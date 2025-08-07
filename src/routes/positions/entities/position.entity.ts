@@ -29,9 +29,5 @@ export class Position {
   @ApiPropertyOptional({ type: String, nullable: true })
   fiatBalance24hChange!: string | null;
   @ApiPropertyOptional({ type: String, nullable: true })
-  protocol!: string | null;
-  @ApiProperty()
-  name!: string;
-  @ApiPropertyOptional({ type: String, nullable: true })
   position_type!: string | null;
 }
