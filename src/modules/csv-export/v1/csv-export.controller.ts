@@ -1,4 +1,11 @@
-import { Body, Controller, Get, Param, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Post,
+} from '@nestjs/common';
 import {
   ApiAcceptedResponse,
   ApiBody,
@@ -57,7 +64,7 @@ export class CsvExportController {
   })
   @Get('/:jobId/status')
   async getExportStatus(
-    @Param('jobId', new ValidationPipe(NumericStringSchema)) jobId: string,
+    @Param('jobId', ParseUUIDPipe) jobId: string,
   ): Promise<JobStatusResponseDto> {
     return this.csvExportService.getExportJobStatus(jobId);
   }
