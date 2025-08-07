@@ -73,6 +73,7 @@ export class CacheRouter {
   private static readonly UNSUPPORTED_CHAIN_EVENT = 'unsupported_chain_event';
   private static readonly ZERION_BALANCES_KEY = 'zerion_balances';
   private static readonly ZERION_COLLECTIBLES_KEY = 'zerion_collectibles';
+  private static readonly ZERION_POSITIONS_KEY = 'zerion_positions';
   private static readonly ORM_QUERY_CACHE_KEY = 'orm_query_cache';
   private static readonly TRANSACTIONS_EXPORT_KEY = 'transactions_export';
 
@@ -141,6 +142,24 @@ export class CacheRouter {
     return new CacheDir(
       CacheRouter.getZerionCollectiblesCacheKey(args),
       `${args.limit}_${args.offset}`,
+    );
+  }
+
+  static getZerionPositionsCacheKey(args: {
+    chainId: string;
+    safeAddress: `0x${string}`;
+  }): string {
+    return `${args.chainId}_${CacheRouter.ZERION_POSITIONS_KEY}_${args.safeAddress}`;
+  }
+
+  static getZerionPositionsCacheDir(args: {
+    chainId: string;
+    safeAddress: `0x${string}`;
+    fiatCode: string;
+  }): CacheDir {
+    return new CacheDir(
+      CacheRouter.getZerionPositionsCacheKey(args),
+      args.fiatCode,
     );
   }
 
