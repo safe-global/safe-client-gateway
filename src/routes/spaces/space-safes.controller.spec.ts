@@ -21,6 +21,7 @@ import { getAddress } from 'viem';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
 import { nameBuilder } from '@/domain/common/entities/name.builder';
 import { createTestModule } from '@/__tests__/testing-module';
+import { SpacesCreationRateLimitGuard } from '@/routes/spaces/guards/spaces-creation-rate-limit.guard';
 
 describe('SpaceSafesController', () => {
   let app: INestApplication<Server>;
@@ -42,6 +43,14 @@ describe('SpaceSafesController', () => {
     const moduleFixture = await createTestModule({
       config: testConfiguration,
       overridePostgresV2: false,
+      guards: [
+        {
+          originalGuard: SpacesCreationRateLimitGuard,
+          testGuard: {
+            canActivate: (): true => true,
+          },
+        },
+      ],
       modules: [
         {
           originalModule: AccountsDatasourceModule,
@@ -199,7 +208,7 @@ describe('SpaceSafesController', () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const spaceName = nameBuilder();
-      const space2Name = faker.company.name();
+      const space2Name = nameBuilder();
       const chain1 = chainBuilder().build();
       const chain2 = chainBuilder().build();
 
