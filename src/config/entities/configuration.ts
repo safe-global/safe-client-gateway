@@ -566,11 +566,41 @@ export default () => ({
           process.env.AWS_STORAGE_BUCKET_NAME || 'safe-client-gateway',
         basePath: process.env.AWS_S3_CSV_EXPORT_PATH || 'assets/csv-export',
       },
+      local: {
+        // This will be ignored if the CSV_EXPORT_FILE_STORAGE_TYPE is set to 'aws'.
+        baseDir: process.env.CSV_EXPORT_LOCAL_BASE_DIR || 'assets/csv-export',
+      },
     },
     // The time-to-live (TTL) for the signed URLs generated for CSV exports.
     // Defaults to 3600 seconds (1 hour).
     signedUrlTtlSeconds: parseInt(
       process.env.CSV_EXPORT_SIGNED_URL_TTL_SECONDS ?? `${60 * 60}`,
     ),
+    // BullMq queue configuration for CSV exports.
+    queue: {
+      removeOnComplete: {
+        age: parseInt(
+          process.env.CSV_EXPORT_QUEUE_REMOVE_ON_COMPLETE_AGE ?? `${86400}`,
+        ), // 24 hours
+        count: parseInt(
+          process.env.CSV_EXPORT_QUEUE_REMOVE_ON_COMPLETE_COUNT ?? `${1000}`,
+        ), // last 1000
+      },
+      removeOnFail: {
+        age: parseInt(
+          process.env.CSV_EXPORT_QUEUE_REMOVE_ON_FAIL_AGE ?? `${43200}`,
+        ), // 12 hours
+        count: parseInt(
+          process.env.CSV_EXPORT_QUEUE_REMOVE_ON_FAIL_COUNT ?? `${100}`,
+        ), // last 100
+      },
+      backoff: {
+        type: process.env.CSV_EXPORT_QUEUE_BACKOFF_TYPE || 'exponential',
+        delay: parseInt(
+          process.env.CSV_EXPORT_QUEUE_BACKOFF_DELAY ?? `${2000}`,
+        ), // 2 seconds
+      },
+      attempts: parseInt(process.env.CSV_EXPORT_QUEUE_ATTEMPTS ?? `${3}`),
+    },
   },
 });
