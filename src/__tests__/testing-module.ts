@@ -25,11 +25,17 @@ export interface CreateBaseTestModuleOptions {
   cacheKeyPrefix?: string;
   modules?: Array<ModuleOverride>;
   providers?: Array<Provider>;
+  guards?: Array<GuardOverride>;
 }
 
 export interface ModuleOverride {
   originalModule: ModuleDefinition;
   testModule: ModuleDefinition;
+}
+
+export interface GuardOverride {
+  originalGuard: unknown;
+  testGuard: unknown;
 }
 
 export async function createTestModule(
@@ -40,6 +46,7 @@ export async function createTestModule(
     cacheKeyPrefix,
     overridePostgresV2,
     modules: additionalOverrides = [],
+    guards: guards = [],
     providers = [],
   } = options;
 
@@ -47,6 +54,7 @@ export async function createTestModule(
     config,
     overridePostgresV2,
     cacheKeyPrefix,
+    guards,
     providers,
     modules: [
       {
@@ -74,6 +82,7 @@ export async function createBaseTestModule(
     overridePostgresV2 = true, // Enable Postgres V2 by default
     cacheKeyPrefix = crypto.randomUUID(),
     modules: additionalOverrides = [],
+    guards: guards = [],
     providers = [],
   } = options;
 
@@ -95,6 +104,11 @@ export async function createBaseTestModule(
       .overrideModule(PostgresDatabaseModuleV2)
       .useModule(TestPostgresDatabaseModuleV2);
   }
+
+  for (const guard of guards) {
+    moduleBuilder.overrideGuard(guard.originalGuard).useValue(guard.testGuard);
+  }
+
   // Apply additional overrides
   for (const override of additionalOverrides) {
     moduleBuilder
