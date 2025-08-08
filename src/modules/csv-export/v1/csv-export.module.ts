@@ -12,20 +12,23 @@ import { CsvModule } from '@/modules/csv-export/csv-utils/csv.module';
 import { CsvExportService } from '@/modules/csv-export/v1/csv-export.service';
 import { ExportApiManagerModule } from '@/modules/csv-export/v1/datasources/export-api.manager.interface';
 import { CloudStorageModule } from '@/datasources/storage/cloud-storage.module';
+import { IConfigurationService } from '@/config/configuration.service.interface';
 
 @Module({
   imports: [
-    BullModule.registerQueue({
+    BullModule.registerQueueAsync({
       name: CSV_EXPORT_QUEUE,
-      defaultJobOptions: {
-        removeOnComplete: { age: 86400, count: 1000 }, // 24 hours or last 1000
-        removeOnFail: { age: 43200, count: 100 }, // 12 hours or last 1000
-        backoff: {
-          type: 'exponential',
-          delay: 2000,
+      useFactory: (configService: IConfigurationService) => ({
+        defaultJobOptions: {
+          removeOnComplete: configService.get(
+            'csvExport.queue.removeOnComplete',
+          ),
+          removeOnFail: configService.get('csvExport.queue.removeOnFail'),
+          backoff: configService.get('csvExport.queue.backoff'),
+          attempts: configService.get<number>('csvExport.queue.attempts'),
         },
-        attempts: 3,
-      },
+      }),
+      inject: [IConfigurationService],
     }),
     CloudStorageModule.register(
       'csvExport.fileStorage.aws.bucketName',
