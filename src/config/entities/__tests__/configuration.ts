@@ -365,5 +365,20 @@ export default (): ReturnType<typeof configuration> => ({
       },
     },
     signedUrlTtlSeconds: faker.number.int(),
+    queue: {
+      removeOnComplete: {
+        age: faker.number.int({ min: 0, max: 10000 }),
+        count: faker.number.int({ min: 0, max: 10 }),
+      },
+      removeOnFail: {
+        age: faker.number.int({ min: 0, max: 10000 }),
+        count: faker.number.int({ min: 0, max: 10 }),
+      },
+      backoff: {
+        type: 'exponential',
+        delay: faker.number.int({ min: 0, max: 2000 }),
+      },
+      attempts: faker.number.int({ min: 0, max: 3 }),
+    },
   },
 });
