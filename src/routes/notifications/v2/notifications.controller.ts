@@ -22,6 +22,13 @@ import {
   ApiOperation,
   ApiTags,
   ApiUnprocessableEntityResponse,
+  ApiOkResponse,
+  ApiParam,
+  ApiBody,
+  ApiCreatedResponse,
+  ApiNoContentResponse,
+  ApiBadRequestResponse,
+  ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { UUID } from 'crypto';
 import { OptionalAuthGuard } from '@/routes/auth/guards/optional-auth.guard';
@@ -34,6 +41,32 @@ import { DeleteAllSubscriptionsDto } from '@/routes/notifications/v2/entities/de
 export class NotificationsControllerV2 {
   constructor(private readonly notificationsService: NotificationsServiceV2) {}
 
+  @ApiOperation({
+    summary: 'Register device for notifications',
+    description:
+      'Registers or updates a device to receive push notifications for Safe events. Creates subscriptions for specified Safes and notification types.',
+  })
+  @ApiBody({
+    type: UpsertSubscriptionsDto,
+    description:
+      'Device and subscription data including device token, Safe addresses, and notification preferences',
+  })
+  @ApiCreatedResponse({
+    description: 'Device registered successfully with returned device UUID',
+    schema: {
+      type: 'object',
+      properties: {
+        deviceUuid: {
+          type: 'string',
+          format: 'uuid',
+          description: 'Generated UUID for the registered device',
+        },
+      },
+    },
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid device data or subscription configuration',
+  })
   @Post('register/notifications')
   @UseGuards(OptionalAuthGuard)
   upsertSubscriptions(
@@ -47,6 +80,39 @@ export class NotificationsControllerV2 {
     });
   }
 
+  @ApiOperation({
+    summary: 'Get Safe subscription',
+    description:
+      'Retrieves the notification types that a device is subscribed to for a specific Safe.',
+  })
+  @ApiParam({
+    name: 'chainId',
+    type: 'string',
+    description: 'Chain ID where the Safe is deployed',
+    example: '1',
+  })
+  @ApiParam({
+    name: 'deviceUuid',
+    type: 'string',
+    description: 'Device UUID',
+    example: '550e8400-e29b-41d4-a716-446655440000',
+  })
+  @ApiParam({
+    name: 'safeAddress',
+    type: 'string',
+    description: 'Safe contract address (0x prefixed hex string)',
+  })
+  @ApiOkResponse({
+    type: [NotificationType],
+    description:
+      'List of notification types the device is subscribed to for this Safe',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Authentication required - valid JWT token must be provided',
+  })
+  @ApiNotFoundResponse({
+    description: 'Device, Safe, or subscription not found',
+  })
   @Get('chains/:chainId/notifications/devices/:deviceUuid/safes/:safeAddress')
   @UseGuards(AuthGuard)
   getSafeSubscription(
@@ -64,6 +130,34 @@ export class NotificationsControllerV2 {
     });
   }
 
+  @ApiOperation({
+    summary: 'Delete Safe subscription',
+    description:
+      'Removes all notification subscriptions for a specific Safe on a device.',
+  })
+  @ApiParam({
+    name: 'chainId',
+    type: 'string',
+    description: 'Chain ID where the Safe is deployed',
+    example: '1',
+  })
+  @ApiParam({
+    name: 'deviceUuid',
+    type: 'string',
+    description: 'Device UUID',
+    example: '550e8400-e29b-41d4-a716-446655440000',
+  })
+  @ApiParam({
+    name: 'safeAddress',
+    type: 'string',
+    description: 'Safe contract address (0x prefixed hex string)',
+  })
+  @ApiNoContentResponse({
+    description: 'Safe subscription deleted successfully',
+  })
+  @ApiNotFoundResponse({
+    description: 'Device, Safe, or subscription not found',
+  })
   @Delete(
     'chains/:chainId/notifications/devices/:deviceUuid/safes/:safeAddress',
   )
@@ -101,6 +195,29 @@ export class NotificationsControllerV2 {
     );
   }
 
+  @ApiOperation({
+    summary: 'Delete device',
+    description:
+      'Removes a device and all its notification subscriptions from the system.',
+  })
+  @ApiParam({
+    name: 'chainId',
+    type: 'string',
+    description: 'Chain ID (kept for backward compatibility)',
+    example: '1',
+  })
+  @ApiParam({
+    name: 'deviceUuid',
+    type: 'string',
+    description: 'Device UUID to delete',
+    example: '550e8400-e29b-41d4-a716-446655440000',
+  })
+  @ApiNoContentResponse({
+    description: 'Device deleted successfully',
+  })
+  @ApiNotFoundResponse({
+    description: 'Device not found',
+  })
   @Delete('chains/:chainId/notifications/devices/:deviceUuid')
   deleteDevice(
     @Param('chainId', new ValidationPipe(NumericStringSchema)) _chainId: string,

@@ -21,7 +21,6 @@ export class DeleteAllSubscriptionItemDto {
       '• Omitted (undefined): Deletes subscriptions regardless of signer address\n' +
       '• null: Deletes only subscriptions with no signer address\n' +
       '• Valid address: Deletes only subscriptions with that specific signer address',
-    example: '0x1234567890123456789012345678901234567890',
   })
   public readonly signerAddress?: `0x${string}` | null;
 }

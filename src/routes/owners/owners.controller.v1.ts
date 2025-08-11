@@ -1,5 +1,10 @@
 import { Controller, Get, Param } from '@nestjs/common';
-import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
+  ApiParam,
+} from '@nestjs/swagger';
 import { SafeList } from '@/routes/owners/entities/safe-list.entity';
 import { OwnersService } from '@/routes/owners/owners.service';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
@@ -13,7 +18,26 @@ import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 export class OwnersControllerV1 {
   constructor(private readonly ownersService: OwnersService) {}
 
-  @ApiOkResponse({ type: SafeList })
+  @ApiOperation({
+    summary: 'Get Safes by owner',
+    description:
+      'Retrieves a list of Safe addresses that are owned by the specified address on a specific chain.',
+  })
+  @ApiParam({
+    name: 'chainId',
+    type: 'string',
+    description: 'Chain ID to search for Safes',
+    example: '1',
+  })
+  @ApiParam({
+    name: 'ownerAddress',
+    type: 'string',
+    description: 'Owner address to search Safes for (0x prefixed hex string)',
+  })
+  @ApiOkResponse({
+    type: SafeList,
+    description: 'List of Safes owned by the specified address',
+  })
   @Get('chains/:chainId/owners/:ownerAddress/safes')
   async getSafesByOwner(
     @Param('chainId') chainId: string,
@@ -23,8 +47,21 @@ export class OwnersControllerV1 {
     return this.ownersService.getSafesByOwner({ chainId, ownerAddress });
   }
 
-  @ApiOkResponse({ type: SafeList })
-  @ApiOperation({ deprecated: true, summary: 'Deprecated' })
+  @ApiOperation({
+    deprecated: true,
+    summary: 'Get all Safes by owner (deprecated)',
+    description:
+      'Retrieves Safes owned by an address across all chains. This endpoint is deprecated, please use the chain-specific version instead.',
+  })
+  @ApiParam({
+    name: 'ownerAddress',
+    type: 'string',
+    description: 'Owner address to search Safes for (0x prefixed hex string)',
+  })
+  @ApiOkResponse({
+    type: SafeList,
+    description: 'Map of chain IDs to arrays of Safe addresses',
+  })
   @Get('owners/:ownerAddress/safes')
   async getAllSafesByOwner(
     @Param('ownerAddress', new ValidationPipe(AddressSchema))

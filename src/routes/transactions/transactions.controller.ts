@@ -16,6 +16,11 @@ import {
   ApiOperation,
   ApiQuery,
   ApiTags,
+  ApiParam,
+  ApiBody,
+  ApiNotFoundResponse,
+  ApiBadRequestResponse,
+  ApiNoContentResponse,
 } from '@nestjs/swagger';
 import { PaginationDataDecorator } from '@/routes/common/decorators/pagination.data.decorator';
 import { RouteUrlDecorator } from '@/routes/common/decorators/route.url.decorator';
@@ -58,7 +63,31 @@ import { TXSCreationTransaction } from '@/routes/transactions/entities/txs-creat
 export class TransactionsController {
   constructor(private readonly transactionsService: TransactionsService) {}
 
-  @ApiOkResponse({ type: TransactionDetails })
+  @ApiOperation({
+    summary: 'Get transaction details',
+    description:
+      'Retrieves detailed information about a specific transaction by its ID, including execution status, confirmations, and decoded transaction data.',
+  })
+  @ApiParam({
+    name: 'chainId',
+    type: 'string',
+    description: 'Chain ID where the transaction exists',
+    example: '1',
+  })
+  @ApiParam({
+    name: 'id',
+    type: 'string',
+    description:
+      'Transaction ID (safe transaction hash or multisig transaction ID)',
+    example: 'multisig_0x1234567890123456789012345678901234567890_0x5678...',
+  })
+  @ApiOkResponse({
+    type: TransactionDetails,
+    description: 'Transaction details retrieved successfully',
+  })
+  @ApiNotFoundResponse({
+    description: 'Transaction not found',
+  })
   @Get(`chains/:chainId/transactions/:id`)
   async getTransactionById(
     @Param('chainId') chainId: string,
@@ -183,15 +212,72 @@ export class TransactionsController {
     });
   }
 
-  @ApiOkResponse({ type: MultisigTransactionPage })
+  @ApiOperation({
+    summary: 'Get multisig transactions',
+    description:
+      'Retrieves a paginated list of multisig transactions for a Safe with optional filtering by execution date, recipient, value, nonce, and execution status.',
+  })
+  @ApiParam({
+    name: 'chainId',
+    type: 'string',
+    description: 'Chain ID where the Safe is deployed',
+    example: '1',
+  })
+  @ApiParam({
+    name: 'safeAddress',
+    type: 'string',
+    description: 'Safe contract address (0x prefixed hex string)',
+  })
+  @ApiQuery({
+    name: 'execution_date__gte',
+    required: false,
+    type: String,
+    description:
+      'Filter by execution date greater than or equal to (ISO 8601 format)',
+  })
+  @ApiQuery({
+    name: 'execution_date__lte',
+    required: false,
+    type: String,
+    description:
+      'Filter by execution date less than or equal to (ISO 8601 format)',
+  })
+  @ApiQuery({
+    name: 'to',
+    required: false,
+    type: String,
+    description: 'Filter by recipient address (0x prefixed hex string)',
+  })
+  @ApiQuery({
+    name: 'value',
+    required: false,
+    type: String,
+    description: 'Filter by transaction value in wei',
+  })
+  @ApiQuery({
+    name: 'nonce',
+    required: false,
+    type: String,
+    description: 'Filter by transaction nonce',
+  })
+  @ApiQuery({
+    name: 'executed',
+    required: false,
+    type: Boolean,
+    description:
+      'Filter by execution status (true for executed, false for pending)',
+  })
+  @ApiQuery({
+    name: 'cursor',
+    required: false,
+    type: String,
+    description: 'Pagination cursor for retrieving the next set of results',
+  })
+  @ApiOkResponse({
+    type: MultisigTransactionPage,
+    description: 'Paginated list of multisig transactions',
+  })
   @Get('chains/:chainId/safes/:safeAddress/multisig-transactions')
-  @ApiQuery({ name: 'execution_date__gte', required: false, type: String })
-  @ApiQuery({ name: 'execution_date__lte', required: false, type: String })
-  @ApiQuery({ name: 'to', required: false, type: String })
-  @ApiQuery({ name: 'value', required: false, type: String })
-  @ApiQuery({ name: 'nonce', required: false, type: String })
-  @ApiQuery({ name: 'executed', required: false, type: Boolean })
-  @ApiQuery({ name: 'cursor', required: false, type: String })
   async getMultisigTransactions(
     @Param('chainId') chainId: string,
     @RouteUrlDecorator() routeUrl: URL,
@@ -221,6 +307,35 @@ export class TransactionsController {
     });
   }
 
+  @ApiOperation({
+    summary: 'Delete transaction',
+    description:
+      'Deletes a pending multisig transaction. Only the proposer or a Safe owner can delete a transaction.',
+  })
+  @ApiParam({
+    name: 'chainId',
+    type: 'string',
+    description: 'Chain ID where the transaction exists',
+    example: '1',
+  })
+  @ApiParam({
+    name: 'safeTxHash',
+    type: 'string',
+    description: 'Safe transaction hash (0x prefixed hex string)',
+  })
+  @ApiBody({
+    type: DeleteTransactionDto,
+    description: 'Signature proving authorization to delete the transaction',
+  })
+  @ApiNoContentResponse({
+    description: 'Transaction deleted successfully',
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid signature or unauthorized deletion attempt',
+  })
+  @ApiNotFoundResponse({
+    description: 'Transaction not found',
+  })
   @Delete('chains/:chainId/transactions/:safeTxHash')
   async deleteTransaction(
     @Param('chainId') chainId: string,
@@ -235,12 +350,51 @@ export class TransactionsController {
     });
   }
 
-  @ApiOkResponse({ type: ModuleTransactionPage })
+  @ApiOperation({
+    summary: 'Get module transactions',
+    description:
+      'Retrieves a paginated list of module transactions for a Safe. Module transactions are executed directly by enabled modules without requiring owner signatures.',
+  })
+  @ApiParam({
+    name: 'chainId',
+    type: 'string',
+    description: 'Chain ID where the Safe is deployed',
+    example: '1',
+  })
+  @ApiParam({
+    name: 'safeAddress',
+    type: 'string',
+    description: 'Safe contract address (0x prefixed hex string)',
+  })
+  @ApiQuery({
+    name: 'to',
+    required: false,
+    type: String,
+    description: 'Filter by recipient address (0x prefixed hex string)',
+  })
+  @ApiQuery({
+    name: 'module',
+    required: false,
+    type: String,
+    description: 'Filter by module address that executed the transaction',
+  })
+  @ApiQuery({
+    name: 'cursor',
+    required: false,
+    type: String,
+    description: 'Pagination cursor for retrieving the next set of results',
+  })
+  @ApiQuery({
+    name: 'transaction_hash',
+    required: false,
+    type: String,
+    description: 'Filter by specific transaction hash',
+  })
+  @ApiOkResponse({
+    type: ModuleTransactionPage,
+    description: 'Paginated list of module transactions',
+  })
   @Get('chains/:chainId/safes/:safeAddress/module-transactions')
-  @ApiQuery({ name: 'to', required: false, type: String })
-  @ApiQuery({ name: 'module', required: false, type: String })
-  @ApiQuery({ name: 'cursor', required: false, type: String })
-  @ApiQuery({ name: 'transaction_hash', required: false, type: String })
   async getModuleTransactions(
     @Param('chainId') chainId: string,
     @RouteUrlDecorator() routeUrl: URL,
@@ -262,8 +416,39 @@ export class TransactionsController {
     });
   }
 
+  @ApiOperation({
+    summary: 'Add transaction confirmation',
+    description:
+      'Adds a confirmation signature to a pending multisig transaction. Once enough confirmations are collected to meet the Safe threshold, the transaction can be executed.',
+  })
+  @ApiParam({
+    name: 'chainId',
+    type: 'string',
+    description: 'Chain ID where the Safe is deployed',
+    example: '1',
+  })
+  @ApiParam({
+    name: 'safeTxHash',
+    type: 'string',
+    description: 'Safe transaction hash (0x prefixed hex string)',
+  })
+  @ApiBody({
+    type: AddConfirmationDto,
+    description:
+      'Confirmation signature from a Safe owner proving their approval of the transaction',
+  })
+  @ApiOkResponse({
+    type: Transaction,
+    description: 'Transaction details with updated confirmation status',
+  })
+  @ApiBadRequestResponse({
+    description:
+      'Invalid signature or confirmation already exists for this owner',
+  })
+  @ApiNotFoundResponse({
+    description: 'Transaction not found',
+  })
   @HttpCode(200)
-  @ApiOkResponse({ type: Transaction })
   @Post('chains/:chainId/transactions/:safeTxHash/confirmations')
   async addConfirmation(
     @Param('chainId') chainId: string,
@@ -278,15 +463,73 @@ export class TransactionsController {
     });
   }
 
-  @ApiOkResponse({ type: IncomingTransferPage })
+  @ApiOperation({
+    summary: 'Get incoming transfers',
+    description:
+      'Retrieves a paginated list of incoming transfers to a Safe, including ETH and token transfers with optional filtering by date, value, token, and trust status.',
+  })
+  @ApiParam({
+    name: 'chainId',
+    type: 'string',
+    description: 'Chain ID where the Safe is deployed',
+    example: '1',
+  })
+  @ApiParam({
+    name: 'safeAddress',
+    type: 'string',
+    description: 'Safe contract address (0x prefixed hex string)',
+  })
+  @ApiQuery({
+    name: 'execution_date__gte',
+    required: false,
+    type: String,
+    description:
+      'Filter by execution date greater than or equal to (ISO 8601 format)',
+  })
+  @ApiQuery({
+    name: 'execution_date__lte',
+    required: false,
+    type: String,
+    description:
+      'Filter by execution date less than or equal to (ISO 8601 format)',
+  })
+  @ApiQuery({
+    name: 'to',
+    required: false,
+    type: String,
+    description: 'Filter by recipient address (0x prefixed hex string)',
+  })
+  @ApiQuery({
+    name: 'value',
+    required: false,
+    type: String,
+    description: 'Filter by transfer value in wei',
+  })
+  @ApiQuery({
+    name: 'token_address',
+    required: false,
+    type: String,
+    description:
+      'Filter by token contract address (0x prefixed hex string for ERC-20 tokens)',
+  })
+  @ApiQuery({
+    name: 'cursor',
+    required: false,
+    type: String,
+    description: 'Pagination cursor for retrieving the next set of results',
+  })
+  @ApiQuery({
+    name: 'trusted',
+    required: false,
+    type: Boolean,
+    description:
+      'Filter by trust status (true for trusted tokens, false for untrusted)',
+  })
+  @ApiOkResponse({
+    type: IncomingTransferPage,
+    description: 'Paginated list of incoming transfers',
+  })
   @Get('chains/:chainId/safes/:safeAddress/incoming-transfers')
-  @ApiQuery({ name: 'execution_date__gte', required: false, type: String })
-  @ApiQuery({ name: 'execution_date__lte', required: false, type: String })
-  @ApiQuery({ name: 'to', required: false, type: String })
-  @ApiQuery({ name: 'value', required: false, type: String })
-  @ApiQuery({ name: 'token_address', required: false, type: String })
-  @ApiQuery({ name: 'cursor', required: false, type: String })
-  @ApiQuery({ name: 'trusted', required: false, type: Boolean })
   async getIncomingTransfers(
     @Param('chainId') chainId: string,
     @RouteUrlDecorator() routeUrl: URL,
@@ -317,7 +560,38 @@ export class TransactionsController {
     });
   }
 
-  @ApiOkResponse({ type: TransactionPreview })
+  @ApiOperation({
+    summary: 'Preview transaction',
+    description:
+      'Simulates a transaction execution to preview its effects, including gas estimates, balance changes, and potential errors before actually proposing or executing it.',
+  })
+  @ApiParam({
+    name: 'chainId',
+    type: 'string',
+    description: 'Chain ID where the Safe is deployed',
+    example: '1',
+  })
+  @ApiParam({
+    name: 'safeAddress',
+    type: 'string',
+    description: 'Safe contract address (0x prefixed hex string)',
+  })
+  @ApiBody({
+    type: PreviewTransactionDto,
+    description:
+      'Transaction data to preview including recipient, value, data, and operation type',
+  })
+  @ApiOkResponse({
+    type: TransactionPreview,
+    description:
+      'Transaction preview with simulation results, gas estimates, and potential effects',
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid transaction data or simulation failed',
+  })
+  @ApiNotFoundResponse({
+    description: 'Safe not found',
+  })
   @HttpCode(200)
   @Post('chains/:chainId/transactions/:safeAddress/preview')
   async previewTransaction(
@@ -334,10 +608,40 @@ export class TransactionsController {
     });
   }
 
-  @ApiOkResponse({ type: QueuedItemPage })
+  @ApiOperation({
+    summary: 'Get transaction queue',
+    description:
+      'Retrieves a paginated list of queued (pending) transactions for a Safe that are waiting for execution, ordered by nonce.',
+  })
+  @ApiParam({
+    name: 'chainId',
+    type: 'string',
+    description: 'Chain ID where the Safe is deployed',
+    example: '1',
+  })
+  @ApiParam({
+    name: 'safeAddress',
+    type: 'string',
+    description: 'Safe contract address (0x prefixed hex string)',
+  })
+  @ApiQuery({
+    name: 'cursor',
+    required: false,
+    type: String,
+    description: 'Pagination cursor for retrieving the next set of results',
+  })
+  @ApiQuery({
+    name: 'trusted',
+    required: false,
+    type: Boolean,
+    description:
+      'Filter by trust status (true for trusted transactions, false for untrusted)',
+  })
+  @ApiOkResponse({
+    type: QueuedItemPage,
+    description: 'Paginated list of queued transactions',
+  })
   @Get('chains/:chainId/safes/:safeAddress/transactions/queued')
-  @ApiQuery({ name: 'cursor', required: false, type: String })
-  @ApiQuery({ name: 'trusted', required: false, type: Boolean })
   async getTransactionQueue(
     @Param('chainId') chainId: string,
     @RouteUrlDecorator() routeUrl: URL,
@@ -356,18 +660,62 @@ export class TransactionsController {
     });
   }
 
-  @ApiOkResponse({ type: TransactionItemPage })
-  @Get('chains/:chainId/safes/:safeAddress/transactions/history')
+  @ApiOperation({
+    summary: 'Get transaction history',
+    description:
+      'Retrieves a paginated list of executed transactions for a Safe, including multisig transactions, module transactions, and incoming transfers, ordered by execution date.',
+  })
+  @ApiParam({
+    name: 'chainId',
+    type: 'string',
+    description: 'Chain ID where the Safe is deployed',
+    example: '1',
+  })
+  @ApiParam({
+    name: 'safeAddress',
+    type: 'string',
+    description: 'Safe contract address (0x prefixed hex string)',
+  })
   @ApiQuery({
     name: 'timezone_offset',
     required: false,
     type: String,
     deprecated: true,
+    description:
+      'Deprecated: Timezone offset in milliseconds for date formatting (use timezone parameter instead)',
   })
-  @ApiQuery({ name: 'cursor', required: false, type: String })
-  @ApiQuery({ name: 'timezone', required: false, type: String })
-  @ApiQuery({ name: 'trusted', required: false, type: Boolean })
-  @ApiQuery({ name: 'imitation', required: false, type: Boolean })
+  @ApiQuery({
+    name: 'cursor',
+    required: false,
+    type: String,
+    description: 'Pagination cursor for retrieving the next set of results',
+  })
+  @ApiQuery({
+    name: 'timezone',
+    required: false,
+    type: String,
+    description:
+      'IANA timezone identifier for date formatting (e.g., "America/New_York")',
+  })
+  @ApiQuery({
+    name: 'trusted',
+    required: false,
+    type: Boolean,
+    description:
+      'Filter by trust status (default: true, set to false to include untrusted transactions)',
+  })
+  @ApiQuery({
+    name: 'imitation',
+    required: false,
+    type: Boolean,
+    description:
+      'Include imitation transactions in results (default: true, set to false to exclude)',
+  })
+  @ApiOkResponse({
+    type: TransactionItemPage,
+    description: 'Paginated list of historical transactions',
+  })
+  @Get('chains/:chainId/safes/:safeAddress/transactions/history')
   async getTransactionsHistory(
     @Param('chainId') chainId: string,
     @RouteUrlDecorator() routeUrl: URL,
@@ -395,8 +743,35 @@ export class TransactionsController {
     });
   }
 
+  @ApiOperation({
+    summary: 'Propose transaction',
+    description:
+      'Proposes a new multisig transaction for a Safe. The transaction will be pending until enough owners sign it to reach the required threshold.',
+  })
+  @ApiParam({
+    name: 'chainId',
+    type: 'string',
+    description: 'Chain ID where the Safe is deployed',
+    example: '1',
+  })
+  @ApiParam({
+    name: 'safeAddress',
+    type: 'string',
+    description: 'Safe contract address (0x prefixed hex string)',
+  })
+  @ApiBody({
+    type: ProposeTransactionDto,
+    description:
+      'Transaction proposal including recipient, value, data, and initial signature',
+  })
+  @ApiOkResponse({
+    type: Transaction,
+    description: 'Transaction proposed successfully',
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid transaction data or signature',
+  })
   @HttpCode(200)
-  @ApiOkResponse({ type: Transaction })
   @Post('chains/:chainId/transactions/:safeAddress/propose')
   async proposeTransaction(
     @Param('chainId') chainId: string,
@@ -412,8 +787,30 @@ export class TransactionsController {
     });
   }
 
+  @ApiOperation({
+    summary: 'Get Safe creation transaction',
+    description:
+      'Retrieves the transaction that created the Safe, including the creation timestamp, creator address, factory used, and setup data.',
+  })
+  @ApiParam({
+    name: 'chainId',
+    type: 'string',
+    description: 'Chain ID where the Safe is deployed',
+    example: '1',
+  })
+  @ApiParam({
+    name: 'safeAddress',
+    type: 'string',
+    description: 'Safe contract address (0x prefixed hex string)',
+  })
+  @ApiOkResponse({
+    type: CreationTransaction,
+    description: 'Safe creation transaction details',
+  })
+  @ApiNotFoundResponse({
+    description: 'Safe not found or creation transaction not available',
+  })
   @HttpCode(200)
-  @ApiOkResponse({ type: CreationTransaction })
   @Get('chains/:chainId/safes/:safeAddress/transactions/creation')
   async getCreationTransaction(
     @Param('chainId') chainId: string,
