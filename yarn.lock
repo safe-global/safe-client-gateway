@@ -1375,10 +1375,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@faker-js/faker@npm:9.3.0":
-  version: 9.3.0
-  resolution: "@faker-js/faker@npm:9.3.0"
-  checksum: 10/fa0718766dc46dea06602b1acdccdf3714e5a076f02eab6dbe26d7dc421ccc43a2e7e08767f7832de963fa2a273c2d9e5d4a2a504247ea5fba119a713efc145c
+"@faker-js/faker@npm:9.9.0":
+  version: 9.9.0
+  resolution: "@faker-js/faker@npm:9.9.0"
+  checksum: 10/b24b1be0fb3090d54abaaa3a814f37d1a7551f1207dcd330a1af2c70f6312a8b95ebb82653577757dd62f4cbbb56caa3c83513053253654dc3e286a05040ecbe
   languageName: node
   linkType: hard
 
@@ -9099,7 +9099,7 @@ __metadata:
     "@aws-sdk/client-kms": "npm:3.859.0"
     "@aws-sdk/client-s3": "npm:3.859.0"
     "@aws-sdk/s3-request-presigner": "npm:3.859.0"
-    "@faker-js/faker": "npm:9.3.0"
+    "@faker-js/faker": "npm:9.9.0"
     "@fingerprintjs/fingerprintjs-pro-server-api": "npm:6.2.0"
     "@nestjs/bullmq": "npm:^11.0.2"
     "@nestjs/cache-manager": "npm:3.0.1"
