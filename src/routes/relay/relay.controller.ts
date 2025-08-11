@@ -1,5 +1,13 @@
 import { Controller, Post, Param, Get, UseFilters, Body } from '@nestjs/common';
-import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiOkResponse,
+  ApiTags,
+  ApiOperation,
+  ApiParam,
+  ApiBody,
+  ApiBadRequestResponse,
+  ApiTooManyRequestsResponse,
+} from '@nestjs/swagger';
 import { RelayDto } from '@/routes/relay/entities/relay.dto.entity';
 import { RelayService } from '@/routes/relay/relay.service';
 import { RelayLimitReachedExceptionFilter } from '@/domain/relay/exception-filters/relay-limit-reached.exception-filter';
@@ -22,6 +30,33 @@ import { RelaysRemaining } from '@/routes/relay/entities/relays-remaining.entity
 export class RelayController {
   constructor(private readonly relayService: RelayService) {}
 
+  @ApiOperation({
+    summary: 'Relay transaction',
+    description:
+      'Relays a Safe transaction using the relay service, which pays for gas fees. The transaction must meet certain criteria and the Safe must have remaining relay quota.',
+  })
+  @ApiParam({
+    name: 'chainId',
+    type: 'string',
+    description: 'Chain ID where the Safe transaction will be executed',
+    example: '1',
+  })
+  @ApiBody({
+    type: RelayDto,
+    description:
+      'Transaction data to relay including Safe address, transaction details, and signatures',
+  })
+  @ApiOkResponse({
+    type: Relay,
+    description: 'Transaction relayed successfully with transaction hash',
+  })
+  @ApiBadRequestResponse({
+    description:
+      'Invalid transaction data, unofficial contracts, or unsupported operation',
+  })
+  @ApiTooManyRequestsResponse({
+    description: 'Relay limit reached for this Safe',
+  })
   @Post()
   @UseFilters(
     RelayLimitReachedExceptionFilter,
@@ -31,7 +66,6 @@ export class RelayController {
     UnofficialMultiSendExceptionFilter,
     UnofficialProxyFactoryExceptionFilter,
   )
-  @ApiOkResponse({ type: Relay })
   async relay(
     @Param('chainId') chainId: string,
     @Body(new ValidationPipe(RelayDtoSchema))
@@ -40,7 +74,26 @@ export class RelayController {
     return this.relayService.relay({ chainId, relayDto });
   }
 
-  @ApiOkResponse({ type: RelaysRemaining })
+  @ApiOperation({
+    summary: 'Get remaining relays',
+    description:
+      'Retrieves the number of remaining relay transactions available for a specific Safe on the given chain.',
+  })
+  @ApiParam({
+    name: 'chainId',
+    type: 'string',
+    description: 'Chain ID where the Safe is deployed',
+    example: '1',
+  })
+  @ApiParam({
+    name: 'safeAddress',
+    type: 'string',
+    description: 'Safe contract address (0x prefixed hex string)',
+  })
+  @ApiOkResponse({
+    type: RelaysRemaining,
+    description: 'Remaining relay quota retrieved successfully',
+  })
   @Get(':safeAddress')
   async getRelaysRemaining(
     @Param('chainId') chainId: string,

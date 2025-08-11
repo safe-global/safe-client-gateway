@@ -1,5 +1,11 @@
 import { Body, Controller, HttpCode, Param, Post } from '@nestjs/common';
-import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiOkResponse,
+  ApiTags,
+  ApiOperation,
+  ApiParam,
+  ApiBody,
+} from '@nestjs/swagger';
 import { DataDecodedService } from '@/routes/data-decode/data-decoded.service';
 import { DataDecoded } from '@/routes/data-decode/entities/data-decoded.entity';
 import {
@@ -16,7 +22,27 @@ import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 export class DataDecodedController {
   constructor(private readonly dataDecodedService: DataDecodedService) {}
 
-  @ApiOkResponse({ type: DataDecoded })
+  @ApiOperation({
+    summary: 'Decode transaction data',
+    description:
+      'Decodes raw transaction data into human-readable format using contract ABIs. This helps understand what functions are being called and with what parameters.',
+  })
+  @ApiParam({
+    name: 'chainId',
+    type: 'string',
+    description: 'Chain ID where the transaction will be executed',
+    example: '1',
+  })
+  @ApiBody({
+    type: TransactionDataDto,
+    description:
+      'Transaction data to decode, including contract address and data payload',
+  })
+  @ApiOkResponse({
+    type: DataDecoded,
+    description:
+      'Transaction data decoded successfully with method name, parameters, and values',
+  })
   @HttpCode(200)
   @Post('chains/:chainId/data-decoder')
   async getDataDecoded(

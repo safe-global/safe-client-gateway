@@ -1,4 +1,11 @@
-import { ApiOkResponse, ApiQuery, ApiTags } from '@nestjs/swagger';
+import {
+  ApiOkResponse,
+  ApiQuery,
+  ApiTags,
+  ApiOperation,
+  ApiParam,
+  ApiNotFoundResponse,
+} from '@nestjs/swagger';
 import {
   Controller,
   DefaultValuePipe,
@@ -25,7 +32,29 @@ import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 export class SafesController {
   constructor(private readonly service: SafesService) {}
 
-  @ApiOkResponse({ type: SafeState })
+  @ApiOperation({
+    summary: 'Get Safe information',
+    description:
+      'Retrieves detailed information about a Safe including owners, threshold, modules, and current state.',
+  })
+  @ApiParam({
+    name: 'chainId',
+    type: 'string',
+    description: 'Chain ID where the Safe is deployed',
+    example: '1',
+  })
+  @ApiParam({
+    name: 'safeAddress',
+    type: 'string',
+    description: 'Safe contract address (0x prefixed hex string)',
+  })
+  @ApiOkResponse({
+    type: SafeState,
+    description: 'Safe information retrieved successfully',
+  })
+  @ApiNotFoundResponse({
+    description: 'Safe not found on the specified chain',
+  })
   @Get('chains/:chainId/safes/:safeAddress')
   async getSafe(
     @Param('chainId') chainId: string,
@@ -35,7 +64,29 @@ export class SafesController {
     return this.service.getSafeInfo({ chainId, safeAddress });
   }
 
-  @ApiOkResponse({ type: SafeNonces })
+  @ApiOperation({
+    summary: 'Get Safe nonces',
+    description:
+      'Retrieves the current nonces for a Safe, including the transaction nonce and any queued nonces.',
+  })
+  @ApiParam({
+    name: 'chainId',
+    type: 'string',
+    description: 'Chain ID where the Safe is deployed',
+    example: '1',
+  })
+  @ApiParam({
+    name: 'safeAddress',
+    type: 'string',
+    description: 'Safe contract address (0x prefixed hex string)',
+  })
+  @ApiOkResponse({
+    type: SafeNonces,
+    description: 'Safe nonces retrieved successfully',
+  })
+  @ApiNotFoundResponse({
+    description: 'Safe not found on the specified chain',
+  })
   @Get('chains/:chainId/safes/:safeAddress/nonces')
   async getNonces(
     @Param('chainId') chainId: string,
@@ -45,13 +96,55 @@ export class SafesController {
     return this.service.getNonces({ chainId, safeAddress });
   }
 
-  @ApiQuery({ name: 'wallet_address', required: false, type: String })
-  @ApiQuery({ name: 'currency', required: true, type: String })
-  @ApiQuery({ name: 'safes', required: true, type: String })
-  @ApiQuery({ name: 'trusted', required: false, type: Boolean })
-  @ApiQuery({ name: 'exclude_spam', required: false, type: Boolean })
+  @ApiOperation({
+    summary: 'Get Safe overview',
+    description:
+      'Retrieves an overview of multiple Safes including their balances, transaction counts, and other summary information. Supports cross-chain queries using CAIP-10 address format.',
+  })
+  @ApiQuery({
+    name: 'currency',
+    required: true,
+    type: String,
+    description: 'Fiat currency code for balance conversion (e.g., USD, EUR)',
+    example: 'USD',
+  })
+  @ApiQuery({
+    name: 'safes',
+    required: true,
+    type: String,
+    description:
+      'Comma-separated list of Safe addresses in CAIP-10 format (chainId:address)',
+    example:
+      '1:0x1234567890123456789012345678901234567890,5:0xabcdefabcdefabcdefabcdefabcdefabcdefabcd',
+  })
+  @ApiQuery({
+    name: 'wallet_address',
+    required: false,
+    type: String,
+    description:
+      'Optional wallet address to filter Safes where this address is an owner',
+  })
+  @ApiQuery({
+    name: 'trusted',
+    required: false,
+    type: Boolean,
+    description:
+      'If true, only includes trusted tokens in balance calculations',
+    example: false,
+  })
+  @ApiQuery({
+    name: 'exclude_spam',
+    required: false,
+    type: Boolean,
+    description: 'If true, excludes spam tokens from balance calculations',
+    example: true,
+  })
+  @ApiOkResponse({
+    type: SafeOverview,
+    isArray: true,
+    description: 'Array of Safe overviews with balances and metadata',
+  })
   @Get('safes')
-  @ApiOkResponse({ type: SafeOverview, isArray: true })
   async getSafeOverview(
     @Query('currency') currency: string,
     @Query('safes', new ValidationPipe(Caip10AddressesSchema))

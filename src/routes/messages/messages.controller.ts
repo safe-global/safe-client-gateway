@@ -1,5 +1,14 @@
 import { Body, Controller, Get, HttpCode, Param, Post } from '@nestjs/common';
-import { ApiOkResponse, ApiQuery, ApiTags } from '@nestjs/swagger';
+import {
+  ApiOkResponse,
+  ApiQuery,
+  ApiTags,
+  ApiOperation,
+  ApiParam,
+  ApiBody,
+  ApiNotFoundResponse,
+  ApiBadRequestResponse,
+} from '@nestjs/swagger';
 import { PaginationDataDecorator } from '@/routes/common/decorators/pagination.data.decorator';
 import { RouteUrlDecorator } from '@/routes/common/decorators/route.url.decorator';
 import { DateLabel } from '@/routes/common/entities/date-label.entity';
@@ -24,7 +33,29 @@ import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 export class MessagesController {
   constructor(private readonly messagesService: MessagesService) {}
 
-  @ApiOkResponse({ type: Message })
+  @ApiOperation({
+    summary: 'Get message by hash',
+    description:
+      'Retrieves a specific message by its hash, including signatures, confirmations, and message content.',
+  })
+  @ApiParam({
+    name: 'chainId',
+    type: 'string',
+    description: 'Chain ID where the message was created',
+    example: '1',
+  })
+  @ApiParam({
+    name: 'messageHash',
+    type: 'string',
+    description: 'Message hash (0x prefixed hex string)',
+  })
+  @ApiOkResponse({
+    type: Message,
+    description: 'Message retrieved successfully',
+  })
+  @ApiNotFoundResponse({
+    description: 'Message not found',
+  })
   @Get('chains/:chainId/messages/:messageHash')
   async getMessageByHash(
     @Param('chainId') chainId: string,
@@ -33,9 +64,36 @@ export class MessagesController {
     return this.messagesService.getMessageByHash({ chainId, messageHash });
   }
 
-  @ApiOkResponse({ type: MessagePage })
+  @ApiOperation({
+    summary: 'Get messages for Safe',
+    description:
+      'Retrieves a paginated list of messages for a specific Safe, including both pending and confirmed messages with date labels.',
+  })
+  @ApiParam({
+    name: 'chainId',
+    type: 'string',
+    description: 'Chain ID where the Safe is deployed',
+    example: '1',
+  })
+  @ApiParam({
+    name: 'safeAddress',
+    type: 'string',
+    description: 'Safe contract address (0x prefixed hex string)',
+  })
+  @ApiQuery({
+    name: 'cursor',
+    required: false,
+    type: String,
+    description: 'Pagination cursor for retrieving the next set of results',
+  })
+  @ApiOkResponse({
+    type: MessagePage,
+    description: 'Paginated list of messages for the Safe',
+  })
+  @ApiNotFoundResponse({
+    description: 'Safe not found on the specified chain',
+  })
   @Get('chains/:chainId/safes/:safeAddress/messages')
-  @ApiQuery({ name: 'cursor', required: false, type: String })
   async getMessagesBySafe(
     @Param('chainId') chainId: string,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
@@ -51,6 +109,32 @@ export class MessagesController {
     });
   }
 
+  @ApiOperation({
+    summary: 'Create message',
+    description:
+      'Creates a new message for a Safe. The message must be properly formatted and signed according to EIP-191 or EIP-712 standards.',
+  })
+  @ApiParam({
+    name: 'chainId',
+    type: 'string',
+    description: 'Chain ID where the Safe is deployed',
+    example: '1',
+  })
+  @ApiParam({
+    name: 'safeAddress',
+    type: 'string',
+    description: 'Safe contract address (0x prefixed hex string)',
+  })
+  @ApiBody({
+    type: CreateMessageDto,
+    description: 'Message data including content and signature',
+  })
+  @ApiOkResponse({
+    description: 'Message created successfully',
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid message format or signature',
+  })
   @HttpCode(200)
   @Post('chains/:chainId/safes/:safeAddress/messages')
   async createMessage(
@@ -67,6 +151,35 @@ export class MessagesController {
     });
   }
 
+  @ApiOperation({
+    summary: 'Add message signature',
+    description:
+      'Adds a signature to an existing message. Multiple Safe owners can sign the same message to reach consensus.',
+  })
+  @ApiParam({
+    name: 'chainId',
+    type: 'string',
+    description: 'Chain ID where the message was created',
+    example: '1',
+  })
+  @ApiParam({
+    name: 'messageHash',
+    type: 'string',
+    description: 'Message hash (0x prefixed hex string)',
+  })
+  @ApiBody({
+    type: UpdateMessageSignatureDto,
+    description: 'Signature data to add to the message',
+  })
+  @ApiOkResponse({
+    description: 'Signature added successfully',
+  })
+  @ApiNotFoundResponse({
+    description: 'Message not found',
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid signature or signer not authorized',
+  })
   @HttpCode(200)
   @Post('chains/:chainId/messages/:messageHash/signatures')
   async updateMessageSignature(

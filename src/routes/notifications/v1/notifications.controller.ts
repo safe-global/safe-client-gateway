@@ -8,7 +8,15 @@ import {
   Param,
   Post,
 } from '@nestjs/common';
-import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
+  ApiParam,
+  ApiBody,
+  ApiBadRequestResponse,
+  ApiNoContentResponse,
+} from '@nestjs/swagger';
 import { RegisterDeviceDto } from '@/routes/notifications/v1/entities/register-device.dto.entity';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
@@ -35,8 +43,23 @@ export class NotificationsController {
     private readonly notificationServiceV2: NotificationsServiceV2,
   ) {}
 
-  @ApiOkResponse()
-  @ApiOperation({ deprecated: true })
+  @ApiOperation({
+    deprecated: true,
+    summary: 'Register device for notifications (deprecated)',
+    description:
+      'Registers a device to receive push notifications for Safe events. This endpoint is deprecated, please use the v2 version instead.',
+  })
+  @ApiBody({
+    type: RegisterDeviceDto,
+    description:
+      'Device registration data including device token, UUID, and Safe registrations with signatures',
+  })
+  @ApiOkResponse({
+    description: 'Device registered successfully for notifications',
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid device data, expired timestamp, or invalid signature',
+  })
   @Post('register/notifications')
   @HttpCode(200)
   async registerDevice(
@@ -189,7 +212,27 @@ export class NotificationsController {
     }
   }
 
-  @ApiOperation({ deprecated: true })
+  @ApiOperation({
+    deprecated: true,
+    summary: 'Unregister device (deprecated)',
+    description:
+      'Removes a device from receiving notifications. This endpoint is deprecated, please use the v2 version instead.',
+  })
+  @ApiParam({
+    name: 'chainId',
+    type: 'string',
+    description: 'Chain ID (kept for backward compatibility)',
+    example: '1',
+  })
+  @ApiParam({
+    name: 'uuid',
+    type: 'string',
+    description: 'Device UUID to unregister',
+    example: '550e8400-e29b-41d4-a716-446655440000',
+  })
+  @ApiNoContentResponse({
+    description: 'Device unregistered successfully',
+  })
   @Delete('chains/:chainId/notifications/devices/:uuid')
   async unregisterDevice(
     @Param('chainId') _: string, // We need to keep this parameter for the swagger documentation
@@ -198,7 +241,32 @@ export class NotificationsController {
     await this.notificationServiceV2.deleteDevice(uuid);
   }
 
-  @ApiOperation({ deprecated: true })
+  @ApiOperation({
+    deprecated: true,
+    summary: 'Unregister Safe from device (deprecated)',
+    description:
+      'Removes a specific Safe from receiving notifications on a device. This endpoint is deprecated, please use the v2 version instead.',
+  })
+  @ApiParam({
+    name: 'chainId',
+    type: 'string',
+    description: 'Chain ID where the Safe is deployed',
+    example: '1',
+  })
+  @ApiParam({
+    name: 'uuid',
+    type: 'string',
+    description: 'Device UUID',
+    example: '550e8400-e29b-41d4-a716-446655440000',
+  })
+  @ApiParam({
+    name: 'safeAddress',
+    type: 'string',
+    description: 'Safe contract address (0x prefixed hex string)',
+  })
+  @ApiNoContentResponse({
+    description: 'Safe unregistered from device notifications successfully',
+  })
   @Delete('chains/:chainId/notifications/devices/:uuid/safes/:safeAddress')
   async unregisterSafe(
     @Param('chainId') chainId: string,

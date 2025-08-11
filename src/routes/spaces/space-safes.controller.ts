@@ -33,6 +33,9 @@ import {
   ApiOkResponse,
   ApiTags,
   ApiUnauthorizedResponse,
+  ApiOperation,
+  ApiParam,
+  ApiForbiddenResponse,
 } from '@nestjs/swagger';
 
 @ApiTags('spaces')
@@ -47,13 +50,37 @@ export class SpaceSafesController {
     private readonly spaceSafesService: SpaceSafesService,
   ) {}
 
-  @Post()
-  @ApiCreatedResponse({ description: 'Safes created successfully' })
-  @ApiBody({ type: CreateSpaceSafesDto })
-  @ApiUnauthorizedResponse({
-    description: 'User unauthorize OR signer address not provided',
+  @ApiOperation({
+    summary: 'Add Safes to space',
+    description:
+      'Adds one or more Safe addresses to a space. This allows the space members to collectively manage these Safes.',
   })
-  @ApiNotFoundResponse({ description: 'User not found.' })
+  @ApiParam({
+    name: 'spaceId',
+    type: 'number',
+    description: 'Space ID to add Safes to',
+    example: 1,
+  })
+  @ApiBody({
+    type: CreateSpaceSafesDto,
+    description:
+      'List of Safe addresses and their chain information to add to the space',
+  })
+  @ApiCreatedResponse({
+    description: 'Safes added to space successfully',
+  })
+  @ApiUnauthorizedResponse({
+    description:
+      'Authentication required or user unauthorized to modify this space',
+  })
+  @ApiNotFoundResponse({
+    description: 'User or space not found',
+  })
+  @ApiForbiddenResponse({
+    description:
+      'Access forbidden - user lacks permission to add Safes to this space',
+  })
+  @Post()
   public async create(
     @Body(new ValidationPipe(CreateSpaceSafesSchema))
     body: CreateSpaceSafesDto,
@@ -68,17 +95,32 @@ export class SpaceSafesController {
     });
   }
 
-  @Get()
+  @ApiOperation({
+    summary: 'Get space Safes',
+    description:
+      'Retrieves all Safes associated with a specific space, including their chain information and metadata.',
+  })
+  @ApiParam({
+    name: 'spaceId',
+    type: 'number',
+    description: 'Space ID to get Safes for',
+    example: 1,
+  })
   @ApiOkResponse({
-    description: 'Safes fetched successfully',
+    description: 'Space Safes retrieved successfully',
     type: GetSpaceSafeResponse,
   })
   @ApiUnauthorizedResponse({
-    description: 'User unauthorized OR signer address not provided',
+    description:
+      'Authentication required or user unauthorized to access this space',
   })
   @ApiNotFoundResponse({
-    description: 'User not found.',
+    description: 'User or space not found',
   })
+  @ApiForbiddenResponse({
+    description: 'Access forbidden - user is not a member of this space',
+  })
+  @Get()
   public async get(
     @Param('spaceId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
     spaceId: number,
@@ -87,15 +129,39 @@ export class SpaceSafesController {
     return await this.spaceSafesService.get(spaceId, authPayload);
   }
 
-  @Delete()
-  @HttpCode(204)
-  @ApiNoContentResponse({ description: 'Safes deleted successfully' })
+  @ApiOperation({
+    summary: 'Remove Safes from space',
+    description:
+      'Removes one or more Safe addresses from a space. This stops the space from managing these Safes.',
+  })
+  @ApiParam({
+    name: 'spaceId',
+    type: 'number',
+    description: 'Space ID to remove Safes from',
+    example: 1,
+  })
+  @ApiBody({
+    type: DeleteSpaceSafesDto,
+    description:
+      'List of Safe addresses and their chain information to remove from the space',
+  })
+  @ApiNoContentResponse({
+    description: 'Safes removed from space successfully',
+  })
   @ApiUnauthorizedResponse({
-    description: 'User unauthorized OR signer address not provided',
+    description:
+      'Authentication required or user unauthorized to modify this space',
   })
   @ApiNotFoundResponse({
-    description: 'Space has no Safes OR user not found.',
+    description:
+      'Space has no Safes, user not found, or specified Safes not found in space',
   })
+  @ApiForbiddenResponse({
+    description:
+      'Access forbidden - user lacks permission to remove Safes from this space',
+  })
+  @Delete()
+  @HttpCode(204)
   public async delete(
     @Body(new ValidationPipe(DeleteSpaceSafesSchema))
     body: DeleteSpaceSafesDto,

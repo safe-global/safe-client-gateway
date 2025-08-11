@@ -1,9 +1,11 @@
 import {
+  ApiBody,
   ApiConflictResponse,
   ApiForbiddenResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiParam,
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
@@ -50,16 +52,35 @@ export class MembersController {
     private readonly membersService: MembersService,
   ) {}
 
+  @ApiOperation({
+    summary: 'Invite users to space',
+    description:
+      'Invites one or more users to join a space. Only space admins can send invitations.',
+  })
+  @ApiParam({
+    name: 'spaceId',
+    type: 'number',
+    description: 'Space ID to invite users to',
+    example: 1,
+  })
+  @ApiBody({
+    type: InviteUsersDto,
+    description: 'List of wallet addresses to invite to the space',
+  })
   @ApiOkResponse({
-    description: 'Users invited',
+    description: 'Users invited successfully',
     type: Invitation,
     isArray: true,
   })
-  @ApiConflictResponse({ description: 'Too many invites' })
-  @ApiForbiddenResponse({ description: 'User not authorized' })
+  @ApiConflictResponse({
+    description: 'Too many invites or some users already invited',
+  })
+  @ApiForbiddenResponse({
+    description: 'User not authorized - must be a space admin to invite users',
+  })
   @ApiUnauthorizedResponse({
     description:
-      'User not admin OR signer address not provided OR member is not active',
+      'Authentication required or user not admin or member not active',
   })
   @Post('/:spaceId/members/invite')
   @UseGuards(AuthGuard)
@@ -77,12 +98,36 @@ export class MembersController {
     });
   }
 
-  @ApiOkResponse({ description: 'Invite accepted' })
-  @ApiForbiddenResponse({ description: 'Signer not authorized' })
-  @ApiNotFoundResponse({
-    description: 'Signer, space or membership not found',
+  @ApiOperation({
+    summary: 'Accept space invitation',
+    description:
+      'Accepts an invitation to join a space. The user must have a pending invitation to the space.',
   })
-  @ApiConflictResponse({ description: 'User invite not pending' })
+  @ApiParam({
+    name: 'spaceId',
+    type: 'number',
+    description: 'Space ID to accept invitation for',
+    example: 1,
+  })
+  @ApiBody({
+    type: AcceptInviteDto,
+    description:
+      'Invitation acceptance data including any required confirmation',
+  })
+  @ApiOkResponse({
+    description:
+      'Invitation accepted successfully - user is now a member of the space',
+  })
+  @ApiForbiddenResponse({
+    description:
+      'Access forbidden - user is not authorized to accept this invitation',
+  })
+  @ApiNotFoundResponse({
+    description: 'User, space, or membership invitation not found',
+  })
+  @ApiConflictResponse({
+    description: 'User invitation is not in pending state or already processed',
+  })
   @Post('/:spaceId/members/accept')
   @UseGuards(AuthGuard)
   public async acceptInvite(
@@ -99,12 +144,30 @@ export class MembersController {
     });
   }
 
-  @ApiOkResponse({ description: 'Invite declined' })
-  @ApiForbiddenResponse({ description: 'Signer not authorized' })
-  @ApiNotFoundResponse({
-    description: 'Signer, space or membership not found',
+  @ApiOperation({
+    summary: 'Decline space invitation',
+    description:
+      'Declines an invitation to join a space. The user must have a pending invitation to the space.',
   })
-  @ApiConflictResponse({ description: 'User invite not pending' })
+  @ApiParam({
+    name: 'spaceId',
+    type: 'number',
+    description: 'Space ID to decline invitation for',
+    example: 1,
+  })
+  @ApiOkResponse({
+    description: 'Invitation declined successfully',
+  })
+  @ApiForbiddenResponse({
+    description:
+      'Access forbidden - user is not authorized to decline this invitation',
+  })
+  @ApiNotFoundResponse({
+    description: 'User, space, or membership invitation not found',
+  })
+  @ApiConflictResponse({
+    description: 'User invitation is not in pending state or already processed',
+  })
   @Post('/:spaceId/members/decline')
   @UseGuards(AuthGuard)
   public async declineInvite(
@@ -118,13 +181,27 @@ export class MembersController {
     });
   }
 
+  @ApiOperation({
+    summary: 'Get space members',
+    description:
+      'Retrieves all members of a space including their roles, status, and membership information.',
+  })
+  @ApiParam({
+    name: 'spaceId',
+    type: 'number',
+    description: 'Space ID to get members for',
+    example: 1,
+  })
   @ApiOkResponse({
-    description: 'Space and members list',
+    description: 'Space members retrieved successfully',
     type: MembersDto,
   })
-  @ApiForbiddenResponse({ description: 'Signer not authorized' })
+  @ApiForbiddenResponse({
+    description:
+      "Access forbidden - user is not authorized to view this space's members",
+  })
   @ApiNotFoundResponse({
-    description: 'Signer or space not found',
+    description: 'User or space not found',
   })
   @Get('/:spaceId/members')
   @UseGuards(AuthGuard)
@@ -139,13 +216,43 @@ export class MembersController {
     });
   }
 
-  @ApiOkResponse({ description: 'Role updated' })
-  @ApiForbiddenResponse({ description: 'Signer not authorized' })
-  @ApiNotFoundResponse({
-    description: 'Signer, space or signer/user-to-update membership not found',
+  @ApiOperation({
+    summary: 'Update member role',
+    description:
+      'Updates the role of a space member. Only space admins can change member roles. Cannot remove the last admin from a space.',
   })
-  @ApiUnauthorizedResponse({ description: 'Signer not active or admin' })
-  @ApiConflictResponse({ description: 'Cannot remove last admin' })
+  @ApiParam({
+    name: 'spaceId',
+    type: 'number',
+    description: 'Space ID containing the member',
+    example: 1,
+  })
+  @ApiParam({
+    name: 'userId',
+    type: 'number',
+    description: 'User ID of the member to update',
+    example: 123,
+  })
+  @ApiBody({
+    type: UpdateRoleDto,
+    description: 'New role information for the member',
+  })
+  @ApiOkResponse({
+    description: 'Member role updated successfully',
+  })
+  @ApiForbiddenResponse({
+    description:
+      'Access forbidden - user is not authorized to update member roles',
+  })
+  @ApiNotFoundResponse({
+    description: 'User, space, or member not found',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'User is not active or not an admin of this space',
+  })
+  @ApiConflictResponse({
+    description: 'Cannot remove the last admin from the space',
+  })
   @Patch('/:spaceId/members/:userId/role')
   @UseGuards(AuthGuard)
   public async updateRole(
@@ -191,13 +298,38 @@ export class MembersController {
     });
   }
 
-  @ApiOkResponse({ description: 'Membership deleted' })
-  @ApiForbiddenResponse({ description: 'Signer not authorized' })
-  @ApiNotFoundResponse({
-    description: 'Signer or space not found',
+  @ApiOperation({
+    summary: 'Remove member from space',
+    description:
+      'Removes a member from a space. Only space admins can remove other members. Cannot remove the last admin from a space.',
   })
-  @ApiUnauthorizedResponse({ description: 'Signer not active or admin' })
-  @ApiConflictResponse({ description: 'Cannot remove last admin' })
+  @ApiParam({
+    name: 'spaceId',
+    type: 'number',
+    description: 'Space ID to remove member from',
+    example: 1,
+  })
+  @ApiParam({
+    name: 'userId',
+    type: 'number',
+    description: 'User ID of the member to remove',
+    example: 123,
+  })
+  @ApiOkResponse({
+    description: 'Member removed from space successfully',
+  })
+  @ApiForbiddenResponse({
+    description: 'Access forbidden - user is not authorized to remove members',
+  })
+  @ApiNotFoundResponse({
+    description: 'User, space, or member not found',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'User is not active or not an admin of this space',
+  })
+  @ApiConflictResponse({
+    description: 'Cannot remove the last admin from the space',
+  })
   @Delete('/:spaceId/members/:userId')
   @UseGuards(AuthGuard)
   public async removeUser(

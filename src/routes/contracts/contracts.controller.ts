@@ -1,5 +1,10 @@
 import { Controller, Get, Param } from '@nestjs/common';
-import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiOkResponse,
+  ApiTags,
+  ApiOperation,
+  ApiParam,
+} from '@nestjs/swagger';
 import { Contract } from '@/domain/contracts/entities/contract.entity';
 import { ContractsService } from '@/routes/contracts/contracts.service';
 import { Contract as ApiContract } from '@/routes/contracts/entities/contract.entity';
@@ -15,7 +20,26 @@ import { NumericStringSchema } from '@/validation/entities/schemas/numeric-strin
 export class ContractsController {
   constructor(private readonly contractsService: ContractsService) {}
 
-  @ApiOkResponse({ type: ApiContract })
+  @ApiOperation({
+    summary: 'Get contract information',
+    description:
+      'Retrieves detailed information about a smart contract deployed on the specified chain, including ABI, source code verification status, and contract metadata.',
+  })
+  @ApiParam({
+    name: 'chainId',
+    type: 'string',
+    description: 'Chain ID where the contract is deployed',
+    example: '1',
+  })
+  @ApiParam({
+    name: 'contractAddress',
+    type: 'string',
+    description: 'Contract address (0x prefixed hex string)',
+  })
+  @ApiOkResponse({
+    type: ApiContract,
+    description: 'Contract information retrieved successfully',
+  })
   @Get('chains/:chainId/contracts/:contractAddress')
   async getContract(
     @Param('chainId', new ValidationPipe(NumericStringSchema)) chainId: string,
