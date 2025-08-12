@@ -170,7 +170,7 @@ export class ZerionPositionsApi implements IPositionsApi {
           throw Error(
             `Zerion error: ${chainName} implementation not found for balance ${zb.id}`,
           );
-        const { value, price } = zb.attributes;
+        const { value, price, application_metadata } = zb.attributes;
         const fiatBalance = value ? getNumberString(value) : null;
         const fiatConversion = price ? getNumberString(price) : null;
 
@@ -179,11 +179,12 @@ export class ZerionPositionsApi implements IPositionsApi {
             ? this._mapNativeBalance(zb.attributes)
             : this._mapErc20Balance(zb.attributes, implementation.address)),
           fiatBalance,
-          fiatBalance24hChange: null,
+          fiatBalance24hChange: zb.attributes.changes.percent_1d?.toString(),
           fiatConversion,
           protocol: zb.attributes.protocol,
           name: zb.attributes.name,
           position_type: zb.attributes.position_type,
+          application_metadata,
         };
       });
     return rawify(balances);

@@ -1,14 +1,10 @@
-import {
-  ApiExtraModels,
-  ApiProperty,
-  ApiPropertyOptional,
-  getSchemaPath,
-} from '@nestjs/swagger';
+import { ApiExtraModels, ApiProperty, getSchemaPath } from '@nestjs/swagger';
 import {
   NativeToken,
   Erc20Token,
   Erc721Token,
 } from '@/routes/balances/entities/token.entity';
+import { PositionType } from '@/domain/positions/entities/position.entity';
 
 @ApiExtraModels(NativeToken, Erc20Token, Erc721Token)
 export class Position {
@@ -26,8 +22,8 @@ export class Position {
     ],
   })
   tokenInfo!: NativeToken | Erc20Token | Erc721Token;
-  @ApiPropertyOptional({ type: String, nullable: true })
+  @ApiProperty({ type: String, nullable: true })
   fiatBalance24hChange!: string | null;
-  @ApiPropertyOptional({ type: String, nullable: true })
-  position_type!: string | null;
+  @ApiProperty({ enum: PositionType, nullable: true })
+  position_type!: keyof typeof PositionType;
 }

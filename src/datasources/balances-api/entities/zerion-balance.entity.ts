@@ -57,6 +57,19 @@ export const ZerionFlagsSchema = z.object({
   displayable: z.boolean(),
 });
 
+export const ZerionApplicationMetadataSchema = z.object({
+  name: z.string(),
+  icon: z.object({
+    url: z.string().nullish().default(null),
+  }),
+  url: z.string(),
+});
+
+export const ZerionBalanceChangeSchema = z.object({
+  absolute_1d: z.number(),
+  percent_1d: z.number(),
+});
+
 export const ZerionAttributesSchema = z.object({
   name: z.string(),
   quantity: ZerionQuantitySchema,
@@ -65,6 +78,8 @@ export const ZerionAttributesSchema = z.object({
   fungible_info: ZerionFungibleInfoSchema,
   flags: ZerionFlagsSchema,
   protocol: z.string().nullish().default(null),
+  application_metadata: ZerionApplicationMetadataSchema,
+  changes: ZerionBalanceChangeSchema,
   position_type: z
     .enum([
       'deposit',

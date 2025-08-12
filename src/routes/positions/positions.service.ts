@@ -6,13 +6,16 @@ import { IChainsRepository } from '@/domain/chains/chains.repository.interface';
 import { NativeCurrency } from '@/domain/chains/entities/native.currency.entity';
 import { NULL_ADDRESS } from '@/routes/common/constants';
 import { getNumberString } from '@/domain/common/utils/utils';
-import { Protocols } from '@/routes/positions/entities/protocols.entity';
+import { Protocol } from '@/routes/positions/entities/protocol.entity';
 import { Position } from '@/routes/positions/entities/position.entity';
 import { PositionGroup } from '@/routes/positions/entities/position-group.entity';
+import { ZerionApplicationMetadataSchema } from '@/datasources/balances-api/entities/zerion-balance.entity';
+import { z } from 'zod';
 
 interface PositionEntry extends Position {
   protocol: string | null;
   name: string;
+  application_metadata: z.infer<typeof ZerionApplicationMetadataSchema>;
 }
 
 @Injectable()
@@ -28,7 +31,7 @@ export class PositionsService {
     chainId: string;
     safeAddress: `0x${string}`;
     fiatCode: string;
-  }): Promise<Array<Protocols>> {
+  }): Promise<Array<Protocol>> {
     const { chainId } = args;
     const chain = await this.chainsRepository.getChain(chainId);
     const domainPositions = await this.positionsRepository.getPositions({
@@ -55,7 +58,7 @@ export class PositionsService {
   private _mapProtocol(
     protocol: string,
     positions: Array<PositionEntry>,
-  ): Protocols {
+  ): Protocol {
     const nameGroups = this._groupByName(positions);
     const positionGroups = Object.entries(nameGroups).map(([name, group]) =>
       this._mapPositionGroup(name, group),
@@ -66,6 +69,7 @@ export class PositionsService {
     );
     return {
       protocol,
+      protocol_metadata: positions[0].application_metadata,
       fiatTotal: getNumberString(fiatTotal),
       items: positionGroups,
     };
@@ -112,7 +116,11 @@ export class PositionsService {
   }
 
   private _sumFiatBalances(items: Array<Position>): number {
-    return items.reduce((sum, item) => sum + Number(item.fiatBalance), 0);
+    return items.reduce((sum, item) => {
+      // Loans = Debt and need to be subtracted from the total fiat balance of a protocol
+      const sign = item.position_type === 'loan' ? -1 : 1;
+      return sum + sign * Number(item.fiatBalance);
+    }, 0);
   }
 
   private _mapPosition(
@@ -150,6 +158,7 @@ export class PositionsService {
       protocol: position.protocol,
       name: position.name,
       position_type: position.position_type,
+      application_metadata: position.application_metadata,
     };
   }
 }
