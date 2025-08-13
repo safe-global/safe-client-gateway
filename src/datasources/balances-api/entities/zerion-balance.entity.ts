@@ -16,6 +16,12 @@ export type ZerionFlags = z.infer<typeof ZerionFlagsSchema>;
 
 export type ZerionAttributes = z.infer<typeof ZerionAttributesSchema>;
 
+export type ZerionApplicationMetadata = z.infer<
+  typeof ZerionApplicationMetadataSchema
+>;
+
+export type ZerionChanges = z.infer<typeof ZerionBalanceChangeSchema>;
+
 export type ZerionBalance = z.infer<typeof ZerionBalanceSchema>;
 
 export type ZerionBalances = z.infer<typeof ZerionBalancesSchema>;

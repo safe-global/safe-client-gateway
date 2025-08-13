@@ -2,15 +2,18 @@ import { faker } from '@faker-js/faker';
 import type { IBuilder } from '../../../../__tests__/builder';
 import { Builder } from '../../../../__tests__/builder';
 import type {
+  ZerionApplicationMetadata,
   ZerionAttributes,
   ZerionBalance,
   ZerionBalances,
+  ZerionChanges,
   ZerionFlags,
   ZerionFungibleInfo,
   ZerionImplementation,
   ZerionQuantity,
 } from '@/datasources/balances-api/entities/zerion-balance.entity';
 import { getAddress } from 'viem';
+import { PositionType } from '@/domain/positions/entities/position.entity';
 
 export function zerionImplementationBuilder(): IBuilder<ZerionImplementation> {
   return new Builder<ZerionImplementation>()
@@ -46,6 +49,19 @@ export function zerionFlagsBuilder(): IBuilder<ZerionFlags> {
   );
 }
 
+export function zerionApplicationMetadataBuilder(): IBuilder<ZerionApplicationMetadata> {
+  return new Builder<ZerionApplicationMetadata>()
+    .with('url', faker.image.url())
+    .with('name', faker.string.sample())
+    .with('icon', { url: faker.image.url() });
+}
+
+export function zerionChangesBuilder(): IBuilder<ZerionChanges> {
+  return new Builder<ZerionChanges>()
+    .with('percent_1d', faker.number.float())
+    .with('absolute_1d', faker.number.float());
+}
+
 export function zerionAttributesBuilder(): IBuilder<ZerionAttributes> {
   return new Builder<ZerionAttributes>()
     .with('name', faker.string.sample())
@@ -53,7 +69,11 @@ export function zerionAttributesBuilder(): IBuilder<ZerionAttributes> {
     .with('value', faker.number.float())
     .with('price', faker.number.float())
     .with('fungible_info', zerionFungibleInfoBuilder().build())
-    .with('flags', zerionFlagsBuilder().build());
+    .with('flags', zerionFlagsBuilder().build())
+    .with('application_metadata', zerionApplicationMetadataBuilder().build())
+    .with('protocol', faker.string.sample())
+    .with('changes', zerionChangesBuilder().build())
+    .with('position_type', faker.helpers.enumValue(PositionType));
 }
 
 export function zerionBalanceBuilder(): IBuilder<ZerionBalance> {
