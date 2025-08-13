@@ -13,7 +13,7 @@ import type {
   ZerionQuantity,
 } from '@/datasources/balances-api/entities/zerion-balance.entity';
 import { getAddress } from 'viem';
-import { PositionType } from '@/domain/positions/entities/position.entity';
+import { POSITION_TYPE_VALUES } from '@/domain/positions/entities/position-type.entity';
 
 export function zerionImplementationBuilder(): IBuilder<ZerionImplementation> {
   return new Builder<ZerionImplementation>()
@@ -73,7 +73,7 @@ export function zerionAttributesBuilder(): IBuilder<ZerionAttributes> {
     .with('application_metadata', zerionApplicationMetadataBuilder().build())
     .with('protocol', faker.string.sample())
     .with('changes', zerionChangesBuilder().build())
-    .with('position_type', faker.helpers.enumValue(PositionType));
+    .with('position_type', faker.helpers.arrayElement(POSITION_TYPE_VALUES));
 }
 
 export function zerionBalanceBuilder(): IBuilder<ZerionBalance> {

@@ -4,7 +4,7 @@ import {
   Erc20Token,
   Erc721Token,
 } from '@/routes/balances/entities/token.entity';
-import { PositionType } from '@/domain/positions/entities/position.entity';
+import { PositionType } from '@/domain/positions/entities/position-type.entity';
 
 @ApiExtraModels(NativeToken, Erc20Token, Erc721Token)
 export class Position {
@@ -25,5 +25,5 @@ export class Position {
   @ApiProperty({ type: String, nullable: true })
   fiatBalance24hChange!: string | null;
   @ApiProperty({ enum: PositionType, nullable: true })
-  position_type!: keyof typeof PositionType;
+  position_type!: PositionType;
 }

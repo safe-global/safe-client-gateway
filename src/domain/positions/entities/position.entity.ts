@@ -4,27 +4,15 @@ import {
   FiatSchema,
   NativeBalanceSchema,
 } from '@/domain/balances/entities/balance.entity';
-import { getStringEnumKeys } from '@/domain/common/utils/enum';
+import { POSITION_TYPE_VALUES } from '@/domain/positions/entities/position-type.entity';
 import { ZerionApplicationMetadataSchema } from '@/datasources/balances-api/entities/zerion-balance.entity';
-
-export enum PositionType {
-  deposit = 'deposit',
-  loan = 'loan',
-  locked = 'locked',
-  staked = 'staked',
-  reward = 'reward',
-  wallet = 'wallet',
-  airdrop = 'airdrop',
-  margin = 'margin',
-  unknown = 'unknown',
-}
 
 export type Position = z.infer<typeof PositionSchema>;
 
 const PositionAttributeSchema = z.object({
   protocol: z.string().nullish().default(null),
   name: z.string(),
-  position_type: z.enum(getStringEnumKeys(PositionType)),
+  position_type: z.enum(POSITION_TYPE_VALUES),
   application_metadata: ZerionApplicationMetadataSchema,
 });
 

@@ -11,6 +11,7 @@ import { Position } from '@/routes/positions/entities/position.entity';
 import { PositionGroup } from '@/routes/positions/entities/position-group.entity';
 import { ZerionApplicationMetadataSchema } from '@/datasources/balances-api/entities/zerion-balance.entity';
 import { z } from 'zod';
+import { PositionType } from '@/domain/positions/entities/position-type.entity';
 
 interface PositionEntry extends Position {
   protocol: string | null;
@@ -91,7 +92,7 @@ export class PositionsService {
   private _aggregateByType(positions: Array<PositionEntry>): Array<Position> {
     const typeGroups = groupBy(
       positions,
-      (position) => position.position_type ?? 'unknown',
+      (position) => position.position_type ?? PositionType.unknown,
     );
     return Object.values(typeGroups).map((group) =>
       this._mapAggregatedPosition(group),
@@ -118,7 +119,7 @@ export class PositionsService {
   private _sumFiatBalances(items: Array<Position>): number {
     return items.reduce((sum, item) => {
       // Loans = Debt and need to be subtracted from the total fiat balance of a protocol
-      const sign = item.position_type === 'loan' ? -1 : 1;
+      const sign = item.position_type === PositionType.loan ? -1 : 1;
       return sum + sign * Number(item.fiatBalance);
     }, 0);
   }
