@@ -19,7 +19,7 @@ jest.mock('@/domain/common/utils/utils', () => ({
   getNumberString: (value: number): string => value.toString(),
 }));
 
-describe('Positions Controller (Unit)', () => {
+describe('Positions Controller', () => {
   let app: INestApplication<Server>;
   let positionsRepository: jest.MockedObjectDeep<IPositionsRepository>;
   let chainsRepository: jest.MockedObjectDeep<IChainsRepository>;
