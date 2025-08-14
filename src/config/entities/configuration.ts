@@ -69,7 +69,7 @@ export default () => ({
     // Enables/disables the execution of migrations on startup.
     // Defaults to true.
     runMigrations: process.env.RUN_MIGRATIONS?.toLowerCase() !== 'false',
-    port: process.env.APPLICATION_PORT || '3001',
+    port: process.env.APPLICATION_PORT || '3000',
   },
   auth: {
     token: process.env.AUTH_TOKEN,

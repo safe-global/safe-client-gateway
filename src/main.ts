@@ -10,11 +10,6 @@ async function bootstrap(): Promise<void> {
   const applicationPort: string =
     configurationService.getOrThrow('application.port');
 
-  app.enableCors({
-    origin: 'http://localhost:3000',
-    credentials: true,
-  });
-
   await app.listen(applicationPort);
 }
 
