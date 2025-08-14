@@ -4,15 +4,15 @@ import {
   FiatSchema,
   NativeBalanceSchema,
 } from '@/domain/balances/entities/balance.entity';
-import { POSITION_TYPE_VALUES } from '@/domain/positions/entities/position-type.entity';
 import { ZerionApplicationMetadataSchema } from '@/datasources/balances-api/entities/zerion-balance.entity';
+import { PositionTypeSchema } from '@/domain/positions/entities/position-type.entity';
 
 export type Position = z.infer<typeof PositionSchema>;
 
 const PositionAttributeSchema = z.object({
   protocol: z.string().nullish().default(null),
   name: z.string(),
-  position_type: z.enum(POSITION_TYPE_VALUES),
+  position_type: PositionTypeSchema,
   application_metadata: ZerionApplicationMetadataSchema,
 });
 

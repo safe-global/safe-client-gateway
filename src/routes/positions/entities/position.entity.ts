@@ -25,5 +25,5 @@ export class Position {
   @ApiProperty({ type: String, nullable: true })
   fiatBalance24hChange!: string | null;
   @ApiProperty({ enum: PositionType, nullable: true })
-  position_type!: PositionType;
+  position_type!: keyof typeof PositionType;
 }
