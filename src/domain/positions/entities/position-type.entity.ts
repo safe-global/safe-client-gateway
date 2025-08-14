@@ -1,18 +1,16 @@
-export const PositionType = {
-  deposit: 'deposit',
-  loan: 'loan',
-  locked: 'locked',
-  staked: 'staked',
-  reward: 'reward',
-  wallet: 'wallet',
-  airdrop: 'airdrop',
-  margin: 'margin',
-  unknown: 'unknown',
-} as const;
+import { z } from 'zod';
 
-export type PositionType = (typeof PositionType)[keyof typeof PositionType];
+export const PositionTypes = [
+  'deposit',
+  'loan',
+  'locked',
+  'staked',
+  'reward',
+  'wallet',
+  'airdrop',
+  'margin',
+  'unknown',
+] as const;
 
-export const POSITION_TYPE_VALUES = Object.values(PositionType) as [
-  PositionType,
-  ...Array<PositionType>,
-];
+export const PositionTypeSchema = z.enum(PositionTypes);
+export const PositionType = PositionTypeSchema.enum;

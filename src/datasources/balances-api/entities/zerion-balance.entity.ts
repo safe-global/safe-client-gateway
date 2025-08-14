@@ -6,7 +6,7 @@
 import { getAddress, isAddress } from 'viem';
 import { z } from 'zod';
 import {
-  POSITION_TYPE_VALUES,
+  PositionTypeSchema,
   PositionType,
 } from '@/domain/positions/entities/position-type.entity';
 
@@ -90,7 +90,7 @@ export const ZerionAttributesSchema = z.object({
   protocol: z.string().nullish().default(null),
   application_metadata: ZerionApplicationMetadataSchema,
   changes: ZerionBalanceChangeSchema,
-  position_type: z.enum(POSITION_TYPE_VALUES).catch(PositionType.unknown),
+  position_type: PositionTypeSchema.catch(PositionType.unknown),
 });
 
 export const ZerionBalanceSchema = z.object({
