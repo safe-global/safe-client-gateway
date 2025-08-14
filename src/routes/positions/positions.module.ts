@@ -3,14 +3,9 @@ import { PositionsController } from '@/routes/positions/positions.controller';
 import { PositionsService } from '@/routes/positions/positions.service';
 import { PositionsRepositoryModule } from '@/domain/positions/positions.repository.interface';
 import { ChainsRepositoryModule } from '@/domain/chains/chains.repository.interface';
-import { SafeRepositoryModule } from '@/domain/safe/safe.repository.interface';
 
 @Module({
-  imports: [
-    PositionsRepositoryModule,
-    ChainsRepositoryModule,
-    SafeRepositoryModule,
-  ],
+  imports: [PositionsRepositoryModule, ChainsRepositoryModule],
   controllers: [PositionsController],
   providers: [PositionsService],
 })
