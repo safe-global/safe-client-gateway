@@ -2,7 +2,7 @@ import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 import type { Server } from 'net';
 import type { INestApplication } from '@nestjs/common';
-import { VersioningType } from '@nestjs/common';
+import { TestAppProvider } from '@/__tests__/test-app.provider';
 import request from 'supertest';
 import { Test } from '@nestjs/testing';
 import { IPositionsRepository } from '@/domain/positions/positions.repository.interface';
@@ -14,10 +14,8 @@ import { PositionType } from '@/domain/positions/entities/position-type.entity';
 import { zerionApplicationMetadataBuilder } from '@/datasources/balances-api/entities/__tests__/zerion-balance.entity.builder';
 import { PositionsService } from '@/routes/positions/positions.service';
 import { PositionsController } from '@/routes/positions/positions.controller';
-
-jest.mock('@/domain/common/utils/utils', () => ({
-  getNumberString: (value: number): string => value.toString(),
-}));
+import { ConfigurationModule } from '@/config/configuration.module';
+import configuration from '@/config/entities/__tests__/configuration';
 
 describe('Positions Controller', () => {
   let app: INestApplication<Server>;
@@ -27,7 +25,8 @@ describe('Positions Controller', () => {
   beforeEach(async () => {
     jest.resetAllMocks();
 
-    const moduleBuilder = Test.createTestingModule({
+    const moduleFixture = await Test.createTestingModule({
+      imports: [ConfigurationModule.register(configuration)],
       controllers: [PositionsController],
       providers: [
         PositionsService,
@@ -37,15 +36,12 @@ describe('Positions Controller', () => {
         },
         { provide: IChainsRepository, useValue: { getChain: jest.fn() } },
       ],
-    });
-
-    const moduleFixture = await moduleBuilder.compile();
+    }).compile();
 
     positionsRepository = moduleFixture.get(IPositionsRepository);
     chainsRepository = moduleFixture.get(IChainsRepository);
 
-    app = moduleFixture.createNestApplication();
-    app.enableVersioning({ type: VersioningType.URI });
+    app = await new TestAppProvider().provide(moduleFixture);
     await app.init();
   });
 

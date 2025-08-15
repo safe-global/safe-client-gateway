@@ -7,10 +7,6 @@ import { PositionType } from '@/domain/positions/entities/position-type.entity';
 import { faker } from '@faker-js/faker/.';
 import { NULL_ADDRESS } from '@/routes/common/constants';
 
-jest.mock('@/domain/common/utils/utils', () => ({
-  getNumberString: (value: number): string => value.toString(),
-}));
-
 describe('PositionsService', () => {
   let service: PositionsService;
   const positionsRepoMock = { getPositions: jest.fn() };
