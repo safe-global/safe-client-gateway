@@ -71,6 +71,7 @@ export class AppModule implements NestModule {
       users: isUsersFeatureEnabled,
       email: isEmailFeatureEnabled,
       delegatesV2: isDelegatesV2Enabled,
+      zerionPositions: isZerionPositionsFeatureEnabled,
     } = configFactory()['features'];
 
     return {
@@ -82,7 +83,7 @@ export class AppModule implements NestModule {
         ...(isAccountsFeatureEnabled ? [AccountsModule] : []),
         ...(isAuthFeatureEnabled ? [AuthModule] : []),
         BalancesModule,
-        PositionsModule,
+        ...(isZerionPositionsFeatureEnabled ? [PositionsModule] : []),
         ChainsModule,
         CollectiblesModule,
         CommunityModule,
