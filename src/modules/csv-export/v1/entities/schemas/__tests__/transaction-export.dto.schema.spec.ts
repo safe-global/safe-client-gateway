@@ -37,13 +37,15 @@ describe('TransactionExportDtoSchema', () => {
       expect(!result.success && result.error).toStrictEqual(
         new ZodError([
           {
-            code: 'custom',
-            message: 'Invalid date string',
+            code: 'invalid_string',
+            validation: 'datetime',
+            message: 'Invalid datetime',
             path: ['executionDateGte'],
           },
           {
-            code: 'custom',
-            message: 'Invalid date string',
+            code: 'invalid_string',
+            validation: 'datetime',
+            message: 'Invalid datetime',
             path: ['executionDateLte'],
           },
         ]),
