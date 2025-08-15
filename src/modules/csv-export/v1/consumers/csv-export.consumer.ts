@@ -14,7 +14,7 @@ import { Job } from 'bullmq';
 export class CsvExportConsumer extends WorkerHost {
   constructor(
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
-    @Inject() private readonly csvExportService: CsvExportService,
+    private readonly csvExportService: CsvExportService,
   ) {
     super();
   }
