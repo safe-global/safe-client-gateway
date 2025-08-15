@@ -5,6 +5,10 @@
 
 import { getAddress, isAddress } from 'viem';
 import { z } from 'zod';
+import {
+  PositionTypeSchema,
+  PositionType,
+} from '@/domain/positions/entities/position-type.entity';
 
 export type ZerionFungibleInfo = z.infer<typeof ZerionFungibleInfoSchema>;
 
@@ -15,6 +19,12 @@ export type ZerionQuantity = z.infer<typeof ZerionQuantitySchema>;
 export type ZerionFlags = z.infer<typeof ZerionFlagsSchema>;
 
 export type ZerionAttributes = z.infer<typeof ZerionAttributesSchema>;
+
+export type ZerionApplicationMetadata = z.infer<
+  typeof ZerionApplicationMetadataSchema
+>;
+
+export type ZerionChanges = z.infer<typeof ZerionBalanceChangeSchema>;
 
 export type ZerionBalance = z.infer<typeof ZerionBalanceSchema>;
 
@@ -57,6 +67,19 @@ export const ZerionFlagsSchema = z.object({
   displayable: z.boolean(),
 });
 
+export const ZerionApplicationMetadataSchema = z.object({
+  name: z.string(),
+  icon: z.object({
+    url: z.string().nullish().default(null),
+  }),
+  url: z.string(),
+});
+
+export const ZerionBalanceChangeSchema = z.object({
+  absolute_1d: z.number(),
+  percent_1d: z.number(),
+});
+
 export const ZerionAttributesSchema = z.object({
   name: z.string(),
   quantity: ZerionQuantitySchema,
@@ -64,6 +87,10 @@ export const ZerionAttributesSchema = z.object({
   price: z.number().nullish().default(null),
   fungible_info: ZerionFungibleInfoSchema,
   flags: ZerionFlagsSchema,
+  protocol: z.string().nullish().default(null),
+  application_metadata: ZerionApplicationMetadataSchema,
+  changes: ZerionBalanceChangeSchema,
+  position_type: PositionTypeSchema.catch(PositionType.unknown),
 });
 
 export const ZerionBalanceSchema = z.object({
