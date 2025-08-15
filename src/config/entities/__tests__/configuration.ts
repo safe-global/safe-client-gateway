@@ -360,7 +360,25 @@ export default (): ReturnType<typeof configuration> => ({
         bucketName: faker.string.alphanumeric(),
         basePath: faker.system.directoryPath(),
       },
+      local: {
+        baseDir: 'assets/csv-export',
+      },
     },
     signedUrlTtlSeconds: faker.number.int(),
+    queue: {
+      removeOnComplete: {
+        age: faker.number.int({ min: 0, max: 10000 }),
+        count: faker.number.int({ min: 0, max: 10 }),
+      },
+      removeOnFail: {
+        age: faker.number.int({ min: 0, max: 10000 }),
+        count: faker.number.int({ min: 0, max: 10 }),
+      },
+      backoff: {
+        type: 'exponential',
+        delay: faker.number.int({ min: 0, max: 2000 }),
+      },
+      attempts: faker.number.int({ min: 0, max: 3 }),
+    },
   },
 });
