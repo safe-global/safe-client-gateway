@@ -12,10 +12,9 @@ import {
   TransactionExportPageSchema,
 } from '@/modules/csv-export/v1/entities/transaction-export.entity';
 import { Inject, Injectable } from '@nestjs/common';
-import { PassThrough } from 'stream';
+import { PassThrough, Readable } from 'stream';
 import path from 'path';
 import fs from 'fs';
-import { pipeline } from 'stream/promises';
 import { UnrecoverableError } from 'bullmq';
 import {
   JobStatusDto,
@@ -112,45 +111,29 @@ export class CsvExportService {
     },
     onProgress: (percentage: number) => Promise<void> = async () => {},
   ): Promise<string> {
-    const {
-      chainId,
-      safeAddress,
-      timestamp,
-      executionDateGte,
-      executionDateLte,
-      limit,
-      offset,
-    } = args;
-
-    const transactionExports = await this.fetchTransactionExports(
-      {
-        chainId,
-        safeAddress,
-        executionDateGte,
-        executionDateLte,
-        limit,
-        offset,
-      },
-      onProgress,
-    );
+    const { chainId, safeAddress, timestamp } = args;
 
     const fileName = this.generateFileName(chainId, safeAddress, timestamp);
-    await this.uploadCsvToStorage(fileName, transactionExports, onProgress);
+    const { uploadStream, uploadPromise } = this.createUploadStream(fileName);
+    const dataStream = Readable.from(
+      this.transactionPagesGenerator(args, onProgress),
+    );
+
+    await this.csvService.toCsv(dataStream, uploadStream, CSV_OPTIONS);
+    await onProgress(80);
+    // Wait for the upload to complete
+    if (uploadPromise) {
+      await uploadPromise;
+    }
+    await onProgress(90);
 
     const downloadUrl = await this.getFileUrl(fileName);
-
     await onProgress(100);
+
     return downloadUrl;
   }
 
-  /**
-   * Fetches transaction exports from the API, handling pagination to get all pages
-   * @param args Export parameters including chain ID, safe address, and date range
-   * @param onProgress Optional callback to report progress (0-100)
-   * @returns {Promise<Array<TransactionExport>>} Array of all transaction exports across all pages
-   * @throws {NotFoundException} When no data is found for the given parameters
-   */
-  private async fetchTransactionExports(
+  private async *transactionPagesGenerator(
     args: {
       chainId: string;
       safeAddress: `0x${string}`;
@@ -160,7 +143,7 @@ export class CsvExportService {
       offset?: number;
     },
     onProgress: (percentage: number) => Promise<void>,
-  ): Promise<Array<TransactionExport>> {
+  ): AsyncGenerator<TransactionExport, void, unknown> {
     const {
       chainId,
       safeAddress,
@@ -170,11 +153,11 @@ export class CsvExportService {
       offset,
     } = args;
 
-    const results: Array<TransactionExport> = [];
     let nextUrl: string | null = null;
     let currentLimit = limit ?? CsvExportService.DEFAULT_LIMIT;
     let currentOffset = offset ?? CsvExportService.DEFAULT_OFFSET;
     let pageCount = 0;
+    let totalProcessed = 0;
 
     const api = await this.exportApiManager.getApi(chainId);
 
@@ -201,32 +184,27 @@ export class CsvExportService {
           hasNext: !!page.next,
         });
 
-        results.push(...page.results);
+        // Yield each record individually
+        for (const r of page.results) {
+          yield r;
+        }
+
         nextUrl = page.next;
+        totalProcessed += page.results.length;
+        await this.reportProgress(onProgress, totalProcessed, page.count);
 
-        await this.reportProgress(onProgress, results.length, page.count);
-
-        // For subsequent requests, parse the next URL to get new offset/limit
+        // Update pagination parameters for next request
         if (nextUrl) {
-          const url = new URL(nextUrl);
-          const params = url.searchParams;
-          const missing = ['limit', 'offset']
-            .filter((p) => !params.get(p))
-            .join(', ');
-
-          if (missing)
-            this.loggingService.warn({
-              type: LogType.TxnExportFetchRequestError,
-              chainId,
-              safeAddress,
-              pageCount,
-              message: `nextUrl is missing required parameter(s): ${missing}. URL: ${nextUrl}`,
-            });
-
-          currentLimit = Number(params.get('limit') ?? currentLimit);
-          currentOffset = Number(
-            params.get('offset') ?? currentOffset + currentLimit,
+          const { newLimit, newOffset } = this.updatePaginationParams(
+            nextUrl,
+            chainId,
+            safeAddress,
+            pageCount,
+            currentLimit,
+            currentOffset,
           );
+          currentLimit = newLimit;
+          currentOffset = newOffset;
         }
       } catch (error) {
         this.loggingService.error({
@@ -236,8 +214,8 @@ export class CsvExportService {
           pageCount: pageCount + 1,
           error: asError(error),
         });
+
         if (error instanceof DataSourceError && error.code === 404) {
-          // move the job to failed without retries (Bullmq-specific error)
           throw new UnrecoverableError('Transactions not found.');
         }
         throw error;
@@ -246,48 +224,65 @@ export class CsvExportService {
 
     this.loggingService.info({
       type: LogType.TxnExportFetchRequest,
-      event: `All pages (${pageCount}) have been succesfully fetched`,
+      event: `All pages (${pageCount}) have been successfully fetched`,
     });
-
-    return results;
   }
 
-  private async uploadCsvToStorage(
-    fileName: string,
-    results: Array<TransactionExport>,
-    onProgress: (percentage: number) => Promise<void>,
-  ): Promise<void> {
-    const passThrough = new PassThrough();
-
-    const uploadPromise =
-      this.storageType === 'aws'
-        ? this.cloudStorageApiService.uploadStream(fileName, passThrough, {
-            ContentType: CsvExportService.CONTENT_TYPE,
-          })
-        : this.uploadToLocalStorage(fileName, passThrough);
-
-    await this.csvService.toCsv(results, passThrough, CSV_OPTIONS);
-    await onProgress(80);
-
-    passThrough.end();
-
-    await uploadPromise;
-    await onProgress(90);
+  private createUploadStream(fileName: string): {
+    uploadStream: PassThrough | fs.WriteStream;
+    uploadPromise: Promise<string> | null;
+  } {
+    if (this.storageType === 'aws') {
+      const passThrough = new PassThrough();
+      const uploadPromise = this.cloudStorageApiService.uploadStream(
+        fileName,
+        passThrough,
+        {
+          ContentType: CsvExportService.CONTENT_TYPE,
+        },
+      );
+      return { uploadStream: passThrough, uploadPromise };
+    }
+    return {
+      uploadStream: fs.createWriteStream(
+        path.resolve(this.localBaseDir, fileName),
+      ),
+      uploadPromise: null,
+    };
   }
 
-  private async uploadToLocalStorage(
-    fileName: string,
-    passThrough: PassThrough,
-  ): Promise<void> {
-    const writable = fs.createWriteStream(
-      path.resolve(this.localBaseDir, fileName),
-    );
-    return pipeline(passThrough, writable);
+  private updatePaginationParams(
+    nextUrl: string,
+    chainId: string,
+    safeAddress: `0x${string}`,
+    pageCount: number,
+    currentLimit: number,
+    currentOffset: number,
+  ): { newLimit: number; newOffset: number } {
+    const url = new URL(nextUrl);
+    const params = url.searchParams;
+    const missing = ['limit', 'offset']
+      .filter((p) => !params.get(p))
+      .join(', ');
+
+    if (missing)
+      this.loggingService.warn({
+        type: LogType.TxnExportFetchRequestError,
+        chainId,
+        safeAddress,
+        pageCount,
+        message: `nextUrl is missing required parameter(s): ${missing}. URL: ${nextUrl}`,
+      });
+
+    const newLimit = Number(params.get('limit') ?? currentLimit);
+    const newOffset = Number(params.get('offset') ?? currentOffset + newLimit);
+
+    return { newLimit, newOffset };
   }
 
   /**
    * Weighted progress:
-   *  - Fetching = up to 60%
+   *  - Fetching + yielding = up to 70%
    */
   private async reportProgress(
     onProgress: (percentage: number) => Promise<void>,
@@ -296,7 +291,7 @@ export class CsvExportService {
   ): Promise<void> {
     let progress = 10;
     if (totalCount && totalCount > 0) {
-      progress = Math.min(60, Math.floor((currentCount / totalCount) * 60));
+      progress = Math.min(70, Math.floor((currentCount / totalCount) * 70));
     }
     await onProgress(progress);
   }

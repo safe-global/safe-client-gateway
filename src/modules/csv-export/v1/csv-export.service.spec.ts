@@ -8,9 +8,10 @@ import {
   transformTransactionExport,
 } from '@/modules/csv-export/v1/entities/__tests__/transaction-export.builder';
 import { faker } from '@faker-js/faker/.';
-import { PassThrough } from 'stream';
+import { PassThrough, Readable } from 'stream';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import { rawify } from '@/validation/entities/raw.entity';
+import fs from 'fs';
 import type { IExportApi } from '@/modules/csv-export/v1/datasources/export-api.interface';
 import type { IJobQueueService } from '@/domain/interfaces/job-queue.interface';
 import type { ILoggingService } from '@/logging/logging.interface';
@@ -63,9 +64,21 @@ const loggingService = {
 } as jest.MockedObjectDeep<ILoggingService>;
 const mockLoggingService = jest.mocked(loggingService);
 
+const collectStreamData = async (
+  stream: Readable,
+): Promise<Array<TransactionExport>> => {
+  const chunks: Array<TransactionExport> = [];
+
+  for await (const chunk of stream) {
+    chunks.push(chunk as TransactionExport);
+  }
+  return chunks;
+};
+
 describe('CsvExportService', () => {
   let service: CsvExportService;
   let mockPage: Page<TransactionExport>;
+  let streamData: Array<TransactionExport>;
   const mockTransactionExport: TransactionExport =
     transactionExportBuilder().build();
 
@@ -94,6 +107,13 @@ describe('CsvExportService', () => {
         default:
           return 3600;
       }
+    });
+
+    // Mock toCsv to simulate consuming the readable stream
+    streamData = [];
+    mockCsvService.toCsv.mockImplementation(async (readable: Readable) => {
+      streamData = await collectStreamData(readable);
+      return Promise.resolve();
     });
 
     service = new CsvExportService(
@@ -153,7 +173,7 @@ describe('CsvExportService', () => {
       );
 
       expect(mockCsvService.toCsv).toHaveBeenCalledWith(
-        [transformTransactionExport(mockTransactionExport)],
+        expect.any(Readable),
         expect.any(PassThrough),
         expect.anything(),
       );
@@ -177,13 +197,16 @@ describe('CsvExportService', () => {
       const result = await service.export(exportArgs);
 
       expect(result).toBe(expectedSignedUrl);
-
-      // Verify empty array was passed to CSV service
       expect(mockCsvService.toCsv).toHaveBeenCalledWith(
-        [],
+        expect.any(Readable),
         expect.any(PassThrough),
         expect.anything(),
       );
+
+      // Verify the readable stream was called correctly
+      const readableArg = mockCsvService.toCsv.mock.calls[0][0] as Readable;
+      expect(readableArg).toBeInstanceOf(Readable);
+      expect(streamData).toHaveLength(0);
     });
 
     it('should throw error when exportApi call fails', async () => {
@@ -308,17 +331,20 @@ describe('CsvExportService', () => {
         offset: 200,
       });
 
+      expect(mockCsvService.toCsv).toHaveBeenCalledWith(
+        expect.any(Readable),
+        expect.any(PassThrough),
+        expect.anything(),
+      );
+
       const expectedCombinedResults = [
         transformTransactionExport(mockTransactionExport),
         transformTransactionExport(mockTransactionExport2),
         transformTransactionExport(mockTransactionExport3),
       ];
 
-      expect(mockCsvService.toCsv).toHaveBeenCalledWith(
-        expectedCombinedResults,
-        expect.any(PassThrough),
-        expect.anything(),
-      );
+      expect(streamData).toHaveLength(3);
+      expect(streamData).toEqual(expectedCombinedResults);
 
       expect(mockLoggingService.debug).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -359,7 +385,7 @@ describe('CsvExportService', () => {
       expect(mockLoggingService.info).toHaveBeenCalledWith(
         expect.objectContaining({
           type: expect.any(String),
-          event: 'All pages (3) have been succesfully fetched',
+          event: 'All pages (3) have been successfully fetched',
         }),
       );
     });
@@ -563,14 +589,90 @@ describe('CsvExportService', () => {
       await service.export(exportArgs, progressCallback);
 
       expect(progressCallback).toHaveBeenCalledTimes(5);
-      // First page: 1/5 * 60 = 12%
-      expect(progressCallback).toHaveBeenNthCalledWith(1, 12);
-      // Second page: 2/5 * 100 * 0.6 = 24%
-      expect(progressCallback).toHaveBeenNthCalledWith(2, 24);
-
+      // First page: 1/5 * 70 = 14%
+      expect(progressCallback).toHaveBeenNthCalledWith(1, 14);
+      // Second page: 2/5 * 70 = 28%
+      expect(progressCallback).toHaveBeenNthCalledWith(2, 28);
       expect(progressCallback).toHaveBeenNthCalledWith(3, 80);
       expect(progressCallback).toHaveBeenNthCalledWith(4, 90);
       expect(progressCallback).toHaveBeenNthCalledWith(5, 100);
+    });
+
+    it('should handle readable stream errors during CSV generation', async () => {
+      mockExportApi.export.mockResolvedValue(rawify(mockPage));
+
+      const streamError = new Error('Stream processing error');
+      mockCsvService.toCsv.mockImplementation(async (readable: Readable) => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        for await (const _ of readable) {
+          throw streamError;
+        }
+      });
+
+      await expect(service.export(exportArgs)).rejects.toThrow(
+        'Stream processing error',
+      );
+      expect(mockExportApi.export).toHaveBeenCalledTimes(1);
+    });
+
+    it('should handle slow AWS upload completion', async () => {
+      let resolveUpload: (value: string) => void;
+      const uploadPromise = new Promise<string>((resolve) => {
+        resolveUpload = resolve;
+      });
+
+      mockExportApi.export.mockResolvedValue(rawify(mockPage));
+      mockCloudStorageApiService.uploadStream.mockReturnValue(uploadPromise);
+      mockCloudStorageApiService.getSignedUrl.mockResolvedValue(
+        'https://signed-url.example.com',
+      );
+
+      const exportPromise = service.export(exportArgs);
+
+      // Simulate slow upload
+      setTimeout(() => resolveUpload('s3://bucket/file.csv'), 50);
+
+      const result = await exportPromise;
+
+      expect(result).toBe('https://signed-url.example.com');
+      expect(mockCloudStorageApiService.uploadStream).toHaveBeenCalledWith(
+        expect.stringContaining('transactions_export_'),
+        expect.any(PassThrough),
+        { ContentType: 'text/csv' },
+      );
+      expect(mockCloudStorageApiService.getSignedUrl).toHaveBeenCalledWith(
+        expect.stringContaining('transactions_export_'),
+        3600,
+      );
+    });
+
+    it('should handle many pages without memory issues', async () => {
+      // Create 100 small pages to test streaming performance
+      let callCount = 0;
+      mockExportApi.export.mockImplementation(() => {
+        const pageIndex = callCount++;
+        const page = pageBuilder()
+          .with('results', [transactionExportBuilder().build()])
+          .with(
+            'next',
+            pageIndex < 99
+              ? `https://api.example.com/export?offset=${pageIndex + 1}`
+              : null,
+          )
+          .build();
+        return Promise.resolve(rawify(page));
+      });
+      mockCloudStorageApiService.uploadStream.mockResolvedValue(
+        's3://bucket/file.csv',
+      );
+      mockCloudStorageApiService.getSignedUrl.mockResolvedValue(
+        'https://signed-url.example.com',
+      );
+
+      const result = await service.export(exportArgs);
+      expect(result).toBeDefined();
+      expect(mockExportApi.export).toHaveBeenCalledTimes(100);
+      expect(streamData).toHaveLength(100);
     });
   });
 
@@ -586,11 +688,19 @@ describe('CsvExportService', () => {
 
       // Simulate writing to the stream with faker data
       csvRow = `${faker.string.uuid()},${faker.string.numeric(1)},${faker.lorem.word()},${faker.date.recent().toISOString()}`;
-      mockCsvService.toCsv.mockImplementation(async (_, stream) => {
-        stream.write(csvHeader + '\n');
-        stream.write(csvRow + '\n');
-        return Promise.resolve();
-      });
+      mockCsvService.toCsv.mockImplementation(
+        async (readable: Readable, stream) => {
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          for await (const _ of readable) {
+            // Just consume the data
+          }
+          // Write to the stream
+          stream.write(csvHeader + '\n');
+          stream.write(csvRow + '\n');
+          stream.end();
+          return Promise.resolve();
+        },
+      );
 
       mockExportApiManager.getApi.mockResolvedValue(mockExportApi);
       mockConfigurationService.getOrThrow.mockImplementation((key: string) => {
@@ -638,8 +748,8 @@ describe('CsvExportService', () => {
       expect(mockCloudStorageApiService.getSignedUrl).not.toHaveBeenCalled();
 
       expect(mockCsvService.toCsv).toHaveBeenCalledWith(
-        [transformTransactionExport(mockTransactionExport)],
-        expect.any(PassThrough),
+        expect.any(Readable),
+        expect.any(fs.WriteStream),
         expect.anything(),
       );
 
