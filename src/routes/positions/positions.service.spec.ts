@@ -1,29 +1,27 @@
-import { Test } from '@nestjs/testing';
 import { PositionsService } from '@/routes/positions/positions.service';
-import { IPositionsRepository } from '@/domain/positions/positions.repository.interface';
-import { IChainsRepository } from '@/domain/chains/chains.repository.interface';
+import type { IPositionsRepository } from '@/domain/positions/positions.repository.interface';
+import type { IChainsRepository } from '@/domain/chains/chains.repository.interface';
 import { positionBuilder } from '@/domain/positions/entities/__tests__/position.builder';
 import { PositionType } from '@/domain/positions/entities/position-type.entity';
 import { faker } from '@faker-js/faker/.';
 import { NULL_ADDRESS } from '@/routes/common/constants';
+import type { Chain } from '@/domain/chains/entities/chain.entity';
+
+const positionsRepoMock = jest.mocked({
+  getPositions: jest.fn(),
+} as jest.MockedObjectDeep<IPositionsRepository>);
+
+const chainsRepoMock = jest.mocked({
+  getChain: jest.fn(),
+} as jest.MockedObjectDeep<IChainsRepository>);
 
 describe('PositionsService', () => {
   let service: PositionsService;
-  const positionsRepoMock = { getPositions: jest.fn() };
-  const chainsRepoMock = { getChain: jest.fn() };
 
-  beforeEach(async () => {
+  beforeEach(() => {
     jest.resetAllMocks();
 
-    const moduleRef = await Test.createTestingModule({
-      providers: [
-        PositionsService,
-        { provide: IPositionsRepository, useValue: positionsRepoMock },
-        { provide: IChainsRepository, useValue: chainsRepoMock },
-      ],
-    }).compile();
-
-    service = moduleRef.get(PositionsService);
+    service = new PositionsService(positionsRepoMock, chainsRepoMock);
 
     chainsRepoMock.getChain.mockResolvedValue({
       chainId: '1',
@@ -33,7 +31,7 @@ describe('PositionsService', () => {
         name: 'Ether',
         logoUri: 'eth.png',
       },
-    });
+    } as Chain);
   });
 
   it('groups by protocol/name/type, aggregates, and subtracts loans in protocol fiatTotal', async () => {
