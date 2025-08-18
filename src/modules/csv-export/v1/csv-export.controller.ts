@@ -37,6 +37,7 @@ export class CsvExportController {
   @ApiBody({
     description: 'Transaction export request',
     type: TransactionExportDto,
+    required: false,
   })
   @Post('chains/:chainId/:safeAddress')
   async launchExport(
@@ -44,7 +45,7 @@ export class CsvExportController {
     @Param('safeAddress', new ValidationPipe(AddressSchema))
     safeAddress: `0x${string}`,
     @Body(new ValidationPipe(TransactionExportDtoSchema))
-    exportDto: TransactionExportDto,
+    exportDto?: TransactionExportDto,
   ): Promise<JobStatusDto> {
     const args = {
       chainId,
