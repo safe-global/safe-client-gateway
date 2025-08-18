@@ -255,6 +255,9 @@ export default () => ({
     hoodi: parseInt(process.env.HOODI_EXPIRATION_TIME_SECONDS ?? `${60}`),
     indexing: parseInt(process.env.EXPIRATION_TIME_INDEXING_SECONDS ?? `${5}`),
     staking: parseInt(process.env.EXPIRATION_TIME_STAKING_SECONDS ?? `${60}`),
+    zerionPositions: parseInt(
+      process.env.EXPIRATION_TIME_POSITIONS_SECONDS ?? `${300}`,
+    ),
     notFound: {
       default: parseInt(
         process.env.DEFAULT_NOT_FOUND_EXPIRE_TIME_SECONDS ?? `${30}`,

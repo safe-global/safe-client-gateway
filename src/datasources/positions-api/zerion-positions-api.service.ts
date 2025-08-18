@@ -36,15 +36,11 @@ import { Position } from '@/domain/positions/entities/position.entity';
 
 @Injectable()
 export class ZerionPositionsApi implements IPositionsApi {
-  private static readonly RATE_LIMIT_CACHE_KEY_PREFIX = 'zerion_positions';
   private readonly apiKey: string | undefined;
   private readonly baseUri: string;
   private readonly chainsConfiguration: Record<number, ChainAttributes>;
   private readonly defaultExpirationTimeInSeconds: number;
-  private readonly defaultNotFoundExpirationTimeSeconds: number;
   private readonly fiatCodes: Array<string>;
-  private readonly limitPeriodSeconds: number;
-  private readonly limitCalls: number;
 
   constructor(
     @Inject(CacheService) private readonly cacheService: ICacheService,
@@ -62,11 +58,7 @@ export class ZerionPositionsApi implements IPositionsApi {
     );
     this.defaultExpirationTimeInSeconds =
       this.configurationService.getOrThrow<number>(
-        'expirationTimeInSeconds.default',
-      );
-    this.defaultNotFoundExpirationTimeSeconds =
-      this.configurationService.getOrThrow<number>(
-        'expirationTimeInSeconds.notFound.default',
+        'expirationTimeInSeconds.zerionPositions',
       );
     this.chainsConfiguration = this.configurationService.getOrThrow<
       Record<number, ChainAttributes>
@@ -74,12 +66,6 @@ export class ZerionPositionsApi implements IPositionsApi {
     this.fiatCodes = this.configurationService
       .getOrThrow<Array<string>>('balances.providers.zerion.currencies')
       .map((currency) => currency.toUpperCase());
-    this.limitPeriodSeconds = configurationService.getOrThrow(
-      'balances.providers.zerion.limitPeriodSeconds',
-    );
-    this.limitCalls = configurationService.getOrThrow(
-      'balances.providers.zerion.limitCalls',
-    );
   }
 
   async getPositions(args: {
@@ -111,7 +97,6 @@ export class ZerionPositionsApi implements IPositionsApi {
     }
 
     try {
-      await this._checkRateLimit();
       const { key, field } = cacheDir;
       this.loggingService.debug({ type: LogType.CacheMiss, key, field });
       const url = `${this.baseUri}/v1/wallets/${args.safeAddress}/positions`;
@@ -228,15 +213,5 @@ export class ZerionPositionsApi implements IPositionsApi {
       );
 
     return chainName;
-  }
-
-  private async _checkRateLimit(): Promise<void> {
-    const current = await this.cacheService.increment(
-      CacheRouter.getRateLimitCacheKey(
-        ZerionPositionsApi.RATE_LIMIT_CACHE_KEY_PREFIX,
-      ),
-      this.limitPeriodSeconds,
-    );
-    if (current > this.limitCalls) throw new LimitReachedError();
   }
 }
