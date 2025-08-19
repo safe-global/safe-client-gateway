@@ -3,12 +3,16 @@ import {
   AWS_BUCKET_NAME,
   AWS_BASE_PATH,
 } from '@/datasources/storage/constants';
+import { LogType } from '@/domain/common/entities/log-type.entity';
+import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { asError } from '@/logging/utils';
 import {
+  CompleteMultipartUploadCommandOutput,
   GetObjectCommand,
   PutObjectCommandInput,
   S3,
 } from '@aws-sdk/client-s3';
+import { Upload } from '@aws-sdk/lib-storage';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { Inject, Injectable } from '@nestjs/common';
 import path from 'path';
@@ -21,6 +25,8 @@ export class AwsCloudStorageApiService implements ICloudStorageApiService {
   constructor(
     @Inject(AWS_BUCKET_NAME) private readonly bucket: string,
     @Inject(AWS_BASE_PATH) private readonly basePath: string,
+    @Inject(LoggingService)
+    private readonly loggingService: ILoggingService,
   ) {
     this.s3Client = new S3();
   }
@@ -42,25 +48,35 @@ export class AwsCloudStorageApiService implements ICloudStorageApiService {
     }
   }
 
-  async uploadStream(
+  createUploadStream(
     fileName: string,
     body: Readable,
     options: Partial<PutObjectCommandInput> = {},
-  ): Promise<string> {
-    const key = path.posix.join(this.basePath, fileName);
-    const params: PutObjectCommandInput = {
-      Bucket: this.bucket,
-      Key: key,
-      Body: body,
-      ...options,
-    };
+  ): Promise<CompleteMultipartUploadCommandOutput> {
+    const upload = new Upload({
+      client: this.s3Client,
+      params: {
+        Bucket: this.bucket,
+        Key: path.posix.join(this.basePath, fileName),
+        Body: body,
+        ...options,
+      },
+    });
 
-    try {
-      await this.s3Client.putObject(params);
-      return `s3://${this.bucket}/${key}`;
-    } catch (err) {
-      throw new Error(`Error uploading content to S3: ${asError(err).message}`);
-    }
+    // Debugging: progress
+    upload.on('httpUploadProgress', (p) => {
+      this.loggingService.debug({
+        type: LogType.AwsCloudStorageUpload,
+        total: p.total,
+        loaded: p.loaded,
+        part: p.part,
+      });
+    });
+
+    // Return the promise immediately - don't await here!
+    // The upload will start when data flows through the stream
+    // Await the promise when data was fully uploaded
+    return upload.done();
   }
 
   async getSignedUrl(fileName: string, expiresIn: number): Promise<string> {

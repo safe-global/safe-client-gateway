@@ -32,6 +32,7 @@
   "dependencies": {
     "@aws-sdk/client-kms": "3.864.0",
     "@aws-sdk/client-s3": "3.864.0",
+    "@aws-sdk/lib-storage": "3.864.0",
     "@aws-sdk/s3-request-presigner": "3.864.0",
     "@fingerprintjs/fingerprintjs-pro-server-api": "6.2.0",
     "@nestjs/bullmq": "^11.0.2",

@@ -8,7 +8,8 @@ import {
   transformTransactionExport,
 } from '@/modules/csv-export/v1/entities/__tests__/transaction-export.builder';
 import { faker } from '@faker-js/faker/.';
-import { PassThrough, Readable } from 'stream';
+import type { Writable } from 'stream';
+import { PassThrough, Readable, Transform } from 'stream';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import { rawify } from '@/validation/entities/raw.entity';
 import fs from 'fs';
@@ -21,6 +22,8 @@ import path from 'path';
 import { DataSourceError } from '@/domain/errors/data-source.error';
 import { UnrecoverableError } from 'bullmq';
 import type { TransactionExport } from '@/modules/csv-export/v1/entities/transaction-export.entity';
+import type { CompleteMultipartUploadCommandOutput } from '@aws-sdk/client-s3';
+import { pipeline } from 'stream/promises';
 
 const exportApi = {
   export: jest.fn(),
@@ -45,7 +48,7 @@ const jobQueueService = {
 const mockJobQueueService = jest.mocked(jobQueueService);
 
 const cloudStorageApiService = {
-  uploadStream: jest.fn(),
+  createUploadStream: jest.fn(),
   getSignedUrl: jest.fn(),
   getFileContent: jest.fn(),
 } as jest.MockedObjectDeep<ICloudStorageApiService>;
@@ -64,23 +67,19 @@ const loggingService = {
 } as jest.MockedObjectDeep<ILoggingService>;
 const mockLoggingService = jest.mocked(loggingService);
 
-const collectStreamData = async (
-  stream: Readable,
-): Promise<Array<TransactionExport>> => {
-  const chunks: Array<TransactionExport> = [];
-
-  for await (const chunk of stream) {
-    chunks.push(chunk as TransactionExport);
-  }
-  return chunks;
-};
-
 describe('CsvExportService', () => {
   let service: CsvExportService;
   let mockPage: Page<TransactionExport>;
   let streamData: Array<TransactionExport>;
+
+  const mockUploadStream = {
+    ETag: faker.string.alphanumeric(),
+  } as CompleteMultipartUploadCommandOutput;
+
   const mockTransactionExport: TransactionExport =
     transactionExportBuilder().build();
+
+  const expectedSignedUrl = faker.internet.url();
 
   const exportArgs = {
     chainId: faker.string.numeric(1),
@@ -92,10 +91,43 @@ describe('CsvExportService', () => {
     offset: faker.number.int({ min: 0, max: 10 }),
   };
 
-  beforeEach(() => {
-    jest.resetAllMocks();
+  const setupCsvServiceMock = (): void => {
+    // Mock toCsv to simulate consuming the readable stream using pipeline
+    streamData = [];
+    mockCsvService.toCsv.mockImplementation(
+      async (readable: Readable, writable: Writable) => {
+        // Transform stream to collect data for testing
+        const collectTransform = new Transform({
+          objectMode: true,
+          transform(chunk: TransactionExport, _, callback): void {
+            streamData.push(chunk);
+            // Convert object to CSV-like string for the writable stream
+            this.push(`${chunk.safe}\n`);
+            callback();
+          },
+        });
+
+        await pipeline(readable, collectTransform, writable);
+      },
+    );
+  };
+
+  const setupMocks = (): void => {
+    mockPage = pageBuilder()
+      .with('results', [mockTransactionExport])
+      .with('next', null)
+      .build() as Page<TransactionExport>;
 
     mockExportApiManager.getApi.mockResolvedValue(mockExportApi);
+
+    mockExportApi.export.mockResolvedValue(rawify(mockPage));
+    mockCloudStorageApiService.createUploadStream.mockResolvedValue(
+      mockUploadStream,
+    );
+    mockCloudStorageApiService.getSignedUrl.mockResolvedValue(
+      expectedSignedUrl,
+    );
+
     mockConfigurationService.getOrThrow.mockImplementation((key: string) => {
       switch (key) {
         case 'csvExport.signedUrlTtlSeconds':
@@ -109,44 +141,30 @@ describe('CsvExportService', () => {
       }
     });
 
-    // Mock toCsv to simulate consuming the readable stream
-    streamData = [];
-    mockCsvService.toCsv.mockImplementation(async (readable: Readable) => {
-      streamData = await collectStreamData(readable);
-      return Promise.resolve();
-    });
-
-    service = new CsvExportService(
-      mockExportApiManager,
-      mockCsvService,
-      mockJobQueueService,
-      mockCloudStorageApiService,
-      mockConfigurationService,
-      mockLoggingService,
-    );
-
-    mockPage = pageBuilder()
-      .with('results', [mockTransactionExport])
-      .with('next', null)
-      .build() as Page<TransactionExport>;
-  });
-
-  it('should be defined', () => {
-    expect(service).toBeDefined();
-  });
+    setupCsvServiceMock();
+  };
 
   describe('export', () => {
+    beforeEach(() => {
+      jest.resetAllMocks();
+
+      setupMocks();
+
+      service = new CsvExportService(
+        mockExportApiManager,
+        mockCsvService,
+        mockJobQueueService,
+        mockCloudStorageApiService,
+        mockConfigurationService,
+        mockLoggingService,
+      );
+    });
+
+    it('should be defined', () => {
+      expect(service).toBeDefined();
+    });
+
     it('should successfully export transactions to CSV and return signed URL', async () => {
-      const expectedSignedUrl = 'https://signed-url.example.com';
-
-      mockExportApi.export.mockResolvedValue(rawify(mockPage));
-      mockCloudStorageApiService.uploadStream.mockResolvedValue(
-        's3://bucket/file.csv',
-      );
-      mockCloudStorageApiService.getSignedUrl.mockResolvedValue(
-        expectedSignedUrl,
-      );
-
       const result = await service.export(exportArgs);
 
       expect(result).toBe(expectedSignedUrl);
@@ -164,7 +182,9 @@ describe('CsvExportService', () => {
         offset: exportArgs.offset,
       });
 
-      expect(mockCloudStorageApiService.uploadStream).toHaveBeenCalledWith(
+      expect(
+        mockCloudStorageApiService.createUploadStream,
+      ).toHaveBeenCalledWith(
         `transactions_export_${exportArgs.chainId}_${exportArgs.safeAddress}_${exportArgs.timestamp}.csv`,
         expect.any(PassThrough),
         {
@@ -185,14 +205,6 @@ describe('CsvExportService', () => {
         .with('next', null)
         .build() as Page<TransactionExport>;
       mockExportApi.export.mockResolvedValue(rawify(mockPage));
-
-      const expectedSignedUrl = 'https://signed-url.example.com';
-      mockCloudStorageApiService.uploadStream.mockResolvedValue(
-        's3://bucket/file.csv',
-      );
-      mockCloudStorageApiService.getSignedUrl.mockResolvedValue(
-        expectedSignedUrl,
-      );
 
       const result = await service.export(exportArgs);
 
@@ -229,8 +241,7 @@ describe('CsvExportService', () => {
     });
 
     it('should throw error when upload to S3 fails', async () => {
-      mockExportApi.export.mockResolvedValue(rawify(mockPage));
-      mockCloudStorageApiService.uploadStream.mockRejectedValue(
+      mockCloudStorageApiService.createUploadStream.mockRejectedValue(
         new Error('Upload failed'),
       );
 
@@ -238,9 +249,17 @@ describe('CsvExportService', () => {
     });
 
     it('should throw error when CSV generation fails', async () => {
-      mockExportApi.export.mockResolvedValue(rawify(mockPage));
-      mockCsvService.toCsv.mockRejectedValue(
-        new Error('CSV generation failed'),
+      mockCsvService.toCsv.mockImplementation(
+        async (readable: Readable, writable: Writable) => {
+          const collectTransform = new Transform({
+            objectMode: true,
+            transform(_chunk, _, callback): void {
+              callback(new Error('CSV generation failed'));
+            },
+          });
+
+          await pipeline(readable, collectTransform, writable);
+        },
       );
 
       await expect(service.export(exportArgs)).rejects.toThrow(
@@ -249,10 +268,6 @@ describe('CsvExportService', () => {
     });
 
     it('should throw error when signed URL generation fails', async () => {
-      mockExportApi.export.mockResolvedValue(rawify(mockPage));
-      mockCloudStorageApiService.uploadStream.mockResolvedValue(
-        's3://bucket/file.csv',
-      );
       mockCloudStorageApiService.getSignedUrl.mockRejectedValue(
         new Error('Signed URL generation failed'),
       );
@@ -263,7 +278,6 @@ describe('CsvExportService', () => {
     });
 
     it('should handle pagination and fetch all pages', async () => {
-      const expectedSignedUrl = 'https://signed-url.example.com';
       const mockTransactionExport2 = transactionExportBuilder().build();
       const mockTransactionExport3 = transactionExportBuilder().build();
 
@@ -290,13 +304,6 @@ describe('CsvExportService', () => {
         .mockResolvedValueOnce(rawify(mockPage1))
         .mockResolvedValueOnce(rawify(mockPage2))
         .mockResolvedValueOnce(rawify(mockPage3));
-
-      mockCloudStorageApiService.uploadStream.mockResolvedValue(
-        's3://bucket/file.csv',
-      );
-      mockCloudStorageApiService.getSignedUrl.mockResolvedValue(
-        expectedSignedUrl,
-      );
 
       const result = await service.export(exportArgs);
 
@@ -397,14 +404,6 @@ describe('CsvExportService', () => {
         offset: undefined,
       };
 
-      mockExportApi.export.mockResolvedValue(rawify(mockPage));
-      mockCloudStorageApiService.uploadStream.mockResolvedValue(
-        's3://bucket/file.csv',
-      );
-      mockCloudStorageApiService.getSignedUrl.mockResolvedValue(
-        'https://signed-url.example.com',
-      );
-
       await service.export(exportArgsNoPagination);
 
       expect(mockExportApi.export).toHaveBeenCalledWith({
@@ -433,13 +432,6 @@ describe('CsvExportService', () => {
       mockExportApi.export
         .mockResolvedValueOnce(rawify(mockPage1))
         .mockResolvedValueOnce(rawify(mockPage2));
-
-      mockCloudStorageApiService.uploadStream.mockResolvedValue(
-        's3://bucket/file.csv',
-      );
-      mockCloudStorageApiService.getSignedUrl.mockResolvedValue(
-        'https://signed-url.example.com',
-      );
 
       await service.export(exportArgs);
 
@@ -505,21 +497,13 @@ describe('CsvExportService', () => {
         timestamp: faker.date.recent().getTime(),
       };
 
-      const expectedSignedUrl = 'https://signed-url.example.com';
-
-      mockExportApi.export.mockResolvedValue(rawify(mockPage));
-      mockCloudStorageApiService.uploadStream.mockResolvedValue(
-        's3://bucket/file.csv',
-      );
-      mockCloudStorageApiService.getSignedUrl.mockResolvedValue(
-        expectedSignedUrl,
-      );
-
       const result = await service.export(exportArgsWithoutDates);
 
       expect(result).toBe(expectedSignedUrl);
 
-      expect(mockCloudStorageApiService.uploadStream).toHaveBeenCalledWith(
+      expect(
+        mockCloudStorageApiService.createUploadStream,
+      ).toHaveBeenCalledWith(
         `transactions_export_${exportArgsWithoutDates.chainId}_${exportArgsWithoutDates.safeAddress}_${exportArgsWithoutDates.timestamp}.csv`,
         expect.any(PassThrough),
         {
@@ -536,21 +520,13 @@ describe('CsvExportService', () => {
         executionDateGte: faker.date.past().toISOString().split('T')[0],
       };
 
-      const expectedSignedUrl = 'https://signed-url.example.com';
-
-      mockExportApi.export.mockResolvedValue(rawify(mockPage));
-      mockCloudStorageApiService.uploadStream.mockResolvedValue(
-        's3://bucket/file.csv',
-      );
-      mockCloudStorageApiService.getSignedUrl.mockResolvedValue(
-        expectedSignedUrl,
-      );
-
       const result = await service.export(exportArgsPartialDates);
 
       expect(result).toBe(expectedSignedUrl);
 
-      expect(mockCloudStorageApiService.uploadStream).toHaveBeenCalledWith(
+      expect(
+        mockCloudStorageApiService.createUploadStream,
+      ).toHaveBeenCalledWith(
         `transactions_export_${exportArgsPartialDates.chainId}_${exportArgsPartialDates.safeAddress}_${exportArgsPartialDates.timestamp}.csv`,
         expect.any(PassThrough),
         {
@@ -579,63 +555,41 @@ describe('CsvExportService', () => {
         .mockResolvedValueOnce(rawify(mockPage1))
         .mockResolvedValueOnce(rawify(mockPage2));
 
-      mockCloudStorageApiService.uploadStream.mockResolvedValue(
-        's3://bucket/file.csv',
-      );
-      mockCloudStorageApiService.getSignedUrl.mockResolvedValue(
-        'https://signed-url.example.com',
-      );
-
       await service.export(exportArgs, progressCallback);
 
-      expect(progressCallback).toHaveBeenCalledTimes(5);
+      expect(progressCallback).toHaveBeenCalledTimes(4);
       // First page: 1/5 * 70 = 14%
       expect(progressCallback).toHaveBeenNthCalledWith(1, 14);
       // Second page: 2/5 * 70 = 28%
       expect(progressCallback).toHaveBeenNthCalledWith(2, 28);
-      expect(progressCallback).toHaveBeenNthCalledWith(3, 80);
-      expect(progressCallback).toHaveBeenNthCalledWith(4, 90);
-      expect(progressCallback).toHaveBeenNthCalledWith(5, 100);
-    });
-
-    it('should handle readable stream errors during CSV generation', async () => {
-      mockExportApi.export.mockResolvedValue(rawify(mockPage));
-
-      const streamError = new Error('Stream processing error');
-      mockCsvService.toCsv.mockImplementation(async (readable: Readable) => {
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        for await (const _ of readable) {
-          throw streamError;
-        }
-      });
-
-      await expect(service.export(exportArgs)).rejects.toThrow(
-        'Stream processing error',
-      );
-      expect(mockExportApi.export).toHaveBeenCalledTimes(1);
+      expect(progressCallback).toHaveBeenNthCalledWith(3, 90);
+      expect(progressCallback).toHaveBeenNthCalledWith(4, 100);
     });
 
     it('should handle slow AWS upload completion', async () => {
-      let resolveUpload: (value: string) => void;
-      const uploadPromise = new Promise<string>((resolve) => {
-        resolveUpload = resolve;
-      });
+      let resolveUpload: (value: CompleteMultipartUploadCommandOutput) => void;
+      const uploadPromise = new Promise<CompleteMultipartUploadCommandOutput>(
+        (resolve) => {
+          resolveUpload = resolve;
+        },
+      );
 
       mockExportApi.export.mockResolvedValue(rawify(mockPage));
-      mockCloudStorageApiService.uploadStream.mockReturnValue(uploadPromise);
-      mockCloudStorageApiService.getSignedUrl.mockResolvedValue(
-        'https://signed-url.example.com',
+      mockCloudStorageApiService.createUploadStream.mockReturnValue(
+        uploadPromise,
       );
 
       const exportPromise = service.export(exportArgs);
 
       // Simulate slow upload
-      setTimeout(() => resolveUpload('s3://bucket/file.csv'), 50);
+      setTimeout(() => resolveUpload(mockUploadStream), 50);
 
       const result = await exportPromise;
 
-      expect(result).toBe('https://signed-url.example.com');
-      expect(mockCloudStorageApiService.uploadStream).toHaveBeenCalledWith(
+      expect(result).toBe(expectedSignedUrl);
+      expect(
+        mockCloudStorageApiService.createUploadStream,
+      ).toHaveBeenCalledWith(
         expect.stringContaining('transactions_export_'),
         expect.any(PassThrough),
         { ContentType: 'text/csv' },
@@ -662,12 +616,6 @@ describe('CsvExportService', () => {
           .build();
         return Promise.resolve(rawify(page));
       });
-      mockCloudStorageApiService.uploadStream.mockResolvedValue(
-        's3://bucket/file.csv',
-      );
-      mockCloudStorageApiService.getSignedUrl.mockResolvedValue(
-        'https://signed-url.example.com',
-      );
 
       const result = await service.export(exportArgs);
       expect(result).toBeDefined();
@@ -682,9 +630,11 @@ describe('CsvExportService', () => {
     const localBaseDir = 'assets/csv-export';
     const fileName = `transactions_export_${exportArgs.chainId}_${exportArgs.safeAddress}_${exportArgs.timestamp}.csv`;
 
-    beforeEach(async () => {
-      jest.resetAllMocks();
-      await mkdir(localBaseDir, { recursive: true });
+    const setupMocks = (): void => {
+      mockPage = pageBuilder()
+        .with('results', [mockTransactionExport])
+        .with('next', null)
+        .build() as Page<TransactionExport>;
 
       // Simulate writing to the stream with faker data
       csvRow = `${faker.string.uuid()},${faker.string.numeric(1)},${faker.lorem.word()},${faker.date.recent().toISOString()}`;
@@ -703,6 +653,7 @@ describe('CsvExportService', () => {
       );
 
       mockExportApiManager.getApi.mockResolvedValue(mockExportApi);
+      mockExportApi.export.mockResolvedValue(rawify(mockPage));
       mockConfigurationService.getOrThrow.mockImplementation((key: string) => {
         switch (key) {
           case 'csvExport.signedUrlTtlSeconds':
@@ -715,6 +666,13 @@ describe('CsvExportService', () => {
             return 3600;
         }
       });
+    };
+
+    beforeEach(async () => {
+      jest.resetAllMocks();
+      await mkdir(localBaseDir, { recursive: true });
+
+      setupMocks();
 
       service = new CsvExportService(
         mockExportApiManager,
@@ -724,11 +682,6 @@ describe('CsvExportService', () => {
         mockConfigurationService,
         mockLoggingService,
       );
-
-      mockPage = pageBuilder()
-        .with('results', [mockTransactionExport])
-        .with('next', null)
-        .build() as Page<TransactionExport>;
     });
 
     afterEach(async () => {
@@ -738,13 +691,13 @@ describe('CsvExportService', () => {
 
     it('should handle local storage type and return local file path', async () => {
       const expectedLocalPath = path.resolve(localBaseDir, fileName);
-      mockExportApi.export.mockResolvedValue(rawify(mockPage));
-
       const result = await service.export(exportArgs);
 
       expect(result).toBe(expectedLocalPath);
 
-      expect(mockCloudStorageApiService.uploadStream).not.toHaveBeenCalled();
+      expect(
+        mockCloudStorageApiService.createUploadStream,
+      ).not.toHaveBeenCalled();
       expect(mockCloudStorageApiService.getSignedUrl).not.toHaveBeenCalled();
 
       expect(mockCsvService.toCsv).toHaveBeenCalledWith(

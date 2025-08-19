@@ -26,6 +26,7 @@ import { FileStorageType } from '@/config/entities/schemas/configuration.schema'
 import { asError } from '@/logging/utils';
 import { DataSourceError } from '@/domain/errors/data-source.error';
 import { CSV_OPTIONS } from '@/modules/csv-export/v1/entities/csv-export.options';
+import { CompleteMultipartUploadCommandOutput } from '@aws-sdk/client-s3';
 
 @Injectable()
 export class CsvExportService {
@@ -112,18 +113,25 @@ export class CsvExportService {
     onProgress: (percentage: number) => Promise<void> = async () => {},
   ): Promise<string> {
     const { chainId, safeAddress, timestamp } = args;
-
     const fileName = this.generateFileName(chainId, safeAddress, timestamp);
+
     const { uploadStream, uploadPromise } = this.createUploadStream(fileName);
     const dataStream = Readable.from(
       this.transactionPagesGenerator(args, onProgress),
     );
 
-    await this.csvService.toCsv(dataStream, uploadStream, CSV_OPTIONS);
-    await onProgress(80);
-    // Wait for the upload to complete
-    if (uploadPromise) {
-      await uploadPromise;
+    const pipePromise = this.csvService.toCsv(
+      dataStream,
+      uploadStream,
+      CSV_OPTIONS,
+    );
+
+    try {
+      await Promise.all([pipePromise, uploadPromise]);
+    } catch (error) {
+      this.loggingService.error(`CSV upload failed: ${asError(error)}`);
+      uploadStream.destroy(error as Error); // ensure the other side unwinds
+      throw error;
     }
     await onProgress(90);
 
@@ -230,11 +238,11 @@ export class CsvExportService {
 
   private createUploadStream(fileName: string): {
     uploadStream: PassThrough | fs.WriteStream;
-    uploadPromise: Promise<string> | null;
+    uploadPromise: Promise<CompleteMultipartUploadCommandOutput> | null;
   } {
     if (this.storageType === 'aws') {
       const passThrough = new PassThrough();
-      const uploadPromise = this.cloudStorageApiService.uploadStream(
+      const uploadPromise = this.cloudStorageApiService.createUploadStream(
         fileName,
         passThrough,
         {
