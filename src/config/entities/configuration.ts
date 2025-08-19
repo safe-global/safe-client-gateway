@@ -536,9 +536,9 @@ export default () => ({
         // This will be ignored if the TARGETED_MESSAGING_FILE_STORAGE_TYPE is set to 'local'.
         // For reference, these environment variables should be present in the environment,
         // but they are not transferred to the memory/configuration file:
-        // AWS_ACCESS_KEY_ID
-        // AWS_SECRET_ACCESS_KEY
         // AWS_REGION
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
         bucketName:
           process.env.AWS_STORAGE_BUCKET_NAME || 'safe-client-gateway',
         basePath: process.env.AWS_S3_BASE_PATH || 'assets/targeted-messaging',
@@ -560,12 +560,12 @@ export default () => ({
         // This will be ignored if the CSV_EXPORT_FILE_STORAGE_TYPE is set to 'local'.
         // For reference, these environment variables should be present in the environment,
         // but they are not transferred to the memory/configuration file:
-        // AWS_ACCESS_KEY_ID
-        // AWS_SECRET_ACCESS_KEY
         // AWS_REGION
+        accessKeyId: process.env.CSV_AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.CSV_AWS_SECRET_ACCESS_KEY,
         bucketName:
-          process.env.AWS_STORAGE_BUCKET_NAME || 'safe-client-gateway',
-        basePath: process.env.AWS_S3_CSV_EXPORT_PATH || 'assets/csv-export',
+          process.env.CSV_AWS_STORAGE_BUCKET_NAME || 'safe-client-gateway',
+        basePath: process.env.CSV_AWS_S3_BASE_PATH || 'assets/csv-export',
       },
       local: {
         // This will be ignored if the CSV_EXPORT_FILE_STORAGE_TYPE is set to 'aws'.

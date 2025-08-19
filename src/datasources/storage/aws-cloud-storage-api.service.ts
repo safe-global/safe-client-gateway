@@ -2,6 +2,8 @@ import type { ICloudStorageApiService } from '@/datasources/storage/cloud-storag
 import {
   AWS_BUCKET_NAME,
   AWS_BASE_PATH,
+  AWS_ACCESS_KEY_ID,
+  AWS_SECRET_ACCESS_KEY,
 } from '@/datasources/storage/constants';
 import { LogType } from '@/domain/common/entities/log-type.entity';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
@@ -23,12 +25,14 @@ export class AwsCloudStorageApiService implements ICloudStorageApiService {
   private readonly s3Client: S3;
 
   constructor(
+    @Inject(AWS_ACCESS_KEY_ID) private readonly accessKeyId: string,
+    @Inject(AWS_SECRET_ACCESS_KEY) private readonly secretAccessKey: string,
     @Inject(AWS_BUCKET_NAME) private readonly bucket: string,
     @Inject(AWS_BASE_PATH) private readonly basePath: string,
     @Inject(LoggingService)
     private readonly loggingService: ILoggingService,
   ) {
-    this.s3Client = new S3();
+    this.s3Client = new S3({ credentials: { accessKeyId, secretAccessKey } });
   }
   async getFileContent(sourceFile: string): Promise<string> {
     try {

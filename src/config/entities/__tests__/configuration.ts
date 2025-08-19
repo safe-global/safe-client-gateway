@@ -345,6 +345,8 @@ export default (): ReturnType<typeof configuration> => ({
     fileStorage: {
       type: 'local',
       aws: {
+        accessKeyId: 'dummy',
+        secretAccessKey: 'dummy',
         bucketName: faker.string.alphanumeric(),
         basePath: faker.system.directoryPath(),
       },
@@ -357,6 +359,8 @@ export default (): ReturnType<typeof configuration> => ({
     fileStorage: {
       type: 'local',
       aws: {
+        accessKeyId: 'dummy',
+        secretAccessKey: 'dummy',
         bucketName: faker.string.alphanumeric(),
         basePath: faker.system.directoryPath(),
       },

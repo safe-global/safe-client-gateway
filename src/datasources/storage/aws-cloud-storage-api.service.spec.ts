@@ -25,6 +25,8 @@ describe('AwsCloudStorageApiService', () => {
   let target: AwsCloudStorageApiService;
 
   const s3Mock = mockClient(S3Client);
+  const accessKeyId = faker.string.alphanumeric();
+  const secretAccessKey = faker.string.alphanumeric();
   const bucketName = faker.string.alphanumeric();
   const basePath = 'base/path';
 
@@ -32,6 +34,8 @@ describe('AwsCloudStorageApiService', () => {
     jest.resetAllMocks();
 
     target = new AwsCloudStorageApiService(
+      accessKeyId,
+      secretAccessKey,
       bucketName,
       basePath,
       mockLoggingService,
@@ -59,6 +63,8 @@ describe('AwsCloudStorageApiService', () => {
 
     it('should normalize paths', async () => {
       const target = new AwsCloudStorageApiService(
+        accessKeyId,
+        secretAccessKey,
         bucketName,
         'base//path///',
         mockLoggingService,
@@ -164,6 +170,8 @@ describe('AwsCloudStorageApiService', () => {
 
     it('should normalize file paths', async () => {
       const target = new AwsCloudStorageApiService(
+        accessKeyId,
+        secretAccessKey,
         bucketName,
         'base//path///',
         mockLoggingService,

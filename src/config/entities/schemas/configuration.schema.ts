@@ -50,6 +50,9 @@ export const RootConfigurationSchema = z
     STAKING_API_KEY: z.string(),
     STAKING_TESTNET_API_KEY: z.string(),
     TARGETED_MESSAGING_FILE_STORAGE_TYPE: z.enum(['local', 'aws']).optional(),
+    CSV_EXPORT_FILE_STORAGE_TYPE: z.enum(['local', 'aws']).optional(),
+    CSV_AWS_ACCESS_KEY_ID: z.string().optional(),
+    CSV_AWS_SECRET_ACCESS_KEY: z.string().optional(),
   })
   .superRefine((config, ctx) =>
     // Check for AWS_* fields in production and staging environments
@@ -58,6 +61,8 @@ export const RootConfigurationSchema = z
       'AWS_KMS_ENCRYPTION_KEY_ID',
       'AWS_SECRET_ACCESS_KEY',
       'AWS_REGION',
+      'CSV_AWS_ACCESS_KEY_ID',
+      'CSV_AWS_SECRET_ACCESS_KEY',
     ].forEach((field) => {
       if (
         config.CGW_ENV &&

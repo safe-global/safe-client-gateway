@@ -31,6 +31,8 @@ import { IConfigurationService } from '@/config/configuration.service.interface'
       inject: [IConfigurationService],
     }),
     CloudStorageModule.register(
+      'csvExport.fileStorage.aws.accessKeyId',
+      'csvExport.fileStorage.aws.secretAccessKey',
       'csvExport.fileStorage.aws.bucketName',
       'csvExport.fileStorage.aws.basePath',
     ),
