@@ -1,7 +1,9 @@
 import { addressBookBuilder } from '@/domain/accounts/address-books/entities/__tests__/address-book.builder';
-import { AddressBookSchema } from '@/domain/accounts/address-books/entities/address-book.entity';
+import {
+  ADDRESS_BOOK_NAME_MAX_LENGTH,
+  AddressBookSchema,
+} from '@/domain/accounts/address-books/entities/address-book.entity';
 import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
-import { NAME_MAX_LENGTH } from '@/domain/common/entities/name.schema';
 import { faker } from '@faker-js/faker/.';
 import { getAddress } from 'viem';
 
@@ -129,7 +131,7 @@ describe('AddressBookSchema', () => {
 
   it('should not verify an AddressBookItem with a longer name', () => {
     const addressBook = addressBookBuilder().build();
-    addressBook.data[0].name = 'e'.repeat(NAME_MAX_LENGTH + 1);
+    addressBook.data[0].name = 'e'.repeat(ADDRESS_BOOK_NAME_MAX_LENGTH + 1);
 
     const result = AddressBookSchema.safeParse(addressBook);
 
@@ -138,8 +140,8 @@ describe('AddressBookSchema', () => {
         code: 'too_big',
         exact: false,
         inclusive: true,
-        message: `Names must be at most ${NAME_MAX_LENGTH} characters long`,
-        maximum: NAME_MAX_LENGTH,
+        message: `Names must be at most ${ADDRESS_BOOK_NAME_MAX_LENGTH} characters long`,
+        maximum: ADDRESS_BOOK_NAME_MAX_LENGTH,
         path: ['data', 0, 'name'],
         type: 'string',
       },
