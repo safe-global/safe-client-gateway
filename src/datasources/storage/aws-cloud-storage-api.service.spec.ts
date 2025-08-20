@@ -1,9 +1,7 @@
 import { AwsCloudStorageApiService } from '@/datasources/storage/aws-cloud-storage-api.service';
-import {
-  GetObjectCommand,
-  PutObjectCommand,
-  S3Client,
-} from '@aws-sdk/client-s3';
+import type { ILoggingService } from '@/logging/logging.interface';
+import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { Upload } from '@aws-sdk/lib-storage';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { faker } from '@faker-js/faker/.';
 import { sdkStreamMixin } from '@smithy/util-stream';
@@ -14,17 +12,34 @@ jest.mock('@aws-sdk/s3-request-presigner', () => ({
   getSignedUrl: jest.fn(),
 }));
 
+jest.mock('@aws-sdk/lib-storage', () => ({
+  Upload: jest.fn(),
+}));
+
+const loggingService = {
+  debug: jest.fn(),
+} as jest.MockedObjectDeep<ILoggingService>;
+const mockLoggingService = jest.mocked(loggingService);
+
 describe('AwsCloudStorageApiService', () => {
   let target: AwsCloudStorageApiService;
 
   const s3Mock = mockClient(S3Client);
+  const accessKeyId = faker.string.alphanumeric();
+  const secretAccessKey = faker.string.alphanumeric();
   const bucketName = faker.string.alphanumeric();
   const basePath = 'base/path';
 
   beforeEach(() => {
     jest.resetAllMocks();
 
-    target = new AwsCloudStorageApiService(bucketName, basePath);
+    target = new AwsCloudStorageApiService(
+      accessKeyId,
+      secretAccessKey,
+      bucketName,
+      basePath,
+      mockLoggingService,
+    );
   });
 
   describe('getFileContent', () => {
@@ -47,7 +62,13 @@ describe('AwsCloudStorageApiService', () => {
     });
 
     it('should normalize paths', async () => {
-      const target = new AwsCloudStorageApiService(bucketName, 'base//path///');
+      const target = new AwsCloudStorageApiService(
+        accessKeyId,
+        secretAccessKey,
+        bucketName,
+        'base//path///',
+        mockLoggingService,
+      );
 
       const content = faker.lorem.paragraphs();
       const sourceFile = '///source-file.json'; // Extra slashes should be normalized
@@ -77,32 +98,123 @@ describe('AwsCloudStorageApiService', () => {
     });
   });
 
-  describe('uploadStream', () => {
-    it('should upload a stream to S3', async () => {
-      const content = faker.lorem.paragraphs();
-      const fileName = 'file.csv';
-      const body = buildStream(content);
+  describe('createUploadStream', () => {
+    const fileName = 'test-file.csv';
+    const mockUpload = Upload as jest.MockedClass<typeof Upload>;
+    let content: string;
+    let body: Readable;
+    let ETag: string;
 
-      s3Mock.on(PutObjectCommand).resolves({});
+    beforeEach(() => {
+      mockUpload.mockClear();
 
-      const result = await target.uploadStream(fileName, body);
-      expect(result).toBe(`s3://${bucketName}/base/path/${fileName}`);
-      expect(
-        s3Mock.commandCalls(PutObjectCommand, {
-          Bucket: bucketName,
-          Key: `base/path/${fileName}`,
-        }),
-      ).toHaveLength(1);
+      content = faker.lorem.paragraphs();
+      body = buildStream(content);
+      ETag = faker.string.alphanumeric();
     });
 
-    it('should throw error when upload fails', async () => {
-      const fileName = 'file.csv';
-      const body = buildStream(faker.lorem.paragraphs());
+    it('should create upload stream and return upload promise', async () => {
+      const mockDone = jest.fn().mockResolvedValue({ ETag });
 
-      s3Mock.on(PutObjectCommand).rejects(new Error('PutObject error'));
+      mockUpload.mockImplementation(
+        () =>
+          ({
+            done: mockDone,
+            on: jest.fn(),
+          }) as unknown as Upload,
+      );
 
-      await expect(target.uploadStream(fileName, body)).rejects.toThrow(
-        'Error uploading content to S3: PutObject error',
+      const resultPromise = target.createUploadStream(fileName, body, {
+        ContentType: 'text/csv',
+      });
+
+      expect(mockUpload).toHaveBeenCalledWith({
+        client: expect.any(S3Client),
+        params: {
+          Bucket: bucketName,
+          Key: `${basePath}/${fileName}`,
+          Body: body,
+          ContentType: 'text/csv',
+        },
+      });
+
+      const result = await resultPromise;
+      expect(mockDone).toHaveBeenCalled();
+      expect(result).toEqual({ ETag });
+    });
+
+    it('should handle upload errors', async () => {
+      const uploadError = new Error('Upload failed');
+
+      mockUpload.mockImplementation(
+        () =>
+          ({
+            done: jest.fn().mockRejectedValue(uploadError),
+            on: jest.fn(),
+          }) as unknown as Upload,
+      );
+
+      await expect(target.createUploadStream(fileName, body)).rejects.toThrow(
+        uploadError,
+      );
+
+      expect(mockUpload).toHaveBeenCalledWith({
+        client: expect.any(S3Client),
+        params: {
+          Bucket: bucketName,
+          Key: `${basePath}/${fileName}`,
+          Body: body,
+        },
+      });
+    });
+
+    it('should normalize file paths', async () => {
+      const target = new AwsCloudStorageApiService(
+        accessKeyId,
+        secretAccessKey,
+        bucketName,
+        'base//path///',
+        mockLoggingService,
+      );
+
+      mockUpload.mockImplementation(
+        () =>
+          ({
+            done: jest.fn().mockResolvedValue({}),
+            on: jest.fn(),
+          }) as unknown as Upload,
+      );
+
+      await target.createUploadStream(fileName, body);
+
+      expect(mockUpload).toHaveBeenCalledWith({
+        client: expect.any(S3Client),
+        params: {
+          Bucket: bucketName,
+          Key: `${basePath}/${fileName}`,
+          Body: body,
+        },
+      });
+    });
+
+    it('should track httpUploadProgress event on upload', async () => {
+      const mockOn = jest.fn();
+
+      mockUpload.mockImplementation(
+        () =>
+          ({
+            done: jest.fn().mockResolvedValue({ ETag }),
+            on: mockOn,
+          }) as unknown as Upload,
+      );
+
+      await target.createUploadStream(fileName, body, {
+        ContentType: 'text/csv',
+      });
+
+      expect(mockOn).toHaveBeenCalledWith(
+        'httpUploadProgress',
+        expect.any(Function),
       );
     });
   });

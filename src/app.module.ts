@@ -61,6 +61,7 @@ import { UsersModule } from '@/routes/users/users.module';
 import { SpacesModule } from '@/routes/spaces/spaces.module';
 import { MembersModule } from '@/routes/spaces/members.module';
 import { BullModule } from '@nestjs/bullmq';
+import { CsvExportModule } from '@/modules/csv-export/v1/csv-export.module';
 
 @Module({})
 export class AppModule implements NestModule {
@@ -88,6 +89,7 @@ export class AppModule implements NestModule {
         CollectiblesModule,
         CommunityModule,
         ContractsModule,
+        CsvExportModule,
         DataDecodedModule,
         // TODO: delete/rename DelegatesModule when clients migration to v2 is completed.
         DelegatesModule,

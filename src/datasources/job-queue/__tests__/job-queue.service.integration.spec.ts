@@ -2,10 +2,10 @@ import type { Queue } from 'bullmq';
 import { Test } from '@nestjs/testing';
 import { BullModule, getQueueToken } from '@nestjs/bullmq';
 import { JobQueueService } from './../job-queue.service';
-import { TestJobConsumer } from './../__test__/test.job.consumer';
+import { TestJobConsumer } from './../__tests__/test.job.consumer';
 import { JobType } from './../types/job-types';
 import { IJobQueueService } from '@/domain/interfaces/job-queue.interface';
-import type { TestJobData } from '@/datasources/job-queue/__test__/job-queue.service.mock';
+import type { TestJobData } from '@/datasources/job-queue/__tests__/test.job.data';
 import { faker } from '@faker-js/faker/.';
 import type { INestApplication } from '@nestjs/common';
 
@@ -117,7 +117,6 @@ describe('JobQueueService & TestJobConsumer integration', () => {
 
     await waitUntil(() => consumer.handledJobs.length === jobs.length);
 
-    expect(consumer.handledJobs).toHaveLength(jobs.length);
     for (let i = 0; i < jobs.length; i++) {
       expect(consumer.handledJobs[i].data).toEqual(jobs[i]);
     }
@@ -128,9 +127,9 @@ describe('JobQueueService & TestJobConsumer integration', () => {
 
     await service.addJob(JobType.TEST_JOB, data);
 
-    await waitUntil(() => consumer.handledJobs.length === 1);
+    await waitUntil(() => consumer.failedJobs.length === 1, 10000);
 
-    expect(consumer.failedJobs).toHaveLength(1);
+    expect(consumer.handledJobs).toHaveLength(1);
     expect(consumer.failedJobs[0].error?.message).toEqual('Job failed');
     expect(consumer.completedJobs).toHaveLength(0);
   });

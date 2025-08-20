@@ -1,4 +1,7 @@
-import type { PutObjectCommandInput } from '@aws-sdk/client-s3';
+import type {
+  CompleteMultipartUploadCommandOutput,
+  PutObjectCommandInput,
+} from '@aws-sdk/client-s3';
 import type { Readable } from 'stream';
 
 export const ICloudStorageApiService = Symbol('ICloudStorageApiService');
@@ -12,17 +15,17 @@ export interface ICloudStorageApiService {
   getFileContent: (key: string) => Promise<string>;
 
   /**
-   * Uploads a stream to S3
+   * Creates an upload stream using Upload class for better streaming support
    * @param {string} fileName The name of the file to upload
    * @param {Readable} body The Readable stream containing the content to upload
    * @param {PutObjectCommandInput} options Additional CSV options
-   * @returns {Promise<string>} The S3 URI of the uploaded content
+   * @returns {Promise<CompleteMultipartUploadCommandOutput>} The object containing the multipart Upload
    */
-  uploadStream: (
+  createUploadStream: (
     fileName: string,
     body: Readable,
     options: Partial<PutObjectCommandInput>,
-  ) => Promise<string>;
+  ) => Promise<CompleteMultipartUploadCommandOutput>;
 
   /**
    * Generates a signed URL for accessing a file in S3

@@ -67,7 +67,7 @@ describe('ExportApiManager', () => {
 
     expect(mockDataSource.get).toHaveBeenCalledWith(
       expect.objectContaining({
-        url: `${expectedUrl}/api/v1/safes/${args.safeAddress}/export`,
+        url: `${expectedUrl}/api/v1/safes/${args.safeAddress}/export/`,
       }),
     );
   });

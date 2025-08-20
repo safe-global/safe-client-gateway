@@ -44,6 +44,8 @@ describe('Configuration validator', () => {
     RELAY_PROVIDER_API_KEY_SEPOLIA: faker.string.uuid(),
     STAKING_API_KEY: faker.string.uuid(),
     STAKING_TESTNET_API_KEY: faker.string.uuid(),
+    CSV_AWS_ACCESS_KEY_ID: faker.string.uuid(),
+    CSV_AWS_SECRET_ACCESS_KEY: faker.string.uuid(),
   };
 
   it('should bypass this validation on test environment', () => {
@@ -150,6 +152,27 @@ describe('Configuration validator', () => {
     );
   });
 
+  it.each([
+    { key: 'TARGETED_MESSAGING_FILE_STORAGE_TYPE' },
+    { key: 'CSV_EXPORT_FILE_STORAGE_TYPE' },
+  ])(
+    `should detect an invalid $key configuration in production environment`,
+    ({ key }) => {
+      process.env.NODE_ENV = 'production';
+      const config = {
+        ...omit(validConfiguration, key),
+        [`${key}`]: faker.lorem.words(),
+      };
+      expect(() =>
+        configurationValidator(config, RootConfigurationSchema),
+      ).toThrow(
+        new RegExp(
+          `${key} Invalid enum value. Expected 'local' | 'aws', received`,
+        ),
+      );
+    },
+  );
+
   it('should detect an invalid TARGETED_MESSAGING_FILE_STORAGE_TYPE configuration in production environment', () => {
     process.env.NODE_ENV = 'production';
     const invalidConfiguration: Record<string, unknown> = {
@@ -208,6 +231,8 @@ describe('Configuration validator', () => {
       { key: 'AWS_KMS_ENCRYPTION_KEY_ID' },
       { key: 'AWS_SECRET_ACCESS_KEY' },
       { key: 'AWS_REGION' },
+      { key: 'CSV_AWS_ACCESS_KEY_ID' },
+      { key: 'CSV_AWS_SECRET_ACCESS_KEY' },
     ])(`should require $key configuration in ${env} environment`, ({ key }) => {
       process.env.NODE_ENV = 'production';
       const config = { ...omit(validConfiguration, key), CGW_ENV: env };

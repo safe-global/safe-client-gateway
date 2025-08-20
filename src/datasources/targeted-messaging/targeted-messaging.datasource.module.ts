@@ -12,6 +12,8 @@ import { Module } from '@nestjs/common';
   imports: [
     PostgresDatabaseModule,
     CloudStorageModule.register(
+      'targetedMessaging.fileStorage.aws.accessKeyId',
+      'targetedMessaging.fileStorage.aws.secretAccessKey',
       'targetedMessaging.fileStorage.aws.bucketName',
       'targetedMessaging.fileStorage.aws.basePath',
     ),
