@@ -118,6 +118,7 @@ export class CsvExportService {
     const { uploadStream, uploadPromise } = this.createUploadStream(fileName);
     const dataStream = Readable.from(
       this.transactionPagesGenerator(args, onProgress),
+      { objectMode: true, highWaterMark: 16 },
     );
 
     const pipePromise = this.csvService.toCsv(
