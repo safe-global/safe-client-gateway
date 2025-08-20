@@ -1,4 +1,4 @@
-import { MigrationInterface, QueryRunner } from 'typeorm';
+import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 export class SpaceNamesConstraint1743412080544 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {

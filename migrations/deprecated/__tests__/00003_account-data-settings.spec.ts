@@ -74,22 +74,24 @@ describe('Migration 00003_account-data-settings', () => {
   it('should add one AccountDataSettings and update its row timestamps', async () => {
     const accountAddress = getAddress(faker.finance.ethereumAddress());
     const name = faker.lorem.word();
-    let accountRows: AccountRow[] = [];
-    let accountDataTypeRows: AccountDataTypeRow[] = [];
+    let accountRows: Array<AccountRow> = [];
+    let accountDataTypeRows: Array<AccountDataTypeRow> = [];
 
     const {
       after: accountDataSettingRows,
-    }: { after: AccountDataSettingsRow[] } = await migrator.test({
+    }: { after: Array<AccountDataSettingsRow> } = await migrator.test({
       migration: '00003_account-data-settings',
-      after: async (sql: postgres.Sql): Promise<AccountDataSettingsRow[]> => {
+      after: async (
+        sql: postgres.Sql,
+      ): Promise<Array<AccountDataSettingsRow>> => {
         accountRows = await sql<
-          AccountRow[]
+          Array<AccountRow>
         >`INSERT INTO accounts (address) VALUES (${accountAddress}) RETURNING *;`;
         accountDataTypeRows = await sql<
-          AccountDataTypeRow[]
+          Array<AccountDataTypeRow>
         >`INSERT INTO account_data_types (name) VALUES (${name}) RETURNING *;`;
         return sql<
-          AccountDataSettingsRow[]
+          Array<AccountDataSettingsRow>
         >`INSERT INTO account_data_settings (account_id, account_data_type_id) VALUES (${accountRows[0].id}, ${accountDataTypeRows[0].id}) RETURNING *;`;
       },
     });
@@ -112,7 +114,7 @@ describe('Migration 00003_account-data-settings', () => {
     await waitMilliseconds(1);
     // only updated_at should be updated after the row is updated
     const afterUpdate = await sql<
-      AccountDataTypeRow[]
+      Array<AccountDataTypeRow>
     >`UPDATE account_data_settings
       SET enabled = true
       WHERE account_id = ${accountDataSettingRows[0].account_id}
@@ -128,26 +130,28 @@ describe('Migration 00003_account-data-settings', () => {
   it('should trigger a cascade delete when the referenced account is deleted', async () => {
     const accountAddress = getAddress(faker.finance.ethereumAddress());
     const name = faker.lorem.word();
-    let accountRows: AccountRow[] = [];
-    let accountDataTypeRows: AccountDataTypeRow[] = [];
+    let accountRows: Array<AccountRow> = [];
+    let accountDataTypeRows: Array<AccountDataTypeRow> = [];
 
     const {
       after: accountDataSettingRows,
-    }: { after: AccountDataSettingsRow[] } = await migrator.test({
+    }: { after: Array<AccountDataSettingsRow> } = await migrator.test({
       migration: '00003_account-data-settings',
-      after: async (sql: postgres.Sql): Promise<AccountDataSettingsRow[]> => {
+      after: async (
+        sql: postgres.Sql,
+      ): Promise<Array<AccountDataSettingsRow>> => {
         accountRows = await sql<
-          AccountRow[]
+          Array<AccountRow>
         >`INSERT INTO accounts (address) VALUES (${accountAddress}) RETURNING *;`;
         accountDataTypeRows = await sql<
-          AccountDataTypeRow[]
+          Array<AccountDataTypeRow>
         >`INSERT INTO account_data_types (name) VALUES (${name}) RETURNING *;`;
         await sql<
-          AccountDataSettingsRow[]
+          Array<AccountDataSettingsRow>
         >`INSERT INTO account_data_settings (account_id, account_data_type_id) VALUES (${accountRows[0].id}, ${accountDataTypeRows[0].id}) RETURNING *;`;
         await sql`DELETE FROM accounts WHERE id = ${accountRows[0].id};`;
         return sql<
-          AccountDataSettingsRow[]
+          Array<AccountDataSettingsRow>
         >`SELECT * FROM account_data_settings WHERE account_id = ${accountRows[0].id}`;
       },
     });
@@ -158,26 +162,28 @@ describe('Migration 00003_account-data-settings', () => {
   it('should trigger a cascade delete when the referenced data type is deleted', async () => {
     const accountAddress = getAddress(faker.finance.ethereumAddress());
     const name = faker.lorem.word();
-    let accountRows: AccountRow[] = [];
-    let accountDataTypeRows: AccountDataTypeRow[] = [];
+    let accountRows: Array<AccountRow> = [];
+    let accountDataTypeRows: Array<AccountDataTypeRow> = [];
 
     const {
       after: accountDataSettingRows,
-    }: { after: AccountDataSettingsRow[] } = await migrator.test({
+    }: { after: Array<AccountDataSettingsRow> } = await migrator.test({
       migration: '00003_account-data-settings',
-      after: async (sql: postgres.Sql): Promise<AccountDataSettingsRow[]> => {
+      after: async (
+        sql: postgres.Sql,
+      ): Promise<Array<AccountDataSettingsRow>> => {
         accountRows = await sql<
-          AccountRow[]
+          Array<AccountRow>
         >`INSERT INTO accounts (address) VALUES (${accountAddress}) RETURNING *;`;
         accountDataTypeRows = await sql<
-          AccountDataTypeRow[]
+          Array<AccountDataTypeRow>
         >`INSERT INTO account_data_types (name) VALUES (${name}) RETURNING *;`;
         await sql<
-          AccountDataSettingsRow[]
+          Array<AccountDataSettingsRow>
         >`INSERT INTO account_data_settings (account_id, account_data_type_id) VALUES (${accountRows[0].id}, ${accountDataTypeRows[0].id}) RETURNING *;`;
         await sql`DELETE FROM account_data_types WHERE id = ${accountDataTypeRows[0].id};`;
         return sql<
-          AccountDataSettingsRow[]
+          Array<AccountDataSettingsRow>
         >`SELECT * FROM account_data_settings WHERE account_id = ${accountRows[0].id}`;
       },
     });

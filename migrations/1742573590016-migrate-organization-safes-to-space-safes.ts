@@ -1,4 +1,4 @@
-import { MigrationInterface, QueryRunner } from 'typeorm';
+import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 export class MigrateOrganizationSafesToSpaceSafes1742573590016
   implements MigrationInterface

@@ -1,4 +1,4 @@
-import { MigrationInterface, QueryRunner } from 'typeorm';
+import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 export class MigrateUserOrganizationsToMembers1742572795471
   implements MigrationInterface

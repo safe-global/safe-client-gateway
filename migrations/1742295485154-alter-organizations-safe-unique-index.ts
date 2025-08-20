@@ -1,4 +1,4 @@
-import { MigrationInterface, QueryRunner } from 'typeorm';
+import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 export class AlterOrganizationsSafeUniqueIndex1742295485154
   implements MigrationInterface
