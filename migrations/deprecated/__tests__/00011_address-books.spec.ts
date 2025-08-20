@@ -88,15 +88,15 @@ describe('Migration 00011_address-books', () => {
   it('should add one AddressBook and update its row timestamps', async () => {
     const accountAddress = getAddress(faker.finance.ethereumAddress());
     const chainId = faker.string.numeric();
-    let accountRows: AccountRow[] = [];
-    let addressBooks: Partial<AddressBooksRow>[] = [];
+    let accountRows: Array<AccountRow> = [];
+    let addressBooks: Array<Partial<AddressBooksRow>> = [];
 
-    const { after: addressBookRows }: { after: AddressBooksRow[] } =
+    const { after: addressBookRows }: { after: Array<AddressBooksRow> } =
       await migrator.test({
         migration: '00011_address-books',
-        after: async (sql: postgres.Sql): Promise<AddressBooksRow[]> => {
+        after: async (sql: postgres.Sql): Promise<Array<AddressBooksRow>> => {
           accountRows = await sql<
-            AccountRow[]
+            Array<AccountRow>
           >`INSERT INTO accounts (address, name, name_hash) VALUES (${accountAddress}, 'name', 'hash') RETURNING *;`;
           addressBooks = [
             {
@@ -108,7 +108,7 @@ describe('Migration 00011_address-books', () => {
             },
           ];
           return sql<
-            AddressBooksRow[]
+            Array<AddressBooksRow>
           >`INSERT INTO address_books ${sql(addressBooks)} RETURNING *`;
         },
       });
@@ -128,7 +128,7 @@ describe('Migration 00011_address-books', () => {
     // wait for 1 millisecond to ensure that the updated_at timestamp is different
     await waitMilliseconds(1);
     // only updated_at should be updated after the row is updated
-    const afterUpdate = await sql<AddressBooksRow[]>`UPDATE address_books
+    const afterUpdate = await sql<Array<AddressBooksRow>>`UPDATE address_books
         SET data = ${Buffer.from(faker.string.alphanumeric())}
         WHERE account_id = ${accountRows[0].id} AND chain_id = ${chainId}
         RETURNING *;`;
@@ -140,16 +140,16 @@ describe('Migration 00011_address-books', () => {
 
   it('should trigger a cascade delete when the referenced account is deleted', async () => {
     const accountAddress = getAddress(faker.finance.ethereumAddress());
-    let accountRows: AccountRow[] = [];
+    let accountRows: Array<AccountRow> = [];
 
-    const { after: addressBooksRows }: { after: AddressBooksRow[] } =
+    const { after: addressBooksRows }: { after: Array<AddressBooksRow> } =
       await migrator.test({
         migration: '00011_address-books',
-        after: async (sql: postgres.Sql): Promise<AddressBooksRow[]> => {
+        after: async (sql: postgres.Sql): Promise<Array<AddressBooksRow>> => {
           accountRows = await sql<
-            AccountRow[]
+            Array<AccountRow>
           >`INSERT INTO accounts (address, name, name_hash) VALUES (${accountAddress}, 'name', 'hash') RETURNING *;`;
-          await sql<AddressBooksRow[]>`INSERT INTO address_books ${sql([
+          await sql<Array<AddressBooksRow>>`INSERT INTO address_books ${sql([
             {
               account_id: accountRows[0].id,
               chain_id: faker.string.numeric(),
@@ -160,7 +160,7 @@ describe('Migration 00011_address-books', () => {
           ])}`;
           await sql`DELETE FROM accounts WHERE id = ${accountRows[0].id};`;
           return sql<
-            AddressBooksRow[]
+            Array<AddressBooksRow>
           >`SELECT * FROM address_books WHERE account_id = ${accountRows[0].id}`;
         },
       });
@@ -170,17 +170,17 @@ describe('Migration 00011_address-books', () => {
 
   it('should throw an error if the unique(account_id, chain_id) constraint is violated', async () => {
     const accountAddress = getAddress(faker.finance.ethereumAddress());
-    let accountRows: AccountRow[] = [];
+    let accountRows: Array<AccountRow> = [];
 
     await migrator.test({
       migration: '00011_address-books',
       after: async (sql: postgres.Sql) => {
         accountRows = await sql<
-          AccountRow[]
+          Array<AccountRow>
         >`INSERT INTO accounts (address, name, name_hash) VALUES (${accountAddress}, 'name', 'hash') RETURNING *;`;
         const duplicatedChainId = faker.string.numeric();
         const duplicatedAccountId = accountRows[0].id;
-        await sql<AddressBooksRow[]>`INSERT INTO address_books ${sql([
+        await sql<Array<AddressBooksRow>>`INSERT INTO address_books ${sql([
           {
             account_id: duplicatedAccountId,
             chain_id: duplicatedChainId,
@@ -211,14 +211,14 @@ describe('Migration 00011_address-books', () => {
       migration: '00011_address-books',
       before: async (sql: postgres.Sql) => {
         const dataTypes = await sql<
-          AccountDataTypeRow[]
+          Array<AccountDataTypeRow>
         >`SELECT * FROM account_data_types WHERE name = 'AddressBook'`;
         expect(dataTypes).toHaveLength(1);
         expect(dataTypes[0].is_active).toBe(false);
       },
       after: async (sql: postgres.Sql) => {
         const dataTypes = await sql<
-          AccountDataTypeRow[]
+          Array<AccountDataTypeRow>
         >`SELECT * FROM account_data_types WHERE name = 'AddressBook'`;
         expect(dataTypes).toHaveLength(1);
         expect(dataTypes[0].is_active).toBe(true);

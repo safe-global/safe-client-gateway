@@ -83,13 +83,13 @@ describe('Migration 00002_account-data-types', () => {
   });
 
   it('should add and update row timestamps', async () => {
-    const result: { before: unknown; after: AccountDataTypeRow[] } =
+    const result: { before: unknown; after: Array<AccountDataTypeRow> } =
       await migrator.test({
         migration: '00002_account-data-types',
-        after: async (sql: Sql): Promise<AccountDataTypeRow[]> => {
+        after: async (sql: Sql): Promise<Array<AccountDataTypeRow>> => {
           await sql`INSERT INTO account_data_types (name) VALUES ('accountDataTypeTestName');`;
           return await sql<
-            AccountDataTypeRow[]
+            Array<AccountDataTypeRow>
           >`SELECT * FROM account_data_types`;
         },
       });
@@ -109,7 +109,7 @@ describe('Migration 00002_account-data-types', () => {
     // only updated_at should be updated after the row is updated
     await sql`UPDATE account_data_types set name = 'updatedName' WHERE id = 1;`;
     const afterUpdate = await sql<
-      AccountDataTypeRow[]
+      Array<AccountDataTypeRow>
     >`SELECT * FROM account_data_types WHERE id = 1`;
     const updatedAtAfterUpdate = new Date(afterUpdate[0].updated_at);
     const createdAtAfterUpdate = new Date(afterUpdate[0].created_at);

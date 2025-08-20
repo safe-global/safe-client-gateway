@@ -82,10 +82,10 @@ describe('Migration 00006_targeted_messaging', () => {
     it('should upsert the updated_at timestamp when updating an outreach', async () => {
       const result: {
         before: unknown;
-        after: Outreach[];
+        after: Array<Outreach>;
       } = await migrator.test({
         migration: '00006_targeted_messaging',
-        after: async (sql: Sql): Promise<Outreach[]> => {
+        after: async (sql: Sql): Promise<Array<Outreach>> => {
           const startDate = faker.date.recent();
           const endDate = faker.date.future({ refDate: startDate });
           const [outreach] = await sql<[Outreach]>`
@@ -105,7 +105,7 @@ describe('Migration 00006_targeted_messaging', () => {
       await waitMilliseconds(1);
       // only updated_at should be updated after the row is updated
       await sql`UPDATE outreaches set name = ${faker.string.alphanumeric()} WHERE id = 1;`;
-      const afterUpdate = await sql<Outreach[]>`SELECT * FROM outreaches`;
+      const afterUpdate = await sql<Array<Outreach>>`SELECT * FROM outreaches`;
       const updatedAtAfterUpdate = new Date(afterUpdate[0].updated_at);
       const createdAtAfterUpdate = new Date(afterUpdate[0].created_at);
 
@@ -138,10 +138,10 @@ describe('Migration 00006_targeted_messaging', () => {
     it('should upsert the updated_at timestamp when updating a targeted_safe', async () => {
       const result: {
         before: unknown;
-        after: TargetedSafe[];
+        after: Array<TargetedSafe>;
       } = await migrator.test({
         migration: '00006_targeted_messaging',
-        after: async (sql: Sql): Promise<TargetedSafe[]> => {
+        after: async (sql: Sql): Promise<Array<TargetedSafe>> => {
           const startDate = faker.date.recent();
           const endDate = faker.date.future({ refDate: startDate });
           const [outreach] = await sql<[Outreach]>`
@@ -166,7 +166,7 @@ describe('Migration 00006_targeted_messaging', () => {
       // only updated_at should be updated after the row is updated
       await sql`UPDATE targeted_safes set address = ${faker.finance.ethereumAddress()} WHERE id = 1;`;
       const afterUpdate = await sql<
-        TargetedSafe[]
+        Array<TargetedSafe>
       >`SELECT * FROM targeted_safes`;
       const updatedAtAfterUpdate = new Date(afterUpdate[0].updated_at);
       const createdAtAfterUpdate = new Date(afterUpdate[0].created_at);
@@ -206,10 +206,10 @@ describe('Migration 00006_targeted_messaging', () => {
     it('should upsert the updated_at timestamp when updating a submission', async () => {
       const result: {
         before: unknown;
-        after: Submission[];
+        after: Array<Submission>;
       } = await migrator.test({
         migration: '00006_targeted_messaging',
-        after: async (sql: Sql): Promise<Submission[]> => {
+        after: async (sql: Sql): Promise<Array<Submission>> => {
           const startDate = faker.date.recent();
           const endDate = faker.date.future({ refDate: startDate });
           const [outreach] = await sql<[Outreach]>`
@@ -237,7 +237,9 @@ describe('Migration 00006_targeted_messaging', () => {
       await waitMilliseconds(1);
       // only updated_at should be updated after the row is updated
       await sql`UPDATE submissions set completion_date = ${new Date()} WHERE id = 1;`;
-      const afterUpdate = await sql<Submission[]>`SELECT * FROM submissions`;
+      const afterUpdate = await sql<
+        Array<Submission>
+      >`SELECT * FROM submissions`;
       const updatedAtAfterUpdate = new Date(afterUpdate[0].updated_at);
       const createdAtAfterUpdate = new Date(afterUpdate[0].created_at);
 
@@ -250,10 +252,10 @@ describe('Migration 00006_targeted_messaging', () => {
     it('should trigger a cascade delete when the referenced target_safe is deleted', async () => {
       const result: {
         before: unknown;
-        after: Submission[];
+        after: Array<Submission>;
       } = await migrator.test({
         migration: '00006_targeted_messaging',
-        after: async (sql: Sql): Promise<Submission[]> => {
+        after: async (sql: Sql): Promise<Array<Submission>> => {
           const startDate = faker.date.recent();
           const endDate = faker.date.future({ refDate: startDate });
           const [outreach] = await sql<[Outreach]>`
@@ -269,7 +271,7 @@ describe('Migration 00006_targeted_messaging', () => {
             VALUES (${targetedSafe.id}, ${faker.finance.ethereumAddress()}, ${faker.date.recent()})
             RETURNING *`;
           await sql`DELETE FROM targeted_safes WHERE id = ${targetedSafe.id};`;
-          return await sql<Submission[]>`SELECT * FROM submissions`;
+          return await sql<Array<Submission>>`SELECT * FROM submissions`;
         },
       });
 

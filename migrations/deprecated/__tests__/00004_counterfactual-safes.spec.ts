@@ -20,7 +20,7 @@ interface CounterfactualSafesRow {
   chain_id: string;
   creator: `0x${string}`;
   fallback_handler: `0x${string}`;
-  owners: `0x${string}`[];
+  owners: Array<`0x${string}`>;
   predicted_address: `0x${string}`;
   salt_nonce: string;
   singleton_address: `0x${string}`;
@@ -79,16 +79,18 @@ describe('Migration 00004_counterfactual-safes', () => {
 
   it('should add one CounterfactualSafe and update its row timestamps', async () => {
     const accountAddress = getAddress(faker.finance.ethereumAddress());
-    let accountRows: AccountRow[] = [];
-    let counterfactualSafes: Partial<CounterfactualSafesRow>[] = [];
+    let accountRows: Array<AccountRow> = [];
+    let counterfactualSafes: Array<Partial<CounterfactualSafesRow>> = [];
 
     const {
       after: counterfactualSafesRows,
-    }: { after: CounterfactualSafesRow[] } = await migrator.test({
+    }: { after: Array<CounterfactualSafesRow> } = await migrator.test({
       migration: '00004_counterfactual-safes',
-      after: async (sql: postgres.Sql): Promise<CounterfactualSafesRow[]> => {
+      after: async (
+        sql: postgres.Sql,
+      ): Promise<Array<CounterfactualSafesRow>> => {
         accountRows = await sql<
-          AccountRow[]
+          Array<AccountRow>
         >`INSERT INTO accounts (address) VALUES (${accountAddress}) RETURNING *;`;
         counterfactualSafes = [
           {
@@ -107,7 +109,7 @@ describe('Migration 00004_counterfactual-safes', () => {
           },
         ];
         return sql<
-          CounterfactualSafesRow[]
+          Array<CounterfactualSafesRow>
         >`INSERT INTO counterfactual_safes ${sql(counterfactualSafes)} RETURNING *`;
       },
     });
@@ -135,7 +137,7 @@ describe('Migration 00004_counterfactual-safes', () => {
     await waitMilliseconds(1);
     // only updated_at should be updated after the row is updated
     const afterUpdate = await sql<
-      CounterfactualSafesRow[]
+      Array<CounterfactualSafesRow>
     >`UPDATE counterfactual_safes
         SET threshold = 4
         WHERE account_id = ${accountRows[0].id}
@@ -148,18 +150,20 @@ describe('Migration 00004_counterfactual-safes', () => {
 
   it('should trigger a cascade delete when the referenced account is deleted', async () => {
     const accountAddress = getAddress(faker.finance.ethereumAddress());
-    let accountRows: AccountRow[] = [];
+    let accountRows: Array<AccountRow> = [];
 
     const {
       after: counterfactualSafesRows,
-    }: { after: CounterfactualSafesRow[] } = await migrator.test({
+    }: { after: Array<CounterfactualSafesRow> } = await migrator.test({
       migration: '00004_counterfactual-safes',
-      after: async (sql: postgres.Sql): Promise<CounterfactualSafesRow[]> => {
+      after: async (
+        sql: postgres.Sql,
+      ): Promise<Array<CounterfactualSafesRow>> => {
         accountRows = await sql<
-          AccountRow[]
+          Array<AccountRow>
         >`INSERT INTO accounts (address) VALUES (${accountAddress}) RETURNING *;`;
         await sql<
-          CounterfactualSafesRow[]
+          Array<CounterfactualSafesRow>
         >`INSERT INTO counterfactual_safes ${sql([
           {
             chain_id: faker.string.numeric(),
@@ -178,7 +182,7 @@ describe('Migration 00004_counterfactual-safes', () => {
         ])}`;
         await sql`DELETE FROM accounts WHERE id = ${accountRows[0].id};`;
         return sql<
-          CounterfactualSafesRow[]
+          Array<CounterfactualSafesRow>
         >`SELECT * FROM counterfactual_safes WHERE account_id = ${accountRows[0].id}`;
       },
     });
@@ -188,18 +192,18 @@ describe('Migration 00004_counterfactual-safes', () => {
 
   it('should throw an error if the unique(account_id, chain_id, predicted_address) constraint is violated', async () => {
     const accountAddress = getAddress(faker.finance.ethereumAddress());
-    let accountRows: AccountRow[] = [];
+    let accountRows: Array<AccountRow> = [];
 
     await migrator.test({
       migration: '00004_counterfactual-safes',
       after: async (sql: postgres.Sql) => {
         accountRows = await sql<
-          AccountRow[]
+          Array<AccountRow>
         >`INSERT INTO accounts (address) VALUES (${accountAddress}) RETURNING *;`;
         const predicted_address = getAddress(faker.finance.ethereumAddress());
         const chain_id = faker.string.numeric();
         await sql<
-          CounterfactualSafesRow[]
+          Array<CounterfactualSafesRow>
         >`INSERT INTO counterfactual_safes ${sql([
           {
             chain_id,

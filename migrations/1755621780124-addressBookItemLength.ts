@@ -1,4 +1,4 @@
-import { MigrationInterface, QueryRunner } from 'typeorm';
+import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 export class AddressBookItemLength1755621780124 implements MigrationInterface {
   name = 'AddressBookItemLength1755621780124';
