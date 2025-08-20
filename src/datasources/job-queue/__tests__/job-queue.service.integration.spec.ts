@@ -117,7 +117,6 @@ describe('JobQueueService & TestJobConsumer integration', () => {
 
     await waitUntil(() => consumer.handledJobs.length === jobs.length);
 
-    expect(consumer.handledJobs).toHaveLength(jobs.length);
     for (let i = 0; i < jobs.length; i++) {
       expect(consumer.handledJobs[i].data).toEqual(jobs[i]);
     }
@@ -128,9 +127,9 @@ describe('JobQueueService & TestJobConsumer integration', () => {
 
     await service.addJob(JobType.TEST_JOB, data);
 
-    await waitUntil(() => consumer.handledJobs.length === 1, 10000);
+    await waitUntil(() => consumer.failedJobs.length === 1, 10000);
 
-    expect(consumer.failedJobs).toHaveLength(1);
+    expect(consumer.handledJobs).toHaveLength(1);
     expect(consumer.failedJobs[0].error?.message).toEqual('Job failed');
     expect(consumer.completedJobs).toHaveLength(0);
   });
