@@ -2,15 +2,12 @@ import type { IConfigurationService } from '@/config/configuration.service.inter
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
 import { SAFE_TRANSACTION_SERVICE_MAX_LIMIT as LIMIT } from '@/domain/common/constants';
 import { ContractsRepository } from '@/domain/contracts/contracts.repository';
-import { contractBuilder } from '@/domain/contracts/entities/__tests__/contract.builder';
-import { contractBuilder as decoderContractBuilder } from '@/domain/data-decoder/v2/entities/__tests__/contract.builder';
+import { contractBuilder } from '@/domain/data-decoder/v2/entities/__tests__/contract.builder';
 import {
   limitAndOffsetUrlFactory,
   pageBuilder,
 } from '@/domain/entities/__tests__/page.builder';
 import type { IDataDecoderApi } from '@/domain/interfaces/data-decoder-api.interface';
-import type { ITransactionApi } from '@/domain/interfaces/transaction-api.interface';
-import type { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { rawify } from '@/validation/entities/raw.entity';
 import { faker } from '@faker-js/faker/.';
@@ -19,14 +16,9 @@ import { getAddress } from 'viem';
 const mockLoggingService = {
   error: jest.fn(),
 } as jest.MockedObjectDeep<ILoggingService>;
-const mockTransactionApiManager = {
-  getApi: jest.fn(),
-} as jest.MockedObjectDeep<ITransactionApiManager>;
-const mockTransactionApi = {
-  getTrustedForDelegateCallContracts: jest.fn(),
-} as jest.MockedObjectDeep<ITransactionApi>;
 const mockDataDecoderApi = {
   getContracts: jest.fn(),
+  getTrustedForDelegateCallContracts: jest.fn(),
 } as jest.MockedObjectDeep<IDataDecoderApi>;
 const mockConfigurationService = jest.mocked({
   getOrThrow: jest.fn(),
@@ -45,7 +37,6 @@ describe('ContractsRepository', () => {
     });
 
     target = new ContractsRepository(
-      mockTransactionApiManager,
       mockDataDecoderApi,
       mockConfigurationService,
       mockLoggingService,
@@ -60,12 +51,11 @@ describe('ContractsRepository', () => {
   describe('trustedForDelegateCallContractsList disabled', () => {
     it('should return false if the contract is not trusted for delegate call', async () => {
       const chain = chainBuilder().build();
-      const contract = decoderContractBuilder()
+      const contract = contractBuilder()
         .with('trustedForDelegateCall', false)
         .build();
       const contractPage = pageBuilder().with('results', [contract]).build();
 
-      mockTransactionApiManager.getApi.mockResolvedValue(mockTransactionApi);
       mockDataDecoderApi.getContracts.mockResolvedValue(rawify(contractPage));
 
       const actual = await target.isTrustedForDelegateCall({
@@ -80,18 +70,17 @@ describe('ContractsRepository', () => {
         chainIds: [chain.chainId],
       });
       expect(
-        mockTransactionApi.getTrustedForDelegateCallContracts,
+        mockDataDecoderApi.getTrustedForDelegateCallContracts,
       ).not.toHaveBeenCalled();
     });
 
     it('should return true if the contract is trusted for delegate call', async () => {
       const chain = chainBuilder().build();
-      const contract = decoderContractBuilder()
+      const contract = contractBuilder()
         .with('trustedForDelegateCall', true)
         .build();
       const contractPage = pageBuilder().with('results', [contract]).build();
 
-      mockTransactionApiManager.getApi.mockResolvedValue(mockTransactionApi);
       mockDataDecoderApi.getContracts.mockResolvedValue(rawify(contractPage));
 
       const actual = await target.isTrustedForDelegateCall({
@@ -106,7 +95,7 @@ describe('ContractsRepository', () => {
         chainIds: [chain.chainId],
       });
       expect(
-        mockTransactionApi.getTrustedForDelegateCallContracts,
+        mockDataDecoderApi.getTrustedForDelegateCallContracts,
       ).not.toHaveBeenCalled();
     });
   });
@@ -122,8 +111,7 @@ describe('ContractsRepository', () => {
         },
       );
       const contractPage = pageBuilder().with('results', contracts).build();
-      mockTransactionApiManager.getApi.mockResolvedValue(mockTransactionApi);
-      mockTransactionApi.getTrustedForDelegateCallContracts.mockResolvedValue(
+      mockDataDecoderApi.getTrustedForDelegateCallContracts.mockResolvedValue(
         rawify(contractPage),
       );
 
@@ -145,8 +133,7 @@ describe('ContractsRepository', () => {
         },
       );
       const contractPage = pageBuilder().with('results', contracts).build();
-      mockTransactionApiManager.getApi.mockResolvedValue(mockTransactionApi);
-      mockTransactionApi.getTrustedForDelegateCallContracts.mockResolvedValue(
+      mockDataDecoderApi.getTrustedForDelegateCallContracts.mockResolvedValue(
         rawify(contractPage),
       );
 
@@ -167,8 +154,7 @@ describe('ContractsRepository', () => {
           count: LIMIT,
         },
       );
-      mockTransactionApiManager.getApi.mockResolvedValue(mockTransactionApi);
-      mockTransactionApi.getTrustedForDelegateCallContracts.mockResolvedValueOnce(
+      mockDataDecoderApi.getTrustedForDelegateCallContracts.mockResolvedValueOnce(
         rawify(
           pageBuilder()
             .with('results', contracts)
@@ -176,7 +162,7 @@ describe('ContractsRepository', () => {
             .build(),
         ),
       );
-      mockTransactionApi.getTrustedForDelegateCallContracts.mockResolvedValueOnce(
+      mockDataDecoderApi.getTrustedForDelegateCallContracts.mockResolvedValueOnce(
         rawify(
           pageBuilder().with('results', contracts).with('next', null).build(),
         ),
@@ -189,17 +175,19 @@ describe('ContractsRepository', () => {
 
       expect(actual).toBe(true);
       expect(
-        mockTransactionApi.getTrustedForDelegateCallContracts,
+        mockDataDecoderApi.getTrustedForDelegateCallContracts,
       ).toHaveBeenCalledTimes(2);
       expect(
-        mockTransactionApi.getTrustedForDelegateCallContracts,
+        mockDataDecoderApi.getTrustedForDelegateCallContracts,
       ).toHaveBeenNthCalledWith(1, {
+        chainIds: [chain.chainId],
         limit: LIMIT,
         offset: 0,
       });
       expect(
-        mockTransactionApi.getTrustedForDelegateCallContracts,
+        mockDataDecoderApi.getTrustedForDelegateCallContracts,
       ).toHaveBeenNthCalledWith(2, {
+        chainIds: [chain.chainId],
         limit: LIMIT,
         offset: LIMIT,
       });
@@ -216,8 +204,7 @@ describe('ContractsRepository', () => {
         },
       );
 
-      mockTransactionApiManager.getApi.mockResolvedValue(mockTransactionApi);
-      mockTransactionApi.getTrustedForDelegateCallContracts.mockResolvedValueOnce(
+      mockDataDecoderApi.getTrustedForDelegateCallContracts.mockResolvedValueOnce(
         rawify(
           pageBuilder()
             .with('results', contracts)
@@ -225,7 +212,7 @@ describe('ContractsRepository', () => {
             .build(),
         ),
       );
-      mockTransactionApi.getTrustedForDelegateCallContracts.mockResolvedValueOnce(
+      mockDataDecoderApi.getTrustedForDelegateCallContracts.mockResolvedValueOnce(
         rawify(
           pageBuilder()
             .with('results', contracts)
@@ -233,7 +220,7 @@ describe('ContractsRepository', () => {
             .build(),
         ),
       );
-      mockTransactionApi.getTrustedForDelegateCallContracts.mockResolvedValueOnce(
+      mockDataDecoderApi.getTrustedForDelegateCallContracts.mockResolvedValueOnce(
         rawify(
           pageBuilder()
             .with('results', contracts)
@@ -249,23 +236,26 @@ describe('ContractsRepository', () => {
 
       expect(actual).toBe(true);
       expect(
-        mockTransactionApi.getTrustedForDelegateCallContracts,
+        mockDataDecoderApi.getTrustedForDelegateCallContracts,
       ).toHaveBeenCalledTimes(maxSequentialPages);
       expect(
-        mockTransactionApi.getTrustedForDelegateCallContracts,
+        mockDataDecoderApi.getTrustedForDelegateCallContracts,
       ).toHaveBeenNthCalledWith(1, {
+        chainIds: [chain.chainId],
         limit: LIMIT,
         offset: 0,
       });
       expect(
-        mockTransactionApi.getTrustedForDelegateCallContracts,
+        mockDataDecoderApi.getTrustedForDelegateCallContracts,
       ).toHaveBeenNthCalledWith(2, {
+        chainIds: [chain.chainId],
         limit: LIMIT,
         offset: LIMIT,
       });
       expect(
-        mockTransactionApi.getTrustedForDelegateCallContracts,
+        mockDataDecoderApi.getTrustedForDelegateCallContracts,
       ).toHaveBeenNthCalledWith(3, {
+        chainIds: [chain.chainId],
         limit: LIMIT,
         offset: LIMIT * 2,
       });

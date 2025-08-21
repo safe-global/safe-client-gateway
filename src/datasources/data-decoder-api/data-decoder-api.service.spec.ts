@@ -23,6 +23,7 @@ const mockCacheFirstDataSource = jest.mocked({
 describe('DataDecoderApi', () => {
   const baseUrl = faker.internet.url({ appendSlash: false });
   const notFoundExpireTimeSeconds = faker.number.int();
+  const expireTimeSeconds = faker.number.int();
   let target: DataDecoderApi;
 
   beforeEach(() => {
@@ -34,6 +35,9 @@ describe('DataDecoderApi', () => {
       }
       if (key === 'expirationTimeInSeconds.notFound.default') {
         return notFoundExpireTimeSeconds;
+      }
+      if (key === 'expirationTimeInSeconds.default') {
+        return expireTimeSeconds;
       }
       throw new Error('Unexpected key');
     });
@@ -137,11 +141,12 @@ describe('DataDecoderApi', () => {
       expect(mockCacheFirstDataSource.get).toHaveBeenCalledTimes(1);
       expect(mockCacheFirstDataSource.get).toHaveBeenCalledWith({
         cacheDir: {
-          field: 'undefined_undefined',
-          key: `${contract.chainId}_decoded_data_contracts_${contract.address}`,
+          field: '',
+          key: `${contract.chainId}_contracts_${contract.address}`,
         },
         url: getContractsUrl,
         notFoundExpireTimeSeconds,
+        expireTimeSeconds,
         networkRequest: {
           params: {
             chain_ids: contract.chainId.toString(),
@@ -177,11 +182,12 @@ describe('DataDecoderApi', () => {
       expect(mockCacheFirstDataSource.get).toHaveBeenCalledTimes(1);
       expect(mockCacheFirstDataSource.get).toHaveBeenCalledWith({
         cacheDir: {
-          field: 'undefined_undefined',
-          key: `${chainIds.sort().join('_')}_decoded_data_contracts_${contract.address}`,
+          field: '',
+          key: `${chainIds.sort().join('_')}_contracts_${contract.address}`,
         },
         url: getContractsUrl,
         notFoundExpireTimeSeconds,
+        expireTimeSeconds,
         networkRequest: {
           params: {
             chain_ids: `${chainIds[0]}&chain_ids=${chainIds[1]}&chain_ids=${chainIds[2]}`,
@@ -225,11 +231,12 @@ describe('DataDecoderApi', () => {
       expect(mockCacheFirstDataSource.get).toHaveBeenCalledTimes(1);
       expect(mockCacheFirstDataSource.get).toHaveBeenCalledWith({
         cacheDir: {
-          field: 'undefined_undefined',
-          key: `${contract.chainId}_decoded_data_contracts_${contract.address}`,
+          field: '',
+          key: `${contract.chainId}_contracts_${contract.address}`,
         },
         url: getContractsUrl,
         notFoundExpireTimeSeconds,
+        expireTimeSeconds,
         networkRequest: {
           params: {
             chain_ids: contract.chainId.toString(),
