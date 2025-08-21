@@ -13,6 +13,7 @@ import { CacheRouter } from '@/datasources/cache/cache.router';
 export class DataDecoderApi implements IDataDecoderApi {
   private readonly baseUrl: string;
   private readonly defaultNotFoundExpirationTimeSeconds: number;
+  private readonly defaultExpirationTimeInSeconds: number;
 
   constructor(
     @Inject(IConfigurationService)
@@ -27,6 +28,10 @@ export class DataDecoderApi implements IDataDecoderApi {
     this.defaultNotFoundExpirationTimeSeconds =
       this.configurationService.getOrThrow<number>(
         'expirationTimeInSeconds.notFound.default',
+      );
+    this.defaultExpirationTimeInSeconds =
+      this.configurationService.getOrThrow<number>(
+        'expirationTimeInSeconds.default',
       );
   }
 
@@ -48,6 +53,7 @@ export class DataDecoderApi implements IDataDecoderApi {
     }
   }
 
+  //TODO expiration time as it used to be with hoodi?
   public async getContracts(args: {
     address: `0x${string}`;
     chainIds: Array<string>;
@@ -57,12 +63,42 @@ export class DataDecoderApi implements IDataDecoderApi {
     try {
       const url = `${this.baseUrl}/api/v1/contracts/${args.address}`;
       return await this.dataSource.get<Page<Contract>>({
-        cacheDir: CacheRouter.getDecodedDataContractsCacheDir(args),
+        cacheDir: CacheRouter.getContractsCacheDir({
+          chainIds: args.chainIds,
+          address: args.address,
+        }),
         notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
+        expireTimeSeconds: this.defaultExpirationTimeInSeconds,
         url,
         networkRequest: {
           params: {
             chain_ids: args.chainIds.join('&chain_ids='),
+            limit: args.limit,
+            offset: args.offset,
+          },
+        },
+      });
+    } catch (error) {
+      throw this.httpErrorFactory.from(error);
+    }
+  }
+
+  async getTrustedForDelegateCallContracts(args: {
+    chainIds: Array<string>;
+    limit?: number;
+    offset?: number;
+  }): Promise<Raw<Page<Contract>>> {
+    try {
+      const url = `${this.baseUrl}/api/v1/contracts`;
+      return await this.dataSource.get<Page<Contract>>({
+        cacheDir: CacheRouter.getTrustedForDelegateCallContractsCacheDir(args),
+        notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
+        expireTimeSeconds: this.defaultExpirationTimeInSeconds,
+        url,
+        networkRequest: {
+          params: {
+            chain_ids: args.chainIds.join('&chain_ids='),
+            trusted_for_delegate_call: true,
             limit: args.limit,
             offset: args.offset,
           },

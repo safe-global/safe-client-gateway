@@ -17,4 +17,10 @@ export interface IDataDecoderApi {
     limit?: number;
     offset?: number;
   }): Promise<Raw<Page<Contract>>>;
+
+  getTrustedForDelegateCallContracts(args: {
+    chainIds: Array<string>;
+    limit?: number;
+    offset?: number;
+  }): Promise<Raw<Page<Contract>>>;
 }

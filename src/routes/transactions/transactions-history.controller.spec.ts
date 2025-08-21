@@ -755,7 +755,7 @@ describe('Transactions History Controller (Unit)', () => {
       // Param ValidationPipe checksums address
       const getAllTransactions = `${chainResponse.transactionService}/api/v1/safes/${getAddress(safeAddress)}/all-transactions/`;
       const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${getAddress(safeAddress)}`;
-      const getContractUrl = `${chainResponse.transactionService}/api/v1/contracts/`;
+      const getContractUrl = `${safeDecoderUrl}/api/v1/contracts/`;
       const getSafeCreationUrl = `${chainResponse.transactionService}/api/v1/safes/${getAddress(safeAddress)}/creation/`;
       if (url === getChainUrl) {
         return Promise.resolve({ data: rawify(chainResponse), status: 200 });

@@ -9,7 +9,6 @@ import type { INetworkService } from '@/datasources/network/network.service.inte
 import type { Backbone } from '@/domain/backbone/entities/backbone.entity';
 import type { Singleton } from '@/domain/chains/entities/singleton.entity';
 import { LogType } from '@/domain/common/entities/log-type.entity';
-import type { Contract } from '@/domain/contracts/entities/contract.entity';
 import type { DataDecoded } from '@/domain/data-decoder/v1/entities/data-decoded.entity';
 import type { Delegate } from '@/domain/delegate/entities/delegate.entity';
 import type { Page } from '@/domain/entities/page.entity';
@@ -43,7 +42,6 @@ export class TransactionApi implements ITransactionApi {
   private readonly indexingExpirationTimeInSeconds: number;
   private readonly defaultNotFoundExpirationTimeSeconds: number;
   private readonly tokenNotFoundExpirationTimeSeconds: number;
-  private readonly contractNotFoundExpirationTimeSeconds: number;
   private readonly ownersExpirationTimeSeconds: number;
 
   constructor(
@@ -76,7 +74,6 @@ export class TransactionApi implements ITransactionApi {
       this.defaultExpirationTimeInSeconds = hoodiExpirationTime;
       this.defaultNotFoundExpirationTimeSeconds = hoodiExpirationTime;
       this.tokenNotFoundExpirationTimeSeconds = hoodiExpirationTime;
-      this.contractNotFoundExpirationTimeSeconds = hoodiExpirationTime;
       this.ownersExpirationTimeSeconds = hoodiExpirationTime;
     } else {
       this.defaultExpirationTimeInSeconds =
@@ -90,10 +87,6 @@ export class TransactionApi implements ITransactionApi {
       this.tokenNotFoundExpirationTimeSeconds =
         this.configurationService.getOrThrow<number>(
           'expirationTimeInSeconds.notFound.token',
-        );
-      this.contractNotFoundExpirationTimeSeconds =
-        this.configurationService.getOrThrow<number>(
-          'expirationTimeInSeconds.notFound.contract',
         );
       this.ownersExpirationTimeSeconds =
         this.configurationService.getOrThrow<number>('owners.ownersTtlSeconds');
@@ -257,55 +250,6 @@ export class TransactionApi implements ITransactionApi {
       safeAddress,
     });
     await this.cacheService.deleteByKey(key);
-  }
-
-  // Important: there is no hook which invalidates this endpoint,
-  // Therefore, this data will live in cache until [defaultExpirationTimeInSeconds]
-  async getContract(contractAddress: `0x${string}`): Promise<Raw<Contract>> {
-    try {
-      const cacheDir = CacheRouter.getContractCacheDir({
-        chainId: this.chainId,
-        contractAddress,
-      });
-      const url = `${this.baseUrl}/api/v1/contracts/${contractAddress}`;
-      return await this.dataSource.get<Contract>({
-        cacheDir,
-        url,
-        notFoundExpireTimeSeconds: this.contractNotFoundExpirationTimeSeconds,
-        expireTimeSeconds: this.defaultExpirationTimeInSeconds,
-      });
-    } catch (error) {
-      throw this.httpErrorFactory.from(this.mapError(error));
-    }
-  }
-
-  // Important: there is no hook which invalidates this endpoint,
-  // Therefore, this data will live in cache until [defaultExpirationTimeInSeconds]
-  async getTrustedForDelegateCallContracts(args: {
-    limit?: number;
-    offset?: number;
-  }): Promise<Raw<Page<Contract>>> {
-    try {
-      const cacheDir = CacheRouter.getTrustedForDelegateCallContractsCacheDir(
-        this.chainId,
-      );
-      const url = `${this.baseUrl}/api/v1/contracts/`;
-      return await this.dataSource.get<Page<Contract>>({
-        cacheDir,
-        url,
-        notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
-        expireTimeSeconds: this.defaultExpirationTimeInSeconds,
-        networkRequest: {
-          params: {
-            trusted_for_delegate_call: true,
-            limit: args.limit,
-            offset: args.offset,
-          },
-        },
-      });
-    } catch (error) {
-      throw this.httpErrorFactory.from(this.mapError(error));
-    }
   }
 
   async getDelegates(args: {
