@@ -38,7 +38,7 @@ export class ContractsRepository implements IContractsRepository {
   }): Promise<Contract> {
     const contracts = await this.dataDecoderApi.getContracts({
       address: args.contractAddress,
-      chainIds: [args.chainId],
+      chainId: args.chainId,
     });
     const { count, results } = ContractPageSchema.parse(contracts);
     if (count === 0) {
@@ -74,7 +74,7 @@ export class ContractsRepository implements IContractsRepository {
     for (let i = 0; i < this.maxSequentialPages; i++) {
       const result =
         await this.dataDecoderApi.getTrustedForDelegateCallContracts({
-          chainIds: [chainId],
+          chainId,
           limit: SAFE_TRANSACTION_SERVICE_MAX_LIMIT,
           offset,
         });

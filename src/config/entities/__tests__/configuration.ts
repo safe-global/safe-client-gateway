@@ -170,6 +170,7 @@ export default (): ReturnType<typeof configuration> => ({
     zerionPositions: faker.number.int(),
     notFound: {
       default: faker.number.int(),
+      contract: faker.number.int(),
       token: faker.number.int(),
     },
   },
