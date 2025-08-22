@@ -12,7 +12,6 @@ import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 import { dataDecodedBuilder } from '@/domain/data-decoder/v1/entities/__tests__/data-decoded.builder';
 import { singletonBuilder } from '@/domain/chains/entities/__tests__/singleton.builder';
-import { contractBuilder } from '@/domain/contracts/entities/__tests__/contract.builder';
 import { delegateBuilder } from '@/domain/delegate/entities/__tests__/delegate.builder';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import { moduleTransactionBuilder } from '@/domain/safe/entities/__tests__/module-transaction.builder';
@@ -82,9 +81,6 @@ describe('TransactionApi', () => {
         return indexingExpirationTimeInSeconds;
       }
       if (key === 'expirationTimeInSeconds.notFound.default') {
-        return notFoundExpireTimeSeconds;
-      }
-      if (key === 'expirationTimeInSeconds.notFound.contract') {
         return notFoundExpireTimeSeconds;
       }
       if (key === 'expirationTimeInSeconds.notFound.token') {
@@ -523,166 +519,6 @@ describe('TransactionApi', () => {
       expect(mockCacheService.deleteByKey).toHaveBeenCalledWith(
         `${chainId}_safe_exists_${safeAddress}`,
       );
-    });
-  });
-
-  describe('getTrustedForDelegateCallContracts', () => {
-    it('should return the trusted for delegate call contracts received', async () => {
-      const contractPage = pageBuilder()
-        .with('results', [
-          contractBuilder().with('trustedForDelegateCall', true).build(),
-          contractBuilder().with('trustedForDelegateCall', true).build(),
-        ])
-        .build();
-      const getTrustedForDelegateCallContractsUrl = `${baseUrl}/api/v1/contracts/`;
-      const cacheDir = new CacheDir(`${chainId}_trusted_contracts`, '');
-      mockDataSource.get.mockResolvedValueOnce(rawify(contractPage));
-
-      const actual = await service.getTrustedForDelegateCallContracts({});
-
-      expect(actual).toBe(contractPage);
-      expect(mockDataSource.get).toHaveBeenCalledTimes(1);
-      expect(mockDataSource.get).toHaveBeenCalledWith({
-        cacheDir,
-        url: getTrustedForDelegateCallContractsUrl,
-        notFoundExpireTimeSeconds: notFoundExpireTimeSeconds,
-        expireTimeSeconds: defaultExpirationTimeInSeconds,
-        networkRequest: {
-          params: {
-            trusted_for_delegate_call: true,
-          },
-        },
-      });
-    });
-
-    it('should relay pagination', async () => {
-      const contractPage = pageBuilder()
-        .with('results', [
-          contractBuilder().with('trustedForDelegateCall', true).build(),
-          contractBuilder().with('trustedForDelegateCall', true).build(),
-        ])
-        .build();
-      const getTrustedForDelegateCallContractsUrl = `${baseUrl}/api/v1/contracts/`;
-      const cacheDir = new CacheDir(`${chainId}_trusted_contracts`, '');
-      mockDataSource.get.mockResolvedValueOnce(rawify(contractPage));
-      const limit = faker.number.int();
-      const offset = faker.number.int();
-
-      const actual = await service.getTrustedForDelegateCallContracts({
-        limit,
-        offset,
-      });
-
-      expect(actual).toBe(contractPage);
-      expect(mockDataSource.get).toHaveBeenCalledTimes(1);
-      expect(mockDataSource.get).toHaveBeenCalledWith({
-        cacheDir,
-        url: getTrustedForDelegateCallContractsUrl,
-        notFoundExpireTimeSeconds: notFoundExpireTimeSeconds,
-        expireTimeSeconds: defaultExpirationTimeInSeconds,
-        networkRequest: {
-          params: {
-            trusted_for_delegate_call: true,
-            limit,
-            offset,
-          },
-        },
-      });
-    });
-
-    const errorMessage = faker.word.words();
-    it.each([
-      ['Transaction Service', { nonFieldErrors: [errorMessage] }],
-      ['standard', new Error(errorMessage)],
-    ])(`should forward a %s error`, async (_, error) => {
-      const getTrustedForDelegateCallContractsUrl = `${baseUrl}/api/v1/contracts/`;
-      const statusCode = faker.internet.httpStatusCode({
-        types: ['clientError', 'serverError'],
-      });
-      const expected = new DataSourceError(errorMessage, statusCode);
-      const cacheDir = new CacheDir(`${chainId}_trusted_contracts`, '');
-      mockDataSource.get.mockRejectedValueOnce(
-        new NetworkResponseError(
-          new URL(getTrustedForDelegateCallContractsUrl),
-          {
-            status: statusCode,
-          } as Response,
-          error,
-        ),
-      );
-
-      await expect(
-        service.getTrustedForDelegateCallContracts({}),
-      ).rejects.toThrow(expected);
-
-      expect(mockDataSource.get).toHaveBeenCalledTimes(1);
-      expect(mockDataSource.get).toHaveBeenCalledWith({
-        cacheDir,
-        url: getTrustedForDelegateCallContractsUrl,
-        notFoundExpireTimeSeconds: notFoundExpireTimeSeconds,
-        expireTimeSeconds: defaultExpirationTimeInSeconds,
-        networkRequest: {
-          params: {
-            trusted_for_delegate_call: true,
-          },
-        },
-      });
-    });
-  });
-
-  describe('getContract', () => {
-    it('should return retrieved contract', async () => {
-      const contract = contractBuilder().build();
-      const getContractUrl = `${baseUrl}/api/v1/contracts/${contract.address}`;
-      const cacheDir = new CacheDir(
-        `${chainId}_contract_${contract.address}`,
-        '',
-      );
-      mockDataSource.get.mockResolvedValueOnce(rawify(contract));
-
-      const actual = await service.getContract(contract.address);
-
-      expect(actual).toBe(contract);
-      expect(mockDataSource.get).toHaveBeenCalledTimes(1);
-      expect(mockDataSource.get).toHaveBeenCalledWith({
-        cacheDir,
-        url: getContractUrl,
-        notFoundExpireTimeSeconds: notFoundExpireTimeSeconds,
-        expireTimeSeconds: defaultExpirationTimeInSeconds,
-      });
-    });
-
-    const errorMessage = faker.word.words();
-    it.each([
-      ['Transaction Service', { nonFieldErrors: [errorMessage] }],
-      ['standard', new Error(errorMessage)],
-    ])(`should forward a %s error`, async (_, error) => {
-      const contract = getAddress(faker.finance.ethereumAddress());
-      const getContractUrl = `${baseUrl}/api/v1/contracts/${contract}`;
-      const statusCode = faker.internet.httpStatusCode({
-        types: ['clientError', 'serverError'],
-      });
-      const expected = new DataSourceError(errorMessage, statusCode);
-      const cacheDir = new CacheDir(`${chainId}_contract_${contract}`, '');
-      mockDataSource.get.mockRejectedValueOnce(
-        new NetworkResponseError(
-          new URL(getContractUrl),
-          {
-            status: statusCode,
-          } as Response,
-          error,
-        ),
-      );
-
-      await expect(service.getContract(contract)).rejects.toThrow(expected);
-
-      expect(mockDataSource.get).toHaveBeenCalledTimes(1);
-      expect(mockDataSource.get).toHaveBeenCalledWith({
-        cacheDir,
-        url: getContractUrl,
-        notFoundExpireTimeSeconds: notFoundExpireTimeSeconds,
-        expireTimeSeconds: defaultExpirationTimeInSeconds,
-      });
     });
   });
 
@@ -2728,9 +2564,6 @@ describe('TransactionApi', () => {
           return defaultExpirationTimeInSeconds;
         }
         if (key === 'expirationTimeInSeconds.notFound.default') {
-          return notFoundExpireTimeSeconds;
-        }
-        if (key === 'expirationTimeInSeconds.notFound.contract') {
           return notFoundExpireTimeSeconds;
         }
         if (key === 'expirationTimeInSeconds.notFound.token') {

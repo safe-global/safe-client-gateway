@@ -33,6 +33,7 @@ import { createTestModule } from '@/__tests__/testing-module';
 describe('List incoming transfers by Safe - Transactions Controller (Unit)', () => {
   let app: INestApplication<Server>;
   let safeConfigUrl: string;
+  let safeDecoderUrl: string;
   let networkService: jest.MockedObjectDeep<INetworkService>;
 
   beforeEach(async () => {
@@ -43,6 +44,7 @@ describe('List incoming transfers by Safe - Transactions Controller (Unit)', () 
       IConfigurationService,
     );
     safeConfigUrl = configurationService.getOrThrow('safeConfig.baseUri');
+    safeDecoderUrl = configurationService.getOrThrow('safeDataDecoder.baseUri');
     networkService = moduleFixture.get(NetworkService);
 
     app = await new TestAppProvider().provide(moduleFixture);
@@ -178,7 +180,7 @@ describe('List incoming transfers by Safe - Transactions Controller (Unit)', () 
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
       const getIncomingTransfersUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/incoming-transfers/`;
       const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
-      const getContractUrlPattern = `${chain.transactionService}/api/v1/contracts/`;
+      const getContractUrlPattern = `${safeDecoderUrl}/api/v1/contracts/`;
       const getTokenUrlPattern = `${chain.transactionService}/api/v1/tokens/${erc20Transfer.tokenAddress}`;
       if (url === getChainUrl) {
         return Promise.resolve({ data: rawify(chain), status: 200 });
@@ -264,7 +266,7 @@ describe('List incoming transfers by Safe - Transactions Controller (Unit)', () 
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
       const getIncomingTransfersUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/incoming-transfers/`;
       const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
-      const getContractUrlPattern = `${chain.transactionService}/api/v1/contracts/`;
+      const getContractUrlPattern = `${safeDecoderUrl}/api/v1/contracts/`;
       const getTokenUrlPattern = `${chain.transactionService}/api/v1/tokens/${erc20Transfer.tokenAddress}`;
       if (url === getChainUrl) {
         return Promise.resolve({ data: rawify(chain), status: 200 });
@@ -349,7 +351,7 @@ describe('List incoming transfers by Safe - Transactions Controller (Unit)', () 
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
       const getIncomingTransfersUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/incoming-transfers/`;
       const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
-      const getContractUrlPattern = `${chain.transactionService}/api/v1/contracts/`;
+      const getContractUrlPattern = `${safeDecoderUrl}/api/v1/contracts/`;
       const getTokenUrlPattern = `${chain.transactionService}/api/v1/tokens/${erc20Transfer.tokenAddress}`;
       if (url === getChainUrl) {
         return Promise.resolve({ data: rawify(chain), status: 200 });
@@ -403,7 +405,7 @@ describe('List incoming transfers by Safe - Transactions Controller (Unit)', () 
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
       const getIncomingTransfersUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/incoming-transfers/`;
       const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
-      const getContractUrlPattern = `${chain.transactionService}/api/v1/contracts/`;
+      const getContractUrlPattern = `${safeDecoderUrl}/api/v1/contracts/`;
       const getTokenUrlPattern = `${chain.transactionService}/api/v1/tokens/${erc721Transfer.tokenAddress}`;
       if (url === getChainUrl) {
         return Promise.resolve({ data: rawify(chain), status: 200 });
@@ -480,7 +482,7 @@ describe('List incoming transfers by Safe - Transactions Controller (Unit)', () 
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
       const getIncomingTransfersUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/incoming-transfers/`;
       const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
-      const getContractUrlPattern = `${chain.transactionService}/api/v1/contracts/`;
+      const getContractUrlPattern = `${safeDecoderUrl}/api/v1/contracts/`;
       if (url === getChainUrl) {
         return Promise.resolve({ data: rawify(chain), status: 200 });
       }
@@ -549,7 +551,7 @@ describe('List incoming transfers by Safe - Transactions Controller (Unit)', () 
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
       const getIncomingTransfersUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/incoming-transfers/`;
       const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
-      const getContractUrlPattern = `${chain.transactionService}/api/v1/contracts/`;
+      const getContractUrlPattern = `${safeDecoderUrl}/api/v1/contracts/`;
       if (url === getChainUrl) {
         return Promise.resolve({ data: rawify(chain), status: 200 });
       }
@@ -625,7 +627,7 @@ describe('List incoming transfers by Safe - Transactions Controller (Unit)', () 
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
       const getIncomingTransfersUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/incoming-transfers/`;
       const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
-      const getContractUrlPattern = `${chain.transactionService}/api/v1/contracts/`;
+      const getContractUrlPattern = `${safeDecoderUrl}/api/v1/contracts/`;
       const getTokenUrlPattern = `${chain.transactionService}/api/v1/tokens/${erc20Transfer.tokenAddress}`;
       if (url === getChainUrl) {
         return Promise.resolve({ data: rawify(chain), status: 200 });

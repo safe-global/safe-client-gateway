@@ -13,7 +13,13 @@ export interface IDataDecoderApi {
 
   getContracts(args: {
     address: `0x${string}`;
-    chainIds: Array<string>;
+    chainId: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<Raw<Page<Contract>>>;
+
+  getTrustedForDelegateCallContracts(args: {
+    chainId: string;
     limit?: number;
     offset?: number;
   }): Promise<Raw<Page<Contract>>>;

@@ -70,8 +70,6 @@ describe('Transaction API Manager Tests', () => {
         return indexingExpirationTimeInSeconds;
       else if (key === 'expirationTimeInSeconds.notFound.default')
         return notFoundExpireTimeSeconds;
-      else if (key === 'expirationTimeInSeconds.notFound.contract')
-        return notFoundExpireTimeSeconds;
       else if (key === 'expirationTimeInSeconds.notFound.token')
         return notFoundExpireTimeSeconds;
       else if (key === 'owners.ownersTtlSeconds') return ownersTtlSeconds;

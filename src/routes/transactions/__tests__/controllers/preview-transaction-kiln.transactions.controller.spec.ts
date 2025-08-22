@@ -561,7 +561,7 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
                 data: rawify(safe),
                 status: 200,
               });
-            case `${dataDecodedBuilder}/api/v1/contracts/${contractResponse.address}`:
+            case `${dataDecoderUrl}/api/v1/contracts/${contractResponse.address}`:
               return Promise.resolve({
                 data: rawify(contractPageResponse),
                 status: 200,

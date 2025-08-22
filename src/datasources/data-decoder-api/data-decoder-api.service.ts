@@ -11,8 +11,16 @@ import { CacheRouter } from '@/datasources/cache/cache.router';
 
 @Injectable()
 export class DataDecoderApi implements IDataDecoderApi {
+  private static readonly HOODI_CHAIN_ID = '560048';
+  // TODO: Remove after Vault decoding has been released
+  private static readonly BASE_CHAIN_ID = '8453';
+
   private readonly baseUrl: string;
   private readonly defaultNotFoundExpirationTimeSeconds: number;
+  private readonly defaultExpirationTimeSeconds: number;
+  private readonly contractNotFoundExpirationTimeSeconds: number;
+  private readonly hoodiExpirationTimeSeconds: number;
+  private readonly isProduction: boolean;
 
   constructor(
     @Inject(IConfigurationService)
@@ -24,9 +32,24 @@ export class DataDecoderApi implements IDataDecoderApi {
     this.baseUrl = this.configurationService.getOrThrow<string>(
       'safeDataDecoder.baseUri',
     );
+    this.isProduction = this.configurationService.getOrThrow<boolean>(
+      'application.isProduction',
+    );
+    this.hoodiExpirationTimeSeconds =
+      this.configurationService.getOrThrow<number>(
+        'expirationTimeInSeconds.hoodi',
+      );
     this.defaultNotFoundExpirationTimeSeconds =
       this.configurationService.getOrThrow<number>(
         'expirationTimeInSeconds.notFound.default',
+      );
+    this.defaultExpirationTimeSeconds =
+      this.configurationService.getOrThrow<number>(
+        'expirationTimeInSeconds.default',
+      );
+    this.contractNotFoundExpirationTimeSeconds =
+      this.configurationService.getOrThrow<number>(
+        'expirationTimeInSeconds.notFound.contract',
       );
   }
 
@@ -48,21 +71,28 @@ export class DataDecoderApi implements IDataDecoderApi {
     }
   }
 
+  //TODO expiration time as it used to be with hoodi?
   public async getContracts(args: {
     address: `0x${string}`;
-    chainIds: Array<string>;
+    chainId: string;
     limit?: number;
     offset?: number;
   }): Promise<Raw<Page<Contract>>> {
+    const { notFoundExpireTimeSeconds, expireTimeSeconds } =
+      this.setCacheExpirationTimes(args.chainId, true);
     try {
       const url = `${this.baseUrl}/api/v1/contracts/${args.address}`;
       return await this.dataSource.get<Page<Contract>>({
-        cacheDir: CacheRouter.getDecodedDataContractsCacheDir(args),
-        notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
+        cacheDir: CacheRouter.getContractsCacheDir({
+          chainId: args.chainId,
+          address: args.address,
+        }),
+        notFoundExpireTimeSeconds,
+        expireTimeSeconds,
         url,
         networkRequest: {
           params: {
-            chain_ids: args.chainIds.join('&chain_ids='),
+            chain_ids: [args.chainId].join('&chain_ids='),
             limit: args.limit,
             offset: args.offset,
           },
@@ -71,5 +101,61 @@ export class DataDecoderApi implements IDataDecoderApi {
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
+  }
+
+  public async getTrustedForDelegateCallContracts(args: {
+    chainId: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<Raw<Page<Contract>>> {
+    const { notFoundExpireTimeSeconds, expireTimeSeconds } =
+      this.setCacheExpirationTimes(args.chainId);
+    try {
+      const url = `${this.baseUrl}/api/v1/contracts`;
+      return await this.dataSource.get<Page<Contract>>({
+        cacheDir: CacheRouter.getTrustedForDelegateCallContractsCacheDir(args),
+        notFoundExpireTimeSeconds,
+        expireTimeSeconds,
+        url,
+        networkRequest: {
+          params: {
+            chain_ids: [args.chainId].join('&chain_ids='),
+            trusted_for_delegate_call: true,
+            limit: args.limit,
+            offset: args.offset,
+          },
+        },
+      });
+    } catch (error) {
+      throw this.httpErrorFactory.from(error);
+    }
+  }
+
+  private setCacheExpirationTimes(
+    chainId: string,
+    isContract: boolean = false,
+  ): {
+    notFoundExpireTimeSeconds: number;
+    expireTimeSeconds: number;
+  } {
+    return this.isHoodyChain(chainId)
+      ? {
+          notFoundExpireTimeSeconds: this.hoodiExpirationTimeSeconds,
+          expireTimeSeconds: this.hoodiExpirationTimeSeconds,
+        }
+      : {
+          notFoundExpireTimeSeconds: isContract
+            ? this.contractNotFoundExpirationTimeSeconds
+            : this.defaultNotFoundExpirationTimeSeconds,
+          expireTimeSeconds: this.defaultExpirationTimeSeconds,
+        };
+  }
+
+  private isHoodyChain(chainId: string): boolean {
+    return (
+      chainId === DataDecoderApi.HOODI_CHAIN_ID ||
+      // TODO: Remove after Vault decoding has been released
+      (!this.isProduction && chainId === DataDecoderApi.BASE_CHAIN_ID)
+    );
   }
 }
