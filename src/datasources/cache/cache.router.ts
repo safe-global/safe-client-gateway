@@ -410,32 +410,30 @@ export class CacheRouter {
   }
 
   static getContractsCacheKey(args: {
-    chainIds: Array<string>;
+    chainId: string;
     address: `0x${string}`;
   }): string {
-    return `${args.chainIds.sort().join('_')}_${CacheRouter.CONTRACTS_KEY}_${args.address}`;
+    return `${args.chainId}_${CacheRouter.CONTRACTS_KEY}_${args.address}`;
   }
 
   static getContractsCacheDir(args: {
-    chainIds: Array<string>;
+    chainId: string;
     address: `0x${string}`;
   }): CacheDir {
     return new CacheDir(CacheRouter.getContractsCacheKey(args), '');
   }
 
-  static getTrustedForDelegateCallContractsCacheKey(
-    chainIds: Array<string>,
-  ): string {
-    return `${chainIds.sort().join('_')}_${CacheRouter.TRUSTED_FOR_DELEGATE_CALL_CONTRACTS_KEY}`;
+  static getTrustedForDelegateCallContractsCacheKey(chainId: string): string {
+    return `${chainId}_${CacheRouter.TRUSTED_FOR_DELEGATE_CALL_CONTRACTS_KEY}`;
   }
 
   static getTrustedForDelegateCallContractsCacheDir(args: {
-    chainIds: Array<string>;
+    chainId: string;
     limit?: number;
     offset?: number;
   }): CacheDir {
     return new CacheDir(
-      CacheRouter.getTrustedForDelegateCallContractsCacheKey(args.chainIds),
+      CacheRouter.getTrustedForDelegateCallContractsCacheKey(args.chainId),
       `${args.limit}_${args.offset}`,
     );
   }

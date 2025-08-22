@@ -67,7 +67,7 @@ describe('ContractsRepository', () => {
       expect(mockDataDecoderApi.getContracts).toHaveBeenCalledTimes(1);
       expect(mockDataDecoderApi.getContracts).toHaveBeenCalledWith({
         address: contract.address,
-        chainIds: [chain.chainId],
+        chainId: chain.chainId,
       });
       expect(
         mockDataDecoderApi.getTrustedForDelegateCallContracts,
@@ -92,7 +92,7 @@ describe('ContractsRepository', () => {
       expect(mockDataDecoderApi.getContracts).toHaveBeenCalledTimes(1);
       expect(mockDataDecoderApi.getContracts).toHaveBeenCalledWith({
         address: contract.address,
-        chainIds: [chain.chainId],
+        chainId: chain.chainId,
       });
       expect(
         mockDataDecoderApi.getTrustedForDelegateCallContracts,
@@ -180,14 +180,14 @@ describe('ContractsRepository', () => {
       expect(
         mockDataDecoderApi.getTrustedForDelegateCallContracts,
       ).toHaveBeenNthCalledWith(1, {
-        chainIds: [chain.chainId],
+        chainId: chain.chainId,
         limit: LIMIT,
         offset: 0,
       });
       expect(
         mockDataDecoderApi.getTrustedForDelegateCallContracts,
       ).toHaveBeenNthCalledWith(2, {
-        chainIds: [chain.chainId],
+        chainId: chain.chainId,
         limit: LIMIT,
         offset: LIMIT,
       });
@@ -241,21 +241,21 @@ describe('ContractsRepository', () => {
       expect(
         mockDataDecoderApi.getTrustedForDelegateCallContracts,
       ).toHaveBeenNthCalledWith(1, {
-        chainIds: [chain.chainId],
+        chainId: chain.chainId,
         limit: LIMIT,
         offset: 0,
       });
       expect(
         mockDataDecoderApi.getTrustedForDelegateCallContracts,
       ).toHaveBeenNthCalledWith(2, {
-        chainIds: [chain.chainId],
+        chainId: chain.chainId,
         limit: LIMIT,
         offset: LIMIT,
       });
       expect(
         mockDataDecoderApi.getTrustedForDelegateCallContracts,
       ).toHaveBeenNthCalledWith(3, {
-        chainIds: [chain.chainId],
+        chainId: chain.chainId,
         limit: LIMIT,
         offset: LIMIT * 2,
       });
