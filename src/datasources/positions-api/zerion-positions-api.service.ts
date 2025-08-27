@@ -1,5 +1,4 @@
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import { ChainAttributes } from '@/datasources/balances-api/entities/provider-chain-attributes.entity';
 import {
   ZerionAttributes,
   ZerionBalance,
@@ -38,7 +37,6 @@ import { Position } from '@/domain/positions/entities/position.entity';
 export class ZerionPositionsApi implements IPositionsApi {
   private readonly apiKey: string | undefined;
   private readonly baseUri: string;
-  private readonly chainsConfiguration: Record<number, ChainAttributes>;
   private readonly defaultExpirationTimeInSeconds: number;
   private readonly fiatCodes: Array<string>;
 
@@ -60,9 +58,6 @@ export class ZerionPositionsApi implements IPositionsApi {
       this.configurationService.getOrThrow<number>(
         'expirationTimeInSeconds.zerionPositions',
       );
-    this.chainsConfiguration = this.configurationService.getOrThrow<
-      Record<number, ChainAttributes>
-    >('balances.providers.zerion.chains');
     this.fiatCodes = this.configurationService
       .getOrThrow<Array<string>>('balances.providers.zerion.currencies')
       .map((currency) => currency.toUpperCase());
@@ -85,7 +80,7 @@ export class ZerionPositionsApi implements IPositionsApi {
       safeAddress: args.safeAddress,
       fiatCode: args.fiatCode,
     });
-    const chainName = this._getChainName(args.chain);
+    const chainName = args.chain.chainName;
     const cached = await this.cacheService.hGet(cacheDir);
     if (cached != null) {
       const { key, field } = cacheDir;
@@ -200,18 +195,5 @@ export class ZerionPositionsApi implements IPositionsApi {
       token: null,
       balance: zerionBalanceAttributes.quantity.int,
     };
-  }
-
-  private _getChainName(chain: Chain): string {
-    const chainName =
-      chain.balancesProvider.chainName ??
-      this.chainsConfiguration[Number(chain.chainId)]?.chainName;
-
-    if (!chainName)
-      throw Error(
-        `Chain ${chain.chainId} balances retrieval via Zerion is not configured`,
-      );
-
-    return chainName;
   }
 }
