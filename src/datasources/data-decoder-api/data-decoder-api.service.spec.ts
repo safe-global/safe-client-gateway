@@ -42,13 +42,6 @@ describe('DataDecoderApi', () => {
       if (key === 'expirationTimeInSeconds.default') {
         return expireTimeSeconds;
       }
-      if (key === 'expirationTimeInSeconds.hoodi') {
-        return expireTimeSeconds;
-      }
-      // TODO: Remove after Vault decoding has been released
-      if (key === 'application.isProduction') {
-        return true;
-      }
       throw new Error('Unexpected key');
     });
     const httpErrorFactory = new HttpErrorFactory();
