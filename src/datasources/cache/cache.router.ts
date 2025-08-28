@@ -11,14 +11,11 @@ export class CacheRouter {
   private static readonly BRIDGE_CHAINS_KEY = 'bridge_chains';
   private static readonly CHAIN_KEY = 'chain';
   private static readonly CHAINS_KEY = 'chains';
-  private static readonly CONTRACT_KEY = 'contract';
-  private static readonly TRUSTED_FOR_DELEGATE_CALL_CONTRACTS_KEY =
-    'trusted_contracts';
+  private static readonly CONTRACTS_KEY = 'contracts';
   private static readonly COUNTERFACTUAL_SAFE_KEY = 'counterfactual_safe';
   private static readonly COUNTERFACTUAL_SAFES_KEY = 'counterfactual_safes';
   private static readonly CREATION_TRANSACTION_KEY = 'creation_transaction';
   private static readonly DECODED_DATA_KEY = 'decoded_data';
-  private static readonly DECODED_DATA_CONTRACTS_KEY = 'decoded_data_contracts';
   private static readonly DELEGATES_KEY = 'delegates';
   private static readonly FIREBASE_OAUTH2_TOKEN_KEY = 'firebase_oauth2_token';
   private static readonly INCOMING_TRANSFERS_KEY = 'incoming_transfers';
@@ -70,6 +67,8 @@ export class CacheRouter {
   private static readonly TOKENS_KEY = 'tokens';
   private static readonly TRANSFER_KEY = 'transfer';
   private static readonly TRANSFERS_KEY = 'transfers';
+  private static readonly TRUSTED_FOR_DELEGATE_CALL_CONTRACTS_KEY =
+    'trusted_contracts';
   private static readonly UNSUPPORTED_CHAIN_EVENT = 'unsupported_chain_event';
   private static readonly ZERION_BALANCES_KEY = 'zerion_balances';
   private static readonly ZERION_COLLECTIBLES_KEY = 'zerion_collectibles';
@@ -193,27 +192,6 @@ export class CacheRouter {
     safeAddress: `0x${string}`;
   }): string {
     return `${args.chainId}_${CacheRouter.SAFE_EXISTS_KEY}_${args.safeAddress}`;
-  }
-
-  static getContractCacheDir(args: {
-    chainId: string;
-    contractAddress: `0x${string}`;
-  }): CacheDir {
-    return new CacheDir(
-      `${args.chainId}_${CacheRouter.CONTRACT_KEY}_${args.contractAddress}`,
-      '',
-    );
-  }
-
-  static getTrustedForDelegateCallContractsCacheKey(chainId: string): string {
-    return `${chainId}_${CacheRouter.TRUSTED_FOR_DELEGATE_CALL_CONTRACTS_KEY}`;
-  }
-
-  static getTrustedForDelegateCallContractsCacheDir(chainId: string): CacheDir {
-    return new CacheDir(
-      CacheRouter.getTrustedForDelegateCallContractsCacheKey(chainId),
-      '',
-    );
   }
 
   static getBackboneCacheDir(chainId: string): CacheDir {
@@ -431,23 +409,31 @@ export class CacheRouter {
     return new CacheDir(CacheRouter.getDecodedDataCacheKey(args), '');
   }
 
-  static getDecodedDataContractsCacheKey(args: {
-    chainIds: Array<string>;
+  static getContractsCacheKey(args: {
+    chainId: string;
     address: `0x${string}`;
-    limit?: number;
-    offset?: number;
   }): string {
-    return `${args.chainIds.sort().join('_')}_${CacheRouter.DECODED_DATA_CONTRACTS_KEY}_${args.address}`;
+    return `${args.chainId}_${CacheRouter.CONTRACTS_KEY}_${args.address}`;
   }
 
-  static getDecodedDataContractsCacheDir(args: {
-    chainIds: Array<string>;
+  static getContractsCacheDir(args: {
+    chainId: string;
     address: `0x${string}`;
+  }): CacheDir {
+    return new CacheDir(CacheRouter.getContractsCacheKey(args), '');
+  }
+
+  static getTrustedForDelegateCallContractsCacheKey(chainId: string): string {
+    return `${chainId}_${CacheRouter.TRUSTED_FOR_DELEGATE_CALL_CONTRACTS_KEY}`;
+  }
+
+  static getTrustedForDelegateCallContractsCacheDir(args: {
+    chainId: string;
     limit?: number;
     offset?: number;
   }): CacheDir {
     return new CacheDir(
-      CacheRouter.getDecodedDataContractsCacheKey(args),
+      CacheRouter.getTrustedForDelegateCallContractsCacheKey(args.chainId),
       `${args.limit}_${args.offset}`,
     );
   }

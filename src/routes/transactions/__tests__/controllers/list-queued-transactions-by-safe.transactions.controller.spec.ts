@@ -8,7 +8,7 @@ import type { INetworkService } from '@/datasources/network/network.service.inte
 import { NetworkService } from '@/datasources/network/network.service.interface';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
 import { SignatureType } from '@/domain/common/entities/signature-type.entity';
-import { contractBuilder } from '@/domain/contracts/entities/__tests__/contract.builder';
+import { contractBuilder } from '@/domain/data-decoder/v2/entities/__tests__/contract.builder';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import { safeAppBuilder } from '@/domain/safe-apps/entities/__tests__/safe-app.builder';
 import {
@@ -33,6 +33,7 @@ import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 describe('List queued transactions by Safe - Transactions Controller (Unit)', () => {
   let app: INestApplication<Server>;
   let safeConfigUrl: string;
+  let safeDecoderUrl: string;
   let networkService: jest.MockedObjectDeep<INetworkService>;
   let loggingService: jest.MockedObjectDeep<ILoggingService>;
 
@@ -51,6 +52,7 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
       IConfigurationService,
     );
     safeConfigUrl = configurationService.getOrThrow('safeConfig.baseUri');
+    safeDecoderUrl = configurationService.getOrThrow('safeDataDecoder.baseUri');
     networkService = moduleFixture.get(NetworkService);
     loggingService = moduleFixture.get(LoggingService);
 
@@ -133,7 +135,9 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
         .with('name', faker.word.words())
         .build(),
     ];
-    const contractResponse = contractBuilder().build();
+    const contractResponse = pageBuilder()
+      .with('results', [contractBuilder().build()])
+      .build();
     const getTransaction = async (
       nonce: number,
     ): Promise<MultisigTransaction> => {
@@ -168,7 +172,7 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
       const getSafeAppsUrl = `${safeConfigUrl}/api/v1/safe-apps/`;
       const getMultisigTransactionsUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/multisig-transactions/`;
       const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`;
-      const getContractUrlPattern = `${chainResponse.transactionService}/api/v1/contracts/`;
+      const getContractUrlPattern = `${safeDecoderUrl}/api/v1/contracts/`;
       const getTokenUrlPattern = `${chainResponse.transactionService}/api/v1/tokens/`;
       if (url === getChainUrl) {
         return Promise.resolve({ data: rawify(chainResponse), status: 200 });
@@ -280,7 +284,9 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
       const privateKey = generatePrivateKey();
       return privateKeyToAccount(privateKey);
     });
-    const contractResponse = contractBuilder().build();
+    const contractResponse = pageBuilder()
+      .with('results', [contractBuilder().build()])
+      .build();
     const safeResponse = safeBuilder()
       .with('address', safeAddress)
       .with('nonce', 1)
@@ -331,7 +337,7 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
       const getSafeAppsUrl = `${safeConfigUrl}/api/v1/safe-apps/`;
       const getMultisigTransactionsUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/multisig-transactions/`;
       const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`;
-      const getContractUrlPattern = `${chainResponse.transactionService}/api/v1/contracts/`;
+      const getContractUrlPattern = `${safeDecoderUrl}/api/v1/contracts/`;
       const getTokenUrlPattern = `${chainResponse.transactionService}/api/v1/tokens/`;
       if (url === getChainUrl) {
         return Promise.resolve({ data: rawify(chainResponse), status: 200 });
@@ -450,7 +456,9 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
       const privateKey = generatePrivateKey();
       return privateKeyToAccount(privateKey);
     });
-    const contractResponse = contractBuilder().build();
+    const contractResponse = pageBuilder()
+      .with('results', [contractBuilder().build()])
+      .build();
     const safeResponse = safeBuilder()
       .with('address', safeAddress)
       .with('nonce', 1)
@@ -488,7 +496,7 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
       const getSafeAppsUrl = `${safeConfigUrl}/api/v1/safe-apps/`;
       const getMultisigTransactionsUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/multisig-transactions/`;
       const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`;
-      const getContractUrlPattern = `${chainResponse.transactionService}/api/v1/contracts/`;
+      const getContractUrlPattern = `${safeDecoderUrl}/api/v1/contracts/`;
       const getTokenUrlPattern = `${chainResponse.transactionService}/api/v1/tokens/`;
       if (url === getChainUrl) {
         return Promise.resolve({ data: rawify(chainResponse), status: 200 });
