@@ -1,8 +1,5 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { IContractsRepository } from '@/domain/contracts/contracts.repository.interface';
-import { Contract } from '@/domain/contracts/entities/contract.entity';
-import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
-import { ContractPageSchema } from '@/domain/contracts/entities/schemas/contract.schema';
 import { isAddressEqual } from 'viem';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { PaginationData } from '@/routes/common/pagination/pagination.data';
@@ -10,8 +7,8 @@ import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { SAFE_TRANSACTION_SERVICE_MAX_LIMIT } from '@/domain/common/constants';
 import { IDataDecoderApi } from '@/domain/interfaces/data-decoder-api.interface';
 import {
-  Contract as DataDecoderContract,
-  ContractPageSchema as DataDecoderContractPageSchema,
+  Contract,
+  ContractPageSchema,
 } from '@/domain/data-decoder/v2/entities/contract.entity';
 
 @Injectable()
@@ -20,8 +17,6 @@ export class ContractsRepository implements IContractsRepository {
   private readonly maxSequentialPages: number;
 
   constructor(
-    @Inject(ITransactionApiManager)
-    private readonly transactionApiManager: ITransactionApiManager,
     @Inject(IDataDecoderApi)
     private readonly dataDecoderApi: IDataDecoderApi,
     @Inject(IConfigurationService)
@@ -40,12 +35,12 @@ export class ContractsRepository implements IContractsRepository {
   async getContract(args: {
     chainId: string;
     contractAddress: `0x${string}`;
-  }): Promise<DataDecoderContract> {
+  }): Promise<Contract> {
     const contracts = await this.dataDecoderApi.getContracts({
       address: args.contractAddress,
-      chainIds: [args.chainId],
+      chainId: args.chainId,
     });
-    const { count, results } = DataDecoderContractPageSchema.parse(contracts);
+    const { count, results } = ContractPageSchema.parse(contracts);
     if (count === 0) {
       throw new NotFoundException('Error fetching the contract data.');
     }
@@ -75,13 +70,14 @@ export class ContractsRepository implements IContractsRepository {
 
     let offset = 0;
     let next = null;
-    const api = await this.transactionApiManager.getApi(chainId);
 
     for (let i = 0; i < this.maxSequentialPages; i++) {
-      const result = await api.getTrustedForDelegateCallContracts({
-        limit: SAFE_TRANSACTION_SERVICE_MAX_LIMIT,
-        offset,
-      });
+      const result =
+        await this.dataDecoderApi.getTrustedForDelegateCallContracts({
+          chainId,
+          limit: SAFE_TRANSACTION_SERVICE_MAX_LIMIT,
+          offset,
+        });
       const page = ContractPageSchema.parse(result);
       next = page.next;
       contracts.push(...page.results);

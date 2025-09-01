@@ -7,7 +7,6 @@ import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module';
 import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.module';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
-import { contractBuilder } from '@/domain/contracts/entities/__tests__/contract.builder';
 import { safeAppBuilder } from '@/domain/safe-apps/entities/__tests__/safe-app.builder';
 import type { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
 import {
@@ -38,6 +37,7 @@ import {
 } from '@/logging/logging.interface';
 import { getAddress } from 'viem';
 import { dataDecodedBuilder } from '@/domain/data-decoder/v2/entities/__tests__/data-decoded.builder';
+import { contractBuilder } from '@/domain/data-decoder/v2/entities/__tests__/contract.builder';
 
 describe('Add transaction confirmations - Transactions Controller (Unit)', () => {
   let app: INestApplication<Server>;
@@ -126,7 +126,9 @@ describe('Add transaction confirmations - Transactions Controller (Unit)', () =>
       const signer = privateKeyToAccount(privateKey);
       const safe = safeBuilder().with('owners', [signer.address]).build();
       const safeApps = [safeAppBuilder().build()];
-      const contract = contractBuilder().build();
+      const contractPage = pageBuilder()
+        .with('results', [contractBuilder().build()])
+        .build();
       const transaction = multisigToJson(
         await multisigTransactionBuilder()
           .with('safe', safe.address)
@@ -153,7 +155,7 @@ describe('Add transaction confirmations - Transactions Controller (Unit)', () =>
         const getSafeUrl = `${chain.transactionService}/api/v1/safes/${transaction.safe}`;
         const getSafeAppsUrl = `${safeConfigUrl}/api/v1/safe-apps/`;
         const getGasTokenContractUrl = `${chain.transactionService}/api/v1/tokens/${transaction.gasToken}`;
-        const getToContractUrl = `${chain.transactionService}/api/v1/contracts/${transaction.to}`;
+        const getToContractUrl = `${safeDecoderUrl}/api/v1/contracts/${transaction.to}`;
         const getToTokenUrl = `${chain.transactionService}/api/v1/tokens/${transaction.to}`;
         switch (url) {
           case getChainUrl:
@@ -172,7 +174,7 @@ describe('Add transaction confirmations - Transactions Controller (Unit)', () =>
           case getGasTokenContractUrl:
             return Promise.resolve({ data: rawify(gasToken), status: 200 });
           case getToContractUrl:
-            return Promise.resolve({ data: rawify(contract), status: 200 });
+            return Promise.resolve({ data: rawify(contractPage), status: 200 });
           case getToTokenUrl:
             return Promise.resolve({ data: rawify(token), status: 200 });
           default:

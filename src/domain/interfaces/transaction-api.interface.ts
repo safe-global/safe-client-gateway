@@ -1,6 +1,5 @@
 import type { Backbone } from '@/domain/backbone/entities/backbone.entity';
 import type { Singleton } from '@/domain/chains/entities/singleton.entity';
-import type { Contract } from '@/domain/contracts/entities/contract.entity';
 import type { DataDecoded } from '@/domain/data-decoder/v2/entities/data-decoded.entity';
 import type { Delegate } from '@/domain/delegate/entities/delegate.entity';
 import type { Page } from '@/domain/entities/page.entity';
@@ -39,13 +38,6 @@ export interface ITransactionApi {
   isSafe(address: `0x${string}`): Promise<boolean>;
 
   clearIsSafe(address: `0x${string}`): Promise<void>;
-
-  getContract(contractAddress: `0x${string}`): Promise<Raw<Contract>>;
-
-  getTrustedForDelegateCallContracts(args: {
-    limit?: number;
-    offset?: number;
-  }): Promise<Raw<Page<Contract>>>;
 
   getDelegates(args: {
     safeAddress?: `0x${string}`;

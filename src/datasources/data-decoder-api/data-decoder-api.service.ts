@@ -13,6 +13,8 @@ import { CacheRouter } from '@/datasources/cache/cache.router';
 export class DataDecoderApi implements IDataDecoderApi {
   private readonly baseUrl: string;
   private readonly defaultNotFoundExpirationTimeSeconds: number;
+  private readonly defaultExpirationTimeSeconds: number;
+  private readonly contractNotFoundExpirationTimeSeconds: number;
 
   constructor(
     @Inject(IConfigurationService)
@@ -27,6 +29,14 @@ export class DataDecoderApi implements IDataDecoderApi {
     this.defaultNotFoundExpirationTimeSeconds =
       this.configurationService.getOrThrow<number>(
         'expirationTimeInSeconds.notFound.default',
+      );
+    this.defaultExpirationTimeSeconds =
+      this.configurationService.getOrThrow<number>(
+        'expirationTimeInSeconds.default',
+      );
+    this.contractNotFoundExpirationTimeSeconds =
+      this.configurationService.getOrThrow<number>(
+        'expirationTimeInSeconds.notFound.contract',
       );
   }
 
@@ -50,19 +60,49 @@ export class DataDecoderApi implements IDataDecoderApi {
 
   public async getContracts(args: {
     address: `0x${string}`;
-    chainIds: Array<string>;
+    chainId: string;
     limit?: number;
     offset?: number;
   }): Promise<Raw<Page<Contract>>> {
     try {
       const url = `${this.baseUrl}/api/v1/contracts/${args.address}`;
       return await this.dataSource.get<Page<Contract>>({
-        cacheDir: CacheRouter.getDecodedDataContractsCacheDir(args),
-        notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
+        cacheDir: CacheRouter.getContractsCacheDir({
+          chainId: args.chainId,
+          address: args.address,
+        }),
+        notFoundExpireTimeSeconds: this.contractNotFoundExpirationTimeSeconds,
+        expireTimeSeconds: this.defaultExpirationTimeSeconds,
         url,
         networkRequest: {
           params: {
-            chain_ids: args.chainIds.join('&chain_ids='),
+            chain_ids: [args.chainId].join('&chain_ids='),
+            limit: args.limit,
+            offset: args.offset,
+          },
+        },
+      });
+    } catch (error) {
+      throw this.httpErrorFactory.from(error);
+    }
+  }
+
+  public async getTrustedForDelegateCallContracts(args: {
+    chainId: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<Raw<Page<Contract>>> {
+    try {
+      const url = `${this.baseUrl}/api/v1/contracts`;
+      return await this.dataSource.get<Page<Contract>>({
+        cacheDir: CacheRouter.getTrustedForDelegateCallContractsCacheDir(args),
+        notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
+        expireTimeSeconds: this.defaultExpirationTimeSeconds,
+        url,
+        networkRequest: {
+          params: {
+            chain_ids: [args.chainId].join('&chain_ids='),
+            trusted_for_delegate_call: true,
             limit: args.limit,
             offset: args.offset,
           },

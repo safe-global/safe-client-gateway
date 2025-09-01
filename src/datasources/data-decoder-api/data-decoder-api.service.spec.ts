@@ -23,6 +23,7 @@ const mockCacheFirstDataSource = jest.mocked({
 describe('DataDecoderApi', () => {
   const baseUrl = faker.internet.url({ appendSlash: false });
   const notFoundExpireTimeSeconds = faker.number.int();
+  const expireTimeSeconds = faker.number.int();
   let target: DataDecoderApi;
 
   beforeEach(() => {
@@ -34,6 +35,12 @@ describe('DataDecoderApi', () => {
       }
       if (key === 'expirationTimeInSeconds.notFound.default') {
         return notFoundExpireTimeSeconds;
+      }
+      if (key === 'expirationTimeInSeconds.notFound.contract') {
+        return notFoundExpireTimeSeconds;
+      }
+      if (key === 'expirationTimeInSeconds.default') {
+        return expireTimeSeconds;
       }
       throw new Error('Unexpected key');
     });
@@ -130,61 +137,22 @@ describe('DataDecoderApi', () => {
 
       const actual = await target.getContracts({
         address: contract.address,
-        chainIds: [contract.chainId],
+        chainId: contract.chainId,
       });
 
       expect(actual).toStrictEqual(contractPage);
       expect(mockCacheFirstDataSource.get).toHaveBeenCalledTimes(1);
       expect(mockCacheFirstDataSource.get).toHaveBeenCalledWith({
         cacheDir: {
-          field: 'undefined_undefined',
-          key: `${contract.chainId}_decoded_data_contracts_${contract.address}`,
+          field: '',
+          key: `${contract.chainId}_contracts_${contract.address}`,
         },
         url: getContractsUrl,
         notFoundExpireTimeSeconds,
+        expireTimeSeconds,
         networkRequest: {
           params: {
             chain_ids: contract.chainId.toString(),
-            limit: undefined,
-            offset: undefined,
-          },
-        },
-      });
-    });
-
-    it('should support multiple chain IDs', async () => {
-      const contract = contractBuilder().build();
-      const chainIds = [
-        faker.string.numeric(),
-        faker.string.numeric(),
-        faker.string.numeric(),
-      ];
-      const contractPage = pageBuilder().with('results', [contract]).build();
-      const getContractsUrl = `${baseUrl}/api/v1/contracts/${contract.address}`;
-      mockCacheFirstDataSource.get.mockImplementation(({ url }) => {
-        if (url === getContractsUrl) {
-          return Promise.resolve(rawify(contractPage));
-        }
-        throw new Error('Unexpected URL');
-      });
-
-      const actual = await target.getContracts({
-        address: contract.address,
-        chainIds,
-      });
-
-      expect(actual).toStrictEqual(contractPage);
-      expect(mockCacheFirstDataSource.get).toHaveBeenCalledTimes(1);
-      expect(mockCacheFirstDataSource.get).toHaveBeenCalledWith({
-        cacheDir: {
-          field: 'undefined_undefined',
-          key: `${chainIds.sort().join('_')}_decoded_data_contracts_${contract.address}`,
-        },
-        url: getContractsUrl,
-        notFoundExpireTimeSeconds,
-        networkRequest: {
-          params: {
-            chain_ids: `${chainIds[0]}&chain_ids=${chainIds[1]}&chain_ids=${chainIds[2]}`,
             limit: undefined,
             offset: undefined,
           },
@@ -218,21 +186,154 @@ describe('DataDecoderApi', () => {
       await expect(
         target.getContracts({
           address: contract.address,
-          chainIds: [contract.chainId],
+          chainId: contract.chainId,
         }),
       ).rejects.toThrow(expected);
 
       expect(mockCacheFirstDataSource.get).toHaveBeenCalledTimes(1);
       expect(mockCacheFirstDataSource.get).toHaveBeenCalledWith({
         cacheDir: {
-          field: 'undefined_undefined',
-          key: `${contract.chainId}_decoded_data_contracts_${contract.address}`,
+          field: '',
+          key: `${contract.chainId}_contracts_${contract.address}`,
         },
         url: getContractsUrl,
         notFoundExpireTimeSeconds,
+        expireTimeSeconds,
         networkRequest: {
           params: {
             chain_ids: contract.chainId.toString(),
+            limit: undefined,
+            offset: undefined,
+          },
+        },
+      });
+    });
+  });
+
+  describe('getTrustedForDelegateCallContracts', () => {
+    it('should return the trusted contracts for delegate call', async () => {
+      const contractPage = pageBuilder()
+        .with('results', [contractBuilder().build()])
+        .build();
+      const chainId = faker.string.numeric();
+      const limit = faker.number.int({ min: 1, max: 100 });
+      const offset = faker.number.int({ min: 0, max: 50 });
+      const getTrustedContractsUrl = `${baseUrl}/api/v1/contracts`;
+
+      mockCacheFirstDataSource.get.mockImplementation(({ url }) => {
+        if (url === getTrustedContractsUrl) {
+          return Promise.resolve(rawify(contractPage));
+        }
+        throw new Error('Unexpected URL');
+      });
+
+      const actual = await target.getTrustedForDelegateCallContracts({
+        chainId,
+        limit,
+        offset,
+      });
+
+      expect(actual).toStrictEqual(contractPage);
+      expect(mockCacheFirstDataSource.get).toHaveBeenCalledTimes(1);
+      expect(mockCacheFirstDataSource.get).toHaveBeenCalledWith({
+        cacheDir: {
+          field: `${limit}_${offset}`,
+          key: `${chainId}_trusted_contracts`,
+        },
+        url: getTrustedContractsUrl,
+        notFoundExpireTimeSeconds,
+        expireTimeSeconds,
+        networkRequest: {
+          params: {
+            chain_ids: chainId,
+            trusted_for_delegate_call: true,
+            limit,
+            offset,
+          },
+        },
+      });
+    });
+
+    it('should return the trusted contracts without limit and offset', async () => {
+      const contractPage = pageBuilder()
+        .with('results', [contractBuilder().build()])
+        .build();
+      const chainId = faker.string.numeric();
+      const getTrustedContractsUrl = `${baseUrl}/api/v1/contracts`;
+
+      mockCacheFirstDataSource.get.mockImplementation(({ url }) => {
+        if (url === getTrustedContractsUrl) {
+          return Promise.resolve(rawify(contractPage));
+        }
+        throw new Error('Unexpected URL');
+      });
+
+      const actual = await target.getTrustedForDelegateCallContracts({
+        chainId,
+      });
+
+      expect(actual).toStrictEqual(contractPage);
+      expect(mockCacheFirstDataSource.get).toHaveBeenCalledTimes(1);
+      expect(mockCacheFirstDataSource.get).toHaveBeenCalledWith({
+        cacheDir: {
+          field: 'undefined_undefined',
+          key: `${chainId}_trusted_contracts`,
+        },
+        url: getTrustedContractsUrl,
+        notFoundExpireTimeSeconds,
+        expireTimeSeconds,
+        networkRequest: {
+          params: {
+            chain_ids: chainId,
+            trusted_for_delegate_call: true,
+            limit: undefined,
+            offset: undefined,
+          },
+        },
+      });
+    });
+
+    it('should forward an error', async () => {
+      const chainId = faker.string.numeric();
+      const errorMessage = faker.word.words();
+      const statusCode = faker.internet.httpStatusCode({
+        types: ['clientError', 'serverError'],
+      });
+      const expected = new DataSourceError(errorMessage, statusCode);
+      const getTrustedContractsUrl = `${baseUrl}/api/v1/contracts`;
+
+      mockCacheFirstDataSource.get.mockImplementation(({ url }) => {
+        if (url === getTrustedContractsUrl) {
+          return Promise.reject(
+            new NetworkResponseError(
+              new URL(getTrustedContractsUrl),
+              {
+                status: statusCode,
+              } as Response,
+              new Error(errorMessage),
+            ),
+          );
+        }
+        throw new Error('Unexpected URL');
+      });
+
+      await expect(
+        target.getTrustedForDelegateCallContracts({ chainId }),
+      ).rejects.toThrow(expected);
+
+      expect(mockCacheFirstDataSource.get).toHaveBeenCalledTimes(1);
+      expect(mockCacheFirstDataSource.get).toHaveBeenCalledWith({
+        cacheDir: {
+          field: 'undefined_undefined',
+          key: `${chainId}_trusted_contracts`,
+        },
+        url: getTrustedContractsUrl,
+        notFoundExpireTimeSeconds,
+        expireTimeSeconds,
+        networkRequest: {
+          params: {
+            chain_ids: chainId,
+            trusted_for_delegate_call: true,
             limit: undefined,
             offset: undefined,
           },

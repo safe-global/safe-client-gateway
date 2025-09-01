@@ -1,4 +1,3 @@
-import { buildPageSchema } from '@/domain/entities/schemas/page.schema.factory';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { z } from 'zod';
 
@@ -10,5 +9,3 @@ export const ContractSchema = z.object({
   contractAbi: z.record(z.unknown()).nullish().default(null),
   trustedForDelegateCall: z.boolean(),
 });
-
-export const ContractPageSchema = buildPageSchema(ContractSchema);
