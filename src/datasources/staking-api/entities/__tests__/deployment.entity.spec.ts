@@ -1,6 +1,7 @@
 import { deploymentBuilder } from '@/datasources/staking-api/entities/__tests__/deployment.entity.builder';
 import { DeploymentSchema } from '@/datasources/staking-api/entities/deployment.entity';
 import { faker } from '@faker-js/faker';
+import type { Address } from 'viem';
 import { getAddress } from 'viem';
 
 describe('DeploymentSchema', () => {
@@ -64,7 +65,7 @@ describe('DeploymentSchema', () => {
   it('should checksum the address field', () => {
     const nonChecksummedAddress = faker.finance.ethereumAddress().toLowerCase();
     const deployment = deploymentBuilder()
-      .with('address', nonChecksummedAddress as `0x${string}`)
+      .with('address', nonChecksummedAddress as Address)
       .build();
 
     const result = DeploymentSchema.safeParse(deployment);

@@ -8,6 +8,7 @@ import {
 } from '@/routes/transactions/helpers/transaction-finder.helper';
 import { Injectable, Module } from '@nestjs/common';
 import {
+  Address,
   ContractFunctionName,
   DecodeFunctionDataReturnType,
   erc4626Abi,
@@ -27,8 +28,8 @@ export class KilnVaultHelper extends Erc4262Decoder {
       'to' | 'data' | 'value'
     >,
   ): {
-    to?: `0x${string}`;
-    data: `0x${string}`;
+    to?: Address;
+    data: Address;
     assets: number;
   } | null {
     const decoded = this.getDecodedTransaction({
@@ -52,8 +53,8 @@ export class KilnVaultHelper extends Erc4262Decoder {
       'to' | 'data' | 'value'
     >,
   ): {
-    to?: `0x${string}`;
-    data: `0x${string}`;
+    to?: Address;
+    data: Address;
     assets: number;
   } | null {
     const decoded =
@@ -90,8 +91,8 @@ export class KilnVaultHelper extends Erc4262Decoder {
     >;
   }): {
     transaction: {
-      to?: `0x${string}`;
-      data: `0x${string}`;
+      to?: Address;
+      data: Address;
       value: string;
     };
     args: DecodeFunctionDataReturnType<TAbi, TFunctionName>['args'];

@@ -8,6 +8,7 @@ import {
 import { KilnDecoder } from '@/domain/staking/contracts/decoders/kiln-decoder.helper';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { faker } from '@faker-js/faker';
+import type { Address, Hex } from 'viem';
 
 const mockLoggingService = {
   debug: jest.fn(),
@@ -32,7 +33,7 @@ describe('KilnDecoder', () => {
     });
 
     it('returns null if the data is not a requestValidatorsExit function call', () => {
-      const data = faker.string.hexadecimal({ length: 1 }) as `0x${string}`;
+      const data = faker.string.hexadecimal({ length: 1 }) as Address;
       expect(kilnDecoder.decodeValidatorsExit(data)).toBeNull();
     });
 
@@ -51,7 +52,7 @@ describe('KilnDecoder', () => {
     });
 
     it('returns null if the data is not a batchWithdrawCLFee function call', () => {
-      const data = faker.string.hexadecimal({ length: 1 }) as `0x${string}`;
+      const data = faker.string.hexadecimal({ length: 1 }) as Address;
       expect(kilnDecoder.decodeBatchWithdrawCLFee(data)).toBeNull();
     });
 
@@ -81,10 +82,11 @@ describe('KilnDecoder', () => {
     });
 
     it('returns null if the data is not a DepositEvent', () => {
-      const data = faker.string.hexadecimal({ length: 514 }) as `0x${string}`;
-      const topics = [
-        faker.string.hexadecimal({ length: 64 }) as `0x${string}`,
-      ] as [signature: `0x${string}`, ...args: Array<`0x${string}`>];
+      const data = faker.string.hexadecimal({ length: 514 }) as Hex;
+      const topics = [faker.string.hexadecimal({ length: 64 }) as Hex] as [
+        signature: Hex,
+        ...args: Array<Address>,
+      ];
 
       expect(kilnDecoder.decodeDepositEvent({ data, topics })).toBe(null);
     });
@@ -110,10 +112,11 @@ describe('KilnDecoder', () => {
     });
 
     it('returns null if the data is not a Withdrawal', () => {
-      const data = faker.string.hexadecimal({ length: 514 }) as `0x${string}`;
-      const topics = [
-        faker.string.hexadecimal({ length: 64 }) as `0x${string}`,
-      ] as [signature: `0x${string}`, ...args: Array<`0x${string}`>];
+      const data = faker.string.hexadecimal({ length: 514 }) as Hex;
+      const topics = [faker.string.hexadecimal({ length: 64 }) as Hex] as [
+        signature: Hex,
+        ...args: Array<Address>,
+      ];
 
       expect(kilnDecoder.decodeWithdrawal({ data, topics })).toBe(null);
     });

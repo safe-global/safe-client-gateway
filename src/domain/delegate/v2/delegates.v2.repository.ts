@@ -4,6 +4,7 @@ import { IDelegatesV2Repository } from '@/domain/delegate/v2/delegates.v2.reposi
 import { Page } from '@/domain/entities/page.entity';
 import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
 import { Inject, Injectable } from '@nestjs/common';
+import type { Address } from 'viem';
 
 @Injectable()
 export class DelegatesV2Repository implements IDelegatesV2Repository {
@@ -14,9 +15,9 @@ export class DelegatesV2Repository implements IDelegatesV2Repository {
 
   async getDelegates(args: {
     chainId: string;
-    safeAddress?: `0x${string}`;
-    delegate?: `0x${string}`;
-    delegator?: `0x${string}`;
+    safeAddress?: Address;
+    delegate?: Address;
+    delegator?: Address;
     label?: string;
     limit?: number;
     offset?: number;
@@ -38,7 +39,7 @@ export class DelegatesV2Repository implements IDelegatesV2Repository {
 
   async clearDelegates(args: {
     chainId: string;
-    safeAddress?: `0x${string}`;
+    safeAddress?: Address;
   }): Promise<void> {
     const transactionService = await this.transactionApiManager.getApi(
       args.chainId,
@@ -48,9 +49,9 @@ export class DelegatesV2Repository implements IDelegatesV2Repository {
 
   async postDelegate(args: {
     chainId: string;
-    safeAddress: `0x${string}` | null;
-    delegate: `0x${string}`;
-    delegator: `0x${string}`;
+    safeAddress: Address | null;
+    delegate: Address;
+    delegator: Address;
     signature: string;
     label: string;
   }): Promise<void> {
@@ -68,9 +69,9 @@ export class DelegatesV2Repository implements IDelegatesV2Repository {
 
   async deleteDelegate(args: {
     chainId: string;
-    delegate: `0x${string}`;
-    delegator: `0x${string}`;
-    safeAddress: `0x${string}` | null;
+    delegate: Address;
+    delegator: Address;
+    safeAddress: Address | null;
     signature: string;
   }): Promise<unknown> {
     const transactionService = await this.transactionApiManager.getApi(

@@ -1,5 +1,6 @@
 import { createHash } from 'crypto';
 import type { BinaryLike } from 'crypto';
+import type { Address } from 'viem';
 
 // We use the maximum value in order to preserve all decimals
 // @see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl/NumberFormat/NumberFormat#maximumfractiondigits
@@ -18,15 +19,12 @@ export function getNumberString(value: number): string {
 
 /**
  * Truncates an address with a specific lengthed prefix and suffix
- * @param {`0x${string}`} address to truncate
+ * @param {Address} address to truncate
  * @param {number} [length] of the prefix and suffix, minus hex prefix
- * @returns {`0x${string}`} truncated address
+ * @returns {Address} truncated address
  */
-export function truncateAddress(
-  address: `0x${string}`,
-  length: number = 4,
-): `0x${string}` {
-  return `${address.slice(0, length + 2)}...${address.slice(-length)}` as `0x${string}`;
+export function truncateAddress(address: Address, length: number = 4): Address {
+  return `${address.slice(0, length + 2)}...${address.slice(-length)}` as Address;
 }
 
 export function hashSha1(value: BinaryLike): string {

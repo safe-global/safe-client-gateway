@@ -21,7 +21,7 @@ import { tokenBuilder } from '@/domain/tokens/__tests__/token.builder';
 import { messageBuilder } from '@/domain/messages/entities/__tests__/message.builder';
 import { proposeTransactionDtoBuilder } from '@/routes/transactions/entities/__tests__/propose-transaction.dto.builder';
 import { erc20TransferBuilder } from '@/domain/safe/entities/__tests__/erc20-transfer.builder';
-import { getAddress } from 'viem';
+import { type Address, getAddress } from 'viem';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { indexingStatusBuilder } from '@/domain/chains/entities/__tests__/indexing-status.builder';
 import { fakeJson } from '@/__tests__/faker';
@@ -110,7 +110,7 @@ describe('TransactionApi', () => {
 
   describe('getDataDecoded', () => {
     it('should return the decoded data', async () => {
-      const data = faker.string.hexadecimal() as `0x${string}`;
+      const data = faker.string.hexadecimal() as Address;
       const to = getAddress(faker.finance.ethereumAddress());
       const getDataDecodedUrl = `${baseUrl}/api/v1/data-decoder/`;
       const decodedData = dataDecodedBuilder().build();
@@ -137,7 +137,7 @@ describe('TransactionApi', () => {
       ['Transaction Service', { nonFieldErrors: [errorMessage] }],
       ['standard', new Error(errorMessage)],
     ])(`should forward a %s error`, async (_, error) => {
-      const data = faker.string.hexadecimal() as `0x${string}`;
+      const data = faker.string.hexadecimal() as Address;
       const to = getAddress(faker.finance.ethereumAddress());
       const getDataDecodedUrl = `${baseUrl}/api/v1/data-decoder/`;
       const statusCode = faker.internet.httpStatusCode({
@@ -1137,7 +1137,7 @@ describe('TransactionApi', () => {
       const safeTxHash = faker.string.hexadecimal();
       const signature = faker.string.hexadecimal({
         length: 130,
-      }) as `0x${string}`;
+      }) as Address;
       const postConfirmationUrl = `${baseUrl}/api/v1/multisig-transactions/${safeTxHash}/confirmations/`;
       networkService.post.mockResolvedValueOnce({
         status: 200,
@@ -1166,7 +1166,7 @@ describe('TransactionApi', () => {
       const safeTxHash = faker.string.hexadecimal();
       const signature = faker.string.hexadecimal({
         length: 130,
-      }) as `0x${string}`;
+      }) as Address;
       const postConfirmationUrl = `${baseUrl}/api/v1/multisig-transactions/${safeTxHash}/confirmations/`;
       const statusCode = faker.internet.httpStatusCode({
         types: ['clientError', 'serverError'],
@@ -2095,7 +2095,7 @@ describe('TransactionApi', () => {
       const safeAddress = getAddress(faker.finance.ethereumAddress());
       const to = getAddress(faker.finance.ethereumAddress());
       const value = faker.string.numeric();
-      const data = faker.string.hexadecimal() as `0x${string}`;
+      const data = faker.string.hexadecimal() as Address;
       const operation = faker.helpers.arrayElement([0, 1] as const);
       const estimation = {
         safeTxGas: faker.string.numeric(),
@@ -2132,7 +2132,7 @@ describe('TransactionApi', () => {
       const safeAddress = getAddress(faker.finance.ethereumAddress());
       const to = getAddress(faker.finance.ethereumAddress());
       const value = faker.string.numeric();
-      const data = faker.string.hexadecimal() as `0x${string}`;
+      const data = faker.string.hexadecimal() as Address;
       const operation = faker.helpers.arrayElement([0, 1] as const);
       const getEstimationUrl = `${baseUrl}/api/v1/safes/${safeAddress}/multisig-transactions/estimations/`;
       const statusCode = faker.internet.httpStatusCode({

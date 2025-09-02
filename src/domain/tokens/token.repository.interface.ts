@@ -3,11 +3,12 @@ import { Token } from '@/domain/tokens/entities/token.entity';
 import { Module } from '@nestjs/common';
 import { TokenRepository } from '@/domain/tokens/token.repository';
 import { TransactionApiManagerModule } from '@/domain/interfaces/transaction-api.manager.interface';
+import type { Address } from 'viem';
 
 export const ITokenRepository = Symbol('ITokenRepository');
 
 export interface ITokenRepository {
-  getToken(args: { chainId: string; address: `0x${string}` }): Promise<Token>;
+  getToken(args: { chainId: string; address: Address }): Promise<Token>;
 
   getTokens(args: {
     chainId: string;

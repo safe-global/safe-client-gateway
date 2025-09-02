@@ -25,6 +25,7 @@ import {
   Query,
 } from '@nestjs/common';
 import { ApiTags, ApiOkResponse, ApiQuery } from '@nestjs/swagger';
+import type { Address } from 'viem';
 
 @ApiTags('community')
 @Controller({
@@ -64,7 +65,7 @@ export class CommunityController {
     @RouteUrlDecorator() routeUrl: URL,
     @PaginationDataDecorator() paginationData: PaginationData,
     @Query('holder', new ValidationPipe(AddressSchema.optional()))
-    holder?: `0x${string}`,
+    holder?: Address,
   ): Promise<CampaignActivityPage> {
     return this.communityService.getCampaignActivities({
       resourceId,
@@ -98,7 +99,7 @@ export class CommunityController {
   async getCampaignRank(
     @Param('resourceId') resourceId: string,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
-    safeAddress: `0x${string}`,
+    safeAddress: Address,
   ): Promise<CampaignRank> {
     return this.communityService.getCampaignRank({ resourceId, safeAddress });
   }
@@ -134,7 +135,7 @@ export class CommunityController {
   @Get('/locking/:safeAddress/rank')
   async getLockingRank(
     @Param('safeAddress', new ValidationPipe(AddressSchema))
-    safeAddress: `0x${string}`,
+    safeAddress: Address,
   ): Promise<LockingRank> {
     return this.communityService.getLockingRank(safeAddress);
   }
@@ -148,7 +149,7 @@ export class CommunityController {
   @Get('/locking/:safeAddress/history')
   async getLockingHistory(
     @Param('safeAddress', new ValidationPipe(AddressSchema))
-    safeAddress: `0x${string}`,
+    safeAddress: Address,
     @RouteUrlDecorator() routeUrl: URL,
     @PaginationDataDecorator() paginationData: PaginationData,
   ): Promise<LockingEventPage> {

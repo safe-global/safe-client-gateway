@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker';
-import { getAddress } from 'viem';
+import { getAddress, type Hex } from 'viem';
 import { DataDecoderApi } from '@/datasources/data-decoder-api/data-decoder-api.service';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { dataDecodedBuilder } from '@/domain/data-decoder/v2/entities/__tests__/data-decoded.builder';
@@ -57,7 +57,7 @@ describe('DataDecoderApi', () => {
       const dataDecoded = dataDecodedBuilder().build();
       const to = getAddress(faker.finance.ethereumAddress());
       const chainId = faker.string.numeric();
-      const data = faker.string.hexadecimal() as `0x${string}`;
+      const data = faker.string.hexadecimal() as Hex;
       const getDataDecodedUrl = `${baseUrl}/api/v1/data-decoder`;
       mockCacheFirstDataSource.post.mockImplementation(({ url }) => {
         if (url === getDataDecodedUrl) {
@@ -83,7 +83,7 @@ describe('DataDecoderApi', () => {
 
     it('should forward an error', async () => {
       const to = getAddress(faker.finance.ethereumAddress());
-      const data = faker.string.hexadecimal() as `0x${string}`;
+      const data = faker.string.hexadecimal() as Hex;
       const chainId = faker.string.numeric();
       const errorMessage = faker.word.words();
       const statusCode = faker.internet.httpStatusCode({

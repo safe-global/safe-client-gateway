@@ -4,6 +4,7 @@ import type { ISwapsApi } from '@/domain/interfaces/swaps-api.interface';
 import type { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import type { FullAppData } from '@/domain/swaps/entities/full-app-data.entity';
 import type { Raw } from '@/validation/entities/raw.entity';
+import type { Hex } from 'viem';
 
 export class CowSwapApi implements ISwapsApi {
   constructor(
@@ -34,7 +35,7 @@ export class CowSwapApi implements ISwapsApi {
     }
   }
 
-  async getFullAppData(appDataHash: `0x${string}`): Promise<Raw<FullAppData>> {
+  async getFullAppData(appDataHash: Hex): Promise<Raw<FullAppData>> {
     try {
       const url = `${this.baseUrl}/api/v1/app_data/${appDataHash}`;
       const { data } = await this.networkService.get<FullAppData>({ url });

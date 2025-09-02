@@ -6,6 +6,7 @@ import type { LockingRank } from '@/domain/community/entities/locking-rank.entit
 import type { CampaignActivity } from '@/domain/community/entities/campaign-activity.entity';
 import type { EligibilityRequest } from '@/domain/community/entities/eligibility-request.entity';
 import type { Eligibility } from '@/domain/community/entities/eligibility.entity';
+import type { Address } from 'viem';
 
 export const ICommunityRepository = Symbol('ICommunityRepository');
 
@@ -19,12 +20,12 @@ export interface ICommunityRepository {
 
   getCampaignActivities(args: {
     resourceId: string;
-    holder?: `0x${string}`;
+    holder?: Address;
     limit?: number;
     offset?: number;
   }): Promise<Page<CampaignActivity>>;
 
-  getLockingRank(safeAddress: `0x${string}`): Promise<LockingRank>;
+  getLockingRank(safeAddress: Address): Promise<LockingRank>;
 
   getLeaderboard(args: {
     limit?: number;
@@ -39,11 +40,11 @@ export interface ICommunityRepository {
 
   getCampaignRank(args: {
     resourceId: string;
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
   }): Promise<CampaignRank>;
 
   getLockingHistory(args: {
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
     offset?: number;
     limit?: number;
   }): Promise<Page<LockingEvent>>;

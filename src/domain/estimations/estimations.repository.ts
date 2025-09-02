@@ -4,6 +4,7 @@ import { GetEstimationDto } from '@/domain/estimations/entities/get-estimation.d
 import { IEstimationsRepository } from '@/domain/estimations/estimations.repository.interface';
 import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
 import { EstimationSchema } from '@/domain/estimations/entities/schemas/estimation.schema';
+import type { Address } from 'viem';
 
 @Injectable()
 export class EstimationsRepository implements IEstimationsRepository {
@@ -14,7 +15,7 @@ export class EstimationsRepository implements IEstimationsRepository {
 
   async getEstimation(args: {
     chainId: string;
-    address: `0x${string}`;
+    address: Address;
     getEstimationDto: GetEstimationDto;
   }): Promise<Estimation> {
     const api = await this.transactionApiManager.getApi(args.chainId);

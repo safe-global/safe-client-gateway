@@ -5,6 +5,7 @@ import type { CampaignRank } from '@/domain/community/entities/campaign-rank.ent
 import type { LockingEvent } from '@/domain/community/entities/locking-event.entity';
 import type { LockingRank } from '@/domain/community/entities/locking-rank.entity';
 import type { Raw } from '@/validation/entities/raw.entity';
+import type { Address } from 'viem';
 
 export const ILockingApi = Symbol('ILockingApi');
 
@@ -18,12 +19,12 @@ export interface ILockingApi {
 
   getCampaignActivities(args: {
     resourceId: string;
-    holder?: `0x${string}`;
+    holder?: Address;
     limit?: number;
     offset?: number;
   }): Promise<Raw<Page<CampaignActivity>>>;
 
-  getLockingRank(safeAddress: `0x${string}`): Promise<Raw<LockingRank>>;
+  getLockingRank(safeAddress: Address): Promise<Raw<LockingRank>>;
 
   getLeaderboard(args: {
     limit?: number;
@@ -38,11 +39,11 @@ export interface ILockingApi {
 
   getCampaignRank(args: {
     resourceId: string;
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
   }): Promise<Raw<CampaignRank>>;
 
   getLockingHistory(args: {
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
     limit?: number;
     offset?: number;
   }): Promise<Raw<Page<LockingEvent>>>;

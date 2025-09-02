@@ -9,7 +9,7 @@ import {
 import type { IBuilder } from '@/__tests__/builder';
 import { Builder } from '@/__tests__/builder';
 import { faker } from '@faker-js/faker';
-import { getAddress } from 'viem';
+import { type Address, getAddress, type Hex } from 'viem';
 
 export function orderBuilder(): IBuilder<Order> {
   const executedFee = faker.number.bigInt({ min: 1 });
@@ -61,7 +61,7 @@ export function orderBuilder(): IBuilder<Order> {
           'eip1271',
         ] as const),
       )
-      .with('signature', faker.string.hexadecimal() as `0x${string}`)
+      .with('signature', faker.string.hexadecimal() as Hex)
       .with(
         'from',
         faker.datatype.boolean()
@@ -96,7 +96,7 @@ export function orderBuilder(): IBuilder<Order> {
         faker.datatype.boolean()
           ? {
               refundTxHash: faker.datatype.boolean()
-                ? (faker.string.hexadecimal() as `0x${string}`)
+                ? (faker.string.hexadecimal() as Address)
                 : null,
               userValidTo: faker.date.future().getTime(),
             }

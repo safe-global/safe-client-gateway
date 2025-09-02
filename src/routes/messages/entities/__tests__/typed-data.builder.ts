@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker';
-import { getAddress } from 'viem';
+import { type Hex, getAddress } from 'viem';
 import { Builder } from '@/__tests__/builder';
 import type { IBuilder } from '@/__tests__/builder';
 import type { TypedData } from '@/domain/messages/entities/typed-data.entity';
@@ -39,7 +39,7 @@ export function typedDataDomainBuilder(): IBuilder<TypedData['domain']> {
   return new Builder<TypedData['domain']>()
     .with('chainId', faker.number.int())
     .with('name', faker.lorem.word())
-    .with('salt', faker.string.hexadecimal({ length: 64 }) as `0x${string}`)
+    .with('salt', faker.string.hexadecimal({ length: 64 }) as Hex)
     .with('verifyingContract', getAddress(faker.finance.ethereumAddress()))
     .with('version', faker.system.semver());
 }

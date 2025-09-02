@@ -19,7 +19,7 @@ import { DataSourceError } from '@/domain/errors/data-source.error';
 import { KilnDecoder } from '@/domain/staking/contracts/decoders/kiln-decoder.helper';
 import { rawify } from '@/validation/entities/raw.entity';
 import { faker } from '@faker-js/faker';
-import { getAddress } from 'viem';
+import { type Address, getAddress, type Hash } from 'viem';
 
 const dataSource = {
   get: jest.fn(),
@@ -809,7 +809,7 @@ describe('KilnApi', () => {
         () =>
           faker.string.hexadecimal({
             length: KilnDecoder.KilnPublicKeyLength,
-          }) as `0x${string}`,
+          }) as Address,
         { count: { min: 1, max: 5 } },
       );
       const concatenatedValidatorsPublicKeys = validatorsPublicKeys.join(',');
@@ -861,7 +861,7 @@ describe('KilnApi', () => {
         () =>
           faker.string.hexadecimal({
             length: KilnDecoder.KilnPublicKeyLength,
-          }) as `0x${string}`,
+          }) as Address,
         { count: { min: 1, max: 5 } },
       );
       const concatenatedValidatorsPublicKeys = validatorsPublicKeys.join(',');
@@ -927,7 +927,7 @@ describe('KilnApi', () => {
 
   describe('getTransactionStatus', () => {
     it('should return the transaction status', async () => {
-      const txHash = faker.string.hexadecimal({ length: 64 }) as `0x${string}`;
+      const txHash = faker.string.hexadecimal({ length: 64 }) as Hash;
       const transactionStatus = transactionStatusBuilder().build();
       const getTransactionStatusUrl = `${baseUrl}/v1/eth/transaction/status`;
       dataSource.get.mockResolvedValue(
@@ -964,7 +964,7 @@ describe('KilnApi', () => {
     });
 
     it('should forward errors', async () => {
-      const txHash = faker.string.hexadecimal({ length: 64 }) as `0x${string}`;
+      const txHash = faker.string.hexadecimal({ length: 64 }) as Hash;
       const getTransactionStatusUrl = `${baseUrl}/v1/eth/transaction/status`;
       const errorMessage = faker.lorem.sentence();
       const statusCode = faker.internet.httpStatusCode({

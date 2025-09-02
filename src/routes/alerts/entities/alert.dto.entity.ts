@@ -4,11 +4,12 @@ import type {
   AlertTransactionSchema,
 } from '@/routes/alerts/entities/schemas/alerts.schema';
 import type { z } from 'zod';
+import type { Address, Hex } from 'viem';
 
 export class AlertLog implements z.infer<typeof AlertLogSchema> {
-  address!: `0x${string}`;
-  topics!: [signature: `0x${string}`, ...Array<`0x${string}`>];
-  data!: `0x${string}`;
+  address!: Address;
+  topics!: [signature: Hex, ...Array<Address>];
+  data!: Address;
 }
 
 export class AlertTransaction
@@ -18,8 +19,8 @@ export class AlertTransaction
   block_hash!: string;
   block_number!: number;
   hash!: string;
-  from!: `0x${string}`;
-  to!: `0x${string}`;
+  from!: Address;
+  to!: Address;
   logs!: Array<AlertLog>;
   input!: string;
   value!: string;

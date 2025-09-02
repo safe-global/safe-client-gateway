@@ -1,6 +1,7 @@
 import type { IApiManager } from '@/domain/interfaces/api.manager.interface';
 import type { IBalancesApi } from '@/domain/interfaces/balances-api.interface';
 import type { Raw } from '@/validation/entities/raw.entity';
+import type { Address } from 'viem';
 
 export const IBalancesApiManager = Symbol('IBalancesApiManager');
 
@@ -17,7 +18,7 @@ export interface IBalancesApiManager extends IApiManager<IBalancesApi> {
    * @param safeAddress - the Safe address to check.
    * @returns {@link IBalancesApi} configured for the input chain ID.
    */
-  getApi(chainId: string, safeAddress: `0x${string}`): Promise<IBalancesApi>;
+  getApi(chainId: string, safeAddress: Address): Promise<IBalancesApi>;
 
   /**
    * Gets the list of supported fiat codes.

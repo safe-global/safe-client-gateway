@@ -29,6 +29,7 @@ import {
   SwapAppsHelperModule,
 } from '@/routes/transactions/helpers/swap-apps.helper';
 import { GPv2OrderParameters } from '@/domain/swaps/contracts/decoders/gp-v2-decoder.helper';
+import type { Address, Hex } from 'viem';
 
 @Injectable()
 export class TwapOrderMapper {
@@ -61,8 +62,8 @@ export class TwapOrderMapper {
    */
   async mapTwapOrder(
     chainId: string,
-    safeAddress: `0x${string}`,
-    transaction: { data: `0x${string}`; executionDate: Date | null },
+    safeAddress: Address,
+    transaction: { data: Hex; executionDate: Date | null },
   ): Promise<TwapOrderTransactionInfo> {
     // Decode `staticInput` of `createWithContextCall`
     const twapStruct = this.composableCowDecoder.decodeTwapStruct(
@@ -228,7 +229,7 @@ export class TwapOrderMapper {
   private async getPartOrders(args: {
     partsToFetch: Array<GPv2OrderParameters>;
     chainId: string;
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
   }): Promise<Array<KnownOrder> | null> {
     const orders: Array<KnownOrder> = [];
 
@@ -274,10 +275,10 @@ export class TwapOrderMapper {
 
   private async getOrderStatus(args: {
     chainId: string;
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
     twapParts: Array<GPv2OrderParameters>;
     partOrders: Array<KnownOrder> | null;
-    activeOrderUid: `0x${string}` | null;
+    activeOrderUid: Address | null;
     executionDate: Date | null;
   }): Promise<OrderStatus> {
     if (!args.executionDate) {

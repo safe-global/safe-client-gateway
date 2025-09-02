@@ -1,7 +1,7 @@
 import { contractBuilder } from '@/domain/contracts/entities/__tests__/contract.builder';
 import { ContractSchema } from '@/domain/contracts/entities/schemas/contract.schema';
 import { faker } from '@faker-js/faker';
-import { getAddress } from 'viem';
+import { type Address, getAddress } from 'viem';
 import { ZodError } from 'zod';
 
 describe('ContractSchema', () => {
@@ -16,7 +16,7 @@ describe('ContractSchema', () => {
   it('should checksum the address', () => {
     const nonChecksummedAddress = faker.finance
       .ethereumAddress()
-      .toLowerCase() as `0x${string}`;
+      .toLowerCase() as Address;
     const contract = contractBuilder()
       .with('address', nonChecksummedAddress)
       .build();

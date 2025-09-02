@@ -8,6 +8,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { IAddressBooksRepository } from '@/domain/accounts/address-books/address-books.repository.interface';
 import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 import { CreateAddressBookItemDto } from '@/domain/accounts/address-books/entities/create-address-book-item.dto.entity';
+import type { Address } from 'viem';
 
 @Injectable()
 export class AddressBooksService {
@@ -18,7 +19,7 @@ export class AddressBooksService {
 
   async getAddressBook(args: {
     authPayload: AuthPayload;
-    address: `0x${string}`;
+    address: Address;
     chainId: string;
   }): Promise<AddressBook> {
     const domainAddressBook = await this.repository.getAddressBook(args);
@@ -27,7 +28,7 @@ export class AddressBooksService {
 
   async createAddressBookItem(args: {
     authPayload: AuthPayload;
-    address: `0x${string}`;
+    address: Address;
     chainId: string;
     createAddressBookItemDto: CreateAddressBookItemDto;
   }): Promise<AddressBookItem> {
@@ -38,7 +39,7 @@ export class AddressBooksService {
 
   async deleteAddressBook(args: {
     authPayload: AuthPayload;
-    address: `0x${string}`;
+    address: Address;
     chainId: string;
   }): Promise<void> {
     await this.repository.deleteAddressBook(args);
@@ -46,7 +47,7 @@ export class AddressBooksService {
 
   async deleteAddressBookItem(args: {
     authPayload: AuthPayload;
-    address: `0x${string}`;
+    address: Address;
     chainId: string;
     addressBookItemId: number;
   }): Promise<void> {

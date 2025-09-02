@@ -27,7 +27,7 @@ import {
 } from '@/domain/chains/entities/schemas/chain.schema';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import { faker } from '@faker-js/faker';
-import { getAddress } from 'viem';
+import { type Address, getAddress } from 'viem';
 import { ZodError } from 'zod';
 
 describe('Chain schemas', () => {
@@ -518,10 +518,7 @@ describe('Chain schemas', () => {
     ].forEach((field) => {
       it(`should checksum the ${field}`, () => {
         const contractAddresses = contractAddressesBuilder()
-          .with(
-            field,
-            faker.finance.ethereumAddress().toLowerCase() as `0x${string}`,
-          )
+          .with(field, faker.finance.ethereumAddress().toLowerCase() as Address)
           .build();
 
         const result = ContractAddressesSchema.safeParse(contractAddresses);

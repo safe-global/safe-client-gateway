@@ -1,6 +1,6 @@
 import { faker } from '@faker-js/faker';
 import { DataSource } from 'typeorm';
-import { getAddress } from 'viem';
+import { type Address, getAddress } from 'viem';
 import configuration from '@/config/entities/__tests__/configuration';
 import { postgresConfig } from '@/config/entities/postgres.config';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
@@ -374,7 +374,7 @@ describe('WalletsRepository', () => {
       const dbUserRepository = dataSource.getRepository(User);
       const nonChecksummedAddress = faker.finance
         .ethereumAddress()
-        .toLowerCase() as `0x${string}`;
+        .toLowerCase() as Address;
       const user = await dbUserRepository.insert({
         status: faker.helpers.arrayElement(UserStatusKeys),
       });
@@ -436,7 +436,7 @@ describe('WalletsRepository', () => {
       const dbUserRepository = dataSource.getRepository(User);
       const nonChecksummedAddress = faker.finance
         .ethereumAddress()
-        .toLowerCase() as `0x${string}`;
+        .toLowerCase() as Address;
       const user = await dbUserRepository.insert({
         status: faker.helpers.arrayElement(UserStatusKeys),
       });
@@ -570,7 +570,7 @@ describe('WalletsRepository', () => {
         await walletsRepository.create(
           {
             userId: user.identifiers[0].id as User['id'],
-            walletAddress: nonChecksummedAddress as `0x${string}`,
+            walletAddress: nonChecksummedAddress as Address,
           },
           entityManager,
         );
@@ -651,7 +651,7 @@ describe('WalletsRepository', () => {
           await walletsRepository.create(
             {
               userId: user.identifiers[0].id as User['id'],
-              walletAddress: walletAddress as `0x${string}`,
+              walletAddress: walletAddress as Address,
             },
             entityManager,
           );
@@ -697,9 +697,7 @@ describe('WalletsRepository', () => {
         },
       });
 
-      await walletsRepository.deleteByAddress(
-        nonChecksummedAddress as `0x${string}`,
-      );
+      await walletsRepository.deleteByAddress(nonChecksummedAddress as Address);
 
       await expect(dbWalletRepository.find()).resolves.toEqual([]);
     });
@@ -710,7 +708,7 @@ describe('WalletsRepository', () => {
       });
 
       await expect(
-        walletsRepository.deleteByAddress(walletAddress as `0x${string}`),
+        walletsRepository.deleteByAddress(walletAddress as Address),
       ).rejects.toThrow(new RegExp(`^Address "${walletAddress}" is invalid.`));
     });
   });

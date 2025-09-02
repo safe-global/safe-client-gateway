@@ -1,7 +1,7 @@
 import { erc20TransferBuilder } from '@/domain/safe/entities/__tests__/erc20-transfer.builder';
 import { Erc20TransferSchema } from '@/domain/safe/entities/schemas/erc20-transfer.schema';
 import { faker } from '@faker-js/faker';
-import { getAddress } from 'viem';
+import { type Address, getAddress } from 'viem';
 
 describe('Erc20TransferSchema', () => {
   it('should validate a Erc20Transfer', () => {
@@ -26,7 +26,7 @@ describe('Erc20TransferSchema', () => {
 
   it('should not allow non-hex transactionHash values', () => {
     const erc20Transfer = erc20TransferBuilder()
-      .with('transactionHash', faker.string.numeric() as `0x${string}`)
+      .with('transactionHash', faker.string.numeric() as Address)
       .build();
 
     const result = Erc20TransferSchema.safeParse(erc20Transfer);
@@ -41,7 +41,7 @@ describe('Erc20TransferSchema', () => {
         .ethereumAddress()
         .toLowerCase();
       const erc20Transfer = erc20TransferBuilder()
-        .with(field, nonChecksummedAddress as `0x${string}`)
+        .with(field, nonChecksummedAddress as Address)
         .build();
 
       const result = Erc20TransferSchema.safeParse(erc20Transfer);

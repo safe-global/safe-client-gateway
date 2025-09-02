@@ -3,6 +3,7 @@ import type { AccountDataType } from '@/domain/accounts/entities/account-data-ty
 import type { Account } from '@/domain/accounts/entities/account.entity';
 import type { CreateAccountDto } from '@/domain/accounts/entities/create-account.dto.entity';
 import type { UpsertAccountDataSettingsDto } from '@/domain/accounts/entities/upsert-account-data-settings.dto.entity';
+import type { Address } from 'viem';
 
 export const IAccountsDatasource = Symbol('IAccountsDatasource');
 
@@ -12,18 +13,16 @@ export interface IAccountsDatasource {
     clientIp: string;
   }): Promise<Account>;
 
-  getAccount(address: `0x${string}`): Promise<Account>;
+  getAccount(address: Address): Promise<Account>;
 
-  deleteAccount(address: `0x${string}`): Promise<void>;
+  deleteAccount(address: Address): Promise<void>;
 
   getDataTypes(): Promise<Array<AccountDataType>>;
 
-  getAccountDataSettings(
-    address: `0x${string}`,
-  ): Promise<Array<AccountDataSetting>>;
+  getAccountDataSettings(address: Address): Promise<Array<AccountDataSetting>>;
 
   upsertAccountDataSettings(args: {
-    address: `0x${string}`;
+    address: Address;
     upsertAccountDataSettingsDto: UpsertAccountDataSettingsDto;
   }): Promise<Array<AccountDataSetting>>;
 }

@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker';
-import { getAddress } from 'viem';
+import { getAddress, type Hex } from 'viem';
 import { Builder } from '@/__tests__/builder';
 import { multisigTransactionBuilder } from '@/domain/safe/entities/__tests__/multisig-transaction.builder';
 import { Operation } from '@/domain/safe/entities/operation.entity';
@@ -39,7 +39,7 @@ function safeTxHashMultisigTransactionBuilder(): IBuilder<BaseMultisigTransactio
   return new Builder<BaseMultisigTransaction>()
     .with('to', getAddress(faker.finance.ethereumAddress()))
     .with('value', faker.string.numeric())
-    .with('data', faker.string.hexadecimal() as `0x${string}`)
+    .with('data', faker.string.hexadecimal() as Hex)
     .with('operation', faker.helpers.enumValue(Operation))
     .with('safeTxGas', faker.number.int())
     .with('baseGas', faker.number.int())
@@ -502,7 +502,7 @@ describe('Safe', () => {
       const chainId = faker.string.numeric();
       const safe = safeBuilder().build();
       const transaction = safeTxHashMultisigTransactionBuilder()
-        .with('to', faker.string.numeric() as `0x${string}`)
+        .with('to', faker.string.numeric() as Hex)
         .build();
 
       expect(() => getSafeTxHash({ chainId, transaction, safe })).toThrow(

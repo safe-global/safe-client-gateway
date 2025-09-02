@@ -7,7 +7,7 @@ import {
   ModuleTransactionSchema,
 } from '@/domain/safe/entities/module-transaction.entity';
 import { faker } from '@faker-js/faker';
-import { getAddress } from 'viem';
+import { type Address, getAddress } from 'viem';
 import { ZodError } from 'zod';
 
 describe('ModuleTransaction schemas', () => {
@@ -25,7 +25,7 @@ describe('ModuleTransaction schemas', () => {
       (key) => {
         const nonChecksummedAddress = faker.finance
           .ethereumAddress()
-          .toLowerCase() as `0x${string}`;
+          .toLowerCase() as Address;
         const moduleTransaction = moduleTransactionBuilder()
           .with(key, nonChecksummedAddress)
           .build();
@@ -54,7 +54,7 @@ describe('ModuleTransaction schemas', () => {
       'should not allow non-hex %s',
       (key) => {
         const moduleTransaction = moduleTransactionBuilder()
-          .with(key, faker.string.numeric() as `0x${string}`)
+          .with(key, faker.string.numeric() as Address)
           .build();
 
         const result = ModuleTransactionSchema.safeParse(moduleTransaction);

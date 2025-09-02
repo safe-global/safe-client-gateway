@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import type { Address } from 'viem';
 
 export class Account {
   @ApiProperty()
@@ -6,14 +7,14 @@ export class Account {
   @ApiPropertyOptional({ type: String, nullable: true })
   groupId: string | null;
   @ApiProperty()
-  address: `0x${string}`;
+  address: Address;
   @ApiProperty()
   name: string;
 
   constructor(
     id: string,
     groupId: string | null,
-    address: `0x${string}`,
+    address: Address,
     name: string,
   ) {
     this.id = id;

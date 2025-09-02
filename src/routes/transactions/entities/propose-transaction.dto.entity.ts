@@ -1,14 +1,15 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Operation } from '@/domain/safe/entities/operation.entity';
 import { ProposeTransactionDto as DomainProposeTransactionDto } from '@/domain/transactions/entities/propose-transaction.dto.entity';
+import type { Address, Hash, Hex } from 'viem';
 
 export class ProposeTransactionDto implements DomainProposeTransactionDto {
   @ApiProperty()
-  to!: `0x${string}`;
+  to!: Address;
   @ApiProperty()
   value!: string;
   @ApiPropertyOptional({ type: String, nullable: true })
-  data!: `0x${string}` | null;
+  data!: Hex | null;
   @ApiProperty()
   nonce!: string;
   @ApiProperty()
@@ -20,15 +21,15 @@ export class ProposeTransactionDto implements DomainProposeTransactionDto {
   @ApiProperty()
   gasPrice!: string;
   @ApiProperty()
-  gasToken!: `0x${string}`;
+  gasToken!: Address;
   @ApiPropertyOptional({ type: String, nullable: true })
-  refundReceiver!: `0x${string}` | null;
+  refundReceiver!: Address | null;
   @ApiProperty()
-  safeTxHash!: `0x${string}`;
+  safeTxHash!: Hash;
   @ApiProperty()
-  sender!: `0x${string}`;
+  sender!: Address;
   @ApiPropertyOptional({ type: String, nullable: true })
-  signature!: `0x${string}` | null;
+  signature!: Hex | null;
   @ApiPropertyOptional({ type: String, nullable: true })
   origin!: string | null;
 }

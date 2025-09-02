@@ -1,7 +1,7 @@
 import { delegateBuilder } from '@/domain/delegate/entities/__tests__/delegate.builder';
 import { DelegateSchema } from '@/domain/delegate/entities/schemas/delegate.schema';
 import { faker } from '@faker-js/faker';
-import { getAddress } from 'viem';
+import { type Address, getAddress } from 'viem';
 import { ZodError } from 'zod';
 
 describe('DelegateSchema', () => {
@@ -26,7 +26,7 @@ describe('DelegateSchema', () => {
   it('should checksum safe, delegate and delegator', () => {
     const nonChecksummedAddress = faker.finance
       .ethereumAddress()
-      .toLowerCase() as `0x${string}`;
+      .toLowerCase() as Address;
     const delegate = delegateBuilder()
       .with('safe', nonChecksummedAddress)
       .with('delegate', nonChecksummedAddress)

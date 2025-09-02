@@ -8,6 +8,7 @@ import {
 } from '@/routes/transactions/helpers/transaction-finder.helper';
 import { Injectable, Module } from '@nestjs/common';
 import { getAbiItem, toFunctionSelector } from 'viem';
+import type { Address, Hex } from 'viem';
 
 @Injectable()
 export class KilnNativeStakingHelper {
@@ -27,10 +28,10 @@ export class KilnNativeStakingHelper {
   constructor(private readonly transactionFinder: TransactionFinder) {}
 
   public findDepositTransaction(args: {
-    to?: `0x${string}`;
-    data: `0x${string}`;
+    to?: Address;
+    data: Hex;
     value: string;
-  }): { to?: `0x${string}`; data: `0x${string}`; value: string } | null {
+  }): { to?: Address; data: Hex; value: string } | null {
     const selector = toFunctionSelector(
       KilnNativeStakingHelper.DEPOSIT_SIGNATURE,
     );
@@ -41,10 +42,10 @@ export class KilnNativeStakingHelper {
   }
 
   public findValidatorsExitTransaction(args: {
-    to?: `0x${string}`;
-    data: `0x${string}`;
+    to?: Address;
+    data: Hex;
     value: string;
-  }): { to?: `0x${string}`; data: `0x${string}`; value: string } | null {
+  }): { to?: Address; data: Hex; value: string } | null {
     const selector = toFunctionSelector(
       KilnNativeStakingHelper.VALIDATORS_EXIT_SIGNATURE,
     );
@@ -55,10 +56,10 @@ export class KilnNativeStakingHelper {
   }
 
   public findWithdrawTransaction(args: {
-    to?: `0x${string}`;
-    data: `0x${string}`;
+    to?: Address;
+    data: Hex;
     value: string;
-  }): { to?: `0x${string}`; data: `0x${string}`; value: string } | null {
+  }): { to?: Address; data: Hex; value: string } | null {
     const selector = toFunctionSelector(
       KilnNativeStakingHelper.WITHDRAW_SIGNATURE,
     );
@@ -77,10 +78,10 @@ export class KilnNativeStakingHelper {
    * @param publicKeys - the public keys to split
    * @returns
    */
-  public splitPublicKeys(publicKeys: `0x${string}`): Array<`0x${string}`> {
+  public splitPublicKeys(publicKeys: Address): Array<Address> {
     // Remove initial `0x` of decoded `_publicKeys`
     const publicKeysString = publicKeys.slice(2);
-    const publicKeysArray: Array<`0x${string}`> = [];
+    const publicKeysArray: Array<Address> = [];
     for (
       let i = 0;
       i < publicKeysString.length;

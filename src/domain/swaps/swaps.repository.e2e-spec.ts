@@ -10,6 +10,7 @@ import { ISwapsRepository } from '@/domain/swaps/swaps.repository';
 import type { Order } from '@/domain/swaps/entities/order.entity';
 import configuration from '@/config/entities/configuration';
 import type { Server } from 'net';
+import type { Address } from 'viem';
 
 const orderIds = {
   '1': {
@@ -137,7 +138,7 @@ describe('CowSwap E2E tests', () => {
         it(`Transaction ID: ${orderId}`, async () => {
           const actual: Order = await repository.getOrder(
             chainId,
-            orderId as `0x${string}`,
+            orderId as Address,
           );
 
           expect(actual).toEqual({

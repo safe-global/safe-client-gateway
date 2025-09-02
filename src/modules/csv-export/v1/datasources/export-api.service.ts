@@ -7,6 +7,7 @@ import { IExportApi } from '@/modules/csv-export/v1/datasources/export-api.inter
 import { TransactionExport } from '@/modules/csv-export/v1/entities/transaction-export.entity';
 import { Raw } from '@/validation/entities/raw.entity';
 import { Inject, Injectable } from '@nestjs/common';
+import type { Address } from 'viem';
 
 @Injectable()
 export class ExportApi implements IExportApi {
@@ -32,7 +33,7 @@ export class ExportApi implements IExportApi {
   }
 
   async export(args: {
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
     executionDateGte?: string;
     executionDateLte?: string;
     limit?: number;

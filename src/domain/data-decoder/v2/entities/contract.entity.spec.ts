@@ -9,7 +9,7 @@ import {
   ContractSchema,
   ProjectSchema,
 } from '@/domain/data-decoder/v2/entities/contract.entity';
-import { getAddress } from 'viem';
+import { type Address, getAddress } from 'viem';
 
 describe('Contract', () => {
   describe('ProjectSchema', () => {
@@ -93,7 +93,7 @@ describe('Contract', () => {
 
     it('should require a valid hex string for abiHash', () => {
       const abi = abiBuilder()
-        .with('abiHash', faker.string.numeric() as `0x${string}`)
+        .with('abiHash', faker.string.numeric() as Address)
         .build();
 
       const result = AbiSchema.safeParse(abi);
@@ -161,7 +161,7 @@ describe('Contract', () => {
         .ethereumAddress()
         .toLowerCase();
       const contract = contractBuilder()
-        .with('address', nonChecksummedAddress as `0x${string}`)
+        .with('address', nonChecksummedAddress as Address)
         .build();
 
       const result = ContractSchema.safeParse(contract);

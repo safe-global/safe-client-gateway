@@ -1,5 +1,6 @@
 import { MultiSendDecoder } from '@/domain/contracts/decoders/multi-send-decoder.helper';
 import { Injectable, Module } from '@nestjs/common';
+import type { Address, Hex } from 'viem';
 
 @Injectable()
 export class TransactionFinder {
@@ -13,12 +14,9 @@ export class TransactionFinder {
    * @returns transaction data if found, otherwise null
    */
   public findTransaction(
-    isTransactionData: (args: {
-      to?: `0x${string}`;
-      data: `0x${string}`;
-    }) => boolean,
-    transaction: { to?: `0x${string}`; data: `0x${string}`; value: string },
-  ): { to?: `0x${string}`; data: `0x${string}`; value: string } | null {
+    isTransactionData: (args: { to?: Address; data: Hex }) => boolean,
+    transaction: { to?: Address; data: Hex; value: string },
+  ): { to?: Address; data: Hex; value: string } | null {
     if (isTransactionData(transaction)) {
       return transaction;
     }

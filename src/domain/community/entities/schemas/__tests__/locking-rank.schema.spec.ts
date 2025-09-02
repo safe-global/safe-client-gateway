@@ -1,7 +1,7 @@
 import { lockingRankBuilder } from '@/domain/community/entities/__tests__/locking-rank.builder';
 import { LockingRankSchema } from '@/domain/community/entities/schemas/locking-rank.schema';
 import { faker } from '@faker-js/faker';
-import { getAddress } from 'viem';
+import { type Address, getAddress } from 'viem';
 import { ZodError } from 'zod';
 
 describe('RankSchema', () => {
@@ -16,7 +16,7 @@ describe('RankSchema', () => {
   it('should checksum the holder', () => {
     const nonChecksummedAddress = faker.finance
       .ethereumAddress()
-      .toLowerCase() as `0x${string}`;
+      .toLowerCase() as Address;
     const lockingRank = lockingRankBuilder()
       .with('holder', nonChecksummedAddress)
       .build();

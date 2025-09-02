@@ -4,13 +4,14 @@ import { PostgresDatabaseMigrator } from '@/datasources/db/v1/postgres-database.
 import { faker } from '@faker-js/faker';
 import type { Sql } from 'postgres';
 import type postgres from 'postgres';
+import type { Address } from 'viem';
 
 interface AccountRow {
   id: number;
   group_id: number;
   created_at: Date;
   updated_at: Date;
-  address: `0x${string}`;
+  address: Address;
 }
 
 describe('Migration 00001_accounts', () => {

@@ -2,7 +2,7 @@ import { faker } from '@faker-js/faker';
 import type { IBuilder } from '@/__tests__/builder';
 import { Builder } from '@/__tests__/builder';
 import type { MessageConfirmation } from '@/domain/messages/entities/message-confirmation.entity';
-import { getAddress } from 'viem';
+import { type Hex, getAddress } from 'viem';
 import { SignatureType } from '@/domain/common/entities/signature-type.entity';
 
 export function messageConfirmationBuilder(): IBuilder<MessageConfirmation> {
@@ -10,10 +10,7 @@ export function messageConfirmationBuilder(): IBuilder<MessageConfirmation> {
     .with('created', faker.date.recent())
     .with('modified', faker.date.recent())
     .with('owner', getAddress(faker.finance.ethereumAddress()))
-    .with(
-      'signature',
-      faker.string.hexadecimal({ length: 130 }) as `0x${string}`,
-    )
+    .with('signature', faker.string.hexadecimal({ length: 130 }) as Hex)
     .with('signatureType', faker.helpers.objectValue(SignatureType));
 }
 

@@ -15,7 +15,7 @@ import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import type { Server } from 'net';
 import request from 'supertest';
-import { getAddress } from 'viem';
+import { type Address, getAddress } from 'viem';
 import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
 import type { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 import { addressBookItemBuilder } from '@/domain/spaces/address-books/entities/__tests__/address-book-item.db.builder';
@@ -258,7 +258,7 @@ describe('AddressBooksController', () => {
     it('should return a 403 if the AuthPayload is empty', async () => {
       const { spaceId } = await createSpace();
       const authPayloadDto = authPayloadDtoBuilder()
-        .with('signer_address', undefined as unknown as `0x${string}`)
+        .with('signer_address', undefined as unknown as Address)
         .build();
       const accessToken = jwtService.sign(authPayloadDto);
 
@@ -800,10 +800,10 @@ describe('AddressBooksController', () => {
   const createAddressBookItem = async (args: {
     spaceId: string;
     adminAccessToken: string;
-    address?: `0x${string}`;
+    address?: Address;
   }): Promise<{
     mockName: string;
-    mockAddress: `0x${string}`;
+    mockAddress: Address;
     mockChainIds: Array<string>;
   }> => {
     const mockAddress =

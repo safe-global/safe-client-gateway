@@ -11,6 +11,7 @@ import {
   PrimaryGeneratedColumn,
   Unique,
 } from 'typeorm';
+import type { Address } from 'viem';
 
 @Entity('space_address_book_items')
 @Unique('UQ_SABI_space_id_address', ['space', 'address'])
@@ -47,7 +48,7 @@ export class AddressBookItem implements DomainAddressBookItem {
     nullable: false,
     transformer: databaseAddressTransformer,
   })
-  address!: `0x${string}`;
+  address!: Address;
 
   @Column({
     type: 'varchar',
@@ -62,7 +63,7 @@ export class AddressBookItem implements DomainAddressBookItem {
     nullable: false,
     transformer: databaseAddressTransformer,
   })
-  createdBy!: `0x${string}`;
+  createdBy!: Address;
 
   @Column({
     name: 'last_updated_by',
@@ -71,7 +72,7 @@ export class AddressBookItem implements DomainAddressBookItem {
     nullable: false,
     transformer: databaseAddressTransformer,
   })
-  lastUpdatedBy!: `0x${string}`;
+  lastUpdatedBy!: Address;
 
   @Column({
     name: 'created_at',

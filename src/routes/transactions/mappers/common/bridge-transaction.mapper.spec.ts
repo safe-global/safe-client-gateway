@@ -8,6 +8,7 @@ import { BridgeTransactionMapper } from './bridge-transaction.mapper';
 import { SwapTransactionInfo } from '@/routes/transactions/entities/bridge/bridge-info.entity';
 import { TokenInfo } from '@/routes/transactions/entities/swaps/token-info.entity';
 import type { IChainsRepository } from '@/domain/chains/chains.repository.interface';
+import type { Address, Hash, Hex } from 'viem';
 
 describe('BridgeTransactionMapper (Unit)', () => {
   let mapper: BridgeTransactionMapper;
@@ -59,21 +60,21 @@ describe('BridgeTransactionMapper (Unit)', () => {
 
   describe('mapSwap', () => {
     it('should return a SwapTransactionInfo', async () => {
-      const data = faker.string.hexadecimal({ length: 40 }) as `0x${string}`;
+      const data = faker.string.hexadecimal({ length: 40 }) as Hex;
       const decoded = {
         transactionId: faker.string.hexadecimal({
           length: 64,
-        }) as `0x${string}`,
-        toAddress: faker.string.hexadecimal({ length: 40 }) as `0x${string}`,
-        fromToken: faker.string.hexadecimal({ length: 40 }) as `0x${string}`,
-        toToken: faker.string.hexadecimal({ length: 40 }) as `0x${string}`,
+        }) as Hex,
+        toAddress: faker.string.hexadecimal({ length: 40 }) as Address,
+        fromToken: faker.string.hexadecimal({ length: 40 }) as Address,
+        toToken: faker.string.hexadecimal({ length: 40 }) as Address,
         fromAmount: BigInt(1000000),
         toAmount: BigInt(1000000),
         fees: {
-          tokenAddress: faker.finance.ethereumAddress() as `0x${string}`,
+          tokenAddress: faker.finance.ethereumAddress() as Address,
           integratorFee: BigInt(100),
           lifiFee: BigInt(200),
-          integratorAddress: faker.finance.ethereumAddress() as `0x${string}`,
+          integratorAddress: faker.finance.ethereumAddress() as Address,
         },
       };
       liFiDecoder.decodeSwap.mockReturnValue(decoded);
@@ -82,7 +83,7 @@ describe('BridgeTransactionMapper (Unit)', () => {
         data,
         chainId: faker.string.numeric(),
         executionDate: null,
-        safeAddress: faker.finance.ethereumAddress() as `0x${string}`,
+        safeAddress: faker.finance.ethereumAddress() as Address,
       });
 
       expect(result).toBeInstanceOf(SwapTransactionInfo);
@@ -92,34 +93,34 @@ describe('BridgeTransactionMapper (Unit)', () => {
 
   describe('mapSwapAndBridge', () => {
     const chainId = faker.string.numeric();
-    const data = faker.string.hexadecimal({ length: 40 }) as `0x${string}`;
+    const data = faker.string.hexadecimal({ length: 40 }) as Hex;
     const safeAddress = faker.string.hexadecimal({
       length: 40,
-    }) as `0x${string}`;
-    const fromToken = faker.string.hexadecimal({ length: 40 }) as `0x${string}`;
-    const toAddress = faker.string.hexadecimal({ length: 40 }) as `0x${string}`;
+    }) as Address;
+    const fromToken = faker.string.hexadecimal({ length: 40 }) as Address;
+    const toAddress = faker.string.hexadecimal({ length: 40 }) as Address;
     const toChain = BigInt(faker.number.int());
 
     it('should map a queued bridge transaction', async () => {
       const decoded = {
         transactionId: faker.string.hexadecimal({
           length: 64,
-        }) as `0x${string}`,
+        }) as Hex,
         fromToken,
         toAddress,
         toChain,
         fromAmount: BigInt(1000000),
-        toToken: faker.string.hexadecimal({ length: 40 }) as `0x${string}`,
+        toToken: faker.string.hexadecimal({ length: 40 }) as Address,
         minAmount: BigInt(1000000),
         fees: {
           tokenAddress: faker.string.hexadecimal({
             length: 40,
-          }) as `0x${string}`,
+          }) as Address,
           integratorFee: BigInt(100),
           lifiFee: BigInt(200),
           integratorAddress: faker.string.hexadecimal({
             length: 40,
-          }) as `0x${string}`,
+          }) as Address,
         },
         bridge: 'lifi',
       };
@@ -175,22 +176,22 @@ describe('BridgeTransactionMapper (Unit)', () => {
       const decoded = {
         transactionId: faker.string.hexadecimal({
           length: 64,
-        }) as `0x${string}`,
+        }) as Hex,
         fromToken,
         toAddress,
         toChain,
         fromAmount: BigInt(1000000),
-        toToken: faker.string.hexadecimal({ length: 40 }) as `0x${string}`,
+        toToken: faker.string.hexadecimal({ length: 40 }) as Address,
         minAmount: BigInt(1000000),
         fees: {
           tokenAddress: faker.string.hexadecimal({
             length: 40,
-          }) as `0x${string}`,
+          }) as Address,
           integratorFee: BigInt(100),
           lifiFee: BigInt(200),
           integratorAddress: faker.string.hexadecimal({
             length: 40,
-          }) as `0x${string}`,
+          }) as Address,
         },
         bridge: 'lifi',
       };
@@ -221,7 +222,7 @@ describe('BridgeTransactionMapper (Unit)', () => {
         transactionId: decoded.transactionId,
         receiving: {
           value: '1000000',
-          txHash: faker.string.hexadecimal({ length: 64 }) as `0x${string}`,
+          txHash: faker.string.hexadecimal({ length: 64 }) as Hash,
           chainId: decoded.toChain.toString(),
           txLink: faker.internet.url(),
           token: {
@@ -238,7 +239,7 @@ describe('BridgeTransactionMapper (Unit)', () => {
           gasPrice: '0',
           gasUsed: '0',
           gasToken: {
-            address: faker.string.hexadecimal({ length: 40 }) as `0x${string}`,
+            address: faker.string.hexadecimal({ length: 40 }) as Address,
             decimals: 18,
             symbol: 'ETH',
             name: 'Ethereum',
@@ -251,8 +252,8 @@ describe('BridgeTransactionMapper (Unit)', () => {
           timestamp: null,
         },
         lifiExplorerLink: faker.internet.url(),
-        fromAddress: faker.string.hexadecimal({ length: 40 }) as `0x${string}`,
-        toAddress: faker.string.hexadecimal({ length: 40 }) as `0x${string}`,
+        fromAddress: faker.string.hexadecimal({ length: 40 }) as Address,
+        toAddress: faker.string.hexadecimal({ length: 40 }) as Address,
         metadata: {
           integrator: faker.string.alpha({ length: 10 }),
         },
@@ -299,22 +300,22 @@ describe('BridgeTransactionMapper (Unit)', () => {
       const decoded = {
         transactionId: faker.string.hexadecimal({
           length: 64,
-        }) as `0x${string}`,
+        }) as Hex,
         fromToken,
         toAddress,
         toChain,
         fromAmount: BigInt(1000000),
-        toToken: faker.string.hexadecimal({ length: 40 }) as `0x${string}`,
+        toToken: faker.string.hexadecimal({ length: 40 }) as Address,
         minAmount: BigInt(1000000),
         fees: {
           tokenAddress: faker.string.hexadecimal({
             length: 40,
-          }) as `0x${string}`,
+          }) as Address,
           integratorFee: BigInt(100),
           lifiFee: BigInt(200),
           integratorAddress: faker.string.hexadecimal({
             length: 40,
-          }) as `0x${string}`,
+          }) as Address,
         },
         bridge: 'lifi',
       };
@@ -343,7 +344,7 @@ describe('BridgeTransactionMapper (Unit)', () => {
         substatus: 'UNKNOWN_FAILED_ERROR',
         substatusMessage: 'Transaction failed',
         sending: {
-          txHash: faker.string.hexadecimal({ length: 64 }) as `0x${string}`,
+          txHash: faker.string.hexadecimal({ length: 64 }) as Hash,
           chainId,
           txLink: faker.internet.url(),
         },
@@ -382,12 +383,12 @@ describe('BridgeTransactionMapper (Unit)', () => {
       const decoded = {
         transactionId: faker.string.hexadecimal({
           length: 64,
-        }) as `0x${string}`,
+        }) as Hex,
         fromToken,
         toAddress,
         toChain,
         fromAmount: BigInt(1000000),
-        toToken: faker.string.hexadecimal({ length: 40 }) as `0x${string}`,
+        toToken: faker.string.hexadecimal({ length: 40 }) as Address,
         minAmount: BigInt(1000000),
         fees: null,
         bridge: 'lifi',

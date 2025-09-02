@@ -5,6 +5,7 @@ import { Submission } from '@/domain/targeted-messaging/entities/submission.enti
 import { TargetedSafe } from '@/domain/targeted-messaging/entities/targeted-safe.entity';
 import { TargetedMessagingRepository } from '@/domain/targeted-messaging/targeted-messaging.repository';
 import { Module } from '@nestjs/common';
+import type { Address } from 'viem';
 
 export const ITargetedMessagingRepository = Symbol(
   'ITargetedMessagingRepository',
@@ -13,12 +14,12 @@ export const ITargetedMessagingRepository = Symbol(
 export interface ITargetedMessagingRepository {
   getTargetedSafe(args: {
     outreachId: number;
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
   }): Promise<TargetedSafe>;
 
   addSafeToOutreach(args: {
     outreachId: number;
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
   }): Promise<Array<TargetedSafe>>;
 
   getOutreachOrFail(outreachId: number): Promise<Outreach>;
@@ -26,12 +27,12 @@ export interface ITargetedMessagingRepository {
   getSubmission(args: {
     chainId: string;
     targetedSafe: TargetedSafe;
-    signerAddress: `0x${string}`;
+    signerAddress: Address;
   }): Promise<Submission>;
 
   createSubmission(args: {
     targetedSafe: TargetedSafe;
-    signerAddress: `0x${string}`;
+    signerAddress: Address;
   }): Promise<Submission>;
 }
 

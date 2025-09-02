@@ -33,6 +33,7 @@ import {
 } from 'viem';
 import { UuidSchema } from '@/validation/entities/schemas/uuid.schema';
 import { DeviceType } from '@/domain/notifications/v1/entities/device.entity';
+import type { Address, Hex } from 'viem';
 
 @ApiTags('notifications')
 @Controller({ path: '', version: '1' })
@@ -103,7 +104,7 @@ export class NotificationsController {
       Parameters<NotificationsServiceV2['upsertSubscriptions']>[0] & {
         upsertSubscriptionsDto: {
           safes: Array<UpsertSubscriptionsSafesDto>;
-          signature: `0x${string}`;
+          signature: Hex;
         };
       }
     > = [];
@@ -121,7 +122,7 @@ export class NotificationsController {
           >[0] & {
             upsertSubscriptionsDto: {
               safes: Array<UpsertSubscriptionsSafesDto>;
-              signature: `0x${string}`;
+              signature: Hex;
             };
           } = {
             upsertSubscriptionsDto: {
@@ -129,14 +130,14 @@ export class NotificationsController {
               deviceType: args.deviceType,
               deviceUuid: (args.uuid as UUID) || undefined,
               safes: [],
-              signature: (safeV1Signature as `0x${string}`) ?? undefined,
+              signature: (safeV1Signature as Hex) ?? undefined,
             },
             authPayload: new AuthPayload(),
           };
           const uniqueSafeAddresses = new Set(safeV1Registration.safes);
           for (const safeAddresses of uniqueSafeAddresses) {
             safeV2.upsertSubscriptionsDto.safes.push({
-              address: safeAddresses as `0x${string}`,
+              address: safeAddresses as Address,
               chainId: safeV1Registration.chainId,
               notificationTypes: Object.values(NotificationType),
             });
@@ -151,7 +152,7 @@ export class NotificationsController {
         (safeV2Safes) => safeV2Safes.address,
       );
 
-      let recoveredAddress: `0x${string}` | undefined = undefined;
+      let recoveredAddress: Address | undefined = undefined;
       if (safeV2.upsertSubscriptionsDto.signature) {
         recoveredAddress = await this.recoverAddress({
           registerDeviceDto: args,
@@ -189,11 +190,11 @@ export class NotificationsController {
     safeV2Dto: Parameters<NotificationsServiceV2['upsertSubscriptions']>[0] & {
       upsertSubscriptionsDto: {
         safes: Array<UpsertSubscriptionsSafesDto>;
-        signature: `0x${string}`;
+        signature: Hex;
       };
     };
-    safeAddresses: Array<`0x${string}`>;
-  }): Promise<`0x${string}`> {
+    safeAddresses: Array<Address>;
+  }): Promise<Address> {
     /**
      * @todo Explore the feasibility of using a unified method to recover signatures for both web and other clients.
      */
@@ -272,7 +273,7 @@ export class NotificationsController {
     @Param('chainId') chainId: string,
     @Param('uuid', new ValidationPipe(UuidSchema)) uuid: UUID,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
-    safeAddress: `0x${string}`,
+    safeAddress: Address,
   ): Promise<void> {
     await this.notificationServiceV2.deleteSubscription({
       deviceUuid: uuid,
@@ -286,11 +287,11 @@ export class NotificationsController {
     safeV2Dto: Parameters<NotificationsServiceV2['upsertSubscriptions']>[0] & {
       upsertSubscriptionsDto: {
         safes: Array<UpsertSubscriptionsSafesDto>;
-        signature: `0x${string}`;
+        signature: Hex;
       };
     };
-    safeAddresses: Array<`0x${string}`>;
-  }): `0x${string}` {
+    safeAddresses: Array<Address>;
+  }): Address {
     return keccak256(
       toBytes(
         `gnosis-safe${args.registerDeviceDto.timestamp}${args.registerDeviceDto.uuid}${args.registerDeviceDto.cloudMessagingToken}${args.safeAddresses.sort().join('')}`,

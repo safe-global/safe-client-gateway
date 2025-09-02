@@ -4,6 +4,7 @@ import { DeviceType } from '@/domain/notifications/v2/entities/device-type.entit
 import type { UUID } from 'crypto';
 import { faker } from '@faker-js/faker';
 import type postgres from 'postgres';
+import type { Address } from 'viem';
 import { getAddress } from 'viem';
 
 type PushNotificationDevicesRow = {
@@ -29,10 +30,10 @@ type NotificationTypesRow = {
 
 type NotificationSubscriptionsRow = {
   id: number;
-  signer_address: `0x${string}` | null;
+  signer_address: Address | null;
   push_notification_device_id: PushNotificationDevicesRow['id'];
   chain_id: string;
-  safe_address: `0x${string}`;
+  safe_address: Address;
   created_at: Date;
   updated_at: Date;
 };

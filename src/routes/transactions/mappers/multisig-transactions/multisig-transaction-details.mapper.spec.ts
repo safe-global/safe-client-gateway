@@ -21,6 +21,7 @@ import type { ILoggingService } from '@/logging/logging.interface';
 import type { IContractsRepository } from '@/domain/contracts/contracts.repository.interface';
 import { Operation } from '@/domain/safe/entities/operation.entity';
 import { dataDecodedBuilder } from '@/domain/data-decoder/v2/entities/__tests__/data-decoded.builder';
+import type { Address } from 'viem';
 
 const addressInfoHelper = jest.mocked({
   getOrDefault: jest.fn(),
@@ -73,7 +74,7 @@ describe('MultisigTransactionDetails mapper (Unit)', () => {
 
   function initTarget(args: {
     ethSign: boolean;
-    blocklist: Array<`0x${string}`>;
+    blocklist: Array<Address>;
   }): void {
     mockConfigurationService.getOrThrow.mockImplementation((key) => {
       if (key === 'blockchain.blocklist') return args.blocklist;

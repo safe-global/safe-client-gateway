@@ -18,6 +18,7 @@ import { UpdateMessageSignatureDto } from '@/routes/messages/entities/update-mes
 import { MessageMapper } from '@/routes/messages/mappers/message-mapper';
 import { LoggingService, ILoggingService } from '@/logging/logging.interface';
 import { LogType } from '@/domain/common/entities/log-type.entity';
+import type { Address, Hash } from 'viem';
 
 @Injectable()
 export class MessagesService {
@@ -32,7 +33,7 @@ export class MessagesService {
 
   async getMessageByHash(args: {
     chainId: string;
-    messageHash: `0x${string}`;
+    messageHash: Hash;
   }): Promise<Message> {
     const message = await this.messagesRepository.getMessageByHash(args);
     const safe = await this.safeRepository.getSafe({
@@ -44,7 +45,7 @@ export class MessagesService {
 
   async getMessagesBySafe(args: {
     chainId: string;
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
     paginationData: PaginationData;
     routeUrl: Readonly<URL>;
   }): Promise<Page<DateLabel | MessageItem>> {
@@ -126,7 +127,7 @@ export class MessagesService {
 
   async createMessage(args: {
     chainId: string;
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
     createMessageDto: CreateMessageDto;
   }): Promise<unknown> {
     this.logProposeMessage(args);
@@ -142,7 +143,7 @@ export class MessagesService {
 
   async updateMessageSignature(args: {
     chainId: string;
-    messageHash: `0x${string}`;
+    messageHash: Hash;
     updateMessageSignatureDto: UpdateMessageSignatureDto;
   }): Promise<unknown> {
     return await this.messagesRepository.updateMessageSignature({

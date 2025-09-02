@@ -14,6 +14,7 @@ import {
   VaultRedeemTransactionInfo as VaultRedeemTransactionInfo,
 } from '@/routes/transactions/entities/vaults/vault-transaction-info.entity';
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import type { Address } from 'viem';
 
 @Injectable()
 export class VaultTransactionMapper {
@@ -26,10 +27,10 @@ export class VaultTransactionMapper {
 
   public async mapDepositInfo(args: {
     chainId: string;
-    to: `0x${string}`;
+    to: Address;
     assets: number;
-    data: `0x${string}`;
-    safeAddress: `0x${string}`;
+    data: Address;
+    safeAddress: Address;
   }): Promise<VaultDepositTransactionInfo> {
     const deployment = await this.earnRepository.getDeployment({
       chainId: args.chainId,
@@ -73,10 +74,10 @@ export class VaultTransactionMapper {
 
   public async mapRedeemInfo(args: {
     chainId: string;
-    to: `0x${string}`;
+    to: Address;
     assets: number;
-    data: `0x${string}`;
-    safeAddress: `0x${string}`;
+    data: Address;
+    safeAddress: Address;
   }): Promise<VaultRedeemTransactionInfo> {
     const deployment = await this.earnRepository.getDeployment({
       chainId: args.chainId,
@@ -133,7 +134,7 @@ export class VaultTransactionMapper {
 
   private async mapAdditionalRewards(args: {
     chainId: string;
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
     additionalRewards: Array<DefiVaultStatsAdditionalReward> | null;
   }): Promise<Array<VaultExtraReward>> {
     if (!args.additionalRewards) {

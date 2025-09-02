@@ -25,6 +25,7 @@ import { EthereumTransaction } from '@/domain/safe/entities/ethereum-transaction
 import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
 import { DataDecoded } from '@/domain/data-decoder/v2/entities/data-decoded.entity';
 import { IDataDecoderRepository } from '@/domain/data-decoder/v2/data-decoder.repository.interface';
+import type { Address } from 'viem';
 
 @Injectable()
 export class TransactionsHistoryMapper {
@@ -146,7 +147,7 @@ export class TransactionsHistoryMapper {
 
   private getAddressesFromTransfers(
     transferTransactions: Array<EthereumTransaction>,
-  ): Array<`0x${string}`> {
+  ): Array<Address> {
     return transferTransactions.flatMap((tx) =>
       [
         tx.from,
@@ -155,7 +156,7 @@ export class TransactionsHistoryMapper {
           transfer.from,
           'tokenAddress' in transfer ? transfer.tokenAddress : undefined,
         ]) ?? []),
-      ].filter((address): address is `0x${string}` => !!address),
+      ].filter((address): address is Address => !!address),
     );
   }
 

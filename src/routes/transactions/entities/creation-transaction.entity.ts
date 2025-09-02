@@ -1,20 +1,21 @@
 import { CreationTransaction as DomainCreationTransaction } from '@/domain/safe/entities/creation-transaction.entity';
 import { DataDecoded } from '@/routes/data-decode/entities/data-decoded.entity';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import type { Address, Hash } from 'viem';
 
 export class CreationTransaction implements DomainCreationTransaction {
   @ApiProperty()
   created: Date;
   @ApiProperty()
-  creator: `0x${string}`;
+  creator: Address;
   @ApiProperty()
-  transactionHash: `0x${string}`;
+  transactionHash: Hash;
   @ApiProperty()
-  factoryAddress: `0x${string}`;
+  factoryAddress: Address;
   @ApiPropertyOptional({ type: String, nullable: true })
-  masterCopy: `0x${string}` | null;
+  masterCopy: Address | null;
   @ApiPropertyOptional({ type: String, nullable: true })
-  setupData: `0x${string}` | null;
+  setupData: Address | null;
   @ApiPropertyOptional({ type: String, nullable: true })
   saltNonce: string | null;
   @ApiPropertyOptional({ type: DataDecoded, nullable: true })
@@ -22,11 +23,11 @@ export class CreationTransaction implements DomainCreationTransaction {
 
   constructor(
     created: Date,
-    creator: `0x${string}`,
-    transactionHash: `0x${string}`,
-    factoryAddress: `0x${string}`,
-    masterCopy: `0x${string}` | null,
-    setupData: `0x${string}` | null,
+    creator: Address,
+    transactionHash: Hash,
+    factoryAddress: Address,
+    masterCopy: Address | null,
+    setupData: Address | null,
     saltNonce: string | null,
     dataDecoded: DataDecoded | null,
   ) {

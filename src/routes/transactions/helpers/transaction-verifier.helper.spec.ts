@@ -1,6 +1,6 @@
 import { faker } from '@faker-js/faker';
 import { get } from 'lodash';
-import { concat, getAddress } from 'viem';
+import { type Address, concat, getAddress } from 'viem';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 import { SignatureType } from '@/domain/common/entities/signature-type.entity';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
@@ -150,7 +150,7 @@ describe('TransactionVerifierHelper', () => {
         });
       transaction.confirmations![0].signature = faker.string.hexadecimal({
         length: 130,
-      }) as `0x${string}`;
+      }) as Address;
 
       expect(() => {
         return target.verifyApiTransaction({ chainId, safe, transaction });
@@ -175,7 +175,7 @@ describe('TransactionVerifierHelper', () => {
         });
       transaction.confirmations![0].signature = faker.string.hexadecimal({
         length: 130,
-      }) as `0x${string}`;
+      }) as Address;
 
       expect(() => {
         return target.verifyApiTransaction({ chainId, safe, transaction });
@@ -270,7 +270,7 @@ describe('TransactionVerifierHelper', () => {
         });
       transaction.data = faker.string.hexadecimal({
         length: 64,
-      }) as `0x${string}`;
+      }) as Address;
 
       expect(() => {
         return target.verifyApiTransaction({ chainId, safe, transaction });
@@ -387,7 +387,7 @@ describe('TransactionVerifierHelper', () => {
           safe,
         });
       transaction.confirmations![0].signature =
-        transaction.confirmations![0].signature!.slice(0, 129) as `0x${string}`;
+        transaction.confirmations![0].signature!.slice(0, 129) as Address;
 
       expect(() => {
         return target.verifyApiTransaction({ chainId, safe, transaction });
@@ -411,7 +411,7 @@ describe('TransactionVerifierHelper', () => {
           safe,
         });
       transaction.confirmations![0].signature =
-        transaction.confirmations![0].signature!.slice(0, 128) as `0x${string}`;
+        transaction.confirmations![0].signature!.slice(0, 128) as Address;
 
       expect(() => {
         return target.verifyApiTransaction({ chainId, safe, transaction });
@@ -1181,7 +1181,7 @@ describe('TransactionVerifierHelper', () => {
         });
       transaction.data = faker.string.hexadecimal({
         length: 64,
-      }) as `0x${string}`;
+      }) as Address;
       const proposal = proposeTransactionDtoBuilder()
         .with('to', transaction.to)
         .with('value', transaction.value)
@@ -1254,7 +1254,7 @@ describe('TransactionVerifierHelper', () => {
           safe,
         });
       transaction.confirmations![0].signature =
-        transaction.confirmations![0].signature!.slice(0, 129) as `0x${string}`;
+        transaction.confirmations![0].signature!.slice(0, 129) as Address;
       const proposal = proposeTransactionDtoBuilder()
         .with('to', transaction.to)
         .with('value', transaction.value)
@@ -1306,7 +1306,7 @@ describe('TransactionVerifierHelper', () => {
           safe,
         });
       transaction.confirmations![0].signature =
-        transaction.confirmations![0].signature!.slice(0, 128) as `0x${string}`;
+        transaction.confirmations![0].signature!.slice(0, 128) as Address;
       const proposal = proposeTransactionDtoBuilder()
         .with('to', transaction.to)
         .with('value', transaction.value)
@@ -1982,7 +1982,7 @@ describe('TransactionVerifierHelper', () => {
         });
       transaction.data = faker.string.hexadecimal({
         length: 64,
-      }) as `0x${string}`;
+      }) as Address;
 
       expect(() => {
         return target.verifyConfirmation({
@@ -2056,7 +2056,7 @@ describe('TransactionVerifierHelper', () => {
           transaction,
           signature: faker.helpers.arrayElement(
             transaction.confirmations!.map((confirmation) => {
-              return confirmation.signature!.slice(0, 129) as `0x${string}`;
+              return confirmation.signature!.slice(0, 129) as Address;
             }),
           ),
         });
@@ -2100,7 +2100,7 @@ describe('TransactionVerifierHelper', () => {
           transaction,
           signature: faker.helpers.arrayElement(
             transaction.confirmations!.map((confirmation) => {
-              return confirmation.signature!.slice(0, 128) as `0x${string}`;
+              return confirmation.signature!.slice(0, 128) as Address;
             }),
           ),
         });

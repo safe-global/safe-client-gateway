@@ -1,13 +1,18 @@
 import { faker } from '@faker-js/faker';
-import { isAddress, type PrivateKeyAccount } from 'viem';
+import {
+  type Hex,
+  type Address,
+  isAddress,
+  type PrivateKeyAccount,
+} from 'viem';
 import { SignatureType } from '@/domain/common/entities/signature-type.entity';
 import { DYNAMIC_PART_LENGTH_FIELD_HEX_LENGTH } from '@/domain/common/utils/signatures';
 
 export async function getSignature(args: {
   signer: PrivateKeyAccount;
-  hash: `0x${string}`;
+  hash: Hex;
   signatureType: SignatureType;
-}): Promise<`0x${string}`> {
+}): Promise<Hex> {
   switch (args.signatureType) {
     case SignatureType.ContractSignature: {
       return getContractSignature(args.signer.address);
@@ -30,11 +35,11 @@ export async function getSignature(args: {
   }
 }
 
-export function getApprovedHashSignature(owner: `0x${string}`): `0x${string}` {
+export function getApprovedHashSignature(owner: Address): Hex {
   return ('0x000000000000000000000000' +
     owner.slice(2) +
     '0000000000000000000000000000000000000000000000000000000000000000' +
-    '01') as `0x${string}`;
+    '01') as Hex;
 }
 
 /**
@@ -45,7 +50,7 @@ export function getApprovedHashSignature(owner: `0x${string}`): `0x${string}` {
  * @param verifier - the verifier address as a 0x-prefixed hex string
  * @returns a mock contract signature as a lower-cased hex string
  */
-export function getContractSignature(verifier: `0x${string}`): `0x${string}` {
+export function getContractSignature(verifier: Address): Hex {
   // For single-signature blob, the pointer is 65, left-padded to 32 bytes
   const DATA_POINTER = (65).toString(16).padStart(64, '0');
   const CONTRACT_SIGNATURE_TYPE = '00';
@@ -75,15 +80,15 @@ export function getContractSignature(verifier: `0x${string}`): `0x${string}` {
 
 export async function getEoaSignature(args: {
   signer: PrivateKeyAccount;
-  hash: `0x${string}`;
-}): Promise<`0x${string}`> {
+  hash: Hex;
+}): Promise<Hex> {
   return await args.signer.sign({ hash: args.hash });
 }
 
 export async function getEthSignSignature(args: {
   signer: PrivateKeyAccount;
-  hash: `0x${string}`;
-}): Promise<`0x${string}`> {
+  hash: Hex;
+}): Promise<Hex> {
   const signature = await args.signer.signMessage({
     message: { raw: args.hash },
   });
@@ -91,5 +96,5 @@ export async function getEthSignSignature(args: {
   // To differentiate signature types, eth_sign signatures have v value increased by 4
   // @see https://docs.safe.global/advanced/smart-account-signatures#eth_sign-signature
   const v = parseInt(signature.slice(-2), 16);
-  return (signature.slice(0, 130) + (v + 4).toString(16)) as `0x${string}`;
+  return (signature.slice(0, 130) + (v + 4).toString(16)) as Hex;
 }

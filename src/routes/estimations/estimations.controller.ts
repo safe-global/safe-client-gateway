@@ -13,6 +13,7 @@ import { EstimationsService } from '@/routes/estimations/estimations.service';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import { GetEstimationDtoSchema } from '@/routes/estimations/entities/schemas/get-estimation.dto.schema';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
+import type { Address } from 'viem';
 
 @ApiTags('estimations')
 @Controller({
@@ -55,7 +56,7 @@ export class EstimationsController {
   @Post('chains/:chainId/safes/:address/multisig-transactions/estimations')
   async getEstimation(
     @Param('chainId') chainId: string,
-    @Param('address', new ValidationPipe(AddressSchema)) address: `0x${string}`,
+    @Param('address', new ValidationPipe(AddressSchema)) address: Address,
     @Body(new ValidationPipe(GetEstimationDtoSchema))
     getEstimationDto: GetEstimationDto,
   ): Promise<EstimationResponse> {

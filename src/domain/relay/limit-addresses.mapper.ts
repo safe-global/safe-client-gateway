@@ -17,6 +17,7 @@ import { InvalidTransferError } from '@/domain/relay/errors/invalid-transfer.err
 import { InvalidMultiSendError } from '@/domain/relay/errors/invalid-multisend.error';
 import { UnofficialProxyFactoryError } from '@/domain/relay/errors/unofficial-proxy-factory.error';
 import { DelayModifierDecoder } from '@/domain/alerts/contracts/decoders/delay-modifier-decoder.helper';
+import type { Address } from 'viem';
 
 @Injectable()
 export class LimitAddressesMapper {
@@ -33,9 +34,9 @@ export class LimitAddressesMapper {
   async getLimitAddresses(args: {
     version: string;
     chainId: string;
-    to: `0x${string}`;
-    data: `0x${string}`;
-  }): Promise<ReadonlyArray<`0x${string}`>> {
+    to: Address;
+    data: Address;
+  }): Promise<ReadonlyArray<Address>> {
     const safeBeingRecovered = await this.getSafeBeingRecovered(args);
     if (safeBeingRecovered) {
       return [safeBeingRecovered];
@@ -132,11 +133,11 @@ export class LimitAddressesMapper {
   private async getSafeBeingRecovered(args: {
     chainId: string;
     version: string;
-    to: `0x${string}`;
-    data: `0x${string}`;
-  }): Promise<`0x${string}` | null> {
-    let to: `0x${string}`;
-    let data: `0x${string}`;
+    to: Address;
+    data: Address;
+  }): Promise<Address | null> {
+    let to: Address;
+    let data: Address;
 
     try {
       const decoded = this.delayModifierDecoder.decodeFunctionData({
@@ -203,13 +204,13 @@ export class LimitAddressesMapper {
    * @returns {Array<{ to: string; data: string }>} - Array of transactions
    */
   private decodeTransactions(args: {
-    address: `0x${string}`;
+    address: Address;
     version: string;
     chainId: string;
-    data: `0x${string}`;
+    data: Address;
   }): Array<{
-    to: `0x${string}`;
-    data: `0x${string}`;
+    to: Address;
+    data: Address;
   }> {
     if (
       this.isOfficialMultiSendDeployment(args) &&
@@ -226,7 +227,7 @@ export class LimitAddressesMapper {
    * @param {string} data - Data of the transaction
    * @returns {boolean} - Whether the data is of owner management
    */
-  private isOwnerManagementTransaction(data: `0x${string}`): boolean {
+  private isOwnerManagementTransaction(data: Address): boolean {
     try {
       const decoded = this.safeDecoder.decodeFunctionData({
         data,
@@ -256,8 +257,8 @@ export class LimitAddressesMapper {
   }
 
   private isValidExecTransactionCall(args: {
-    to: `0x${string}`;
-    data: `0x${string}`;
+    to: Address;
+    data: Address;
   }): boolean {
     const execTransactionArgs = this.getExecTransactionArgs(args.data);
     // Not a valid execTransaction call
@@ -298,10 +299,10 @@ export class LimitAddressesMapper {
     return isCancellation || this.safeDecoder.isCall(execTransactionArgs.data);
   }
 
-  private getExecTransactionArgs(data: `0x${string}`): {
-    to: `0x${string}`;
+  private getExecTransactionArgs(data: Address): {
+    to: Address;
     value: bigint;
-    data: `0x${string}`;
+    data: Address;
   } | null {
     try {
       const safeDecodedData = this.safeDecoder.decodeFunctionData({
@@ -322,10 +323,7 @@ export class LimitAddressesMapper {
     }
   }
 
-  private isValidErc20Transfer(args: {
-    to: `0x${string}`;
-    data: `0x${string}`;
-  }): boolean {
+  private isValidErc20Transfer(args: { to: Address; data: Address }): boolean {
     // Can throw but called after this.erc20Decoder.helpers.isTransfer
     const erc20DecodedData = this.erc20Decoder.decodeFunctionData({
       data: args.data,
@@ -341,8 +339,8 @@ export class LimitAddressesMapper {
   }
 
   private isValidErc20TransferFrom(args: {
-    to: `0x${string}`;
-    data: `0x${string}`;
+    to: Address;
+    data: Address;
   }): boolean {
     // Can throw but called after this.erc20Decoder.helpers.isTransferFrom
     const erc20DecodedData = this.erc20Decoder.decodeFunctionData({
@@ -360,7 +358,7 @@ export class LimitAddressesMapper {
 
   private async isOfficialMastercopy(args: {
     chainId: string;
-    address: `0x${string}`;
+    address: Address;
   }): Promise<boolean> {
     try {
       await this.safeRepository.getSafe(args);
@@ -373,7 +371,7 @@ export class LimitAddressesMapper {
   private isOfficialMultiSendDeployment(args: {
     version: string;
     chainId: string;
-    address: `0x${string}`;
+    address: Address;
   }): boolean {
     return (
       getMultiSendCallOnlyDeployments(args).includes(args.address) ||
@@ -381,9 +379,7 @@ export class LimitAddressesMapper {
     );
   }
 
-  private getSafeAddressFromMultiSend = (
-    data: `0x${string}`,
-  ): `0x${string}` => {
+  private getSafeAddressFromMultiSend = (data: Address): Address => {
     // Decode transactions within MultiSend
     const transactions = this.multiSendDecoder.mapMultiSendTransactions(data);
 
@@ -413,7 +409,7 @@ export class LimitAddressesMapper {
   private isOfficialProxyFactoryDeployment(args: {
     version: string;
     chainId: string;
-    address: `0x${string}`;
+    address: Address;
   }): boolean {
     const proxyFactoryDeployments = getProxyFactoryDeployments(args);
     return proxyFactoryDeployments.includes(args.address);
@@ -422,9 +418,9 @@ export class LimitAddressesMapper {
   private isValidCreateProxyWithNonceCall(args: {
     version: string;
     chainId: string;
-    data: `0x${string}`;
+    data: Address;
   }): boolean {
-    let singleton: `0x${string}` | null = null;
+    let singleton: Address | null = null;
 
     try {
       const decoded = this.proxyFactoryDecoder.decodeFunctionData({
@@ -447,8 +443,8 @@ export class LimitAddressesMapper {
   }
 
   private getOwnersFromCreateProxyWithNonce(
-    data: `0x${string}`,
-  ): ReadonlyArray<`0x${string}`> {
+    data: Address,
+  ): ReadonlyArray<Address> {
     const decodedProxyFactory = this.proxyFactoryDecoder.decodeFunctionData({
       data,
     });

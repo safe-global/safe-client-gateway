@@ -10,6 +10,7 @@ import {
 import { MessageVerifierHelper } from '@/domain/messages/helpers/message-verifier.helper';
 import { ISafeRepository } from '@/domain/safe/safe.repository.interface';
 import { TypedData } from '@/domain/messages/entities/typed-data.entity';
+import type { Address, Hash, Hex } from 'viem';
 
 @Injectable()
 export class MessagesRepository implements IMessagesRepository {
@@ -23,7 +24,7 @@ export class MessagesRepository implements IMessagesRepository {
 
   async getMessageByHash(args: {
     chainId: string;
-    messageHash: `0x${string}`;
+    messageHash: Hash;
   }): Promise<Message> {
     const transactionService = await this.transactionApiManager.getApi(
       args.chainId,
@@ -34,7 +35,7 @@ export class MessagesRepository implements IMessagesRepository {
 
   async getMessagesBySafe(args: {
     chainId: string;
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
     limit?: number | undefined;
     offset?: number | undefined;
   }): Promise<Page<Message>> {
@@ -52,10 +53,10 @@ export class MessagesRepository implements IMessagesRepository {
 
   async createMessage(args: {
     chainId: string;
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
     message: string | TypedData;
     safeAppId: number | null;
-    signature: `0x${string}`;
+    signature: Hex;
     origin: string | null;
   }): Promise<unknown> {
     const safe = await this.safeRepository.getSafe({
@@ -82,8 +83,8 @@ export class MessagesRepository implements IMessagesRepository {
 
   async updateMessageSignature(args: {
     chainId: string;
-    messageHash: `0x${string}`;
-    signature: `0x${string}`;
+    messageHash: Hash;
+    signature: Hex;
   }): Promise<unknown> {
     const message = await this.getMessageByHash({
       chainId: args.chainId,
@@ -109,7 +110,7 @@ export class MessagesRepository implements IMessagesRepository {
 
   async clearMessagesBySafe(args: {
     chainId: string;
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
   }): Promise<void> {
     const api = await this.transactionApiManager.getApi(args.chainId);
     await api.clearMessagesBySafe(args);

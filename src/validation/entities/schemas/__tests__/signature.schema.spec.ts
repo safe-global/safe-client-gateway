@@ -1,11 +1,12 @@
 import { faker } from '@faker-js/faker';
 import { SignatureSchema } from '@/validation/entities/schemas/signature.schema';
+import type { Hex } from 'viem';
 
 describe('SignatureSchema', () => {
   it('should validate a signature', () => {
     const signature = faker.string.hexadecimal({
       length: 130,
-    }) as `0x${string}`;
+    }) as Hex;
 
     const result = SignatureSchema.safeParse(signature);
 
@@ -15,7 +16,7 @@ describe('SignatureSchema', () => {
   it('should validate a concatenated signature', () => {
     const signature = faker.string.hexadecimal({
       length: 130 * faker.number.int({ min: 2, max: 5 }),
-    }) as `0x${string}`;
+    }) as Hex;
 
     const result = SignatureSchema.safeParse(signature);
 
@@ -23,7 +24,7 @@ describe('SignatureSchema', () => {
   });
 
   it('should not validate a non-hex signature', () => {
-    const signature = faker.string.alphanumeric() as `0x${string}`;
+    const signature = faker.string.alphanumeric() as Hex;
 
     const result = SignatureSchema.safeParse(signature);
 
@@ -49,7 +50,7 @@ describe('SignatureSchema', () => {
   it('should not validate a incorrect length signature', () => {
     const signature = faker.string.hexadecimal({
       length: 129,
-    }) as `0x${string}`;
+    }) as Hex;
 
     const result = SignatureSchema.safeParse(signature);
 

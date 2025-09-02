@@ -8,6 +8,7 @@ import {
   TransactionStatusSchema,
 } from '@/datasources/staking-api/entities/transaction-status.entity';
 import { faker } from '@faker-js/faker/.';
+import type { Address } from 'viem';
 
 describe('TransactionStatus', () => {
   describe('TransactionStatusReceiptLogSchema', () => {
@@ -24,7 +25,7 @@ describe('TransactionStatus', () => {
 
     it('should not allow non-hex topics', () => {
       const transactionStatusReceiptLog = transactionStatusReceiptLogBuilder()
-        .with('topics', [faker.string.alphanumeric() as `0x${string}`])
+        .with('topics', [faker.string.alphanumeric() as Address])
         .build();
 
       const result = TransactionStatusReceiptLogSchema.safeParse(
@@ -41,7 +42,7 @@ describe('TransactionStatus', () => {
 
     it('should not allow non-hex data', () => {
       const transactionStatusReceiptLog = transactionStatusReceiptLogBuilder()
-        .with('data', faker.string.alphanumeric() as `0x${string}`)
+        .with('data', faker.string.alphanumeric() as Address)
         .build();
 
       const result = TransactionStatusReceiptLogSchema.safeParse(

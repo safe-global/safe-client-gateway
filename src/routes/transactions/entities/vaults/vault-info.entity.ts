@@ -1,8 +1,9 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import type { Address } from 'viem';
 
 export class VaultInfo {
   @ApiProperty()
-  address: `0x${string}`;
+  address: Address;
 
   @ApiProperty()
   name: string;
@@ -17,7 +18,7 @@ export class VaultInfo {
   logoUri: string;
 
   constructor(args: {
-    address: `0x${string}`;
+    address: Address;
     name: string;
     description: string;
     dashboardUri: string | null;

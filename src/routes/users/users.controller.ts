@@ -30,6 +30,7 @@ import { WalletAddedToUser } from '@/routes/users/entities/wallet-added-to-user.
 import { SiweDtoSchema } from '@/routes/auth/entities/siwe.dto.entity';
 import { SiweDto } from '@/routes/auth/entities/siwe.dto.entity';
 import type { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
+import { type Address } from 'viem';
 
 @ApiTags('users')
 @Controller({ path: 'users', version: '1' })
@@ -172,7 +173,7 @@ export class UsersController {
   @UseGuards(AuthGuard)
   public async deleteWalletFromUser(
     @Param('walletAddress', new ValidationPipe(AddressSchema))
-    walletAddress: `0x${string}`,
+    walletAddress: Address,
     @Auth() authPayload: AuthPayload,
   ): Promise<void> {
     return await this.usersService.deleteWalletFromUser({

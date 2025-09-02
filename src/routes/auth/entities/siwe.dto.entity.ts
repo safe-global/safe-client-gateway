@@ -1,12 +1,13 @@
 import { HexSchema } from '@/validation/entities/schemas/hex.schema';
 import { ApiProperty } from '@nestjs/swagger';
 import { z } from 'zod';
+import type { Address } from 'viem';
 
 export class SiweDto implements z.infer<typeof SiweDtoSchema> {
   @ApiProperty()
   message!: string;
   @ApiProperty()
-  signature!: `0x${string}`;
+  signature!: Address;
 
   constructor(props: SiweDto) {
     this.message = props.message;

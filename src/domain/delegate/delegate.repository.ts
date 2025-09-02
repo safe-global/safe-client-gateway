@@ -4,6 +4,7 @@ import { Delegate } from '@/domain/delegate/entities/delegate.entity';
 import { Page } from '@/domain/entities/page.entity';
 import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
 import { DelegatePageSchema } from '@/domain/delegate/entities/schemas/delegate.schema';
+import type { Address } from 'viem';
 
 @Injectable()
 export class DelegateRepository implements IDelegateRepository {
@@ -14,9 +15,9 @@ export class DelegateRepository implements IDelegateRepository {
 
   async getDelegates(args: {
     chainId: string;
-    safeAddress?: `0x${string}`;
-    delegate?: `0x${string}`;
-    delegator?: `0x${string}`;
+    safeAddress?: Address;
+    delegate?: Address;
+    delegator?: Address;
     label?: string;
     limit?: number;
     offset?: number;
@@ -38,9 +39,9 @@ export class DelegateRepository implements IDelegateRepository {
 
   async postDelegate(args: {
     chainId: string;
-    safeAddress: `0x${string}` | null;
-    delegate: `0x${string}`;
-    delegator: `0x${string}`;
+    safeAddress: Address | null;
+    delegate: Address;
+    delegator: Address;
     signature: string;
     label: string;
   }): Promise<void> {
@@ -58,8 +59,8 @@ export class DelegateRepository implements IDelegateRepository {
 
   async deleteDelegate(args: {
     chainId: string;
-    delegate: `0x${string}`;
-    delegator: `0x${string}`;
+    delegate: Address;
+    delegator: Address;
     signature: string;
   }): Promise<unknown> {
     const transactionService = await this.transactionApiManager.getApi(
@@ -74,8 +75,8 @@ export class DelegateRepository implements IDelegateRepository {
 
   async deleteSafeDelegate(args: {
     chainId: string;
-    delegate: `0x${string}`;
-    safeAddress: `0x${string}`;
+    delegate: Address;
+    safeAddress: Address;
     signature: string;
   }): Promise<unknown> {
     const transactionService = await this.transactionApiManager.getApi(

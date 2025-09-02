@@ -16,6 +16,7 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
+import type { Address } from 'viem';
 
 @Injectable()
 export class CounterfactualSafesRepository
@@ -34,9 +35,9 @@ export class CounterfactualSafesRepository
    * Checks that the account has the CounterfactualSafes data setting enabled.
    */
   async getCounterfactualSafe(args: {
-    address: `0x${string}`;
+    address: Address;
     chainId: string;
-    predictedAddress: `0x${string}`;
+    predictedAddress: Address;
   }): Promise<CounterfactualSafe> {
     return this.datasource.getCounterfactualSafe(args);
   }
@@ -46,7 +47,7 @@ export class CounterfactualSafesRepository
    * Checks that the account has the CounterfactualSafes data setting enabled.
    */
   async getCounterfactualSafes(
-    address: `0x${string}`,
+    address: Address,
   ): Promise<Array<CounterfactualSafe>> {
     return this.datasource.getCounterfactualSafesForAddress(address);
   }
@@ -60,7 +61,7 @@ export class CounterfactualSafesRepository
    */
   async createCounterfactualSafe(args: {
     authPayload: AuthPayload;
-    address: `0x${string}`;
+    address: Address;
     createCounterfactualSafeDto: CreateCounterfactualSafeDto;
   }): Promise<CounterfactualSafe> {
     if (!args.authPayload.isForSigner(args.address)) {
@@ -98,9 +99,9 @@ export class CounterfactualSafesRepository
    */
   async deleteCounterfactualSafe(args: {
     authPayload: AuthPayload;
-    address: `0x${string}`;
+    address: Address;
     chainId: string;
-    predictedAddress: `0x${string}`;
+    predictedAddress: Address;
   }): Promise<void> {
     if (!args.authPayload.isForSigner(args.address)) {
       throw new UnauthorizedException();
@@ -126,7 +127,7 @@ export class CounterfactualSafesRepository
    */
   async deleteCounterfactualSafes(args: {
     authPayload: AuthPayload;
-    address: `0x${string}`;
+    address: Address;
   }): Promise<void> {
     if (!args.authPayload.isForSigner(args.address)) {
       throw new UnauthorizedException();
@@ -145,7 +146,7 @@ export class CounterfactualSafesRepository
   // TODO: Extract this functionality in AccountsRepository['checkIsEnabled(DataType, Account)']
   private async checkCounterfactualSafesIsEnabled(args: {
     authPayload: AuthPayload;
-    address: `0x${string}`;
+    address: Address;
   }): Promise<void> {
     const counterfactualSafeDataType =
       await this.checkCounterfactualSafeDataTypeIsActive();

@@ -1,22 +1,23 @@
 import type { Operation } from '@/domain/safe/entities/operation.entity';
 import type { ProposeTransactionDtoSchema } from '@/routes/transactions/entities/schemas/propose-transaction.dto.schema';
 import type { z } from 'zod';
+import type { Address, Hash, Hex } from 'viem';
 
 export class ProposeTransactionDto
   implements z.infer<typeof ProposeTransactionDtoSchema>
 {
-  to!: `0x${string}`;
+  to!: Address;
   value!: string;
-  data!: `0x${string}` | null;
+  data!: Hex | null;
   nonce!: string;
   operation!: Operation;
   safeTxGas!: string;
   baseGas!: string;
   gasPrice!: string;
-  gasToken!: `0x${string}`;
-  refundReceiver!: `0x${string}` | null;
-  safeTxHash!: `0x${string}`;
-  sender!: `0x${string}`;
-  signature!: `0x${string}` | null;
+  gasToken!: Address;
+  refundReceiver!: Address | null;
+  safeTxHash!: Hash;
+  sender!: Address;
+  signature!: Hex | null;
   origin!: string | null;
 }

@@ -5,7 +5,7 @@ import {
   type DataDecodedParameter,
 } from '@/domain/data-decoder/v2/entities/data-decoded.entity';
 import { DataDecodedParamHelper } from '@/routes/transactions/mappers/common/data-decoded-param.helper';
-import { getAddress } from 'viem';
+import { type Address, getAddress } from 'viem';
 
 describe('DataDecoded param helper (Unit)', () => {
   const helper = new DataDecodedParamHelper();
@@ -467,7 +467,7 @@ describe('DataDecoded param helper (Unit)', () => {
                 operation: 0,
                 to: getAddress(faker.finance.ethereumAddress()),
                 value: faker.string.numeric(),
-                data: faker.string.hexadecimal({ length: 32 }) as `0x${string}`,
+                data: faker.string.hexadecimal({ length: 32 }) as Address,
                 dataDecoded: {
                   method: faker.word.sample(),
                   parameters: [
@@ -506,7 +506,7 @@ describe('DataDecoded param helper (Unit)', () => {
                 operation: 0,
                 to: getAddress(faker.finance.ethereumAddress()),
                 value: faker.string.numeric(),
-                data: faker.string.hexadecimal({ length: 32 }) as `0x${string}`,
+                data: faker.string.hexadecimal({ length: 32 }) as Address,
                 dataDecoded: {
                   method: faker.word.sample(),
                   parameters: [
@@ -527,7 +527,7 @@ describe('DataDecoded param helper (Unit)', () => {
                 operation: 0,
                 to: getAddress(faker.finance.ethereumAddress()),
                 value: faker.string.numeric(),
-                data: faker.string.hexadecimal({ length: 32 }) as `0x${string}`,
+                data: faker.string.hexadecimal({ length: 32 }) as Address,
                 dataDecoded: {
                   method: faker.word.sample(),
                   parameters: [
@@ -575,7 +575,7 @@ describe('DataDecoded param helper (Unit)', () => {
                 operation: 1,
                 to: getAddress(faker.finance.ethereumAddress()),
                 value: faker.string.numeric(),
-                data: faker.string.hexadecimal({ length: 32 }) as `0x${string}`,
+                data: faker.string.hexadecimal({ length: 32 }) as Address,
                 dataDecoded: {
                   method: faker.word.sample(),
                   parameters: [
@@ -614,7 +614,7 @@ describe('DataDecoded param helper (Unit)', () => {
                 operation: 1,
                 to: getAddress(faker.finance.ethereumAddress()),
                 value: faker.string.numeric(),
-                data: faker.string.hexadecimal({ length: 32 }) as `0x${string}`,
+                data: faker.string.hexadecimal({ length: 32 }) as Address,
                 dataDecoded: {
                   method: faker.word.sample(),
                   parameters: [
@@ -635,7 +635,7 @@ describe('DataDecoded param helper (Unit)', () => {
                 operation: 0,
                 to: getAddress(faker.finance.ethereumAddress()),
                 value: faker.string.numeric(),
-                data: faker.string.hexadecimal({ length: 32 }) as `0x${string}`,
+                data: faker.string.hexadecimal({ length: 32 }) as Address,
                 dataDecoded: {
                   method: faker.word.sample(),
                   parameters: [
@@ -674,14 +674,14 @@ describe('DataDecoded param helper (Unit)', () => {
                 operation: 1,
                 to: getAddress(faker.finance.ethereumAddress()),
                 value: faker.string.numeric(),
-                data: faker.string.hexadecimal({ length: 32 }) as `0x${string}`,
+                data: faker.string.hexadecimal({ length: 32 }) as Address,
                 dataDecoded: null,
               },
               {
                 operation: 0,
                 to: getAddress(faker.finance.ethereumAddress()),
                 value: faker.string.numeric(),
-                data: faker.string.hexadecimal({ length: 32 }) as `0x${string}`,
+                data: faker.string.hexadecimal({ length: 32 }) as Address,
                 dataDecoded: null,
               },
             ],

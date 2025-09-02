@@ -2,7 +2,7 @@ import { deletedMultisigTransactionEventBuilder } from '@/routes/hooks/entities/
 import type { TransactionEventType } from '@/routes/hooks/entities/event-type.entity';
 import { DeletedMultisigTransactionEventSchema } from '@/routes/hooks/entities/schemas/deleted-multisig-transaction.schema';
 import { faker } from '@faker-js/faker';
-import { getAddress } from 'viem';
+import { type Address, getAddress } from 'viem';
 import { ZodError } from 'zod';
 
 describe('DeletedMultisigTransactionEventSchema', () => {
@@ -47,7 +47,7 @@ describe('DeletedMultisigTransactionEventSchema', () => {
   it('should not allow a non-address address', () => {
     const deletedMultisigTransactionEvent =
       deletedMultisigTransactionEventBuilder()
-        .with('address', faker.string.alpha() as `0x${string}`)
+        .with('address', faker.string.alpha() as Address)
         .build();
 
     const result = DeletedMultisigTransactionEventSchema.safeParse(
@@ -68,7 +68,7 @@ describe('DeletedMultisigTransactionEventSchema', () => {
   it('should checksum the address', () => {
     const nonChecksummedAddress = faker.finance
       .ethereumAddress()
-      .toLowerCase() as `0x${string}`;
+      .toLowerCase() as Address;
     const deletedMultisigTransactionEvent =
       deletedMultisigTransactionEventBuilder()
         .with('address', nonChecksummedAddress)

@@ -11,13 +11,14 @@ import { MultisigExecutionInfo } from '@/routes/transactions/entities/multisig-e
 import { SafeAppInfo } from '@/routes/transactions/entities/safe-app-info.entity';
 import { TransactionInfo } from '@/routes/transactions/entities/transaction-info.entity';
 import { TransactionStatus } from '@/routes/transactions/entities/transaction-status.entity';
+import type { Hash } from 'viem';
 
 @ApiExtraModels(ModuleExecutionInfo, MultisigExecutionInfo)
 export class Transaction extends BaseTransaction {
   @ApiProperty()
   id: string;
   @ApiPropertyOptional({ type: String, nullable: true })
-  txHash: `0x${string}` | null;
+  txHash: Hash | null;
   @ApiProperty()
   timestamp: number;
   @ApiProperty({ enum: TransactionStatus })
@@ -40,7 +41,7 @@ export class Transaction extends BaseTransaction {
     txInfo: TransactionInfo,
     executionInfo: ExecutionInfo | null = null,
     safeAppInfo: SafeAppInfo | null = null,
-    txHash: `0x${string}` | null = null,
+    txHash: Hash | null = null,
   ) {
     super(txInfo);
     this.id = id;

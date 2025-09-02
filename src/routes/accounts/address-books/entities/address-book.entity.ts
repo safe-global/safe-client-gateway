@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import type { Address } from 'viem';
 
 export class AddressBookItem {
   @ApiProperty()
@@ -6,9 +7,9 @@ export class AddressBookItem {
   @ApiProperty()
   name: string;
   @ApiProperty()
-  address: `0x${string}`;
+  address: Address;
 
-  constructor(id: string, name: string, address: `0x${string}`) {
+  constructor(id: string, name: string, address: Address) {
     this.id = id;
     this.name = name;
     this.address = address;

@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker';
-import { getAddress } from 'viem';
+import { type Address, getAddress } from 'viem';
 import { tokenBuilder } from '@/domain/bridge/entities/__tests__/token.builder';
 import { TokenSchema } from '@/domain/bridge/entities/token.entity';
 
@@ -26,7 +26,7 @@ describe('TokenSchema', () => {
   it('should checksum address', () => {
     const nonChecksummedAddress = faker.finance.ethereumAddress().toLowerCase();
     const token = tokenBuilder()
-      .with('address', nonChecksummedAddress as `0x${string}`)
+      .with('address', nonChecksummedAddress as Address)
       .build();
 
     const result = TokenSchema.safeParse(token);

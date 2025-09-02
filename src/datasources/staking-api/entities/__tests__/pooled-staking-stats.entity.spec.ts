@@ -2,7 +2,7 @@ import { pooledStakingStatsBuilder } from '@/datasources/staking-api/entities/__
 import type { PooledStakingStats } from '@/datasources/staking-api/entities/pooled-staking-stats.entity';
 import { PooledStakingStatsSchema } from '@/datasources/staking-api/entities/pooled-staking-stats.entity';
 import { faker } from '@faker-js/faker';
-import { getAddress } from 'viem';
+import { type Address, getAddress } from 'viem';
 
 describe('PooledStakingSchema', () => {
   it('should validate a PooledStakingStats object', () => {
@@ -16,7 +16,7 @@ describe('PooledStakingSchema', () => {
   it('should checksum the address', () => {
     const nonChecksummedAddress = faker.finance.ethereumAddress().toLowerCase();
     const pooledStakingStats = pooledStakingStatsBuilder()
-      .with('address', nonChecksummedAddress as `0x${string}`)
+      .with('address', nonChecksummedAddress as Address)
       .build();
 
     const result = PooledStakingStatsSchema.safeParse(pooledStakingStats);
@@ -65,7 +65,7 @@ describe('PooledStakingSchema', () => {
   ])('should checksum the pools[number]%s', (key) => {
     const nonChecksummedAddress = faker.finance.ethereumAddress().toLowerCase();
     const pooledStakingStats = pooledStakingStatsBuilder().build();
-    pooledStakingStats.pools[0][key] = nonChecksummedAddress as `0x${string}`;
+    pooledStakingStats.pools[0][key] = nonChecksummedAddress as Address;
 
     const result = PooledStakingStatsSchema.safeParse(pooledStakingStats);
 

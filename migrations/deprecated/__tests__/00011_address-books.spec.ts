@@ -3,6 +3,7 @@ import { waitMilliseconds } from '@/__tests__/util/retry';
 import { PostgresDatabaseMigrator } from '@/datasources/db/v1/postgres-database.migrator';
 import { faker } from '@faker-js/faker';
 import type postgres from 'postgres';
+import type { Address } from 'viem';
 import { getAddress } from 'viem';
 
 interface AccountDataTypeRow {
@@ -19,7 +20,7 @@ interface AccountRow {
   group_id: number;
   created_at: Date;
   updated_at: Date;
-  address: `0x${string}`;
+  address: Address;
 }
 
 interface AddressBooksRow {

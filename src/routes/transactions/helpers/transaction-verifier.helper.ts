@@ -15,7 +15,7 @@ import { LogType } from '@/domain/common/entities/log-type.entity';
 import { SafeSignature } from '@/domain/common/entities/safe-signature';
 import { SignatureType } from '@/domain/common/entities/signature-type.entity';
 import { LogSource } from '@/domain/common/entities/log-source.entity';
-import { isAddressEqual } from 'viem';
+import { type Address, type Hash, Hex, isAddressEqual } from 'viem';
 import { IContractsRepository } from '@/domain/contracts/contracts.repository.interface';
 import { Operation } from '@/domain/safe/entities/operation.entity';
 import { parseSignaturesByType } from '@/domain/common/utils/signatures';
@@ -38,7 +38,7 @@ export class TransactionVerifierHelper {
   private readonly isApiSignatureVerificationEnabled: boolean;
   private readonly isProposalHashVerificationEnabled: boolean;
   private readonly isProposalSignatureVerificationEnabled: boolean;
-  private readonly blocklist: Array<`0x${string}`>;
+  private readonly blocklist: Array<Address>;
 
   constructor(
     @Inject(IConfigurationService)
@@ -122,7 +122,7 @@ export class TransactionVerifierHelper {
     chainId: string;
     safe: Safe;
     transaction: MultisigTransaction;
-    signature: `0x${string}`;
+    signature: Hex;
   }): void {
     const code = HttpStatus.UNPROCESSABLE_ENTITY;
 
@@ -178,7 +178,7 @@ export class TransactionVerifierHelper {
     transaction: MultisigTransaction;
     code: HttpStatus;
   }): void {
-    let safeTxHash: `0x${string}`;
+    let safeTxHash: Hash;
     try {
       safeTxHash = getSafeTxHash(args);
     } catch {
@@ -213,7 +213,7 @@ export class TransactionVerifierHelper {
       baseGas: Number(args.proposal.baseGas),
     };
 
-    let safeTxHash: `0x${string}`;
+    let safeTxHash: Hash;
     try {
       safeTxHash = getSafeTxHash({
         ...args,
@@ -246,7 +246,7 @@ export class TransactionVerifierHelper {
     transaction: MultisigTransaction;
     code: HttpStatus;
   }): void {
-    let safeTxHash: `0x${string}`;
+    let safeTxHash: Hash;
     try {
       safeTxHash = getSafeTxHash(args);
     } catch {
@@ -423,7 +423,7 @@ export class TransactionVerifierHelper {
     chainId: string;
     safe: Safe;
     transaction: MultisigTransaction;
-    signature: `0x${string}`;
+    signature: Hex;
     code: HttpStatus;
   }): void {
     const signature = new SafeSignature({
@@ -469,7 +469,7 @@ export class TransactionVerifierHelper {
   private logMalformedSafeTxHash(args: {
     chainId: string;
     safe: Safe;
-    safeTxHash: `0x${string}`;
+    safeTxHash: Hash;
     transaction: BaseMultisigTransaction;
     source: LogSource;
   }): void {
@@ -488,7 +488,7 @@ export class TransactionVerifierHelper {
   private logMismatchSafeTxHash(args: {
     chainId: string;
     safe: Safe;
-    safeTxHash: `0x${string}`;
+    safeTxHash: Hash;
     transaction: BaseMultisigTransaction;
     source: LogSource;
   }): void {
@@ -507,8 +507,8 @@ export class TransactionVerifierHelper {
   private logBlockedAddress(args: {
     chainId: string;
     safe: Safe;
-    safeTxHash: `0x${string}`;
-    blockedAddress: `0x${string}`;
+    safeTxHash: Hash;
+    blockedAddress: Address;
     source: LogSource;
   }): void {
     this.loggingService.error({
@@ -526,9 +526,9 @@ export class TransactionVerifierHelper {
   private logInvalidSignature(args: {
     chainId: string;
     safe: Safe;
-    safeTxHash: `0x${string}`;
-    signerAddress: `0x${string}`;
-    signature: `0x${string}`;
+    safeTxHash: Hash;
+    signerAddress: Address;
+    signature: Hex;
     source: LogSource;
   }): void {
     this.loggingService.error({

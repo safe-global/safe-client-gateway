@@ -1,7 +1,7 @@
 import { nativeTokenTransferBuilder } from '@/domain/safe/entities/__tests__/native-token-transfer.builder';
 import { NativeTokenTransferSchema } from '@/domain/safe/entities/schemas/native-token-transfer.schema';
 import { faker } from '@faker-js/faker';
-import { getAddress } from 'viem';
+import { type Address, getAddress } from 'viem';
 
 describe('NativeTokenTransferSchema', () => {
   it('should validate a NativeTokenTransfer', () => {
@@ -26,7 +26,7 @@ describe('NativeTokenTransferSchema', () => {
 
   it('should not allow non-hex transactionHash values', () => {
     const nativeTokenTransfer = nativeTokenTransferBuilder()
-      .with('transactionHash', faker.string.numeric() as `0x${string}`)
+      .with('transactionHash', faker.string.numeric() as Address)
       .build();
 
     const result = NativeTokenTransferSchema.safeParse(nativeTokenTransfer);
@@ -41,7 +41,7 @@ describe('NativeTokenTransferSchema', () => {
         .ethereumAddress()
         .toLowerCase();
       const nativeTokenTransfer = nativeTokenTransferBuilder()
-        .with(field, nonChecksummedAddress as `0x${string}`)
+        .with(field, nonChecksummedAddress as Address)
         .build();
 
       const result = NativeTokenTransferSchema.safeParse(nativeTokenTransfer);

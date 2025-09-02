@@ -5,7 +5,12 @@ import {
   messageConfirmationBuilder,
   toJson as messageConfirmationToJson,
 } from '@/domain/messages/entities/__tests__/message-confirmation.builder';
-import { getAddress, type PrivateKeyAccount } from 'viem';
+import {
+  type Address,
+  getAddress,
+  type Hash,
+  type PrivateKeyAccount,
+} from 'viem';
 import { fakeJson } from '@/__tests__/faker';
 import { SignatureType } from '@/domain/common/entities/signature-type.entity';
 import { getSafeMessageMessageHash } from '@/domain/common/utils/safe';
@@ -70,10 +75,7 @@ export function messageBuilder(): BuilderWithConfirmations<Message> {
     .with('modified', faker.date.recent())
     .with('safe', getAddress(faker.finance.ethereumAddress()))
     .with('message', faker.word.words({ count: { min: 1, max: 5 } }))
-    .with(
-      'messageHash',
-      faker.string.hexadecimal({ length: 32 }) as `0x${string}`,
-    )
+    .with('messageHash', faker.string.hexadecimal({ length: 32 }) as Hash)
     .with('proposedBy', getAddress(faker.finance.ethereumAddress()))
     .with('safeAppId', faker.number.int())
     .with(
@@ -84,7 +86,7 @@ export function messageBuilder(): BuilderWithConfirmations<Message> {
     )
     .with(
       'preparedSignature',
-      faker.string.hexadecimal({ length: 32 }) as `0x${string}`,
+      faker.string.hexadecimal({ length: 32 }) as Address,
     )
     .with('origin', fakeJson());
 }

@@ -24,6 +24,7 @@ import {
 } from '@/routes/jobs/entities/job-status.dto';
 import { TransactionExportDtoSchema } from '@/modules/csv-export/v1/entities/schemas/transaction-export.dto.schema';
 import { TransactionExportDto } from '@/modules/csv-export/v1/entities/transaction-export-request';
+import type { Address } from 'viem';
 
 @ApiTags('export')
 @Controller({
@@ -43,7 +44,7 @@ export class CsvExportController {
   async launchExport(
     @Param('chainId', new ValidationPipe(NumericStringSchema)) chainId: string,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
-    safeAddress: `0x${string}`,
+    safeAddress: Address,
     @Body(new ValidationPipe(TransactionExportDtoSchema))
     exportDto?: TransactionExportDto,
   ): Promise<JobStatusDto> {

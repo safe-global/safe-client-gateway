@@ -16,7 +16,7 @@ import { createHash } from 'crypto';
 import { mkdir, rm, writeFile } from 'fs/promises';
 import path from 'path';
 import type postgres from 'postgres';
-import { getAddress } from 'viem';
+import { type Address, getAddress } from 'viem';
 import { OutreachFileProcessor } from './outreach-file-processor';
 import { SubmissionDbMapper } from '@/datasources/targeted-messaging/entities/submission.db.mapper';
 import { TargetedSafeDbMapper } from '@/datasources/targeted-messaging/entities/targeted-safe.db.mapper';
@@ -303,7 +303,7 @@ describe('OutreachFileProcessor', () => {
       .with(
         'safe_addresses',
         faker.helpers.multiple(
-          () => faker.finance.ethereumAddress().toLowerCase() as `0x${string}`, // not checksummed
+          () => faker.finance.ethereumAddress().toLowerCase() as Address, // not checksummed
           { count: { min: 10, max: 50 } },
         ),
       )

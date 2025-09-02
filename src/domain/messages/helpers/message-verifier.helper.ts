@@ -9,6 +9,7 @@ import { Message } from '@/domain/messages/entities/message.entity';
 import { Safe } from '@/domain/safe/entities/safe.entity';
 import { LoggingService, ILoggingService } from '@/logging/logging.interface';
 import { HttpStatus, Inject, Injectable } from '@nestjs/common';
+import type { Address, Hash, Hex } from 'viem';
 import { isAddressEqual } from 'viem';
 
 enum ErrorMessage {
@@ -24,7 +25,7 @@ export class MessageVerifierHelper {
 
   private readonly isEthSignEnabled: boolean;
   private readonly isMessageVerificationEnabled: boolean;
-  private readonly blocklist: Array<`0x${string}`>;
+  private readonly blocklist: Array<Address>;
 
   constructor(
     @Inject(IConfigurationService)
@@ -46,7 +47,7 @@ export class MessageVerifierHelper {
     chainId: string;
     safe: Safe;
     message: Message['message'];
-    signature: `0x${string}`;
+    signature: Hex;
   }): void {
     if (!this.isMessageVerificationEnabled) {
       return;
@@ -71,8 +72,8 @@ export class MessageVerifierHelper {
     chainId: string;
     safe: Safe;
     message: Message['message'];
-    messageHash: `0x${string}`;
-    signature: `0x${string}`;
+    messageHash: Hash;
+    signature: Hex;
   }): void {
     if (!this.isMessageVerificationEnabled) {
       return;
@@ -98,7 +99,7 @@ export class MessageVerifierHelper {
   private verifyMessageHash(args: {
     chainId: string;
     safe: Safe;
-    expectedHash: `0x${string}`;
+    expectedHash: Hex;
     message: Message['message'];
     source: LogSource;
   }): void {
@@ -121,8 +122,8 @@ export class MessageVerifierHelper {
     safe: Safe;
     message: Message['message'];
     source: LogSource;
-  }): `0x${string}` {
-    let calculatedHash: `0x${string}`;
+  }): Hash {
+    let calculatedHash: Hex;
     try {
       calculatedHash = getSafeMessageMessageHash(args);
     } catch {
@@ -138,8 +139,8 @@ export class MessageVerifierHelper {
   private verifySignature(args: {
     safe: Safe;
     chainId: string;
-    messageHash: `0x${string}`;
-    signature: `0x${string}`;
+    messageHash: Hash;
+    signature: Hex;
     source: LogSource;
   }): void {
     const signature = new SafeSignature({
@@ -206,7 +207,7 @@ export class MessageVerifierHelper {
   private logMismatchMessageHash(args: {
     chainId: string;
     safe: Safe;
-    messageHash: `0x${string}`;
+    messageHash: Hash;
     message: Message['message'];
     source: LogSource;
   }): void {
@@ -225,9 +226,9 @@ export class MessageVerifierHelper {
   private logBlockedAddress(args: {
     chainId: string;
     safe: Safe;
-    messageHash: `0x${string}`;
-    signature: `0x${string}`;
-    blockedAddress: `0x${string}`;
+    messageHash: Hash;
+    signature: Hex;
+    blockedAddress: Address;
     source: LogSource;
   }): void {
     this.loggingService.error({
@@ -246,9 +247,9 @@ export class MessageVerifierHelper {
   private logInvalidSignature(args: {
     chainId: string;
     safe: Safe;
-    messageHash: `0x${string}`;
-    signerAddress: `0x${string}`;
-    signature: `0x${string}`;
+    messageHash: Hash;
+    signerAddress: Address;
+    signature: Hex;
     source: LogSource;
   }): void {
     this.loggingService.error({

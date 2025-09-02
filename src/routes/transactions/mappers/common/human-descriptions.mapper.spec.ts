@@ -1,4 +1,10 @@
-import { encodeFunctionData, formatUnits, getAddress, parseAbi } from 'viem';
+import {
+  type Address,
+  encodeFunctionData,
+  formatUnits,
+  getAddress,
+  parseAbi,
+} from 'viem';
 import { faker } from '@faker-js/faker';
 import type { TokenRepository } from '@/domain/tokens/token.repository';
 import { tokenBuilder } from '@/domain/tokens/__tests__/token.builder';
@@ -92,7 +98,7 @@ describe('Human descriptions mapper (Unit)', () => {
     const data = 'something that is not hex';
 
     const transaction = multisigTransactionBuilder()
-      .with('data', data as `0x${string}`)
+      .with('data', data as Address)
       .build();
 
     const humanDescription = await mapper.mapHumanDescription(
@@ -122,7 +128,7 @@ describe('Human descriptions mapper (Unit)', () => {
     const corruptedData = mockTransferData.slice(0, -7);
 
     const transaction = multisigTransactionBuilder()
-      .with('data', corruptedData as `0x${string}`)
+      .with('data', corruptedData as Address)
       .build();
 
     const humanDescription = await mapper.mapHumanDescription(

@@ -1,4 +1,4 @@
-import { getAddress } from 'viem';
+import { type Address, getAddress } from 'viem';
 import { faker } from '@faker-js/faker';
 import request from 'supertest';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
@@ -135,7 +135,7 @@ describe('UsersController', () => {
 
     it('should return a 403 is the AuthPayload is empty', async () => {
       const authPayloadDto = authPayloadDtoBuilder()
-        .with('signer_address', undefined as unknown as `0x${string}`)
+        .with('signer_address', undefined as unknown as Address)
         .build();
       const accessToken = jwtService.sign(authPayloadDto);
 
@@ -198,7 +198,7 @@ describe('UsersController', () => {
 
     it('should return a 403 is the AuthPayload is empty', async () => {
       const authPayloadDto = authPayloadDtoBuilder()
-        .with('signer_address', undefined as unknown as `0x${string}`)
+        .with('signer_address', undefined as unknown as Address)
         .build();
       const accessToken = jwtService.sign(authPayloadDto);
 
@@ -259,7 +259,7 @@ describe('UsersController', () => {
 
     it('should return a 403 is the AuthPayload is empty', async () => {
       const authPayloadDto = authPayloadDtoBuilder()
-        .with('signer_address', undefined as unknown as `0x${string}`)
+        .with('signer_address', undefined as unknown as Address)
         .build();
       const accessToken = jwtService.sign(authPayloadDto);
 
@@ -355,7 +355,7 @@ describe('UsersController', () => {
 
     it('should return a 403 is the AuthPayload is empty', async () => {
       const authPayloadDto = authPayloadDtoBuilder()
-        .with('signer_address', undefined as unknown as `0x${string}`)
+        .with('signer_address', undefined as unknown as Address)
         .build();
       const accessToken = jwtService.sign(authPayloadDto);
 
@@ -892,7 +892,7 @@ ${messageObj.resources?.reduce((acc, cur) => `${acc}\n- ${cur}`, 'Resources:')}`
     it('should return a 403 is the AuthPayload is empty', async () => {
       const walletAddress = getAddress(faker.finance.ethereumAddress());
       const authPayloadDto = authPayloadDtoBuilder()
-        .with('signer_address', undefined as unknown as `0x${string}`)
+        .with('signer_address', undefined as unknown as Address)
         .build();
       const accessToken = jwtService.sign(authPayloadDto);
 

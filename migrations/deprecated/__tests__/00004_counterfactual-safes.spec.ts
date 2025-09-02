@@ -3,6 +3,7 @@ import { waitMilliseconds } from '@/__tests__/util/retry';
 import { PostgresDatabaseMigrator } from '@/datasources/db/v1/postgres-database.migrator';
 import { faker } from '@faker-js/faker';
 import type postgres from 'postgres';
+import type { Address } from 'viem';
 import { getAddress } from 'viem';
 
 interface AccountRow {
@@ -10,7 +11,7 @@ interface AccountRow {
   group_id: number;
   created_at: Date;
   updated_at: Date;
-  address: `0x${string}`;
+  address: Address;
 }
 
 interface CounterfactualSafesRow {
@@ -18,12 +19,12 @@ interface CounterfactualSafesRow {
   updated_at: Date;
   id: number;
   chain_id: string;
-  creator: `0x${string}`;
-  fallback_handler: `0x${string}`;
-  owners: Array<`0x${string}`>;
-  predicted_address: `0x${string}`;
+  creator: Address;
+  fallback_handler: Address;
+  owners: Array<Address>;
+  predicted_address: Address;
   salt_nonce: string;
-  singleton_address: `0x${string}`;
+  singleton_address: Address;
   threshold: number;
   account_id: number;
 }

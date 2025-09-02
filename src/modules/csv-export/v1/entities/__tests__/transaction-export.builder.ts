@@ -1,6 +1,6 @@
 import { faker } from '@faker-js/faker';
 import { formatUnits, getAddress } from 'viem';
-import type { Hex } from 'viem';
+import type { Hash } from 'viem';
 import { Builder } from '@/__tests__/builder';
 import type { IBuilder } from '@/__tests__/builder';
 import type { TransactionExport } from '@/modules/csv-export/v1/entities/transaction-export.entity';
@@ -26,7 +26,7 @@ export function transactionExportBuilder(): IBuilder<TransactionExport> {
     .with('executorAddress', getAddress(faker.finance.ethereumAddress()))
     .with('executedAt', faker.date.recent())
     .with('note', faker.lorem.sentence())
-    .with('transactionHash', faker.string.hexadecimal({ length: 64 }) as Hex)
+    .with('transactionHash', faker.string.hexadecimal({ length: 64 }) as Hash)
     .with('contractAddress', getAddress(faker.finance.ethereumAddress()))
     .with('nonce', faker.number.int().toString());
 }

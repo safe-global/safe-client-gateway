@@ -3,6 +3,7 @@ import type { BridgeStatus } from '@/domain/bridge/entities/bridge-status.entity
 import type { Raw } from '@/validation/entities/raw.entity';
 
 import type { BridgeChainPage } from '@/domain/bridge/entities/bridge-chain.entity';
+import type { Hash } from 'viem';
 
 export const IBridgeApi = Symbol('IBridgeApi');
 
@@ -10,7 +11,7 @@ export interface IBridgeApi {
   getChains(): Promise<Raw<BridgeChainPage>>;
 
   getStatus(args: {
-    txHash: `0x${string}`;
+    txHash: Hash;
     bridge?: BridgeName;
     toChain?: string;
   }): Promise<Raw<BridgeStatus>>;

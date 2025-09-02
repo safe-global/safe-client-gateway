@@ -28,6 +28,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { Response } from 'express';
+import type { Address } from 'viem';
 
 @ApiTags('targeted-messaging')
 @Controller({
@@ -49,7 +50,7 @@ export class TargetedMessagingController {
     outreachId: number,
     @Param('chainId', new ValidationPipe(NumericStringSchema)) chainId: string,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
-    safeAddress: `0x${string}`,
+    safeAddress: Address,
   ): Promise<TargetedSafe> {
     return this.service.getTargetedSafe({ outreachId, chainId, safeAddress });
   }
@@ -64,9 +65,9 @@ export class TargetedMessagingController {
     outreachId: number,
     @Param('chainId', new ValidationPipe(NumericStringSchema)) chainId: string,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
-    safeAddress: `0x${string}`,
+    safeAddress: Address,
     @Param('signerAddress', new ValidationPipe(AddressSchema))
-    signerAddress: `0x${string}`,
+    signerAddress: Address,
   ): Promise<Response> {
     try {
       const submission = await this.service.getSubmission({
@@ -99,9 +100,9 @@ export class TargetedMessagingController {
     outreachId: number,
     @Param('chainId', new ValidationPipe(NumericStringSchema)) chainId: string,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
-    safeAddress: `0x${string}`,
+    safeAddress: Address,
     @Param('signerAddress', new ValidationPipe(AddressSchema))
-    signerAddress: `0x${string}`,
+    signerAddress: Address,
     @Body(new ValidationPipe(CreateSubmissionDtoSchema))
     createSubmissionDto: CreateSubmissionDto,
   ): Promise<Submission> {

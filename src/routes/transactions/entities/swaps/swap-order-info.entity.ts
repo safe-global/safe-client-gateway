@@ -13,6 +13,7 @@ import {
   OrderStatus,
 } from '@/domain/swaps/entities/order.entity';
 import { TokenInfo } from '@/routes/transactions/entities/swaps/token-info.entity';
+import type { Address } from 'viem';
 
 export interface OrderInfo {
   uid: string;
@@ -28,7 +29,7 @@ export interface OrderInfo {
   executedFee: string;
   executedFeeToken: TokenInfo;
   receiver: string | null;
-  owner: `0x${string}`;
+  owner: Address;
   fullAppData: Record<string, unknown> | null;
 }
 
@@ -114,7 +115,7 @@ export class SwapOrderTransactionInfo
   @ApiProperty({
     type: String,
   })
-  owner: `0x${string}`;
+  owner: Address;
 
   @ApiPropertyOptional({
     type: Object,
@@ -139,7 +140,7 @@ export class SwapOrderTransactionInfo
     executedFee: string;
     executedFeeToken: TokenInfo;
     receiver: string | null;
-    owner: `0x${string}`;
+    owner: Address;
     fullAppData: Record<string, unknown> | null;
   }) {
     super(TransactionInfoType.SwapOrder, null);

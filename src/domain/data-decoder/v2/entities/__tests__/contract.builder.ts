@@ -1,4 +1,5 @@
 import { faker } from '@faker-js/faker';
+import type { Address } from 'viem';
 import { getAddress } from 'viem';
 import { fakeJson } from '@/__tests__/faker';
 import { Builder } from '@/__tests__/builder';
@@ -14,7 +15,7 @@ export function projectBuilder(): IBuilder<NonNullable<Contract['project']>> {
 export function abiBuilder(): IBuilder<NonNullable<Contract['abi']>> {
   return new Builder<NonNullable<Contract['abi']>>()
     .with('abiJson', [JSON.parse(fakeJson()) as Record<string, unknown>])
-    .with('abiHash', faker.string.hexadecimal() as `0x${string}`)
+    .with('abiHash', faker.string.hexadecimal() as Address)
     .with('modified', faker.date.past());
 }
 

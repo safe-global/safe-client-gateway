@@ -8,6 +8,7 @@ import type {
 import { type Repository, type EntityManager } from 'typeorm';
 import type { Wallet } from '@/datasources/wallets/entities/wallets.entity.db';
 import type { User } from '@/domain/users/entities/user.entity';
+import type { Address } from 'viem';
 
 export const IWalletsRepository = Symbol('IWalletsRepository');
 
@@ -35,12 +36,12 @@ export interface IWalletsRepository {
   }): Promise<Array<Wallet>>;
 
   findOneByAddressOrFail(
-    address: `0x${string}`,
+    address: Address,
     relations?: FindOptionsRelations<Wallet>,
   ): Promise<Wallet>;
 
   findOneByAddress(
-    address: `0x${string}`,
+    address: Address,
     relations?: FindOptionsRelations<Wallet>,
   ): Promise<Wallet | null>;
 
@@ -52,10 +53,10 @@ export interface IWalletsRepository {
   create(
     args: {
       userId: number;
-      walletAddress: `0x${string}`;
+      walletAddress: Address;
     },
     entityManager: EntityManager | Repository<Wallet>,
   ): Promise<InsertResult>;
 
-  deleteByAddress(address: `0x${string}`): Promise<DeleteResult>;
+  deleteByAddress(address: Address): Promise<DeleteResult>;
 }

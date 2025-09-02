@@ -30,7 +30,7 @@ import { IPositionsApi } from '@/domain/interfaces/positions-api.interface';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { rawify, type Raw } from '@/validation/entities/raw.entity';
 import { Inject, Injectable } from '@nestjs/common';
-import { getAddress } from 'viem';
+import { Address, getAddress } from 'viem';
 import { z, ZodError } from 'zod';
 import { Position } from '@/domain/positions/entities/position.entity';
 
@@ -70,7 +70,7 @@ export class ZerionPositionsApi implements IPositionsApi {
 
   async getPositions(args: {
     chain: Chain;
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
     fiatCode: string;
   }): Promise<Raw<Array<Position>>> {
     if (!this.fiatCodes.includes(args.fiatCode.toUpperCase())) {
@@ -131,7 +131,7 @@ export class ZerionPositionsApi implements IPositionsApi {
 
   async clearPositions(args: {
     chainId: string;
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
   }): Promise<void> {
     const key = CacheRouter.getZerionPositionsCacheKey(args);
     await this.cacheService.deleteByKey(key);

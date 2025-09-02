@@ -13,7 +13,7 @@ import { AddressInfo } from '@/routes/common/entities/address-info.entity';
 import { MULTI_SEND_METHOD_NAME } from '@/routes/transactions/constants';
 import type { DataDecodedParamHelper } from '@/routes/transactions/mappers/common/data-decoded-param.helper';
 import { TransactionDataMapper } from '@/routes/transactions/mappers/common/transaction-data.mapper';
-import { getAddress } from 'viem';
+import { type Address, getAddress } from 'viem';
 import type { MultisigTransactionInfoMapper } from '@/routes/transactions/mappers/common/transaction-info.mapper';
 import type { IChainsRepository } from '@/domain/chains/chains.repository.interface';
 import type { TokenRepository } from '@/domain/tokens/token.repository';
@@ -315,7 +315,7 @@ describe('Transaction Data Mapper (Unit)', () => {
                 operation: 0,
                 to: getAddress(faker.finance.ethereumAddress()),
                 value: faker.string.numeric(),
-                data: faker.string.hexadecimal() as `0x${string}`,
+                data: faker.string.hexadecimal() as Address,
                 dataDecoded: dataDecodedBuilder()
                   .with('method', 'swap')
                   .with('parameters', [
@@ -367,7 +367,7 @@ describe('Transaction Data Mapper (Unit)', () => {
               {
                 operation: 0,
                 to: getAddress(faker.finance.ethereumAddress()),
-                data: faker.string.hexadecimal() as `0x${string}`,
+                data: faker.string.hexadecimal() as Address,
                 value: faker.string.numeric(),
                 dataDecoded: dataDecodedBuilder()
                   .with('method', 'swap')
@@ -386,7 +386,7 @@ describe('Transaction Data Mapper (Unit)', () => {
                 operation: 0,
                 to: contractAddress,
                 value: faker.string.numeric(),
-                data: faker.string.hexadecimal() as `0x${string}`,
+                data: faker.string.hexadecimal() as Address,
                 dataDecoded: dataDecodedBuilder()
                   .with('method', 'swap')
                   .with('parameters', [
@@ -403,7 +403,7 @@ describe('Transaction Data Mapper (Unit)', () => {
               {
                 operation: 0,
                 to: contractAddress,
-                data: faker.string.hexadecimal() as `0x${string}`,
+                data: faker.string.hexadecimal() as Address,
                 value: faker.string.numeric(),
                 dataDecoded: dataDecodedBuilder()
                   .with('method', 'swap')

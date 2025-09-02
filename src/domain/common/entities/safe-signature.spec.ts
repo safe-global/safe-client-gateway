@@ -9,6 +9,7 @@ import {
   SIGNATURE_HEX_LENGTH,
   DYNAMIC_PART_LENGTH_FIELD_HEX_LENGTH,
 } from '@/domain/common/utils/signatures';
+import type { Hex, Hash } from 'viem';
 
 describe('SafeSignature', () => {
   it('should create an instance', () => {
@@ -25,8 +26,8 @@ describe('SafeSignature', () => {
       '1f',
       '20',
     ]);
-    const signature = `${baseSignature}${v}` as `0x${string}`;
-    const hash = faker.string.hexadecimal({ length: 66 }) as `0x${string}`;
+    const signature = `${baseSignature}${v}` as Hex;
+    const hash = faker.string.hexadecimal({ length: 66 }) as Hex;
 
     expect(() => new SafeSignature({ signature, hash })).not.toThrow();
   });
@@ -36,8 +37,8 @@ describe('SafeSignature', () => {
       .hexadecimal({
         length: 130,
       })
-      .slice(2) as `0x${string}`;
-    const hash = faker.string.hexadecimal({ length: 66 }) as `0x${string}`;
+      .slice(2) as Hex;
+    const hash = faker.string.hexadecimal({ length: 66 }) as Hex;
 
     expect(() => new SafeSignature({ signature, hash })).toThrow(
       new Error('Invalid "0x" notated signature'),
@@ -47,8 +48,8 @@ describe('SafeSignature', () => {
   it('should throw an error if the signature length is not even', () => {
     const signature = faker.string.hexadecimal({
       length: 129,
-    }) as `0x${string}`;
-    const hash = faker.string.hexadecimal({ length: 66 }) as `0x${string}`;
+    }) as Hex;
+    const hash = faker.string.hexadecimal({ length: 66 }) as Hash;
 
     expect(() => new SafeSignature({ signature, hash })).toThrow(
       new Error('Invalid hex bytes length'),
@@ -58,8 +59,8 @@ describe('SafeSignature', () => {
   it('should throw if the signature length is less than 132', () => {
     const signature = faker.string.hexadecimal({
       length: 128,
-    }) as `0x${string}`;
-    const hash = faker.string.hexadecimal({ length: 66 }) as `0x${string}`;
+    }) as Hex;
+    const hash = faker.string.hexadecimal({ length: 66 }) as Hash;
 
     expect(() => new SafeSignature({ signature, hash })).toThrow(
       new Error('Invalid signature length'),
@@ -69,7 +70,7 @@ describe('SafeSignature', () => {
   it('should throw if a contract signature has insufficient bytes for the dynamic part length field', async () => {
     const privateKey = generatePrivateKey();
     const signer = privateKeyToAccount(privateKey);
-    const hash = faker.string.hexadecimal({ length: 66 }) as `0x${string}`;
+    const hash = faker.string.hexadecimal({ length: 66 }) as Hash;
     const signature = await getSignature({
       signer,
       hash,
@@ -82,7 +83,7 @@ describe('SafeSignature', () => {
           signature: signature.slice(
             0,
             SIGNATURE_HEX_LENGTH + DYNAMIC_PART_LENGTH_FIELD_HEX_LENGTH - 2,
-          ) as `0x${string}`,
+          ) as Hex,
           hash,
         }),
     ).toThrow(new Error('Insufficient length for dynamic part length field'));
@@ -91,7 +92,7 @@ describe('SafeSignature', () => {
   it('should throw if a contract signature has insufficient bytes for the dynamic part', async () => {
     const privateKey = generatePrivateKey();
     const signer = privateKeyToAccount(privateKey);
-    const hash = faker.string.hexadecimal({ length: 66 }) as `0x${string}`;
+    const hash = faker.string.hexadecimal({ length: 66 }) as Hash;
     const signature = await getSignature({
       signer,
       hash,
@@ -101,7 +102,7 @@ describe('SafeSignature', () => {
     expect(
       () =>
         new SafeSignature({
-          signature: signature.slice(0, -2) as `0x${string}`,
+          signature: signature.slice(0, -2) as Hex,
           hash,
         }),
     ).toThrow(new Error('Insufficient length for dynamic part'));
@@ -110,7 +111,7 @@ describe('SafeSignature', () => {
   it('should throw if providing a concatenated signature', async () => {
     const privateKey = generatePrivateKey();
     const signer = privateKeyToAccount(privateKey);
-    const hash = faker.string.hexadecimal({ length: 66 }) as `0x${string}`;
+    const hash = faker.string.hexadecimal({ length: 66 }) as Hash;
     const signatures = await Promise.all(
       shuffle(Object.values(SignatureType)).map((signatureType) => {
         return getSignature({
@@ -133,8 +134,8 @@ describe('SafeSignature', () => {
   it('should return the r value', () => {
     const signature = faker.string.hexadecimal({
       length: 130,
-    }) as `0x${string}`;
-    const hash = faker.string.hexadecimal({ length: 66 }) as `0x${string}`;
+    }) as Hex;
+    const hash = faker.string.hexadecimal({ length: 66 }) as Hash;
 
     const safeSignature = new SafeSignature({
       signature,
@@ -147,8 +148,8 @@ describe('SafeSignature', () => {
   it('should return the s value', () => {
     const signature = faker.string.hexadecimal({
       length: 130,
-    }) as `0x${string}`;
-    const hash = faker.string.hexadecimal({ length: 66 }) as `0x${string}`;
+    }) as Hex;
+    const hash = faker.string.hexadecimal({ length: 66 }) as Hash;
 
     const safeSignature = new SafeSignature({
       signature,
@@ -161,8 +162,8 @@ describe('SafeSignature', () => {
   it('should return the v value', () => {
     const signature = faker.string.hexadecimal({
       length: 130,
-    }) as `0x${string}`;
-    const hash = faker.string.hexadecimal({ length: 66 }) as `0x${string}`;
+    }) as Hex;
+    const hash = faker.string.hexadecimal({ length: 66 }) as Hash;
 
     const safeSignature = new SafeSignature({
       signature,
@@ -174,7 +175,7 @@ describe('SafeSignature', () => {
 
   describe('signatureType', () => {
     it('should return ContractSignature if the v is 0', async () => {
-      const hash = faker.string.hexadecimal({ length: 66 }) as `0x${string}`;
+      const hash = faker.string.hexadecimal({ length: 66 }) as Hash;
       const signature = await getSignature({
         signer: privateKeyToAccount(generatePrivateKey()),
         hash,
@@ -187,7 +188,7 @@ describe('SafeSignature', () => {
     });
 
     it('should return ApprovedHash if the v is 1', async () => {
-      const hash = faker.string.hexadecimal({ length: 66 }) as `0x${string}`;
+      const hash = faker.string.hexadecimal({ length: 66 }) as Hash;
       const signature = await getSignature({
         signer: privateKeyToAccount(generatePrivateKey()),
         hash,
@@ -200,7 +201,7 @@ describe('SafeSignature', () => {
     });
 
     it('should return EthSign if the v is greater than 30', async () => {
-      const hash = faker.string.hexadecimal({ length: 66 }) as `0x${string}`;
+      const hash = faker.string.hexadecimal({ length: 66 }) as Hash;
       const signature = await getSignature({
         signer: privateKeyToAccount(generatePrivateKey()),
         hash,
@@ -213,7 +214,7 @@ describe('SafeSignature', () => {
     });
 
     it('should return Eoa if the v is not any of the above', async () => {
-      const hash = faker.string.hexadecimal({ length: 66 }) as `0x${string}`;
+      const hash = faker.string.hexadecimal({ length: 66 }) as Hash;
       const signature = await getSignature({
         signer: privateKeyToAccount(generatePrivateKey()),
         hash,
@@ -232,7 +233,7 @@ describe('SafeSignature', () => {
       async (signatureType) => {
         const privateKey = generatePrivateKey();
         const signer = privateKeyToAccount(privateKey);
-        const hash = faker.string.hexadecimal({ length: 66 }) as `0x${string}`;
+        const hash = faker.string.hexadecimal({ length: 66 }) as Hash;
         const signature = await getSignature({
           signer,
           hash,
@@ -250,7 +251,7 @@ describe('SafeSignature', () => {
 
       const privateKey = generatePrivateKey();
       const signer = privateKeyToAccount(privateKey);
-      const hash = faker.string.hexadecimal({ length: 66 }) as `0x${string}`;
+      const hash = faker.string.hexadecimal({ length: 66 }) as Hash;
       // Recovered via getAddress
       const signatureType = faker.helpers.arrayElement([
         SignatureType.ApprovedHash,

@@ -12,6 +12,7 @@ import {
   Erc721Token,
   NativeToken,
 } from '@/routes/balances/entities/token.entity';
+import type { Address } from 'viem';
 
 @ApiExtraModels(AddressInfo, DataDecoded, Erc20Token, Erc721Token, NativeToken)
 export class TransactionData {
@@ -47,7 +48,7 @@ export class TransactionData {
     nullable: true,
   })
   tokenInfoIndex: Record<
-    `0x${string}`,
+    Address,
     Erc20Token | Erc721Token | NativeToken
   > | null;
 
@@ -60,7 +61,7 @@ export class TransactionData {
     trustedDelegateCallTarget: boolean | null,
     addressInfoIndex: Record<string, AddressInfo> | null,
     tokenInfoIndex: Record<
-      `0x${string}`,
+      Address,
       Erc20Token | Erc721Token | NativeToken
     > | null,
   ) {

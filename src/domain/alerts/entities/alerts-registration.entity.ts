@@ -1,5 +1,7 @@
+import type { Address } from 'viem';
+
 export type AlertsRegistration = {
-  address: `0x${string}`;
+  address: Address;
   chainId: string;
   // {chainId}:{safeAddress}:{moduleAddress}
   displayName?: `${string}:${string}:${string}`;

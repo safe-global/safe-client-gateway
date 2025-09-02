@@ -26,6 +26,7 @@ import { IConfigurationService } from '@/config/configuration.service.interface'
 import type { INetworkService } from '@/datasources/network/network.service.interface';
 import { NetworkService } from '@/datasources/network/network.service.interface';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
+import type { Address } from 'viem';
 import { getAddress } from 'viem';
 import type { Server } from 'net';
 import { rawify } from '@/validation/entities/raw.entity';
@@ -445,7 +446,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
     const tx = await multisigTransactionBuilder()
       .with('safe', safe.address)
       .with('operation', 0)
-      .with('data', faker.string.hexadecimal({ length: 32 }) as `0x${string}`)
+      .with('data', faker.string.hexadecimal({ length: 32 }) as Address)
       .with('isExecuted', true)
       .with('isSuccessful', true)
       .with('executionDate', executionDate)
@@ -639,7 +640,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
     const tx = await multisigTransactionBuilder()
       .with('safe', safe.address)
       .with('operation', 0)
-      .with('data', faker.string.hexadecimal({ length: 32 }) as `0x${string}`)
+      .with('data', faker.string.hexadecimal({ length: 32 }) as Address)
       .with('isExecuted', true)
       .with('isSuccessful', true)
       .with('executionDate', executionDate)
@@ -834,7 +835,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
       .with('safe', safe.address)
       .with('operation', 0)
       .with('nonce', 4)
-      .with('data', faker.string.hexadecimal({ length: 32 }) as `0x${string}`)
+      .with('data', faker.string.hexadecimal({ length: 32 }) as Address)
       .with('isExecuted', false)
       .with('isSuccessful', null)
       .with('executionDate', executionDate)
@@ -1147,7 +1148,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
         });
       multisigTransaction.data = faker.string.hexadecimal({
         length: 64,
-      }) as `0x${string}`;
+      }) as Address;
       const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
       const getMultisigTransactionUrl = `${chain.transactionService}/api/v1/multisig-transactions/${multisigTransaction.safeTxHash}/`;

@@ -1,5 +1,6 @@
 import { CreateCounterfactualSafeDto as DomainCreateCounterfactualSafeDto } from '@/domain/accounts/counterfactual-safes/entities/create-counterfactual-safe.dto.entity';
 import { ApiProperty } from '@nestjs/swagger';
+import type { Address } from 'viem';
 
 export class CreateCounterfactualSafeDto
   implements DomainCreateCounterfactualSafeDto
@@ -7,15 +8,15 @@ export class CreateCounterfactualSafeDto
   @ApiProperty()
   chainId!: string;
   @ApiProperty()
-  fallbackHandler!: `0x${string}`;
+  fallbackHandler!: Address;
   @ApiProperty()
-  owners!: Array<`0x${string}`>;
+  owners!: Array<Address>;
   @ApiProperty()
-  predictedAddress!: `0x${string}`;
+  predictedAddress!: Address;
   @ApiProperty()
   saltNonce!: string;
   @ApiProperty()
-  singletonAddress!: `0x${string}`;
+  singletonAddress!: Address;
   @ApiProperty()
   threshold!: number;
 }

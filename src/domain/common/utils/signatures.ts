@@ -1,6 +1,7 @@
 import { HEX_BYTES_LENGTH, HEX_PREFIX_LENGTH } from '@/routes/common/constants';
 import { isHexBytes } from '@/validation/entities/schemas/hexbytes.schema';
 import { isSignatureLike } from '@/validation/entities/schemas/signature.schema';
+import type { Address, Hex } from 'viem';
 
 export const R_OR_S_HEX_LENGTH = 32 * HEX_BYTES_LENGTH; // 32 bytes in hex
 export const V_HEX_LENGTH = 1 * HEX_BYTES_LENGTH; // 1 byte in hex
@@ -14,9 +15,7 @@ export const DYNAMIC_PART_LENGTH_FIELD_HEX_LENGTH = 32 * HEX_BYTES_LENGTH; // 32
  * @param signature - A 0x-prefixed hex string of a (concatenated) signature
  * @returns An array of 0x-prefixed signature type signatures
  */
-export function parseSignaturesByType(
-  signature: `0x${string}`,
-): Array<`0x${string}`> {
+export function parseSignaturesByType(signature: Hex): Array<Hex> {
   // TODO: Replace with viem's isHex and update all tests accordingly
   if (!signature.startsWith('0x')) {
     throw new Error('Invalid "0x" notated signature');
@@ -30,7 +29,7 @@ export function parseSignaturesByType(
     throw new Error('Invalid signature length');
   }
 
-  const signatures: Array<`0x${string}`> = [];
+  const signatures: Array<Address> = [];
 
   let i = HEX_PREFIX_LENGTH;
 
@@ -60,7 +59,7 @@ export function parseSignaturesByType(
   return signatures;
 }
 
-function getStaticPart(signature: `0x${string}`, offset: number): string {
+function getStaticPart(signature: Hex, offset: number): string {
   return signature.slice(offset, offset + SIGNATURE_HEX_LENGTH);
 }
 

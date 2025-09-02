@@ -17,7 +17,7 @@ import { checkGuardIsApplied } from '@/__tests__/util/check-guard';
 import { AuthGuard } from '@/routes/auth/guards/auth.guard';
 import { authPayloadDtoBuilder } from '@/domain/auth/entities/__tests__/auth-payload-dto.entity.builder';
 import { faker } from '@faker-js/faker/.';
-import { getAddress } from 'viem';
+import { type Address, getAddress } from 'viem';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
 import { nameBuilder } from '@/domain/common/entities/name.builder';
 import { createTestModule } from '@/__tests__/testing-module';
@@ -424,7 +424,7 @@ describe('SpaceSafesController', () => {
 
     it('Should return a 403 if the AuthPayload is empty', async () => {
       const authPayloadDto = authPayloadDtoBuilder()
-        .with('signer_address', undefined as unknown as `0x${string}`)
+        .with('signer_address', undefined as unknown as Address)
         .build();
       const accessToken = jwtService.sign(authPayloadDto);
       const spaceId = faker.number.int();
@@ -853,7 +853,7 @@ describe('SpaceSafesController', () => {
 
     it('Should return a 403 if the AuthPayload is empty', async () => {
       const authPayloadDto = authPayloadDtoBuilder()
-        .with('signer_address', undefined as unknown as `0x${string}`)
+        .with('signer_address', undefined as unknown as Address)
         .build();
       const accessToken = jwtService.sign(authPayloadDto);
       const spaceId = faker.number.int();
@@ -1185,7 +1185,7 @@ describe('SpaceSafesController', () => {
 
     it('Should return a 403 if the AuthPayload is empty', async () => {
       const authPayloadDto = authPayloadDtoBuilder()
-        .with('signer_address', undefined as unknown as `0x${string}`)
+        .with('signer_address', undefined as unknown as Address)
         .build();
       const accessToken = jwtService.sign(authPayloadDto);
       const spaceId = faker.number.int();

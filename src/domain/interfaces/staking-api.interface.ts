@@ -9,37 +9,38 @@ import type { Raw } from '@/validation/entities/raw.entity';
 import type { DefiVaultStake } from '@/datasources/staking-api/entities/defi-vault-stake.entity';
 import type { DefiMorphoExtraReward } from '@/datasources/staking-api/entities/defi-morpho-extra-reward.entity';
 import type { RewardsFee } from '@/datasources/staking-api/entities/rewards-fee.entity';
+import type { Address, Hash } from 'viem';
 
 export const IStakingApi = Symbol('IStakingApi');
 
 export interface IStakingApi {
   getDeployments(): Promise<Raw<Array<Deployment>>>;
 
-  getRewardsFee(contract: `0x${string}`): Promise<Raw<RewardsFee>>;
+  getRewardsFee(contract: Address): Promise<Raw<RewardsFee>>;
 
   getNetworkStats(): Promise<Raw<NetworkStats>>;
 
   getDedicatedStakingStats(): Promise<Raw<DedicatedStakingStats>>;
 
-  getPooledStakingStats(pool: `0x${string}`): Promise<Raw<PooledStakingStats>>;
+  getPooledStakingStats(pool: Address): Promise<Raw<PooledStakingStats>>;
 
-  getDefiVaultStats(vault: `0x${string}`): Promise<Raw<Array<DefiVaultStats>>>;
+  getDefiVaultStats(vault: Address): Promise<Raw<Array<DefiVaultStats>>>;
 
   getDefiVaultStakes(args: {
-    safeAddress: `0x${string}`;
-    vault: `0x${string}`;
+    safeAddress: Address;
+    vault: Address;
   }): Promise<Raw<Array<DefiVaultStake>>>;
 
   getDefiMorphoExtraRewards(
-    safeAddress: `0x${string}`,
+    safeAddress: Address,
   ): Promise<Raw<Array<DefiMorphoExtraReward>>>;
 
   getStakes(args: {
-    safeAddress: `0x${string}`;
-    validatorsPublicKeys: Array<`0x${string}`>;
+    safeAddress: Address;
+    validatorsPublicKeys: Array<Address>;
   }): Promise<Raw<Array<Stake>>>;
 
-  clearStakes(safeAddress: `0x${string}`): Promise<void>;
+  clearStakes(safeAddress: Address): Promise<void>;
 
-  getTransactionStatus(txHash: `0x${string}`): Promise<Raw<TransactionStatus>>;
+  getTransactionStatus(txHash: Hash): Promise<Raw<TransactionStatus>>;
 }

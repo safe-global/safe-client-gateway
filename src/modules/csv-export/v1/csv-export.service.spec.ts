@@ -24,6 +24,7 @@ import { UnrecoverableError } from 'bullmq';
 import type { TransactionExport } from '@/modules/csv-export/v1/entities/transaction-export.entity';
 import type { CompleteMultipartUploadCommandOutput } from '@aws-sdk/client-s3';
 import { pipeline } from 'stream/promises';
+import type { Address } from 'viem';
 
 const exportApi = {
   export: jest.fn(),
@@ -83,7 +84,7 @@ describe('CsvExportService', () => {
 
   const exportArgs = {
     chainId: faker.string.numeric(1),
-    safeAddress: faker.finance.ethereumAddress() as `0x${string}`,
+    safeAddress: faker.finance.ethereumAddress() as Address,
     timestamp: faker.date.recent().getTime(),
     executionDateGte: faker.date.past().toISOString().split('T')[0],
     executionDateLte: faker.date.recent().toISOString().split('T')[0],
@@ -493,7 +494,7 @@ describe('CsvExportService', () => {
     it('should generate correct filename when dates are not provided', async () => {
       const exportArgsWithoutDates = {
         chainId: faker.string.numeric(1),
-        safeAddress: faker.finance.ethereumAddress() as `0x${string}`,
+        safeAddress: faker.finance.ethereumAddress() as Address,
         timestamp: faker.date.recent().getTime(),
       };
 
@@ -515,7 +516,7 @@ describe('CsvExportService', () => {
     it('should generate correct filename when only one date is provided', async () => {
       const exportArgsPartialDates = {
         chainId: faker.string.numeric(1),
-        safeAddress: faker.finance.ethereumAddress() as `0x${string}`,
+        safeAddress: faker.finance.ethereumAddress() as Address,
         timestamp: faker.date.recent().getTime(),
         executionDateGte: faker.date.past().toISOString().split('T')[0],
       };

@@ -1,4 +1,5 @@
 import { faker } from '@faker-js/faker';
+import type { Address } from 'viem';
 import { getAddress } from 'viem';
 import { defiVaultStakeBuilder } from '@/datasources/staking-api/entities/__tests__/defi-vault-state.entity.builder';
 import { DefiVaultStakeSchema } from '@/datasources/staking-api/entities/defi-vault-stake.entity';
@@ -17,7 +18,7 @@ describe('DefiVaultStakeSchema', () => {
     (field) => {
       const lowerCaseAddress = faker.finance.ethereumAddress().toLowerCase();
       const defiVaultStake = defiVaultStakeBuilder()
-        .with(field, lowerCaseAddress as `0x${string}`)
+        .with(field, lowerCaseAddress as Address)
         .build();
 
       const result = DefiVaultStakeSchema.safeParse(defiVaultStake);

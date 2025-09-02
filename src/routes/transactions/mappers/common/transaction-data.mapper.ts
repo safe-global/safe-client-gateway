@@ -19,6 +19,7 @@ import { PreviewTransactionDto } from '@/routes/transactions/entities/preview-tr
 import { TransactionData } from '@/routes/transactions/entities/transaction-data.entity';
 import { DataDecodedParamHelper } from '@/routes/transactions/mappers/common/data-decoded-param.helper';
 import { AddressInfo } from '@/routes/common/entities/address-info.entity';
+import type { Address } from 'viem';
 import { getAddress } from 'viem';
 import {
   Erc20Token,
@@ -56,7 +57,7 @@ export class TransactionDataMapper {
     chainId: string,
     previewTransactionDto: PreviewTransactionDto,
     dataDecoded: DataDecoded | null,
-    safeAddress: `0x${string}`,
+    safeAddress: Address,
   ): Promise<TransactionData> {
     const [toAddress, isTrustedDelegateCall, addressInfoIndex] =
       await Promise.all([
@@ -106,7 +107,7 @@ export class TransactionDataMapper {
   async isTrustedDelegateCall(
     chainId: string,
     operation: Operation,
-    to: `0x${string}`,
+    to: Address,
     dataDecoded: DataDecoded | null,
   ): Promise<boolean | null> {
     if (operation !== Operation.DELEGATE) return null;
@@ -140,9 +141,9 @@ export class TransactionDataMapper {
    */
   async buildTokenInfoIndex(args: {
     chainId: string;
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
     dataDecoded: BaseDataDecoded | null;
-  }): Promise<Record<`0x${string}`, Erc20Token | Erc721Token | NativeToken>> {
+  }): Promise<Record<Address, Erc20Token | Erc721Token | NativeToken>> {
     if (
       !args.dataDecoded?.parameters ||
       args.dataDecoded.method !== MULTI_SEND_METHOD_NAME
@@ -172,14 +173,14 @@ export class TransactionDataMapper {
    * @param args.chainId - chain ID to use
    * @param args.safeAddress - Safe address to use
    * @param args.parameters - array of {@link DataDecodedParameter}
-   * @returns {@link Array<`0x${string}`>} - array of token addresses
+   * @returns {@link Array<Address>} - array of token addresses
    */
   private _getBatchTransferredTokenAddresses(args: {
     chainId: string;
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
     parameters: Array<DataDecodedParameter>;
-  }): Array<`0x${string}`> {
-    const tokens = new Set<`0x${string}`>();
+  }): Array<Address> {
+    const tokens = new Set<Address>();
 
     for (const parameter of args.parameters) {
       const isMultiSend =
@@ -220,7 +221,7 @@ export class TransactionDataMapper {
    * @returns {@link Array<TokenInfo>} - array of token info
    */
   private async _getTokenInfos(args: {
-    tokenAddresses: Array<`0x${string}`>;
+    tokenAddresses: Array<Address>;
     chainId: string;
   }): Promise<Array<Erc20Token | Erc721Token | NativeToken>> {
     const tokenAddresses = args.tokenAddresses.slice(
@@ -237,7 +238,7 @@ export class TransactionDataMapper {
             );
             return {
               type: 'NATIVE_TOKEN' as const,
-              address: NULL_ADDRESS as `0x${string}`,
+              address: NULL_ADDRESS as Address,
               decimals: nativeCurrency.decimals,
               logoUri: nativeCurrency.logoUri,
               name: nativeCurrency.name,

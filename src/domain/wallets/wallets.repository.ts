@@ -11,6 +11,7 @@ import type {
 import type { User } from '@/domain/users/entities/user.entity';
 import type { IWalletsRepository } from '@/domain/wallets/wallets.repository.interface';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
+import type { Address } from 'viem';
 
 @Injectable()
 export class WalletsRepository implements IWalletsRepository {
@@ -71,7 +72,7 @@ export class WalletsRepository implements IWalletsRepository {
   }
 
   public async findOneByAddressOrFail(
-    address: `0x${string}`,
+    address: Address,
     relations?: FindOptionsRelations<Wallet>,
   ): Promise<Wallet> {
     const wallet = await this.findOneByAddress(address, relations);
@@ -84,7 +85,7 @@ export class WalletsRepository implements IWalletsRepository {
   }
 
   public async findOneByAddress(
-    address: `0x${string}`,
+    address: Address,
     relations?: FindOptionsRelations<Wallet>,
   ): Promise<Wallet | null> {
     return await this.findOne({ address }, relations);
@@ -107,7 +108,7 @@ export class WalletsRepository implements IWalletsRepository {
   public async create(
     args: {
       userId: number;
-      walletAddress: `0x${string}`;
+      walletAddress: Address;
     },
     entityManager: EntityManager,
   ): Promise<InsertResult> {
@@ -119,7 +120,7 @@ export class WalletsRepository implements IWalletsRepository {
     });
   }
 
-  public async deleteByAddress(address: `0x${string}`): Promise<DeleteResult> {
+  public async deleteByAddress(address: Address): Promise<DeleteResult> {
     const walletRepository =
       await this.postgresDatabaseService.getRepository(Wallet);
 

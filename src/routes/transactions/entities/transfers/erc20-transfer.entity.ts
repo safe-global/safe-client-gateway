@@ -3,12 +3,13 @@ import {
   Transfer,
   TransferType,
 } from '@/routes/transactions/entities/transfers/transfer.entity';
+import type { Address } from 'viem';
 
 export class Erc20Transfer extends Transfer {
   @ApiProperty({ enum: [TransferType.Erc20] })
   override type = TransferType.Erc20;
   @ApiProperty()
-  tokenAddress: `0x${string}`;
+  tokenAddress: Address;
   @ApiProperty()
   value: string;
   @ApiPropertyOptional({ type: String, nullable: true })
@@ -25,7 +26,7 @@ export class Erc20Transfer extends Transfer {
   imitation: boolean;
 
   constructor(
-    tokenAddress: `0x${string}`,
+    tokenAddress: Address,
     value: string,
     tokenName: string | null = null,
     tokenSymbol: string | null = null,

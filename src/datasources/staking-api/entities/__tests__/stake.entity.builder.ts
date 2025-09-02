@@ -4,6 +4,7 @@ import type { Stake } from '@/datasources/staking-api/entities/stake.entity';
 import { StakeState } from '@/datasources/staking-api/entities/stake.entity';
 import { KilnDecoder } from '@/domain/staking/contracts/decoders/kiln-decoder.helper';
 import { faker } from '@faker-js/faker';
+import type { Address } from 'viem';
 
 export function stakeBuilder(): IBuilder<Stake> {
   return new Builder<Stake>()
@@ -11,7 +12,7 @@ export function stakeBuilder(): IBuilder<Stake> {
       'validator_address',
       faker.string.hexadecimal({
         length: KilnDecoder.KilnPublicKeyLength,
-      }) as `0x${string}`,
+      }) as Address,
     )
     .with('state', faker.helpers.arrayElement(Object.values(StakeState)))
     .with('rewards', faker.string.numeric())

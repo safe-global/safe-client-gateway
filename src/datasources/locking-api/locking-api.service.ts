@@ -13,6 +13,7 @@ import { LockingEvent } from '@/domain/community/entities/locking-event.entity';
 import { LockingRank } from '@/domain/community/entities/locking-rank.entity';
 import { Inject } from '@nestjs/common';
 import type { Raw } from '@/validation/entities/raw.entity';
+import type { Address } from 'viem';
 
 export class LockingApi implements ILockingApi {
   private readonly baseUri: string;
@@ -61,7 +62,7 @@ export class LockingApi implements ILockingApi {
 
   async getCampaignActivities(args: {
     resourceId: string;
-    holder?: `0x${string}`;
+    holder?: Address;
     limit?: number;
     offset?: number;
   }): Promise<Raw<Page<CampaignActivity>>> {
@@ -87,7 +88,7 @@ export class LockingApi implements ILockingApi {
 
   async getCampaignRank(args: {
     resourceId: string;
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
   }): Promise<Raw<CampaignRank>> {
     try {
       const url = `${this.baseUri}/api/v1/campaigns/${args.resourceId}/leaderboard/${args.safeAddress}`;
@@ -100,7 +101,7 @@ export class LockingApi implements ILockingApi {
     }
   }
 
-  async getLockingRank(safeAddress: `0x${string}`): Promise<Raw<LockingRank>> {
+  async getLockingRank(safeAddress: Address): Promise<Raw<LockingRank>> {
     try {
       const url = `${this.baseUri}/api/v1/leaderboard/${safeAddress}`;
       const { data } = await this.networkService.get<LockingRank>({ url });
@@ -154,7 +155,7 @@ export class LockingApi implements ILockingApi {
   }
 
   async getLockingHistory(args: {
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
     limit?: number;
     offset?: number;
   }): Promise<Raw<Page<LockingEvent>>> {

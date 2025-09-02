@@ -13,6 +13,7 @@ import {
   TransactionInfoType,
 } from '@/routes/transactions/entities/transaction-info.entity';
 import { ApiExtraModels, ApiProperty } from '@nestjs/swagger';
+import type { Address } from 'viem';
 
 @ApiExtraModels(BridgeFee)
 export class SwapTransactionInfo extends TransactionInfo {
@@ -112,7 +113,7 @@ export class BridgeAndSwapTransactionInfo extends TransactionInfo {
     status: BridgeStatus['status'] | 'AWAITING_EXECUTION';
     substatus: BridgeStatus['substatus'] | 'AWAITING_EXECUTION';
     fees: {
-      tokenAddress: `0x${string}`;
+      tokenAddress: Address;
       integratorFee: string;
       lifiFee: string;
     } | null;

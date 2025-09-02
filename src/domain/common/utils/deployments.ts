@@ -6,6 +6,7 @@ import {
   getSafeL2SingletonDeployments as _getSafeL2SingletonDeployments,
   getSafeSingletonDeployments as _getSafeSingletonDeployments,
 } from '@safe-global/safe-deployments';
+import type { Address } from 'viem';
 
 type Filter = {
   chainId: string;
@@ -18,9 +19,9 @@ type Filter = {
  * @param {string} args.chainId - the chain ID to filter deployments by
  * @param {string} args.version - the version to filter deployments by
  *
- * @returns {Array<`0x${string}`>} - a list of checksummed ProxyFactory addresses
+ * @returns {Array<Address>} - a list of checksummed ProxyFactory addresses
  */
-export function getProxyFactoryDeployments(args: Filter): Array<`0x${string}`> {
+export function getProxyFactoryDeployments(args: Filter): Array<Address> {
   return formatDeployments(_getProxyFactoryDeployments, args);
 }
 
@@ -30,11 +31,9 @@ export function getProxyFactoryDeployments(args: Filter): Array<`0x${string}`> {
  * @param {string} args.chainId - the chain ID to filter deployments by
  * @param {string} args.version - the version to filter deployments by
  *
- * @returns {Array<`0x${string}`>} - a list of checksummed L1 singleton addresses
+ * @returns {Array<Address>} - a list of checksummed L1 singleton addresses
  */
-export function getSafeSingletonDeployments(
-  args: Filter,
-): Array<`0x${string}`> {
+export function getSafeSingletonDeployments(args: Filter): Array<Address> {
   return formatDeployments(_getSafeSingletonDeployments, args);
 }
 
@@ -44,11 +43,9 @@ export function getSafeSingletonDeployments(
  * @param {string} args.chainId - the chain ID to filter deployments by
  * @param {string} args.version - the version to filter deployments by
  *
- * @returns {Array<`0x${string}`>} - a list of checksummed L2 singleton addresses
+ * @returns {Array<Address>} - a list of checksummed L2 singleton addresses
  */
-export function getSafeL2SingletonDeployments(
-  args: Filter,
-): Array<`0x${string}`> {
+export function getSafeL2SingletonDeployments(args: Filter): Array<Address> {
   return formatDeployments(_getSafeL2SingletonDeployments, args);
 }
 
@@ -58,11 +55,9 @@ export function getSafeL2SingletonDeployments(
  * @param {string} args.chainId - the chain ID to filter deployments by
  * @param {string} args.version - the version to filter deployments by
  *
- * @returns {Array<`0x${string}`>} - a list of checksummed MultiSendCallOnly addresses
+ * @returns {Array<Address>} - a list of checksummed MultiSendCallOnly addresses
  */
-export function getMultiSendCallOnlyDeployments(
-  args: Filter,
-): Array<`0x${string}`> {
+export function getMultiSendCallOnlyDeployments(args: Filter): Array<Address> {
   return formatDeployments(_getMultiSendCallOnlyDeployments, args);
 }
 
@@ -72,9 +67,9 @@ export function getMultiSendCallOnlyDeployments(
  * @param {string} args.chainId - the chain ID to filter deployments by
  * @param {string} args.version - the version to filter deployments by
  *
- * @returns {Array<`0x${string}`>} - a list of checksummed MultiSend addresses
+ * @returns {Array<Address>} - a list of checksummed MultiSend addresses
  */
-export function getMultiSendDeployments(args: Filter): Array<`0x${string}`> {
+export function getMultiSendDeployments(args: Filter): Array<Address> {
   return formatDeployments(_getMultiSendDeployments, args);
 }
 
@@ -84,7 +79,7 @@ export function getMultiSendDeployments(args: Filter): Array<`0x${string}`> {
  * @param {Function} getDeployments - function to get deployments
  * @param {Filter} filter - filter to apply to deployments
  *
- * @returns {Array<`0x${string}`>} - a list of checksummed addresses
+ * @returns {Array<Address>} - a list of checksummed addresses
  */
 function formatDeployments(
   getDeployments:
@@ -94,7 +89,7 @@ function formatDeployments(
     | typeof _getMultiSendCallOnlyDeployments
     | typeof _getMultiSendDeployments,
   filter: Filter,
-): Array<`0x${string}`> {
+): Array<Address> {
   const deployments = getDeployments({
     network: filter.chainId,
     version: filter.version,
@@ -111,8 +106,8 @@ function formatDeployments(
 
   // Note: can cast as deployment are inherently checksummed
   if (!Array.isArray(chainDeployments)) {
-    return [chainDeployments as `0x${string}`];
+    return [chainDeployments as Address];
   }
 
-  return chainDeployments as Array<`0x${string}`>;
+  return chainDeployments as Array<Address>;
 }

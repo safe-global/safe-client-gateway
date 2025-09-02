@@ -4,7 +4,7 @@ import {
 } from '@/domain/auth/entities/auth-payload.entity';
 import { authPayloadDtoBuilder } from '@/domain/auth/entities/__tests__/auth-payload-dto.entity.builder';
 import { faker } from '@faker-js/faker';
-import { getAddress } from 'viem';
+import { type Address, getAddress } from 'viem';
 
 describe('AuthPayload entity', () => {
   describe('AuthPayload', () => {
@@ -51,7 +51,7 @@ describe('AuthPayload entity', () => {
           const authPayloadDto = authPayloadDtoBuilder()
             .with(
               'signer_address',
-              faker.finance.ethereumAddress().toLowerCase() as `0x${string}`,
+              faker.finance.ethereumAddress().toLowerCase() as Address,
             )
             .build();
           const authPayload = new AuthPayload(authPayloadDto);
@@ -66,7 +66,7 @@ describe('AuthPayload entity', () => {
             .with('signer_address', getAddress(faker.finance.ethereumAddress()))
             .build();
           const signerAddress =
-            authPayloadDto.signer_address.toLowerCase() as `0x${string}`;
+            authPayloadDto.signer_address.toLowerCase() as Address;
           const authPayload = new AuthPayload(authPayloadDto);
 
           const result = authPayload.isForSigner(signerAddress);
@@ -78,7 +78,7 @@ describe('AuthPayload entity', () => {
           const authPayloadDto = authPayloadDtoBuilder()
             .with(
               'signer_address',
-              faker.finance.ethereumAddress().toLowerCase() as `0x${string}`,
+              faker.finance.ethereumAddress().toLowerCase() as Address,
             )
             .build();
           const signerAddress = getAddress(authPayloadDto.signer_address);
@@ -119,7 +119,7 @@ describe('AuthPayload entity', () => {
           .ethereumAddress()
           .toLowerCase();
         const authPayloadDto = authPayloadDtoBuilder()
-          .with('signer_address', nonChecksummedAddress as `0x${string}`)
+          .with('signer_address', nonChecksummedAddress as Address)
           .build();
 
         const result = AuthPayloadDtoSchema.safeParse(authPayloadDto);
@@ -148,7 +148,7 @@ describe('AuthPayload entity', () => {
 
       it('should not allow a non-address signer_address', () => {
         const authPayloadDto = authPayloadDtoBuilder()
-          .with('signer_address', faker.lorem.word() as `0x${string}`)
+          .with('signer_address', faker.lorem.word() as Address)
           .build();
 
         const result = AuthPayloadDtoSchema.safeParse(authPayloadDto);

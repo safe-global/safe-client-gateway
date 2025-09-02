@@ -3,23 +3,21 @@ import type { Chain } from '@/domain/chains/entities/chain.entity';
 import type { Collectible } from '@/domain/collectibles/entities/collectible.entity';
 import type { Page } from '@/domain/entities/page.entity';
 import type { Raw } from '@/validation/entities/raw.entity';
+import type { Address } from 'viem';
 
 export interface IBalancesApi {
   getBalances(args: {
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
     fiatCode: string;
     chain: Chain;
     trusted?: boolean;
     excludeSpam?: boolean;
   }): Promise<Raw<Array<Balance>>>;
 
-  clearBalances(args: {
-    chainId: string;
-    safeAddress: `0x${string}`;
-  }): Promise<void>;
+  clearBalances(args: { chainId: string; safeAddress: Address }): Promise<void>;
 
   getCollectibles(args: {
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
     chain: Chain;
     limit?: number;
     offset?: number;
@@ -29,7 +27,7 @@ export interface IBalancesApi {
 
   clearCollectibles(args: {
     chainId: string;
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
   }): Promise<void>;
 
   getFiatCodes(): Promise<Raw<Array<string>>>;

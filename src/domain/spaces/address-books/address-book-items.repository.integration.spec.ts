@@ -26,7 +26,7 @@ import { BadRequestException, NotFoundException } from '@nestjs/common';
 import type { ConfigService } from '@nestjs/config';
 import { range } from 'lodash';
 import { DataSource } from 'typeorm';
-import { getAddress } from 'viem';
+import { type Address, getAddress } from 'viem';
 
 const mockLoggingService = {
   debug: jest.fn(),
@@ -255,8 +255,8 @@ describe('AddressBookItemsRepository', () => {
         () =>
           addressBookItemBuilder()
             .with('space', spaceBuilder().with('id', spaceId).build())
-            .with('createdBy', authPayload.signer_address as `0x${string}`)
-            .with('lastUpdatedBy', authPayload.signer_address as `0x${string}`)
+            .with('createdBy', authPayload.signer_address as Address)
+            .with('lastUpdatedBy', authPayload.signer_address as Address)
             .build(),
         { count: { min: 2, max: 5 } },
       );
@@ -321,8 +321,8 @@ describe('AddressBookItemsRepository', () => {
         () =>
           addressBookItemBuilder()
             .with('space', spaceBuilder().with('id', spaceId).build())
-            .with('createdBy', authPayload.signer_address as `0x${string}`)
-            .with('lastUpdatedBy', authPayload.signer_address as `0x${string}`)
+            .with('createdBy', authPayload.signer_address as Address)
+            .with('lastUpdatedBy', authPayload.signer_address as Address)
             .build(),
         {
           count: limit - 1,
@@ -385,8 +385,8 @@ describe('AddressBookItemsRepository', () => {
       const { spaceId, authPayload } = await createSpaceAsAdmin();
       const addressBookItem = addressBookItemBuilder()
         .with('space', spaceBuilder().with('id', spaceId).build())
-        .with('createdBy', authPayload.signer_address as `0x${string}`)
-        .with('lastUpdatedBy', authPayload.signer_address as `0x${string}`)
+        .with('createdBy', authPayload.signer_address as Address)
+        .with('lastUpdatedBy', authPayload.signer_address as Address)
         .build();
       await dbAddressBookItemsRepository.insert(addressBookItem);
 
@@ -412,14 +412,14 @@ describe('AddressBookItemsRepository', () => {
       const addressBookItem1 = addressBookItemBuilder()
         .with('address', address)
         .with('space', spaceBuilder().with('id', spaceId1).build())
-        .with('createdBy', authPayload1.signer_address as `0x${string}`)
-        .with('lastUpdatedBy', authPayload1.signer_address as `0x${string}`)
+        .with('createdBy', authPayload1.signer_address as Address)
+        .with('lastUpdatedBy', authPayload1.signer_address as Address)
         .build();
       const addressBookItem2 = addressBookItemBuilder()
         .with('address', address)
         .with('space', spaceBuilder().with('id', spaceId2).build())
-        .with('createdBy', authPayload2.signer_address as `0x${string}`)
-        .with('lastUpdatedBy', authPayload2.signer_address as `0x${string}`)
+        .with('createdBy', authPayload2.signer_address as Address)
+        .with('lastUpdatedBy', authPayload2.signer_address as Address)
         .build();
       await dbAddressBookItemsRepository.insert(addressBookItem1);
       await dbAddressBookItemsRepository.insert(addressBookItem2);

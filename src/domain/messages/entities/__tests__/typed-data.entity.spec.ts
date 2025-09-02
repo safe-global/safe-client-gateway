@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker';
-import { getAddress } from 'viem';
+import { type Address, getAddress } from 'viem';
 import {
   _TypedDataDomainSchema,
   TypedDataSchema,
@@ -88,7 +88,7 @@ describe('TypedDataSchema', () => {
 
     it('should require a hex salt', () => {
       const domain = typedDataDomainBuilder()
-        .with('salt', faker.string.alpha() as `0x${string}`)
+        .with('salt', faker.string.alpha() as Address)
         .build();
 
       const result = _TypedDataDomainSchema.safeParse(domain);
@@ -105,7 +105,7 @@ describe('TypedDataSchema', () => {
     it('should checksum the verifyingContract', () => {
       const nonChecksummedAddress = faker.finance
         .ethereumAddress()
-        .toLowerCase() as `0x${string}`;
+        .toLowerCase() as Address;
       const domain = typedDataDomainBuilder()
         .with('verifyingContract', nonChecksummedAddress)
         .build();

@@ -13,6 +13,7 @@ import { User as DbUser } from '@/datasources/users/entities/users.entity.db';
 import { Wallet } from '@/datasources/wallets/entities/wallets.entity.db';
 import { EntityManager } from 'typeorm';
 import { IWalletsRepository } from '@/domain/wallets/wallets.repository.interface';
+import type { Address } from 'viem';
 
 @Injectable()
 export class UsersRepository implements IUsersRepository {
@@ -84,7 +85,7 @@ export class UsersRepository implements IUsersRepository {
   }
 
   async addWalletToUser(args: {
-    walletAddress: `0x${string}`;
+    walletAddress: Address;
     authPayload: AuthPayload;
   }): Promise<Pick<Wallet, 'id'>> {
     this.assertSignerAddress(args.authPayload);
@@ -126,7 +127,7 @@ export class UsersRepository implements IUsersRepository {
   }
 
   public async deleteWalletFromUser(args: {
-    walletAddress: `0x${string}`;
+    walletAddress: Address;
     authPayload: AuthPayload;
   }): Promise<void> {
     this.assertSignerAddress(args.authPayload);
@@ -144,9 +145,7 @@ export class UsersRepository implements IUsersRepository {
     await this.walletsRepository.deleteByAddress(wallet.address);
   }
 
-  public async findByWalletAddressOrFail(
-    address: `0x${string}`,
-  ): Promise<User> {
+  public async findByWalletAddressOrFail(address: Address): Promise<User> {
     const user = await this.findByWalletAddress(address);
 
     if (!user) {
@@ -157,7 +156,7 @@ export class UsersRepository implements IUsersRepository {
   }
 
   public async findByWalletAddress(
-    address: `0x${string}`,
+    address: Address,
   ): Promise<User | undefined> {
     const wallet = await this.walletsRepository.findOneByAddress(address, {
       user: true,
@@ -191,7 +190,7 @@ export class UsersRepository implements IUsersRepository {
 
   private assertSignerAddress(
     authPayload: AuthPayload,
-  ): asserts authPayload is AuthPayload & { signer_address: `0x${string}` } {
+  ): asserts authPayload is AuthPayload & { signer_address: Address } {
     if (!authPayload.signer_address) {
       throw new UnauthorizedException('Signer address not provided');
     }
@@ -199,7 +198,7 @@ export class UsersRepository implements IUsersRepository {
 
   private assertWalletIsNotSigner(args: {
     authPayload: AuthPayload;
-    walletAddress: `0x${string}`;
+    walletAddress: Address;
   }): void {
     if (args.authPayload.isForSigner(args.walletAddress)) {
       throw new ConflictException('Cannot remove the current wallet');
@@ -207,7 +206,7 @@ export class UsersRepository implements IUsersRepository {
   }
 
   private async assertWalletDoesNotExist(
-    walletAddress: `0x${string}`,
+    walletAddress: Address,
   ): Promise<void> {
     const wallet = await this.walletsRepository.findOneByAddress(walletAddress);
 

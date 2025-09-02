@@ -7,6 +7,7 @@ import {
   cursorUrlFromLimitAndOffset,
 } from '@/routes/common/pagination/pagination.data';
 import { IChainsRepository } from '@/domain/chains/chains.repository.interface';
+import type { Address } from 'viem';
 
 @Injectable()
 export class CollectiblesService {
@@ -19,7 +20,7 @@ export class CollectiblesService {
 
   async getCollectibles(args: {
     chainId: string;
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
     routeUrl: Readonly<URL>;
     paginationData: PaginationData;
     trusted: boolean;

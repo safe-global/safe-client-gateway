@@ -11,6 +11,7 @@ import { Contract as ApiContract } from '@/routes/contracts/entities/contract.en
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
+import type { Address } from 'viem';
 
 @ApiTags('contracts')
 @Controller({
@@ -44,7 +45,7 @@ export class ContractsController {
   async getContract(
     @Param('chainId', new ValidationPipe(NumericStringSchema)) chainId: string,
     @Param('contractAddress', new ValidationPipe(AddressSchema))
-    contractAddress: `0x${string}`,
+    contractAddress: Address,
   ): Promise<Contract> {
     return this.contractsService.getContract({ chainId, contractAddress });
   }

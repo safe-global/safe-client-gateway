@@ -1,6 +1,6 @@
 import { orderBuilder } from '@/domain/swaps/entities/__tests__/order.builder';
 import { faker } from '@faker-js/faker';
-import { getAddress } from 'viem';
+import { getAddress, type Hex } from 'viem';
 import type { Order } from '@/domain/swaps/entities/order.entity';
 import { OrderSchema } from '@/domain/swaps/entities/order.entity';
 
@@ -15,7 +15,7 @@ describe('OrderSchema', () => {
 
   it('hexadecimal signature should be valid', () => {
     const order = orderBuilder()
-      .with('signature', faker.string.hexadecimal() as `0x${string}`)
+      .with('signature', faker.string.hexadecimal() as Hex)
       .build();
 
     const result = OrderSchema.safeParse(order);

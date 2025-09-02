@@ -7,6 +7,7 @@ import {
 } from '@/domain/human-description/entities/human-description.entity';
 import { IHumanDescriptionRepository } from '@/domain/human-description/human-description.repository.interface';
 import { IHumanDescriptionApi } from '@/domain/interfaces/human-description-api.interface';
+import type { Address } from 'viem';
 
 @Injectable()
 export class HumanDescriptionRepository implements IHumanDescriptionRepository {
@@ -33,7 +34,7 @@ export class HumanDescriptionRepository implements IHumanDescriptionRepository {
   getHumanDescription(args: {
     functionSignatureHash: FunctionSignatureHash;
     to: string;
-    data: `0x${string}`;
+    data: Address;
   }): Array<HumanDescriptionFragment> {
     const template = this._getTemplate(args.functionSignatureHash);
     return template.parse(args.to, args.data);

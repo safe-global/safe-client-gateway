@@ -1,5 +1,6 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { IContractsRepository } from '@/domain/contracts/contracts.repository.interface';
+import type { Address } from 'viem';
 import { isAddressEqual } from 'viem';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { PaginationData } from '@/routes/common/pagination/pagination.data';
@@ -34,7 +35,7 @@ export class ContractsRepository implements IContractsRepository {
 
   async getContract(args: {
     chainId: string;
-    contractAddress: `0x${string}`;
+    contractAddress: Address;
   }): Promise<Contract> {
     const contracts = await this.dataDecoderApi.getContracts({
       address: args.contractAddress,
@@ -50,7 +51,7 @@ export class ContractsRepository implements IContractsRepository {
 
   async isTrustedForDelegateCall(args: {
     chainId: string;
-    contractAddress: `0x${string}`;
+    contractAddress: Address;
   }): Promise<boolean> {
     return this.isTrustedForDelegateCallContractsListEnabled
       ? await this.isIncludedInTrustedForDelegateCallContractsList({
@@ -104,7 +105,7 @@ export class ContractsRepository implements IContractsRepository {
 
   private async isIncludedInTrustedForDelegateCallContractsList(args: {
     chainId: string;
-    contractAddress: `0x${string}`;
+    contractAddress: Address;
   }): Promise<boolean> {
     const trustedContracts = await this.getTrustedForDelegateCallContracts(
       args.chainId,
@@ -118,7 +119,7 @@ export class ContractsRepository implements IContractsRepository {
 
   private async isTrustedForDelegateCallContract(args: {
     chainId: string;
-    contractAddress: `0x${string}`;
+    contractAddress: Address;
   }): Promise<boolean> {
     const contract = await this.getContract({
       chainId: args.chainId,

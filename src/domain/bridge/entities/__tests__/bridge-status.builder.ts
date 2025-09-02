@@ -17,6 +17,7 @@ import type {
   TransferMetadata,
 } from '@/domain/bridge/entities/bridge-status.entity';
 import { tokenBuilder } from '@/domain/bridge/entities/__tests__/token.builder';
+import type { Address, Hash, Hex } from 'viem';
 
 export function baseStatusDataBuilder<
   T extends SuccessStatusData | FailedStatusData | PendingStatusData,
@@ -37,7 +38,7 @@ export function baseTransactionInfoBuilder<
   T extends BaseTransactionInfo | ExtendedTransactionInfo = BaseTransactionInfo,
 >(): IBuilder<T> {
   return new Builder<T>()
-    .with('txHash', faker.string.hexadecimal({ length: 64 }) as `0x${string}`)
+    .with('txHash', faker.string.hexadecimal({ length: 64 }) as Hash)
     .with('chainId', faker.string.numeric())
     .with('txLink', faker.internet.url({ appendSlash: false }));
 }
@@ -75,14 +76,11 @@ export function successStatusDataBuilder<
 >(): IBuilder<T> {
   return baseStatusDataBuilder<T>()
     .with('status', 'DONE')
-    .with('toAddress', faker.finance.ethereumAddress() as `0x${string}`)
-    .with('fromAddress', faker.finance.ethereumAddress() as `0x${string}`)
+    .with('toAddress', faker.finance.ethereumAddress() as Address)
+    .with('fromAddress', faker.finance.ethereumAddress() as Address)
     .with('substatus', faker.helpers.arrayElement([...SubstatusesDone]))
     .with('receiving', extendedTransactionInfoBuilder().build())
-    .with(
-      'transactionId',
-      faker.string.hexadecimal({ length: 64 }) as `0x${string}`,
-    )
+    .with('transactionId', faker.string.hexadecimal({ length: 64 }) as Hex)
     .with('metadata', transferMetadataBuilder().build())
     .with('bridgeExplorerLink', faker.internet.url({ appendSlash: false }))
     .with('lifiExplorerLink', faker.internet.url({ appendSlash: false }));

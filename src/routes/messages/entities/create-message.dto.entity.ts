@@ -7,6 +7,7 @@ import {
   getSchemaPath,
 } from '@nestjs/swagger';
 import { z } from 'zod';
+import type { Address } from 'viem';
 
 @ApiExtraModels(TypedData)
 export class CreateMessageDto
@@ -19,7 +20,7 @@ export class CreateMessageDto
   @ApiPropertyOptional({ type: Number, nullable: true, deprecated: true })
   safeAppId!: number | null;
   @ApiProperty()
-  signature!: `0x${string}`;
+  signature!: Address;
   @ApiPropertyOptional({ type: String, nullable: true })
   origin!: string | null;
 }

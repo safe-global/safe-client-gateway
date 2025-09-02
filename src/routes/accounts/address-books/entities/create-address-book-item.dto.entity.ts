@@ -4,6 +4,7 @@ import {
   NAME_MIN_LENGTH,
 } from '@/domain/common/entities/name.schema';
 import { ApiProperty } from '@nestjs/swagger';
+import type { Address } from 'viem';
 
 export class CreateAddressBookItemDto
   implements DomainCreateAddressBookItemDto
@@ -11,5 +12,5 @@ export class CreateAddressBookItemDto
   @ApiProperty({ minLength: NAME_MIN_LENGTH, maxLength: NAME_MAX_LENGTH })
   name!: string;
   @ApiProperty()
-  address!: `0x${string}`;
+  address!: Address;
 }

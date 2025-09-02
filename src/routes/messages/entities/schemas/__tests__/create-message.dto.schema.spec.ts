@@ -3,6 +3,7 @@ import { createMessageDtoBuilder } from '@/routes/messages/entities/__tests__/cr
 import { CreateMessageDtoSchema } from '@/routes/messages/entities/schemas/create-message.dto.schema';
 import { faker } from '@faker-js/faker';
 import { ZodError } from 'zod';
+import type { Address } from 'viem';
 
 describe('CreateMessageDtoSchema', () => {
   describe('message', () => {
@@ -141,7 +142,7 @@ describe('CreateMessageDtoSchema', () => {
   describe('signature', () => {
     it('should not validate a non-hex signature', () => {
       const createMessageDto = createMessageDtoBuilder()
-        .with('signature', faker.string.numeric() as `0x${string}`)
+        .with('signature', faker.string.numeric() as Address)
         .build();
 
       const result = CreateMessageDtoSchema.safeParse(createMessageDto);

@@ -36,6 +36,7 @@ import {
   ApiForbiddenResponse,
 } from '@nestjs/swagger';
 import { Request } from 'express';
+import type { Address } from 'viem';
 
 @ApiTags('accounts')
 @Controller({ path: 'accounts', version: '1' })
@@ -115,7 +116,7 @@ export class AccountsController {
   @UseGuards(AuthGuard)
   async getAccountDataSettings(
     @Auth() authPayload: AuthPayload,
-    @Param('address', new ValidationPipe(AddressSchema)) address: `0x${string}`,
+    @Param('address', new ValidationPipe(AddressSchema)) address: Address,
   ): Promise<Array<AccountDataSetting>> {
     return this.accountsService.getAccountDataSettings({
       authPayload,
@@ -149,7 +150,7 @@ export class AccountsController {
   @UseGuards(AuthGuard)
   async upsertAccountDataSettings(
     @Auth() authPayload: AuthPayload,
-    @Param('address', new ValidationPipe(AddressSchema)) address: `0x${string}`,
+    @Param('address', new ValidationPipe(AddressSchema)) address: Address,
     @Body(new ValidationPipe(UpsertAccountDataSettingsDtoSchema))
     upsertAccountDataSettingsDto: UpsertAccountDataSettingsDto,
   ): Promise<Array<AccountDataSetting>> {
@@ -180,7 +181,7 @@ export class AccountsController {
   @Get(':address')
   @UseGuards(AuthGuard)
   async getAccount(
-    @Param('address', new ValidationPipe(AddressSchema)) address: `0x${string}`,
+    @Param('address', new ValidationPipe(AddressSchema)) address: Address,
     @Auth() authPayload: AuthPayload,
   ): Promise<Account> {
     return this.accountsService.getAccount({ authPayload, address });
@@ -206,7 +207,7 @@ export class AccountsController {
   @UseGuards(AuthGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteAccount(
-    @Param('address', new ValidationPipe(AddressSchema)) address: `0x${string}`,
+    @Param('address', new ValidationPipe(AddressSchema)) address: Address,
     @Auth() authPayload: AuthPayload,
   ): Promise<void> {
     return this.accountsService.deleteAccount({ authPayload, address });

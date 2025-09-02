@@ -21,6 +21,7 @@ import { RelayDtoSchema } from '@/routes/relay/entities/schemas/relay.dto.schema
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { Relay } from '@/routes/relay/entities/relay.entity';
 import { RelaysRemaining } from '@/routes/relay/entities/relays-remaining.entity';
+import type { Address } from 'viem';
 
 @ApiTags('relay')
 @Controller({
@@ -98,7 +99,7 @@ export class RelayController {
   async getRelaysRemaining(
     @Param('chainId') chainId: string,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
-    safeAddress: `0x${string}`,
+    safeAddress: Address,
   ): Promise<RelaysRemaining> {
     return this.relayService.getRelaysRemaining({ chainId, safeAddress });
   }

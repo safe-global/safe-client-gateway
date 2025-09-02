@@ -1,6 +1,6 @@
 import { faker } from '@faker-js/faker';
 import { DataSource } from 'typeorm';
-import { getAddress } from 'viem';
+import { type Address, getAddress } from 'viem';
 import configuration from '@/config/entities/__tests__/configuration';
 import { postgresConfig } from '@/config/entities/postgres.config';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
@@ -225,7 +225,7 @@ describe('UsersRepository', () => {
         length: { min: 41, max: 41 },
       });
       const authPayloadDto = authPayloadDtoBuilder()
-        .with('signer_address', signerAddress as `0x${string}`)
+        .with('signer_address', signerAddress as Address)
         .build();
       const authPayload = new AuthPayload(authPayloadDto);
       const status = faker.helpers.arrayElement(UserStatusKeys);
@@ -241,7 +241,7 @@ describe('UsersRepository', () => {
         .ethereumAddress()
         .toLowerCase();
       const authPayloadDto = authPayloadDtoBuilder()
-        .with('signer_address', nonChecksummedAddress as `0x${string}`)
+        .with('signer_address', nonChecksummedAddress as Address)
         .build();
       const authPayload = new AuthPayload(authPayloadDto);
       const status = faker.helpers.arrayElement(UserStatusKeys);
@@ -346,7 +346,7 @@ describe('UsersRepository', () => {
       const dbUserRepository = dataSource.getRepository(User);
       const nonChecksummedAddress = faker.finance
         .ethereumAddress()
-        .toLowerCase() as `0x${string}`;
+        .toLowerCase() as Address;
       const authPayloadDto = authPayloadDtoBuilder()
         .with('signer_address', nonChecksummedAddress)
         .build();
@@ -462,7 +462,7 @@ describe('UsersRepository', () => {
       await expect(
         usersRepository.addWalletToUser({
           authPayload,
-          walletAddress: walletAddress as `0x${string}`,
+          walletAddress: walletAddress as Address,
         }),
       ).rejects.toThrow(new RegExp(`^Address "${walletAddress}" is invalid.`));
     });
@@ -488,7 +488,7 @@ describe('UsersRepository', () => {
 
       await usersRepository.addWalletToUser({
         authPayload,
-        walletAddress: nonChecksummedAddress as `0x${string}`,
+        walletAddress: nonChecksummedAddress as Address,
       });
 
       const wallet = await dbWalletRepository.findOneOrFail({

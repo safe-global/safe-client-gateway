@@ -17,6 +17,7 @@ import {
   PrimaryGeneratedColumn,
   Unique,
 } from 'typeorm';
+import type { Address } from 'viem';
 
 @Entity('members')
 @Unique('UQ_members', ['user', 'space'])
@@ -75,7 +76,7 @@ export class Member implements DomainMember {
     nullable: true,
     transformer: nullableDatabaseAddressTransformer,
   })
-  invitedBy!: `0x${string}` | null;
+  invitedBy!: Address | null;
 
   @Column({
     name: 'created_at',

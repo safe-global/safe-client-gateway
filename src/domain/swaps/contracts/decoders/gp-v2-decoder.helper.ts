@@ -6,6 +6,7 @@ import {
   OrderKind,
   SellTokenBalance,
 } from '@/domain/swaps/entities/order.entity';
+import type { Address, Hex } from 'viem';
 
 /**
  * Taken from CoW contracts:
@@ -599,13 +600,13 @@ export const GPv2Abi = [
 ] as const;
 
 export type GPv2OrderParameters = {
-  sellToken: `0x${string}`;
-  buyToken: `0x${string}`;
-  receiver: `0x${string}`;
+  sellToken: Address;
+  buyToken: Address;
+  receiver: Address;
   sellAmount: bigint;
   buyAmount: bigint;
   validTo: number;
-  appData: `0x${string}`;
+  appData: Address;
   feeAmount: bigint;
   kind: OrderKind;
   partiallyFillable: boolean;
@@ -655,11 +656,9 @@ export class GPv2Decoder extends AbiDecoder<typeof GPv2Abi> {
    * Gets the Order UID associated with the provided transaction data.
    *
    * @param data - the transaction data for the setPreSignature call
-   * @returns {`0x${string}`} the order UID or null if the data does not represent a setPreSignature transaction
+   * @returns {Address} the order UID or null if the data does not represent a setPreSignature transaction
    */
-  public getOrderUidFromSetPreSignature(
-    data: `0x${string}`,
-  ): `0x${string}` | null {
+  public getOrderUidFromSetPreSignature(data: Hex): Hex | null {
     if (!this.helpers.isSetPreSignature(data)) {
       return null;
     }
@@ -685,9 +684,7 @@ export class GPv2Decoder extends AbiDecoder<typeof GPv2Abi> {
    * @param tokens The list of token addresses as they appear in the settlement.
    * @returns The decoded {@link GPv2OrderParameters} or null if the trade is invalid.
    */
-  public decodeOrderFromSettle(
-    data: `0x${string}`,
-  ): GPv2OrderParameters | null {
+  public decodeOrderFromSettle(data: Hex): GPv2OrderParameters | null {
     const decoded = this.decodeSettle(data);
 
     if (!decoded) {
@@ -721,7 +718,7 @@ export class GPv2Decoder extends AbiDecoder<typeof GPv2Abi> {
 
   // Use inferred return type
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-  private decodeSettle(data: `0x${string}`) {
+  private decodeSettle(data: Address) {
     if (!this.helpers.isSettle(data)) {
       return null;
     }

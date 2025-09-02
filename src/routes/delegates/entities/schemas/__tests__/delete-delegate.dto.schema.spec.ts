@@ -1,7 +1,7 @@
 import { deleteDelegateDtoBuilder } from '@/routes/delegates/entities/__tests__/delete-delegate.dto.builder';
 import { DeleteDelegateDtoSchema } from '@/routes/delegates/entities/schemas/delete-delegate.dto.schema';
 import { faker } from '@faker-js/faker';
-import { getAddress } from 'viem';
+import { type Address, getAddress } from 'viem';
 import { ZodError } from 'zod';
 
 describe('DeleteDelegateSchema', () => {
@@ -16,7 +16,7 @@ describe('DeleteDelegateSchema', () => {
   it('should checksum delegate and delegator', () => {
     const nonCheckSummedAddress = faker.finance
       .ethereumAddress()
-      .toLowerCase() as `0x${string}`;
+      .toLowerCase() as Address;
     const deleteDelegateDto = deleteDelegateDtoBuilder()
       .with('delegate', nonCheckSummedAddress)
       .with('delegator', nonCheckSummedAddress)

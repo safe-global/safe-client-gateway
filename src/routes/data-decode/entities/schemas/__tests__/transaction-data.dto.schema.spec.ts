@@ -1,6 +1,6 @@
 import { transactionDataDtoBuilder } from '@/routes/data-decode/entities/__tests__/transaction-data.dto.builder';
 import { faker } from '@faker-js/faker';
-import { getAddress } from 'viem';
+import { type Address, getAddress } from 'viem';
 import { ZodError } from 'zod';
 import { TransactionDataDtoSchema } from '@/routes/common/entities/transaction-data.dto.entity';
 
@@ -16,7 +16,7 @@ describe('TransactionDataDtoSchema', () => {
   it('should checksum the to', () => {
     const nonChecksummedAddress = faker.finance
       .ethereumAddress()
-      .toLowerCase() as `0x${string}`;
+      .toLowerCase() as Address;
     const transactionDataDto = transactionDataDtoBuilder()
       .with('to', nonChecksummedAddress)
       .build();
@@ -38,7 +38,7 @@ describe('TransactionDataDtoSchema', () => {
 
   it('should not allow non-hex data', () => {
     const transactionDataDto = transactionDataDtoBuilder()
-      .with('data', 'non-hex' as `0x${string}`)
+      .with('data', 'non-hex' as Address)
       .build();
 
     const result = TransactionDataDtoSchema.safeParse(transactionDataDto);

@@ -18,11 +18,12 @@ import type { Token } from '@/domain/tokens/entities/token.entity';
 import type { AddConfirmationDto } from '@/domain/transactions/entities/add-confirmation.dto.entity';
 import type { ProposeTransactionDto } from '@/domain/transactions/entities/propose-transaction.dto.entity';
 import type { Raw } from '@/validation/entities/raw.entity';
+import type { Address, Hex } from 'viem';
 
 export interface ITransactionApi {
   getDataDecoded(args: {
-    data: `0x${string}`;
-    to?: `0x${string}`;
+    data: Address;
+    to?: Address;
   }): Promise<Raw<DataDecoded>>;
 
   getBackbone(): Promise<Raw<Backbone>>;
@@ -31,108 +32,108 @@ export interface ITransactionApi {
 
   getIndexingStatus(): Promise<Raw<IndexingStatus>>;
 
-  getSafe(safeAddress: `0x${string}`): Promise<Raw<Safe>>;
+  getSafe(safeAddress: Address): Promise<Raw<Safe>>;
 
-  clearSafe(address: `0x${string}`): Promise<void>;
+  clearSafe(address: Address): Promise<void>;
 
-  isSafe(address: `0x${string}`): Promise<boolean>;
+  isSafe(address: Address): Promise<boolean>;
 
-  clearIsSafe(address: `0x${string}`): Promise<void>;
+  clearIsSafe(address: Address): Promise<void>;
 
   getDelegates(args: {
-    safeAddress?: `0x${string}`;
-    delegate?: `0x${string}`;
-    delegator?: `0x${string}`;
+    safeAddress?: Address;
+    delegate?: Address;
+    delegator?: Address;
     label?: string;
     limit?: number;
     offset?: number;
   }): Promise<Raw<Page<Delegate>>>;
 
   getDelegatesV2(args: {
-    safeAddress?: `0x${string}`;
-    delegate?: `0x${string}`;
-    delegator?: `0x${string}`;
+    safeAddress?: Address;
+    delegate?: Address;
+    delegator?: Address;
     label?: string;
     limit?: number;
     offset?: number;
   }): Promise<Raw<Page<Delegate>>>;
 
-  clearDelegates(safeAddress?: `0x${string}`): Promise<void>;
+  clearDelegates(safeAddress?: Address): Promise<void>;
 
   postDelegate(args: {
-    safeAddress: `0x${string}` | null;
-    delegate: `0x${string}`;
-    delegator: `0x${string}`;
+    safeAddress: Address | null;
+    delegate: Address;
+    delegator: Address;
     signature: string;
     label: string;
   }): Promise<void>;
 
   postDelegateV2(args: {
-    safeAddress: `0x${string}` | null;
-    delegate: `0x${string}`;
-    delegator: `0x${string}`;
+    safeAddress: Address | null;
+    delegate: Address;
+    delegator: Address;
     signature: string;
     label: string;
   }): Promise<void>;
 
   deleteDelegate(args: {
-    delegate: `0x${string}`;
-    delegator: `0x${string}`;
+    delegate: Address;
+    delegator: Address;
     signature: string;
   }): Promise<unknown>;
 
   deleteSafeDelegate(args: {
-    delegate: `0x${string}`;
-    safeAddress: `0x${string}`;
+    delegate: Address;
+    safeAddress: Address;
     signature: string;
   }): Promise<unknown>;
 
   deleteDelegateV2(args: {
-    delegate: `0x${string}`;
-    delegator: `0x${string}`;
-    safeAddress: `0x${string}` | null;
+    delegate: Address;
+    delegator: Address;
+    safeAddress: Address | null;
     signature: string;
   }): Promise<unknown>;
 
   getTransfer(transferId: string): Promise<Raw<Transfer>>;
 
   getTransfers(args: {
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
     onlyErc20?: boolean;
     onlyErc721?: boolean;
     limit?: number;
     offset?: number;
   }): Promise<Raw<Page<Transfer>>>;
 
-  clearTransfers(safeAddress: `0x${string}`): Promise<void>;
+  clearTransfers(safeAddress: Address): Promise<void>;
 
   getIncomingTransfers(args: {
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
     executionDateGte?: string;
     executionDateLte?: string;
-    to?: `0x${string}`;
+    to?: Address;
     value?: string;
-    tokenAddress?: `0x${string}`;
+    tokenAddress?: Address;
     txHash?: string;
     limit?: number;
     offset?: number;
   }): Promise<Raw<Page<Transfer>>>;
 
-  clearIncomingTransfers(safeAddress: `0x${string}`): Promise<void>;
+  clearIncomingTransfers(safeAddress: Address): Promise<void>;
 
   postConfirmation(args: {
     safeTxHash: string;
     addConfirmationDto: AddConfirmationDto;
   }): Promise<unknown>;
 
-  getSafesByModule(moduleAddress: `0x${string}`): Promise<Raw<SafeList>>;
+  getSafesByModule(moduleAddress: Address): Promise<Raw<SafeList>>;
 
   getModuleTransaction(
     moduleTransactionId: string,
   ): Promise<Raw<ModuleTransaction>>;
 
   getModuleTransactions(args: {
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
     to?: string;
     txHash?: string;
     module?: string;
@@ -140,7 +141,7 @@ export interface ITransactionApi {
     offset?: number;
   }): Promise<Raw<Page<ModuleTransaction>>>;
 
-  clearModuleTransactions(safeAddress: `0x${string}`): Promise<void>;
+  clearModuleTransactions(safeAddress: Address): Promise<void>;
 
   getMultisigTransaction(
     safeTransactionHash: string,
@@ -158,13 +159,13 @@ export interface ITransactionApi {
   clearMultisigTransaction(safeTransactionHash: string): Promise<void>;
 
   getMultisigTransactions(args: {
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
     ordering?: string;
     executed?: boolean;
     trusted?: boolean;
     executionDateGte?: string;
     executionDateLte?: string;
-    to?: `0x${string}`;
+    to?: Address;
     value?: string;
     nonce?: string;
     nonceGte?: number;
@@ -173,7 +174,7 @@ export interface ITransactionApi {
   }): Promise<Raw<Page<MultisigTransaction>>>;
 
   getMultisigTransactionsWithNoCache(args: {
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
     // Transaction Service parameters
     failed?: boolean;
     modified__lt?: string;
@@ -203,18 +204,18 @@ export interface ITransactionApi {
     offset?: number;
   }): Promise<Raw<Page<MultisigTransaction>>>;
 
-  clearMultisigTransactions(safeAddress: `0x${string}`): Promise<void>;
+  clearMultisigTransactions(safeAddress: Address): Promise<void>;
 
   getCreationTransaction(
-    safeAddress: `0x${string}`,
+    safeAddress: Address,
   ): Promise<Raw<CreationTransaction>>;
 
   getCreationTransactionWithNoCache(
-    safeAddress: `0x${string}`,
+    safeAddress: Address,
   ): Promise<Raw<CreationTransaction>>;
 
   getAllTransactions(args: {
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
     ordering?: string;
     executed?: boolean;
     queued?: boolean;
@@ -222,37 +223,37 @@ export interface ITransactionApi {
     offset?: number;
   }): Promise<Raw<Page<Transaction>>>;
 
-  clearAllTransactions(safeAddress: `0x${string}`): Promise<void>;
+  clearAllTransactions(safeAddress: Address): Promise<void>;
 
-  getToken(address: `0x${string}`): Promise<Raw<Token>>;
+  getToken(address: Address): Promise<Raw<Token>>;
 
   getTokens(args: {
     limit?: number;
     offset?: number;
   }): Promise<Raw<Page<Token>>>;
 
-  getSafesByOwner(ownerAddress: `0x${string}`): Promise<Raw<SafeList>>;
+  getSafesByOwner(ownerAddress: Address): Promise<Raw<SafeList>>;
 
   getEstimation(args: {
-    address: `0x${string}`;
+    address: Address;
     getEstimationDto: GetEstimationDto;
   }): Promise<Raw<Estimation>>;
 
   getMessageByHash(messageHash: string): Promise<Raw<Message>>;
 
   getMessagesBySafe(args: {
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
     limit?: number;
     offset?: number;
   }): Promise<Raw<Page<Message>>>;
 
   postMultisigTransaction(args: {
-    address: `0x${string}`;
+    address: Address;
     data: ProposeTransactionDto;
   }): Promise<unknown>;
 
   postMessage(args: {
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
     message: unknown;
     safeAppId: number | null;
     signature: string;
@@ -261,10 +262,10 @@ export interface ITransactionApi {
 
   postMessageSignature(args: {
     messageHash: string;
-    signature: `0x${string}`;
+    signature: Hex;
   }): Promise<unknown>;
 
-  clearMessagesBySafe(args: { safeAddress: `0x${string}` }): Promise<void>;
+  clearMessagesBySafe(args: { safeAddress: Address }): Promise<void>;
 
   clearMessagesByHash(args: { messageHash: string }): Promise<void>;
 }

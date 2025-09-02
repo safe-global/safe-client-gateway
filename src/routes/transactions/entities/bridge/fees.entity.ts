@@ -1,8 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
+import type { Address } from 'viem';
 
 export class BridgeFee {
   @ApiProperty()
-  readonly tokenAddress: `0x${string}`;
+  readonly tokenAddress: Address;
 
   @ApiProperty()
   readonly integratorFee: string;
@@ -11,7 +12,7 @@ export class BridgeFee {
   readonly lifiFee: string;
 
   constructor(args: {
-    tokenAddress: `0x${string}`;
+    tokenAddress: Address;
     integratorFee: string;
     lifiFee: string;
   }) {

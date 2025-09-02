@@ -1,12 +1,13 @@
 import { AddConfirmationDtoSchema } from '@/routes/transactions/entities/schemas/add-confirmation.dto.schema';
 import { faker } from '@faker-js/faker';
 import { ZodError } from 'zod';
+import type { Address } from 'viem';
 
 describe('AddConfirmationDtoSchema', () => {
   it('should validate a signature', () => {
     const signature = faker.string.hexadecimal({
       length: 130,
-    }) as `0x${string}`;
+    }) as Address;
     const result = AddConfirmationDtoSchema.safeParse({ signature });
 
     expect(result.success).toBe(true);
@@ -17,7 +18,7 @@ describe('AddConfirmationDtoSchema', () => {
   it('supports the signedSafeTxHash property', () => {
     const signedSafeTxHash = faker.string.hexadecimal({
       length: 130,
-    }) as `0x${string}`;
+    }) as Address;
 
     const result = AddConfirmationDtoSchema.safeParse({ signedSafeTxHash });
 

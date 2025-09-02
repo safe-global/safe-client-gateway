@@ -4,6 +4,7 @@ import {
   TransactionInfoType,
 } from '@/routes/transactions/entities/transaction-info.entity';
 import { ApiProperty } from '@nestjs/swagger';
+import type { Address } from 'viem';
 
 export class NativeStakingWithdrawTransactionInfo extends TransactionInfo {
   @ApiProperty({ enum: [TransactionInfoType.NativeStakingWithdraw] })
@@ -16,12 +17,12 @@ export class NativeStakingWithdrawTransactionInfo extends TransactionInfo {
   tokenInfo: TokenInfo;
 
   @ApiProperty()
-  validators: Array<`0x${string}`>;
+  validators: Array<Address>;
 
   constructor(args: {
     value: string;
     tokenInfo: TokenInfo;
-    validators: Array<`0x${string}`>;
+    validators: Array<Address>;
   }) {
     super(TransactionInfoType.NativeStakingWithdraw, null);
     this.value = args.value;

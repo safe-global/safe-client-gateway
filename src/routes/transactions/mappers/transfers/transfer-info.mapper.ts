@@ -18,6 +18,7 @@ import { SwapTransferInfoMapper } from '@/routes/transactions/mappers/transfers/
 import { SwapTransferTransactionInfo } from '@/routes/transactions/swap-transfer-transaction-info.entity';
 import { AddressInfo } from '@/routes/common/entities/address-info.entity';
 import { LoggingService, ILoggingService } from '@/logging/logging.interface';
+import { type Address } from 'viem';
 
 @Injectable()
 export class TransferInfoMapper {
@@ -84,7 +85,7 @@ export class TransferInfoMapper {
     recipient: AddressInfo;
     direction: TransferDirection;
     chainId: string;
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
     transferInfo: Transfer;
     domainTransfer: DomainTransfer;
   }): Promise<SwapTransferTransactionInfo | null> {
@@ -137,7 +138,7 @@ export class TransferInfoMapper {
 
   private getToken(
     chainId: string,
-    tokenAddress: `0x${string}` | null,
+    tokenAddress: Address | null,
   ): Promise<Token> {
     if (!tokenAddress) {
       throw Error('Invalid token address for transfer');

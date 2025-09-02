@@ -1,6 +1,6 @@
 import { GetDelegateDtoSchema } from '@/routes/delegates/entities/schemas/get-delegate.dto.schema';
 import { faker } from '@faker-js/faker';
-import { getAddress } from 'viem';
+import { type Address, getAddress } from 'viem';
 import { ZodError } from 'zod';
 
 describe('GetDelegateDtoSchema', () => {
@@ -70,7 +70,7 @@ describe('GetDelegateDtoSchema', () => {
     (property) => {
       const nonCheckSummedAddress = faker.finance
         .ethereumAddress()
-        .toLowerCase() as `0x${string}`;
+        .toLowerCase() as Address;
       const getDelegateDto = { [property]: nonCheckSummedAddress };
 
       const result = GetDelegateDtoSchema.safeParse(getDelegateDto);

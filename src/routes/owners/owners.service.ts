@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { SafeRepository } from '@/domain/safe/safe.repository';
 import { ISafeRepository } from '@/domain/safe/safe.repository.interface';
 import { SafeList } from '@/routes/owners/entities/safe-list.entity';
+import type { Address } from 'viem';
 
 @Injectable()
 export class OwnersService {
@@ -12,7 +13,7 @@ export class OwnersService {
 
   async getSafesByOwner(args: {
     chainId: string;
-    ownerAddress: `0x${string}`;
+    ownerAddress: Address;
   }): Promise<SafeList> {
     return this.safeRepository.getSafesByOwner(args);
   }
@@ -20,13 +21,13 @@ export class OwnersService {
   // TODO: Remove with /owners/:ownerAddress/safes
   // @deprecated
   async deprecated__getAllSafesByOwner(args: {
-    ownerAddress: `0x${string}`;
+    ownerAddress: Address;
   }): Promise<{ [chainId: string]: Array<string> }> {
     return this.safeRepository.deprecated__getAllSafesByOwner(args);
   }
 
   async getAllSafesByOwner(args: {
-    ownerAddress: `0x${string}`;
+    ownerAddress: Address;
   }): Promise<{ [chainId: string]: Array<string> | null }> {
     return this.safeRepository.getAllSafesByOwner(args);
   }

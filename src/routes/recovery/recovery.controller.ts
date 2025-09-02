@@ -16,6 +16,7 @@ import { Auth } from '@/routes/auth/decorators/auth.decorator';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
+import type { Address } from 'viem';
 
 @ApiTags('recovery')
 @Controller({
@@ -31,7 +32,7 @@ export class RecoveryController {
   async addRecoveryModule(
     @Param('chainId') chainId: string,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
-    safeAddress: `0x${string}`,
+    safeAddress: Address,
     @Body(new ValidationPipe(AddRecoveryModuleDtoSchema))
     addRecoveryModuleDto: AddRecoveryModuleDto,
     @Auth() authPayload: AuthPayload,
@@ -50,9 +51,9 @@ export class RecoveryController {
   async deleteRecoveryModule(
     @Param('chainId') chainId: string,
     @Param('moduleAddress', new ValidationPipe(AddressSchema))
-    moduleAddress: `0x${string}`,
+    moduleAddress: Address,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
-    safeAddress: `0x${string}`,
+    safeAddress: Address,
     @Auth() authPayload: AuthPayload,
   ): Promise<void> {
     return this.recoveryService.deleteRecoveryModule({

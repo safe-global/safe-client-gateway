@@ -1,6 +1,7 @@
 import { GPv2OrderParameters } from '@/domain/swaps/contracts/decoders/gp-v2-decoder.helper';
 import { Injectable } from '@nestjs/common';
 import { TypedDataDomain, encodePacked, hashTypedData } from 'viem';
+import type { Address } from 'viem';
 
 @Injectable()
 export class GPv2OrderHelper {
@@ -43,9 +44,9 @@ export class GPv2OrderHelper {
    */
   public computeOrderUid(args: {
     chainId: string;
-    owner: `0x${string}`;
+    owner: Address;
     order: GPv2OrderParameters;
-  }): `0x${string}` {
+  }): Address {
     return encodePacked(
       ['bytes32', 'address', 'uint32'],
       [this.hashOrder(args), args.owner, args.order.validTo],
@@ -65,7 +66,7 @@ export class GPv2OrderHelper {
   private hashOrder(args: {
     chainId: string;
     order: GPv2OrderParameters;
-  }): `0x${string}` {
+  }): Address {
     return hashTypedData({
       domain: this.getDomain(args.chainId),
       primaryType: GPv2OrderHelper.TypedDataPrimaryType,

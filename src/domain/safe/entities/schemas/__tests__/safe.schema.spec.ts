@@ -1,7 +1,7 @@
 import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
 import { SafeSchema } from '@/domain/safe/entities/schemas/safe.schema';
 import { faker } from '@faker-js/faker';
-import { getAddress } from 'viem';
+import { type Address, getAddress } from 'viem';
 import { ZodError } from 'zod';
 
 describe('SafeSchema', () => {
@@ -31,7 +31,7 @@ describe('SafeSchema', () => {
   ])('should checksum %s', (field) => {
     const nonChecksummedAddress = faker.finance
       .ethereumAddress()
-      .toLowerCase() as `0x${string}`;
+      .toLowerCase() as Address;
     const safe = safeBuilder().with(field, nonChecksummedAddress).build();
 
     const result = SafeSchema.safeParse(safe);
@@ -128,7 +128,7 @@ describe('SafeSchema', () => {
     'should checksum the array of %s',
     (field) => {
       const nonChecksummedAddresses = faker.helpers.multiple(
-        () => faker.finance.ethereumAddress().toLowerCase() as `0x${string}`,
+        () => faker.finance.ethereumAddress().toLowerCase() as Address,
         {
           count: { min: 1, max: 5 },
         },

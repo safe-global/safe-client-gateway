@@ -26,6 +26,7 @@ import { IConfigurationService } from '@/config/configuration.service.interface'
 import { LoggingService, ILoggingService } from '@/logging/logging.interface';
 import { asError } from '@/logging/utils';
 import { Caip10Addresses } from '@/routes/safes/entities/caip-10-addresses.entity';
+import type { Address } from 'viem';
 
 @Injectable()
 export class SafesService {
@@ -51,7 +52,7 @@ export class SafesService {
 
   async getSafeInfo(args: {
     chainId: string;
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
   }): Promise<SafeState> {
     const [safe, { recommendedMasterCopyVersion }, supportedSingletons] =
       await Promise.all([
@@ -133,7 +134,7 @@ export class SafesService {
     addresses: Caip10Addresses;
     trusted: boolean;
     excludeSpam: boolean;
-    walletAddress?: `0x${string}`;
+    walletAddress?: Address;
   }): Promise<Array<SafeOverview>> {
     const limitedSafes = args.addresses.slice(0, this.maxOverviews);
 
@@ -198,7 +199,7 @@ export class SafesService {
 
   public async getNonces(args: {
     chainId: string;
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
   }): Promise<SafeNonces> {
     const nonce = await this.safeRepository.getNonces(args);
     return new SafeNonces(nonce);
@@ -206,7 +207,7 @@ export class SafesService {
 
   private computeAwaitingConfirmation(args: {
     transactions: Array<MultisigTransaction>;
-    walletAddress: `0x${string}`;
+    walletAddress: Address;
   }): number {
     return args.transactions.reduce(
       (acc, { confirmationsRequired, confirmations }) => {
@@ -232,7 +233,7 @@ export class SafesService {
 
   private async getCollectiblesTag(
     chainId: string,
-    safeAddress: `0x${string}`,
+    safeAddress: Address,
   ): Promise<Date | null> {
     const lastCollectibleTransfer = await this.safeRepository
       .getCollectibleTransfers({
@@ -274,7 +275,7 @@ export class SafesService {
    */
   private async getTxHistoryTagDate(
     chainId: string,
-    safeAddress: `0x${string}`,
+    safeAddress: Address,
   ): Promise<Date | null> {
     const txPages = await Promise.allSettled([
       this.safeRepository.getMultisigTransactions({
@@ -323,7 +324,7 @@ export class SafesService {
 
   private async modifiedMessageTag(
     chainId: string,
-    safeAddress: `0x${string}`,
+    safeAddress: Address,
   ): Promise<Date | null> {
     const messages = await this.messagesRepository.getMessagesBySafe({
       chainId,

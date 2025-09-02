@@ -2,7 +2,7 @@ import { singletonBuilder } from '@/domain/chains/entities/__tests__/singleton.b
 import { SingletonSchema } from '@/domain/chains/entities/schemas/singleton.schema';
 import type { Singleton } from '@/domain/chains/entities/singleton.entity';
 import { faker } from '@faker-js/faker';
-import { getAddress } from 'viem';
+import { type Address, getAddress } from 'viem';
 
 describe('SingletonSchema', () => {
   it('should validate a singleton', () => {
@@ -16,7 +16,7 @@ describe('SingletonSchema', () => {
   it.each(['address' as const])('should checksum %s', (key) => {
     const nonChecksummedAddress = faker.finance
       .ethereumAddress()
-      .toLowerCase() as `0x${string}`;
+      .toLowerCase() as Address;
     const singleton = singletonBuilder()
       .with(key, nonChecksummedAddress)
       .build();

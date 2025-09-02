@@ -37,6 +37,7 @@ import {
 import { rawify } from '@/validation/entities/raw.entity';
 import { createTestModule } from '@/__tests__/testing-module';
 import { rewardsFeeBuilder } from '@/datasources/staking-api/entities/__tests__/rewards-fee.entity.builder';
+import type { Address } from 'viem';
 
 describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
   let app: INestApplication<Server>;
@@ -930,7 +931,7 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
             length: KilnDecoder.KilnPublicKeyLength,
             casing: 'lower',
           }),
-        ] as Array<`0x${string}`>;
+        ] as Array<Address>;
         const data = requestValidatorsExitEncoder()
           .with('_publicKeys', concat(validators))
           .encode();
@@ -1057,7 +1058,7 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
             length: KilnDecoder.KilnPublicKeyLength,
             casing: 'lower',
           }),
-        ] as Array<`0x${string}`>;
+        ] as Array<Address>;
         const data = requestValidatorsExitEncoder()
           .with('_publicKeys', concat(validators))
           .encode();
@@ -1214,7 +1215,7 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
             length: KilnDecoder.KilnPublicKeyLength,
             casing: 'lower',
           }),
-        ] as Array<`0x${string}`>;
+        ] as Array<Address>;
         const data = requestValidatorsExitEncoder()
           .with('_publicKeys', concat(validators))
           .encode();
@@ -1287,7 +1288,7 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
             length: KilnDecoder.KilnPublicKeyLength,
             casing: 'lower',
           }),
-        ] as Array<`0x${string}`>;
+        ] as Array<Address>;
         const data = requestValidatorsExitEncoder()
           .with('_publicKeys', concat(validators))
           .encode();
@@ -1371,7 +1372,7 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
             length: KilnDecoder.KilnPublicKeyLength,
             casing: 'lower',
           }),
-        ] as Array<`0x${string}`>;
+        ] as Array<Address>;
         const data = requestValidatorsExitEncoder()
           .with('_publicKeys', concat(validators))
           .encode();
@@ -1457,7 +1458,7 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
             length: KilnDecoder.KilnPublicKeyLength,
             casing: 'lower',
           }),
-        ] as Array<`0x${string}`>;
+        ] as Array<Address>;
         const data = requestValidatorsExitEncoder()
           .with('_publicKeys', concat(validators))
           .encode();
@@ -1546,7 +1547,7 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
             length: KilnDecoder.KilnPublicKeyLength,
             casing: 'lower',
           }),
-        ] as Array<`0x${string}`>;
+        ] as Array<Address>;
         const data = requestValidatorsExitEncoder()
           .with('_publicKeys', concat(validators))
           .encode();
@@ -1645,7 +1646,7 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
             length: KilnDecoder.KilnPublicKeyLength,
             casing: 'lower',
           }),
-        ] as Array<`0x${string}`>;
+        ] as Array<Address>;
         const data = requestValidatorsExitEncoder()
           .with('_publicKeys', concat(validators))
           .encode();
@@ -1745,7 +1746,7 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
             length: KilnDecoder.KilnPublicKeyLength,
             casing: 'lower',
           }),
-        ] as Array<`0x${string}`>;
+        ] as Array<Address>;
         const data = batchWithdrawCLFeeEncoder()
           .with('_publicKeys', concat(validators))
           .encode();
@@ -1871,7 +1872,7 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
             length: KilnDecoder.KilnPublicKeyLength,
             casing: 'lower',
           }),
-        ] as Array<`0x${string}`>;
+        ] as Array<Address>;
         const data = batchWithdrawCLFeeEncoder()
           .with('_publicKeys', concat(validators))
           .encode();
@@ -2028,7 +2029,7 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
             length: KilnDecoder.KilnPublicKeyLength,
             casing: 'lower',
           }),
-        ] as Array<`0x${string}`>;
+        ] as Array<Address>;
         const data = batchWithdrawCLFeeEncoder()
           .with('_publicKeys', concat(validators))
           .encode();
@@ -2110,7 +2111,7 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
             length: KilnDecoder.KilnPublicKeyLength,
             casing: 'lower',
           }),
-        ] as Array<`0x${string}`>;
+        ] as Array<Address>;
         const data = batchWithdrawCLFeeEncoder()
           .with('_publicKeys', concat(validators))
           .encode();
@@ -2200,7 +2201,7 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
             length: KilnDecoder.KilnPublicKeyLength,
             casing: 'lower',
           }),
-        ] as Array<`0x${string}`>;
+        ] as Array<Address>;
         const data = batchWithdrawCLFeeEncoder()
           .with('_publicKeys', concat(validators))
           .encode();
@@ -2289,7 +2290,7 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
             length: KilnDecoder.KilnPublicKeyLength,
             casing: 'lower',
           }),
-        ] as Array<`0x${string}`>;
+        ] as Array<Address>;
         const data = batchWithdrawCLFeeEncoder()
           .with('_publicKeys', concat(validators))
           .encode();
@@ -2377,7 +2378,7 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
             length: KilnDecoder.KilnPublicKeyLength,
             casing: 'lower',
           }),
-        ] as Array<`0x${string}`>;
+        ] as Array<Address>;
         const data = batchWithdrawCLFeeEncoder()
           .with('_publicKeys', concat(validators))
           .encode();

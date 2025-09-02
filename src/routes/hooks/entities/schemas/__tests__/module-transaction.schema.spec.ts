@@ -1,7 +1,7 @@
 import { ModuleTransactionEventSchema } from '@/routes/hooks/entities/schemas/module-transaction.schema';
 import type { TransactionEventType } from '@/routes/hooks/entities/event-type.entity';
 import { faker } from '@faker-js/faker';
-import { getAddress } from 'viem';
+import { type Address, getAddress } from 'viem';
 import { ZodError } from 'zod';
 import { moduleTransactionEventBuilder } from '@/routes/hooks/entities/__tests__/module-transaction.builder';
 
@@ -45,7 +45,7 @@ describe('ModuleTransactionEventSchema', () => {
     'should not allow a non-address %s',
     (field) => {
       const moduleTransactionEvent = moduleTransactionEventBuilder()
-        .with(field, faker.string.alpha() as `0x${string}`)
+        .with(field, faker.string.alpha() as Address)
         .build();
 
       const result = ModuleTransactionEventSchema.safeParse(
@@ -69,7 +69,7 @@ describe('ModuleTransactionEventSchema', () => {
     (field) => {
       const nonChecksummedAddress = faker.finance
         .ethereumAddress()
-        .toLowerCase() as `0x${string}`;
+        .toLowerCase() as Address;
       const moduleTransactionEvent = moduleTransactionEventBuilder()
         .with(field, nonChecksummedAddress)
         .build();

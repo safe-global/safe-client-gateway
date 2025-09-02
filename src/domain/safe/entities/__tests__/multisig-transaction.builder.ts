@@ -12,7 +12,7 @@ import type {
 } from '@/domain/safe/entities/multisig-transaction.entity';
 import type { Safe } from '@/domain/safe/entities/safe.entity';
 import type { Operation } from '@/domain/safe/entities/operation.entity';
-import { getAddress, type PrivateKeyAccount } from 'viem';
+import { getAddress, type Hash, type Hex, type PrivateKeyAccount } from 'viem';
 import { getSignature } from '@/domain/common/utils/__tests__/signatures.builder';
 
 const HASH_LENGTH = 32;
@@ -77,7 +77,7 @@ export function multisigTransactionBuilder(): BuilderWithConfirmations<MultisigT
       .with('baseGas', faker.number.int())
       .with('blockNumber', faker.number.int())
       .with('confirmationsRequired', faker.number.int())
-      .with('data', faker.string.hexadecimal() as `0x${string}`)
+      .with('data', faker.string.hexadecimal() as Hex)
       .with('ethGasPrice', faker.string.numeric())
       .with('executor', getAddress(faker.finance.ethereumAddress()))
       .with('executionDate', faker.date.recent())
@@ -102,12 +102,12 @@ export function multisigTransactionBuilder(): BuilderWithConfirmations<MultisigT
       .with('refundReceiver', getAddress(faker.finance.ethereumAddress()))
       .with('safe', getAddress(faker.finance.ethereumAddress()))
       .with('safeTxGas', faker.number.int())
-      .with('signatures', faker.string.hexadecimal() as `0x${string}`)
+      .with('signatures', faker.string.hexadecimal() as Hex)
       .with('submissionDate', faker.date.recent())
       .with('to', getAddress(faker.finance.ethereumAddress()))
       .with(
         'transactionHash',
-        faker.string.hexadecimal({ length: HASH_LENGTH }) as `0x${string}`,
+        faker.string.hexadecimal({ length: HASH_LENGTH }) as Hash,
       )
       .with('trusted', faker.datatype.boolean())
       .with('value', faker.string.numeric())
@@ -120,7 +120,7 @@ export function multisigTransactionBuilder(): BuilderWithConfirmations<MultisigT
       )
       .with(
         'safeTxHash',
-        faker.string.hexadecimal({ length: HASH_LENGTH }) as `0x${string}`,
+        faker.string.hexadecimal({ length: HASH_LENGTH }) as Hash,
       )
   );
 }

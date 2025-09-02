@@ -7,6 +7,7 @@ import {
   Position,
   PositionsSchema,
 } from '@/domain/positions/entities/position.entity';
+import type { Address } from 'viem';
 
 @Injectable()
 export class PositionsRepository implements IPositionsRepository {
@@ -16,7 +17,7 @@ export class PositionsRepository implements IPositionsRepository {
 
   async getPositions(args: {
     chain: Chain;
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
     fiatCode: string;
   }): Promise<Array<Position>> {
     const positions = await this.positionsApi.getPositions(args);
@@ -25,7 +26,7 @@ export class PositionsRepository implements IPositionsRepository {
 
   async clearPositions(args: {
     chainId: string;
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
   }): Promise<void> {
     await this.positionsApi.clearPositions(args);
   }

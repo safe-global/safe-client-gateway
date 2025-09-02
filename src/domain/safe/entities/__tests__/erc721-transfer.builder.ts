@@ -2,7 +2,7 @@ import { faker } from '@faker-js/faker';
 import type { IBuilder } from '@/__tests__/builder';
 import { Builder } from '@/__tests__/builder';
 import type { ERC721Transfer } from '@/domain/safe/entities/transfer.entity';
-import { getAddress } from 'viem';
+import { type Address, getAddress } from 'viem';
 
 export function erc721TransferBuilder(): IBuilder<ERC721Transfer> {
   return new Builder<ERC721Transfer>()
@@ -11,7 +11,7 @@ export function erc721TransferBuilder(): IBuilder<ERC721Transfer> {
     .with('executionDate', faker.date.recent())
     .with('from', getAddress(faker.finance.ethereumAddress()))
     .with('to', getAddress(faker.finance.ethereumAddress()))
-    .with('transactionHash', faker.string.hexadecimal() as `0x${string}`)
+    .with('transactionHash', faker.string.hexadecimal() as Address)
     .with('tokenAddress', getAddress(faker.finance.ethereumAddress()))
     .with('tokenId', faker.string.sample())
     .with('transferId', faker.string.sample());

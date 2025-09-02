@@ -10,6 +10,7 @@ import { CreateAccountDto } from '@/routes/accounts/entities/create-account.dto.
 import { UpsertAccountDataSettingsDto } from '@/routes/accounts/entities/upsert-account-data-settings.dto.entity';
 import { Inject, Injectable } from '@nestjs/common';
 import { Request } from 'express';
+import type { Address } from 'viem';
 
 @Injectable()
 export class AccountsService {
@@ -33,7 +34,7 @@ export class AccountsService {
 
   async getAccount(args: {
     authPayload: AuthPayload;
-    address: `0x${string}`;
+    address: Address;
   }): Promise<Account> {
     const domainAccount = await this.accountsRepository.getAccount({
       authPayload: args.authPayload,
@@ -44,7 +45,7 @@ export class AccountsService {
 
   async deleteAccount(args: {
     authPayload: AuthPayload;
-    address: `0x${string}`;
+    address: Address;
   }): Promise<void> {
     await this.accountsRepository.deleteAccount({
       authPayload: args.authPayload,
@@ -61,7 +62,7 @@ export class AccountsService {
 
   async getAccountDataSettings(args: {
     authPayload: AuthPayload;
-    address: `0x${string}`;
+    address: Address;
   }): Promise<Array<AccountDataSetting>> {
     const [domainAccountDataSettings, dataTypes] = await Promise.all([
       this.accountsRepository.getAccountDataSettings({
@@ -78,7 +79,7 @@ export class AccountsService {
 
   async upsertAccountDataSettings(args: {
     authPayload: AuthPayload;
-    address: `0x${string}`;
+    address: Address;
     upsertAccountDataSettingsDto: UpsertAccountDataSettingsDto;
   }): Promise<Array<AccountDataSetting>> {
     const [domainAccountDataSettings, dataTypes] = await Promise.all([

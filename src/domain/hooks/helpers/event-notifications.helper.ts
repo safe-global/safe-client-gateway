@@ -40,6 +40,7 @@ import { Confirmation } from '@/domain/safe/entities/multisig-transaction.entity
 import { MessageConfirmation } from '@/domain/messages/entities/message-confirmation.entity';
 import { LogType } from '@/domain/common/entities/log-type.entity';
 import { asError } from '@/logging/utils';
+import type { Address } from 'viem';
 
 type EventToNotify =
   | DeletedMultisigTransactionEvent
@@ -176,7 +177,7 @@ export class EventNotificationsHelper {
    */
   private async getRelevantSubscribers(event: EventToNotify): Promise<
     Array<{
-      subscriber: `0x${string}` | null;
+      subscriber: Address | null;
       deviceUuid: UUID;
       cloudMessagingToken: string;
     }>
@@ -236,8 +237,8 @@ export class EventNotificationsHelper {
    */
   private async isOwnerOrDelegate(args: {
     chainId: string;
-    safeAddress: `0x${string}`;
-    subscriber: `0x${string}`;
+    safeAddress: Address;
+    subscriber: Address;
   }): Promise<boolean> {
     // We don't use Promise.all avoid unnecessary calls for delegates
     const safe = await this.safeRepository.getSafe({
@@ -269,7 +270,7 @@ export class EventNotificationsHelper {
    */
   private async mapEventNotification(
     event: EventToNotify,
-    subscriber: `0x${string}` | null,
+    subscriber: Address | null,
   ): Promise<Notification | null> {
     if (
       event.type === TransactionEventType.INCOMING_ETHER ||
@@ -341,7 +342,7 @@ export class EventNotificationsHelper {
    */
   private async mapPendingMultisigTransactionEventNotification(
     event: PendingTransactionEvent,
-    subscriber: `0x${string}`,
+    subscriber: Address,
   ): Promise<ConfirmationRequestNotification | null> {
     const safe = await this.safeRepository.getSafe({
       chainId: event.chainId,
@@ -382,7 +383,7 @@ export class EventNotificationsHelper {
 
   private async hasSubscriberSigned(
     chainId: string,
-    subscriber: `0x${string}`,
+    subscriber: Address,
     confirmations: Array<Confirmation | MessageConfirmation>,
   ): Promise<boolean | undefined> {
     // The owner can be a delegate key so we need to check whether the owner or the delegate key has signed the message.
@@ -414,7 +415,7 @@ export class EventNotificationsHelper {
    */
   private async mapMessageCreatedEventNotification(
     event: MessageCreatedEvent,
-    subscriber: `0x${string}`,
+    subscriber: Address,
   ): Promise<MessageConfirmationNotification | null> {
     const safe = await this.safeRepository.getSafe({
       chainId: event.chainId,

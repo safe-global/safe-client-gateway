@@ -1,6 +1,7 @@
 import { faker } from '@faker-js/faker';
 import { Erc20Decoder } from '@/domain/relay/contracts/decoders/erc-20-decoder.helper';
 import { erc20TransferEncoder } from '@/domain/relay/contracts/__tests__/encoders/erc20-encoder.builder';
+import type { Hex } from 'viem';
 
 describe('Erc20Decoder', () => {
   let target: Erc20Decoder;
@@ -22,7 +23,7 @@ describe('Erc20Decoder', () => {
   });
 
   it('throws if the function call cannot be decoded', () => {
-    const data = faker.string.hexadecimal({ length: 138 }) as `0x${string}`;
+    const data = faker.string.hexadecimal({ length: 138 }) as Hex;
 
     expect(() => target.decodeFunctionData({ data })).toThrow();
   });

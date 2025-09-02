@@ -9,7 +9,7 @@ import {
   NewDelegateEventSchema,
   UpdatedDelegateEventSchema,
 } from '@/routes/hooks/entities/schemas/delegate-events.schema';
-import { getAddress } from 'viem';
+import { type Address, getAddress } from 'viem';
 
 describe.each([
   ['NewDelegateEventSchema', NewDelegateEventSchema, newDelegateEventBuilder],
@@ -52,7 +52,7 @@ describe.each([
     (field) => {
       const nonChecksummedAddress = faker.finance.ethereumAddress();
       const event = builder()
-        .with(field, nonChecksummedAddress as `0x${string}`)
+        .with(field, nonChecksummedAddress as Address)
         .build();
 
       const result = Schema.safeParse(event);

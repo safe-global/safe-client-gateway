@@ -1,4 +1,5 @@
 import type { Hex } from 'viem/types/misc';
+import type { Address } from 'viem';
 
 export enum ValueType {
   Text = 'text',
@@ -21,7 +22,7 @@ export interface TextFragment {
 
 export interface AddressFragment {
   type: ValueType.Address;
-  value: `0x${string}`;
+  value: Address;
 }
 
 export interface NumberFragment {

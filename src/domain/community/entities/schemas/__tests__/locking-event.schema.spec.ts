@@ -12,7 +12,7 @@ import {
   WithdrawEventItemSchema,
 } from '@/domain/community/entities/schemas/locking-event.schema';
 import { faker } from '@faker-js/faker';
-import { getAddress } from 'viem';
+import { type Address, getAddress } from 'viem';
 import { ZodError } from 'zod';
 
 describe('Locking event schemas', () => {
@@ -58,7 +58,7 @@ describe('Locking event schemas', () => {
     it('should not allow non-hex transactionHash', () => {
       const transactionHash = faker.string.numeric();
       const lockEventItem = lockEventItemBuilder()
-        .with('transactionHash', transactionHash as `0x${string}`)
+        .with('transactionHash', transactionHash as Address)
         .build();
 
       const result = LockEventItemSchema.safeParse(lockEventItem);
@@ -77,7 +77,7 @@ describe('Locking event schemas', () => {
     it('should checksum the holder', () => {
       const nonChecksummedAddress = faker.finance
         .ethereumAddress()
-        .toLowerCase() as `0x${string}`;
+        .toLowerCase() as Address;
       const lockEventItem = lockEventItemBuilder()
         .with('holder', nonChecksummedAddress)
         .build();
@@ -204,7 +204,7 @@ describe('Locking event schemas', () => {
     it('should checksum the holder', () => {
       const nonChecksummedAddress = faker.finance
         .ethereumAddress()
-        .toLowerCase() as `0x${string}`;
+        .toLowerCase() as Address;
       const unlockEventItem = unlockEventItemBuilder()
         .with('holder', nonChecksummedAddress)
         .build();
@@ -339,7 +339,7 @@ describe('Locking event schemas', () => {
     it('should checksum the holder', () => {
       const nonChecksummedAddress = faker.finance
         .ethereumAddress()
-        .toLowerCase() as `0x${string}`;
+        .toLowerCase() as Address;
       const withdrawEventItem = withdrawEventItemBuilder()
         .with('holder', nonChecksummedAddress)
         .build();

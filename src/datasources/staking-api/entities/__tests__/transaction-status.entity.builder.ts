@@ -2,6 +2,7 @@ import type { IBuilder } from '@/__tests__/builder';
 import { Builder } from '@/__tests__/builder';
 import type { TransactionStatus } from '@/datasources/staking-api/entities/transaction-status.entity';
 import { faker } from '@faker-js/faker';
+import type { Address, Hex } from 'viem';
 
 export function transactionStatusReceiptLogBuilder(): IBuilder<
   TransactionStatus['receipt']['logs'][number]
@@ -10,14 +11,14 @@ export function transactionStatusReceiptLogBuilder(): IBuilder<
     .with(
       'topics',
       Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, () => {
-        return faker.string.hexadecimal({ length: 64 }) as `0x${string}`;
-      }) as [`0x${string}`, ...Array<`0x${string}`>],
+        return faker.string.hexadecimal({ length: 64 }) as Hex;
+      }) as [Address, ...Array<Address>],
     )
     .with(
       'data',
       faker.string.hexadecimal({
         length: 64,
-      }) as `0x${string}`,
+      }) as Address,
     );
 }
 

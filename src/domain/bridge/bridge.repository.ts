@@ -7,6 +7,7 @@ import {
 import { IBridgeApiFactory } from '@/domain/interfaces/bridge-api.factory.interface';
 import { BridgeName } from '@/domain/bridge/entities/bridge-name.entity';
 import { BridgeChainPageSchema } from '@/domain/bridge/entities/bridge-chain.entity';
+import type { Address, Hash } from 'viem';
 
 @Injectable()
 export class BridgeRepository implements IBridgeRepository {
@@ -15,7 +16,7 @@ export class BridgeRepository implements IBridgeRepository {
     private readonly bridgeApiFactory: IBridgeApiFactory,
   ) {}
 
-  public async getDiamondAddress(chainId: string): Promise<`0x${string}`> {
+  public async getDiamondAddress(chainId: string): Promise<Address> {
     const api = await this.bridgeApiFactory.getApi(chainId);
     const result = await api.getChains();
     const { chains } = BridgeChainPageSchema.parse(result);
@@ -31,7 +32,7 @@ export class BridgeRepository implements IBridgeRepository {
   }
 
   async getStatus(args: {
-    txHash: `0x${string}`;
+    txHash: Hash;
     bridge?: BridgeName;
     fromChain: string;
     toChain?: string;

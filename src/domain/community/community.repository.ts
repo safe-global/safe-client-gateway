@@ -28,6 +28,7 @@ import { Eligibility } from '@/domain/community/entities/eligibility.entity';
 import { asError } from '@/logging/utils';
 import { LoggingService, ILoggingService } from '@/logging/logging.interface';
 import { IIdentityApi } from '@/domain/interfaces/identity-api.interface';
+import type { Address } from 'viem';
 
 @Injectable()
 export class CommunityRepository implements ICommunityRepository {
@@ -54,7 +55,7 @@ export class CommunityRepository implements ICommunityRepository {
 
   async getCampaignActivities(args: {
     resourceId: string;
-    holder?: `0x${string}`;
+    holder?: Address;
     limit?: number;
     offset?: number;
   }): Promise<Page<CampaignActivity>> {
@@ -62,7 +63,7 @@ export class CommunityRepository implements ICommunityRepository {
     return CampaignActivityPageSchema.parse(page);
   }
 
-  async getLockingRank(safeAddress: `0x${string}`): Promise<LockingRank> {
+  async getLockingRank(safeAddress: Address): Promise<LockingRank> {
     const lockingRank = await this.lockingApi.getLockingRank(safeAddress);
     return LockingRankSchema.parse(lockingRank);
   }
@@ -86,14 +87,14 @@ export class CommunityRepository implements ICommunityRepository {
 
   async getCampaignRank(args: {
     resourceId: string;
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
   }): Promise<CampaignRank> {
     const campaignRank = await this.lockingApi.getCampaignRank(args);
     return CampaignRankSchema.parse(campaignRank);
   }
 
   async getLockingHistory(args: {
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
     offset?: number;
     limit?: number;
   }): Promise<Page<LockingEvent>> {

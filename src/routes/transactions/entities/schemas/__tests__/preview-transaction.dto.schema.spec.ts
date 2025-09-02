@@ -1,7 +1,7 @@
 import { previewTransactionDtoBuilder } from '@/routes/transactions/entities/__tests__/preview-transaction.dto.builder';
 import { PreviewTransactionDtoSchema } from '@/routes/transactions/entities/schemas/preview-transaction.dto.schema';
 import { faker } from '@faker-js/faker';
-import { getAddress } from 'viem';
+import { type Address, getAddress } from 'viem';
 import { ZodError } from 'zod';
 
 describe('PreviewTransactionDtoSchema', () => {
@@ -16,7 +16,7 @@ describe('PreviewTransactionDtoSchema', () => {
   it('should checksum the address', () => {
     const nonChecksummedAddress = faker.finance
       .ethereumAddress()
-      .toLowerCase() as `0x${string}`;
+      .toLowerCase() as Address;
     const previewTransactionDto = previewTransactionDtoBuilder()
       .with('to', nonChecksummedAddress)
       .build();

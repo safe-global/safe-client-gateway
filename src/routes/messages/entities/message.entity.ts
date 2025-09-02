@@ -7,6 +7,7 @@ import {
 import { AddressInfo } from '@/routes/common/entities/address-info.entity';
 import { MessageConfirmation } from '@/routes/messages/entities/message-confirmation.entity';
 import { TypedData } from '@/routes/messages/entities/typed-data.entity';
+import type { Hash, Hex } from 'viem';
 
 export enum MessageStatus {
   NeedsConfirmation = 'NEEDS_CONFIRMATION',
@@ -16,7 +17,7 @@ export enum MessageStatus {
 @ApiExtraModels(TypedData)
 export class Message {
   @ApiProperty()
-  messageHash: `0x${string}`;
+  messageHash: Hash;
   @ApiProperty({ enum: MessageStatus })
   status: MessageStatus;
   @ApiPropertyOptional({ type: String, nullable: true })
@@ -40,12 +41,12 @@ export class Message {
   @ApiProperty({ type: MessageConfirmation, isArray: true })
   confirmations: Array<MessageConfirmation>;
   @ApiPropertyOptional({ type: String, nullable: true })
-  preparedSignature: `0x${string}` | null;
+  preparedSignature: Hex | null;
   @ApiPropertyOptional({ type: String, nullable: true })
   origin: string | null;
 
   constructor(
-    messageHash: `0x${string}`,
+    messageHash: Hash,
     status: MessageStatus,
     logoUri: string | null,
     name: string | null,
@@ -56,7 +57,7 @@ export class Message {
     confirmationsRequired: number,
     proposedBy: AddressInfo,
     confirmations: Array<MessageConfirmation>,
-    preparedSignature: `0x${string}` | null,
+    preparedSignature: Hex | null,
     origin: string | null,
   ) {
     this.messageHash = messageHash;
