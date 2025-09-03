@@ -4,6 +4,11 @@ import {
   ApiOkResponse,
   ApiTags,
   ApiUnauthorizedResponse,
+  ApiOperation,
+  ApiParam,
+  ApiBody,
+  ApiNoContentResponse,
+  ApiCreatedResponse,
 } from '@nestjs/swagger';
 import {
   Body,
@@ -31,9 +36,23 @@ import type { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 export class UsersController {
   public constructor(private readonly usersService: UsersService) {}
 
-  @ApiOkResponse({ type: UserWithWallets })
-  @ApiUnauthorizedResponse({ description: 'Signer address not provided' })
-  @ApiNotFoundResponse({ description: 'User (wallet) not found' })
+  @ApiOperation({
+    summary: 'Get user with wallets',
+    description:
+      'Retrieves the authenticated user information along with all associated wallet addresses.',
+  })
+  @ApiOkResponse({
+    type: UserWithWallets,
+    description:
+      'User information with associated wallets retrieved successfully',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Authentication required - valid JWT token must be provided',
+  })
+  @ApiNotFoundResponse({
+    description:
+      'User not found - the authenticated wallet is not associated with any user',
+  })
   @Get()
   @UseGuards(AuthGuard)
   public async getWithWallets(
@@ -42,9 +61,21 @@ export class UsersController {
     return await this.usersService.getWithWallets(authPayload);
   }
 
-  @ApiOkResponse({ description: 'User deleted' })
-  @ApiUnauthorizedResponse({ description: 'Signer address not provided' })
-  @ApiNotFoundResponse({ description: 'User (wallet) not found' })
+  @ApiOperation({
+    summary: 'Delete user',
+    description:
+      'Deletes the authenticated user and all associated data including wallets and account information.',
+  })
+  @ApiNoContentResponse({
+    description: 'User deleted successfully',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Authentication required - valid JWT token must be provided',
+  })
+  @ApiNotFoundResponse({
+    description:
+      'User not found - the authenticated wallet is not associated with any user',
+  })
   @Delete()
   @UseGuards(AuthGuard)
   public async delete(@Auth() authPayload: AuthPayload): Promise<void> {
@@ -52,9 +83,22 @@ export class UsersController {
   }
 
   // @todo move wallet methods to Wallet controller
-  @ApiOkResponse({ type: CreatedUserWithWallet })
-  @ApiUnauthorizedResponse({ description: 'Signer address not provided' })
-  @ApiConflictResponse({ description: 'Wallet already exists' })
+  @ApiOperation({
+    summary: 'Create user with wallet',
+    description:
+      'Creates a new user account associated with the authenticated wallet address.',
+  })
+  @ApiCreatedResponse({
+    type: CreatedUserWithWallet,
+    description: 'User created successfully with wallet association',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Authentication required - valid JWT token must be provided',
+  })
+  @ApiConflictResponse({
+    description:
+      'Wallet already exists - this wallet is already associated with a user',
+  })
   @Post('/wallet')
   @UseGuards(AuthGuard)
   public async createWithWallet(
@@ -63,12 +107,31 @@ export class UsersController {
     return await this.usersService.createWithWallet(authPayload);
   }
 
-  @ApiOkResponse({ type: WalletAddedToUser })
-  @ApiUnauthorizedResponse({
-    description: 'Signer address not provided OR invalid message/signature',
+  @ApiOperation({
+    summary: 'Add wallet to user',
+    description:
+      'Associates an additional wallet address with the authenticated user account using Sign-In with Ethereum (SiWE) verification.',
   })
-  @ApiConflictResponse({ description: 'Wallet already exists' })
-  @ApiNotFoundResponse({ description: 'User not found' })
+  @ApiBody({
+    type: SiweDto,
+    description:
+      'Sign-In with Ethereum message and signature for the wallet to add',
+  })
+  @ApiOkResponse({
+    type: WalletAddedToUser,
+    description: 'Wallet added to user successfully',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Authentication required or invalid SiWE message/signature',
+  })
+  @ApiConflictResponse({
+    description:
+      'Wallet already exists - this wallet is already associated with a user',
+  })
+  @ApiNotFoundResponse({
+    description:
+      'User not found - the authenticated wallet is not associated with any user',
+  })
   @Post('/wallet/add')
   @UseGuards(AuthGuard)
   public async addWalletToUser(
@@ -82,11 +145,28 @@ export class UsersController {
     });
   }
 
-  @ApiOkResponse({ description: 'Wallet removed from user and deleted' })
-  @ApiUnauthorizedResponse({ description: 'Signer address not provided' })
-  @ApiConflictResponse({ description: 'Cannot remove the current wallet' })
+  @ApiOperation({
+    summary: 'Remove wallet from user',
+    description:
+      'Removes a wallet address from the authenticated user account. Cannot remove the currently authenticated wallet.',
+  })
+  @ApiParam({
+    name: 'walletAddress',
+    type: 'string',
+    description: 'Wallet address to remove (0x prefixed hex string)',
+  })
+  @ApiNoContentResponse({
+    description: 'Wallet removed from user successfully',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Authentication required - valid JWT token must be provided',
+  })
+  @ApiConflictResponse({
+    description:
+      'Cannot remove the current wallet - use a different wallet to authenticate',
+  })
   @ApiNotFoundResponse({
-    description: 'User OR provided wallet not found',
+    description: 'User or specified wallet not found',
   })
   @Delete('/wallet/:walletAddress')
   @UseGuards(AuthGuard)

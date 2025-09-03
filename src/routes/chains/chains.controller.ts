@@ -1,5 +1,11 @@
 import { Controller, Get, Param } from '@nestjs/common';
-import { ApiOkResponse, ApiQuery, ApiTags } from '@nestjs/swagger';
+import {
+  ApiOkResponse,
+  ApiQuery,
+  ApiTags,
+  ApiOperation,
+  ApiParam,
+} from '@nestjs/swagger';
 import { ChainsService } from '@/routes/chains/chains.service';
 import { AboutChain } from '@/routes/chains/entities/about-chain.entity';
 import { ChainPage } from '@/routes/chains/entities/chain-page.entity';
@@ -23,12 +29,21 @@ import { IndexingStatus } from '@/routes/chains/entities/indexing-status.entity'
 export class ChainsController {
   constructor(private readonly chainsService: ChainsService) {}
 
+  @ApiOperation({
+    summary: 'Get supported chains',
+    description:
+      'Retrieves a paginated list of all blockchain networks supported by the Safe infrastructure, including their configuration and capabilities.',
+  })
   @ApiQuery({
     name: 'cursor',
     required: false,
     type: String,
+    description: 'Pagination cursor for retrieving the next set of results',
   })
-  @ApiOkResponse({ type: ChainPage })
+  @ApiOkResponse({
+    type: ChainPage,
+    description: 'Paginated list of supported chains',
+  })
   @Get()
   async getChains(
     @RouteUrlDecorator() routeUrl: URL,
@@ -37,25 +52,82 @@ export class ChainsController {
     return this.chainsService.getChains(routeUrl, paginationData);
   }
 
-  @ApiOkResponse({ type: Chain })
+  @ApiOperation({
+    summary: 'Get chain details',
+    description:
+      'Retrieves detailed information about a specific blockchain network, including its configuration, features, and Safe-specific settings.',
+  })
+  @ApiParam({
+    name: 'chainId',
+    type: 'string',
+    description: 'Chain ID of the blockchain network',
+    example: '1',
+  })
+  @ApiOkResponse({
+    type: Chain,
+    description: 'Chain details retrieved successfully',
+  })
   @Get('/:chainId')
   async getChain(@Param('chainId') chainId: string): Promise<Chain> {
     return this.chainsService.getChain(chainId);
   }
 
-  @ApiOkResponse({ type: AboutChain })
+  @ApiOperation({
+    summary: 'Get chain information',
+    description:
+      'Retrieves general information about a blockchain network, including network details and statistics.',
+  })
+  @ApiParam({
+    name: 'chainId',
+    type: 'string',
+    description: 'Chain ID of the blockchain network',
+    example: '1',
+  })
+  @ApiOkResponse({
+    type: AboutChain,
+    description: 'Chain information retrieved successfully',
+  })
   @Get('/:chainId/about')
   async getAboutChain(@Param('chainId') chainId: string): Promise<AboutChain> {
     return this.chainsService.getAboutChain(chainId);
   }
 
-  @ApiOkResponse({ type: ApiBackbone })
+  @ApiOperation({
+    summary: 'Get chain backbone information',
+    description:
+      'Retrieves backbone infrastructure information for a specific chain, including API endpoints and service configurations.',
+  })
+  @ApiParam({
+    name: 'chainId',
+    type: 'string',
+    description: 'Chain ID of the blockchain network',
+    example: '1',
+  })
+  @ApiOkResponse({
+    type: ApiBackbone,
+    description: 'Chain backbone information retrieved successfully',
+  })
   @Get('/:chainId/about/backbone')
   async getBackbone(@Param('chainId') chainId: string): Promise<Backbone> {
     return this.chainsService.getBackbone(chainId);
   }
 
-  @ApiOkResponse({ type: MasterCopy, isArray: true })
+  @ApiOperation({
+    summary: 'Get Safe master copy contracts',
+    description:
+      'Retrieves information about Safe master copy contracts deployed on the specified chain, including their addresses and versions.',
+  })
+  @ApiParam({
+    name: 'chainId',
+    type: 'string',
+    description: 'Chain ID of the blockchain network',
+    example: '1',
+  })
+  @ApiOkResponse({
+    type: MasterCopy,
+    isArray: true,
+    description: 'List of Safe master copy contracts',
+  })
   @Get('/:chainId/about/master-copies')
   async getMasterCopies(
     @Param('chainId') chainId: string,
@@ -63,7 +135,21 @@ export class ChainsController {
     return this.chainsService.getMasterCopies(chainId);
   }
 
-  @ApiOkResponse({ type: IndexingStatus })
+  @ApiOperation({
+    summary: 'Get chain indexing status',
+    description:
+      'Retrieves the current indexing status for a blockchain network, including the latest indexed block and synchronization state.',
+  })
+  @ApiParam({
+    name: 'chainId',
+    type: 'string',
+    description: 'Chain ID of the blockchain network',
+    example: '1',
+  })
+  @ApiOkResponse({
+    type: IndexingStatus,
+    description: 'Chain indexing status retrieved successfully',
+  })
   @Get('/:chainId/about/indexing')
   async getIndexingStatus(
     @Param('chainId') chainId: string,

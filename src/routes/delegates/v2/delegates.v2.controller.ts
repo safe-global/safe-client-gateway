@@ -22,38 +22,66 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
-import { ApiOkResponse, ApiQuery, ApiTags } from '@nestjs/swagger';
+import {
+  ApiOkResponse,
+  ApiQuery,
+  ApiTags,
+  ApiOperation,
+  ApiParam,
+  ApiBody,
+  ApiBadRequestResponse,
+  ApiNoContentResponse,
+} from '@nestjs/swagger';
 
 @ApiTags('delegates')
 @Controller({ version: '2' })
 export class DelegatesV2Controller {
   constructor(private readonly service: DelegatesV2Service) {}
 
-  @ApiOkResponse({ type: DelegatePage })
+  @ApiOperation({
+    summary: 'Get delegates',
+    description:
+      'Retrieves a paginated list of delegates for a specific chain with optional filtering by Safe, delegate, delegator, or label.',
+  })
+  @ApiParam({
+    name: 'chainId',
+    type: 'string',
+    description: 'Chain ID where delegates are registered',
+    example: '1',
+  })
   @ApiQuery({
     name: 'safe',
     required: false,
     type: String,
+    description: 'Filter by Safe address (0x prefixed hex string)',
   })
   @ApiQuery({
     name: 'delegate',
     required: false,
     type: String,
+    description: 'Filter by delegate address (0x prefixed hex string)',
   })
   @ApiQuery({
     name: 'delegator',
     required: false,
     type: String,
+    description: 'Filter by delegator address (0x prefixed hex string)',
   })
   @ApiQuery({
     name: 'label',
     required: false,
     type: String,
+    description: 'Filter by delegate label or name',
   })
   @ApiQuery({
     name: 'cursor',
     required: false,
     type: String,
+    description: 'Pagination cursor for retrieving the next set of results',
+  })
+  @ApiOkResponse({
+    type: DelegatePage,
+    description: 'Paginated list of delegates retrieved successfully',
   })
   @Get('chains/:chainId/delegates')
   async getDelegates(
@@ -71,6 +99,29 @@ export class DelegatesV2Controller {
     });
   }
 
+  @ApiOperation({
+    summary: 'Create delegate',
+    description:
+      'Creates a new delegate relationship between a Safe and a delegate address. Requires proper authorization signature.',
+  })
+  @ApiParam({
+    name: 'chainId',
+    type: 'string',
+    description: 'Chain ID where the delegate will be registered',
+    example: '1',
+  })
+  @ApiBody({
+    type: CreateDelegateDto,
+    description:
+      'Delegate creation data including Safe address, delegate address, label, and authorization signature',
+  })
+  @ApiNoContentResponse({
+    description: 'Delegate created successfully',
+  })
+  @ApiBadRequestResponse({
+    description:
+      'Invalid delegate data, signature, or unauthorized creation attempt',
+  })
   @HttpCode(200)
   @Post('chains/:chainId/delegates')
   async postDelegate(
@@ -81,6 +132,33 @@ export class DelegatesV2Controller {
     await this.service.postDelegate({ chainId, createDelegateDto });
   }
 
+  @ApiOperation({
+    summary: 'Delete delegate',
+    description:
+      'Removes a delegate relationship for a specific delegate address. Requires proper authorization signature.',
+  })
+  @ApiParam({
+    name: 'chainId',
+    type: 'string',
+    description: 'Chain ID where the delegate is registered',
+    example: '1',
+  })
+  @ApiParam({
+    name: 'delegateAddress',
+    type: 'string',
+    description: 'Delegate address to remove (0x prefixed hex string)',
+  })
+  @ApiBody({
+    type: DeleteDelegateV2Dto,
+    description:
+      'Signature and data proving authorization to delete the delegate',
+  })
+  @ApiNoContentResponse({
+    description: 'Delegate deleted successfully',
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid signature or unauthorized deletion attempt',
+  })
   @Delete('chains/:chainId/delegates/:delegateAddress')
   async deleteDelegate(
     @Param('chainId') chainId: string,
