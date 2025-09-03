@@ -147,7 +147,7 @@ describe('Safes Controller Overview (Unit)', () => {
               status: 200,
             });
           }
-          case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/multisig-transactions/`: {
+          case `${chain.transactionService}/api/v2/safes/${safeInfo.address}/multisig-transactions/`: {
             return Promise.resolve({
               data: rawify(queuedTransactions),
               status: 200,
@@ -229,7 +229,7 @@ describe('Safes Controller Overview (Unit)', () => {
         },
       });
       expect(networkService.get.mock.calls[6][0].url).toBe(
-        `${chain.transactionService}/api/v1/safes/${safeInfo.address}/multisig-transactions/`,
+        `${chain.transactionService}/api/v2/safes/${safeInfo.address}/multisig-transactions/`,
       );
     });
 
@@ -317,7 +317,7 @@ describe('Safes Controller Overview (Unit)', () => {
               status: 200,
             });
           }
-          case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/multisig-transactions/`: {
+          case `${chain.transactionService}/api/v2/safes/${safeInfo.address}/multisig-transactions/`: {
             return Promise.resolve({
               data: rawify(queuedTransactions),
               status: 200,
@@ -399,7 +399,7 @@ describe('Safes Controller Overview (Unit)', () => {
         },
       });
       expect(networkService.get.mock.calls[6][0].url).toBe(
-        `${chain.transactionService}/api/v1/safes/${safeInfo.address}/multisig-transactions/`,
+        `${chain.transactionService}/api/v2/safes/${safeInfo.address}/multisig-transactions/`,
       );
     });
 
@@ -539,19 +539,19 @@ describe('Safes Controller Overview (Unit)', () => {
               status: 200,
             });
           }
-          case `${chain1.transactionService}/api/v1/safes/${safeInfo1.address}/multisig-transactions/`: {
+          case `${chain1.transactionService}/api/v2/safes/${safeInfo1.address}/multisig-transactions/`: {
             return Promise.resolve({
               data: rawify(queuedTransactions1),
               status: 200,
             });
           }
-          case `${chain2.transactionService}/api/v1/safes/${safeInfo2.address}/multisig-transactions/`: {
+          case `${chain2.transactionService}/api/v2/safes/${safeInfo2.address}/multisig-transactions/`: {
             return Promise.resolve({
               data: rawify(queuedTransactions2),
               status: 200,
             });
           }
-          case `${chain2.transactionService}/api/v1/safes/${safeInfo3.address}/multisig-transactions/`: {
+          case `${chain2.transactionService}/api/v2/safes/${safeInfo3.address}/multisig-transactions/`: {
             return Promise.resolve({
               data: rawify(queuedTransactions3),
               status: 200,
@@ -762,19 +762,19 @@ describe('Safes Controller Overview (Unit)', () => {
               status: 200,
             });
           }
-          case `${chain1.transactionService}/api/v1/safes/${safeInfo1.address}/multisig-transactions/`: {
+          case `${chain1.transactionService}/api/v2/safes/${safeInfo1.address}/multisig-transactions/`: {
             return Promise.resolve({
               data: rawify(queuedTransactions1),
               status: 200,
             });
           }
-          case `${chain2.transactionService}/api/v1/safes/${safeInfo2.address}/multisig-transactions/`: {
+          case `${chain2.transactionService}/api/v2/safes/${safeInfo2.address}/multisig-transactions/`: {
             return Promise.resolve({
               data: rawify(queuedTransactions2),
               status: 200,
             });
           }
-          case `${chain2.transactionService}/api/v1/safes/${safeInfo3.address}/multisig-transactions/`: {
+          case `${chain2.transactionService}/api/v2/safes/${safeInfo3.address}/multisig-transactions/`: {
             return Promise.resolve({
               data: rawify(queuedTransactions3),
               status: 200,
@@ -915,7 +915,7 @@ describe('Safes Controller Overview (Unit)', () => {
               status: 200,
             });
           }
-          case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/multisig-transactions/`: {
+          case `${chain.transactionService}/api/v2/safes/${safeInfo.address}/multisig-transactions/`: {
             return Promise.resolve({
               data: rawify(queuedTransactions),
               status: 200,
@@ -996,7 +996,7 @@ describe('Safes Controller Overview (Unit)', () => {
         },
       });
       expect(networkService.get.mock.calls[6][0].url).toBe(
-        `${chain.transactionService}/api/v1/safes/${safeInfo.address}/multisig-transactions/`,
+        `${chain.transactionService}/api/v2/safes/${safeInfo.address}/multisig-transactions/`,
       );
     });
 
@@ -1068,7 +1068,7 @@ describe('Safes Controller Overview (Unit)', () => {
               status: 200,
             });
           }
-          case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/multisig-transactions/`: {
+          case `${chain.transactionService}/api/v2/safes/${safeInfo.address}/multisig-transactions/`: {
             return Promise.resolve({
               data: rawify(queuedTransactions),
               status: 200,
@@ -1149,7 +1149,7 @@ describe('Safes Controller Overview (Unit)', () => {
         },
       });
       expect(networkService.get.mock.calls[6][0].url).toBe(
-        `${chain.transactionService}/api/v1/safes/${safeInfo.address}/multisig-transactions/`,
+        `${chain.transactionService}/api/v2/safes/${safeInfo.address}/multisig-transactions/`,
       );
     });
   });
@@ -1296,19 +1296,19 @@ describe('Safes Controller Overview (Unit)', () => {
               status: 200,
             });
           }
-          case `${chain1.transactionService}/api/v1/safes/${safeInfo1.address}/multisig-transactions/`: {
+          case `${chain1.transactionService}/api/v2/safes/${safeInfo1.address}/multisig-transactions/`: {
             return Promise.resolve({
               data: rawify(queuedTransactions1),
               status: 200,
             });
           }
-          case `${chain2.transactionService}/api/v1/safes/${safeInfo2.address}/multisig-transactions/`: {
+          case `${chain2.transactionService}/api/v2/safes/${safeInfo2.address}/multisig-transactions/`: {
             return Promise.resolve({
               data: rawify(queuedTransactions2),
               status: 200,
             });
           }
-          case `${chain2.transactionService}/api/v1/safes/${safeInfo3.address}/multisig-transactions/`: {
+          case `${chain2.transactionService}/api/v2/safes/${safeInfo3.address}/multisig-transactions/`: {
             return Promise.resolve({
               data: rawify(queuedTransactions3),
               status: 200,
@@ -1485,13 +1485,13 @@ describe('Safes Controller Overview (Unit)', () => {
               status: 200,
             });
           }
-          case `${chain2.transactionService}/api/v1/safes/${safeInfo2.address}/multisig-transactions/`: {
+          case `${chain2.transactionService}/api/v2/safes/${safeInfo2.address}/multisig-transactions/`: {
             return Promise.resolve({
               data: rawify(queuedTransactions2),
               status: 200,
             });
           }
-          case `${chain2.transactionService}/api/v1/safes/${safeInfo3.address}/multisig-transactions/`: {
+          case `${chain2.transactionService}/api/v2/safes/${safeInfo3.address}/multisig-transactions/`: {
             return Promise.resolve({
               data: rawify(queuedTransactions3),
               status: 200,
@@ -1684,19 +1684,19 @@ describe('Safes Controller Overview (Unit)', () => {
               status: 200,
             });
           }
-          case `${chain1.transactionService}/api/v1/safes/${safeInfo1.address}/multisig-transactions/`: {
+          case `${chain1.transactionService}/api/v2/safes/${safeInfo1.address}/multisig-transactions/`: {
             return Promise.resolve({
               data: rawify(queuedTransactions1),
               status: 200,
             });
           }
-          case `${chain2.transactionService}/api/v1/safes/${safeInfo2.address}/multisig-transactions/`: {
+          case `${chain2.transactionService}/api/v2/safes/${safeInfo2.address}/multisig-transactions/`: {
             return Promise.resolve({
               data: rawify(queuedTransactions2),
               status: 200,
             });
           }
-          case `${chain2.transactionService}/api/v1/safes/${safeInfo3.address}/multisig-transactions/`: {
+          case `${chain2.transactionService}/api/v2/safes/${safeInfo3.address}/multisig-transactions/`: {
             return Promise.resolve({
               data: rawify(queuedTransactions3),
               status: 200,
@@ -1804,7 +1804,7 @@ describe('Safes Controller Overview (Unit)', () => {
           case `${pricesProviderUrl}/simple/token_price/${chainName}`: {
             return Promise.reject();
           }
-          case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/multisig-transactions/`: {
+          case `${chain.transactionService}/api/v2/safes/${safeInfo.address}/multisig-transactions/`: {
             return Promise.resolve({
               data: rawify(queuedTransactions),
               status: 200,

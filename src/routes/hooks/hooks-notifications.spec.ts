@@ -378,7 +378,7 @@ describe('Hook Events for Notifications (Unit) pt. 1', () => {
           });
         } else if (
           url ===
-          `${chain.transactionService}/api/v1/multisig-transactions/${event.safeTxHash}/`
+          `${chain.transactionService}/api/v2/multisig-transactions/${event.safeTxHash}/`
         ) {
           return Promise.resolve({
             status: 200,
@@ -518,7 +518,7 @@ describe('Hook Events for Notifications (Unit) pt. 1', () => {
           });
         } else if (
           url ===
-          `${chain.transactionService}/api/v1/multisig-transactions/${event.safeTxHash}/`
+          `${chain.transactionService}/api/v2/multisig-transactions/${event.safeTxHash}/`
         ) {
           return Promise.resolve({
             status: 200,
@@ -600,7 +600,7 @@ describe('Hook Events for Notifications (Unit) pt. 1', () => {
           });
         } else if (
           url ===
-          `${chain.transactionService}/api/v1/multisig-transactions/${event.safeTxHash}/`
+          `${chain.transactionService}/api/v2/multisig-transactions/${event.safeTxHash}/`
         ) {
           return Promise.resolve({
             status: 200,
@@ -1023,7 +1023,7 @@ describe('Hook Events for Notifications (Unit) pt. 1', () => {
           });
         } else if (
           url ===
-          `${chain.transactionService}/api/v1/multisig-transactions/${event.safeTxHash}/`
+          `${chain.transactionService}/api/v2/multisig-transactions/${event.safeTxHash}/`
         ) {
           return Promise.resolve({
             status: 200,
@@ -1170,7 +1170,7 @@ describe('Hook Events for Notifications (Unit) pt. 1', () => {
           });
         } else if (
           url ===
-          `${chain.transactionService}/api/v1/multisig-transactions/${event.safeTxHash}/`
+          `${chain.transactionService}/api/v2/multisig-transactions/${event.safeTxHash}/`
         ) {
           return Promise.resolve({
             status: 200,
@@ -1259,7 +1259,7 @@ describe('Hook Events for Notifications (Unit) pt. 1', () => {
           });
         } else if (
           url ===
-          `${chain.transactionService}/api/v1/multisig-transactions/${event.safeTxHash}/`
+          `${chain.transactionService}/api/v2/multisig-transactions/${event.safeTxHash}/`
         ) {
           return Promise.resolve({
             status: 200,
@@ -1673,7 +1673,7 @@ describe('Hook Events for Notifications (Unit) pt. 1', () => {
           });
         } else if (
           url ===
-          `${chain.transactionService}/api/v1/multisig-transactions/${event.safeTxHash}/`
+          `${chain.transactionService}/api/v2/multisig-transactions/${event.safeTxHash}/`
         ) {
           return Promise.resolve({
             status: 200,
@@ -1867,7 +1867,7 @@ describe('Hook Events for Notifications (Unit) pt. 1', () => {
         });
       } else if (
         url ===
-        `${chain.transactionService}/api/v1/multisig-transactions/${event.safeTxHash}/`
+        `${chain.transactionService}/api/v2/multisig-transactions/${event.safeTxHash}/`
       ) {
         return Promise.resolve({
           status: 200,
@@ -2138,7 +2138,7 @@ describe('Hook Events for Notifications (Unit) pt. 1', () => {
         });
       } else if (
         url ===
-        `${chain.transactionService}/api/v1/multisig-transactions/${multisigTransaction.safeTxHash}/`
+        `${chain.transactionService}/api/v2/multisig-transactions/${multisigTransaction.safeTxHash}/`
       ) {
         return Promise.resolve({
           status: 200,

@@ -391,7 +391,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
     const txHash = faker.string.hexadecimal();
     const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
     const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
-    const getMultisigTransactionUrl = `${chain.transactionService}/api/v1/multisig-transactions/${txHash}/`;
+    const getMultisigTransactionUrl = `${chain.transactionService}/api/v2/multisig-transactions/${txHash}/`;
     networkService.get.mockImplementation(({ url }) => {
       switch (url) {
         case getChainUrl:
@@ -481,8 +481,8 @@ describe('Get by id - Transactions Controller (Unit)', () => {
     const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
     const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
     const getSafeAppsUrl = `${safeConfigUrl}/api/v1/safe-apps/`;
-    const getMultisigTransactionUrl = `${chain.transactionService}/api/v1/multisig-transactions/${tx.safeTxHash}/`;
-    const getMultisigTransactionsUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/multisig-transactions/`;
+    const getMultisigTransactionUrl = `${chain.transactionService}/api/v2/multisig-transactions/${tx.safeTxHash}/`;
+    const getMultisigTransactionsUrl = `${chain.transactionService}/api/v2/safes/${safe.address}/multisig-transactions/`;
     const getGasTokenContractUrl = `${chain.transactionService}/api/v1/tokens/${tx.gasToken}`;
     const getToContractUrl = `${safeDecoderUrl}/api/v1/contracts/${tx.to}`;
     const getToTokenUrl = `${chain.transactionService}/api/v1/tokens/${tx.to}`;
@@ -676,8 +676,8 @@ describe('Get by id - Transactions Controller (Unit)', () => {
     const getSafeAppsUrl = `${safeConfigUrl}/api/v1/safe-apps/`;
     const getMultisigTransactionUrl = `${
       chain.transactionService
-    }/api/v1/multisig-transactions/${tx.safeTxHash.slice(2)}/`;
-    const getMultisigTransactionsUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/multisig-transactions/`;
+    }/api/v2/multisig-transactions/${tx.safeTxHash.slice(2)}/`;
+    const getMultisigTransactionsUrl = `${chain.transactionService}/api/v2/safes/${safe.address}/multisig-transactions/`;
     const getGasTokenContractUrl = `${chain.transactionService}/api/v1/tokens/${tx.gasToken}`;
     const getToContractUrl = `${safeDecoderUrl}/api/v1/contracts/${tx.to}`;
     const getToTokenUrl = `${chain.transactionService}/api/v1/tokens/${tx.to}`;
@@ -868,8 +868,8 @@ describe('Get by id - Transactions Controller (Unit)', () => {
     const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
     const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
     const getSafeAppsUrl = `${safeConfigUrl}/api/v1/safe-apps/`;
-    const getMultisigTransactionUrl = `${chain.transactionService}/api/v1/multisig-transactions/${tx.safeTxHash}/`;
-    const getMultisigTransactionsUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/multisig-transactions/`;
+    const getMultisigTransactionUrl = `${chain.transactionService}/api/v2/multisig-transactions/${tx.safeTxHash}/`;
+    const getMultisigTransactionsUrl = `${chain.transactionService}/api/v2/safes/${safe.address}/multisig-transactions/`;
     const getGasTokenContractUrl = `${chain.transactionService}/api/v1/tokens/${tx.gasToken}`;
     const getToContractUrl = `${safeDecoderUrl}/api/v1/contracts/${tx.to}`;
     networkService.get.mockImplementation(({ url }) => {
@@ -1009,7 +1009,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
     const tx = multisigTransactionBuilder().build();
     const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
     const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
-    const getMultisigTransactionUrl = `${chain.transactionService}/api/v1/multisig-transactions/${tx.safeTxHash}/`;
+    const getMultisigTransactionUrl = `${chain.transactionService}/api/v2/multisig-transactions/${tx.safeTxHash}/`;
     networkService.get.mockImplementation(({ url }) => {
       switch (url) {
         case getChainUrl:
@@ -1069,7 +1069,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
       safe.version = null;
       const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
-      const getMultisigTransactionUrl = `${chain.transactionService}/api/v1/multisig-transactions/${multisigTransaction.safeTxHash}/`;
+      const getMultisigTransactionUrl = `${chain.transactionService}/api/v2/multisig-transactions/${multisigTransaction.safeTxHash}/`;
       networkService.get.mockImplementation(({ url }) => {
         switch (url) {
           case getChainUrl:
@@ -1150,7 +1150,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
       }) as `0x${string}`;
       const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
-      const getMultisigTransactionUrl = `${chain.transactionService}/api/v1/multisig-transactions/${multisigTransaction.safeTxHash}/`;
+      const getMultisigTransactionUrl = `${chain.transactionService}/api/v2/multisig-transactions/${multisigTransaction.safeTxHash}/`;
       networkService.get.mockImplementation(({ url }) => {
         switch (url) {
           case getChainUrl:
@@ -1224,7 +1224,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
       multisigTransaction.confirmations![0].signature = `0xdeadbee`;
       const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
-      const getMultisigTransactionUrl = `${chain.transactionService}/api/v1/multisig-transactions/${multisigTransaction.safeTxHash}/`;
+      const getMultisigTransactionUrl = `${chain.transactionService}/api/v2/multisig-transactions/${multisigTransaction.safeTxHash}/`;
       networkService.get.mockImplementation(({ url }) => {
         switch (url) {
           case getChainUrl:
@@ -1282,7 +1282,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
       multisigTransaction.confirmations![0].signature = `0xdeadbee`;
       const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
-      const getMultisigTransactionUrl = `${chain.transactionService}/api/v1/multisig-transactions/${multisigTransaction.safeTxHash}/`;
+      const getMultisigTransactionUrl = `${chain.transactionService}/api/v2/multisig-transactions/${multisigTransaction.safeTxHash}/`;
       networkService.get.mockImplementation(({ url }) => {
         switch (url) {
           case getChainUrl:
@@ -1345,7 +1345,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
 
         const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
         const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
-        const getMultisigTransactionUrl = `${chain.transactionService}/api/v1/multisig-transactions/${multisigTransaction.safeTxHash}/`;
+        const getMultisigTransactionUrl = `${chain.transactionService}/api/v2/multisig-transactions/${multisigTransaction.safeTxHash}/`;
         networkService.get.mockImplementation(({ url }) => {
           switch (url) {
             case getChainUrl:
@@ -1407,7 +1407,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
         });
       const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
-      const getMultisigTransactionUrl = `${chain.transactionService}/api/v1/multisig-transactions/${multisigTransaction.safeTxHash}/`;
+      const getMultisigTransactionUrl = `${chain.transactionService}/api/v2/multisig-transactions/${multisigTransaction.safeTxHash}/`;
       networkService.get.mockImplementation(({ url }) => {
         switch (url) {
           case getChainUrl:
@@ -1465,7 +1465,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
       );
       const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
-      const getMultisigTransactionUrl = `${chain.transactionService}/api/v1/multisig-transactions/${multisigTransaction.safeTxHash}/`;
+      const getMultisigTransactionUrl = `${chain.transactionService}/api/v2/multisig-transactions/${multisigTransaction.safeTxHash}/`;
       networkService.get.mockImplementation(({ url }) => {
         switch (url) {
           case getChainUrl:

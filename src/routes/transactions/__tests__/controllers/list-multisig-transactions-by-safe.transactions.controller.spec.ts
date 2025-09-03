@@ -74,7 +74,7 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
     const safeAddress = faker.finance.ethereumAddress();
     const error = new NetworkResponseError(
       new URL(
-        `${safeConfigUrl}/v1/chains/${chainId}/safes/${safeAddress}/multisig-transactions`,
+        `${safeConfigUrl}/v2/chains/${chainId}/safes/${safeAddress}/multisig-transactions`,
       ),
       { status: 500 } as Response,
     );
@@ -105,7 +105,7 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
     const error = new NetworkResponseError(
       new URL(
         // Param ValidationPipe checksums address
-        `${safeConfigUrl}/v1/chains/${chainId}/safes/${getAddress(safeAddress)}/multisig-transactions`,
+        `${safeConfigUrl}/v2/chains/${chainId}/safes/${getAddress(safeAddress)}/multisig-transactions`,
       ),
       { status: 500 } as Response,
     );
@@ -125,7 +125,7 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
     });
     expect(networkService.get).toHaveBeenCalledWith({
       // Param ValidationPipe checksums address
-      url: `${chainResponse.transactionService}/api/v1/safes/${getAddress(safeAddress)}/multisig-transactions/`,
+      url: `${chainResponse.transactionService}/api/v2/safes/${getAddress(safeAddress)}/multisig-transactions/`,
       networkRequest: expect.objectContaining({
         params: expect.objectContaining({
           ordering: '-nonce',
@@ -221,7 +221,7 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
       .build();
     networkService.get.mockImplementation(({ url }) => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
-      const getMultisigTransactionsUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/multisig-transactions/`;
+      const getMultisigTransactionsUrl = `${chain.transactionService}/api/v2/safes/${safe.address}/multisig-transactions/`;
       const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
       const getContractUrlPattern = `${safeDecoderUrl}/api/v1/contracts/`;
       const getTokenUrlPattern = `${chain.transactionService}/api/v1/tokens/${multisigTransaction.to}`;
@@ -356,7 +356,7 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
       .build();
     networkService.get.mockImplementation(({ url }) => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
-      const getMultisigTransactionsUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/multisig-transactions/`;
+      const getMultisigTransactionsUrl = `${chain.transactionService}/api/v2/safes/${safe.address}/multisig-transactions/`;
       const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
       const getContractUrlPattern = `${safeDecoderUrl}/api/v1/contracts/`;
       const getTokenUrlPattern = `${chain.transactionService}/api/v1/tokens/0x7Af3460d552f832fD7E2DE973c628ACeA59B0712`;
@@ -486,7 +486,7 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
     networkService.get.mockImplementation(({ url }) => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
       const getSafeAppsUrl = `${safeConfigUrl}/api/v1/safe-apps/`;
-      const getMultisigTransactionsUrl = `${chain.transactionService}/api/v1/safes/${domainTransaction.safe}/multisig-transactions/`;
+      const getMultisigTransactionsUrl = `${chain.transactionService}/api/v2/safes/${domainTransaction.safe}/multisig-transactions/`;
       const getSafeUrl = `${chain.transactionService}/api/v1/safes/${domainTransaction.safe}`;
       const getContractUrlPattern = `${safeDecoderUrl}/api/v1/contracts/`;
       if (url === getChainUrl) {
@@ -605,7 +605,7 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
     const dataDecoded = dataDecodedBuilder().build();
     networkService.get.mockImplementation(({ url }) => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
-      const getMultisigTransactionsUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/multisig-transactions/`;
+      const getMultisigTransactionsUrl = `${chain.transactionService}/api/v2/safes/${safe.address}/multisig-transactions/`;
       const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
       const getContractUrlPattern = `${safeDecoderUrl}/api/v1/contracts/`;
       if (url === getChainUrl) {

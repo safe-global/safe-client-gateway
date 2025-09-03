@@ -655,7 +655,7 @@ export class TransactionApi implements ITransactionApi {
         chainId: this.chainId,
         ...args,
       });
-      const url = `${this.baseUrl}/api/v1/safes/${args.safeAddress}/multisig-transactions/`;
+      const url = `${this.baseUrl}/api/v2/safes/${args.safeAddress}/multisig-transactions/`;
       return await this.dataSource.get<Page<MultisigTransaction>>({
         cacheDir,
         url,
@@ -717,7 +717,7 @@ export class TransactionApi implements ITransactionApi {
     offset?: number;
   }): Promise<Raw<Page<MultisigTransaction>>> {
     try {
-      const url = `${this.baseUrl}/api/v1/safes/${safeAddress}/multisig-transactions/`;
+      const url = `${this.baseUrl}/api/v2/safes/${safeAddress}/multisig-transactions/`;
       const { data } = await this.networkService.get<Page<MultisigTransaction>>(
         {
           url,
@@ -748,7 +748,7 @@ export class TransactionApi implements ITransactionApi {
         chainId: this.chainId,
         safeTransactionHash,
       });
-      const url = `${this.baseUrl}/api/v1/multisig-transactions/${safeTransactionHash}/`;
+      const url = `${this.baseUrl}/api/v2/multisig-transactions/${safeTransactionHash}/`;
       return await this.dataSource.get<MultisigTransaction>({
         cacheDir,
         url,
@@ -764,7 +764,7 @@ export class TransactionApi implements ITransactionApi {
     safeTransactionHash: string,
   ): Promise<Raw<MultisigTransaction>> {
     try {
-      const url = `${this.baseUrl}/api/v1/multisig-transactions/${safeTransactionHash}/`;
+      const url = `${this.baseUrl}/api/v2/multisig-transactions/${safeTransactionHash}/`;
       const { data } = await this.networkService.get<Raw<MultisigTransaction>>({
         url,
       });
@@ -779,7 +779,7 @@ export class TransactionApi implements ITransactionApi {
     signature: string;
   }): Promise<void> {
     try {
-      const url = `${this.baseUrl}/api/v1/multisig-transactions/${args.safeTxHash}`;
+      const url = `${this.baseUrl}/api/v2/multisig-transactions/${args.safeTxHash}`;
       await this.networkService.delete({
         url,
         data: {
@@ -848,7 +848,7 @@ export class TransactionApi implements ITransactionApi {
         chainId: this.chainId,
         ...args,
       });
-      const url = `${this.baseUrl}/api/v1/safes/${args.safeAddress}/all-transactions/`;
+      const url = `${this.baseUrl}/api/v2/safes/${args.safeAddress}/all-transactions/`;
       return await this.dataSource.get<Page<Transaction>>({
         cacheDir,
         url,
@@ -1021,7 +1021,7 @@ export class TransactionApi implements ITransactionApi {
     data: ProposeTransactionDto;
   }): Promise<unknown> {
     try {
-      const url = `${this.baseUrl}/api/v1/safes/${args.address}/multisig-transactions/`;
+      const url = `${this.baseUrl}/api/v2/safes/${args.address}/multisig-transactions/`;
       return await this.networkService.post({
         url,
         data: {
