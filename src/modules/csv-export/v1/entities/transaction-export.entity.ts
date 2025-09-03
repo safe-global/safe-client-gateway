@@ -22,6 +22,7 @@ export const TransactionExportSchema = z
     note: z.string().nullable(),
     transactionHash: HexSchema,
     contractAddress: AddressSchema.nullable(),
+    nonce: z.string().nullable(),
   })
   .transform(({ amount, assetDecimals, ...rest }) => ({
     ...rest,

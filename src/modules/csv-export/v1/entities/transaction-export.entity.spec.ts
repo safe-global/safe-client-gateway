@@ -92,6 +92,7 @@ describe('TransactionExportSchema', () => {
       .with('executedAt', null)
       .with('note', null)
       .with('contractAddress', null)
+      .with('nonce', null)
       .build();
 
     const result = TransactionExportSchema.safeParse(transactionExport);
@@ -107,6 +108,7 @@ describe('TransactionExportSchema', () => {
       expect(result.data.executedAt).toBeNull();
       expect(result.data.note).toBeNull();
       expect(result.data.contractAddress).toBeNull();
+      expect(result.data.nonce).toBeNull();
     }
   });
 

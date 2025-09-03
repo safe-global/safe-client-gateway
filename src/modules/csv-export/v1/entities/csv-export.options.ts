@@ -3,6 +3,7 @@ import type { CsvOptions } from '@/modules/csv-export/csv-utils/csv.service';
 export const CSV_OPTIONS: CsvOptions = {
   header: true,
   columns: [
+    { key: 'nonce', header: 'Nonce' },
     { key: 'safe', header: 'Safe Address' },
     { key: 'from', header: 'From Address' },
     { key: 'to', header: 'To Address' },

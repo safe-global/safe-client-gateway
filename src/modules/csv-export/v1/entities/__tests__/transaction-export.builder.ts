@@ -27,7 +27,8 @@ export function transactionExportBuilder(): IBuilder<TransactionExport> {
     .with('executedAt', faker.date.recent())
     .with('note', faker.lorem.sentence())
     .with('transactionHash', faker.string.hexadecimal({ length: 64 }) as Hex)
-    .with('contractAddress', getAddress(faker.finance.ethereumAddress()));
+    .with('contractAddress', getAddress(faker.finance.ethereumAddress()))
+    .with('nonce', faker.number.int().toString());
 }
 
 /**
