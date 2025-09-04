@@ -8,7 +8,7 @@ import {
   MultisigTransactionTypeSchema,
 } from '@/domain/safe/entities/multisig-transaction.entity';
 import { faker } from '@faker-js/faker/.';
-import { getAddress } from 'viem';
+import { type Address, getAddress } from 'viem';
 import { ZodError } from 'zod';
 
 describe('MultisigTransaction', () => {
@@ -98,7 +98,7 @@ describe('MultisigTransaction', () => {
         .ethereumAddress()
         .toLowerCase();
       const multisigTransaction = multisigTransactionBuilder()
-        .with(key, nonChecksummedAddress as `0x${string}`)
+        .with(key, nonChecksummedAddress as Address)
         .build();
 
       const result = MultisigTransactionSchema.safeParse(multisigTransaction);
@@ -135,7 +135,7 @@ describe('MultisigTransaction', () => {
       'safeTxHash' as const,
     ])('should require %s to be a hex string', (key) => {
       const multisigTransaction = multisigTransactionBuilder()
-        .with(key, faker.string.numeric() as `0x${string}`)
+        .with(key, faker.string.numeric() as Address)
         .build();
 
       const result = MultisigTransactionSchema.safeParse(multisigTransaction);

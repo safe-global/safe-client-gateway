@@ -8,6 +8,7 @@ import { IDataDecoderApi } from '@/domain/interfaces/data-decoder-api.interface'
 import { Transaction } from '@/domain/safe/entities/transaction.entity';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { asError } from '@/logging/utils';
+import type { Address } from 'viem';
 
 @Injectable()
 export class DataDecoderRepository implements IDataDecoderRepository {
@@ -19,8 +20,8 @@ export class DataDecoderRepository implements IDataDecoderRepository {
 
   public async getDecodedData(args: {
     chainId: string;
-    data: `0x${string}`;
-    to: `0x${string}`;
+    data: Address;
+    to: Address;
   }): Promise<DataDecoded> {
     const dataDecoded = await this.dataDecoderApi.getDecodedData(args);
     return DataDecodedSchema.parse(dataDecoded);
@@ -50,7 +51,7 @@ export class DataDecoderRepository implements IDataDecoderRepository {
     }
   }
 
-  private getDataDecodedData(transaction: Transaction): `0x${string}` | null {
+  private getDataDecodedData(transaction: Transaction): Address | null {
     // Multisig transaction
     if ('data' in transaction) {
       return transaction.data;
@@ -63,7 +64,7 @@ export class DataDecoderRepository implements IDataDecoderRepository {
     throw Error('Unrecognized transaction type');
   }
 
-  private getDataDecodedTo(transaction: Transaction): `0x${string}` {
+  private getDataDecodedTo(transaction: Transaction): Address {
     // Multisig transaction
     if ('to' in transaction) {
       return transaction.to;

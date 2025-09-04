@@ -18,6 +18,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { In } from 'typeorm';
+import type { Address } from 'viem';
 
 export class SpacesService {
   public constructor(
@@ -125,7 +126,7 @@ export class SpacesService {
 
   private assertSignerAddress(
     authPayload: AuthPayload,
-  ): asserts authPayload is AuthPayload & { signer_address: `0x${string}` } {
+  ): asserts authPayload is AuthPayload & { signer_address: Address } {
     if (!authPayload.signer_address) {
       throw new UnauthorizedException('Signer address not provided');
     }
@@ -133,7 +134,7 @@ export class SpacesService {
 
   public async isAdmin(
     spaceId: Space['id'],
-    signerAddress: `0x${string}`,
+    signerAddress: Address,
   ): Promise<void> {
     const { id: userId } =
       await this.userRepository.findByWalletAddressOrFail(signerAddress);

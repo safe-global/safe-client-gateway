@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker';
-import { encodeFunctionData, getAddress } from 'viem';
+import { type Address, encodeFunctionData, getAddress } from 'viem';
 import ProxyFactory130 from '@/abis/safe/v1.3.0/GnosisSafeProxyFactory.abi';
 import type { IEncoder } from '@/__tests__/encoder-builder';
 import { Builder } from '@/__tests__/builder';
@@ -8,8 +8,8 @@ import { setupEncoder } from '@/domain/contracts/__tests__/encoders/safe-encoder
 // createProxyWithNonce
 
 type CreateProxyWithNonceArgs = {
-  singleton: `0x${string}`;
-  initializer: `0x${string}`;
+  singleton: Address;
+  initializer: Address;
   saltNonce: bigint;
 };
 
@@ -17,7 +17,7 @@ class SetupEncoder<T extends CreateProxyWithNonceArgs>
   extends Builder<T>
   implements IEncoder
 {
-  encode(): `0x${string}` {
+  encode(): Address {
     const args = this.build();
 
     return encodeFunctionData({

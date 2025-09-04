@@ -4,6 +4,7 @@ import type {
   TextFragment,
 } from '@/domain/human-description/entities/human-description.entity';
 import { ValueType } from '@/domain/human-description/entities/human-description.entity';
+import type { Address } from 'viem';
 
 type SafeRegExpExecArray = RegExpExecArray & {
   groups: NonNullable<RegExpExecArray['groups']>;
@@ -52,7 +53,7 @@ export class HumanDescriptionTemplate {
    * @param to - the target address of the transaction
    * @param data - the raw data of the transaction
    */
-  parse(to: string, data: `0x${string}`): Array<HumanDescriptionFragment> {
+  parse(to: string, data: Address): Array<HumanDescriptionFragment> {
     const { args } = decodeFunctionData({
       abi: this.functionAbi,
       data,

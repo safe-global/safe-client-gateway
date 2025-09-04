@@ -54,6 +54,7 @@ import { TimezoneSchema } from '@/validation/entities/schemas/timezone.schema';
 import { TXSMultisigTransaction } from '@/routes/transactions/entities/txs-multisig-transaction.entity';
 import { TXSMultisigTransactionPage } from '@/routes/transactions/entities/txs-multisig-transaction-page.entity';
 import { TXSCreationTransaction } from '@/routes/transactions/entities/txs-creation-transaction.entity';
+import type { Address } from 'viem';
 
 @ApiTags('transactions')
 @Controller({
@@ -144,7 +145,7 @@ export class TransactionsController {
   async getDomainMultisigTransactions(
     @Param('chainId') chainId: string,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
-    safeAddress: `0x${string}`,
+    safeAddress: Address,
     @Param('failed', new ParseBoolPipe({ optional: true })) failed?: boolean,
     @Query('modified__lt') modified__lt?: string,
     @Query('modified__gt') modified__gt?: string,
@@ -283,11 +284,11 @@ export class TransactionsController {
     @RouteUrlDecorator() routeUrl: URL,
     @PaginationDataDecorator() paginationData: PaginationData,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
-    safeAddress: `0x${string}`,
+    safeAddress: Address,
     @Query('execution_date__gte') executionDateGte?: string,
     @Query('execution_date__lte') executionDateLte?: string,
     @Query('to', new ValidationPipe(AddressSchema.optional()))
-    to?: `0x${string}`,
+    to?: Address,
     @Query('value') value?: string,
     @Query('nonce') nonce?: string,
     @Query('executed', new ParseBoolPipe({ optional: true }))
@@ -400,7 +401,7 @@ export class TransactionsController {
     @RouteUrlDecorator() routeUrl: URL,
     @PaginationDataDecorator() paginationData: PaginationData,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
-    safeAddress: `0x${string}`,
+    safeAddress: Address,
     @Query('to') to?: string,
     @Query('module') module?: string,
     @Query('transaction_hash') txHash?: string,
@@ -534,17 +535,17 @@ export class TransactionsController {
     @Param('chainId') chainId: string,
     @RouteUrlDecorator() routeUrl: URL,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
-    safeAddress: `0x${string}`,
+    safeAddress: Address,
     @PaginationDataDecorator() paginationData: PaginationData,
     @Query('trusted', new DefaultValuePipe(true), ParseBoolPipe)
     trusted: boolean,
     @Query('execution_date__gte') executionDateGte?: string,
     @Query('execution_date__lte') executionDateLte?: string,
     @Query('to', new ValidationPipe(AddressSchema.optional()))
-    to?: `0x${string}`,
+    to?: Address,
     @Query('value') value?: string,
     @Query('token_address', new ValidationPipe(AddressSchema.optional()))
-    tokenAddress?: `0x${string}`,
+    tokenAddress?: Address,
   ): Promise<Partial<Page<IncomingTransfer>>> {
     return this.transactionsService.getIncomingTransfers({
       chainId,
@@ -597,7 +598,7 @@ export class TransactionsController {
   async previewTransaction(
     @Param('chainId') chainId: string,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
-    safeAddress: `0x${string}`,
+    safeAddress: Address,
     @Body(new ValidationPipe(PreviewTransactionDtoSchema))
     previewTransactionDto: PreviewTransactionDto,
   ): Promise<TransactionPreview> {
@@ -646,7 +647,7 @@ export class TransactionsController {
     @Param('chainId') chainId: string,
     @RouteUrlDecorator() routeUrl: URL,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
-    safeAddress: `0x${string}`,
+    safeAddress: Address,
     @PaginationDataDecorator() paginationData: PaginationData,
     @Query('trusted', new DefaultValuePipe(true), ParseBoolPipe)
     trusted: boolean,
@@ -720,7 +721,7 @@ export class TransactionsController {
     @Param('chainId') chainId: string,
     @RouteUrlDecorator() routeUrl: URL,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
-    safeAddress: `0x${string}`,
+    safeAddress: Address,
     @PaginationDataDecorator() paginationData: PaginationData,
     @Query('timezone_offset', new DefaultValuePipe(0), ParseIntPipe)
     timezoneOffsetMs: number,
@@ -776,7 +777,7 @@ export class TransactionsController {
   async proposeTransaction(
     @Param('chainId') chainId: string,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
-    safeAddress: `0x${string}`,
+    safeAddress: Address,
     @Body(new ValidationPipe(ProposeTransactionDtoSchema))
     proposeTransactionDto: ProposeTransactionDto,
   ): Promise<TransactionDetails> {
@@ -815,7 +816,7 @@ export class TransactionsController {
   async getCreationTransaction(
     @Param('chainId') chainId: string,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
-    safeAddress: `0x${string}`,
+    safeAddress: Address,
   ): Promise<CreationTransaction> {
     return this.transactionsService.getCreationTransaction({
       chainId,
@@ -830,7 +831,7 @@ export class TransactionsController {
   async getDomainCreationTransaction(
     @Param('chainId') chainId: string,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
-    safeAddress: `0x${string}`,
+    safeAddress: Address,
   ): Promise<TXSCreationTransaction> {
     return this.transactionsService.getDomainCreationTransaction({
       chainId,

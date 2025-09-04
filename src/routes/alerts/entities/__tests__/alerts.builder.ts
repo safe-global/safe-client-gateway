@@ -7,7 +7,7 @@ import type {
   Alert,
 } from '@/routes/alerts/entities/alert.dto.entity';
 import { EventType } from '@/routes/alerts/entities/alert.dto.entity';
-import { getAddress } from 'viem';
+import { type Address, getAddress, type Hash } from 'viem';
 
 export function alertLogBuilder(): IBuilder<AlertLog> {
   return new Builder<AlertLog>()
@@ -16,9 +16,9 @@ export function alertLogBuilder(): IBuilder<AlertLog> {
       'topics',
       Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, () =>
         faker.string.hexadecimal(),
-      ) as [`0x${string}`, ...Array<`0x${string}`>],
+      ) as [Address, ...Array<Address>],
     )
-    .with('data', faker.string.hexadecimal() as `0x${string}`);
+    .with('data', faker.string.hexadecimal() as Hash);
 }
 
 export function alertTransactionBuilder(): IBuilder<AlertTransaction> {

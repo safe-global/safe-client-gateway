@@ -19,6 +19,7 @@ import type { TransactionStatus } from '@/datasources/staking-api/entities/trans
 import type { IStakingApi } from '@/domain/interfaces/staking-api.interface';
 import type { Raw } from '@/validation/entities/raw.entity';
 import { z, ZodError } from 'zod';
+import type { Address, Hash } from 'viem';
 
 export class KilnApi implements IStakingApi {
   public static DefiVaultStatsChains: {
@@ -77,7 +78,7 @@ export class KilnApi implements IStakingApi {
 
   // Important: there is no hook which invalidates this endpoint,
   // Therefore, this data will live in cache until [stakingExpirationTimeInSeconds]
-  async getRewardsFee(contract: `0x${string}`): Promise<Raw<RewardsFee>> {
+  async getRewardsFee(contract: Address): Promise<Raw<RewardsFee>> {
     const url = `${this.baseUrl}/v1/eth/onchain/v1/fee`;
     const cacheDir = CacheRouter.getStakingRewardsFeeCacheDir({
       cacheType: this.cacheType,
@@ -144,9 +145,7 @@ export class KilnApi implements IStakingApi {
 
   // Important: there is no hook which invalidates this endpoint,
   // Therefore, this data will live in cache until [stakingExpirationTimeInSeconds]
-  async getPooledStakingStats(
-    pool: `0x${string}`,
-  ): Promise<Raw<PooledStakingStats>> {
+  async getPooledStakingStats(pool: Address): Promise<Raw<PooledStakingStats>> {
     const url = `${this.baseUrl}/v1/eth/onchain/v2/network-stats`;
     const cacheDir = CacheRouter.getStakingPooledStakingStatsCacheDir({
       cacheType: this.cacheType,
@@ -172,9 +171,7 @@ export class KilnApi implements IStakingApi {
 
   // Important: there is no hook which invalidates this endpoint,
   // Therefore, this data will live in cache until [stakingExpirationTimeInSeconds]
-  async getDefiVaultStats(
-    vault: `0x${string}`,
-  ): Promise<Raw<Array<DefiVaultStats>>> {
+  async getDefiVaultStats(vault: Address): Promise<Raw<Array<DefiVaultStats>>> {
     const url = `${this.baseUrl}/v1/defi/network-stats`;
     const cacheDir = CacheRouter.getStakingDefiVaultStatsCacheDir({
       cacheType: this.cacheType,
@@ -202,8 +199,8 @@ export class KilnApi implements IStakingApi {
   // Important: there is no hook which invalidates this endpoint,
   // Therefore, this data will live in cache until [stakingExpirationTimeInSeconds]
   async getDefiVaultStakes(args: {
-    safeAddress: `0x${string}`;
-    vault: `0x${string}`;
+    safeAddress: Address;
+    vault: Address;
   }): Promise<Raw<Array<DefiVaultStake>>> {
     const url = `${this.baseUrl}/v1/defi/stakes`;
     const cacheDir = CacheRouter.getStakingDefiVaultStakesCacheDir({
@@ -234,7 +231,7 @@ export class KilnApi implements IStakingApi {
   // Important: there is no hook which invalidates this endpoint,
   // Therefore, this data will live in cache until [stakingExpirationTimeInSeconds]
   async getDefiMorphoExtraRewards(
-    safeAddress: `0x${string}`,
+    safeAddress: Address,
   ): Promise<Raw<Array<DefiMorphoExtraReward>>> {
     const url = `${this.baseUrl}/v1/defi/extra-rewards/morpho`;
     const cacheDir = CacheRouter.getStakingDefiMorphoExtraRewardsCacheDir({
@@ -272,8 +269,8 @@ export class KilnApi implements IStakingApi {
    * @see https://docs.api.kiln.fi/reference/getethstakes
    */
   async getStakes(args: {
-    safeAddress: `0x${string}`;
-    validatorsPublicKeys: Array<`0x${string}`>;
+    safeAddress: Address;
+    validatorsPublicKeys: Array<Address>;
   }): Promise<Raw<Array<Stake>>> {
     const url = `${this.baseUrl}/v1/eth/stakes`;
     const cacheDir = CacheRouter.getStakingStakesCacheDir({
@@ -307,7 +304,7 @@ export class KilnApi implements IStakingApi {
    *
    * @param {string} safeAddress - Safe address
    */
-  async clearStakes(safeAddress: `0x${string}`): Promise<void> {
+  async clearStakes(safeAddress: Address): Promise<void> {
     const key = CacheRouter.getStakingStakesCacheKey({
       chainId: this.chainId,
       safeAddress,
@@ -315,9 +312,7 @@ export class KilnApi implements IStakingApi {
     await this.cacheService.deleteByKey(key);
   }
 
-  async getTransactionStatus(
-    txHash: `0x${string}`,
-  ): Promise<Raw<TransactionStatus>> {
+  async getTransactionStatus(txHash: Hash): Promise<Raw<TransactionStatus>> {
     const url = `${this.baseUrl}/v1/eth/transaction/status`;
     const cacheDir = CacheRouter.getStakingTransactionStatusCacheDir({
       cacheType: this.cacheType,
@@ -374,7 +369,7 @@ export class KilnApi implements IStakingApi {
    * @returns array of DeFi vault identifiers - `chainIdentifier_vault`, e.g. `eth_0x123`
    * @see https://docs.api.kiln.fi/reference/getdefinetworkstats
    */
-  private getDefiVaultIdentifier(vault: `0x${string}`): string {
+  private getDefiVaultIdentifier(vault: Address): string {
     const chain = Object.entries(KilnApi.DefiVaultStatsChains).find(
       ([, chainId]) => {
         return chainId === this.chainId;

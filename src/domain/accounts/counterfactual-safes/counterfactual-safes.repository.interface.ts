@@ -5,6 +5,7 @@ import { CounterfactualSafe } from '@/domain/accounts/counterfactual-safes/entit
 import { CreateCounterfactualSafeDto } from '@/domain/accounts/counterfactual-safes/entities/create-counterfactual-safe.dto.entity';
 import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 import { Module } from '@nestjs/common';
+import type { Address } from 'viem';
 
 export const ICounterfactualSafesRepository = Symbol(
   'ICounterfactualSafesRepository',
@@ -12,31 +13,29 @@ export const ICounterfactualSafesRepository = Symbol(
 
 export interface ICounterfactualSafesRepository {
   getCounterfactualSafe(args: {
-    address: `0x${string}`;
+    address: Address;
     chainId: string;
-    predictedAddress: `0x${string}`;
+    predictedAddress: Address;
   }): Promise<CounterfactualSafe>;
 
-  getCounterfactualSafes(
-    address: `0x${string}`,
-  ): Promise<Array<CounterfactualSafe>>;
+  getCounterfactualSafes(address: Address): Promise<Array<CounterfactualSafe>>;
 
   createCounterfactualSafe(args: {
     authPayload: AuthPayload;
-    address: `0x${string}`;
+    address: Address;
     createCounterfactualSafeDto: CreateCounterfactualSafeDto;
   }): Promise<CounterfactualSafe>;
 
   deleteCounterfactualSafe(args: {
     authPayload: AuthPayload;
-    address: `0x${string}`;
+    address: Address;
     chainId: string;
-    predictedAddress: `0x${string}`;
+    predictedAddress: Address;
   }): Promise<void>;
 
   deleteCounterfactualSafes(args: {
     authPayload: AuthPayload;
-    address: `0x${string}`;
+    address: Address;
   }): Promise<void>;
 }
 

@@ -28,6 +28,7 @@ import { faker } from '@faker-js/faker';
 import { UnauthorizedException } from '@nestjs/common';
 import type { ConfigService } from '@nestjs/config';
 import { DataSource, In } from 'typeorm';
+import type { Address } from 'viem';
 import { getAddress } from 'viem';
 
 const mockLoggingService = {
@@ -625,14 +626,14 @@ describe('MembersRepository', () => {
 
     it('should throw an error if the signer_address does not exist', async () => {
       const authPayloadDto = authPayloadDtoBuilder()
-        .with('signer_address', undefined as unknown as `0x${string}`)
+        .with('signer_address', undefined as unknown as Address)
         .build();
       const spaceId = faker.number.int({
         min: 69420,
         max: DB_MAX_SAFE_INTEGER,
       });
       const users: Array<{
-        address: `0x${string}`;
+        address: Address;
         role: keyof typeof MemberRole;
         name: string;
       }> = [];
@@ -653,7 +654,7 @@ describe('MembersRepository', () => {
         max: DB_MAX_SAFE_INTEGER,
       });
       const users: Array<{
-        address: `0x${string}`;
+        address: Address;
         role: keyof typeof MemberRole;
         name: string;
       }> = [];
@@ -773,7 +774,7 @@ describe('MembersRepository', () => {
         max: DB_MAX_SAFE_INTEGER,
       });
       const users: Array<{
-        address: `0x${string}`;
+        address: Address;
         role: keyof typeof MemberRole;
         name: string;
       }> = [];
@@ -828,7 +829,7 @@ describe('MembersRepository', () => {
         invitedBy: getAddress(faker.finance.ethereumAddress()),
       });
       const users: Array<{
-        address: `0x${string}`;
+        address: Address;
         role: keyof typeof MemberRole;
         name: string;
       }> = [];
@@ -1052,7 +1053,7 @@ describe('MembersRepository', () => {
 
     it('should throw an error if the signer_address does not exist', async () => {
       const authPayloadDto = authPayloadDtoBuilder()
-        .with('signer_address', undefined as unknown as `0x${string}`)
+        .with('signer_address', undefined as unknown as Address)
         .build();
       const spaceId = faker.number.int({
         min: 69420,
@@ -1343,7 +1344,7 @@ describe('MembersRepository', () => {
 
     it('should throw an error if the signer_address does not exist', async () => {
       const authPayloadDto = authPayloadDtoBuilder()
-        .with('signer_address', undefined as unknown as `0x${string}`)
+        .with('signer_address', undefined as unknown as Address)
         .build();
       const spaceId = faker.number.int({
         min: 69420,
@@ -1554,7 +1555,7 @@ describe('MembersRepository', () => {
 
     it('should throw an error if the signer_address does not exist', async () => {
       const authPayloadDto = authPayloadDtoBuilder()
-        .with('signer_address', undefined as unknown as `0x${string}`)
+        .with('signer_address', undefined as unknown as Address)
         .build();
       const spaceId = faker.number.int({
         min: 69420,
@@ -1925,7 +1926,7 @@ describe('MembersRepository', () => {
 
     it('should throw an error if the signer_address does not exist', async () => {
       const authPayloadDto = authPayloadDtoBuilder()
-        .with('signer_address', undefined as unknown as `0x${string}`)
+        .with('signer_address', undefined as unknown as Address)
         .build();
       const spaceId = faker.number.int({
         min: 69420,
@@ -2266,7 +2267,7 @@ describe('MembersRepository', () => {
 
     it('should throw an error if the signer_address does not exist', async () => {
       const authPayloadDto = authPayloadDtoBuilder()
-        .with('signer_address', undefined as unknown as `0x${string}`)
+        .with('signer_address', undefined as unknown as Address)
         .build();
       const spaceId = faker.number.int({
         min: 69420,

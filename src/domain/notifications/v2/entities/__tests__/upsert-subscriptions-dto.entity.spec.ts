@@ -4,7 +4,7 @@ import { upsertSubscriptionsDtoBuilder } from '@/routes/notifications/v2/entitie
 import { UpsertSubscriptionsDtoSchema } from '@/domain/notifications/v2/entities/upsert-subscriptions.dto.entity';
 import { faker } from '@faker-js/faker';
 import type { UUID } from 'crypto';
-import { getAddress } from 'viem';
+import { type Address, getAddress } from 'viem';
 
 describe('UpsertSubscriptionsDtoSchema', () => {
   it('should validate a valid UpsertSubscriptionsDto', () => {
@@ -131,7 +131,7 @@ describe('UpsertSubscriptionsDtoSchema', () => {
       .with('safes', [
         {
           chainId: faker.string.numeric(),
-          address: nonChecksummedAddress as `0x${string}`,
+          address: nonChecksummedAddress as Address,
           notificationTypes: faker.helpers.arrayElements(
             Object.values(NotificationType),
           ),

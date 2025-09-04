@@ -15,7 +15,7 @@ import { VaultInfo } from '@/routes/transactions/entities/vaults/vault-info.enti
 import { VaultTransactionMapper } from '@/routes/transactions/mappers/common/vault-transaction.mapper';
 import { faker } from '@faker-js/faker/.';
 import { NotFoundException } from '@nestjs/common';
-import { getAddress } from 'viem';
+import { type Address, getAddress } from 'viem';
 
 const mockEarnRepository = jest.mocked({
   getDeployment: jest.fn(),
@@ -44,7 +44,7 @@ describe('VaultTransactionMapper', () => {
     it('should map deposit info correctly', async () => {
       const chain = chainBuilder().build();
       const safeAddress = getAddress(faker.finance.ethereumAddress());
-      const data = faker.string.hexadecimal() as `0x${string}`;
+      const data = faker.string.hexadecimal() as Address;
       const assets = 1_000_000;
       const deployment = deploymentBuilder()
         .with('product_type', 'defi')
@@ -151,7 +151,7 @@ describe('VaultTransactionMapper', () => {
     it('should fail if the deployment product type is not DeFi', async () => {
       const chain = chainBuilder().build();
       const safeAddress = getAddress(faker.finance.ethereumAddress());
-      const data = faker.string.hexadecimal() as `0x${string}`;
+      const data = faker.string.hexadecimal() as Address;
       const assets = faker.number.int();
       const deployment = deploymentBuilder()
         .with('product_type', 'pooling')
@@ -174,7 +174,7 @@ describe('VaultTransactionMapper', () => {
     it('should fail if the deployment is not active', async () => {
       const chain = chainBuilder().build();
       const safeAddress = getAddress(faker.finance.ethereumAddress());
-      const data = faker.string.hexadecimal() as `0x${string}`;
+      const data = faker.string.hexadecimal() as Address;
       const assets = faker.number.int();
       const deployment = deploymentBuilder()
         .with('product_type', 'defi')
@@ -197,7 +197,7 @@ describe('VaultTransactionMapper', () => {
     it('should fail if the deployment chainId is different', async () => {
       const chain = chainBuilder().build();
       const safeAddress = getAddress(faker.finance.ethereumAddress());
-      const data = faker.string.hexadecimal() as `0x${string}`;
+      const data = faker.string.hexadecimal() as Address;
       const assets = faker.number.int();
       const deployment = deploymentBuilder()
         .with('product_type', 'defi')
@@ -225,7 +225,7 @@ describe('VaultTransactionMapper', () => {
     it('should map redeem info correctly', async () => {
       const chain = chainBuilder().build();
       const safeAddress = getAddress(faker.finance.ethereumAddress());
-      const data = faker.string.hexadecimal() as `0x${string}`;
+      const data = faker.string.hexadecimal() as Address;
       const assets = 1_000_000;
       const deployment = deploymentBuilder()
         .with('product_type', 'defi')
@@ -329,7 +329,7 @@ describe('VaultTransactionMapper', () => {
     it('should fail if the deployment product type is not DeFi', async () => {
       const chain = chainBuilder().build();
       const safeAddress = getAddress(faker.finance.ethereumAddress());
-      const data = faker.string.hexadecimal() as `0x${string}`;
+      const data = faker.string.hexadecimal() as Address;
       const assets = faker.number.int();
       const deployment = deploymentBuilder()
         .with('product_type', 'defi')
@@ -352,7 +352,7 @@ describe('VaultTransactionMapper', () => {
     it('should fail if the deployment is not active', async () => {
       const chain = chainBuilder().build();
       const safeAddress = getAddress(faker.finance.ethereumAddress());
-      const data = faker.string.hexadecimal() as `0x${string}`;
+      const data = faker.string.hexadecimal() as Address;
       const assets = faker.number.int();
       const deployment = deploymentBuilder()
         .with('product_type', 'defi')
@@ -375,7 +375,7 @@ describe('VaultTransactionMapper', () => {
     it('should fail if the deployment chainId is different', async () => {
       const chain = chainBuilder().build();
       const safeAddress = getAddress(faker.finance.ethereumAddress());
-      const data = faker.string.hexadecimal() as `0x${string}`;
+      const data = faker.string.hexadecimal() as Address;
       const assets = faker.number.int();
       const deployment = deploymentBuilder()
         .with('product_type', 'defi')

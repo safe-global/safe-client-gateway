@@ -2,7 +2,7 @@ import { pendingTransactionEventBuilder } from '@/routes/hooks/entities/__tests_
 import type { TransactionEventType } from '@/routes/hooks/entities/event-type.entity';
 import { PendingTransactionEventSchema } from '@/routes/hooks/entities/schemas/pending-transaction.schema';
 import { faker } from '@faker-js/faker';
-import { getAddress } from 'viem';
+import { type Address, getAddress } from 'viem';
 import { ZodError } from 'zod';
 
 describe('PendingTransactionEventSchema', () => {
@@ -46,7 +46,7 @@ describe('PendingTransactionEventSchema', () => {
     'should not allow a non-address %s',
     (field) => {
       const pendingTransactionEvent = pendingTransactionEventBuilder()
-        .with(field, faker.string.sample() as `0x${string}`)
+        .with(field, faker.string.sample() as Address)
         .build();
 
       const result = PendingTransactionEventSchema.safeParse(
@@ -70,7 +70,7 @@ describe('PendingTransactionEventSchema', () => {
     (field) => {
       const nonChecksummedAddress = faker.finance
         .ethereumAddress()
-        .toLowerCase() as `0x${string}`;
+        .toLowerCase() as Address;
       const pendingTransactionEvent = pendingTransactionEventBuilder()
         .with(field, nonChecksummedAddress)
         .build();

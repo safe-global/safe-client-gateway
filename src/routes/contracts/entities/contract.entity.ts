@@ -1,9 +1,10 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Contract as DomainContract } from '@/domain/contracts/entities/contract.entity';
+import type { Address } from 'viem';
 
 export class Contract implements DomainContract {
   @ApiProperty()
-  address!: `0x${string}`;
+  address!: Address;
   @ApiProperty()
   name!: string;
   @ApiProperty()

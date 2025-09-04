@@ -18,6 +18,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import type { Address } from 'viem';
 
 @ApiTags('accounts')
 @Controller({ path: 'accounts', version: '1' })
@@ -27,10 +28,10 @@ export class CounterfactualSafesController {
   @ApiOkResponse({ type: CounterfactualSafe })
   @Get(':address/counterfactual-safes/:chainId/:predictedAddress')
   async getCounterfactualSafe(
-    @Param('address', new ValidationPipe(AddressSchema)) address: `0x${string}`,
+    @Param('address', new ValidationPipe(AddressSchema)) address: Address,
     @Param('chainId', new ValidationPipe(NumericStringSchema)) chainId: string,
     @Param('predictedAddress', new ValidationPipe(AddressSchema))
-    predictedAddress: `0x${string}`,
+    predictedAddress: Address,
   ): Promise<CounterfactualSafe> {
     return this.service.getCounterfactualSafe({
       address,
@@ -42,7 +43,7 @@ export class CounterfactualSafesController {
   @ApiOkResponse({ type: CounterfactualSafe, isArray: true })
   @Get(':address/counterfactual-safes')
   async getCounterfactualSafes(
-    @Param('address', new ValidationPipe(AddressSchema)) address: `0x${string}`,
+    @Param('address', new ValidationPipe(AddressSchema)) address: Address,
   ): Promise<Array<CounterfactualSafe>> {
     return this.service.getCounterfactualSafes(address);
   }
@@ -52,7 +53,7 @@ export class CounterfactualSafesController {
   @UseGuards(AuthGuard)
   async createCounterfactualSafe(
     @Auth() authPayload: AuthPayload,
-    @Param('address', new ValidationPipe(AddressSchema)) address: `0x${string}`,
+    @Param('address', new ValidationPipe(AddressSchema)) address: Address,
     @Body(new ValidationPipe(CreateCounterfactualSafeDtoSchema))
     createCounterfactualSafeDto: CreateCounterfactualSafeDto,
   ): Promise<CounterfactualSafe> {
@@ -67,10 +68,10 @@ export class CounterfactualSafesController {
   @UseGuards(AuthGuard)
   async deleteCounterfactualSafe(
     @Auth() authPayload: AuthPayload,
-    @Param('address', new ValidationPipe(AddressSchema)) address: `0x${string}`,
+    @Param('address', new ValidationPipe(AddressSchema)) address: Address,
     @Param('chainId', new ValidationPipe(NumericStringSchema)) chainId: string,
     @Param('predictedAddress', new ValidationPipe(AddressSchema))
-    predictedAddress: `0x${string}`,
+    predictedAddress: Address,
   ): Promise<void> {
     return this.service.deleteCounterfactualSafe({
       authPayload,
@@ -84,7 +85,7 @@ export class CounterfactualSafesController {
   @UseGuards(AuthGuard)
   async deleteCounterfactualSafes(
     @Auth() authPayload: AuthPayload,
-    @Param('address', new ValidationPipe(AddressSchema)) address: `0x${string}`,
+    @Param('address', new ValidationPipe(AddressSchema)) address: Address,
   ): Promise<void> {
     return this.service.deleteCounterfactualSafes({ authPayload, address });
   }

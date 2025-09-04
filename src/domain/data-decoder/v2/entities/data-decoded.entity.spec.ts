@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker';
-import { getAddress } from 'viem';
+import { type Address, getAddress } from 'viem';
 import { ZodError } from 'zod';
 import {
   baseDataDecodedBuilder,
@@ -85,7 +85,7 @@ describe('DataDecoded', () => {
         .ethereumAddress()
         .toLowerCase();
       const multisend = multisendBuilder()
-        .with('to', nonChecksummedAddress as `0x${string}`)
+        .with('to', nonChecksummedAddress as Address)
         .build();
 
       const result = MultisendSchema.safeParse(multisend);
@@ -97,7 +97,7 @@ describe('DataDecoded', () => {
 
     it('should expect hex data', () => {
       const multisend = multisendBuilder()
-        .with('data', faker.string.alpha() as `0x${string}`)
+        .with('data', faker.string.alpha() as Address)
         .build();
 
       const result = MultisendSchema.safeParse(multisend);

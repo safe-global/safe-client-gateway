@@ -1,6 +1,11 @@
 import { faker } from '@faker-js/faker';
 import { encodeFunctionData, getAddress, parseAbi } from 'viem';
-import type { AbiParameter, AbiParameterToPrimitiveType, Hex } from 'viem';
+import type {
+  AbiParameter,
+  AbiParameterToPrimitiveType,
+  Address,
+  Hex,
+} from 'viem';
 import type { ParseStructs } from 'abitype/dist/types/human-readable/types/structs';
 
 import { Builder } from '@/__tests__/builder';
@@ -181,10 +186,10 @@ export function swapAndStartBridgeTokensViaAcrossV3Encoder(): SwapAndStartBridge
             abi: LiFiDecoder.FeeCollectorAbi,
             functionName: 'collectTokenFees',
             args: [
-              faker.finance.ethereumAddress() as `0x${string}`,
+              faker.finance.ethereumAddress() as Address,
               faker.number.bigInt(),
               faker.number.bigInt(),
-              faker.finance.ethereumAddress() as `0x${string}`,
+              faker.finance.ethereumAddress() as Address,
             ],
           }),
         )

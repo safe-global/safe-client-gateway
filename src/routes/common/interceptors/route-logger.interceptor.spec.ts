@@ -16,6 +16,7 @@ import { Server } from 'net';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
 import { ZodError } from 'zod';
+import type { Address } from 'viem';
 
 // We expect 500 instead of the status code of the DataSourceError
 // The reason is that this test webserver does not have logic to map
@@ -59,7 +60,7 @@ class TestController {
   @Get('validation-error')
   validationError(
     @Query('numeric_string', new ValidationPipe(NumericStringSchema))
-    _: `0x${string}`,
+    _: Address,
   ): void {}
   /* eslint-enable @typescript-eslint/no-unused-vars */
 

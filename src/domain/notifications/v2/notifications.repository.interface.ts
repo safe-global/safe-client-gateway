@@ -3,6 +3,7 @@ import type { FirebaseNotification } from '@/datasources/push-notifications-api/
 import type { UUID } from 'crypto';
 import type { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 import type { NotificationType } from '@/datasources/notifications/entities/notification-type.entity.db';
+import type { Address } from 'viem';
 
 export const INotificationsRepositoryV2 = Symbol('INotificationsRepositoryV2');
 
@@ -24,15 +25,15 @@ export interface INotificationsRepositoryV2 {
     authPayload: AuthPayload;
     deviceUuid: UUID;
     chainId: string;
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
   }): Promise<Array<NotificationType>>;
 
   getSubscribersBySafe(args: {
     chainId: string;
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
   }): Promise<
     Array<{
-      subscriber: `0x${string}` | null;
+      subscriber: Address | null;
       deviceUuid: UUID;
       cloudMessagingToken: string;
     }>
@@ -42,15 +43,15 @@ export interface INotificationsRepositoryV2 {
     subscriptions: Array<{
       chainId: string;
       deviceUuid: UUID;
-      safeAddress: `0x${string}`;
-      signerAddress?: `0x${string}` | null;
+      safeAddress: Address;
+      signerAddress?: Address | null;
     }>;
   }): Promise<void>;
 
   deleteSubscription(args: {
     deviceUuid: UUID;
     chainId: string;
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
   }): Promise<void>;
 
   deleteDevice(deviceUuid: UUID): Promise<void>;

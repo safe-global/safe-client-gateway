@@ -13,6 +13,7 @@ import { pricesProviderBuilder } from '@/domain/chains/entities/__tests__/prices
 import { balancesProviderBuilder } from '@/domain/chains/entities/__tests__/balances-provider.builder';
 import { contractAddressesBuilder } from '@/domain/chains/entities/__tests__/contract-addresses.builder';
 import { beaconChainExplorerUriTemplateBuilder } from '@/domain/chains/entities/__tests__/beacon-chain-explorer-uri-template.builder';
+import type { Address } from 'viem';
 
 export function chainBuilder(): IBuilder<Chain> {
   return new Builder<Chain>()
@@ -44,10 +45,7 @@ export function chainBuilder(): IBuilder<Chain> {
       gasPriceFixedEIP1559Builder().build(),
       gasPriceOracleBuilder().build(),
     ])
-    .with(
-      'ensRegistryAddress',
-      faker.finance.ethereumAddress() as `0x${string}`,
-    )
+    .with('ensRegistryAddress', faker.finance.ethereumAddress() as Address)
     .with('disabledWallets', [faker.word.sample(), faker.word.sample()])
     .with('features', [faker.word.sample(), faker.word.sample()])
     .with('recommendedMasterCopyVersion', faker.system.semver());

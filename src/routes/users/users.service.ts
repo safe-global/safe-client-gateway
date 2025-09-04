@@ -9,6 +9,7 @@ import type { CreatedUserWithWallet } from '@/routes/users/entities/created-user
 import type { WalletAddedToUser } from '@/routes/users/entities/wallet-added-to-user.entity';
 import { getEnumKey } from '@/domain/common/utils/enum';
 import type { SiweDto } from '@/routes/auth/entities/siwe.dto.entity';
+import type { Address } from 'viem';
 
 export class UsersService {
   public constructor(
@@ -53,7 +54,7 @@ export class UsersService {
 
   public async deleteWalletFromUser(args: {
     authPayload: AuthPayload;
-    walletAddress: `0x${string}`;
+    walletAddress: Address;
   }): Promise<void> {
     return await this.usersRepository.deleteWalletFromUser(args);
   }

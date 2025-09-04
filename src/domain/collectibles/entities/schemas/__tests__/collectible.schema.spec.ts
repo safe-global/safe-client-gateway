@@ -1,7 +1,7 @@
 import { collectibleBuilder } from '@/domain/collectibles/entities/__tests__/collectible.builder';
 import { CollectibleSchema } from '@/domain/collectibles/entities/schemas/collectible.schema';
 import { faker } from '@faker-js/faker';
-import { getAddress } from 'viem';
+import { type Address, getAddress } from 'viem';
 import { ZodError } from 'zod';
 
 describe('CollectibleSchema', () => {
@@ -16,7 +16,7 @@ describe('CollectibleSchema', () => {
   it('should checksum the address', () => {
     const nonChecksummedAddress = faker.finance
       .ethereumAddress()
-      .toLowerCase() as `0x${string}`;
+      .toLowerCase() as Address;
     const collectible = collectibleBuilder()
       .with('address', nonChecksummedAddress)
       .build();

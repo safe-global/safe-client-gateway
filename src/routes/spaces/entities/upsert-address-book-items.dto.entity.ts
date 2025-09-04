@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { ApiExtraModels, ApiProperty, getSchemaPath } from '@nestjs/swagger';
+import type { Address } from 'viem';
 
 const AddressBookItemSchema = z.object({
   name: z.string(),
@@ -13,7 +14,7 @@ class AddressBookItem implements z.infer<typeof AddressBookItemSchema> {
   readonly name!: string;
 
   @ApiProperty({ type: String })
-  readonly address!: `0x${string}`;
+  readonly address!: Address;
 
   @ApiProperty({ type: String, isArray: true })
   readonly chainIds!: Array<string>;

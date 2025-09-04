@@ -25,7 +25,7 @@ import {
 import type { INetworkService } from '@/datasources/network/network.service.interface';
 import { NetworkService } from '@/datasources/network/network.service.interface';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
-import { getAddress } from 'viem';
+import { type Address, getAddress } from 'viem';
 import type { Server } from 'net';
 import { rawify } from '@/validation/entities/raw.entity';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
@@ -458,7 +458,7 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
     const domainTransaction = await multisigTransactionBuilder()
       .with('safe', safe.address)
       .with('value', '0')
-      .with('data', faker.string.hexadecimal({ length: 32 }) as `0x${string}`)
+      .with('data', faker.string.hexadecimal({ length: 32 }) as Address)
       .with('isExecuted', true)
       .with('isSuccessful', true)
       .with('confirmationsRequired', 3)

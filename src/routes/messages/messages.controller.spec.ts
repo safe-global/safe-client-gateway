@@ -23,7 +23,7 @@ import type { SafeApp } from '@/routes/safe-apps/entities/safe-app.entity';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 import type { Server } from 'net';
 import { rawify } from '@/validation/entities/raw.entity';
-import { getAddress } from 'viem';
+import { type Address, getAddress } from 'viem';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 import { GlobalErrorFilter } from '@/routes/common/filters/global-error.filter';
 import { APP_FILTER } from '@nestjs/core';
@@ -1445,7 +1445,7 @@ describe('Messages controller', () => {
           });
         message.messageHash = faker.string.hexadecimal({
           length: 64,
-        }) as `0x${string}`;
+        }) as Address;
         networkService.get.mockImplementation(({ url }) => {
           switch (url) {
             case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:

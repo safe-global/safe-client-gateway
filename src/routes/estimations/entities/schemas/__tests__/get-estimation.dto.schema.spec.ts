@@ -1,7 +1,7 @@
 import { getEstimationDtoBuilder } from '@/routes/estimations/entities/__tests__/get-estimation.dto.builder';
 import { GetEstimationDtoSchema } from '@/routes/estimations/entities/schemas/get-estimation.dto.schema';
 import { faker } from '@faker-js/faker';
-import { getAddress } from 'viem';
+import { type Address, getAddress } from 'viem';
 import { ZodError } from 'zod';
 
 describe('GetEstimationDtoSchema', () => {
@@ -16,7 +16,7 @@ describe('GetEstimationDtoSchema', () => {
   it('should checksum the to field', () => {
     const nonChecksummedAddress = faker.finance
       .ethereumAddress()
-      .toLowerCase() as `0x${string}`;
+      .toLowerCase() as Address;
     const getEstimationDto = getEstimationDtoBuilder()
       .with('to', nonChecksummedAddress)
       .build();
@@ -29,7 +29,7 @@ describe('GetEstimationDtoSchema', () => {
   });
 
   it('should allow hex data', () => {
-    const hexData = faker.string.hexadecimal() as `0x${string}`;
+    const hexData = faker.string.hexadecimal() as Address;
     const getEstimationDto = getEstimationDtoBuilder()
       .with('data', hexData)
       .build();
@@ -42,7 +42,7 @@ describe('GetEstimationDtoSchema', () => {
   it('should not allow non-hex data', () => {
     const nonHexData = faker.string.alphanumeric();
     const getEstimationDto = getEstimationDtoBuilder()
-      .with('data', nonHexData as `0x${string}`)
+      .with('data', nonHexData as Address)
       .build();
 
     const result = GetEstimationDtoSchema.safeParse(getEstimationDto);

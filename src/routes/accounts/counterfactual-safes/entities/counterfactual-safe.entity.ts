@@ -1,31 +1,32 @@
 import { ApiProperty } from '@nestjs/swagger';
+import type { Address } from 'viem';
 
 export class CounterfactualSafe {
   @ApiProperty()
   chainId: string;
   @ApiProperty()
-  creator: `0x${string}`;
+  creator: Address;
   @ApiProperty()
-  fallbackHandler: `0x${string}`;
+  fallbackHandler: Address;
   @ApiProperty({ type: String, isArray: true })
-  owners: Array<`0x${string}`>;
+  owners: Array<Address>;
   @ApiProperty()
-  predictedAddress: `0x${string}`;
+  predictedAddress: Address;
   @ApiProperty()
   saltNonce: string;
   @ApiProperty()
-  singletonAddress: `0x${string}`;
+  singletonAddress: Address;
   @ApiProperty()
   threshold: number;
 
   constructor(
     chainId: string,
-    creator: `0x${string}`,
-    fallbackHandler: `0x${string}`,
-    owners: Array<`0x${string}`>,
-    predictedAddress: `0x${string}`,
+    creator: Address,
+    fallbackHandler: Address,
+    owners: Array<Address>,
+    predictedAddress: Address,
     saltNonce: string,
-    singletonAddress: `0x${string}`,
+    singletonAddress: Address,
     threshold: number,
   ) {
     this.chainId = chainId;

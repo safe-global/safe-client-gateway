@@ -12,6 +12,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { CampaignActivity } from '@/domain/community/entities/campaign-activity.entity';
 import { Eligibility } from '@/routes/community/entities/eligibility.entity';
 import { EligibilityRequest } from '@/routes/community/entities/eligibility-request.entity';
+import type { Address } from 'viem';
 
 @Injectable()
 export class CommunityService {
@@ -48,7 +49,7 @@ export class CommunityService {
 
   async getCampaignActivities(args: {
     resourceId: string;
-    holder?: `0x${string}`;
+    holder?: Address;
     routeUrl: URL;
     paginationData: PaginationData;
   }): Promise<Page<CampaignActivity>> {
@@ -100,7 +101,7 @@ export class CommunityService {
 
   async getCampaignRank(args: {
     resourceId: string;
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
   }): Promise<CampaignRank> {
     return this.communityRepository.getCampaignRank(args);
   }
@@ -127,12 +128,12 @@ export class CommunityService {
     };
   }
 
-  async getLockingRank(safeAddress: `0x${string}`): Promise<LockingRank> {
+  async getLockingRank(safeAddress: Address): Promise<LockingRank> {
     return this.communityRepository.getLockingRank(safeAddress);
   }
 
   async getLockingHistory(args: {
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
     routeUrl: URL;
     paginationData: PaginationData;
   }): Promise<Page<LockingEvent>> {

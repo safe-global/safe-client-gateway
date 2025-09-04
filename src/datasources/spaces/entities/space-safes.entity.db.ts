@@ -10,6 +10,7 @@ import {
   PrimaryGeneratedColumn,
   Unique,
 } from 'typeorm';
+import type { Address } from 'viem';
 
 @Entity('space_safes')
 @Unique('UQ_SS_chainId_address_space', ['chainId', 'address', 'space'])
@@ -31,7 +32,7 @@ export class SpaceSafe implements DomainSpaceSafe {
     length: 42,
     transformer: databaseAddressTransformer,
   })
-  public readonly address!: `0x${string}`;
+  public readonly address!: Address;
 
   @Column({
     name: 'created_at',

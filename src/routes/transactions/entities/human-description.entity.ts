@@ -4,6 +4,7 @@ import {
   ApiPropertyOptional,
   getSchemaPath,
 } from '@nestjs/swagger';
+import type { Address } from 'viem';
 
 export enum RichFragmentType {
   Text = 'text',
@@ -44,7 +45,7 @@ export class RichTextFragment extends RichDecodedInfoFragment {
 }
 
 export class RichAddressFragment extends RichDecodedInfoFragment {
-  constructor(value: `0x${string}`) {
+  constructor(value: Address) {
     super(RichFragmentType.Address, value);
   }
 }

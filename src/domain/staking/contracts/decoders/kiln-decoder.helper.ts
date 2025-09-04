@@ -2,6 +2,7 @@ import { AbiDecoder } from '@/domain/contracts/decoders/abi-decoder.helper';
 import { LoggingService, ILoggingService } from '@/logging/logging.interface';
 import { Inject, Injectable } from '@nestjs/common';
 import { parseAbi } from 'viem';
+import type { Address, Hex } from 'viem';
 
 export const KilnAbi = parseAbi([
   'event DepositEvent(bytes pubkey, bytes withdrawal_credentials, bytes amount, bytes signature, bytes index)',
@@ -14,7 +15,7 @@ export const KilnAbi = parseAbi([
 export type KilnRequestValidatorsExitParameters = {
   name: '_publicKeys';
   type: 'bytes';
-  value: `0x${string}`;
+  value: Address;
   valueDecoded: null;
 };
 export type KilnBatchWithdrawCLFeeParameters =
@@ -29,7 +30,7 @@ export class KilnDecoder extends AbiDecoder<typeof KilnAbi> {
     super(KilnAbi);
   }
 
-  decodeValidatorsExit(data: `0x${string}`): `0x${string}` | null {
+  decodeValidatorsExit(data: Hex): Hex | null {
     if (!this.helpers.isRequestValidatorsExit(data)) {
       return null;
     }
@@ -45,7 +46,7 @@ export class KilnDecoder extends AbiDecoder<typeof KilnAbi> {
     }
   }
 
-  decodeBatchWithdrawCLFee(data: `0x${string}`): `0x${string}` | null {
+  decodeBatchWithdrawCLFee(data: Hex): Hex | null {
     if (!this.helpers.isBatchWithdrawCLFee(data)) {
       return null;
     }
@@ -62,14 +63,14 @@ export class KilnDecoder extends AbiDecoder<typeof KilnAbi> {
   }
 
   decodeDepositEvent(args: {
-    data: `0x${string}`;
-    topics: [signature: `0x${string}`, ...args: Array<`0x${string}`>];
+    data: Address;
+    topics: [signature: Hex, ...args: Array<Address>];
   }): {
-    pubkey: `0x${string}`;
-    withdrawal_credentials: `0x${string}`;
-    amount: `0x${string}`;
-    signature: `0x${string}`;
-    index: `0x${string}`;
+    pubkey: Address;
+    withdrawal_credentials: Address;
+    amount: Address;
+    signature: Hex;
+    index: Address;
   } | null {
     try {
       const decoded = this.decodeEventLog(args);
@@ -84,12 +85,12 @@ export class KilnDecoder extends AbiDecoder<typeof KilnAbi> {
   }
 
   decodeWithdrawal(args: {
-    data: `0x${string}`;
-    topics: [signature: `0x${string}`, ...args: Array<`0x${string}`>];
+    data: Address;
+    topics: [signature: Hex, ...args: Array<Address>];
   }): {
-    withdrawer: `0x${string}`;
-    feeRecipient: `0x${string}`;
-    pubKeyRoot: `0x${string}`;
+    withdrawer: Address;
+    feeRecipient: Address;
+    pubKeyRoot: Address;
     rewards: bigint;
     nodeOperatorFee: bigint;
     treasuryFee: bigint;

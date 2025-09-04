@@ -21,7 +21,7 @@ import {
 } from '@/routes/transactions/entities/swaps/twap-order-info.entity';
 import { GPv2OrderParameters } from '@/domain/swaps/contracts/decoders/gp-v2-decoder.helper';
 import { Injectable, Module } from '@nestjs/common';
-import { isAddressEqual } from 'viem';
+import { type Address, type Hex, isAddressEqual } from 'viem';
 
 /**
  *
@@ -44,10 +44,7 @@ export class TwapOrderHelper {
    * @param args.data - data of the transaction
    * @returns TWAP order data if found, otherwise null
    */
-  public findTwapOrder(args: {
-    to: `0x${string}`;
-    data: `0x${string}`;
-  }): `0x${string}` | null {
+  public findTwapOrder(args: { to: Address; data: Hex }): Hex | null {
     return (
       this.transactionFinder.findTransaction(
         ({ to, data }) => {

@@ -1,7 +1,7 @@
 import { campaignActivityBuilder } from '@/domain/community/entities/__tests__/campaign-activity.builder';
 import { CampaignActivitySchema } from '@/domain/community/entities/campaign-activity.entity';
 import { faker } from '@faker-js/faker';
-import { getAddress } from 'viem';
+import { type Address, getAddress } from 'viem';
 import { ZodError } from 'zod';
 
 describe('CampaignActivitySchema', () => {
@@ -15,8 +15,7 @@ describe('CampaignActivitySchema', () => {
 
   it('should checksum the holder', () => {
     const campaignActivity = campaignActivityBuilder().build();
-    campaignActivity.holder =
-      campaignActivity.holder.toLowerCase() as `0x${string}`;
+    campaignActivity.holder = campaignActivity.holder.toLowerCase() as Address;
 
     const result = CampaignActivitySchema.safeParse(campaignActivity);
 

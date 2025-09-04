@@ -1,7 +1,7 @@
 import { addRecoveryModuleDtoBuilder } from '@/routes/recovery/entities/__tests__/add-recovery-module.dto.builder';
 import { AddRecoveryModuleDtoSchema } from '@/routes/recovery/entities/schemas/add-recovery-module.dto.schema';
 import { faker } from '@faker-js/faker';
-import { getAddress } from 'viem';
+import { type Address, getAddress } from 'viem';
 import { ZodError } from 'zod';
 
 describe('AddRecoveryModuleDtoSchema', () => {
@@ -16,7 +16,7 @@ describe('AddRecoveryModuleDtoSchema', () => {
   it('should checksum the moduleAddress', () => {
     const nonChecksummedAddress = faker.finance
       .ethereumAddress()
-      .toLowerCase() as `0x${string}`;
+      .toLowerCase() as Address;
     const addRecoveryModuleDto = addRecoveryModuleDtoBuilder()
       .with('moduleAddress', nonChecksummedAddress)
       .build();

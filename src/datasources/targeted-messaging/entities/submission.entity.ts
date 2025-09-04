@@ -1,7 +1,9 @@
+import type { Address } from 'viem';
+
 export class Submission {
   id: number;
   targeted_safe_id: number;
-  signer_address: `0x${string}`;
+  signer_address: Address;
   completion_date: Date;
   created_at: Date;
   updated_at: Date;
@@ -9,7 +11,7 @@ export class Submission {
   constructor(
     id: number,
     targeted_safe_id: number,
-    signer_address: `0x${string}`,
+    signer_address: Address,
     completion_date: Date,
     created_at: Date,
     updated_at: Date,

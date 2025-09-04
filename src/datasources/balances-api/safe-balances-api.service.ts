@@ -20,6 +20,7 @@ import {
   getAssetPricesSchema,
 } from '@/datasources/balances-api/entities/asset-price.entity';
 import { ZodError } from 'zod';
+import type { Address } from 'viem';
 
 @Injectable()
 export class SafeBalancesApi implements IBalancesApi {
@@ -65,7 +66,7 @@ export class SafeBalancesApi implements IBalancesApi {
   }
 
   async getBalances(args: {
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
     fiatCode: string;
     chain: Chain;
     trusted?: boolean;
@@ -105,7 +106,7 @@ export class SafeBalancesApi implements IBalancesApi {
     }
   }
 
-  async clearBalances(args: { safeAddress: `0x${string}` }): Promise<void> {
+  async clearBalances(args: { safeAddress: Address }): Promise<void> {
     const key = CacheRouter.getBalancesCacheKey({
       chainId: this.chainId,
       safeAddress: args.safeAddress,
@@ -114,7 +115,7 @@ export class SafeBalancesApi implements IBalancesApi {
   }
 
   async getCollectibles(args: {
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
     limit?: number;
     offset?: number;
     trusted?: boolean;
@@ -145,7 +146,7 @@ export class SafeBalancesApi implements IBalancesApi {
     }
   }
 
-  async clearCollectibles(args: { safeAddress: `0x${string}` }): Promise<void> {
+  async clearCollectibles(args: { safeAddress: Address }): Promise<void> {
     const key = CacheRouter.getCollectiblesKey({
       chainId: this.chainId,
       safeAddress: args.safeAddress,
@@ -176,7 +177,7 @@ export class SafeBalancesApi implements IBalancesApi {
   }): Promise<Raw<Array<Balance>>> {
     const tokenAddresses = args.balances
       .map((balance) => balance.tokenAddress)
-      .filter((address): address is `0x${string}` => address !== null);
+      .filter((address): address is Address => address !== null);
 
     const lowerCaseFiatCode = args.fiatCode.toLowerCase();
     const assetPrices = await this.coingeckoApi

@@ -5,6 +5,7 @@ import {
   ApiPropertyOptional,
   getSchemaPath,
 } from '@nestjs/swagger';
+import type { Address } from 'viem';
 
 class TypedDataDomain {
   @ApiPropertyOptional({ type: Number })
@@ -16,12 +17,12 @@ class TypedDataDomain {
   name?: string;
 
   @ApiPropertyOptional({ type: String })
-  salt?: `0x${string}`;
+  salt?: Address;
 
   @ApiPropertyOptional({
     type: String,
   })
-  verifyingContract?: `0x${string}`;
+  verifyingContract?: Address;
 
   @ApiPropertyOptional({
     type: String,

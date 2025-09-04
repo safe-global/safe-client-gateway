@@ -6,7 +6,7 @@ import {
   MessagePageSchema,
 } from '@/domain/messages/entities/message.entity';
 import { faker } from '@faker-js/faker';
-import { getAddress } from 'viem';
+import { type Address, getAddress } from 'viem';
 import { ZodError } from 'zod';
 
 describe('Message entity schemas', () => {
@@ -37,7 +37,7 @@ describe('Message entity schemas', () => {
       (key) => {
         const nonChecksummedAddress = faker.finance
           .ethereumAddress()
-          .toLowerCase() as `0x${string}`;
+          .toLowerCase() as Address;
         const message = messageBuilder()
           .with(key, nonChecksummedAddress)
           .build();
@@ -54,7 +54,7 @@ describe('Message entity schemas', () => {
       'should not allow non-hex %s',
       (key) => {
         const message = messageBuilder()
-          .with(key, faker.string.numeric() as `0x${string}`)
+          .with(key, faker.string.numeric() as Address)
           .build();
 
         const result = MessageSchema.safeParse(message);

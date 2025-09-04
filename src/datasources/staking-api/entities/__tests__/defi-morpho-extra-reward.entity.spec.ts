@@ -1,4 +1,5 @@
 import { faker } from '@faker-js/faker';
+import type { Address } from 'viem';
 import { getAddress } from 'viem';
 
 import { defiMorphoExtraRewardBuilder } from '@/datasources/staking-api/entities/__tests__/defi-morpho-extra-reward.entity.builder';
@@ -16,7 +17,7 @@ describe('DefiMorphoExtraRewardSchema', () => {
   it('should checksum the asset address', () => {
     const lowerCaseAddress = faker.finance.ethereumAddress().toLowerCase();
     const defiMorphoExtraReward = defiMorphoExtraRewardBuilder()
-      .with('asset', lowerCaseAddress as `0x${string}`)
+      .with('asset', lowerCaseAddress as Address)
       .build();
 
     const result = DefiMorphoExtraRewardSchema.safeParse(defiMorphoExtraReward);

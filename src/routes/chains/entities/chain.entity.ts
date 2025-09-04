@@ -38,6 +38,7 @@ import {
 } from '@/routes/chains/entities/theme.entity';
 import { BalancesProvider } from '@/routes/chains/entities/balances-provider.entity';
 import { ContractAddresses } from '@/routes/chains/entities/contract-addresses.entity';
+import type { Address } from 'viem';
 
 @ApiExtraModels(ApiGasPriceOracle, ApiGasPriceFixed, ApiGasPriceFixedEIP1559)
 export class Chain {
@@ -66,7 +67,7 @@ export class Chain {
   @ApiProperty()
   disabledWallets: Array<string>;
   @ApiPropertyOptional({ type: String, nullable: true })
-  ensRegistryAddress: `0x${string}` | null;
+  ensRegistryAddress: Address | null;
   @ApiProperty()
   balancesProvider: BalancesProvider;
   @ApiProperty()
@@ -117,7 +118,7 @@ export class Chain {
     safeAppsRpcUri: RpcUri;
     shortName: string;
     theme: Theme;
-    ensRegistryAddress: `0x${string}` | null;
+    ensRegistryAddress: Address | null;
     isTestnet: boolean;
     chainLogoUri: string | null;
     balancesProvider: BalancesProvider;

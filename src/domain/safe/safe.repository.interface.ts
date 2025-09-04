@@ -15,44 +15,45 @@ import { TransactionApiManagerModule } from '@/domain/interfaces/transaction-api
 import { TransactionVerifierHelper } from '@/routes/transactions/helpers/transaction-verifier.helper';
 import { DelegatesV2RepositoryModule } from '@/domain/delegate/v2/delegates.v2.repository.interface';
 import { ContractsRepositoryModule } from '@/domain/contracts/contracts.repository.interface';
+import type { Address } from 'viem';
 
 export const ISafeRepository = Symbol('ISafeRepository');
 
 export interface ISafeRepository {
-  getSafe(args: { chainId: string; address: `0x${string}` }): Promise<Safe>;
+  getSafe(args: { chainId: string; address: Address }): Promise<Safe>;
 
-  clearSafe(args: { chainId: string; address: `0x${string}` }): Promise<void>;
+  clearSafe(args: { chainId: string; address: Address }): Promise<void>;
 
-  isSafe(args: { chainId: string; address: `0x${string}` }): Promise<boolean>;
+  isSafe(args: { chainId: string; address: Address }): Promise<boolean>;
 
-  clearIsSafe(args: { chainId: string; address: `0x${string}` }): Promise<void>;
+  clearIsSafe(args: { chainId: string; address: Address }): Promise<void>;
 
   isOwner(args: {
     chainId: string;
-    safeAddress: `0x${string}`;
-    address: `0x${string}`;
+    safeAddress: Address;
+    address: Address;
   }): Promise<boolean>;
 
   getCollectibleTransfers(args: {
     chainId: string;
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
     limit?: number;
     offset?: number;
   }): Promise<Page<Transfer>>;
 
   clearTransfers(args: {
     chainId: string;
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
   }): Promise<void>;
 
   getIncomingTransfers(args: {
     chainId: string;
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
     executionDateGte?: string;
     executionDateLte?: string;
-    to?: `0x${string}`;
+    to?: Address;
     value?: string;
-    tokenAddress?: `0x${string}`;
+    tokenAddress?: Address;
     txHash?: string;
     limit?: number;
     offset?: number;
@@ -60,7 +61,7 @@ export interface ISafeRepository {
 
   clearIncomingTransfers(args: {
     chainId: string;
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
   }): Promise<void>;
 
   addConfirmation(args: {
@@ -76,7 +77,7 @@ export interface ISafeRepository {
 
   getModuleTransactions(args: {
     chainId: string;
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
     to?: string;
     txHash?: string;
     module?: string;
@@ -86,7 +87,7 @@ export interface ISafeRepository {
 
   clearModuleTransactions(args: {
     chainId: string;
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
   }): Promise<void>;
 
   /**
@@ -116,12 +117,12 @@ export interface ISafeRepository {
 
   getCreationTransaction(args: {
     chainId: string;
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
   }): Promise<CreationTransaction>;
 
   getTransactionHistory(args: {
     chainId: string;
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
     limit?: number;
     offset?: number;
   }): Promise<Page<Transaction>>;
@@ -133,7 +134,7 @@ export interface ISafeRepository {
 
   clearAllExecutedTransactions(args: {
     chainId: string;
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
   }): Promise<void>;
 
   clearMultisigTransaction(args: {
@@ -143,12 +144,12 @@ export interface ISafeRepository {
 
   clearMultisigTransactions(args: {
     chainId: string;
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
   }): Promise<void>;
 
   getMultisigTransactions(args: {
     chainId: string;
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
     executed?: boolean;
     executionDateGte?: string;
     executionDateLte?: string;
@@ -169,31 +170,31 @@ export interface ISafeRepository {
 
   getTransfers(args: {
     chainId: string;
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
     limit?: number;
   }): Promise<Page<Transfer>>;
 
   getSafesByOwner(args: {
     chainId: string;
-    ownerAddress: `0x${string}`;
+    ownerAddress: Address;
   }): Promise<SafeList>;
 
   deprecated__getAllSafesByOwner(args: {
-    ownerAddress: `0x${string}`;
+    ownerAddress: Address;
   }): Promise<{ [chainId: string]: Array<string> }>;
 
   getAllSafesByOwner(args: {
-    ownerAddress: `0x${string}`;
+    ownerAddress: Address;
   }): Promise<{ [chainId: string]: Array<string> | null }>;
 
   getLastTransactionSortedByNonce(args: {
     chainId: string;
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
   }): Promise<MultisigTransaction | null>;
 
   proposeTransaction(args: {
     chainId: string;
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
     proposeTransactionDto: ProposeTransactionDto;
   }): Promise<unknown>;
 
@@ -209,12 +210,12 @@ export interface ISafeRepository {
    */
   getNonces(args: {
     chainId: string;
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
   }): Promise<{ currentNonce: number; recommendedNonce: number }>;
 
   getSafesByModule(args: {
     chainId: string;
-    moduleAddress: `0x${string}`;
+    moduleAddress: Address;
   }): Promise<SafeList>;
 }
 

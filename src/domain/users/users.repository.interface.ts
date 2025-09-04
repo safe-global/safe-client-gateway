@@ -2,6 +2,7 @@ import type { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 import type { User, UserStatus } from '@/domain/users/entities/user.entity';
 import type { Wallet } from '@/datasources/wallets/entities/wallets.entity.db';
 import type { EntityManager } from 'typeorm';
+import type { Address } from 'viem';
 
 export const IUsersRepository = Symbol('IUsersRepository');
 
@@ -23,20 +24,20 @@ export interface IUsersRepository {
   }>;
 
   addWalletToUser(args: {
-    walletAddress: `0x${string}`;
+    walletAddress: Address;
     authPayload: AuthPayload;
   }): Promise<Pick<Wallet, 'id'>>;
 
   delete(authPayload: AuthPayload): Promise<void>;
 
   deleteWalletFromUser(args: {
-    walletAddress: `0x${string}`;
+    walletAddress: Address;
     authPayload: AuthPayload;
   }): Promise<void>;
 
-  findByWalletAddressOrFail(address: `0x${string}`): Promise<User>;
+  findByWalletAddressOrFail(address: Address): Promise<User>;
 
-  findByWalletAddress(address: `0x${string}`): Promise<User | undefined>;
+  findByWalletAddress(address: Address): Promise<User | undefined>;
 
   update(args: {
     userId: User['id'];

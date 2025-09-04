@@ -2,13 +2,14 @@ import { ApiExtraModels, ApiProperty } from '@nestjs/swagger';
 import { UserStatus } from '@/domain/users/entities/user.entity';
 import type { User } from '@/domain/users/entities/user.entity';
 import type { Wallet } from '@/domain/wallets/entities/wallet.entity';
+import type { Address } from 'viem';
 
 class UserWallet implements Pick<Wallet, 'id' | 'address'> {
   @ApiProperty()
   id!: number;
 
   @ApiProperty()
-  address!: `0x${string}`;
+  address!: Address;
 }
 
 @ApiExtraModels(UserWallet)

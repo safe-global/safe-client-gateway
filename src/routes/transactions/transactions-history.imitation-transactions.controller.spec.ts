@@ -31,7 +31,7 @@ import {
   erc20TransferBuilder,
   toJson as erc20TransferToJson,
 } from '@/domain/safe/entities/__tests__/erc20-transfer.builder';
-import { getAddress, parseUnits, zeroAddress } from 'viem';
+import { type Address, getAddress, parseUnits, zeroAddress } from 'viem';
 import { erc20TransferEncoder } from '@/domain/relay/contracts/__tests__/encoders/erc20-encoder.builder';
 import type { EthereumTransaction } from '@/domain/safe/entities/ethereum-transaction.entity';
 import type { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
@@ -97,7 +97,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
     await app.close();
   });
 
-  function getImitationAddress(address: `0x${string}`): `0x${string}` {
+  function getImitationAddress(address: Address): Address {
     // + 2 is to account for the '0x' prefix
     const prefix = address.slice(0, prefixLength + 2);
     const suffix = address.slice(-suffixLength);
@@ -115,7 +115,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
     let multisigToken: Token;
     let multisigTransaction: MultisigTransaction;
     let multisigTransactionDataDecoded: DataDecoded;
-    let imitationAddress: `0x${string}`;
+    let imitationAddress: Address;
     let imitationToken: Token;
     let imitationOutgoingTransaction: EthereumTransaction;
     let imitationIncomingTransaction: EthereumTransaction;
@@ -2857,7 +2857,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
     let notImitatedMultisigToken: Token;
     let notImitatedMultisigTransaction: MultisigTransaction;
     let notImitatedMultisigTransactionDataDecoded: DataDecoded;
-    let imitationAddress: `0x${string}`;
+    let imitationAddress: Address;
     let notImitatedMultisigTransfer: ERC20Transfer;
     let imitationIncomingTransfer: ERC20Transfer;
     let imitationIncomingTransaction: EthereumTransaction;

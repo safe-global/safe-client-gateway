@@ -2,7 +2,7 @@ import { outgoingEtherEventBuilder } from '@/routes/hooks/entities/__tests__/out
 import type { TransactionEventType } from '@/routes/hooks/entities/event-type.entity';
 import { OutgoingEtherEventSchema } from '@/routes/hooks/entities/schemas/outgoing-ether.schema';
 import { faker } from '@faker-js/faker';
-import { getAddress } from 'viem';
+import { type Address, getAddress } from 'viem';
 import { ZodError } from 'zod';
 
 describe('OutgoingEtherEventSchema', () => {
@@ -36,7 +36,7 @@ describe('OutgoingEtherEventSchema', () => {
 
   it('should not allow a non-address address', () => {
     const outgoingEtherEvent = outgoingEtherEventBuilder()
-      .with('address', faker.string.alpha() as `0x${string}`)
+      .with('address', faker.string.alpha() as Address)
       .build();
 
     const result = OutgoingEtherEventSchema.safeParse(outgoingEtherEvent);
@@ -55,7 +55,7 @@ describe('OutgoingEtherEventSchema', () => {
   it('should checksum the address', () => {
     const nonChecksummedAddress = faker.finance
       .ethereumAddress()
-      .toLowerCase() as `0x${string}`;
+      .toLowerCase() as Address;
     const outgoingEtherEvent = outgoingEtherEventBuilder()
       .with('address', nonChecksummedAddress)
       .build();

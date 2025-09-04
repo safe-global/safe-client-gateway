@@ -5,6 +5,7 @@ import { CreateSubmissionDto } from '@/routes/targeted-messaging/entities/create
 import { Submission } from '@/routes/targeted-messaging/entities/submission.entity';
 import { TargetedSafe as RouteTargetedSafe } from '@/routes/targeted-messaging/entities/targeted-safe.entity';
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+import type { Address } from 'viem';
 
 @Injectable()
 export class TargetedMessagingService {
@@ -16,7 +17,7 @@ export class TargetedMessagingService {
   async getTargetedSafe(args: {
     outreachId: TargetedSafe['outreachId'];
     chainId: string;
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
   }): Promise<RouteTargetedSafe> {
     const targetedSafe = await this.repository.getTargetedSafe(args);
     return {
@@ -28,8 +29,8 @@ export class TargetedMessagingService {
   async getSubmission(args: {
     outreachId: number;
     chainId: string;
-    safeAddress: `0x${string}`;
-    signerAddress: `0x${string}`;
+    safeAddress: Address;
+    signerAddress: Address;
   }): Promise<Submission> {
     const targetedSafe = await this.repository.getTargetedSafe(args);
     try {
@@ -60,7 +61,7 @@ export class TargetedMessagingService {
 
   private async getOrAddSafeToOutreach(args: {
     outreachId: number;
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
   }): Promise<TargetedSafe> {
     try {
       return await this.repository.getTargetedSafe(args);
@@ -84,8 +85,8 @@ export class TargetedMessagingService {
   async createSubmission(args: {
     outreachId: number;
     chainId: string;
-    safeAddress: `0x${string}`;
-    signerAddress: `0x${string}`;
+    safeAddress: Address;
+    signerAddress: Address;
     createSubmissionDto: CreateSubmissionDto;
   }): Promise<Submission> {
     const targetedSafe = await this.getOrAddSafeToOutreach(args);

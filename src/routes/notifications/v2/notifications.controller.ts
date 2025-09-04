@@ -35,6 +35,7 @@ import { OptionalAuthGuard } from '@/routes/auth/guards/optional-auth.guard';
 import { NotificationType } from '@/datasources/notifications/entities/notification-type.entity.db';
 import { DeleteAllSubscriptionsDtoSchema } from '@/domain/notifications/v2/entities/delete-all-subscriptions.dto.entity';
 import { DeleteAllSubscriptionsDto } from '@/routes/notifications/v2/entities/delete-all-subscriptions.dto.entity';
+import type { Address } from 'viem';
 
 @ApiTags('notifications')
 @Controller({ path: '', version: '2' })
@@ -119,7 +120,7 @@ export class NotificationsControllerV2 {
     @Param('deviceUuid', new ValidationPipe(UuidSchema)) deviceUuid: UUID,
     @Param('chainId', new ValidationPipe(NumericStringSchema)) chainId: string,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
-    safeAddress: `0x${string}`,
+    safeAddress: Address,
     @Auth() authPayload: AuthPayload,
   ): Promise<Array<NotificationType>> {
     return this.notificationsService.getSafeSubscription({
@@ -165,7 +166,7 @@ export class NotificationsControllerV2 {
     @Param('deviceUuid', new ValidationPipe(UuidSchema)) deviceUuid: UUID,
     @Param('chainId', new ValidationPipe(NumericStringSchema)) chainId: string,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
-    safeAddress: `0x${string}`,
+    safeAddress: Address,
   ): Promise<void> {
     return this.notificationsService.deleteSubscription({
       deviceUuid,

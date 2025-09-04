@@ -2,7 +2,7 @@ import { executedTransactionEventBuilder } from '@/routes/hooks/entities/__tests
 import type { TransactionEventType } from '@/routes/hooks/entities/event-type.entity';
 import { ExecutedTransactionEventSchema } from '@/routes/hooks/entities/schemas/executed-transaction.schema';
 import { faker } from '@faker-js/faker';
-import { getAddress } from 'viem';
+import { type Address, getAddress } from 'viem';
 import { ZodError } from 'zod';
 
 describe('ExecutedTransactionEventSchema', () => {
@@ -46,7 +46,7 @@ describe('ExecutedTransactionEventSchema', () => {
     'should not allow a non-address %s',
     (field) => {
       const executedTransactionEvent = executedTransactionEventBuilder()
-        .with(field, faker.string.sample() as `0x${string}`)
+        .with(field, faker.string.sample() as Address)
         .build();
 
       const result = ExecutedTransactionEventSchema.safeParse(
@@ -70,7 +70,7 @@ describe('ExecutedTransactionEventSchema', () => {
     (field) => {
       const nonChecksummedAddress = faker.finance
         .ethereumAddress()
-        .toLowerCase() as `0x${string}`;
+        .toLowerCase() as Address;
       const executedTransactionEvent = executedTransactionEventBuilder()
         .with(field, nonChecksummedAddress)
         .build();
@@ -109,7 +109,7 @@ describe('ExecutedTransactionEventSchema', () => {
 
   it('should not allow a non-hex data', () => {
     const executedTransactionEvent = executedTransactionEventBuilder()
-      .with('data', faker.string.sample() as `0x${string}`)
+      .with('data', faker.string.sample() as Address)
       .build();
 
     const result = ExecutedTransactionEventSchema.safeParse(

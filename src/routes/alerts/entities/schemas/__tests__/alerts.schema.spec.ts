@@ -9,7 +9,7 @@ import {
   AlertTransactionSchema,
 } from '@/routes/alerts/entities/schemas/alerts.schema';
 import { faker } from '@faker-js/faker';
-import { getAddress } from 'viem';
+import { type Address, getAddress } from 'viem';
 import { ZodError } from 'zod';
 
 describe('Alerts schemas', () => {
@@ -25,7 +25,7 @@ describe('Alerts schemas', () => {
     it('should checksum the alert log address', () => {
       const nonChecksummedAddress = faker.finance
         .ethereumAddress()
-        .toLowerCase() as `0x${string}`;
+        .toLowerCase() as Address;
       const alertLog = alertLogBuilder()
         .with('address', nonChecksummedAddress)
         .build();
@@ -39,10 +39,7 @@ describe('Alerts schemas', () => {
 
     it('should not allow empty alert log event signature', () => {
       const alertLog = alertLogBuilder()
-        .with(
-          'topics',
-          [] as unknown as [`0x${string}`, ...Array<`0x${string}`>],
-        )
+        .with('topics', [] as unknown as [Address, ...Array<Address>])
         .build();
 
       const result = AlertLogSchema.safeParse(alertLog);
@@ -104,7 +101,7 @@ describe('Alerts schemas', () => {
     it('should checksum the alert transaction from and to addresses', () => {
       const nonChecksummedAddress = faker.finance
         .ethereumAddress()
-        .toLowerCase() as `0x${string}`;
+        .toLowerCase() as Address;
       const alertTransaction = alertTransactionBuilder()
         .with('from', nonChecksummedAddress)
         .with('to', nonChecksummedAddress)

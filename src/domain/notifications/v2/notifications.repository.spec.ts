@@ -16,7 +16,7 @@ import { NotificationDevice } from '@/datasources/notifications/entities/notific
 import { mockEntityManager } from '@/datasources/db/v2/__tests__/entity-manager.mock';
 import { mockPostgresDatabaseService } from '@/datasources/db/v2/__tests__/postgresql-database.service.mock';
 import { mockRepository } from '@/datasources/db/v2/__tests__/repository.mock';
-import { getAddress } from 'viem';
+import { type Address, getAddress } from 'viem';
 import { IsNull } from 'typeorm';
 import { deleteAllSubscriptionsDtoBuilder } from '@/domain/notifications/v2/entities/__tests__/delete-all-subscriptions.dto.builder';
 import type { ConfigService } from '@nestjs/config';
@@ -240,7 +240,7 @@ describe('NotificationsRepositoryV2', () => {
         authPayload: authPayload,
         deviceUuid: faker.string.uuid() as UUID,
         chainId: authPayload.chain_id as string,
-        safeAddress: faker.string.hexadecimal({ length: 32 }) as `0x${string}`,
+        safeAddress: faker.string.hexadecimal({ length: 32 }) as Address,
       };
 
       const result = await notificationsRepository.getSafeSubscription(args);
@@ -263,7 +263,7 @@ describe('NotificationsRepositoryV2', () => {
 
     it('Should throw UnauthorizedException if signer_address is not passed', async () => {
       const authPayloadDto = authPayloadDtoBuilder()
-        .with('signer_address', '' as `0x${string}`)
+        .with('signer_address', '' as Address)
         .build();
       const authPayload = new AuthPayload(authPayloadDto);
 
@@ -273,7 +273,7 @@ describe('NotificationsRepositoryV2', () => {
         chainId: authPayload.chain_id as string,
         safeAddress: faker.string.hexadecimal({
           length: 32,
-        }) as `0x${string}`,
+        }) as Address,
       };
       const result = notificationsRepository.getSafeSubscription(args);
 
@@ -296,7 +296,7 @@ describe('NotificationsRepositoryV2', () => {
         chainId: authPayload.chain_id as string,
         safeAddress: faker.string.hexadecimal({
           length: 32,
-        }) as `0x${string}`,
+        }) as Address,
       };
       const result = await notificationsRepository.getSafeSubscription(args);
 
@@ -333,7 +333,7 @@ describe('NotificationsRepositoryV2', () => {
 
       const result = await notificationsRepository.getSubscribersBySafe({
         chainId: faker.number.int({ min: 1, max: 100 }).toString(),
-        safeAddress: faker.string.hexadecimal({ length: 32 }) as `0x${string}`,
+        safeAddress: faker.string.hexadecimal({ length: 32 }) as Address,
       });
 
       const output = mockSubscribers.map(
@@ -358,7 +358,7 @@ describe('NotificationsRepositoryV2', () => {
 
       const result = await notificationsRepository.getSubscribersBySafe({
         chainId: faker.number.int({ min: 1, max: 100 }).toString(),
-        safeAddress: faker.string.hexadecimal({ length: 32 }) as `0x${string}`,
+        safeAddress: faker.string.hexadecimal({ length: 32 }) as Address,
       });
 
       expect(result).toEqual([]);
@@ -381,7 +381,7 @@ describe('NotificationsRepositoryV2', () => {
       const args = {
         deviceUuid: faker.string.uuid() as UUID,
         chainId: faker.number.int({ min: 0 }).toString(),
-        safeAddress: faker.string.hexadecimal({ length: 32 }) as `0x${string}`,
+        safeAddress: faker.string.hexadecimal({ length: 32 }) as Address,
       };
 
       await notificationsRepository.deleteSubscription(args);
@@ -415,7 +415,7 @@ describe('NotificationsRepositoryV2', () => {
       const args = {
         deviceUuid: faker.string.uuid() as UUID,
         chainId: faker.number.int({ min: 0 }).toString(),
-        safeAddress: faker.string.hexadecimal({ length: 32 }) as `0x${string}`,
+        safeAddress: faker.string.hexadecimal({ length: 32 }) as Address,
       };
 
       const result = notificationsRepository.deleteSubscription(args);

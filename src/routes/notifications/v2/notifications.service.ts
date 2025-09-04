@@ -4,6 +4,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { UUID } from 'crypto';
 import { NotificationType } from '@/datasources/notifications/entities/notification-type.entity.db';
 import { INotificationsRepositoryV2 } from '@/domain/notifications/v2/notifications.repository.interface';
+import type { Address } from 'viem';
 
 @Injectable()
 export class NotificationsServiceV2 {
@@ -25,7 +26,7 @@ export class NotificationsServiceV2 {
     authPayload: AuthPayload;
     deviceUuid: UUID;
     chainId: string;
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
   }): Promise<Array<NotificationType>> {
     return await this.notificationsRepository.getSafeSubscription(args);
   }
@@ -33,7 +34,7 @@ export class NotificationsServiceV2 {
   async deleteSubscription(args: {
     deviceUuid: UUID;
     chainId: string;
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
   }): Promise<void> {
     await this.notificationsRepository.deleteSubscription(args);
   }
@@ -42,7 +43,7 @@ export class NotificationsServiceV2 {
     subscriptions: Array<{
       chainId: string;
       deviceUuid: UUID;
-      safeAddress: `0x${string}`;
+      safeAddress: Address;
     }>;
   }): Promise<void> {
     await this.notificationsRepository.deleteAllSubscriptions(args);

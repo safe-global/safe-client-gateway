@@ -38,7 +38,7 @@ import { IBalancesApi } from '@/domain/interfaces/balances-api.interface';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { rawify, type Raw } from '@/validation/entities/raw.entity';
 import { Inject, Injectable } from '@nestjs/common';
-import { getAddress } from 'viem';
+import { Address, getAddress } from 'viem';
 import { z, ZodError } from 'zod';
 
 export const IZerionBalancesApi = Symbol('IZerionBalancesApi');
@@ -96,7 +96,7 @@ export class ZerionBalancesApi implements IBalancesApi {
 
   async getBalances(args: {
     chain: Chain;
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
     fiatCode: string;
   }): Promise<Raw<Array<Balance>>> {
     if (!this.fiatCodes.includes(args.fiatCode.toUpperCase())) {
@@ -166,7 +166,7 @@ export class ZerionBalancesApi implements IBalancesApi {
    */
   async getCollectibles(args: {
     chain: Chain;
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
     limit?: number;
     offset?: number;
   }): Promise<Raw<Page<Collectible>>> {
@@ -221,7 +221,7 @@ export class ZerionBalancesApi implements IBalancesApi {
 
   async clearCollectibles(args: {
     chainId: string;
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
   }): Promise<void> {
     const key = CacheRouter.getZerionCollectiblesCacheKey(args);
     await this.cacheService.deleteByKey(key);
@@ -291,7 +291,7 @@ export class ZerionBalancesApi implements IBalancesApi {
 
   async clearBalances(args: {
     chainId: string;
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
   }): Promise<void> {
     const key = CacheRouter.getZerionBalancesCacheKey(args);
     await this.cacheService.deleteByKey(key);

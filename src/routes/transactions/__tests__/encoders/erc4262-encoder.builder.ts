@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker';
-import { encodeFunctionData, erc4626Abi, getAddress } from 'viem';
+import { type Address, encodeFunctionData, erc4626Abi, getAddress } from 'viem';
 import { Builder } from '@/__tests__/builder';
 import type { IEncoder } from '@/__tests__/encoder-builder';
 
@@ -7,14 +7,14 @@ import type { IEncoder } from '@/__tests__/encoder-builder';
 
 type Erc4262DepositArgs = {
   assets: bigint;
-  receiver: `0x${string}`;
+  receiver: Address;
 };
 
 class Erc4262DepositEncoder<T extends Erc4262DepositArgs>
   extends Builder<T>
   implements IEncoder
 {
-  encode(): `0x${string}` {
+  encode(): Address {
     const args = this.build();
 
     return encodeFunctionData({
@@ -35,15 +35,15 @@ export function erc4262DepositEncoder(): Erc4262DepositEncoder<Erc4262DepositArg
 
 type Erc4262WithdrawArgs = {
   assets: bigint;
-  receiver: `0x${string}`;
-  owner: `0x${string}`;
+  receiver: Address;
+  owner: Address;
 };
 
 class Erc4262WithdrawEncoder<T extends Erc4262WithdrawArgs>
   extends Builder<T>
   implements IEncoder
 {
-  encode(): `0x${string}` {
+  encode(): Address {
     const args = this.build();
 
     return encodeFunctionData({

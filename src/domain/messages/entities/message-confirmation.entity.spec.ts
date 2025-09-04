@@ -2,7 +2,7 @@ import type { SignatureType } from '@/domain/common/entities/signature-type.enti
 import { messageConfirmationBuilder } from '@/domain/messages/entities/__tests__/message-confirmation.builder';
 import { MessageConfirmationSchema } from '@/domain/messages/entities/message-confirmation.entity';
 import { faker } from '@faker-js/faker';
-import { getAddress } from 'viem';
+import { type Address, getAddress } from 'viem';
 import { ZodError } from 'zod';
 
 describe('MessageConfirmationSchema', () => {
@@ -32,7 +32,7 @@ describe('MessageConfirmationSchema', () => {
   it('should checksum the owner', () => {
     const nonChecksummedAddress = faker.finance
       .ethereumAddress()
-      .toLowerCase() as `0x${string}`;
+      .toLowerCase() as Address;
     const messageConfirmation = messageConfirmationBuilder()
       .with('owner', nonChecksummedAddress)
       .build();
@@ -46,7 +46,7 @@ describe('MessageConfirmationSchema', () => {
 
   it('should not allow non-hex signature', () => {
     const messageConfirmation = messageConfirmationBuilder()
-      .with('signature', faker.string.numeric() as `0x${string}`)
+      .with('signature', faker.string.numeric() as Address)
       .build();
 
     const result = MessageConfirmationSchema.safeParse(messageConfirmation);

@@ -7,6 +7,7 @@ import type { Space } from '@/domain/spaces/entities/space.entity';
 import type { User } from '@/domain/users/entities/user.entity';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { NameSchema } from '@/domain/common/entities/name.schema';
+import type { Address } from 'viem';
 
 export enum MemberRole {
   ADMIN = 1,
@@ -28,7 +29,7 @@ export const MemberSchema: z.ZodType<
     alias: string | null;
     role: keyof typeof MemberRole;
     status: keyof typeof MemberStatus;
-    invitedBy: `0x${string}` | null;
+    invitedBy: Address | null;
   }
 > = RowSchema.extend({
   user: z.lazy(() => UserSchema),
@@ -37,7 +38,7 @@ export const MemberSchema: z.ZodType<
   alias: NameSchema.nullable(),
   role: z.enum(getStringEnumKeys(MemberRole)),
   status: z.enum(getStringEnumKeys(MemberStatus)),
-  invitedBy: AddressSchema.nullable() as z.ZodType<`0x${string}` | null>,
+  invitedBy: AddressSchema.nullable() as z.ZodType<Address | null>,
 });
 
 export type Member = z.infer<typeof MemberSchema>;

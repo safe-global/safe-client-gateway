@@ -12,6 +12,7 @@ import {
 import { NULL_ADDRESS } from '@/routes/common/constants';
 import orderBy from 'lodash/orderBy';
 import { getNumberString } from '@/domain/common/utils/utils';
+import type { Address } from 'viem';
 
 @Injectable()
 export class BalancesService {
@@ -24,7 +25,7 @@ export class BalancesService {
 
   async getBalances(args: {
     chainId: string;
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
     fiatCode: string;
     trusted: boolean;
     excludeSpam: boolean;

@@ -5,7 +5,7 @@ import {
   NativeBalanceSchema,
 } from '@/domain/balances/entities/balance.entity';
 import { faker } from '@faker-js/faker';
-import { getAddress } from 'viem';
+import { type Address, getAddress } from 'viem';
 import { ZodError } from 'zod';
 
 describe('Balance entity schemas', () => {
@@ -65,7 +65,7 @@ describe('Balance entity schemas', () => {
     it('should checksum the tokenAddress', () => {
       const nonChecksummedTokenAddress = faker.finance
         .ethereumAddress()
-        .toLowerCase() as `0x${string}`;
+        .toLowerCase() as Address;
       const erc20Balance = balanceBuilder()
         .with('tokenAddress', nonChecksummedTokenAddress)
         .build();

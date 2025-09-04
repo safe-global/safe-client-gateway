@@ -35,7 +35,7 @@ import {
   type ILoggingService,
   LoggingService,
 } from '@/logging/logging.interface';
-import { getAddress } from 'viem';
+import { type Address, getAddress } from 'viem';
 import { dataDecodedBuilder } from '@/domain/data-decoder/v2/entities/__tests__/data-decoded.builder';
 import { contractBuilder } from '@/domain/data-decoder/v2/entities/__tests__/contract.builder';
 
@@ -420,7 +420,7 @@ describe('Add transaction confirmations - Transactions Controller (Unit)', () =>
       });
       transaction.data = faker.string.hexadecimal({
         length: 64,
-      }) as `0x${string}`;
+      }) as Address;
 
       await request(app.getHttpServer())
         .post(
@@ -473,7 +473,7 @@ describe('Add transaction confirmations - Transactions Controller (Unit)', () =>
           }),
       ) as MultisigTransaction;
       transaction.confirmations![0].signature =
-        transaction.confirmations![0].signature!.slice(0, 129) as `0x${string}`;
+        transaction.confirmations![0].signature!.slice(0, 129) as Address;
       const addConfirmationDto = addConfirmationDtoBuilder()
         .with('signature', transaction.confirmations![0].signature)
         .build();
@@ -511,7 +511,7 @@ describe('Add transaction confirmations - Transactions Controller (Unit)', () =>
           }),
       ) as MultisigTransaction;
       transaction.confirmations![0].signature =
-        transaction.confirmations![0].signature!.slice(0, 128) as `0x${string}`;
+        transaction.confirmations![0].signature!.slice(0, 128) as Address;
       const addConfirmationDto = addConfirmationDtoBuilder()
         .with('signature', transaction.confirmations![0].signature)
         .build();

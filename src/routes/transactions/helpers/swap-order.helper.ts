@@ -21,6 +21,7 @@ import {
   ChainsRepositoryModule,
   IChainsRepository,
 } from '@/domain/chains/chains.repository.interface';
+import type { Address, Hex } from 'viem';
 
 @Injectable()
 export class SwapOrderHelper {
@@ -53,7 +54,7 @@ export class SwapOrderHelper {
    * @private
    * @returns The swap order if found, otherwise null
    */
-  public findSwapOrder(data: `0x${string}`): `0x${string}` | null {
+  public findSwapOrder(data: Hex): Hex | null {
     return (
       this.transactionFinder.findTransaction(
         (transaction) =>
@@ -82,7 +83,7 @@ export class SwapOrderHelper {
    */
   async getOrder(args: {
     chainId: string;
-    orderUid: `0x${string}`;
+    orderUid: Address;
   }): Promise<KnownOrder> {
     const order = await this.swapsRepository.getOrder(
       args.chainId,
@@ -125,7 +126,7 @@ export class SwapOrderHelper {
    */
   public async getToken(args: {
     chainId: string;
-    address: `0x${string}`;
+    address: Address;
   }): Promise<Token> {
     // We perform lower case comparison because the provided address (3rd party service)
     // might not be checksummed.

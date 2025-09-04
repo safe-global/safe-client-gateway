@@ -7,6 +7,7 @@ import {
   NAME_MAX_LENGTH,
   NAME_MIN_LENGTH,
 } from '@/domain/common/entities/name.schema';
+import type { Address } from 'viem';
 
 const InviteUserDtoSchema = z
   .array(
@@ -24,7 +25,7 @@ export const InviteUsersDtoSchema = z.object({
 
 export class InviteUserDto {
   @ApiProperty()
-  public readonly address!: `0x${string}`;
+  public readonly address!: Address;
 
   @ApiProperty({
     type: String,

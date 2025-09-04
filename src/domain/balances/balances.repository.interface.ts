@@ -3,6 +3,7 @@ import { Module } from '@nestjs/common';
 import { BalancesRepository } from '@/domain/balances/balances.repository';
 import { BalancesApiModule } from '@/datasources/balances-api/balances-api.module';
 import { Chain } from '@/domain/chains/entities/chain.entity';
+import type { Address } from 'viem';
 
 export const IBalancesRepository = Symbol('IBalancesRepository');
 
@@ -13,7 +14,7 @@ export interface IBalancesRepository {
    */
   getBalances(args: {
     chain: Chain;
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
     fiatCode: string;
     trusted?: boolean;
     excludeSpam?: boolean;
@@ -22,10 +23,7 @@ export interface IBalancesRepository {
   /**
    * Clears any stored local balance data of {@link safeAddress} on {@link chainId}
    */
-  clearBalances(args: {
-    chainId: string;
-    safeAddress: `0x${string}`;
-  }): Promise<void>;
+  clearBalances(args: { chainId: string; safeAddress: Address }): Promise<void>;
 
   /**
    * Gets the list of supported fiat codes.

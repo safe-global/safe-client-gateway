@@ -9,6 +9,7 @@ import { SafeList } from '@/routes/owners/entities/safe-list.entity';
 import { OwnersService } from '@/routes/owners/owners.service';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
+import type { Address } from 'viem';
 
 @ApiTags('owners')
 @Controller({
@@ -42,7 +43,7 @@ export class OwnersControllerV1 {
   async getSafesByOwner(
     @Param('chainId') chainId: string,
     @Param('ownerAddress', new ValidationPipe(AddressSchema))
-    ownerAddress: `0x${string}`,
+    ownerAddress: Address,
   ): Promise<SafeList> {
     return this.ownersService.getSafesByOwner({ chainId, ownerAddress });
   }
@@ -65,7 +66,7 @@ export class OwnersControllerV1 {
   @Get('owners/:ownerAddress/safes')
   async getAllSafesByOwner(
     @Param('ownerAddress', new ValidationPipe(AddressSchema))
-    ownerAddress: `0x${string}`,
+    ownerAddress: Address,
   ): Promise<{ [chainId: string]: Array<string> }> {
     return this.ownersService.deprecated__getAllSafesByOwner({ ownerAddress });
   }

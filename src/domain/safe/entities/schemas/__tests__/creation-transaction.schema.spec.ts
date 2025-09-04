@@ -2,7 +2,7 @@ import { creationTransactionBuilder } from '@/domain/safe/entities/__tests__/cre
 import type { CreationTransaction } from '@/domain/safe/entities/creation-transaction.entity';
 import { CreationTransactionSchema } from '@/domain/safe/entities/schemas/creation-transaction.schema';
 import { faker } from '@faker-js/faker';
-import { getAddress } from 'viem';
+import { type Address, getAddress } from 'viem';
 
 describe('CreationTransactionSchema', () => {
   it('should validate a valid creation transaction', () => {
@@ -32,7 +32,7 @@ describe('CreationTransactionSchema', () => {
   ])('should checksum the %s', (field) => {
     const nonChecksummedAddress = faker.finance
       .ethereumAddress()
-      .toLowerCase() as `0x${string}`;
+      .toLowerCase() as Address;
     const creationTransaction = creationTransactionBuilder()
       .with(field, nonChecksummedAddress)
       .build();
@@ -62,7 +62,7 @@ describe('CreationTransactionSchema', () => {
     'masterCopy' as const,
   ])('should not allow non-address %s', (field) => {
     const creationTransaction = creationTransactionBuilder()
-      .with(field, 'not an address' as `0x${string}`)
+      .with(field, 'not an address' as Address)
       .build();
 
     const result = CreationTransactionSchema.safeParse(creationTransaction);
@@ -80,7 +80,7 @@ describe('CreationTransactionSchema', () => {
     'should not allow non-hex %s',
     (field) => {
       const creationTransaction = creationTransactionBuilder()
-        .with(field, 'not a hex string' as `0x${string}`)
+        .with(field, 'not a hex string' as Address)
         .build();
 
       const result = CreationTransactionSchema.safeParse(creationTransaction);

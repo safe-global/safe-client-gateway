@@ -1,13 +1,15 @@
+import type { Address } from 'viem';
+
 export class TargetedSafe {
   id: number;
-  address: `0x${string}`;
+  address: Address;
   outreach_id: number;
   created_at: Date;
   updated_at: Date;
 
   constructor(
     id: number,
-    address: `0x${string}`,
+    address: Address,
     outreach_id: number,
     created_at: Date,
     updated_at: Date,

@@ -1,10 +1,11 @@
 import { EventTopicsSchema } from '@/validation/entities/schemas/event-topics.schema';
 import { faker } from '@faker-js/faker/.';
+import type { Address } from 'viem';
 
 describe('EventTopicsSchema', () => {
   it('validate an EventTopicsSchema', () => {
     const eventTopics = faker.helpers.multiple(
-      () => faker.string.hexadecimal() as `0x${string}`,
+      () => faker.string.hexadecimal() as Address,
       { count: { min: 1, max: 5 } },
     );
 
@@ -30,7 +31,7 @@ describe('EventTopicsSchema', () => {
 
   it('should not allow non-hex topics', () => {
     const topics = faker.helpers.multiple(
-      () => faker.string.alpha() as `0x${string}`,
+      () => faker.string.alpha() as Address,
       { count: { min: 1, max: 5 } },
     );
 

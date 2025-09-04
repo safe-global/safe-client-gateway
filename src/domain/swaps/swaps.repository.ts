@@ -9,18 +9,16 @@ import {
   FullAppData,
   FullAppDataSchema,
 } from '@/domain/swaps/entities/full-app-data.entity';
+import type { Address, Hex } from 'viem';
 
 export const ISwapsRepository = Symbol('ISwapsRepository');
 
 export interface ISwapsRepository {
-  getOrder(chainId: string, orderUid: `0x${string}`): Promise<Order>;
+  getOrder(chainId: string, orderUid: Address): Promise<Order>;
 
   getOrders(chainId: string, txHash: string): Promise<Array<Order>>;
 
-  getFullAppData(
-    chainId: string,
-    appDataHash: `0x${string}`,
-  ): Promise<FullAppData>;
+  getFullAppData(chainId: string, appDataHash: Hex): Promise<FullAppData>;
 }
 
 @Injectable()
@@ -30,7 +28,7 @@ export class SwapsRepository implements ISwapsRepository {
     private readonly swapsApiFactory: ISwapsApiFactory,
   ) {}
 
-  async getOrder(chainId: string, orderUid: `0x${string}`): Promise<Order> {
+  async getOrder(chainId: string, orderUid: Address): Promise<Order> {
     const api = await this.swapsApiFactory.getApi(chainId);
     const order = await api.getOrder(orderUid);
     return OrderSchema.parse(order);
@@ -44,7 +42,7 @@ export class SwapsRepository implements ISwapsRepository {
 
   async getFullAppData(
     chainId: string,
-    appDataHash: `0x${string}`,
+    appDataHash: Hex,
   ): Promise<FullAppData> {
     const api = await this.swapsApiFactory.getApi(chainId);
     const fullAppData = await api.getFullAppData(appDataHash);

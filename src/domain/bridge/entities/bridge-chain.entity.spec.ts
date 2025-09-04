@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker';
-import { getAddress } from 'viem';
+import { type Address, getAddress } from 'viem';
 import { bridgeChainBuilder } from '@/domain/bridge/entities/__tests__/bridge-chain.builder';
 import { BridgeChainSchema } from '@/domain/bridge/entities/bridge-chain.entity';
 
@@ -26,7 +26,7 @@ describe('BridgeChainSchema', () => {
   it('should checksum diamondAddress', () => {
     const nonChecksummedAddress = faker.finance.ethereumAddress().toLowerCase();
     const bridgeChain = bridgeChainBuilder()
-      .with('diamondAddress', nonChecksummedAddress as `0x${string}`)
+      .with('diamondAddress', nonChecksummedAddress as Address)
       .build();
 
     const result = BridgeChainSchema.safeParse(bridgeChain);
@@ -61,7 +61,7 @@ describe('BridgeChainSchema', () => {
   it('should reject invalid diamondAddress format', () => {
     const invalidAddress = 'invalid-address';
     const bridgeChain = bridgeChainBuilder()
-      .with('diamondAddress', invalidAddress as `0x${string}`)
+      .with('diamondAddress', invalidAddress as Address)
       .build();
 
     const result = BridgeChainSchema.safeParse(bridgeChain);

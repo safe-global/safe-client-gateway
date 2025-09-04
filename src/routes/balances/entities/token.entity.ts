@@ -4,10 +4,11 @@ import {
   Erc20Token as DomainErc20Token,
   Erc721Token as DomainErc721Token,
 } from '@/domain/tokens/entities/token.entity';
+import type { Address } from 'viem';
 
 class BaseToken {
   @ApiProperty()
-  address!: `0x${string}`;
+  address!: Address;
   @ApiProperty()
   decimals!: number;
   @ApiProperty()

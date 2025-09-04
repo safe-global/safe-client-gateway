@@ -1,8 +1,9 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import type { Address } from 'viem';
 
 export class TokenInfo {
   @ApiProperty({ description: 'The token address' })
-  address: `0x${string}`;
+  address: Address;
 
   @ApiProperty({ description: 'The token decimals' })
   decimals: number;
@@ -24,7 +25,7 @@ export class TokenInfo {
   trusted: boolean;
 
   constructor(args: {
-    address: `0x${string}`;
+    address: Address;
     decimals: number;
     logoUri: string | null;
     name: string;

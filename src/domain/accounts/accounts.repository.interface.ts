@@ -8,6 +8,7 @@ import { UpsertAccountDataSettingsDto } from '@/domain/accounts/entities/upsert-
 import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 import { Module } from '@nestjs/common';
 import { Request } from 'express';
+import type { Address } from 'viem';
 
 export const IAccountsRepository = Symbol('IAccountsRepository');
 
@@ -20,24 +21,24 @@ export interface IAccountsRepository {
 
   getAccount(args: {
     authPayload: AuthPayload;
-    address: `0x${string}`;
+    address: Address;
   }): Promise<Account>;
 
   deleteAccount(args: {
     authPayload: AuthPayload;
-    address: `0x${string}`;
+    address: Address;
   }): Promise<void>;
 
   getDataTypes(): Promise<Array<AccountDataType>>;
 
   getAccountDataSettings(args: {
     authPayload: AuthPayload;
-    address: `0x${string}`;
+    address: Address;
   }): Promise<Array<AccountDataSetting>>;
 
   upsertAccountDataSettings(args: {
     authPayload: AuthPayload;
-    address: `0x${string}`;
+    address: Address;
     upsertAccountDataSettingsDto: UpsertAccountDataSettingsDto;
   }): Promise<Array<AccountDataSetting>>;
 }

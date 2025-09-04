@@ -15,7 +15,7 @@ import {
   OneToMany,
   JoinColumn,
 } from 'typeorm';
-import { getAddress } from 'viem';
+import { Address, getAddress } from 'viem';
 import { z } from 'zod';
 
 export const NotificationSubscriptionSchema = RowSchema.extend({
@@ -56,15 +56,15 @@ export class NotificationSubscription
     type: 'varchar',
     length: 42,
     transformer: {
-      from(value: string): `0x${string}` {
+      from(value: string): Address {
         return getAddress(value);
       },
-      to(value: string): `0x${string}` {
+      to(value: string): Address {
         return getAddress(value);
       },
     },
   })
-  safe_address!: `0x${string}`;
+  safe_address!: Address;
 
   @Column({
     type: 'varchar',
@@ -79,7 +79,7 @@ export class NotificationSubscription
       },
     },
   })
-  signer_address!: `0x${string}` | null;
+  signer_address!: Address | null;
 
   @Column({
     type: 'timestamp with time zone',

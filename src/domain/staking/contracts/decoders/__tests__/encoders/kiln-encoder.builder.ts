@@ -15,6 +15,7 @@ import {
   getAbiItem,
   getAddress,
 } from 'viem';
+import type { Address, Hex } from 'viem';
 
 // deposit
 
@@ -24,7 +25,7 @@ class DepositEncoder<T extends DepositArgs>
   extends Builder<T>
   implements IEncoder
 {
-  encode(): `0x${string}` {
+  encode(): Address {
     return encodeFunctionData({
       abi: KilnAbi,
       functionName: 'deposit',
@@ -40,14 +41,14 @@ export function depositEncoder(): DepositEncoder<DepositArgs> {
 // requestValidatorsExit
 
 type RequestValidatorsExitArgs = {
-  _publicKeys: `0x${string}`;
+  _publicKeys: Address;
 };
 
 class RequestValidatorsExitEncoder<T extends RequestValidatorsExitArgs>
   extends Builder<T>
   implements IEncoder
 {
-  encode(): `0x${string}` {
+  encode(): Address {
     const args = this.build();
 
     return encodeFunctionData({
@@ -72,14 +73,14 @@ export function requestValidatorsExitEncoder(): RequestValidatorsExitEncoder<Req
 // batchWithdrawCLFee
 
 type BatchWithdrawCLFeeArgs = {
-  _publicKeys: `0x${string}`;
+  _publicKeys: Address;
 };
 
 class BatchWithdrawCLFeeEncoder<T extends BatchWithdrawCLFeeArgs>
   extends Builder<T>
   implements IEncoder
 {
-  encode(): `0x${string}` {
+  encode(): Address {
     const args = this.build();
 
     return encodeFunctionData({
@@ -104,16 +105,16 @@ export function batchWithdrawCLFeeEncoder(): BatchWithdrawCLFeeEncoder<BatchWith
 // DepositEvent
 
 type DepositEventEventArgs = {
-  pubkey: `0x${string}`;
-  withdrawal_credentials: `0x${string}`;
-  amount: `0x${string}`;
-  signature: `0x${string}`;
-  index: `0x${string}`;
+  pubkey: Address;
+  withdrawal_credentials: Address;
+  amount: Address;
+  signature: Hex;
+  index: Address;
 };
 
 type DepositEventEvent = {
-  data: `0x${string}`;
-  topics: [signature: `0x${string}`, ...args: Array<`0x${string}`>];
+  data: Address;
+  topics: [signature: Hex, ...args: Array<Address>];
 };
 
 class DepositEventBuilder<T extends DepositEventEventArgs>
@@ -175,17 +176,17 @@ export function depositEventEventBuilder(): DepositEventBuilder<DepositEventEven
 // Withdrawal
 
 type WithdrawalArgs = {
-  withdrawer: `0x${string}`;
-  feeRecipient: `0x${string}`;
-  pubKeyRoot: `0x${string}`;
+  withdrawer: Address;
+  feeRecipient: Address;
+  pubKeyRoot: Address;
   rewards: bigint;
   nodeOperatorFee: bigint;
   treasuryFee: bigint;
 };
 
 type Withdrawal = {
-  data: `0x${string}`;
-  topics: [signature: `0x${string}`, ...args: Array<`0x${string}`>];
+  data: Address;
+  topics: [signature: Hex, ...args: Array<Address>];
 };
 
 class WithdrawalEventBuilder<T extends WithdrawalArgs>

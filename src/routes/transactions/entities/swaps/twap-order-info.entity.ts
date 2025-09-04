@@ -14,6 +14,7 @@ import {
   ApiPropertyOptional,
   getSchemaPath,
 } from '@nestjs/swagger';
+import type { Address } from 'viem';
 
 export enum DurationType {
   Auto = 'AUTO',
@@ -66,7 +67,7 @@ export class StartTimeAtEpoch {
 export type TwapOrderInfo = {
   status: OrderStatus;
   kind: OrderKind.Sell;
-  activeOrderUid: `0x${string}` | null;
+  activeOrderUid: Address | null;
   class: OrderClass.Limit;
   validUntil: number;
   sellAmount: string;
@@ -79,8 +80,8 @@ export type TwapOrderInfo = {
   executedFeeToken: TokenInfo;
   sellToken: TokenInfo;
   buyToken: TokenInfo;
-  receiver: `0x${string}`;
-  owner: `0x${string}`;
+  receiver: Address;
+  owner: Address;
   numberOfParts: string;
   partSellAmount: string;
   minPartLimit: string;
@@ -120,7 +121,7 @@ export class TwapOrderTransactionInfo
     nullable: true,
     description: 'The order UID of the active order, or null if none is active',
   })
-  activeOrderUid: `0x${string}` | null;
+  activeOrderUid: Address | null;
 
   @ApiProperty({ description: 'The timestamp when the TWAP expires' })
   validUntil: number;
@@ -176,12 +177,12 @@ export class TwapOrderTransactionInfo
   @ApiProperty({
     description: 'The address to receive the proceeds of the trade',
   })
-  receiver: `0x${string}`;
+  receiver: Address;
 
   @ApiProperty({
     type: String,
   })
-  owner: `0x${string}`;
+  owner: Address;
 
   @ApiPropertyOptional({
     type: Object,
@@ -231,7 +232,7 @@ export class TwapOrderTransactionInfo
   constructor(args: {
     status: OrderStatus;
     kind: OrderKind.Sell;
-    activeOrderUid: `0x${string}` | null;
+    activeOrderUid: Address | null;
     class: OrderClass.Limit;
     validUntil: number;
     sellAmount: string;
@@ -242,8 +243,8 @@ export class TwapOrderTransactionInfo
     executedFeeToken: TokenInfo;
     sellToken: TokenInfo;
     buyToken: TokenInfo;
-    receiver: `0x${string}`;
-    owner: `0x${string}`;
+    receiver: Address;
+    owner: Address;
     fullAppData: Record<string, unknown> | null;
     numberOfParts: string;
     partSellAmount: string;

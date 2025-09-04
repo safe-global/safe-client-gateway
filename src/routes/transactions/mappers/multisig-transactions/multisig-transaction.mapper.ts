@@ -13,7 +13,7 @@ import { MultisigTransactionStatusMapper } from '@/routes/transactions/mappers/m
 import { TransactionVerifierHelper } from '@/routes/transactions/helpers/transaction-verifier.helper';
 import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
 import { DataDecodedParamHelper } from '@/routes/transactions/mappers/common/data-decoded-param.helper';
-import { getAddress, isAddress } from 'viem';
+import { type Address, getAddress, isAddress } from 'viem';
 import { DataDecoded } from '@/domain/data-decoder/v2/entities/data-decoded.entity';
 import { IDataDecoderRepository } from '@/domain/data-decoder/v2/data-decoder.repository.interface';
 
@@ -79,7 +79,7 @@ export class MultisigTransactionMapper {
     chainId: string;
     transactions: Array<MultisigTransaction>;
   }): Promise<void> {
-    const addresses: Set<`0x${string}`> = new Set();
+    const addresses: Set<Address> = new Set();
     for (const transaction of args.transactions) {
       addresses.add(transaction.safe);
       addresses.add(transaction.to);

@@ -26,6 +26,7 @@ import { UserStatus } from '@/domain/users/entities/user.entity';
 import { getEnumKey } from '@/domain/common/utils/enum';
 import { nameBuilder } from '@/domain/common/entities/name.builder';
 import { createTestModule } from '@/__tests__/testing-module';
+import type { Address } from 'viem';
 
 describe('SpacesController', () => {
   let app: INestApplication<Server>;
@@ -162,7 +163,7 @@ describe('SpacesController', () => {
 
     it('Should return a 403 if the AuthPayload is empty', async () => {
       const authPayloadDto = authPayloadDtoBuilder()
-        .with('signer_address', undefined as unknown as `0x${string}`)
+        .with('signer_address', undefined as unknown as Address)
         .build();
       const accessToken = jwtService.sign(authPayloadDto);
 
@@ -302,7 +303,7 @@ describe('SpacesController', () => {
 
     it('Should return a 403 if the AuthPayload is empty', async () => {
       const authPayloadDto = authPayloadDtoBuilder()
-        .with('signer_address', undefined as unknown as `0x${string}`)
+        .with('signer_address', undefined as unknown as Address)
         .build();
       const accessToken = jwtService.sign(authPayloadDto);
 
@@ -445,7 +446,7 @@ describe('SpacesController', () => {
 
     it('Should return a 403 is the AuthPayload is empty', async () => {
       const authPayloadDto = authPayloadDtoBuilder()
-        .with('signer_address', undefined as unknown as `0x${string}`)
+        .with('signer_address', undefined as unknown as Address)
         .build();
       const accessToken = jwtService.sign(authPayloadDto);
 
@@ -678,7 +679,7 @@ describe('SpacesController', () => {
 
     it('Should return a 403 is the AuthPayload is empty', async () => {
       const authPayloadDto = authPayloadDtoBuilder()
-        .with('signer_address', undefined as unknown as `0x${string}`)
+        .with('signer_address', undefined as unknown as Address)
         .build();
       const accessToken = jwtService.sign(authPayloadDto);
 
@@ -742,7 +743,7 @@ describe('SpacesController', () => {
 
     it('Should return a 403 is the AuthPayload is empty', async () => {
       const authPayloadDto = authPayloadDtoBuilder()
-        .with('signer_address', undefined as unknown as `0x${string}`)
+        .with('signer_address', undefined as unknown as Address)
         .build();
       const accessToken = jwtService.sign(authPayloadDto);
       const spaceId = faker.number.int({ min: 1 });
@@ -1106,7 +1107,7 @@ describe('SpacesController', () => {
 
     it('Should return a 403 is the AuthPayload is empty', async () => {
       const authPayloadDto = authPayloadDtoBuilder()
-        .with('signer_address', undefined as unknown as `0x${string}`)
+        .with('signer_address', undefined as unknown as Address)
         .build();
       const accessToken = jwtService.sign(authPayloadDto);
       const spaceId = faker.number.int({ min: 1 });

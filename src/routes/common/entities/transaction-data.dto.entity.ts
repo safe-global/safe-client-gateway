@@ -2,6 +2,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { z } from 'zod';
 import { HexSchema } from '@/validation/entities/schemas/hex.schema';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
+import type { Address } from 'viem';
 
 export const TransactionDataDtoSchema = z.object({
   data: HexSchema,
@@ -12,11 +13,11 @@ export class TransactionDataDto
   implements z.infer<typeof TransactionDataDtoSchema>
 {
   @ApiProperty({ description: 'Hexadecimal value' })
-  data: `0x${string}`;
+  data: Address;
   @ApiPropertyOptional({ description: 'The target Ethereum address' })
-  to: `0x${string}`;
+  to: Address;
 
-  constructor(data: `0x${string}`, to: `0x${string}`) {
+  constructor(data: Address, to: Address) {
     this.data = data;
     this.to = to;
   }

@@ -5,6 +5,7 @@ import { AddRecoveryModuleDto } from '@/routes/recovery/entities/add-recovery-mo
 import { AlertsRegistration } from '@/domain/alerts/entities/alerts-registration.entity';
 import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 import { ISafeRepository } from '@/domain/safe/safe.repository.interface';
+import type { Address } from 'viem';
 
 @Injectable()
 export class RecoveryService {
@@ -17,7 +18,7 @@ export class RecoveryService {
 
   async addRecoveryModule(args: {
     chainId: string;
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
     addRecoveryModuleDto: AddRecoveryModuleDto;
     authPayload: AuthPayload;
   }): Promise<void> {
@@ -67,8 +68,8 @@ export class RecoveryService {
 
   async deleteRecoveryModule(args: {
     chainId: string;
-    moduleAddress: `0x${string}`;
-    safeAddress: `0x${string}`;
+    moduleAddress: Address;
+    safeAddress: Address;
     authPayload: AuthPayload;
   }): Promise<void> {
     if (

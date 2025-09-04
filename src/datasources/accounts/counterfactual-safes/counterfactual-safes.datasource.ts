@@ -14,6 +14,7 @@ import { ICounterfactualSafesDatasource } from '@/domain/interfaces/counterfactu
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import postgres from 'postgres';
+import type { Address } from 'viem';
 
 @Injectable()
 export class CounterfactualSafesDatasource
@@ -67,9 +68,9 @@ export class CounterfactualSafesDatasource
   }
 
   async getCounterfactualSafe(args: {
-    address: `0x${string}`;
+    address: Address;
     chainId: string;
-    predictedAddress: `0x${string}`;
+    predictedAddress: Address;
   }): Promise<CounterfactualSafe> {
     const cacheDir = CacheRouter.getCounterfactualSafeCacheDir(
       args.chainId,
@@ -95,7 +96,7 @@ export class CounterfactualSafesDatasource
   }
 
   getCounterfactualSafesForAddress(
-    address: `0x${string}`,
+    address: Address,
   ): Promise<Array<CounterfactualSafe>> {
     const cacheDir = CacheRouter.getCounterfactualSafesCacheDir(address);
     return this.cachedQueryResolver.get<Array<CounterfactualSafe>>({
@@ -110,7 +111,7 @@ export class CounterfactualSafesDatasource
   async deleteCounterfactualSafe(args: {
     account: Account;
     chainId: string;
-    predictedAddress: `0x${string}`;
+    predictedAddress: Address;
   }): Promise<void> {
     try {
       const { count } = await this

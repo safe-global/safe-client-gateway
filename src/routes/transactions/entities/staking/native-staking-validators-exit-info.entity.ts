@@ -5,6 +5,7 @@ import {
   TransactionInfoType,
 } from '@/routes/transactions/entities/transaction-info.entity';
 import { ApiProperty } from '@nestjs/swagger';
+import type { Address } from 'viem';
 
 export class NativeStakingValidatorsExitTransactionInfo extends TransactionInfo {
   @ApiProperty({ enum: [TransactionInfoType.NativeStakingValidatorsExit] })
@@ -29,7 +30,7 @@ export class NativeStakingValidatorsExitTransactionInfo extends TransactionInfo 
   tokenInfo: TokenInfo;
 
   @ApiProperty()
-  validators: Array<`0x${string}`>;
+  validators: Array<Address>;
 
   constructor(args: {
     status: StakingStatus;
@@ -38,7 +39,7 @@ export class NativeStakingValidatorsExitTransactionInfo extends TransactionInfo 
     value: string;
     numValidators: number;
     tokenInfo: TokenInfo;
-    validators: Array<`0x${string}`>;
+    validators: Array<Address>;
   }) {
     super(TransactionInfoType.NativeStakingValidatorsExit, null);
     this.status = args.status;

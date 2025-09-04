@@ -4,6 +4,7 @@ import type { Outreach } from '@/domain/targeted-messaging/entities/outreach.ent
 import type { Submission } from '@/domain/targeted-messaging/entities/submission.entity';
 import type { TargetedSafe } from '@/domain/targeted-messaging/entities/targeted-safe.entity';
 import type { UpdateOutreachDto } from '@/domain/targeted-messaging/entities/update-outreach.dto.entity';
+import type { Address } from 'viem';
 
 export const ITargetedMessagingDatasource = Symbol(
   'ITargetedMessagingDatasource',
@@ -26,16 +27,16 @@ export interface ITargetedMessagingDatasource {
 
   getTargetedSafe(args: {
     outreachId: number;
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
   }): Promise<TargetedSafe>;
 
   createSubmission(args: {
     targetedSafe: TargetedSafe;
-    signerAddress: `0x${string}`;
+    signerAddress: Address;
   }): Promise<Submission>;
 
   getSubmission(args: {
     targetedSafe: TargetedSafe;
-    signerAddress: `0x${string}`;
+    signerAddress: Address;
   }): Promise<Submission>;
 }

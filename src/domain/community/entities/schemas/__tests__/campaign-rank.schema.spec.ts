@@ -1,7 +1,7 @@
 import { campaignRankBuilder } from '@/domain/community/entities/__tests__/campaign-rank.builder';
 import { CampaignRankSchema } from '@/domain/community/entities/campaign-rank.entity';
 import { faker } from '@faker-js/faker';
-import { getAddress } from 'viem';
+import { type Address, getAddress } from 'viem';
 import { ZodError } from 'zod';
 
 describe('CampaignRankSchema', () => {
@@ -16,7 +16,7 @@ describe('CampaignRankSchema', () => {
   it('should checksum the holder address', () => {
     const nonChecksummedAddress = faker.finance
       .ethereumAddress()
-      .toLowerCase() as `0x${string}`;
+      .toLowerCase() as Address;
     const campaignRank = campaignRankBuilder()
       .with('holder', nonChecksummedAddress)
       .build();

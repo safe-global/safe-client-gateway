@@ -9,6 +9,7 @@ import {
   TransactionInfoType,
 } from '@/routes/transactions/entities/transaction-info.entity';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import type { Address } from 'viem';
 
 export type NativeStakingDepositInfo = StakingTimeInfo & StakingFinancialInfo;
 
@@ -67,7 +68,7 @@ export class NativeStakingDepositTransactionInfo
     nullable: true,
     description: 'Populated after transaction has been executed',
   })
-  validators: Array<`0x${string}`> | null;
+  validators: Array<Address> | null;
 
   constructor(args: {
     status: StakingStatus;
@@ -84,7 +85,7 @@ export class NativeStakingDepositTransactionInfo
     expectedFiatAnnualReward: number;
     expectedFiatMonthlyReward: number;
     tokenInfo: TokenInfo;
-    validators: Array<`0x${string}`> | null;
+    validators: Array<Address> | null;
   }) {
     super(TransactionInfoType.NativeStakingDeposit, null);
     this.status = args.status;

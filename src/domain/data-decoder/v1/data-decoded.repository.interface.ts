@@ -2,6 +2,7 @@ import { DataDecoded } from '@/domain/data-decoder/v1/entities/data-decoded.enti
 import { Module } from '@nestjs/common';
 import { DataDecodedRepository } from '@/domain/data-decoder/v1/data-decoded.repository';
 import { TransactionApiManagerModule } from '@/domain/interfaces/transaction-api.manager.interface';
+import type { Address } from 'viem';
 
 export const IDataDecodedRepository = Symbol('IDataDecodedRepository');
 
@@ -12,8 +13,8 @@ export interface IDataDecodedRepository {
    */
   getDataDecoded(args: {
     chainId: string;
-    data: `0x${string}`;
-    to?: `0x${string}`;
+    data: Address;
+    to?: Address;
   }): Promise<DataDecoded>;
 }
 

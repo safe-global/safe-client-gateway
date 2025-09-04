@@ -1,6 +1,6 @@
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
-import type { Hex } from 'viem';
+import type { Address, Hex } from 'viem';
 import { transactionExportBuilder } from '@/modules/csv-export/v1/entities/__tests__/transaction-export.builder';
 import { TransactionExportSchema } from '@/modules/csv-export/v1/entities/transaction-export.entity';
 
@@ -22,13 +22,13 @@ describe('TransactionExportSchema', () => {
     const contractAddress = faker.finance.ethereumAddress().toLowerCase();
 
     const transactionExportData = transactionExportBuilder()
-      .with('safe', safe as `0x${string}`)
-      .with('from', from as `0x${string}`)
-      .with('to', to as `0x${string}`)
-      .with('assetAddress', assetAddress as `0x${string}`)
-      .with('proposerAddress', proposerAddress as `0x${string}`)
-      .with('executorAddress', executorAddress as `0x${string}`)
-      .with('contractAddress', contractAddress as `0x${string}`)
+      .with('safe', safe as Address)
+      .with('from', from as Address)
+      .with('to', to as Address)
+      .with('assetAddress', assetAddress as Address)
+      .with('proposerAddress', proposerAddress as Address)
+      .with('executorAddress', executorAddress as Address)
+      .with('contractAddress', contractAddress as Address)
       .build();
 
     const result = TransactionExportSchema.safeParse(transactionExportData);
@@ -68,7 +68,7 @@ describe('TransactionExportSchema', () => {
     'contractAddress',
   ] as const)('should validate %s as a valid address', (field) => {
     const transactionExportData = transactionExportBuilder()
-      .with(field, '0x123' as `0x${string}`)
+      .with(field, '0x123' as Address)
       .build();
 
     const result = TransactionExportSchema.safeParse(transactionExportData);

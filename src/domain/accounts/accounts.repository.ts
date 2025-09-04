@@ -11,6 +11,7 @@ import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 import { IAccountsDatasource } from '@/domain/interfaces/accounts.datasource.interface';
 import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { Request } from 'express';
+import type { Address } from 'viem';
 
 @Injectable()
 export class AccountsRepository implements IAccountsRepository {
@@ -39,7 +40,7 @@ export class AccountsRepository implements IAccountsRepository {
 
   async getAccount(args: {
     authPayload: AuthPayload;
-    address: `0x${string}`;
+    address: Address;
   }): Promise<Account> {
     if (!args.authPayload.isForSigner(args.address)) {
       throw new UnauthorizedException();
@@ -50,7 +51,7 @@ export class AccountsRepository implements IAccountsRepository {
 
   async deleteAccount(args: {
     authPayload: AuthPayload;
-    address: `0x${string}`;
+    address: Address;
   }): Promise<void> {
     if (!args.authPayload.isForSigner(args.address)) {
       throw new UnauthorizedException();
@@ -64,7 +65,7 @@ export class AccountsRepository implements IAccountsRepository {
 
   async getAccountDataSettings(args: {
     authPayload: AuthPayload;
-    address: `0x${string}`;
+    address: Address;
   }): Promise<Array<AccountDataSetting>> {
     if (!args.authPayload.isForSigner(args.address)) {
       throw new UnauthorizedException();
@@ -75,7 +76,7 @@ export class AccountsRepository implements IAccountsRepository {
 
   async upsertAccountDataSettings(args: {
     authPayload: AuthPayload;
-    address: `0x${string}`;
+    address: Address;
     upsertAccountDataSettingsDto: UpsertAccountDataSettingsDto;
   }): Promise<Array<AccountDataSetting>> {
     const { address, upsertAccountDataSettingsDto } = args;

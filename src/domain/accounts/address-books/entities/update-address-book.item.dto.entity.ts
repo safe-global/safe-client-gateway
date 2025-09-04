@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import type { Address } from 'viem';
 
 export const UpdateAddressBookItemDtoSchema = z.object({
   id: z.number(),
@@ -11,7 +12,7 @@ export class UpdateAddressBookItemDto
 {
   id: number;
   name: string;
-  address: `0x${string}`;
+  address: Address;
 
   constructor(props: UpdateAddressBookItemDto) {
     this.id = props.id;

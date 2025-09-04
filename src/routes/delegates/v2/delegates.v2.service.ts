@@ -10,6 +10,7 @@ import { CreateDelegateDto } from '@/routes/delegates/entities/create-delegate.d
 import { GetDelegateDto } from '@/routes/delegates/entities/get-delegate.dto.entity';
 import { DeleteDelegateV2Dto } from '@/routes/delegates/v2/entities/delete-delegate.v2.dto.entity';
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import type { Address } from 'viem';
 
 @Injectable()
 export class DelegatesV2Service {
@@ -66,7 +67,7 @@ export class DelegatesV2Service {
 
   async deleteDelegate(args: {
     chainId: string;
-    delegateAddress: `0x${string}`;
+    delegateAddress: Address;
     deleteDelegateV2Dto: DeleteDelegateV2Dto;
   }): Promise<unknown> {
     const { deleteDelegateV2Dto } = args;
@@ -97,9 +98,9 @@ export class DelegatesV2Service {
 
   private async _getDelegatorForDelegateAndSafe(
     chainId: string,
-    delegate: `0x${string}`,
-    safeAddress: `0x${string}`,
-  ): Promise<`0x${string}`> {
+    delegate: Address,
+    safeAddress: Address,
+  ): Promise<Address> {
     const response = await this.repository.getDelegates({
       chainId,
       delegate,

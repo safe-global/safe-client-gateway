@@ -23,6 +23,7 @@ import {
 import { Erc20Transfer } from '@/routes/transactions/entities/transfers/erc20-transfer.entity';
 import { Erc721Transfer } from '@/routes/transactions/entities/transfers/erc721-transfer.entity';
 import { NativeCoinTransfer } from '@/routes/transactions/entities/transfers/native-coin-transfer.entity';
+import type { Address } from 'viem';
 
 export class SwapTransferTransactionInfo
   extends TransactionInfo
@@ -124,7 +125,7 @@ export class SwapTransferTransactionInfo
   @ApiProperty({
     type: String,
   })
-  owner: `0x${string}`;
+  owner: Address;
 
   @ApiPropertyOptional({
     type: Object,
@@ -156,7 +157,7 @@ export class SwapTransferTransactionInfo
     executedFee: string;
     executedFeeToken: TokenInfo;
     receiver: string | null;
-    owner: `0x${string}`;
+    owner: Address;
     fullAppData: Record<string, unknown> | null;
   }) {
     // TransferTransactionInfo constructor

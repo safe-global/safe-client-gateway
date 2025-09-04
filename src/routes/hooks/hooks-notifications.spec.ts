@@ -20,7 +20,7 @@ import { IConfigurationService } from '@/config/configuration.service.interface'
 import type { INetworkService } from '@/datasources/network/network.service.interface';
 import { NetworkService } from '@/datasources/network/network.service.interface';
 import { faker } from '@faker-js/faker';
-import { getAddress } from 'viem';
+import { getAddress, type Hash, type Hex } from 'viem';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import { nativeTokenTransferBuilder } from '@/domain/safe/entities/__tests__/native-token-transfer.builder';
 import { erc721TransferBuilder } from '@/domain/safe/entities/__tests__/erc721-transfer.builder';
@@ -207,15 +207,15 @@ describe('Hook Events for Notifications (Unit) pt. 1', () => {
           const transfers = [
             nativeTokenTransferBuilder()
               .with('to', event.address)
-              .with('transactionHash', event.txHash as `0x${string}`)
+              .with('transactionHash', event.txHash as Hash)
               .build(),
             erc721TransferBuilder()
               .with('to', event.address)
-              .with('transactionHash', event.txHash as `0x${string}`)
+              .with('transactionHash', event.txHash as Hash)
               .build(),
             erc20TransferBuilder()
               .with('to', event.address)
-              .with('transactionHash', event.txHash as `0x${string}`)
+              .with('transactionHash', event.txHash as Hash)
               .build(),
           ];
           return Promise.resolve({
@@ -291,17 +291,17 @@ describe('Hook Events for Notifications (Unit) pt. 1', () => {
             nativeTokenTransferBuilder()
               .with('from', event.address)
               .with('to', event.address)
-              .with('transactionHash', event.txHash as `0x${string}`)
+              .with('transactionHash', event.txHash as Hash)
               .build(),
             erc721TransferBuilder()
               .with('from', event.address)
               .with('to', event.address)
-              .with('transactionHash', event.txHash as `0x${string}`)
+              .with('transactionHash', event.txHash as Hash)
               .build(),
             erc20TransferBuilder()
               .with('from', event.address)
               .with('to', event.address)
-              .with('transactionHash', event.txHash as `0x${string}`)
+              .with('transactionHash', event.txHash as Hash)
               .build(),
           ];
           return Promise.resolve({
@@ -651,7 +651,7 @@ describe('Hook Events for Notifications (Unit) pt. 1', () => {
       const event = messageCreatedEventBuilder().build();
       const chain = chainBuilder().with('chainId', event.chainId).build();
       const message = messageBuilder()
-        .with('messageHash', event.messageHash as `0x${string}`)
+        .with('messageHash', event.messageHash as Hash)
         .build();
       const subscribers = faker.helpers.multiple(
         () => ({
@@ -812,7 +812,7 @@ describe('Hook Events for Notifications (Unit) pt. 1', () => {
         subscribers,
       );
       const message = messageBuilder()
-        .with('messageHash', event.messageHash as `0x${string}`)
+        .with('messageHash', event.messageHash as Hash)
         .with(
           'confirmations',
           subscribers.map((subscriber) => {
@@ -888,7 +888,7 @@ describe('Hook Events for Notifications (Unit) pt. 1', () => {
           return messageConfirmationBuilder().with('owner', owner).build();
         });
       const message = messageBuilder()
-        .with('messageHash', event.messageHash as `0x${string}`)
+        .with('messageHash', event.messageHash as Hash)
         .with('confirmations', confirmations)
         .build();
 
@@ -1309,7 +1309,7 @@ describe('Hook Events for Notifications (Unit) pt. 1', () => {
         .with('threshold', faker.number.int({ min: 2 }))
         .build();
       const message = messageBuilder()
-        .with('messageHash', event.messageHash as `0x${string}`)
+        .with('messageHash', event.messageHash as Hash)
         .build();
       const subscribers = faker.helpers.multiple(
         () => ({
@@ -1471,7 +1471,7 @@ describe('Hook Events for Notifications (Unit) pt. 1', () => {
           .build();
       });
       const message = messageBuilder()
-        .with('messageHash', event.messageHash as `0x${string}`)
+        .with('messageHash', event.messageHash as Hash)
         .with(
           'confirmations',
           subscribers.map((subscriber) => {
@@ -1558,7 +1558,7 @@ describe('Hook Events for Notifications (Unit) pt. 1', () => {
           return messageConfirmationBuilder().with('owner', owner).build();
         });
       const message = messageBuilder()
-        .with('messageHash', event.messageHash as `0x${string}`)
+        .with('messageHash', event.messageHash as Hash)
         .with('confirmations', confirmations)
         .build();
 
@@ -1702,7 +1702,7 @@ describe('Hook Events for Notifications (Unit) pt. 1', () => {
         .with('threshold', faker.number.int({ min: 2 }))
         .build();
       const message = messageBuilder()
-        .with('messageHash', event.messageHash as `0x${string}`)
+        .with('messageHash', event.messageHash as Hash)
         .build();
       const subscribers = faker.helpers.multiple(
         () => ({
@@ -1849,8 +1849,7 @@ describe('Hook Events for Notifications (Unit) pt. 1', () => {
           data: rawify(safe),
         });
       } else if (url === `${chain.transactionService}/api/v2/delegates/`) {
-        const payloadDelegate = networkRequest?.params
-          ?.delegate as `0x${string}`;
+        const payloadDelegate = networkRequest?.params?.delegate as Hex;
         const delegator = delegateDelegators[payloadDelegate];
         const results = delegator
           ? [
@@ -1968,7 +1967,7 @@ describe('Hook Events for Notifications (Unit) pt. 1', () => {
       )
       .build();
     const message = messageBuilder()
-      .with('messageHash', event.messageHash as `0x${string}`)
+      .with('messageHash', event.messageHash as Hash)
       .with('confirmations', [
         messageConfirmationBuilder().with('owner', safeOwners[0]).build(),
       ])
@@ -1993,8 +1992,7 @@ describe('Hook Events for Notifications (Unit) pt. 1', () => {
           data: rawify(safe),
         });
       } else if (url === `${chain.transactionService}/api/v2/delegates/`) {
-        const payloadDelegate = networkRequest?.params
-          ?.delegate as `0x${string}`;
+        const payloadDelegate = networkRequest?.params?.delegate as Hex;
         const delegator = delegateDelegators[payloadDelegate];
         const results = delegator
           ? [

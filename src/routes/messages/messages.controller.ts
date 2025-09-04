@@ -24,6 +24,7 @@ import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import { UpdateMessageSignatureDtoSchema } from '@/routes/messages/entities/schemas/update-message-signature.dto.schema';
 import { CreateMessageDtoSchema } from '@/routes/messages/entities/schemas/create-message.dto.schema';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
+import type { Address, Hash } from 'viem';
 
 @ApiTags('messages')
 @Controller({
@@ -59,7 +60,7 @@ export class MessagesController {
   @Get('chains/:chainId/messages/:messageHash')
   async getMessageByHash(
     @Param('chainId') chainId: string,
-    @Param('messageHash') messageHash: `0x${string}`,
+    @Param('messageHash') messageHash: Hash,
   ): Promise<Message> {
     return this.messagesService.getMessageByHash({ chainId, messageHash });
   }
@@ -97,7 +98,7 @@ export class MessagesController {
   async getMessagesBySafe(
     @Param('chainId') chainId: string,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
-    safeAddress: `0x${string}`,
+    safeAddress: Address,
     @RouteUrlDecorator() routeUrl: URL,
     @PaginationDataDecorator() paginationData: PaginationData,
   ): Promise<Page<DateLabel | MessageItem>> {
@@ -140,7 +141,7 @@ export class MessagesController {
   async createMessage(
     @Param('chainId') chainId: string,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
-    safeAddress: `0x${string}`,
+    safeAddress: Address,
     @Body(new ValidationPipe(CreateMessageDtoSchema))
     createMessageDto: CreateMessageDto,
   ): Promise<unknown> {
@@ -184,7 +185,7 @@ export class MessagesController {
   @Post('chains/:chainId/messages/:messageHash/signatures')
   async updateMessageSignature(
     @Param('chainId') chainId: string,
-    @Param('messageHash') messageHash: `0x${string}`,
+    @Param('messageHash') messageHash: Hash,
     @Body(new ValidationPipe(UpdateMessageSignatureDtoSchema))
     updateMessageSignatureDto: UpdateMessageSignatureDto,
   ): Promise<unknown> {

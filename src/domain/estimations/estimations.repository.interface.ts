@@ -3,13 +3,14 @@ import { GetEstimationDto } from '@/domain/estimations/entities/get-estimation.d
 import { Module } from '@nestjs/common';
 import { EstimationsRepository } from '@/domain/estimations/estimations.repository';
 import { TransactionApiManagerModule } from '@/domain/interfaces/transaction-api.manager.interface';
+import type { Address } from 'viem';
 
 export const IEstimationsRepository = Symbol('IEstimationsRepository');
 
 export interface IEstimationsRepository {
   getEstimation(args: {
     chainId: string;
-    address: `0x${string}`;
+    address: Address;
     getEstimationDto: GetEstimationDto;
   }): Promise<Estimation>;
 }

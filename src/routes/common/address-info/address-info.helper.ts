@@ -5,6 +5,7 @@ import { TokenRepository } from '@/domain/tokens/token.repository';
 import { ITokenRepository } from '@/domain/tokens/token.repository.interface';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { AddressInfo } from '@/routes/common/entities/address-info.entity';
+import type { Address } from 'viem';
 
 export type Source = 'CONTRACT' | 'TOKEN';
 
@@ -36,7 +37,7 @@ export class AddressInfoHelper {
 
   async get(
     chainId: string,
-    address: `0x${string}`,
+    address: Address,
     sources: Array<Source>,
   ): Promise<AddressInfo> {
     for (const source of sources) {
@@ -65,7 +66,7 @@ export class AddressInfoHelper {
    */
   async getOrDefault(
     chainId: string,
-    address: `0x${string}`,
+    address: Address,
     sources: Array<Source>,
   ): Promise<AddressInfo> {
     return this.get(chainId, address, sources).catch(
@@ -82,7 +83,7 @@ export class AddressInfoHelper {
    */
   async getCollection(
     chainId: string,
-    addresses: Array<`0x${string}`>,
+    addresses: Array<Address>,
     sources: Array<Source>,
   ): Promise<Array<AddressInfo>> {
     return Promise.allSettled(
@@ -97,7 +98,7 @@ export class AddressInfoHelper {
 
   private async _getFromSource(
     chainId: string,
-    address: `0x${string}`,
+    address: Address,
     source: Source,
   ): Promise<AddressInfo> {
     switch (source) {

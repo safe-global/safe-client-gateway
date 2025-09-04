@@ -2,7 +2,7 @@ import { newConfirmationEventBuilder } from '@/routes/hooks/entities/__tests__/n
 import type { TransactionEventType } from '@/routes/hooks/entities/event-type.entity';
 import { NewConfirmationEventSchema } from '@/routes/hooks/entities/schemas/new-confirmation.schema';
 import { faker } from '@faker-js/faker';
-import { getAddress } from 'viem';
+import { type Address, getAddress } from 'viem';
 import { ZodError } from 'zod';
 
 describe('NewConfirmationEventSchema', () => {
@@ -41,7 +41,7 @@ describe('NewConfirmationEventSchema', () => {
     'should not allow a non-address %s',
     (field) => {
       const newConfirmationEvent = newConfirmationEventBuilder()
-        .with(field, faker.string.alpha() as `0x${string}`)
+        .with(field, faker.string.alpha() as Address)
         .build();
 
       const result = NewConfirmationEventSchema.safeParse(newConfirmationEvent);
@@ -63,7 +63,7 @@ describe('NewConfirmationEventSchema', () => {
     (field) => {
       const nonChecksummedAddress = faker.finance
         .ethereumAddress()
-        .toLowerCase() as `0x${string}`;
+        .toLowerCase() as Address;
       const newConfirmationEvent = newConfirmationEventBuilder()
         .with(field, nonChecksummedAddress)
         .build();

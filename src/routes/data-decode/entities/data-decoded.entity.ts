@@ -12,6 +12,7 @@ import {
   DataDecodedAccuracy,
 } from '@/domain/data-decoder/v2/entities/data-decoded.entity';
 import { Operation } from '@/domain/safe/entities/operation.entity';
+import type { Address, Hex } from 'viem';
 
 class BaseDataDecoded implements DomainBaseDataDecoded {
   @ApiProperty()
@@ -32,10 +33,10 @@ class MultiSend implements DomainMultiSend {
   dataDecoded!: BaseDataDecoded;
 
   @ApiProperty()
-  to!: `0x${string}`;
+  to!: Address;
 
   @ApiPropertyOptional()
-  data!: `0x${string}` | null;
+  data!: Hex | null;
 }
 
 @ApiExtraModels(MultiSend, BaseDataDecoded)

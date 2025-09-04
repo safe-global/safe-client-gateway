@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { Hex } from 'viem';
+import { type Hex } from 'viem';
 import { IAlertsRepository } from '@/domain/alerts/alerts.repository.interface';
 import { IAlertsApi } from '@/domain/interfaces/alerts-api.interface';
 import { AlertsRegistration } from '@/domain/alerts/entities/alerts-registration.entity';

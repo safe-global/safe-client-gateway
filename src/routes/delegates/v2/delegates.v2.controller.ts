@@ -32,6 +32,7 @@ import {
   ApiBadRequestResponse,
   ApiNoContentResponse,
 } from '@nestjs/swagger';
+import type { Address } from 'viem';
 
 @ApiTags('delegates')
 @Controller({ version: '2' })
@@ -162,7 +163,7 @@ export class DelegatesV2Controller {
   @Delete('chains/:chainId/delegates/:delegateAddress')
   async deleteDelegate(
     @Param('chainId') chainId: string,
-    @Param('delegateAddress') delegateAddress: `0x${string}`,
+    @Param('delegateAddress') delegateAddress: Address,
     @Body(new ValidationPipe(DeleteDelegateV2DtoSchema))
     deleteDelegateV2Dto: DeleteDelegateV2Dto,
   ): Promise<unknown> {

@@ -4,6 +4,7 @@ import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { verifyMessage } from 'viem';
 import { generateSiweNonce, SiweMessage } from 'viem/siwe';
 import { SiweMessageSchema } from '@/domain/siwe/entities/siwe-message.entity';
+import type { Hex } from 'viem';
 
 @Injectable()
 export class SiweRepository implements ISiweRepository {
@@ -29,7 +30,7 @@ export class SiweRepository implements ISiweRepository {
 
   async getValidatedSiweMessage(args: {
     message: string;
-    signature: `0x${string}`;
+    signature: Hex;
   }): Promise<SiweMessage> {
     const result = SiweMessageSchema.safeParse(args.message);
     if (!result.success) {

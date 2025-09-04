@@ -16,7 +16,7 @@ import { tokenBuilder } from '@/domain/tokens/__tests__/token.builder';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
 import { NetworkService } from '@/datasources/network/network.service.interface';
 import { proposeTransactionDtoBuilder } from '@/routes/transactions/entities/__tests__/propose-transaction.dto.builder';
-import { concat, getAddress } from 'viem';
+import { type Address, concat, getAddress } from 'viem';
 import type { Server } from 'net';
 import { rawify } from '@/validation/entities/raw.entity';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
@@ -1037,7 +1037,7 @@ describe('Propose transaction - Transactions Controller (Unit)', () => {
         });
       transaction.data = faker.string.hexadecimal({
         length: 64,
-      }) as `0x${string}`;
+      }) as Address;
       const proposeTransactionDto = proposeTransactionDtoBuilder()
         .with('to', transaction.to)
         .with('value', transaction.value)
@@ -1120,7 +1120,7 @@ describe('Propose transaction - Transactions Controller (Unit)', () => {
           signers: [signer],
         });
       transaction.confirmations![0].signature =
-        transaction.confirmations![0].signature!.slice(0, 129) as `0x${string}`;
+        transaction.confirmations![0].signature!.slice(0, 129) as Address;
       const proposeTransactionDto = proposeTransactionDtoBuilder()
         .with('to', transaction.to)
         .with('value', transaction.value)
@@ -1168,7 +1168,7 @@ describe('Propose transaction - Transactions Controller (Unit)', () => {
           signers: [signer],
         });
       transaction.confirmations![0].signature =
-        transaction.confirmations![0].signature!.slice(0, 128) as `0x${string}`;
+        transaction.confirmations![0].signature!.slice(0, 128) as Address;
       const proposeTransactionDto = proposeTransactionDtoBuilder()
         .with('to', transaction.to)
         .with('value', transaction.value)

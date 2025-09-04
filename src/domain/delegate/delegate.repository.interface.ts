@@ -3,15 +3,16 @@ import { Page } from '@/domain/entities/page.entity';
 import { Module } from '@nestjs/common';
 import { DelegateRepository } from '@/domain/delegate/delegate.repository';
 import { TransactionApiManagerModule } from '@/domain/interfaces/transaction-api.manager.interface';
+import type { Address } from 'viem';
 
 export const IDelegateRepository = Symbol('IDelegateRepository');
 
 export interface IDelegateRepository {
   getDelegates(args: {
     chainId: string;
-    safeAddress?: `0x${string}`;
-    delegate?: `0x${string}`;
-    delegator?: `0x${string}`;
+    safeAddress?: Address;
+    delegate?: Address;
+    delegator?: Address;
     label?: string;
     limit?: number;
     offset?: number;
@@ -19,24 +20,24 @@ export interface IDelegateRepository {
 
   postDelegate(args: {
     chainId: string;
-    safeAddress: `0x${string}` | null;
-    delegate: `0x${string}`;
-    delegator: `0x${string}`;
+    safeAddress: Address | null;
+    delegate: Address;
+    delegator: Address;
     signature: string;
     label: string;
   }): Promise<void>;
 
   deleteDelegate(args: {
     chainId: string;
-    delegate: `0x${string}`;
-    delegator: `0x${string}`;
+    delegate: Address;
+    delegator: Address;
     signature: string;
   }): Promise<unknown>;
 
   deleteSafeDelegate(args: {
     chainId: string;
-    delegate: `0x${string}`;
-    safeAddress: `0x${string}`;
+    delegate: Address;
+    safeAddress: Address;
     signature: string;
   }): Promise<unknown>;
 }

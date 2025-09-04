@@ -5,20 +5,21 @@ import {
 } from '@/domain/safe/entities/multisig-transaction.entity';
 import { Operation } from '@/domain/safe/entities/operation.entity';
 import { ApiProperty } from '@nestjs/swagger';
+import type { Address, Hash, Hex } from 'viem';
 
 export class TXSMultisigTransaction implements DomainMultisigTransaction {
   @ApiProperty()
-  safe: `0x${string}`;
+  safe: Address;
   @ApiProperty()
-  to: `0x${string}`;
+  to: Address;
   @ApiProperty()
   value: string;
   @ApiProperty()
-  data: `0x${string}` | null;
+  data: Hex | null;
   @ApiProperty()
   operation: Operation;
   @ApiProperty()
-  gasToken: `0x${string}` | null;
+  gasToken: Address | null;
   @ApiProperty()
   safeTxGas: number | null;
   @ApiProperty()
@@ -26,11 +27,11 @@ export class TXSMultisigTransaction implements DomainMultisigTransaction {
   @ApiProperty()
   gasPrice: string | null;
   @ApiProperty()
-  proposer: `0x${string}` | null;
+  proposer: Address | null;
   @ApiProperty()
-  proposedByDelegate: `0x${string}` | null;
+  proposedByDelegate: Address | null;
   @ApiProperty()
-  refundReceiver: `0x${string}` | null;
+  refundReceiver: Address | null;
   @ApiProperty()
   nonce: number;
   @ApiProperty()
@@ -42,11 +43,11 @@ export class TXSMultisigTransaction implements DomainMultisigTransaction {
   @ApiProperty()
   blockNumber: number | null;
   @ApiProperty()
-  transactionHash: `0x${string}` | null;
+  transactionHash: Hash | null;
   @ApiProperty()
-  safeTxHash: `0x${string}`;
+  safeTxHash: Hash;
   @ApiProperty()
-  executor: `0x${string}` | null;
+  executor: Address | null;
   @ApiProperty()
   isExecuted: boolean;
   @ApiProperty()
@@ -64,32 +65,32 @@ export class TXSMultisigTransaction implements DomainMultisigTransaction {
   @ApiProperty()
   confirmations: Array<Confirmation> | null;
   @ApiProperty()
-  signatures: `0x${string}` | null;
+  signatures: Hex | null;
   @ApiProperty()
   trusted: boolean;
 
   constructor(args: {
-    safe: `0x${string}`;
-    to: `0x${string}`;
+    safe: Address;
+    to: Address;
     value: string;
-    data: `0x${string}` | null;
+    data: Hex | null;
     dataDecoded: DataDecoded | null;
     operation: Operation;
-    gasToken: `0x${string}` | null;
+    gasToken: Address | null;
     safeTxGas: number | null;
     baseGas: number | null;
     gasPrice: string | null;
-    proposer: `0x${string}` | null;
-    proposedByDelegate: `0x${string}` | null;
-    refundReceiver: `0x${string}` | null;
+    proposer: Address | null;
+    proposedByDelegate: Address | null;
+    refundReceiver: Address | null;
     nonce: number;
     executionDate: Date | null;
     submissionDate: Date;
     modified: Date | null;
     blockNumber: number | null;
-    transactionHash: `0x${string}` | null;
-    safeTxHash: `0x${string}`;
-    executor: `0x${string}` | null;
+    transactionHash: Hash | null;
+    safeTxHash: Hash;
+    executor: Address | null;
     isExecuted: boolean;
     isSuccessful: boolean | null;
     ethGasPrice: string | null;
@@ -98,7 +99,7 @@ export class TXSMultisigTransaction implements DomainMultisigTransaction {
     origin: string | null;
     confirmationsRequired: number;
     confirmations: Array<Confirmation> | null;
-    signatures: `0x${string}` | null;
+    signatures: Hex | null;
     trusted: boolean;
   }) {
     this.safe = args.safe;

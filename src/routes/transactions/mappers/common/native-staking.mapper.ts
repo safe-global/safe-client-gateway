@@ -20,6 +20,7 @@ import {
   KilnNativeStakingHelper,
   KilnNativeStakingHelperModule,
 } from '@/routes/transactions/helpers/kiln-native-staking.helper';
+import type { Address, Hash } from 'viem';
 
 @Injectable()
 export class NativeStakingMapper {
@@ -48,9 +49,9 @@ export class NativeStakingMapper {
    */
   public async mapDepositInfo(args: {
     chainId: string;
-    to: `0x${string}`;
+    to: Address;
     value: string | null;
-    txHash: `0x${string}` | null;
+    txHash: Hash | null;
   }): Promise<NativeStakingDepositTransactionInfo> {
     const [chain, deployment, rewardsFee] = await Promise.all([
       this.chainsRepository.getChain(args.chainId),
@@ -127,12 +128,12 @@ export class NativeStakingMapper {
    * @param args.txHash - the transaction hash of the deposit transaction
    * @param args.chainId - the chain ID of the native staking deployment
    *
-   * @returns {Array<`0x${string}`> | null} the public keys of the validators
+   * @returns {Array<Address> | null} the public keys of the validators
    */
   private async getDepositPublicKeys(args: {
-    txHash: `0x${string}` | null;
+    txHash: Hash | null;
     chainId: string;
-  }): Promise<Array<`0x${string}`> | null> {
+  }): Promise<Array<Address> | null> {
     if (!args.txHash) {
       return null;
     }
@@ -172,9 +173,9 @@ export class NativeStakingMapper {
    */
   public async mapValidatorsExitInfo(args: {
     chainId: string;
-    safeAddress: `0x${string}`;
-    to: `0x${string}`;
-    data: `0x${string}`;
+    safeAddress: Address;
+    to: Address;
+    data: Address;
   }): Promise<NativeStakingValidatorsExitTransactionInfo> {
     const [chain, deployment] = await Promise.all([
       this.chainsRepository.getChain(args.chainId),
@@ -234,10 +235,10 @@ export class NativeStakingMapper {
    */
   public async mapWithdrawInfo(args: {
     chainId: string;
-    safeAddress: `0x${string}`;
-    to: `0x${string}`;
-    txHash: `0x${string}` | null;
-    data: `0x${string}`;
+    safeAddress: Address;
+    to: Address;
+    txHash: Hash | null;
+    data: Address;
   }): Promise<NativeStakingWithdrawTransactionInfo> {
     const [chain, deployment] = await Promise.all([
       this.chainsRepository.getChain(args.chainId),
@@ -282,17 +283,17 @@ export class NativeStakingMapper {
    * we return the value get the exact value from the transaction logs instead.
    *
    * @param {string | nulle} args.txHash - the transaction hash of the withdraw transaction
-   * @param {Array<`0x${string}`>} args.publicKeys - the public keys to get the value for
+   * @param {Array<Address>} args.publicKeys - the public keys to get the value for
    * @param {string} args.chainId - the chain ID of the native staking deployment
    * @param {string} args.safeAddress - the Safe staking
    *
    * @returns {number} the value to withdraw or withdrawn
    */
   private async getWithdrawValue(args: {
-    txHash: `0x${string}` | null;
-    publicKeys: Array<`0x${string}`>;
+    txHash: Hash | null;
+    publicKeys: Array<Address>;
     chainId: string;
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
   }): Promise<number> {
     if (!args.txHash) {
       const stakes = await this.stakingRepository.getStakes({
@@ -352,8 +353,8 @@ export class NativeStakingMapper {
    */
   public async _getStatus(args: {
     chainId: string;
-    safeAddress: `0x${string}`;
-    publicKeys: Array<`0x${string}`> | null;
+    safeAddress: Address;
+    publicKeys: Array<Address> | null;
   }): Promise<StakingStatus> {
     if (!args.publicKeys || args.publicKeys.length === 0) {
       return StakingStatus.NotStaked;

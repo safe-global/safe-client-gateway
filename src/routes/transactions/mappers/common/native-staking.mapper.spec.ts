@@ -31,7 +31,7 @@ import { KilnNativeStakingHelper } from '@/routes/transactions/helpers/kiln-nati
 import { TransactionFinder } from '@/routes/transactions/helpers/transaction-finder.helper';
 import { NativeStakingMapper } from '@/routes/transactions/mappers/common/native-staking.mapper';
 import { faker } from '@faker-js/faker';
-import { concat, getAddress } from 'viem';
+import { type Address, concat, getAddress, type Hash } from 'viem';
 
 const mockStakingRepository = jest.mocked({
   getDeployment: jest.fn(),
@@ -243,7 +243,7 @@ describe('NativeStakingMapper', () => {
         casing: 'lower',
       });
       const depositEventEvent = depositEventEventBuilder()
-        .with('pubkey', pubkey as `0x${string}`)
+        .with('pubkey', pubkey as Address)
         .encode();
       const transactionStatus = transactionStatusBuilder()
         .with(
@@ -258,7 +258,7 @@ describe('NativeStakingMapper', () => {
             .build(),
         )
         .build();
-      const txHash = faker.string.hexadecimal() as `0x${string}`;
+      const txHash = faker.string.hexadecimal() as Hash;
       mockChainsRepository.getChain.mockResolvedValue(chain);
       mockStakingRepository.getDeployment.mockResolvedValue(deployment);
       mockStakingRepository.getNetworkStats.mockResolvedValue(networkStats);
@@ -413,7 +413,7 @@ describe('NativeStakingMapper', () => {
           length: KilnDecoder.KilnPublicKeyLength,
           casing: 'lower',
         }),
-      ] as Array<`0x${string}`>;
+      ] as Array<Address>;
       const transaction = multisigTransactionBuilder().build();
       const data = requestValidatorsExitEncoder()
         .with('_publicKeys', concat(validators))
@@ -537,7 +537,7 @@ describe('NativeStakingMapper', () => {
           length: KilnDecoder.KilnPublicKeyLength,
           casing: 'lower',
         }),
-      ] as Array<`0x${string}`>;
+      ] as Array<Address>;
       const data = batchWithdrawCLFeeEncoder()
         .with('_publicKeys', concat(validators))
         .encode();
@@ -611,7 +611,7 @@ describe('NativeStakingMapper', () => {
           length: KilnDecoder.KilnPublicKeyLength,
           casing: 'lower',
         }),
-      ] as Array<`0x${string}`>;
+      ] as Array<Address>;
       const withdrawalEvent = withdrawalEventBuilder();
       const withdrawalEventParams = withdrawalEvent.build();
       const withdrawalEventEncoded = withdrawalEvent.encode();
@@ -646,7 +646,7 @@ describe('NativeStakingMapper', () => {
         .with('_publicKeys', concat(validators))
         .encode();
       const safeAddress = getAddress(faker.finance.ethereumAddress());
-      const txHash = faker.string.hexadecimal() as `0x${string}`;
+      const txHash = faker.string.hexadecimal() as Hash;
       mockChainsRepository.getChain.mockResolvedValue(chain);
       mockStakingRepository.getDeployment.mockResolvedValue(deployment);
       mockStakingRepository.getNetworkStats.mockResolvedValue(networkStats);
@@ -762,7 +762,7 @@ describe('NativeStakingMapper', () => {
     it('should return NOT_STAKED if there are no public keys', async () => {
       const chainId = faker.string.numeric();
       const safeAddress = getAddress(faker.finance.ethereumAddress());
-      const publicKeys: Array<`0x${string}`> = [];
+      const publicKeys: Array<Address> = [];
 
       const actual = await target._getStatus({
         chainId,

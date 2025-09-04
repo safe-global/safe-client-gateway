@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import type { UUID } from 'crypto';
 import { DeleteAllSubscriptionsDto as DomainDeleteAllSubscriptionsDto } from '@/domain/notifications/v2/entities/delete-all-subscriptions.dto.entity';
+import type { Address } from 'viem';
 
 export class DeleteAllSubscriptionItemDto {
   @ApiProperty()
@@ -10,7 +11,7 @@ export class DeleteAllSubscriptionItemDto {
   public readonly deviceUuid!: UUID;
 
   @ApiProperty()
-  public readonly safeAddress!: `0x${string}`;
+  public readonly safeAddress!: Address;
 
   @ApiProperty({
     type: 'string',
@@ -22,7 +23,7 @@ export class DeleteAllSubscriptionItemDto {
       '• null: Deletes only subscriptions with no signer address\n' +
       '• Valid address: Deletes only subscriptions with that specific signer address',
   })
-  public readonly signerAddress?: `0x${string}` | null;
+  public readonly signerAddress?: Address | null;
 }
 
 export class DeleteAllSubscriptionsDto

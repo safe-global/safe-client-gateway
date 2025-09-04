@@ -1,6 +1,6 @@
 import type { IEncoder } from '@/__tests__/encoder-builder';
 import { faker } from '@faker-js/faker';
-import type { Hex } from 'viem';
+import type { Address, Hash, Hex } from 'viem';
 import {
   encodeAbiParameters,
   encodeEventTopics,
@@ -17,7 +17,7 @@ import { DelayModifierAbi } from '@/domain/alerts/contracts/decoders/delay-modif
 
 type TransactionAddedEventArgs = {
   queueNonce: bigint;
-  txHash: Hex;
+  txHash: Hash;
   to: Hex;
   value: bigint;
   data: Hex;
@@ -82,9 +82,9 @@ export function transactionAddedEventBuilder(): TransactionAddedEventBuilder<Tra
 // execTransactionFromModule
 
 type ExecTransactionFromModuleArgs = {
-  to: `0x${string}`;
+  to: Address;
   value: bigint;
-  data: `0x${string}`;
+  data: Address;
   operation: 0 | 1;
 };
 
@@ -92,7 +92,7 @@ class ExecTransactionFromModuleEncoder<T extends ExecTransactionFromModuleArgs>
   extends Builder<T>
   implements IEncoder
 {
-  encode(): `0x${string}` {
+  encode(): Address {
     const args = this.build();
 
     return encodeFunctionData({
@@ -107,16 +107,16 @@ export function execTransactionFromModuleEncoder(): ExecTransactionFromModuleEnc
   return new ExecTransactionFromModuleEncoder()
     .with('to', getAddress(faker.finance.ethereumAddress()))
     .with('value', faker.number.bigInt())
-    .with('data', faker.string.hexadecimal() as `0x${string}`)
+    .with('data', faker.string.hexadecimal() as Hex)
     .with('operation', faker.helpers.arrayElement([0, 1]));
 }
 
 // executeNextTx
 
 type ExecNextTxArgs = {
-  to: `0x${string}`;
+  to: Address;
   value: bigint;
-  data: `0x${string}`;
+  data: Address;
   operation: 0 | 1;
 };
 
@@ -124,7 +124,7 @@ class ExecNextTxEncoder<T extends ExecNextTxArgs>
   extends Builder<T>
   implements IEncoder
 {
-  encode(): `0x${string}` {
+  encode(): Address {
     const args = this.build();
 
     return encodeFunctionData({
@@ -139,6 +139,6 @@ export function executeNextTxEncoder(): ExecNextTxEncoder<ExecNextTxArgs> {
   return new ExecNextTxEncoder()
     .with('to', getAddress(faker.finance.ethereumAddress()))
     .with('value', faker.number.bigInt())
-    .with('data', faker.string.hexadecimal() as `0x${string}`)
+    .with('data', faker.string.hexadecimal() as Hex)
     .with('operation', faker.helpers.arrayElement([0, 1]));
 }

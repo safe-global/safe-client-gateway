@@ -30,6 +30,7 @@ import {
   UnprocessableEntityException,
 } from '@nestjs/common';
 import postgres from 'postgres';
+import { type Address } from 'viem';
 
 @Injectable()
 export class TargetedMessagingDatasource
@@ -195,7 +196,7 @@ export class TargetedMessagingDatasource
 
   async getTargetedSafe(args: {
     outreachId: number;
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
   }): Promise<TargetedSafe> {
     const [dbTargetedSafe] = await this.cachedQueryResolver.get<
       Array<DbTargetedSafe>
@@ -216,7 +217,7 @@ export class TargetedMessagingDatasource
 
   async createSubmission(args: {
     targetedSafe: TargetedSafe;
-    signerAddress: `0x${string}`;
+    signerAddress: Address;
   }): Promise<Submission> {
     const [dbSubmission] = await this.sql<Array<DbSubmission>>`
       INSERT INTO submissions (targeted_safe_id, signer_address, completion_date)
@@ -236,7 +237,7 @@ export class TargetedMessagingDatasource
 
   async getSubmission(args: {
     targetedSafe: TargetedSafe;
-    signerAddress: `0x${string}`;
+    signerAddress: Address;
   }): Promise<Submission> {
     const [dbSubmission] = await this.cachedQueryResolver.get<
       Array<DbSubmission>

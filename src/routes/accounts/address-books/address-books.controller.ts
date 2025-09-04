@@ -23,6 +23,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import type { Address } from 'viem';
 
 @ApiTags('accounts')
 @Controller({ path: 'accounts', version: '1' })
@@ -34,7 +35,7 @@ export class AddressBooksController {
   @UseGuards(AuthGuard)
   async getAddressBook(
     @Auth() authPayload: AuthPayload,
-    @Param('address', new ValidationPipe(AddressSchema)) address: `0x${string}`,
+    @Param('address', new ValidationPipe(AddressSchema)) address: Address,
     @Param('chainId', new ValidationPipe(NumericStringSchema)) chainId: string,
   ): Promise<AddressBook> {
     return this.service.getAddressBook({
@@ -49,7 +50,7 @@ export class AddressBooksController {
   @UseGuards(AuthGuard)
   async createAddressBookItem(
     @Auth() authPayload: AuthPayload,
-    @Param('address', new ValidationPipe(AddressSchema)) address: `0x${string}`,
+    @Param('address', new ValidationPipe(AddressSchema)) address: Address,
     @Param('chainId', new ValidationPipe(NumericStringSchema)) chainId: string,
     @Body(new ValidationPipe(CreateAddressBookItemDtoSchema))
     createAddressBookItemDto: CreateAddressBookItemDto,
@@ -66,7 +67,7 @@ export class AddressBooksController {
   @UseGuards(AuthGuard)
   async deleteAddressBook(
     @Auth() authPayload: AuthPayload,
-    @Param('address', new ValidationPipe(AddressSchema)) address: `0x${string}`,
+    @Param('address', new ValidationPipe(AddressSchema)) address: Address,
     @Param('chainId', new ValidationPipe(NumericStringSchema)) chainId: string,
   ): Promise<void> {
     return this.service.deleteAddressBook({
@@ -80,7 +81,7 @@ export class AddressBooksController {
   @UseGuards(AuthGuard)
   async deleteAddressBookItem(
     @Auth() authPayload: AuthPayload,
-    @Param('address', new ValidationPipe(AddressSchema)) address: `0x${string}`,
+    @Param('address', new ValidationPipe(AddressSchema)) address: Address,
     @Param('chainId', new ValidationPipe(NumericStringSchema)) chainId: string,
     @Param('addressBookItemId', new DefaultValuePipe(0), ParseIntPipe)
     addressBookItemId: number,

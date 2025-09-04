@@ -8,6 +8,7 @@ import type { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import { CacheRouter } from '@/datasources/cache/cache.router';
 import { type BridgeChainPage } from '@/domain/bridge/entities/bridge-chain.entity';
+import type { Hash } from 'viem';
 
 export class LifiBridgeApi implements IBridgeApi {
   public static readonly LIFI_API_HEADER = 'x-lifi-api-key';
@@ -59,7 +60,7 @@ export class LifiBridgeApi implements IBridgeApi {
   }
 
   public async getStatus(args: {
-    txHash: `0x${string}`;
+    txHash: Hash;
     bridge?: BridgeName;
     toChain?: string;
   }): Promise<Raw<BridgeStatus>> {

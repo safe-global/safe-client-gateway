@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker';
-import { getAddress } from 'viem';
+import { type Address, getAddress } from 'viem';
 import {
   baseStatusDataBuilder,
   baseTransactionInfoBuilder,
@@ -151,7 +151,7 @@ describe('BridgeStatusSchema', () => {
           .ethereumAddress()
           .toLowerCase();
         const fullStatusData = successStatusDataBuilder()
-          .with(key, nonChecksummedAddress as `0x${string}`)
+          .with(key, nonChecksummedAddress as Address)
           .build();
 
         const result = SuccessStatusDataSchema.safeParse(fullStatusData);

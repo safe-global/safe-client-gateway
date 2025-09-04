@@ -7,6 +7,7 @@ import {
   DefiVaultStatsSchema,
 } from '@/datasources/staking-api/entities/defi-vault-stats.entity';
 import { faker } from '@faker-js/faker';
+import type { Address } from 'viem';
 import { getAddress } from 'viem';
 
 describe('DefiVaultStatsSchema', () => {
@@ -25,7 +26,7 @@ describe('DefiVaultStatsSchema', () => {
         .ethereumAddress()
         .toLowerCase();
       const defiVaultStats = defiVaultStatsBuilder()
-        .with(key, nonChecksummedAddress as `0x${string}`)
+        .with(key, nonChecksummedAddress as Address)
         .build();
 
       const result = DefiVaultStatsSchema.safeParse(defiVaultStats);
@@ -282,7 +283,7 @@ describe('DefiVaultStatsSchema', () => {
   it('should checksum an asset address', () => {
     const nonChecksummedAddress = faker.finance.ethereumAddress().toLowerCase();
     const defiVaultStatsAdditionalReward = defiVaultAdditionalRewardBuilder()
-      .with('asset', nonChecksummedAddress as `0x${string}`)
+      .with('asset', nonChecksummedAddress as Address)
       .build();
 
     const result = DefiVaultStatsAdditionalRewardSchema.safeParse(

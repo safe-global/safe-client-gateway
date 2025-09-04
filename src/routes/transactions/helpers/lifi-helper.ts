@@ -8,7 +8,7 @@ import {
   TransactionFinderModule,
 } from '@/routes/transactions/helpers/transaction-finder.helper';
 import { Inject, Injectable, Module } from '@nestjs/common';
-import { isAddressEqual } from 'viem';
+import { type Address, isAddressEqual } from 'viem';
 
 @Injectable()
 export class LiFiHelper {
@@ -23,8 +23,8 @@ export class LiFiHelper {
     chainId: string;
     transaction: MultisigTransaction | ModuleTransaction;
   }): Promise<{
-    to?: `0x${string}`;
-    data: `0x${string}`;
+    to?: Address;
+    data: Address;
     value: string;
   } | null> {
     return await this.findTransactionByPredicate({
@@ -39,8 +39,8 @@ export class LiFiHelper {
     chainId: string;
     transaction: MultisigTransaction | ModuleTransaction;
   }): Promise<{
-    to?: `0x${string}`;
-    data: `0x${string}`;
+    to?: Address;
+    data: Address;
     value: string;
   } | null> {
     return await this.findTransactionByPredicate({
@@ -55,8 +55,8 @@ export class LiFiHelper {
     chainId: string;
     transaction: MultisigTransaction | ModuleTransaction;
   }): Promise<{
-    to?: `0x${string}`;
-    data: `0x${string}`;
+    to?: Address;
+    data: Address;
     value: string;
   } | null> {
     return await this.findTransactionByPredicate({
@@ -73,10 +73,10 @@ export class LiFiHelper {
   private async findTransactionByPredicate(args: {
     chainId: string;
     transaction: MultisigTransaction | ModuleTransaction;
-    predicate: (data: `0x${string}`) => boolean;
+    predicate: (data: Address) => boolean;
   }): Promise<{
-    to?: `0x${string}`;
-    data: `0x${string}`;
+    to?: Address;
+    data: Address;
     value: string;
   } | null> {
     if (!args.transaction.data || args.transaction.data === '0x') {

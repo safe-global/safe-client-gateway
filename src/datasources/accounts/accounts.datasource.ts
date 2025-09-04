@@ -28,6 +28,7 @@ import {
 import crypto from 'crypto';
 import omit from 'lodash/omit';
 import postgres from 'postgres';
+import type { Address } from 'viem';
 
 @Injectable()
 export class AccountsDatasource implements IAccountsDatasource, OnModuleInit {
@@ -112,7 +113,7 @@ export class AccountsDatasource implements IAccountsDatasource, OnModuleInit {
     return omit(await this.decryptAccountData(account), 'name_hash');
   }
 
-  async getAccount(address: `0x${string}`): Promise<Account> {
+  async getAccount(address: Address): Promise<Account> {
     const cacheDir = CacheRouter.getAccountCacheDir(address);
     const [account] = await this.cachedQueryResolver.get<Array<Account>>({
       cacheDir,
@@ -127,7 +128,7 @@ export class AccountsDatasource implements IAccountsDatasource, OnModuleInit {
     return this.decryptAccountData(account);
   }
 
-  async deleteAccount(address: `0x${string}`): Promise<void> {
+  async deleteAccount(address: Address): Promise<void> {
     try {
       const { count } = await this
         .sql`DELETE FROM accounts WHERE address = ${address}`;
@@ -156,7 +157,7 @@ export class AccountsDatasource implements IAccountsDatasource, OnModuleInit {
   }
 
   async getAccountDataSettings(
-    address: `0x${string}`,
+    address: Address,
   ): Promise<Array<AccountDataSetting>> {
     const account = await this.getAccount(address);
     const cacheDir = CacheRouter.getAccountDataSettingsCacheDir(address);
@@ -182,7 +183,7 @@ export class AccountsDatasource implements IAccountsDatasource, OnModuleInit {
    * @returns {Array<AccountDataSetting>} inserted account data settings.
    */
   async upsertAccountDataSettings(args: {
-    address: `0x${string}`;
+    address: Address;
     upsertAccountDataSettingsDto: UpsertAccountDataSettingsDto;
   }): Promise<Array<AccountDataSetting>> {
     const { accountDataSettings } = args.upsertAccountDataSettingsDto;
@@ -270,7 +271,7 @@ export class AccountsDatasource implements IAccountsDatasource, OnModuleInit {
 
   async encryptAccountData(
     createAccountDto: CreateAccountDto,
-  ): Promise<{ address: `0x${string}`; name: string; nameHash: string }> {
+  ): Promise<{ address: Address; name: string; nameHash: string }> {
     const hash = crypto.createHash('sha256');
     hash.update(createAccountDto.name);
     const nameHash = hash.digest('hex');

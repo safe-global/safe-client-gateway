@@ -6,6 +6,7 @@ import {
 } from '@/domain/notifications/v2/entities/upsert-subscriptions.dto.entity';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import type { UUID } from 'crypto';
+import type { Address } from 'viem';
 
 export class UpsertSubscriptionsSafesDto
   implements DomainUpsertSubscriptionsSafesDto
@@ -14,7 +15,7 @@ export class UpsertSubscriptionsSafesDto
   chainId!: string;
 
   @ApiProperty()
-  address!: `0x${string}`;
+  address!: Address;
 
   @ApiProperty({
     isArray: true,

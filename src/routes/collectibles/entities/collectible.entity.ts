@@ -1,9 +1,10 @@
 import { Collectible as DomainCollectible } from '@/domain/collectibles/entities/collectible.entity';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import type { Address } from 'viem';
 
 export class Collectible implements DomainCollectible {
   @ApiProperty()
-  address!: `0x${string}`;
+  address!: Address;
   @ApiProperty()
   tokenName!: string;
   @ApiProperty()

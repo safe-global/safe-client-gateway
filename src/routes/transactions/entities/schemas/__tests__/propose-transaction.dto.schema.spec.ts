@@ -2,7 +2,7 @@ import type { Operation } from '@/domain/safe/entities/operation.entity';
 import { proposeTransactionDtoBuilder } from '@/routes/transactions/entities/__tests__/propose-transaction.dto.builder';
 import { ProposeTransactionDtoSchema } from '@/routes/transactions/entities/schemas/propose-transaction.dto.schema';
 import { faker } from '@faker-js/faker';
-import { getAddress } from 'viem';
+import { type Address, getAddress, type Hash, type Hex } from 'viem';
 import { ZodError } from 'zod';
 
 describe('ProposeTransactionDtoSchema', () => {
@@ -17,7 +17,7 @@ describe('ProposeTransactionDtoSchema', () => {
   ['to' as const, 'gasToken' as const, 'sender' as const].forEach((field) => {
     it(`should not allow non-address ${field}`, () => {
       const proposeTransactionDto = proposeTransactionDtoBuilder()
-        .with(field, faker.string.alphanumeric() as `0x${string}`)
+        .with(field, faker.string.alphanumeric() as Address)
         .build();
 
       const result = ProposeTransactionDtoSchema.safeParse(
@@ -38,7 +38,7 @@ describe('ProposeTransactionDtoSchema', () => {
     it(`should checksum ${field}`, () => {
       const nonChecksummedAddress = faker.finance
         .ethereumAddress()
-        .toLowerCase() as `0x${string}`;
+        .toLowerCase() as Address;
       const proposeTransactionDto = proposeTransactionDtoBuilder()
         .with(field, nonChecksummedAddress)
         .build();
@@ -95,7 +95,7 @@ describe('ProposeTransactionDtoSchema', () => {
 
   it('should validate if safeTxHash is hex', () => {
     const proposeTransactionDto = proposeTransactionDtoBuilder()
-      .with('safeTxHash', faker.string.hexadecimal() as `0x${string}`)
+      .with('safeTxHash', faker.string.hexadecimal() as Hash)
       .build();
 
     const result = ProposeTransactionDtoSchema.safeParse(proposeTransactionDto);
@@ -105,7 +105,7 @@ describe('ProposeTransactionDtoSchema', () => {
 
   it('should not allow non-hex safeTxHash', () => {
     const proposeTransactionDto = proposeTransactionDtoBuilder()
-      .with('safeTxHash', faker.string.alphanumeric() as `0x${string}`)
+      .with('safeTxHash', faker.string.alphanumeric() as Hash)
       .build();
 
     const result = ProposeTransactionDtoSchema.safeParse(proposeTransactionDto);
@@ -123,10 +123,7 @@ describe('ProposeTransactionDtoSchema', () => {
 
   it('should validate if signature is hex', () => {
     const proposeTransactionDto = proposeTransactionDtoBuilder()
-      .with(
-        'signature',
-        faker.string.hexadecimal({ length: 130 }) as `0x${string}`,
-      )
+      .with('signature', faker.string.hexadecimal({ length: 130 }) as Hex)
       .build();
 
     const result = ProposeTransactionDtoSchema.safeParse(proposeTransactionDto);
@@ -136,7 +133,7 @@ describe('ProposeTransactionDtoSchema', () => {
 
   it('should not allow non-hex signature', () => {
     const proposeTransactionDto = proposeTransactionDtoBuilder()
-      .with('signature', faker.string.alphanumeric() as `0x${string}`)
+      .with('signature', faker.string.alphanumeric() as Address)
       .build();
 
     const result = ProposeTransactionDtoSchema.safeParse(proposeTransactionDto);

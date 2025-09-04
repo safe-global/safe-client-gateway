@@ -1,6 +1,7 @@
+import type { Address } from 'viem';
 import { getAddress } from 'viem';
 
-export function getBlocklist(): Array<`0x${string}`> {
+export function getBlocklist(): Array<Address> {
   // Addresses not allowed to interact with the service
   // List taken from https://www.ic3.gov/PSA/2025/PSA250226
   return [

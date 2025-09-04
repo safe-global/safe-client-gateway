@@ -1,9 +1,10 @@
 import { CampaignRank as DomainCampaignRank } from '@/domain/community/entities/campaign-rank.entity';
 import { ApiProperty } from '@nestjs/swagger';
+import type { Address } from 'viem';
 
 export class CampaignRank implements DomainCampaignRank {
   @ApiProperty()
-  holder!: `0x${string}`;
+  holder!: Address;
   @ApiProperty()
   position!: number;
   @ApiProperty()

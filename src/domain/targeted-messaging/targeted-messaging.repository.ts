@@ -5,6 +5,7 @@ import { Submission } from '@/domain/targeted-messaging/entities/submission.enti
 import { TargetedSafe } from '@/domain/targeted-messaging/entities/targeted-safe.entity';
 import { ITargetedMessagingRepository } from '@/domain/targeted-messaging/targeted-messaging.repository.interface';
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+import type { Address } from 'viem';
 
 @Injectable()
 export class TargetedMessagingRepository
@@ -19,14 +20,14 @@ export class TargetedMessagingRepository
 
   async getTargetedSafe(args: {
     outreachId: number;
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
   }): Promise<TargetedSafe> {
     return this.datasource.getTargetedSafe(args);
   }
 
   async addSafeToOutreach(args: {
     outreachId: number;
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
   }): Promise<Array<TargetedSafe>> {
     return this.datasource.createTargetedSafes({
       outreachId: args.outreachId,
@@ -37,7 +38,7 @@ export class TargetedMessagingRepository
   async getSubmission(args: {
     chainId: string;
     targetedSafe: TargetedSafe;
-    signerAddress: `0x${string}`;
+    signerAddress: Address;
   }): Promise<Submission> {
     const isOwner = await this.safeRepository.isOwner({
       chainId: args.chainId,
@@ -52,7 +53,7 @@ export class TargetedMessagingRepository
 
   async createSubmission(args: {
     targetedSafe: TargetedSafe;
-    signerAddress: `0x${string}`;
+    signerAddress: Address;
   }): Promise<Submission> {
     return this.datasource.createSubmission(args);
   }

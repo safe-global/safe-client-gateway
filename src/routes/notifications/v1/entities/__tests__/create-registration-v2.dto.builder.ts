@@ -10,6 +10,7 @@ import {
   toBytes,
 } from 'viem';
 import { DeviceType } from '@/domain/notifications/v1/entities/device.entity';
+import type { Address, Hex } from 'viem';
 
 export const createV2RegisterDtoBuilder = async (
   args: RegisterDeviceDto,
@@ -22,7 +23,7 @@ export const createV2RegisterDtoBuilder = async (
   const safeV2Array: Array<{
     authPayload: AuthPayload;
     upsertSubscriptionsDto: UpsertSubscriptionsDto & {
-      signature: `0x${string}`;
+      signature: Hex;
     };
   }> = [];
 
@@ -36,7 +37,7 @@ export const createV2RegisterDtoBuilder = async (
           deviceType: args.deviceType,
           deviceUuid: args.uuid ?? null,
           safes: [],
-          signature: safeV1Registration.signatures[0] as `0x${string}`,
+          signature: safeV1Registration.signatures[0] as Address,
         },
         authPayload: new AuthPayload(),
       };
@@ -56,7 +57,7 @@ export const createV2RegisterDtoBuilder = async (
       (safeV2Safes) => safeV2Safes.address,
     );
 
-    let recoveredAddress: `0x${string}`;
+    let recoveredAddress: Address;
     if (args.deviceType === DeviceType.Web) {
       recoveredAddress = await recoverMessageAddress({
         message: {
@@ -83,8 +84,8 @@ export const createV2RegisterDtoBuilder = async (
 
 const messageToRecover = (
   args: RegisterDeviceDto,
-  safeAddresses: Array<`0x${string}`>,
-): `0x${string}` => {
+  safeAddresses: Array<Address>,
+): Address => {
   return keccak256(
     toBytes(
       `gnosis-safe${args.timestamp}${args.uuid}${args.cloudMessagingToken}${safeAddresses.sort().join('')}`,

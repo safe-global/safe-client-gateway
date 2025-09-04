@@ -1,12 +1,13 @@
 import type { ValueTransformer } from 'typeorm';
+import type { Address } from 'viem';
 import { getAddress } from 'viem';
 
 // TODO: add tests
 export const databaseAddressTransformer: ValueTransformer = {
-  to(value: string): `0x${string}` {
+  to(value: string): Address {
     return getAddress(value);
   },
-  from(value: string): `0x${string}` {
+  from(value: string): Address {
     return getAddress(value);
   },
 };

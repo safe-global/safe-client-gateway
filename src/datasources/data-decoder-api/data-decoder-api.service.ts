@@ -8,6 +8,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
 import { CacheRouter } from '@/datasources/cache/cache.router';
+import type { Address } from 'viem';
 
 @Injectable()
 export class DataDecoderApi implements IDataDecoderApi {
@@ -41,8 +42,8 @@ export class DataDecoderApi implements IDataDecoderApi {
   }
 
   public async getDecodedData(args: {
-    data: `0x${string}`;
-    to: `0x${string}`;
+    data: Address;
+    to: Address;
     chainId: string;
   }): Promise<Raw<DataDecoded>> {
     try {
@@ -59,7 +60,7 @@ export class DataDecoderApi implements IDataDecoderApi {
   }
 
   public async getContracts(args: {
-    address: `0x${string}`;
+    address: Address;
     chainId: string;
     limit?: number;
     offset?: number;

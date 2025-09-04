@@ -6,7 +6,7 @@ import { GPv2OrderHelper } from '@/routes/transactions/helpers/gp-v2-order.helpe
 import { SwapOrderHelper } from '@/routes/transactions/helpers/swap-order.helper';
 import { AddressInfo } from '@/routes/common/entities/address-info.entity';
 import { SwapTransferTransactionInfo } from '@/routes/transactions/swap-transfer-transaction-info.entity';
-import { getAddress, isAddressEqual } from 'viem';
+import { type Address, getAddress, isAddressEqual } from 'viem';
 import { ISwapsRepository } from '@/domain/swaps/swaps.repository';
 import { Order } from '@/domain/swaps/entities/order.entity';
 import { SwapAppsHelper } from '@/routes/transactions/helpers/swap-apps.helper';
@@ -37,7 +37,7 @@ export class SwapTransferInfoMapper {
     recipient: AddressInfo;
     direction: TransferDirection;
     chainId: string;
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
     transferInfo: Transfer;
     domainTransfer: DomainTransfer;
   }): Promise<SwapTransferTransactionInfo> {

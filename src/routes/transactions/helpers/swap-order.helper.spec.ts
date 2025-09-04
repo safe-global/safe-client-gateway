@@ -4,7 +4,7 @@ import type { GPv2Decoder } from '@/domain/swaps/contracts/decoders/gp-v2-decode
 import { faker } from '@faker-js/faker';
 import { orderBuilder } from '@/domain/swaps/entities/__tests__/order.builder';
 import { tokenBuilder } from '@/domain/tokens/__tests__/token.builder';
-import { getAddress } from 'viem';
+import { type Address, getAddress, type Hex } from 'viem';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import { OrderKind, OrderStatus } from '@/domain/swaps/entities/order.entity';
 import { SwapOrderHelper } from '@/routes/transactions/helpers/swap-order.helper';
@@ -74,7 +74,7 @@ describe('Swap Order Helper tests', () => {
         .with('sellToken', getAddress(sellToken.address))
         .build();
       gpv2DecoderMock.getOrderUidFromSetPreSignature.mockReturnValue(
-        order.uid as `0x${string}`,
+        order.uid as Address,
       );
       swapsRepositoryMock.getOrder.mockResolvedValue(order);
       tokenRepositoryMock.getToken.mockImplementation(({ address }) => {
@@ -85,7 +85,7 @@ describe('Swap Order Helper tests', () => {
 
       const actual = await target.getOrder({
         chainId,
-        orderUid: order.uid as `0x${string}`,
+        orderUid: order.uid as Address,
       });
 
       expect(actual).toEqual({
@@ -129,7 +129,7 @@ describe('Swap Order Helper tests', () => {
 
   it(`should throw if repository getOrder throws an error`, async () => {
     const chainId = faker.string.numeric();
-    const orderUid = faker.string.hexadecimal({ length: 112 }) as `0x${string}`;
+    const orderUid = faker.string.hexadecimal({ length: 112 }) as Hex;
     const error = new Error('Order not found');
     swapsRepositoryMock.getOrder.mockRejectedValue(error);
 
@@ -176,7 +176,7 @@ describe('Swap Order Helper tests', () => {
       await expect(
         target.getOrder({
           chainId,
-          orderUid: order.uid as `0x${string}`,
+          orderUid: order.uid as Address,
         }),
       ).rejects.toThrow('Unknown order kind');
 

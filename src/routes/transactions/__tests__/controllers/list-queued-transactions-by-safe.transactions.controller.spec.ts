@@ -27,7 +27,7 @@ import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import type { Server } from 'net';
 import request from 'supertest';
-import { getAddress } from 'viem';
+import { getAddress, type Hash } from 'viem';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 
 describe('List queued transactions by Safe - Transactions Controller (Unit)', () => {
@@ -706,7 +706,7 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
       };
       const nonce1 = await getTransaction(1);
       const nonce2 = await getTransaction(2);
-      nonce1.data = faker.string.hexadecimal({ length: 64 }) as `0x${string}`;
+      nonce1.data = faker.string.hexadecimal({ length: 64 }) as Hash;
       const transactions: Array<MultisigTransaction> = [
         multisigToJson(nonce1) as MultisigTransaction,
         multisigToJson(nonce2) as MultisigTransaction,

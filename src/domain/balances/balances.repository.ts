@@ -7,6 +7,7 @@ import {
 import { IBalancesApiManager } from '@/domain/interfaces/balances-api.manager.interface';
 import { Chain } from '@/domain/chains/entities/chain.entity';
 import { z } from 'zod';
+import type { Address } from 'viem';
 
 @Injectable()
 export class BalancesRepository implements IBalancesRepository {
@@ -17,7 +18,7 @@ export class BalancesRepository implements IBalancesRepository {
 
   async getBalances(args: {
     chain: Chain;
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
     fiatCode: string;
     trusted?: boolean;
     excludeSpam?: boolean;
@@ -32,7 +33,7 @@ export class BalancesRepository implements IBalancesRepository {
 
   async clearBalances(args: {
     chainId: string;
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
   }): Promise<void> {
     const api = await this.balancesApiManager.getApi(
       args.chainId,

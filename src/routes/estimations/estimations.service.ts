@@ -5,6 +5,7 @@ import { IEstimationsRepository } from '@/domain/estimations/estimations.reposit
 import { SafeRepository } from '@/domain/safe/safe.repository';
 import { ISafeRepository } from '@/domain/safe/safe.repository.interface';
 import { EstimationResponse } from '@/routes/estimations/entities/estimation-response.entity';
+import type { Address } from 'viem';
 
 @Injectable()
 export class EstimationsService {
@@ -26,7 +27,7 @@ export class EstimationsService {
    */
   async getEstimation(args: {
     chainId: string;
-    address: `0x${string}`;
+    address: Address;
     getEstimationDto: GetEstimationDto;
   }): Promise<EstimationResponse> {
     const estimation = await this.estimationsRepository.getEstimation(args);

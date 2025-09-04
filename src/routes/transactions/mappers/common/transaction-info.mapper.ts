@@ -42,6 +42,7 @@ import {
   BaseDataDecoded,
   DataDecoded,
 } from '@/domain/data-decoder/v2/entities/data-decoded.entity';
+import type { Address } from 'viem';
 
 @Injectable()
 export class MultisigTransactionInfoMapper {
@@ -325,7 +326,7 @@ export class MultisigTransactionInfoMapper {
       return null;
     }
 
-    const orderData: `0x${string}` | null = this.swapOrderHelper.findSwapOrder(
+    const orderData: Address | null = this.swapOrderHelper.findSwapOrder(
       transaction.data,
     );
 
@@ -588,7 +589,7 @@ export class MultisigTransactionInfoMapper {
   }
 
   public isValidTokenTransfer(
-    safeAddress: `0x${string}`,
+    safeAddress: Address,
     dataDecoded: BaseDataDecoded | null,
   ): boolean {
     return (
@@ -611,7 +612,7 @@ export class MultisigTransactionInfoMapper {
   }
 
   private isSafeSenderOrReceiver(
-    safeAddress: `0x${string}`,
+    safeAddress: Address,
     dataDecoded: BaseDataDecoded | null,
   ): boolean {
     if (!dataDecoded) return false;

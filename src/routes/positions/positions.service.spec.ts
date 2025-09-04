@@ -6,6 +6,7 @@ import { PositionType } from '@/domain/positions/entities/position-type.entity';
 import { faker } from '@faker-js/faker/.';
 import { NULL_ADDRESS } from '@/routes/common/constants';
 import type { Chain } from '@/domain/chains/entities/chain.entity';
+import type { Address } from 'viem';
 
 const positionsRepoMock = jest.mocked({
   getPositions: jest.fn(),
@@ -69,7 +70,7 @@ describe('PositionsService', () => {
 
     const res = await service.getPositions({
       chainId: '1',
-      safeAddress: faker.finance.ethereumAddress() as `0x${string}`,
+      safeAddress: faker.finance.ethereumAddress() as Address,
       fiatCode: 'USD',
     });
 
@@ -153,7 +154,7 @@ describe('PositionsService', () => {
 
     const res = await service.getPositions({
       chainId: '1',
-      safeAddress: faker.finance.ethereumAddress() as `0x${string}`,
+      safeAddress: faker.finance.ethereumAddress() as Address,
       fiatCode: 'USD',
     });
 
@@ -190,7 +191,7 @@ describe('PositionsService', () => {
 
     const [aave] = await service.getPositions({
       chainId: '1',
-      safeAddress: faker.finance.ethereumAddress() as `0x${string}`,
+      safeAddress: faker.finance.ethereumAddress() as Address,
       fiatCode: 'USD',
     });
 
@@ -218,7 +219,7 @@ describe('PositionsService', () => {
 
     const [maker] = await service.getPositions({
       chainId: '1',
-      safeAddress: '0x1' as `0x${string}`,
+      safeAddress: '0x1' as Address,
       fiatCode: 'USD',
     });
 
@@ -241,7 +242,7 @@ describe('PositionsService', () => {
 
     const [unknown] = await service.getPositions({
       chainId: '1',
-      safeAddress: '0x1' as `0x${string}`,
+      safeAddress: '0x1' as Address,
       fiatCode: 'USD',
     });
 
@@ -266,7 +267,7 @@ describe('PositionsService', () => {
 
     const [protocol] = await service.getPositions({
       chainId: '1',
-      safeAddress: '0x1' as `0x${string}`,
+      safeAddress: '0x1' as Address,
       fiatCode: 'USD',
     });
 
@@ -294,7 +295,7 @@ describe('PositionsService', () => {
 
     const [aave] = await service.getPositions({
       chainId: '1',
-      safeAddress: '0x1' as `0x${string}`,
+      safeAddress: '0x1' as Address,
       fiatCode: 'USD',
     });
 
@@ -307,7 +308,7 @@ describe('PositionsService', () => {
     positionsRepoMock.getPositions.mockResolvedValue([]);
     const res = await service.getPositions({
       chainId: '1',
-      safeAddress: faker.finance.ethereumAddress() as `0x${string}`,
+      safeAddress: faker.finance.ethereumAddress() as Address,
       fiatCode: 'USD',
     });
     expect(res).toEqual([]);

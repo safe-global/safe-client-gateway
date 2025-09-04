@@ -4,6 +4,7 @@ import {
   erc4262DepositEncoder,
   erc4262WithdrawEncoder,
 } from '@/routes/transactions/__tests__/encoders/erc4262-encoder.builder';
+import type { Hex } from 'viem';
 
 describe('ERC4262Decoder', () => {
   let target: Erc4262Decoder;
@@ -35,7 +36,7 @@ describe('ERC4262Decoder', () => {
   });
 
   it('throws if the function call cannot be decoded', () => {
-    const data = faker.string.hexadecimal({ length: 138 }) as `0x${string}`;
+    const data = faker.string.hexadecimal({ length: 138 }) as Hex;
 
     expect(() => target.decodeFunctionData({ data })).toThrow();
   });

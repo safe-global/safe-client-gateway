@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import type { Address } from 'viem';
 
 export class Submission {
   @ApiProperty()
@@ -6,14 +7,14 @@ export class Submission {
   @ApiProperty()
   targetedSafeId!: number;
   @ApiProperty()
-  signerAddress!: `0x${string}`;
+  signerAddress!: Address;
   @ApiPropertyOptional({ type: Date, nullable: true })
   completionDate!: Date | null;
 
   constructor(
     outreachId: number,
     targetedSafeId: number,
-    signerAddress: `0x${string}`,
+    signerAddress: Address,
     completionDate: Date | null,
   ) {
     this.outreachId = outreachId;

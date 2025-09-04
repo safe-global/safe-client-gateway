@@ -10,6 +10,7 @@ import {
   SwapAppsHelper,
   SwapAppsHelperModule,
 } from '@/routes/transactions/helpers/swap-apps.helper';
+import type { Address } from 'viem';
 
 @Injectable()
 export class SwapOrderMapper {
@@ -21,9 +22,9 @@ export class SwapOrderMapper {
 
   async mapSwapOrder(
     chainId: string,
-    transaction: { data: `0x${string}` },
+    transaction: { data: Address },
   ): Promise<SwapOrderTransactionInfo> {
-    const orderUid: `0x${string}` | null =
+    const orderUid: Address | null =
       this.gpv2Decoder.getOrderUidFromSetPreSignature(transaction.data);
     if (!orderUid) {
       throw new Error('Order UID not found in transaction data');

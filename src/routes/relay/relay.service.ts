@@ -4,6 +4,7 @@ import { RelayDto } from '@/routes/relay/entities/relay.dto.entity';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { Relay } from '@/routes/relay/entities/relay.entity';
 import { RelaysRemaining } from '@/routes/relay/entities/relays-remaining.entity';
+import type { Address } from 'viem';
 
 @Injectable()
 export class RelayService {
@@ -31,7 +32,7 @@ export class RelayService {
 
   async getRelaysRemaining(args: {
     chainId: string;
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
   }): Promise<{ remaining: number; limit: number }> {
     const currentCount = await this.relayRepository.getRelayCount({
       chainId: args.chainId,

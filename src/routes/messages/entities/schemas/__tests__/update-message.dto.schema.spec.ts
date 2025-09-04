@@ -2,6 +2,7 @@ import { updateMessageSignatureDtoBuilder } from '@/routes/messages/entities/__t
 import { UpdateMessageSignatureDtoSchema } from '@/routes/messages/entities/schemas/update-message-signature.dto.schema';
 import { faker } from '@faker-js/faker';
 import { ZodError } from 'zod';
+import type { Address, Hash } from 'viem';
 
 describe('UpdateMessageSignatureDtoSchema', () => {
   it('should validate a valid updateMessageSignatureDto', () => {
@@ -17,7 +18,7 @@ describe('UpdateMessageSignatureDtoSchema', () => {
 
   it('should not allow a non-hex signature', () => {
     const updateMessageSignatureDto = updateMessageSignatureDtoBuilder()
-      .with('signature', faker.string.alphanumeric() as `0x${string}`)
+      .with('signature', faker.string.alphanumeric() as Address)
       .build();
 
     const result = UpdateMessageSignatureDtoSchema.safeParse(
@@ -47,10 +48,7 @@ describe('UpdateMessageSignatureDtoSchema', () => {
 
   it('should not allow non-signature length hex strings', () => {
     const updateMessageSignatureDto = updateMessageSignatureDtoBuilder()
-      .with(
-        'signature',
-        faker.string.hexadecimal({ length: 129 }) as `0x${string}`,
-      )
+      .with('signature', faker.string.hexadecimal({ length: 129 }) as Hash)
       .build();
 
     const result = UpdateMessageSignatureDtoSchema.safeParse(

@@ -1,6 +1,7 @@
 import { faker } from '@faker-js/faker';
 import { outreachFileBuilder } from '@/datasources/targeted-messaging/entities/__tests__/outreach-file.builder';
 import { OutreachFileSchema } from '@/datasources/targeted-messaging/entities/outreach-file.entity';
+import type { Address } from 'viem';
 import { getAddress } from 'viem';
 
 describe('OutreachFileSchema', () => {
@@ -52,7 +53,7 @@ describe('OutreachFileSchema', () => {
       { count: { min: 2, max: 5 } },
     );
     const outreachFile = outreachFileBuilder()
-      .with('safe_addresses', nonChecksummedAddresses as Array<`0x${string}`>)
+      .with('safe_addresses', nonChecksummedAddresses as Array<Address>)
       .build();
 
     const result = OutreachFileSchema.safeParse(outreachFile);

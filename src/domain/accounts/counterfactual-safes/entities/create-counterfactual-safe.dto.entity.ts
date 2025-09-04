@@ -1,15 +1,16 @@
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { z } from 'zod';
+import type { Address } from 'viem';
 
 export class CreateCounterfactualSafeDto
   implements z.infer<typeof CreateCounterfactualSafeDtoSchema>
 {
   chainId: string;
-  fallbackHandler: `0x${string}`;
-  owners: Array<`0x${string}`>;
-  predictedAddress: `0x${string}`;
+  fallbackHandler: Address;
+  owners: Array<Address>;
+  predictedAddress: Address;
   saltNonce: string;
-  singletonAddress: `0x${string}`;
+  singletonAddress: Address;
   threshold: number;
 
   constructor(props: CreateCounterfactualSafeDto) {

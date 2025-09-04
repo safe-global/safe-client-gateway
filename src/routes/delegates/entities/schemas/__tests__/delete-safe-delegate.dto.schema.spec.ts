@@ -2,7 +2,7 @@ import { deleteSafeDelegateDtoBuilder } from '@/routes/delegates/entities/__test
 import type { DeleteSafeDelegateDto } from '@/routes/delegates/entities/delete-safe-delegate.dto.entity';
 import { DeleteSafeDelegateDtoSchema } from '@/routes/delegates/entities/schemas/delete-safe-delegate.dto.schema';
 import { faker } from '@faker-js/faker';
-import { getAddress } from 'viem';
+import { type Address, getAddress } from 'viem';
 import { ZodError } from 'zod';
 
 describe('DeleteSafeDelegateDtoSchema', () => {
@@ -19,7 +19,7 @@ describe('DeleteSafeDelegateDtoSchema', () => {
     (key) => {
       const nonChecksummedAddress = faker.finance
         .ethereumAddress()
-        .toLowerCase() as `0x${string}`;
+        .toLowerCase() as Address;
       const deleteSafeDelegateDto = deleteSafeDelegateDtoBuilder()
         .with(key, nonChecksummedAddress)
         .build();
@@ -36,7 +36,7 @@ describe('DeleteSafeDelegateDtoSchema', () => {
 
   it('should not allow non-hex signature', () => {
     const deleteSafeDelegateDto = deleteSafeDelegateDtoBuilder()
-      .with('signature', faker.string.numeric() as `0x${string}`)
+      .with('signature', faker.string.numeric() as Address)
       .build();
 
     const result = DeleteSafeDelegateDtoSchema.safeParse(deleteSafeDelegateDto);

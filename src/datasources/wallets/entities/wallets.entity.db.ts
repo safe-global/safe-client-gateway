@@ -10,6 +10,7 @@ import { z } from 'zod';
 import { User } from '@/datasources/users/entities/users.entity.db';
 import { WalletSchema } from '@/domain/wallets/entities/wallet.entity';
 import { databaseAddressTransformer } from '@/domain/common/transformers/databaseAddress.transformer';
+import type { Address } from 'viem';
 
 @Entity('wallets')
 @Unique('UQ_wallet_address', ['address'])
@@ -32,7 +33,7 @@ export class Wallet implements z.infer<typeof WalletSchema> {
     length: 42,
     transformer: databaseAddressTransformer,
   })
-  address!: `0x${string}`;
+  address!: Address;
 
   @Column({
     name: 'created_at',

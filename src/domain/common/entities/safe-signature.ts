@@ -1,6 +1,6 @@
 import { secp256k1 } from '@noble/curves/secp256k1';
 import { memoize } from 'lodash';
-import { getAddress, hashMessage } from 'viem';
+import { Address, getAddress, hashMessage, Hex } from 'viem';
 import { publicKeyToAddress } from 'viem/utils';
 import { SignatureType } from '@/domain/common/entities/signature-type.entity';
 import {
@@ -15,10 +15,10 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 const ETH_SIGN_V_OFFSET = 4;
 
 export class SafeSignature {
-  public signature: `0x${string}`;
-  public hash: `0x${string}`;
+  public signature: Hex;
+  public hash: Hex;
 
-  constructor(args: { signature: `0x${string}`; hash: `0x${string}` }) {
+  constructor(args: { signature: Hex; hash: Hex }) {
     const signatures = parseSignaturesByType(args.signature);
 
     if (signatures.length !== 1) {
@@ -33,11 +33,11 @@ export class SafeSignature {
     this.hash = args.hash;
   }
 
-  get r(): `0x${string}` {
+  get r(): Hex {
     return `0x${this.signature.slice(HEX_PREFIX_LENGTH, HEX_PREFIX_LENGTH + R_OR_S_HEX_LENGTH)}`;
   }
 
-  get s(): `0x${string}` {
+  get s(): Hex {
     const rOffset = HEX_PREFIX_LENGTH + R_OR_S_HEX_LENGTH;
     return `0x${this.signature.slice(rOffset, rOffset + R_OR_S_HEX_LENGTH)}`;
   }
@@ -60,7 +60,7 @@ export class SafeSignature {
     return SignatureType.Eoa;
   }
 
-  get owner(): `0x${string}` {
+  get owner(): Address {
     return this._owner();
   }
 
@@ -75,7 +75,7 @@ export class SafeSignature {
           case SignatureType.EthSign: {
             // To differentiate signature types, eth_sign signatures have v value increased by 4
             // @see https://docs.safe.global/advanced/smart-account-signatures#eth_sign-signature
-            const normalizedSignature: `0x${string}` = `${this.r}${this.s.slice(HEX_PREFIX_LENGTH)}${(this.v - ETH_SIGN_V_OFFSET).toString(16)}`;
+            const normalizedSignature: Hex = `${this.r}${this.s.slice(HEX_PREFIX_LENGTH)}${(this.v - ETH_SIGN_V_OFFSET).toString(16)}`;
             return recoverAddress({
               hash: hashMessage({ raw: this.hash }),
               signature: normalizedSignature,
@@ -107,18 +107,12 @@ export class SafeSignature {
   }
 }
 
-function recoverAddress(args: {
-  hash: `0x${string}`;
-  signature: `0x${string}`;
-}): `0x${string}` {
+function recoverAddress(args: { hash: Hex; signature: Hex }): Address {
   const publicKey = recoverPublicKey(args);
   return publicKeyToAddress(publicKey);
 }
 
-function recoverPublicKey(args: {
-  hash: `0x${string}`;
-  signature: `0x${string}`;
-}): `0x${string}` {
+function recoverPublicKey(args: { hash: Hex; signature: Hex }): Hex {
   const recoveryBit = toRecoveryBit(args.signature);
   const signature = secp256k1.Signature.fromCompact(
     args.signature.substring(HEX_PREFIX_LENGTH, SIGNATURE_HEX_LENGTH),
@@ -131,7 +125,7 @@ function recoverPublicKey(args: {
   return `0x${publicKey}`;
 }
 
-function toRecoveryBit(signature: `0x${string}`): number {
+function toRecoveryBit(signature: Hex): number {
   const v = parseInt(signature.slice(V_HEX_LENGTH * -1), 16);
   if (v === 0 || v === 1) {
     return v;

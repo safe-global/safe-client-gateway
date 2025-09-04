@@ -4,6 +4,7 @@ import { CreateCounterfactualSafeDto } from '@/domain/accounts/counterfactual-sa
 import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 import { CounterfactualSafe } from '@/routes/accounts/counterfactual-safes/entities/counterfactual-safe.entity';
 import { Inject, Injectable } from '@nestjs/common';
+import type { Address } from 'viem';
 
 @Injectable()
 export class CounterfactualSafesService {
@@ -13,9 +14,9 @@ export class CounterfactualSafesService {
   ) {}
 
   async getCounterfactualSafe(args: {
-    address: `0x${string}`;
+    address: Address;
     chainId: string;
-    predictedAddress: `0x${string}`;
+    predictedAddress: Address;
   }): Promise<CounterfactualSafe> {
     const domainCounterfactualSafe =
       await this.repository.getCounterfactualSafe(args);
@@ -23,7 +24,7 @@ export class CounterfactualSafesService {
   }
 
   async getCounterfactualSafes(
-    address: `0x${string}`,
+    address: Address,
   ): Promise<Array<CounterfactualSafe>> {
     const domainCounterfactualSafes =
       await this.repository.getCounterfactualSafes(address);
@@ -34,7 +35,7 @@ export class CounterfactualSafesService {
 
   async createCounterfactualSafe(args: {
     authPayload: AuthPayload;
-    address: `0x${string}`;
+    address: Address;
     createCounterfactualSafeDto: CreateCounterfactualSafeDto;
   }): Promise<CounterfactualSafe> {
     const domainCounterfactualSafe =
@@ -44,16 +45,16 @@ export class CounterfactualSafesService {
 
   async deleteCounterfactualSafe(args: {
     authPayload: AuthPayload;
-    address: `0x${string}`;
+    address: Address;
     chainId: string;
-    predictedAddress: `0x${string}`;
+    predictedAddress: Address;
   }): Promise<void> {
     await this.repository.deleteCounterfactualSafe(args);
   }
 
   async deleteCounterfactualSafes(args: {
     authPayload: AuthPayload;
-    address: `0x${string}`;
+    address: Address;
   }): Promise<void> {
     await this.repository.deleteCounterfactualSafes(args);
   }

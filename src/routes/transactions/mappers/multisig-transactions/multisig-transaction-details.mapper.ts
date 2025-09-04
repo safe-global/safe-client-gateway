@@ -18,6 +18,7 @@ import { MultisigTransactionStatusMapper } from '@/routes/transactions/mappers/m
 import { MultisigTransactionNoteMapper } from '@/routes/transactions/mappers/multisig-transactions/multisig-transaction-note.mapper';
 import { TransactionVerifierHelper } from '@/routes/transactions/helpers/transaction-verifier.helper';
 import { DataDecoded } from '@/domain/data-decoder/v2/entities/data-decoded.entity';
+import { type Address } from 'viem';
 
 @Injectable()
 export class MultisigTransactionDetailsMapper {
@@ -116,7 +117,7 @@ export class MultisigTransactionDetailsMapper {
    */
   private async _getRecipientAddressInfo(
     chainId: string,
-    address: `0x${string}`,
+    address: Address,
   ): Promise<AddressInfo> {
     return await this.addressInfoHelper.getOrDefault(chainId, address, [
       'TOKEN',

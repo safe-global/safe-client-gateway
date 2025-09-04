@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ContractsRepository } from '@/domain/contracts/contracts.repository';
 import type { Contract } from '@/domain/data-decoder/v2/entities/contract.entity';
 import { DataDecodedApiModule } from '@/datasources/data-decoder-api/data-decoder-api.module';
+import type { Address } from 'viem';
 
 export const IContractsRepository = Symbol('IContractsRepository');
 
@@ -11,7 +12,7 @@ export interface IContractsRepository {
    */
   getContract(args: {
     chainId: string;
-    contractAddress: `0x${string}`;
+    contractAddress: Address;
   }): Promise<Contract>;
 
   /**
@@ -19,7 +20,7 @@ export interface IContractsRepository {
    */
   isTrustedForDelegateCall(args: {
     chainId: string;
-    contractAddress: `0x${string}`;
+    contractAddress: Address;
   }): Promise<boolean>;
 }
 

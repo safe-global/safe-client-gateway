@@ -4,6 +4,7 @@ import { PositionsService } from '@/routes/positions/positions.service';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { Protocol } from '@/routes/positions/entities/protocol.entity';
+import type { Address } from 'viem';
 
 @ApiTags('positions')
 @Controller({
@@ -18,7 +19,7 @@ export class PositionsController {
   async getPositions(
     @Param('chainId') chainId: string,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
-    safeAddress: `0x${string}`,
+    safeAddress: Address,
     @Param('fiatCode') fiatCode: string,
   ): Promise<Array<Protocol>> {
     return this.positionsService.getPositions({

@@ -17,6 +17,7 @@ import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { Test } from '@nestjs/testing';
 import configuration from '@/config/entities/__tests__/configuration';
+import type { Hash } from 'viem';
 
 const mockNetworkService = jest.mocked({
   get: jest.fn(),
@@ -99,7 +100,7 @@ describe('LifiBridgeApi', () => {
   describe('getStatus', () => {
     it('should return the status', async () => {
       const bridgeStatus = bridgeStatusBuilder().build();
-      const txHash = faker.string.hexadecimal({ length: 64 }) as `0x${string}`;
+      const txHash = faker.string.hexadecimal({ length: 64 }) as Hash;
       const bridge = faker.helpers.arrayElement(BridgeNames);
       const toChain = faker.string.numeric();
       mockNetworkService.get.mockResolvedValueOnce({
@@ -131,7 +132,7 @@ describe('LifiBridgeApi', () => {
     });
 
     it('should forward errors', async () => {
-      const txHash = faker.string.hexadecimal({ length: 64 }) as `0x${string}`;
+      const txHash = faker.string.hexadecimal({ length: 64 }) as Hash;
       const bridge = faker.helpers.arrayElement(BridgeNames);
       const toChain = faker.string.numeric();
       const status = faker.internet.httpStatusCode({ types: ['serverError'] });

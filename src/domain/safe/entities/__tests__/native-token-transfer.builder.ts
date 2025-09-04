@@ -2,7 +2,7 @@ import { faker } from '@faker-js/faker';
 import type { IBuilder } from '@/__tests__/builder';
 import { Builder } from '@/__tests__/builder';
 import type { NativeTokenTransfer } from '@/domain/safe/entities/transfer.entity';
-import { getAddress } from 'viem';
+import { type Address, getAddress } from 'viem';
 
 export function nativeTokenTransferBuilder(): IBuilder<NativeTokenTransfer> {
   return new Builder<NativeTokenTransfer>()
@@ -11,7 +11,7 @@ export function nativeTokenTransferBuilder(): IBuilder<NativeTokenTransfer> {
     .with('executionDate', faker.date.recent())
     .with('from', getAddress(faker.finance.ethereumAddress()))
     .with('to', getAddress(faker.finance.ethereumAddress()))
-    .with('transactionHash', faker.string.hexadecimal() as `0x${string}`)
+    .with('transactionHash', faker.string.hexadecimal() as Address)
     .with('value', faker.string.hexadecimal())
     .with('transferId', faker.string.sample());
 }

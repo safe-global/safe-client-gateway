@@ -52,6 +52,7 @@ import { TXSCreationTransaction } from '@/routes/transactions/entities/txs-creat
 import { ITokenRepository } from '@/domain/tokens/token.repository.interface';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { IDataDecoderRepository } from '@/domain/data-decoder/v2/data-decoder.repository.interface';
+import type { Address } from 'viem';
 
 @Injectable()
 export class TransactionsService {
@@ -210,10 +211,10 @@ export class TransactionsService {
     chainId: string;
     routeUrl: Readonly<URL>;
     paginationData: PaginationData;
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
     executionDateGte?: string;
     executionDateLte?: string;
-    to?: `0x${string}`;
+    to?: Address;
     value?: string;
     nonce?: string;
     executed?: boolean;
@@ -280,7 +281,7 @@ export class TransactionsService {
   }
 
   async getDomainMultisigTransactions(args: {
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
     chainId: string;
     // Transaction Service parameters
     failed?: boolean;
@@ -353,7 +354,7 @@ export class TransactionsService {
   async getModuleTransactions(args: {
     chainId: string;
     routeUrl: Readonly<URL>;
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
     to?: string;
     module?: string;
     txHash?: string;
@@ -401,12 +402,12 @@ export class TransactionsService {
   async getIncomingTransfers(args: {
     chainId: string;
     routeUrl: Readonly<URL>;
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
     executionDateGte?: string;
     executionDateLte?: string;
-    to?: `0x${string}`;
+    to?: Address;
     value?: string;
-    tokenAddress?: `0x${string}`;
+    tokenAddress?: Address;
     paginationData?: PaginationData;
     onlyTrusted: boolean;
   }): Promise<Partial<Page<IncomingTransfer>>> {
@@ -451,7 +452,7 @@ export class TransactionsService {
 
   async previewTransaction(args: {
     chainId: string;
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
     previewTransactionDto: PreviewTransactionDto;
   }): Promise<TransactionPreview> {
     const safe = await this.safeRepository.getSafe({
@@ -468,7 +469,7 @@ export class TransactionsService {
   async getTransactionQueue(args: {
     chainId: string;
     routeUrl: Readonly<URL>;
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
     paginationData: PaginationData;
     trusted?: boolean;
   }): Promise<Page<QueuedItem>> {
@@ -518,7 +519,7 @@ export class TransactionsService {
   async getTransactionHistory(args: {
     chainId: string;
     routeUrl: Readonly<URL>;
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
     paginationData: PaginationData;
     timezoneOffsetMs: number;
     onlyTrusted: boolean;
@@ -574,7 +575,7 @@ export class TransactionsService {
 
   async proposeTransaction(args: {
     chainId: string;
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
     proposeTransactionDto: ProposeTransactionDto;
   }): Promise<TransactionDetails> {
     this.logProposeTx(args);
@@ -608,7 +609,7 @@ export class TransactionsService {
 
   async getCreationTransaction(args: {
     chainId: string;
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
   }): Promise<CreationTransaction> {
     const tx = await this.safeRepository.getCreationTransaction(args);
     const dataDecoded =
@@ -624,7 +625,7 @@ export class TransactionsService {
 
   async getDomainCreationTransaction(args: {
     chainId: string;
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
   }): Promise<TXSCreationTransaction> {
     const tx = await this.safeRepository.getCreationTransaction(args);
     return new TXSCreationTransaction(tx);
@@ -660,7 +661,7 @@ export class TransactionsService {
   private async parseTokenValue(args: {
     chainId: string;
     value: string;
-    tokenAddress?: `0x${string}`;
+    tokenAddress?: Address;
   }): Promise<string> {
     if (!args.tokenAddress) {
       return parseEther(args.value).toString();

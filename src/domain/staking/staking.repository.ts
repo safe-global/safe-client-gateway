@@ -41,6 +41,7 @@ import {
   RewardsFee,
   RewardsFeeSchema,
 } from '@/datasources/staking-api/entities/rewards-fee.entity';
+import type { Address, Hash } from 'viem';
 
 // TODO: Deduplicate code with EarnRepository
 
@@ -53,7 +54,7 @@ export class StakingRepository implements IStakingRepositoryWithRewardsFee {
 
   public async getDeployment(args: {
     chainId: string;
-    address: `0x${string}`;
+    address: Address;
   }): Promise<Deployment> {
     const deployments = await this.getDeployments(args.chainId);
     const deployment = deployments.find((deployment) => {
@@ -70,7 +71,7 @@ export class StakingRepository implements IStakingRepositoryWithRewardsFee {
 
   public async getRewardsFee(args: {
     chainId: string;
-    address: `0x${string}`;
+    address: Address;
   }): Promise<RewardsFee> {
     const stakingApi = await this.stakingApiFactory.getApi(args.chainId);
     const rewardsFee = await stakingApi.getRewardsFee(args.address);
@@ -100,7 +101,7 @@ export class StakingRepository implements IStakingRepositoryWithRewardsFee {
 
   public async getPooledStakingStats(args: {
     chainId: string;
-    pool: `0x${string}`;
+    pool: Address;
   }): Promise<PooledStakingStats> {
     const stakingApi = await this.stakingApiFactory.getApi(args.chainId);
     const pooledStaking = await stakingApi.getPooledStakingStats(args.pool);
@@ -109,7 +110,7 @@ export class StakingRepository implements IStakingRepositoryWithRewardsFee {
 
   public async getDefiVaultStats(args: {
     chainId: string;
-    vault: `0x${string}`;
+    vault: Address;
   }): Promise<DefiVaultStats> {
     const stakingApi = await this.stakingApiFactory.getApi(args.chainId);
     const defiStats = await stakingApi.getDefiVaultStats(args.vault);
@@ -119,8 +120,8 @@ export class StakingRepository implements IStakingRepositoryWithRewardsFee {
 
   public async getDefiVaultStake(args: {
     chainId: string;
-    safeAddress: `0x${string}`;
-    vault: `0x${string}`;
+    safeAddress: Address;
+    vault: Address;
   }): Promise<DefiVaultStake> {
     const stakingApi = await this.stakingApiFactory.getApi(args.chainId);
     const defiStakes = await stakingApi.getDefiVaultStakes(args);
@@ -130,7 +131,7 @@ export class StakingRepository implements IStakingRepositoryWithRewardsFee {
 
   public async getDefiMorphoExtraRewards(args: {
     chainId: string;
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
   }): Promise<Array<DefiMorphoExtraReward>> {
     const stakingApi = await this.stakingApiFactory.getApi(args.chainId);
     const defiMorphoExtraRewards = await stakingApi.getDefiMorphoExtraRewards(
@@ -141,8 +142,8 @@ export class StakingRepository implements IStakingRepositoryWithRewardsFee {
 
   public async getStakes(args: {
     chainId: string;
-    safeAddress: `0x${string}`;
-    validatorsPublicKeys: Array<`0x${string}`>;
+    safeAddress: Address;
+    validatorsPublicKeys: Array<Address>;
   }): Promise<Array<Stake>> {
     const stakingApi = await this.stakingApiFactory.getApi(args.chainId);
     const stakes = await stakingApi.getStakes(args);
@@ -151,7 +152,7 @@ export class StakingRepository implements IStakingRepositoryWithRewardsFee {
 
   public async clearStakes(args: {
     chainId: string;
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
   }): Promise<void> {
     const stakingApi = await this.stakingApiFactory.getApi(args.chainId);
     await stakingApi.clearStakes(args.safeAddress);
@@ -159,7 +160,7 @@ export class StakingRepository implements IStakingRepositoryWithRewardsFee {
 
   public async getTransactionStatus(args: {
     chainId: string;
-    txHash: `0x${string}`;
+    txHash: Hash;
   }): Promise<TransactionStatus> {
     const stakingApi = await this.stakingApiFactory.getApi(args.chainId);
     const txStatus = await stakingApi.getTransactionStatus(args.txHash);

@@ -3,6 +3,7 @@ import { IDataDecodedRepository } from '@/domain/data-decoder/v1/data-decoded.re
 import { DataDecoded } from '@/domain/data-decoder/v1/entities/data-decoded.entity';
 import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
 import { DataDecodedSchema } from '@/domain/data-decoder/v1/entities/schemas/data-decoded.schema';
+import type { Address } from 'viem';
 
 @Injectable()
 export class DataDecodedRepository implements IDataDecodedRepository {
@@ -13,8 +14,8 @@ export class DataDecodedRepository implements IDataDecodedRepository {
 
   async getDataDecoded(args: {
     chainId: string;
-    data: `0x${string}`;
-    to?: `0x${string}`;
+    data: Address;
+    to?: Address;
   }): Promise<DataDecoded> {
     const api = await this.transactionApiManager.getApi(args.chainId);
     const dataDecoded = await api.getDataDecoded({

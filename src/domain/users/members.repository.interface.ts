@@ -9,6 +9,7 @@ import type {
   FindOptionsRelations,
   FindOptionsWhere,
 } from 'typeorm';
+import type { Address } from 'viem';
 
 export const IMembersRepository = Symbol('IMembersRepository');
 
@@ -33,7 +34,7 @@ export interface IMembersRepository {
     authPayload: AuthPayload;
     spaceId: Space['id'];
     users: Array<{
-      address: `0x${string}`;
+      address: Address;
       role: Member['role'];
       name: Member['name'];
     }>;

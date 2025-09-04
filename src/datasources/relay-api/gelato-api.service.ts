@@ -13,6 +13,7 @@ import {
 } from '@/datasources/cache/cache.service.interface';
 import type { Relay } from '@/domain/relay/entities/relay.entity';
 import type { Raw } from '@/validation/entities/raw.entity';
+import type { Address } from 'viem';
 
 @Injectable()
 export class GelatoApi implements IRelayApi {
@@ -42,7 +43,7 @@ export class GelatoApi implements IRelayApi {
 
   async relay(args: {
     chainId: string;
-    to: `0x${string}`;
+    to: Address;
     data: string;
     gasLimit: bigint | null;
   }): Promise<Raw<Relay>> {
@@ -76,7 +77,7 @@ export class GelatoApi implements IRelayApi {
 
   async getRelayCount(args: {
     chainId: string;
-    address: `0x${string}`;
+    address: Address;
     // TODO: Change to Raw when cache service is migrated
   }): Promise<number> {
     const cacheDir = CacheRouter.getRelayCacheDir(args);
@@ -86,7 +87,7 @@ export class GelatoApi implements IRelayApi {
 
   async setRelayCount(args: {
     chainId: string;
-    address: `0x${string}`;
+    address: Address;
     count: number;
   }): Promise<void> {
     const cacheDir = CacheRouter.getRelayCacheDir(args);

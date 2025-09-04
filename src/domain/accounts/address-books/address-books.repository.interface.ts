@@ -8,32 +8,33 @@ import type {
 import { CreateAddressBookItemDto } from '@/domain/accounts/address-books/entities/create-address-book-item.dto.entity';
 import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 import { Module } from '@nestjs/common';
+import type { Address } from 'viem';
 
 export const IAddressBooksRepository = Symbol.for('IAddressBooksRepository');
 
 export interface IAddressBooksRepository {
   getAddressBook(args: {
     authPayload: AuthPayload;
-    address: `0x${string}`;
+    address: Address;
     chainId: string;
   }): Promise<AddressBook>;
 
   createAddressBookItem(args: {
     authPayload: AuthPayload;
-    address: `0x${string}`;
+    address: Address;
     chainId: string;
     createAddressBookItemDto: CreateAddressBookItemDto;
   }): Promise<AddressBookItem>;
 
   deleteAddressBook(args: {
     authPayload: AuthPayload;
-    address: `0x${string}`;
+    address: Address;
     chainId: string;
   }): Promise<void>;
 
   deleteAddressBookItem(args: {
     authPayload: AuthPayload;
-    address: `0x${string}`;
+    address: Address;
     chainId: string;
     addressBookItemId: number;
   }): Promise<void>;

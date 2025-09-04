@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker';
-import { getAddress } from 'viem';
+import { getAddress, type Hex } from 'viem';
 import { DataDecodedAccuracy } from '@/domain/data-decoder/v2/entities/data-decoded.entity';
 import { Builder } from '@/__tests__/builder';
 import type { IBuilder } from '@/__tests__/builder';
@@ -18,7 +18,7 @@ export function multisendBuilder(): IBuilder<z.infer<typeof MultisendSchema>> {
       // No nested data to prevent call stack exceeded
       .with('dataDecoded', null)
       .with('to', getAddress(faker.finance.ethereumAddress()))
-      .with('data', faker.string.hexadecimal() as `0x${string}`)
+      .with('data', faker.string.hexadecimal() as Hex)
   );
 }
 

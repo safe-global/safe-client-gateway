@@ -10,6 +10,7 @@ import { Delegate } from '@/routes/delegates/entities/delegate.entity';
 import { DeleteDelegateDto } from '@/routes/delegates/entities/delete-delegate.dto.entity';
 import { DeleteSafeDelegateDto } from '@/routes/delegates/entities/delete-safe-delegate.dto.entity';
 import { GetDelegateDto } from '@/routes/delegates/entities/get-delegate.dto.entity';
+import type { Address } from 'viem';
 
 @Injectable()
 export class DelegatesService {
@@ -64,7 +65,7 @@ export class DelegatesService {
 
   async deleteDelegate(args: {
     chainId: string;
-    delegateAddress: `0x${string}`;
+    delegateAddress: Address;
     deleteDelegateDto: DeleteDelegateDto;
   }): Promise<unknown> {
     return await this.repository.deleteDelegate({

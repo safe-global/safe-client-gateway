@@ -5,7 +5,7 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { isAddressEqual } from 'viem';
+import { type Address, isAddressEqual } from 'viem';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { ISpacesRepository } from '@/domain/spaces/spaces.repository.interface';
 import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
@@ -91,7 +91,7 @@ export class MembersRepository implements IMembersRepository {
     spaceId: Space['id'];
     users: Array<{
       name: Member['name'];
-      address: `0x${string}`;
+      address: Address;
       role: Member['role'];
     }>;
   }): Promise<Array<Invitation>> {
@@ -166,7 +166,7 @@ export class MembersRepository implements IMembersRepository {
 
   private async createUserAndWallet(args: {
     entityManager: EntityManager;
-    address: `0x${string}`;
+    address: Address;
   }): Promise<User['id']> {
     const { address, entityManager } = args;
     const userId = await this.usersRepository.create('PENDING', entityManager);
@@ -388,7 +388,7 @@ export class MembersRepository implements IMembersRepository {
 
   private assertSignerAddress(
     authPayload: AuthPayload,
-  ): asserts authPayload is AuthPayload & { signer_address: `0x${string}` } {
+  ): asserts authPayload is AuthPayload & { signer_address: Address } {
     if (!authPayload.signer_address) {
       throw new UnauthorizedException('Signer address not provided.');
     }

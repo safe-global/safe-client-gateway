@@ -2,10 +2,11 @@ import type {
   JobData,
   JobResponse,
 } from '@/datasources/job-queue/types/job-types';
+import type { Address } from 'viem';
 
 export interface CsvExportJobData extends JobData {
   chainId: string;
-  safeAddress: `0x${string}`;
+  safeAddress: Address;
   executionDateGte?: string;
   executionDateLte?: string;
   limit?: number;

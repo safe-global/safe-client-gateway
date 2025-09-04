@@ -1,14 +1,15 @@
 import { DeleteDelegateDtoSchema } from '@/routes/delegates/entities/schemas/delete-delegate.dto.schema';
 import { ApiProperty } from '@nestjs/swagger';
 import { z } from 'zod';
+import type { Address } from 'viem';
 
 export class DeleteDelegateDto
   implements z.infer<typeof DeleteDelegateDtoSchema>
 {
   @ApiProperty()
-  delegate!: `0x${string}`;
+  delegate!: Address;
   @ApiProperty()
-  delegator!: `0x${string}`;
+  delegator!: Address;
   @ApiProperty()
   signature!: string;
 }

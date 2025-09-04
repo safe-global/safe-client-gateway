@@ -1,4 +1,5 @@
 import semverSatisfies from 'semver/functions/satisfies';
+import type { Address } from 'viem';
 import { hashMessage, hashTypedData, zeroAddress } from 'viem';
 import { MessageSchema } from '@/domain/messages/entities/message.entity';
 import type { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
@@ -14,7 +15,7 @@ export function getSafeMessageMessageHash(args: {
   chainId: string;
   safe: Safe;
   message: string | TypedData;
-}): `0x${string}` {
+}): Address {
   if (!args.safe.version) {
     throw new Error('Safe version is required');
   }
@@ -83,7 +84,7 @@ export function getSafeTxHash(args: {
   chainId: string;
   transaction: BaseMultisigTransaction;
   safe: Safe;
-}): `0x${string}` {
+}): Address {
   if (!args.safe.version) {
     throw new Error('Safe version is required');
   }

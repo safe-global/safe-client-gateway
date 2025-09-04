@@ -16,6 +16,7 @@ import { Page } from '@/routes/common/entities/page.entity';
 import { PaginationData } from '@/routes/common/pagination/pagination.data';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
+import type { Address } from 'viem';
 
 @ApiTags('collectibles')
 @Controller({
@@ -44,7 +45,7 @@ export class CollectiblesController {
   async getCollectibles(
     @Param('chainId') chainId: string,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
-    safeAddress: `0x${string}`,
+    safeAddress: Address,
     @RouteUrlDecorator() routeUrl: URL,
     @PaginationDataDecorator() paginationData: PaginationData,
     @Query('trusted', new DefaultValuePipe(false), ParseBoolPipe)

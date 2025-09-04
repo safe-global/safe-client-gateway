@@ -6,7 +6,7 @@ import { MultiSendDecoder } from '@/domain/contracts/decoders/multi-send-decoder
 import type { ILoggingService } from '@/logging/logging.interface';
 import { TransactionFinder } from '@/routes/transactions/helpers/transaction-finder.helper';
 import { faker } from '@faker-js/faker';
-import { encodeFunctionData, erc20Abi, getAddress } from 'viem';
+import { type Address, encodeFunctionData, erc20Abi, getAddress } from 'viem';
 
 const mockLoggingService = {
   warn: jest.fn(),
@@ -56,7 +56,7 @@ describe('TransactionFinder', () => {
       'transactions',
       multiSendTransactionsEncoder([transaction]),
     );
-    const isTransactionData = (args: { data: `0x${string}` }): boolean => {
+    const isTransactionData = (args: { data: Address }): boolean => {
       return args.data === transaction.data;
     };
 

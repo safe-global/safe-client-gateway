@@ -1,5 +1,6 @@
 import { AbiDecoder } from '@/domain/contracts/decoders/abi-decoder.helper';
 import { Injectable } from '@nestjs/common';
+import type { Address } from 'viem';
 import { decodeAbiParameters, isAddressEqual, parseAbiParameters } from 'viem';
 
 /**
@@ -646,7 +647,7 @@ export class ComposableCowDecoder extends AbiDecoder<typeof ComposableCowAbi> {
    * @param data - transaction data to decode
    * @returns the decoded {@link TwapStruct}
    */
-  decodeTwapStruct(data: `0x${string}`): TwapStruct {
+  decodeTwapStruct(data: Address): TwapStruct {
     const decoded = this.decodeCreateWithContext(data);
 
     if (!decoded) {
@@ -671,7 +672,7 @@ export class ComposableCowDecoder extends AbiDecoder<typeof ComposableCowAbi> {
    */
   // Use inferred return type
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-  private decodeCreateWithContext(data: `0x${string}`) {
+  private decodeCreateWithContext(data: Address) {
     if (!this.helpers.isCreateWithContext(data)) {
       return null;
     }
@@ -697,7 +698,7 @@ export class ComposableCowDecoder extends AbiDecoder<typeof ComposableCowAbi> {
    * @returns decoded `ConditionalOrderParams` as {@link TwapStruct}
    */
   private decodeConditionalOrderParams(
-    staticInput: `0x${string}`, // IConditionalOrder.ConditionalOrderParams calldata
+    staticInput: Address, // IConditionalOrder.ConditionalOrderParams calldata
   ): TwapStruct {
     const [
       sellToken,
@@ -738,17 +739,17 @@ export type TwapStruct = {
   /**
    * which token to sell
    */
-  readonly sellToken: `0x${string}`;
+  readonly sellToken: Address;
 
   /**
    * which token to buy
    */
-  readonly buyToken: `0x${string}`;
+  readonly buyToken: Address;
 
   /**
    * who to send the tokens to
    */
-  readonly receiver: `0x${string}`;
+  readonly receiver: Address;
 
   /**
    * Meta-data associated with the order. Normally would be the keccak256 hash of the document generated in http://github.com/cowprotocol/app-data
@@ -756,7 +757,7 @@ export type TwapStruct = {
    * This hash should have been uploaded to the API https://api.cow.fi/docs/#/default/put_api_v1_app_data__app_data_hash_ and potentially to other data availability protocols like IPFS.
    *
    */
-  readonly appData: `0x${string}`;
+  readonly appData: Address;
 
   /**
    * amount of sellToken to sell in each part

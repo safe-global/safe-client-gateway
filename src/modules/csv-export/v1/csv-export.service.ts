@@ -27,6 +27,7 @@ import { asError } from '@/logging/utils';
 import { DataSourceError } from '@/domain/errors/data-source.error';
 import { CSV_OPTIONS } from '@/modules/csv-export/v1/entities/csv-export.options';
 import { CompleteMultipartUploadCommandOutput } from '@aws-sdk/client-s3';
+import type { Address } from 'viem';
 
 @Injectable()
 export class CsvExportService {
@@ -70,7 +71,7 @@ export class CsvExportService {
    */
   async registerExportJob(args: {
     chainId: string;
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
     executionDateGte?: string;
     executionDateLte?: string;
     limit?: number;
@@ -103,7 +104,7 @@ export class CsvExportService {
   async export(
     args: {
       chainId: string;
-      safeAddress: `0x${string}`;
+      safeAddress: Address;
       timestamp: number;
       executionDateGte?: string;
       executionDateLte?: string;
@@ -145,7 +146,7 @@ export class CsvExportService {
   private async *transactionPagesGenerator(
     args: {
       chainId: string;
-      safeAddress: `0x${string}`;
+      safeAddress: Address;
       executionDateGte?: string;
       executionDateLte?: string;
       limit?: number;
@@ -263,7 +264,7 @@ export class CsvExportService {
   private updatePaginationParams(
     nextUrl: string,
     chainId: string,
-    safeAddress: `0x${string}`,
+    safeAddress: Address,
     pageCount: number,
     currentLimit: number,
     currentOffset: number,
@@ -307,7 +308,7 @@ export class CsvExportService {
 
   private generateFileName(
     chainId: string,
-    safeAddress: `0x${string}`,
+    safeAddress: Address,
     timestamp: number,
   ): string {
     return `${CsvExportService.FILE_NAME}_${chainId}_${safeAddress}_${timestamp}.csv`;

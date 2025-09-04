@@ -5,6 +5,7 @@ import { IRelayApi } from '@/domain/interfaces/relay-api.interface';
 import { LimitAddressesMapper } from '@/domain/relay/limit-addresses.mapper';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { Relay, RelaySchema } from '@/domain/relay/entities/relay.entity';
+import type { Address } from 'viem';
 
 @Injectable()
 export class RelayRepository {
@@ -24,8 +25,8 @@ export class RelayRepository {
   async relay(args: {
     version: string;
     chainId: string;
-    to: `0x${string}`;
-    data: `0x${string}`;
+    to: Address;
+    data: Address;
     gasLimit: bigint | null;
   }): Promise<Relay> {
     const relayAddresses =
@@ -67,14 +68,14 @@ export class RelayRepository {
 
   async getRelayCount(args: {
     chainId: string;
-    address: `0x${string}`;
+    address: Address;
   }): Promise<number> {
     return this.relayApi.getRelayCount(args);
   }
 
   private async canRelay(args: {
     chainId: string;
-    address: `0x${string}`;
+    address: Address;
   }): Promise<{ result: boolean; currentCount: number }> {
     const currentCount = await this.getRelayCount(args);
     return { result: currentCount < this.limit, currentCount };
@@ -82,7 +83,7 @@ export class RelayRepository {
 
   private async incrementRelayCount(args: {
     chainId: string;
-    address: `0x${string}`;
+    address: Address;
   }): Promise<void> {
     const currentCount = await this.getRelayCount(args);
     const incremented = currentCount + 1;

@@ -1,6 +1,6 @@
 import { faker } from '@faker-js/faker';
 import { get } from 'lodash';
-import { getAddress } from 'viem';
+import { type Address, getAddress } from 'viem';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 import { MessageVerifierHelper } from '@/domain/messages/helpers/message-verifier.helper';
 import { messageBuilder } from '@/domain/messages/entities/__tests__/message.builder';
@@ -203,7 +203,7 @@ describe('MessageVerifierHelper', () => {
           safe,
         });
       message.confirmations[0].signature =
-        message.confirmations[0].signature.slice(0, 129) as `0x${string}`;
+        message.confirmations[0].signature.slice(0, 129) as Address;
 
       expect(() => {
         return target.verifyCreation({
@@ -243,7 +243,7 @@ describe('MessageVerifierHelper', () => {
           safe,
         });
       message.confirmations[0].signature =
-        message.confirmations[0].signature.slice(0, 128) as `0x${string}`;
+        message.confirmations[0].signature.slice(0, 128) as Address;
 
       expect(() => {
         return target.verifyCreation({
@@ -502,7 +502,7 @@ describe('MessageVerifierHelper', () => {
         });
       message.messageHash = faker.string.hexadecimal({
         length: 64,
-      }) as `0x${string}`;
+      }) as Address;
 
       expect(() => {
         return target.verifyUpdate({
@@ -604,7 +604,7 @@ describe('MessageVerifierHelper', () => {
           safe,
         });
       message.confirmations[0].signature =
-        message.confirmations[0].signature.slice(0, 129) as `0x${string}`;
+        message.confirmations[0].signature.slice(0, 129) as Address;
 
       expect(() => {
         return target.verifyUpdate({
@@ -645,7 +645,7 @@ describe('MessageVerifierHelper', () => {
           safe,
         });
       message.confirmations[0].signature =
-        message.confirmations[0].signature.slice(0, 128) as `0x${string}`;
+        message.confirmations[0].signature.slice(0, 128) as Address;
 
       expect(() => {
         return target.verifyUpdate({

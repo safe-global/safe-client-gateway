@@ -17,6 +17,7 @@ import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.mana
 import { ChainSchema } from '@/domain/chains/entities/schemas/chain.schema';
 import { z } from 'zod';
 import { type Raw, rawify } from '@/validation/entities/raw.entity';
+import type { Address } from 'viem';
 
 @Injectable()
 export class BalancesApiManager implements IBalancesApiManager {
@@ -51,10 +52,7 @@ export class BalancesApiManager implements IBalancesApiManager {
     this.zerionBalancesApi = zerionBalancesApi;
   }
 
-  async getApi(
-    chainId: string,
-    safeAddress: `0x${string}`,
-  ): Promise<IBalancesApi> {
+  async getApi(chainId: string, safeAddress: Address): Promise<IBalancesApi> {
     if (this.zerionChainIds.includes(chainId)) {
       return this.zerionBalancesApi;
     }

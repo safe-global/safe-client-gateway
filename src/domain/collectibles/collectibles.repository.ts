@@ -5,6 +5,7 @@ import { Collectible } from '@/domain/collectibles/entities/collectible.entity';
 import { Page } from '@/domain/entities/page.entity';
 import { IBalancesApiManager } from '@/domain/interfaces/balances-api.manager.interface';
 import { Chain } from '@/domain/chains/entities/chain.entity';
+import type { Address } from 'viem';
 
 @Injectable()
 export class CollectiblesRepository implements ICollectiblesRepository {
@@ -15,7 +16,7 @@ export class CollectiblesRepository implements ICollectiblesRepository {
 
   async getCollectibles(args: {
     chain: Chain;
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
     limit?: number;
     offset?: number;
     trusted?: boolean;
@@ -31,7 +32,7 @@ export class CollectiblesRepository implements ICollectiblesRepository {
 
   async clearCollectibles(args: {
     chainId: string;
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
   }): Promise<void> {
     const api = await this.balancesApiManager.getApi(
       args.chainId,

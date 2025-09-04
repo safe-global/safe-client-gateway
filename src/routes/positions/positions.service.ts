@@ -12,6 +12,7 @@ import { PositionGroup } from '@/routes/positions/entities/position-group.entity
 import { ZerionApplicationMetadataSchema } from '@/datasources/balances-api/entities/zerion-balance.entity';
 import { z } from 'zod';
 import { PositionType } from '@/domain/positions/entities/position-type.entity';
+import type { Address } from 'viem';
 
 interface PositionEntry extends Position {
   protocol: string | null;
@@ -30,7 +31,7 @@ export class PositionsService {
 
   async getPositions(args: {
     chainId: string;
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
     fiatCode: string;
   }): Promise<Array<Protocol>> {
     const { chainId } = args;

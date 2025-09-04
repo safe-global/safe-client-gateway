@@ -1,7 +1,9 @@
+import type { Address } from 'viem';
+
 interface TestSafe {
   chainId: string;
-  address: `0x${string}`;
-  owners: Array<`0x${string}`>;
+  address: Address;
+  owners: Array<Address>;
 }
 
 export const TEST_SAFE: TestSafe = {

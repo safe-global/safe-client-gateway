@@ -6,12 +6,12 @@ import { TokenInfo } from '@/routes/transactions/entities/swaps/token-info.entit
 import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
 import { IBridgeRepository } from '@/domain/bridge/bridge.repository.interface';
 import { BridgeStatus } from '@/domain/bridge/entities/bridge-status.entity';
-import { Address } from 'viem';
 import { BridgeAndSwapTransactionInfo } from '@/routes/transactions/entities/bridge/bridge-info.entity';
 import { Token } from '@/domain/tokens/entities/token.entity';
 import { NULL_ADDRESS } from '@/routes/common/constants';
 import { IChainsRepository } from '@/domain/chains/chains.repository.interface';
 import { BridgeFee } from '@/routes/transactions/entities/bridge/fees.entity';
+import type { Address } from 'viem';
 
 @Injectable()
 export class BridgeTransactionMapper {
@@ -27,10 +27,10 @@ export class BridgeTransactionMapper {
   ) {}
 
   public async mapSwap(args: {
-    data: `0x${string}`;
+    data: Address;
     executionDate: Date | null;
     chainId: string;
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
   }): Promise<SwapTransactionInfo> {
     const decoded = this.liFiDecoder.decodeSwap(args.data);
 
@@ -75,9 +75,9 @@ export class BridgeTransactionMapper {
 
   public async mapSwapAndBridge(args: {
     chainId: string;
-    data: `0x${string}`;
+    data: Address;
     executionDate: Date | null;
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
   }): Promise<BridgeAndSwapTransactionInfo | null> {
     const decoded = this.liFiDecoder.decodeBridgeAndMaybeSwap(args.data);
 
@@ -108,7 +108,7 @@ export class BridgeTransactionMapper {
   }
 
   private async _getTokenInfo(args: {
-    tokenAddress: `0x${string}`;
+    tokenAddress: Address;
     chainId: string;
   }): Promise<Token> {
     const isNativeCoin = args.tokenAddress === NULL_ADDRESS;
@@ -118,7 +118,7 @@ export class BridgeTransactionMapper {
       );
       return {
         type: 'NATIVE_TOKEN' as const,
-        address: NULL_ADDRESS as `0x${string}`,
+        address: NULL_ADDRESS as Address,
         decimals: nativeCurrency.decimals,
         logoUri: nativeCurrency.logoUri,
         name: nativeCurrency.name,
@@ -135,7 +135,7 @@ export class BridgeTransactionMapper {
 
   private async getExecutedSwapInfo(args: {
     chainId: string;
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
     decoded: ReturnType<LiFiDecoder['decodeSwap']>;
   }): Promise<{
     toAmount: string;
@@ -164,7 +164,7 @@ export class BridgeTransactionMapper {
   private async getSwapAndBridgeInfo(args: {
     executionDate: Date | null;
     chainId: string;
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
     decoded: ReturnType<LiFiDecoder['decodeBridgeAndMaybeSwap']>;
   }): Promise<{
     toAmount: string | null;

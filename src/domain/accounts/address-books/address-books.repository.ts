@@ -18,6 +18,7 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
+import type { Address } from 'viem';
 
 @Injectable()
 export class AddressBooksRepository implements IAddressBooksRepository {
@@ -35,7 +36,7 @@ export class AddressBooksRepository implements IAddressBooksRepository {
    */
   async getAddressBook(args: {
     authPayload: AuthPayload;
-    address: `0x${string}`;
+    address: Address;
     chainId: string;
   }): Promise<AddressBook> {
     if (!args.authPayload.isForSigner(args.address)) {
@@ -63,7 +64,7 @@ export class AddressBooksRepository implements IAddressBooksRepository {
    */
   async createAddressBookItem(args: {
     authPayload: AuthPayload;
-    address: `0x${string}`;
+    address: Address;
     chainId: string;
     createAddressBookItemDto: CreateAddressBookItemDto;
   }): Promise<AddressBookItem> {
@@ -88,7 +89,7 @@ export class AddressBooksRepository implements IAddressBooksRepository {
 
   async deleteAddressBook(args: {
     authPayload: AuthPayload;
-    address: `0x${string}`;
+    address: Address;
     chainId: string;
   }): Promise<void> {
     if (!args.authPayload.isForSigner(args.address)) {
@@ -111,7 +112,7 @@ export class AddressBooksRepository implements IAddressBooksRepository {
 
   async deleteAddressBookItem(args: {
     authPayload: AuthPayload;
-    address: `0x${string}`;
+    address: Address;
     chainId: string;
     addressBookItemId: number;
   }): Promise<void> {
@@ -139,7 +140,7 @@ export class AddressBooksRepository implements IAddressBooksRepository {
   // TODO: Extract this functionality in AccountsRepository['checkIsEnabled(DataType, Account)']
   private async checkAddressBooksIsEnabled(args: {
     authPayload: AuthPayload;
-    address: `0x${string}`;
+    address: Address;
   }): Promise<void> {
     const addressBookDataType = await this.checkAddressBookDataTypeIsActive();
     const accountDataSettings =

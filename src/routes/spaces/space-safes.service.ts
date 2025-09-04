@@ -11,6 +11,7 @@ import { groupBy, mapValues } from 'lodash';
 import { ISpaceSafesRepository } from '@/domain/spaces/space-safes.repository.interface';
 import { IMembersRepository } from '@/domain/users/members.repository.interface';
 import { In } from 'typeorm';
+import type { Address } from 'viem';
 
 @Injectable()
 export class SpaceSafesService {
@@ -69,7 +70,7 @@ export class SpaceSafesService {
 
   private assertSignerAddress(
     authPayload: AuthPayload,
-  ): asserts authPayload is AuthPayload & { signer_address: `0x${string}` } {
+  ): asserts authPayload is AuthPayload & { signer_address: Address } {
     if (!authPayload.signer_address) {
       throw new UnauthorizedException('Signer address not provided');
     }
@@ -77,7 +78,7 @@ export class SpaceSafesService {
 
   private async isAdmin(
     spaceId: Space['id'],
-    signerAddress: `0x${string}`,
+    signerAddress: Address,
   ): Promise<void> {
     const { id: userId } =
       await this.userRepository.findByWalletAddressOrFail(signerAddress);
@@ -104,7 +105,7 @@ export class SpaceSafesService {
 
   private async isMember(
     spaceId: Space['id'],
-    signerAddress: `0x${string}`,
+    signerAddress: Address,
   ): Promise<void> {
     const { id: userId } =
       await this.userRepository.findByWalletAddressOrFail(signerAddress);

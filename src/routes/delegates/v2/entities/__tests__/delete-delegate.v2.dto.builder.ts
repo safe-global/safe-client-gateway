@@ -2,14 +2,11 @@ import type { IBuilder } from '@/__tests__/builder';
 import { Builder } from '@/__tests__/builder';
 import type { DeleteDelegateV2Dto } from '@/routes/delegates/v2/entities/delete-delegate.v2.dto.entity';
 import { faker } from '@faker-js/faker';
-import { getAddress } from 'viem';
+import { type Address, getAddress } from 'viem';
 
 export function deleteDelegateV2DtoBuilder(): IBuilder<DeleteDelegateV2Dto> {
   return new Builder<DeleteDelegateV2Dto>()
     .with('delegator', getAddress(faker.finance.ethereumAddress()))
     .with('safe', getAddress(faker.finance.ethereumAddress()))
-    .with(
-      'signature',
-      faker.string.hexadecimal({ length: 32 }) as `0x${string}`,
-    );
+    .with('signature', faker.string.hexadecimal({ length: 32 }) as Address);
 }

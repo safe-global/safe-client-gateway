@@ -2,7 +2,7 @@ import { DeleteAllSubscriptionsDtoSchema } from '@/domain/notifications/v2/entit
 import { deleteAllSubscriptionsDtoBuilder } from '@/domain/notifications/v2/entities/__tests__/delete-all-subscriptions.dto.builder';
 import { faker } from '@faker-js/faker';
 import type { UUID } from 'crypto';
-import { getAddress } from 'viem';
+import { type Address, getAddress } from 'viem';
 
 describe('DeleteAllSubscriptionsDtoSchema', () => {
   it('should validate a valid DeleteAllSubscriptionsDto', () => {
@@ -93,7 +93,7 @@ describe('DeleteAllSubscriptionsDtoSchema', () => {
         {
           chainId: faker.string.numeric(),
           deviceUuid: faker.string.uuid() as UUID,
-          safeAddress: nonChecksummedAddress as `0x${string}`,
+          safeAddress: nonChecksummedAddress as Address,
         },
       ],
     };
@@ -113,7 +113,7 @@ describe('DeleteAllSubscriptionsDtoSchema', () => {
         {
           chainId: faker.string.numeric(),
           deviceUuid: faker.string.uuid() as UUID,
-          safeAddress: 'not-an-address' as `0x${string}`,
+          safeAddress: 'not-an-address' as Address,
         },
       ],
     };
@@ -253,7 +253,7 @@ describe('DeleteAllSubscriptionsDtoSchema', () => {
           chainId: faker.string.numeric(),
           deviceUuid: faker.string.uuid() as UUID,
           safeAddress: getAddress(faker.finance.ethereumAddress()),
-          signerAddress: nonChecksummedAddress as `0x${string}`,
+          signerAddress: nonChecksummedAddress as Address,
         },
       ])
       .build();
@@ -274,7 +274,7 @@ describe('DeleteAllSubscriptionsDtoSchema', () => {
           chainId: faker.string.numeric(),
           deviceUuid: faker.string.uuid() as UUID,
           safeAddress: getAddress(faker.finance.ethereumAddress()),
-          signerAddress: 'not-an-address' as `0x${string}`,
+          signerAddress: 'not-an-address' as Address,
         },
       ])
       .build();

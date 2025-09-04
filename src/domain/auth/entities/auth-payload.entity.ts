@@ -1,6 +1,7 @@
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
 import { z } from 'zod';
+import type { Address } from 'viem';
 
 export type AuthPayloadDto = z.infer<typeof AuthPayloadDtoSchema>;
 
@@ -13,7 +14,7 @@ export const AuthPayloadDtoSchema = z.object({
 // the `Auth` decorator, should there not be a payload
 export class AuthPayload implements Partial<AuthPayloadDto> {
   chain_id?: string;
-  signer_address?: `0x${string}`;
+  signer_address?: Address;
 
   constructor(props?: AuthPayloadDto) {
     this.chain_id = props?.chain_id;
@@ -24,7 +25,7 @@ export class AuthPayload implements Partial<AuthPayloadDto> {
     return !!this.chain_id && this.chain_id === chainId;
   }
 
-  isForSigner(signerAddress: `0x${string}`): boolean {
+  isForSigner(signerAddress: Address): boolean {
     return (
       !!this.signer_address &&
       // Lowercase ensures a mixture of (non-)checksummed addresses are compared correctly

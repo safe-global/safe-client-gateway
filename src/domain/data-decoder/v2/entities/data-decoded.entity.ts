@@ -3,10 +3,11 @@ import { AddressSchema as _AddressSchema } from '@/validation/entities/schemas/a
 import { HexSchema as _HexSchema } from '@/validation/entities/schemas/hex.schema';
 import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
 import { Operation } from '@/domain/safe/entities/operation.entity';
+import type { Address } from 'viem';
 
 // ZodEffects cannot be recursively inferred and need be casted
-const AddressSchema = _AddressSchema as z.ZodType<`0x${string}`>;
-const HexSchema = _HexSchema as z.ZodType<`0x${string}`>;
+const AddressSchema = _AddressSchema as z.ZodType<Address>;
+const HexSchema = _HexSchema as z.ZodType<Address>;
 
 export const MultisendSchema = z.object({
   operation: z.nativeEnum(Operation),

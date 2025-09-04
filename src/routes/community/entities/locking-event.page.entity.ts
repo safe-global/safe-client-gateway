@@ -6,6 +6,7 @@ import {
 import { LockingEventType } from '@/domain/community/entities/schemas/locking-event.schema';
 import { Page } from '@/routes/common/entities/page.entity';
 import { ApiExtraModels, ApiProperty, getSchemaPath } from '@nestjs/swagger';
+import type { Address } from 'viem';
 
 class LockEventItem implements DomainLockEventItem {
   @ApiProperty({ enum: [LockingEventType.LOCKED] })
@@ -13,9 +14,9 @@ class LockEventItem implements DomainLockEventItem {
   @ApiProperty({ type: String })
   executionDate!: Date;
   @ApiProperty()
-  transactionHash!: `0x${string}`;
+  transactionHash!: Address;
   @ApiProperty()
-  holder!: `0x${string}`;
+  holder!: Address;
   @ApiProperty()
   amount!: string;
   @ApiProperty()
@@ -28,9 +29,9 @@ class UnlockEventItem implements DomainUnlockEventItem {
   @ApiProperty({ type: String })
   executionDate!: Date;
   @ApiProperty()
-  transactionHash!: `0x${string}`;
+  transactionHash!: Address;
   @ApiProperty()
-  holder!: `0x${string}`;
+  holder!: Address;
   @ApiProperty()
   amount!: string;
   @ApiProperty()
@@ -45,9 +46,9 @@ class WithdrawEventItem implements DomainWithdrawEventItem {
   @ApiProperty({ type: String })
   executionDate!: Date;
   @ApiProperty()
-  transactionHash!: `0x${string}`;
+  transactionHash!: Address;
   @ApiProperty()
-  holder!: `0x${string}`;
+  holder!: Address;
   @ApiProperty()
   amount!: string;
   @ApiProperty()

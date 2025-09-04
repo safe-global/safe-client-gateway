@@ -4,6 +4,7 @@ import type { SpaceSafe as DbSpaceSafe } from '@/datasources/spaces/entities/spa
 import { SpaceSchema } from '@/domain/spaces/entities/space.entity';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
+import type { Address } from 'viem';
 
 export type SpaceSafe = z.infer<typeof SpaceSafeSchema>;
 
@@ -16,6 +17,6 @@ export const SpaceSafeSchema: z.ZodType<
   }
 > = RowSchema.extend({
   chainId: NumericStringSchema,
-  address: AddressSchema as z.ZodType<`0x${string}`>,
+  address: AddressSchema as z.ZodType<Address>,
   space: z.lazy(() => SpaceSchema).optional(),
 });

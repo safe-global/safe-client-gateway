@@ -21,6 +21,7 @@ import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.s
 import { NotificationSubscriptionNotificationType } from '@/datasources/notifications/entities/notification-subscription-notification-type.entity.db';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { CacheRouter } from '@/datasources/cache/cache.router';
+import type { Address } from 'viem';
 
 @Injectable()
 export class NotificationsRepositoryV2 implements INotificationsRepositoryV2 {
@@ -167,7 +168,7 @@ export class NotificationsRepositoryV2 implements INotificationsRepositoryV2 {
     entityManager: EntityManager,
     args: {
       deviceId: number;
-      signerAddress?: `0x${string}`;
+      signerAddress?: Address;
       upsertSubscriptionsDto: UpsertSubscriptionsDto;
     },
   ): Promise<void> {
@@ -314,7 +315,7 @@ export class NotificationsRepositoryV2 implements INotificationsRepositoryV2 {
     authPayload: AuthPayload;
     deviceUuid: UUID;
     chainId: string;
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
   }): Promise<Array<NotificationType>> {
     if (!args.authPayload.signer_address) {
       throw new UnauthorizedException();
@@ -344,10 +345,10 @@ export class NotificationsRepositoryV2 implements INotificationsRepositoryV2 {
 
   public async getSubscribersBySafe(args: {
     chainId: string;
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
   }): Promise<
     Array<{
-      subscriber: `0x${string}` | null;
+      subscriber: Address | null;
       deviceUuid: UUID;
       cloudMessagingToken: string;
     }>
@@ -378,7 +379,7 @@ export class NotificationsRepositoryV2 implements INotificationsRepositoryV2 {
     });
 
     const output: Array<{
-      subscriber: `0x${string}` | null;
+      subscriber: Address | null;
       deviceUuid: UUID;
       cloudMessagingToken: string;
     }> = [];
@@ -398,7 +399,7 @@ export class NotificationsRepositoryV2 implements INotificationsRepositoryV2 {
   public async deleteSubscription(args: {
     deviceUuid: UUID;
     chainId: string;
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
   }): Promise<void> {
     const notificationsSubscriptionsRepository =
       await this.postgresDatabaseService.getRepository<NotificationSubscription>(
@@ -429,8 +430,8 @@ export class NotificationsRepositoryV2 implements INotificationsRepositoryV2 {
     subscriptions: Array<{
       chainId: string;
       deviceUuid: UUID;
-      safeAddress: `0x${string}`;
-      signerAddress?: `0x${string}` | null;
+      safeAddress: Address;
+      signerAddress?: Address | null;
     }>;
   }): Promise<void> {
     const notificationsSubscriptionsRepository =
@@ -505,7 +506,7 @@ export class NotificationsRepositoryV2 implements INotificationsRepositoryV2 {
 
   private getSubscribersBySafeCacheKey(args: {
     chainId: string;
-    safeAddress: `0x${string}`;
+    safeAddress: Address;
   }): string {
     return CacheRouter.getOrnCacheKey(
       'getSubscribersBySafe',
@@ -516,7 +517,7 @@ export class NotificationsRepositoryV2 implements INotificationsRepositoryV2 {
 
   private async removeGetSubscribersBySafeCache(args: {
     entityManager: EntityManager;
-    safes: Array<{ chainId: string; address: `0x${string}` }>;
+    safes: Array<{ chainId: string; address: Address }>;
   }): Promise<void> {
     for (const safe of args.safes) {
       const subscriptionsCacheKey = this.getSubscribersBySafeCacheKey({

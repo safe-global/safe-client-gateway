@@ -24,6 +24,7 @@ import {
 } from '@/routes/safes/entities/caip-10-addresses.entity';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
+import type { Address } from 'viem';
 
 @ApiTags('safes')
 @Controller({
@@ -59,7 +60,7 @@ export class SafesController {
   async getSafe(
     @Param('chainId') chainId: string,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
-    safeAddress: `0x${string}`,
+    safeAddress: Address,
   ): Promise<SafeState> {
     return this.service.getSafeInfo({ chainId, safeAddress });
   }
@@ -91,7 +92,7 @@ export class SafesController {
   async getNonces(
     @Param('chainId') chainId: string,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
-    safeAddress: `0x${string}`,
+    safeAddress: Address,
   ): Promise<SafeNonces> {
     return this.service.getNonces({ chainId, safeAddress });
   }
@@ -154,7 +155,7 @@ export class SafesController {
     @Query('exclude_spam', new DefaultValuePipe(true), ParseBoolPipe)
     excludeSpam: boolean,
     @Query('wallet_address', new ValidationPipe(AddressSchema.optional()))
-    walletAddress?: `0x${string}`,
+    walletAddress?: Address,
   ): Promise<Array<SafeOverview>> {
     return this.service.getSafeOverview({
       currency,

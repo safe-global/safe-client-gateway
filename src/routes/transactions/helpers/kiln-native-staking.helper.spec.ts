@@ -13,6 +13,7 @@ import type { ILoggingService } from '@/logging/logging.interface';
 import { KilnNativeStakingHelper } from '@/routes/transactions/helpers/kiln-native-staking.helper';
 import { TransactionFinder } from '@/routes/transactions/helpers/transaction-finder.helper';
 import { faker } from '@faker-js/faker';
+import type { Address } from 'viem';
 import { concat, getAddress } from 'viem';
 
 const mockLoggingService = {
@@ -103,7 +104,7 @@ describe('KilnNativeStakingHelper', () => {
           length: KilnDecoder.KilnPublicKeyLength,
           casing: 'lower',
         }),
-      ] as Array<`0x${string}`>;
+      ] as Array<Address>;
       const _publicKeys = concat(validators);
 
       const result = target.splitPublicKeys(_publicKeys);

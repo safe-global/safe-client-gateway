@@ -34,6 +34,7 @@ import {
 } from '@/routes/spaces/entities/upsert-address-book-items.dto.entity';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { SpacesAddressBookRateLimitGuard } from '@/routes/spaces/guards/spaces-address-book-rate-limit.guard';
+import type { Address } from 'viem';
 
 @ApiTags('spaces')
 @Controller({ path: 'spaces', version: '1' })
@@ -157,7 +158,7 @@ export class AddressBooksController {
     @Param('spaceId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
     spaceId: number,
     @Param('address', new ValidationPipe(AddressSchema))
-    address: `0x${string}`,
+    address: Address,
   ): Promise<void> {
     return this.service.deleteByAddress({ authPayload, spaceId, address });
   }

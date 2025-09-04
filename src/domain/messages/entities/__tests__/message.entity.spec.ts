@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker';
-import { getAddress } from 'viem';
+import { type Address, getAddress } from 'viem';
 import { typedDataBuilder } from '@/routes/messages/entities/__tests__/typed-data.builder';
 import { messageBuilder } from '@/domain/messages/entities/__tests__/message.builder';
 import { MessageSchema } from '@/domain/messages/entities/message.entity';
@@ -54,7 +54,7 @@ describe('MessageSchema', () => {
     (key) => {
       const nonChecksummedAddress = faker.finance.ethereumAddress().toString();
       const message = messageBuilder()
-        .with(key, nonChecksummedAddress as `0x${string}`)
+        .with(key, nonChecksummedAddress as Address)
         .build();
 
       const result = MessageSchema.safeParse(message);
@@ -69,7 +69,7 @@ describe('MessageSchema', () => {
     'should not allow a non-hex messageHash',
     (key) => {
       const message = messageBuilder()
-        .with(key, faker.string.alphanumeric() as `0x${string}`)
+        .with(key, faker.string.alphanumeric() as Address)
         .build();
 
       const result = MessageSchema.safeParse(message);
