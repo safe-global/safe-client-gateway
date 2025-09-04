@@ -2087,29 +2087,29 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@nestjs/bull-shared@npm:^11.0.2":
-  version: 11.0.2
-  resolution: "@nestjs/bull-shared@npm:11.0.2"
+"@nestjs/bull-shared@npm:^11.0.3":
+  version: 11.0.3
+  resolution: "@nestjs/bull-shared@npm:11.0.3"
   dependencies:
     tslib: "npm:2.8.1"
   peerDependencies:
     "@nestjs/common": ^10.0.0 || ^11.0.0
     "@nestjs/core": ^10.0.0 || ^11.0.0
-  checksum: 10/5ddd639104241c3d7cfef0366fda3b9900dcb250b1a251566bc866a1dab1ada84ce5118efc1455d27a261e86f4b802893237a00e5876748ffb0759086aa02a13
+  checksum: 10/3e24f66f4673bf9213fc20c495ef6c62860a839ce4f385453c190fe57840b82adb76b3244d97168d1ea0b557cbb861e739980117422daddd0692ba1013882ae2
   languageName: node
   linkType: hard
 
-"@nestjs/bullmq@npm:^11.0.2":
-  version: 11.0.2
-  resolution: "@nestjs/bullmq@npm:11.0.2"
+"@nestjs/bullmq@npm:^11.0.3":
+  version: 11.0.3
+  resolution: "@nestjs/bullmq@npm:11.0.3"
   dependencies:
-    "@nestjs/bull-shared": "npm:^11.0.2"
+    "@nestjs/bull-shared": "npm:^11.0.3"
     tslib: "npm:2.8.1"
   peerDependencies:
     "@nestjs/common": ^10.0.0 || ^11.0.0
     "@nestjs/core": ^10.0.0 || ^11.0.0
     bullmq: ^3.0.0 || ^4.0.0 || ^5.0.0
-  checksum: 10/eac510862401d06898e3222e5979c0b16c0026e0048858d64365a714538bd4838d3d030c0cc18b396a6eab978aab0cc33b82dd3fb340757fcb813073b0cae370
+  checksum: 10/3f5fc685b5ea7d1d9590ea6b3594df3e684a208a115e637b1366963af0167276d4eee35b2085324ed6be4d751d249466ccf707a28120c090063f0d6afc8c2015
   languageName: node
   linkType: hard
 
@@ -9148,7 +9148,7 @@ __metadata:
     "@aws-sdk/s3-request-presigner": "npm:3.879.0"
     "@faker-js/faker": "npm:9.9.0"
     "@fingerprintjs/fingerprintjs-pro-server-api": "npm:6.2.0"
-    "@nestjs/bullmq": "npm:^11.0.2"
+    "@nestjs/bullmq": "npm:^11.0.3"
     "@nestjs/cache-manager": "npm:3.0.1"
     "@nestjs/cli": "npm:11.0.5"
     "@nestjs/common": "npm:11.1.6"
