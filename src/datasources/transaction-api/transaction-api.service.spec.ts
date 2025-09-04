@@ -1441,7 +1441,7 @@ describe('TransactionApi', () => {
       const executedDateLte = faker.date.recent().toISOString();
       const limit = faker.number.int();
       const offset = faker.number.int();
-      const getMultisigTransactionsUrl = `${baseUrl}/api/v1/safes/${multisigTransaction.safe}/multisig-transactions/`;
+      const getMultisigTransactionsUrl = `${baseUrl}/api/v2/safes/${multisigTransaction.safe}/multisig-transactions/`;
       const cacheDir = new CacheDir(
         `${chainId}_multisig_transactions_${multisigTransaction.safe}`,
         `${ordering}_${multisigTransaction.isExecuted}_${multisigTransaction.trusted}_${executedDateGte}_${executedDateLte}_${multisigTransaction.to}_${multisigTransaction.value}_${multisigTransaction.nonce}_${multisigTransaction.nonce}_${limit}_${offset}`,
@@ -1502,7 +1502,7 @@ describe('TransactionApi', () => {
       const executedDateLte = faker.date.recent().toISOString();
       const limit = faker.number.int();
       const offset = faker.number.int();
-      const getMultisigTransactionsUrl = `${baseUrl}/api/v1/safes/${multisigTransaction.safe}/multisig-transactions/`;
+      const getMultisigTransactionsUrl = `${baseUrl}/api/v2/safes/${multisigTransaction.safe}/multisig-transactions/`;
       const statusCode = faker.internet.httpStatusCode({
         types: ['clientError', 'serverError'],
       });
@@ -1580,7 +1580,7 @@ describe('TransactionApi', () => {
   describe('getMultisigTransaction', () => {
     it('should return the multisig transaction retrieved', async () => {
       const multisigTransaction = multisigTransactionBuilder().build();
-      const getMultisigTransactionUrl = `${baseUrl}/api/v1/multisig-transactions/${multisigTransaction.safeTxHash}/`;
+      const getMultisigTransactionUrl = `${baseUrl}/api/v2/multisig-transactions/${multisigTransaction.safeTxHash}/`;
       const cacheDir = new CacheDir(
         `${chainId}_multisig_transaction_${multisigTransaction.safeTxHash}`,
         '',
@@ -1607,7 +1607,7 @@ describe('TransactionApi', () => {
       ['standard', new Error(errorMessage)],
     ])(`should forward a %s error`, async (_, error) => {
       const multisigTransaction = multisigTransactionBuilder().build();
-      const getMultisigTransactionUrl = `${baseUrl}/api/v1/multisig-transactions/${multisigTransaction.safeTxHash}/`;
+      const getMultisigTransactionUrl = `${baseUrl}/api/v2/multisig-transactions/${multisigTransaction.safeTxHash}/`;
       const statusCode = faker.internet.httpStatusCode({
         types: ['clientError', 'serverError'],
       });
@@ -1644,7 +1644,7 @@ describe('TransactionApi', () => {
     it('should delete a transaction', async () => {
       const safeTxHash = faker.string.hexadecimal();
       const signature = faker.string.hexadecimal();
-      const deleteTransactionUrl = `${baseUrl}/api/v1/multisig-transactions/${safeTxHash}`;
+      const deleteTransactionUrl = `${baseUrl}/api/v2/multisig-transactions/${safeTxHash}`;
       networkService.delete.mockResolvedValueOnce({
         status: 200,
         data: rawify({}),
@@ -1671,7 +1671,7 @@ describe('TransactionApi', () => {
     ])(`should forward a %s error`, async (_, error) => {
       const safeTxHash = faker.string.hexadecimal();
       const signature = faker.string.hexadecimal();
-      const deleteTransactionUrl = `${baseUrl}/api/v1/multisig-transactions/${safeTxHash}`;
+      const deleteTransactionUrl = `${baseUrl}/api/v2/multisig-transactions/${safeTxHash}`;
       const statusCode = faker.internet.httpStatusCode({
         types: ['clientError', 'serverError'],
       });
@@ -1791,7 +1791,7 @@ describe('TransactionApi', () => {
       const allTransactionsPage = pageBuilder()
         .with('results', [multisigTransaction, creationTransaction])
         .build();
-      const getAllTransactionsUrl = `${baseUrl}/api/v1/safes/${safeAddress}/all-transactions/`;
+      const getAllTransactionsUrl = `${baseUrl}/api/v2/safes/${safeAddress}/all-transactions/`;
       const cacheDir = new CacheDir(
         `${chainId}_all_transactions_${safeAddress}`,
         `${ordering}_${executed}_${queued}_${limit}_${offset}`,
@@ -1838,7 +1838,7 @@ describe('TransactionApi', () => {
       const queued = faker.datatype.boolean();
       const limit = faker.number.int();
       const offset = faker.number.int();
-      const getAllTransactionsUrl = `${baseUrl}/api/v1/safes/${safeAddress}/all-transactions/`;
+      const getAllTransactionsUrl = `${baseUrl}/api/v2/safes/${safeAddress}/all-transactions/`;
       const statusCode = faker.internet.httpStatusCode({
         types: ['clientError', 'serverError'],
       });
@@ -2315,7 +2315,7 @@ describe('TransactionApi', () => {
     it('should post multisig transaction', async () => {
       const safeAddress = getAddress(faker.finance.ethereumAddress());
       const proposeTransactionDto = proposeTransactionDtoBuilder().build();
-      const postMultisigTransactionUrl = `${baseUrl}/api/v1/safes/${safeAddress}/multisig-transactions/`;
+      const postMultisigTransactionUrl = `${baseUrl}/api/v2/safes/${safeAddress}/multisig-transactions/`;
       networkService.post.mockResolvedValueOnce({
         status: 200,
         data: rawify({}),
@@ -2344,7 +2344,7 @@ describe('TransactionApi', () => {
     ])(`should forward a %s error`, async (_, error) => {
       const safeAddress = getAddress(faker.finance.ethereumAddress());
       const proposeTransactionDto = proposeTransactionDtoBuilder().build();
-      const postMultisigTransactionUrl = `${baseUrl}/api/v1/safes/${safeAddress}/multisig-transactions/`;
+      const postMultisigTransactionUrl = `${baseUrl}/api/v2/safes/${safeAddress}/multisig-transactions/`;
       const statusCode = faker.internet.httpStatusCode({
         types: ['clientError', 'serverError'],
       });
