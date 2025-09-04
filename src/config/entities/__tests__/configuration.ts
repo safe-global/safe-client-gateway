@@ -384,6 +384,7 @@ export default (): ReturnType<typeof configuration> => ({
         delay: faker.number.int({ min: 0, max: 2000 }),
       },
       attempts: faker.number.int({ min: 0, max: 3 }),
+      concurrency: faker.number.int({ min: 1, max: 3 }),
     },
   },
 });

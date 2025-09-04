@@ -7,16 +7,34 @@ import {
   CsvExportJobResponse,
 } from '@/modules/csv-export/v1/entities/csv-export-job-data.entity';
 import { OnWorkerEvent, Processor, WorkerHost } from '@nestjs/bullmq';
-import { Inject } from '@nestjs/common';
+import { Inject, OnModuleInit } from '@nestjs/common';
 import { Job } from 'bullmq';
+import { IConfigurationService } from '@/config/configuration.service.interface';
 
-@Processor(CSV_EXPORT_QUEUE)
-export class CsvExportConsumer extends WorkerHost {
+@Processor(CSV_EXPORT_QUEUE, {
+  concurrency: 1, // Dynamically overridden on module init
+})
+export class CsvExportConsumer extends WorkerHost implements OnModuleInit {
   constructor(
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
     private readonly csvExportService: CsvExportService,
+    @Inject(IConfigurationService)
+    private readonly configurationService: IConfigurationService,
   ) {
     super();
+  }
+
+  onModuleInit(): void {
+    const concurrency = this.configurationService.getOrThrow<number>(
+      'csvExport.queue.concurrency',
+    );
+    this.worker.concurrency = concurrency;
+
+    this.loggingService.debug({
+      type: LogType.JobEvent,
+      source: 'CsvExportConsumer',
+      event: `BullMq Worker concurrency set to ${concurrency}`,
+    });
   }
 
   async process(

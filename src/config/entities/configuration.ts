@@ -606,6 +606,7 @@ export default () => ({
         ), // 2 seconds
       },
       attempts: parseInt(process.env.CSV_EXPORT_QUEUE_ATTEMPTS ?? `${3}`),
+      concurrency: parseInt(process.env.CSV_EXPORT_QUEUE_CONCURRENCY ?? `${3}`),
     },
   },
 });
