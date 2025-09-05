@@ -130,7 +130,7 @@ describe('PositionsService', () => {
     );
   });
 
-  it('aggregates multiple positions of the same type into a single item with summed balances', async () => {
+  it('returns individual positions without aggregation by type', async () => {
     const aaveDeposit1 = positionBuilder()
       .with('protocol', 'Aave')
       .with('name', 'USDC')
@@ -161,13 +161,20 @@ describe('PositionsService', () => {
     const aave = res.find((p) => p.protocol === 'Aave')!;
     const usdcGroup = aave.items.find((g) => g.name === 'USDC')!;
 
-    expect(usdcGroup.items).toHaveLength(1);
-    expect(usdcGroup.items[0]).toEqual(
-      expect.objectContaining({
-        position_type: PositionType.deposit,
-        balance: '15',
-        fiatBalance: '45',
-      }),
+    expect(usdcGroup.items).toHaveLength(2);
+    expect(usdcGroup.items).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          position_type: PositionType.deposit,
+          balance: '10',
+          fiatBalance: '30',
+        }),
+        expect.objectContaining({
+          position_type: PositionType.deposit,
+          balance: '5',
+          fiatBalance: '15',
+        }),
+      ]),
     );
 
     expect(aave.fiatTotal).toBe('45');
@@ -276,7 +283,7 @@ describe('PositionsService', () => {
     expect(item.fiatConversion).toBe('0');
   });
 
-  it('handles large numeric strings when aggregating', async () => {
+  it('handles large numeric strings without aggregation', async () => {
     const big1 = positionBuilder()
       .with('protocol', 'Aave')
       .with('name', 'USDT')
@@ -299,9 +306,12 @@ describe('PositionsService', () => {
       fiatCode: 'USD',
     });
 
-    const agg = aave.items.find((g) => g.name === 'USDT')!.items[0];
-    expect(agg.balance).toBe('1000000000000001');
-    expect(agg.fiatBalance).toBe('2000000000000002');
+    const usdtGroup = aave.items.find((g) => g.name === 'USDT')!;
+    expect(usdtGroup.items).toHaveLength(2);
+    expect(usdtGroup.items[0].balance).toBe('1000000000000000');
+    expect(usdtGroup.items[0].fiatBalance).toBe('2000000000000000');
+    expect(usdtGroup.items[1].balance).toBe('1');
+    expect(usdtGroup.items[1].fiatBalance).toBe('2');
   });
 
   it('returns empty array when repository yields no positions', async () => {
