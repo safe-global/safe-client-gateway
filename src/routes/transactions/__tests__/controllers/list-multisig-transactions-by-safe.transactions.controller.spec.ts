@@ -296,11 +296,97 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
                   missingSigners: null,
                 },
                 safeAppInfo: null,
+                note: null,
               },
               conflictType: 'None',
             },
           ],
         });
+      });
+  });
+
+  it('Should include transaction note when present', async () => {
+    const chain = chainBuilder().build();
+    const signers = Array.from({ length: 2 }, () => {
+      const privateKey = generatePrivateKey();
+      return privateKeyToAccount(privateKey);
+    });
+    const safe = safeBuilder()
+      .with(
+        'owners',
+        signers.map((signer) => signer.address),
+      )
+      .build();
+    const token = erc20TokenBuilder()
+      .with('address', '0x84662112A54cC30733A0DfF864bc38905AB42fD4')
+      .build();
+    const note = faker.lorem.sentence();
+    const multisigTransaction = await multisigTransactionBuilder()
+      .with('safe', safe.address)
+      .with('to', token.address)
+      .with('value', '455753658736')
+      .with('operation', 0)
+      .with('executionDate', new Date('2022-06-21T23:12:32.000Z'))
+      .with('isExecuted', true)
+      .with('isSuccessful', true)
+      .with('origin', JSON.stringify({ note }))
+      .with('confirmationsRequired', 2)
+      .buildWithConfirmations({ safe, chainId: chain.chainId, signers });
+    const dataDecoded = dataDecodedBuilder()
+      .with('method', 'transfer')
+      .with('parameters', [
+        dataDecodedParameterBuilder()
+          .with('name', 'to')
+          .with('type', 'address')
+          .with('value', token.address)
+          .build(),
+        dataDecodedParameterBuilder()
+          .with('name', 'value')
+          .with('type', 'uint256')
+          .with('value', '455753658736')
+          .build(),
+      ])
+      .build();
+    networkService.get.mockImplementation(({ url }) => {
+      const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
+      const getMultisigTransactionsUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/multisig-transactions/`;
+      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
+      const getTokenUrl = `${chain.transactionService}/api/v1/tokens/${token.address}`;
+      if (url === getChainUrl) {
+        return Promise.resolve({ data: rawify(chain), status: 200 });
+      }
+      if (url === getMultisigTransactionsUrl) {
+        return Promise.resolve({
+          data: rawify(
+            pageBuilder()
+              .with('results', [multisigTransactionToJson(multisigTransaction)])
+              .build(),
+          ),
+          status: 200,
+        });
+      }
+      if (url === getSafeUrl) {
+        return Promise.resolve({ data: rawify(safe), status: 200 });
+      }
+      if (url === getTokenUrl) {
+        return Promise.resolve({ data: rawify(token), status: 200 });
+      }
+      return Promise.reject(new Error(`Could not match ${url}`));
+    });
+    networkService.post.mockImplementation(({ url }) => {
+      if (url === `${safeDecoderUrl}/api/v1/data-decoder`) {
+        return Promise.resolve({ data: rawify(dataDecoded), status: 200 });
+      }
+      return Promise.reject(new Error(`Could not match ${url}`));
+    });
+
+    await request(app.getHttpServer())
+      .get(
+        `/v1/chains/${chain.chainId}/safes/${safe.address}/multisig-transactions`,
+      )
+      .expect(200)
+      .then(({ body }) => {
+        expect(body.results[0].transaction.note).toBe(note);
       });
   });
 
@@ -430,6 +516,7 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
                   missingSigners: null,
                 },
                 safeAppInfo: null,
+                note: null,
               },
               conflictType: 'None',
             },
@@ -561,6 +648,7 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
                   name: safeAppsResponse[0].name,
                   url: safeAppsResponse[0].url,
                 },
+                note: null,
               },
               conflictType: 'None',
             },
@@ -671,6 +759,7 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
                   missingSigners: null,
                 },
                 safeAppInfo: null,
+                note: null,
               },
               conflictType: 'None',
             },

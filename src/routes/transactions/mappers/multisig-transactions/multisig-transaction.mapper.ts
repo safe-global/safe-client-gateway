@@ -10,6 +10,7 @@ import { SafeAppInfoMapper } from '@/routes/transactions/mappers/common/safe-app
 import { MultisigTransactionInfoMapper } from '@/routes/transactions/mappers/common/transaction-info.mapper';
 import { MultisigTransactionExecutionInfoMapper } from '@/routes/transactions/mappers/multisig-transactions/multisig-transaction-execution-info.mapper';
 import { MultisigTransactionStatusMapper } from '@/routes/transactions/mappers/multisig-transactions/multisig-transaction-status.mapper';
+import { MultisigTransactionNoteMapper } from '@/routes/transactions/mappers/multisig-transactions/multisig-transaction-note.mapper';
 import { TransactionVerifierHelper } from '@/routes/transactions/helpers/transaction-verifier.helper';
 import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
 import { DataDecodedParamHelper } from '@/routes/transactions/mappers/common/data-decoded-param.helper';
@@ -26,6 +27,7 @@ export class MultisigTransactionMapper {
     private readonly transactionInfoMapper: MultisigTransactionInfoMapper,
     private readonly executionInfoMapper: MultisigTransactionExecutionInfoMapper,
     private readonly safeAppInfoMapper: SafeAppInfoMapper,
+    private readonly noteMapper: MultisigTransactionNoteMapper,
     private readonly transactionVerifier: TransactionVerifierHelper,
     private readonly addressInfoHelper: AddressInfoHelper,
     private readonly dataDecodedParamHelper: DataDecodedParamHelper,
@@ -58,6 +60,7 @@ export class MultisigTransactionMapper {
       chainId,
       transaction,
     );
+    const note = this.noteMapper.mapTxNote(transaction);
 
     return new Transaction(
       `${MULTISIG_TRANSACTION_PREFIX}${TRANSACTION_ID_SEPARATOR}${transaction.safe}${TRANSACTION_ID_SEPARATOR}${transaction.safeTxHash}`,
@@ -66,6 +69,7 @@ export class MultisigTransactionMapper {
       txInfo,
       executionInfo,
       safeAppInfo,
+      note,
       transaction.transactionHash,
     );
   }

@@ -49,6 +49,7 @@ export class CreationTransactionMapper {
       txInfo,
       null,
       null,
+      null,
       transaction.transactionHash,
     );
   }

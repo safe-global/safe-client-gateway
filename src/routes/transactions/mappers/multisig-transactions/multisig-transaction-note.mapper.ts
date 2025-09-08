@@ -5,6 +5,11 @@ import { ProposeTransactionDto } from '@/domain/transactions/entities/propose-tr
 
 @Injectable()
 export class MultisigTransactionNoteMapper {
+  /**
+   * The Safe Transaction Service does not expose a top-level `note` field.
+   * Instead, if present, the note is encoded within the JSON `origin` string.
+   * This helper extracts and sanitises that value for downstream consumers.
+   */
   mapTxNote(
     transaction: MultisigTransaction | ProposeTransactionDto,
   ): string | null {
