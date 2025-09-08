@@ -1,6 +1,11 @@
 import { z } from 'zod';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { StatusGroupSchema, type StatusGroup } from './status-group.entity';
+import {
+  ContractStatusGroup,
+  ContractStatusGroupSchema,
+  RecipientStatusGroup,
+  RecipientStatusGroupSchema,
+} from './status-group.entity';
 import {
   RecipientAnalysisResultSchema,
   ContractAnalysisResultSchema,
@@ -19,7 +24,7 @@ import {
 export const RecipientAnalysisResponseSchema = z.record(
   AddressSchema,
   z.record(
-    StatusGroupSchema,
+    RecipientStatusGroupSchema,
     z.array(RecipientAnalysisResultSchema).optional(),
   ),
 );
@@ -33,7 +38,10 @@ export const RecipientAnalysisResponseSchema = z.record(
  */
 export const ContractAnalysisResponseSchema = z.record(
   AddressSchema,
-  z.record(StatusGroupSchema, z.array(ContractAnalysisResultSchema).optional()),
+  z.record(
+    ContractStatusGroupSchema,
+    z.array(ContractAnalysisResultSchema).optional(),
+  ),
 );
 
 /**
@@ -67,5 +75,7 @@ export type ThreatAnalysisResponse = z.infer<
 export type GroupedAnalysisResults<
   T extends RecipientAnalysisResult | ContractAnalysisResult,
 > = {
-  [group in StatusGroup]?: T[];
+  [group in T extends RecipientAnalysisResult
+    ? RecipientStatusGroup
+    : ContractStatusGroup]?: T[];
 };
