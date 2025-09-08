@@ -87,7 +87,6 @@ Environment variables influencing CSV export:
 | `CSV_EXPORT_SIGNED_URL_TTL_SECONDS`                                                            | Signed URL TTL              | `3600`                     |
 | `CSV_EXPORT_QUEUE_REMOVE_ON_COMPLETE_*`, `CSV_EXPORT_QUEUE_REMOVE_ON_FAIL_*`                   | Job cleanup                 | see `configuration.ts`     |
 | `CSV_EXPORT_QUEUE_BACKOFF_TYPE`, `CSV_EXPORT_QUEUE_BACKOFF_DELAY`, `CSV_EXPORT_QUEUE_ATTEMPTS` | Retry/backoff strategy      | `exponential`, `2000`, `3` |
-| `CSV_EXPORT_QUEUE_CONCURRENCY`                                                                 | Worker concurrency          | `3`                        |
 
 ## Adding/Changing Columns
 

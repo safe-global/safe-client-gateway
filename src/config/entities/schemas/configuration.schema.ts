@@ -53,7 +53,6 @@ export const RootConfigurationSchema = z
     CSV_EXPORT_FILE_STORAGE_TYPE: z.enum(['local', 'aws']).optional(),
     CSV_AWS_ACCESS_KEY_ID: z.string().optional(),
     CSV_AWS_SECRET_ACCESS_KEY: z.string().optional(),
-    CSV_EXPORT_QUEUE_CONCURRENCY: z.number({ coerce: true }).min(1).optional(),
   })
   .superRefine((config, ctx) =>
     // Check for AWS_* fields in production and staging environments

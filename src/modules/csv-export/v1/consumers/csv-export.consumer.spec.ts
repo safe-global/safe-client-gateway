@@ -1,4 +1,3 @@
-import type { IConfigurationService } from '@/config/configuration.service.interface';
 import { LogType } from '@/domain/common/entities/log-type.entity';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { CsvExportConsumer } from '@/modules/csv-export/v1/consumers/csv-export.consumer';
@@ -19,11 +18,6 @@ const csvExportService = {
 } as jest.MockedObjectDeep<CsvExportService>;
 const mockCsvExportService = jest.mocked(csvExportService);
 
-const configurationService = {
-  getOrThrow: jest.fn(),
-} as jest.MockedObjectDeep<IConfigurationService>;
-const mockConfigurationService = jest.mocked(configurationService);
-
 const loggingService = {
   debug: jest.fn(),
   info: jest.fn(),
@@ -34,79 +28,11 @@ const mockLoggingService = jest.mocked(loggingService);
 
 describe('CsvExportConsumer', () => {
   let consumer: CsvExportConsumer;
-  let mockWorker: { concurrency: number };
 
   beforeEach(() => {
     jest.resetAllMocks();
 
-    mockWorker = { concurrency: 1 };
-
-    consumer = new CsvExportConsumer(
-      mockLoggingService,
-      mockCsvExportService,
-      mockConfigurationService,
-    );
-
-    // Mock the worker property
-    Object.defineProperty(consumer, 'worker', {
-      value: mockWorker,
-      writable: true,
-    });
-  });
-
-  describe('onModuleInit', () => {
-    it('should set worker concurrency from configuration and log debug message', () => {
-      const expectedConcurrency = 5;
-      mockConfigurationService.getOrThrow.mockReturnValue(expectedConcurrency);
-
-      consumer.onModuleInit();
-
-      expect(mockConfigurationService.getOrThrow).toHaveBeenCalledWith(
-        'csvExport.queue.concurrency',
-      );
-      expect(mockWorker.concurrency).toBe(expectedConcurrency);
-      expect(mockLoggingService.debug).toHaveBeenCalledWith({
-        type: LogType.JobEvent,
-        source: 'CsvExportConsumer',
-        event: `BullMq Worker concurrency set to ${expectedConcurrency}`,
-      });
-    });
-
-    it('should handle different concurrency values correctly', () => {
-      const testCases = [1, 3, 10, 50];
-
-      testCases.forEach((concurrency) => {
-        jest.resetAllMocks();
-        mockConfigurationService.getOrThrow.mockReturnValue(concurrency);
-
-        consumer.onModuleInit();
-
-        expect(mockWorker.concurrency).toBe(concurrency);
-      });
-    });
-
-    it('should override the initial processor decorator concurrency setting', () => {
-      const initialConcurrency = mockWorker.concurrency;
-      const newConcurrency = initialConcurrency + 10;
-      mockConfigurationService.getOrThrow.mockReturnValue(newConcurrency);
-
-      expect(mockWorker.concurrency).toBe(initialConcurrency);
-
-      consumer.onModuleInit();
-
-      expect(mockWorker.concurrency).toBe(newConcurrency);
-      expect(mockWorker.concurrency).not.toBe(initialConcurrency);
-    });
-
-    it('should throw error when configuration service throws', () => {
-      const expectedError = new Error('Configuration not found');
-      mockConfigurationService.getOrThrow.mockImplementation(() => {
-        throw expectedError;
-      });
-
-      expect(() => consumer.onModuleInit()).toThrow(expectedError);
-      expect(mockLoggingService.debug).not.toHaveBeenCalled();
-    });
+    consumer = new CsvExportConsumer(mockLoggingService, mockCsvExportService);
   });
 
   describe('process', () => {
