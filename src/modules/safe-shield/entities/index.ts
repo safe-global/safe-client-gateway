@@ -16,7 +16,15 @@ export {
   getSeverityOrder,
   compareSeverity,
 } from './severity.entity';
-export { StatusGroup, StatusGroupSchema } from './status-group.entity';
+
+export {
+  StatusGroup,
+  StatusGroupSchema,
+  RecipientStatusGroup,
+  RecipientStatusGroupSchema,
+  ContractStatusGroup,
+  ContractStatusGroupSchema,
+} from './status-group.entity';
 
 // Status enums for different analysis types
 export {
