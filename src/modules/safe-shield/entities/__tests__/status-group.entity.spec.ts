@@ -1,7 +1,14 @@
-import { StatusGroup, StatusGroupSchema } from '../status-group.entity';
+import {
+  StatusGroup,
+  StatusGroupSchema,
+  RecipientStatusGroup,
+  RecipientStatusGroupSchema,
+  ContractStatusGroup,
+  ContractStatusGroupSchema,
+} from '../status-group.entity';
 
 describe('StatusGroup', () => {
-  describe('StatusGroup enum', () => {
+  describe('StatusGroup', () => {
     it('should have correct string values', () => {
       expect(StatusGroup.RECIPIENT_INTERACTION).toBe('RECIPIENT_INTERACTION');
       expect(StatusGroup.BRIDGE).toBe('BRIDGE');
@@ -30,6 +37,42 @@ describe('StatusGroup', () => {
         // Should not start or end with underscore
         expect(value).not.toMatch(/^_|_$/);
       });
+    });
+  });
+
+  describe('RecipientStatusGroup', () => {
+    it('should have correct string values', () => {
+      expect(RecipientStatusGroup.RECIPIENT_INTERACTION).toBe(
+        'RECIPIENT_INTERACTION',
+      );
+      expect(RecipientStatusGroup.BRIDGE).toBe('BRIDGE');
+    });
+
+    it('should have all expected values', () => {
+      const values = Object.values(RecipientStatusGroup);
+      expect(values).toHaveLength(2);
+      expect(values).toContain('RECIPIENT_INTERACTION');
+      expect(values).toContain('BRIDGE');
+    });
+  });
+
+  describe('ContractStatusGroup', () => {
+    it('should have correct string values', () => {
+      expect(ContractStatusGroup.CONTRACT_VERIFICATION).toBe(
+        'CONTRACT_VERIFICATION',
+      );
+      expect(ContractStatusGroup.CONTRACT_INTERACTION).toBe(
+        'CONTRACT_INTERACTION',
+      );
+      expect(ContractStatusGroup.DELEGATECALL).toBe('DELEGATECALL');
+    });
+
+    it('should have all expected values', () => {
+      const values = Object.values(ContractStatusGroup);
+      expect(values).toHaveLength(3);
+      expect(values).toContain('CONTRACT_VERIFICATION');
+      expect(values).toContain('CONTRACT_INTERACTION');
+      expect(values).toContain('DELEGATECALL');
     });
   });
 
@@ -81,6 +124,93 @@ describe('StatusGroup', () => {
         StatusGroup.RECIPIENT_INTERACTION,
       );
       expect(StatusGroupSchema.parse('THREAT')).toBe(StatusGroup.THREAT);
+    });
+  });
+
+  describe('RecipientStatusGroupSchema', () => {
+    it('should validate recipient status groups', () => {
+      expect(() =>
+        RecipientStatusGroupSchema.parse('RECIPIENT_INTERACTION'),
+      ).not.toThrow();
+      expect(() => RecipientStatusGroupSchema.parse('BRIDGE')).not.toThrow();
+    });
+
+    it('should accept RecipientStatusGroup enum values', () => {
+      expect(() =>
+        RecipientStatusGroupSchema.parse(
+          RecipientStatusGroup.RECIPIENT_INTERACTION,
+        ),
+      ).not.toThrow();
+      expect(() =>
+        RecipientStatusGroupSchema.parse(RecipientStatusGroup.BRIDGE),
+      ).not.toThrow();
+    });
+
+    it('should reject non-recipient status groups', () => {
+      expect(() =>
+        RecipientStatusGroupSchema.parse('CONTRACT_VERIFICATION'),
+      ).toThrow();
+      expect(() => RecipientStatusGroupSchema.parse('DELEGATECALL')).toThrow();
+      expect(() => RecipientStatusGroupSchema.parse('THREAT')).toThrow();
+    });
+
+    it('should return parsed recipient status group values', () => {
+      expect(RecipientStatusGroupSchema.parse('RECIPIENT_INTERACTION')).toBe(
+        RecipientStatusGroup.RECIPIENT_INTERACTION,
+      );
+      expect(RecipientStatusGroupSchema.parse('BRIDGE')).toBe(
+        RecipientStatusGroup.BRIDGE,
+      );
+    });
+  });
+
+  describe('ContractStatusGroupSchema', () => {
+    it('should validate contract status groups', () => {
+      expect(() =>
+        ContractStatusGroupSchema.parse('CONTRACT_VERIFICATION'),
+      ).not.toThrow();
+      expect(() =>
+        ContractStatusGroupSchema.parse('CONTRACT_INTERACTION'),
+      ).not.toThrow();
+      expect(() =>
+        ContractStatusGroupSchema.parse('DELEGATECALL'),
+      ).not.toThrow();
+    });
+
+    it('should accept ContractStatusGroup enum values', () => {
+      expect(() =>
+        ContractStatusGroupSchema.parse(
+          ContractStatusGroup.CONTRACT_VERIFICATION,
+        ),
+      ).not.toThrow();
+      expect(() =>
+        ContractStatusGroupSchema.parse(
+          ContractStatusGroup.CONTRACT_INTERACTION,
+        ),
+      ).not.toThrow();
+      expect(() =>
+        ContractStatusGroupSchema.parse(ContractStatusGroup.DELEGATECALL),
+      ).not.toThrow();
+    });
+
+    it('should reject non-contract status groups', () => {
+      expect(() =>
+        ContractStatusGroupSchema.parse('RECIPIENT_INTERACTION'),
+      ).toThrow();
+      expect(() => ContractStatusGroupSchema.parse('BRIDGE')).toThrow();
+      expect(() => ContractStatusGroupSchema.parse('THREAT')).toThrow();
+    });
+
+    it('should return parsed contract status group values', () => {
+      expect(ContractStatusGroupSchema.parse('CONTRACT_VERIFICATION')).toBe(
+        ContractStatusGroup.CONTRACT_VERIFICATION,
+      );
+      expect(ContractStatusGroupSchema.parse('CONTRACT_INTERACTION')).toBe(
+        ContractStatusGroup.CONTRACT_INTERACTION,
+      );
+      expect(ContractStatusGroupSchema.parse('DELEGATECALL')).toBe(
+        ContractStatusGroup.DELEGATECALL,
+      );
     });
   });
 });

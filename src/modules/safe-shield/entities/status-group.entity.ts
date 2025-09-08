@@ -1,15 +1,14 @@
 import { z } from 'zod';
 
-/**
- * Status groups for categorizing different types of security analysis checks.
- */
-export enum StatusGroup {
+export enum RecipientStatusGroup {
   /** Recipient interaction history - previous interactions with the recipient */
   RECIPIENT_INTERACTION = 'RECIPIENT_INTERACTION',
 
   /** Cross-chain bridge analysis - compatibility and ownership checks */
   BRIDGE = 'BRIDGE',
+}
 
+export enum ContractStatusGroup {
   /** Contract verification status - whether contracts are verified */
   CONTRACT_VERIFICATION = 'CONTRACT_VERIFICATION',
 
@@ -18,13 +17,43 @@ export enum StatusGroup {
 
   /** Delegatecall operation detection - potentially dangerous delegate calls */
   DELEGATECALL = 'DELEGATECALL',
-
-  /** Transaction-level threat analysis - malicious patterns and risks */
-  THREAT = 'THREAT',
 }
 
 /**
- * Zod schema for validating StatusGroup enum values.
+ * Status groups for categorizing different types of security analysis checks.
+ */
+export const StatusGroup = {
+  ...RecipientStatusGroup,
+  ...ContractStatusGroup,
+
+  /** Transaction-level threat analysis - malicious patterns and risks */
+  THREAT: 'THREAT',
+};
+
+export type StatusGroup = typeof StatusGroup;
+
+/**
+ * Zod schema for validating RecipientStatusGroup enum values.
+ *
+ * @example
+ * ```typescript
+ * const group = RecipientStatusGroupSchema.parse('RECIPIENT_INTERACTION');
+ * ```
+ */
+export const RecipientStatusGroupSchema = z.nativeEnum(RecipientStatusGroup);
+
+/**
+ * Zod schema for validating ContractStatusGroup enum values.
+ *
+ * @example
+ * ```typescript
+ * const group = ContractStatusGroupSchema.parse('CONTRACT_VERIFICATION');
+ * ```
+ */
+export const ContractStatusGroupSchema = z.nativeEnum(ContractStatusGroup);
+
+/**
+ * Zod schema for validating StatusGroup values.
  *
  * @example
  * ```typescript
