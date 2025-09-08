@@ -42,6 +42,9 @@ describe('DataDecoderApi', () => {
       if (key === 'expirationTimeInSeconds.default') {
         return expireTimeSeconds;
       }
+      if (key === 'expirationTimeInSeconds.hoodi') {
+        return expireTimeSeconds;
+      }
       throw new Error('Unexpected key');
     });
     const httpErrorFactory = new HttpErrorFactory();
