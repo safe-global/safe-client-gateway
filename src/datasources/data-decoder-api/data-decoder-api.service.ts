@@ -12,10 +12,13 @@ import type { Address } from 'viem';
 
 @Injectable()
 export class DataDecoderApi implements IDataDecoderApi {
+  private static readonly HOODI_CHAIN_ID = '560048';
+
   private readonly baseUrl: string;
   private readonly defaultNotFoundExpirationTimeSeconds: number;
   private readonly defaultExpirationTimeSeconds: number;
   private readonly contractNotFoundExpirationTimeSeconds: number;
+  private readonly hoodiExpirationTimeSeconds: number;
 
   constructor(
     @Inject(IConfigurationService)
@@ -27,6 +30,10 @@ export class DataDecoderApi implements IDataDecoderApi {
     this.baseUrl = this.configurationService.getOrThrow<string>(
       'safeDataDecoder.baseUri',
     );
+    this.hoodiExpirationTimeSeconds =
+      this.configurationService.getOrThrow<number>(
+        'expirationTimeInSeconds.hoodi',
+      );
     this.defaultNotFoundExpirationTimeSeconds =
       this.configurationService.getOrThrow<number>(
         'expirationTimeInSeconds.notFound.default',
@@ -65,6 +72,8 @@ export class DataDecoderApi implements IDataDecoderApi {
     limit?: number;
     offset?: number;
   }): Promise<Raw<Page<Contract>>> {
+    const { notFoundExpireTimeSeconds, expireTimeSeconds } =
+      this.setCacheExpirationTimes(args.chainId, true);
     try {
       const url = `${this.baseUrl}/api/v1/contracts/${args.address}`;
       return await this.dataSource.get<Page<Contract>>({
@@ -72,8 +81,8 @@ export class DataDecoderApi implements IDataDecoderApi {
           chainId: args.chainId,
           address: args.address,
         }),
-        notFoundExpireTimeSeconds: this.contractNotFoundExpirationTimeSeconds,
-        expireTimeSeconds: this.defaultExpirationTimeSeconds,
+        notFoundExpireTimeSeconds,
+        expireTimeSeconds,
         url,
         networkRequest: {
           params: {
@@ -93,12 +102,14 @@ export class DataDecoderApi implements IDataDecoderApi {
     limit?: number;
     offset?: number;
   }): Promise<Raw<Page<Contract>>> {
+    const { notFoundExpireTimeSeconds, expireTimeSeconds } =
+      this.setCacheExpirationTimes(args.chainId);
     try {
       const url = `${this.baseUrl}/api/v1/contracts`;
       return await this.dataSource.get<Page<Contract>>({
         cacheDir: CacheRouter.getTrustedForDelegateCallContractsCacheDir(args),
-        notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
-        expireTimeSeconds: this.defaultExpirationTimeSeconds,
+        notFoundExpireTimeSeconds,
+        expireTimeSeconds,
         url,
         networkRequest: {
           params: {
@@ -112,5 +123,25 @@ export class DataDecoderApi implements IDataDecoderApi {
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
+  }
+
+  private setCacheExpirationTimes(
+    chainId: string,
+    isContract: boolean = false,
+  ): {
+    notFoundExpireTimeSeconds: number;
+    expireTimeSeconds: number;
+  } {
+    return chainId === DataDecoderApi.HOODI_CHAIN_ID
+      ? {
+          notFoundExpireTimeSeconds: this.hoodiExpirationTimeSeconds,
+          expireTimeSeconds: this.hoodiExpirationTimeSeconds,
+        }
+      : {
+          notFoundExpireTimeSeconds: isContract
+            ? this.contractNotFoundExpirationTimeSeconds
+            : this.defaultNotFoundExpirationTimeSeconds,
+          expireTimeSeconds: this.defaultExpirationTimeSeconds,
+        };
   }
 }
