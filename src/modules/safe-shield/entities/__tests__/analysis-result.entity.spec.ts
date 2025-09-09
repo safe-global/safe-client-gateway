@@ -8,6 +8,7 @@ import {
   type RecipientAnalysisResult,
   type ContractAnalysisResult,
   type ThreatAnalysisResult,
+  type AnyStatus,
 } from '../analysis-result.entity';
 import { Severity } from '../severity.entity';
 import { RecipientStatus } from '../recipient-status.entity';
@@ -303,7 +304,7 @@ describe('AnalysisResult', () => {
 
   describe('real-world scenarios', () => {
     it('should handle multiple analysis results correctly', () => {
-      const results: Array<AnalysisResult<any>> = [
+      const results: Array<AnalysisResult<AnyStatus>> = [
         {
           severity: Severity.CRITICAL,
           type: ThreatStatus.MALICIOUS,
