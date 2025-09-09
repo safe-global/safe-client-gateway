@@ -198,8 +198,8 @@ describe('API Schemas', () => {
         ] as const;
 
         requiredFields.forEach((field) => {
-          const incompleteRequest = { ...validThreatRequest };
-          delete (incompleteRequest as any)[field];
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          const { [field]: _, ...incompleteRequest } = validThreatRequest;
 
           expect(() =>
             ThreatAnalysisRequestBodySchema.parse(incompleteRequest),
