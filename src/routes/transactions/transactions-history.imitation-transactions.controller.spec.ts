@@ -309,7 +309,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
           .build(),
       ) as EthereumTransaction;
 
-      getAllTransactionsUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/all-transactions/`;
+      getAllTransactionsUrl = `${chain.transactionService}/api/v2/safes/${safe.address}/all-transactions/`;
       getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
       getTokenAddressUrl = `${chain.transactionService}/api/v1/tokens/${multisigToken.address}`;
       getNotImitatedTokenAddressUrl = `${chain.transactionService}/api/v1/tokens/${notImitatedMultisigToken.address}`;
@@ -2991,7 +2991,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
         .build();
       imitationAddress = getImitationAddress(multisigTransfer.to);
 
-      getAllTransactionsUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/all-transactions/`;
+      getAllTransactionsUrl = `${chain.transactionService}/api/v2/safes/${safe.address}/all-transactions/`;
       getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
       getTokenAddressUrl = `${chain.transactionService}/api/v1/tokens/${multisigToken.address}`;
       getNotImitatedTokenAddressUrl = `${chain.transactionService}/api/v1/tokens/${notImitatedMultisigToken.address}`;
