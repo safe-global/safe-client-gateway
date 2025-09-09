@@ -35,7 +35,7 @@ describe('PositionsService', () => {
     } as Chain);
   });
 
-  it('groups by protocol/name/type, aggregates, and subtracts loans in protocol fiatTotal', async () => {
+  it('groups by protocol/name and displays individual positions, subtracts loans in protocol fiatTotal', async () => {
     const aaveDeposit = positionBuilder()
       .with('protocol', 'Aave')
       .with('name', 'USDC')
