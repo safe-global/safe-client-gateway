@@ -1,9 +1,11 @@
 import { z } from 'zod';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import {
+import type {
   ContractStatusGroup,
-  ContractStatusGroupSchema,
   RecipientStatusGroup,
+} from './status-group.entity';
+import {
+  ContractStatusGroupSchema,
   RecipientStatusGroupSchema,
 } from './status-group.entity';
 import {
@@ -77,5 +79,5 @@ export type GroupedAnalysisResults<
 > = {
   [group in T extends RecipientAnalysisResult
     ? RecipientStatusGroup
-    : ContractStatusGroup]?: T[];
+    : ContractStatusGroup]?: Array<T>;
 };
