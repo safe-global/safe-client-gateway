@@ -2,9 +2,9 @@ import { createHash } from 'crypto';
 import type { BinaryLike } from 'crypto';
 import type { Address } from 'viem';
 
-// We use the maximum value in order to preserve all decimals
+// We use a reasonable maximum value for fraction digits
 // @see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl/NumberFormat/NumberFormat#maximumfractiondigits
-const MAX_MAXIMUM_FRACTION_DIGITS = 100;
+const MAX_MAXIMUM_FRACTION_DIGITS = 20;
 
 const formatter = new Intl.NumberFormat('en-US', {
   // Prevent scientific notation

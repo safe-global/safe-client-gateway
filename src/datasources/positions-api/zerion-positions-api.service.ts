@@ -72,6 +72,7 @@ export class ZerionPositionsApi implements IPositionsApi {
     chain: Chain;
     safeAddress: Address;
     fiatCode: string;
+    refresh?: boolean;
   }): Promise<Raw<Array<Position>>> {
     if (!this.fiatCodes.includes(args.fiatCode.toUpperCase())) {
       throw new DataSourceError(
@@ -84,8 +85,10 @@ export class ZerionPositionsApi implements IPositionsApi {
       chainId: args.chain.chainId,
       safeAddress: args.safeAddress,
       fiatCode: args.fiatCode,
+      refresh: args.refresh,
     });
     const chainName = this._getChainName(args.chain);
+
     const cached = await this.cacheService.hGet(cacheDir);
     if (cached != null) {
       const { key, field } = cacheDir;
@@ -98,7 +101,11 @@ export class ZerionPositionsApi implements IPositionsApi {
 
     try {
       const { key, field } = cacheDir;
-      this.loggingService.debug({ type: LogType.CacheMiss, key, field });
+      this.loggingService.debug({
+        type: LogType.CacheMiss,
+        key,
+        field,
+      });
       const url = `${this.baseUri}/v1/wallets/${args.safeAddress}/positions`;
       const networkRequest = {
         headers: { Authorization: `Basic ${this.apiKey}` },
