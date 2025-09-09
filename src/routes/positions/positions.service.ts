@@ -100,15 +100,6 @@ export class PositionsService {
     return { name, items };
   }
 
-  private _sumFiatBalances(items: Array<Position>): number {
-    return items.reduce((sum, item) => {
-      // Loans = Debt and need to be subtracted from the total fiat balance of a protocol
-      const fiatBalance = Number(item.fiatBalance) || 0;
-      const sign = item.position_type === PositionType.loan ? -1 : 1;
-      return sum + sign * fiatBalance;
-    }, 0);
-  }
-
   private _mapPosition(
     position: DomainPosition,
     nativeCurrency: NativeCurrency,
