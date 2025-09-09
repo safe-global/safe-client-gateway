@@ -6,7 +6,7 @@ import { ThreatAnalysisModule } from './threat-analysis/threat-analysis.module';
 
 /**
  * Main module for Safe Shield transaction analysis system.
- * 
+ *
  * This module orchestrates all analysis types and provides the main
  * entry point for transaction safety checks. It imports all analysis
  * modules and exports the main SafeShieldService.
