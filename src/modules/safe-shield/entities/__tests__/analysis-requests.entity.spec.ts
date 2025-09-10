@@ -1,13 +1,13 @@
 import {
+  recipientAnalysisRequestBodyBuilder,
+  contractAnalysisRequestBodyBuilder,
+  threatAnalysisRequestBodyBuilder,
+} from './builders/analysis-requests.builder';
+import {
   RecipientAnalysisRequestBodySchema,
   ContractAnalysisRequestBodySchema,
   ThreatAnalysisRequestBodySchema,
 } from '../analysis-requests.entity';
-import {
-  recipientAnalysisRequestBodyBuilder,
-  contractAnalysisRequestBodyBuilder,
-  threatAnalysisRequestBodyBuilder,
-} from './builders';
 
 describe('Analysis Request Schemas', () => {
   describe('RecipientAnalysisRequestBodySchema', () => {

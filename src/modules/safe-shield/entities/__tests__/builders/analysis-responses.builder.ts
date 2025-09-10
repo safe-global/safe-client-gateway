@@ -11,7 +11,7 @@ import { ThreatStatus } from '../../threat-status.entity';
 import {
   contractAnalysisResultBuilder,
   recipientAnalysisResultBuilder,
-} from '@/modules/safe-shield/entities/__tests__/builders';
+} from './analysis-result.builder';
 import {
   ContractStatusGroup,
   RecipientStatusGroup,

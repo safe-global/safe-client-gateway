@@ -8,8 +8,8 @@ import {
   recipientAnalysisResponseBuilder,
   contractAnalysisResponseBuilder,
   threatAnalysisResponseBuilder,
-  recipientAnalysisResultBuilder,
-} from './builders';
+} from './builders/analysis-responses.builder';
+import { recipientAnalysisResultBuilder } from './builders/analysis-result.builder';
 import { faker } from '@faker-js/faker';
 import { ThreatStatus } from '@/modules/safe-shield/entities/threat-status.entity';
 
