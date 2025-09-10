@@ -79,7 +79,7 @@ describe('Delete Transaction - Transactions Controller (Unit', () => {
       }
       if (
         url ===
-        `${chain.transactionService}/api/v1/multisig-transactions/${tx.safeTxHash}/`
+        `${chain.transactionService}/api/v2/multisig-transactions/${tx.safeTxHash}/`
       ) {
         return Promise.resolve({
           data: rawify(multisigToJson(tx)),
@@ -91,7 +91,7 @@ describe('Delete Transaction - Transactions Controller (Unit', () => {
     networkService.delete.mockImplementation(({ url }) => {
       if (
         url ===
-        `${chain.transactionService}/api/v1/multisig-transactions/${tx.safeTxHash}`
+        `${chain.transactionService}/api/v2/multisig-transactions/${tx.safeTxHash}`
       ) {
         return Promise.resolve({ data: rawify({}), status: 204 });
       }
@@ -117,7 +117,7 @@ describe('Delete Transaction - Transactions Controller (Unit', () => {
       }
       if (
         url ===
-        `${chain.transactionService}/api/v1/multisig-transactions/${tx.safeTxHash}/`
+        `${chain.transactionService}/api/v2/multisig-transactions/${tx.safeTxHash}/`
       ) {
         return Promise.resolve({
           data: rawify(multisigToJson(tx)),
@@ -129,7 +129,7 @@ describe('Delete Transaction - Transactions Controller (Unit', () => {
     networkService.delete.mockImplementation(({ url }) => {
       if (
         url ===
-        `${chain.transactionService}/api/v1/multisig-transactions/${tx.safeTxHash}`
+        `${chain.transactionService}/api/v2/multisig-transactions/${tx.safeTxHash}`
       ) {
         return Promise.resolve({ data: rawify({}), status: 204 });
       }
@@ -169,7 +169,7 @@ describe('Delete Transaction - Transactions Controller (Unit', () => {
       }
       if (
         url ===
-        `${chain.transactionService}/api/v1/multisig-transactions/${tx.safeTxHash}/`
+        `${chain.transactionService}/api/v2/multisig-transactions/${tx.safeTxHash}/`
       ) {
         return Promise.resolve({
           data: rawify(multisigToJson(tx)),
@@ -181,7 +181,7 @@ describe('Delete Transaction - Transactions Controller (Unit', () => {
     networkService.delete.mockImplementation(({ url }) => {
       if (
         url ===
-        `${chain.transactionService}/api/v1/multisig-transactions/${tx.safeTxHash}`
+        `${chain.transactionService}/api/v2/multisig-transactions/${tx.safeTxHash}`
       ) {
         return Promise.reject(
           new NetworkResponseError(

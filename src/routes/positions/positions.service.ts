@@ -65,10 +65,12 @@ export class PositionsService {
     const positionGroups = Object.entries(nameGroups).map(([name, group]) =>
       this._mapPositionGroup(name, group),
     );
-    const fiatTotal = positionGroups.reduce(
-      (acc, group) => acc + this._sumFiatBalances(group.items),
-      0,
-    );
+    // Calculate fiat total from all individual positions
+    const fiatTotal = positions.reduce((sum, position) => {
+      const fiatBalance = Number(position.fiatBalance) || 0;
+      const sign = position.position_type === PositionType.loan ? -1 : 1;
+      return sum + sign * fiatBalance;
+    }, 0);
     return {
       protocol,
       protocol_metadata: positions[0].application_metadata,
@@ -87,42 +89,15 @@ export class PositionsService {
     name: string,
     positions: Array<PositionEntry>,
   ): PositionGroup {
-    return { name, items: this._aggregateByType(positions) };
-  }
-
-  private _aggregateByType(positions: Array<PositionEntry>): Array<Position> {
-    const typeGroups = groupBy(
-      positions,
-      (position) => position.position_type ?? PositionType.unknown,
-    );
-    return Object.values(typeGroups).map((group) =>
-      this._mapAggregatedPosition(group),
-    );
-  }
-
-  private _mapAggregatedPosition(group: Array<PositionEntry>): Position {
-    const [first] = group;
-    const balance = group.reduce((sum, item) => sum + Number(item.balance), 0);
-    const fiatBalance = group.reduce(
-      (sum, item) => sum + Number(item.fiatBalance),
-      0,
-    );
-    return {
-      position_type: first.position_type,
-      tokenInfo: first.tokenInfo,
-      balance: getNumberString(balance),
-      fiatBalance: getNumberString(fiatBalance),
-      fiatBalance24hChange: first.fiatBalance24hChange,
-      fiatConversion: first.fiatConversion,
-    };
-  }
-
-  private _sumFiatBalances(items: Array<Position>): number {
-    return items.reduce((sum, item) => {
-      // Loans = Debt and need to be subtracted from the total fiat balance of a protocol
-      const sign = item.position_type === PositionType.loan ? -1 : 1;
-      return sum + sign * Number(item.fiatBalance);
-    }, 0);
+    const items = positions.map((position) => ({
+      position_type: position.position_type,
+      tokenInfo: position.tokenInfo,
+      balance: position.balance,
+      fiatBalance: position.fiatBalance,
+      fiatBalance24hChange: position.fiatBalance24hChange,
+      fiatConversion: position.fiatConversion,
+    }));
+    return { name, items };
   }
 
   private _mapPosition(
