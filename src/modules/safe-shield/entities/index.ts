@@ -38,11 +38,11 @@ export { ThreatStatus, ThreatStatusSchema } from './threat-status.entity';
 // Analysis result structures
 export {
   type AnalysisResult,
-  type AnyStatus,
+  type AnalysisStatus,
   type RecipientAnalysisResult,
   type ContractAnalysisResult,
   type ThreatAnalysisResult,
-  AnyStatusSchema,
+  AnalysisStatusSchema,
   AnalysisResultBaseSchema,
   RecipientAnalysisResultSchema,
   ContractAnalysisResultSchema,
