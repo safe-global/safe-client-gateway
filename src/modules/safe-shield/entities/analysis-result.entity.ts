@@ -20,7 +20,7 @@ import { ThreatStatusSchema, type ThreatStatus } from './threat-status.entity';
  *
  * @template T - The specific status type (AnalysisStatus)
  */
-export interface AnalysisResult<T extends AnalysisStatus> {
+export interface AnalysisResult<T extends AnalysisStatus = AnalysisStatus> {
   /** Severity level indicating the importance and risk of this finding */
   severity: Severity;
 
