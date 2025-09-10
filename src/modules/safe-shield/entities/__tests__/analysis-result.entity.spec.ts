@@ -292,7 +292,6 @@ import {
   type RecipientAnalysisResult,
   type ContractAnalysisResult,
   type ThreatAnalysisResult,
-  type AnyStatus,
 } from '../analysis-result.entity';
 import { Severity } from '../severity.entity';
 import { RecipientStatus } from '../recipient-status.entity';
@@ -343,56 +342,60 @@ describe('AnalysisResult', () => {
     });
   });
 
-  describe('AnyStatusSchema', () => {
+  describe('AnalysisStatusSchema', () => {
     it('should validate all recipient status values', () => {
       expect(() =>
-        AnyStatusSchema.parse(RecipientStatus.NEW_RECIPIENT),
+        AnalysisStatusSchema.parse(RecipientStatus.NEW_RECIPIENT),
       ).not.toThrow();
       expect(() =>
-        AnyStatusSchema.parse(RecipientStatus.KNOWN_RECIPIENT),
+        AnalysisStatusSchema.parse(RecipientStatus.KNOWN_RECIPIENT),
       ).not.toThrow();
     });
 
     it('should validate all bridge status values', () => {
       expect(() =>
-        AnyStatusSchema.parse(BridgeStatus.INCOMPATIBLE_SAFE),
+        AnalysisStatusSchema.parse(BridgeStatus.INCOMPATIBLE_SAFE),
       ).not.toThrow();
       expect(() =>
-        AnyStatusSchema.parse(BridgeStatus.MISSING_OWNERSHIP),
+        AnalysisStatusSchema.parse(BridgeStatus.MISSING_OWNERSHIP),
       ).not.toThrow();
       expect(() =>
-        AnyStatusSchema.parse(BridgeStatus.UNSUPPORTED_NETWORK),
+        AnalysisStatusSchema.parse(BridgeStatus.UNSUPPORTED_NETWORK),
       ).not.toThrow();
       expect(() =>
-        AnyStatusSchema.parse(BridgeStatus.DIFFERENT_SAFE_SETUP),
+        AnalysisStatusSchema.parse(BridgeStatus.DIFFERENT_SAFE_SETUP),
       ).not.toThrow();
     });
 
     it('should validate all contract status values', () => {
       expect(() =>
-        AnyStatusSchema.parse(ContractStatus.VERIFIED),
+        AnalysisStatusSchema.parse(ContractStatus.VERIFIED),
       ).not.toThrow();
       expect(() =>
-        AnyStatusSchema.parse(ContractStatus.NOT_VERIFIED),
+        AnalysisStatusSchema.parse(ContractStatus.NOT_VERIFIED),
       ).not.toThrow();
       expect(() =>
-        AnyStatusSchema.parse(ContractStatus.UNEXPECTED_DELEGATECALL),
+        AnalysisStatusSchema.parse(ContractStatus.UNEXPECTED_DELEGATECALL),
       ).not.toThrow();
     });
 
     it('should validate all threat status values', () => {
-      expect(() => AnyStatusSchema.parse(ThreatStatus.MALICIOUS)).not.toThrow();
-      expect(() => AnyStatusSchema.parse(ThreatStatus.NO_THREAT)).not.toThrow();
       expect(() =>
-        AnyStatusSchema.parse(ThreatStatus.MODULE_CHANGE),
+        AnalysisStatusSchema.parse(ThreatStatus.MALICIOUS),
+      ).not.toThrow();
+      expect(() =>
+        AnalysisStatusSchema.parse(ThreatStatus.NO_THREAT),
+      ).not.toThrow();
+      expect(() =>
+        AnalysisStatusSchema.parse(ThreatStatus.MODULE_CHANGE),
       ).not.toThrow();
     });
 
     it('should reject invalid status values', () => {
-      expect(() => AnyStatusSchema.parse('INVALID_STATUS')).toThrow();
-      expect(() => AnyStatusSchema.parse('')).toThrow();
-      expect(() => AnyStatusSchema.parse(null)).toThrow();
-      expect(() => AnyStatusSchema.parse(123)).toThrow();
+      expect(() => AnalysisStatusSchema.parse('INVALID_STATUS')).toThrow();
+      expect(() => AnalysisStatusSchema.parse('')).toThrow();
+      expect(() => AnalysisStatusSchema.parse(null)).toThrow();
+      expect(() => AnalysisStatusSchema.parse(123)).toThrow();
     });
   });
 
@@ -588,7 +591,7 @@ describe('AnalysisResult', () => {
 
   describe('real-world scenarios', () => {
     it('should handle multiple analysis results correctly', () => {
-      const results: Array<AnalysisResult<AnyStatus>> = [
+      const results: Array<AnalysisResult> = [
         {
           severity: Severity.CRITICAL,
           type: ThreatStatus.MALICIOUS,
