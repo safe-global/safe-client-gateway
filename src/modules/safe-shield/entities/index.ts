@@ -9,13 +9,7 @@
  */
 
 // Core enums and types
-export {
-  Severity,
-  SeveritySchema,
-  SeverityOrder,
-  getSeverityOrder,
-  compareSeverity,
-} from './severity.entity';
+export { Severity, SeveritySchema } from './severity.entity';
 
 export {
   StatusGroup,
