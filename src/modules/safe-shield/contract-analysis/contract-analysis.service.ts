@@ -1,9 +1,7 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 
 /**
  * Service responsible for analyzing contract interactions in transactions.
  */
 @Injectable()
-export class ContractAnalysisService {
-  private readonly logger = new Logger(ContractAnalysisService.name);
-}
+export class ContractAnalysisService {}
