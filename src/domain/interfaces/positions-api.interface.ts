@@ -10,7 +10,7 @@ export interface IPositionsApi {
     safeAddress: Address;
     fiatCode: string;
     chain: Chain;
-    refresh?: boolean;
+    refresh?: string;
   }): Promise<Raw<Array<Position>>>;
 
   clearPositions(args: {

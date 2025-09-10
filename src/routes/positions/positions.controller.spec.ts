@@ -160,11 +160,11 @@ describe('Positions Controller', () => {
         chainId: chain.chainId,
         safeAddress,
         fiatCode,
-        refresh: false,
+        refresh: '',
       });
     });
 
-    it('calls service with refresh=true when refresh query parameter is provided', async () => {
+    it('calls service with refresh string when refresh query parameter is provided', async () => {
       const chain = chainBuilder().build();
       chainsRepository.getChain.mockResolvedValue(chain);
 
@@ -192,9 +192,10 @@ describe('Positions Controller', () => {
 
       positionsRepository.getPositions.mockResolvedValue(domainPositions);
 
+      const refreshValue = 'cache-bust-123';
       await request(app.getHttpServer())
         .get(
-          `/v1/chains/${chain.chainId}/safes/${safeAddress}/positions/${fiatCode}?refresh=true`,
+          `/v1/chains/${chain.chainId}/safes/${safeAddress}/positions/${fiatCode}?refresh=${refreshValue}`,
         )
         .expect(200);
 
@@ -203,7 +204,7 @@ describe('Positions Controller', () => {
         chainId: chain.chainId,
         safeAddress,
         fiatCode,
-        refresh: true,
+        refresh: refreshValue,
       });
     });
   });

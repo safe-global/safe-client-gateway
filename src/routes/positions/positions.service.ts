@@ -33,7 +33,7 @@ export class PositionsService {
     chainId: string;
     safeAddress: Address;
     fiatCode: string;
-    refresh?: boolean;
+    refresh?: string;
   }): Promise<Array<Protocol>> {
     const { chainId } = args;
     const chain = await this.chainsRepository.getChain(chainId);

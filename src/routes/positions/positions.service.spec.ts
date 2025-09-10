@@ -317,31 +317,33 @@ describe('PositionsService', () => {
   it('passes refresh parameter to repository correctly', async () => {
     positionsRepoMock.getPositions.mockResolvedValue([]);
 
-    // Test with refresh=true
+    // Test with refresh string value
+    const refreshValue = 'cache-bust-12345';
     await service.getPositions({
       chainId: '1',
       safeAddress: faker.finance.ethereumAddress() as Address,
       fiatCode: 'USD',
-      refresh: true,
+      refresh: refreshValue,
     });
 
     expect(positionsRepoMock.getPositions).toHaveBeenCalledWith(
       expect.objectContaining({
-        refresh: true,
+        refresh: refreshValue,
       }),
     );
 
-    // Test with refresh=false
+    // Test with different refresh string value
+    const refreshValue2 = 'different-value';
     await service.getPositions({
       chainId: '1',
       safeAddress: faker.finance.ethereumAddress() as Address,
       fiatCode: 'USD',
-      refresh: false,
+      refresh: refreshValue2,
     });
 
     expect(positionsRepoMock.getPositions).toHaveBeenCalledWith(
       expect.objectContaining({
-        refresh: false,
+        refresh: refreshValue2,
       }),
     );
 

@@ -19,7 +19,7 @@ export class PositionsRepository implements IPositionsRepository {
     chain: Chain;
     safeAddress: Address;
     fiatCode: string;
-    refresh?: boolean;
+    refresh?: string;
   }): Promise<Array<Position>> {
     const positions = await this.positionsApi.getPositions(args);
     return PositionsSchema.parse(positions);

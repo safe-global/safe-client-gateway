@@ -72,7 +72,7 @@ export class ZerionPositionsApi implements IPositionsApi {
     chain: Chain;
     safeAddress: Address;
     fiatCode: string;
-    refresh?: boolean;
+    refresh?: string;
   }): Promise<Raw<Array<Position>>> {
     if (!this.fiatCodes.includes(args.fiatCode.toUpperCase())) {
       throw new DataSourceError(

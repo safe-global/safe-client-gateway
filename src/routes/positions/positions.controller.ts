@@ -4,7 +4,6 @@ import {
   Param,
   Query,
   DefaultValuePipe,
-  ParseBoolPipe,
 } from '@nestjs/common';
 import { ApiOkResponse, ApiTags, ApiQuery } from '@nestjs/swagger';
 import { PositionsService } from '@/routes/positions/positions.service';
@@ -25,10 +24,10 @@ export class PositionsController {
   @ApiQuery({
     name: 'refresh',
     required: false,
-    type: Boolean,
+    type: String,
     description:
-      'If true, invalidates the cache and fetches fresh data from Zerion',
-    example: false,
+      'Cache busting parameter. Provide any string value to invalidate cache and fetch fresh data from Zerion',
+    example: '1234567890',
   })
   @Get('chains/:chainId/safes/:safeAddress/positions/:fiatCode')
   async getPositions(
@@ -36,8 +35,8 @@ export class PositionsController {
     @Param('safeAddress', new ValidationPipe(AddressSchema))
     safeAddress: Address,
     @Param('fiatCode') fiatCode: string,
-    @Query('refresh', new DefaultValuePipe(false), ParseBoolPipe)
-    refresh: boolean,
+    @Query('refresh', new DefaultValuePipe(''))
+    refresh: string,
   ): Promise<Array<Protocol>> {
     return this.positionsService.getPositions({
       chainId,
