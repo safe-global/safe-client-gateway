@@ -24,27 +24,28 @@ describe('Severity', () => {
   });
 
   describe('SeveritySchema', () => {
-    it('should validate correct severity values', () => {
-      expect(() => SeveritySchema.parse('OK')).not.toThrow();
-      expect(() => SeveritySchema.parse('INFO')).not.toThrow();
-      expect(() => SeveritySchema.parse('WARN')).not.toThrow();
-      expect(() => SeveritySchema.parse('CRITICAL')).not.toThrow();
+    it.each(['OK', 'INFO', 'WARN', 'CRITICAL'] as const)(
+      'should validate correct severity value = %s',
+      (severity) => {
+        expect(() => SeveritySchema.parse(severity)).not.toThrow();
+      },
+    );
+
+    it.each([
+      Severity.OK,
+      Severity.INFO,
+      Severity.WARN,
+      Severity.CRITICAL,
+    ] as const)('should accept Severity enum value = %s', (severity) => {
+      expect(() => SeveritySchema.parse(severity)).not.toThrow();
     });
 
-    it('should accept Severity enum values', () => {
-      expect(() => SeveritySchema.parse(Severity.OK)).not.toThrow();
-      expect(() => SeveritySchema.parse(Severity.INFO)).not.toThrow();
-      expect(() => SeveritySchema.parse(Severity.WARN)).not.toThrow();
-      expect(() => SeveritySchema.parse(Severity.CRITICAL)).not.toThrow();
-    });
-
-    it('should reject invalid values', () => {
-      expect(() => SeveritySchema.parse('INVALID')).toThrow();
-      expect(() => SeveritySchema.parse('')).toThrow();
-      expect(() => SeveritySchema.parse(null)).toThrow();
-      expect(() => SeveritySchema.parse(undefined)).toThrow();
-      expect(() => SeveritySchema.parse(123)).toThrow();
-    });
+    it.each(['INVALID', '', null, undefined, 123] as const)(
+      'should reject invalid value = %s',
+      (invalidSeverity) => {
+        expect(() => SeveritySchema.parse(invalidSeverity)).toThrow();
+      },
+    );
 
     it('should return parsed severity values', () => {
       expect(SeveritySchema.parse('OK')).toBe(Severity.OK);

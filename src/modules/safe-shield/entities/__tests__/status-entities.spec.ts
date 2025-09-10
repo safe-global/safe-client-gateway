@@ -23,13 +23,19 @@ describe('Status Entities', () => {
       expect(values).toContain('KNOWN_RECIPIENT');
     });
 
-    it('should validate with schema', () => {
-      expect(() => RecipientStatusSchema.parse('NEW_RECIPIENT')).not.toThrow();
-      expect(() =>
-        RecipientStatusSchema.parse('KNOWN_RECIPIENT'),
-      ).not.toThrow();
-      expect(() => RecipientStatusSchema.parse('INVALID')).toThrow();
-    });
+    it.each(['NEW_RECIPIENT', 'KNOWN_RECIPIENT'] as const)(
+      'should validate with schema = %s',
+      (value) => {
+        expect(() => RecipientStatusSchema.parse(value)).not.toThrow();
+      },
+    );
+
+    it.each(['INVALID', '', null, undefined, 123] as const)(
+      'should reject invalid value = %s',
+      (invalidValue) => {
+        expect(() => RecipientStatusSchema.parse(invalidValue)).toThrow();
+      },
+    );
   });
 
   describe('BridgeStatus', () => {
@@ -49,17 +55,21 @@ describe('Status Entities', () => {
       expect(values).toContain('DIFFERENT_SAFE_SETUP');
     });
 
-    it('should validate with schema', () => {
-      expect(() => BridgeStatusSchema.parse('INCOMPATIBLE_SAFE')).not.toThrow();
-      expect(() => BridgeStatusSchema.parse('MISSING_OWNERSHIP')).not.toThrow();
-      expect(() =>
-        BridgeStatusSchema.parse('UNSUPPORTED_NETWORK'),
-      ).not.toThrow();
-      expect(() =>
-        BridgeStatusSchema.parse('DIFFERENT_SAFE_SETUP'),
-      ).not.toThrow();
-      expect(() => BridgeStatusSchema.parse('INVALID')).toThrow();
+    it.each([
+      'INCOMPATIBLE_SAFE',
+      'MISSING_OWNERSHIP',
+      'UNSUPPORTED_NETWORK',
+      'DIFFERENT_SAFE_SETUP',
+    ] as const)('should validate with schema = %s', (value) => {
+      expect(() => BridgeStatusSchema.parse(value)).not.toThrow();
     });
+
+    it.each(['INVALID', '', null, undefined, 123] as const)(
+      'should reject invalid value = %s',
+      (invalidValue) => {
+        expect(() => BridgeStatusSchema.parse(invalidValue)).toThrow();
+      },
+    );
   });
 
   describe('ContractStatus', () => {
@@ -89,22 +99,24 @@ describe('Status Entities', () => {
       expect(values).toContain('UNEXPECTED_DELEGATECALL');
     });
 
-    it('should validate with schema', () => {
-      expect(() => ContractStatusSchema.parse('VERIFIED')).not.toThrow();
-      expect(() => ContractStatusSchema.parse('NOT_VERIFIED')).not.toThrow();
-      expect(() =>
-        ContractStatusSchema.parse('NOT_VERIFIED_BY_SAFE'),
-      ).not.toThrow();
-      expect(() =>
-        ContractStatusSchema.parse('VERIFICATION_UNAVAILABLE'),
-      ).not.toThrow();
-      expect(() => ContractStatusSchema.parse('NEW_CONTRACT')).not.toThrow();
-      expect(() => ContractStatusSchema.parse('KNOWN_CONTRACT')).not.toThrow();
-      expect(() =>
-        ContractStatusSchema.parse('UNEXPECTED_DELEGATECALL'),
-      ).not.toThrow();
-      expect(() => ContractStatusSchema.parse('INVALID')).toThrow();
+    it.each([
+      'VERIFIED',
+      'NOT_VERIFIED',
+      'NOT_VERIFIED_BY_SAFE',
+      'VERIFICATION_UNAVAILABLE',
+      'NEW_CONTRACT',
+      'KNOWN_CONTRACT',
+      'UNEXPECTED_DELEGATECALL',
+    ] as const)('should validate with schema = %s', (value) => {
+      expect(() => ContractStatusSchema.parse(value)).not.toThrow();
     });
+
+    it.each(['INVALID', '', null, undefined, 123] as const)(
+      'should reject invalid value = %s',
+      (invalidValue) => {
+        expect(() => ContractStatusSchema.parse(invalidValue)).toThrow();
+      },
+    );
 
     it('should group statuses correctly by business logic', () => {
       // Contract verification group
@@ -157,18 +169,24 @@ describe('Status Entities', () => {
       expect(values).toContain('MODULE_CHANGE');
     });
 
-    it('should validate with schema', () => {
-      expect(() => ThreatStatusSchema.parse('MALICIOUS')).not.toThrow();
-      expect(() => ThreatStatusSchema.parse('MODERATE')).not.toThrow();
-      expect(() => ThreatStatusSchema.parse('NO_THREAT')).not.toThrow();
-      expect(() => ThreatStatusSchema.parse('FAILED')).not.toThrow();
-      expect(() =>
-        ThreatStatusSchema.parse('MASTER_COPY_CHANGE'),
-      ).not.toThrow();
-      expect(() => ThreatStatusSchema.parse('OWNERSHIP_CHANGE')).not.toThrow();
-      expect(() => ThreatStatusSchema.parse('MODULE_CHANGE')).not.toThrow();
-      expect(() => ThreatStatusSchema.parse('INVALID')).toThrow();
+    it.each([
+      'MALICIOUS',
+      'MODERATE',
+      'NO_THREAT',
+      'FAILED',
+      'MASTER_COPY_CHANGE',
+      'OWNERSHIP_CHANGE',
+      'MODULE_CHANGE',
+    ] as const)('should validate with schema = %s', (value) => {
+      expect(() => ThreatStatusSchema.parse(value)).not.toThrow();
     });
+
+    it.each(['INVALID', '', null, undefined, 123] as const)(
+      'should reject invalid value = %s',
+      (invalidValue) => {
+        expect(() => ThreatStatusSchema.parse(invalidValue)).toThrow();
+      },
+    );
 
     it('should categorize threat types correctly', () => {
       // General threat assessment

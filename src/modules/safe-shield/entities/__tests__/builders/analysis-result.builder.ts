@@ -1,120 +1,46 @@
 import { faker } from '@faker-js/faker';
+import type { IBuilder } from '@/__tests__/builder';
+import { Builder } from '@/__tests__/builder';
 import {
-  type AnalysisResult,
   type RecipientAnalysisResult,
   type ContractAnalysisResult,
   type ThreatAnalysisResult,
-  type AnalysisStatus,
 } from '../../analysis-result.entity';
 import { Severity } from '../../severity.entity';
 import { RecipientStatus } from '../../recipient-status.entity';
-import { BridgeStatus } from '../../bridge-status.entity';
 import { ContractStatus } from '../../contract-status.entity';
 import { ThreatStatus } from '../../threat-status.entity';
 
 /**
- * Builder for creating test AnalysisResult objects
+ * Builder for RecipientAnalysisResult entities
  */
-export class AnalysisResultBuilder<T extends AnalysisStatus> {
-  private severity: Severity = Severity.INFO;
-  private type: T;
-  private title: string = faker.lorem.sentence();
-  private description: string = faker.lorem.paragraph();
-
-  constructor(type: T) {
-    this.type = type;
-  }
-
-  static recipient(
-    type: RecipientStatus = RecipientStatus.KNOWN_RECIPIENT,
-  ): AnalysisResultBuilder<RecipientStatus> {
-    return new AnalysisResultBuilder(type);
-  }
-
-  static bridge(
-    type: BridgeStatus = BridgeStatus.INCOMPATIBLE_SAFE,
-  ): AnalysisResultBuilder<BridgeStatus> {
-    return new AnalysisResultBuilder(type);
-  }
-
-  static contract(
-    type: ContractStatus = ContractStatus.VERIFIED,
-  ): AnalysisResultBuilder<ContractStatus> {
-    return new AnalysisResultBuilder(type);
-  }
-
-  static threat(
-    type: ThreatStatus = ThreatStatus.NO_THREAT,
-  ): AnalysisResultBuilder<ThreatStatus> {
-    return new AnalysisResultBuilder(type);
-  }
-
-  withSeverity(severity: Severity): this {
-    this.severity = severity;
-    return this;
-  }
-
-  withType(type: T): this {
-    this.type = type;
-    return this;
-  }
-
-  withTitle(title: string): this {
-    this.title = title;
-    return this;
-  }
-
-  withDescription(description: string): this {
-    this.description = description;
-    return this;
-  }
-
-  critical(): this {
-    return this.withSeverity(Severity.CRITICAL);
-  }
-
-  warn(): this {
-    return this.withSeverity(Severity.WARN);
-  }
-
-  info(): this {
-    return this.withSeverity(Severity.INFO);
-  }
-
-  ok(): this {
-    return this.withSeverity(Severity.OK);
-  }
-
-  build(): AnalysisResult<T> {
-    return {
-      severity: this.severity,
-      type: this.type,
-      title: this.title,
-      description: this.description,
-    };
-  }
+export function recipientAnalysisResultBuilder(): IBuilder<RecipientAnalysisResult> {
+  return new Builder<RecipientAnalysisResult>()
+    .with('severity', Severity.INFO)
+    .with('type', RecipientStatus.KNOWN_RECIPIENT)
+    .with('title', faker.lorem.sentence())
+    .with('description', faker.lorem.paragraph());
 }
 
 /**
- * Convenience builders for specific analysis types
+ * Builder for ContractAnalysisResult entities
  */
-export const buildRecipientAnalysisResult = (
-  overrides: Partial<RecipientAnalysisResult> = {},
-): RecipientAnalysisResult => ({
-  ...new AnalysisResultBuilder(RecipientStatus.KNOWN_RECIPIENT).build(),
-  ...overrides,
-});
+export function contractAnalysisResultBuilder(): IBuilder<ContractAnalysisResult> {
+  return new Builder<ContractAnalysisResult>()
+    .with('severity', Severity.INFO)
+    .with('type', ContractStatus.VERIFIED)
+    .with('title', faker.lorem.sentence())
+    .with('description', faker.lorem.paragraph());
+}
 
-export const buildContractAnalysisResult = (
-  overrides: Partial<ContractAnalysisResult> = {},
-): ContractAnalysisResult => ({
-  ...new AnalysisResultBuilder(ContractStatus.VERIFIED).build(),
-  ...overrides,
-});
+/**
+ * Builder for ThreatAnalysisResult entities
+ */
+export function threatAnalysisResultBuilder(): IBuilder<ThreatAnalysisResult> {
+  return new Builder<ThreatAnalysisResult>()
+    .with('severity', Severity.OK)
+    .with('type', ThreatStatus.NO_THREAT)
+    .with('title', faker.lorem.sentence())
+    .with('description', faker.lorem.paragraph());
+}
 
-export const buildThreatAnalysisResult = (
-  overrides: Partial<ThreatAnalysisResult> = {},
-): ThreatAnalysisResult => ({
-  ...new AnalysisResultBuilder(ThreatStatus.NO_THREAT).build(),
-  ...overrides,
-});

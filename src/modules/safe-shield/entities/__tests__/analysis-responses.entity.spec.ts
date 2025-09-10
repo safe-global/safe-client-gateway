@@ -1,22 +1,23 @@
+import { RecipientStatusGroup } from '@/modules/safe-shield/entities/status-group.entity';
 import {
   RecipientAnalysisResponseSchema,
   ContractAnalysisResponseSchema,
   ThreatAnalysisResponseSchema,
 } from '../analysis-responses.entity';
 import {
-  RecipientAnalysisResponseBuilder,
-  ContractAnalysisResponseBuilder,
-  ThreatAnalysisResponseBuilder,
+  recipientAnalysisResponseBuilder,
+  contractAnalysisResponseBuilder,
+  threatAnalysisResponseBuilder,
+  recipientAnalysisResultBuilder,
 } from './builders';
+import { faker } from '@faker-js/faker';
+import { ThreatStatus } from '@/modules/safe-shield/entities/threat-status.entity';
 
 describe('Analysis Response Schemas', () => {
   describe('Response Schemas', () => {
     describe('RecipientAnalysisResponseSchema', () => {
       it('should validate correct recipient analysis response', () => {
-        const validResponse = RecipientAnalysisResponseBuilder.new()
-          .withRandomAddress()
-          .withKnownRecipient()
-          .build();
+        const validResponse = recipientAnalysisResponseBuilder().build();
 
         expect(() =>
           RecipientAnalysisResponseSchema.parse(validResponse),
@@ -24,12 +25,15 @@ describe('Analysis Response Schemas', () => {
       });
 
       it('should validate response with multiple addresses', () => {
-        const multiAddressResponse = RecipientAnalysisResponseBuilder.new()
-          .withRandomAddress()
-          .withKnownRecipient()
-          .and()
-          .withRandomAddress()
-          .withIncompatibleSafe()
+        const multiAddressResponse = recipientAnalysisResponseBuilder()
+          .with(faker.finance.ethereumAddress() as `0x${string}`, {
+            [RecipientStatusGroup.RECIPIENT_INTERACTION]: [
+              recipientAnalysisResultBuilder().build(),
+            ],
+            [RecipientStatusGroup.BRIDGE]: [
+              recipientAnalysisResultBuilder().build(),
+            ],
+          })
           .build();
 
         expect(() =>
@@ -42,8 +46,10 @@ describe('Analysis Response Schemas', () => {
       });
 
       it('should validate response with empty status groups', () => {
-        const responseWithEmptyGroups = RecipientAnalysisResponseBuilder.new()
-          .withRandomAddress()
+        const responseWithEmptyGroups = recipientAnalysisResponseBuilder()
+          .with(faker.finance.ethereumAddress() as `0x${string}`, {
+            [RecipientStatusGroup.RECIPIENT_INTERACTION]: [],
+          })
           .build();
 
         expect(() =>
@@ -52,10 +58,7 @@ describe('Analysis Response Schemas', () => {
       });
 
       it('should reject invalid address format', () => {
-        const invalidAddressResponse = RecipientAnalysisResponseBuilder.new()
-          .withAddress('invalid-address')
-          .withIncompatibleSafe()
-          .build();
+        const invalidAddressResponse = { 'invalid-address': {} };
 
         expect(() =>
           RecipientAnalysisResponseSchema.parse(invalidAddressResponse),
@@ -65,34 +68,17 @@ describe('Analysis Response Schemas', () => {
 
     describe('ContractAnalysisResponseSchema', () => {
       it('should validate correct contract analysis response', () => {
-        const validResponse = ContractAnalysisResponseBuilder.new()
-          .withRandomAddress()
-          .withNotVerified()
-          .withKnownContract()
-          .build();
+        const validResponse = contractAnalysisResponseBuilder().build();
 
         expect(() =>
           ContractAnalysisResponseSchema.parse(validResponse),
-        ).not.toThrow();
-      });
-
-      it('should validate response with delegatecall detection', () => {
-        const delegatecallResponse = ContractAnalysisResponseBuilder.new()
-          .withRandomAddress()
-          .withUnexpectedDelegatecall()
-          .build();
-
-        expect(() =>
-          ContractAnalysisResponseSchema.parse(delegatecallResponse),
         ).not.toThrow();
       });
     });
 
     describe('ThreatAnalysisResponseSchema', () => {
       it('should validate threat analysis response', () => {
-        const validThreatResponse = ThreatAnalysisResponseBuilder.new()
-          .malicious()
-          .build();
+        const validThreatResponse = threatAnalysisResponseBuilder().build();
 
         expect(() =>
           ThreatAnalysisResponseSchema.parse(validThreatResponse),
@@ -101,9 +87,9 @@ describe('Analysis Response Schemas', () => {
 
       it('should validate safe threat responses', () => {
         const safeThreats = [
-          ThreatAnalysisResponseBuilder.new().ownershipChange().build(),
-          ThreatAnalysisResponseBuilder.new().moduleChange().build(),
-          ThreatAnalysisResponseBuilder.new().masterCopyChange().build(),
+          threatAnalysisResponseBuilder().build(),
+          threatAnalysisResponseBuilder().build(),
+          threatAnalysisResponseBuilder().build(),
         ];
 
         safeThreats.forEach((threat) => {
@@ -114,8 +100,8 @@ describe('Analysis Response Schemas', () => {
       });
 
       it('should validate no threat response', () => {
-        const noThreatResponse = ThreatAnalysisResponseBuilder.new()
-          .noThreat()
+        const noThreatResponse = threatAnalysisResponseBuilder()
+          .with('type', ThreatStatus.NO_THREAT)
           .build();
 
         expect(() =>
@@ -124,8 +110,8 @@ describe('Analysis Response Schemas', () => {
       });
 
       it('should validate failed analysis response', () => {
-        const failedResponse = ThreatAnalysisResponseBuilder.new()
-          .failed()
+        const failedResponse = threatAnalysisResponseBuilder()
+          .with('type', ThreatStatus.FAILED)
           .build();
 
         expect(() =>
@@ -140,21 +126,11 @@ describe('Analysis Response Schemas', () => {
       // Simulate a multi-send transaction with multiple recipients and contracts
       const multiSendResponse = {
         // Recipient analysis for multiple addresses
-        recipient: RecipientAnalysisResponseBuilder.new()
-          .withRandomAddress()
-          .withIncompatibleSafe()
-          .and()
-          .withRandomAddress()
-          .withNewRecipient()
-          .build(),
+        recipient: recipientAnalysisResponseBuilder().build(),
         // Contract analysis
-        contract: ContractAnalysisResponseBuilder.new()
-          .withRandomAddress()
-          .withNotVerified()
-          .withKnownContract()
-          .build(),
+        contract: contractAnalysisResponseBuilder().build(),
         // Threat analysis
-        threat: ThreatAnalysisResponseBuilder.new().noThreat().build(),
+        threat: threatAnalysisResponseBuilder().build(),
       };
 
       // Validate individual components

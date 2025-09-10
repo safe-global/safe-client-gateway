@@ -4,15 +4,15 @@ import {
   ThreatAnalysisRequestBodySchema,
 } from '../analysis-requests.entity';
 import {
-  RecipientAnalysisRequestBuilder,
-  ContractAnalysisRequestBuilder,
-  ThreatAnalysisRequestBuilder,
+  recipientAnalysisRequestBodyBuilder,
+  contractAnalysisRequestBodyBuilder,
+  threatAnalysisRequestBodyBuilder,
 } from './builders';
 
 describe('Analysis Request Schemas', () => {
   describe('RecipientAnalysisRequestBodySchema', () => {
     it('should validate correct request body', () => {
-      const validRequest = RecipientAnalysisRequestBuilder.new().build();
+      const validRequest = recipientAnalysisRequestBodyBuilder().build();
 
       expect(() =>
         RecipientAnalysisRequestBodySchema.parse(validRequest),
@@ -20,8 +20,8 @@ describe('Analysis Request Schemas', () => {
     });
 
     it('should validate empty data', () => {
-      const requestWithEmptyData = RecipientAnalysisRequestBuilder.new()
-        .withEmptyData()
+      const requestWithEmptyData = recipientAnalysisRequestBodyBuilder()
+        .with('data', '0x')
         .build();
 
       expect(() =>
@@ -30,9 +30,9 @@ describe('Analysis Request Schemas', () => {
     });
 
     it('should reject invalid hex data', () => {
-      const invalidHexRequest = RecipientAnalysisRequestBuilder.new()
-        .withInvalidData()
-        .build();
+      const invalidHexRequest = {
+        data: 'invalidhex',
+      };
 
       expect(() =>
         RecipientAnalysisRequestBodySchema.parse(invalidHexRequest),
@@ -46,7 +46,7 @@ describe('Analysis Request Schemas', () => {
 
   describe('ContractAnalysisRequestBodySchema', () => {
     it('should validate correct request body', () => {
-      const validRequest = ContractAnalysisRequestBuilder.new().build();
+      const validRequest = contractAnalysisRequestBodyBuilder().build();
 
       expect(() =>
         ContractAnalysisRequestBodySchema.parse(validRequest),
@@ -54,8 +54,8 @@ describe('Analysis Request Schemas', () => {
     });
 
     it('should validate delegatecall operation', () => {
-      const delegatecallRequest = ContractAnalysisRequestBuilder.new()
-        .withDelegatecall()
+      const delegatecallRequest = contractAnalysisRequestBodyBuilder()
+        .with('operation', 1)
         .build();
 
       expect(() =>
@@ -64,9 +64,10 @@ describe('Analysis Request Schemas', () => {
     });
 
     it('should reject invalid operation values', () => {
-      const invalidOperationRequest = ContractAnalysisRequestBuilder.new()
-        .withInvalidOperation()
-        .build();
+      const invalidOperationRequest = {
+        data: '0x1234567890abcdef',
+        operation: 5,
+      };
 
       expect(() =>
         ContractAnalysisRequestBodySchema.parse(invalidOperationRequest),
@@ -91,7 +92,7 @@ describe('Analysis Request Schemas', () => {
   });
 
   describe('ThreatAnalysisRequestBodySchema', () => {
-    const validThreatRequest = ThreatAnalysisRequestBuilder.new().build();
+    const validThreatRequest = threatAnalysisRequestBodyBuilder().build();
 
     it('should validate complete threat analysis request', () => {
       expect(() =>
@@ -99,9 +100,9 @@ describe('Analysis Request Schemas', () => {
       ).not.toThrow();
     });
 
-    it('should validate with different operation type', () => {
-      const delegatecallRequest = ThreatAnalysisRequestBuilder.new()
-        .withDelegatecall()
+    it('should validate with delegate call operation', () => {
+      const delegatecallRequest = threatAnalysisRequestBodyBuilder()
+        .with('operation', 1)
         .build();
 
       expect(() =>
@@ -110,9 +111,10 @@ describe('Analysis Request Schemas', () => {
     });
 
     it('should reject invalid `to` address', () => {
-      const invalidAddressRequest = ThreatAnalysisRequestBuilder.new()
-        .withInvalidAddress()
-        .build();
+      const invalidAddressRequest = {
+        ...threatAnalysisRequestBodyBuilder().build(),
+        to: 'invalidaddress',
+      };
 
       expect(() =>
         ThreatAnalysisRequestBodySchema.parse(invalidAddressRequest),
@@ -129,13 +131,15 @@ describe('Analysis Request Schemas', () => {
     });
 
     it('should reject invalid numeric strings', () => {
-      const invalidValueRequest = ThreatAnalysisRequestBuilder.new()
-        .withInvalidValue()
-        .build();
+      const invalidValueRequest = {
+        ...threatAnalysisRequestBodyBuilder().build(),
+        value: 'notanumber',
+      };
 
-      const invalidNonceRequest = ThreatAnalysisRequestBuilder.new()
-        .withInvalidNonce()
-        .build();
+      const invalidNonceRequest = {
+        ...threatAnalysisRequestBodyBuilder().build(),
+        nonce: 'notanumber',
+      };
 
       expect(() =>
         ThreatAnalysisRequestBodySchema.parse(invalidValueRequest),
@@ -153,28 +157,24 @@ describe('Analysis Request Schemas', () => {
       ).toThrow();
     });
 
-    it('should reject missing required fields', () => {
-      const requiredFields = [
-        'to',
-        'value',
-        'data',
-        'operation',
-        'safeTxGas',
-        'baseGas',
-        'gasPrice',
-        'gasToken',
-        'refundReceiver',
-        'nonce',
-      ] as const;
+    it.each([
+      'to',
+      'value',
+      'data',
+      'operation',
+      'safeTxGas',
+      'baseGas',
+      'gasPrice',
+      'gasToken',
+      'refundReceiver',
+      'nonce',
+    ] as const)('should reject missing required field = %s', (field) => {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { [field]: _, ...incompleteRequest } = validThreatRequest;
 
-      requiredFields.forEach((field) => {
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { [field]: _, ...incompleteRequest } = validThreatRequest;
-
-        expect(() =>
-          ThreatAnalysisRequestBodySchema.parse(incompleteRequest),
-        ).toThrow();
-      });
+      expect(() =>
+        ThreatAnalysisRequestBodySchema.parse(incompleteRequest),
+      ).toThrow();
     });
   });
 });
