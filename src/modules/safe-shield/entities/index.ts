@@ -57,7 +57,7 @@ export {
   RecipientAnalysisRequestBodySchema,
   ContractAnalysisRequestBodySchema,
   ThreatAnalysisRequestBodySchema,
-} from './api-requests.entity';
+} from './analysis-requests.entity';
 
 // API response schemas and types
 export {
@@ -68,4 +68,4 @@ export {
   RecipientAnalysisResponseSchema,
   ContractAnalysisResponseSchema,
   ThreatAnalysisResponseSchema,
-} from './api-responses.entity';
+} from './analysis-responses.entity';
