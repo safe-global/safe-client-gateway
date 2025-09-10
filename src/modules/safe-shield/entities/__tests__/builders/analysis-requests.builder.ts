@@ -43,4 +43,3 @@ export function threatAnalysisRequestBodyBuilder(): IBuilder<ThreatAnalysisReque
     .with('refundReceiver', getAddress(faker.finance.ethereumAddress()))
     .with('nonce', faker.string.numeric());
 }
-

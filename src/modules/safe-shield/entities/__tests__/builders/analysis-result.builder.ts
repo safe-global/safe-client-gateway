@@ -43,4 +43,3 @@ export function threatAnalysisResultBuilder(): IBuilder<ThreatAnalysisResult> {
     .with('title', faker.lorem.sentence())
     .with('description', faker.lorem.paragraph());
 }
-
