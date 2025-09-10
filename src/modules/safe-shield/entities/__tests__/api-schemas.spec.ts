@@ -2,12 +2,12 @@ import {
   RecipientAnalysisRequestBodySchema,
   ContractAnalysisRequestBodySchema,
   ThreatAnalysisRequestBodySchema,
-} from '../api-requests.entity';
+} from '../analysis-requests.entity';
 import {
   RecipientAnalysisResponseSchema,
   ContractAnalysisResponseSchema,
   ThreatAnalysisResponseSchema,
-} from '../api-responses.entity';
+} from '../analysis-responses.entity';
 import { Severity } from '../severity.entity';
 import { StatusGroup } from '../status-group.entity';
 import { RecipientStatus } from '../recipient-status.entity';
