@@ -2,32 +2,26 @@
  * Safe Shield Test Builders
  *
  * Centralized exports for all test builders to simplify imports in test files.
+ * Follows the repository pattern of function-based builders returning IBuilder<T>.
  */
 
 // Analysis Result Builders
 export {
-  AnalysisResultBuilder,
-  buildRecipientAnalysisResult,
-  buildContractAnalysisResult,
-  buildThreatAnalysisResult,
+  recipientAnalysisResultBuilder,
+  contractAnalysisResultBuilder,
+  threatAnalysisResultBuilder,
 } from './analysis-result.builder';
 
 // API Request Builders
 export {
-  RecipientAnalysisRequestBuilder,
-  ContractAnalysisRequestBuilder,
-  ThreatAnalysisRequestBuilder,
-  buildRecipientAnalysisRequest,
-  buildContractAnalysisRequest,
-  buildThreatAnalysisRequest,
+  recipientAnalysisRequestBodyBuilder,
+  contractAnalysisRequestBodyBuilder,
+  threatAnalysisRequestBodyBuilder,
 } from './analysis-requests.builder';
 
 // API Response Builders
 export {
-  RecipientAnalysisResponseBuilder,
-  ContractAnalysisResponseBuilder,
-  ThreatAnalysisResponseBuilder,
-  buildRecipientAnalysisResponse,
-  buildContractAnalysisResponse,
-  buildThreatAnalysisResponse,
+  recipientAnalysisResponseBuilder,
+  contractAnalysisResponseBuilder,
+  threatAnalysisResponseBuilder,
 } from './analysis-responses.builder';
