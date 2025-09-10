@@ -347,21 +347,20 @@ export class ThreatAnalysisResponseBuilder {
 export const buildRecipientAnalysisResponse = (
   overrides: RecipientAnalysisResponse = {},
 ): RecipientAnalysisResponse => ({
+  ...new RecipientAnalysisResponseBuilder().build(),
   ...overrides,
 });
 
 export const buildContractAnalysisResponse = (
   overrides: ContractAnalysisResponse = {},
 ): ContractAnalysisResponse => ({
+  ...new ContractAnalysisResponseBuilder().build(),
   ...overrides,
 });
 
 export const buildThreatAnalysisResponse = (
   overrides: Partial<ThreatAnalysisResponse> = {},
 ): ThreatAnalysisResponse => ({
-  severity: Severity.OK,
-  type: ThreatStatus.NO_THREAT,
-  title: faker.lorem.sentence(),
-  description: faker.lorem.paragraph(),
+  ...new ThreatAnalysisResponseBuilder().build(),
   ...overrides,
 });

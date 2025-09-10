@@ -101,29 +101,20 @@ export class AnalysisResultBuilder<T extends AnalysisStatus> {
 export const buildRecipientAnalysisResult = (
   overrides: Partial<RecipientAnalysisResult> = {},
 ): RecipientAnalysisResult => ({
-  severity: Severity.INFO,
-  type: RecipientStatus.KNOWN_RECIPIENT,
-  title: faker.lorem.sentence(),
-  description: faker.lorem.paragraph(),
+  ...new AnalysisResultBuilder(RecipientStatus.KNOWN_RECIPIENT).build(),
   ...overrides,
 });
 
 export const buildContractAnalysisResult = (
   overrides: Partial<ContractAnalysisResult> = {},
 ): ContractAnalysisResult => ({
-  severity: Severity.INFO,
-  type: ContractStatus.VERIFIED,
-  title: faker.lorem.sentence(),
-  description: faker.lorem.paragraph(),
+  ...new AnalysisResultBuilder(ContractStatus.VERIFIED).build(),
   ...overrides,
 });
 
 export const buildThreatAnalysisResult = (
   overrides: Partial<ThreatAnalysisResult> = {},
 ): ThreatAnalysisResult => ({
-  severity: Severity.OK,
-  type: ThreatStatus.NO_THREAT,
-  title: faker.lorem.sentence(),
-  description: faker.lorem.paragraph(),
+  ...new AnalysisResultBuilder(ThreatStatus.NO_THREAT).build(),
   ...overrides,
 });
