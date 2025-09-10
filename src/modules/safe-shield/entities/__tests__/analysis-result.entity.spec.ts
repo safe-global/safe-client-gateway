@@ -291,54 +291,55 @@ import {
   type AnalysisResult,
   type RecipientAnalysisResult,
   type ContractAnalysisResult,
-  type ThreatAnalysisResult,
 } from '../analysis-result.entity';
 import { Severity } from '../severity.entity';
 import { RecipientStatus } from '../recipient-status.entity';
 import { BridgeStatus } from '../bridge-status.entity';
 import { ContractStatus } from '../contract-status.entity';
 import { ThreatStatus } from '../threat-status.entity';
+import { AnalysisResultBuilder } from './builders';
 
 describe('AnalysisResult', () => {
   describe('AnalysisResult interface', () => {
     it('should enforce correct structure for recipient analysis', () => {
-      const result: RecipientAnalysisResult = {
-        severity: Severity.WARN,
-        type: RecipientStatus.NEW_RECIPIENT,
-        title: 'New recipient detected',
-        description: 'This is the first time interacting with this address',
-      };
+      const result = AnalysisResultBuilder.recipient(
+        RecipientStatus.NEW_RECIPIENT,
+      )
+        .warn()
+        .build();
 
       expect(result.severity).toBe(Severity.WARN);
       expect(result.type).toBe(RecipientStatus.NEW_RECIPIENT);
-      expect(result.title).toBe('New recipient detected');
-      expect(result.description).toBe(
-        'This is the first time interacting with this address',
-      );
+      expect(result.title).toStrictEqual(expect.any(String));
+      expect(result.title).not.toHaveLength(0);
+      expect(result.description).toStrictEqual(expect.any(String));
+      expect(result.description).not.toHaveLength(0);
     });
 
     it('should enforce correct structure for contract analysis', () => {
-      const result: ContractAnalysisResult = {
-        severity: Severity.CRITICAL,
-        type: ContractStatus.NOT_VERIFIED,
-        title: 'Unverified contract',
-        description: 'Contract source code is not verified',
-      };
+      const result = AnalysisResultBuilder.contract(ContractStatus.NOT_VERIFIED)
+        .critical()
+        .build();
 
       expect(result.severity).toBe(Severity.CRITICAL);
       expect(result.type).toBe(ContractStatus.NOT_VERIFIED);
+      expect(result.title).toStrictEqual(expect.any(String));
+      expect(result.title).not.toHaveLength(0);
+      expect(result.description).toStrictEqual(expect.any(String));
+      expect(result.description).not.toHaveLength(0);
     });
 
     it('should enforce correct structure for threat analysis', () => {
-      const result: ThreatAnalysisResult = {
-        severity: Severity.CRITICAL,
-        type: ThreatStatus.MALICIOUS,
-        title: 'Malicious transaction detected',
-        description: 'This transaction contains known malicious patterns',
-      };
+      const result = AnalysisResultBuilder.threat(ThreatStatus.MALICIOUS)
+        .critical()
+        .build();
 
       expect(result.severity).toBe(Severity.CRITICAL);
       expect(result.type).toBe(ThreatStatus.MALICIOUS);
+      expect(result.title).toStrictEqual(expect.any(String));
+      expect(result.title).not.toHaveLength(0);
+      expect(result.description).toStrictEqual(expect.any(String));
+      expect(result.description).not.toHaveLength(0);
     });
   });
 
@@ -400,12 +401,7 @@ describe('AnalysisResult', () => {
   });
 
   describe('AnalysisResultBaseSchema', () => {
-    const validBaseResult = {
-      severity: Severity.WARN,
-      type: RecipientStatus.NEW_RECIPIENT,
-      title: 'Test title',
-      description: 'Test description',
-    };
+    const validBaseResult = AnalysisResultBuilder.recipient().build();
 
     it('should validate correct analysis result structure', () => {
       expect(() =>
@@ -428,17 +424,15 @@ describe('AnalysisResult', () => {
 
     it('should reject empty title or description', () => {
       expect(() =>
-        AnalysisResultBaseSchema.parse({
-          ...validBaseResult,
-          title: '',
-        }),
+        AnalysisResultBaseSchema.parse(
+          AnalysisResultBuilder.recipient().withTitle('').build(),
+        ),
       ).toThrow();
 
       expect(() =>
-        AnalysisResultBaseSchema.parse({
-          ...validBaseResult,
-          description: '',
-        }),
+        AnalysisResultBaseSchema.parse(
+          AnalysisResultBuilder.recipient().withDescription('').build(),
+        ),
       ).toThrow();
     });
 
@@ -463,12 +457,7 @@ describe('AnalysisResult', () => {
 
   describe('RecipientAnalysisResultSchema', () => {
     it('should validate recipient status types', () => {
-      const recipientResult = {
-        severity: Severity.INFO,
-        type: RecipientStatus.KNOWN_RECIPIENT,
-        title: 'Known recipient',
-        description: 'You have interacted with this address before',
-      };
+      const recipientResult = AnalysisResultBuilder.recipient().build();
 
       expect(() =>
         RecipientAnalysisResultSchema.parse(recipientResult),
@@ -476,12 +465,7 @@ describe('AnalysisResult', () => {
     });
 
     it('should validate bridge status types', () => {
-      const bridgeResult = {
-        severity: Severity.CRITICAL,
-        type: BridgeStatus.INCOMPATIBLE_SAFE,
-        title: 'Incompatible Safe',
-        description: 'Target Safe version is incompatible',
-      };
+      const bridgeResult = AnalysisResultBuilder.bridge().build();
 
       expect(() =>
         RecipientAnalysisResultSchema.parse(bridgeResult),
@@ -489,12 +473,7 @@ describe('AnalysisResult', () => {
     });
 
     it('should reject contract status types', () => {
-      const contractResult = {
-        severity: Severity.WARN,
-        type: ContractStatus.NOT_VERIFIED,
-        title: 'Unverified contract',
-        description: 'Contract is not verified',
-      };
+      const contractResult = AnalysisResultBuilder.contract().build();
 
       expect(() =>
         RecipientAnalysisResultSchema.parse(contractResult),
@@ -502,12 +481,7 @@ describe('AnalysisResult', () => {
     });
 
     it('should reject threat status types', () => {
-      const threatResult = {
-        severity: Severity.CRITICAL,
-        type: ThreatStatus.MALICIOUS,
-        title: 'Malicious transaction',
-        description: 'Transaction contains malicious patterns',
-      };
+      const threatResult = AnalysisResultBuilder.threat().build();
 
       expect(() => RecipientAnalysisResultSchema.parse(threatResult)).toThrow();
     });
@@ -515,12 +489,7 @@ describe('AnalysisResult', () => {
 
   describe('ContractAnalysisResultSchema', () => {
     it('should validate contract status types', () => {
-      const contractResult = {
-        severity: Severity.WARN,
-        type: ContractStatus.NOT_VERIFIED,
-        title: 'Unverified contract',
-        description: 'Contract source code is not verified',
-      };
+      const contractResult = AnalysisResultBuilder.contract().build();
 
       expect(() =>
         ContractAnalysisResultSchema.parse(contractResult),
@@ -528,12 +497,7 @@ describe('AnalysisResult', () => {
     });
 
     it('should reject recipient status types', () => {
-      const recipientResult = {
-        severity: Severity.INFO,
-        type: RecipientStatus.KNOWN_RECIPIENT,
-        title: 'Known recipient',
-        description: 'You have interacted with this address before',
-      };
+      const recipientResult = AnalysisResultBuilder.recipient().build();
 
       expect(() =>
         ContractAnalysisResultSchema.parse(recipientResult),
@@ -541,12 +505,7 @@ describe('AnalysisResult', () => {
     });
 
     it('should reject threat status types', () => {
-      const threatResult = {
-        severity: Severity.CRITICAL,
-        type: ThreatStatus.MALICIOUS,
-        title: 'Malicious transaction',
-        description: 'Transaction contains malicious patterns',
-      };
+      const threatResult = AnalysisResultBuilder.threat().build();
 
       expect(() => ContractAnalysisResultSchema.parse(threatResult)).toThrow();
     });
@@ -554,12 +513,7 @@ describe('AnalysisResult', () => {
 
   describe('ThreatAnalysisResultSchema', () => {
     it('should validate threat status types', () => {
-      const threatResult = {
-        severity: Severity.CRITICAL,
-        type: ThreatStatus.OWNERSHIP_CHANGE,
-        title: 'Ownership change detected',
-        description: 'This transaction attempts to modify Safe ownership',
-      };
+      const threatResult = AnalysisResultBuilder.threat().build();
 
       expect(() =>
         ThreatAnalysisResultSchema.parse(threatResult),
@@ -567,23 +521,13 @@ describe('AnalysisResult', () => {
     });
 
     it('should reject contract status types', () => {
-      const contractResult = {
-        severity: Severity.WARN,
-        type: ContractStatus.NOT_VERIFIED,
-        title: 'Unverified contract',
-        description: 'Contract source code is not verified',
-      };
+      const contractResult = AnalysisResultBuilder.contract().build();
 
       expect(() => ThreatAnalysisResultSchema.parse(contractResult)).toThrow();
     });
 
     it('should reject recipient status types', () => {
-      const recipientResult = {
-        severity: Severity.INFO,
-        type: RecipientStatus.KNOWN_RECIPIENT,
-        title: 'Known recipient',
-        description: 'You have interacted with this address before',
-      };
+      const recipientResult = AnalysisResultBuilder.recipient().build();
 
       expect(() => ThreatAnalysisResultSchema.parse(recipientResult)).toThrow();
     });
@@ -591,25 +535,12 @@ describe('AnalysisResult', () => {
 
   describe('real-world scenarios', () => {
     it('should handle multiple analysis results correctly', () => {
-      const results: Array<AnalysisResult> = [
-        {
-          severity: Severity.CRITICAL,
-          type: ThreatStatus.MALICIOUS,
-          title: 'Malicious transaction',
-          description: 'Transaction flagged as malicious',
-        },
-        {
-          severity: Severity.WARN,
-          type: ContractStatus.NOT_VERIFIED,
-          title: 'Unverified contract',
-          description: 'Contract source not verified',
-        },
-        {
-          severity: Severity.INFO,
-          type: RecipientStatus.KNOWN_RECIPIENT,
-          title: 'Known recipient',
-          description: 'Previously interacted with',
-        },
+      const results: Array<ContractAnalysisResult> = [
+        AnalysisResultBuilder.contract(ContractStatus.KNOWN_CONTRACT).build(),
+        AnalysisResultBuilder.contract(ContractStatus.VERIFIED).build(),
+        AnalysisResultBuilder.contract(
+          ContractStatus.UNEXPECTED_DELEGATECALL,
+        ).build(),
       ];
 
       // Verify all results have the required structure
@@ -625,24 +556,15 @@ describe('AnalysisResult', () => {
 
     it('should work with sorting by severity', () => {
       const results = [
-        {
-          severity: Severity.INFO,
-          type: RecipientStatus.KNOWN_RECIPIENT,
-          title: 'Info',
-          description: 'Info desc',
-        },
-        {
-          severity: Severity.CRITICAL,
-          type: ThreatStatus.MALICIOUS,
-          title: 'Critical',
-          description: 'Critical desc',
-        },
-        {
-          severity: Severity.WARN,
-          type: ContractStatus.NOT_VERIFIED,
-          title: 'Warn',
-          description: 'Warn desc',
-        },
+        AnalysisResultBuilder.contract(ContractStatus.KNOWN_CONTRACT)
+          .info()
+          .build(),
+        AnalysisResultBuilder.contract(ContractStatus.UNEXPECTED_DELEGATECALL)
+          .critical()
+          .build(),
+        AnalysisResultBuilder.contract(ContractStatus.NOT_VERIFIED_BY_SAFE)
+          .warn()
+          .build(),
       ];
 
       const sorted = results.sort((a, b) => b.severity - a.severity);
