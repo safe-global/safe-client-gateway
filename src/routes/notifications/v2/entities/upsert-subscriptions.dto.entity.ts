@@ -20,7 +20,7 @@ export class UpsertSubscriptionsSafesDto
   @ApiProperty({
     isArray: true,
     enum: NotificationType,
-    enumName: 'NotificationType',
+    enumName: 'NotificationTypeEnum',
   })
   notificationTypes!: Array<NotificationType>;
 }

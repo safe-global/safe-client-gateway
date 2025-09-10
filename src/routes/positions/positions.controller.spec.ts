@@ -104,55 +104,71 @@ describe('Positions Controller', () => {
 
       positionsRepository.getPositions.mockResolvedValue(domainPositions);
 
-      await request(app.getHttpServer())
+      const response = await request(app.getHttpServer())
         .get(
           `/v1/chains/${chain.chainId}/safes/${safeAddress}/positions/${fiatCode}`,
         )
-        .expect(200)
-        .expect([
-          {
-            protocol: 'aave',
-            protocol_metadata: applicationMetadata,
-            fiatTotal: '105',
-            items: [
-              {
-                name: 'Aave V3',
-                items: [
-                  {
-                    position_type: PositionType.deposit,
-                    tokenInfo: {
-                      type: 'ERC20',
-                      address: depositTokenAddress,
-                      decimals: depositToken.decimals,
-                      symbol: depositToken.symbol,
-                      name: depositToken.name,
-                      logoUri: depositToken.logoUri,
-                    },
-                    balance: '5',
-                    fiatBalance: '125',
-                    fiatBalance24hChange: '1',
-                    fiatConversion: '25',
+        .expect(200);
+
+      expect(response.body).toEqual([
+        {
+          protocol: 'aave',
+          protocol_metadata: applicationMetadata,
+          fiatTotal: '105',
+          items: [
+            {
+              name: 'Aave V3',
+              items: [
+                {
+                  position_type: PositionType.deposit,
+                  tokenInfo: {
+                    type: 'ERC20',
+                    address: depositTokenAddress,
+                    decimals: depositToken.decimals,
+                    symbol: depositToken.symbol,
+                    name: depositToken.name,
+                    logoUri: depositToken.logoUri,
                   },
-                  {
-                    position_type: PositionType.loan,
-                    tokenInfo: {
-                      type: 'ERC20',
-                      address: loanTokenAddress,
-                      decimals: loanToken.decimals,
-                      symbol: loanToken.symbol,
-                      name: loanToken.name,
-                      logoUri: loanToken.logoUri,
-                    },
-                    balance: '1',
-                    fiatBalance: '20',
-                    fiatBalance24hChange: '0.5',
-                    fiatConversion: '20',
+                  balance: '2',
+                  fiatBalance: '50',
+                  fiatBalance24hChange: '1',
+                  fiatConversion: '25',
+                },
+                {
+                  position_type: PositionType.deposit,
+                  tokenInfo: {
+                    type: 'ERC20',
+                    address: depositTokenAddress,
+                    decimals: depositToken.decimals,
+                    symbol: depositToken.symbol,
+                    name: depositToken.name,
+                    logoUri: depositToken.logoUri,
                   },
-                ],
-              },
-            ],
-          },
-        ]);
+                  balance: '3',
+                  fiatBalance: '75',
+                  fiatBalance24hChange: '1',
+                  fiatConversion: '25',
+                },
+                {
+                  position_type: PositionType.loan,
+                  tokenInfo: {
+                    type: 'ERC20',
+                    address: loanTokenAddress,
+                    decimals: loanToken.decimals,
+                    symbol: loanToken.symbol,
+                    name: loanToken.name,
+                    logoUri: loanToken.logoUri,
+                  },
+                  balance: '1',
+                  fiatBalance: '20',
+                  fiatBalance24hChange: '0.5',
+                  fiatConversion: '20',
+                },
+              ],
+            },
+          ],
+        },
+      ]);
 
       expect(chainsRepository.getChain).toHaveBeenCalledWith(chain.chainId);
       expect(positionsRepository.getPositions).toHaveBeenCalledWith({
