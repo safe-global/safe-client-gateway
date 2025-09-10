@@ -301,7 +301,7 @@ import {
   recipientAnalysisResultBuilder,
   contractAnalysisResultBuilder,
   threatAnalysisResultBuilder,
-} from './builders';
+} from './builders/analysis-result.builder';
 
 describe('AnalysisResult', () => {
   describe('AnalysisResult interface', () => {
@@ -428,17 +428,17 @@ describe('AnalysisResult', () => {
     });
 
     it('should reject empty title or description', () => {
-        expect(() =>
-          AnalysisResultBaseSchema.parse(
-            recipientAnalysisResultBuilder().with('title', '').build(),
-          ),
-        ).toThrow();
+      expect(() =>
+        AnalysisResultBaseSchema.parse(
+          recipientAnalysisResultBuilder().with('title', '').build(),
+        ),
+      ).toThrow();
 
-        expect(() =>
-          AnalysisResultBaseSchema.parse(
-            recipientAnalysisResultBuilder().with('description', '').build(),
-          ),
-        ).toThrow();
+      expect(() =>
+        AnalysisResultBaseSchema.parse(
+          recipientAnalysisResultBuilder().with('description', '').build(),
+        ),
+      ).toThrow();
     });
 
     it('should reject invalid severity', () => {
@@ -543,9 +543,15 @@ describe('AnalysisResult', () => {
   describe('real-world scenarios', () => {
     it('should handle multiple analysis results correctly', () => {
       const results: Array<ContractAnalysisResult> = [
-        contractAnalysisResultBuilder().with('type', ContractStatus.KNOWN_CONTRACT).build(),
-        contractAnalysisResultBuilder().with('type', ContractStatus.VERIFIED).build(),
-        contractAnalysisResultBuilder().with('type', ContractStatus.UNEXPECTED_DELEGATECALL).build(),
+        contractAnalysisResultBuilder()
+          .with('type', ContractStatus.KNOWN_CONTRACT)
+          .build(),
+        contractAnalysisResultBuilder()
+          .with('type', ContractStatus.VERIFIED)
+          .build(),
+        contractAnalysisResultBuilder()
+          .with('type', ContractStatus.UNEXPECTED_DELEGATECALL)
+          .build(),
       ];
 
       // Verify all results have the required structure
