@@ -75,9 +75,7 @@ describe('Severity', () => {
       ];
 
       // Sort by severity (highest first)
-      const sorted = analysisResults.sort((a, b) =>
-        compareSeverity(b.severity, a.severity),
-      );
+      const sorted = analysisResults.sort((a, b) => b.severity - a.severity);
 
       expect(sorted[0].severity).toBe(Severity.CRITICAL);
       expect(sorted[1].severity).toBe(Severity.CRITICAL);

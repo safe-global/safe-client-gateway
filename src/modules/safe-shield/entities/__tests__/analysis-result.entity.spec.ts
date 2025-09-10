@@ -645,11 +645,7 @@ describe('AnalysisResult', () => {
         },
       ];
 
-      // This would be done using the compareSeverity function in practice
-      const severityOrder = { OK: 0, INFO: 1, WARN: 2, CRITICAL: 3 };
-      const sorted = results.sort(
-        (a, b) => severityOrder[b.severity] - severityOrder[a.severity],
-      );
+      const sorted = results.sort((a, b) => b.severity - a.severity);
 
       expect(sorted[0].severity).toBe(Severity.CRITICAL);
       expect(sorted[1].severity).toBe(Severity.WARN);
