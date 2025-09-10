@@ -18,11 +18,9 @@ import { ThreatStatusSchema, type ThreatStatus } from './threat-status.entity';
  * status type, user-facing messaging, and detailed description. This provides
  * a consistent format across all analysis types (recipient, contract, threat).
  *
- * @template T - The specific status type (RecipientStatus, ContractStatus, etc.)
+ * @template T - The specific status type (AnalysisStatus)
  */
-export interface AnalysisResult<
-  T extends RecipientStatus | BridgeStatus | ContractStatus | ThreatStatus,
-> {
+export interface AnalysisResult<T extends AnalysisStatus> {
   /** Severity level indicating the importance and risk of this finding */
   severity: Severity;
 
@@ -39,7 +37,7 @@ export interface AnalysisResult<
 /**
  * Union type of all possible status types that can be used in analysis results.
  */
-export type AnyStatus =
+export type AnalysisStatus =
   | RecipientStatus
   | BridgeStatus
   | ContractStatus
@@ -48,7 +46,7 @@ export type AnyStatus =
 /**
  * Zod schema for validating any status enum value.
  */
-export const AnyStatusSchema = z.union([
+export const AnalysisStatusSchema = z.union([
   RecipientStatusSchema,
   BridgeStatusSchema,
   ContractStatusSchema,
@@ -63,7 +61,7 @@ export const AnyStatusSchema = z.union([
  */
 export const AnalysisResultBaseSchema = z.object({
   severity: SeveritySchema,
-  type: AnyStatusSchema,
+  type: AnalysisStatusSchema,
   title: z.string().min(1, 'Title cannot be empty'),
   description: z.string().min(1, 'Description cannot be empty'),
 });
