@@ -37,10 +37,10 @@ yarn generate-abis
 
 ## Running the app
 
-1. Start Redis instance. By default, it will start on port `6379` of `localhost`.
+1. Start the Redis and DB (PostgreSQL) instances. By default, Redis will start on port `6379` of `localhost`, DB on port `5432`.
 
 ```shell
-docker compose up -d redis
+docker compose up -d redis db
 ```
 
 2. Start the Safe Client Gateway
