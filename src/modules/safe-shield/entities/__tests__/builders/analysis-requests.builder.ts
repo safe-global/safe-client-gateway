@@ -9,7 +9,9 @@ import {
  * Builder for RecipientAnalysisRequestBody
  */
 export class RecipientAnalysisRequestBuilder {
-  private data: `0x${string}` = faker.string.hexadecimal({ length: 128 }) as `0x${string}`;
+  private data: `0x${string}` = faker.string.hexadecimal({
+    length: 128,
+  }) as `0x${string}`;
 
   static new(): RecipientAnalysisRequestBuilder {
     return new RecipientAnalysisRequestBuilder();
@@ -39,7 +41,9 @@ export class RecipientAnalysisRequestBuilder {
  * Builder for ContractAnalysisRequestBody
  */
 export class ContractAnalysisRequestBuilder {
-  private data: `0x${string}` = faker.string.hexadecimal({ length: 128 }) as `0x${string}`;
+  private data: `0x${string}` = faker.string.hexadecimal({
+    length: 128,
+  }) as `0x${string}`;
   private operation: number = 0;
 
   static new(): ContractAnalysisRequestBuilder {
@@ -82,13 +86,17 @@ export class ContractAnalysisRequestBuilder {
 export class ThreatAnalysisRequestBuilder {
   private to: `0x${string}` = faker.finance.ethereumAddress() as `0x${string}`;
   private value: string = '1000000000000000000';
-  private data: `0x${string}` = faker.string.hexadecimal({ length: 128 }) as `0x${string}`;
-  private operation: number = 0;
+  private data: `0x${string}` = faker.string.hexadecimal({
+    length: 128,
+  }) as `0x${string}`;
+  private operation: number = faker.helpers.arrayElement([0, 1]);
   private safeTxGas: string = '100000';
   private baseGas: string = '21000';
   private gasPrice: string = '20000000000';
-  private gasToken: `0x${string}` = '0x0000000000000000000000000000000000000000';
-  private refundReceiver: `0x${string}` = '0x0000000000000000000000000000000000000000';
+  private gasToken: `0x${string}` =
+    '0x0000000000000000000000000000000000000000';
+  private refundReceiver: `0x${string}` =
+    '0x0000000000000000000000000000000000000000';
   private nonce: string = '1';
 
   static new(): ThreatAnalysisRequestBuilder {
@@ -183,30 +191,20 @@ export class ThreatAnalysisRequestBuilder {
 export const buildRecipientAnalysisRequest = (
   overrides: Partial<RecipientAnalysisRequestBody> = {},
 ): RecipientAnalysisRequestBody => ({
-  data: faker.string.hexadecimal({ length: 128 }) as `0x${string}`,
+  ...new RecipientAnalysisRequestBuilder().build(),
   ...overrides,
 });
 
 export const buildContractAnalysisRequest = (
   overrides: Partial<ContractAnalysisRequestBody> = {},
 ): ContractAnalysisRequestBody => ({
-  data: faker.string.hexadecimal({ length: 128 }) as `0x${string}`,
-  operation: 0,
+  ...new ContractAnalysisRequestBuilder().build(),
   ...overrides,
 });
 
 export const buildThreatAnalysisRequest = (
   overrides: Partial<ThreatAnalysisRequestBody> = {},
 ): ThreatAnalysisRequestBody => ({
-  to: faker.finance.ethereumAddress() as `0x${string}`,
-  value: '1000000000000000000',
-  data: faker.string.hexadecimal({ length: 128 }) as `0x${string}`,
-  operation: 0,
-  safeTxGas: '100000',
-  baseGas: '21000',
-  gasPrice: '20000000000',
-  gasToken: '0x0000000000000000000000000000000000000000',
-  refundReceiver: '0x0000000000000000000000000000000000000000',
-  nonce: '1',
+  ...new ThreatAnalysisRequestBuilder().build(),
   ...overrides,
 });
