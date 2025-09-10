@@ -1,3 +1,4 @@
+import { getStringEnumKeys } from '@/domain/common/utils/enum';
 import { z } from 'zod';
 
 export enum RecipientStatusGroup {
@@ -40,7 +41,9 @@ export type StatusGroup = typeof StatusGroup;
  * const group = RecipientStatusGroupSchema.parse('RECIPIENT_INTERACTION');
  * ```
  */
-export const RecipientStatusGroupSchema = z.nativeEnum(RecipientStatusGroup);
+export const RecipientStatusGroupSchema = z.enum(
+  getStringEnumKeys(RecipientStatusGroup),
+);
 
 /**
  * Zod schema for validating ContractStatusGroup enum values.
@@ -50,7 +53,9 @@ export const RecipientStatusGroupSchema = z.nativeEnum(RecipientStatusGroup);
  * const group = ContractStatusGroupSchema.parse('CONTRACT_VERIFICATION');
  * ```
  */
-export const ContractStatusGroupSchema = z.nativeEnum(ContractStatusGroup);
+export const ContractStatusGroupSchema = z.enum(
+  getStringEnumKeys(ContractStatusGroup),
+);
 
 /**
  * Zod schema for validating StatusGroup values.
@@ -60,4 +65,4 @@ export const ContractStatusGroupSchema = z.nativeEnum(ContractStatusGroup);
  * const group = StatusGroupSchema.parse('CONTRACT_VERIFICATION');
  * ```
  */
-export const StatusGroupSchema = z.nativeEnum(StatusGroup);
+export const StatusGroupSchema = z.enum(getStringEnumKeys(StatusGroup));

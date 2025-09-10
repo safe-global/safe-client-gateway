@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { getStringEnumKeys } from '@/domain/common/utils/enum';
 
 /**
  * Status codes for bridge analysis in Safe Shield security checks.
@@ -29,4 +30,4 @@ export enum BridgeStatus {
  * const status = BridgeStatusSchema.parse('INCOMPATIBLE_SAFE');
  * ```
  */
-export const BridgeStatusSchema = z.nativeEnum(BridgeStatus);
+export const BridgeStatusSchema = z.enum(getStringEnumKeys(BridgeStatus));

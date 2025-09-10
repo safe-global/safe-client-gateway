@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { getStringEnumKeys } from '@/domain/common/utils/enum';
 
 /**
  * Status codes for recipient analysis in Safe Shield security checks.
@@ -22,4 +23,4 @@ export enum RecipientStatus {
  * const status = RecipientStatusSchema.parse('NEW_RECIPIENT');
  * ```
  */
-export const RecipientStatusSchema = z.nativeEnum(RecipientStatus);
+export const RecipientStatusSchema = z.enum(getStringEnumKeys(RecipientStatus));

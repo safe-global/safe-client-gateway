@@ -1,3 +1,4 @@
+import { getStringEnumKeys } from '@/domain/common/utils/enum';
 import { z } from 'zod';
 
 /**
@@ -38,4 +39,4 @@ export enum ThreatStatus {
  * const status = ThreatStatusSchema.parse('MALICIOUS');
  * ```
  */
-export const ThreatStatusSchema = z.nativeEnum(ThreatStatus);
+export const ThreatStatusSchema = z.enum(getStringEnumKeys(ThreatStatus));

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { getStringEnumKeys } from '@/domain/common/utils/enum';
 
 /**
  * Status codes for contract analysis in Safe Shield security checks.
@@ -43,4 +44,4 @@ export enum ContractStatus {
  * const status = ContractStatusSchema.parse('VERIFIED');
  * ```
  */
-export const ContractStatusSchema = z.nativeEnum(ContractStatus);
+export const ContractStatusSchema = z.enum(getStringEnumKeys(ContractStatus));
