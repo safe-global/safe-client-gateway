@@ -8,7 +8,6 @@ import {
   ContractAnalysisResponseSchema,
   ThreatAnalysisResponseSchema,
 } from '../analysis-responses.entity';
-import { Severity } from '../severity.entity';
 import { StatusGroup } from '../status-group.entity';
 import { RecipientStatus } from '../recipient-status.entity';
 import { ContractStatus } from '../contract-status.entity';
@@ -216,7 +215,7 @@ describe('API Schemas', () => {
           [faker.finance.ethereumAddress()]: {
             [StatusGroup.RECIPIENT_INTERACTION]: [
               {
-                severity: Severity.INFO,
+                severity: 'INFO',
                 type: RecipientStatus.KNOWN_RECIPIENT,
                 title: 'Known recipient',
                 description: 'You have interacted with this address before',
@@ -235,7 +234,7 @@ describe('API Schemas', () => {
           [faker.finance.ethereumAddress()]: {
             [StatusGroup.RECIPIENT_INTERACTION]: [
               {
-                severity: Severity.INFO,
+                severity: 'INFO',
                 type: RecipientStatus.KNOWN_RECIPIENT,
                 title: 'Known recipient',
                 description: 'Previously interacted',
@@ -245,7 +244,7 @@ describe('API Schemas', () => {
           [faker.finance.ethereumAddress()]: {
             [StatusGroup.BRIDGE]: [
               {
-                severity: Severity.WARN,
+                severity: 'WARN',
                 type: 'INCOMPATIBLE_SAFE',
                 title: 'Incompatible Safe',
                 description: 'Target Safe version incompatible',
@@ -278,7 +277,7 @@ describe('API Schemas', () => {
           'invalid-address': {
             [StatusGroup.RECIPIENT_INTERACTION]: [
               {
-                severity: Severity.INFO,
+                severity: 'INFO',
                 type: RecipientStatus.KNOWN_RECIPIENT,
                 title: 'Known recipient',
                 description: 'Previously interacted',
@@ -299,7 +298,7 @@ describe('API Schemas', () => {
           [faker.finance.ethereumAddress()]: {
             [StatusGroup.CONTRACT_VERIFICATION]: [
               {
-                severity: Severity.WARN,
+                severity: 'WARN',
                 type: ContractStatus.NOT_VERIFIED,
                 title: 'Unverified contract',
                 description: 'Contract source code is not verified',
@@ -307,7 +306,7 @@ describe('API Schemas', () => {
             ],
             [StatusGroup.CONTRACT_INTERACTION]: [
               {
-                severity: Severity.INFO,
+                severity: 'INFO',
                 type: ContractStatus.KNOWN_CONTRACT,
                 title: 'Known contract',
                 description: 'You have interacted with this contract before',
@@ -326,7 +325,7 @@ describe('API Schemas', () => {
           [faker.finance.ethereumAddress()]: {
             [StatusGroup.DELEGATECALL]: [
               {
-                severity: Severity.CRITICAL,
+                severity: 'CRITICAL',
                 type: ContractStatus.UNEXPECTED_DELEGATECALL,
                 title: 'Unexpected delegatecall',
                 description: 'Potentially dangerous delegatecall detected',
@@ -344,7 +343,7 @@ describe('API Schemas', () => {
     describe('ThreatAnalysisResponseSchema', () => {
       it('should validate threat analysis response', () => {
         const validThreatResponse = {
-          severity: Severity.CRITICAL,
+          severity: 'CRITICAL',
           type: ThreatStatus.MALICIOUS,
           title: 'Malicious transaction detected',
           description: 'This transaction contains known malicious patterns',
@@ -358,19 +357,19 @@ describe('API Schemas', () => {
       it('should validate safe threat responses', () => {
         const safeThreats = [
           {
-            severity: Severity.CRITICAL,
+            severity: 'CRITICAL',
             type: ThreatStatus.OWNERSHIP_CHANGE,
             title: 'Ownership change',
             description: 'Transaction modifies Safe ownership',
           },
           {
-            severity: Severity.WARN,
+            severity: 'WARN',
             type: ThreatStatus.MODULE_CHANGE,
             title: 'Module change',
             description: 'Transaction modifies Safe modules',
           },
           {
-            severity: Severity.CRITICAL,
+            severity: 'CRITICAL',
             type: ThreatStatus.MASTER_COPY_CHANGE,
             title: 'Master copy change',
             description: 'Transaction changes Safe implementation',
@@ -386,7 +385,7 @@ describe('API Schemas', () => {
 
       it('should validate no threat response', () => {
         const noThreatResponse = {
-          severity: Severity.OK,
+          severity: 'OK',
           type: ThreatStatus.NO_THREAT,
           title: 'No threats detected',
           description: 'Transaction appears safe',
@@ -399,7 +398,7 @@ describe('API Schemas', () => {
 
       it('should validate failed analysis response', () => {
         const failedResponse = {
-          severity: Severity.INFO,
+          severity: 'INFO',
           type: ThreatStatus.FAILED,
           title: 'Analysis failed',
           description: 'Threat analysis service unavailable',
@@ -421,7 +420,7 @@ describe('API Schemas', () => {
           [faker.finance.ethereumAddress()]: {
             [StatusGroup.RECIPIENT_INTERACTION]: [
               {
-                severity: Severity.WARN,
+                severity: 'WARN',
                 type: RecipientStatus.NEW_RECIPIENT,
                 title: 'New recipient',
                 description: 'First time interacting with this address',
@@ -431,7 +430,7 @@ describe('API Schemas', () => {
           [faker.finance.ethereumAddress()]: {
             [StatusGroup.RECIPIENT_INTERACTION]: [
               {
-                severity: Severity.INFO,
+                severity: 'INFO',
                 type: RecipientStatus.KNOWN_RECIPIENT,
                 title: 'Known recipient',
                 description: 'Previously interacted with this address',
@@ -444,7 +443,7 @@ describe('API Schemas', () => {
           [faker.finance.ethereumAddress()]: {
             [StatusGroup.CONTRACT_VERIFICATION]: [
               {
-                severity: Severity.CRITICAL,
+                severity: 'CRITICAL',
                 type: ContractStatus.NOT_VERIFIED,
                 title: 'Unverified contract',
                 description: 'Contract source code not verified',
@@ -454,7 +453,7 @@ describe('API Schemas', () => {
         },
         // Threat analysis
         threat: {
-          severity: Severity.OK,
+          severity: 'OK',
           type: ThreatStatus.NO_THREAT,
           title: 'No threats detected',
           description: 'Transaction analysis completed without threats',
