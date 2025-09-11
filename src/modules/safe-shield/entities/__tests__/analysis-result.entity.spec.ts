@@ -22,11 +22,11 @@ describe('AnalysisResult', () => {
     it('should enforce correct structure for recipient analysis', () => {
       const result = recipientAnalysisResultBuilder()
         .with('severity', Severity.WARN)
-        .with('type', RecipientStatus.NEW_RECIPIENT)
+        .with('type', 'NEW_RECIPIENT')
         .build();
 
       expect(result.severity).toBe(Severity.WARN);
-      expect(result.type).toBe(RecipientStatus.NEW_RECIPIENT);
+      expect(result.type).toBe('NEW_RECIPIENT');
       expect(result.title).toStrictEqual(expect.any(String));
       expect(result.title).not.toHaveLength(0);
       expect(result.description).toStrictEqual(expect.any(String));
@@ -63,14 +63,12 @@ describe('AnalysisResult', () => {
   });
 
   describe('AnalysisStatusSchema', () => {
-    it('should validate all recipient status values', () => {
-      expect(() =>
-        AnalysisStatusSchema.parse(RecipientStatus.NEW_RECIPIENT),
-      ).not.toThrow();
-      expect(() =>
-        AnalysisStatusSchema.parse(RecipientStatus.KNOWN_RECIPIENT),
-      ).not.toThrow();
-    });
+    it.each(RecipientStatus)(
+      'should validate all recipient status values = %s',
+      (value) => {
+        expect(() => AnalysisStatusSchema.parse(value)).not.toThrow();
+      },
+    );
 
     it.each(BridgeStatus)(
       'should validate all bridge status values = %s',
@@ -123,7 +121,7 @@ describe('AnalysisResult', () => {
       expect(() =>
         AnalysisResultBaseSchema.parse({
           severity: Severity.OK,
-          type: RecipientStatus.NEW_RECIPIENT,
+          type: 'NEW_RECIPIENT',
         }),
       ).toThrow();
     });

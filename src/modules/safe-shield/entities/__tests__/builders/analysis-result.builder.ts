@@ -7,7 +7,6 @@ import {
   type ThreatAnalysisResult,
 } from '../../analysis-result.entity';
 import { Severity } from '../../severity.entity';
-import { RecipientStatus } from '../../recipient-status.entity';
 import { ThreatStatus } from '../../threat-status.entity';
 
 /**
@@ -16,7 +15,7 @@ import { ThreatStatus } from '../../threat-status.entity';
 export function recipientAnalysisResultBuilder(): IBuilder<RecipientAnalysisResult> {
   return new Builder<RecipientAnalysisResult>()
     .with('severity', Severity.INFO)
-    .with('type', RecipientStatus.KNOWN_RECIPIENT)
+    .with('type', 'KNOWN_RECIPIENT')
     .with('title', faker.lorem.sentence())
     .with('description', faker.lorem.paragraph());
 }

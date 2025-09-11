@@ -11,11 +11,6 @@ import { ThreatStatus, ThreatStatusSchema } from '../threat-status.entity';
 
 describe('Status Entities', () => {
   describe('RecipientStatus', () => {
-    it('should have correct string values', () => {
-      expect(RecipientStatus.NEW_RECIPIENT).toBe('NEW_RECIPIENT');
-      expect(RecipientStatus.KNOWN_RECIPIENT).toBe('KNOWN_RECIPIENT');
-    });
-
     it('should have all expected values', () => {
       const values = Object.values(RecipientStatus);
       expect(values).toHaveLength(2);
@@ -23,12 +18,9 @@ describe('Status Entities', () => {
       expect(values).toContain('KNOWN_RECIPIENT');
     });
 
-    it.each(['NEW_RECIPIENT', 'KNOWN_RECIPIENT'] as const)(
-      'should validate with schema = %s',
-      (value) => {
-        expect(() => RecipientStatusSchema.parse(value)).not.toThrow();
-      },
-    );
+    it.each(RecipientStatus)('should validate with schema = %s', (value) => {
+      expect(() => RecipientStatusSchema.parse(value)).not.toThrow();
+    });
 
     it.each(['INVALID', '', null, undefined, 123] as const)(
       'should reject invalid value = %s',
@@ -170,7 +162,7 @@ describe('Status Entities', () => {
 
     it('should have unique values across different status types', () => {
       const allValues = [
-        ...Object.values(RecipientStatus),
+        ...RecipientStatus,
         ...BridgeStatus,
         ...ContractStatus,
         ...Object.values(ThreatStatus),
