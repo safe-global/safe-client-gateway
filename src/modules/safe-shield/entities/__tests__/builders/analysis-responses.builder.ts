@@ -6,7 +6,6 @@ import {
   type ContractAnalysisResponse,
   type ThreatAnalysisResponse,
 } from '../../analysis-responses.entity';
-import { Severity } from '../../severity.entity';
 import {
   contractAnalysisResultBuilder,
   recipientAnalysisResultBuilder,
@@ -44,7 +43,7 @@ export function contractAnalysisResponseBuilder(): IBuilder<ContractAnalysisResp
  */
 export function threatAnalysisResponseBuilder(): IBuilder<ThreatAnalysisResponse> {
   return new Builder<ThreatAnalysisResponse>()
-    .with('severity', Severity.OK)
+    .with('severity', 'OK')
     .with('type', 'NO_THREAT')
     .with('title', faker.lorem.sentence())
     .with('description', faker.lorem.paragraph());

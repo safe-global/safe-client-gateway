@@ -6,14 +6,13 @@ import {
   type ContractAnalysisResult,
   type ThreatAnalysisResult,
 } from '../../analysis-result.entity';
-import { Severity } from '../../severity.entity';
 
 /**
  * Builder for RecipientAnalysisResult entities
  */
 export function recipientAnalysisResultBuilder(): IBuilder<RecipientAnalysisResult> {
   return new Builder<RecipientAnalysisResult>()
-    .with('severity', Severity.INFO)
+    .with('severity', 'INFO')
     .with('type', 'KNOWN_RECIPIENT')
     .with('title', faker.lorem.sentence())
     .with('description', faker.lorem.paragraph());
@@ -24,7 +23,7 @@ export function recipientAnalysisResultBuilder(): IBuilder<RecipientAnalysisResu
  */
 export function contractAnalysisResultBuilder(): IBuilder<ContractAnalysisResult> {
   return new Builder<ContractAnalysisResult>()
-    .with('severity', Severity.INFO)
+    .with('severity', 'INFO')
     .with('type', 'VERIFIED')
     .with('title', faker.lorem.sentence())
     .with('description', faker.lorem.paragraph());
@@ -35,7 +34,7 @@ export function contractAnalysisResultBuilder(): IBuilder<ContractAnalysisResult
  */
 export function threatAnalysisResultBuilder(): IBuilder<ThreatAnalysisResult> {
   return new Builder<ThreatAnalysisResult>()
-    .with('severity', Severity.OK)
+    .with('severity', 'OK')
     .with('type', 'NO_THREAT')
     .with('title', faker.lorem.sentence())
     .with('description', faker.lorem.paragraph());

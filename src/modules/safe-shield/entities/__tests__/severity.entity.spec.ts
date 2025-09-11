@@ -1,82 +1,94 @@
-import { Severity, SeveritySchema } from '../severity.entity';
+import {
+  Severity,
+  SeveritySchema,
+  SeverityOrder,
+  getSeverityOrder,
+  compareSeverity,
+} from '../severity.entity';
 
 describe('Severity', () => {
-  describe('Severity enum', () => {
-    it('should have correct numeri values', () => {
-      expect(Severity.OK).toBe(0);
-      expect(Severity.INFO).toBe(1);
-      expect(Severity.WARN).toBe(2);
-      expect(Severity.CRITICAL).toBe(3);
+  describe('Severity array', () => {
+    it('should have correct string values in order', () => {
+      expect(Severity).toEqual(['OK', 'INFO', 'WARN', 'CRITICAL']);
     });
+  });
 
-    it('should have all expected values', () => {
-      const values = Object.values(Severity);
-      expect(values).toHaveLength(8);
-      expect(values).toContain(0);
-      expect(values).toContain(1);
-      expect(values).toContain(2);
-      expect(values).toContain(3);
-      expect(values).toContain('OK');
-      expect(values).toContain('INFO');
-      expect(values).toContain('WARN');
-      expect(values).toContain('CRITICAL');
+  describe('SeverityOrder', () => {
+    it('should have correct numeric order values', () => {
+      expect(SeverityOrder.OK).toBe(0);
+      expect(SeverityOrder.INFO).toBe(1);
+      expect(SeverityOrder.WARN).toBe(2);
+      expect(SeverityOrder.CRITICAL).toBe(3);
+    });
+  });
+
+  describe('getSeverityOrder', () => {
+    it('should return correct order for each severity', () => {
+      expect(getSeverityOrder('OK')).toBe(0);
+      expect(getSeverityOrder('INFO')).toBe(1);
+      expect(getSeverityOrder('WARN')).toBe(2);
+      expect(getSeverityOrder('CRITICAL')).toBe(3);
+    });
+  });
+
+  describe('compareSeverity', () => {
+    it('should compare severities correctly', () => {
+      // OK < INFO
+      expect(compareSeverity('OK', 'INFO')).toBeLessThan(0);
+      // INFO < WARN
+      expect(compareSeverity('INFO', 'WARN')).toBeLessThan(0);
+      // WARN < CRITICAL
+      expect(compareSeverity('WARN', 'CRITICAL')).toBeLessThan(0);
+      // CRITICAL > OK
+      expect(compareSeverity('CRITICAL', 'OK')).toBeGreaterThan(0);
+      // Same values
+      expect(compareSeverity('INFO', 'INFO')).toBe(0);
     });
   });
 
   describe('SeveritySchema', () => {
-    it.each(['OK', 'INFO', 'WARN', 'CRITICAL'] as const)(
+    it.each(Severity)(
       'should validate correct severity value = %s',
       (severity) => {
         expect(() => SeveritySchema.parse(severity)).not.toThrow();
       },
     );
 
-    it.each([
-      Severity.OK,
-      Severity.INFO,
-      Severity.WARN,
-      Severity.CRITICAL,
-    ] as const)('should accept Severity enum value = %s', (severity) => {
-      expect(() => SeveritySchema.parse(severity)).not.toThrow();
-    });
-
-    it.each(['INVALID', '', null, undefined, 123] as const)(
+    it.each(['INVALID', '', null, undefined, 123, 0, 1, 2, 3] as const)(
       'should reject invalid value = %s',
       (invalidSeverity) => {
         expect(() => SeveritySchema.parse(invalidSeverity)).toThrow();
       },
     );
 
-    it('should return parsed severity values', () => {
-      expect(SeveritySchema.parse('OK')).toBe(Severity.OK);
-      expect(SeveritySchema.parse('INFO')).toBe(Severity.INFO);
-      expect(SeveritySchema.parse('WARN')).toBe(Severity.WARN);
-      expect(SeveritySchema.parse('CRITICAL')).toBe(Severity.CRITICAL);
-      expect(SeveritySchema.parse(0)).toBe(Severity.OK);
-      expect(SeveritySchema.parse(1)).toBe(Severity.INFO);
-      expect(SeveritySchema.parse(2)).toBe(Severity.WARN);
-      expect(SeveritySchema.parse(3)).toBe(Severity.CRITICAL);
-    });
+    it.each(Severity)(
+      'should return parsed severity values for valid strings = %s',
+      (severity) => {
+        expect(SeveritySchema.parse(severity)).toBe(severity);
+      },
+    );
   });
 
   describe('integration tests', () => {
     it('should work with real-world sorting scenarios', () => {
       const analysisResults = [
-        { severity: Severity.INFO, message: 'Info message' },
-        { severity: Severity.CRITICAL, message: 'Critical alert' },
-        { severity: Severity.OK, message: 'All good' },
-        { severity: Severity.WARN, message: 'Warning message' },
-        { severity: Severity.CRITICAL, message: 'Another critical' },
+        { severity: 'INFO' as const, message: 'Info message' },
+        { severity: 'CRITICAL' as const, message: 'Critical alert' },
+        { severity: 'OK' as const, message: 'All good' },
+        { severity: 'WARN' as const, message: 'Warning message' },
+        { severity: 'CRITICAL' as const, message: 'Another critical' },
       ];
 
       // Sort by severity (highest first)
-      const sorted = analysisResults.sort((a, b) => b.severity - a.severity);
+      const sorted = analysisResults.sort((a, b) =>
+        compareSeverity(b.severity, a.severity),
+      );
 
-      expect(sorted[0].severity).toBe(Severity.CRITICAL);
-      expect(sorted[1].severity).toBe(Severity.CRITICAL);
-      expect(sorted[2].severity).toBe(Severity.WARN);
-      expect(sorted[3].severity).toBe(Severity.INFO);
-      expect(sorted[4].severity).toBe(Severity.OK);
+      expect(sorted[0].severity).toBe('CRITICAL');
+      expect(sorted[1].severity).toBe('CRITICAL');
+      expect(sorted[2].severity).toBe('WARN');
+      expect(sorted[3].severity).toBe('INFO');
+      expect(sorted[4].severity).toBe('OK');
     });
   });
 });
