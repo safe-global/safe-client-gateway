@@ -67,21 +67,23 @@ describe('Severity', () => {
   describe('integration tests', () => {
     it('should work with real-world sorting scenarios', () => {
       const analysisResults = [
-        { severity: Severity.INFO, message: 'Info message' },
-        { severity: Severity.CRITICAL, message: 'Critical alert' },
-        { severity: Severity.OK, message: 'All good' },
-        { severity: Severity.WARN, message: 'Warning message' },
-        { severity: Severity.CRITICAL, message: 'Another critical' },
+        { severity: 'INFO' as const, message: 'Info message' },
+        { severity: 'CRITICAL' as const, message: 'Critical alert' },
+        { severity: 'OK' as const, message: 'All good' },
+        { severity: 'WARN' as const, message: 'Warning message' },
+        { severity: 'CRITICAL' as const, message: 'Another critical' },
       ];
 
       // Sort by severity (highest first)
-      const sorted = analysisResults.sort((a, b) => b.severity - a.severity);
+      const sorted = analysisResults.sort((a, b) =>
+        compareSeverity(b.severity, a.severity),
+      );
 
-      expect(sorted[0].severity).toBe(Severity.CRITICAL);
-      expect(sorted[1].severity).toBe(Severity.CRITICAL);
-      expect(sorted[2].severity).toBe(Severity.WARN);
-      expect(sorted[3].severity).toBe(Severity.INFO);
-      expect(sorted[4].severity).toBe(Severity.OK);
+      expect(sorted[0].severity).toBe('CRITICAL');
+      expect(sorted[1].severity).toBe('CRITICAL');
+      expect(sorted[2].severity).toBe('WARN');
+      expect(sorted[3].severity).toBe('INFO');
+      expect(sorted[4].severity).toBe('OK');
     });
   });
 });
