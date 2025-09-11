@@ -8,6 +8,7 @@ import {
   ContractAnalysisRequestBodySchema,
   ThreatAnalysisRequestBodySchema,
 } from '../analysis-requests.entity';
+import { faker } from '@faker-js/faker';
 
 describe('Analysis Request Schemas', () => {
   describe('RecipientAnalysisRequestBodySchema', () => {
@@ -31,6 +32,7 @@ describe('Analysis Request Schemas', () => {
 
     it('should reject invalid hex data', () => {
       const invalidHexRequest = {
+        ...recipientAnalysisRequestBodyBuilder().build(),
         data: 'invalidhex',
       };
 
@@ -64,10 +66,9 @@ describe('Analysis Request Schemas', () => {
     });
 
     it('should reject invalid operation values', () => {
-      const invalidOperationRequest = {
-        data: '0x1234567890abcdef',
-        operation: 5,
-      };
+      const invalidOperationRequest = contractAnalysisRequestBodyBuilder()
+        .with('operation', 5)
+        .build();
 
       expect(() =>
         ContractAnalysisRequestBodySchema.parse(invalidOperationRequest),
@@ -77,7 +78,7 @@ describe('Analysis Request Schemas', () => {
     it('should reject missing fields', () => {
       expect(() =>
         ContractAnalysisRequestBodySchema.parse({
-          data: '0x1234567890abcdef',
+          data: faker.string.hexadecimal({ length: 128 }),
           // missing operation
         }),
       ).toThrow();
@@ -112,7 +113,7 @@ describe('Analysis Request Schemas', () => {
 
     it('should reject invalid `to` address', () => {
       const invalidAddressRequest = {
-        ...threatAnalysisRequestBodyBuilder().build(),
+        ...validThreatRequest,
         to: 'invalidaddress',
       };
 
@@ -132,13 +133,18 @@ describe('Analysis Request Schemas', () => {
 
     it('should reject invalid numeric strings', () => {
       const invalidValueRequest = {
-        ...threatAnalysisRequestBodyBuilder().build(),
+        ...validThreatRequest,
         value: 'notanumber',
       };
 
       const invalidNonceRequest = {
-        ...threatAnalysisRequestBodyBuilder().build(),
+        ...validThreatRequest,
         nonce: 'notanumber',
+      };
+
+      const invalidSafeTxGasRequest = {
+        ...validThreatRequest,
+        safeTxGas: '',
       };
 
       expect(() =>
@@ -150,10 +156,7 @@ describe('Analysis Request Schemas', () => {
       ).toThrow();
 
       expect(() =>
-        ThreatAnalysisRequestBodySchema.parse({
-          ...validThreatRequest,
-          safeTxGas: '',
-        }),
+        ThreatAnalysisRequestBodySchema.parse(invalidSafeTxGasRequest),
       ).toThrow();
     });
 

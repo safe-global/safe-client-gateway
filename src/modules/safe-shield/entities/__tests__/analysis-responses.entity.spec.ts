@@ -1,3 +1,4 @@
+import { ThreatStatus } from '@/modules/safe-shield/entities/threat-status.entity';
 import {
   RecipientAnalysisResponseSchema,
   ContractAnalysisResponseSchema,
@@ -8,8 +9,15 @@ import {
   contractAnalysisResponseBuilder,
   threatAnalysisResponseBuilder,
 } from './builders/analysis-responses.builder';
-import { recipientAnalysisResultBuilder } from './builders/analysis-result.builder';
+import {
+  contractAnalysisResultBuilder,
+  recipientAnalysisResultBuilder,
+} from './builders/analysis-result.builder';
 import { faker } from '@faker-js/faker';
+import type {
+  ContractStatusGroup,
+  RecipientStatusGroup,
+} from '../status-group.entity';
 
 describe('Analysis Response Schemas', () => {
   describe('Response Schemas', () => {
@@ -58,6 +66,20 @@ describe('Analysis Response Schemas', () => {
           RecipientAnalysisResponseSchema.parse(invalidAddressResponse),
         ).toThrow();
       });
+
+      it('should reject invalid status group', () => {
+        const invalidStatusGroupResponse = recipientAnalysisResponseBuilder()
+          .with(faker.finance.ethereumAddress() as `0x${string}`, {
+            ['INVALID_STATUS_GROUP' as RecipientStatusGroup]: [
+              recipientAnalysisResultBuilder().build(),
+            ],
+          })
+          .build();
+
+        expect(() =>
+          RecipientAnalysisResponseSchema.parse(invalidStatusGroupResponse),
+        ).toThrow();
+      });
     });
 
     describe('ContractAnalysisResponseSchema', () => {
@@ -67,6 +89,58 @@ describe('Analysis Response Schemas', () => {
         expect(() =>
           ContractAnalysisResponseSchema.parse(validResponse),
         ).not.toThrow();
+      });
+
+      it('should validate response with multiple addresses', () => {
+        const multiAddressResponse = contractAnalysisResponseBuilder()
+          .with(faker.finance.ethereumAddress() as `0x${string}`, {
+            CONTRACT_VERIFICATION: [contractAnalysisResultBuilder().build()],
+            CONTRACT_INTERACTION: [contractAnalysisResultBuilder().build()],
+            DELEGATECALL: [contractAnalysisResultBuilder().build()],
+          })
+          .build();
+
+        expect(() =>
+          ContractAnalysisResponseSchema.parse(multiAddressResponse),
+        ).not.toThrow();
+      });
+
+      it('should validate empty response', () => {
+        expect(() => ContractAnalysisResponseSchema.parse({})).not.toThrow();
+      });
+
+      it('should validate response with empty status groups', () => {
+        const responseWithEmptyGroups = contractAnalysisResponseBuilder()
+          .with(faker.finance.ethereumAddress() as `0x${string}`, {
+            CONTRACT_VERIFICATION: [],
+          })
+          .build();
+
+        expect(() =>
+          ContractAnalysisResponseSchema.parse(responseWithEmptyGroups),
+        ).not.toThrow();
+      });
+
+      it('should reject invalid address format', () => {
+        const invalidAddressResponse = { 'invalid-address': {} };
+
+        expect(() =>
+          ContractAnalysisResponseSchema.parse(invalidAddressResponse),
+        ).toThrow();
+      });
+
+      it('should reject invalid status group', () => {
+        const invalidStatusGroupResponse = contractAnalysisResponseBuilder()
+          .with(faker.finance.ethereumAddress() as `0x${string}`, {
+            ['INVALID_STATUS_GROUP' as ContractStatusGroup]: [
+              contractAnalysisResultBuilder().build(),
+            ],
+          })
+          .build();
+
+        expect(() =>
+          ContractAnalysisResponseSchema.parse(invalidStatusGroupResponse),
+        ).toThrow();
       });
     });
 
@@ -79,12 +153,10 @@ describe('Analysis Response Schemas', () => {
         ).not.toThrow();
       });
 
-      it('should validate safe threat responses', () => {
-        const safeThreats = [
-          threatAnalysisResponseBuilder().build(),
-          threatAnalysisResponseBuilder().build(),
-          threatAnalysisResponseBuilder().build(),
-        ];
+      it('should validate all threat status responses', () => {
+        const safeThreats = ThreatStatus.map((threat) =>
+          threatAnalysisResponseBuilder().with('type', threat).build(),
+        );
 
         safeThreats.forEach((threat) => {
           expect(() =>
@@ -93,24 +165,14 @@ describe('Analysis Response Schemas', () => {
         });
       });
 
-      it('should validate no threat response', () => {
-        const noThreatResponse = threatAnalysisResponseBuilder()
-          .with('type', 'NO_THREAT')
+      it('should reject invalid threat status', () => {
+        const invalidThreatResponse = threatAnalysisResponseBuilder()
+          .with('type', 'INVALID_THREAT' as ThreatStatus)
           .build();
 
         expect(() =>
-          ThreatAnalysisResponseSchema.parse(noThreatResponse),
-        ).not.toThrow();
-      });
-
-      it('should validate failed analysis response', () => {
-        const failedResponse = threatAnalysisResponseBuilder()
-          .with('type', 'FAILED')
-          .build();
-
-        expect(() =>
-          ThreatAnalysisResponseSchema.parse(failedResponse),
-        ).not.toThrow();
+          ThreatAnalysisResponseSchema.parse(invalidThreatResponse),
+        ).toThrow();
       });
     });
   });
