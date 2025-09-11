@@ -349,7 +349,7 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
       .build();
     networkService.get.mockImplementation(({ url }) => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
-      const getMultisigTransactionsUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/multisig-transactions/`;
+      const getMultisigTransactionsUrl = `${chain.transactionService}/api/v2/safes/${safe.address}/multisig-transactions/`;
       const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
       const getTokenUrl = `${chain.transactionService}/api/v1/tokens/${token.address}`;
       if (url === getChainUrl) {
