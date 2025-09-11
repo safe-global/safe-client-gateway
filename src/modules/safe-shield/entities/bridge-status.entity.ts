@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { getStringEnumKeys } from '@/domain/common/utils/enum';
 
 /**
  * Status codes for bridge analysis in Safe Shield security checks.
@@ -8,19 +7,19 @@ import { getStringEnumKeys } from '@/domain/common/utils/enum';
  * to identify potential compatibility issues, ownership problems, or
  * unsupported network configurations.
  */
-export enum BridgeStatus {
+export const BridgeStatus = [
   /** Target Safe version is incompatible with source Safe */
-  INCOMPATIBLE_SAFE = 'INCOMPATIBLE_SAFE',
+  'INCOMPATIBLE_SAFE',
 
   /** No ownership on the target chain */
-  MISSING_OWNERSHIP = 'MISSING_OWNERSHIP',
+  'MISSING_OWNERSHIP',
 
   /** Target network is not supported on Safe */
-  UNSUPPORTED_NETWORK = 'UNSUPPORTED_NETWORK',
+  'UNSUPPORTED_NETWORK',
 
   /** Different Safe setup on target chain */
-  DIFFERENT_SAFE_SETUP = 'DIFFERENT_SAFE_SETUP',
-}
+  'DIFFERENT_SAFE_SETUP',
+] as const;
 
 /**
  * Zod schema for validating BridgeStatus enum values.
@@ -30,4 +29,6 @@ export enum BridgeStatus {
  * const status = BridgeStatusSchema.parse('INCOMPATIBLE_SAFE');
  * ```
  */
-export const BridgeStatusSchema = z.enum(getStringEnumKeys(BridgeStatus));
+export const BridgeStatusSchema = z.enum(BridgeStatus);
+
+export type BridgeStatus = z.infer<typeof BridgeStatusSchema>;

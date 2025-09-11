@@ -39,13 +39,6 @@ describe('Status Entities', () => {
   });
 
   describe('BridgeStatus', () => {
-    it('should have correct string values', () => {
-      expect(BridgeStatus.INCOMPATIBLE_SAFE).toBe('INCOMPATIBLE_SAFE');
-      expect(BridgeStatus.MISSING_OWNERSHIP).toBe('MISSING_OWNERSHIP');
-      expect(BridgeStatus.UNSUPPORTED_NETWORK).toBe('UNSUPPORTED_NETWORK');
-      expect(BridgeStatus.DIFFERENT_SAFE_SETUP).toBe('DIFFERENT_SAFE_SETUP');
-    });
-
     it('should have all expected values', () => {
       const values = Object.values(BridgeStatus);
       expect(values).toHaveLength(4);
@@ -55,12 +48,7 @@ describe('Status Entities', () => {
       expect(values).toContain('DIFFERENT_SAFE_SETUP');
     });
 
-    it.each([
-      'INCOMPATIBLE_SAFE',
-      'MISSING_OWNERSHIP',
-      'UNSUPPORTED_NETWORK',
-      'DIFFERENT_SAFE_SETUP',
-    ] as const)('should validate with schema = %s', (value) => {
+    it.each(BridgeStatus)('should validate with schema = %s', (value) => {
       expect(() => BridgeStatusSchema.parse(value)).not.toThrow();
     });
 
