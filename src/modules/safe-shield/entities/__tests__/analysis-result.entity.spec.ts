@@ -358,20 +358,12 @@ describe('AnalysisResult', () => {
       ).not.toThrow();
     });
 
-    it('should validate all bridge status values', () => {
-      expect(() =>
-        AnalysisStatusSchema.parse(BridgeStatus.INCOMPATIBLE_SAFE),
-      ).not.toThrow();
-      expect(() =>
-        AnalysisStatusSchema.parse(BridgeStatus.MISSING_OWNERSHIP),
-      ).not.toThrow();
-      expect(() =>
-        AnalysisStatusSchema.parse(BridgeStatus.UNSUPPORTED_NETWORK),
-      ).not.toThrow();
-      expect(() =>
-        AnalysisStatusSchema.parse(BridgeStatus.DIFFERENT_SAFE_SETUP),
-      ).not.toThrow();
-    });
+    it.each(BridgeStatus)(
+      'should validate all bridge status values = %s',
+      (value) => {
+        expect(() => AnalysisStatusSchema.parse(value)).not.toThrow();
+      },
+    );
 
     it('should validate all contract status values', () => {
       expect(() =>
@@ -471,7 +463,7 @@ describe('AnalysisResult', () => {
 
     it('should validate bridge status types', () => {
       const bridgeResult = recipientAnalysisResultBuilder()
-        .with('type', BridgeStatus.INCOMPATIBLE_SAFE)
+        .with('type', 'INCOMPATIBLE_SAFE')
         .build();
 
       expect(() =>
