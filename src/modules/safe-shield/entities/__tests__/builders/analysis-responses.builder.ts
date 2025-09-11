@@ -12,10 +12,6 @@ import {
   contractAnalysisResultBuilder,
   recipientAnalysisResultBuilder,
 } from './analysis-result.builder';
-import {
-  ContractStatusGroup,
-  RecipientStatusGroup,
-} from '@/modules/safe-shield/entities/status-group.entity';
 
 /**
  * Builder for RecipientAnalysisResponse
@@ -24,10 +20,8 @@ export function recipientAnalysisResponseBuilder(): IBuilder<RecipientAnalysisRe
   return new Builder<RecipientAnalysisResponse>().with(
     faker.finance.ethereumAddress() as `0x${string}`,
     {
-      [RecipientStatusGroup.RECIPIENT_INTERACTION]: [
-        recipientAnalysisResultBuilder().build(),
-      ],
-      [RecipientStatusGroup.BRIDGE]: [recipientAnalysisResultBuilder().build()],
+      RECIPIENT_INTERACTION: [recipientAnalysisResultBuilder().build()],
+      BRIDGE: [recipientAnalysisResultBuilder().build()],
     },
   );
 }
@@ -39,15 +33,9 @@ export function contractAnalysisResponseBuilder(): IBuilder<ContractAnalysisResp
   return new Builder<ContractAnalysisResponse>().with(
     faker.finance.ethereumAddress() as `0x${string}`,
     {
-      [ContractStatusGroup.CONTRACT_VERIFICATION]: [
-        contractAnalysisResultBuilder().build(),
-      ],
-      [ContractStatusGroup.CONTRACT_INTERACTION]: [
-        contractAnalysisResultBuilder().build(),
-      ],
-      [ContractStatusGroup.DELEGATECALL]: [
-        contractAnalysisResultBuilder().build(),
-      ],
+      CONTRACT_VERIFICATION: [contractAnalysisResultBuilder().build()],
+      CONTRACT_INTERACTION: [contractAnalysisResultBuilder().build()],
+      DELEGATECALL: [contractAnalysisResultBuilder().build()],
     },
   );
 }

@@ -1,4 +1,3 @@
-import { RecipientStatusGroup } from '@/modules/safe-shield/entities/status-group.entity';
 import {
   RecipientAnalysisResponseSchema,
   ContractAnalysisResponseSchema,
@@ -27,12 +26,8 @@ describe('Analysis Response Schemas', () => {
       it('should validate response with multiple addresses', () => {
         const multiAddressResponse = recipientAnalysisResponseBuilder()
           .with(faker.finance.ethereumAddress() as `0x${string}`, {
-            [RecipientStatusGroup.RECIPIENT_INTERACTION]: [
-              recipientAnalysisResultBuilder().build(),
-            ],
-            [RecipientStatusGroup.BRIDGE]: [
-              recipientAnalysisResultBuilder().build(),
-            ],
+            RECIPIENT_INTERACTION: [recipientAnalysisResultBuilder().build()],
+            BRIDGE: [recipientAnalysisResultBuilder().build()],
           })
           .build();
 
@@ -48,7 +43,7 @@ describe('Analysis Response Schemas', () => {
       it('should validate response with empty status groups', () => {
         const responseWithEmptyGroups = recipientAnalysisResponseBuilder()
           .with(faker.finance.ethereumAddress() as `0x${string}`, {
-            [RecipientStatusGroup.RECIPIENT_INTERACTION]: [],
+            RECIPIENT_INTERACTION: [],
           })
           .build();
 

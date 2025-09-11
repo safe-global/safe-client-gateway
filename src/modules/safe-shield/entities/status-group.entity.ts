@@ -1,37 +1,34 @@
-import { getStringEnumKeys } from '@/domain/common/utils/enum';
 import { z } from 'zod';
 
-export enum RecipientStatusGroup {
+export const RecipientStatusGroup = [
   /** Recipient interaction history - previous interactions with the recipient */
-  RECIPIENT_INTERACTION = 'RECIPIENT_INTERACTION',
+  'RECIPIENT_INTERACTION',
 
   /** Cross-chain bridge analysis - compatibility and ownership checks */
-  BRIDGE = 'BRIDGE',
-}
+  'BRIDGE',
+] as const;
 
-export enum ContractStatusGroup {
+export const ContractStatusGroup = [
   /** Contract verification status - whether contracts are verified */
-  CONTRACT_VERIFICATION = 'CONTRACT_VERIFICATION',
+  'CONTRACT_VERIFICATION',
 
   /** Contract interaction history - previous interactions with contracts */
-  CONTRACT_INTERACTION = 'CONTRACT_INTERACTION',
+  'CONTRACT_INTERACTION',
 
   /** Delegatecall operation detection - potentially dangerous delegate calls */
-  DELEGATECALL = 'DELEGATECALL',
-}
+  'DELEGATECALL',
+] as const;
 
 /**
  * Status groups for categorizing different types of security analysis checks.
  */
-export const StatusGroup = {
+export const StatusGroup = [
   ...RecipientStatusGroup,
   ...ContractStatusGroup,
 
   /** Transaction-level threat analysis - malicious patterns and risks */
-  THREAT: 'THREAT',
-};
-
-export type StatusGroup = typeof StatusGroup;
+  'THREAT',
+] as const;
 
 /**
  * Zod schema for validating RecipientStatusGroup enum values.
@@ -41,9 +38,7 @@ export type StatusGroup = typeof StatusGroup;
  * const group = RecipientStatusGroupSchema.parse('RECIPIENT_INTERACTION');
  * ```
  */
-export const RecipientStatusGroupSchema = z.enum(
-  getStringEnumKeys(RecipientStatusGroup),
-);
+export const RecipientStatusGroupSchema = z.enum(RecipientStatusGroup);
 
 /**
  * Zod schema for validating ContractStatusGroup enum values.
@@ -53,9 +48,7 @@ export const RecipientStatusGroupSchema = z.enum(
  * const group = ContractStatusGroupSchema.parse('CONTRACT_VERIFICATION');
  * ```
  */
-export const ContractStatusGroupSchema = z.enum(
-  getStringEnumKeys(ContractStatusGroup),
-);
+export const ContractStatusGroupSchema = z.enum(ContractStatusGroup);
 
 /**
  * Zod schema for validating StatusGroup values.
@@ -65,4 +58,8 @@ export const ContractStatusGroupSchema = z.enum(
  * const group = StatusGroupSchema.parse('CONTRACT_VERIFICATION');
  * ```
  */
-export const StatusGroupSchema = z.enum(getStringEnumKeys(StatusGroup));
+export const StatusGroupSchema = z.enum(StatusGroup);
+
+export type RecipientStatusGroup = z.infer<typeof RecipientStatusGroupSchema>;
+export type ContractStatusGroup = z.infer<typeof ContractStatusGroupSchema>;
+export type StatusGroup = z.infer<typeof StatusGroupSchema>;
