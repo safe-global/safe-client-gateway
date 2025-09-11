@@ -322,11 +322,11 @@ describe('AnalysisResult', () => {
     it('should enforce correct structure for contract analysis', () => {
       const result = contractAnalysisResultBuilder()
         .with('severity', Severity.CRITICAL)
-        .with('type', ContractStatus.NOT_VERIFIED)
+        .with('type', 'NOT_VERIFIED')
         .build();
 
       expect(result.severity).toBe(Severity.CRITICAL);
-      expect(result.type).toBe(ContractStatus.NOT_VERIFIED);
+      expect(result.type).toBe('NOT_VERIFIED');
       expect(result.title).toStrictEqual(expect.any(String));
       expect(result.title).not.toHaveLength(0);
       expect(result.description).toStrictEqual(expect.any(String));
@@ -365,17 +365,12 @@ describe('AnalysisResult', () => {
       },
     );
 
-    it('should validate all contract status values', () => {
-      expect(() =>
-        AnalysisStatusSchema.parse(ContractStatus.VERIFIED),
-      ).not.toThrow();
-      expect(() =>
-        AnalysisStatusSchema.parse(ContractStatus.NOT_VERIFIED),
-      ).not.toThrow();
-      expect(() =>
-        AnalysisStatusSchema.parse(ContractStatus.UNEXPECTED_DELEGATECALL),
-      ).not.toThrow();
-    });
+    it.each(ContractStatus)(
+      'should validate all contract status values = %s',
+      (value) => {
+        expect(() => AnalysisStatusSchema.parse(value)).not.toThrow();
+      },
+    );
 
     it('should validate all threat status values', () => {
       expect(() =>
@@ -535,14 +530,10 @@ describe('AnalysisResult', () => {
   describe('real-world scenarios', () => {
     it('should handle multiple analysis results correctly', () => {
       const results: Array<ContractAnalysisResult> = [
+        contractAnalysisResultBuilder().with('type', 'KNOWN_CONTRACT').build(),
+        contractAnalysisResultBuilder().with('type', 'VERIFIED').build(),
         contractAnalysisResultBuilder()
-          .with('type', ContractStatus.KNOWN_CONTRACT)
-          .build(),
-        contractAnalysisResultBuilder()
-          .with('type', ContractStatus.VERIFIED)
-          .build(),
-        contractAnalysisResultBuilder()
-          .with('type', ContractStatus.UNEXPECTED_DELEGATECALL)
+          .with('type', 'UNEXPECTED_DELEGATECALL')
           .build(),
       ];
 
@@ -561,15 +552,15 @@ describe('AnalysisResult', () => {
       const results = [
         contractAnalysisResultBuilder()
           .with('severity', Severity.INFO)
-          .with('type', ContractStatus.KNOWN_CONTRACT)
+          .with('type', 'KNOWN_CONTRACT')
           .build(),
         contractAnalysisResultBuilder()
           .with('severity', Severity.CRITICAL)
-          .with('type', ContractStatus.UNEXPECTED_DELEGATECALL)
+          .with('type', 'UNEXPECTED_DELEGATECALL')
           .build(),
         contractAnalysisResultBuilder()
           .with('severity', Severity.WARN)
-          .with('type', ContractStatus.NOT_VERIFIED_BY_SAFE)
+          .with('type', 'NOT_VERIFIED_BY_SAFE')
           .build(),
       ];
 
