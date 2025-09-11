@@ -1,4 +1,3 @@
-import { getStringEnumKeys } from '@/domain/common/utils/enum';
 import { z } from 'zod';
 
 /**
@@ -8,28 +7,28 @@ import { z } from 'zod';
  * via Blockaid integration) to identify malicious patterns, ownership changes,
  * and other critical security risks at the transaction level.
  */
-export enum ThreatStatus {
+export const ThreatStatus = [
   /** Transaction contains malicious patterns or known threats */
-  MALICIOUS = 'MALICIOUS',
+  'MALICIOUS',
 
   /** Transaction has moderate risk indicators */
-  MODERATE = 'MODERATE',
+  'MODERATE',
 
   /** No threats detected in the transaction */
-  NO_THREAT = 'NO_THREAT',
+  'NO_THREAT',
 
   /** Threat analysis failed due to service issues */
-  FAILED = 'FAILED',
+  'FAILED',
 
   /** Transaction attempts to change Safe master copy/implementation */
-  MASTER_COPY_CHANGE = 'MASTER_COPY_CHANGE',
+  'MASTER_COPY_CHANGE',
 
   /** Transaction attempts to modify Safe ownership */
-  OWNERSHIP_CHANGE = 'OWNERSHIP_CHANGE',
+  'OWNERSHIP_CHANGE',
 
   /** Transaction attempts to modify Safe modules */
-  MODULE_CHANGE = 'MODULE_CHANGE',
-}
+  'MODULE_CHANGE',
+] as const;
 
 /**
  * Zod schema for validating ThreatStatus enum values.
@@ -39,4 +38,6 @@ export enum ThreatStatus {
  * const status = ThreatStatusSchema.parse('MALICIOUS');
  * ```
  */
-export const ThreatStatusSchema = z.enum(getStringEnumKeys(ThreatStatus));
+export const ThreatStatusSchema = z.enum(ThreatStatus);
+
+export type ThreatStatus = z.infer<typeof ThreatStatusSchema>;

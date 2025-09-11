@@ -50,11 +50,11 @@ describe('AnalysisResult', () => {
     it('should enforce correct structure for threat analysis', () => {
       const result = threatAnalysisResultBuilder()
         .with('severity', Severity.CRITICAL)
-        .with('type', ThreatStatus.MALICIOUS)
+        .with('type', 'MALICIOUS')
         .build();
 
       expect(result.severity).toBe(Severity.CRITICAL);
-      expect(result.type).toBe(ThreatStatus.MALICIOUS);
+      expect(result.type).toBe('MALICIOUS');
       expect(result.title).toStrictEqual(expect.any(String));
       expect(result.title).not.toHaveLength(0);
       expect(result.description).toStrictEqual(expect.any(String));
@@ -84,24 +84,19 @@ describe('AnalysisResult', () => {
       },
     );
 
-    it('should validate all threat status values', () => {
-      expect(() =>
-        AnalysisStatusSchema.parse(ThreatStatus.MALICIOUS),
-      ).not.toThrow();
-      expect(() =>
-        AnalysisStatusSchema.parse(ThreatStatus.NO_THREAT),
-      ).not.toThrow();
-      expect(() =>
-        AnalysisStatusSchema.parse(ThreatStatus.MODULE_CHANGE),
-      ).not.toThrow();
-    });
+    it.each(ThreatStatus)(
+      'should validate all threat status values = %s',
+      (value) => {
+        expect(() => AnalysisStatusSchema.parse(value)).not.toThrow();
+      },
+    );
 
-    it('should reject invalid status values', () => {
-      expect(() => AnalysisStatusSchema.parse('INVALID_STATUS')).toThrow();
-      expect(() => AnalysisStatusSchema.parse('')).toThrow();
-      expect(() => AnalysisStatusSchema.parse(null)).toThrow();
-      expect(() => AnalysisStatusSchema.parse(123)).toThrow();
-    });
+    it.each(['INVALID_STATUS', '', null, undefined, 123] as const)(
+      'should reject invalid status values = %s',
+      (value) => {
+        expect(() => AnalysisStatusSchema.parse(value)).toThrow();
+      },
+    );
   });
 
   describe('AnalysisResultBaseSchema', () => {

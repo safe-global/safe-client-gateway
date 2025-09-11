@@ -10,7 +10,6 @@ import {
 } from './builders/analysis-responses.builder';
 import { recipientAnalysisResultBuilder } from './builders/analysis-result.builder';
 import { faker } from '@faker-js/faker';
-import { ThreatStatus } from '@/modules/safe-shield/entities/threat-status.entity';
 
 describe('Analysis Response Schemas', () => {
   describe('Response Schemas', () => {
@@ -96,7 +95,7 @@ describe('Analysis Response Schemas', () => {
 
       it('should validate no threat response', () => {
         const noThreatResponse = threatAnalysisResponseBuilder()
-          .with('type', ThreatStatus.NO_THREAT)
+          .with('type', 'NO_THREAT')
           .build();
 
         expect(() =>
@@ -106,7 +105,7 @@ describe('Analysis Response Schemas', () => {
 
       it('should validate failed analysis response', () => {
         const failedResponse = threatAnalysisResponseBuilder()
-          .with('type', ThreatStatus.FAILED)
+          .with('type', 'FAILED')
           .build();
 
         expect(() =>
