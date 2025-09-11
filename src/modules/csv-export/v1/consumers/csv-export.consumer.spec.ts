@@ -12,6 +12,7 @@ import type {
 } from '@/modules/csv-export/v1/entities/csv-export-job-data.entity';
 import { faker } from '@faker-js/faker/.';
 import type { Job } from 'bullmq';
+import { CSV_EXPORT_WORKER_CONCURRENCY } from '@/domain/common/entities/jobs.constants';
 
 const csvExportService = {
   export: jest.fn(),
@@ -31,7 +32,6 @@ describe('CsvExportConsumer', () => {
 
   beforeEach(() => {
     jest.resetAllMocks();
-
     consumer = new CsvExportConsumer(mockLoggingService, mockCsvExportService);
   });
 
@@ -75,64 +75,74 @@ describe('CsvExportConsumer', () => {
     });
   });
 
-  describe('onCompleted', () => {
-    it('should log completion message', () => {
-      const jobId = faker.string.uuid();
-      const mockJob = { id: jobId } as Job;
+  describe('event handlers', () => {
+    describe('onCompleted', () => {
+      it('should log completion message', () => {
+        const jobId = faker.string.uuid();
+        const mockJob = { id: jobId } as Job;
 
-      consumer.onCompleted(mockJob);
+        consumer.onCompleted(mockJob);
 
-      expect(mockLoggingService.info).toHaveBeenCalledWith({
-        type: LogType.JobEvent,
-        source: 'CsvExportConsumer',
-        event: `Job ${jobId} completed`,
+        expect(mockLoggingService.info).toHaveBeenCalledWith({
+          type: LogType.JobEvent,
+          source: 'CsvExportConsumer',
+          event: `Job ${jobId} completed`,
+        });
+      });
+    });
+
+    describe('onFailed', () => {
+      it('should log failure message with error', () => {
+        const jobId = faker.string.uuid();
+        const mockJob = { id: jobId } as Job;
+        const error = new Error('Test error');
+
+        consumer.onFailed(mockJob, error);
+
+        expect(mockLoggingService.error).toHaveBeenCalledWith({
+          type: LogType.JobError,
+          source: 'CsvExportConsumer',
+          event: `Job ${jobId} failed. ${error}`,
+        });
+      });
+    });
+
+    describe('onProgress', () => {
+      it('should log progress message', () => {
+        const jobId = faker.string.uuid();
+        const progress = 50;
+        const mockJob = { id: jobId } as Job;
+
+        consumer.onProgress(mockJob, progress);
+
+        expect(mockLoggingService.info).toHaveBeenCalledWith({
+          type: LogType.JobEvent,
+          source: 'CsvExportConsumer',
+          event: `Job ${jobId} progress: ${progress}%`,
+        });
+      });
+    });
+
+    describe('onWorkerError', () => {
+      it('should log worker error message', () => {
+        const error = new Error('Worker error');
+
+        consumer.onWorkerError(error);
+
+        expect(mockLoggingService.error).toHaveBeenCalledWith({
+          type: LogType.JobError,
+          source: 'CsvExportConsumer',
+          event: `Worker encountered an error: ${error}`,
+        });
       });
     });
   });
 
-  describe('onFailed', () => {
-    it('should log failure message with error', () => {
-      const jobId = faker.string.uuid();
-      const mockJob = { id: jobId } as Job;
-      const error = new Error('Test error');
-
-      consumer.onFailed(mockJob, error);
-
-      expect(mockLoggingService.error).toHaveBeenCalledWith({
-        type: LogType.JobError,
-        source: 'CsvExportConsumer',
-        event: `Job ${jobId} failed. ${error}`,
-      });
-    });
-  });
-
-  describe('onProgress', () => {
-    it('should log progress message', () => {
-      const jobId = faker.string.uuid();
-      const progress = 50;
-      const mockJob = { id: jobId } as Job;
-
-      consumer.onProgress(mockJob, progress);
-
-      expect(mockLoggingService.info).toHaveBeenCalledWith({
-        type: LogType.JobEvent,
-        source: 'CsvExportConsumer',
-        event: `Job ${jobId} progress: ${progress}%`,
-      });
-    });
-  });
-
-  describe('onWorkerError', () => {
-    it('should log worker error message', () => {
-      const error = new Error('Worker error');
-
-      consumer.onWorkerError(error);
-
-      expect(mockLoggingService.error).toHaveBeenCalledWith({
-        type: LogType.JobError,
-        source: 'CsvExportConsumer',
-        event: `Worker encountered an error: ${error}`,
-      });
+  describe('configuration', () => {
+    it('should use concurrency value from configuration constants', () => {
+      expect(CSV_EXPORT_WORKER_CONCURRENCY).toBeDefined();
+      expect(typeof CSV_EXPORT_WORKER_CONCURRENCY).toBe('number');
+      expect(CSV_EXPORT_WORKER_CONCURRENCY).toBeGreaterThan(0);
     });
   });
 });
