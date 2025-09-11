@@ -782,7 +782,7 @@ describe('Transactions History Controller (Unit)', () => {
       .build();
     networkService.get.mockImplementation(({ url }) => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
-      const getAllTransactionsUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/all-transactions/`;
+      const getAllTransactionsUrl = `${chain.transactionService}/api/v2/safes/${safe.address}/all-transactions/`;
       const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
       const getTokenUrl = `${chain.transactionService}/api/v1/tokens/${multisigTransaction.to}`;
       if (url === getChainUrl) {
