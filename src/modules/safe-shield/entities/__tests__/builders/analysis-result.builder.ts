@@ -8,7 +8,6 @@ import {
 } from '../../analysis-result.entity';
 import { Severity } from '../../severity.entity';
 import { RecipientStatus } from '../../recipient-status.entity';
-import { ContractStatus } from '../../contract-status.entity';
 import { ThreatStatus } from '../../threat-status.entity';
 
 /**
@@ -28,7 +27,7 @@ export function recipientAnalysisResultBuilder(): IBuilder<RecipientAnalysisResu
 export function contractAnalysisResultBuilder(): IBuilder<ContractAnalysisResult> {
   return new Builder<ContractAnalysisResult>()
     .with('severity', Severity.INFO)
-    .with('type', ContractStatus.VERIFIED)
+    .with('type', 'VERIFIED')
     .with('title', faker.lorem.sentence())
     .with('description', faker.lorem.paragraph());
 }

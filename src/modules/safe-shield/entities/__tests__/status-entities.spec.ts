@@ -61,20 +61,6 @@ describe('Status Entities', () => {
   });
 
   describe('ContractStatus', () => {
-    it('should have correct string values', () => {
-      expect(ContractStatus.VERIFIED).toBe('VERIFIED');
-      expect(ContractStatus.NOT_VERIFIED).toBe('NOT_VERIFIED');
-      expect(ContractStatus.NOT_VERIFIED_BY_SAFE).toBe('NOT_VERIFIED_BY_SAFE');
-      expect(ContractStatus.VERIFICATION_UNAVAILABLE).toBe(
-        'VERIFICATION_UNAVAILABLE',
-      );
-      expect(ContractStatus.NEW_CONTRACT).toBe('NEW_CONTRACT');
-      expect(ContractStatus.KNOWN_CONTRACT).toBe('KNOWN_CONTRACT');
-      expect(ContractStatus.UNEXPECTED_DELEGATECALL).toBe(
-        'UNEXPECTED_DELEGATECALL',
-      );
-    });
-
     it('should have all expected values', () => {
       const values = Object.values(ContractStatus);
       expect(values).toHaveLength(7);
@@ -87,15 +73,7 @@ describe('Status Entities', () => {
       expect(values).toContain('UNEXPECTED_DELEGATECALL');
     });
 
-    it.each([
-      'VERIFIED',
-      'NOT_VERIFIED',
-      'NOT_VERIFIED_BY_SAFE',
-      'VERIFICATION_UNAVAILABLE',
-      'NEW_CONTRACT',
-      'KNOWN_CONTRACT',
-      'UNEXPECTED_DELEGATECALL',
-    ] as const)('should validate with schema = %s', (value) => {
+    it.each(ContractStatus)('should validate with schema = %s', (value) => {
       expect(() => ContractStatusSchema.parse(value)).not.toThrow();
     });
 
@@ -105,33 +83,6 @@ describe('Status Entities', () => {
         expect(() => ContractStatusSchema.parse(invalidValue)).toThrow();
       },
     );
-
-    it('should group statuses correctly by business logic', () => {
-      // Contract verification group
-      const verificationStatuses = [
-        ContractStatus.VERIFIED,
-        ContractStatus.NOT_VERIFIED,
-        ContractStatus.NOT_VERIFIED_BY_SAFE,
-        ContractStatus.VERIFICATION_UNAVAILABLE,
-      ];
-
-      // Contract interaction group
-      const interactionStatuses = [
-        ContractStatus.NEW_CONTRACT,
-        ContractStatus.KNOWN_CONTRACT,
-      ];
-
-      // Delegatecall group
-      const delegatecallStatuses = [ContractStatus.UNEXPECTED_DELEGATECALL];
-
-      // Ensure all statuses are accounted for
-      const allStatuses = [
-        ...verificationStatuses,
-        ...interactionStatuses,
-        ...delegatecallStatuses,
-      ];
-      expect(allStatuses).toHaveLength(Object.values(ContractStatus).length);
-    });
   });
 
   describe('ThreatStatus', () => {
@@ -220,8 +171,8 @@ describe('Status Entities', () => {
     it('should have unique values across different status types', () => {
       const allValues = [
         ...Object.values(RecipientStatus),
-        ...Object.values(BridgeStatus),
-        ...Object.values(ContractStatus),
+        ...BridgeStatus,
+        ...ContractStatus,
         ...Object.values(ThreatStatus),
       ];
 
