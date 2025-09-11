@@ -307,11 +307,11 @@ describe('AnalysisResult', () => {
   describe('AnalysisResult interface', () => {
     it('should enforce correct structure for recipient analysis', () => {
       const result = recipientAnalysisResultBuilder()
-        .with('severity', Severity.WARN)
+        .with('severity', 'WARN')
         .with('type', 'NEW_RECIPIENT')
         .build();
 
-      expect(result.severity).toBe(Severity.WARN);
+      expect(result.severity).toBe('WARN');
       expect(result.type).toBe('NEW_RECIPIENT');
       expect(result.title).toStrictEqual(expect.any(String));
       expect(result.title).not.toHaveLength(0);
@@ -321,11 +321,11 @@ describe('AnalysisResult', () => {
 
     it('should enforce correct structure for contract analysis', () => {
       const result = contractAnalysisResultBuilder()
-        .with('severity', Severity.CRITICAL)
+        .with('severity', 'CRITICAL')
         .with('type', 'NOT_VERIFIED')
         .build();
 
-      expect(result.severity).toBe(Severity.CRITICAL);
+      expect(result.severity).toBe('CRITICAL');
       expect(result.type).toBe('NOT_VERIFIED');
       expect(result.title).toStrictEqual(expect.any(String));
       expect(result.title).not.toHaveLength(0);
@@ -335,11 +335,11 @@ describe('AnalysisResult', () => {
 
     it('should enforce correct structure for threat analysis', () => {
       const result = threatAnalysisResultBuilder()
-        .with('severity', Severity.CRITICAL)
+        .with('severity', 'CRITICAL')
         .with('type', 'MALICIOUS')
         .build();
 
-      expect(result.severity).toBe(Severity.CRITICAL);
+      expect(result.severity).toBe('CRITICAL');
       expect(result.type).toBe('MALICIOUS');
       expect(result.title).toStrictEqual(expect.any(String));
       expect(result.title).not.toHaveLength(0);
@@ -397,11 +397,11 @@ describe('AnalysisResult', () => {
     it('should reject missing required fields', () => {
       expect(() => AnalysisResultBaseSchema.parse({})).toThrow();
       expect(() =>
-        AnalysisResultBaseSchema.parse({ severity: Severity.OK }),
+        AnalysisResultBaseSchema.parse({ severity: 'OK' }),
       ).toThrow();
       expect(() =>
         AnalysisResultBaseSchema.parse({
-          severity: Severity.OK,
+          severity: 'OK',
           type: 'NEW_RECIPIENT',
         }),
       ).toThrow();
@@ -544,24 +544,26 @@ describe('AnalysisResult', () => {
     it('should work with sorting by severity', () => {
       const results = [
         contractAnalysisResultBuilder()
-          .with('severity', Severity.INFO)
+          .with('severity', 'INFO')
           .with('type', 'KNOWN_CONTRACT')
           .build(),
         contractAnalysisResultBuilder()
-          .with('severity', Severity.CRITICAL)
+          .with('severity', 'CRITICAL')
           .with('type', 'UNEXPECTED_DELEGATECALL')
           .build(),
         contractAnalysisResultBuilder()
-          .with('severity', Severity.WARN)
+          .with('severity', 'WARN')
           .with('type', 'NOT_VERIFIED_BY_SAFE')
           .build(),
       ];
 
-      const sorted = results.sort((a, b) => b.severity - a.severity);
+      const sorted = results.sort((a, b) =>
+        compareSeverity(b.severity, a.severity),
+      );
 
-      expect(sorted[0].severity).toBe(Severity.CRITICAL);
-      expect(sorted[1].severity).toBe(Severity.WARN);
-      expect(sorted[2].severity).toBe(Severity.INFO);
+      expect(sorted[0].severity).toBe('CRITICAL');
+      expect(sorted[1].severity).toBe('WARN');
+      expect(sorted[2].severity).toBe('INFO');
     });
   });
 });
