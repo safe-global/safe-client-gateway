@@ -11,8 +11,8 @@ async function bootstrap(): Promise<void> {
     configurationService.getOrThrow('application.port');
 
   if (
-    process.env.ALLOW_CORS === 'TRUE' &&
-    process.env.CGW_ENV === 'development'
+    configurationService.getOrThrow('application.allowCors') &&
+    configurationService.getOrThrow('application.isDevelopment')
   ) {
     app.enableCors();
   }
