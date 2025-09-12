@@ -12,8 +12,8 @@ export class MultisigTransactionNoteMapper {
    * Instead, if present, the note is encoded within the JSON `origin` string.
    * This helper parses that string and returns the note, or `null` if absent.
    *
-   * @param transaction - The transaction object, either a `MultisigTransaction` or `ProposeTransactionDto`.
-   * @returns The extracted note string if available, otherwise `null`.
+   * @param {MultisigTransaction | ProposeTransactionDto} transaction - The transaction object, either a `MultisigTransaction` or `ProposeTransactionDto`.
+   * @returns {string | null} The extracted note string if available, otherwise `null`.
    */
   mapTxNote(
     transaction: MultisigTransaction | ProposeTransactionDto,
