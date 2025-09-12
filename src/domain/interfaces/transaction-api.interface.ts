@@ -103,6 +103,7 @@ export interface ITransactionApi {
     onlyErc721?: boolean;
     limit?: number;
     offset?: number;
+    to?: Address;
   }): Promise<Raw<Page<Transfer>>>;
 
   clearTransfers(safeAddress: Address): Promise<void>;

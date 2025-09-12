@@ -268,10 +268,11 @@ export class CacheRouter {
     onlyErc721: boolean;
     limit?: number;
     offset?: number;
+    to?: string;
   }): CacheDir {
     return new CacheDir(
       CacheRouter.getTransfersCacheKey(args),
-      `${args.onlyErc20}_${args.onlyErc721}_${args.limit}_${args.offset}`,
+      `${args.onlyErc20}_${args.onlyErc721}_${args.limit}_${args.offset}_${args.to}`,
     );
   }
 
