@@ -38,8 +38,10 @@ export default (): ReturnType<typeof configuration> => ({
   },
   application: {
     isProduction: faker.datatype.boolean(),
+    isDevelopment: faker.datatype.boolean(),
     runMigrations: true,
     port: faker.internet.port().toString(),
+    allowCors: faker.datatype.boolean(),
   },
   auth: {
     token: faker.string.hexadecimal({ length: 32 }),
