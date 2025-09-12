@@ -1,0 +1,100 @@
+import {
+  StatusGroup,
+  StatusGroupSchema,
+  RecipientStatusGroup,
+  RecipientStatusGroupSchema,
+  ContractStatusGroup,
+  ContractStatusGroupSchema,
+} from '../status-group.entity';
+
+describe('StatusGroup', () => {
+  describe('StatusGroup', () => {
+    it('should have all expected values', () => {
+      expect(StatusGroup).toHaveLength(6);
+      expect(StatusGroup).toContain('RECIPIENT_INTERACTION');
+      expect(StatusGroup).toContain('BRIDGE');
+      expect(StatusGroup).toContain('CONTRACT_VERIFICATION');
+      expect(StatusGroup).toContain('CONTRACT_INTERACTION');
+      expect(StatusGroup).toContain('DELEGATECALL');
+      expect(StatusGroup).toContain('THREAT');
+    });
+
+    it('should have consistent naming convention', () => {
+      StatusGroup.forEach((value) => {
+        // All values should be uppercase with underscores
+        expect(value).toMatch(/^[A-Z_]+$/);
+        // Should not start or end with underscore
+        expect(value).not.toMatch(/^_|_$/);
+      });
+    });
+  });
+
+  describe('RecipientStatusGroup', () => {
+    it('should have all expected values', () => {
+      expect(RecipientStatusGroup).toHaveLength(2);
+      expect(RecipientStatusGroup).toContain('RECIPIENT_INTERACTION');
+      expect(RecipientStatusGroup).toContain('BRIDGE');
+    });
+  });
+
+  describe('ContractStatusGroup', () => {
+    it('should have all expected values', () => {
+      expect(ContractStatusGroup).toHaveLength(3);
+      expect(ContractStatusGroup).toContain('CONTRACT_VERIFICATION');
+      expect(ContractStatusGroup).toContain('CONTRACT_INTERACTION');
+      expect(ContractStatusGroup).toContain('DELEGATECALL');
+    });
+  });
+
+  describe('StatusGroupSchema', () => {
+    it.each(StatusGroup)(
+      'should validate correct status group value = %s',
+      (value) => {
+        expect(() => StatusGroupSchema.parse(value)).not.toThrow();
+      },
+    );
+
+    it.each([
+      'INVALID_GROUP',
+      '',
+      'RECIPIENT_ACTIVITY',
+      null,
+      undefined,
+      123,
+    ] as const)('should reject invalid value = %s', (invalidValue) => {
+      expect(() => StatusGroupSchema.parse(invalidValue)).toThrow();
+    });
+  });
+});
+
+describe('RecipientStatusGroupSchema', () => {
+  it.each(RecipientStatusGroup)(
+    'should validate recipient status group = %s',
+    (value) => {
+      expect(() => RecipientStatusGroupSchema.parse(value)).not.toThrow();
+    },
+  );
+
+  it.each([...ContractStatusGroup, 'THREAT'] as const)(
+    'should reject non-recipient status group = %s',
+    (invalidValue) => {
+      expect(() => RecipientStatusGroupSchema.parse(invalidValue)).toThrow();
+    },
+  );
+});
+
+describe('ContractStatusGroupSchema', () => {
+  it.each(ContractStatusGroup)(
+    'should validate contract status group = %s',
+    (value) => {
+      expect(() => ContractStatusGroupSchema.parse(value)).not.toThrow();
+    },
+  );
+
+  it.each([...RecipientStatusGroup, 'THREAT'] as const)(
+    'should reject non-contract status group = %s',
+    (invalidValue) => {
+      expect(() => ContractStatusGroupSchema.parse(invalidValue)).toThrow();
+    },
+  );
+});
