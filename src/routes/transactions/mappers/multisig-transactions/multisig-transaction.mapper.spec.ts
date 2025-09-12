@@ -17,6 +17,10 @@ import type { MultisigTransactionStatusMapper } from '@/routes/transactions/mapp
 import { MultisigTransactionMapper } from '@/routes/transactions/mappers/multisig-transactions/multisig-transaction.mapper';
 import type { IDataDecoderRepository } from '@/domain/data-decoder/v2/data-decoder.repository.interface';
 import type { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
+import type { MultisigTransactionNoteMapper } from '@/routes/transactions/mappers/multisig-transactions/multisig-transaction-note.mapper';
+import { TransactionStatus } from '@/routes/transactions/entities/transaction-status.entity';
+import { transferTransactionInfoBuilder } from '@/routes/transactions/entities/__tests__/transfer-transaction-info.builder';
+import { MultisigExecutionInfo } from '@/routes/transactions/entities/multisig-execution-info.entity';
 
 const mockDataDecodedRepository = {
   getTransactionDataDecoded: jest.fn(),
@@ -28,17 +32,38 @@ describe('MultisigTransactionMapper', () => {
   const addressInfoHelper = jest.mocked({
     getCollection: jest.fn(),
   } as jest.MockedObjectDeep<AddressInfoHelper>);
+  const statusMapper = jest.mocked({
+    mapTransactionStatus: jest.fn(),
+  } as jest.Mocked<MultisigTransactionStatusMapper>);
+  const transactionInfoMapper = {
+    mapTransactionInfo: jest.fn(),
+  } as unknown as jest.Mocked<MultisigTransactionInfoMapper>;
+  const executionInfoMapper = {
+    mapExecutionInfo: jest.fn(),
+  } as unknown as jest.Mocked<MultisigTransactionExecutionInfoMapper>;
+  const safeAppInfoMapper = {
+    mapSafeAppInfo: jest.fn(),
+  } as unknown as jest.Mocked<SafeAppInfoMapper>;
+  const noteMapper = {
+    mapTxNote: jest.fn(),
+  } as jest.Mocked<MultisigTransactionNoteMapper>;
+  const transactionVerifier = {
+    verifyApiTransaction: jest.fn(),
+    verifyProposal: jest.fn(),
+    verifyConfirmation: jest.fn(),
+  } as unknown as jest.Mocked<TransactionVerifierHelper>;
 
   beforeEach(() => {
     jest.resetAllMocks();
 
     mapper = new MultisigTransactionMapper(
       mockDataDecodedRepository,
-      jest.mocked({} as jest.Mocked<MultisigTransactionStatusMapper>),
-      jest.mocked({} as jest.Mocked<MultisigTransactionInfoMapper>),
-      jest.mocked({} as jest.Mocked<MultisigTransactionExecutionInfoMapper>),
-      jest.mocked({} as jest.Mocked<SafeAppInfoMapper>),
-      jest.mocked({} as jest.Mocked<TransactionVerifierHelper>),
+      statusMapper,
+      transactionInfoMapper,
+      executionInfoMapper,
+      safeAppInfoMapper,
+      noteMapper,
+      transactionVerifier,
       addressInfoHelper,
       new DataDecodedParamHelper(),
     );
@@ -125,6 +150,36 @@ describe('MultisigTransactionMapper', () => {
         ]),
         ['TOKEN', 'CONTRACT'],
       );
+    });
+  });
+
+  describe('mapTransaction', () => {
+    it('should map the transaction note', async () => {
+      const chain = chainBuilder().build();
+      const safe = safeBuilder().build();
+      const transaction = multisigTransactionBuilder().build();
+      const expectedNote = 'a note';
+
+      noteMapper.mapTxNote.mockReturnValue(expectedNote);
+      statusMapper.mapTransactionStatus.mockReturnValue(
+        TransactionStatus.Success,
+      );
+      transactionInfoMapper.mapTransactionInfo.mockResolvedValue(
+        transferTransactionInfoBuilder().build(),
+      );
+      executionInfoMapper.mapExecutionInfo.mockReturnValue(
+        new MultisigExecutionInfo(0, 0, 0, null),
+      );
+      safeAppInfoMapper.mapSafeAppInfo.mockResolvedValue(null);
+
+      const result = await mapper.mapTransaction(
+        chain.chainId,
+        transaction,
+        safe,
+        null,
+      );
+
+      expect(result.note).toBe(expectedNote);
     });
   });
 });

@@ -28,6 +28,7 @@ export class TransferMapper {
       await this.transferInfoMapper.mapTransferInfo(chainId, transfer, safe),
       null,
       null,
+      null,
       transfer.transactionHash,
     );
   }

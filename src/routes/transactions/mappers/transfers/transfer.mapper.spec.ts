@@ -93,6 +93,7 @@ describe('Transfer mapper (Unit)', () => {
             txInfo: expect.any(TransferTransactionInfo),
             executionInfo: null,
             safeAppInfo: null,
+            note: null,
             txHash: transfer.transactionHash,
           },
         ]);
@@ -137,6 +138,7 @@ describe('Transfer mapper (Unit)', () => {
             txInfo: expect.any(TransferTransactionInfo),
             executionInfo: null,
             safeAppInfo: null,
+            note: null,
             txHash: transfer.transactionHash,
           },
         ]);
@@ -181,6 +183,7 @@ describe('Transfer mapper (Unit)', () => {
               txInfo: expect.any(TransferTransactionInfo),
               executionInfo: null,
               safeAppInfo: null,
+              note: null,
               txHash: transfer.transactionHash,
             },
           ]);
@@ -246,6 +249,7 @@ describe('Transfer mapper (Unit)', () => {
               txInfo: expect.any(TransferTransactionInfo),
               executionInfo: null,
               safeAppInfo: null,
+              note: null,
               txHash: transfer.transactionHash,
             },
           ]);
@@ -412,6 +416,7 @@ describe('Transfer mapper (Unit)', () => {
               }),
               executionInfo: null,
               safeAppInfo: null,
+              note: null,
               txHash: transfer.transactionHash,
             },
           ]);
@@ -536,6 +541,7 @@ describe('Transfer mapper (Unit)', () => {
               }),
               executionInfo: null,
               safeAppInfo: null,
+              note: null,
               txHash: transfer.transactionHash,
             },
           ]);
@@ -723,6 +729,7 @@ describe('Transfer mapper (Unit)', () => {
           txInfo: expect.any(TransferTransactionInfo),
           executionInfo: null,
           safeAppInfo: null,
+          note: null,
           txHash: nativeTransfer.transactionHash,
         },
         expect.objectContaining({
@@ -732,6 +739,7 @@ describe('Transfer mapper (Unit)', () => {
           txInfo: expect.any(TransferTransactionInfo),
           executionInfo: null,
           safeAppInfo: null,
+          note: null,
           txHash: erc721Transfer.transactionHash,
         }),
         expect.objectContaining({
@@ -741,6 +749,7 @@ describe('Transfer mapper (Unit)', () => {
           txInfo: expect.any(TransferTransactionInfo),
           executionInfo: null,
           safeAppInfo: null,
+          note: null,
           txHash: trustedErc20TransferWithValue.transactionHash,
         }),
       ]);

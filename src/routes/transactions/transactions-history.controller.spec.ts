@@ -645,6 +645,7 @@ describe('Transactions History Controller (Unit)', () => {
                 id: `module_${safe.address}_i5a6754140f0432d3b`,
                 txHash: moduleTransaction.transactionHash,
                 safeAppInfo: null,
+                note: null,
                 timestamp: moduleTransaction.executionDate.getTime(),
                 txStatus: 'SUCCESS',
                 txInfo: {
@@ -701,6 +702,7 @@ describe('Transactions History Controller (Unit)', () => {
                   missingSigners: null,
                 },
                 safeAppInfo: null,
+                note: null,
               },
               conflictType: 'None',
             },
@@ -715,6 +717,7 @@ describe('Transactions History Controller (Unit)', () => {
                 txHash: nativeTokenTransfer.transactionHash,
                 executionInfo: null,
                 safeAppInfo: null,
+                note: null,
                 timestamp: nativeTokenTransfer.executionDate.getTime(),
                 txStatus: 'SUCCESS',
                 txInfo: {
@@ -732,6 +735,96 @@ describe('Transactions History Controller (Unit)', () => {
             },
           ],
         });
+      });
+  });
+
+  it('Should include multisig transaction note', async () => {
+    const chain = chainBuilder().build();
+    const signers = Array.from({ length: 2 }, () => {
+      const privateKey = generatePrivateKey();
+      return privateKeyToAccount(privateKey);
+    });
+    const safe = safeBuilder()
+      .with(
+        'owners',
+        signers.map((signer) => signer.address),
+      )
+      .build();
+    const note = faker.lorem.sentence();
+    const multisigTransaction = await multisigTransactionBuilder()
+      .with('safe', safe.address)
+      .with('value', '0')
+      .with('operation', 0)
+      .with('executionDate', new Date('2022-11-16T07:31:11Z'))
+      .with('submissionDate', new Date('2022-11-16T07:29:56.401601Z'))
+      .with('isExecuted', true)
+      .with('isSuccessful', true)
+      .with('origin', JSON.stringify({ note }))
+      .with('confirmationsRequired', 2)
+      .buildWithConfirmations({ safe, signers, chainId: chain.chainId });
+    const token = erc20TokenBuilder()
+      .with('address', getAddress(multisigTransaction.to))
+      .build();
+    const dataDecoded = dataDecodedBuilder()
+      .with('method', 'transfer')
+      .with('parameters', [
+        dataDecodedParameterBuilder()
+          .with('name', 'to')
+          .with('type', 'address')
+          .with('value', getAddress(multisigTransaction.to))
+          .build(),
+        dataDecodedParameterBuilder()
+          .with('name', 'value')
+          .with('type', 'uint256')
+          .with('value', multisigTransaction.value)
+          .build(),
+      ])
+      .build();
+    networkService.get.mockImplementation(({ url }) => {
+      const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
+      const getAllTransactionsUrl = `${chain.transactionService}/api/v2/safes/${safe.address}/all-transactions/`;
+      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
+      const getTokenUrl = `${chain.transactionService}/api/v1/tokens/${multisigTransaction.to}`;
+      if (url === getChainUrl) {
+        return Promise.resolve({ data: rawify(chain), status: 200 });
+      }
+      if (url === getAllTransactionsUrl) {
+        return Promise.resolve({
+          data: rawify(
+            pageBuilder()
+              .with('results', [multisigTransactionToJson(multisigTransaction)])
+              .build(),
+          ),
+          status: 200,
+        });
+      }
+      if (url === getSafeUrl) {
+        return Promise.resolve({ data: rawify(safe), status: 200 });
+      }
+      if (url === getTokenUrl) {
+        return Promise.resolve({ data: rawify(token), status: 200 });
+      }
+      return Promise.reject(new Error(`Could not match ${url}`));
+    });
+    networkService.post.mockImplementation(({ url, data }) => {
+      if (
+        url === `${safeDecoderUrl}/api/v1/data-decoder` &&
+        data &&
+        'data' in data &&
+        data.data === multisigTransaction.data
+      ) {
+        return Promise.resolve({ data: rawify(dataDecoded), status: 200 });
+      }
+      return Promise.reject(new Error(`Could not match ${url}`));
+    });
+
+    await request(app.getHttpServer())
+      .get(
+        `/v1/chains/${chain.chainId}/safes/${safe.address}/transactions/history/`,
+      )
+      .expect(200)
+      .then(({ body }) => {
+        expect(body.results[1].transaction.note).toBe(note);
       });
   });
 

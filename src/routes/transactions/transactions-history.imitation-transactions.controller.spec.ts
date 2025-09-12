@@ -398,6 +398,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                   // @ts-expect-error - Type does not contain transfers
                   id: `transfer_${safe.address}_${results[0].transfers[0].transferId}`,
                   safeAppInfo: null,
+                  note: null,
                   timestamp: 1710927778000,
                   txInfo: {
                     direction: 'INCOMING',
@@ -443,6 +444,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                   },
                   id: `multisig_${safe.address}_${multisigTransaction.safeTxHash}`,
                   safeAppInfo: null,
+                  note: null,
                   timestamp: 1710927685000,
                   txInfo: {
                     direction: 'OUTGOING',
@@ -482,6 +484,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                   // @ts-expect-error - Type does not contain transfers
                   id: `transfer_${safe.address}_${results[2].transfers[0].transferId}`,
                   safeAppInfo: null,
+                  note: null,
                   timestamp: 1710927778000,
                   txInfo: {
                     direction: 'OUTGOING',
@@ -527,6 +530,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                   },
                   id: `multisig_${safe.address}_${notImitatedMultisigTransaction.safeTxHash}`,
                   safeAppInfo: null,
+                  note: null,
                   timestamp:
                     notImitatedMultisigTransfer.executionDate.getTime(),
                   txInfo: {
@@ -572,6 +576,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                   },
                   id: `multisig_${safe.address}_${multisigTransaction.safeTxHash}`,
                   safeAppInfo: null,
+                  note: null,
                   timestamp: 1710927685000,
                   txInfo: {
                     direction: 'OUTGOING',
@@ -690,6 +695,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                   // @ts-expect-error - Type does not contain transfers
                   id: `transfer_${safe.address}_${results[0].transfers[0].transferId}`,
                   safeAppInfo: null,
+                  note: null,
                   timestamp: 1710927778000,
                   txInfo: {
                     direction: 'INCOMING',
@@ -730,6 +736,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                   // @ts-expect-error - Type does not contain transfers
                   id: `transfer_${safe.address}_${results[1].transfers[0].transferId}`,
                   safeAppInfo: null,
+                  note: null,
                   timestamp: 1710927778000,
                   txInfo: {
                     direction: 'OUTGOING',
@@ -775,6 +782,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                   },
                   id: `multisig_${safe.address}_${notImitatedMultisigTransaction.safeTxHash}`,
                   safeAppInfo: null,
+                  note: null,
                   timestamp:
                     notImitatedMultisigTransfer.executionDate.getTime(),
                   txInfo: {
@@ -820,6 +828,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                   },
                   id: `multisig_${safe.address}_${notImitatedMultisigTransaction.safeTxHash}`,
                   safeAppInfo: null,
+                  note: null,
                   timestamp:
                     notImitatedMultisigTransfer.executionDate.getTime(),
                   txInfo: {
@@ -865,6 +874,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                   },
                   id: `multisig_${safe.address}_${multisigTransaction.safeTxHash}`,
                   safeAppInfo: null,
+                  note: null,
                   timestamp: 1710927685000,
                   txInfo: {
                     direction: 'OUTGOING',
@@ -988,6 +998,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                   },
                   id: `multisig_${safe.address}_${multisigTransaction.safeTxHash}`,
                   safeAppInfo: null,
+                  note: null,
                   timestamp: 1710927685000,
                   txInfo: {
                     direction: 'OUTGOING',
@@ -1032,6 +1043,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                   },
                   id: `multisig_${safe.address}_${notImitatedMultisigTransaction.safeTxHash}`,
                   safeAppInfo: null,
+                  note: null,
                   timestamp:
                     notImitatedMultisigTransfer.executionDate.getTime(),
                   txInfo: {
@@ -1077,6 +1089,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                   },
                   id: `multisig_${safe.address}_${multisigTransaction.safeTxHash}`,
                   safeAppInfo: null,
+                  note: null,
                   timestamp: 1710927685000,
                   txInfo: {
                     direction: 'OUTGOING',
@@ -1195,6 +1208,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                   // @ts-expect-error - Type does not contain transfers
                   id: `transfer_${safe.address}_${results[0].transfers[0].transferId}`,
                   safeAppInfo: null,
+                  note: null,
                   timestamp: 1710927778000,
                   txInfo: {
                     direction: 'INCOMING',
@@ -1235,6 +1249,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                   // @ts-expect-error - Type does not contain transfers
                   id: `transfer_${safe.address}_${results[1].transfers[0].transferId}`,
                   safeAppInfo: null,
+                  note: null,
                   timestamp: 1710927778000,
                   txInfo: {
                     direction: 'OUTGOING',
@@ -1280,6 +1295,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                   },
                   id: `multisig_${safe.address}_${notImitatedMultisigTransaction.safeTxHash}`,
                   safeAppInfo: null,
+                  note: null,
                   timestamp:
                     notImitatedMultisigTransfer.executionDate.getTime(),
                   txInfo: {
@@ -1325,6 +1341,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                   },
                   id: `multisig_${safe.address}_${notImitatedMultisigTransaction.safeTxHash}`,
                   safeAppInfo: null,
+                  note: null,
                   timestamp:
                     notImitatedMultisigTransfer.executionDate.getTime(),
                   txInfo: {
@@ -1370,6 +1387,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                   },
                   id: `multisig_${safe.address}_${multisigTransaction.safeTxHash}`,
                   safeAppInfo: null,
+                  note: null,
                   timestamp: 1710927685000,
                   txInfo: {
                     direction: 'OUTGOING',
@@ -1519,6 +1537,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                   // @ts-expect-error - Type does not contain transfers
                   id: `transfer_${safe.address}_${results[0].transfers[0].transferId}`,
                   safeAppInfo: null,
+                  note: null,
                   timestamp: 1710927778000,
                   txInfo: {
                     direction: 'INCOMING',
@@ -1568,6 +1587,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                   },
                   id: `multisig_${safe.address}_${multisigTransaction.safeTxHash}`,
                   safeAppInfo: null,
+                  note: null,
                   timestamp: 1710927685000,
                   txInfo: {
                     direction: 'OUTGOING',
@@ -1607,6 +1627,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                   // @ts-expect-error - Type does not contain transfers
                   id: `transfer_${safe.address}_${results[2].transfers[0].transferId}`,
                   safeAppInfo: null,
+                  note: null,
                   timestamp: new Date(
                     valueIntolerantOutgoingTransaction.executionDate,
                   ).getTime(),
@@ -1658,6 +1679,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                   },
                   id: `multisig_${safe.address}_${notImitatedMultisigTransaction.safeTxHash}`,
                   safeAppInfo: null,
+                  note: null,
                   timestamp:
                     notImitatedMultisigTransfer.executionDate.getTime(),
                   txInfo: {
@@ -1703,6 +1725,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                   },
                   id: `multisig_${safe.address}_${multisigTransaction.safeTxHash}`,
                   safeAppInfo: null,
+                  note: null,
                   timestamp: 1710927685000,
                   txInfo: {
                     direction: 'OUTGOING',
@@ -1820,6 +1843,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                   // @ts-expect-error - Type does not contain transfers
                   id: `transfer_${safe.address}_${results[0].transfers[0].transferId}`,
                   safeAppInfo: null,
+                  note: null,
                   timestamp: 1710927778000,
                   txInfo: {
                     direction: 'INCOMING',
@@ -1864,6 +1888,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                   // @ts-expect-error - Type does not contain transfers
                   id: `transfer_${safe.address}_${results[1].transfers[0].transferId}`,
                   safeAppInfo: null,
+                  note: null,
                   timestamp: new Date(
                     valueIntolerantOutgoingTransaction.executionDate,
                   ).getTime(),
@@ -1915,6 +1940,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                   },
                   id: `multisig_${safe.address}_${notImitatedMultisigTransaction.safeTxHash}`,
                   safeAppInfo: null,
+                  note: null,
                   timestamp:
                     notImitatedMultisigTransfer.executionDate.getTime(),
                   txInfo: {
@@ -1960,6 +1986,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                   },
                   id: `multisig_${safe.address}_${notImitatedMultisigTransaction.safeTxHash}`,
                   safeAppInfo: null,
+                  note: null,
                   timestamp:
                     notImitatedMultisigTransfer.executionDate.getTime(),
                   txInfo: {
@@ -2005,6 +2032,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                   },
                   id: `multisig_${safe.address}_${multisigTransaction.safeTxHash}`,
                   safeAppInfo: null,
+                  note: null,
                   timestamp: 1710927685000,
                   txInfo: {
                     direction: 'OUTGOING',
@@ -2122,6 +2150,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                   // @ts-expect-error - Type does not contain transfers
                   id: `transfer_${safe.address}_${results[0].transfers[0].transferId}`,
                   safeAppInfo: null,
+                  note: null,
                   timestamp: 1710927778000,
                   txInfo: {
                     direction: 'INCOMING',
@@ -2171,6 +2200,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                   },
                   id: `multisig_${safe.address}_${multisigTransaction.safeTxHash}`,
                   safeAppInfo: null,
+                  note: null,
                   timestamp: 1710927685000,
                   txInfo: {
                     direction: 'OUTGOING',
@@ -2210,6 +2240,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                   // @ts-expect-error - Type does not contain transfers
                   id: `transfer_${safe.address}_${results[2].transfers[0].transferId}`,
                   safeAppInfo: null,
+                  note: null,
                   timestamp: new Date(
                     valueIntolerantOutgoingTransaction.executionDate,
                   ).getTime(),
@@ -2261,6 +2292,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                   },
                   id: `multisig_${safe.address}_${notImitatedMultisigTransaction.safeTxHash}`,
                   safeAppInfo: null,
+                  note: null,
                   timestamp:
                     notImitatedMultisigTransfer.executionDate.getTime(),
                   txInfo: {
@@ -2306,6 +2338,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                   },
                   id: `multisig_${safe.address}_${multisigTransaction.safeTxHash}`,
                   safeAppInfo: null,
+                  note: null,
                   timestamp: 1710927685000,
                   txInfo: {
                     direction: 'OUTGOING',
@@ -2423,6 +2456,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                   // @ts-expect-error - Type does not contain transfers
                   id: `transfer_${safe.address}_${results[0].transfers[0].transferId}`,
                   safeAppInfo: null,
+                  note: null,
                   timestamp: 1710927778000,
                   txInfo: {
                     direction: 'INCOMING',
@@ -2467,6 +2501,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                   // @ts-expect-error - Type does not contain transfers
                   id: `transfer_${safe.address}_${results[1].transfers[0].transferId}`,
                   safeAppInfo: null,
+                  note: null,
                   timestamp: new Date(
                     valueIntolerantOutgoingTransaction.executionDate,
                   ).getTime(),
@@ -2518,6 +2553,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                   },
                   id: `multisig_${safe.address}_${notImitatedMultisigTransaction.safeTxHash}`,
                   safeAppInfo: null,
+                  note: null,
                   timestamp:
                     notImitatedMultisigTransfer.executionDate.getTime(),
                   txInfo: {
@@ -2563,6 +2599,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                   },
                   id: `multisig_${safe.address}_${notImitatedMultisigTransaction.safeTxHash}`,
                   safeAppInfo: null,
+                  note: null,
                   timestamp:
                     notImitatedMultisigTransfer.executionDate.getTime(),
                   txInfo: {
@@ -2608,6 +2645,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                   },
                   id: `multisig_${safe.address}_${multisigTransaction.safeTxHash}`,
                   safeAppInfo: null,
+                  note: null,
                   timestamp: 1710927685000,
                   txInfo: {
                     direction: 'OUTGOING',
@@ -2766,6 +2804,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                 // @ts-expect-error - Type does not contain transfers
                 id: `transfer_${safe.address}_${results[0].transfers[0].transferId}`,
                 safeAppInfo: null,
+                note: null,
                 timestamp: 1710927778000,
                 txInfo: {
                   direction: 'INCOMING',
@@ -2812,6 +2851,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                 },
                 id: `multisig_${safe.address}_${multisigTransaction.safeTxHash}`,
                 safeAppInfo: null,
+                note: null,
                 timestamp: 1710927685000,
                 txInfo: {
                   direction: 'OUTGOING',
@@ -3094,6 +3134,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                   // @ts-expect-error - Type does not contain transfers
                   id: `transfer_${safe.address}_${results[0].transfers[0].transferId}`,
                   safeAppInfo: null,
+                  note: null,
                   timestamp: 1710927778000,
                   txInfo: {
                     direction: 'INCOMING',
@@ -3139,6 +3180,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                   },
                   id: `multisig_${safe.address}_${multisigTransaction.safeTxHash}`,
                   safeAppInfo: null,
+                  note: null,
                   timestamp: 1710927778000,
                   txInfo: {
                     direction: 'OUTGOING',
@@ -3251,6 +3293,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                   // @ts-expect-error - Type does not contain transfers
                   id: `transfer_${safe.address}_${results[0].transfers[0].transferId}`,
                   safeAppInfo: null,
+                  note: null,
                   timestamp: 1710927778000,
                   txInfo: {
                     direction: 'INCOMING',
@@ -3296,6 +3339,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                   },
                   id: `multisig_${safe.address}_${notImitatedMultisigTransaction.safeTxHash}`,
                   safeAppInfo: null,
+                  note: null,
                   timestamp:
                     notImitatedMultisigTransfer.executionDate.getTime(),
                   txInfo: {
@@ -3341,6 +3385,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                   },
                   id: `multisig_${safe.address}_${notImitatedMultisigTransaction.safeTxHash}`,
                   safeAppInfo: null,
+                  note: null,
                   timestamp:
                     notImitatedMultisigTransfer.executionDate.getTime(),
                   txInfo: {
@@ -3386,6 +3431,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                   },
                   id: `multisig_${safe.address}_${notImitatedMultisigTransaction.safeTxHash}`,
                   safeAppInfo: null,
+                  note: null,
                   timestamp:
                     notImitatedMultisigTransfer.executionDate.getTime(),
                   txInfo: {
@@ -3431,6 +3477,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                   },
                   id: `multisig_${safe.address}_${multisigTransaction.safeTxHash}`,
                   safeAppInfo: null,
+                  note: null,
                   timestamp: 1710927778000,
                   txInfo: {
                     direction: 'OUTGOING',
@@ -3535,6 +3582,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                   },
                   id: `multisig_${safe.address}_${multisigTransaction.safeTxHash}`,
                   safeAppInfo: null,
+                  note: null,
                   timestamp: 1710927778000,
                   txInfo: {
                     direction: 'OUTGOING',
@@ -3647,6 +3695,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                   // @ts-expect-error - Type does not contain transfers
                   id: `transfer_${safe.address}_${results[0].transfers[0].transferId}`,
                   safeAppInfo: null,
+                  note: null,
                   timestamp: 1710927778000,
                   txInfo: {
                     direction: 'INCOMING',
@@ -3692,6 +3741,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                   },
                   id: `multisig_${safe.address}_${notImitatedMultisigTransaction.safeTxHash}`,
                   safeAppInfo: null,
+                  note: null,
                   timestamp:
                     notImitatedMultisigTransfer.executionDate.getTime(),
                   txInfo: {
@@ -3737,6 +3787,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                   },
                   id: `multisig_${safe.address}_${notImitatedMultisigTransaction.safeTxHash}`,
                   safeAppInfo: null,
+                  note: null,
                   timestamp:
                     notImitatedMultisigTransfer.executionDate.getTime(),
                   txInfo: {
@@ -3782,6 +3833,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                   },
                   id: `multisig_${safe.address}_${notImitatedMultisigTransaction.safeTxHash}`,
                   safeAppInfo: null,
+                  note: null,
                   timestamp:
                     notImitatedMultisigTransfer.executionDate.getTime(),
                   txInfo: {
@@ -3827,6 +3879,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                   },
                   id: `multisig_${safe.address}_${multisigTransaction.safeTxHash}`,
                   safeAppInfo: null,
+                  note: null,
                   timestamp: 1710927778000,
                   txInfo: {
                     direction: 'OUTGOING',
@@ -3973,6 +4026,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                   // @ts-expect-error - Type does not contain transfers
                   id: `transfer_${safe.address}_${results[0].transfers[0].transferId}`,
                   safeAppInfo: null,
+                  note: null,
                   timestamp: 1710927778000,
                   txInfo: {
                     direction: 'INCOMING',
@@ -4018,6 +4072,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                   },
                   id: `multisig_${safe.address}_${multisigTransaction.safeTxHash}`,
                   safeAppInfo: null,
+                  note: null,
                   timestamp: 1710927778000,
                   txInfo: {
                     direction: 'OUTGOING',
@@ -4138,6 +4193,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                   // @ts-expect-error - Type does not contain transfers
                   id: `transfer_${safe.address}_${results[0].transfers[0].transferId}`,
                   safeAppInfo: null,
+                  note: null,
                   timestamp: 1710927778000,
                   txInfo: {
                     direction: 'INCOMING',
@@ -4183,6 +4239,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                   },
                   id: `multisig_${safe.address}_${notImitatedMultisigTransaction.safeTxHash}`,
                   safeAppInfo: null,
+                  note: null,
                   timestamp:
                     notImitatedMultisigTransfer.executionDate.getTime(),
                   txInfo: {
@@ -4228,6 +4285,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                   },
                   id: `multisig_${safe.address}_${notImitatedMultisigTransaction.safeTxHash}`,
                   safeAppInfo: null,
+                  note: null,
                   timestamp:
                     notImitatedMultisigTransfer.executionDate.getTime(),
                   txInfo: {
@@ -4273,6 +4331,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                   },
                   id: `multisig_${safe.address}_${notImitatedMultisigTransaction.safeTxHash}`,
                   safeAppInfo: null,
+                  note: null,
                   timestamp:
                     notImitatedMultisigTransfer.executionDate.getTime(),
                   txInfo: {
@@ -4318,6 +4377,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                   },
                   id: `multisig_${safe.address}_${multisigTransaction.safeTxHash}`,
                   safeAppInfo: null,
+                  note: null,
                   timestamp: 1710927778000,
                   txInfo: {
                     direction: 'OUTGOING',

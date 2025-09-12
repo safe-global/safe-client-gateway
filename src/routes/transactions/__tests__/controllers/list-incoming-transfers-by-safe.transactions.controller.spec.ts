@@ -222,6 +222,7 @@ describe('List incoming transfers by Safe - Transactions Controller (Unit)', () 
                 txHash: erc20Transfer.transactionHash,
                 executionInfo: null,
                 safeAppInfo: null,
+                note: null,
                 timestamp: erc20Transfer.executionDate.getTime(),
                 txStatus: 'SUCCESS',
                 txInfo: {
@@ -308,6 +309,7 @@ describe('List incoming transfers by Safe - Transactions Controller (Unit)', () 
                 txHash: erc20Transfer.transactionHash,
                 executionInfo: null,
                 safeAppInfo: null,
+                note: null,
                 timestamp: erc20Transfer.executionDate.getTime(),
                 txStatus: 'SUCCESS',
                 txInfo: {
@@ -669,6 +671,7 @@ describe('List incoming transfers by Safe - Transactions Controller (Unit)', () 
                 txHash: erc20Transfer.transactionHash,
                 executionInfo: null,
                 safeAppInfo: null,
+                note: null,
                 timestamp: erc20Transfer.executionDate.getTime(),
                 txStatus: 'SUCCESS',
                 txInfo: {

@@ -33,6 +33,8 @@ export class Transaction extends BaseTransaction {
   executionInfo: ExecutionInfo | null;
   @ApiPropertyOptional({ type: SafeAppInfo, nullable: true })
   safeAppInfo: SafeAppInfo | null;
+  @ApiPropertyOptional({ type: String, nullable: true })
+  note: string | null;
 
   constructor(
     id: string,
@@ -41,6 +43,7 @@ export class Transaction extends BaseTransaction {
     txInfo: TransactionInfo,
     executionInfo: ExecutionInfo | null = null,
     safeAppInfo: SafeAppInfo | null = null,
+    note: string | null = null,
     txHash: Hash | null = null,
   ) {
     super(txInfo);
@@ -50,6 +53,7 @@ export class Transaction extends BaseTransaction {
     this.txInfo = txInfo;
     this.executionInfo = executionInfo;
     this.safeAppInfo = safeAppInfo;
+    this.note = note;
     this.txHash = txHash;
   }
 }
