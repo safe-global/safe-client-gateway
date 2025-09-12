@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { RecipientAnalysisService } from './recipient-analysis.service';
+import { TransactionApiManagerModule } from '@/domain/interfaces/transaction-api.manager.interface';
 
 /**
  * Module for recipient analysis functionality.
@@ -8,6 +9,7 @@ import { RecipientAnalysisService } from './recipient-analysis.service';
  * including interaction history tracking and bridge configuration validation.
  */
 @Module({
+  imports: [TransactionApiManagerModule],
   providers: [RecipientAnalysisService],
   exports: [RecipientAnalysisService],
 })
