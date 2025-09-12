@@ -2,12 +2,6 @@ import { getBlocklist } from '@/config/entities/blocklist.config';
 import { randomBytes } from 'crypto';
 
 // Custom configuration for the application
-
-// Export specific configuration values (ex. in decorators as they need static values at module load time)
-export const csvExportWorkerConcurrency = parseInt(
-  process.env.CSV_EXPORT_QUEUE_CONCURRENCY ?? `${3}`,
-);
-
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 export default () => ({
   about: {
@@ -611,7 +605,7 @@ export default () => ({
         ), // 2 seconds
       },
       attempts: parseInt(process.env.CSV_EXPORT_QUEUE_ATTEMPTS ?? `${3}`),
-      concurrency: csvExportWorkerConcurrency,
+      concurrency: parseInt(process.env.CSV_EXPORT_QUEUE_CONCURRENCY ?? `${3}`),
     },
   },
 });

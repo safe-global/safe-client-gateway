@@ -2,8 +2,6 @@ import { faker } from '@faker-js/faker';
 import type configuration from '@/config/entities/configuration';
 import { getAddress } from 'viem';
 
-export const csvExportWorkerConcurrency = faker.number.int({ min: 1, max: 5 });
-
 export default (): ReturnType<typeof configuration> => ({
   about: {
     name: faker.word.words(),
@@ -386,7 +384,7 @@ export default (): ReturnType<typeof configuration> => ({
         delay: faker.number.int({ min: 0, max: 2000 }),
       },
       attempts: faker.number.int({ min: 0, max: 3 }),
-      concurrency: csvExportWorkerConcurrency,
+      concurrency: faker.number.int({ min: 1, max: 5 }),
     },
   },
 });

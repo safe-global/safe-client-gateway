@@ -1,4 +1,5 @@
-import { csvExportWorkerConcurrency } from '@/config/entities/configuration';
+import configuration from '@/config/entities/configuration';
 
 export const CSV_EXPORT_QUEUE = 'csv-export';
-export const CSV_EXPORT_WORKER_CONCURRENCY = csvExportWorkerConcurrency;
+export const CSV_EXPORT_WORKER_CONCURRENCY =
+  configuration().csvExport.queue.concurrency;
