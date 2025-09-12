@@ -22,7 +22,7 @@ import { ThreatStatusSchema, type ThreatStatus } from './threat-status.entity';
  */
 export interface AnalysisResult<T extends AnalysisStatus = AnalysisStatus> {
   /** Severity level indicating the importance and risk of this finding */
-  severity: Severity;
+  severity: keyof typeof Severity;
 
   /** Specific status code identifying the type of finding */
   type: T;

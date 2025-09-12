@@ -6,7 +6,7 @@ import {
   AnalysisStatusSchema,
   type ContractAnalysisResult,
 } from '../analysis-result.entity';
-import { compareSeverity } from '../severity.entity';
+import { compareSeverityString } from '../severity.entity';
 import { RecipientStatus } from '../recipient-status.entity';
 import { BridgeStatus } from '../bridge-status.entity';
 import { ContractStatus } from '../contract-status.entity';
@@ -272,7 +272,7 @@ describe('AnalysisResult', () => {
       ];
 
       const sorted = results.sort((a, b) =>
-        compareSeverity(b.severity, a.severity),
+        compareSeverityString(b.severity, a.severity),
       );
 
       expect(sorted[0].severity).toBe('CRITICAL');
