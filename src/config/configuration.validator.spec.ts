@@ -46,6 +46,7 @@ describe('Configuration validator', () => {
     STAKING_TESTNET_API_KEY: faker.string.uuid(),
     CSV_AWS_ACCESS_KEY_ID: faker.string.uuid(),
     CSV_AWS_SECRET_ACCESS_KEY: faker.string.uuid(),
+    CSV_EXPORT_QUEUE_CONCURRENCY: faker.number.int({ min: 1, max: 5 }),
   };
 
   it('should bypass this validation on test environment', () => {

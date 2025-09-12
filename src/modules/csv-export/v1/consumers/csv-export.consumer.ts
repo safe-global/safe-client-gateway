@@ -1,4 +1,7 @@
-import { CSV_EXPORT_QUEUE } from '@/domain/common/entities/jobs.constants';
+import {
+  CSV_EXPORT_QUEUE,
+  CSV_EXPORT_WORKER_CONCURRENCY,
+} from '@/domain/common/entities/jobs.constants';
 import { LogType } from '@/domain/common/entities/log-type.entity';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { CsvExportService } from '@/modules/csv-export/v1/csv-export.service';
@@ -10,7 +13,7 @@ import { OnWorkerEvent, Processor, WorkerHost } from '@nestjs/bullmq';
 import { Inject } from '@nestjs/common';
 import { Job } from 'bullmq';
 
-@Processor(CSV_EXPORT_QUEUE)
+@Processor(CSV_EXPORT_QUEUE, { concurrency: CSV_EXPORT_WORKER_CONCURRENCY })
 export class CsvExportConsumer extends WorkerHost {
   constructor(
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
