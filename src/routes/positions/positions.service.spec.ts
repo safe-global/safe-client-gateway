@@ -3,7 +3,7 @@ import type { IPositionsRepository } from '@/domain/positions/positions.reposito
 import type { IChainsRepository } from '@/domain/chains/chains.repository.interface';
 import { positionBuilder } from '@/domain/positions/entities/__tests__/position.builder';
 import { PositionType } from '@/domain/positions/entities/position-type.entity';
-import { faker } from '@faker-js/faker/.';
+import { faker } from '@faker-js/faker';
 import { NULL_ADDRESS } from '@/routes/common/constants';
 import type { Chain } from '@/domain/chains/entities/chain.entity';
 import type { Address } from 'viem';
@@ -322,5 +322,52 @@ describe('PositionsService', () => {
       fiatCode: 'USD',
     });
     expect(res).toEqual([]);
+  });
+
+  it('passes refresh parameter to repository correctly', async () => {
+    positionsRepoMock.getPositions.mockResolvedValue([]);
+
+    // Test with refresh string value
+    const refreshValue = 'cache-bust-12345';
+    await service.getPositions({
+      chainId: '1',
+      safeAddress: faker.finance.ethereumAddress() as Address,
+      fiatCode: 'USD',
+      refresh: refreshValue,
+    });
+
+    expect(positionsRepoMock.getPositions).toHaveBeenCalledWith(
+      expect.objectContaining({
+        refresh: refreshValue,
+      }),
+    );
+
+    // Test with different refresh string value
+    const refreshValue2 = 'different-value';
+    await service.getPositions({
+      chainId: '1',
+      safeAddress: faker.finance.ethereumAddress() as Address,
+      fiatCode: 'USD',
+      refresh: refreshValue2,
+    });
+
+    expect(positionsRepoMock.getPositions).toHaveBeenCalledWith(
+      expect.objectContaining({
+        refresh: refreshValue2,
+      }),
+    );
+
+    // Test without refresh parameter (should be undefined)
+    await service.getPositions({
+      chainId: '1',
+      safeAddress: faker.finance.ethereumAddress() as Address,
+      fiatCode: 'USD',
+    });
+
+    expect(positionsRepoMock.getPositions).toHaveBeenCalledWith(
+      expect.not.objectContaining({
+        refresh: expect.anything(),
+      }),
+    );
   });
 });

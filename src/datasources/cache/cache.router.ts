@@ -156,10 +156,11 @@ export class CacheRouter {
     chainId: string;
     safeAddress: Address;
     fiatCode: string;
+    refresh?: string;
   }): CacheDir {
     return new CacheDir(
       CacheRouter.getZerionPositionsCacheKey(args),
-      args.fiatCode,
+      `${args.fiatCode}_${args.refresh ?? ''}`,
     );
   }
 
