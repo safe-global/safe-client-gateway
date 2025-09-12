@@ -10,7 +10,10 @@ async function bootstrap(): Promise<void> {
   const applicationPort: string =
     configurationService.getOrThrow('application.port');
 
-  if (process.env.ALLOW_CORS === 'TRUE') {
+  if (
+    process.env.ALLOW_CORS === 'TRUE' &&
+    process.env.CGW_ENV === 'development'
+  ) {
     app.enableCors();
   }
 
