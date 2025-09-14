@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { RecipientAnalysisService } from './recipient-analysis.service';
 import { TransactionApiManagerModule } from '@/domain/interfaces/transaction-api.manager.interface';
+import { Erc20Decoder } from '@/domain/relay/contracts/decoders/erc-20-decoder.helper';
 
 /**
  * Module for recipient analysis functionality.
@@ -10,7 +11,7 @@ import { TransactionApiManagerModule } from '@/domain/interfaces/transaction-api
  */
 @Module({
   imports: [TransactionApiManagerModule],
-  providers: [RecipientAnalysisService],
+  providers: [RecipientAnalysisService, Erc20Decoder],
   exports: [RecipientAnalysisService],
 })
 export class RecipientAnalysisModule {}

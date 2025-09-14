@@ -2,7 +2,7 @@ import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.mana
 import { TransferPageSchema } from '@/domain/safe/entities/transfer.entity';
 import type { RecipientAnalysisResult } from '@/modules/safe-shield/entities/analysis-result.entity';
 import { Inject, Injectable } from '@nestjs/common';
-import type { Address } from 'viem';
+import { getAddress, type Address } from 'viem';
 import {
   SEVERITY_MAPPING,
   TITLE_MAPPING,
@@ -11,6 +11,10 @@ import {
 import type { RecipientStatus } from '@/modules/safe-shield/entities/recipient-status.entity';
 import type { BridgeStatus } from '@/modules/safe-shield/entities/bridge-status.entity';
 import type { RecipientStatusGroup } from '@/modules/safe-shield/entities/status-group.entity';
+import type { DecodedTransactionData } from '@/modules/safe-shield/entities/transaction-data.entity';
+import { Erc20Decoder } from '@/domain/relay/contracts/decoders/erc-20-decoder.helper';
+import { RecipientAnalysisResponse } from '@/modules/safe-shield/entities/analysis-responses.entity';
+import uniq from 'lodash/uniq';
 
 /**
  * Service responsible for analyzing transaction recipients and bridge configurations.
@@ -20,7 +24,31 @@ export class RecipientAnalysisService {
   constructor(
     @Inject(ITransactionApiManager)
     private readonly transactionApiManager: ITransactionApiManager,
+    private readonly erc20Decoder: Erc20Decoder,
   ) {}
+
+  async analyze(args: {
+    chainId: string;
+    safeAddress: Address;
+    transactions: Array<DecodedTransactionData>;
+  }): Promise<RecipientAnalysisResponse> {
+    const recipients = this.extractRecipients(args.transactions);
+
+    const analysisResults: RecipientAnalysisResponse = {};
+
+    // Analyze each unique recipient
+    for (const recipient of recipients) {
+      const result = await this.analyzeRecipient({
+        chainId: args.chainId,
+        safeAddress: args.safeAddress,
+        recipient,
+      });
+
+      analysisResults[recipient] = result;
+    }
+
+    return analysisResults;
+  }
 
   /**
    * Analyzes the recipient and bridge status.
@@ -30,7 +58,7 @@ export class RecipientAnalysisService {
    * @param args.recipient - The recipient address.
    * @returns The analysis results.
    */
-  async analyze(args: {
+  async analyzeRecipient(args: {
     chainId: string;
     safeAddress: Address;
     recipient: Address;
@@ -92,5 +120,54 @@ export class RecipientAnalysisService {
     const description = DESCRIPTION_MAPPING[type](interactions ?? 0);
 
     return { severity, type, title, description };
+  }
+
+  /**
+   * Extracts the unique recipients from transactions.
+   * @param transactions - The transactions.
+   * @returns The unique recipient addresses.
+   */
+  private extractRecipients(
+    transactions: Array<DecodedTransactionData>,
+  ): Array<Address> {
+    return uniq(
+      transactions
+        .map((tx) => this.extractRecipient(tx))
+        .filter((recipient) => !!recipient),
+    );
+  }
+
+  /**
+   * Extracts the recipient address from a transaction.
+   * @param tx - The transaction.
+   * @returns The recipient address or undefined if the transaction is not a transfer.
+   */
+  private extractRecipient({
+    dataDecoded,
+    data,
+    to,
+  }: DecodedTransactionData): Address | undefined {
+    // ExecTransaction with no data is a transfer
+    if (
+      dataDecoded?.method === 'execTransaction' &&
+      dataDecoded?.parameters?.[2].value === '0x'
+    ) {
+      return getAddress(dataDecoded?.parameters?.[0].value as string);
+    }
+
+    // ERC-20 transfer
+    if (this.erc20Decoder.helpers.isTransfer(data)) {
+      return getAddress(dataDecoded?.parameters?.[0].value as string);
+    }
+
+    // ERC-20 transferFrom
+    if (this.erc20Decoder.helpers.isTransferFrom(data)) {
+      return getAddress(dataDecoded?.parameters?.[1].value as string);
+    }
+
+    // Native transfer
+    if (data === '0x' || !dataDecoded) {
+      return getAddress(to);
+    }
   }
 }
