@@ -314,40 +314,38 @@ describe('PositionsService', () => {
     expect(res).toEqual([]);
   });
 
-  it('passes refresh parameter to repository correctly', async () => {
+  it('converts boolean refresh parameter to timestamp for repository', async () => {
     positionsRepoMock.getPositions.mockResolvedValue([]);
 
-    // Test with refresh string value
-    const refreshValue = 'cache-bust-12345';
+    // Test with refresh=true (should generate timestamp)
     await service.getPositions({
       chainId: '1',
       safeAddress: faker.finance.ethereumAddress() as Address,
       fiatCode: 'USD',
-      refresh: refreshValue,
+      refresh: true,
     });
 
     expect(positionsRepoMock.getPositions).toHaveBeenCalledWith(
       expect.objectContaining({
-        refresh: refreshValue,
+        refresh: expect.stringMatching(/^\d+$/), // Expect timestamp string
       }),
     );
 
-    // Test with different refresh string value
-    const refreshValue2 = 'different-value';
+    // Test with refresh=false (should generate empty string)
     await service.getPositions({
       chainId: '1',
       safeAddress: faker.finance.ethereumAddress() as Address,
       fiatCode: 'USD',
-      refresh: refreshValue2,
+      refresh: false,
     });
 
     expect(positionsRepoMock.getPositions).toHaveBeenCalledWith(
       expect.objectContaining({
-        refresh: refreshValue2,
+        refresh: '', // Expect empty string
       }),
     );
 
-    // Test without refresh parameter (should be undefined)
+    // Test without refresh parameter (should generate empty string)
     await service.getPositions({
       chainId: '1',
       safeAddress: faker.finance.ethereumAddress() as Address,
@@ -355,8 +353,8 @@ describe('PositionsService', () => {
     });
 
     expect(positionsRepoMock.getPositions).toHaveBeenCalledWith(
-      expect.not.objectContaining({
-        refresh: expect.anything(),
+      expect.objectContaining({
+        refresh: '', // Expect empty string when refresh is undefined
       }),
     );
   });

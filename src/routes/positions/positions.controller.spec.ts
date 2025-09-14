@@ -164,7 +164,7 @@ describe('Positions Controller', () => {
       });
     });
 
-    it('calls service with refresh string when refresh query parameter is provided', async () => {
+    it('calls service with timestamp when refresh query parameter is true', async () => {
       const chain = chainBuilder().build();
       chainsRepository.getChain.mockResolvedValue(chain);
 
@@ -192,10 +192,9 @@ describe('Positions Controller', () => {
 
       positionsRepository.getPositions.mockResolvedValue(domainPositions);
 
-      const refreshValue = 'cache-bust-123';
       await request(app.getHttpServer())
         .get(
-          `/v1/chains/${chain.chainId}/safes/${safeAddress}/positions/${fiatCode}?refresh=${refreshValue}`,
+          `/v1/chains/${chain.chainId}/safes/${safeAddress}/positions/${fiatCode}?refresh=true`,
         )
         .expect(200);
 
@@ -204,7 +203,50 @@ describe('Positions Controller', () => {
         chainId: chain.chainId,
         safeAddress,
         fiatCode,
-        refresh: refreshValue,
+        refresh: expect.stringMatching(/^\d+$/), // Expect a timestamp string
+      });
+    });
+
+    it('calls service with empty string when refresh query parameter is false', async () => {
+      const chain = chainBuilder().build();
+      chainsRepository.getChain.mockResolvedValue(chain);
+
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const fiatCode = faker.finance.currencyCode();
+
+      const applicationMetadata = zerionApplicationMetadataBuilder().build();
+      const depositToken = balanceTokenBuilder().build();
+      const depositTokenAddress = getAddress(faker.finance.ethereumAddress());
+
+      const domainPositions = [
+        positionBuilder()
+          .with('protocol', 'aave')
+          .with('name', 'Aave V3')
+          .with('position_type', PositionType.deposit)
+          .with('tokenAddress', depositTokenAddress)
+          .with('token', depositToken)
+          .with('balance', '2')
+          .with('fiatBalance', '50')
+          .with('fiatConversion', '25')
+          .with('fiatBalance24hChange', '1')
+          .with('application_metadata', applicationMetadata)
+          .build(),
+      ];
+
+      positionsRepository.getPositions.mockResolvedValue(domainPositions);
+
+      await request(app.getHttpServer())
+        .get(
+          `/v1/chains/${chain.chainId}/safes/${safeAddress}/positions/${fiatCode}?refresh=false`,
+        )
+        .expect(200);
+
+      expect(positionsRepository.getPositions).toHaveBeenCalledWith({
+        chain,
+        chainId: chain.chainId,
+        safeAddress,
+        fiatCode,
+        refresh: '', // Expect empty string when refresh is false
       });
     });
   });

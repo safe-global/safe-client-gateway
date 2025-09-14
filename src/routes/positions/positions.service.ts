@@ -33,13 +33,16 @@ export class PositionsService {
     chainId: string;
     safeAddress: Address;
     fiatCode: string;
-    refresh?: string;
+    refresh?: boolean;
   }): Promise<Array<Protocol>> {
-    const { chainId } = args;
+    const { chainId, refresh } = args;
     const chain = await this.chainsRepository.getChain(chainId);
+    // Convert boolean refresh to timestamp string for cache busting
+    const refreshKey = refresh ? Date.now().toString() : '';
     const domainPositions = await this.positionsRepository.getPositions({
       ...args,
       chain,
+      refresh: refreshKey,
     });
     const positions = domainPositions.map((position) =>
       this._mapPosition(position, chain.nativeCurrency),
