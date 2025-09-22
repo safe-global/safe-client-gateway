@@ -368,4 +368,27 @@ describe('PositionsService', () => {
       }),
     );
   });
+
+  it('handles positions with null fiatBalance24hChange when changes data is null', async () => {
+    const position = positionBuilder()
+      .with('protocol', 'TestProtocol')
+      .with('name', 'TestToken')
+      .with('position_type', PositionType.deposit)
+      .with('balance', '100')
+      .with('fiatBalance', '100')
+      .with('fiatBalance24hChange', null)
+      .build();
+
+    positionsRepoMock.getPositions.mockResolvedValue([position]);
+
+    const [protocol] = await service.getPositions({
+      chainId: '1',
+      safeAddress: faker.finance.ethereumAddress() as Address,
+      fiatCode: 'USD',
+    });
+
+    expect(protocol.protocol).toBe('TestProtocol');
+    const item = protocol.items[0].items[0];
+    expect(item.fiatBalance24hChange).toBeNull();
+  });
 });

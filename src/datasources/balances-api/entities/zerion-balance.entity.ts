@@ -89,7 +89,7 @@ export const ZerionAttributesSchema = z.object({
   flags: ZerionFlagsSchema,
   protocol: z.string().nullish().default(null),
   application_metadata: ZerionApplicationMetadataSchema,
-  changes: ZerionBalanceChangeSchema,
+  changes: ZerionBalanceChangeSchema.nullish().default(null),
   position_type: PositionTypeSchema.catch(PositionType.unknown),
 });
 

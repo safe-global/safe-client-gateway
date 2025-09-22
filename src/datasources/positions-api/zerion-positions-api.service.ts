@@ -171,7 +171,7 @@ export class ZerionPositionsApi implements IPositionsApi {
             ? this._mapNativeBalance(zb.attributes)
             : this._mapErc20Balance(zb.attributes, implementation.address)),
           fiatBalance,
-          fiatBalance24hChange: zb.attributes.changes.percent_1d?.toString(),
+          fiatBalance24hChange: zb.attributes.changes?.percent_1d?.toString() ?? null,
           fiatConversion,
           protocol: zb.attributes.protocol,
           name: zb.attributes.name,
