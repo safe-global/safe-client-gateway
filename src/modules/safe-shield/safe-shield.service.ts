@@ -71,14 +71,14 @@ export class SafeShieldService {
    *
    * @param args - Analysis parameters
    * @param args.chainId - The chain ID
-  //TODO  * @param args.safeAddress - The Safe address
+   * @param args.safeAddress - The Safe address
    * @param args.to - The transaction contract address
    * @param args.data - The transaction data (may contain multiSend)
    * @returns Map of contract addresses to their analysis results
    */
   async analyzeContracts(args: {
     chainId: string;
-    // safeAddress: Address;
+    safeAddress: Address;
     to: Address;
     data: Hex;
   }): Promise<ContractAnalysisResponse> {
@@ -90,6 +90,7 @@ export class SafeShieldService {
 
     return this.contractAnalysisService.analyze({
       chainId: args.chainId,
+      safeAddress: args.safeAddress,
       transactions,
     });
   }
