@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ContractAnalysisService } from './contract-analysis.service';
+import { DataDecodedApiModule } from '@/datasources/data-decoder-api/data-decoder-api.module';
 
 /**
  * Module for contract analysis functionality.
@@ -8,6 +9,7 @@ import { ContractAnalysisService } from './contract-analysis.service';
  * including verification status checks, interaction history, and delegatecall detection.
  */
 @Module({
+  imports: [DataDecodedApiModule],
   providers: [ContractAnalysisService],
   exports: [ContractAnalysisService],
 })

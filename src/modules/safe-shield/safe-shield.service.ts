@@ -7,7 +7,10 @@ import { DataDecodedService } from '@/routes/data-decode/data-decoded.service';
 import { TransactionDataDto } from '@/routes/common/entities/transaction-data.dto.entity';
 import type { DataDecoded } from '@/routes/data-decode/entities/data-decoded.entity';
 import { type Address, type Hex } from 'viem';
-import type { RecipientAnalysisResponse } from './entities/analysis-responses.entity';
+import type {
+  ContractAnalysisResponse,
+  RecipientAnalysisResponse,
+} from './entities/analysis-responses.entity';
 import type {
   DecodedTransactionData,
   TransactionData,
@@ -59,6 +62,34 @@ export class SafeShieldService {
     return this.recipientAnalysisService.analyze({
       chainId: args.chainId,
       safeAddress: args.safeAddress,
+      transactions,
+    });
+  }
+
+  /**
+   * Analyzes contracts in a transaction, including inner calls if it's a multiSend.
+   *
+   * @param args - Analysis parameters
+   * @param args.chainId - The chain ID
+  //TODO  * @param args.safeAddress - The Safe address
+   * @param args.to - The transaction contract address
+   * @param args.data - The transaction data (may contain multiSend)
+   * @returns Map of contract addresses to their analysis results
+   */
+  async analyzeContracts(args: {
+    chainId: string;
+    // safeAddress: Address;
+    to: Address;
+    data: Hex;
+  }): Promise<ContractAnalysisResponse> {
+    const transactions = await this.extractTransactions(
+      args.chainId,
+      args.to,
+      args.data,
+    );
+
+    return this.contractAnalysisService.analyze({
+      chainId: args.chainId,
       transactions,
     });
   }
