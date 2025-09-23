@@ -12,6 +12,7 @@ export interface IPositionsRepository {
     chain: Chain;
     safeAddress: Address;
     fiatCode: string;
+    refresh?: string;
   }): Promise<Array<Position>>;
 
   clearPositions(args: {
