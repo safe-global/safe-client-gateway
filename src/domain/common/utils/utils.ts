@@ -2,9 +2,14 @@ import { createHash } from 'crypto';
 import type { BinaryLike } from 'crypto';
 import type { Address } from 'viem';
 
-// We use a reasonable maximum value for fraction digits
+// We use the maximum value in order to preserve all decimals
 // @see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl/NumberFormat/NumberFormat#maximumfractiondigits
-const MAX_MAXIMUM_FRACTION_DIGITS = 20;
+// Node.js v20 supports max 20, v22+ supports max 100
+const MAX_MAXIMUM_FRACTION_DIGITS = (() => {
+  const nodeVersion = process.versions.node;
+  const majorVersion = parseInt(nodeVersion.split('.')[0], 10);
+  return majorVersion >= 22 ? 100 : 20;
+})();
 
 const formatter = new Intl.NumberFormat('en-US', {
   // Prevent scientific notation
