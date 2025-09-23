@@ -72,7 +72,10 @@ export function zerionAttributesBuilder(): IBuilder<ZerionAttributes> {
     .with('flags', zerionFlagsBuilder().build())
     .with('application_metadata', zerionApplicationMetadataBuilder().build())
     .with('protocol', faker.string.sample())
-    .with('changes', faker.datatype.boolean() ? zerionChangesBuilder().build() : null)
+    .with(
+      'changes',
+      faker.datatype.boolean() ? zerionChangesBuilder().build() : null,
+    )
     .with('position_type', faker.helpers.arrayElement(PositionTypes));
 }
 
