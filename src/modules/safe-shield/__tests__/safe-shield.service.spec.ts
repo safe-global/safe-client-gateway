@@ -4,6 +4,7 @@ import type { ContractAnalysisService } from '../contract-analysis/contract-anal
 import type { ThreatAnalysisService } from '../threat-analysis/threat-analysis.service';
 import type { MultiSendDecoder } from '@/domain/contracts/decoders/multi-send-decoder.helper';
 import type { DataDecodedService } from '@/routes/data-decode/data-decoded.service';
+import type { ILoggingService } from '@/logging/logging.interface';
 import type { DataDecoded } from '@/routes/data-decode/entities/data-decoded.entity';
 import type {
   DecodedTransactionData,
@@ -15,6 +16,13 @@ import { getAddress, type Hex } from 'viem';
 import { recipientAnalysisResponseBuilder } from '../entities/__tests__/builders/analysis-responses.builder';
 import { dataDecodedBuilder } from '@/domain/data-decoder/v2/entities/__tests__/data-decoded.builder';
 import { recipientAnalysisResultBuilder } from '@/modules/safe-shield/entities/__tests__/builders/analysis-result.builder';
+
+// Utility function for generating Wei values
+const generateRandomWeiAmount = (): bigint =>
+  faker.number.bigInt({
+    min: BigInt('1000000000000000000'),
+    max: BigInt('9999999999999999999'),
+  });
 
 describe('SafeShieldService', () => {
   const mockRecipientAnalysisService = {
@@ -34,15 +42,23 @@ describe('SafeShieldService', () => {
     getDataDecoded: jest.fn(),
   } as unknown as jest.Mocked<DataDecodedService>;
 
+  const mockLoggingService = {
+    debug: jest.fn(),
+    info: jest.fn(),
+    warn: jest.fn(),
+    error: jest.fn(),
+  } as unknown as jest.Mocked<ILoggingService>;
+
   const service = new SafeShieldService(
     mockRecipientAnalysisService,
     mockContractAnalysisService,
     mockThreatAnalysisService,
     mockMultiSendDecoder,
     mockDataDecodedService,
+    mockLoggingService,
   );
 
-  const mockChainId = '1';
+  const mockChainId = faker.number.int({ min: 1, max: 999999 }).toString();
   const mockSafeAddress = getAddress(faker.finance.ethereumAddress());
   const mockRecipientAddress = getAddress(faker.finance.ethereumAddress());
   const mockData = faker.string.hexadecimal({ length: 128 }) as Hex;
@@ -71,7 +87,7 @@ describe('SafeShieldService', () => {
       {
         name: 'value',
         type: 'uint256',
-        value: '1000000000000000000',
+        value: generateRandomWeiAmount().toString(),
         valueDecoded: null,
       },
     ])
@@ -124,18 +140,18 @@ describe('SafeShieldService', () => {
 
     it('should analyze recipient for a multiSend transaction', async () => {
       const multiSendData: Hex =
-        '0x8d80ff0a000000000000000000000000000000000000000000000000000000000000002000000000';
+        `0x8d80ff0a${faker.string.hexadecimal({ length: 128, casing: 'lower', prefix: '' })}` as Hex;
       const innerTransactions: Array<TransactionData> = [
         {
           operation: 0,
           to: mockRecipientAddress,
-          value: BigInt(1000000000000000000),
+          value: generateRandomWeiAmount(),
           data: faker.string.hexadecimal() as Hex,
         },
         {
           operation: 0,
           to: getAddress(faker.finance.ethereumAddress()),
-          value: BigInt(2000000000000000000),
+          value: generateRandomWeiAmount(),
           data: '0x',
         },
       ];
@@ -188,7 +204,7 @@ describe('SafeShieldService', () => {
 
     it('should handle multiSend decoding failure gracefully', async () => {
       const multiSendData: Hex =
-        '0x8d80ff0a000000000000000000000000000000000000000000000000000000000000002000000000';
+        `0x8d80ff0a${faker.string.hexadecimal({ length: 128, casing: 'lower', prefix: '' })}` as Hex;
 
       (mockMultiSendDecoder.helpers.isMultiSend as jest.Mock).mockReturnValue(
         true,
@@ -257,6 +273,134 @@ describe('SafeShieldService', () => {
         ],
       });
     });
+
+    it('should handle data decoding failure gracefully', async () => {
+      const error = new Error('Data decoding failed');
+      (mockMultiSendDecoder.helpers.isMultiSend as jest.Mock).mockReturnValue(
+        false,
+      );
+      (mockDataDecodedService.getDataDecoded as jest.Mock).mockRejectedValue(
+        error,
+      );
+      (mockRecipientAnalysisService.analyze as jest.Mock).mockResolvedValue(
+        mockRecipientAnalysisResponse,
+      );
+
+      const result = await service.analyzeRecipient({
+        chainId: mockChainId,
+        safeAddress: mockSafeAddress,
+        to: mockRecipientAddress,
+        data: mockData,
+      });
+
+      expect(result).toEqual(mockRecipientAnalysisResponse);
+      expect(mockLoggingService.warn).toHaveBeenCalledWith(
+        `Failed to decode transaction data: ${error}`,
+      );
+      expect(mockRecipientAnalysisService.analyze).toHaveBeenCalledWith({
+        chainId: mockChainId,
+        safeAddress: mockSafeAddress,
+        transactions: [
+          expect.objectContaining({
+            to: mockRecipientAddress,
+            data: mockData,
+            dataDecoded: null,
+          }),
+        ],
+      });
+    });
+
+    it('should handle recipient analysis service failure', async () => {
+      const error = new Error('Recipient analysis failed');
+      (mockMultiSendDecoder.helpers.isMultiSend as jest.Mock).mockReturnValue(
+        false,
+      );
+      (mockDataDecodedService.getDataDecoded as jest.Mock).mockResolvedValue(
+        mockDataDecoded,
+      );
+      (mockRecipientAnalysisService.analyze as jest.Mock).mockRejectedValue(
+        error,
+      );
+
+      await expect(
+        service.analyzeRecipient({
+          chainId: mockChainId,
+          safeAddress: mockSafeAddress,
+          to: mockRecipientAddress,
+          data: mockData,
+        }),
+      ).rejects.toThrow('Recipient analysis failed');
+    });
+
+    it('should handle complex multiSend with mixed transaction types', async () => {
+      const multiSendData: Hex =
+        `0x8d80ff0a${faker.string.hexadecimal({ length: 128, casing: 'lower', prefix: '' })}` as Hex;
+      const innerTransactions: Array<TransactionData> = [
+        {
+          operation: 0,
+          to: mockRecipientAddress,
+          value: generateRandomWeiAmount(),
+          data: faker.string.hexadecimal() as Hex,
+        },
+        {
+          operation: 1, // Different operation type
+          to: getAddress(faker.finance.ethereumAddress()),
+          value: BigInt(0),
+          data: '0x',
+        },
+        {
+          operation: 0,
+          to: getAddress(faker.finance.ethereumAddress()),
+          value: generateRandomWeiAmount(),
+          data: faker.string.hexadecimal() as Hex,
+        },
+      ];
+
+      (mockMultiSendDecoder.helpers.isMultiSend as jest.Mock).mockReturnValue(
+        true,
+      );
+      (
+        mockMultiSendDecoder.mapMultiSendTransactions as jest.Mock
+      ).mockReturnValue(innerTransactions);
+      (mockDataDecodedService.getDataDecoded as jest.Mock)
+        .mockResolvedValueOnce(mockDataDecoded)
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce(mockDataDecoded);
+      (mockRecipientAnalysisService.analyze as jest.Mock).mockResolvedValue(
+        mockRecipientAnalysisResponse,
+      );
+
+      const result = await service.analyzeRecipient({
+        chainId: mockChainId,
+        safeAddress: mockSafeAddress,
+        to: mockRecipientAddress,
+        data: multiSendData,
+      });
+
+      expect(result).toEqual(mockRecipientAnalysisResponse);
+      expect(mockDataDecodedService.getDataDecoded).toHaveBeenCalledTimes(2); // Only 2 calls because one has '0x' data
+      expect(mockRecipientAnalysisService.analyze).toHaveBeenCalledWith({
+        chainId: mockChainId,
+        safeAddress: mockSafeAddress,
+        transactions: expect.arrayContaining([
+          expect.objectContaining({
+            operation: 0,
+            to: innerTransactions[0].to,
+            value: innerTransactions[0].value,
+          }),
+          expect.objectContaining({
+            operation: 1,
+            to: innerTransactions[1].to,
+            value: innerTransactions[1].value,
+          }),
+          expect.objectContaining({
+            operation: 0,
+            to: innerTransactions[2].to,
+            value: innerTransactions[2].value,
+          }),
+        ]),
+      });
+    });
   });
 
   describe('extractTransactions', () => {
@@ -286,12 +430,12 @@ describe('SafeShieldService', () => {
 
     it('should extract multiple transactions for multiSend', async () => {
       const multiSendData: Hex =
-        '0x8d80ff0a000000000000000000000000000000000000000000000000000000000000002000000000';
+        `0x8d80ff0a${faker.string.hexadecimal({ length: 128, casing: 'lower', prefix: '' })}` as Hex;
       const innerTransactions: Array<TransactionData> = [
         {
           operation: 0,
           to: mockRecipientAddress,
-          value: BigInt(1000000000000000000),
+          value: generateRandomWeiAmount(),
           data: mockData,
         },
         {
@@ -335,37 +479,123 @@ describe('SafeShieldService', () => {
       });
     });
 
-    it('should handle custom operation and value parameters', async () => {
-      const customOperation = 1;
-      const customValue = BigInt(5000000000000000000);
+    it.each([
+      ['custom operation with BigInt value', 1, generateRandomWeiAmount()],
+      [
+        'default operation with string value',
+        0,
+        generateRandomWeiAmount().toString(),
+      ],
+      ['delegate call operation with zero value', 1, BigInt(0)],
+    ])(
+      'should handle %s (operation: %d, value: %s)',
+      async (_, operation, value) => {
+        (mockMultiSendDecoder.helpers.isMultiSend as jest.Mock).mockReturnValue(
+          false,
+        );
+        (mockDataDecodedService.getDataDecoded as jest.Mock).mockResolvedValue(
+          mockDataDecoded,
+        );
+
+        const result = await service['extractTransactions'](
+          mockChainId,
+          mockRecipientAddress,
+          mockData,
+          operation,
+          value,
+        );
+
+        expect(result[0]).toEqual({
+          operation,
+          to: mockRecipientAddress,
+          value,
+          data: mockData,
+          dataDecoded: mockDataDecoded,
+        });
+      },
+    );
+
+    it('should handle multiSend extraction failure', async () => {
+      const multiSendData: Hex =
+        `0x8d80ff0a${faker.string.hexadecimal({ length: 128, casing: 'lower', prefix: '' })}` as Hex;
 
       (mockMultiSendDecoder.helpers.isMultiSend as jest.Mock).mockReturnValue(
-        false,
+        true,
       );
+      (
+        mockMultiSendDecoder.mapMultiSendTransactions as jest.Mock
+      ).mockImplementation(() => {
+        throw new Error('MultiSend extraction failed');
+      });
       (mockDataDecodedService.getDataDecoded as jest.Mock).mockResolvedValue(
-        mockDataDecoded,
+        null,
       );
 
       const result = await service['extractTransactions'](
         mockChainId,
         mockRecipientAddress,
-        mockData,
-        customOperation,
-        customValue,
+        multiSendData,
       );
 
+      // Should fall back to treating as single transaction
+      expect(result).toHaveLength(1);
       expect(result[0]).toEqual({
-        operation: customOperation,
+        operation: 0,
         to: mockRecipientAddress,
-        value: customValue,
-        data: mockData,
-        dataDecoded: mockDataDecoded,
+        value: BigInt(0),
+        data: multiSendData,
+        dataDecoded: null,
       });
+    });
+
+    it('should handle large multiSend with many transactions', async () => {
+      const multiSendData: Hex =
+        `0x8d80ff0a${faker.string.hexadecimal({ length: 128, casing: 'lower', prefix: '' })}` as Hex;
+
+      // Create 10 inner transactions
+      const innerTransactions: Array<TransactionData> = Array.from(
+        { length: 10 },
+        (_, i) => ({
+          operation: i % 2, // Alternate between 0 and 1
+          to: getAddress(faker.finance.ethereumAddress()),
+          value: BigInt(i * 1000000000000000000),
+          data: i % 3 === 0 ? '0x' : (faker.string.hexadecimal() as Hex),
+        }),
+      );
+
+      (mockMultiSendDecoder.helpers.isMultiSend as jest.Mock).mockReturnValue(
+        true,
+      );
+      (
+        mockMultiSendDecoder.mapMultiSendTransactions as jest.Mock
+      ).mockReturnValue(innerTransactions);
+
+      // Mock data decoding calls - only for non-empty data
+      const nonEmptyDataCount = innerTransactions.filter(
+        (tx) => tx.data !== '0x',
+      ).length;
+      for (let i = 0; i < nonEmptyDataCount; i++) {
+        (
+          mockDataDecodedService.getDataDecoded as jest.Mock
+        ).mockResolvedValueOnce(i % 2 === 0 ? mockDataDecoded : null);
+      }
+
+      const result = await service['extractTransactions'](
+        mockChainId,
+        mockRecipientAddress,
+        multiSendData,
+      );
+
+      expect(result).toHaveLength(10);
+      expect(mockDataDecodedService.getDataDecoded).toHaveBeenCalledTimes(
+        nonEmptyDataCount,
+      );
     });
   });
 
   describe('mapDecodedTransactions', () => {
     it('should handle execTransaction by extracting inner transaction', () => {
+      const expectedValue = generateRandomWeiAmount().toString();
       const execTransactionDecoded: DataDecoded = dataDecodedBuilder()
         .with('method', 'execTransaction')
         .with('parameters', [
@@ -378,7 +608,7 @@ describe('SafeShieldService', () => {
           {
             name: 'value',
             type: 'uint256',
-            value: '1000000000000000000',
+            value: expectedValue,
             valueDecoded: null,
           },
           {
@@ -395,7 +625,7 @@ describe('SafeShieldService', () => {
         operation: 0,
         to: getAddress(faker.finance.ethereumAddress()),
         value: '0',
-        data: '0xexecTransactionData',
+        data: faker.string.hexadecimal({ length: 32 }) as Hex,
         dataDecoded: execTransactionDecoded,
       };
 
@@ -405,31 +635,33 @@ describe('SafeShieldService', () => {
       expect(result[0]).toEqual({
         operation: 0,
         to: mockRecipientAddress,
-        value: '1000000000000000000',
+        value: expectedValue,
         data: mockData,
         dataDecoded: mockDataDecoded,
       });
     });
 
     it('should handle multiSend by extracting all inner transactions', () => {
+      const expectedValue = generateRandomWeiAmount().toString();
+      const secondRecipient = getAddress(faker.finance.ethereumAddress());
       const multiSendDecoded: DataDecoded = dataDecodedBuilder()
         .with('method', 'multiSend')
         .with('parameters', [
           {
             name: 'transactions',
             type: 'bytes',
-            value: '0x...',
+            value: faker.string.hexadecimal({ length: 32 }),
             valueDecoded: [
               {
                 operation: 0,
                 to: mockRecipientAddress,
-                value: '1000000000000000000',
+                value: expectedValue,
                 data: mockData,
                 dataDecoded: mockDataDecoded,
               },
               {
                 operation: 0,
-                to: getAddress(faker.finance.ethereumAddress()),
+                to: secondRecipient,
                 value: '0',
                 data: '0x',
                 dataDecoded: null,
@@ -444,7 +676,7 @@ describe('SafeShieldService', () => {
         operation: 0,
         to: getAddress(faker.finance.ethereumAddress()),
         value: '0',
-        data: '0x8d80ff0a000000000000000000000000000000000000000000000000000000000000002000000000',
+        data: `0x8d80ff0a${faker.string.hexadecimal({ length: 128, casing: 'lower', prefix: '' })}` as Hex,
         dataDecoded: multiSendDecoded,
       };
 
@@ -458,13 +690,13 @@ describe('SafeShieldService', () => {
       expect(result[0]).toEqual({
         operation: 0,
         to: mockRecipientAddress,
-        value: '1000000000000000000',
+        value: expectedValue,
         data: mockData,
         dataDecoded: mockDataDecoded,
       });
       expect(result[1]).toEqual({
         operation: 0,
-        to: expect.any(String),
+        to: secondRecipient,
         value: '0',
         data: '0x',
         dataDecoded: null,
@@ -475,7 +707,7 @@ describe('SafeShieldService', () => {
       const transaction: DecodedTransactionData = {
         operation: 0,
         to: mockRecipientAddress,
-        value: '1000000000000000000',
+        value: generateRandomWeiAmount().toString(),
         data: mockData,
         dataDecoded: mockDataDecoded,
       };
@@ -494,7 +726,7 @@ describe('SafeShieldService', () => {
       const transaction: DecodedTransactionData = {
         operation: 0,
         to: mockRecipientAddress,
-        value: '1000000000000000000',
+        value: generateRandomWeiAmount().toString(),
         data: '0x',
         dataDecoded: null,
       };
@@ -507,6 +739,163 @@ describe('SafeShieldService', () => {
 
       expect(result).toHaveLength(1);
       expect(result[0]).toEqual(transaction);
+    });
+
+    it('should handle execTransaction with missing parameters', () => {
+      const execTransactionDecoded: DataDecoded = dataDecodedBuilder()
+        .with('method', 'execTransaction')
+        .with('parameters', []) // Missing parameters
+        .with('accuracy', 'FULL_MATCH')
+        .build();
+
+      const transaction: DecodedTransactionData = {
+        operation: 0,
+        to: getAddress(faker.finance.ethereumAddress()),
+        value: '0',
+        data: faker.string.hexadecimal({ length: 32 }) as Hex,
+        dataDecoded: execTransactionDecoded,
+      };
+
+      // This should throw because it tries to access parameters[0], parameters[1], parameters[2]
+      expect(() => service['mapDecodedTransactions'](transaction)).toThrow();
+    });
+
+    it.each([
+      ['missing valueDecoded', null, 1],
+      ['non-array valueDecoded', { method: 'invalid', parameters: null, accuracy: 'UNKNOWN' }, 1],
+    ])('should handle multiSend with %s', (_, valueDecoded, expectedLength) => {
+      const multiSendDecoded: DataDecoded = dataDecodedBuilder()
+        .with('method', 'multiSend')
+        .with('parameters', [
+          {
+            name: 'transactions',
+            type: 'bytes',
+            value: faker.string.hexadecimal({ length: 32 }),
+            valueDecoded,
+          },
+        ])
+        .with('accuracy', 'FULL_MATCH')
+        .build();
+
+      const transaction: DecodedTransactionData = {
+        operation: 0,
+        to: getAddress(faker.finance.ethereumAddress()),
+        value: '0',
+        data: `0x8d80ff0a${faker.string.hexadecimal({ length: 128, casing: 'lower', prefix: '' })}` as Hex,
+        dataDecoded: multiSendDecoded,
+      };
+
+      (mockMultiSendDecoder.helpers.isMultiSend as jest.Mock).mockReturnValue(
+        true,
+      );
+
+      const result = service['mapDecodedTransactions'](transaction);
+
+      // Should return transaction as-is since valueDecoded is invalid
+      expect(result).toHaveLength(expectedLength);
+      expect(result[0]).toEqual(transaction);
+    });
+
+    it('should handle multiSend with empty array valueDecoded', () => {
+      const multiSendDecoded: DataDecoded = dataDecodedBuilder()
+        .with('method', 'multiSend')
+        .with('parameters', [
+          {
+            name: 'transactions',
+            type: 'bytes',
+            value: faker.string.hexadecimal({ length: 32 }),
+            valueDecoded: [], // Empty array - valid but contains no transactions
+          },
+        ])
+        .with('accuracy', 'FULL_MATCH')
+        .build();
+
+      const transaction: DecodedTransactionData = {
+        operation: 0,
+        to: getAddress(faker.finance.ethereumAddress()),
+        value: '0',
+        data: `0x8d80ff0a${faker.string.hexadecimal({ length: 128, casing: 'lower', prefix: '' })}` as Hex,
+        dataDecoded: multiSendDecoded,
+      };
+
+      (mockMultiSendDecoder.helpers.isMultiSend as jest.Mock).mockReturnValue(
+        true,
+      );
+
+      const result = service['mapDecodedTransactions'](transaction);
+
+      // Should return empty array since there are no inner transactions
+      expect(result).toHaveLength(0);
+    });
+
+    it('should handle nested execTransaction within multiSend', () => {
+      const nestedExecTransaction = {
+        operation: 0,
+        to: mockRecipientAddress,
+        value: generateRandomWeiAmount().toString(),
+        data: '0x' as Hex,
+        dataDecoded: {
+          method: 'execTransaction',
+          parameters: [
+            {
+              name: 'to',
+              type: 'address',
+              value: getAddress(faker.finance.ethereumAddress()),
+              valueDecoded: null,
+            },
+            {
+              name: 'value',
+              type: 'uint256',
+              value: generateRandomWeiAmount().toString(),
+              valueDecoded: null,
+            },
+            {
+              name: 'data',
+              type: 'bytes',
+              value: '0x',
+              valueDecoded: null,
+            },
+          ],
+          accuracy: 'FULL_MATCH',
+        },
+      };
+
+      const multiSendDecoded: DataDecoded = dataDecodedBuilder()
+        .with('method', 'multiSend')
+        .with('parameters', [
+          {
+            name: 'transactions',
+            type: 'bytes',
+            value: faker.string.hexadecimal({ length: 32 }),
+            valueDecoded: [nestedExecTransaction],
+          },
+        ])
+        .with('accuracy', 'FULL_MATCH')
+        .build();
+
+      const transaction: DecodedTransactionData = {
+        operation: 0,
+        to: getAddress(faker.finance.ethereumAddress()),
+        value: '0',
+        data: `0x8d80ff0a${faker.string.hexadecimal({ length: 128, casing: 'lower', prefix: '' })}` as Hex,
+        dataDecoded: multiSendDecoded,
+      };
+
+      (mockMultiSendDecoder.helpers.isMultiSend as jest.Mock).mockReturnValue(
+        true,
+      );
+
+      const result = service['mapDecodedTransactions'](transaction);
+
+      // Should extract the inner execTransaction
+      expect(result).toHaveLength(1);
+      expect(result[0]).toEqual({
+        operation: 0,
+        to: nestedExecTransaction.dataDecoded.parameters[0].value,
+        value: nestedExecTransaction.dataDecoded.parameters[1].value,
+        data: '0x',
+        dataDecoded: null,
+      });
     });
   });
 
@@ -538,8 +927,6 @@ describe('SafeShieldService', () => {
         error,
       );
 
-      const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
-
       const result = await service['decodeTransactionData'](
         mockChainId,
         mockRecipientAddress,
@@ -547,12 +934,9 @@ describe('SafeShieldService', () => {
       );
 
       expect(result).toBeNull();
-      expect(consoleSpy).toHaveBeenCalledWith(
-        'Failed to decode transaction data:',
-        error,
+      expect(mockLoggingService.warn).toHaveBeenCalledWith(
+        `Failed to decode transaction data: ${error}`,
       );
-
-      consoleSpy.mockRestore();
     });
 
     it('should create TransactionDataDto with correct parameters', async () => {
@@ -570,6 +954,90 @@ describe('SafeShieldService', () => {
         chainId: mockChainId,
         getDataDecodedDto: expect.objectContaining({
           data: mockData,
+          to: mockRecipientAddress,
+        }),
+      });
+    });
+
+    it.each([
+      ['Error object', new Error('Network timeout')],
+      ['TypeError object', new TypeError('Invalid address format')],
+      ['RangeError object', new RangeError('Invalid data length')],
+      ['Custom error object', { message: 'Custom error object' }],
+      ['String error', 'String error'],
+      ['null error', null],
+      ['undefined error', undefined],
+    ])('should handle %s gracefully', async (_, error) => {
+      (mockDataDecodedService.getDataDecoded as jest.Mock).mockRejectedValue(
+        error,
+      );
+
+      const result = await service['decodeTransactionData'](
+        mockChainId,
+        mockRecipientAddress,
+        mockData,
+      );
+
+      expect(result).toBeNull();
+      expect(mockLoggingService.warn).toHaveBeenCalledWith(
+        // eslint-disable-next-line @typescript-eslint/no-base-to-string
+        `Failed to decode transaction data: ${error}`,
+      );
+    });
+
+    it.each([
+      ['Ethereum mainnet', '1'],
+      ['Polygon mainnet', '137'],
+      ['Arbitrum One', '42161'],
+    ])(
+      'should handle %s (chainId: %s) and different addresses',
+      async (_, chainId) => {
+        const address = getAddress(faker.finance.ethereumAddress());
+        (mockDataDecodedService.getDataDecoded as jest.Mock).mockResolvedValue(
+          mockDataDecoded,
+        );
+
+        const result = await service['decodeTransactionData'](
+          chainId,
+          address,
+          mockData,
+        );
+
+        expect(result).toEqual(mockDataDecoded);
+        expect(mockDataDecodedService.getDataDecoded).toHaveBeenCalledWith({
+          chainId,
+          getDataDecodedDto: expect.objectContaining({
+            data: mockData,
+            to: address,
+          }),
+        });
+      },
+    );
+
+    it.each([
+      ['empty data', '0x' as Hex],
+      ['single byte', '0x00' as Hex],
+      ['ERC-20 transfer', '0xa9059cbb' as Hex],
+      ['ERC-20 transferFrom', '0x23b872dd' as Hex],
+      ['ERC-20 approve', '0x095ea7b3' as Hex],
+      ['short hex data', faker.string.hexadecimal({ length: 8 }) as Hex],
+      ['long hex data', faker.string.hexadecimal({ length: 256 }) as Hex],
+    ])('should handle %s (%s)', async (_, data) => {
+      (mockDataDecodedService.getDataDecoded as jest.Mock).mockResolvedValue(
+        mockDataDecoded,
+      );
+
+      const result = await service['decodeTransactionData'](
+        mockChainId,
+        mockRecipientAddress,
+        data,
+      );
+
+      expect(result).toEqual(mockDataDecoded);
+      expect(mockDataDecodedService.getDataDecoded).toHaveBeenCalledWith({
+        chainId: mockChainId,
+        getDataDecodedDto: expect.objectContaining({
+          data,
           to: mockRecipientAddress,
         }),
       });
