@@ -8,7 +8,7 @@ import type { BridgeStatus } from '@/modules/safe-shield/entities/bridge-status.
  */
 export const SEVERITY_MAPPING: Record<
   RecipientStatus | BridgeStatus,
-  Severity
+  keyof typeof Severity
 > = {
   NEW_RECIPIENT: 'INFO',
   KNOWN_RECIPIENT: 'OK',
