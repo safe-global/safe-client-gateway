@@ -21,7 +21,7 @@ import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { LogType } from '@/domain/common/entities/log-type.entity';
 import { Inject, Injectable } from '@nestjs/common';
 import { uniq } from 'lodash';
-import { Address } from 'viem';
+import { Address, getAddress } from 'viem';
 import { Operation } from '@/domain/safe/entities/operation.entity';
 
 /**
@@ -160,11 +160,29 @@ export class ContractAnalysisService {
     operation,
   }: DecodedTransactionData): Address | undefined {
     //TODO implement
-    if ((operation as Operation) === Operation.DELEGATE) return to;
     // Native transfer
     if (data === '0x' || !dataDecoded) {
       return undefined;
     }
+    if ((operation as Operation) === Operation.DELEGATE) return getAddress(to);
+
+    // // ExecTransaction with no data is a transfer
+    // if (
+    //   dataDecoded?.method === 'execTransaction' &&
+    //   dataDecoded?.parameters?.[2].value === '0x'
+    // ) {
+    //   return getAddress(dataDecoded?.parameters?.[0].value as string);
+    // }
+
+    // // ERC-20 transfer
+    // if (this.erc20Decoder.helpers.isTransfer(data)) {
+    //   return getAddress(dataDecoded?.parameters?.[0].value as string);
+    // }
+
+    // // ERC-20 transferFrom
+    // if (this.erc20Decoder.helpers.isTransferFrom(data)) {
+    //   return getAddress(dataDecoded?.parameters?.[1].value as string);
+    // }
   }
 
   private logCacheHit(cacheDir: CacheDir): void {
