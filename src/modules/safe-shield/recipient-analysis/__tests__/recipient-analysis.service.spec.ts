@@ -1,4 +1,5 @@
-import { Test, TestingModule } from '@nestjs/testing';
+import type { TestingModule } from '@nestjs/testing';
+import { Test } from '@nestjs/testing';
 import { RecipientAnalysisService } from '../recipient-analysis.service';
 import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
 import { Erc20Decoder } from '@/domain/relay/contracts/decoders/erc-20-decoder.helper';
@@ -11,9 +12,9 @@ import { getAddress } from 'viem';
 
 describe('RecipientAnalysisService', () => {
   let service: RecipientAnalysisService;
-  let mockTransactionApiManager: jest.Mocked<ITransactionApiManager>;
-  let mockTransactionApi: jest.Mocked<ITransactionApi>;
-  let mockErc20Decoder: jest.Mocked<Erc20Decoder>;
+  let mockTransactionApiManager: jest.Mocked<Pick<ITransactionApiManager, 'getApi'>>;
+  let mockTransactionApi: jest.Mocked<Pick<ITransactionApi, 'getTransfers'>>;
+  let mockErc20Decoder: Pick<Erc20Decoder, 'helpers'>;
 
   const mockChainId = '1';
   const mockSafeAddress = getAddress(faker.finance.ethereumAddress());
@@ -21,18 +22,20 @@ describe('RecipientAnalysisService', () => {
 
   beforeEach(async () => {
     // Create properly typed mocks
-    mockTransactionApi = { getTransfers: jest.fn() } as any;
+    mockTransactionApi = { 
+      getTransfers: jest.fn() 
+    } as jest.Mocked<Pick<ITransactionApi, 'getTransfers'>>;
 
     mockTransactionApiManager = {
       getApi: jest.fn().mockResolvedValue(mockTransactionApi),
-    } as any;
+    } as jest.Mocked<Pick<ITransactionApiManager, 'getApi'>>;
 
     mockErc20Decoder = {
       helpers: {
         isTransfer: jest.fn(),
         isTransferFrom: jest.fn(),
-      },
-    } as any;
+      } as Pick<Erc20Decoder['helpers'], 'isTransfer' | 'isTransferFrom'>,
+    } as Pick<Erc20Decoder, 'helpers'>;
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -67,7 +70,7 @@ describe('RecipientAnalysisService', () => {
       const recipient1 = getAddress(faker.finance.ethereumAddress());
       const recipient2 = getAddress(faker.finance.ethereumAddress());
 
-      const transactions: DecodedTransactionData[] = [
+      const transactions: Array<DecodedTransactionData> = [
         {
           operation: 0,
           to: recipient1,
@@ -243,7 +246,7 @@ describe('RecipientAnalysisService', () => {
       const recipient1 = getAddress(faker.finance.ethereumAddress());
       const recipient2 = getAddress(faker.finance.ethereumAddress());
 
-      const transactions: DecodedTransactionData[] = [
+      const transactions: Array<DecodedTransactionData> = [
         {
           operation: 0,
           to: recipient1,
@@ -277,7 +280,7 @@ describe('RecipientAnalysisService', () => {
     it('should filter out undefined recipients', () => {
       const validRecipient = getAddress(faker.finance.ethereumAddress());
 
-      const transactions: DecodedTransactionData[] = [
+      const transactions: Array<DecodedTransactionData> = [
         {
           operation: 0,
           to: validRecipient,
@@ -293,7 +296,8 @@ describe('RecipientAnalysisService', () => {
           dataDecoded: {
             method: 'unknownMethod',
             parameters: [],
-          } as any,
+            accuracy: 'UNKNOWN',
+          },
         },
       ];
 
@@ -321,11 +325,12 @@ describe('RecipientAnalysisService', () => {
           dataDecoded: {
             method: 'execTransaction',
             parameters: [
-              { value: expectedRecipient },
-              { value: '1000000000000000000' },
-              { value: '0x' },
+              { name: 'to', type: 'address', value: expectedRecipient },
+              { name: 'value', type: 'uint256', value: '1000000000000000000' },
+              { name: 'data', type: 'bytes', value: '0x' },
             ],
-          } as any,
+            accuracy: 'FULL_MATCH',
+          },
         };
 
         const result = service['extractRecipient'](transaction);
@@ -346,10 +351,11 @@ describe('RecipientAnalysisService', () => {
           dataDecoded: {
             method: 'transfer',
             parameters: [
-              { value: expectedRecipient },
-              { value: '1000000000000000000' },
+              { name: 'to', type: 'address', value: expectedRecipient },
+              { name: 'value', type: 'uint256', value: '1000000000000000000' },
             ],
-          } as any,
+            accuracy: 'FULL_MATCH',
+          },
         };
 
         (mockErc20Decoder.helpers.isTransfer as jest.Mock).mockReturnValue(
@@ -375,11 +381,12 @@ describe('RecipientAnalysisService', () => {
           dataDecoded: {
             method: 'transferFrom',
             parameters: [
-              { value: sender },
-              { value: expectedRecipient },
-              { value: '1000000000000000000' },
+              { name: 'from', type: 'address', value: sender },
+              { name: 'to', type: 'address', value: expectedRecipient },
+              { name: 'value', type: 'uint256', value: '1000000000000000000' },
             ],
-          } as any,
+            accuracy: 'FULL_MATCH',
+          },
         };
 
         (mockErc20Decoder.helpers.isTransfer as jest.Mock).mockReturnValue(
@@ -453,7 +460,8 @@ describe('RecipientAnalysisService', () => {
           dataDecoded: {
             method: 'unknownMethod',
             parameters: [],
-          } as any,
+            accuracy: 'UNKNOWN',
+          },
         };
 
         (mockErc20Decoder.helpers.isTransfer as jest.Mock).mockReturnValue(
