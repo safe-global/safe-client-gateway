@@ -1,11 +1,9 @@
-import type { TestingModule } from '@nestjs/testing';
-import { Test } from '@nestjs/testing';
 import { SafeShieldService } from '../safe-shield.service';
-import { RecipientAnalysisService } from '../recipient-analysis/recipient-analysis.service';
-import { ContractAnalysisService } from '../contract-analysis/contract-analysis.service';
-import { ThreatAnalysisService } from '../threat-analysis/threat-analysis.service';
-import { MultiSendDecoder } from '@/domain/contracts/decoders/multi-send-decoder.helper';
-import { DataDecodedService } from '@/routes/data-decode/data-decoded.service';
+import type { RecipientAnalysisService } from '../recipient-analysis/recipient-analysis.service';
+import type { ContractAnalysisService } from '../contract-analysis/contract-analysis.service';
+import type { ThreatAnalysisService } from '../threat-analysis/threat-analysis.service';
+import type { MultiSendDecoder } from '@/domain/contracts/decoders/multi-send-decoder.helper';
+import type { DataDecodedService } from '@/routes/data-decode/data-decoded.service';
 import type { DataDecoded } from '@/routes/data-decode/entities/data-decoded.entity';
 import type {
   DecodedTransactionData,
@@ -19,77 +17,38 @@ import { dataDecodedBuilder } from '@/domain/data-decoder/v2/entities/__tests__/
 import { recipientAnalysisResultBuilder } from '@/modules/safe-shield/entities/__tests__/builders/analysis-result.builder';
 
 describe('SafeShieldService', () => {
-  let service: SafeShieldService;
-  let mockRecipientAnalysisService: jest.Mocked<
-    Pick<RecipientAnalysisService, 'analyze'>
-  >;
-  let mockContractAnalysisService: Record<string, never>;
-  let mockThreatAnalysisService: Record<string, never>;
-  let mockMultiSendDecoder: jest.Mocked<
-    Pick<MultiSendDecoder, 'helpers' | 'mapMultiSendTransactions'>
-  >;
-  let mockDataDecodedService: jest.Mocked<
-    Pick<DataDecodedService, 'getDataDecoded'>
-  >;
+  const mockRecipientAnalysisService = {
+    analyze: jest.fn(),
+  } as unknown as jest.Mocked<RecipientAnalysisService>;
+  const mockContractAnalysisService =
+    {} as unknown as jest.Mocked<ContractAnalysisService>;
+  const mockThreatAnalysisService =
+    {} as unknown as jest.Mocked<ThreatAnalysisService>;
+  const mockMultiSendDecoder = {
+    helpers: {
+      isMultiSend: jest.fn(),
+    },
+    mapMultiSendTransactions: jest.fn(),
+  } as unknown as jest.Mocked<MultiSendDecoder>;
+  const mockDataDecodedService = {
+    getDataDecoded: jest.fn(),
+  } as unknown as jest.Mocked<DataDecodedService>;
+
+  const service = new SafeShieldService(
+    mockRecipientAnalysisService,
+    mockContractAnalysisService,
+    mockThreatAnalysisService,
+    mockMultiSendDecoder,
+    mockDataDecodedService,
+  );
 
   const mockChainId = '1';
   const mockSafeAddress = getAddress(faker.finance.ethereumAddress());
   const mockRecipientAddress = getAddress(faker.finance.ethereumAddress());
   const mockData = faker.string.hexadecimal({ length: 128 }) as Hex;
 
-  beforeEach(async () => {
-    // Create properly typed mocks
-    mockRecipientAnalysisService = {
-      analyze: jest.fn(),
-    } as jest.Mocked<Pick<RecipientAnalysisService, 'analyze'>>;
-
-    mockContractAnalysisService = {} as Record<string, never>;
-    mockThreatAnalysisService = {} as Record<string, never>;
-
-    mockMultiSendDecoder = {
-      helpers: {
-        isMultiSend: jest.fn(),
-      },
-      mapMultiSendTransactions: jest.fn(),
-    } as jest.Mocked<
-      Pick<MultiSendDecoder, 'helpers' | 'mapMultiSendTransactions'>
-    >;
-
-    mockDataDecodedService = {
-      getDataDecoded: jest.fn(),
-    } as jest.Mocked<Pick<DataDecodedService, 'getDataDecoded'>>;
-
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        SafeShieldService,
-        {
-          provide: RecipientAnalysisService,
-          useValue: mockRecipientAnalysisService,
-        },
-        {
-          provide: ContractAnalysisService,
-          useValue: mockContractAnalysisService,
-        },
-        {
-          provide: ThreatAnalysisService,
-          useValue: mockThreatAnalysisService,
-        },
-        {
-          provide: MultiSendDecoder,
-          useValue: mockMultiSendDecoder,
-        },
-        {
-          provide: DataDecodedService,
-          useValue: mockDataDecodedService,
-        },
-      ],
-    }).compile();
-
-    service = module.get<SafeShieldService>(SafeShieldService);
-  });
-
-  afterEach(() => {
-    jest.clearAllMocks();
+  beforeEach(() => {
+    jest.resetAllMocks();
   });
 
   const mockRecipientAnalysisResponse: RecipientAnalysisResponse =
