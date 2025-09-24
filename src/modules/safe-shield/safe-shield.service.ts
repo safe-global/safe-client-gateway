@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { RecipientAnalysisService } from './recipient-analysis/recipient-analysis.service';
 import { ContractAnalysisService } from './contract-analysis/contract-analysis.service';
 import { ThreatAnalysisService } from './threat-analysis/threat-analysis.service';
@@ -12,6 +12,7 @@ import type {
   DecodedTransactionData,
   TransactionData,
 } from '@/modules/safe-shield/entities/transaction-data.entity';
+import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 
 /**
  * Main orchestration service for Safe Shield transaction analysis.
@@ -28,6 +29,8 @@ export class SafeShieldService {
     private readonly threatAnalysisService: ThreatAnalysisService,
     private readonly multiSendDecoder: MultiSendDecoder,
     private readonly dataDecodedService: DataDecodedService,
+    @Inject(LoggingService)
+    private readonly loggingService: ILoggingService,
   ) {}
 
   /**
@@ -84,7 +87,9 @@ export class SafeShieldService {
       try {
         rawTransactions = this.multiSendDecoder.mapMultiSendTransactions(data);
       } catch (error) {
-        console.warn('Failed to decode multiSend transaction:', error);
+        this.loggingService.warn(
+          `Failed to decode multiSend transaction: ${error}`,
+        );
       }
     }
 
@@ -169,7 +174,7 @@ export class SafeShieldService {
         getDataDecodedDto: new TransactionDataDto(data, to),
       });
     } catch (error) {
-      console.warn('Failed to decode transaction data:', error);
+      this.loggingService.warn(`Failed to decode transaction data: ${error}`);
       return null;
     }
   }
