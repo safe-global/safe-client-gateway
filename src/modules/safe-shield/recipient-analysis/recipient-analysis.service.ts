@@ -14,6 +14,7 @@ import type { RecipientStatusGroup } from '@/modules/safe-shield/entities/status
 import type { DecodedTransactionData } from '@/modules/safe-shield/entities/transaction-data.entity';
 import { Erc20Decoder } from '@/domain/relay/contracts/decoders/erc-20-decoder.helper';
 import { RecipientAnalysisResponse } from '@/modules/safe-shield/entities/analysis-responses.entity';
+import uniq from 'lodash/uniq';
 import {
   CacheService,
   ICacheService,

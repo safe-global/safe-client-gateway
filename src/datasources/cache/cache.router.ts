@@ -76,8 +76,8 @@ export class CacheRouter {
   private static readonly ZERION_POSITIONS_KEY = 'zerion_positions';
   private static readonly ORM_QUERY_CACHE_KEY = 'orm_query_cache';
   private static readonly TRANSACTIONS_EXPORT_KEY = 'transactions_export';
-  private static readonly CONTRACT_ANALYSIS_KEY = 'contract_analysis';
   private static readonly RECIPIENT_ANALYSIS_KEY = 'recipient_analysis';
+  private static readonly CONTRACT_ANALYSIS_KEY = 'contract_analysis';
 
   static getAuthNonceCacheKey(nonce: string): string {
     return `${CacheRouter.AUTH_NONCE_KEY}_${nonce}`;
@@ -870,25 +870,6 @@ export class CacheRouter {
   }
 
   /**
-   * Gets cache directory for contract analysis results.
-   *
-   * @param {string} args.chainId - Chain ID
-   * @param {Address[]} args.contracts - Array of contract addresses
-   * @returns {CacheDir} - Cache directory
-   */
-  static getContractAnalysisCacheDir(args: {
-    chainId: string;
-    contracts: Array<Address>;
-  }): CacheDir {
-    const contractsHash = crypto.createHash('sha256');
-    contractsHash.update(args.contracts.sort().join(','));
-    return new CacheDir(
-      `${args.chainId}_${CacheRouter.CONTRACT_ANALYSIS_KEY}`,
-      contractsHash.digest('hex'),
-    );
-  }
-
-  /**
    * Gets cache directory for recipient analysis results.
    *
    * @param {string} args.chainId - Chain ID
@@ -904,6 +885,25 @@ export class CacheRouter {
     return new CacheDir(
       `${args.chainId}_${CacheRouter.RECIPIENT_ANALYSIS_KEY}`,
       recipientsHash.digest('hex'),
+    );
+  }
+
+  /**
+   * Gets cache directory for contract analysis results.
+   *
+   * @param {string} args.chainId - Chain ID
+   * @param {Address[]} args.contracts - Array of contract addresses
+   * @returns {CacheDir} - Cache directory
+   */
+  static getContractAnalysisCacheDir(args: {
+    chainId: string;
+    contracts: Array<Address>;
+  }): CacheDir {
+    const contractsHash = crypto.createHash('sha256');
+    contractsHash.update(args.contracts.sort().join(','));
+    return new CacheDir(
+      `${args.chainId}_${CacheRouter.CONTRACT_ANALYSIS_KEY}`,
+      contractsHash.digest('hex'),
     );
   }
 }
