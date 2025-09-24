@@ -15,18 +15,39 @@ import type { DecodedTransactionData } from '@/modules/safe-shield/entities/tran
 import { Erc20Decoder } from '@/domain/relay/contracts/decoders/erc-20-decoder.helper';
 import { RecipientAnalysisResponse } from '@/modules/safe-shield/entities/analysis-responses.entity';
 import uniq from 'lodash/uniq';
+import {
+  CacheService,
+  ICacheService,
+} from '@/datasources/cache/cache.service.interface';
+import { CacheRouter } from '@/datasources/cache/cache.router';
+import { IConfigurationService } from '@/config/configuration.service.interface';
+import { LogType } from '@/domain/common/entities/log-type.entity';
+import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
+import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 
 /**
  * Service responsible for analyzing transaction recipients and bridge configurations.
  */
 @Injectable()
 export class RecipientAnalysisService {
+  private readonly defaultExpirationTimeInSeconds: number;
+
   constructor(
     @Inject(ITransactionApiManager)
     private readonly transactionApiManager: ITransactionApiManager,
     private readonly erc20Decoder: Erc20Decoder,
-  ) {}
-
+    @Inject(IConfigurationService)
+    private readonly configurationService: IConfigurationService,
+    @Inject(CacheService)
+    private readonly cacheService: ICacheService,
+    @Inject(LoggingService)
+    private readonly loggingService: ILoggingService,
+  ) {
+    this.defaultExpirationTimeInSeconds =
+      this.configurationService.getOrThrow<number>(
+        'expirationTimeInSeconds.default',
+      );
+  }
   async analyze(args: {
     chainId: string;
     safeAddress: Address;
@@ -34,9 +55,19 @@ export class RecipientAnalysisService {
   }): Promise<RecipientAnalysisResponse> {
     const recipients = this.extractRecipients(args.transactions);
 
-    const analysisResults: RecipientAnalysisResponse = {};
+    const cacheDir = CacheRouter.getRecipientAnalysisCacheDir({
+      chainId: args.chainId,
+      recipients,
+    });
 
-    // Analyze each unique recipient
+    const cached = await this.cacheService.hGet(cacheDir);
+    if (cached) {
+      this.logCacheHit(cacheDir);
+      return JSON.parse(cached) as RecipientAnalysisResponse;
+    }
+    this.logCacheMiss(cacheDir);
+
+    const analysisResults: RecipientAnalysisResponse = {};
     for (const recipient of recipients) {
       const result = await this.analyzeRecipient({
         chainId: args.chainId,
@@ -46,6 +77,12 @@ export class RecipientAnalysisService {
 
       analysisResults[recipient] = result;
     }
+
+    await this.cacheService.hSet(
+      cacheDir,
+      JSON.stringify(analysisResults),
+      this.defaultExpirationTimeInSeconds,
+    );
 
     return analysisResults;
   }
@@ -169,5 +206,21 @@ export class RecipientAnalysisService {
     if (data === '0x' || !dataDecoded) {
       return getAddress(to);
     }
+  }
+
+  private logCacheHit(cacheDir: CacheDir): void {
+    this.loggingService.debug({
+      type: LogType.CacheHit,
+      key: cacheDir.key,
+      field: cacheDir.field,
+    });
+  }
+
+  private logCacheMiss(cacheDir: CacheDir): void {
+    this.loggingService.debug({
+      type: LogType.CacheMiss,
+      key: cacheDir.key,
+      field: cacheDir.field,
+    });
   }
 }

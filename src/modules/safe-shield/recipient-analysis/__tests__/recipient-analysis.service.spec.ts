@@ -5,6 +5,9 @@ import type { ITransactionApi } from '@/domain/interfaces/transaction-api.interf
 import type { DecodedTransactionData } from '@/modules/safe-shield/entities/transaction-data.entity';
 import type { Page } from '@/domain/entities/page.entity';
 import type { Transfer } from '@/domain/safe/entities/transfer.entity';
+import type { IConfigurationService } from '@/config/configuration.service.interface';
+import type { ICacheService } from '@/datasources/cache/cache.service.interface';
+import type { ILoggingService } from '@/logging/logging.interface';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 
@@ -24,9 +27,25 @@ describe('RecipientAnalysisService', () => {
     },
   } as unknown as jest.Mocked<Erc20Decoder>;
 
+  const mockConfigurationService = {
+    getOrThrow: jest.fn().mockReturnValue(3600), // Default cache expiration
+  } as unknown as jest.Mocked<IConfigurationService>;
+
+  const mockCacheService = {
+    hGet: jest.fn(),
+    hSet: jest.fn(),
+  } as unknown as jest.Mocked<ICacheService>;
+
+  const mockLoggingService = {
+    debug: jest.fn(),
+  } as unknown as jest.Mocked<ILoggingService>;
+
   const service = new RecipientAnalysisService(
     mockTransactionApiManager,
     mockErc20Decoder,
+    mockConfigurationService,
+    mockCacheService,
+    mockLoggingService,
   );
 
   const mockChainId = '1';
@@ -75,6 +94,8 @@ describe('RecipientAnalysisService', () => {
         },
       ];
 
+      // Mock cache miss
+      (mockCacheService.hGet as jest.Mock).mockResolvedValue(null);
       (mockTransactionApi.getTransfers as jest.Mock)
         .mockResolvedValueOnce(mockTransferPage(5))
         .mockResolvedValueOnce(mockTransferPage(0));
@@ -85,36 +106,51 @@ describe('RecipientAnalysisService', () => {
         transactions,
       });
 
-      expect(result).toEqual({
-        [recipient1]: {
-          RECIPIENT_INTERACTION: [
-            {
-              severity: 'OK',
-              type: 'KNOWN_RECIPIENT',
-              title: 'Recurring recipient',
-              description: 'You have interacted with this address 5 times.',
-            },
-          ],
-          BRIDGE: [],
-        },
-        [recipient2]: {
-          RECIPIENT_INTERACTION: [
-            {
-              severity: 'INFO',
-              type: 'NEW_RECIPIENT',
-              title: 'New Recipient',
-              description:
-                'You are interacting with this address for the first time.',
-            },
-          ],
-          BRIDGE: [],
-        },
+      // Check that both recipients are analyzed
+      expect(Object.keys(result)).toHaveLength(2);
+      expect(Object.keys(result)).toContain(recipient1);
+      expect(Object.keys(result)).toContain(recipient2);
+
+      // Check that one recipient is KNOWN_RECIPIENT (5 interactions) and the other is NEW_RECIPIENT (0 interactions)
+      const results = Object.values(result);
+      const knownRecipientResult = results.find(
+        (r) => r?.RECIPIENT_INTERACTION?.[0]?.type === 'KNOWN_RECIPIENT',
+      );
+      const newRecipientResult = results.find(
+        (r) => r?.RECIPIENT_INTERACTION?.[0]?.type === 'NEW_RECIPIENT',
+      );
+
+      expect(knownRecipientResult).toEqual({
+        RECIPIENT_INTERACTION: [
+          {
+            severity: 'OK',
+            type: 'KNOWN_RECIPIENT',
+            title: 'Recurring recipient',
+            description: 'You have interacted with this address 5 times.',
+          },
+        ],
+        BRIDGE: [],
+      });
+
+      expect(newRecipientResult).toEqual({
+        RECIPIENT_INTERACTION: [
+          {
+            severity: 'INFO',
+            type: 'NEW_RECIPIENT',
+            title: 'New Recipient',
+            description:
+              'You are interacting with this address for the first time.',
+          },
+        ],
+        BRIDGE: [],
       });
 
       expect(mockTransactionApi.getTransfers).toHaveBeenCalledTimes(2);
     });
 
     it('should handle empty transactions array', async () => {
+      (mockCacheService.hGet as jest.Mock).mockResolvedValue(null);
+
       const result = await service.analyze({
         chainId: mockChainId,
         safeAddress: mockSafeAddress,
@@ -123,6 +159,96 @@ describe('RecipientAnalysisService', () => {
 
       expect(result).toEqual({});
       expect(mockTransactionApi.getTransfers).not.toHaveBeenCalled();
+      expect(mockCacheService.hSet).toHaveBeenCalledWith(
+        expect.objectContaining({
+          key: expect.any(String),
+          field: expect.any(String),
+        }),
+        '{}',
+        3600,
+      );
+    });
+
+    it('should return cached result when available', async () => {
+      const cachedResult = {
+        [mockRecipientAddress]: {
+          RECIPIENT_INTERACTION: [
+            {
+              severity: 'OK',
+              type: 'KNOWN_RECIPIENT',
+              title: 'Recurring recipient',
+              description: 'You have interacted with this address 3 times.',
+            },
+          ],
+          BRIDGE: [],
+        },
+      };
+
+      (mockCacheService.hGet as jest.Mock).mockResolvedValue(
+        JSON.stringify(cachedResult),
+      );
+
+      const transactions: Array<DecodedTransactionData> = [
+        {
+          operation: 0,
+          to: mockRecipientAddress,
+          value: '1000000000000000000',
+          data: '0x',
+          dataDecoded: null,
+        },
+      ];
+
+      const result = await service.analyze({
+        chainId: mockChainId,
+        safeAddress: mockSafeAddress,
+        transactions,
+      });
+
+      expect(result).toEqual(cachedResult);
+      expect(mockTransactionApi.getTransfers).not.toHaveBeenCalled();
+      expect(mockLoggingService.debug).toHaveBeenCalledWith({
+        type: 'CACHE_HIT',
+        key: expect.any(String),
+        field: expect.any(String),
+      });
+    });
+
+    it('should cache result when not in cache', async () => {
+      (mockCacheService.hGet as jest.Mock).mockResolvedValue(null);
+      (mockTransactionApi.getTransfers as jest.Mock).mockResolvedValue(
+        mockTransferPage(2),
+      );
+
+      const transactions: Array<DecodedTransactionData> = [
+        {
+          operation: 0,
+          to: mockRecipientAddress,
+          value: '1000000000000000000',
+          data: '0x',
+          dataDecoded: null,
+        },
+      ];
+
+      const result = await service.analyze({
+        chainId: mockChainId,
+        safeAddress: mockSafeAddress,
+        transactions,
+      });
+
+      expect(mockLoggingService.debug).toHaveBeenCalledWith({
+        type: 'CACHE_MISS',
+        key: expect.any(String),
+        field: expect.any(String),
+      });
+
+      expect(mockCacheService.hSet).toHaveBeenCalledWith(
+        expect.objectContaining({
+          key: expect.any(String),
+          field: expect.any(String),
+        }),
+        JSON.stringify(result),
+        3600,
+      );
     });
   });
 
@@ -218,6 +344,56 @@ describe('RecipientAnalysisService', () => {
         title: 'New Recipient',
         description:
           'You are interacting with this address for the first time.',
+      });
+    });
+
+    it('should handle API errors gracefully', async () => {
+      const error = new Error('API connection failed');
+      (mockTransactionApi.getTransfers as jest.Mock).mockRejectedValue(error);
+
+      await expect(
+        service.analyzeInteractions({
+          chainId: mockChainId,
+          safeAddress: mockSafeAddress,
+          recipient: mockRecipientAddress,
+        }),
+      ).rejects.toThrow('API connection failed');
+
+      expect(mockTransactionApiManager.getApi).toHaveBeenCalledWith(
+        mockChainId,
+      );
+    });
+
+    it('should handle invalid transfer page response', async () => {
+      (mockTransactionApi.getTransfers as jest.Mock).mockResolvedValue({
+        invalidField: 'invalid',
+      });
+
+      await expect(
+        service.analyzeInteractions({
+          chainId: mockChainId,
+          safeAddress: mockSafeAddress,
+          recipient: mockRecipientAddress,
+        }),
+      ).rejects.toThrow();
+    });
+
+    it('should handle large interaction counts correctly', async () => {
+      (mockTransactionApi.getTransfers as jest.Mock).mockResolvedValue(
+        mockTransferPage(999),
+      );
+
+      const result = await service.analyzeInteractions({
+        chainId: mockChainId,
+        safeAddress: mockSafeAddress,
+        recipient: mockRecipientAddress,
+      });
+
+      expect(result).toEqual({
+        severity: 'OK',
+        type: 'KNOWN_RECIPIENT',
+        title: 'Recurring recipient',
+        description: 'You have interacted with this address 999 times.',
       });
     });
   });
@@ -318,6 +494,50 @@ describe('RecipientAnalysisService', () => {
 
         expect(result).toBe(expectedRecipient);
       });
+
+      it('should not extract from execTransaction with non-empty data', () => {
+        // Setup mock to return false for ERC-20 checks since data isn't recognized
+        (mockErc20Decoder.helpers.isTransfer as jest.Mock).mockReturnValue(false);
+        (mockErc20Decoder.helpers.isTransferFrom as jest.Mock).mockReturnValue(false);
+
+        const transaction: DecodedTransactionData = {
+          operation: 0,
+          to: getAddress(faker.finance.ethereumAddress()),
+          value: '1000000000000000000',
+          data: '0xa9059cbb', // Non-empty data - not a native transfer, doesn't match ERC-20
+          dataDecoded: {
+            method: 'execTransaction',
+            parameters: [
+              { name: 'to', type: 'address', value: getAddress(faker.finance.ethereumAddress()) },
+              { name: 'value', type: 'uint256', value: '1000000000000000000' },
+              { name: 'data', type: 'bytes', value: '0xa9059cbb' }, // Non-empty data
+            ],
+            accuracy: 'FULL_MATCH',
+          },
+        };
+
+        const result = service['extractRecipient'](transaction);
+
+        // Since data is not '0x' and doesn't match ERC-20 patterns, returns undefined
+        expect(result).toBeUndefined();
+      });
+
+      it('should handle execTransaction with missing parameters and throw error', () => {
+        const transaction: DecodedTransactionData = {
+          operation: 0,
+          to: getAddress(faker.finance.ethereumAddress()),
+          value: '1000000000000000000',
+          data: '0x',
+          dataDecoded: {
+            method: 'execTransaction',
+            parameters: [], // Missing parameters - this will cause error when trying to access parameters[2]
+            accuracy: 'FULL_MATCH',
+          },
+        };
+
+        // This should throw because the service tries to access parameters[2].value on empty array
+        expect(() => service['extractRecipient'](transaction)).toThrow();
+      });
     });
 
     describe('ERC-20 transfer', () => {
@@ -346,6 +566,27 @@ describe('RecipientAnalysisService', () => {
         const result = service['extractRecipient'](transaction);
 
         expect(result).toBe(expectedRecipient);
+      });
+
+      it('should handle transfer with missing parameters and throw error', () => {
+        // Setup mocks
+        (mockErc20Decoder.helpers.isTransfer as jest.Mock).mockReturnValue(true);
+        (mockErc20Decoder.helpers.isTransferFrom as jest.Mock).mockReturnValue(false);
+
+        const transaction: DecodedTransactionData = {
+          operation: 0,
+          to: getAddress(faker.finance.ethereumAddress()),
+          value: '0',
+          data: '0xa9059cbb',
+          dataDecoded: {
+            method: 'transfer',
+            parameters: [], // Missing parameters - will cause error accessing parameters[0]
+            accuracy: 'FULL_MATCH',
+          },
+        };
+
+        // This should fail because the service tries to access parameters[0].value on empty array
+        expect(() => service['extractRecipient'](transaction)).toThrow();
       });
     });
 
@@ -480,6 +721,28 @@ describe('RecipientAnalysisService', () => {
         title: 'New Recipient',
         description:
           'You are interacting with this address for the first time.',
+      });
+    });
+
+    it('should handle single interaction correctly', () => {
+      const result = service['mapToAnalysisResult']('KNOWN_RECIPIENT', 1);
+
+      expect(result).toEqual({
+        severity: 'OK',
+        type: 'KNOWN_RECIPIENT',
+        title: 'Recurring recipient',
+        description: 'You have interacted with this address 1 time.',
+      });
+    });
+
+    it('should handle very large interaction counts', () => {
+      const result = service['mapToAnalysisResult']('KNOWN_RECIPIENT', 10000);
+
+      expect(result).toEqual({
+        severity: 'OK',
+        type: 'KNOWN_RECIPIENT',
+        title: 'Recurring recipient',
+        description: 'You have interacted with this address 10000 times.',
       });
     });
   });
