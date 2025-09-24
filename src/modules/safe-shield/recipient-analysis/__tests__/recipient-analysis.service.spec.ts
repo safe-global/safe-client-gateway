@@ -12,7 +12,9 @@ import { getAddress } from 'viem';
 
 describe('RecipientAnalysisService', () => {
   let service: RecipientAnalysisService;
-  let mockTransactionApiManager: jest.Mocked<Pick<ITransactionApiManager, 'getApi'>>;
+  let mockTransactionApiManager: jest.Mocked<
+    Pick<ITransactionApiManager, 'getApi'>
+  >;
   let mockTransactionApi: jest.Mocked<Pick<ITransactionApi, 'getTransfers'>>;
   let mockErc20Decoder: Pick<Erc20Decoder, 'helpers'>;
 
@@ -22,8 +24,8 @@ describe('RecipientAnalysisService', () => {
 
   beforeEach(async () => {
     // Create properly typed mocks
-    mockTransactionApi = { 
-      getTransfers: jest.fn() 
+    mockTransactionApi = {
+      getTransfers: jest.fn(),
     } as jest.Mocked<Pick<ITransactionApi, 'getTransfers'>>;
 
     mockTransactionApiManager = {
