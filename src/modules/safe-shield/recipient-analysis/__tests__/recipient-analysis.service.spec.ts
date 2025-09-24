@@ -1,8 +1,6 @@
-import type { TestingModule } from '@nestjs/testing';
-import { Test } from '@nestjs/testing';
 import { RecipientAnalysisService } from '../recipient-analysis.service';
-import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
-import { Erc20Decoder } from '@/domain/relay/contracts/decoders/erc-20-decoder.helper';
+import type { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
+import type { Erc20Decoder } from '@/domain/relay/contracts/decoders/erc-20-decoder.helper';
 import type { ITransactionApi } from '@/domain/interfaces/transaction-api.interface';
 import type { DecodedTransactionData } from '@/modules/safe-shield/entities/transaction-data.entity';
 import type { Page } from '@/domain/entities/page.entity';
@@ -11,53 +9,34 @@ import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 
 describe('RecipientAnalysisService', () => {
-  let service: RecipientAnalysisService;
-  let mockTransactionApiManager: jest.Mocked<
-    Pick<ITransactionApiManager, 'getApi'>
-  >;
-  let mockTransactionApi: jest.Mocked<Pick<ITransactionApi, 'getTransfers'>>;
-  let mockErc20Decoder: Pick<Erc20Decoder, 'helpers'>;
+  const mockTransactionApi = {
+    getTransfers: jest.fn(),
+  } as unknown as jest.Mocked<ITransactionApi>;
+
+  const mockTransactionApiManager = {
+    getApi: jest.fn().mockResolvedValue(mockTransactionApi),
+  } as unknown as jest.Mocked<ITransactionApiManager>;
+
+  const mockErc20Decoder = {
+    helpers: {
+      isTransfer: jest.fn(),
+      isTransferFrom: jest.fn(),
+    },
+  } as unknown as jest.Mocked<Erc20Decoder>;
+
+  const service = new RecipientAnalysisService(
+    mockTransactionApiManager,
+    mockErc20Decoder,
+  );
 
   const mockChainId = '1';
   const mockSafeAddress = getAddress(faker.finance.ethereumAddress());
   const mockRecipientAddress = getAddress(faker.finance.ethereumAddress());
 
-  beforeEach(async () => {
-    // Create properly typed mocks
-    mockTransactionApi = {
-      getTransfers: jest.fn(),
-    } as jest.Mocked<Pick<ITransactionApi, 'getTransfers'>>;
-
-    mockTransactionApiManager = {
-      getApi: jest.fn().mockResolvedValue(mockTransactionApi),
-    } as jest.Mocked<Pick<ITransactionApiManager, 'getApi'>>;
-
-    mockErc20Decoder = {
-      helpers: {
-        isTransfer: jest.fn(),
-        isTransferFrom: jest.fn(),
-      } as Pick<Erc20Decoder['helpers'], 'isTransfer' | 'isTransferFrom'>,
-    } as Pick<Erc20Decoder, 'helpers'>;
-
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        RecipientAnalysisService,
-        {
-          provide: ITransactionApiManager,
-          useValue: mockTransactionApiManager,
-        },
-        {
-          provide: Erc20Decoder,
-          useValue: mockErc20Decoder,
-        },
-      ],
-    }).compile();
-
-    service = module.get<RecipientAnalysisService>(RecipientAnalysisService);
-  });
-
-  afterEach(() => {
-    jest.clearAllMocks();
+  beforeEach(() => {
+    jest.resetAllMocks();
+    // Re-establish the mock chain
+    (mockTransactionApiManager.getApi as jest.Mock).mockResolvedValue(mockTransactionApi);
   });
 
   const mockTransferPage = (count: number | null): Page<Transfer> => ({
