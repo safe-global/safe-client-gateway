@@ -55,7 +55,9 @@ describe('RecipientAnalysisService', () => {
   beforeEach(() => {
     jest.resetAllMocks();
     // Re-establish the mock chain
-    (mockTransactionApiManager.getApi as jest.Mock).mockResolvedValue(mockTransactionApi);
+    (mockTransactionApiManager.getApi as jest.Mock).mockResolvedValue(
+      mockTransactionApi,
+    );
   });
 
   const mockTransferPage = (count: number | null): Page<Transfer> => ({
@@ -497,8 +499,12 @@ describe('RecipientAnalysisService', () => {
 
       it('should not extract from execTransaction with non-empty data', () => {
         // Setup mock to return false for ERC-20 checks since data isn't recognized
-        (mockErc20Decoder.helpers.isTransfer as jest.Mock).mockReturnValue(false);
-        (mockErc20Decoder.helpers.isTransferFrom as jest.Mock).mockReturnValue(false);
+        (mockErc20Decoder.helpers.isTransfer as jest.Mock).mockReturnValue(
+          false,
+        );
+        (mockErc20Decoder.helpers.isTransferFrom as jest.Mock).mockReturnValue(
+          false,
+        );
 
         const transaction: DecodedTransactionData = {
           operation: 0,
@@ -508,7 +514,11 @@ describe('RecipientAnalysisService', () => {
           dataDecoded: {
             method: 'execTransaction',
             parameters: [
-              { name: 'to', type: 'address', value: getAddress(faker.finance.ethereumAddress()) },
+              {
+                name: 'to',
+                type: 'address',
+                value: getAddress(faker.finance.ethereumAddress()),
+              },
               { name: 'value', type: 'uint256', value: '1000000000000000000' },
               { name: 'data', type: 'bytes', value: '0xa9059cbb' }, // Non-empty data
             ],
@@ -570,8 +580,12 @@ describe('RecipientAnalysisService', () => {
 
       it('should handle transfer with missing parameters and throw error', () => {
         // Setup mocks
-        (mockErc20Decoder.helpers.isTransfer as jest.Mock).mockReturnValue(true);
-        (mockErc20Decoder.helpers.isTransferFrom as jest.Mock).mockReturnValue(false);
+        (mockErc20Decoder.helpers.isTransfer as jest.Mock).mockReturnValue(
+          true,
+        );
+        (mockErc20Decoder.helpers.isTransferFrom as jest.Mock).mockReturnValue(
+          false,
+        );
 
         const transaction: DecodedTransactionData = {
           operation: 0,

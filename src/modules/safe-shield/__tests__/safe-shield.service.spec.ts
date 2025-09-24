@@ -762,7 +762,11 @@ describe('SafeShieldService', () => {
 
     it.each([
       ['missing valueDecoded', null, 1],
-      ['non-array valueDecoded', { method: 'invalid', parameters: null, accuracy: 'UNKNOWN' }, 1],
+      [
+        'non-array valueDecoded',
+        { method: 'invalid', parameters: null, accuracy: 'UNKNOWN' },
+        1,
+      ],
     ])('should handle multiSend with %s', (_, valueDecoded, expectedLength) => {
       const multiSendDecoded: DataDecoded = dataDecodedBuilder()
         .with('method', 'multiSend')
