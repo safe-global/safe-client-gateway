@@ -15,14 +15,13 @@ import {
   ICacheService,
 } from '@/datasources/cache/cache.service.interface';
 import { CacheRouter } from '@/datasources/cache/cache.router';
-import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
-import { LogType } from '@/domain/common/entities/log-type.entity';
 import { Inject, Injectable } from '@nestjs/common';
 import { uniq } from 'lodash';
-import { Address, getAddress } from 'viem';
-import { Operation } from '@/domain/safe/entities/operation.entity';
+import { Address } from 'viem';
+import { logCacheHit, logCacheMiss } from '@/modules/safe-shield/utils/common';
+import { extractContract } from '@/modules/safe-shield/utils/extraction.utils';
 
 /**
  * Service responsible for analyzing contract interactions in transactions.
@@ -59,10 +58,10 @@ export class ContractAnalysisService {
 
     const cached = await this.cacheService.hGet(cacheDir);
     if (cached) {
-      this.logCacheHit(cacheDir);
+      logCacheHit(cacheDir, this.loggingService);
       return JSON.parse(cached) as ContractAnalysisResponse;
     }
-    this.logCacheMiss(cacheDir);
+    logCacheMiss(cacheDir, this.loggingService);
 
     const analysisResults: ContractAnalysisResponse = {};
     for (const contract of contracts) {
@@ -143,61 +142,8 @@ export class ContractAnalysisService {
   ): Array<Address> {
     return uniq(
       transactions
-        .map((tx) => this.extractContract(tx))
+        .map((tx) => extractContract(tx))
         .filter((contract) => !!contract),
     );
-  }
-
-  /**
-   * Extracts the contract address from a transaction.
-   * @param tx - The transaction.
-   * @returns The contract address or undefined if the transaction is a transfer.
-   */
-  private extractContract({
-    dataDecoded,
-    data,
-    to,
-    operation,
-  }: DecodedTransactionData): Address | undefined {
-    //TODO implement
-    // Native transfer
-    if (data === '0x' || !dataDecoded) {
-      return undefined;
-    }
-    if ((operation as Operation) === Operation.DELEGATE) return getAddress(to);
-
-    // // ExecTransaction with no data is a transfer
-    // if (
-    //   dataDecoded?.method === 'execTransaction' &&
-    //   dataDecoded?.parameters?.[2].value === '0x'
-    // ) {
-    //   return getAddress(dataDecoded?.parameters?.[0].value as string);
-    // }
-
-    // // ERC-20 transfer
-    // if (this.erc20Decoder.helpers.isTransfer(data)) {
-    //   return getAddress(dataDecoded?.parameters?.[0].value as string);
-    // }
-
-    // // ERC-20 transferFrom
-    // if (this.erc20Decoder.helpers.isTransferFrom(data)) {
-    //   return getAddress(dataDecoded?.parameters?.[1].value as string);
-    // }
-  }
-
-  private logCacheHit(cacheDir: CacheDir): void {
-    this.loggingService.debug({
-      type: LogType.CacheHit,
-      key: cacheDir.key,
-      field: cacheDir.field,
-    });
-  }
-
-  private logCacheMiss(cacheDir: CacheDir): void {
-    this.loggingService.debug({
-      type: LogType.CacheMiss,
-      key: cacheDir.key,
-      field: cacheDir.field,
-    });
   }
 }
