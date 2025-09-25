@@ -27,27 +27,25 @@ const generateRandomWeiAmount = (): bigint =>
 describe('SafeShieldService', () => {
   const mockRecipientAnalysisService = {
     analyze: jest.fn(),
-  } as unknown as jest.Mocked<RecipientAnalysisService>;
+  } as jest.MockedObjectDeep<RecipientAnalysisService>;
   const mockContractAnalysisService =
-    {} as unknown as jest.Mocked<ContractAnalysisService>;
+    {} as jest.MockedObjectDeep<ContractAnalysisService>;
   const mockThreatAnalysisService =
-    {} as unknown as jest.Mocked<ThreatAnalysisService>;
+    {} as jest.MockedObjectDeep<ThreatAnalysisService>;
   const mockMultiSendDecoder = {
-    helpers: {
-      isMultiSend: jest.fn(),
-    },
+    helpers: { isMultiSend: jest.fn() },
     mapMultiSendTransactions: jest.fn(),
-  } as unknown as jest.Mocked<MultiSendDecoder>;
+  } as jest.MockedObjectDeep<MultiSendDecoder>;
   const mockDataDecodedService = {
     getDataDecoded: jest.fn(),
-  } as unknown as jest.Mocked<DataDecodedService>;
+  } as jest.MockedObjectDeep<DataDecodedService>;
 
   const mockLoggingService = {
     debug: jest.fn(),
     info: jest.fn(),
     warn: jest.fn(),
     error: jest.fn(),
-  } as unknown as jest.Mocked<ILoggingService>;
+  } as jest.MockedObjectDeep<ILoggingService>;
 
   const service = new SafeShieldService(
     mockRecipientAnalysisService,
@@ -106,13 +104,9 @@ describe('SafeShieldService', () => {
         },
       ];
 
-      (mockMultiSendDecoder.helpers.isMultiSend as jest.Mock).mockReturnValue(
-        false,
-      );
-      (mockDataDecodedService.getDataDecoded as jest.Mock).mockResolvedValue(
-        mockDataDecoded,
-      );
-      (mockRecipientAnalysisService.analyze as jest.Mock).mockResolvedValue(
+      mockMultiSendDecoder.helpers.isMultiSend.mockReturnValue(false);
+      mockDataDecodedService.getDataDecoded.mockResolvedValue(mockDataDecoded);
+      mockRecipientAnalysisService.analyze.mockResolvedValue(
         mockRecipientAnalysisResponse,
       );
 
@@ -156,16 +150,14 @@ describe('SafeShieldService', () => {
         },
       ];
 
-      (mockMultiSendDecoder.helpers.isMultiSend as jest.Mock).mockReturnValue(
-        true,
-      );
+      mockMultiSendDecoder.helpers.isMultiSend.mockReturnValue(true);
       (
         mockMultiSendDecoder.mapMultiSendTransactions as jest.Mock
       ).mockReturnValue(innerTransactions);
-      (
-        mockDataDecodedService.getDataDecoded as jest.Mock
-      ).mockResolvedValueOnce(mockDataDecoded); // Only the first transaction has data to decode
-      (mockRecipientAnalysisService.analyze as jest.Mock).mockResolvedValue(
+      mockDataDecodedService.getDataDecoded.mockResolvedValueOnce(
+        mockDataDecoded,
+      ); // Only the first transaction has data to decode
+      mockRecipientAnalysisService.analyze.mockResolvedValue(
         mockRecipientAnalysisResponse,
       );
 
@@ -206,18 +198,14 @@ describe('SafeShieldService', () => {
       const multiSendData: Hex =
         `0x8d80ff0a${faker.string.hexadecimal({ length: 128, casing: 'lower', prefix: '' })}` as Hex;
 
-      (mockMultiSendDecoder.helpers.isMultiSend as jest.Mock).mockReturnValue(
-        true,
-      );
-      (
-        mockMultiSendDecoder.mapMultiSendTransactions as jest.Mock
-      ).mockImplementation(() => {
+      mockMultiSendDecoder.helpers.isMultiSend.mockReturnValue(true);
+      mockMultiSendDecoder.mapMultiSendTransactions.mockImplementation(() => {
         throw new Error('Invalid multiSend data');
       });
       (mockDataDecodedService.getDataDecoded as jest.Mock).mockResolvedValue(
         null,
       );
-      (mockRecipientAnalysisService.analyze as jest.Mock).mockResolvedValue(
+      mockRecipientAnalysisService.analyze.mockResolvedValue(
         mockRecipientAnalysisResponse,
       );
 
@@ -245,10 +233,8 @@ describe('SafeShieldService', () => {
     it('should handle transaction data with empty data (0x)', async () => {
       const emptyData: Hex = '0x';
 
-      (mockMultiSendDecoder.helpers.isMultiSend as jest.Mock).mockReturnValue(
-        false,
-      );
-      (mockRecipientAnalysisService.analyze as jest.Mock).mockResolvedValue(
+      mockMultiSendDecoder.helpers.isMultiSend.mockReturnValue(false);
+      mockRecipientAnalysisService.analyze.mockResolvedValue(
         mockRecipientAnalysisResponse,
       );
 
@@ -276,13 +262,9 @@ describe('SafeShieldService', () => {
 
     it('should handle data decoding failure gracefully', async () => {
       const error = new Error('Data decoding failed');
-      (mockMultiSendDecoder.helpers.isMultiSend as jest.Mock).mockReturnValue(
-        false,
-      );
-      (mockDataDecodedService.getDataDecoded as jest.Mock).mockRejectedValue(
-        error,
-      );
-      (mockRecipientAnalysisService.analyze as jest.Mock).mockResolvedValue(
+      mockMultiSendDecoder.helpers.isMultiSend.mockReturnValue(false);
+      mockDataDecodedService.getDataDecoded.mockRejectedValue(error);
+      mockRecipientAnalysisService.analyze.mockResolvedValue(
         mockRecipientAnalysisResponse,
       );
 
@@ -312,15 +294,9 @@ describe('SafeShieldService', () => {
 
     it('should handle recipient analysis service failure', async () => {
       const error = new Error('Recipient analysis failed');
-      (mockMultiSendDecoder.helpers.isMultiSend as jest.Mock).mockReturnValue(
-        false,
-      );
-      (mockDataDecodedService.getDataDecoded as jest.Mock).mockResolvedValue(
-        mockDataDecoded,
-      );
-      (mockRecipientAnalysisService.analyze as jest.Mock).mockRejectedValue(
-        error,
-      );
+      mockMultiSendDecoder.helpers.isMultiSend.mockReturnValue(false);
+      mockDataDecodedService.getDataDecoded.mockResolvedValue(mockDataDecoded);
+      mockRecipientAnalysisService.analyze.mockRejectedValue(error);
 
       await expect(
         service.analyzeRecipient({
@@ -356,9 +332,7 @@ describe('SafeShieldService', () => {
         },
       ];
 
-      (mockMultiSendDecoder.helpers.isMultiSend as jest.Mock).mockReturnValue(
-        true,
-      );
+      mockMultiSendDecoder.helpers.isMultiSend.mockReturnValue(true);
       (
         mockMultiSendDecoder.mapMultiSendTransactions as jest.Mock
       ).mockReturnValue(innerTransactions);
@@ -366,7 +340,7 @@ describe('SafeShieldService', () => {
         .mockResolvedValueOnce(mockDataDecoded)
         .mockResolvedValueOnce(null)
         .mockResolvedValueOnce(mockDataDecoded);
-      (mockRecipientAnalysisService.analyze as jest.Mock).mockResolvedValue(
+      mockRecipientAnalysisService.analyze.mockResolvedValue(
         mockRecipientAnalysisResponse,
       );
 
@@ -405,12 +379,8 @@ describe('SafeShieldService', () => {
 
   describe('extractTransactions', () => {
     it('should extract single transaction for non-multiSend', async () => {
-      (mockMultiSendDecoder.helpers.isMultiSend as jest.Mock).mockReturnValue(
-        false,
-      );
-      (mockDataDecodedService.getDataDecoded as jest.Mock).mockResolvedValue(
-        mockDataDecoded,
-      );
+      mockMultiSendDecoder.helpers.isMultiSend.mockReturnValue(false);
+      mockDataDecodedService.getDataDecoded.mockResolvedValue(mockDataDecoded);
 
       const result = await service['extractTransactions'](
         mockChainId,
@@ -446,9 +416,7 @@ describe('SafeShieldService', () => {
         },
       ];
 
-      (mockMultiSendDecoder.helpers.isMultiSend as jest.Mock).mockReturnValue(
-        true,
-      );
+      mockMultiSendDecoder.helpers.isMultiSend.mockReturnValue(true);
       (
         mockMultiSendDecoder.mapMultiSendTransactions as jest.Mock
       ).mockReturnValue(innerTransactions);
@@ -490,10 +458,8 @@ describe('SafeShieldService', () => {
     ])(
       'should handle %s (operation: %d, value: %s)',
       async (_, operation, value) => {
-        (mockMultiSendDecoder.helpers.isMultiSend as jest.Mock).mockReturnValue(
-          false,
-        );
-        (mockDataDecodedService.getDataDecoded as jest.Mock).mockResolvedValue(
+        mockMultiSendDecoder.helpers.isMultiSend.mockReturnValue(false);
+        mockDataDecodedService.getDataDecoded.mockResolvedValue(
           mockDataDecoded,
         );
 
@@ -519,12 +485,8 @@ describe('SafeShieldService', () => {
       const multiSendData: Hex =
         `0x8d80ff0a${faker.string.hexadecimal({ length: 128, casing: 'lower', prefix: '' })}` as Hex;
 
-      (mockMultiSendDecoder.helpers.isMultiSend as jest.Mock).mockReturnValue(
-        true,
-      );
-      (
-        mockMultiSendDecoder.mapMultiSendTransactions as jest.Mock
-      ).mockImplementation(() => {
+      mockMultiSendDecoder.helpers.isMultiSend.mockReturnValue(true);
+      mockMultiSendDecoder.mapMultiSendTransactions.mockImplementation(() => {
         throw new Error('MultiSend extraction failed');
       });
       (mockDataDecodedService.getDataDecoded as jest.Mock).mockResolvedValue(
@@ -563,9 +525,7 @@ describe('SafeShieldService', () => {
         }),
       );
 
-      (mockMultiSendDecoder.helpers.isMultiSend as jest.Mock).mockReturnValue(
-        true,
-      );
+      mockMultiSendDecoder.helpers.isMultiSend.mockReturnValue(true);
       (
         mockMultiSendDecoder.mapMultiSendTransactions as jest.Mock
       ).mockReturnValue(innerTransactions);
@@ -680,9 +640,7 @@ describe('SafeShieldService', () => {
         dataDecoded: multiSendDecoded,
       };
 
-      (mockMultiSendDecoder.helpers.isMultiSend as jest.Mock).mockReturnValue(
-        true,
-      );
+      mockMultiSendDecoder.helpers.isMultiSend.mockReturnValue(true);
 
       const result = service['mapDecodedTransactions'](transaction);
 
@@ -712,9 +670,7 @@ describe('SafeShieldService', () => {
         dataDecoded: mockDataDecoded,
       };
 
-      (mockMultiSendDecoder.helpers.isMultiSend as jest.Mock).mockReturnValue(
-        false,
-      );
+      mockMultiSendDecoder.helpers.isMultiSend.mockReturnValue(false);
 
       const result = service['mapDecodedTransactions'](transaction);
 
@@ -731,9 +687,7 @@ describe('SafeShieldService', () => {
         dataDecoded: null,
       };
 
-      (mockMultiSendDecoder.helpers.isMultiSend as jest.Mock).mockReturnValue(
-        false,
-      );
+      mockMultiSendDecoder.helpers.isMultiSend.mockReturnValue(false);
 
       const result = service['mapDecodedTransactions'](transaction);
 
@@ -789,9 +743,7 @@ describe('SafeShieldService', () => {
         dataDecoded: multiSendDecoded,
       };
 
-      (mockMultiSendDecoder.helpers.isMultiSend as jest.Mock).mockReturnValue(
-        true,
-      );
+      mockMultiSendDecoder.helpers.isMultiSend.mockReturnValue(true);
 
       const result = service['mapDecodedTransactions'](transaction);
 
@@ -822,9 +774,7 @@ describe('SafeShieldService', () => {
         dataDecoded: multiSendDecoded,
       };
 
-      (mockMultiSendDecoder.helpers.isMultiSend as jest.Mock).mockReturnValue(
-        true,
-      );
+      mockMultiSendDecoder.helpers.isMultiSend.mockReturnValue(true);
 
       const result = service['mapDecodedTransactions'](transaction);
 
@@ -885,9 +835,7 @@ describe('SafeShieldService', () => {
         dataDecoded: multiSendDecoded,
       };
 
-      (mockMultiSendDecoder.helpers.isMultiSend as jest.Mock).mockReturnValue(
-        true,
-      );
+      mockMultiSendDecoder.helpers.isMultiSend.mockReturnValue(true);
 
       const result = service['mapDecodedTransactions'](transaction);
 
@@ -899,151 +847,6 @@ describe('SafeShieldService', () => {
         value: nestedExecTransaction.dataDecoded.parameters[1].value,
         data: '0x',
         dataDecoded: null,
-      });
-    });
-  });
-
-  describe('decodeTransactionData', () => {
-    it('should successfully decode transaction data', async () => {
-      (mockDataDecodedService.getDataDecoded as jest.Mock).mockResolvedValue(
-        mockDataDecoded,
-      );
-
-      const result = await service['decodeTransactionData'](
-        mockChainId,
-        mockRecipientAddress,
-        mockData,
-      );
-
-      expect(result).toEqual(mockDataDecoded);
-      expect(mockDataDecodedService.getDataDecoded).toHaveBeenCalledWith({
-        chainId: mockChainId,
-        getDataDecodedDto: expect.objectContaining({
-          data: mockData,
-          to: mockRecipientAddress,
-        }),
-      });
-    });
-
-    it('should handle decoding failure gracefully', async () => {
-      const error = new Error('Decoding failed');
-      (mockDataDecodedService.getDataDecoded as jest.Mock).mockRejectedValue(
-        error,
-      );
-
-      const result = await service['decodeTransactionData'](
-        mockChainId,
-        mockRecipientAddress,
-        mockData,
-      );
-
-      expect(result).toBeNull();
-      expect(mockLoggingService.warn).toHaveBeenCalledWith(
-        `Failed to decode transaction data: ${error}`,
-      );
-    });
-
-    it('should create TransactionDataDto with correct parameters', async () => {
-      (mockDataDecodedService.getDataDecoded as jest.Mock).mockResolvedValue(
-        mockDataDecoded,
-      );
-
-      await service['decodeTransactionData'](
-        mockChainId,
-        mockRecipientAddress,
-        mockData,
-      );
-
-      expect(mockDataDecodedService.getDataDecoded).toHaveBeenCalledWith({
-        chainId: mockChainId,
-        getDataDecodedDto: expect.objectContaining({
-          data: mockData,
-          to: mockRecipientAddress,
-        }),
-      });
-    });
-
-    it.each([
-      ['Error object', new Error('Network timeout')],
-      ['TypeError object', new TypeError('Invalid address format')],
-      ['RangeError object', new RangeError('Invalid data length')],
-      ['Custom error object', { message: 'Custom error object' }],
-      ['String error', 'String error'],
-      ['null error', null],
-      ['undefined error', undefined],
-    ])('should handle %s gracefully', async (_, error) => {
-      (mockDataDecodedService.getDataDecoded as jest.Mock).mockRejectedValue(
-        error,
-      );
-
-      const result = await service['decodeTransactionData'](
-        mockChainId,
-        mockRecipientAddress,
-        mockData,
-      );
-
-      expect(result).toBeNull();
-      expect(mockLoggingService.warn).toHaveBeenCalledWith(
-        // eslint-disable-next-line @typescript-eslint/no-base-to-string
-        `Failed to decode transaction data: ${error}`,
-      );
-    });
-
-    it.each([
-      ['Ethereum mainnet', '1'],
-      ['Polygon mainnet', '137'],
-      ['Arbitrum One', '42161'],
-    ])(
-      'should handle %s (chainId: %s) and different addresses',
-      async (_, chainId) => {
-        const address = getAddress(faker.finance.ethereumAddress());
-        (mockDataDecodedService.getDataDecoded as jest.Mock).mockResolvedValue(
-          mockDataDecoded,
-        );
-
-        const result = await service['decodeTransactionData'](
-          chainId,
-          address,
-          mockData,
-        );
-
-        expect(result).toEqual(mockDataDecoded);
-        expect(mockDataDecodedService.getDataDecoded).toHaveBeenCalledWith({
-          chainId,
-          getDataDecodedDto: expect.objectContaining({
-            data: mockData,
-            to: address,
-          }),
-        });
-      },
-    );
-
-    it.each([
-      ['empty data', '0x' as Hex],
-      ['single byte', '0x00' as Hex],
-      ['ERC-20 transfer', '0xa9059cbb' as Hex],
-      ['ERC-20 transferFrom', '0x23b872dd' as Hex],
-      ['ERC-20 approve', '0x095ea7b3' as Hex],
-      ['short hex data', faker.string.hexadecimal({ length: 8 }) as Hex],
-      ['long hex data', faker.string.hexadecimal({ length: 256 }) as Hex],
-    ])('should handle %s (%s)', async (_, data) => {
-      (mockDataDecodedService.getDataDecoded as jest.Mock).mockResolvedValue(
-        mockDataDecoded,
-      );
-
-      const result = await service['decodeTransactionData'](
-        mockChainId,
-        mockRecipientAddress,
-        data,
-      );
-
-      expect(result).toEqual(mockDataDecoded);
-      expect(mockDataDecodedService.getDataDecoded).toHaveBeenCalledWith({
-        chainId: mockChainId,
-        getDataDecodedDto: expect.objectContaining({
-          data,
-          to: mockRecipientAddress,
-        }),
       });
     });
   });

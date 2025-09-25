@@ -14,31 +14,31 @@ import { getAddress } from 'viem';
 describe('RecipientAnalysisService', () => {
   const mockTransactionApi = {
     getTransfers: jest.fn(),
-  } as unknown as jest.Mocked<ITransactionApi>;
+  } as jest.MockedObjectDeep<ITransactionApi>;
 
   const mockTransactionApiManager = {
     getApi: jest.fn().mockResolvedValue(mockTransactionApi),
-  } as unknown as jest.Mocked<ITransactionApiManager>;
+  } as jest.MockedObjectDeep<ITransactionApiManager>;
 
   const mockErc20Decoder = {
     helpers: {
       isTransfer: jest.fn(),
       isTransferFrom: jest.fn(),
     },
-  } as unknown as jest.Mocked<Erc20Decoder>;
+  } as jest.MockedObjectDeep<Erc20Decoder>;
 
   const mockConfigurationService = {
     getOrThrow: jest.fn().mockReturnValue(3600), // Default cache expiration
-  } as unknown as jest.Mocked<IConfigurationService>;
+  } as jest.MockedObjectDeep<IConfigurationService>;
 
   const mockCacheService = {
     hGet: jest.fn(),
     hSet: jest.fn(),
-  } as unknown as jest.Mocked<ICacheService>;
+  } as jest.MockedObjectDeep<ICacheService>;
 
   const mockLoggingService = {
     debug: jest.fn(),
-  } as unknown as jest.Mocked<ILoggingService>;
+  } as jest.MockedObjectDeep<ILoggingService>;
 
   const service = new RecipientAnalysisService(
     mockTransactionApiManager,
@@ -55,9 +55,7 @@ describe('RecipientAnalysisService', () => {
   beforeEach(() => {
     jest.resetAllMocks();
     // Re-establish the mock chain
-    (mockTransactionApiManager.getApi as jest.Mock).mockResolvedValue(
-      mockTransactionApi,
-    );
+    mockTransactionApiManager.getApi.mockResolvedValue(mockTransactionApi);
   });
 
   const mockTransferPage = (count: number | null): Page<Transfer> => ({
@@ -186,9 +184,7 @@ describe('RecipientAnalysisService', () => {
         },
       };
 
-      (mockCacheService.hGet as jest.Mock).mockResolvedValue(
-        JSON.stringify(cachedResult),
-      );
+      mockCacheService.hGet.mockResolvedValue(JSON.stringify(cachedResult));
 
       const transactions: Array<DecodedTransactionData> = [
         {
@@ -351,7 +347,7 @@ describe('RecipientAnalysisService', () => {
 
     it('should handle API errors gracefully', async () => {
       const error = new Error('API connection failed');
-      (mockTransactionApi.getTransfers as jest.Mock).mockRejectedValue(error);
+      mockTransactionApi.getTransfers.mockRejectedValue(error);
 
       await expect(
         service.analyzeInteractions({
@@ -460,10 +456,8 @@ describe('RecipientAnalysisService', () => {
         },
       ];
 
-      (mockErc20Decoder.helpers.isTransfer as jest.Mock).mockReturnValue(false);
-      (mockErc20Decoder.helpers.isTransferFrom as jest.Mock).mockReturnValue(
-        false,
-      );
+      mockErc20Decoder.helpers.isTransfer.mockReturnValue(false);
+      mockErc20Decoder.helpers.isTransferFrom.mockReturnValue(false);
 
       const result = service['extractRecipients'](transactions);
 
@@ -499,12 +493,8 @@ describe('RecipientAnalysisService', () => {
 
       it('should not extract from execTransaction with non-empty data', () => {
         // Setup mock to return false for ERC-20 checks since data isn't recognized
-        (mockErc20Decoder.helpers.isTransfer as jest.Mock).mockReturnValue(
-          false,
-        );
-        (mockErc20Decoder.helpers.isTransferFrom as jest.Mock).mockReturnValue(
-          false,
-        );
+        mockErc20Decoder.helpers.isTransfer.mockReturnValue(false);
+        mockErc20Decoder.helpers.isTransferFrom.mockReturnValue(false);
 
         const transaction: DecodedTransactionData = {
           operation: 0,
@@ -569,9 +559,7 @@ describe('RecipientAnalysisService', () => {
           },
         };
 
-        (mockErc20Decoder.helpers.isTransfer as jest.Mock).mockReturnValue(
-          true,
-        );
+        mockErc20Decoder.helpers.isTransfer.mockReturnValue(true);
 
         const result = service['extractRecipient'](transaction);
 
@@ -580,12 +568,8 @@ describe('RecipientAnalysisService', () => {
 
       it('should handle transfer with missing parameters and throw error', () => {
         // Setup mocks
-        (mockErc20Decoder.helpers.isTransfer as jest.Mock).mockReturnValue(
-          true,
-        );
-        (mockErc20Decoder.helpers.isTransferFrom as jest.Mock).mockReturnValue(
-          false,
-        );
+        mockErc20Decoder.helpers.isTransfer.mockReturnValue(true);
+        mockErc20Decoder.helpers.isTransferFrom.mockReturnValue(false);
 
         const transaction: DecodedTransactionData = {
           operation: 0,
@@ -625,12 +609,8 @@ describe('RecipientAnalysisService', () => {
           },
         };
 
-        (mockErc20Decoder.helpers.isTransfer as jest.Mock).mockReturnValue(
-          false,
-        );
-        (mockErc20Decoder.helpers.isTransferFrom as jest.Mock).mockReturnValue(
-          true,
-        );
+        mockErc20Decoder.helpers.isTransfer.mockReturnValue(false);
+        mockErc20Decoder.helpers.isTransferFrom.mockReturnValue(true);
 
         const result = service['extractRecipient'](transaction);
 
@@ -650,12 +630,8 @@ describe('RecipientAnalysisService', () => {
           dataDecoded: null,
         };
 
-        (mockErc20Decoder.helpers.isTransfer as jest.Mock).mockReturnValue(
-          false,
-        );
-        (mockErc20Decoder.helpers.isTransferFrom as jest.Mock).mockReturnValue(
-          false,
-        );
+        mockErc20Decoder.helpers.isTransfer.mockReturnValue(false);
+        mockErc20Decoder.helpers.isTransferFrom.mockReturnValue(false);
 
         const result = service['extractRecipient'](transaction);
 
@@ -673,12 +649,8 @@ describe('RecipientAnalysisService', () => {
           dataDecoded: null,
         };
 
-        (mockErc20Decoder.helpers.isTransfer as jest.Mock).mockReturnValue(
-          false,
-        );
-        (mockErc20Decoder.helpers.isTransferFrom as jest.Mock).mockReturnValue(
-          false,
-        );
+        mockErc20Decoder.helpers.isTransfer.mockReturnValue(false);
+        mockErc20Decoder.helpers.isTransferFrom.mockReturnValue(false);
 
         const result = service['extractRecipient'](transaction);
 
@@ -700,12 +672,8 @@ describe('RecipientAnalysisService', () => {
           },
         };
 
-        (mockErc20Decoder.helpers.isTransfer as jest.Mock).mockReturnValue(
-          false,
-        );
-        (mockErc20Decoder.helpers.isTransferFrom as jest.Mock).mockReturnValue(
-          false,
-        );
+        mockErc20Decoder.helpers.isTransfer.mockReturnValue(false);
+        mockErc20Decoder.helpers.isTransferFrom.mockReturnValue(false);
 
         const result = service['extractRecipient'](transaction);
 
