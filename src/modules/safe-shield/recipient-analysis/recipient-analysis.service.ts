@@ -159,7 +159,6 @@ export class RecipientAnalysisService {
     return { severity, type, title, description };
   }
 
-
   private logCacheHit(cacheDir: CacheDir): void {
     this.loggingService.debug({
       type: LogType.CacheHit,
