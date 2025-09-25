@@ -17,7 +17,9 @@ export function mapToAnalysisResult(
   type: RecipientStatus,
   interactions: number,
 ): RecipientAnalysisResult;
-export function mapToAnalysisResult(type: BridgeStatus): RecipientAnalysisResult;
+export function mapToAnalysisResult(
+  type: BridgeStatus,
+): RecipientAnalysisResult;
 export function mapToAnalysisResult(
   type: RecipientStatus | BridgeStatus,
   interactions?: number,
