@@ -2,7 +2,7 @@ import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.mana
 import { TransferPageSchema } from '@/domain/safe/entities/transfer.entity';
 import type { RecipientAnalysisResult } from '@/modules/safe-shield/entities/analysis-result.entity';
 import { Inject, Injectable } from '@nestjs/common';
-import { getAddress, type Address } from 'viem';
+import type { Address } from 'viem';
 import {
   SEVERITY_MAPPING,
   TITLE_MAPPING,
