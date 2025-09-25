@@ -8,10 +8,6 @@ import { NULL_ADDRESS } from '@/routes/common/constants';
 import type { Chain } from '@/domain/chains/entities/chain.entity';
 import type { Address } from 'viem';
 
-jest.mock('@/domain/common/utils/utils', () => ({
-  getNumberString: (value: number): string => value.toString(),
-}));
-
 const positionsRepoMock = jest.mocked({
   getPositions: jest.fn(),
 } as jest.MockedObjectDeep<IPositionsRepository>);
