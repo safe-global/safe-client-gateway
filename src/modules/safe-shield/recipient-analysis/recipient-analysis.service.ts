@@ -2,7 +2,7 @@ import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.mana
 import { TransferPageSchema } from '@/domain/safe/entities/transfer.entity';
 import type { RecipientAnalysisResult } from '@/modules/safe-shield/entities/analysis-result.entity';
 import { Inject, Injectable } from '@nestjs/common';
-import { getAddress, type Address } from 'viem';
+import type { Address } from 'viem';
 import {
   SEVERITY_MAPPING,
   TITLE_MAPPING,
@@ -14,7 +14,6 @@ import type { RecipientStatusGroup } from '@/modules/safe-shield/entities/status
 import type { DecodedTransactionData } from '@/modules/safe-shield/entities/transaction-data.entity';
 import { Erc20Decoder } from '@/domain/relay/contracts/decoders/erc-20-decoder.helper';
 import { RecipientAnalysisResponse } from '@/modules/safe-shield/entities/analysis-responses.entity';
-import uniq from 'lodash/uniq';
 import {
   CacheService,
   ICacheService,
@@ -157,54 +156,5 @@ export class RecipientAnalysisService {
     const description = DESCRIPTION_MAPPING[type](interactions ?? 0);
 
     return { severity, type, title, description };
-  }
-
-  /**
-   * Extracts the unique recipients from transactions.
-   * @param transactions - The transactions.
-   * @returns The unique recipient addresses.
-   */
-  private extractRecipients(
-    transactions: Array<DecodedTransactionData>,
-  ): Array<Address> {
-    return uniq(
-      transactions
-        .map((tx) => this.extractRecipient(tx))
-        .filter((recipient) => !!recipient),
-    );
-  }
-
-  /**
-   * Extracts the recipient address from a transaction.
-   * @param tx - The transaction.
-   * @returns The recipient address or undefined if the transaction is not a transfer.
-   */
-  private extractRecipient({
-    dataDecoded,
-    data,
-    to,
-  }: DecodedTransactionData): Address | undefined {
-    // ExecTransaction with no data is a transfer
-    if (
-      dataDecoded?.method === 'execTransaction' &&
-      dataDecoded?.parameters?.[2].value === '0x'
-    ) {
-      return getAddress(dataDecoded?.parameters?.[0].value as string);
-    }
-
-    // ERC-20 transfer
-    if (this.erc20Decoder.helpers.isTransfer(data)) {
-      return getAddress(dataDecoded?.parameters?.[0].value as string);
-    }
-
-    // ERC-20 transferFrom
-    if (this.erc20Decoder.helpers.isTransferFrom(data)) {
-      return getAddress(dataDecoded?.parameters?.[1].value as string);
-    }
-
-    // Native transfer
-    if (data === '0x' || !dataDecoded) {
-      return getAddress(to);
-    }
   }
 }
