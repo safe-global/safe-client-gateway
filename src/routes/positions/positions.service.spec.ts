@@ -8,6 +8,10 @@ import { NULL_ADDRESS } from '@/routes/common/constants';
 import type { Chain } from '@/domain/chains/entities/chain.entity';
 import type { Address } from 'viem';
 
+jest.mock('@/domain/common/utils/utils', () => ({
+  getNumberString: (value: number) => value.toString(),
+}));
+
 const positionsRepoMock = jest.mocked({
   getPositions: jest.fn(),
 } as jest.MockedObjectDeep<IPositionsRepository>);
@@ -207,6 +211,56 @@ describe('PositionsService', () => {
     expect(aave.fiatTotal).toBe('30');
   });
 
+  it('filters out dust positions and groups', async () => {
+    const dustPosition = positionBuilder()
+      .with('protocol', 'Compound')
+      .with('name', 'cUSDC')
+      .with('position_type', PositionType.deposit)
+      .with('fiatBalance', '0.009')
+      .build();
+
+    const validPosition = positionBuilder()
+      .with('protocol', 'Compound')
+      .with('name', 'cDAI')
+      .with('position_type', PositionType.deposit)
+      .with('fiatBalance', '10')
+      .build();
+
+    positionsRepoMock.getPositions.mockResolvedValue([
+      dustPosition,
+      validPosition,
+    ]);
+
+    const [compound] = await service.getPositions({
+      chainId: '1',
+      safeAddress: faker.finance.ethereumAddress() as Address,
+      fiatCode: 'USD',
+    });
+
+    expect(compound.items).toHaveLength(1);
+    expect(compound.items[0].name).toBe('cDAI');
+    expect(compound.fiatTotal).toBe('10');
+  });
+
+  it('filters out entire protocols when only dust positions are present', async () => {
+    const dustPosition = positionBuilder()
+      .with('protocol', 'Yearn')
+      .with('name', 'yvUSDC')
+      .with('position_type', PositionType.deposit)
+      .with('fiatBalance', null)
+      .build();
+
+    positionsRepoMock.getPositions.mockResolvedValue([dustPosition]);
+
+    const res = await service.getPositions({
+      chainId: '1',
+      safeAddress: faker.finance.ethereumAddress() as Address,
+      fiatCode: 'USD',
+    });
+
+    expect(res).toEqual([]);
+  });
+
   it('subtracts loans in fiatTotal but does not negate balances', async () => {
     const deposit = positionBuilder()
       .with('protocol', 'Maker')
@@ -264,9 +318,9 @@ describe('PositionsService', () => {
     expect(unknown.fiatTotal).toBe('3000');
   });
 
-  it('normalizes null fiat fields to "0" in mapped output', async () => {
+  it('normalizes null fiatConversion to "0" in mapped output', async () => {
     const position = positionBuilder()
-      .with('fiatBalance', null)
+      .with('fiatBalance', '0.02')
       .with('fiatConversion', null)
       .with('position_type', PositionType.deposit)
       .build();
@@ -279,7 +333,7 @@ describe('PositionsService', () => {
     });
 
     const item = protocol.items[0].items[0];
-    expect(item.fiatBalance).toBe('0');
+    expect(item.fiatBalance).toBe('0.02');
     expect(item.fiatConversion).toBe('0');
   });
 

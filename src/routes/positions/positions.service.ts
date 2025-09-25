@@ -50,9 +50,9 @@ export class PositionsService {
 
     const protocolGroups = this._groupByProtocol(positions);
 
-    return Object.entries(protocolGroups).map(([protocol, positions]) =>
-      this._mapProtocol(protocol, positions),
-    );
+    return Object.entries(protocolGroups)
+      .map(([protocol, positions]) => this._mapProtocol(protocol, positions))
+      .filter((protocol): protocol is Protocol => protocol !== null);
   }
 
   private _groupByProtocol(
@@ -61,23 +61,33 @@ export class PositionsService {
     return groupBy(positions, (position) => position.protocol ?? 'unknown');
   }
 
+  private static readonly DUST_THRESHOLD_USD = 0.01;
+
   private _mapProtocol(
     protocol: string,
     positions: Array<PositionEntry>,
-  ): Protocol {
-    const nameGroups = this._groupByName(positions);
+  ): Protocol | null {
+    const filteredPositions = positions.filter(
+      (position) => !this._isDust(position),
+    );
+
+    if (!filteredPositions.length) {
+      return null;
+    }
+
+    const nameGroups = this._groupByName(filteredPositions);
     const positionGroups = Object.entries(nameGroups).map(([name, group]) =>
       this._mapPositionGroup(name, group),
     );
     // Calculate fiat total from all individual positions
-    const fiatTotal = positions.reduce((sum, position) => {
+    const fiatTotal = filteredPositions.reduce((sum, position) => {
       const fiatBalance = Number(position.fiatBalance) || 0;
       const sign = position.position_type === PositionType.loan ? -1 : 1;
       return sum + sign * fiatBalance;
     }, 0);
     return {
       protocol,
-      protocol_metadata: positions[0].application_metadata,
+      protocol_metadata: filteredPositions[0].application_metadata,
       fiatTotal: getNumberString(fiatTotal),
       items: positionGroups,
     };
@@ -141,5 +151,13 @@ export class PositionsService {
       position_type: position.position_type,
       application_metadata: position.application_metadata,
     };
+  }
+
+  private _isDust(position: PositionEntry): boolean {
+    const fiatBalance = Number(position.fiatBalance);
+    if (Number.isNaN(fiatBalance)) {
+      return true;
+    }
+    return Math.abs(fiatBalance) < PositionsService.DUST_THRESHOLD_USD;
   }
 }
