@@ -10,6 +10,7 @@ import type { ICacheService } from '@/datasources/cache/cache.service.interface'
 import type { ILoggingService } from '@/logging/logging.interface';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
+import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 
 describe('RecipientAnalysisService', () => {
   const mockTransactionApi = {
@@ -58,12 +59,8 @@ describe('RecipientAnalysisService', () => {
     mockTransactionApiManager.getApi.mockResolvedValue(mockTransactionApi);
   });
 
-  const mockTransferPage = (count: number | null): Page<Transfer> => ({
-    count,
-    next: null,
-    previous: null,
-    results: [],
-  });
+  const mockTransferPage = (count: number | null): Page<Transfer> =>
+    pageBuilder<Transfer>().with('count', count).build();
 
   describe('analyze', () => {
     it('should analyze multiple transactions and return results for each unique recipient', async () => {
