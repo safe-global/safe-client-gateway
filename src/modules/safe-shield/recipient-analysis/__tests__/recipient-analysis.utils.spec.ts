@@ -54,7 +54,8 @@ describe('recipient-analysis.utils', () => {
         severity: 'CRITICAL',
         type: 'INCOMPATIBLE_SAFE',
         title: 'Incompatible Safe version',
-        description: 'This Safe account cannot be created on the destination chain. You will not be able to claim ownership of the same address. Funds sent may be inaccessible.',
+        description:
+          'This Safe account cannot be created on the destination chain. You will not be able to claim ownership of the same address. Funds sent may be inaccessible.',
       });
     });
 
@@ -65,7 +66,8 @@ describe('recipient-analysis.utils', () => {
         severity: 'WARN',
         type: 'MISSING_OWNERSHIP',
         title: 'Missing ownership',
-        description: 'This Safe account is not activated on the target chain. First, create the Safe, execute a test transaction, and then proceed with bridging. Funds sent may be inaccessible.',
+        description:
+          'This Safe account is not activated on the target chain. First, create the Safe, execute a test transaction, and then proceed with bridging. Funds sent may be inaccessible.',
       });
     });
 
@@ -76,7 +78,8 @@ describe('recipient-analysis.utils', () => {
         severity: 'WARN',
         type: 'UNSUPPORTED_NETWORK',
         title: 'Unsupported network',
-        description: 'app.safe.global does not support the network. Unless you have a wallet deployed there, we recommend not to bridge. Funds sent may be inaccessible.',
+        description:
+          'app.safe.global does not support the network. Unless you have a wallet deployed there, we recommend not to bridge. Funds sent may be inaccessible.',
       });
     });
 
@@ -87,7 +90,8 @@ describe('recipient-analysis.utils', () => {
         severity: 'INFO',
         type: 'DIFFERENT_SAFE_SETUP',
         title: 'Different setup',
-        description: 'Your Safe exists on the target chain but with a different configuration. Review carefully before proceeding. Funds sent may be inaccessible if the setup is incorrect.',
+        description:
+          'Your Safe exists on the target chain but with a different configuration. Review carefully before proceeding. Funds sent may be inaccessible if the setup is incorrect.',
       });
     });
   });
