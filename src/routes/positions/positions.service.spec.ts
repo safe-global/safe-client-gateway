@@ -9,7 +9,7 @@ import type { Chain } from '@/domain/chains/entities/chain.entity';
 import type { Address } from 'viem';
 
 jest.mock('@/domain/common/utils/utils', () => ({
-  getNumberString: (value: number) => value.toString(),
+  getNumberString: (value: number): string => value.toString(),
 }));
 
 const positionsRepoMock = jest.mocked({
