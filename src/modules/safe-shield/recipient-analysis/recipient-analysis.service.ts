@@ -3,6 +3,13 @@ import { TransferPageSchema } from '@/domain/safe/entities/transfer.entity';
 import type { RecipientAnalysisResult } from '@/modules/safe-shield/entities/analysis-result.entity';
 import { Inject, Injectable } from '@nestjs/common';
 import type { Address } from 'viem';
+import {
+  SEVERITY_MAPPING,
+  TITLE_MAPPING,
+  DESCRIPTION_MAPPING,
+} from './recipient-analysis.constants';
+import type { RecipientStatus } from '@/modules/safe-shield/entities/recipient-status.entity';
+import type { BridgeStatus } from '@/modules/safe-shield/entities/bridge-status.entity';
 import type { RecipientStatusGroup } from '@/modules/safe-shield/entities/status-group.entity';
 import type { DecodedTransactionData } from '@/modules/safe-shield/entities/transaction-data.entity';
 import { Erc20Decoder } from '@/domain/relay/contracts/decoders/erc-20-decoder.helper';
@@ -17,7 +24,6 @@ import { LogType } from '@/domain/common/entities/log-type.entity';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { extractRecipients } from '../utils/recipient-extraction.utils';
-import { mapToAnalysisResult } from './recipient-analysis.utils';
 
 /**
  * Service responsible for analyzing transaction recipients and bridge configurations.
@@ -128,8 +134,31 @@ export class RecipientAnalysisService {
     const interactions = transferPage.count ?? 0;
     const type = interactions > 0 ? 'KNOWN_RECIPIENT' : 'NEW_RECIPIENT';
 
-    return mapToAnalysisResult(type, interactions);
+    return this.mapToAnalysisResult(type, interactions);
   }
+
+  /**
+   * Maps a recipient or bridge status to an analysis result.
+   * @param type - The recipient or bridge status.
+   * @param interactions - The number of interactions with the recipient.
+   * @returns The analysis result.
+   */
+  private mapToAnalysisResult(
+    type: RecipientStatus,
+    interactions: number,
+  ): RecipientAnalysisResult;
+  private mapToAnalysisResult(type: BridgeStatus): RecipientAnalysisResult;
+  private mapToAnalysisResult(
+    type: RecipientStatus | BridgeStatus,
+    interactions?: number,
+  ): RecipientAnalysisResult {
+    const severity = SEVERITY_MAPPING[type];
+    const title = TITLE_MAPPING[type];
+    const description = DESCRIPTION_MAPPING[type](interactions ?? 0);
+
+    return { severity, type, title, description };
+  }
+
 
   private logCacheHit(cacheDir: CacheDir): void {
     this.loggingService.debug({
