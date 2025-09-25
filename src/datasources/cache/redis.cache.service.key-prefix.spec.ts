@@ -6,6 +6,7 @@ import type { RedisClientType } from 'redis';
 import { fakeJson } from '@/__tests__/faker';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import clearAllMocks = jest.clearAllMocks;
+import type { ResponseCacheService } from '@/datasources/cache/response-cache.service';
 
 const redisClientType = {
   isReady: true,
@@ -16,6 +17,7 @@ const redisClientType = {
   unlink: jest.fn(),
   quit: jest.fn(),
   scanIterator: jest.fn(),
+  ttl: jest.fn(),
 } as jest.MockedObjectDeep<RedisClientType>;
 const redisClientTypeMock = jest.mocked(redisClientType);
 
@@ -36,6 +38,10 @@ describe('RedisCacheService with a Key Prefix', () => {
   let defaultExpirationTimeInSeconds: number;
   let defaultExpirationDeviatePercent: number;
   const keyPrefix = faker.string.uuid();
+  const responseCacheService = {
+    trackTtl: jest.fn(),
+    getTtl: jest.fn(),
+  } as unknown as jest.Mocked<ResponseCacheService>;
 
   beforeEach(() => {
     clearAllMocks();
@@ -56,7 +62,9 @@ describe('RedisCacheService with a Key Prefix', () => {
       mockLoggingService,
       mockConfigurationService,
       keyPrefix,
+      responseCacheService,
     );
+    redisClientTypeMock.ttl.mockResolvedValue(defaultExpirationTimeInSeconds);
   });
 
   it('setting a key should set with prefix', async () => {

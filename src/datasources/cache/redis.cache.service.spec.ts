@@ -9,6 +9,7 @@ import clearAllMocks = jest.clearAllMocks;
 import { redisClientFactory } from '@/__tests__/redis-client.factory';
 import { MAX_TTL } from '@/datasources/cache/constants';
 import { offsetByPercentage } from '@/domain/common/utils/number';
+import type { ResponseCacheService } from '@/datasources/cache/response-cache.service';
 
 const mockLoggingService: jest.MockedObjectDeep<ILoggingService> = {
   info: jest.fn(),
@@ -29,6 +30,10 @@ describe('RedisCacheService', () => {
   let maxTtlDeviated: number;
   const keyPrefix = '';
   let redisClient: RedisClientType;
+  const responseCacheService: jest.Mocked<ResponseCacheService> = {
+    trackTtl: jest.fn(),
+    getTtl: jest.fn(),
+  } as unknown as jest.Mocked<ResponseCacheService>;
 
   beforeAll(async () => {
     redisClient = await redisClientFactory();
@@ -41,6 +46,8 @@ describe('RedisCacheService', () => {
   beforeEach(async () => {
     clearAllMocks();
     await redisClient.flushDb();
+    responseCacheService.trackTtl.mockReset();
+    responseCacheService.getTtl.mockReset();
     defaultExpirationTimeInSeconds = faker.number.int({ min: 1, max: 3600 });
     defaultExpirationDeviatePercent = faker.number.int({ min: 1, max: 99 });
     maxTtlDeviated =
@@ -60,6 +67,7 @@ describe('RedisCacheService', () => {
       mockLoggingService,
       mockConfigurationService,
       keyPrefix,
+      responseCacheService,
     );
   });
 

@@ -6,6 +6,7 @@ import { RedisCacheService } from '@/datasources/cache/redis.cache.service';
 import { CacheReadiness } from '@/domain/interfaces/cache-readiness.interface';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { CacheKeyPrefix } from '@/datasources/cache/constants';
+import { ResponseCacheService } from '@/datasources/cache/response-cache.service';
 import { LogType } from '@/domain/common/entities/log-type.entity';
 
 export type RedisClientType = ReturnType<typeof createClient>;
@@ -73,7 +74,8 @@ async function redisClientFactory(
     { provide: CacheService, useClass: RedisCacheService },
     { provide: CacheReadiness, useExisting: CacheService },
     { provide: CacheKeyPrefix, useValue: '' },
+    ResponseCacheService,
   ],
-  exports: [CacheService, CacheReadiness],
+  exports: [CacheService, CacheReadiness, ResponseCacheService],
 })
 export class CacheModule {}

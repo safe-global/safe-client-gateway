@@ -6,6 +6,7 @@ import { ICacheReadiness } from '@/domain/interfaces/cache-readiness.interface';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { CacheKeyPrefix, MAX_TTL } from '@/datasources/cache/constants';
+import { ResponseCacheService } from '@/datasources/cache/response-cache.service';
 import { LogType } from '@/domain/common/entities/log-type.entity';
 import { deviateRandomlyByPercentage } from '@/domain/common/utils/number';
 
@@ -23,6 +24,7 @@ export class RedisCacheService
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
     @Inject(CacheKeyPrefix) private readonly keyPrefix: string,
+    private readonly responseCacheService: ResponseCacheService,
   ) {
     this.defaultExpirationTimeInSeconds =
       this.configurationService.getOrThrow<number>(
@@ -53,6 +55,7 @@ export class RedisCacheService
     value: string,
     expireTimeSeconds: number | undefined,
     expireDeviatePercent?: number,
+    options?: { trackTtl?: boolean },
   ): Promise<void> {
     if (!expireTimeSeconds || expireTimeSeconds <= 0) {
       return;
@@ -71,6 +74,9 @@ export class RedisCacheService
       // NX - Set expiry only when the key has no expiry
       // See https://redis.io/commands/expire/
       await this.client.expire(key, expirationTime, 'NX');
+      if (this.shouldTrackTtl(cacheDir) && options?.trackTtl !== false) {
+        await this.trackTtl(cacheDir);
+      }
     } catch (error) {
       this.loggingService.error({
         type: LogType.CacheError,
@@ -84,7 +90,11 @@ export class RedisCacheService
 
   async hGet(cacheDir: CacheDir): Promise<string | undefined> {
     const key = this._prefixKey(cacheDir.key);
-    return await this.client.hGet(key, cacheDir.field);
+    const value = await this.client.hGet(key, cacheDir.field);
+    if (value != null && this.shouldTrackTtl(cacheDir)) {
+      await this.trackTtl(cacheDir);
+    }
+    return value ?? undefined;
   }
 
   async deleteByKey(key: string): Promise<number> {
@@ -97,6 +107,7 @@ export class RedisCacheService
       Date.now().toString(),
       this.defaultExpirationTimeInSeconds,
       0,
+      { trackTtl: false },
     );
     return result;
   }
@@ -198,5 +209,22 @@ export class RedisCacheService
    */
   private enforceMaxRedisTTL(ttl: number): number {
     return Math.min(ttl, MAX_TTL);
+  }
+
+  private shouldTrackTtl(cacheDir: CacheDir): boolean {
+    return !cacheDir.key.startsWith('invalidationTimeMs:');
+  }
+
+  private async trackTtl(cacheDir: CacheDir): Promise<void> {
+    try {
+      const ttl = await this.client.ttl(this._prefixKey(cacheDir.key));
+      this.responseCacheService.trackTtl(ttl > 0 ? ttl : null);
+    } catch (error) {
+      this.loggingService.warn({
+        type: LogType.CacheEvent,
+        source: 'RedisCacheService',
+        event: `Failed to read TTL for ${cacheDir.key}`,
+      });
+    }
   }
 }

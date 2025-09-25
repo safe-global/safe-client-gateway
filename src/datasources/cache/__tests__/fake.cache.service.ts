@@ -51,6 +51,8 @@ export class FakeCacheService implements ICacheService, ICacheReadiness {
     cacheDir: CacheDir,
     value: string | number,
     expireTimeSeconds: number | undefined,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    _options?: { trackTtl?: boolean },
   ): Promise<void> {
     if (!expireTimeSeconds || expireTimeSeconds <= 0) {
       return Promise.resolve();
