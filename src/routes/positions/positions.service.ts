@@ -14,6 +14,8 @@ import { z } from 'zod';
 import { PositionType } from '@/domain/positions/entities/position-type.entity';
 import type { Address } from 'viem';
 
+const DUST_THRESHOLD_USD = 0.01;
+
 interface PositionEntry extends Position {
   protocol: string | null;
   name: string;
@@ -60,8 +62,6 @@ export class PositionsService {
   ): Record<string, Array<PositionEntry>> {
     return groupBy(positions, (position) => position.protocol ?? 'unknown');
   }
-
-  private static readonly DUST_THRESHOLD_USD = 0.01;
 
   private _mapProtocol(
     protocol: string,
@@ -158,6 +158,6 @@ export class PositionsService {
     if (Number.isNaN(fiatBalance)) {
       return true;
     }
-    return Math.abs(fiatBalance) < PositionsService.DUST_THRESHOLD_USD;
+    return Math.abs(fiatBalance) < DUST_THRESHOLD_USD;
   }
 }
