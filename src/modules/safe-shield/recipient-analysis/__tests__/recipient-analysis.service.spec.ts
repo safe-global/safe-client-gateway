@@ -12,6 +12,10 @@ import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import * as utils from '../../utils/recipient-extraction.utils';
+import * as analysisUtils from '../recipient-analysis.utils';
+import { RecipientStatus } from '@/modules/safe-shield/entities/recipient-status.entity';
+import { BridgeStatus } from '@/modules/safe-shield/entities/bridge-status.entity';
+import { recipientAnalysisResultBuilder } from '@/modules/safe-shield/entities/__tests__/builders/analysis-result.builder';
 
 describe('RecipientAnalysisService', () => {
   const mockTransactionApi = {
@@ -51,6 +55,10 @@ describe('RecipientAnalysisService', () => {
   );
 
   const extractRecipientsSpy = jest.spyOn(utils, 'extractRecipients');
+  const mapToAnalysisResultSpy = jest.spyOn(
+    analysisUtils,
+    'mapToAnalysisResult',
+  );
 
   const mockChainId = '1';
   const mockSafeAddress = getAddress(faker.finance.ethereumAddress());
@@ -63,6 +71,38 @@ describe('RecipientAnalysisService', () => {
     extractRecipientsSpy.mockImplementation(
       (transactions: Array<DecodedTransactionData>) =>
         transactions.map((tx: DecodedTransactionData) => tx.to),
+    );
+    mapToAnalysisResultSpy.mockImplementation(
+      (type: RecipientStatus | BridgeStatus, interactions = 0) => {
+        if (type === 'KNOWN_RECIPIENT') {
+          return recipientAnalysisResultBuilder()
+            .with('severity', 'OK')
+            .with('type', type)
+            .with('title', 'Recurring recipient')
+            .with(
+              'description',
+              `You have interacted with this address ${interactions} times.`,
+            )
+            .build();
+        } else if (type === 'NEW_RECIPIENT') {
+          return recipientAnalysisResultBuilder()
+            .with('severity', 'INFO')
+            .with('type', type)
+            .with('title', 'New Recipient')
+            .with(
+              'description',
+              'You are interacting with this address for the first time.',
+            )
+            .build();
+        }
+        // Default for bridge statuses
+        return recipientAnalysisResultBuilder()
+          .with('severity', 'INFO')
+          .with('type', type)
+          .with('title', 'Bridge Status')
+          .with('description', 'Bridge status description.')
+          .build();
+      },
     );
   });
 
@@ -332,6 +372,7 @@ describe('RecipientAnalysisService', () => {
         to: mockRecipientAddress,
         limit: 1,
       });
+      expect(mapToAnalysisResultSpy).toHaveBeenCalledWith('KNOWN_RECIPIENT', 5);
     });
 
     it('should return NEW_RECIPIENT when interactions = 0', async () => {
@@ -352,6 +393,7 @@ describe('RecipientAnalysisService', () => {
         description:
           'You are interacting with this address for the first time.',
       });
+      expect(mapToAnalysisResultSpy).toHaveBeenCalledWith('NEW_RECIPIENT', 0);
     });
 
     it('should handle null count', async () => {
@@ -372,6 +414,7 @@ describe('RecipientAnalysisService', () => {
         description:
           'You are interacting with this address for the first time.',
       });
+      expect(mapToAnalysisResultSpy).toHaveBeenCalledWith('NEW_RECIPIENT', 0);
     });
 
     it('should handle API errors gracefully', async () => {
@@ -389,6 +432,7 @@ describe('RecipientAnalysisService', () => {
       expect(mockTransactionApiManager.getApi).toHaveBeenCalledWith(
         mockChainId,
       );
+      expect(mapToAnalysisResultSpy).not.toHaveBeenCalled();
     });
 
     it('should handle invalid transfer page response', async () => {
@@ -403,6 +447,7 @@ describe('RecipientAnalysisService', () => {
           recipient: mockRecipientAddress,
         }),
       ).rejects.toThrow();
+      expect(mapToAnalysisResultSpy).not.toHaveBeenCalled();
     });
 
     it('should handle large interaction counts correctly', async () => {
@@ -422,6 +467,10 @@ describe('RecipientAnalysisService', () => {
         title: 'Recurring recipient',
         description: 'You have interacted with this address 999 times.',
       });
+      expect(mapToAnalysisResultSpy).toHaveBeenCalledWith(
+        'KNOWN_RECIPIENT',
+        999,
+      );
     });
   });
 });
