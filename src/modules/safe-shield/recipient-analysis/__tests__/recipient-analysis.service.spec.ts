@@ -13,8 +13,8 @@ import { getAddress } from 'viem';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import * as utils from '../../utils/recipient-extraction.utils';
 import * as analysisUtils from '../recipient-analysis.utils';
-import { RecipientStatus } from '@/modules/safe-shield/entities/recipient-status.entity';
-import { BridgeStatus } from '@/modules/safe-shield/entities/bridge-status.entity';
+import type { RecipientStatus } from '@/modules/safe-shield/entities/recipient-status.entity';
+import type { BridgeStatus } from '@/modules/safe-shield/entities/bridge-status.entity';
 import { recipientAnalysisResultBuilder } from '@/modules/safe-shield/entities/__tests__/builders/analysis-result.builder';
 
 describe('RecipientAnalysisService', () => {
