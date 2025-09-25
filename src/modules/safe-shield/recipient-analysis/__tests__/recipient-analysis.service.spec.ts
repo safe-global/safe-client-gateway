@@ -11,6 +11,7 @@ import type { ILoggingService } from '@/logging/logging.interface';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
+import * as utils from '../../utils/recipient-extraction.utils';
 
 describe('RecipientAnalysisService', () => {
   const mockTransactionApi = {
@@ -49,6 +50,8 @@ describe('RecipientAnalysisService', () => {
     mockLoggingService,
   );
 
+  const extractRecipientsSpy = jest.spyOn(utils, 'extractRecipients');
+
   const mockChainId = '1';
   const mockSafeAddress = getAddress(faker.finance.ethereumAddress());
   const mockRecipientAddress = getAddress(faker.finance.ethereumAddress());
@@ -57,6 +60,10 @@ describe('RecipientAnalysisService', () => {
     jest.resetAllMocks();
     // Re-establish the mock chain
     mockTransactionApiManager.getApi.mockResolvedValue(mockTransactionApi);
+    extractRecipientsSpy.mockImplementation(
+      (transactions: Array<DecodedTransactionData>) =>
+        transactions.map((tx: DecodedTransactionData) => tx.to),
+    );
   });
 
   const mockTransferPage = (count: number | null): Page<Transfer> =>
@@ -93,6 +100,7 @@ describe('RecipientAnalysisService', () => {
 
       // Mock cache miss
       (mockCacheService.hGet as jest.Mock).mockResolvedValue(null);
+      extractRecipientsSpy.mockReturnValue([recipient1, recipient2]);
       (mockTransactionApi.getTransfers as jest.Mock)
         .mockResolvedValueOnce(mockTransferPage(5))
         .mockResolvedValueOnce(mockTransferPage(0));
@@ -143,10 +151,17 @@ describe('RecipientAnalysisService', () => {
       });
 
       expect(mockTransactionApi.getTransfers).toHaveBeenCalledTimes(2);
+
+      expect(extractRecipientsSpy).toHaveBeenCalledTimes(1);
+      expect(extractRecipientsSpy).toHaveBeenCalledWith(
+        transactions,
+        mockErc20Decoder,
+      );
     });
 
     it('should handle empty transactions array', async () => {
       (mockCacheService.hGet as jest.Mock).mockResolvedValue(null);
+      extractRecipientsSpy.mockReturnValue([]);
 
       const result = await service.analyze({
         chainId: mockChainId,
@@ -164,6 +179,9 @@ describe('RecipientAnalysisService', () => {
         '{}',
         3600,
       );
+
+      expect(extractRecipientsSpy).toHaveBeenCalledTimes(1);
+      expect(extractRecipientsSpy).toHaveBeenCalledWith([], mockErc20Decoder);
     });
 
     it('should return cached result when available', async () => {
@@ -182,6 +200,7 @@ describe('RecipientAnalysisService', () => {
       };
 
       mockCacheService.hGet.mockResolvedValue(JSON.stringify(cachedResult));
+      extractRecipientsSpy.mockReturnValue([mockRecipientAddress]);
 
       const transactions: Array<DecodedTransactionData> = [
         {
@@ -206,6 +225,12 @@ describe('RecipientAnalysisService', () => {
         key: expect.any(String),
         field: expect.any(String),
       });
+
+      expect(extractRecipientsSpy).toHaveBeenCalledTimes(1);
+      expect(extractRecipientsSpy).toHaveBeenCalledWith(
+        transactions,
+        mockErc20Decoder,
+      );
     });
 
     it('should cache result when not in cache', async () => {
@@ -213,6 +238,7 @@ describe('RecipientAnalysisService', () => {
       (mockTransactionApi.getTransfers as jest.Mock).mockResolvedValue(
         mockTransferPage(2),
       );
+      extractRecipientsSpy.mockReturnValue([mockRecipientAddress]);
 
       const transactions: Array<DecodedTransactionData> = [
         {
@@ -243,6 +269,12 @@ describe('RecipientAnalysisService', () => {
         }),
         JSON.stringify(result),
         3600,
+      );
+
+      expect(extractRecipientsSpy).toHaveBeenCalledTimes(1);
+      expect(extractRecipientsSpy).toHaveBeenCalledWith(
+        transactions,
+        mockErc20Decoder,
       );
     });
   });
@@ -389,292 +421,6 @@ describe('RecipientAnalysisService', () => {
         type: 'KNOWN_RECIPIENT',
         title: 'Recurring recipient',
         description: 'You have interacted with this address 999 times.',
-      });
-    });
-  });
-
-  describe('extractRecipients', () => {
-    it('should extract unique recipients from transactions', () => {
-      const recipient1 = getAddress(faker.finance.ethereumAddress());
-      const recipient2 = getAddress(faker.finance.ethereumAddress());
-
-      const transactions: Array<DecodedTransactionData> = [
-        {
-          operation: 0,
-          to: recipient1,
-          value: '1000000000000000000',
-          data: '0x',
-          dataDecoded: null,
-        },
-        {
-          operation: 0,
-          to: recipient2,
-          value: '2000000000000000000',
-          data: '0x',
-          dataDecoded: null,
-        },
-        {
-          operation: 0,
-          to: recipient1, // Duplicate
-          value: '500000000000000000',
-          data: '0x',
-          dataDecoded: null,
-        },
-      ];
-
-      const result = service['extractRecipients'](transactions);
-
-      expect(result).toHaveLength(2);
-      expect(result).toContain(recipient1);
-      expect(result).toContain(recipient2);
-    });
-
-    it('should filter out undefined recipients', () => {
-      const validRecipient = getAddress(faker.finance.ethereumAddress());
-
-      const transactions: Array<DecodedTransactionData> = [
-        {
-          operation: 0,
-          to: validRecipient,
-          value: '1000000000000000000',
-          data: '0x',
-          dataDecoded: null,
-        },
-        {
-          operation: 0,
-          to: getAddress(faker.finance.ethereumAddress()),
-          value: '2000000000000000000',
-          data: '0xunknownmethod', // Unknown method that doesn't match any pattern
-          dataDecoded: {
-            method: 'unknownMethod',
-            parameters: [],
-            accuracy: 'UNKNOWN',
-          },
-        },
-      ];
-
-      mockErc20Decoder.helpers.isTransfer.mockReturnValue(false);
-      mockErc20Decoder.helpers.isTransferFrom.mockReturnValue(false);
-
-      const result = service['extractRecipients'](transactions);
-
-      expect(result).toEqual([validRecipient]);
-    });
-  });
-
-  describe('extractRecipient', () => {
-    describe('execTransaction with empty data', () => {
-      it('should extract recipient from execTransaction parameters', () => {
-        const expectedRecipient = getAddress(faker.finance.ethereumAddress());
-
-        const transaction: DecodedTransactionData = {
-          operation: 0,
-          to: getAddress(faker.finance.ethereumAddress()),
-          value: '1000000000000000000',
-          data: '0x',
-          dataDecoded: {
-            method: 'execTransaction',
-            parameters: [
-              { name: 'to', type: 'address', value: expectedRecipient },
-              { name: 'value', type: 'uint256', value: '1000000000000000000' },
-              { name: 'data', type: 'bytes', value: '0x' },
-            ],
-            accuracy: 'FULL_MATCH',
-          },
-        };
-
-        const result = service['extractRecipient'](transaction);
-
-        expect(result).toBe(expectedRecipient);
-      });
-
-      it('should not extract from execTransaction with non-empty data', () => {
-        // Setup mock to return false for ERC-20 checks since data isn't recognized
-        mockErc20Decoder.helpers.isTransfer.mockReturnValue(false);
-        mockErc20Decoder.helpers.isTransferFrom.mockReturnValue(false);
-
-        const transaction: DecodedTransactionData = {
-          operation: 0,
-          to: getAddress(faker.finance.ethereumAddress()),
-          value: '1000000000000000000',
-          data: '0xa9059cbb', // Non-empty data - not a native transfer, doesn't match ERC-20
-          dataDecoded: {
-            method: 'execTransaction',
-            parameters: [
-              {
-                name: 'to',
-                type: 'address',
-                value: getAddress(faker.finance.ethereumAddress()),
-              },
-              { name: 'value', type: 'uint256', value: '1000000000000000000' },
-              { name: 'data', type: 'bytes', value: '0xa9059cbb' }, // Non-empty data
-            ],
-            accuracy: 'FULL_MATCH',
-          },
-        };
-
-        const result = service['extractRecipient'](transaction);
-
-        // Since data is not '0x' and doesn't match ERC-20 patterns, returns undefined
-        expect(result).toBeUndefined();
-      });
-
-      it('should handle execTransaction with missing parameters and throw error', () => {
-        const transaction: DecodedTransactionData = {
-          operation: 0,
-          to: getAddress(faker.finance.ethereumAddress()),
-          value: '1000000000000000000',
-          data: '0x',
-          dataDecoded: {
-            method: 'execTransaction',
-            parameters: [], // Missing parameters - this will cause error when trying to access parameters[2]
-            accuracy: 'FULL_MATCH',
-          },
-        };
-
-        // This should throw because the service tries to access parameters[2].value on empty array
-        expect(() => service['extractRecipient'](transaction)).toThrow();
-      });
-    });
-
-    describe('ERC-20 transfer', () => {
-      it('should extract recipient from transfer function', () => {
-        const expectedRecipient = getAddress(faker.finance.ethereumAddress());
-
-        const transaction: DecodedTransactionData = {
-          operation: 0,
-          to: getAddress(faker.finance.ethereumAddress()),
-          value: '0',
-          data: '0xa9059cbb',
-          dataDecoded: {
-            method: 'transfer',
-            parameters: [
-              { name: 'to', type: 'address', value: expectedRecipient },
-              { name: 'value', type: 'uint256', value: '1000000000000000000' },
-            ],
-            accuracy: 'FULL_MATCH',
-          },
-        };
-
-        mockErc20Decoder.helpers.isTransfer.mockReturnValue(true);
-
-        const result = service['extractRecipient'](transaction);
-
-        expect(result).toBe(expectedRecipient);
-      });
-
-      it('should handle transfer with missing parameters and throw error', () => {
-        // Setup mocks
-        mockErc20Decoder.helpers.isTransfer.mockReturnValue(true);
-        mockErc20Decoder.helpers.isTransferFrom.mockReturnValue(false);
-
-        const transaction: DecodedTransactionData = {
-          operation: 0,
-          to: getAddress(faker.finance.ethereumAddress()),
-          value: '0',
-          data: '0xa9059cbb',
-          dataDecoded: {
-            method: 'transfer',
-            parameters: [], // Missing parameters - will cause error accessing parameters[0]
-            accuracy: 'FULL_MATCH',
-          },
-        };
-
-        // This should fail because the service tries to access parameters[0].value on empty array
-        expect(() => service['extractRecipient'](transaction)).toThrow();
-      });
-    });
-
-    describe('ERC-20 transferFrom', () => {
-      it('should extract recipient from transferFrom function', () => {
-        const sender = getAddress(faker.finance.ethereumAddress());
-        const expectedRecipient = getAddress(faker.finance.ethereumAddress());
-
-        const transaction: DecodedTransactionData = {
-          operation: 0,
-          to: getAddress(faker.finance.ethereumAddress()),
-          value: '0',
-          data: '0x23b872dd',
-          dataDecoded: {
-            method: 'transferFrom',
-            parameters: [
-              { name: 'from', type: 'address', value: sender },
-              { name: 'to', type: 'address', value: expectedRecipient },
-              { name: 'value', type: 'uint256', value: '1000000000000000000' },
-            ],
-            accuracy: 'FULL_MATCH',
-          },
-        };
-
-        mockErc20Decoder.helpers.isTransfer.mockReturnValue(false);
-        mockErc20Decoder.helpers.isTransferFrom.mockReturnValue(true);
-
-        const result = service['extractRecipient'](transaction);
-
-        expect(result).toBe(expectedRecipient);
-      });
-    });
-
-    describe('Native transfer', () => {
-      it('should extract recipient from transaction.to for native transfer with empty data', () => {
-        const expectedRecipient = getAddress(faker.finance.ethereumAddress());
-
-        const transaction: DecodedTransactionData = {
-          operation: 0,
-          to: expectedRecipient,
-          value: '1000000000000000000',
-          data: '0x',
-          dataDecoded: null,
-        };
-
-        mockErc20Decoder.helpers.isTransfer.mockReturnValue(false);
-        mockErc20Decoder.helpers.isTransferFrom.mockReturnValue(false);
-
-        const result = service['extractRecipient'](transaction);
-
-        expect(result).toBe(expectedRecipient);
-      });
-
-      it('should extract recipient from transaction.to when dataDecoded is null', () => {
-        const expectedRecipient = getAddress(faker.finance.ethereumAddress());
-
-        const transaction: DecodedTransactionData = {
-          operation: 0,
-          to: expectedRecipient,
-          value: '1000000000000000000',
-          data: '0xsomedata',
-          dataDecoded: null,
-        };
-
-        mockErc20Decoder.helpers.isTransfer.mockReturnValue(false);
-        mockErc20Decoder.helpers.isTransferFrom.mockReturnValue(false);
-
-        const result = service['extractRecipient'](transaction);
-
-        expect(result).toBe(expectedRecipient);
-      });
-    });
-
-    describe('unrecognized transactions', () => {
-      it('should return undefined for unrecognized contract interactions', () => {
-        const transaction: DecodedTransactionData = {
-          operation: 0,
-          to: getAddress(faker.finance.ethereumAddress()),
-          value: '0',
-          data: '0xunknownmethod',
-          dataDecoded: {
-            method: 'unknownMethod',
-            parameters: [],
-            accuracy: 'UNKNOWN',
-          },
-        };
-
-        mockErc20Decoder.helpers.isTransfer.mockReturnValue(false);
-        mockErc20Decoder.helpers.isTransferFrom.mockReturnValue(false);
-
-        const result = service['extractRecipient'](transaction);
-
-        expect(result).toBeUndefined();
       });
     });
   });
