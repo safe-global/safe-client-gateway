@@ -20,10 +20,9 @@ import {
 } from '@/datasources/cache/cache.service.interface';
 import { CacheRouter } from '@/datasources/cache/cache.router';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import { LogType } from '@/domain/common/entities/log-type.entity';
-import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { extractRecipients } from '../utils/recipient-extraction.utils';
+import { logCacheHit, logCacheMiss } from '@/modules/safe-shield/utils/common';
 
 /**
  * Service responsible for analyzing transaction recipients and bridge configurations.
@@ -62,10 +61,10 @@ export class RecipientAnalysisService {
 
     const cached = await this.cacheService.hGet(cacheDir);
     if (cached) {
-      this.logCacheHit(cacheDir);
+      logCacheHit(cacheDir, this.loggingService);
       return JSON.parse(cached) as RecipientAnalysisResponse;
     }
-    this.logCacheMiss(cacheDir);
+    logCacheMiss(cacheDir, this.loggingService);
 
     const analysisResults: RecipientAnalysisResponse = {};
     for (const recipient of recipients) {
@@ -157,21 +156,5 @@ export class RecipientAnalysisService {
     const description = DESCRIPTION_MAPPING[type](interactions ?? 0);
 
     return { severity, type, title, description };
-  }
-
-  private logCacheHit(cacheDir: CacheDir): void {
-    this.loggingService.debug({
-      type: LogType.CacheHit,
-      key: cacheDir.key,
-      field: cacheDir.field,
-    });
-  }
-
-  private logCacheMiss(cacheDir: CacheDir): void {
-    this.loggingService.debug({
-      type: LogType.CacheMiss,
-      key: cacheDir.key,
-      field: cacheDir.field,
-    });
   }
 }
