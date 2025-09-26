@@ -10,6 +10,7 @@ export interface ICacheService {
     value: string,
     expireTimeSeconds: number | undefined,
     expireDeviatePercent?: number,
+    options?: { trackTtl?: boolean },
   ): Promise<void>;
 
   hGet(cacheDir: CacheDir): Promise<string | undefined>;
