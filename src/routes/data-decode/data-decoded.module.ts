@@ -7,5 +7,6 @@ import { DataDecoderRepositoryModule } from '@/domain/data-decoder/v2/data-decod
   imports: [DataDecoderRepositoryModule],
   controllers: [DataDecodedController],
   providers: [DataDecodedService],
+  exports: [DataDecodedService],
 })
 export class DataDecodedModule {}

@@ -464,6 +464,7 @@ export class TransactionApi implements ITransactionApi {
     onlyErc721: boolean;
     limit?: number;
     offset?: number;
+    to?: Address;
   }): Promise<Raw<Page<Transfer>>> {
     try {
       const cacheDir = CacheRouter.getTransfersCacheDir({
@@ -481,6 +482,7 @@ export class TransactionApi implements ITransactionApi {
             erc721: args.onlyErc721,
             limit: args.limit,
             offset: args.offset,
+            to: args.to,
           },
         },
         expireTimeSeconds: this.defaultExpirationTimeInSeconds,

@@ -823,14 +823,11 @@ describe('TransactionApi', () => {
         `${chainId}_transfer_${transfer.transferId}`,
         '',
       );
-      networkService.get.mockResolvedValueOnce({
-        status: 200,
-        data: rawify(transfer),
-      });
+      mockDataSource.get.mockResolvedValueOnce(rawify(transfer));
 
       const actual = await service.getTransfer(transfer.transferId);
 
-      expect(actual).toBe(actual);
+      expect(actual).toBe(transfer);
       expect(mockDataSource.get).toHaveBeenCalledTimes(1);
       expect(mockDataSource.get).toHaveBeenCalledWith({
         cacheDir,
@@ -886,12 +883,9 @@ describe('TransactionApi', () => {
       const getTransfersUrl = `${baseUrl}/api/v1/safes/${safeAddress}/transfers/`;
       const cacheDir = new CacheDir(
         `${chainId}_transfers_${safeAddress}`,
-        `${onlyErc20}_${onlyErc721}_${limit}_${offset}`,
+        `${onlyErc20}_${onlyErc721}_${limit}_${offset}_undefined`,
       );
-      networkService.get.mockResolvedValueOnce({
-        status: 200,
-        data: rawify(transfersPage),
-      });
+      mockDataSource.get.mockResolvedValueOnce(rawify(transfersPage));
 
       const actual = await service.getTransfers({
         safeAddress,
@@ -901,7 +895,7 @@ describe('TransactionApi', () => {
         offset,
       });
 
-      expect(actual).toBe(actual);
+      expect(actual).toBe(transfersPage);
       expect(mockDataSource.get).toHaveBeenCalledTimes(1);
       expect(mockDataSource.get).toHaveBeenCalledWith({
         cacheDir,
@@ -914,6 +908,50 @@ describe('TransactionApi', () => {
             erc721: onlyErc721,
             limit,
             offset,
+          },
+        },
+      });
+    });
+
+    it('should return the transfers retrieved with `to` filter', async () => {
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const onlyErc20 = faker.datatype.boolean();
+      const onlyErc721 = faker.datatype.boolean();
+      const limit = faker.number.int();
+      const offset = faker.number.int();
+      const to = getAddress(faker.finance.ethereumAddress());
+      const transfer = erc20TransferBuilder().build();
+      const transfersPage = pageBuilder().with('results', [transfer]).build();
+      const getTransfersUrl = `${baseUrl}/api/v1/safes/${safeAddress}/transfers/`;
+      const cacheDir = new CacheDir(
+        `${chainId}_transfers_${safeAddress}`,
+        `${onlyErc20}_${onlyErc721}_${limit}_${offset}_${to}`,
+      );
+      mockDataSource.get.mockResolvedValueOnce(rawify(transfersPage));
+
+      const actual = await service.getTransfers({
+        safeAddress,
+        onlyErc20,
+        onlyErc721,
+        limit,
+        offset,
+        to,
+      });
+
+      expect(actual).toBe(transfersPage);
+      expect(mockDataSource.get).toHaveBeenCalledTimes(1);
+      expect(mockDataSource.get).toHaveBeenCalledWith({
+        cacheDir,
+        expireTimeSeconds: defaultExpirationTimeInSeconds,
+        notFoundExpireTimeSeconds: notFoundExpireTimeSeconds,
+        url: getTransfersUrl,
+        networkRequest: {
+          params: {
+            erc20: onlyErc20,
+            erc721: onlyErc721,
+            limit,
+            offset,
+            to,
           },
         },
       });
@@ -936,7 +974,7 @@ describe('TransactionApi', () => {
       const expected = new DataSourceError(errorMessage, statusCode);
       const cacheDir = new CacheDir(
         `${chainId}_transfers_${safeAddress}`,
-        `${onlyErc20}_${onlyErc721}_${limit}_${offset}`,
+        `${onlyErc20}_${onlyErc721}_${limit}_${offset}_undefined`,
       );
       mockDataSource.get.mockRejectedValueOnce(
         new NetworkResponseError(
@@ -1011,10 +1049,7 @@ describe('TransactionApi', () => {
         `${chainId}_incoming_transfers_${safeAddress}`,
         `${executionDateGte}_${executionDateLte}_${to}_${value}_${tokenAddress}_${txHash}_${limit}_${offset}`,
       );
-      networkService.get.mockResolvedValueOnce({
-        status: 200,
-        data: rawify(incomingTransfersPage),
-      });
+      mockDataSource.get.mockResolvedValueOnce(rawify(incomingTransfersPage));
 
       const actual = await service.getIncomingTransfers({
         safeAddress,
@@ -1028,7 +1063,7 @@ describe('TransactionApi', () => {
         txHash,
       });
 
-      expect(actual).toBe(actual);
+      expect(actual).toBe(incomingTransfersPage);
       expect(mockDataSource.get).toHaveBeenCalledTimes(1);
       expect(mockDataSource.get).toHaveBeenCalledWith({
         cacheDir,

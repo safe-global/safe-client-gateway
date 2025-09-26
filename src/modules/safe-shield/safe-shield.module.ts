@@ -3,6 +3,8 @@ import { SafeShieldService } from './safe-shield.service';
 import { RecipientAnalysisModule } from './recipient-analysis/recipient-analysis.module';
 import { ContractAnalysisModule } from './contract-analysis/contract-analysis.module';
 import { ThreatAnalysisModule } from './threat-analysis/threat-analysis.module';
+import { MultiSendDecoder } from '@/domain/contracts/decoders/multi-send-decoder.helper';
+import { DataDecodedModule } from '@/routes/data-decode/data-decoded.module';
 
 /**
  * Main module for Safe Shield transaction analysis system.
@@ -16,8 +18,9 @@ import { ThreatAnalysisModule } from './threat-analysis/threat-analysis.module';
     RecipientAnalysisModule,
     ContractAnalysisModule,
     ThreatAnalysisModule,
+    DataDecodedModule,
   ],
-  providers: [SafeShieldService],
+  providers: [SafeShieldService, MultiSendDecoder],
   exports: [SafeShieldService],
 })
 export class SafeShieldModule {}
