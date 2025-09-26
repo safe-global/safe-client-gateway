@@ -22,6 +22,8 @@ import { Address } from 'viem';
 import { logCacheHit, logCacheMiss } from '@/modules/safe-shield/utils/common';
 import { extractContracts } from '@/modules/safe-shield/utils/extraction.utils';
 import { Erc20Decoder } from '@/domain/relay/contracts/decoders/erc-20-decoder.helper';
+import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
+import { MultisigTransactionPageSchema } from '@/domain/safe/entities/multisig-transaction.entity';
 
 /**
  * Service responsible for analyzing contract interactions in transactions.
@@ -33,6 +35,8 @@ export class ContractAnalysisService {
   constructor(
     @Inject(IDataDecoderApi)
     private readonly dataDecoderApi: IDataDecoderApi,
+    @Inject(ITransactionApiManager)
+    private readonly transactionApiManager: ITransactionApiManager,
     private readonly erc20Decoder: Erc20Decoder,
     @Inject(CacheService)
     private readonly cacheService: ICacheService,
@@ -49,6 +53,7 @@ export class ContractAnalysisService {
 
   async analyze(args: {
     chainId: string;
+    safeAddress: Address;
     transactions: Array<DecodedTransactionData>;
   }): Promise<ContractAnalysisResponse> {
     const contracts = extractContracts(args.transactions, this.erc20Decoder);
@@ -68,6 +73,7 @@ export class ContractAnalysisService {
     for (const contract of contracts) {
       const result = await this.analyzeContract({
         chainId: args.chainId,
+        safeAddress: args.safeAddress,
         contract,
       });
 
@@ -84,16 +90,32 @@ export class ContractAnalysisService {
 
   async analyzeContract(args: {
     chainId: string;
+    safeAddress: Address;
     contract: Address;
   }): Promise<Record<ContractStatusGroup, Array<ContractAnalysisResult>>> {
-    const contractVerificationResult = await this.verifyContract(args);
+    const [contractVerificationResult, contractInteractionResult] =
+      await Promise.all([
+        this.verifyContract({
+          chainId: args.chainId,
+          contract: args.contract,
+        }),
+        this.analyzeInteractions(args),
+      ]);
+
     return {
       CONTRACT_VERIFICATION: [contractVerificationResult],
-      CONTRACT_INTERACTION: [],
+      CONTRACT_INTERACTION: [contractInteractionResult],
       DELEGATECALL: [],
     };
   }
 
+  /**
+   * Verify a contract.
+   * @param args - The arguments for the analysis.
+   * @param args.chainId - The chain ID.
+   * @param args.contract - The contract address.
+   * @returns The analysis result.
+   */
   async verifyContract(args: {
     chainId: string;
     contract: Address;
@@ -106,6 +128,7 @@ export class ContractAnalysisService {
       });
       const { count, results } = ContractPageSchema.parse(contracts);
       if (count) {
+        //TODO check what to do if abiJson is null
         type = results[0].abi ? 'VERIFIED' : 'NOT_VERIFIED';
       } else {
         type = 'NOT_VERIFIED_BY_SAFE';
@@ -114,6 +137,36 @@ export class ContractAnalysisService {
       type = 'VERIFICATION_UNAVAILABLE';
     }
     return this.mapToAnalysisResult(type);
+  }
+
+  /**
+   * Analyzes the interactions between a Safe and a contract.
+   * @param args - The arguments for the analysis.
+   * @param args.chainId - The chain ID.
+   * @param args.safeAddress - The Safe address.
+   * @param args.contract - The contract address.
+   * @returns The analysis result.
+   */
+  async analyzeInteractions(args: {
+    chainId: string;
+    safeAddress: Address;
+    contract: Address;
+  }): Promise<ContractAnalysisResult> {
+    const transactionApi = await this.transactionApiManager.getApi(
+      args.chainId,
+    );
+
+    const page = await transactionApi.getMultisigTransactions({
+      safeAddress: args.safeAddress,
+      to: args.contract,
+      limit: 1,
+    });
+
+    const multisigPage = MultisigTransactionPageSchema.parse(page);
+    const interactions = multisigPage.count ?? 0;
+    const type = interactions > 0 ? 'KNOWN_CONTRACT' : 'NEW_CONTRACT';
+
+    return this.mapToAnalysisResult(type, interactions);
   }
 
   /**
