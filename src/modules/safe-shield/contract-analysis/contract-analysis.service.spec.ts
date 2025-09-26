@@ -17,6 +17,7 @@ import {
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import { rawify } from '@/validation/entities/raw.entity';
 import { contractBuilder } from '@/domain/data-decoder/v2/entities/__tests__/contract.builder';
+import { Erc20Decoder } from '@/domain/relay/contracts/decoders/erc-20-decoder.helper';
 
 const mockDataDecoderApi = {
   getContracts: jest.fn(),
