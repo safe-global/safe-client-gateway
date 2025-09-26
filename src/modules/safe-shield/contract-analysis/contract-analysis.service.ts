@@ -18,10 +18,10 @@ import { CacheRouter } from '@/datasources/cache/cache.router';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { Inject, Injectable } from '@nestjs/common';
-import { uniq } from 'lodash';
 import { Address } from 'viem';
 import { logCacheHit, logCacheMiss } from '@/modules/safe-shield/utils/common';
-import { extractContract } from '@/modules/safe-shield/utils/extraction.utils';
+import { extractContracts } from '@/modules/safe-shield/utils/extraction.utils';
+import { Erc20Decoder } from '@/domain/relay/contracts/decoders/erc-20-decoder.helper';
 
 /**
  * Service responsible for analyzing contract interactions in transactions.
@@ -33,6 +33,7 @@ export class ContractAnalysisService {
   constructor(
     @Inject(IDataDecoderApi)
     private readonly dataDecoderApi: IDataDecoderApi,
+    private readonly erc20Decoder: Erc20Decoder,
     @Inject(CacheService)
     private readonly cacheService: ICacheService,
     @Inject(IConfigurationService)
@@ -50,7 +51,7 @@ export class ContractAnalysisService {
     chainId: string;
     transactions: Array<DecodedTransactionData>;
   }): Promise<ContractAnalysisResponse> {
-    const contracts = this.extractContracts(args.transactions);
+    const contracts = extractContracts(args.transactions, this.erc20Decoder);
     const cacheDir = CacheRouter.getContractAnalysisCacheDir({
       chainId: args.chainId,
       contracts,
@@ -130,20 +131,5 @@ export class ContractAnalysisService {
     const description = DESCRIPTION_MAPPING[type](interactions ?? 0);
 
     return { severity, type, title, description };
-  }
-
-  /**
-   * Extracts the unique contract addresses from transactions.
-   * @param transactions - The transactions.
-   * @returns The unique contract addresses.
-   */
-  private extractContracts(
-    transactions: Array<DecodedTransactionData>,
-  ): Array<Address> {
-    return uniq(
-      transactions
-        .map((tx) => extractContract(tx))
-        .filter((contract) => !!contract),
-    );
   }
 }
