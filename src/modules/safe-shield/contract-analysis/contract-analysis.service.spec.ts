@@ -16,6 +16,7 @@ import {
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import { rawify } from '@/validation/entities/raw.entity';
 import { contractBuilder } from '@/domain/data-decoder/v2/entities/__tests__/contract.builder';
+import type { Erc20Decoder } from '@/domain/relay/contracts/decoders/erc-20-decoder.helper';
 
 const mockDataDecoderApi = {
   getContracts: jest.fn(),
@@ -37,6 +38,13 @@ const mockLoggingService = {
   debug: jest.fn(),
 } as jest.MockedObjectDeep<ILoggingService>;
 
+const mockErc20Decoder = {
+  helpers: {
+    isTransfer: jest.fn(),
+    isTransferFrom: jest.fn(),
+  },
+} as jest.MockedObjectDeep<Erc20Decoder>;
+
 describe('ContractAnalysisService', () => {
   let service: ContractAnalysisService;
   let fakeCacheService: FakeCacheService;
@@ -46,6 +54,7 @@ describe('ContractAnalysisService', () => {
     service = new ContractAnalysisService(
       mockDataDecoderApi,
       mockTransactionApiManager,
+      mockErc20Decoder,
       fakeCacheService,
       mockConfigurationService,
       mockLoggingService,
