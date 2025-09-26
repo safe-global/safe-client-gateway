@@ -155,9 +155,6 @@ export class PositionsService {
 
   private _isDust(position: PositionEntry): boolean {
     const fiatBalance = Number(position.fiatBalance);
-    if (Number.isNaN(fiatBalance)) {
-      return true;
-    }
-    return Math.abs(fiatBalance) < DUST_THRESHOLD_USD;
+    return Number.isNaN(fiatBalance) || Math.abs(fiatBalance) < DUST_THRESHOLD_USD;
   }
 }
