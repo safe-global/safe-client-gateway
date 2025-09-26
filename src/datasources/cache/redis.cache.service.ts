@@ -224,6 +224,7 @@ export class RedisCacheService
         type: LogType.CacheEvent,
         source: 'RedisCacheService',
         event: `Failed to read TTL for ${cacheDir.key}`,
+        error,
       });
     }
   }
