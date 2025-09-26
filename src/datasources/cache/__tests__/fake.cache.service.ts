@@ -49,16 +49,14 @@ export class FakeCacheService implements ICacheService, ICacheReadiness {
 
   hSet(
     cacheDir: CacheDir,
-    value: string | number,
+    value: string,
     expireTimeSeconds: number | undefined,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    _expireDeviatePercent?: number,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _options?: { trackTtl?: boolean },
   ): Promise<void> {
     if (!expireTimeSeconds || expireTimeSeconds <= 0) {
-      return Promise.resolve();
-    }
-    if (typeof value === 'number') {
-      this.cache[cacheDir.key] = value;
       return Promise.resolve();
     }
     const fields = this.cache[cacheDir.key];

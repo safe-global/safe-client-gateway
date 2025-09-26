@@ -14,9 +14,7 @@ import { ResponseCacheService } from '@/datasources/cache/response-cache.service
  */
 @Injectable()
 export class CacheControlInterceptor implements NestInterceptor {
-  constructor(
-    private readonly responseCacheService: ResponseCacheService,
-  ) {}
+  constructor(private readonly responseCacheService: ResponseCacheService) {}
 
   intercept(
     context: ExecutionContext,
