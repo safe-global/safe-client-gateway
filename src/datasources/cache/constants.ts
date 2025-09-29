@@ -17,3 +17,5 @@ export const CacheKeyPrefix = Symbol('CacheKeyPrefix');
  * Ref: https://github.com/redis/redis/blob/cc244370a2d622d5d2fec5573ae87de6c59ed3b9/src/expire.c#L573
  */
 export const MAX_TTL = Number.MAX_SAFE_INTEGER - 1;
+
+export const CACHE_INVALIDATION_PREFIX = 'invalidationTimeMs:';

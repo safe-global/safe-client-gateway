@@ -23,6 +23,7 @@ import { IConfigurationService } from '@/config/configuration.service.interface'
 import { Safe } from '@/domain/safe/entities/safe.entity';
 import { Raw } from '@/validation/entities/raw.entity';
 import { LogType } from '@/domain/common/entities/log-type.entity';
+import { CACHE_INVALIDATION_PREFIX } from '@/datasources/cache/constants';
 
 /**
  * A data source which tries to retrieve values from cache using
@@ -257,7 +258,7 @@ export class CacheFirstDataSource {
     startTimeMs: number,
   ): Promise<boolean> {
     const invalidationTimeMsStr = await this.cacheService.hGet(
-      new CacheDir(`invalidationTimeMs:${key}`, ''),
+      new CacheDir(`${CACHE_INVALIDATION_PREFIX}${key}`, ''),
     );
 
     if (!invalidationTimeMsStr) return true;

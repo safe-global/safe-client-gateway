@@ -1,6 +1,7 @@
 import { faker } from '@faker-js/faker';
 import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
+import { CACHE_INVALIDATION_PREFIX } from '@/datasources/cache/constants';
 describe('FakeCacheService', () => {
   let target: FakeCacheService;
 
@@ -34,7 +35,9 @@ describe('FakeCacheService', () => {
 
     await expect(target.hGet(cacheDir)).resolves.toBe(undefined);
     await expect(
-      target.hGet(new CacheDir(`invalidationTimeMs:${cacheDir.key}`, '')),
+      target.hGet(
+        new CacheDir(`${CACHE_INVALIDATION_PREFIX}${cacheDir.key}`, ''),
+      ),
     ).resolves.toBe(now.toString());
     expect(target.keyCount()).toBe(1);
     jest.useRealTimers();

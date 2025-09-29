@@ -5,7 +5,11 @@ import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { ICacheReadiness } from '@/domain/interfaces/cache-readiness.interface';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import { CacheKeyPrefix, MAX_TTL } from '@/datasources/cache/constants';
+import {
+  CACHE_INVALIDATION_PREFIX,
+  CacheKeyPrefix,
+  MAX_TTL,
+} from '@/datasources/cache/constants';
 import { ResponseCacheService } from '@/datasources/cache/response-cache.service';
 import { LogType } from '@/domain/common/entities/log-type.entity';
 import { deviateRandomlyByPercentage } from '@/domain/common/utils/number';
@@ -103,7 +107,7 @@ export class RedisCacheService
     const result = await this.client.unlink(keyWithPrefix);
 
     await this.hSet(
-      new CacheDir(`invalidationTimeMs:${key}`, ''),
+      new CacheDir(`${CACHE_INVALIDATION_PREFIX}${key}`, ''),
       Date.now().toString(),
       this.defaultExpirationTimeInSeconds,
       0,
@@ -212,7 +216,7 @@ export class RedisCacheService
   }
 
   private shouldTrackTtl(cacheDir: CacheDir): boolean {
-    return !cacheDir.key.startsWith('invalidationTimeMs:');
+    return !cacheDir.key.startsWith(CACHE_INVALIDATION_PREFIX);
   }
 
   private async trackTtl(cacheDir: CacheDir): Promise<void> {

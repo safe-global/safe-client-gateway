@@ -7,6 +7,7 @@ import { fakeJson } from '@/__tests__/faker';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import clearAllMocks = jest.clearAllMocks;
 import type { ResponseCacheService } from '@/datasources/cache/response-cache.service';
+import { CACHE_INVALIDATION_PREFIX } from '@/datasources/cache/constants';
 
 const redisClientType = {
   isReady: true,
@@ -110,12 +111,12 @@ describe('RedisCacheService with a Key Prefix', () => {
     await redisCacheService.deleteByKey(key);
 
     expect(redisClientTypeMock.hSet).toHaveBeenCalledWith(
-      `${keyPrefix}-invalidationTimeMs:${key}`,
+      `${keyPrefix}-${CACHE_INVALIDATION_PREFIX}${key}`,
       '',
       now.toString(),
     );
     expect(redisClientTypeMock.expire).toHaveBeenCalledWith(
-      `${keyPrefix}-invalidationTimeMs:${key}`,
+      `${keyPrefix}-${CACHE_INVALIDATION_PREFIX}${key}`,
       defaultExpirationTimeInSeconds,
       'NX',
     );
