@@ -23,7 +23,7 @@ export const SEVERITY_MAPPING: Record<
  * Maps each recipient or bridge status to its user-facing title.
  */
 export const TITLE_MAPPING: Record<RecipientStatus | BridgeStatus, string> = {
-  NEW_RECIPIENT: 'New Recipient',
+  NEW_RECIPIENT: 'New recipient',
   KNOWN_RECIPIENT: 'Recurring recipient',
   INCOMPATIBLE_SAFE: 'Incompatible Safe version',
   MISSING_OWNERSHIP: 'Missing ownership',
