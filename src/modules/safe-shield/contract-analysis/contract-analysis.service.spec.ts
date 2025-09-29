@@ -164,6 +164,8 @@ describe('ContractAnalysisService', () => {
               abiHash: faker.string.hexadecimal() as Hex,
               modified: faker.date.recent(),
             })
+            .with('name', '')
+            .with('displayName', '')
             .build(),
         ])
         .build();
