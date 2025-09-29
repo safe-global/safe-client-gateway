@@ -76,6 +76,7 @@ export class CacheRouter {
   private static readonly ZERION_POSITIONS_KEY = 'zerion_positions';
   private static readonly ORM_QUERY_CACHE_KEY = 'orm_query_cache';
   private static readonly TRANSACTIONS_EXPORT_KEY = 'transactions_export';
+  private static readonly RECIPIENT_ANALYSIS_KEY = 'recipient_analysis';
 
   static getAuthNonceCacheKey(nonce: string): string {
     return `${CacheRouter.AUTH_NONCE_KEY}_${nonce}`;
@@ -268,10 +269,11 @@ export class CacheRouter {
     onlyErc721: boolean;
     limit?: number;
     offset?: number;
+    to?: string;
   }): CacheDir {
     return new CacheDir(
       CacheRouter.getTransfersCacheKey(args),
-      `${args.onlyErc20}_${args.onlyErc721}_${args.limit}_${args.offset}`,
+      `${args.onlyErc20}_${args.onlyErc721}_${args.limit}_${args.offset}_${args.to}`,
     );
   }
 
@@ -864,5 +866,24 @@ export class CacheRouter {
     safeAddress: Address,
   ): string {
     return `${CacheRouter.ORM_QUERY_CACHE_KEY}:${prefix}:${chainId}:${safeAddress}`;
+  }
+
+  /**
+   * Gets cache directory for recipient analysis results.
+   *
+   * @param {string} args.chainId - Chain ID
+   * @param {Address[]} args.recipients - Array of recipient addresses
+   * @returns {CacheDir} - Cache directory
+   */
+  static getRecipientAnalysisCacheDir(args: {
+    chainId: string;
+    recipients: Array<Address>;
+  }): CacheDir {
+    const recipientsHash = crypto.createHash('sha256');
+    recipientsHash.update(args.recipients.sort().join(','));
+    return new CacheDir(
+      `${args.chainId}_${CacheRouter.RECIPIENT_ANALYSIS_KEY}`,
+      recipientsHash.digest('hex'),
+    );
   }
 }
