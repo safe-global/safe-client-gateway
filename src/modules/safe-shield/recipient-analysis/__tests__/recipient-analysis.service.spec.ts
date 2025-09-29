@@ -142,7 +142,7 @@ describe('RecipientAnalysisService', () => {
           {
             severity: 'INFO',
             type: 'NEW_RECIPIENT',
-            title: 'New Recipient',
+            title: 'New recipient',
             description:
               'You are interacting with this address for the first time.',
           },
@@ -348,7 +348,7 @@ describe('RecipientAnalysisService', () => {
       expect(result).toEqual({
         severity: 'INFO',
         type: 'NEW_RECIPIENT',
-        title: 'New Recipient',
+        title: 'New recipient',
         description:
           'You are interacting with this address for the first time.',
       });
@@ -368,7 +368,7 @@ describe('RecipientAnalysisService', () => {
       expect(result).toEqual({
         severity: 'INFO',
         type: 'NEW_RECIPIENT',
-        title: 'New Recipient',
+        title: 'New recipient',
         description:
           'You are interacting with this address for the first time.',
       });
