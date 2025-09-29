@@ -869,7 +869,7 @@ export class CacheRouter {
     return `${CacheRouter.ORM_QUERY_CACHE_KEY}:${prefix}:${chainId}:${safeAddress}`;
   }
 
-  /**
+ /**
    * Gets cache directory for recipient analysis results.
    *
    * @param {string} args.chainId - Chain ID
@@ -888,19 +888,23 @@ export class CacheRouter {
     );
   }
 
-  /**
+    /**
    * Gets cache directory for contract analysis results.
    *
    * @param {string} args.chainId - Chain ID
-   * @param {Address[]} args.contracts - Array of contract addresses
+   * @param {[Address, boolean][]} args.contractPairs - Array of pairs: contract address and isDelegateCall flag
    * @returns {CacheDir} - Cache directory
    */
   static getContractAnalysisCacheDir(args: {
     chainId: string;
-    contracts: Array<Address>;
+    contractPairs: Array<[Address, boolean]>;
   }): CacheDir {
     const contractsHash = crypto.createHash('sha256');
-    contractsHash.update(args.contracts.sort().join(','));
+    contractsHash.update(
+      args.contractPairs
+        .sort((a, b) => a[0].localeCompare(b[0]) || Number(a[1]) - Number(b[1]))
+        .join(','),
+    );
     return new CacheDir(
       `${args.chainId}_${CacheRouter.CONTRACT_ANALYSIS_KEY}`,
       contractsHash.digest('hex'),
