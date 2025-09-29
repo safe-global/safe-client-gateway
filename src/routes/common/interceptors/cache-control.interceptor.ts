@@ -8,6 +8,9 @@ import { Response } from 'express';
 import { Observable, tap } from 'rxjs';
 import crypto from 'crypto';
 import { ResponseCacheService } from '@/datasources/cache/response-cache.service';
+import packageJson from '../../../../package.json';
+
+const apiVersion = (packageJson as { version?: string }).version ?? '0.0.0';
 
 /**
  * This interceptor can be used to set the `Cache-Control` header to `no-cache`.
@@ -61,7 +64,10 @@ export class CacheControlInterceptor implements NestInterceptor {
       return;
     }
 
-    const etag = crypto.createHash('sha256').update(payload).digest('hex');
+    const etag = crypto
+      .createHash('sha256')
+      .update(`${apiVersion}:${payload}`)
+      .digest('hex');
     response.header('ETag', `"${etag}"`);
   }
 
