@@ -99,6 +99,8 @@ export class ContractAnalysisService {
     contract: Address;
   }): Promise<ContractAnalysisResult> {
     let type: ContractStatus;
+    let name: string | undefined;
+
     try {
       const contracts = await this.dataDecoderApi.getContracts({
         address: args.contract,
@@ -106,29 +108,35 @@ export class ContractAnalysisService {
       });
       const { count, results } = ContractPageSchema.parse(contracts);
       if (count) {
-        type = results[0].abi ? 'VERIFIED' : 'NOT_VERIFIED';
+        const [{ abi, name: rawName, displayName }] = results;
+
+        type = abi ? 'VERIFIED' : 'NOT_VERIFIED';
+        name = displayName || rawName;
       } else {
         type = 'NOT_VERIFIED_BY_SAFE';
       }
     } catch {
       type = 'VERIFICATION_UNAVAILABLE';
     }
-    return this.mapToAnalysisResult(type);
+    return this.mapToAnalysisResult({ type, name });
   }
 
   /**
    * Maps a contract verification status to an analysis result.
    * @param type - The contract status.
    * @param interactions - The number of interactions with the contract (if applicable).
+   * @param name - The name of the contract (if applicable).
    * @returns The analysis result.
    */
-  private mapToAnalysisResult(
-    type: ContractStatus,
-    interactions?: number,
-  ): ContractAnalysisResult {
+  private mapToAnalysisResult(args: {
+    type: ContractStatus;
+    interactions?: number;
+    name?: string;
+  }): ContractAnalysisResult {
+    const { type, interactions, name } = args;
     const severity = SEVERITY_MAPPING[type];
     const title = TITLE_MAPPING[type];
-    const description = DESCRIPTION_MAPPING[type](interactions ?? 0);
+    const description = DESCRIPTION_MAPPING[type]({ interactions, name });
 
     return { severity, type, title, description };
   }

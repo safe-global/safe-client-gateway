@@ -53,9 +53,10 @@ describe('ContractAnalysisService', () => {
   });
 
   describe('verifyContract', () => {
-    it('should return VERIFIED when contract has ABI', async () => {
+    it('should return VERIFIED when contract has ABI and displayName', async () => {
       const chainId = faker.string.numeric();
       const contractAddress = getAddress(faker.finance.ethereumAddress());
+      const name = faker.company.name();
 
       const mockContractPage = pageBuilder()
         .with('count', 1)
@@ -67,6 +68,7 @@ describe('ContractAnalysisService', () => {
               abiHash: faker.string.hexadecimal() as Hex,
               modified: faker.date.recent(),
             })
+            .with('displayName', name)
             .build(),
         ])
         .build();
@@ -89,7 +91,92 @@ describe('ContractAnalysisService', () => {
         severity: SEVERITY_MAPPING.VERIFIED,
         type: 'VERIFIED',
         title: TITLE_MAPPING.VERIFIED,
-        description: DESCRIPTION_MAPPING.VERIFIED(0),
+        description: DESCRIPTION_MAPPING.VERIFIED({ name: name }),
+      });
+    });
+
+    it('should return VERIFIED with name when displayName is not present', async () => {
+      const chainId = faker.string.numeric();
+      const contractAddress = getAddress(faker.finance.ethereumAddress());
+      const name = faker.company.name();
+
+      const mockContractPage = pageBuilder()
+        .with('count', 1)
+        .with('results', [
+          contractBuilder()
+            .with('address', contractAddress)
+            .with('abi', {
+              abiJson: [{ type: 'function', name: 'test' }],
+              abiHash: faker.string.hexadecimal() as Hex,
+              modified: faker.date.recent(),
+            })
+            .with('name', name)
+            .with('displayName', '')
+            .build(),
+        ])
+        .build();
+
+      mockDataDecoderApi.getContracts.mockResolvedValue(
+        rawify(mockContractPage),
+      );
+
+      const result = await service.verifyContract({
+        chainId,
+        contract: contractAddress,
+      });
+
+      expect(mockDataDecoderApi.getContracts).toHaveBeenCalledWith({
+        address: contractAddress,
+        chainId,
+      });
+
+      expect(result).toEqual({
+        severity: SEVERITY_MAPPING.VERIFIED,
+        type: 'VERIFIED',
+        title: TITLE_MAPPING.VERIFIED,
+        description: DESCRIPTION_MAPPING.VERIFIED({ name: name }),
+      });
+    });
+
+    it('should return VERIFIED without name when name/displayName are not present', async () => {
+      const chainId = faker.string.numeric();
+      const contractAddress = getAddress(faker.finance.ethereumAddress());
+
+      const mockContractPage = pageBuilder()
+        .with('count', 1)
+        .with('results', [
+          contractBuilder()
+            .with('address', contractAddress)
+            .with('abi', {
+              abiJson: [{ type: 'function', name: 'test' }],
+              abiHash: faker.string.hexadecimal() as Hex,
+              modified: faker.date.recent(),
+            })
+            .with('name', '')
+            .with('displayName', '')
+            .build(),
+        ])
+        .build();
+
+      mockDataDecoderApi.getContracts.mockResolvedValue(
+        rawify(mockContractPage),
+      );
+
+      const result = await service.verifyContract({
+        chainId,
+        contract: contractAddress,
+      });
+
+      expect(mockDataDecoderApi.getContracts).toHaveBeenCalledWith({
+        address: contractAddress,
+        chainId,
+      });
+
+      expect(result).toEqual({
+        severity: SEVERITY_MAPPING.VERIFIED,
+        type: 'VERIFIED',
+        title: TITLE_MAPPING.VERIFIED,
+        description: 'This contract is verified.',
       });
     });
 
@@ -125,7 +212,7 @@ describe('ContractAnalysisService', () => {
         severity: SEVERITY_MAPPING.NOT_VERIFIED,
         type: 'NOT_VERIFIED',
         title: TITLE_MAPPING.NOT_VERIFIED,
-        description: DESCRIPTION_MAPPING.NOT_VERIFIED(0),
+        description: DESCRIPTION_MAPPING.NOT_VERIFIED(),
       });
     });
 
@@ -156,7 +243,7 @@ describe('ContractAnalysisService', () => {
         severity: SEVERITY_MAPPING.NOT_VERIFIED_BY_SAFE,
         type: 'NOT_VERIFIED_BY_SAFE',
         title: TITLE_MAPPING.NOT_VERIFIED_BY_SAFE,
-        description: DESCRIPTION_MAPPING.NOT_VERIFIED_BY_SAFE(0),
+        description: DESCRIPTION_MAPPING.NOT_VERIFIED_BY_SAFE(),
       });
     });
 
@@ -183,13 +270,14 @@ describe('ContractAnalysisService', () => {
         severity: SEVERITY_MAPPING.VERIFICATION_UNAVAILABLE,
         type: 'VERIFICATION_UNAVAILABLE',
         title: TITLE_MAPPING.VERIFICATION_UNAVAILABLE,
-        description: DESCRIPTION_MAPPING.VERIFICATION_UNAVAILABLE(0),
+        description: DESCRIPTION_MAPPING.VERIFICATION_UNAVAILABLE(),
       });
     });
 
     it('should handle multiple contracts and use first result', async () => {
       const chainId = faker.string.numeric();
       const contractAddress = getAddress(faker.finance.ethereumAddress());
+      const name = faker.company.name();
 
       const mockContractPage = pageBuilder()
         .with('count', 2)
@@ -201,6 +289,7 @@ describe('ContractAnalysisService', () => {
               abiHash: faker.string.hexadecimal() as Hex,
               modified: faker.date.recent(),
             })
+            .with('displayName', name)
             .build(),
           contractBuilder()
             .with('address', contractAddress)
@@ -223,7 +312,7 @@ describe('ContractAnalysisService', () => {
         severity: SEVERITY_MAPPING.VERIFIED,
         type: 'VERIFIED',
         title: TITLE_MAPPING.VERIFIED,
-        description: DESCRIPTION_MAPPING.VERIFIED(0),
+        description: DESCRIPTION_MAPPING.VERIFIED({ name: name }),
       });
     });
   });

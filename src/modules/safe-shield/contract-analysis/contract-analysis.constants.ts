@@ -29,15 +29,21 @@ export const TITLE_MAPPING: Record<ContractStatus, string> = {
   UNEXPECTED_DELEGATECALL: 'Unexpected delegateCall',
 };
 
+type DescriptionArgs = {
+  name?: string;
+  interactions?: number;
+};
+
 /**
  * Description mapping for contract analysis results.
  * Maps each contract status to a function that generates the description.
  */
 export const DESCRIPTION_MAPPING: Record<
   ContractStatus,
-  ((interactions: number) => string) | (() => string)
+  (args?: DescriptionArgs) => string
 > = {
-  VERIFIED: () => 'This contract is verified.',
+  VERIFIED: ({ name } = {}) =>
+    `This contract is verified${name ? ` as "${name}"` : ''}.`,
   NOT_VERIFIED: () => 'This contract is not verified yet.',
   NOT_VERIFIED_BY_SAFE: () =>
     'This contract has not been interacted with on Safe{Wallet}. If verified, it will be marked as such after the first transaction.',
@@ -45,7 +51,7 @@ export const DESCRIPTION_MAPPING: Record<
     'Contract verification is currently unavailable.',
   NEW_CONTRACT: () =>
     'You are interacting with this contract for the first time.',
-  KNOWN_CONTRACT: (interactions: number) =>
-    `You have interacted with this contract ${interactions} time${interactions > 1 ? 's' : ''}.`,
+  KNOWN_CONTRACT: ({ interactions = 0 } = {}) =>
+    `You have interacted with this contract ${interactions} time${interactions !== 1 ? 's' : ''}.`,
   UNEXPECTED_DELEGATECALL: () => 'Unexpected delegateCall.',
 };
