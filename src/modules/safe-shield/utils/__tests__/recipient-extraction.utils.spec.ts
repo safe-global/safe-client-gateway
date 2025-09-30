@@ -104,9 +104,10 @@ describe('recipient-extraction.utils', () => {
           dataDecoded: {
             method: 'execTransaction',
             parameters: [
-              { name: 'to', type: 'address', value: expectedRecipient },
-              { name: 'value', type: 'uint256', value: '1000000000000000000' },
-              { name: 'data', type: 'bytes', value: '0x' },
+              { name: 'to', type: 'address', value: expectedRecipient, valueDecoded: null },
+              { name: 'value', type: 'uint256', value: '1000000000000000000', valueDecoded: null },
+              { name: 'data', type: 'bytes', value: '0x', valueDecoded: null },
+              { name: 'operation', type: 'uint256', value: '0', valueDecoded: null },
             ],
             accuracy: 'FULL_MATCH',
           },
@@ -134,9 +135,11 @@ describe('recipient-extraction.utils', () => {
                 name: 'to',
                 type: 'address',
                 value: getAddress(faker.finance.ethereumAddress()),
+                valueDecoded: null,
               },
-              { name: 'value', type: 'uint256', value: '1000000000000000000' },
-              { name: 'data', type: 'bytes', value: '0xa9059cbb' }, // Non-empty data
+              { name: 'value', type: 'uint256', value: '1000000000000000000', valueDecoded: null },
+              { name: 'data', type: 'bytes', value: '0xa9059cbb', valueDecoded: null }, // Non-empty data
+              { name: 'operation', type: 'uint256', value: '0', valueDecoded: null },
             ],
             accuracy: 'FULL_MATCH',
           },
@@ -156,7 +159,7 @@ describe('recipient-extraction.utils', () => {
           data: '0x',
           dataDecoded: {
             method: 'execTransaction',
-            parameters: [], // Missing parameters - this will cause error when trying to access parameters[2]
+            parameters: [] as Array<never>, // Missing parameters - this will cause error when trying to access parameters[2]
             accuracy: 'FULL_MATCH',
           },
         };
@@ -178,8 +181,8 @@ describe('recipient-extraction.utils', () => {
           dataDecoded: {
             method: 'transfer',
             parameters: [
-              { name: 'to', type: 'address', value: expectedRecipient },
-              { name: 'value', type: 'uint256', value: '1000000000000000000' },
+              { name: 'to', type: 'address', value: expectedRecipient, valueDecoded: null },
+              { name: 'value', type: 'uint256', value: '1000000000000000000', valueDecoded: null },
             ],
             accuracy: 'FULL_MATCH',
           },
@@ -227,9 +230,9 @@ describe('recipient-extraction.utils', () => {
           dataDecoded: {
             method: 'transferFrom',
             parameters: [
-              { name: 'from', type: 'address', value: sender },
-              { name: 'to', type: 'address', value: expectedRecipient },
-              { name: 'value', type: 'uint256', value: '1000000000000000000' },
+              { name: 'from', type: 'address', value: sender, valueDecoded: null },
+              { name: 'to', type: 'address', value: expectedRecipient, valueDecoded: null },
+              { name: 'value', type: 'uint256', value: '1000000000000000000', valueDecoded: null },
             ],
             accuracy: 'FULL_MATCH',
           },
@@ -264,14 +267,14 @@ describe('recipient-extraction.utils', () => {
         expect(result).toBe(expectedRecipient);
       });
 
-      it('should extract recipient from transaction.to when dataDecoded is null', () => {
+      it('should return undefined when dataDecoded is null and data is not empty', () => {
         const expectedRecipient = getAddress(faker.finance.ethereumAddress());
 
         const transaction: DecodedTransactionData = {
           operation: 0,
           to: expectedRecipient,
           value: '1000000000000000000',
-          data: '0xsomedata',
+          data: '0xsomedata', // Non-empty data
           dataDecoded: null,
         };
 
@@ -280,7 +283,8 @@ describe('recipient-extraction.utils', () => {
 
         const result = extractRecipient(transaction, mockErc20Decoder);
 
-        expect(result).toBe(expectedRecipient);
+        // Should return undefined because data is not '0x' and no ERC-20 patterns match
+        expect(result).toBeUndefined();
       });
     });
 
