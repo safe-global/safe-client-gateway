@@ -797,7 +797,7 @@ describe('ContractAnalysisService', () => {
         });
       });
 
-      it('should return UNEXPECTED_DELEGATECALL when contract is not present', async () => {
+      it('should return UNEXPECTED_DELEGATECALL when contract fetch failed', async () => {
         const errorMessage = 'Data decoder API error';
 
         mockDataDecoderApi.getContracts.mockRejectedValue(
@@ -815,6 +815,36 @@ describe('ContractAnalysisService', () => {
           type: 'VERIFICATION_UNAVAILABLE',
           title: TITLE_MAPPING.VERIFICATION_UNAVAILABLE,
           description: DESCRIPTION_MAPPING.VERIFICATION_UNAVAILABLE(),
+        });
+
+        expect(delegateCall).toEqual({
+          severity: SEVERITY_MAPPING.UNEXPECTED_DELEGATECALL,
+          type: 'UNEXPECTED_DELEGATECALL',
+          title: TITLE_MAPPING.UNEXPECTED_DELEGATECALL,
+          description: DESCRIPTION_MAPPING.UNEXPECTED_DELEGATECALL(),
+        });
+      });
+
+      it('should return UNEXPECTED_DELEGATECALL when contract is undefined', async () => {
+        const mockContractPage = pageBuilder()
+          .with('count', 0)
+          .with('results', [])
+          .build();
+        mockDataDecoderApi.getContracts.mockResolvedValue(
+          rawify(mockContractPage),
+        );
+
+        const [verification, delegateCall] = await service.verifyContract({
+          chainId,
+          contract: contractAddress,
+          isDelegateCall: true,
+        });
+
+        expect(verification).toEqual({
+          severity: SEVERITY_MAPPING.NOT_VERIFIED_BY_SAFE,
+          type: 'NOT_VERIFIED_BY_SAFE',
+          title: TITLE_MAPPING.NOT_VERIFIED_BY_SAFE,
+          description: DESCRIPTION_MAPPING.NOT_VERIFIED_BY_SAFE(),
         });
 
         expect(delegateCall).toEqual({

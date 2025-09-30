@@ -9,7 +9,10 @@ import {
   TITLE_MAPPING,
 } from '@/modules/safe-shield/contract-analysis/contract-analysis.constants';
 import { ContractAnalysisResponse } from '@/modules/safe-shield/entities/analysis-responses.entity';
-import { ContractAnalysisResult } from '@/modules/safe-shield/entities/analysis-result.entity';
+import {
+  AnalysisResult,
+  ContractAnalysisResult,
+} from '@/modules/safe-shield/entities/analysis-result.entity';
 import { ContractStatus } from '@/modules/safe-shield/entities/contract-status.entity';
 import { ContractStatusGroup } from '@/modules/safe-shield/entities/status-group.entity';
 import { DecodedTransactionData } from '@/modules/safe-shield/entities/transaction-data.entity';
@@ -128,7 +131,12 @@ export class ContractAnalysisService {
     chainId: string;
     contract: Address;
     isDelegateCall: boolean;
-  }): Promise<[ContractAnalysisResult, ContractAnalysisResult | undefined]> {
+  }): Promise<
+    [
+      ContractAnalysisResult,
+      AnalysisResult<'UNEXPECTED_DELEGATECALL'> | undefined,
+    ]
+  > {
     let type: ContractStatus;
     let name: string | undefined;
     let resolvedContract: Contract | undefined;
@@ -200,7 +208,7 @@ export class ContractAnalysisService {
   private checkDelegateCall(
     isDelegateCall: boolean,
     contract: Contract | undefined,
-  ): ContractAnalysisResult | undefined {
+  ): AnalysisResult<'UNEXPECTED_DELEGATECALL'> | undefined {
     if (!isDelegateCall || contract?.trustedForDelegateCall) return undefined;
     return this.mapToAnalysisResult({ type: 'UNEXPECTED_DELEGATECALL' });
   }
@@ -212,11 +220,11 @@ export class ContractAnalysisService {
    * @param name - The name of the contract (if applicable).
    * @returns The analysis result.
    */
-  private mapToAnalysisResult(args: {
-    type: ContractStatus;
+  private mapToAnalysisResult<T extends ContractStatus>(args: {
+    type: T;
     interactions?: number;
     name?: string;
-  }): ContractAnalysisResult {
+  }): AnalysisResult<T> {
     const { type, interactions, name } = args;
     const severity = SEVERITY_MAPPING[type];
     const title = TITLE_MAPPING[type];
