@@ -24,7 +24,6 @@ import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { extractRecipients } from '../utils/recipient-extraction.utils';
 import { logCacheHit, logCacheMiss } from '@/modules/safe-shield/utils/common';
 
-
 /**
  * Service responsible for analyzing transaction recipients and bridge configurations.
  */

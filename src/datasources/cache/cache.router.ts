@@ -869,7 +869,7 @@ export class CacheRouter {
     return `${CacheRouter.ORM_QUERY_CACHE_KEY}:${prefix}:${chainId}:${safeAddress}`;
   }
 
- /**
+  /**
    * Gets cache directory for recipient analysis results.
    *
    * @param {string} args.chainId - Chain ID
@@ -888,7 +888,7 @@ export class CacheRouter {
     );
   }
 
-    /**
+  /**
    * Gets cache directory for contract analysis results.
    *
    * @param {string} args.chainId - Chain ID

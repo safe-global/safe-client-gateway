@@ -144,7 +144,7 @@ export class ContractAnalysisService {
       const { count, results } = ContractPageSchema.parse(rawContracts);
 
       if (count) {
-        const [resolvedContract] = results;
+        resolvedContract = results[0];
         const { abi, displayName, name: rawName } = resolvedContract;
 
         type = abi ? 'VERIFIED' : 'NOT_VERIFIED';
@@ -203,7 +203,7 @@ export class ContractAnalysisService {
     contract: Contract | undefined,
   ): ContractAnalysisResult | undefined {
     if (!isDelegateCall || contract?.trustedForDelegateCall) return undefined;
-    return this.mapToAnalysisResult({type: 'UNEXPECTED_DELEGATECALL'});
+    return this.mapToAnalysisResult({ type: 'UNEXPECTED_DELEGATECALL' });
   }
 
   /**

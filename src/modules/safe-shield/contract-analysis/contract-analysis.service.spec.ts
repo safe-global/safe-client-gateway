@@ -153,7 +153,9 @@ describe('ContractAnalysisService', () => {
             severity: SEVERITY_MAPPING.VERIFIED,
             type: 'VERIFIED',
             title: TITLE_MAPPING.VERIFIED,
-            description: DESCRIPTION_MAPPING.VERIFIED(0),
+            description: DESCRIPTION_MAPPING.VERIFIED({
+              name: faker.company.name(),
+            }),
           },
         ],
         CONTRACT_INTERACTION: [
@@ -161,7 +163,7 @@ describe('ContractAnalysisService', () => {
             severity: SEVERITY_MAPPING.NEW_CONTRACT,
             type: 'NEW_CONTRACT',
             title: TITLE_MAPPING.NEW_CONTRACT,
-            description: DESCRIPTION_MAPPING.NEW_CONTRACT(0),
+            description: DESCRIPTION_MAPPING.NEW_CONTRACT(),
           },
         ],
         DELEGATECALL: [],
@@ -173,7 +175,7 @@ describe('ContractAnalysisService', () => {
             severity: SEVERITY_MAPPING.NOT_VERIFIED,
             type: 'NOT_VERIFIED',
             title: TITLE_MAPPING.NOT_VERIFIED,
-            description: DESCRIPTION_MAPPING.NOT_VERIFIED(0),
+            description: DESCRIPTION_MAPPING.NOT_VERIFIED(),
           },
         ],
         CONTRACT_INTERACTION: [
@@ -181,7 +183,9 @@ describe('ContractAnalysisService', () => {
             severity: SEVERITY_MAPPING.KNOWN_CONTRACT,
             type: 'KNOWN_CONTRACT',
             title: TITLE_MAPPING.KNOWN_CONTRACT,
-            description: DESCRIPTION_MAPPING.KNOWN_CONTRACT(2),
+            description: DESCRIPTION_MAPPING.KNOWN_CONTRACT({
+              interactions: 2,
+            }),
           },
         ],
         DELEGATECALL: [
@@ -189,7 +193,7 @@ describe('ContractAnalysisService', () => {
             severity: SEVERITY_MAPPING.UNEXPECTED_DELEGATECALL,
             type: 'UNEXPECTED_DELEGATECALL',
             title: TITLE_MAPPING.UNEXPECTED_DELEGATECALL,
-            description: DESCRIPTION_MAPPING.UNEXPECTED_DELEGATECALL(0),
+            description: DESCRIPTION_MAPPING.UNEXPECTED_DELEGATECALL(),
           },
         ],
       } as Record<ContractStatusGroup, Array<ContractAnalysisResult>>;
@@ -405,9 +409,6 @@ describe('ContractAnalysisService', () => {
     });
 
     it('should handle errors from parallel operations correctly', async () => {
-      const chainId = faker.string.numeric();
-      const safeAddress = getAddress(faker.finance.ethereumAddress());
-      const contractAddress = getAddress(faker.finance.ethereumAddress());
       const errorMessage = 'Transaction API error';
 
       const mockContractPage = pageBuilder()
@@ -680,6 +681,7 @@ describe('ContractAnalysisService', () => {
                 abiHash: faker.string.hexadecimal() as Hex,
                 modified: faker.date.recent(),
               })
+              .with('displayName', name)
               .build(),
             contractBuilder()
               .with('address', contractAddress)
@@ -703,7 +705,7 @@ describe('ContractAnalysisService', () => {
           severity: SEVERITY_MAPPING.VERIFIED,
           type: 'VERIFIED',
           title: TITLE_MAPPING.VERIFIED,
-          description: DESCRIPTION_MAPPING.VERIFIED(),
+          description: DESCRIPTION_MAPPING.VERIFIED({ name }),
         });
         expect(delegateCall).toBeUndefined();
       });
@@ -866,10 +868,6 @@ describe('ContractAnalysisService', () => {
     });
 
     it('should return KNOWN_CONTRACT and handle single interaction correctly', async () => {
-      const chainId = faker.string.numeric();
-      const safeAddress = getAddress(faker.finance.ethereumAddress());
-      const contractAddress = getAddress(faker.finance.ethereumAddress());
-
       const mockTransactionPage = pageBuilder().with('count', 1).build();
 
       mockTransactionApi.getMultisigTransactions.mockResolvedValue(
@@ -891,9 +889,6 @@ describe('ContractAnalysisService', () => {
     });
 
     it('should return KNOWN_CONTRACT and handle multiple interactions correctly', async () => {
-      const chainId = faker.string.numeric();
-      const safeAddress = getAddress(faker.finance.ethereumAddress());
-      const contractAddress = getAddress(faker.finance.ethereumAddress());
       const interactionCount = faker.number.int({ min: 2, max: 50 });
 
       const mockTransactionPage = pageBuilder()
