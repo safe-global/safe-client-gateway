@@ -225,11 +225,11 @@ describe('extraction.utils', () => {
       ]);
     });
 
-    it('deduplicates by address and isDelegateCall flag', () => {
+    it('deduplicates by address and overrides isDelegateCall flag if true', () => {
       mockErc20Decoder.helpers.isTransfer.mockReturnValue(false);
       mockErc20Decoder.helpers.isTransferFrom.mockReturnValue(false);
 
-      const contract = getAddress('0x0000000000000000000000000000000000000abc');
+      const contract = getAddress(faker.finance.ethereumAddress());
 
       const transactions = [
         createTransaction({ to: contract, operation: 0 }),
@@ -243,10 +243,7 @@ describe('extraction.utils', () => {
 
       const result = extractContracts(transactions, mockErc20Decoder);
 
-      expect(result).toEqual([
-        [contract, false],
-        [contract, true],
-      ]);
+      expect(result).toEqual([[contract, true]]);
     });
   });
 });

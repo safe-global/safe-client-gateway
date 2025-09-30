@@ -901,9 +901,7 @@ export class CacheRouter {
   }): CacheDir {
     const contractsHash = crypto.createHash('sha256');
     contractsHash.update(
-      args.contractPairs
-        .sort((a, b) => a[0].localeCompare(b[0]) || Number(a[1]) - Number(b[1]))
-        .join(','),
+      args.contractPairs.sort((a, b) => a[0].localeCompare(b[0])).join(','),
     );
     return new CacheDir(
       `${args.chainId}_${CacheRouter.CONTRACT_ANALYSIS_KEY}`,

@@ -136,8 +136,8 @@ describe('ContractAnalysisService', () => {
 
     it('should analyze contracts and cache result when cache miss', async () => {
       const contractPairs: Array<[Address, boolean]> = [
-        [getAddress(faker.finance.ethereumAddress()), true],
         [getAddress(faker.finance.ethereumAddress()), false],
+        [getAddress(faker.finance.ethereumAddress()), true],
       ];
 
       const cacheDir = CacheRouter.getContractAnalysisCacheDir({

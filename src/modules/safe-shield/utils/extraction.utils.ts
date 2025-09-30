@@ -4,9 +4,12 @@ import type { Address } from 'viem';
 import { getAddress } from 'viem';
 
 /**
- * Extracts the unique pairs  of contract addresses and boolean flag isDelegateCall from transactions.
+ * Extracts the unique contract addresses and pair it with isDelegateCall flag.
+ * In case of multiple interactions with the same contract, if at least one is a delegate call,
+ * the flag will be true.
  * @param transactions - The transactions.
- * @returns The unique contract addresses.
+ * @param erc20Decoder - The ERC-20 decoder to identify token transfers.
+ * @returns The unique contract addresses and isDelegateCall flag.
  */
 export function extractContracts(
   transactions: Array<DecodedTransactionData>,
@@ -32,15 +35,13 @@ export function extractContracts(
     return [getAddress(to), operation === 1 /* DELEGATE_CALL */];
   };
 
-  const uniquePairs = new Map<string, [Address, boolean]>();
+  const result: Record<Address, boolean> = {};
 
   for (const tx of transactions) {
     const [address, isDelegateCall] = extractContract(tx);
     if (!address) continue;
 
-    const key = `${address}:${Number(isDelegateCall)}`;
-    if (!uniquePairs.has(key)) uniquePairs.set(key, [address, isDelegateCall]);
+    result[address] = (result[address] ?? false) || isDelegateCall;
   }
-
-  return [...uniquePairs.values()];
+  return Object.entries(result) as Array<[Address, boolean]>;
 }
