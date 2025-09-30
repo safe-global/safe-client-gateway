@@ -312,7 +312,7 @@ describe('ContractAnalysisService', () => {
         severity: SEVERITY_MAPPING.VERIFIED,
         type: 'VERIFIED',
         title: TITLE_MAPPING.VERIFIED,
-        description: DESCRIPTION_MAPPING.VERIFIED({ name: name }),
+        description: DESCRIPTION_MAPPING.VERIFIED({ name }),
       });
     });
   });
