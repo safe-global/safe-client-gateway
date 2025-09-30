@@ -249,6 +249,49 @@ describe('ContractAnalysisService', () => {
         field: cacheDir.field,
       });
     });
+
+    it('should throw error if any of the downstream contract analysis fails', async () => {
+      const contractPairs: Array<[Address, boolean]> = [
+        [getAddress(faker.finance.ethereumAddress()), false],
+        [getAddress(faker.finance.ethereumAddress()), true],
+      ];
+
+      mockExtractContracts.mockReturnValue(contractPairs);
+
+      const analyzeContractSpy = jest
+        .spyOn(service, 'analyzeContract')
+        .mockResolvedValueOnce({
+          CONTRACT_VERIFICATION: [],
+          CONTRACT_INTERACTION: [],
+          DELEGATECALL: [],
+        })
+        .mockRejectedValueOnce(new Error('Transaction API error'));
+
+      await expect(
+        service.analyze({
+          chainId,
+          safeAddress,
+          transactions,
+        }),
+      ).rejects.toThrow('Transaction API error');
+
+      expect(mockExtractContracts).toHaveBeenCalledWith(
+        transactions,
+        mockErc20Decoder,
+      );
+      expect(analyzeContractSpy).toHaveBeenNthCalledWith(1, {
+        chainId,
+        safeAddress,
+        contract: contractPairs[0][0],
+        isDelegateCall: contractPairs[0][1],
+      });
+      expect(analyzeContractSpy).toHaveBeenNthCalledWith(2, {
+        chainId,
+        safeAddress,
+        contract: contractPairs[1][0],
+        isDelegateCall: contractPairs[1][1],
+      });
+    });
   });
 
   describe('analyzeContract', () => {

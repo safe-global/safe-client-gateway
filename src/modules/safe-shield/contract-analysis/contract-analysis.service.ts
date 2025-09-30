@@ -54,7 +54,6 @@ export class ContractAnalysisService {
       );
   }
 
-  //TODO what to do when analyzeContract fails for a specific contract? currently it will fail the whole analyze call
   async analyze(args: {
     chainId: string;
     safeAddress: Address;
