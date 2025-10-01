@@ -389,4 +389,11 @@ export default (): ReturnType<typeof configuration> => ({
       concurrency: faker.number.int({ min: 1, max: 5 }),
     },
   },
+  safeShield: {
+    threadAnalysis: {
+      blockaid: {
+        apiKey: faker.string.hexadecimal({ length: 32 }),
+      },
+    },
+  },
 });
