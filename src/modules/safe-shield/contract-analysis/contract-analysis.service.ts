@@ -1,4 +1,7 @@
-import { ContractPageSchema } from '@/domain/data-decoder/v2/entities/contract.entity';
+import {
+  Contract,
+  ContractPageSchema,
+} from '@/domain/data-decoder/v2/entities/contract.entity';
 import { IDataDecoderApi } from '@/domain/interfaces/data-decoder-api.interface';
 import {
   DESCRIPTION_MAPPING,
@@ -6,7 +9,10 @@ import {
   TITLE_MAPPING,
 } from '@/modules/safe-shield/contract-analysis/contract-analysis.constants';
 import { ContractAnalysisResponse } from '@/modules/safe-shield/entities/analysis-responses.entity';
-import { ContractAnalysisResult } from '@/modules/safe-shield/entities/analysis-result.entity';
+import {
+  AnalysisResult,
+  ContractAnalysisResult,
+} from '@/modules/safe-shield/entities/analysis-result.entity';
 import { ContractStatus } from '@/modules/safe-shield/entities/contract-status.entity';
 import { ContractStatusGroup } from '@/modules/safe-shield/entities/status-group.entity';
 import { DecodedTransactionData } from '@/modules/safe-shield/entities/transaction-data.entity';
@@ -56,10 +62,13 @@ export class ContractAnalysisService {
     safeAddress: Address;
     transactions: Array<DecodedTransactionData>;
   }): Promise<ContractAnalysisResponse> {
-    const contracts = extractContracts(args.transactions, this.erc20Decoder);
+    const contractPairs = extractContracts(
+      args.transactions,
+      this.erc20Decoder,
+    );
     const cacheDir = CacheRouter.getContractAnalysisCacheDir({
       chainId: args.chainId,
-      contracts,
+      contractPairs,
     });
 
     const cached = await this.cacheService.hGet(cacheDir);
@@ -70,11 +79,12 @@ export class ContractAnalysisService {
     logCacheMiss(cacheDir, this.loggingService);
 
     const analysisResults: ContractAnalysisResponse = {};
-    for (const contract of contracts) {
+    for (const [contract, isDelegateCall] of contractPairs) {
       const result = await this.analyzeContract({
         chainId: args.chainId,
         safeAddress: args.safeAddress,
         contract,
+        isDelegateCall,
       });
 
       analysisResults[contract] = result;
@@ -92,45 +102,57 @@ export class ContractAnalysisService {
     chainId: string;
     safeAddress: Address;
     contract: Address;
+    isDelegateCall: boolean;
   }): Promise<Record<ContractStatusGroup, Array<ContractAnalysisResult>>> {
-    const [contractVerificationResult, contractInteractionResult] =
+    const { chainId, safeAddress, contract, isDelegateCall } = args;
+
+    const [[verificationResult, delegateCallResult], interactionResult] =
       await Promise.all([
-        this.verifyContract({
-          chainId: args.chainId,
-          contract: args.contract,
-        }),
-        this.analyzeInteractions(args),
+        this.verifyContract({ chainId, contract, isDelegateCall }),
+        this.analyzeInteractions({ chainId, safeAddress, contract }),
       ]);
 
     return {
-      CONTRACT_VERIFICATION: [contractVerificationResult],
-      CONTRACT_INTERACTION: [contractInteractionResult],
-      DELEGATECALL: [],
+      CONTRACT_VERIFICATION: [verificationResult],
+      CONTRACT_INTERACTION: [interactionResult],
+      DELEGATECALL: delegateCallResult ? [delegateCallResult] : [],
     };
   }
 
   /**
-   * Verify a contract.
+   * Verify a contract. In case of delegateCall, check for trustworthiness.
    * @param args - The arguments for the analysis.
    * @param args.chainId - The chain ID.
    * @param args.contract - The contract address.
-   * @returns The analysis result.
+   * @param args.isDelegateCall - Whether the contract is called via delegateCall.
+   * @returns A pair of analysis results: [verification result, delegateCall result (if available)].
    */
   async verifyContract(args: {
     chainId: string;
     contract: Address;
-  }): Promise<ContractAnalysisResult> {
+    isDelegateCall: boolean;
+  }): Promise<
+    [
+      ContractAnalysisResult,
+      AnalysisResult<'UNEXPECTED_DELEGATECALL'> | undefined,
+    ]
+  > {
     let type: ContractStatus;
     let name: string | undefined;
+    let resolvedContract: Contract | undefined;
+
+    const { chainId, contract, isDelegateCall } = args;
 
     try {
-      const contracts = await this.dataDecoderApi.getContracts({
-        address: args.contract,
-        chainId: args.chainId,
+      const rawContracts = await this.dataDecoderApi.getContracts({
+        address: contract,
+        chainId,
       });
-      const { count, results } = ContractPageSchema.parse(contracts);
+      const { count, results } = ContractPageSchema.parse(rawContracts);
+
       if (count) {
-        const [{ abi, name: rawName, displayName }] = results;
+        resolvedContract = results[0];
+        const { abi, displayName, name: rawName } = resolvedContract;
 
         type = abi ? 'VERIFIED' : 'NOT_VERIFIED';
         name = displayName || rawName;
@@ -140,7 +162,12 @@ export class ContractAnalysisService {
     } catch {
       type = 'VERIFICATION_UNAVAILABLE';
     }
-    return this.mapToAnalysisResult({ type, name });
+
+    const delegateCallResult = this.checkDelegateCall(
+      isDelegateCall,
+      resolvedContract,
+    );
+    return [this.mapToAnalysisResult({ type, name }), delegateCallResult];
   }
 
   /**
@@ -156,13 +183,12 @@ export class ContractAnalysisService {
     safeAddress: Address;
     contract: Address;
   }): Promise<ContractAnalysisResult> {
-    const transactionApi = await this.transactionApiManager.getApi(
-      args.chainId,
-    );
+    const { chainId, safeAddress, contract } = args;
+    const transactionApi = await this.transactionApiManager.getApi(chainId);
 
     const page = await transactionApi.getMultisigTransactions({
-      safeAddress: args.safeAddress,
-      to: args.contract,
+      safeAddress,
+      to: contract,
       limit: 1,
     });
 
@@ -174,17 +200,31 @@ export class ContractAnalysisService {
   }
 
   /**
+   * Checks if a delegateCall is unexpected based on the contract's trust status.
+   * @param isDelegateCall - Whether the call is a delegateCall.
+   * @param contract - The contract details (if available).
+   * @returns The analysis result (if available).
+   */
+  private checkDelegateCall(
+    isDelegateCall: boolean,
+    contract: Contract | undefined,
+  ): AnalysisResult<'UNEXPECTED_DELEGATECALL'> | undefined {
+    if (!isDelegateCall || contract?.trustedForDelegateCall) return undefined;
+    return this.mapToAnalysisResult({ type: 'UNEXPECTED_DELEGATECALL' });
+  }
+
+  /**
    * Maps a contract verification status to an analysis result.
    * @param type - The contract status.
    * @param interactions - The number of interactions with the contract (if applicable).
    * @param name - The name of the contract (if applicable).
    * @returns The analysis result.
    */
-  private mapToAnalysisResult(args: {
-    type: ContractStatus;
+  private mapToAnalysisResult<T extends ContractStatus>(args: {
+    type: T;
     interactions?: number;
     name?: string;
-  }): ContractAnalysisResult {
+  }): AnalysisResult<T> {
     const { type, interactions, name } = args;
     const severity = SEVERITY_MAPPING[type];
     const title = TITLE_MAPPING[type];

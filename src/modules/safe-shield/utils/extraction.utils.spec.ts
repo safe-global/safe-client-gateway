@@ -63,8 +63,8 @@ describe('extraction.utils', () => {
       const result = extractContracts(transactions, mockErc20Decoder);
 
       expect(result).toEqual([
-        getAddress('0x0000000000000000000000000000000000000abc'),
-        getAddress(contract2),
+        [getAddress('0x0000000000000000000000000000000000000abc'), false],
+        [getAddress(contract2), false],
       ]);
     });
 
@@ -86,6 +86,7 @@ describe('extraction.utils', () => {
         [
           createTransaction({
             dataDecoded: null,
+            operation: 1,
           }),
         ],
         mockErc20Decoder,
@@ -218,7 +219,31 @@ describe('extraction.utils', () => {
 
       const result = extractContracts(transactions, mockErc20Decoder);
 
-      expect(result).toEqual([getAddress(contract1), getAddress(contract2)]);
+      expect(result).toEqual([
+        [getAddress(contract1), false],
+        [getAddress(contract2), false],
+      ]);
+    });
+
+    it('deduplicates by address and overrides isDelegateCall flag if true', () => {
+      mockErc20Decoder.helpers.isTransfer.mockReturnValue(false);
+      mockErc20Decoder.helpers.isTransferFrom.mockReturnValue(false);
+
+      const contract = getAddress(faker.finance.ethereumAddress());
+
+      const transactions = [
+        createTransaction({ to: contract, operation: 0 }),
+        createTransaction({ to: contract, operation: 0 }),
+        createTransaction({
+          data: '0x' as Hex,
+        }),
+        createTransaction({ to: contract, operation: 1 }),
+        createTransaction({ to: contract, operation: 1 }),
+      ];
+
+      const result = extractContracts(transactions, mockErc20Decoder);
+
+      expect(result).toEqual([[contract, true]]);
     });
   });
 });

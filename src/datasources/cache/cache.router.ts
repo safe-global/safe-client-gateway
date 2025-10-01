@@ -873,15 +873,17 @@ export class CacheRouter {
    * Gets cache directory for contract analysis results.
    *
    * @param {string} args.chainId - Chain ID
-   * @param {Address[]} args.contracts - Array of contract addresses
+   * @param {[Address, boolean][]} args.contractPairs - Array of pairs: contract address and isDelegateCall flag
    * @returns {CacheDir} - Cache directory
    */
   static getContractAnalysisCacheDir(args: {
     chainId: string;
-    contracts: Array<Address>;
+    contractPairs: Array<[Address, boolean]>;
   }): CacheDir {
     const contractsHash = crypto.createHash('sha256');
-    contractsHash.update(args.contracts.sort().join(','));
+    contractsHash.update(
+      args.contractPairs.sort((a, b) => a[0].localeCompare(b[0])).join(','),
+    );
     return new CacheDir(
       `${args.chainId}_${CacheRouter.CONTRACT_ANALYSIS_KEY}`,
       contractsHash.digest('hex'),
