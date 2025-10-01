@@ -104,10 +104,25 @@ describe('recipient-extraction.utils', () => {
           dataDecoded: {
             method: 'execTransaction',
             parameters: [
-              { name: 'to', type: 'address', value: expectedRecipient, valueDecoded: null },
-              { name: 'value', type: 'uint256', value: '1000000000000000000', valueDecoded: null },
+              {
+                name: 'to',
+                type: 'address',
+                value: expectedRecipient,
+                valueDecoded: null,
+              },
+              {
+                name: 'value',
+                type: 'uint256',
+                value: '1000000000000000000',
+                valueDecoded: null,
+              },
               { name: 'data', type: 'bytes', value: '0x', valueDecoded: null },
-              { name: 'operation', type: 'uint256', value: '0', valueDecoded: null },
+              {
+                name: 'operation',
+                type: 'uint256',
+                value: '0',
+                valueDecoded: null,
+              },
             ],
             accuracy: 'FULL_MATCH',
           },
@@ -137,9 +152,24 @@ describe('recipient-extraction.utils', () => {
                 value: getAddress(faker.finance.ethereumAddress()),
                 valueDecoded: null,
               },
-              { name: 'value', type: 'uint256', value: '1000000000000000000', valueDecoded: null },
-              { name: 'data', type: 'bytes', value: '0xa9059cbb', valueDecoded: null }, // Non-empty data
-              { name: 'operation', type: 'uint256', value: '0', valueDecoded: null },
+              {
+                name: 'value',
+                type: 'uint256',
+                value: '1000000000000000000',
+                valueDecoded: null,
+              },
+              {
+                name: 'data',
+                type: 'bytes',
+                value: '0xa9059cbb',
+                valueDecoded: null,
+              }, // Non-empty data
+              {
+                name: 'operation',
+                type: 'uint256',
+                value: '0',
+                valueDecoded: null,
+              },
             ],
             accuracy: 'FULL_MATCH',
           },
@@ -181,8 +211,18 @@ describe('recipient-extraction.utils', () => {
           dataDecoded: {
             method: 'transfer',
             parameters: [
-              { name: 'to', type: 'address', value: expectedRecipient, valueDecoded: null },
-              { name: 'value', type: 'uint256', value: '1000000000000000000', valueDecoded: null },
+              {
+                name: 'to',
+                type: 'address',
+                value: expectedRecipient,
+                valueDecoded: null,
+              },
+              {
+                name: 'value',
+                type: 'uint256',
+                value: '1000000000000000000',
+                valueDecoded: null,
+              },
             ],
             accuracy: 'FULL_MATCH',
           },
@@ -230,9 +270,24 @@ describe('recipient-extraction.utils', () => {
           dataDecoded: {
             method: 'transferFrom',
             parameters: [
-              { name: 'from', type: 'address', value: sender, valueDecoded: null },
-              { name: 'to', type: 'address', value: expectedRecipient, valueDecoded: null },
-              { name: 'value', type: 'uint256', value: '1000000000000000000', valueDecoded: null },
+              {
+                name: 'from',
+                type: 'address',
+                value: sender,
+                valueDecoded: null,
+              },
+              {
+                name: 'to',
+                type: 'address',
+                value: expectedRecipient,
+                valueDecoded: null,
+              },
+              {
+                name: 'value',
+                type: 'uint256',
+                value: '1000000000000000000',
+                valueDecoded: null,
+              },
             ],
             accuracy: 'FULL_MATCH',
           },

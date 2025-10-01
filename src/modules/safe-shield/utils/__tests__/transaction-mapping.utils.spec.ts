@@ -1,4 +1,9 @@
-import { mapDecodedTransactions, isMultiSend, isExecTransaction, mapMultiSendTransactions } from '../transaction-mapping.utils';
+import {
+  mapDecodedTransactions,
+  isMultiSend,
+  isExecTransaction,
+  mapMultiSendTransactions,
+} from '../transaction-mapping.utils';
 import type { DecodedTransactionData } from '@/modules/safe-shield/entities/transaction-data.entity';
 import type { DataDecoded } from '@/routes/data-decode/entities/data-decoded.entity';
 import { faker } from '@faker-js/faker';

@@ -8,7 +8,10 @@ import type { DecodedTransactionData } from '@/modules/safe-shield/entities/tran
 import type { RecipientAnalysisResponse } from '../entities/analysis-responses.entity';
 import type { TransactionsService } from '@/routes/transactions/transactions.service';
 import type { TransactionPreview } from '@/routes/transactions/entities/transaction-preview.entity';
-import { TransferTransactionInfo, TransferDirection } from '@/routes/transactions/entities/transfer-transaction-info.entity';
+import {
+  TransferTransactionInfo,
+  TransferDirection,
+} from '@/routes/transactions/entities/transfer-transaction-info.entity';
 import { CustomTransactionInfo } from '@/routes/transactions/entities/custom-transaction.entity';
 import { NativeCoinTransfer } from '@/routes/transactions/entities/transfers/native-coin-transfer.entity';
 import { TransactionData } from '@/routes/transactions/entities/transaction-data.entity';
@@ -158,7 +161,10 @@ describe('SafeShieldService', () => {
   describe('analyzeRecipient', () => {
     it('should analyze recipient for a simple transaction', async () => {
       const mockTransactionPreview = createTransactionPreviewMock({
-        txInfo: createTransferTransactionInfo(mockSafeAddress, mockRecipientAddress),
+        txInfo: createTransferTransactionInfo(
+          mockSafeAddress,
+          mockRecipientAddress,
+        ),
         hexData: mockData,
         dataDecoded: mockDataDecoded,
         to: mockRecipientAddress,
@@ -174,7 +180,9 @@ describe('SafeShieldService', () => {
         },
       ];
 
-      mockTransactionsService.previewTransaction.mockResolvedValue(mockTransactionPreview);
+      mockTransactionsService.previewTransaction.mockResolvedValue(
+        mockTransactionPreview,
+      );
       mockRecipientAnalysisService.analyze.mockResolvedValue(
         mockRecipientAnalysisResponse,
       );
@@ -209,7 +217,7 @@ describe('SafeShieldService', () => {
     it('should analyze recipient for a multiSend transaction', async () => {
       const multiSendData: Hex =
         `0x8d80ff0a${faker.string.hexadecimal({ length: 128, casing: 'lower', prefix: '' })}` as Hex;
-      
+
       const multiSendDataDecoded: DataDecoded = dataDecodedBuilder()
         .with('method', 'multiSend')
         .with('parameters', [
@@ -251,7 +259,9 @@ describe('SafeShieldService', () => {
         to: mockRecipientAddress,
       });
 
-      mockTransactionsService.previewTransaction.mockResolvedValue(mockTransactionPreview);
+      mockTransactionsService.previewTransaction.mockResolvedValue(
+        mockTransactionPreview,
+      );
       mockRecipientAnalysisService.analyze.mockResolvedValue(
         mockRecipientAnalysisResponse,
       );
@@ -331,13 +341,18 @@ describe('SafeShieldService', () => {
       'should handle transaction with $description',
       async ({ data, dataDecoded, expectedDataDecoded }) => {
         const mockTransactionPreview = createTransactionPreviewMock({
-          txInfo: createTransferTransactionInfo(mockSafeAddress, mockRecipientAddress),
+          txInfo: createTransferTransactionInfo(
+            mockSafeAddress,
+            mockRecipientAddress,
+          ),
           hexData: data,
           dataDecoded,
           to: mockRecipientAddress,
         });
 
-        mockTransactionsService.previewTransaction.mockResolvedValue(mockTransactionPreview);
+        mockTransactionsService.previewTransaction.mockResolvedValue(
+          mockTransactionPreview,
+        );
         mockRecipientAnalysisService.analyze.mockResolvedValue(
           mockRecipientAnalysisResponse,
         );
@@ -368,15 +383,20 @@ describe('SafeShieldService', () => {
 
     it('should handle recipient analysis service failure', async () => {
       const error = new Error('Recipient analysis failed');
-      
+
       const mockTransactionPreview = createTransactionPreviewMock({
-        txInfo: createTransferTransactionInfo(mockSafeAddress, mockRecipientAddress),
+        txInfo: createTransferTransactionInfo(
+          mockSafeAddress,
+          mockRecipientAddress,
+        ),
         hexData: mockData,
         dataDecoded: mockDataDecoded,
         to: mockRecipientAddress,
       });
 
-      mockTransactionsService.previewTransaction.mockResolvedValue(mockTransactionPreview);
+      mockTransactionsService.previewTransaction.mockResolvedValue(
+        mockTransactionPreview,
+      );
       mockRecipientAnalysisService.analyze.mockRejectedValue(error);
 
       await expect(
@@ -423,7 +443,9 @@ describe('SafeShieldService', () => {
           operation,
         });
 
-        mockTransactionsService.previewTransaction.mockResolvedValue(mockTransactionPreview);
+        mockTransactionsService.previewTransaction.mockResolvedValue(
+          mockTransactionPreview,
+        );
         mockRecipientAnalysisService.analyze.mockResolvedValue(
           mockRecipientAnalysisResponse,
         );
@@ -440,16 +462,18 @@ describe('SafeShieldService', () => {
         });
 
         expect(result).toEqual(mockRecipientAnalysisResponse);
-        expect(mockTransactionsService.previewTransaction).toHaveBeenCalledWith({
-          chainId: mockChainId,
-          safeAddress: mockSafeAddress,
-          previewTransactionDto: {
-            to: mockRecipientAddress,
-            data: mockData,
-            value: value.toString(),
-            operation,
+        expect(mockTransactionsService.previewTransaction).toHaveBeenCalledWith(
+          {
+            chainId: mockChainId,
+            safeAddress: mockSafeAddress,
+            previewTransactionDto: {
+              to: mockRecipientAddress,
+              data: mockData,
+              value: value.toString(),
+              operation,
+            },
           },
-        });
+        );
       },
     );
   });
