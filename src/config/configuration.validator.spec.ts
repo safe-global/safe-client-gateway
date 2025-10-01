@@ -47,6 +47,7 @@ describe('Configuration validator', () => {
     CSV_AWS_ACCESS_KEY_ID: faker.string.uuid(),
     CSV_AWS_SECRET_ACCESS_KEY: faker.string.uuid(),
     CSV_EXPORT_QUEUE_CONCURRENCY: faker.number.int({ min: 1, max: 5 }),
+    BLOCKAID_API_KEY: faker.string.uuid(),
   };
 
   it('should bypass this validation on test environment', () => {
@@ -234,6 +235,7 @@ describe('Configuration validator', () => {
       { key: 'AWS_REGION' },
       { key: 'CSV_AWS_ACCESS_KEY_ID' },
       { key: 'CSV_AWS_SECRET_ACCESS_KEY' },
+      { key: 'BLOCKAID_API_KEY' },
     ])(`should require $key configuration in ${env} environment`, ({ key }) => {
       process.env.NODE_ENV = 'production';
       const config = { ...omit(validConfiguration, key), CGW_ENV: env };
