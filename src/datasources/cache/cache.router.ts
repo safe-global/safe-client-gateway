@@ -79,6 +79,7 @@ export class CacheRouter {
   private static readonly TRANSACTIONS_EXPORT_KEY = 'transactions_export';
   private static readonly CONTRACT_ANALYSIS_KEY = 'contract_analysis';
   private static readonly RECIPIENT_ANALYSIS_KEY = 'recipient_analysis';
+  private static readonly THREAT_ANALYSIS_KEY = 'threat_analysis';
 
   static getAuthNonceCacheKey(nonce: string): string {
     return `${CacheRouter.AUTH_NONCE_KEY}_${nonce}`;
@@ -918,6 +919,19 @@ export class CacheRouter {
     return new CacheDir(
       `${args.chainId}_${CacheRouter.RECIPIENT_ANALYSIS_KEY}_${args.safeAddress}`,
       hash.digest('hex'),
+    );
+  }
+
+  /**
+   * Gets cache directory for threat analysis results.
+   *
+   * @param {string} args.chainId - Chain ID
+   * @returns {CacheDir} - Cache directory
+   */
+  static getThreatAnalysisCacheDir(args: { chainId: string }): CacheDir {
+    return new CacheDir(
+      `${args.chainId}_${CacheRouter.THREAT_ANALYSIS_KEY}`,
+      '', //TODO
     );
   }
 }
