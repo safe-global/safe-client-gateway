@@ -934,4 +934,17 @@ export class CacheRouter {
       '', //TODO
     );
   }
+
+  /**
+   * Gets cache directory for threat analysis results.
+   *
+   * @param {string} args.chainId - Chain ID
+   * @returns {CacheDir} - Cache directory
+   */
+  static getThreatAnalysisCacheDir(args: { chainId: string }): CacheDir {
+    return new CacheDir(
+      `${args.chainId}_${CacheRouter.THREAT_ANALYSIS_KEY}`,
+      '', //TODO
+    );
+  }
 }
