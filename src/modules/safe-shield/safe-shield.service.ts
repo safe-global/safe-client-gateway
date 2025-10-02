@@ -9,7 +9,7 @@ import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { mapDecodedTransactions } from './utils/transaction-mapping.utils';
 import { TransactionsService } from '@/routes/transactions/transactions.service';
 import { Operation } from '@/domain/safe/entities/operation.entity';
-import { TransactionPreview } from '@/routes/transactions/entities/transaction-preview.entity';
+import type { TransactionInfo } from '@/routes/transactions/entities/transaction-info.entity';
 
 /**
  * Main orchestration service for Safe Shield transaction analysis.
@@ -56,25 +56,68 @@ export class SafeShieldService {
       operation?: Operation;
     };
   }): Promise<RecipientAnalysisResponse> {
-    const { data = '0x', value = '0', operation = Operation.CALL } = tx;
-
-    let txPreview: TransactionPreview | null = null;
+    let transactions: Array<DecodedTransactionData> = [];
+    let txInfo: TransactionInfo | undefined;
 
     try {
-      txPreview = await this.transactionsService.previewTransaction({
+      const decodedTransaction = await this.decodeTransaction({
         chainId,
         safeAddress,
-        previewTransactionDto: {
-          ...tx,
-          data,
-          operation,
-          value: value.toString(),
-        },
+        tx,
       });
+
+      transactions = decodedTransaction.transactions;
+      txInfo = decodedTransaction.txInfo;
     } catch (error) {
       this.loggingService.warn(`Failed to decode transaction: ${error}`);
       return {};
     }
+
+    return this.recipientAnalysisService.analyze({
+      chainId,
+      safeAddress,
+      transactions,
+      txInfo,
+    });
+  }
+
+  /**
+   * Decodes a transaction.
+   * @param args - The arguments for decoding the transaction.
+   * @param args.chainId - The chain ID.
+   * @param args.safeAddress - The Safe address.
+   * @param args.tx - The transaction.
+   * @returns The decoded transaction.
+   */
+  private async decodeTransaction({
+    chainId,
+    safeAddress,
+    tx,
+  }: {
+    chainId: string;
+    safeAddress: Address;
+    tx: {
+      to: Address;
+      data?: Hex;
+      value?: bigint | string;
+      operation?: Operation;
+    };
+  }): Promise<{
+    transactions: Array<DecodedTransactionData>;
+    txInfo: TransactionInfo;
+  }> {
+    const { data = '0x', value = '0', operation = Operation.CALL } = tx;
+
+    const txPreview = await this.transactionsService.previewTransaction({
+      chainId,
+      safeAddress,
+      previewTransactionDto: {
+        ...tx,
+        data,
+        operation,
+        value: value.toString(),
+      },
+    });
 
     const decodedTransactionData: DecodedTransactionData = {
       ...tx,
@@ -84,12 +127,9 @@ export class SafeShieldService {
       dataDecoded: txPreview?.txData?.dataDecoded ?? null,
     };
 
-    const transactions = mapDecodedTransactions(decodedTransactionData);
-
-    return this.recipientAnalysisService.analyze({
-      chainId,
-      safeAddress,
-      transactions,
-    });
+    return {
+      transactions: mapDecodedTransactions(decodedTransactionData),
+      txInfo: txPreview?.txInfo,
+    };
   }
 }
