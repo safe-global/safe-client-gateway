@@ -1,6 +1,11 @@
 import semverSatisfies from 'semver/functions/satisfies';
 import type { Address } from 'viem';
-import { decodeFunctionData, hashMessage, hashTypedData, zeroAddress } from 'viem';
+import {
+  decodeFunctionData,
+  hashMessage,
+  hashTypedData,
+  zeroAddress,
+} from 'viem';
 import { MessageSchema } from '@/domain/messages/entities/message.entity';
 import type { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
 import type { Safe } from '@/domain/safe/entities/safe.entity';

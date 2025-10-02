@@ -82,9 +82,7 @@ export function getMultiSendDeployments(args: Filter): Array<Address> {
  *
  * @returns {Array<Address>} - a list of checksummed SafeToL2Migration addresses
  */
-export function getSafeToL2MigrationDeployments(
-  args: Filter,
-): Array<Address> {
+export function getSafeToL2MigrationDeployments(args: Filter): Array<Address> {
   return formatDeployments(_getSafeToL2MigrationDeployments, args);
 }
 

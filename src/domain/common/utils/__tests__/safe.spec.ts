@@ -730,7 +730,10 @@ describe('Safe', () => {
         .with('to', migrationContract)
         .with('value', '0')
         .with('operation', Operation.DELEGATE)
-        .with('data', migrateToL2Encoder().with('l2Singleton', l2Singleton).encode())
+        .with(
+          'data',
+          migrateToL2Encoder().with('l2Singleton', l2Singleton).encode(),
+        )
         .build();
 
       // Should not throw and should calculate hash using detected version
@@ -761,7 +764,10 @@ describe('Safe', () => {
         .with('to', unofficialMigrationContract)
         .with('value', '0')
         .with('operation', Operation.DELEGATE)
-        .with('data', migrateToL2Encoder().with('l2Singleton', l2Singleton).encode())
+        .with(
+          'data',
+          migrateToL2Encoder().with('l2Singleton', l2Singleton).encode(),
+        )
         .build();
 
       expect(() =>
@@ -786,9 +792,7 @@ describe('Safe', () => {
       }
 
       const migrationContract = faker.helpers.arrayElement(migrationContracts);
-      const unofficialL2Singleton = getAddress(
-        faker.finance.ethereumAddress(),
-      );
+      const unofficialL2Singleton = getAddress(faker.finance.ethereumAddress());
 
       const safe = safeBuilder()
         .with('address', safeAddress)
@@ -801,7 +805,9 @@ describe('Safe', () => {
         .with('operation', Operation.DELEGATE)
         .with(
           'data',
-          migrateToL2Encoder().with('l2Singleton', unofficialL2Singleton).encode(),
+          migrateToL2Encoder()
+            .with('l2Singleton', unofficialL2Singleton)
+            .encode(),
         )
         .build();
 
