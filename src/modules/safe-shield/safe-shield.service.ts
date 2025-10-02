@@ -65,11 +65,15 @@ export class SafeShieldService {
       tx,
     });
 
-    return this.recipientAnalysisService.analyze({
-      chainId,
-      safeAddress,
-      transactions,
-    });
+    if (transactions.length > 0) {
+      return this.recipientAnalysisService.analyze({
+        chainId,
+        safeAddress,
+        transactions,
+      });
+    }
+
+    return {};
   }
 
   /**
@@ -105,11 +109,15 @@ export class SafeShieldService {
       tx,
     });
 
-    return this.contractAnalysisService.analyze({
-      chainId,
-      safeAddress,
-      transactions,
-    });
+    if (transactions.length > 0) {
+      return this.contractAnalysisService.analyze({
+        chainId,
+        safeAddress,
+        transactions,
+      });
+    }
+
+    return {};
   }
 
   /**
