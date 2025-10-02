@@ -506,11 +506,15 @@ export default () => ({
     },
   },
   swaps: {
+    // CoW Swap API URLs for different chains
+    // See: https://github.com/cowprotocol/cow-sdk/blob/main/packages/order-book/src/api.ts
     api: {
       1: 'https://api.cow.fi/mainnet',
+      56: 'https://api.cow.fi/bnb',
       100: 'https://api.cow.fi/xdai',
       137: 'https://api.cow.fi/polygon',
       8453: 'https://api.cow.fi/base',
+      232: 'https://api.cow.fi/lens',
       42161: 'https://api.cow.fi/arbitrum_one',
       43114: 'https://api.cow.fi/avalanche',
       11155111: 'https://api.cow.fi/sepolia',
