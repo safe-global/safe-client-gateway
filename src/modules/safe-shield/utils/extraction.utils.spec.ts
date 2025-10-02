@@ -81,6 +81,21 @@ describe('extraction.utils', () => {
       expect(result).toEqual([]);
     });
 
+    it('ignores transactions without data payload', () => {
+      const result = extractContracts(
+        [
+          createTransaction({
+            data: undefined,
+          }),
+        ],
+        mockErc20Decoder,
+      );
+
+      expect(result).toEqual([]);
+      expect(mockErc20Decoder.helpers.isTransfer).not.toHaveBeenCalled();
+      expect(mockErc20Decoder.helpers.isTransferFrom).not.toHaveBeenCalled();
+    });
+
     it('ignores transactions without decoded data', () => {
       const result = extractContracts(
         [
