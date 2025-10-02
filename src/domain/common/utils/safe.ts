@@ -1,5 +1,5 @@
 import semverSatisfies from 'semver/functions/satisfies';
-import type { Address, Hex } from 'viem';
+import type { Address } from 'viem';
 import { decodeFunctionData, hashMessage, hashTypedData, zeroAddress } from 'viem';
 import { MessageSchema } from '@/domain/messages/entities/message.entity';
 import type { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
