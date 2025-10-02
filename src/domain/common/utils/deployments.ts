@@ -6,7 +6,8 @@ import {
   getSafeL2SingletonDeployments as _getSafeL2SingletonDeployments,
   getSafeSingletonDeployments as _getSafeSingletonDeployments,
   getCompatibilityFallbackHandlerDeployments as _getFallbackHandlerDeployments,
-  SingletonDeploymentV2,
+  getSafeToL2SetupDeployments as _getSafeToL2SetupDeployments,
+  getSafeToL2MigrationDeployments as _getSafeToL2MigrationDeployments,
 } from '@safe-global/safe-deployments';
 import { getAddress, type Address } from 'viem';
 
@@ -149,6 +150,19 @@ export const hasCanonicalDeployment = (
     networkAddresses.includes(getAddress(canonicalAddress))
   );
 };
+
+/**
+ * Checks if there is a canonical deployment of SafeToL2Setup on a given chain and version.
+ */
+export const hasCanonicalDeploymentSafeToL2Setup = (args: Filter): boolean =>
+  hasCanonicalDeployment(_getSafeToL2SetupDeployments, args);
+
+/**
+ * Checks if there is a canonical deployment of SafeToL2Migration on a given chain and version.
+ */
+export const hasCanonicalDeploymentSafeToL2Migration = (
+  args: Filter,
+): boolean => hasCanonicalDeployment(_getSafeToL2MigrationDeployments, args);
 
 /**
  * Generic helper to check if a given address is deployed.
