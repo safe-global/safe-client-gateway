@@ -3,7 +3,10 @@ import { RecipientAnalysisService } from './recipient-analysis/recipient-analysi
 import { ContractAnalysisService } from './contract-analysis/contract-analysis.service';
 import { ThreatAnalysisService } from './threat-analysis/threat-analysis.service';
 import { type Address, type Hex } from 'viem';
-import type { RecipientAnalysisResponse } from './entities/analysis-responses.entity';
+import type {
+  ContractAnalysisResponse,
+  RecipientAnalysisResponse,
+} from './entities/analysis-responses.entity';
 import type { DecodedTransactionData } from '@/modules/safe-shield/entities/transaction-data.entity';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { mapDecodedTransactions } from './utils/transaction-mapping.utils';
@@ -56,22 +59,53 @@ export class SafeShieldService {
       operation?: Operation;
     };
   }): Promise<RecipientAnalysisResponse> {
-    let transactions: Array<DecodedTransactionData> = [];
-
-    try {
-      const decodedTransaction = await this.decodeTransaction({
-        chainId,
-        safeAddress,
-        tx,
-      });
-
-      transactions = decodedTransaction.transactions;
-    } catch (error) {
-      this.loggingService.warn(`Failed to decode transaction: ${error}`);
-      return {};
-    }
+    const { transactions } = await this.decodeTransaction({
+      chainId,
+      safeAddress,
+      tx,
+    });
 
     return this.recipientAnalysisService.analyze({
+      chainId,
+      safeAddress,
+      transactions,
+    });
+  }
+
+  /**
+   * Analyzes contracts in a transaction, including inner calls if it's a multiSend.
+   *
+   * @param args - Analysis parameters
+   * @param args.chainId - The chain ID
+   * @param args.safeAddress - The Safe address
+   * @param args.tx - The transaction data
+   * @param args.tx.to - The transaction contract address
+   * @param args.tx.data - The transaction data
+   * @param args.tx.value - The transaction value (optional)
+   * @param args.tx.operation - The transaction operation (optional)
+   * @returns Map of contract addresses to their analysis results
+   */
+  async analyzeContracts({
+    chainId,
+    safeAddress,
+    tx,
+  }: {
+    chainId: string;
+    safeAddress: Address;
+    tx: {
+      to: Address;
+      data: Hex;
+      value?: bigint | string;
+      operation?: Operation;
+    };
+  }): Promise<ContractAnalysisResponse> {
+    const { transactions } = await this.decodeTransaction({
+      chainId,
+      safeAddress,
+      tx,
+    });
+
+    return this.contractAnalysisService.analyze({
       chainId,
       safeAddress,
       transactions,
@@ -101,32 +135,37 @@ export class SafeShieldService {
     };
   }): Promise<{
     transactions: Array<DecodedTransactionData>;
-    txInfo: TransactionInfo;
+    txInfo?: TransactionInfo;
   }> {
     const { data = '0x', value = '0', operation = Operation.CALL } = tx;
 
-    const txPreview = await this.transactionsService.previewTransaction({
-      chainId,
-      safeAddress,
-      previewTransactionDto: {
+    try {
+      const txPreview = await this.transactionsService.previewTransaction({
+        chainId,
+        safeAddress,
+        previewTransactionDto: {
+          ...tx,
+          data,
+          operation,
+          value: value.toString(),
+        },
+      });
+
+      const decodedTransactionData: DecodedTransactionData = {
         ...tx,
         data,
         operation,
-        value: value.toString(),
-      },
-    });
+        value,
+        dataDecoded: txPreview?.txData?.dataDecoded ?? null,
+      };
 
-    const decodedTransactionData: DecodedTransactionData = {
-      ...tx,
-      data,
-      operation,
-      value,
-      dataDecoded: txPreview?.txData?.dataDecoded ?? null,
-    };
-
-    return {
-      transactions: mapDecodedTransactions(decodedTransactionData),
-      txInfo: txPreview?.txInfo,
-    };
+      return {
+        transactions: mapDecodedTransactions(decodedTransactionData),
+        txInfo: txPreview?.txInfo,
+      };
+    } catch (error) {
+      this.loggingService.warn(`Failed to decode transaction: ${error}`);
+      return { transactions: [] };
+    }
   }
 }
