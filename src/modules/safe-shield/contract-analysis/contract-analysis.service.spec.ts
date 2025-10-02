@@ -157,8 +157,10 @@ describe('ContractAnalysisService', () => {
         CONTRACT_INTERACTION: [],
         DELEGATECALL: [],
       } as Record<ContractStatusGroup, Array<ContractAnalysisResult>>;
-      
-      jest.spyOn(service, 'analyzeContract').mockResolvedValue(mockAnalysisResult);
+
+      jest
+        .spyOn(service, 'analyzeContract')
+        .mockResolvedValue(mockAnalysisResult);
 
       const result = await service.analyze({
         chainId,
