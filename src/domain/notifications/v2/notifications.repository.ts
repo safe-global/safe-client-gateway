@@ -16,6 +16,7 @@ import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 import { NotificationSubscription } from '@/datasources/notifications/entities/notification-subscription.entity.db';
 import { NotificationDevice } from '@/datasources/notifications/entities/notification-devices.entity.db';
 import { NotificationType } from '@/datasources/notifications/entities/notification-type.entity.db';
+import { NotificationTypeResponseDto } from '@/routes/notifications/v2/entities/notification-type-response.dto.entity';
 import { EntityManager, In, IsNull } from 'typeorm';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { NotificationSubscriptionNotificationType } from '@/datasources/notifications/entities/notification-subscription-notification-type.entity.db';
@@ -316,7 +317,7 @@ export class NotificationsRepositoryV2 implements INotificationsRepositoryV2 {
     deviceUuid: UUID;
     chainId: string;
     safeAddress: Address;
-  }): Promise<Array<NotificationType>> {
+  }): Promise<Array<NotificationTypeResponseDto>> {
     if (!args.authPayload.signer_address) {
       throw new UnauthorizedException();
     }
