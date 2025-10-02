@@ -117,7 +117,13 @@ export class RecipientAnalysisService {
     const cached = await this.cacheService.hGet(cacheDir);
     if (cached) {
       logCacheHit(cacheDir, this.loggingService);
-      return JSON.parse(cached) as RecipientAnalysisResponse;
+      try {
+        return JSON.parse(cached) as RecipientAnalysisResponse;
+      } catch (error) {
+        this.loggingService.warn(
+          `Failed to parse cached recipient analysis results for ${JSON.stringify(cacheDir)}: ${error}`,
+        );
+      }
     }
     logCacheMiss(cacheDir, this.loggingService);
 
