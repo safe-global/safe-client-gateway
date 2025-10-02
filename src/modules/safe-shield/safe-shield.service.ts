@@ -59,17 +59,18 @@ export class SafeShieldService {
       operation?: Operation;
     };
   }): Promise<RecipientAnalysisResponse> {
-    const { transactions } = await this.decodeTransaction({
+    const { transactions, txInfo } = await this.decodeTransaction({
       chainId,
       safeAddress,
       tx,
     });
 
-    if (transactions.length > 0) {
+    if (transactions.length > 0 || !!txInfo) {
       return this.recipientAnalysisService.analyze({
         chainId,
         safeAddress,
         transactions,
+        txInfo,
       });
     }
 

@@ -48,6 +48,7 @@ const mockConfigurationService = {
 
 const mockLoggingService = {
   debug: jest.fn(),
+  warn: jest.fn(),
 } as jest.MockedObjectDeep<ILoggingService>;
 
 const mockErc20Decoder = {
@@ -131,6 +132,54 @@ describe('ContractAnalysisService', () => {
         type: LogType.CacheHit,
         key: cacheDir.key,
         field: cacheDir.field,
+      });
+    });
+
+    it('should handle JSON parsing errors in cached data gracefully', async () => {
+      const contractAddress = getAddress(faker.finance.ethereumAddress());
+      const contractPairs: Array<[Address, boolean]> = [
+        [contractAddress, false],
+      ];
+
+      const cacheDir = CacheRouter.getContractAnalysisCacheDir({
+        chainId,
+        contractPairs,
+      });
+
+      const invalidCachedData = 'invalid json data';
+      await fakeCacheService.hSet(cacheDir, invalidCachedData, 3600);
+
+      mockExtractContracts.mockReturnValue(contractPairs);
+
+      // Mock analyzeContract to return a result when cache parsing fails
+      const mockAnalysisResult = {
+        CONTRACT_VERIFICATION: [],
+        CONTRACT_INTERACTION: [],
+        DELEGATECALL: [],
+      } as Record<ContractStatusGroup, Array<ContractAnalysisResult>>;
+
+      jest
+        .spyOn(service, 'analyzeContract')
+        .mockResolvedValue(mockAnalysisResult);
+
+      const result = await service.analyze({
+        chainId,
+        safeAddress,
+        transactions: [],
+      });
+
+      // Should handle JSON parsing error gracefully and return fresh analysis
+      expect(result).toBeDefined();
+      expect(mockLoggingService.warn).toHaveBeenCalledWith(
+        expect.stringContaining(
+          'Failed to parse cached contract analysis results',
+        ),
+      );
+
+      expect(mockLoggingService.debug).toHaveBeenCalledWith({
+        type: 'CACHE_MISS',
+        key: expect.any(String),
+        field: expect.any(String),
       });
     });
 

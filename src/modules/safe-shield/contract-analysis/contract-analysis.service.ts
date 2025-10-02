@@ -74,7 +74,13 @@ export class ContractAnalysisService {
     const cached = await this.cacheService.hGet(cacheDir);
     if (cached) {
       logCacheHit(cacheDir, this.loggingService);
-      return JSON.parse(cached) as ContractAnalysisResponse;
+      try {
+        return JSON.parse(cached) as ContractAnalysisResponse;
+      } catch (error) {
+        this.loggingService.warn(
+          `Failed to parse cached contract analysis results for ${JSON.stringify(cacheDir)}: ${error}`,
+        );
+      }
     }
     logCacheMiss(cacheDir, this.loggingService);
 

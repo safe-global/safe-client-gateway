@@ -135,3 +135,13 @@ export class BridgeAndSwapTransactionInfo extends TransactionInfo {
     this.toAmount = args.toAmount;
   }
 }
+
+/**
+ * Type guard to check if a TransactionInfo is a BridgeAndSwapTransactionInfo.
+ * @param txInfo - The transaction info to check.
+ * @returns True if the transaction info is a BridgeAndSwapTransactionInfo.
+ */
+export const isBridgeAndSwapTransactionInfo = (
+  txInfo: TransactionInfo,
+): txInfo is BridgeAndSwapTransactionInfo =>
+  txInfo.type === TransactionInfoType.SwapAndBridge;
