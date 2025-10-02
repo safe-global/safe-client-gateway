@@ -2,7 +2,7 @@ import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 import { UpsertSubscriptionsDto } from '@/domain/notifications/v2/entities/upsert-subscriptions.dto.entity';
 import { Inject, Injectable } from '@nestjs/common';
 import { UUID } from 'crypto';
-import { NotificationType } from '@/datasources/notifications/entities/notification-type.entity.db';
+import { NotificationTypeResponseDto } from '@/routes/notifications/v2/entities/notification-type-response.dto.entity';
 import { INotificationsRepositoryV2 } from '@/domain/notifications/v2/notifications.repository.interface';
 import type { Address } from 'viem';
 
@@ -27,7 +27,7 @@ export class NotificationsServiceV2 {
     deviceUuid: UUID;
     chainId: string;
     safeAddress: Address;
-  }): Promise<Array<NotificationType>> {
+  }): Promise<Array<NotificationTypeResponseDto>> {
     return await this.notificationsRepository.getSafeSubscription(args);
   }
 
