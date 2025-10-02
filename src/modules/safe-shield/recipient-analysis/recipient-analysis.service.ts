@@ -35,19 +35,19 @@ import {
 import { Safe } from '@/domain/safe/entities/safe.entity';
 import { TransactionsService } from '@/routes/transactions/transactions.service';
 import {
-  hasCanonicalDeployment,
+  hasCanonicalDeploymentSafeToL2Migration,
+  hasCanonicalDeploymentSafeToL2Setup,
   isFallbackHandlerDeployed,
   isL1SingletonDeployed,
   isL2SingletonDeployed,
   isProxyFactoryDeployed,
 } from '@/domain/common/utils/deployments';
-import {
-  getSafeToL2MigrationDeployments,
-  getSafeToL2SetupDeployments,
-} from '@safe-global/safe-deployments';
 import { Chain } from '@/routes/chains/entities/chain.entity';
 import { merge } from 'lodash';
 import type { SafeCreationData } from '@/modules/safe-shield/entities/safe-creation-data.entity';
+
+const SAFE_VERSIONS = ['1.4.1', '1.3.0', '1.2.0', '1.1.1', '1.0.0'] as const;
+type SafeVersion = (typeof SAFE_VERSIONS)[number];
 
 /**
  * Service responsible for analyzing transaction recipients and bridge configurations.
@@ -55,6 +55,11 @@ import type { SafeCreationData } from '@/modules/safe-shield/entities/safe-creat
 @Injectable()
 export class RecipientAnalysisService {
   private readonly defaultExpirationTimeInSeconds: number;
+
+  private static readonly MULTICHAIN_SUPPORTED_VERSIONS = [
+    '1.4.1',
+    '1.3.0',
+  ] as const;
 
   constructor(
     @Inject(ITransactionApiManager)
@@ -91,6 +96,17 @@ export class RecipientAnalysisService {
     transactions: Array<DecodedTransactionData>;
     txInfo?: TransactionInfo;
   }): Promise<RecipientAnalysisResponse> {
+    // Input validation
+    if (
+      !args.chainId ||
+      !args.safeAddress ||
+      !Array.isArray(args.transactions)
+    ) {
+      throw new Error(
+        'Invalid arguments: chainId, safeAddress, and transactions are required',
+      );
+    }
+
     const recipients = extractRecipients(args.transactions, this.erc20Decoder);
 
     const cacheDir = CacheRouter.getRecipientAnalysisCacheDir({
@@ -167,6 +183,13 @@ export class RecipientAnalysisService {
     safeAddress: Address;
     recipient: Address;
   }): Promise<RecipientAnalysisResult> {
+    // Input validation
+    if (!args.chainId || !args.safeAddress || !args.recipient) {
+      throw new Error(
+        'Invalid arguments: chainId, safeAddress, and recipient are required',
+      );
+    }
+
     const transactionApi = await this.transactionApiManager.getApi(
       args.chainId,
     );
@@ -192,6 +215,13 @@ export class RecipientAnalysisService {
     safeAddress: Address;
     txInfo?: TransactionInfo;
   }): Promise<RecipientAnalysisResponse> {
+    // Input validation
+    if (!args.chainId || !args.safeAddress) {
+      throw new Error(
+        'Invalid arguments: chainId and safeAddress are required',
+      );
+    }
+
     if (!args.txInfo || !isBridgeAndSwapTransactionInfo(args.txInfo)) {
       return {};
     }
@@ -257,7 +287,9 @@ export class RecipientAnalysisService {
     ]);
 
     if (!sourceSafe) {
-      throw new Error('Source Safe not found');
+      throw new Error(
+        `Source Safe not found for address ${args.safeAddress} on chain ${args.chainId}`,
+      );
     }
 
     if (targetSafe) {
@@ -327,7 +359,7 @@ export class RecipientAnalysisService {
       creationTransaction.setupData === '0x'
     ) {
       throw new Error(
-        'The Safe creation information for this Safe could not be found or is incomplete.',
+        `Safe creation information not found or incomplete for ${safeAddress} on chain ${chainId}`,
       );
     }
 
@@ -339,7 +371,7 @@ export class RecipientAnalysisService {
     const creationParameters = creationTransaction.dataDecoded.parameters;
 
     const safeAccountConfig = {
-      owners: (creationParameters[0].value as Array<string>).map(getAddress),
+      owners: this.parseOwners(creationParameters[0].value),
       threshold: Number(creationParameters[1].value),
       to: getAddress(creationParameters[2].value as string),
       data: creationParameters[3].value as Hex,
@@ -358,20 +390,22 @@ export class RecipientAnalysisService {
   }
 
   /**
+   * Parses and validates owners from creation parameters.
+   */
+  private parseOwners(ownersValue: unknown): Array<Address> {
+    if (!Array.isArray(ownersValue)) {
+      throw new Error('Owners parameter must be an array');
+    }
+    return ownersValue.map((owner) => getAddress(owner as string));
+  }
+
+  /**
    * Determines the master copy version.
    */
   private determineMasterCopyVersion(
     masterCopy: string,
     chainId: string,
-  ): '1.4.1' | '1.3.0' | '1.2.0' | '1.1.1' | '1.0.0' | undefined {
-    const SAFE_VERSIONS = [
-      '1.4.1',
-      '1.3.0',
-      '1.2.0',
-      '1.1.1',
-      '1.0.0',
-    ] as const;
-
+  ): SafeVersion | undefined {
     return SAFE_VERSIONS.find((version) => {
       const isL1Singleton = isL1SingletonDeployed({
         version,
@@ -411,9 +445,9 @@ export class RecipientAnalysisService {
     chain: Chain,
     safeCreationData: SafeCreationData,
   ): boolean {
-    const SUPPORTED_VERSIONS = ['1.4.1', '1.3.0'] as const;
-    return SUPPORTED_VERSIONS.some((version) =>
-      this.checkVersionCompatibility(chain, safeCreationData, version),
+    return RecipientAnalysisService.MULTICHAIN_SUPPORTED_VERSIONS.some(
+      (version) =>
+        this.checkVersionCompatibility(chain, safeCreationData, version),
     );
   }
 
@@ -423,7 +457,7 @@ export class RecipientAnalysisService {
   private checkVersionCompatibility(
     chain: Chain,
     safeCreationData: SafeCreationData,
-    version: '1.4.1' | '1.3.0',
+    version: SafeVersion,
   ): boolean {
     const isL2Singleton = isL2SingletonDeployed({
       version,
@@ -455,7 +489,7 @@ export class RecipientAnalysisService {
 
     const areSetupToL2ConditionsMet =
       !includesSetupToL2 ||
-      hasCanonicalDeployment(getSafeToL2SetupDeployments, {
+      hasCanonicalDeploymentSafeToL2Setup({
         chainId: chain.chainId,
         version: '1.4.1',
       });
@@ -464,7 +498,7 @@ export class RecipientAnalysisService {
 
     const areMigrationConditionsMet =
       !isMigrationRequired ||
-      hasCanonicalDeployment(getSafeToL2MigrationDeployments, {
+      hasCanonicalDeploymentSafeToL2Migration({
         chainId: chain.chainId,
         version: '1.4.1',
       });
