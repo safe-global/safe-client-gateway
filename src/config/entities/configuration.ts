@@ -508,7 +508,7 @@ export default () => ({
   swaps: {
     api: {
       1: 'https://api.cow.fi/mainnet',
-      56: 'https://api.cow.fi/bsc',
+      56: 'https://api.cow.fi/bnb',
       100: 'https://api.cow.fi/xdai',
       137: 'https://api.cow.fi/polygon',
       8453: 'https://api.cow.fi/base',
