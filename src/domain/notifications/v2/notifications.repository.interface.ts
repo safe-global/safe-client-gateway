@@ -2,7 +2,7 @@ import type { UpsertSubscriptionsDto } from '@/domain/notifications/v2/entities/
 import type { FirebaseNotification } from '@/datasources/push-notifications-api/entities/firebase-notification.entity';
 import type { UUID } from 'crypto';
 import type { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
-import type { NotificationType } from '@/datasources/notifications/entities/notification-type.entity.db';
+import type { NotificationTypeResponseDto } from '@/routes/notifications/v2/entities/notification-type-response.dto.entity';
 import type { Address } from 'viem';
 
 export const INotificationsRepositoryV2 = Symbol('INotificationsRepositoryV2');
@@ -26,7 +26,7 @@ export interface INotificationsRepositoryV2 {
     deviceUuid: UUID;
     chainId: string;
     safeAddress: Address;
-  }): Promise<Array<NotificationType>>;
+  }): Promise<Array<NotificationTypeResponseDto>>;
 
   getSubscribersBySafe(args: {
     chainId: string;
