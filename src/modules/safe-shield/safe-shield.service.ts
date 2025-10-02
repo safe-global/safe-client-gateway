@@ -57,7 +57,6 @@ export class SafeShieldService {
     };
   }): Promise<RecipientAnalysisResponse> {
     let transactions: Array<DecodedTransactionData> = [];
-    let txInfo: TransactionInfo | undefined;
 
     try {
       const decodedTransaction = await this.decodeTransaction({
@@ -67,7 +66,6 @@ export class SafeShieldService {
       });
 
       transactions = decodedTransaction.transactions;
-      txInfo = decodedTransaction.txInfo;
     } catch (error) {
       this.loggingService.warn(`Failed to decode transaction: ${error}`);
       return {};
@@ -77,7 +75,6 @@ export class SafeShieldService {
       chainId,
       safeAddress,
       transactions,
-      txInfo,
     });
   }
 
