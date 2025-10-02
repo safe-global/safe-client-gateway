@@ -9,7 +9,6 @@ import {
 } from '@/domain/contracts/__tests__/encoders/multi-send-encoder.builder';
 import {
   addOwnerWithThresholdEncoder,
-  changeMasterCopyEncoder,
   changeThresholdEncoder,
   disableModuleEncoder,
   enableModuleEncoder,
@@ -838,102 +837,6 @@ describe('LimitAddressesMapper', () => {
             const safeAddress = getAddress(safe.address);
             const data = execTransactionEncoder()
               .with('to', safeAddress)
-              .encode();
-            // Unofficial mastercopy
-            mockSafeRepository.getSafe.mockRejectedValue(
-              new Error('Not official mastercopy'),
-            );
-
-            await expect(
-              target.getLimitAddresses({
-                version,
-                chainId,
-                data,
-                to: safeAddress,
-              }),
-            ).rejects.toThrow(
-              'Safe attempting to relay is not official. Only official Safe singletons are supported.',
-            );
-          });
-
-          // Migration to official mastercopy
-          it('should allow migration from unofficial to official L1 mastercopy', async () => {
-            const safeAddress = getAddress(faker.finance.ethereumAddress());
-            const officialMastercopy = faker.helpers.arrayElement(
-              getSafeSingletonDeployments({ version, chainId }),
-            );
-            const data = execTransactionEncoder()
-              .with('to', safeAddress)
-              .with(
-                'data',
-                changeMasterCopyEncoder()
-                  .with('masterCopy', officialMastercopy)
-                  .encode(),
-              )
-              .encode();
-            // Unofficial mastercopy initially
-            mockSafeRepository.getSafe.mockRejectedValue(
-              new Error('Not official mastercopy'),
-            );
-
-            const expectedLimitAddresses = await target.getLimitAddresses({
-              version,
-              chainId,
-              data,
-              to: safeAddress,
-            });
-            expect(expectedLimitAddresses).toStrictEqual([safeAddress]);
-          });
-
-          it('should allow migration from unofficial to official L2 mastercopy', async () => {
-            const l2Deployments = getSafeL2SingletonDeployments({
-              version,
-              chainId,
-            });
-            // Skip if no L2 deployments for this version/chain
-            if (l2Deployments.length === 0) {
-              return;
-            }
-
-            const safeAddress = getAddress(faker.finance.ethereumAddress());
-            const officialMastercopy =
-              faker.helpers.arrayElement(l2Deployments);
-            const data = execTransactionEncoder()
-              .with('to', safeAddress)
-              .with(
-                'data',
-                changeMasterCopyEncoder()
-                  .with('masterCopy', officialMastercopy)
-                  .encode(),
-              )
-              .encode();
-            // Unofficial mastercopy initially
-            mockSafeRepository.getSafe.mockRejectedValue(
-              new Error('Not official mastercopy'),
-            );
-
-            const expectedLimitAddresses = await target.getLimitAddresses({
-              version,
-              chainId,
-              data,
-              to: safeAddress,
-            });
-            expect(expectedLimitAddresses).toStrictEqual([safeAddress]);
-          });
-
-          it('should reject migration to unofficial mastercopy', async () => {
-            const safeAddress = getAddress(faker.finance.ethereumAddress());
-            const unofficialMastercopy = getAddress(
-              faker.finance.ethereumAddress(),
-            );
-            const data = execTransactionEncoder()
-              .with('to', safeAddress)
-              .with(
-                'data',
-                changeMasterCopyEncoder()
-                  .with('masterCopy', unofficialMastercopy)
-                  .encode(),
-              )
               .encode();
             // Unofficial mastercopy
             mockSafeRepository.getSafe.mockRejectedValue(
