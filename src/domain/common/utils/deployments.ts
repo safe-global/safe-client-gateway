@@ -15,6 +15,14 @@ type Filter = {
   version: string;
 };
 
+type DeploymentGetter =
+  | typeof _getProxyFactoryDeployments
+  | typeof _getSafeSingletonDeployments
+  | typeof _getSafeL2SingletonDeployments
+  | typeof _getMultiSendCallOnlyDeployments
+  | typeof _getMultiSendDeployments
+  | typeof _getFallbackHandlerDeployments;
+
 /**
  * Returns a list of official ProxyFactory addresses based on given {@link Filter}.
  *
@@ -96,12 +104,7 @@ export function getFallbackHandlerDeployments(args: Filter): Array<Address> {
  * @returns {Array<Address>} - a list of checksummed addresses
  */
 function formatDeployments(
-  getDeployments:
-    | typeof _getProxyFactoryDeployments
-    | typeof _getSafeSingletonDeployments
-    | typeof _getSafeL2SingletonDeployments
-    | typeof _getMultiSendCallOnlyDeployments
-    | typeof _getMultiSendDeployments,
+  getDeployments: DeploymentGetter,
   filter: Filter,
 ): Array<Address> {
   const deployments = getDeployments({
@@ -134,12 +137,7 @@ function formatDeployments(
  * @returns {boolean} - true if the address is deployed as a canonical deployment, false otherwise.
  */
 export const hasCanonicalDeployment = (
-  getDeployments:
-    | typeof _getProxyFactoryDeployments
-    | typeof _getSafeSingletonDeployments
-    | typeof _getSafeL2SingletonDeployments
-    | typeof _getMultiSendCallOnlyDeployments
-    | typeof _getMultiSendDeployments,
+  getDeployments: DeploymentGetter,
   filter: Filter,
 ): boolean => {
   const { deployments } = getDeployments(filter) || {};
@@ -153,61 +151,40 @@ export const hasCanonicalDeployment = (
 };
 
 /**
- * Checks if a given address is deployed as an L1 singleton.
- *
- * @param {string} args.chainId - the chain ID to filter deployments by
- * @param {string} args.version - the version to filter deployments by
- * @param {Address} args.address - the address to check
- * @returns True if the address is deployed as an L1 singleton, false otherwise.
+ * Generic helper to check if a given address is deployed.
  */
-export function isL1SingletonDeployed(
+function isDeployed(
+  getDeploymentsFn: (args: Filter) => Array<Address>,
   args: Filter & { address: Address },
 ): boolean {
-  const deployments = getSafeSingletonDeployments(args);
+  const deployments = getDeploymentsFn(args);
   return deployments.includes(args.address);
 }
+
+/**
+ * Checks if a given address is deployed as an L1 singleton.
+ */
+export const isL1SingletonDeployed = (
+  args: Filter & { address: Address },
+): boolean => isDeployed(getSafeSingletonDeployments, args);
 
 /**
  * Checks if a given address is deployed as an L2 singleton.
- *
- * @param {string} args.chainId - the chain ID to filter deployments by
- * @param {string} args.version - the version to filter deployments by
- * @param {Address} args.address - the address to check
- * @returns True if the address is deployed as an L2 singleton, false otherwise.
  */
-export function isL2SingletonDeployed(
+export const isL2SingletonDeployed = (
   args: Filter & { address: Address },
-): boolean {
-  const deployments = getSafeL2SingletonDeployments(args);
-  return deployments.includes(args.address);
-}
+): boolean => isDeployed(getSafeL2SingletonDeployments, args);
 
 /**
  * Checks if a given address is deployed as a ProxyFactory.
- *
- * @param {string} args.chainId - the chain ID to filter deployments by
- * @param {string} args.version - the version to filter deployments by
- * @param {Address} args.address - the address to check
- * @returns True if the address is deployed as a ProxyFactory, false otherwise.
  */
-export function isProxyFactoryDeployed(
+export const isProxyFactoryDeployed = (
   args: Filter & { address: Address },
-): boolean {
-  const deployments = getProxyFactoryDeployments(args);
-  return deployments.includes(args.address);
-}
+): boolean => isDeployed(getProxyFactoryDeployments, args);
 
 /**
  * Checks if a given address is deployed as a CompatibilityFallbackHandler.
- *
- * @param {string} args.chainId - the chain ID to filter deployments by
- * @param {string} args.version - the version to filter deployments by
- * @param {Address} args.address - the address to check
- * @returns True if the address is deployed as a CompatibilityFallbackHandler, false otherwise.
  */
-export function isFallbackHandlerDeployed(
+export const isFallbackHandlerDeployed = (
   args: Filter & { address: Address },
-): boolean {
-  const deployments = getFallbackHandlerDeployments(args);
-  return deployments.includes(args.address);
-}
+): boolean => isDeployed(getFallbackHandlerDeployments, args);
