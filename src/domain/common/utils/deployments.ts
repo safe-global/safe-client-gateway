@@ -5,6 +5,7 @@ import {
   getProxyFactoryDeployments as _getProxyFactoryDeployments,
   getSafeL2SingletonDeployments as _getSafeL2SingletonDeployments,
   getSafeSingletonDeployments as _getSafeSingletonDeployments,
+  getSafeToL2MigrationDeployments as _getSafeToL2MigrationDeployments,
 } from '@safe-global/safe-deployments';
 import type { Address } from 'viem';
 
@@ -74,6 +75,20 @@ export function getMultiSendDeployments(args: Filter): Array<Address> {
 }
 
 /**
+ * Returns a list of official SafeToL2Migration addresses based on given {@link Filter}.
+ *
+ * @param {string} args.chainId - the chain ID to filter deployments by
+ * @param {string} args.version - the version to filter deployments by
+ *
+ * @returns {Array<Address>} - a list of checksummed SafeToL2Migration addresses
+ */
+export function getSafeToL2MigrationDeployments(
+  args: Filter,
+): Array<Address> {
+  return formatDeployments(_getSafeToL2MigrationDeployments, args);
+}
+
+/**
  * Helper to remap {@link SingletonDeploymentV2} to a list of checksummed addresses.
  *
  * @param {Function} getDeployments - function to get deployments
@@ -87,7 +102,8 @@ function formatDeployments(
     | typeof _getSafeSingletonDeployments
     | typeof _getSafeL2SingletonDeployments
     | typeof _getMultiSendCallOnlyDeployments
-    | typeof _getMultiSendDeployments,
+    | typeof _getMultiSendDeployments
+    | typeof _getSafeToL2MigrationDeployments,
   filter: Filter,
 ): Array<Address> {
   const deployments = getDeployments({
@@ -110,4 +126,39 @@ function formatDeployments(
   }
 
   return chainDeployments as Array<Address>;
+}
+
+/**
+ * Detects the Safe version from a mastercopy address.
+ * Checks both L1 and L2 singleton deployments across all known versions.
+ *
+ * @param {string} chainId - the chain ID
+ * @param {Address} mastercopyAddress - the mastercopy address to check
+ *
+ * @returns {string | null} - the Safe version if found, null otherwise
+ */
+export function getVersionFromMastercopy(
+  chainId: string,
+  mastercopyAddress: Address,
+): string | null {
+  const versions = ['1.4.1', '1.3.0', '1.2.0', '1.1.1', '1.0.0'];
+
+  for (const version of versions) {
+    const l1Singletons = getSafeSingletonDeployments({ chainId, version });
+    const l2Singletons = getSafeL2SingletonDeployments({ chainId, version });
+
+    const found =
+      l1Singletons.some(
+        (addr) => addr.toLowerCase() === mastercopyAddress.toLowerCase(),
+      ) ||
+      l2Singletons.some(
+        (addr) => addr.toLowerCase() === mastercopyAddress.toLowerCase(),
+      );
+
+    if (found) {
+      return version;
+    }
+  }
+
+  return null;
 }
