@@ -2,21 +2,17 @@ import { Inject, Injectable } from '@nestjs/common';
 import { RecipientAnalysisService } from './recipient-analysis/recipient-analysis.service';
 import { ContractAnalysisService } from './contract-analysis/contract-analysis.service';
 import { ThreatAnalysisService } from './threat-analysis/threat-analysis.service';
-import { MultiSendDecoder } from '@/domain/contracts/decoders/multi-send-decoder.helper';
-import { DataDecodedService } from '@/routes/data-decode/data-decoded.service';
-import { TransactionDataDto } from '@/routes/common/entities/transaction-data.dto.entity';
-import type { DataDecoded } from '@/routes/data-decode/entities/data-decoded.entity';
 import { type Address, type Hex } from 'viem';
 import type {
   ContractAnalysisResponse,
   RecipientAnalysisResponse,
 } from './entities/analysis-responses.entity';
-import type {
-  DecodedTransactionData,
-  TransactionData,
-} from '@/modules/safe-shield/entities/transaction-data.entity';
+import type { DecodedTransactionData } from '@/modules/safe-shield/entities/transaction-data.entity';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { mapDecodedTransactions } from './utils/transaction-mapping.utils';
+import { TransactionsService } from '@/routes/transactions/transactions.service';
+import { Operation } from '@/domain/safe/entities/operation.entity';
+import type { TransactionInfo } from '@/routes/transactions/entities/transaction-info.entity';
 
 /**
  * Main orchestration service for Safe Shield transaction analysis.
@@ -31,10 +27,9 @@ export class SafeShieldService {
     private readonly recipientAnalysisService: RecipientAnalysisService,
     private readonly contractAnalysisService: ContractAnalysisService,
     private readonly threatAnalysisService: ThreatAnalysisService,
-    private readonly multiSendDecoder: MultiSendDecoder,
-    private readonly dataDecodedService: DataDecodedService,
     @Inject(LoggingService)
     private readonly loggingService: ILoggingService,
+    private readonly transactionsService: TransactionsService,
   ) {}
 
   /**
@@ -43,27 +38,42 @@ export class SafeShieldService {
    * @param args - Analysis parameters
    * @param args.chainId - The chain ID
    * @param args.safeAddress - The Safe address
-   * @param args.to - The transaction recipient address
-   * @param args.data - The transaction data (may contain multiSend)
+   * @param args.tx - The transaction data
+   * @param args.tx.to - The transaction recipient address
+   * @param args.tx.data - The transaction data (optional)
+   * @param args.tx.value - The transaction value (optional)
+   * @param args.tx.operation - The transaction operation (optional)
    * @returns Map of recipient addresses to their analysis results
    */
-  async analyzeRecipient(args: {
+  async analyzeRecipient({
+    chainId,
+    safeAddress,
+    tx,
+  }: {
     chainId: string;
     safeAddress: Address;
-    to: Address;
-    data: Hex;
+    tx: {
+      to: Address;
+      data?: Hex;
+      value?: bigint | string;
+      operation?: Operation;
+    };
   }): Promise<RecipientAnalysisResponse> {
-    const transactions = await this.extractTransactions(
-      args.chainId,
-      args.to,
-      args.data,
-    );
-
-    return this.recipientAnalysisService.analyze({
-      chainId: args.chainId,
-      safeAddress: args.safeAddress,
-      transactions,
+    const { transactions } = await this.decodeTransaction({
+      chainId,
+      safeAddress,
+      tx,
     });
+
+    if (transactions.length > 0) {
+      return this.recipientAnalysisService.analyze({
+        chainId,
+        safeAddress,
+        transactions,
+      });
+    }
+
+    return {};
   }
 
   /**
@@ -72,99 +82,98 @@ export class SafeShieldService {
    * @param args - Analysis parameters
    * @param args.chainId - The chain ID
    * @param args.safeAddress - The Safe address
-   * @param args.to - The transaction contract address
-   * @param args.data - The transaction data (may contain multiSend)
+   * @param args.tx - The transaction data
+   * @param args.tx.to - The transaction contract address
+   * @param args.tx.data - The transaction data
+   * @param args.tx.value - The transaction value (optional)
+   * @param args.tx.operation - The transaction operation (optional)
    * @returns Map of contract addresses to their analysis results
    */
-  async analyzeContracts(args: {
+  async analyzeContracts({
+    chainId,
+    safeAddress,
+    tx,
+  }: {
     chainId: string;
     safeAddress: Address;
-    to: Address;
-    data: Hex;
+    tx: {
+      to: Address;
+      data: Hex;
+      value?: bigint | string;
+      operation?: Operation;
+    };
   }): Promise<ContractAnalysisResponse> {
-    const transactions = await this.extractTransactions(
-      args.chainId,
-      args.to,
-      args.data,
-    );
-
-    return this.contractAnalysisService.analyze({
-      chainId: args.chainId,
-      safeAddress: args.safeAddress,
-      transactions,
+    const { transactions } = await this.decodeTransaction({
+      chainId,
+      safeAddress,
+      tx,
     });
-  }
 
-  /**
-   * Extracts all transactions from a transaction request.
-   * If it's a multiSend, extracts all inner transactions. Otherwise, returns the main transaction.
-   *
-   * @param chainId - The chain ID for decoding context
-   * @param to - The main transaction recipient
-   * @param data - The transaction data
-   * @returns Array of transaction objects with operation, to, value, data, and decoded information
-   */
-  async extractTransactions(
-    chainId: string,
-    to: Address,
-    data: Hex,
-    operation: number = 0,
-    value: bigint | string = BigInt(0),
-  ): Promise<Array<DecodedTransactionData>> {
-    let rawTransactions: Array<TransactionData> = [
-      { operation, to, value, data },
-    ];
-
-    // Extract the inner transactions if it's a multiSend
-    if (this.multiSendDecoder.helpers.isMultiSend(data)) {
-      try {
-        rawTransactions = this.multiSendDecoder.mapMultiSendTransactions(data);
-      } catch (error) {
-        this.loggingService.warn(
-          `Failed to decode multiSend transaction: ${error}`,
-        );
-      }
+    if (transactions.length > 0) {
+      return this.contractAnalysisService.analyze({
+        chainId,
+        safeAddress,
+        transactions,
+      });
     }
 
-    // Decode the transactions
-    const decodedTransactions = await Promise.all(
-      rawTransactions.map(async (tx) => ({
-        ...tx,
-        dataDecoded:
-          tx.data === '0x'
-            ? null
-            : await this.decodeTransactionData(chainId, tx.to, tx.data),
-      })),
-    );
-
-    // Map the decoded transactions to a flat array
-    return decodedTransactions.reduce<Array<DecodedTransactionData>>(
-      (acc, curr) => [...acc, ...mapDecodedTransactions(curr)],
-      [],
-    );
+    return {};
   }
 
   /**
-   * Decodes transaction data using the DataDecodedService.
-   *
-   * @param chainId - The chain ID
-   * @param to - The transaction recipient address
-   * @param data - The transaction data to decode
-   * @returns Promise<DataDecoded | null> - Decoded transaction data or null if decoding fails
+   * Decodes a transaction.
+   * @param args - The arguments for decoding the transaction.
+   * @param args.chainId - The chain ID.
+   * @param args.safeAddress - The Safe address.
+   * @param args.tx - The transaction.
+   * @returns The decoded transaction.
    */
-  private async decodeTransactionData(
-    chainId: string,
-    to: Address,
-    data: Hex,
-  ): Promise<DataDecoded | null> {
+  private async decodeTransaction({
+    chainId,
+    safeAddress,
+    tx,
+  }: {
+    chainId: string;
+    safeAddress: Address;
+    tx: {
+      to: Address;
+      data?: Hex;
+      value?: bigint | string;
+      operation?: Operation;
+    };
+  }): Promise<{
+    transactions: Array<DecodedTransactionData>;
+    txInfo?: TransactionInfo;
+  }> {
+    const { data = '0x', value = '0', operation = Operation.CALL } = tx;
+
     try {
-      return await this.dataDecodedService.getDataDecoded({
+      const txPreview = await this.transactionsService.previewTransaction({
         chainId,
-        getDataDecodedDto: new TransactionDataDto(data, to),
+        safeAddress,
+        previewTransactionDto: {
+          ...tx,
+          data,
+          operation,
+          value: value.toString(),
+        },
       });
+
+      const decodedTransactionData: DecodedTransactionData = {
+        ...tx,
+        data,
+        operation,
+        value,
+        dataDecoded: txPreview?.txData?.dataDecoded ?? null,
+      };
+
+      return {
+        transactions: mapDecodedTransactions(decodedTransactionData),
+        txInfo: txPreview?.txInfo,
+      };
     } catch (error) {
-      this.loggingService.warn(`Failed to decode transaction data: ${error}`);
-      return null;
+      this.loggingService.warn(`Failed to decode transaction: ${error}`);
+      return { transactions: [] };
     }
   }
 }

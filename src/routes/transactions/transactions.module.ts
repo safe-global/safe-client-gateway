@@ -121,5 +121,6 @@ import { BridgeRepositoryModule } from '@/domain/bridge/bridge.repository.module
     TransferMapper,
     VaultTransactionMapper,
   ],
+  exports: [TransactionsService],
 })
 export class TransactionsModule {}

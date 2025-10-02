@@ -1,5 +1,6 @@
 import type { Erc20Decoder } from '@/domain/relay/contracts/decoders/erc-20-decoder.helper';
 import type { DecodedTransactionData } from '@/modules/safe-shield/entities/transaction-data.entity';
+import { isExecTransaction } from '@/modules/safe-shield/utils/transaction-mapping.utils';
 import type { Address } from 'viem';
 import { getAddress } from 'viem';
 
@@ -15,20 +16,19 @@ export function extractContracts(
   transactions: Array<DecodedTransactionData>,
   erc20Decoder: Erc20Decoder,
 ): Array<[Address, boolean]> {
-  const extractContract = ({
-    dataDecoded,
-    data,
-    to,
-    operation,
-  }: DecodedTransactionData): [Address | undefined, boolean] => {
+  const extractContract = (
+    tx: DecodedTransactionData,
+  ): [Address | undefined, boolean] => {
+    const { dataDecoded, data, to, operation } = tx;
+
     // all cases where the transaction is not a contract interaction
     if (
       data === '0x' ||
+      !data ||
       !dataDecoded ||
       erc20Decoder.helpers.isTransfer(data) ||
       erc20Decoder.helpers.isTransferFrom(data) ||
-      (dataDecoded?.method === 'execTransaction' &&
-        dataDecoded?.parameters?.[2].value === '0x')
+      (isExecTransaction(tx) && dataDecoded?.parameters?.[2].value === '0x')
     ) {
       return [undefined, false];
     }
