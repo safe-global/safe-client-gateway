@@ -6,7 +6,6 @@ import type { DecodedTransactionData } from '@/modules/safe-shield/entities/tran
 import type { Page } from '@/domain/entities/page.entity';
 import type { Transfer } from '@/domain/safe/entities/transfer.entity';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
-import type { ICacheService } from '@/datasources/cache/cache.service.interface';
 import type { ILoggingService } from '@/logging/logging.interface';
 import type { IChainsRepository } from '@/domain/chains/chains.repository.interface';
 import { faker } from '@faker-js/faker';
@@ -22,6 +21,8 @@ import type { Address, Hash, Hex } from 'viem';
 import type { DataDecodedAccuracy } from '@/domain/data-decoder/v2/entities/data-decoded.entity';
 import type { CreationTransaction } from '@/routes/transactions/entities/creation-transaction.entity';
 import type { DataDecoded } from '@/routes/data-decode/entities/data-decoded.entity';
+import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
+import { CacheRouter } from '@/datasources/cache/cache.router';
 
 describe('RecipientAnalysisService', () => {
   const mockTransactionApi = {
@@ -44,10 +45,7 @@ describe('RecipientAnalysisService', () => {
     getOrThrow: jest.fn().mockReturnValue(3600), // Default cache expiration
   } as jest.MockedObjectDeep<IConfigurationService>;
 
-  const mockCacheService = {
-    hGet: jest.fn(),
-    hSet: jest.fn(),
-  } as jest.MockedObjectDeep<ICacheService>;
+  const fakeCacheService = new FakeCacheService();
 
   const mockLoggingService = {
     debug: jest.fn(),
@@ -68,7 +66,7 @@ describe('RecipientAnalysisService', () => {
     mockTransactionApiManager,
     mockErc20Decoder,
     mockConfigurationService,
-    mockCacheService,
+    fakeCacheService,
     mockLoggingService,
     mockChainsRepository,
     mockTransactionsService,
@@ -162,6 +160,7 @@ describe('RecipientAnalysisService', () => {
 
   beforeEach(() => {
     jest.resetAllMocks();
+    fakeCacheService.clear();
     mockTransactionApiManager.getApi.mockResolvedValue(mockTransactionApi);
   });
 
@@ -179,8 +178,6 @@ describe('RecipientAnalysisService', () => {
         faker.string.numeric(3),
       );
 
-      // Mock cache miss
-      mockCacheService.hGet.mockResolvedValue(undefined);
       extractRecipientsSpy.mockReturnValue([mockRecipientAddress]);
       (mockTransactionApi.getTransfers as jest.Mock).mockResolvedValue(
         mockTransferPage(faker.number.int({ min: 1, max: 5 })),
@@ -235,8 +232,6 @@ describe('RecipientAnalysisService', () => {
         },
       ];
 
-      // Mock cache miss
-      mockCacheService.hGet.mockResolvedValue(undefined);
       extractRecipientsSpy.mockReturnValue([recipient1, recipient2]);
       (mockTransactionApi.getTransfers as jest.Mock)
         .mockResolvedValueOnce(mockTransferPage(5))
@@ -295,7 +290,6 @@ describe('RecipientAnalysisService', () => {
     });
 
     it('should handle empty transactions array', async () => {
-      mockCacheService.hGet.mockResolvedValue(undefined);
       extractRecipientsSpy.mockReturnValue([]);
 
       const result = await service.analyze({
@@ -306,13 +300,15 @@ describe('RecipientAnalysisService', () => {
 
       expect(result).toEqual({});
       expect(mockTransactionApi.getTransfers).not.toHaveBeenCalled();
-      expect(mockCacheService.hSet).toHaveBeenCalledWith(
-        expect.objectContaining({
-          key: expect.any(String),
-          field: expect.any(String),
-        }),
-        '{}',
-        3600,
+
+      // check the result is stored in the cache
+      const cacheDir = CacheRouter.getRecipientAnalysisCacheDir({
+        chainId: mockChainId,
+        recipients: [],
+      });
+      const cacheContent = await fakeCacheService.hGet(cacheDir);
+      expect(JSON.parse(cacheContent as string)).toStrictEqual(
+        expect.objectContaining(result),
       );
 
       expect(extractRecipientsSpy).toHaveBeenCalledTimes(1);
@@ -320,40 +316,46 @@ describe('RecipientAnalysisService', () => {
     });
 
     it('should return cached result when available', async () => {
-      const cachedResult = {
-        [mockRecipientAddress]: {
-          RECIPIENT_INTERACTION: [
-            {
-              severity: 'OK',
-              type: 'KNOWN_RECIPIENT',
-              title: 'Recurring recipient',
-              description: 'You have interacted with this address 3 times.',
-            },
-          ],
-          BRIDGE: [],
-        },
-      };
+      // First run to populate cache
+      extractRecipientsSpy.mockReturnValue([mockRecipientAddress]);
+      (mockTransactionApi.getTransfers as jest.Mock).mockResolvedValue(
+        mockTransferPage(3),
+      );
 
-      mockCacheService.hGet.mockResolvedValue(JSON.stringify(cachedResult));
+      const firstResult = await service.analyze({
+        chainId: mockChainId,
+        safeAddress: mockSafeAddress,
+        transactions: [
+          {
+            operation: 0,
+            to: mockRecipientAddress,
+            value: '1000000000000000000',
+            data: '0x',
+            dataDecoded: null,
+          },
+        ],
+      });
+
+      // Reset mocks for second call
+      jest.clearAllMocks();
       extractRecipientsSpy.mockReturnValue([mockRecipientAddress]);
 
-      const transactions: Array<DecodedTransactionData> = [
-        {
-          operation: 0,
-          to: mockRecipientAddress,
-          value: '1000000000000000000',
-          data: '0x',
-          dataDecoded: null,
-        },
-      ];
-
+      // Second run should use cache
       const result = await service.analyze({
         chainId: mockChainId,
         safeAddress: mockSafeAddress,
-        transactions,
+        transactions: [
+          {
+            operation: 0,
+            to: mockRecipientAddress,
+            value: '1000000000000000000',
+            data: '0x',
+            dataDecoded: null,
+          },
+        ],
       });
 
-      expect(result).toEqual(cachedResult);
+      expect(result).toEqual(firstResult);
       expect(mockTransactionApi.getTransfers).not.toHaveBeenCalled();
       expect(mockLoggingService.debug).toHaveBeenCalledWith({
         type: 'CACHE_HIT',
@@ -363,13 +365,13 @@ describe('RecipientAnalysisService', () => {
 
       expect(extractRecipientsSpy).toHaveBeenCalledTimes(1);
       expect(extractRecipientsSpy).toHaveBeenCalledWith(
-        transactions,
+        expect.any(Array),
         mockErc20Decoder,
       );
     });
 
     it('should cache result when not in cache', async () => {
-      mockCacheService.hGet.mockResolvedValue(undefined);
+      // Cache is already empty from fakeCacheService.clear() in beforeEach
       (mockTransactionApi.getTransfers as jest.Mock).mockResolvedValue(
         mockTransferPage(faker.number.int({ min: 1, max: 5 })),
       );
@@ -397,13 +399,14 @@ describe('RecipientAnalysisService', () => {
         field: expect.any(String),
       });
 
-      expect(mockCacheService.hSet).toHaveBeenCalledWith(
-        expect.objectContaining({
-          key: expect.any(String),
-          field: expect.any(String),
-        }),
-        JSON.stringify(result),
-        3600,
+      // check the result is stored in the cache
+      const cacheDir = CacheRouter.getRecipientAnalysisCacheDir({
+        chainId: mockChainId,
+        recipients: [mockRecipientAddress],
+      });
+      const cacheContent = await fakeCacheService.hGet(cacheDir);
+      expect(JSON.parse(cacheContent as string)).toStrictEqual(
+        expect.objectContaining(result),
       );
 
       expect(extractRecipientsSpy).toHaveBeenCalledTimes(1);
@@ -1083,9 +1086,6 @@ describe('RecipientAnalysisService', () => {
       );
       // Ensure the transaction API manager returns the mock for all chains
       mockTransactionApiManager.getApi.mockResolvedValue(mockTransactionApi);
-      // Clear cache to ensure no cached results affect tests
-      mockCacheService.hGet.mockResolvedValue(undefined);
-      mockCacheService.hSet.mockResolvedValue(undefined);
     });
 
     it('should return MISSING_OWNERSHIP when target Safe does not exist but network is compatible', async () => {
@@ -1139,15 +1139,54 @@ describe('RecipientAnalysisService', () => {
     });
 
     it('should handle JSON parsing errors in cached data gracefully', async () => {
-      const invalidCachedData = 'invalid json data';
-      mockCacheService.hGet.mockResolvedValue(invalidCachedData);
+      // First, populate cache with valid data
+      extractRecipientsSpy.mockReturnValue([mockRecipientAddress]);
+      (mockTransactionApi.getTransfers as jest.Mock).mockResolvedValue(
+        mockTransferPage(3),
+      );
 
-      extractRecipientsSpy.mockReturnValue([]);
+      await service.analyze({
+        chainId: mockChainId,
+        safeAddress: mockSafeAddress,
+        transactions: [
+          {
+            operation: 0,
+            to: mockRecipientAddress,
+            value: '1000000000000000000',
+            data: '0x',
+            dataDecoded: null,
+          },
+        ],
+      });
+
+      // Now manually corrupt the cached data
+      const recipientsHash = require('crypto').createHash('sha256');
+      recipientsHash.update([mockRecipientAddress].sort().join(','));
+      const cacheDir = {
+        key: `${mockChainId}_recipient_analysis`,
+        field: recipientsHash.digest('hex'),
+      };
+      await fakeCacheService.hSet(cacheDir, 'invalid json data', 3600);
+
+      // Reset mocks
+      jest.clearAllMocks();
+      extractRecipientsSpy.mockReturnValue([mockRecipientAddress]);
+      (mockTransactionApi.getTransfers as jest.Mock).mockResolvedValue(
+        mockTransferPage(3),
+      );
 
       const result = await service.analyze({
         chainId: mockChainId,
         safeAddress: mockSafeAddress,
-        transactions: [],
+        transactions: [
+          {
+            operation: 0,
+            to: mockRecipientAddress,
+            value: '1000000000000000000',
+            data: '0x',
+            dataDecoded: null,
+          },
+        ],
       });
 
       // Should handle JSON parsing error gracefully and return fresh analysis
