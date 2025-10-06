@@ -549,7 +549,6 @@ describe('Get by id - Transactions Controller (Unit)', () => {
             dataSize: '16',
             value: Number(tx.value).toString(),
             methodName: dataDecoded.method,
-            actionCount: null,
             isCancellation: false,
           },
           txData: {
@@ -742,7 +741,6 @@ describe('Get by id - Transactions Controller (Unit)', () => {
             dataSize: '16',
             value: Number(tx.value).toString(),
             methodName: dataDecoded.method,
-            actionCount: null,
             isCancellation: false,
           },
           txData: {
@@ -933,7 +931,6 @@ describe('Get by id - Transactions Controller (Unit)', () => {
             dataSize: expect.any(String),
             value: expect.any(String),
             methodName: dataDecoded.method,
-            actionCount: null,
             isCancellation: false,
           },
           txData: {
