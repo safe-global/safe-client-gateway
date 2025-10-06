@@ -1,6 +1,9 @@
 import { ApiExtraModels, ApiProperty, getSchemaPath } from '@nestjs/swagger';
 import { CreationTransactionInfo } from '@/routes/transactions/entities/creation-transaction-info.entity';
-import { CustomTransactionInfo } from '@/routes/transactions/entities/custom-transaction.entity';
+import { 
+  CustomTransactionInfo,
+  MultiSendTransactionInfo,
+} from '@/routes/transactions/entities/custom-transaction.entity';
 import { SettingsChangeTransaction } from '@/routes/transactions/entities/settings-change-transaction.entity';
 import { NativeStakingDepositTransactionInfo } from '@/routes/transactions/entities/staking/native-staking-deposit-info.entity';
 import { NativeStakingValidatorsExitTransactionInfo } from '@/routes/transactions/entities/staking/native-staking-validators-exit-info.entity';
@@ -23,6 +26,7 @@ import {
   TransactionInfo,
   CreationTransactionInfo,
   CustomTransactionInfo,
+  MultiSendTransactionInfo,
   SettingsChangeTransaction,
   TransferTransactionInfo,
   BridgeAndSwapTransactionInfo,
@@ -41,6 +45,7 @@ export class BaseTransaction {
     oneOf: [
       { $ref: getSchemaPath(CreationTransactionInfo) },
       { $ref: getSchemaPath(CustomTransactionInfo) },
+      { $ref: getSchemaPath(MultiSendTransactionInfo) },
       { $ref: getSchemaPath(SettingsChangeTransaction) },
       { $ref: getSchemaPath(TransferTransactionInfo) },
       { $ref: getSchemaPath(SwapOrderTransactionInfo) },

@@ -8,7 +8,10 @@ import {
 import type { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
 import { NULL_ADDRESS } from '@/routes/common/constants';
 import { AddressInfo } from '@/routes/common/entities/address-info.entity';
-import { CustomTransactionInfo } from '@/routes/transactions/entities/custom-transaction.entity';
+import {
+  CustomTransactionInfo,
+  MultiSendTransactionInfo,
+} from '@/routes/transactions/entities/custom-transaction.entity';
 import { CustomTransactionMapper } from '@/routes/transactions/mappers/common/custom-transaction.mapper';
 import { getAddress } from 'viem';
 
@@ -24,7 +27,7 @@ describe('Multisig Custom Transaction mapper (Unit)', () => {
     mapper = new CustomTransactionMapper(addressInfoHelper);
   });
 
-  it('should build a CustomTransactionInfo with null actionCount', async () => {
+  it('should build a CustomTransactionInfo for non-multiSend transactions', async () => {
     const toAddress = new AddressInfo(faker.finance.ethereumAddress());
     addressInfoHelper.getOrDefault.mockResolvedValue(toAddress);
     const dataSize = faker.number.int();
@@ -46,7 +49,6 @@ describe('Multisig Custom Transaction mapper (Unit)', () => {
       dataSize: dataSize.toString(),
       value: transaction.value,
       methodName: dataDecoded.method,
-      actionCount: null,
       isCancellation: false,
     });
   });
@@ -75,12 +77,11 @@ describe('Multisig Custom Transaction mapper (Unit)', () => {
       dataSize: dataSize.toString(),
       value: transaction.value,
       methodName: dataDecoded.method,
-      actionCount: null,
       isCancellation: false,
     });
   });
 
-  it('should build a multiSend CustomTransactionInfo with null actionCount', async () => {
+  it('should build a MultiSendTransactionInfo with default actionCount when parameters are missing', async () => {
     const toAddress = new AddressInfo(faker.finance.ethereumAddress());
     addressInfoHelper.getOrDefault.mockResolvedValue(toAddress);
     const method = 'multiSend';
@@ -97,18 +98,18 @@ describe('Multisig Custom Transaction mapper (Unit)', () => {
       dataDecoded,
     );
 
-    expect(customTransaction).toBeInstanceOf(CustomTransactionInfo);
+    expect(customTransaction).toBeInstanceOf(MultiSendTransactionInfo);
     expect(customTransaction).toMatchObject({
       to: toAddress,
       dataSize: dataSize.toString(),
       value: transaction.value,
-      methodName: method,
-      actionCount: null,
+      methodName: 'multiSend',
+      actionCount: 0,
       isCancellation: false,
     });
   });
 
-  it('should build a multiSend CustomTransactionInfo with actionCount', async () => {
+  it('should build a MultiSendTransactionInfo with correct actionCount', async () => {
     const toAddress = new AddressInfo(faker.finance.ethereumAddress());
     addressInfoHelper.getOrDefault.mockResolvedValue(toAddress);
     const method = 'multiSend';
@@ -141,12 +142,12 @@ describe('Multisig Custom Transaction mapper (Unit)', () => {
       dataDecoded,
     );
 
-    expect(customTransaction).toBeInstanceOf(CustomTransactionInfo);
+    expect(customTransaction).toBeInstanceOf(MultiSendTransactionInfo);
     expect(customTransaction).toMatchObject({
       to: toAddress,
       dataSize: dataSize.toString(),
       value: transaction.value,
-      methodName: method,
+      methodName: 'multiSend',
       actionCount: 3,
       isCancellation: false,
     });
@@ -186,7 +187,6 @@ describe('Multisig Custom Transaction mapper (Unit)', () => {
       dataSize: dataSize.toString(),
       value,
       methodName: method,
-      actionCount: null,
       isCancellation: true,
     });
   });
