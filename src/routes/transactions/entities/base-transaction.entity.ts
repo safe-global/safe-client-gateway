@@ -1,6 +1,6 @@
 import { ApiExtraModels, ApiProperty, getSchemaPath } from '@nestjs/swagger';
 import { CreationTransactionInfo } from '@/routes/transactions/entities/creation-transaction-info.entity';
-import { 
+import {
   CustomTransactionInfo,
   MultiSendTransactionInfo,
 } from '@/routes/transactions/entities/custom-transaction.entity';

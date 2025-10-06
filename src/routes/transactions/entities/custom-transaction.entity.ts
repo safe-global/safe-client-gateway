@@ -48,9 +48,9 @@ export class MultiSendTransactionInfo extends TransactionInfo {
   @ApiProperty()
   isCancellation: boolean;
   @ApiProperty({ enum: ['multiSend'] })
-  methodName: 'multiSend'; // Always 'multiSend' for this type
+  methodName: 'multiSend';
   @ApiProperty({ type: Number })
-  actionCount: number; // Always present and meaningful for MultiSend
+  actionCount: number;
 
   constructor(
     to: AddressInfo,
