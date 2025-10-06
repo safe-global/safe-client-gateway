@@ -87,7 +87,6 @@ const createCustomTransactionInfo = (
     dataSize,
     value,
     methodName,
-    null,
     false,
     description,
   );
