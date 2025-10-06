@@ -8,7 +8,10 @@ import {
   MULTI_SEND_METHOD_NAME,
   TRANSACTIONS_PARAMETER_NAME,
 } from '@/routes/transactions/constants';
-import { CustomTransactionInfo } from '@/routes/transactions/entities/custom-transaction.entity';
+import {
+  CustomTransactionInfo,
+  MultiSendTransactionInfo,
+} from '@/routes/transactions/entities/custom-transaction.entity';
 import { Operation } from '@/domain/safe/entities/operation.entity';
 import { DataDecoded } from '@/domain/data-decoder/v2/entities/data-decoded.entity';
 
@@ -22,20 +25,35 @@ export class CustomTransactionMapper {
     chainId: string,
     humanDescription: string | null,
     dataDecoded: DataDecoded | null,
-  ): Promise<CustomTransactionInfo> {
+  ): Promise<CustomTransactionInfo | MultiSendTransactionInfo> {
     const toAddressInfo = await this.addressInfoHelper.getOrDefault(
       chainId,
       transaction.to,
       ['TOKEN', 'CONTRACT'],
     );
 
+    const methodName = dataDecoded?.method ?? null;
+    const isCancellation = this.isCancellation(transaction, dataSize);
+
+    if (methodName === MULTI_SEND_METHOD_NAME) {
+      const actionCount = this.getActionCount(dataDecoded);
+
+      return new MultiSendTransactionInfo(
+        toAddressInfo,
+        dataSize.toString(),
+        transaction.value,
+        actionCount ?? 0,
+        isCancellation,
+        humanDescription,
+      );
+    }
+
     return new CustomTransactionInfo(
       toAddressInfo,
       dataSize.toString(),
       transaction.value,
-      dataDecoded?.method ?? null,
-      this.getActionCount(dataDecoded),
-      this.isCancellation(transaction, dataSize),
+      methodName,
+      isCancellation,
       humanDescription,
     );
   }
