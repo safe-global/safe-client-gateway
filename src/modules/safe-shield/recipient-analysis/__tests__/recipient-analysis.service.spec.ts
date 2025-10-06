@@ -23,6 +23,7 @@ import type { CreationTransaction } from '@/routes/transactions/entities/creatio
 import type { DataDecoded } from '@/routes/data-decode/entities/data-decoded.entity';
 import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
 import { CacheRouter } from '@/datasources/cache/cache.router';
+import { createHash } from 'crypto';
 
 describe('RecipientAnalysisService', () => {
   const mockTransactionApi = {
@@ -416,7 +417,6 @@ describe('RecipientAnalysisService', () => {
       );
     });
   });
-
 
   describe('Error Handling', () => {
     it('should handle Safe creation data parsing errors gracefully', async () => {
@@ -1071,7 +1071,7 @@ describe('RecipientAnalysisService', () => {
       });
 
       // Now manually corrupt the cached data
-      const recipientsHash = require('crypto').createHash('sha256');
+      const recipientsHash = createHash('sha256');
       recipientsHash.update([mockRecipientAddress].sort().join(','));
       const cacheDir = {
         key: `${mockChainId}_recipient_analysis`,
