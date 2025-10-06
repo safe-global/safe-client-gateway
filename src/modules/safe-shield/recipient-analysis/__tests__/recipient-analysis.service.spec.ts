@@ -162,27 +162,7 @@ describe('RecipientAnalysisService', () => {
 
   beforeEach(() => {
     jest.resetAllMocks();
-    // Re-establish the mock chain
     mockTransactionApiManager.getApi.mockResolvedValue(mockTransactionApi);
-    extractRecipientsSpy.mockImplementation(
-      (transactions: Array<DecodedTransactionData>) =>
-        transactions.map((tx: DecodedTransactionData) => tx.to),
-    );
-
-    // Reset all mock implementations to default
-    (mockTransactionApi.getSafe as jest.Mock).mockResolvedValue(null);
-    (mockTransactionApi.getTransfers as jest.Mock).mockResolvedValue(
-      mockTransferPage(0),
-    );
-    (mockChainsRepository.isSupportedChain as jest.Mock).mockResolvedValue(
-      true,
-    );
-    (mockChainsRepository.getChain as jest.Mock).mockResolvedValue(
-      chainBuilder().with('chainId', faker.string.numeric(3)).build(),
-    );
-    (
-      mockTransactionsService.getCreationTransaction as jest.Mock
-    ).mockResolvedValue(null);
   });
 
   const mockTransferPage = (count: number | null): Page<Transfer> =>
@@ -200,7 +180,7 @@ describe('RecipientAnalysisService', () => {
       );
 
       // Mock cache miss
-      (mockCacheService.hGet as jest.Mock).mockResolvedValue(null);
+      mockCacheService.hGet.mockResolvedValue(undefined);
       extractRecipientsSpy.mockReturnValue([mockRecipientAddress]);
       (mockTransactionApi.getTransfers as jest.Mock).mockResolvedValue(
         mockTransferPage(faker.number.int({ min: 1, max: 5 })),
@@ -256,7 +236,7 @@ describe('RecipientAnalysisService', () => {
       ];
 
       // Mock cache miss
-      (mockCacheService.hGet as jest.Mock).mockResolvedValue(null);
+      mockCacheService.hGet.mockResolvedValue(undefined);
       extractRecipientsSpy.mockReturnValue([recipient1, recipient2]);
       (mockTransactionApi.getTransfers as jest.Mock)
         .mockResolvedValueOnce(mockTransferPage(5))
@@ -315,7 +295,7 @@ describe('RecipientAnalysisService', () => {
     });
 
     it('should handle empty transactions array', async () => {
-      (mockCacheService.hGet as jest.Mock).mockResolvedValue(null);
+      mockCacheService.hGet.mockResolvedValue(undefined);
       extractRecipientsSpy.mockReturnValue([]);
 
       const result = await service.analyze({
@@ -389,7 +369,7 @@ describe('RecipientAnalysisService', () => {
     });
 
     it('should cache result when not in cache', async () => {
-      (mockCacheService.hGet as jest.Mock).mockResolvedValue(null);
+      mockCacheService.hGet.mockResolvedValue(undefined);
       (mockTransactionApi.getTransfers as jest.Mock).mockResolvedValue(
         mockTransferPage(faker.number.int({ min: 1, max: 5 })),
       );
