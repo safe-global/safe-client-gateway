@@ -96,16 +96,6 @@ export class RecipientAnalysisService {
     transactions: Array<DecodedTransactionData>;
     txInfo?: TransactionInfo;
   }): Promise<RecipientAnalysisResponse> {
-    // Input validation
-    if (
-      !args.chainId ||
-      !args.safeAddress ||
-      !Array.isArray(args.transactions)
-    ) {
-      throw new Error(
-        'Invalid arguments: chainId, safeAddress, and transactions are required',
-      );
-    }
 
     const recipients = extractRecipients(args.transactions, this.erc20Decoder);
 
@@ -189,12 +179,6 @@ export class RecipientAnalysisService {
     safeAddress: Address;
     recipient: Address;
   }): Promise<RecipientAnalysisResult> {
-    // Input validation
-    if (!args.chainId || !args.safeAddress || !args.recipient) {
-      throw new Error(
-        'Invalid arguments: chainId, safeAddress, and recipient are required',
-      );
-    }
 
     const transactionApi = await this.transactionApiManager.getApi(
       args.chainId,
@@ -221,12 +205,6 @@ export class RecipientAnalysisService {
     safeAddress: Address;
     txInfo?: TransactionInfo;
   }): Promise<RecipientAnalysisResponse> {
-    // Input validation
-    if (!args.chainId || !args.safeAddress) {
-      throw new Error(
-        'Invalid arguments: chainId and safeAddress are required',
-      );
-    }
 
     if (!args.txInfo || !isBridgeAndSwapTransactionInfo(args.txInfo)) {
       return {};
