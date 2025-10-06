@@ -96,7 +96,6 @@ export class RecipientAnalysisService {
     transactions: Array<DecodedTransactionData>;
     txInfo?: TransactionInfo;
   }): Promise<RecipientAnalysisResponse> {
-
     const recipients = extractRecipients(args.transactions, this.erc20Decoder);
 
     const cacheDir = CacheRouter.getRecipientAnalysisCacheDir({
@@ -154,21 +153,23 @@ export class RecipientAnalysisService {
     safeAddress: Address;
     recipients: Array<Address>;
   }): Promise<RecipientAnalysisResponse> {
-    const analyseRecipients = await Promise.all(
-      args.recipients.map(async (recipient) => {
-        const interactionsAnalysisResult = await this.analyzeInteractions({
-          chainId: args.chainId,
-          safeAddress: args.safeAddress,
+    const { chainId, safeAddress, recipients } = args;
+    return Object.fromEntries(
+      await Promise.all(
+        recipients.map(async (recipient) => [
           recipient,
-        });
-        return [
-          recipient,
-          { RECIPIENT_INTERACTION: [interactionsAnalysisResult] },
-        ];
-      }),
+          {
+            RECIPIENT_INTERACTION: [
+              await this.analyzeInteractions({
+                chainId,
+                safeAddress,
+                recipient,
+              }),
+            ],
+          },
+        ]),
+      ),
     );
-
-    return Object.fromEntries(analyseRecipients);
   }
 
   /**
@@ -179,7 +180,6 @@ export class RecipientAnalysisService {
     safeAddress: Address;
     recipient: Address;
   }): Promise<RecipientAnalysisResult> {
-
     const transactionApi = await this.transactionApiManager.getApi(
       args.chainId,
     );
@@ -205,7 +205,6 @@ export class RecipientAnalysisService {
     safeAddress: Address;
     txInfo?: TransactionInfo;
   }): Promise<RecipientAnalysisResponse> {
-
     if (!args.txInfo || !isBridgeAndSwapTransactionInfo(args.txInfo)) {
       return {};
     }
