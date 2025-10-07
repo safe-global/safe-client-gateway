@@ -160,11 +160,12 @@ describe('SafeShieldService', () => {
 
   describe('analyzeRecipient', () => {
     it('should analyze recipient for a simple transaction', async () => {
+      const mockTxInfo = createTransferTransactionInfo(
+        mockSafeAddress,
+        mockRecipientAddress,
+      );
       const mockTransactionPreview = createTransactionPreviewMock({
-        txInfo: createTransferTransactionInfo(
-          mockSafeAddress,
-          mockRecipientAddress,
-        ),
+        txInfo: mockTxInfo,
         hexData: mockData,
         dataDecoded: mockDataDecoded,
         to: mockRecipientAddress,
@@ -211,6 +212,7 @@ describe('SafeShieldService', () => {
         chainId: mockChainId,
         safeAddress: mockSafeAddress,
         transactions: expectedTransactions,
+        txInfo: mockTxInfo,
       });
     });
 
@@ -246,14 +248,15 @@ describe('SafeShieldService', () => {
         .with('accuracy', 'FULL_MATCH')
         .build();
 
+      const mockTxInfo = createCustomTransactionInfo(
+        mockRecipientAddress,
+        multiSendData.length.toString(),
+        '0',
+        'multiSend',
+        'MultiSend transaction',
+      );
       const mockTransactionPreview = createTransactionPreviewMock({
-        txInfo: createCustomTransactionInfo(
-          mockRecipientAddress,
-          multiSendData.length.toString(),
-          '0',
-          'multiSend',
-          'MultiSend transaction',
-        ),
+        txInfo: mockTxInfo,
         hexData: multiSendData,
         dataDecoded: multiSendDataDecoded,
         to: mockRecipientAddress,
@@ -298,6 +301,7 @@ describe('SafeShieldService', () => {
             value: '0',
           }),
         ]),
+        txInfo: mockTxInfo,
       });
     });
 
@@ -340,11 +344,12 @@ describe('SafeShieldService', () => {
     ])(
       'should handle transaction with $description',
       async ({ data, dataDecoded, expectedDataDecoded }) => {
+        const mockTxInfo = createTransferTransactionInfo(
+          mockSafeAddress,
+          mockRecipientAddress,
+        );
         const mockTransactionPreview = createTransactionPreviewMock({
-          txInfo: createTransferTransactionInfo(
-            mockSafeAddress,
-            mockRecipientAddress,
-          ),
+          txInfo: mockTxInfo,
           hexData: data,
           dataDecoded,
           to: mockRecipientAddress,
@@ -377,6 +382,7 @@ describe('SafeShieldService', () => {
               dataDecoded: expectedDataDecoded,
             }),
           ],
+          txInfo: mockTxInfo,
         });
       },
     );
@@ -384,11 +390,12 @@ describe('SafeShieldService', () => {
     it('should handle recipient analysis service failure', async () => {
       const error = new Error('Recipient analysis failed');
 
+      const mockTxInfo = createTransferTransactionInfo(
+        mockSafeAddress,
+        mockRecipientAddress,
+      );
       const mockTransactionPreview = createTransactionPreviewMock({
-        txInfo: createTransferTransactionInfo(
-          mockSafeAddress,
-          mockRecipientAddress,
-        ),
+        txInfo: mockTxInfo,
         hexData: mockData,
         dataDecoded: mockDataDecoded,
         to: mockRecipientAddress,
@@ -409,6 +416,18 @@ describe('SafeShieldService', () => {
           },
         }),
       ).rejects.toThrow('Recipient analysis failed');
+
+      expect(mockRecipientAnalysisService.analyze).toHaveBeenCalledWith({
+        chainId: mockChainId,
+        safeAddress: mockSafeAddress,
+        transactions: expect.arrayContaining([
+          expect.objectContaining({
+            to: mockRecipientAddress,
+            data: mockData,
+          }),
+        ]),
+        txInfo: mockTxInfo,
+      });
     });
 
     it.each([
@@ -430,12 +449,13 @@ describe('SafeShieldService', () => {
     ])(
       'should handle transaction with $description',
       async ({ value, operation }) => {
+        const mockTxInfo = createCustomTransactionInfo(
+          mockRecipientAddress,
+          mockData.length.toString(),
+          value.toString(),
+        );
         const mockTransactionPreview = createTransactionPreviewMock({
-          txInfo: createCustomTransactionInfo(
-            mockRecipientAddress,
-            mockData.length.toString(),
-            value.toString(),
-          ),
+          txInfo: mockTxInfo,
           hexData: mockData,
           dataDecoded: mockDataDecoded,
           to: mockRecipientAddress,
@@ -474,6 +494,19 @@ describe('SafeShieldService', () => {
             },
           },
         );
+        expect(mockRecipientAnalysisService.analyze).toHaveBeenCalledWith({
+          chainId: mockChainId,
+          safeAddress: mockSafeAddress,
+          transactions: expect.arrayContaining([
+            expect.objectContaining({
+              to: mockRecipientAddress,
+              data: mockData,
+              dataDecoded: mockDataDecoded,
+              operation,
+            }),
+          ]),
+          txInfo: mockTxInfo,
+        });
       },
     );
   });
