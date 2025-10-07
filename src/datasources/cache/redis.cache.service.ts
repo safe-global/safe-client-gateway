@@ -171,7 +171,7 @@ export class RedisCacheService
       event: 'Closing Redis connection',
     });
     const forceQuitTimeout = setTimeout(() => {
-      this.forceQuit();
+      void this.forceQuit();
     }, this.quitTimeoutInSeconds * 1000);
     await this.client.quit();
     clearTimeout(forceQuitTimeout);
