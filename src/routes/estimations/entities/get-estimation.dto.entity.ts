@@ -10,6 +10,10 @@ export class GetEstimationDto implements DomainGetEstimationDto {
   value!: string;
   @ApiPropertyOptional({ type: String, nullable: true })
   data!: Hex | null;
-  @ApiProperty()
+  @ApiProperty({
+    enum: Operation,
+    enumName: 'Operation',
+    description: 'Operation type: 0 for CALL, 1 for DELEGATE',
+  })
   operation!: Operation;
 }
