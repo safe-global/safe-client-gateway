@@ -9,6 +9,7 @@ import {
   getSafeToL2SetupDeployments as _getSafeToL2SetupDeployments,
   getSafeToL2MigrationDeployments as _getSafeToL2MigrationDeployments,
 } from '@safe-global/safe-deployments';
+import { _SAFE_DEPLOYMENTS } from '@safe-global/safe-deployments/dist/deployments';
 import { getAddress, type Address } from 'viem';
 
 type Filter = {
@@ -22,7 +23,9 @@ type DeploymentGetter =
   | typeof _getSafeL2SingletonDeployments
   | typeof _getMultiSendCallOnlyDeployments
   | typeof _getMultiSendDeployments
-  | typeof _getFallbackHandlerDeployments;
+  | typeof _getFallbackHandlerDeployments
+  | typeof _getSafeToL2SetupDeployments
+  | typeof _getSafeToL2MigrationDeployments;
 
 /**
  * Returns a list of official ProxyFactory addresses based on given {@link Filter}.
@@ -97,6 +100,18 @@ export function getFallbackHandlerDeployments(args: Filter): Array<Address> {
 }
 
 /**
+ * Returns a list of official SafeToL2Migration addresses based on given {@link Filter}.
+ *
+ * @param {string} args.chainId - the chain ID to filter deployments by
+ * @param {string} args.version - the version to filter deployments by
+ *
+ * @returns {Array<Address>} - a list of checksummed SafeToL2Migration addresses
+ */
+export function getSafeToL2MigrationDeployments(args: Filter): Array<Address> {
+  return formatDeployments(_getSafeToL2MigrationDeployments, args);
+}
+
+/**
  * Helper to remap {@link SingletonDeploymentV2} to a list of checksummed addresses.
  *
  * @param {Function} getDeployments - function to get deployments
@@ -128,6 +143,51 @@ function formatDeployments(
   }
 
   return chainDeployments as Array<Address>;
+}
+
+/**
+ * Gets the list of Safe versions available in the safe-deployments package.
+ * Infers versions from the _SAFE_DEPLOYMENTS constant exported by the package.
+ *
+ * @returns {Array<string>} - a list of Safe versions in descending order
+ */
+function getSafeVersions(): Array<string> {
+  return _SAFE_DEPLOYMENTS.map((deployment) => deployment.version);
+}
+
+/**
+ * Detects the Safe version from a mastercopy address.
+ * Checks both L1 and L2 singleton deployments across all known versions.
+ *
+ * @param {string} chainId - the chain ID
+ * @param {Address} mastercopyAddress - the mastercopy address to check
+ *
+ * @returns {string | null} - the Safe version if found, null otherwise
+ */
+export function getVersionFromMastercopy(
+  chainId: string,
+  mastercopyAddress: Address,
+): string | null {
+  const versions = getSafeVersions();
+
+  for (const version of versions) {
+    const l1Singletons = getSafeSingletonDeployments({ chainId, version });
+    const l2Singletons = getSafeL2SingletonDeployments({ chainId, version });
+
+    const found =
+      l1Singletons.some(
+        (addr) => addr.toLowerCase() === mastercopyAddress.toLowerCase(),
+      ) ||
+      l2Singletons.some(
+        (addr) => addr.toLowerCase() === mastercopyAddress.toLowerCase(),
+      );
+
+    if (found) {
+      return version;
+    }
+  }
+
+  return null;
 }
 
 /**
