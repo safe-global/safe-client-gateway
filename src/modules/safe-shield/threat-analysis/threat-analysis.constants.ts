@@ -31,7 +31,7 @@ export const TITLE_MAPPING: Record<ThreatStatus, string> = {
 
 type DescriptionArgs = {
   reason?: string;
-  classification?: number;
+  classification?: string;
 };
 
 /**

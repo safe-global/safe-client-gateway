@@ -10,7 +10,11 @@ import {
 import {
   contractAnalysisResultBuilder,
   recipientAnalysisResultBuilder,
+  threatAnalysisResultBuilder,
+  masterCopyChangeThreatBuilder,
+  maliciousOrModerateThreatBuilder,
 } from './analysis-result.builder';
+import type { ThreatStatus } from '../../threat-status.entity';
 
 /**
  * Builder for RecipientAnalysisResponse
@@ -41,13 +45,19 @@ export function contractAnalysisResponseBuilder(): IBuilder<ContractAnalysisResp
 
 /**
  * Builder for ThreatAnalysisResponse
+ * @param type - Optional threat type to build. Delegates to appropriate builder based on type.
  */
-export function threatAnalysisResponseBuilder(): IBuilder<ThreatAnalysisResponse> {
-  return new Builder<ThreatAnalysisResponse>()
-    .with('severity', 'OK')
-    .with('type', 'NO_THREAT')
-    .with('title', faker.lorem.sentence())
-    .with('description', faker.lorem.paragraph());
+export function threatAnalysisResponseBuilder(
+  type?: ThreatStatus,
+): IBuilder<ThreatAnalysisResponse> {
+  if (type === 'MASTER_COPY_CHANGE') {
+    return masterCopyChangeThreatBuilder();
+  } else if (type === 'MALICIOUS' || type === 'MODERATE') {
+    return maliciousOrModerateThreatBuilder().with('type', type);
+  } else if (type) {
+    return threatAnalysisResultBuilder().with('type', type);
+  }
+  return threatAnalysisResultBuilder();
 }
 
 /**
