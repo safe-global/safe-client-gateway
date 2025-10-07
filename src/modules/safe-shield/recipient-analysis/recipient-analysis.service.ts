@@ -1,8 +1,13 @@
 import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
 import { TransferPageSchema } from '@/domain/safe/entities/transfer.entity';
-import type { RecipientAnalysisResult } from '@/modules/safe-shield/entities/analysis-result.entity';
+import type {
+  AnalysisResult,
+  RecipientAnalysisResult,
+} from '@/modules/safe-shield/entities/analysis-result.entity';
 import { Inject, Injectable } from '@nestjs/common';
-import type { Address } from 'viem';
+import { getAddress, Hex, zeroAddress, type Address } from 'viem';
+import { IChainsRepository } from '@/domain/chains/chains.repository.interface';
+import { SafeSchema } from '@/domain/safe/entities/schemas/safe.schema';
 import {
   SEVERITY_MAPPING,
   TITLE_MAPPING,
@@ -10,7 +15,6 @@ import {
 } from './recipient-analysis.constants';
 import type { RecipientStatus } from '@/modules/safe-shield/entities/recipient-status.entity';
 import type { BridgeStatus } from '@/modules/safe-shield/entities/bridge-status.entity';
-import type { RecipientStatusGroup } from '@/modules/safe-shield/entities/status-group.entity';
 import type { DecodedTransactionData } from '@/modules/safe-shield/entities/transaction-data.entity';
 import { Erc20Decoder } from '@/domain/relay/contracts/decoders/erc-20-decoder.helper';
 import { RecipientAnalysisResponse } from '@/modules/safe-shield/entities/analysis-responses.entity';
@@ -23,6 +27,27 @@ import { IConfigurationService } from '@/config/configuration.service.interface'
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { extractRecipients } from '../utils/recipient-extraction.utils';
 import { logCacheHit, logCacheMiss } from '@/modules/safe-shield/utils/common';
+import { TransactionInfo } from '@/routes/transactions/entities/transaction-info.entity';
+import {
+  BridgeAndSwapTransactionInfo,
+  isBridgeAndSwapTransactionInfo,
+} from '@/routes/transactions/entities/bridge/bridge-info.entity';
+import { Safe } from '@/domain/safe/entities/safe.entity';
+import { TransactionsService } from '@/routes/transactions/transactions.service';
+import {
+  hasCanonicalDeploymentSafeToL2Migration,
+  hasCanonicalDeploymentSafeToL2Setup,
+  isFallbackHandlerDeployed,
+  isL1SingletonDeployed,
+  isL2SingletonDeployed,
+  isProxyFactoryDeployed,
+} from '@/domain/common/utils/deployments';
+import { Chain } from '@/routes/chains/entities/chain.entity';
+import { merge } from 'lodash';
+import type { SafeCreationData } from '@/modules/safe-shield/entities/safe-creation-data.entity';
+
+const SAFE_VERSIONS = ['1.4.1', '1.3.0', '1.2.0', '1.1.1', '1.0.0'] as const;
+type SafeVersion = (typeof SAFE_VERSIONS)[number];
 
 /**
  * Service responsible for analyzing transaction recipients and bridge configurations.
@@ -30,6 +55,11 @@ import { logCacheHit, logCacheMiss } from '@/modules/safe-shield/utils/common';
 @Injectable()
 export class RecipientAnalysisService {
   private readonly defaultExpirationTimeInSeconds: number;
+
+  private static readonly MULTICHAIN_SUPPORTED_VERSIONS = [
+    '1.4.1',
+    '1.3.0',
+  ] as const;
 
   constructor(
     @Inject(ITransactionApiManager)
@@ -41,16 +71,30 @@ export class RecipientAnalysisService {
     private readonly cacheService: ICacheService,
     @Inject(LoggingService)
     private readonly loggingService: ILoggingService,
+    @Inject(IChainsRepository)
+    private readonly chainsRepository: IChainsRepository,
+    private readonly transactionsService: TransactionsService,
   ) {
     this.defaultExpirationTimeInSeconds =
       this.configurationService.getOrThrow<number>(
         'expirationTimeInSeconds.default',
       );
   }
+
+  /**
+   * Analyzes the recipients and bridge compatibility for a Safe.
+   * @param args - The arguments for the analysis.
+   * @param args.chainId - The chain ID.
+   * @param args.safeAddress - The Safe address.
+   * @param args.transactions - The transactions to analyze.
+   * @param args.txInfo - The transaction info.
+   * @returns The analysis results.
+   */
   async analyze(args: {
     chainId: string;
     safeAddress: Address;
     transactions: Array<DecodedTransactionData>;
+    txInfo?: TransactionInfo;
   }): Promise<RecipientAnalysisResponse> {
     const recipients = extractRecipients(args.transactions, this.erc20Decoder);
 
@@ -62,20 +106,35 @@ export class RecipientAnalysisService {
     const cached = await this.cacheService.hGet(cacheDir);
     if (cached) {
       logCacheHit(cacheDir, this.loggingService);
-      return JSON.parse(cached) as RecipientAnalysisResponse;
+      try {
+        return JSON.parse(cached) as RecipientAnalysisResponse;
+      } catch (error) {
+        this.loggingService.warn(
+          `Failed to parse cached recipient analysis results for ${JSON.stringify(cacheDir)}: ${error}`,
+        );
+      }
     }
     logCacheMiss(cacheDir, this.loggingService);
 
-    const analysisResults: RecipientAnalysisResponse = {};
-    for (const recipient of recipients) {
-      const result = await this.analyzeRecipient({
-        chainId: args.chainId,
-        safeAddress: args.safeAddress,
-        recipient,
-      });
+    const [recipientAnalysisResults, bridgeAnalysisResults] = await Promise.all(
+      [
+        this.analyseRecipients({
+          chainId: args.chainId,
+          safeAddress: args.safeAddress,
+          recipients,
+        }),
+        this.analyzeBridge({
+          chainId: args.chainId,
+          safeAddress: args.safeAddress,
+          txInfo: args.txInfo,
+        }),
+      ],
+    );
 
-      analysisResults[recipient] = result;
-    }
+    const analysisResults = merge(
+      recipientAnalysisResults,
+      bridgeAnalysisResults,
+    );
 
     await this.cacheService.hSet(
       cacheDir,
@@ -87,32 +146,34 @@ export class RecipientAnalysisService {
   }
 
   /**
-   * Analyzes the recipient and bridge status.
-   * @param args - The arguments for the analysis.
-   * @param args.chainId - The chain ID.
-   * @param args.safeAddress - The Safe address.
-   * @param args.recipient - The recipient address.
-   * @returns The analysis results.
+   * Analyzes the recipients for a Safe.
    */
-  async analyzeRecipient(args: {
+  private async analyseRecipients(args: {
     chainId: string;
     safeAddress: Address;
-    recipient: Address;
-  }): Promise<Record<RecipientStatusGroup, Array<RecipientAnalysisResult>>> {
-    const recipientInteractionResults = await this.analyzeInteractions(args);
-    return {
-      RECIPIENT_INTERACTION: [recipientInteractionResults],
-      BRIDGE: [],
-    };
+    recipients: Array<Address>;
+  }): Promise<RecipientAnalysisResponse> {
+    const { chainId, safeAddress, recipients } = args;
+    return Object.fromEntries(
+      await Promise.all(
+        recipients.map(async (recipient) => [
+          recipient,
+          {
+            RECIPIENT_INTERACTION: [
+              await this.analyzeInteractions({
+                chainId,
+                safeAddress,
+                recipient,
+              }),
+            ],
+          },
+        ]),
+      ),
+    );
   }
 
   /**
    * Analyzes the interactions between a Safe and a recipient.
-   * @param args - The arguments for the analysis.
-   * @param args.chainId - The chain ID.
-   * @param args.safeAddress - The Safe address.
-   * @param args.recipient - The recipient address.
-   * @returns The analysis result.
    */
   async analyzeInteractions(args: {
     chainId: string;
@@ -137,20 +198,317 @@ export class RecipientAnalysisService {
   }
 
   /**
-   * Maps a recipient or bridge status to an analysis result.
-   * @param type - The recipient or bridge status.
-   * @param interactions - The number of interactions with the recipient.
-   * @returns The analysis result.
+   * Analyzes bridge compatibility for cross-chain operations.
    */
-  private mapToAnalysisResult(
-    type: RecipientStatus,
+  async analyzeBridge(args: {
+    chainId: string;
+    safeAddress: Address;
+    txInfo?: TransactionInfo;
+  }): Promise<RecipientAnalysisResponse> {
+    if (!args.txInfo || !isBridgeAndSwapTransactionInfo(args.txInfo)) {
+      return {};
+    }
+
+    const bridgeRecipient = getAddress(args.txInfo.recipient.value);
+
+    if (bridgeRecipient === getAddress(args.safeAddress)) {
+      const resultStatus = await this.analyzeTargetChainCompatibility({
+        ...args,
+        txInfo: args.txInfo,
+      });
+
+      if (!resultStatus) {
+        return {};
+      }
+
+      return {
+        [bridgeRecipient]: { BRIDGE: [this.mapToAnalysisResult(resultStatus)] },
+      };
+    }
+
+    // If the bridge recipient is not the same as the Safe address, we need to analyse the recipient
+    return this.analyseRecipients({
+      chainId: args.chainId,
+      safeAddress: args.safeAddress,
+      recipients: [bridgeRecipient],
+    });
+  }
+
+  /**
+   * Analyzes compatibility between source and target chain Safes.
+   */
+  private async analyzeTargetChainCompatibility(args: {
+    chainId: string;
+    safeAddress: Address;
+    txInfo: BridgeAndSwapTransactionInfo;
+  }): Promise<BridgeStatus | undefined> {
+    // Early return if recipient doesn't match safe address
+    if (
+      getAddress(args.txInfo.recipient.value) !== getAddress(args.safeAddress)
+    ) {
+      return undefined;
+    }
+
+    // Check if target chain is supported
+    const isTargetChainSupported = await this.chainsRepository.isSupportedChain(
+      args.txInfo.toChain,
+    );
+    if (!isTargetChainSupported) {
+      return 'UNSUPPORTED_NETWORK';
+    }
+
+    // Fetch source and target safes in parallel
+    const [sourceSafe, targetSafe] = await Promise.all([
+      this.getSafe({
+        chainId: args.chainId,
+        safeAddress: args.safeAddress,
+      }),
+      this.getSafe({
+        chainId: args.txInfo.toChain,
+        safeAddress: args.safeAddress,
+      }),
+    ]);
+
+    if (!sourceSafe) {
+      throw new Error(
+        `Source Safe not found for address ${args.safeAddress} on chain ${args.chainId}`,
+      );
+    }
+
+    if (targetSafe) {
+      if (!this.haveSameSetup(sourceSafe, targetSafe)) {
+        return 'DIFFERENT_SAFE_SETUP';
+      }
+    } else {
+      // Check network compatibility
+      const [safeCreationData, targetChain] = await Promise.all([
+        this.getSafeCreationData({
+          chainId: args.chainId,
+          safeAddress: args.safeAddress,
+        }),
+        this.chainsRepository.getChain(args.txInfo.toChain),
+      ]);
+
+      if (!this.isNetworkCompatible(targetChain, safeCreationData)) {
+        return 'INCOMPATIBLE_SAFE';
+      }
+
+      return 'MISSING_OWNERSHIP';
+    }
+  }
+
+  /**
+   * Gets Safe data.
+   */
+  private async getSafe(args: {
+    chainId: string;
+    safeAddress: Address;
+  }): Promise<Safe | null> {
+    try {
+      const transactionApi = await this.transactionApiManager.getApi(
+        args.chainId,
+      );
+      const safe = await transactionApi.getSafe(args.safeAddress);
+      return SafeSchema.parse(safe);
+    } catch (error) {
+      this.loggingService.warn(
+        `Failed to get Safe by address ${args.safeAddress}: ${error}`,
+      );
+      return null;
+    }
+  }
+
+  /**
+   * Gets the safe creation data.
+   */
+  private async getSafeCreationData({
+    chainId,
+    safeAddress,
+  }: {
+    chainId: string;
+    safeAddress: Address;
+  }): Promise<SafeCreationData> {
+    const creationTransaction =
+      await this.transactionsService.getCreationTransaction({
+        chainId,
+        safeAddress,
+      });
+
+    if (
+      !creationTransaction ||
+      !creationTransaction.masterCopy ||
+      !creationTransaction.setupData ||
+      !creationTransaction.dataDecoded?.parameters ||
+      creationTransaction.setupData === '0x'
+    ) {
+      throw new Error(
+        `Safe creation information not found or incomplete for ${safeAddress} on chain ${chainId}`,
+      );
+    }
+
+    const safeVersion = this.determineMasterCopyVersion(
+      creationTransaction.masterCopy,
+      chainId,
+    );
+
+    const creationParameters = creationTransaction.dataDecoded.parameters;
+
+    const safeAccountConfig = {
+      owners: this.parseOwners(creationParameters[0].value),
+      threshold: Number(creationParameters[1].value),
+      to: getAddress(creationParameters[2].value as string),
+      data: creationParameters[3].value as Hex,
+      fallbackHandler: getAddress(creationParameters[4].value as string),
+      paymentToken: getAddress(creationParameters[5].value as string),
+      payment: Number(creationParameters[6].value),
+      paymentReceiver: getAddress(creationParameters[7].value as string),
+    };
+
+    return {
+      factoryAddress: getAddress(creationTransaction.factoryAddress),
+      masterCopy: getAddress(creationTransaction.masterCopy),
+      safeAccountConfig,
+      safeVersion,
+    };
+  }
+
+  /**
+   * Parses and validates owners from creation parameters.
+   */
+  private parseOwners(ownersValue: unknown): Array<Address> {
+    if (!Array.isArray(ownersValue)) {
+      throw new Error('Owners parameter must be an array');
+    }
+    return ownersValue.map((owner) => getAddress(owner as string));
+  }
+
+  /**
+   * Determines the master copy version.
+   */
+  private determineMasterCopyVersion(
+    masterCopy: string,
+    chainId: string,
+  ): SafeVersion | undefined {
+    return SAFE_VERSIONS.find((version) => {
+      const isL1Singleton = isL1SingletonDeployed({
+        version,
+        chainId,
+        address: getAddress(masterCopy),
+      });
+      const isL2Singleton = isL2SingletonDeployed({
+        version,
+        chainId,
+        address: getAddress(masterCopy),
+      });
+      return isL1Singleton || isL2Singleton;
+    });
+  }
+
+  /**
+   * Checks if two Safes have the same setup.
+   */
+  private haveSameSetup(sourceSafe: Safe, targetSafe: Safe): boolean {
+    const sourceSafeOwners = sourceSafe.owners.map(getAddress);
+    const targetSafeOwners = targetSafe.owners.map(getAddress);
+
+    const ownersMatch =
+      sourceSafeOwners.length === targetSafeOwners.length &&
+      sourceSafeOwners.every((owner) => targetSafeOwners.includes(owner));
+
+    return ownersMatch && sourceSafe.threshold === targetSafe.threshold;
+  }
+
+  /**
+   * Checks if the network is compatible with the safe creation data.
+   * @param chain - The chain.
+   * @param safeCreationData - The safe creation data.
+   * @returns True if the network is compatible.
+   */
+  private isNetworkCompatible(
+    chain: Chain,
+    safeCreationData: SafeCreationData,
+  ): boolean {
+    return RecipientAnalysisService.MULTICHAIN_SUPPORTED_VERSIONS.some(
+      (version) =>
+        this.checkVersionCompatibility(chain, safeCreationData, version),
+    );
+  }
+
+  /**
+   * Checks if a specific Safe version is compatible with the target chain.
+   */
+  private checkVersionCompatibility(
+    chain: Chain,
+    safeCreationData: SafeCreationData,
+    version: SafeVersion,
+  ): boolean {
+    const isL2Singleton = isL2SingletonDeployed({
+      version,
+      chainId: chain.chainId,
+      address: safeCreationData.masterCopy,
+    });
+
+    const masterCopyExists =
+      isL1SingletonDeployed({
+        version,
+        chainId: chain.chainId,
+        address: safeCreationData.masterCopy,
+      }) || isL2Singleton;
+
+    const proxyFactoryExists = isProxyFactoryDeployed({
+      version,
+      chainId: chain.chainId,
+      address: safeCreationData.factoryAddress,
+    });
+
+    const fallbackHandlerExists = isFallbackHandlerDeployed({
+      version,
+      chainId: chain.chainId,
+      address: safeCreationData.safeAccountConfig.fallbackHandler,
+    });
+
+    const includesSetupToL2 =
+      safeCreationData.safeAccountConfig.to !== zeroAddress;
+
+    const areSetupToL2ConditionsMet =
+      !includesSetupToL2 ||
+      hasCanonicalDeploymentSafeToL2Setup({
+        chainId: chain.chainId,
+        version: '1.4.1',
+      });
+
+    const isMigrationRequired = isL2Singleton && !includesSetupToL2 && chain.l2;
+
+    const areMigrationConditionsMet =
+      !isMigrationRequired ||
+      hasCanonicalDeploymentSafeToL2Migration({
+        chainId: chain.chainId,
+        version: '1.4.1',
+      });
+
+    return (
+      masterCopyExists &&
+      proxyFactoryExists &&
+      fallbackHandlerExists &&
+      areSetupToL2ConditionsMet &&
+      areMigrationConditionsMet
+    );
+  }
+
+  /**
+   * Maps a recipient or bridge status to an analysis result.
+   */
+  private mapToAnalysisResult<T extends RecipientStatus>(
+    type: T,
     interactions: number,
-  ): RecipientAnalysisResult;
-  private mapToAnalysisResult(type: BridgeStatus): RecipientAnalysisResult;
-  private mapToAnalysisResult(
-    type: RecipientStatus | BridgeStatus,
+  ): AnalysisResult<T>;
+  private mapToAnalysisResult<T extends BridgeStatus>(
+    type: T,
+  ): AnalysisResult<T>;
+  private mapToAnalysisResult<T extends RecipientStatus | BridgeStatus>(
+    type: T,
     interactions?: number,
-  ): RecipientAnalysisResult {
+  ): AnalysisResult<T> {
     const severity = SEVERITY_MAPPING[type];
     const title = TITLE_MAPPING[type];
     const description = DESCRIPTION_MAPPING[type](interactions ?? 0);

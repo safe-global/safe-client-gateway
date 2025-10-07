@@ -32,7 +32,7 @@ import {
 } from '@nestjs/swagger';
 import { UUID } from 'crypto';
 import { OptionalAuthGuard } from '@/routes/auth/guards/optional-auth.guard';
-import { NotificationType } from '@/datasources/notifications/entities/notification-type.entity.db';
+import { NotificationTypeResponseDto } from '@/routes/notifications/v2/entities/notification-type-response.dto.entity';
 import { DeleteAllSubscriptionsDtoSchema } from '@/domain/notifications/v2/entities/delete-all-subscriptions.dto.entity';
 import { DeleteAllSubscriptionsDto } from '@/routes/notifications/v2/entities/delete-all-subscriptions.dto.entity';
 import type { Address } from 'viem';
@@ -104,7 +104,7 @@ export class NotificationsControllerV2 {
     description: 'Safe contract address (0x prefixed hex string)',
   })
   @ApiOkResponse({
-    type: [NotificationType],
+    type: [NotificationTypeResponseDto],
     description:
       'List of notification types the device is subscribed to for this Safe',
   })
@@ -122,7 +122,7 @@ export class NotificationsControllerV2 {
     @Param('safeAddress', new ValidationPipe(AddressSchema))
     safeAddress: Address,
     @Auth() authPayload: AuthPayload,
-  ): Promise<Array<NotificationType>> {
+  ): Promise<Array<NotificationTypeResponseDto>> {
     return this.notificationsService.getSafeSubscription({
       authPayload,
       deviceUuid,

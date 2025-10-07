@@ -5,16 +5,28 @@ import {
   getProxyFactoryDeployments as _getProxyFactoryDeployments,
   getSafeL2SingletonDeployments as _getSafeL2SingletonDeployments,
   getSafeSingletonDeployments as _getSafeSingletonDeployments,
+  getCompatibilityFallbackHandlerDeployments as _getFallbackHandlerDeployments,
+  getSafeToL2SetupDeployments as _getSafeToL2SetupDeployments,
   getSafeToL2MigrationDeployments as _getSafeToL2MigrationDeployments,
 } from '@safe-global/safe-deployments';
 // eslint-disable-next-line no-restricted-imports
 import { _SAFE_DEPLOYMENTS } from '@safe-global/safe-deployments/dist/deployments';
-import type { Address } from 'viem';
+import { getAddress, type Address } from 'viem';
 
 type Filter = {
   chainId: string;
   version: string;
 };
+
+type DeploymentGetter =
+  | typeof _getProxyFactoryDeployments
+  | typeof _getSafeSingletonDeployments
+  | typeof _getSafeL2SingletonDeployments
+  | typeof _getMultiSendCallOnlyDeployments
+  | typeof _getMultiSendDeployments
+  | typeof _getFallbackHandlerDeployments
+  | typeof _getSafeToL2SetupDeployments
+  | typeof _getSafeToL2MigrationDeployments;
 
 /**
  * Returns a list of official ProxyFactory addresses based on given {@link Filter}.
@@ -77,6 +89,18 @@ export function getMultiSendDeployments(args: Filter): Array<Address> {
 }
 
 /**
+ * Returns a list of official CompatibilityFallbackHandler addresses based on given {@link Filter}.
+ *
+ * @param {string} args.chainId - the chain ID to filter deployments by
+ * @param {string} args.version - the version to filter deployments by
+ *
+ * @returns {Array<Address>} - a list of checksummed CompatibilityFallbackHandler addresses
+ */
+export function getFallbackHandlerDeployments(args: Filter): Array<Address> {
+  return formatDeployments(_getFallbackHandlerDeployments, args);
+}
+
+/**
  * Returns a list of official SafeToL2Migration addresses based on given {@link Filter}.
  *
  * @param {string} args.chainId - the chain ID to filter deployments by
@@ -97,13 +121,7 @@ export function getSafeToL2MigrationDeployments(args: Filter): Array<Address> {
  * @returns {Array<Address>} - a list of checksummed addresses
  */
 function formatDeployments(
-  getDeployments:
-    | typeof _getProxyFactoryDeployments
-    | typeof _getSafeSingletonDeployments
-    | typeof _getSafeL2SingletonDeployments
-    | typeof _getMultiSendCallOnlyDeployments
-    | typeof _getMultiSendDeployments
-    | typeof _getSafeToL2MigrationDeployments,
+  getDeployments: DeploymentGetter,
   filter: Filter,
 ): Array<Address> {
   const deployments = getDeployments({
@@ -172,3 +190,76 @@ export function getVersionFromMastercopy(
 
   return null;
 }
+
+/**
+ * Checks if a given address is deployed as a canonical deployment.
+ *
+ * @param {Function} getDeployments - function to get deployments
+ * @param {Filter} filter - filter to apply to deployments
+ * @returns {boolean} - true if the address is deployed as a canonical deployment, false otherwise.
+ */
+export const hasCanonicalDeployment = (
+  getDeployments: DeploymentGetter,
+  filter: Filter,
+): boolean => {
+  const { deployments } = getDeployments(filter) || {};
+  const canonicalAddress = deployments?.canonical?.address;
+  const networkAddresses = formatDeployments(getDeployments, filter);
+
+  return (
+    !!canonicalAddress &&
+    networkAddresses.includes(getAddress(canonicalAddress))
+  );
+};
+
+/**
+ * Checks if there is a canonical deployment of SafeToL2Setup on a given chain and version.
+ */
+export const hasCanonicalDeploymentSafeToL2Setup = (args: Filter): boolean =>
+  hasCanonicalDeployment(_getSafeToL2SetupDeployments, args);
+
+/**
+ * Checks if there is a canonical deployment of SafeToL2Migration on a given chain and version.
+ */
+export const hasCanonicalDeploymentSafeToL2Migration = (
+  args: Filter,
+): boolean => hasCanonicalDeployment(_getSafeToL2MigrationDeployments, args);
+
+/**
+ * Generic helper to check if a given address is deployed.
+ */
+function isDeployed(
+  getDeploymentsFn: (args: Filter) => Array<Address>,
+  args: Filter & { address: Address },
+): boolean {
+  const deployments = getDeploymentsFn(args);
+  return deployments.includes(args.address);
+}
+
+/**
+ * Checks if a given address is deployed as an L1 singleton.
+ */
+export const isL1SingletonDeployed = (
+  args: Filter & { address: Address },
+): boolean => isDeployed(getSafeSingletonDeployments, args);
+
+/**
+ * Checks if a given address is deployed as an L2 singleton.
+ */
+export const isL2SingletonDeployed = (
+  args: Filter & { address: Address },
+): boolean => isDeployed(getSafeL2SingletonDeployments, args);
+
+/**
+ * Checks if a given address is deployed as a ProxyFactory.
+ */
+export const isProxyFactoryDeployed = (
+  args: Filter & { address: Address },
+): boolean => isDeployed(getProxyFactoryDeployments, args);
+
+/**
+ * Checks if a given address is deployed as a CompatibilityFallbackHandler.
+ */
+export const isFallbackHandlerDeployed = (
+  args: Filter & { address: Address },
+): boolean => isDeployed(getFallbackHandlerDeployments, args);
