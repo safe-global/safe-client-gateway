@@ -9,7 +9,6 @@ import {
   getSafeToL2SetupDeployments as _getSafeToL2SetupDeployments,
   getSafeToL2MigrationDeployments as _getSafeToL2MigrationDeployments,
 } from '@safe-global/safe-deployments';
-// eslint-disable-next-line no-restricted-imports
 import { _SAFE_DEPLOYMENTS } from '@safe-global/safe-deployments/dist/deployments';
 import { getAddress, type Address } from 'viem';
 
