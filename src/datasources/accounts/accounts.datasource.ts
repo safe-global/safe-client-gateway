@@ -117,7 +117,7 @@ export class AccountsDatasource implements IAccountsDatasource, OnModuleInit {
     const cacheDir = CacheRouter.getAccountCacheDir(address);
     const [account] = await this.cachedQueryResolver.get<Array<Account>>({
       cacheDir,
-      query: this.sql`SELECT * FROM accounts WHERE address = ${address}`,
+      query: this.sql`SELECT id, created_at, updated_at, group_id, address, name, name_hash FROM accounts WHERE address = ${address}`,
       ttl: this.defaultExpirationTimeInSeconds,
     });
 
@@ -151,7 +151,7 @@ export class AccountsDatasource implements IAccountsDatasource, OnModuleInit {
     const cacheDir = CacheRouter.getAccountDataTypesCacheDir();
     return this.cachedQueryResolver.get<Array<AccountDataType>>({
       cacheDir,
-      query: this.sql`SELECT * FROM account_data_types`,
+      query: this.sql`SELECT id, created_at, updated_at, name, description, is_active FROM account_data_types`,
       ttl: MAX_TTL,
     });
   }
@@ -205,7 +205,7 @@ export class AccountsDatasource implements IAccountsDatasource, OnModuleInit {
         }),
       );
       return sql<[AccountDataSetting]>`
-        SELECT * FROM account_data_settings WHERE account_id = ${account.id}`;
+        SELECT account_id, account_data_type_id, enabled, created_at, updated_at FROM account_data_settings WHERE account_id = ${account.id}`;
     });
 
     const cacheDir = CacheRouter.getAccountDataSettingsCacheDir(args.address);

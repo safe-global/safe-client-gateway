@@ -81,7 +81,7 @@ export class CounterfactualSafesDatasource
     >({
       cacheDir,
       query: this.sql<Array<CounterfactualSafe>>`
-        SELECT * FROM counterfactual_safes 
+        SELECT id, created_at, updated_at, chain_id, creator, fallback_handler, owners, predicted_address, salt_nonce, singleton_address, threshold, account_id FROM counterfactual_safes
         WHERE account_id = (SELECT id FROM accounts WHERE address = ${args.address})
           AND chain_id = ${args.chainId}
           AND predicted_address = ${args.predictedAddress}`,
@@ -102,7 +102,7 @@ export class CounterfactualSafesDatasource
     return this.cachedQueryResolver.get<Array<CounterfactualSafe>>({
       cacheDir,
       query: this.sql<Array<CounterfactualSafe>>`
-        SELECT * FROM counterfactual_safes WHERE account_id = 
+        SELECT id, created_at, updated_at, chain_id, creator, fallback_handler, owners, predicted_address, salt_nonce, singleton_address, threshold, account_id FROM counterfactual_safes WHERE account_id =
           (SELECT id FROM accounts WHERE address = ${address})`,
       ttl: this.defaultExpirationTimeInSeconds,
     });
