@@ -83,12 +83,9 @@ export class AwsCloudStorageApiService implements ICloudStorageApiService {
 
     upload.on('httpUploadProgress', progressListener);
 
-    try {
-      return await upload.done();
-    } finally {
-      // Clean up the listener after upload completes or fails
+    return upload.done().finally(() => {
       upload.off('httpUploadProgress', progressListener);
-    }
+    });
   }
 
   async getSignedUrl(fileName: string, expiresIn: number): Promise<string> {
