@@ -13,6 +13,10 @@ export class PreviewTransactionDto
   data!: Hex | null;
   @ApiProperty()
   value!: string;
-  @ApiProperty()
+  @ApiProperty({
+    enum: Operation,
+    enumName: 'Operation',
+    description: 'Operation type: 0 for CALL, 1 for DELEGATE',
+  })
   operation!: Operation;
 }

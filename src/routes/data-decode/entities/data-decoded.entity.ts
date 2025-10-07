@@ -23,7 +23,11 @@ class BaseDataDecoded implements DomainBaseDataDecoded {
 }
 
 class MultiSend implements DomainMultiSend {
-  @ApiProperty({ enum: Operation })
+  @ApiProperty({
+    enum: Operation,
+    enumName: 'Operation',
+    description: 'Operation type: 0 for CALL, 1 for DELEGATE',
+  })
   operation!: Operation;
 
   @ApiProperty()

@@ -24,7 +24,11 @@ export class TransactionData {
   to: AddressInfo;
   @ApiPropertyOptional({ type: String, nullable: true })
   value: string | null;
-  @ApiProperty()
+  @ApiProperty({
+    enum: Operation,
+    enumName: 'Operation',
+    description: 'Operation type: 0 for CALL, 1 for DELEGATE',
+  })
   operation: Operation;
   @ApiPropertyOptional({ type: Boolean, nullable: true })
   trustedDelegateCallTarget: boolean | null;
