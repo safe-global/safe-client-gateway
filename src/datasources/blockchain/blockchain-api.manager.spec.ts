@@ -102,10 +102,16 @@ describe('BlockchainApiManager', () => {
   });
 
   describe('createCachedRpcClient', () => {
+    let fetchSpy: jest.SpyInstance;
+
+    afterEach(() => {
+      fetchSpy?.mockRestore();
+    });
+
     it('caches string response RPC requests', async () => {
       const chain = chainBuilder().build();
       const client = target._createCachedRpcClient(chain);
-      const fetchSpy = jest.spyOn(global, 'fetch');
+      fetchSpy = jest.spyOn(global, 'fetch');
       const chainId = toHex(chain.chainId);
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       fetchSpy.mockImplementation((_: unknown) => {
@@ -150,14 +156,12 @@ describe('BlockchainApiManager', () => {
       expect(fakeCacheService.keyCount()).toBe(1);
       const cached = await fakeCacheService.hGet(cacheDir);
       expect(JSON.parse(cached!)).toBe(chainId);
-
-      fetchSpy.mockRestore();
     });
 
     it('caches non-string response RPC requests', async () => {
       const chain = chainBuilder().build();
       const client = target._createCachedRpcClient(chain);
-      const fetchSpy = jest.spyOn(global, 'fetch');
+      fetchSpy = jest.spyOn(global, 'fetch');
       const blockByNumber = {
         baseFeePerGas: null,
         hash: null,
@@ -213,8 +217,6 @@ describe('BlockchainApiManager', () => {
       expect(fakeCacheService.keyCount()).toBe(1);
       const cached = await fakeCacheService.hGet(cacheDir);
       expect(JSON.parse(cached!)).toStrictEqual(blockByNumber);
-
-      fetchSpy.mockRestore();
     });
   });
 });

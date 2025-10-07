@@ -28,8 +28,8 @@ describe('JwtClaimsSchema', () => {
   it.each(['exp' as const, 'nbf' as const, 'iat' as const])(
     'should transform %s seconds to Date',
     (field) => {
-      // As claim is in second, coerced date does not have ms
-      const date = new Date(faker.date.recent().setMilliseconds(0));
+      // Use fixed date for deterministic tests
+      const date = new Date('2024-01-01T12:00:00.000Z');
       const seconds = toSecondsTimestamp(date);
 
       const result = JwtClaimsSchema.safeParse({

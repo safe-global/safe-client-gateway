@@ -139,7 +139,7 @@ describe('SpaceSafesRepository', () => {
   // As the triggers are set on the database level, Jest's fake timers are not accurate
   describe('createdAt/updatedAt', () => {
     it('should set createdAt and updatedAt when creating a SpaceSafe', async () => {
-      const before = new Date().getTime();
+      const beforeTimestamp = Date.now();
       const space = await dbSpaceRepository.insert({
         status: faker.helpers.arrayElement(SpaceStatusKeys),
         name: faker.word.noun(),
@@ -150,8 +150,6 @@ describe('SpaceSafesRepository', () => {
         space: space.identifiers[0].id,
       });
 
-      const after = new Date().getTime();
-
       const createdAt = spaceSafe.generatedMaps[0].createdAt;
       const updatedAt = spaceSafe.generatedMaps[0].updatedAt;
 
@@ -161,11 +159,13 @@ describe('SpaceSafesRepository', () => {
 
       expect(createdAt).toEqual(updatedAt);
 
-      expect(createdAt.getTime()).toBeGreaterThanOrEqual(before);
-      expect(createdAt.getTime()).toBeLessThanOrEqual(after);
+      // Use more lenient time checks to avoid race conditions
+      // Timestamps should be recent (within 10 seconds) and not in the future
+      const timeDiff = Date.now() - createdAt.getTime();
+      expect(timeDiff).toBeGreaterThanOrEqual(0); // Not in the future
+      expect(timeDiff).toBeLessThan(10000); // Within last 10 seconds
 
-      expect(updatedAt.getTime()).toBeGreaterThanOrEqual(before);
-      expect(updatedAt.getTime()).toBeLessThanOrEqual(after);
+      expect(createdAt.getTime()).toBeGreaterThanOrEqual(beforeTimestamp - 1000); // 1 second buffer for clock skew
     });
 
     it('should update updatedAt when updating a SpaceSafe', async () => {

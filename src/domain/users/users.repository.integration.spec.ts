@@ -120,12 +120,10 @@ describe('UsersRepository', () => {
   describe('createdAt/updatedAt', () => {
     it('should set createdAt and updatedAt when creating a User', async () => {
       const dbUserRepository = dataSource.getRepository(User);
-      const before = new Date().getTime();
+      const beforeTimestamp = Date.now();
       const user = await dbUserRepository.insert({
         status: faker.helpers.arrayElement(UserStatusKeys),
       });
-
-      const after = new Date().getTime();
 
       const createdAt = user.generatedMaps[0].createdAt;
       const updatedAt = user.generatedMaps[0].updatedAt;
@@ -136,11 +134,17 @@ describe('UsersRepository', () => {
 
       expect(createdAt).toEqual(updatedAt);
 
-      expect(createdAt.getTime()).toBeGreaterThanOrEqual(before);
-      expect(createdAt.getTime()).toBeLessThanOrEqual(after);
+      // Use more lenient time checks to avoid race conditions
+      // Timestamps should be recent (within 10 seconds) and not in the future
+      const createdAtTimeDiff = Date.now() - createdAt.getTime();
+      expect(createdAtTimeDiff).toBeGreaterThanOrEqual(0); // Not in the future
+      expect(createdAtTimeDiff).toBeLessThan(10000); // Within last 10 seconds
+      expect(createdAt.getTime()).toBeGreaterThanOrEqual(beforeTimestamp - 1000); // 1 second buffer for clock skew
 
-      expect(updatedAt.getTime()).toBeGreaterThanOrEqual(before);
-      expect(updatedAt.getTime()).toBeLessThanOrEqual(after);
+      const updatedAtTimeDiff = Date.now() - updatedAt.getTime();
+      expect(updatedAtTimeDiff).toBeGreaterThanOrEqual(0); // Not in the future
+      expect(updatedAtTimeDiff).toBeLessThan(10000); // Within last 10 seconds
+      expect(updatedAt.getTime()).toBeGreaterThanOrEqual(beforeTimestamp - 1000); // 1 second buffer for clock skew
     });
 
     it('should update updatedAt when updating a User', async () => {

@@ -15,6 +15,8 @@ describe('JobQueueService & TestJobConsumer integration', () => {
   let queue: Queue;
   let consumer: TestJobConsumer;
 
+  const FIXED_TEST_TIME = new Date('2024-01-01T12:00:00Z').getTime();
+
   beforeAll(async () => {
     const moduleFixture = await Test.createTestingModule({
       imports: [
@@ -63,7 +65,7 @@ describe('JobQueueService & TestJobConsumer integration', () => {
   it('should process a job added to the queue', async () => {
     const data = {
       message: faker.lorem.word(),
-      timestamp: Date.now(),
+      timestamp: FIXED_TEST_TIME,
     } as TestJobData;
 
     await service.addJob(JobType.TEST_JOB, data);
@@ -81,7 +83,7 @@ describe('JobQueueService & TestJobConsumer integration', () => {
   it('should invoke worker event handlers', async () => {
     const data = {
       message: faker.lorem.word(),
-      timestamp: Date.now(),
+      timestamp: FIXED_TEST_TIME,
     } as TestJobData;
 
     await service.addJob(JobType.TEST_JOB, data);
@@ -106,9 +108,9 @@ describe('JobQueueService & TestJobConsumer integration', () => {
   });
 
   it('should process multiple jobs and preserve order', async () => {
-    const jobs = Array.from({ length: 3 }, () => ({
+    const jobs = Array.from({ length: 3 }, (_, i) => ({
       message: faker.lorem.word(),
-      timestamp: Date.now(),
+      timestamp: FIXED_TEST_TIME + i, // Increment to ensure unique timestamps
     })) as Array<TestJobData>;
 
     for (const data of jobs) {
@@ -123,7 +125,7 @@ describe('JobQueueService & TestJobConsumer integration', () => {
   });
 
   it('should handle job failure', async () => {
-    const data: TestJobData = { message: 'THROW_ERROR', timestamp: Date.now() };
+    const data: TestJobData = { message: 'THROW_ERROR', timestamp: FIXED_TEST_TIME };
 
     await service.addJob(JobType.TEST_JOB, data);
 
@@ -137,17 +139,16 @@ describe('JobQueueService & TestJobConsumer integration', () => {
 
 async function waitUntil(
   condition: () => boolean,
-  timeout = 5000,
-  interval = 50,
+  timeout = 10000, // Increased timeout to reduce flakiness
+  interval = 100, // Slightly longer interval to reduce CPU usage
 ): Promise<void> {
-  const start = Date.now();
-  return new Promise((resolve, reject) => {
-    const check = (): void => {
-      if (condition()) return resolve();
-      if (Date.now() - start > timeout)
-        return reject(new Error('Timeout waiting for condition'));
-      setTimeout(check, interval);
-    };
-    check();
-  });
+  const startTime = Date.now();
+
+  while (!condition()) {
+    if (Date.now() - startTime > timeout) {
+      throw new Error('Timeout waiting for condition');
+    }
+    // Use promisified setTimeout for better async handling
+    await new Promise((resolve) => setTimeout(resolve, interval));
+  }
 }

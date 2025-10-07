@@ -582,8 +582,8 @@ describe('CsvExportService', () => {
 
       const exportPromise = service.export(exportArgs);
 
-      // Simulate slow upload
-      setTimeout(() => resolveUpload(mockUploadStream), 50);
+      // Resolve upload immediately (no need for artificial delay)
+      resolveUpload(mockUploadStream);
 
       const result = await exportPromise;
 

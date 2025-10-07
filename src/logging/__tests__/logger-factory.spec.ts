@@ -38,6 +38,10 @@ describe('logger factory', () => {
     logger = winstonFactory(transports, mockConfigurationService);
   });
 
+  afterEach(() => {
+    consoleSpy.mockRestore();
+  });
+
   it('logs string message', () => {
     const level = faker.helpers.arrayElement([
       'info',

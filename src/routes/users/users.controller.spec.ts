@@ -34,9 +34,12 @@ describe('UsersController', () => {
   let jwtService: IJwtService;
   let cacheService: FakeCacheService;
   let maxValidityPeriodInMs: number;
+  const FIXED_TEST_TIME = new Date('2024-01-01T12:00:00.000Z');
 
   beforeEach(async () => {
     jest.resetAllMocks();
+    jest.useFakeTimers();
+    jest.setSystemTime(FIXED_TEST_TIME);
 
     const defaultConfiguration = configuration();
     const testConfiguration = (): typeof defaultConfiguration => ({
@@ -84,6 +87,7 @@ describe('UsersController', () => {
   });
 
   afterEach(async () => {
+    jest.useRealTimers();
     await app.close();
   });
 

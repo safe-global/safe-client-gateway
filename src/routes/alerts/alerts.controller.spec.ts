@@ -67,6 +67,7 @@ function fakeTenderlySignature(args: {
 
 describe('Alerts (Unit)', () => {
   let configurationService: jest.MockedObjectDeep<IConfigurationService>;
+  const FIXED_TEST_TIME = new Date('2024-01-01T12:00:00.000Z');
 
   describe('/alerts route enabled', () => {
     let app: INestApplication<Server>;
@@ -74,6 +75,8 @@ describe('Alerts (Unit)', () => {
 
     beforeEach(async () => {
       jest.resetAllMocks();
+      jest.useFakeTimers();
+      jest.setSystemTime(FIXED_TEST_TIME);
 
       const defaultConfiguration = configuration();
       const testConfiguration = (): typeof defaultConfiguration => ({
@@ -108,6 +111,10 @@ describe('Alerts (Unit)', () => {
       signingKey = configurationService.getOrThrow('alerts-route.signingKey');
       app = await new TestAppProvider().provide(moduleFixture);
       await app.init();
+    });
+
+    afterEach(() => {
+      jest.useRealTimers();
     });
 
     afterAll(async () => {
@@ -863,6 +870,8 @@ describe('Alerts (Unit)', () => {
 
       beforeEach(async () => {
         jest.resetAllMocks();
+        jest.useFakeTimers();
+        jest.setSystemTime(FIXED_TEST_TIME);
 
         const defaultConfiguration = configuration();
         const testConfiguration = (): typeof defaultConfiguration => ({
@@ -878,6 +887,10 @@ describe('Alerts (Unit)', () => {
         });
         app = moduleFixture.createNestApplication();
         await app.init();
+      });
+
+      afterEach(() => {
+        jest.useRealTimers();
       });
 
       afterAll(async () => {

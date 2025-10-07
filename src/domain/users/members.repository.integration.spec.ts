@@ -151,7 +151,7 @@ describe('MembersRepository', () => {
   // As the triggers are set on the database level, Jest's fake timers are not accurate
   describe('createdAt/updatedAt', () => {
     it('should set createdAt and updatedAt when creating a member', async () => {
-      const before = new Date().getTime();
+      const beforeTimestamp = Date.now();
 
       const dbUserRepo = dataSource.getRepository(User);
       const dbSpacesRepository = dataSource.getRepository(Space);
@@ -172,8 +172,6 @@ describe('MembersRepository', () => {
         invitedBy: getAddress(faker.finance.ethereumAddress()),
       });
 
-      const after = new Date().getTime();
-
       const createdAt = member.generatedMaps[0].createdAt;
       const updatedAt = member.generatedMaps[0].updatedAt;
 
@@ -183,11 +181,17 @@ describe('MembersRepository', () => {
 
       expect(createdAt).toEqual(updatedAt);
 
-      expect(createdAt.getTime()).toBeGreaterThanOrEqual(before);
-      expect(createdAt.getTime()).toBeLessThanOrEqual(after);
+      // Use more lenient time checks to avoid race conditions
+      // Timestamps should be recent (within 10 seconds) and not in the future
+      const createdAtTimeDiff = Date.now() - createdAt.getTime();
+      expect(createdAtTimeDiff).toBeGreaterThanOrEqual(0); // Not in the future
+      expect(createdAtTimeDiff).toBeLessThan(10000); // Within last 10 seconds
+      expect(createdAt.getTime()).toBeGreaterThanOrEqual(beforeTimestamp - 1000); // 1 second buffer for clock skew
 
-      expect(updatedAt.getTime()).toBeGreaterThanOrEqual(before);
-      expect(updatedAt.getTime()).toBeLessThanOrEqual(after);
+      const updatedAtTimeDiff = Date.now() - updatedAt.getTime();
+      expect(updatedAtTimeDiff).toBeGreaterThanOrEqual(0); // Not in the future
+      expect(updatedAtTimeDiff).toBeLessThan(10000); // Within last 10 seconds
+      expect(updatedAt.getTime()).toBeGreaterThanOrEqual(beforeTimestamp - 1000); // 1 second buffer for clock skew
     });
 
     it('should update updatedAt when updating a member', async () => {

@@ -20,6 +20,7 @@ describe('AuthController', () => {
   let app: INestApplication<Server>;
   let cacheService: FakeCacheService;
   let maxValidityPeriodInMs: number;
+  const FIXED_TEST_TIME = new Date('2024-01-01T12:00:00.000Z');
 
   async function initApp(config: typeof configuration): Promise<void> {
     const moduleFixture = await createTestModule({
@@ -46,6 +47,7 @@ describe('AuthController', () => {
 
   beforeEach(async () => {
     jest.useFakeTimers();
+    jest.setSystemTime(FIXED_TEST_TIME);
     jest.resetAllMocks();
 
     const defaultConfiguration = configuration();

@@ -5,27 +5,50 @@ import {
 
 describe('Number Utils', () => {
   describe('deviateRandomlyByPercentage', () => {
+    beforeEach(() => {
+      // Mock Math.random for deterministic tests
+      jest.spyOn(Math, 'random');
+    });
+
+    afterEach(() => {
+      jest.restoreAllMocks();
+    });
+
     it('Should deviate within the specified percentage range for positive numbers', () => {
       const baseNumber = 100;
       const percent = 10;
-      const result = deviateRandomlyByPercentage(baseNumber, percent);
 
-      // Result should be within ±10% of 100 (90-110)
-      expect(result).toBeGreaterThanOrEqual(90);
-      expect(result).toBeLessThanOrEqual(110);
+      // Test with Math.random() = 0.5 (middle of range)
+      jest.spyOn(Math, 'random').mockReturnValue(0.5);
+      const resultMid = deviateRandomlyByPercentage(baseNumber, percent);
+      expect(resultMid).toBe(100); // No deviation at 0.5
+
+      // Test with Math.random() = 0 (minimum deviation)
+      jest.spyOn(Math, 'random').mockReturnValue(0);
+      const resultMin = deviateRandomlyByPercentage(baseNumber, percent);
+      expect(resultMin).toBe(90);
+
+      // Test with Math.random() = 1 (maximum deviation)
+      jest.spyOn(Math, 'random').mockReturnValue(0.9999);
+      const resultMax = deviateRandomlyByPercentage(baseNumber, percent);
+      expect(resultMax).toBeCloseTo(110, 0);
     });
 
     it('Should deviate within the specified percentage range for negative numbers', () => {
       const baseNumber = -100;
       const percent = 10;
-      const result = deviateRandomlyByPercentage(baseNumber, percent);
 
-      // Result should be within ±10% of -100 (-110 to -90)
-      expect(result).toBeGreaterThanOrEqual(-110);
-      expect(result).toBeLessThanOrEqual(-90);
+      jest.spyOn(Math, 'random').mockReturnValue(0);
+      const resultMin = deviateRandomlyByPercentage(baseNumber, percent);
+      expect(resultMin).toBe(-110);
+
+      jest.spyOn(Math, 'random').mockReturnValue(0.9999);
+      const resultMax = deviateRandomlyByPercentage(baseNumber, percent);
+      expect(resultMax).toBeCloseTo(-90, 0);
     });
 
     it('Should return zero when input is zero', () => {
+      jest.spyOn(Math, 'random').mockReturnValue(0.5);
       const result = deviateRandomlyByPercentage(0, 10);
       expect(result).toBe(0);
     });
@@ -33,11 +56,14 @@ describe('Number Utils', () => {
     it('Should handle large percentages', () => {
       const baseNumber = 100;
       const percent = 100;
-      const result = deviateRandomlyByPercentage(baseNumber, percent);
 
-      // Result should be within ±100% of 100 (0-200)
-      expect(result).toBeGreaterThanOrEqual(0);
-      expect(result).toBeLessThanOrEqual(200);
+      jest.spyOn(Math, 'random').mockReturnValue(0);
+      const resultMin = deviateRandomlyByPercentage(baseNumber, percent);
+      expect(resultMin).toBe(0);
+
+      jest.spyOn(Math, 'random').mockReturnValue(0.9999);
+      const resultMax = deviateRandomlyByPercentage(baseNumber, percent);
+      expect(resultMax).toBeCloseTo(200, 0);
     });
   });
 
