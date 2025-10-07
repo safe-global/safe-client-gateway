@@ -155,6 +155,11 @@ function detectVersionFromMigrationTransaction(args: {
 
 /**
  * Detects delegate call migrations to SafeToL2Migration.migrateToL2 (v1.3.0+)
+ *
+ * @param {string} args.chainId - Chain ID
+ * @param {BaseMultisigTransaction} args.transaction - Transaction to analyze
+ *
+ * @returns {string | null} - Detected version or null if not a valid migration
  */
 function detectDelegateMigration(args: {
   chainId: string;

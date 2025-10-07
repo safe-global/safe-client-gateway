@@ -7,6 +7,8 @@ import {
   getSafeSingletonDeployments as _getSafeSingletonDeployments,
   getSafeToL2MigrationDeployments as _getSafeToL2MigrationDeployments,
 } from '@safe-global/safe-deployments';
+// eslint-disable-next-line no-restricted-imports
+import { _SAFE_DEPLOYMENTS } from '@safe-global/safe-deployments/dist/deployments';
 import type { Address } from 'viem';
 
 type Filter = {
@@ -127,6 +129,16 @@ function formatDeployments(
 }
 
 /**
+ * Gets the list of Safe versions available in the safe-deployments package.
+ * Infers versions from the _SAFE_DEPLOYMENTS constant exported by the package.
+ *
+ * @returns {Array<string>} - a list of Safe versions in descending order
+ */
+function getSafeVersions(): Array<string> {
+  return _SAFE_DEPLOYMENTS.map((deployment) => deployment.version);
+}
+
+/**
  * Detects the Safe version from a mastercopy address.
  * Checks both L1 and L2 singleton deployments across all known versions.
  *
@@ -139,7 +151,7 @@ export function getVersionFromMastercopy(
   chainId: string,
   mastercopyAddress: Address,
 ): string | null {
-  const versions = ['1.4.1', '1.3.0', '1.2.0', '1.1.1', '1.0.0'];
+  const versions = getSafeVersions();
 
   for (const version of versions) {
     const l1Singletons = getSafeSingletonDeployments({ chainId, version });
