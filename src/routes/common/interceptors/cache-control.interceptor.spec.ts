@@ -33,6 +33,7 @@ describe('CacheControlInterceptor tests', () => {
   const responseCacheService = {
     getTtl: jest.fn(),
     trackTtl: jest.fn(),
+    hasTtlTrackingFailed: jest.fn(),
   } as unknown as jest.Mocked<ResponseCacheService>;
 
   beforeEach(async () => {
@@ -51,6 +52,7 @@ describe('CacheControlInterceptor tests', () => {
 
   it('should set the Cache-Control header to no-cache', () => {
     responseCacheService.getTtl.mockReturnValueOnce(undefined);
+    responseCacheService.hasTtlTrackingFailed.mockReturnValueOnce(false);
     return request(app.getHttpServer())
       .get('/')
       .expect('Cache-Control', 'no-cache');
@@ -59,11 +61,13 @@ describe('CacheControlInterceptor tests', () => {
   it('should set cache headers when ttl is available', async () => {
     const ttl = 60;
     responseCacheService.getTtl.mockReturnValueOnce(ttl);
+    responseCacheService.hasTtlTrackingFailed.mockReturnValueOnce(false);
 
     const response = await request(app.getHttpServer()).get('/');
 
+    const staleWhileRevalidate = Math.max(ttl * 2, 300);
     expect(response.headers['cache-control']).toBe(
-      `public, max-age=${ttl}, must-revalidate`,
+      `public, max-age=${ttl}, stale-while-revalidate=${staleWhileRevalidate}`,
     );
     expect(response.headers.expires).toBeDefined();
     expect(response.headers.etag).toBeDefined();
@@ -71,8 +75,18 @@ describe('CacheControlInterceptor tests', () => {
 
   it('should not set the Cache-Control header to no-cache if the headers have been set', () => {
     responseCacheService.getTtl.mockReturnValueOnce(undefined);
+    responseCacheService.hasTtlTrackingFailed.mockReturnValueOnce(false);
     return request(app.getHttpServer())
       .get('/headers-sent')
       .expect('Cache-Control', 'public');
+  });
+
+  it('should set no-cache when TTL tracking has failed', () => {
+    const ttl = 60;
+    responseCacheService.getTtl.mockReturnValueOnce(ttl);
+    responseCacheService.hasTtlTrackingFailed.mockReturnValueOnce(true);
+    return request(app.getHttpServer())
+      .get('/')
+      .expect('Cache-Control', 'no-cache');
   });
 });

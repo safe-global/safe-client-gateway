@@ -39,9 +39,8 @@ export class ResponseCacheService {
     }
 
     // Cache TTL values to avoid redundant Redis calls
-    const ttlCache = this.cls.get<Record<string, number>>(
-      RESPONSE_CACHE_TTL_CACHE_KEY,
-    ) ?? {};
+    const ttlCache =
+      this.cls.get<Record<string, number>>(RESPONSE_CACHE_TTL_CACHE_KEY) ?? {};
 
     if (ttlCache[cacheKey] !== undefined) {
       return; // Already tracked this cache key in this request
