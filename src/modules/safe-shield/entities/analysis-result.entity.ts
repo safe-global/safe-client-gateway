@@ -82,10 +82,29 @@ export const ContractAnalysisResultSchema = AnalysisResultBaseSchema.extend({
 
 /**
  * Zod schema for threat analysis results.
+ * Uses union to validate type-specific fields.
  */
-export const ThreatAnalysisResultSchema = AnalysisResultBaseSchema.extend({
-  type: ThreatStatusSchema,
-});
+export const ThreatAnalysisResultSchema = z.union([
+  // MASTER_COPY_CHANGE: requires before and after
+  AnalysisResultBaseSchema.extend({
+    type: z.literal('MASTER_COPY_CHANGE'),
+    before: z.string(),
+    after: z.string(),
+  }),
+  // MALICIOUS or MODERATE: optional issues
+  AnalysisResultBaseSchema.extend({
+    type: z.union([z.literal('MALICIOUS'), z.literal('MODERATE')]),
+    issues: z.map(SeveritySchema, z.array(z.string())).optional(),
+  }),
+  // All others: no extra fields
+  AnalysisResultBaseSchema.extend({
+    type: ThreatStatusSchema.exclude([
+      'MASTER_COPY_CHANGE',
+      'MALICIOUS',
+      'MODERATE',
+    ]),
+  }),
+]);
 
 /**
  * Type definition for recipient analysis results.
@@ -99,7 +118,28 @@ export type RecipientAnalysisResult = AnalysisResult<
  */
 export type ContractAnalysisResult = AnalysisResult<ContractStatus>;
 
+export type MasterCopyChangeThreatAnalysisResult =
+  AnalysisResult<'MASTER_COPY_CHANGE'> & {
+    /** Address of the old master copy/implementation contract */
+    before: string;
+    /** Address of the new master copy/implementation contract */
+    after: string;
+  };
+
+export type MaliciousOrModerateThreatAnalysisResult = AnalysisResult<
+  'MALICIOUS' | 'MODERATE'
+> & {
+  /** A potential map of specific issues identified during threat analysis, grouped by severity */
+  issues?: Map<keyof typeof Severity, Array<string>>;
+};
+
 /**
  * Type definition for threat analysis results.
+ * Uses discriminated union to provide type-specific fields.
  */
-export type ThreatAnalysisResult = AnalysisResult<ThreatStatus>;
+export type ThreatAnalysisResult =
+  | MasterCopyChangeThreatAnalysisResult
+  | MaliciousOrModerateThreatAnalysisResult
+  | AnalysisResult<
+      Exclude<ThreatStatus, 'MASTER_COPY_CHANGE' | 'MALICIOUS' | 'MODERATE'>
+    >;

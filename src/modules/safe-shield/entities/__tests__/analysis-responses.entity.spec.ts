@@ -155,7 +155,7 @@ describe('Analysis Response Schemas', () => {
 
       it('should validate all threat status responses', () => {
         const safeThreats = ThreatStatus.map((threat) =>
-          threatAnalysisResponseBuilder().with('type', threat).build(),
+          threatAnalysisResponseBuilder(threat).build(),
         );
 
         safeThreats.forEach((threat) => {
