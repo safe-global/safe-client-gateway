@@ -35,11 +35,17 @@ export class CacheControlInterceptor implements NestInterceptor {
         }
 
         const ttl = this.responseCacheService.getTtl();
+        const ttlTrackingFailed =
+          this.responseCacheService.hasTtlTrackingFailed();
 
-        if (ttl && ttl > 0) {
+        if (ttl && ttl > 0 && !ttlTrackingFailed) {
+          // Use stale-while-revalidate to allow serving stale content
+          // while revalidating in the background, preventing cache inconsistency
+          // when multiple caches have different TTLs
+          const staleWhileRevalidate = Math.max(ttl * 2, 300); // At least 5 minutes
           response.header(
             'Cache-Control',
-            `public, max-age=${ttl}, must-revalidate`,
+            `public, max-age=${ttl}, stale-while-revalidate=${staleWhileRevalidate}`,
           );
           response.header(
             'Expires',
@@ -48,6 +54,7 @@ export class CacheControlInterceptor implements NestInterceptor {
 
           this.setEtag(response, body);
         } else {
+          // Use no-cache if TTL tracking failed or no valid TTL available
           response.header('Cache-Control', 'no-cache');
         }
       }),
@@ -65,7 +72,7 @@ export class CacheControlInterceptor implements NestInterceptor {
     }
 
     const etag = crypto
-      .createHash('sha256')
+      .createHash('sha1')
       .update(`${apiVersion}:${payload}`)
       .digest('hex');
     response.header('ETag', `"${etag}"`);

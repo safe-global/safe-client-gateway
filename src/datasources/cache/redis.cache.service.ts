@@ -78,7 +78,7 @@ export class RedisCacheService
       // NX - Set expiry only when the key has no expiry
       // See https://redis.io/commands/expire/
       await this.client.expire(key, expirationTime, 'NX');
-      if (this.shouldTrackTtl(cacheDir) && options?.trackTtl !== false) {
+      if (this.shouldTrackTtl(cacheDir) && (options?.trackTtl ?? true)) {
         await this.trackTtl(cacheDir);
       }
     } catch (error) {
@@ -222,7 +222,7 @@ export class RedisCacheService
   private async trackTtl(cacheDir: CacheDir): Promise<void> {
     try {
       const ttl = await this.client.ttl(this._prefixKey(cacheDir.key));
-      this.responseCacheService.trackTtl(ttl > 0 ? ttl : null);
+      this.responseCacheService.trackTtl(ttl > 0 ? ttl : null, cacheDir.key);
     } catch (error) {
       this.loggingService.warn({
         type: LogType.CacheEvent,
@@ -230,6 +230,7 @@ export class RedisCacheService
         event: `Failed to read TTL for ${cacheDir.key}`,
         error,
       });
+      this.responseCacheService.markTtlTrackingFailed();
     }
   }
 }
