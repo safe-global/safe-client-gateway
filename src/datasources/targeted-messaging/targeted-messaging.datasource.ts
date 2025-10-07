@@ -126,7 +126,7 @@ export class TargetedMessagingDatasource
   async getUnprocessedOutreaches(): Promise<Array<Outreach>> {
     const dbOutreaches = await this.sql<
       Array<DbOutreach>
-    >`SELECT id, name, start_date, end_date, source_id, type, team_name, source_file, source_file_processed_date, source_file_checksum, target_all, created_at, updated_at FROM outreaches WHERE source_file_processed_date IS NULL`.catch(
+    >`SELECT * FROM outreaches WHERE source_file_processed_date IS NULL`.catch(
       (err) => {
         this.loggingService.warn(
           `Error getting unprocessed outreaches: ${asError(err).message}`,
@@ -180,7 +180,7 @@ export class TargetedMessagingDatasource
 
       const dbTargetedSafes = await sql<
         Array<DbTargetedSafe>
-      >`SELECT id, address, outreach_id, created_at, updated_at FROM targeted_safes WHERE id = ANY(${inserted.map((i) => i.id)})`;
+      >`SELECT * FROM targeted_safes WHERE id = ANY(${inserted.map((i) => i.id)})`;
 
       return dbTargetedSafes.map((dbTargetedSafe) =>
         this.targetedSafeDbMapper.map(dbTargetedSafe),
@@ -203,7 +203,7 @@ export class TargetedMessagingDatasource
     >({
       cacheDir: CacheRouter.getTargetedSafeCacheDir(args),
       query: this.sql`
-        SELECT id, address, outreach_id, created_at, updated_at FROM targeted_safes
+        SELECT * FROM targeted_safes
         WHERE outreach_id = ${args.outreachId} AND address = ${args.safeAddress}`,
       ttl: this.defaultExpirationTimeInSeconds,
     });
@@ -248,7 +248,7 @@ export class TargetedMessagingDatasource
         signerAddress: args.signerAddress,
       }),
       query: this.sql`
-        SELECT id, targeted_safe_id, signer_address, completion_date, created_at, updated_at FROM submissions
+        SELECT * FROM submissions
         WHERE targeted_safe_id = ${args.targetedSafe.id} AND signer_address = ${args.signerAddress}`,
       ttl: this.defaultExpirationTimeInSeconds,
     });

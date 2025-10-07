@@ -25,7 +25,8 @@ export class QueueApiService implements IQueuesApiService, IQueueReadiness {
       void fn(msg)
         .catch((error) => {
           this.loggingService.error(
-            `Error processing message from queue ${queueName}: ${error}`,
+            `Error processing message from queue ${queueName}: ${error.message}`,
+            { error },
           );
         })
         .finally(() => this.consumer.channel.ack(msg));

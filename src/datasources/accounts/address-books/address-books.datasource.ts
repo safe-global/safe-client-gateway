@@ -49,7 +49,7 @@ export class AddressBooksDatasource implements IAddressBooksDatasource {
   }): Promise<AddressBook> {
     const [dbAddressBook] = await this.sql<
       Array<DbAddressBook>
-    >`SELECT id, account_id, chain_id, data, key, iv, created_at, updated_at FROM address_books WHERE account_id = ${args.account.id} AND chain_id = ${args.chainId}`;
+    >`SELECT * FROM address_books WHERE account_id = ${args.account.id} AND chain_id = ${args.chainId}`;
     if (!dbAddressBook) throw new AddressBookNotFoundError();
     return this.addressBookMapper.map(dbAddressBook);
   }
