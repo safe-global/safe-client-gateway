@@ -59,12 +59,11 @@ describe('AddressBookItemsRepository', () => {
     entities: [Member, Space, SpaceSafe, User, Wallet, AddressBookItem],
   });
 
-  const dbWalletRepo = dataSource.getRepository(Wallet);
-  const dbUserRepo = dataSource.getRepository(User);
-  const dbSpacesRepository = dataSource.getRepository(Space);
-  const dbMembersRepository = dataSource.getRepository(Member);
-  const dbAddressBookItemsRepository =
-    dataSource.getRepository(AddressBookItem);
+  let dbWalletRepo: ReturnType<typeof dataSource.getRepository<Wallet>>;
+  let dbUserRepo: ReturnType<typeof dataSource.getRepository<User>>;
+  let dbSpacesRepository: ReturnType<typeof dataSource.getRepository<Space>>;
+  let dbMembersRepository: ReturnType<typeof dataSource.getRepository<Member>>;
+  let dbAddressBookItemsRepository: ReturnType<typeof dataSource.getRepository<AddressBookItem>>;
 
   beforeAll(async () => {
     // Create database
@@ -111,6 +110,13 @@ describe('AddressBookItemsRepository', () => {
     );
     await migrator.migrate();
 
+    // Initialize repositories after DataSource is connected
+    dbWalletRepo = dataSource.getRepository(Wallet);
+    dbUserRepo = dataSource.getRepository(User);
+    dbSpacesRepository = dataSource.getRepository(Space);
+    dbMembersRepository = dataSource.getRepository(Member);
+    dbAddressBookItemsRepository = dataSource.getRepository(AddressBookItem);
+
     mockConfigurationService.getOrThrow.mockImplementation((key) => {
       if (key === 'spaces.maxSpaceCreationsPerUser') {
         return testConfiguration.spaces.maxSpaceCreationsPerUser;
@@ -130,8 +136,10 @@ describe('AddressBookItemsRepository', () => {
   });
 
   afterAll(async () => {
-    await dbService.getDataSource().dropDatabase();
-    await dbService.destroyDatabaseConnection();
+    if (dbService) {
+      await dbService.getDataSource().dropDatabase();
+      await dbService.destroyDatabaseConnection();
+    }
   });
 
   describe('findAllBySpaceId', () => {

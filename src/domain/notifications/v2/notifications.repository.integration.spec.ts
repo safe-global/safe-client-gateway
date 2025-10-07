@@ -221,8 +221,10 @@ describe('NotificationsRepositoryV2', () => {
   });
 
   afterAll(async () => {
-    await postgresDatabaseService.getDataSource().dropDatabase();
-    await postgresDatabaseService.destroyDatabaseConnection();
+    if (postgresDatabaseService) {
+      await postgresDatabaseService.getDataSource().dropDatabase();
+      await postgresDatabaseService.destroyDatabaseConnection();
+    }
   });
 
   beforeEach(async () => {

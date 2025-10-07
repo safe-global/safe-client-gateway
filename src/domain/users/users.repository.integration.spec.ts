@@ -48,6 +48,9 @@ describe('UsersRepository', () => {
     entities: [Member, Space, SpaceSafe, User, Wallet],
   });
 
+  let dbWalletRepository: ReturnType<typeof dataSource.getRepository<Wallet>>;
+  let dbUserRepository: ReturnType<typeof dataSource.getRepository<User>>;
+
   beforeAll(async () => {
     // Create database
     const testDataSource = new DataSource({
@@ -92,6 +95,10 @@ describe('UsersRepository', () => {
     );
     await migrator.migrate();
 
+    // Initialize repositories after DataSource is connected
+    dbWalletRepository = dataSource.getRepository(Wallet);
+    dbUserRepository = dataSource.getRepository(User);
+
     usersRepository = new UsersRepository(
       postgresDatabaseService,
       new WalletsRepository(postgresDatabaseService),
@@ -101,19 +108,17 @@ describe('UsersRepository', () => {
   afterEach(async () => {
     jest.resetAllMocks();
 
-    const dbWalletRepository = dataSource.getRepository(Wallet);
-    const dbUserRepository = dataSource.getRepository(User);
-    await dbWalletRepository
-      .createQueryBuilder()
-      .delete()
-      .where('1=1')
-      .execute();
-    await dbUserRepository.createQueryBuilder().delete().where('1=1').execute();
+    if (dbWalletRepository && dbUserRepository) {
+      await dbWalletRepository.createQueryBuilder().delete().where('1=1').execute();
+      await dbUserRepository.createQueryBuilder().delete().where('1=1').execute();
+    }
   });
 
   afterAll(async () => {
-    await postgresDatabaseService.getDataSource().dropDatabase();
-    await postgresDatabaseService.destroyDatabaseConnection();
+    if (postgresDatabaseService) {
+      await postgresDatabaseService.getDataSource().dropDatabase();
+      await postgresDatabaseService.destroyDatabaseConnection();
+    }
   });
 
   // As the triggers are set on the database level, Jest's fake timers are not accurate

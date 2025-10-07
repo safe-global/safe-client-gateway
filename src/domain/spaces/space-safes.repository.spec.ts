@@ -118,22 +118,21 @@ describe('SpaceSafesRepository', () => {
   afterEach(async () => {
     jest.resetAllMocks();
 
-    await Promise.all(
-      [
-        dbWalletRepo,
-        dbUserRepo,
-        dbSpaceRepository,
-        dbMembersRepository,
-        dbSpaceSafesRepository,
-      ].map(async (repo) => {
-        await repo.createQueryBuilder().delete().where('1=1').execute();
-      }),
-    );
+    // Clean up in reverse dependency order to avoid FK constraint violations
+    if (dbSpaceSafesRepository && dbMembersRepository && dbSpaceRepository && dbWalletRepo && dbUserRepo) {
+      await dbSpaceSafesRepository.createQueryBuilder().delete().where('1=1').execute();
+      await dbMembersRepository.createQueryBuilder().delete().where('1=1').execute();
+      await dbSpaceRepository.createQueryBuilder().delete().where('1=1').execute();
+      await dbWalletRepo.createQueryBuilder().delete().where('1=1').execute();
+      await dbUserRepo.createQueryBuilder().delete().where('1=1').execute();
+    }
   });
 
   afterAll(async () => {
-    await postgresDatabaseService.getDataSource().dropDatabase();
-    await postgresDatabaseService.destroyDatabaseConnection();
+    if (postgresDatabaseService) {
+      await postgresDatabaseService.getDataSource().dropDatabase();
+      await postgresDatabaseService.destroyDatabaseConnection();
+    }
   });
 
   // As the triggers are set on the database level, Jest's fake timers are not accurate

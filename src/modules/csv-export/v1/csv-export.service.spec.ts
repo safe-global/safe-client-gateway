@@ -568,7 +568,7 @@ describe('CsvExportService', () => {
     });
 
     it('should handle slow AWS upload completion', async () => {
-      let resolveUpload: (value: CompleteMultipartUploadCommandOutput) => void;
+      let resolveUpload!: (value: CompleteMultipartUploadCommandOutput) => void;
       const uploadPromise = new Promise<CompleteMultipartUploadCommandOutput>(
         (resolve) => {
           resolveUpload = resolve;

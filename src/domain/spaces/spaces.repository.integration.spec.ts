@@ -52,9 +52,11 @@ describe('SpacesRepository', () => {
     entities: [Member, Space, SpaceSafe, User, Wallet],
   });
 
-  const dbUserRepo = dataSource.getRepository(User);
-  const dbMembersRepository = dataSource.getRepository(Member);
-  const dbSpacesRepository = dataSource.getRepository(Space);
+  let dbUserRepo: ReturnType<typeof dataSource.getRepository<User>>;
+  let dbMembersRepository: ReturnType<typeof dataSource.getRepository<Member>>;
+  let dbSpacesRepository: ReturnType<typeof dataSource.getRepository<Space>>;
+  let dbSpaceSafeRepository: ReturnType<typeof dataSource.getRepository<SpaceSafe>>;
+  let dbWalletRepository: ReturnType<typeof dataSource.getRepository<Wallet>>;
 
   beforeAll(async () => {
     // Create database
@@ -104,6 +106,14 @@ describe('SpacesRepository', () => {
       }
     });
     await migrator.migrate();
+
+    // Initialize repositories after DataSource is connected
+    dbUserRepo = dataSource.getRepository(User);
+    dbMembersRepository = dataSource.getRepository(Member);
+    dbSpacesRepository = dataSource.getRepository(Space);
+    dbSpaceSafeRepository = dataSource.getRepository(SpaceSafe);
+    dbWalletRepository = dataSource.getRepository(Wallet);
+
     spacesRepository = new SpacesRepository(
       postgresDatabaseService,
       mockConfigurationService,
@@ -113,21 +123,21 @@ describe('SpacesRepository', () => {
   afterEach(async () => {
     jest.resetAllMocks();
 
-    await Promise.all(
-      [Member, Space, User, Wallet].map(async (entity) => {
-        const repository = dataSource.getRepository(entity);
-        return await repository
-          .createQueryBuilder()
-          .delete()
-          .where('1=1')
-          .execute();
-      }),
-    );
+    // Clean up in reverse dependency order to avoid FK constraint violations
+    if (dbMembersRepository && dbSpaceSafeRepository && dbSpacesRepository && dbWalletRepository && dbUserRepo) {
+      await dbMembersRepository.createQueryBuilder().delete().where('1=1').execute();
+      await dbSpaceSafeRepository.createQueryBuilder().delete().where('1=1').execute();
+      await dbSpacesRepository.createQueryBuilder().delete().where('1=1').execute();
+      await dbWalletRepository.createQueryBuilder().delete().where('1=1').execute();
+      await dbUserRepo.createQueryBuilder().delete().where('1=1').execute();
+    }
   });
 
   afterAll(async () => {
-    await postgresDatabaseService.getDataSource().dropDatabase();
-    await postgresDatabaseService.destroyDatabaseConnection();
+    if (postgresDatabaseService) {
+      await postgresDatabaseService.getDataSource().dropDatabase();
+      await postgresDatabaseService.destroyDatabaseConnection();
+    }
   });
 
   // As the triggers are set on the database level, Jest's fake timers are not accurate
