@@ -20,7 +20,7 @@ export class NotFoundLoggerMiddleware implements NestMiddleware {
   use(req: Request, res: Response, next: NextFunction): void {
     const startTimeMs: number = performance.now();
 
-    res.on('finish', () => {
+    res.once('finish', () => {
       const { statusCode } = res;
       if (statusCode === 404) {
         this.loggingService.info(
