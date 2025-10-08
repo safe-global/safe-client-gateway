@@ -6,10 +6,11 @@ import { ResponseCacheService } from '@/datasources/cache/response-cache.service
 
 const responseCacheServiceStub: Pick<
   ResponseCacheService,
-  'trackTtl' | 'getTtl'
+  'trackTtl' | 'getTtl' | 'hasTtlTrackingFailed'
 > = {
   trackTtl: (): void => undefined,
   getTtl: (): number | undefined => undefined,
+  hasTtlTrackingFailed: (): boolean => false,
 };
 
 /**
