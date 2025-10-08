@@ -82,7 +82,7 @@ describe('BlockaidApi', () => {
           params: [safeAddress, message],
         },
         options: ['simulation', 'validation'],
-        metadata: { domain: 'https://example.com' },
+        metadata: { domain: '' },
       });
 
       expect(result).toEqual(mockScanResponse);
