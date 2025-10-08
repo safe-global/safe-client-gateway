@@ -5,6 +5,7 @@ import {
   ICacheService,
 } from '@/datasources/cache/cache.service.interface';
 import { LoggingService, ILoggingService } from '@/logging/logging.interface';
+import { ThreatAnalysisRequestBody } from '@/modules/safe-shield/entities/analysis-requests.entity';
 import { ThreatAnalysisResponse } from '@/modules/safe-shield/entities/analysis-responses.entity';
 import { ThreatAnalysisResult } from '@/modules/safe-shield/entities/analysis-result.entity';
 import {
@@ -12,9 +13,9 @@ import {
   compareSeverityString,
 } from '@/modules/safe-shield/entities/severity.entity';
 import { ThreatStatus } from '@/modules/safe-shield/entities/threat-status.entity';
-import { DecodedTransactionData } from '@/modules/safe-shield/entities/transaction-data.entity';
 import { IBlockaidApi } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-api.interface';
 import { BLOCKAID_SEVERITY_MAP } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid.constants';
+import { generateTypedData } from '@/modules/safe-shield/threat-analysis/eip-712';
 import {
   DESCRIPTION_MAPPING,
   SEVERITY_MAPPING,
@@ -56,12 +57,12 @@ export class ThreatAnalysisService {
   async analyze(args: {
     chainId: string;
     safeAddress: Address;
-    transactions: Array<DecodedTransactionData>;
+    requestData: ThreatAnalysisRequestBody;
   }): Promise<Array<ThreatAnalysisResponse>> {
+    // TODO add what is being cached
     const cacheDir = CacheRouter.getThreatAnalysisCacheDir({
       chainId: args.chainId,
     });
-
     const cached = await this.cacheService.hGet(cacheDir);
 
     if (cached) {
@@ -76,8 +77,6 @@ export class ThreatAnalysisService {
     }
     logCacheMiss(cacheDir, this.loggingService);
 
-    //TODO deal with transactions
-
     const analysisResults: Array<ThreatAnalysisResponse> =
       await this.detectThreats(args);
 
@@ -89,20 +88,22 @@ export class ThreatAnalysisService {
     return analysisResults;
   }
 
-  async detectThreats(args: {
+  private async detectThreats(args: {
     chainId: string;
     safeAddress: Address;
+    requestData: ThreatAnalysisRequestBody;
   }): Promise<Array<ThreatAnalysisResult>> {
     const { chainId, safeAddress } = args;
     try {
-      //TODO prepare message
+      const message = this.prepareMessage(args);
       const response = await this.blockaidAPI.scanTransaction(
         chainId,
         safeAddress,
-        '', //TODO to be replaced with real data
+        message,
       );
       const { simulation, validation } = response;
 
+      //TODO sort by severity
       return [
         this.analyzeValidation(validation),
         ...this.analyzeSimulation(safeAddress, simulation),
@@ -121,7 +122,12 @@ export class ThreatAnalysisService {
   ): ThreatAnalysisResult {
     let type: ThreatStatus = 'FAILED';
     let issues: Map<keyof typeof Severity, Array<string>> | undefined;
-    const { reason, classification, features, result_type } = validation ?? {};
+    const {
+      reason,
+      classification,
+      features = [],
+      result_type,
+    } = validation ?? {};
 
     if (validation) {
       switch (result_type) {
@@ -150,6 +156,7 @@ export class ThreatAnalysisService {
     if (!simulation) return [];
 
     if (simulation.status === 'Error') {
+      //TODO should we treat it as FAILED or just log and ignore ?
       return [this.mapToAnalysisResult({ type: 'FAILED' })];
     }
 
@@ -181,9 +188,12 @@ export class ThreatAnalysisService {
    * @returns - Map of issues grouped by severity (highest to lowest)
    */
   private groupIssuesBySeverity(
-    features?: Array<{ type: string; description: string }>,
+    features: Array<{ type: string; description: string }>,
   ): Map<keyof typeof Severity, Array<string>> {
-    const issuesBySeverity = (features ?? []).reduce((acc, feature) => {
+    if (!features.length) {
+      return new Map();
+    }
+    const issuesBySeverity = features.reduce((acc, feature) => {
       // Only process Malicious and Warning types
       if (feature.type !== 'Malicious' && feature.type !== 'Warning') {
         return acc;
@@ -243,5 +253,36 @@ export class ThreatAnalysisService {
     }
 
     return { severity, type, title, description };
+  }
+
+  /**
+   * Prepares the message for threat analysis by generating EIP-712 typed data.
+   * @param args - The arguments containing chainId, safeAddress, and requestData.
+   * @returns - The message as a JSON string.
+   */
+  private prepareMessage(args: {
+    chainId: string;
+    safeAddress: Address;
+    requestData: ThreatAnalysisRequestBody;
+  }): string {
+    const { chainId, safeAddress, requestData } = args;
+    /* TODO it seems we never provide EIP-712 typed data */
+    // if (isEIP712TypedData(data)) {
+    //   const normalizedMsg = normalizeTypedData(data);
+    //   return JSON.stringify(normalizedMsg);
+    // } else {
+
+    return JSON.stringify(
+      generateTypedData({
+        safeAddress,
+        safeVersion: '1.3.0', // TODO what about other versions?
+        chainId: BigInt(chainId),
+        data: {
+          ...requestData,
+          nonce: Number(requestData.nonce),
+        },
+      }),
+    );
+    // }
   }
 }
