@@ -161,6 +161,14 @@ jobs:
           flag-name: run-integration-tests
           parallel: true
 
+  tests:
+    name: tests (test:cov)
+    needs: [unit-tests, integration-tests]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Tests completed
+        run: echo "All tests passed"
+
   tests-finish:
     needs: [unit-tests, integration-tests]
     runs-on: ubuntu-latest
