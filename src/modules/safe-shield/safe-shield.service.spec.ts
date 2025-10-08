@@ -21,6 +21,7 @@ import { getAddress, type Hex } from 'viem';
 import {
   recipientAnalysisResponseBuilder,
   contractAnalysisResponseBuilder,
+  threatAnalysisResponseBuilder,
 } from './entities/__tests__/builders/analysis-responses.builder';
 import { dataDecodedBuilder } from '@/domain/data-decoder/v2/entities/__tests__/data-decoded.builder';
 import {
@@ -111,8 +112,9 @@ describe('SafeShieldService', () => {
   const mockContractAnalysisService = {
     analyze: jest.fn(),
   } as jest.MockedObjectDeep<ContractAnalysisService>;
-  const mockThreatAnalysisService =
-    {} as jest.MockedObjectDeep<ThreatAnalysisService>;
+  const mockThreatAnalysisService = {
+    analyze: jest.fn(),
+  } as jest.MockedObjectDeep<ThreatAnalysisService>;
   const mockTransactionsService = {
     previewTransaction: jest.fn(),
   } as jest.MockedObjectDeep<TransactionsService>;
@@ -1049,6 +1051,98 @@ describe('SafeShieldService', () => {
         safeAddress: mockSafeAddress,
         recipient: mockRecipientAddress,
       });
+    });
+
+    it('should handle analyzeInteractions failure', async () => {
+      const error = new Error('Failed to analyze interactions');
+
+      mockRecipientAnalysisService.analyzeInteractions.mockRejectedValue(error);
+
+      await expect(
+        service.analyzeRecipient(
+          mockChainId,
+          mockSafeAddress,
+          mockRecipientAddress,
+        ),
+      ).rejects.toThrow('Failed to analyze interactions');
+
+      expect(
+        mockRecipientAnalysisService.analyzeInteractions,
+      ).toHaveBeenCalledWith({
+        chainId: mockChainId,
+        safeAddress: mockSafeAddress,
+        recipient: mockRecipientAddress,
+      });
+    });
+  });
+
+  describe('analyzeThreats', () => {
+    const mockThreatRequest = {
+      to: mockRecipientAddress,
+      value: '0',
+      data: mockData,
+      operation: 0,
+      safeTxGas: '0',
+      baseGas: '0',
+      gasPrice: '0',
+      gasToken: getAddress(faker.finance.ethereumAddress()),
+      refundReceiver: getAddress(faker.finance.ethereumAddress()),
+      nonce: '0',
+    };
+
+    it('should analyze threats for a transaction', async () => {
+      const mockThreatResponse = [threatAnalysisResponseBuilder().build()];
+
+      mockThreatAnalysisService.analyze.mockResolvedValue(mockThreatResponse);
+
+      const result = await service.analyzeThreats({
+        chainId: mockChainId,
+        safeAddress: mockSafeAddress,
+        txRequest: mockThreatRequest,
+      });
+
+      expect(result).toEqual(mockThreatResponse);
+      expect(mockThreatAnalysisService.analyze).toHaveBeenCalledWith({
+        chainId: mockChainId,
+        safeAddress: mockSafeAddress,
+        requestData: mockThreatRequest,
+      });
+    });
+
+    it('should return empty array when no threats detected', async () => {
+      mockThreatAnalysisService.analyze.mockResolvedValue([]);
+
+      const result = await service.analyzeThreats({
+        chainId: mockChainId,
+        safeAddress: mockSafeAddress,
+        txRequest: mockThreatRequest,
+      });
+
+      expect(result).toEqual([]);
+      expect(mockThreatAnalysisService.analyze).toHaveBeenCalledWith({
+        chainId: mockChainId,
+        safeAddress: mockSafeAddress,
+        requestData: mockThreatRequest,
+      });
+    });
+
+    it('should handle multiple threat results', async () => {
+      const mockMultipleThreats = [
+        threatAnalysisResponseBuilder('MALICIOUS').build(),
+        threatAnalysisResponseBuilder('MASTER_COPY_CHANGE').build(),
+        threatAnalysisResponseBuilder().build(),
+      ];
+
+      mockThreatAnalysisService.analyze.mockResolvedValue(mockMultipleThreats);
+
+      const result = await service.analyzeThreats({
+        chainId: mockChainId,
+        safeAddress: mockSafeAddress,
+        txRequest: mockThreatRequest,
+      });
+
+      expect(result).toEqual(mockMultipleThreats);
+      expect(result).toHaveLength(3);
     });
   });
 });
