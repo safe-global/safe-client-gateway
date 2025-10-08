@@ -4,7 +4,10 @@
   "roots": ["./src", "./migrations"],
   "testEnvironment": "node",
   "testRegex": ".*\\.spec\\.ts$",
-  "testPathIgnorePatterns": ["\\.integration\\.spec\\.ts$", "\\.e2e-spec\\.ts$"],
+  "testPathIgnorePatterns": [
+    "\\.integration\\.spec\\.ts$",
+    "\\.e2e-spec\\.ts$"
+  ],
   "transform": {
     "^.+\\.(t|j)s$": "ts-jest"
   },

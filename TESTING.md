@@ -5,6 +5,7 @@ This document describes the testing strategy and organization for the Safe Clien
 ## Test Types
 
 ### Unit Tests (`.spec.ts`)
+
 - **Purpose**: Test isolated logic without external dependencies
 - **Count**: ~329 tests
 - **Characteristics**:
@@ -14,6 +15,7 @@ This document describes the testing strategy and organization for the Safe Clien
   - Tests pure functions, schemas, entities, validators
 
 ### Integration Tests (`.integration.spec.ts` and `.e2e-spec.ts`)
+
 - **Purpose**: Test components with real infrastructure
 - **Count**: ~16 tests (7 integration + 9 e2e)
 - **Characteristics**:
@@ -50,6 +52,7 @@ yarn test:watch
 ### CI/CD
 
 Tests run in parallel on GitHub Actions:
+
 - **`unit-tests` job**: Runs ~329 unit tests without external services (~2 min)
 - **`integration-tests` job**: Runs ~16 integration tests with Postgres, Redis, and RabbitMQ (~5-10 min)
 
@@ -120,6 +123,7 @@ yarn test:integration
 ## Writing Tests
 
 ### When to Write Unit Tests
+
 - Testing business logic
 - Testing data transformations
 - Testing validators and schemas
@@ -127,6 +131,7 @@ yarn test:integration
 - Testing API controllers with mocked services
 
 ### When to Write Integration Tests
+
 - Testing database repositories
 - Testing message queue consumers
 - Testing full request/response cycles
@@ -134,6 +139,7 @@ yarn test:integration
 - Testing critical infrastructure components
 
 ### Naming Conventions
+
 - Unit tests: `*.spec.ts`
 - Integration tests: `*.integration.spec.ts`
 - E2E tests: `*.e2e-spec.ts`
@@ -143,6 +149,7 @@ Keep integration tests co-located with the code they test to maintain feature or
 ## Test Configuration
 
 ### Jest Configurations
+
 - **`package.json`** (default): Runs unit tests only
 - **`test/jest-unit.json`**: Explicitly runs unit tests, excludes `.integration.spec.ts` and `.e2e-spec.ts`
 - **`test/jest-integration.json`**: Runs only `.integration.spec.ts` and `.e2e-spec.ts` files
