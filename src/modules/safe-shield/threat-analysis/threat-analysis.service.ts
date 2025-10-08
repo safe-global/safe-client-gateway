@@ -59,9 +59,9 @@ export class ThreatAnalysisService {
     safeAddress: Address;
     requestData: ThreatAnalysisRequestBody;
   }): Promise<Array<ThreatAnalysisResponse>> {
-    // TODO add what is being cached
     const cacheDir = CacheRouter.getThreatAnalysisCacheDir({
       chainId: args.chainId,
+      requestData: args.requestData,
     });
     const cached = await this.cacheService.hGet(cacheDir);
 
@@ -103,11 +103,10 @@ export class ThreatAnalysisService {
       );
       const { simulation, validation } = response;
 
-      //TODO sort by severity
       return [
         this.analyzeValidation(validation),
         ...this.analyzeSimulation(safeAddress, simulation),
-      ];
+      ].sort((a, b) => compareSeverityString(b.severity, a.severity));
     } catch (error) {
       this.loggingService.warn(
         `Error during threat analysis for Safe ${safeAddress} on chain ${chainId}: ${error}`,
@@ -156,8 +155,12 @@ export class ThreatAnalysisService {
     if (!simulation) return [];
 
     if (simulation.status === 'Error') {
-      //TODO should we treat it as FAILED or just log and ignore ?
-      return [this.mapToAnalysisResult({ type: 'FAILED' })];
+      return [
+        this.mapToAnalysisResult({
+          type: 'FAILED',
+          reason: simulation.description,
+        }),
+      ];
     }
 
     const items = simulation.contract_management?.[safeAddress] ?? [];
@@ -275,7 +278,7 @@ export class ThreatAnalysisService {
     return JSON.stringify(
       generateTypedData({
         safeAddress,
-        safeVersion: '1.3.0', // TODO what about other versions?
+        safeVersion: '1.3.0',
         chainId: BigInt(chainId),
         data: {
           ...requestData,

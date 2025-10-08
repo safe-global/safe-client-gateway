@@ -54,8 +54,7 @@ export const RootConfigurationSchema = z
     CSV_AWS_ACCESS_KEY_ID: z.string().optional(),
     CSV_AWS_SECRET_ACCESS_KEY: z.string().optional(),
     CSV_EXPORT_QUEUE_CONCURRENCY: z.number({ coerce: true }).min(1).optional(),
-    THREAD_ANALYSIS_BLOCKAID_BASE_URI: z.string().url().optional(),
-    BLOCKAID_API_KEY: z.string().optional(), //TODO required by default?
+    BLOCKAID_API_KEY: z.string().optional(),
   })
   .superRefine((config, ctx) =>
     // Check for AWS_* and Blockaid fields in production and staging environments

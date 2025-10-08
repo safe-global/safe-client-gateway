@@ -47,7 +47,8 @@ export const DESCRIPTION_MAPPING: Record<
   MODERATE: ({ reason, classification } = {}) =>
     `The transaction ${reason} ${classification}. Cancel this transaction.`,
   NO_THREAT: () => 'Threat analysis found no issues.',
-  FAILED: () => 'Threat analysis failed. Review before processing.',
+  FAILED: ({ reason } = {}) =>
+    `Threat analysis failed. Review before processing.${reason ? ` (${reason}).` : ''}`,
   MASTER_COPY_CHANGE: () =>
     'Verify this change as it may overwrite account ownership.',
   OWNERSHIP_CHANGE: () =>
