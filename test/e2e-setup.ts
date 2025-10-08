@@ -43,3 +43,6 @@ process.env.PUSH_NOTIFICATIONS_API_SERVICE_ACCOUNT_CLIENT_EMAIL =
   'email@fake-email.com';
 process.env.PUSH_NOTIFICATIONS_API_SERVICE_ACCOUNT_PRIVATE_KEY =
   'fake-private-key';
+
+// For E2E tests, Bridge API dummy values
+process.env.BRIDGE_API_KEY = 'fake-bridge-api-key';
