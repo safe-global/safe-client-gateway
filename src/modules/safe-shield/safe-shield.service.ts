@@ -6,6 +6,7 @@ import { type Address, type Hex } from 'viem';
 import type {
   ContractAnalysisResponse,
   RecipientAnalysisResponse,
+  ThreatAnalysisResponse,
 } from './entities/analysis-responses.entity';
 import type { DecodedTransactionData } from '@/modules/safe-shield/entities/transaction-data.entity';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
@@ -14,6 +15,7 @@ import { TransactionsService } from '@/routes/transactions/transactions.service'
 import { Operation } from '@/domain/safe/entities/operation.entity';
 import type { TransactionInfo } from '@/routes/transactions/entities/transaction-info.entity';
 import { RecipientInteractionAnalysisDto } from './entities/dtos/recipient-analysis.dto';
+import { ThreatAnalysisRequestBody } from '@/modules/safe-shield/entities/analysis-requests.entity';
 
 /**
  * Main orchestration service for Safe Shield transaction analysis.
@@ -150,6 +152,31 @@ export class SafeShieldService {
     }
 
     return {};
+  }
+
+  /**
+   * Analyze transaction for any potential threats.
+   *
+   * @param args - Analysis parameters
+   * @param args.chainId - The chain ID
+   * @param args.safeAddress - The Safe address
+   * @param args.txRequest - The transaction data
+   * @returns Array of threat analysis results
+   */
+  async analyzeThreats({
+    chainId,
+    safeAddress,
+    txRequest,
+  }: {
+    chainId: string;
+    safeAddress: Address;
+    txRequest: ThreatAnalysisRequestBody;
+  }): Promise<Array<ThreatAnalysisResponse>> {
+    return this.threatAnalysisService.analyze({
+      chainId,
+      safeAddress,
+      requestData: txRequest,
+    });
   }
 
   /**
