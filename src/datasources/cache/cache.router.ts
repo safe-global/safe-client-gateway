@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import type { Address, Hash } from 'viem';
+import type { ThreatAnalysisRequestBody } from '@/modules/safe-shield/entities/analysis-requests.entity';
 
 export class CacheRouter {
   private static readonly ACCOUNT_DATA_SETTINGS_KEY = 'account_data_settings';
@@ -914,12 +915,18 @@ export class CacheRouter {
    * Gets cache directory for threat analysis results.
    *
    * @param {string} args.chainId - Chain ID
+   * @param {ThreatAnalysisRequestBody} args.requestData - Request data to be hashed
    * @returns {CacheDir} - Cache directory
    */
-  static getThreatAnalysisCacheDir(args: { chainId: string }): CacheDir {
+  static getThreatAnalysisCacheDir(args: {
+    chainId: string;
+    requestData: ThreatAnalysisRequestBody;
+  }): CacheDir {
+    const requestHash = crypto.createHash('sha256');
+    requestHash.update(JSON.stringify(args.requestData));
     return new CacheDir(
       `${args.chainId}_${CacheRouter.THREAT_ANALYSIS_KEY}`,
-      '', //TODO
+      requestHash.digest('hex'),
     );
   }
 }
