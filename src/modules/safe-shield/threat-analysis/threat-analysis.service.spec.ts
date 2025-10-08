@@ -77,7 +77,10 @@ describe('ThreatAnalysisService', () => {
         const cachedResponse = [
           threatAnalysisResponseBuilder('NO_THREAT').build(),
         ];
-        const cacheDir = CacheRouter.getThreatAnalysisCacheDir({ chainId });
+        const cacheDir = CacheRouter.getThreatAnalysisCacheDir({
+          chainId,
+          requestData,
+        });
         await fakeCacheService.hSet(
           cacheDir,
           JSON.stringify(cachedResponse),
@@ -95,7 +98,10 @@ describe('ThreatAnalysisService', () => {
       });
 
       it('should handle JSON parsing errors in cached data gracefully', async () => {
-        const cacheDir = CacheRouter.getThreatAnalysisCacheDir({ chainId });
+        const cacheDir = CacheRouter.getThreatAnalysisCacheDir({
+          chainId,
+          requestData,
+        });
         const invalidCachedData = 'invalid json data';
         await fakeCacheService.hSet(cacheDir, invalidCachedData, 3600);
 
@@ -158,7 +164,10 @@ describe('ThreatAnalysisService', () => {
           expect.any(String),
         );
 
-        const cacheDir = CacheRouter.getThreatAnalysisCacheDir({ chainId });
+        const cacheDir = CacheRouter.getThreatAnalysisCacheDir({
+          chainId,
+          requestData,
+        });
         await expect(fakeCacheService.hGet(cacheDir)).resolves.toEqual(
           JSON.stringify(expectedResponse),
         );
@@ -392,6 +401,7 @@ describe('ThreatAnalysisService', () => {
           simulation: {
             status: 'Error',
             error: 'Simulation failed',
+            description: 'Simulation could not be completed',
           },
         } as unknown as TransactionScanResponse;
 
@@ -408,16 +418,18 @@ describe('ThreatAnalysisService', () => {
 
         expect(result).toEqual([
           {
+            severity: SEVERITY_MAPPING.FAILED,
+            type: 'FAILED',
+            title: TITLE_MAPPING.FAILED,
+            description: DESCRIPTION_MAPPING.FAILED({
+              reason: 'Simulation could not be completed',
+            }),
+          },
+          {
             severity: SEVERITY_MAPPING.NO_THREAT,
             type: 'NO_THREAT',
             title: TITLE_MAPPING.NO_THREAT,
             description: DESCRIPTION_MAPPING.NO_THREAT(),
-          },
-          {
-            severity: SEVERITY_MAPPING.FAILED,
-            type: 'FAILED',
-            title: TITLE_MAPPING.FAILED,
-            description: DESCRIPTION_MAPPING.FAILED(),
           },
         ]);
       });
@@ -468,18 +480,18 @@ describe('ThreatAnalysisService', () => {
 
         expect(result).toEqual([
           {
-            severity: SEVERITY_MAPPING.NO_THREAT,
-            type: 'NO_THREAT',
-            title: TITLE_MAPPING.NO_THREAT,
-            description: DESCRIPTION_MAPPING.NO_THREAT(),
-          },
-          {
             severity: SEVERITY_MAPPING.MASTER_COPY_CHANGE,
             type: 'MASTER_COPY_CHANGE',
             title: TITLE_MAPPING.MASTER_COPY_CHANGE,
             description: DESCRIPTION_MAPPING.MASTER_COPY_CHANGE(),
             before: oldMasterCopy,
             after: newMasterCopy,
+          },
+          {
+            severity: SEVERITY_MAPPING.NO_THREAT,
+            type: 'NO_THREAT',
+            title: TITLE_MAPPING.NO_THREAT,
+            description: DESCRIPTION_MAPPING.NO_THREAT(),
           },
         ]);
       });
@@ -522,16 +534,16 @@ describe('ThreatAnalysisService', () => {
 
         expect(result).toEqual([
           {
-            severity: SEVERITY_MAPPING.NO_THREAT,
-            type: 'NO_THREAT',
-            title: TITLE_MAPPING.NO_THREAT,
-            description: DESCRIPTION_MAPPING.NO_THREAT(),
-          },
-          {
             severity: SEVERITY_MAPPING.OWNERSHIP_CHANGE,
             type: 'OWNERSHIP_CHANGE',
             title: TITLE_MAPPING.OWNERSHIP_CHANGE,
             description: DESCRIPTION_MAPPING.OWNERSHIP_CHANGE(),
+          },
+          {
+            severity: SEVERITY_MAPPING.NO_THREAT,
+            type: 'NO_THREAT',
+            title: TITLE_MAPPING.NO_THREAT,
+            description: DESCRIPTION_MAPPING.NO_THREAT(),
           },
         ]);
       });
@@ -574,16 +586,16 @@ describe('ThreatAnalysisService', () => {
 
         expect(result).toEqual([
           {
-            severity: SEVERITY_MAPPING.NO_THREAT,
-            type: 'NO_THREAT',
-            title: TITLE_MAPPING.NO_THREAT,
-            description: DESCRIPTION_MAPPING.NO_THREAT(),
-          },
-          {
             severity: SEVERITY_MAPPING.MODULE_CHANGE,
             type: 'MODULE_CHANGE',
             title: TITLE_MAPPING.MODULE_CHANGE,
             description: DESCRIPTION_MAPPING.MODULE_CHANGE(),
+          },
+          {
+            severity: SEVERITY_MAPPING.NO_THREAT,
+            type: 'NO_THREAT',
+            title: TITLE_MAPPING.NO_THREAT,
+            description: DESCRIPTION_MAPPING.NO_THREAT(),
           },
         ]);
       });

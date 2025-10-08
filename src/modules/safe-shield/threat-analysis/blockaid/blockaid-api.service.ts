@@ -26,7 +26,6 @@ export class BlockaidApi implements IBlockaidApi {
         params: [safeAddress, message],
       },
       options: ['simulation', 'validation'],
-      //    account_address: walletAddress, //TODO signer address
       metadata: { domain: '' },
     };
 
