@@ -39,6 +39,43 @@ jobs:
 
   unit-tests:
     runs-on: ubuntu-latest
+    env:
+      POSTGRES_TEST_DB: test-db
+      POSTGRES_TEST_USER: postgres
+      POSTGRES_TEST_PASSWORD: postgres
+      POSTGRES_TEST_PORT: 5433
+    services:
+      redis:
+        image: redis
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+      postgres:
+        image: postgres:14.8
+        env:
+          POSTGRES_DB: test-db
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5433:5432
+      rabbitmq:
+        image: rabbitmq:alpine
+        ports:
+          - 5672:5672
+        options: >-
+          --health-cmd "rabbitmqctl await_startup"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
@@ -49,6 +86,8 @@ jobs:
       - run: yarn run build
       - run: yarn run test:unit:cov
         env:
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
           SAFE_CONFIG_BASE_URI: ${{ secrets.SAFE_CONFIG_BASE_URI }}
           LOG_SILENT: true
       - name: Coveralls Parallel
