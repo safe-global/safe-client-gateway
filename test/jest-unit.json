@@ -1,0 +1,25 @@
+{
+  "moduleFileExtensions": ["js", "json", "ts"],
+  "rootDir": "../",
+  "roots": ["./src", "./migrations"],
+  "testEnvironment": "node",
+  "testRegex": ".*\\.spec\\.ts$",
+  "testPathIgnorePatterns": ["\\.integration\\.spec\\.ts$", "\\.e2e-spec\\.ts$"],
+  "transform": {
+    "^.+\\.(t|j)s$": "ts-jest"
+  },
+  "collectCoverageFrom": ["**/*.(t|j)s"],
+  "coverageDirectory": "./coverage",
+  "coveragePathIgnorePatterns": [
+    "index.ts",
+    ".+\\/__tests__\\/.+\\.builder.(t|j)s",
+    ".+\\/__tests__\\/.+\\.factory.(t|j)s",
+    ".e2e-spec.ts",
+    ".integration.spec.ts"
+  ],
+  "moduleNameMapper": {
+    "^@/abis/(.*)$": "<rootDir>/abis/$1",
+    "^@/(.*)$": "<rootDir>/src/$1"
+  },
+  "globalSetup": "<rootDir>/test/global-setup.ts"
+}

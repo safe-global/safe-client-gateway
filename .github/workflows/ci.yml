@@ -37,13 +37,30 @@ jobs:
       - run: yarn install --immutable
       - run: yarn run lint-check
 
-  tests:
+  unit-tests:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        # task: ['test:cov', 'test:e2e:cov']
-        task: ['test:cov']
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22.11.0' # jod
+          cache: 'yarn'
+      - run: yarn install --immutable
+      - run: yarn run build
+      - run: yarn run test:unit:cov
+        env:
+          SAFE_CONFIG_BASE_URI: ${{ secrets.SAFE_CONFIG_BASE_URI }}
+          LOG_SILENT: true
+      - name: Coveralls Parallel
+        continue-on-error: true
+        uses: coverallsapp/github-action@648a8eb78e6d50909eff900e4ec85cab4524a45b # v2.3.6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          flag-name: run-unit-tests
+          parallel: true
+
+  integration-tests:
+    runs-on: ubuntu-latest
     env:
       POSTGRES_TEST_DB: test-db
       POSTGRES_TEST_USER: postgres
@@ -91,7 +108,7 @@ jobs:
           cache: 'yarn'
       - run: yarn install --immutable
       - run: yarn run build
-      - run: yarn run ${{matrix.task}}
+      - run: yarn run test:integration:cov
         env:
           REDIS_HOST: localhost
           REDIS_PORT: 6379
@@ -102,11 +119,11 @@ jobs:
         uses: coverallsapp/github-action@648a8eb78e6d50909eff900e4ec85cab4524a45b # v2.3.6
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          flag-name: run-${{ matrix.task }}
+          flag-name: run-integration-tests
           parallel: true
 
   tests-finish:
-    needs: tests
+    needs: [unit-tests, integration-tests]
     runs-on: ubuntu-latest
     steps:
       - name: Coveralls Finished
