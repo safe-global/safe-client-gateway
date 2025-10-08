@@ -14,10 +14,10 @@ This document describes the testing strategy and organization for the Safe Clien
   - Fast execution (< 2 minutes)
   - Tests pure functions, schemas, entities, validators
 
-### Integration Tests (`.integration.spec.ts` and `.e2e-spec.ts`)
+### Integration Tests (`.integration.spec.ts`)
 
 - **Purpose**: Test components with real infrastructure
-- **Count**: ~16 tests (7 integration + 9 e2e)
+- **Count**: ~7 tests
 - **Characteristics**:
   - Use real database connections (Postgres + TypeORM)
   - Use real Redis/BullMQ queues
@@ -152,7 +152,7 @@ Keep integration tests co-located with the code they test to maintain feature or
 
 - **`package.json`** (default): Runs unit tests only
 - **`test/jest-unit.json`**: Explicitly runs unit tests, excludes `.integration.spec.ts` and `.e2e-spec.ts`
-- **`test/jest-integration.json`**: Runs only `.integration.spec.ts` and `.e2e-spec.ts` files
+- **`test/jest-integration.json`**: Runs only `.integration.spec.ts` files
 - **`test/jest-e2e.json`**: Legacy config for e2e tests only
 - **`test/jest-all.json`**: Runs all tests
 

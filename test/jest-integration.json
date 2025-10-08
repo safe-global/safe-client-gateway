@@ -4,7 +4,7 @@
   "roots": ["./src"],
   "setupFiles": ["<rootDir>/test/e2e-setup.ts"],
   "testEnvironment": "node",
-  "testMatch": ["**/*.integration.spec.ts", "**/*.e2e-spec.ts"],
+  "testMatch": ["**/*.integration.spec.ts"],
   "testTimeout": 60000,
   "transform": {
     "^.+\\.(t|j)s$": "ts-jest"
