@@ -1399,10 +1399,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@fingerprintjs/fingerprintjs-pro-server-api@npm:6.2.0":
-  version: 6.2.0
-  resolution: "@fingerprintjs/fingerprintjs-pro-server-api@npm:6.2.0"
-  checksum: 10/011d2f25ae15ae6de0b383c60d1b416505751017a3dd512dec4878645a82f644e01dc05a068e056d63acb08efed8fbb14efcea67f5b793d16545947821c03307
+"@fingerprintjs/fingerprintjs-pro-server-api@npm:6.10.0":
+  version: 6.10.0
+  resolution: "@fingerprintjs/fingerprintjs-pro-server-api@npm:6.10.0"
+  checksum: 10/b247657f5a006f2c7c6dc38653977fede512fc0336b8b81026a2b8e73290388c7bf1f0e9e7c0751dda036a8629bbbebf7fdd053355aa5bffd6b994c2ff614f5b
   languageName: node
   linkType: hard
 
@@ -9227,7 +9227,7 @@ __metadata:
     "@aws-sdk/lib-storage": "npm:3.879.0"
     "@aws-sdk/s3-request-presigner": "npm:3.879.0"
     "@faker-js/faker": "npm:9.9.0"
-    "@fingerprintjs/fingerprintjs-pro-server-api": "npm:6.2.0"
+    "@fingerprintjs/fingerprintjs-pro-server-api": "npm:6.10.0"
     "@nestjs/bullmq": "npm:^11.0.3"
     "@nestjs/cache-manager": "npm:3.0.1"
     "@nestjs/cli": "npm:11.0.5"
