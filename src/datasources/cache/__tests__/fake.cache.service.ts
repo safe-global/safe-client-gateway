@@ -1,6 +1,7 @@
 import type { ICacheService } from '@/datasources/cache/cache.service.interface';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import type { ICacheReadiness } from '@/domain/interfaces/cache-readiness.interface';
+import { CACHE_INVALIDATION_PREFIX } from '@/datasources/cache/constants';
 
 export class FakeCacheService implements ICacheService, ICacheReadiness {
   private cache: Record<string, Record<string, string> | number> = {};
@@ -25,7 +26,7 @@ export class FakeCacheService implements ICacheService, ICacheReadiness {
   async deleteByKey(key: string): Promise<number> {
     delete this.cache[key];
     await this.hSet(
-      new CacheDir(`invalidationTimeMs:${key}`, ''),
+      new CacheDir(`${CACHE_INVALIDATION_PREFIX}${key}`, ''),
       Date.now().toString(),
       1, // non-falsy expireTimeSeconds, otherwise it wouldn't be written
     );
@@ -51,6 +52,10 @@ export class FakeCacheService implements ICacheService, ICacheReadiness {
     cacheDir: CacheDir,
     value: string | number,
     expireTimeSeconds: number | undefined,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    _expireDeviatePercent?: number,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    _options?: { trackTtl?: boolean },
   ): Promise<void> {
     if (!expireTimeSeconds || expireTimeSeconds <= 0) {
       return Promise.resolve();
