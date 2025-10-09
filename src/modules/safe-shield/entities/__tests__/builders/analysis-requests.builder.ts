@@ -30,5 +30,7 @@ export function threatAnalysisRequestBodyBuilder(): IBuilder<ThreatAnalysisReque
     .with('gasPrice', faker.string.numeric())
     .with('gasToken', getAddress(faker.finance.ethereumAddress()))
     .with('refundReceiver', getAddress(faker.finance.ethereumAddress()))
-    .with('nonce', faker.string.numeric());
+    .with('nonce', faker.string.numeric())
+    .with('walletAddress', getAddress(faker.finance.ethereumAddress()))
+    .with('origin', faker.internet.url());
 }

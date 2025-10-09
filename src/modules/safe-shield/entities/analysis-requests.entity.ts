@@ -84,6 +84,12 @@ export const ThreatAnalysisRequestSchema = z.object({
 
   /** Safe transaction nonce */
   nonce: NumericStringSchema,
+
+  /** Address of the transaction signer/wallet */
+  walletAddress: AddressSchema,
+
+  /** Optional origin identifier for the request */
+  origin: z.string().optional(),
 });
 
 export type ThreatAnalysisRequest = z.infer<typeof ThreatAnalysisRequestSchema>;

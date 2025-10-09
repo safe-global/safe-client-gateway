@@ -1088,6 +1088,7 @@ describe('SafeShieldService', () => {
       gasToken: getAddress(faker.finance.ethereumAddress()),
       refundReceiver: getAddress(faker.finance.ethereumAddress()),
       nonce: '0',
+      walletAddress: mockRecipientAddress,
     };
 
     it('should analyze threats for a transaction', async () => {
