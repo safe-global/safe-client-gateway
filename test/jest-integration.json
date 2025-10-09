@@ -1,0 +1,18 @@
+{
+  "moduleFileExtensions": ["js", "json", "ts"],
+  "rootDir": "../",
+  "roots": ["./src"],
+  "setupFiles": ["<rootDir>/test/e2e-setup.ts"],
+  "testEnvironment": "node",
+  "testMatch": ["**/*.integration.spec.ts"],
+  "testTimeout": 60000,
+  "transform": {
+    "^.+\\.(t|j)s$": "ts-jest"
+  },
+  "coverageDirectory": "./coverage",
+  "moduleNameMapper": {
+    "^@/abis/(.*)$": "<rootDir>/abis/$1",
+    "^@/(.*)$": "<rootDir>/src/$1"
+  },
+  "globalSetup": "<rootDir>/test/global-setup.ts"
+}

@@ -17,7 +17,7 @@ import type { IExportApi } from '@/modules/csv-export/v1/datasources/export-api.
 import type { IJobQueueService } from '@/domain/interfaces/job-queue.interface';
 import type { ILoggingService } from '@/logging/logging.interface';
 import type { Page } from '@/domain/entities/page.entity';
-import { mkdir, rm, readFile } from 'fs/promises';
+import { mkdir, rm, readFile, access } from 'fs/promises';
 import path from 'path';
 import { DataSourceError } from '@/domain/errors/data-source.error';
 import { UnrecoverableError } from 'bullmq';
@@ -645,11 +645,16 @@ describe('CsvExportService', () => {
           for await (const _ of readable) {
             // Just consume the data
           }
-          // Write to the stream
+          // Write to the stream and wait for it to finish
           stream.write(csvHeader + '\n');
           stream.write(csvRow + '\n');
           stream.end();
-          return Promise.resolve();
+
+          // Wait for the stream to finish writing to disk
+          return new Promise<void>((resolve, reject) => {
+            stream.on('finish', () => resolve());
+            stream.on('error', reject);
+          });
         },
       );
 
@@ -686,7 +691,13 @@ describe('CsvExportService', () => {
     });
 
     afterEach(async () => {
-      await rm(path.resolve(localBaseDir, fileName));
+      try {
+        const filePath = path.resolve(localBaseDir, fileName);
+        await access(filePath);
+        await rm(filePath);
+      } catch {
+        // File doesn't exist, nothing to clean up
+      }
       jest.clearAllMocks();
     });
 
