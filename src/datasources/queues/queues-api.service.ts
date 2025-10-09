@@ -22,7 +22,13 @@ export class QueueApiService implements IQueuesApiService, IQueueReadiness {
     await this.consumer.channel.consume(queueName, (msg: ConsumeMessage) => {
       // Note: each message is explicitly acknowledged at this point, regardless the callback execution result.
       // The callback is expected to handle any errors and/or retries. Messages are not re-enqueued on error.
-      void fn(msg).finally(() => this.consumer.channel.ack(msg));
+      void fn(msg)
+        .catch((error) => {
+          this.loggingService.error(
+            `Error processing message from queue ${queueName}: ${error.message}`,
+          );
+        })
+        .finally(() => this.consumer.channel.ack(msg));
     });
     this.loggingService.info(`Subscribed to queue: ${queueName}`);
   }

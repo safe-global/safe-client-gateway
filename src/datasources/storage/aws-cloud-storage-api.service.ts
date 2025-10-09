@@ -52,7 +52,7 @@ export class AwsCloudStorageApiService implements ICloudStorageApiService {
     }
   }
 
-  createUploadStream(
+  async createUploadStream(
     fileName: string,
     body: Readable,
     options: Partial<PutObjectCommandInput> = {},
@@ -68,19 +68,24 @@ export class AwsCloudStorageApiService implements ICloudStorageApiService {
     });
 
     // Debugging: progress
-    upload.on('httpUploadProgress', (p) => {
+    const progressListener = (p: {
+      total?: number;
+      loaded?: number;
+      part?: number;
+    }): void => {
       this.loggingService.debug({
         type: LogType.AwsCloudStorageUpload,
         total: p.total,
         loaded: p.loaded,
         part: p.part,
       });
-    });
+    };
 
-    // Return the promise immediately - don't await here!
-    // The upload will start when data flows through the stream
-    // Await the promise when data was fully uploaded
-    return upload.done();
+    upload.on('httpUploadProgress', progressListener);
+
+    return upload.done().finally(() => {
+      upload.off('httpUploadProgress', progressListener);
+    });
   }
 
   async getSignedUrl(fileName: string, expiresIn: number): Promise<string> {
@@ -100,9 +105,30 @@ export class AwsCloudStorageApiService implements ICloudStorageApiService {
   private async streamToString(stream: Readable): Promise<string> {
     return new Promise<string>((resolve, reject) => {
       const chunks: Array<Buffer> = [];
-      stream.on('data', (chunk: Buffer) => chunks.push(chunk));
-      stream.on('error', reject);
-      stream.on('end', () => resolve(Buffer.concat(chunks).toString('utf-8')));
+
+      const onData = (chunk: Buffer): void => {
+        chunks.push(chunk);
+      };
+
+      const onError = (error: Error): void => {
+        cleanup();
+        reject(error);
+      };
+
+      const onEnd = (): void => {
+        cleanup();
+        resolve(Buffer.concat(chunks).toString('utf-8'));
+      };
+
+      const cleanup = (): void => {
+        stream.off('data', onData);
+        stream.off('error', onError);
+        stream.off('end', onEnd);
+      };
+
+      stream.on('data', onData);
+      stream.on('error', onError);
+      stream.on('end', onEnd);
     });
   }
 }

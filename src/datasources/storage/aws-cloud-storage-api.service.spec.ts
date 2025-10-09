@@ -121,6 +121,7 @@ describe('AwsCloudStorageApiService', () => {
           ({
             done: mockDone,
             on: jest.fn(),
+            off: jest.fn(),
           }) as unknown as Upload,
       );
 
@@ -151,6 +152,7 @@ describe('AwsCloudStorageApiService', () => {
           ({
             done: jest.fn().mockRejectedValue(uploadError),
             on: jest.fn(),
+            off: jest.fn(),
           }) as unknown as Upload,
       );
 
@@ -182,6 +184,7 @@ describe('AwsCloudStorageApiService', () => {
           ({
             done: jest.fn().mockResolvedValue({}),
             on: jest.fn(),
+            off: jest.fn(),
           }) as unknown as Upload,
       );
 
@@ -199,12 +202,14 @@ describe('AwsCloudStorageApiService', () => {
 
     it('should track httpUploadProgress event on upload', async () => {
       const mockOn = jest.fn();
+      const mockOff = jest.fn();
 
       mockUpload.mockImplementation(
         () =>
           ({
             done: jest.fn().mockResolvedValue({ ETag }),
             on: mockOn,
+            off: mockOff,
           }) as unknown as Upload,
       );
 
@@ -213,6 +218,10 @@ describe('AwsCloudStorageApiService', () => {
       });
 
       expect(mockOn).toHaveBeenCalledWith(
+        'httpUploadProgress',
+        expect.any(Function),
+      );
+      expect(mockOff).toHaveBeenCalledWith(
         'httpUploadProgress',
         expect.any(Function),
       );
