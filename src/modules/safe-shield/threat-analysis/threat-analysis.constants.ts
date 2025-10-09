@@ -3,6 +3,7 @@ import { COMMON_SEVERITY_MAPPING } from '@/modules/safe-shield/entities/common-s
 import type { Severity } from '@/modules/safe-shield/entities/severity.entity';
 import type { ThreatStatus } from '@/modules/safe-shield/entities/threat-status.entity';
 
+export const SAFE_VERSION = '1.3.0';
 /**
  * Severity mapping for threat analysis results.
  * Maps each contract status to its corresponding severity level.

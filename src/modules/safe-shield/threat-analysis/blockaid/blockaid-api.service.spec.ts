@@ -71,6 +71,41 @@ describe('BlockaidApi', () => {
     it('should call blockaid client with correct parameters', async () => {
       const origin = faker.internet.url();
 
+    it('should call blockaid client with correct parameters', async () => {
+      const origin = faker.internet.url();
+
+      const mockScanResponse: TransactionScanResponse = {
+        block: faker.string.numeric(),
+        chain: `0x${chainId}`,
+        request_id: faker.string.uuid(),
+        status: 'Success',
+      } as TransactionScanResponse;
+
+      mockBlockaidClient.evm.jsonRpc.scan.mockResolvedValue(mockScanResponse);
+
+      const result = await service.scanTransaction(
+        chainId,
+        safeAddress,
+        walletAddress,
+        message,
+        origin,
+      );
+
+      expect(mockBlockaidClient.evm.jsonRpc.scan).toHaveBeenCalledWith({
+        chain: `0x${chainId}`,
+        data: {
+          method: 'eth_signTypedData_v4',
+          params: [safeAddress, message],
+        },
+        options: ['simulation', 'validation'],
+        metadata: { domain: origin },
+        account_address: walletAddress,
+      });
+
+      expect(result).toEqual(mockScanResponse);
+    });
+
+    it('should call blockaid client without domain parameter', async () => {
       const mockScanResponse: TransactionScanResponse = {
         block: faker.string.numeric(),
         chain: `0x${chainId}`,
