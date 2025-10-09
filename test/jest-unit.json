@@ -1,7 +1,7 @@
 {
   "moduleFileExtensions": ["js", "json", "ts"],
   "rootDir": "../",
-  "roots": ["./src", "./migrations"],
+  "roots": ["./src"],
   "testEnvironment": "node",
   "testRegex": ".*\\.spec\\.ts$",
   "testPathIgnorePatterns": [

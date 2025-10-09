@@ -6,37 +6,41 @@ This document describes the testing strategy and organization for the Safe Clien
 
 ### Unit Tests (`.spec.ts`)
 
-- **Purpose**: Test isolated logic without external dependencies
-- **Count**: ~329 tests
+- **Purpose**: Test individual components and business logic in isolation
+- **Count**: ~309 tests
 - **Characteristics**:
-  - All dependencies are mocked using `jest.fn()` or `MockedObjectDeep`
+  - All external dependencies are mocked using `jest.fn()` or `MockedObjectDeep`
   - No real database, Redis, or external service connections
   - Fast execution (< 2 minutes)
-  - Tests pure functions, schemas, entities, validators
+  - Tests services, controllers, schemas, entities, validators with mocked dependencies
 
 ### Integration Tests (`.integration.spec.ts`)
 
-- **Purpose**: Test components with real infrastructure
-- **Count**: ~7 tests
+- **Purpose**: Test components with real infrastructure and cross-module interactions
+- **Count**: ~27 tests
 - **Characteristics**:
   - Use real database connections (Postgres + TypeORM)
   - Use real Redis/BullMQ queues
-  - Test full NestJS module bootstrap
+  - Test database repositories, migrations, and data access layers
+  - Test full NestJS module bootstrap and end-to-end flows
   - Slower execution (can take several minutes)
-  - Tests critical integration points
+  - Require Postgres, Redis, and RabbitMQ services to be running
 
 ## Running Tests
 
 ### Locally
 
 ```bash
-# Run all unit tests (default, fast)
+# Run all unit tests (default config from package.json)
 yarn test
+
+# Run unit tests explicitly (uses test/jest-unit.json config)
+yarn test:unit
 
 # Run unit tests with coverage
 yarn test:unit:cov
 
-# Run integration tests (requires Docker services)
+# Run integration tests (uses test/jest-integration.json config)
 yarn test:integration
 
 # Run integration tests with coverage
@@ -49,12 +53,17 @@ yarn test:all
 yarn test:watch
 ```
 
+**Note**: Both `yarn test` and `yarn test:unit` run the same unit tests, but `yarn test` uses the default Jest configuration from `package.json` while `yarn test:unit` explicitly uses `test/jest-unit.json`.
+
 ### CI/CD
 
 Tests run in parallel on GitHub Actions:
 
-- **`unit-tests` job**: Runs ~329 unit tests without external services (~2 min)
-- **`integration-tests` job**: Runs ~16 integration tests with Postgres, Redis, and RabbitMQ (~5-10 min)
+- **`unit-tests` job**: Runs ~309 unit tests without external services (~2 min)
+- **`integration-tests` job**: Runs ~27 integration tests with Postgres, Redis, and RabbitMQ services (~5-10 min)
+- **`tests` job**: Aggregates results from both test jobs for branch protection
+
+Both jobs run in parallel and report coverage to Coveralls.
 
 ## Test Patterns
 
@@ -120,23 +129,28 @@ export REDIS_PORT=6379
 yarn test:integration
 ```
 
+**Note**: Unit tests (`yarn test` or `yarn test:unit`) do NOT require these services and can run without Docker.
+
 ## Writing Tests
 
 ### When to Write Unit Tests
 
-- Testing business logic
+- Testing business logic in services
 - Testing data transformations
 - Testing validators and schemas
 - Testing isolated functions
 - Testing API controllers with mocked services
+- Testing components with all external dependencies mocked
 
 ### When to Write Integration Tests
 
-- Testing database repositories
-- Testing message queue consumers
-- Testing full request/response cycles
-- Testing complex module interactions
-- Testing critical infrastructure components
+- Testing database repositories and data access layers
+- Testing database migrations
+- Testing full module bootstrap and initialization
+- Testing message queue consumers with real queue infrastructure
+- Testing complete request/response cycles through multiple layers
+- Testing complex interactions between multiple modules
+- Testing critical end-to-end workflows with real infrastructure
 
 ### Naming Conventions
 
@@ -186,8 +200,10 @@ open coverage/lcov-report/index.html
 
 1. **Keep tests co-located**: Place test files next to the code they test
 2. **Use descriptive names**: Test file names should clearly indicate what they test
-3. **Mock external dependencies**: Unit tests should not rely on external services
-4. **Clean up resources**: Integration tests should clean up database connections
-5. **Maintain fast unit tests**: Unit tests should run in milliseconds
-6. **Use test factories**: Create reusable test data builders in `__tests__/*.factory.ts`
-7. **Avoid test interdependencies**: Each test should be independent and idempotent
+3. **Mock all external dependencies in unit tests**: Unit tests should mock databases, caches, HTTP APIs, and all I/O
+4. **Use real infrastructure for integration tests**: Test database repositories, migrations, and queues against real services
+5. **Clean up resources**: Integration tests must clean up database connections and test data
+6. **Maintain fast unit tests**: Unit tests should run quickly without I/O (< 2 minutes for the full suite)
+7. **Use test factories**: Create reusable test data builders in `__tests__/*.factory.ts`
+8. **Avoid test interdependencies**: Each test should be independent and idempotent
+9. **Choose the right test type**: If your test needs real infrastructure, it's an integration test (`.integration.spec.ts`)
