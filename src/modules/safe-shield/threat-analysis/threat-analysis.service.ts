@@ -18,6 +18,7 @@ import { BLOCKAID_SEVERITY_MAP } from '@/modules/safe-shield/threat-analysis/blo
 import { generateTypedData } from '@/modules/safe-shield/threat-analysis/eip-712';
 import {
   DESCRIPTION_MAPPING,
+  SAFE_VERSION,
   SEVERITY_MAPPING,
   TITLE_MAPPING,
 } from '@/modules/safe-shield/threat-analysis/threat-analysis.constants';
@@ -93,12 +94,18 @@ export class ThreatAnalysisService {
     safeAddress: Address;
     requestData: ThreatAnalysisRequestBody;
   }): Promise<Array<ThreatAnalysisResult>> {
-    const { chainId, safeAddress } = args;
+    const { chainId, safeAddress, requestData } = args;
+    const { walletAddress, ...data } = requestData;
     try {
-      const message = this.prepareMessage(args);
+      const message = this.prepareMessage({
+        chainId,
+        safeAddress,
+        data,
+      });
       const response = await this.blockaidAPI.scanTransaction(
         chainId,
         safeAddress,
+        walletAddress,
         message,
       );
       const { simulation, validation } = response;
@@ -197,16 +204,16 @@ export class ThreatAnalysisService {
       return new Map();
     }
     const issuesBySeverity = features.reduce((acc, feature) => {
-      // Only process Malicious and Warning types
       if (feature.type !== 'Malicious' && feature.type !== 'Warning') {
         return acc;
       }
 
       const severity = BLOCKAID_SEVERITY_MAP[feature.type];
       if (!acc.has(severity)) {
-        acc.set(severity, []);
+        acc.set(severity, [feature.description]);
+      } else {
+        acc.get(severity)!.push(feature.description);
       }
-      acc.get(severity)!.push(feature.description);
       return acc;
     }, new Map<keyof typeof Severity, Array<string>>());
 
@@ -246,8 +253,8 @@ export class ThreatAnalysisService {
         type,
         title,
         description,
-        before: before!,
-        after: after!,
+        before: before ?? '',
+        after: after ?? '',
       };
     }
 
@@ -266,9 +273,9 @@ export class ThreatAnalysisService {
   private prepareMessage(args: {
     chainId: string;
     safeAddress: Address;
-    requestData: ThreatAnalysisRequestBody;
+    data: Omit<ThreatAnalysisRequestBody, 'walletAddress'>;
   }): string {
-    const { chainId, safeAddress, requestData } = args;
+    const { chainId, safeAddress, data } = args;
     /* TODO it seems we never provide EIP-712 typed data */
     // if (isEIP712TypedData(data)) {
     //   const normalizedMsg = normalizeTypedData(data);
@@ -278,11 +285,11 @@ export class ThreatAnalysisService {
     return JSON.stringify(
       generateTypedData({
         safeAddress,
-        safeVersion: '1.3.0',
+        safeVersion: SAFE_VERSION,
         chainId: BigInt(chainId),
         data: {
-          ...requestData,
-          nonce: Number(requestData.nonce),
+          ...data,
+          nonce: Number(data.nonce),
         },
       }),
     );

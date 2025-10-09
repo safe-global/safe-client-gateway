@@ -26,39 +26,41 @@ describe('BlockaidApi', () => {
   describe('scanTransaction', () => {
     const chainId = faker.string.numeric();
     const safeAddress = faker.finance.ethereumAddress() as Address;
+    const walletAddress = faker.finance.ethereumAddress() as Address;
+    const message = JSON.stringify({
+      domain: {
+        chainId: 1,
+        name: 'Test Token',
+        version: '1',
+        verifyingContract: faker.finance.ethereumAddress(),
+      },
+      message: {
+        owner: safeAddress,
+        spender: faker.finance.ethereumAddress(),
+        value: '1000000000000000000',
+        nonce: '0',
+        deadline: '1988064000',
+      },
+      primaryType: 'Permit',
+      types: {
+        EIP712Domain: [
+          { name: 'name', type: 'string' },
+          { name: 'version', type: 'string' },
+          { name: 'chainId', type: 'uint256' },
+          { name: 'verifyingContract', type: 'address' },
+        ],
+        Permit: [
+          { name: 'owner', type: 'address' },
+          { name: 'spender', type: 'address' },
+          { name: 'value', type: 'uint256' },
+          { name: 'nonce', type: 'uint256' },
+          { name: 'deadline', type: 'uint256' },
+        ],
+      },
+    });
 
     it('should call blockaid client with correct parameters', async () => {
-      const message = JSON.stringify({
-        domain: {
-          chainId: 1,
-          name: 'Test Token',
-          version: '1',
-          verifyingContract: faker.finance.ethereumAddress(),
-        },
-        message: {
-          owner: safeAddress,
-          spender: faker.finance.ethereumAddress(),
-          value: '1000000000000000000',
-          nonce: '0',
-          deadline: '1988064000',
-        },
-        primaryType: 'Permit',
-        types: {
-          EIP712Domain: [
-            { name: 'name', type: 'string' },
-            { name: 'version', type: 'string' },
-            { name: 'chainId', type: 'uint256' },
-            { name: 'verifyingContract', type: 'address' },
-          ],
-          Permit: [
-            { name: 'owner', type: 'address' },
-            { name: 'spender', type: 'address' },
-            { name: 'value', type: 'uint256' },
-            { name: 'nonce', type: 'uint256' },
-            { name: 'deadline', type: 'uint256' },
-          ],
-        },
-      });
+      const origin = faker.internet.url();
 
       const mockScanResponse: TransactionScanResponse = {
         block: faker.string.numeric(),
@@ -72,6 +74,39 @@ describe('BlockaidApi', () => {
       const result = await service.scanTransaction(
         chainId,
         safeAddress,
+        walletAddress,
+        message,
+        origin,
+      );
+
+      expect(mockBlockaidClient.evm.jsonRpc.scan).toHaveBeenCalledWith({
+        chain: `0x${chainId}`,
+        data: {
+          method: 'eth_signTypedData_v4',
+          params: [safeAddress, message],
+        },
+        options: ['simulation', 'validation'],
+        metadata: { domain: origin },
+        account_address: walletAddress,
+      });
+
+      expect(result).toEqual(mockScanResponse);
+    });
+
+    it('should call blockaid client without domain parameter', async () => {
+      const mockScanResponse: TransactionScanResponse = {
+        block: faker.string.numeric(),
+        chain: `0x${chainId}`,
+        request_id: faker.string.uuid(),
+        status: 'Success',
+      } as TransactionScanResponse;
+
+      mockBlockaidClient.evm.jsonRpc.scan.mockResolvedValue(mockScanResponse);
+
+      const result = await service.scanTransaction(
+        chainId,
+        safeAddress,
+        walletAddress,
         message,
       );
 
@@ -83,19 +118,18 @@ describe('BlockaidApi', () => {
         },
         options: ['simulation', 'validation'],
         metadata: { domain: '' },
+        account_address: walletAddress,
       });
 
       expect(result).toEqual(mockScanResponse);
     });
 
     it('should forward errors from blockaid client', async () => {
-      const message = '{"test":"data"}';
-
       const error = new Error('Blockaid API error');
       mockBlockaidClient.evm.jsonRpc.scan.mockRejectedValue(error);
 
       await expect(
-        service.scanTransaction(chainId, safeAddress, message),
+        service.scanTransaction(chainId, safeAddress, walletAddress, message),
       ).rejects.toThrow('Blockaid API error');
     });
   });
