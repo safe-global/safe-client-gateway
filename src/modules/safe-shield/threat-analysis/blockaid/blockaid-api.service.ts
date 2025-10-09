@@ -16,7 +16,9 @@ export class BlockaidApi implements IBlockaidApi {
   async scanTransaction(
     chainId: string,
     safeAddress: Address,
+    walletAddress: Address,
     message: string,
+    origin?: string,
   ): Promise<TransactionScanResponse> {
     const chain = numberToHex(Number(chainId));
     const params: JsonRpcScanParams = {
@@ -26,7 +28,8 @@ export class BlockaidApi implements IBlockaidApi {
         params: [safeAddress, message],
       },
       options: ['simulation', 'validation'],
-      metadata: { domain: '' },
+      metadata: { domain: origin ?? '' },
+      account_address: walletAddress,
     };
 
     return await this.blockaidClient.evm.jsonRpc.scan(params);

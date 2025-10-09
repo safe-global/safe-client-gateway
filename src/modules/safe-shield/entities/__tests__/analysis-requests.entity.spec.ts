@@ -70,6 +70,17 @@ describe('Analysis Request Schemas', () => {
       ).toThrow();
     });
 
+    it('should reject invalid `walletAddress` address', () => {
+      const invalidAddressRequest = {
+        ...validThreatRequest,
+        walletAddress: 'invalidaddress',
+      };
+
+      expect(() =>
+        ThreatAnalysisRequestBodySchema.parse(invalidAddressRequest),
+      ).toThrow();
+    });
+
     it('should reject invalid `gasToken` address', () => {
       expect(() =>
         ThreatAnalysisRequestSchema.parse({
@@ -119,6 +130,7 @@ describe('Analysis Request Schemas', () => {
       'gasToken',
       'refundReceiver',
       'nonce',
+      'walletAddress',
     ] as const)('should reject missing required field = %s', (field) => {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { [field]: _, ...incompleteRequest } = validThreatRequest;

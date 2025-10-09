@@ -615,7 +615,7 @@ export default () => ({
     },
   },
   safeShield: {
-    threadAnalysis: {
+    threatAnalysis: {
       blockaid: {
         apiKey: process.env.BLOCKAID_CLIENT_API_KEY,
       },
