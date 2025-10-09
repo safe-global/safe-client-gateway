@@ -392,7 +392,7 @@ export default (): ReturnType<typeof configuration> => ({
     },
   },
   safeShield: {
-    threadAnalysis: {
+    threatAnalysis: {
       blockaid: {
         apiKey: faker.string.hexadecimal({ length: 32 }),
       },

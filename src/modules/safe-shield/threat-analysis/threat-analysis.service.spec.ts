@@ -55,8 +55,11 @@ describe('ThreatAnalysisService', () => {
   describe('analyze', () => {
     const chainId = faker.string.numeric();
     const safeAddress = getAddress(faker.finance.ethereumAddress());
+    const walletAddress = getAddress(faker.finance.ethereumAddress());
     const requestData: ThreatAnalysisRequestBody =
-      threatAnalysisRequestBodyBuilder().build();
+      threatAnalysisRequestBodyBuilder()
+        .with('walletAddress', walletAddress)
+        .build();
 
     describe('caching behavior', () => {
       const mockSuccessScanResponse = {
@@ -161,6 +164,7 @@ describe('ThreatAnalysisService', () => {
         expect(mockBlockaidApi.scanTransaction).toHaveBeenCalledWith(
           chainId,
           safeAddress,
+          walletAddress,
           expect.any(String),
         );
 
@@ -626,7 +630,7 @@ describe('ThreatAnalysisService', () => {
       const mockScanResponse = {
         block: faker.string.numeric(),
         chain: 'ethereum',
-        account_address: safeAddress,
+        account_address: walletAddress,
         validation: {
           status: 'Success',
           result_type: 'Benign',
@@ -651,12 +655,13 @@ describe('ThreatAnalysisService', () => {
       expect(mockBlockaidApi.scanTransaction).toHaveBeenCalledWith(
         chainId,
         safeAddress,
+        walletAddress,
         expect.any(String),
       );
 
       // Get the message argument passed to scanTransaction
       const callArgs = mockBlockaidApi.scanTransaction.mock.calls[0];
-      const messageArg = callArgs[2];
+      const messageArg = callArgs[3];
 
       expect(() => JSON.parse(messageArg)).not.toThrow();
       const parsedMessage = JSON.parse(messageArg);
