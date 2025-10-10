@@ -6,6 +6,7 @@ import { type Address, type Hex } from 'viem';
 import type {
   ContractAnalysisResponse,
   RecipientAnalysisResponse,
+  GroupedAnalysisResults,
 } from './entities/analysis-responses.entity';
 import type { DecodedTransactionData } from '@/modules/safe-shield/entities/transaction-data.entity';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
@@ -13,6 +14,7 @@ import { mapDecodedTransactions } from './utils/transaction-mapping.utils';
 import { TransactionsService } from '@/routes/transactions/transactions.service';
 import { Operation } from '@/domain/safe/entities/operation.entity';
 import type { TransactionInfo } from '@/routes/transactions/entities/transaction-info.entity';
+import type { RecipientAnalysisResult } from './entities/analysis-result.entity';
 
 /**
  * Main orchestration service for Safe Shield transaction analysis.
@@ -45,7 +47,7 @@ export class SafeShieldService {
    * @param args.tx.operation - The transaction operation (optional)
    * @returns Map of recipient addresses to their analysis results
    */
-  async analyzeRecipient({
+  async analyzeRecipients({
     chainId,
     safeAddress,
     tx,
@@ -75,6 +77,36 @@ export class SafeShieldService {
     }
 
     return {};
+  }
+
+  /**
+   * Analyzes a single recipient address.
+   *
+   * @param args - Analysis parameters
+   * @param args.chainId - The chain ID
+   * @param args.safeAddress - The Safe address
+   * @param args.recipientAddress - The recipient address to analyze
+   * @returns Analysis result for group RECIPIENT_INTERACTION
+   */
+  async analyzeRecipient({
+    chainId,
+    safeAddress,
+    recipientAddress,
+  }: {
+    chainId: string;
+    safeAddress: Address;
+    recipientAddress: Address;
+  }): Promise<GroupedAnalysisResults<RecipientAnalysisResult>> {
+    const interactionResult =
+      await this.recipientAnalysisService.analyzeInteractions({
+        chainId,
+        safeAddress,
+        recipient: recipientAddress,
+      });
+
+    return {
+      RECIPIENT_INTERACTION: [interactionResult],
+    };
   }
 
   /**

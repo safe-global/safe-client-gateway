@@ -1,11 +1,11 @@
-import { SafeShieldService } from '../safe-shield.service';
-import type { RecipientAnalysisService } from '../recipient-analysis/recipient-analysis.service';
-import type { ContractAnalysisService } from '../contract-analysis/contract-analysis.service';
-import type { ThreatAnalysisService } from '../threat-analysis/threat-analysis.service';
+import { SafeShieldService } from './safe-shield.service';
+import type { RecipientAnalysisService } from './recipient-analysis/recipient-analysis.service';
+import type { ContractAnalysisService } from './contract-analysis/contract-analysis.service';
+import type { ThreatAnalysisService } from './threat-analysis/threat-analysis.service';
 import type { ILoggingService } from '@/logging/logging.interface';
 import type { DataDecoded } from '@/routes/data-decode/entities/data-decoded.entity';
 import type { DecodedTransactionData } from '@/modules/safe-shield/entities/transaction-data.entity';
-import type { RecipientAnalysisResponse } from '../entities/analysis-responses.entity';
+import type { RecipientAnalysisResponse } from './entities/analysis-responses.entity';
 import type { TransactionsService } from '@/routes/transactions/transactions.service';
 import type { TransactionPreview } from '@/routes/transactions/entities/transaction-preview.entity';
 import {
@@ -18,11 +18,11 @@ import { TransactionData } from '@/routes/transactions/entities/transaction-data
 import { AddressInfo } from '@/routes/common/entities/address-info.entity';
 import { faker } from '@faker-js/faker';
 import { getAddress, type Hex } from 'viem';
-import { recipientAnalysisResponseBuilder } from '../entities/__tests__/builders/analysis-responses.builder';
+import { recipientAnalysisResponseBuilder } from './entities/__tests__/builders/analysis-responses.builder';
 import { dataDecodedBuilder } from '@/domain/data-decoder/v2/entities/__tests__/data-decoded.builder';
 import { recipientAnalysisResultBuilder } from '@/modules/safe-shield/entities/__tests__/builders/analysis-result.builder';
 import { Operation } from '@/domain/safe/entities/operation.entity';
-import * as utils from '../utils/transaction-mapping.utils';
+import * as utils from './utils/transaction-mapping.utils';
 
 // Utility function for generating Wei values
 const generateRandomWeiAmount = (): bigint =>
@@ -96,6 +96,7 @@ describe('SafeShieldService', () => {
 
   const mockRecipientAnalysisService = {
     analyze: jest.fn(),
+    analyzeInteractions: jest.fn(),
   } as jest.MockedObjectDeep<RecipientAnalysisService>;
   const mockContractAnalysisService =
     {} as jest.MockedObjectDeep<ContractAnalysisService>;
@@ -157,7 +158,7 @@ describe('SafeShieldService', () => {
     .with('accuracy', 'FULL_MATCH')
     .build();
 
-  describe('analyzeRecipient', () => {
+  describe('analyzeRecipients', () => {
     it('should analyze recipient for a simple transaction', async () => {
       const mockTxInfo = createTransferTransactionInfo(
         mockSafeAddress,
@@ -187,7 +188,7 @@ describe('SafeShieldService', () => {
         mockRecipientAnalysisResponse,
       );
 
-      const result = await service.analyzeRecipient({
+      const result = await service.analyzeRecipients({
         chainId: mockChainId,
         safeAddress: mockSafeAddress,
         tx: {
@@ -268,7 +269,7 @@ describe('SafeShieldService', () => {
         mockRecipientAnalysisResponse,
       );
 
-      const result = await service.analyzeRecipient({
+      const result = await service.analyzeRecipients({
         chainId: mockChainId,
         safeAddress: mockSafeAddress,
         tx: {
@@ -311,7 +312,7 @@ describe('SafeShieldService', () => {
         new Error('Failed to decode transaction'),
       );
 
-      const result = await service.analyzeRecipient({
+      const result = await service.analyzeRecipients({
         chainId: mockChainId,
         safeAddress: mockSafeAddress,
         tx: {
@@ -361,7 +362,7 @@ describe('SafeShieldService', () => {
           mockRecipientAnalysisResponse,
         );
 
-        const result = await service.analyzeRecipient({
+        const result = await service.analyzeRecipients({
           chainId: mockChainId,
           safeAddress: mockSafeAddress,
           tx: {
@@ -406,7 +407,7 @@ describe('SafeShieldService', () => {
       mockRecipientAnalysisService.analyze.mockRejectedValue(error);
 
       await expect(
-        service.analyzeRecipient({
+        service.analyzeRecipients({
           chainId: mockChainId,
           safeAddress: mockSafeAddress,
           tx: {
@@ -469,7 +470,7 @@ describe('SafeShieldService', () => {
           mockRecipientAnalysisResponse,
         );
 
-        const result = await service.analyzeRecipient({
+        const result = await service.analyzeRecipients({
           chainId: mockChainId,
           safeAddress: mockSafeAddress,
           tx: {
@@ -508,5 +509,54 @@ describe('SafeShieldService', () => {
         });
       },
     );
+  });
+
+  describe('analyzeRecipient', () => {
+    it('should analyze a single recipient address', async () => {
+      const mockInteractionResult = recipientAnalysisResultBuilder().build();
+
+      mockRecipientAnalysisService.analyzeInteractions.mockResolvedValue(
+        mockInteractionResult,
+      );
+
+      const result = await service.analyzeRecipient({
+        chainId: mockChainId,
+        safeAddress: mockSafeAddress,
+        recipientAddress: mockRecipientAddress,
+      });
+
+      expect(result).toEqual({
+        RECIPIENT_INTERACTION: [mockInteractionResult],
+      });
+      expect(
+        mockRecipientAnalysisService.analyzeInteractions,
+      ).toHaveBeenCalledWith({
+        chainId: mockChainId,
+        safeAddress: mockSafeAddress,
+        recipient: mockRecipientAddress,
+      });
+    });
+
+    it('should handle analyzeInteractions failure', async () => {
+      const error = new Error('Failed to analyze interactions');
+
+      mockRecipientAnalysisService.analyzeInteractions.mockRejectedValue(error);
+
+      await expect(
+        service.analyzeRecipient({
+          chainId: mockChainId,
+          safeAddress: mockSafeAddress,
+          recipientAddress: mockRecipientAddress,
+        }),
+      ).rejects.toThrow('Failed to analyze interactions');
+
+      expect(
+        mockRecipientAnalysisService.analyzeInteractions,
+      ).toHaveBeenCalledWith({
+        chainId: mockChainId,
+        safeAddress: mockSafeAddress,
+        recipient: mockRecipientAddress,
+      });
+    });
   });
 });
