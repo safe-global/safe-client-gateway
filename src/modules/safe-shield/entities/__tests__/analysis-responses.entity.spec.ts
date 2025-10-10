@@ -147,12 +147,16 @@ describe('Analysis Response Schemas', () => {
     });
 
     describe('ThreatAnalysisResponseSchema', () => {
-      it('should validate threat analysis response', () => {
+      it('should validate correct threat analysis response', () => {
         const validThreatResponse = threatAnalysisResponseBuilder().build();
 
         expect(() =>
           ThreatAnalysisResponseSchema.parse(validThreatResponse),
         ).not.toThrow();
+
+        const parsed = ThreatAnalysisResponseSchema.parse(validThreatResponse);
+        expect(parsed).toHaveProperty('THREAT');
+        expect(parsed).toHaveProperty('BALANCE_CHANGE');
       });
 
       it('should validate all threat status responses', () => {
@@ -167,13 +171,44 @@ describe('Analysis Response Schemas', () => {
         });
       });
 
-      it('should reject invalid threat status', () => {
-        const invalidThreatResponse = threatAnalysisResponseBuilder()
-          .with('type', 'INVALID_THREAT' as ThreatStatus)
+      it('should validate empty THREAT and BALANCE_CHANGE arrays', () => {
+        const emptyResponse = threatAnalysisResponseBuilder()
+          .with('THREAT', [])
+          .with('BALANCE_CHANGE', [])
           .build();
 
         expect(() =>
-          ThreatAnalysisResponseSchema.parse(invalidThreatResponse),
+          ThreatAnalysisResponseSchema.parse(emptyResponse),
+        ).not.toThrow();
+      });
+
+      it('should validate response with balance changes', () => {
+        const responseWithBalanceChanges = threatAnalysisResponseBuilder()
+          .with('BALANCE_CHANGE', [
+            {
+              asset: {
+                type: 'ERC20',
+                symbol: 'USDC',
+                address: faker.finance.ethereumAddress() as `0x${string}`,
+              },
+              in: [{ value: faker.finance.amount() }],
+              out: [],
+            },
+          ])
+          .build();
+
+        expect(() =>
+          ThreatAnalysisResponseSchema.parse(responseWithBalanceChanges),
+        ).not.toThrow();
+      });
+
+      it('should reject invalid status group', () => {
+        const invalidResponse = {
+          INVALID_GROUP: [],
+        };
+
+        expect(() =>
+          ThreatAnalysisResponseSchema.parse(invalidResponse),
         ).toThrow();
       });
     });

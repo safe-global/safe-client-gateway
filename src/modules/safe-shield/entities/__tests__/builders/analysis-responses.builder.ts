@@ -50,14 +50,22 @@ export function contractAnalysisResponseBuilder(): IBuilder<ContractAnalysisResp
 export function threatAnalysisResponseBuilder(
   type?: ThreatStatus,
 ): IBuilder<ThreatAnalysisResponse> {
+  let threatResult;
   if (type === 'MASTER_COPY_CHANGE') {
-    return masterCopyChangeThreatBuilder();
+    threatResult = masterCopyChangeThreatBuilder().build();
   } else if (type === 'MALICIOUS' || type === 'MODERATE') {
-    return maliciousOrModerateThreatBuilder().with('type', type);
+    threatResult = maliciousOrModerateThreatBuilder()
+      .with('type', type)
+      .build();
   } else if (type) {
-    return threatAnalysisResultBuilder().with('type', type);
+    threatResult = threatAnalysisResultBuilder().with('type', type).build();
+  } else {
+    threatResult = threatAnalysisResultBuilder().build();
   }
-  return threatAnalysisResultBuilder();
+
+  return new Builder<ThreatAnalysisResponse>()
+    .with('THREAT', [threatResult])
+    .with('BALANCE_CHANGE', []);
 }
 
 /**
