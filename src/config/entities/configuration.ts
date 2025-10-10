@@ -150,6 +150,36 @@ export default () => ({
       },
     },
   },
+  portfolio: {
+    providers: {
+      zerion: {
+        apiKey: process.env.ZERION_API_KEY,
+        baseUri: process.env.ZERION_BASE_URI || 'https://api.zerion.io',
+        currencies: [
+          'usd',
+          'eur',
+          'eth',
+          'aud',
+          'btc',
+          'cad',
+          'chf',
+          'cny',
+          'gbp',
+          'inr',
+          'jpy',
+          'krw',
+          'nzd',
+          'rub',
+          'try',
+          'zar',
+        ],
+      },
+      zapper: {
+        apiKey: process.env.ZAPPER_API_KEY,
+        baseUri: process.env.ZAPPER_BASE_URI || 'https://api.zapper.xyz',
+      },
+    },
+  },
   blockchain: {
     blocklist: getBlocklist(),
     infura: {

@@ -74,6 +74,7 @@ export class CacheRouter {
   private static readonly ZERION_BALANCES_KEY = 'zerion_balances';
   private static readonly ZERION_COLLECTIBLES_KEY = 'zerion_collectibles';
   private static readonly ZERION_POSITIONS_KEY = 'zerion_positions';
+  private static readonly PORTFOLIO_KEY = 'portfolio';
   private static readonly ORM_QUERY_CACHE_KEY = 'orm_query_cache';
   private static readonly TRANSACTIONS_EXPORT_KEY = 'transactions_export';
   private static readonly CONTRACT_ANALYSIS_KEY = 'contract_analysis';
@@ -906,6 +907,25 @@ export class CacheRouter {
     return new CacheDir(
       `${args.chainId}_${CacheRouter.RECIPIENT_ANALYSIS_KEY}`,
       recipientsHash.digest('hex'),
+    );
+  }
+
+  static getPortfolioCacheKey(args: {
+    address: Address;
+    provider?: string;
+  }): string {
+    const provider = args.provider || 'zerion';
+    return `${CacheRouter.PORTFOLIO_KEY}_${args.address}_${provider}`;
+  }
+
+  static getPortfolioCacheDir(args: {
+    address: Address;
+    fiatCode: string;
+    provider?: string;
+  }): CacheDir {
+    return new CacheDir(
+      CacheRouter.getPortfolioCacheKey(args),
+      args.fiatCode,
     );
   }
 }

@@ -57,6 +57,7 @@ function createRequestFunction(requestTimeout: number) {
         ...options,
         signal: AbortSignal.timeout(requestTimeout),
         keepalive: true,
+        redirect: 'follow', // Follow HTTP redirects (301, 302, 307, 308)
       });
     } catch (error) {
       throw new NetworkRequestError(urlObject, error);
