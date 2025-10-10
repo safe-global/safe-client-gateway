@@ -161,7 +161,7 @@ export class SafeShieldService {
    * @param args.chainId - The chain ID
    * @param args.safeAddress - The Safe address
    * @param args.txRequest - The transaction data
-   * @returns Array of threat analysis results
+   * @returns A threat analysis response
    */
   async analyzeThreats({
     chainId,
@@ -171,7 +171,7 @@ export class SafeShieldService {
     chainId: string;
     safeAddress: Address;
     txRequest: ThreatAnalysisRequestBody;
-  }): Promise<Array<ThreatAnalysisResponse>> {
+  }): Promise<ThreatAnalysisResponse> {
     return this.threatAnalysisService.analyze({
       chainId,
       safeAddress,

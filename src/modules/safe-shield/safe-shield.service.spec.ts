@@ -23,7 +23,12 @@ import {
   threatAnalysisResponseBuilder,
 } from './entities/__tests__/builders/analysis-responses.builder';
 import { dataDecodedBuilder } from '@/domain/data-decoder/v2/entities/__tests__/data-decoded.builder';
-import { recipientAnalysisResultBuilder } from '@/modules/safe-shield/entities/__tests__/builders/analysis-result.builder';
+import {
+  recipientAnalysisResultBuilder,
+  maliciousOrModerateThreatBuilder,
+  masterCopyChangeThreatBuilder,
+  threatAnalysisResultBuilder,
+} from '@/modules/safe-shield/entities/__tests__/builders/analysis-result.builder';
 import { Operation } from '@/domain/safe/entities/operation.entity';
 import * as utils from './utils/transaction-mapping.utils';
 import type { AnalysisResult } from '@/modules/safe-shield/entities/analysis-result.entity';
@@ -583,7 +588,7 @@ describe('SafeShieldService', () => {
     };
 
     it('should analyze threats for a transaction', async () => {
-      const mockThreatResponse = [threatAnalysisResponseBuilder().build()];
+      const mockThreatResponse = threatAnalysisResponseBuilder().build();
 
       mockThreatAnalysisService.analyze.mockResolvedValue(mockThreatResponse);
 
@@ -601,8 +606,30 @@ describe('SafeShieldService', () => {
       });
     });
 
-    it('should return empty array when no threats detected', async () => {
-      mockThreatAnalysisService.analyze.mockResolvedValue([]);
+    it('should handle multiple threat results and balance changes', async () => {
+      const mockMultipleThreatsResponse = {
+        THREAT: [
+          maliciousOrModerateThreatBuilder().with('type', 'MALICIOUS').build(),
+          masterCopyChangeThreatBuilder().build(),
+          threatAnalysisResultBuilder().build(),
+        ],
+        BALANCE_CHANGE: [
+          {
+            asset: {
+              type: 'ERC20' as const,
+              symbol: 'USDC',
+              address: getAddress(faker.finance.ethereumAddress()),
+              logo_url: faker.internet.url(),
+            },
+            in: [{ value: faker.string.numeric(7) }],
+            out: [],
+          },
+        ],
+      };
+
+      mockThreatAnalysisService.analyze.mockResolvedValue(
+        mockMultipleThreatsResponse,
+      );
 
       const result = await service.analyzeThreats({
         chainId: mockChainId,
@@ -610,31 +637,9 @@ describe('SafeShieldService', () => {
         txRequest: mockThreatRequest,
       });
 
-      expect(result).toEqual([]);
-      expect(mockThreatAnalysisService.analyze).toHaveBeenCalledWith({
-        chainId: mockChainId,
-        safeAddress: mockSafeAddress,
-        requestData: mockThreatRequest,
-      });
-    });
-
-    it('should handle multiple threat results', async () => {
-      const mockMultipleThreats = [
-        threatAnalysisResponseBuilder('MALICIOUS').build(),
-        threatAnalysisResponseBuilder('MASTER_COPY_CHANGE').build(),
-        threatAnalysisResponseBuilder().build(),
-      ];
-
-      mockThreatAnalysisService.analyze.mockResolvedValue(mockMultipleThreats);
-
-      const result = await service.analyzeThreats({
-        chainId: mockChainId,
-        safeAddress: mockSafeAddress,
-        txRequest: mockThreatRequest,
-      });
-
-      expect(result).toEqual(mockMultipleThreats);
-      expect(result).toHaveLength(3);
+      expect(result).toEqual(mockMultipleThreatsResponse);
+      expect(result.THREAT).toHaveLength(3);
+      expect(result.BALANCE_CHANGE).toHaveLength(1);
     });
   });
 });

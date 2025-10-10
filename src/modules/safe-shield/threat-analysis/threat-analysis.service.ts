@@ -12,6 +12,10 @@ import {
   Severity,
   compareSeverityString,
 } from '@/modules/safe-shield/entities/severity.entity';
+import {
+  BalanceChanges,
+  BalanceChangesSchema,
+} from '@/modules/safe-shield/entities/threat-analysis.types';
 import { ThreatStatus } from '@/modules/safe-shield/entities/threat-status.entity';
 import { IBlockaidApi } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-api.interface';
 import { BLOCKAID_SEVERITY_MAP } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid.constants';
@@ -59,7 +63,7 @@ export class ThreatAnalysisService {
     chainId: string;
     safeAddress: Address;
     requestData: ThreatAnalysisRequestBody;
-  }): Promise<Array<ThreatAnalysisResponse>> {
+  }): Promise<ThreatAnalysisResponse> {
     const cacheDir = CacheRouter.getThreatAnalysisCacheDir({
       chainId: args.chainId,
       requestData: args.requestData,
@@ -69,7 +73,7 @@ export class ThreatAnalysisService {
     if (cached) {
       logCacheHit(cacheDir, this.loggingService);
       try {
-        return JSON.parse(cached) as Array<ThreatAnalysisResponse>;
+        return JSON.parse(cached) as ThreatAnalysisResponse;
       } catch (error) {
         this.loggingService.warn(
           `Failed to parse cached threat analysis results for ${JSON.stringify(cacheDir)}: ${error}`,
@@ -78,7 +82,7 @@ export class ThreatAnalysisService {
     }
     logCacheMiss(cacheDir, this.loggingService);
 
-    const analysisResults: Array<ThreatAnalysisResponse> =
+    const analysisResults: ThreatAnalysisResponse =
       await this.detectThreats(args);
 
     await this.cacheService.hSet(
@@ -93,7 +97,7 @@ export class ThreatAnalysisService {
     chainId: string;
     safeAddress: Address;
     requestData: ThreatAnalysisRequestBody;
-  }): Promise<Array<ThreatAnalysisResult>> {
+  }): Promise<ThreatAnalysisResponse> {
     const { chainId, safeAddress, requestData } = args;
     const { walletAddress, ...data } = requestData;
     try {
@@ -110,17 +114,38 @@ export class ThreatAnalysisService {
       );
       const { simulation, validation } = response;
 
-      return [
-        this.analyzeValidation(validation),
-        ...this.analyzeSimulation(safeAddress, simulation),
-      ].sort((a, b) => compareSeverityString(b.severity, a.severity));
+      return this.processAnalysisResults(safeAddress, simulation, validation);
     } catch (error) {
       this.loggingService.warn(
         `Error during threat analysis for Safe ${safeAddress} on chain ${chainId}: ${error}`,
       );
 
-      return [this.mapToAnalysisResult({ type: 'FAILED' })];
+      return {
+        THREAT: [this.mapToAnalysisResult({ type: 'FAILED' })],
+        BALANCE_CHANGE: [],
+      };
     }
+  }
+
+  private processAnalysisResults(
+    safeAddress: Address,
+    simulation?: TransactionSimulation | TransactionSimulationError,
+    validation?: TransactionValidation | TransactionValidationError,
+  ): ThreatAnalysisResponse {
+    const { results, balanceChanges } = this.analyzeSimulation(
+      safeAddress,
+      simulation,
+    );
+    const validationResult = this.analyzeValidation(validation);
+
+    const threatResults = [validationResult, ...results].sort((a, b) =>
+      compareSeverityString(b.severity, a.severity),
+    );
+
+    return {
+      THREAT: threatResults,
+      BALANCE_CHANGE: balanceChanges,
+    };
   }
 
   private analyzeValidation(
@@ -152,44 +177,64 @@ export class ThreatAnalysisService {
       issues = this.groupIssuesBySeverity(features);
     }
 
-    return this.mapToAnalysisResult({ type, reason, classification, issues });
+    return this.mapToAnalysisResult({
+      type,
+      reason,
+      classification,
+      issues,
+    });
   }
 
   private analyzeSimulation(
     safeAddress: Address,
     simulation?: TransactionSimulation | TransactionSimulationError,
-  ): Array<ThreatAnalysisResult> {
-    if (!simulation) return [];
+  ): {
+    results: Array<ThreatAnalysisResult>;
+    balanceChanges: BalanceChanges;
+  } {
+    let results: Array<ThreatAnalysisResult> = [];
+    let balanceChanges: BalanceChanges = [];
+
+    if (!simulation) {
+      return { results, balanceChanges };
+    }
 
     if (simulation.status === 'Error') {
-      return [
+      results = [
         this.mapToAnalysisResult({
           type: 'FAILED',
           reason: simulation.description,
         }),
       ];
+      return { results, balanceChanges };
     }
 
-    const items = simulation.contract_management?.[safeAddress] ?? [];
+    balanceChanges = BalanceChangesSchema.parse(
+      simulation.assets_diffs?.[safeAddress] ?? [],
+    );
 
-    return items.flatMap((m) => {
-      switch (m.type) {
-        case 'PROXY_UPGRADE':
-          return [
-            this.mapToAnalysisResult({
-              type: 'MASTER_COPY_CHANGE',
-              before: m.before.address,
-              after: m.after.address,
-            }),
-          ];
-        case 'OWNERSHIP_CHANGE':
-          return [this.mapToAnalysisResult({ type: 'OWNERSHIP_CHANGE' })];
-        case 'MODULE_CHANGE':
-          return [this.mapToAnalysisResult({ type: 'MODULE_CHANGE' })];
-        default:
-          return [];
-      }
-    });
+    results = (simulation.contract_management?.[safeAddress] ?? []).flatMap(
+      (m) => {
+        switch (m.type) {
+          case 'PROXY_UPGRADE':
+            return [
+              this.mapToAnalysisResult({
+                type: 'MASTER_COPY_CHANGE',
+                before: m.before.address,
+                after: m.after.address,
+              }),
+            ];
+          case 'OWNERSHIP_CHANGE':
+            return [this.mapToAnalysisResult({ type: 'OWNERSHIP_CHANGE' })];
+          case 'MODULE_CHANGE':
+            return [this.mapToAnalysisResult({ type: 'MODULE_CHANGE' })];
+          default:
+            return [];
+        }
+      },
+    );
+
+    return { results, balanceChanges };
   }
 
   /**
@@ -247,22 +292,22 @@ export class ThreatAnalysisService {
     const title = TITLE_MAPPING[type];
     const description = DESCRIPTION_MAPPING[type]({ reason, classification });
 
-    if (type === 'MASTER_COPY_CHANGE') {
-      return {
-        severity,
-        type,
-        title,
-        description,
-        before: before ?? '',
-        after: after ?? '',
-      };
+    switch (type) {
+      case 'MASTER_COPY_CHANGE':
+        return {
+          severity,
+          type,
+          title,
+          description,
+          before: before ?? '',
+          after: after ?? '',
+        };
+      case 'MALICIOUS':
+      case 'MODERATE':
+        return { severity, type, title, description, issues };
+      default:
+        return { severity, type, title, description };
     }
-
-    if (type === 'MALICIOUS' || type === 'MODERATE') {
-      return { severity, type, title, description, issues };
-    }
-
-    return { severity, type, title, description };
   }
 
   /**

@@ -118,6 +118,8 @@ export type RecipientAnalysisResult = AnalysisResult<
  */
 export type ContractAnalysisResult = AnalysisResult<ContractStatus>;
 
+//----------------------- Threat Analysis Result Types -------------------------//
+
 export type MasterCopyChangeThreatAnalysisResult =
   AnalysisResult<'MASTER_COPY_CHANGE'> & {
     /** Address of the old master copy/implementation contract */
