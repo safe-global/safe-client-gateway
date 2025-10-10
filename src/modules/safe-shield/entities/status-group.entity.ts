@@ -19,15 +19,21 @@ export const ContractStatusGroup = [
   'DELEGATECALL',
 ] as const;
 
+export const ThreatStatusGroup = [
+  /** Transaction-level threat analysis - malicious patterns and risks */
+  'THREAT',
+
+  /** Balance changes detected in the transaction */
+  'BALANCE_CHANGE',
+] as const;
+
 /**
  * Status groups for categorizing different types of security analysis checks.
  */
 export const StatusGroup = [
   ...RecipientStatusGroup,
   ...ContractStatusGroup,
-
-  /** Transaction-level threat analysis - malicious patterns and risks */
-  'THREAT',
+  ...ThreatStatusGroup,
 ] as const;
 
 /**
@@ -51,6 +57,16 @@ export const RecipientStatusGroupSchema = z.enum(RecipientStatusGroup);
 export const ContractStatusGroupSchema = z.enum(ContractStatusGroup);
 
 /**
+ * Zod schema for validating ThreatStatusGroup enum values.
+ *
+ * @example
+ * ```typescript
+ * const group = ThreatStatusGroupSchema.parse('THREAT');
+ * ```
+ */
+export const ThreatStatusGroupSchema = z.enum(ThreatStatusGroup);
+
+/**
  * Zod schema for validating StatusGroup values.
  *
  * @example
@@ -62,4 +78,5 @@ export const StatusGroupSchema = z.enum(StatusGroup);
 
 export type RecipientStatusGroup = z.infer<typeof RecipientStatusGroupSchema>;
 export type ContractStatusGroup = z.infer<typeof ContractStatusGroupSchema>;
+export type ThreatStatusGroup = z.infer<typeof ThreatStatusGroupSchema>;
 export type StatusGroup = z.infer<typeof StatusGroupSchema>;

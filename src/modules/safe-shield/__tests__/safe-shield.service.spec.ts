@@ -18,9 +18,17 @@ import { TransactionData } from '@/routes/transactions/entities/transaction-data
 import { AddressInfo } from '@/routes/common/entities/address-info.entity';
 import { faker } from '@faker-js/faker';
 import { getAddress, type Hex } from 'viem';
-import { recipientAnalysisResponseBuilder } from '../entities/__tests__/builders/analysis-responses.builder';
+import {
+  recipientAnalysisResponseBuilder,
+  threatAnalysisResponseBuilder,
+} from '../entities/__tests__/builders/analysis-responses.builder';
 import { dataDecodedBuilder } from '@/domain/data-decoder/v2/entities/__tests__/data-decoded.builder';
-import { recipientAnalysisResultBuilder } from '@/modules/safe-shield/entities/__tests__/builders/analysis-result.builder';
+import {
+  recipientAnalysisResultBuilder,
+  maliciousOrModerateThreatBuilder,
+  masterCopyChangeThreatBuilder,
+  threatAnalysisResultBuilder,
+} from '@/modules/safe-shield/entities/__tests__/builders/analysis-result.builder';
 import { Operation } from '@/domain/safe/entities/operation.entity';
 import * as utils from '../utils/transaction-mapping.utils';
 
@@ -99,8 +107,9 @@ describe('SafeShieldService', () => {
   } as jest.MockedObjectDeep<RecipientAnalysisService>;
   const mockContractAnalysisService =
     {} as jest.MockedObjectDeep<ContractAnalysisService>;
-  const mockThreatAnalysisService =
-    {} as jest.MockedObjectDeep<ThreatAnalysisService>;
+  const mockThreatAnalysisService = {
+    analyze: jest.fn(),
+  } as jest.MockedObjectDeep<ThreatAnalysisService>;
   const mockTransactionsService = {
     previewTransaction: jest.fn(),
   } as jest.MockedObjectDeep<TransactionsService>;
@@ -508,5 +517,76 @@ describe('SafeShieldService', () => {
         });
       },
     );
+  });
+
+  describe('analyzeThreats', () => {
+    const mockThreatRequest = {
+      to: mockRecipientAddress,
+      value: '0',
+      data: mockData,
+      operation: 0,
+      safeTxGas: '0',
+      baseGas: '0',
+      gasPrice: '0',
+      gasToken: getAddress(faker.finance.ethereumAddress()),
+      refundReceiver: getAddress(faker.finance.ethereumAddress()),
+      nonce: '0',
+      walletAddress: mockRecipientAddress,
+    };
+
+    it('should analyze threats for a transaction', async () => {
+      const mockThreatResponse = threatAnalysisResponseBuilder().build();
+
+      mockThreatAnalysisService.analyze.mockResolvedValue(mockThreatResponse);
+
+      const result = await service.analyzeThreats({
+        chainId: mockChainId,
+        safeAddress: mockSafeAddress,
+        txRequest: mockThreatRequest,
+      });
+
+      expect(result).toEqual(mockThreatResponse);
+      expect(mockThreatAnalysisService.analyze).toHaveBeenCalledWith({
+        chainId: mockChainId,
+        safeAddress: mockSafeAddress,
+        requestData: mockThreatRequest,
+      });
+    });
+
+    it('should handle multiple threat results and balance changes', async () => {
+      const mockMultipleThreatsResponse = {
+        THREAT: [
+          maliciousOrModerateThreatBuilder().with('type', 'MALICIOUS').build(),
+          masterCopyChangeThreatBuilder().build(),
+          threatAnalysisResultBuilder().build(),
+        ],
+        BALANCE_CHANGE: [
+          {
+            asset: {
+              type: 'ERC20' as const,
+              symbol: 'USDC',
+              address: getAddress(faker.finance.ethereumAddress()),
+              logo_url: faker.internet.url(),
+            },
+            in: [{ value: faker.string.numeric(7) }],
+            out: [],
+          },
+        ],
+      };
+
+      mockThreatAnalysisService.analyze.mockResolvedValue(
+        mockMultipleThreatsResponse,
+      );
+
+      const result = await service.analyzeThreats({
+        chainId: mockChainId,
+        safeAddress: mockSafeAddress,
+        txRequest: mockThreatRequest,
+      });
+
+      expect(result).toEqual(mockMultipleThreatsResponse);
+      expect(result.THREAT).toHaveLength(3);
+      expect(result.BALANCE_CHANGE).toHaveLength(1);
+    });
   });
 });
