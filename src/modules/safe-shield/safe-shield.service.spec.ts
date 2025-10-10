@@ -158,7 +158,7 @@ describe('SafeShieldService', () => {
     .with('accuracy', 'FULL_MATCH')
     .build();
 
-  describe('analyzeRecipient', () => {
+  describe('analyzeRecipients', () => {
     it('should analyze recipient for a simple transaction', async () => {
       const mockTxInfo = createTransferTransactionInfo(
         mockSafeAddress,
