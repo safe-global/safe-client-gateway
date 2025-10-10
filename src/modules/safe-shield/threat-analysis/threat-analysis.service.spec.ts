@@ -77,9 +77,8 @@ describe('ThreatAnalysisService', () => {
       } as unknown as TransactionScanResponse;
 
       it('should return cached analysis when available', async () => {
-        const cachedResponse = [
-          threatAnalysisResponseBuilder('NO_THREAT').build(),
-        ];
+        const cachedResponse =
+          threatAnalysisResponseBuilder('NO_THREAT').build();
         const cacheDir = CacheRouter.getThreatAnalysisCacheDir({
           chainId,
           requestData,
@@ -119,14 +118,17 @@ describe('ThreatAnalysisService', () => {
         });
 
         expect(result).toBeDefined();
-        expect(result).toEqual([
-          {
-            severity: SEVERITY_MAPPING.NO_THREAT,
-            type: 'NO_THREAT',
-            title: TITLE_MAPPING.NO_THREAT,
-            description: DESCRIPTION_MAPPING.NO_THREAT(),
-          },
-        ]);
+        expect(result).toEqual({
+          THREAT: [
+            {
+              severity: SEVERITY_MAPPING.NO_THREAT,
+              type: 'NO_THREAT',
+              title: TITLE_MAPPING.NO_THREAT,
+              description: DESCRIPTION_MAPPING.NO_THREAT(),
+            },
+          ],
+          BALANCE_CHANGE: [],
+        });
         expect(mockBlockaidApi.scanTransaction).toHaveBeenCalled();
 
         expect(mockLoggingService.warn).toHaveBeenCalledWith(
@@ -142,14 +144,17 @@ describe('ThreatAnalysisService', () => {
       });
 
       it('should analyze threats and cache result when cache miss', async () => {
-        const expectedResponse = [
-          {
-            severity: SEVERITY_MAPPING.NO_THREAT,
-            type: 'NO_THREAT',
-            title: TITLE_MAPPING.NO_THREAT,
-            description: DESCRIPTION_MAPPING.NO_THREAT(),
-          },
-        ];
+        const expectedResponse = {
+          THREAT: [
+            {
+              severity: SEVERITY_MAPPING.NO_THREAT,
+              type: 'NO_THREAT',
+              title: TITLE_MAPPING.NO_THREAT,
+              description: DESCRIPTION_MAPPING.NO_THREAT(),
+            },
+          ],
+          BALANCE_CHANGE: [],
+        };
         mockBlockaidApi.scanTransaction.mockResolvedValue(
           mockSuccessScanResponse,
         );
@@ -203,14 +208,17 @@ describe('ThreatAnalysisService', () => {
         });
 
         expect(result).toBeDefined();
-        expect(result).toEqual([
-          {
-            severity: SEVERITY_MAPPING.FAILED,
-            type: 'FAILED',
-            title: TITLE_MAPPING.FAILED,
-            description: DESCRIPTION_MAPPING.FAILED(),
-          },
-        ]);
+        expect(result).toEqual({
+          THREAT: [
+            {
+              severity: SEVERITY_MAPPING.FAILED,
+              type: 'FAILED',
+              title: TITLE_MAPPING.FAILED,
+              description: DESCRIPTION_MAPPING.FAILED(),
+            },
+          ],
+          BALANCE_CHANGE: [],
+        });
       });
 
       it('should handle validation result_type Error as FAILED', async () => {
@@ -241,23 +249,29 @@ describe('ThreatAnalysisService', () => {
         });
 
         expect(result).toBeDefined();
-        expect(result).toEqual([
-          {
-            severity: SEVERITY_MAPPING.FAILED,
-            type: 'FAILED',
-            title: TITLE_MAPPING.FAILED,
-            description: DESCRIPTION_MAPPING.FAILED(),
-          },
-        ]);
+        expect(result).toEqual({
+          THREAT: [
+            {
+              severity: SEVERITY_MAPPING.FAILED,
+              type: 'FAILED',
+              title: TITLE_MAPPING.FAILED,
+              description: DESCRIPTION_MAPPING.FAILED(),
+            },
+          ],
+          BALANCE_CHANGE: [],
+        });
       });
 
       it('should handle validation result_type Malicious without features', async () => {
+        const classification = faker.lorem.words(2);
+        const reason = faker.lorem.words(2);
+
         const mockScanResponse = {
           validation: {
             status: 'Success',
             result_type: 'Malicious',
-            classification: 'known_malicious',
-            reason: 'permit_farming',
+            classification,
+            reason,
             description: faker.lorem.sentence(),
             features: [],
           },
@@ -275,21 +289,27 @@ describe('ThreatAnalysisService', () => {
         });
 
         expect(result).toBeDefined();
-        expect(result).toEqual([
-          {
-            severity: SEVERITY_MAPPING.MALICIOUS,
-            type: 'MALICIOUS',
-            title: TITLE_MAPPING.MALICIOUS,
-            description: DESCRIPTION_MAPPING.MALICIOUS({
-              classification: 'known_malicious',
-              reason: 'permit_farming',
-            }),
-            issues: new Map(),
-          },
-        ]);
+        expect(result).toEqual({
+          THREAT: [
+            {
+              severity: SEVERITY_MAPPING.MALICIOUS,
+              type: 'MALICIOUS',
+              title: TITLE_MAPPING.MALICIOUS,
+              description: DESCRIPTION_MAPPING.MALICIOUS({
+                classification,
+                reason,
+              }),
+              issues: new Map(),
+            },
+          ],
+          BALANCE_CHANGE: [],
+        });
       });
 
       it('should handle validation result_type Warning with features', async () => {
+        const classification = faker.lorem.words(2);
+        const reason = faker.lorem.words(2);
+
         const features = [
           {
             description: faker.lorem.sentence(),
@@ -317,8 +337,8 @@ describe('ThreatAnalysisService', () => {
           validation: {
             status: 'Success',
             result_type: 'Warning',
-            classification: 'losing_assets',
-            reason: 'user_mistake',
+            classification,
+            reason,
             description: faker.lorem.sentence(),
             features: features,
           },
@@ -336,21 +356,24 @@ describe('ThreatAnalysisService', () => {
         });
 
         expect(result).toBeDefined();
-        expect(result).toEqual([
-          {
-            severity: SEVERITY_MAPPING.MODERATE,
-            type: 'MODERATE',
-            title: TITLE_MAPPING.MODERATE,
-            description: DESCRIPTION_MAPPING.MODERATE({
-              classification: 'losing_assets',
-              reason: 'user_mistake',
-            }),
-            issues: new Map([
-              ['CRITICAL', [features[2].description]],
-              ['WARN', [features[0].description]],
-            ]),
-          },
-        ]);
+        expect(result).toEqual({
+          THREAT: [
+            {
+              severity: SEVERITY_MAPPING.MODERATE,
+              type: 'MODERATE',
+              title: TITLE_MAPPING.MODERATE,
+              description: DESCRIPTION_MAPPING.MODERATE({
+                classification,
+                reason,
+              }),
+              issues: new Map([
+                ['CRITICAL', [features[2].description]],
+                ['WARN', [features[0].description]],
+              ]),
+            },
+          ],
+          BALANCE_CHANGE: [],
+        });
       });
     });
 
@@ -379,14 +402,17 @@ describe('ThreatAnalysisService', () => {
         });
 
         expect(result).toBeDefined();
-        expect(result).toEqual([
-          {
-            severity: SEVERITY_MAPPING.NO_THREAT,
-            type: 'NO_THREAT',
-            title: TITLE_MAPPING.NO_THREAT,
-            description: DESCRIPTION_MAPPING.NO_THREAT(),
-          },
-        ]);
+        expect(result).toEqual({
+          THREAT: [
+            {
+              severity: SEVERITY_MAPPING.NO_THREAT,
+              type: 'NO_THREAT',
+              title: TITLE_MAPPING.NO_THREAT,
+              description: DESCRIPTION_MAPPING.NO_THREAT(),
+            },
+          ],
+          BALANCE_CHANGE: [],
+        });
       });
 
       it('should handle simulation with Error status as FAILED', async () => {
@@ -418,24 +444,25 @@ describe('ThreatAnalysisService', () => {
         });
 
         expect(result).toBeDefined();
-        expect(result.length).toBe(2);
-
-        expect(result).toEqual([
-          {
-            severity: SEVERITY_MAPPING.FAILED,
-            type: 'FAILED',
-            title: TITLE_MAPPING.FAILED,
-            description: DESCRIPTION_MAPPING.FAILED({
-              reason: 'Simulation could not be completed',
-            }),
-          },
-          {
-            severity: SEVERITY_MAPPING.NO_THREAT,
-            type: 'NO_THREAT',
-            title: TITLE_MAPPING.NO_THREAT,
-            description: DESCRIPTION_MAPPING.NO_THREAT(),
-          },
-        ]);
+        expect(result).toEqual({
+          THREAT: [
+            {
+              severity: SEVERITY_MAPPING.FAILED,
+              type: 'FAILED',
+              title: TITLE_MAPPING.FAILED,
+              description: DESCRIPTION_MAPPING.FAILED({
+                reason: 'Simulation could not be completed',
+              }),
+            },
+            {
+              severity: SEVERITY_MAPPING.NO_THREAT,
+              type: 'NO_THREAT',
+              title: TITLE_MAPPING.NO_THREAT,
+              description: DESCRIPTION_MAPPING.NO_THREAT(),
+            },
+          ],
+          BALANCE_CHANGE: [],
+        });
       });
 
       it('should handle simulation with PROXY_UPGRADE', async () => {
@@ -455,6 +482,7 @@ describe('ThreatAnalysisService', () => {
           },
           simulation: {
             status: 'Success',
+            assets_diffs: [],
             contract_management: {
               [safeAddress]: [
                 {
@@ -480,24 +508,25 @@ describe('ThreatAnalysisService', () => {
         });
 
         expect(result).toBeDefined();
-        expect(result.length).toBe(2);
-
-        expect(result).toEqual([
-          {
-            severity: SEVERITY_MAPPING.MASTER_COPY_CHANGE,
-            type: 'MASTER_COPY_CHANGE',
-            title: TITLE_MAPPING.MASTER_COPY_CHANGE,
-            description: DESCRIPTION_MAPPING.MASTER_COPY_CHANGE(),
-            before: oldMasterCopy,
-            after: newMasterCopy,
-          },
-          {
-            severity: SEVERITY_MAPPING.NO_THREAT,
-            type: 'NO_THREAT',
-            title: TITLE_MAPPING.NO_THREAT,
-            description: DESCRIPTION_MAPPING.NO_THREAT(),
-          },
-        ]);
+        expect(result).toEqual({
+          THREAT: [
+            {
+              severity: SEVERITY_MAPPING.MASTER_COPY_CHANGE,
+              type: 'MASTER_COPY_CHANGE',
+              title: TITLE_MAPPING.MASTER_COPY_CHANGE,
+              description: DESCRIPTION_MAPPING.MASTER_COPY_CHANGE(),
+              before: oldMasterCopy,
+              after: newMasterCopy,
+            },
+            {
+              severity: SEVERITY_MAPPING.NO_THREAT,
+              type: 'NO_THREAT',
+              title: TITLE_MAPPING.NO_THREAT,
+              description: DESCRIPTION_MAPPING.NO_THREAT(),
+            },
+          ],
+          BALANCE_CHANGE: [],
+        });
       });
 
       it('should handle simulation with OWNERSHIP_CHANGE', async () => {
@@ -515,6 +544,7 @@ describe('ThreatAnalysisService', () => {
           },
           simulation: {
             status: 'Success',
+            assets_diffs: [],
             contract_management: {
               [safeAddress]: [
                 {
@@ -534,22 +564,23 @@ describe('ThreatAnalysisService', () => {
         });
 
         expect(result).toBeDefined();
-        expect(result.length).toBe(2);
-
-        expect(result).toEqual([
-          {
-            severity: SEVERITY_MAPPING.OWNERSHIP_CHANGE,
-            type: 'OWNERSHIP_CHANGE',
-            title: TITLE_MAPPING.OWNERSHIP_CHANGE,
-            description: DESCRIPTION_MAPPING.OWNERSHIP_CHANGE(),
-          },
-          {
-            severity: SEVERITY_MAPPING.NO_THREAT,
-            type: 'NO_THREAT',
-            title: TITLE_MAPPING.NO_THREAT,
-            description: DESCRIPTION_MAPPING.NO_THREAT(),
-          },
-        ]);
+        expect(result).toEqual({
+          THREAT: [
+            {
+              severity: SEVERITY_MAPPING.OWNERSHIP_CHANGE,
+              type: 'OWNERSHIP_CHANGE',
+              title: TITLE_MAPPING.OWNERSHIP_CHANGE,
+              description: DESCRIPTION_MAPPING.OWNERSHIP_CHANGE(),
+            },
+            {
+              severity: SEVERITY_MAPPING.NO_THREAT,
+              type: 'NO_THREAT',
+              title: TITLE_MAPPING.NO_THREAT,
+              description: DESCRIPTION_MAPPING.NO_THREAT(),
+            },
+          ],
+          BALANCE_CHANGE: [],
+        });
       });
 
       it('should handle simulation with MODULE_CHANGE', async () => {
@@ -586,22 +617,112 @@ describe('ThreatAnalysisService', () => {
         });
 
         expect(result).toBeDefined();
-        expect(result.length).toBe(2);
+        expect(result).toEqual({
+          THREAT: [
+            {
+              severity: SEVERITY_MAPPING.MODULE_CHANGE,
+              type: 'MODULE_CHANGE',
+              title: TITLE_MAPPING.MODULE_CHANGE,
+              description: DESCRIPTION_MAPPING.MODULE_CHANGE(),
+            },
+            {
+              severity: SEVERITY_MAPPING.NO_THREAT,
+              type: 'NO_THREAT',
+              title: TITLE_MAPPING.NO_THREAT,
+              description: DESCRIPTION_MAPPING.NO_THREAT(),
+            },
+          ],
+          BALANCE_CHANGE: [],
+        });
+      });
 
-        expect(result).toEqual([
-          {
-            severity: SEVERITY_MAPPING.MODULE_CHANGE,
-            type: 'MODULE_CHANGE',
-            title: TITLE_MAPPING.MODULE_CHANGE,
-            description: DESCRIPTION_MAPPING.MODULE_CHANGE(),
+      it('should populate balance changes from simulation', async () => {
+        const mockErc20Address = getAddress(faker.finance.ethereumAddress());
+        const mockNativeAddress = getAddress(faker.finance.ethereumAddress());
+        const tokenSymbol = faker.string.alpha(4).toUpperCase();
+        const logoUrl = faker.internet.url();
+        const inValue = faker.string.numeric(7);
+        const outValue = faker.string.numeric(6);
+        const nativeOutValue = faker.string.numeric(18);
+
+        const mockScanResponse = {
+          block: faker.string.numeric(),
+          chain: 'ethereum',
+          account_address: safeAddress,
+          validation: {
+            status: 'Success',
+            result_type: 'Benign',
+            classification: '',
+            description: '',
+            reason: '',
+            features: [],
           },
-          {
-            severity: SEVERITY_MAPPING.NO_THREAT,
-            type: 'NO_THREAT',
-            title: TITLE_MAPPING.NO_THREAT,
-            description: DESCRIPTION_MAPPING.NO_THREAT(),
+          simulation: {
+            status: 'Success',
+            assets_diffs: {
+              [safeAddress]: [
+                {
+                  asset: {
+                    type: 'ERC20',
+                    symbol: tokenSymbol,
+                    address: mockErc20Address,
+                    logo_url: logoUrl,
+                  },
+                  in: [{ value: inValue }],
+                  out: [{ value: outValue }],
+                },
+                {
+                  asset: {
+                    type: 'NATIVE',
+                    address: mockNativeAddress,
+                  },
+                  in: [],
+                  out: [{ value: nativeOutValue }],
+                },
+              ],
+            },
           },
-        ]);
+        } as unknown as TransactionScanResponse;
+
+        mockBlockaidApi.scanTransaction.mockResolvedValue(mockScanResponse);
+
+        const result = await service.analyze({
+          chainId,
+          safeAddress,
+          requestData,
+        });
+
+        expect(result).toBeDefined();
+        expect(result).toEqual({
+          THREAT: [
+            {
+              severity: SEVERITY_MAPPING.NO_THREAT,
+              type: 'NO_THREAT',
+              title: TITLE_MAPPING.NO_THREAT,
+              description: DESCRIPTION_MAPPING.NO_THREAT(),
+            },
+          ],
+          BALANCE_CHANGE: [
+            {
+              asset: {
+                type: 'ERC20',
+                symbol: tokenSymbol,
+                address: mockErc20Address,
+                logo_url: logoUrl,
+              },
+              in: [{ value: inValue }],
+              out: [{ value: outValue }],
+            },
+            {
+              asset: {
+                type: 'NATIVE',
+                address: mockNativeAddress,
+              },
+              in: [],
+              out: [{ value: nativeOutValue }],
+            },
+          ],
+        });
       });
     });
 
@@ -613,14 +734,17 @@ describe('ThreatAnalysisService', () => {
         requestData,
       });
       expect(result).toBeDefined();
-      expect(result).toEqual([
-        {
-          severity: SEVERITY_MAPPING.FAILED,
-          type: 'FAILED',
-          title: TITLE_MAPPING.FAILED,
-          description: DESCRIPTION_MAPPING.FAILED(),
-        },
-      ]);
+      expect(result).toEqual({
+        THREAT: [
+          {
+            severity: SEVERITY_MAPPING.FAILED,
+            type: 'FAILED',
+            title: TITLE_MAPPING.FAILED,
+            description: DESCRIPTION_MAPPING.FAILED(),
+          },
+        ],
+        BALANCE_CHANGE: [],
+      });
       expect(mockLoggingService.warn).toHaveBeenCalledWith(
         expect.stringContaining('Error during threat analysis for Safe'),
       );
@@ -698,9 +822,15 @@ describe('ThreatAnalysisService', () => {
       });
     });
 
-    it('should handle both validation and simulation results', async () => {
+    it('should handle all results: validation, simulation and balanceChange', async () => {
       const oldMasterCopy = getAddress(faker.finance.ethereumAddress());
       const newMasterCopy = getAddress(faker.finance.ethereumAddress());
+      const erc20Address = getAddress(faker.finance.ethereumAddress());
+      const otherAddress = getAddress(faker.finance.ethereumAddress());
+      const logoUrl = faker.internet.url();
+      const inValue = faker.string.numeric(7);
+      const classification = faker.lorem.words(2);
+      const reason = faker.lorem.words(2);
 
       const mockScanResponse = {
         block: faker.string.numeric(),
@@ -709,9 +839,9 @@ describe('ThreatAnalysisService', () => {
         validation: {
           status: 'Success',
           result_type: 'Warning',
-          classification: 'Suspicious activity',
-          description: 'Transaction has some suspicious patterns',
-          reason: 'Unusual gas settings',
+          classification,
+          description: faker.lorem.sentence(),
+          reason,
           features: [
             {
               type: 'Warning',
@@ -737,6 +867,31 @@ describe('ThreatAnalysisService', () => {
               },
             ],
           },
+          assets_diffs: {
+            [safeAddress]: [
+              {
+                asset: {
+                  type: 'ERC20',
+                  address: erc20Address,
+                  logo_url: logoUrl,
+                  symbol: 'USDC',
+                },
+                in: [{ value: inValue }],
+                out: [],
+              },
+            ],
+            [otherAddress]: [
+              {
+                asset: {
+                  type: 'ERC20',
+                  address: getAddress(faker.finance.ethereumAddress()),
+                  symbol: 'DAI',
+                },
+                in: [],
+                out: [{ value: faker.string.numeric(10) }],
+              },
+            ],
+          },
         },
       } as unknown as TransactionScanResponse;
 
@@ -749,32 +904,46 @@ describe('ThreatAnalysisService', () => {
       });
 
       expect(result).toBeDefined();
-      expect(result).toEqual([
-        {
-          severity: SEVERITY_MAPPING.MODERATE,
-          type: 'MODERATE',
-          title: TITLE_MAPPING.MODERATE,
-          description: DESCRIPTION_MAPPING.MODERATE({
-            reason: 'Unusual gas settings',
-            classification: 'Suspicious activity',
-          }),
-          issues: new Map([['WARN', ['High gas price detected']]]),
-        },
-        {
-          severity: SEVERITY_MAPPING.MASTER_COPY_CHANGE,
-          type: 'MASTER_COPY_CHANGE',
-          title: TITLE_MAPPING.MASTER_COPY_CHANGE,
-          description: DESCRIPTION_MAPPING.MASTER_COPY_CHANGE(),
-          before: oldMasterCopy,
-          after: newMasterCopy,
-        },
-        {
-          severity: SEVERITY_MAPPING.OWNERSHIP_CHANGE,
-          type: 'OWNERSHIP_CHANGE',
-          title: TITLE_MAPPING.OWNERSHIP_CHANGE,
-          description: DESCRIPTION_MAPPING.OWNERSHIP_CHANGE(),
-        },
-      ]);
+      expect(result).toEqual({
+        THREAT: [
+          {
+            severity: SEVERITY_MAPPING.MODERATE,
+            type: 'MODERATE',
+            title: TITLE_MAPPING.MODERATE,
+            description: DESCRIPTION_MAPPING.MODERATE({
+              reason,
+              classification,
+            }),
+            issues: new Map([['WARN', ['High gas price detected']]]),
+          },
+          {
+            severity: SEVERITY_MAPPING.MASTER_COPY_CHANGE,
+            type: 'MASTER_COPY_CHANGE',
+            title: TITLE_MAPPING.MASTER_COPY_CHANGE,
+            description: DESCRIPTION_MAPPING.MASTER_COPY_CHANGE(),
+            before: oldMasterCopy,
+            after: newMasterCopy,
+          },
+          {
+            severity: SEVERITY_MAPPING.OWNERSHIP_CHANGE,
+            type: 'OWNERSHIP_CHANGE',
+            title: TITLE_MAPPING.OWNERSHIP_CHANGE,
+            description: DESCRIPTION_MAPPING.OWNERSHIP_CHANGE(),
+          },
+        ],
+        BALANCE_CHANGE: [
+          {
+            asset: {
+              type: 'ERC20',
+              address: erc20Address,
+              logo_url: logoUrl,
+              symbol: 'USDC',
+            },
+            in: [{ value: inValue }],
+            out: [],
+          },
+        ],
+      });
     });
   });
 });
