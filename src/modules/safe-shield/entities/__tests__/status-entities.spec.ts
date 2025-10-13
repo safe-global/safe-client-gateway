@@ -14,7 +14,7 @@ describe('Status Entities', () => {
     it('should have all expected values', () => {
       expect(RecipientStatus).toHaveLength(2);
       expect(RecipientStatus).toContain('NEW_RECIPIENT');
-      expect(RecipientStatus).toContain('KNOWN_RECIPIENT');
+      expect(RecipientStatus).toContain('RECURRING_RECIPIENT');
     });
 
     it.each(RecipientStatus)('should validate with schema = %s', (value) => {

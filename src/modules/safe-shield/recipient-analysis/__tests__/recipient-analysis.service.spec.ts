@@ -249,10 +249,10 @@ describe('RecipientAnalysisService', () => {
       expect(Object.keys(result)).toContain(recipient1);
       expect(Object.keys(result)).toContain(recipient2);
 
-      // Check that one recipient is KNOWN_RECIPIENT (5 interactions) and the other is NEW_RECIPIENT (0 interactions)
+      // Check that one recipient is RECURRING_RECIPIENT (5 interactions) and the other is NEW_RECIPIENT (0 interactions)
       const results = Object.values(result);
       const knownRecipientResult = results.find(
-        (r) => r?.RECIPIENT_INTERACTION?.[0]?.type === 'KNOWN_RECIPIENT',
+        (r) => r?.RECIPIENT_INTERACTION?.[0]?.type === 'RECURRING_RECIPIENT',
       );
       const newRecipientResult = results.find(
         (r) => r?.RECIPIENT_INTERACTION?.[0]?.type === 'NEW_RECIPIENT',
@@ -262,7 +262,7 @@ describe('RecipientAnalysisService', () => {
         RECIPIENT_INTERACTION: [
           {
             severity: 'OK',
-            type: 'KNOWN_RECIPIENT',
+            type: 'RECURRING_RECIPIENT',
             title: 'Recurring recipient',
             description: 'You have interacted with this address 5 times.',
           },
@@ -628,7 +628,7 @@ describe('RecipientAnalysisService', () => {
   });
 
   describe('analyzeInteractions', () => {
-    it('should return KNOWN_RECIPIENT when interactions > 0', async () => {
+    it('should return RECURRING_RECIPIENT when interactions > 0', async () => {
       const interactionCount = faker.number.int({ min: 2, max: 10 });
       (mockTransactionApi.getTransfers as jest.Mock).mockResolvedValue(
         mockTransferPage(interactionCount),
@@ -642,7 +642,7 @@ describe('RecipientAnalysisService', () => {
 
       expect(result).toEqual({
         severity: 'OK',
-        type: 'KNOWN_RECIPIENT',
+        type: 'RECURRING_RECIPIENT',
         title: 'Recurring recipient',
         description: `You have interacted with this address ${interactionCount} times.`,
       });
@@ -742,7 +742,7 @@ describe('RecipientAnalysisService', () => {
 
       expect(result).toEqual({
         severity: 'OK',
-        type: 'KNOWN_RECIPIENT',
+        type: 'RECURRING_RECIPIENT',
         title: 'Recurring recipient',
         description: `You have interacted with this address ${largeInteractionCount} times.`,
       });
@@ -1247,7 +1247,7 @@ describe('RecipientAnalysisService', () => {
       // Should return recipient analysis result
       expect(Object.keys(result)).toContain(differentRecipient);
       expect(result[differentRecipient]?.RECIPIENT_INTERACTION?.[0]?.type).toBe(
-        'KNOWN_RECIPIENT',
+        'RECURRING_RECIPIENT',
       );
     });
 

@@ -11,7 +11,7 @@ export const SEVERITY_MAPPING: Record<
   keyof typeof Severity
 > = {
   NEW_RECIPIENT: 'INFO',
-  KNOWN_RECIPIENT: 'OK',
+  RECURRING_RECIPIENT: 'OK',
   INCOMPATIBLE_SAFE: 'CRITICAL',
   MISSING_OWNERSHIP: 'WARN',
   UNSUPPORTED_NETWORK: 'WARN',
@@ -24,7 +24,7 @@ export const SEVERITY_MAPPING: Record<
  */
 export const TITLE_MAPPING: Record<RecipientStatus | BridgeStatus, string> = {
   NEW_RECIPIENT: 'New recipient',
-  KNOWN_RECIPIENT: 'Recurring recipient',
+  RECURRING_RECIPIENT: 'Recurring recipient',
   INCOMPATIBLE_SAFE: 'Incompatible Safe version',
   MISSING_OWNERSHIP: 'Missing ownership',
   UNSUPPORTED_NETWORK: 'Unsupported network',
@@ -42,7 +42,7 @@ export const DESCRIPTION_MAPPING: Record<
   Record<BridgeStatus, () => string> = {
   NEW_RECIPIENT: () =>
     'You are interacting with this address for the first time.',
-  KNOWN_RECIPIENT: (interactions: number) =>
+  RECURRING_RECIPIENT: (interactions: number) =>
     `You have interacted with this address ${interactions} time${interactions > 1 ? 's' : ''}.`,
   INCOMPATIBLE_SAFE: () =>
     'This Safe account cannot be created on the destination chain. You will not be able to claim ownership of the same address. Funds sent may be inaccessible.',
