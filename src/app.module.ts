@@ -62,6 +62,7 @@ import { SpacesModule } from '@/routes/spaces/spaces.module';
 import { MembersModule } from '@/routes/spaces/members.module';
 import { BullModule } from '@nestjs/bullmq';
 import { CsvExportModule } from '@/modules/csv-export/v1/csv-export.module';
+import { SafeShieldModule } from '@/modules/safe-shield/safe-shield.module';
 
 @Module({})
 export class AppModule implements NestModule {
@@ -112,6 +113,7 @@ export class AppModule implements NestModule {
         RootModule,
         SafeAppsModule,
         SafesModule,
+        SafeShieldModule,
         TargetedMessagingModule,
         TransactionsModule,
         // common
