@@ -192,7 +192,7 @@ export class RecipientAnalysisService {
 
     const transferPage = TransferPageSchema.parse(page);
     const interactions = transferPage.count ?? 0;
-    const type = interactions > 0 ? 'KNOWN_RECIPIENT' : 'NEW_RECIPIENT';
+    const type = interactions > 0 ? 'RECURRING_RECIPIENT' : 'NEW_RECIPIENT';
 
     return this.mapToAnalysisResult(type, interactions);
   }

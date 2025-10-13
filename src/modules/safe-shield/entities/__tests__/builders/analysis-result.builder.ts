@@ -12,8 +12,8 @@ import {
  */
 export function recipientAnalysisResultBuilder(): IBuilder<RecipientAnalysisResult> {
   return new Builder<RecipientAnalysisResult>()
-    .with('severity', 'INFO')
-    .with('type', 'KNOWN_RECIPIENT')
+    .with('severity', 'OK')
+    .with('type', 'RECURRING_RECIPIENT')
     .with('title', faker.lorem.sentence())
     .with('description', faker.lorem.paragraph());
 }
