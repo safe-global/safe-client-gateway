@@ -191,8 +191,10 @@ export class SafeShieldService {
         dataDecoded: txPreview?.txData?.dataDecoded ?? null,
       };
 
+      const transactions = mapDecodedTransactions(decodedTransactionData);
+
       return {
-        transactions: mapDecodedTransactions(decodedTransactionData),
+        transactions,
         txInfo: txPreview?.txInfo,
       };
     } catch (error) {

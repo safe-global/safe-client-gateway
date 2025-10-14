@@ -28,9 +28,6 @@ import {
   recipientAnalysisResultBuilder,
 } from '@/modules/safe-shield/entities/__tests__/builders/analysis-result.builder';
 import { Operation } from '@/domain/safe/entities/operation.entity';
-import * as utils from './utils/transaction-mapping.utils';
-import type { AnalysisResult } from '@/modules/safe-shield/entities/analysis-result.entity';
-import type { RecipientStatus } from '@/modules/safe-shield/entities/recipient-status.entity';
 
 // Utility function for generating Wei values
 const generateRandomWeiAmount = (): bigint =>
@@ -100,8 +97,6 @@ const createCustomTransactionInfo = (
   );
 
 describe('SafeShieldService', () => {
-  const mapDecodedTransactionsSpy = jest.spyOn(utils, 'mapDecodedTransactions');
-
   const mockRecipientAnalysisService = {
     analyze: jest.fn(),
     analyzeInteractions: jest.fn(),
@@ -138,7 +133,6 @@ describe('SafeShieldService', () => {
 
   beforeEach(() => {
     jest.resetAllMocks();
-    mapDecodedTransactionsSpy.mockImplementation((tx) => [tx]);
   });
 
   const mockRecipientAnalysisResponse: RecipientAnalysisResponse =

@@ -56,11 +56,11 @@ describe('SafeShieldController (Unit)', () => {
       );
 
       expect(result).toEqual(expectedResponse);
-      expect(safeShieldService.analyzeRecipient).toHaveBeenCalledWith({
-        chainId: mockChainId,
-        safeAddress: mockSafeAddress,
-        recipientAddress: mockRecipientAddress,
-      });
+      expect(safeShieldService.analyzeRecipient).toHaveBeenCalledWith(
+        mockChainId,
+        mockSafeAddress,
+        mockRecipientAddress,
+      );
     });
 
     it('should propagate errors from SafeShieldService', async () => {
