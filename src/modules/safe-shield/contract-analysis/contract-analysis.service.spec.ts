@@ -89,6 +89,33 @@ describe('ContractAnalysisService', () => {
     const safeAddress = getAddress(faker.finance.ethereumAddress());
     const transactions: Array<DecodedTransactionData> = [];
 
+    it('should return empty object when extractContracts returns empty array', async () => {
+      mockExtractContracts.mockReturnValue([]);
+
+      const result = await service.analyze({
+        chainId,
+        safeAddress,
+        transactions,
+      });
+
+      expect(result).toEqual({});
+      expect(mockExtractContracts).toHaveBeenCalledWith(
+        transactions,
+        mockErc20Decoder,
+      );
+
+      // Verify that no caching occurs
+      const cacheDir = CacheRouter.getContractAnalysisCacheDir({
+        chainId,
+        contractPairs: [],
+      });
+      const cacheContent = await fakeCacheService.hGet(cacheDir);
+      expect(cacheContent).toBeUndefined();
+
+      const analyzeContractSpy = jest.spyOn(service, 'analyzeContract');
+      expect(analyzeContractSpy).not.toHaveBeenCalled();
+    });
+
     it('should return cached analysis when available', async () => {
       const contractAddress = getAddress(faker.finance.ethereumAddress());
       const contractPairs: Array<[Address, boolean]> = [

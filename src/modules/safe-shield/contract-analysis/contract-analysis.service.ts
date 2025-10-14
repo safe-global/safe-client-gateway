@@ -57,7 +57,6 @@ export class ContractAnalysisService {
       );
   }
 
-  //TODO if no pairs are found, return {}
   async analyze(args: {
     chainId: string;
     safeAddress: Address;
@@ -67,6 +66,9 @@ export class ContractAnalysisService {
       args.transactions,
       this.erc20Decoder,
     );
+    if (!contractPairs.length) {
+      return {};
+    }
     const cacheDir = CacheRouter.getContractAnalysisCacheDir({
       chainId: args.chainId,
       contractPairs,

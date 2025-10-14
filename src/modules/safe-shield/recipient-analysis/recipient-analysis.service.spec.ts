@@ -1,4 +1,4 @@
-import { RecipientAnalysisService } from '../recipient-analysis.service';
+import { RecipientAnalysisService } from './recipient-analysis.service';
 import type { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
 import type { Erc20Decoder } from '@/domain/relay/contracts/decoders/erc-20-decoder.helper';
 import type { ITransactionApi } from '@/domain/interfaces/transaction-api.interface';
@@ -11,7 +11,7 @@ import type { IChainsRepository } from '@/domain/chains/chains.repository.interf
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
-import * as utils from '../../utils/recipient-extraction.utils';
+import * as utils from '../utils/recipient-extraction.utils';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
 import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
 import type { TransactionsService } from '@/routes/transactions/transactions.service';
@@ -302,18 +302,44 @@ describe('RecipientAnalysisService', () => {
       expect(result).toEqual({});
       expect(mockTransactionApi.getTransfers).not.toHaveBeenCalled();
 
-      // check the result is stored in the cache
+      // check the result is NOT stored in the cache
       const cacheDir = CacheRouter.getRecipientAnalysisCacheDir({
         chainId: mockChainId,
         recipients: [],
       });
       const cacheContent = await fakeCacheService.hGet(cacheDir);
-      expect(JSON.parse(cacheContent as string)).toStrictEqual(
-        expect.objectContaining(result),
-      );
+      expect(cacheContent).toBeUndefined();
 
       expect(extractRecipientsSpy).toHaveBeenCalledTimes(1);
       expect(extractRecipientsSpy).toHaveBeenCalledWith([], mockErc20Decoder);
+    });
+
+    it('should return empty object when extractRecipients returns empty array', async () => {
+      extractRecipientsSpy.mockReturnValue([]);
+
+      const transactions: Array<DecodedTransactionData> = [
+        {
+          operation: 0,
+          to: mockRecipientAddress,
+          value: '1000000000000000000',
+          data: '0x',
+          dataDecoded: null,
+        },
+      ];
+
+      const result = await service.analyze({
+        chainId: mockChainId,
+        safeAddress: mockSafeAddress,
+        transactions,
+      });
+
+      expect(result).toEqual({});
+      expect(mockTransactionApi.getTransfers).not.toHaveBeenCalled();
+      expect(extractRecipientsSpy).toHaveBeenCalledTimes(1);
+      expect(extractRecipientsSpy).toHaveBeenCalledWith(
+        transactions,
+        mockErc20Decoder,
+      );
     });
 
     it('should return cached result when available', async () => {

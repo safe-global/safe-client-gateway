@@ -95,6 +95,10 @@ export class RecipientAnalysisService {
   }): Promise<RecipientAnalysisResponse> {
     const recipients = extractRecipients(args.transactions, this.erc20Decoder);
 
+    if (!recipients.length) {
+      return {};
+    }
+
     const cacheDir = CacheRouter.getRecipientAnalysisCacheDir({
       chainId: args.chainId,
       recipients,
