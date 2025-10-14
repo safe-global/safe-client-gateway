@@ -47,6 +47,17 @@ export const ContractAnalysisResponseSchema = z.record(
 );
 
 /**
+ * Response structure for counterparty analysis endpoint.
+ *
+ * Combines recipient and contract analysis results for a single
+ * transaction simulation.
+ */
+export const CounterpartyAnalysisResponseSchema = z.object({
+  recipient: RecipientAnalysisResponseSchema,
+  contract: ContractAnalysisResponseSchema,
+});
+
+/**
  * Response structure for threat analysis endpoint.
  *
  * Returns a single threat analysis result for the entire transaction.
@@ -66,6 +77,9 @@ export type ContractAnalysisResponse = z.infer<
 >;
 export type ThreatAnalysisResponse = z.infer<
   typeof ThreatAnalysisResponseSchema
+>;
+export type CounterpartyAnalysisResponse = z.infer<
+  typeof CounterpartyAnalysisResponseSchema
 >;
 
 /**

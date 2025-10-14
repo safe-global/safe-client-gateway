@@ -57,6 +57,7 @@ export class ContractAnalysisService {
       );
   }
 
+  //TODO if no pairs are found, return {}
   async analyze(args: {
     chainId: string;
     safeAddress: Address;

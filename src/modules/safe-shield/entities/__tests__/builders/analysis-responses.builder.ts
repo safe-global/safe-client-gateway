@@ -5,6 +5,7 @@ import {
   type RecipientAnalysisResponse,
   type ContractAnalysisResponse,
   type ThreatAnalysisResponse,
+  type CounterpartyAnalysisResponse,
 } from '../../analysis-responses.entity';
 import {
   contractAnalysisResultBuilder,
@@ -47,4 +48,13 @@ export function threatAnalysisResponseBuilder(): IBuilder<ThreatAnalysisResponse
     .with('type', 'NO_THREAT')
     .with('title', faker.lorem.sentence())
     .with('description', faker.lorem.paragraph());
+}
+
+/**
+ * Builder for CounterpartyAnalysisResponse
+ */
+export function counterpartyAnalysisResponseBuilder(): IBuilder<CounterpartyAnalysisResponse> {
+  return new Builder<CounterpartyAnalysisResponse>()
+    .with('recipient', recipientAnalysisResponseBuilder().build())
+    .with('contract', contractAnalysisResponseBuilder().build());
 }

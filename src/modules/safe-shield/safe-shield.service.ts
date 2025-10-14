@@ -6,6 +6,7 @@ import { type Address, type Hex } from 'viem';
 import type {
   ContractAnalysisResponse,
   RecipientAnalysisResponse,
+  CounterpartyAnalysisResponse,
 } from './entities/analysis-responses.entity';
 import type { DecodedTransactionData } from '@/modules/safe-shield/entities/transaction-data.entity';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
@@ -34,19 +35,19 @@ export class SafeShieldService {
   ) {}
 
   /**
-   * Analyzes recipients in a transaction, including inner calls if it's a multiSend.
+   * Performs combined recipient and contract analysis for a transaction.
    *
    * @param args - Analysis parameters
    * @param args.chainId - The chain ID
    * @param args.safeAddress - The Safe address
-   * @param args.tx - The transaction data
+   * @param args.tx - The Safe transaction
    * @param args.tx.to - The transaction recipient address
-   * @param args.tx.data - The transaction data (optional)
-   * @param args.tx.value - The transaction value (optional)
-   * @param args.tx.operation - The transaction operation (optional)
-   * @returns Map of recipient addresses to their analysis results
+   * @param args.tx.data - The transaction data
+   * @param args.tx.value - The transaction value
+   * @param args.tx.operation - The transaction operation
+   * @returns Counterparty analysis results containing both recipient and contract insights grouped by status group
    */
-  async analyzeRecipients({
+  async analyzeCounterparty({
     chainId,
     safeAddress,
     tx,
@@ -55,18 +56,44 @@ export class SafeShieldService {
     safeAddress: Address;
     tx: {
       to: Address;
-      data?: Hex;
-      value?: bigint | string;
-      operation?: Operation;
+      value: string;
+      data: Hex;
+      operation: Operation;
     };
-  }): Promise<RecipientAnalysisResponse> {
+  }): Promise<CounterpartyAnalysisResponse> {
     const { transactions, txInfo } = await this.decodeTransaction({
       chainId,
       safeAddress,
       tx,
     });
 
-    if (transactions.length > 0 || !!txInfo) {
+    const [recipients, contracts] = await Promise.all([
+      this.analyzeRecipients(chainId, safeAddress, transactions, txInfo),
+      this.analyzeContracts(chainId, safeAddress, transactions),
+    ]);
+
+    return {
+      recipient: recipients,
+      contract: contracts,
+    };
+  }
+
+  /**
+   * Analyzes recipients in a transaction, including inner calls if it's a multiSend.
+   *
+   * @param chainId - The chain ID
+   * @param safeAddress - The Safe address
+   * @param transactions - A list of decoded transactions
+   * @param txInfo - The transaction recipient address
+   * @returns Map of recipient addresses to their analysis results
+   */
+  async analyzeRecipients(
+    chainId: string,
+    safeAddress: Address,
+    transactions: Array<DecodedTransactionData>,
+    txInfo?: TransactionInfo,
+  ): Promise<RecipientAnalysisResponse> {
+    if (transactions.length > 0 || txInfo) {
       return this.recipientAnalysisService.analyze({
         chainId,
         safeAddress,
@@ -81,21 +108,16 @@ export class SafeShieldService {
   /**
    * Analyzes a single recipient address.
    *
-   * @param args - Analysis parameters
-   * @param args.chainId - The chain ID
-   * @param args.safeAddress - The Safe address
-   * @param args.recipientAddress - The recipient address to analyze
+   * @param chainId - The chain ID
+   * @param safeAddress - The Safe address
+   * @param recipientAddress - The recipient address to analyze
    * @returns Analysis result for group RECIPIENT_INTERACTION
    */
-  async analyzeRecipient({
-    chainId,
-    safeAddress,
-    recipientAddress,
-  }: {
-    chainId: string;
-    safeAddress: Address;
-    recipientAddress: Address;
-  }): Promise<RecipientInteractionAnalysisDto> {
+  async analyzeRecipient(
+    chainId: string,
+    safeAddress: Address,
+    recipientAddress: Address,
+  ): Promise<RecipientInteractionAnalysisDto> {
     const interactionResult =
       await this.recipientAnalysisService.analyzeInteractions({
         chainId,
@@ -111,37 +133,17 @@ export class SafeShieldService {
   /**
    * Analyzes contracts in a transaction, including inner calls if it's a multiSend.
    *
-   * @param args - Analysis parameters
-   * @param args.chainId - The chain ID
-   * @param args.safeAddress - The Safe address
-   * @param args.tx - The transaction data
-   * @param args.tx.to - The transaction contract address
-   * @param args.tx.data - The transaction data
-   * @param args.tx.value - The transaction value (optional)
-   * @param args.tx.operation - The transaction operation (optional)
+   * @param chainId - The chain ID
+   * @param safeAddress - The Safe address
+   * @param transactions - A list of decoded transactions
    * @returns Map of contract addresses to their analysis results
    */
-  async analyzeContracts({
-    chainId,
-    safeAddress,
-    tx,
-  }: {
-    chainId: string;
-    safeAddress: Address;
-    tx: {
-      to: Address;
-      data: Hex;
-      value?: bigint | string;
-      operation?: Operation;
-    };
-  }): Promise<ContractAnalysisResponse> {
-    const { transactions } = await this.decodeTransaction({
-      chainId,
-      safeAddress,
-      tx,
-    });
-
-    if (transactions.length > 0) {
+  async analyzeContracts(
+    chainId: string,
+    safeAddress: Address,
+    transactions: Array<DecodedTransactionData>,
+  ): Promise<ContractAnalysisResponse> {
+    if (transactions.length) {
       return this.contractAnalysisService.analyze({
         chainId,
         safeAddress,
@@ -158,7 +160,7 @@ export class SafeShieldService {
    * @param args.chainId - The chain ID.
    * @param args.safeAddress - The Safe address.
    * @param args.tx - The transaction.
-   * @returns The decoded transaction.
+   * @returns The decoded transaction and additional tx info (optional).
    */
   private async decodeTransaction({
     chainId,
@@ -169,33 +171,23 @@ export class SafeShieldService {
     safeAddress: Address;
     tx: {
       to: Address;
-      data?: Hex;
-      value?: bigint | string;
-      operation?: Operation;
+      data: Hex;
+      value: string;
+      operation: Operation;
     };
   }): Promise<{
     transactions: Array<DecodedTransactionData>;
     txInfo?: TransactionInfo;
   }> {
-    const { data = '0x', value = '0', operation = Operation.CALL } = tx;
-
     try {
       const txPreview = await this.transactionsService.previewTransaction({
         chainId,
         safeAddress,
-        previewTransactionDto: {
-          ...tx,
-          data,
-          operation,
-          value: value.toString(),
-        },
+        previewTransactionDto: tx,
       });
 
       const decodedTransactionData: DecodedTransactionData = {
         ...tx,
-        data,
-        operation,
-        value,
         dataDecoded: txPreview?.txData?.dataDecoded ?? null,
       };
 
