@@ -1,9 +1,6 @@
 import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
 import { TransferPageSchema } from '@/domain/safe/entities/transfer.entity';
-import type {
-  AnalysisResult,
-  RecipientAnalysisResult,
-} from '@/modules/safe-shield/entities/analysis-result.entity';
+import type { AnalysisResult } from '@/modules/safe-shield/entities/analysis-result.entity';
 import { Inject, Injectable } from '@nestjs/common';
 import { getAddress, Hex, zeroAddress, type Address } from 'viem';
 import { IChainsRepository } from '@/domain/chains/chains.repository.interface';
@@ -179,7 +176,7 @@ export class RecipientAnalysisService {
     chainId: string;
     safeAddress: Address;
     recipient: Address;
-  }): Promise<RecipientAnalysisResult> {
+  }): Promise<AnalysisResult<RecipientStatus>> {
     const transactionApi = await this.transactionApiManager.getApi(
       args.chainId,
     );
