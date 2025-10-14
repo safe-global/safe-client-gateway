@@ -6,7 +6,6 @@ import { type Address, type Hex } from 'viem';
 import type {
   ContractAnalysisResponse,
   RecipientAnalysisResponse,
-  GroupedAnalysisResults,
 } from './entities/analysis-responses.entity';
 import type { DecodedTransactionData } from '@/modules/safe-shield/entities/transaction-data.entity';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
@@ -14,7 +13,7 @@ import { mapDecodedTransactions } from './utils/transaction-mapping.utils';
 import { TransactionsService } from '@/routes/transactions/transactions.service';
 import { Operation } from '@/domain/safe/entities/operation.entity';
 import type { TransactionInfo } from '@/routes/transactions/entities/transaction-info.entity';
-import type { RecipientAnalysisResult } from './entities/analysis-result.entity';
+import { RecipientInteractionAnalysisDto } from './entities/dtos/recipient-analysis.dto';
 
 /**
  * Main orchestration service for Safe Shield transaction analysis.
@@ -96,7 +95,7 @@ export class SafeShieldService {
     chainId: string;
     safeAddress: Address;
     recipientAddress: Address;
-  }): Promise<GroupedAnalysisResults<RecipientAnalysisResult>> {
+  }): Promise<RecipientInteractionAnalysisDto> {
     const interactionResult =
       await this.recipientAnalysisService.analyzeInteractions({
         chainId,

@@ -23,6 +23,8 @@ import { dataDecodedBuilder } from '@/domain/data-decoder/v2/entities/__tests__/
 import { recipientAnalysisResultBuilder } from '@/modules/safe-shield/entities/__tests__/builders/analysis-result.builder';
 import { Operation } from '@/domain/safe/entities/operation.entity';
 import * as utils from './utils/transaction-mapping.utils';
+import type { AnalysisResult } from '@/modules/safe-shield/entities/analysis-result.entity';
+import type { RecipientStatus } from '@/modules/safe-shield/entities/recipient-status.entity';
 
 // Utility function for generating Wei values
 const generateRandomWeiAmount = (): bigint =>
@@ -513,7 +515,8 @@ describe('SafeShieldService', () => {
 
   describe('analyzeRecipient', () => {
     it('should analyze a single recipient address', async () => {
-      const mockInteractionResult = recipientAnalysisResultBuilder().build();
+      const mockInteractionResult =
+        recipientAnalysisResultBuilder().build() as AnalysisResult<RecipientStatus>;
 
       mockRecipientAnalysisService.analyzeInteractions.mockResolvedValue(
         mockInteractionResult,

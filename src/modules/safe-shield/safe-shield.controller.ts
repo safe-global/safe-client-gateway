@@ -9,8 +9,7 @@ import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import type { Address } from 'viem';
 import { SafeShieldService } from './safe-shield.service';
-import type { GroupedAnalysisResults } from './entities/analysis-responses.entity';
-import type { RecipientAnalysisResult } from './entities/analysis-result.entity';
+import { RecipientInteractionAnalysisDto } from './entities/dtos/recipient-analysis.dto';
 
 /**
  * Controller for Safe Shield security analysis endpoints.
@@ -49,7 +48,8 @@ export class SafeShieldController {
     description: 'Recipient address to analyze',
   })
   @ApiOkResponse({
-    description: 'Recipient analysis results grouped by status group',
+    description: 'Recipient interaction analysis results',
+    type: RecipientInteractionAnalysisDto,
   })
   @HttpCode(HttpStatus.OK)
   @Get('chains/:chainId/security/:safeAddress/recipient/:recipientAddress')
@@ -59,7 +59,7 @@ export class SafeShieldController {
     safeAddress: Address,
     @Param('recipientAddress', new ValidationPipe(AddressSchema))
     recipientAddress: Address,
-  ): Promise<GroupedAnalysisResults<RecipientAnalysisResult>> {
+  ): Promise<RecipientInteractionAnalysisDto> {
     return await this.safeShieldService.analyzeRecipient({
       chainId,
       safeAddress,
