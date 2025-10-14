@@ -12,6 +12,24 @@ import {
 import { ThreatStatusSchema, type ThreatStatus } from './threat-status.entity';
 
 /**
+ * Common status code available for all analysis types.
+ *
+ * This status can be used as fallbacks across any analysis type
+ * when errors or exceptional conditions occur.
+ */
+export const CommonStatus = [
+  /** Analysis failed due to service issues or errors */
+  'FAILED',
+] as const;
+
+/**
+ * Zod schema for validating CommonStatus enum values.
+ */
+export const CommonStatusSchema = z.enum(CommonStatus);
+
+export type CommonStatus = z.infer<typeof CommonStatusSchema>;
+
+/**
  * Generic analysis result structure for Safe Shield security checks.
  *
  * Each analysis check produces a structured result with severity classification,
@@ -38,6 +56,7 @@ export interface AnalysisResult<T extends AnalysisStatus = AnalysisStatus> {
  * Union type of all possible status types that can be used in analysis results.
  */
 export type AnalysisStatus =
+  | CommonStatus
   | RecipientStatus
   | BridgeStatus
   | ContractStatus
@@ -47,6 +66,7 @@ export type AnalysisStatus =
  * Zod schema for validating any status enum value.
  */
 export const AnalysisStatusSchema = z.union([
+  CommonStatusSchema,
   RecipientStatusSchema,
   BridgeStatusSchema,
   ContractStatusSchema,
@@ -70,36 +90,45 @@ export const AnalysisResultBaseSchema = z.object({
  * Zod schema for recipient analysis results.
  */
 export const RecipientAnalysisResultSchema = AnalysisResultBaseSchema.extend({
-  type: z.union([RecipientStatusSchema, BridgeStatusSchema]),
+  type: z.union([
+    RecipientStatusSchema,
+    BridgeStatusSchema,
+    CommonStatusSchema,
+  ]),
 });
 
 /**
  * Zod schema for contract analysis results.
  */
 export const ContractAnalysisResultSchema = AnalysisResultBaseSchema.extend({
-  type: ContractStatusSchema,
+  type: z.union([ContractStatusSchema, CommonStatusSchema]),
 });
 
 /**
  * Zod schema for threat analysis results.
  */
 export const ThreatAnalysisResultSchema = AnalysisResultBaseSchema.extend({
-  type: ThreatStatusSchema,
+  type: z.union([ThreatStatusSchema, CommonStatusSchema]),
 });
 
 /**
  * Type definition for recipient analysis results.
+ * Inferred from the Zod schema to avoid duplication.
  */
-export type RecipientAnalysisResult = AnalysisResult<
-  RecipientStatus | BridgeStatus
+export type RecipientAnalysisResult = z.infer<
+  typeof RecipientAnalysisResultSchema
 >;
 
 /**
  * Type definition for contract analysis results.
+ * Inferred from the Zod schema to avoid duplication.
  */
-export type ContractAnalysisResult = AnalysisResult<ContractStatus>;
+export type ContractAnalysisResult = z.infer<
+  typeof ContractAnalysisResultSchema
+>;
 
 /**
  * Type definition for threat analysis results.
+ * Inferred from the Zod schema to avoid duplication.
  */
-export type ThreatAnalysisResult = AnalysisResult<ThreatStatus>;
+export type ThreatAnalysisResult = z.infer<typeof ThreatAnalysisResultSchema>;

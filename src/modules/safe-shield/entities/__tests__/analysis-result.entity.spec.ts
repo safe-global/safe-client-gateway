@@ -5,6 +5,7 @@ import {
   ThreatAnalysisResultSchema,
   AnalysisStatusSchema,
   type ContractAnalysisResult,
+  CommonStatus,
 } from '../analysis-result.entity';
 import { compareSeverityString } from '../severity.entity';
 import { RecipientStatus } from '../recipient-status.entity';
@@ -91,6 +92,13 @@ describe('AnalysisResult', () => {
       },
     );
 
+    it.each(CommonStatus)(
+      'should validate all recipient status values = %s',
+      (value) => {
+        expect(() => AnalysisStatusSchema.parse(value)).not.toThrow();
+      },
+    );
+
     it.each(['INVALID_STATUS', '', null, undefined, 123] as const)(
       'should reject invalid status values = %s',
       (value) => {
@@ -105,6 +113,29 @@ describe('AnalysisResult', () => {
     it('should validate correct analysis result structure', () => {
       expect(() =>
         AnalysisResultBaseSchema.parse(validBaseResult),
+      ).not.toThrow();
+    });
+
+    it('should validate common status FAILED across all analysis types', () => {
+      const failedRecipientResult = recipientAnalysisResultBuilder()
+        .with('type', 'FAILED')
+        .build();
+      expect(() =>
+        AnalysisResultBaseSchema.parse(failedRecipientResult),
+      ).not.toThrow();
+
+      const failedContractResult = contractAnalysisResultBuilder()
+        .with('type', 'FAILED')
+        .build();
+      expect(() =>
+        AnalysisResultBaseSchema.parse(failedContractResult),
+      ).not.toThrow();
+
+      const failedThreatResult = threatAnalysisResultBuilder()
+        .with('type', 'FAILED')
+        .build();
+      expect(() =>
+        AnalysisResultBaseSchema.parse(failedThreatResult),
       ).not.toThrow();
     });
 
@@ -173,6 +204,16 @@ describe('AnalysisResult', () => {
       ).not.toThrow();
     });
 
+    it('should validate common status FAILED', () => {
+      const failedResult = recipientAnalysisResultBuilder()
+        .with('type', 'FAILED')
+        .build();
+
+      expect(() =>
+        RecipientAnalysisResultSchema.parse(failedResult),
+      ).not.toThrow();
+    });
+
     it('should reject contract status types', () => {
       const contractResult = contractAnalysisResultBuilder().build();
 
@@ -197,6 +238,16 @@ describe('AnalysisResult', () => {
       ).not.toThrow();
     });
 
+    it('should validate common status FAILED', () => {
+      const failedResult = contractAnalysisResultBuilder()
+        .with('type', 'FAILED')
+        .build();
+
+      expect(() =>
+        ContractAnalysisResultSchema.parse(failedResult),
+      ).not.toThrow();
+    });
+
     it('should reject recipient status types', () => {
       const recipientResult = recipientAnalysisResultBuilder().build();
 
@@ -218,6 +269,16 @@ describe('AnalysisResult', () => {
 
       expect(() =>
         ThreatAnalysisResultSchema.parse(threatResult),
+      ).not.toThrow();
+    });
+
+    it('should validate common status FAILED', () => {
+      const failedResult = threatAnalysisResultBuilder()
+        .with('type', 'FAILED')
+        .build();
+
+      expect(() =>
+        ThreatAnalysisResultSchema.parse(failedResult),
       ).not.toThrow();
     });
 

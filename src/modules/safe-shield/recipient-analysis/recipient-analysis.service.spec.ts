@@ -513,14 +513,25 @@ describe('RecipientAnalysisService', () => {
         });
       });
 
-      // The service should throw an error when source Safe is not found
-      await expect(
-        service.analyzeBridge({
-          chainId: mockChainId,
-          safeAddress: mockSafeAddress,
-          txInfo: mockTxInfo,
-        }),
-      ).rejects.toThrow('Source Safe not found');
+      const result = await service.analyzeBridge({
+        chainId: mockChainId,
+        safeAddress: mockSafeAddress,
+        txInfo: mockTxInfo,
+      });
+
+      expect(result).toEqual({
+        [mockSafeAddress]: {
+          BRIDGE: [
+            {
+              type: 'FAILED',
+              severity: 'CRITICAL',
+              title: 'Analysis failed',
+              description:
+                'The analysis failed: bridge compatibility unavailable. Please try again later.',
+            },
+          ],
+        },
+      });
     });
   });
 
@@ -727,13 +738,19 @@ describe('RecipientAnalysisService', () => {
       const error = new Error('API connection failed');
       mockTransactionApi.getTransfers.mockRejectedValue(error);
 
-      await expect(
-        service.analyzeInteractions({
-          chainId: mockChainId,
-          safeAddress: mockSafeAddress,
-          recipient: mockRecipientAddress,
-        }),
-      ).rejects.toThrow('API connection failed');
+      const result = await service.analyzeInteractions({
+        chainId: mockChainId,
+        safeAddress: mockSafeAddress,
+        recipient: mockRecipientAddress,
+      });
+
+      expect(result).toEqual({
+        type: 'FAILED',
+        severity: 'CRITICAL',
+        title: 'Analysis failed',
+        description:
+          'The analysis failed: recipient interactions unavailable. Please try again later.',
+      });
 
       expect(mockTransactionApiManager.getApi).toHaveBeenCalledWith(
         mockChainId,
@@ -745,13 +762,19 @@ describe('RecipientAnalysisService', () => {
         invalidField: 'invalid',
       });
 
-      await expect(
-        service.analyzeInteractions({
-          chainId: mockChainId,
-          safeAddress: mockSafeAddress,
-          recipient: mockRecipientAddress,
-        }),
-      ).rejects.toThrow();
+      const result = await service.analyzeInteractions({
+        chainId: mockChainId,
+        safeAddress: mockSafeAddress,
+        recipient: mockRecipientAddress,
+      });
+
+      expect(result).toEqual({
+        type: 'FAILED',
+        severity: 'CRITICAL',
+        title: 'Analysis failed',
+        description:
+          'The analysis failed: recipient interactions unavailable. Please try again later.',
+      });
     });
 
     it('should handle large interaction counts correctly', async () => {
@@ -1287,14 +1310,25 @@ describe('RecipientAnalysisService', () => {
         new Error('Chains service unavailable'),
       );
 
-      // The service should throw the error when isSupportedChain fails
-      await expect(
-        service.analyzeBridge({
-          chainId: mockChainId,
-          safeAddress: mockSafeAddress,
-          txInfo: mockTxInfo,
-        }),
-      ).rejects.toThrow('Chains service unavailable');
+      const result = await service.analyzeBridge({
+        chainId: mockChainId,
+        safeAddress: mockSafeAddress,
+        txInfo: mockTxInfo,
+      });
+
+      expect(result).toEqual({
+        [mockSafeAddress]: {
+          BRIDGE: [
+            {
+              type: 'FAILED',
+              severity: 'CRITICAL',
+              title: 'Analysis failed',
+              description:
+                'The analysis failed: bridge compatibility unavailable. Please try again later.',
+            },
+          ],
+        },
+      });
     });
   });
 });

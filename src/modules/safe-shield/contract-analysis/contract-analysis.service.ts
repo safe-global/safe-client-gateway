@@ -8,13 +8,16 @@ import {
   SEVERITY_MAPPING,
   TITLE_MAPPING,
 } from '@/modules/safe-shield/contract-analysis/contract-analysis.constants';
-import { ContractAnalysisResponse } from '@/modules/safe-shield/entities/analysis-responses.entity';
+import {
+  ContractAnalysisResponse,
+  GroupedAnalysisResults,
+} from '@/modules/safe-shield/entities/analysis-responses.entity';
 import {
   AnalysisResult,
+  CommonStatus,
   ContractAnalysisResult,
 } from '@/modules/safe-shield/entities/analysis-result.entity';
 import { ContractStatus } from '@/modules/safe-shield/entities/contract-status.entity';
-import { ContractStatusGroup } from '@/modules/safe-shield/entities/status-group.entity';
 import { DecodedTransactionData } from '@/modules/safe-shield/entities/transaction-data.entity';
 import {
   CacheService,
@@ -87,17 +90,19 @@ export class ContractAnalysisService {
     }
     logCacheMiss(cacheDir, this.loggingService);
 
-    const analysisResults: ContractAnalysisResponse = {};
-    for (const [contract, isDelegateCall] of contractPairs) {
-      const result = await this.analyzeContract({
-        chainId: args.chainId,
-        safeAddress: args.safeAddress,
-        contract,
-        isDelegateCall,
-      });
-
-      analysisResults[contract] = result;
-    }
+    const analysisResults: ContractAnalysisResponse = Object.fromEntries(
+      await Promise.all(
+        contractPairs.map(async ([contract, isDelegateCall]) => [
+          contract,
+          await this.analyzeContract({
+            chainId: args.chainId,
+            safeAddress: args.safeAddress,
+            contract,
+            isDelegateCall,
+          }),
+        ]),
+      ),
+    );
 
     await this.cacheService.hSet(
       cacheDir,
@@ -112,7 +117,7 @@ export class ContractAnalysisService {
     safeAddress: Address;
     contract: Address;
     isDelegateCall: boolean;
-  }): Promise<Record<ContractStatusGroup, Array<ContractAnalysisResult>>> {
+  }): Promise<GroupedAnalysisResults<ContractAnalysisResult>> {
     const { chainId, safeAddress, contract, isDelegateCall } = args;
 
     const [[verificationResult, delegateCallResult], interactionResult] =
@@ -193,19 +198,28 @@ export class ContractAnalysisService {
     contract: Address;
   }): Promise<ContractAnalysisResult> {
     const { chainId, safeAddress, contract } = args;
-    const transactionApi = await this.transactionApiManager.getApi(chainId);
+    try {
+      const transactionApi = await this.transactionApiManager.getApi(chainId);
 
-    const page = await transactionApi.getMultisigTransactions({
-      safeAddress,
-      to: contract,
-      limit: 1,
-    });
+      const page = await transactionApi.getMultisigTransactions({
+        safeAddress,
+        to: contract,
+        limit: 1,
+      });
 
-    const multisigPage = MultisigTransactionPageSchema.parse(page);
-    const interactions = multisigPage.count ?? 0;
-    const type = interactions > 0 ? 'KNOWN_CONTRACT' : 'NEW_CONTRACT';
-
-    return this.mapToAnalysisResult({ type, interactions });
+      const multisigPage = MultisigTransactionPageSchema.parse(page);
+      const interactions = multisigPage.count ?? 0;
+      const type = interactions > 0 ? 'KNOWN_CONTRACT' : 'NEW_CONTRACT';
+      return this.mapToAnalysisResult({ type, interactions });
+    } catch (error) {
+      this.loggingService.warn(
+        `Failed to analyze contract interactions: ${error}`,
+      );
+      return this.mapToAnalysisResult({
+        type: 'FAILED',
+        reason: 'contract interactions unavailable',
+      });
+    }
   }
 
   /**
@@ -227,17 +241,23 @@ export class ContractAnalysisService {
    * @param type - The contract status.
    * @param interactions - The number of interactions with the contract (if applicable).
    * @param name - The name of the contract (if applicable).
-   * @returns The analysis result.
+   * @param reason - The reason for failure (if applicable).
+   * @returns The contract analysis result.
    */
-  private mapToAnalysisResult<T extends ContractStatus>(args: {
+  private mapToAnalysisResult<T extends ContractStatus | CommonStatus>(args: {
     type: T;
     interactions?: number;
     name?: string;
+    reason?: string;
   }): AnalysisResult<T> {
-    const { type, interactions, name } = args;
+    const { type, interactions, name, reason } = args;
     const severity = SEVERITY_MAPPING[type];
     const title = TITLE_MAPPING[type];
-    const description = DESCRIPTION_MAPPING[type]({ interactions, name });
+    const description = DESCRIPTION_MAPPING[type]({
+      interactions,
+      name,
+      reason,
+    });
 
     return { severity, type, title, description };
   }

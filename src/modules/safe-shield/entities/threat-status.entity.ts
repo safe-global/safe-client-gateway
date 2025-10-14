@@ -17,9 +17,6 @@ export const ThreatStatus = [
   /** No threats detected in the transaction */
   'NO_THREAT',
 
-  /** Threat analysis failed due to service issues */
-  'FAILED',
-
   /** Transaction attempts to change Safe master copy/implementation */
   'MASTER_COPY_CHANGE',
 

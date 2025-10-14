@@ -487,18 +487,19 @@ describe('SafeShieldService', () => {
         mockContractAnalysisResponse,
       );
 
-      await expect(
-        service.analyzeCounterparty({
-          chainId: mockChainId,
-          safeAddress: mockSafeAddress,
-          tx: {
-            to: mockRecipientAddress,
-            data: mockData,
-            value: '0',
-            operation: Operation.CALL,
-          },
-        }),
-      ).rejects.toThrow('Recipient analysis failed');
+      const result = await service.analyzeCounterparty({
+        chainId: mockChainId,
+        safeAddress: mockSafeAddress,
+        tx: {
+          to: mockRecipientAddress,
+          data: mockData,
+          value: '0',
+          operation: Operation.CALL,
+        },
+      });
+
+      expect(result.recipient).toEqual({});
+      expect(result.contract).toEqual(mockContractAnalysisResponse);
 
       expect(mockRecipientAnalysisService.analyze).toHaveBeenCalledWith({
         chainId: mockChainId,
@@ -545,18 +546,19 @@ describe('SafeShieldService', () => {
       );
       mockContractAnalysisService.analyze.mockRejectedValue(error);
 
-      await expect(
-        service.analyzeCounterparty({
-          chainId: mockChainId,
-          safeAddress: mockSafeAddress,
-          tx: {
-            to: mockRecipientAddress,
-            data: mockData,
-            value: '0',
-            operation: Operation.CALL,
-          },
-        }),
-      ).rejects.toThrow('Contract analysis failed');
+      const result = await service.analyzeCounterparty({
+        chainId: mockChainId,
+        safeAddress: mockSafeAddress,
+        tx: {
+          to: mockRecipientAddress,
+          data: mockData,
+          value: '0',
+          operation: Operation.CALL,
+        },
+      });
+
+      expect(result.contract).toEqual({});
+      expect(result.recipient).toEqual(mockRecipientAnalysisResponse);
 
       expect(mockRecipientAnalysisService.analyze).toHaveBeenCalledWith({
         chainId: mockChainId,

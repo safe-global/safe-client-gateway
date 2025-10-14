@@ -553,15 +553,33 @@ describe('ContractAnalysisService', () => {
         new Error(errorMessage),
       );
 
-      await expect(
-        service.analyzeContract({
-          chainId,
-          safeAddress,
-          contract: contractAddress,
-          isDelegateCall: false,
-        }),
-      ).rejects.toThrow(errorMessage);
+      const result = await service.analyzeContract({
+        chainId,
+        safeAddress,
+        contract: contractAddress,
+        isDelegateCall: false,
+      });
 
+      expect(result).toEqual({
+        CONTRACT_VERIFICATION: [
+          {
+            severity: SEVERITY_MAPPING.VERIFIED,
+            type: 'VERIFIED',
+            title: TITLE_MAPPING.VERIFIED,
+            description: DESCRIPTION_MAPPING.VERIFIED(),
+          },
+        ],
+        CONTRACT_INTERACTION: [
+          {
+            severity: SEVERITY_MAPPING.FAILED,
+            type: 'FAILED',
+            title: TITLE_MAPPING.FAILED,
+            description:
+              'The analysis failed: contract interactions unavailable. Please try again later.',
+          },
+        ],
+        DELEGATECALL: [],
+      });
       expect(mockDataDecoderApi.getContracts).toHaveBeenCalledWith({
         address: contractAddress,
         chainId,
@@ -1062,40 +1080,52 @@ describe('ContractAnalysisService', () => {
       });
     });
 
-    it('should throw error when transaction API manager fails', async () => {
+    it('should return FAILED when transaction API manager fails', async () => {
       const errorMessage = 'Transaction API manager error';
 
       mockTransactionApiManager.getApi.mockRejectedValue(
         new Error(errorMessage),
       );
 
-      await expect(
-        service.analyzeInteractions({
-          chainId,
-          safeAddress,
-          contract: contractAddress,
-        }),
-      ).rejects.toThrow(errorMessage);
+      const result = await service.analyzeInteractions({
+        chainId,
+        safeAddress,
+        contract: contractAddress,
+      });
 
+      expect(result).toEqual({
+        severity: SEVERITY_MAPPING.FAILED,
+        type: 'FAILED',
+        title: TITLE_MAPPING.FAILED,
+        description: DESCRIPTION_MAPPING.FAILED({
+          reason: 'contract interactions unavailable',
+        }),
+      });
       expect(mockTransactionApiManager.getApi).toHaveBeenCalledWith(chainId);
       expect(mockTransactionApi.getMultisigTransactions).not.toHaveBeenCalled();
     });
 
-    it('should throw error when transaction API fails', async () => {
+    it('should return FAILED when transaction API fails', async () => {
       const errorMessage = 'Transaction API error';
 
       mockTransactionApi.getMultisigTransactions.mockRejectedValue(
         new Error(errorMessage),
       );
 
-      await expect(
-        service.analyzeInteractions({
-          chainId,
-          safeAddress,
-          contract: contractAddress,
-        }),
-      ).rejects.toThrow(errorMessage);
+      const result = await service.analyzeInteractions({
+        chainId,
+        safeAddress,
+        contract: contractAddress,
+      });
 
+      expect(result).toEqual({
+        severity: SEVERITY_MAPPING.FAILED,
+        type: 'FAILED',
+        title: TITLE_MAPPING.FAILED,
+        description: DESCRIPTION_MAPPING.FAILED({
+          reason: 'contract interactions unavailable',
+        }),
+      });
       expect(mockTransactionApiManager.getApi).toHaveBeenCalledWith(chainId);
       expect(mockTransactionApi.getMultisigTransactions).toHaveBeenCalledWith({
         safeAddress,

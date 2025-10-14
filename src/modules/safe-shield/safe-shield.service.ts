@@ -67,14 +67,16 @@ export class SafeShieldService {
       tx,
     });
 
-    const [recipients, contracts] = await Promise.all([
+    const [recipientsResult, contractsResult] = await Promise.allSettled([
       this.analyzeRecipients(chainId, safeAddress, transactions, txInfo),
       this.analyzeContracts(chainId, safeAddress, transactions),
     ]);
 
     return {
-      recipient: recipients,
-      contract: contracts,
+      recipient:
+        recipientsResult.status === 'fulfilled' ? recipientsResult.value : {},
+      contract:
+        contractsResult.status === 'fulfilled' ? contractsResult.value : {},
     };
   }
 
