@@ -226,7 +226,7 @@ function detectDelegateMigration(args: {
 
     // Since SafeMigration uses immutable addresses set at deployment, we need to
     // determine which singleton it migrates to based on all possible versions
-    const versions = ['1.3.0', '1.4.0', '1.4.1'];
+    const versions = ['1.3.0', '1.4.1'];
 
     for (const version of versions) {
       const l1Singletons = getSafeSingletonDeployments({

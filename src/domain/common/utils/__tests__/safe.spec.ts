@@ -841,7 +841,8 @@ describe('Safe', () => {
           return;
         }
 
-        const migrationContract = faker.helpers.arrayElement(migrationContracts);
+        const migrationContract =
+          faker.helpers.arrayElement(migrationContracts);
         const safe = safeBuilder()
           .with('address', safeAddress)
           .with('version', null)
@@ -876,7 +877,8 @@ describe('Safe', () => {
           return;
         }
 
-        const migrationContract = faker.helpers.arrayElement(migrationContracts);
+        const migrationContract =
+          faker.helpers.arrayElement(migrationContracts);
         const safe = safeBuilder()
           .with('address', safeAddress)
           .with('version', null)
@@ -911,7 +913,8 @@ describe('Safe', () => {
           return;
         }
 
-        const migrationContract = faker.helpers.arrayElement(migrationContracts);
+        const migrationContract =
+          faker.helpers.arrayElement(migrationContracts);
         const safe = safeBuilder()
           .with('address', safeAddress)
           .with('version', null)
@@ -946,7 +949,8 @@ describe('Safe', () => {
           return;
         }
 
-        const migrationContract = faker.helpers.arrayElement(migrationContracts);
+        const migrationContract =
+          faker.helpers.arrayElement(migrationContracts);
         const safe = safeBuilder()
           .with('address', safeAddress)
           .with('version', null)
@@ -1008,7 +1012,8 @@ describe('Safe', () => {
           return;
         }
 
-        const migrationContract = faker.helpers.arrayElement(migrationContracts);
+        const migrationContract =
+          faker.helpers.arrayElement(migrationContracts);
         const safe = safeBuilder()
           .with('address', safeAddress)
           .with('version', null)
@@ -1042,7 +1047,8 @@ describe('Safe', () => {
           return;
         }
 
-        const migrationContract = faker.helpers.arrayElement(migrationContracts);
+        const migrationContract =
+          faker.helpers.arrayElement(migrationContracts);
         const safe = safeBuilder()
           .with('address', safeAddress)
           .with('version', null)
@@ -1078,7 +1084,8 @@ describe('Safe', () => {
           return;
         }
 
-        const migrationContract = faker.helpers.arrayElement(migrationContracts);
+        const migrationContract =
+          faker.helpers.arrayElement(migrationContracts);
         const safe = safeBuilder()
           .with('address', safeAddress)
           .with('version', null)
@@ -1092,9 +1099,15 @@ describe('Safe', () => {
           .build();
 
         // Check if there are any singletons on this chain for the tested versions
-        const hasAnySingletons = ['1.3.0', '1.4.0', '1.4.1'].some((version) => {
-          const l1 = getSafeSingletonDeployments({ chainId: testChainId, version });
-          const l2 = getSafeL2SingletonDeployments({ chainId: testChainId, version });
+        const hasAnySingletons = ['1.3.0', '1.4.1'].some((version) => {
+          const l1 = getSafeSingletonDeployments({
+            chainId: testChainId,
+            version,
+          });
+          const l2 = getSafeL2SingletonDeployments({
+            chainId: testChainId,
+            version,
+          });
           return l1.length > 0 || l2.length > 0;
         });
 
