@@ -1,11 +1,9 @@
 import { faker } from '@faker-js/faker';
 import type { IBuilder } from '@/__tests__/builder';
 import { Builder } from '@/__tests__/builder';
-import type {
-  CounterpartyAnalysisRequestDto,
-  ThreatAnalysisRequest,
-} from '../../analysis-requests.entity';
+import type { ThreatAnalysisRequest } from '../../analysis-requests.entity';
 import { type Hex, getAddress } from 'viem';
+import type { CounterpartyAnalysisRequestDto } from '@/modules/safe-shield/entities/dtos/counterparty-analysis-request.dto';
 
 /**
  * Builder for CounterpartyAnalysisRequest

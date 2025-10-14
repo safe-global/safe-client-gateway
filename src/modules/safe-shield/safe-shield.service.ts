@@ -7,6 +7,7 @@ import type {
   ContractAnalysisResponse,
   RecipientAnalysisResponse,
   CounterpartyAnalysisResponse,
+  RecipientInteractionAnalysisResponse,
 } from './entities/analysis-responses.entity';
 import type { DecodedTransactionData } from '@/modules/safe-shield/entities/transaction-data.entity';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
@@ -14,7 +15,11 @@ import { mapDecodedTransactions } from './utils/transaction-mapping.utils';
 import { TransactionsService } from '@/routes/transactions/transactions.service';
 import { Operation } from '@/domain/safe/entities/operation.entity';
 import type { TransactionInfo } from '@/routes/transactions/entities/transaction-info.entity';
-import { RecipientInteractionAnalysisDto } from './entities/dtos/recipient-analysis.dto';
+import {
+  COMMON_DESCRIPTION_MAPPING,
+  COMMON_SEVERITY_MAPPING,
+  COMMON_TITLE_MAPPING,
+} from './entities/common-status.constants';
 
 /**
  * Main orchestration service for Safe Shield transaction analysis.
@@ -74,9 +79,13 @@ export class SafeShieldService {
 
     return {
       recipient:
-        recipientsResult.status === 'fulfilled' ? recipientsResult.value : {},
+        recipientsResult.status === 'fulfilled'
+          ? recipientsResult.value
+          : this.handleFailedAnalysis(tx.to, 'RECIPIENT_INTERACTION'),
       contract:
-        contractsResult.status === 'fulfilled' ? contractsResult.value : {},
+        contractsResult.status === 'fulfilled'
+          ? contractsResult.value
+          : this.handleFailedAnalysis(tx.to, 'CONTRACT_VERIFICATION'),
     };
   }
 
@@ -119,7 +128,7 @@ export class SafeShieldService {
     chainId: string,
     safeAddress: Address,
     recipientAddress: Address,
-  ): Promise<RecipientInteractionAnalysisDto> {
+  ): Promise<RecipientInteractionAnalysisResponse> {
     const interactionResult =
       await this.recipientAnalysisService.analyzeInteractions({
         chainId,
@@ -203,5 +212,37 @@ export class SafeShieldService {
       this.loggingService.warn(`Failed to decode transaction: ${error}`);
       return { transactions: [] };
     }
+  }
+
+  /**
+   * Handles failed analysis by creating a FAILED result placeholder.
+   *
+   * @param reason - The error reason from the rejected promise
+   * @param targetAddress - The address to attach the failure to
+   * @param statusGroup - The status group for the failure
+   * @returns Analysis response with FAILED status
+   */
+  private handleFailedAnalysis<
+    T extends RecipientAnalysisResponse | ContractAnalysisResponse,
+  >(
+    targetAddress: Address,
+    statusGroup: 'RECIPIENT_INTERACTION' | 'CONTRACT_VERIFICATION',
+  ): T {
+    this.loggingService.warn(
+      `Counterparty analysis for ${statusGroup == 'RECIPIENT_INTERACTION' ? 'recipients' : 'contracts'} failed`,
+    );
+
+    return {
+      [targetAddress]: {
+        [statusGroup]: [
+          {
+            type: 'FAILED',
+            severity: COMMON_SEVERITY_MAPPING.FAILED,
+            title: COMMON_TITLE_MAPPING.FAILED,
+            description: COMMON_DESCRIPTION_MAPPING.FAILED(),
+          },
+        ],
+      },
+    } as T;
   }
 }

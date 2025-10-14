@@ -3,7 +3,6 @@ import { TransferPageSchema } from '@/domain/safe/entities/transfer.entity';
 import type {
   AnalysisResult,
   CommonStatus,
-  RecipientAnalysisResult,
 } from '@/modules/safe-shield/entities/analysis-result.entity';
 import { Inject, Injectable } from '@nestjs/common';
 import { getAddress, Hex, zeroAddress, type Address } from 'viem';
@@ -196,9 +195,9 @@ export class RecipientAnalysisService {
         limit: 1,
       });
 
-    const transferPage = TransferPageSchema.parse(page);
-    const interactions = transferPage.count ?? 0;
-    const type = interactions > 0 ? 'RECURRING_RECIPIENT' : 'NEW_RECIPIENT';
+      const transferPage = TransferPageSchema.parse(page);
+      const interactions = transferPage.count ?? 0;
+      const type = interactions > 0 ? 'RECURRING_RECIPIENT' : 'NEW_RECIPIENT';
 
       return this.mapToAnalysisResult({ type, interactions });
     } catch (error) {

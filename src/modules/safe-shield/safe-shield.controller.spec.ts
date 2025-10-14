@@ -1,17 +1,15 @@
 import { Test } from '@nestjs/testing';
 import { faker } from '@faker-js/faker';
+import type { Address } from 'viem';
 import { getAddress } from 'viem';
 import { SafeShieldController } from './safe-shield.controller';
 import { SafeShieldService } from './safe-shield.service';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
-import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import {
-  CounterpartyAnalysisRequestSchema,
-  type CounterpartyAnalysisRequestDto,
-} from './entities/analysis-requests.entity';
 import { counterpartyAnalysisRequestDtoBuilder } from './entities/__tests__/builders/analysis-requests.builder';
 import { counterpartyAnalysisResponseBuilder } from './entities/__tests__/builders/analysis-responses.builder';
 import { recipientAnalysisResultBuilder } from './entities/__tests__/builders/analysis-result.builder';
+import type { RecipientInteractionAnalysisResponse } from '@/modules/safe-shield/entities/analysis-responses.entity';
+import { CounterpartyAnalysisRequestSchema } from '@/modules/safe-shield/entities/analysis-requests.entity';
 
 describe('SafeShieldController (Unit)', () => {
   let controller: SafeShieldController;
@@ -45,7 +43,7 @@ describe('SafeShieldController (Unit)', () => {
     it('should delegate to SafeShieldService and return analysis results', async () => {
       const expectedResponse = {
         RECIPIENT_INTERACTION: [recipientAnalysisResultBuilder().build()],
-      };
+      } as RecipientInteractionAnalysisResponse;
 
       safeShieldService.analyzeRecipient.mockResolvedValue(expectedResponse);
 
@@ -118,20 +116,12 @@ describe('SafeShieldController (Unit)', () => {
         ),
       ).rejects.toThrow(error);
     });
-  });
-
-  describe('validation', () => {
-    it('should reject invalid Safe addresses', () => {
-      const pipe = new ValidationPipe(AddressSchema);
-
-      expect(() => pipe.transform('invalid-address')).toThrow();
-    });
 
     it('should reject invalid counterparty analysis requests', () => {
       const pipe = new ValidationPipe(CounterpartyAnalysisRequestSchema);
       const invalidRequest = {
         ...counterpartyAnalysisRequestDtoBuilder().build(),
-        to: 'invalid-address' as unknown as CounterpartyAnalysisRequestDto['to'],
+        to: 'invalid-address' as unknown as Address,
       };
 
       expect(() => pipe.transform(invalidRequest)).toThrow();

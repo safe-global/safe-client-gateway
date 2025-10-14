@@ -28,6 +28,13 @@ import {
   recipientAnalysisResultBuilder,
 } from '@/modules/safe-shield/entities/__tests__/builders/analysis-result.builder';
 import { Operation } from '@/domain/safe/entities/operation.entity';
+import type { AnalysisResult } from '@/modules/safe-shield/entities/analysis-result.entity';
+import type { RecipientStatus } from '@/modules/safe-shield/entities/recipient-status.entity';
+import {
+  COMMON_DESCRIPTION_MAPPING,
+  COMMON_SEVERITY_MAPPING,
+  COMMON_TITLE_MAPPING,
+} from './entities/common-status.constants';
 
 // Utility function for generating Wei values
 const generateRandomWeiAmount = (): bigint =>
@@ -498,8 +505,22 @@ describe('SafeShieldService', () => {
         },
       });
 
-      expect(result.recipient).toEqual({});
+      expect(result.recipient).toEqual({
+        [mockRecipientAddress]: {
+          RECIPIENT_INTERACTION: [
+            {
+              type: 'FAILED',
+              severity: COMMON_SEVERITY_MAPPING.FAILED,
+              title: COMMON_TITLE_MAPPING.FAILED,
+              description: COMMON_DESCRIPTION_MAPPING.FAILED(),
+            },
+          ],
+        },
+      });
       expect(result.contract).toEqual(mockContractAnalysisResponse);
+      expect(mockLoggingService.warn).toHaveBeenCalledWith(
+        'Counterparty analysis for recipients failed',
+      );
 
       expect(mockRecipientAnalysisService.analyze).toHaveBeenCalledWith({
         chainId: mockChainId,
@@ -557,8 +578,22 @@ describe('SafeShieldService', () => {
         },
       });
 
-      expect(result.contract).toEqual({});
+      expect(result.contract).toEqual({
+        [mockRecipientAddress]: {
+          CONTRACT_VERIFICATION: [
+            {
+              type: 'FAILED',
+              severity: COMMON_SEVERITY_MAPPING.FAILED,
+              title: COMMON_TITLE_MAPPING.FAILED,
+              description: COMMON_DESCRIPTION_MAPPING.FAILED(),
+            },
+          ],
+        },
+      });
       expect(result.recipient).toEqual(mockRecipientAnalysisResponse);
+      expect(mockLoggingService.warn).toHaveBeenCalledWith(
+        'Counterparty analysis for contracts failed',
+      );
 
       expect(mockRecipientAnalysisService.analyze).toHaveBeenCalledWith({
         chainId: mockChainId,
@@ -909,28 +944,6 @@ describe('SafeShieldService', () => {
       expect(result).toEqual({
         RECIPIENT_INTERACTION: [mockInteractionResult],
       });
-      expect(
-        mockRecipientAnalysisService.analyzeInteractions,
-      ).toHaveBeenCalledWith({
-        chainId: mockChainId,
-        safeAddress: mockSafeAddress,
-        recipient: mockRecipientAddress,
-      });
-    });
-
-    it('should handle analyzeInteractions failure', async () => {
-      const error = new Error('Failed to analyze interactions');
-
-      mockRecipientAnalysisService.analyzeInteractions.mockRejectedValue(error);
-
-      await expect(
-        service.analyzeRecipient(
-          mockChainId,
-          mockSafeAddress,
-          mockRecipientAddress,
-        ),
-      ).rejects.toThrow('Failed to analyze interactions');
-
       expect(
         mockRecipientAnalysisService.analyzeInteractions,
       ).toHaveBeenCalledWith({

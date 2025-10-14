@@ -8,6 +8,7 @@ import {
   ContractStatusGroupSchema,
   RecipientStatusGroupSchema,
 } from './status-group.entity';
+import type { AnalysisResult, CommonStatus } from './analysis-result.entity';
 import {
   RecipientAnalysisResultSchema,
   ContractAnalysisResultSchema,
@@ -15,6 +16,7 @@ import {
   type RecipientAnalysisResult,
   type ContractAnalysisResult,
 } from './analysis-result.entity';
+import type { RecipientStatus } from '@/modules/safe-shield/entities/recipient-status.entity';
 
 /**
  * Response structure for recipient analysis endpoint.
@@ -95,3 +97,16 @@ export type GroupedAnalysisResults<
     ? RecipientStatusGroup
     : ContractStatusGroup]?: Array<T>;
 };
+
+/**
+ * Response structure for single recipient interaction analysis.
+ *
+ * Contains only the RECIPIENT_INTERACTION status group.
+ * Used by the analyzeRecipient endpoint which focuses on recipient interaction history.
+ */
+export type RecipientInteractionAnalysisResponse = Required<
+  Pick<
+    GroupedAnalysisResults<AnalysisResult<RecipientStatus | CommonStatus>>,
+    'RECIPIENT_INTERACTION'
+  >
+>;

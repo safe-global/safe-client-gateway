@@ -2,8 +2,6 @@ import { z } from 'zod';
 import { HexSchema } from '@/validation/entities/schemas/hex.schema';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
-import { Address, Hex } from 'viem';
-import { ApiProperty } from '@nestjs/swagger';
 import { Operation } from '@/domain/safe/entities/operation.entity';
 
 /**
@@ -38,6 +36,10 @@ export const CounterpartyAnalysisRequestSchema = z.object({
    */
   operation: z.nativeEnum(Operation),
 });
+
+export type CounterpartyAnalysisRequest = z.infer<
+  typeof CounterpartyAnalysisRequestSchema
+>;
 
 /**
  * Request schema for threat analysis endpoint.
@@ -87,25 +89,5 @@ export const ThreatAnalysisRequestSchema = z.object({
   /** Safe transaction nonce */
   nonce: NumericStringSchema,
 });
-
-export class CounterpartyAnalysisRequestDto
-  implements z.infer<typeof CounterpartyAnalysisRequestSchema>
-{
-  @ApiProperty()
-  to!: Address;
-
-  @ApiProperty()
-  value!: string;
-
-  @ApiProperty({ type: String })
-  data!: Hex;
-
-  @ApiProperty({
-    enum: Operation,
-    enumName: 'Operation',
-    description: 'Operation type: 0 for CALL, 1 for DELEGATE',
-  })
-  operation!: Operation;
-}
 
 export type ThreatAnalysisRequest = z.infer<typeof ThreatAnalysisRequestSchema>;

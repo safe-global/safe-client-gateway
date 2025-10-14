@@ -18,14 +18,10 @@ import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import type { Address } from 'viem';
 import { SafeShieldService } from './safe-shield.service';
-import { RecipientInteractionAnalysisDto } from './entities/dtos/recipient-analysis.dto';
-import type {
-  CounterpartyAnalysisResponse,
-} from './entities/analysis-responses.entity';
-import {
-  CounterpartyAnalysisRequestDto,
-  CounterpartyAnalysisRequestSchema,
-} from './entities/analysis-requests.entity';
+import { RecipientInteractionAnalysisDto } from './entities/dtos/recipient-interaction-analysis.dto';
+import { CounterpartyAnalysisRequestSchema } from './entities/analysis-requests.entity';
+import { CounterpartyAnalysisRequestDto } from '@/modules/safe-shield/entities/dtos/counterparty-analysis-request.dto';
+import { CounterpartyAnalysisDto } from '@/modules/safe-shield/entities/dtos/counterparty-analysis.dto';
 
 /**
  * Controller for Safe Shield security analysis endpoints.
@@ -76,11 +72,11 @@ export class SafeShieldController {
     @Param('recipientAddress', new ValidationPipe(AddressSchema))
     recipientAddress: Address,
   ): Promise<RecipientInteractionAnalysisDto> {
-    return await this.safeShieldService.analyzeRecipient({
+    return await this.safeShieldService.analyzeRecipient(
       chainId,
       safeAddress,
       recipientAddress,
-  });
+    );
   }
 
   @ApiOperation({
@@ -107,8 +103,9 @@ export class SafeShieldController {
       'Transaction data used to analyze all counterparties involved.',
   })
   @ApiOkResponse({
+    type: CounterpartyAnalysisDto,
     description:
-      'Combined counterparty analysis including recipients and contracts grouped by status group.',
+      'Combined counterparty analysis including recipients and contracts grouped by status group and mapped to an address.',
   })
   @HttpCode(HttpStatus.OK)
   @Post('chains/:chainId/security/:safeAddress/counterparty-analysis')
@@ -118,7 +115,7 @@ export class SafeShieldController {
     safeAddress: Address,
     @Body(new ValidationPipe(CounterpartyAnalysisRequestSchema))
     txData: CounterpartyAnalysisRequestDto,
-  ): Promise<CounterpartyAnalysisResponse> {
+  ): Promise<CounterpartyAnalysisDto> {
     return await this.safeShieldService.analyzeCounterparty({
       chainId,
       safeAddress,
