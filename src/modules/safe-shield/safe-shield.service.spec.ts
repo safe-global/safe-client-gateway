@@ -598,23 +598,111 @@ describe('SafeShieldService', () => {
       expect(mockRecipientAnalysisService.analyze).toHaveBeenCalledWith({
         chainId: mockChainId,
         safeAddress: mockSafeAddress,
-        transactions: expect.arrayContaining([
+        transactions: [
           expect.objectContaining({
             to: mockRecipientAddress,
             data: mockData,
           }),
-        ]),
+        ],
         txInfo: mockTxInfo,
       });
       expect(mockContractAnalysisService.analyze).toHaveBeenCalledWith({
         chainId: mockChainId,
         safeAddress: mockSafeAddress,
-        transactions: expect.arrayContaining([
+        transactions: [
           expect.objectContaining({
             to: mockRecipientAddress,
             data: mockData,
           }),
-        ]),
+        ],
+      });
+    });
+
+    it('should handle both analysis services failing simultaneously', async () => {
+      const recipientError = new Error('Recipient analysis failed');
+      const contractError = new Error('Contract analysis failed');
+
+      const mockTxInfo = createTransferTransactionInfo(
+        mockSafeAddress,
+        mockRecipientAddress,
+      );
+      const mockTransactionPreview = createTransactionPreviewMock({
+        txInfo: mockTxInfo,
+        hexData: mockData,
+        dataDecoded: mockDataDecoded,
+        to: mockRecipientAddress,
+      });
+
+      mockTransactionsService.previewTransaction.mockResolvedValue(
+        mockTransactionPreview,
+      );
+      mockRecipientAnalysisService.analyze.mockRejectedValue(recipientError);
+      mockContractAnalysisService.analyze.mockRejectedValue(contractError);
+
+      const result = await service.analyzeCounterparty({
+        chainId: mockChainId,
+        safeAddress: mockSafeAddress,
+        tx: {
+          to: mockRecipientAddress,
+          data: mockData,
+          value: '0',
+          operation: Operation.CALL,
+        },
+      });
+
+      expect(result.recipient).toEqual({
+        [mockRecipientAddress]: {
+          RECIPIENT_INTERACTION: [
+            {
+              type: 'FAILED',
+              severity: COMMON_SEVERITY_MAPPING.FAILED,
+              title: COMMON_TITLE_MAPPING.FAILED,
+              description: COMMON_DESCRIPTION_MAPPING.FAILED(),
+            },
+          ],
+        },
+      });
+      expect(result.contract).toEqual({
+        [mockRecipientAddress]: {
+          CONTRACT_VERIFICATION: [
+            {
+              type: 'FAILED',
+              severity: COMMON_SEVERITY_MAPPING.FAILED,
+              title: COMMON_TITLE_MAPPING.FAILED,
+              description: COMMON_DESCRIPTION_MAPPING.FAILED(),
+            },
+          ],
+        },
+      });
+
+      expect(mockLoggingService.warn).toHaveBeenCalledWith(
+        'Counterparty analysis for recipients failed',
+      );
+      expect(mockLoggingService.warn).toHaveBeenCalledWith(
+        'Counterparty analysis for contracts failed',
+      );
+      expect(mockLoggingService.warn).toHaveBeenCalledTimes(2);
+
+      expect(mockRecipientAnalysisService.analyze).toHaveBeenCalledWith({
+        chainId: mockChainId,
+        safeAddress: mockSafeAddress,
+        transactions: [
+          expect.objectContaining({
+            to: mockRecipientAddress,
+            data: mockData,
+          }),
+        ],
+        txInfo: mockTxInfo,
+      });
+      expect(mockContractAnalysisService.analyze).toHaveBeenCalledWith({
+        chainId: mockChainId,
+        safeAddress: mockSafeAddress,
+        transactions: [
+          expect.objectContaining({
+            to: mockRecipientAddress,
+            data: mockData,
+          }),
+        ],
       });
     });
 
