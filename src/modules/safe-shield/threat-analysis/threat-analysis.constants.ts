@@ -46,7 +46,7 @@ export const DESCRIPTION_MAPPING: Record<
   MALICIOUS: ({ reason, classification } = {}) =>
     `The transaction ${reason} ${classification}.`,
   MODERATE: ({ reason, classification } = {}) =>
-    `The transaction ${reason} ${classification}. Cancel this transaction.`,
+    `The transaction${reason ? ` ${reason}` : ''}${classification ? ` ${classification}` : ''}. Cancel this transaction.`,
   NO_THREAT: () => 'Threat analysis found no issues.',
   FAILED: ({ reason } = {}) =>
     `Threat analysis failed. Review before processing.${reason ? ` (${reason}).` : ''}`,
