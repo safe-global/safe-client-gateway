@@ -10,7 +10,7 @@ export interface IBlockaidApi {
    * @param safeAddress - The Safe address.
    * @param walletAddress - The wallet address initiating the transaction (signer).
    * @param message - The JSON representation of typed data.
-   * @param origin - Optional origin identifier for the request.
+   * @param origin - The origin identifier for the request (optional).
    * @returns The scan response.
    */
   scanTransaction(

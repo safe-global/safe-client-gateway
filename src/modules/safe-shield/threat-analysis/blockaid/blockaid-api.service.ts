@@ -28,7 +28,7 @@ export class BlockaidApi implements IBlockaidApi {
         params: [safeAddress, message],
       },
       options: ['simulation', 'validation'],
-      metadata: { domain: origin ?? '' },
+      metadata: origin ? { domain: origin } : { non_dapp: true as const },
       account_address: walletAddress,
     };
 

@@ -93,7 +93,7 @@ describe('BlockaidApi', () => {
       expect(result).toEqual(mockScanResponse);
     });
 
-    it('should call blockaid client without domain parameter', async () => {
+    it('should call blockaid client without domain parameter/ with non_dapp', async () => {
       const mockScanResponse: TransactionScanResponse = {
         block: faker.string.numeric(),
         chain: `0x${chainId}`,
@@ -117,7 +117,7 @@ describe('BlockaidApi', () => {
           params: [safeAddress, message],
         },
         options: ['simulation', 'validation'],
-        metadata: { domain: '' },
+        metadata: { non_dapp: true },
         account_address: walletAddress,
       });
 
