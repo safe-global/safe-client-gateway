@@ -8,6 +8,7 @@ import {
   getCompatibilityFallbackHandlerDeployments as _getFallbackHandlerDeployments,
   getSafeToL2SetupDeployments as _getSafeToL2SetupDeployments,
   getSafeToL2MigrationDeployments as _getSafeToL2MigrationDeployments,
+  getSafeMigrationDeployments as _getSafeMigrationDeployments,
 } from '@safe-global/safe-deployments';
 import { _SAFE_DEPLOYMENTS } from '@safe-global/safe-deployments/dist/deployments';
 import { getAddress, type Address } from 'viem';
@@ -109,6 +110,18 @@ export function getFallbackHandlerDeployments(args: Filter): Array<Address> {
  */
 export function getSafeToL2MigrationDeployments(args: Filter): Array<Address> {
   return formatDeployments(_getSafeToL2MigrationDeployments, args);
+}
+
+/**
+ * Returns a list of official SafeMigration addresses based on given {@link Filter}.
+ *
+ * @param {string} args.chainId - the chain ID to filter deployments by
+ * @param {string} args.version - the version to filter deployments by
+ *
+ * @returns {Array<Address>} - a list of checksummed SafeMigration addresses
+ */
+export function getSafeMigrationDeployments(args: Filter): Array<Address> {
+  return formatDeployments(_getSafeMigrationDeployments, args);
 }
 
 /**
