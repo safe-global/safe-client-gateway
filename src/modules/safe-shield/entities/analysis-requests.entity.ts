@@ -88,6 +88,12 @@ export const ThreatAnalysisRequestBodySchema = z.object({
 
   /** Safe transaction nonce */
   nonce: NumericStringSchema,
+
+  /** Address of the transaction signer/wallet */
+  walletAddress: AddressSchema,
+
+  /** Optional origin identifier for the request */
+  origin: z.string().optional(),
 });
 
 /**

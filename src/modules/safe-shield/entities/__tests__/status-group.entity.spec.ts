@@ -5,18 +5,21 @@ import {
   RecipientStatusGroupSchema,
   ContractStatusGroup,
   ContractStatusGroupSchema,
+  ThreatStatusGroup,
+  ThreatStatusGroupSchema,
 } from '../status-group.entity';
 
 describe('StatusGroup', () => {
   describe('StatusGroup', () => {
     it('should have all expected values', () => {
-      expect(StatusGroup).toHaveLength(6);
+      expect(StatusGroup).toHaveLength(7);
       expect(StatusGroup).toContain('RECIPIENT_INTERACTION');
       expect(StatusGroup).toContain('BRIDGE');
       expect(StatusGroup).toContain('CONTRACT_VERIFICATION');
       expect(StatusGroup).toContain('CONTRACT_INTERACTION');
       expect(StatusGroup).toContain('DELEGATECALL');
       expect(StatusGroup).toContain('THREAT');
+      expect(StatusGroup).toContain('BALANCE_CHANGE');
     });
 
     it('should have consistent naming convention', () => {
@@ -43,6 +46,14 @@ describe('StatusGroup', () => {
       expect(ContractStatusGroup).toContain('CONTRACT_VERIFICATION');
       expect(ContractStatusGroup).toContain('CONTRACT_INTERACTION');
       expect(ContractStatusGroup).toContain('DELEGATECALL');
+    });
+  });
+
+  describe('ThreatStatusGroup', () => {
+    it('should have all expected values', () => {
+      expect(ThreatStatusGroup).toHaveLength(2);
+      expect(ThreatStatusGroup).toContain('THREAT');
+      expect(ThreatStatusGroup).toContain('BALANCE_CHANGE');
     });
   });
 
@@ -75,7 +86,7 @@ describe('RecipientStatusGroupSchema', () => {
     },
   );
 
-  it.each([...ContractStatusGroup, 'THREAT'] as const)(
+  it.each([...ContractStatusGroup, ...ThreatStatusGroup] as const)(
     'should reject non-recipient status group = %s',
     (invalidValue) => {
       expect(() => RecipientStatusGroupSchema.parse(invalidValue)).toThrow();
@@ -91,10 +102,26 @@ describe('ContractStatusGroupSchema', () => {
     },
   );
 
-  it.each([...RecipientStatusGroup, 'THREAT'] as const)(
+  it.each([...RecipientStatusGroup, ...ThreatStatusGroup] as const)(
     'should reject non-contract status group = %s',
     (invalidValue) => {
       expect(() => ContractStatusGroupSchema.parse(invalidValue)).toThrow();
+    },
+  );
+});
+
+describe('ThreatStatusGroupSchema', () => {
+  it.each(ThreatStatusGroup)(
+    'should validate threat status group = %s',
+    (value) => {
+      expect(() => ThreatStatusGroupSchema.parse(value)).not.toThrow();
+    },
+  );
+
+  it.each([...RecipientStatusGroup, ...ContractStatusGroup] as const)(
+    'should reject non-threat status group = %s',
+    (invalidValue) => {
+      expect(() => ThreatStatusGroupSchema.parse(invalidValue)).toThrow();
     },
   );
 });
