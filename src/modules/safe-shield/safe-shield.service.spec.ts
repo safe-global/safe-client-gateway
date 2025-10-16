@@ -512,14 +512,16 @@ describe('SafeShieldService', () => {
               type: 'FAILED',
               severity: COMMON_SEVERITY_MAPPING.FAILED,
               title: COMMON_TITLE_MAPPING.FAILED,
-              description: COMMON_DESCRIPTION_MAPPING.FAILED(),
+              description: COMMON_DESCRIPTION_MAPPING.FAILED({
+                reason: 'Recipient analysis failed',
+              }),
             },
           ],
         },
       });
       expect(result.contract).toEqual(mockContractAnalysisResponse);
       expect(mockLoggingService.warn).toHaveBeenCalledWith(
-        'Counterparty analysis for recipients failed',
+        'Counterparty analysis for recipients failed. Recipient analysis failed',
       );
 
       expect(mockRecipientAnalysisService.analyze).toHaveBeenCalledWith({
@@ -585,14 +587,16 @@ describe('SafeShieldService', () => {
               type: 'FAILED',
               severity: COMMON_SEVERITY_MAPPING.FAILED,
               title: COMMON_TITLE_MAPPING.FAILED,
-              description: COMMON_DESCRIPTION_MAPPING.FAILED(),
+              description: COMMON_DESCRIPTION_MAPPING.FAILED({
+                reason: 'Contract analysis failed',
+              }),
             },
           ],
         },
       });
       expect(result.recipient).toEqual(mockRecipientAnalysisResponse);
       expect(mockLoggingService.warn).toHaveBeenCalledWith(
-        'Counterparty analysis for contracts failed',
+        'Counterparty analysis for contracts failed. Contract analysis failed',
       );
 
       expect(mockRecipientAnalysisService.analyze).toHaveBeenCalledWith({
@@ -657,7 +661,9 @@ describe('SafeShieldService', () => {
               type: 'FAILED',
               severity: COMMON_SEVERITY_MAPPING.FAILED,
               title: COMMON_TITLE_MAPPING.FAILED,
-              description: COMMON_DESCRIPTION_MAPPING.FAILED(),
+              description: COMMON_DESCRIPTION_MAPPING.FAILED({
+                reason: 'Recipient analysis failed',
+              }),
             },
           ],
         },
@@ -669,17 +675,19 @@ describe('SafeShieldService', () => {
               type: 'FAILED',
               severity: COMMON_SEVERITY_MAPPING.FAILED,
               title: COMMON_TITLE_MAPPING.FAILED,
-              description: COMMON_DESCRIPTION_MAPPING.FAILED(),
+              description: COMMON_DESCRIPTION_MAPPING.FAILED({
+                reason: 'Contract analysis failed',
+              }),
             },
           ],
         },
       });
 
       expect(mockLoggingService.warn).toHaveBeenCalledWith(
-        'Counterparty analysis for recipients failed',
+        'Counterparty analysis for recipients failed. Recipient analysis failed',
       );
       expect(mockLoggingService.warn).toHaveBeenCalledWith(
-        'Counterparty analysis for contracts failed',
+        'Counterparty analysis for contracts failed. Contract analysis failed',
       );
       expect(mockLoggingService.warn).toHaveBeenCalledTimes(2);
 

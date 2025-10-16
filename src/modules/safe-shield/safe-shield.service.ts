@@ -20,6 +20,7 @@ import {
   COMMON_SEVERITY_MAPPING,
   COMMON_TITLE_MAPPING,
 } from './entities/common-status.constants';
+import { extractReasonMessage } from './utils/common';
 
 /**
  * Main orchestration service for Safe Shield transaction analysis.
@@ -81,11 +82,19 @@ export class SafeShieldService {
       recipient:
         recipientsResult.status === 'fulfilled'
           ? recipientsResult.value
-          : this.handleFailedAnalysis(tx.to, 'RECIPIENT_INTERACTION'),
+          : this.handleFailedAnalysis(
+              tx.to,
+              'RECIPIENT_INTERACTION',
+              recipientsResult.reason,
+            ),
       contract:
         contractsResult.status === 'fulfilled'
           ? contractsResult.value
-          : this.handleFailedAnalysis(tx.to, 'CONTRACT_VERIFICATION'),
+          : this.handleFailedAnalysis(
+              tx.to,
+              'CONTRACT_VERIFICATION',
+              contractsResult.reason,
+            ),
     };
   }
 
@@ -227,9 +236,12 @@ export class SafeShieldService {
   >(
     targetAddress: Address,
     statusGroup: 'RECIPIENT_INTERACTION' | 'CONTRACT_VERIFICATION',
+    reason?: unknown,
   ): T {
+    const reasonMessage = extractReasonMessage(reason);
+
     this.loggingService.warn(
-      `Counterparty analysis for ${statusGroup == 'RECIPIENT_INTERACTION' ? 'recipients' : 'contracts'} failed`,
+      `Counterparty analysis for ${statusGroup == 'RECIPIENT_INTERACTION' ? 'recipients' : 'contracts'} failed. ${reasonMessage}`,
     );
 
     return {
@@ -239,7 +251,9 @@ export class SafeShieldService {
             type: 'FAILED',
             severity: COMMON_SEVERITY_MAPPING.FAILED,
             title: COMMON_TITLE_MAPPING.FAILED,
-            description: COMMON_DESCRIPTION_MAPPING.FAILED(),
+            description: COMMON_DESCRIPTION_MAPPING.FAILED({
+              reason: reasonMessage,
+            }),
           },
         ],
       },
