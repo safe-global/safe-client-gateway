@@ -263,8 +263,8 @@ describe('ThreatAnalysisService', () => {
       });
 
       it('should handle validation result_type Malicious without features', async () => {
-        const classification = faker.lorem.words(2);
-        const reason = faker.lorem.words(2);
+        const classification = 'known_malicious';
+        const reason = 'transfer_farming';
 
         const mockScanResponse = {
           validation: {
@@ -296,8 +296,8 @@ describe('ThreatAnalysisService', () => {
               type: 'MALICIOUS',
               title: TITLE_MAPPING.MALICIOUS,
               description: DESCRIPTION_MAPPING.MALICIOUS({
-                classification,
-                reason,
+                classification: 'a known malicious address',
+                reason: 'transfers tokens to',
               }),
               issues: new Map(),
             },
@@ -307,8 +307,8 @@ describe('ThreatAnalysisService', () => {
       });
 
       it('should handle validation result_type Warning with features', async () => {
-        const classification = faker.lorem.words(2);
-        const reason = faker.lorem.words(2);
+        const classification = 'known_malicious';
+        const reason = 'transfer_farming';
 
         const features = [
           {
@@ -363,8 +363,8 @@ describe('ThreatAnalysisService', () => {
               type: 'MODERATE',
               title: TITLE_MAPPING.MODERATE,
               description: DESCRIPTION_MAPPING.MODERATE({
-                classification,
-                reason,
+                classification: 'a known malicious address',
+                reason: 'transfers tokens to',
               }),
               issues: new Map([
                 ['CRITICAL', [features[2].description]],
@@ -451,7 +451,7 @@ describe('ThreatAnalysisService', () => {
               type: 'FAILED',
               title: TITLE_MAPPING.FAILED,
               description: DESCRIPTION_MAPPING.FAILED({
-                reason: 'Simulation could not be completed',
+                error: 'Simulation could not be completed',
               }),
             },
             {
@@ -829,8 +829,8 @@ describe('ThreatAnalysisService', () => {
       const otherAddress = getAddress(faker.finance.ethereumAddress());
       const logoUrl = faker.internet.url();
       const inValue = faker.string.numeric(7);
-      const classification = faker.lorem.words(2);
-      const reason = faker.lorem.words(2);
+      const classification = 'known_malicious';
+      const reason = 'transfer_farming';
 
       const mockScanResponse = {
         block: faker.string.numeric(),
@@ -911,8 +911,8 @@ describe('ThreatAnalysisService', () => {
             type: 'MODERATE',
             title: TITLE_MAPPING.MODERATE,
             description: DESCRIPTION_MAPPING.MODERATE({
-              reason,
-              classification,
+              classification: 'a known malicious address',
+              reason: 'transfers tokens to',
             }),
             issues: new Map([['WARN', ['High gas price detected']]]),
           },

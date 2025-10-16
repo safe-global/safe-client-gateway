@@ -33,6 +33,7 @@ export const TITLE_MAPPING: Record<ThreatStatus, string> = {
 type DescriptionArgs = {
   reason?: string;
   classification?: string;
+  error?: string;
 };
 
 /**
@@ -44,12 +45,12 @@ export const DESCRIPTION_MAPPING: Record<
   (args?: DescriptionArgs) => string
 > = {
   MALICIOUS: ({ reason, classification } = {}) =>
-    `The transaction ${reason} ${classification}.`,
+    `The transaction ${reason ? ` ${reason}` : ''}${classification ? ` ${classification}` : ''}.`,
   MODERATE: ({ reason, classification } = {}) =>
     `The transaction${reason ? ` ${reason}` : ''}${classification ? ` ${classification}` : ''}. Cancel this transaction.`,
   NO_THREAT: () => 'Threat analysis found no issues.',
-  FAILED: ({ reason } = {}) =>
-    `Threat analysis failed. Review before processing.${reason ? ` (${reason}).` : ''}`,
+  FAILED: ({ error } = {}) =>
+    `Threat analysis failed. Review before processing.${error ? ` (${error}).` : ''}`,
   MASTER_COPY_CHANGE: () =>
     'Verify this change as it may overwrite account ownership.',
   OWNERSHIP_CHANGE: () =>

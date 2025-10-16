@@ -18,7 +18,11 @@ import {
 } from '@/modules/safe-shield/entities/threat-analysis.types';
 import { ThreatStatus } from '@/modules/safe-shield/entities/threat-status.entity';
 import { IBlockaidApi } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-api.interface';
-import { BLOCKAID_SEVERITY_MAP } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid.constants';
+import {
+  BLOCKAID_SEVERITY_MAP,
+  CLASSIFICATION_MAPPING,
+  REASON_MAPPING,
+} from '@/modules/safe-shield/threat-analysis/blockaid/blockaid.constants';
 import {
   DESCRIPTION_MAPPING,
   SAFE_VERSION,
@@ -203,7 +207,7 @@ export class ThreatAnalysisService {
       results = [
         this.mapToAnalysisResult({
           type: 'FAILED',
-          reason: simulation.description,
+          error: simulation.description,
         }),
       ];
       return { results, balanceChanges };
@@ -277,6 +281,7 @@ export class ThreatAnalysisService {
    * @param issues - A potential map of specific issues identified during threat analysis, grouped by severity.
    * @param before - The old master copy address (only for MASTER_COPY_CHANGE).
    * @param after - The new master copy address (only for MASTER_COPY_CHANGE).
+   * @param error - An error message in case of a failure (optional).
    * @returns The analysis result.
    */
   private mapToAnalysisResult(args: {
@@ -286,11 +291,20 @@ export class ThreatAnalysisService {
     issues?: Map<keyof typeof Severity, Array<string>>;
     before?: string;
     after?: string;
+    error?: string;
   }): ThreatAnalysisResult {
-    const { type, reason, classification, issues, before, after } = args;
+    const { type, reason, classification, issues, before, after, error } = args;
     const severity = SEVERITY_MAPPING[type];
     const title = TITLE_MAPPING[type];
-    const description = DESCRIPTION_MAPPING[type]({ reason, classification });
+    const reasonMsg = reason ? REASON_MAPPING[reason] : '';
+    const classificationMsg = classification
+      ? CLASSIFICATION_MAPPING[classification]
+      : '';
+    const description = DESCRIPTION_MAPPING[type]({
+      reason: reasonMsg,
+      classification: classificationMsg,
+      error,
+    });
 
     switch (type) {
       case 'MASTER_COPY_CHANGE':
