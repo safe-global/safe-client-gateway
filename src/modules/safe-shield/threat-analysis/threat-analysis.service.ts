@@ -19,7 +19,6 @@ import {
 import { ThreatStatus } from '@/modules/safe-shield/entities/threat-status.entity';
 import { IBlockaidApi } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-api.interface';
 import { BLOCKAID_SEVERITY_MAP } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid.constants';
-import { generateTypedData } from '@/modules/safe-shield/threat-analysis/eip-712';
 import {
   DESCRIPTION_MAPPING,
   SAFE_VERSION,
@@ -34,6 +33,7 @@ import {
   TransactionValidationError,
 } from '@blockaid/client/resources/index';
 import { Inject, Injectable } from '@nestjs/common';
+import { generateTypedData } from '@safe-global/protocol-kit';
 import { Address } from 'viem';
 
 /**
