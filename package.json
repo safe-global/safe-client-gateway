@@ -50,6 +50,7 @@
     "@nestjs/serve-static": "5.0.3",
     "@nestjs/swagger": "11.2.0",
     "@nestjs/typeorm": "11.0.0",
+    "@safe-global/protocol-kit": "^6.1.1",
     "@safe-global/safe-deployments": "1.37.32",
     "amqp-connection-manager": "4.1.14",
     "amqplib": "0.10.8",

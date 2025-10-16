@@ -34,6 +34,7 @@ import {
   TransactionValidationError,
 } from '@blockaid/client/resources/index';
 import { Inject, Injectable } from '@nestjs/common';
+import { generateTypedData } from '@safe-global/protocol-kit';
 import { Address } from 'viem';
 import { TypedData } from '@/domain/messages/entities/typed-data.entity';
 
