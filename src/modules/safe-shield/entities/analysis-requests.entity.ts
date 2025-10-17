@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { HexSchema } from '@/validation/entities/schemas/hex.schema';
+import { TypedDataSchema } from '@/domain/messages/entities/typed-data.entity';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
 
 /**
  * Request body schema for recipient analysis endpoint.
@@ -42,52 +42,21 @@ export const ContractAnalysisRequestBodySchema = z.object({
 });
 
 /**
- * Request body schema for threat analysis endpoint.
+ * Request body schema for EIP-712 typed data threat analysis endpoint.
  *
- * Contains complete Safe transaction parameters for comprehensive
- * threat analysis including malicious pattern detection and
- * Safe-specific security risks.
+ *
+ * Contains complete Safe transaction parameters or a message to be signed
+ * as EIP-712 structured data for comprehensive threat analysis,
+ * including signature farming, phishing attempts, and malicious
+ * structured data patterns.
  */
-export const ThreatAnalysisRequestBodySchema = z.object({
-  /** Target address for the transaction */
-  to: AddressSchema,
-
+export const ThreatAnalysisRequestSchema = z.object({
   /**
-   * Amount of ETH (in wei) being sent with the transaction.
-   * Represented as a string to handle large numbers without precision loss.
-   * Example: "1000000000000000000" for 1 ETH
+   * EIP-712 typed data to analyze for security threats.
+   * Contains domain, primaryType, types, and message fields
+   * following the EIP-712 standard for structured data signing.
    */
-  value: NumericStringSchema,
-
-  /**
-   * Transaction data payload as a hex string.
-   * @see RecipientAnalysisRequestBodySchema.data
-   */
-  data: HexSchema,
-
-  /**
-   * Type of operation being performed.
-   * @see ContractAnalysisRequestBodySchema.operation
-   */
-  operation: z.number().int().min(0).max(1),
-
-  /** Gas limit for the Safe transaction execution */
-  safeTxGas: NumericStringSchema,
-
-  /** Base gas for the Safe transaction */
-  baseGas: NumericStringSchema,
-
-  /** Gas price for the transaction */
-  gasPrice: NumericStringSchema,
-
-  /** Token address for gas payment (address(0) for ETH) */
-  gasToken: AddressSchema,
-
-  /** Address to receive gas payment refund */
-  refundReceiver: AddressSchema,
-
-  /** Safe transaction nonce */
-  nonce: NumericStringSchema,
+  data: TypedDataSchema,
 
   /** Address of the transaction signer/wallet */
   walletAddress: AddressSchema,
@@ -105,6 +74,4 @@ export type RecipientAnalysisRequestBody = z.infer<
 export type ContractAnalysisRequestBody = z.infer<
   typeof ContractAnalysisRequestBodySchema
 >;
-export type ThreatAnalysisRequestBody = z.infer<
-  typeof ThreatAnalysisRequestBodySchema
->;
+export type ThreatAnalysisRequest = z.infer<typeof ThreatAnalysisRequestSchema>;

@@ -6,9 +6,8 @@ import type { IBlockaidApi } from '@/modules/safe-shield/threat-analysis/blockai
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 import type { TransactionScanResponse } from '@blockaid/client/resources/evm/evm';
-import type { ThreatAnalysisRequestBody } from '@/modules/safe-shield/entities/analysis-requests.entity';
 import { CacheRouter } from '@/datasources/cache/cache.router';
-import { threatAnalysisRequestBodyBuilder } from '@/modules/safe-shield/entities/__tests__/builders/analysis-requests.builder';
+import { threatAnalysisRequestBuilder } from '@/modules/safe-shield/entities/__tests__/builders/analysis-requests.builder';
 import { threatAnalysisResponseBuilder } from '@/modules/safe-shield/entities/__tests__/builders/analysis-responses.builder';
 import {
   DESCRIPTION_MAPPING,
@@ -56,10 +55,11 @@ describe('ThreatAnalysisService', () => {
     const chainId = faker.string.numeric();
     const safeAddress = getAddress(faker.finance.ethereumAddress());
     const walletAddress = getAddress(faker.finance.ethereumAddress());
-    const requestData: ThreatAnalysisRequestBody =
-      threatAnalysisRequestBodyBuilder()
-        .with('walletAddress', walletAddress)
-        .build();
+    const request = threatAnalysisRequestBuilder()
+      .with('walletAddress', walletAddress)
+      .build();
+    const { data, origin } = request;
+    const message = JSON.stringify(data);
 
     describe('caching behavior', () => {
       const mockSuccessScanResponse = {
@@ -81,7 +81,10 @@ describe('ThreatAnalysisService', () => {
           threatAnalysisResponseBuilder('NO_THREAT').build();
         const cacheDir = CacheRouter.getThreatAnalysisCacheDir({
           chainId,
-          requestData,
+          safeAddress,
+          walletAddress,
+          message,
+          origin,
         });
         await fakeCacheService.hSet(
           cacheDir,
@@ -92,7 +95,7 @@ describe('ThreatAnalysisService', () => {
         const result = await service.analyze({
           chainId,
           safeAddress,
-          requestData,
+          request,
         });
 
         expect(result).toEqual(cachedResponse);
@@ -102,7 +105,10 @@ describe('ThreatAnalysisService', () => {
       it('should handle JSON parsing errors in cached data gracefully', async () => {
         const cacheDir = CacheRouter.getThreatAnalysisCacheDir({
           chainId,
-          requestData,
+          safeAddress,
+          walletAddress,
+          message,
+          origin,
         });
         const invalidCachedData = 'invalid json data';
         await fakeCacheService.hSet(cacheDir, invalidCachedData, 3600);
@@ -114,7 +120,7 @@ describe('ThreatAnalysisService', () => {
         const result = await service.analyze({
           chainId,
           safeAddress,
-          requestData,
+          request,
         });
 
         expect(result).toBeDefined();
@@ -162,7 +168,7 @@ describe('ThreatAnalysisService', () => {
         const result = await service.analyze({
           chainId,
           safeAddress,
-          requestData,
+          request,
         });
 
         expect(result).toEqual(expectedResponse);
@@ -171,11 +177,15 @@ describe('ThreatAnalysisService', () => {
           safeAddress,
           walletAddress,
           expect.any(String),
+          origin,
         );
 
         const cacheDir = CacheRouter.getThreatAnalysisCacheDir({
           chainId,
-          requestData,
+          safeAddress,
+          walletAddress,
+          message,
+          origin,
         });
         await expect(fakeCacheService.hGet(cacheDir)).resolves.toEqual(
           JSON.stringify(expectedResponse),
@@ -204,7 +214,7 @@ describe('ThreatAnalysisService', () => {
         const result = await service.analyze({
           chainId,
           safeAddress,
-          requestData,
+          request,
         });
 
         expect(result).toBeDefined();
@@ -245,7 +255,7 @@ describe('ThreatAnalysisService', () => {
         const result = await service.analyze({
           chainId,
           safeAddress,
-          requestData,
+          request,
         });
 
         expect(result).toBeDefined();
@@ -285,7 +295,7 @@ describe('ThreatAnalysisService', () => {
         const result = await service.analyze({
           chainId,
           safeAddress,
-          requestData,
+          request,
         });
 
         expect(result).toBeDefined();
@@ -352,7 +362,7 @@ describe('ThreatAnalysisService', () => {
         const result = await service.analyze({
           chainId,
           safeAddress,
-          requestData,
+          request,
         });
 
         expect(result).toBeDefined();
@@ -398,7 +408,7 @@ describe('ThreatAnalysisService', () => {
         const result = await service.analyze({
           chainId,
           safeAddress,
-          requestData,
+          request,
         });
 
         expect(result).toBeDefined();
@@ -440,7 +450,7 @@ describe('ThreatAnalysisService', () => {
         const result = await service.analyze({
           chainId,
           safeAddress,
-          requestData,
+          request,
         });
 
         expect(result).toBeDefined();
@@ -504,7 +514,7 @@ describe('ThreatAnalysisService', () => {
         const result = await service.analyze({
           chainId,
           safeAddress,
-          requestData,
+          request,
         });
 
         expect(result).toBeDefined();
@@ -560,7 +570,7 @@ describe('ThreatAnalysisService', () => {
         const result = await service.analyze({
           chainId,
           safeAddress,
-          requestData,
+          request,
         });
 
         expect(result).toBeDefined();
@@ -613,7 +623,7 @@ describe('ThreatAnalysisService', () => {
         const result = await service.analyze({
           chainId,
           safeAddress,
-          requestData,
+          request,
         });
 
         expect(result).toBeDefined();
@@ -689,7 +699,7 @@ describe('ThreatAnalysisService', () => {
         const result = await service.analyze({
           chainId,
           safeAddress,
-          requestData,
+          request,
         });
 
         expect(result).toBeDefined();
@@ -731,7 +741,7 @@ describe('ThreatAnalysisService', () => {
       const result = await service.analyze({
         chainId,
         safeAddress,
-        requestData,
+        request,
       });
       expect(result).toBeDefined();
       expect(result).toEqual({
@@ -750,7 +760,7 @@ describe('ThreatAnalysisService', () => {
       );
     });
 
-    it('should prepare the correct message for Blockaid API', async () => {
+    it('should send the correct message to Blockaid API', async () => {
       const mockScanResponse = {
         block: faker.string.numeric(),
         chain: 'ethereum',
@@ -773,53 +783,33 @@ describe('ThreatAnalysisService', () => {
       await service.analyze({
         chainId,
         safeAddress,
-        requestData,
+        request,
       });
-
-      expect(mockBlockaidApi.scanTransaction).toHaveBeenCalledWith(
-        chainId,
-        safeAddress,
-        walletAddress,
-        expect.any(String),
-      );
 
       // Get the message argument passed to scanTransaction
       const callArgs = mockBlockaidApi.scanTransaction.mock.calls[0];
       const messageArg = callArgs[3];
 
+      expect(mockBlockaidApi.scanTransaction).toHaveBeenCalledWith(
+        chainId,
+        safeAddress,
+        walletAddress,
+        messageArg,
+        request.origin,
+      );
+
       expect(() => JSON.parse(messageArg)).not.toThrow();
       const parsedMessage = JSON.parse(messageArg);
 
-      // Verify EIP-712 typed data structure
-      expect(parsedMessage).toHaveProperty('types');
-      expect(parsedMessage).toHaveProperty('domain');
-      expect(parsedMessage).toHaveProperty('primaryType');
-      expect(parsedMessage).toHaveProperty('message');
-
-      // Verify EIP-712 types structure
-      expect(parsedMessage.types).toHaveProperty('EIP712Domain');
-      expect(parsedMessage.types).toHaveProperty('SafeTx');
-
-      // Verify domain
-      expect(parsedMessage.domain.verifyingContract).toBe(safeAddress);
-      expect(parsedMessage.domain.chainId).toBe(Number(chainId));
-
-      // Verify primary type
-      expect(parsedMessage.primaryType).toBe('SafeTx');
-
-      // Verify message contains transaction data
-      expect(parsedMessage.message).toMatchObject({
-        to: requestData.to,
-        value: requestData.value,
-        data: requestData.data,
-        operation: requestData.operation,
-        safeTxGas: requestData.safeTxGas,
-        baseGas: requestData.baseGas,
-        gasPrice: requestData.gasPrice,
-        gasToken: requestData.gasToken,
-        refundReceiver: requestData.refundReceiver,
-        nonce: Number(requestData.nonce),
-      });
+      // Verify the message is the EIP-712 typed data from the request
+      // Compare with JSON.parse/stringify to handle BigInt serialization
+      expect(parsedMessage).toEqual(
+        JSON.parse(
+          JSON.stringify(request.data, (_key, value) =>
+            typeof value === 'bigint' ? value.toString() : value,
+          ),
+        ),
+      );
     });
 
     it('should handle all results: validation, simulation and balanceChange', async () => {
@@ -900,7 +890,7 @@ describe('ThreatAnalysisService', () => {
       const result = await service.analyze({
         chainId,
         safeAddress,
-        requestData,
+        request,
       });
 
       expect(result).toBeDefined();

@@ -1,14 +1,16 @@
 import {
   recipientAnalysisRequestBodyBuilder,
   contractAnalysisRequestBodyBuilder,
-  threatAnalysisRequestBodyBuilder,
+  threatAnalysisRequestBuilder,
 } from './builders/analysis-requests.builder';
 import {
   RecipientAnalysisRequestBodySchema,
   ContractAnalysisRequestBodySchema,
-  ThreatAnalysisRequestBodySchema,
+  ThreatAnalysisRequestSchema,
 } from '../analysis-requests.entity';
 import { faker } from '@faker-js/faker';
+import { typedDataBuilder } from '@/routes/messages/entities/__tests__/typed-data.builder';
+import type { TypedData } from '@/domain/messages/entities/typed-data.entity';
 
 describe('Analysis Request Schemas', () => {
   describe('RecipientAnalysisRequestBodySchema', () => {
@@ -92,104 +94,150 @@ describe('Analysis Request Schemas', () => {
     });
   });
 
-  describe('ThreatAnalysisRequestBodySchema', () => {
-    const validThreatRequest = threatAnalysisRequestBodyBuilder().build();
+  describe('ThreatAnalysisRequestSchema', () => {
+    it('should validate correct EIP-712 typed data request', () => {
+      const validRequest = threatAnalysisRequestBuilder().build();
 
-    it('should validate complete threat analysis request', () => {
       expect(() =>
-        ThreatAnalysisRequestBodySchema.parse(validThreatRequest),
+        ThreatAnalysisRequestSchema.parse(validRequest),
       ).not.toThrow();
     });
 
-    it('should validate with delegate call operation', () => {
-      const delegatecallRequest = threatAnalysisRequestBodyBuilder()
-        .with('operation', 1)
+    it('should validate without origin field', () => {
+      const request = threatAnalysisRequestBuilder()
+        .with('origin', undefined)
+        .build();
+
+      expect(() => ThreatAnalysisRequestSchema.parse(request)).not.toThrow();
+    });
+
+    it('should reject invalid walletAddress', () => {
+      const request = {
+        ...threatAnalysisRequestBuilder().build(),
+        walletAddress: 'invalid-address',
+      };
+
+      expect(() => ThreatAnalysisRequestSchema.parse(request)).toThrow();
+    });
+
+    it('should reject missing walletAddress', () => {
+      const request = {
+        ...threatAnalysisRequestBuilder().build(),
+        walletAddress: undefined,
+      };
+
+      expect(() => ThreatAnalysisRequestSchema.parse(request)).toThrow();
+    });
+
+    it('should validate with all optional domain fields', () => {
+      const typedData = typedDataBuilder()
+        .with('domain', {
+          chainId: 1,
+          name: 'TestApp',
+          version: '1',
+          verifyingContract: faker.finance.ethereumAddress() as `0x${string}`,
+          salt: faker.string.hexadecimal({ length: 64 }) as `0x${string}`,
+        })
+        .build();
+
+      const request = threatAnalysisRequestBuilder()
+        .with('data', typedData)
+        .build();
+
+      expect(() => ThreatAnalysisRequestSchema.parse(request)).not.toThrow();
+    });
+
+    it('should validate with minimal domain fields', () => {
+      const typedData = typedDataBuilder()
+        .with('domain', {
+          chainId: 1,
+        })
+        .build();
+
+      const request = threatAnalysisRequestBuilder()
+        .with('data', typedData)
+        .build();
+
+      expect(() => ThreatAnalysisRequestSchema.parse(request)).not.toThrow();
+    });
+
+    it('should reject missing data field', () => {
+      expect(() => ThreatAnalysisRequestSchema.parse({})).toThrow();
+    });
+
+    it('should reject invalid typed data structure', () => {
+      const invalidRequest = threatAnalysisRequestBuilder()
+        .with('data', {
+          domain: {},
+        } as unknown as TypedData)
+        .build();
+
+      expect(() => ThreatAnalysisRequestSchema.parse(invalidRequest)).toThrow();
+    });
+
+    it('should reject typed data with invalid domain', () => {
+      const invalidDomainRequest = threatAnalysisRequestBuilder()
+        .with(
+          'data',
+          typedDataBuilder()
+            .with('domain', {
+              chainId: 'invalid',
+            } as Record<string, unknown>)
+            .build(),
+        )
         .build();
 
       expect(() =>
-        ThreatAnalysisRequestBodySchema.parse(delegatecallRequest),
-      ).not.toThrow();
-    });
-
-    it('should reject invalid `to` address', () => {
-      const invalidAddressRequest = {
-        ...validThreatRequest,
-        to: 'invalidaddress',
-      };
-
-      expect(() =>
-        ThreatAnalysisRequestBodySchema.parse(invalidAddressRequest),
+        ThreatAnalysisRequestSchema.parse(invalidDomainRequest),
       ).toThrow();
     });
 
-    it('should reject invalid `walletAddress` address', () => {
-      const invalidAddressRequest = {
-        ...validThreatRequest,
-        walletAddress: 'invalidaddress',
-      };
-
-      expect(() =>
-        ThreatAnalysisRequestBodySchema.parse(invalidAddressRequest),
-      ).toThrow();
-    });
-
-    it('should reject invalid `gasToken` address', () => {
-      expect(() =>
-        ThreatAnalysisRequestBodySchema.parse({
-          ...validThreatRequest,
-          gasToken: '0xinvalid',
-        }),
-      ).toThrow();
-    });
-
-    it('should reject invalid numeric strings', () => {
-      const invalidValueRequest = {
-        ...validThreatRequest,
-        value: 'notanumber',
-      };
-
-      const invalidNonceRequest = {
-        ...validThreatRequest,
-        nonce: 'notanumber',
-      };
-
-      const invalidSafeTxGasRequest = {
-        ...validThreatRequest,
-        safeTxGas: '',
-      };
-
-      expect(() =>
-        ThreatAnalysisRequestBodySchema.parse(invalidValueRequest),
-      ).toThrow();
-
-      expect(() =>
-        ThreatAnalysisRequestBodySchema.parse(invalidNonceRequest),
-      ).toThrow();
-
-      expect(() =>
-        ThreatAnalysisRequestBodySchema.parse(invalidSafeTxGasRequest),
-      ).toThrow();
-    });
-
-    it.each([
-      'to',
-      'value',
-      'data',
-      'operation',
-      'safeTxGas',
-      'baseGas',
-      'gasPrice',
-      'gasToken',
-      'refundReceiver',
-      'nonce',
-      'walletAddress',
-    ] as const)('should reject missing required field = %s', (field) => {
+    it('should reject typed data with missing primaryType', () => {
+      const typedData = typedDataBuilder().build();
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { [field]: _, ...incompleteRequest } = validThreatRequest;
+      const { primaryType, ...invalidTypedData } = typedData;
 
-      expect(() =>
-        ThreatAnalysisRequestBodySchema.parse(incompleteRequest),
-      ).toThrow();
+      const invalidRequest = {
+        walletAddress: faker.finance.ethereumAddress() as `0x${string}`,
+        data: invalidTypedData,
+      };
+
+      expect(() => ThreatAnalysisRequestSchema.parse(invalidRequest)).toThrow();
+    });
+
+    it('should reject typed data with missing types', () => {
+      const typedData = typedDataBuilder().build();
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { types, ...invalidTypedData } = typedData;
+
+      const invalidRequest = {
+        walletAddress: faker.finance.ethereumAddress() as `0x${string}`,
+        data: invalidTypedData,
+      };
+
+      expect(() => ThreatAnalysisRequestSchema.parse(invalidRequest)).toThrow();
+    });
+
+    it('should reject typed data with missing message', () => {
+      const typedData = typedDataBuilder().build();
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { message, ...invalidTypedData } = typedData;
+
+      const invalidRequest = {
+        walletAddress: faker.finance.ethereumAddress() as `0x${string}`,
+        data: invalidTypedData,
+      };
+
+      expect(() => ThreatAnalysisRequestSchema.parse(invalidRequest)).toThrow();
+    });
+
+    it('should reject non-object data field', () => {
+      const invalidRequest = {
+        walletAddress: faker.finance.ethereumAddress() as `0x${string}`,
+        data: 'not an object',
+      };
+
+      expect(() => ThreatAnalysisRequestSchema.parse(invalidRequest)).toThrow();
     });
   });
 });
