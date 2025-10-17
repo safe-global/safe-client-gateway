@@ -2,11 +2,13 @@ import { ThreatStatus } from '@/modules/safe-shield/entities/threat-status.entit
 import {
   RecipientAnalysisResponseSchema,
   ContractAnalysisResponseSchema,
+  CounterpartyAnalysisResponseSchema,
   ThreatAnalysisResponseSchema,
 } from '../analysis-responses.entity';
 import {
   recipientAnalysisResponseBuilder,
   contractAnalysisResponseBuilder,
+  counterpartyAnalysisResponseBuilder,
   threatAnalysisResponseBuilder,
 } from './builders/analysis-responses.builder';
 import {
@@ -172,6 +174,38 @@ describe('Analysis Response Schemas', () => {
 
         expect(() =>
           ThreatAnalysisResponseSchema.parse(invalidThreatResponse),
+        ).toThrow();
+      });
+    });
+
+    describe('CounterpartyAnalysisResponseSchema', () => {
+      it('should validate counterparty analysis response', () => {
+        const response = counterpartyAnalysisResponseBuilder().build();
+
+        expect(() =>
+          CounterpartyAnalysisResponseSchema.parse(response),
+        ).not.toThrow();
+      });
+
+      it('should reject invalid recipient analysis structure', () => {
+        const response = {
+          ...counterpartyAnalysisResponseBuilder().build(),
+          recipient: { invalid: {} },
+        } as unknown;
+
+        expect(() =>
+          CounterpartyAnalysisResponseSchema.parse(response),
+        ).toThrow();
+      });
+
+      it('should reject invalid contract analysis structure', () => {
+        const response = {
+          ...counterpartyAnalysisResponseBuilder().build(),
+          contract: { invalid: {} },
+        } as unknown;
+
+        expect(() =>
+          CounterpartyAnalysisResponseSchema.parse(response),
         ).toThrow();
       });
     });

@@ -6,6 +6,8 @@ import { type Address, type Hex } from 'viem';
 import type {
   ContractAnalysisResponse,
   RecipientAnalysisResponse,
+  CounterpartyAnalysisResponse,
+  RecipientInteractionAnalysisResponse,
 } from './entities/analysis-responses.entity';
 import type { DecodedTransactionData } from '@/modules/safe-shield/entities/transaction-data.entity';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
@@ -13,7 +15,16 @@ import { mapDecodedTransactions } from './utils/transaction-mapping.utils';
 import { TransactionsService } from '@/routes/transactions/transactions.service';
 import { Operation } from '@/domain/safe/entities/operation.entity';
 import type { TransactionInfo } from '@/routes/transactions/entities/transaction-info.entity';
-import { RecipientInteractionAnalysisDto } from './entities/dtos/recipient-analysis.dto';
+import {
+  COMMON_DESCRIPTION_MAPPING,
+  COMMON_SEVERITY_MAPPING,
+  COMMON_TITLE_MAPPING,
+} from './entities/common-status.constants';
+import {
+  ContractStatusGroup,
+  RecipientStatusGroup,
+} from '@/modules/safe-shield/entities/status-group.entity';
+import { asError } from '@/logging/utils';
 
 /**
  * Main orchestration service for Safe Shield transaction analysis.
@@ -34,19 +45,19 @@ export class SafeShieldService {
   ) {}
 
   /**
-   * Analyzes recipients in a transaction, including inner calls if it's a multiSend.
+   * Performs combined recipient and contract analysis for a transaction.
    *
    * @param args - Analysis parameters
    * @param args.chainId - The chain ID
    * @param args.safeAddress - The Safe address
-   * @param args.tx - The transaction data
+   * @param args.tx - The Safe transaction
    * @param args.tx.to - The transaction recipient address
-   * @param args.tx.data - The transaction data (optional)
-   * @param args.tx.value - The transaction value (optional)
-   * @param args.tx.operation - The transaction operation (optional)
-   * @returns Map of recipient addresses to their analysis results
+   * @param args.tx.data - The transaction data
+   * @param args.tx.value - The transaction value
+   * @param args.tx.operation - The transaction operation
+   * @returns Counterparty analysis results containing both recipient and contract insights grouped by status group
    */
-  async analyzeRecipients({
+  async analyzeCounterparty({
     chainId,
     safeAddress,
     tx,
@@ -55,18 +66,58 @@ export class SafeShieldService {
     safeAddress: Address;
     tx: {
       to: Address;
-      data?: Hex;
-      value?: bigint | string;
-      operation?: Operation;
+      value: string;
+      data: Hex;
+      operation: Operation;
     };
-  }): Promise<RecipientAnalysisResponse> {
+  }): Promise<CounterpartyAnalysisResponse> {
     const { transactions, txInfo } = await this.decodeTransaction({
       chainId,
       safeAddress,
       tx,
     });
 
-    if (transactions.length > 0 || !!txInfo) {
+    const [recipientsResult, contractsResult] = await Promise.allSettled([
+      this.analyzeRecipients(chainId, safeAddress, transactions, txInfo),
+      this.analyzeContracts(chainId, safeAddress, transactions),
+    ]);
+
+    return {
+      recipient:
+        recipientsResult.status === 'fulfilled'
+          ? recipientsResult.value
+          : this.handleFailedAnalysis(
+              tx.to,
+              'RECIPIENT_INTERACTION',
+              recipientsResult.reason,
+            ),
+      contract:
+        contractsResult.status === 'fulfilled'
+          ? contractsResult.value
+          : this.handleFailedAnalysis(
+              tx.to,
+              'CONTRACT_VERIFICATION',
+              contractsResult.reason,
+            ),
+    };
+  }
+
+  /**
+   * Analyzes recipients in a transaction, including inner calls if it's a multiSend.
+   *
+   * @param chainId - The chain ID
+   * @param safeAddress - The Safe address
+   * @param transactions - A list of decoded transactions
+   * @param txInfo - The transaction recipient address
+   * @returns Map of recipient addresses to their analysis results
+   */
+  async analyzeRecipients(
+    chainId: string,
+    safeAddress: Address,
+    transactions: Array<DecodedTransactionData>,
+    txInfo?: TransactionInfo,
+  ): Promise<RecipientAnalysisResponse> {
+    if (transactions.length > 0 || txInfo) {
       return this.recipientAnalysisService.analyze({
         chainId,
         safeAddress,
@@ -81,21 +132,16 @@ export class SafeShieldService {
   /**
    * Analyzes a single recipient address.
    *
-   * @param args - Analysis parameters
-   * @param args.chainId - The chain ID
-   * @param args.safeAddress - The Safe address
-   * @param args.recipientAddress - The recipient address to analyze
+   * @param chainId - The chain ID
+   * @param safeAddress - The Safe address
+   * @param recipientAddress - The recipient address to analyze
    * @returns Analysis result for group RECIPIENT_INTERACTION
    */
-  async analyzeRecipient({
-    chainId,
-    safeAddress,
-    recipientAddress,
-  }: {
-    chainId: string;
-    safeAddress: Address;
-    recipientAddress: Address;
-  }): Promise<RecipientInteractionAnalysisDto> {
+  async analyzeRecipient(
+    chainId: string,
+    safeAddress: Address,
+    recipientAddress: Address,
+  ): Promise<RecipientInteractionAnalysisResponse> {
     const interactionResult =
       await this.recipientAnalysisService.analyzeInteractions({
         chainId,
@@ -111,37 +157,17 @@ export class SafeShieldService {
   /**
    * Analyzes contracts in a transaction, including inner calls if it's a multiSend.
    *
-   * @param args - Analysis parameters
-   * @param args.chainId - The chain ID
-   * @param args.safeAddress - The Safe address
-   * @param args.tx - The transaction data
-   * @param args.tx.to - The transaction contract address
-   * @param args.tx.data - The transaction data
-   * @param args.tx.value - The transaction value (optional)
-   * @param args.tx.operation - The transaction operation (optional)
+   * @param chainId - The chain ID
+   * @param safeAddress - The Safe address
+   * @param transactions - A list of decoded transactions
    * @returns Map of contract addresses to their analysis results
    */
-  async analyzeContracts({
-    chainId,
-    safeAddress,
-    tx,
-  }: {
-    chainId: string;
-    safeAddress: Address;
-    tx: {
-      to: Address;
-      data: Hex;
-      value?: bigint | string;
-      operation?: Operation;
-    };
-  }): Promise<ContractAnalysisResponse> {
-    const { transactions } = await this.decodeTransaction({
-      chainId,
-      safeAddress,
-      tx,
-    });
-
-    if (transactions.length > 0) {
+  async analyzeContracts(
+    chainId: string,
+    safeAddress: Address,
+    transactions: Array<DecodedTransactionData>,
+  ): Promise<ContractAnalysisResponse> {
+    if (transactions.length) {
       return this.contractAnalysisService.analyze({
         chainId,
         safeAddress,
@@ -158,7 +184,7 @@ export class SafeShieldService {
    * @param args.chainId - The chain ID.
    * @param args.safeAddress - The Safe address.
    * @param args.tx - The transaction.
-   * @returns The decoded transaction.
+   * @returns The decoded transaction and additional tx info (optional).
    */
   private async decodeTransaction({
     chainId,
@@ -169,43 +195,69 @@ export class SafeShieldService {
     safeAddress: Address;
     tx: {
       to: Address;
-      data?: Hex;
-      value?: bigint | string;
-      operation?: Operation;
+      data: Hex;
+      value: string;
+      operation: Operation;
     };
   }): Promise<{
     transactions: Array<DecodedTransactionData>;
     txInfo?: TransactionInfo;
   }> {
-    const { data = '0x', value = '0', operation = Operation.CALL } = tx;
-
     try {
       const txPreview = await this.transactionsService.previewTransaction({
         chainId,
         safeAddress,
-        previewTransactionDto: {
-          ...tx,
-          data,
-          operation,
-          value: value.toString(),
-        },
+        previewTransactionDto: tx,
       });
 
       const decodedTransactionData: DecodedTransactionData = {
         ...tx,
-        data,
-        operation,
-        value,
         dataDecoded: txPreview?.txData?.dataDecoded ?? null,
       };
 
+      const transactions = mapDecodedTransactions(decodedTransactionData);
+
       return {
-        transactions: mapDecodedTransactions(decodedTransactionData),
+        transactions,
         txInfo: txPreview?.txInfo,
       };
     } catch (error) {
       this.loggingService.warn(`Failed to decode transaction: ${error}`);
       return { transactions: [] };
     }
+  }
+
+  /**
+   * Handles failed analysis by creating a FAILED result placeholder.
+   *
+   * @param reason - The error reason from the rejected promise
+   * @param targetAddress - The address to attach the failure to
+   * @param statusGroup - The status group for the failure
+   * @returns Analysis response with FAILED status
+   */
+  private handleFailedAnalysis<
+    T extends RecipientAnalysisResponse | ContractAnalysisResponse,
+  >(
+    targetAddress: Address,
+    statusGroup: RecipientStatusGroup | ContractStatusGroup,
+    reason?: unknown,
+  ): T {
+    const error = asError(reason);
+    this.loggingService.warn(`Counterparty analysis failed. ${error}`);
+
+    return {
+      [targetAddress]: {
+        [statusGroup]: [
+          {
+            type: 'FAILED',
+            severity: COMMON_SEVERITY_MAPPING.FAILED,
+            title: COMMON_TITLE_MAPPING.FAILED,
+            description: COMMON_DESCRIPTION_MAPPING.FAILED({
+              reason: error.message,
+            }),
+          },
+        ],
+      },
+    } as T;
   }
 }

@@ -1,24 +1,22 @@
-import { TestAppProvider } from '@/__tests__/test-app.provider';
-import { createTestModule } from '@/__tests__/testing-module';
-import type { INetworkService } from '@/datasources/network/network.service.interface';
-import { NetworkService } from '@/datasources/network/network.service.interface';
+import { Test } from '@nestjs/testing';
 import { faker } from '@faker-js/faker';
-import type { INestApplication } from '@nestjs/common';
-import type { Server } from 'net';
-import request from 'supertest';
+import type { Address } from 'viem';
 import { getAddress } from 'viem';
-import { rawify } from '@/validation/entities/raw.entity';
-import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
-import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
+import { SafeShieldController } from './safe-shield.controller';
+import { SafeShieldService } from './safe-shield.service';
+import { ValidationPipe } from '@/validation/pipes/validation.pipe';
+import { counterpartyAnalysisRequestDtoBuilder } from './entities/__tests__/builders/analysis-requests.builder';
+import { counterpartyAnalysisResponseBuilder } from './entities/__tests__/builders/analysis-responses.builder';
 import {
-  DESCRIPTION_MAPPING,
-  SEVERITY_MAPPING,
-  TITLE_MAPPING,
-} from '@/modules/safe-shield/recipient-analysis/recipient-analysis.constants';
+  contractAnalysisResultBuilder,
+  recipientAnalysisResultBuilder,
+} from './entities/__tests__/builders/analysis-result.builder';
+import type { RecipientInteractionAnalysisResponse } from '@/modules/safe-shield/entities/analysis-responses.entity';
+import { CounterpartyAnalysisRequestSchema } from '@/modules/safe-shield/entities/analysis-requests.entity';
 
 describe('SafeShieldController (Unit)', () => {
-  let app: INestApplication<Server>;
-  let networkService: jest.MockedObjectDeep<INetworkService>;
+  let controller: SafeShieldController;
+  let safeShieldService: jest.Mocked<SafeShieldService>;
 
   const mockChainId = faker.number.int({ min: 1, max: 999999 }).toString();
   const mockSafeAddress = getAddress(faker.finance.ethereumAddress());
@@ -27,113 +25,236 @@ describe('SafeShieldController (Unit)', () => {
   beforeEach(async () => {
     jest.resetAllMocks();
 
-    const moduleFixture = await createTestModule({});
+    const moduleRef = await Test.createTestingModule({
+      controllers: [SafeShieldController],
+      providers: [
+        {
+          provide: SafeShieldService,
+          useValue: {
+            analyzeRecipient: jest.fn(),
+            analyzeCounterparty: jest.fn(),
+          },
+        },
+      ],
+    }).compile();
 
-    networkService = moduleFixture.get(NetworkService);
-
-    app = await new TestAppProvider().provide(moduleFixture);
-    await app.init();
+    controller = moduleRef.get(SafeShieldController);
+    safeShieldService = moduleRef.get(SafeShieldService);
   });
 
-  afterAll(async () => {
-    await app.close();
+  describe('analyzeRecipient', () => {
+    it('should delegate to SafeShieldService and return analysis results', async () => {
+      const expectedResponse = {
+        RECIPIENT_INTERACTION: [recipientAnalysisResultBuilder().build()],
+      } as RecipientInteractionAnalysisResponse;
+
+      safeShieldService.analyzeRecipient.mockResolvedValue(expectedResponse);
+
+      const result = await controller.analyzeRecipient(
+        mockChainId,
+        mockSafeAddress,
+        mockRecipientAddress,
+      );
+
+      expect(result).toEqual(expectedResponse);
+      expect(safeShieldService.analyzeRecipient).toHaveBeenCalledWith(
+        mockChainId,
+        mockSafeAddress,
+        mockRecipientAddress,
+      );
+    });
+
+    it('should propagate errors from SafeShieldService', async () => {
+      const error = new Error('Network error');
+
+      safeShieldService.analyzeRecipient.mockRejectedValue(error);
+
+      await expect(
+        controller.analyzeRecipient(
+          mockChainId,
+          mockSafeAddress,
+          mockRecipientAddress,
+        ),
+      ).rejects.toThrow(error);
+    });
   });
 
-  describe('GET /chains/:chainId/security/:safeAddress/recipient/:recipientAddress', () => {
-    it('should return recipient analysis results for a new recipient', async () => {
-      const chain = chainBuilder().with('chainId', mockChainId).build();
-      const transfersPage = pageBuilder()
-        .with('count', 0)
-        .with('results', [])
-        .build();
+  describe('analyzeCounterparty', () => {
+    const requestBody = counterpartyAnalysisRequestDtoBuilder().build();
 
-      networkService.get.mockResolvedValueOnce({
-        data: rawify(chain),
-        status: 200,
-      });
-      networkService.get.mockResolvedValueOnce({
-        data: rawify(transfersPage),
-        status: 200,
-      });
+    it('should call service with the parsed transaction data', async () => {
+      const expectedResponse = counterpartyAnalysisResponseBuilder().build();
 
-      await request(app.getHttpServer())
-        .get(
-          `/v1/chains/${mockChainId}/security/${mockSafeAddress}/recipient/${mockRecipientAddress}`,
-        )
-        .expect(200)
-        .then((response) => {
-          expect(response.body).toEqual({
+      safeShieldService.analyzeCounterparty.mockResolvedValue(expectedResponse);
+
+      const result = await controller.analyzeCounterparty(
+        mockChainId,
+        mockSafeAddress,
+        requestBody,
+      );
+
+      expect(result).toEqual(expectedResponse);
+      expect(safeShieldService.analyzeCounterparty).toHaveBeenCalledWith({
+        chainId: mockChainId,
+        safeAddress: mockSafeAddress,
+        tx: {
+          to: requestBody.to,
+          data: requestBody.data,
+          value: requestBody.value,
+          operation: requestBody.operation,
+        },
+      });
+    });
+
+    it('should propagate errors from SafeShieldService', async () => {
+      const error = new Error('Analysis failed');
+
+      safeShieldService.analyzeCounterparty.mockRejectedValue(error);
+
+      await expect(
+        controller.analyzeCounterparty(
+          mockChainId,
+          mockSafeAddress,
+          requestBody,
+        ),
+      ).rejects.toThrow(error);
+    });
+
+    it('should reject invalid counterparty analysis requests', () => {
+      const pipe = new ValidationPipe(CounterpartyAnalysisRequestSchema);
+      const invalidRequest = {
+        ...counterpartyAnalysisRequestDtoBuilder().build(),
+        to: 'invalid-address' as unknown as Address,
+      };
+
+      expect(() => pipe.transform(invalidRequest)).toThrow();
+    });
+
+    it('should handle both recipient and contract analysis failures in service', async () => {
+      const expectedResponse = counterpartyAnalysisResponseBuilder()
+        .with('recipient', {
+          [requestBody.to]: {
             RECIPIENT_INTERACTION: [
               {
-                type: 'NEW_RECIPIENT',
-                severity: SEVERITY_MAPPING.NEW_RECIPIENT,
-                title: TITLE_MAPPING.NEW_RECIPIENT,
-                description: DESCRIPTION_MAPPING.NEW_RECIPIENT(0),
+                type: 'FAILED',
+                severity: 'CRITICAL',
+                title: 'Analysis Failed',
+                description: 'Unable to complete analysis',
               },
             ],
-          });
-        });
+          },
+        })
+        .with('contract', {
+          [requestBody.to]: {
+            CONTRACT_VERIFICATION: [
+              {
+                type: 'FAILED',
+                severity: 'CRITICAL',
+                title: 'Analysis Failed',
+                description: 'Unable to complete analysis',
+              },
+            ],
+          },
+        })
+        .build();
 
-      expect(networkService.get).toHaveBeenNthCalledWith(
-        1,
-        expect.objectContaining({
-          url: expect.stringContaining(`/api/v1/chains/${mockChainId}`),
-        }),
+      safeShieldService.analyzeCounterparty.mockResolvedValue(expectedResponse);
+
+      const result = await controller.analyzeCounterparty(
+        mockChainId,
+        mockSafeAddress,
+        requestBody,
       );
-      expect(networkService.get).toHaveBeenNthCalledWith(
-        2,
-        expect.objectContaining({
-          url: expect.stringContaining(
-            `/api/v1/safes/${mockSafeAddress}/transfers/`,
-          ),
-          networkRequest: expect.objectContaining({
-            params: expect.objectContaining({
-              to: mockRecipientAddress,
-              limit: 1,
-            }),
-          }),
-        }),
+
+      expect(result).toEqual(expectedResponse);
+      expect(result.recipient[requestBody.to]?.RECIPIENT_INTERACTION).toEqual([
+        expect.objectContaining({ type: 'FAILED' }),
+      ]);
+      expect(result.contract[requestBody.to]?.CONTRACT_VERIFICATION).toEqual([
+        expect.objectContaining({ type: 'FAILED' }),
+      ]);
+    });
+
+    it('should handle partial success with recipient analysis succeeding but contract failing', async () => {
+      const successfulRecipientAnalysis = {
+        [requestBody.to]: {
+          RECIPIENT_INTERACTION: [
+            recipientAnalysisResultBuilder()
+              .with('type', 'NEW_RECIPIENT')
+              .build(),
+          ],
+        },
+      };
+      const expectedResponse = counterpartyAnalysisResponseBuilder()
+        .with('recipient', successfulRecipientAnalysis)
+        .with('contract', {
+          [requestBody.to]: {
+            CONTRACT_VERIFICATION: [
+              {
+                type: 'FAILED',
+                severity: 'CRITICAL',
+                title: 'Analysis Failed',
+                description: 'Unable to complete analysis',
+              },
+            ],
+          },
+        })
+        .build();
+
+      safeShieldService.analyzeCounterparty.mockResolvedValue(expectedResponse);
+
+      const result = await controller.analyzeCounterparty(
+        mockChainId,
+        mockSafeAddress,
+        requestBody,
       );
+
+      expect(result.recipient[requestBody.to]).toEqual(
+        successfulRecipientAnalysis[requestBody.to],
+      );
+      expect(result.contract[requestBody.to]?.CONTRACT_VERIFICATION).toEqual([
+        expect.objectContaining({ type: 'FAILED' }),
+      ]);
     });
 
-    it('should validate safeAddress parameter', async () => {
-      const invalidAddress = 'invalid-address';
+    it('should handle partial success with contract analysis succeeding but recipient failing', async () => {
+      const successfulContractAnalysis = {
+        [requestBody.to]: {
+          CONTRACT_VERIFICATION: [
+            contractAnalysisResultBuilder().with('type', 'VERIFIED').build(),
+          ],
+        },
+      };
+      const expectedResponse = counterpartyAnalysisResponseBuilder()
+        .with('recipient', {
+          [requestBody.to]: {
+            RECIPIENT_INTERACTION: [
+              {
+                type: 'FAILED',
+                severity: 'CRITICAL',
+                title: 'Analysis Failed',
+                description: 'Unable to complete analysis',
+              },
+            ],
+          },
+        })
+        .with('contract', successfulContractAnalysis)
+        .build();
 
-      await request(app.getHttpServer())
-        .get(
-          `/v1/chains/${mockChainId}/security/${invalidAddress}/recipient/${mockRecipientAddress}`,
-        )
-        .expect(422);
+      safeShieldService.analyzeCounterparty.mockResolvedValue(expectedResponse);
 
-      expect(networkService.get).not.toHaveBeenCalled();
-    });
+      const result = await controller.analyzeCounterparty(
+        mockChainId,
+        mockSafeAddress,
+        requestBody,
+      );
 
-    it('should validate recipientAddress parameter', async () => {
-      const invalidAddress = 'invalid-address';
-
-      await request(app.getHttpServer())
-        .get(
-          `/v1/chains/${mockChainId}/security/${mockSafeAddress}/recipient/${invalidAddress}`,
-        )
-        .expect(422);
-
-      expect(networkService.get).not.toHaveBeenCalled();
-    });
-
-    it('should handle network errors gracefully', async () => {
-      const chain = chainBuilder().with('chainId', mockChainId).build();
-
-      networkService.get.mockResolvedValueOnce({
-        data: rawify(chain),
-        status: 200,
-      });
-      networkService.get.mockRejectedValueOnce(new Error('Network error'));
-
-      await request(app.getHttpServer())
-        .get(
-          `/v1/chains/${mockChainId}/security/${mockSafeAddress}/recipient/${mockRecipientAddress}`,
-        )
-        .expect(503);
+      expect(result.contract[requestBody.to]).toEqual(
+        successfulContractAnalysis[requestBody.to],
+      );
+      expect(result.recipient[requestBody.to]?.RECIPIENT_INTERACTION).toEqual([
+        expect.objectContaining({ type: 'FAILED' }),
+      ]);
     });
   });
 });

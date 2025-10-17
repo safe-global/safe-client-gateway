@@ -1,28 +1,17 @@
 import { faker } from '@faker-js/faker';
 import type { IBuilder } from '@/__tests__/builder';
 import { Builder } from '@/__tests__/builder';
-import type {
-  RecipientAnalysisRequestBody,
-  ContractAnalysisRequestBody,
-  ThreatAnalysisRequestBody,
-} from '../../analysis-requests.entity';
+import type { ThreatAnalysisRequest } from '../../analysis-requests.entity';
 import { type Hex, getAddress } from 'viem';
+import type { CounterpartyAnalysisRequestDto } from '@/modules/safe-shield/entities/dtos/counterparty-analysis-request.dto';
 
 /**
- * Builder for RecipientAnalysisRequestBody
+ * Builder for CounterpartyAnalysisRequest
  */
-export function recipientAnalysisRequestBodyBuilder(): IBuilder<RecipientAnalysisRequestBody> {
-  return new Builder<RecipientAnalysisRequestBody>().with(
-    'data',
-    faker.string.hexadecimal({ length: 128 }) as Hex,
-  );
-}
-
-/**
- * Builder for ContractAnalysisRequestBody
- */
-export function contractAnalysisRequestBodyBuilder(): IBuilder<ContractAnalysisRequestBody> {
-  return new Builder<ContractAnalysisRequestBody>()
+export function counterpartyAnalysisRequestDtoBuilder(): IBuilder<CounterpartyAnalysisRequestDto> {
+  return new Builder<CounterpartyAnalysisRequestDto>()
+    .with('to', getAddress(faker.finance.ethereumAddress()))
+    .with('value', faker.string.numeric())
     .with('data', faker.string.hexadecimal({ length: 128 }) as Hex)
     .with('operation', faker.helpers.arrayElement([0, 1]));
 }
@@ -30,8 +19,8 @@ export function contractAnalysisRequestBodyBuilder(): IBuilder<ContractAnalysisR
 /**
  * Builder for ThreatAnalysisRequestBody
  */
-export function threatAnalysisRequestBodyBuilder(): IBuilder<ThreatAnalysisRequestBody> {
-  return new Builder<ThreatAnalysisRequestBody>()
+export function threatAnalysisRequestBodyBuilder(): IBuilder<ThreatAnalysisRequest> {
+  return new Builder<ThreatAnalysisRequest>()
     .with('to', getAddress(faker.finance.ethereumAddress()))
     .with('value', faker.string.numeric())
     .with('data', faker.string.hexadecimal({ length: 128 }) as Hex)

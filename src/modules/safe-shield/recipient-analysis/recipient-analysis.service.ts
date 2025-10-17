@@ -1,6 +1,9 @@
 import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
 import { TransferPageSchema } from '@/domain/safe/entities/transfer.entity';
-import type { AnalysisResult } from '@/modules/safe-shield/entities/analysis-result.entity';
+import type {
+  AnalysisResult,
+  CommonStatus,
+} from '@/modules/safe-shield/entities/analysis-result.entity';
 import { Inject, Injectable } from '@nestjs/common';
 import { getAddress, Hex, zeroAddress, type Address } from 'viem';
 import { IChainsRepository } from '@/domain/chains/chains.repository.interface';
@@ -97,7 +100,9 @@ export class RecipientAnalysisService {
 
     const cacheDir = CacheRouter.getRecipientAnalysisCacheDir({
       chainId: args.chainId,
+      safeAddress: args.safeAddress,
       recipients,
+      txInfo: args.txInfo,
     });
 
     const cached = await this.cacheService.hGet(cacheDir);
@@ -176,22 +181,32 @@ export class RecipientAnalysisService {
     chainId: string;
     safeAddress: Address;
     recipient: Address;
-  }): Promise<AnalysisResult<RecipientStatus>> {
-    const transactionApi = await this.transactionApiManager.getApi(
-      args.chainId,
-    );
+  }): Promise<AnalysisResult<RecipientStatus | CommonStatus>> {
+    try {
+      const transactionApi = await this.transactionApiManager.getApi(
+        args.chainId,
+      );
 
-    const page = await transactionApi.getTransfers({
-      safeAddress: args.safeAddress,
-      to: args.recipient,
-      limit: 1,
-    });
+      const page = await transactionApi.getTransfers({
+        safeAddress: args.safeAddress,
+        to: args.recipient,
+        limit: 1,
+      });
 
-    const transferPage = TransferPageSchema.parse(page);
-    const interactions = transferPage.count ?? 0;
-    const type = interactions > 0 ? 'RECURRING_RECIPIENT' : 'NEW_RECIPIENT';
+      const transferPage = TransferPageSchema.parse(page);
+      const interactions = transferPage.count ?? 0;
+      const type = interactions > 0 ? 'RECURRING_RECIPIENT' : 'NEW_RECIPIENT';
 
-    return this.mapToAnalysisResult(type, interactions);
+      return this.mapToAnalysisResult({ type, interactions });
+    } catch (error) {
+      this.loggingService.warn(
+        `Failed to analyze recipient interactions: ${error}`,
+      );
+      return this.mapToAnalysisResult({
+        type: 'FAILED',
+        reason: 'recipient interactions unavailable',
+      });
+    }
   }
 
   /**
@@ -219,7 +234,17 @@ export class RecipientAnalysisService {
       }
 
       return {
-        [bridgeRecipient]: { BRIDGE: [this.mapToAnalysisResult(resultStatus)] },
+        [bridgeRecipient]: {
+          BRIDGE: [
+            this.mapToAnalysisResult({
+              type: resultStatus,
+              reason:
+                resultStatus === 'FAILED'
+                  ? 'bridge compatibility unavailable'
+                  : undefined,
+            }),
+          ],
+        },
       };
     }
 
@@ -238,59 +263,62 @@ export class RecipientAnalysisService {
     chainId: string;
     safeAddress: Address;
     txInfo: BridgeAndSwapTransactionInfo;
-  }): Promise<BridgeStatus | undefined> {
-    // Early return if recipient doesn't match safe address
+  }): Promise<BridgeStatus | CommonStatus | undefined> {
     if (
       getAddress(args.txInfo.recipient.value) !== getAddress(args.safeAddress)
     ) {
       return undefined;
     }
 
-    // Check if target chain is supported
-    const isTargetChainSupported = await this.chainsRepository.isSupportedChain(
-      args.txInfo.toChain,
-    );
-    if (!isTargetChainSupported) {
-      return 'UNSUPPORTED_NETWORK';
-    }
-
-    // Fetch source and target safes in parallel
-    const [sourceSafe, targetSafe] = await Promise.all([
-      this.getSafe({
-        chainId: args.chainId,
-        safeAddress: args.safeAddress,
-      }),
-      this.getSafe({
-        chainId: args.txInfo.toChain,
-        safeAddress: args.safeAddress,
-      }),
-    ]);
-
-    if (!sourceSafe) {
-      throw new Error(
-        `Source Safe not found for address ${args.safeAddress} on chain ${args.chainId}`,
-      );
-    }
-
-    if (targetSafe) {
-      if (!this.haveSameSetup(sourceSafe, targetSafe)) {
-        return 'DIFFERENT_SAFE_SETUP';
+    try {
+      const isTargetChainSupported =
+        await this.chainsRepository.isSupportedChain(args.txInfo.toChain);
+      if (!isTargetChainSupported) {
+        return 'UNSUPPORTED_NETWORK';
       }
-    } else {
-      // Check network compatibility
-      const [safeCreationData, targetChain] = await Promise.all([
-        this.getSafeCreationData({
+
+      const [sourceSafe, targetSafe] = await Promise.all([
+        this.getSafe({
           chainId: args.chainId,
           safeAddress: args.safeAddress,
         }),
-        this.chainsRepository.getChain(args.txInfo.toChain),
+        this.getSafe({
+          chainId: args.txInfo.toChain,
+          safeAddress: args.safeAddress,
+        }),
       ]);
 
-      if (!this.isNetworkCompatible(targetChain, safeCreationData)) {
-        return 'INCOMPATIBLE_SAFE';
+      if (!sourceSafe) {
+        this.loggingService.warn(
+          `Source Safe not found for address ${args.safeAddress} on chain ${args.chainId}`,
+        );
+        return 'FAILED';
       }
 
-      return 'MISSING_OWNERSHIP';
+      if (targetSafe) {
+        if (!this.haveSameSetup(sourceSafe, targetSafe)) {
+          return 'DIFFERENT_SAFE_SETUP';
+        }
+      } else {
+        const [safeCreationData, targetChain] = await Promise.all([
+          this.getSafeCreationData({
+            chainId: args.chainId,
+            safeAddress: args.safeAddress,
+          }),
+          this.chainsRepository.getChain(args.txInfo.toChain),
+        ]);
+
+        if (!this.isNetworkCompatible(targetChain, safeCreationData)) {
+          return 'INCOMPATIBLE_SAFE';
+        }
+
+        return 'MISSING_OWNERSHIP';
+      }
+    } catch (error) {
+      this.loggingService.warn(
+        `Failed to analyze target chain compatibility: ${error}`,
+      );
+      return 'FAILED';
     }
   }
 
@@ -494,21 +522,22 @@ export class RecipientAnalysisService {
 
   /**
    * Maps a recipient or bridge status to an analysis result.
+   * @param type - The recipient or bridge status.
+   * @param interactions - The number of interactions with the recipient (if applicable).
+   * @param reason - The reason for failure (if applicable).
+   * @returns The recipient analysis result.
    */
-  private mapToAnalysisResult<T extends RecipientStatus>(
-    type: T,
-    interactions: number,
-  ): AnalysisResult<T>;
-  private mapToAnalysisResult<T extends BridgeStatus>(
-    type: T,
-  ): AnalysisResult<T>;
-  private mapToAnalysisResult<T extends RecipientStatus | BridgeStatus>(
-    type: T,
-    interactions?: number,
-  ): AnalysisResult<T> {
+  private mapToAnalysisResult<
+    T extends RecipientStatus | BridgeStatus | CommonStatus,
+  >(args: {
+    type: T;
+    interactions?: number;
+    reason?: string;
+  }): AnalysisResult<T> {
+    const { type, interactions, reason } = args;
     const severity = SEVERITY_MAPPING[type];
     const title = TITLE_MAPPING[type];
-    const description = DESCRIPTION_MAPPING[type](interactions ?? 0);
+    const description = DESCRIPTION_MAPPING[type]({ interactions, reason });
 
     return { severity, type, title, description };
   }
