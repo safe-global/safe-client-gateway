@@ -7,8 +7,12 @@ import { fakeJson } from '@/__tests__/faker';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import clearAllMocks = jest.clearAllMocks;
 import { redisClientFactory } from '@/__tests__/redis-client.factory';
-import { MAX_TTL } from '@/datasources/cache/constants';
+import {
+  CACHE_INVALIDATION_PREFIX,
+  MAX_TTL,
+} from '@/datasources/cache/constants';
 import { offsetByPercentage } from '@/domain/common/utils/number';
+import type { ResponseCacheService } from '@/datasources/cache/response-cache.service';
 
 const mockLoggingService: jest.MockedObjectDeep<ILoggingService> = {
   info: jest.fn(),
@@ -29,6 +33,10 @@ describe('RedisCacheService', () => {
   let maxTtlDeviated: number;
   const keyPrefix = '';
   let redisClient: RedisClientType;
+  const responseCacheService: jest.Mocked<ResponseCacheService> = {
+    trackTtl: jest.fn(),
+    getTtl: jest.fn(),
+  } as unknown as jest.Mocked<ResponseCacheService>;
 
   beforeAll(async () => {
     redisClient = await redisClientFactory();
@@ -41,6 +49,8 @@ describe('RedisCacheService', () => {
   beforeEach(async () => {
     clearAllMocks();
     await redisClient.flushDb();
+    responseCacheService.trackTtl.mockReset();
+    responseCacheService.getTtl.mockReset();
     defaultExpirationTimeInSeconds = faker.number.int({ min: 1, max: 3600 });
     defaultExpirationDeviatePercent = faker.number.int({ min: 1, max: 99 });
     maxTtlDeviated =
@@ -60,6 +70,7 @@ describe('RedisCacheService', () => {
       mockLoggingService,
       mockConfigurationService,
       keyPrefix,
+      responseCacheService,
     );
   });
 
@@ -162,12 +173,11 @@ describe('RedisCacheService', () => {
     await redisCacheService.deleteByKey(cacheDir.key);
 
     const storedValue = await redisClient.hGet(cacheDir.key, cacheDir.field);
+    const invalidationKey = `${CACHE_INVALIDATION_PREFIX}${cacheDir.key}`;
     const invalidationTime = Number(
-      await redisClient.hGet(`invalidationTimeMs:${cacheDir.key}`, ''),
+      await redisClient.hGet(invalidationKey, ''),
     );
-    const invalidationTimeTtl = await redisClient.ttl(
-      `invalidationTimeMs:${cacheDir.key}`,
-    );
+    const invalidationTimeTtl = await redisClient.ttl(invalidationKey);
     expect(storedValue).toBeNull();
     expect(invalidationTime).toBeGreaterThanOrEqual(startTime);
     expect(invalidationTimeTtl).toBeGreaterThan(0);

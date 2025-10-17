@@ -4,6 +4,7 @@ import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.servi
 import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
 import type { ICacheService } from '@/datasources/cache/cache.service.interface';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
+import { CACHE_INVALIDATION_PREFIX } from '@/datasources/cache/constants';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
 import type { ILoggingService } from '@/logging/logging.interface';
@@ -84,7 +85,7 @@ describe('CacheFirstDataSource', () => {
       const data = JSON.parse(fakeJson());
       const invalidationTimeMs = jest.now(); // invalidation happens at this point in time
       await fakeCacheService.hSet(
-        new CacheDir(`invalidationTimeMs:${cacheDir.key}`, ''),
+        new CacheDir(`${CACHE_INVALIDATION_PREFIX}${cacheDir.key}`, ''),
         invalidationTimeMs.toString(),
         faker.number.int({ min: 1 }),
       );
@@ -120,7 +121,7 @@ describe('CacheFirstDataSource', () => {
       const data = JSON.parse(fakeJson());
       const invalidationTimeMs = jest.now() + 1; // invalidation happens 1 ms after this point in time
       await fakeCacheService.hSet(
-        new CacheDir(`invalidationTimeMs:${cacheDir.key}`, ''),
+        new CacheDir(`${CACHE_INVALIDATION_PREFIX}${cacheDir.key}`, ''),
         invalidationTimeMs.toString(),
         faker.number.int({ min: 1 }),
       );
@@ -365,7 +366,7 @@ describe('CacheFirstDataSource', () => {
       const data = JSON.parse(fakeJson());
       const invalidationTimeMs = jest.now(); // invalidation happens at this point in time
       await fakeCacheService.hSet(
-        new CacheDir(`invalidationTimeMs:${cacheDir.key}`, ''),
+        new CacheDir(`${CACHE_INVALIDATION_PREFIX}${cacheDir.key}`, ''),
         invalidationTimeMs.toString(),
         faker.number.int({ min: 1 }),
       );
@@ -403,7 +404,7 @@ describe('CacheFirstDataSource', () => {
       const data = JSON.parse(fakeJson());
       const invalidationTimeMs = jest.now() + 1; // invalidation happens 1 ms after this point in time
       await fakeCacheService.hSet(
-        new CacheDir(`invalidationTimeMs:${cacheDir.key}`, ''),
+        new CacheDir(`${CACHE_INVALIDATION_PREFIX}${cacheDir.key}`, ''),
         invalidationTimeMs.toString(),
         faker.number.int({ min: 1 }),
       );
