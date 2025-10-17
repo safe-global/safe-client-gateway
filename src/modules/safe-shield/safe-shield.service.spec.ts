@@ -521,7 +521,7 @@ describe('SafeShieldService', () => {
       });
       expect(result.contract).toEqual(mockContractAnalysisResponse);
       expect(mockLoggingService.warn).toHaveBeenCalledWith(
-        'Counterparty analysis for recipients failed. Recipient analysis failed',
+        'Counterparty analysis failed. Error: Recipient analysis failed',
       );
 
       expect(mockRecipientAnalysisService.analyze).toHaveBeenCalledWith({
@@ -596,7 +596,7 @@ describe('SafeShieldService', () => {
       });
       expect(result.recipient).toEqual(mockRecipientAnalysisResponse);
       expect(mockLoggingService.warn).toHaveBeenCalledWith(
-        'Counterparty analysis for contracts failed. Contract analysis failed',
+        'Counterparty analysis failed. Error: Contract analysis failed',
       );
 
       expect(mockRecipientAnalysisService.analyze).toHaveBeenCalledWith({
@@ -683,11 +683,13 @@ describe('SafeShieldService', () => {
         },
       });
 
-      expect(mockLoggingService.warn).toHaveBeenCalledWith(
-        'Counterparty analysis for recipients failed. Recipient analysis failed',
+      expect(mockLoggingService.warn).toHaveBeenNthCalledWith(
+        1,
+        'Counterparty analysis failed. Error: Recipient analysis failed',
       );
-      expect(mockLoggingService.warn).toHaveBeenCalledWith(
-        'Counterparty analysis for contracts failed. Contract analysis failed',
+      expect(mockLoggingService.warn).toHaveBeenNthCalledWith(
+        2,
+        'Counterparty analysis failed. Error: Contract analysis failed',
       );
       expect(mockLoggingService.warn).toHaveBeenCalledTimes(2);
 

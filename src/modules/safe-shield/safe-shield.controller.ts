@@ -22,6 +22,7 @@ import { RecipientInteractionAnalysisDto } from './entities/dtos/recipient-inter
 import { CounterpartyAnalysisRequestSchema } from './entities/analysis-requests.entity';
 import { CounterpartyAnalysisRequestDto } from '@/modules/safe-shield/entities/dtos/counterparty-analysis-request.dto';
 import { CounterpartyAnalysisDto } from '@/modules/safe-shield/entities/dtos/counterparty-analysis.dto';
+import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
 
 /**
  * Controller for Safe Shield security analysis endpoints.
@@ -66,7 +67,7 @@ export class SafeShieldController {
   @HttpCode(HttpStatus.OK)
   @Get('chains/:chainId/security/:safeAddress/recipient/:recipientAddress')
   async analyzeRecipient(
-    @Param('chainId') chainId: string,
+    @Param('chainId', new ValidationPipe(NumericStringSchema)) chainId: string,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
     safeAddress: Address,
     @Param('recipientAddress', new ValidationPipe(AddressSchema))
@@ -110,7 +111,7 @@ export class SafeShieldController {
   @HttpCode(HttpStatus.OK)
   @Post('chains/:chainId/security/:safeAddress/counterparty-analysis')
   async analyzeCounterparty(
-    @Param('chainId') chainId: string,
+    @Param('chainId', new ValidationPipe(NumericStringSchema)) chainId: string,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
     safeAddress: Address,
     @Body(new ValidationPipe(CounterpartyAnalysisRequestSchema))

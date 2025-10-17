@@ -98,13 +98,11 @@ export class RecipientAnalysisService {
   }): Promise<RecipientAnalysisResponse> {
     const recipients = extractRecipients(args.transactions, this.erc20Decoder);
 
-    if (!recipients.length) {
-      return {};
-    }
-
     const cacheDir = CacheRouter.getRecipientAnalysisCacheDir({
       chainId: args.chainId,
+      safeAddress: args.safeAddress,
       recipients,
+      txInfo: args.txInfo,
     });
 
     const cached = await this.cacheService.hGet(cacheDir);
@@ -266,7 +264,6 @@ export class RecipientAnalysisService {
     safeAddress: Address;
     txInfo: BridgeAndSwapTransactionInfo;
   }): Promise<BridgeStatus | CommonStatus | undefined> {
-    // Early return if recipient doesn't match safe address
     if (
       getAddress(args.txInfo.recipient.value) !== getAddress(args.safeAddress)
     ) {
@@ -274,14 +271,12 @@ export class RecipientAnalysisService {
     }
 
     try {
-      // Check if target chain is supported
       const isTargetChainSupported =
         await this.chainsRepository.isSupportedChain(args.txInfo.toChain);
       if (!isTargetChainSupported) {
         return 'UNSUPPORTED_NETWORK';
       }
 
-      // Fetch source and target safes in parallel
       const [sourceSafe, targetSafe] = await Promise.all([
         this.getSafe({
           chainId: args.chainId,
@@ -305,7 +300,6 @@ export class RecipientAnalysisService {
           return 'DIFFERENT_SAFE_SETUP';
         }
       } else {
-        // Check network compatibility
         const [safeCreationData, targetChain] = await Promise.all([
           this.getSafeCreationData({
             chainId: args.chainId,

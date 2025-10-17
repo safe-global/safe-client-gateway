@@ -168,7 +168,7 @@ export class CounterpartyAnalysisDto implements CounterpartyAnalysisResponse {
       $ref: getSchemaPath(RecipientAnalysisDto),
     },
     example: {
-      '0x1234567890123456789012345678901234567890': {
+      '0x0000000000000000000000000000000000000000': {
         RECIPIENT_INTERACTION: [
           {
             severity: 'INFO',
@@ -192,7 +192,7 @@ export class CounterpartyAnalysisDto implements CounterpartyAnalysisResponse {
       $ref: getSchemaPath(ContractAnalysisDto),
     },
     example: {
-      '0x1234567890123456789012345678901234567890': {
+      '0x0000000000000000000000000000000000000000': {
         CONTRACT_VERIFICATION: [
           {
             severity: 'INFO',

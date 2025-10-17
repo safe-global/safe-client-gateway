@@ -20,7 +20,11 @@ import {
   COMMON_SEVERITY_MAPPING,
   COMMON_TITLE_MAPPING,
 } from './entities/common-status.constants';
-import { extractReasonMessage } from './utils/common';
+import {
+  ContractStatusGroup,
+  RecipientStatusGroup,
+} from '@/modules/safe-shield/entities/status-group.entity';
+import { asError } from '@/logging/utils';
 
 /**
  * Main orchestration service for Safe Shield transaction analysis.
@@ -235,14 +239,11 @@ export class SafeShieldService {
     T extends RecipientAnalysisResponse | ContractAnalysisResponse,
   >(
     targetAddress: Address,
-    statusGroup: 'RECIPIENT_INTERACTION' | 'CONTRACT_VERIFICATION',
+    statusGroup: RecipientStatusGroup | ContractStatusGroup,
     reason?: unknown,
   ): T {
-    const reasonMessage = extractReasonMessage(reason);
-
-    this.loggingService.warn(
-      `Counterparty analysis for ${statusGroup == 'RECIPIENT_INTERACTION' ? 'recipients' : 'contracts'} failed. ${reasonMessage}`,
-    );
+    const error = asError(reason);
+    this.loggingService.warn(`Counterparty analysis failed. ${error}`);
 
     return {
       [targetAddress]: {
@@ -252,7 +253,7 @@ export class SafeShieldService {
             severity: COMMON_SEVERITY_MAPPING.FAILED,
             title: COMMON_TITLE_MAPPING.FAILED,
             description: COMMON_DESCRIPTION_MAPPING.FAILED({
-              reason: reasonMessage,
+              reason: error.message,
             }),
           },
         ],

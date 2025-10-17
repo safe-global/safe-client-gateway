@@ -6,18 +6,26 @@ import { Address, Hex } from 'viem';
 export class CounterpartyAnalysisRequestDto
   implements CounterpartyAnalysisRequest
 {
-  @ApiProperty({ type: String })
+  @ApiProperty({
+    type: String,
+    description: 'Recipient address of the transaction.',
+  })
   to!: Address;
 
-  @ApiProperty()
+  @ApiProperty({
+    description: 'Amount to send with the transaction.',
+  })
   value!: string;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({
+    type: String,
+    description: 'Hex-encoded data payload for the transaction.',
+  })
   data!: Hex;
 
   @ApiProperty({
     enum: Operation,
-    description: 'Operation type: 0 for CALL, 1 for DELEGATE',
+    description: 'Operation type: 0 for CALL, 1 for DELEGATECALL.',
   })
   operation!: Operation;
 }
