@@ -15,7 +15,7 @@ import { TransactionsService } from '@/routes/transactions/transactions.service'
 import { Operation } from '@/domain/safe/entities/operation.entity';
 import type { TransactionInfo } from '@/routes/transactions/entities/transaction-info.entity';
 import { RecipientInteractionAnalysisDto } from './entities/dtos/recipient-analysis.dto';
-import { ThreatAnalysisRequestBody } from '@/modules/safe-shield/entities/analysis-requests.entity';
+import { ThreatAnalysisRequest } from '@/modules/safe-shield/entities/analysis-requests.entity';
 
 /**
  * Main orchestration service for Safe Shield transaction analysis.
@@ -160,22 +160,22 @@ export class SafeShieldService {
    * @param args - Analysis parameters
    * @param args.chainId - The chain ID
    * @param args.safeAddress - The Safe address
-   * @param args.txRequest - The transaction data
+   * @param args.request - The transaction data/ sign message as TypedData
    * @returns A threat analysis response
    */
   async analyzeThreats({
     chainId,
     safeAddress,
-    txRequest,
+    request,
   }: {
     chainId: string;
     safeAddress: Address;
-    txRequest: ThreatAnalysisRequestBody;
+    request: ThreatAnalysisRequest;
   }): Promise<ThreatAnalysisResponse> {
     return this.threatAnalysisService.analyze({
       chainId,
       safeAddress,
-      requestData: txRequest,
+      request,
     });
   }
 

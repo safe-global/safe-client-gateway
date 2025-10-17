@@ -1,7 +1,6 @@
 import crypto from 'crypto';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import type { Address, Hash } from 'viem';
-import type { ThreatAnalysisRequestBody } from '@/modules/safe-shield/entities/analysis-requests.entity';
 
 export class CacheRouter {
   private static readonly ACCOUNT_DATA_SETTINGS_KEY = 'account_data_settings';
@@ -915,18 +914,24 @@ export class CacheRouter {
    * Gets cache directory for threat analysis results.
    *
    * @param {string} args.chainId - Chain ID
-   * @param {ThreatAnalysisRequestBody} args.requestData - Request data to be hashed
+   * @param {string} args.safeAddress - Safe address
+   * @param {string} args.walletAddress - Signer address
+   * @param {string} args.message - JSON representation of typed data
+   * @param {string} args.origin - Request origin (optional)
    * @returns {CacheDir} - Cache directory
    */
   static getThreatAnalysisCacheDir(args: {
     chainId: string;
-    requestData: ThreatAnalysisRequestBody;
+    safeAddress: Address;
+    walletAddress: Address;
+    message: string;
+    origin?: string;
   }): CacheDir {
     const requestHash = crypto.createHash('sha256');
-    requestHash.update(JSON.stringify(args.requestData));
+    requestHash.update(args.message);
     return new CacheDir(
-      `${args.chainId}_${CacheRouter.THREAT_ANALYSIS_KEY}`,
-      requestHash.digest('hex'),
+      `${args.chainId}_${CacheRouter.THREAT_ANALYSIS_KEY}_${args.safeAddress}`,
+      `${args.walletAddress}_${requestHash.digest('hex')}_${args.origin}`,
     );
   }
 }
