@@ -25,7 +25,7 @@ import {
   BLOCKAID_SEVERITY_MAP,
   CLASSIFICATION_MAPPING,
   REASON_MAPPING,
-} from '@/modules/safe-shield/threat-analysis/blockaid/blockaid.constants';
+} from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-api.constants';
 import {
   DESCRIPTION_MAPPING,
   SEVERITY_MAPPING,

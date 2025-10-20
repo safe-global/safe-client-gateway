@@ -39,6 +39,10 @@ import {
   COMMON_SEVERITY_MAPPING,
 } from './entities/common-status.constants';
 import { threatAnalysisRequestBuilder } from '@/modules/safe-shield/entities/__tests__/builders/analysis-requests.builder';
+import type { IConfigApi } from '@/domain/interfaces/config-api.interface';
+import { RISK_MITIGATION } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-api.constants';
+import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
+import { rawify } from '@/validation/entities/raw.entity';
 
 // Utility function for generating Wei values
 const generateRandomWeiAmount = (): bigint =>
@@ -129,12 +133,17 @@ describe('SafeShieldService', () => {
     error: jest.fn(),
   } as jest.MockedObjectDeep<ILoggingService>;
 
+  const mockConfigApi = {
+    getChain: jest.fn(),
+  } as jest.MockedObjectDeep<IConfigApi>;
+
   const service = new SafeShieldService(
     mockRecipientAnalysisService,
     mockContractAnalysisService,
     mockThreatAnalysisService,
     mockLoggingService,
     mockTransactionsService,
+    mockConfigApi,
   );
 
   const mockChainId = faker.number.int({ min: 1, max: 999999 }).toString();
@@ -1084,8 +1093,14 @@ describe('SafeShieldService', () => {
       .with('walletAddress', mockRecipientAddress)
       .build();
 
-    it('should analyze threats for a transaction', async () => {
+    it('should analyze threats when Blockaid is enabled for the chain', async () => {
       const mockThreatResponse = threatAnalysisResponseBuilder().build();
+      const mockChain = chainBuilder()
+        .with('chainId', mockChainId)
+        .with('features', [RISK_MITIGATION])
+        .build();
+
+      mockConfigApi.getChain.mockResolvedValue(rawify(mockChain));
       mockThreatAnalysisService.analyze.mockResolvedValue(mockThreatResponse);
 
       const result = await service.analyzeThreats({
@@ -1095,11 +1110,31 @@ describe('SafeShieldService', () => {
       });
 
       expect(result).toEqual(mockThreatResponse);
+      expect(mockConfigApi.getChain).toHaveBeenCalledWith(mockChainId);
       expect(mockThreatAnalysisService.analyze).toHaveBeenCalledWith({
         chainId: mockChainId,
         safeAddress: mockSafeAddress,
         request: mockThreatRequest,
       });
+    });
+
+    it('should return empty response when Blockaid is disabled for the chain', async () => {
+      const mockChain = chainBuilder()
+        .with('chainId', mockChainId)
+        .with('features', ['OTHER_FEATURE'])
+        .build();
+
+      mockConfigApi.getChain.mockResolvedValue(rawify(mockChain));
+
+      const result = await service.analyzeThreats({
+        chainId: mockChainId,
+        safeAddress: mockSafeAddress,
+        request: mockThreatRequest,
+      });
+
+      expect(result).toEqual({});
+      expect(mockConfigApi.getChain).toHaveBeenCalledWith(mockChainId);
+      expect(mockThreatAnalysisService.analyze).not.toHaveBeenCalled();
     });
 
     it('should handle multiple threat results and balance changes', async () => {
@@ -1122,7 +1157,12 @@ describe('SafeShieldService', () => {
           },
         ],
       };
+      const mockChain = chainBuilder()
+        .with('chainId', mockChainId)
+        .with('features', [RISK_MITIGATION])
+        .build();
 
+      mockConfigApi.getChain.mockResolvedValue(rawify(mockChain));
       mockThreatAnalysisService.analyze.mockResolvedValue(
         mockMultipleThreatsResponse,
       );
@@ -1136,6 +1176,55 @@ describe('SafeShieldService', () => {
       expect(result).toEqual(mockMultipleThreatsResponse);
       expect(result.THREAT).toHaveLength(3);
       expect(result.BALANCE_CHANGE).toHaveLength(1);
+      expect(mockConfigApi.getChain).toHaveBeenCalledWith(mockChainId);
+      expect(mockThreatAnalysisService.analyze).toHaveBeenCalledWith({
+        chainId: mockChainId,
+        safeAddress: mockSafeAddress,
+        request: mockThreatRequest,
+      });
+    });
+
+    it('should handle threat analysis service failure', async () => {
+      const error = new Error('Threat analysis failed');
+      const mockChain = chainBuilder()
+        .with('chainId', mockChainId)
+        .with('features', [RISK_MITIGATION])
+        .build();
+
+      mockConfigApi.getChain.mockResolvedValue(rawify(mockChain));
+      mockThreatAnalysisService.analyze.mockRejectedValue(error);
+
+      await expect(
+        service.analyzeThreats({
+          chainId: mockChainId,
+          safeAddress: mockSafeAddress,
+          request: mockThreatRequest,
+        }),
+      ).rejects.toThrow('Threat analysis failed');
+
+      expect(mockConfigApi.getChain).toHaveBeenCalledWith(mockChainId);
+      expect(mockThreatAnalysisService.analyze).toHaveBeenCalledWith({
+        chainId: mockChainId,
+        safeAddress: mockSafeAddress,
+        request: mockThreatRequest,
+      });
+    });
+
+    it('should handle config API failure when checking if Blockaid is enabled', async () => {
+      const error = new Error('Failed to fetch chain config');
+
+      mockConfigApi.getChain.mockRejectedValue(error);
+
+      await expect(
+        service.analyzeThreats({
+          chainId: mockChainId,
+          safeAddress: mockSafeAddress,
+          request: mockThreatRequest,
+        }),
+      ).rejects.toThrow('Failed to fetch chain config');
+
+      expect(mockConfigApi.getChain).toHaveBeenCalledWith(mockChainId);
+      expect(mockThreatAnalysisService.analyze).not.toHaveBeenCalled();
     });
   });
 });

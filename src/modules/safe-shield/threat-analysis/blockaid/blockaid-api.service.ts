@@ -1,5 +1,5 @@
 import { IBlockaidApi } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-api.interface';
-import { GUARD_STORAGE_POSITION } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid.constants';
+import { GUARD_STORAGE_POSITION } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-api.constants';
 import Blockaid from '@blockaid/client';
 import { TransactionScanResponse } from '@blockaid/client/resources/evm/evm';
 import { JsonRpcScanParams } from '@blockaid/client/resources/evm/json-rpc';

@@ -26,6 +26,9 @@ import {
 } from '@/modules/safe-shield/entities/status-group.entity';
 import { asError } from '@/logging/utils';
 import { ThreatAnalysisRequest } from '@/modules/safe-shield/entities/analysis-requests.entity';
+import { IConfigApi } from '@/domain/interfaces/config-api.interface';
+import { ChainSchema } from '@/domain/chains/entities/schemas/chain.schema';
+import { RISK_MITIGATION } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-api.constants';
 
 /**
  * Main orchestration service for Safe Shield transaction analysis.
@@ -43,6 +46,8 @@ export class SafeShieldService {
     @Inject(LoggingService)
     private readonly loggingService: ILoggingService,
     private readonly transactionsService: TransactionsService,
+    @Inject(IConfigApi)
+    private readonly configApi: IConfigApi,
   ) {}
 
   /**
@@ -197,11 +202,24 @@ export class SafeShieldService {
     safeAddress: Address;
     request: ThreatAnalysisRequest;
   }): Promise<ThreatAnalysisResponse> {
+    const isAnalysisEnabled = await this.isBlockaidEnabled(chainId);
+    if (!isAnalysisEnabled) {
+      return {};
+    }
+
     return this.threatAnalysisService.analyze({
       chainId,
       safeAddress,
       request,
     });
+  }
+
+  private async isBlockaidEnabled(chainId: string): Promise<boolean> {
+    const chain = await this.configApi
+      .getChain(chainId)
+      .then(ChainSchema.parse);
+
+    return chain.features.includes(RISK_MITIGATION);
   }
 
   /**
