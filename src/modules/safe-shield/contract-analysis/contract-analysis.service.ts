@@ -217,7 +217,7 @@ export class ContractAnalysisService {
       );
       return this.mapToAnalysisResult({
         type: 'FAILED',
-        reason: 'contract interactions unavailable',
+        error: 'contract interactions unavailable',
       });
     }
   }
@@ -248,15 +248,15 @@ export class ContractAnalysisService {
     type: T;
     interactions?: number;
     name?: string;
-    reason?: string;
+    error?: string;
   }): AnalysisResult<T> {
-    const { type, interactions, name, reason } = args;
+    const { type, interactions, name, error } = args;
     const severity = SEVERITY_MAPPING[type];
     const title = TITLE_MAPPING[type];
     const description = DESCRIPTION_MAPPING[type]({
       interactions,
       name,
-      reason,
+      error,
     });
 
     return { severity, type, title, description };

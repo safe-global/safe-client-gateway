@@ -3,7 +3,6 @@ import type { ContractStatus } from '@/modules/safe-shield/entities/contract-sta
 import type { CommonStatus } from '@/modules/safe-shield/entities/analysis-result.entity';
 import {
   COMMON_SEVERITY_MAPPING,
-  COMMON_TITLE_MAPPING,
   COMMON_DESCRIPTION_MAPPING,
 } from '@/modules/safe-shield/entities/common-status.constants';
 
@@ -30,7 +29,6 @@ export const SEVERITY_MAPPING: Record<
  * Maps each contract status to its user-facing title.
  */
 export const TITLE_MAPPING: Record<ContractStatus | CommonStatus, string> = {
-  ...COMMON_TITLE_MAPPING,
   VERIFIED: 'Verified contract',
   NOT_VERIFIED: 'Unverified contract',
   NOT_VERIFIED_BY_SAFE: 'New contract',
@@ -38,12 +36,13 @@ export const TITLE_MAPPING: Record<ContractStatus | CommonStatus, string> = {
   NEW_CONTRACT: 'First contract interaction',
   KNOWN_CONTRACT: 'Known contract',
   UNEXPECTED_DELEGATECALL: 'Unexpected delegateCall',
+  FAILED: 'Contract analysis failed',
 };
 
 type DescriptionArgs = {
   name?: string;
   interactions?: number;
-  reason?: string;
+  error?: string;
 };
 
 /**

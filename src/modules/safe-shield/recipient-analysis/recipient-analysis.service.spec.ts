@@ -486,8 +486,8 @@ describe('RecipientAnalysisService', () => {
           BRIDGE: [
             {
               type: 'FAILED',
-              severity: 'CRITICAL',
-              title: 'Analysis failed',
+              severity: 'WARN',
+              title: 'Recipient analysis failed',
               description:
                 'The analysis failed: bridge compatibility unavailable. Please try again later.',
               targetChainId,
@@ -708,8 +708,8 @@ describe('RecipientAnalysisService', () => {
 
       expect(result).toEqual({
         type: 'FAILED',
-        severity: 'CRITICAL',
-        title: 'Analysis failed',
+        severity: 'WARN',
+        title: 'Recipient analysis failed',
         description:
           'The analysis failed: recipient interactions unavailable. Please try again later.',
       });
@@ -732,8 +732,8 @@ describe('RecipientAnalysisService', () => {
 
       expect(result).toEqual({
         type: 'FAILED',
-        severity: 'CRITICAL',
-        title: 'Analysis failed',
+        severity: 'WARN',
+        title: 'Recipient analysis failed',
         description:
           'The analysis failed: recipient interactions unavailable. Please try again later.',
       });
@@ -1298,8 +1298,8 @@ describe('RecipientAnalysisService', () => {
           BRIDGE: [
             {
               type: 'FAILED',
-              severity: 'CRITICAL',
-              title: 'Analysis failed',
+              severity: 'WARN',
+              title: 'Recipient analysis failed',
               description:
                 'The analysis failed: bridge compatibility unavailable. Please try again later.',
               targetChainId,

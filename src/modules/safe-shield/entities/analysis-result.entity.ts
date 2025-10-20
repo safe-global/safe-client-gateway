@@ -129,11 +129,14 @@ export const ThreatAnalysisResultSchema = z.union([
   }),
   // All others: no extra fields
   AnalysisResultBaseSchema.extend({
-    type: ThreatStatusSchema.exclude([
-      'MASTER_COPY_CHANGE',
-      'MALICIOUS',
-      'MODERATE',
-    ]), //TODO add CommonStatusSchema
+    type: z.union([
+      ThreatStatusSchema.exclude([
+        'MASTER_COPY_CHANGE',
+        'MALICIOUS',
+        'MODERATE',
+      ]),
+      CommonStatusSchema,
+    ]),
   }),
 ]);
 
@@ -181,5 +184,6 @@ export type ThreatAnalysisResult =
   | MasterCopyChangeThreatAnalysisResult
   | MaliciousOrModerateThreatAnalysisResult
   | AnalysisResult<
-      Exclude<ThreatStatus, 'MASTER_COPY_CHANGE' | 'MALICIOUS' | 'MODERATE'>
+      | Exclude<ThreatStatus, 'MASTER_COPY_CHANGE' | 'MALICIOUS' | 'MODERATE'>
+      | CommonStatus
     >;

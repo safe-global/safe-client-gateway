@@ -3,6 +3,7 @@ import { HexSchema } from '@/validation/entities/schemas/hex.schema';
 import { TypedDataSchema } from '@/domain/messages/entities/typed-data.entity';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { Operation } from '@/domain/safe/entities/operation.entity';
+import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
 
 /**
  * Request schema for counterparty analysis endpoint.
@@ -60,13 +61,4 @@ export const ThreatAnalysisRequestSchema = z.object({
   origin: z.string().optional(),
 });
 
-/**
- * TypeScript types derived from the Zod schemas.
- */
-export type RecipientAnalysisRequestBody = z.infer<
-  typeof RecipientAnalysisRequestBodySchema
->;
-export type ContractAnalysisRequestBody = z.infer<
-  typeof ContractAnalysisRequestBodySchema
->;
 export type ThreatAnalysisRequest = z.infer<typeof ThreatAnalysisRequestSchema>;

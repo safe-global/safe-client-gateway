@@ -204,7 +204,7 @@ export class RecipientAnalysisService {
       );
       return this.mapToAnalysisResult({
         type: 'FAILED',
-        reason: 'recipient interactions unavailable',
+        error: 'recipient interactions unavailable',
       });
     }
   }
@@ -240,7 +240,7 @@ export class RecipientAnalysisService {
           BRIDGE: [
             this.mapToAnalysisResult({
               type: resultStatus,
-              reason:
+              error:
                 resultStatus === 'FAILED'
                   ? 'bridge compatibility unavailable'
                   : undefined,
@@ -529,7 +529,7 @@ export class RecipientAnalysisService {
    * Maps a recipient or bridge status to an analysis result.
    * @param type - The recipient or bridge status.
    * @param interactions - The number of interactions with the recipient (if applicable).
-   * @param reason - The reason for failure (if applicable).
+   * @param error - The reason for failure (if applicable).
    * @param targetChainId - The target chain ID (optional, only included for bridge-related statuses).
    * @returns The recipient analysis result.
    */
@@ -538,13 +538,13 @@ export class RecipientAnalysisService {
   >(args: {
     type: T;
     interactions?: number;
-    reason?: string;
+    error?: string;
     targetChainId?: string;
   }): AnalysisResult<T> & { targetChainId?: string } {
-    const { type, interactions, reason, targetChainId } = args;
+    const { type, interactions, error, targetChainId } = args;
     const severity = SEVERITY_MAPPING[type];
     const title = TITLE_MAPPING[type];
-    const description = DESCRIPTION_MAPPING[type]({ interactions, reason });
+    const description = DESCRIPTION_MAPPING[type]({ interactions, error });
 
     return {
       severity,

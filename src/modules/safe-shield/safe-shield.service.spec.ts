@@ -37,7 +37,6 @@ import type { RecipientStatus } from '@/modules/safe-shield/entities/recipient-s
 import {
   COMMON_DESCRIPTION_MAPPING,
   COMMON_SEVERITY_MAPPING,
-  COMMON_TITLE_MAPPING,
 } from './entities/common-status.constants';
 import { threatAnalysisRequestBuilder } from '@/modules/safe-shield/entities/__tests__/builders/analysis-requests.builder';
 
@@ -517,9 +516,9 @@ describe('SafeShieldService', () => {
             {
               type: 'FAILED',
               severity: COMMON_SEVERITY_MAPPING.FAILED,
-              title: COMMON_TITLE_MAPPING.FAILED,
+              title: 'Recipient analysis failed',
               description: COMMON_DESCRIPTION_MAPPING.FAILED({
-                reason: 'Recipient analysis failed',
+                error: 'Recipient analysis failed',
               }),
             },
           ],
@@ -592,9 +591,9 @@ describe('SafeShieldService', () => {
             {
               type: 'FAILED',
               severity: COMMON_SEVERITY_MAPPING.FAILED,
-              title: COMMON_TITLE_MAPPING.FAILED,
+              title: 'Contract analysis failed',
               description: COMMON_DESCRIPTION_MAPPING.FAILED({
-                reason: 'Contract analysis failed',
+                error: 'Contract analysis failed',
               }),
             },
           ],
@@ -666,9 +665,9 @@ describe('SafeShieldService', () => {
             {
               type: 'FAILED',
               severity: COMMON_SEVERITY_MAPPING.FAILED,
-              title: COMMON_TITLE_MAPPING.FAILED,
+              title: 'Recipient analysis failed',
               description: COMMON_DESCRIPTION_MAPPING.FAILED({
-                reason: 'Recipient analysis failed',
+                error: 'Recipient analysis failed',
               }),
             },
           ],
@@ -680,9 +679,9 @@ describe('SafeShieldService', () => {
             {
               type: 'FAILED',
               severity: COMMON_SEVERITY_MAPPING.FAILED,
-              title: COMMON_TITLE_MAPPING.FAILED,
+              title: 'Contract analysis failed',
               description: COMMON_DESCRIPTION_MAPPING.FAILED({
-                reason: 'Contract analysis failed',
+                error: 'Contract analysis failed',
               }),
             },
           ],
@@ -1087,7 +1086,6 @@ describe('SafeShieldService', () => {
 
     it('should analyze threats for a transaction', async () => {
       const mockThreatResponse = threatAnalysisResponseBuilder().build();
-
       mockThreatAnalysisService.analyze.mockResolvedValue(mockThreatResponse);
 
       const result = await service.analyzeThreats({

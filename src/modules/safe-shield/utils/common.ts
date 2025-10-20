@@ -23,22 +23,3 @@ export function logCacheMiss(
     field: cacheDir.field,
   });
 }
-
-/**
- * Extracts a readable error message from a rejected promise.
- *
- * @param reason - The error reason from a rejected promise
- * @returns A string representation of the error
- */
-export function extractReasonMessage(reason: unknown): string {
-  if (reason instanceof Error) {
-    return reason.message;
-  }
-  if (typeof reason === 'string') {
-    return reason;
-  }
-  if (reason && typeof reason === 'object' && 'message' in reason) {
-    return String(reason.message);
-  }
-  return String(reason);
-}

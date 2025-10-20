@@ -4,7 +4,6 @@ import type { BridgeStatus } from '@/modules/safe-shield/entities/bridge-status.
 import type { CommonStatus } from '@/modules/safe-shield/entities/analysis-result.entity';
 import {
   COMMON_SEVERITY_MAPPING,
-  COMMON_TITLE_MAPPING,
   COMMON_DESCRIPTION_MAPPING,
 } from '@/modules/safe-shield/entities/common-status.constants';
 
@@ -33,18 +32,18 @@ export const TITLE_MAPPING: Record<
   RecipientStatus | BridgeStatus | CommonStatus,
   string
 > = {
-  ...COMMON_TITLE_MAPPING,
   NEW_RECIPIENT: 'New recipient',
   RECURRING_RECIPIENT: 'Recurring recipient',
   INCOMPATIBLE_SAFE: 'Incompatible Safe version',
   MISSING_OWNERSHIP: 'Missing ownership',
   UNSUPPORTED_NETWORK: 'Unsupported network',
   DIFFERENT_SAFE_SETUP: 'Different setup',
+  FAILED: 'Recipient analysis failed',
 };
 
 type DescriptionArgs = {
   interactions?: number;
-  reason?: string;
+  error?: string;
 };
 
 /**

@@ -1098,7 +1098,7 @@ describe('ContractAnalysisService', () => {
         type: 'FAILED',
         title: TITLE_MAPPING.FAILED,
         description: DESCRIPTION_MAPPING.FAILED({
-          reason: 'contract interactions unavailable',
+          error: 'contract interactions unavailable',
         }),
       });
       expect(mockTransactionApiManager.getApi).toHaveBeenCalledWith(chainId);
@@ -1123,7 +1123,7 @@ describe('ContractAnalysisService', () => {
         type: 'FAILED',
         title: TITLE_MAPPING.FAILED,
         description: DESCRIPTION_MAPPING.FAILED({
-          reason: 'contract interactions unavailable',
+          error: 'contract interactions unavailable',
         }),
       });
       expect(mockTransactionApiManager.getApi).toHaveBeenCalledWith(chainId);
