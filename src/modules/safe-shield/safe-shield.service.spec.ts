@@ -39,6 +39,7 @@ import {
   COMMON_SEVERITY_MAPPING,
   COMMON_TITLE_MAPPING,
 } from './entities/common-status.constants';
+import { threatAnalysisRequestBuilder } from '@/modules/safe-shield/entities/__tests__/builders/analysis-requests.builder';
 
 // Utility function for generating Wei values
 const generateRandomWeiAmount = (): bigint =>
@@ -1080,19 +1081,9 @@ describe('SafeShieldService', () => {
   });
 
   describe('analyzeThreats', () => {
-    const mockThreatRequest = {
-      to: mockRecipientAddress,
-      value: '0',
-      data: mockData,
-      operation: 0,
-      safeTxGas: '0',
-      baseGas: '0',
-      gasPrice: '0',
-      gasToken: getAddress(faker.finance.ethereumAddress()),
-      refundReceiver: getAddress(faker.finance.ethereumAddress()),
-      nonce: '0',
-      walletAddress: mockRecipientAddress,
-    };
+    const mockThreatRequest = threatAnalysisRequestBuilder()
+      .with('walletAddress', mockRecipientAddress)
+      .build();
 
     it('should analyze threats for a transaction', async () => {
       const mockThreatResponse = threatAnalysisResponseBuilder().build();
@@ -1102,14 +1093,14 @@ describe('SafeShieldService', () => {
       const result = await service.analyzeThreats({
         chainId: mockChainId,
         safeAddress: mockSafeAddress,
-        txRequest: mockThreatRequest,
+        request: mockThreatRequest,
       });
 
       expect(result).toEqual(mockThreatResponse);
       expect(mockThreatAnalysisService.analyze).toHaveBeenCalledWith({
         chainId: mockChainId,
         safeAddress: mockSafeAddress,
-        requestData: mockThreatRequest,
+        request: mockThreatRequest,
       });
     });
 
@@ -1141,7 +1132,7 @@ describe('SafeShieldService', () => {
       const result = await service.analyzeThreats({
         chainId: mockChainId,
         safeAddress: mockSafeAddress,
-        txRequest: mockThreatRequest,
+        request: mockThreatRequest,
       });
 
       expect(result).toEqual(mockMultipleThreatsResponse);

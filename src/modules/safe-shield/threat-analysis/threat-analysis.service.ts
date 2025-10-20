@@ -5,7 +5,7 @@ import {
   ICacheService,
 } from '@/datasources/cache/cache.service.interface';
 import { LoggingService, ILoggingService } from '@/logging/logging.interface';
-import { ThreatAnalysisRequestBody } from '@/modules/safe-shield/entities/analysis-requests.entity';
+import { ThreatAnalysisRequest } from '@/modules/safe-shield/entities/analysis-requests.entity';
 import { ThreatAnalysisResponse } from '@/modules/safe-shield/entities/analysis-responses.entity';
 import { ThreatAnalysisResult } from '@/modules/safe-shield/entities/analysis-result.entity';
 import {
@@ -25,7 +25,6 @@ import {
 } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid.constants';
 import {
   DESCRIPTION_MAPPING,
-  SAFE_VERSION,
   SEVERITY_MAPPING,
   TITLE_MAPPING,
 } from '@/modules/safe-shield/threat-analysis/threat-analysis.constants';
@@ -37,8 +36,8 @@ import {
   TransactionValidationError,
 } from '@blockaid/client/resources/index';
 import { Inject, Injectable } from '@nestjs/common';
-import { generateTypedData } from '@safe-global/protocol-kit';
 import { Address } from 'viem';
+import { TypedData } from '@/domain/messages/entities/typed-data.entity';
 
 /**
  * Service responsible for analyzing transactions for security threats and malicious patterns.
@@ -63,14 +62,27 @@ export class ThreatAnalysisService {
       );
   }
 
-  async analyze(args: {
+  async analyze({
+    chainId,
+    safeAddress,
+    request,
+  }: {
     chainId: string;
     safeAddress: Address;
-    requestData: ThreatAnalysisRequestBody;
+    request: ThreatAnalysisRequest;
   }): Promise<ThreatAnalysisResponse> {
+    const { walletAddress, origin, data } = request;
+    const message = this.serializeMessage(data);
+    if (!message) {
+      return this.getFailedAnalysisResponse();
+    }
+
     const cacheDir = CacheRouter.getThreatAnalysisCacheDir({
-      chainId: args.chainId,
-      requestData: args.requestData,
+      chainId,
+      safeAddress,
+      walletAddress,
+      message,
+      origin,
     });
     const cached = await this.cacheService.hGet(cacheDir);
 
@@ -80,14 +92,19 @@ export class ThreatAnalysisService {
         return JSON.parse(cached) as ThreatAnalysisResponse;
       } catch (error) {
         this.loggingService.warn(
-          `Failed to parse cached threat analysis results for ${JSON.stringify(cacheDir)}: ${error}`,
+          `Failed to parse cached threat analysis results: ${error}`,
         );
       }
     }
     logCacheMiss(cacheDir, this.loggingService);
 
-    const analysisResults: ThreatAnalysisResponse =
-      await this.detectThreats(args);
+    const analysisResults = await this.detectThreats(
+      chainId,
+      safeAddress,
+      walletAddress,
+      message,
+      origin,
+    );
 
     await this.cacheService.hSet(
       cacheDir,
@@ -97,24 +114,31 @@ export class ThreatAnalysisService {
     return analysisResults;
   }
 
-  private async detectThreats(args: {
-    chainId: string;
-    safeAddress: Address;
-    requestData: ThreatAnalysisRequestBody;
-  }): Promise<ThreatAnalysisResponse> {
-    const { chainId, safeAddress, requestData } = args;
-    const { walletAddress, ...data } = requestData;
+  private serializeMessage(data: TypedData): string | null {
     try {
-      const message = this.prepareMessage({
-        chainId,
-        safeAddress,
-        data,
-      });
+      return JSON.stringify(data);
+    } catch (error) {
+      this.loggingService.warn(
+        `Failed to serialize threat analysis request data: ${error}`,
+      );
+      return null;
+    }
+  }
+
+  private async detectThreats(
+    chainId: string,
+    safeAddress: Address,
+    walletAddress: Address,
+    message: string,
+    origin?: string,
+  ): Promise<ThreatAnalysisResponse> {
+    try {
       const response = await this.blockaidAPI.scanTransaction(
         chainId,
         safeAddress,
         walletAddress,
         message,
+        origin,
       );
       const { simulation, validation } = response;
 
@@ -123,11 +147,7 @@ export class ThreatAnalysisService {
       this.loggingService.warn(
         `Error during threat analysis for Safe ${safeAddress} on chain ${chainId}: ${error}`,
       );
-
-      return {
-        THREAT: [this.mapToAnalysisResult({ type: 'FAILED' })],
-        BALANCE_CHANGE: [],
-      };
+      return this.getFailedAnalysisResponse();
     }
   }
 
@@ -324,34 +344,10 @@ export class ThreatAnalysisService {
     }
   }
 
-  /**
-   * Prepares the message for threat analysis by generating EIP-712 typed data.
-   * @param args - The arguments containing chainId, safeAddress, and requestData.
-   * @returns - The message as a JSON string.
-   */
-  private prepareMessage(args: {
-    chainId: string;
-    safeAddress: Address;
-    data: Omit<ThreatAnalysisRequestBody, 'walletAddress'>;
-  }): string {
-    const { chainId, safeAddress, data } = args;
-    /* TODO it seems we never provide EIP-712 typed data */
-    // if (isEIP712TypedData(data)) {
-    //   const normalizedMsg = normalizeTypedData(data);
-    //   return JSON.stringify(normalizedMsg);
-    // } else {
-
-    return JSON.stringify(
-      generateTypedData({
-        safeAddress,
-        safeVersion: SAFE_VERSION,
-        chainId: BigInt(chainId),
-        data: {
-          ...data,
-          nonce: Number(data.nonce),
-        },
-      }),
-    );
-    // }
+  private getFailedAnalysisResponse(): ThreatAnalysisResponse {
+    return {
+      THREAT: [this.mapToAnalysisResult({ type: 'FAILED' })],
+      BALANCE_CHANGE: [],
+    };
   }
 }
