@@ -61,4 +61,13 @@ export const ThreatAnalysisRequestSchema = z.object({
   origin: z.string().optional(),
 });
 
+/**
+ * TypeScript types derived from the Zod schemas.
+ */
+export type RecipientAnalysisRequestBody = z.infer<
+  typeof RecipientAnalysisRequestBodySchema
+>;
+export type ContractAnalysisRequestBody = z.infer<
+  typeof ContractAnalysisRequestBodySchema
+>;
 export type ThreatAnalysisRequest = z.infer<typeof ThreatAnalysisRequestSchema>;

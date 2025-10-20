@@ -22,7 +22,6 @@ import {
 } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-api.constants';
 import {
   DESCRIPTION_MAPPING,
-  SAFE_VERSION,
   SEVERITY_MAPPING,
   TITLE_MAPPING,
 } from '@/modules/safe-shield/threat-analysis/threat-analysis.constants';
@@ -34,7 +33,6 @@ import {
   TransactionValidationError,
 } from '@blockaid/client/resources/index';
 import { Inject, Injectable } from '@nestjs/common';
-import { generateTypedData } from '@safe-global/protocol-kit';
 import { Address } from 'viem';
 import { TypedData } from '@/domain/messages/entities/typed-data.entity';
 
