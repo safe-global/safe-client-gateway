@@ -19,7 +19,6 @@ import type { TransactionInfo } from '@/routes/transactions/entities/transaction
 import {
   COMMON_DESCRIPTION_MAPPING,
   COMMON_SEVERITY_MAPPING,
-  COMMON_TITLE_MAPPING,
 } from './entities/common-status.constants';
 import {
   ContractStatusGroup,
@@ -257,9 +256,9 @@ export class SafeShieldService {
   /**
    * Handles failed analysis by creating a FAILED result placeholder.
    *
-   * @param reason - The error reason from the rejected promise
    * @param targetAddress - The address to attach the failure to
    * @param statusGroup - The status group for the failure
+   * @param reason - The error reason from the rejected promise
    * @returns Analysis response with FAILED status
    */
   private handleFailedAnalysis<
@@ -271,6 +270,9 @@ export class SafeShieldService {
   ): T {
     const error = asError(reason);
     this.loggingService.warn(`Counterparty analysis failed. ${error}`);
+    const isRecipient = (
+      RecipientStatusGroup as ReadonlyArray<string>
+    ).includes(statusGroup);
 
     return {
       [targetAddress]: {
@@ -278,9 +280,9 @@ export class SafeShieldService {
           {
             type: 'FAILED',
             severity: COMMON_SEVERITY_MAPPING.FAILED,
-            title: COMMON_TITLE_MAPPING.FAILED,
+            title: `${isRecipient ? 'Recipient' : 'Contract'} analysis failed`,
             description: COMMON_DESCRIPTION_MAPPING.FAILED({
-              reason: error.message,
+              error: error.message,
             }),
           },
         ],

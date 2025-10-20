@@ -7,7 +7,10 @@ import {
 import { LoggingService, ILoggingService } from '@/logging/logging.interface';
 import { ThreatAnalysisRequest } from '@/modules/safe-shield/entities/analysis-requests.entity';
 import { ThreatAnalysisResponse } from '@/modules/safe-shield/entities/analysis-responses.entity';
-import { ThreatAnalysisResult } from '@/modules/safe-shield/entities/analysis-result.entity';
+import {
+  CommonStatus,
+  ThreatAnalysisResult,
+} from '@/modules/safe-shield/entities/analysis-result.entity';
 import {
   Severity,
   compareSeverityString,
@@ -175,7 +178,7 @@ export class ThreatAnalysisService {
   private analyzeValidation(
     validation?: TransactionValidation | TransactionValidationError,
   ): ThreatAnalysisResult {
-    let type: ThreatStatus = 'FAILED';
+    let type: ThreatStatus | CommonStatus = 'FAILED';
     let issues: Map<keyof typeof Severity, Array<string>> | undefined;
     const {
       reason,
@@ -195,8 +198,6 @@ export class ThreatAnalysisService {
         case 'Malicious':
           type = 'MALICIOUS';
           break;
-        default:
-          type = 'FAILED';
       }
       issues = this.groupIssuesBySeverity(features);
     }
@@ -305,7 +306,7 @@ export class ThreatAnalysisService {
    * @returns The analysis result.
    */
   private mapToAnalysisResult(args: {
-    type: ThreatStatus;
+    type: ThreatStatus | CommonStatus;
     reason?: string;
     classification?: string;
     issues?: Map<keyof typeof Severity, Array<string>>;

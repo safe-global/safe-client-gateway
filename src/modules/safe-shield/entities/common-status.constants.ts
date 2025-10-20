@@ -9,15 +9,7 @@ export const COMMON_SEVERITY_MAPPING: Record<
   CommonStatus,
   keyof typeof Severity
 > = {
-  FAILED: 'CRITICAL',
-};
-
-/**
- * Title mapping for common status values.
- * This can be spread into specific analysis type title mappings.
- */
-export const COMMON_TITLE_MAPPING: Record<CommonStatus, string> = {
-  FAILED: 'Analysis failed',
+  FAILED: 'WARN',
 };
 
 /**
@@ -26,8 +18,8 @@ export const COMMON_TITLE_MAPPING: Record<CommonStatus, string> = {
  */
 export const COMMON_DESCRIPTION_MAPPING: Record<
   CommonStatus,
-  (args?: { reason?: string }) => string
+  (args?: { error?: string }) => string
 > = {
-  FAILED: ({ reason } = {}) =>
-    `The analysis failed${reason ? `: ${reason}` : ''}. Please try again later.`,
+  FAILED: ({ error } = {}) =>
+    `The analysis failed${error ? `: ${error}` : ''}. Please try again later.`,
 };
