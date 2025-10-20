@@ -917,7 +917,7 @@ export class CacheRouter {
       }
     }
     return new CacheDir(
-      `${args.chainId}_${CacheRouter.RECIPIENT_ANALYSIS_KEY}`,
+      `${args.chainId}_${CacheRouter.RECIPIENT_ANALYSIS_KEY}_${args.safeAddress}`,
       hash.digest('hex'),
     );
   }
