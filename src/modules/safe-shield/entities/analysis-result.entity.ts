@@ -178,7 +178,6 @@ export type MaliciousOrModerateThreatAnalysisResult = AnalysisResult<
  * Inferred from the Zod schema to avoid duplication.
  * Uses discriminated union to provide type-specific fields.
  */
-// export type ThreatAnalysisResult = AnalysisResult<ThreatStatus>;
 
 export type ThreatAnalysisResult =
   | MasterCopyChangeThreatAnalysisResult

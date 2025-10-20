@@ -1,4 +1,5 @@
 import { BlockaidApi } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-api.service';
+import { GUARD_STORAGE_POSITION } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid.constants';
 import type { TransactionScanResponse } from '@blockaid/client/resources/evm/evm';
 import type { Address } from 'viem';
 import { faker } from '@faker-js/faker';
@@ -58,6 +59,14 @@ describe('BlockaidApi', () => {
         ],
       },
     });
+    const stateOverride = {
+      [safeAddress]: {
+        stateDiff: {
+          [GUARD_STORAGE_POSITION]:
+            '0x0000000000000000000000000000000000000000000000000000000000000000',
+        },
+      },
+    };
 
     it('should call blockaid client with correct parameters', async () => {
       const origin = faker.internet.url();
@@ -88,6 +97,7 @@ describe('BlockaidApi', () => {
         options: ['simulation', 'validation'],
         metadata: { domain: origin },
         account_address: walletAddress,
+        state_override: stateOverride,
       });
 
       expect(result).toEqual(mockScanResponse);
@@ -119,6 +129,7 @@ describe('BlockaidApi', () => {
         options: ['simulation', 'validation'],
         metadata: { non_dapp: true },
         account_address: walletAddress,
+        state_override: stateOverride,
       });
 
       expect(result).toEqual(mockScanResponse);
