@@ -12,7 +12,6 @@ import type { Portfolio } from '@/domain/portfolio/entities/portfolio.entity';
 import type { TokenBalance } from '@/domain/portfolio/entities/token-balance.entity';
 import type { AppBalance } from '@/domain/portfolio/entities/app-balance.entity';
 import type { AppPosition } from '@/domain/portfolio/entities/app-position.entity';
-import { DataSourceError } from '@/domain/errors/data-source.error';
 import { getNumberString } from '@/domain/common/utils/utils';
 import { rawify, type Raw } from '@/validation/entities/raw.entity';
 
@@ -25,6 +24,7 @@ interface ZapperToken {
   price?: number;
   balance?: string;
   balanceUSD?: number;
+  balanceInCurrency?: number;
   imgUrlV2?: string;
   onchainMarketData?: {
     priceChange24h?: number;
@@ -50,6 +50,7 @@ interface ZapperApp {
   appImage: string;
   network: string;
   balanceUSD: number;
+  balanceInCurrency?: number;
   tokens: Array<ZapperAppTokenBalance>;
 }
 
@@ -61,6 +62,7 @@ interface ZapperV2Token {
   decimals: number | null;
   balance: number;
   balanceUSD: number;
+  balanceInCurrency?: number;
   price?: number;
   imgUrlV2?: string;
   onchainMarketData?: {
@@ -77,6 +79,7 @@ interface ZapperV2App {
   };
   network: { name: string };
   balanceUSD: number;
+  balanceInCurrency?: number;
   positionBalances: {
     edges: Array<{
       node: {
@@ -138,38 +141,46 @@ export class ZapperPortfolioApi implements IPortfolioApi {
     chainIds?: Array<string>;
   }): Promise<Raw<Portfolio>> {
     try {
-      const query = this._buildGraphQLQuery(args.address, args.chainIds);
+      const query = this._buildGraphQLQuery();
       const fiatCode = args.fiatCode.toUpperCase();
 
-      const result = await this.networkService.post<{ data: ZapperResponse }>({
-        url: `${this.baseUri}/graphql`,
-        data: {
-          query,
-          variables: {
-            addresses: [args.address],
-            first: 100,
-            priceCurrency: fiatCode,
+      const response = await this.networkService.post<{ data: ZapperResponse }>(
+        {
+          url: `${this.baseUri}/graphql`,
+          data: {
+            query,
+            variables: {
+              addresses: [args.address],
+              first: 100,
+              priceCurrency: fiatCode,
+            },
+          },
+          networkRequest: {
+            headers: {
+              'x-zapper-api-key': this.apiKey,
+              'Content-Type': 'application/json',
+            },
           },
         },
-        networkRequest: {
-          headers: {
-            'x-zapper-api-key': this.apiKey,
-            'Content-Type': 'application/json',
-          },
-        },
-      });
+      );
 
       // GraphQL wraps response in { data: { ... } }
-      return this._buildPortfolio((result.data as any).data);
+      const graphqlResponse = response.data as unknown as {
+        data: ZapperResponse;
+        errors?: Array<{ message: string }>;
+      };
+
+      if (graphqlResponse.errors && graphqlResponse.errors.length > 0) {
+        throw new Error(`GraphQL Error: ${graphqlResponse.errors[0].message}`);
+      }
+
+      return this._buildPortfolio(graphqlResponse.data);
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
   }
 
-  private _buildGraphQLQuery(
-    address: Address,
-    chainIds?: Array<string>,
-  ): string {
+  private _buildGraphQLQuery(): string {
     return `
       query PortfolioV2($addresses: [Address!]!, $first: Int = 100, $priceCurrency: Currency) {
         portfolioV2(addresses: $addresses) {
@@ -187,6 +198,7 @@ export class ZapperPortfolioApi implements IPortfolioApi {
                   decimals
                   balance
                   balanceUSD
+                  balanceInCurrency(currency: $priceCurrency)
                   price
                   imgUrlV2
                   onchainMarketData {
@@ -211,6 +223,7 @@ export class ZapperPortfolioApi implements IPortfolioApi {
                     name
                   }
                   balanceUSD
+                  balanceInCurrency(currency: $priceCurrency)
                   positionBalances(first: 20) {
                     edges {
                       node {
@@ -240,22 +253,25 @@ export class ZapperPortfolioApi implements IPortfolioApi {
 
   private _buildPortfolio(response: ZapperResponse): Raw<Portfolio> {
     // Transform portfolioV2 tokens to old format
-    const tokens = response.portfolioV2.tokenBalances.byToken.edges.map((edge) => {
-      const decimals = edge.node.decimals ?? 18;
+    const tokens = response.portfolioV2.tokenBalances.byToken.edges.map(
+      (edge) => {
+        const decimals = edge.node.decimals ?? 18;
 
-      return {
-        address: edge.node.tokenAddress,
-        network: edge.node.network.name,
-        symbol: edge.node.symbol,
-        name: edge.node.name,
-        decimals,
-        balance: edge.node.balance.toString(),
-        balanceUSD: edge.node.balanceUSD,
-        price: edge.node.price,
-        imgUrlV2: edge.node.imgUrlV2,
-        onchainMarketData: edge.node.onchainMarketData,
-      };
-    });
+        return {
+          address: edge.node.tokenAddress,
+          network: edge.node.network.name,
+          symbol: edge.node.symbol,
+          name: edge.node.name,
+          decimals,
+          balance: edge.node.balance.toString(),
+          balanceUSD: edge.node.balanceUSD,
+          balanceInCurrency: edge.node.balanceInCurrency,
+          price: edge.node.price,
+          imgUrlV2: edge.node.imgUrlV2,
+          onchainMarketData: edge.node.onchainMarketData,
+        };
+      },
+    );
 
     const tokenBalances = this._buildTokenBalances(tokens);
 
@@ -266,6 +282,7 @@ export class ZapperPortfolioApi implements IPortfolioApi {
       appImage: edge.node.app.imgUrl,
       network: edge.node.network.name,
       balanceUSD: edge.node.balanceUSD,
+      balanceInCurrency: edge.node.balanceInCurrency,
       tokens: edge.node.positionBalances.edges.map((pos) => ({
         address: pos.node.address,
         network: pos.node.network,
@@ -305,9 +322,10 @@ export class ZapperPortfolioApi implements IPortfolioApi {
     return tokens
       .filter((token) => isAddress(token.address))
       .map((token): TokenBalance => {
-        const balanceFiat = token.onchainMarketData?.price !== undefined && token.balance
-          ? getNumberString(parseFloat(token.balance) * token.onchainMarketData.price)
-          : null;
+        const balanceFiat =
+          token.balanceInCurrency !== undefined
+            ? getNumberString(token.balanceInCurrency)
+            : null;
 
         return {
           tokenInfo: {
@@ -320,12 +338,14 @@ export class ZapperPortfolioApi implements IPortfolioApi {
           },
           balance: token.balance ?? '0',
           balanceFiat,
-          price: token.onchainMarketData?.price !== undefined
-            ? getNumberString(token.onchainMarketData.price)
-            : null,
-          priceChangePercentage1d: token.onchainMarketData?.priceChange24h !== undefined
-            ? getNumberString(token.onchainMarketData.priceChange24h)
-            : null,
+          price:
+            token.onchainMarketData?.price !== undefined
+              ? getNumberString(token.onchainMarketData.price)
+              : null,
+          priceChangePercentage1d:
+            token.onchainMarketData?.priceChange24h !== undefined
+              ? getNumberString(token.onchainMarketData.priceChange24h)
+              : null,
         };
       });
   }
@@ -333,7 +353,9 @@ export class ZapperPortfolioApi implements IPortfolioApi {
   private _buildAppBalances(apps: Array<ZapperApp>): Array<AppBalance> {
     return apps.map((app): AppBalance => {
       const positions = this._buildAppPositions(app);
-      const balanceFiat = getNumberString(app.balanceUSD);
+      const balanceFiat = app.balanceInCurrency !== undefined && app.balanceInCurrency !== null
+        ? getNumberString(app.balanceInCurrency)
+        : getNumberString(app.balanceUSD);
 
       return {
         appInfo: {
