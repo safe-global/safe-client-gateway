@@ -1,5 +1,5 @@
 import { BlockaidApi } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-api.service';
-import { GUARD_STORAGE_POSITION } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid.constants';
+import { GUARD_STORAGE_POSITION } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-api.constants';
 import type { TransactionScanResponse } from '@blockaid/client/resources/evm/evm';
 import type { Address } from 'viem';
 import { faker } from '@faker-js/faker';

@@ -25,13 +25,17 @@ import {
   BLOCKAID_SEVERITY_MAP,
   CLASSIFICATION_MAPPING,
   REASON_MAPPING,
-} from '@/modules/safe-shield/threat-analysis/blockaid/blockaid.constants';
+} from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-api.constants';
 import {
   DESCRIPTION_MAPPING,
   SEVERITY_MAPPING,
   TITLE_MAPPING,
 } from '@/modules/safe-shield/threat-analysis/threat-analysis.constants';
-import { logCacheHit, logCacheMiss } from '@/modules/safe-shield/utils/common';
+import {
+  logCacheHit,
+  logCacheMiss,
+  createFailedAnalysisResult,
+} from '@/modules/safe-shield/utils/common';
 import {
   TransactionSimulation,
   TransactionSimulationError,
@@ -346,9 +350,10 @@ export class ThreatAnalysisService {
   }
 
   private getFailedAnalysisResponse(): ThreatAnalysisResponse {
-    return {
-      THREAT: [this.mapToAnalysisResult({ type: 'FAILED' })],
-      BALANCE_CHANGE: [],
-    };
+    return createFailedAnalysisResult<ThreatAnalysisResult>(
+      this.loggingService,
+      'THREAT',
+      'Threat',
+    ) as ThreatAnalysisResponse;
   }
 }

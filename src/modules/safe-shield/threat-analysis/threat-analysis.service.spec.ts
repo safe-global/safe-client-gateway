@@ -753,7 +753,6 @@ describe('ThreatAnalysisService', () => {
             description: DESCRIPTION_MAPPING.FAILED(),
           },
         ],
-        BALANCE_CHANGE: [],
       });
       expect(mockLoggingService.warn).toHaveBeenCalledWith(
         expect.stringContaining('Error during threat analysis for Safe'),
