@@ -9,14 +9,18 @@ export class AppBalanceAppInfo {
   name!: string;
 
   @ApiPropertyOptional({
-    description: 'Application logo URL',
+    type: 'string',
+    format: 'uri',
+    description: 'Application logo URL (HTTPS)',
     example: 'https://example.com/aave-logo.png',
     nullable: true,
   })
   logoUrl!: string | null;
 
   @ApiPropertyOptional({
-    description: 'Application URL',
+    type: 'string',
+    format: 'uri',
+    description: 'Application URL (HTTPS)',
     example: 'https://aave.com',
     nullable: true,
   })
@@ -31,7 +35,8 @@ export class AppBalance {
   appInfo!: AppBalanceAppInfo;
 
   @ApiPropertyOptional({
-    description: 'Total balance in fiat currency across all positions',
+    type: 'string',
+    description: 'Total balance in fiat currency across all positions (decimal string)',
     example: '15000.00',
     nullable: true,
   })

@@ -27,7 +27,9 @@ export class TokenBalanceTokenInfo {
   name!: string;
 
   @ApiPropertyOptional({
-    description: 'Token logo URL',
+    type: 'string',
+    format: 'uri',
+    description: 'Token logo URL (HTTPS)',
     example: 'https://example.com/logo.png',
     nullable: true,
   })
@@ -54,21 +56,24 @@ export class TokenBalance {
   balance!: string;
 
   @ApiPropertyOptional({
-    description: 'Balance in requested fiat currency',
+    type: 'string',
+    description: 'Balance in requested fiat currency (decimal string)',
     example: '1000.50',
     nullable: true,
   })
   balanceFiat!: string | null;
 
   @ApiPropertyOptional({
-    description: 'Token price in requested fiat currency',
+    type: 'string',
+    description: 'Token price in requested fiat currency (decimal string)',
     example: '4370.50',
     nullable: true,
   })
   price!: string | null;
 
   @ApiPropertyOptional({
-    description: 'Price change percentage in the last 24 hours',
+    type: 'string',
+    description: 'Price change percentage in the last 24 hours (decimal string)',
     example: '-4.31',
     nullable: true,
   })

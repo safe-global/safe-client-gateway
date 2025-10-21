@@ -27,7 +27,9 @@ export class AppPositionTokenInfo {
   name!: string;
 
   @ApiPropertyOptional({
-    description: 'Token logo URL',
+    type: 'string',
+    format: 'uri',
+    description: 'Token logo URL (HTTPS)',
     example: 'https://example.com/logo.png',
     nullable: true,
   })
@@ -72,14 +74,16 @@ export class AppPosition {
   balance!: string;
 
   @ApiPropertyOptional({
-    description: 'Balance in requested fiat currency',
+    type: 'string',
+    description: 'Balance in requested fiat currency (decimal string)',
     example: '10000.00',
     nullable: true,
   })
   balanceFiat!: string | null;
 
   @ApiPropertyOptional({
-    description: 'Price change percentage in the last 24 hours',
+    type: 'string',
+    description: 'Price change percentage in the last 24 hours (decimal string)',
     example: '-4.31',
     nullable: true,
   })
