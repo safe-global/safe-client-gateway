@@ -136,7 +136,7 @@ export class ZerionPortfolioApi implements IPortfolioApi {
               position.attributes.fungible_info.name ??
               position.attributes.name,
             logoUrl: position.attributes.fungible_info.icon?.url ?? null,
-            chainId: impl.chain_id,
+            chainId: this._mapNetworkToChainId(impl.chain_id),
           },
           balance: position.attributes.quantity.numeric,
           balanceFiat: position.attributes.value ?? null,
@@ -214,7 +214,7 @@ export class ZerionPortfolioApi implements IPortfolioApi {
               position.attributes.fungible_info.name ??
               position.attributes.name,
             logoUrl: position.attributes.fungible_info.icon?.url ?? null,
-            chainId: impl.chain_id,
+            chainId: this._mapNetworkToChainId(impl.chain_id),
           },
           balance: position.attributes.quantity.numeric,
           balanceFiat: position.attributes.value ?? null,
@@ -235,5 +235,73 @@ export class ZerionPortfolioApi implements IPortfolioApi {
     return positions.reduce((sum, position) => {
       return sum + (position.attributes.value ?? 0);
     }, 0);
+  }
+
+  private _mapNetworkToChainId(network: string): string {
+    const mapping: Record<string, string> = {
+      '0g': '16661',
+      abstract: '2741',
+      ape: '33139',
+      arbitrum: '42161',
+      aurora: '1313161554',
+      avalanche: '43114',
+      base: '8453',
+      berachain: '80094',
+      'binance-smart-chain': '56',
+      bsc: '56', // alias for binance-smart-chain
+      blast: '81457',
+      bob: '60808',
+      celo: '42220',
+      'cronos-zkevm': '388',
+      cyber: '7560',
+      degen: '666666666',
+      ethereum: '1',
+      fantom: '250',
+      fraxtal: '252',
+      gnosis: '100',
+      'gravity-alpha': '1625',
+      hyperevm: '999',
+      ink: '57073',
+      katana: '747474',
+      lens: '232',
+      linea: '59144',
+      lisk: '1135',
+      'manta-pacific': '169',
+      mantle: '5000',
+      'metis-andromeda': '1088',
+      mode: '34443',
+      okbchain: '196',
+      opbnb: '204',
+      optimism: '10',
+      plasma: '9745',
+      polygon: '137',
+      'polygon-zkevm': '1101',
+      polynomial: '8008',
+      rari: '1380012617',
+      're-al': '111188',
+      redstone: '690',
+      ronin: '2020',
+      scroll: '534352',
+      sei: '1329',
+      solana: '101',
+      somnia: '5031',
+      soneium: '1868',
+      sonic: '146',
+      swellchain: '1923',
+      taiko: '167000',
+      tomochain: '88',
+      unichain: '130',
+      wonder: '9637',
+      world: '480',
+      xdai: '100',
+      'xinfin-xdc': '50',
+      zero: '543210',
+      zkcandy: '320',
+      'zklink-nova': '810180',
+      zksync: '324', // alias for zksync-era
+      'zksync-era': '324',
+      zora: '7777777',
+    };
+    return mapping[network.toLowerCase()] ?? '1';
   }
 }
