@@ -322,6 +322,25 @@ describe('recipient-extraction.utils', () => {
         expect(result).toBe(expectedRecipient);
       });
 
+      it('should extract recipient from transaction.to for native transfer with null data', () => {
+        const expectedRecipient = getAddress(faker.finance.ethereumAddress());
+
+        const transaction: DecodedTransactionData = {
+          operation: 0,
+          to: expectedRecipient,
+          value: '1000000000000000000',
+          data: null,
+          dataDecoded: null,
+        };
+
+        mockErc20Decoder.helpers.isTransfer.mockReturnValue(false);
+        mockErc20Decoder.helpers.isTransferFrom.mockReturnValue(false);
+
+        const result = extractRecipient(transaction, mockErc20Decoder);
+
+        expect(result).toBe(expectedRecipient);
+      });
+
       it('should return undefined when dataDecoded is null and data is not empty', () => {
         const expectedRecipient = getAddress(faker.finance.ethereumAddress());
 
