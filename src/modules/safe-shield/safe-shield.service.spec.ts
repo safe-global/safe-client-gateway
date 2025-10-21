@@ -40,7 +40,7 @@ import {
 } from './entities/common-status.constants';
 import { threatAnalysisRequestBuilder } from '@/modules/safe-shield/entities/__tests__/builders/analysis-requests.builder';
 import type { IConfigApi } from '@/domain/interfaces/config-api.interface';
-import { RISK_MITIGATION } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-api.constants';
+import { FF_RISK_MITIGATION } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-api.constants';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
 import { rawify } from '@/validation/entities/raw.entity';
 
@@ -1097,7 +1097,7 @@ describe('SafeShieldService', () => {
       const mockThreatResponse = threatAnalysisResponseBuilder().build();
       const mockChain = chainBuilder()
         .with('chainId', mockChainId)
-        .with('features', [RISK_MITIGATION])
+        .with('features', [FF_RISK_MITIGATION])
         .build();
 
       mockConfigApi.getChain.mockResolvedValue(rawify(mockChain));
@@ -1159,7 +1159,7 @@ describe('SafeShieldService', () => {
       };
       const mockChain = chainBuilder()
         .with('chainId', mockChainId)
-        .with('features', [RISK_MITIGATION])
+        .with('features', [FF_RISK_MITIGATION])
         .build();
 
       mockConfigApi.getChain.mockResolvedValue(rawify(mockChain));
@@ -1188,7 +1188,7 @@ describe('SafeShieldService', () => {
       const error = new Error('Threat analysis failed');
       const mockChain = chainBuilder()
         .with('chainId', mockChainId)
-        .with('features', [RISK_MITIGATION])
+        .with('features', [FF_RISK_MITIGATION])
         .build();
 
       mockConfigApi.getChain.mockResolvedValue(rawify(mockChain));

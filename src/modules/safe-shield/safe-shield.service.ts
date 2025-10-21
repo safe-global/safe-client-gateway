@@ -28,7 +28,7 @@ import {
 import { ThreatAnalysisRequest } from '@/modules/safe-shield/entities/analysis-requests.entity';
 import { IConfigApi } from '@/domain/interfaces/config-api.interface';
 import { ChainSchema } from '@/domain/chains/entities/schemas/chain.schema';
-import { RISK_MITIGATION } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-api.constants';
+import { FF_RISK_MITIGATION } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-api.constants';
 import { createFailedAnalysisResult } from './utils/common';
 
 /**
@@ -229,7 +229,7 @@ export class SafeShieldService {
       .getChain(chainId)
       .then(ChainSchema.parse);
 
-    return chain.features.includes(RISK_MITIGATION);
+    return chain.features.includes(FF_RISK_MITIGATION);
   }
 
   /**
