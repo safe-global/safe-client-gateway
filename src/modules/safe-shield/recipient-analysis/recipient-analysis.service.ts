@@ -224,14 +224,16 @@ export class RecipientAnalysisService {
     const bridgeRecipient = getAddress(args.txInfo.recipient.value);
 
     if (bridgeRecipient === getAddress(args.safeAddress)) {
-      const resultStatus = await this.analyzeTargetChainCompatibility({
+      const result = await this.analyzeTargetChainCompatibility({
         ...args,
         txInfo: args.txInfo,
       });
 
-      if (!resultStatus) {
+      if (!result) {
         return {};
       }
+
+      const [resultStatus, targetChainId] = result;
 
       return {
         [bridgeRecipient]: {
@@ -242,6 +244,7 @@ export class RecipientAnalysisService {
                 resultStatus === 'FAILED'
                   ? 'bridge compatibility unavailable'
                   : undefined,
+              targetChainId,
             }),
           ],
         },
@@ -263,18 +266,19 @@ export class RecipientAnalysisService {
     chainId: string;
     safeAddress: Address;
     txInfo: BridgeAndSwapTransactionInfo;
-  }): Promise<BridgeStatus | CommonStatus | undefined> {
+  }): Promise<[BridgeStatus | CommonStatus, string] | undefined> {
     if (
       getAddress(args.txInfo.recipient.value) !== getAddress(args.safeAddress)
     ) {
       return undefined;
     }
+    const targetChainId = args.txInfo.toChain;
 
     try {
       const isTargetChainSupported =
-        await this.chainsRepository.isSupportedChain(args.txInfo.toChain);
+        await this.chainsRepository.isSupportedChain(targetChainId);
       if (!isTargetChainSupported) {
-        return 'UNSUPPORTED_NETWORK';
+        return ['UNSUPPORTED_NETWORK', targetChainId];
       }
 
       const [sourceSafe, targetSafe] = await Promise.all([
@@ -283,7 +287,7 @@ export class RecipientAnalysisService {
           safeAddress: args.safeAddress,
         }),
         this.getSafe({
-          chainId: args.txInfo.toChain,
+          chainId: targetChainId,
           safeAddress: args.safeAddress,
         }),
       ]);
@@ -292,33 +296,34 @@ export class RecipientAnalysisService {
         this.loggingService.warn(
           `Source Safe not found for address ${args.safeAddress} on chain ${args.chainId}`,
         );
-        return 'FAILED';
+        return ['FAILED', targetChainId];
       }
 
       if (targetSafe) {
         if (!this.haveSameSetup(sourceSafe, targetSafe)) {
-          return 'DIFFERENT_SAFE_SETUP';
+          return ['DIFFERENT_SAFE_SETUP', targetChainId];
         }
+        return undefined;
       } else {
         const [safeCreationData, targetChain] = await Promise.all([
           this.getSafeCreationData({
             chainId: args.chainId,
             safeAddress: args.safeAddress,
           }),
-          this.chainsRepository.getChain(args.txInfo.toChain),
+          this.chainsRepository.getChain(targetChainId),
         ]);
 
         if (!this.isNetworkCompatible(targetChain, safeCreationData)) {
-          return 'INCOMPATIBLE_SAFE';
+          return ['INCOMPATIBLE_SAFE', targetChainId];
         }
 
-        return 'MISSING_OWNERSHIP';
+        return ['MISSING_OWNERSHIP', targetChainId];
       }
     } catch (error) {
       this.loggingService.warn(
         `Failed to analyze target chain compatibility: ${error}`,
       );
-      return 'FAILED';
+      return ['FAILED', targetChainId];
     }
   }
 
@@ -525,6 +530,7 @@ export class RecipientAnalysisService {
    * @param type - The recipient or bridge status.
    * @param interactions - The number of interactions with the recipient (if applicable).
    * @param reason - The reason for failure (if applicable).
+   * @param targetChainId - The target chain ID (optional, only included for bridge-related statuses).
    * @returns The recipient analysis result.
    */
   private mapToAnalysisResult<
@@ -533,12 +539,19 @@ export class RecipientAnalysisService {
     type: T;
     interactions?: number;
     reason?: string;
-  }): AnalysisResult<T> {
-    const { type, interactions, reason } = args;
+    targetChainId?: string;
+  }): AnalysisResult<T> & { targetChainId?: string } {
+    const { type, interactions, reason, targetChainId } = args;
     const severity = SEVERITY_MAPPING[type];
     const title = TITLE_MAPPING[type];
     const description = DESCRIPTION_MAPPING[type]({ interactions, reason });
 
-    return { severity, type, title, description };
+    return {
+      severity,
+      type,
+      title,
+      description,
+      ...(targetChainId !== undefined && { targetChainId }),
+    };
   }
 }

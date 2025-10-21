@@ -4,9 +4,11 @@ import {
   RecipientAnalysisResult,
   type ContractAnalysisResult,
 } from '../analysis-result.entity';
-import type { GroupedAnalysisResults } from '../analysis-responses.entity';
+import type {
+  CounterpartyAnalysisResponse,
+  GroupedAnalysisResults,
+} from '@/modules/safe-shield/entities/analysis-responses.entity';
 import { ContractStatus } from '@/modules/safe-shield/entities/contract-status.entity';
-import type { CounterpartyAnalysisResponse } from '@/modules/safe-shield/entities/analysis-responses.entity';
 import { AnalysisResultDto } from './analysis-result.dto';
 import { BridgeStatus } from '@/modules/safe-shield/entities/bridge-status.entity';
 import { RecipientStatus } from '@/modules/safe-shield/entities/recipient-status.entity';
@@ -103,12 +105,20 @@ export class RecipientResultDto extends AnalysisResultDto<
     example: 'MISSING_OWNERSHIP',
   })
   type!: RecipientStatus | BridgeStatus | CommonStatus;
+
+  @ApiProperty({
+    description:
+      'Target chain ID for bridge operations. Only present for BridgeStatus.',
+    example: '137',
+    required: false,
+  })
+  targetChainId?: string;
 }
 
 /**
  * DTO for full recipient analysis response.
  *
- * This DTO mirrors GroupedAnalysisResults<RecipientAnalysisResult> for Swagger documentation.
+ * This DTO represents the structure for Swagger documentation.
  * Results are grouped by status group and sorted by severity (CRITICAL first).
  * Used by endpoints that return both recipient interaction and bridge analysis.
  */
@@ -145,6 +155,7 @@ export class RecipientAnalysisDto
         type: 'MISSING_OWNERSHIP',
         title: 'No ownership on target chain',
         description: 'You do not have ownership of a Safe on the target chain',
+        targetChainId: '137',
       },
     ],
   })
