@@ -61,9 +61,6 @@ export class ZerionPortfolioApi implements IPortfolioApi {
           currency: args.fiatCode.toLowerCase(),
           sort: 'value',
           'filter[positions]': 'no_filter',
-          ...(args.chainIds && {
-            'filter[chain_ids]': args.chainIds.join(','),
-          }),
         },
       };
 
