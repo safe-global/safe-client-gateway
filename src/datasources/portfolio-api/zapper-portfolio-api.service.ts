@@ -15,45 +15,6 @@ import type { AppPosition } from '@/domain/portfolio/entities/app-position.entit
 import { getNumberString } from '@/domain/common/utils/utils';
 import { rawify, type Raw } from '@/validation/entities/raw.entity';
 
-interface ZapperToken {
-  address: string;
-  network: string;
-  symbol: string;
-  name?: string;
-  decimals: number;
-  price?: number;
-  balance?: string;
-  balanceUSD?: number;
-  balanceInCurrency?: number;
-  imgUrlV2?: string;
-  onchainMarketData?: {
-    priceChange24h?: number;
-    price?: number;
-  };
-}
-
-interface ZapperAppTokenBalance {
-  address: string;
-  network: string;
-  symbol: string;
-  name?: string;
-  displayLabel?: string;
-  decimals: number;
-  balance: string;
-  balanceUSD: number;
-  category: string;
-}
-
-interface ZapperApp {
-  appId: string;
-  appName: string;
-  appImage: string;
-  network: string;
-  balanceUSD: number;
-  balanceInCurrency?: number;
-  tokens: Array<ZapperAppTokenBalance>;
-}
-
 interface ZapperV2Token {
   tokenAddress: string;
   network: { name: string };
@@ -252,51 +213,13 @@ export class ZapperPortfolioApi implements IPortfolioApi {
   }
 
   private _buildPortfolio(response: ZapperResponse): Raw<Portfolio> {
-    // Transform portfolioV2 tokens to old format
-    const tokens = response.portfolioV2.tokenBalances.byToken.edges.map(
-      (edge) => {
-        const decimals = edge.node.decimals ?? 18;
-
-        return {
-          address: edge.node.tokenAddress,
-          network: edge.node.network.name,
-          symbol: edge.node.symbol,
-          name: edge.node.name,
-          decimals,
-          balance: edge.node.balance.toString(),
-          balanceUSD: edge.node.balanceUSD,
-          balanceInCurrency: edge.node.balanceInCurrency,
-          price: edge.node.price,
-          imgUrlV2: edge.node.imgUrlV2,
-          onchainMarketData: edge.node.onchainMarketData,
-        };
-      },
+    const tokenBalances = this._buildTokenBalances(
+      response.portfolioV2.tokenBalances.byToken.edges.map((edge) => edge.node),
     );
 
-    const tokenBalances = this._buildTokenBalances(tokens);
-
-    // Transform portfolioV2 apps to old format
-    const apps = response.portfolioV2.appBalances.byApp.edges.map((edge) => ({
-      appId: edge.node.app.slug,
-      appName: edge.node.app.displayName,
-      appImage: edge.node.app.imgUrl,
-      network: edge.node.network.name,
-      balanceUSD: edge.node.balanceUSD,
-      balanceInCurrency: edge.node.balanceInCurrency,
-      tokens: edge.node.positionBalances.edges.map((pos) => ({
-        address: pos.node.address,
-        network: pos.node.network,
-        symbol: pos.node.symbol,
-        name: undefined,
-        displayLabel: pos.node.displayProps?.label,
-        decimals: pos.node.decimals,
-        balance: pos.node.balance,
-        balanceUSD: pos.node.balanceUSD,
-        category: pos.node.groupLabel,
-      })),
-    }));
-
-    const appBalances = this._buildAppBalances(apps);
+    const appBalances = this._buildAppBalances(
+      response.portfolioV2.appBalances.byApp.edges.map((edge) => edge.node),
+    );
 
     const totalBalanceFiat = getNumberString(
       response.portfolioV2.tokenBalances.totalBalanceUSD +
@@ -318,10 +241,13 @@ export class ZapperPortfolioApi implements IPortfolioApi {
     });
   }
 
-  private _buildTokenBalances(tokens: Array<ZapperToken>): Array<TokenBalance> {
+  private _buildTokenBalances(
+    tokens: Array<ZapperV2Token>,
+  ): Array<TokenBalance> {
     return tokens
-      .filter((token) => isAddress(token.address))
+      .filter((token) => isAddress(token.tokenAddress))
       .map((token): TokenBalance => {
+        const decimals = token.decimals ?? 18;
         const balanceFiat =
           token.balanceInCurrency !== undefined
             ? getNumberString(token.balanceInCurrency)
@@ -329,14 +255,14 @@ export class ZapperPortfolioApi implements IPortfolioApi {
 
         return {
           tokenInfo: {
-            address: getAddress(token.address),
-            decimals: token.decimals,
+            address: getAddress(token.tokenAddress),
+            decimals,
             symbol: token.symbol,
             name: token.name ?? token.symbol,
             logoUrl: token.imgUrlV2 ?? null,
-            chainId: this._mapNetworkToChainId(token.network),
+            chainId: this._mapNetworkToChainId(token.network.name),
           },
-          balance: token.balance ?? '0',
+          balance: token.balance.toString(),
           balanceFiat,
           price:
             token.onchainMarketData?.price !== undefined
@@ -350,17 +276,18 @@ export class ZapperPortfolioApi implements IPortfolioApi {
       });
   }
 
-  private _buildAppBalances(apps: Array<ZapperApp>): Array<AppBalance> {
+  private _buildAppBalances(apps: Array<ZapperV2App>): Array<AppBalance> {
     return apps.map((app): AppBalance => {
       const positions = this._buildAppPositions(app);
-      const balanceFiat = app.balanceInCurrency !== undefined && app.balanceInCurrency !== null
-        ? getNumberString(app.balanceInCurrency)
-        : getNumberString(app.balanceUSD);
+      const balanceFiat =
+        app.balanceInCurrency !== undefined && app.balanceInCurrency !== null
+          ? getNumberString(app.balanceInCurrency)
+          : getNumberString(app.balanceUSD);
 
       return {
         appInfo: {
-          name: app.appName,
-          logoUrl: app.appImage ?? null,
+          name: app.app.displayName,
+          logoUrl: app.app.imgUrl ?? null,
           url: null,
         },
         balanceFiat,
@@ -369,21 +296,22 @@ export class ZapperPortfolioApi implements IPortfolioApi {
     });
   }
 
-  private _buildAppPositions(app: ZapperApp): Array<AppPosition> {
-    return app.tokens
+  private _buildAppPositions(app: ZapperV2App): Array<AppPosition> {
+    return app.positionBalances.edges
+      .map((edge) => edge.node)
       .filter((token) => isAddress(token.address))
       .map((token): AppPosition => {
         const balanceFiat = getNumberString(token.balanceUSD);
 
         return {
-          key: `${app.appId}-${token.network}-${token.address}`,
-          type: token.category,
-          name: token.displayLabel ?? token.symbol,
+          key: `${app.app.slug}-${token.network}-${token.address}`,
+          type: token.groupLabel,
+          name: token.displayProps?.label ?? token.symbol,
           tokenInfo: {
             address: getAddress(token.address),
             decimals: token.decimals,
             symbol: token.symbol,
-            name: token.name ?? token.symbol,
+            name: token.symbol,
             logoUrl: null,
             chainId: this._mapNetworkToChainId(token.network),
           },
