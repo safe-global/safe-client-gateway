@@ -21,6 +21,19 @@ export interface IBalancesRepository {
   }): Promise<Array<Balance>>;
 
   /**
+   * Gets the balance of token associated with {@link safeAddress}
+   * on {@link chainId}
+   */
+  getTokenBalance(args: {
+    chain: Chain;
+    safeAddress: Address;
+    fiatCode: string;
+    trusted?: boolean;
+    excludeSpam?: boolean;
+    tokenAddress: Address;
+  }): Promise<Balance | null>;
+
+  /**
    * Clears any stored local balance data of {@link safeAddress} on {@link chainId}
    */
   clearBalances(args: { chainId: string; safeAddress: Address }): Promise<void>;

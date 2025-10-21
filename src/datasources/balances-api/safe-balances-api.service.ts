@@ -4,6 +4,10 @@ import { CacheRouter } from '@/datasources/cache/cache.router';
 import { ICacheService } from '@/datasources/cache/cache.service.interface';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import {
+  INetworkService,
+  NetworkService,
+} from '@/datasources/network/network.service.interface';
+import {
   Balance,
   BalancesSchema,
 } from '@/domain/balances/entities/balance.entity';
@@ -12,7 +16,7 @@ import { getNumberString } from '@/domain/common/utils/utils';
 import { Page } from '@/domain/entities/page.entity';
 import { IBalancesApi } from '@/domain/interfaces/balances-api.interface';
 import { IPricesApi } from '@/datasources/balances-api/prices-api.interface';
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { Chain } from '@/domain/chains/entities/chain.entity';
 import { rawify, type Raw } from '@/validation/entities/raw.entity';
 import {
@@ -38,6 +42,7 @@ export class SafeBalancesApi implements IBalancesApi {
     private readonly configurationService: IConfigurationService,
     private readonly httpErrorFactory: HttpErrorFactory,
     private readonly coingeckoApi: IPricesApi,
+    @Inject(NetworkService) private readonly networkService: INetworkService,
   ) {
     const isProduction = this.configurationService.getOrThrow<boolean>(
       'application.isProduction',
@@ -95,6 +100,53 @@ export class SafeBalancesApi implements IBalancesApi {
 
       return this._mapBalances({
         balances: data,
+        fiatCode: args.fiatCode,
+        chain: args.chain,
+      });
+    } catch (error) {
+      if (error instanceof ZodError) {
+        throw error;
+      }
+      throw this.httpErrorFactory.from(error);
+    }
+  }
+
+  async getBalance(args: {
+    safeAddress: Address;
+    fiatCode: string;
+    chain: Chain;
+    trusted?: boolean;
+    excludeSpam?: boolean;
+    tokenAddress: Address;
+  }): Promise<Raw<Balance> | null> {
+    try {
+      const url = `${this.baseUrl}/api/v1/safes/${args.safeAddress}/balances/`;
+      const networkRequest = {
+        params: {
+          trusted: args.trusted,
+          exclude_spam: args.excludeSpam,
+        },
+      };
+
+      const data = await this.networkService
+        .get<Array<Balance>>({
+          url,
+          networkRequest,
+        })
+        .then(({ data }) => BalancesSchema.parse(data));
+
+      const balance = data.find(
+        (balance) =>
+          balance.tokenAddress?.toLowerCase() ===
+          args.tokenAddress.toLowerCase(),
+      );
+
+      if (!balance) {
+        return null;
+      }
+
+      return this._mapBalances({
+        balances: [balance],
         fiatCode: args.fiatCode,
         chain: args.chain,
       });

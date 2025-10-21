@@ -1,4 +1,5 @@
 import { getBlocklist } from '@/config/entities/blocklist.config';
+import type { RelayRules } from '@/domain/relay/entities/relay.configuration';
 import { randomBytes } from 'crypto';
 
 // Custom configuration for the application
@@ -419,6 +420,8 @@ export default () => ({
       process.env.RELAY_THROTTLE_TTL_SECONDS ?? `${60 * 60 * 24}`,
     ),
     apiKey: {
+      // Ethereum Mainnet
+      1: process.env.RELAY_PROVIDER_API_KEY_MAINNET,
       // Optimism
       10: process.env.RELAY_PROVIDER_API_KEY_OPTIMISM,
       // BNB
@@ -441,6 +444,43 @@ export default () => ({
       81457: process.env.RELAY_PROVIDER_API_KEY_BLAST,
       // Sepolia
       11155111: process.env.RELAY_PROVIDER_API_KEY_SEPOLIA,
+    },
+    noFeeCampaign: {
+      // Key is the chainId
+      1: {
+        startsAtTimeStamp: parseInt(
+          process.env.RELAY_NO_FEE_CAMPAIGN_MAINNET_START_TIMESTAMP ?? `${0}`,
+        ),
+        endsAtTimeStamp: parseInt(
+          process.env.RELAY_NO_FEE_CAMPAIGN_MAINNET_END_TIMESTAMP ?? `${0}`,
+        ),
+        maxTxValueInUSD: parseInt(
+          process.env.RELAY_NO_FEE_CAMPAIGN_MAINNET_PER_TX_LIMIT_USD ?? `${0}`,
+        ),
+        safeTokenAddress:
+          process.env.RELAY_NO_FEE_CAMPAIGN_MAINNET_SAFE_TOKEN_ADDRESS,
+        relayRules:
+          parseRelayRules(
+            process.env.RELAY_NO_FEE_CAMPAIGN_MAINNET_RELAY_RULES,
+          ) ?? [],
+      },
+      11155111: {
+        startsAtTimeStamp: parseInt(
+          process.env.RELAY_NO_FEE_CAMPAIGN_SEPOLIA_START_TIMESTAMP ?? `${0}`,
+        ),
+        endsAtTimeStamp: parseInt(
+          process.env.RELAY_NO_FEE_CAMPAIGN_SEPOLIA_END_TIMESTAMP ?? `${0}`,
+        ),
+        maxTxValueInUSD: parseInt(
+          process.env.RELAY_NO_FEE_CAMPAIGN_SEPOLIA_PER_TX_LIMIT_USD ?? `${0}`,
+        ),
+        safeTokenAddress:
+          process.env.RELAY_NO_FEE_CAMPAIGN_SEPOLIA_SAFE_TOKEN_ADDRESS,
+        relayRules:
+          parseRelayRules(
+            process.env.RELAY_NO_FEE_CAMPAIGN_SEPOLIA_RELAY_RULES,
+          ) ?? [],
+      },
     },
   },
   safeConfig: {
@@ -615,3 +655,24 @@ export default () => ({
     },
   },
 });
+
+// Helper function to parse relay rules from environment variable
+const parseRelayRules = (
+  envValue: string | undefined,
+): RelayRules | undefined => {
+  if (!envValue) {
+    return undefined;
+  }
+
+  const parsed = JSON.parse(envValue) as RelayRules;
+  parsed.every(
+    (rule) =>
+      typeof rule === 'object' &&
+      rule !== null &&
+      typeof rule.balance === 'number' &&
+      typeof rule.limit === 'number' &&
+      rule.balance >= 0 &&
+      rule.limit >= 0,
+  );
+  return parsed;
+};

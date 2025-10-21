@@ -31,6 +31,7 @@ export class CacheRouter {
   private static readonly OWNERS_SAFE_KEY = 'owner_safes';
   private static readonly RATE_LIMIT_KEY = 'rate_limit';
   private static readonly RELAY_KEY = 'relay';
+  private static readonly RELAY_NO_FEE_CAMPAIGN_KEY = 'relay_no_fee_campaign';
   private static readonly RPC_REQUESTS_KEY = 'rpc_requests';
   private static readonly SAFE_APPS_KEY = 'safe_apps';
   private static readonly SAFE_BALANCES_KEY = 'safe_balances';
@@ -559,11 +560,25 @@ export class CacheRouter {
     return `${args.chainId}_${CacheRouter.RELAY_KEY}_${args.address}`;
   }
 
+  static getnoFeeCampaignRelayKey(args: {
+    chainId: string;
+    address: Address;
+  }): string {
+    return `${args.chainId}_${CacheRouter.RELAY_NO_FEE_CAMPAIGN_KEY}_${args.address}`;
+  }
+
   static getRelayCacheDir(args: {
     chainId: string;
     address: Address;
   }): CacheDir {
     return new CacheDir(CacheRouter.getRelayKey(args), '');
+  }
+
+  static getRelaynoFeeCampaignCacheDir(args: {
+    chainId: string;
+    address: Address;
+  }): CacheDir {
+    return new CacheDir(CacheRouter.getnoFeeCampaignRelayKey(args), '');
   }
 
   static getSafeAppsKey(chainId: string): string {

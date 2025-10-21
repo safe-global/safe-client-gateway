@@ -14,6 +14,15 @@ export interface IBalancesApi {
     excludeSpam?: boolean;
   }): Promise<Raw<Array<Balance>>>;
 
+  getBalance(args: {
+    safeAddress: Address;
+    fiatCode: string;
+    chain: Chain;
+    trusted?: boolean;
+    excludeSpam?: boolean;
+    tokenAddress: Address;
+  }): Promise<Raw<Balance> | null>;
+
   clearBalances(args: { chainId: string; safeAddress: Address }): Promise<void>;
 
   getCollectibles(args: {

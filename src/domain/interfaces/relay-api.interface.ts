@@ -14,7 +14,18 @@ export interface IRelayApi {
 
   getRelayCount(args: { chainId: string; address: Address }): Promise<number>;
 
+  getRelaynoFeeCampaignCount(args: {
+    chainId: string;
+    address: Address;
+  }): Promise<number>;
+
   setRelayCount(args: {
+    chainId: string;
+    address: Address;
+    count: number;
+  }): Promise<void>;
+
+  setRelaynoFeeCampaignCount(args: {
     chainId: string;
     address: Address;
     count: number;
