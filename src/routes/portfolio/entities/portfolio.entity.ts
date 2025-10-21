@@ -4,22 +4,25 @@ import { AppBalance } from '@/routes/portfolio/entities/app-balance.entity';
 
 export class Portfolio {
   @ApiProperty({
+    type: 'number',
     description: 'Total balance in fiat currency across all tokens and positions',
-    example: '50000.00',
+    example: 50000.00,
   })
-  totalBalanceFiat!: string;
+  totalBalanceFiat!: number;
 
   @ApiProperty({
+    type: 'number',
     description: 'Total balance in fiat currency for all token holdings',
-    example: '30000.00',
+    example: 30000.00,
   })
-  totalTokenBalanceFiat!: string;
+  totalTokenBalanceFiat!: number;
 
   @ApiProperty({
+    type: 'number',
     description: 'Total balance in fiat currency for all app positions',
-    example: '20000.00',
+    example: 20000.00,
   })
-  totalPositionsBalanceFiat!: string;
+  totalPositionsBalanceFiat!: number;
 
   @ApiProperty({
     description: 'List of token balances',

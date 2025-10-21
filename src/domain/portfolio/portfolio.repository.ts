@@ -102,23 +102,21 @@ export class PortfolioRepository implements IPortfolioRepository {
 
     const filteredTokenBalances = portfolio.tokenBalances.filter((token) => {
       if (!token.balanceFiat) return true;
-      return parseFloat(token.balanceFiat) >= DUST_THRESHOLD_USD;
+      return token.balanceFiat >= DUST_THRESHOLD_USD;
     });
 
     const filteredAppBalances = portfolio.positionBalances
       .map((app) => {
         const filteredPositions = app.positions.filter((position) => {
           if (!position.balanceFiat) return true;
-          return parseFloat(position.balanceFiat) >= DUST_THRESHOLD_USD;
+          return position.balanceFiat >= DUST_THRESHOLD_USD;
         });
 
         if (filteredPositions.length === 0) return null;
 
-        const appBalanceFiat = filteredPositions
-          .reduce((sum, pos) => {
-            return sum + parseFloat(pos.balanceFiat ?? '0');
-          }, 0)
-          .toString();
+        const appBalanceFiat = filteredPositions.reduce((sum, pos) => {
+          return sum + (pos.balanceFiat ?? 0);
+        }, 0);
 
         return {
           ...app,
@@ -128,24 +126,22 @@ export class PortfolioRepository implements IPortfolioRepository {
       })
       .filter((app): app is NonNullable<typeof app> => app !== null);
 
-    const totalBalanceFiat = (
+    const totalBalanceFiat =
       filteredTokenBalances.reduce(
-        (sum, token) => sum + parseFloat(token.balanceFiat ?? '0'),
+        (sum, token) => sum + (token.balanceFiat ?? 0),
         0,
       ) +
-      filteredAppBalances.reduce(
-        (sum, app) => sum + parseFloat(app.balanceFiat ?? '0'),
-        0,
-      )
-    ).toString();
+      filteredAppBalances.reduce((sum, app) => sum + (app.balanceFiat ?? 0), 0);
 
-    const totalTokenBalanceFiat = filteredTokenBalances
-      .reduce((sum, token) => sum + parseFloat(token.balanceFiat ?? '0'), 0)
-      .toString();
+    const totalTokenBalanceFiat = filteredTokenBalances.reduce(
+      (sum, token) => sum + (token.balanceFiat ?? 0),
+      0,
+    );
 
-    const totalPositionsBalanceFiat = filteredAppBalances
-      .reduce((sum, app) => sum + parseFloat(app.balanceFiat ?? '0'), 0)
-      .toString();
+    const totalPositionsBalanceFiat = filteredAppBalances.reduce(
+      (sum, app) => sum + (app.balanceFiat ?? 0),
+      0,
+    );
 
     return {
       totalBalanceFiat,

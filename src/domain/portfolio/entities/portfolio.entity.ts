@@ -3,9 +3,9 @@ import { TokenBalancesSchema } from '@/domain/portfolio/entities/token-balance.e
 import { AppBalancesSchema } from '@/domain/portfolio/entities/app-balance.entity';
 
 export const PortfolioSchema = z.object({
-  totalBalanceFiat: z.string(),
-  totalTokenBalanceFiat: z.string(),
-  totalPositionsBalanceFiat: z.string(),
+  totalBalanceFiat: z.number(),
+  totalTokenBalanceFiat: z.number(),
+  totalPositionsBalanceFiat: z.number(),
   tokenBalances: TokenBalancesSchema,
   positionBalances: AppBalancesSchema,
 });

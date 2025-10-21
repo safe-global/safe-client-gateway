@@ -74,18 +74,18 @@ export class AppPosition {
   balance!: string;
 
   @ApiPropertyOptional({
-    type: 'string',
-    description: 'Balance in requested fiat currency (decimal string)',
-    example: '10000.00',
+    type: 'number',
+    description: 'Balance in requested fiat currency',
+    example: 10000.00,
     nullable: true,
   })
-  balanceFiat!: string | null;
+  balanceFiat!: number | null;
 
   @ApiPropertyOptional({
-    type: 'string',
-    description: 'Price change percentage in the last 24 hours (decimal string)',
-    example: '-4.31',
+    type: 'number',
+    description: 'Price change as decimal (e.g., -0.0431 for -4.31%)',
+    example: -0.0431,
     nullable: true,
   })
-  priceChangePercentage1d!: string | null;
+  priceChangePercentage1d!: number | null;
 }

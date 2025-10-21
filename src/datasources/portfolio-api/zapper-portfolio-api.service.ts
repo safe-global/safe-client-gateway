@@ -12,7 +12,6 @@ import type { Portfolio } from '@/domain/portfolio/entities/portfolio.entity';
 import type { TokenBalance } from '@/domain/portfolio/entities/token-balance.entity';
 import type { AppBalance } from '@/domain/portfolio/entities/app-balance.entity';
 import type { AppPosition } from '@/domain/portfolio/entities/app-position.entity';
-import { getNumberString } from '@/domain/common/utils/utils';
 import { rawify, type Raw } from '@/validation/entities/raw.entity';
 
 interface ZapperV2Token {
@@ -221,16 +220,13 @@ export class ZapperPortfolioApi implements IPortfolioApi {
       response.portfolioV2.appBalances.byApp.edges.map((edge) => edge.node),
     );
 
-    const totalBalanceFiat = getNumberString(
+    const totalBalanceFiat =
       response.portfolioV2.tokenBalances.totalBalanceUSD +
-        response.portfolioV2.appBalances.totalBalanceUSD,
-    );
-    const totalTokenBalanceFiat = getNumberString(
-      response.portfolioV2.tokenBalances.totalBalanceUSD,
-    );
-    const totalPositionsBalanceFiat = getNumberString(
-      response.portfolioV2.appBalances.totalBalanceUSD,
-    );
+      response.portfolioV2.appBalances.totalBalanceUSD;
+    const totalTokenBalanceFiat =
+      response.portfolioV2.tokenBalances.totalBalanceUSD;
+    const totalPositionsBalanceFiat =
+      response.portfolioV2.appBalances.totalBalanceUSD;
 
     return rawify({
       totalBalanceFiat,
@@ -248,10 +244,6 @@ export class ZapperPortfolioApi implements IPortfolioApi {
       .filter((token) => isAddress(token.tokenAddress))
       .map((token): TokenBalance => {
         const decimals = token.decimals ?? 18;
-        const balanceFiat =
-          token.balanceInCurrency !== undefined
-            ? getNumberString(token.balanceInCurrency)
-            : null;
 
         return {
           tokenInfo: {
@@ -263,15 +255,10 @@ export class ZapperPortfolioApi implements IPortfolioApi {
             chainId: this._mapNetworkToChainId(token.network.name),
           },
           balance: token.balance.toString(),
-          balanceFiat,
-          price:
-            token.onchainMarketData?.price !== undefined
-              ? getNumberString(token.onchainMarketData.price)
-              : null,
+          balanceFiat: token.balanceInCurrency ?? null,
+          price: token.onchainMarketData?.price ?? null,
           priceChangePercentage1d:
-            token.onchainMarketData?.priceChange24h !== undefined
-              ? getNumberString(token.onchainMarketData.priceChange24h)
-              : null,
+            token.onchainMarketData?.priceChange24h ?? null,
         };
       });
   }
@@ -281,8 +268,8 @@ export class ZapperPortfolioApi implements IPortfolioApi {
       const positions = this._buildAppPositions(app);
       const balanceFiat =
         app.balanceInCurrency !== undefined && app.balanceInCurrency !== null
-          ? getNumberString(app.balanceInCurrency)
-          : getNumberString(app.balanceUSD);
+          ? app.balanceInCurrency
+          : app.balanceUSD;
 
       return {
         appInfo: {
@@ -301,8 +288,6 @@ export class ZapperPortfolioApi implements IPortfolioApi {
       .map((edge) => edge.node)
       .filter((token) => isAddress(token.address))
       .map((token): AppPosition => {
-        const balanceFiat = getNumberString(token.balanceUSD);
-
         return {
           key: `${app.app.slug}-${token.network}-${token.address}`,
           type: token.groupLabel,
@@ -316,7 +301,7 @@ export class ZapperPortfolioApi implements IPortfolioApi {
             chainId: this._mapNetworkToChainId(token.network),
           },
           balance: token.balance,
-          balanceFiat,
+          balanceFiat: token.balanceUSD,
           priceChangePercentage1d: null, // Zapper doesn't provide 1d price change
         };
       });

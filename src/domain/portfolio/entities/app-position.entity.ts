@@ -16,8 +16,8 @@ export const AppPositionSchema = z.object({
   name: z.string(),
   tokenInfo: AppPositionTokenInfoSchema,
   balance: z.string(),
-  balanceFiat: z.string().nullish().default(null),
-  priceChangePercentage1d: z.string().nullish().default(null),
+  balanceFiat: z.number().nullish().default(null),
+  priceChangePercentage1d: z.number().nullish().default(null),
 });
 
 export const AppPositionsSchema = z.array(AppPositionSchema);

@@ -13,7 +13,6 @@ import type { TokenBalance } from '@/domain/portfolio/entities/token-balance.ent
 import type { AppBalance } from '@/domain/portfolio/entities/app-balance.entity';
 import type { AppPosition } from '@/domain/portfolio/entities/app-position.entity';
 import { DataSourceError } from '@/domain/errors/data-source.error';
-import { getNumberString } from '@/domain/common/utils/utils';
 import { rawify, type Raw } from '@/validation/entities/raw.entity';
 import type { ZerionBalance } from '@/datasources/balances-api/entities/zerion-balance.entity';
 import { ZerionBalancesSchema } from '@/datasources/balances-api/entities/zerion-balance.entity';
@@ -143,15 +142,10 @@ export class ZerionPortfolioApi implements IPortfolioApi {
             chainId: impl.chain_id,
           },
           balance: position.attributes.quantity.numeric,
-          balanceFiat: position.attributes.value
-            ? getNumberString(position.attributes.value)
-            : null,
-          price: position.attributes.price
-            ? getNumberString(position.attributes.price)
-            : null,
-          priceChangePercentage1d: position.attributes.changes?.percent_1d !== undefined
-            ? getNumberString(position.attributes.changes.percent_1d)
-            : null,
+          balanceFiat: position.attributes.value ?? null,
+          price: position.attributes.price ?? null,
+          priceChangePercentage1d:
+            position.attributes.changes?.percent_1d ?? null,
         };
       })
       .filter((token): token is TokenBalance => token !== null);
@@ -226,28 +220,23 @@ export class ZerionPortfolioApi implements IPortfolioApi {
             chainId: impl.chain_id,
           },
           balance: position.attributes.quantity.numeric,
-          balanceFiat: position.attributes.value
-            ? getNumberString(position.attributes.value)
-            : null,
-          priceChangePercentage1d: position.attributes.changes?.percent_1d !== undefined
-            ? getNumberString(position.attributes.changes.percent_1d)
-            : null,
+          balanceFiat: position.attributes.value ?? null,
+          priceChangePercentage1d:
+            position.attributes.changes?.percent_1d ?? null,
         };
       })
       .filter((pos): pos is AppPosition => pos !== null);
   }
 
-  private _calculateTotalBalance(positions: Array<ZerionBalance>): string {
-    const total = positions.reduce((sum, position) => {
+  private _calculateTotalBalance(positions: Array<ZerionBalance>): number {
+    return positions.reduce((sum, position) => {
       return sum + (position.attributes.value ?? 0);
     }, 0);
-    return getNumberString(total);
   }
 
-  private _calculatePositionsBalance(positions: Array<ZerionBalance>): string {
-    const total = positions.reduce((sum, position) => {
+  private _calculatePositionsBalance(positions: Array<ZerionBalance>): number {
+    return positions.reduce((sum, position) => {
       return sum + (position.attributes.value ?? 0);
     }, 0);
-    return getNumberString(total);
   }
 }

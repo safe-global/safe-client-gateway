@@ -13,9 +13,9 @@ export const TokenBalanceTokenInfoSchema = z.object({
 export const TokenBalanceSchema = z.object({
   tokenInfo: TokenBalanceTokenInfoSchema,
   balance: z.string(),
-  balanceFiat: z.string().nullish().default(null),
-  price: z.string().nullish().default(null),
-  priceChangePercentage1d: z.string().nullish().default(null),
+  balanceFiat: z.number().nullish().default(null),
+  price: z.number().nullish().default(null),
+  priceChangePercentage1d: z.number().nullish().default(null),
 });
 
 export const TokenBalancesSchema = z.array(TokenBalanceSchema);

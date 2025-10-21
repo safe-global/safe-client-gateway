@@ -35,12 +35,12 @@ export class AppBalance {
   appInfo!: AppBalanceAppInfo;
 
   @ApiPropertyOptional({
-    type: 'string',
-    description: 'Total balance in fiat currency across all positions (decimal string)',
-    example: '15000.00',
+    type: 'number',
+    description: 'Total balance in fiat currency across all positions',
+    example: 15000.00,
     nullable: true,
   })
-  balanceFiat!: string | null;
+  balanceFiat!: number | null;
 
   @ApiProperty({
     description: 'List of positions in this app',
