@@ -2,7 +2,7 @@ import type { DataDecoded } from '@/routes/data-decode/entities/data-decoded.ent
 import type { Address, Hex } from 'viem';
 
 export type TransactionData = {
-  data: Hex;
+  data: Hex | null;
   operation: number;
   to: Address;
   value: bigint | string;

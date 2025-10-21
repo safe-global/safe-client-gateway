@@ -49,7 +49,7 @@ export function extractRecipient(
   }
 
   // Native transfer
-  if (data === '0x') {
+  if (!data || data === '0x') {
     return getAddress(to);
   }
 }
