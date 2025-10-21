@@ -30,6 +30,7 @@ import { IConfigApi } from '@/domain/interfaces/config-api.interface';
 import { ChainSchema } from '@/domain/chains/entities/schemas/chain.schema';
 import { FF_RISK_MITIGATION } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-api.constants';
 import { createFailedAnalysisResult } from './utils/common';
+import { DESCRIPTION_MAPPING } from '@/modules/safe-shield/threat-analysis/threat-analysis.constants';
 
 /**
  * Main orchestration service for Safe Shield transaction analysis.
@@ -215,12 +216,13 @@ export class SafeShieldService {
         request,
       });
     } catch (error) {
-      return createFailedAnalysisResult<ThreatAnalysisResult>(
-        this.loggingService,
-        'THREAT',
-        'Threat',
-        error,
-      ) as ThreatAnalysisResponse;
+      return createFailedAnalysisResult<ThreatAnalysisResult>({
+        loggingService: this.loggingService,
+        statusGroup: 'THREAT',
+        type: 'Threat',
+        reason: error,
+        description: DESCRIPTION_MAPPING.FAILED(),
+      }) as ThreatAnalysisResponse;
     }
   }
 
@@ -305,7 +307,7 @@ export class SafeShieldService {
     return {
       [targetAddress]: createFailedAnalysisResult<
         RecipientAnalysisResult | ContractAnalysisResult
-      >(this.loggingService, statusGroup, type, reason),
+      >({ loggingService: this.loggingService, statusGroup, type, reason }),
     } as T;
   }
 }

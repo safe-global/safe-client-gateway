@@ -1,8 +1,5 @@
 import type { CommonStatus } from '@/modules/safe-shield/entities/analysis-result.entity';
-import {
-  COMMON_DESCRIPTION_MAPPING,
-  COMMON_SEVERITY_MAPPING,
-} from '@/modules/safe-shield/entities/common-status.constants';
+import { COMMON_SEVERITY_MAPPING } from '@/modules/safe-shield/entities/common-status.constants';
 import type { Severity } from '@/modules/safe-shield/entities/severity.entity';
 import type { ThreatStatus } from '@/modules/safe-shield/entities/threat-status.entity';
 
@@ -52,11 +49,10 @@ export const DESCRIPTION_MAPPING: Record<
   ThreatStatus | CommonStatus,
   (args?: DescriptionArgs) => string
 > = {
-  ...COMMON_DESCRIPTION_MAPPING,
   MALICIOUS: ({ reason, classification } = {}) =>
     `The transaction ${reason ? ` ${reason}` : ''}${classification ? ` ${classification}` : ''}.`,
   MODERATE: ({ reason, classification } = {}) =>
-    `The transaction${reason ? ` ${reason}` : ''}${classification ? ` ${classification}` : ''}. Cancel this transaction.`,
+    `The transaction${reason ? ` ${reason}` : ''}${classification ? ` ${classification}` : ''}. Review before processing.`,
   NO_THREAT: () => 'Threat analysis found no issues.',
   MASTER_COPY_CHANGE: () =>
     'Verify this change as it may overwrite account ownership.',
@@ -64,4 +60,6 @@ export const DESCRIPTION_MAPPING: Record<
     "Verify this change before proceeding as it will change the Safe's ownership",
   MODULE_CHANGE: () =>
     'Verify this change before proceeding as it will change Safe modules.',
+  FAILED: ({ error } = {}) =>
+    `Threat analysis failed.${error ? ` (${error}).` : ''} Review before processing.`,
 };

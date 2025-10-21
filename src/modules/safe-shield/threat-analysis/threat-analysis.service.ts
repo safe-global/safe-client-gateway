@@ -350,10 +350,11 @@ export class ThreatAnalysisService {
   }
 
   private getFailedAnalysisResponse(): ThreatAnalysisResponse {
-    return createFailedAnalysisResult<ThreatAnalysisResult>(
-      this.loggingService,
-      'THREAT',
-      'Threat',
-    ) as ThreatAnalysisResponse;
+    return createFailedAnalysisResult<ThreatAnalysisResult>({
+      loggingService: this.loggingService,
+      statusGroup: 'THREAT',
+      type: 'Threat',
+      description: DESCRIPTION_MAPPING.FAILED(),
+    });
   }
 }

@@ -43,6 +43,7 @@ import type { IConfigApi } from '@/domain/interfaces/config-api.interface';
 import { FF_RISK_MITIGATION } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-api.constants';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
 import { rawify } from '@/validation/entities/raw.entity';
+import { DESCRIPTION_MAPPING } from '@/modules/safe-shield/threat-analysis/threat-analysis.constants';
 
 // Utility function for generating Wei values
 const generateRandomWeiAmount = (): bigint =>
@@ -1206,9 +1207,7 @@ describe('SafeShieldService', () => {
             type: 'FAILED',
             severity: COMMON_SEVERITY_MAPPING.FAILED,
             title: 'Threat analysis failed',
-            description: COMMON_DESCRIPTION_MAPPING.FAILED({
-              error: 'Threat analysis failed',
-            }),
+            description: DESCRIPTION_MAPPING.FAILED(),
           },
         ],
       });
@@ -1240,9 +1239,7 @@ describe('SafeShieldService', () => {
             type: 'FAILED',
             severity: COMMON_SEVERITY_MAPPING.FAILED,
             title: 'Threat analysis failed',
-            description: COMMON_DESCRIPTION_MAPPING.FAILED({
-              error: 'Failed to fetch chain config',
-            }),
+            description: DESCRIPTION_MAPPING.FAILED(),
           },
         ],
       });

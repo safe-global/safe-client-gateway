@@ -42,7 +42,8 @@ export function logCacheMiss(
  * @param loggingService - The logging service for warning logs
  * @param statusGroup - The status group for the failure
  * @param type - The type of the analysis
- * @param reason - The error reason
+ * @param reason - The error reason (optional)
+ * @param description - The custom description (optional)
  * @returns A grouped FAILED analysis result
  */
 export function createFailedAnalysisResult<
@@ -50,12 +51,19 @@ export function createFailedAnalysisResult<
     | RecipientAnalysisResult
     | ContractAnalysisResult
     | ThreatAnalysisResult,
->(
-  loggingService: ILoggingService,
-  statusGroup: StatusGroup,
-  type: string,
-  reason?: unknown,
-): GroupedAnalysisResults<T> {
+>({
+  loggingService,
+  statusGroup,
+  type,
+  reason,
+  description,
+}: {
+  loggingService: ILoggingService;
+  statusGroup: StatusGroup;
+  type: string;
+  reason?: unknown;
+  description?: string;
+}): GroupedAnalysisResults<T> {
   let error: Error | undefined;
   if (reason) {
     error = asError(reason);
@@ -68,9 +76,11 @@ export function createFailedAnalysisResult<
         type: 'FAILED',
         severity: COMMON_SEVERITY_MAPPING.FAILED,
         title: `${type} analysis failed`,
-        description: COMMON_DESCRIPTION_MAPPING.FAILED({
-          error: error?.message,
-        }),
+        description:
+          description ??
+          COMMON_DESCRIPTION_MAPPING.FAILED({
+            error: error?.message,
+          }),
       },
     ],
   } as GroupedAnalysisResults<T>;
