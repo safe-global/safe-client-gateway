@@ -39,7 +39,7 @@ class MultiSend implements DomainMultiSend {
   @ApiProperty()
   to!: Address;
 
-  @ApiPropertyOptional({
+  @ApiProperty({
     type: String,
     nullable: true,
     description: 'Hexadecimal encoded data',
