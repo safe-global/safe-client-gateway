@@ -535,7 +535,7 @@ describe('SafeShieldService', () => {
       });
       expect(result.contract).toEqual(mockContractAnalysisResponse);
       expect(mockLoggingService.warn).toHaveBeenCalledWith(
-        'Counterparty analysis failed. Error: Recipient analysis failed',
+        'The analysis failed. Error: Recipient analysis failed',
       );
 
       expect(mockRecipientAnalysisService.analyze).toHaveBeenCalledWith({
@@ -610,7 +610,7 @@ describe('SafeShieldService', () => {
       });
       expect(result.recipient).toEqual(mockRecipientAnalysisResponse);
       expect(mockLoggingService.warn).toHaveBeenCalledWith(
-        'Counterparty analysis failed. Error: Contract analysis failed',
+        'The analysis failed. Error: Contract analysis failed',
       );
 
       expect(mockRecipientAnalysisService.analyze).toHaveBeenCalledWith({
@@ -699,11 +699,11 @@ describe('SafeShieldService', () => {
 
       expect(mockLoggingService.warn).toHaveBeenNthCalledWith(
         1,
-        'Counterparty analysis failed. Error: Recipient analysis failed',
+        'The analysis failed. Error: Recipient analysis failed',
       );
       expect(mockLoggingService.warn).toHaveBeenNthCalledWith(
         2,
-        'Counterparty analysis failed. Error: Contract analysis failed',
+        'The analysis failed. Error: Contract analysis failed',
       );
       expect(mockLoggingService.warn).toHaveBeenCalledTimes(2);
 
@@ -1194,14 +1194,27 @@ describe('SafeShieldService', () => {
       mockConfigApi.getChain.mockResolvedValue(rawify(mockChain));
       mockThreatAnalysisService.analyze.mockRejectedValue(error);
 
-      await expect(
-        service.analyzeThreats({
-          chainId: mockChainId,
-          safeAddress: mockSafeAddress,
-          request: mockThreatRequest,
-        }),
-      ).rejects.toThrow('Threat analysis failed');
+      const result = await service.analyzeThreats({
+        chainId: mockChainId,
+        safeAddress: mockSafeAddress,
+        request: mockThreatRequest,
+      });
 
+      expect(result).toEqual({
+        THREAT: [
+          {
+            type: 'FAILED',
+            severity: COMMON_SEVERITY_MAPPING.FAILED,
+            title: 'Threat analysis failed',
+            description: COMMON_DESCRIPTION_MAPPING.FAILED({
+              error: 'Threat analysis failed',
+            }),
+          },
+        ],
+      });
+      expect(mockLoggingService.warn).toHaveBeenCalledWith(
+        'The analysis failed. Error: Threat analysis failed',
+      );
       expect(mockConfigApi.getChain).toHaveBeenCalledWith(mockChainId);
       expect(mockThreatAnalysisService.analyze).toHaveBeenCalledWith({
         chainId: mockChainId,
@@ -1210,19 +1223,32 @@ describe('SafeShieldService', () => {
       });
     });
 
-    it('should handle config API failure when checking if Blockaid is enabled', async () => {
+    it('should handle config API failure gracefully when checking if Blockaid is enabled', async () => {
       const error = new Error('Failed to fetch chain config');
 
       mockConfigApi.getChain.mockRejectedValue(error);
 
-      await expect(
-        service.analyzeThreats({
-          chainId: mockChainId,
-          safeAddress: mockSafeAddress,
-          request: mockThreatRequest,
-        }),
-      ).rejects.toThrow('Failed to fetch chain config');
+      const result = await service.analyzeThreats({
+        chainId: mockChainId,
+        safeAddress: mockSafeAddress,
+        request: mockThreatRequest,
+      });
 
+      expect(result).toEqual({
+        THREAT: [
+          {
+            type: 'FAILED',
+            severity: COMMON_SEVERITY_MAPPING.FAILED,
+            title: 'Threat analysis failed',
+            description: COMMON_DESCRIPTION_MAPPING.FAILED({
+              error: 'Failed to fetch chain config',
+            }),
+          },
+        ],
+      });
+      expect(mockLoggingService.warn).toHaveBeenCalledWith(
+        'The analysis failed. Error: Failed to fetch chain config',
+      );
       expect(mockConfigApi.getChain).toHaveBeenCalledWith(mockChainId);
       expect(mockThreatAnalysisService.analyze).not.toHaveBeenCalled();
     });
