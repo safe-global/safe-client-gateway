@@ -204,10 +204,34 @@ describe('AnalysisResult', () => {
       ).not.toThrow();
     });
 
+    it('should validate bridge status with targetChainId', () => {
+      const bridgeResult = {
+        ...recipientAnalysisResultBuilder()
+          .with('type', 'INCOMPATIBLE_SAFE')
+          .build(),
+        targetChainId: '137',
+      };
+
+      expect(() =>
+        RecipientAnalysisResultSchema.parse(bridgeResult),
+      ).not.toThrow();
+    });
+
     it('should validate common status FAILED', () => {
       const failedResult = recipientAnalysisResultBuilder()
         .with('type', 'FAILED')
         .build();
+
+      expect(() =>
+        RecipientAnalysisResultSchema.parse(failedResult),
+      ).not.toThrow();
+    });
+
+    it('should validate common status FAILED with targetChainId', () => {
+      const failedResult = {
+        ...recipientAnalysisResultBuilder().with('type', 'FAILED').build(),
+        targetChainId: '137',
+      };
 
       expect(() =>
         RecipientAnalysisResultSchema.parse(failedResult),

@@ -24,6 +24,7 @@ import type { DataDecoded } from '@/routes/data-decode/entities/data-decoded.ent
 import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
 import { CacheRouter } from '@/datasources/cache/cache.router';
 import { createHash } from 'crypto';
+import { rawify } from '@/validation/entities/raw.entity';
 
 describe('RecipientAnalysisService', () => {
   const mockTransactionApi = {
@@ -456,10 +457,8 @@ describe('RecipientAnalysisService', () => {
     });
 
     it('should handle getSafe errors gracefully', async () => {
-      const mockTxInfo = createMockTxInfo(
-        mockSafeAddress,
-        faker.string.numeric(3),
-      );
+      const targetChainId = faker.string.numeric(3);
+      const mockTxInfo = createMockTxInfo(mockSafeAddress, targetChainId);
 
       mockChainsRepository.isSupportedChain.mockResolvedValue(true);
 
@@ -491,6 +490,7 @@ describe('RecipientAnalysisService', () => {
               title: 'Analysis failed',
               description:
                 'The analysis failed: bridge compatibility unavailable. Please try again later.',
+              targetChainId,
             },
           ],
         },
@@ -807,10 +807,8 @@ describe('RecipientAnalysisService', () => {
     });
 
     it('should handle Safe setup comparison with different owners', async () => {
-      const mockTxInfo = createMockTxInfo(
-        mockSafeAddress,
-        faker.string.numeric(3),
-      );
+      const targetChainId = faker.string.numeric(3);
+      const mockTxInfo = createMockTxInfo(mockSafeAddress, targetChainId);
       const owner1 = getAddress(faker.finance.ethereumAddress());
       const owner2 = getAddress(faker.finance.ethereumAddress());
       const owner3 = getAddress(faker.finance.ethereumAddress());
@@ -831,7 +829,7 @@ describe('RecipientAnalysisService', () => {
 
       mockChainsRepository.isSupportedChain.mockResolvedValue(true);
       mockChainsRepository.getChain.mockResolvedValue(
-        chainBuilder().with('chainId', faker.string.numeric(3)).build(),
+        chainBuilder().with('chainId', targetChainId).build(),
       );
 
       mockTransactionApiManager.getApi.mockImplementation((chainId) => {
@@ -859,10 +857,20 @@ describe('RecipientAnalysisService', () => {
         txInfo: mockTxInfo,
       });
 
-      expect(Object.keys(result)).toContain(mockSafeAddress);
-      expect(result[mockSafeAddress]?.BRIDGE?.[0]?.type).toBe(
-        'DIFFERENT_SAFE_SETUP',
-      );
+      expect(result).toEqual({
+        [mockSafeAddress]: {
+          BRIDGE: [
+            {
+              type: 'DIFFERENT_SAFE_SETUP',
+              severity: 'INFO',
+              title: 'Different setup',
+              description:
+                'Your Safe exists on the target chain but with a different configuration. Review carefully before proceeding. Funds sent may be inaccessible if the setup is incorrect.',
+              targetChainId,
+            },
+          ],
+        },
+      });
     });
 
     it('should handle Safe setup comparison with different owner counts', async () => {
@@ -999,17 +1007,13 @@ describe('RecipientAnalysisService', () => {
     beforeEach(() => {
       mockChainsRepository.getAllChains.mockResolvedValue(mockChains);
       mockChainsRepository.isSupportedChain.mockResolvedValue(true);
-      (mockTransactionApi.getSafe as jest.Mock).mockResolvedValue(
-        mockSourceSafe,
-      );
+      mockTransactionApi.getSafe.mockResolvedValue(rawify(mockSourceSafe));
       mockTransactionApiManager.getApi.mockResolvedValue(mockTransactionApi);
     });
 
     it('should return MISSING_OWNERSHIP when target Safe does not exist but network is compatible', async () => {
-      const mockTxInfo = createMockTxInfo(
-        mockSafeAddress,
-        faker.string.numeric(3),
-      );
+      const targetChainId = faker.string.numeric(3);
+      const mockTxInfo = createMockTxInfo(mockSafeAddress, targetChainId);
 
       mockTransactionApiManager.getApi.mockImplementation((chainId) => {
         if (chainId === mockChainId) {
@@ -1036,7 +1040,7 @@ describe('RecipientAnalysisService', () => {
       mockChainsRepository.isSupportedChain.mockResolvedValue(true);
       mockChainsRepository.getChain.mockResolvedValue(
         chainBuilder()
-          .with('chainId', faker.string.numeric(3))
+          .with('chainId', targetChainId)
           .with('l2', false) // L1 chain for compatibility
           .build(),
       );
@@ -1047,10 +1051,20 @@ describe('RecipientAnalysisService', () => {
         txInfo: mockTxInfo,
       });
 
-      expect(Object.keys(result)).toContain(mockSafeAddress);
-      expect(result[mockSafeAddress]?.BRIDGE?.[0]?.type).toBe(
-        'INCOMPATIBLE_SAFE',
-      );
+      expect(result).toEqual({
+        [mockSafeAddress]: {
+          BRIDGE: [
+            {
+              type: 'INCOMPATIBLE_SAFE',
+              severity: 'CRITICAL',
+              title: 'Incompatible Safe version',
+              description:
+                'This Safe account cannot be created on the destination chain. You will not be able to claim ownership of the same address. Funds sent may be inaccessible.',
+              targetChainId,
+            },
+          ],
+        },
+      });
     });
 
     it('should handle JSON parsing errors in cached data gracefully', async () => {
@@ -1218,10 +1232,20 @@ describe('RecipientAnalysisService', () => {
         txInfo: mockTxInfo,
       });
 
-      expect(Object.keys(result)).toContain(mockSafeAddress);
-      expect(result[mockSafeAddress]?.BRIDGE?.[0]?.type).toBe(
-        'UNSUPPORTED_NETWORK',
-      );
+      expect(result).toEqual({
+        [mockSafeAddress]: {
+          BRIDGE: [
+            {
+              type: 'UNSUPPORTED_NETWORK',
+              severity: 'WARN',
+              title: 'Unsupported network',
+              description:
+                'app.safe.global does not support the network. Unless you have a wallet deployed there, we recommend not to bridge. Funds sent may be inaccessible.',
+              targetChainId: unsupportedChainId,
+            },
+          ],
+        },
+      });
     });
 
     it('should analyze recipient when bridge recipient is different from safe address', async () => {
@@ -1256,10 +1280,8 @@ describe('RecipientAnalysisService', () => {
     });
 
     it('should handle bridge analysis errors gracefully', async () => {
-      const mockTxInfo = createMockTxInfo(
-        mockSafeAddress,
-        faker.string.numeric(3),
-      );
+      const targetChainId = faker.string.numeric(3);
+      const mockTxInfo = createMockTxInfo(mockSafeAddress, targetChainId);
 
       mockChainsRepository.isSupportedChain.mockRejectedValue(
         new Error('Chains service unavailable'),
@@ -1280,6 +1302,7 @@ describe('RecipientAnalysisService', () => {
               title: 'Analysis failed',
               description:
                 'The analysis failed: bridge compatibility unavailable. Please try again later.',
+              targetChainId,
             },
           ],
         },

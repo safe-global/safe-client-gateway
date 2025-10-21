@@ -37,10 +37,6 @@ export const CounterpartyAnalysisRequestSchema = z.object({
   operation: z.nativeEnum(Operation),
 });
 
-export type CounterpartyAnalysisRequest = z.infer<
-  typeof CounterpartyAnalysisRequestSchema
->;
-
 /**
  * Request schema for threat analysis endpoint.
  *

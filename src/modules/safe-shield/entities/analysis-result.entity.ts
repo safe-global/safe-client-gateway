@@ -10,6 +10,7 @@ import {
   type ContractStatus,
 } from './contract-status.entity';
 import { ThreatStatusSchema, type ThreatStatus } from './threat-status.entity';
+import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
 
 /**
  * Common status code available for all analysis types.
@@ -88,14 +89,20 @@ export const AnalysisResultBaseSchema = z.object({
 
 /**
  * Zod schema for recipient analysis results.
+ *
+ * Combines recipient interaction and bridge analysis results using a union.
+ * - BridgeStatus and CommonStatus results include optional targetChainId field
+ * - RecipientStatus results do not include targetChainId field
  */
-export const RecipientAnalysisResultSchema = AnalysisResultBaseSchema.extend({
-  type: z.union([
-    RecipientStatusSchema,
-    BridgeStatusSchema,
-    CommonStatusSchema,
-  ]),
-});
+export const RecipientAnalysisResultSchema = z.union([
+  AnalysisResultBaseSchema.extend({
+    type: z.union([BridgeStatusSchema, CommonStatusSchema]),
+    targetChainId: NumericStringSchema.optional(),
+  }),
+  AnalysisResultBaseSchema.extend({
+    type: RecipientStatusSchema,
+  }),
+]);
 
 /**
  * Zod schema for contract analysis results.
