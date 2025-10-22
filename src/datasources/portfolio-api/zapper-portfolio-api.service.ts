@@ -16,7 +16,7 @@ import { rawify, type Raw } from '@/validation/entities/raw.entity';
 
 interface ZapperV2Token {
   tokenAddress: string;
-  network: { name: string };
+  network: { name: string; chainId: number };
   symbol: string;
   name?: string;
   decimals: number | null;
@@ -38,7 +38,7 @@ interface ZapperV2App {
     imgUrl: string;
     slug: string;
   };
-  network: { name: string };
+  network: { name: string; chainId: number };
   balanceUSD: number;
   balanceInCurrency?: number;
   positionBalances: {
@@ -154,6 +154,7 @@ export class ZapperPortfolioApi implements IPortfolioApi {
                   tokenAddress
                   network {
                     name
+                    chainId
                   }
                   symbol
                   name
@@ -184,6 +185,7 @@ export class ZapperPortfolioApi implements IPortfolioApi {
                   }
                   network {
                     name
+                    chainId
                   }
                   balanceUSD
                   balanceInCurrency(currency: $priceCurrency)
@@ -255,7 +257,7 @@ export class ZapperPortfolioApi implements IPortfolioApi {
             symbol: token.symbol,
             name: token.name ?? token.symbol,
             logoUrl: token.imgUrlV2 ?? null,
-            chainId: this._mapNetworkToChainId(token.network.name),
+            chainId: token.network.chainId.toString(),
             trusted: token.verified ?? false,
           },
           balance: token.balance.toString(),
@@ -302,7 +304,7 @@ export class ZapperPortfolioApi implements IPortfolioApi {
             symbol: token.symbol,
             name: token.symbol,
             logoUrl: null,
-            chainId: this._mapNetworkToChainId(token.network),
+            chainId: app.network.chainId.toString(),
             trusted: true, // App positions are hand-selected by Zapper
           },
           balance: token.balance,
@@ -310,35 +312,5 @@ export class ZapperPortfolioApi implements IPortfolioApi {
           priceChangePercentage1d: null, // Zapper doesn't provide 1d price change
         };
       });
-  }
-
-  private _mapChainIdToNetwork(chainId: string): string {
-    const mapping: Record<string, string> = {
-      '1': 'ETHEREUM',
-      '10': 'OPTIMISM',
-      '56': 'BSC',
-      '100': 'GNOSIS',
-      '137': 'POLYGON',
-      '250': 'FANTOM',
-      '8453': 'BASE',
-      '42161': 'ARBITRUM',
-      '43114': 'AVALANCHE',
-    };
-    return mapping[chainId] ?? 'ETHEREUM';
-  }
-
-  private _mapNetworkToChainId(network: string): string {
-    const mapping: Record<string, string> = {
-      ETHEREUM: '1',
-      OPTIMISM: '10',
-      BSC: '56',
-      GNOSIS: '100',
-      POLYGON: '137',
-      FANTOM: '250',
-      BASE: '8453',
-      ARBITRUM: '42161',
-      AVALANCHE: '43114',
-    };
-    return mapping[network] ?? '1';
   }
 }
