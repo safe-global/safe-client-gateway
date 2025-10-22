@@ -25,6 +25,7 @@ interface ZapperV2Token {
   balanceInCurrency?: number;
   price?: number;
   imgUrlV2?: string;
+  verified?: boolean;
   onchainMarketData?: {
     priceChange24h?: number;
     price?: number;
@@ -161,6 +162,7 @@ export class ZapperPortfolioApi implements IPortfolioApi {
                   balanceInCurrency(currency: $priceCurrency)
                   price
                   imgUrlV2
+                  verified
                   onchainMarketData {
                     priceChange24h
                     price(currency: $priceCurrency)
@@ -253,6 +255,7 @@ export class ZapperPortfolioApi implements IPortfolioApi {
             name: token.name ?? token.symbol,
             logoUrl: token.imgUrlV2 ?? null,
             chainId: this._mapNetworkToChainId(token.network.name),
+            trusted: token.verified ?? false,
           },
           balance: token.balance.toString(),
           balanceFiat: token.balanceInCurrency ?? null,
@@ -299,6 +302,7 @@ export class ZapperPortfolioApi implements IPortfolioApi {
             name: token.symbol,
             logoUrl: null,
             chainId: this._mapNetworkToChainId(token.network),
+            trusted: true, // App positions are hand-selected by Zapper
           },
           balance: token.balance,
           balanceFiat: token.balanceUSD,

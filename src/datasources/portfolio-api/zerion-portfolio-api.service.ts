@@ -145,6 +145,8 @@ export class ZerionPortfolioApi implements IPortfolioApi {
               position.attributes.name,
             logoUrl: position.attributes.fungible_info.icon?.url ?? null,
             chainId,
+            trusted:
+              position.attributes.fungible_info.flags?.verified ?? false,
           },
           balance: position.attributes.quantity.numeric,
           balanceFiat: position.attributes.value ?? null,
@@ -231,6 +233,8 @@ export class ZerionPortfolioApi implements IPortfolioApi {
               position.attributes.name,
             logoUrl: position.attributes.fungible_info.icon?.url ?? null,
             chainId,
+            trusted:
+              position.attributes.fungible_info.flags?.verified ?? false,
           },
           balance: position.attributes.quantity.numeric,
           balanceFiat: position.attributes.value ?? null,

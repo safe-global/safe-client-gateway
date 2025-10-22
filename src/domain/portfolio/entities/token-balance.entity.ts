@@ -8,6 +8,7 @@ export const TokenBalanceTokenInfoSchema = z.object({
   name: z.string(),
   logoUrl: z.string().nullish().default(null),
   chainId: z.string(),
+  trusted: z.boolean(),
 });
 
 export const TokenBalanceSchema = z.object({

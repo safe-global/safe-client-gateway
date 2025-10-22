@@ -40,6 +40,12 @@ export class AppPositionTokenInfo {
     example: '1',
   })
   chainId!: string;
+
+  @ApiProperty({
+    description: 'Whether the token is verified by the provider',
+    example: true,
+  })
+  trusted!: boolean;
 }
 
 export class AppPosition {

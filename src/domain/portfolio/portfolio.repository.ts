@@ -71,6 +71,10 @@ export class PortfolioRepository implements IPortfolioRepository {
       filteredPortfolio = this._filterByChains(filteredPortfolio, args.chainIds);
     }
 
+    if (args.trusted) {
+      filteredPortfolio = this._filterTrustedTokens(filteredPortfolio);
+    }
+
     if (args.excludeDust) {
       filteredPortfolio = this._filterDustPositions(filteredPortfolio);
     }
@@ -145,6 +149,57 @@ export class PortfolioRepository implements IPortfolioRepository {
 
     return {
       totalBalanceFiat: totalTokenBalanceFiat + totalPositionsBalanceFiat,
+      totalTokenBalanceFiat,
+      totalPositionsBalanceFiat,
+      tokenBalances: filteredTokenBalances,
+      positionBalances: filteredAppBalances,
+    };
+  }
+
+  private _filterTrustedTokens(portfolio: Portfolio): Portfolio {
+    const filteredTokenBalances = portfolio.tokenBalances.filter(
+      (token) => token.tokenInfo.trusted,
+    );
+
+    const filteredAppBalances = portfolio.positionBalances
+      .map((app) => {
+        const filteredPositions = app.positions.filter(
+          (position) => position.tokenInfo.trusted,
+        );
+
+        if (filteredPositions.length === 0) return null;
+
+        const appBalanceFiat = filteredPositions.reduce((sum, pos) => {
+          return sum + (pos.balanceFiat ?? 0);
+        }, 0);
+
+        return {
+          ...app,
+          positions: filteredPositions,
+          balanceFiat: appBalanceFiat,
+        };
+      })
+      .filter((app): app is NonNullable<typeof app> => app !== null);
+
+    const totalBalanceFiat =
+      filteredTokenBalances.reduce(
+        (sum, token) => sum + (token.balanceFiat ?? 0),
+        0,
+      ) +
+      filteredAppBalances.reduce((sum, app) => sum + (app.balanceFiat ?? 0), 0);
+
+    const totalTokenBalanceFiat = filteredTokenBalances.reduce(
+      (sum, token) => sum + (token.balanceFiat ?? 0),
+      0,
+    );
+
+    const totalPositionsBalanceFiat = filteredAppBalances.reduce(
+      (sum, app) => sum + (app.balanceFiat ?? 0),
+      0,
+    );
+
+    return {
+      totalBalanceFiat,
       totalTokenBalanceFiat,
       totalPositionsBalanceFiat,
       tokenBalances: filteredTokenBalances,
