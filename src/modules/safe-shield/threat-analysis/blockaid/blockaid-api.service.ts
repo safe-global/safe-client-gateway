@@ -14,7 +14,7 @@ export class BlockaidApi implements IBlockaidApi {
     this.blockaidClient = new Blockaid();
   }
 
-  async scanTransaction(
+  public async scanTransaction(
     chainId: string,
     safeAddress: Address,
     walletAddress: Address,

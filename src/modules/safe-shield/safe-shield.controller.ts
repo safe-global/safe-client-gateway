@@ -66,7 +66,7 @@ export class SafeShieldController {
   })
   @HttpCode(HttpStatus.OK)
   @Get('chains/:chainId/security/:safeAddress/recipient/:recipientAddress')
-  async analyzeRecipient(
+  public async analyzeRecipient(
     @Param('chainId', new ValidationPipe(NumericStringSchema)) chainId: string,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
     safeAddress: Address,
@@ -110,7 +110,7 @@ export class SafeShieldController {
   })
   @HttpCode(HttpStatus.OK)
   @Post('chains/:chainId/security/:safeAddress/counterparty-analysis')
-  async analyzeCounterparty(
+  public async analyzeCounterparty(
     @Param('chainId', new ValidationPipe(NumericStringSchema)) chainId: string,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
     safeAddress: Address,

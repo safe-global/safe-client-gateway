@@ -15,13 +15,14 @@ import {
   maliciousOrModerateThreatBuilder,
 } from './analysis-result.builder';
 import type { ThreatStatus } from '../../threat-status.entity';
+import { getAddress } from 'viem';
 
 /**
  * Builder for RecipientAnalysisResponse
  */
 export function recipientAnalysisResponseBuilder(): IBuilder<RecipientAnalysisResponse> {
   return new Builder<RecipientAnalysisResponse>().with(
-    faker.finance.ethereumAddress() as `0x${string}`,
+    getAddress(faker.finance.ethereumAddress()),
     {
       RECIPIENT_INTERACTION: [recipientAnalysisResultBuilder().build()],
       BRIDGE: [recipientAnalysisResultBuilder().build()],
@@ -34,7 +35,7 @@ export function recipientAnalysisResponseBuilder(): IBuilder<RecipientAnalysisRe
  */
 export function contractAnalysisResponseBuilder(): IBuilder<ContractAnalysisResponse> {
   return new Builder<ContractAnalysisResponse>().with(
-    faker.finance.ethereumAddress() as `0x${string}`,
+    getAddress(faker.finance.ethereumAddress()),
     {
       CONTRACT_VERIFICATION: [contractAnalysisResultBuilder().build()],
       CONTRACT_INTERACTION: [contractAnalysisResultBuilder().build()],
@@ -51,7 +52,7 @@ export function threatAnalysisResponseBuilder(
   type?: ThreatStatus,
 ): IBuilder<ThreatAnalysisResponse> {
   let threatResult;
-  if (type === 'MASTER_COPY_CHANGE') {
+  if (type === 'MASTERCOPY_CHANGE') {
     threatResult = masterCopyChangeThreatBuilder().build();
   } else if (type === 'MALICIOUS' || type === 'MODERATE') {
     threatResult = maliciousOrModerateThreatBuilder()

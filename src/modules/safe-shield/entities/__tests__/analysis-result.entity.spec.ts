@@ -309,7 +309,7 @@ describe('AnalysisResult', () => {
       ).not.toThrow();
     });
 
-    it('should validate MASTER_COPY_CHANGE with before and after fields', () => {
+    it('should validate MASTERCOPY_CHANGE with before and after fields', () => {
       const masterCopyChange = masterCopyChangeThreatBuilder().build();
 
       expect(() =>
@@ -317,12 +317,12 @@ describe('AnalysisResult', () => {
       ).not.toThrow();
 
       const parsed = ThreatAnalysisResultSchema.parse(masterCopyChange);
-      expect(parsed.type).toBe('MASTER_COPY_CHANGE');
+      expect(parsed.type).toBe('MASTERCOPY_CHANGE');
       expect(parsed).toHaveProperty('before');
       expect(parsed).toHaveProperty('after');
     });
 
-    it('should reject MASTER_COPY_CHANGE without before field', () => {
+    it('should reject MASTERCOPY_CHANGE without before field', () => {
       const invalidWithoutBefore = omit(
         masterCopyChangeThreatBuilder().build(),
         'before',
@@ -333,7 +333,7 @@ describe('AnalysisResult', () => {
       ).toThrow();
     });
 
-    it('should reject MASTER_COPY_CHANGE without after field', () => {
+    it('should reject MASTERCOPY_CHANGE without after field', () => {
       const invalidWithoutAfter = omit(
         masterCopyChangeThreatBuilder().build(),
         'after',

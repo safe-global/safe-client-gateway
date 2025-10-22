@@ -81,7 +81,7 @@ describe('Status Entities', () => {
       expect(ThreatStatus).toContain('MALICIOUS');
       expect(ThreatStatus).toContain('MODERATE');
       expect(ThreatStatus).toContain('NO_THREAT');
-      expect(ThreatStatus).toContain('MASTER_COPY_CHANGE');
+      expect(ThreatStatus).toContain('MASTERCOPY_CHANGE');
       expect(ThreatStatus).toContain('OWNERSHIP_CHANGE');
       expect(ThreatStatus).toContain('MODULE_CHANGE');
     });

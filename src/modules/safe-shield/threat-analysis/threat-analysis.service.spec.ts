@@ -1,28 +1,19 @@
 import { ThreatAnalysisService } from '@/modules/safe-shield/threat-analysis/threat-analysis.service';
-import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
-import type { IConfigurationService } from '@/config/configuration.service.interface';
 import type { ILoggingService } from '@/logging/logging.interface';
 import type { IBlockaidApi } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-api.interface';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 import type { TransactionScanResponse } from '@blockaid/client/resources/evm/evm';
-import { CacheRouter } from '@/datasources/cache/cache.router';
 import { threatAnalysisRequestBuilder } from '@/modules/safe-shield/entities/__tests__/builders/analysis-requests.builder';
-import { threatAnalysisResponseBuilder } from '@/modules/safe-shield/entities/__tests__/builders/analysis-responses.builder';
 import {
   DESCRIPTION_MAPPING,
   SEVERITY_MAPPING,
   TITLE_MAPPING,
 } from '@/modules/safe-shield/threat-analysis/threat-analysis.constants';
-import { LogType } from '@/domain/common/entities/log-type.entity';
 
 const mockBlockaidApi = {
   scanTransaction: jest.fn(),
 } as jest.MockedObjectDeep<IBlockaidApi>;
-
-const mockConfigurationService = {
-  getOrThrow: jest.fn(),
-} as jest.MockedObjectDeep<IConfigurationService>;
 
 const mockLoggingService = {
   debug: jest.fn(),
@@ -31,24 +22,14 @@ const mockLoggingService = {
 
 describe('ThreatAnalysisService', () => {
   let service: ThreatAnalysisService;
-  let fakeCacheService: FakeCacheService;
 
   beforeEach(() => {
-    mockConfigurationService.getOrThrow.mockReturnValue(3600);
-
-    fakeCacheService = new FakeCacheService();
-    service = new ThreatAnalysisService(
-      mockBlockaidApi,
-      fakeCacheService,
-      mockConfigurationService,
-      mockLoggingService,
-    );
+    service = new ThreatAnalysisService(mockBlockaidApi, mockLoggingService);
   });
 
   afterEach(() => {
     jest.clearAllMocks();
     jest.resetAllMocks();
-    fakeCacheService.clear();
   });
 
   describe('analyze', () => {
@@ -58,10 +39,8 @@ describe('ThreatAnalysisService', () => {
     const request = threatAnalysisRequestBuilder()
       .with('walletAddress', walletAddress)
       .build();
-    const { data, origin } = request;
-    const message = JSON.stringify(data);
 
-    describe('caching behavior', () => {
+    it('should analyze threats', async () => {
       const mockSuccessScanResponse = {
         validation: {
           status: 'Success',
@@ -76,125 +55,268 @@ describe('ThreatAnalysisService', () => {
         },
       } as unknown as TransactionScanResponse;
 
-      it('should return cached analysis when available', async () => {
-        const cachedResponse =
-          threatAnalysisResponseBuilder('NO_THREAT').build();
-        const cacheDir = CacheRouter.getThreatAnalysisCacheDir({
-          chainId,
-          safeAddress,
-          walletAddress,
-          message,
-          origin,
-        });
-        await fakeCacheService.hSet(
-          cacheDir,
-          JSON.stringify(cachedResponse),
-          3600,
-        );
+      const expectedResponse = {
+        THREAT: [
+          {
+            severity: SEVERITY_MAPPING.NO_THREAT,
+            type: 'NO_THREAT',
+            title: TITLE_MAPPING.NO_THREAT,
+            description: DESCRIPTION_MAPPING.NO_THREAT(),
+          },
+        ],
+        BALANCE_CHANGE: [],
+      };
+      mockBlockaidApi.scanTransaction.mockResolvedValue(
+        mockSuccessScanResponse,
+      );
 
-        const result = await service.analyze({
-          chainId,
-          safeAddress,
-          request,
-        });
-
-        expect(result).toEqual(cachedResponse);
-        expect(mockBlockaidApi.scanTransaction).not.toHaveBeenCalled();
+      const result = await service.analyze({
+        chainId,
+        safeAddress,
+        request,
       });
 
-      it('should handle JSON parsing errors in cached data gracefully', async () => {
-        const cacheDir = CacheRouter.getThreatAnalysisCacheDir({
-          chainId,
-          safeAddress,
-          walletAddress,
-          message,
-          origin,
-        });
-        const invalidCachedData = 'invalid json data';
-        await fakeCacheService.hSet(cacheDir, invalidCachedData, 3600);
+      expect(result).toEqual(expectedResponse);
+      expect(mockBlockaidApi.scanTransaction).toHaveBeenCalledWith(
+        chainId,
+        safeAddress,
+        walletAddress,
+        expect.any(String),
+        request.origin,
+      );
+    });
 
-        mockBlockaidApi.scanTransaction.mockResolvedValue(
-          mockSuccessScanResponse,
-        );
+    it('should handle message serialization failure', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const circularData: any = { domain: {} };
+      circularData.domain.circular = circularData;
 
-        const result = await service.analyze({
-          chainId,
-          safeAddress,
-          request,
-        });
+      const requestWithCircularData = threatAnalysisRequestBuilder()
+        .with('walletAddress', walletAddress)
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+        .with('data', circularData)
+        .build();
 
-        expect(result).toBeDefined();
-        expect(result).toEqual({
-          THREAT: [
-            {
-              severity: SEVERITY_MAPPING.NO_THREAT,
-              type: 'NO_THREAT',
-              title: TITLE_MAPPING.NO_THREAT,
-              description: DESCRIPTION_MAPPING.NO_THREAT(),
-            },
-          ],
-          BALANCE_CHANGE: [],
-        });
-        expect(mockBlockaidApi.scanTransaction).toHaveBeenCalled();
+      const result = await service.analyze({
+        chainId,
+        safeAddress,
+        request: requestWithCircularData,
+      });
 
-        expect(mockLoggingService.warn).toHaveBeenCalledWith(
-          expect.stringContaining(
-            'Failed to parse cached threat analysis results',
+      expect(result).toEqual({
+        THREAT: [
+          {
+            severity: SEVERITY_MAPPING.FAILED,
+            type: 'FAILED',
+            title: TITLE_MAPPING.FAILED,
+            description: DESCRIPTION_MAPPING.FAILED(),
+          },
+        ],
+      });
+      expect(mockLoggingService.warn).toHaveBeenCalledWith(
+        expect.stringContaining(
+          'Failed to serialize threat analysis request data',
+        ),
+      );
+      expect(mockBlockaidApi.scanTransaction).not.toHaveBeenCalled();
+    });
+
+    it('should handle blockaid API errors', async () => {
+      mockBlockaidApi.scanTransaction.mockRejectedValue(new Error('API Error'));
+      const result = await service.analyze({
+        chainId,
+        safeAddress,
+        request,
+      });
+      expect(result).toBeDefined();
+      expect(result).toEqual({
+        THREAT: [
+          {
+            severity: SEVERITY_MAPPING.FAILED,
+            type: 'FAILED',
+            title: TITLE_MAPPING.FAILED,
+            description: DESCRIPTION_MAPPING.FAILED(),
+          },
+        ],
+      });
+      expect(mockLoggingService.warn).toHaveBeenCalledWith(
+        expect.stringContaining('Error during threat analysis for Safe'),
+      );
+    });
+
+    it('should send the correct message to Blockaid API', async () => {
+      const mockScanResponse = {
+        block: faker.string.numeric(),
+        chain: 'ethereum',
+        account_address: walletAddress,
+        validation: {
+          status: 'Success',
+          result_type: 'Benign',
+          classification: '',
+          description: '',
+          reason: '',
+          features: [],
+        },
+        simulation: {
+          status: 'Success',
+        },
+      } as unknown as TransactionScanResponse;
+
+      mockBlockaidApi.scanTransaction.mockResolvedValue(mockScanResponse);
+
+      await service.analyze({
+        chainId,
+        safeAddress,
+        request,
+      });
+
+      // Get the message argument passed to scanTransaction
+      const callArgs = mockBlockaidApi.scanTransaction.mock.calls[0];
+      const messageArg = callArgs[3];
+
+      expect(mockBlockaidApi.scanTransaction).toHaveBeenCalledWith(
+        chainId,
+        safeAddress,
+        walletAddress,
+        messageArg,
+        request.origin,
+      );
+
+      expect(() => JSON.parse(messageArg)).not.toThrow();
+      const parsedMessage = JSON.parse(messageArg);
+
+      // Verify the message is the EIP-712 typed data from the request
+      // Compare with JSON.parse/stringify to handle BigInt serialization
+      expect(parsedMessage).toEqual(
+        JSON.parse(
+          JSON.stringify(request.data, (_key, value) =>
+            typeof value === 'bigint' ? value.toString() : value,
           ),
-        );
-        expect(mockLoggingService.debug).toHaveBeenCalledWith({
-          type: 'CACHE_MISS',
-          key: expect.any(String),
-          field: expect.any(String),
-        });
-      });
+        ),
+      );
+    });
 
-      it('should analyze threats and cache result when cache miss', async () => {
-        const expectedResponse = {
-          THREAT: [
+    it('should handle all results: validation, simulation and balanceChange', async () => {
+      const oldMasterCopy = getAddress(faker.finance.ethereumAddress());
+      const newMasterCopy = getAddress(faker.finance.ethereumAddress());
+      const erc20Address = getAddress(faker.finance.ethereumAddress());
+      const otherAddress = getAddress(faker.finance.ethereumAddress());
+      const logoUrl = faker.internet.url();
+      const inValue = faker.string.numeric(7);
+      const classification = 'known_malicious';
+      const reason = 'transfer_farming';
+
+      const mockScanResponse = {
+        block: faker.string.numeric(),
+        chain: 'ethereum',
+        account_address: safeAddress,
+        validation: {
+          status: 'Success',
+          result_type: 'Warning',
+          classification,
+          description: faker.lorem.sentence(),
+          reason,
+          features: [
             {
-              severity: SEVERITY_MAPPING.NO_THREAT,
-              type: 'NO_THREAT',
-              title: TITLE_MAPPING.NO_THREAT,
-              description: DESCRIPTION_MAPPING.NO_THREAT(),
+              type: 'Warning',
+              description: 'High gas price detected',
             },
           ],
-          BALANCE_CHANGE: [],
-        };
-        mockBlockaidApi.scanTransaction.mockResolvedValue(
-          mockSuccessScanResponse,
-        );
+        },
+        simulation: {
+          status: 'Success',
+          contract_management: {
+            [safeAddress]: [
+              {
+                type: 'PROXY_UPGRADE',
+                before: {
+                  address: oldMasterCopy,
+                },
+                after: {
+                  address: newMasterCopy,
+                },
+              },
+              {
+                type: 'OWNERSHIP_CHANGE',
+              },
+            ],
+          },
+          assets_diffs: {
+            [safeAddress]: [
+              {
+                asset: {
+                  type: 'ERC20',
+                  address: erc20Address,
+                  logo_url: logoUrl,
+                  symbol: 'USDC',
+                },
+                in: [{ value: inValue }],
+                out: [],
+              },
+            ],
+            [otherAddress]: [
+              {
+                asset: {
+                  type: 'ERC20',
+                  address: getAddress(faker.finance.ethereumAddress()),
+                  symbol: 'DAI',
+                },
+                in: [],
+                out: [{ value: faker.string.numeric(10) }],
+              },
+            ],
+          },
+        },
+      } as unknown as TransactionScanResponse;
 
-        const result = await service.analyze({
-          chainId,
-          safeAddress,
-          request,
-        });
+      mockBlockaidApi.scanTransaction.mockResolvedValue(mockScanResponse);
 
-        expect(result).toEqual(expectedResponse);
-        expect(mockBlockaidApi.scanTransaction).toHaveBeenCalledWith(
-          chainId,
-          safeAddress,
-          walletAddress,
-          expect.any(String),
-          origin,
-        );
+      const result = await service.analyze({
+        chainId,
+        safeAddress,
+        request,
+      });
 
-        const cacheDir = CacheRouter.getThreatAnalysisCacheDir({
-          chainId,
-          safeAddress,
-          walletAddress,
-          message,
-          origin,
-        });
-        await expect(fakeCacheService.hGet(cacheDir)).resolves.toEqual(
-          JSON.stringify(expectedResponse),
-        );
-        expect(mockLoggingService.debug).toHaveBeenCalledWith({
-          type: LogType.CacheMiss,
-          key: cacheDir.key,
-          field: cacheDir.field,
-        });
+      expect(result).toBeDefined();
+      expect(result).toEqual({
+        THREAT: [
+          {
+            severity: SEVERITY_MAPPING.MODERATE,
+            type: 'MODERATE',
+            title: TITLE_MAPPING.MODERATE,
+            description: DESCRIPTION_MAPPING.MODERATE({
+              classification: 'a known malicious address',
+              reason: 'transfers tokens to',
+            }),
+            issues: new Map([['WARN', ['High gas price detected']]]),
+          },
+          {
+            severity: SEVERITY_MAPPING.MASTERCOPY_CHANGE,
+            type: 'MASTERCOPY_CHANGE',
+            title: TITLE_MAPPING.MASTERCOPY_CHANGE,
+            description: DESCRIPTION_MAPPING.MASTERCOPY_CHANGE(),
+            before: oldMasterCopy,
+            after: newMasterCopy,
+          },
+          {
+            severity: SEVERITY_MAPPING.OWNERSHIP_CHANGE,
+            type: 'OWNERSHIP_CHANGE',
+            title: TITLE_MAPPING.OWNERSHIP_CHANGE,
+            description: DESCRIPTION_MAPPING.OWNERSHIP_CHANGE(),
+          },
+        ],
+        BALANCE_CHANGE: [
+          {
+            asset: {
+              type: 'ERC20',
+              address: erc20Address,
+              logo_url: logoUrl,
+              symbol: 'USDC',
+            },
+            in: [{ value: inValue }],
+            out: [],
+          },
+        ],
       });
     });
 
@@ -521,10 +643,10 @@ describe('ThreatAnalysisService', () => {
         expect(result).toEqual({
           THREAT: [
             {
-              severity: SEVERITY_MAPPING.MASTER_COPY_CHANGE,
-              type: 'MASTER_COPY_CHANGE',
-              title: TITLE_MAPPING.MASTER_COPY_CHANGE,
-              description: DESCRIPTION_MAPPING.MASTER_COPY_CHANGE(),
+              severity: SEVERITY_MAPPING.MASTERCOPY_CHANGE,
+              type: 'MASTERCOPY_CHANGE',
+              title: TITLE_MAPPING.MASTERCOPY_CHANGE,
+              description: DESCRIPTION_MAPPING.MASTERCOPY_CHANGE(),
               before: oldMasterCopy,
               after: newMasterCopy,
             },
@@ -733,205 +855,6 @@ describe('ThreatAnalysisService', () => {
             },
           ],
         });
-      });
-    });
-
-    it('should handle blockaid API errors', async () => {
-      mockBlockaidApi.scanTransaction.mockRejectedValue(new Error('API Error'));
-      const result = await service.analyze({
-        chainId,
-        safeAddress,
-        request,
-      });
-      expect(result).toBeDefined();
-      expect(result).toEqual({
-        THREAT: [
-          {
-            severity: SEVERITY_MAPPING.FAILED,
-            type: 'FAILED',
-            title: TITLE_MAPPING.FAILED,
-            description: DESCRIPTION_MAPPING.FAILED(),
-          },
-        ],
-      });
-      expect(mockLoggingService.warn).toHaveBeenCalledWith(
-        expect.stringContaining('Error during threat analysis for Safe'),
-      );
-    });
-
-    it('should send the correct message to Blockaid API', async () => {
-      const mockScanResponse = {
-        block: faker.string.numeric(),
-        chain: 'ethereum',
-        account_address: walletAddress,
-        validation: {
-          status: 'Success',
-          result_type: 'Benign',
-          classification: '',
-          description: '',
-          reason: '',
-          features: [],
-        },
-        simulation: {
-          status: 'Success',
-        },
-      } as unknown as TransactionScanResponse;
-
-      mockBlockaidApi.scanTransaction.mockResolvedValue(mockScanResponse);
-
-      await service.analyze({
-        chainId,
-        safeAddress,
-        request,
-      });
-
-      // Get the message argument passed to scanTransaction
-      const callArgs = mockBlockaidApi.scanTransaction.mock.calls[0];
-      const messageArg = callArgs[3];
-
-      expect(mockBlockaidApi.scanTransaction).toHaveBeenCalledWith(
-        chainId,
-        safeAddress,
-        walletAddress,
-        messageArg,
-        request.origin,
-      );
-
-      expect(() => JSON.parse(messageArg)).not.toThrow();
-      const parsedMessage = JSON.parse(messageArg);
-
-      // Verify the message is the EIP-712 typed data from the request
-      // Compare with JSON.parse/stringify to handle BigInt serialization
-      expect(parsedMessage).toEqual(
-        JSON.parse(
-          JSON.stringify(request.data, (_key, value) =>
-            typeof value === 'bigint' ? value.toString() : value,
-          ),
-        ),
-      );
-    });
-
-    it('should handle all results: validation, simulation and balanceChange', async () => {
-      const oldMasterCopy = getAddress(faker.finance.ethereumAddress());
-      const newMasterCopy = getAddress(faker.finance.ethereumAddress());
-      const erc20Address = getAddress(faker.finance.ethereumAddress());
-      const otherAddress = getAddress(faker.finance.ethereumAddress());
-      const logoUrl = faker.internet.url();
-      const inValue = faker.string.numeric(7);
-      const classification = 'known_malicious';
-      const reason = 'transfer_farming';
-
-      const mockScanResponse = {
-        block: faker.string.numeric(),
-        chain: 'ethereum',
-        account_address: safeAddress,
-        validation: {
-          status: 'Success',
-          result_type: 'Warning',
-          classification,
-          description: faker.lorem.sentence(),
-          reason,
-          features: [
-            {
-              type: 'Warning',
-              description: 'High gas price detected',
-            },
-          ],
-        },
-        simulation: {
-          status: 'Success',
-          contract_management: {
-            [safeAddress]: [
-              {
-                type: 'PROXY_UPGRADE',
-                before: {
-                  address: oldMasterCopy,
-                },
-                after: {
-                  address: newMasterCopy,
-                },
-              },
-              {
-                type: 'OWNERSHIP_CHANGE',
-              },
-            ],
-          },
-          assets_diffs: {
-            [safeAddress]: [
-              {
-                asset: {
-                  type: 'ERC20',
-                  address: erc20Address,
-                  logo_url: logoUrl,
-                  symbol: 'USDC',
-                },
-                in: [{ value: inValue }],
-                out: [],
-              },
-            ],
-            [otherAddress]: [
-              {
-                asset: {
-                  type: 'ERC20',
-                  address: getAddress(faker.finance.ethereumAddress()),
-                  symbol: 'DAI',
-                },
-                in: [],
-                out: [{ value: faker.string.numeric(10) }],
-              },
-            ],
-          },
-        },
-      } as unknown as TransactionScanResponse;
-
-      mockBlockaidApi.scanTransaction.mockResolvedValue(mockScanResponse);
-
-      const result = await service.analyze({
-        chainId,
-        safeAddress,
-        request,
-      });
-
-      expect(result).toBeDefined();
-      expect(result).toEqual({
-        THREAT: [
-          {
-            severity: SEVERITY_MAPPING.MODERATE,
-            type: 'MODERATE',
-            title: TITLE_MAPPING.MODERATE,
-            description: DESCRIPTION_MAPPING.MODERATE({
-              classification: 'a known malicious address',
-              reason: 'transfers tokens to',
-            }),
-            issues: new Map([['WARN', ['High gas price detected']]]),
-          },
-          {
-            severity: SEVERITY_MAPPING.MASTER_COPY_CHANGE,
-            type: 'MASTER_COPY_CHANGE',
-            title: TITLE_MAPPING.MASTER_COPY_CHANGE,
-            description: DESCRIPTION_MAPPING.MASTER_COPY_CHANGE(),
-            before: oldMasterCopy,
-            after: newMasterCopy,
-          },
-          {
-            severity: SEVERITY_MAPPING.OWNERSHIP_CHANGE,
-            type: 'OWNERSHIP_CHANGE',
-            title: TITLE_MAPPING.OWNERSHIP_CHANGE,
-            description: DESCRIPTION_MAPPING.OWNERSHIP_CHANGE(),
-          },
-        ],
-        BALANCE_CHANGE: [
-          {
-            asset: {
-              type: 'ERC20',
-              address: erc20Address,
-              logo_url: logoUrl,
-              symbol: 'USDC',
-            },
-            in: [{ value: inValue }],
-            out: [],
-          },
-        ],
       });
     });
   });

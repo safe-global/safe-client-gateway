@@ -10,6 +10,7 @@ import {
   type ContractAnalysisResult,
   type ThreatAnalysisResult,
 } from '../../analysis-result.entity';
+import { getAddress } from 'viem';
 
 /**
  * Builder for RecipientAnalysisResult entities
@@ -45,16 +46,16 @@ export function threatAnalysisResultBuilder(): IBuilder<ThreatAnalysisResult> {
 }
 
 /**
- * Builder for ThreatAnalysisResult with MASTER_COPY_CHANGE type
+ * Builder for ThreatAnalysisResult with MASTERCOPY_CHANGE type
  */
 export function masterCopyChangeThreatBuilder(): IBuilder<MasterCopyChangeThreatAnalysisResult> {
   return new Builder<MasterCopyChangeThreatAnalysisResult>()
     .with('severity', 'CRITICAL')
-    .with('type', 'MASTER_COPY_CHANGE')
+    .with('type', 'MASTERCOPY_CHANGE')
     .with('title', faker.lorem.sentence())
     .with('description', faker.lorem.paragraph())
-    .with('before', faker.finance.ethereumAddress())
-    .with('after', faker.finance.ethereumAddress());
+    .with('before', getAddress(faker.finance.ethereumAddress()))
+    .with('after', getAddress(faker.finance.ethereumAddress()));
 }
 
 /**

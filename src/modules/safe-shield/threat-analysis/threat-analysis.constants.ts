@@ -16,7 +16,7 @@ export const SEVERITY_MAPPING: Record<
   MALICIOUS: 'CRITICAL',
   MODERATE: 'WARN',
   NO_THREAT: 'OK',
-  MASTER_COPY_CHANGE: 'WARN',
+  MASTERCOPY_CHANGE: 'WARN',
   OWNERSHIP_CHANGE: 'WARN',
   MODULE_CHANGE: 'WARN',
 };
@@ -29,7 +29,7 @@ export const TITLE_MAPPING: Record<ThreatStatus | CommonStatus, string> = {
   MALICIOUS: 'Malicious threat detected',
   MODERATE: 'Moderate threat detected',
   NO_THREAT: 'No threat detected',
-  MASTER_COPY_CHANGE: 'Mastercopy change',
+  MASTERCOPY_CHANGE: 'Mastercopy change',
   OWNERSHIP_CHANGE: 'Ownership change',
   MODULE_CHANGE: 'Modules change',
   FAILED: 'Threat analysis failed',
@@ -54,7 +54,7 @@ export const DESCRIPTION_MAPPING: Record<
   MODERATE: ({ reason, classification } = {}) =>
     `The transaction${reason ? ` ${reason}` : ''}${classification ? ` ${classification}` : ''}. Review before processing.`,
   NO_THREAT: () => 'Threat analysis found no issues.',
-  MASTER_COPY_CHANGE: () =>
+  MASTERCOPY_CHANGE: () =>
     'Verify this change as it may overwrite account ownership.',
   OWNERSHIP_CHANGE: () =>
     "Verify this change before proceeding as it will change the Safe's ownership",

@@ -65,7 +65,7 @@ export class SafeShieldService {
    * @param args.tx.operation - The transaction operation
    * @returns Counterparty analysis results containing both recipient and contract insights grouped by status group
    */
-  async analyzeCounterparty({
+  public async analyzeCounterparty({
     chainId,
     safeAddress,
     tx,
@@ -119,7 +119,7 @@ export class SafeShieldService {
    * @param txInfo - The transaction recipient address
    * @returns Map of recipient addresses to their analysis results
    */
-  async analyzeRecipients(
+  public async analyzeRecipients(
     chainId: string,
     safeAddress: Address,
     transactions: Array<DecodedTransactionData>,
@@ -145,7 +145,7 @@ export class SafeShieldService {
    * @param recipientAddress - The recipient address to analyze
    * @returns Analysis result for group RECIPIENT_INTERACTION
    */
-  async analyzeRecipient(
+  public async analyzeRecipient(
     chainId: string,
     safeAddress: Address,
     recipientAddress: Address,
@@ -170,7 +170,7 @@ export class SafeShieldService {
    * @param transactions - A list of decoded transactions
    * @returns Map of contract addresses to their analysis results
    */
-  async analyzeContracts(
+  public async analyzeContracts(
     chainId: string,
     safeAddress: Address,
     transactions: Array<DecodedTransactionData>,
@@ -195,7 +195,7 @@ export class SafeShieldService {
    * @param args.request - The transaction data/ sign message as TypedData
    * @returns A threat analysis response
    */
-  async analyzeThreats({
+  public async analyzeThreats({
     chainId,
     safeAddress,
     request,

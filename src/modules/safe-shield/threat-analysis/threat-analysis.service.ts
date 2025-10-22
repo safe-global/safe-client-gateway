@@ -1,9 +1,3 @@
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { CacheRouter } from '@/datasources/cache/cache.router';
-import {
-  CacheService,
-  ICacheService,
-} from '@/datasources/cache/cache.service.interface';
 import { LoggingService, ILoggingService } from '@/logging/logging.interface';
 import { ThreatAnalysisRequest } from '@/modules/safe-shield/entities/analysis-requests.entity';
 import { ThreatAnalysisResponse } from '@/modules/safe-shield/entities/analysis-responses.entity';
@@ -31,11 +25,7 @@ import {
   SEVERITY_MAPPING,
   TITLE_MAPPING,
 } from '@/modules/safe-shield/threat-analysis/threat-analysis.constants';
-import {
-  logCacheHit,
-  logCacheMiss,
-  createFailedAnalysisResult,
-} from '@/modules/safe-shield/utils/common';
+import { createFailedAnalysisResult } from '@/modules/safe-shield/utils/common';
 import {
   TransactionSimulation,
   TransactionSimulationError,
@@ -48,28 +38,26 @@ import { TypedData } from '@/domain/messages/entities/typed-data.entity';
 
 /**
  * Service responsible for analyzing transactions for security threats and malicious patterns.
+ * @class ThreatAnalysisService
  */
 @Injectable()
 export class ThreatAnalysisService {
-  private readonly defaultExpirationTimeInSeconds: number;
-
   constructor(
     @Inject(IBlockaidApi)
     private readonly blockaidAPI: IBlockaidApi,
-    @Inject(CacheService)
-    private readonly cacheService: ICacheService,
-    @Inject(IConfigurationService)
-    private readonly configurationService: IConfigurationService,
     @Inject(LoggingService)
     private readonly loggingService: ILoggingService,
-  ) {
-    this.defaultExpirationTimeInSeconds =
-      this.configurationService.getOrThrow<number>(
-        'expirationTimeInSeconds.default',
-      );
-  }
+  ) {}
 
-  async analyze({
+  /**
+   * Analyzes a transaction request for security threats.
+   * @param {Object} params - The analysis parameters
+   * @param {string} params.chainId - The blockchain chain ID
+   * @param {Address} params.safeAddress - The Safe wallet address
+   * @param {ThreatAnalysisRequest} params.request - The threat analysis request
+   * @returns {Promise<ThreatAnalysisResponse>} The threat analysis response
+   */
+  public async analyze({
     chainId,
     safeAddress,
     request,
@@ -84,27 +72,6 @@ export class ThreatAnalysisService {
       return this.getFailedAnalysisResponse();
     }
 
-    const cacheDir = CacheRouter.getThreatAnalysisCacheDir({
-      chainId,
-      safeAddress,
-      walletAddress,
-      message,
-      origin,
-    });
-    const cached = await this.cacheService.hGet(cacheDir);
-
-    if (cached) {
-      logCacheHit(cacheDir, this.loggingService);
-      try {
-        return JSON.parse(cached) as ThreatAnalysisResponse;
-      } catch (error) {
-        this.loggingService.warn(
-          `Failed to parse cached threat analysis results: ${error}`,
-        );
-      }
-    }
-    logCacheMiss(cacheDir, this.loggingService);
-
     const analysisResults = await this.detectThreats(
       chainId,
       safeAddress,
@@ -113,14 +80,14 @@ export class ThreatAnalysisService {
       origin,
     );
 
-    await this.cacheService.hSet(
-      cacheDir,
-      JSON.stringify(analysisResults),
-      this.defaultExpirationTimeInSeconds,
-    );
     return analysisResults;
   }
 
+  /**
+   * Serializes typed data to a JSON string.
+   * @param {TypedData} data - The typed data to serialize
+   * @returns {string | null} The serialized message or null if serialization fails
+   */
   private serializeMessage(data: TypedData): string | null {
     try {
       return JSON.stringify(data);
@@ -132,6 +99,15 @@ export class ThreatAnalysisService {
     }
   }
 
+  /**
+   * Detects threats in a transaction by scanning with Blockaid API.
+   * @param {string} chainId - The blockchain chain ID
+   * @param {Address} safeAddress - The Safe wallet address
+   * @param {Address} walletAddress - The wallet address initiating the transaction
+   * @param {string} message - The serialized transaction message
+   * @param {string} [origin] - Optional origin URL
+   * @returns {Promise<ThreatAnalysisResponse>} The threat analysis response
+   */
   private async detectThreats(
     chainId: string,
     safeAddress: Address,
@@ -158,6 +134,13 @@ export class ThreatAnalysisService {
     }
   }
 
+  /**
+   * Processes simulation and validation results into a threat analysis response.
+   * @param {Address} safeAddress - The Safe wallet address
+   * @param {TransactionSimulation | TransactionSimulationError} [simulation] - The transaction simulation result
+   * @param {TransactionValidation | TransactionValidationError} [validation] - The transaction validation result
+   * @returns {ThreatAnalysisResponse} The processed threat analysis response
+   */
   private processAnalysisResults(
     safeAddress: Address,
     simulation?: TransactionSimulation | TransactionSimulationError,
@@ -179,6 +162,11 @@ export class ThreatAnalysisService {
     };
   }
 
+  /**
+   * Analyzes transaction validation results and maps them to a threat analysis result.
+   * @param {TransactionValidation | TransactionValidationError} [validation] - The transaction validation result
+   * @returns {ThreatAnalysisResult} The analyzed threat result
+   */
   private analyzeValidation(
     validation?: TransactionValidation | TransactionValidationError,
   ): ThreatAnalysisResult {
@@ -214,6 +202,12 @@ export class ThreatAnalysisService {
     });
   }
 
+  /**
+   * Analyzes transaction simulation results to extract threats and balance changes.
+   * @param {Address} safeAddress - The Safe wallet address
+   * @param {TransactionSimulation | TransactionSimulationError} [simulation] - The transaction simulation result
+   * @returns {{ results: Array<ThreatAnalysisResult>; balanceChanges: BalanceChanges }} Object containing threat results and balance changes
+   */
   private analyzeSimulation(
     safeAddress: Address,
     simulation?: TransactionSimulation | TransactionSimulationError,
@@ -248,7 +242,7 @@ export class ThreatAnalysisService {
           case 'PROXY_UPGRADE':
             return [
               this.mapToAnalysisResult({
-                type: 'MASTER_COPY_CHANGE',
+                type: 'MASTERCOPY_CHANGE',
                 before: m.before.address,
                 after: m.after.address,
               }),
@@ -268,8 +262,8 @@ export class ThreatAnalysisService {
 
   /**
    * Groups validation issues by their severity.
-   * @param features - List of features detected during threat analysis
-   * @returns - Map of issues grouped by severity (highest to lowest)
+   * @param {Array<{ type: string; description: string }>} features - List of features detected during threat analysis
+   * @returns {Map<keyof typeof Severity, Array<string>>} Map of issues grouped by severity (highest to lowest)
    */
   private groupIssuesBySeverity(
     features: Array<{ type: string; description: string }>,
@@ -300,14 +294,15 @@ export class ThreatAnalysisService {
 
   /**
    * Maps a threat analysis status to an analysis result.
-   * @param type - The threat status.
-   * @param reason - A description about the reasons the transaction was flagged with the type.
-   * @param classification - A classification explaining the reason of threat analysis result.
-   * @param issues - A potential map of specific issues identified during threat analysis, grouped by severity.
-   * @param before - The old master copy address (only for MASTER_COPY_CHANGE).
-   * @param after - The new master copy address (only for MASTER_COPY_CHANGE).
-   * @param error - An error message in case of a failure (optional).
-   * @returns The analysis result.
+   * @param {Object} args - The mapping parameters
+   * @param {ThreatStatus | CommonStatus} args.type - The threat status
+   * @param {string} args.reason - A description about the reasons the transaction was flagged with the type
+   * @param {string} args.classification - A classification explaining the reason of threat analysis result
+   * @param {Map<keyof typeof Severity, Array<string>>} args.issues - A potential map of specific issues identified during threat analysis, grouped by severity
+   * @param {string} args.before - The old master copy address (only for MASTERCOPY_CHANGE)
+   * @param {string} args.after - The new master copy address (only for MASTERCOPY_CHANGE)
+   * @param {string} args.error - An error message in case of a failure
+   * @returns {ThreatAnalysisResult} The analysis result
    */
   private mapToAnalysisResult(args: {
     type: ThreatStatus | CommonStatus;
@@ -332,7 +327,7 @@ export class ThreatAnalysisService {
     });
 
     switch (type) {
-      case 'MASTER_COPY_CHANGE':
+      case 'MASTERCOPY_CHANGE':
         return {
           severity,
           type,
@@ -349,6 +344,10 @@ export class ThreatAnalysisService {
     }
   }
 
+  /**
+   * Returns a failed threat analysis response.
+   * @returns {ThreatAnalysisResponse} A response indicating analysis failure
+   */
   private getFailedAnalysisResponse(): ThreatAnalysisResponse {
     return createFailedAnalysisResult<ThreatAnalysisResult>({
       loggingService: this.loggingService,

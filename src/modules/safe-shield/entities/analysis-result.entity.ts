@@ -116,9 +116,9 @@ export const ContractAnalysisResultSchema = AnalysisResultBaseSchema.extend({
  * Uses union to validate type-specific fields.
  */
 export const ThreatAnalysisResultSchema = z.union([
-  // MASTER_COPY_CHANGE: requires before and after
+  // MASTERCOPY_CHANGE: requires before and after
   AnalysisResultBaseSchema.extend({
-    type: z.literal('MASTER_COPY_CHANGE'),
+    type: z.literal('MASTERCOPY_CHANGE'),
     before: z.string(),
     after: z.string(),
   }),
@@ -131,7 +131,7 @@ export const ThreatAnalysisResultSchema = z.union([
   AnalysisResultBaseSchema.extend({
     type: z.union([
       ThreatStatusSchema.exclude([
-        'MASTER_COPY_CHANGE',
+        'MASTERCOPY_CHANGE',
         'MALICIOUS',
         'MODERATE',
       ]),
@@ -159,7 +159,7 @@ export type ContractAnalysisResult = z.infer<
 //----------------------- Threat Analysis Result Types -------------------------//
 
 export type MasterCopyChangeThreatAnalysisResult =
-  AnalysisResult<'MASTER_COPY_CHANGE'> & {
+  AnalysisResult<'MASTERCOPY_CHANGE'> & {
     /** Address of the old master copy/implementation contract */
     before: string;
     /** Address of the new master copy/implementation contract */
@@ -183,6 +183,6 @@ export type ThreatAnalysisResult =
   | MasterCopyChangeThreatAnalysisResult
   | MaliciousOrModerateThreatAnalysisResult
   | AnalysisResult<
-      | Exclude<ThreatStatus, 'MASTER_COPY_CHANGE' | 'MALICIOUS' | 'MODERATE'>
+      | Exclude<ThreatStatus, 'MASTERCOPY_CHANGE' | 'MALICIOUS' | 'MODERATE'>
       | CommonStatus
     >;
