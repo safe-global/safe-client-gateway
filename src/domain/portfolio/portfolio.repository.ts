@@ -18,7 +18,7 @@ import {
 
 @Injectable()
 export class PortfolioRepository implements IPortfolioRepository {
-  private readonly cacheExpirationSeconds = 5;
+  private readonly cacheExpirationSeconds = 30;
 
   constructor(
     @Inject(IPortfolioApi) private readonly defaultPortfolioApi: IPortfolioApi,
@@ -45,34 +45,40 @@ export class PortfolioRepository implements IPortfolioRepository {
     });
 
     const cached = await this.cacheService.hGet(cacheDir);
+    let portfolio: Portfolio;
+
     if (cached) {
-      return PortfolioSchema.parse(JSON.parse(cached));
+      portfolio = PortfolioSchema.parse(JSON.parse(cached));
+    } else {
+      const portfolioApi = this._getProviderApi(provider);
+      const rawPortfolio = await portfolioApi.getPortfolio({
+        address: args.address,
+        fiatCode: args.fiatCode,
+      });
+
+      portfolio = PortfolioSchema.parse(rawPortfolio);
+
+      await this.cacheService.hSet(
+        cacheDir,
+        JSON.stringify(portfolio),
+        this.cacheExpirationSeconds,
+      );
     }
 
-    const portfolioApi = this._getProviderApi(provider);
-    const portfolio = await portfolioApi.getPortfolio({
-      address: args.address,
-      fiatCode: args.fiatCode,
-      chainIds: args.chainIds,
-    });
+    let filteredPortfolio = portfolio;
 
-    let filteredPortfolio = PortfolioSchema.parse(portfolio);
+    if (args.chainIds && args.chainIds.length > 0) {
+      filteredPortfolio = this._filterByChains(filteredPortfolio, args.chainIds);
+    }
 
     if (args.excludeDust) {
       filteredPortfolio = this._filterDustPositions(filteredPortfolio);
     }
 
-    await this.cacheService.hSet(
-      cacheDir,
-      JSON.stringify(filteredPortfolio),
-      this.cacheExpirationSeconds,
-    );
-
     return filteredPortfolio;
   }
 
   async clearPortfolio(args: { address: Address }): Promise<void> {
-    // Clear cache for both providers
     const zerionKey = CacheRouter.getPortfolioCacheKey({
       address: args.address,
       provider: 'zerion',
@@ -95,6 +101,55 @@ export class PortfolioRepository implements IPortfolioRepository {
       default:
         return this.zerionPortfolioApi;
     }
+  }
+
+  private _filterByChains(
+    portfolio: Portfolio,
+    chainIds: Array<string>,
+  ): Portfolio {
+    const chainIdSet = new Set(chainIds);
+
+    const filteredTokenBalances = portfolio.tokenBalances.filter((token) =>
+      chainIdSet.has(token.tokenInfo.chainId),
+    );
+
+    const filteredAppBalances = portfolio.positionBalances
+      .map((app) => {
+        const filteredPositions = app.positions.filter((position) =>
+          chainIdSet.has(position.tokenInfo.chainId),
+        );
+
+        if (filteredPositions.length === 0) return null;
+
+        const appBalanceFiat = filteredPositions.reduce((sum, pos) => {
+          return sum + (pos.balanceFiat ?? 0);
+        }, 0);
+
+        return {
+          ...app,
+          positions: filteredPositions,
+          balanceFiat: appBalanceFiat,
+        };
+      })
+      .filter((app): app is NonNullable<typeof app> => app !== null);
+
+    const totalTokenBalanceFiat = filteredTokenBalances.reduce(
+      (sum, token) => sum + (token.balanceFiat ?? 0),
+      0,
+    );
+
+    const totalPositionsBalanceFiat = filteredAppBalances.reduce(
+      (sum, app) => sum + (app.balanceFiat ?? 0),
+      0,
+    );
+
+    return {
+      totalBalanceFiat: totalTokenBalanceFiat + totalPositionsBalanceFiat,
+      totalTokenBalanceFiat,
+      totalPositionsBalanceFiat,
+      tokenBalances: filteredTokenBalances,
+      positionBalances: filteredAppBalances,
+    };
   }
 
   private _filterDustPositions(portfolio: Portfolio): Portfolio {

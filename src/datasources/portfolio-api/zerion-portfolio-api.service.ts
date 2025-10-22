@@ -115,7 +115,15 @@ export class ZerionPortfolioApi implements IPortfolioApi {
   ): Array<TokenBalance> {
     return positions
       .map((position): TokenBalance | null => {
-        const impl = position.attributes.fungible_info.implementations[0];
+        const networkName = position.relationships?.chain?.data?.id;
+        if (!networkName) return null;
+
+        const chainId = this._mapNetworkToChainId(networkName);
+
+        // Find the implementation for this specific chain
+        const impl = position.attributes.fungible_info.implementations.find(
+          (i) => i.chain_id === networkName,
+        );
         if (!impl) return null;
 
         // Skip if address is invalid (but null is allowed for native tokens)
@@ -136,7 +144,7 @@ export class ZerionPortfolioApi implements IPortfolioApi {
               position.attributes.fungible_info.name ??
               position.attributes.name,
             logoUrl: position.attributes.fungible_info.icon?.url ?? null,
-            chainId: this._mapNetworkToChainId(impl.chain_id),
+            chainId,
           },
           balance: position.attributes.quantity.numeric,
           balanceFiat: position.attributes.value ?? null,
@@ -190,7 +198,15 @@ export class ZerionPortfolioApi implements IPortfolioApi {
   ): Array<AppPosition> {
     return positions
       .map((position): AppPosition | null => {
-        const impl = position.attributes.fungible_info.implementations[0];
+        const networkName = position.relationships?.chain?.data?.id;
+        if (!networkName) return null;
+
+        const chainId = this._mapNetworkToChainId(networkName);
+
+        // Find the implementation for this specific chain
+        const impl = position.attributes.fungible_info.implementations.find(
+          (i) => i.chain_id === networkName,
+        );
         if (!impl) return null;
 
         // Skip if address is invalid (but null is allowed for native tokens)
@@ -214,7 +230,7 @@ export class ZerionPortfolioApi implements IPortfolioApi {
               position.attributes.fungible_info.name ??
               position.attributes.name,
             logoUrl: position.attributes.fungible_info.icon?.url ?? null,
-            chainId: this._mapNetworkToChainId(impl.chain_id),
+            chainId,
           },
           balance: position.attributes.quantity.numeric,
           balanceFiat: position.attributes.value ?? null,
@@ -248,7 +264,7 @@ export class ZerionPortfolioApi implements IPortfolioApi {
       base: '8453',
       berachain: '80094',
       'binance-smart-chain': '56',
-      bsc: '56', // alias for binance-smart-chain
+      bsc: '56',
       blast: '81457',
       bob: '60808',
       celo: '42220',
@@ -298,7 +314,7 @@ export class ZerionPortfolioApi implements IPortfolioApi {
       zero: '543210',
       zkcandy: '320',
       'zklink-nova': '810180',
-      zksync: '324', // alias for zksync-era
+      zksync: '324',
       'zksync-era': '324',
       zora: '7777777',
     };

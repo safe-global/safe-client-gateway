@@ -50,7 +50,7 @@ export class PortfolioController {
     name: 'chainIds',
     required: false,
     type: String,
-    description: 'Comma-separated list of chain IDs to filter by',
+    description: 'Comma-separated list of chain IDs to filter by. If omitted, returns data for all chains.',
     example: '1,137,42161',
   })
   @ApiQuery({

@@ -103,6 +103,16 @@ export const ZerionBalanceSchema = z.object({
   type: z.enum(['positions', 'unknown']).catch('unknown'),
   id: z.string(),
   attributes: ZerionAttributesSchema,
+  relationships: z
+    .object({
+      chain: z.object({
+        data: z.object({
+          type: z.string(),
+          id: z.string(),
+        }),
+      }),
+    })
+    .optional(),
 });
 
 export const ZerionBalancesSchema = z.object({
