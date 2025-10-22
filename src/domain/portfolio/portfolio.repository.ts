@@ -54,6 +54,7 @@ export class PortfolioRepository implements IPortfolioRepository {
       const rawPortfolio = await portfolioApi.getPortfolio({
         address: args.address,
         fiatCode: args.fiatCode,
+        trusted: args.trusted,
       });
 
       portfolio = PortfolioSchema.parse(rawPortfolio);

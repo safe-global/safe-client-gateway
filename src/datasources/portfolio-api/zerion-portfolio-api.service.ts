@@ -45,6 +45,7 @@ export class ZerionPortfolioApi implements IPortfolioApi {
     address: Address;
     fiatCode: string;
     chainIds?: Array<string>;
+    trusted?: boolean;
   }): Promise<Raw<Portfolio>> {
     if (!this.fiatCodes.includes(args.fiatCode.toUpperCase())) {
       throw new DataSourceError(
@@ -55,13 +56,19 @@ export class ZerionPortfolioApi implements IPortfolioApi {
 
     try {
       const url = `${this.baseUri}/v1/wallets/${args.address}/positions`;
+      const params: Record<string, string> = {
+        currency: args.fiatCode.toLowerCase(),
+        sort: 'value',
+        'filter[positions]': 'no_filter',
+      };
+
+      if (args.trusted) {
+        params['filter[trash]'] = 'only_non_trash';
+      }
+
       const networkRequest = {
         headers: { Authorization: `Basic ${this.apiKey}` },
-        params: {
-          currency: args.fiatCode.toLowerCase(),
-          sort: 'value',
-          'filter[positions]': 'no_filter',
-        },
+        params,
       };
 
       const response = await this.networkService
@@ -80,9 +87,7 @@ export class ZerionPortfolioApi implements IPortfolioApi {
     }
   }
 
-  private _buildPortfolio(
-    positions: Array<ZerionBalance>,
-  ): Raw<Portfolio> {
+  private _buildPortfolio(positions: Array<ZerionBalance>): Raw<Portfolio> {
     const displayablePositions = positions.filter(
       (p) => p.attributes.flags.displayable && !p.attributes.flags.is_trash,
     );
@@ -145,8 +150,7 @@ export class ZerionPortfolioApi implements IPortfolioApi {
               position.attributes.name,
             logoUrl: position.attributes.fungible_info.icon?.url ?? null,
             chainId,
-            trusted:
-              position.attributes.fungible_info.flags?.verified ?? false,
+            trusted: position.attributes.fungible_info.flags?.verified ?? false,
           },
           balance: position.attributes.quantity.numeric,
           balanceFiat: position.attributes.value ?? null,
@@ -233,8 +237,7 @@ export class ZerionPortfolioApi implements IPortfolioApi {
               position.attributes.name,
             logoUrl: position.attributes.fungible_info.icon?.url ?? null,
             chainId,
-            trusted:
-              position.attributes.fungible_info.flags?.verified ?? false,
+            trusted: position.attributes.fungible_info.flags?.verified ?? false,
           },
           balance: position.attributes.quantity.numeric,
           balanceFiat: position.attributes.value ?? null,

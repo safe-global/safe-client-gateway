@@ -100,6 +100,7 @@ export class ZapperPortfolioApi implements IPortfolioApi {
     address: Address;
     fiatCode: string;
     chainIds?: Array<string>;
+    trusted?: boolean;
   }): Promise<Raw<Portfolio>> {
     try {
       const query = this._buildGraphQLQuery();
