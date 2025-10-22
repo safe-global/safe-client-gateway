@@ -1,3 +1,4 @@
+import type { TestingModule } from '@nestjs/testing';
 import { Test } from '@nestjs/testing';
 import { faker } from '@faker-js/faker';
 import type { Address } from 'viem';
@@ -5,18 +6,28 @@ import { getAddress } from 'viem';
 import { SafeShieldController } from './safe-shield.controller';
 import { SafeShieldService } from './safe-shield.service';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
-import { counterpartyAnalysisRequestDtoBuilder } from './entities/__tests__/builders/analysis-requests.builder';
-import { counterpartyAnalysisResponseBuilder } from './entities/__tests__/builders/analysis-responses.builder';
+import {
+  counterpartyAnalysisRequestDtoBuilder,
+  threatAnalysisRequestBuilder,
+} from './entities/__tests__/builders/analysis-requests.builder';
+import {
+  counterpartyAnalysisResponseBuilder,
+  threatAnalysisResponseBuilder,
+} from './entities/__tests__/builders/analysis-responses.builder';
 import {
   contractAnalysisResultBuilder,
   recipientAnalysisResultBuilder,
 } from './entities/__tests__/builders/analysis-result.builder';
 import type { RecipientInteractionAnalysisResponse } from '@/modules/safe-shield/entities/analysis-responses.entity';
-import { CounterpartyAnalysisRequestSchema } from '@/modules/safe-shield/entities/analysis-requests.entity';
+import {
+  CounterpartyAnalysisRequestSchema,
+  ThreatAnalysisRequestSchema,
+} from '@/modules/safe-shield/entities/analysis-requests.entity';
 
 describe('SafeShieldController (Unit)', () => {
   let controller: SafeShieldController;
   let safeShieldService: jest.Mocked<SafeShieldService>;
+  let moduleRef: TestingModule;
 
   const mockChainId = faker.number.int({ min: 1, max: 999999 }).toString();
   const mockSafeAddress = getAddress(faker.finance.ethereumAddress());
@@ -25,7 +36,7 @@ describe('SafeShieldController (Unit)', () => {
   beforeEach(async () => {
     jest.resetAllMocks();
 
-    const moduleRef = await Test.createTestingModule({
+    moduleRef = await Test.createTestingModule({
       controllers: [SafeShieldController],
       providers: [
         {
@@ -33,6 +44,7 @@ describe('SafeShieldController (Unit)', () => {
           useValue: {
             analyzeRecipient: jest.fn(),
             analyzeCounterparty: jest.fn(),
+            analyzeThreats: jest.fn(),
           },
         },
       ],
@@ -40,6 +52,10 @@ describe('SafeShieldController (Unit)', () => {
 
     controller = moduleRef.get(SafeShieldController);
     safeShieldService = moduleRef.get(SafeShieldService);
+  });
+
+  afterAll(async () => {
+    await moduleRef.close();
   });
 
   describe('analyzeRecipient', () => {
@@ -255,6 +271,50 @@ describe('SafeShieldController (Unit)', () => {
       expect(result.recipient[requestBody.to]?.RECIPIENT_INTERACTION).toEqual([
         expect.objectContaining({ type: 'FAILED' }),
       ]);
+    });
+  });
+
+  describe('analyzeThreat', () => {
+    const requestBody = threatAnalysisRequestBuilder().build();
+
+    it('should delegate to SafeShieldService and return threat analysis results', async () => {
+      const expectedResponse =
+        threatAnalysisResponseBuilder('NO_THREAT').build();
+
+      safeShieldService.analyzeThreats.mockResolvedValue(expectedResponse);
+
+      const result = await controller.analyzeThreat(
+        mockChainId,
+        mockSafeAddress,
+        requestBody,
+      );
+
+      expect(result).toEqual(expectedResponse);
+      expect(safeShieldService.analyzeThreats).toHaveBeenCalledWith({
+        chainId: mockChainId,
+        safeAddress: mockSafeAddress,
+        request: requestBody,
+      });
+    });
+
+    it('should propagate errors from SafeShieldService', async () => {
+      const error = new Error('Threat analysis failed');
+
+      safeShieldService.analyzeThreats.mockRejectedValue(error);
+
+      await expect(
+        controller.analyzeThreat(mockChainId, mockSafeAddress, requestBody),
+      ).rejects.toThrow(error);
+    });
+
+    it('should reject invalid threat analysis requests', () => {
+      const pipe = new ValidationPipe(ThreatAnalysisRequestSchema);
+      const invalidRequest = {
+        ...threatAnalysisRequestBuilder().build(),
+        walletAddress: 'invalid-address' as unknown as Address,
+      };
+
+      expect(() => pipe.transform(invalidRequest)).toThrow();
     });
   });
 });

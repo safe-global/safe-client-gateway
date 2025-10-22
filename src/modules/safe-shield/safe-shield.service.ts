@@ -10,11 +10,6 @@ import type {
   RecipientInteractionAnalysisResponse,
   ThreatAnalysisResponse,
 } from './entities/analysis-responses.entity';
-import type {
-  RecipientAnalysisResult,
-  ContractAnalysisResult,
-  ThreatAnalysisResult,
-} from './entities/analysis-result.entity';
 import type { DecodedTransactionData } from '@/modules/safe-shield/entities/transaction-data.entity';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { mapDecodedTransactions } from './utils/transaction-mapping.utils';
@@ -29,8 +24,11 @@ import { ThreatAnalysisRequest } from '@/modules/safe-shield/entities/analysis-r
 import { IConfigApi } from '@/domain/interfaces/config-api.interface';
 import { ChainSchema } from '@/domain/chains/entities/schemas/chain.schema';
 import { FF_RISK_MITIGATION } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-api.constants';
-import { createFailedAnalysisResult } from './utils/common';
-import { DESCRIPTION_MAPPING } from '@/modules/safe-shield/threat-analysis/threat-analysis.constants';
+import { asError } from '@/logging/utils';
+import {
+  COMMON_DESCRIPTION_MAPPING,
+  COMMON_SEVERITY_MAPPING,
+} from '@/modules/safe-shield/entities/common-status.constants';
 
 /**
  * Main orchestration service for Safe Shield transaction analysis.
@@ -216,13 +214,8 @@ export class SafeShieldService {
         request,
       });
     } catch (error) {
-      return createFailedAnalysisResult<ThreatAnalysisResult>({
-        loggingService: this.loggingService,
-        statusGroup: 'THREAT',
-        type: 'Threat',
-        reason: error,
-        description: DESCRIPTION_MAPPING.FAILED(),
-      }) as ThreatAnalysisResponse;
+      this.loggingService.warn(`The threat analysis failed. ${error}`);
+      return this.threatAnalysisService.failedAnalysisResponse();
     }
   }
 
@@ -298,6 +291,9 @@ export class SafeShieldService {
     statusGroup: RecipientStatusGroup | ContractStatusGroup,
     reason?: unknown,
   ): T {
+    const error = asError(reason);
+    this.loggingService.warn(`The counterparty analysis failed. ${error}`);
+
     const type = (RecipientStatusGroup as ReadonlyArray<string>).includes(
       statusGroup,
     )
@@ -305,9 +301,18 @@ export class SafeShieldService {
       : 'Contract';
 
     return {
-      [targetAddress]: createFailedAnalysisResult<
-        RecipientAnalysisResult | ContractAnalysisResult
-      >({ loggingService: this.loggingService, statusGroup, type, reason }),
+      [targetAddress]: {
+        [statusGroup]: [
+          {
+            type: 'FAILED',
+            severity: COMMON_SEVERITY_MAPPING.FAILED,
+            title: `${type} analysis failed`,
+            description: COMMON_DESCRIPTION_MAPPING.FAILED({
+              error: error?.message,
+            }),
+          },
+        ],
+      },
     } as T;
   }
 }

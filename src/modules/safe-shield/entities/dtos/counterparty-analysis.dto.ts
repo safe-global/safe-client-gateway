@@ -173,7 +173,8 @@ export class CounterpartyAnalysisDto implements CounterpartyAnalysisResponse {
   @ApiProperty({
     description:
       'Recipient analysis results mapped by address. ' +
-      'Contains recipient interaction history and bridge analysis.',
+      'Contains recipient interaction history and bridge analysis.' +
+      'type: Record<Address, RecipientAnalysisDto>.',
     type: 'object',
     additionalProperties: {
       $ref: getSchemaPath(RecipientAnalysisDto),
@@ -197,7 +198,8 @@ export class CounterpartyAnalysisDto implements CounterpartyAnalysisResponse {
   @ApiProperty({
     description:
       'Contract analysis results mapped by address. ' +
-      'Contains contract verification, interaction history, and delegatecall analysis.',
+      'Contains contract verification, interaction history, and delegatecall analysis.' +
+      'type: Record<Address, ContractAnalysisDto>.',
     type: 'object',
     additionalProperties: {
       $ref: getSchemaPath(ContractAnalysisDto),

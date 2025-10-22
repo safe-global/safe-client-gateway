@@ -125,7 +125,7 @@ export const ThreatAnalysisResultSchema = z.union([
   // MALICIOUS or MODERATE: optional issues
   AnalysisResultBaseSchema.extend({
     type: z.union([z.literal('MALICIOUS'), z.literal('MODERATE')]),
-    issues: z.map(SeveritySchema, z.array(z.string())).optional(),
+    issues: z.record(SeveritySchema, z.array(z.string())).optional(),
   }),
   // All others: no extra fields
   AnalysisResultBaseSchema.extend({
@@ -169,8 +169,8 @@ export type MasterCopyChangeThreatAnalysisResult =
 export type MaliciousOrModerateThreatAnalysisResult = AnalysisResult<
   'MALICIOUS' | 'MODERATE'
 > & {
-  /** A potential map of specific issues identified during threat analysis, grouped by severity */
-  issues?: Map<keyof typeof Severity, Array<string>>;
+  /** A potential partial record of specific issues identified during threat analysis, grouped by severity */
+  issues?: Partial<Record<keyof typeof Severity, Array<string>>>;
 };
 
 /**
