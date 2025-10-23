@@ -10,14 +10,19 @@ import {
 import {
   contractAnalysisResultBuilder,
   recipientAnalysisResultBuilder,
+  threatAnalysisResultBuilder,
+  masterCopyChangeThreatBuilder,
+  maliciousOrModerateThreatBuilder,
 } from './analysis-result.builder';
+import type { ThreatStatus } from '../../threat-status.entity';
+import { getAddress } from 'viem';
 
 /**
  * Builder for RecipientAnalysisResponse
  */
 export function recipientAnalysisResponseBuilder(): IBuilder<RecipientAnalysisResponse> {
   return new Builder<RecipientAnalysisResponse>().with(
-    faker.finance.ethereumAddress() as `0x${string}`,
+    getAddress(faker.finance.ethereumAddress()),
     {
       RECIPIENT_INTERACTION: [recipientAnalysisResultBuilder().build()],
       BRIDGE: [recipientAnalysisResultBuilder().build()],
@@ -30,7 +35,7 @@ export function recipientAnalysisResponseBuilder(): IBuilder<RecipientAnalysisRe
  */
 export function contractAnalysisResponseBuilder(): IBuilder<ContractAnalysisResponse> {
   return new Builder<ContractAnalysisResponse>().with(
-    faker.finance.ethereumAddress() as `0x${string}`,
+    getAddress(faker.finance.ethereumAddress()),
     {
       CONTRACT_VERIFICATION: [contractAnalysisResultBuilder().build()],
       CONTRACT_INTERACTION: [contractAnalysisResultBuilder().build()],
@@ -41,13 +46,27 @@ export function contractAnalysisResponseBuilder(): IBuilder<ContractAnalysisResp
 
 /**
  * Builder for ThreatAnalysisResponse
+ * @param type - Optional threat type to build. Delegates to appropriate builder based on type.
  */
-export function threatAnalysisResponseBuilder(): IBuilder<ThreatAnalysisResponse> {
+export function threatAnalysisResponseBuilder(
+  type?: ThreatStatus,
+): IBuilder<ThreatAnalysisResponse> {
+  let threatResult;
+  if (type === 'MASTERCOPY_CHANGE') {
+    threatResult = masterCopyChangeThreatBuilder().build();
+  } else if (type === 'MALICIOUS' || type === 'MODERATE') {
+    threatResult = maliciousOrModerateThreatBuilder()
+      .with('type', type)
+      .build();
+  } else if (type) {
+    threatResult = threatAnalysisResultBuilder().with('type', type).build();
+  } else {
+    threatResult = threatAnalysisResultBuilder().build();
+  }
+
   return new Builder<ThreatAnalysisResponse>()
-    .with('severity', 'OK')
-    .with('type', 'NO_THREAT')
-    .with('title', faker.lorem.sentence())
-    .with('description', faker.lorem.paragraph());
+    .with('THREAT', [threatResult])
+    .with('BALANCE_CHANGE', []);
 }
 
 /**

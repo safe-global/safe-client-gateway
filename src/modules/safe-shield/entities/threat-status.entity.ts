@@ -18,7 +18,7 @@ export const ThreatStatus = [
   'NO_THREAT',
 
   /** Transaction attempts to change Safe master copy/implementation */
-  'MASTER_COPY_CHANGE',
+  'MASTERCOPY_CHANGE',
 
   /** Transaction attempts to modify Safe ownership */
   'OWNERSHIP_CHANGE',

@@ -21,11 +21,15 @@ import { getAddress, type Hex } from 'viem';
 import {
   recipientAnalysisResponseBuilder,
   contractAnalysisResponseBuilder,
+  threatAnalysisResponseBuilder,
 } from './entities/__tests__/builders/analysis-responses.builder';
 import { dataDecodedBuilder } from '@/domain/data-decoder/v2/entities/__tests__/data-decoded.builder';
 import {
   contractAnalysisResultBuilder,
   recipientAnalysisResultBuilder,
+  maliciousOrModerateThreatBuilder,
+  masterCopyChangeThreatBuilder,
+  threatAnalysisResultBuilder,
 } from '@/modules/safe-shield/entities/__tests__/builders/analysis-result.builder';
 import { Operation } from '@/domain/safe/entities/operation.entity';
 import type { AnalysisResult } from '@/modules/safe-shield/entities/analysis-result.entity';
@@ -33,8 +37,13 @@ import type { RecipientStatus } from '@/modules/safe-shield/entities/recipient-s
 import {
   COMMON_DESCRIPTION_MAPPING,
   COMMON_SEVERITY_MAPPING,
-  COMMON_TITLE_MAPPING,
 } from './entities/common-status.constants';
+import { threatAnalysisRequestBuilder } from '@/modules/safe-shield/entities/__tests__/builders/analysis-requests.builder';
+import type { IConfigApi } from '@/domain/interfaces/config-api.interface';
+import { FF_RISK_MITIGATION } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-api.constants';
+import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
+import { rawify } from '@/validation/entities/raw.entity';
+import { DESCRIPTION_MAPPING } from '@/modules/safe-shield/threat-analysis/threat-analysis.constants';
 
 // Utility function for generating Wei values
 const generateRandomWeiAmount = (): bigint =>
@@ -111,8 +120,9 @@ describe('SafeShieldService', () => {
   const mockContractAnalysisService = {
     analyze: jest.fn(),
   } as jest.MockedObjectDeep<ContractAnalysisService>;
-  const mockThreatAnalysisService =
-    {} as jest.MockedObjectDeep<ThreatAnalysisService>;
+  const mockThreatAnalysisService = {
+    analyze: jest.fn(),
+  } as jest.MockedObjectDeep<ThreatAnalysisService>;
   const mockTransactionsService = {
     previewTransaction: jest.fn(),
   } as jest.MockedObjectDeep<TransactionsService>;
@@ -124,12 +134,17 @@ describe('SafeShieldService', () => {
     error: jest.fn(),
   } as jest.MockedObjectDeep<ILoggingService>;
 
+  const mockConfigApi = {
+    getChain: jest.fn(),
+  } as jest.MockedObjectDeep<IConfigApi>;
+
   const service = new SafeShieldService(
     mockRecipientAnalysisService,
     mockContractAnalysisService,
     mockThreatAnalysisService,
     mockLoggingService,
     mockTransactionsService,
+    mockConfigApi,
   );
 
   const mockChainId = faker.number.int({ min: 1, max: 999999 }).toString();
@@ -511,9 +526,9 @@ describe('SafeShieldService', () => {
             {
               type: 'FAILED',
               severity: COMMON_SEVERITY_MAPPING.FAILED,
-              title: COMMON_TITLE_MAPPING.FAILED,
+              title: 'Recipient analysis failed',
               description: COMMON_DESCRIPTION_MAPPING.FAILED({
-                reason: 'Recipient analysis failed',
+                error: 'Recipient analysis failed',
               }),
             },
           ],
@@ -521,7 +536,7 @@ describe('SafeShieldService', () => {
       });
       expect(result.contract).toEqual(mockContractAnalysisResponse);
       expect(mockLoggingService.warn).toHaveBeenCalledWith(
-        'Counterparty analysis failed. Error: Recipient analysis failed',
+        'The analysis failed. Error: Recipient analysis failed',
       );
 
       expect(mockRecipientAnalysisService.analyze).toHaveBeenCalledWith({
@@ -586,9 +601,9 @@ describe('SafeShieldService', () => {
             {
               type: 'FAILED',
               severity: COMMON_SEVERITY_MAPPING.FAILED,
-              title: COMMON_TITLE_MAPPING.FAILED,
+              title: 'Contract analysis failed',
               description: COMMON_DESCRIPTION_MAPPING.FAILED({
-                reason: 'Contract analysis failed',
+                error: 'Contract analysis failed',
               }),
             },
           ],
@@ -596,7 +611,7 @@ describe('SafeShieldService', () => {
       });
       expect(result.recipient).toEqual(mockRecipientAnalysisResponse);
       expect(mockLoggingService.warn).toHaveBeenCalledWith(
-        'Counterparty analysis failed. Error: Contract analysis failed',
+        'The analysis failed. Error: Contract analysis failed',
       );
 
       expect(mockRecipientAnalysisService.analyze).toHaveBeenCalledWith({
@@ -660,9 +675,9 @@ describe('SafeShieldService', () => {
             {
               type: 'FAILED',
               severity: COMMON_SEVERITY_MAPPING.FAILED,
-              title: COMMON_TITLE_MAPPING.FAILED,
+              title: 'Recipient analysis failed',
               description: COMMON_DESCRIPTION_MAPPING.FAILED({
-                reason: 'Recipient analysis failed',
+                error: 'Recipient analysis failed',
               }),
             },
           ],
@@ -674,9 +689,9 @@ describe('SafeShieldService', () => {
             {
               type: 'FAILED',
               severity: COMMON_SEVERITY_MAPPING.FAILED,
-              title: COMMON_TITLE_MAPPING.FAILED,
+              title: 'Contract analysis failed',
               description: COMMON_DESCRIPTION_MAPPING.FAILED({
-                reason: 'Contract analysis failed',
+                error: 'Contract analysis failed',
               }),
             },
           ],
@@ -685,11 +700,11 @@ describe('SafeShieldService', () => {
 
       expect(mockLoggingService.warn).toHaveBeenNthCalledWith(
         1,
-        'Counterparty analysis failed. Error: Recipient analysis failed',
+        'The analysis failed. Error: Recipient analysis failed',
       );
       expect(mockLoggingService.warn).toHaveBeenNthCalledWith(
         2,
-        'Counterparty analysis failed. Error: Contract analysis failed',
+        'The analysis failed. Error: Contract analysis failed',
       );
       expect(mockLoggingService.warn).toHaveBeenCalledTimes(2);
 
@@ -1049,6 +1064,190 @@ describe('SafeShieldService', () => {
         safeAddress: mockSafeAddress,
         recipient: mockRecipientAddress,
       });
+    });
+
+    it('should handle analyzeInteractions failure', async () => {
+      const error = new Error('Failed to analyze interactions');
+
+      mockRecipientAnalysisService.analyzeInteractions.mockRejectedValue(error);
+
+      await expect(
+        service.analyzeRecipient(
+          mockChainId,
+          mockSafeAddress,
+          mockRecipientAddress,
+        ),
+      ).rejects.toThrow('Failed to analyze interactions');
+
+      expect(
+        mockRecipientAnalysisService.analyzeInteractions,
+      ).toHaveBeenCalledWith({
+        chainId: mockChainId,
+        safeAddress: mockSafeAddress,
+        recipient: mockRecipientAddress,
+      });
+    });
+  });
+
+  describe('analyzeThreats', () => {
+    const mockThreatRequest = threatAnalysisRequestBuilder()
+      .with('walletAddress', mockRecipientAddress)
+      .build();
+
+    it('should analyze threats when Blockaid is enabled for the chain', async () => {
+      const mockThreatResponse = threatAnalysisResponseBuilder().build();
+      const mockChain = chainBuilder()
+        .with('chainId', mockChainId)
+        .with('features', [FF_RISK_MITIGATION])
+        .build();
+
+      mockConfigApi.getChain.mockResolvedValue(rawify(mockChain));
+      mockThreatAnalysisService.analyze.mockResolvedValue(mockThreatResponse);
+
+      const result = await service.analyzeThreats({
+        chainId: mockChainId,
+        safeAddress: mockSafeAddress,
+        request: mockThreatRequest,
+      });
+
+      expect(result).toEqual(mockThreatResponse);
+      expect(mockConfigApi.getChain).toHaveBeenCalledWith(mockChainId);
+      expect(mockThreatAnalysisService.analyze).toHaveBeenCalledWith({
+        chainId: mockChainId,
+        safeAddress: mockSafeAddress,
+        request: mockThreatRequest,
+      });
+    });
+
+    it('should return empty response when Blockaid is disabled for the chain', async () => {
+      const mockChain = chainBuilder()
+        .with('chainId', mockChainId)
+        .with('features', ['OTHER_FEATURE'])
+        .build();
+
+      mockConfigApi.getChain.mockResolvedValue(rawify(mockChain));
+
+      const result = await service.analyzeThreats({
+        chainId: mockChainId,
+        safeAddress: mockSafeAddress,
+        request: mockThreatRequest,
+      });
+
+      expect(result).toEqual({});
+      expect(mockConfigApi.getChain).toHaveBeenCalledWith(mockChainId);
+      expect(mockThreatAnalysisService.analyze).not.toHaveBeenCalled();
+    });
+
+    it('should handle multiple threat results and balance changes', async () => {
+      const mockMultipleThreatsResponse = {
+        THREAT: [
+          maliciousOrModerateThreatBuilder().with('type', 'MALICIOUS').build(),
+          masterCopyChangeThreatBuilder().build(),
+          threatAnalysisResultBuilder().build(),
+        ],
+        BALANCE_CHANGE: [
+          {
+            asset: {
+              type: 'ERC20' as const,
+              symbol: 'USDC',
+              address: getAddress(faker.finance.ethereumAddress()),
+              logo_url: faker.internet.url(),
+            },
+            in: [{ value: faker.string.numeric(7) }],
+            out: [],
+          },
+        ],
+      };
+      const mockChain = chainBuilder()
+        .with('chainId', mockChainId)
+        .with('features', [FF_RISK_MITIGATION])
+        .build();
+
+      mockConfigApi.getChain.mockResolvedValue(rawify(mockChain));
+      mockThreatAnalysisService.analyze.mockResolvedValue(
+        mockMultipleThreatsResponse,
+      );
+
+      const result = await service.analyzeThreats({
+        chainId: mockChainId,
+        safeAddress: mockSafeAddress,
+        request: mockThreatRequest,
+      });
+
+      expect(result).toEqual(mockMultipleThreatsResponse);
+      expect(result.THREAT).toHaveLength(3);
+      expect(result.BALANCE_CHANGE).toHaveLength(1);
+      expect(mockConfigApi.getChain).toHaveBeenCalledWith(mockChainId);
+      expect(mockThreatAnalysisService.analyze).toHaveBeenCalledWith({
+        chainId: mockChainId,
+        safeAddress: mockSafeAddress,
+        request: mockThreatRequest,
+      });
+    });
+
+    it('should handle threat analysis service failure', async () => {
+      const error = new Error('Threat analysis failed');
+      const mockChain = chainBuilder()
+        .with('chainId', mockChainId)
+        .with('features', [FF_RISK_MITIGATION])
+        .build();
+
+      mockConfigApi.getChain.mockResolvedValue(rawify(mockChain));
+      mockThreatAnalysisService.analyze.mockRejectedValue(error);
+
+      const result = await service.analyzeThreats({
+        chainId: mockChainId,
+        safeAddress: mockSafeAddress,
+        request: mockThreatRequest,
+      });
+
+      expect(result).toEqual({
+        THREAT: [
+          {
+            type: 'FAILED',
+            severity: COMMON_SEVERITY_MAPPING.FAILED,
+            title: 'Threat analysis failed',
+            description: DESCRIPTION_MAPPING.FAILED(),
+          },
+        ],
+      });
+      expect(mockLoggingService.warn).toHaveBeenCalledWith(
+        'The analysis failed. Error: Threat analysis failed',
+      );
+      expect(mockConfigApi.getChain).toHaveBeenCalledWith(mockChainId);
+      expect(mockThreatAnalysisService.analyze).toHaveBeenCalledWith({
+        chainId: mockChainId,
+        safeAddress: mockSafeAddress,
+        request: mockThreatRequest,
+      });
+    });
+
+    it('should handle config API failure gracefully when checking if Blockaid is enabled', async () => {
+      const error = new Error('Failed to fetch chain config');
+
+      mockConfigApi.getChain.mockRejectedValue(error);
+
+      const result = await service.analyzeThreats({
+        chainId: mockChainId,
+        safeAddress: mockSafeAddress,
+        request: mockThreatRequest,
+      });
+
+      expect(result).toEqual({
+        THREAT: [
+          {
+            type: 'FAILED',
+            severity: COMMON_SEVERITY_MAPPING.FAILED,
+            title: 'Threat analysis failed',
+            description: DESCRIPTION_MAPPING.FAILED(),
+          },
+        ],
+      });
+      expect(mockLoggingService.warn).toHaveBeenCalledWith(
+        'The analysis failed. Error: Failed to fetch chain config',
+      );
+      expect(mockConfigApi.getChain).toHaveBeenCalledWith(mockChainId);
+      expect(mockThreatAnalysisService.analyze).not.toHaveBeenCalled();
     });
   });
 });

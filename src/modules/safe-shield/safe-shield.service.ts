@@ -8,7 +8,13 @@ import type {
   RecipientAnalysisResponse,
   CounterpartyAnalysisResponse,
   RecipientInteractionAnalysisResponse,
+  ThreatAnalysisResponse,
 } from './entities/analysis-responses.entity';
+import type {
+  RecipientAnalysisResult,
+  ContractAnalysisResult,
+  ThreatAnalysisResult,
+} from './entities/analysis-result.entity';
 import type { DecodedTransactionData } from '@/modules/safe-shield/entities/transaction-data.entity';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { mapDecodedTransactions } from './utils/transaction-mapping.utils';
@@ -16,15 +22,15 @@ import { TransactionsService } from '@/routes/transactions/transactions.service'
 import { Operation } from '@/domain/safe/entities/operation.entity';
 import type { TransactionInfo } from '@/routes/transactions/entities/transaction-info.entity';
 import {
-  COMMON_DESCRIPTION_MAPPING,
-  COMMON_SEVERITY_MAPPING,
-  COMMON_TITLE_MAPPING,
-} from './entities/common-status.constants';
-import {
   ContractStatusGroup,
   RecipientStatusGroup,
 } from '@/modules/safe-shield/entities/status-group.entity';
-import { asError } from '@/logging/utils';
+import { ThreatAnalysisRequest } from '@/modules/safe-shield/entities/analysis-requests.entity';
+import { IConfigApi } from '@/domain/interfaces/config-api.interface';
+import { ChainSchema } from '@/domain/chains/entities/schemas/chain.schema';
+import { FF_RISK_MITIGATION } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-api.constants';
+import { createFailedAnalysisResult } from './utils/common';
+import { DESCRIPTION_MAPPING } from '@/modules/safe-shield/threat-analysis/threat-analysis.constants';
 
 /**
  * Main orchestration service for Safe Shield transaction analysis.
@@ -42,6 +48,8 @@ export class SafeShieldService {
     @Inject(LoggingService)
     private readonly loggingService: ILoggingService,
     private readonly transactionsService: TransactionsService,
+    @Inject(IConfigApi)
+    private readonly configApi: IConfigApi,
   ) {}
 
   /**
@@ -57,7 +65,7 @@ export class SafeShieldService {
    * @param args.tx.operation - The transaction operation
    * @returns Counterparty analysis results containing both recipient and contract insights grouped by status group
    */
-  async analyzeCounterparty({
+  public async analyzeCounterparty({
     chainId,
     safeAddress,
     tx,
@@ -111,7 +119,7 @@ export class SafeShieldService {
    * @param txInfo - The transaction recipient address
    * @returns Map of recipient addresses to their analysis results
    */
-  async analyzeRecipients(
+  public async analyzeRecipients(
     chainId: string,
     safeAddress: Address,
     transactions: Array<DecodedTransactionData>,
@@ -137,7 +145,7 @@ export class SafeShieldService {
    * @param recipientAddress - The recipient address to analyze
    * @returns Analysis result for group RECIPIENT_INTERACTION
    */
-  async analyzeRecipient(
+  public async analyzeRecipient(
     chainId: string,
     safeAddress: Address,
     recipientAddress: Address,
@@ -162,7 +170,7 @@ export class SafeShieldService {
    * @param transactions - A list of decoded transactions
    * @returns Map of contract addresses to their analysis results
    */
-  async analyzeContracts(
+  public async analyzeContracts(
     chainId: string,
     safeAddress: Address,
     transactions: Array<DecodedTransactionData>,
@@ -176,6 +184,54 @@ export class SafeShieldService {
     }
 
     return {};
+  }
+
+  /**
+   * Analyze transaction for any potential threats.
+   *
+   * @param args - Analysis parameters
+   * @param args.chainId - The chain ID
+   * @param args.safeAddress - The Safe address
+   * @param args.request - The transaction data/ sign message as TypedData
+   * @returns A threat analysis response
+   */
+  public async analyzeThreats({
+    chainId,
+    safeAddress,
+    request,
+  }: {
+    chainId: string;
+    safeAddress: Address;
+    request: ThreatAnalysisRequest;
+  }): Promise<ThreatAnalysisResponse> {
+    try {
+      const isAnalysisEnabled = await this.isBlockaidEnabled(chainId);
+      if (!isAnalysisEnabled) {
+        return {};
+      }
+
+      return await this.threatAnalysisService.analyze({
+        chainId,
+        safeAddress,
+        request,
+      });
+    } catch (error) {
+      return createFailedAnalysisResult<ThreatAnalysisResult>({
+        loggingService: this.loggingService,
+        statusGroup: 'THREAT',
+        type: 'Threat',
+        reason: error,
+        description: DESCRIPTION_MAPPING.FAILED(),
+      }) as ThreatAnalysisResponse;
+    }
+  }
+
+  private async isBlockaidEnabled(chainId: string): Promise<boolean> {
+    const chain = await this.configApi
+      .getChain(chainId)
+      .then(ChainSchema.parse);
+
+    return chain.features.includes(FF_RISK_MITIGATION);
   }
 
   /**
@@ -230,9 +286,9 @@ export class SafeShieldService {
   /**
    * Handles failed analysis by creating a FAILED result placeholder.
    *
-   * @param reason - The error reason from the rejected promise
    * @param targetAddress - The address to attach the failure to
    * @param statusGroup - The status group for the failure
+   * @param reason - The error reason from the rejected promise
    * @returns Analysis response with FAILED status
    */
   private handleFailedAnalysis<
@@ -242,22 +298,16 @@ export class SafeShieldService {
     statusGroup: RecipientStatusGroup | ContractStatusGroup,
     reason?: unknown,
   ): T {
-    const error = asError(reason);
-    this.loggingService.warn(`Counterparty analysis failed. ${error}`);
+    const type = (RecipientStatusGroup as ReadonlyArray<string>).includes(
+      statusGroup,
+    )
+      ? 'Recipient'
+      : 'Contract';
 
     return {
-      [targetAddress]: {
-        [statusGroup]: [
-          {
-            type: 'FAILED',
-            severity: COMMON_SEVERITY_MAPPING.FAILED,
-            title: COMMON_TITLE_MAPPING.FAILED,
-            description: COMMON_DESCRIPTION_MAPPING.FAILED({
-              reason: error.message,
-            }),
-          },
-        ],
-      },
+      [targetAddress]: createFailedAnalysisResult<
+        RecipientAnalysisResult | ContractAnalysisResult
+      >({ loggingService: this.loggingService, statusGroup, type, reason }),
     } as T;
   }
 }

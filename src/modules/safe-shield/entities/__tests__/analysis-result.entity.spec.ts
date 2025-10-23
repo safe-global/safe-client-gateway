@@ -16,7 +16,10 @@ import {
   recipientAnalysisResultBuilder,
   contractAnalysisResultBuilder,
   threatAnalysisResultBuilder,
+  masterCopyChangeThreatBuilder,
+  maliciousOrModerateThreatBuilder,
 } from './builders/analysis-result.builder';
+import { omit } from 'lodash';
 
 describe('AnalysisResult', () => {
   describe('AnalysisResult interface', () => {
@@ -303,6 +306,62 @@ describe('AnalysisResult', () => {
 
       expect(() =>
         ThreatAnalysisResultSchema.parse(failedResult),
+      ).not.toThrow();
+    });
+
+    it('should validate MASTERCOPY_CHANGE with before and after fields', () => {
+      const masterCopyChange = masterCopyChangeThreatBuilder().build();
+
+      expect(() =>
+        ThreatAnalysisResultSchema.parse(masterCopyChange),
+      ).not.toThrow();
+
+      const parsed = ThreatAnalysisResultSchema.parse(masterCopyChange);
+      expect(parsed.type).toBe('MASTERCOPY_CHANGE');
+      expect(parsed).toHaveProperty('before');
+      expect(parsed).toHaveProperty('after');
+    });
+
+    it('should reject MASTERCOPY_CHANGE without before field', () => {
+      const invalidWithoutBefore = omit(
+        masterCopyChangeThreatBuilder().build(),
+        'before',
+      );
+
+      expect(() =>
+        ThreatAnalysisResultSchema.parse(invalidWithoutBefore),
+      ).toThrow();
+    });
+
+    it('should reject MASTERCOPY_CHANGE without after field', () => {
+      const invalidWithoutAfter = omit(
+        masterCopyChangeThreatBuilder().build(),
+        'after',
+      );
+
+      expect(() =>
+        ThreatAnalysisResultSchema.parse(invalidWithoutAfter),
+      ).toThrow();
+    });
+
+    it('should validate MALICIOUS with optional issues', () => {
+      const malicious = maliciousOrModerateThreatBuilder().build();
+
+      expect(() => ThreatAnalysisResultSchema.parse(malicious)).not.toThrow();
+
+      const parsed = ThreatAnalysisResultSchema.parse(malicious);
+      expect(parsed.type).toBe('MALICIOUS');
+      expect(parsed).toHaveProperty('issues');
+    });
+
+    it('should validate MALICIOUS without issues field', () => {
+      const maliciousNoIssues = omit(
+        maliciousOrModerateThreatBuilder().build(),
+        'issues',
+      );
+
+      expect(() =>
+        ThreatAnalysisResultSchema.parse(maliciousNoIssues),
       ).not.toThrow();
     });
 
