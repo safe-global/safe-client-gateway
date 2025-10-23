@@ -241,6 +241,7 @@ export class ZapperPortfolioApi implements IPortfolioApi {
       totalPositionsBalanceFiat,
       tokenBalances,
       positionBalances: appBalances,
+      pnl: null, // Zapper doesn't provide PnL data
     });
   }
 

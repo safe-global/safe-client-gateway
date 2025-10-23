@@ -1,6 +1,7 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { TokenBalance } from '@/routes/portfolio/entities/token-balance.entity';
 import { AppBalance } from '@/routes/portfolio/entities/app-balance.entity';
+import { PnL } from '@/routes/portfolio/entities/pnl.entity';
 
 export class Portfolio {
   @ApiProperty({
@@ -35,4 +36,11 @@ export class Portfolio {
     type: [AppBalance],
   })
   positionBalances!: Array<AppBalance>;
+
+  @ApiPropertyOptional({
+    description: 'Profit and Loss metrics (null if unavailable)',
+    type: PnL,
+    nullable: true,
+  })
+  pnl!: PnL | null;
 }

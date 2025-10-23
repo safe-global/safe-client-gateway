@@ -928,4 +928,47 @@ export class CacheRouter {
       args.fiatCode,
     );
   }
+
+  static getPortfolioPositionsCacheKey(args: {
+    address: Address;
+    provider?: string;
+  }): string {
+    const provider = args.provider || 'zerion';
+    return `${CacheRouter.PORTFOLIO_KEY}_positions_${args.address}_${provider}`;
+  }
+
+  static getPortfolioPositionsCacheDir(args: {
+    address: Address;
+    fiatCode: string;
+    provider?: string;
+  }): CacheDir {
+    return new CacheDir(
+      CacheRouter.getPortfolioPositionsCacheKey(args),
+      args.fiatCode,
+    );
+  }
+
+  static getPortfolioPnLCacheKey(args: {
+    address: Address;
+    fungibleIds?: Array<string>;
+  }): string {
+    let key = `${CacheRouter.PORTFOLIO_KEY}_pnl_${args.address}`;
+    if (args.fungibleIds && args.fungibleIds.length > 0) {
+      const fungibleHash = crypto.createHash('sha256');
+      fungibleHash.update(args.fungibleIds.sort().join(','));
+      key += `_${fungibleHash.digest('hex').substring(0, 8)}`;
+    }
+    return key;
+  }
+
+  static getPortfolioPnLCacheDir(args: {
+    address: Address;
+    fiatCode: string;
+    fungibleIds?: Array<string>;
+  }): CacheDir {
+    return new CacheDir(
+      CacheRouter.getPortfolioPnLCacheKey(args),
+      args.fiatCode,
+    );
+  }
 }

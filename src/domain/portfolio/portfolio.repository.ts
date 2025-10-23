@@ -18,7 +18,8 @@ import {
 
 @Injectable()
 export class PortfolioRepository implements IPortfolioRepository {
-  private readonly cacheExpirationSeconds = 30;
+  private readonly positionsCacheExpirationSeconds = 30;
+  private readonly pnlCacheExpirationSeconds = 60;
 
   constructor(
     @Inject(IPortfolioApi) private readonly defaultPortfolioApi: IPortfolioApi,
@@ -36,8 +37,125 @@ export class PortfolioRepository implements IPortfolioRepository {
     trusted?: boolean;
     excludeDust?: boolean;
     provider?: string;
+    fungibleIds?: Array<string>;
   }): Promise<Portfolio> {
     const provider = args.provider?.toLowerCase() || 'zerion';
+    const portfolioApi = this._getProviderApi(provider);
+
+    // Use separate caching strategy for Zerion (which supports PnL)
+    // For Zapper, use single cache since it doesn't support PnL
+    if (provider === 'zerion') {
+      const portfolio = await this._getZerionPortfolioWithSeparateCaching(
+        args,
+        portfolioApi,
+      );
+      return this._applyFilters(portfolio, args);
+    } else {
+      // Zapper: use original single cache strategy
+      const portfolio = await this._getPortfolioWithSingleCache(
+        args,
+        portfolioApi,
+        provider,
+      );
+      return this._applyFilters(portfolio, args);
+    }
+  }
+
+  private async _getZerionPortfolioWithSeparateCaching(
+    args: {
+      address: Address;
+      fiatCode: string;
+      trusted?: boolean;
+      fungibleIds?: Array<string>;
+    },
+    portfolioApi: any,
+  ): Promise<Portfolio> {
+    const positionsCacheDir = CacheRouter.getPortfolioPositionsCacheDir({
+      address: args.address,
+      fiatCode: args.fiatCode,
+      provider: 'zerion',
+    });
+
+    const pnlCacheDir = CacheRouter.getPortfolioPnLCacheDir({
+      address: args.address,
+      fiatCode: args.fiatCode,
+      fungibleIds: args.fungibleIds,
+    });
+
+    // Check cache first
+    const [cachedPortfolio, cachedPnL] = await Promise.all([
+      this.cacheService.hGet(positionsCacheDir),
+      this.cacheService.hGet(pnlCacheDir),
+    ]);
+
+    // If both are cached, return combined result
+    if (cachedPortfolio && cachedPnL) {
+      const portfolio = JSON.parse(cachedPortfolio);
+      const pnl = JSON.parse(cachedPnL);
+      return PortfolioSchema.parse({ ...portfolio, pnl });
+    }
+
+    // If only portfolio is cached but PnL expired, fetch PnL separately
+    if (cachedPortfolio && !cachedPnL) {
+      const portfolio = JSON.parse(cachedPortfolio);
+      let pnl = null;
+      try {
+        pnl = await portfolioApi.fetchPnL({
+          address: args.address,
+          fiatCode: args.fiatCode,
+          fungibleIds: args.fungibleIds,
+        });
+        await this.cacheService.hSet(
+          pnlCacheDir,
+          JSON.stringify(pnl),
+          this.pnlCacheExpirationSeconds,
+        );
+      } catch (error) {
+        // PnL fetch failed, continue with null
+        pnl = null;
+      }
+      return PortfolioSchema.parse({ ...portfolio, pnl });
+    }
+
+    // Otherwise, fetch everything fresh (portfolio API handles parallel fetching)
+    const rawPortfolio = await portfolioApi.getPortfolio({
+      address: args.address,
+      fiatCode: args.fiatCode,
+      trusted: args.trusted,
+      fungibleIds: args.fungibleIds,
+    });
+
+    const portfolio = PortfolioSchema.parse(rawPortfolio);
+
+    // Cache positions and PnL separately
+    const { pnl, ...portfolioWithoutPnL } = portfolio;
+    await Promise.all([
+      this.cacheService.hSet(
+        positionsCacheDir,
+        JSON.stringify(portfolioWithoutPnL),
+        this.positionsCacheExpirationSeconds,
+      ),
+      pnl
+        ? this.cacheService.hSet(
+            pnlCacheDir,
+            JSON.stringify(pnl),
+            this.pnlCacheExpirationSeconds,
+          )
+        : Promise.resolve(),
+    ]);
+
+    return portfolio;
+  }
+
+  private async _getPortfolioWithSingleCache(
+    args: {
+      address: Address;
+      fiatCode: string;
+      trusted?: boolean;
+    },
+    portfolioApi: any,
+    provider: string,
+  ): Promise<Portfolio> {
     const cacheDir = CacheRouter.getPortfolioCacheDir({
       address: args.address,
       fiatCode: args.fiatCode,
@@ -45,27 +163,36 @@ export class PortfolioRepository implements IPortfolioRepository {
     });
 
     const cached = await this.cacheService.hGet(cacheDir);
-    let portfolio: Portfolio;
 
     if (cached) {
-      portfolio = PortfolioSchema.parse(JSON.parse(cached));
-    } else {
-      const portfolioApi = this._getProviderApi(provider);
-      const rawPortfolio = await portfolioApi.getPortfolio({
-        address: args.address,
-        fiatCode: args.fiatCode,
-        trusted: args.trusted,
-      });
-
-      portfolio = PortfolioSchema.parse(rawPortfolio);
-
-      await this.cacheService.hSet(
-        cacheDir,
-        JSON.stringify(portfolio),
-        this.cacheExpirationSeconds,
-      );
+      return PortfolioSchema.parse(JSON.parse(cached));
     }
 
+    const rawPortfolio = await portfolioApi.getPortfolio({
+      address: args.address,
+      fiatCode: args.fiatCode,
+      trusted: args.trusted,
+    });
+
+    const portfolio = PortfolioSchema.parse(rawPortfolio);
+
+    await this.cacheService.hSet(
+      cacheDir,
+      JSON.stringify(portfolio),
+      this.positionsCacheExpirationSeconds,
+    );
+
+    return portfolio;
+  }
+
+  private _applyFilters(
+    portfolio: Portfolio,
+    args: {
+      chainIds?: Array<string>;
+      trusted?: boolean;
+      excludeDust?: boolean;
+    },
+  ): Portfolio {
     let filteredPortfolio = portfolio;
 
     if (args.chainIds && args.chainIds.length > 0) {
@@ -84,6 +211,7 @@ export class PortfolioRepository implements IPortfolioRepository {
   }
 
   async clearPortfolio(args: { address: Address }): Promise<void> {
+    // Clear old single-cache keys
     const zerionKey = CacheRouter.getPortfolioCacheKey({
       address: args.address,
       provider: 'zerion',
@@ -92,9 +220,21 @@ export class PortfolioRepository implements IPortfolioRepository {
       address: args.address,
       provider: 'zapper',
     });
+
+    // Clear new separate cache keys for Zerion
+    const zerionPositionsKey = CacheRouter.getPortfolioPositionsCacheKey({
+      address: args.address,
+      provider: 'zerion',
+    });
+    const zerionPnLKey = CacheRouter.getPortfolioPnLCacheKey({
+      address: args.address,
+    });
+
     await Promise.all([
       this.cacheService.deleteByKey(zerionKey),
       this.cacheService.deleteByKey(zapperKey),
+      this.cacheService.deleteByKey(zerionPositionsKey),
+      this.cacheService.deleteByKey(zerionPnLKey),
     ]);
   }
 
@@ -154,6 +294,7 @@ export class PortfolioRepository implements IPortfolioRepository {
       totalPositionsBalanceFiat,
       tokenBalances: filteredTokenBalances,
       positionBalances: filteredAppBalances,
+      pnl: portfolio.pnl, // Preserve PnL through filtering
     };
   }
 
@@ -205,6 +346,7 @@ export class PortfolioRepository implements IPortfolioRepository {
       totalPositionsBalanceFiat,
       tokenBalances: filteredTokenBalances,
       positionBalances: filteredAppBalances,
+      pnl: portfolio.pnl, // Preserve PnL through filtering
     };
   }
 
@@ -260,6 +402,7 @@ export class PortfolioRepository implements IPortfolioRepository {
       totalPositionsBalanceFiat,
       tokenBalances: filteredTokenBalances,
       positionBalances: filteredAppBalances,
+      pnl: portfolio.pnl, // Preserve PnL through filtering
     };
   }
 }
