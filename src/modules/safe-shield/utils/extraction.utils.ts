@@ -25,7 +25,6 @@ export function extractContracts(
     if (
       data === '0x' ||
       !data ||
-      !dataDecoded ||
       erc20Decoder.helpers.isTransfer(data) ||
       erc20Decoder.helpers.isTransferFrom(data) ||
       (isExecTransaction(tx) && dataDecoded?.parameters?.[2].value === '0x')
