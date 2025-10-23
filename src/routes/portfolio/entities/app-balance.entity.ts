@@ -4,7 +4,6 @@ import { AppPosition } from '@/routes/portfolio/entities/app-position.entity';
 export class AppBalanceAppInfo {
   @ApiProperty({
     description: 'Application name',
-    example: 'Aave V3',
   })
   name!: string;
 
@@ -12,7 +11,6 @@ export class AppBalanceAppInfo {
     type: 'string',
     format: 'uri',
     description: 'Application logo URL (HTTPS)',
-    example: 'https://example.com/aave-logo.png',
     nullable: true,
   })
   logoUrl!: string | null;
@@ -21,7 +19,6 @@ export class AppBalanceAppInfo {
     type: 'string',
     format: 'uri',
     description: 'Application URL (HTTPS)',
-    example: 'https://aave.com',
     nullable: true,
   })
   url!: string | null;

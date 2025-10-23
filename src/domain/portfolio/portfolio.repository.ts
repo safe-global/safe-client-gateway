@@ -15,6 +15,7 @@ import {
   ZERION_PORTFOLIO_API,
   ZAPPER_PORTFOLIO_API,
 } from '@/datasources/portfolio-api/portfolio-api.module';
+import { PortfolioProvider } from '@/domain/portfolio/entities/portfolio-provider.enum';
 
 @Injectable()
 export class PortfolioRepository implements IPortfolioRepository {
@@ -37,7 +38,8 @@ export class PortfolioRepository implements IPortfolioRepository {
     excludeDust?: boolean;
     provider?: string;
   }): Promise<Portfolio> {
-    const provider = args.provider?.toLowerCase() || 'zerion';
+    const provider =
+      args.provider?.toLowerCase() || PortfolioProvider.ZERION;
     const cacheDir = CacheRouter.getPortfolioCacheDir({
       address: args.address,
       fiatCode: args.fiatCode,
@@ -86,11 +88,11 @@ export class PortfolioRepository implements IPortfolioRepository {
   async clearPortfolio(args: { address: Address }): Promise<void> {
     const zerionKey = CacheRouter.getPortfolioCacheKey({
       address: args.address,
-      provider: 'zerion',
+      provider: PortfolioProvider.ZERION,
     });
     const zapperKey = CacheRouter.getPortfolioCacheKey({
       address: args.address,
-      provider: 'zapper',
+      provider: PortfolioProvider.ZAPPER,
     });
     await Promise.all([
       this.cacheService.deleteByKey(zerionKey),
@@ -100,9 +102,9 @@ export class PortfolioRepository implements IPortfolioRepository {
 
   private _getProviderApi(provider: string): IPortfolioApi {
     switch (provider) {
-      case 'zapper':
+      case PortfolioProvider.ZAPPER:
         return this.zapperPortfolioApi;
-      case 'zerion':
+      case PortfolioProvider.ZERION:
       default:
         return this.zerionPortfolioApi;
     }

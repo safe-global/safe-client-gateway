@@ -13,69 +13,11 @@ import type { TokenBalance } from '@/domain/portfolio/entities/token-balance.ent
 import type { AppBalance } from '@/domain/portfolio/entities/app-balance.entity';
 import type { AppPosition } from '@/domain/portfolio/entities/app-position.entity';
 import { rawify, type Raw } from '@/validation/entities/raw.entity';
-
-interface ZapperV2Token {
-  tokenAddress: string;
-  network: { name: string; chainId: number };
-  symbol: string;
-  name?: string;
-  decimals: number | null;
-  balance: number;
-  balanceUSD: number;
-  balanceInCurrency?: number;
-  price?: number;
-  imgUrlV2?: string;
-  verified?: boolean;
-  onchainMarketData?: {
-    priceChange24h?: number;
-    price?: number;
-  };
-}
-
-interface ZapperV2App {
-  app: {
-    displayName: string;
-    imgUrl: string;
-    slug: string;
-  };
-  network: { name: string; chainId: number };
-  balanceUSD: number;
-  balanceInCurrency?: number;
-  positionBalances: {
-    edges: Array<{
-      node: {
-        address: string;
-        network: string;
-        symbol: string;
-        name?: string;
-        decimals: number;
-        balance: string;
-        balanceUSD: number;
-        groupLabel: string;
-        displayProps?: {
-          label?: string;
-        };
-      };
-    }>;
-  };
-}
-
-interface ZapperResponse {
-  portfolioV2: {
-    tokenBalances: {
-      totalBalanceUSD: number;
-      byToken: {
-        edges: Array<{ node: ZapperV2Token }>;
-      };
-    };
-    appBalances: {
-      totalBalanceUSD: number;
-      byApp: {
-        edges: Array<{ node: ZapperV2App }>;
-      };
-    };
-  };
-}
+import type {
+  ZapperV2Token,
+  ZapperV2App,
+  ZapperResponse,
+} from '@/datasources/portfolio-api/entities/zapper.entity';
 
 @Injectable()
 export class ZapperPortfolioApi implements IPortfolioApi {
@@ -280,7 +222,7 @@ export class ZapperPortfolioApi implements IPortfolioApi {
       return {
         appInfo: {
           name: app.app.displayName,
-          logoUrl: app.app.imgUrl ?? null,
+          logoUrl: app.app.imgUrl,
           url: null,
         },
         balanceFiat,

@@ -1,5 +1,6 @@
 import crypto from 'crypto';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
+import { PortfolioProvider } from '@/domain/portfolio/entities/portfolio-provider.enum';
 import type { Address, Hash } from 'viem';
 
 export class CacheRouter {
@@ -914,7 +915,7 @@ export class CacheRouter {
     address: Address;
     provider?: string;
   }): string {
-    const provider = args.provider || 'zerion';
+    const provider = args.provider || PortfolioProvider.ZERION;
     return `${CacheRouter.PORTFOLIO_KEY}_${args.address}_${provider}`;
   }
 

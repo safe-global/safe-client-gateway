@@ -4,25 +4,21 @@ import type { Address } from 'viem';
 export class AppPositionTokenInfo {
   @ApiProperty({
     description: 'Token contract address (0x0000000000000000000000000000000000000000 for native tokens)',
-    example: '0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84',
   })
   address!: Address;
 
   @ApiProperty({
     description: 'Token decimals',
-    example: 18,
   })
   decimals!: number;
 
   @ApiProperty({
     description: 'Token symbol',
-    example: 'stETH',
   })
   symbol!: string;
 
   @ApiProperty({
     description: 'Token name',
-    example: 'Staked Ether',
   })
   name!: string;
 
@@ -30,20 +26,17 @@ export class AppPositionTokenInfo {
     type: 'string',
     format: 'uri',
     description: 'Token logo URL (HTTPS)',
-    example: 'https://example.com/logo.png',
     nullable: true,
   })
   logoUrl!: string | null;
 
   @ApiProperty({
     description: 'Chain ID where token is deployed',
-    example: '1',
   })
   chainId!: string;
 
   @ApiProperty({
     description: 'Whether the token is verified by the provider',
-    example: true,
   })
   trusted!: boolean;
 }
@@ -51,19 +44,16 @@ export class AppPositionTokenInfo {
 export class AppPosition {
   @ApiProperty({
     description: 'Unique position key',
-    example: 'aave-v3-ethereum-steth',
   })
   key!: string;
 
   @ApiProperty({
     description: 'Position type (e.g., staked, lending, liquidity)',
-    example: 'staked',
   })
   type!: string;
 
   @ApiProperty({
     description: 'Position name',
-    example: 'Morpho Yield: cbBTC Pool (Gauntlet cbBTC Core)',
   })
   name!: string;
 
@@ -75,14 +65,12 @@ export class AppPosition {
 
   @ApiProperty({
     description: 'Position balance',
-    example: '5000000000000000000',
   })
   balance!: string;
 
   @ApiPropertyOptional({
     type: 'number',
     description: 'Balance in requested fiat currency',
-    example: 10000.00,
     nullable: true,
   })
   balanceFiat!: number | null;
@@ -90,7 +78,6 @@ export class AppPosition {
   @ApiPropertyOptional({
     type: 'number',
     description: 'Price change as decimal (e.g., -0.0431 for -4.31%)',
-    example: -0.0431,
     nullable: true,
   })
   priceChangePercentage1d!: number | null;

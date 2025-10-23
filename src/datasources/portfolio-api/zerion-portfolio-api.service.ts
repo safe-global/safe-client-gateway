@@ -18,6 +18,71 @@ import type { ZerionBalance } from '@/datasources/balances-api/entities/zerion-b
 import { ZerionBalancesSchema } from '@/datasources/balances-api/entities/zerion-balance.entity';
 import { ZodError } from 'zod';
 
+const ZERION_NETWORK_TO_CHAIN_ID_MAPPING: Record<string, string> = {
+  '0g': '16661',
+  abstract: '2741',
+  ape: '33139',
+  arbitrum: '42161',
+  aurora: '1313161554',
+  avalanche: '43114',
+  base: '8453',
+  berachain: '80094',
+  'binance-smart-chain': '56',
+  bsc: '56',
+  blast: '81457',
+  bob: '60808',
+  celo: '42220',
+  'cronos-zkevm': '388',
+  cyber: '7560',
+  degen: '666666666',
+  ethereum: '1',
+  fantom: '250',
+  fraxtal: '252',
+  gnosis: '100',
+  'gravity-alpha': '1625',
+  hyperevm: '999',
+  ink: '57073',
+  katana: '747474',
+  lens: '232',
+  linea: '59144',
+  lisk: '1135',
+  'manta-pacific': '169',
+  mantle: '5000',
+  'metis-andromeda': '1088',
+  mode: '34443',
+  okbchain: '196',
+  opbnb: '204',
+  optimism: '10',
+  plasma: '9745',
+  polygon: '137',
+  'polygon-zkevm': '1101',
+  polynomial: '8008',
+  rari: '1380012617',
+  're-al': '111188',
+  redstone: '690',
+  ronin: '2020',
+  scroll: '534352',
+  sei: '1329',
+  solana: '101',
+  somnia: '5031',
+  soneium: '1868',
+  sonic: '146',
+  swellchain: '1923',
+  taiko: '167000',
+  tomochain: '88',
+  unichain: '130',
+  wonder: '9637',
+  world: '480',
+  xdai: '100',
+  'xinfin-xdc': '50',
+  zero: '543210',
+  zkcandy: '320',
+  'zklink-nova': '810180',
+  zksync: '324',
+  'zksync-era': '324',
+  zora: '7777777',
+};
+
 @Injectable()
 export class ZerionPortfolioApi implements IPortfolioApi {
   private readonly apiKey: string | undefined;
@@ -125,13 +190,11 @@ export class ZerionPortfolioApi implements IPortfolioApi {
 
         const chainId = this._mapNetworkToChainId(networkName);
 
-        // Find the implementation for this specific chain
         const impl = position.attributes.fungible_info.implementations.find(
           (i) => i.chain_id === networkName,
         );
         if (!impl) return null;
 
-        // Skip if address is invalid (but null is allowed for native tokens)
         if (impl.address !== null && !isAddress(impl.address)) {
           return null;
         }
@@ -180,11 +243,7 @@ export class ZerionPortfolioApi implements IPortfolioApi {
 
     return Array.from(grouped.entries()).map(
       ([appName, appPositions]): AppBalance => {
-        const firstPosition = appPositions[0];
-        const appMetadata = firstPosition.attributes.application_metadata;
-
-        const positions = this._buildAppPositions(appPositions);
-        const balanceFiat = this._calculatePositionsBalance(appPositions);
+        const appMetadata = appPositions[0].attributes.application_metadata;
 
         return {
           appInfo: {
@@ -192,8 +251,8 @@ export class ZerionPortfolioApi implements IPortfolioApi {
             logoUrl: appMetadata?.icon?.url ?? null,
             url: appMetadata?.url ?? null,
           },
-          balanceFiat,
-          positions,
+          balanceFiat: this._calculatePositionsBalance(appPositions),
+          positions: this._buildAppPositions(appPositions),
         };
       },
     );
@@ -209,13 +268,11 @@ export class ZerionPortfolioApi implements IPortfolioApi {
 
         const chainId = this._mapNetworkToChainId(networkName);
 
-        // Find the implementation for this specific chain
         const impl = position.attributes.fungible_info.implementations.find(
           (i) => i.chain_id === networkName,
         );
         if (!impl) return null;
 
-        // Skip if address is invalid (but null is allowed for native tokens)
         if (impl.address !== null && !isAddress(impl.address)) {
           return null;
         }
@@ -261,70 +318,6 @@ export class ZerionPortfolioApi implements IPortfolioApi {
   }
 
   private _mapNetworkToChainId(network: string): string {
-    const mapping: Record<string, string> = {
-      '0g': '16661',
-      abstract: '2741',
-      ape: '33139',
-      arbitrum: '42161',
-      aurora: '1313161554',
-      avalanche: '43114',
-      base: '8453',
-      berachain: '80094',
-      'binance-smart-chain': '56',
-      bsc: '56',
-      blast: '81457',
-      bob: '60808',
-      celo: '42220',
-      'cronos-zkevm': '388',
-      cyber: '7560',
-      degen: '666666666',
-      ethereum: '1',
-      fantom: '250',
-      fraxtal: '252',
-      gnosis: '100',
-      'gravity-alpha': '1625',
-      hyperevm: '999',
-      ink: '57073',
-      katana: '747474',
-      lens: '232',
-      linea: '59144',
-      lisk: '1135',
-      'manta-pacific': '169',
-      mantle: '5000',
-      'metis-andromeda': '1088',
-      mode: '34443',
-      okbchain: '196',
-      opbnb: '204',
-      optimism: '10',
-      plasma: '9745',
-      polygon: '137',
-      'polygon-zkevm': '1101',
-      polynomial: '8008',
-      rari: '1380012617',
-      're-al': '111188',
-      redstone: '690',
-      ronin: '2020',
-      scroll: '534352',
-      sei: '1329',
-      solana: '101',
-      somnia: '5031',
-      soneium: '1868',
-      sonic: '146',
-      swellchain: '1923',
-      taiko: '167000',
-      tomochain: '88',
-      unichain: '130',
-      wonder: '9637',
-      world: '480',
-      xdai: '100',
-      'xinfin-xdc': '50',
-      zero: '543210',
-      zkcandy: '320',
-      'zklink-nova': '810180',
-      zksync: '324',
-      'zksync-era': '324',
-      zora: '7777777',
-    };
-    return mapping[network.toLowerCase()] ?? '1';
+    return ZERION_NETWORK_TO_CHAIN_ID_MAPPING[network.toLowerCase()] ?? '1';
   }
 }
