@@ -14,6 +14,7 @@ import { ChainsModule } from '@/routes/chains/chains.module';
 import { BalancesModule } from '@/routes/balances/balances.module';
 import { PositionsModule } from '@/routes/positions/positions.module';
 import { PortfolioModule } from '@/routes/portfolio/portfolio.module';
+import { ChartsModule } from '@/routes/charts/charts.module';
 import { NetworkModule } from '@/datasources/network/network.module';
 import { ConfigurationModule } from '@/config/configuration.module';
 import { CacheModule } from '@/datasources/cache/cache.module';
@@ -86,6 +87,7 @@ export class AppModule implements NestModule {
         ...(isAuthFeatureEnabled ? [AuthModule] : []),
         BalancesModule,
         PortfolioModule,
+        ChartsModule,
         ...(isZerionPositionsFeatureEnabled ? [PositionsModule] : []),
         ChainsModule,
         CollectiblesModule,
