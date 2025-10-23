@@ -67,5 +67,5 @@ export function maliciousOrModerateThreatBuilder(): IBuilder<MaliciousOrModerate
     .with('type', 'MALICIOUS')
     .with('title', faker.lorem.sentence())
     .with('description', faker.lorem.paragraph())
-    .with('issues', new Map([['WARN', [faker.lorem.sentence()]]]));
+    .with('issues', { WARN: [faker.lorem.sentence()] });
 }

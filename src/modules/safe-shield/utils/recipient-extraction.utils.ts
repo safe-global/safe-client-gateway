@@ -6,9 +6,9 @@ import { isExecTransaction } from '@/modules/safe-shield/utils/transaction-mappi
 
 /**
  * Extracts the unique recipients from transactions.
- * @param transactions - The transactions.
- * @param erc20Decoder - The ERC-20 decoder helper.
- * @returns The unique recipient addresses.
+ * @param {Array<DecodedTransactionData>} transactions - The transactions.
+ * @param {Erc20Decoder} erc20Decoder - The ERC-20 decoder helper.
+ * @returns {Array<Address>} The unique recipient addresses.
  */
 export function extractRecipients(
   transactions: Array<DecodedTransactionData>,
@@ -23,9 +23,9 @@ export function extractRecipients(
 
 /**
  * Extracts the recipient address from a transaction.
- * @param tx - The transaction.
- * @param erc20Decoder - The ERC-20 decoder helper.
- * @returns The recipient address or undefined if the transaction is not a transfer.
+ * @param {DecodedTransactionData} tx - The transaction.
+ * @param {Erc20Decoder} erc20Decoder - The ERC-20 decoder helper.
+ * @returns {Address | undefined} The recipient address or undefined if the transaction is not a transfer.
  */
 export function extractRecipient(
   tx: DecodedTransactionData,

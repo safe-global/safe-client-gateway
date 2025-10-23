@@ -10,7 +10,7 @@ import {
   compareSeverityString,
 } from '@/modules/safe-shield/entities/severity.entity';
 import {
-  BalanceChanges,
+  BalanceChange,
   BalanceChangesSchema,
 } from '@/modules/safe-shield/entities/threat-analysis.types';
 import { ThreatStatus } from '@/modules/safe-shield/entities/threat-status.entity';
@@ -25,7 +25,6 @@ import {
   SEVERITY_MAPPING,
   TITLE_MAPPING,
 } from '@/modules/safe-shield/threat-analysis/threat-analysis.constants';
-import { createFailedAnalysisResult } from '@/modules/safe-shield/utils/common';
 import {
   TransactionSimulation,
   TransactionSimulationError,
@@ -69,18 +68,16 @@ export class ThreatAnalysisService {
     const { walletAddress, origin, data } = request;
     const message = this.serializeMessage(data);
     if (!message) {
-      return this.getFailedAnalysisResponse();
+      return this.failedAnalysisResponse();
     }
 
-    const analysisResults = await this.detectThreats(
+    return await this.detectThreats(
       chainId,
       safeAddress,
       walletAddress,
       message,
       origin,
     );
-
-    return analysisResults;
   }
 
   /**
@@ -130,7 +127,7 @@ export class ThreatAnalysisService {
       this.loggingService.warn(
         `Error during threat analysis for Safe ${safeAddress} on chain ${chainId}: ${error}`,
       );
-      return this.getFailedAnalysisResponse();
+      return this.failedAnalysisResponse();
     }
   }
 
@@ -146,7 +143,7 @@ export class ThreatAnalysisService {
     simulation?: TransactionSimulation | TransactionSimulationError,
     validation?: TransactionValidation | TransactionValidationError,
   ): ThreatAnalysisResponse {
-    const { results, balanceChanges } = this.analyzeSimulation(
+    const [results, balanceChanges] = this.analyzeSimulation(
       safeAddress,
       simulation,
     );
@@ -171,7 +168,9 @@ export class ThreatAnalysisService {
     validation?: TransactionValidation | TransactionValidationError,
   ): ThreatAnalysisResult {
     let type: ThreatStatus | CommonStatus = 'FAILED';
-    let issues: Map<keyof typeof Severity, Array<string>> | undefined;
+    let issues:
+      | Partial<Record<keyof typeof Severity, Array<string>>>
+      | undefined;
     const {
       reason,
       classification,
@@ -211,15 +210,12 @@ export class ThreatAnalysisService {
   private analyzeSimulation(
     safeAddress: Address,
     simulation?: TransactionSimulation | TransactionSimulationError,
-  ): {
-    results: Array<ThreatAnalysisResult>;
-    balanceChanges: BalanceChanges;
-  } {
+  ): [Array<ThreatAnalysisResult>, Array<BalanceChange> | undefined] {
     let results: Array<ThreatAnalysisResult> = [];
-    let balanceChanges: BalanceChanges = [];
+    let balanceChanges: Array<BalanceChange> = [];
 
     if (!simulation) {
-      return { results, balanceChanges };
+      return [results, balanceChanges];
     }
 
     if (simulation.status === 'Error') {
@@ -229,7 +225,7 @@ export class ThreatAnalysisService {
           error: simulation.description,
         }),
       ];
-      return { results, balanceChanges };
+      return [results, undefined];
     }
 
     balanceChanges = BalanceChangesSchema.parse(
@@ -257,39 +253,37 @@ export class ThreatAnalysisService {
       },
     );
 
-    return { results, balanceChanges };
+    return [results, balanceChanges];
   }
 
   /**
    * Groups validation issues by their severity.
    * @param {Array<{ type: string; description: string }>} features - List of features detected during threat analysis
-   * @returns {Map<keyof typeof Severity, Array<string>>} Map of issues grouped by severity (highest to lowest)
+   * @returns {Map<keyof typeof Severity, Array<string>>} Partial record of issues grouped by severity (highest to lowest)
    */
   private groupIssuesBySeverity(
     features: Array<{ type: string; description: string }>,
-  ): Map<keyof typeof Severity, Array<string>> {
+  ): Partial<Record<keyof typeof Severity, Array<string>>> {
     if (!features.length) {
-      return new Map();
+      return {};
     }
-    const issuesBySeverity = features.reduce((acc, feature) => {
-      if (feature.type !== 'Malicious' && feature.type !== 'Warning') {
-        return acc;
-      }
 
-      const severity = BLOCKAID_SEVERITY_MAP[feature.type];
-      if (!acc.has(severity)) {
-        acc.set(severity, [feature.description]);
-      } else {
-        acc.get(severity)!.push(feature.description);
-      }
-      return acc;
-    }, new Map<keyof typeof Severity, Array<string>>());
+    const grouped = features
+      .filter((f) => f.type === 'Malicious' || f.type === 'Warning')
+      .reduce(
+        (acc, { type, description }) => {
+          const sev = BLOCKAID_SEVERITY_MAP[type as 'Malicious' | 'Warning'];
+          (acc[sev] ??= []).push(description);
+          return acc;
+        },
+        {} as Partial<Record<keyof typeof Severity, Array<string>>>,
+      );
 
-    return new Map(
-      [...issuesBySeverity.entries()].sort((a, b) =>
-        compareSeverityString(b[0], a[0]),
-      ),
-    );
+    return Object.fromEntries(
+      (
+        Object.entries(grouped) as Array<[keyof typeof Severity, Array<string>]>
+      ).sort(([a], [b]) => compareSeverityString(b, a)),
+    ) as Partial<Record<keyof typeof Severity, Array<string>>>;
   }
 
   /**
@@ -298,7 +292,7 @@ export class ThreatAnalysisService {
    * @param {ThreatStatus | CommonStatus} args.type - The threat status
    * @param {string} args.reason - A description about the reasons the transaction was flagged with the type
    * @param {string} args.classification - A classification explaining the reason of threat analysis result
-   * @param {Map<keyof typeof Severity, Array<string>>} args.issues - A potential map of specific issues identified during threat analysis, grouped by severity
+   * @param {Map<keyof typeof Severity, Array<string>>} args.issues - A potential partial record of specific issues identified during threat analysis, grouped by severity
    * @param {string} args.before - The old master copy address (only for MASTERCOPY_CHANGE)
    * @param {string} args.after - The new master copy address (only for MASTERCOPY_CHANGE)
    * @param {string} args.error - An error message in case of a failure
@@ -308,7 +302,7 @@ export class ThreatAnalysisService {
     type: ThreatStatus | CommonStatus;
     reason?: string;
     classification?: string;
-    issues?: Map<keyof typeof Severity, Array<string>>;
+    issues?: Partial<Record<keyof typeof Severity, Array<string>>>;
     before?: string;
     after?: string;
     error?: string;
@@ -348,12 +342,7 @@ export class ThreatAnalysisService {
    * Returns a failed threat analysis response.
    * @returns {ThreatAnalysisResponse} A response indicating analysis failure
    */
-  private getFailedAnalysisResponse(): ThreatAnalysisResponse {
-    return createFailedAnalysisResult<ThreatAnalysisResult>({
-      loggingService: this.loggingService,
-      statusGroup: 'THREAT',
-      type: 'Threat',
-      description: DESCRIPTION_MAPPING.FAILED(),
-    });
+  public failedAnalysisResponse(): ThreatAnalysisResponse {
+    return { THREAT: [this.mapToAnalysisResult({ type: 'FAILED' })] };
   }
 }

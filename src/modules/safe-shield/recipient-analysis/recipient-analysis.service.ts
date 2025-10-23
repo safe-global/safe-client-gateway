@@ -83,14 +83,13 @@ export class RecipientAnalysisService {
 
   /**
    * Analyzes the recipients and bridge compatibility for a Safe.
-   * @param args - The arguments for the analysis.
-   * @param args.chainId - The chain ID.
-   * @param args.safeAddress - The Safe address.
-   * @param args.transactions - The transactions to analyze.
-   * @param args.txInfo - The transaction info.
-   * @returns The analysis results.
+   * @param {string} args.chainId - The chain ID.
+   * @param {Address} args.safeAddress - The Safe address.
+   * @param {Array<DecodedTransactionData>} args.transactions - The transactions to analyze.
+   * @param {TransactionInfo} [args.txInfo] - The transaction info.
+   * @returns {Promise<RecipientAnalysisResponse>} The analysis results.
    */
-  async analyze(args: {
+  public async analyze(args: {
     chainId: string;
     safeAddress: Address;
     transactions: Array<DecodedTransactionData>;
@@ -149,6 +148,10 @@ export class RecipientAnalysisService {
 
   /**
    * Analyzes the recipients for a Safe.
+   * @param {string} args.chainId - The chain ID.
+   * @param {Address} args.safeAddress - The Safe address.
+   * @param {Array<Address>} args.recipients - The recipient addresses to analyze.
+   * @returns {Promise<RecipientAnalysisResponse>} The recipient analysis response.
    */
   private async analyseRecipients(args: {
     chainId: string;
@@ -176,8 +179,12 @@ export class RecipientAnalysisService {
 
   /**
    * Analyzes the interactions between a Safe and a recipient.
+   * @param {string} args.chainId - The chain ID.
+   * @param {Address} args.safeAddress - The Safe address.
+   * @param {Address} args.recipient - The recipient address.
+   * @returns {Promise<AnalysisResult<RecipientStatus | CommonStatus>>} The analysis result indicating if recipient is new or recurring.
    */
-  async analyzeInteractions(args: {
+  public async analyzeInteractions(args: {
     chainId: string;
     safeAddress: Address;
     recipient: Address;
@@ -211,8 +218,12 @@ export class RecipientAnalysisService {
 
   /**
    * Analyzes bridge compatibility for cross-chain operations.
+   * @param {string} args.chainId - The chain ID.
+   * @param {Address} args.safeAddress - The Safe address.
+   * @param {TransactionInfo} [args.txInfo] - The transaction info.
+   * @returns {Promise<RecipientAnalysisResponse>} The bridge analysis response.
    */
-  async analyzeBridge(args: {
+  public async analyzeBridge(args: {
     chainId: string;
     safeAddress: Address;
     txInfo?: TransactionInfo;
@@ -261,6 +272,10 @@ export class RecipientAnalysisService {
 
   /**
    * Analyzes compatibility between source and target chain Safes.
+   * @param {string} args.chainId - The source chain ID.
+   * @param {Address} args.safeAddress - The Safe address.
+   * @param {BridgeAndSwapTransactionInfo} args.txInfo - The bridge transaction info.
+   * @returns {Promise<[BridgeStatus | CommonStatus, string] | undefined>} A tuple of status and target chain ID if incompatible, undefined if compatible.
    */
   private async analyzeTargetChainCompatibility(args: {
     chainId: string;
@@ -329,6 +344,9 @@ export class RecipientAnalysisService {
 
   /**
    * Gets Safe data.
+   * @param {string} args.chainId - The chain ID.
+   * @param {Address} args.safeAddress - The Safe address.
+   * @returns {Promise<Safe | null>} The Safe data, or null if not found.
    */
   private async getSafe(args: {
     chainId: string;
@@ -350,6 +368,9 @@ export class RecipientAnalysisService {
 
   /**
    * Gets the safe creation data.
+   * @param {string} args.chainId - The chain ID.
+   * @param {Address} args.safeAddress - The Safe address.
+   * @returns {Promise<SafeCreationData>} The Safe creation data.
    */
   private async getSafeCreationData({
     chainId,
@@ -404,6 +425,8 @@ export class RecipientAnalysisService {
 
   /**
    * Parses and validates owners from creation parameters.
+   * @param {unknown} ownersValue - The owners value from creation parameters.
+   * @returns {Array<Address>} The parsed and validated owner addresses.
    */
   private parseOwners(ownersValue: unknown): Array<Address> {
     if (!Array.isArray(ownersValue)) {
@@ -414,6 +437,9 @@ export class RecipientAnalysisService {
 
   /**
    * Determines the master copy version.
+   * @param {string} masterCopy - The master copy address.
+   * @param {string} chainId - The chain ID.
+   * @returns {SafeVersion | undefined} The Safe version if found, undefined otherwise.
    */
   private determineMasterCopyVersion(
     masterCopy: string,
@@ -436,6 +462,9 @@ export class RecipientAnalysisService {
 
   /**
    * Checks if two Safes have the same setup.
+   * @param {Safe} sourceSafe - The source Safe.
+   * @param {Safe} targetSafe - The target Safe.
+   * @returns {boolean} True if both Safes have the same owners and threshold.
    */
   private haveSameSetup(sourceSafe: Safe, targetSafe: Safe): boolean {
     const sourceSafeOwners = sourceSafe.owners.map(getAddress);
@@ -450,9 +479,9 @@ export class RecipientAnalysisService {
 
   /**
    * Checks if the network is compatible with the safe creation data.
-   * @param chain - The chain.
-   * @param safeCreationData - The safe creation data.
-   * @returns True if the network is compatible.
+   * @param {Chain} chain - The chain.
+   * @param {SafeCreationData} safeCreationData - The safe creation data.
+   * @returns {boolean} True if the network is compatible.
    */
   private isNetworkCompatible(
     chain: Chain,
@@ -466,6 +495,10 @@ export class RecipientAnalysisService {
 
   /**
    * Checks if a specific Safe version is compatible with the target chain.
+   * @param {Chain} chain - The target chain.
+   * @param {SafeCreationData} safeCreationData - The Safe creation data.
+   * @param {SafeVersion} version - The Safe version to check.
+   * @returns {boolean} True if the version is compatible with the target chain.
    */
   private checkVersionCompatibility(
     chain: Chain,
@@ -527,11 +560,12 @@ export class RecipientAnalysisService {
 
   /**
    * Maps a recipient or bridge status to an analysis result.
-   * @param type - The recipient or bridge status.
-   * @param interactions - The number of interactions with the recipient (if applicable).
-   * @param error - The reason for failure (if applicable).
-   * @param targetChainId - The target chain ID (optional, only included for bridge-related statuses).
-   * @returns The recipient analysis result.
+   * @param {T} args.type - The recipient or bridge status.
+   * @param {number} [args.interactions] - The number of interactions with the recipient (if applicable).
+   * @param {string} [args.error] - The reason for failure (if applicable).
+   * @param {string} [args.targetChainId] - The target chain ID (optional, only included for bridge-related statuses).
+   * @returns {AnalysisResult<T> & { targetChainId?: string }} The recipient analysis result.
+   * @template T
    */
   private mapToAnalysisResult<
     T extends RecipientStatus | BridgeStatus | CommonStatus,

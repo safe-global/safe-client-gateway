@@ -249,19 +249,6 @@ describe('Analysis Response Schemas', () => {
           responseWithBalanceChanges,
         );
       });
-
-      it('should reject invalid status group', () => {
-        const invalidResponse = {
-          INVALID_GROUP: [],
-        };
-
-        const result = ThreatAnalysisResponseSchema.safeParse(invalidResponse);
-
-        expect(!result.success && result.error.issues.length).toBeGreaterThan(
-          0,
-        );
-        expect(result?.error?.issues[0].code).toBe('invalid_enum_value');
-      });
     });
 
     describe('CounterpartyAnalysisResponseSchema', () => {

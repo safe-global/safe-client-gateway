@@ -3,12 +3,10 @@ import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import type {
   ContractStatusGroup,
   RecipientStatusGroup,
-  ThreatStatusGroup,
 } from './status-group.entity';
 import {
   ContractStatusGroupSchema,
   RecipientStatusGroupSchema,
-  ThreatStatusGroupSchema,
 } from './status-group.entity';
 import type { AnalysisResult, CommonStatus } from './analysis-result.entity';
 import {
@@ -17,7 +15,6 @@ import {
   ThreatAnalysisResultSchema,
   type RecipientAnalysisResult,
   type ContractAnalysisResult,
-  type ThreatAnalysisResult,
 } from './analysis-result.entity';
 import type { RecipientStatus } from '@/modules/safe-shield/entities/recipient-status.entity';
 import { BalanceChangesSchema } from './threat-analysis.types';
@@ -70,10 +67,10 @@ export const CounterpartyAnalysisResponseSchema = z.object({
  * Unlike recipient/contract analysis, threat analysis operates at the
  * transaction level rather than per-address.
  */
-export const ThreatAnalysisResponseSchema = z.record(
-  ThreatStatusGroupSchema,
-  z.union([z.array(ThreatAnalysisResultSchema), BalanceChangesSchema]),
-);
+export const ThreatAnalysisResponseSchema = z.object({
+  THREAT: z.array(ThreatAnalysisResultSchema).optional(),
+  BALANCE_CHANGE: BalanceChangesSchema.optional(),
+});
 
 /**
  * TypeScript types derived from the Zod schemas.
@@ -94,20 +91,16 @@ export type CounterpartyAnalysisResponse = z.infer<
 /**
  * Helper type for analysis results grouped by status group.
  *
- * This represents the structure used for recipient, contract, and threat
+ * This represents the structure used for recipient and contract
  * analysis responses where results are organized by status group.
+ * Note: Not applicable to threat analysis which has different value types per group.
  */
 export type GroupedAnalysisResults<
-  T extends
-    | RecipientAnalysisResult
-    | ContractAnalysisResult
-    | ThreatAnalysisResult,
+  T extends RecipientAnalysisResult | ContractAnalysisResult,
 > = {
   [group in T extends RecipientAnalysisResult
     ? RecipientStatusGroup
-    : T extends ContractAnalysisResult
-      ? ContractStatusGroup
-      : ThreatStatusGroup]?: Array<T>;
+    : ContractStatusGroup]?: Array<T>;
 };
 
 /**

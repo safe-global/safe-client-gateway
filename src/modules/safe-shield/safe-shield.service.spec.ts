@@ -5,7 +5,10 @@ import type { ThreatAnalysisService } from './threat-analysis/threat-analysis.se
 import type { ILoggingService } from '@/logging/logging.interface';
 import type { DataDecoded } from '@/routes/data-decode/entities/data-decoded.entity';
 import type { DecodedTransactionData } from '@/modules/safe-shield/entities/transaction-data.entity';
-import type { RecipientAnalysisResponse } from './entities/analysis-responses.entity';
+import type {
+  RecipientAnalysisResponse,
+  ThreatAnalysisResponse,
+} from './entities/analysis-responses.entity';
 import type { TransactionsService } from '@/routes/transactions/transactions.service';
 import type { TransactionPreview } from '@/routes/transactions/entities/transaction-preview.entity';
 import {
@@ -122,6 +125,7 @@ describe('SafeShieldService', () => {
   } as jest.MockedObjectDeep<ContractAnalysisService>;
   const mockThreatAnalysisService = {
     analyze: jest.fn(),
+    failedAnalysisResponse: jest.fn(),
   } as jest.MockedObjectDeep<ThreatAnalysisService>;
   const mockTransactionsService = {
     previewTransaction: jest.fn(),
@@ -536,7 +540,7 @@ describe('SafeShieldService', () => {
       });
       expect(result.contract).toEqual(mockContractAnalysisResponse);
       expect(mockLoggingService.warn).toHaveBeenCalledWith(
-        'The analysis failed. Error: Recipient analysis failed',
+        'The counterparty analysis failed. Error: Recipient analysis failed',
       );
 
       expect(mockRecipientAnalysisService.analyze).toHaveBeenCalledWith({
@@ -611,7 +615,7 @@ describe('SafeShieldService', () => {
       });
       expect(result.recipient).toEqual(mockRecipientAnalysisResponse);
       expect(mockLoggingService.warn).toHaveBeenCalledWith(
-        'The analysis failed. Error: Contract analysis failed',
+        'The counterparty analysis failed. Error: Contract analysis failed',
       );
 
       expect(mockRecipientAnalysisService.analyze).toHaveBeenCalledWith({
@@ -700,11 +704,11 @@ describe('SafeShieldService', () => {
 
       expect(mockLoggingService.warn).toHaveBeenNthCalledWith(
         1,
-        'The analysis failed. Error: Recipient analysis failed',
+        'The counterparty analysis failed. Error: Recipient analysis failed',
       );
       expect(mockLoggingService.warn).toHaveBeenNthCalledWith(
         2,
-        'The analysis failed. Error: Contract analysis failed',
+        'The counterparty analysis failed. Error: Contract analysis failed',
       );
       expect(mockLoggingService.warn).toHaveBeenCalledTimes(2);
 
@@ -1192,16 +1196,7 @@ describe('SafeShieldService', () => {
         .with('features', [FF_RISK_MITIGATION])
         .build();
 
-      mockConfigApi.getChain.mockResolvedValue(rawify(mockChain));
-      mockThreatAnalysisService.analyze.mockRejectedValue(error);
-
-      const result = await service.analyzeThreats({
-        chainId: mockChainId,
-        safeAddress: mockSafeAddress,
-        request: mockThreatRequest,
-      });
-
-      expect(result).toEqual({
+      const expectedResult = {
         THREAT: [
           {
             type: 'FAILED',
@@ -1210,9 +1205,23 @@ describe('SafeShieldService', () => {
             description: DESCRIPTION_MAPPING.FAILED(),
           },
         ],
+      } as ThreatAnalysisResponse;
+
+      mockConfigApi.getChain.mockResolvedValue(rawify(mockChain));
+      mockThreatAnalysisService.analyze.mockRejectedValue(error);
+      mockThreatAnalysisService.failedAnalysisResponse.mockReturnValue(
+        expectedResult,
+      );
+
+      const result = await service.analyzeThreats({
+        chainId: mockChainId,
+        safeAddress: mockSafeAddress,
+        request: mockThreatRequest,
       });
+
+      expect(result).toEqual(expectedResult);
       expect(mockLoggingService.warn).toHaveBeenCalledWith(
-        'The analysis failed. Error: Threat analysis failed',
+        'The threat analysis failed. Error: Threat analysis failed',
       );
       expect(mockConfigApi.getChain).toHaveBeenCalledWith(mockChainId);
       expect(mockThreatAnalysisService.analyze).toHaveBeenCalledWith({
@@ -1224,16 +1233,7 @@ describe('SafeShieldService', () => {
 
     it('should handle config API failure gracefully when checking if Blockaid is enabled', async () => {
       const error = new Error('Failed to fetch chain config');
-
-      mockConfigApi.getChain.mockRejectedValue(error);
-
-      const result = await service.analyzeThreats({
-        chainId: mockChainId,
-        safeAddress: mockSafeAddress,
-        request: mockThreatRequest,
-      });
-
-      expect(result).toEqual({
+      const expectedResult = {
         THREAT: [
           {
             type: 'FAILED',
@@ -1242,9 +1242,22 @@ describe('SafeShieldService', () => {
             description: DESCRIPTION_MAPPING.FAILED(),
           },
         ],
+      } as ThreatAnalysisResponse;
+
+      mockConfigApi.getChain.mockRejectedValue(error);
+      mockThreatAnalysisService.failedAnalysisResponse.mockReturnValue(
+        expectedResult,
+      );
+
+      const result = await service.analyzeThreats({
+        chainId: mockChainId,
+        safeAddress: mockSafeAddress,
+        request: mockThreatRequest,
       });
+
+      expect(result).toEqual(expectedResult);
       expect(mockLoggingService.warn).toHaveBeenCalledWith(
-        'The analysis failed. Error: Failed to fetch chain config',
+        'The threat analysis failed. Error: Failed to fetch chain config',
       );
       expect(mockConfigApi.getChain).toHaveBeenCalledWith(mockChainId);
       expect(mockThreatAnalysisService.analyze).not.toHaveBeenCalled();

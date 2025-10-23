@@ -3,24 +3,26 @@
 import { z } from 'zod';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 
-const AssetTypeSchema = z.enum(['NATIVE', 'ERC20', 'ERC721', 'ERC1155']);
+export const AssetTypeSchema = z.enum(['NATIVE', 'ERC20', 'ERC721', 'ERC1155']);
+export type AssetType = z.infer<typeof AssetTypeSchema>;
 
-const AssetDetailsSchema = z.object({
+export const AssetDetailsSchema = z.object({
   type: AssetTypeSchema,
   symbol: z.string().optional(),
   address: AddressSchema,
   logo_url: z.string().optional(),
 });
+export type AssetDetails = z.infer<typeof AssetDetailsSchema>;
 
-const FungibleDiffSchema = z.object({
+export const FungibleDiffSchema = z.object({
   value: z.string().optional(),
 });
 
-const NFTDiffSchema = z.object({
+export const NFTDiffSchema = z.object({
   token_id: z.number(),
 });
 
-const AssetDiffSchema = z.union([NFTDiffSchema, FungibleDiffSchema]);
+export const AssetDiffSchema = z.union([NFTDiffSchema, FungibleDiffSchema]);
 
 export const BalanceChangeSchema = z.object({
   asset: AssetDetailsSchema,
@@ -28,5 +30,5 @@ export const BalanceChangeSchema = z.object({
   out: z.array(AssetDiffSchema),
 });
 
+export type BalanceChange = z.infer<typeof BalanceChangeSchema>;
 export const BalanceChangesSchema = z.array(BalanceChangeSchema);
-export type BalanceChanges = z.infer<typeof BalanceChangesSchema>;

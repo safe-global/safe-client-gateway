@@ -49,7 +49,7 @@ export const DESCRIPTION_MAPPING: Record<
   (args?: DescriptionArgs) => string
 > = {
   MALICIOUS: ({ reason, classification } = {}) =>
-    `The transaction ${reason ? ` ${reason}` : ''}${classification ? ` ${classification}` : ''}.`,
+    `The transaction${reason ? ` ${reason}` : ''}${classification ? ` ${classification}` : ''}.`,
   MODERATE: ({ reason, classification } = {}) =>
     `The transaction${reason ? ` ${reason}` : ''}${classification ? ` ${classification}` : ''}. Review before processing.`,
   NO_THREAT: () => 'Threat analysis found no issues.',

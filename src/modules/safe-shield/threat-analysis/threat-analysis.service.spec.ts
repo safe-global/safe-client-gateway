@@ -288,7 +288,7 @@ describe('ThreatAnalysisService', () => {
               classification: 'a known malicious address',
               reason: 'transfers tokens to',
             }),
-            issues: new Map([['WARN', ['High gas price detected']]]),
+            issues: { WARN: ['High gas price detected'] },
           },
           {
             severity: SEVERITY_MAPPING.MASTERCOPY_CHANGE,
@@ -431,7 +431,7 @@ describe('ThreatAnalysisService', () => {
                 classification: 'a known malicious address',
                 reason: 'transfers tokens to',
               }),
-              issues: new Map(),
+              issues: {},
             },
           ],
           BALANCE_CHANGE: [],
@@ -498,10 +498,10 @@ describe('ThreatAnalysisService', () => {
                 classification: 'a known malicious address',
                 reason: 'transfers tokens to',
               }),
-              issues: new Map([
-                ['CRITICAL', [features[2].description]],
-                ['WARN', [features[0].description]],
-              ]),
+              issues: {
+                CRITICAL: [features[2].description],
+                WARN: [features[0].description],
+              },
             },
           ],
           BALANCE_CHANGE: [],
@@ -593,7 +593,7 @@ describe('ThreatAnalysisService', () => {
               description: DESCRIPTION_MAPPING.NO_THREAT(),
             },
           ],
-          BALANCE_CHANGE: [],
+          BALANCE_CHANGE: undefined,
         });
       });
 

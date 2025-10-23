@@ -8,9 +8,9 @@ import { getAddress } from 'viem';
  * Extracts the unique contract addresses and pair it with isDelegateCall flag.
  * In case of multiple interactions with the same contract, if at least one is a delegate call,
  * the flag will be true.
- * @param transactions - The transactions.
- * @param erc20Decoder - The ERC-20 decoder to identify token transfers.
- * @returns The unique contract addresses and isDelegateCall flag.
+ * @param {Array<DecodedTransactionData>} transactions - The transactions.
+ * @param {Erc20Decoder} erc20Decoder - The ERC-20 decoder to identify token transfers.
+ * @returns {Array<[Address, boolean]>} The unique contract addresses and isDelegateCall flag.
  */
 export function extractContracts(
   transactions: Array<DecodedTransactionData>,
