@@ -1,4 +1,9 @@
-import { ApiExtraModels, ApiProperty, getSchemaPath } from '@nestjs/swagger';
+import {
+  ApiExtraModels,
+  ApiProperty,
+  ApiPropertyOptional,
+  getSchemaPath,
+} from '@nestjs/swagger';
 import {
   CommonStatus,
   RecipientAnalysisResult,
@@ -38,12 +43,11 @@ export class ContractAnalysisResultDto extends AnalysisResultDto<
 export class ContractAnalysisDto
   implements GroupedAnalysisResults<ContractAnalysisResult>
 {
-  @ApiProperty({
+  @ApiPropertyOptional({
     description:
       'Analysis results for contract verification status. ' +
       'Shows whether contracts are verified and source code is available.',
     type: [ContractAnalysisResultDto],
-    required: false,
     example: [
       {
         severity: 'INFO',
@@ -56,12 +60,11 @@ export class ContractAnalysisDto
   })
   CONTRACT_VERIFICATION?: Array<ContractAnalysisResultDto>;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description:
       'Analysis results related to contract interaction history. ' +
       'Shows whether this is a new or previously interacted contract.',
     type: [ContractAnalysisResultDto],
-    required: false,
     example: [
       {
         severity: 'INFO',
@@ -74,12 +77,11 @@ export class ContractAnalysisDto
   })
   CONTRACT_INTERACTION?: Array<ContractAnalysisResultDto>;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description:
       'Analysis results for delegatecall operations. ' +
       'Identifies unexpected or potentially dangerous delegate calls.',
     type: [ContractAnalysisResultDto],
-    required: false,
     example: [
       {
         severity: 'CRITICAL',
@@ -106,11 +108,9 @@ export class RecipientResultDto extends AnalysisResultDto<
   })
   type!: RecipientStatus | BridgeStatus | CommonStatus;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description:
       'Target chain ID for bridge operations. Only present for BridgeStatus.',
-    example: '137',
-    required: false,
   })
   targetChainId?: string;
 }
@@ -125,12 +125,11 @@ export class RecipientResultDto extends AnalysisResultDto<
 export class RecipientAnalysisDto
   implements GroupedAnalysisResults<RecipientAnalysisResult>
 {
-  @ApiProperty({
+  @ApiPropertyOptional({
     description:
       'Analysis results related to recipient interaction history. ' +
       'Shows whether this is a new or recurring recipient.',
     type: [RecipientResultDto],
-    required: false,
     example: [
       {
         severity: 'INFO',
@@ -143,12 +142,11 @@ export class RecipientAnalysisDto
   })
   RECIPIENT_INTERACTION?: Array<RecipientResultDto>;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description:
       'Analysis results for cross-chain bridge operations. ' +
       'Identifies compatibility issues, ownership problems, or unsupported networks.',
     type: [RecipientResultDto],
-    required: false,
     example: [
       {
         severity: 'WARN',
@@ -175,7 +173,7 @@ export class CounterpartyAnalysisDto implements CounterpartyAnalysisResponse {
       'Recipient analysis results mapped by address. ' +
       'Contains recipient interaction history and bridge analysis.' +
       'type: Record<Address, RecipientAnalysisDto>.',
-    type: 'object',
+    type: Object,
     additionalProperties: {
       $ref: getSchemaPath(RecipientAnalysisDto),
     },

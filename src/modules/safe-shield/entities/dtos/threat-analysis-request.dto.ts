@@ -1,8 +1,7 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Address } from 'viem';
 import { ThreatAnalysisRequest } from '../analysis-requests.entity';
-import { TypedData } from '@/domain/messages/entities/typed-data.entity';
-
+import { TypedData } from '@/routes/messages/entities/typed-data.entity';
 /**
  * DTO for threat analysis request.
  *
@@ -12,6 +11,7 @@ import { TypedData } from '@/domain/messages/entities/typed-data.entity';
  */
 export class ThreatAnalysisRequestDto implements ThreatAnalysisRequest {
   @ApiProperty({
+    type: TypedData,
     description:
       'EIP-712 typed data to analyze for security threats. ' +
       'Contains domain, primaryType, types, and message fields ' +
@@ -24,9 +24,8 @@ export class ThreatAnalysisRequestDto implements ThreatAnalysisRequest {
   })
   walletAddress!: Address;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'Optional origin identifier for the request',
-    required: false,
   })
   origin?: string;
 }

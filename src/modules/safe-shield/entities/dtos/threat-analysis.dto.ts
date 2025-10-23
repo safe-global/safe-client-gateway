@@ -99,9 +99,8 @@ export class AssetDetailsDto implements AssetDetails {
   })
   type!: AssetType;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'Token symbol (if available)',
-    required: false,
   })
   symbol?: string;
 
@@ -110,10 +109,9 @@ export class AssetDetailsDto implements AssetDetails {
   })
   address!: Address;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'URL to asset logo (if available)',
     example: 'https://example.com/usdc-logo.png',
-    required: false,
   })
   logo_url?: string;
 }
@@ -122,10 +120,9 @@ export class AssetDetailsDto implements AssetDetails {
  * DTO for fungible asset difference.
  */
 export class FungibleDiffDto implements z.infer<typeof FungibleDiffSchema> {
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'Value change for fungible tokens',
     example: '1000000',
-    required: false,
   })
   value?: string;
 }
@@ -192,7 +189,7 @@ export class BalanceChangeDto implements BalanceChange {
   MaliciousOrModerateThreatAnalysisResultDto,
 )
 export class ThreatAnalysisResponseDto implements ThreatAnalysisResponse {
-  @ApiProperty({
+  @ApiPropertyOptional({
     description:
       'Array of threat analysis results. ' +
       'Results are sorted by severity (CRITICAL first). ' +
@@ -203,7 +200,6 @@ export class ThreatAnalysisResponseDto implements ThreatAnalysisResponse {
       { $ref: getSchemaPath(MaliciousOrModerateThreatAnalysisResultDto) },
     ],
     isArray: true,
-    required: false,
     example: [
       {
         severity: 'OK',
@@ -215,12 +211,11 @@ export class ThreatAnalysisResponseDto implements ThreatAnalysisResponse {
   })
   THREAT?: Array<ThreatAnalysisResult>;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description:
       'Balance changes resulting from the transaction. ' +
       'Shows incoming and outgoing transfers for various asset types.',
     type: [BalanceChangeDto],
-    required: false,
     example: [
       {
         asset: {
