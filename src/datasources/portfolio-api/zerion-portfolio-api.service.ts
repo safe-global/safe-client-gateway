@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import type { Address } from 'viem';
 import { getAddress, isAddress } from 'viem';
 import { IConfigurationService } from '@/config/configuration.service.interface';
@@ -85,6 +85,7 @@ const ZERION_NETWORK_TO_CHAIN_ID_MAPPING: Record<string, string> = {
 
 @Injectable()
 export class ZerionPortfolioApi implements IPortfolioApi {
+  private readonly logger = new Logger(ZerionPortfolioApi.name);
   private readonly apiKey: string | undefined;
   private readonly baseUri: string;
   private readonly fiatCodes: Array<string>;
@@ -318,6 +319,16 @@ export class ZerionPortfolioApi implements IPortfolioApi {
   }
 
   private _mapNetworkToChainId(network: string): string {
-    return ZERION_NETWORK_TO_CHAIN_ID_MAPPING[network.toLowerCase()] ?? '1';
+    const chainId =
+      ZERION_NETWORK_TO_CHAIN_ID_MAPPING[network.toLowerCase()];
+
+    if (!chainId) {
+      this.logger.warn(
+        `Unknown Zerion network: "${network}", defaulting to Ethereum mainnet (chain ID 1)`,
+      );
+      return '1';
+    }
+
+    return chainId;
   }
 }

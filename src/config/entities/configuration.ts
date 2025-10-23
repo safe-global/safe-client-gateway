@@ -151,6 +151,16 @@ export default () => ({
     },
   },
   portfolio: {
+    cache: {
+      ttlSeconds: parseInt(
+        process.env.PORTFOLIO_CACHE_TTL_SECONDS ?? `${30}`,
+      ),
+    },
+    filters: {
+      dustThresholdUsd: parseFloat(
+        process.env.PORTFOLIO_DUST_THRESHOLD_USD ?? '1.0',
+      ),
+    },
     providers: {
       zerion: {
         apiKey: process.env.ZERION_API_KEY,

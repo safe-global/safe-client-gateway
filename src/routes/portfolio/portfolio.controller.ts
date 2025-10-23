@@ -19,6 +19,9 @@ import { PortfolioService } from '@/routes/portfolio/portfolio.service';
 import { Portfolio } from '@/routes/portfolio/entities/portfolio.entity';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
+import { ChainIdsSchema } from '@/routes/portfolio/entities/schemas/chain-ids.schema';
+import { ProviderValidationPipe } from '@/routes/portfolio/pipes/provider-validation.pipe';
+import { PortfolioProvider } from '@/domain/portfolio/entities/portfolio-provider.enum';
 import type { Address } from 'viem';
 
 @ApiTags('portfolio')
@@ -50,7 +53,8 @@ export class PortfolioController {
     name: 'chainIds',
     required: false,
     type: String,
-    description: 'Comma-separated list of chain IDs to filter by. If omitted, returns data for all chains.',
+    description:
+      'Comma-separated list of chain IDs to filter by. If omitted, returns data for all chains.',
     example: '1,137,42161',
   })
   @ApiQuery({
@@ -70,31 +74,33 @@ export class PortfolioController {
   @ApiQuery({
     name: 'provider',
     required: false,
-    type: String,
-    description: 'Portfolio data provider (zerion or zapper)',
-    example: 'zerion',
+    enum: PortfolioProvider,
+    description: 'Portfolio data provider',
+    example: PortfolioProvider.ZERION,
   })
   @ApiOkResponse({ type: Portfolio })
-  @Get('/portfolios/:address')
+  @Get('/portfolio/:address')
   async getPortfolio(
     @Param('address', new ValidationPipe(AddressSchema))
     address: Address,
     @Query('fiatCode', new DefaultValuePipe('USD')) fiatCode: string,
-    @Query('chainIds') chainIds?: string,
+    @Query('chainIds', new ValidationPipe(ChainIdsSchema))
+    chainIds?: Array<string>,
     @Query('trusted', new DefaultValuePipe(true), ParseBoolPipe)
     trusted?: boolean,
     @Query('excludeDust', new DefaultValuePipe(true), ParseBoolPipe)
     excludeDust?: boolean,
-    @Query('provider', new DefaultValuePipe('zerion')) provider?: string,
+    @Query(
+      'provider',
+      new DefaultValuePipe(PortfolioProvider.ZERION),
+      ProviderValidationPipe,
+    )
+    provider?: PortfolioProvider,
   ): Promise<Portfolio> {
-    const chainIdArray = chainIds
-      ? chainIds.split(',').map((id) => id.trim())
-      : undefined;
-
     return this.portfolioService.getPortfolio({
       address,
       fiatCode,
-      chainIds: chainIdArray,
+      chainIds,
       trusted,
       excludeDust,
       provider,
@@ -110,7 +116,7 @@ export class PortfolioController {
     type: 'string',
     description: 'Wallet address (0x prefixed hex string)',
   })
-  @Delete('/portfolios/:address')
+  @Delete('/portfolio/:address')
   @HttpCode(204)
   async clearPortfolio(
     @Param('address', new ValidationPipe(AddressSchema))
