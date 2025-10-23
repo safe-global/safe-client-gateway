@@ -60,7 +60,7 @@ export class ContractAnalysisService {
       );
   }
 
-  async analyze(args: {
+  public async analyze(args: {
     chainId: string;
     safeAddress: Address;
     transactions: Array<DecodedTransactionData>;
@@ -112,7 +112,7 @@ export class ContractAnalysisService {
     return analysisResults;
   }
 
-  async analyzeContract(args: {
+  public async analyzeContract(args: {
     chainId: string;
     safeAddress: Address;
     contract: Address;
@@ -141,7 +141,7 @@ export class ContractAnalysisService {
    * @param args.isDelegateCall - Whether the contract is called via delegateCall.
    * @returns A pair of analysis results: [verification result, delegateCall result (if available)].
    */
-  async verifyContract(args: {
+  public async verifyContract(args: {
     chainId: string;
     contract: Address;
     isDelegateCall: boolean;
@@ -192,7 +192,7 @@ export class ContractAnalysisService {
    * @param args.contract - The contract address.
    * @returns The analysis result.
    */
-  async analyzeInteractions(args: {
+  public async analyzeInteractions(args: {
     chainId: string;
     safeAddress: Address;
     contract: Address;

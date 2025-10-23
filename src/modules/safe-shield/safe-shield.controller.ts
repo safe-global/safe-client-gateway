@@ -156,7 +156,7 @@ export class SafeShieldController {
   })
   @HttpCode(HttpStatus.OK)
   @Post('chains/:chainId/security/:safeAddress/threat-analysis')
-  async analyzeThreat(
+  public async analyzeThreat(
     @Param('chainId', new ValidationPipe(NumericStringSchema)) chainId: string,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
     safeAddress: Address,

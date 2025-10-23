@@ -342,7 +342,7 @@ export class ThreatAnalysisService {
    * Returns a failed threat analysis response.
    * @returns {ThreatAnalysisResponse} A response indicating analysis failure
    */
-  failedAnalysisResponse(): ThreatAnalysisResponse {
+  public failedAnalysisResponse(): ThreatAnalysisResponse {
     return { THREAT: [this.mapToAnalysisResult({ type: 'FAILED' })] };
   }
 }
