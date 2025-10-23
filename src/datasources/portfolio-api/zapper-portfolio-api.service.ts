@@ -51,6 +51,7 @@ interface ZapperV2App {
         decimals: number;
         balance: string;
         balanceUSD: number;
+        balanceInCurrency?: number;
         groupLabel: string;
         displayProps?: {
           label?: string;
@@ -199,6 +200,7 @@ export class ZapperPortfolioApi implements IPortfolioApi {
                           decimals
                           balance
                           balanceUSD
+                          balanceInCurrency(currency: $priceCurrency)
                           groupLabel
                           displayProps {
                             label
@@ -308,7 +310,7 @@ export class ZapperPortfolioApi implements IPortfolioApi {
             trusted: true, // App positions are hand-selected by Zapper
           },
           balance: token.balance,
-          balanceFiat: token.balanceUSD,
+          balanceFiat: token.balanceInCurrency ?? token.balanceUSD,
           priceChangePercentage1d: null, // Zapper doesn't provide 1d price change
         };
       });
