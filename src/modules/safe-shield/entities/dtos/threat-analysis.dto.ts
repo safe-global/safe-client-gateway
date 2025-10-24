@@ -82,9 +82,11 @@ export class ThreatAnalysisResultDto extends AnalysisResultDto<
 > {
   @ApiProperty({
     description: 'Threat status code',
-    enum: [...ThreatStatus, ...CommonStatus],
+    enum: ['NO_THREAT', 'OWNERSHIP_CHANGE', 'MODULE_CHANGE', ...CommonStatus],
   })
-  type!: ThreatStatus | CommonStatus;
+  type!:
+    | Exclude<ThreatStatus, 'MASTERCOPY_CHANGE' | 'MALICIOUS' | 'MODERATE'>
+    | CommonStatus;
 }
 
 /**
