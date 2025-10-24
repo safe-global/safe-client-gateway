@@ -15,9 +15,7 @@ import { ThreatStatus } from '../threat-status.entity';
 import { Severity } from '../severity.entity';
 import type { ThreatAnalysisResponse } from '../analysis-responses.entity';
 import {
-  AssetDetails,
   AssetType,
-  AssetTypeSchema,
   BalanceChange,
   FungibleDiffSchema,
   NFTDiffSchema,
@@ -36,7 +34,7 @@ export class MasterCopyChangeThreatAnalysisResultDto
     description: 'Threat status code',
     enum: ['MASTERCOPY_CHANGE'],
   })
-  type!: 'MASTERCOPY_CHANGE';
+  type!: Extract<ThreatStatus, 'MASTERCOPY_CHANGE'>;
 
   @ApiProperty({
     description: 'Address of the old master copy/implementation contract',
@@ -60,7 +58,7 @@ export class MaliciousOrModerateThreatAnalysisResultDto
     description: 'Threat status code',
     enum: ['MALICIOUS', 'MODERATE'],
   })
-  type!: 'MALICIOUS' | 'MODERATE';
+  type!: Extract<ThreatStatus, 'MALICIOUS' | 'MODERATE'>;
 
   @ApiPropertyOptional({
     description:
@@ -84,37 +82,60 @@ export class ThreatAnalysisResultDto extends AnalysisResultDto<
 > {
   @ApiProperty({
     description: 'Threat status code',
-    enum: [...ThreatStatus, ...CommonStatus],
+    enum: ['NO_THREAT', 'OWNERSHIP_CHANGE', 'MODULE_CHANGE', ...CommonStatus],
   })
-  type!: ThreatStatus | CommonStatus;
+  type!:
+    | Exclude<ThreatStatus, 'MASTERCOPY_CHANGE' | 'MALICIOUS' | 'MODERATE'>
+    | CommonStatus;
 }
 
 /**
- * DTO for asset details in balance changes.
+ * Base DTO for asset details.
  */
-export class AssetDetailsDto implements AssetDetails {
-  @ApiProperty({
-    description: 'Asset type',
-    enum: AssetTypeSchema.options,
-  })
-  type!: AssetType;
-
+abstract class BaseAssetDetailsDto {
   @ApiPropertyOptional({
     description: 'Token symbol (if available)',
   })
   symbol?: string;
 
+  @ApiPropertyOptional({
+    description: 'URL to asset logo (if available)',
+    example: 'https://example.com/logo.png',
+  })
+  logo_url?: string;
+}
+
+/**
+ * DTO for native asset details.
+ */
+export class NativeAssetDetailsDto extends BaseAssetDetailsDto {
+  @ApiProperty({
+    description: 'Asset type',
+    enum: ['NATIVE'],
+  })
+  type!: Extract<AssetType, 'NATIVE'>;
+}
+
+/**
+ * DTO for token asset details (ERC20, ERC721, ERC1155).
+ */
+export class TokenAssetDetailsDto extends BaseAssetDetailsDto {
+  @ApiProperty({
+    description: 'Asset type',
+    enum: ['ERC20', 'ERC721', 'ERC1155'],
+  })
+  type!: Exclude<AssetType, 'NATIVE'>;
+
   @ApiProperty({
     description: 'Token contract address',
   })
   address!: Address;
-
-  @ApiPropertyOptional({
-    description: 'URL to asset logo (if available)',
-    example: 'https://example.com/usdc-logo.png',
-  })
-  logo_url?: string;
 }
+
+/**
+ * DTO for asset details in balance changes.
+ */
+export type AssetDetailsDto = NativeAssetDetailsDto | TokenAssetDetailsDto;
 
 /**
  * DTO for fungible asset difference.
@@ -141,11 +162,19 @@ export class NFTDiffDto implements z.infer<typeof NFTDiffSchema> {
 /**
  * DTO for balance change of a single asset.
  */
-@ApiExtraModels(FungibleDiffDto, NFTDiffDto)
+@ApiExtraModels(
+  NativeAssetDetailsDto,
+  TokenAssetDetailsDto,
+  FungibleDiffDto,
+  NFTDiffDto,
+)
 export class BalanceChangeDto implements BalanceChange {
   @ApiProperty({
     description: 'Asset details',
-    type: AssetDetailsDto,
+    oneOf: [
+      { $ref: getSchemaPath(NativeAssetDetailsDto) },
+      { $ref: getSchemaPath(TokenAssetDetailsDto) },
+    ],
   })
   asset!: AssetDetailsDto;
 

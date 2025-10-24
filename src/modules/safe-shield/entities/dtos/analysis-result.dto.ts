@@ -17,26 +17,22 @@ export class AnalysisResultDto<T extends AnalysisStatus>
   @ApiProperty({
     description: 'Severity level indicating the importance and risk',
     enum: getStringEnumKeys(Severity),
-    example: 'INFO',
   })
   severity!: keyof typeof Severity;
 
   @ApiProperty({
     description: 'Specific status code identifying the type of finding',
-    example: 'NEW_RECIPIENT',
   })
   type!: T;
 
   @ApiProperty({
     description: 'User-facing title of the finding',
-    example: 'New recipient',
   })
   title!: string;
 
   @ApiProperty({
     description:
       'Detailed description explaining the finding and its implications',
-    example: 'This is the first time you are interacting with this recipient',
   })
   description!: string;
 }
