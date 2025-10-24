@@ -1,6 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { IChartsRepository } from '@/domain/charts/charts.repository.interface';
-import type { Chart as DomainChart } from '@/domain/charts/entities/chart.entity';
 import { ChartPeriod } from '@/domain/charts/entities/chart.entity';
 import { Chart } from '@/routes/charts/entities/chart.entity';
 
@@ -17,7 +16,7 @@ export class ChartsService {
     currency: string;
   }): Promise<Chart> {
     const domainChart = await this.chartsRepository.getChart(args);
-    return this._mapToApiChart(domainChart);
+    return new Chart(domainChart);
   }
 
   async clearChart(args: {
@@ -26,9 +25,5 @@ export class ChartsService {
     currency: string;
   }): Promise<void> {
     await this.chartsRepository.clearChart(args);
-  }
-
-  private _mapToApiChart(domainChart: DomainChart): Chart {
-    return new Chart(domainChart);
   }
 }
