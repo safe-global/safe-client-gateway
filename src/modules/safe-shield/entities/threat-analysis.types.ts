@@ -6,12 +6,20 @@ import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 export const AssetTypeSchema = z.enum(['NATIVE', 'ERC20', 'ERC721', 'ERC1155']);
 export type AssetType = z.infer<typeof AssetTypeSchema>;
 
-export const AssetDetailsSchema = z.object({
-  type: AssetTypeSchema,
+const BaseAssetDetailsSchema = z.object({
   symbol: z.string().optional(),
-  address: AddressSchema,
   logo_url: z.string().optional(),
 });
+
+export const AssetDetailsSchema = z.discriminatedUnion('type', [
+  BaseAssetDetailsSchema.extend({
+    type: z.literal('NATIVE'),
+  }),
+  BaseAssetDetailsSchema.extend({
+    type: z.enum(['ERC20', 'ERC721', 'ERC1155']),
+    address: AddressSchema,
+  }),
+]);
 export type AssetDetails = z.infer<typeof AssetDetailsSchema>;
 
 export const FungibleDiffSchema = z.object({

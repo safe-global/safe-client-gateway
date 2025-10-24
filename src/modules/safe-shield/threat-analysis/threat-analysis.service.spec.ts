@@ -770,7 +770,6 @@ describe('ThreatAnalysisService', () => {
 
       it('should populate balance changes from simulation', async () => {
         const mockErc20Address = getAddress(faker.finance.ethereumAddress());
-        const mockNativeAddress = getAddress(faker.finance.ethereumAddress());
         const tokenSymbol = faker.string.alpha(4).toUpperCase();
         const logoUrl = faker.internet.url();
         const inValue = faker.string.numeric(7);
@@ -806,7 +805,6 @@ describe('ThreatAnalysisService', () => {
                 {
                   asset: {
                     type: 'NATIVE',
-                    address: mockNativeAddress,
                   },
                   in: [],
                   out: [{ value: nativeOutValue }],
@@ -848,7 +846,6 @@ describe('ThreatAnalysisService', () => {
             {
               asset: {
                 type: 'NATIVE',
-                address: mockNativeAddress,
               },
               in: [],
               out: [{ value: nativeOutValue }],

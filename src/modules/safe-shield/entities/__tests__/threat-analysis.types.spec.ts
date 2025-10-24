@@ -154,7 +154,6 @@ describe('ThreatAnalysis Types', () => {
         {
           asset: {
             type: 'NATIVE',
-            address: getAddress(faker.finance.ethereumAddress()),
           },
           in: [],
           out: [{ value: faker.string.numeric(18) }],
@@ -247,7 +246,6 @@ describe('ThreatAnalysis Types', () => {
           out: [],
         },
         {
-          // Missing asset
           in: [],
           out: [],
         },
