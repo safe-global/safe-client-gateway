@@ -120,7 +120,7 @@ export class PortfolioRepository implements IPortfolioRepository {
   }
 
   private _getProviderApi(provider: string): IPortfolioApi {
-    switch (provider) {
+    switch (provider as PortfolioProvider) {
       case PortfolioProvider.ZAPPER:
         return this.zapperPortfolioApi;
       case PortfolioProvider.ZERION:
@@ -198,8 +198,8 @@ export class PortfolioRepository implements IPortfolioRepository {
    * Returns a new Portfolio object with updated totals.
    */
   private _recalculateTotals(
-    tokenBalances: TokenBalance[],
-    appBalances: AppBalance[],
+    tokenBalances: Array<TokenBalance>,
+    appBalances: Array<AppBalance>,
   ): Portfolio {
     const totalTokenBalanceFiat = this._sumBalances(tokenBalances);
     const totalPositionsBalanceFiat = this._sumBalances(appBalances);
