@@ -12,8 +12,8 @@ export const ZERION_CHART_API = Symbol('ZerionChartApi');
   imports: [CacheFirstDataSourceModule],
   providers: [
     HttpErrorFactory,
-    { provide: IChartApi, useClass: ZerionChartApi },           // Default
-    { provide: ZERION_CHART_API, useClass: ZerionChartApi },   // Named
+    { provide: IChartApi, useClass: ZerionChartApi }, // Default
+    { provide: ZERION_CHART_API, useClass: ZerionChartApi }, // Named
   ],
   exports: [IChartApi, ZERION_CHART_API],
 })

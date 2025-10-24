@@ -33,7 +33,11 @@ describe('ChartsRepository', () => {
 
       mockCacheService.hGet.mockResolvedValue(JSON.stringify(cachedChart));
 
-      const result = await repository.getChart({ fungibleId, period, currency });
+      const result = await repository.getChart({
+        fungibleId,
+        period,
+        currency,
+      });
 
       expect(result).toEqual(cachedChart);
       expect(mockCacheService.hGet).toHaveBeenCalledWith(
@@ -56,7 +60,11 @@ describe('ChartsRepository', () => {
       mockCacheService.hGet.mockResolvedValue(undefined);
       mockChartApi.getChart.mockResolvedValue(rawify(apiChart));
 
-      const result = await repository.getChart({ fungibleId, period, currency });
+      const result = await repository.getChart({
+        fungibleId,
+        period,
+        currency,
+      });
 
       expect(result).toEqual(apiChart);
       expect(mockCacheService.hGet).toHaveBeenCalled();
@@ -268,7 +276,11 @@ describe('ChartsRepository', () => {
       mockCacheService.hGet.mockResolvedValue(undefined);
       mockChartApi.getChart.mockResolvedValue(rawify(validChart));
 
-      const result = await repository.getChart({ fungibleId, period, currency });
+      const result = await repository.getChart({
+        fungibleId,
+        period,
+        currency,
+      });
 
       // Should not throw and return valid chart
       expect(result).toEqual(validChart);
@@ -300,7 +312,11 @@ describe('ChartsRepository', () => {
 
       mockCacheService.hGet.mockResolvedValue(JSON.stringify(cachedChart));
 
-      const result = await repository.getChart({ fungibleId, period, currency });
+      const result = await repository.getChart({
+        fungibleId,
+        period,
+        currency,
+      });
 
       expect(result).toEqual(cachedChart);
       expect(mockChartApi.getChart).not.toHaveBeenCalled();
@@ -357,7 +373,9 @@ describe('ChartsRepository', () => {
         await repository.clearChart({ fungibleId, period, currency });
       }
 
-      expect(mockCacheService.deleteByKey).toHaveBeenCalledTimes(periods.length);
+      expect(mockCacheService.deleteByKey).toHaveBeenCalledTimes(
+        periods.length,
+      );
     });
 
     it('should not throw if cache entry does not exist', async () => {
@@ -365,7 +383,9 @@ describe('ChartsRepository', () => {
       const period = ChartPeriod.DAY;
       const currency = 'usd';
 
-      mockCacheService.deleteByKey.mockResolvedValue(void 0 as unknown as number);
+      mockCacheService.deleteByKey.mockResolvedValue(
+        void 0 as unknown as number,
+      );
 
       await expect(
         repository.clearChart({ fungibleId, period, currency }),

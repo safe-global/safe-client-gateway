@@ -935,9 +935,6 @@ export class CacheRouter {
     period: string;
     currency: string;
   }): CacheDir {
-    return new CacheDir(
-      CacheRouter.getFungibleChartCacheKey(args),
-      '',
-    );
+    return new CacheDir(CacheRouter.getFungibleChartCacheKey(args), '');
   }
 }

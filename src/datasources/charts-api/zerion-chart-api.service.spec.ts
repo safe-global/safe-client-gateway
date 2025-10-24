@@ -97,7 +97,10 @@ describe('ZerionChartApi', () => {
       const currency = 'usd';
       const zerionResponse = zerionChartResponseBuilder().build();
 
-      mockNetworkService.get.mockResolvedValue({ data: rawify(zerionResponse), status: 200 } as unknown as NetworkResponse<unknown>);
+      mockNetworkService.get.mockResolvedValue({
+        data: rawify(zerionResponse),
+        status: 200,
+      } as unknown as NetworkResponse<unknown>);
 
       const result = await service.getChart({ fungibleId, period, currency });
 
@@ -134,7 +137,10 @@ describe('ZerionChartApi', () => {
       const currency = 'usd';
       const zerionResponse = zerionChartResponseBuilder().build();
 
-      mockNetworkService.get.mockResolvedValue({ data: rawify(zerionResponse), status: 200 } as unknown as NetworkResponse<unknown>);
+      mockNetworkService.get.mockResolvedValue({
+        data: rawify(zerionResponse),
+        status: 200,
+      } as unknown as NetworkResponse<unknown>);
 
       await serviceWithoutKey.getChart({ fungibleId, period, currency });
 
@@ -160,7 +166,10 @@ describe('ZerionChartApi', () => {
 
       for (const period of periods) {
         const zerionResponse = zerionChartResponseBuilder().build();
-        mockNetworkService.get.mockResolvedValue({ data: rawify(zerionResponse), status: 200 } as unknown as NetworkResponse<unknown>);
+        mockNetworkService.get.mockResolvedValue({
+          data: rawify(zerionResponse),
+          status: 200,
+        } as unknown as NetworkResponse<unknown>);
 
         await service.getChart({
           fungibleId: 'eth',
@@ -182,7 +191,10 @@ describe('ZerionChartApi', () => {
       const currency = 'USD'; // uppercase input
       const zerionResponse = zerionChartResponseBuilder().build();
 
-      mockNetworkService.get.mockResolvedValue({ data: rawify(zerionResponse), status: 200 } as unknown as NetworkResponse<unknown>);
+      mockNetworkService.get.mockResolvedValue({
+        data: rawify(zerionResponse),
+        status: 200,
+      } as unknown as NetworkResponse<unknown>);
 
       await service.getChart({ fungibleId, period, currency });
 
@@ -250,7 +262,10 @@ describe('ZerionChartApi', () => {
 
       for (const fungibleId of fungibleIds) {
         const zerionResponse = zerionChartResponseBuilder().build();
-        mockNetworkService.get.mockResolvedValue({ data: rawify(zerionResponse), status: 200 } as unknown as NetworkResponse<unknown>);
+        mockNetworkService.get.mockResolvedValue({
+          data: rawify(zerionResponse),
+          status: 200,
+        } as unknown as NetworkResponse<unknown>);
 
         await service.getChart({
           fungibleId,
@@ -293,7 +308,10 @@ describe('ZerionChartApi', () => {
         })
         .build();
 
-      mockNetworkService.get.mockResolvedValue({ data: rawify(zerionResponse), status: 200 } as unknown as NetworkResponse<unknown>);
+      mockNetworkService.get.mockResolvedValue({
+        data: rawify(zerionResponse),
+        status: 200,
+      } as unknown as NetworkResponse<unknown>);
 
       const result = await service.getChart({ fungibleId, period, currency });
 
@@ -338,11 +356,16 @@ describe('ZerionChartApi', () => {
         })
         .build();
 
-      mockNetworkService.get.mockResolvedValue({ data: rawify(zerionResponse), status: 200 } as unknown as NetworkResponse<unknown>);
+      mockNetworkService.get.mockResolvedValue({
+        data: rawify(zerionResponse),
+        status: 200,
+      } as unknown as NetworkResponse<unknown>);
 
       const result = await service.getChart({ fungibleId, period, currency });
 
-      expect((result as unknown as { points: Array<unknown> }).points).toEqual([]);
+      expect((result as unknown as { points: Array<unknown> }).points).toEqual(
+        [],
+      );
       expect((result as unknown as { stats: unknown }).stats).toEqual({
         first: 0,
         min: 0,

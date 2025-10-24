@@ -180,7 +180,11 @@ describe('ChartsController', () => {
       const apiChart = new Chart(domainChart);
       mockChartsService.getChart.mockResolvedValue(apiChart);
 
-      const result = await controller.getChart('newtoken', ChartPeriod.MAX, 'usd');
+      const result = await controller.getChart(
+        'newtoken',
+        ChartPeriod.MAX,
+        'usd',
+      );
 
       expect(result.points).toEqual([]);
     });
@@ -270,7 +274,9 @@ describe('ChartsController', () => {
         await controller.clearChart('eth', period, 'usd');
       }
 
-      expect(mockChartsService.clearChart).toHaveBeenCalledTimes(periods.length);
+      expect(mockChartsService.clearChart).toHaveBeenCalledTimes(
+        periods.length,
+      );
     });
 
     it('should clear cache for different fungible IDs', async () => {
