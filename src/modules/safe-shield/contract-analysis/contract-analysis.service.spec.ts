@@ -421,6 +421,7 @@ describe('ContractAnalysisService', () => {
       expect(mockTransactionApi.getMultisigTransactions).toHaveBeenCalledWith({
         safeAddress,
         to: contractAddress,
+        executed: true,
         limit: 1,
       });
 
@@ -492,6 +493,7 @@ describe('ContractAnalysisService', () => {
       expect(mockTransactionApi.getMultisigTransactions).toHaveBeenCalledWith({
         safeAddress,
         to: contractAddress,
+        executed: true,
         limit: 1,
       });
 
@@ -1002,6 +1004,7 @@ describe('ContractAnalysisService', () => {
       expect(mockTransactionApi.getMultisigTransactions).toHaveBeenCalledWith({
         safeAddress,
         to: contractAddress,
+        executed: true,
         limit: 1,
       });
 
@@ -1130,6 +1133,7 @@ describe('ContractAnalysisService', () => {
       expect(mockTransactionApi.getMultisigTransactions).toHaveBeenCalledWith({
         safeAddress,
         to: contractAddress,
+        executed: true,
         limit: 1,
       });
     });

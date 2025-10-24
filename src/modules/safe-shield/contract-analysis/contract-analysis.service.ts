@@ -204,6 +204,7 @@ export class ContractAnalysisService {
       const page = await transactionApi.getMultisigTransactions({
         safeAddress,
         to: contract,
+        executed: true,
         limit: 1,
       });
 
