@@ -3,11 +3,13 @@ import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { IPortfolioApi } from '@/domain/interfaces/portfolio-api.interface';
 import { ZerionPortfolioApi } from '@/datasources/portfolio-api/zerion-portfolio-api.service';
 import { ZapperPortfolioApi } from '@/datasources/portfolio-api/zapper-portfolio-api.service';
+import { AssetRegistryModule } from '@/domain/common/asset-registry.module';
 
 export const ZERION_PORTFOLIO_API = Symbol('ZerionPortfolioApi');
 export const ZAPPER_PORTFOLIO_API = Symbol('ZapperPortfolioApi');
 
 @Module({
+  imports: [AssetRegistryModule],
   providers: [
     HttpErrorFactory,
     {

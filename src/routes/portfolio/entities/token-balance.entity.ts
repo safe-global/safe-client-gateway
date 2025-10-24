@@ -39,6 +39,12 @@ export class TokenBalanceTokenInfo {
     description: 'Whether the token is verified by the provider',
   })
   trusted!: boolean;
+
+  @ApiProperty({
+    description: 'Unique asset identifier (human-readable slug like "eth", "dai", "weth-c02a")',
+    example: 'eth',
+  })
+  assetId!: string;
 }
 
 export class TokenBalance {

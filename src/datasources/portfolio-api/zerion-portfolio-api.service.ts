@@ -19,6 +19,7 @@ import type { ZerionBalance } from '@/datasources/balances-api/entities/zerion-b
 import { ZerionBalancesSchema } from '@/datasources/balances-api/entities/zerion-balance.entity';
 import { ZerionPnLResponseSchema } from '@/datasources/balances-api/entities/zerion-pnl.entity';
 import { ZodError } from 'zod';
+import { AssetRegistryService } from '@/domain/common/services/asset-registry.service';
 
 const ZERION_NETWORK_TO_CHAIN_ID_MAPPING: Record<string, string> = {
   '0g': '16661',
@@ -97,6 +98,8 @@ export class ZerionPortfolioApi implements IPortfolioApi {
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
     private readonly httpErrorFactory: HttpErrorFactory,
+    @Inject(AssetRegistryService)
+    private readonly assetRegistry: AssetRegistryService,
   ) {
     this.apiKey = this.configurationService.get<string>(
       'balances.providers.zerion.apiKey',
@@ -271,25 +274,45 @@ export class ZerionPortfolioApi implements IPortfolioApi {
   private _buildTokenBalances(
     positions: Array<ZerionBalance>,
   ): Array<TokenBalance> {
-    return positions
-      .map((position): TokenBalance | null => {
-        const networkName = position.relationships?.chain?.data?.id;
-        if (!networkName) return null;
+    return positions.flatMap((position): Array<TokenBalance> => {
+      const networkName = position.relationships?.chain?.data?.id;
+      if (!networkName) return [];
 
-        const chainId = this._mapNetworkToChainId(networkName);
+      const chainId = this._mapNetworkToChainId(networkName);
 
-        const impl = position.attributes.fungible_info.implementations.find(
-          (i) => i.chain_id === networkName,
+      const impl = position.attributes.fungible_info.implementations.find(
+        (i) => i.chain_id === networkName,
+      );
+      if (!impl) return [];
+
+      if (impl.address !== null && !isAddress(impl.address)) {
+        return [];
+      }
+
+      const address = impl.address ? getAddress(impl.address) : null;
+
+      const fungibleId = position.relationships?.fungible?.data?.id;
+      if (!fungibleId) {
+        this.logger.warn(
+          `Position ${position.id} has no fungible ID, skipping`,
         );
-        if (!impl) return null;
+        return [];
+      }
 
-        if (impl.address !== null && !isAddress(impl.address)) {
-          return null;
-        }
+      const assetId = this.assetRegistry.registerFromZerion({
+        symbol:
+          position.attributes.fungible_info.symbol ??
+          position.attributes.name,
+        name:
+          position.attributes.fungible_info.name ??
+          position.attributes.name,
+        chain: networkName,
+        address: address,
+        zerionFungibleId: fungibleId,
+      });
 
-        const address = impl.address ? getAddress(impl.address) : null;
-
-        return {
+      return [
+        {
           tokenInfo: {
             address,
             decimals: impl.decimals,
@@ -302,15 +325,16 @@ export class ZerionPortfolioApi implements IPortfolioApi {
             logoUrl: position.attributes.fungible_info.icon?.url ?? null,
             chainId,
             trusted: position.attributes.fungible_info.flags?.verified ?? false,
+            assetId,
           },
           balance: position.attributes.quantity.numeric,
           balanceFiat: position.attributes.value ?? null,
           price: position.attributes.price ?? null,
           priceChangePercentage1d:
             position.attributes.changes?.percent_1d ?? null,
-        };
-      })
-      .filter((token): token is TokenBalance => token !== null);
+        },
+      ];
+    });
   }
 
   private _buildAppBalances(
@@ -349,25 +373,45 @@ export class ZerionPortfolioApi implements IPortfolioApi {
   private _buildAppPositions(
     positions: Array<ZerionBalance>,
   ): Array<AppPosition> {
-    return positions
-      .map((position): AppPosition | null => {
-        const networkName = position.relationships?.chain?.data?.id;
-        if (!networkName) return null;
+    return positions.flatMap((position): Array<AppPosition> => {
+      const networkName = position.relationships?.chain?.data?.id;
+      if (!networkName) return [];
 
-        const chainId = this._mapNetworkToChainId(networkName);
+      const chainId = this._mapNetworkToChainId(networkName);
 
-        const impl = position.attributes.fungible_info.implementations.find(
-          (i) => i.chain_id === networkName,
+      const impl = position.attributes.fungible_info.implementations.find(
+        (i) => i.chain_id === networkName,
+      );
+      if (!impl) return [];
+
+      if (impl.address !== null && !isAddress(impl.address)) {
+        return [];
+      }
+
+      const address = impl.address ? getAddress(impl.address) : null;
+
+      const fungibleId = position.relationships?.fungible?.data?.id;
+      if (!fungibleId) {
+        this.logger.warn(
+          `Position ${position.id} has no fungible ID, skipping`,
         );
-        if (!impl) return null;
+        return [];
+      }
 
-        if (impl.address !== null && !isAddress(impl.address)) {
-          return null;
-        }
+      const assetId = this.assetRegistry.registerFromZerion({
+        symbol:
+          position.attributes.fungible_info.symbol ??
+          position.attributes.name,
+        name:
+          position.attributes.fungible_info.name ??
+          position.attributes.name,
+        chain: networkName,
+        address: address,
+        zerionFungibleId: fungibleId,
+      });
 
-        const address = impl.address ? getAddress(impl.address) : null;
-
-        return {
+      return [
+        {
           key: position.id,
           type: position.attributes.position_type,
           name: position.attributes.name,
@@ -383,14 +427,15 @@ export class ZerionPortfolioApi implements IPortfolioApi {
             logoUrl: position.attributes.fungible_info.icon?.url ?? null,
             chainId,
             trusted: position.attributes.fungible_info.flags?.verified ?? false,
+            assetId,
           },
           balance: position.attributes.quantity.numeric,
           balanceFiat: position.attributes.value ?? null,
           priceChangePercentage1d:
             position.attributes.changes?.percent_1d ?? null,
-        };
-      })
-      .filter((pos): pos is AppPosition => pos !== null);
+        },
+      ];
+    });
   }
 
   private _calculateTotalBalance(positions: Array<ZerionBalance>): number {

@@ -111,6 +111,14 @@ export const ZerionBalanceSchema = z.object({
           id: z.string(),
         }),
       }),
+      fungible: z
+        .object({
+          data: z.object({
+            type: z.string(),
+            id: z.string(),
+          }),
+        })
+        .optional(),
     })
     .optional(),
 });

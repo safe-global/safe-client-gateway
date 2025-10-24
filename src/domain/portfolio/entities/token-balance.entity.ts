@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
+import { AssetIdSchema } from '@/domain/common/entities/asset-identifier.entity';
 
 export const TokenBalanceTokenInfoSchema = z.object({
   address: AddressSchema.nullish().default(null),
@@ -9,6 +10,7 @@ export const TokenBalanceTokenInfoSchema = z.object({
   logoUrl: z.string().nullish().default(null),
   chainId: z.string(),
   trusted: z.boolean(),
+  assetId: AssetIdSchema,
 });
 
 export const TokenBalanceSchema = z.object({

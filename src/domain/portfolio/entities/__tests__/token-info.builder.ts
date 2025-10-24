@@ -12,5 +12,6 @@ export function tokenInfoBuilder(): IBuilder<TokenBalanceTokenInfo> {
     .with('name', faker.finance.currencyName())
     .with('logoUrl', faker.internet.url({ appendSlash: false }))
     .with('chainId', faker.string.numeric())
-    .with('trusted', faker.datatype.boolean());
+    .with('trusted', faker.datatype.boolean())
+    .with('assetId', faker.lorem.word().toLowerCase());
 }

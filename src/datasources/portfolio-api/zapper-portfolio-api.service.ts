@@ -18,7 +18,14 @@ import type {
   ZapperV2App,
   ZapperResponse,
 } from '@/datasources/portfolio-api/entities/zapper.entity';
+import { AssetRegistryService } from '@/domain/common/services/asset-registry.service';
 
+/**
+ * Zapper Portfolio API Implementation
+ *
+ * Asset IDs are generated using the AssetRegistry service with chain+address
+ * as the unique identifier. This ensures consistent asset IDs across providers.
+ */
 @Injectable()
 export class ZapperPortfolioApi implements IPortfolioApi {
   private readonly apiKey: string;
@@ -29,6 +36,8 @@ export class ZapperPortfolioApi implements IPortfolioApi {
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
     private readonly httpErrorFactory: HttpErrorFactory,
+    @Inject(AssetRegistryService)
+    private readonly assetRegistry: AssetRegistryService,
   ) {
     this.apiKey = this.configurationService.getOrThrow<string>(
       'portfolio.providers.zapper.apiKey',
@@ -190,19 +199,30 @@ export class ZapperPortfolioApi implements IPortfolioApi {
     tokens: Array<ZapperV2Token>,
   ): Array<TokenBalance> {
     return tokens
-      .filter((token) => isAddress(token.tokenAddress))
+      .filter((token) => isAddress(token.tokenAddress) && token.symbol)
       .map((token): TokenBalance => {
         const decimals = token.decimals ?? 18;
+        const address = getAddress(token.tokenAddress);
+        const chainId = token.network.chainId.toString();
+
+        // Register asset and get consistent asset ID
+        const assetId = this.assetRegistry.register({
+          symbol: token.symbol,
+          name: token.name ?? token.symbol,
+          chain: chainId,
+          address,
+        });
 
         return {
           tokenInfo: {
-            address: getAddress(token.tokenAddress),
+            address,
             decimals,
             symbol: token.symbol,
             name: token.name ?? token.symbol,
             logoUrl: token.imgUrlV2 ?? null,
-            chainId: token.network.chainId.toString(),
+            chainId,
             trusted: token.verified ?? false,
+            assetId,
           },
           balance: token.balance.toString(),
           balanceFiat: token.balanceInCurrency ?? null,
@@ -236,24 +256,36 @@ export class ZapperPortfolioApi implements IPortfolioApi {
   private _buildAppPositions(app: ZapperV2App): Array<AppPosition> {
     return app.positionBalances.edges
       .map((edge) => edge.node)
-      .filter((token) => isAddress(token.address))
+      .filter((token) => isAddress(token.address) && token.symbol)
       .map((token): AppPosition => {
+        const address = getAddress(token.address);
+        const chainId = app.network.chainId.toString();
+
+        // Register asset and get consistent asset ID
+        const assetId = this.assetRegistry.register({
+          symbol: token.symbol,
+          name: token.symbol,
+          chain: chainId,
+          address,
+        });
+
         return {
           key: `${app.app.slug}-${token.network}-${token.address}`,
           type: token.groupLabel,
           name: token.displayProps?.label ?? token.symbol,
           tokenInfo: {
-            address: getAddress(token.address),
+            address,
             decimals: token.decimals,
             symbol: token.symbol,
             name: token.symbol,
             logoUrl: null,
-            chainId: app.network.chainId.toString(),
-            trusted: true, // App positions are hand-selected by Zapper
+            chainId,
+            trusted: true,
+            assetId,
           },
           balance: token.balance,
           balanceFiat: token.balanceUSD,
-          priceChangePercentage1d: null, // Zapper doesn't provide 1d price change
+          priceChangePercentage1d: null,
         };
       });
   }

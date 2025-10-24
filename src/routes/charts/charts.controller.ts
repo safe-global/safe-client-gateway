@@ -29,13 +29,13 @@ export class ChartsController {
   @ApiOperation({
     summary: 'Get fungible price chart',
     description:
-      'Retrieves historical price chart data for a fungible asset (token) over a specified time period',
+      'Retrieves historical price chart data for a fungible asset (token) over a specified time period. Accepts human-readable asset IDs from the portfolio endpoint (e.g., "eth", "dai", "morpho").',
   })
   @ApiParam({
     name: 'fungibleId',
     type: 'string',
     description:
-      'Fungible asset identifier (e.g., "eth" for Ethereum, "btc" for Bitcoin)',
+      'Asset identifier - use the assetId from portfolio endpoint (e.g., "eth", "dai", "weth-c02a")',
     example: 'eth',
   })
   @ApiParam({
