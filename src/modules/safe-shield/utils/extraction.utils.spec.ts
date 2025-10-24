@@ -96,10 +96,15 @@ describe('extraction.utils', () => {
       expect(mockErc20Decoder.helpers.isTransferFrom).not.toHaveBeenCalled();
     });
 
-    it('ignores transactions without decoded data', () => {
+    it('extracts contracts from transactions without decoded data but with valid data', () => {
+      mockErc20Decoder.helpers.isTransfer.mockReturnValue(false);
+      mockErc20Decoder.helpers.isTransferFrom.mockReturnValue(false);
+
+      const contract = getAddress(faker.finance.ethereumAddress());
       const result = extractContracts(
         [
           createTransaction({
+            to: contract,
             dataDecoded: null,
             operation: 1,
           }),
@@ -107,7 +112,7 @@ describe('extraction.utils', () => {
         mockErc20Decoder,
       );
 
-      expect(result).toEqual([]);
+      expect(result).toEqual([[contract, true]]);
     });
 
     it('ignores ERC20 transfer transactions', () => {

@@ -766,7 +766,7 @@ export class TransactionsController {
       'Transaction proposal including recipient, value, data, and initial signature',
   })
   @ApiOkResponse({
-    type: Transaction,
+    type: TransactionDetails,
     description: 'Transaction proposed successfully',
   })
   @ApiBadRequestResponse({

@@ -2,6 +2,7 @@ import crypto from 'crypto';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { PortfolioProvider } from '@/domain/portfolio/entities/portfolio-provider.enum';
 import type { Address, Hash } from 'viem';
+import type { TransactionInfo } from '@/routes/transactions/entities/transaction-info.entity';
 
 export class CacheRouter {
   private static readonly ACCOUNT_DATA_SETTINGS_KEY = 'account_data_settings';
@@ -78,6 +79,7 @@ export class CacheRouter {
   private static readonly PORTFOLIO_KEY = 'portfolio';
   private static readonly PORTFOLIO_POSITIONS_KEY = 'portfolio_positions';
   private static readonly PORTFOLIO_PNL_KEY = 'portfolio_pnl';
+  private static readonly FUNGIBLE_CHART_KEY = 'fungible_chart';
   private static readonly ORM_QUERY_CACHE_KEY = 'orm_query_cache';
   private static readonly TRANSACTIONS_EXPORT_KEY = 'transactions_export';
   private static readonly CONTRACT_ANALYSIS_KEY = 'contract_analysis';
@@ -898,18 +900,29 @@ export class CacheRouter {
    * Gets cache directory for recipient analysis results.
    *
    * @param {string} args.chainId - Chain ID
+   * @param {string} args.safeAddress - Safe address
    * @param {Address[]} args.recipients - Array of recipient addresses
+   * @param {TransactionInfo} args.txInfo - The transaction info
    * @returns {CacheDir} - Cache directory
    */
   static getRecipientAnalysisCacheDir(args: {
     chainId: string;
+    safeAddress: Address;
     recipients: Array<Address>;
+    txInfo?: TransactionInfo;
   }): CacheDir {
-    const recipientsHash = crypto.createHash('sha256');
-    recipientsHash.update(args.recipients.sort().join(','));
+    const hash = crypto.createHash('sha256');
+    hash.update(args.recipients.sort().join(','));
+    if (args.txInfo) {
+      try {
+        hash.update(JSON.stringify(args.txInfo));
+      } catch {
+        // fallback: do not update hash if serialization fails
+      }
+    }
     return new CacheDir(
-      `${args.chainId}_${CacheRouter.RECIPIENT_ANALYSIS_KEY}`,
-      recipientsHash.digest('hex'),
+      `${args.chainId}_${CacheRouter.RECIPIENT_ANALYSIS_KEY}_${args.safeAddress}`,
+      hash.digest('hex'),
     );
   }
 
@@ -973,5 +986,21 @@ export class CacheRouter {
       CacheRouter.getPortfolioPnLCacheKey(args),
       args.fiatCode,
     );
+  }
+
+  static getFungibleChartCacheKey(args: {
+    fungibleId: string;
+    period: string;
+    currency: string;
+  }): string {
+    return `${CacheRouter.FUNGIBLE_CHART_KEY}_${args.fungibleId}_${args.period}_${args.currency}`;
+  }
+
+  static getFungibleChartCacheDir(args: {
+    fungibleId: string;
+    period: string;
+    currency: string;
+  }): CacheDir {
+    return new CacheDir(CacheRouter.getFungibleChartCacheKey(args), '');
   }
 }

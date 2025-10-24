@@ -1,9 +1,11 @@
 import { Module } from '@nestjs/common';
 import { SafeShieldService } from './safe-shield.service';
+import { SafeShieldController } from './safe-shield.controller';
 import { RecipientAnalysisModule } from './recipient-analysis/recipient-analysis.module';
 import { ContractAnalysisModule } from './contract-analysis/contract-analysis.module';
 import { ThreatAnalysisModule } from './threat-analysis/threat-analysis.module';
 import { TransactionsModule } from '@/routes/transactions/transactions.module';
+import { ConfigApiModule } from '@/datasources/config-api/config-api.module';
 
 /**
  * Main module for Safe Shield transaction analysis system.
@@ -18,7 +20,9 @@ import { TransactionsModule } from '@/routes/transactions/transactions.module';
     ContractAnalysisModule,
     ThreatAnalysisModule,
     TransactionsModule,
+    ConfigApiModule,
   ],
+  controllers: [SafeShieldController],
   providers: [SafeShieldService],
   exports: [SafeShieldService],
 })

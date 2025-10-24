@@ -1,19 +1,14 @@
 import semverSatisfies from 'semver/functions/satisfies';
 import type { Address } from 'viem';
-import {
-  decodeFunctionData,
-  hashMessage,
-  hashTypedData,
-  zeroAddress,
-} from 'viem';
+import { hashMessage, hashTypedData, zeroAddress } from 'viem';
 import { MessageSchema } from '@/domain/messages/entities/message.entity';
 import type { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
 import type { Safe } from '@/domain/safe/entities/safe.entity';
 import type { TypedData } from '@/domain/messages/entities/typed-data.entity';
-import SafeToL2Migration from '@/abis/safe/v1.4.1/SafeToL2Migration.abi';
 import {
-  getVersionFromMastercopy,
-  getSafeToL2MigrationDeployments,
+  getSafeMigrationDeployments,
+  getSafeSingletonDeployments,
+  getSafeL2SingletonDeployments,
 } from '@/domain/common/utils/deployments';
 import { Operation } from '@/domain/safe/entities/operation.entity';
 
@@ -134,9 +129,10 @@ export function getSafeTxHash(args: {
 }
 
 /**
- * Attempts to detect the Safe version from a migration transaction.
+ * Attempts to detect the Safe version from a SafeMigration transaction.
  * For Safes with unsupported mastercopies (version = null), if the transaction
- * is a delegate call to SafeToL2Migration.migrateToL2, we can infer the target version.
+ * is a delegate call to an official SafeMigration contract, we can infer the version
+ * based on which singletons are deployed on the target chain.
  *
  * @param {string} chainId - Chain ID
  * @param {Address} safeAddress - Safe address
@@ -149,19 +145,27 @@ function detectVersionFromMigrationTransaction(args: {
   safeAddress: Address;
   transaction: BaseMultisigTransaction;
 }): string | null {
-  // Delegate call to SafeToL2Migration.migrateToL2 (v1.3.0+)
-  return detectDelegateMigration(args);
+  return detectSafeMigration(args);
 }
 
 /**
- * Detects delegate call migrations to SafeToL2Migration.migrateToL2 (v1.3.0+)
+ * Detects delegate call migrations to SafeMigration contracts (v1.3.0+)
+ *
+ * SafeMigration contracts use immutable addresses set at deployment and have functions:
+ * - migrateL2Singleton()
+ * - migrateL2WithFallbackHandler()
+ * - migrateSingleton()
+ * - migrateWithFallbackHandler()
+ *
+ * Since these functions have no parameters, we infer the target version by checking
+ * which singleton deployments exist on the target chain.
  *
  * @param {string} args.chainId - Chain ID
  * @param {BaseMultisigTransaction} args.transaction - Transaction to analyze
  *
  * @returns {string | null} - Detected version or null if not a valid migration
  */
-function detectDelegateMigration(args: {
+function detectSafeMigration(args: {
   chainId: string;
   transaction: BaseMultisigTransaction;
 }): string | null {
@@ -171,17 +175,17 @@ function detectDelegateMigration(args: {
       return null;
     }
 
-    // Check if target is an official SafeToL2Migration contract
-    const migrationContracts = getSafeToL2MigrationDeployments({
+    // Check if target is an official SafeMigration contract
+    const safeMigrationContracts = getSafeMigrationDeployments({
       chainId: args.chainId,
-      version: '1.4.1', // SafeToL2Migration was introduced in 1.4.1
+      version: '1.4.1', // SafeMigration was introduced in 1.4.1
     });
 
-    const isOfficialMigrationContract = migrationContracts.some(
+    const isSafeMigration = safeMigrationContracts.some(
       (addr) => addr.toLowerCase() === args.transaction.to.toLowerCase(),
     );
 
-    if (!isOfficialMigrationContract) {
+    if (!isSafeMigration) {
       return null;
     }
 
@@ -190,21 +194,26 @@ function detectDelegateMigration(args: {
       return null;
     }
 
-    // Try to decode as migrateToL2
-    const decoded = decodeFunctionData({
-      abi: SafeToL2Migration,
-      data: args.transaction.data,
-    });
+    // Infer version from available singleton deployments on this chain
+    const versions = ['1.3.0', '1.4.1'];
 
-    if (decoded.functionName !== 'migrateToL2') {
-      return null;
+    for (const version of versions) {
+      const l1Singletons = getSafeSingletonDeployments({
+        chainId: args.chainId,
+        version,
+      });
+      const l2Singletons = getSafeL2SingletonDeployments({
+        chainId: args.chainId,
+        version,
+      });
+
+      // If any L1 or L2 singleton exists for this version on this chain, assume that's the target
+      if (l1Singletons.length > 0 || l2Singletons.length > 0) {
+        return version;
+      }
     }
 
-    // Extract the L2 singleton address
-    const l2Singleton = decoded.args[0];
-
-    // Detect the version from the L2 singleton address
-    return getVersionFromMastercopy(args.chainId, l2Singleton);
+    return null;
   } catch {
     return null;
   }

@@ -661,4 +661,11 @@ export default () => ({
       concurrency: parseInt(process.env.CSV_EXPORT_QUEUE_CONCURRENCY ?? `${3}`),
     },
   },
+  safeShield: {
+    threatAnalysis: {
+      blockaid: {
+        apiKey: process.env.BLOCKAID_CLIENT_API_KEY,
+      },
+    },
+  },
 });

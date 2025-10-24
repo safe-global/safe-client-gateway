@@ -89,6 +89,33 @@ describe('ContractAnalysisService', () => {
     const safeAddress = getAddress(faker.finance.ethereumAddress());
     const transactions: Array<DecodedTransactionData> = [];
 
+    it('should return empty object when extractContracts returns empty array', async () => {
+      mockExtractContracts.mockReturnValue([]);
+
+      const result = await service.analyze({
+        chainId,
+        safeAddress,
+        transactions,
+      });
+
+      expect(result).toEqual({});
+      expect(mockExtractContracts).toHaveBeenCalledWith(
+        transactions,
+        mockErc20Decoder,
+      );
+
+      // Verify that no caching occurs
+      const cacheDir = CacheRouter.getContractAnalysisCacheDir({
+        chainId,
+        contractPairs: [],
+      });
+      const cacheContent = await fakeCacheService.hGet(cacheDir);
+      expect(cacheContent).toBeUndefined();
+
+      const analyzeContractSpy = jest.spyOn(service, 'analyzeContract');
+      expect(analyzeContractSpy).not.toHaveBeenCalled();
+    });
+
     it('should return cached analysis when available', async () => {
       const contractAddress = getAddress(faker.finance.ethereumAddress());
       const contractPairs: Array<[Address, boolean]> = [
@@ -394,6 +421,7 @@ describe('ContractAnalysisService', () => {
       expect(mockTransactionApi.getMultisigTransactions).toHaveBeenCalledWith({
         safeAddress,
         to: contractAddress,
+        executed: true,
         limit: 1,
       });
 
@@ -465,6 +493,7 @@ describe('ContractAnalysisService', () => {
       expect(mockTransactionApi.getMultisigTransactions).toHaveBeenCalledWith({
         safeAddress,
         to: contractAddress,
+        executed: true,
         limit: 1,
       });
 
@@ -526,15 +555,33 @@ describe('ContractAnalysisService', () => {
         new Error(errorMessage),
       );
 
-      await expect(
-        service.analyzeContract({
-          chainId,
-          safeAddress,
-          contract: contractAddress,
-          isDelegateCall: false,
-        }),
-      ).rejects.toThrow(errorMessage);
+      const result = await service.analyzeContract({
+        chainId,
+        safeAddress,
+        contract: contractAddress,
+        isDelegateCall: false,
+      });
 
+      expect(result).toEqual({
+        CONTRACT_VERIFICATION: [
+          {
+            severity: SEVERITY_MAPPING.VERIFIED,
+            type: 'VERIFIED',
+            title: TITLE_MAPPING.VERIFIED,
+            description: DESCRIPTION_MAPPING.VERIFIED(),
+          },
+        ],
+        CONTRACT_INTERACTION: [
+          {
+            severity: SEVERITY_MAPPING.FAILED,
+            type: 'FAILED',
+            title: TITLE_MAPPING.FAILED,
+            description:
+              'The analysis failed: contract interactions unavailable. Please try again later.',
+          },
+        ],
+        DELEGATECALL: [],
+      });
       expect(mockDataDecoderApi.getContracts).toHaveBeenCalledWith({
         address: contractAddress,
         chainId,
@@ -957,6 +1004,7 @@ describe('ContractAnalysisService', () => {
       expect(mockTransactionApi.getMultisigTransactions).toHaveBeenCalledWith({
         safeAddress,
         to: contractAddress,
+        executed: true,
         limit: 1,
       });
 
@@ -1035,44 +1083,57 @@ describe('ContractAnalysisService', () => {
       });
     });
 
-    it('should throw error when transaction API manager fails', async () => {
+    it('should return FAILED when transaction API manager fails', async () => {
       const errorMessage = 'Transaction API manager error';
 
       mockTransactionApiManager.getApi.mockRejectedValue(
         new Error(errorMessage),
       );
 
-      await expect(
-        service.analyzeInteractions({
-          chainId,
-          safeAddress,
-          contract: contractAddress,
-        }),
-      ).rejects.toThrow(errorMessage);
+      const result = await service.analyzeInteractions({
+        chainId,
+        safeAddress,
+        contract: contractAddress,
+      });
 
+      expect(result).toEqual({
+        severity: SEVERITY_MAPPING.FAILED,
+        type: 'FAILED',
+        title: TITLE_MAPPING.FAILED,
+        description: DESCRIPTION_MAPPING.FAILED({
+          error: 'contract interactions unavailable',
+        }),
+      });
       expect(mockTransactionApiManager.getApi).toHaveBeenCalledWith(chainId);
       expect(mockTransactionApi.getMultisigTransactions).not.toHaveBeenCalled();
     });
 
-    it('should throw error when transaction API fails', async () => {
+    it('should return FAILED when transaction API fails', async () => {
       const errorMessage = 'Transaction API error';
 
       mockTransactionApi.getMultisigTransactions.mockRejectedValue(
         new Error(errorMessage),
       );
 
-      await expect(
-        service.analyzeInteractions({
-          chainId,
-          safeAddress,
-          contract: contractAddress,
-        }),
-      ).rejects.toThrow(errorMessage);
+      const result = await service.analyzeInteractions({
+        chainId,
+        safeAddress,
+        contract: contractAddress,
+      });
 
+      expect(result).toEqual({
+        severity: SEVERITY_MAPPING.FAILED,
+        type: 'FAILED',
+        title: TITLE_MAPPING.FAILED,
+        description: DESCRIPTION_MAPPING.FAILED({
+          error: 'contract interactions unavailable',
+        }),
+      });
       expect(mockTransactionApiManager.getApi).toHaveBeenCalledWith(chainId);
       expect(mockTransactionApi.getMultisigTransactions).toHaveBeenCalledWith({
         safeAddress,
         to: contractAddress,
+        executed: true,
         limit: 1,
       });
     });

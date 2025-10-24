@@ -8,13 +8,14 @@ import {
   ContractStatusSchema,
 } from '../contract-status.entity';
 import { ThreatStatus, ThreatStatusSchema } from '../threat-status.entity';
+import { CommonStatus } from '@/modules/safe-shield/entities/analysis-result.entity';
 
 describe('Status Entities', () => {
   describe('RecipientStatus', () => {
     it('should have all expected values', () => {
       expect(RecipientStatus).toHaveLength(2);
       expect(RecipientStatus).toContain('NEW_RECIPIENT');
-      expect(RecipientStatus).toContain('KNOWN_RECIPIENT');
+      expect(RecipientStatus).toContain('RECURRING_RECIPIENT');
     });
 
     it.each(RecipientStatus)('should validate with schema = %s', (value) => {
@@ -76,12 +77,11 @@ describe('Status Entities', () => {
 
   describe('ThreatStatus', () => {
     it('should have all expected values', () => {
-      expect(ThreatStatus).toHaveLength(7);
+      expect(ThreatStatus).toHaveLength(6);
       expect(ThreatStatus).toContain('MALICIOUS');
       expect(ThreatStatus).toContain('MODERATE');
       expect(ThreatStatus).toContain('NO_THREAT');
-      expect(ThreatStatus).toContain('FAILED');
-      expect(ThreatStatus).toContain('MASTER_COPY_CHANGE');
+      expect(ThreatStatus).toContain('MASTERCOPY_CHANGE');
       expect(ThreatStatus).toContain('OWNERSHIP_CHANGE');
       expect(ThreatStatus).toContain('MODULE_CHANGE');
     });
@@ -105,6 +105,7 @@ describe('Status Entities', () => {
         BridgeStatus,
         ContractStatus,
         ThreatStatus,
+        CommonStatus,
       ];
 
       allStatusEnums.forEach((statusEnum) => {
@@ -123,6 +124,7 @@ describe('Status Entities', () => {
         ...BridgeStatus,
         ...ContractStatus,
         ...ThreatStatus,
+        ...CommonStatus,
       ];
 
       const uniqueValues = new Set(allValues);

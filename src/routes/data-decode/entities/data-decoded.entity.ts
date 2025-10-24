@@ -39,7 +39,12 @@ class MultiSend implements DomainMultiSend {
   @ApiProperty()
   to!: Address;
 
-  @ApiPropertyOptional()
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    description: 'Hexadecimal encoded data',
+    pattern: '^0x[0-9a-fA-F]*$',
+  })
   data!: Hex | null;
 }
 
@@ -51,7 +56,11 @@ export class DataDecodedParameter implements DomainDataDecodedParameter {
   @ApiProperty()
   type!: string;
 
-  @ApiProperty()
+  @ApiProperty({
+    description:
+      'Parameter value - typically a string, but may be an array of strings for array types (e.g., address[], uint256[])',
+    oneOf: [{ type: 'string' }, { type: 'array', items: { type: 'string' } }],
+  })
   value!: Required<unknown>;
 
   @ApiPropertyOptional({

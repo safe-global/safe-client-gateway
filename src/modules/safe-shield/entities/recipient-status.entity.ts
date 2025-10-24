@@ -11,7 +11,7 @@ export const RecipientStatus = [
   'NEW_RECIPIENT',
 
   /** This recipient has been interacted with before */
-  'KNOWN_RECIPIENT',
+  'RECURRING_RECIPIENT',
 ] as const;
 
 /**

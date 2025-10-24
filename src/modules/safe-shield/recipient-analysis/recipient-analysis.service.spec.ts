@@ -1,4 +1,4 @@
-import { RecipientAnalysisService } from '../recipient-analysis.service';
+import { RecipientAnalysisService } from './recipient-analysis.service';
 import type { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
 import type { Erc20Decoder } from '@/domain/relay/contracts/decoders/erc-20-decoder.helper';
 import type { ITransactionApi } from '@/domain/interfaces/transaction-api.interface';
@@ -11,7 +11,7 @@ import type { IChainsRepository } from '@/domain/chains/chains.repository.interf
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
-import * as utils from '../../utils/recipient-extraction.utils';
+import * as utils from '../utils/recipient-extraction.utils';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
 import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
 import type { TransactionsService } from '@/routes/transactions/transactions.service';
@@ -24,6 +24,7 @@ import type { DataDecoded } from '@/routes/data-decode/entities/data-decoded.ent
 import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
 import { CacheRouter } from '@/datasources/cache/cache.router';
 import { createHash } from 'crypto';
+import { rawify } from '@/validation/entities/raw.entity';
 
 describe('RecipientAnalysisService', () => {
   const mockTransactionApi = {
@@ -79,7 +80,6 @@ describe('RecipientAnalysisService', () => {
   const mockSafeAddress = getAddress(faker.finance.ethereumAddress());
   const mockRecipientAddress = getAddress(faker.finance.ethereumAddress());
 
-  // Helper function to create mock transaction info
   const createMockTxInfo = (
     recipient: string,
     toChain: string,
@@ -91,7 +91,6 @@ describe('RecipientAnalysisService', () => {
       humanDescription: 'Bridge transaction',
     }) as BridgeAndSwapTransactionInfo;
 
-  // Helper function to create mock creation transaction parameters
   const createMockParameters = (
     owners: Array<string>,
     threshold: number = 1,
@@ -130,7 +129,6 @@ describe('RecipientAnalysisService', () => {
     },
   ];
 
-  // Helper function to create mock creation transaction
   const createMockCreationTransaction = (
     owners: Array<string>,
     threshold: number = 1,
@@ -159,6 +157,9 @@ describe('RecipientAnalysisService', () => {
       } as DataDecoded,
     }) as CreationTransaction;
 
+  const getRandomSafeVersion = (): string =>
+    faker.helpers.arrayElement(['1.0.0', '1.1.1', '1.2.0', '1.3.0', '1.4.1']);
+
   beforeEach(() => {
     jest.resetAllMocks();
     fakeCacheService.clear();
@@ -167,10 +168,6 @@ describe('RecipientAnalysisService', () => {
 
   const mockTransferPage = (count: number | null): Page<Transfer> =>
     pageBuilder<Transfer>().with('count', count).with('results', []).build();
-
-  // Helper function to get a random Safe version
-  const getRandomSafeVersion = (): string =>
-    faker.helpers.arrayElement(['1.0.0', '1.1.1', '1.2.0', '1.3.0', '1.4.1']);
 
   describe('analyze', () => {
     it('should handle analyze with txInfo parameter', async () => {
@@ -244,15 +241,13 @@ describe('RecipientAnalysisService', () => {
         transactions,
       });
 
-      // Check that both recipients are analyzed
       expect(Object.keys(result)).toHaveLength(2);
       expect(Object.keys(result)).toContain(recipient1);
       expect(Object.keys(result)).toContain(recipient2);
 
-      // Check that one recipient is KNOWN_RECIPIENT (5 interactions) and the other is NEW_RECIPIENT (0 interactions)
       const results = Object.values(result);
       const knownRecipientResult = results.find(
-        (r) => r?.RECIPIENT_INTERACTION?.[0]?.type === 'KNOWN_RECIPIENT',
+        (r) => r?.RECIPIENT_INTERACTION?.[0]?.type === 'RECURRING_RECIPIENT',
       );
       const newRecipientResult = results.find(
         (r) => r?.RECIPIENT_INTERACTION?.[0]?.type === 'NEW_RECIPIENT',
@@ -262,7 +257,7 @@ describe('RecipientAnalysisService', () => {
         RECIPIENT_INTERACTION: [
           {
             severity: 'OK',
-            type: 'KNOWN_RECIPIENT',
+            type: 'RECURRING_RECIPIENT',
             title: 'Recurring recipient',
             description: 'You have interacted with this address 5 times.',
           },
@@ -302,39 +297,45 @@ describe('RecipientAnalysisService', () => {
       expect(result).toEqual({});
       expect(mockTransactionApi.getTransfers).not.toHaveBeenCalled();
 
-      // check the result is stored in the cache
       const cacheDir = CacheRouter.getRecipientAnalysisCacheDir({
         chainId: mockChainId,
+        safeAddress: mockSafeAddress,
         recipients: [],
       });
       const cacheContent = await fakeCacheService.hGet(cacheDir);
-      expect(JSON.parse(cacheContent as string)).toStrictEqual(
-        expect.objectContaining(result),
-      );
+      expect(JSON.parse(cacheContent as string)).toStrictEqual({});
 
       expect(extractRecipientsSpy).toHaveBeenCalledTimes(1);
       expect(extractRecipientsSpy).toHaveBeenCalledWith([], mockErc20Decoder);
     });
 
     it('should return cached result when available', async () => {
+      const mockTxInfo = createMockTxInfo(
+        getAddress(faker.finance.ethereumAddress()),
+        faker.string.numeric(3),
+      );
+
       // First run to populate cache
       extractRecipientsSpy.mockReturnValue([mockRecipientAddress]);
       (mockTransactionApi.getTransfers as jest.Mock).mockResolvedValue(
         mockTransferPage(3),
       );
 
+      const transactions: Array<DecodedTransactionData> = [
+        {
+          operation: 0,
+          to: mockRecipientAddress,
+          value: '1000000000000000000',
+          data: '0x',
+          dataDecoded: null,
+        },
+      ];
+
       const firstResult = await service.analyze({
         chainId: mockChainId,
         safeAddress: mockSafeAddress,
-        transactions: [
-          {
-            operation: 0,
-            to: mockRecipientAddress,
-            value: '1000000000000000000',
-            data: '0x',
-            dataDecoded: null,
-          },
-        ],
+        transactions,
+        txInfo: mockTxInfo,
       });
 
       // Reset mocks for second call
@@ -345,15 +346,8 @@ describe('RecipientAnalysisService', () => {
       const result = await service.analyze({
         chainId: mockChainId,
         safeAddress: mockSafeAddress,
-        transactions: [
-          {
-            operation: 0,
-            to: mockRecipientAddress,
-            value: '1000000000000000000',
-            data: '0x',
-            dataDecoded: null,
-          },
-        ],
+        transactions,
+        txInfo: mockTxInfo,
       });
 
       expect(result).toEqual(firstResult);
@@ -366,13 +360,12 @@ describe('RecipientAnalysisService', () => {
 
       expect(extractRecipientsSpy).toHaveBeenCalledTimes(1);
       expect(extractRecipientsSpy).toHaveBeenCalledWith(
-        expect.any(Array),
+        transactions,
         mockErc20Decoder,
       );
     });
 
     it('should cache result when not in cache', async () => {
-      // Cache is already empty from fakeCacheService.clear() in beforeEach
       (mockTransactionApi.getTransfers as jest.Mock).mockResolvedValue(
         mockTransferPage(faker.number.int({ min: 1, max: 5 })),
       );
@@ -400,9 +393,9 @@ describe('RecipientAnalysisService', () => {
         field: expect.any(String),
       });
 
-      // check the result is stored in the cache
       const cacheDir = CacheRouter.getRecipientAnalysisCacheDir({
         chainId: mockChainId,
+        safeAddress: mockSafeAddress,
         recipients: [mockRecipientAddress],
       });
       const cacheContent = await fakeCacheService.hGet(cacheDir);
@@ -425,7 +418,6 @@ describe('RecipientAnalysisService', () => {
         faker.string.numeric(3),
       );
 
-      // Mock invalid creation transaction data
       mockTransactionsService.getCreationTransaction.mockResolvedValue({
         created: faker.date.recent(),
         creator: faker.finance.ethereumAddress() as Address,
@@ -461,19 +453,15 @@ describe('RecipientAnalysisService', () => {
         txInfo: mockTxInfo,
       });
 
-      // Service should handle the error gracefully and return empty object
       expect(result).toEqual({});
     });
 
     it('should handle getSafe errors gracefully', async () => {
-      const mockTxInfo = createMockTxInfo(
-        mockSafeAddress,
-        faker.string.numeric(3),
-      );
+      const targetChainId = faker.string.numeric(3);
+      const mockTxInfo = createMockTxInfo(mockSafeAddress, targetChainId);
 
       mockChainsRepository.isSupportedChain.mockResolvedValue(true);
 
-      // Mock transactionApiManager.getApi to return an API that throws an error
       mockTransactionApiManager.getApi.mockImplementation((chainId) => {
         if (chainId === mockChainId) {
           return Promise.resolve({
@@ -487,14 +475,26 @@ describe('RecipientAnalysisService', () => {
         });
       });
 
-      // The service should throw an error when source Safe is not found
-      await expect(
-        service.analyzeBridge({
-          chainId: mockChainId,
-          safeAddress: mockSafeAddress,
-          txInfo: mockTxInfo,
-        }),
-      ).rejects.toThrow('Source Safe not found');
+      const result = await service.analyzeBridge({
+        chainId: mockChainId,
+        safeAddress: mockSafeAddress,
+        txInfo: mockTxInfo,
+      });
+
+      expect(result).toEqual({
+        [mockSafeAddress]: {
+          BRIDGE: [
+            {
+              type: 'FAILED',
+              severity: 'WARN',
+              title: 'Recipient analysis failed',
+              description:
+                'The analysis failed: bridge compatibility unavailable. Please try again later.',
+              targetChainId,
+            },
+          ],
+        },
+      });
     });
   });
 
@@ -558,7 +558,7 @@ describe('RecipientAnalysisService', () => {
         dataDecoded: {
           method: 'setup',
           parameters: [
-            { name: 'owners', type: 'address[]', value: 'not-an-array' }, // Invalid owners parameter
+            { name: 'owners', type: 'address[]', value: 'not-an-array' },
             {
               name: 'threshold',
               type: 'uint256',
@@ -622,13 +622,12 @@ describe('RecipientAnalysisService', () => {
         txInfo: mockTxInfo,
       });
 
-      // Service should handle the error gracefully and return empty object
       expect(result).toEqual({});
     });
   });
 
   describe('analyzeInteractions', () => {
-    it('should return KNOWN_RECIPIENT when interactions > 0', async () => {
+    it('should return RECURRING_RECIPIENT when interactions > 0', async () => {
       const interactionCount = faker.number.int({ min: 2, max: 10 });
       (mockTransactionApi.getTransfers as jest.Mock).mockResolvedValue(
         mockTransferPage(interactionCount),
@@ -642,7 +641,7 @@ describe('RecipientAnalysisService', () => {
 
       expect(result).toEqual({
         severity: 'OK',
-        type: 'KNOWN_RECIPIENT',
+        type: 'RECURRING_RECIPIENT',
         title: 'Recurring recipient',
         description: `You have interacted with this address ${interactionCount} times.`,
       });
@@ -701,13 +700,19 @@ describe('RecipientAnalysisService', () => {
       const error = new Error('API connection failed');
       mockTransactionApi.getTransfers.mockRejectedValue(error);
 
-      await expect(
-        service.analyzeInteractions({
-          chainId: mockChainId,
-          safeAddress: mockSafeAddress,
-          recipient: mockRecipientAddress,
-        }),
-      ).rejects.toThrow('API connection failed');
+      const result = await service.analyzeInteractions({
+        chainId: mockChainId,
+        safeAddress: mockSafeAddress,
+        recipient: mockRecipientAddress,
+      });
+
+      expect(result).toEqual({
+        type: 'FAILED',
+        severity: 'WARN',
+        title: 'Recipient analysis failed',
+        description:
+          'The analysis failed: recipient interactions unavailable. Please try again later.',
+      });
 
       expect(mockTransactionApiManager.getApi).toHaveBeenCalledWith(
         mockChainId,
@@ -719,13 +724,19 @@ describe('RecipientAnalysisService', () => {
         invalidField: 'invalid',
       });
 
-      await expect(
-        service.analyzeInteractions({
-          chainId: mockChainId,
-          safeAddress: mockSafeAddress,
-          recipient: mockRecipientAddress,
-        }),
-      ).rejects.toThrow();
+      const result = await service.analyzeInteractions({
+        chainId: mockChainId,
+        safeAddress: mockSafeAddress,
+        recipient: mockRecipientAddress,
+      });
+
+      expect(result).toEqual({
+        type: 'FAILED',
+        severity: 'WARN',
+        title: 'Recipient analysis failed',
+        description:
+          'The analysis failed: recipient interactions unavailable. Please try again later.',
+      });
     });
 
     it('should handle large interaction counts correctly', async () => {
@@ -742,7 +753,7 @@ describe('RecipientAnalysisService', () => {
 
       expect(result).toEqual({
         severity: 'OK',
-        type: 'KNOWN_RECIPIENT',
+        type: 'RECURRING_RECIPIENT',
         title: 'Recurring recipient',
         description: `You have interacted with this address ${largeInteractionCount} times.`,
       });
@@ -792,15 +803,12 @@ describe('RecipientAnalysisService', () => {
         txInfo: mockTxInfo,
       });
 
-      // Should return empty object when setups match
       expect(result).toEqual({});
     });
 
     it('should handle Safe setup comparison with different owners', async () => {
-      const mockTxInfo = createMockTxInfo(
-        mockSafeAddress,
-        faker.string.numeric(3),
-      );
+      const targetChainId = faker.string.numeric(3);
+      const mockTxInfo = createMockTxInfo(mockSafeAddress, targetChainId);
       const owner1 = getAddress(faker.finance.ethereumAddress());
       const owner2 = getAddress(faker.finance.ethereumAddress());
       const owner3 = getAddress(faker.finance.ethereumAddress());
@@ -821,10 +829,9 @@ describe('RecipientAnalysisService', () => {
 
       mockChainsRepository.isSupportedChain.mockResolvedValue(true);
       mockChainsRepository.getChain.mockResolvedValue(
-        chainBuilder().with('chainId', faker.string.numeric(3)).build(),
+        chainBuilder().with('chainId', targetChainId).build(),
       );
 
-      // Mock transactionApiManager.getApi to return different APIs for different chains
       mockTransactionApiManager.getApi.mockImplementation((chainId) => {
         if (chainId === mockChainId) {
           return Promise.resolve({
@@ -850,10 +857,20 @@ describe('RecipientAnalysisService', () => {
         txInfo: mockTxInfo,
       });
 
-      expect(Object.keys(result)).toContain(mockSafeAddress);
-      expect(result[mockSafeAddress]?.BRIDGE?.[0]?.type).toBe(
-        'DIFFERENT_SAFE_SETUP',
-      );
+      expect(result).toEqual({
+        [mockSafeAddress]: {
+          BRIDGE: [
+            {
+              type: 'DIFFERENT_SAFE_SETUP',
+              severity: 'INFO',
+              title: 'Different setup',
+              description:
+                'Your Safe exists on the target chain but with a different configuration. Review carefully before proceeding. Funds sent may be inaccessible if the setup is incorrect.',
+              targetChainId,
+            },
+          ],
+        },
+      });
     });
 
     it('should handle Safe setup comparison with different owner counts', async () => {
@@ -884,7 +901,6 @@ describe('RecipientAnalysisService', () => {
         chainBuilder().with('chainId', faker.string.numeric(3)).build(),
       );
 
-      // Mock transactionApiManager.getApi to return different APIs for different chains
       mockTransactionApiManager.getApi.mockImplementation((chainId) => {
         if (chainId === mockChainId) {
           return Promise.resolve({
@@ -937,7 +953,6 @@ describe('RecipientAnalysisService', () => {
         chainBuilder().with('chainId', faker.string.numeric(3)).build(),
       );
 
-      // Mock transactionApiManager.getApi to return different APIs for different chains
       mockTransactionApiManager.getApi.mockImplementation((chainId) => {
         if (chainId === mockChainId) {
           return Promise.resolve({
@@ -992,20 +1007,14 @@ describe('RecipientAnalysisService', () => {
     beforeEach(() => {
       mockChainsRepository.getAllChains.mockResolvedValue(mockChains);
       mockChainsRepository.isSupportedChain.mockResolvedValue(true);
-      (mockTransactionApi.getSafe as jest.Mock).mockResolvedValue(
-        mockSourceSafe,
-      );
-      // Ensure the transaction API manager returns the mock for all chains
+      mockTransactionApi.getSafe.mockResolvedValue(rawify(mockSourceSafe));
       mockTransactionApiManager.getApi.mockResolvedValue(mockTransactionApi);
     });
 
     it('should return MISSING_OWNERSHIP when target Safe does not exist but network is compatible', async () => {
-      const mockTxInfo = createMockTxInfo(
-        mockSafeAddress,
-        faker.string.numeric(3),
-      );
+      const targetChainId = faker.string.numeric(3);
+      const mockTxInfo = createMockTxInfo(mockSafeAddress, targetChainId);
 
-      // Mock transactionApiManager.getApi to return different APIs for different chains
       mockTransactionApiManager.getApi.mockImplementation((chainId) => {
         if (chainId === mockChainId) {
           return Promise.resolve({
@@ -1015,11 +1024,10 @@ describe('RecipientAnalysisService', () => {
         }
         return Promise.resolve({
           ...mockTransactionApi,
-          getSafe: jest.fn().mockResolvedValue(null), // Target Safe does not exist
+          getSafe: jest.fn().mockResolvedValue(null),
         });
       });
 
-      // Mock compatible creation transaction and chain
       const compatibleCreationTransaction = {
         ...createMockCreationTransaction([mockSafeAddress], 1),
         masterCopy: '0xd9Db270c1B5E3Bd161E8c8503c55cEABeE709552' as Address,
@@ -1032,7 +1040,7 @@ describe('RecipientAnalysisService', () => {
       mockChainsRepository.isSupportedChain.mockResolvedValue(true);
       mockChainsRepository.getChain.mockResolvedValue(
         chainBuilder()
-          .with('chainId', faker.string.numeric(3))
+          .with('chainId', targetChainId)
           .with('l2', false) // L1 chain for compatibility
           .build(),
       );
@@ -1043,14 +1051,23 @@ describe('RecipientAnalysisService', () => {
         txInfo: mockTxInfo,
       });
 
-      expect(Object.keys(result)).toContain(mockSafeAddress);
-      expect(result[mockSafeAddress]?.BRIDGE?.[0]?.type).toBe(
-        'INCOMPATIBLE_SAFE',
-      );
+      expect(result).toEqual({
+        [mockSafeAddress]: {
+          BRIDGE: [
+            {
+              type: 'INCOMPATIBLE_SAFE',
+              severity: 'CRITICAL',
+              title: 'Incompatible Safe version',
+              description:
+                'This Safe account cannot be created on the destination chain. You will not be able to claim ownership of the same address. Funds sent may be inaccessible.',
+              targetChainId,
+            },
+          ],
+        },
+      });
     });
 
     it('should handle JSON parsing errors in cached data gracefully', async () => {
-      // First, populate cache with valid data
       extractRecipientsSpy.mockReturnValue([mockRecipientAddress]);
       (mockTransactionApi.getTransfers as jest.Mock).mockResolvedValue(
         mockTransferPage(3),
@@ -1074,7 +1091,7 @@ describe('RecipientAnalysisService', () => {
       const recipientsHash = createHash('sha256');
       recipientsHash.update([mockRecipientAddress].sort().join(','));
       const cacheDir = {
-        key: `${mockChainId}_recipient_analysis`,
+        key: `${mockChainId}_recipient_analysis_${mockSafeAddress}`,
         field: recipientsHash.digest('hex'),
       };
       await fakeCacheService.hSet(cacheDir, 'invalid json data', 3600);
@@ -1100,8 +1117,10 @@ describe('RecipientAnalysisService', () => {
         ],
       });
 
-      // Should handle JSON parsing error gracefully and return fresh analysis
       expect(result).toBeDefined();
+      expect(result[mockRecipientAddress]).toBeDefined();
+      expect(result[mockRecipientAddress]?.RECIPIENT_INTERACTION).toBeDefined();
+
       expect(mockLoggingService.warn).toHaveBeenCalledWith(
         expect.stringContaining(
           'Failed to parse cached recipient analysis results',
@@ -1112,6 +1131,12 @@ describe('RecipientAnalysisService', () => {
         type: 'CACHE_MISS',
         key: expect.any(String),
         field: expect.any(String),
+      });
+
+      expect(mockTransactionApi.getTransfers).toHaveBeenCalledWith({
+        safeAddress: mockSafeAddress,
+        to: mockRecipientAddress,
+        limit: 1,
       });
     });
 
@@ -1130,7 +1155,6 @@ describe('RecipientAnalysisService', () => {
         faker.string.numeric(3),
       );
 
-      // Mock transactionApiManager.getApi to return different APIs for different chains
       mockTransactionApiManager.getApi.mockImplementation((chainId) => {
         if (chainId === mockChainId) {
           return Promise.resolve({
@@ -1141,7 +1165,7 @@ describe('RecipientAnalysisService', () => {
         if (chainId !== mockChainId) {
           return Promise.resolve({
             ...mockTransactionApi,
-            getSafe: jest.fn().mockResolvedValue(null), // Target Safe does not exist
+            getSafe: jest.fn().mockResolvedValue(null),
           });
         }
         return Promise.resolve({
@@ -1150,7 +1174,6 @@ describe('RecipientAnalysisService', () => {
         });
       });
 
-      // Mock getCreationTransaction to return valid creation data with compatible setup
       // Use a known compatible master copy and factory address
       const compatibleCreationTransaction = {
         ...createMockCreationTransaction([mockSafeAddress], 1),
@@ -1172,7 +1195,6 @@ describe('RecipientAnalysisService', () => {
         txInfo: mockTxInfo,
       });
 
-      // Should return bridge analysis result
       expect(Object.keys(result)).toContain(mockSafeAddress);
       expect(result[mockSafeAddress]?.BRIDGE?.[0]?.type).toBe(
         'INCOMPATIBLE_SAFE',
@@ -1181,7 +1203,7 @@ describe('RecipientAnalysisService', () => {
 
     it('should return UNSUPPORTED_NETWORK when target chain is not supported', async () => {
       const unsupportedChainId = faker.string.numeric(3);
-      const mockTxInfo = createMockTxInfo(mockSafeAddress, unsupportedChainId); // Unsupported chain
+      const mockTxInfo = createMockTxInfo(mockSafeAddress, unsupportedChainId);
 
       mockChainsRepository.isSupportedChain.mockImplementation((chainId) => {
         return Promise.resolve(chainId !== unsupportedChainId);
@@ -1191,7 +1213,6 @@ describe('RecipientAnalysisService', () => {
         createMockCreationTransaction([mockSafeAddress], 1),
       );
 
-      // Mock transactionApiManager.getApi for source chain
       mockTransactionApiManager.getApi.mockImplementation((chainId) => {
         if (chainId === mockChainId) {
           return Promise.resolve({
@@ -1211,10 +1232,20 @@ describe('RecipientAnalysisService', () => {
         txInfo: mockTxInfo,
       });
 
-      expect(Object.keys(result)).toContain(mockSafeAddress);
-      expect(result[mockSafeAddress]?.BRIDGE?.[0]?.type).toBe(
-        'UNSUPPORTED_NETWORK',
-      );
+      expect(result).toEqual({
+        [mockSafeAddress]: {
+          BRIDGE: [
+            {
+              type: 'UNSUPPORTED_NETWORK',
+              severity: 'WARN',
+              title: 'Unsupported network',
+              description:
+                'app.safe.global does not support the network. Unless you have a wallet deployed there, we recommend not to bridge. Funds sent may be inaccessible.',
+              targetChainId: unsupportedChainId,
+            },
+          ],
+        },
+      });
     });
 
     it('should analyze recipient when bridge recipient is different from safe address', async () => {
@@ -1224,12 +1255,10 @@ describe('RecipientAnalysisService', () => {
         faker.string.numeric(3),
       );
 
-      // Mock the recipient analysis
       (mockTransactionApi.getTransfers as jest.Mock).mockResolvedValue(
         mockTransferPage(faker.number.int({ min: 1, max: 5 })),
       );
 
-      // Mock transactionApiManager.getApi
       mockTransactionApiManager.getApi.mockImplementation(() => {
         return Promise.resolve({
           ...mockTransactionApi,
@@ -1244,31 +1273,40 @@ describe('RecipientAnalysisService', () => {
         txInfo: mockTxInfo,
       });
 
-      // Should return recipient analysis result
       expect(Object.keys(result)).toContain(differentRecipient);
       expect(result[differentRecipient]?.RECIPIENT_INTERACTION?.[0]?.type).toBe(
-        'KNOWN_RECIPIENT',
+        'RECURRING_RECIPIENT',
       );
     });
 
     it('should handle bridge analysis errors gracefully', async () => {
-      const mockTxInfo = createMockTxInfo(
-        mockSafeAddress,
-        faker.string.numeric(3),
-      );
+      const targetChainId = faker.string.numeric(3);
+      const mockTxInfo = createMockTxInfo(mockSafeAddress, targetChainId);
 
       mockChainsRepository.isSupportedChain.mockRejectedValue(
         new Error('Chains service unavailable'),
       );
 
-      // The service should throw the error when isSupportedChain fails
-      await expect(
-        service.analyzeBridge({
-          chainId: mockChainId,
-          safeAddress: mockSafeAddress,
-          txInfo: mockTxInfo,
-        }),
-      ).rejects.toThrow('Chains service unavailable');
+      const result = await service.analyzeBridge({
+        chainId: mockChainId,
+        safeAddress: mockSafeAddress,
+        txInfo: mockTxInfo,
+      });
+
+      expect(result).toEqual({
+        [mockSafeAddress]: {
+          BRIDGE: [
+            {
+              type: 'FAILED',
+              severity: 'WARN',
+              title: 'Recipient analysis failed',
+              description:
+                'The analysis failed: bridge compatibility unavailable. Please try again later.',
+              targetChainId,
+            },
+          ],
+        },
+      });
     });
   });
 });
