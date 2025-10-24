@@ -289,7 +289,7 @@ export default (): ReturnType<typeof configuration> => ({
     noFeeCampaign: {
       1: {
         startsAtTimeStamp: new Date().getTime() / 1000 - 10_000,
-        endsAtTimeStamp: new Date().getTime() / 1000 + 1000_000,
+        endsAtTimeStamp: new Date().getTime() / 1000 + 1_000_000,
         safeTokenAddress: faker.finance.ethereumAddress(),
         maxTxValueInUSD: 100,
         relayRules: [
