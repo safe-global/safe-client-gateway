@@ -291,7 +291,7 @@ export default (): ReturnType<typeof configuration> => ({
         startsAtTimeStamp: new Date().getTime() / 1000 - 10_000,
         endsAtTimeStamp: new Date().getTime() / 1000 + 1_000_000,
         safeTokenAddress: faker.finance.ethereumAddress(),
-        maxTxValueInUSD: 100,
+        maxTxValueInUSD: faker.number.int(),
         relayRules: [
           {
             balance: 0,
