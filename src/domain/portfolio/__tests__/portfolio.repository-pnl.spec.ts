@@ -48,7 +48,8 @@ describe('PortfolioRepository - PnL Caching', () => {
     mockConfigService = {
       get: jest.fn(),
       getOrThrow: jest.fn().mockImplementation((key: string) => {
-        if (key === 'portfolio.cache.positions.ttlSeconds') return positionsCacheTtl;
+        if (key === 'portfolio.cache.positions.ttlSeconds')
+          return positionsCacheTtl;
         if (key === 'portfolio.cache.pnl.ttlSeconds') return pnlCacheTtl;
         if (key === 'portfolio.filters.dustThresholdUsd') return dustThreshold;
         throw new Error(`Unexpected config key: ${key}`);
@@ -159,7 +160,8 @@ describe('PortfolioRepository - PnL Caching', () => {
       expect(
         hSetCalls.some((call) => {
           return (
-            call[0].key === pnlCacheDir.key && call[0].field === pnlCacheDir.field
+            call[0].key === pnlCacheDir.key &&
+            call[0].field === pnlCacheDir.field
           );
         }),
       ).toBe(true);

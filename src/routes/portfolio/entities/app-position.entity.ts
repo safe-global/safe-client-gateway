@@ -3,7 +3,8 @@ import type { Address } from 'viem';
 
 export class AppPositionTokenInfo {
   @ApiProperty({
-    description: 'Token contract address (0x0000000000000000000000000000000000000000 for native tokens)',
+    description:
+      'Token contract address (0x0000000000000000000000000000000000000000 for native tokens)',
   })
   address!: Address;
 

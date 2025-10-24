@@ -406,8 +406,7 @@ export class ZerionPortfolioApi implements IPortfolioApi {
   }
 
   private _mapNetworkToChainId(network: string): string {
-    const chainId =
-      ZERION_NETWORK_TO_CHAIN_ID_MAPPING[network.toLowerCase()];
+    const chainId = ZERION_NETWORK_TO_CHAIN_ID_MAPPING[network.toLowerCase()];
 
     if (!chainId) {
       this.logger.warn(

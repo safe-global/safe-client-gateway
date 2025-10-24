@@ -49,7 +49,8 @@ describe('PortfolioRepository', () => {
     mockConfigService = {
       get: jest.fn(),
       getOrThrow: jest.fn().mockImplementation((key: string) => {
-        if (key === 'portfolio.cache.positions.ttlSeconds') return defaultCacheTtl;
+        if (key === 'portfolio.cache.positions.ttlSeconds')
+          return defaultCacheTtl;
         if (key === 'portfolio.cache.pnl.ttlSeconds') return 60;
         if (key === 'portfolio.filters.dustThresholdUsd')
           return defaultDustThreshold;
@@ -75,7 +76,7 @@ describe('PortfolioRepository', () => {
         const cachedPortfolio = portfolioBuilder()
           .with('pnl', new PnLBuilder().build())
           .build();
-        const { pnl, ...positions} = cachedPortfolio;
+        const { pnl, ...positions } = cachedPortfolio;
 
         mockCacheService.hGet
           .mockResolvedValueOnce(JSON.stringify(positions))
@@ -125,10 +126,14 @@ describe('PortfolioRepository', () => {
 
         const hSetCalls = mockCacheService.hSet.mock.calls;
         const positionsCall = hSetCalls.find(
-          (call) => call[0].key === positionsCacheDir.key && call[0].field === positionsCacheDir.field,
+          (call) =>
+            call[0].key === positionsCacheDir.key &&
+            call[0].field === positionsCacheDir.field,
         );
         const pnlCall = hSetCalls.find(
-          (call) => call[0].key === pnlCacheDir.key && call[0].field === pnlCacheDir.field,
+          (call) =>
+            call[0].key === pnlCacheDir.key &&
+            call[0].field === pnlCacheDir.field,
         );
 
         expect(positionsCall).toBeDefined();
@@ -148,7 +153,8 @@ describe('PortfolioRepository', () => {
         const customPositionsTtl = 60;
         const customPnlTtl = 120;
         mockConfigService.getOrThrow.mockImplementation((key: string) => {
-          if (key === 'portfolio.cache.positions.ttlSeconds') return customPositionsTtl;
+          if (key === 'portfolio.cache.positions.ttlSeconds')
+            return customPositionsTtl;
           if (key === 'portfolio.cache.pnl.ttlSeconds') return customPnlTtl;
           if (key === 'portfolio.filters.dustThresholdUsd')
             return defaultDustThreshold;
@@ -189,10 +195,14 @@ describe('PortfolioRepository', () => {
         });
 
         const positionsCall = hSetCalls.find(
-          (call) => call[0].key === positionsCacheDir.key && call[0].field === positionsCacheDir.field,
+          (call) =>
+            call[0].key === positionsCacheDir.key &&
+            call[0].field === positionsCacheDir.field,
         );
         const pnlCall = hSetCalls.find(
-          (call) => call[0].key === pnlCacheDir.key && call[0].field === pnlCacheDir.field,
+          (call) =>
+            call[0].key === pnlCacheDir.key &&
+            call[0].field === pnlCacheDir.field,
         );
 
         expect(positionsCall![2]).toBe(customPositionsTtl);
@@ -332,13 +342,17 @@ describe('PortfolioRepository', () => {
       });
 
       it('should filter positions by chain ID', async () => {
-        const position1TokenInfo = tokenInfoBuilder().with('chainId', '1').build();
+        const position1TokenInfo = tokenInfoBuilder()
+          .with('chainId', '1')
+          .build();
         const position1 = appPositionBuilder()
           .with('tokenInfo', position1TokenInfo)
           .with('balanceFiat', 500)
           .build();
 
-        const position2TokenInfo = tokenInfoBuilder().with('chainId', '10').build();
+        const position2TokenInfo = tokenInfoBuilder()
+          .with('chainId', '10')
+          .build();
         const position2 = appPositionBuilder()
           .with('tokenInfo', position2TokenInfo)
           .with('balanceFiat', 600)
@@ -371,14 +385,14 @@ describe('PortfolioRepository', () => {
       });
 
       it('should remove apps with no positions after chain filtering', async () => {
-        const position1TokenInfo = tokenInfoBuilder().with('chainId', '10').build();
+        const position1TokenInfo = tokenInfoBuilder()
+          .with('chainId', '10')
+          .build();
         const position1 = appPositionBuilder()
           .with('tokenInfo', position1TokenInfo)
           .build();
 
-        const app = appBalanceBuilder()
-          .with('positions', [position1])
-          .build();
+        const app = appBalanceBuilder().with('positions', [position1]).build();
 
         const portfolio = portfolioBuilder()
           .with('tokenBalances', [])
@@ -398,13 +412,17 @@ describe('PortfolioRepository', () => {
       });
 
       it('should recalculate app balance after filtering positions', async () => {
-        const position1TokenInfo = tokenInfoBuilder().with('chainId', '1').build();
+        const position1TokenInfo = tokenInfoBuilder()
+          .with('chainId', '1')
+          .build();
         const position1 = appPositionBuilder()
           .with('tokenInfo', position1TokenInfo)
           .with('balanceFiat', 100)
           .build();
 
-        const position2TokenInfo = tokenInfoBuilder().with('chainId', '10').build();
+        const position2TokenInfo = tokenInfoBuilder()
+          .with('chainId', '10')
+          .build();
         const position2 = appPositionBuilder()
           .with('tokenInfo', position2TokenInfo)
           .with('balanceFiat', 200)
@@ -435,13 +453,17 @@ describe('PortfolioRepository', () => {
 
     describe('trusted token filtering', () => {
       it('should filter untrusted tokens when trusted=true', async () => {
-        const trustedTokenInfo = tokenInfoBuilder().with('trusted', true).build();
+        const trustedTokenInfo = tokenInfoBuilder()
+          .with('trusted', true)
+          .build();
         const trustedToken = tokenBalanceBuilder()
           .with('tokenInfo', trustedTokenInfo)
           .with('balanceFiat', 100)
           .build();
 
-        const untrustedTokenInfo = tokenInfoBuilder().with('trusted', false).build();
+        const untrustedTokenInfo = tokenInfoBuilder()
+          .with('trusted', false)
+          .build();
         const untrustedToken = tokenBalanceBuilder()
           .with('tokenInfo', untrustedTokenInfo)
           .with('balanceFiat', 200)
@@ -467,13 +489,17 @@ describe('PortfolioRepository', () => {
       });
 
       it('should filter untrusted positions when trusted=true', async () => {
-        const trustedPositionInfo = tokenInfoBuilder().with('trusted', true).build();
+        const trustedPositionInfo = tokenInfoBuilder()
+          .with('trusted', true)
+          .build();
         const trustedPosition = appPositionBuilder()
           .with('tokenInfo', trustedPositionInfo)
           .with('balanceFiat', 100)
           .build();
 
-        const untrustedPositionInfo = tokenInfoBuilder().with('trusted', false).build();
+        const untrustedPositionInfo = tokenInfoBuilder()
+          .with('trusted', false)
+          .build();
         const untrustedPosition = appPositionBuilder()
           .with('tokenInfo', untrustedPositionInfo)
           .with('balanceFiat', 200)
@@ -506,12 +532,16 @@ describe('PortfolioRepository', () => {
       });
 
       it('should not filter when trusted=false', async () => {
-        const trustedTokenInfo = tokenInfoBuilder().with('trusted', true).build();
+        const trustedTokenInfo = tokenInfoBuilder()
+          .with('trusted', true)
+          .build();
         const trustedToken = tokenBalanceBuilder()
           .with('tokenInfo', trustedTokenInfo)
           .build();
 
-        const untrustedTokenInfo = tokenInfoBuilder().with('trusted', false).build();
+        const untrustedTokenInfo = tokenInfoBuilder()
+          .with('trusted', false)
+          .build();
         const untrustedToken = tokenBalanceBuilder()
           .with('tokenInfo', untrustedTokenInfo)
           .build();
@@ -539,7 +569,9 @@ describe('PortfolioRepository', () => {
         const largeToken = tokenBalanceBuilder()
           .with('balanceFiat', 10.0)
           .build();
-        const dustToken = tokenBalanceBuilder().with('balanceFiat', 0.5).build();
+        const dustToken = tokenBalanceBuilder()
+          .with('balanceFiat', 0.5)
+          .build();
 
         const portfolio = portfolioBuilder()
           .with('tokenBalances', [largeToken, dustToken])
@@ -592,7 +624,8 @@ describe('PortfolioRepository', () => {
       it('should use configured dust threshold', async () => {
         const customThreshold = 5.0;
         mockConfigService.getOrThrow.mockImplementation((key: string) => {
-          if (key === 'portfolio.cache.positions.ttlSeconds') return defaultCacheTtl;
+          if (key === 'portfolio.cache.positions.ttlSeconds')
+            return defaultCacheTtl;
           if (key === 'portfolio.cache.pnl.ttlSeconds') return 60;
           if (key === 'portfolio.filters.dustThresholdUsd')
             return customThreshold;

@@ -63,9 +63,7 @@ describe('PortfolioService - PnL Mapping', () => {
     });
 
     it('should map null PnL as null', async () => {
-      const domainPortfolio = portfolioBuilder()
-        .with('pnl', null)
-        .build();
+      const domainPortfolio = portfolioBuilder().with('pnl', null).build();
 
       mockDomainPortfolioService.getPortfolio.mockResolvedValue(
         domainPortfolio,
@@ -91,9 +89,7 @@ describe('PortfolioService - PnL Mapping', () => {
         .withReceivedForNfts(250)
         .build();
 
-      const domainPortfolio = portfolioBuilder()
-        .with('pnl', customPnL)
-        .build();
+      const domainPortfolio = portfolioBuilder().with('pnl', customPnL).build();
 
       mockDomainPortfolioService.getPortfolio.mockResolvedValue(
         domainPortfolio,
@@ -126,9 +122,7 @@ describe('PortfolioService - PnL Mapping', () => {
         .withReceivedForNfts(0)
         .build();
 
-      const domainPortfolio = portfolioBuilder()
-        .with('pnl', zeroPnL)
-        .build();
+      const domainPortfolio = portfolioBuilder().with('pnl', zeroPnL).build();
 
       mockDomainPortfolioService.getPortfolio.mockResolvedValue(
         domainPortfolio,
@@ -184,21 +178,15 @@ describe('PortfolioService - PnL Mapping', () => {
       });
 
       // Verify other portfolio fields are preserved
-      expect(result.totalBalanceFiat).toBe(
-        domainPortfolio.totalBalanceFiat,
-      );
+      expect(result.totalBalanceFiat).toBe(domainPortfolio.totalBalanceFiat);
       expect(result.totalTokenBalanceFiat).toBe(
         domainPortfolio.totalTokenBalanceFiat,
       );
       expect(result.totalPositionsBalanceFiat).toBe(
         domainPortfolio.totalPositionsBalanceFiat,
       );
-      expect(result.tokenBalances).toEqual(
-        expect.any(Array),
-      );
-      expect(result.positionBalances).toEqual(
-        expect.any(Array),
-      );
+      expect(result.tokenBalances).toEqual(expect.any(Array));
+      expect(result.positionBalances).toEqual(expect.any(Array));
       expect(result.pnl).toBeDefined();
     });
 
@@ -234,9 +222,7 @@ describe('PortfolioService - PnL Mapping', () => {
 
     it('should create new PnL instance for each call', async () => {
       const pnlData = new PnLBuilder().build();
-      const domainPortfolio = portfolioBuilder()
-        .with('pnl', pnlData)
-        .build();
+      const domainPortfolio = portfolioBuilder().with('pnl', pnlData).build();
 
       mockDomainPortfolioService.getPortfolio.mockResolvedValue(
         domainPortfolio,

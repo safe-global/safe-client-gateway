@@ -256,13 +256,19 @@ describe('PortfolioController', () => {
     });
 
     it('should filter by chain IDs correctly', async () => {
-      const tokenInfo1 = tokenInfoBuilder().with('chainId', '1').with('trusted', true).build();
+      const tokenInfo1 = tokenInfoBuilder()
+        .with('chainId', '1')
+        .with('trusted', true)
+        .build();
       const token1 = tokenBalanceBuilder()
         .with('tokenInfo', tokenInfo1)
         .with('balanceFiat', 100)
         .build();
 
-      const tokenInfo2 = tokenInfoBuilder().with('chainId', '10').with('trusted', true).build();
+      const tokenInfo2 = tokenInfoBuilder()
+        .with('chainId', '10')
+        .with('trusted', true)
+        .build();
       const token2 = tokenBalanceBuilder()
         .with('tokenInfo', tokenInfo2)
         .with('balanceFiat', 200)
@@ -290,7 +296,9 @@ describe('PortfolioController', () => {
         .with('balanceFiat', 100)
         .build();
 
-      const untrustedTokenInfo = tokenInfoBuilder().with('trusted', false).build();
+      const untrustedTokenInfo = tokenInfoBuilder()
+        .with('trusted', false)
+        .build();
       const untrustedToken = tokenBalanceBuilder()
         .with('tokenInfo', untrustedTokenInfo)
         .with('balanceFiat', 200)

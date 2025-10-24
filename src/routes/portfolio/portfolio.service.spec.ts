@@ -133,7 +133,10 @@ describe('PortfolioService', () => {
         .with('key', 'test-position-key')
         .with('type', 'lending')
         .with('name', 'USDC Lending')
-        .with('tokenInfo', positionTokenInfo as unknown as TokenBalance['tokenInfo'])
+        .with(
+          'tokenInfo',
+          positionTokenInfo as unknown as TokenBalance['tokenInfo'],
+        )
         .with('balance', '5000000000')
         .with('balanceFiat', 5000)
         .with('priceChangePercentage1d', -2.5)
@@ -184,7 +187,10 @@ describe('PortfolioService', () => {
         .build();
 
       const position = appPositionBuilder()
-        .with('tokenInfo', positionTokenInfo as unknown as TokenBalance['tokenInfo'])
+        .with(
+          'tokenInfo',
+          positionTokenInfo as unknown as TokenBalance['tokenInfo'],
+        )
         .build();
 
       const app = appBalanceBuilder().with('positions', [position]).build();

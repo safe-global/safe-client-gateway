@@ -55,7 +55,10 @@ class PortfolioBuilder extends Builder<Portfolio> {
     // Update totals in the builder
     super.with('totalTokenBalanceFiat', totalTokenBalanceFiat);
     super.with('totalPositionsBalanceFiat', totalPositionsBalanceFiat);
-    super.with('totalBalanceFiat', totalTokenBalanceFiat + totalPositionsBalanceFiat);
+    super.with(
+      'totalBalanceFiat',
+      totalTokenBalanceFiat + totalPositionsBalanceFiat,
+    );
   }
 }
 

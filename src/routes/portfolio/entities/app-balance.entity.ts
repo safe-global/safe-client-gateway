@@ -34,7 +34,7 @@ export class AppBalance {
   @ApiPropertyOptional({
     type: 'number',
     description: 'Total balance in fiat currency across all positions',
-    example: 15000.00,
+    example: 15000.0,
     nullable: true,
   })
   balanceFiat!: number | null;

@@ -21,9 +21,8 @@ export class PortfolioService {
     excludeDust?: boolean;
     provider?: string;
   }): Promise<Portfolio> {
-    const domainPortfolio = await this.domainPortfolioService.getPortfolio(
-      args,
-    );
+    const domainPortfolio =
+      await this.domainPortfolioService.getPortfolio(args);
     return this._mapToApiPortfolio(domainPortfolio);
   }
 

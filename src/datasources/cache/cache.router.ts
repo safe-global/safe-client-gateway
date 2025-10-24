@@ -926,10 +926,7 @@ export class CacheRouter {
     fiatCode: string;
     provider?: string;
   }): CacheDir {
-    return new CacheDir(
-      CacheRouter.getPortfolioCacheKey(args),
-      args.fiatCode,
-    );
+    return new CacheDir(CacheRouter.getPortfolioCacheKey(args), args.fiatCode);
   }
 
   static getPortfolioPositionsCacheKey(args: {
