@@ -43,6 +43,7 @@ export class ZapperPortfolioApi implements IPortfolioApi {
     fiatCode: string;
     chainIds?: Array<string>;
     trusted?: boolean;
+    fungibleIds?: Array<string>;
   }): Promise<Raw<Portfolio>> {
     try {
       const query = this._buildGraphQLQuery();
@@ -181,6 +182,7 @@ export class ZapperPortfolioApi implements IPortfolioApi {
       totalPositionsBalanceFiat,
       tokenBalances,
       positionBalances: appBalances,
+      pnl: null,
     });
   }
 

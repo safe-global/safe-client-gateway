@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import type { Address } from 'viem';
 import { IPortfolioRepository } from '@/domain/portfolio/portfolio.repository.interface';
 import { IPortfolioApi } from '@/domain/interfaces/portfolio-api.interface';
@@ -9,6 +9,7 @@ import {
 import type { TokenBalance } from '@/domain/portfolio/entities/token-balance.entity';
 import type { AppBalance } from '@/domain/portfolio/entities/app-balance.entity';
 import type { AppPosition } from '@/domain/portfolio/entities/app-position.entity';
+import type { PnL } from '@/domain/portfolio/entities/pnl.entity';
 import {
   CacheService,
   ICacheService,
@@ -23,7 +24,9 @@ import { IConfigurationService } from '@/config/configuration.service.interface'
 
 @Injectable()
 export class PortfolioRepository implements IPortfolioRepository {
-  private readonly cacheExpirationSeconds: number;
+  private readonly logger = new Logger(PortfolioRepository.name);
+  private readonly positionsCacheExpirationSeconds: number;
+  private readonly pnlCacheExpirationSeconds: number;
   private readonly dustThresholdUsd: number;
 
   constructor(
@@ -36,9 +39,14 @@ export class PortfolioRepository implements IPortfolioRepository {
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
   ) {
-    this.cacheExpirationSeconds = this.configurationService.getOrThrow<number>(
-      'portfolio.cache.ttlSeconds',
-    );
+    this.positionsCacheExpirationSeconds =
+      this.configurationService.getOrThrow<number>(
+        'portfolio.cache.positions.ttlSeconds',
+      );
+    this.pnlCacheExpirationSeconds =
+      this.configurationService.getOrThrow<number>(
+        'portfolio.cache.pnl.ttlSeconds',
+      );
     this.dustThresholdUsd = this.configurationService.getOrThrow<number>(
       'portfolio.filters.dustThresholdUsd',
     );
@@ -51,8 +59,117 @@ export class PortfolioRepository implements IPortfolioRepository {
     trusted?: boolean;
     excludeDust?: boolean;
     provider?: string;
+    fungibleIds?: Array<string>;
   }): Promise<Portfolio> {
-    const provider = args.provider?.toLowerCase() || PortfolioProvider.ZERION;
+    const provider = args.provider?.toLowerCase() || 'zerion';
+
+    const portfolio =
+      provider === 'zerion'
+        ? await this._getZerionPortfolioWithSeparateCaching(args)
+        : await this._getPortfolioWithSingleCache(args);
+
+    return this._applyFilters(portfolio, args);
+  }
+
+  /**
+   * Dual-cache strategy: positions and PnL cached separately with different TTLs.
+   * Returns cached data when available, fetches PnL separately if only positions cached.
+   */
+  private async _getZerionPortfolioWithSeparateCaching(args: {
+    address: Address;
+    fiatCode: string;
+    trusted?: boolean;
+    fungibleIds?: Array<string>;
+  }): Promise<Portfolio> {
+    const positionsCacheDir = CacheRouter.getPortfolioPositionsCacheDir({
+      address: args.address,
+      fiatCode: args.fiatCode,
+      provider: PortfolioProvider.ZERION,
+    });
+
+    const pnlCacheDir = CacheRouter.getPortfolioPnLCacheDir({
+      address: args.address,
+      fiatCode: args.fiatCode,
+      fungibleIds: args.fungibleIds,
+    });
+
+    const [cachedPositions, cachedPnL] = await Promise.all([
+      this.cacheService.hGet(positionsCacheDir),
+      this.cacheService.hGet(pnlCacheDir),
+    ]);
+
+    if (cachedPositions && cachedPnL) {
+      const positions = JSON.parse(cachedPositions);
+      const pnl = JSON.parse(cachedPnL);
+      return PortfolioSchema.parse({ ...positions, pnl });
+    }
+
+    if (cachedPositions && !cachedPnL) {
+      const positions = JSON.parse(cachedPositions);
+      let pnl = null;
+      try {
+        pnl = await this.zerionPortfolioApi.fetchPnL?.({
+          address: args.address,
+          fiatCode: args.fiatCode,
+          fungibleIds: args.fungibleIds,
+        });
+        if (pnl) {
+          await this.cacheService.hSet(
+            pnlCacheDir,
+            JSON.stringify(pnl),
+            this.pnlCacheExpirationSeconds,
+          );
+        }
+      } catch (error) {
+        this.logger.warn(
+          `Failed to fetch PnL for address ${args.address}, returning portfolio without PnL data`,
+          error,
+        );
+        pnl = null;
+      }
+      return PortfolioSchema.parse({ ...positions, pnl });
+    }
+
+    const rawPortfolio = await this.zerionPortfolioApi.getPortfolio({
+      address: args.address,
+      fiatCode: args.fiatCode,
+      trusted: args.trusted,
+      fungibleIds: args.fungibleIds,
+    });
+
+    const portfolio = PortfolioSchema.parse(rawPortfolio);
+    const { pnl, ...positionsOnly } = portfolio;
+
+    const cachePromises: Array<Promise<void>> = [
+      this.cacheService.hSet(
+        positionsCacheDir,
+        JSON.stringify(positionsOnly),
+        this.positionsCacheExpirationSeconds,
+      ),
+    ];
+
+    if (pnl) {
+      cachePromises.push(
+        this.cacheService.hSet(
+          pnlCacheDir,
+          JSON.stringify(pnl),
+          this.pnlCacheExpirationSeconds,
+        ),
+      );
+    }
+
+    await Promise.all(cachePromises);
+
+    return portfolio;
+  }
+
+  private async _getPortfolioWithSingleCache(args: {
+    address: Address;
+    fiatCode: string;
+    provider?: string;
+    trusted?: boolean;
+  }): Promise<Portfolio> {
+    const provider = args.provider || PortfolioProvider.ZAPPER;
     const cacheDir = CacheRouter.getPortfolioCacheDir({
       address: args.address,
       fiatCode: args.fiatCode,
@@ -60,27 +177,37 @@ export class PortfolioRepository implements IPortfolioRepository {
     });
 
     const cached = await this.cacheService.hGet(cacheDir);
-    let portfolio: Portfolio;
 
     if (cached) {
-      portfolio = PortfolioSchema.parse(JSON.parse(cached));
-    } else {
-      const portfolioApi = this._getProviderApi(provider);
-      const rawPortfolio = await portfolioApi.getPortfolio({
-        address: args.address,
-        fiatCode: args.fiatCode,
-        trusted: args.trusted,
-      });
-
-      portfolio = PortfolioSchema.parse(rawPortfolio);
-
-      await this.cacheService.hSet(
-        cacheDir,
-        JSON.stringify(portfolio),
-        this.cacheExpirationSeconds,
-      );
+      return PortfolioSchema.parse(JSON.parse(cached));
     }
 
+    const portfolioApi = this._getProviderApi(provider);
+    const rawPortfolio = await portfolioApi.getPortfolio({
+      address: args.address,
+      fiatCode: args.fiatCode,
+      trusted: args.trusted,
+    });
+
+    const portfolio = PortfolioSchema.parse(rawPortfolio);
+
+    await this.cacheService.hSet(
+      cacheDir,
+      JSON.stringify(portfolio),
+      this.positionsCacheExpirationSeconds,
+    );
+
+    return portfolio;
+  }
+
+  private _applyFilters(
+    portfolio: Portfolio,
+    args: {
+      chainIds?: Array<string>;
+      trusted?: boolean;
+      excludeDust?: boolean;
+    },
+  ): Portfolio {
     let filteredPortfolio = portfolio;
 
     if (args.chainIds && args.chainIds.length > 0) {
@@ -103,20 +230,33 @@ export class PortfolioRepository implements IPortfolioRepository {
 
   /**
    * Clears ALL cached portfolio data for an address across all providers.
-   * This removes the entire cache key, which includes all fiat code fields.
+   * This removes portfolio, positions, and PnL cache keys for the address.
    */
   async clearPortfolio(args: { address: Address }): Promise<void> {
-    const providers = [PortfolioProvider.ZERION, PortfolioProvider.ZAPPER];
+    const providers = ['zerion', 'zapper'];
 
-    const deletePromises = providers.map((provider) => {
-      const key = CacheRouter.getPortfolioCacheKey({
-        address: args.address,
-        provider,
-      });
-      return this.cacheService.deleteByKey(key);
-    });
+    for (const provider of providers) {
+      await this.cacheService.deleteByKey(
+        CacheRouter.getPortfolioCacheKey({
+          address: args.address,
+          provider,
+        }),
+      );
 
-    await Promise.all(deletePromises);
+      if (provider === 'zerion') {
+        await this.cacheService.deleteByKey(
+          CacheRouter.getPortfolioPositionsCacheKey({
+            address: args.address,
+            provider: provider as unknown as string,
+          }),
+        );
+        await this.cacheService.deleteByKey(
+          CacheRouter.getPortfolioPnLCacheKey({
+            address: args.address,
+          }),
+        );
+      }
+    }
   }
 
   private _getProviderApi(provider: string): IPortfolioApi {
@@ -156,7 +296,11 @@ export class PortfolioRepository implements IPortfolioRepository {
       })
       .filter((app): app is NonNullable<typeof app> => app !== null);
 
-    return this._recalculateTotals(filteredTokenBalances, filteredAppBalances);
+    return this._recalculateTotals(
+      filteredTokenBalances,
+      filteredAppBalances,
+      portfolio.pnl,
+    );
   }
 
   private _filterByChains(
@@ -200,6 +344,7 @@ export class PortfolioRepository implements IPortfolioRepository {
   private _recalculateTotals(
     tokenBalances: Array<TokenBalance>,
     appBalances: Array<AppBalance>,
+    pnl: PnL = null,
   ): Portfolio {
     const totalTokenBalanceFiat = this._sumBalances(tokenBalances);
     const totalPositionsBalanceFiat = this._sumBalances(appBalances);
@@ -210,6 +355,7 @@ export class PortfolioRepository implements IPortfolioRepository {
       totalPositionsBalanceFiat,
       tokenBalances,
       positionBalances: appBalances,
+      pnl,
     };
   }
 }

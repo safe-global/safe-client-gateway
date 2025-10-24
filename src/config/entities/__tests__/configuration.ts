@@ -362,7 +362,12 @@ export default (): ReturnType<typeof configuration> => ({
   },
   portfolio: {
     cache: {
-      ttlSeconds: faker.number.int({ min: 10, max: 300 }),
+      positions: {
+        ttlSeconds: faker.number.int({ min: 10, max: 300 }),
+      },
+      pnl: {
+        ttlSeconds: faker.number.int({ min: 10, max: 300 }),
+      },
     },
     filters: {
       dustThresholdUsd: faker.number.float({ min: 0.1, max: 10 }),

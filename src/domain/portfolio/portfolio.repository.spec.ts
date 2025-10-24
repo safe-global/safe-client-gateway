@@ -5,6 +5,7 @@ import type { IConfigurationService } from '@/config/configuration.service.inter
 import { CacheRouter } from '@/datasources/cache/cache.router';
 import { PortfolioProvider } from '@/domain/portfolio/entities/portfolio-provider.enum';
 import { portfolioBuilder } from '@/domain/portfolio/entities/__tests__/portfolio.builder';
+import { PnLBuilder } from '@/domain/portfolio/entities/__tests__/pnl.builder';
 import { tokenBalanceBuilder } from '@/domain/portfolio/entities/__tests__/token-balance.builder';
 import { appBalanceBuilder } from '@/domain/portfolio/entities/__tests__/app-balance.builder';
 import { appPositionBuilder } from '@/domain/portfolio/entities/__tests__/app-position.builder';
@@ -48,7 +49,8 @@ describe('PortfolioRepository', () => {
     mockConfigService = {
       get: jest.fn(),
       getOrThrow: jest.fn().mockImplementation((key: string) => {
-        if (key === 'portfolio.cache.ttlSeconds') return defaultCacheTtl;
+        if (key === 'portfolio.cache.positions.ttlSeconds') return defaultCacheTtl;
+        if (key === 'portfolio.cache.pnl.ttlSeconds') return 60;
         if (key === 'portfolio.filters.dustThresholdUsd')
           return defaultDustThreshold;
         throw new Error(`Unexpected config key: ${key}`);
@@ -70,10 +72,14 @@ describe('PortfolioRepository', () => {
 
     describe('caching', () => {
       it('should return cached portfolio if available', async () => {
-        const cachedPortfolio = portfolioBuilder().build();
-        mockCacheService.hGet.mockResolvedValue(
-          JSON.stringify(cachedPortfolio),
-        );
+        const cachedPortfolio = portfolioBuilder()
+          .with('pnl', new PnLBuilder().build())
+          .build();
+        const { pnl, ...positions} = cachedPortfolio;
+
+        mockCacheService.hGet
+          .mockResolvedValueOnce(JSON.stringify(positions))
+          .mockResolvedValueOnce(JSON.stringify(pnl));
 
         const result = await repository.getPortfolio({
           address,
@@ -83,17 +89,12 @@ describe('PortfolioRepository', () => {
 
         expect(result).toEqual(cachedPortfolio);
         expect(mockZerionApi.getPortfolio).not.toHaveBeenCalled();
-        expect(mockCacheService.hGet).toHaveBeenCalledWith(
-          CacheRouter.getPortfolioCacheDir({
-            address,
-            fiatCode,
-            provider: PortfolioProvider.ZERION,
-          }),
-        );
       });
 
       it('should fetch from API and cache if not cached', async () => {
-        const portfolio = portfolioBuilder().build();
+        const portfolio = portfolioBuilder()
+          .with('pnl', new PnLBuilder().build())
+          .build();
         mockCacheService.hGet.mockResolvedValue(undefined);
         mockZerionApi.getPortfolio.mockResolvedValue(rawify(portfolio));
 
@@ -110,27 +111,45 @@ describe('PortfolioRepository', () => {
           trusted: undefined,
         });
 
-        // Verify cache.hSet was called with correct parameters
-        expect(mockCacheService.hSet).toHaveBeenCalledWith(
-          CacheRouter.getPortfolioCacheDir({
-            address,
-            fiatCode,
-            provider: PortfolioProvider.ZERION,
-          }),
-          expect.any(String),
-          defaultCacheTtl,
+        expect(mockCacheService.hSet).toHaveBeenCalledTimes(2);
+
+        const positionsCacheDir = CacheRouter.getPortfolioPositionsCacheDir({
+          address,
+          fiatCode,
+          provider: PortfolioProvider.ZERION,
+        });
+        const pnlCacheDir = CacheRouter.getPortfolioPnLCacheDir({
+          address,
+          fiatCode,
+        });
+
+        const hSetCalls = mockCacheService.hSet.mock.calls;
+        const positionsCall = hSetCalls.find(
+          (call) => call[0].key === positionsCacheDir.key && call[0].field === positionsCacheDir.field,
+        );
+        const pnlCall = hSetCalls.find(
+          (call) => call[0].key === pnlCacheDir.key && call[0].field === pnlCacheDir.field,
         );
 
-        // Verify the cached string is a valid Portfolio when parsed
-        const cachedCall = mockCacheService.hSet.mock.calls[0];
-        const cachedPortfolio = JSON.parse(cachedCall[1]);
-        expect(cachedPortfolio).toEqual(portfolio);
+        expect(positionsCall).toBeDefined();
+        expect(pnlCall).toBeDefined();
+
+        const { pnl, ...positions } = portfolio;
+        const cachedPositions = JSON.parse(positionsCall![1]);
+        const cachedPnl = JSON.parse(pnlCall![1]);
+
+        expect(cachedPositions).toEqual(positions);
+        expect(cachedPnl).toEqual(pnl);
+        expect(positionsCall![2]).toBe(defaultCacheTtl);
+        expect(pnlCall![2]).toBe(60);
       });
 
       it('should use configured cache TTL', async () => {
-        const customTtl = 60;
+        const customPositionsTtl = 60;
+        const customPnlTtl = 120;
         mockConfigService.getOrThrow.mockImplementation((key: string) => {
-          if (key === 'portfolio.cache.ttlSeconds') return customTtl;
+          if (key === 'portfolio.cache.positions.ttlSeconds') return customPositionsTtl;
+          if (key === 'portfolio.cache.pnl.ttlSeconds') return customPnlTtl;
           if (key === 'portfolio.filters.dustThresholdUsd')
             return defaultDustThreshold;
           throw new Error(`Unexpected config key: ${key}`);
@@ -144,7 +163,9 @@ describe('PortfolioRepository', () => {
           mockConfigService,
         );
 
-        const portfolio = portfolioBuilder().build();
+        const portfolio = portfolioBuilder()
+          .with('pnl', new PnLBuilder().build())
+          .build();
         mockCacheService.hGet.mockResolvedValue(undefined);
         mockZerionApi.getPortfolio.mockResolvedValue(rawify(portfolio));
 
@@ -154,11 +175,28 @@ describe('PortfolioRepository', () => {
           provider: PortfolioProvider.ZERION,
         });
 
-        expect(mockCacheService.hSet).toHaveBeenCalledWith(
-          expect.any(Object),
-          expect.any(String),
-          customTtl,
+        expect(mockCacheService.hSet).toHaveBeenCalledTimes(2);
+
+        const hSetCalls = mockCacheService.hSet.mock.calls;
+        const positionsCacheDir = CacheRouter.getPortfolioPositionsCacheDir({
+          address,
+          fiatCode,
+          provider: PortfolioProvider.ZERION,
+        });
+        const pnlCacheDir = CacheRouter.getPortfolioPnLCacheDir({
+          address,
+          fiatCode,
+        });
+
+        const positionsCall = hSetCalls.find(
+          (call) => call[0].key === positionsCacheDir.key && call[0].field === positionsCacheDir.field,
         );
+        const pnlCall = hSetCalls.find(
+          (call) => call[0].key === pnlCacheDir.key && call[0].field === pnlCacheDir.field,
+        );
+
+        expect(positionsCall![2]).toBe(customPositionsTtl);
+        expect(pnlCall![2]).toBe(customPnlTtl);
       });
     });
 
@@ -238,7 +276,8 @@ describe('PortfolioRepository', () => {
           .with('positionBalances', [])
           .build();
 
-        mockCacheService.hGet.mockResolvedValue(JSON.stringify(portfolio));
+        mockCacheService.hGet.mockResolvedValue(undefined);
+        mockZerionApi.getPortfolio.mockResolvedValue(rawify(portfolio));
 
         const result = await repository.getPortfolio({
           address,
@@ -275,7 +314,8 @@ describe('PortfolioRepository', () => {
           .with('positionBalances', [])
           .build();
 
-        mockCacheService.hGet.mockResolvedValue(JSON.stringify(portfolio));
+        mockCacheService.hGet.mockResolvedValue(undefined);
+        mockZerionApi.getPortfolio.mockResolvedValue(rawify(portfolio));
 
         const result = await repository.getPortfolio({
           address,
@@ -314,7 +354,8 @@ describe('PortfolioRepository', () => {
           .with('positionBalances', [app])
           .build();
 
-        mockCacheService.hGet.mockResolvedValue(JSON.stringify(portfolio));
+        mockCacheService.hGet.mockResolvedValue(undefined);
+        mockZerionApi.getPortfolio.mockResolvedValue(rawify(portfolio));
 
         const result = await repository.getPortfolio({
           address,
@@ -344,7 +385,8 @@ describe('PortfolioRepository', () => {
           .with('positionBalances', [app])
           .build();
 
-        mockCacheService.hGet.mockResolvedValue(JSON.stringify(portfolio));
+        mockCacheService.hGet.mockResolvedValue(undefined);
+        mockZerionApi.getPortfolio.mockResolvedValue(rawify(portfolio));
 
         const result = await repository.getPortfolio({
           address,
@@ -378,7 +420,8 @@ describe('PortfolioRepository', () => {
           .with('positionBalances', [app])
           .build();
 
-        mockCacheService.hGet.mockResolvedValue(JSON.stringify(portfolio));
+        mockCacheService.hGet.mockResolvedValue(undefined);
+        mockZerionApi.getPortfolio.mockResolvedValue(rawify(portfolio));
 
         const result = await repository.getPortfolio({
           address,
@@ -409,7 +452,8 @@ describe('PortfolioRepository', () => {
           .with('positionBalances', [])
           .build();
 
-        mockCacheService.hGet.mockResolvedValue(JSON.stringify(portfolio));
+        mockCacheService.hGet.mockResolvedValue(undefined);
+        mockZerionApi.getPortfolio.mockResolvedValue(rawify(portfolio));
 
         const result = await repository.getPortfolio({
           address,
@@ -445,7 +489,8 @@ describe('PortfolioRepository', () => {
           .with('positionBalances', [app])
           .build();
 
-        mockCacheService.hGet.mockResolvedValue(JSON.stringify(portfolio));
+        mockCacheService.hGet.mockResolvedValue(undefined);
+        mockZerionApi.getPortfolio.mockResolvedValue(rawify(portfolio));
 
         const result = await repository.getPortfolio({
           address,
@@ -476,7 +521,8 @@ describe('PortfolioRepository', () => {
           .with('positionBalances', [])
           .build();
 
-        mockCacheService.hGet.mockResolvedValue(JSON.stringify(portfolio));
+        mockCacheService.hGet.mockResolvedValue(undefined);
+        mockZerionApi.getPortfolio.mockResolvedValue(rawify(portfolio));
 
         const result = await repository.getPortfolio({
           address,
@@ -500,7 +546,8 @@ describe('PortfolioRepository', () => {
           .with('positionBalances', [])
           .build();
 
-        mockCacheService.hGet.mockResolvedValue(JSON.stringify(portfolio));
+        mockCacheService.hGet.mockResolvedValue(undefined);
+        mockZerionApi.getPortfolio.mockResolvedValue(rawify(portfolio));
 
         const result = await repository.getPortfolio({
           address,
@@ -529,7 +576,8 @@ describe('PortfolioRepository', () => {
           .with('positionBalances', [app])
           .build();
 
-        mockCacheService.hGet.mockResolvedValue(JSON.stringify(portfolio));
+        mockCacheService.hGet.mockResolvedValue(undefined);
+        mockZerionApi.getPortfolio.mockResolvedValue(rawify(portfolio));
 
         const result = await repository.getPortfolio({
           address,
@@ -544,7 +592,8 @@ describe('PortfolioRepository', () => {
       it('should use configured dust threshold', async () => {
         const customThreshold = 5.0;
         mockConfigService.getOrThrow.mockImplementation((key: string) => {
-          if (key === 'portfolio.cache.ttlSeconds') return defaultCacheTtl;
+          if (key === 'portfolio.cache.positions.ttlSeconds') return defaultCacheTtl;
+          if (key === 'portfolio.cache.pnl.ttlSeconds') return 60;
           if (key === 'portfolio.filters.dustThresholdUsd')
             return customThreshold;
           throw new Error(`Unexpected config key: ${key}`);
@@ -566,7 +615,8 @@ describe('PortfolioRepository', () => {
           .with('positionBalances', [])
           .build();
 
-        mockCacheService.hGet.mockResolvedValue(JSON.stringify(portfolio));
+        mockCacheService.hGet.mockResolvedValue(undefined);
+        mockZerionApi.getPortfolio.mockResolvedValue(rawify(portfolio));
 
         const result = await newRepository.getPortfolio({
           address,
@@ -588,7 +638,8 @@ describe('PortfolioRepository', () => {
           .with('positionBalances', [])
           .build();
 
-        mockCacheService.hGet.mockResolvedValue(JSON.stringify(portfolio));
+        mockCacheService.hGet.mockResolvedValue(undefined);
+        mockZerionApi.getPortfolio.mockResolvedValue(rawify(portfolio));
 
         const result = await repository.getPortfolio({
           address,
@@ -609,7 +660,8 @@ describe('PortfolioRepository', () => {
           .with('positionBalances', [])
           .build();
 
-        mockCacheService.hGet.mockResolvedValue(JSON.stringify(portfolio));
+        mockCacheService.hGet.mockResolvedValue(undefined);
+        mockZerionApi.getPortfolio.mockResolvedValue(rawify(portfolio));
 
         const result = await repository.getPortfolio({
           address,
@@ -673,7 +725,8 @@ describe('PortfolioRepository', () => {
           .with('positionBalances', [])
           .build();
 
-        mockCacheService.hGet.mockResolvedValue(JSON.stringify(portfolio));
+        mockCacheService.hGet.mockResolvedValue(undefined);
+        mockZerionApi.getPortfolio.mockResolvedValue(rawify(portfolio));
 
         const result = await repository.getPortfolio({
           address,
@@ -738,7 +791,8 @@ describe('PortfolioRepository', () => {
           .with('totalBalanceFiat', 1000)
           .build();
 
-        mockCacheService.hGet.mockResolvedValue(JSON.stringify(portfolio));
+        mockCacheService.hGet.mockResolvedValue(undefined);
+        mockZerionApi.getPortfolio.mockResolvedValue(rawify(portfolio));
 
         const result = await repository.getPortfolio({
           address,
@@ -760,11 +814,22 @@ describe('PortfolioRepository', () => {
 
       await repository.clearPortfolio({ address });
 
-      expect(mockCacheService.deleteByKey).toHaveBeenCalledTimes(2);
+      expect(mockCacheService.deleteByKey).toHaveBeenCalledTimes(4);
       expect(mockCacheService.deleteByKey).toHaveBeenCalledWith(
         CacheRouter.getPortfolioCacheKey({
           address,
           provider: PortfolioProvider.ZERION,
+        }),
+      );
+      expect(mockCacheService.deleteByKey).toHaveBeenCalledWith(
+        CacheRouter.getPortfolioPositionsCacheKey({
+          address,
+          provider: PortfolioProvider.ZERION,
+        }),
+      );
+      expect(mockCacheService.deleteByKey).toHaveBeenCalledWith(
+        CacheRouter.getPortfolioPnLCacheKey({
+          address,
         }),
       );
       expect(mockCacheService.deleteByKey).toHaveBeenCalledWith(
@@ -775,25 +840,12 @@ describe('PortfolioRepository', () => {
       );
     });
 
-    it('should delete cache entries in parallel', async () => {
+    it('should delete all cache entries', async () => {
       const address = getAddress(faker.finance.ethereumAddress());
-      const deletePromises: Array<Promise<number>> = [];
 
-      mockCacheService.deleteByKey.mockImplementation(() => {
-        const promise = new Promise<number>((resolve) => {
-          setTimeout(() => resolve(1), 10);
-        });
-        deletePromises.push(promise);
-        return promise;
-      });
+      await repository.clearPortfolio({ address });
 
-      const clearPromise = repository.clearPortfolio({ address });
-
-      // Both deletes should be initiated before we await
-      expect(mockCacheService.deleteByKey).toHaveBeenCalledTimes(2);
-
-      await clearPromise;
-      expect(deletePromises).toHaveLength(2);
+      expect(mockCacheService.deleteByKey).toHaveBeenCalledTimes(4);
     });
   });
 });

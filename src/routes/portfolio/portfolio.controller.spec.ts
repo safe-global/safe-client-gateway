@@ -31,7 +31,12 @@ describe('PortfolioController', () => {
       ...defaultConfiguration,
       portfolio: {
         cache: {
-          ttlSeconds: 30,
+          positions: {
+            ttlSeconds: 30,
+          },
+          pnl: {
+            ttlSeconds: 60,
+          },
         },
         filters: {
           dustThresholdUsd: 1.0,
@@ -385,6 +390,7 @@ describe('PortfolioController', () => {
     it('should use cache on subsequent requests', async () => {
       const portfolio = portfolioBuilder().build();
       zerionPortfolioApi.getPortfolio.mockResolvedValue(rawify(portfolio));
+      zerionPortfolioApi.fetchPnL = jest.fn().mockResolvedValue(null);
 
       // First request
       await request(app.getHttpServer())

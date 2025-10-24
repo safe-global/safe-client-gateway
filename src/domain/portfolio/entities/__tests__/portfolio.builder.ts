@@ -69,5 +69,6 @@ export function portfolioBuilder(): IBuilder<Portfolio> {
     .with('positionBalances', [
       appBalanceBuilder().build(),
       appBalanceBuilder().build(),
-    ]);
+    ])
+    .with('pnl', null);
 }

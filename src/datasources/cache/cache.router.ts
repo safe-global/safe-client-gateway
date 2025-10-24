@@ -76,6 +76,8 @@ export class CacheRouter {
   private static readonly ZERION_COLLECTIBLES_KEY = 'zerion_collectibles';
   private static readonly ZERION_POSITIONS_KEY = 'zerion_positions';
   private static readonly PORTFOLIO_KEY = 'portfolio';
+  private static readonly PORTFOLIO_POSITIONS_KEY = 'portfolio_positions';
+  private static readonly PORTFOLIO_PNL_KEY = 'portfolio_pnl';
   private static readonly ORM_QUERY_CACHE_KEY = 'orm_query_cache';
   private static readonly TRANSACTIONS_EXPORT_KEY = 'transactions_export';
   private static readonly CONTRACT_ANALYSIS_KEY = 'contract_analysis';
@@ -926,6 +928,49 @@ export class CacheRouter {
   }): CacheDir {
     return new CacheDir(
       CacheRouter.getPortfolioCacheKey(args),
+      args.fiatCode,
+    );
+  }
+
+  static getPortfolioPositionsCacheKey(args: {
+    address: Address;
+    provider?: string;
+  }): string {
+    const provider = args.provider || PortfolioProvider.ZERION;
+    return `${CacheRouter.PORTFOLIO_POSITIONS_KEY}_${args.address}_${provider}`;
+  }
+
+  static getPortfolioPositionsCacheDir(args: {
+    address: Address;
+    fiatCode: string;
+    provider?: string;
+  }): CacheDir {
+    return new CacheDir(
+      CacheRouter.getPortfolioPositionsCacheKey(args),
+      args.fiatCode,
+    );
+  }
+
+  static getPortfolioPnLCacheKey(args: {
+    address: Address;
+    fungibleIds?: Array<string>;
+  }): string {
+    let key = `${CacheRouter.PORTFOLIO_PNL_KEY}_${args.address}`;
+    if (args.fungibleIds && args.fungibleIds.length > 0) {
+      const fungibleHash = crypto.createHash('sha256');
+      fungibleHash.update(args.fungibleIds.sort().join(','));
+      key += `_${fungibleHash.digest('hex').substring(0, 8)}`;
+    }
+    return key;
+  }
+
+  static getPortfolioPnLCacheDir(args: {
+    address: Address;
+    fiatCode: string;
+    fungibleIds?: Array<string>;
+  }): CacheDir {
+    return new CacheDir(
+      CacheRouter.getPortfolioPnLCacheKey(args),
       args.fiatCode,
     );
   }

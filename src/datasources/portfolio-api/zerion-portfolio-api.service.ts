@@ -12,10 +12,12 @@ import type { Portfolio } from '@/domain/portfolio/entities/portfolio.entity';
 import type { TokenBalance } from '@/domain/portfolio/entities/token-balance.entity';
 import type { AppBalance } from '@/domain/portfolio/entities/app-balance.entity';
 import type { AppPosition } from '@/domain/portfolio/entities/app-position.entity';
+import type { PnL } from '@/domain/portfolio/entities/pnl.entity';
 import { DataSourceError } from '@/domain/errors/data-source.error';
 import { rawify, type Raw } from '@/validation/entities/raw.entity';
 import type { ZerionBalance } from '@/datasources/balances-api/entities/zerion-balance.entity';
 import { ZerionBalancesSchema } from '@/datasources/balances-api/entities/zerion-balance.entity';
+import { ZerionPnLResponseSchema } from '@/datasources/balances-api/entities/zerion-pnl.entity';
 import { ZodError } from 'zod';
 
 const ZERION_NETWORK_TO_CHAIN_ID_MAPPING: Record<string, string> = {
@@ -112,6 +114,7 @@ export class ZerionPortfolioApi implements IPortfolioApi {
     fiatCode: string;
     chainIds?: Array<string>;
     trusted?: boolean;
+    fungibleIds?: Array<string>;
   }): Promise<Raw<Portfolio>> {
     if (!this.fiatCodes.includes(args.fiatCode.toUpperCase())) {
       throw new DataSourceError(
@@ -120,6 +123,41 @@ export class ZerionPortfolioApi implements IPortfolioApi {
       );
     }
 
+    const [positionsResult, pnlResult] = await Promise.allSettled([
+      this._fetchPositions(args),
+      this._fetchPnL(args),
+    ]);
+
+    if (positionsResult.status === 'rejected') {
+      throw positionsResult.reason;
+    }
+
+    const pnl = pnlResult.status === 'fulfilled' ? pnlResult.value : null;
+
+    return this._buildPortfolio(positionsResult.value, pnl);
+  }
+
+  async fetchPositions(args: {
+    address: Address;
+    fiatCode: string;
+    trusted?: boolean;
+  }): Promise<Array<ZerionBalance>> {
+    return this._fetchPositions(args);
+  }
+
+  async fetchPnL(args: {
+    address: Address;
+    fiatCode: string;
+    fungibleIds?: Array<string>;
+  }): Promise<PnL> {
+    return this._fetchPnL(args);
+  }
+
+  private async _fetchPositions(args: {
+    address: Address;
+    fiatCode: string;
+    trusted?: boolean;
+  }): Promise<Array<ZerionBalance>> {
     try {
       const url = `${this.baseUri}/v1/wallets/${args.address}/positions`;
       const params: Record<string, string> = {
@@ -144,7 +182,7 @@ export class ZerionPortfolioApi implements IPortfolioApi {
         })
         .then(({ data }) => ZerionBalancesSchema.parse(data));
 
-      return this._buildPortfolio(response.data);
+      return response.data;
     } catch (error) {
       if (error instanceof ZodError) {
         throw error;
@@ -153,7 +191,55 @@ export class ZerionPortfolioApi implements IPortfolioApi {
     }
   }
 
-  private _buildPortfolio(positions: Array<ZerionBalance>): Raw<Portfolio> {
+  private async _fetchPnL(args: {
+    address: Address;
+    fiatCode: string;
+    fungibleIds?: Array<string>;
+  }): Promise<PnL> {
+    try {
+      const url = `${this.baseUri}/v1/wallets/${args.address}/pnl`;
+      const params: Record<string, string> = {
+        currency: args.fiatCode.toLowerCase(),
+      };
+
+      if (args.fungibleIds && args.fungibleIds.length > 0) {
+        params['filter[fungible_ids]'] = args.fungibleIds.join(',');
+      }
+
+      const networkRequest = {
+        headers: { Authorization: `Basic ${this.apiKey}` },
+        params,
+      };
+
+      const response = await this.networkService
+        .get({
+          url,
+          networkRequest,
+        })
+        .then(({ data }) => ZerionPnLResponseSchema.parse(data));
+
+      return {
+        realizedGain: response.data.attributes.realized_gain,
+        unrealizedGain: response.data.attributes.unrealized_gain,
+        totalFee: response.data.attributes.total_fee,
+        netInvested: response.data.attributes.net_invested,
+        receivedExternal: response.data.attributes.received_external,
+        sentExternal: response.data.attributes.sent_external,
+        sentForNfts: response.data.attributes.sent_for_nfts,
+        receivedForNfts: response.data.attributes.received_for_nfts,
+      };
+    } catch (error) {
+      if (error instanceof ZodError) {
+        throw error;
+      }
+      throw this.httpErrorFactory.from(error);
+    }
+  }
+
+  private _buildPortfolio(
+    positions: Array<ZerionBalance>,
+    pnl: PnL | null,
+  ): Raw<Portfolio> {
     const displayablePositions = positions.filter(
       (p) => p.attributes.flags.displayable && !p.attributes.flags.is_trash,
     );
@@ -178,6 +264,7 @@ export class ZerionPortfolioApi implements IPortfolioApi {
       totalPositionsBalanceFiat,
       tokenBalances,
       positionBalances: appBalances,
+      pnl,
     });
   }
 

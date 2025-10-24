@@ -3,6 +3,7 @@ import type { Address } from 'viem';
 import { IPortfolioService as DomainPortfolioService } from '@/domain/portfolio/portfolio.service.interface';
 import type { Portfolio as DomainPortfolio } from '@/domain/portfolio/entities/portfolio.entity';
 import { Portfolio } from '@/routes/portfolio/entities/portfolio.entity';
+import { PnL } from '@/routes/portfolio/entities/pnl.entity';
 import { NULL_ADDRESS } from '@/routes/common/constants';
 
 @Injectable()
@@ -75,6 +76,7 @@ export class PortfolioService {
           priceChangePercentage1d: position.priceChangePercentage1d,
         })),
       })),
+      pnl: domainPortfolio.pnl ? new PnL(domainPortfolio.pnl) : null,
     };
   }
 }
