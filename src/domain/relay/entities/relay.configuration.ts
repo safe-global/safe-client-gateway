@@ -1,6 +1,5 @@
 import type { Address } from 'viem';
 
-// Type for no-fee campaign configuration
 export type NoFeeCampaignConfiguration = Record<
   number,
   {

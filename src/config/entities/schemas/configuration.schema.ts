@@ -1,5 +1,4 @@
 import { z } from 'zod';
-// Custom validator for relay rules JSON
 const relayRulesValidator = z.string().refine(
   (value) => {
     if (value === undefined || value === null || value === '') return false;

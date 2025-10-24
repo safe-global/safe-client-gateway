@@ -2780,7 +2780,6 @@ describe('Relay controller', () => {
     });
   });
 
-  // No-fee campaign tests for chains with no-fee campaign configuration
   describe('No-fee campaign tests', () => {
     describe.each(noFeeCampaignSupportedChainIds)(
       'No-fee campaign tests [%s]',
