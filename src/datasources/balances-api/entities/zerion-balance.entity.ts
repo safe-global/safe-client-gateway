@@ -53,6 +53,11 @@ export const ZerionFungibleInfoSchema = z.object({
     })
     .nullish()
     .default(null),
+  flags: z
+    .object({
+      verified: z.boolean(),
+    })
+    .optional(),
   implementations: z.array(ZerionImplementationSchema),
 });
 
@@ -65,6 +70,7 @@ export const ZerionQuantitySchema = z.object({
 
 export const ZerionFlagsSchema = z.object({
   displayable: z.boolean(),
+  is_trash: z.boolean().optional(),
 });
 
 export const ZerionApplicationMetadataSchema = z.object({
@@ -88,7 +94,7 @@ export const ZerionAttributesSchema = z.object({
   fungible_info: ZerionFungibleInfoSchema,
   flags: ZerionFlagsSchema,
   protocol: z.string().nullish().default(null),
-  application_metadata: ZerionApplicationMetadataSchema,
+  application_metadata: ZerionApplicationMetadataSchema.nullish().default(null),
   changes: ZerionBalanceChangeSchema.nullish().default(null),
   position_type: PositionTypeSchema.catch(PositionType.unknown),
 });
@@ -97,6 +103,16 @@ export const ZerionBalanceSchema = z.object({
   type: z.enum(['positions', 'unknown']).catch('unknown'),
   id: z.string(),
   attributes: ZerionAttributesSchema,
+  relationships: z
+    .object({
+      chain: z.object({
+        data: z.object({
+          type: z.string(),
+          id: z.string(),
+        }),
+      }),
+    })
+    .optional(),
 });
 
 export const ZerionBalancesSchema = z.object({

@@ -150,6 +150,53 @@ export default () => ({
       },
     },
   },
+  portfolio: {
+    cache: {
+      positions: {
+        ttlSeconds: parseInt(
+          process.env.PORTFOLIO_CACHE_POSITIONS_TTL_SECONDS ?? `${30}`,
+        ),
+      },
+      pnl: {
+        ttlSeconds: parseInt(
+          process.env.PORTFOLIO_CACHE_PNL_TTL_SECONDS ?? `${60}`,
+        ),
+      },
+    },
+    filters: {
+      dustThresholdUsd: parseFloat(
+        process.env.PORTFOLIO_DUST_THRESHOLD_USD ?? '1.0',
+      ),
+    },
+    providers: {
+      zerion: {
+        apiKey: process.env.ZERION_API_KEY,
+        baseUri: process.env.ZERION_BASE_URI || 'https://api.zerion.io',
+        currencies: [
+          'usd',
+          'eur',
+          'eth',
+          'aud',
+          'btc',
+          'cad',
+          'chf',
+          'cny',
+          'gbp',
+          'inr',
+          'jpy',
+          'krw',
+          'nzd',
+          'rub',
+          'try',
+          'zar',
+        ],
+      },
+      zapper: {
+        apiKey: process.env.ZAPPER_API_KEY,
+        baseUri: process.env.ZAPPER_BASE_URI || 'https://api.zapper.xyz',
+      },
+    },
+  },
   blockchain: {
     blocklist: getBlocklist(),
     infura: {

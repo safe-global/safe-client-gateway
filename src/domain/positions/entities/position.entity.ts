@@ -13,7 +13,7 @@ const PositionAttributeSchema = z.object({
   protocol: z.string().nullish().default(null),
   name: z.string(),
   position_type: PositionTypeSchema,
-  application_metadata: ZerionApplicationMetadataSchema,
+  application_metadata: ZerionApplicationMetadataSchema.nullish().default(null),
 });
 
 export const PositionSchema = z.union([
