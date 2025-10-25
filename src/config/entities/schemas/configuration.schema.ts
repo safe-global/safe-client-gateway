@@ -6,7 +6,7 @@ const relayRulesValidator = z.string().refine(
       const parsed = JSON.parse(value);
       if (!Array.isArray(parsed)) return false;
       return parsed.every(
-        (rule) =>
+        (rule: unknown) =>
           typeof rule === 'object' &&
           rule !== null &&
           typeof rule.balance === 'number' &&
