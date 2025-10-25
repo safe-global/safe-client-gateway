@@ -7,6 +7,10 @@ import {
   ICacheService,
 } from '@/datasources/cache/cache.service.interface';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
+import {
+  INetworkService,
+  NetworkService,
+} from '@/datasources/network/network.service.interface';
 import { IBalancesApi } from '@/domain/interfaces/balances-api.interface';
 import { IBalancesApiManager } from '@/domain/interfaces/balances-api.manager.interface';
 import { IConfigApi } from '@/domain/interfaces/config-api.interface';
@@ -38,6 +42,7 @@ export class BalancesApiManager implements IBalancesApiManager {
     @Inject(IPricesApi) private readonly coingeckoApi: IPricesApi,
     @Inject(ITransactionApiManager)
     private readonly transactionApiManager: ITransactionApiManager,
+    @Inject(NetworkService) private readonly networkService: INetworkService,
   ) {
     this.isCounterFactualBalancesEnabled =
       this.configurationService.getOrThrow<boolean>(
@@ -95,6 +100,7 @@ export class BalancesApiManager implements IBalancesApiManager {
       this.configurationService,
       this.httpErrorFactory,
       this.coingeckoApi,
+      this.networkService,
     );
     return this.safeBalancesApiMap[chainId];
   }

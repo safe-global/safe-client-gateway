@@ -85,6 +85,29 @@ export class BalancesService {
     };
   }
 
+  async getTokenBalance(args: {
+    chainId: string;
+    safeAddress: Address;
+    fiatCode: string;
+    trusted?: boolean;
+    excludeSpam?: boolean;
+    tokenAddress: Address;
+  }): Promise<Balance | null> {
+    const { chainId, safeAddress, tokenAddress } = args;
+    const chain = await this.chainsRepository.getChain(chainId);
+    const balance = await this.balancesRepository.getTokenBalance({
+      chain,
+      safeAddress,
+      fiatCode: args.fiatCode,
+      trusted: args.trusted,
+      excludeSpam: args.excludeSpam,
+      tokenAddress,
+    });
+
+    if (!balance) return null;
+    return this._mapBalance(balance, chain.nativeCurrency);
+  }
+
   async getSupportedFiatCodes(): Promise<Array<string>> {
     return this.balancesRepository.getFiatCodes();
   }

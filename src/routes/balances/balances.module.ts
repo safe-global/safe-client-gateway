@@ -13,5 +13,6 @@ import { ChainsRepositoryModule } from '@/domain/chains/chains.repository.interf
   ],
   controllers: [BalancesController],
   providers: [BalancesService],
+  exports: [BalancesService],
 })
 export class BalancesModule {}

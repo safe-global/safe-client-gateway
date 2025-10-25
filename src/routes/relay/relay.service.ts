@@ -34,14 +34,11 @@ export class RelayService {
     chainId: string;
     safeAddress: Address;
   }): Promise<{ remaining: number; limit: number }> {
-    const currentCount = await this.relayRepository.getRelayCount({
+    const relaysRemaining = await this.relayRepository.getRelaysRemaining({
       chainId: args.chainId,
       address: args.safeAddress,
     });
 
-    return new RelaysRemaining({
-      remaining: Math.max(this.limit - currentCount, 0),
-      limit: this.limit,
-    });
+    return new RelaysRemaining(relaysRemaining);
   }
 }
