@@ -18,9 +18,9 @@ export interface IBalancesApi {
     safeAddress: Address;
     fiatCode: string;
     chain: Chain;
+    tokenAddress: Address;
     trusted?: boolean;
     excludeSpam?: boolean;
-    tokenAddress: Address;
   }): Promise<Raw<Balance> | null>;
 
   clearBalances(args: { chainId: string; safeAddress: Address }): Promise<void>;

@@ -99,9 +99,9 @@ export class ZerionBalancesApi implements IBalancesApi {
     safeAddress: Address;
     fiatCode: string;
     chain: Chain;
+    tokenAddress: Address;
     trusted?: boolean;
     excludeSpam?: boolean;
-    tokenAddress: Address;
   }): Promise<Raw<Balance> | null> {
     throw new Error('Method not implemented.');
   }

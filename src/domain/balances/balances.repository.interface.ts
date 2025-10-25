@@ -11,6 +11,13 @@ export interface IBalancesRepository {
   /**
    * Gets the collection of {@link Balance} associated with {@link safeAddress}
    * on {@link chainId}
+   * @param args - The arguments object
+   * @param args.chain - The chain information
+   * @param args.safeAddress - The Safe address to get balances for
+   * @param args.fiatCode - The fiat currency code for conversion
+   * @param args.trusted - Whether to include only trusted tokens (optional)
+   * @param args.excludeSpam - Whether to exclude spam tokens (optional)
+   * @returns Promise that resolves to an array of Balance objects
    */
   getBalances(args: {
     chain: Chain;
@@ -23,14 +30,22 @@ export interface IBalancesRepository {
   /**
    * Gets the balance of token associated with {@link safeAddress}
    * on {@link chainId}
+   * @param args - The arguments object
+   * @param args.chain - The chain information
+   * @param args.safeAddress - The Safe address to get token balance for
+   * @param args.fiatCode - The fiat currency code for conversion
+   * @param args.tokenAddress - The specific token address to get balance for
+   * @param args.trusted - Whether to include only trusted tokens (optional)
+   * @param args.excludeSpam - Whether to exclude spam tokens (optional)
+   * @returns Promise that resolves to a Balance object or null if not found
    */
   getTokenBalance(args: {
     chain: Chain;
     safeAddress: Address;
     fiatCode: string;
+    tokenAddress: Address;
     trusted?: boolean;
     excludeSpam?: boolean;
-    tokenAddress: Address;
   }): Promise<Balance | null>;
 
   /**

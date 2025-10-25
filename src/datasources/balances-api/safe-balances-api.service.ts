@@ -3,9 +3,7 @@ import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.sourc
 import { CacheRouter } from '@/datasources/cache/cache.router';
 import { ICacheService } from '@/datasources/cache/cache.service.interface';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
-import {
-  INetworkService,
-} from '@/datasources/network/network.service.interface';
+import { INetworkService } from '@/datasources/network/network.service.interface';
 import {
   Balance,
   BalancesSchema,
@@ -114,9 +112,9 @@ export class SafeBalancesApi implements IBalancesApi {
     safeAddress: Address;
     fiatCode: string;
     chain: Chain;
+    tokenAddress: Address;
     trusted?: boolean;
     excludeSpam?: boolean;
-    tokenAddress: Address;
   }): Promise<Raw<Balance> | null> {
     try {
       const url = `${this.baseUrl}/api/v1/safes/${args.safeAddress}/balances/`;

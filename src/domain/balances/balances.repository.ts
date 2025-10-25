@@ -36,9 +36,9 @@ export class BalancesRepository implements IBalancesRepository {
     chain: Chain;
     safeAddress: Address;
     fiatCode: string;
+    tokenAddress: Address;
     trusted?: boolean;
     excludeSpam?: boolean;
-    tokenAddress: Address;
   }): Promise<Balance | null> {
     const api = await this.balancesApiManager.getApi(
       args.chain.chainId,
