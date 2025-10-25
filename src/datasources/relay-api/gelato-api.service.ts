@@ -85,7 +85,7 @@ export class GelatoApi implements IRelayApi {
     return count ? parseInt(count) : 0;
   }
 
-  async getRelaynoFeeCampaignCount(args: {
+  async getRelayNoFeeCampaignCount(args: {
     chainId: string;
     address: Address;
   }): Promise<number> {
@@ -107,7 +107,7 @@ export class GelatoApi implements IRelayApi {
     );
   }
 
-  async setRelaynoFeeCampaignCount(args: {
+  async setRelayNoFeeCampaignCount(args: {
     chainId: string;
     address: Address;
     count: number;

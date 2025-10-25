@@ -84,7 +84,7 @@ export class RelayRepository {
     }
 
     if (this.isnoFeeCampaignActive(args.chainId)) {
-      return this.getRelaynoFeeCampaignCount(args);
+      return this.getRelayNoFeeCampaignCount(args);
     } else {
       return 0;
     }
@@ -132,9 +132,9 @@ export class RelayRepository {
     address: Address;
   }): Promise<void> {
     if (this.isnoFeeCampaignActive(args.chainId)) {
-      const currentCount = await this.getRelaynoFeeCampaignCount(args);
+      const currentCount = await this.getRelayNoFeeCampaignCount(args);
       const incremented = currentCount + 1;
-      return this.relayApi.setRelaynoFeeCampaignCount({
+      return this.relayApi.setRelayNoFeeCampaignCount({
         chainId: args.chainId,
         address: args.address,
         count: incremented,
@@ -217,11 +217,11 @@ export class RelayRepository {
     return hasStarted && hasNotEnded;
   }
 
-  private async getRelaynoFeeCampaignCount(args: {
+  private async getRelayNoFeeCampaignCount(args: {
     chainId: string;
     address: Address;
   }): Promise<number> {
-    return this.relayApi.getRelaynoFeeCampaignCount(args);
+    return this.relayApi.getRelayNoFeeCampaignCount(args);
   }
 
   async getRelaysRemaining(args: {
