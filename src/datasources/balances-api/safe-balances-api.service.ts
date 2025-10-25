@@ -5,7 +5,6 @@ import { ICacheService } from '@/datasources/cache/cache.service.interface';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import {
   INetworkService,
-  NetworkService,
 } from '@/datasources/network/network.service.interface';
 import {
   Balance,
@@ -16,7 +15,7 @@ import { getNumberString } from '@/domain/common/utils/utils';
 import { Page } from '@/domain/entities/page.entity';
 import { IBalancesApi } from '@/domain/interfaces/balances-api.interface';
 import { IPricesApi } from '@/datasources/balances-api/prices-api.interface';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Chain } from '@/domain/chains/entities/chain.entity';
 import { rawify, type Raw } from '@/validation/entities/raw.entity';
 import {
@@ -42,7 +41,7 @@ export class SafeBalancesApi implements IBalancesApi {
     private readonly configurationService: IConfigurationService,
     private readonly httpErrorFactory: HttpErrorFactory,
     private readonly coingeckoApi: IPricesApi,
-    @Inject(NetworkService) private readonly networkService: INetworkService,
+    private readonly networkService: INetworkService,
   ) {
     const isProduction = this.configurationService.getOrThrow<boolean>(
       'application.isProduction',
