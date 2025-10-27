@@ -150,6 +150,40 @@ export default () => ({
       },
     },
   },
+  portfolio: {
+    cache: {
+      ttlSeconds: parseInt(process.env.PORTFOLIO_CACHE_TTL_SECONDS ?? `${30}`),
+    },
+    filters: {
+      dustThresholdUsd: parseFloat(
+        process.env.PORTFOLIO_DUST_THRESHOLD_USD ?? '1.0',
+      ),
+    },
+    providers: {
+      zerion: {
+        apiKey: process.env.ZERION_API_KEY,
+        baseUri: process.env.ZERION_BASE_URI || 'https://api.zerion.io',
+        currencies: [
+          'usd',
+          'eur',
+          'eth',
+          'aud',
+          'btc',
+          'cad',
+          'chf',
+          'cny',
+          'gbp',
+          'inr',
+          'jpy',
+          'krw',
+          'nzd',
+          'rub',
+          'try',
+          'zar',
+        ],
+      },
+    },
+  },
   blockchain: {
     blocklist: getBlocklist(),
     infura: {

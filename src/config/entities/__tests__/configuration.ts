@@ -96,6 +96,21 @@ export default (): ReturnType<typeof configuration> => ({
       },
     },
   },
+  portfolio: {
+    cache: {
+      ttlSeconds: faker.number.int({ min: 10, max: 300 }),
+    },
+    filters: {
+      dustThresholdUsd: faker.number.float({ min: 0.1, max: 10 }),
+    },
+    providers: {
+      zerion: {
+        apiKey: faker.string.hexadecimal({ length: 32 }),
+        baseUri: faker.internet.url({ appendSlash: false }),
+        currencies: ['usd', 'eur', 'gbp'],
+      },
+    },
+  },
   blockchain: {
     blocklist: faker.helpers.multiple(
       () => getAddress(faker.finance.ethereumAddress()),
