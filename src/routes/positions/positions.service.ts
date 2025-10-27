@@ -19,7 +19,7 @@ const DUST_THRESHOLD_USD = 0.01;
 interface PositionEntry extends Position {
   protocol: string | null;
   name: string;
-  application_metadata: z.infer<typeof ZerionApplicationMetadataSchema>;
+  application_metadata: z.infer<typeof ZerionApplicationMetadataSchema> | null;
 }
 
 @Injectable()
@@ -68,7 +68,8 @@ export class PositionsService {
     positions: Array<PositionEntry>,
   ): Protocol | null {
     const filteredPositions = positions.filter(
-      (position) => !this._isDust(position),
+      (position) =>
+        !this._isDust(position) && position.application_metadata !== null,
     );
 
     if (!filteredPositions.length) {
@@ -85,9 +86,13 @@ export class PositionsService {
       const sign = position.position_type === PositionType.loan ? -1 : 1;
       return sum + sign * fiatBalance;
     }, 0);
+    const appMetadata = filteredPositions[0].application_metadata!;
     return {
       protocol,
-      protocol_metadata: filteredPositions[0].application_metadata,
+      protocol_metadata: {
+        name: appMetadata.name,
+        icon: appMetadata.icon,
+      },
       fiatTotal: getNumberString(fiatTotal),
       items: positionGroups,
     };
