@@ -10,6 +10,7 @@ import { tokenBalanceBuilder } from '@/domain/portfolio/entities/__tests__/token
 import { appBalanceBuilder } from '@/domain/portfolio/entities/__tests__/app-balance.builder';
 import { appPositionBuilder } from '@/domain/portfolio/entities/__tests__/app-position.builder';
 import { tokenInfoBuilder } from '@/domain/portfolio/entities/__tests__/token-info.builder';
+import { appPositionTokenInfoBuilder } from '@/domain/portfolio/entities/__tests__/app-position-token-info.builder';
 import { rawify } from '@/validation/entities/raw.entity';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
@@ -332,13 +333,13 @@ describe('PortfolioRepository', () => {
       });
 
       it('should filter positions by chain ID', async () => {
-        const position1TokenInfo = tokenInfoBuilder().with('chainId', '1').build();
+        const position1TokenInfo = appPositionTokenInfoBuilder().with('chainId', '1').build();
         const position1 = appPositionBuilder()
           .with('tokenInfo', position1TokenInfo)
           .with('balanceFiat', 500)
           .build();
 
-        const position2TokenInfo = tokenInfoBuilder().with('chainId', '10').build();
+        const position2TokenInfo = appPositionTokenInfoBuilder().with('chainId', '10').build();
         const position2 = appPositionBuilder()
           .with('tokenInfo', position2TokenInfo)
           .with('balanceFiat', 600)
@@ -371,7 +372,7 @@ describe('PortfolioRepository', () => {
       });
 
       it('should remove apps with no positions after chain filtering', async () => {
-        const position1TokenInfo = tokenInfoBuilder().with('chainId', '10').build();
+        const position1TokenInfo = appPositionTokenInfoBuilder().with('chainId', '10').build();
         const position1 = appPositionBuilder()
           .with('tokenInfo', position1TokenInfo)
           .build();
@@ -398,13 +399,13 @@ describe('PortfolioRepository', () => {
       });
 
       it('should recalculate app balance after filtering positions', async () => {
-        const position1TokenInfo = tokenInfoBuilder().with('chainId', '1').build();
+        const position1TokenInfo = appPositionTokenInfoBuilder().with('chainId', '1').build();
         const position1 = appPositionBuilder()
           .with('tokenInfo', position1TokenInfo)
           .with('balanceFiat', 100)
           .build();
 
-        const position2TokenInfo = tokenInfoBuilder().with('chainId', '10').build();
+        const position2TokenInfo = appPositionTokenInfoBuilder().with('chainId', '10').build();
         const position2 = appPositionBuilder()
           .with('tokenInfo', position2TokenInfo)
           .with('balanceFiat', 200)
@@ -467,13 +468,13 @@ describe('PortfolioRepository', () => {
       });
 
       it('should filter untrusted positions when trusted=true', async () => {
-        const trustedPositionInfo = tokenInfoBuilder().with('trusted', true).build();
+        const trustedPositionInfo = appPositionTokenInfoBuilder().with('trusted', true).build();
         const trustedPosition = appPositionBuilder()
           .with('tokenInfo', trustedPositionInfo)
           .with('balanceFiat', 100)
           .build();
 
-        const untrustedPositionInfo = tokenInfoBuilder().with('trusted', false).build();
+        const untrustedPositionInfo = appPositionTokenInfoBuilder().with('trusted', false).build();
         const untrustedPosition = appPositionBuilder()
           .with('tokenInfo', untrustedPositionInfo)
           .with('balanceFiat', 200)
@@ -760,7 +761,7 @@ describe('PortfolioRepository', () => {
           .with('balanceFiat', 200)
           .build();
 
-        const position1Info = tokenInfoBuilder()
+        const position1Info = appPositionTokenInfoBuilder()
           .with('chainId', '1')
           .with('trusted', true)
           .build();
@@ -769,7 +770,7 @@ describe('PortfolioRepository', () => {
           .with('balanceFiat', 300)
           .build();
 
-        const position2Info = tokenInfoBuilder()
+        const position2Info = appPositionTokenInfoBuilder()
           .with('chainId', '10')
           .with('trusted', true)
           .build();

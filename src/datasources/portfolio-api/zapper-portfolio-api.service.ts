@@ -213,16 +213,23 @@ export class ZapperPortfolioApi implements IPortfolioApi {
           address,
         });
 
+        const logoUri = token.imgUrlV2 ?? '';
+        const type: 'ERC20' | 'NATIVE_TOKEN' =
+          address === '0x0000000000000000000000000000000000000000'
+            ? 'NATIVE_TOKEN'
+            : 'ERC20';
+
         return {
           tokenInfo: {
             address,
             decimals,
             symbol: token.symbol,
             name: token.name ?? token.symbol,
-            logoUrl: token.imgUrlV2 ?? null,
+            logoUri,
             chainId,
             trusted: token.verified ?? false,
             assetId,
+            type,
           },
           balance: token.balance.toString(),
           balanceFiat: token.balanceInCurrency ?? null,
@@ -278,10 +285,11 @@ export class ZapperPortfolioApi implements IPortfolioApi {
             decimals: token.decimals,
             symbol: token.symbol,
             name: token.symbol,
-            logoUrl: null,
+            logoUri: '',
             chainId,
             trusted: true,
             assetId,
+            type: 'ERC20' as const,
           },
           balance: token.balance,
           balanceFiat: token.balanceUSD,

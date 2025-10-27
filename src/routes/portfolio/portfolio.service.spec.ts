@@ -5,6 +5,7 @@ import { tokenBalanceBuilder } from '@/domain/portfolio/entities/__tests__/token
 import { appBalanceBuilder } from '@/domain/portfolio/entities/__tests__/app-balance.builder';
 import { appPositionBuilder } from '@/domain/portfolio/entities/__tests__/app-position.builder';
 import { tokenInfoBuilder } from '@/domain/portfolio/entities/__tests__/token-info.builder';
+import { appPositionTokenInfoBuilder } from '@/domain/portfolio/entities/__tests__/app-position-token-info.builder';
 import type { TokenBalance } from '@/domain/portfolio/entities/token-balance.entity';
 import { NULL_ADDRESS } from '@/routes/common/constants';
 import { faker } from '@faker-js/faker';
@@ -58,9 +59,10 @@ describe('PortfolioService', () => {
         .with('decimals', 18)
         .with('symbol', 'TEST')
         .with('name', 'Test Token')
-        .with('logoUrl', 'https://example.com/logo.png')
+        .with('logoUri', 'https://example.com/logo.png')
         .with('chainId', '1')
         .with('trusted', true)
+        .with('type', 'ERC20')
         .build();
 
       const token = tokenBalanceBuilder()
@@ -89,11 +91,12 @@ describe('PortfolioService', () => {
       expect(mappedToken.tokenInfo.decimals).toBe(18);
       expect(mappedToken.tokenInfo.symbol).toBe('TEST');
       expect(mappedToken.tokenInfo.name).toBe('Test Token');
-      expect(mappedToken.tokenInfo.logoUrl).toBe(
+      expect(mappedToken.tokenInfo.logoUri).toBe(
         'https://example.com/logo.png',
       );
       expect(mappedToken.tokenInfo.chainId).toBe('1');
       expect(mappedToken.tokenInfo.trusted).toBe(true);
+      expect(mappedToken.tokenInfo.type).toBe('ERC20');
       expect(mappedToken.balance).toBe('1000000000000000000');
       expect(mappedToken.balanceFiat).toBe(100.5);
       expect(mappedToken.price).toBe(100.5);
@@ -125,7 +128,7 @@ describe('PortfolioService', () => {
     });
 
     it('should map app balances correctly', async () => {
-      const positionTokenInfo = tokenInfoBuilder()
+      const positionTokenInfo = appPositionTokenInfoBuilder()
         .with('address', getAddress(faker.finance.ethereumAddress()))
         .build();
 
@@ -133,7 +136,7 @@ describe('PortfolioService', () => {
         .with('key', 'test-position-key')
         .with('type', 'lending')
         .with('name', 'USDC Lending')
-        .with('tokenInfo', positionTokenInfo as unknown as TokenBalance['tokenInfo'])
+        .with('tokenInfo', positionTokenInfo)
         .with('balance', '5000000000')
         .with('balanceFiat', 5000)
         .with('priceChangePercentage1d', -2.5)
@@ -179,12 +182,12 @@ describe('PortfolioService', () => {
     });
 
     it('should replace null address in positions with NULL_ADDRESS', async () => {
-      const positionTokenInfo = tokenInfoBuilder()
+      const positionTokenInfo = appPositionTokenInfoBuilder()
         .with('address', null as unknown as `0x${string}`)
         .build();
 
       const position = appPositionBuilder()
-        .with('tokenInfo', positionTokenInfo as unknown as TokenBalance['tokenInfo'])
+        .with('tokenInfo', positionTokenInfo)
         .build();
 
       const app = appBalanceBuilder().with('positions', [position]).build();
@@ -265,10 +268,10 @@ describe('PortfolioService', () => {
     });
 
     it('should handle null and undefined optional fields', async () => {
-      const tokenInfo = tokenInfoBuilder().with('logoUrl', null).build();
+      const tokenInfo = tokenInfoBuilder().with('logoUri', '').build();
 
       const token = tokenBalanceBuilder()
-        .with('tokenInfo', tokenInfo as unknown as TokenBalance['tokenInfo'])
+        .with('tokenInfo', tokenInfo)
         .with('balanceFiat', null)
         .with('price', null)
         .with('priceChangePercentage1d', null)
@@ -286,7 +289,7 @@ describe('PortfolioService', () => {
         fiatCode: 'USD',
       });
 
-      expect(result.tokenBalances[0].tokenInfo.logoUrl).toBeNull();
+      expect(result.tokenBalances[0].tokenInfo.logoUri).toBe('');
       expect(result.tokenBalances[0].balanceFiat).toBeNull();
       expect(result.tokenBalances[0].price).toBeNull();
       expect(result.tokenBalances[0].priceChangePercentage1d).toBeNull();

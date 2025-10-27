@@ -2,7 +2,7 @@ import { faker } from '@faker-js/faker';
 import type { IBuilder } from '@/__tests__/builder';
 import { Builder } from '@/__tests__/builder';
 import type { AppPosition } from '@/domain/portfolio/entities/app-position.entity';
-import { tokenInfoBuilder } from '@/domain/portfolio/entities/__tests__/token-info.builder';
+import { appPositionTokenInfoBuilder } from '@/domain/portfolio/entities/__tests__/app-position-token-info.builder';
 
 export function appPositionBuilder(): IBuilder<AppPosition> {
   return new Builder<AppPosition>()
@@ -18,7 +18,7 @@ export function appPositionBuilder(): IBuilder<AppPosition> {
       ]),
     )
     .with('name', faker.word.words(2))
-    .with('tokenInfo', tokenInfoBuilder().build())
+    .with('tokenInfo', appPositionTokenInfoBuilder().build())
     .with('balance', faker.string.numeric({ length: 18 }))
     .with(
       'balanceFiat',

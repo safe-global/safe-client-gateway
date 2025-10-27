@@ -7,10 +7,11 @@ export const TokenBalanceTokenInfoSchema = z.object({
   decimals: z.number(),
   symbol: z.string(),
   name: z.string(),
-  logoUrl: z.string().nullish().default(null),
+  logoUri: z.string(),
   chainId: z.string(),
   trusted: z.boolean(),
   assetId: AssetIdSchema,
+  type: z.enum(['ERC20', 'NATIVE_TOKEN']),
 });
 
 export const TokenBalanceSchema = z.object({

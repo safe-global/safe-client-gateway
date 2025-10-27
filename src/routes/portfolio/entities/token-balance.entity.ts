@@ -22,13 +22,12 @@ export class TokenBalanceTokenInfo {
   })
   name!: string;
 
-  @ApiPropertyOptional({
+  @ApiProperty({
     type: 'string',
     format: 'uri',
-    description: 'Token logo URL (HTTPS)',
-    nullable: true,
+    description: 'Token logo URI (HTTPS)',
   })
-  logoUrl!: string | null;
+  logoUri!: string;
 
   @ApiProperty({
     description: 'Chain ID where token is deployed',
@@ -45,6 +44,12 @@ export class TokenBalanceTokenInfo {
     example: 'eth',
   })
   assetId!: string;
+
+  @ApiProperty({
+    enum: ['ERC20', 'NATIVE_TOKEN'],
+    description: 'Token type',
+  })
+  type!: 'ERC20' | 'NATIVE_TOKEN';
 }
 
 export class TokenBalance {

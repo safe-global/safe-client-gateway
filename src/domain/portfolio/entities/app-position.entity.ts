@@ -7,10 +7,11 @@ export const AppPositionTokenInfoSchema = z.object({
   decimals: z.number(),
   symbol: z.string(),
   name: z.string(),
-  logoUrl: z.string().nullish().default(null),
+  logoUri: z.string(),
   chainId: z.string(),
   trusted: z.boolean(),
   assetId: AssetIdSchema,
+  type: z.literal('ERC20'),
 });
 
 export const AppPositionSchema = z.object({

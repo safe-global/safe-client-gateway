@@ -22,13 +22,12 @@ export class AppPositionTokenInfo {
   })
   name!: string;
 
-  @ApiPropertyOptional({
+  @ApiProperty({
     type: 'string',
     format: 'uri',
-    description: 'Token logo URL (HTTPS)',
-    nullable: true,
+    description: 'Token logo URI (HTTPS)',
   })
-  logoUrl!: string | null;
+  logoUri!: string;
 
   @ApiProperty({
     description: 'Chain ID where token is deployed',
@@ -45,6 +44,12 @@ export class AppPositionTokenInfo {
     example: 'morpho',
   })
   assetId!: string;
+
+  @ApiProperty({
+    enum: ['ERC20'],
+    description: 'Token type (positions are always ERC20)',
+  })
+  type!: 'ERC20';
 }
 
 export class AppPosition {

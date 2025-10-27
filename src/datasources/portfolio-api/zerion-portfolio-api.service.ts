@@ -311,6 +311,12 @@ export class ZerionPortfolioApi implements IPortfolioApi {
         zerionFungibleId: fungibleId,
       });
 
+      const logoUri = position.attributes.fungible_info.icon?.url ?? '';
+      const type: 'ERC20' | 'NATIVE_TOKEN' =
+        !address || address === '0x0000000000000000000000000000000000000000'
+          ? 'NATIVE_TOKEN'
+          : 'ERC20';
+
       return [
         {
           tokenInfo: {
@@ -322,10 +328,11 @@ export class ZerionPortfolioApi implements IPortfolioApi {
             name:
               position.attributes.fungible_info.name ??
               position.attributes.name,
-            logoUrl: position.attributes.fungible_info.icon?.url ?? null,
+            logoUri,
             chainId,
             trusted: position.attributes.fungible_info.flags?.verified ?? false,
             assetId,
+            type,
           },
           balance: position.attributes.quantity.numeric,
           balanceFiat: position.attributes.value ?? null,
@@ -410,6 +417,8 @@ export class ZerionPortfolioApi implements IPortfolioApi {
         zerionFungibleId: fungibleId,
       });
 
+      const logoUri = position.attributes.fungible_info.icon?.url ?? '';
+
       return [
         {
           key: position.id,
@@ -424,10 +433,11 @@ export class ZerionPortfolioApi implements IPortfolioApi {
             name:
               position.attributes.fungible_info.name ??
               position.attributes.name,
-            logoUrl: position.attributes.fungible_info.icon?.url ?? null,
+            logoUri,
             chainId,
             trusted: position.attributes.fungible_info.flags?.verified ?? false,
             assetId,
+            type: 'ERC20' as const,
           },
           balance: position.attributes.quantity.numeric,
           balanceFiat: position.attributes.value ?? null,
