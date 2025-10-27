@@ -643,12 +643,20 @@ describe('Chains Controller (Unit)', () => {
         .get(`/v1/chains/${chainResponse.chainId}/about/indexing`)
         .expect(200)
         .expect({
+          currentBlockNumber: indexingStatus.currentBlockNumber,
+          currentBlockTimestamp: indexingStatus.currentBlockTimestamp.toISOString(),
+          erc20BlockNumber: indexingStatus.erc20BlockNumber,
+          erc20BlockTimestamp: indexingStatus.erc20BlockTimestamp.toISOString(),
+          erc20Synced: indexingStatus.erc20Synced,
+          masterCopiesBlockNumber: indexingStatus.masterCopiesBlockNumber,
+          masterCopiesBlockTimestamp: indexingStatus.masterCopiesBlockTimestamp.toISOString(),
+          masterCopiesSynced: indexingStatus.masterCopiesSynced,
+          synced: indexingStatus.synced,
           lastSync:
             indexingStatus.erc20BlockTimestamp >
             indexingStatus.masterCopiesBlockTimestamp
               ? indexingStatus.masterCopiesBlockTimestamp.getTime()
               : indexingStatus.erc20BlockTimestamp.getTime(),
-          synced: indexingStatus.synced,
         });
 
       expect(networkService.get).toHaveBeenCalledTimes(2);

@@ -87,8 +87,16 @@ export class ChainsService {
     );
 
     return new IndexingStatus({
-      lastSync,
+      currentBlockNumber: indexingStatus.currentBlockNumber,
+      currentBlockTimestamp: indexingStatus.currentBlockTimestamp,
+      erc20BlockNumber: indexingStatus.erc20BlockNumber,
+      erc20BlockTimestamp: indexingStatus.erc20BlockTimestamp,
+      erc20Synced: indexingStatus.erc20Synced,
+      masterCopiesBlockNumber: indexingStatus.masterCopiesBlockNumber,
+      masterCopiesBlockTimestamp: indexingStatus.masterCopiesBlockTimestamp,
+      masterCopiesSynced: indexingStatus.masterCopiesSynced,
       synced: indexingStatus.synced,
+      lastSync,
     });
   }
 }
