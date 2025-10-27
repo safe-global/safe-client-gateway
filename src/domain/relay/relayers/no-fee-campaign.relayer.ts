@@ -41,24 +41,24 @@ export class NoFeeCampaignRelayer implements IRelayer {
       return { result: false, currentCount: 0, limit: 0 };
     }
 
-    if (this.isNoFeeCampaignActive(args.chainId)) {
-      const currentSafeTokenBalance = await this.getTokenBalance(args);
-      const currentCount = await this.getRelayCount(args);
-
-      // Get the appropriate limit based on Safe token balance using relay rules
-      const relayLimit = this.getNoFeeCampaignLimit(
-        currentSafeTokenBalance,
-        noFeeCampaignConfigurationPerChain.relayRules,
-      );
-      return {
-        result: currentCount < relayLimit,
-        currentCount,
-        limit: relayLimit,
-      };
-    } else {
+    if (!this.isNoFeeCampaignActive(args.chainId)) {
       // Outside no-fee campaign
       return { result: false, currentCount: 0, limit: 0 };
     }
+    
+    const currentSafeTokenBalance = await this.getTokenBalance(args);
+    const currentCount = await this.getRelayCount(args);
+
+    // Get the appropriate limit based on Safe token balance using relay rules
+    const relayLimit = this.getNoFeeCampaignLimit(
+        currentSafeTokenBalance,
+        noFeeCampaignConfigurationPerChain.relayRules,
+    );
+    return {
+        result: currentCount < relayLimit,
+        currentCount,
+        limit: relayLimit,
+    };
   }
 
   async relay(args: {
