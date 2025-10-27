@@ -17,7 +17,7 @@ export interface IBalancesRepository {
    * @param args.fiatCode - The fiat currency code for conversion
    * @param args.trusted - Whether to include only trusted tokens (optional)
    * @param args.excludeSpam - Whether to exclude spam tokens (optional)
-   * @returns Promise that resolves to an array of Balance objects
+   * @returns {Promise<Array<Balance>>} Promise that resolves to an array of Balance objects
    */
   getBalances(args: {
     chain: Chain;
@@ -37,7 +37,7 @@ export interface IBalancesRepository {
    * @param args.tokenAddress - The specific token address to get balance for
    * @param args.trusted - Whether to include only trusted tokens (optional)
    * @param args.excludeSpam - Whether to exclude spam tokens (optional)
-   * @returns Promise that resolves to a Balance object or null if not found
+   * @returns {Promise<Balance | null>} Promise that resolves to a Balance object or null if not found
    */
   getTokenBalance(args: {
     chain: Chain;
@@ -50,6 +50,10 @@ export interface IBalancesRepository {
 
   /**
    * Clears any stored local balance data of {@link safeAddress} on {@link chainId}
+   * @param args - The arguments object
+   * @param args.chainId - The chain identifier
+   * @param args.safeAddress - The Safe address to clear balances for
+   * @returns {Promise<void>} Promise that resolves when balances are cleared
    */
   clearBalances(args: { chainId: string; safeAddress: Address }): Promise<void>;
 
@@ -61,6 +65,8 @@ export interface IBalancesRepository {
 
   /**
    * Clears the API associated with {@link chainId}
+   * @param chainId - The chain identifier
+   * @returns {void}
    */
   clearApi(chainId: string): void;
 }

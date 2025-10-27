@@ -16,6 +16,7 @@ import {
 @Injectable()
 export class NoFeeCampaignRelayer implements IRelayer {
   private readonly noFeeCampaignConfiguration: NoFeeCampaignConfiguration;
+  private static readonly DEFAULT_FIAT_CODE = 'USD';
 
   constructor(
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
@@ -208,7 +209,7 @@ export class NoFeeCampaignRelayer implements IRelayer {
       const balance = await this.balancesService.getTokenBalance({
         chainId: args.chainId,
         safeAddress: args.address,
-        fiatCode: 'USD', // Using USD as default fiat code
+        fiatCode: NoFeeCampaignRelayer.DEFAULT_FIAT_CODE,
         tokenAddress: noFeeCampaignConfigurationPerChain.safeTokenAddress,
       });
 
