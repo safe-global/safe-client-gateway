@@ -37,6 +37,7 @@ describe('Analysis Response Schemas', () => {
         const multiAddressResponse = recipientAnalysisResponseBuilder()
           .with(getAddress(faker.finance.ethereumAddress()), {
             RECIPIENT_INTERACTION: [recipientAnalysisResultBuilder().build()],
+            RECIPIENT_ACTIVITY: [recipientAnalysisResultBuilder().build()],
             BRIDGE: [recipientAnalysisResultBuilder().build()],
           })
           .build();

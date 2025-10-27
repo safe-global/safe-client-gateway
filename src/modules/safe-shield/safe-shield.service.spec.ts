@@ -7,6 +7,7 @@ import type { DataDecoded } from '@/routes/data-decode/entities/data-decoded.ent
 import type { DecodedTransactionData } from '@/modules/safe-shield/entities/transaction-data.entity';
 import type {
   RecipientAnalysisResponse,
+  SingleRecipientAnalysisResponse,
   ThreatAnalysisResponse,
 } from './entities/analysis-responses.entity';
 import type { TransactionsService } from '@/routes/transactions/transactions.service';
@@ -35,8 +36,6 @@ import {
   threatAnalysisResultBuilder,
 } from '@/modules/safe-shield/entities/__tests__/builders/analysis-result.builder';
 import { Operation } from '@/domain/safe/entities/operation.entity';
-import type { AnalysisResult } from '@/modules/safe-shield/entities/analysis-result.entity';
-import type { RecipientStatus } from '@/modules/safe-shield/entities/recipient-status.entity';
 import {
   COMMON_DESCRIPTION_MAPPING,
   COMMON_SEVERITY_MAPPING,
@@ -118,7 +117,7 @@ const createCustomTransactionInfo = (
 describe('SafeShieldService', () => {
   const mockRecipientAnalysisService = {
     analyze: jest.fn(),
-    analyzeInteractions: jest.fn(),
+    analyzeRecipient: jest.fn(),
   } as jest.MockedObjectDeep<RecipientAnalysisService>;
   const mockContractAnalysisService = {
     analyze: jest.fn(),
@@ -165,6 +164,9 @@ describe('SafeShieldService', () => {
     recipientAnalysisResponseBuilder()
       .with(mockRecipientAddress, {
         RECIPIENT_INTERACTION: [recipientAnalysisResultBuilder().build()],
+        RECIPIENT_ACTIVITY: [
+          recipientAnalysisResultBuilder().with('type', 'LOW_ACTIVITY').build(),
+        ],
         BRIDGE: [],
       })
       .build();
@@ -1045,11 +1047,12 @@ describe('SafeShieldService', () => {
 
   describe('analyzeRecipient', () => {
     it('should analyze a single recipient address', async () => {
-      const mockInteractionResult =
-        recipientAnalysisResultBuilder().build() as AnalysisResult<RecipientStatus>;
+      const mockInteractionResponse = {
+        RECIPIENT_INTERACTION: [recipientAnalysisResultBuilder().build()],
+      } as SingleRecipientAnalysisResponse;
 
-      mockRecipientAnalysisService.analyzeInteractions.mockResolvedValue(
-        mockInteractionResult,
+      mockRecipientAnalysisService.analyzeRecipient.mockResolvedValue(
+        mockInteractionResponse,
       );
 
       const result = await service.analyzeRecipient(
@@ -1058,22 +1061,20 @@ describe('SafeShieldService', () => {
         mockRecipientAddress,
       );
 
-      expect(result).toEqual({
-        RECIPIENT_INTERACTION: [mockInteractionResult],
-      });
+      expect(result).toEqual(mockInteractionResponse);
       expect(
-        mockRecipientAnalysisService.analyzeInteractions,
-      ).toHaveBeenCalledWith({
-        chainId: mockChainId,
-        safeAddress: mockSafeAddress,
-        recipient: mockRecipientAddress,
-      });
+        mockRecipientAnalysisService.analyzeRecipient,
+      ).toHaveBeenCalledWith(
+        mockChainId,
+        mockSafeAddress,
+        mockRecipientAddress,
+      );
     });
 
-    it('should handle analyzeInteractions failure', async () => {
+    it('should handle analyzeRecipient failure', async () => {
       const error = new Error('Failed to analyze interactions');
 
-      mockRecipientAnalysisService.analyzeInteractions.mockRejectedValue(error);
+      mockRecipientAnalysisService.analyzeRecipient.mockRejectedValue(error);
 
       await expect(
         service.analyzeRecipient(
@@ -1084,12 +1085,12 @@ describe('SafeShieldService', () => {
       ).rejects.toThrow('Failed to analyze interactions');
 
       expect(
-        mockRecipientAnalysisService.analyzeInteractions,
-      ).toHaveBeenCalledWith({
-        chainId: mockChainId,
-        safeAddress: mockSafeAddress,
-        recipient: mockRecipientAddress,
-      });
+        mockRecipientAnalysisService.analyzeRecipient,
+      ).toHaveBeenCalledWith(
+        mockChainId,
+        mockSafeAddress,
+        mockRecipientAddress,
+      );
     });
   });
 

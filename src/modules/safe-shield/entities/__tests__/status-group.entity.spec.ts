@@ -12,8 +12,9 @@ import {
 describe('StatusGroup', () => {
   describe('StatusGroup', () => {
     it('should have all expected values', () => {
-      expect(StatusGroup).toHaveLength(7);
+      expect(StatusGroup).toHaveLength(8);
       expect(StatusGroup).toContain('RECIPIENT_INTERACTION');
+      expect(StatusGroup).toContain('RECIPIENT_ACTIVITY');
       expect(StatusGroup).toContain('BRIDGE');
       expect(StatusGroup).toContain('CONTRACT_VERIFICATION');
       expect(StatusGroup).toContain('CONTRACT_INTERACTION');
@@ -34,8 +35,9 @@ describe('StatusGroup', () => {
 
   describe('RecipientStatusGroup', () => {
     it('should have all expected values', () => {
-      expect(RecipientStatusGroup).toHaveLength(2);
+      expect(RecipientStatusGroup).toHaveLength(3);
       expect(RecipientStatusGroup).toContain('RECIPIENT_INTERACTION');
+      expect(RecipientStatusGroup).toContain('RECIPIENT_ACTIVITY');
       expect(RecipientStatusGroup).toContain('BRIDGE');
     });
   });
@@ -65,16 +67,12 @@ describe('StatusGroup', () => {
       },
     );
 
-    it.each([
-      'INVALID_GROUP',
-      '',
-      'RECIPIENT_ACTIVITY',
-      null,
-      undefined,
-      123,
-    ] as const)('should reject invalid value = %s', (invalidValue) => {
-      expect(() => StatusGroupSchema.parse(invalidValue)).toThrow();
-    });
+    it.each(['INVALID_GROUP', '', null, undefined, 123] as const)(
+      'should reject invalid value = %s',
+      (invalidValue) => {
+        expect(() => StatusGroupSchema.parse(invalidValue)).toThrow();
+      },
+    );
   });
 });
 

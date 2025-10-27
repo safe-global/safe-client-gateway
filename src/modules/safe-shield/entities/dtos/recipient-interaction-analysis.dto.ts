@@ -1,13 +1,13 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { CommonStatus } from '../analysis-result.entity';
 import { RecipientStatus } from '@/modules/safe-shield/entities/recipient-status.entity';
 import { AnalysisResultDto } from './analysis-result.dto';
-import { RecipientInteractionAnalysisResponse } from '@/modules/safe-shield/entities/analysis-responses.entity';
+import { SingleRecipientAnalysisResponse } from '@/modules/safe-shield/entities/analysis-responses.entity';
 
 /**
  * DTO for recipient interaction analysis result.
  */
-export class RecipientInteractionResultDto extends AnalysisResultDto<
+export class SingleRecipientAnalysisResultDto extends AnalysisResultDto<
   RecipientStatus | CommonStatus
 > {
   @ApiProperty({
@@ -22,25 +22,42 @@ export class RecipientInteractionResultDto extends AnalysisResultDto<
  * DTO for single recipient analysis response.
  *
  * This DTO is used by the analyzeRecipient endpoint which only returns
- * recipient interaction status (not bridge analysis).
+ * recipient interaction and activity statuses (not bridge analysis).
  */
-export class RecipientInteractionAnalysisDto
-  implements RecipientInteractionAnalysisResponse
+export class SingleRecipientAnalysisDto
+  implements SingleRecipientAnalysisResponse
 {
   @ApiProperty({
     description:
       'Analysis results related to recipient interaction history. ' +
       'Shows whether this is a new or recurring recipient.',
-    type: [RecipientInteractionResultDto],
+    type: [SingleRecipientAnalysisResultDto],
     example: [
       {
         severity: 'INFO',
         type: 'NEW_RECIPIENT',
         title: 'New recipient',
         description:
-          'This is the first time you are interacting with this recipient',
+          'This is the first time you are interacting with this recipient.',
       },
     ],
   })
-  RECIPIENT_INTERACTION!: Array<RecipientInteractionResultDto>;
+  RECIPIENT_INTERACTION!: Array<SingleRecipientAnalysisResultDto>;
+
+  @ApiPropertyOptional({
+    description:
+      'Analysis results related to recipient activity. ' +
+      'Shows whether this is a low activity recipient.' +
+      '(Available only for Safes)',
+    type: [SingleRecipientAnalysisResultDto],
+    example: [
+      {
+        severity: 'WARN',
+        type: 'LOW_ACTIVITY',
+        title: 'Low activity recipient',
+        description: 'This address has low activity.',
+      },
+    ],
+  })
+  RECIPIENT_ACTIVITY?: Array<SingleRecipientAnalysisResultDto>;
 }

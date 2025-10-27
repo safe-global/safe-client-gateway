@@ -18,7 +18,7 @@ import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import type { Address } from 'viem';
 import { SafeShieldService } from './safe-shield.service';
-import { RecipientInteractionAnalysisDto } from './entities/dtos/recipient-interaction-analysis.dto';
+import { SingleRecipientAnalysisDto } from './entities/dtos/recipient-interaction-analysis.dto';
 import {
   CounterpartyAnalysisRequestSchema,
   ThreatAnalysisRequestSchema,
@@ -67,7 +67,7 @@ export class SafeShieldController {
   })
   @ApiOkResponse({
     description: 'Recipient interaction analysis results',
-    type: RecipientInteractionAnalysisDto,
+    type: SingleRecipientAnalysisDto,
   })
   @HttpCode(HttpStatus.OK)
   @Get('chains/:chainId/security/:safeAddress/recipient/:recipientAddress')
@@ -77,7 +77,7 @@ export class SafeShieldController {
     safeAddress: Address,
     @Param('recipientAddress', new ValidationPipe(AddressSchema))
     recipientAddress: Address,
-  ): Promise<RecipientInteractionAnalysisDto> {
+  ): Promise<SingleRecipientAnalysisDto> {
     return this.safeShieldService.analyzeRecipient(
       chainId,
       safeAddress,

@@ -104,14 +104,19 @@ export type GroupedAnalysisResults<
 };
 
 /**
- * Response structure for single recipient interaction analysis.
+ * Response structure for single recipient analysis.
  *
- * Contains only the RECIPIENT_INTERACTION status group.
- * Used by the analyzeRecipient endpoint which focuses on recipient interaction history.
+ * Contains the RECIPIENT_INTERACTION status group (required) and
+ * RECIPIENT_ACTIVITY status group (optional).
+ * Used by the analyzeRecipient endpoint which focuses on recipient interaction history and activity patterns.
  */
-export type RecipientInteractionAnalysisResponse = Required<
+export type SingleRecipientAnalysisResponse = Required<
   Pick<
     GroupedAnalysisResults<AnalysisResult<RecipientStatus | CommonStatus>>,
     'RECIPIENT_INTERACTION'
   >
->;
+> &
+  Pick<
+    GroupedAnalysisResults<AnalysisResult<RecipientStatus | CommonStatus>>,
+    'RECIPIENT_ACTIVITY'
+  >;

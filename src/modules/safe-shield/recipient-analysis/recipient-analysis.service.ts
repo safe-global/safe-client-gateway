@@ -17,7 +17,10 @@ import type { RecipientStatus } from '@/modules/safe-shield/entities/recipient-s
 import type { BridgeStatus } from '@/modules/safe-shield/entities/bridge-status.entity';
 import type { DecodedTransactionData } from '@/modules/safe-shield/entities/transaction-data.entity';
 import { Erc20Decoder } from '@/domain/relay/contracts/decoders/erc-20-decoder.helper';
-import { RecipientAnalysisResponse } from '@/modules/safe-shield/entities/analysis-responses.entity';
+import {
+  RecipientAnalysisResponse,
+  SingleRecipientAnalysisResponse,
+} from '@/modules/safe-shield/entities/analysis-responses.entity';
 import {
   CacheService,
   ICacheService,
@@ -45,6 +48,8 @@ import {
 import { Chain } from '@/routes/chains/entities/chain.entity';
 import { merge } from 'lodash';
 import type { SafeCreationData } from '@/modules/safe-shield/entities/safe-creation-data.entity';
+import { ITransactionApi } from '@/domain/interfaces/transaction-api.interface';
+import { DataSourceError } from '@/domain/errors/data-source.error';
 
 const SAFE_VERSIONS = ['1.4.1', '1.3.0', '1.2.0', '1.1.1', '1.0.0'] as const;
 type SafeVersion = (typeof SAFE_VERSIONS)[number];
@@ -119,7 +124,7 @@ export class RecipientAnalysisService {
 
     const [recipientAnalysisResults, bridgeAnalysisResults] = await Promise.all(
       [
-        this.analyseRecipients({
+        this.analyzeRecipients({
           chainId: args.chainId,
           safeAddress: args.safeAddress,
           recipients,
@@ -153,7 +158,7 @@ export class RecipientAnalysisService {
    * @param {Array<Address>} args.recipients - The recipient addresses to analyze.
    * @returns {Promise<RecipientAnalysisResponse>} The recipient analysis response.
    */
-  private async analyseRecipients(args: {
+  private async analyzeRecipients(args: {
     chainId: string;
     safeAddress: Address;
     recipients: Array<Address>;
@@ -163,38 +168,66 @@ export class RecipientAnalysisService {
       await Promise.all(
         recipients.map(async (recipient) => [
           recipient,
-          {
-            RECIPIENT_INTERACTION: [
-              await this.analyzeInteractions({
-                chainId,
-                safeAddress,
-                recipient,
-              }),
-            ],
-          },
+          await this.analyzeRecipient(chainId, safeAddress, recipient),
         ]),
       ),
     );
   }
 
+  public async analyzeRecipient(
+    chainId: string,
+    safeAddress: Address,
+    recipient: Address,
+  ): Promise<SingleRecipientAnalysisResponse> {
+    const failed = this.mapToAnalysisResult({ type: 'FAILED' });
+
+    let transactionApi: ITransactionApi;
+    try {
+      transactionApi = await this.transactionApiManager.getApi(chainId);
+    } catch (error) {
+      this.loggingService.warn(
+        `Failed to get transaction API for chain ${chainId}: ${error}`,
+      );
+      //TODO should we return RECIPIENT_ACTIVITY in such case?
+      return {
+        RECIPIENT_INTERACTION: [failed],
+        RECIPIENT_ACTIVITY: [failed],
+      };
+    }
+
+    const [interactionResult, activityResult] = await Promise.all([
+      this.analyzeInteractions({
+        transactionApi,
+        safeAddress,
+        recipient,
+      }),
+      this.analyzeActivity({ transactionApi, recipient }),
+    ]);
+
+    const recipientActivity = activityResult
+      ? { RECIPIENT_ACTIVITY: [activityResult] }
+      : undefined;
+
+    return {
+      RECIPIENT_INTERACTION: [interactionResult],
+      ...recipientActivity,
+    };
+  }
+
   /**
    * Analyzes the interactions between a Safe and a recipient.
-   * @param {string} args.chainId - The chain ID.
+   * @param {ITransactionApi} args.transactionApi - The transaction API instance.
    * @param {Address} args.safeAddress - The Safe address.
    * @param {Address} args.recipient - The recipient address.
    * @returns {Promise<AnalysisResult<RecipientStatus | CommonStatus>>} The analysis result indicating if recipient is new or recurring.
    */
   public async analyzeInteractions(args: {
-    chainId: string;
+    transactionApi: ITransactionApi;
     safeAddress: Address;
     recipient: Address;
   }): Promise<AnalysisResult<RecipientStatus | CommonStatus>> {
     try {
-      const transactionApi = await this.transactionApiManager.getApi(
-        args.chainId,
-      );
-
-      const page = await transactionApi.getTransfers({
+      const page = await args.transactionApi.getTransfers({
         safeAddress: args.safeAddress,
         to: args.recipient,
         limit: 1,
@@ -213,6 +246,40 @@ export class RecipientAnalysisService {
         type: 'FAILED',
         error: 'recipient interactions unavailable',
       });
+    }
+  }
+
+  /**
+   * Analyzes the activity level of a recipient address.
+   * @param {ITransactionApi} args.transactionApi - The transaction API instance.
+   * @param {Address} args.recipient - The recipient address.
+   * @returns {Promise<AnalysisResult<RecipientStatus | CommonStatus> | undefined>} The analysis result if low activity is detected, undefined otherwise.
+   */
+  public async analyzeActivity(args: {
+    transactionApi: ITransactionApi;
+    recipient: Address;
+  }): Promise<AnalysisResult<RecipientStatus | CommonStatus> | undefined> {
+    const { transactionApi, recipient } = args;
+    try {
+      const response = await transactionApi.getSafe(recipient);
+      const { nonce } = SafeSchema.parse(response);
+
+      return nonce < 5
+        ? this.mapToAnalysisResult({ type: 'LOW_ACTIVITY' })
+        : undefined;
+    } catch (error) {
+      //todo deal with 404
+      if (error instanceof DataSourceError && error.code === 404) {
+        //TODO isSafe should be false
+      } else {
+        this.loggingService.warn(
+          `Failed to analyze recipient activity: ${error}`,
+        );
+        return this.mapToAnalysisResult({
+          type: 'FAILED',
+          error: 'recipient activity check unavailable',
+        });
+      }
     }
   }
 
@@ -263,7 +330,7 @@ export class RecipientAnalysisService {
     }
 
     // If the bridge recipient is not the same as the Safe address, we need to analyse the recipient
-    return this.analyseRecipients({
+    return this.analyzeRecipients({
       chainId: args.chainId,
       safeAddress: args.safeAddress,
       recipients: [bridgeRecipient],
