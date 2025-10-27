@@ -2,6 +2,7 @@
 
 import { z } from 'zod';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
+import { HexSchema } from '@/validation/entities/schemas/hex.schema';
 
 export const AssetTypeSchema = z.enum(['NATIVE', 'ERC20', 'ERC721', 'ERC1155']);
 export type AssetType = z.infer<typeof AssetTypeSchema>;
@@ -27,7 +28,7 @@ export const FungibleDiffSchema = z.object({
 });
 
 export const NFTDiffSchema = z.object({
-  token_id: z.number(),
+  token_id: HexSchema.transform(Number),
 });
 
 export const AssetDiffSchema = z.union([NFTDiffSchema, FungibleDiffSchema]);
