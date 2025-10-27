@@ -45,19 +45,19 @@ export class NoFeeCampaignRelayer implements IRelayer {
       // Outside no-fee campaign
       return { result: false, currentCount: 0, limit: 0 };
     }
-    
+
     const currentSafeTokenBalance = await this.getTokenBalance(args);
     const currentCount = await this.getRelayCount(args);
 
     // Get the appropriate limit based on Safe token balance using relay rules
     const relayLimit = this.getNoFeeCampaignLimit(
-        currentSafeTokenBalance,
-        noFeeCampaignConfigurationPerChain.relayRules,
+      currentSafeTokenBalance,
+      noFeeCampaignConfigurationPerChain.relayRules,
     );
     return {
-        result: currentCount < relayLimit,
-        currentCount,
-        limit: relayLimit,
+      result: currentCount < relayLimit,
+      currentCount,
+      limit: relayLimit,
     };
   }
 
