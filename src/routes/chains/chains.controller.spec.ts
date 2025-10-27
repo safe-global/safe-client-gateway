@@ -644,12 +644,14 @@ describe('Chains Controller (Unit)', () => {
         .expect(200)
         .expect({
           currentBlockNumber: indexingStatus.currentBlockNumber,
-          currentBlockTimestamp: indexingStatus.currentBlockTimestamp.toISOString(),
+          currentBlockTimestamp:
+            indexingStatus.currentBlockTimestamp.toISOString(),
           erc20BlockNumber: indexingStatus.erc20BlockNumber,
           erc20BlockTimestamp: indexingStatus.erc20BlockTimestamp.toISOString(),
           erc20Synced: indexingStatus.erc20Synced,
           masterCopiesBlockNumber: indexingStatus.masterCopiesBlockNumber,
-          masterCopiesBlockTimestamp: indexingStatus.masterCopiesBlockTimestamp.toISOString(),
+          masterCopiesBlockTimestamp:
+            indexingStatus.masterCopiesBlockTimestamp.toISOString(),
           masterCopiesSynced: indexingStatus.masterCopiesSynced,
           synced: indexingStatus.synced,
           lastSync:
