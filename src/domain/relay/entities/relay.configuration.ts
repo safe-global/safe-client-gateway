@@ -5,7 +5,7 @@ export type NoFeeCampaignConfiguration = Record<
   {
     startsAtTimeStamp: number;
     endsAtTimeStamp: number;
-    maxTxValueInUSD: number;
+    maxGasLimit: number;
     safeTokenAddress: Address;
     relayRules: RelayRules;
   }

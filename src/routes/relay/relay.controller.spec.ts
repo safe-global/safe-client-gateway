@@ -3186,6 +3186,145 @@ describe('Relay controller', () => {
             },
           );
         });
+
+        describe('Gas limit handling', () => {
+          const gasLimitScenarios = [
+            {
+              description: 'should relay with undefined gasLimit',
+              gasLimit: undefined,
+              expectedGasLimit: (maxGasLimit: number): number =>
+                maxGasLimit + 150_000,
+            },
+            {
+              description:
+                'should cap gasLimit at maxGasLimit when provided gasLimit exceeds maxGasLimit',
+              gasLimit: (maxGasLimit: number): number => maxGasLimit + 100000, // Exceeds max by 100k
+              expectedGasLimit: (maxGasLimit: number): number =>
+                maxGasLimit + 150_000, // maxGasLimit + buffer
+            },
+            {
+              description:
+                'should use provided gasLimit when it is less than maxGasLimit',
+              gasLimit: (maxGasLimit: number): number =>
+                Math.max(1, maxGasLimit - 50000), // Below max by 50k, ensure it's positive
+              expectedGasLimit: (maxGasLimit: number): number =>
+                Math.max(1, maxGasLimit - 50000) + 150_000, // original + buffer
+            },
+          ];
+
+          describe.each(gasLimitScenarios)(
+            '$description',
+            ({ gasLimit, expectedGasLimit }) => {
+              it('should handle gas limit correctly', async () => {
+                const chain = chainBuilder().with('chainId', chainId).build();
+                const safe = safeBuilder().build();
+                const safeAddress = getAddress(safe.address);
+                const data = execTransactionEncoder()
+                  .with('value', faker.number.bigInt())
+                  .encode();
+
+                const noFeeConfig = configurationService.get(
+                  'relay.noFeeCampaign',
+                ) as NoFeeCampaignConfiguration;
+
+                const maxGasLimit = noFeeConfig[parseInt(chainId)]?.maxGasLimit;
+                const actualGasLimit =
+                  typeof gasLimit === 'function'
+                    ? gasLimit(maxGasLimit)
+                    : gasLimit;
+                const expectedActualGasLimit =
+                  typeof expectedGasLimit === 'function'
+                    ? expectedGasLimit(maxGasLimit)
+                    : expectedGasLimit;
+
+                // Mock BalancesService to return sufficient token balance
+                const tokenBalance = {
+                  tokenAddress: noFeeConfig[parseInt(chainId)]
+                    ?.safeTokenAddress as string,
+                  balance: (BigInt(1000) * BigInt(10 ** 18)).toString(), // 1000 tokens
+                  fiatBalance: '1000',
+                  fiatConversion: '1',
+                  tokenInfo: {
+                    decimals: 18,
+                    symbol: 'SAFE',
+                    name: 'Safe Token',
+                  },
+                };
+
+                balancesService.getTokenBalance = jest
+                  .fn()
+                  .mockResolvedValue(tokenBalance);
+
+                const taskId = faker.string.uuid();
+
+                networkService.get.mockImplementation(({ url }) => {
+                  switch (url) {
+                    case `${safeConfigUrl}/api/v1/chains/${chainId}`:
+                      return Promise.resolve({
+                        data: rawify(chain),
+                        status: 200,
+                      });
+                    case `${chain.transactionService}/api/v1/safes/${safeAddress}`:
+                      return Promise.resolve({
+                        data: rawify(safe),
+                        status: 200,
+                      });
+                    default:
+                      return Promise.reject(`No matching rule for url: ${url}`);
+                  }
+                });
+
+                // Mock the relay API call and capture the request
+                let relayApiCall: Record<string, unknown> = {};
+                networkService.post.mockImplementation(
+                  ({ url, data: postData }) => {
+                    switch (url) {
+                      case `${relayUrl}/relays/v2/sponsored-call`:
+                        relayApiCall = (postData ?? {}) as Record<
+                          string,
+                          unknown
+                        >;
+                        return Promise.resolve({
+                          data: rawify({ taskId }),
+                          status: 200,
+                        });
+                      default:
+                        return Promise.reject(
+                          `No matching rule for url: ${url}`,
+                        );
+                    }
+                  },
+                );
+
+                const requestBody: Record<string, string> = {
+                  to: safeAddress,
+                  data,
+                  version,
+                };
+
+                // Only add gasLimit to request if it's defined
+                if (actualGasLimit !== undefined) {
+                  requestBody.gasLimit = actualGasLimit.toString();
+                }
+
+                await request(app.getHttpServer())
+                  .post(`/v1/chains/${chainId}/relay`)
+                  .send(requestBody)
+                  .expect(201)
+                  .expect({ taskId });
+
+                // Verify that relay API was called with the expected gasLimit
+                if (expectedActualGasLimit === undefined) {
+                  expect(relayApiCall.gasLimit).toBeUndefined();
+                } else {
+                  expect(relayApiCall.gasLimit).toBe(
+                    expectedActualGasLimit.toString(),
+                  );
+                }
+              });
+            },
+          );
+        });
       },
     );
   });

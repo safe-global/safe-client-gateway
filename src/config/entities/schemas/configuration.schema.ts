@@ -80,7 +80,7 @@ export const RootConfigurationSchema = z
       .number({ coerce: true })
       .int()
       .min(0),
-    RELAY_NO_FEE_CAMPAIGN_SEPOLIA_PER_TX_LIMIT_USD: z
+    RELAY_NO_FEE_CAMPAIGN_SEPOLIA_MAX_GAS_LIMIT: z
       .number({ coerce: true })
       .min(0),
     RELAY_NO_FEE_CAMPAIGN_SEPOLIA_RELAY_RULES: relayRulesValidator,
@@ -93,7 +93,7 @@ export const RootConfigurationSchema = z
       .number({ coerce: true })
       .int()
       .min(0),
-    RELAY_NO_FEE_CAMPAIGN_MAINNET_PER_TX_LIMIT_USD: z
+    RELAY_NO_FEE_CAMPAIGN_MAINNET_MAX_GAS_LIMIT: z
       .number({ coerce: true })
       .min(0),
     RELAY_NO_FEE_CAMPAIGN_MAINNET_RELAY_RULES: relayRulesValidator,

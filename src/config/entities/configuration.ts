@@ -454,8 +454,8 @@ export default () => ({
         endsAtTimeStamp: parseInt(
           process.env.RELAY_NO_FEE_CAMPAIGN_MAINNET_END_TIMESTAMP ?? `${0}`,
         ),
-        maxTxValueInUSD: parseInt(
-          process.env.RELAY_NO_FEE_CAMPAIGN_MAINNET_PER_TX_LIMIT_USD ?? `${0}`,
+        maxGasLimit: parseInt(
+          process.env.RELAY_NO_FEE_CAMPAIGN_MAINNET_MAX_GAS_LIMIT ?? `${0}`,
         ),
         safeTokenAddress:
           process.env.RELAY_NO_FEE_CAMPAIGN_MAINNET_SAFE_TOKEN_ADDRESS,
@@ -471,8 +471,8 @@ export default () => ({
         endsAtTimeStamp: parseInt(
           process.env.RELAY_NO_FEE_CAMPAIGN_SEPOLIA_END_TIMESTAMP ?? `${0}`,
         ),
-        maxTxValueInUSD: parseInt(
-          process.env.RELAY_NO_FEE_CAMPAIGN_SEPOLIA_PER_TX_LIMIT_USD ?? `${0}`,
+        maxGasLimit: parseInt(
+          process.env.RELAY_NO_FEE_CAMPAIGN_SEPOLIA_MAX_GAS_LIMIT ?? `${0}`,
         ),
         safeTokenAddress:
           process.env.RELAY_NO_FEE_CAMPAIGN_SEPOLIA_SAFE_TOKEN_ADDRESS,

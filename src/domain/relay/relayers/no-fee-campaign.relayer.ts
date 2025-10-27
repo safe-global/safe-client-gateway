@@ -86,8 +86,22 @@ export class NoFeeCampaignRelayer implements IRelayer {
       }
     }
 
+    const maxGasLimit = BigInt(
+      this.noFeeCampaignConfiguration[parseInt(args.chainId)].maxGasLimit,
+    );
+
+    let gasLimit: bigint;
+    if (args.gasLimit === null || args.gasLimit > maxGasLimit) {
+      gasLimit = maxGasLimit;
+    } else {
+      gasLimit = args.gasLimit;
+    }
+
     const relayResponse = await this.relayApi
-      .relay(args)
+      .relay({
+        ...args,
+        gasLimit,
+      })
       .then(RelaySchema.parse);
 
     // If we fail to increment count, we should not fail the relay

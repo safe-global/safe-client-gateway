@@ -291,7 +291,7 @@ export default (): ReturnType<typeof configuration> => ({
         startsAtTimeStamp: new Date().getTime() / 1000 - 10_000,
         endsAtTimeStamp: new Date().getTime() / 1000 + 1_000_000,
         safeTokenAddress: faker.finance.ethereumAddress(),
-        maxTxValueInUSD: faker.number.int(),
+        maxGasLimit: faker.number.int(),
         relayRules: [
           {
             balance: 0,
@@ -314,7 +314,7 @@ export default (): ReturnType<typeof configuration> => ({
       11155111: {
         startsAtTimeStamp: new Date().getTime() / 1000 - 10_000,
         endsAtTimeStamp: new Date().getTime() / 1000 + 1000_000,
-        maxTxValueInUSD: 100,
+        maxGasLimit: 100,
         safeTokenAddress: faker.finance.ethereumAddress(),
         relayRules: [
           {

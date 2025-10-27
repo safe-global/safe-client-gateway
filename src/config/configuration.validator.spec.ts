@@ -46,7 +46,7 @@ describe('Configuration validator', () => {
       faker.finance.ethereumAddress(),
     RELAY_NO_FEE_CAMPAIGN_SEPOLIA_START_TIMESTAMP: faker.date.past().getTime(),
     RELAY_NO_FEE_CAMPAIGN_SEPOLIA_END_TIMESTAMP: faker.date.future().getTime(),
-    RELAY_NO_FEE_CAMPAIGN_SEPOLIA_PER_TX_LIMIT_USD: faker.number.int({
+    RELAY_NO_FEE_CAMPAIGN_SEPOLIA_MAX_GAS_LIMIT: faker.number.int({
       min: 1,
       max: 1000,
     }),
@@ -59,7 +59,7 @@ describe('Configuration validator', () => {
       faker.finance.ethereumAddress(),
     RELAY_NO_FEE_CAMPAIGN_MAINNET_START_TIMESTAMP: faker.date.past().getTime(),
     RELAY_NO_FEE_CAMPAIGN_MAINNET_END_TIMESTAMP: faker.date.future().getTime(),
-    RELAY_NO_FEE_CAMPAIGN_MAINNET_PER_TX_LIMIT_USD: faker.number.int({
+    RELAY_NO_FEE_CAMPAIGN_MAINNET_MAX_GAS_LIMIT: faker.number.int({
       min: 1,
       max: 1000,
     }),
