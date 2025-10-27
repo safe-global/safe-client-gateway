@@ -46,13 +46,17 @@ describe('ThreatAnalysis Types', () => {
           address: getAddress(faker.finance.ethereumAddress()),
           symbol: 'NFT',
         },
-        in: [{ token_id: faker.number.int() }],
-        out: [{ token_id: faker.number.int() }],
+        in: [{ token_id: '0x1a0' }],
+        out: [{ token_id: '0xff' }],
       };
 
       const result = BalanceChangeSchema.parse(nftBalanceChange);
 
-      expect(result).toEqual(nftBalanceChange);
+      expect(result).toEqual({
+        asset: nftBalanceChange.asset,
+        in: [{ token_id: 416 }],
+        out: [{ token_id: 255 }],
+      });
     });
 
     it('should parse Blockaid response and strip extra fields', () => {

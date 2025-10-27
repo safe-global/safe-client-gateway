@@ -272,7 +272,7 @@ export class ThreatAnalysisService {
       .filter((f) => f.type === 'Malicious' || f.type === 'Warning')
       .reduce(
         (acc, { type, description }) => {
-          const sev = BLOCKAID_SEVERITY_MAP[type as 'Malicious' | 'Warning'];
+          const sev = BLOCKAID_SEVERITY_MAP[type];
           (acc[sev] ??= []).push(description);
           return acc;
         },
