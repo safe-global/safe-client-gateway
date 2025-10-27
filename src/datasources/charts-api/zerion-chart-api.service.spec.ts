@@ -9,10 +9,15 @@ import { zerionChartResponseBuilder } from '@/datasources/charts-api/entities/__
 import { faker } from '@faker-js/faker';
 import { rawify } from '@/validation/entities/raw.entity';
 import { ZodError } from 'zod';
+import type { AssetRegistryService } from '@/domain/common/services/asset-registry.service';
 
 const mockNetworkService = {
   get: jest.fn(),
 } as jest.MockedObjectDeep<INetworkService>;
+
+const mockAssetRegistry = {
+  getAssetMetadata: jest.fn(),
+} as jest.MockedObjectDeep<AssetRegistryService>;
 
 describe('ZerionChartApi', () => {
   let service: ZerionChartApi;
@@ -23,6 +28,15 @@ describe('ZerionChartApi', () => {
 
   beforeEach(() => {
     jest.resetAllMocks();
+
+    mockAssetRegistry.getAssetMetadata.mockImplementation((assetId) => ({
+      assetId,
+      symbol: assetId.toUpperCase(),
+      name: assetId,
+      isCanonical: true,
+      providerIds: { zerion: assetId },
+    }));
+
     fakeConfigurationService = new FakeConfigurationService();
     fakeConfigurationService.set(
       'balances.providers.zerion.baseUri',
@@ -42,6 +56,7 @@ describe('ZerionChartApi', () => {
       mockNetworkService,
       fakeConfigurationService,
       httpErrorFactory,
+      mockAssetRegistry,
     );
   });
 
@@ -56,6 +71,7 @@ describe('ZerionChartApi', () => {
             mockNetworkService,
             configService,
             httpErrorFactory,
+            mockAssetRegistry,
           ),
       ).toThrow();
     });
@@ -70,6 +86,7 @@ describe('ZerionChartApi', () => {
             mockNetworkService,
             configService,
             httpErrorFactory,
+            mockAssetRegistry,
           ),
       ).toThrow();
     });
@@ -85,6 +102,7 @@ describe('ZerionChartApi', () => {
             mockNetworkService,
             configService,
             httpErrorFactory,
+            mockAssetRegistry,
           ),
       ).not.toThrow();
     });
@@ -104,6 +122,7 @@ describe('ZerionChartApi', () => {
 
       const result = await service.getChart({ fungibleId, period, currency });
 
+      expect(mockAssetRegistry.getAssetMetadata).toHaveBeenCalledWith(fungibleId);
       expect(mockNetworkService.get).toHaveBeenCalledWith({
         url: `${zerionBaseUri}/v1/fungibles/${fungibleId}/charts/${period}`,
         networkRequest: {
@@ -130,6 +149,7 @@ describe('ZerionChartApi', () => {
         mockNetworkService,
         configService,
         httpErrorFactory,
+        mockAssetRegistry,
       );
 
       const fungibleId = 'eth';
@@ -205,6 +225,48 @@ describe('ZerionChartApi', () => {
           }),
         }),
       );
+    });
+
+    it('should throw DataSourceError when asset not found in registry', async () => {
+      const fungibleId = 'unknown-asset';
+      const period = ChartPeriod.DAY;
+      const currency = 'usd';
+
+      mockAssetRegistry.getAssetMetadata.mockReturnValue(null);
+
+      await expect(
+        service.getChart({ fungibleId, period, currency }),
+      ).rejects.toThrow(DataSourceError);
+
+      await expect(
+        service.getChart({ fungibleId, period, currency }),
+      ).rejects.toThrow('Asset not found or not available from Zerion: unknown-asset');
+
+      expect(mockNetworkService.get).not.toHaveBeenCalled();
+    });
+
+    it('should throw DataSourceError when asset has no Zerion provider ID', async () => {
+      const fungibleId = 'zapper-only-asset';
+      const period = ChartPeriod.DAY;
+      const currency = 'usd';
+
+      mockAssetRegistry.getAssetMetadata.mockReturnValue({
+        assetId: fungibleId,
+        symbol: 'ZOA',
+        name: 'Zapper Only Asset',
+        isCanonical: true,
+        providerIds: {},
+      });
+
+      await expect(
+        service.getChart({ fungibleId, period, currency }),
+      ).rejects.toThrow(DataSourceError);
+
+      await expect(
+        service.getChart({ fungibleId, period, currency }),
+      ).rejects.toThrow('Asset not found or not available from Zerion: zapper-only-asset');
+
+      expect(mockNetworkService.get).not.toHaveBeenCalled();
     });
 
     it('should throw DataSourceError for unsupported currency', async () => {

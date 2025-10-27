@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { ZodError } from 'zod';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import {
@@ -10,7 +11,7 @@ import { rawify, type Raw } from '@/validation/entities/raw.entity';
 import type { Chart } from '@/domain/charts/entities/chart.entity';
 import { ChartPeriod } from '@/domain/charts/entities/chart.entity';
 import { ZerionChartResponseSchema } from '@/datasources/charts-api/entities/zerion-chart.entity';
-import { ZodError } from 'zod';
+import { AssetRegistryService } from '@/domain/common/services/asset-registry.service';
 
 export const IChartApi = Symbol('IChartApi');
 
@@ -33,6 +34,7 @@ export class ZerionChartApi implements IChartApi {
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
     private readonly httpErrorFactory: HttpErrorFactory,
+    private readonly assetRegistry: AssetRegistryService,
   ) {
     this.apiKey = this.configurationService.get<string>(
       'balances.providers.zerion.apiKey',
@@ -57,15 +59,24 @@ export class ZerionChartApi implements IChartApi {
       );
     }
 
+    const metadata = this.assetRegistry.getAssetMetadata(args.fungibleId);
+    if (!metadata?.providerIds.zerion) {
+      throw new DataSourceError(
+        `Asset not found or not available from Zerion: ${args.fungibleId}`,
+        404,
+      );
+    }
+
+    const zerionFungibleId = metadata.providerIds.zerion;
+
     try {
-      const url = `${this.baseUri}/v1/fungibles/${args.fungibleId}/charts/${args.period}`;
+      const url = `${this.baseUri}/v1/fungibles/${zerionFungibleId}/charts/${args.period}`;
       const params: Record<string, string> = {
         currency: args.currency.toLowerCase(),
       };
 
       const networkRequest: Record<string, unknown> = { params };
 
-      // Only add Authorization header if API key exists
       if (this.apiKey) {
         networkRequest.headers = { Authorization: `Basic ${this.apiKey}` };
       }
@@ -77,7 +88,6 @@ export class ZerionChartApi implements IChartApi {
         })
         .then(({ data }) => ZerionChartResponseSchema.parse(data));
 
-      // Map Zerion chart to domain chart
       return rawify({
         beginAt: response.data.attributes.begin_at,
         endAt: response.data.attributes.end_at,
