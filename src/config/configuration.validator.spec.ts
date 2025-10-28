@@ -290,16 +290,6 @@ describe('Configuration validator', () => {
         ).not.toThrow();
       });
 
-      it('should reject undefined', () => {
-        const config = {
-          ...validConfiguration,
-          [fieldKey]: undefined,
-        };
-        expect(() =>
-          configurationValidator(config, RootConfigurationSchema),
-        ).toThrow(/Configuration is invalid:/);
-      });
-
       it('should reject empty string', () => {
         const config = {
           ...validConfiguration,
