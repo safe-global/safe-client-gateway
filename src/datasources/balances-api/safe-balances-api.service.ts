@@ -21,7 +21,7 @@ import {
   getAssetPricesSchema,
 } from '@/datasources/balances-api/entities/asset-price.entity';
 import { ZodError } from 'zod';
-import type { Address } from 'viem';
+import { type Address, isAddressEqual, zeroAddress } from 'viem';
 
 @Injectable()
 export class SafeBalancesApi implements IBalancesApi {
@@ -134,8 +134,10 @@ export class SafeBalancesApi implements IBalancesApi {
 
       const balance = data.find(
         (balance) =>
-          balance.tokenAddress?.toLowerCase() ===
-          args.tokenAddress.toLowerCase(),
+          (balance.tokenAddress &&
+            isAddressEqual(balance.tokenAddress, args.tokenAddress)) ||
+          (balance.tokenAddress === null &&
+            isAddressEqual(args.tokenAddress, zeroAddress)),
       );
 
       if (!balance) {
