@@ -58,6 +58,13 @@ export class ZerionPortfolioApi implements IPortfolioApi {
     chainIds?: Array<string>;
     trusted?: boolean;
   }): Promise<Raw<Portfolio>> {
+    if (!this.apiKey) {
+      throw new DataSourceError(
+        'Zerion API key is not configured. Set ZERION_API_KEY environment variable.',
+        503,
+      );
+    }
+
     if (!this.fiatCodes.includes(args.fiatCode.toUpperCase())) {
       throw new DataSourceError(
         `Unsupported currency code: ${args.fiatCode}`,
