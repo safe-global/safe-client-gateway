@@ -60,5 +60,5 @@ export const DESCRIPTION_MAPPING: Record<
   MODULE_CHANGE: () =>
     'Verify this change before proceeding as it will change Safe modules.',
   FAILED: ({ error } = {}) =>
-    `Threat analysis failed.${error ? ` (${error}).` : ''} Review before processing.`,
+    `Threat analysis failed.${error ? ` (${error})` : ''} Review before processing.`,
 };
