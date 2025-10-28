@@ -387,7 +387,9 @@ describe('ThreatAnalysisService', () => {
               severity: SEVERITY_MAPPING.FAILED,
               type: 'FAILED',
               title: TITLE_MAPPING.FAILED,
-              description: DESCRIPTION_MAPPING.FAILED(),
+              description: DESCRIPTION_MAPPING.FAILED({
+                error: 'Validation failed',
+              }),
             },
           ],
           BALANCE_CHANGE: [],

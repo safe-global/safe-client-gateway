@@ -168,30 +168,28 @@ export class ThreatAnalysisService {
     validation?: TransactionValidation | TransactionValidationError,
   ): ThreatAnalysisResult {
     let type: ThreatStatus | CommonStatus = 'FAILED';
-    let issues:
-      | Partial<Record<keyof typeof Severity, Array<string>>>
-      | undefined;
-    const {
-      reason,
-      classification,
-      features = [],
-      result_type,
-    } = validation ?? {};
 
-    if (validation) {
-      switch (result_type) {
-        case 'Benign':
-          type = 'NO_THREAT';
-          break;
-        case 'Warning':
-          type = 'MODERATE';
-          break;
-        case 'Malicious':
-          type = 'MALICIOUS';
-          break;
-      }
-      issues = this.groupIssuesBySeverity(features);
+    if (!validation || validation.result_type === 'Error') {
+      return this.mapToAnalysisResult({
+        type,
+        error: validation?.error,
+      });
     }
+
+    const { reason, classification, features = [], result_type } = validation;
+    switch (result_type) {
+      case 'Benign':
+        type = 'NO_THREAT';
+        break;
+      case 'Warning':
+        type = 'MODERATE';
+        break;
+      case 'Malicious':
+        type = 'MALICIOUS';
+        break;
+    }
+
+    const issues = this.groupIssuesBySeverity(features);
 
     return this.mapToAnalysisResult({
       type,
@@ -222,7 +220,7 @@ export class ThreatAnalysisService {
       results = [
         this.mapToAnalysisResult({
           type: 'FAILED',
-          error: simulation.description,
+          error: simulation.description || simulation.error,
         }),
       ];
       return [results, undefined];
