@@ -200,17 +200,16 @@ export class NoFeeCampaignRelayer implements IRelayer {
     chainId: string;
     address: Address;
   }): Promise<number> {
-    const noFeeCampaignConfigurationPerChain =
-      this.relayConfiguration[parseInt(args.chainId)];
+    const chainConfiguration = this.relayConfiguration[parseInt(args.chainId)];
 
-    if (!noFeeCampaignConfigurationPerChain) return 0;
+    if (!chainConfiguration) return 0;
 
     try {
       const balance = await this.balancesService.getTokenBalance({
         chainId: args.chainId,
         safeAddress: args.address,
         fiatCode: NoFeeCampaignRelayer.DEFAULT_FIAT_CODE,
-        tokenAddress: noFeeCampaignConfigurationPerChain.safeTokenAddress,
+        tokenAddress: chainConfiguration.safeTokenAddress,
       });
 
       if (!balance) {
