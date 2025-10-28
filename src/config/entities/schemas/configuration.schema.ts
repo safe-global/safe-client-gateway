@@ -1,28 +1,31 @@
 import { z } from 'zod';
-const relayRulesValidator = z.string().refine(
-  (value) => {
-    if (value === undefined || value === null || value === '') return false;
-    try {
-      const parsed = JSON.parse(value);
-      if (!Array.isArray(parsed)) return false;
-      return parsed.every(
-        (rule: Record<string, unknown>) =>
-          typeof rule === 'object' &&
-          rule !== null &&
-          typeof rule.balance === 'number' &&
-          typeof rule.limit === 'number' &&
-          rule.balance >= 0 &&
-          rule.limit >= 0,
-      );
-    } catch {
-      return false;
-    }
-  },
-  {
-    message:
-      'Must be a valid JSON array of objects with balance (number >= 0) and limit (number >= 0) properties',
-  },
-);
+const relayRulesValidator = z
+  .string()
+  .refine(
+    (value) => {
+      if (value === undefined || value === null || value === '') return false;
+      try {
+        const parsed = JSON.parse(value);
+        if (!Array.isArray(parsed)) return false;
+        return parsed.every(
+          (rule: Record<string, unknown>) =>
+            typeof rule === 'object' &&
+            rule !== null &&
+            typeof rule.balance === 'number' &&
+            typeof rule.limit === 'number' &&
+            rule.balance >= 0 &&
+            rule.limit >= 0,
+        );
+      } catch {
+        return false;
+      }
+    },
+    {
+      message:
+        'Must be a valid JSON array of objects with balance (number >= 0) and limit (number >= 0) properties',
+    },
+  )
+  .optional();
 
 export const RootConfigurationSchema = z
   .object({
@@ -71,31 +74,37 @@ export const RootConfigurationSchema = z
     RELAY_PROVIDER_API_KEY_LINEA: z.string(),
     RELAY_PROVIDER_API_KEY_BLAST: z.string(),
     RELAY_PROVIDER_API_KEY_SEPOLIA: z.string(),
-    RELAY_NO_FEE_CAMPAIGN_SEPOLIA_SAFE_TOKEN_ADDRESS: z.string(),
+    RELAY_NO_FEE_CAMPAIGN_SEPOLIA_SAFE_TOKEN_ADDRESS: z.string().optional(),
     RELAY_NO_FEE_CAMPAIGN_SEPOLIA_START_TIMESTAMP: z
       .number({ coerce: true })
       .int()
-      .min(0),
+      .min(0)
+      .optional(),
     RELAY_NO_FEE_CAMPAIGN_SEPOLIA_END_TIMESTAMP: z
       .number({ coerce: true })
       .int()
-      .min(0),
+      .min(0)
+      .optional(),
     RELAY_NO_FEE_CAMPAIGN_SEPOLIA_MAX_GAS_LIMIT: z
       .number({ coerce: true })
-      .min(0),
+      .min(0)
+      .optional(),
     RELAY_NO_FEE_CAMPAIGN_SEPOLIA_RELAY_RULES: relayRulesValidator,
-    RELAY_NO_FEE_CAMPAIGN_MAINNET_SAFE_TOKEN_ADDRESS: z.string(),
+    RELAY_NO_FEE_CAMPAIGN_MAINNET_SAFE_TOKEN_ADDRESS: z.string().optional(),
     RELAY_NO_FEE_CAMPAIGN_MAINNET_START_TIMESTAMP: z
       .number({ coerce: true })
       .int()
-      .min(0),
+      .min(0)
+      .optional(),
     RELAY_NO_FEE_CAMPAIGN_MAINNET_END_TIMESTAMP: z
       .number({ coerce: true })
       .int()
-      .min(0),
+      .min(0)
+      .optional(),
     RELAY_NO_FEE_CAMPAIGN_MAINNET_MAX_GAS_LIMIT: z
       .number({ coerce: true })
-      .min(0),
+      .min(0)
+      .optional(),
     RELAY_NO_FEE_CAMPAIGN_MAINNET_RELAY_RULES: relayRulesValidator,
     STAKING_API_KEY: z.string(),
     STAKING_TESTNET_API_KEY: z.string(),
