@@ -35,7 +35,7 @@ export class NoFeeCampaignRelayer implements IRelayer {
     address: Address;
   }): Promise<{ result: boolean; currentCount: number; limit: number }> {
     const noFeeCampaignConfigurationPerChain =
-      this.relayconfiguration[parseInt(args.chainId)];
+      this.relayConfiguration[parseInt(args.chainId)];
 
     if (!noFeeCampaignConfigurationPerChain) {
       return { result: false, currentCount: 0, limit: 0 };
