@@ -150,7 +150,6 @@ export class SafeBalancesApi implements IBalancesApi {
         chain: args.chain,
       });
 
-      // Extract the first balance from the array and return as Raw<Balance>
       const mappedBalance = BalancesSchema.parse(mappedBalances)[0];
       return rawify(mappedBalance);
     } catch (error) {
