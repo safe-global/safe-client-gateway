@@ -2,7 +2,6 @@ import { Inject, Injectable } from '@nestjs/common';
 import { IRelayManager } from '@/domain/relay/interfaces/relay-manager.interface';
 import { Relay } from '@/domain/relay/entities/relay.entity';
 import type { Address } from 'viem';
-import { chain } from 'lodash';
 
 @Injectable()
 export class RelayRepository {

@@ -560,7 +560,7 @@ export class CacheRouter {
     return `${args.chainId}_${CacheRouter.RELAY_KEY}_${args.address}`;
   }
 
-  static getnoFeeCampaignRelayKey(args: {
+  static getNoFeeCampaignRelayKey(args: {
     chainId: string;
     address: Address;
   }): string {
@@ -574,11 +574,11 @@ export class CacheRouter {
     return new CacheDir(CacheRouter.getRelayKey(args), '');
   }
 
-  static getRelaynoFeeCampaignCacheDir(args: {
+  static getRelayNoFeeCampaignCacheDir(args: {
     chainId: string;
     address: Address;
   }): CacheDir {
-    return new CacheDir(CacheRouter.getnoFeeCampaignRelayKey(args), '');
+    return new CacheDir(CacheRouter.getNoFeeCampaignRelayKey(args), '');
   }
 
   static getSafeAppsKey(chainId: string): string {

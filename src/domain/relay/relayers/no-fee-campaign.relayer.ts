@@ -15,7 +15,7 @@ import {
 
 @Injectable()
 export class NoFeeCampaignRelayer implements IRelayer {
-  private readonly noFeeCampaignConfiguration: NoFeeCampaignConfiguration;
+  private readonly relayconfiguration: NoFeeCampaignConfiguration;
   private static readonly DEFAULT_FIAT_CODE = 'USD';
 
   constructor(
@@ -25,7 +25,7 @@ export class NoFeeCampaignRelayer implements IRelayer {
     @Inject(IRelayApi) private readonly relayApi: IRelayApi,
     @Inject(BalancesService) private readonly balancesService: BalancesService,
   ) {
-    this.noFeeCampaignConfiguration = configurationService.getOrThrow(
+    this.relayconfiguration = configurationService.getOrThrow(
       'relay.noFeeCampaign',
     );
   }
@@ -35,13 +35,13 @@ export class NoFeeCampaignRelayer implements IRelayer {
     address: Address;
   }): Promise<{ result: boolean; currentCount: number; limit: number }> {
     const noFeeCampaignConfigurationPerChain =
-      this.noFeeCampaignConfiguration[parseInt(args.chainId)];
+      this.relayconfiguration[parseInt(args.chainId)];
 
     if (!noFeeCampaignConfigurationPerChain) {
       return { result: false, currentCount: 0, limit: 0 };
     }
 
-    if (!this.isNoFeeCampaignActive(args.chainId)) {
+    if (!this.isActive(args.chainId)) {
       // Outside no-fee campaign
       return { result: false, currentCount: 0, limit: 0 };
     }
@@ -50,7 +50,7 @@ export class NoFeeCampaignRelayer implements IRelayer {
     const currentCount = await this.getRelayCount(args);
 
     // Get the appropriate limit based on Safe token balance using relay rules
-    const relayLimit = this.getNoFeeCampaignLimit(
+    const relayLimit = this.getLimit(
       currentSafeTokenBalance,
       noFeeCampaignConfigurationPerChain.relayRules,
     );
@@ -88,7 +88,7 @@ export class NoFeeCampaignRelayer implements IRelayer {
     }
 
     const maxGasLimit = BigInt(
-      this.noFeeCampaignConfiguration[parseInt(args.chainId)].maxGasLimit,
+      this.relayconfiguration[parseInt(args.chainId)].maxGasLimit,
     );
 
     let gasLimit: bigint;
@@ -124,18 +124,18 @@ export class NoFeeCampaignRelayer implements IRelayer {
     address: Address;
   }): Promise<{ remaining: number; limit: number }> {
     const noFeeCampaignConfigurationPerChain =
-      this.noFeeCampaignConfiguration[parseInt(args.chainId)];
+      this.relayconfiguration[parseInt(args.chainId)];
 
     if (!noFeeCampaignConfigurationPerChain) {
       return { remaining: 0, limit: 0 };
     }
 
-    if (this.isNoFeeCampaignActive(args.chainId)) {
+    if (this.isActive(args.chainId)) {
       const currentSafeTokenBalance = await this.getTokenBalance(args);
       const currentCount = await this.getRelayCount(args);
 
       // Get the appropriate limit based on Safe token balance using relay rules
-      const relayLimit = this.getNoFeeCampaignLimit(
+      const relayLimit = this.getLimit(
         currentSafeTokenBalance,
         noFeeCampaignConfigurationPerChain.relayRules,
       );
@@ -157,19 +157,18 @@ export class NoFeeCampaignRelayer implements IRelayer {
     chainId: string;
     address: Address;
   }): Promise<number> {
-    if (this.isNoFeeCampaignActive(args.chainId)) {
-      return this.getRelayNoFeeCampaignCount(args);
-    } else {
+    if (!this.isActive(args.chainId)) {
       return 0;
     }
+    return this.relayApi.getRelayNoFeeCampaignCount(args);
   }
 
   private async incrementRelayCount(args: {
     chainId: string;
     address: Address;
   }): Promise<void> {
-    if (this.isNoFeeCampaignActive(args.chainId)) {
-      const currentCount = await this.getRelayNoFeeCampaignCount(args);
+    if (this.isActive(args.chainId)) {
+      const currentCount = await this.getRelayCount(args);
       const incremented = currentCount + 1;
       return this.relayApi.setRelayNoFeeCampaignCount({
         chainId: args.chainId,
@@ -179,10 +178,7 @@ export class NoFeeCampaignRelayer implements IRelayer {
     }
   }
 
-  private getNoFeeCampaignLimit(
-    tokenBalance: number,
-    relayRules: RelayRules,
-  ): number {
+  private getLimit(tokenBalance: number, relayRules: RelayRules): number {
     // Sort rules by balance ascending to ensure proper range checking
     const sortedRules = relayRules.sort((a, b) => a.balance - b.balance);
 
@@ -201,7 +197,7 @@ export class NoFeeCampaignRelayer implements IRelayer {
     address: Address;
   }): Promise<number> {
     const noFeeCampaignConfigurationPerChain =
-      this.noFeeCampaignConfiguration[parseInt(args.chainId)];
+      this.relayconfiguration[parseInt(args.chainId)];
 
     if (!noFeeCampaignConfigurationPerChain) return 0;
 
@@ -230,13 +226,18 @@ export class NoFeeCampaignRelayer implements IRelayer {
     }
   }
 
-  private isNoFeeCampaignActive(chainId: string): boolean {
+  private isActive(chainId: string): boolean {
     const noFeeCampaignConfigurationPerChain =
-      this.noFeeCampaignConfiguration[parseInt(chainId)];
+      this.relayconfiguration[parseInt(chainId)];
     const unixTimestampNow: number = new Date().getTime() / 1000;
 
     // Return false of configuration for no-fee campaign is absent
     if (!noFeeCampaignConfigurationPerChain) return false;
+
+    // If token address is not configured, return false
+    if (!noFeeCampaignConfigurationPerChain.safeTokenAddress) {
+      return false;
+    }
 
     const hasStarted =
       unixTimestampNow >= noFeeCampaignConfigurationPerChain.startsAtTimeStamp;
@@ -244,12 +245,5 @@ export class NoFeeCampaignRelayer implements IRelayer {
       unixTimestampNow <= noFeeCampaignConfigurationPerChain.endsAtTimeStamp;
 
     return hasStarted && hasNotEnded;
-  }
-
-  private async getRelayNoFeeCampaignCount(args: {
-    chainId: string;
-    address: Address;
-  }): Promise<number> {
-    return this.relayApi.getRelayNoFeeCampaignCount(args);
   }
 }

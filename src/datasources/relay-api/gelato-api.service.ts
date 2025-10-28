@@ -89,7 +89,7 @@ export class GelatoApi implements IRelayApi {
     chainId: string;
     address: Address;
   }): Promise<number> {
-    const cacheDir = CacheRouter.getRelaynoFeeCampaignCacheDir(args);
+    const cacheDir = CacheRouter.getRelayNoFeeCampaignCacheDir(args);
     const count = await this.cacheService.hGet(cacheDir);
     return count ? parseInt(count) : 0;
   }
@@ -112,7 +112,7 @@ export class GelatoApi implements IRelayApi {
     address: Address;
     count: number;
   }): Promise<void> {
-    const cacheDir = CacheRouter.getRelaynoFeeCampaignCacheDir(args);
+    const cacheDir = CacheRouter.getRelayNoFeeCampaignCacheDir(args);
     await this.cacheService.hSet(
       cacheDir,
       args.count.toString(),

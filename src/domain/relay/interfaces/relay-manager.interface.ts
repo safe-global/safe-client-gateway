@@ -1,5 +1,3 @@
-import type { Address } from 'viem';
-import type { Relay } from '@/domain/relay/entities/relay.entity';
 import type { IRelayer } from '@/domain/relay/interfaces/relayer.interface';
 
 export const IRelayManager = Symbol('IRelayManager');
