@@ -160,7 +160,7 @@ export class NoFeeCampaignRelayer implements IRelayer {
     if (!this.isActive(args.chainId)) {
       return 0;
     }
-    return this.relayApi.getRelayNoFeeCampaignCount(args);
+    return this.relayApi.getRelayCount(args);
   }
 
   private async incrementRelayCount(args: {
@@ -175,7 +175,7 @@ export class NoFeeCampaignRelayer implements IRelayer {
         this.relayconfiguration[parseInt(args.chainId)].endsAtTimeStamp -
         new Date().getTime() / 1000;
 
-      return this.relayApi.setRelayNoFeeCampaignCount({
+      return this.relayApi.setRelayCount({
         chainId: args.chainId,
         address: args.address,
         count: incremented,
