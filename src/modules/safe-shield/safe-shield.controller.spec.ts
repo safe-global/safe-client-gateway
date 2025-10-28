@@ -18,7 +18,7 @@ import {
   contractAnalysisResultBuilder,
   recipientAnalysisResultBuilder,
 } from './entities/__tests__/builders/analysis-result.builder';
-import type { RecipientInteractionAnalysisResponse } from '@/modules/safe-shield/entities/analysis-responses.entity';
+import type { SingleRecipientAnalysisResponse } from '@/modules/safe-shield/entities/analysis-responses.entity';
 import {
   CounterpartyAnalysisRequestSchema,
   ThreatAnalysisRequestSchema,
@@ -62,7 +62,7 @@ describe('SafeShieldController (Unit)', () => {
     it('should delegate to SafeShieldService and return analysis results', async () => {
       const expectedResponse = {
         RECIPIENT_INTERACTION: [recipientAnalysisResultBuilder().build()],
-      } as RecipientInteractionAnalysisResponse;
+      } as SingleRecipientAnalysisResponse;
 
       safeShieldService.analyzeRecipient.mockResolvedValue(expectedResponse);
 
@@ -150,6 +150,7 @@ describe('SafeShieldController (Unit)', () => {
       const expectedResponse = counterpartyAnalysisResponseBuilder()
         .with('recipient', {
           [requestBody.to]: {
+            isSafe: false,
             RECIPIENT_INTERACTION: [
               {
                 type: 'FAILED',
@@ -194,6 +195,7 @@ describe('SafeShieldController (Unit)', () => {
     it('should handle partial success with recipient analysis succeeding but contract failing', async () => {
       const successfulRecipientAnalysis = {
         [requestBody.to]: {
+          isSafe: true,
           RECIPIENT_INTERACTION: [
             recipientAnalysisResultBuilder()
               .with('type', 'NEW_RECIPIENT')
@@ -244,6 +246,7 @@ describe('SafeShieldController (Unit)', () => {
       const expectedResponse = counterpartyAnalysisResponseBuilder()
         .with('recipient', {
           [requestBody.to]: {
+            isSafe: false,
             RECIPIENT_INTERACTION: [
               {
                 type: 'FAILED',

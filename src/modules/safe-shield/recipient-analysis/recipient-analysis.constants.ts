@@ -22,6 +22,7 @@ export const SEVERITY_MAPPING: Record<
   MISSING_OWNERSHIP: 'WARN',
   UNSUPPORTED_NETWORK: 'WARN',
   DIFFERENT_SAFE_SETUP: 'INFO',
+  LOW_ACTIVITY: 'WARN',
 };
 
 /**
@@ -38,6 +39,7 @@ export const TITLE_MAPPING: Record<
   MISSING_OWNERSHIP: 'Missing ownership',
   UNSUPPORTED_NETWORK: 'Unsupported network',
   DIFFERENT_SAFE_SETUP: 'Different setup',
+  LOW_ACTIVITY: 'Low activity recipient',
   FAILED: 'Recipient analysis failed',
 };
 
@@ -67,4 +69,5 @@ export const DESCRIPTION_MAPPING: Record<
     'app.safe.global does not support the network. Unless you have a wallet deployed there, we recommend not to bridge. Funds sent may be inaccessible.',
   DIFFERENT_SAFE_SETUP: () =>
     'Your Safe exists on the target chain but with a different configuration. Review carefully before proceeding. Funds sent may be inaccessible if the setup is incorrect.',
+  LOW_ACTIVITY: () => 'This address has few transactions.',
 };

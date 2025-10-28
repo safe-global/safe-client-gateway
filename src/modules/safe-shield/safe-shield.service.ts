@@ -7,7 +7,7 @@ import type {
   ContractAnalysisResponse,
   RecipientAnalysisResponse,
   CounterpartyAnalysisResponse,
-  RecipientInteractionAnalysisResponse,
+  SingleRecipientAnalysisResponse,
   ThreatAnalysisResponse,
 } from './entities/analysis-responses.entity';
 import type { DecodedTransactionData } from '@/modules/safe-shield/entities/transaction-data.entity';
@@ -139,23 +139,18 @@ export class SafeShieldService {
    * @param {string} chainId - The chain ID
    * @param {Address} safeAddress - The Safe address
    * @param {Address} recipientAddress - The recipient address to analyze
-   * @returns {Promise<RecipientInteractionAnalysisResponse>} Analysis result for group RECIPIENT_INTERACTION
+   * @returns {Promise<SingleRecipientAnalysisResponse>} Analysis result for groups RECIPIENT_INTERACTION and RECIPIENT_ACTIVITY
    */
   public async analyzeRecipient(
     chainId: string,
     safeAddress: Address,
     recipientAddress: Address,
-  ): Promise<RecipientInteractionAnalysisResponse> {
-    const interactionResult =
-      await this.recipientAnalysisService.analyzeInteractions({
-        chainId,
-        safeAddress,
-        recipient: recipientAddress,
-      });
-
-    return {
-      RECIPIENT_INTERACTION: [interactionResult],
-    };
+  ): Promise<SingleRecipientAnalysisResponse> {
+    return this.recipientAnalysisService.analyzeRecipient(
+      chainId,
+      safeAddress,
+      recipientAddress,
+    );
   }
 
   /**
@@ -293,24 +288,24 @@ export class SafeShieldService {
     const error = asError(reason);
     this.loggingService.warn(`The counterparty analysis failed. ${error}`);
 
-    const type = (RecipientStatusGroup as ReadonlyArray<string>).includes(
-      statusGroup,
-    )
-      ? 'Recipient'
-      : 'Contract';
+    const isRecipient = (
+      RecipientStatusGroup as ReadonlyArray<string>
+    ).includes(statusGroup);
 
+    const isSafe = isRecipient ? { isSafe: false } : undefined;
     return {
       [targetAddress]: {
         [statusGroup]: [
           {
             type: 'FAILED',
             severity: COMMON_SEVERITY_MAPPING.FAILED,
-            title: `${type} analysis failed`,
+            title: `${isRecipient ? 'Recipient' : 'Contract'} analysis failed`,
             description: COMMON_DESCRIPTION_MAPPING.FAILED({
               error: error?.message,
             }),
           },
         ],
+        ...isSafe,
       },
     } as T;
   }

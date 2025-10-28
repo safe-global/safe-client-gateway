@@ -4,6 +4,9 @@ export const RecipientStatusGroup = [
   /** Recipient interaction history - previous interactions with the recipient */
   'RECIPIENT_INTERACTION',
 
+  /** Recipient activity analysis - activity frequency */
+  'RECIPIENT_ACTIVITY',
+
   /** Cross-chain bridge analysis - compatibility and ownership checks */
   'BRIDGE',
 ] as const;

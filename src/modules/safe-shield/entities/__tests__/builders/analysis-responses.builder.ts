@@ -24,8 +24,16 @@ export function recipientAnalysisResponseBuilder(): IBuilder<RecipientAnalysisRe
   return new Builder<RecipientAnalysisResponse>().with(
     getAddress(faker.finance.ethereumAddress()),
     {
+      isSafe: true,
       RECIPIENT_INTERACTION: [recipientAnalysisResultBuilder().build()],
-      BRIDGE: [recipientAnalysisResultBuilder().build()],
+      RECIPIENT_ACTIVITY: [
+        recipientAnalysisResultBuilder().with('type', 'LOW_ACTIVITY').build(),
+      ],
+      BRIDGE: [
+        recipientAnalysisResultBuilder()
+          .with('type', 'INCOMPATIBLE_SAFE')
+          .build(),
+      ],
     },
   );
 }

@@ -13,9 +13,10 @@ import { CommonStatus } from '@/modules/safe-shield/entities/analysis-result.ent
 describe('Status Entities', () => {
   describe('RecipientStatus', () => {
     it('should have all expected values', () => {
-      expect(RecipientStatus).toHaveLength(2);
+      expect(RecipientStatus).toHaveLength(3);
       expect(RecipientStatus).toContain('NEW_RECIPIENT');
       expect(RecipientStatus).toContain('RECURRING_RECIPIENT');
+      expect(RecipientStatus).toContain('LOW_ACTIVITY');
     });
 
     it.each(RecipientStatus)('should validate with schema = %s', (value) => {

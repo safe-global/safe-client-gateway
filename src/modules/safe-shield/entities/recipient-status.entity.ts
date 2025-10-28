@@ -12,6 +12,9 @@ export const RecipientStatus = [
 
   /** This recipient has been interacted with before */
   'RECURRING_RECIPIENT',
+
+  /** The recipient has sent less than 5 transactions */
+  'LOW_ACTIVITY',
 ] as const;
 
 /**

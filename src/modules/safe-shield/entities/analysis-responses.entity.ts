@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
+import type { Address } from 'viem';
 import type {
   ContractStatusGroup,
   RecipientStatusGroup,
@@ -7,6 +8,7 @@ import type {
 import {
   ContractStatusGroupSchema,
   RecipientStatusGroupSchema,
+  ThreatStatusGroupSchema,
 } from './status-group.entity';
 import type { AnalysisResult, CommonStatus } from './analysis-result.entity';
 import {
@@ -19,6 +21,24 @@ import {
 import type { RecipientStatus } from '@/modules/safe-shield/entities/recipient-status.entity';
 import { BalanceChangesSchema } from './threat-analysis.types';
 
+const recipientGroupValueSchema = z
+  .array(RecipientAnalysisResultSchema)
+  .optional();
+
+/**
+ * Dynamically builds the shape object for all recipient status groups.
+ * This ensures that each valid RecipientStatusGroup enum value is mapped
+ * to the same array schema, maintaining type safety while avoiding
+ * manual repetition of each field.
+ */
+const groupsShape = RecipientStatusGroupSchema.options.reduce(
+  (acc, key) => {
+    acc[key] = recipientGroupValueSchema;
+    return acc;
+  },
+  {} as Record<RecipientStatusGroup, typeof recipientGroupValueSchema>,
+);
+
 /**
  * Response structure for recipient analysis endpoint.
  *
@@ -28,10 +48,12 @@ import { BalanceChangesSchema } from './threat-analysis.types';
  */
 export const RecipientAnalysisResponseSchema = z.record(
   AddressSchema,
-  z.record(
-    RecipientStatusGroupSchema,
-    z.array(RecipientAnalysisResultSchema).optional(),
-  ),
+  z
+    .object({
+      isSafe: z.boolean(),
+      ...groupsShape,
+    })
+    .strict(),
 );
 
 /**
@@ -61,16 +83,31 @@ export const CounterpartyAnalysisResponseSchema = z.object({
 });
 
 /**
+ * Dynamically builds the shape object for all threat status groups.
+ * Maps THREAT to an array of threat results and BALANCE_CHANGE to balance changes schema.
+ */
+const threatGroupsShape = ThreatStatusGroupSchema.options.reduce(
+  (acc, key) => {
+    if (key === 'THREAT') {
+      acc[key] = z.array(ThreatAnalysisResultSchema).optional();
+    } else if (key === 'BALANCE_CHANGE') {
+      acc[key] = BalanceChangesSchema.optional();
+    }
+    return acc;
+  },
+  {} as Record<string, z.ZodTypeAny>,
+);
+
+/**
  * Response structure for threat analysis endpoint.
  *
  * Returns threat analysis results grouped by category along with balance changes.
  * Unlike recipient/contract analysis, threat analysis operates at the
  * transaction level rather than per-address.
  */
-export const ThreatAnalysisResponseSchema = z.object({
-  THREAT: z.array(ThreatAnalysisResultSchema).optional(),
-  BALANCE_CHANGE: BalanceChangesSchema.optional(),
-});
+export const ThreatAnalysisResponseSchema = z
+  .object(threatGroupsShape)
+  .strict();
 
 /**
  * TypeScript types derived from the Zod schemas.
@@ -78,6 +115,7 @@ export const ThreatAnalysisResponseSchema = z.object({
 export type RecipientAnalysisResponse = z.infer<
   typeof RecipientAnalysisResponseSchema
 >;
+
 export type ContractAnalysisResponse = z.infer<
   typeof ContractAnalysisResponseSchema
 >;
@@ -86,6 +124,18 @@ export type ThreatAnalysisResponse = z.infer<
 >;
 export type CounterpartyAnalysisResponse = z.infer<
   typeof CounterpartyAnalysisResponseSchema
+>;
+
+/**
+ * RecipientAnalysisResponse without the isSafe field.
+ * Used for responses where isSafe information is not available (e.g., bridge analysis).
+ */
+export type RecipientAnalysisResponseWithoutIsSafe = Record<
+  Address,
+  Omit<
+    NonNullable<RecipientAnalysisResponse[keyof RecipientAnalysisResponse]>,
+    'isSafe'
+  >
 >;
 
 /**
@@ -104,14 +154,21 @@ export type GroupedAnalysisResults<
 };
 
 /**
- * Response structure for single recipient interaction analysis.
+ * Response structure for single recipient analysis.
  *
- * Contains only the RECIPIENT_INTERACTION status group.
- * Used by the analyzeRecipient endpoint which focuses on recipient interaction history.
+ * Contains the RECIPIENT_INTERACTION status group (required) and
+ * RECIPIENT_ACTIVITY status group (optional).
+ * Used by the analyzeRecipient endpoint which focuses on recipient interaction history and activity patterns.
  */
-export type RecipientInteractionAnalysisResponse = Required<
+export type SingleRecipientAnalysisResponse = Required<
   Pick<
     GroupedAnalysisResults<AnalysisResult<RecipientStatus | CommonStatus>>,
     'RECIPIENT_INTERACTION'
   >
->;
+> &
+  Pick<
+    GroupedAnalysisResults<AnalysisResult<RecipientStatus | CommonStatus>>,
+    'RECIPIENT_ACTIVITY'
+  > & {
+    isSafe: boolean;
+  };
