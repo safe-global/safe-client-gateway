@@ -281,7 +281,7 @@ describe('Configuration validator', () => {
           ...validConfiguration,
           [fieldKey]: JSON.stringify([
             { balance: 0, limit: 0 },
-            { balance: 100, limit: 5 },
+    { balance: faker.number.int({ min: 100, max: 200 }), limit: faker.number.int({ min: 1, max: 9 }) },
             { balance: 1000, limit: 50 },
           ]),
         };
