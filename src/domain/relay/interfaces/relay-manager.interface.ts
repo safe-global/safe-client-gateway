@@ -11,27 +11,4 @@ export interface IRelayManager {
    * @returns The relayer instance to use
    */
   getRelayer(chainId: string): IRelayer;
-
-  /**
-   * Performs a relay operation using the appropriate relayer
-   * @param args - Relay parameters
-   * @returns Relay result
-   */
-  relay(args: {
-    version: string;
-    chainId: string;
-    to: Address;
-    data: Address;
-    gasLimit: bigint | null;
-  }): Promise<Relay>;
-
-  /**
-   * Gets the remaining relays and limit for an address using the appropriate relayer
-   * @param args - Chain ID and address
-   * @returns Object containing remaining count and limit
-   */
-  getRelaysRemaining(args: {
-    chainId: string;
-    address: Address;
-  }): Promise<{ remaining: number; limit: number }>;
 }
