@@ -238,11 +238,8 @@ export class NoFeeCampaignRelayer implements IRelayer {
     const unixTimestampNow: number = new Date().getTime() / 1000;
 
     // Return false of configuration for no-fee campaign is absent
-    if (!noFeeCampaignConfigurationPerChain) return false;
-
-    // If token address is not configured, return false
-    if (!noFeeCampaignConfigurationPerChain.safeTokenAddress) {
-      return false;
+    if (!noFeeCampaignConfigurationPerChain || !noFeeCampaignConfigurationPerChain.safeTokenAddress) {
+        return false;
     }
 
     const hasStarted =
