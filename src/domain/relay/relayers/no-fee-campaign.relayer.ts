@@ -15,7 +15,7 @@ import {
 
 @Injectable()
 export class NoFeeCampaignRelayer implements IRelayer {
-  private readonly relayconfiguration: NoFeeCampaignConfiguration;
+  private readonly relayConfiguration: NoFeeCampaignConfiguration;
   private static readonly DEFAULT_FIAT_CODE = 'USD';
 
   constructor(
@@ -25,7 +25,7 @@ export class NoFeeCampaignRelayer implements IRelayer {
     @Inject(IRelayApi) private readonly relayApi: IRelayApi,
     @Inject(BalancesService) private readonly balancesService: BalancesService,
   ) {
-    this.relayconfiguration = configurationService.getOrThrow(
+    this.relayConfiguration = configurationService.getOrThrow(
       'relay.noFeeCampaign',
     );
   }
@@ -34,10 +34,9 @@ export class NoFeeCampaignRelayer implements IRelayer {
     chainId: string;
     address: Address;
   }): Promise<{ result: boolean; currentCount: number; limit: number }> {
-    const noFeeCampaignConfigurationPerChain =
-      this.relayConfiguration[parseInt(args.chainId)];
+    const chainConfiguration = this.relayConfiguration[parseInt(args.chainId)];
 
-    if (!noFeeCampaignConfigurationPerChain) {
+    if (!chainConfiguration) {
       return { result: false, currentCount: 0, limit: 0 };
     }
 
@@ -52,7 +51,7 @@ export class NoFeeCampaignRelayer implements IRelayer {
     // Get the appropriate limit based on Safe token balance using relay rules
     const relayLimit = this.getLimit(
       currentSafeTokenBalance,
-      noFeeCampaignConfigurationPerChain.relayRules,
+      chainConfiguration.relayRules,
     );
     return {
       result: currentCount < relayLimit,
@@ -88,7 +87,7 @@ export class NoFeeCampaignRelayer implements IRelayer {
     }
 
     const maxGasLimit = BigInt(
-      this.relayconfiguration[parseInt(args.chainId)].maxGasLimit,
+      this.relayConfiguration[parseInt(args.chainId)].maxGasLimit,
     );
 
     let gasLimit: bigint;
@@ -123,10 +122,9 @@ export class NoFeeCampaignRelayer implements IRelayer {
     chainId: string;
     address: Address;
   }): Promise<{ remaining: number; limit: number }> {
-    const noFeeCampaignConfigurationPerChain =
-      this.relayconfiguration[parseInt(args.chainId)];
+    const chainConfiguration = this.relayConfiguration[parseInt(args.chainId)];
 
-    if (!noFeeCampaignConfigurationPerChain) {
+    if (!chainConfiguration) {
       return { remaining: 0, limit: 0 };
     }
 
@@ -137,7 +135,7 @@ export class NoFeeCampaignRelayer implements IRelayer {
       // Get the appropriate limit based on Safe token balance using relay rules
       const relayLimit = this.getLimit(
         currentSafeTokenBalance,
-        noFeeCampaignConfigurationPerChain.relayRules,
+        chainConfiguration.relayRules,
       );
 
       return {
@@ -172,7 +170,7 @@ export class NoFeeCampaignRelayer implements IRelayer {
       const incremented = currentCount + 1;
 
       const ttlSeconds =
-        this.relayconfiguration[parseInt(args.chainId)].endsAtTimeStamp -
+        this.relayConfiguration[parseInt(args.chainId)].endsAtTimeStamp -
         new Date().getTime() / 1000;
 
       return this.relayApi.setRelayCount({
@@ -203,7 +201,7 @@ export class NoFeeCampaignRelayer implements IRelayer {
     address: Address;
   }): Promise<number> {
     const noFeeCampaignConfigurationPerChain =
-      this.relayconfiguration[parseInt(args.chainId)];
+      this.relayConfiguration[parseInt(args.chainId)];
 
     if (!noFeeCampaignConfigurationPerChain) return 0;
 
@@ -233,19 +231,16 @@ export class NoFeeCampaignRelayer implements IRelayer {
   }
 
   private isActive(chainId: string): boolean {
-    const noFeeCampaignConfigurationPerChain =
-      this.relayconfiguration[parseInt(chainId)];
+    const chainConfiguration = this.relayConfiguration[parseInt(chainId)];
     const unixTimestampNow: number = new Date().getTime() / 1000;
 
     // Return false of configuration for no-fee campaign is absent
-    if (!noFeeCampaignConfigurationPerChain || !noFeeCampaignConfigurationPerChain.safeTokenAddress) {
-        return false;
+    if (!chainConfiguration || !chainConfiguration.safeTokenAddress) {
+      return false;
     }
 
-    const hasStarted =
-      unixTimestampNow >= noFeeCampaignConfigurationPerChain.startsAtTimeStamp;
-    const hasNotEnded =
-      unixTimestampNow <= noFeeCampaignConfigurationPerChain.endsAtTimeStamp;
+    const hasStarted = unixTimestampNow >= chainConfiguration.startsAtTimeStamp;
+    const hasNotEnded = unixTimestampNow <= chainConfiguration.endsAtTimeStamp;
 
     return hasStarted && hasNotEnded;
   }
