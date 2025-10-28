@@ -14,7 +14,6 @@ import {
   ICacheService,
 } from '@/datasources/cache/cache.service.interface';
 import { CacheRouter } from '@/datasources/cache/cache.router';
-import { ZERION_PORTFOLIO_API } from '@/datasources/portfolio-api/portfolio-api.module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 
 @Injectable()
@@ -23,9 +22,7 @@ export class PortfolioRepository implements IPortfolioRepository {
   private readonly dustThresholdUsd: number;
 
   constructor(
-    @Inject(IPortfolioApi) private readonly defaultPortfolioApi: IPortfolioApi,
-    @Inject(ZERION_PORTFOLIO_API)
-    private readonly zerionPortfolioApi: IPortfolioApi,
+    @Inject(IPortfolioApi) private readonly portfolioApi: IPortfolioApi,
     @Inject(CacheService) private readonly cacheService: ICacheService,
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
@@ -44,13 +41,10 @@ export class PortfolioRepository implements IPortfolioRepository {
     chainIds?: Array<string>;
     trusted?: boolean;
     excludeDust?: boolean;
-    provider?: string;
   }): Promise<Portfolio> {
-    const provider = args.provider?.toLowerCase() || 'zerion';
     const cacheDir = CacheRouter.getPortfolioCacheDir({
       address: args.address,
       fiatCode: args.fiatCode,
-      provider,
     });
 
     const cached = await this.cacheService.hGet(cacheDir);
@@ -59,7 +53,7 @@ export class PortfolioRepository implements IPortfolioRepository {
     if (cached) {
       portfolio = PortfolioSchema.parse(JSON.parse(cached));
     } else {
-      const rawPortfolio = await this.zerionPortfolioApi.getPortfolio({
+      const rawPortfolio = await this.portfolioApi.getPortfolio({
         address: args.address,
         fiatCode: args.fiatCode,
         trusted: args.trusted,
@@ -81,7 +75,6 @@ export class PortfolioRepository implements IPortfolioRepository {
     await this.cacheService.deleteByKey(
       CacheRouter.getPortfolioCacheKey({
         address: args.address,
-        provider: 'zerion',
       }),
     );
   }

@@ -15,7 +15,6 @@ export interface IPortfolioRepository {
    * @param args.chainIds - Optional array of chain IDs to filter by
    * @param args.trusted - Optional flag to filter trusted tokens only
    * @param args.excludeDust - Optional flag to exclude dust (very small value) positions
-   * @param args.provider - Optional provider name to use (e.g., 'zerion')
    * @returns A promise that resolves to the portfolio data
    */
   getPortfolio(args: {
@@ -24,7 +23,6 @@ export interface IPortfolioRepository {
     chainIds?: Array<string>;
     trusted?: boolean;
     excludeDust?: boolean;
-    provider?: string;
   }): Promise<Portfolio>;
 
   /**

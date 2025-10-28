@@ -107,6 +107,10 @@ export class ZerionPortfolioApi implements IPortfolioApi {
     }
   }
 
+  /**
+   * Transforms Zerion balance positions into the portfolio entity structure.
+   * Filters out non-displayable and trash positions, then separates wallet positions from app positions.
+   */
   private async _buildPortfolio(
     positions: Array<ZerionBalance>,
   ): Promise<Raw<Portfolio>> {
@@ -139,6 +143,11 @@ export class ZerionPortfolioApi implements IPortfolioApi {
     });
   }
 
+  /**
+   * Converts Zerion wallet positions into TokenBalance entities.
+   * Maps Zerion's network identifiers to chain IDs and extracts token information.
+   * Filters out positions with missing or invalid data.
+   */
   private async _buildTokenBalances(
     positions: Array<ZerionBalance>,
   ): Promise<Array<TokenBalance>> {
@@ -193,6 +202,10 @@ export class ZerionPortfolioApi implements IPortfolioApi {
     );
   }
 
+  /**
+   * Converts Zerion app positions into AppBalance entities.
+   * Groups positions by application name and aggregates their balances.
+   */
   private async _buildAppBalances(
     positions: Array<ZerionBalance>,
   ): Promise<Array<AppBalance>> {
@@ -228,6 +241,10 @@ export class ZerionPortfolioApi implements IPortfolioApi {
     );
   }
 
+  /**
+   * Converts Zerion positions into AppPosition entities.
+   * Similar to token balances but includes position-specific fields like key and type.
+   */
   private async _buildAppPositions(
     positions: Array<ZerionBalance>,
   ): Promise<Array<AppPosition>> {

@@ -1,5 +1,5 @@
 import { ZodError } from 'zod';
-import { ChainIdsSchema } from '@/routes/portfolio/entities/schemas/chain-ids.schema';
+import { ChainIdsSchema } from '@/domain/common/entities/schemas/chain-ids.schema';
 
 describe('ChainIdsSchema', () => {
   describe('valid inputs', () => {

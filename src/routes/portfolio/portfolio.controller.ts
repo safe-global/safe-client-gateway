@@ -19,9 +19,7 @@ import { PortfolioService } from '@/routes/portfolio/portfolio.service';
 import { Portfolio } from '@/routes/portfolio/entities/portfolio.entity';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { ChainIdsSchema } from '@/routes/portfolio/entities/schemas/chain-ids.schema';
-import { ProviderValidationPipe } from '@/routes/portfolio/pipes/provider-validation.pipe';
-import { PortfolioProvider } from '@/domain/portfolio/entities/portfolio-provider.enum';
+import { ChainIdsSchema } from '@/domain/common/entities/schemas/chain-ids.schema';
 import type { Address } from 'viem';
 
 @ApiTags('portfolio')
@@ -71,13 +69,6 @@ export class PortfolioController {
     description: 'If true, filters out dust positions (balance < $1 USD)',
     example: true,
   })
-  @ApiQuery({
-    name: 'provider',
-    required: false,
-    enum: PortfolioProvider,
-    description: 'Portfolio data provider',
-    example: PortfolioProvider.ZERION,
-  })
   @ApiOkResponse({ type: Portfolio })
   @Get('/portfolio/:address')
   async getPortfolio(
@@ -90,12 +81,6 @@ export class PortfolioController {
     trusted?: boolean,
     @Query('excludeDust', new DefaultValuePipe(true), ParseBoolPipe)
     excludeDust?: boolean,
-    @Query(
-      'provider',
-      new DefaultValuePipe(PortfolioProvider.ZERION),
-      ProviderValidationPipe,
-    )
-    provider?: PortfolioProvider,
   ): Promise<Portfolio> {
     return this.portfolioService.getPortfolio({
       address,
@@ -103,7 +88,6 @@ export class PortfolioController {
       chainIds,
       trusted,
       excludeDust,
-      provider,
     });
   }
 
