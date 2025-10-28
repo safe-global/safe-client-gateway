@@ -14,6 +14,7 @@ import {
 import {
   contractAnalysisResultBuilder,
   recipientAnalysisResultBuilder,
+  threatAnalysisResultBuilder,
 } from './builders/analysis-result.builder';
 import { faker } from '@faker-js/faker';
 import type {
@@ -36,6 +37,7 @@ describe('Analysis Response Schemas', () => {
       it('should validate response with multiple addresses', () => {
         const multiAddressResponse = recipientAnalysisResponseBuilder()
           .with(getAddress(faker.finance.ethereumAddress()), {
+            isSafe: true,
             RECIPIENT_INTERACTION: [recipientAnalysisResultBuilder().build()],
             RECIPIENT_ACTIVITY: [recipientAnalysisResultBuilder().build()],
             BRIDGE: [recipientAnalysisResultBuilder().build()],
@@ -59,6 +61,7 @@ describe('Analysis Response Schemas', () => {
       it('should validate response with empty status groups', () => {
         const responseWithEmptyGroups = recipientAnalysisResponseBuilder()
           .with(getAddress(faker.finance.ethereumAddress()), {
+            isSafe: true,
             RECIPIENT_INTERACTION: [],
           })
           .build();
@@ -73,7 +76,9 @@ describe('Analysis Response Schemas', () => {
       });
 
       it('should reject invalid address format', () => {
-        const invalidAddressResponse = { 'invalid-address': {} };
+        const invalidAddressResponse = {
+          'invalid-address': { isSafe: true },
+        };
 
         const result = RecipientAnalysisResponseSchema.safeParse(
           invalidAddressResponse,
@@ -91,6 +96,7 @@ describe('Analysis Response Schemas', () => {
       it('should reject invalid status group', () => {
         const invalidStatusGroupResponse = recipientAnalysisResponseBuilder()
           .with(getAddress(faker.finance.ethereumAddress()), {
+            isSafe: true,
             ['INVALID_STATUS_GROUP' as RecipientStatusGroup]: [
               recipientAnalysisResultBuilder().build(),
             ],
@@ -104,7 +110,7 @@ describe('Analysis Response Schemas', () => {
         expect(!result.success && result.error.issues.length).toBeGreaterThan(
           0,
         );
-        expect(result?.error?.issues[0].code).toBe('invalid_enum_value');
+        expect(result?.error?.issues[0].code).toBe('unrecognized_keys');
       });
     });
 
@@ -249,6 +255,22 @@ describe('Analysis Response Schemas', () => {
         expect(result.success && result.data).toStrictEqual(
           responseWithBalanceChanges,
         );
+      });
+
+      it('should reject invalid status group', () => {
+        const invalidStatusGroupResponse = {
+          ...threatAnalysisResponseBuilder().build(),
+          INVALID_STATUS_GROUP: [threatAnalysisResultBuilder().build()],
+        };
+
+        const result = ThreatAnalysisResponseSchema.safeParse(
+          invalidStatusGroupResponse,
+        );
+
+        expect(!result.success && result.error.issues.length).toBeGreaterThan(
+          0,
+        );
+        expect(result?.error?.issues[0].code).toBe('unrecognized_keys');
       });
     });
 

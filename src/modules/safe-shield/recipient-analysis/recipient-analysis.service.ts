@@ -19,6 +19,7 @@ import type { DecodedTransactionData } from '@/modules/safe-shield/entities/tran
 import { Erc20Decoder } from '@/domain/relay/contracts/decoders/erc-20-decoder.helper';
 import {
   RecipientAnalysisResponse,
+  RecipientAnalysisResponseWithoutIsSafe,
   SingleRecipientAnalysisResponse,
 } from '@/modules/safe-shield/entities/analysis-responses.entity';
 import {
@@ -188,14 +189,14 @@ export class RecipientAnalysisService {
       this.loggingService.warn(
         `Failed to get transaction API for chain ${chainId}: ${error}`,
       );
-      //TODO should we return RECIPIENT_ACTIVITY in such case?
       return {
         RECIPIENT_INTERACTION: [failed],
         RECIPIENT_ACTIVITY: [failed],
+        isSafe: false,
       };
     }
 
-    const [interactionResult, activityResult] = await Promise.all([
+    const [interactionResult, [activityResult, isSafe]] = await Promise.all([
       this.analyzeInteractions({
         transactionApi,
         safeAddress,
@@ -211,6 +212,7 @@ export class RecipientAnalysisService {
     return {
       RECIPIENT_INTERACTION: [interactionResult],
       ...recipientActivity,
+      isSafe,
     };
   }
 
@@ -253,32 +255,43 @@ export class RecipientAnalysisService {
    * Analyzes the activity level of a recipient address.
    * @param {ITransactionApi} args.transactionApi - The transaction API instance.
    * @param {Address} args.recipient - The recipient address.
-   * @returns {Promise<AnalysisResult<RecipientStatus | CommonStatus> | undefined>} The analysis result if low activity is detected, undefined otherwise.
+   * @returns {Promise<[AnalysisResult<RecipientStatus | CommonStatus> | undefined, boolean]>}
+   * A pair of the analysis result if low activity is detected, undefined otherwise and a boolean flag isSafe.
    */
   public async analyzeActivity(args: {
     transactionApi: ITransactionApi;
     recipient: Address;
-  }): Promise<AnalysisResult<RecipientStatus | CommonStatus> | undefined> {
+  }): Promise<
+    [AnalysisResult<RecipientStatus | CommonStatus> | undefined, boolean]
+  > {
     const { transactionApi, recipient } = args;
+    let isSafe: boolean = true;
     try {
       const response = await transactionApi.getSafe(recipient);
       const { nonce } = SafeSchema.parse(response);
 
-      return nonce < 5
-        ? this.mapToAnalysisResult({ type: 'LOW_ACTIVITY' })
-        : undefined;
+      return [
+        nonce < 5
+          ? this.mapToAnalysisResult({ type: 'LOW_ACTIVITY' })
+          : undefined,
+        isSafe,
+      ];
     } catch (error) {
-      //todo deal with 404
+      isSafe = false;
+      // Not found = it is not a Safe
       if (error instanceof DataSourceError && error.code === 404) {
-        //TODO isSafe should be false
+        return [undefined, isSafe];
       } else {
         this.loggingService.warn(
           `Failed to analyze recipient activity: ${error}`,
         );
-        return this.mapToAnalysisResult({
-          type: 'FAILED',
-          error: 'recipient activity check unavailable',
-        });
+        return [
+          this.mapToAnalysisResult({
+            type: 'FAILED',
+            error: 'recipient activity check unavailable',
+          }),
+          isSafe,
+        ];
       }
     }
   }
@@ -288,13 +301,15 @@ export class RecipientAnalysisService {
    * @param {string} args.chainId - The chain ID.
    * @param {Address} args.safeAddress - The Safe address.
    * @param {TransactionInfo} [args.txInfo] - The transaction info.
-   * @returns {Promise<RecipientAnalysisResponse>} The bridge analysis response.
+   * @returns {Promise<RecipientAnalysisResponse | RecipientAnalysisResponseWithoutIsSafe>} The bridge analysis response (may or may not include isSafe).
    */
   public async analyzeBridge(args: {
     chainId: string;
     safeAddress: Address;
     txInfo?: TransactionInfo;
-  }): Promise<RecipientAnalysisResponse> {
+  }): Promise<
+    RecipientAnalysisResponse | RecipientAnalysisResponseWithoutIsSafe
+  > {
     if (!args.txInfo || !isBridgeAndSwapTransactionInfo(args.txInfo)) {
       return {};
     }

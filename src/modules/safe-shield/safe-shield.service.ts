@@ -288,24 +288,24 @@ export class SafeShieldService {
     const error = asError(reason);
     this.loggingService.warn(`The counterparty analysis failed. ${error}`);
 
-    const type = (RecipientStatusGroup as ReadonlyArray<string>).includes(
-      statusGroup,
-    )
-      ? 'Recipient'
-      : 'Contract';
+    const isRecipient = (
+      RecipientStatusGroup as ReadonlyArray<string>
+    ).includes(statusGroup);
 
+    const isSafe = isRecipient ? { isSafe: false } : undefined;
     return {
       [targetAddress]: {
         [statusGroup]: [
           {
             type: 'FAILED',
             severity: COMMON_SEVERITY_MAPPING.FAILED,
-            title: `${type} analysis failed`,
+            title: `${isRecipient ? 'Recipient' : 'Contract'} analysis failed`,
             description: COMMON_DESCRIPTION_MAPPING.FAILED({
               error: error?.message,
             }),
           },
         ],
+        ...isSafe,
       },
     } as T;
   }

@@ -205,6 +205,7 @@ describe('RecipientAnalysisService', () => {
 
       expect(result).toEqual({
         [mockRecipientAddress]: {
+          isSafe: true,
           RECIPIENT_INTERACTION: [
             {
               severity: 'OK',
@@ -245,6 +246,7 @@ describe('RecipientAnalysisService', () => {
 
       expect(result).toEqual({
         [mockRecipientAddress]: {
+          isSafe: true,
           RECIPIENT_INTERACTION: [
             {
               severity: 'OK',
@@ -317,6 +319,7 @@ describe('RecipientAnalysisService', () => {
 
       expect(result).toEqual({
         [recipient1]: {
+          isSafe: true,
           RECIPIENT_INTERACTION: [
             {
               severity: 'OK',
@@ -327,6 +330,7 @@ describe('RecipientAnalysisService', () => {
           ],
         },
         [recipient2]: {
+          isSafe: true,
           RECIPIENT_INTERACTION: [
             {
               severity: 'INFO',
@@ -840,7 +844,7 @@ describe('RecipientAnalysisService', () => {
       const mockSafe = safeBuilder().with('nonce', 3).build();
       mockTransactionApi.getSafe.mockResolvedValue(rawify(mockSafe));
 
-      const result = await service.analyzeActivity({
+      const [result, isSafe] = await service.analyzeActivity({
         transactionApi: mockTransactionApi,
         recipient: mockRecipientAddress,
       });
@@ -851,6 +855,7 @@ describe('RecipientAnalysisService', () => {
         title: 'Low activity recipient',
         description: 'This address has low activity.',
       });
+      expect(isSafe).toBe(true);
 
       expect(mockTransactionApi.getSafe).toHaveBeenCalledWith(
         mockRecipientAddress,
@@ -861,31 +866,33 @@ describe('RecipientAnalysisService', () => {
       const mockSafe = safeBuilder().with('nonce', 10).build();
       mockTransactionApi.getSafe.mockResolvedValue(rawify(mockSafe));
 
-      const result = await service.analyzeActivity({
+      const [result, isSafe] = await service.analyzeActivity({
         transactionApi: mockTransactionApi,
         recipient: mockRecipientAddress,
       });
 
       expect(result).toBeUndefined();
+      expect(isSafe).toBe(true);
     });
 
     it('should return undefined when nonce = 5', async () => {
       const mockSafe = safeBuilder().with('nonce', 5).build();
       mockTransactionApi.getSafe.mockResolvedValue(rawify(mockSafe));
 
-      const result = await service.analyzeActivity({
+      const [result, isSafe] = await service.analyzeActivity({
         transactionApi: mockTransactionApi,
         recipient: mockRecipientAddress,
       });
 
       expect(result).toBeUndefined();
+      expect(isSafe).toBe(true);
     });
 
     it('should handle API errors gracefully', async () => {
       const error = new Error('API connection failed');
       mockTransactionApi.getSafe.mockRejectedValue(error);
 
-      const result = await service.analyzeActivity({
+      const [result, isSafe] = await service.analyzeActivity({
         transactionApi: mockTransactionApi,
         recipient: mockRecipientAddress,
       });
@@ -897,6 +904,7 @@ describe('RecipientAnalysisService', () => {
         description:
           'The analysis failed: recipient activity check unavailable. Please try again later.',
       });
+      expect(isSafe).toBe(false);
     });
 
     it('should handle invalid safe response', async () => {
@@ -906,7 +914,7 @@ describe('RecipientAnalysisService', () => {
         }),
       );
 
-      const result = await service.analyzeActivity({
+      const [result, isSafe] = await service.analyzeActivity({
         transactionApi: mockTransactionApi,
         recipient: mockRecipientAddress,
       });
@@ -918,18 +926,20 @@ describe('RecipientAnalysisService', () => {
         description:
           'The analysis failed: recipient activity check unavailable. Please try again later.',
       });
+      expect(isSafe).toBe(false);
     });
 
     it('should handle 404 errors when Safe does not exist', async () => {
       const error = new DataSourceError('Not found', 404);
       mockTransactionApi.getSafe.mockRejectedValue(error);
 
-      const result = await service.analyzeActivity({
+      const [result, isSafe] = await service.analyzeActivity({
         transactionApi: mockTransactionApi,
         recipient: mockRecipientAddress,
       });
 
       expect(result).toEqual(undefined);
+      expect(isSafe).toBe(false);
     });
   });
 
@@ -949,6 +959,7 @@ describe('RecipientAnalysisService', () => {
       );
 
       expect(result).toEqual({
+        isSafe: true,
         RECIPIENT_INTERACTION: [
           {
             severity: 'OK',
@@ -983,6 +994,7 @@ describe('RecipientAnalysisService', () => {
       );
 
       expect(result).toEqual({
+        isSafe: true,
         RECIPIENT_INTERACTION: [
           {
             severity: 'OK',
@@ -1005,6 +1017,7 @@ describe('RecipientAnalysisService', () => {
       );
 
       expect(result).toEqual({
+        isSafe: false,
         RECIPIENT_INTERACTION: [
           {
             type: 'FAILED',
@@ -1043,6 +1056,7 @@ describe('RecipientAnalysisService', () => {
       );
 
       expect(result).toEqual({
+        isSafe: true,
         RECIPIENT_INTERACTION: [
           {
             type: 'FAILED',
@@ -1559,8 +1573,8 @@ describe('RecipientAnalysisService', () => {
         faker.string.numeric(3),
       );
 
-      (mockTransactionApi.getTransfers as jest.Mock).mockResolvedValue(
-        mockTransferPage(faker.number.int({ min: 1, max: 5 })),
+      mockTransactionApi.getTransfers.mockResolvedValue(
+        rawify(mockTransferPage(faker.number.int({ min: 1, max: 5 }))),
       );
 
       mockTransactionApiManager.getApi.mockImplementation(() => {
@@ -1575,6 +1589,19 @@ describe('RecipientAnalysisService', () => {
         chainId: mockChainId,
         safeAddress: mockSafeAddress,
         txInfo: mockTxInfo,
+      });
+
+      expect(result).toEqual({
+        [differentRecipient]: {
+          RECIPIENT_INTERACTION: [
+            expect.objectContaining({
+              severity: 'OK',
+              type: 'RECURRING_RECIPIENT',
+              title: 'Recurring recipient',
+            }),
+          ],
+          isSafe: true,
+        },
       });
 
       expect(Object.keys(result)).toContain(differentRecipient);

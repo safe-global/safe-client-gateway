@@ -125,6 +125,12 @@ export class RecipientResultDto extends AnalysisResultDto<
 export class RecipientAnalysisDto
   implements GroupedAnalysisResults<RecipientAnalysisResult>
 {
+  @ApiProperty({
+    description: 'Indicates whether the analyzed recipient address is a Safe.',
+    example: true,
+  })
+  isSafe!: boolean;
+
   @ApiPropertyOptional({
     description:
       'Analysis results related to recipient interaction history. ' +
@@ -136,11 +142,27 @@ export class RecipientAnalysisDto
         type: 'NEW_RECIPIENT',
         title: 'New recipient',
         description:
-          'This is the first time you are interacting with this recipient',
+          'This is the first time you are interacting with this recipient.',
       },
     ],
   })
   RECIPIENT_INTERACTION?: Array<RecipientResultDto>;
+
+  @ApiPropertyOptional({
+    description:
+      'Analysis results related to recipient activity frequency. ' +
+      'Shows whether this is a low activity recipient.',
+    type: [RecipientResultDto],
+    example: [
+      {
+        severity: 'WARN',
+        type: 'LOW_ACTIVITY',
+        title: 'Low activity recipient',
+        description: 'This address has low activity.',
+      },
+    ],
+  })
+  RECIPIENT_ACTIVITY?: Array<RecipientResultDto>;
 
   @ApiPropertyOptional({
     description:
@@ -152,7 +174,7 @@ export class RecipientAnalysisDto
         severity: 'WARN',
         type: 'MISSING_OWNERSHIP',
         title: 'No ownership on target chain',
-        description: 'You do not have ownership of a Safe on the target chain',
+        description: 'You do not have ownership of a Safe on the target chain.',
         targetChainId: '137',
       },
     ],
@@ -179,6 +201,7 @@ export class CounterpartyAnalysisDto implements CounterpartyAnalysisResponse {
     },
     example: {
       '0x0000000000000000000000000000000000000000': {
+        isSafe: true,
         RECIPIENT_INTERACTION: [
           {
             severity: 'INFO',
@@ -191,7 +214,10 @@ export class CounterpartyAnalysisDto implements CounterpartyAnalysisResponse {
       },
     },
   })
-  recipient!: Record<Address, Partial<RecipientAnalysisDto> | undefined>;
+  recipient!: Record<
+    Address,
+    (Partial<RecipientAnalysisDto> & { isSafe: boolean }) | undefined
+  >;
 
   @ApiProperty({
     description:

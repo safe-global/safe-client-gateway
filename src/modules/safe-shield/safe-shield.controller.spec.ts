@@ -150,6 +150,7 @@ describe('SafeShieldController (Unit)', () => {
       const expectedResponse = counterpartyAnalysisResponseBuilder()
         .with('recipient', {
           [requestBody.to]: {
+            isSafe: false,
             RECIPIENT_INTERACTION: [
               {
                 type: 'FAILED',
@@ -194,6 +195,7 @@ describe('SafeShieldController (Unit)', () => {
     it('should handle partial success with recipient analysis succeeding but contract failing', async () => {
       const successfulRecipientAnalysis = {
         [requestBody.to]: {
+          isSafe: true,
           RECIPIENT_INTERACTION: [
             recipientAnalysisResultBuilder()
               .with('type', 'NEW_RECIPIENT')
@@ -244,6 +246,7 @@ describe('SafeShieldController (Unit)', () => {
       const expectedResponse = counterpartyAnalysisResponseBuilder()
         .with('recipient', {
           [requestBody.to]: {
+            isSafe: false,
             RECIPIENT_INTERACTION: [
               {
                 type: 'FAILED',

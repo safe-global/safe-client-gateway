@@ -18,7 +18,7 @@ import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import type { Address } from 'viem';
 import { SafeShieldService } from './safe-shield.service';
-import { SingleRecipientAnalysisDto } from './entities/dtos/recipient-interaction-analysis.dto';
+import { SingleRecipientAnalysisDto } from './entities/dtos/single-recipient-analysis.dto';
 import {
   CounterpartyAnalysisRequestSchema,
   ThreatAnalysisRequestSchema,

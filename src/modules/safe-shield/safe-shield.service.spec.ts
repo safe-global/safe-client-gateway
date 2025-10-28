@@ -163,6 +163,7 @@ describe('SafeShieldService', () => {
   const mockRecipientAnalysisResponse: RecipientAnalysisResponse =
     recipientAnalysisResponseBuilder()
       .with(mockRecipientAddress, {
+        isSafe: true,
         RECIPIENT_INTERACTION: [recipientAnalysisResultBuilder().build()],
         RECIPIENT_ACTIVITY: [
           recipientAnalysisResultBuilder().with('type', 'LOW_ACTIVITY').build(),
@@ -528,6 +529,7 @@ describe('SafeShieldService', () => {
 
       expect(result.recipient).toEqual({
         [mockRecipientAddress]: {
+          isSafe: false,
           RECIPIENT_INTERACTION: [
             {
               type: 'FAILED',
@@ -677,6 +679,7 @@ describe('SafeShieldService', () => {
 
       expect(result.recipient).toEqual({
         [mockRecipientAddress]: {
+          isSafe: false,
           RECIPIENT_INTERACTION: [
             {
               type: 'FAILED',
@@ -834,6 +837,29 @@ describe('SafeShieldService', () => {
         });
       },
     );
+
+    it('should return undefined responses when decoded transactions array is empty', async () => {
+      mockTransactionsService.previewTransaction.mockRejectedValue(new Error());
+
+      const result = await service.analyzeCounterparty({
+        chainId: mockChainId,
+        safeAddress: mockSafeAddress,
+        tx: {
+          to: mockRecipientAddress,
+          data: '0x',
+          value: '0',
+          operation: Operation.CALL,
+        },
+      });
+
+      expect(result).toEqual({
+        recipient: {},
+        contract: {},
+      });
+
+      expect(mockRecipientAnalysisService.analyze).not.toHaveBeenCalled();
+      expect(mockContractAnalysisService.analyze).not.toHaveBeenCalled();
+    });
   });
 
   describe('analyzeRecipients', () => {

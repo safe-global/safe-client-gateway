@@ -60,4 +60,10 @@ export class SingleRecipientAnalysisDto
     ],
   })
   RECIPIENT_ACTIVITY?: Array<SingleRecipientAnalysisResultDto>;
+
+  @ApiProperty({
+    description: 'Indicates whether the analyzed recipient address is a Safe.',
+    example: false,
+  })
+  isSafe!: boolean;
 }
