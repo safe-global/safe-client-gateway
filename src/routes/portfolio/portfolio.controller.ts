@@ -19,7 +19,7 @@ import { PortfolioService } from '@/routes/portfolio/portfolio.service';
 import { Portfolio } from '@/routes/portfolio/entities/portfolio.entity';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { ChainIdsSchema } from '@/domain/common/entities/schemas/chain-ids.schema';
+import { ChainIdsSchema } from '@/domain/chains/entities/schemas/chain-ids.schema';
 import type { Address } from 'viem';
 
 @ApiTags('portfolio')

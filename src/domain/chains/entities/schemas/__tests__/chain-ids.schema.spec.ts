@@ -1,5 +1,5 @@
 import { ZodError } from 'zod';
-import { ChainIdsSchema } from '@/domain/common/entities/schemas/chain-ids.schema';
+import { ChainIdsSchema } from '@/domain/chains/entities/schemas/chain-ids.schema';
 
 describe('ChainIdsSchema', () => {
   describe('valid inputs', () => {
@@ -89,7 +89,7 @@ describe('ChainIdsSchema', () => {
         expect(error).toBeInstanceOf(ZodError);
         const zodError = error as ZodError;
         expect(zodError.errors[0].message).toContain(
-          'Chain IDs must be numeric strings',
+          'Chain ID must be a positive integer',
         );
       }
     });

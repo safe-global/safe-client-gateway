@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { ChainIdSchema } from '@/domain/chains/entities/schemas/chain-id.schema';
 
 export const ChainIdsSchema = z
   .string()
@@ -10,14 +11,6 @@ export const ChainIdsSchema = z
       .map((id) => id.trim())
       .filter((id) => id.length > 0);
   })
-  .pipe(
-    z
-      .array(
-        z.string().regex(/^\d+$/, {
-          message: 'Chain IDs must be numeric strings',
-        }),
-      )
-      .optional(),
-  );
+  .pipe(z.array(ChainIdSchema).optional());
 
 export type ChainIds = z.infer<typeof ChainIdsSchema>;
