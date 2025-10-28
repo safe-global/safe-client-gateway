@@ -11,6 +11,7 @@ import { RelayLimitReachedError } from '@/domain/relay/errors/relay-limit-reache
 @Injectable()
 export class DailyLimitRelayer implements IRelayer {
   private readonly limit: number;
+  private readonly ttlSeconds: number;
 
   constructor(
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
@@ -19,6 +20,7 @@ export class DailyLimitRelayer implements IRelayer {
     @Inject(IRelayApi) private readonly relayApi: IRelayApi,
   ) {
     this.limit = configurationService.getOrThrow('relay.limit');
+    this.ttlSeconds = configurationService.getOrThrow('relay.ttlSeconds');
   }
 
   async canRelay(args: {
@@ -105,6 +107,7 @@ export class DailyLimitRelayer implements IRelayer {
       chainId: args.chainId,
       address: args.address,
       count: incremented,
+      ttlSeconds: this.ttlSeconds,
     });
   }
 }

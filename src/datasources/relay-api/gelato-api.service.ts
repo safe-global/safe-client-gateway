@@ -26,7 +26,6 @@ export class GelatoApi implements IRelayApi {
   private static GAS_LIMIT_BUFFER = BigInt(150_000);
 
   private readonly baseUri: string;
-  private readonly ttlSeconds: number;
 
   constructor(
     @Inject(NetworkService)
@@ -38,7 +37,6 @@ export class GelatoApi implements IRelayApi {
   ) {
     this.baseUri =
       this.configurationService.getOrThrow<string>('relay.baseUri');
-    this.ttlSeconds = configurationService.getOrThrow('relay.ttlSeconds');
   }
 
   async relay(args: {
@@ -85,35 +83,13 @@ export class GelatoApi implements IRelayApi {
     return count ? parseInt(count) : 0;
   }
 
-  async getRelayNoFeeCampaignCount(args: {
-    chainId: string;
-    address: Address;
-  }): Promise<number> {
-    const cacheDir = CacheRouter.getRelayNoFeeCampaignCacheDir(args);
-    const count = await this.cacheService.hGet(cacheDir);
-    return count ? parseInt(count) : 0;
-  }
-
   async setRelayCount(args: {
-    chainId: string;
-    address: Address;
-    count: number;
-  }): Promise<void> {
-    const cacheDir = CacheRouter.getRelayCacheDir(args);
-    await this.cacheService.hSet(
-      cacheDir,
-      args.count.toString(),
-      this.ttlSeconds,
-    );
-  }
-
-  async setRelayNoFeeCampaignCount(args: {
     chainId: string;
     address: Address;
     count: number;
     ttlSeconds: number;
   }): Promise<void> {
-    const cacheDir = CacheRouter.getRelayNoFeeCampaignCacheDir(args);
+    const cacheDir = CacheRouter.getRelayCacheDir(args);
     await this.cacheService.hSet(
       cacheDir,
       args.count.toString(),
