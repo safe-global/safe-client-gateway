@@ -7,8 +7,8 @@ import type {
 /**
  * Checks if the decoded transaction data represents a multiSend transaction.
  *
- * @param tx - The decoded transaction data to check
- * @returns True if the transaction is a multiSend transaction
+ * @param {DecodedTransactionData} tx - The decoded transaction data to check
+ * @returns {boolean} True if the transaction is a multiSend transaction
  */
 export function isMultiSend(
   tx: DecodedTransactionData,
@@ -22,8 +22,8 @@ export function isMultiSend(
 /**
  * Checks if the decoded transaction data represents an execTransaction call.
  *
- * @param tx - The decoded transaction data to check
- * @returns True if the transaction is an execTransaction call
+ * @param {DecodedTransactionData} tx - The decoded transaction data to check
+ * @returns {boolean} True if the transaction is an execTransaction call
  */
 export function isExecTransaction(
   tx: DecodedTransactionData,
@@ -38,8 +38,8 @@ export function isExecTransaction(
  * Extracts all inner transactions from a multiSend DecodedTransactionData object.
  * If it's not a multiSend, returns the transaction itself.
  *
- * @param tx - The multiSend transaction with dataDecoded
- * @returns Array of inner transaction data, or the transaction itself if not a valid multiSend
+ * @param {DecodedTransactionData} tx  - The multiSend transaction with dataDecoded
+ * @returns {Array<DecodedTransactionData>} Array of inner transaction data, or the transaction itself if not a valid multiSend
  */
 export function mapMultiSendTransactions(
   tx: DecodedTransactionData,
@@ -59,8 +59,8 @@ export function mapMultiSendTransactions(
  * Maps decoded transaction data recursively to an array of decoded transactions.
  * Handles execTransaction and multiSend methods by extracting their inner transactions.
  *
- * @param transaction - The decoded transaction data
- * @returns Array of decoded transactions
+ * @param {DecodedTransactionData} tx - The decoded transaction data
+ * @returns {Array<DecodedTransactionData>} Array of decoded transactions
  */
 export function mapDecodedTransactions(
   tx: DecodedTransactionData,

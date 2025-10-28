@@ -162,7 +162,6 @@ export class TwapOrderTransactionInfo
   executedFee: string | null;
 
   @ApiProperty({
-    type: String,
     description:
       'The token in which the fee was paid, expressed by SURPLUS tokens (BUY tokens for SELL orders and SELL tokens for BUY orders).',
   })

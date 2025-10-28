@@ -113,9 +113,10 @@ export const RootConfigurationSchema = z
     CSV_AWS_ACCESS_KEY_ID: z.string().optional(),
     CSV_AWS_SECRET_ACCESS_KEY: z.string().optional(),
     CSV_EXPORT_QUEUE_CONCURRENCY: z.number({ coerce: true }).min(1).optional(),
+    BLOCKAID_CLIENT_API_KEY: z.string().optional(),
   })
   .superRefine((config, ctx) =>
-    // Check for AWS_* fields in production and staging environments
+    // Check for AWS_* and Blockaid fields in production and staging environments
     [
       'AWS_ACCESS_KEY_ID',
       'AWS_KMS_ENCRYPTION_KEY_ID',
@@ -123,6 +124,7 @@ export const RootConfigurationSchema = z
       'AWS_REGION',
       'CSV_AWS_ACCESS_KEY_ID',
       'CSV_AWS_SECRET_ACCESS_KEY',
+      'BLOCKAID_CLIENT_API_KEY',
     ].forEach((field) => {
       if (
         config.CGW_ENV &&

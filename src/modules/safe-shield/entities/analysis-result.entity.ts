@@ -10,6 +10,25 @@ import {
   type ContractStatus,
 } from './contract-status.entity';
 import { ThreatStatusSchema, type ThreatStatus } from './threat-status.entity';
+import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
+
+/**
+ * Common status code available for all analysis types.
+ *
+ * This status can be used as fallbacks across any analysis type
+ * when errors or exceptional conditions occur.
+ */
+export const CommonStatus = [
+  /** Analysis failed due to service issues or errors */
+  'FAILED',
+] as const;
+
+/**
+ * Zod schema for validating CommonStatus enum values.
+ */
+export const CommonStatusSchema = z.enum(CommonStatus);
+
+export type CommonStatus = z.infer<typeof CommonStatusSchema>;
 
 /**
  * Generic analysis result structure for Safe Shield security checks.
@@ -38,6 +57,7 @@ export interface AnalysisResult<T extends AnalysisStatus = AnalysisStatus> {
  * Union type of all possible status types that can be used in analysis results.
  */
 export type AnalysisStatus =
+  | CommonStatus
   | RecipientStatus
   | BridgeStatus
   | ContractStatus
@@ -47,6 +67,7 @@ export type AnalysisStatus =
  * Zod schema for validating any status enum value.
  */
 export const AnalysisStatusSchema = z.union([
+  CommonStatusSchema,
   RecipientStatusSchema,
   BridgeStatusSchema,
   ContractStatusSchema,
@@ -68,38 +89,100 @@ export const AnalysisResultBaseSchema = z.object({
 
 /**
  * Zod schema for recipient analysis results.
+ *
+ * Combines recipient interaction and bridge analysis results using a union.
+ * - BridgeStatus and CommonStatus results include optional targetChainId field
+ * - RecipientStatus results do not include targetChainId field
  */
-export const RecipientAnalysisResultSchema = AnalysisResultBaseSchema.extend({
-  type: z.union([RecipientStatusSchema, BridgeStatusSchema]),
-});
+export const RecipientAnalysisResultSchema = z.union([
+  AnalysisResultBaseSchema.extend({
+    type: z.union([BridgeStatusSchema, CommonStatusSchema]),
+    targetChainId: NumericStringSchema.optional(),
+  }),
+  AnalysisResultBaseSchema.extend({
+    type: RecipientStatusSchema,
+  }),
+]);
 
 /**
  * Zod schema for contract analysis results.
  */
 export const ContractAnalysisResultSchema = AnalysisResultBaseSchema.extend({
-  type: ContractStatusSchema,
+  type: z.union([ContractStatusSchema, CommonStatusSchema]),
 });
 
 /**
  * Zod schema for threat analysis results.
+ * Uses union to validate type-specific fields.
  */
-export const ThreatAnalysisResultSchema = AnalysisResultBaseSchema.extend({
-  type: ThreatStatusSchema,
-});
+export const ThreatAnalysisResultSchema = z.union([
+  // MASTERCOPY_CHANGE: requires before and after
+  AnalysisResultBaseSchema.extend({
+    type: z.literal('MASTERCOPY_CHANGE'),
+    before: z.string(),
+    after: z.string(),
+  }),
+  // MALICIOUS or MODERATE: optional issues
+  AnalysisResultBaseSchema.extend({
+    type: z.union([z.literal('MALICIOUS'), z.literal('MODERATE')]),
+    issues: z.record(SeveritySchema, z.array(z.string())).optional(),
+  }),
+  // All others: no extra fields
+  AnalysisResultBaseSchema.extend({
+    type: z.union([
+      ThreatStatusSchema.exclude([
+        'MASTERCOPY_CHANGE',
+        'MALICIOUS',
+        'MODERATE',
+      ]),
+      CommonStatusSchema,
+    ]),
+  }),
+]);
 
 /**
  * Type definition for recipient analysis results.
+ * Inferred from the Zod schema to avoid duplication.
  */
-export type RecipientAnalysisResult = AnalysisResult<
-  RecipientStatus | BridgeStatus
+export type RecipientAnalysisResult = z.infer<
+  typeof RecipientAnalysisResultSchema
 >;
 
 /**
  * Type definition for contract analysis results.
+ * Inferred from the Zod schema to avoid duplication.
  */
-export type ContractAnalysisResult = AnalysisResult<ContractStatus>;
+export type ContractAnalysisResult = z.infer<
+  typeof ContractAnalysisResultSchema
+>;
+
+//----------------------- Threat Analysis Result Types -------------------------//
+
+export type MasterCopyChangeThreatAnalysisResult =
+  AnalysisResult<'MASTERCOPY_CHANGE'> & {
+    /** Address of the old master copy/implementation contract */
+    before: string;
+    /** Address of the new master copy/implementation contract */
+    after: string;
+  };
+
+export type MaliciousOrModerateThreatAnalysisResult = AnalysisResult<
+  'MALICIOUS' | 'MODERATE'
+> & {
+  /** A potential partial record of specific issues identified during threat analysis, grouped by severity */
+  issues?: Partial<Record<keyof typeof Severity, Array<string>>>;
+};
 
 /**
  * Type definition for threat analysis results.
+ * Inferred from the Zod schema to avoid duplication.
+ * Uses discriminated union to provide type-specific fields.
  */
-export type ThreatAnalysisResult = AnalysisResult<ThreatStatus>;
+
+export type ThreatAnalysisResult =
+  | MasterCopyChangeThreatAnalysisResult
+  | MaliciousOrModerateThreatAnalysisResult
+  | AnalysisResult<
+      | Exclude<ThreatStatus, 'MASTERCOPY_CHANGE' | 'MALICIOUS' | 'MODERATE'>
+      | CommonStatus
+    >;
