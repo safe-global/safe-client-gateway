@@ -142,11 +142,15 @@ export class SafeBalancesApi implements IBalancesApi {
         return null;
       }
 
-      return this._mapBalances({
+      const mappedBalances = await this._mapBalances({
         balances: [balance],
         fiatCode: args.fiatCode,
         chain: args.chain,
       });
+
+      // Extract the first balance from the array and return as Raw<Balance>
+      const mappedBalance = (mappedBalances as unknown as Array<Balance>)[0];
+      return rawify(mappedBalance);
     } catch (error) {
       if (error instanceof ZodError) {
         throw error;
