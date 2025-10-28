@@ -273,6 +273,7 @@ export default (): ReturnType<typeof configuration> => ({
     limit: faker.number.int({ min: 1 }),
     ttlSeconds: faker.number.int(),
     apiKey: {
+      1: faker.string.hexadecimal({ length: 32 }),
       10: faker.string.hexadecimal({ length: 32 }),
       56: faker.string.hexadecimal({ length: 32 }),
       100: faker.string.hexadecimal({ length: 32 }),
@@ -284,6 +285,56 @@ export default (): ReturnType<typeof configuration> => ({
       59144: faker.string.hexadecimal({ length: 32 }),
       81457: faker.string.hexadecimal({ length: 32 }),
       11155111: faker.string.hexadecimal({ length: 32 }),
+    },
+    noFeeCampaign: {
+      1: {
+        startsAtTimeStamp: new Date().getTime() / 1000 - 10_000,
+        endsAtTimeStamp: new Date().getTime() / 1000 + 1_000_000,
+        safeTokenAddress: faker.finance.ethereumAddress(),
+        maxGasLimit: faker.number.int({ min: 1 }),
+        relayRules: [
+          {
+            balance: 0,
+            limit: 0,
+          },
+          {
+            balance: 100,
+            limit: 1,
+          },
+          {
+            balance: 1000,
+            limit: 10,
+          },
+          {
+            balance: Number.MAX_SAFE_INTEGER,
+            limit: 100,
+          },
+        ],
+      },
+      11155111: {
+        startsAtTimeStamp: new Date().getTime() / 1000 - 10_000,
+        endsAtTimeStamp: new Date().getTime() / 1000 + 1000_000,
+        maxGasLimit: faker.number.int({ min: 1 }),
+        safeTokenAddress: faker.finance.ethereumAddress(),
+        relayRules: [
+          {
+            balance: 0,
+            limit: 0,
+          },
+          {
+            balance: 100,
+            limit: 1,
+          },
+          {
+            balance: 1000,
+            limit: 10,
+          },
+          {
+            balance: Number.MAX_SAFE_INTEGER,
+            limit: 100,
+          },
+        ],
+      },
     },
   },
   safeConfig: {

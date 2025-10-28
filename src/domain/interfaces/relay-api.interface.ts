@@ -18,5 +18,6 @@ export interface IRelayApi {
     chainId: string;
     address: Address;
     count: number;
+    ttlSeconds: number;
   }): Promise<void>;
 }

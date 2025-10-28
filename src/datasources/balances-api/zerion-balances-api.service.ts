@@ -94,6 +94,18 @@ export class ZerionBalancesApi implements IBalancesApi {
     );
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars,@typescript-eslint/require-await
+  async getBalance(_args: {
+    safeAddress: Address;
+    fiatCode: string;
+    chain: Chain;
+    tokenAddress: Address;
+    trusted?: boolean;
+    excludeSpam?: boolean;
+  }): Promise<Raw<Balance> | null> {
+    throw new Error('Method not implemented.');
+  }
+
   async getBalances(args: {
     chain: Chain;
     safeAddress: Address;

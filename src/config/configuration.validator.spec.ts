@@ -42,6 +42,32 @@ describe('Configuration validator', () => {
     RELAY_PROVIDER_API_KEY_LINEA: faker.string.uuid(),
     RELAY_PROVIDER_API_KEY_BLAST: faker.string.uuid(),
     RELAY_PROVIDER_API_KEY_SEPOLIA: faker.string.uuid(),
+    RELAY_NO_FEE_CAMPAIGN_SEPOLIA_SAFE_TOKEN_ADDRESS:
+      faker.finance.ethereumAddress(),
+    RELAY_NO_FEE_CAMPAIGN_SEPOLIA_START_TIMESTAMP: faker.date.past().getTime(),
+    RELAY_NO_FEE_CAMPAIGN_SEPOLIA_END_TIMESTAMP: faker.date.future().getTime(),
+    RELAY_NO_FEE_CAMPAIGN_SEPOLIA_MAX_GAS_LIMIT: faker.number.int({
+      min: 1,
+      max: 1000,
+    }),
+    RELAY_NO_FEE_CAMPAIGN_SEPOLIA_RELAY_RULES: JSON.stringify([
+      { balance: 0, limit: 0 },
+      { balance: 100, limit: 1 },
+      { balance: 1000, limit: 10 },
+    ]),
+    RELAY_NO_FEE_CAMPAIGN_MAINNET_SAFE_TOKEN_ADDRESS:
+      faker.finance.ethereumAddress(),
+    RELAY_NO_FEE_CAMPAIGN_MAINNET_START_TIMESTAMP: faker.date.past().getTime(),
+    RELAY_NO_FEE_CAMPAIGN_MAINNET_END_TIMESTAMP: faker.date.future().getTime(),
+    RELAY_NO_FEE_CAMPAIGN_MAINNET_MAX_GAS_LIMIT: faker.number.int({
+      min: 1,
+      max: 1000,
+    }),
+    RELAY_NO_FEE_CAMPAIGN_MAINNET_RELAY_RULES: JSON.stringify([
+      { balance: 0, limit: 0 },
+      { balance: 100, limit: 1 },
+      { balance: 1000, limit: 10 },
+    ]),
     STAKING_API_KEY: faker.string.uuid(),
     STAKING_TESTNET_API_KEY: faker.string.uuid(),
     CSV_AWS_ACCESS_KEY_ID: faker.string.uuid(),
@@ -244,6 +270,123 @@ describe('Configuration validator', () => {
       ).toThrow(
         `Configuration is invalid: ${key} is required in production and staging environments`,
       );
+    });
+  });
+
+  describe('RELAY_NO_FEE_CAMPAIGN relay rules validation', () => {
+    describe.each([
+      'RELAY_NO_FEE_CAMPAIGN_MAINNET_RELAY_RULES',
+      'RELAY_NO_FEE_CAMPAIGN_SEPOLIA_RELAY_RULES',
+    ])('%s', (fieldKey) => {
+      it('should accept valid JSON array of relay rules', () => {
+        const config = {
+          ...validConfiguration,
+          [fieldKey]: JSON.stringify([
+            { balance: 0, limit: 0 },
+            {
+              balance: faker.number.int({ min: 100, max: 200 }),
+              limit: faker.number.int({ min: 1, max: 9 }),
+            },
+            {
+              balance: faker.number.int({ min: 201, max: 1000 }),
+              limit: faker.number.int({ min: 10, max: 999 }),
+            },
+          ]),
+        };
+        expect(() =>
+          configurationValidator(config, RootConfigurationSchema),
+        ).not.toThrow();
+      });
+
+      it('should reject empty string', () => {
+        const config = {
+          ...validConfiguration,
+          [fieldKey]: '',
+        };
+        expect(() =>
+          configurationValidator(config, RootConfigurationSchema),
+        ).toThrow(
+          new RegExp(
+            `Configuration is invalid: ${fieldKey} Must be a valid JSON array of objects with balance \\(number >= 0\\) and limit \\(number >= 0\\) properties`,
+          ),
+        );
+      });
+
+      it('should reject invalid JSON', () => {
+        const config = {
+          ...validConfiguration,
+          [fieldKey]: 'invalid json',
+        };
+        expect(() =>
+          configurationValidator(config, RootConfigurationSchema),
+        ).toThrow(
+          new RegExp(
+            `Configuration is invalid: ${fieldKey} Must be a valid JSON array of objects with balance \\(number >= 0\\) and limit \\(number >= 0\\) properties`,
+          ),
+        );
+      });
+
+      it('should reject non-array JSON', () => {
+        const config = {
+          ...validConfiguration,
+          [fieldKey]: JSON.stringify({
+            balance: 0,
+            limit: 0,
+          }),
+        };
+        expect(() =>
+          configurationValidator(config, RootConfigurationSchema),
+        ).toThrow(
+          new RegExp(
+            `Configuration is invalid: ${fieldKey} Must be a valid JSON array of objects with balance \\(number >= 0\\) and limit \\(number >= 0\\) properties`,
+          ),
+        );
+      });
+
+      it('should reject array with invalid objects', () => {
+        const config = {
+          ...validConfiguration,
+          [fieldKey]: JSON.stringify([
+            { balance: faker.number.int(), limit: faker.number.int() },
+            { balance: 'invalid', limit: 5 }, // Invalid balance type
+          ]),
+        };
+        expect(() =>
+          configurationValidator(config, RootConfigurationSchema),
+        ).toThrow(
+          new RegExp(
+            `Configuration is invalid: ${fieldKey} Must be a valid JSON array of objects with balance \\(number >= 0\\) and limit \\(number >= 0\\) properties`,
+          ),
+        );
+      });
+
+      it('should reject negative balance values', () => {
+        const config = {
+          ...validConfiguration,
+          [fieldKey]: JSON.stringify([{ balance: -1, limit: 0 }]),
+        };
+        expect(() =>
+          configurationValidator(config, RootConfigurationSchema),
+        ).toThrow(
+          new RegExp(
+            `Configuration is invalid: ${fieldKey} Must be a valid JSON array of objects with balance \\(number >= 0\\) and limit \\(number >= 0\\) properties`,
+          ),
+        );
+      });
+
+      it('should reject negative limit values', () => {
+        const config = {
+          ...validConfiguration,
+          [fieldKey]: JSON.stringify([{ balance: 0, limit: -1 }]),
+        };
+        expect(() =>
+          configurationValidator(config, RootConfigurationSchema),
+        ).toThrow(
+          new RegExp(
+            `Configuration is invalid: ${fieldKey} Must be a valid JSON array of objects with balance \\(number >= 0\\) and limit \\(number >= 0\\) properties`,
+          ),
+        );
+      });
     });
   });
 });

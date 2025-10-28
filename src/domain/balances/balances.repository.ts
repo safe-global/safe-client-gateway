@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { IBalancesRepository } from '@/domain/balances/balances.repository.interface';
 import {
   Balance,
+  BalanceSchema,
   BalancesSchema,
 } from '@/domain/balances/entities/balance.entity';
 import { IBalancesApiManager } from '@/domain/interfaces/balances-api.manager.interface';
@@ -29,6 +30,22 @@ export class BalancesRepository implements IBalancesRepository {
     );
     const balances = await api.getBalances(args);
     return BalancesSchema.parse(balances);
+  }
+
+  async getTokenBalance(args: {
+    chain: Chain;
+    safeAddress: Address;
+    fiatCode: string;
+    tokenAddress: Address;
+    trusted?: boolean;
+    excludeSpam?: boolean;
+  }): Promise<Balance | null> {
+    const api = await this.balancesApiManager.getApi(
+      args.chain.chainId,
+      args.safeAddress,
+    );
+    const balance = await api.getBalance(args);
+    return BalanceSchema.parse(balance);
   }
 
   async clearBalances(args: {

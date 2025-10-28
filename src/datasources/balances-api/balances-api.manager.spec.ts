@@ -12,6 +12,7 @@ import { getAddress } from 'viem';
 import sample from 'lodash/sample';
 import type { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
 import type { ITransactionApi } from '@/domain/interfaces/transaction-api.interface';
+import type { INetworkService } from '@/datasources/network/network.service.interface';
 import { rawify } from '@/validation/entities/raw.entity';
 
 const configurationService = {
@@ -52,6 +53,7 @@ const zerionBalancesApi = {
   getCollectibles: jest.fn(),
   clearCollectibles: jest.fn(),
   getFiatCodes: jest.fn(),
+  getBalance: jest.fn(),
 } as IBalancesApi;
 
 const zerionBalancesApiMock = jest.mocked(zerionBalancesApi);
@@ -63,6 +65,14 @@ const coingeckoApi = {
 } as IPricesApi;
 
 const coingeckoApiMock = jest.mocked(coingeckoApi);
+
+const networkService = {
+  get: jest.fn(),
+  post: jest.fn(),
+} as jest.MockedObjectDeep<INetworkService>;
+
+const networkServiceMock = jest.mocked(networkService);
+
 const ZERION_BALANCES_CHAIN_IDS: Array<string> = faker.helpers.multiple(
   () => faker.string.numeric(),
   { count: { min: 1, max: 10 } },
@@ -91,6 +101,7 @@ describe('Balances API Manager Tests', () => {
         zerionBalancesApiMock,
         coingeckoApiMock,
         transactionApiManagerMock,
+        networkServiceMock,
       );
       const safeAddress = getAddress(faker.finance.ethereumAddress());
 
@@ -112,6 +123,7 @@ describe('Balances API Manager Tests', () => {
         zerionBalancesApiMock,
         coingeckoApiMock,
         transactionApiManagerMock,
+        networkServiceMock,
       );
       const safeAddress = getAddress(faker.finance.ethereumAddress());
       transactionApiManagerMock.getApi.mockResolvedValue(transactionApiMock);
@@ -172,6 +184,7 @@ describe('Balances API Manager Tests', () => {
         zerionBalancesApiMock,
         coingeckoApiMock,
         transactionApiManagerMock,
+        networkServiceMock,
       );
       transactionApiManagerMock.getApi.mockResolvedValue(transactionApiMock);
       transactionApiMock.isSafe.mockResolvedValue(true);
@@ -222,6 +235,7 @@ describe('Balances API Manager Tests', () => {
         zerionBalancesApiMock,
         coingeckoApiMock,
         transactionApiManagerMock,
+        networkServiceMock,
       );
 
       const result = await manager.getFiatCodes();

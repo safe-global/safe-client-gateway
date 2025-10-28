@@ -1,0 +1,113 @@
+import { Inject, Injectable } from '@nestjs/common';
+import type { Address } from 'viem';
+import { IRelayer } from '@/domain/relay/interfaces/relayer.interface';
+import { IConfigurationService } from '@/config/configuration.service.interface';
+import { IRelayApi } from '@/domain/interfaces/relay-api.interface';
+import { LimitAddressesMapper } from '@/domain/relay/limit-addresses.mapper';
+import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import { Relay, RelaySchema } from '@/domain/relay/entities/relay.entity';
+import { RelayLimitReachedError } from '@/domain/relay/errors/relay-limit-reached.error';
+
+@Injectable()
+export class DailyLimitRelayer implements IRelayer {
+  private readonly limit: number;
+  private readonly ttlSeconds: number;
+
+  constructor(
+    @Inject(LoggingService) private readonly loggingService: ILoggingService,
+    @Inject(IConfigurationService) configurationService: IConfigurationService,
+    private readonly limitAddressesMapper: LimitAddressesMapper,
+    @Inject(IRelayApi) private readonly relayApi: IRelayApi,
+  ) {
+    this.limit = configurationService.getOrThrow('relay.limit');
+    this.ttlSeconds = configurationService.getOrThrow('relay.ttlSeconds');
+  }
+
+  async canRelay(args: {
+    chainId: string;
+    address: Address;
+  }): Promise<{ result: boolean; currentCount: number; limit: number }> {
+    const currentCount = await this.getRelayCount(args);
+    return {
+      result: currentCount < this.limit,
+      currentCount,
+      limit: this.limit,
+    };
+  }
+
+  async relay(args: {
+    version: string;
+    chainId: string;
+    to: Address;
+    data: Address;
+    gasLimit: bigint | null;
+  }): Promise<Relay> {
+    const relayAddresses =
+      await this.limitAddressesMapper.getLimitAddresses(args);
+
+    for (const address of relayAddresses) {
+      const canRelay = await this.canRelay({
+        chainId: args.chainId,
+        address,
+      });
+      if (!canRelay.result) {
+        const error = new RelayLimitReachedError(
+          address,
+          canRelay.currentCount,
+          canRelay.limit,
+        );
+        this.loggingService.info(error.message);
+        throw error;
+      }
+    }
+
+    const relayResponse = await this.relayApi
+      .relay(args)
+      .then(RelaySchema.parse);
+
+    // If we fail to increment count, we should not fail the relay
+    for (const address of relayAddresses) {
+      await this.incrementRelayCount({
+        chainId: args.chainId,
+        address,
+      }).catch((error) => {
+        // If we fail to increment count, we should not fail the relay
+        this.loggingService.warn(error.message);
+      });
+    }
+
+    return relayResponse;
+  }
+
+  async getRelaysRemaining(args: {
+    chainId: string;
+    address: Address;
+  }): Promise<{ remaining: number; limit: number }> {
+    const currentCount = await this.getRelayCount(args);
+    return {
+      remaining: Math.max(this.limit - currentCount, 0),
+      limit: this.limit,
+    };
+  }
+
+  private async getRelayCount(args: {
+    chainId: string;
+    address: Address;
+  }): Promise<number> {
+    return this.relayApi.getRelayCount(args);
+  }
+
+  private async incrementRelayCount(args: {
+    chainId: string;
+    address: Address;
+  }): Promise<void> {
+    const currentCount = await this.getRelayCount(args);
+    const incremented = currentCount + 1;
+    return this.relayApi.setRelayCount({
+      chainId: args.chainId,
+      address: args.address,
+      count: incremented,
+      ttlSeconds: this.ttlSeconds,
+    });
+  }
+}

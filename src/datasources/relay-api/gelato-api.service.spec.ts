@@ -211,6 +211,7 @@ describe('GelatoApi', () => {
         chainId,
         address,
         count,
+        ttlSeconds: faker.number.int(),
       });
 
       const result = await fakeCacheService.hGet(
