@@ -111,12 +111,13 @@ export class GelatoApi implements IRelayApi {
     chainId: string;
     address: Address;
     count: number;
+    ttlSeconds: number;
   }): Promise<void> {
     const cacheDir = CacheRouter.getRelayNoFeeCampaignCacheDir(args);
     await this.cacheService.hSet(
       cacheDir,
       args.count.toString(),
-      this.ttlSeconds,
+      args.ttlSeconds,
     );
   }
 }

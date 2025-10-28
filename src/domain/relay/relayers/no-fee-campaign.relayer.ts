@@ -170,10 +170,16 @@ export class NoFeeCampaignRelayer implements IRelayer {
     if (this.isActive(args.chainId)) {
       const currentCount = await this.getRelayCount(args);
       const incremented = currentCount + 1;
+
+      const ttlSeconds =
+        this.relayconfiguration[parseInt(args.chainId)].endsAtTimeStamp -
+        new Date().getTime() / 1000;
+
       return this.relayApi.setRelayNoFeeCampaignCount({
         chainId: args.chainId,
         address: args.address,
         count: incremented,
+        ttlSeconds: ttlSeconds,
       });
     }
   }
