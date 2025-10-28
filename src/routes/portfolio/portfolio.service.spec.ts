@@ -38,7 +38,6 @@ describe('PortfolioService', () => {
         chainIds: undefined,
         trusted: undefined,
         excludeDust: undefined,
-        provider: undefined,
       });
 
       expect(result).toEqual(domainPortfolio);
@@ -50,7 +49,6 @@ describe('PortfolioService', () => {
       const chainIds = ['1', '10'];
       const trusted = true;
       const excludeDust = true;
-      const provider = 'zerion';
 
       const domainPortfolio = portfolioBuilder().build();
       mockDomainService.getPortfolio.mockResolvedValue(domainPortfolio);
@@ -61,7 +59,6 @@ describe('PortfolioService', () => {
         chainIds,
         trusted,
         excludeDust,
-        provider,
       });
 
       expect(mockDomainService.getPortfolio).toHaveBeenCalledWith({
@@ -70,7 +67,6 @@ describe('PortfolioService', () => {
         chainIds,
         trusted,
         excludeDust,
-        provider,
       });
     });
   });

@@ -17,7 +17,6 @@ export class PortfolioService {
     chainIds?: Array<string>;
     trusted?: boolean;
     excludeDust?: boolean;
-    provider?: string;
   }): Promise<Portfolio> {
     const domainPortfolio =
       await this.domainPortfolioService.getPortfolio(args);

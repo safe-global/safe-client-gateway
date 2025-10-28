@@ -17,7 +17,6 @@ export class PortfolioService implements IPortfolioService {
     chainIds?: Array<string>;
     trusted?: boolean;
     excludeDust?: boolean;
-    provider?: string;
   }): Promise<Portfolio> {
     return this.portfolioRepository.getPortfolio(args);
   }

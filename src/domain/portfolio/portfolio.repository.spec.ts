@@ -3,7 +3,6 @@ import type { IPortfolioApi } from '@/domain/interfaces/portfolio-api.interface'
 import type { ICacheService } from '@/datasources/cache/cache.service.interface';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import { CacheRouter } from '@/datasources/cache/cache.router';
-import { PortfolioProvider } from '@/domain/portfolio/entities/portfolio-provider.enum';
 import { portfolioBuilder } from '@/domain/portfolio/entities/__tests__/portfolio.builder';
 import { tokenBalanceBuilder } from '@/domain/portfolio/entities/__tests__/token-balance.builder';
 import { tokenInfoBuilder } from '@/domain/portfolio/entities/__tests__/token-info.builder';
@@ -13,8 +12,7 @@ import { getAddress } from 'viem';
 
 describe('PortfolioRepository', () => {
   let repository: PortfolioRepository;
-  let mockDefaultApi: jest.MockedObjectDeep<IPortfolioApi>;
-  let mockZerionApi: jest.MockedObjectDeep<IPortfolioApi>;
+  let mockPortfolioApi: jest.MockedObjectDeep<IPortfolioApi>;
   let mockCacheService: jest.MockedObjectDeep<ICacheService>;
   let mockConfigService: jest.MockedObjectDeep<IConfigurationService>;
 
@@ -24,11 +22,7 @@ describe('PortfolioRepository', () => {
   beforeEach(() => {
     jest.resetAllMocks();
 
-    mockDefaultApi = {
-      getPortfolio: jest.fn(),
-    } as jest.MockedObjectDeep<IPortfolioApi>;
-
-    mockZerionApi = {
+    mockPortfolioApi = {
       getPortfolio: jest.fn(),
     } as jest.MockedObjectDeep<IPortfolioApi>;
 
@@ -49,8 +43,7 @@ describe('PortfolioRepository', () => {
     } as unknown as jest.MockedObjectDeep<IConfigurationService>;
 
     repository = new PortfolioRepository(
-      mockDefaultApi,
-      mockZerionApi,
+      mockPortfolioApi,
       mockCacheService,
       mockConfigService,
     );
@@ -71,17 +64,16 @@ describe('PortfolioRepository', () => {
         const result = await repository.getPortfolio({
           address,
           fiatCode,
-          provider: PortfolioProvider.ZERION,
         });
 
         expect(result).toEqual(cachedPortfolio);
-        expect(mockZerionApi.getPortfolio).not.toHaveBeenCalled();
+        expect(mockPortfolioApi.getPortfolio).not.toHaveBeenCalled();
       });
 
       it('should fetch and cache portfolio if not cached', async () => {
         const portfolio = portfolioBuilder().build();
         mockCacheService.hGet.mockResolvedValue(undefined);
-        mockZerionApi.getPortfolio.mockResolvedValue(rawify(portfolio));
+        mockPortfolioApi.getPortfolio.mockResolvedValue(rawify(portfolio));
 
         const result = await repository.getPortfolio({
           address,
@@ -89,7 +81,7 @@ describe('PortfolioRepository', () => {
         });
 
         expect(result).toEqual(portfolio);
-        expect(mockZerionApi.getPortfolio).toHaveBeenCalledWith({
+        expect(mockPortfolioApi.getPortfolio).toHaveBeenCalledWith({
           address,
           fiatCode,
           chainIds: undefined,
@@ -99,7 +91,6 @@ describe('PortfolioRepository', () => {
         const cacheDir = CacheRouter.getPortfolioCacheDir({
           address,
           fiatCode,
-          provider: 'zerion',
         });
 
         expect(mockCacheService.hSet).toHaveBeenCalledWith(
@@ -133,7 +124,7 @@ describe('PortfolioRepository', () => {
           .build();
 
         mockCacheService.hGet.mockResolvedValue(undefined);
-        mockZerionApi.getPortfolio.mockResolvedValue(rawify(portfolio));
+        mockPortfolioApi.getPortfolio.mockResolvedValue(rawify(portfolio));
 
         const result = await repository.getPortfolio({
           address,
@@ -166,7 +157,7 @@ describe('PortfolioRepository', () => {
           .build();
 
         mockCacheService.hGet.mockResolvedValue(undefined);
-        mockZerionApi.getPortfolio.mockResolvedValue(rawify(portfolio));
+        mockPortfolioApi.getPortfolio.mockResolvedValue(rawify(portfolio));
 
         const result = await repository.getPortfolio({
           address,
@@ -192,7 +183,7 @@ describe('PortfolioRepository', () => {
           .build();
 
         mockCacheService.hGet.mockResolvedValue(undefined);
-        mockZerionApi.getPortfolio.mockResolvedValue(rawify(portfolio));
+        mockPortfolioApi.getPortfolio.mockResolvedValue(rawify(portfolio));
 
         const result = await repository.getPortfolio({
           address,
@@ -228,7 +219,7 @@ describe('PortfolioRepository', () => {
           .build();
 
         mockCacheService.hGet.mockResolvedValue(undefined);
-        mockZerionApi.getPortfolio.mockResolvedValue(rawify(portfolio));
+        mockPortfolioApi.getPortfolio.mockResolvedValue(rawify(portfolio));
 
         const result = await repository.getPortfolio({
           address,
@@ -248,7 +239,6 @@ describe('PortfolioRepository', () => {
 
         const cacheKey = CacheRouter.getPortfolioCacheKey({
           address,
-          provider: 'zerion',
         });
 
         expect(mockCacheService.deleteByKey).toHaveBeenCalledWith(cacheKey);

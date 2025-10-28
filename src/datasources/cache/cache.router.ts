@@ -923,18 +923,13 @@ export class CacheRouter {
     );
   }
 
-  static getPortfolioCacheKey(args: {
-    address: Address;
-    provider?: string;
-  }): string {
-    const provider = args.provider || 'zerion';
-    return `${CacheRouter.PORTFOLIO_KEY}_${args.address}_${provider}`;
+  static getPortfolioCacheKey(args: { address: Address }): string {
+    return `${CacheRouter.PORTFOLIO_KEY}_${args.address}_zerion`;
   }
 
   static getPortfolioCacheDir(args: {
     address: Address;
     fiatCode: string;
-    provider?: string;
   }): CacheDir {
     return new CacheDir(CacheRouter.getPortfolioCacheKey(args), args.fiatCode);
   }
