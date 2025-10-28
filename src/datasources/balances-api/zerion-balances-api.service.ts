@@ -99,6 +99,13 @@ export class ZerionBalancesApi implements IBalancesApi {
     safeAddress: Address;
     fiatCode: string;
   }): Promise<Raw<Array<Balance>>> {
+    if (!this.apiKey) {
+      throw new DataSourceError(
+        'Zerion API key is not configured. Set ZERION_API_KEY environment variable.',
+        503,
+      );
+    }
+
     if (!this.fiatCodes.includes(args.fiatCode.toUpperCase())) {
       throw new DataSourceError(
         `Unsupported currency code: ${args.fiatCode}`,
@@ -170,6 +177,13 @@ export class ZerionBalancesApi implements IBalancesApi {
     limit?: number;
     offset?: number;
   }): Promise<Raw<Page<Collectible>>> {
+    if (!this.apiKey) {
+      throw new DataSourceError(
+        'Zerion API key is not configured. Set ZERION_API_KEY environment variable.',
+        503,
+      );
+    }
+
     const cacheDir = CacheRouter.getZerionCollectiblesCacheDir({
       ...args,
       chainId: args.chain.chainId,

@@ -74,6 +74,13 @@ export class ZerionPositionsApi implements IPositionsApi {
     fiatCode: string;
     refresh?: string;
   }): Promise<Raw<Array<Position>>> {
+    if (!this.apiKey) {
+      throw new DataSourceError(
+        'Zerion API key is not configured. Set ZERION_API_KEY environment variable.',
+        503,
+      );
+    }
+
     if (!this.fiatCodes.includes(args.fiatCode.toUpperCase())) {
       throw new DataSourceError(
         `Unsupported currency code: ${args.fiatCode}`,
