@@ -16,79 +16,21 @@ import { DataSourceError } from '@/domain/errors/data-source.error';
 import { rawify, type Raw } from '@/validation/entities/raw.entity';
 import type { ZerionBalance } from '@/datasources/balances-api/entities/zerion-balance.entity';
 import { ZerionBalancesSchema } from '@/datasources/balances-api/entities/zerion-balance.entity';
+import { ZerionChainsSchema } from '@/datasources/balances-api/entities/zerion-chain.entity';
 import { ZodError } from 'zod';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
-
-const ZERION_NETWORK_TO_CHAIN_ID_MAPPING: Record<string, string> = {
-  '0g': '16661',
-  abstract: '2741',
-  ape: '33139',
-  arbitrum: '42161',
-  aurora: '1313161554',
-  avalanche: '43114',
-  base: '8453',
-  berachain: '80094',
-  'binance-smart-chain': '56',
-  bsc: '56',
-  blast: '81457',
-  bob: '60808',
-  celo: '42220',
-  'cronos-zkevm': '388',
-  cyber: '7560',
-  degen: '666666666',
-  ethereum: '1',
-  fantom: '250',
-  fraxtal: '252',
-  gnosis: '100',
-  'gravity-alpha': '1625',
-  hyperevm: '999',
-  ink: '57073',
-  katana: '747474',
-  lens: '232',
-  linea: '59144',
-  lisk: '1135',
-  'manta-pacific': '169',
-  mantle: '5000',
-  'metis-andromeda': '1088',
-  mode: '34443',
-  okbchain: '196',
-  opbnb: '204',
-  optimism: '10',
-  plasma: '9745',
-  polygon: '137',
-  'polygon-zkevm': '1101',
-  polynomial: '8008',
-  rari: '1380012617',
-  're-al': '111188',
-  redstone: '690',
-  ronin: '2020',
-  scroll: '534352',
-  sei: '1329',
-  solana: '101',
-  somnia: '5031',
-  soneium: '1868',
-  sonic: '146',
-  swellchain: '1923',
-  taiko: '167000',
-  tomochain: '88',
-  unichain: '130',
-  wonder: '9637',
-  world: '480',
-  xdai: '100',
-  'xinfin-xdc': '50',
-  zero: '543210',
-  zkcandy: '320',
-  'zklink-nova': '810180',
-  zksync: '324',
-  'zksync-era': '324',
-  zora: '7777777',
-};
+import {
+  CacheService,
+  ICacheService,
+} from '@/datasources/cache/cache.service.interface';
+import { CacheRouter } from '@/datasources/cache/cache.router';
 
 @Injectable()
 export class ZerionPortfolioApi implements IPortfolioApi {
   private readonly apiKey: string | undefined;
   private readonly baseUri: string;
   private readonly fiatCodes: Array<string>;
+  private readonly chainsCacheTtlSeconds = 86400;
 
   constructor(
     @Inject(NetworkService) private readonly networkService: INetworkService,
@@ -97,6 +39,7 @@ export class ZerionPortfolioApi implements IPortfolioApi {
     private readonly httpErrorFactory: HttpErrorFactory,
     @Inject(LoggingService)
     private readonly loggingService: ILoggingService,
+    @Inject(CacheService) private readonly cacheService: ICacheService,
   ) {
     this.apiKey = this.configurationService.get<string>(
       'balances.providers.zerion.apiKey',
@@ -123,7 +66,7 @@ export class ZerionPortfolioApi implements IPortfolioApi {
     }
 
     const positions = await this._fetchPositions(args);
-    return this._buildPortfolio(positions);
+    return await this._buildPortfolio(positions);
   }
 
   private async _fetchPositions(args: {
@@ -164,7 +107,9 @@ export class ZerionPortfolioApi implements IPortfolioApi {
     }
   }
 
-  private _buildPortfolio(positions: Array<ZerionBalance>): Raw<Portfolio> {
+  private async _buildPortfolio(
+    positions: Array<ZerionBalance>,
+  ): Promise<Raw<Portfolio>> {
     const displayablePositions = positions.filter(
       (p) => p.attributes.flags.displayable && !p.attributes.flags.is_trash,
     );
@@ -176,8 +121,10 @@ export class ZerionPortfolioApi implements IPortfolioApi {
       (p) => p.attributes.position_type !== 'wallet',
     );
 
-    const tokenBalances = this._buildTokenBalances(walletPositions);
-    const appBalances = this._buildAppBalances(appPositions);
+    const [tokenBalances, appBalances] = await Promise.all([
+      this._buildTokenBalances(walletPositions),
+      this._buildAppBalances(appPositions),
+    ]);
 
     const totalBalanceFiat = this._calculateTotalBalance(displayablePositions);
     const totalTokenBalanceFiat = this._calculateTotalBalance(walletPositions);
@@ -192,15 +139,15 @@ export class ZerionPortfolioApi implements IPortfolioApi {
     });
   }
 
-  private _buildTokenBalances(
+  private async _buildTokenBalances(
     positions: Array<ZerionBalance>,
-  ): Array<TokenBalance> {
-    return positions
-      .map((position): TokenBalance | null => {
+  ): Promise<Array<TokenBalance>> {
+    const tokenBalances = await Promise.all(
+      positions.map(async (position): Promise<TokenBalance | null> => {
         const networkName = position.relationships?.chain?.data?.id;
         if (!networkName) return null;
 
-        const chainId = this._mapNetworkToChainId(networkName);
+        const chainId = await this._mapNetworkToChainId(networkName);
 
         const impl = position.attributes.fungible_info.implementations.find(
           (i) => i.chain_id === networkName,
@@ -238,13 +185,17 @@ export class ZerionPortfolioApi implements IPortfolioApi {
           priceChangePercentage1d:
             position.attributes.changes?.percent_1d ?? null,
         };
-      })
-      .filter((token): token is TokenBalance => token !== null);
+      }),
+    );
+
+    return tokenBalances.filter(
+      (token): token is TokenBalance => token !== null,
+    );
   }
 
-  private _buildAppBalances(
+  private async _buildAppBalances(
     positions: Array<ZerionBalance>,
-  ): Array<AppBalance> {
+  ): Promise<Array<AppBalance>> {
     const grouped = new Map<string, Array<ZerionBalance>>();
 
     for (const position of positions) {
@@ -258,32 +209,34 @@ export class ZerionPortfolioApi implements IPortfolioApi {
       grouped.get(appName)!.push(position);
     }
 
-    return Array.from(grouped.entries()).map(
-      ([appName, appPositions]): AppBalance => {
-        const appMetadata = appPositions[0].attributes.application_metadata;
+    return Promise.all(
+      Array.from(grouped.entries()).map(
+        async ([appName, appPositions]): Promise<AppBalance> => {
+          const appMetadata = appPositions[0].attributes.application_metadata;
 
-        return {
-          appInfo: {
-            name: appName,
-            logoUrl: appMetadata?.icon?.url ?? null,
-            url: appMetadata?.url ?? null,
-          },
-          balanceFiat: this._calculatePositionsBalance(appPositions),
-          positions: this._buildAppPositions(appPositions),
-        };
-      },
+          return {
+            appInfo: {
+              name: appName,
+              logoUrl: appMetadata?.icon?.url ?? null,
+              url: appMetadata?.url ?? null,
+            },
+            balanceFiat: this._calculatePositionsBalance(appPositions),
+            positions: await this._buildAppPositions(appPositions),
+          };
+        },
+      ),
     );
   }
 
-  private _buildAppPositions(
+  private async _buildAppPositions(
     positions: Array<ZerionBalance>,
-  ): Array<AppPosition> {
-    return positions
-      .map((position): AppPosition | null => {
+  ): Promise<Array<AppPosition>> {
+    const appPositions = await Promise.all(
+      positions.map(async (position): Promise<AppPosition | null> => {
         const networkName = position.relationships?.chain?.data?.id;
         if (!networkName) return null;
 
-        const chainId = this._mapNetworkToChainId(networkName);
+        const chainId = await this._mapNetworkToChainId(networkName);
 
         const impl = position.attributes.fungible_info.implementations.find(
           (i) => i.chain_id === networkName,
@@ -319,8 +272,10 @@ export class ZerionPortfolioApi implements IPortfolioApi {
           priceChangePercentage1d:
             position.attributes.changes?.percent_1d ?? null,
         };
-      })
-      .filter((pos): pos is AppPosition => pos !== null);
+      }),
+    );
+
+    return appPositions.filter((pos): pos is AppPosition => pos !== null);
   }
 
   private _calculateTotalBalance(positions: Array<ZerionBalance>): number {
@@ -335,8 +290,64 @@ export class ZerionPortfolioApi implements IPortfolioApi {
     }, 0);
   }
 
-  private _mapNetworkToChainId(network: string): string {
-    const chainId = ZERION_NETWORK_TO_CHAIN_ID_MAPPING[network.toLowerCase()];
+  private async _getCachedChainMapping(): Promise<Record<
+    string,
+    string
+  > | null> {
+    const cacheDir = new CacheRouter().getZerionChainsCacheDir();
+    const cached = await this.cacheService.hGet(cacheDir);
+
+    if (!cached) {
+      return null;
+    }
+
+    return JSON.parse(cached);
+  }
+
+  private async _fetchAndCacheChainMapping(): Promise<Record<string, string>> {
+    const url = `${this.baseUri}/v1/chains`;
+    const networkRequest = {
+      headers: { Authorization: `Basic ${this.apiKey}` },
+    };
+
+    const response = await this.networkService
+      .get({ url, networkRequest })
+      .then(({ data }) => ZerionChainsSchema.parse(data));
+
+    const mapping: Record<string, string> = {};
+    for (const chain of response.data) {
+      const networkName = chain.id;
+      const chainId = chain.attributes.external_id;
+      mapping[networkName] = chainId;
+    }
+
+    const cacheDir = new CacheRouter().getZerionChainsCacheDir();
+    await this.cacheService.hSet(
+      cacheDir,
+      JSON.stringify(mapping),
+      this.chainsCacheTtlSeconds,
+    );
+
+    return mapping;
+  }
+
+  private async _getChainMapping(): Promise<Record<string, string>> {
+    const cached = await this._getCachedChainMapping();
+    if (cached) {
+      return cached;
+    }
+
+    try {
+      return await this._fetchAndCacheChainMapping();
+    } catch (error) {
+      this.loggingService.error(`Failed to fetch Zerion chains: ${error}`);
+      return {};
+    }
+  }
+
+  private async _mapNetworkToChainId(network: string): Promise<string> {
+    const mapping = await this._getChainMapping();
+    const chainId = mapping[network.toLowerCase()];
 
     if (!chainId) {
       this.loggingService.warn(

@@ -75,6 +75,7 @@ export class CacheRouter {
   private static readonly ZERION_BALANCES_KEY = 'zerion_balances';
   private static readonly ZERION_COLLECTIBLES_KEY = 'zerion_collectibles';
   private static readonly ZERION_POSITIONS_KEY = 'zerion_positions';
+  private static readonly ZERION_CHAINS_KEY = 'zerion_chains';
   private static readonly PORTFOLIO_KEY = 'portfolio';
   private static readonly ORM_QUERY_CACHE_KEY = 'orm_query_cache';
   private static readonly TRANSACTIONS_EXPORT_KEY = 'transactions_export';
@@ -936,5 +937,9 @@ export class CacheRouter {
     provider?: string;
   }): CacheDir {
     return new CacheDir(CacheRouter.getPortfolioCacheKey(args), args.fiatCode);
+  }
+
+  getZerionChainsCacheDir(): CacheDir {
+    return new CacheDir(CacheRouter.ZERION_CHAINS_KEY, 'mapping');
   }
 }
