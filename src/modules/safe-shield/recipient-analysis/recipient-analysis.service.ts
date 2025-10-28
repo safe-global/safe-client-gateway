@@ -208,7 +208,7 @@ export class RecipientAnalysisService {
 
     const recipientActivity = activityResult
       ? { RECIPIENT_ACTIVITY: [activityResult] }
-      : undefined;
+      : {};
 
     return {
       RECIPIENT_INTERACTION: [interactionResult],

@@ -260,7 +260,7 @@ describe('RecipientAnalysisService', () => {
               severity: 'WARN',
               type: 'LOW_ACTIVITY',
               title: 'Low activity recipient',
-              description: 'This address has low activity.',
+              description: 'This address has few transactions.',
             },
           ],
         },
@@ -345,7 +345,7 @@ describe('RecipientAnalysisService', () => {
               severity: 'WARN',
               type: 'LOW_ACTIVITY',
               title: 'Low activity recipient',
-              description: 'This address has low activity.',
+              description: 'This address has few transactions.',
             },
           ],
         },
@@ -853,7 +853,7 @@ describe('RecipientAnalysisService', () => {
         severity: 'WARN',
         type: 'LOW_ACTIVITY',
         title: 'Low activity recipient',
-        description: 'This address has low activity.',
+        description: 'This address has few transactions.',
       });
       expect(isSafe).toBe(true);
 
@@ -973,7 +973,7 @@ describe('RecipientAnalysisService', () => {
             severity: 'WARN',
             type: 'LOW_ACTIVITY',
             title: 'Low activity recipient',
-            description: 'This address has low activity.',
+            description: 'This address has few transactions.',
           },
         ],
       });
@@ -1071,7 +1071,7 @@ describe('RecipientAnalysisService', () => {
             severity: 'WARN',
             type: 'LOW_ACTIVITY',
             title: 'Low activity recipient',
-            description: 'This address has low activity.',
+            description: 'This address has few transactions.',
           },
         ],
       });

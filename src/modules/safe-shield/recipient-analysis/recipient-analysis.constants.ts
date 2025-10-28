@@ -69,5 +69,5 @@ export const DESCRIPTION_MAPPING: Record<
     'app.safe.global does not support the network. Unless you have a wallet deployed there, we recommend not to bridge. Funds sent may be inaccessible.',
   DIFFERENT_SAFE_SETUP: () =>
     'Your Safe exists on the target chain but with a different configuration. Review carefully before proceeding. Funds sent may be inaccessible if the setup is incorrect.',
-  LOW_ACTIVITY: () => 'This address has low activity.',
+  LOW_ACTIVITY: () => 'This address has few transactions.',
 };

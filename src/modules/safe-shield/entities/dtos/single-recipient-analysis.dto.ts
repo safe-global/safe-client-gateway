@@ -55,7 +55,7 @@ export class SingleRecipientAnalysisDto
         severity: 'WARN',
         type: 'LOW_ACTIVITY',
         title: 'Low activity recipient',
-        description: 'This address has low activity.',
+        description: 'This address has few transactions.',
       },
     ],
   })
