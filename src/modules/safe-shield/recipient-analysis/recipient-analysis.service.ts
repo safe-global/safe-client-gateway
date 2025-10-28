@@ -66,6 +66,7 @@ export class RecipientAnalysisService {
     '1.4.1',
     '1.3.0',
   ] as const;
+  private static readonly LOW_ACTIVITY_THRESHOLD = 5;
 
   constructor(
     @Inject(ITransactionApiManager)
@@ -265,19 +266,19 @@ export class RecipientAnalysisService {
     [AnalysisResult<RecipientStatus | CommonStatus> | undefined, boolean]
   > {
     const { transactionApi, recipient } = args;
-    let isSafe: boolean = true;
+    let isSafe: boolean = false;
     try {
       const response = await transactionApi.getSafe(recipient);
       const { nonce } = SafeSchema.parse(response);
+      isSafe = true;
 
       return [
-        nonce < 5
+        nonce < RecipientAnalysisService.LOW_ACTIVITY_THRESHOLD
           ? this.mapToAnalysisResult({ type: 'LOW_ACTIVITY' })
           : undefined,
         isSafe,
       ];
     } catch (error) {
-      isSafe = false;
       // Not found = it is not a Safe
       if (error instanceof DataSourceError && error.code === 404) {
         return [undefined, isSafe];

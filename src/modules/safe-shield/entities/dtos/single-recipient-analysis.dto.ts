@@ -47,7 +47,7 @@ export class SingleRecipientAnalysisDto
   @ApiPropertyOptional({
     description:
       'Analysis results related to recipient activity. ' +
-      'Shows whether this is a low activity recipient.' +
+      'Shows whether this is a low activity recipient. ' +
       '(Available only for Safes)',
     type: [SingleRecipientAnalysisResultDto],
     example: [
