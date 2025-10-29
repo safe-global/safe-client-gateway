@@ -113,7 +113,10 @@ describe('Positions Controller', () => {
       expect(response.body).toEqual([
         {
           protocol: 'aave',
-          protocol_metadata: applicationMetadata,
+          protocol_metadata: {
+            name: applicationMetadata.name,
+            icon: applicationMetadata.icon,
+          },
           fiatTotal: '105',
           items: [
             {
