@@ -11,7 +11,10 @@ import { rawify, type Raw } from '@/validation/entities/raw.entity';
 import type { Chart } from '@/domain/charts/entities/chart.entity';
 import { ChartPeriod } from '@/domain/charts/entities/chart.entity';
 import { ZerionChartResponseSchema } from '@/datasources/charts-api/entities/zerion-chart.entity';
+import { ZerionWalletChartResponseSchema } from '@/datasources/charts-api/entities/zerion-wallet-chart.entity';
 import { AssetRegistryService } from '@/domain/common/services/asset-registry.service';
+import type { WalletChart } from '@/domain/charts/entities/wallet-chart.entity';
+import type { Address } from 'viem';
 
 export const IChartApi = Symbol('IChartApi');
 
@@ -21,6 +24,12 @@ export interface IChartApi {
     period: ChartPeriod;
     currency: string;
   }): Promise<Raw<Chart>>;
+
+  getWalletChart(args: {
+    address: Address;
+    period: ChartPeriod;
+    currency: string;
+  }): Promise<Raw<WalletChart>>;
 }
 
 @Injectable()
@@ -92,6 +101,50 @@ export class ZerionChartApi implements IChartApi {
         beginAt: response.data.attributes.begin_at,
         endAt: response.data.attributes.end_at,
         stats: response.data.attributes.stats,
+        points: response.data.attributes.points,
+      });
+    } catch (error) {
+      if (error instanceof ZodError) {
+        throw error;
+      }
+      throw this.httpErrorFactory.from(error);
+    }
+  }
+
+  async getWalletChart(args: {
+    address: Address;
+    period: ChartPeriod;
+    currency: string;
+  }): Promise<Raw<WalletChart>> {
+    if (!this.fiatCodes.includes(args.currency.toUpperCase())) {
+      throw new DataSourceError(
+        `Unsupported currency code: ${args.currency}`,
+        400,
+      );
+    }
+
+    try {
+      const url = `${this.baseUri}/v1/wallets/${args.address}/charts/${args.period}`;
+      const params: Record<string, string> = {
+        currency: args.currency.toLowerCase(),
+      };
+
+      const networkRequest: Record<string, unknown> = { params };
+
+      if (this.apiKey) {
+        networkRequest.headers = { Authorization: `Basic ${this.apiKey}` };
+      }
+
+      const response = await this.networkService
+        .get({
+          url,
+          networkRequest,
+        })
+        .then(({ data }) => ZerionWalletChartResponseSchema.parse(data));
+
+      return rawify({
+        beginAt: response.data.attributes.begin_at,
+        endAt: response.data.attributes.end_at,
         points: response.data.attributes.points,
       });
     } catch (error) {

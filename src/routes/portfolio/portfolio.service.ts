@@ -4,13 +4,18 @@ import { IPortfolioService as DomainPortfolioService } from '@/domain/portfolio/
 import type { Portfolio as DomainPortfolio } from '@/domain/portfolio/entities/portfolio.entity';
 import { Portfolio } from '@/routes/portfolio/entities/portfolio.entity';
 import { PnL } from '@/routes/portfolio/entities/pnl.entity';
+import { WalletChart } from '@/routes/portfolio/entities/wallet-chart.entity';
 import { NULL_ADDRESS } from '@/routes/common/constants';
+import { IChartsRepository } from '@/domain/charts/charts.repository.interface';
+import { ChartPeriod } from '@/domain/charts/entities/chart.entity';
 
 @Injectable()
 export class PortfolioService {
   constructor(
     @Inject(DomainPortfolioService)
     private readonly domainPortfolioService: DomainPortfolioService,
+    @Inject(IChartsRepository)
+    private readonly chartsRepository: IChartsRepository,
   ) {}
 
   async getPortfolio(args: {
@@ -29,6 +34,23 @@ export class PortfolioService {
 
   async clearPortfolio(args: { address: Address }): Promise<void> {
     await this.domainPortfolioService.clearPortfolio(args);
+  }
+
+  async getWalletChart(args: {
+    address: Address;
+    period: ChartPeriod;
+    currency: string;
+  }): Promise<WalletChart> {
+    const domainChart = await this.chartsRepository.getWalletChart(args);
+    return new WalletChart(domainChart);
+  }
+
+  async clearWalletChart(args: {
+    address: Address;
+    period: ChartPeriod;
+    currency: string;
+  }): Promise<void> {
+    await this.chartsRepository.clearWalletChart(args);
   }
 
   private _mapToApiPortfolio(domainPortfolio: DomainPortfolio): Portfolio {

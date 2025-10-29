@@ -7,6 +7,11 @@ import {
   ChartPeriod,
 } from '@/domain/charts/entities/chart.entity';
 import {
+  WalletChart,
+  WalletChartSchema,
+} from '@/domain/charts/entities/wallet-chart.entity';
+import type { Address } from 'viem';
+import {
   CacheService,
   ICacheService,
 } from '@/datasources/cache/cache.service.interface';
@@ -73,6 +78,53 @@ export class ChartsRepository implements IChartsRepository {
   }): Promise<void> {
     const cacheDir = CacheRouter.getFungibleChartCacheDir({
       fungibleId: args.fungibleId,
+      period: args.period,
+      currency: args.currency.toLowerCase(),
+    });
+
+    await this.cacheService.deleteByKey(cacheDir.key);
+  }
+
+  async getWalletChart(args: {
+    address: Address;
+    period: ChartPeriod;
+    currency: string;
+  }): Promise<WalletChart> {
+    const cacheDir = CacheRouter.getWalletChartCacheDir({
+      address: args.address,
+      period: args.period,
+      currency: args.currency.toLowerCase(),
+    });
+
+    const cachedChart = await this.cacheService.hGet(cacheDir);
+    if (cachedChart) {
+      return WalletChartSchema.parse(JSON.parse(cachedChart));
+    }
+
+    const rawChart = await this.chartApi.getWalletChart({
+      address: args.address,
+      period: args.period,
+      currency: args.currency,
+    });
+
+    const chart = WalletChartSchema.parse(rawChart);
+
+    await this.cacheService.hSet(
+      cacheDir,
+      JSON.stringify(chart),
+      this.chartCacheTtl[args.period],
+    );
+
+    return chart;
+  }
+
+  async clearWalletChart(args: {
+    address: Address;
+    period: ChartPeriod;
+    currency: string;
+  }): Promise<void> {
+    const cacheDir = CacheRouter.getWalletChartCacheDir({
+      address: args.address,
       period: args.period,
       currency: args.currency.toLowerCase(),
     });

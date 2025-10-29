@@ -80,6 +80,7 @@ export class CacheRouter {
   private static readonly PORTFOLIO_POSITIONS_KEY = 'portfolio_positions';
   private static readonly PORTFOLIO_PNL_KEY = 'portfolio_pnl';
   private static readonly FUNGIBLE_CHART_KEY = 'fungible_chart';
+  private static readonly WALLET_CHART_KEY = 'wallet_chart';
   private static readonly ORM_QUERY_CACHE_KEY = 'orm_query_cache';
   private static readonly TRANSACTIONS_EXPORT_KEY = 'transactions_export';
   private static readonly CONTRACT_ANALYSIS_KEY = 'contract_analysis';
@@ -1002,5 +1003,21 @@ export class CacheRouter {
     currency: string;
   }): CacheDir {
     return new CacheDir(CacheRouter.getFungibleChartCacheKey(args), '');
+  }
+
+  static getWalletChartCacheKey(args: {
+    address: Address;
+    period: string;
+    currency: string;
+  }): string {
+    return `${CacheRouter.WALLET_CHART_KEY}_${args.address}_${args.period}_${args.currency}`;
+  }
+
+  static getWalletChartCacheDir(args: {
+    address: Address;
+    period: string;
+    currency: string;
+  }): CacheDir {
+    return new CacheDir(CacheRouter.getWalletChartCacheKey(args), '');
   }
 }

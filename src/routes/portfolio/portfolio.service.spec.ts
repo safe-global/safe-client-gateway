@@ -14,6 +14,7 @@ import { getAddress } from 'viem';
 describe('PortfolioService', () => {
   let service: PortfolioService;
   let mockDomainService: jest.MockedObjectDeep<DomainPortfolioService>;
+  let mockChartsRepository: any;
 
   beforeEach(() => {
     jest.resetAllMocks();
@@ -23,7 +24,12 @@ describe('PortfolioService', () => {
       clearPortfolio: jest.fn(),
     } as jest.MockedObjectDeep<DomainPortfolioService>;
 
-    service = new PortfolioService(mockDomainService);
+    mockChartsRepository = {
+      getWalletChart: jest.fn(),
+      clearWalletChart: jest.fn(),
+    };
+
+    service = new PortfolioService(mockDomainService, mockChartsRepository);
   });
 
   describe('getPortfolio', () => {

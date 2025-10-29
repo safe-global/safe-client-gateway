@@ -22,6 +22,8 @@ import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { ChainIdsSchema } from '@/routes/portfolio/entities/schemas/chain-ids.schema';
 import { ProviderValidationPipe } from '@/routes/portfolio/pipes/provider-validation.pipe';
 import { PortfolioProvider } from '@/domain/portfolio/entities/portfolio-provider.enum';
+import { WalletChart } from '@/routes/portfolio/entities/wallet-chart.entity';
+import { ChartPeriod } from '@/domain/charts/entities/chart.entity';
 import type { Address } from 'viem';
 
 @ApiTags('portfolio')
@@ -123,5 +125,79 @@ export class PortfolioController {
     address: Address,
   ): Promise<void> {
     await this.portfolioService.clearPortfolio({ address });
+  }
+
+  @ApiOperation({
+    summary: 'Get wallet chart',
+    description:
+      'Retrieves historical portfolio value chart data for a wallet address over a specified time period.',
+  })
+  @ApiParam({
+    name: 'address',
+    type: 'string',
+    description: 'Wallet address (0x prefixed hex string)',
+  })
+  @ApiParam({
+    name: 'period',
+    enum: ChartPeriod,
+    description: 'Time period for the chart data',
+  })
+  @ApiQuery({
+    name: 'currency',
+    required: false,
+    type: String,
+    description: 'Fiat currency code for value conversion (e.g., USD, EUR)',
+    example: 'USD',
+  })
+  @ApiOkResponse({ type: WalletChart })
+  @Get('/portfolio/:address/chart/:period')
+  async getWalletChart(
+    @Param('address', new ValidationPipe(AddressSchema))
+    address: Address,
+    @Param('period') period: ChartPeriod,
+    @Query('currency', new DefaultValuePipe('USD')) currency: string,
+  ): Promise<WalletChart> {
+    return this.portfolioService.getWalletChart({
+      address,
+      period,
+      currency,
+    });
+  }
+
+  @ApiOperation({
+    summary: 'Clear wallet chart cache',
+    description:
+      'Clears the cached wallet chart data for a specific address and period',
+  })
+  @ApiParam({
+    name: 'address',
+    type: 'string',
+    description: 'Wallet address (0x prefixed hex string)',
+  })
+  @ApiParam({
+    name: 'period',
+    enum: ChartPeriod,
+    description: 'Time period',
+  })
+  @ApiQuery({
+    name: 'currency',
+    required: false,
+    type: String,
+    description: 'Fiat currency code',
+    example: 'USD',
+  })
+  @Delete('/portfolio/:address/chart/:period')
+  @HttpCode(204)
+  async clearWalletChart(
+    @Param('address', new ValidationPipe(AddressSchema))
+    address: Address,
+    @Param('period') period: ChartPeriod,
+    @Query('currency', new DefaultValuePipe('USD')) currency: string,
+  ): Promise<void> {
+    await this.portfolioService.clearWalletChart({
+      address,
+      period,
+      currency,
+    });
   }
 }

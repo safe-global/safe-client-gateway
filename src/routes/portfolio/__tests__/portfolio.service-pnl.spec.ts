@@ -9,6 +9,7 @@ import { getAddress } from 'viem';
 describe('PortfolioService - PnL Mapping', () => {
   let service: PortfolioService;
   let mockDomainPortfolioService: jest.MockedObjectDeep<IDomainPortfolioService>;
+  let mockChartsRepository: any;
 
   beforeEach(() => {
     jest.resetAllMocks();
@@ -18,7 +19,15 @@ describe('PortfolioService - PnL Mapping', () => {
       clearPortfolio: jest.fn(),
     } as jest.MockedObjectDeep<IDomainPortfolioService>;
 
-    service = new PortfolioService(mockDomainPortfolioService);
+    mockChartsRepository = {
+      getWalletChart: jest.fn(),
+      clearWalletChart: jest.fn(),
+    };
+
+    service = new PortfolioService(
+      mockDomainPortfolioService,
+      mockChartsRepository,
+    );
   });
 
   describe('getPortfolio', () => {
