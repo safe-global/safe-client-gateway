@@ -9,7 +9,7 @@ export const AppBalanceAppInfoSchema = z.object({
 
 export const AppBalanceSchema = z.object({
   appInfo: AppBalanceAppInfoSchema,
-  balanceFiat: z.number().nullish().default(null),
+  balanceFiat: z.number(),
   positions: AppPositionsSchema,
 });
 

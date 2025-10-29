@@ -1,4 +1,4 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty } from '@nestjs/swagger';
 import { AppPosition } from '@/routes/portfolio/entities/app-position.entity';
 
 export class AppBalanceAppInfo {
@@ -7,21 +7,21 @@ export class AppBalanceAppInfo {
   })
   name!: string;
 
-  @ApiPropertyOptional({
+  @ApiProperty({
     type: 'string',
     format: 'uri',
     description: 'Application logo URL (HTTPS)',
     nullable: true,
   })
-  logoUrl!: string | null;
+  logoUrl: string | null = null;
 
-  @ApiPropertyOptional({
+  @ApiProperty({
     type: 'string',
     format: 'uri',
     description: 'Application URL (HTTPS)',
     nullable: true,
   })
-  url!: string | null;
+  url: string | null = null;
 }
 
 export class AppBalance {
@@ -31,12 +31,11 @@ export class AppBalance {
   })
   appInfo!: AppBalanceAppInfo;
 
-  @ApiPropertyOptional({
+  @ApiProperty({
     type: 'number',
     description: 'Total balance in fiat currency across all positions',
-    nullable: true,
   })
-  balanceFiat!: number | null;
+  balanceFiat!: number;
 
   @ApiProperty({
     description: 'List of positions in this app',
