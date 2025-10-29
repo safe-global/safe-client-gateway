@@ -1,4 +1,4 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty } from '@nestjs/swagger';
 import { PortfolioTokenInfo } from '@/routes/portfolio/entities/token-info.entity';
 
 export class TokenBalance {
