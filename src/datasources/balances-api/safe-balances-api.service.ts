@@ -21,7 +21,7 @@ import {
   getAssetPricesSchema,
 } from '@/datasources/balances-api/entities/asset-price.entity';
 import { ZodError } from 'zod';
-import type { Address } from 'viem';
+import { type Address, isAddressEqual, zeroAddress } from 'viem';
 
 @Injectable()
 export class SafeBalancesApi implements IBalancesApi {
@@ -108,6 +108,28 @@ export class SafeBalancesApi implements IBalancesApi {
     }
   }
 
+  /**
+   * Retrieves the balance of a specific token for a Safe address without caching or priceing data.
+   *
+   * This method bypasses the standard caching and omits fiat pricing data to optimize performance
+   * for relay operations that only require token balance validation. Unlike {@link getBalances},
+   * this method makes a direct network call and returns null pricing fields to avoid unnecessary
+   * API calls to price providers.
+   *
+   * Primary use case: No-fee campaign relayer validation where only token balance thresholds matter,
+   * not fiat conversions or historical price data.
+   *
+   * @param {Object} args - Configuration object for balance retrieval
+   * @param {Address} args.safeAddress - The Safe contract address to query
+   * @param {string} args.fiatCode - Fiat currency code (unused but required for interface compatibility)
+   * @param {Chain} args.chain - Blockchain network configuration
+   * @param {Address} args.tokenAddress - Specific token contract address to retrieve balance for
+   * @param {boolean} [args.trusted] - Optional filter for trusted tokens only
+   * @param {boolean} [args.excludeSpam] - Optional filter to exclude spam tokens
+   * @returns {Promise<Raw<Balance> | null>} Promise resolving to the token balance or null if token not found
+   * @throws {ZodError} When API response fails schema validation
+   * @throws {HttpError} When network request fails
+   */
   async getBalance(args: {
     safeAddress: Address;
     fiatCode: string;
@@ -134,18 +156,21 @@ export class SafeBalancesApi implements IBalancesApi {
 
       const balance = data.find(
         (balance) =>
-          balance.tokenAddress?.toLowerCase() ===
-          args.tokenAddress.toLowerCase(),
+          (balance.tokenAddress &&
+            isAddressEqual(balance.tokenAddress, args.tokenAddress)) ||
+          (balance.tokenAddress === null &&
+            isAddressEqual(args.tokenAddress, zeroAddress)),
       );
 
       if (!balance) {
         return null;
       }
 
-      return this._mapBalances({
-        balances: [balance],
-        fiatCode: args.fiatCode,
-        chain: args.chain,
+      return rawify({
+        ...balance,
+        fiatBalance: null,
+        fiatBalance24hChange: null,
+        fiatConversion: null,
       });
     } catch (error) {
       if (error instanceof ZodError) {

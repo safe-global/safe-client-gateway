@@ -220,7 +220,7 @@ export class NoFeeCampaignRelayer implements IRelayer {
       const tokenDecimals = balance.tokenInfo.decimals;
       const balanceInWei = BigInt(balance.balance);
       const tokenBalance = Number(balanceInWei) / Math.pow(10, tokenDecimals);
-
+      // TODO: change to bigint
       return tokenBalance;
     } catch (error) {
       // If we fail to get token balance, return 0 (safest fallback)
