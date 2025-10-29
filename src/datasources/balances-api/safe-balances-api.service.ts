@@ -119,14 +119,14 @@ export class SafeBalancesApi implements IBalancesApi {
    * Primary use case: No-fee campaign relayer validation where only token balance thresholds matter,
    * not fiat conversions or historical price data.
    *
-   * @param args - Configuration object for balance retrieval
-   * @param args.safeAddress - The Safe contract address to query
-   * @param args.fiatCode - Fiat currency code (unused but required for interface compatibility)
-   * @param args.chain - Blockchain network configuration
-   * @param args.tokenAddress - Specific token contract address to retrieve balance for
-   * @param args.trusted - Optional filter for trusted tokens only
-   * @param args.excludeSpam - Optional filter to exclude spam tokens
-   * @returns Promise resolving to the token balance or null if token not found
+   * @param {Object} args - Configuration object for balance retrieval
+   * @param {Address} args.safeAddress - The Safe contract address to query
+   * @param {string} args.fiatCode - Fiat currency code (unused but required for interface compatibility)
+   * @param {Chain} args.chain - Blockchain network configuration
+   * @param {Address} args.tokenAddress - Specific token contract address to retrieve balance for
+   * @param {boolean} [args.trusted] - Optional filter for trusted tokens only
+   * @param {boolean} [args.excludeSpam] - Optional filter to exclude spam tokens
+   * @returns {Promise<Raw<Balance> | null>} Promise resolving to the token balance or null if token not found
    * @throws {ZodError} When API response fails schema validation
    * @throws {HttpError} When network request fails
    */
