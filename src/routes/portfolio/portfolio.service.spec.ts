@@ -3,10 +3,12 @@ import type { IPortfolioService as IDomainPortfolioService } from '@/domain/port
 import { portfolioBuilder } from '@/domain/portfolio/entities/__tests__/portfolio.builder';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
+import { PortfolioMapper } from '@/routes/portfolio/portfolio.mapper';
 
 describe('PortfolioService', () => {
   let service: PortfolioService;
   let mockDomainService: jest.MockedObjectDeep<IDomainPortfolioService>;
+  let portfolioMapper: PortfolioMapper;
 
   beforeEach(() => {
     jest.resetAllMocks();
@@ -16,7 +18,9 @@ describe('PortfolioService', () => {
       clearPortfolio: jest.fn(),
     } as jest.MockedObjectDeep<IDomainPortfolioService>;
 
-    service = new PortfolioService(mockDomainService);
+    portfolioMapper = new PortfolioMapper();
+
+    service = new PortfolioService(mockDomainService, portfolioMapper);
   });
 
   describe('getPortfolio', () => {
