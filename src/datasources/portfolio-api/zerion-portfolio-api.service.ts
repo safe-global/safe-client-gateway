@@ -195,7 +195,7 @@ export class ZerionPortfolioApi implements IPortfolioApi {
                 ? ('NATIVE_TOKEN' as const)
                 : ('ERC20' as const),
           },
-          balance: position.attributes.quantity.numeric,
+          balance: position.attributes.quantity.int,
           balanceFiat: position.attributes.value ?? null,
           price: position.attributes.price ?? null,
           priceChangePercentage1d:
@@ -291,7 +291,7 @@ export class ZerionPortfolioApi implements IPortfolioApi {
             trusted: position.attributes.fungible_info.flags?.verified ?? false,
             type: 'ERC20' as const,
           },
-          balance: position.attributes.quantity.numeric,
+          balance: position.attributes.quantity.int,
           balanceFiat: position.attributes.value ?? null,
           priceChangePercentage1d:
             position.attributes.changes?.percent_1d ?? null,
