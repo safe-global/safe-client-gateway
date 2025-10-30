@@ -24,7 +24,8 @@ export class AppPosition {
   tokenInfo!: PortfolioTokenInfo;
 
   @ApiProperty({
-    description: 'Position balance',
+    description:
+      'Balance in smallest unit as string integer. Use decimals to convert.',
   })
   balance!: string;
 

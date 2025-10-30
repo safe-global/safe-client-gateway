@@ -9,7 +9,8 @@ export class TokenBalance {
   tokenInfo!: PortfolioTokenInfo;
 
   @ApiProperty({
-    description: 'Token balance (as string to avoid precision loss)',
+    description:
+      'Balance in smallest unit as string integer. Use decimals to convert.',
   })
   balance!: string;
 
