@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type { Address } from 'viem';
-import { getAddress, isAddress } from 'viem';
+import { getAddress, hexToNumber, isAddress } from 'viem';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import {
@@ -341,8 +341,11 @@ export class ZerionPortfolioApi implements IPortfolioApi {
     const mapping: Record<string, string> = {};
     for (const chain of response.data) {
       const networkName = chain.id;
-      const chainId = chain.attributes.external_id;
-      mapping[networkName] = chainId;
+      const hexChainId = chain.attributes.external_id;
+      const decimalChainId = hexToNumber(
+        hexChainId as `0x${string}`,
+      ).toString();
+      mapping[networkName] = decimalChainId;
     }
 
     const cacheDir = new CacheRouter().getZerionChainsCacheDir();
