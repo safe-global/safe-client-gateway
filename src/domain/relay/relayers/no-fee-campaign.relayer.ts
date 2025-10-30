@@ -7,6 +7,7 @@ import { LimitAddressesMapper } from '@/domain/relay/limit-addresses.mapper';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { Relay, RelaySchema } from '@/domain/relay/entities/relay.entity';
 import { RelayLimitReachedError } from '@/domain/relay/errors/relay-limit-reached.error';
+import { ExceedsMaxGasLimitError } from '@/domain/relay/errors/exceeds-max-gas-limit';
 import { BalancesService } from '@/routes/balances/balances.service';
 import {
   NoFeeCampaignConfiguration,
@@ -70,6 +71,16 @@ export class NoFeeCampaignRelayer implements IRelayer {
     const relayAddresses =
       await this.limitAddressesMapper.getLimitAddresses(args);
 
+    const maxGasLimit = BigInt(
+      this.relayConfiguration[parseInt(args.chainId)].maxGasLimit,
+    );
+
+    // Use maxGasLimit if no gasLimit provided
+    const gasLimit = args.gasLimit ?? maxGasLimit;
+    if (gasLimit > maxGasLimit) {
+      throw new ExceedsMaxGasLimitError(gasLimit, maxGasLimit);
+    }
+
     for (const address of relayAddresses) {
       const canRelay = await this.canRelay({
         chainId: args.chainId,
@@ -84,17 +95,6 @@ export class NoFeeCampaignRelayer implements IRelayer {
         this.loggingService.info(error.message);
         throw error;
       }
-    }
-
-    const maxGasLimit = BigInt(
-      this.relayConfiguration[parseInt(args.chainId)].maxGasLimit,
-    );
-
-    let gasLimit: bigint;
-    if (args.gasLimit === null || args.gasLimit > maxGasLimit) {
-      gasLimit = maxGasLimit;
-    } else {
-      gasLimit = args.gasLimit;
     }
 
     const relayResponse = await this.relayApi

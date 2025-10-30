@@ -2971,7 +2971,7 @@ describe('Relay controller', () => {
         describe('Token balance-based relay limits', () => {
           const tokenBalanceScenarios = [
             { tokens: 0, expectedLimit: 0 },
-            { tokens: faker.number.int({ min: 0, max: 50 }), expectedLimit: 1 },
+            { tokens: faker.number.int({ min: 1, max: 50 }), expectedLimit: 1 },
             {
               tokens: faker.number.int({ min: 51, max: 100 }),
               expectedLimit: 1,
@@ -3197,13 +3197,6 @@ describe('Relay controller', () => {
             },
             {
               description:
-                'should cap gasLimit at maxGasLimit when provided gasLimit exceeds maxGasLimit',
-              gasLimit: (maxGasLimit: number): number => maxGasLimit + 100000, // Exceeds max by 100k
-              expectedGasLimit: (maxGasLimit: number): number =>
-                maxGasLimit + 150_000, // maxGasLimit + buffer
-            },
-            {
-              description:
                 'should use provided gasLimit when it is less than maxGasLimit',
               gasLimit: (maxGasLimit: number): number =>
                 Math.max(1, maxGasLimit - 50000), // Below max by 50k, ensure it's positive
@@ -3314,16 +3307,74 @@ describe('Relay controller', () => {
                   .expect({ taskId });
 
                 // Verify that relay API was called with the expected gasLimit
-                if (expectedActualGasLimit === undefined) {
-                  expect(relayApiCall.gasLimit).toBeUndefined();
-                } else {
-                  expect(relayApiCall.gasLimit).toBe(
-                    expectedActualGasLimit.toString(),
-                  );
-                }
+                expect(relayApiCall.gasLimit).toBe(
+                  expectedActualGasLimit.toString(),
+                );
               });
             },
           );
+
+          it('reject tx exceeding maxGasLimit', async () => {
+            const chain = chainBuilder().with('chainId', chainId).build();
+            const safe = safeBuilder().build();
+            const safeAddress = getAddress(safe.address);
+            const data = execTransactionEncoder()
+              .with('value', faker.number.bigInt())
+              .encode();
+
+            const noFeeConfig = configurationService.get(
+              'relay.noFeeCampaign',
+            ) as NoFeeCampaignConfiguration;
+
+            // Mock BalancesService to return sufficient token balance
+            const tokenBalance = {
+              tokenAddress: noFeeConfig[parseInt(chainId)]
+                ?.safeTokenAddress as string,
+              balance: (BigInt(1000) * BigInt(10 ** 18)).toString(), // 1000 tokens
+              fiatBalance: '1000',
+              fiatConversion: '1',
+              tokenInfo: {
+                decimals: 18,
+                symbol: 'SAFE',
+                name: 'Safe Token',
+              },
+            };
+
+            balancesService.getTokenBalance = jest
+              .fn()
+              .mockResolvedValue(tokenBalance);
+
+            networkService.get.mockImplementation(({ url }) => {
+              switch (url) {
+                case `${safeConfigUrl}/api/v1/chains/${chainId}`:
+                  return Promise.resolve({
+                    data: rawify(chain),
+                    status: 200,
+                  });
+                case `${chain.transactionService}/api/v1/safes/${safeAddress}`:
+                  return Promise.resolve({
+                    data: rawify(safe),
+                    status: 200,
+                  });
+                default:
+                  return Promise.reject(`No matching rule for url: ${url}`);
+              }
+            });
+
+            const requestBody: Record<string, string> = {
+              to: safeAddress,
+              data,
+              version,
+              gasLimit: (
+                noFeeConfig[parseInt(chainId)]?.maxGasLimit + 100_000
+              ).toString(),
+            };
+
+            await request(app.getHttpServer())
+              .post(`/v1/chains/${chainId}/relay`)
+              .send(requestBody)
+              .expect(422);
+          });
         });
       },
     );
