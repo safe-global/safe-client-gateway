@@ -42,7 +42,7 @@ export class RecoveryService {
       throw new UnauthorizedException();
     }
 
-    // After after owner check to avoid unnecessary request
+    // After owner check to avoid unnecessary request
     const isEnabled = await this.safeRepository
       .getSafesByModule({
         chainId: args.chainId,
