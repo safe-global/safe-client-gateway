@@ -24,6 +24,7 @@ import {
   ICacheService,
 } from '@/datasources/cache/cache.service.interface';
 import { CacheRouter } from '@/datasources/cache/cache.router';
+import { getNumberString } from '@/domain/common/utils/utils';
 
 @Injectable()
 export class ZerionPortfolioApi implements IPortfolioApi {
@@ -137,9 +138,15 @@ export class ZerionPortfolioApi implements IPortfolioApi {
       this._buildAppBalances(appPositions),
     ]);
 
-    const totalBalanceFiat = this._calculateTotalBalance(displayablePositions);
-    const totalTokenBalanceFiat = this._calculateTotalBalance(walletPositions);
-    const totalPositionsBalanceFiat = this._calculateTotalBalance(appPositions);
+    const totalBalanceFiat = getNumberString(
+      this._calculateTotalBalance(displayablePositions),
+    );
+    const totalTokenBalanceFiat = getNumberString(
+      this._calculateTotalBalance(walletPositions),
+    );
+    const totalPositionsBalanceFiat = getNumberString(
+      this._calculateTotalBalance(appPositions),
+    );
 
     return rawify({
       totalBalanceFiat,
@@ -196,10 +203,20 @@ export class ZerionPortfolioApi implements IPortfolioApi {
                 : ('ERC20' as const),
           },
           balance: position.attributes.quantity.int,
-          balanceFiat: position.attributes.value ?? null,
-          price: position.attributes.price ?? null,
+          balanceFiat:
+            position.attributes.value == null
+              ? null
+              : getNumberString(position.attributes.value),
+          price:
+            position.attributes.price !== null &&
+            position.attributes.price !== undefined
+              ? getNumberString(position.attributes.price)
+              : null,
           priceChangePercentage1d:
-            position.attributes.changes?.percent_1d ?? null,
+            position.attributes.changes?.percent_1d !== null &&
+            position.attributes.changes?.percent_1d !== undefined
+              ? getNumberString(position.attributes.changes.percent_1d)
+              : null,
         };
       }),
     );
@@ -240,7 +257,9 @@ export class ZerionPortfolioApi implements IPortfolioApi {
               logoUrl: appMetadata?.icon?.url ?? null,
               url: appMetadata?.url ?? null,
             },
-            balanceFiat: this._calculatePositionsBalance(appPositions),
+            balanceFiat: getNumberString(
+              this._calculatePositionsBalance(appPositions),
+            ),
             positions: await this._buildAppPositions(appPositions),
           };
         },
@@ -292,9 +311,15 @@ export class ZerionPortfolioApi implements IPortfolioApi {
             type: 'ERC20' as const,
           },
           balance: position.attributes.quantity.int,
-          balanceFiat: position.attributes.value ?? null,
+          balanceFiat:
+            position.attributes.value == null
+              ? null
+              : getNumberString(position.attributes.value),
           priceChangePercentage1d:
-            position.attributes.changes?.percent_1d ?? null,
+            position.attributes.changes?.percent_1d !== null &&
+            position.attributes.changes?.percent_1d !== undefined
+              ? getNumberString(position.attributes.changes.percent_1d)
+              : null,
         };
       }),
     );

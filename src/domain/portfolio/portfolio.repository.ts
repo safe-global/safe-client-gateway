@@ -15,6 +15,7 @@ import {
 } from '@/datasources/cache/cache.service.interface';
 import { CacheRouter } from '@/datasources/cache/cache.router';
 import { IConfigurationService } from '@/config/configuration.service.interface';
+import { getNumberString } from '@/domain/common/utils/utils';
 
 @Injectable()
 export class PortfolioRepository implements IPortfolioRepository {
@@ -121,10 +122,11 @@ export class PortfolioRepository implements IPortfolioRepository {
 
         if (filteredPositions.length === 0) return null;
 
+        const sum = this._sumBalances(filteredPositions);
         return {
           ...app,
           positions: filteredPositions,
-          balanceFiat: this._sumBalances(filteredPositions),
+          balanceFiat: getNumberString(sum),
         };
       })
       .filter((app): app is NonNullable<typeof app> => app !== null);
@@ -153,14 +155,20 @@ export class PortfolioRepository implements IPortfolioRepository {
   }
 
   private _filterDustPositions(portfolio: Portfolio): Portfolio {
-    const isDustFree = (item: { balanceFiat: number | null }): boolean =>
-      !item.balanceFiat || item.balanceFiat >= this.dustThresholdUsd;
+    const isDustFree = (item: { balanceFiat: string | null }): boolean => {
+      if (!item.balanceFiat) return true;
+      const value = Number(item.balanceFiat);
+      return value >= this.dustThresholdUsd;
+    };
 
     return this._filterPortfolio(portfolio, isDustFree, isDustFree);
   }
 
-  private _sumBalances(items: Array<{ balanceFiat: number | null }>): number {
-    return items.reduce((sum, item) => sum + (item.balanceFiat ?? 0), 0);
+  private _sumBalances(items: Array<{ balanceFiat: string | null }>): number {
+    return items.reduce((sum, item) => {
+      const value = item.balanceFiat ? Number(item.balanceFiat) : 0;
+      return sum + value;
+    }, 0);
   }
 
   private _recalculateTotals(
@@ -171,9 +179,11 @@ export class PortfolioRepository implements IPortfolioRepository {
     const totalPositionsBalanceFiat = this._sumBalances(appBalances);
 
     return {
-      totalBalanceFiat: totalTokenBalanceFiat + totalPositionsBalanceFiat,
-      totalTokenBalanceFiat,
-      totalPositionsBalanceFiat,
+      totalBalanceFiat: getNumberString(
+        totalTokenBalanceFiat + totalPositionsBalanceFiat,
+      ),
+      totalTokenBalanceFiat: getNumberString(totalTokenBalanceFiat),
+      totalPositionsBalanceFiat: getNumberString(totalPositionsBalanceFiat),
       tokenBalances,
       positionBalances: appBalances,
     };

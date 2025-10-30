@@ -10,7 +10,7 @@ export function appBalanceBuilder(): IBuilder<AppBalance> {
     .with('appInfo', appInfoBuilder().build())
     .with(
       'balanceFiat',
-      faker.number.float({ min: 0, max: 100000, fractionDigits: 2 }),
+      faker.number.float({ min: 0, max: 100000, fractionDigits: 2 }).toString(),
     )
     .with('positions', [
       appPositionBuilder().build(),
