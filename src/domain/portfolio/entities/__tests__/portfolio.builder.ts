@@ -37,19 +37,19 @@ class PortfolioBuilder extends Builder<Portfolio> {
 
   private _recalculateTotals(): void {
     const totalTokenBalanceFiat = this.tokenBalances.reduce(
-      (sum, token) => sum + (token.balanceFiat ?? 0),
+      (sum, token) => sum + (token.balanceFiat ? Number(token.balanceFiat) : 0),
       0,
     );
     const totalPositionsBalanceFiat = this.positionBalances.reduce(
-      (sum, app) => sum + (app.balanceFiat ?? 0),
+      (sum, app) => sum + (app.balanceFiat ? Number(app.balanceFiat) : 0),
       0,
     );
 
-    super.with('totalTokenBalanceFiat', totalTokenBalanceFiat);
-    super.with('totalPositionsBalanceFiat', totalPositionsBalanceFiat);
+    super.with('totalTokenBalanceFiat', totalTokenBalanceFiat.toString());
+    super.with('totalPositionsBalanceFiat', totalPositionsBalanceFiat.toString());
     super.with(
       'totalBalanceFiat',
-      totalTokenBalanceFiat + totalPositionsBalanceFiat,
+      (totalTokenBalanceFiat + totalPositionsBalanceFiat).toString(),
     );
   }
 }

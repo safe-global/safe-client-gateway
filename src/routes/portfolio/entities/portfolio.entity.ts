@@ -4,23 +4,31 @@ import { AppBalance } from '@/routes/portfolio/entities/app-balance.entity';
 
 export class Portfolio {
   @ApiProperty({
-    type: 'number',
+    type: 'string',
     description:
-      'Total balance in fiat currency across all tokens and positions',
+      'Total balance in fiat currency across all tokens and positions. Decimal string without exponent notation or thousand separators.',
+    pattern: '^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$',
+    example: '954181237.094243',
   })
-  totalBalanceFiat!: number;
+  totalBalanceFiat!: string;
 
   @ApiProperty({
-    type: 'number',
-    description: 'Total balance in fiat currency for all token holdings',
+    type: 'string',
+    description:
+      'Total balance in fiat currency for all token holdings. Decimal string without exponent notation or thousand separators.',
+    pattern: '^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$',
+    example: '935542322.9685864',
   })
-  totalTokenBalanceFiat!: number;
+  totalTokenBalanceFiat!: string;
 
   @ApiProperty({
-    type: 'number',
-    description: 'Total balance in fiat currency for all app positions',
+    type: 'string',
+    description:
+      'Total balance in fiat currency for all app positions. Decimal string without exponent notation or thousand separators.',
+    pattern: '^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$',
+    example: '18638914.125656575',
   })
-  totalPositionsBalanceFiat!: number;
+  totalPositionsBalanceFiat!: string;
 
   @ApiProperty({
     description: 'List of token balances',

@@ -30,16 +30,22 @@ export class AppPosition {
   balance!: string;
 
   @ApiProperty({
-    type: 'number',
-    description: 'Balance in requested fiat currency',
+    type: 'string',
+    description:
+      'Balance in requested fiat currency. Decimal string without exponent notation or thousand separators.',
+    pattern: '^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$',
+    example: '18638914.125656575',
     nullable: true,
   })
-  balanceFiat: number | null = null;
+  balanceFiat: string | null = null;
 
   @ApiProperty({
-    type: 'number',
-    description: 'Price change as decimal (e.g., -0.0431 for -4.31%)',
+    type: 'string',
+    description:
+      'Price change as decimal (e.g., "-0.0431" for -4.31%). Decimal string without exponent notation.',
+    pattern: '^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$',
+    example: '-0.0431',
     nullable: true,
   })
-  priceChangePercentage1d: number | null = null;
+  priceChangePercentage1d: string | null = null;
 }

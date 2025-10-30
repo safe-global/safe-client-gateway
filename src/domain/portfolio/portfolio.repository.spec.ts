@@ -171,10 +171,10 @@ describe('PortfolioRepository', () => {
 
       it('should filter dust positions when excludeDust is true', async () => {
         const largeBalance = tokenBalanceBuilder()
-          .with('balanceFiat', 100)
+          .with('balanceFiat', '100')
           .build();
         const dustBalance = tokenBalanceBuilder()
-          .with('balanceFiat', 0.5)
+          .with('balanceFiat', '0.5')
           .build();
 
         const portfolio = portfolioBuilder()
@@ -192,7 +192,7 @@ describe('PortfolioRepository', () => {
         });
 
         expect(result.tokenBalances).toHaveLength(1);
-        expect(result.tokenBalances[0].balanceFiat).toBe(100);
+        expect(result.tokenBalances[0].balanceFiat).toBe('100');
       });
 
       it('should recalculate totals after filtering', async () => {
@@ -203,19 +203,19 @@ describe('PortfolioRepository', () => {
 
         const chain1Token = tokenBalanceBuilder()
           .with('tokenInfo', chain1TokenInfo)
-          .with('balanceFiat', 100)
+          .with('balanceFiat', '100')
           .build();
         const chain10Token = tokenBalanceBuilder()
           .with('tokenInfo', chain10TokenInfo)
-          .with('balanceFiat', 50)
+          .with('balanceFiat', '50')
           .build();
 
         const portfolio = portfolioBuilder()
           .with('tokenBalances', [chain1Token, chain10Token])
           .with('positionBalances', [])
-          .with('totalBalanceFiat', 150)
-          .with('totalTokenBalanceFiat', 150)
-          .with('totalPositionsBalanceFiat', 0)
+          .with('totalBalanceFiat', '150')
+          .with('totalTokenBalanceFiat', '150')
+          .with('totalPositionsBalanceFiat', '0')
           .build();
 
         mockCacheService.hGet.mockResolvedValue(undefined);
@@ -227,9 +227,9 @@ describe('PortfolioRepository', () => {
           chainIds: ['1'],
         });
 
-        expect(result.totalTokenBalanceFiat).toBe(100);
-        expect(result.totalPositionsBalanceFiat).toBe(0);
-        expect(result.totalBalanceFiat).toBe(100);
+        expect(result.totalTokenBalanceFiat).toBe('100');
+        expect(result.totalPositionsBalanceFiat).toBe('0');
+        expect(result.totalBalanceFiat).toBe('100');
       });
     });
 

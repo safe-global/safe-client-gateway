@@ -1,6 +1,9 @@
 import { z } from 'zod';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 
+const FiatStringSchema = z.string().regex(/^-?(?:0|[1-9]\d*)(?:\.\d+)?$/);
+const PercentageStringSchema = z.string().regex(/^-?(?:0|[1-9]\d*)(?:\.\d+)?$/);
+
 export const TokenBalanceTokenInfoSchema = z.object({
   address: AddressSchema.nullish().default(null),
   decimals: z.number(),
@@ -15,9 +18,9 @@ export const TokenBalanceTokenInfoSchema = z.object({
 export const TokenBalanceSchema = z.object({
   tokenInfo: TokenBalanceTokenInfoSchema,
   balance: z.string(),
-  balanceFiat: z.number().nullish().default(null),
-  price: z.number().nullish().default(null),
-  priceChangePercentage1d: z.number().nullish().default(null),
+  balanceFiat: FiatStringSchema.nullish().default(null),
+  price: FiatStringSchema.nullish().default(null),
+  priceChangePercentage1d: PercentageStringSchema.nullish().default(null),
 });
 
 export const TokenBalancesSchema = z.array(TokenBalanceSchema);
