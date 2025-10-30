@@ -65,5 +65,6 @@ export const DESCRIPTION_MAPPING: Record<
     'You are interacting with this contract for the first time.',
   KNOWN_CONTRACT: ({ interactions = 0 } = {}) =>
     `You have interacted with this contract ${interactions} time${interactions !== 1 ? 's' : ''}.`,
-  UNEXPECTED_DELEGATECALL: () => 'Unexpected delegateCall.',
+  UNEXPECTED_DELEGATECALL: () =>
+    'This transaction calls a smart contract that will be able to modify your Safe account. Learn more',
 };
