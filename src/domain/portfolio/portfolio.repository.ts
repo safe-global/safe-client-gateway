@@ -17,6 +17,11 @@ import { CacheRouter } from '@/datasources/cache/cache.router';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { getNumberString } from '@/domain/common/utils/utils';
 
+/**
+ * Portfolio repository.
+ * Handles caching, filtering (chainIds, trusted, excludeDust), and aggregation.
+ * Filters are applied after fetching from the API.
+ */
 @Injectable()
 export class PortfolioRepository implements IPortfolioRepository {
   private readonly cacheExpirationSeconds: number;
@@ -72,6 +77,11 @@ export class PortfolioRepository implements IPortfolioRepository {
     return this._applyFilters(portfolio, args);
   }
 
+  /**
+   * Clears cached portfolio for an address.
+   *
+   * @param args - Clear parameters
+   */
   async clearPortfolio(args: { address: Address }): Promise<void> {
     await this.cacheService.deleteByKey(
       CacheRouter.getPortfolioCacheKey({
@@ -80,6 +90,12 @@ export class PortfolioRepository implements IPortfolioRepository {
     );
   }
 
+  /**
+   * Applies filters to portfolio.
+   *
+   * @param portfolio - Portfolio to filter
+   * @param args - Filter options
+   */
   private _applyFilters(
     portfolio: Portfolio,
     args: {
@@ -108,32 +124,68 @@ export class PortfolioRepository implements IPortfolioRepository {
     return filteredPortfolio;
   }
 
+  /**
+   * Filters portfolio using token and position filter functions.
+   * Used by other filter functions (_filterByChains, _filterTrustedTokens, _filterDustPositions).
+   *
+   * @param portfolio - Portfolio to filter
+   * @param tokenFilter - Filter function for tokens
+   * @param positionFilter - Filter function for positions
+   */
   private _filterPortfolio(
     portfolio: Portfolio,
-    tokenPredicate: (token: TokenBalance) => boolean,
-    positionPredicate: (position: AppPosition) => boolean,
+    tokenFilter: (token: TokenBalance) => boolean,
+    positionFilter: (position: AppPosition) => boolean,
   ): Portfolio {
-    const filteredTokenBalances =
-      portfolio.tokenBalances.filter(tokenPredicate);
+    const filteredTokenBalances = portfolio.tokenBalances.filter(tokenFilter);
 
     const filteredAppBalances = portfolio.positionBalances
-      .map((app) => {
-        const filteredPositions = app.positions.filter(positionPredicate);
-
-        if (filteredPositions.length === 0) return null;
-
-        const sum = this._sumBalances(filteredPositions);
-        return {
-          ...app,
-          positions: filteredPositions,
-          balanceFiat: getNumberString(sum),
-        };
-      })
+      .map((app) => this._filterAppBalance(app, positionFilter))
       .filter((app): app is NonNullable<typeof app> => app !== null);
 
     return this._recalculateTotals(filteredTokenBalances, filteredAppBalances);
   }
 
+  /**
+   * Filters positions within an app balance, removing empty groups.
+   *
+   * @param app - App balance to filter
+   * @param positionFilter - Filter function for positions
+   * @returns Filtered app balance or null if all groups are empty
+   */
+  private _filterAppBalance(
+    app: AppBalance,
+    positionFilter: (position: AppPosition) => boolean,
+  ): AppBalance | null {
+    const filteredGroups = app.groups
+      .map((group) => {
+        const filteredItems = group.items.filter(positionFilter);
+        if (filteredItems.length === 0) return null;
+        return {
+          ...group,
+          items: filteredItems,
+        };
+      })
+      .filter((group): group is NonNullable<typeof group> => group !== null);
+
+    if (filteredGroups.length === 0) return null;
+
+    const allFilteredPositions = filteredGroups.flatMap((group) => group.items);
+    const sum = this._sumBalances(allFilteredPositions);
+
+    return {
+      ...app,
+      groups: filteredGroups,
+      balanceFiat: getNumberString(sum),
+    };
+  }
+
+  /**
+   * Filters portfolio by chain IDs.
+   *
+   * @param portfolio - Portfolio to filter
+   * @param chainIds - Chain IDs to include
+   */
   private _filterByChains(
     portfolio: Portfolio,
     chainIds: Array<string>,
@@ -146,6 +198,11 @@ export class PortfolioRepository implements IPortfolioRepository {
     );
   }
 
+  /**
+   * Filters portfolio to only include trusted tokens and positions.
+   *
+   * @param portfolio - Portfolio to filter
+   */
   private _filterTrustedTokens(portfolio: Portfolio): Portfolio {
     return this._filterPortfolio(
       portfolio,
@@ -154,6 +211,11 @@ export class PortfolioRepository implements IPortfolioRepository {
     );
   }
 
+  /**
+   * Filters out dust positions below threshold.
+   *
+   * @param portfolio - Portfolio to filter
+   */
   private _filterDustPositions(portfolio: Portfolio): Portfolio {
     const isDustFree = (item: { balanceFiat: string | null }): boolean => {
       if (!item.balanceFiat) return true;
@@ -164,6 +226,11 @@ export class PortfolioRepository implements IPortfolioRepository {
     return this._filterPortfolio(portfolio, isDustFree, isDustFree);
   }
 
+  /**
+   * Sums fiat balances from items.
+   *
+   * @param items - Items with balanceFiat property
+   */
   private _sumBalances(items: Array<{ balanceFiat: string | null }>): number {
     return items.reduce((sum, item) => {
       const value = item.balanceFiat ? Number(item.balanceFiat) : 0;
@@ -171,6 +238,12 @@ export class PortfolioRepository implements IPortfolioRepository {
     }, 0);
   }
 
+  /**
+   * Recalculates total balances from filtered token and app balances.
+   *
+   * @param tokenBalances - Filtered token balances
+   * @param appBalances - Filtered app balances
+   */
   private _recalculateTotals(
     tokenBalances: Array<TokenBalance>,
     appBalances: Array<AppBalance>,

@@ -19,6 +19,7 @@ export const AppPositionSchema = z.object({
   key: z.string(),
   type: z.string(),
   name: z.string(),
+  groupId: z.string().nullish().default(null),
   tokenInfo: AppPositionTokenInfoSchema,
   receiptTokenAddress: AddressSchema.nullish().default(null),
   balance: z.string(),
@@ -28,6 +29,15 @@ export const AppPositionSchema = z.object({
 
 export const AppPositionsSchema = z.array(AppPositionSchema);
 
+export const AppPositionGroupSchema = z.object({
+  name: z.string(),
+  items: AppPositionsSchema,
+});
+
+export const AppPositionGroupsSchema = z.array(AppPositionGroupSchema);
+
 export type AppPositionTokenInfo = z.infer<typeof AppPositionTokenInfoSchema>;
 export type AppPosition = z.infer<typeof AppPositionSchema>;
 export type AppPositions = z.infer<typeof AppPositionsSchema>;
+export type AppPositionGroup = z.infer<typeof AppPositionGroupSchema>;
+export type AppPositionGroups = z.infer<typeof AppPositionGroupsSchema>;

@@ -31,6 +31,10 @@ export function appPositionBuilder(): IBuilder<AppPosition> {
       ]),
     )
     .with('name', faker.word.words(2))
+    .with(
+      'groupId',
+      faker.datatype.boolean() ? faker.string.alphanumeric(32) : null,
+    )
     .with('tokenInfo', appPositionTokenInfoBuilder().build())
     .with(
       'receiptTokenAddress',

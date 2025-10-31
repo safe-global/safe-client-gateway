@@ -1,14 +1,16 @@
-import { PortfolioService } from '@/routes/portfolio/portfolio.service';
+import { PortfolioApiService } from '@/routes/portfolio/portfolio.service';
 import type { IPortfolioService as IDomainPortfolioService } from '@/domain/portfolio/portfolio.service.interface';
 import { portfolioBuilder } from '@/domain/portfolio/entities/__tests__/portfolio.builder';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
-import { PortfolioMapper } from '@/routes/portfolio/portfolio.mapper';
+import { PortfolioRouteMapper } from '@/routes/portfolio/portfolio.mapper';
+import { appBalanceBuilder } from '@/domain/portfolio/entities/__tests__/app-balance.builder';
+import { tokenBalanceBuilder } from '@/domain/portfolio/entities/__tests__/token-balance.builder';
 
-describe('PortfolioService', () => {
-  let service: PortfolioService;
+describe('PortfolioApiService', () => {
+  let service: PortfolioApiService;
   let mockDomainService: jest.MockedObjectDeep<IDomainPortfolioService>;
-  let portfolioMapper: PortfolioMapper;
+  let portfolioRouteMapper: PortfolioRouteMapper;
 
   beforeEach(() => {
     jest.resetAllMocks();
@@ -18,9 +20,9 @@ describe('PortfolioService', () => {
       clearPortfolio: jest.fn(),
     } as jest.MockedObjectDeep<IDomainPortfolioService>;
 
-    portfolioMapper = new PortfolioMapper();
+    portfolioRouteMapper = new PortfolioRouteMapper();
 
-    service = new PortfolioService(mockDomainService, portfolioMapper);
+    service = new PortfolioApiService(mockDomainService, portfolioRouteMapper);
   });
 
   describe('getPortfolio', () => {
@@ -45,6 +47,32 @@ describe('PortfolioService', () => {
       });
 
       expect(result).toEqual(domainPortfolio);
+    });
+
+    it('should map domain portfolio through mapper', async () => {
+      const address = getAddress(faker.finance.ethereumAddress());
+      const fiatCode = 'USD';
+
+      const tokenBalance = tokenBalanceBuilder().build();
+      const appBalance = appBalanceBuilder().build();
+
+      const domainPortfolio = portfolioBuilder()
+        .with('tokenBalances', [tokenBalance])
+        .with('positionBalances', [appBalance])
+        .build();
+
+      mockDomainService.getPortfolio.mockResolvedValue(domainPortfolio);
+
+      const result = await service.getPortfolio({
+        address,
+        fiatCode,
+      });
+
+      // Verify mapper was used - check that structure matches mapped format
+      expect(result.tokenBalances).toHaveLength(1);
+      expect(result.positionBalances).toHaveLength(1);
+      expect(result.positionBalances[0].groups).toBeDefined();
+      expect(Array.isArray(result.positionBalances[0].groups)).toBe(true);
     });
 
     it('should pass through all parameters', async () => {

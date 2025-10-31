@@ -1,4 +1,4 @@
-import { ApiExtraModels, ApiProperty, getSchemaPath } from '@nestjs/swagger';
+import { ApiExtraModels, ApiProperty } from '@nestjs/swagger';
 import {
   NativeToken,
   Erc20Token,
@@ -10,7 +10,9 @@ export class PortfolioNativeToken extends NativeToken {
   @ApiProperty({ description: 'The chain ID' })
   chainId!: string;
 
-  @ApiProperty({ description: 'The token trusted status' })
+  @ApiProperty({
+    description: 'Whether the token is trusted (spam filter)',
+  })
   trusted!: boolean;
 }
 
@@ -19,7 +21,9 @@ export class PortfolioErc20Token extends Erc20Token {
   @ApiProperty({ description: 'The chain ID' })
   chainId!: string;
 
-  @ApiProperty({ description: 'The token trusted status' })
+  @ApiProperty({
+    description: 'Whether the token is trusted (spam filter)',
+  })
   trusted!: boolean;
 }
 
@@ -28,6 +32,8 @@ export class PortfolioErc721Token extends Erc721Token {
   @ApiProperty({ description: 'The chain ID' })
   chainId!: string;
 
-  @ApiProperty({ description: 'The token trusted status' })
+  @ApiProperty({
+    description: 'Whether the token is trusted (spam filter)',
+  })
   trusted!: boolean;
 }

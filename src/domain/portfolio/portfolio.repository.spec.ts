@@ -6,6 +6,9 @@ import { CacheRouter } from '@/datasources/cache/cache.router';
 import { portfolioBuilder } from '@/domain/portfolio/entities/__tests__/portfolio.builder';
 import { tokenBalanceBuilder } from '@/domain/portfolio/entities/__tests__/token-balance.builder';
 import { tokenInfoBuilder } from '@/domain/portfolio/entities/__tests__/token-info.builder';
+import { appBalanceBuilder } from '@/domain/portfolio/entities/__tests__/app-balance.builder';
+import { appPositionBuilder } from '@/domain/portfolio/entities/__tests__/app-position.builder';
+import { appPositionGroupBuilder } from '@/domain/portfolio/entities/__tests__/app-position-group.builder';
 import { rawify } from '@/validation/entities/raw.entity';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
@@ -17,7 +20,7 @@ describe('PortfolioRepository', () => {
   let mockConfigService: jest.MockedObjectDeep<IConfigurationService>;
 
   const defaultCacheTtl = 30;
-  const defaultDustThreshold = 1.0;
+  const defaultDustThreshold = 0.001;
 
   beforeEach(() => {
     jest.resetAllMocks();
@@ -174,7 +177,7 @@ describe('PortfolioRepository', () => {
           .with('balanceFiat', '100')
           .build();
         const dustBalance = tokenBalanceBuilder()
-          .with('balanceFiat', '0.5')
+          .with('balanceFiat', '0.0005')
           .build();
 
         const portfolio = portfolioBuilder()
@@ -230,6 +233,307 @@ describe('PortfolioRepository', () => {
         expect(result.totalTokenBalanceFiat).toBe('100');
         expect(result.totalPositionsBalanceFiat).toBe('0');
         expect(result.totalBalanceFiat).toBe('100');
+      });
+
+      it('should filter position groups by chain IDs', async () => {
+        const chain1PositionTokenInfo = tokenInfoBuilder()
+          .with('chainId', '1')
+          .build();
+        const chain10PositionTokenInfo = tokenInfoBuilder()
+          .with('chainId', '10')
+          .build();
+
+        const chain1Position = appPositionBuilder()
+          .with('tokenInfo', {
+            ...chain1PositionTokenInfo,
+            type: 'ERC20' as const,
+          })
+          .with('balanceFiat', '100')
+          .build();
+        const chain10Position = appPositionBuilder()
+          .with('tokenInfo', {
+            ...chain10PositionTokenInfo,
+            type: 'ERC20' as const,
+          })
+          .with('balanceFiat', '50')
+          .build();
+
+        const group1 = appPositionGroupBuilder()
+          .with('name', 'Group 1')
+          .with('items', [chain1Position, chain10Position])
+          .build();
+
+        const appBalance = appBalanceBuilder()
+          .with('groups', [group1])
+          .with('balanceFiat', '150')
+          .build();
+
+        const portfolio = portfolioBuilder()
+          .with('tokenBalances', [])
+          .with('positionBalances', [appBalance])
+          .with('totalBalanceFiat', '150')
+          .with('totalTokenBalanceFiat', '0')
+          .with('totalPositionsBalanceFiat', '150')
+          .build();
+
+        mockCacheService.hGet.mockResolvedValue(undefined);
+        mockPortfolioApi.getPortfolio.mockResolvedValue(rawify(portfolio));
+
+        const result = await repository.getPortfolio({
+          address,
+          fiatCode,
+          chainIds: ['1'],
+        });
+
+        expect(result.positionBalances).toHaveLength(1);
+        expect(result.positionBalances[0].groups).toHaveLength(1);
+        expect(result.positionBalances[0].groups[0].items).toHaveLength(1);
+        expect(
+          result.positionBalances[0].groups[0].items[0].tokenInfo.chainId,
+        ).toBe('1');
+        expect(result.positionBalances[0].balanceFiat).toBe('100');
+      });
+
+      it('should filter position groups by trusted tokens', async () => {
+        const trustedPositionTokenInfo = tokenInfoBuilder()
+          .with('trusted', true)
+          .build();
+        const untrustedPositionTokenInfo = tokenInfoBuilder()
+          .with('trusted', false)
+          .build();
+
+        const trustedPosition = appPositionBuilder()
+          .with('tokenInfo', {
+            ...trustedPositionTokenInfo,
+            type: 'ERC20' as const,
+          })
+          .with('balanceFiat', '100')
+          .build();
+        const untrustedPosition = appPositionBuilder()
+          .with('tokenInfo', {
+            ...untrustedPositionTokenInfo,
+            type: 'ERC20' as const,
+          })
+          .with('balanceFiat', '50')
+          .build();
+
+        const group = appPositionGroupBuilder()
+          .with('name', 'Test Group')
+          .with('items', [trustedPosition, untrustedPosition])
+          .build();
+
+        const appBalance = appBalanceBuilder()
+          .with('groups', [group])
+          .with('balanceFiat', '150')
+          .build();
+
+        const portfolio = portfolioBuilder()
+          .with('tokenBalances', [])
+          .with('positionBalances', [appBalance])
+          .build();
+
+        mockCacheService.hGet.mockResolvedValue(undefined);
+        mockPortfolioApi.getPortfolio.mockResolvedValue(rawify(portfolio));
+
+        const result = await repository.getPortfolio({
+          address,
+          fiatCode,
+          trusted: true,
+        });
+
+        expect(result.positionBalances).toHaveLength(1);
+        expect(result.positionBalances[0].groups).toHaveLength(1);
+        expect(result.positionBalances[0].groups[0].items).toHaveLength(1);
+        expect(
+          result.positionBalances[0].groups[0].items[0].tokenInfo.trusted,
+        ).toBe(true);
+        expect(result.positionBalances[0].balanceFiat).toBe('100');
+      });
+
+      it('should filter dust positions from groups when excludeDust is true', async () => {
+        const largePosition = appPositionBuilder()
+          .with('balanceFiat', '100')
+          .build();
+        const dustPosition = appPositionBuilder()
+          .with('balanceFiat', '0.0005')
+          .build();
+
+        const group = appPositionGroupBuilder()
+          .with('name', 'Test Group')
+          .with('items', [largePosition, dustPosition])
+          .build();
+
+        const appBalance = appBalanceBuilder()
+          .with('groups', [group])
+          .with('balanceFiat', '100.5')
+          .build();
+
+        const portfolio = portfolioBuilder()
+          .with('tokenBalances', [])
+          .with('positionBalances', [appBalance])
+          .build();
+
+        mockCacheService.hGet.mockResolvedValue(undefined);
+        mockPortfolioApi.getPortfolio.mockResolvedValue(rawify(portfolio));
+
+        const result = await repository.getPortfolio({
+          address,
+          fiatCode,
+          excludeDust: true,
+        });
+
+        expect(result.positionBalances).toHaveLength(1);
+        expect(result.positionBalances[0].groups).toHaveLength(1);
+        expect(result.positionBalances[0].groups[0].items).toHaveLength(1);
+        expect(result.positionBalances[0].groups[0].items[0].balanceFiat).toBe(
+          '100',
+        );
+        expect(result.positionBalances[0].balanceFiat).toBe('100');
+      });
+
+      it('should remove empty groups after filtering', async () => {
+        const chain1Position = appPositionBuilder()
+          .with('tokenInfo', {
+            ...tokenInfoBuilder().with('chainId', '1').build(),
+            type: 'ERC20' as const,
+          })
+          .with('balanceFiat', '100')
+          .build();
+        const chain10Position = appPositionBuilder()
+          .with('tokenInfo', {
+            ...tokenInfoBuilder().with('chainId', '10').build(),
+            type: 'ERC20' as const,
+          })
+          .with('balanceFiat', '50')
+          .build();
+
+        const group1 = appPositionGroupBuilder()
+          .with('name', 'Group 1')
+          .with('items', [chain1Position])
+          .build();
+        const group2 = appPositionGroupBuilder()
+          .with('name', 'Group 2')
+          .with('items', [chain10Position])
+          .build();
+
+        const appBalance = appBalanceBuilder()
+          .with('groups', [group1, group2])
+          .with('balanceFiat', '150')
+          .build();
+
+        const portfolio = portfolioBuilder()
+          .with('tokenBalances', [])
+          .with('positionBalances', [appBalance])
+          .build();
+
+        mockCacheService.hGet.mockResolvedValue(undefined);
+        mockPortfolioApi.getPortfolio.mockResolvedValue(rawify(portfolio));
+
+        const result = await repository.getPortfolio({
+          address,
+          fiatCode,
+          chainIds: ['1'],
+        });
+
+        expect(result.positionBalances).toHaveLength(1);
+        expect(result.positionBalances[0].groups).toHaveLength(1);
+        expect(result.positionBalances[0].groups[0].name).toBe('Group 1');
+      });
+
+      it('should remove apps when all groups are empty after filtering', async () => {
+        const chain10Position = appPositionBuilder()
+          .with('tokenInfo', {
+            ...tokenInfoBuilder().with('chainId', '10').build(),
+            type: 'ERC20' as const,
+          })
+          .with('balanceFiat', '50')
+          .build();
+
+        const group = appPositionGroupBuilder()
+          .with('name', 'Group 1')
+          .with('items', [chain10Position])
+          .build();
+
+        const appBalance = appBalanceBuilder()
+          .with('groups', [group])
+          .with('balanceFiat', '50')
+          .build();
+
+        const portfolio = portfolioBuilder()
+          .with('tokenBalances', [])
+          .with('positionBalances', [appBalance])
+          .build();
+
+        mockCacheService.hGet.mockResolvedValue(undefined);
+        mockPortfolioApi.getPortfolio.mockResolvedValue(rawify(portfolio));
+
+        const result = await repository.getPortfolio({
+          address,
+          fiatCode,
+          chainIds: ['1'],
+        });
+
+        expect(result.positionBalances).toHaveLength(0);
+        expect(result.totalPositionsBalanceFiat).toBe('0');
+      });
+
+      it('should recalculate position totals after filtering groups', async () => {
+        const chain1Position1 = appPositionBuilder()
+          .with('tokenInfo', {
+            ...tokenInfoBuilder().with('chainId', '1').build(),
+            type: 'ERC20' as const,
+          })
+          .with('balanceFiat', '100')
+          .build();
+        const chain1Position2 = appPositionBuilder()
+          .with('tokenInfo', {
+            ...tokenInfoBuilder().with('chainId', '1').build(),
+            type: 'ERC20' as const,
+          })
+          .with('balanceFiat', '50')
+          .build();
+        const chain10Position = appPositionBuilder()
+          .with('tokenInfo', {
+            ...tokenInfoBuilder().with('chainId', '10').build(),
+            type: 'ERC20' as const,
+          })
+          .with('balanceFiat', '75')
+          .build();
+
+        const group1 = appPositionGroupBuilder()
+          .with('name', 'Group 1')
+          .with('items', [chain1Position1, chain1Position2])
+          .build();
+        const group2 = appPositionGroupBuilder()
+          .with('name', 'Group 2')
+          .with('items', [chain10Position])
+          .build();
+
+        const appBalance = appBalanceBuilder()
+          .with('groups', [group1, group2])
+          .with('balanceFiat', '225')
+          .build();
+
+        const portfolio = portfolioBuilder()
+          .with('tokenBalances', [])
+          .with('positionBalances', [appBalance])
+          .with('totalBalanceFiat', '225')
+          .with('totalTokenBalanceFiat', '0')
+          .with('totalPositionsBalanceFiat', '225')
+          .build();
+
+        mockCacheService.hGet.mockResolvedValue(undefined);
+        mockPortfolioApi.getPortfolio.mockResolvedValue(rawify(portfolio));
+
+        const result = await repository.getPortfolio({
+          address,
+          fiatCode,
+          chainIds: ['1'],
+        });
+
+        expect(result.totalPositionsBalanceFiat).toBe('150');
+        expect(result.totalBalanceFiat).toBe('150');
+        expect(result.positionBalances[0].balanceFiat).toBe('150');
       });
     });
 

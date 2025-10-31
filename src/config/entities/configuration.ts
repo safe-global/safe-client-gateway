@@ -157,32 +157,8 @@ export default () => ({
     },
     filters: {
       dustThresholdUsd: parseFloat(
-        process.env.PORTFOLIO_DUST_THRESHOLD_USD ?? '1.0',
+        process.env.PORTFOLIO_DUST_THRESHOLD_USD ?? `${0.001}`,
       ),
-    },
-    providers: {
-      zerion: {
-        apiKey: process.env.ZERION_API_KEY,
-        baseUri: process.env.ZERION_BASE_URI || 'https://api.zerion.io',
-        currencies: [
-          'usd',
-          'eur',
-          'eth',
-          'aud',
-          'btc',
-          'cad',
-          'chf',
-          'cny',
-          'gbp',
-          'inr',
-          'jpy',
-          'krw',
-          'nzd',
-          'rub',
-          'try',
-          'zar',
-        ],
-      },
     },
   },
   blockchain: {
