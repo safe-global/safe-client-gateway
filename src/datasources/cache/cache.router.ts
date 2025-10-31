@@ -934,7 +934,7 @@ export class CacheRouter {
     return new CacheDir(CacheRouter.getPortfolioCacheKey(args), args.fiatCode);
   }
 
-  getZerionChainsCacheDir(): CacheDir {
+  static getZerionChainsCacheDir(): CacheDir {
     return new CacheDir(CacheRouter.ZERION_CHAINS_KEY, 'mapping');
   }
 }
