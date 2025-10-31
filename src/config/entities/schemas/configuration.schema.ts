@@ -77,7 +77,11 @@ export const RootConfigurationSchema = z
     RELAY_PROVIDER_API_KEY_LINEA: z.string(),
     RELAY_PROVIDER_API_KEY_BLAST: z.string(),
     RELAY_PROVIDER_API_KEY_SEPOLIA: z.string(),
-    RELAY_DAILY_LIMIT_CHAIN_IDS: z.string().optional(),
+    RELAY_DAILY_LIMIT_CHAIN_IDS: z
+      .string()
+      .transform((value) => value.split(',').map((item) => item.trim()))
+      .pipe(z.array(z.string()))
+      .optional(),
     RELAY_NO_FEE_CAMPAIGN_SEPOLIA_SAFE_TOKEN_ADDRESS: z.string().optional(),
     RELAY_NO_FEE_CAMPAIGN_SEPOLIA_START_TIMESTAMP: z
       .number({ coerce: true })
@@ -94,11 +98,7 @@ export const RootConfigurationSchema = z
       .min(0)
       .optional(),
     RELAY_NO_FEE_CAMPAIGN_SEPOLIA_RELAY_RULES: relayRulesValidator,
-    RELAY_NO_FEE_CAMPAIGN_MAINNET_SAFE_TOKEN_ADDRESS: z
-      .string()
-      .transform((value) => value.split(',').map((item) => item.trim()))
-      .pipe(z.array(z.string()))
-      .optional(),
+    RELAY_NO_FEE_CAMPAIGN_MAINNET_SAFE_TOKEN_ADDRESS: z.string().optional(),
     RELAY_NO_FEE_CAMPAIGN_MAINNET_START_TIMESTAMP: z
       .number({ coerce: true })
       .int()
