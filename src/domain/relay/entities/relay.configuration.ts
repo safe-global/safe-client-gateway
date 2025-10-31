@@ -12,7 +12,8 @@ export type NoFeeCampaignConfiguration = Record<
 >;
 
 export type RelayRule = {
-  balance: number;
+  balanceMin: bigint;
+  balanceMax: bigint;
   limit: number;
 };
 

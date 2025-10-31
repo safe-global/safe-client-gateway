@@ -93,6 +93,11 @@ const PROXY_FACTORY_VERSIONS = getDeploymentVersionsByChainIds(
   supportedChainIds,
 );
 
+const getScaledBalance = (
+  tokens: bigint | number,
+  decimals: number = 18,
+): bigint => BigInt(tokens) * BigInt(10) ** BigInt(decimals);
+
 describe('Relay controller', () => {
   let app: INestApplication<Server>;
   let configurationService: jest.MockedObjectDeep<IConfigurationService>;
@@ -2791,7 +2796,10 @@ describe('Relay controller', () => {
           const safe = safeBuilder().build();
           const safeAddress = getAddress(safe.address);
           const data = execTransactionEncoder()
-            .with('value', faker.number.bigInt())
+            .with(
+              'value',
+              faker.number.bigInt({ min: BigInt(0), max: BigInt(1000000) }),
+            )
             .encode();
 
           const noFeeConfig = configurationService.get(
@@ -2970,22 +2978,74 @@ describe('Relay controller', () => {
 
         describe('Token balance-based relay limits', () => {
           const tokenBalanceScenarios = [
-            { tokens: 0, expectedLimit: 0 },
-            { tokens: faker.number.int({ min: 1, max: 50 }), expectedLimit: 1 },
             {
-              tokens: faker.number.int({ min: 51, max: 100 }),
+              tokens: faker.number.bigInt({
+                min: 0,
+                max: getScaledBalance(99),
+              }),
+              expectedLimit: 0,
+            },
+            {
+              tokens: faker.number.bigInt({
+                min: getScaledBalance(100),
+                max: getScaledBalance(500),
+              }),
               expectedLimit: 1,
             },
             {
-              tokens: faker.number.int({ min: 101, max: 500 }),
+              tokens: faker.number.bigInt({
+                min: getScaledBalance(502),
+                max: getScaledBalance(999),
+              }),
+              expectedLimit: 1,
+            },
+            {
+              tokens: faker.number.bigInt({
+                min: getScaledBalance(1000),
+                max: getScaledBalance(5000),
+              }),
               expectedLimit: 10,
             },
             {
-              tokens: faker.number.int({ min: 501, max: 1000 }),
+              tokens: faker.number.bigInt({
+                min: getScaledBalance(5001),
+                max: getScaledBalance(9999),
+              }),
               expectedLimit: 10,
             },
             {
-              tokens: faker.number.int({ min: 1001, max: 5000 }),
+              tokens: faker.number.bigInt({
+                min: getScaledBalance(10000),
+                max: getScaledBalance(Number.MAX_SAFE_INTEGER),
+              }),
+              expectedLimit: 100,
+            },
+
+            // Edge cases
+            {
+              tokens: getScaledBalance(100) - BigInt(1),
+              expectedLimit: 0,
+            },
+            {
+              tokens: getScaledBalance(100),
+              expectedLimit: 1,
+            },
+            {
+              tokens: getScaledBalance(1000) - BigInt(1),
+              expectedLimit: 1,
+            },
+            {
+              tokens: getScaledBalance(1000),
+              expectedLimit: 10,
+            },
+
+            {
+              tokens: getScaledBalance(10000) - BigInt(1),
+              expectedLimit: 10,
+            },
+
+            {
+              tokens: getScaledBalance(10000),
               expectedLimit: 100,
             },
           ];
@@ -3009,7 +3069,7 @@ describe('Relay controller', () => {
                   tokens > 0
                     ? {
                         tokenAddress,
-                        balance: (BigInt(tokens) * BigInt(10 ** 18)).toString(),
+                        balance: tokens.toString(),
                         fiatBalance: tokens.toString(),
                         fiatConversion: '1',
                         tokenInfo: {
@@ -3065,19 +3125,19 @@ describe('Relay controller', () => {
         describe('Relay count based on token balance', () => {
           const values = [
             {
-              balanceMin: 1,
-              balanceMax: 100,
+              balanceMin: 100,
+              balanceMax: 999,
               expectedLimit: 1,
               expectedRemaining: 0,
             },
             {
-              balanceMin: 101,
-              balanceMax: 1000,
+              balanceMin: 1000,
+              balanceMax: 9999,
               expectedLimit: 10,
               expectedRemaining: 9,
             },
             {
-              balanceMin: 1001,
+              balanceMin: 10000,
               balanceMax: Number.MAX_SAFE_INTEGER,
               expectedLimit: 100,
               expectedRemaining: 99,
@@ -3234,7 +3294,7 @@ describe('Relay controller', () => {
                 const tokenBalance = {
                   tokenAddress: noFeeConfig[parseInt(chainId)]
                     ?.safeTokenAddress as string,
-                  balance: (BigInt(1000) * BigInt(10 ** 18)).toString(), // 1000 tokens
+                  balance: getScaledBalance(1000).toString(), // 1000 tokens
                   fiatBalance: '1000',
                   fiatConversion: '1',
                   tokenInfo: {
@@ -3330,7 +3390,7 @@ describe('Relay controller', () => {
             const tokenBalance = {
               tokenAddress: noFeeConfig[parseInt(chainId)]
                 ?.safeTokenAddress as string,
-              balance: (BigInt(1000) * BigInt(10 ** 18)).toString(), // 1000 tokens
+              balance: getScaledBalance(1000).toString(), // 1000 tokens
               fiatBalance: '1000',
               fiatConversion: '1',
               tokenInfo: {

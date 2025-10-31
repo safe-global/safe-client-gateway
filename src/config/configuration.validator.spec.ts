@@ -51,9 +51,9 @@ describe('Configuration validator', () => {
       max: 1000,
     }),
     RELAY_NO_FEE_CAMPAIGN_SEPOLIA_RELAY_RULES: JSON.stringify([
-      { balance: 0, limit: 0 },
-      { balance: 100, limit: 1 },
-      { balance: 1000, limit: 10 },
+      { balanceMin: '0', balanceMax: '99', limit: 0 },
+      { balanceMin: '100', balanceMax: '999', limit: 1 },
+      { balanceMin: '1000', balanceMax: '100000000', limit: 0 },
     ]),
     RELAY_NO_FEE_CAMPAIGN_MAINNET_SAFE_TOKEN_ADDRESS:
       faker.finance.ethereumAddress(),
@@ -64,9 +64,9 @@ describe('Configuration validator', () => {
       max: 1000,
     }),
     RELAY_NO_FEE_CAMPAIGN_MAINNET_RELAY_RULES: JSON.stringify([
-      { balance: 0, limit: 0 },
-      { balance: 100, limit: 1 },
-      { balance: 1000, limit: 10 },
+      { balanceMin: '0', balanceMax: '99', limit: 0 },
+      { balanceMin: '100', balanceMax: '999', limit: 1 },
+      { balanceMin: '1000', balanceMax: '100000000', limit: 0 },
     ]),
     STAKING_API_KEY: faker.string.uuid(),
     STAKING_TESTNET_API_KEY: faker.string.uuid(),
@@ -282,13 +282,19 @@ describe('Configuration validator', () => {
         const config = {
           ...validConfiguration,
           [fieldKey]: JSON.stringify([
-            { balance: 0, limit: 0 },
+            { balanceMin: '0', balanceMax: '0', limit: 0 },
             {
-              balance: faker.number.int({ min: 100, max: 200 }),
+              balanceMin: faker.number
+                .bigInt({ min: 100, max: 200 })
+                .toString(),
+              balanceMax: faker.number.bigInt({ min: 201 }).toString(),
               limit: faker.number.int({ min: 1, max: 9 }),
             },
             {
-              balance: faker.number.int({ min: 201, max: 1000 }),
+              balanceMin: faker.number
+                .bigInt({ min: 201, max: 1000 })
+                .toString(),
+              balanceMax: faker.number.bigInt({ min: 1001 }).toString(),
               limit: faker.number.int({ min: 10, max: 999 }),
             },
           ]),
@@ -307,7 +313,7 @@ describe('Configuration validator', () => {
           configurationValidator(config, RootConfigurationSchema),
         ).toThrow(
           new RegExp(
-            `Configuration is invalid: ${fieldKey} Must be a valid JSON array of objects with balance \\(number >= 0\\) and limit \\(number >= 0\\) properties`,
+            `Configuration is invalid: ${fieldKey} Must be a valid JSON array of objects with balances \\(bigint >= 0\\) and limit \\(number >= 0\\) properties`,
           ),
         );
       });
@@ -321,7 +327,7 @@ describe('Configuration validator', () => {
           configurationValidator(config, RootConfigurationSchema),
         ).toThrow(
           new RegExp(
-            `Configuration is invalid: ${fieldKey} Must be a valid JSON array of objects with balance \\(number >= 0\\) and limit \\(number >= 0\\) properties`,
+            `Configuration is invalid: ${fieldKey} Must be a valid JSON array of objects with balances \\(bigint >= 0\\) and limit \\(number >= 0\\) properties`,
           ),
         );
       });
@@ -338,7 +344,7 @@ describe('Configuration validator', () => {
           configurationValidator(config, RootConfigurationSchema),
         ).toThrow(
           new RegExp(
-            `Configuration is invalid: ${fieldKey} Must be a valid JSON array of objects with balance \\(number >= 0\\) and limit \\(number >= 0\\) properties`,
+            `Configuration is invalid: ${fieldKey} Must be a valid JSON array of objects with balances \\(bigint >= 0\\) and limit \\(number >= 0\\) properties`,
           ),
         );
       });
@@ -347,15 +353,23 @@ describe('Configuration validator', () => {
         const config = {
           ...validConfiguration,
           [fieldKey]: JSON.stringify([
-            { balance: faker.number.int(), limit: faker.number.int() },
-            { balance: 'invalid', limit: 5 }, // Invalid balance type
+            {
+              balanceMin: faker.number.bigInt({ max: 200 }).toString(),
+              balanceMax: faker.number.bigInt({ min: 201 }).toString(),
+              limit: faker.number.int(),
+            },
+            {
+              balanceMin: 'invalid',
+              balanceMax: faker.number.bigInt().toString(),
+              limit: 5,
+            }, // Invalid balance type
           ]),
         };
         expect(() =>
           configurationValidator(config, RootConfigurationSchema),
         ).toThrow(
           new RegExp(
-            `Configuration is invalid: ${fieldKey} Must be a valid JSON array of objects with balance \\(number >= 0\\) and limit \\(number >= 0\\) properties`,
+            `Configuration is invalid: ${fieldKey} Must be a valid JSON array of objects with balances \\(bigint >= 0\\) and limit \\(number >= 0\\) properties`,
           ),
         );
       });
@@ -369,7 +383,7 @@ describe('Configuration validator', () => {
           configurationValidator(config, RootConfigurationSchema),
         ).toThrow(
           new RegExp(
-            `Configuration is invalid: ${fieldKey} Must be a valid JSON array of objects with balance \\(number >= 0\\) and limit \\(number >= 0\\) properties`,
+            `Configuration is invalid: ${fieldKey} Must be a valid JSON array of objects with balances \\(bigint >= 0\\) and limit \\(number >= 0\\) properties`,
           ),
         );
       });
@@ -377,13 +391,19 @@ describe('Configuration validator', () => {
       it('should reject negative limit values', () => {
         const config = {
           ...validConfiguration,
-          [fieldKey]: JSON.stringify([{ balance: 0, limit: -1 }]),
+          [fieldKey]: JSON.stringify([
+            {
+              balanceMin: '0',
+              balanceMax: '0',
+              limit: -1,
+            },
+          ]),
         };
         expect(() =>
           configurationValidator(config, RootConfigurationSchema),
         ).toThrow(
           new RegExp(
-            `Configuration is invalid: ${fieldKey} Must be a valid JSON array of objects with balance \\(number >= 0\\) and limit \\(number >= 0\\) properties`,
+            `Configuration is invalid: ${fieldKey} Must be a valid JSON array of objects with balances \\(bigint >= 0\\) and limit \\(number >= 0\\) properties`,
           ),
         );
       });
