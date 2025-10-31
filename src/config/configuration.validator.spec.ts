@@ -353,8 +353,16 @@ describe('Configuration validator', () => {
         const config = {
           ...validConfiguration,
           [fieldKey]: JSON.stringify([
-            { balance: faker.number.int(), limit: faker.number.int() },
-            { balance: 'invalid', limit: 5 }, // Invalid balance type
+            {
+              balanceMin: faker.number.bigInt({ max: 200 }).toString(),
+              balanceMax: faker.number.bigInt({ min: 201 }).toString(),
+              limit: faker.number.int(),
+            },
+            {
+              balanceMin: 'invalid',
+              balanceMax: faker.number.bigInt().toString(),
+              limit: 5,
+            }, // Invalid balance type
           ]),
         };
         expect(() =>
@@ -383,7 +391,13 @@ describe('Configuration validator', () => {
       it('should reject negative limit values', () => {
         const config = {
           ...validConfiguration,
-          [fieldKey]: JSON.stringify([{ balance: 0, limit: -1 }]),
+          [fieldKey]: JSON.stringify([
+            {
+              balanceMin: '0',
+              balanceMax: '0',
+              limit: faker.number.int({ max: -1 }),
+            },
+          ]),
         };
         expect(() =>
           configurationValidator(config, RootConfigurationSchema),
