@@ -20,8 +20,6 @@ import type { AppPositionGroup } from '@/routes/portfolio/entities/app-position-
  */
 @Injectable()
 export class PortfolioRouteMapper {
-  public constructor() {}
-
   /**
    * Maps domain portfolio to route portfolio format.
    *
