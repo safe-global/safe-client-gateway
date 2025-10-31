@@ -287,7 +287,7 @@ export default (): ReturnType<typeof configuration> => ({
       11155111: faker.string.hexadecimal({ length: 32 }),
     },
     dailyLimitRelayerChainsIds:
-      process.env.RELAY_NO_FEE_CAMPAIGN_CHAIN_IDS?.split(',') ?? [],
+      process.env.RELAY_DAILY_LIMIT_CHAIN_IDS?.split(',') ?? [],
     noFeeCampaign: {
       1: {
         startsAtTimeStamp: new Date().getTime() / 1000 - 10_000,
