@@ -48,7 +48,6 @@ import { rawify } from '@/validation/entities/raw.entity';
 import { createTestModule } from '@/__tests__/testing-module';
 import { BalancesService } from '@/routes/balances/balances.service';
 import type { NoFeeCampaignConfiguration } from '@/domain/relay/entities/relay.configuration';
-import { get } from 'lodash';
 
 const allSupportedChainIds = Object.keys(configuration().relay.apiKey);
 const noFeeCampaignChains = Object.keys(
