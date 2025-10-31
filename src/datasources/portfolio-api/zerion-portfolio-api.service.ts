@@ -420,7 +420,7 @@ export class ZerionPortfolioApi implements IPortfolioApi {
     string,
     string
   > | null> {
-    const cacheDir = new CacheRouter().getZerionChainsCacheDir();
+    const cacheDir = CacheRouter.getZerionChainsCacheDir();
     const cached = await this.cacheService.hGet(cacheDir);
 
     if (!cached) {
@@ -453,7 +453,7 @@ export class ZerionPortfolioApi implements IPortfolioApi {
       mapping[networkName] = decimalChainId;
     }
 
-    const cacheDir = new CacheRouter().getZerionChainsCacheDir();
+    const cacheDir = CacheRouter.getZerionChainsCacheDir();
     await this.cacheService.hSet(
       cacheDir,
       JSON.stringify(mapping),
