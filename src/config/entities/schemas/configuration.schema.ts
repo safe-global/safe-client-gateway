@@ -6,14 +6,18 @@ const relayRulesValidator = z
       if (value === undefined || value === null || value === '') return false;
       try {
         const parsed = JSON.parse(value);
+        console.log('Parsed relay rules:', parsed);
+        console.log('Type of parsed:', typeof parsed[0].balanceMax);
         if (!Array.isArray(parsed)) return false;
         return parsed.every(
           (rule: Record<string, unknown>) =>
             typeof rule === 'object' &&
             rule !== null &&
-            typeof rule.balance === 'number' &&
+            typeof rule.balanceMin === 'string' &&
+            typeof rule.balanceMax === 'string' &&
             typeof rule.limit === 'number' &&
-            rule.balance >= 0 &&
+            BigInt(rule.balanceMin) >= 0 &&
+            BigInt(rule.balanceMax) >= BigInt(rule.balanceMin) &&
             rule.limit >= 0,
         );
       } catch {
@@ -22,7 +26,7 @@ const relayRulesValidator = z
     },
     {
       message:
-        'Must be a valid JSON array of objects with balance (number >= 0) and limit (number >= 0) properties',
+        'Must be a valid JSON array of objects with balances (bigint >= 0) and limit (number >= 0) properties',
     },
   )
   .optional();
@@ -74,6 +78,7 @@ export const RootConfigurationSchema = z
     RELAY_PROVIDER_API_KEY_LINEA: z.string(),
     RELAY_PROVIDER_API_KEY_BLAST: z.string(),
     RELAY_PROVIDER_API_KEY_SEPOLIA: z.string(),
+    RELAT_DAILY_LIMIT_CHAIN_IDS: z.string().optional(),
     RELAY_NO_FEE_CAMPAIGN_SEPOLIA_SAFE_TOKEN_ADDRESS: z.string().optional(),
     RELAY_NO_FEE_CAMPAIGN_SEPOLIA_START_TIMESTAMP: z
       .number({ coerce: true })
@@ -90,7 +95,11 @@ export const RootConfigurationSchema = z
       .min(0)
       .optional(),
     RELAY_NO_FEE_CAMPAIGN_SEPOLIA_RELAY_RULES: relayRulesValidator,
-    RELAY_NO_FEE_CAMPAIGN_MAINNET_SAFE_TOKEN_ADDRESS: z.string().optional(),
+    RELAY_NO_FEE_CAMPAIGN_MAINNET_SAFE_TOKEN_ADDRESS: z
+      .string()
+      .transform((value) => value.split(',').map((item) => item.trim()))
+      .pipe(z.array(z.string()))
+      .optional(),
     RELAY_NO_FEE_CAMPAIGN_MAINNET_START_TIMESTAMP: z
       .number({ coerce: true })
       .int()

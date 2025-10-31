@@ -286,6 +286,8 @@ export default (): ReturnType<typeof configuration> => ({
       81457: faker.string.hexadecimal({ length: 32 }),
       11155111: faker.string.hexadecimal({ length: 32 }),
     },
+    dailyLimitRelayerChainsIds:
+      process.env.RELAY_NO_FEE_CAMPAIGN_CHAIN_IDS?.split(',') ?? [],
     noFeeCampaign: {
       1: {
         startsAtTimeStamp: new Date().getTime() / 1000 - 10_000,
@@ -294,19 +296,24 @@ export default (): ReturnType<typeof configuration> => ({
         maxGasLimit: faker.number.int({ min: 1 }),
         relayRules: [
           {
-            balance: 0,
+            balanceMin: BigInt(0),
+            balanceMax: BigInt(99) * BigInt(10) ** BigInt(18),
             limit: 0,
           },
           {
-            balance: 100,
+            balanceMin: BigInt(100) * BigInt(10) ** BigInt(18),
+            balanceMax: BigInt(1000) * BigInt(10) ** BigInt(18) - BigInt(1),
             limit: 1,
           },
           {
-            balance: 1000,
+            balanceMin: BigInt(1000) * BigInt(10) ** BigInt(18),
+            balanceMax: BigInt(10000) * BigInt(10) ** BigInt(18) - BigInt(1),
             limit: 10,
           },
           {
-            balance: Number.MAX_SAFE_INTEGER,
+            balanceMin: BigInt(10000) * BigInt(10) ** BigInt(18),
+            balanceMax:
+              BigInt(Number.MAX_SAFE_INTEGER) * BigInt(10) ** BigInt(18),
             limit: 100,
           },
         ],
@@ -318,19 +325,24 @@ export default (): ReturnType<typeof configuration> => ({
         safeTokenAddress: faker.finance.ethereumAddress(),
         relayRules: [
           {
-            balance: 0,
+            balanceMin: BigInt(0),
+            balanceMax: BigInt(99) * BigInt(10) ** BigInt(18),
             limit: 0,
           },
           {
-            balance: 100,
+            balanceMin: BigInt(100) * BigInt(10) ** BigInt(18),
+            balanceMax: BigInt(1000) * BigInt(10) ** BigInt(18) - BigInt(1),
             limit: 1,
           },
           {
-            balance: 1000,
+            balanceMin: BigInt(1000) * BigInt(10) ** BigInt(18),
+            balanceMax: BigInt(10000) * BigInt(10) ** BigInt(18) - BigInt(1),
             limit: 10,
           },
           {
-            balance: Number.MAX_SAFE_INTEGER,
+            balanceMin: BigInt(10000) * BigInt(10) ** BigInt(18),
+            balanceMax:
+              BigInt(Number.MAX_SAFE_INTEGER) * BigInt(10) ** BigInt(18),
             limit: 100,
           },
         ],

@@ -419,6 +419,8 @@ export default () => ({
     ttlSeconds: parseInt(
       process.env.RELAY_THROTTLE_TTL_SECONDS ?? `${60 * 60 * 24}`,
     ),
+    dailyLimitRelayerChainsIds:
+      process.env.RELAY_NO_FEE_CAMPAIGN_CHAIN_IDS?.split(',') ?? [],
     apiKey: {
       // Ethereum Mainnet
       1: process.env.RELAY_PROVIDER_API_KEY_MAINNET,
@@ -676,9 +678,11 @@ const parseRelayRules = (
     (rule) =>
       typeof rule === 'object' &&
       rule !== null &&
-      typeof rule.balance === 'number' &&
+      typeof rule.balanceMin === 'string' &&
+      typeof rule.balanceMax === 'string' &&
       typeof rule.limit === 'number' &&
-      rule.balance >= 0 &&
+      BigInt(rule.balanceMin) >= 0 &&
+      BigInt(rule.balanceMax) >= BigInt(rule.balanceMin) &&
       rule.limit >= 0,
   );
   return parsed;

@@ -183,12 +183,16 @@ export class NoFeeCampaignRelayer implements IRelayer {
     }
   }
 
-  private getLimit(tokenBalance: number, relayRules: RelayRules): number {
-    // Sort rules by balance ascending to ensure proper range checking
-    const sortedRules = relayRules.sort((a, b) => a.balance - b.balance);
+  private getLimit(tokenBalance: bigint, relayRules: RelayRules): number {
+    // Sort rules by balanceMin ascending to ensure proper range checking
+    const sortedRules = relayRules.sort((a, b) => {
+      if (a.balanceMin < b.balanceMin) return -1;
+      if (a.balanceMin > b.balanceMin) return 1;
+      return 0;
+    });
 
     for (const rule of sortedRules) {
-      if (tokenBalance <= rule.balance) {
+      if (rule.balanceMin <= tokenBalance && tokenBalance <= rule.balanceMax) {
         return rule.limit;
       }
     }
@@ -200,10 +204,10 @@ export class NoFeeCampaignRelayer implements IRelayer {
   private async getTokenBalance(args: {
     chainId: string;
     address: Address;
-  }): Promise<number> {
+  }): Promise<bigint> {
     const chainConfiguration = this.relayConfiguration[parseInt(args.chainId)];
 
-    if (!chainConfiguration) return 0;
+    if (!chainConfiguration) return BigInt(0);
 
     try {
       const balance = await this.balancesService.getTokenBalance({
@@ -214,19 +218,14 @@ export class NoFeeCampaignRelayer implements IRelayer {
       });
 
       if (!balance) {
-        return 0;
+        return BigInt(0);
       }
 
-      // Convert balance to token units (divide by 10^decimals)
-      const tokenDecimals = balance.tokenInfo.decimals;
-      const balanceInWei = BigInt(balance.balance);
-      const tokenBalance = Number(balanceInWei) / Math.pow(10, tokenDecimals);
-      // TODO: change to bigint
-      return tokenBalance;
+      return BigInt(balance.balance);
     } catch (error) {
       // If we fail to get token balance, return 0 (safest fallback)
       this.loggingService.warn(`Failed to get token balance: ${error}`);
-      return 0;
+      return BigInt(0);
     }
   }
 
