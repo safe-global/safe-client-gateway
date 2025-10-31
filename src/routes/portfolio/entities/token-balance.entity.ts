@@ -1,12 +1,21 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { PortfolioTokenInfo } from '@/routes/portfolio/entities/token-info.entity';
+import { ApiExtraModels, ApiProperty, getSchemaPath } from '@nestjs/swagger';
+import {
+  PortfolioNativeToken,
+  PortfolioErc20Token,
+  PortfolioErc721Token,
+} from '@/routes/portfolio/entities/portfolio-token.entity';
 
+@ApiExtraModels(PortfolioNativeToken, PortfolioErc20Token, PortfolioErc721Token)
 export class TokenBalance {
   @ApiProperty({
     description: 'Token information',
-    type: PortfolioTokenInfo,
+    oneOf: [
+      { $ref: getSchemaPath(PortfolioNativeToken) },
+      { $ref: getSchemaPath(PortfolioErc20Token) },
+      { $ref: getSchemaPath(PortfolioErc721Token) },
+    ],
   })
-  tokenInfo!: PortfolioTokenInfo;
+  tokenInfo!: PortfolioNativeToken | PortfolioErc20Token | PortfolioErc721Token;
 
   @ApiProperty({
     description:

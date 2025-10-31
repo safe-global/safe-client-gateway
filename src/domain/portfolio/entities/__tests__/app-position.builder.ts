@@ -32,6 +32,12 @@ export function appPositionBuilder(): IBuilder<AppPosition> {
     )
     .with('name', faker.word.words(2))
     .with('tokenInfo', appPositionTokenInfoBuilder().build())
+    .with(
+      'receiptTokenAddress',
+      faker.datatype.boolean()
+        ? getAddress(faker.finance.ethereumAddress())
+        : null,
+    )
     .with('balance', faker.string.numeric({ length: 18 }))
     .with(
       'balanceFiat',

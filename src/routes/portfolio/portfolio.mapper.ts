@@ -61,6 +61,7 @@ export class PortfolioMapper {
         trusted: position.tokenInfo.trusted,
         type: position.tokenInfo.type,
       },
+      receiptTokenAddress: position.receiptTokenAddress,
       balance: position.balance,
       balanceFiat: position.balanceFiat,
       priceChangePercentage1d: position.priceChangePercentage1d,
