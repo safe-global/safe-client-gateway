@@ -47,7 +47,7 @@ export const IZerionBalancesApi = Symbol('IZerionBalancesApi');
 export class ZerionBalancesApi implements IBalancesApi {
   private static readonly COLLECTIBLES_SORTING = '-floor_price';
   private static readonly RATE_LIMIT_CACHE_KEY_PREFIX = 'zerion';
-  private readonly apiKey: string | undefined;
+  private readonly apiKey: string;
   private readonly baseUri: string;
   private readonly chainsConfiguration: Record<number, ChainAttributes>;
   private readonly defaultExpirationTimeInSeconds: number;
@@ -66,7 +66,7 @@ export class ZerionBalancesApi implements IBalancesApi {
     private readonly configurationService: IConfigurationService,
     private readonly httpErrorFactory: HttpErrorFactory,
   ) {
-    this.apiKey = this.configurationService.get<string>(
+    this.apiKey = this.configurationService.getOrThrow<string>(
       'balances.providers.zerion.apiKey',
     );
     this.baseUri = this.configurationService.getOrThrow<string>(
@@ -111,13 +111,6 @@ export class ZerionBalancesApi implements IBalancesApi {
     safeAddress: Address;
     fiatCode: string;
   }): Promise<Raw<Array<Balance>>> {
-    if (!this.apiKey) {
-      throw new DataSourceError(
-        'Zerion API key is not configured. Set ZERION_API_KEY environment variable.',
-        503,
-      );
-    }
-
     if (!this.fiatCodes.includes(args.fiatCode.toUpperCase())) {
       throw new DataSourceError(
         `Unsupported currency code: ${args.fiatCode}`,
@@ -189,13 +182,6 @@ export class ZerionBalancesApi implements IBalancesApi {
     limit?: number;
     offset?: number;
   }): Promise<Raw<Page<Collectible>>> {
-    if (!this.apiKey) {
-      throw new DataSourceError(
-        'Zerion API key is not configured. Set ZERION_API_KEY environment variable.',
-        503,
-      );
-    }
-
     const cacheDir = CacheRouter.getZerionCollectiblesCacheDir({
       ...args,
       chainId: args.chain.chainId,
