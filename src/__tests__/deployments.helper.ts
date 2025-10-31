@@ -16,6 +16,12 @@ const deploymentAliases = {
   CompatibilityFallbackHandler: [
     'CompatibilityFallbackHandler', // 1.3.0, 1.4.1
   ],
+  ExtensibleFallbackHandler: [
+    'ExtensibleFallbackHandler', // 1.5.0
+  ],
+  TokenCallbackHandler: [
+    'TokenCallbackHandler', // 1.5.0
+  ],
   CreateCall: [
     'CreateCall', // 1.3.0, 1.4.1
   ],
