@@ -1,12 +1,12 @@
 import { Module } from '@nestjs/common';
 import { PortfolioController } from '@/routes/portfolio/portfolio.controller';
-import { PortfolioService } from '@/routes/portfolio/portfolio.service';
+import { PortfolioApiService } from '@/routes/portfolio/portfolio.service';
 import { PortfolioServiceModule } from '@/domain/portfolio/portfolio.service.interface';
-import { PortfolioMapper } from '@/routes/portfolio/portfolio.mapper';
+import { PortfolioRouteMapper } from '@/routes/portfolio/portfolio.mapper';
 
 @Module({
   imports: [PortfolioServiceModule],
   controllers: [PortfolioController],
-  providers: [PortfolioService, PortfolioMapper],
+  providers: [PortfolioApiService, PortfolioRouteMapper],
 })
 export class PortfolioModule {}

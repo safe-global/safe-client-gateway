@@ -1,29 +1,8 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { AppPosition } from '@/routes/portfolio/entities/app-position.entity';
+import { ApiExtraModels, ApiProperty, getSchemaPath } from '@nestjs/swagger';
+import { AppPositionGroup } from '@/routes/portfolio/entities/app-position-group.entity';
+import { AppBalanceAppInfo } from './app-balance-app-info.entity';
 
-export class AppBalanceAppInfo {
-  @ApiProperty({
-    description: 'Application name',
-  })
-  name!: string;
-
-  @ApiProperty({
-    type: 'string',
-    format: 'uri',
-    description: 'Application logo URL (HTTPS)',
-    nullable: true,
-  })
-  logoUrl: string | null = null;
-
-  @ApiProperty({
-    type: 'string',
-    format: 'uri',
-    description: 'Application URL (HTTPS)',
-    nullable: true,
-  })
-  url: string | null = null;
-}
-
+@ApiExtraModels(AppPositionGroup)
 export class AppBalance {
   @ApiProperty({
     description: 'Application information',
@@ -34,15 +13,16 @@ export class AppBalance {
   @ApiProperty({
     type: 'string',
     description:
-      'Total balance in fiat currency across all positions. Decimal string without exponent notation or thousand separators.',
+      'Total balance in fiat currency across all position groups. Decimal string without exponent notation or thousand separators.',
     pattern: '^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$',
     example: '18638914.125656575',
   })
   balanceFiat!: string;
 
   @ApiProperty({
-    description: 'List of positions in this app',
-    type: [AppPosition],
+    description: 'Position groups in this app, grouped by position name',
+    type: 'array',
+    items: { $ref: getSchemaPath(AppPositionGroup) },
   })
-  positions!: Array<AppPosition>;
+  groups!: Array<AppPositionGroup>;
 }

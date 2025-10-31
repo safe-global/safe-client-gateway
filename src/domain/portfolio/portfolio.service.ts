@@ -4,6 +4,10 @@ import { IPortfolioService } from '@/domain/portfolio/portfolio.service.interfac
 import { IPortfolioRepository } from '@/domain/portfolio/portfolio.repository.interface';
 import type { Portfolio } from '@/domain/portfolio/entities/portfolio.entity';
 
+/**
+ * Domain portfolio service.
+ * Delegates to PortfolioRepository for data retrieval.
+ */
 @Injectable()
 export class PortfolioService implements IPortfolioService {
   constructor(

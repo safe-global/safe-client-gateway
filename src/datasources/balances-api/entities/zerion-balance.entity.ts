@@ -98,6 +98,7 @@ export const ZerionAttributesSchema = z.object({
   changes: ZerionBalanceChangeSchema.nullish().default(null),
   position_type: PositionTypeSchema.catch(PositionType.unknown),
   pool_address: z.string().nullish().default(null),
+  group_id: z.string().nullish().default(null),
 });
 
 export const ZerionBalanceSchema = z.object({

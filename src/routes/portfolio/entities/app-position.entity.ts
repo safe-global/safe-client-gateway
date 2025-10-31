@@ -23,6 +23,13 @@ export class AppPosition {
   name!: string;
 
   @ApiProperty({
+    description: 'Group ID for grouping related positions together',
+    type: 'string',
+    nullable: true,
+  })
+  groupId!: string | null;
+
+  @ApiProperty({
     description: 'Token information',
     oneOf: [
       { $ref: getSchemaPath(PortfolioNativeToken) },

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { AppPositionsSchema } from '@/domain/portfolio/entities/app-position.entity';
+import { AppPositionGroupsSchema } from '@/domain/portfolio/entities/app-position.entity';
 
 const FiatStringSchema = z.string().regex(/^-?(?:0|[1-9]\d*)(?:\.\d+)?$/);
 
@@ -12,7 +12,7 @@ export const AppBalanceAppInfoSchema = z.object({
 export const AppBalanceSchema = z.object({
   appInfo: AppBalanceAppInfoSchema,
   balanceFiat: FiatStringSchema,
-  positions: AppPositionsSchema,
+  groups: AppPositionGroupsSchema,
 });
 
 export const AppBalancesSchema = z.array(AppBalanceSchema);

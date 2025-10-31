@@ -2,14 +2,18 @@ import { Inject, Injectable } from '@nestjs/common';
 import type { Address } from 'viem';
 import { IPortfolioService as DomainPortfolioService } from '@/domain/portfolio/portfolio.service.interface';
 import { Portfolio } from '@/routes/portfolio/entities/portfolio.entity';
-import { PortfolioMapper } from '@/routes/portfolio/portfolio.mapper';
+import { PortfolioRouteMapper } from '@/routes/portfolio/portfolio.mapper';
 
+/**
+ * Portfolio API service.
+ * Maps internal domain portfolio to internal API portfolio format.
+ */
 @Injectable()
-export class PortfolioService {
+export class PortfolioApiService {
   constructor(
     @Inject(DomainPortfolioService)
     private readonly domainPortfolioService: DomainPortfolioService,
-    private readonly portfolioMapper: PortfolioMapper,
+    private readonly portfolioRouteMapper: PortfolioRouteMapper,
   ) {}
 
   async getPortfolio(args: {
@@ -21,7 +25,7 @@ export class PortfolioService {
   }): Promise<Portfolio> {
     const domainPortfolio =
       await this.domainPortfolioService.getPortfolio(args);
-    return this.portfolioMapper.mapZerionPortfolioToApi(domainPortfolio);
+    return this.portfolioRouteMapper.mapDomainToRoute(domainPortfolio);
   }
 
   async clearPortfolio(args: { address: Address }): Promise<void> {

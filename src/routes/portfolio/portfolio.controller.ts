@@ -15,20 +15,24 @@ import {
   ApiOperation,
   ApiParam,
 } from '@nestjs/swagger';
-import { PortfolioService } from '@/routes/portfolio/portfolio.service';
+import { PortfolioApiService } from '@/routes/portfolio/portfolio.service';
 import { Portfolio } from '@/routes/portfolio/entities/portfolio.entity';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { ChainIdsSchema } from '@/domain/chains/entities/schemas/chain-ids.schema';
 import type { Address } from 'viem';
 
+/**
+ * Portfolio controller.
+ * Exposes GET /v1/portfolio/:address and DELETE /v1/portfolio/:address endpoints.
+ */
 @ApiTags('portfolio')
 @Controller({
   path: '',
   version: '1',
 })
 export class PortfolioController {
-  constructor(private readonly portfolioService: PortfolioService) {}
+  constructor(private readonly portfolioService: PortfolioApiService) {}
 
   @ApiOperation({
     summary: 'Get portfolio',
@@ -66,7 +70,7 @@ export class PortfolioController {
     name: 'excludeDust',
     required: false,
     type: Boolean,
-    description: 'If true, filters out dust positions (balance < $1 USD)',
+    description: 'If true, filters out dust positions (balance < $0.001 USD)',
     example: true,
   })
   @ApiOkResponse({ type: Portfolio })
