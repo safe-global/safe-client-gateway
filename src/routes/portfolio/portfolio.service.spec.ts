@@ -46,10 +46,14 @@ describe('PortfolioApiService', () => {
         excludeDust: undefined,
       });
 
-      expect(result).toEqual(domainPortfolio);
+      // Verify that result is mapped (not the raw domain portfolio)
+      expect(result).not.toBe(domainPortfolio);
+      expect(result.totalBalanceFiat).toBe(domainPortfolio.totalBalanceFiat);
+      expect(result.tokenBalances).toBeDefined();
+      expect(result.positionBalances).toBeDefined();
     });
 
-    it('should map domain portfolio through mapper', async () => {
+    it('should map domain portfolio through mapper with correct structure', async () => {
       const address = getAddress(faker.finance.ethereumAddress());
       const fiatCode = 'USD';
 
@@ -71,6 +75,7 @@ describe('PortfolioApiService', () => {
       // Verify mapper was used - check that structure matches mapped format
       expect(result.tokenBalances).toHaveLength(1);
       expect(result.positionBalances).toHaveLength(1);
+      expect(result.positionBalances[0].appInfo).toBeDefined();
       expect(result.positionBalances[0].groups).toBeDefined();
       expect(Array.isArray(result.positionBalances[0].groups)).toBe(true);
     });
