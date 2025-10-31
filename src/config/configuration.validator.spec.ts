@@ -395,7 +395,7 @@ describe('Configuration validator', () => {
             {
               balanceMin: '0',
               balanceMax: '0',
-              limit: faker.number.int({ max: -1 }),
+              limit: -1,
             },
           ]),
         };
