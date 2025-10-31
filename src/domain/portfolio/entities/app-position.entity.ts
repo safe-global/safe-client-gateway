@@ -12,7 +12,7 @@ export const AppPositionTokenInfoSchema = z.object({
   logoUri: z.string(),
   chainId: z.string(),
   trusted: z.boolean(),
-  type: z.literal('ERC20'),
+  type: z.enum(['ERC20', 'NATIVE_TOKEN']),
 });
 
 export const AppPositionSchema = z.object({
@@ -20,6 +20,7 @@ export const AppPositionSchema = z.object({
   type: z.string(),
   name: z.string(),
   tokenInfo: AppPositionTokenInfoSchema,
+  receiptTokenAddress: AddressSchema.nullish().default(null),
   balance: z.string(),
   balanceFiat: FiatStringSchema.nullish().default(null),
   priceChangePercentage1d: PercentageStringSchema.nullish().default(null),

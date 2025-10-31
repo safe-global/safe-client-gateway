@@ -46,7 +46,10 @@ class PortfolioBuilder extends Builder<Portfolio> {
     );
 
     super.with('totalTokenBalanceFiat', totalTokenBalanceFiat.toString());
-    super.with('totalPositionsBalanceFiat', totalPositionsBalanceFiat.toString());
+    super.with(
+      'totalPositionsBalanceFiat',
+      totalPositionsBalanceFiat.toString(),
+    );
     super.with(
       'totalBalanceFiat',
       (totalTokenBalanceFiat + totalPositionsBalanceFiat).toString(),

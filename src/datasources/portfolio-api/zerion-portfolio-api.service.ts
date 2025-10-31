@@ -204,9 +204,10 @@ export class ZerionPortfolioApi implements IPortfolioApi {
           },
           balance: position.attributes.quantity.int,
           balanceFiat:
-            position.attributes.value == null
-              ? null
-              : getNumberString(position.attributes.value),
+            position.attributes.value !== null &&
+            position.attributes.value !== undefined
+              ? getNumberString(position.attributes.value)
+              : null,
           price:
             position.attributes.price !== null &&
             position.attributes.price !== undefined
@@ -292,6 +293,12 @@ export class ZerionPortfolioApi implements IPortfolioApi {
 
         const address = impl.address ? getAddress(impl.address) : null;
 
+        const poolAddress = position.attributes.pool_address;
+        const receiptTokenAddress =
+          poolAddress != null && isAddress(poolAddress)
+            ? getAddress(poolAddress)
+            : null;
+
         return {
           key: position.id,
           type: position.attributes.position_type,
@@ -299,17 +306,18 @@ export class ZerionPortfolioApi implements IPortfolioApi {
           tokenInfo: {
             address,
             decimals: impl.decimals,
-            symbol:
-              position.attributes.fungible_info.symbol ??
-              position.attributes.name,
-            name:
-              position.attributes.fungible_info.name ??
-              position.attributes.name,
+            symbol: position.attributes.fungible_info.symbol ?? '',
+            name: position.attributes.fungible_info.name ?? '',
             logoUri: position.attributes.fungible_info.icon?.url ?? '',
             chainId,
             trusted: position.attributes.fungible_info.flags?.verified ?? false,
-            type: 'ERC20' as const,
+            type:
+              address === null ||
+              address === '0x0000000000000000000000000000000000000000'
+                ? ('NATIVE_TOKEN' as const)
+                : ('ERC20' as const),
           },
+          receiptTokenAddress,
           balance: position.attributes.quantity.int,
           balanceFiat:
             position.attributes.value == null

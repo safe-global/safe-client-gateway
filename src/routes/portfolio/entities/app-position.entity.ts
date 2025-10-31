@@ -1,6 +1,11 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { PortfolioTokenInfo } from '@/routes/portfolio/entities/token-info.entity';
+import { ApiExtraModels, ApiProperty, getSchemaPath } from '@nestjs/swagger';
+import {
+  PortfolioNativeToken,
+  PortfolioErc20Token,
+  PortfolioErc721Token,
+} from '@/routes/portfolio/entities/portfolio-token.entity';
 
+@ApiExtraModels(PortfolioNativeToken, PortfolioErc20Token, PortfolioErc721Token)
 export class AppPosition {
   @ApiProperty({
     description: 'Unique position key',
@@ -19,9 +24,22 @@ export class AppPosition {
 
   @ApiProperty({
     description: 'Token information',
-    type: PortfolioTokenInfo,
+    oneOf: [
+      { $ref: getSchemaPath(PortfolioNativeToken) },
+      { $ref: getSchemaPath(PortfolioErc20Token) },
+      { $ref: getSchemaPath(PortfolioErc721Token) },
+    ],
   })
-  tokenInfo!: PortfolioTokenInfo;
+  tokenInfo!: PortfolioNativeToken | PortfolioErc20Token | PortfolioErc721Token;
+
+  @ApiProperty({
+    description:
+      'Receipt token address (pool address) representing this position. This is the contract address for the position token (LP token, staking receipt, etc.), not the underlying token.',
+    type: 'string',
+    nullable: true,
+    example: '0x6da7b0d8464c4eeab6023d891db267a045fc978f',
+  })
+  receiptTokenAddress: string | null = null;
 
   @ApiProperty({
     description:
