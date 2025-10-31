@@ -6,8 +6,7 @@ const relayRulesValidator = z
       if (value === undefined || value === null || value === '') return false;
       try {
         const parsed = JSON.parse(value);
-        console.log('Parsed relay rules:', parsed);
-        console.log('Type of parsed:', typeof parsed[0].balanceMax);
+
         if (!Array.isArray(parsed)) return false;
         return parsed.every(
           (rule: Record<string, unknown>) =>

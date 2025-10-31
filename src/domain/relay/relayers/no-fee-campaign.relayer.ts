@@ -197,8 +197,8 @@ export class NoFeeCampaignRelayer implements IRelayer {
       }
     }
 
-    // If balance exceeds all thresholds, return the highest limit
-    return sortedRules[sortedRules.length - 1].limit;
+    // Return 0 if no rules matched
+    return 0;
   }
 
   private async getTokenBalance(args: {
