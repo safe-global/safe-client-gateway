@@ -297,7 +297,7 @@ export default (): ReturnType<typeof configuration> => ({
         relayRules: [
           {
             balanceMin: BigInt(0),
-            balanceMax: BigInt(99) * BigInt(10) ** BigInt(18),
+            balanceMax: BigInt(100) * BigInt(10) ** BigInt(18) - BigInt(1),
             limit: 0,
           },
           {
