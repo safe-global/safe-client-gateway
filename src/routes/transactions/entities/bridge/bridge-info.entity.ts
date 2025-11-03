@@ -145,3 +145,12 @@ export const isBridgeAndSwapTransactionInfo = (
   txInfo: TransactionInfo,
 ): txInfo is BridgeAndSwapTransactionInfo =>
   txInfo.type === TransactionInfoType.SwapAndBridge;
+
+/**
+ * Type guard to check if a TransactionInfo is a SwapTransactionInfo.
+ * @param txInfo - The transaction info to check.
+ * @returns True if the transaction info is a SwapTransactionInfo.
+ */
+export const isSwapTransactionInfo = (
+  txInfo: TransactionInfo,
+): txInfo is SwapTransactionInfo => txInfo.type === TransactionInfoType.Swap;

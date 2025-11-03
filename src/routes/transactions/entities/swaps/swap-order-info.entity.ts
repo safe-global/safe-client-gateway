@@ -162,3 +162,13 @@ export class SwapOrderTransactionInfo
     this.fullAppData = args.fullAppData;
   }
 }
+
+/**
+ * Type guard to check if a TransactionInfo is a SwapOrderTransactionInfo.
+ * @param txInfo - The transaction info to check.
+ * @returns True if the transaction info is a SwapOrderTransactionInfo.
+ */
+export const isSwapOrderTransactionInfo = (
+  txInfo: TransactionInfo,
+): txInfo is SwapOrderTransactionInfo =>
+  txInfo.type === TransactionInfoType.SwapOrder;

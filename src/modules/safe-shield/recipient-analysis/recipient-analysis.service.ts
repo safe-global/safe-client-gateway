@@ -35,6 +35,7 @@ import { TransactionInfo } from '@/routes/transactions/entities/transaction-info
 import {
   BridgeAndSwapTransactionInfo,
   isBridgeAndSwapTransactionInfo,
+  isSwapTransactionInfo,
 } from '@/routes/transactions/entities/bridge/bridge-info.entity';
 import { Safe } from '@/domain/safe/entities/safe.entity';
 import { TransactionsService } from '@/routes/transactions/transactions.service';
@@ -51,6 +52,7 @@ import { merge } from 'lodash';
 import type { SafeCreationData } from '@/modules/safe-shield/entities/safe-creation-data.entity';
 import { ITransactionApi } from '@/domain/interfaces/transaction-api.interface';
 import { DataSourceError } from '@/domain/errors/data-source.error';
+import { isSwapOrderTransactionInfo } from '@/routes/transactions/entities/swaps/swap-order-info.entity';
 
 const SAFE_VERSIONS = ['1.4.1', '1.3.0', '1.2.0', '1.1.1', '1.0.0'] as const;
 type SafeVersion = (typeof SAFE_VERSIONS)[number];
@@ -102,13 +104,14 @@ export class RecipientAnalysisService {
     transactions: Array<DecodedTransactionData>;
     txInfo?: TransactionInfo;
   }): Promise<RecipientAnalysisResponse> {
-    const recipients = extractRecipients(args.transactions, this.erc20Decoder);
+    const { chainId, safeAddress, transactions, txInfo } = args;
+    const recipients = extractRecipients(transactions, this.erc20Decoder);
 
     const cacheDir = CacheRouter.getRecipientAnalysisCacheDir({
-      chainId: args.chainId,
-      safeAddress: args.safeAddress,
+      chainId,
+      safeAddress,
       recipients,
-      txInfo: args.txInfo,
+      txInfo,
     });
 
     const cached = await this.cacheService.hGet(cacheDir);
@@ -127,14 +130,14 @@ export class RecipientAnalysisService {
     const [recipientAnalysisResults, bridgeAnalysisResults] = await Promise.all(
       [
         this.analyzeRecipients({
-          chainId: args.chainId,
-          safeAddress: args.safeAddress,
+          chainId,
+          safeAddress,
           recipients,
         }),
-        this.analyzeBridge({
-          chainId: args.chainId,
-          safeAddress: args.safeAddress,
-          txInfo: args.txInfo,
+        this.analyzeBridgeAndSwap({
+          chainId,
+          safeAddress,
+          txInfo,
         }),
       ],
     );
@@ -297,24 +300,71 @@ export class RecipientAnalysisService {
     }
   }
 
-  /**
-   * Analyzes bridge compatibility for cross-chain operations.
-   * @param {string} args.chainId - The chain ID.
-   * @param {Address} args.safeAddress - The Safe address.
-   * @param {TransactionInfo} [args.txInfo] - The transaction info.
-   * @returns {Promise<RecipientAnalysisResponse | RecipientAnalysisResponseWithoutIsSafe>} The bridge analysis response (may or may not include isSafe).
-   */
-  public async analyzeBridge(args: {
+  private async analyzeBridgeAndSwap(args: {
     chainId: string;
     safeAddress: Address;
     txInfo?: TransactionInfo;
   }): Promise<
     RecipientAnalysisResponse | RecipientAnalysisResponseWithoutIsSafe
   > {
-    if (!args.txInfo || !isBridgeAndSwapTransactionInfo(args.txInfo)) {
+    const { chainId, safeAddress, txInfo } = args;
+    if (!txInfo) {
       return {};
     }
 
+    if (isBridgeAndSwapTransactionInfo(txInfo)) {
+      return this.analyzeBridge({ chainId, safeAddress, txInfo });
+    }
+
+    const recipient = this.extractSwapRecipient(txInfo, safeAddress);
+    if (recipient) {
+      return this.analyzeRecipients({
+        chainId,
+        safeAddress,
+        recipients: [recipient],
+      });
+    }
+
+    return {};
+  }
+
+  /**
+   * Extracts the recipient address from swap-related transactions if different from Safe address.
+   * @param {TransactionInfo} txInfo - The transaction info.
+   * @param {Address} safeAddress - The Safe address to compare against.
+   * @returns {Address | null} The recipient address if different from Safe, null otherwise.
+   */
+  private extractSwapRecipient(
+    txInfo: TransactionInfo,
+    safeAddress: Address,
+  ): Address | null {
+    if (isSwapTransactionInfo(txInfo)) {
+      const recipient = getAddress(txInfo.recipient.value);
+      return recipient !== safeAddress ? recipient : null;
+    }
+
+    if (isSwapOrderTransactionInfo(txInfo)) {
+      const receiver = txInfo.receiver ? getAddress(txInfo.receiver) : null;
+      return receiver && receiver !== safeAddress ? receiver : null;
+    }
+
+    return null;
+  }
+
+  /**
+   * Analyzes bridge compatibility for cross-chain operations.
+   * @param {string} args.chainId - The chain ID.
+   * @param {Address} args.safeAddress - The Safe address.
+   * @param {BridgeAndSwapTransactionInfo} [args.txInfo] - The bridge transaction info.
+   * @returns {Promise<RecipientAnalysisResponse | RecipientAnalysisResponseWithoutIsSafe>} The bridge analysis response (may or may not include isSafe).
+   */
+  public async analyzeBridge(args: {
+    chainId: string;
+    safeAddress: Address;
+    txInfo: BridgeAndSwapTransactionInfo;
+  }): Promise<
+    RecipientAnalysisResponse | RecipientAnalysisResponseWithoutIsSafe
+  > {
     const bridgeRecipient = getAddress(args.txInfo.recipient.value);
 
     if (bridgeRecipient === getAddress(args.safeAddress)) {
