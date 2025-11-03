@@ -48,6 +48,8 @@ import { rawify } from '@/validation/entities/raw.entity';
 import { createTestModule } from '@/__tests__/testing-module';
 import { BalancesService } from '@/routes/balances/balances.service';
 import type { NoFeeCampaignConfiguration } from '@/domain/relay/entities/relay.configuration';
+import { CacheService } from '@/datasources/cache/cache.service.interface';
+import type { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
 
 const allSupportedChainIds = Object.keys(configuration().relay.apiKey);
 const noFeeCampaignChains = Object.keys(
@@ -103,6 +105,7 @@ describe('Relay controller', () => {
   let configurationService: jest.MockedObjectDeep<IConfigurationService>;
   let networkService: jest.MockedObjectDeep<INetworkService>;
   let balancesService: jest.MockedObjectDeep<BalancesService>;
+  let cacheService: FakeCacheService;
   let safeConfigUrl: string;
   let relayUrl: string;
 
@@ -127,9 +130,15 @@ describe('Relay controller', () => {
     relayUrl = configurationService.getOrThrow('relay.baseUri');
     networkService = moduleFixture.get(NetworkService);
     balancesService = moduleFixture.get(BalancesService);
+    cacheService = moduleFixture.get(CacheService);
 
     app = await new TestAppProvider().provide(moduleFixture);
     await app.init();
+  });
+
+  afterEach(() => {
+    // Clear cache between tests to prevent state leakage causing flaky tests
+    cacheService.clear();
   });
 
   afterAll(async () => {
@@ -2618,8 +2627,19 @@ describe('Relay controller', () => {
       });
 
       it('should not rate limit the same address on different chains', async () => {
-        const differentChainId = faker.string.numeric({ exclude: chainId });
+        // Use another daily limit chain to ensure proper configuration
+        const differentChainId =
+          dailyLimitChainIds.find((id) => id !== chainId) ||
+          nonnoFeeCampaignChainIds.find((id) => id !== chainId);
+        if (!differentChainId) {
+          throw new Error(
+            'No different chain ID available for testing cross-chain isolation',
+          );
+        }
         const chain = chainBuilder().with('chainId', chainId).build();
+        const differentChain = chainBuilder()
+          .with('chainId', differentChainId)
+          .build();
         const safe = safeBuilder().build();
         const safeAddress = getAddress(safe.address);
         const data = execTransactionEncoder()
@@ -2630,7 +2650,13 @@ describe('Relay controller', () => {
           switch (url) {
             case `${safeConfigUrl}/api/v1/chains/${chainId}`:
               return Promise.resolve({ data: rawify(chain), status: 200 });
+            case `${safeConfigUrl}/api/v1/chains/${differentChainId}`:
+              return Promise.resolve({
+                data: rawify(differentChain),
+                status: 200,
+              });
             case `${chain.transactionService}/api/v1/safes/${safeAddress}`:
+            case `${differentChain.transactionService}/api/v1/safes/${safeAddress}`:
               // Official mastercopy
               return Promise.resolve({ data: rawify(safe), status: 200 });
             default:

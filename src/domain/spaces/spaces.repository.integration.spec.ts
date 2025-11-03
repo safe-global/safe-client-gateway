@@ -113,16 +113,26 @@ describe('SpacesRepository', () => {
   afterEach(async () => {
     jest.resetAllMocks();
 
-    await Promise.all(
-      [Member, Space, User, Wallet].map(async (entity) => {
-        const repository = dataSource.getRepository(entity);
-        return await repository
-          .createQueryBuilder()
-          .delete()
-          .where('1=1')
-          .execute();
-      }),
-    );
+    // Delete sequentially to avoid deadlocks when tests run in parallel
+    // Must delete in order respecting foreign key constraints: Member -> SpaceSafe -> Space -> Wallet -> User
+    const memberRepository = dataSource.getRepository(Member);
+    await memberRepository.createQueryBuilder().delete().where('1=1').execute();
+
+    const spaceSafeRepository = dataSource.getRepository(SpaceSafe);
+    await spaceSafeRepository
+      .createQueryBuilder()
+      .delete()
+      .where('1=1')
+      .execute();
+
+    const spaceRepository = dataSource.getRepository(Space);
+    await spaceRepository.createQueryBuilder().delete().where('1=1').execute();
+
+    const walletRepository = dataSource.getRepository(Wallet);
+    await walletRepository.createQueryBuilder().delete().where('1=1').execute();
+
+    const userRepository = dataSource.getRepository(User);
+    await userRepository.createQueryBuilder().delete().where('1=1').execute();
   });
 
   afterAll(async () => {
@@ -151,10 +161,12 @@ describe('SpacesRepository', () => {
 
       expect(createdAt).toEqual(updatedAt);
 
-      expect(createdAt.getTime()).toBeGreaterThanOrEqual(before);
+      // Allow small timing differences (database timestamps may be slightly off due to clock skew)
+      // Use a 10ms buffer to account for database processing time and timing differences
+      expect(createdAt.getTime()).toBeGreaterThanOrEqual(before - 10);
       expect(createdAt.getTime()).toBeLessThanOrEqual(after);
 
-      expect(updatedAt.getTime()).toBeGreaterThanOrEqual(before);
+      expect(updatedAt.getTime()).toBeGreaterThanOrEqual(before - 10);
       expect(updatedAt.getTime()).toBeLessThanOrEqual(after);
     });
 

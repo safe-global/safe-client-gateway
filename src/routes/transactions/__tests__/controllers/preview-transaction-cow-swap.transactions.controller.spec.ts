@@ -849,6 +849,11 @@ describe('Preview transaction - CoW Swap - Transactions Controller (Unit)', () =
           return Promise.resolve({ data: rawify(contractPage), status: 200 });
         }
         if (
+          url === `${dataDecoderUrl}/api/v1/contracts/${ComposableCowAddress}`
+        ) {
+          return Promise.resolve({ data: rawify(contractPage), status: 200 });
+        }
+        if (
           url ===
           `${chain.transactionService}/api/v1/tokens/${twapTransaction.to}`
         ) {

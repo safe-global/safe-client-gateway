@@ -66,8 +66,15 @@ describe('Safes Controller Overview (Unit)', () => {
     await app.init();
   });
 
+  afterEach(async () => {
+    jest.clearAllMocks();
+    if (app) {
+      await app.close();
+    }
+  });
+
   afterAll(async () => {
-    await app.close();
+    // Final cleanup if needed
   });
 
   describe('GET /safes', () => {

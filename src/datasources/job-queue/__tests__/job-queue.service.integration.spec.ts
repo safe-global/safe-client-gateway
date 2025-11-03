@@ -51,6 +51,13 @@ describe('JobQueueService & TestJobConsumer integration', () => {
 
   afterEach(async () => {
     consumer.cleanup();
+    // Wait for all in-flight jobs to complete before cleaning up Redis
+    await waitUntil(() => {
+      const activeJobCount = consumer.activeJobs.length;
+      return activeJobCount === 0;
+    }, 2000).catch(() => {
+      // Ignore timeout - proceed with cleanup anyway
+    });
     await (await queue.client).flushdb();
     await queue.drain(true);
   });
