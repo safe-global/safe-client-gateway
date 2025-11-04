@@ -4385,14 +4385,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"amqp-connection-manager@npm:4.1.14":
-  version: 4.1.14
-  resolution: "amqp-connection-manager@npm:4.1.14"
+"amqp-connection-manager@npm:5.0.0":
+  version: 5.0.0
+  resolution: "amqp-connection-manager@npm:5.0.0"
   dependencies:
     promise-breaker: "npm:^6.0.0"
   peerDependencies:
     amqplib: "*"
-  checksum: 10/502edfd40b9c26eeac0f094fb6603d106370790e1c343554a975a9174651f0fa35e4232f9fd26c418cd6604f1800f5849506166bf15fd61efe3762b08ea65dcc
+  checksum: 10/bf6c346537f71f1cdf03f4d1832c2945b3f80274e8fca41fa96db35ecc3ea0162e1fbf4cba76326fb3784b2362c8c6dd14a74e3ca30e1fc6dcd3ba6dcc172828
   languageName: node
   linkType: hard
 
@@ -9418,7 +9418,7 @@ __metadata:
     "@types/sanitize-html": "npm:2"
     "@types/semver": "npm:7.7.0"
     "@types/supertest": "npm:6.0.2"
-    amqp-connection-manager: "npm:4.1.14"
+    amqp-connection-manager: "npm:5.0.0"
     amqplib: "npm:0.10.8"
     aws-sdk-client-mock: "npm:4.1.0"
     bullmq: "npm:^5.56.0"
