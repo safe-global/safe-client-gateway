@@ -234,14 +234,7 @@ describe('ContractAnalysisService', () => {
             }),
           },
         ],
-        CONTRACT_INTERACTION: [
-          {
-            severity: SEVERITY_MAPPING.NEW_CONTRACT,
-            type: 'NEW_CONTRACT',
-            title: TITLE_MAPPING.NEW_CONTRACT,
-            description: DESCRIPTION_MAPPING.NEW_CONTRACT(),
-          },
-        ],
+        CONTRACT_INTERACTION: [],
         DELEGATECALL: [],
       } as Record<ContractStatusGroup, Array<ContractAnalysisResult>>;
 
@@ -259,9 +252,7 @@ describe('ContractAnalysisService', () => {
             severity: SEVERITY_MAPPING.KNOWN_CONTRACT,
             type: 'KNOWN_CONTRACT',
             title: TITLE_MAPPING.KNOWN_CONTRACT,
-            description: DESCRIPTION_MAPPING.KNOWN_CONTRACT({
-              interactions: 2,
-            }),
+            description: DESCRIPTION_MAPPING.KNOWN_CONTRACT(),
           },
         ],
         DELEGATECALL: [
@@ -439,9 +430,7 @@ describe('ContractAnalysisService', () => {
             severity: SEVERITY_MAPPING.KNOWN_CONTRACT,
             type: 'KNOWN_CONTRACT',
             title: TITLE_MAPPING.KNOWN_CONTRACT,
-            description: DESCRIPTION_MAPPING.KNOWN_CONTRACT({
-              interactions: interactionCount,
-            }),
+            description: DESCRIPTION_MAPPING.KNOWN_CONTRACT(),
           },
         ],
         DELEGATECALL: [],
@@ -511,9 +500,7 @@ describe('ContractAnalysisService', () => {
             severity: SEVERITY_MAPPING.KNOWN_CONTRACT,
             type: 'KNOWN_CONTRACT',
             title: TITLE_MAPPING.KNOWN_CONTRACT,
-            description: DESCRIPTION_MAPPING.KNOWN_CONTRACT({
-              interactions: interactionCount,
-            }),
+            description: DESCRIPTION_MAPPING.KNOWN_CONTRACT(),
           },
         ],
         DELEGATECALL: [
@@ -521,9 +508,7 @@ describe('ContractAnalysisService', () => {
             severity: SEVERITY_MAPPING.UNEXPECTED_DELEGATECALL,
             type: 'UNEXPECTED_DELEGATECALL',
             title: TITLE_MAPPING.UNEXPECTED_DELEGATECALL,
-            description: DESCRIPTION_MAPPING.UNEXPECTED_DELEGATECALL({
-              interactions: interactionCount,
-            }),
+            description: DESCRIPTION_MAPPING.UNEXPECTED_DELEGATECALL(),
           },
         ],
       });
@@ -587,6 +572,65 @@ describe('ContractAnalysisService', () => {
         chainId,
       });
       expect(mockTransactionApiManager.getApi).toHaveBeenCalledWith(chainId);
+    });
+
+    it('should return empty arrays when both delegateCallResult and interactionResult are undefined', async () => {
+      const mockContractPage = pageBuilder()
+        .with('count', 1)
+        .with('results', [
+          contractBuilder()
+            .with('address', contractAddress)
+            .with('abi', {
+              abiJson: [{ type: 'function', name: 'test' }],
+              abiHash: faker.string.hexadecimal() as Hex,
+              modified: faker.date.recent(),
+            })
+            .with('displayName', name)
+            .with('trustedForDelegateCall', true)
+            .build(),
+        ])
+        .build();
+
+      mockDataDecoderApi.getContracts.mockResolvedValue(
+        rawify(mockContractPage),
+      );
+      const mockTransactionPage = pageBuilder().with('count', 0).build();
+      mockTransactionApi.getMultisigTransactions.mockResolvedValue(
+        rawify(mockTransactionPage),
+      );
+
+      const result = await service.analyzeContract({
+        chainId,
+        safeAddress,
+        contract: contractAddress,
+        isDelegateCall: true,
+      });
+
+      expect(mockDataDecoderApi.getContracts).toHaveBeenCalledWith({
+        address: contractAddress,
+        chainId,
+      });
+
+      expect(mockTransactionApiManager.getApi).toHaveBeenCalledWith(chainId);
+      expect(mockTransactionApi.getMultisigTransactions).toHaveBeenCalledWith({
+        safeAddress,
+        to: contractAddress,
+        executed: true,
+        limit: 1,
+      });
+
+      expect(result).toEqual({
+        CONTRACT_VERIFICATION: [
+          {
+            severity: SEVERITY_MAPPING.VERIFIED,
+            type: 'VERIFIED',
+            title: TITLE_MAPPING.VERIFIED,
+            description: DESCRIPTION_MAPPING.VERIFIED({ name }),
+          },
+        ],
+        CONTRACT_INTERACTION: [],
+        DELEGATECALL: [],
+      });
     });
   });
 
@@ -987,7 +1031,7 @@ describe('ContractAnalysisService', () => {
     const safeAddress = getAddress(faker.finance.ethereumAddress());
     const contractAddress = getAddress(faker.finance.ethereumAddress());
 
-    it('should return NEW_CONTRACT when no interactions exist', async () => {
+    it('should return undefined when no interactions exist', async () => {
       const mockTransactionPage = pageBuilder().with('count', 0).build();
 
       mockTransactionApi.getMultisigTransactions.mockResolvedValue(
@@ -1008,15 +1052,10 @@ describe('ContractAnalysisService', () => {
         limit: 1,
       });
 
-      expect(result).toEqual({
-        severity: SEVERITY_MAPPING.NEW_CONTRACT,
-        type: 'NEW_CONTRACT',
-        title: TITLE_MAPPING.NEW_CONTRACT,
-        description: DESCRIPTION_MAPPING.NEW_CONTRACT(),
-      });
+      expect(result).toEqual(undefined);
     });
 
-    it('should return NEW_CONTRACT when count is null', async () => {
+    it('should return undefined when count is null', async () => {
       const mockTransactionPage = pageBuilder().with('count', null).build();
 
       mockTransactionApi.getMultisigTransactions.mockResolvedValue(
@@ -1029,40 +1068,12 @@ describe('ContractAnalysisService', () => {
         contract: contractAddress,
       });
 
-      expect(result).toEqual({
-        severity: SEVERITY_MAPPING.NEW_CONTRACT,
-        type: 'NEW_CONTRACT',
-        title: TITLE_MAPPING.NEW_CONTRACT,
-        description: DESCRIPTION_MAPPING.NEW_CONTRACT(),
-      });
+      expect(result).toEqual(undefined);
     });
 
-    it('should return KNOWN_CONTRACT and handle single interaction correctly', async () => {
-      const mockTransactionPage = pageBuilder().with('count', 1).build();
-
-      mockTransactionApi.getMultisigTransactions.mockResolvedValue(
-        rawify(mockTransactionPage),
-      );
-
-      const result = await service.analyzeInteractions({
-        chainId,
-        safeAddress,
-        contract: contractAddress,
-      });
-
-      expect(result).toEqual({
-        severity: SEVERITY_MAPPING.KNOWN_CONTRACT,
-        type: 'KNOWN_CONTRACT',
-        title: TITLE_MAPPING.KNOWN_CONTRACT,
-        description: 'You have interacted with this contract 1 time.',
-      });
-    });
-
-    it('should return KNOWN_CONTRACT and handle multiple interactions correctly', async () => {
-      const interactionCount = faker.number.int({ min: 2, max: 50 });
-
+    it('should return KNOWN_CONTRACT when count > 0', async () => {
       const mockTransactionPage = pageBuilder()
-        .with('count', interactionCount)
+        .with('count', faker.number.int({ min: 1 }))
         .build();
 
       mockTransactionApi.getMultisigTransactions.mockResolvedValue(
@@ -1079,7 +1090,7 @@ describe('ContractAnalysisService', () => {
         severity: SEVERITY_MAPPING.KNOWN_CONTRACT,
         type: 'KNOWN_CONTRACT',
         title: TITLE_MAPPING.KNOWN_CONTRACT,
-        description: `You have interacted with this contract ${interactionCount} times.`,
+        description: 'You have already interacted with this contract.',
       });
     });
 
