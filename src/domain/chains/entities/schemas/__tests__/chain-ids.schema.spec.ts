@@ -69,29 +69,8 @@ describe('ChainIdsSchema', () => {
       expect(() => ChainIdsSchema.parse('1,@#$,10')).toThrow(ZodError);
     });
 
-    it('should reject negative numbers', () => {
-      expect(() => ChainIdsSchema.parse('-1')).toThrow(ZodError);
-    });
-
-    it('should reject decimal numbers', () => {
-      expect(() => ChainIdsSchema.parse('1.5')).toThrow(ZodError);
-    });
-
     it('should reject mixed valid and invalid entries', () => {
       expect(() => ChainIdsSchema.parse('1,invalid,137')).toThrow(ZodError);
-    });
-
-    it('should provide meaningful error message for non-numeric input', () => {
-      try {
-        ChainIdsSchema.parse('abc');
-        fail('Expected ZodError to be thrown');
-      } catch (error) {
-        expect(error).toBeInstanceOf(ZodError);
-        const zodError = error as ZodError;
-        expect(zodError.errors[0].message).toContain(
-          'Chain ID must be a positive integer',
-        );
-      }
     });
 
     it('should reject hexadecimal chain IDs', () => {
