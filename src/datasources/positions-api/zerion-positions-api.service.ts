@@ -36,7 +36,7 @@ import { Position } from '@/domain/positions/entities/position.entity';
 
 @Injectable()
 export class ZerionPositionsApi implements IPositionsApi {
-  private readonly apiKey: string | undefined;
+  private readonly apiKey: string;
   private readonly baseUri: string;
   private readonly chainsConfiguration: Record<number, ChainAttributes>;
   private readonly defaultExpirationTimeInSeconds: number;
@@ -50,7 +50,7 @@ export class ZerionPositionsApi implements IPositionsApi {
     private readonly configurationService: IConfigurationService,
     private readonly httpErrorFactory: HttpErrorFactory,
   ) {
-    this.apiKey = this.configurationService.get<string>(
+    this.apiKey = this.configurationService.getOrThrow<string>(
       'balances.providers.zerion.apiKey',
     );
     this.baseUri = this.configurationService.getOrThrow<string>(
@@ -74,12 +74,6 @@ export class ZerionPositionsApi implements IPositionsApi {
     fiatCode: string;
     refresh?: string;
   }): Promise<Raw<Array<Position>>> {
-    if (!this.apiKey) {
-      throw new DataSourceError(
-        'Zerion API key is not configured. Set ZERION_API_KEY environment variable.',
-        503,
-      );
-    }
 
     if (!this.fiatCodes.includes(args.fiatCode.toUpperCase())) {
       throw new DataSourceError(

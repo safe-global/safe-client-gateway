@@ -49,7 +49,7 @@ import { getNumberString } from '@/domain/common/utils/utils';
  */
 @Injectable()
 export class ZerionPortfolioApi implements IPortfolioApi {
-  private readonly apiKey: string | undefined;
+  private readonly apiKey: string;
   private readonly baseUri: string;
   private readonly fiatCodes: Array<string>;
   private readonly chainsCacheTtlSeconds = 86400;
@@ -63,7 +63,7 @@ export class ZerionPortfolioApi implements IPortfolioApi {
     private readonly loggingService: ILoggingService,
     @Inject(CacheService) private readonly cacheService: ICacheService,
   ) {
-    this.apiKey = this.configurationService.get<string>(
+    this.apiKey = this.configurationService.getOrThrow<string>(
       'balances.providers.zerion.apiKey',
     );
     this.baseUri = this.configurationService.getOrThrow<string>(
@@ -80,13 +80,6 @@ export class ZerionPortfolioApi implements IPortfolioApi {
     chainIds?: Array<string>;
     trusted?: boolean;
   }): Promise<Raw<Portfolio>> {
-    if (!this.apiKey) {
-      throw new DataSourceError(
-        'Zerion API key is not configured. Set ZERION_API_KEY environment variable.',
-        503,
-      );
-    }
-
     if (!this.fiatCodes.includes(args.fiatCode.toUpperCase())) {
       throw new DataSourceError(
         `Unsupported currency code: ${args.fiatCode}`,
