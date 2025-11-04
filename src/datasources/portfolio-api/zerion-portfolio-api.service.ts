@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { groupBy } from 'lodash';
 import type { Address } from 'viem';
-import { getAddress, hexToNumber, isAddress, isHex, type Hex } from 'viem';
+import { getAddress, hexToNumber, isAddress, type Hex } from 'viem';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import {
@@ -69,9 +69,9 @@ export class ZerionPortfolioApi implements IPortfolioApi {
     this.baseUri = this.configurationService.getOrThrow<string>(
       'balances.providers.zerion.baseUri',
     );
-    this.fiatCodes = this.configurationService
-      .getOrThrow<Array<string>>('balances.providers.zerion.currencies')
-      .map((currency) => currency.toUpperCase());
+    this.fiatCodes = this.configurationService.getOrThrow<Array<string>>(
+      'balances.providers.zerion.currencies',
+    );
   }
 
   async getPortfolio(args: {

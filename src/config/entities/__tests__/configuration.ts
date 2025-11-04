@@ -83,12 +83,12 @@ export default (): ReturnType<typeof configuration> => ({
           new Set([
             ...Array.from(
               { length: faker.number.int({ min: 2, max: 5 }) },
-              () => faker.finance.currencyCode().toLowerCase(),
+              () => faker.finance.currencyCode(),
             ),
-            'btc',
-            'eth',
-            'eur',
-            'usd',
+            'BTC',
+            'ETH',
+            'EUR',
+            'USD',
           ]),
         ),
         limitPeriodSeconds: faker.number.int({ min: 1, max: 10 }),
