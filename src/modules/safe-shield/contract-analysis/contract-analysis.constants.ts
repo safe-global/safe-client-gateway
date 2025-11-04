@@ -41,7 +41,6 @@ export const TITLE_MAPPING: Record<ContractStatus | CommonStatus, string> = {
 
 type DescriptionArgs = {
   name?: string;
-  interactions?: number;
   error?: string;
 };
 
@@ -63,8 +62,7 @@ export const DESCRIPTION_MAPPING: Record<
     'Contract verification is currently unavailable.',
   NEW_CONTRACT: () =>
     'You are interacting with this contract for the first time.',
-  KNOWN_CONTRACT: ({ interactions = 0 } = {}) =>
-    `You have interacted with this contract ${interactions} time${interactions !== 1 ? 's' : ''}.`,
+  KNOWN_CONTRACT: () => 'You have already interacted with this contract.',
   UNEXPECTED_DELEGATECALL: () =>
     'This transaction calls a smart contract that will be able to modify your Safe account. Learn more',
 };

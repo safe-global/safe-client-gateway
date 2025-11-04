@@ -128,7 +128,7 @@ export class ContractAnalysisService {
 
     return {
       CONTRACT_VERIFICATION: [verificationResult],
-      CONTRACT_INTERACTION: [interactionResult],
+      CONTRACT_INTERACTION: interactionResult ? [interactionResult] : [],
       DELEGATECALL: delegateCallResult ? [delegateCallResult] : [],
     };
   }
@@ -196,7 +196,7 @@ export class ContractAnalysisService {
     chainId: string;
     safeAddress: Address;
     contract: Address;
-  }): Promise<ContractAnalysisResult> {
+  }): Promise<ContractAnalysisResult | undefined> {
     const { chainId, safeAddress, contract } = args;
     try {
       const transactionApi = await this.transactionApiManager.getApi(chainId);
@@ -210,8 +210,9 @@ export class ContractAnalysisService {
 
       const multisigPage = MultisigTransactionPageSchema.parse(page);
       const interactions = multisigPage.count ?? 0;
-      const type = interactions > 0 ? 'KNOWN_CONTRACT' : 'NEW_CONTRACT';
-      return this.mapToAnalysisResult({ type, interactions });
+      return interactions > 0
+        ? this.mapToAnalysisResult({ type: 'KNOWN_CONTRACT' })
+        : undefined;
     } catch (error) {
       this.loggingService.warn(
         `Failed to analyze contract interactions: ${error}`,
@@ -240,22 +241,19 @@ export class ContractAnalysisService {
   /**
    * Maps a contract verification status to an analysis result.
    * @param type - The contract status.
-   * @param interactions - The number of interactions with the contract (if applicable).
    * @param name - The name of the contract (if applicable).
    * @param reason - The reason for failure (if applicable).
    * @returns The contract analysis result.
    */
   private mapToAnalysisResult<T extends ContractStatus | CommonStatus>(args: {
     type: T;
-    interactions?: number;
     name?: string;
     error?: string;
   }): AnalysisResult<T> {
-    const { type, interactions, name, error } = args;
+    const { type, name, error } = args;
     const severity = SEVERITY_MAPPING[type];
     const title = TITLE_MAPPING[type];
     const description = DESCRIPTION_MAPPING[type]({
-      interactions,
       name,
       error,
     });
