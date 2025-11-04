@@ -1,4 +1,9 @@
-import { ApiExtraModels, ApiProperty, getSchemaPath } from '@nestjs/swagger';
+import {
+  ApiExtraModels,
+  ApiProperty,
+  ApiPropertyOptional,
+  getSchemaPath,
+} from '@nestjs/swagger';
 import {
   PortfolioNativeToken,
   PortfolioErc20Token,
@@ -23,33 +28,30 @@ export class TokenBalance {
   })
   balance!: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     type: 'string',
     description:
       'Balance in requested fiat currency. Decimal string without exponent notation or thousand separators.',
     pattern: '^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$',
     example: '4801.653401839',
-    nullable: true,
   })
-  balanceFiat: string | null = null;
+  balanceFiat?: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     type: 'string',
     description:
       'Token price in requested fiat currency. Decimal string without exponent notation or thousand separators.',
     pattern: '^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$',
     example: '3890.12',
-    nullable: true,
   })
-  price: string | null = null;
+  price?: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     type: 'string',
     description:
       'Price change as decimal (e.g., "-0.0431" for -4.31%). Decimal string without exponent notation.',
     pattern: '^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$',
     example: '-0.0431',
-    nullable: true,
   })
-  priceChangePercentage1d: string | null = null;
+  priceChangePercentage1d?: string;
 }

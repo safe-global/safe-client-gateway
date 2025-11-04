@@ -47,7 +47,7 @@ export const IZerionBalancesApi = Symbol('IZerionBalancesApi');
 export class ZerionBalancesApi implements IBalancesApi {
   private static readonly COLLECTIBLES_SORTING = '-floor_price';
   private static readonly RATE_LIMIT_CACHE_KEY_PREFIX = 'zerion';
-  private readonly apiKey: string;
+  private readonly apiKey: string | undefined;
   private readonly baseUri: string;
   private readonly chainsConfiguration: Record<number, ChainAttributes>;
   private readonly defaultExpirationTimeInSeconds: number;
@@ -66,7 +66,7 @@ export class ZerionBalancesApi implements IBalancesApi {
     private readonly configurationService: IConfigurationService,
     private readonly httpErrorFactory: HttpErrorFactory,
   ) {
-    this.apiKey = this.configurationService.getOrThrow<string>(
+    this.apiKey = this.configurationService.get<string>(
       'balances.providers.zerion.apiKey',
     );
     this.baseUri = this.configurationService.getOrThrow<string>(

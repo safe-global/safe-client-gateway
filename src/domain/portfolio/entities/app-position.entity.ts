@@ -19,12 +19,12 @@ export const AppPositionSchema = z.object({
   key: z.string(),
   type: z.string(),
   name: z.string(),
-  groupId: z.string().nullish().default(null),
+  groupId: z.string().optional(),
   tokenInfo: AppPositionTokenInfoSchema,
-  receiptTokenAddress: AddressSchema.nullish().default(null),
+  receiptTokenAddress: AddressSchema.optional(),
   balance: z.string(),
-  balanceFiat: FiatStringSchema.nullish().default(null),
-  priceChangePercentage1d: PercentageStringSchema.nullish().default(null),
+  balanceFiat: FiatStringSchema.optional(),
+  priceChangePercentage1d: PercentageStringSchema.optional(),
 });
 
 export const AppPositionsSchema = z.array(AppPositionSchema);

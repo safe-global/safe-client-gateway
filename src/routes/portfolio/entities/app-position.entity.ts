@@ -1,4 +1,9 @@
-import { ApiExtraModels, ApiProperty, getSchemaPath } from '@nestjs/swagger';
+import {
+  ApiExtraModels,
+  ApiProperty,
+  ApiPropertyOptional,
+  getSchemaPath,
+} from '@nestjs/swagger';
 import {
   PortfolioNativeToken,
   PortfolioErc20Token,
@@ -22,12 +27,11 @@ export class AppPosition {
   })
   name!: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'Group ID for grouping related positions together',
     type: 'string',
-    nullable: true,
   })
-  groupId!: string | null;
+  groupId?: string;
 
   @ApiProperty({
     description: 'Token information',
@@ -39,14 +43,13 @@ export class AppPosition {
   })
   tokenInfo!: PortfolioNativeToken | PortfolioErc20Token | PortfolioErc721Token;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description:
       'Receipt token address (pool address) representing this position. This is the contract address for the position token (LP token, staking receipt, etc.), not the underlying token.',
     type: 'string',
-    nullable: true,
     example: '0x6da7b0d8464c4eeab6023d891db267a045fc978f',
   })
-  receiptTokenAddress: string | null = null;
+  receiptTokenAddress?: string;
 
   @ApiProperty({
     description:
@@ -54,23 +57,21 @@ export class AppPosition {
   })
   balance!: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     type: 'string',
     description:
       'Balance in requested fiat currency. Decimal string without exponent notation or thousand separators.',
     pattern: '^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$',
     example: '18638914.125656575',
-    nullable: true,
   })
-  balanceFiat: string | null = null;
+  balanceFiat?: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     type: 'string',
     description:
       'Price change as decimal (e.g., "-0.0431" for -4.31%). Decimal string without exponent notation.',
     pattern: '^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$',
     example: '-0.0431',
-    nullable: true,
   })
-  priceChangePercentage1d: string | null = null;
+  priceChangePercentage1d?: string;
 }

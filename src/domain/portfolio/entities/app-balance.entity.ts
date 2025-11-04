@@ -5,8 +5,8 @@ const FiatStringSchema = z.string().regex(/^-?(?:0|[1-9]\d*)(?:\.\d+)?$/);
 
 export const AppBalanceAppInfoSchema = z.object({
   name: z.string(),
-  logoUrl: z.string().nullish().default(null),
-  url: z.string().nullish().default(null),
+  logoUrl: z.string().optional(),
+  url: z.string().optional(),
 });
 
 export const AppBalanceSchema = z.object({

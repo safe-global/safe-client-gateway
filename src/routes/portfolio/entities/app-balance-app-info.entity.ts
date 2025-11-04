@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class AppBalanceAppInfo {
   @ApiProperty({
@@ -6,19 +6,17 @@ export class AppBalanceAppInfo {
   })
   name!: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     type: 'string',
     format: 'uri',
     description: 'Application logo URL (HTTPS)',
-    nullable: true,
   })
-  logoUrl: string | null = null;
+  logoUrl?: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     type: 'string',
     format: 'uri',
     description: 'Application URL (HTTPS)',
-    nullable: true,
   })
-  url: string | null = null;
+  url?: string;
 }

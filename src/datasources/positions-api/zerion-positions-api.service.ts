@@ -36,7 +36,7 @@ import { Position } from '@/domain/positions/entities/position.entity';
 
 @Injectable()
 export class ZerionPositionsApi implements IPositionsApi {
-  private readonly apiKey: string;
+  private readonly apiKey: string | undefined;
   private readonly baseUri: string;
   private readonly chainsConfiguration: Record<number, ChainAttributes>;
   private readonly defaultExpirationTimeInSeconds: number;
@@ -50,7 +50,7 @@ export class ZerionPositionsApi implements IPositionsApi {
     private readonly configurationService: IConfigurationService,
     private readonly httpErrorFactory: HttpErrorFactory,
   ) {
-    this.apiKey = this.configurationService.getOrThrow<string>(
+    this.apiKey = this.configurationService.get<string>(
       'balances.providers.zerion.apiKey',
     );
     this.baseUri = this.configurationService.getOrThrow<string>(
@@ -74,7 +74,6 @@ export class ZerionPositionsApi implements IPositionsApi {
     fiatCode: string;
     refresh?: string;
   }): Promise<Raw<Array<Position>>> {
-
     if (!this.fiatCodes.includes(args.fiatCode.toUpperCase())) {
       throw new DataSourceError(
         `Unsupported currency code: ${args.fiatCode}`,

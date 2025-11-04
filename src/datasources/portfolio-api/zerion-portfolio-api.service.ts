@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { groupBy } from 'lodash';
 import type { Address } from 'viem';
-import { getAddress, hexToNumber, isAddress } from 'viem';
+import { getAddress, hexToNumber, isAddress, isHex, type Hex } from 'viem';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import {
@@ -49,7 +49,7 @@ import { getNumberString } from '@/domain/common/utils/utils';
  */
 @Injectable()
 export class ZerionPortfolioApi implements IPortfolioApi {
-  private readonly apiKey: string;
+  private readonly apiKey: string | undefined;
   private readonly baseUri: string;
   private readonly fiatCodes: Array<string>;
   private readonly chainsCacheTtlSeconds = 86400;
@@ -63,7 +63,7 @@ export class ZerionPortfolioApi implements IPortfolioApi {
     private readonly loggingService: ILoggingService,
     @Inject(CacheService) private readonly cacheService: ICacheService,
   ) {
-    this.apiKey = this.configurationService.getOrThrow<string>(
+    this.apiKey = this.configurationService.get<string>(
       'balances.providers.zerion.apiKey',
     );
     this.baseUri = this.configurationService.getOrThrow<string>(
@@ -224,20 +224,18 @@ export class ZerionPortfolioApi implements IPortfolioApi {
           },
           balance: position.attributes.quantity.int,
           balanceFiat:
-            position.attributes.value !== null &&
-            position.attributes.value !== undefined
+            position.attributes.value !== null
               ? getNumberString(position.attributes.value)
-              : null,
+              : undefined,
           price:
-            position.attributes.price !== null &&
-            position.attributes.price !== undefined
+            position.attributes.price !== null
               ? getNumberString(position.attributes.price)
-              : null,
+              : undefined,
           priceChangePercentage1d:
             position.attributes.changes?.percent_1d !== null &&
             position.attributes.changes?.percent_1d !== undefined
               ? getNumberString(position.attributes.changes.percent_1d)
-              : null,
+              : undefined,
         };
       }),
     );
@@ -280,8 +278,8 @@ export class ZerionPortfolioApi implements IPortfolioApi {
           return {
             appInfo: {
               name: appName,
-              logoUrl: appMetadata?.icon?.url ?? null,
-              url: appMetadata?.url ?? null,
+              logoUrl: appMetadata?.icon?.url ?? undefined,
+              url: appMetadata?.url ?? undefined,
             },
             balanceFiat: getNumberString(
               this._calculatePositionsBalance(appPositions),
@@ -345,13 +343,13 @@ export class ZerionPortfolioApi implements IPortfolioApi {
         const receiptTokenAddress =
           poolAddress != null && isAddress(poolAddress)
             ? getAddress(poolAddress)
-            : null;
+            : undefined;
 
         return {
           key: position.id,
           type: position.attributes.position_type,
           name: position.attributes.name,
-          groupId: position.attributes.group_id ?? null,
+          groupId: position.attributes.group_id ?? undefined,
           tokenInfo: {
             address,
             decimals: impl.decimals,
@@ -369,14 +367,14 @@ export class ZerionPortfolioApi implements IPortfolioApi {
           receiptTokenAddress,
           balance: position.attributes.quantity.int,
           balanceFiat:
-            position.attributes.value == null
-              ? null
-              : getNumberString(position.attributes.value),
+            position.attributes.value !== null
+              ? getNumberString(position.attributes.value)
+              : undefined,
           priceChangePercentage1d:
             position.attributes.changes?.percent_1d !== null &&
             position.attributes.changes?.percent_1d !== undefined
               ? getNumberString(position.attributes.changes.percent_1d)
-              : null,
+              : undefined,
         };
       }),
     );
@@ -439,9 +437,8 @@ export class ZerionPortfolioApi implements IPortfolioApi {
     const mapping: Record<string, string> = {};
     for (const chain of response.data) {
       const networkName = chain.id;
-      const hexChainId = chain.attributes.external_id;
       const decimalChainId = hexToNumber(
-        hexChainId as `0x${string}`,
+        chain.attributes.external_id as Hex,
       ).toString();
       mapping[networkName] = decimalChainId;
     }

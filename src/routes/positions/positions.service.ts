@@ -86,13 +86,9 @@ export class PositionsService {
       const sign = position.position_type === PositionType.loan ? -1 : 1;
       return sum + sign * fiatBalance;
     }, 0);
-    const appMetadata = filteredPositions[0].application_metadata!;
     return {
       protocol,
-      protocol_metadata: {
-        name: appMetadata.name,
-        icon: appMetadata.icon,
-      },
+      protocol_metadata: filteredPositions[0].application_metadata!,
       fiatTotal: getNumberString(fiatTotal),
       items: positionGroups,
     };

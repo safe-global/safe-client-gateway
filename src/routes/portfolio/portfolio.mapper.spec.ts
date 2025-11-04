@@ -226,7 +226,7 @@ describe('PortfolioRouteMapper', () => {
 
     it('should map null receiptTokenAddress correctly', () => {
       const position = appPositionBuilder()
-        .with('receiptTokenAddress', null)
+        .with('receiptTokenAddress', undefined)
         .build();
 
       const group = appPositionGroupBuilder().with('items', [position]).build();
@@ -242,7 +242,7 @@ describe('PortfolioRouteMapper', () => {
 
       expect(
         result.positionBalances[0].groups[0].items[0].receiptTokenAddress,
-      ).toBeNull();
+      ).toBeUndefined();
     });
 
     it('should handle empty portfolios', () => {

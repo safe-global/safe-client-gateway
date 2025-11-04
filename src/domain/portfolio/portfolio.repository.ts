@@ -217,7 +217,7 @@ export class PortfolioRepository implements IPortfolioRepository {
    * @param portfolio - Portfolio to filter
    */
   private _filterDustPositions(portfolio: Portfolio): Portfolio {
-    const isDustFree = (item: { balanceFiat: string | null }): boolean => {
+    const isDustFree = (item: { balanceFiat?: string }): boolean => {
       if (!item.balanceFiat) return true;
       const value = Number(item.balanceFiat);
       return value >= this.dustThresholdUsd;
@@ -231,7 +231,7 @@ export class PortfolioRepository implements IPortfolioRepository {
    *
    * @param items - Items with balanceFiat property
    */
-  private _sumBalances(items: Array<{ balanceFiat: string | null }>): number {
+  private _sumBalances(items: Array<{ balanceFiat?: string }>): number {
     return items.reduce((sum, item) => {
       const value = item.balanceFiat ? Number(item.balanceFiat) : 0;
       return sum + value;

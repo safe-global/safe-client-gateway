@@ -62,7 +62,7 @@ export class PortfolioRouteMapper {
   private mapAppPosition(position: DomainAppPosition): AppPosition {
     return {
       ...position,
-      groupId: position.groupId ?? null,
+      groupId: position.groupId ?? undefined,
       tokenInfo: {
         ...position.tokenInfo,
         address: position.tokenInfo.address ?? NULL_ADDRESS,
@@ -78,9 +78,7 @@ export class PortfolioRouteMapper {
   private mapAppBalance(app: DomainAppBalance): AppBalance {
     return {
       appInfo: {
-        name: app.appInfo.name,
-        logoUrl: app.appInfo.logoUrl,
-        url: app.appInfo.url,
+        ...app.appInfo,
       },
       balanceFiat: app.balanceFiat,
       groups: app.groups.map((group) => this.mapAppPositionGroup(group)),
