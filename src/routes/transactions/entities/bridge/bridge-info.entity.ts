@@ -9,6 +9,7 @@ import { AddressInfo } from '@/routes/common/entities/address-info.entity';
 import { BridgeFee } from '@/routes/transactions/entities/bridge/fees.entity';
 import { TokenInfo } from '@/routes/transactions/entities/swaps/token-info.entity';
 import {
+  isTransactionInfoOfType,
   TransactionInfo,
   TransactionInfoType,
 } from '@/routes/transactions/entities/transaction-info.entity';
@@ -138,19 +139,18 @@ export class BridgeAndSwapTransactionInfo extends TransactionInfo {
 
 /**
  * Type guard to check if a TransactionInfo is a BridgeAndSwapTransactionInfo.
- * @param txInfo - The transaction info to check.
- * @returns True if the transaction info is a BridgeAndSwapTransactionInfo.
+ * @param {TransactionInfo} txInfo - The transaction info to check.
+ * @returns {BridgeAndSwapTransactionInfo} True if the transaction info is a BridgeAndSwapTransactionInfo.
  */
-export const isBridgeAndSwapTransactionInfo = (
-  txInfo: TransactionInfo,
-): txInfo is BridgeAndSwapTransactionInfo =>
-  txInfo.type === TransactionInfoType.SwapAndBridge;
+export const isBridgeAndSwapTransactionInfo =
+  isTransactionInfoOfType<BridgeAndSwapTransactionInfo>(
+    TransactionInfoType.SwapAndBridge,
+  );
 
 /**
  * Type guard to check if a TransactionInfo is a SwapTransactionInfo.
- * @param txInfo - The transaction info to check.
- * @returns True if the transaction info is a SwapTransactionInfo.
+ * @param {TransactionInfo} txInfo - The transaction info to check.
+ * @returns {SwapTransactionInfo} True if the transaction info is a SwapTransactionInfo.
  */
-export const isSwapTransactionInfo = (
-  txInfo: TransactionInfo,
-): txInfo is SwapTransactionInfo => txInfo.type === TransactionInfoType.Swap;
+export const isSwapTransactionInfo =
+  isTransactionInfoOfType<SwapTransactionInfo>(TransactionInfoType.Swap);

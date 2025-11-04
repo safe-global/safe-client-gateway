@@ -1,4 +1,5 @@
 import {
+  isTransactionInfoOfType,
   TransactionInfo,
   TransactionInfoType,
 } from '@/routes/transactions/entities/transaction-info.entity';
@@ -165,10 +166,10 @@ export class SwapOrderTransactionInfo
 
 /**
  * Type guard to check if a TransactionInfo is a SwapOrderTransactionInfo.
- * @param txInfo - The transaction info to check.
- * @returns True if the transaction info is a SwapOrderTransactionInfo.
+ * @param {TransactionInfo} txInfo - The transaction info to check.
+ * @returns {SwapOrderTransactionInfo} True if the transaction info is a SwapOrderTransactionInfo.
  */
-export const isSwapOrderTransactionInfo = (
-  txInfo: TransactionInfo,
-): txInfo is SwapOrderTransactionInfo =>
-  txInfo.type === TransactionInfoType.SwapOrder;
+export const isSwapOrderTransactionInfo =
+  isTransactionInfoOfType<SwapOrderTransactionInfo>(
+    TransactionInfoType.SwapOrder,
+  );
