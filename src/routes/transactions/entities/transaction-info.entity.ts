@@ -32,3 +32,13 @@ export class TransactionInfo {
     this.humanDescription = humanDescription;
   }
 }
+
+/**
+ * Creates a type guard that checks if a TransactionInfo matches a specific type.
+ * @param {TransactionInfoType} type - The transaction info type to check for.
+ * @returns A type guard function that narrows TransactionInfo to the specified subtype.
+ */
+export const isTransactionInfoOfType =
+  <T extends TransactionInfo>(type: TransactionInfoType) =>
+  (txInfo: TransactionInfo): txInfo is T =>
+    txInfo.type === type;

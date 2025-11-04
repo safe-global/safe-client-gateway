@@ -16,7 +16,11 @@ import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
 import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
 import type { TransactionsService } from '@/routes/transactions/transactions.service';
 import { TransactionInfoType } from '@/routes/transactions/entities/transaction-info.entity';
-import type { BridgeAndSwapTransactionInfo } from '@/routes/transactions/entities/bridge/bridge-info.entity';
+import type {
+  BridgeAndSwapTransactionInfo,
+  SwapTransactionInfo,
+} from '@/routes/transactions/entities/bridge/bridge-info.entity';
+import type { SwapOrderTransactionInfo } from '@/routes/transactions/entities/swaps/swap-order-info.entity';
 import type { Address, Hash, Hex } from 'viem';
 import type { DataDecodedAccuracy } from '@/domain/data-decoder/v2/entities/data-decoded.entity';
 import type { CreationTransaction } from '@/routes/transactions/entities/creation-transaction.entity';
@@ -492,6 +496,194 @@ describe('RecipientAnalysisService', () => {
         transactions,
         mockErc20Decoder,
       );
+    });
+
+    it('should analyze Swap transaction with recipient different from Safe address', async () => {
+      const differentRecipient = getAddress(faker.finance.ethereumAddress());
+      const mockSwapTxInfo = {
+        type: TransactionInfoType.Swap,
+        recipient: { value: differentRecipient },
+      } as SwapTransactionInfo;
+
+      extractRecipientsSpy.mockReturnValue([]);
+      mockTransactionApi.getTransfers.mockResolvedValue(
+        rawify(mockTransferPage(5)),
+      );
+      mockTransactionApi.getSafe.mockResolvedValue(
+        rawify(safeBuilder().with('nonce', 10).build()),
+      );
+
+      const result = await service.analyze({
+        chainId: mockChainId,
+        safeAddress: mockSafeAddress,
+        transactions: [],
+        txInfo: mockSwapTxInfo,
+      });
+
+      expect(result).toEqual({
+        [differentRecipient]: {
+          isSafe: true,
+          RECIPIENT_INTERACTION: [
+            {
+              severity: 'OK',
+              type: 'RECURRING_RECIPIENT',
+              title: 'Recurring recipient',
+              description: 'You have interacted with this address 5 times.',
+            },
+          ],
+        },
+      });
+    });
+
+    it('should not analyze Swap transaction when recipient equals Safe address', async () => {
+      const mockSwapTxInfo = {
+        type: TransactionInfoType.Swap,
+        recipient: { value: mockSafeAddress },
+      } as SwapTransactionInfo;
+
+      extractRecipientsSpy.mockReturnValue([]);
+
+      const result = await service.analyze({
+        chainId: mockChainId,
+        safeAddress: mockSafeAddress,
+        transactions: [],
+        txInfo: mockSwapTxInfo,
+      });
+
+      expect(result).toEqual({});
+      expect(mockTransactionApi.getTransfers).not.toHaveBeenCalled();
+    });
+
+    it('should analyze SwapOrder transaction with receiver different from Safe address', async () => {
+      const differentReceiver = getAddress(faker.finance.ethereumAddress());
+      const mockSwapOrderTxInfo = {
+        type: TransactionInfoType.SwapOrder,
+        receiver: differentReceiver,
+      } as SwapOrderTransactionInfo;
+
+      extractRecipientsSpy.mockReturnValue([]);
+      mockTransactionApi.getTransfers.mockResolvedValue(
+        rawify(mockTransferPage(3)),
+      );
+      mockTransactionApi.getSafe.mockResolvedValue(
+        rawify(safeBuilder().with('nonce', 8).build()),
+      );
+
+      const result = await service.analyze({
+        chainId: mockChainId,
+        safeAddress: mockSafeAddress,
+        transactions: [],
+        txInfo: mockSwapOrderTxInfo,
+      });
+
+      expect(result).toEqual({
+        [differentReceiver]: {
+          isSafe: true,
+          RECIPIENT_INTERACTION: [
+            {
+              severity: 'OK',
+              type: 'RECURRING_RECIPIENT',
+              title: 'Recurring recipient',
+              description: 'You have interacted with this address 3 times.',
+            },
+          ],
+        },
+      });
+    });
+
+    it('should not analyze SwapOrder transaction when receiver is null', async () => {
+      const mockSwapOrderTxInfo = {
+        type: TransactionInfoType.SwapOrder,
+        receiver: null,
+      } as SwapOrderTransactionInfo;
+
+      extractRecipientsSpy.mockReturnValue([]);
+
+      const result = await service.analyze({
+        chainId: mockChainId,
+        safeAddress: mockSafeAddress,
+        transactions: [],
+        txInfo: mockSwapOrderTxInfo,
+      });
+
+      expect(result).toEqual({});
+      expect(mockTransactionApi.getTransfers).not.toHaveBeenCalled();
+    });
+
+    it('should not analyze SwapOrder transaction when receiver equals Safe address', async () => {
+      const mockSwapOrderTxInfo = {
+        type: TransactionInfoType.SwapOrder,
+        receiver: mockSafeAddress,
+      } as SwapOrderTransactionInfo;
+
+      extractRecipientsSpy.mockReturnValue([]);
+
+      const result = await service.analyze({
+        chainId: mockChainId,
+        safeAddress: mockSafeAddress,
+        transactions: [],
+        txInfo: mockSwapOrderTxInfo,
+      });
+
+      expect(result).toEqual({});
+      expect(mockTransactionApi.getTransfers).not.toHaveBeenCalled();
+    });
+
+    it('should analyze BridgeAndSwap with recipient same as Safe address', async () => {
+      const targetChainId = faker.string.numeric(3);
+      const mockBridgeTxInfo = createMockTxInfo(mockSafeAddress, targetChainId);
+
+      extractRecipientsSpy.mockReturnValue([]);
+
+      mockTransactionsService.getCreationTransaction.mockResolvedValue(
+        createMockCreationTransaction([mockSafeAddress], 1),
+      );
+
+      mockChainsRepository.isSupportedChain.mockResolvedValue(true);
+      mockChainsRepository.getChain.mockResolvedValue(
+        chainBuilder().with('chainId', targetChainId).build(),
+      );
+
+      const mockSourceSafe = safeBuilder()
+        .with('version', '1.3.0')
+        .with('threshold', 1)
+        .with('owners', [mockSafeAddress])
+        .build();
+
+      mockTransactionApiManager.getApi.mockImplementation((chainId) => {
+        if (chainId === mockChainId) {
+          return Promise.resolve({
+            ...mockTransactionApi,
+            getSafe: jest.fn().mockResolvedValue(mockSourceSafe),
+          });
+        }
+        return Promise.resolve({
+          ...mockTransactionApi,
+          getSafe: jest.fn().mockResolvedValue(null),
+        });
+      });
+
+      const result = await service.analyze({
+        chainId: mockChainId,
+        safeAddress: mockSafeAddress,
+        transactions: [],
+        txInfo: mockBridgeTxInfo,
+      });
+
+      expect(result).toEqual({
+        [mockSafeAddress]: {
+          BRIDGE: [
+            {
+              type: 'INCOMPATIBLE_SAFE',
+              severity: 'CRITICAL',
+              title: 'Incompatible Safe version',
+              description:
+                'This Safe account cannot be created on the destination chain. You will not be able to claim ownership of the same address. Funds sent may be inaccessible.',
+              targetChainId,
+            },
+          ],
+        },
+      });
     });
   });
 
@@ -1456,15 +1648,6 @@ describe('RecipientAnalysisService', () => {
         to: mockRecipientAddress,
         limit: 1,
       });
-    });
-
-    it('should return empty object when txInfo is not provided', async () => {
-      const result = await service.analyzeBridge({
-        chainId: mockChainId,
-        safeAddress: mockSafeAddress,
-      });
-
-      expect(result).toEqual({});
     });
 
     it('should return INCOMPATIBLE_SAFE when target Safe does not exist and target network is incompatible', async () => {
