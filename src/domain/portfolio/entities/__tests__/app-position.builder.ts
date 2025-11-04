@@ -33,14 +33,14 @@ export function appPositionBuilder(): IBuilder<AppPosition> {
     .with('name', faker.word.words(2))
     .with(
       'groupId',
-      faker.datatype.boolean() ? faker.string.alphanumeric(32) : null,
+      faker.datatype.boolean() ? faker.string.alphanumeric(32) : undefined,
     )
     .with('tokenInfo', appPositionTokenInfoBuilder().build())
     .with(
       'receiptTokenAddress',
       faker.datatype.boolean()
         ? getAddress(faker.finance.ethereumAddress())
-        : null,
+        : undefined,
     )
     .with('balance', faker.string.numeric({ length: 18 }))
     .with(

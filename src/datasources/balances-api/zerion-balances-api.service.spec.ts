@@ -37,10 +37,9 @@ describe('ZerionBalancesApiService', () => {
   const notFoundExpirationTimeInSeconds = faker.number.int();
   const supportedFiatCodes = Array.from(
     new Set([
-      ...faker.helpers.multiple(
-        () => faker.finance.currencyCode().toLowerCase(),
-        { count: { min: 2, max: 5 } },
-      ),
+      ...faker.helpers.multiple(() => faker.finance.currencyCode(), {
+        count: { min: 2, max: 5 },
+      }),
     ]),
   );
   const fallbackChainId = faker.number.int();

@@ -103,7 +103,7 @@ describe('PortfolioRepository', () => {
         );
 
         const cachedValue = JSON.parse(mockCacheService.hSet.mock.calls[0][1]);
-        expect(cachedValue).toMatchObject(portfolio);
+        expect(cachedValue).toMatchObject(expect.objectContaining(portfolio));
       });
     });
 
