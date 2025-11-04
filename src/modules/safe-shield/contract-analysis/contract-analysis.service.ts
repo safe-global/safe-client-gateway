@@ -60,6 +60,15 @@ export class ContractAnalysisService {
       );
   }
 
+  /**
+   * Analyzes contracts.
+   * Extracts contract addresses, checks cache, and performs analysis on each contract.
+   *
+   * @param {string} args.chainId - The chain ID.
+   * @param {Address} args.safeAddress - The Safe wallet address.
+   * @param {Array<DecodedTransactionData>} args.transactions - The transactions to analyze.
+   * @returns {Promise<ContractAnalysisResponse>} A map of contract addresses to their analysis results.
+   */
   public async analyze(args: {
     chainId: string;
     safeAddress: Address;
@@ -112,6 +121,16 @@ export class ContractAnalysisService {
     return analysisResults;
   }
 
+  /**
+   * Analyzes a single contract by performing verification and interaction checks.
+   * Groups results by analysis type: verification, interaction, and delegatecall checks.
+   *
+   * @param {string} args.chainId - The chain ID.
+   * @param {Address} args.safeAddress - The Safe wallet address.
+   * @param {Address} args.contract - The contract address to analyze.
+   * @param {boolean} args.isDelegateCall - Whether the contract is called via delegatecall.
+   * @returns {Promise<GroupedAnalysisResults<ContractAnalysisResult>>} Grouped analysis results by category.
+   */
   public async analyzeContract(args: {
     chainId: string;
     safeAddress: Address;
@@ -135,11 +154,11 @@ export class ContractAnalysisService {
 
   /**
    * Verify a contract. In case of delegateCall, check for trustworthiness.
-   * @param args - The arguments for the analysis.
-   * @param args.chainId - The chain ID.
-   * @param args.contract - The contract address.
-   * @param args.isDelegateCall - Whether the contract is called via delegateCall.
-   * @returns A pair of analysis results if available: [verification result, delegateCall result].
+   *
+   * @param {string} args.chainId - The chain ID.
+   * @param {Address} args.contract - The contract address.
+   * @param {boolean} args.isDelegateCall - Whether the contract is called via delegateCall.
+   * @returns {Promise<[ContractAnalysisResult | undefined, AnalysisResult<'UNEXPECTED_DELEGATECALL'> | undefined]>} A pair of analysis results if available: [verification result, delegateCall result].
    */
   public async verifyContract(args: {
     chainId: string;
@@ -186,11 +205,11 @@ export class ContractAnalysisService {
 
   /**
    * Analyzes the interactions between a Safe and a contract.
-   * @param args - The arguments for the analysis.
-   * @param args.chainId - The chain ID.
-   * @param args.safeAddress - The Safe address.
-   * @param args.contract - The contract address.
-   * @returns The analysis result.
+   *
+   * @param {string} args.chainId - The chain ID.
+   * @param {Address} args.safeAddress - The Safe address.
+   * @param {Address} args.contract - The contract address.
+   * @returns {Promise<ContractAnalysisResult | undefined>} The analysis result.
    */
   public async analyzeInteractions(args: {
     chainId: string;
@@ -226,9 +245,9 @@ export class ContractAnalysisService {
 
   /**
    * Checks if a delegateCall is unexpected based on the contract's trust status.
-   * @param isDelegateCall - Whether the call is a delegateCall.
-   * @param contract - The contract details (if available).
-   * @returns The analysis result (if available).
+   * @param {boolean} isDelegateCall - Whether the call is a delegateCall.
+   * @param {Contract | undefined} contract - The contract details (if available).
+   * @returns {AnalysisResult<'UNEXPECTED_DELEGATECALL'> | undefined} The analysis result (if available).
    */
   private checkDelegateCall(
     isDelegateCall: boolean,
@@ -240,10 +259,11 @@ export class ContractAnalysisService {
 
   /**
    * Maps a contract verification status to an analysis result.
-   * @param type - The contract status.
-   * @param name - The name of the contract (if applicable).
-   * @param reason - The reason for failure (if applicable).
-   * @returns The contract analysis result.
+   * @template T - The contract status type.
+   * @param {T} args.type - The contract status.
+   * @param {string} args.name - The name of the contract (if applicable).
+   * @param {string} args.error - The error message (if applicable).
+   * @returns {AnalysisResult<T>} The contract analysis result.
    */
   private mapToAnalysisResult<T extends ContractStatus | CommonStatus>(args: {
     type: T;
