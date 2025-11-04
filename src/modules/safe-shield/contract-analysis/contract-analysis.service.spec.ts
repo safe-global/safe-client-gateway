@@ -796,7 +796,7 @@ describe('ContractAnalysisService', () => {
         expect(delegateCall).toBeUndefined();
       });
 
-      it('should return NOT_VERIFIED_BY_SAFE when no contracts found', async () => {
+      it('should return undefined when no contracts found', async () => {
         const mockContractPage = pageBuilder()
           .with('count', 0)
           .with('results', [])
@@ -817,12 +817,7 @@ describe('ContractAnalysisService', () => {
           chainId,
         });
 
-        expect(verification).toEqual({
-          severity: SEVERITY_MAPPING.NOT_VERIFIED_BY_SAFE,
-          type: 'NOT_VERIFIED_BY_SAFE',
-          title: TITLE_MAPPING.NOT_VERIFIED_BY_SAFE,
-          description: DESCRIPTION_MAPPING.NOT_VERIFIED_BY_SAFE(),
-        });
+        expect(verification).toBeUndefined();
         expect(delegateCall).toBeUndefined();
       });
 
@@ -980,12 +975,7 @@ describe('ContractAnalysisService', () => {
           isDelegateCall: true,
         });
 
-        expect(verification).toEqual({
-          severity: SEVERITY_MAPPING.NOT_VERIFIED_BY_SAFE,
-          type: 'NOT_VERIFIED_BY_SAFE',
-          title: TITLE_MAPPING.NOT_VERIFIED_BY_SAFE,
-          description: DESCRIPTION_MAPPING.NOT_VERIFIED_BY_SAFE(),
-        });
+        expect(verification).toBeUndefined();
 
         expect(delegateCall).toEqual({
           severity: SEVERITY_MAPPING.UNEXPECTED_DELEGATECALL,

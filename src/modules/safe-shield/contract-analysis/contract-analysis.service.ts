@@ -127,7 +127,7 @@ export class ContractAnalysisService {
       ]);
 
     return {
-      CONTRACT_VERIFICATION: [verificationResult],
+      CONTRACT_VERIFICATION: verificationResult ? [verificationResult] : [],
       CONTRACT_INTERACTION: interactionResult ? [interactionResult] : [],
       DELEGATECALL: delegateCallResult ? [delegateCallResult] : [],
     };
@@ -139,7 +139,7 @@ export class ContractAnalysisService {
    * @param args.chainId - The chain ID.
    * @param args.contract - The contract address.
    * @param args.isDelegateCall - Whether the contract is called via delegateCall.
-   * @returns A pair of analysis results: [verification result, delegateCall result (if available)].
+   * @returns A pair of analysis results if available: [verification result, delegateCall result].
    */
   public async verifyContract(args: {
     chainId: string;
@@ -147,16 +147,14 @@ export class ContractAnalysisService {
     isDelegateCall: boolean;
   }): Promise<
     [
-      ContractAnalysisResult,
+      ContractAnalysisResult | undefined,
       AnalysisResult<'UNEXPECTED_DELEGATECALL'> | undefined,
     ]
   > {
-    let type: ContractStatus;
-    let name: string | undefined;
     let resolvedContract: Contract | undefined;
+    let verificationResult: ContractAnalysisResult | undefined;
 
     const { chainId, contract, isDelegateCall } = args;
-
     try {
       const rawContracts = await this.dataDecoderApi.getContracts({
         address: contract,
@@ -164,24 +162,26 @@ export class ContractAnalysisService {
       });
       const { count, results } = ContractPageSchema.parse(rawContracts);
 
-      if (count) {
-        resolvedContract = results[0];
-        const { abi, displayName, name: rawName } = resolvedContract;
-
-        type = abi ? 'VERIFIED' : 'NOT_VERIFIED';
-        name = displayName || rawName;
-      } else {
-        type = 'NOT_VERIFIED_BY_SAFE';
+      if (!count) {
+        return [undefined, this.checkDelegateCall(isDelegateCall, undefined)];
       }
+
+      resolvedContract = results[0];
+      const { abi, displayName, name: rawName } = resolvedContract;
+      const type = abi ? 'VERIFIED' : 'NOT_VERIFIED';
+      const name = displayName || rawName;
+
+      verificationResult = this.mapToAnalysisResult({ type, name });
     } catch {
-      type = 'VERIFICATION_UNAVAILABLE';
+      verificationResult = this.mapToAnalysisResult({
+        type: 'VERIFICATION_UNAVAILABLE',
+      });
     }
 
-    const delegateCallResult = this.checkDelegateCall(
-      isDelegateCall,
-      resolvedContract,
-    );
-    return [this.mapToAnalysisResult({ type, name }), delegateCallResult];
+    return [
+      verificationResult,
+      this.checkDelegateCall(isDelegateCall, resolvedContract),
+    ];
   }
 
   /**
