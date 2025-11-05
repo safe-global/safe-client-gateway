@@ -15,7 +15,7 @@ export class SingleRecipientAnalysisResultDto extends AnalysisResultDto<
     enum: [...RecipientStatus, ...CommonStatus],
     example: 'NEW_RECIPIENT',
   })
-  type!: RecipientStatus | CommonStatus;
+  declare type: RecipientStatus | CommonStatus;
 }
 
 /**

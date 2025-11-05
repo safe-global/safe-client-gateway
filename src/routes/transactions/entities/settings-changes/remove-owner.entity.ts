@@ -7,7 +7,7 @@ import {
 
 export class RemoveOwner extends SettingsChange {
   @ApiProperty({ enum: [SettingsChangeType.RemoveOwner] })
-  override type!: SettingsChangeType.RemoveOwner;
+  declare type: SettingsChangeType.RemoveOwner;
 
   @ApiProperty()
   owner: AddressInfo;

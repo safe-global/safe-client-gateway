@@ -7,7 +7,7 @@ import {
 
 export class AddOwner extends SettingsChange {
   @ApiProperty({ enum: [SettingsChangeType.AddOwner] })
-  readonly type!: SettingsChangeType.AddOwner;
+  declare readonly type: SettingsChangeType.AddOwner;
 
   @ApiProperty()
   owner: AddressInfo;

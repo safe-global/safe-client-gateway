@@ -34,7 +34,7 @@ export class MasterCopyChangeThreatAnalysisResultDto
     description: 'Threat status code',
     enum: ['MASTERCOPY_CHANGE'],
   })
-  type!: Extract<ThreatStatus, 'MASTERCOPY_CHANGE'>;
+  declare type: Extract<ThreatStatus, 'MASTERCOPY_CHANGE'>;
 
   @ApiProperty({
     description: 'Address of the old master copy/implementation contract',
@@ -58,7 +58,7 @@ export class MaliciousOrModerateThreatAnalysisResultDto
     description: 'Threat status code',
     enum: ['MALICIOUS', 'MODERATE'],
   })
-  type!: Extract<ThreatStatus, 'MALICIOUS' | 'MODERATE'>;
+  declare type: Extract<ThreatStatus, 'MALICIOUS' | 'MODERATE'>;
 
   @ApiPropertyOptional({
     description:
@@ -84,7 +84,7 @@ export class ThreatAnalysisResultDto extends AnalysisResultDto<
     description: 'Threat status code',
     enum: ['NO_THREAT', 'OWNERSHIP_CHANGE', 'MODULE_CHANGE', ...CommonStatus],
   })
-  type!:
+  declare type:
     | Exclude<ThreatStatus, 'MASTERCOPY_CHANGE' | 'MALICIOUS' | 'MODERATE'>
     | CommonStatus;
 }

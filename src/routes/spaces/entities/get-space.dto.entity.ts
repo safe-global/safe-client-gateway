@@ -12,10 +12,10 @@ import { ApiProperty } from '@nestjs/swagger';
 
 class UserDto extends User {
   @ApiProperty({ type: Number })
-  public id!: User['id'];
+  declare public id: User['id'];
 
   @ApiProperty({ type: String, enum: getStringEnumKeys(UserStatus) })
-  public status!: User['status'];
+  declare public status: User['status'];
 }
 
 class MemberDto {

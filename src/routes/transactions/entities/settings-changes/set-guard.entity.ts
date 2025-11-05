@@ -7,7 +7,7 @@ import {
 
 export class SetGuard extends SettingsChange {
   @ApiProperty({ enum: [SettingsChangeType.SetGuard] })
-  override type!: SettingsChangeType.SetGuard;
+  declare type: SettingsChangeType.SetGuard;
 
   @ApiProperty()
   guard: AddressInfo;

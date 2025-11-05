@@ -6,7 +6,7 @@ import {
 
 export class ChangeThreshold extends SettingsChange {
   @ApiProperty({ enum: [SettingsChangeType.ChangeThreshold] })
-  override type!: SettingsChangeType.ChangeThreshold;
+  declare type: SettingsChangeType.ChangeThreshold;
 
   @ApiProperty()
   threshold: number;

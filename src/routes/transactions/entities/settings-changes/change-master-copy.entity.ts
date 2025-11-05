@@ -7,7 +7,7 @@ import {
 
 export class ChangeMasterCopy extends SettingsChange {
   @ApiProperty({ enum: [SettingsChangeType.ChangeMasterCopy] })
-  override type!: SettingsChangeType.ChangeMasterCopy;
+  declare type: SettingsChangeType.ChangeMasterCopy;
 
   @ApiProperty()
   implementation: AddressInfo;
