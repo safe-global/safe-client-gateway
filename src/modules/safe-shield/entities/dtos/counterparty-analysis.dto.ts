@@ -30,7 +30,7 @@ export class ContractAnalysisResultDto extends AnalysisResultDto<
     enum: [...ContractStatus, ...CommonStatus],
     example: 'VERIFIED',
   })
-  type!: ContractStatus | CommonStatus;
+  declare type: ContractStatus | CommonStatus;
 }
 
 /**
@@ -106,7 +106,7 @@ export class RecipientResultDto extends AnalysisResultDto<
     enum: [...RecipientStatus, ...BridgeStatus, ...CommonStatus],
     example: 'MISSING_OWNERSHIP',
   })
-  type!: RecipientStatus | BridgeStatus | CommonStatus;
+  declare type: RecipientStatus | BridgeStatus | CommonStatus;
 
   @ApiPropertyOptional({
     description:

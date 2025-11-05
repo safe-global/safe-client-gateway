@@ -30,8 +30,7 @@ export class SwapOrderHelper {
   public static readonly NATIVE_CURRENCY_ADDRESS =
     '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE';
 
-  private readonly swapsExplorerBaseUri: string =
-    this.configurationService.getOrThrow('swaps.explorerBaseUri');
+  private readonly swapsExplorerBaseUri: string;
 
   constructor(
     private readonly transactionFinder: TransactionFinder,
@@ -44,7 +43,11 @@ export class SwapOrderHelper {
     private readonly configurationService: IConfigurationService,
     @Inject(IChainsRepository)
     private readonly chainsRepository: IChainsRepository,
-  ) {}
+  ) {
+    this.swapsExplorerBaseUri = this.configurationService.getOrThrow(
+      'swaps.explorerBaseUri',
+    );
+  }
 
   /**
    * Finds the swap order in the transaction data.

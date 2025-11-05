@@ -7,7 +7,7 @@ import {
 
 export class SwapOwner extends SettingsChange {
   @ApiProperty({ enum: [SettingsChangeType.SwapOwner] })
-  override type!: SettingsChangeType.SwapOwner;
+  declare type: SettingsChangeType.SwapOwner;
 
   @ApiProperty()
   oldOwner: AddressInfo;

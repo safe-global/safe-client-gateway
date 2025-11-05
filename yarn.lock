@@ -3648,12 +3648,21 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/node@npm:*, @types/node@npm:22.13.5":
+"@types/node@npm:*":
   version: 22.13.5
   resolution: "@types/node@npm:22.13.5"
   dependencies:
     undici-types: "npm:~6.20.0"
   checksum: 10/a69ec8dba36a58a93e3ec3709a6a362ca0cdd8443310bb5e43b0c1f560c57bcc120c96fabb301ef42c2901f46103adad5158b6923ea14e8e14a432af20a2bb24
+  languageName: node
+  linkType: hard
+
+"@types/node@npm:24.10.0":
+  version: 24.10.0
+  resolution: "@types/node@npm:24.10.0"
+  dependencies:
+    undici-types: "npm:~7.16.0"
+  checksum: 10/bc3abd9adc61423b1a72324208f3fcfe4f957b9fc8b9e81bf3fed584deb0b40f0e2af63cd0e2afa8f408d06f14bdba899ac638ac619f646badf8e72de246c052
   languageName: node
   linkType: hard
 
@@ -9283,7 +9292,7 @@ __metadata:
     "@types/jest": "npm:29.5.14"
     "@types/jsonwebtoken": "npm:9"
     "@types/lodash": "npm:4.17.18"
-    "@types/node": "npm:22.13.5"
+    "@types/node": "npm:24.10.0"
     "@types/sanitize-html": "npm:2"
     "@types/semver": "npm:7.7.0"
     "@types/supertest": "npm:6.0.2"
@@ -10501,6 +10510,13 @@ __metadata:
   version: 6.20.0
   resolution: "undici-types@npm:6.20.0"
   checksum: 10/583ac7bbf4ff69931d3985f4762cde2690bb607844c16a5e2fbb92ed312fe4fa1b365e953032d469fa28ba8b224e88a595f0b10a449332f83fa77c695e567dbe
+  languageName: node
+  linkType: hard
+
+"undici-types@npm:~7.16.0":
+  version: 7.16.0
+  resolution: "undici-types@npm:7.16.0"
+  checksum: 10/db43439f69c2d94cc29f75cbfe9de86df87061d6b0c577ebe9bb3255f49b22c50162a7d7eb413b0458b6510b8ca299ac7cff38c3a29fbd31af9f504bcf7fbc0d
   languageName: node
   linkType: hard
 

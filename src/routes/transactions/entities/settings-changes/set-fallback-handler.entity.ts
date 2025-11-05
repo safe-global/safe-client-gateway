@@ -7,7 +7,7 @@ import {
 
 export class SetFallbackHandler extends SettingsChange {
   @ApiProperty({ enum: [SettingsChangeType.SetFallbackHandler] })
-  override type!: SettingsChangeType.SetFallbackHandler;
+  declare type: SettingsChangeType.SetFallbackHandler;
 
   @ApiProperty()
   handler: AddressInfo;

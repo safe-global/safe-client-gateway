@@ -7,7 +7,7 @@ import {
 
 export class EnableModule extends SettingsChange {
   @ApiProperty({ enum: [SettingsChangeType.EnableModule] })
-  override type!: SettingsChangeType.EnableModule;
+  declare type: SettingsChangeType.EnableModule;
 
   @ApiProperty()
   module: AddressInfo;
