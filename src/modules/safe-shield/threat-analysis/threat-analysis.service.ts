@@ -17,8 +17,7 @@ import { ThreatStatus } from '@/modules/safe-shield/entities/threat-status.entit
 import { IBlockaidApi } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-api.interface';
 import {
   BLOCKAID_SEVERITY_MAP,
-  CLASSIFICATION_MAPPING,
-  REASON_MAPPING,
+  prepareDescription,
 } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-api.constants';
 import {
   DESCRIPTION_MAPPING,
@@ -176,7 +175,13 @@ export class ThreatAnalysisService {
       });
     }
 
-    const { reason, classification, features = [], result_type } = validation;
+    const {
+      reason,
+      classification,
+      description,
+      features = [],
+      result_type,
+    } = validation;
     switch (result_type) {
       case 'Benign':
         type = 'NO_THREAT';
@@ -195,6 +200,7 @@ export class ThreatAnalysisService {
       type,
       reason,
       classification,
+      description,
       issues,
     });
   }
@@ -290,6 +296,7 @@ export class ThreatAnalysisService {
    * @param {ThreatStatus | CommonStatus} args.type - The threat status
    * @param {string} args.reason - A description about the reasons the transaction was flagged with the type
    * @param {string} args.classification - A classification explaining the reason of threat analysis result
+   * @param {string} args.description - A fallback description from Blockaid in case specific mappings are not found for reason/classification
    * @param {Map<keyof typeof Severity, Array<string>>} args.issues - A potential partial record of specific issues identified during threat analysis, grouped by severity
    * @param {string} args.before - The old master copy address (only for MASTERCOPY_CHANGE)
    * @param {string} args.after - The new master copy address (only for MASTERCOPY_CHANGE)
@@ -300,21 +307,32 @@ export class ThreatAnalysisService {
     type: ThreatStatus | CommonStatus;
     reason?: string;
     classification?: string;
+    description?: string;
     issues?: Partial<Record<keyof typeof Severity, Array<string>>>;
     before?: string;
     after?: string;
     error?: string;
   }): ThreatAnalysisResult {
-    const { type, reason, classification, issues, before, after, error } = args;
+    const {
+      type,
+      reason,
+      classification,
+      description: scanDescription,
+      issues,
+      before,
+      after,
+      error,
+    } = args;
     const severity = SEVERITY_MAPPING[type];
     const title = TITLE_MAPPING[type];
-    const reasonMsg = reason ? REASON_MAPPING[reason] : '';
-    const classificationMsg = classification
-      ? CLASSIFICATION_MAPPING[classification]
-      : '';
+    const descriptionMsg = prepareDescription(
+      reason,
+      classification,
+      scanDescription,
+    );
+
     const description = DESCRIPTION_MAPPING[type]({
-      reason: reasonMsg,
-      classification: classificationMsg,
+      description: descriptionMsg,
       error,
     });
 

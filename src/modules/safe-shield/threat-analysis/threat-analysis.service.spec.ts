@@ -285,8 +285,8 @@ describe('ThreatAnalysisService', () => {
             type: 'MODERATE',
             title: TITLE_MAPPING.MODERATE,
             description: DESCRIPTION_MAPPING.MODERATE({
-              classification: 'a known malicious address',
-              reason: 'transfers tokens to',
+              description:
+                'The transaction transfers tokens to a known malicious address.',
             }),
             issues: { WARN: ['High gas price detected'] },
           },
@@ -397,16 +397,13 @@ describe('ThreatAnalysisService', () => {
       });
 
       it('should handle validation result_type Malicious without features', async () => {
-        const classification = 'known_malicious';
-        const reason = 'transfer_farming';
+        const description = faker.lorem.sentence();
 
         const mockScanResponse = {
           validation: {
             status: 'Success',
             result_type: 'Malicious',
-            classification,
-            reason,
-            description: faker.lorem.sentence(),
+            description: description,
             features: [],
           },
           simulation: {
@@ -430,8 +427,7 @@ describe('ThreatAnalysisService', () => {
               type: 'MALICIOUS',
               title: TITLE_MAPPING.MALICIOUS,
               description: DESCRIPTION_MAPPING.MALICIOUS({
-                classification: 'a known malicious address',
-                reason: 'transfers tokens to',
+                description: description,
               }),
               issues: {},
             },
@@ -497,8 +493,8 @@ describe('ThreatAnalysisService', () => {
               type: 'MODERATE',
               title: TITLE_MAPPING.MODERATE,
               description: DESCRIPTION_MAPPING.MODERATE({
-                classification: 'a known malicious address',
-                reason: 'transfers tokens to',
+                description:
+                  'The transaction transfers tokens to a known malicious address.',
               }),
               issues: {
                 CRITICAL: [features[2].description],
