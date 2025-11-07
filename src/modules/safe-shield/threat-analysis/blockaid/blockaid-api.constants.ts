@@ -44,7 +44,7 @@ const CLASSIFICATION_MAPPING: Record<string, string> = {
  * @param {string} reason - A description about the reasons the transaction was flagged
  * @param {string} classification - A classification explaining the reason of threat analysis result
  * @param {string} description - A fallback description from Blockaid
- * @returns {string | undefined} The prepared description is available
+ * @returns {string | undefined} The prepared description, if available
  */
 export const prepareDescription = (
   reason?: string,
