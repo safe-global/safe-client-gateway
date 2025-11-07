@@ -40,7 +40,7 @@ const CLASSIFICATION_MAPPING: Record<string, string> = {
 };
 
 /**
- * Prepares a description from reason and classification or falls back to scan description.
+ * Prepares a description from a scan description or falls back to reason and classification mapping.
  * @param {string} reason - A description about the reasons the transaction was flagged
  * @param {string} classification - A classification explaining the reason of threat analysis result
  * @param {string} description - A fallback description from Blockaid
@@ -51,11 +51,17 @@ export const prepareDescription = (
   classification?: string,
   description?: string,
 ): string | undefined => {
-  const reasonMsg = reason ? REASON_MAPPING[reason] : '';
-  const classificationMsg = classification
-    ? CLASSIFICATION_MAPPING[classification]
-    : '';
-  return reasonMsg && classificationMsg
-    ? `The transaction ${reasonMsg} ${classificationMsg}.`
-    : description;
+  if (description) {
+    return description;
+  }
+
+  const reasonMsg = reason && REASON_MAPPING[reason];
+  const classificationMsg =
+    classification && CLASSIFICATION_MAPPING[classification];
+
+  if (!reasonMsg || !classificationMsg) {
+    return undefined;
+  }
+
+  return `The transaction ${reasonMsg} ${classificationMsg}.`;
 };
