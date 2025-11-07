@@ -214,7 +214,6 @@ describe('ThreatAnalysisService', () => {
           status: 'Success',
           result_type: 'Warning',
           classification,
-          description: faker.lorem.sentence(),
           reason,
           features: [
             {
@@ -469,7 +468,6 @@ describe('ThreatAnalysisService', () => {
             result_type: 'Warning',
             classification,
             reason,
-            description: faker.lorem.sentence(),
             features: features,
           },
           simulation: {
