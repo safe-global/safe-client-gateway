@@ -47,7 +47,7 @@ export const DESCRIPTION_MAPPING: Record<
   ThreatStatus | CommonStatus,
   (args?: DescriptionArgs) => string
 > = {
-  MALICIOUS: ({ description } = {}) => `${description ? description : ''}`,
+  MALICIOUS: ({ description } = {}) => `${description || ''}`,
   MODERATE: ({ description } = {}) =>
     `${description ? `${description} ` : ''}Review before processing.`,
   NO_THREAT: () => 'Threat analysis found no issues.',

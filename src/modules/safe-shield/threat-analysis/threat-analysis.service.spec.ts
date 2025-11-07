@@ -403,7 +403,7 @@ describe('ThreatAnalysisService', () => {
           validation: {
             status: 'Success',
             result_type: 'Malicious',
-            description: description,
+            description,
             features: [],
           },
           simulation: {
@@ -427,7 +427,7 @@ describe('ThreatAnalysisService', () => {
               type: 'MALICIOUS',
               title: TITLE_MAPPING.MALICIOUS,
               description: DESCRIPTION_MAPPING.MALICIOUS({
-                description: description,
+                description,
               }),
               issues: {},
             },
