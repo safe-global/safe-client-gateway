@@ -35,8 +35,7 @@ export const TITLE_MAPPING: Record<ThreatStatus | CommonStatus, string> = {
 };
 
 type DescriptionArgs = {
-  reason?: string;
-  classification?: string;
+  description?: string;
   error?: string;
 };
 
@@ -48,10 +47,9 @@ export const DESCRIPTION_MAPPING: Record<
   ThreatStatus | CommonStatus,
   (args?: DescriptionArgs) => string
 > = {
-  MALICIOUS: ({ reason, classification } = {}) =>
-    `The transaction${reason ? ` ${reason}` : ''}${classification ? ` ${classification}` : ''}.`,
-  MODERATE: ({ reason, classification } = {}) =>
-    `The transaction${reason ? ` ${reason}` : ''}${classification ? ` ${classification}` : ''}. Review before processing.`,
+  MALICIOUS: ({ description } = {}) => `${description || ''}`,
+  MODERATE: ({ description } = {}) =>
+    `${description ? `${description} ` : ''}Review before processing.`,
   NO_THREAT: () => 'Threat analysis found no issues.',
   MASTERCOPY_CHANGE: () =>
     'Verify this change as it may overwrite account ownership.',

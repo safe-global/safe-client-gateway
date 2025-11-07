@@ -11,7 +11,7 @@ export const BLOCKAID_SEVERITY_MAP: Record<string, keyof typeof Severity> = {
   Info: 'INFO',
 };
 
-export const REASON_MAPPING: Record<string, string> = {
+const REASON_MAPPING: Record<string, string> = {
   raw_ether_transfer: 'transfers native currency',
   signature_farming: 'is a raw signed transaction',
   transfer_farming: 'transfers tokens',
@@ -22,7 +22,7 @@ export const REASON_MAPPING: Record<string, string> = {
   blur_farming: 'authorizes transfer of assets via Blur marketplace',
   delegatecall_execution: 'involves a delegate call',
 };
-export const CLASSIFICATION_MAPPING: Record<string, string> = {
+const CLASSIFICATION_MAPPING: Record<string, string> = {
   known_malicious: 'to a known malicious address',
   unverified_contract: 'to an unverified contract',
   new_address: 'to a new address',
@@ -37,4 +37,25 @@ export const CLASSIFICATION_MAPPING: Record<string, string> = {
   gas_farming_attack:
     'resulting in a waste of the account address’ gas to generate tokens for a scammer',
   other: 'resulting in a malicious outcome',
+};
+
+/**
+ * Prepares a description from reason and classification or falls back to scan description.
+ * @param {string} reason - A description about the reasons the transaction was flagged
+ * @param {string} classification - A classification explaining the reason of threat analysis result
+ * @param {string} description - A fallback description from Blockaid
+ * @returns {string | undefined} The prepared description, if available
+ */
+export const prepareDescription = (
+  reason?: string,
+  classification?: string,
+  description?: string,
+): string | undefined => {
+  const reasonMsg = reason ? REASON_MAPPING[reason] : '';
+  const classificationMsg = classification
+    ? CLASSIFICATION_MAPPING[classification]
+    : '';
+  return reasonMsg && classificationMsg
+    ? `The transaction ${reasonMsg} ${classificationMsg}.`
+    : description;
 };
