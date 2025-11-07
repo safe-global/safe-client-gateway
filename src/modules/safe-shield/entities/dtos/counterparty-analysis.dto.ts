@@ -44,6 +44,18 @@ export class ContractAnalysisDto
   implements GroupedAnalysisResults<ContractAnalysisResult>
 {
   @ApiPropertyOptional({
+    description: 'Logo URL for the contract',
+    example: 'https://example.com/logo.png',
+  })
+  logoUrl?: string;
+
+  @ApiPropertyOptional({
+    description: 'Name of the contract',
+    example: 'Uniswap V3 Router',
+  })
+  name?: string;
+
+  @ApiPropertyOptional({
     description:
       'Analysis results for contract verification status. ' +
       'Shows whether contracts are verified and source code is available.',

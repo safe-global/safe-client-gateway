@@ -56,6 +56,24 @@ export const RecipientAnalysisResponseSchema = z.record(
     .strict(),
 );
 
+const contractGroupValueSchema = z
+  .array(ContractAnalysisResultSchema)
+  .optional();
+
+/**
+ * Dynamically builds the shape object for all contract status groups.
+ * This ensures that each valid ContractStatusGroup enum value is mapped
+ * to the same array schema, maintaining type safety while avoiding
+ * manual repetition of each field.
+ */
+const contractGroupsShape = ContractStatusGroupSchema.options.reduce(
+  (acc, key) => {
+    acc[key] = contractGroupValueSchema;
+    return acc;
+  },
+  {} as Record<ContractStatusGroup, typeof contractGroupValueSchema>,
+);
+
 /**
  * Response structure for contract analysis endpoint.
  *
@@ -65,10 +83,13 @@ export const RecipientAnalysisResponseSchema = z.record(
  */
 export const ContractAnalysisResponseSchema = z.record(
   AddressSchema,
-  z.record(
-    ContractStatusGroupSchema,
-    z.array(ContractAnalysisResultSchema).optional(),
-  ),
+  z
+    .object({
+      logoUrl: z.string().optional(),
+      name: z.string().optional(),
+      ...contractGroupsShape,
+    })
+    .strict(),
 );
 
 /**

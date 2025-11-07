@@ -124,6 +124,8 @@ describe('ContractAnalysisService', () => {
       // set up cache with expected response
       const cachedResponse: ContractAnalysisResponse = {
         [contractAddress]: {
+          logoUrl: faker.image.url(),
+          name: faker.company.name(),
           CONTRACT_VERIFICATION: [],
           CONTRACT_INTERACTION: [],
           DELEGATECALL: [],
@@ -380,6 +382,7 @@ describe('ContractAnalysisService', () => {
               modified: faker.date.recent(),
             })
             .with('displayName', name)
+            .with('logoUrl', null)
             .build(),
         ])
         .build();
@@ -417,6 +420,8 @@ describe('ContractAnalysisService', () => {
       });
 
       expect(result).toEqual({
+        logoUrl: undefined,
+        name,
         CONTRACT_VERIFICATION: [
           {
             severity: SEVERITY_MAPPING.VERIFIED,
@@ -433,11 +438,11 @@ describe('ContractAnalysisService', () => {
             description: DESCRIPTION_MAPPING.KNOWN_CONTRACT(),
           },
         ],
-        DELEGATECALL: [],
       });
     });
 
     it('should return combined analysis results from verification, delegateCall and interaction checks', async () => {
+      const logoUrl = faker.image.url();
       const mockContractPage = pageBuilder()
         .with('count', 1)
         .with('results', [
@@ -449,6 +454,7 @@ describe('ContractAnalysisService', () => {
               modified: faker.date.recent(),
             })
             .with('displayName', name)
+            .with('logoUrl', logoUrl)
             .with('trustedForDelegateCall', false)
             .build(),
         ])
@@ -487,6 +493,8 @@ describe('ContractAnalysisService', () => {
       });
 
       expect(result).toEqual({
+        logoUrl,
+        name,
         CONTRACT_VERIFICATION: [
           {
             severity: SEVERITY_MAPPING.VERIFIED,
@@ -529,6 +537,7 @@ describe('ContractAnalysisService', () => {
             })
             .with('name', '')
             .with('displayName', '')
+            .with('logoUrl', null)
             .build(),
         ])
         .build();
@@ -565,8 +574,8 @@ describe('ContractAnalysisService', () => {
               'The analysis failed: contract interactions unavailable. Please try again later.',
           },
         ],
-        DELEGATECALL: [],
       });
+
       expect(mockDataDecoderApi.getContracts).toHaveBeenCalledWith({
         address: contractAddress,
         chainId,
@@ -574,7 +583,8 @@ describe('ContractAnalysisService', () => {
       expect(mockTransactionApiManager.getApi).toHaveBeenCalledWith(chainId);
     });
 
-    it('should return empty arrays when both delegateCallResult and interactionResult are undefined', async () => {
+    it('should return only CONTRACT_VERIFICATION group when both delegateCallResult and interactionResult are undefined', async () => {
+      const logoUrl = faker.image.url();
       const mockContractPage = pageBuilder()
         .with('count', 1)
         .with('results', [
@@ -586,6 +596,7 @@ describe('ContractAnalysisService', () => {
               modified: faker.date.recent(),
             })
             .with('displayName', name)
+            .with('logoUrl', logoUrl)
             .with('trustedForDelegateCall', true)
             .build(),
         ])
@@ -620,6 +631,8 @@ describe('ContractAnalysisService', () => {
       });
 
       expect(result).toEqual({
+        logoUrl,
+        name,
         CONTRACT_VERIFICATION: [
           {
             severity: SEVERITY_MAPPING.VERIFIED,
@@ -628,8 +641,6 @@ describe('ContractAnalysisService', () => {
             description: DESCRIPTION_MAPPING.VERIFIED({ name }),
           },
         ],
-        CONTRACT_INTERACTION: [],
-        DELEGATECALL: [],
       });
     });
   });
@@ -638,6 +649,7 @@ describe('ContractAnalysisService', () => {
     const chainId = faker.string.numeric();
     const contractAddress = getAddress(faker.finance.ethereumAddress());
     const name = faker.company.name();
+    const logoUrl = faker.image.url();
 
     describe('not delegate call', () => {
       it('should return VERIFIED when contract has ABI and displayName', async () => {
@@ -652,6 +664,7 @@ describe('ContractAnalysisService', () => {
                 modified: faker.date.recent(),
               })
               .with('displayName', name)
+              .with('logoUrl', logoUrl)
               .build(),
           ])
           .build();
@@ -660,7 +673,7 @@ describe('ContractAnalysisService', () => {
           rawify(mockContractPage),
         );
 
-        const [verification, delegateCall] = await service.verifyContract({
+        const result = await service.verifyContract({
           chainId,
           contract: contractAddress,
           isDelegateCall: false,
@@ -670,16 +683,22 @@ describe('ContractAnalysisService', () => {
           address: contractAddress,
           chainId,
         });
-        expect(verification).toEqual({
-          severity: SEVERITY_MAPPING.VERIFIED,
-          type: 'VERIFIED',
-          title: TITLE_MAPPING.VERIFIED,
-          description: DESCRIPTION_MAPPING.VERIFIED({ name: name }),
+        expect(result).toEqual({
+          logoUrl,
+          name,
+          CONTRACT_VERIFICATION: [
+            {
+              severity: SEVERITY_MAPPING.VERIFIED,
+              type: 'VERIFIED',
+              title: TITLE_MAPPING.VERIFIED,
+              description: DESCRIPTION_MAPPING.VERIFIED({ name: name }),
+            },
+          ],
         });
-        expect(delegateCall).toBeUndefined();
       });
 
       it('should return VERIFIED with name when displayName is not present', async () => {
+        const logoUrl = faker.image.url();
         const mockContractPage = pageBuilder()
           .with('count', 1)
           .with('results', [
@@ -692,6 +711,7 @@ describe('ContractAnalysisService', () => {
               })
               .with('name', name)
               .with('displayName', '')
+              .with('logoUrl', logoUrl)
               .build(),
           ])
           .build();
@@ -700,7 +720,7 @@ describe('ContractAnalysisService', () => {
           rawify(mockContractPage),
         );
 
-        const [verification, delegateCall] = await service.verifyContract({
+        const result = await service.verifyContract({
           chainId,
           contract: contractAddress,
           isDelegateCall: false,
@@ -711,16 +731,21 @@ describe('ContractAnalysisService', () => {
           chainId,
         });
 
-        expect(verification).toEqual({
-          severity: SEVERITY_MAPPING.VERIFIED,
-          type: 'VERIFIED',
-          title: TITLE_MAPPING.VERIFIED,
-          description: DESCRIPTION_MAPPING.VERIFIED({ name: name }),
+        expect(result).toEqual({
+          logoUrl,
+          name,
+          CONTRACT_VERIFICATION: [
+            {
+              severity: SEVERITY_MAPPING.VERIFIED,
+              type: 'VERIFIED',
+              title: TITLE_MAPPING.VERIFIED,
+              description: DESCRIPTION_MAPPING.VERIFIED({ name: name }),
+            },
+          ],
         });
-        expect(delegateCall).toBeUndefined();
       });
 
-      it('should return VERIFIED without name when name/displayName are not present', async () => {
+      it('should return VERIFIED without name/logoUrl when name/displayName/logoUrl are not present', async () => {
         const mockContractPage = pageBuilder()
           .with('count', 1)
           .with('results', [
@@ -733,6 +758,7 @@ describe('ContractAnalysisService', () => {
               })
               .with('name', '')
               .with('displayName', '')
+              .with('logoUrl', null)
               .build(),
           ])
           .build();
@@ -741,7 +767,7 @@ describe('ContractAnalysisService', () => {
           rawify(mockContractPage),
         );
 
-        const [verification, delegateCall] = await service.verifyContract({
+        const result = await service.verifyContract({
           chainId,
           contract: contractAddress,
           isDelegateCall: false,
@@ -752,13 +778,16 @@ describe('ContractAnalysisService', () => {
           chainId,
         });
 
-        expect(verification).toEqual({
-          severity: SEVERITY_MAPPING.VERIFIED,
-          type: 'VERIFIED',
-          title: TITLE_MAPPING.VERIFIED,
-          description: 'This contract is verified.',
+        expect(result).toEqual({
+          CONTRACT_VERIFICATION: [
+            {
+              severity: SEVERITY_MAPPING.VERIFIED,
+              type: 'VERIFIED',
+              title: TITLE_MAPPING.VERIFIED,
+              description: 'This contract is verified.',
+            },
+          ],
         });
-        expect(delegateCall).toBeUndefined();
       });
 
       it('should return NOT_VERIFIED when contract exists but has no ABI', async () => {
@@ -768,6 +797,9 @@ describe('ContractAnalysisService', () => {
             contractBuilder()
               .with('address', contractAddress)
               .with('abi', null)
+              .with('name', '')
+              .with('displayName', '')
+              .with('logoUrl', null)
               .build(),
           ])
           .build();
@@ -776,7 +808,7 @@ describe('ContractAnalysisService', () => {
           rawify(mockContractPage),
         );
 
-        const [verification, delegateCall] = await service.verifyContract({
+        const result = await service.verifyContract({
           chainId,
           contract: contractAddress,
           isDelegateCall: false,
@@ -787,16 +819,19 @@ describe('ContractAnalysisService', () => {
           chainId,
         });
 
-        expect(verification).toEqual({
-          severity: SEVERITY_MAPPING.NOT_VERIFIED,
-          type: 'NOT_VERIFIED',
-          title: TITLE_MAPPING.NOT_VERIFIED,
-          description: DESCRIPTION_MAPPING.NOT_VERIFIED(),
+        expect(result).toEqual({
+          CONTRACT_VERIFICATION: [
+            {
+              severity: SEVERITY_MAPPING.NOT_VERIFIED,
+              type: 'NOT_VERIFIED',
+              title: TITLE_MAPPING.NOT_VERIFIED,
+              description: DESCRIPTION_MAPPING.NOT_VERIFIED(),
+            },
+          ],
         });
-        expect(delegateCall).toBeUndefined();
       });
 
-      it('should return undefined when no contracts found', async () => {
+      it('should return empty response when no contracts found', async () => {
         const mockContractPage = pageBuilder()
           .with('count', 0)
           .with('results', [])
@@ -806,7 +841,7 @@ describe('ContractAnalysisService', () => {
           rawify(mockContractPage),
         );
 
-        const [verification, delegateCall] = await service.verifyContract({
+        const result = await service.verifyContract({
           chainId,
           contract: contractAddress,
           isDelegateCall: false,
@@ -817,8 +852,7 @@ describe('ContractAnalysisService', () => {
           chainId,
         });
 
-        expect(verification).toBeUndefined();
-        expect(delegateCall).toBeUndefined();
+        expect(result).toEqual({});
       });
 
       it('should return VERIFICATION_UNAVAILABLE when data decoder API fails', async () => {
@@ -828,7 +862,7 @@ describe('ContractAnalysisService', () => {
           new Error(errorMessage),
         );
 
-        const [verification, delegateCall] = await service.verifyContract({
+        const result = await service.verifyContract({
           chainId,
           contract: contractAddress,
           isDelegateCall: false,
@@ -839,13 +873,16 @@ describe('ContractAnalysisService', () => {
           chainId,
         });
 
-        expect(verification).toEqual({
-          severity: SEVERITY_MAPPING.VERIFICATION_UNAVAILABLE,
-          type: 'VERIFICATION_UNAVAILABLE',
-          title: TITLE_MAPPING.VERIFICATION_UNAVAILABLE,
-          description: DESCRIPTION_MAPPING.VERIFICATION_UNAVAILABLE(),
+        expect(result).toEqual({
+          CONTRACT_VERIFICATION: [
+            {
+              severity: SEVERITY_MAPPING.VERIFICATION_UNAVAILABLE,
+              type: 'VERIFICATION_UNAVAILABLE',
+              title: TITLE_MAPPING.VERIFICATION_UNAVAILABLE,
+              description: DESCRIPTION_MAPPING.VERIFICATION_UNAVAILABLE(),
+            },
+          ],
         });
-        expect(delegateCall).toBeUndefined();
       });
 
       it('should handle multiple contracts and use first result', async () => {
@@ -860,6 +897,7 @@ describe('ContractAnalysisService', () => {
                 modified: faker.date.recent(),
               })
               .with('displayName', name)
+              .with('logoUrl', logoUrl)
               .build(),
             contractBuilder()
               .with('address', contractAddress)
@@ -872,20 +910,25 @@ describe('ContractAnalysisService', () => {
           rawify(mockContractPage),
         );
 
-        const [verification, delegateCall] = await service.verifyContract({
+        const result = await service.verifyContract({
           chainId,
           contract: contractAddress,
           isDelegateCall: false,
         });
 
         // Should use first result
-        expect(verification).toEqual({
-          severity: SEVERITY_MAPPING.VERIFIED,
-          type: 'VERIFIED',
-          title: TITLE_MAPPING.VERIFIED,
-          description: DESCRIPTION_MAPPING.VERIFIED({ name }),
+        expect(result).toEqual({
+          logoUrl,
+          name,
+          CONTRACT_VERIFICATION: [
+            {
+              severity: SEVERITY_MAPPING.VERIFIED,
+              type: 'VERIFIED',
+              title: TITLE_MAPPING.VERIFIED,
+              description: DESCRIPTION_MAPPING.VERIFIED({ name }),
+            },
+          ],
         });
-        expect(delegateCall).toBeUndefined();
       });
     });
 
@@ -903,6 +946,7 @@ describe('ContractAnalysisService', () => {
               })
               .with('trustedForDelegateCall', false)
               .with('displayName', name)
+              .with('logoUrl', logoUrl)
               .build(),
           ])
           .build();
@@ -911,24 +955,31 @@ describe('ContractAnalysisService', () => {
           rawify(mockContractPage),
         );
 
-        const [verification, delegateCall] = await service.verifyContract({
+        const result = await service.verifyContract({
           chainId,
           contract: contractAddress,
           isDelegateCall: true,
         });
 
-        expect(verification).toEqual({
-          severity: SEVERITY_MAPPING.VERIFIED,
-          type: 'VERIFIED',
-          title: TITLE_MAPPING.VERIFIED,
-          description: DESCRIPTION_MAPPING.VERIFIED({ name }),
-        });
-
-        expect(delegateCall).toEqual({
-          severity: SEVERITY_MAPPING.UNEXPECTED_DELEGATECALL,
-          type: 'UNEXPECTED_DELEGATECALL',
-          title: TITLE_MAPPING.UNEXPECTED_DELEGATECALL,
-          description: DESCRIPTION_MAPPING.UNEXPECTED_DELEGATECALL(),
+        expect(result).toEqual({
+          logoUrl,
+          name,
+          CONTRACT_VERIFICATION: [
+            {
+              severity: SEVERITY_MAPPING.VERIFIED,
+              type: 'VERIFIED',
+              title: TITLE_MAPPING.VERIFIED,
+              description: DESCRIPTION_MAPPING.VERIFIED({ name }),
+            },
+          ],
+          DELEGATECALL: [
+            {
+              severity: SEVERITY_MAPPING.UNEXPECTED_DELEGATECALL,
+              type: 'UNEXPECTED_DELEGATECALL',
+              title: TITLE_MAPPING.UNEXPECTED_DELEGATECALL,
+              description: DESCRIPTION_MAPPING.UNEXPECTED_DELEGATECALL(),
+            },
+          ],
         });
       });
 
@@ -939,24 +990,29 @@ describe('ContractAnalysisService', () => {
           new Error(errorMessage),
         );
 
-        const [verification, delegateCall] = await service.verifyContract({
+        const result = await service.verifyContract({
           chainId,
           contract: contractAddress,
           isDelegateCall: true,
         });
 
-        expect(verification).toEqual({
-          severity: SEVERITY_MAPPING.VERIFICATION_UNAVAILABLE,
-          type: 'VERIFICATION_UNAVAILABLE',
-          title: TITLE_MAPPING.VERIFICATION_UNAVAILABLE,
-          description: DESCRIPTION_MAPPING.VERIFICATION_UNAVAILABLE(),
-        });
-
-        expect(delegateCall).toEqual({
-          severity: SEVERITY_MAPPING.UNEXPECTED_DELEGATECALL,
-          type: 'UNEXPECTED_DELEGATECALL',
-          title: TITLE_MAPPING.UNEXPECTED_DELEGATECALL,
-          description: DESCRIPTION_MAPPING.UNEXPECTED_DELEGATECALL(),
+        expect(result).toEqual({
+          CONTRACT_VERIFICATION: [
+            {
+              severity: SEVERITY_MAPPING.VERIFICATION_UNAVAILABLE,
+              type: 'VERIFICATION_UNAVAILABLE',
+              title: TITLE_MAPPING.VERIFICATION_UNAVAILABLE,
+              description: DESCRIPTION_MAPPING.VERIFICATION_UNAVAILABLE(),
+            },
+          ],
+          DELEGATECALL: [
+            {
+              severity: SEVERITY_MAPPING.UNEXPECTED_DELEGATECALL,
+              type: 'UNEXPECTED_DELEGATECALL',
+              title: TITLE_MAPPING.UNEXPECTED_DELEGATECALL,
+              description: DESCRIPTION_MAPPING.UNEXPECTED_DELEGATECALL(),
+            },
+          ],
         });
       });
 
@@ -969,23 +1025,25 @@ describe('ContractAnalysisService', () => {
           rawify(mockContractPage),
         );
 
-        const [verification, delegateCall] = await service.verifyContract({
+        const result = await service.verifyContract({
           chainId,
           contract: contractAddress,
           isDelegateCall: true,
         });
 
-        expect(verification).toBeUndefined();
-
-        expect(delegateCall).toEqual({
-          severity: SEVERITY_MAPPING.UNEXPECTED_DELEGATECALL,
-          type: 'UNEXPECTED_DELEGATECALL',
-          title: TITLE_MAPPING.UNEXPECTED_DELEGATECALL,
-          description: DESCRIPTION_MAPPING.UNEXPECTED_DELEGATECALL(),
+        expect(result).toEqual({
+          DELEGATECALL: [
+            {
+              severity: SEVERITY_MAPPING.UNEXPECTED_DELEGATECALL,
+              type: 'UNEXPECTED_DELEGATECALL',
+              title: TITLE_MAPPING.UNEXPECTED_DELEGATECALL,
+              description: DESCRIPTION_MAPPING.UNEXPECTED_DELEGATECALL(),
+            },
+          ],
         });
       });
 
-      it('should return undefined when contract is trusted', async () => {
+      it('should omit DELEGATECALL group when contract is trusted', async () => {
         const mockContractPage = pageBuilder()
           .with('count', 1)
           .with('results', [
@@ -997,6 +1055,8 @@ describe('ContractAnalysisService', () => {
                 modified: faker.date.recent(),
               })
               .with('trustedForDelegateCall', true)
+              .with('displayName', name)
+              .with('logoUrl', logoUrl)
               .build(),
           ])
           .build();
@@ -1005,13 +1065,24 @@ describe('ContractAnalysisService', () => {
           rawify(mockContractPage),
         );
 
-        const [, delegateCall] = await service.verifyContract({
+        const result = await service.verifyContract({
           chainId,
           contract: contractAddress,
           isDelegateCall: true,
         });
 
-        expect(delegateCall).toBeUndefined();
+        expect(result).toEqual({
+          logoUrl,
+          name,
+          CONTRACT_VERIFICATION: [
+            {
+              severity: SEVERITY_MAPPING.VERIFIED,
+              type: 'VERIFIED',
+              title: TITLE_MAPPING.VERIFIED,
+              description: DESCRIPTION_MAPPING.VERIFIED({ name }),
+            },
+          ],
+        });
       });
     });
   });
@@ -1021,7 +1092,7 @@ describe('ContractAnalysisService', () => {
     const safeAddress = getAddress(faker.finance.ethereumAddress());
     const contractAddress = getAddress(faker.finance.ethereumAddress());
 
-    it('should return undefined when no interactions exist', async () => {
+    it('should return empty response when no interactions exist', async () => {
       const mockTransactionPage = pageBuilder().with('count', 0).build();
 
       mockTransactionApi.getMultisigTransactions.mockResolvedValue(
@@ -1042,10 +1113,10 @@ describe('ContractAnalysisService', () => {
         limit: 1,
       });
 
-      expect(result).toEqual(undefined);
+      expect(result).toEqual({});
     });
 
-    it('should return undefined when count is null', async () => {
+    it('should return empty response when count is null', async () => {
       const mockTransactionPage = pageBuilder().with('count', null).build();
 
       mockTransactionApi.getMultisigTransactions.mockResolvedValue(
@@ -1058,7 +1129,7 @@ describe('ContractAnalysisService', () => {
         contract: contractAddress,
       });
 
-      expect(result).toEqual(undefined);
+      expect(result).toEqual({});
     });
 
     it('should return KNOWN_CONTRACT when count > 0', async () => {
@@ -1077,10 +1148,14 @@ describe('ContractAnalysisService', () => {
       });
 
       expect(result).toEqual({
-        severity: SEVERITY_MAPPING.KNOWN_CONTRACT,
-        type: 'KNOWN_CONTRACT',
-        title: TITLE_MAPPING.KNOWN_CONTRACT,
-        description: 'You have already interacted with this contract.',
+        CONTRACT_INTERACTION: [
+          {
+            severity: SEVERITY_MAPPING.KNOWN_CONTRACT,
+            type: 'KNOWN_CONTRACT',
+            title: TITLE_MAPPING.KNOWN_CONTRACT,
+            description: 'You have already interacted with this contract.',
+          },
+        ],
       });
     });
 
@@ -1098,12 +1173,16 @@ describe('ContractAnalysisService', () => {
       });
 
       expect(result).toEqual({
-        severity: SEVERITY_MAPPING.FAILED,
-        type: 'FAILED',
-        title: TITLE_MAPPING.FAILED,
-        description: DESCRIPTION_MAPPING.FAILED({
-          error: 'contract interactions unavailable',
-        }),
+        CONTRACT_INTERACTION: [
+          {
+            severity: SEVERITY_MAPPING.FAILED,
+            type: 'FAILED',
+            title: TITLE_MAPPING.FAILED,
+            description: DESCRIPTION_MAPPING.FAILED({
+              error: 'contract interactions unavailable',
+            }),
+          },
+        ],
       });
       expect(mockTransactionApiManager.getApi).toHaveBeenCalledWith(chainId);
       expect(mockTransactionApi.getMultisigTransactions).not.toHaveBeenCalled();
@@ -1123,12 +1202,16 @@ describe('ContractAnalysisService', () => {
       });
 
       expect(result).toEqual({
-        severity: SEVERITY_MAPPING.FAILED,
-        type: 'FAILED',
-        title: TITLE_MAPPING.FAILED,
-        description: DESCRIPTION_MAPPING.FAILED({
-          error: 'contract interactions unavailable',
-        }),
+        CONTRACT_INTERACTION: [
+          {
+            severity: SEVERITY_MAPPING.FAILED,
+            type: 'FAILED',
+            title: TITLE_MAPPING.FAILED,
+            description: DESCRIPTION_MAPPING.FAILED({
+              error: 'contract interactions unavailable',
+            }),
+          },
+        ],
       });
       expect(mockTransactionApiManager.getApi).toHaveBeenCalledWith(chainId);
       expect(mockTransactionApi.getMultisigTransactions).toHaveBeenCalledWith({

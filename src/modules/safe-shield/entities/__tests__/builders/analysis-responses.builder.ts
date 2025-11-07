@@ -45,6 +45,8 @@ export function contractAnalysisResponseBuilder(): IBuilder<ContractAnalysisResp
   return new Builder<ContractAnalysisResponse>().with(
     getAddress(faker.finance.ethereumAddress()),
     {
+      logoUrl: faker.image.url(),
+      name: faker.company.name(),
       CONTRACT_VERIFICATION: [contractAnalysisResultBuilder().build()],
       CONTRACT_INTERACTION: [contractAnalysisResultBuilder().build()],
       DELEGATECALL: [contractAnalysisResultBuilder().build()],
