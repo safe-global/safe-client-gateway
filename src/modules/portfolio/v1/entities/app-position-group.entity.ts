@@ -6,12 +6,12 @@ export class AppPositionGroup {
   @ApiProperty({
     description: 'Group name (e.g., "Protocol A Vesting")',
   })
-  name!: string;
+  public readonly name!: string;
 
   @ApiProperty({
     description: 'Positions in this group',
     type: 'array',
     items: { $ref: getSchemaPath(AppPosition) },
   })
-  items!: Array<AppPosition>;
+  public readonly items!: Array<AppPosition>;
 }

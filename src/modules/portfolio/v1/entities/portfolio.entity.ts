@@ -10,7 +10,7 @@ export class Portfolio {
     pattern: '^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$',
     example: '954181237.094243',
   })
-  totalBalanceFiat!: string;
+  public readonly totalBalanceFiat!: string;
 
   @ApiProperty({
     type: 'string',
@@ -19,7 +19,7 @@ export class Portfolio {
     pattern: '^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$',
     example: '935542322.9685864',
   })
-  totalTokenBalanceFiat!: string;
+  public readonly totalTokenBalanceFiat!: string;
 
   @ApiProperty({
     type: 'string',
@@ -28,17 +28,17 @@ export class Portfolio {
     pattern: '^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$',
     example: '18638914.125656575',
   })
-  totalPositionsBalanceFiat!: string;
+  public readonly totalPositionsBalanceFiat!: string;
 
   @ApiProperty({
     description: 'List of token balances',
     type: [TokenBalance],
   })
-  tokenBalances!: Array<TokenBalance>;
+  public readonly tokenBalances!: Array<TokenBalance>;
 
   @ApiProperty({
     description: 'List of app balances',
     type: [AppBalance],
   })
-  positionBalances!: Array<AppBalance>;
+  public readonly positionBalances!: Array<AppBalance>;
 }

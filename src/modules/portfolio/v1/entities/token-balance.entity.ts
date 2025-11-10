@@ -20,13 +20,16 @@ export class TokenBalance {
       { $ref: getSchemaPath(PortfolioErc721Token) },
     ],
   })
-  tokenInfo!: PortfolioNativeToken | PortfolioErc20Token | PortfolioErc721Token;
+  public readonly tokenInfo!:
+    | PortfolioNativeToken
+    | PortfolioErc20Token
+    | PortfolioErc721Token;
 
   @ApiProperty({
     description:
       'Balance in smallest unit as string integer. Use decimals to convert.',
   })
-  balance!: string;
+  public readonly balance!: string;
 
   @ApiPropertyOptional({
     type: 'string',
@@ -35,7 +38,7 @@ export class TokenBalance {
     pattern: '^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$',
     example: '4801.653401839',
   })
-  balanceFiat?: string;
+  public readonly balanceFiat?: string;
 
   @ApiPropertyOptional({
     type: 'string',
@@ -44,7 +47,7 @@ export class TokenBalance {
     pattern: '^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$',
     example: '3890.12',
   })
-  price?: string;
+  public readonly price?: string;
 
   @ApiPropertyOptional({
     type: 'string',
@@ -53,5 +56,5 @@ export class TokenBalance {
     pattern: '^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$',
     example: '-0.0431',
   })
-  priceChangePercentage1d?: string;
+  public readonly priceChangePercentage1d?: string;
 }

@@ -4,19 +4,19 @@ export class AppBalanceAppInfo {
   @ApiProperty({
     description: 'Application name',
   })
-  name!: string;
+  public readonly name!: string;
 
   @ApiPropertyOptional({
     type: 'string',
     format: 'uri',
     description: 'Application logo URL (HTTPS)',
   })
-  logoUrl?: string;
+  public readonly logoUrl?: string;
 
   @ApiPropertyOptional({
     type: 'string',
     format: 'uri',
     description: 'Application URL (HTTPS)',
   })
-  url?: string;
+  public readonly url?: string;
 }

@@ -15,23 +15,23 @@ export class AppPosition {
   @ApiProperty({
     description: 'Unique position key',
   })
-  key!: string;
+  public readonly key!: string;
 
   @ApiProperty({
     description: 'Position type (e.g., staked, lending, liquidity)',
   })
-  type!: string;
+  public readonly type!: string;
 
   @ApiProperty({
     description: 'Position name',
   })
-  name!: string;
+  public readonly name!: string;
 
   @ApiPropertyOptional({
     description: 'Group ID for grouping related positions together',
     type: 'string',
   })
-  groupId?: string;
+  public readonly groupId?: string;
 
   @ApiProperty({
     description: 'Token information',
@@ -41,7 +41,10 @@ export class AppPosition {
       { $ref: getSchemaPath(PortfolioErc721Token) },
     ],
   })
-  tokenInfo!: PortfolioNativeToken | PortfolioErc20Token | PortfolioErc721Token;
+  public readonly tokenInfo!:
+    | PortfolioNativeToken
+    | PortfolioErc20Token
+    | PortfolioErc721Token;
 
   @ApiPropertyOptional({
     description:
@@ -49,13 +52,13 @@ export class AppPosition {
     type: 'string',
     example: '0x6da7b0d8464c4eeab6023d891db267a045fc978f',
   })
-  receiptTokenAddress?: string;
+  public readonly receiptTokenAddress?: string;
 
   @ApiProperty({
     description:
       'Balance in smallest unit as string integer. Use decimals to convert.',
   })
-  balance!: string;
+  public readonly balance!: string;
 
   @ApiPropertyOptional({
     type: 'string',
@@ -64,7 +67,7 @@ export class AppPosition {
     pattern: '^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$',
     example: '18638914.125656575',
   })
-  balanceFiat?: string;
+  public readonly balanceFiat?: string;
 
   @ApiPropertyOptional({
     type: 'string',
@@ -73,5 +76,5 @@ export class AppPosition {
     pattern: '^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$',
     example: '-0.0431',
   })
-  priceChangePercentage1d?: string;
+  public readonly priceChangePercentage1d?: string;
 }

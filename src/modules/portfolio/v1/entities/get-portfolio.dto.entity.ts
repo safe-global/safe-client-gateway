@@ -8,26 +8,26 @@ export class GetPortfolioDto implements z.infer<typeof GetPortfolioDtoSchema> {
     example: 'USD',
     default: 'USD',
   })
-  fiatCode!: string;
+  public readonly fiatCode!: string;
 
   @ApiPropertyOptional({
     description:
       'Comma-separated list of chain IDs to filter by. If omitted, returns data for all chains.',
     example: '1,137,42161',
   })
-  chainIds?: Array<string>;
+  public readonly chainIds?: Array<string>;
 
   @ApiPropertyOptional({
     description: 'If true, only returns trusted tokens',
     example: true,
     default: true,
   })
-  trusted!: boolean;
+  public readonly trusted!: boolean;
 
   @ApiPropertyOptional({
     description: 'If true, filters out dust positions (balance < $0.001 USD)',
     example: true,
     default: true,
   })
-  excludeDust!: boolean;
+  public readonly excludeDust!: boolean;
 }

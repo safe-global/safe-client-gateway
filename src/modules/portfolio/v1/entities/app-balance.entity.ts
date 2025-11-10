@@ -8,7 +8,7 @@ export class AppBalance {
     description: 'Application information',
     type: AppBalanceAppInfo,
   })
-  appInfo!: AppBalanceAppInfo;
+  public readonly appInfo!: AppBalanceAppInfo;
 
   @ApiProperty({
     type: 'string',
@@ -17,12 +17,12 @@ export class AppBalance {
     pattern: '^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$',
     example: '18638914.125656575',
   })
-  balanceFiat!: string;
+  public readonly balanceFiat!: string;
 
   @ApiProperty({
     description: 'Position groups in this app, grouped by position name',
     type: 'array',
     items: { $ref: getSchemaPath(AppPositionGroup) },
   })
-  groups!: Array<AppPositionGroup>;
+  public readonly groups!: Array<AppPositionGroup>;
 }
