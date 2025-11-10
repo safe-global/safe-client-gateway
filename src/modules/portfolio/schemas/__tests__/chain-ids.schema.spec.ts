@@ -87,17 +87,17 @@ describe('ChainIdsSchema', () => {
   describe('edge cases', () => {
     it('should handle single comma', () => {
       const result = ChainIdsSchema.parse(',');
-      expect(result).toEqual([]);
+      expect(result).toBeUndefined();
     });
 
     it('should handle multiple commas', () => {
       const result = ChainIdsSchema.parse(',,,');
-      expect(result).toEqual([]);
+      expect(result).toBeUndefined();
     });
 
     it('should handle commas with spaces', () => {
       const result = ChainIdsSchema.parse(', , ,');
-      expect(result).toEqual([]);
+      expect(result).toBeUndefined();
     });
 
     it('should handle trailing comma', () => {

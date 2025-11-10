@@ -6,10 +6,11 @@ export const ChainIdsSchema = z
   .optional()
   .transform((val) => {
     if (!val) return undefined;
-    return val
+    const ids = val
       .split(',')
       .map((id) => id.trim())
       .filter((id) => id.length > 0);
+    return ids.length > 0 ? ids : undefined;
   })
   .pipe(z.array(ChainIdSchema).optional());
 
