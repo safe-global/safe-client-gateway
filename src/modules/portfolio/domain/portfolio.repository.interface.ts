@@ -1,8 +1,5 @@
-import { Module } from '@nestjs/common';
 import type { Address } from 'viem';
 import type { Portfolio } from '@/modules/portfolio/domain/entities/portfolio.entity';
-import { PortfolioRepository } from '@/modules/portfolio/domain/portfolio.repository';
-import { PortfolioApiModule } from '@/modules/portfolio/datasources/portfolio-api.module';
 
 export const IPortfolioRepository = Symbol('IPortfolioRepository');
 
@@ -35,15 +32,3 @@ export interface IPortfolioRepository {
    */
   clearPortfolio(args: { address: Address }): Promise<void>;
 }
-
-@Module({
-  imports: [PortfolioApiModule],
-  providers: [
-    {
-      provide: IPortfolioRepository,
-      useClass: PortfolioRepository,
-    },
-  ],
-  exports: [IPortfolioRepository],
-})
-export class PortfolioRepositoryModule {}
