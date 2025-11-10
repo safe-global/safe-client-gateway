@@ -222,8 +222,8 @@ export class ZerionPortfolioApi implements IPortfolioApi {
             type:
               address === null ||
               address === '0x0000000000000000000000000000000000000000'
-                ? ('NATIVE_TOKEN' as const)
-                : ('ERC20' as const),
+                ? 'NATIVE_TOKEN'
+                : 'ERC20',
           },
           balance: position.attributes.quantity.int,
           balanceFiat:
@@ -367,8 +367,8 @@ export class ZerionPortfolioApi implements IPortfolioApi {
             type:
               address === null ||
               address === '0x0000000000000000000000000000000000000000'
-                ? ('NATIVE_TOKEN' as const)
-                : ('ERC20' as const),
+                ? 'NATIVE_TOKEN'
+                : 'ERC20',
           },
           receiptTokenAddress,
           balance: position.attributes.quantity.int,
