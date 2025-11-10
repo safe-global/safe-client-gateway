@@ -1,11 +1,9 @@
 import {
   Controller,
-  DefaultValuePipe,
   Delete,
   Get,
   HttpCode,
   Param,
-  ParseBoolPipe,
   Query,
 } from '@nestjs/common';
 import {
@@ -19,7 +17,8 @@ import { PortfolioApiService } from '@/modules/portfolio/v1/portfolio.service';
 import { Portfolio } from '@/modules/portfolio/v1/entities/portfolio.entity';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { ChainIdsSchema } from '@/modules/portfolio/schemas/chain-ids.schema';
+import { GetPortfolioDto } from '@/modules/portfolio/v1/entities/get-portfolio.dto.entity';
+import { GetPortfolioDtoSchema } from '@/modules/portfolio/v1/entities/schemas/get-portfolio.dto.schema';
 import type { Address } from 'viem';
 
 /**
@@ -78,20 +77,15 @@ export class PortfolioController {
   async getPortfolio(
     @Param('address', new ValidationPipe(AddressSchema))
     address: Address,
-    @Query('fiatCode', new DefaultValuePipe('USD')) fiatCode: string,
-    @Query('chainIds', new ValidationPipe(ChainIdsSchema))
-    chainIds?: Array<string>,
-    @Query('trusted', new DefaultValuePipe(true), ParseBoolPipe)
-    trusted?: boolean,
-    @Query('excludeDust', new DefaultValuePipe(true), ParseBoolPipe)
-    excludeDust?: boolean,
+    @Query(new ValidationPipe(GetPortfolioDtoSchema))
+    getPortfolioDto: GetPortfolioDto,
   ): Promise<Portfolio> {
     return this.portfolioService.getPortfolio({
       address,
-      fiatCode,
-      chainIds,
-      trusted,
-      excludeDust,
+      fiatCode: getPortfolioDto.fiatCode,
+      chainIds: getPortfolioDto.chainIds,
+      trusted: getPortfolioDto.trusted,
+      excludeDust: getPortfolioDto.excludeDust,
     });
   }
 
