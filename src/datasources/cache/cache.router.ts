@@ -127,7 +127,7 @@ export class CacheRouter {
   }): CacheDir {
     return new CacheDir(
       CacheRouter.getZerionBalancesCacheKey(args),
-      args.fiatCode,
+      args.fiatCode.toUpperCase(),
     );
   }
 
@@ -165,7 +165,7 @@ export class CacheRouter {
   }): CacheDir {
     return new CacheDir(
       CacheRouter.getZerionPositionsCacheKey(args),
-      `${args.fiatCode}_${args.refresh ?? ''}`,
+      `${args.fiatCode.toUpperCase()}_${args.refresh ?? ''}`,
     );
   }
 
@@ -590,7 +590,7 @@ export class CacheRouter {
     fiatCode: string;
   }): CacheDir {
     return new CacheDir(
-      `${args.nativeCoinId}_${CacheRouter.NATIVE_COIN_PRICE_KEY}_${args.fiatCode}`,
+      `${args.nativeCoinId}_${CacheRouter.NATIVE_COIN_PRICE_KEY}_${args.fiatCode.toUpperCase()}`,
       '',
     );
   }
@@ -601,7 +601,7 @@ export class CacheRouter {
     tokenAddress: string;
   }): CacheDir {
     return new CacheDir(
-      `${args.chainName}_${CacheRouter.TOKEN_PRICE_KEY}_${args.tokenAddress}_${args.fiatCode}`,
+      `${args.chainName}_${CacheRouter.TOKEN_PRICE_KEY}_${args.tokenAddress}_${args.fiatCode.toUpperCase()}`,
       '',
     );
   }
@@ -931,7 +931,10 @@ export class CacheRouter {
     address: Address;
     fiatCode: string;
   }): CacheDir {
-    return new CacheDir(CacheRouter.getPortfolioCacheKey(args), args.fiatCode);
+    return new CacheDir(
+      CacheRouter.getPortfolioCacheKey(args),
+      args.fiatCode.toUpperCase(),
+    );
   }
 
   static getZerionChainsCacheDir(): CacheDir {
