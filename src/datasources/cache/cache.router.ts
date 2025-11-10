@@ -930,10 +930,12 @@ export class CacheRouter {
   static getPortfolioCacheDir(args: {
     address: Address;
     fiatCode: string;
+    trusted?: boolean;
   }): CacheDir {
+    const trustedSuffix = args.trusted ? '_trusted' : '';
     return new CacheDir(
       CacheRouter.getPortfolioCacheKey(args),
-      args.fiatCode.toUpperCase(),
+      `${args.fiatCode.toUpperCase()}${trustedSuffix}`,
     );
   }
 

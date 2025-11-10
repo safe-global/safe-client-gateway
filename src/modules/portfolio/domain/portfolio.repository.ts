@@ -51,6 +51,7 @@ export class PortfolioRepository implements IPortfolioRepository {
     const cacheDir = CacheRouter.getPortfolioCacheDir({
       address: args.address,
       fiatCode: args.fiatCode,
+      trusted: args.trusted,
     });
 
     const cached = await this.cacheService.hGet(cacheDir);
