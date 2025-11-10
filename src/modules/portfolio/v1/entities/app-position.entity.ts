@@ -50,7 +50,6 @@ export class AppPosition {
     description:
       'Receipt token address (pool address) representing this position. This is the contract address for the position token (LP token, staking receipt, etc.), not the underlying token.',
     type: 'string',
-    example: '0x6da7b0d8464c4eeab6023d891db267a045fc978f',
   })
   public readonly receiptTokenAddress?: string;
 
