@@ -69,7 +69,7 @@ export class PositionsService {
   ): Protocol | null {
     const filteredPositions = positions.filter(
       (position) =>
-        !this._isDust(position) && position.application_metadata !== undefined,
+        !this._isDust(position) && position.application_metadata != null,
     );
 
     if (!filteredPositions.length) {
