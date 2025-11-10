@@ -41,7 +41,7 @@ export class PortfolioRepository implements IPortfolioRepository {
     );
   }
 
-  async getPortfolio(args: {
+  public async getPortfolio(args: {
     address: Address;
     fiatCode: string;
     chainIds?: Array<string>;
@@ -83,7 +83,7 @@ export class PortfolioRepository implements IPortfolioRepository {
    * @param {{ address: Address }} args - Clear parameters
    * @returns {Promise<void>} Promise that resolves when cache is cleared
    */
-  async clearPortfolio(args: { address: Address }): Promise<void> {
+  public async clearPortfolio(args: { address: Address }): Promise<void> {
     await this.cacheService.deleteByKey(
       CacheRouter.getPortfolioCacheKey({
         address: args.address,

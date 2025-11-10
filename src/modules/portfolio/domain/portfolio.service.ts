@@ -15,7 +15,7 @@ export class PortfolioService implements IPortfolioService {
     private readonly portfolioRepository: IPortfolioRepository,
   ) {}
 
-  async getPortfolio(args: {
+  public async getPortfolio(args: {
     address: Address;
     fiatCode: string;
     chainIds?: Array<string>;
@@ -25,7 +25,7 @@ export class PortfolioService implements IPortfolioService {
     return this.portfolioRepository.getPortfolio(args);
   }
 
-  async clearPortfolio(args: { address: Address }): Promise<void> {
+  public async clearPortfolio(args: { address: Address }): Promise<void> {
     await this.portfolioRepository.clearPortfolio(args);
   }
 }

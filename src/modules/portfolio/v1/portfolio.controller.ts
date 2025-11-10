@@ -74,7 +74,7 @@ export class PortfolioController {
   })
   @ApiOkResponse({ type: Portfolio })
   @Get('/portfolio/:address')
-  async getPortfolio(
+  public async getPortfolio(
     @Param('address', new ValidationPipe(AddressSchema))
     address: Address,
     @Query(new ValidationPipe(GetPortfolioDtoSchema))
@@ -100,7 +100,7 @@ export class PortfolioController {
   })
   @Delete('/portfolio/:address')
   @HttpCode(204)
-  async clearPortfolio(
+  public async clearPortfolio(
     @Param('address', new ValidationPipe(AddressSchema))
     address: Address,
   ): Promise<void> {

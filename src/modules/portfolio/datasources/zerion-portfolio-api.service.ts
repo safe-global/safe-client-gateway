@@ -74,7 +74,7 @@ export class ZerionPortfolioApi implements IPortfolioApi {
     );
   }
 
-  async getPortfolio(args: {
+  public async getPortfolio(args: {
     address: Address;
     fiatCode: string;
     chainIds?: Array<string>;

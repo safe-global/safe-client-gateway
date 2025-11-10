@@ -16,7 +16,7 @@ export class PortfolioApiService {
     private readonly portfolioRouteMapper: PortfolioRouteMapper,
   ) {}
 
-  async getPortfolio(args: {
+  public async getPortfolio(args: {
     address: Address;
     fiatCode: string;
     chainIds?: Array<string>;
@@ -28,7 +28,7 @@ export class PortfolioApiService {
     return this.portfolioRouteMapper.mapDomainToRoute(domainPortfolio);
   }
 
-  async clearPortfolio(args: { address: Address }): Promise<void> {
+  public async clearPortfolio(args: { address: Address }): Promise<void> {
     await this.domainPortfolioService.clearPortfolio(args);
   }
 }
