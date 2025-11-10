@@ -8,11 +8,12 @@ export interface IPortfolioApi {
   /**
    * Retrieves the portfolio data for a given wallet address.
    *
-   * @param args.address - The wallet address
-   * @param args.fiatCode - The fiat currency code (e.g., 'USD', 'EUR')
-   * @param args.chainIds - Optional array of chain IDs to filter by
-   * @param args.trusted - Optional flag to filter trusted tokens only
-   * @returns A promise that resolves to the portfolio data
+   * @param {Object} args - Portfolio fetch parameters
+   * @param {Address} args.address - The wallet address
+   * @param {string} args.fiatCode - The fiat currency code (e.g., 'USD', 'EUR')
+   * @param {Array<string>} [args.chainIds] - Optional array of chain IDs to filter by
+   * @param {boolean} [args.trusted] - Optional flag to filter trusted tokens only
+   * @returns {Promise<Raw<Portfolio>>} A promise that resolves to the portfolio data
    */
   getPortfolio(args: {
     address: Address;

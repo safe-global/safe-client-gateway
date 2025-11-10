@@ -23,7 +23,8 @@ export class PortfolioRouteMapper {
   /**
    * Maps domain portfolio to route portfolio format.
    *
-   * @param domainPortfolio - Domain portfolio entity
+   * @param {DomainPortfolio} domainPortfolio - Domain portfolio entity
+   * @returns {Portfolio} Route portfolio entity
    */
   public mapDomainToRoute(domainPortfolio: DomainPortfolio): Portfolio {
     return {
@@ -42,7 +43,8 @@ export class PortfolioRouteMapper {
   /**
    * Maps domain token balance to route token balance.
    *
-   * @param token - Domain token balance
+   * @param {DomainTokenBalance} token - Domain token balance
+   * @returns {TokenBalance} Route token balance entity
    */
   private mapTokenBalance(token: DomainTokenBalance): TokenBalance {
     return {
@@ -57,7 +59,8 @@ export class PortfolioRouteMapper {
   /**
    * Maps domain app position to route app position.
    *
-   * @param position - Domain app position
+   * @param {DomainAppPosition} position - Domain app position
+   * @returns {AppPosition} Route app position entity
    */
   private mapAppPosition(position: DomainAppPosition): AppPosition {
     return {
@@ -73,7 +76,8 @@ export class PortfolioRouteMapper {
   /**
    * Maps domain app balance to route app balance.
    *
-   * @param app - Domain app balance
+   * @param {DomainAppBalance} app - Domain app balance
+   * @returns {AppBalance} Route app balance entity
    */
   private mapAppBalance(app: DomainAppBalance): AppBalance {
     return {
@@ -88,7 +92,8 @@ export class PortfolioRouteMapper {
   /**
    * Maps domain app position group to route app position group.
    *
-   * @param group - Domain app position group
+   * @param {DomainAppPositionGroup} group - Domain app position group
+   * @returns {AppPositionGroup} Route app position group entity
    */
   private mapAppPositionGroup(group: DomainAppPositionGroup): AppPositionGroup {
     return {

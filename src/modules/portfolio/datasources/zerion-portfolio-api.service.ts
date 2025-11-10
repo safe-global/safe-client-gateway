@@ -94,7 +94,8 @@ export class ZerionPortfolioApi implements IPortfolioApi {
   /**
    * Fetches positions from Zerion API.
    *
-   * @param args - Fetch parameters
+   * @param {{ address: Address; fiatCode: string; trusted?: boolean }} args - Fetch parameters
+   * @returns {Promise<Array<ZerionBalance>>} Promise that resolves to Zerion balance positions
    */
   private async _fetchPositions(args: {
     address: Address;
@@ -137,7 +138,8 @@ export class ZerionPortfolioApi implements IPortfolioApi {
   /**
    * Maps Zerion positions to domain portfolio.
    *
-   * @param positions - Zerion balance positions
+   * @param {Array<ZerionBalance>} positions - Zerion balance positions
+   * @returns {Promise<Raw<Portfolio>>} Promise that resolves to raw portfolio data
    */
   private async _buildPortfolio(
     positions: Array<ZerionBalance>,
@@ -180,7 +182,8 @@ export class ZerionPortfolioApi implements IPortfolioApi {
   /**
    * Maps Zerion wallet positions to domain TokenBalance entities.
    *
-   * @param positions - Zerion wallet positions
+   * @param {Array<ZerionBalance>} positions - Zerion wallet positions
+   * @returns {Promise<Array<TokenBalance>>} Promise that resolves to token balance entities
    */
   private async _buildTokenBalances(
     positions: Array<ZerionBalance>,
@@ -248,7 +251,8 @@ export class ZerionPortfolioApi implements IPortfolioApi {
   /**
    * Maps Zerion app positions to domain AppBalance entities, grouped by app and group_id.
    *
-   * @param positions - Zerion app positions
+   * @param {Array<ZerionBalance>} positions - Zerion app positions
+   * @returns {Promise<Array<AppBalance>>} Promise that resolves to app balance entities
    */
   private async _buildAppBalances(
     positions: Array<ZerionBalance>,
@@ -295,7 +299,8 @@ export class ZerionPortfolioApi implements IPortfolioApi {
    * Groups positions by group_id, using name as fallback.
    * Group name is taken from the first position's name field.
    *
-   * @param positions - Positions to group
+   * @param {Array<AppPosition>} positions - Positions to group
+   * @returns {Array<AppPositionGroup>} Grouped positions
    */
   private groupPositions(
     positions: Array<AppPosition>,
@@ -316,7 +321,8 @@ export class ZerionPortfolioApi implements IPortfolioApi {
   /**
    * Maps Zerion positions to domain AppPosition entities.
    *
-   * @param positions - Zerion balance positions
+   * @param {Array<ZerionBalance>} positions - Zerion balance positions
+   * @returns {Promise<Array<AppPosition>>} Promise that resolves to app position entities
    */
   private async _buildAppPositions(
     positions: Array<ZerionBalance>,
@@ -385,7 +391,8 @@ export class ZerionPortfolioApi implements IPortfolioApi {
   /**
    * Calculates total fiat value of positions.
    *
-   * @param positions - Positions to calculate balance for
+   * @param {Array<ZerionBalance>} positions - Positions to calculate balance for
+   * @returns {number} Total fiat value
    */
   private _calculateTotalBalance(positions: Array<ZerionBalance>): number {
     return positions.reduce((sum, position) => {
@@ -396,7 +403,8 @@ export class ZerionPortfolioApi implements IPortfolioApi {
   /**
    * Calculates total fiat value of app positions.
    *
-   * @param positions - App positions to calculate balance for
+   * @param {Array<ZerionBalance>} positions - App positions to calculate balance for
+   * @returns {number} Total fiat value
    */
   private _calculatePositionsBalance(positions: Array<ZerionBalance>): number {
     return positions.reduce((sum, position) => {
@@ -406,6 +414,8 @@ export class ZerionPortfolioApi implements IPortfolioApi {
 
   /**
    * Retrieves cached chain mapping.
+   *
+   * @returns {Promise<Record<string, string> | null>} Promise that resolves to cached mapping or null
    */
   private async _getCachedChainMapping(): Promise<Record<
     string,
@@ -423,6 +433,8 @@ export class ZerionPortfolioApi implements IPortfolioApi {
 
   /**
    * Fetches and caches Zerion network to chain ID mapping.
+   *
+   * @returns {Promise<Record<string, string>>} Promise that resolves to network to chain ID mapping
    */
   private async _fetchAndCacheChainMapping(): Promise<Record<string, string>> {
     const url = `${this.baseUri}/v1/chains`;
@@ -455,6 +467,8 @@ export class ZerionPortfolioApi implements IPortfolioApi {
 
   /**
    * Gets chain mapping from cache or fetches if missing.
+   *
+   * @returns {Promise<Record<string, string>>} Promise that resolves to network to chain ID mapping
    */
   private async _getChainMapping(): Promise<Record<string, string>> {
     const cached = await this._getCachedChainMapping();
@@ -473,7 +487,8 @@ export class ZerionPortfolioApi implements IPortfolioApi {
   /**
    * Maps Zerion network identifier to chain ID.
    *
-   * @param network - Zerion network identifier
+   * @param {string} network - Zerion network identifier
+   * @returns {Promise<string>} Promise that resolves to chain ID (defaults to '1' if unknown)
    */
   private async _mapNetworkToChainId(network: string): Promise<string> {
     const mapping = await this._getChainMapping();

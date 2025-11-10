@@ -80,7 +80,8 @@ export class PortfolioRepository implements IPortfolioRepository {
   /**
    * Clears cached portfolio for an address.
    *
-   * @param args - Clear parameters
+   * @param {{ address: Address }} args - Clear parameters
+   * @returns {Promise<void>} Promise that resolves when cache is cleared
    */
   async clearPortfolio(args: { address: Address }): Promise<void> {
     await this.cacheService.deleteByKey(
@@ -93,8 +94,9 @@ export class PortfolioRepository implements IPortfolioRepository {
   /**
    * Applies filters to portfolio.
    *
-   * @param portfolio - Portfolio to filter
-   * @param args - Filter options
+   * @param {Portfolio} portfolio - Portfolio to filter
+   * @param {{ chainIds?: Array<string>; trusted?: boolean; excludeDust?: boolean }} args - Filter options
+   * @returns {Portfolio} Filtered portfolio
    */
   private _applyFilters(
     portfolio: Portfolio,
@@ -128,9 +130,10 @@ export class PortfolioRepository implements IPortfolioRepository {
    * Filters portfolio using token and position filter functions.
    * Used by other filter functions (_filterByChains, _filterTrustedTokens, _filterDustPositions).
    *
-   * @param portfolio - Portfolio to filter
-   * @param tokenFilter - Filter function for tokens
-   * @param positionFilter - Filter function for positions
+   * @param {Portfolio} portfolio - Portfolio to filter
+   * @param {(token: TokenBalance) => boolean} tokenFilter - Filter function for tokens
+   * @param {(position: AppPosition) => boolean} positionFilter - Filter function for positions
+   * @returns {Portfolio} Filtered portfolio
    */
   private _filterPortfolio(
     portfolio: Portfolio,
@@ -149,9 +152,9 @@ export class PortfolioRepository implements IPortfolioRepository {
   /**
    * Filters positions within an app balance, removing empty groups.
    *
-   * @param app - App balance to filter
-   * @param positionFilter - Filter function for positions
-   * @returns Filtered app balance or null if all groups are empty
+   * @param {AppBalance} app - App balance to filter
+   * @param {(position: AppPosition) => boolean} positionFilter - Filter function for positions
+   * @returns {AppBalance | null} Filtered app balance or null if all groups are empty
    */
   private _filterAppBalance(
     app: AppBalance,
@@ -183,8 +186,9 @@ export class PortfolioRepository implements IPortfolioRepository {
   /**
    * Filters portfolio by chain IDs.
    *
-   * @param portfolio - Portfolio to filter
-   * @param chainIds - Chain IDs to include
+   * @param {Portfolio} portfolio - Portfolio to filter
+   * @param {Array<string>} chainIds - Chain IDs to include
+   * @returns {Portfolio} Filtered portfolio
    */
   private _filterByChains(
     portfolio: Portfolio,
@@ -201,7 +205,8 @@ export class PortfolioRepository implements IPortfolioRepository {
   /**
    * Filters portfolio to only include trusted tokens and positions.
    *
-   * @param portfolio - Portfolio to filter
+   * @param {Portfolio} portfolio - Portfolio to filter
+   * @returns {Portfolio} Filtered portfolio
    */
   private _filterTrustedTokens(portfolio: Portfolio): Portfolio {
     return this._filterPortfolio(
@@ -214,7 +219,8 @@ export class PortfolioRepository implements IPortfolioRepository {
   /**
    * Filters out dust positions below threshold.
    *
-   * @param portfolio - Portfolio to filter
+   * @param {Portfolio} portfolio - Portfolio to filter
+   * @returns {Portfolio} Filtered portfolio
    */
   private _filterDustPositions(portfolio: Portfolio): Portfolio {
     const isDustFree = (item: { balanceFiat?: string }): boolean => {
@@ -229,7 +235,8 @@ export class PortfolioRepository implements IPortfolioRepository {
   /**
    * Sums fiat balances from items.
    *
-   * @param items - Items with balanceFiat property
+   * @param {Array<{ balanceFiat?: string }>} items - Items with balanceFiat property
+   * @returns {number} Sum of fiat balances
    */
   private _sumBalances(items: Array<{ balanceFiat?: string }>): number {
     return items.reduce((sum, item) => {
@@ -241,8 +248,9 @@ export class PortfolioRepository implements IPortfolioRepository {
   /**
    * Recalculates total balances from filtered token and app balances.
    *
-   * @param tokenBalances - Filtered token balances
-   * @param appBalances - Filtered app balances
+   * @param {Array<TokenBalance>} tokenBalances - Filtered token balances
+   * @param {Array<AppBalance>} appBalances - Filtered app balances
+   * @returns {Portfolio} Portfolio with recalculated totals
    */
   private _recalculateTotals(
     tokenBalances: Array<TokenBalance>,
