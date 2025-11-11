@@ -2146,11 +2146,27 @@ describe('TransactionVerifierHelper', () => {
             chainId,
             safe,
             transaction,
-            signature: `0x${'-'.repeat(128)}${v}`,
+            signature:
+              signatureType === SignatureType.ContractSignature
+                ? // For CONTRACT_SIGNATURE, create valid hex that passes parsing
+                  // The address will be extracted from r, but since it's not in owners list,
+                  // it will throw "Invalid signature" and log an error
+                  // Static part: address not in owners (64 chars) + data pointer (64 chars) + v=00 (2 chars)
+                  // Dynamic part: length field (64 chars) + minimal data (2 chars)
+                  // Use an address that's definitely not in the owners list
+                  `0x${'1'.repeat(24)}${'0'.repeat(40)}${(65).toString(16).padStart(64, '0')}00${(1).toString(16).padStart(64, '0')}00`
+                : `0x${'-'.repeat(128)}${v}`,
           });
-        }).toThrow(new Error('Could not recover address'));
+        }).toThrow(
+          signatureType === SignatureType.ContractSignature
+            ? new Error('Invalid signature')
+            : new Error('Could not recover address'),
+        );
 
-        expect(mockLoggingRepository.error).not.toHaveBeenCalled();
+        // CONTRACT_SIGNATURE logs when address is not in owners list, other types don't
+        if (signatureType !== SignatureType.ContractSignature) {
+          expect(mockLoggingRepository.error).not.toHaveBeenCalled();
+        }
       },
     );
 

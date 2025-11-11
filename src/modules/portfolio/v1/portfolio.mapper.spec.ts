@@ -43,7 +43,7 @@ describe('PortfolioRouteMapper', () => {
           getAddress('0x1234567890123456789012345678901234567890'),
         )
         .with('chainId', '1')
-        .with('type', 'ERC20' as const)
+        .with('type', 'ERC20')
         .build();
 
       const tokenBalance = tokenBalanceBuilder()
@@ -76,7 +76,7 @@ describe('PortfolioRouteMapper', () => {
     it('should map null address to NULL_ADDRESS for token balances', () => {
       const tokenInfo = tokenInfoBuilder()
         .with('address', null)
-        .with('type', 'NATIVE_TOKEN' as const)
+        .with('type', 'NATIVE_TOKEN')
         .build();
 
       const tokenBalance = tokenBalanceBuilder()
@@ -146,7 +146,7 @@ describe('PortfolioRouteMapper', () => {
           getAddress('0xabcdefabcdefabcdefabcdefabcdefabcdefabcd'),
         )
         .with('chainId', '137')
-        .with('type', 'ERC20' as const)
+        .with('type', 'ERC20')
         .with('trusted', true)
         .build();
 
@@ -198,7 +198,7 @@ describe('PortfolioRouteMapper', () => {
     it('should map null address to NULL_ADDRESS for app positions', () => {
       const tokenInfo = tokenInfoBuilder()
         .with('address', null)
-        .with('type', 'NATIVE_TOKEN' as const)
+        .with('type', 'NATIVE_TOKEN')
         .build();
 
       const position = appPositionBuilder()
@@ -262,19 +262,14 @@ describe('PortfolioRouteMapper', () => {
 
     it('should map multiple token types correctly', () => {
       const erc20Token = tokenBalanceBuilder()
-        .with(
-          'tokenInfo',
-          tokenInfoBuilder()
-            .with('type', 'ERC20' as const)
-            .build(),
-        )
+        .with('tokenInfo', tokenInfoBuilder().with('type', 'ERC20').build())
         .build();
 
       const nativeToken = tokenBalanceBuilder()
         .with(
           'tokenInfo',
           tokenInfoBuilder()
-            .with('type', 'NATIVE_TOKEN' as const)
+            .with('type', 'NATIVE_TOKEN')
             .with('address', null)
             .build(),
         )
