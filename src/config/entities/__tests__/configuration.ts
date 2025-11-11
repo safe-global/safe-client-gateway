@@ -189,6 +189,7 @@ export default (): ReturnType<typeof configuration> => ({
     email: false,
     zerionBalancesChainIds: ['137'],
     zerionPositions: false,
+    portfolio: false,
     debugLogs: false,
     configHooksDebugLogs: false,
     auth: false,

@@ -295,6 +295,7 @@ export default () => ({
       process.env.FF_ZERION_BALANCES_CHAIN_IDS?.split(',') ?? [],
     zerionPositions:
       process.env.FF_ZERION_POSITIONS_DISABLED?.toLowerCase() !== 'true',
+    portfolio: process.env.FF_PORTFOLIO_DISABLED?.toLowerCase() !== 'true',
     debugLogs: process.env.FF_DEBUG_LOGS?.toLowerCase() === 'true',
     configHooksDebugLogs:
       process.env.FF_CONFIG_HOOKS_DEBUG_LOGS?.toLowerCase() === 'true',

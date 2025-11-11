@@ -62,6 +62,7 @@ describe('Preview transaction - CoW Swap - Transactions Controller (Unit)', () =
     swapsApiUrl = swapApiConfig[swapsChainId];
     swapsExplorerUrl = configurationService.getOrThrow(`swaps.explorerBaseUri`);
     networkService = moduleFixture.get(NetworkService);
+    networkService.get.mockReset();
 
     app = await new TestAppProvider().provide(moduleFixture);
     await app.init();
@@ -94,7 +95,6 @@ describe('Preview transaction - CoW Swap - Transactions Controller (Unit)', () =
       const contractPageResponse = pageBuilder()
         .with('results', [contractResponse])
         .build();
-      networkService.get.mockReset();
       networkService.get.mockImplementation(({ url }) => {
         if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
           return Promise.resolve({ data: rawify(chain), status: 200 });
