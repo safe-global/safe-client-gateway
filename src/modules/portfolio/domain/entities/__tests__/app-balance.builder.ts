@@ -8,10 +8,7 @@ import { appPositionGroupBuilder } from '@/modules/portfolio/domain/entities/__t
 export function appBalanceBuilder(): IBuilder<AppBalance> {
   return new Builder<AppBalance>()
     .with('appInfo', appInfoBuilder().build())
-    .with(
-      'balanceFiat',
-      faker.number.float({ min: 0, max: 100000, fractionDigits: 2 }).toString(),
-    )
+    .with('balanceFiat', faker.number.float({ fractionDigits: 2 }).toString())
     .with('groups', [
       appPositionGroupBuilder().build(),
       appPositionGroupBuilder().build(),
