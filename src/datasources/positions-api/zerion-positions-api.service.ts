@@ -63,9 +63,9 @@ export class ZerionPositionsApi implements IPositionsApi {
     this.chainsConfiguration = this.configurationService.getOrThrow<
       Record<number, ChainAttributes>
     >('balances.providers.zerion.chains');
-    this.fiatCodes = this.configurationService
-      .getOrThrow<Array<string>>('balances.providers.zerion.currencies')
-      .map((currency) => currency.toUpperCase());
+    this.fiatCodes = this.configurationService.getOrThrow<Array<string>>(
+      'balances.providers.zerion.currencies',
+    );
   }
 
   async getPositions(args: {

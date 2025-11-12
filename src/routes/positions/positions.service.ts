@@ -17,9 +17,9 @@ import type { Address } from 'viem';
 const DUST_THRESHOLD_USD = 0.01;
 
 interface PositionEntry extends Position {
-  protocol: string | null;
+  protocol?: string;
   name: string;
-  application_metadata: z.infer<typeof ZerionApplicationMetadataSchema>;
+  application_metadata?: z.infer<typeof ZerionApplicationMetadataSchema>;
 }
 
 @Injectable()
@@ -68,7 +68,8 @@ export class PositionsService {
     positions: Array<PositionEntry>,
   ): Protocol | null {
     const filteredPositions = positions.filter(
-      (position) => !this._isDust(position),
+      (position) =>
+        !this._isDust(position) && position.application_metadata != null,
     );
 
     if (!filteredPositions.length) {
@@ -87,7 +88,7 @@ export class PositionsService {
     }, 0);
     return {
       protocol,
-      protocol_metadata: filteredPositions[0].application_metadata,
+      protocol_metadata: filteredPositions[0].application_metadata!,
       fiatTotal: getNumberString(fiatTotal),
       items: positionGroups,
     };
@@ -146,10 +147,10 @@ export class PositionsService {
       fiatBalance: position.fiatBalance ?? '0',
       fiatBalance24hChange: position.fiatBalance24hChange,
       fiatConversion: position.fiatConversion ?? '0',
-      protocol: position.protocol,
+      protocol: position.protocol ?? undefined,
       name: position.name,
       position_type: position.position_type,
-      application_metadata: position.application_metadata,
+      application_metadata: position.application_metadata ?? undefined,
     };
   }
 

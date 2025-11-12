@@ -75,6 +75,8 @@ export class CacheRouter {
   private static readonly ZERION_BALANCES_KEY = 'zerion_balances';
   private static readonly ZERION_COLLECTIBLES_KEY = 'zerion_collectibles';
   private static readonly ZERION_POSITIONS_KEY = 'zerion_positions';
+  private static readonly ZERION_CHAINS_KEY = 'zerion_chains';
+  private static readonly PORTFOLIO_KEY = 'portfolio';
   private static readonly ORM_QUERY_CACHE_KEY = 'orm_query_cache';
   private static readonly TRANSACTIONS_EXPORT_KEY = 'transactions_export';
   private static readonly CONTRACT_ANALYSIS_KEY = 'contract_analysis';
@@ -125,7 +127,7 @@ export class CacheRouter {
   }): CacheDir {
     return new CacheDir(
       CacheRouter.getZerionBalancesCacheKey(args),
-      args.fiatCode,
+      args.fiatCode.toUpperCase(),
     );
   }
 
@@ -163,7 +165,7 @@ export class CacheRouter {
   }): CacheDir {
     return new CacheDir(
       CacheRouter.getZerionPositionsCacheKey(args),
-      `${args.fiatCode}_${args.refresh ?? ''}`,
+      `${args.fiatCode.toUpperCase()}_${args.refresh ?? ''}`,
     );
   }
 
@@ -588,7 +590,7 @@ export class CacheRouter {
     fiatCode: string;
   }): CacheDir {
     return new CacheDir(
-      `${args.nativeCoinId}_${CacheRouter.NATIVE_COIN_PRICE_KEY}_${args.fiatCode}`,
+      `${args.nativeCoinId}_${CacheRouter.NATIVE_COIN_PRICE_KEY}_${args.fiatCode.toUpperCase()}`,
       '',
     );
   }
@@ -599,7 +601,7 @@ export class CacheRouter {
     tokenAddress: string;
   }): CacheDir {
     return new CacheDir(
-      `${args.chainName}_${CacheRouter.TOKEN_PRICE_KEY}_${args.tokenAddress}_${args.fiatCode}`,
+      `${args.chainName}_${CacheRouter.TOKEN_PRICE_KEY}_${args.tokenAddress}_${args.fiatCode.toUpperCase()}`,
       '',
     );
   }
@@ -919,5 +921,25 @@ export class CacheRouter {
       `${args.chainId}_${CacheRouter.RECIPIENT_ANALYSIS_KEY}_${args.safeAddress}`,
       hash.digest('hex'),
     );
+  }
+
+  static getPortfolioCacheKey(args: { address: Address }): string {
+    return `${CacheRouter.PORTFOLIO_KEY}_${args.address}_zerion`;
+  }
+
+  static getPortfolioCacheDir(args: {
+    address: Address;
+    fiatCode: string;
+    trusted?: boolean;
+  }): CacheDir {
+    const trustedSuffix = args.trusted ? '_trusted' : '';
+    return new CacheDir(
+      CacheRouter.getPortfolioCacheKey(args),
+      `${args.fiatCode.toUpperCase()}${trustedSuffix}`,
+    );
+  }
+
+  static getZerionChainsCacheDir(): CacheDir {
+    return new CacheDir(CacheRouter.ZERION_CHAINS_KEY, 'mapping');
   }
 }

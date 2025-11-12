@@ -83,17 +83,25 @@ export default (): ReturnType<typeof configuration> => ({
           new Set([
             ...Array.from(
               { length: faker.number.int({ min: 2, max: 5 }) },
-              () => faker.finance.currencyCode().toLowerCase(),
+              () => faker.finance.currencyCode(),
             ),
-            'btc',
-            'eth',
-            'eur',
-            'usd',
+            'BTC',
+            'ETH',
+            'EUR',
+            'USD',
           ]),
         ),
         limitPeriodSeconds: faker.number.int({ min: 1, max: 10 }),
         limitCalls: faker.number.int({ min: 1, max: 5 }),
       },
+    },
+  },
+  portfolio: {
+    cache: {
+      ttlSeconds: faker.number.int({ min: 10, max: 300 }),
+    },
+    filters: {
+      dustThresholdUsd: faker.number.float({ min: 0.1, max: 10 }),
     },
   },
   blockchain: {

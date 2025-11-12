@@ -236,7 +236,7 @@ describe('CoingeckoAPI', () => {
     });
 
     const expectedCacheDir = new CacheDir(
-      `${chain.pricesProvider.chainName}_token_price_${tokenAddress}_${lowerCaseFiatCode}`,
+      `${chain.pricesProvider.chainName}_token_price_${tokenAddress}_${fiatCode.toUpperCase()}`,
       '',
     );
     expect(assetPrice).toEqual([
@@ -275,11 +275,11 @@ describe('CoingeckoAPI', () => {
     );
     expect(mockInMemoryCache.get).toHaveBeenCalledTimes(1);
     expect(mockInMemoryCache.get).toHaveBeenCalledWith(
-      `${chain.pricesProvider.chainName}_token_price_${tokenAddress}_${lowerCaseFiatCode}:`,
+      `${chain.pricesProvider.chainName}_token_price_${tokenAddress}_${fiatCode.toUpperCase()}:`,
     );
     expect(mockInMemoryCache.set).toHaveBeenCalledTimes(1);
     expect(mockInMemoryCache.set).toHaveBeenCalledWith(
-      `${chain.pricesProvider.chainName}_token_price_${tokenAddress}_${lowerCaseFiatCode}:`,
+      `${chain.pricesProvider.chainName}_token_price_${tokenAddress}_${fiatCode.toUpperCase()}:`,
       JSON.stringify({
         [tokenAddress]: {
           [lowerCaseFiatCode]: price,
@@ -323,7 +323,7 @@ describe('CoingeckoAPI', () => {
     expect(mockCacheService.hGet).not.toHaveBeenCalled();
     expect(mockInMemoryCache.get).toHaveBeenCalledTimes(1);
     expect(mockInMemoryCache.get).toHaveBeenCalledWith(
-      `${chain.pricesProvider.chainName}_token_price_${tokenAddress}_${lowerCaseFiatCode}:`,
+      `${chain.pricesProvider.chainName}_token_price_${tokenAddress}_${fiatCode.toUpperCase()}:`,
     );
   });
 
@@ -362,7 +362,7 @@ describe('CoingeckoAPI', () => {
     });
 
     const expectedCacheDir = new CacheDir(
-      `${chain.pricesProvider.chainName}_token_price_${tokenAddress}_${lowerCaseFiatCode}`,
+      `${chain.pricesProvider.chainName}_token_price_${tokenAddress}_${fiatCode.toUpperCase()}`,
       '',
     );
     expect(assetPrice).toEqual([
@@ -481,26 +481,26 @@ describe('CoingeckoAPI', () => {
     expect(mockCacheService.hGet).toHaveBeenCalledTimes(3);
     expect(mockCacheService.hGet).toHaveBeenCalledWith(
       new CacheDir(
-        `${chain.pricesProvider.chainName}_token_price_${firstTokenAddress}_${lowerCaseFiatCode}`,
+        `${chain.pricesProvider.chainName}_token_price_${firstTokenAddress}_${fiatCode.toUpperCase()}`,
         '',
       ),
     );
     expect(mockCacheService.hGet).toHaveBeenCalledWith(
       new CacheDir(
-        `${chain.pricesProvider.chainName}_token_price_${secondTokenAddress}_${lowerCaseFiatCode}`,
+        `${chain.pricesProvider.chainName}_token_price_${secondTokenAddress}_${fiatCode.toUpperCase()}`,
         '',
       ),
     );
     expect(mockCacheService.hGet).toHaveBeenCalledWith(
       new CacheDir(
-        `${chain.pricesProvider.chainName}_token_price_${thirdTokenAddress}_${lowerCaseFiatCode}`,
+        `${chain.pricesProvider.chainName}_token_price_${thirdTokenAddress}_${fiatCode.toUpperCase()}`,
         '',
       ),
     );
     expect(mockCacheService.hSet).toHaveBeenCalledTimes(3);
     expect(mockCacheService.hSet).toHaveBeenCalledWith(
       new CacheDir(
-        `${chain.pricesProvider.chainName}_token_price_${firstTokenAddress}_${lowerCaseFiatCode}`,
+        `${chain.pricesProvider.chainName}_token_price_${firstTokenAddress}_${fiatCode.toUpperCase()}`,
         '',
       ),
       JSON.stringify({
@@ -513,7 +513,7 @@ describe('CoingeckoAPI', () => {
     );
     expect(mockCacheService.hSet).toHaveBeenCalledWith(
       new CacheDir(
-        `${chain.pricesProvider.chainName}_token_price_${secondTokenAddress}_${lowerCaseFiatCode}`,
+        `${chain.pricesProvider.chainName}_token_price_${secondTokenAddress}_${fiatCode.toUpperCase()}`,
         '',
       ),
       JSON.stringify({
@@ -526,7 +526,7 @@ describe('CoingeckoAPI', () => {
     );
     expect(mockCacheService.hSet).toHaveBeenCalledWith(
       new CacheDir(
-        `${chain.pricesProvider.chainName}_token_price_${thirdTokenAddress}_${lowerCaseFiatCode}`,
+        `${chain.pricesProvider.chainName}_token_price_${thirdTokenAddress}_${fiatCode.toUpperCase()}`,
         '',
       ),
       JSON.stringify({
@@ -566,7 +566,7 @@ describe('CoingeckoAPI', () => {
     mockCacheService.hGet.mockImplementation((cacheDir) => {
       if (
         cacheDir.key ===
-        `${chain.pricesProvider.chainName}_token_price_${secondTokenAddress}_${lowerCaseFiatCode}`
+        `${chain.pricesProvider.chainName}_token_price_${secondTokenAddress}_${fiatCode.toUpperCase()}`
       ) {
         return Promise.resolve(
           JSON.stringify({
@@ -582,7 +582,7 @@ describe('CoingeckoAPI', () => {
     mockInMemoryCache.get.mockImplementation((key) => {
       if (
         key ===
-        `${chain.pricesProvider.chainName}_token_price_${thirdTokenAddress}_${lowerCaseFiatCode}:`
+        `${chain.pricesProvider.chainName}_token_price_${thirdTokenAddress}_${fiatCode.toUpperCase()}:`
       ) {
         return Promise.resolve(
           JSON.stringify({
@@ -646,18 +646,18 @@ describe('CoingeckoAPI', () => {
     // mockInMemoryCache.get should have been called 3 times
     expect(mockInMemoryCache.get).toHaveBeenCalledTimes(3);
     expect(mockInMemoryCache.get).toHaveBeenCalledWith(
-      `${chain.pricesProvider.chainName}_token_price_${firstTokenAddress}_${lowerCaseFiatCode}:`,
+      `${chain.pricesProvider.chainName}_token_price_${firstTokenAddress}_${fiatCode.toUpperCase()}:`,
     );
     expect(mockInMemoryCache.get).toHaveBeenCalledWith(
-      `${chain.pricesProvider.chainName}_token_price_${secondTokenAddress}_${lowerCaseFiatCode}:`,
+      `${chain.pricesProvider.chainName}_token_price_${secondTokenAddress}_${fiatCode.toUpperCase()}:`,
     );
     expect(mockInMemoryCache.get).toHaveBeenCalledWith(
-      `${chain.pricesProvider.chainName}_token_price_${thirdTokenAddress}_${lowerCaseFiatCode}:`,
+      `${chain.pricesProvider.chainName}_token_price_${thirdTokenAddress}_${fiatCode.toUpperCase()}:`,
     );
     // mockInMemoryCache.set should have been called 2 times, to store the network price and the cache price
     expect(mockInMemoryCache.set).toHaveBeenCalledTimes(2);
     expect(mockInMemoryCache.set).toHaveBeenCalledWith(
-      `${chain.pricesProvider.chainName}_token_price_${firstTokenAddress}_${lowerCaseFiatCode}:`,
+      `${chain.pricesProvider.chainName}_token_price_${firstTokenAddress}_${fiatCode.toUpperCase()}:`,
       JSON.stringify({
         [firstTokenAddress]: {
           [lowerCaseFiatCode]: firstPrice,
@@ -667,7 +667,7 @@ describe('CoingeckoAPI', () => {
       pricesTtlSeconds * 1_000, // milliseconds
     );
     expect(mockInMemoryCache.set).toHaveBeenCalledWith(
-      `${chain.pricesProvider.chainName}_token_price_${secondTokenAddress}_${lowerCaseFiatCode}:`,
+      `${chain.pricesProvider.chainName}_token_price_${secondTokenAddress}_${fiatCode.toUpperCase()}:`,
       JSON.stringify({
         [secondTokenAddress]: {
           [lowerCaseFiatCode]: secondPrice,
@@ -680,13 +680,13 @@ describe('CoingeckoAPI', () => {
     expect(mockCacheService.hGet).toHaveBeenCalledTimes(2);
     expect(mockCacheService.hGet).toHaveBeenCalledWith(
       new CacheDir(
-        `${chain.pricesProvider.chainName}_token_price_${firstTokenAddress}_${lowerCaseFiatCode}`,
+        `${chain.pricesProvider.chainName}_token_price_${firstTokenAddress}_${fiatCode.toUpperCase()}`,
         '',
       ),
     );
     expect(mockCacheService.hGet).toHaveBeenCalledWith(
       new CacheDir(
-        `${chain.pricesProvider.chainName}_token_price_${secondTokenAddress}_${lowerCaseFiatCode}`,
+        `${chain.pricesProvider.chainName}_token_price_${secondTokenAddress}_${fiatCode.toUpperCase()}`,
         '',
       ),
     );
@@ -694,7 +694,7 @@ describe('CoingeckoAPI', () => {
     expect(mockCacheService.hSet).toHaveBeenCalledTimes(1);
     expect(mockCacheService.hSet).toHaveBeenCalledWith(
       new CacheDir(
-        `${chain.pricesProvider.chainName}_token_price_${firstTokenAddress}_${lowerCaseFiatCode}`,
+        `${chain.pricesProvider.chainName}_token_price_${firstTokenAddress}_${fiatCode.toUpperCase()}`,
         '',
       ),
       JSON.stringify({
@@ -790,13 +790,13 @@ describe('CoingeckoAPI', () => {
     // high-refresh-rate token price is cached with highRefreshRateTokensTtlSeconds
     expect(mockCacheService.hGet).toHaveBeenCalledWith(
       new CacheDir(
-        `${chain.pricesProvider.chainName}_token_price_${highRefreshRateTokenAddress}_${lowerCaseFiatCode}`,
+        `${chain.pricesProvider.chainName}_token_price_${highRefreshRateTokenAddress}_${fiatCode.toUpperCase()}`,
         '',
       ),
     );
     expect(mockCacheService.hSet).toHaveBeenCalledWith(
       new CacheDir(
-        `${chain.pricesProvider.chainName}_token_price_${highRefreshRateTokenAddress}_${lowerCaseFiatCode}`,
+        `${chain.pricesProvider.chainName}_token_price_${highRefreshRateTokenAddress}_${fiatCode.toUpperCase()}`,
         '',
       ),
       JSON.stringify({
@@ -810,13 +810,13 @@ describe('CoingeckoAPI', () => {
     // another token price is cached with pricesCacheTtlSeconds
     expect(mockCacheService.hGet).toHaveBeenCalledWith(
       new CacheDir(
-        `${chain.pricesProvider.chainName}_token_price_${anotherTokenAddress}_${lowerCaseFiatCode}`,
+        `${chain.pricesProvider.chainName}_token_price_${anotherTokenAddress}_${fiatCode.toUpperCase()}`,
         '',
       ),
     );
     expect(mockCacheService.hSet).toHaveBeenCalledWith(
       new CacheDir(
-        `${chain.pricesProvider.chainName}_token_price_${anotherTokenAddress}_${lowerCaseFiatCode}`,
+        `${chain.pricesProvider.chainName}_token_price_${anotherTokenAddress}_${fiatCode.toUpperCase()}`,
         '',
       ),
       JSON.stringify({
@@ -920,19 +920,19 @@ describe('CoingeckoAPI', () => {
     expect(mockCacheService.hGet).toHaveBeenCalledTimes(3);
     expect(mockCacheService.hGet).toHaveBeenCalledWith(
       new CacheDir(
-        `${chain.pricesProvider.chainName}_token_price_${firstTokenAddress}_${lowerCaseFiatCode}`,
+        `${chain.pricesProvider.chainName}_token_price_${firstTokenAddress}_${fiatCode.toUpperCase()}`,
         '',
       ),
     );
     expect(mockCacheService.hGet).toHaveBeenCalledWith(
       new CacheDir(
-        `${chain.pricesProvider.chainName}_token_price_${secondTokenAddress}_${lowerCaseFiatCode}`,
+        `${chain.pricesProvider.chainName}_token_price_${secondTokenAddress}_${fiatCode.toUpperCase()}`,
         '',
       ),
     );
     expect(mockCacheService.hGet).toHaveBeenCalledWith(
       new CacheDir(
-        `${chain.pricesProvider.chainName}_token_price_${thirdTokenAddress}_${lowerCaseFiatCode}`,
+        `${chain.pricesProvider.chainName}_token_price_${thirdTokenAddress}_${fiatCode.toUpperCase()}`,
         '',
       ),
     );
@@ -940,7 +940,7 @@ describe('CoingeckoAPI', () => {
     expect(mockCacheService.hSet).toHaveBeenNthCalledWith(
       1,
       new CacheDir(
-        `${chain.pricesProvider.chainName}_token_price_${firstTokenAddress}_${lowerCaseFiatCode}`,
+        `${chain.pricesProvider.chainName}_token_price_${firstTokenAddress}_${fiatCode.toUpperCase()}`,
         '',
       ),
       JSON.stringify({
@@ -954,7 +954,7 @@ describe('CoingeckoAPI', () => {
     expect(mockCacheService.hSet).toHaveBeenNthCalledWith(
       2,
       new CacheDir(
-        `${chain.pricesProvider.chainName}_token_price_${thirdTokenAddress}_${lowerCaseFiatCode}`,
+        `${chain.pricesProvider.chainName}_token_price_${thirdTokenAddress}_${fiatCode.toUpperCase()}`,
         '',
       ),
       JSON.stringify({
@@ -1059,19 +1059,19 @@ describe('CoingeckoAPI', () => {
     expect(mockCacheService.hGet).toHaveBeenCalledTimes(3);
     expect(mockCacheService.hGet).toHaveBeenCalledWith(
       new CacheDir(
-        `${chain.pricesProvider.chainName}_token_price_${firstTokenAddress}_${lowerCaseFiatCode}`,
+        `${chain.pricesProvider.chainName}_token_price_${firstTokenAddress}_${fiatCode.toUpperCase()}`,
         '',
       ),
     );
     expect(mockCacheService.hGet).toHaveBeenCalledWith(
       new CacheDir(
-        `${chain.pricesProvider.chainName}_token_price_${secondTokenAddress}_${lowerCaseFiatCode}`,
+        `${chain.pricesProvider.chainName}_token_price_${secondTokenAddress}_${fiatCode.toUpperCase()}`,
         '',
       ),
     );
     expect(mockCacheService.hGet).toHaveBeenCalledWith(
       new CacheDir(
-        `${chain.pricesProvider.chainName}_token_price_${thirdTokenAddress}_${lowerCaseFiatCode}`,
+        `${chain.pricesProvider.chainName}_token_price_${thirdTokenAddress}_${fiatCode.toUpperCase()}`,
         '',
       ),
     );
@@ -1109,7 +1109,7 @@ describe('CoingeckoAPI', () => {
       },
     };
     const cacheDir = new CacheDir(
-      `${chain.pricesProvider.nativeCoin}_native_coin_price_${lowerCaseFiatCode}`,
+      `${chain.pricesProvider.nativeCoin}_native_coin_price_${fiatCode.toUpperCase()}`,
       '',
     );
     mockCacheFirstDataSource.get.mockResolvedValue(rawify(expectedAssetPrice));
@@ -1155,7 +1155,7 @@ describe('CoingeckoAPI', () => {
       },
     };
     const cacheDir = new CacheDir(
-      `${chain.pricesProvider.nativeCoin}_native_coin_price_${lowerCaseFiatCode}`,
+      `${chain.pricesProvider.nativeCoin}_native_coin_price_${fiatCode.toUpperCase()}`,
       '',
     );
     mockCacheFirstDataSource.get.mockResolvedValue(rawify(expectedAssetPrice));
