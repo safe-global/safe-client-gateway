@@ -382,7 +382,6 @@ describe('ContractAnalysisService', () => {
               modified: faker.date.recent(),
             })
             .with('displayName', name)
-            .with('logoUrl', null)
             .build(),
         ])
         .build();
@@ -537,7 +536,6 @@ describe('ContractAnalysisService', () => {
             })
             .with('name', '')
             .with('displayName', '')
-            .with('logoUrl', null)
             .build(),
         ])
         .build();
@@ -758,7 +756,6 @@ describe('ContractAnalysisService', () => {
               })
               .with('name', '')
               .with('displayName', '')
-              .with('logoUrl', null)
               .build(),
           ])
           .build();
@@ -799,7 +796,6 @@ describe('ContractAnalysisService', () => {
               .with('abi', null)
               .with('name', '')
               .with('displayName', '')
-              .with('logoUrl', null)
               .build(),
           ])
           .build();
@@ -1116,7 +1112,7 @@ describe('ContractAnalysisService', () => {
       expect(result).toEqual({});
     });
 
-    it('should return empty response when count is null', async () => {
+    it('should return empty response when count is undefined', async () => {
       const mockTransactionPage = pageBuilder().with('count', null).build();
 
       mockTransactionApi.getMultisigTransactions.mockResolvedValue(

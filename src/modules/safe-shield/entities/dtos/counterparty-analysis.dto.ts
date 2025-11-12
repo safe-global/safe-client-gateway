@@ -47,13 +47,13 @@ export class ContractAnalysisDto
     description: 'Logo URL for the contract',
     example: 'https://example.com/logo.png',
   })
-  logoUrl?: string;
+  public readonly logoUrl?: string;
 
   @ApiPropertyOptional({
     description: 'Name of the contract',
     example: 'Uniswap V3 Router',
   })
-  name?: string;
+  public readonly name?: string;
 
   @ApiPropertyOptional({
     description:
@@ -70,7 +70,7 @@ export class ContractAnalysisDto
       },
     ],
   })
-  CONTRACT_VERIFICATION?: Array<ContractAnalysisResultDto>;
+  public readonly CONTRACT_VERIFICATION?: Array<ContractAnalysisResultDto>;
 
   @ApiPropertyOptional({
     description:
@@ -87,7 +87,7 @@ export class ContractAnalysisDto
       },
     ],
   })
-  CONTRACT_INTERACTION?: Array<ContractAnalysisResultDto>;
+  public readonly CONTRACT_INTERACTION?: Array<ContractAnalysisResultDto>;
 
   @ApiPropertyOptional({
     description:
@@ -104,7 +104,7 @@ export class ContractAnalysisDto
       },
     ],
   })
-  DELEGATECALL?: Array<ContractAnalysisResultDto>;
+  public readonly DELEGATECALL?: Array<ContractAnalysisResultDto>;
 }
 
 /**

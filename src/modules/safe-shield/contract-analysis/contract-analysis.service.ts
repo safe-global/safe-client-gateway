@@ -33,7 +33,6 @@ import { extractContracts } from '@/modules/safe-shield/utils/extraction.utils';
 import { Erc20Decoder } from '@/domain/relay/contracts/decoders/erc-20-decoder.helper';
 import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
 import { MultisigTransactionPageSchema } from '@/domain/safe/entities/multisig-transaction.entity';
-import { merge } from 'lodash';
 
 /**
  * Service responsible for analyzing contract interactions in transactions.
@@ -145,7 +144,10 @@ export class ContractAnalysisService {
       this.analyzeInteractions({ chainId, safeAddress, contract }),
     ]);
 
-    return merge(verificationResult, interactionResult);
+    return {
+      ...verificationResult,
+      ...interactionResult,
+    };
   }
 
   /**
@@ -169,14 +171,6 @@ export class ContractAnalysisService {
   > {
     const { chainId, contract, isDelegateCall } = args;
 
-    // Helper to include delegatecall result if applicable
-    const withDelegate = (
-      resolved?: Contract,
-    ): GroupedAnalysisResults<ContractAnalysisResult> => {
-      const res = this.checkDelegateCall(isDelegateCall, resolved);
-      return res ? { DELEGATECALL: [res] } : {};
-    };
-
     try {
       const raw = await this.dataDecoderApi.getContracts({
         address: contract,
@@ -185,17 +179,17 @@ export class ContractAnalysisService {
       const { count, results } = ContractPageSchema.parse(raw);
 
       if (!count) {
-        return { ...withDelegate(undefined) };
+        return { ...this.withDelegate(isDelegateCall) };
       }
 
       const resolved = results[0];
       const name = resolved.displayName || resolved.name || undefined;
-      const logoUrl = resolved.logoUrl || undefined;
+      const logoUrl = resolved.logoUrl;
       const type = resolved.abi ? 'VERIFIED' : 'NOT_VERIFIED';
 
       return {
         CONTRACT_VERIFICATION: [this.mapToAnalysisResult({ type, name })],
-        ...withDelegate(resolved),
+        ...this.withDelegate(isDelegateCall, resolved),
         name,
         logoUrl,
       };
@@ -204,7 +198,7 @@ export class ContractAnalysisService {
         CONTRACT_VERIFICATION: [
           this.mapToAnalysisResult({ type: 'VERIFICATION_UNAVAILABLE' }),
         ],
-        ...withDelegate(undefined),
+        ...this.withDelegate(isDelegateCall),
       };
     }
   }
@@ -268,6 +262,17 @@ export class ContractAnalysisService {
   ): AnalysisResult<'UNEXPECTED_DELEGATECALL'> | undefined {
     if (!isDelegateCall || contract?.trustedForDelegateCall) return undefined;
     return this.mapToAnalysisResult({ type: 'UNEXPECTED_DELEGATECALL' });
+  }
+
+  /**
+   * Helper to include delegatecall result if applicable.
+   */
+  private withDelegate(
+    isDelegateCall: boolean,
+    resolved?: Contract,
+  ): GroupedAnalysisResults<ContractAnalysisResult> {
+    const res = this.checkDelegateCall(isDelegateCall, resolved);
+    return res ? { DELEGATECALL: [res] } : {};
   }
 
   /**
