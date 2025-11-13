@@ -382,6 +382,7 @@ describe('ContractAnalysisService', () => {
               modified: faker.date.recent(),
             })
             .with('displayName', name)
+            .with('logoUrl', undefined)
             .build(),
         ])
         .build();
@@ -536,6 +537,7 @@ describe('ContractAnalysisService', () => {
             })
             .with('name', '')
             .with('displayName', '')
+            .with('logoUrl', undefined)
             .build(),
         ])
         .build();
@@ -555,6 +557,8 @@ describe('ContractAnalysisService', () => {
       });
 
       expect(result).toEqual({
+        name: undefined,
+        logoUrl: undefined,
         CONTRACT_VERIFICATION: [
           {
             severity: SEVERITY_MAPPING.VERIFIED,
@@ -756,6 +760,7 @@ describe('ContractAnalysisService', () => {
               })
               .with('name', '')
               .with('displayName', '')
+              .with('logoUrl', undefined)
               .build(),
           ])
           .build();
@@ -776,6 +781,8 @@ describe('ContractAnalysisService', () => {
         });
 
         expect(result).toEqual({
+          name: undefined,
+          logoUrl: undefined,
           CONTRACT_VERIFICATION: [
             {
               severity: SEVERITY_MAPPING.VERIFIED,
@@ -796,6 +803,7 @@ describe('ContractAnalysisService', () => {
               .with('abi', null)
               .with('name', '')
               .with('displayName', '')
+              .with('logoUrl', undefined)
               .build(),
           ])
           .build();
@@ -816,6 +824,8 @@ describe('ContractAnalysisService', () => {
         });
 
         expect(result).toEqual({
+          name: undefined,
+          logoUrl: undefined,
           CONTRACT_VERIFICATION: [
             {
               severity: SEVERITY_MAPPING.NOT_VERIFIED,

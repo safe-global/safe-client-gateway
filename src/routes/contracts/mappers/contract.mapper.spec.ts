@@ -32,11 +32,13 @@ describe('Contract Mapper', () => {
     });
   });
 
-  it('should return logoUri = undefined if logoUrl is null', () => {
-    const contract = dataDecodedContractBuilder().build();
+  it('should return logoUri = null if logoUrl is null', () => {
+    const contract = dataDecodedContractBuilder()
+      .with('logoUrl', undefined)
+      .build();
 
     const actual = mapper.map(contract);
-    expect(actual.logoUri).toEqual(undefined);
+    expect(actual.logoUri).toEqual(null);
   });
 
   it('should return contractAbi = null if abiJson is null', () => {
