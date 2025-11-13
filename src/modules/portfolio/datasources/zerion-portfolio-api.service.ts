@@ -218,7 +218,7 @@ export class ZerionPortfolioApi implements IPortfolioApi {
               position.attributes.name,
             logoUri: position.attributes.fungible_info.icon?.url ?? '',
             chainId,
-            trusted: position.attributes.fungible_info.flags?.verified ?? false,
+            trusted: !(position.attributes.flags.is_trash ?? false),
             type:
               address === null ||
               address === '0x0000000000000000000000000000000000000000'
@@ -363,7 +363,7 @@ export class ZerionPortfolioApi implements IPortfolioApi {
             name: position.attributes.fungible_info.name ?? '',
             logoUri: position.attributes.fungible_info.icon?.url ?? '',
             chainId,
-            trusted: position.attributes.fungible_info.flags?.verified ?? false,
+            trusted: !(position.attributes.flags.is_trash ?? false),
             type:
               address === null ||
               address === '0x0000000000000000000000000000000000000000'
