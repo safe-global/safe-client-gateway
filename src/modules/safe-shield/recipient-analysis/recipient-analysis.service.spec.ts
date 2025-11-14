@@ -14,16 +14,16 @@ import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import * as utils from '../utils/recipient-extraction.utils';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
 import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
-import type { TransactionsService } from '@/routes/transactions/transactions.service';
-import { TransactionInfoType } from '@/routes/transactions/entities/transaction-info.entity';
+import type { TransactionsService } from '@/modules/transactions/routes/transactions.service';
+import { TransactionInfoType } from '@/modules/transactions/routes/entities/transaction-info.entity';
 import type {
   BridgeAndSwapTransactionInfo,
   SwapTransactionInfo,
-} from '@/routes/transactions/entities/bridge/bridge-info.entity';
-import type { SwapOrderTransactionInfo } from '@/routes/transactions/entities/swaps/swap-order-info.entity';
+} from '@/modules/transactions/routes/entities/bridge/bridge-info.entity';
+import type { SwapOrderTransactionInfo } from '@/modules/transactions/routes/entities/swaps/swap-order-info.entity';
 import type { Address, Hash, Hex } from 'viem';
 import type { DataDecodedAccuracy } from '@/domain/data-decoder/v2/entities/data-decoded.entity';
-import type { CreationTransaction } from '@/routes/transactions/entities/creation-transaction.entity';
+import type { CreationTransaction } from '@/modules/transactions/routes/entities/creation-transaction.entity';
 import type { DataDecoded } from '@/routes/data-decode/entities/data-decoded.entity';
 import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
 import { CacheRouter } from '@/datasources/cache/cache.router';

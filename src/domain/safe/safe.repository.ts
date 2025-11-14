@@ -24,14 +24,14 @@ import {
 import { SafeListSchema } from '@/domain/safe/entities/schemas/safe-list.schema';
 import { ISafeRepository } from '@/domain/safe/safe.repository.interface';
 import { TransactionTypePageSchema } from '@/domain/safe/entities/schemas/transaction-type.schema';
-import { AddConfirmationDto } from '@/domain/transactions/entities/add-confirmation.dto.entity';
-import { ProposeTransactionDto } from '@/domain/transactions/entities/propose-transaction.dto.entity';
+import { AddConfirmationDto } from '@/modules/transactions/domain/entities/add-confirmation.dto.entity';
+import { ProposeTransactionDto } from '@/modules/transactions/domain/entities/propose-transaction.dto.entity';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { IChainsRepository } from '@/domain/chains/chains.repository.interface';
 import { CreationTransactionSchema } from '@/domain/safe/entities/schemas/creation-transaction.schema';
 import { SafeSchema } from '@/domain/safe/entities/schemas/safe.schema';
 import { z } from 'zod';
-import { TransactionVerifierHelper } from '@/routes/transactions/helpers/transaction-verifier.helper';
+import { TransactionVerifierHelper } from '@/modules/transactions/routes/helpers/transaction-verifier.helper';
 import type { Address } from 'viem';
 
 @Injectable()

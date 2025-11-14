@@ -13,7 +13,7 @@ import { IMessagesRepository } from '@/domain/messages/messages.repository.inter
 import { ISafeAppsRepository } from '@/domain/safe-apps/safe-apps.repository.interface';
 import { ISafeRepository } from '@/domain/safe/safe.repository.interface';
 import { IStakingRepositoryWithRewardsFee } from '@/domain/staking/staking.repository.interface';
-import { ITransactionsRepository } from '@/domain/transactions/transactions.repository.interface';
+import { ITransactionsRepository } from '@/modules/transactions/domain/transactions.repository.interface';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import {
   ConfigEventType,

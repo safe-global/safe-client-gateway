@@ -1,7 +1,7 @@
 import crypto from 'crypto';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import type { Address, Hash } from 'viem';
-import type { TransactionInfo } from '@/routes/transactions/entities/transaction-info.entity';
+import type { TransactionInfo } from '@/modules/transactions/routes/entities/transaction-info.entity';
 
 export class CacheRouter {
   private static readonly ACCOUNT_DATA_SETTINGS_KEY = 'account_data_settings';

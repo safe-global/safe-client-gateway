@@ -4,7 +4,7 @@ import { SafeShieldController } from './safe-shield.controller';
 import { RecipientAnalysisModule } from './recipient-analysis/recipient-analysis.module';
 import { ContractAnalysisModule } from './contract-analysis/contract-analysis.module';
 import { ThreatAnalysisModule } from './threat-analysis/threat-analysis.module';
-import { TransactionsModule } from '@/routes/transactions/transactions.module';
+import { TransactionsModule } from '@/modules/transactions/routes/transactions.module';
 import { ConfigApiModule } from '@/datasources/config-api/config-api.module';
 
 /**

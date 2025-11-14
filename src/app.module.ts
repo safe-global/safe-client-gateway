@@ -27,7 +27,7 @@ import { SafeAppsModule } from '@/routes/safe-apps/safe-apps.module';
 import { HealthModule } from '@/routes/health/health.module';
 import { OwnersModule } from '@/routes/owners/owners.module';
 import { AboutModule } from '@/routes/about/about.module';
-import { TransactionsModule } from '@/routes/transactions/transactions.module';
+import { TransactionsModule } from '@/modules/transactions/routes/transactions.module';
 import { SafesModule } from '@/routes/safes/safes.module';
 import { NotificationsModule } from '@/routes/notifications/v1/notifications.module';
 import { EstimationsModule } from '@/routes/estimations/estimations.module';

@@ -10,15 +10,15 @@ import type {
   SingleRecipientAnalysisResponse,
   ThreatAnalysisResponse,
 } from './entities/analysis-responses.entity';
-import type { TransactionsService } from '@/routes/transactions/transactions.service';
-import type { TransactionPreview } from '@/routes/transactions/entities/transaction-preview.entity';
+import type { TransactionsService } from '@/modules/transactions/routes/transactions.service';
+import type { TransactionPreview } from '@/modules/transactions/routes/entities/transaction-preview.entity';
 import {
   TransferTransactionInfo,
   TransferDirection,
-} from '@/routes/transactions/entities/transfer-transaction-info.entity';
-import { CustomTransactionInfo } from '@/routes/transactions/entities/custom-transaction.entity';
-import { NativeCoinTransfer } from '@/routes/transactions/entities/transfers/native-coin-transfer.entity';
-import { TransactionData } from '@/routes/transactions/entities/transaction-data.entity';
+} from '@/modules/transactions/routes/entities/transfer-transaction-info.entity';
+import { CustomTransactionInfo } from '@/modules/transactions/routes/entities/custom-transaction.entity';
+import { NativeCoinTransfer } from '@/modules/transactions/routes/entities/transfers/native-coin-transfer.entity';
+import { TransactionData } from '@/modules/transactions/routes/entities/transaction-data.entity';
 import { AddressInfo } from '@/routes/common/entities/address-info.entity';
 import { faker } from '@faker-js/faker';
 import { getAddress, type Hex } from 'viem';

@@ -15,8 +15,8 @@ import type { Safe } from '@/domain/safe/entities/safe.entity';
 import type { Transaction } from '@/domain/safe/entities/transaction.entity';
 import type { Transfer } from '@/domain/safe/entities/transfer.entity';
 import type { Token } from '@/domain/tokens/entities/token.entity';
-import type { AddConfirmationDto } from '@/domain/transactions/entities/add-confirmation.dto.entity';
-import type { ProposeTransactionDto } from '@/domain/transactions/entities/propose-transaction.dto.entity';
+import type { AddConfirmationDto } from '@/modules/transactions/domain/entities/add-confirmation.dto.entity';
+import type { ProposeTransactionDto } from '@/modules/transactions/domain/entities/propose-transaction.dto.entity';
 import type { Raw } from '@/validation/entities/raw.entity';
 import type { Address, Hex } from 'viem';
 

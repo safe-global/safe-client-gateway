@@ -3,7 +3,7 @@ import { RecipientAnalysisService } from './recipient-analysis.service';
 import { TransactionApiManagerModule } from '@/domain/interfaces/transaction-api.manager.interface';
 import { Erc20Decoder } from '@/domain/relay/contracts/decoders/erc-20-decoder.helper';
 import { ChainsRepositoryModule } from '@/domain/chains/chains.repository.interface';
-import { TransactionsModule } from '@/routes/transactions/transactions.module';
+import { TransactionsModule } from '@/modules/transactions/routes/transactions.module';
 
 /**
  * Module for recipient analysis functionality.
