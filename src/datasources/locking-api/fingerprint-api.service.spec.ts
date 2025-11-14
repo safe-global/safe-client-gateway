@@ -7,7 +7,7 @@ import {
   fingerprintVpnBuilder,
 } from '@/datasources/locking-api/entities/__tests__/fingerprint-unsealed-data.entity.builder';
 import { FingerprintApiService } from '@/datasources/locking-api/fingerprint-api.service';
-import { eligibilityRequestBuilder } from '@/domain/community/entities/__tests__/eligibility-request.builder';
+import { eligibilityRequestBuilder } from '@/modules/community/domain/entities/__tests__/eligibility-request.builder';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { faker } from '@faker-js/faker';
 import { unsealEventsResponse } from '@fingerprintjs/fingerprintjs-pro-server-api';

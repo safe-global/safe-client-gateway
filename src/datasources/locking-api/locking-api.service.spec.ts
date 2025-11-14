@@ -10,13 +10,13 @@ import {
   lockEventItemBuilder,
   unlockEventItemBuilder,
   withdrawEventItemBuilder,
-} from '@/domain/community/entities/__tests__/locking-event.builder';
+} from '@/modules/community/domain/entities/__tests__/locking-event.builder';
 import { getAddress } from 'viem';
-import { lockingRankBuilder } from '@/domain/community/entities/__tests__/locking-rank.builder';
-import { campaignBuilder } from '@/domain/community/entities/__tests__/campaign.builder';
-import { campaignRankBuilder } from '@/domain/community/entities/__tests__/campaign-rank.builder';
-import type { CampaignRank } from '@/domain/community/entities/campaign-rank.entity';
-import { campaignActivityBuilder } from '@/domain/community/entities/__tests__/campaign-activity.builder';
+import { lockingRankBuilder } from '@/modules/community/domain/entities/__tests__/locking-rank.builder';
+import { campaignBuilder } from '@/modules/community/domain/entities/__tests__/campaign.builder';
+import { campaignRankBuilder } from '@/modules/community/domain/entities/__tests__/campaign-rank.builder';
+import type { CampaignRank } from '@/modules/community/domain/entities/campaign-rank.entity';
+import { campaignActivityBuilder } from '@/modules/community/domain/entities/__tests__/campaign-activity.builder';
 import { rawify } from '@/validation/entities/raw.entity';
 
 const networkService = {

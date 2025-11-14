@@ -4,14 +4,14 @@ import {
   ApiPropertyOptional,
   getSchemaPath,
 } from '@nestjs/swagger';
-import { Operation } from '@/domain/safe/entities/operation.entity';
+import { Operation } from '@/modules/safe/domain/entities/operation.entity';
 import { AddressInfo } from '@/routes/common/entities/address-info.entity';
-import { DataDecoded } from '@/routes/data-decode/entities/data-decoded.entity';
+import { DataDecoded } from '@/modules/data-decoder/routes/entities/data-decoded.entity';
 import {
   Erc20Token,
   Erc721Token,
   NativeToken,
-} from '@/routes/balances/entities/token.entity';
+} from '@/modules/balances/routes/entities/token.entity';
 import type { Address } from 'viem';
 
 @ApiExtraModels(AddressInfo, DataDecoded, Erc20Token, Erc721Token, NativeToken)

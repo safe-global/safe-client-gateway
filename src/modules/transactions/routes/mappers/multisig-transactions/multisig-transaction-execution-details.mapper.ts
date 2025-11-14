@@ -1,10 +1,10 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
-import { Safe } from '@/domain/safe/entities/safe.entity';
-import { SafeRepository } from '@/domain/safe/safe.repository';
-import { ISafeRepository } from '@/domain/safe/safe.repository.interface';
-import { TokenRepository } from '@/domain/tokens/token.repository';
-import { ITokenRepository } from '@/domain/tokens/token.repository.interface';
+import { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
+import { Safe } from '@/modules/safe/domain/entities/safe.entity';
+import { SafeRepository } from '@/modules/safe/domain/safe.repository';
+import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
+import { TokenRepository } from '@/modules/tokens/domain/token.repository';
+import { ITokenRepository } from '@/modules/tokens/domain/token.repository.interface';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
 import { NULL_ADDRESS } from '@/routes/common/constants';

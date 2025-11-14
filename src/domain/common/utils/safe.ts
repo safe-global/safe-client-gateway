@@ -1,16 +1,16 @@
 import semverSatisfies from 'semver/functions/satisfies';
 import type { Address } from 'viem';
 import { hashMessage, hashTypedData, zeroAddress } from 'viem';
-import { MessageSchema } from '@/domain/messages/entities/message.entity';
-import type { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
-import type { Safe } from '@/domain/safe/entities/safe.entity';
-import type { TypedData } from '@/domain/messages/entities/typed-data.entity';
+import { MessageSchema } from '@/modules/messages/domain/entities/message.entity';
+import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
+import type { Safe } from '@/modules/safe/domain/entities/safe.entity';
+import type { TypedData } from '@/modules/messages/domain/entities/typed-data.entity';
 import {
   getSafeMigrationDeployments,
   getSafeSingletonDeployments,
   getSafeL2SingletonDeployments,
 } from '@/domain/common/utils/deployments';
-import { Operation } from '@/domain/safe/entities/operation.entity';
+import { Operation } from '@/modules/safe/domain/entities/operation.entity';
 
 const CHAIN_ID_DOMAIN_HASH_VERSION = '>=1.3.0';
 const TRANSACTION_PRIMARY_TYPE = 'SafeTx';

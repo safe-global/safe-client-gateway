@@ -4,9 +4,9 @@ import type { ICacheService } from '@/datasources/cache/cache.service.interface'
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { ConfigApi } from '@/datasources/config-api/config-api.service';
 import type { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
-import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
+import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
 import { DataSourceError } from '@/domain/errors/data-source.error';
-import { safeAppBuilder } from '@/domain/safe-apps/entities/__tests__/safe-app.builder';
+import { safeAppBuilder } from '@/modules/safe-apps/domain/entities/__tests__/safe-app.builder';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { rawify } from '@/validation/entities/raw.entity';
 import { faker } from '@faker-js/faker';

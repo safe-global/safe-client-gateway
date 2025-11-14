@@ -6,16 +6,16 @@ import {
   parseAbi,
 } from 'viem';
 import { faker } from '@faker-js/faker';
-import type { TokenRepository } from '@/domain/tokens/token.repository';
-import { tokenBuilder } from '@/domain/tokens/__tests__/token.builder';
+import type { TokenRepository } from '@/modules/tokens/domain/token.repository';
+import { tokenBuilder } from '@/modules/tokens/domain/__tests__/token.builder';
 import type { ILoggingService } from '@/logging/logging.interface';
 
-import { HumanDescriptionApi } from '@/datasources/human-description-api/human-description-api.service';
-import { HumanDescriptionRepository } from '@/domain/human-description/human-description.repository';
-import { multisigTransactionBuilder } from '@/domain/safe/entities/__tests__/multisig-transaction.builder';
+import { HumanDescriptionApi } from '@/modules/human-description/datasources/human-description-api.service';
+import { HumanDescriptionRepository } from '@/modules/human-description/domain/human-description.repository';
+import { multisigTransactionBuilder } from '@/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
 import type { Hex } from 'viem/types/misc';
-import type { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
-import type { Token } from '@/domain/tokens/entities/token.entity';
+import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
+import type { Token } from '@/modules/tokens/domain/entities/token.entity';
 import { AddressInfo } from '@/routes/common/entities/address-info.entity';
 import { MAX_UINT256 } from '@/modules/transactions/routes/constants';
 import { SafeAppInfo } from '@/modules/transactions/routes/entities/safe-app-info.entity';

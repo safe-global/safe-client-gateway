@@ -1,5 +1,5 @@
 import { getBlocklist } from '@/config/entities/blocklist.config';
-import type { RelayRules } from '@/domain/relay/entities/relay.configuration';
+import type { RelayRules } from '@/modules/relay/domain/entities/relay.configuration';
 import { randomBytes } from 'crypto';
 
 // Custom configuration for the application

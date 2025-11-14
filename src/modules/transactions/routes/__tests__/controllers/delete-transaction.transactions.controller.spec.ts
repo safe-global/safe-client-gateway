@@ -2,7 +2,7 @@ import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
-import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
+import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
 import { NetworkService } from '@/datasources/network/network.service.interface';
@@ -11,7 +11,7 @@ import { NetworkResponseError } from '@/datasources/network/entities/network.err
 import {
   multisigTransactionBuilder,
   toJson as multisigToJson,
-} from '@/domain/safe/entities/__tests__/multisig-transaction.builder';
+} from '@/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
 import { CacheService } from '@/datasources/cache/cache.service.interface';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import type { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';

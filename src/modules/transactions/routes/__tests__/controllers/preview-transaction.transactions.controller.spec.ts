@@ -2,14 +2,14 @@ import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
-import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
+import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
 import {
   dataDecodedBuilder,
   dataDecodedParameterBuilder,
   multisendBuilder,
-} from '@/domain/data-decoder/v2/entities/__tests__/data-decoded.builder';
-import { Operation } from '@/domain/safe/entities/operation.entity';
-import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
+} from '@/modules/data-decoder/domain/v2/entities/__tests__/data-decoded.builder';
+import { Operation } from '@/modules/safe/domain/entities/operation.entity';
+import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
 import { NetworkService } from '@/datasources/network/network.service.interface';
@@ -17,7 +17,7 @@ import { previewTransactionDtoBuilder } from '@/modules/transactions/routes/enti
 import { getAddress } from 'viem';
 import type { Server } from 'net';
 import { rawify } from '@/validation/entities/raw.entity';
-import { contractBuilder } from '@/domain/data-decoder/v2/entities/__tests__/contract.builder';
+import { contractBuilder } from '@/modules/data-decoder/domain/v2/entities/__tests__/contract.builder';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import { createTestModule } from '@/__tests__/testing-module';
 

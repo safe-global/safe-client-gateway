@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { CreationTransaction as DomainCreationTransaction } from '@/domain/safe/entities/creation-transaction.entity';
+import { CreationTransaction as DomainCreationTransaction } from '@/modules/safe/domain/entities/creation-transaction.entity';
 import type { Address, Hash } from 'viem';
 
 export class TXSCreationTransaction implements DomainCreationTransaction {

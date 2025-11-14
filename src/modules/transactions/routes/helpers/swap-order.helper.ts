@@ -3,24 +3,24 @@ import {
   TransactionFinder,
   TransactionFinderModule,
 } from '@/modules/transactions/routes/helpers/transaction-finder.helper';
-import { GPv2Decoder } from '@/domain/swaps/contracts/decoders/gp-v2-decoder.helper';
+import { GPv2Decoder } from '@/modules/swaps/domain/contracts/decoders/gp-v2-decoder.helper';
 import {
   ITokenRepository,
   TokenRepositoryModule,
-} from '@/domain/tokens/token.repository.interface';
-import { ISwapsRepository } from '@/domain/swaps/swaps.repository';
-import { Token } from '@/domain/tokens/entities/token.entity';
+} from '@/modules/tokens/domain/token.repository.interface';
+import { ISwapsRepository } from '@/modules/swaps/domain/swaps.repository';
+import { Token } from '@/modules/tokens/domain/entities/token.entity';
 import {
   KnownOrder,
   Order,
   OrderKind,
-} from '@/domain/swaps/entities/order.entity';
+} from '@/modules/swaps/domain/entities/order.entity';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import { SwapsRepositoryModule } from '@/domain/swaps/swaps-repository.module';
+import { SwapsRepositoryModule } from '@/modules/swaps/domain/swaps-repository.module';
 import {
   ChainsRepositoryModule,
   IChainsRepository,
-} from '@/domain/chains/chains.repository.interface';
+} from '@/modules/chains/domain/chains.repository.interface';
 import type { Address, Hex } from 'viem';
 
 @Injectable()

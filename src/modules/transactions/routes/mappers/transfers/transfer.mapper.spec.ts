@@ -1,17 +1,17 @@
-import { erc20TransferBuilder } from '@/domain/safe/entities/__tests__/erc20-transfer.builder';
-import { erc721TransferBuilder } from '@/domain/safe/entities/__tests__/erc721-transfer.builder';
-import { nativeTokenTransferBuilder } from '@/domain/safe/entities/__tests__/native-token-transfer.builder';
-import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
+import { erc20TransferBuilder } from '@/modules/safe/domain/entities/__tests__/erc20-transfer.builder';
+import { erc721TransferBuilder } from '@/modules/safe/domain/entities/__tests__/erc721-transfer.builder';
+import { nativeTokenTransferBuilder } from '@/modules/safe/domain/entities/__tests__/native-token-transfer.builder';
+import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
 import {
   OrderClass,
   OrderKind,
   OrderStatus,
-} from '@/domain/swaps/entities/order.entity';
+} from '@/modules/swaps/domain/entities/order.entity';
 import {
   erc20TokenBuilder,
   erc721TokenBuilder,
-} from '@/domain/tokens/__tests__/token.builder';
-import type { TokenRepository } from '@/domain/tokens/token.repository';
+} from '@/modules/tokens/domain/__tests__/token.builder';
+import type { TokenRepository } from '@/modules/tokens/domain/token.repository';
 import type { ILoggingService } from '@/logging/logging.interface';
 import type { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
 import { AddressInfo } from '@/routes/common/entities/address-info.entity';

@@ -1,0 +1,50 @@
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  Inject,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
+import { ApiExcludeController } from '@nestjs/swagger';
+import { Alert } from '@/modules/alerts/routes/entities/alert.dto.entity';
+import { ValidationPipe } from '@/validation/pipes/validation.pipe';
+import { AlertsService } from '@/modules/alerts/routes/alerts.service';
+import { AlertsRouteGuard } from '@/modules/alerts/routes/guards/alerts-route.guard';
+import { TenderlySignatureGuard } from '@/modules/alerts/routes/guards/tenderly-signature.guard';
+import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import { AlertSchema } from '@/modules/alerts/routes/entities/schemas/alerts.schema';
+
+@Controller({
+  path: '/alerts',
+  version: '1',
+})
+@ApiExcludeController()
+export class AlertsController {
+  constructor(
+    private readonly alertsService: AlertsService,
+    @Inject(LoggingService) private readonly loggingService: ILoggingService,
+  ) {}
+
+  @Get()
+  @HttpCode(200)
+  verifyWebhook(): void {
+    // Tenderly requires a GET request, returning a 200 to verify a webhook exists
+  }
+
+  @UseGuards(AlertsRouteGuard)
+  @UseGuards(TenderlySignatureGuard)
+  @Post()
+  @HttpCode(202)
+  postAlert(
+    @Body(new ValidationPipe(AlertSchema))
+    alertPayload: Alert,
+  ): void {
+    // TODO: we return immediately but we should consider a pub/sub system to tackle received alerts
+    //  which were not handled correctly (e.g. due to other 3rd parties being unavailable)
+    this.alertsService
+      .onAlert(alertPayload)
+      .catch((reason) => this.loggingService.warn(reason));
+  }
+}

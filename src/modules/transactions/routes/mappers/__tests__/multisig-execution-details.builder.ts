@@ -1,7 +1,7 @@
 import { faker } from '@faker-js/faker';
 import type { IBuilder } from '@/__tests__/builder';
 import { Builder } from '@/__tests__/builder';
-import { tokenBuilder } from '@/domain/tokens/__tests__/token.builder';
+import { tokenBuilder } from '@/modules/tokens/domain/__tests__/token.builder';
 import { addressInfoBuilder } from '@/routes/common/__tests__/entities/address-info.builder';
 import type {
   MultisigConfirmationDetails,

@@ -1,13 +1,13 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { IDataDecoderRepository } from '@/domain/data-decoder/v2/data-decoder.repository.interface';
-import { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
-import { Safe } from '@/domain/safe/entities/safe.entity';
+import { IDataDecoderRepository } from '@/modules/data-decoder/domain/v2/data-decoder.repository.interface';
+import { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
+import { Safe } from '@/modules/safe/domain/entities/safe.entity';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { PreviewTransactionDto } from '@/modules/transactions/routes/entities/preview-transaction.dto.entity';
 import { TransactionPreview } from '@/modules/transactions/routes/entities/transaction-preview.entity';
 import { TransactionDataMapper } from '@/modules/transactions/routes/mappers/common/transaction-data.mapper';
 import { MultisigTransactionInfoMapper } from '@/modules/transactions/routes/mappers/common/transaction-info.mapper';
-import { DataDecoded } from '@/domain/data-decoder/v2/entities/data-decoded.entity';
+import { DataDecoded } from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';
 import { asError } from '@/logging/utils';
 
 @Injectable()

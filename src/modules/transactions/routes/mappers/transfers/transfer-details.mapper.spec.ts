@@ -1,6 +1,6 @@
 import { faker } from '@faker-js/faker';
-import { erc20TransferBuilder } from '@/domain/safe/entities/__tests__/erc20-transfer.builder';
-import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
+import { erc20TransferBuilder } from '@/modules/safe/domain/entities/__tests__/erc20-transfer.builder';
+import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
 import { transferTransactionInfoBuilder } from '@/modules/transactions/routes/entities/__tests__/transfer-transaction-info.builder';
 import { TransferDetailsMapper } from '@/modules/transactions/routes/mappers/transfers/transfer-details.mapper';
 import type { TransferInfoMapper } from '@/modules/transactions/routes/mappers/transfers/transfer-info.mapper';

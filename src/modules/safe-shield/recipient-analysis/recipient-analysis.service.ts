@@ -1,13 +1,13 @@
 import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
-import { TransferPageSchema } from '@/domain/safe/entities/transfer.entity';
+import { TransferPageSchema } from '@/modules/safe/domain/entities/transfer.entity';
 import type {
   AnalysisResult,
   CommonStatus,
 } from '@/modules/safe-shield/entities/analysis-result.entity';
 import { Inject, Injectable } from '@nestjs/common';
 import { getAddress, Hex, zeroAddress, type Address } from 'viem';
-import { IChainsRepository } from '@/domain/chains/chains.repository.interface';
-import { SafeSchema } from '@/domain/safe/entities/schemas/safe.schema';
+import { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
+import { SafeSchema } from '@/modules/safe/domain/entities/schemas/safe.schema';
 import {
   SEVERITY_MAPPING,
   TITLE_MAPPING,
@@ -16,7 +16,7 @@ import {
 import type { RecipientStatus } from '@/modules/safe-shield/entities/recipient-status.entity';
 import type { BridgeStatus } from '@/modules/safe-shield/entities/bridge-status.entity';
 import type { DecodedTransactionData } from '@/modules/safe-shield/entities/transaction-data.entity';
-import { Erc20Decoder } from '@/domain/relay/contracts/decoders/erc-20-decoder.helper';
+import { Erc20Decoder } from '@/modules/relay/domain/contracts/decoders/erc-20-decoder.helper';
 import {
   RecipientAnalysisResponse,
   RecipientAnalysisResponseWithoutIsSafe,
@@ -37,7 +37,7 @@ import {
   isBridgeAndSwapTransactionInfo,
   isSwapTransactionInfo,
 } from '@/modules/transactions/routes/entities/bridge/bridge-info.entity';
-import { Safe } from '@/domain/safe/entities/safe.entity';
+import { Safe } from '@/modules/safe/domain/entities/safe.entity';
 import { TransactionsService } from '@/modules/transactions/routes/transactions.service';
 import {
   hasCanonicalDeploymentSafeToL2Migration,
@@ -47,7 +47,7 @@ import {
   isL2SingletonDeployed,
   isProxyFactoryDeployed,
 } from '@/domain/common/utils/deployments';
-import { Chain } from '@/routes/chains/entities/chain.entity';
+import { Chain } from '@/modules/chains/routes/entities/chain.entity';
 import { merge } from 'lodash';
 import type { SafeCreationData } from '@/modules/safe-shield/entities/safe-creation-data.entity';
 import { ITransactionApi } from '@/domain/interfaces/transaction-api.interface';

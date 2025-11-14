@@ -2,25 +2,25 @@ import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
-import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
-import { contractBuilder } from '@/domain/data-decoder/v2/entities/__tests__/contract.builder';
+import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
+import { contractBuilder } from '@/modules/data-decoder/domain/v2/entities/__tests__/contract.builder';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
-import { safeAppBuilder } from '@/domain/safe-apps/entities/__tests__/safe-app.builder';
-import { Operation } from '@/domain/safe/entities/operation.entity';
+import { safeAppBuilder } from '@/modules/safe-apps/domain/entities/__tests__/safe-app.builder';
+import { Operation } from '@/modules/safe/domain/entities/operation.entity';
 import {
   moduleTransactionBuilder,
   toJson as moduleTransactionToJson,
-} from '@/domain/safe/entities/__tests__/module-transaction.builder';
+} from '@/modules/safe/domain/entities/__tests__/module-transaction.builder';
 import {
   multisigTransactionBuilder,
   toJson as multisigToJson,
-} from '@/domain/safe/entities/__tests__/multisig-transaction.builder';
+} from '@/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
 import {
   nativeTokenTransferBuilder,
   toJson as nativeTokenTransferToJson,
-} from '@/domain/safe/entities/__tests__/native-token-transfer.builder';
-import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
-import { tokenBuilder } from '@/domain/tokens/__tests__/token.builder';
+} from '@/modules/safe/domain/entities/__tests__/native-token-transfer.builder';
+import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
+import { tokenBuilder } from '@/modules/tokens/domain/__tests__/token.builder';
 import configuration from '@/config/entities/__tests__/configuration';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
@@ -38,7 +38,7 @@ import {
   type ILoggingService,
   LoggingService,
 } from '@/logging/logging.interface';
-import { dataDecodedBuilder } from '@/domain/data-decoder/v2/entities/__tests__/data-decoded.builder';
+import { dataDecodedBuilder } from '@/modules/data-decoder/domain/v2/entities/__tests__/data-decoded.builder';
 import { createTestModule } from '@/__tests__/testing-module';
 
 describe('Get by id - Transactions Controller (Unit)', () => {

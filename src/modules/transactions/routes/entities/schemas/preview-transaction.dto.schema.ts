@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { HexSchema } from '@/validation/entities/schemas/hex.schema';
-import { Operation } from '@/domain/safe/entities/operation.entity';
+import { Operation } from '@/modules/safe/domain/entities/operation.entity';
 
 export const PreviewTransactionDtoSchema = z.object({
   to: AddressSchema,

@@ -6,18 +6,18 @@ import { TestIdentityApiModule } from '@/datasources/locking-api/__tests__/test.
 import { IdentityApiModule } from '@/datasources/locking-api/identity-api.module';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
 import { NetworkService } from '@/datasources/network/network.service.interface';
-import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
+import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
 import { SignatureType } from '@/domain/common/entities/signature-type.entity';
-import { contractBuilder } from '@/domain/data-decoder/v2/entities/__tests__/contract.builder';
+import { contractBuilder } from '@/modules/data-decoder/domain/v2/entities/__tests__/contract.builder';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
-import { safeAppBuilder } from '@/domain/safe-apps/entities/__tests__/safe-app.builder';
+import { safeAppBuilder } from '@/modules/safe-apps/domain/entities/__tests__/safe-app.builder';
 import {
   toJson as multisigToJson,
   multisigTransactionBuilder,
-} from '@/domain/safe/entities/__tests__/multisig-transaction.builder';
-import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
-import type { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
-import { erc20TokenBuilder } from '@/domain/tokens/__tests__/token.builder';
+} from '@/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
+import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
+import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
+import { erc20TokenBuilder } from '@/modules/tokens/domain/__tests__/token.builder';
 import {
   type ILoggingService,
   LoggingService,

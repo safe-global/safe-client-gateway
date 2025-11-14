@@ -4,7 +4,7 @@ import type { ICacheService } from '@/datasources/cache/cache.service.interface'
 import type { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
 import { TransactionApiManager } from '@/modules/transactions/datasources/transaction-api.manager';
-import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
+import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
 import type { IConfigApi } from '@/domain/interfaces/config-api.interface';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { rawify } from '@/validation/entities/raw.entity';

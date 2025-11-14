@@ -5,13 +5,13 @@ import {
 import {
   ComposableCowDecoder,
   TwapStruct,
-} from '@/domain/swaps/contracts/decoders/composable-cow-decoder.helper';
+} from '@/modules/swaps/domain/contracts/decoders/composable-cow-decoder.helper';
 import {
   BuyTokenBalance,
   OrderClass,
   OrderKind,
   SellTokenBalance,
-} from '@/domain/swaps/entities/order.entity';
+} from '@/modules/swaps/domain/entities/order.entity';
 import {
   DurationAuto,
   DurationLimit,
@@ -19,7 +19,7 @@ import {
   StartTimeAtMining,
   TwapOrderInfo,
 } from '@/modules/transactions/routes/entities/swaps/twap-order-info.entity';
-import { GPv2OrderParameters } from '@/domain/swaps/contracts/decoders/gp-v2-decoder.helper';
+import { GPv2OrderParameters } from '@/modules/swaps/domain/contracts/decoders/gp-v2-decoder.helper';
 import { Injectable, Module } from '@nestjs/common';
 import { type Address, type Hex, isAddressEqual } from 'viem';
 

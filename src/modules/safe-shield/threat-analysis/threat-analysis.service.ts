@@ -32,7 +32,7 @@ import {
 } from '@blockaid/client/resources/index';
 import { Inject, Injectable } from '@nestjs/common';
 import { Address } from 'viem';
-import { TypedData } from '@/domain/messages/entities/typed-data.entity';
+import { TypedData } from '@/modules/messages/domain/entities/typed-data.entity';
 
 /**
  * Service responsible for analyzing transactions for security threats and malicious patterns.

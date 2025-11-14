@@ -1,6 +1,6 @@
-import type { Balance } from '@/domain/balances/entities/balance.entity';
-import type { Chain } from '@/domain/chains/entities/chain.entity';
-import type { Collectible } from '@/domain/collectibles/entities/collectible.entity';
+import type { Balance } from '@/modules/balances/domain/entities/balance.entity';
+import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
+import type { Collectible } from '@/modules/collectibles/domain/entities/collectible.entity';
 import type { Page } from '@/domain/entities/page.entity';
 import type { Raw } from '@/validation/entities/raw.entity';
 import type { Address } from 'viem';

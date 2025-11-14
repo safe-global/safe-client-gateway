@@ -1,7 +1,7 @@
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
-import { MultisigTransaction as DomainMultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
-import { SafeRepository } from '@/domain/safe/safe.repository';
-import { ISafeRepository } from '@/domain/safe/safe.repository.interface';
+import { MultisigTransaction as DomainMultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
+import { SafeRepository } from '@/modules/safe/domain/safe.repository';
+import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
 import { AddConfirmationDto } from '@/modules/transactions/domain/entities/add-confirmation.dto.entity';
 import { ProposeTransactionDto } from '@/modules/transactions/domain/entities/propose-transaction.dto.entity';
 import { Page } from '@/routes/common/entities/page.entity';
@@ -49,9 +49,9 @@ import { LogType } from '@/domain/common/entities/log-type.entity';
 import { TXSMultisigTransaction } from '@/modules/transactions/routes/entities/txs-multisig-transaction.entity';
 import { TXSMultisigTransactionPage } from '@/modules/transactions/routes/entities/txs-multisig-transaction-page.entity';
 import { TXSCreationTransaction } from '@/modules/transactions/routes/entities/txs-creation-transaction.entity';
-import { ITokenRepository } from '@/domain/tokens/token.repository.interface';
+import { ITokenRepository } from '@/modules/tokens/domain/token.repository.interface';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import { IDataDecoderRepository } from '@/domain/data-decoder/v2/data-decoder.repository.interface';
+import { IDataDecoderRepository } from '@/modules/data-decoder/domain/v2/data-decoder.repository.interface';
 import type { Address } from 'viem';
 
 @Injectable()

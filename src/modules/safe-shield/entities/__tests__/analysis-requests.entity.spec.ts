@@ -7,8 +7,8 @@ import {
   ThreatAnalysisRequestSchema,
 } from '../analysis-requests.entity';
 import { faker } from '@faker-js/faker';
-import { typedDataBuilder } from '@/routes/messages/entities/__tests__/typed-data.builder';
-import type { TypedData } from '@/domain/messages/entities/typed-data.entity';
+import { typedDataBuilder } from '@/modules/messages/routes/entities/__tests__/typed-data.builder';
+import type { TypedData } from '@/modules/messages/domain/entities/typed-data.entity';
 import { getAddress } from 'viem';
 
 describe('Analysis Request Schemas', () => {

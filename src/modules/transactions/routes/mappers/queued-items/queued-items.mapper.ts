@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import groupBy from 'lodash/groupBy';
-import { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
-import { Safe } from '@/domain/safe/entities/safe.entity';
+import { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
+import { Safe } from '@/modules/safe/domain/entities/safe.entity';
 import { MultisigTransactionMapper } from '@/modules/transactions/routes/mappers/multisig-transactions/multisig-transaction.mapper';
 import { Page } from '@/domain/entities/page.entity';
 import { ConflictType } from '@/modules/transactions/routes/entities/conflict-type.entity';
@@ -13,7 +13,7 @@ import {
 } from '@/modules/transactions/routes/entities/queued-items/label-queued-item.entity';
 import { TransactionQueuedItem } from '@/modules/transactions/routes/entities/queued-items/transaction-queued-item.entity';
 import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
-import { IDataDecoderRepository } from '@/domain/data-decoder/v2/data-decoder.repository.interface';
+import { IDataDecoderRepository } from '@/modules/data-decoder/domain/v2/data-decoder.repository.interface';
 
 class TransactionGroup {
   nonce!: number;

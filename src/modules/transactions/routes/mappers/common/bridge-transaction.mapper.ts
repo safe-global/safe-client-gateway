@@ -1,15 +1,15 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { LiFiDecoder } from '@/domain/bridge/contracts/decoders/lifi-decoder.helper';
+import { LiFiDecoder } from '@/modules/bridge/domain/contracts/decoders/lifi-decoder.helper';
 import { SwapTransactionInfo } from '@/modules/transactions/routes/entities/bridge/bridge-info.entity';
-import { ITokenRepository } from '@/domain/tokens/token.repository.interface';
+import { ITokenRepository } from '@/modules/tokens/domain/token.repository.interface';
 import { TokenInfo } from '@/modules/transactions/routes/entities/swaps/token-info.entity';
 import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
-import { IBridgeRepository } from '@/domain/bridge/bridge.repository.interface';
-import { BridgeStatus } from '@/domain/bridge/entities/bridge-status.entity';
+import { IBridgeRepository } from '@/modules/bridge/domain/bridge.repository.interface';
+import { BridgeStatus } from '@/modules/bridge/domain/entities/bridge-status.entity';
 import { BridgeAndSwapTransactionInfo } from '@/modules/transactions/routes/entities/bridge/bridge-info.entity';
-import { Token } from '@/domain/tokens/entities/token.entity';
+import { Token } from '@/modules/tokens/domain/entities/token.entity';
 import { NULL_ADDRESS } from '@/routes/common/constants';
-import { IChainsRepository } from '@/domain/chains/chains.repository.interface';
+import { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
 import { BridgeFee } from '@/modules/transactions/routes/entities/bridge/fees.entity';
 import type { Address } from 'viem';
 

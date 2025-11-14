@@ -1,6 +1,6 @@
 import { getAddress, type Address } from 'viem';
 import type { DecodedTransactionData } from '@/modules/safe-shield/entities/transaction-data.entity';
-import type { Erc20Decoder } from '@/domain/relay/contracts/decoders/erc-20-decoder.helper';
+import type { Erc20Decoder } from '@/modules/relay/domain/contracts/decoders/erc-20-decoder.helper';
 import uniq from 'lodash/uniq';
 import { isExecTransaction } from '@/modules/safe-shield/utils/transaction-mapping.utils';
 

@@ -5,10 +5,10 @@ import {
   getBaseMultisigTransaction,
   getSafeTxHash,
 } from '@/domain/common/utils/safe';
-import { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
-import { Safe } from '@/domain/safe/entities/safe.entity';
+import { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
+import { Safe } from '@/modules/safe/domain/entities/safe.entity';
 import { ProposeTransactionDto } from '@/modules/transactions/domain/entities/propose-transaction.dto.entity';
-import { IDelegatesV2Repository } from '@/domain/delegate/v2/delegates.v2.repository.interface';
+import { IDelegatesV2Repository } from '@/modules/delegate/domain/v2/delegates.v2.repository.interface';
 import { HttpExceptionNoLog } from '@/domain/common/errors/http-exception-no-log.error';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { LogType } from '@/domain/common/entities/log-type.entity';
@@ -16,8 +16,8 @@ import { SafeSignature } from '@/domain/common/entities/safe-signature';
 import { SignatureType } from '@/domain/common/entities/signature-type.entity';
 import { LogSource } from '@/domain/common/entities/log-source.entity';
 import { type Address, type Hash, Hex, isAddressEqual } from 'viem';
-import { IContractsRepository } from '@/domain/contracts/contracts.repository.interface';
-import { Operation } from '@/domain/safe/entities/operation.entity';
+import { IContractsRepository } from '@/modules/contracts/domain/contracts.repository.interface';
+import { Operation } from '@/modules/safe/domain/entities/operation.entity';
 import { parseSignaturesByType } from '@/domain/common/utils/signatures';
 
 enum ErrorMessage {

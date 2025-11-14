@@ -3,7 +3,7 @@ import type { RecipientAnalysisService } from './recipient-analysis/recipient-an
 import type { ContractAnalysisService } from './contract-analysis/contract-analysis.service';
 import type { ThreatAnalysisService } from './threat-analysis/threat-analysis.service';
 import type { ILoggingService } from '@/logging/logging.interface';
-import type { DataDecoded } from '@/routes/data-decode/entities/data-decoded.entity';
+import type { DataDecoded } from '@/modules/data-decoder/routes/entities/data-decoded.entity';
 import type { DecodedTransactionData } from '@/modules/safe-shield/entities/transaction-data.entity';
 import type {
   RecipientAnalysisResponse,
@@ -27,7 +27,7 @@ import {
   contractAnalysisResponseBuilder,
   threatAnalysisResponseBuilder,
 } from './entities/__tests__/builders/analysis-responses.builder';
-import { dataDecodedBuilder } from '@/domain/data-decoder/v2/entities/__tests__/data-decoded.builder';
+import { dataDecodedBuilder } from '@/modules/data-decoder/domain/v2/entities/__tests__/data-decoded.builder';
 import {
   contractAnalysisResultBuilder,
   recipientAnalysisResultBuilder,
@@ -35,7 +35,7 @@ import {
   masterCopyChangeThreatBuilder,
   threatAnalysisResultBuilder,
 } from '@/modules/safe-shield/entities/__tests__/builders/analysis-result.builder';
-import { Operation } from '@/domain/safe/entities/operation.entity';
+import { Operation } from '@/modules/safe/domain/entities/operation.entity';
 import {
   COMMON_DESCRIPTION_MAPPING,
   COMMON_SEVERITY_MAPPING,
@@ -43,7 +43,7 @@ import {
 import { threatAnalysisRequestBuilder } from '@/modules/safe-shield/entities/__tests__/builders/analysis-requests.builder';
 import type { IConfigApi } from '@/domain/interfaces/config-api.interface';
 import { FF_RISK_MITIGATION } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-api.constants';
-import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
+import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
 import { rawify } from '@/validation/entities/raw.entity';
 import { DESCRIPTION_MAPPING } from '@/modules/safe-shield/threat-analysis/threat-analysis.constants';
 

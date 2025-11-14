@@ -9,7 +9,7 @@ import {
   Erc20Token,
   Erc721Token,
   NativeToken,
-} from '@/routes/balances/entities/token.entity';
+} from '@/modules/balances/routes/entities/token.entity';
 import {
   ExecutionDetails,
   ExecutionDetailsType,

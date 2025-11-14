@@ -3,25 +3,25 @@ import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
+import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import {
   erc20TransferBuilder,
   toJson as erc20TransferToJson,
-} from '@/domain/safe/entities/__tests__/erc20-transfer.builder';
+} from '@/modules/safe/domain/entities/__tests__/erc20-transfer.builder';
 import {
   erc721TransferBuilder,
   toJson as erc721TransferToJson,
-} from '@/domain/safe/entities/__tests__/erc721-transfer.builder';
+} from '@/modules/safe/domain/entities/__tests__/erc721-transfer.builder';
 import {
   nativeTokenTransferBuilder,
   toJson as nativeTokenTransferToJson,
-} from '@/domain/safe/entities/__tests__/native-token-transfer.builder';
-import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
+} from '@/modules/safe/domain/entities/__tests__/native-token-transfer.builder';
+import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
 import {
   erc20TokenBuilder,
   erc721TokenBuilder,
-} from '@/domain/tokens/__tests__/token.builder';
+} from '@/modules/tokens/domain/__tests__/token.builder';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
 import { NetworkService } from '@/datasources/network/network.service.interface';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';

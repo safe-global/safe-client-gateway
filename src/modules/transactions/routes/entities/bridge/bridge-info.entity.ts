@@ -4,7 +4,7 @@ import {
   SubstatusesDone,
   SubstatusesFailed,
   SubstatusesPending,
-} from '@/domain/bridge/entities/bridge-status.entity';
+} from '@/modules/bridge/domain/entities/bridge-status.entity';
 import { AddressInfo } from '@/routes/common/entities/address-info.entity';
 import { BridgeFee } from '@/modules/transactions/routes/entities/bridge/fees.entity';
 import { TokenInfo } from '@/modules/transactions/routes/entities/swaps/token-info.entity';

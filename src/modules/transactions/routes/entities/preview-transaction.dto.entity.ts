@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Operation } from '@/domain/safe/entities/operation.entity';
+import { Operation } from '@/modules/safe/domain/entities/operation.entity';
 import { z } from 'zod';
 import { PreviewTransactionDtoSchema } from '@/modules/transactions/routes/entities/schemas/preview-transaction.dto.schema';
 import type { Address, Hex } from 'viem';

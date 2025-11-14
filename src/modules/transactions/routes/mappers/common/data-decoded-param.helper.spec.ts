@@ -3,7 +3,7 @@ import {
   DataDecodedAccuracy,
   type DataDecoded,
   type DataDecodedParameter,
-} from '@/domain/data-decoder/v2/entities/data-decoded.entity';
+} from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';
 import { DataDecodedParamHelper } from '@/modules/transactions/routes/mappers/common/data-decoded-param.helper';
 import { type Address, getAddress } from 'viem';
 

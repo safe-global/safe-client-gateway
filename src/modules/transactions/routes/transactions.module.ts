@@ -1,14 +1,14 @@
-import { ChainsRepositoryModule } from '@/domain/chains/chains.repository.interface';
-import { ContractsRepositoryModule } from '@/domain/contracts/contracts.repository.interface';
-import { DataDecoderRepositoryModule } from '@/domain/data-decoder/v2/data-decoder.repository.module';
-import { EarnRepositoryModule } from '@/domain/earn/earn.repository.module';
-import { HumanDescriptionRepositoryModule } from '@/domain/human-description/human-description.repository.interface';
-import { SafeAppsRepositoryModule } from '@/domain/safe-apps/safe-apps.repository.interface';
-import { SafeRepositoryModule } from '@/domain/safe/safe.repository.interface';
-import { StakingRepositoryModule } from '@/domain/staking/staking.repository.module';
-import { GPv2DecoderModule } from '@/domain/swaps/contracts/decoders/gp-v2-decoder.helper';
-import { SwapsRepositoryModule } from '@/domain/swaps/swaps-repository.module';
-import { TokenRepositoryModule } from '@/domain/tokens/token.repository.interface';
+import { ChainsRepositoryModule } from '@/modules/chains/domain/chains.repository.interface';
+import { ContractsRepositoryModule } from '@/modules/contracts/domain/contracts.repository.interface';
+import { DataDecoderRepositoryModule } from '@/modules/data-decoder/domain/v2/data-decoder.repository.module';
+import { EarnRepositoryModule } from '@/modules/earn/domain/earn.repository.module';
+import { HumanDescriptionRepositoryModule } from '@/modules/human-description/domain/human-description.repository.interface';
+import { SafeAppsRepositoryModule } from '@/modules/safe-apps/domain/safe-apps.repository.interface';
+import { SafeRepositoryModule } from '@/modules/safe/domain/safe.repository.interface';
+import { StakingRepositoryModule } from '@/modules/staking/domain/staking.repository.module';
+import { GPv2DecoderModule } from '@/modules/swaps/domain/contracts/decoders/gp-v2-decoder.helper';
+import { SwapsRepositoryModule } from '@/modules/swaps/domain/swaps-repository.module';
+import { TokenRepositoryModule } from '@/modules/tokens/domain/token.repository.interface';
 import { AddressInfoModule } from '@/routes/common/address-info/address-info.module';
 import { GPv2OrderHelper } from '@/modules/transactions/routes/helpers/gp-v2-order.helper';
 import { KilnNativeStakingHelperModule } from '@/modules/transactions/routes/helpers/kiln-native-staking.helper';
@@ -50,13 +50,13 @@ import { TransactionsController } from '@/modules/transactions/routes/transactio
 import { TransactionsService } from '@/modules/transactions/routes/transactions.service';
 import { Module } from '@nestjs/common';
 import { TransactionVerifierHelper } from '@/modules/transactions/routes/helpers/transaction-verifier.helper';
-import { DelegatesV2RepositoryModule } from '@/domain/delegate/v2/delegates.v2.repository.interface';
+import { DelegatesV2RepositoryModule } from '@/modules/delegate/domain/v2/delegates.v2.repository.interface';
 import { KilnVaultHelperModule } from '@/modules/transactions/routes/helpers/kiln-vault.helper';
 import { VaultTransactionMapper } from '@/modules/transactions/routes/mappers/common/vault-transaction.mapper';
 import { BridgeTransactionMapper } from '@/modules/transactions/routes/mappers/common/bridge-transaction.mapper';
-import { LiFiDecoderModule } from '@/domain/bridge/contracts/decoders/lifi-decoder.helper';
+import { LiFiDecoderModule } from '@/modules/bridge/domain/contracts/decoders/lifi-decoder.helper';
 import { LiFiHelperModule } from '@/modules/transactions/routes/helpers/lifi-helper';
-import { BridgeRepositoryModule } from '@/domain/bridge/bridge.repository.module';
+import { BridgeRepositoryModule } from '@/modules/bridge/domain/bridge.repository.module';
 
 @Module({
   controllers: [TransactionsController],

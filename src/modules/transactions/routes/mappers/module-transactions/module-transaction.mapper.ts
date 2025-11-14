@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { ModuleTransaction } from '@/domain/safe/entities/module-transaction.entity';
+import { ModuleTransaction } from '@/modules/safe/domain/entities/module-transaction.entity';
 import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
 import {
   MODULE_TRANSACTION_PREFIX,
@@ -9,7 +9,7 @@ import { ModuleExecutionInfo } from '@/modules/transactions/routes/entities/modu
 import { Transaction } from '@/modules/transactions/routes/entities/transaction.entity';
 import { MultisigTransactionInfoMapper } from '@/modules/transactions/routes/mappers/common/transaction-info.mapper';
 import { ModuleTransactionStatusMapper } from '@/modules/transactions/routes/mappers/module-transactions/module-transaction-status.mapper';
-import { DataDecoded } from '@/domain/data-decoder/v2/entities/data-decoded.entity';
+import { DataDecoded } from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';
 
 @Injectable()
 export class ModuleTransactionMapper {

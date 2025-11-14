@@ -3,7 +3,7 @@ import {
   extractRecipient,
 } from '../recipient-extraction.utils';
 import type { DecodedTransactionData } from '@/modules/safe-shield/entities/transaction-data.entity';
-import type { Erc20Decoder } from '@/domain/relay/contracts/decoders/erc-20-decoder.helper';
+import type { Erc20Decoder } from '@/modules/relay/domain/contracts/decoders/erc-20-decoder.helper';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 

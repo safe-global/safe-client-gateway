@@ -1,12 +1,12 @@
-import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
-import { contractBuilder } from '@/domain/contracts/entities/__tests__/contract.builder';
+import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
+import { contractBuilder } from '@/modules/contracts/domain/entities/__tests__/contract.builder';
 import {
   dataDecodedBuilder,
   dataDecodedParameterBuilder,
-} from '@/domain/data-decoder/v2/entities/__tests__/data-decoded.builder';
-import { multisigTransactionBuilder } from '@/domain/safe/entities/__tests__/multisig-transaction.builder';
-import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
-import { tokenBuilder } from '@/domain/tokens/__tests__/token.builder';
+} from '@/modules/data-decoder/domain/v2/entities/__tests__/data-decoded.builder';
+import { multisigTransactionBuilder } from '@/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
+import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
+import { tokenBuilder } from '@/modules/tokens/domain/__tests__/token.builder';
 import type { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
 import type { TransactionVerifierHelper } from '@/modules/transactions/routes/helpers/transaction-verifier.helper';
 import { DataDecodedParamHelper } from '@/modules/transactions/routes/mappers/common/data-decoded-param.helper';
@@ -15,8 +15,8 @@ import type { MultisigTransactionInfoMapper } from '@/modules/transactions/route
 import type { MultisigTransactionExecutionInfoMapper } from '@/modules/transactions/routes/mappers/multisig-transactions/multisig-transaction-execution-info.mapper';
 import type { MultisigTransactionStatusMapper } from '@/modules/transactions/routes/mappers/multisig-transactions/multisig-transaction-status.mapper';
 import { MultisigTransactionMapper } from '@/modules/transactions/routes/mappers/multisig-transactions/multisig-transaction.mapper';
-import type { IDataDecoderRepository } from '@/domain/data-decoder/v2/data-decoder.repository.interface';
-import type { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
+import type { IDataDecoderRepository } from '@/modules/data-decoder/domain/v2/data-decoder.repository.interface';
+import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
 import type { MultisigTransactionNoteMapper } from '@/modules/transactions/routes/mappers/multisig-transactions/multisig-transaction-note.mapper';
 import { TransactionStatus } from '@/modules/transactions/routes/entities/transaction-status.entity';
 import { transferTransactionInfoBuilder } from '@/modules/transactions/routes/entities/__tests__/transfer-transaction-info.builder';

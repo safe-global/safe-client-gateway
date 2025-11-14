@@ -18,8 +18,8 @@ import type {
 } from '@/modules/portfolio/domain/entities/app-position.entity';
 import { DataSourceError } from '@/domain/errors/data-source.error';
 import { rawify, type Raw } from '@/validation/entities/raw.entity';
-import type { ZerionBalance } from '@/datasources/balances-api/entities/zerion-balance.entity';
-import { ZerionBalancesSchema } from '@/datasources/balances-api/entities/zerion-balance.entity';
+import type { ZerionBalance } from '@/modules/balances/datasources/entities/zerion-balance.entity';
+import { ZerionBalancesSchema } from '@/modules/balances/datasources/entities/zerion-balance.entity';
 import { ZerionChainsSchema } from '@/modules/portfolio/datasources/entities/zerion-chain.entity';
 import { ZodError } from 'zod';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';

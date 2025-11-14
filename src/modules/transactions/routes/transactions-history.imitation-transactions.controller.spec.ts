@@ -4,41 +4,41 @@ import request from 'supertest';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import configuration from '@/config/entities/__tests__/configuration';
-import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
+import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
 import {
   dataDecodedBuilder,
   dataDecodedParameterBuilder,
-} from '@/domain/data-decoder/v2/entities/__tests__/data-decoded.builder';
+} from '@/modules/data-decoder/domain/v2/entities/__tests__/data-decoded.builder';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import {
   ethereumTransactionBuilder,
   toJson as ethereumTransactionToJson,
-} from '@/domain/safe/entities/__tests__/ethereum-transaction.builder';
+} from '@/modules/safe/domain/entities/__tests__/ethereum-transaction.builder';
 import {
   multisigTransactionBuilder,
   toJson as multisigTransactionToJson,
-} from '@/domain/safe/entities/__tests__/multisig-transaction.builder';
-import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
-import { erc20TokenBuilder } from '@/domain/tokens/__tests__/token.builder';
-import { type Token } from '@/domain/tokens/entities/token.entity';
+} from '@/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
+import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
+import { erc20TokenBuilder } from '@/modules/tokens/domain/__tests__/token.builder';
+import { type Token } from '@/modules/tokens/domain/entities/token.entity';
 import type {
   ERC20Transfer,
   Transfer,
-} from '@/domain/safe/entities/transfer.entity';
+} from '@/modules/safe/domain/entities/transfer.entity';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
 import { NetworkService } from '@/datasources/network/network.service.interface';
 import {
   erc20TransferBuilder,
   toJson as erc20TransferToJson,
-} from '@/domain/safe/entities/__tests__/erc20-transfer.builder';
+} from '@/modules/safe/domain/entities/__tests__/erc20-transfer.builder';
 import { type Address, getAddress, parseUnits, zeroAddress } from 'viem';
-import { erc20TransferEncoder } from '@/domain/relay/contracts/__tests__/encoders/erc20-encoder.builder';
-import type { EthereumTransaction } from '@/domain/safe/entities/ethereum-transaction.entity';
-import type { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
+import { erc20TransferEncoder } from '@/modules/relay/domain/contracts/__tests__/encoders/erc20-encoder.builder';
+import type { EthereumTransaction } from '@/modules/safe/domain/entities/ethereum-transaction.entity';
+import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
 import type { Server } from 'net';
 import { rawify } from '@/validation/entities/raw.entity';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
-import type { DataDecoded } from '@/domain/data-decoder/v2/entities/data-decoded.entity';
+import type { DataDecoded } from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';
 import { createTestModule } from '@/__tests__/testing-module';
 
 describe('Transactions History Controller (Unit) - Imitation Transactions', () => {

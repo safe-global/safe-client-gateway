@@ -18,9 +18,9 @@ import {
   isModuleTransaction,
   isCreationTransaction,
   Transaction,
-} from '@/domain/safe/entities/transaction.entity';
+} from '@/modules/safe/domain/entities/transaction.entity';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import { Safe } from '@/domain/safe/entities/safe.entity';
+import { Safe } from '@/modules/safe/domain/entities/safe.entity';
 import { Raw } from '@/validation/entities/raw.entity';
 import { LogType } from '@/domain/common/entities/log-type.entity';
 

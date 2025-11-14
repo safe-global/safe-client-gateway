@@ -1,8 +1,8 @@
-import { IBridgeRepository } from '@/domain/bridge/bridge.repository.interface';
-import { BridgeRepositoryModule } from '@/domain/bridge/bridge.repository.module';
-import { LiFiDecoder } from '@/domain/bridge/contracts/decoders/lifi-decoder.helper';
-import { ModuleTransaction } from '@/domain/safe/entities/module-transaction.entity';
-import { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
+import { IBridgeRepository } from '@/modules/bridge/domain/bridge.repository.interface';
+import { BridgeRepositoryModule } from '@/modules/bridge/domain/bridge.repository.module';
+import { LiFiDecoder } from '@/modules/bridge/domain/contracts/decoders/lifi-decoder.helper';
+import { ModuleTransaction } from '@/modules/safe/domain/entities/module-transaction.entity';
+import { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
 import {
   TransactionFinder,
   TransactionFinderModule,

@@ -1,7 +1,7 @@
-import type { ContractsRepository } from '@/domain/contracts/contracts.repository';
-import { contractBuilder } from '@/domain/data-decoder/v2/entities/__tests__/contract.builder';
-import { tokenBuilder } from '@/domain/tokens/__tests__/token.builder';
-import type { TokenRepository } from '@/domain/tokens/token.repository';
+import type { ContractsRepository } from '@/modules/contracts/domain/contracts.repository';
+import { contractBuilder } from '@/modules/data-decoder/domain/v2/entities/__tests__/contract.builder';
+import { tokenBuilder } from '@/modules/tokens/domain/__tests__/token.builder';
+import type { TokenRepository } from '@/modules/tokens/domain/token.repository';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
 import { faker } from '@faker-js/faker';

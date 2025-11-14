@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import isEmpty from 'lodash/isEmpty';
-import { ModuleTransaction } from '@/domain/safe/entities/module-transaction.entity';
+import { ModuleTransaction } from '@/modules/safe/domain/entities/module-transaction.entity';
 import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
 import {
   MODULE_TRANSACTION_PREFIX,
@@ -12,7 +12,7 @@ import { TransactionDetails } from '@/modules/transactions/routes/entities/trans
 import { MultisigTransactionInfoMapper } from '@/modules/transactions/routes/mappers/common/transaction-info.mapper';
 import { ModuleTransactionStatusMapper } from '@/modules/transactions/routes/mappers/module-transactions/module-transaction-status.mapper';
 import { TransactionDataMapper } from '@/modules/transactions/routes/mappers/common/transaction-data.mapper';
-import { DataDecoded } from '@/routes/data-decode/entities/data-decoded.entity';
+import { DataDecoded } from '@/modules/data-decoder/routes/entities/data-decoded.entity';
 
 @Injectable()
 export class ModuleTransactionDetailsMapper {

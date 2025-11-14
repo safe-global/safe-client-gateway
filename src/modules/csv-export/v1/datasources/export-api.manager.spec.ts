@@ -3,7 +3,7 @@ import { ExportApiManager } from './export-api.manager';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import type { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
 import type { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
-import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
+import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
 import type { IConfigApi } from '@/domain/interfaces/config-api.interface';
 import { rawify } from '@/validation/entities/raw.entity';
 import { getAddress } from 'viem';

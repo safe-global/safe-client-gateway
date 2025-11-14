@@ -1,5 +1,5 @@
-import type { Position } from '@/domain/positions/entities/position.entity';
-import type { Chain } from '@/domain/chains/entities/chain.entity';
+import type { Position } from '@/modules/positions/domain/entities/position.entity';
+import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
 import type { Raw } from '@/validation/entities/raw.entity';
 import type { Address } from 'viem';
 

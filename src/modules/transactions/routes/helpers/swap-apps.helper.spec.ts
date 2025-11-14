@@ -1,5 +1,5 @@
 import type { IConfigurationService } from '@/config/configuration.service.interface';
-import { fullAppDataBuilder } from '@/domain/swaps/entities/__tests__/full-app-data.builder';
+import { fullAppDataBuilder } from '@/modules/swaps/domain/entities/__tests__/full-app-data.builder';
 import { SwapAppsHelper } from '@/modules/transactions/routes/helpers/swap-apps.helper';
 
 const configurationService = {

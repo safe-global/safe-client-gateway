@@ -1,19 +1,19 @@
 import { RecipientAnalysisService } from './recipient-analysis.service';
 import type { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
-import type { Erc20Decoder } from '@/domain/relay/contracts/decoders/erc-20-decoder.helper';
+import type { Erc20Decoder } from '@/modules/relay/domain/contracts/decoders/erc-20-decoder.helper';
 import type { ITransactionApi } from '@/domain/interfaces/transaction-api.interface';
 import type { DecodedTransactionData } from '@/modules/safe-shield/entities/transaction-data.entity';
 import type { Page } from '@/domain/entities/page.entity';
-import type { Transfer } from '@/domain/safe/entities/transfer.entity';
+import type { Transfer } from '@/modules/safe/domain/entities/transfer.entity';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import type { ILoggingService } from '@/logging/logging.interface';
-import type { IChainsRepository } from '@/domain/chains/chains.repository.interface';
+import type { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import * as utils from '../utils/recipient-extraction.utils';
-import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
-import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
+import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
+import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
 import type { TransactionsService } from '@/modules/transactions/routes/transactions.service';
 import { TransactionInfoType } from '@/modules/transactions/routes/entities/transaction-info.entity';
 import type {
@@ -22,9 +22,9 @@ import type {
 } from '@/modules/transactions/routes/entities/bridge/bridge-info.entity';
 import type { SwapOrderTransactionInfo } from '@/modules/transactions/routes/entities/swaps/swap-order-info.entity';
 import type { Address, Hash, Hex } from 'viem';
-import type { DataDecodedAccuracy } from '@/domain/data-decoder/v2/entities/data-decoded.entity';
+import type { DataDecodedAccuracy } from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';
 import type { CreationTransaction } from '@/modules/transactions/routes/entities/creation-transaction.entity';
-import type { DataDecoded } from '@/routes/data-decode/entities/data-decoded.entity';
+import type { DataDecoded } from '@/modules/data-decoder/routes/entities/data-decoded.entity';
 import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
 import { CacheRouter } from '@/datasources/cache/cache.router';
 import { createHash } from 'crypto';

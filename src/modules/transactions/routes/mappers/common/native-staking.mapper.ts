@@ -1,13 +1,13 @@
-import { Deployment } from '@/datasources/staking-api/entities/deployment.entity';
-import { StakeState } from '@/datasources/staking-api/entities/stake.entity';
+import { Deployment } from '@/modules/staking/datasources/entities/deployment.entity';
+import { StakeState } from '@/modules/staking/datasources/entities/stake.entity';
 import {
   ChainsRepositoryModule,
   IChainsRepository,
-} from '@/domain/chains/chains.repository.interface';
+} from '@/modules/chains/domain/chains.repository.interface';
 import { getNumberString } from '@/domain/common/utils/utils';
-import { KilnDecoder } from '@/domain/staking/contracts/decoders/kiln-decoder.helper';
-import { IStakingRepositoryWithRewardsFee } from '@/domain/staking/staking.repository.interface';
-import { StakingRepositoryModule } from '@/domain/staking/staking.repository.module';
+import { KilnDecoder } from '@/modules/staking/domain/contracts/decoders/kiln-decoder.helper';
+import { IStakingRepositoryWithRewardsFee } from '@/modules/staking/domain/staking.repository.interface';
+import { StakingRepositoryModule } from '@/modules/staking/domain/staking.repository.module';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { NULL_ADDRESS } from '@/routes/common/constants';
 import { NativeStakingDepositTransactionInfo } from '@/modules/transactions/routes/entities/staking/native-staking-deposit-info.entity';

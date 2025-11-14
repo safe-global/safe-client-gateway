@@ -1,6 +1,6 @@
-import type { CounterfactualSafe } from '@/domain/accounts/counterfactual-safes/entities/counterfactual-safe.entity';
-import type { CreateCounterfactualSafeDto } from '@/domain/accounts/counterfactual-safes/entities/create-counterfactual-safe.dto.entity';
-import type { Account } from '@/domain/accounts/entities/account.entity';
+import type { CounterfactualSafe } from '@/modules/accounts/domain/counterfactual-safes/entities/counterfactual-safe.entity';
+import type { CreateCounterfactualSafeDto } from '@/modules/accounts/domain/counterfactual-safes/entities/create-counterfactual-safe.dto.entity';
+import type { Account } from '@/modules/accounts/domain/entities/account.entity';
 import type { Address } from 'viem';
 
 export const ICounterfactualSafesDatasource = Symbol(

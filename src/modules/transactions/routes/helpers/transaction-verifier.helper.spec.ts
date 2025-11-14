@@ -4,22 +4,22 @@ import { type Address, concat, getAddress } from 'viem';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 import { SignatureType } from '@/domain/common/entities/signature-type.entity';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
-import { delegateBuilder } from '@/domain/delegate/entities/__tests__/delegate.builder';
-import { multisigTransactionBuilder } from '@/domain/safe/entities/__tests__/multisig-transaction.builder';
-import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
+import { delegateBuilder } from '@/modules/delegate/domain/entities/__tests__/delegate.builder';
+import { multisigTransactionBuilder } from '@/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
+import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
 import { proposeTransactionDtoBuilder } from '@/modules/transactions/routes/entities/__tests__/propose-transaction.dto.builder';
 import { TransactionVerifierHelper } from '@/modules/transactions/routes/helpers/transaction-verifier.helper';
 import { HttpExceptionNoLog } from '@/domain/common/errors/http-exception-no-log.error';
-import { Operation } from '@/domain/safe/entities/operation.entity';
+import { Operation } from '@/modules/safe/domain/entities/operation.entity';
 import configuration from '@/config/entities/__tests__/configuration';
 import { getSignature } from '@/domain/common/utils/__tests__/signatures.builder';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
-import type { DelegatesV2Repository } from '@/domain/delegate/v2/delegates.v2.repository';
+import type { DelegatesV2Repository } from '@/modules/delegate/domain/v2/delegates.v2.repository';
 import type { ILoggingService } from '@/logging/logging.interface';
-import type { Delegate } from '@/domain/delegate/entities/delegate.entity';
-import type { IContractsRepository } from '@/domain/contracts/contracts.repository.interface';
+import type { Delegate } from '@/modules/delegate/domain/entities/delegate.entity';
+import type { IContractsRepository } from '@/modules/contracts/domain/contracts.repository.interface';
 import { getSafeTxHash } from '@/domain/common/utils/safe';
-import { confirmationBuilder } from '@/domain/safe/entities/__tests__/multisig-transaction-confirmation.builder';
+import { confirmationBuilder } from '@/modules/safe/domain/entities/__tests__/multisig-transaction-confirmation.builder';
 
 const mockConfigurationService = jest.mocked({
   getOrThrow: jest.fn(),

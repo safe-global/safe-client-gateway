@@ -1,7 +1,7 @@
 import {
   Contract,
   ContractPageSchema,
-} from '@/domain/data-decoder/v2/entities/contract.entity';
+} from '@/modules/data-decoder/domain/v2/entities/contract.entity';
 import { IDataDecoderApi } from '@/domain/interfaces/data-decoder-api.interface';
 import {
   DESCRIPTION_MAPPING,
@@ -30,9 +30,9 @@ import { Inject, Injectable } from '@nestjs/common';
 import { Address } from 'viem';
 import { logCacheHit, logCacheMiss } from '@/modules/safe-shield/utils/common';
 import { extractContracts } from '@/modules/safe-shield/utils/extraction.utils';
-import { Erc20Decoder } from '@/domain/relay/contracts/decoders/erc-20-decoder.helper';
+import { Erc20Decoder } from '@/modules/relay/domain/contracts/decoders/erc-20-decoder.helper';
 import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
-import { MultisigTransactionPageSchema } from '@/domain/safe/entities/multisig-transaction.entity';
+import { MultisigTransactionPageSchema } from '@/modules/safe/domain/entities/multisig-transaction.entity';
 
 /**
  * Service responsible for analyzing contract interactions in transactions.

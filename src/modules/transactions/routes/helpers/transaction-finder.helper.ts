@@ -1,4 +1,4 @@
-import { MultiSendDecoder } from '@/domain/contracts/decoders/multi-send-decoder.helper';
+import { MultiSendDecoder } from '@/modules/contracts/domain/decoders/multi-send-decoder.helper';
 import { Injectable, Module } from '@nestjs/common';
 import type { Address, Hex } from 'viem';
 

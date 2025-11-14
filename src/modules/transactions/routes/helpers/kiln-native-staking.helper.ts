@@ -1,7 +1,7 @@
 import {
   KilnAbi,
   KilnDecoder,
-} from '@/domain/staking/contracts/decoders/kiln-decoder.helper';
+} from '@/modules/staking/domain/contracts/decoders/kiln-decoder.helper';
 import {
   TransactionFinder,
   TransactionFinderModule,

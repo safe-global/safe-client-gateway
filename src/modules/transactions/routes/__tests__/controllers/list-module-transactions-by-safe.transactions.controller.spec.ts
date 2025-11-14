@@ -2,12 +2,12 @@ import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
-import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
+import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
 import {
   moduleTransactionBuilder,
   toJson as moduleTransactionToJson,
-} from '@/domain/safe/entities/__tests__/module-transaction.builder';
-import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
+} from '@/modules/safe/domain/entities/__tests__/module-transaction.builder';
+import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
 import { NetworkService } from '@/datasources/network/network.service.interface';

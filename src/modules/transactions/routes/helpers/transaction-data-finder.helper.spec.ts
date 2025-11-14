@@ -1,8 +1,8 @@
 import {
   multiSendEncoder,
   multiSendTransactionsEncoder,
-} from '@/domain/contracts/__tests__/encoders/multi-send-encoder.builder';
-import { MultiSendDecoder } from '@/domain/contracts/decoders/multi-send-decoder.helper';
+} from '@/modules/contracts/domain/__tests__/encoders/multi-send-encoder.builder';
+import { MultiSendDecoder } from '@/modules/contracts/domain/decoders/multi-send-decoder.helper';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { TransactionFinder } from '@/modules/transactions/routes/helpers/transaction-finder.helper';
 import { faker } from '@faker-js/faker';

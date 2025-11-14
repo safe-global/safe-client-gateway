@@ -1,4 +1,4 @@
-import type { Relay } from '@/domain/relay/entities/relay.entity';
+import type { Relay } from '@/modules/relay/domain/entities/relay.entity';
 import type { Raw } from '@/validation/entities/raw.entity';
 import type { Address } from 'viem';
 

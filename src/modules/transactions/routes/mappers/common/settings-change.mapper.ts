@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { DataDecoded } from '@/domain/data-decoder/v2/entities/data-decoded.entity';
+import { DataDecoded } from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';
 import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
 import { NULL_ADDRESS } from '@/routes/common/constants';
 import { AddressInfo } from '@/routes/common/entities/address-info.entity';

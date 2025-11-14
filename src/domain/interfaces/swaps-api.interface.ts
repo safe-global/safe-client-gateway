@@ -1,5 +1,5 @@
-import type { FullAppData } from '@/domain/swaps/entities/full-app-data.entity';
-import type { Order } from '@/domain/swaps/entities/order.entity';
+import type { FullAppData } from '@/modules/swaps/domain/entities/full-app-data.entity';
+import type { Order } from '@/modules/swaps/domain/entities/order.entity';
 import type { Raw } from '@/validation/entities/raw.entity';
 import type { Hex } from 'viem';
 

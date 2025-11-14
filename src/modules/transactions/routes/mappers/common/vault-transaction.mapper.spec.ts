@@ -1,14 +1,14 @@
-import { defiMorphoExtraRewardBuilder } from '@/datasources/staking-api/entities/__tests__/defi-morpho-extra-reward.entity.builder';
-import { defiVaultStakeBuilder } from '@/datasources/staking-api/entities/__tests__/defi-vault-state.entity.builder';
+import { defiMorphoExtraRewardBuilder } from '@/modules/staking/datasources/entities/__tests__/defi-morpho-extra-reward.entity.builder';
+import { defiVaultStakeBuilder } from '@/modules/staking/datasources/entities/__tests__/defi-vault-state.entity.builder';
 import {
   defiVaultAdditionalRewardBuilder,
   defiVaultStatsBuilder,
-} from '@/datasources/staking-api/entities/__tests__/defi-vault-stats.entity.builder';
-import { deploymentBuilder } from '@/datasources/staking-api/entities/__tests__/deployment.entity.builder';
-import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
-import type { EarnRepository } from '@/domain/earn/earn.repository';
-import { tokenBuilder } from '@/domain/tokens/__tests__/token.builder';
-import type { ITokenRepository } from '@/domain/tokens/token.repository.interface';
+} from '@/modules/staking/datasources/entities/__tests__/defi-vault-stats.entity.builder';
+import { deploymentBuilder } from '@/modules/staking/datasources/entities/__tests__/deployment.entity.builder';
+import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
+import type { EarnRepository } from '@/modules/earn/domain/earn.repository';
+import { tokenBuilder } from '@/modules/tokens/domain/__tests__/token.builder';
+import type { ITokenRepository } from '@/modules/tokens/domain/token.repository.interface';
 import { TokenInfo } from '@/modules/transactions/routes/entities/swaps/token-info.entity';
 import { TransactionInfoType } from '@/modules/transactions/routes/entities/transaction-info.entity';
 import { VaultInfo } from '@/modules/transactions/routes/entities/vaults/vault-info.entity';

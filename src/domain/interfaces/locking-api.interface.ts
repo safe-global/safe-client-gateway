@@ -1,9 +1,9 @@
 import type { Page } from '@/domain/entities/page.entity';
-import type { Campaign } from '@/domain/community/entities/campaign.entity';
-import type { CampaignActivity } from '@/domain/community/entities/campaign-activity.entity';
-import type { CampaignRank } from '@/domain/community/entities/campaign-rank.entity';
-import type { LockingEvent } from '@/domain/community/entities/locking-event.entity';
-import type { LockingRank } from '@/domain/community/entities/locking-rank.entity';
+import type { Campaign } from '@/modules/community/domain/entities/campaign.entity';
+import type { CampaignActivity } from '@/modules/community/domain/entities/campaign-activity.entity';
+import type { CampaignRank } from '@/modules/community/domain/entities/campaign-rank.entity';
+import type { LockingEvent } from '@/modules/community/domain/entities/locking-event.entity';
+import type { LockingRank } from '@/modules/community/domain/entities/locking-rank.entity';
 import type { Raw } from '@/validation/entities/raw.entity';
 import type { Address } from 'viem';
 

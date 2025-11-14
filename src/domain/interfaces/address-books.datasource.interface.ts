@@ -1,10 +1,10 @@
 import type {
   AddressBook,
   AddressBookItem,
-} from '@/domain/accounts/address-books/entities/address-book.entity';
-import type { CreateAddressBookItemDto } from '@/domain/accounts/address-books/entities/create-address-book-item.dto.entity';
-import type { UpdateAddressBookItemDto } from '@/domain/accounts/address-books/entities/update-address-book.item.dto.entity';
-import type { Account } from '@/domain/accounts/entities/account.entity';
+} from '@/modules/accounts/domain/address-books/entities/address-book.entity';
+import type { CreateAddressBookItemDto } from '@/modules/accounts/domain/address-books/entities/create-address-book-item.dto.entity';
+import type { UpdateAddressBookItemDto } from '@/modules/accounts/domain/address-books/entities/update-address-book.item.dto.entity';
+import type { Account } from '@/modules/accounts/domain/entities/account.entity';
 
 export const IAddressBooksDatasource = Symbol('IAddressBooksDatasource');
 

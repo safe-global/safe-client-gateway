@@ -1,10 +1,10 @@
-import type { Erc20Decoder } from '@/domain/relay/contracts/decoders/erc-20-decoder.helper';
+import type { Erc20Decoder } from '@/modules/relay/domain/contracts/decoders/erc-20-decoder.helper';
 import type { DecodedTransactionData } from '@/modules/safe-shield/entities/transaction-data.entity';
 import { extractContracts } from '@/modules/safe-shield/utils/extraction.utils';
 import type {
   DataDecoded,
   DataDecodedParameter,
-} from '@/routes/data-decode/entities/data-decoded.entity';
+} from '@/modules/data-decoder/routes/entities/data-decoded.entity';
 import { faker } from '@faker-js/faker/.';
 import { getAddress, type Address, type Hex } from 'viem';
 

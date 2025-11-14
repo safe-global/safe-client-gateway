@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import { ModuleTransaction } from '@/domain/safe/entities/module-transaction.entity';
-import { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
-import { Erc721Token } from '@/domain/tokens/entities/token.entity';
+import { ModuleTransaction } from '@/modules/safe/domain/entities/module-transaction.entity';
+import { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
+import { Erc721Token } from '@/modules/tokens/domain/entities/token.entity';
 import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
 import { NULL_ADDRESS } from '@/routes/common/constants';
 import { TransferTransactionInfo } from '@/modules/transactions/routes/entities/transfer-transaction-info.entity';
@@ -9,7 +9,7 @@ import { Erc721Transfer } from '@/modules/transactions/routes/entities/transfers
 import { DataDecodedParamHelper } from '@/modules/transactions/routes/mappers/common/data-decoded-param.helper';
 import { getTransferDirection } from '@/modules/transactions/routes/mappers/common/transfer-direction.helper';
 import { getAddress } from 'viem';
-import { DataDecoded } from '@/routes/data-decode/entities/data-decoded.entity';
+import { DataDecoded } from '@/modules/data-decoder/routes/entities/data-decoded.entity';
 
 @Injectable()
 export class Erc721TransferMapper {

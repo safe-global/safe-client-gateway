@@ -1,5 +1,5 @@
 import { Injectable, Module } from '@nestjs/common';
-import { GPv2Decoder } from '@/domain/swaps/contracts/decoders/gp-v2-decoder.helper';
+import { GPv2Decoder } from '@/modules/swaps/domain/contracts/decoders/gp-v2-decoder.helper';
 import { SwapOrderTransactionInfo } from '@/modules/transactions/routes/entities/swaps/swap-order-info.entity';
 import { TokenInfo } from '@/modules/transactions/routes/entities/swaps/token-info.entity';
 import {

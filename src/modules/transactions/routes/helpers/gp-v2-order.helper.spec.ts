@@ -1,5 +1,5 @@
-import { MultiSendDecoder } from '@/domain/contracts/decoders/multi-send-decoder.helper';
-import { ComposableCowDecoder } from '@/domain/swaps/contracts/decoders/composable-cow-decoder.helper';
+import { MultiSendDecoder } from '@/modules/contracts/domain/decoders/multi-send-decoder.helper';
+import { ComposableCowDecoder } from '@/modules/swaps/domain/contracts/decoders/composable-cow-decoder.helper';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { GPv2OrderHelper } from '@/modules/transactions/routes/helpers/gp-v2-order.helper';
 import { TransactionFinder } from '@/modules/transactions/routes/helpers/transaction-finder.helper';

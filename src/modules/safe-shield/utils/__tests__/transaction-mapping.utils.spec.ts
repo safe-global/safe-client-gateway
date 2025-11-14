@@ -5,10 +5,10 @@ import {
   mapMultiSendTransactions,
 } from '../transaction-mapping.utils';
 import type { DecodedTransactionData } from '@/modules/safe-shield/entities/transaction-data.entity';
-import type { DataDecoded } from '@/routes/data-decode/entities/data-decoded.entity';
+import type { DataDecoded } from '@/modules/data-decoder/routes/entities/data-decoded.entity';
 import { faker } from '@faker-js/faker';
 import { getAddress, type Hex } from 'viem';
-import { dataDecodedBuilder } from '@/domain/data-decoder/v2/entities/__tests__/data-decoded.builder';
+import { dataDecodedBuilder } from '@/modules/data-decoder/domain/v2/entities/__tests__/data-decoded.builder';
 
 describe('mapDecodedTransactions', () => {
   const mockRecipientAddress = getAddress(faker.finance.ethereumAddress());
