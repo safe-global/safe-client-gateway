@@ -3,12 +3,6 @@ import request from 'supertest';
 import { getAddress } from 'viem';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import configuration from '@/config/entities/__tests__/configuration';
-import { TestAccountsDataSourceModule } from '@/modules/accounts/datasources/__tests__/test.accounts.datasource.module';
-import { AccountsDatasourceModule } from '@/modules/accounts/datasources/accounts.datasource.module';
-import { TestAddressBooksDataSourceModule } from '@/modules/accounts/datasources/address-books/__tests__/test.address-books.datasource.module';
-import { AddressBooksDatasourceModule } from '@/modules/accounts/datasources/address-books/address-books.datasource.module';
-import { TestCounterfactualSafesDataSourceModule } from '@/modules/accounts/datasources/counterfactual-safes/__tests__/test.counterfactual-safes.datasource.module';
-import { CounterfactualSafesDatasourceModule } from '@/modules/accounts/datasources/counterfactual-safes/counterfactual-safes.datasource.module';
 import { NotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/notifications.repository.module';
 import { TestNotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/test.notification.repository.module';
 import { MembersController } from '@/modules/spaces/routes/members.controller';
@@ -45,18 +39,6 @@ describe('MembersController', () => {
       config: testConfiguration,
       overridePostgresV2: false,
       modules: [
-        {
-          originalModule: AccountsDatasourceModule,
-          testModule: TestAccountsDataSourceModule,
-        },
-        {
-          originalModule: AddressBooksDatasourceModule,
-          testModule: TestAddressBooksDataSourceModule,
-        },
-        {
-          originalModule: CounterfactualSafesDatasourceModule,
-          testModule: TestCounterfactualSafesDataSourceModule,
-        },
         {
           originalModule: NotificationsRepositoryV2Module,
           testModule: TestNotificationsRepositoryV2Module,

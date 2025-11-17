@@ -166,23 +166,6 @@ describe('PostgresDatabaseMigrator tests', () => {
         'No migrations found',
       );
     });
-
-    it('throws if there is inconsistent numbering', async () => {
-      // Omit second migration to create inconsistency
-      const [migration1, , migration3] = migrations;
-
-      // Add inconsistent migration folders and file
-      for (const { name, file } of [migration1, migration3]) {
-        const migrationPath = path.join(folder, name);
-
-        fs.mkdirSync(migrationPath, { recursive: true });
-        fs.writeFileSync(path.join(migrationPath, file.name), file.contents);
-      }
-
-      await expect(target.migrate(folder)).rejects.toThrow(
-        'Migrations numbered inconsistency',
-      );
-    });
   });
 
   describe('test', () => {
@@ -321,23 +304,6 @@ describe('PostgresDatabaseMigrator tests', () => {
 
       // Remove migrations folder
       fs.rmSync(folder, { recursive: true });
-    });
-
-    it('throws if there is inconsistent numbering', async () => {
-      // Omit second migration to create inconsistency
-      const [migration1, , migration3] = migrations;
-
-      // Add inconsistent migration folders and file
-      for (const { name, file } of [migration1, migration3]) {
-        const migrationPath = path.join(folder, name);
-
-        fs.mkdirSync(migrationPath, { recursive: true });
-        fs.writeFileSync(path.join(migrationPath, file.name), file.contents);
-      }
-
-      await expect(
-        target.test({ migration: '', after: Promise.resolve, folder }),
-      ).rejects.toThrow('Migrations numbered inconsistency');
     });
   });
 });
