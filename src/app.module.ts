@@ -47,7 +47,6 @@ import { ZodErrorFilter } from '@/routes/common/filters/zod-error.filter';
 import { CacheControlInterceptor } from '@/routes/common/interceptors/cache-control.interceptor';
 import { AuthModule } from '@/modules/auth/routes/auth.module';
 import { DelegatesV2Module } from '@/modules/delegate/routes/v2/delegates.v2.module';
-import { AccountsModule } from '@/modules/accounts/routes/accounts.module';
 import { NotificationsModuleV2 } from '@/modules/notifications/routes/v2/notifications.module';
 import { TargetedMessagingModule } from '@/modules/targeted-messaging/routes/targeted-messaging.module';
 import { PostgresDatabaseModule } from '@/datasources/db/v1/postgres-database.module';
@@ -70,7 +69,6 @@ export class AppModule implements NestModule {
   static register(configFactory = configuration): DynamicModule {
     const {
       auth: isAuthFeatureEnabled,
-      accounts: isAccountsFeatureEnabled,
       users: isUsersFeatureEnabled,
       email: isEmailFeatureEnabled,
       delegatesV2: isDelegatesV2Enabled,
@@ -83,7 +81,6 @@ export class AppModule implements NestModule {
         PostgresDatabaseModule,
         // features
         AboutModule,
-        ...(isAccountsFeatureEnabled ? [AccountsModule] : []),
         ...(isAuthFeatureEnabled ? [AuthModule] : []),
         BalancesModule,
         ...(isZerionPositionsFeatureEnabled ? [PositionsModule] : []),
