@@ -14,7 +14,7 @@ import {
   OrderStatus,
   OrderClass,
   OrderKind,
-} from '@/domain/swaps/entities/order.entity';
+} from '@/modules/swaps/domain/entities/order.entity';
 import { TokenInfo } from '@/modules/transactions/routes/entities/swaps/token-info.entity';
 import {
   TransferDirection,

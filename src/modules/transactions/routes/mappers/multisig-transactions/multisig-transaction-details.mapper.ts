@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import isEmpty from 'lodash/isEmpty';
-import { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
-import { Safe } from '@/domain/safe/entities/safe.entity';
+import { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
+import { Safe } from '@/modules/safe/domain/entities/safe.entity';
 import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
 import {
   MULTISIG_TRANSACTION_PREFIX,
@@ -17,7 +17,7 @@ import { MultisigTransactionExecutionDetailsMapper } from '@/modules/transaction
 import { MultisigTransactionStatusMapper } from '@/modules/transactions/routes/mappers/multisig-transactions/multisig-transaction-status.mapper';
 import { MultisigTransactionNoteMapper } from '@/modules/transactions/routes/mappers/multisig-transactions/multisig-transaction-note.mapper';
 import { TransactionVerifierHelper } from '@/modules/transactions/routes/helpers/transaction-verifier.helper';
-import { DataDecoded } from '@/domain/data-decoder/v2/entities/data-decoded.entity';
+import { DataDecoded } from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';
 import { type Address } from 'viem';
 
 @Injectable()

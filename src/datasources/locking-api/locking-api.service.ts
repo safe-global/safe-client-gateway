@@ -6,11 +6,11 @@ import {
 } from '@/datasources/network/network.service.interface';
 import { Page } from '@/domain/entities/page.entity';
 import { ILockingApi } from '@/domain/interfaces/locking-api.interface';
-import { Campaign } from '@/domain/community/entities/campaign.entity';
-import { CampaignActivity } from '@/domain/community/entities/campaign-activity.entity';
-import { CampaignRank } from '@/domain/community/entities/campaign-rank.entity';
-import { LockingEvent } from '@/domain/community/entities/locking-event.entity';
-import { LockingRank } from '@/domain/community/entities/locking-rank.entity';
+import { Campaign } from '@/modules/community/domain/entities/campaign.entity';
+import { CampaignActivity } from '@/modules/community/domain/entities/campaign-activity.entity';
+import { CampaignRank } from '@/modules/community/domain/entities/campaign-rank.entity';
+import { LockingEvent } from '@/modules/community/domain/entities/locking-event.entity';
+import { LockingRank } from '@/modules/community/domain/entities/locking-rank.entity';
 import { Inject } from '@nestjs/common';
 import type { Raw } from '@/validation/entities/raw.entity';
 import type { Address } from 'viem';

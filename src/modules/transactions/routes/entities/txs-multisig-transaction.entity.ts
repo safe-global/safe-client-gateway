@@ -1,9 +1,9 @@
-import { DataDecoded } from '@/domain/data-decoder/v2/entities/data-decoded.entity';
+import { DataDecoded } from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';
 import {
   Confirmation,
   MultisigTransaction as DomainMultisigTransaction,
-} from '@/domain/safe/entities/multisig-transaction.entity';
-import { Operation } from '@/domain/safe/entities/operation.entity';
+} from '@/modules/safe/domain/entities/multisig-transaction.entity';
+import { Operation } from '@/modules/safe/domain/entities/operation.entity';
 import { ApiProperty } from '@nestjs/swagger';
 import type { Address, Hash, Hex } from 'viem';
 

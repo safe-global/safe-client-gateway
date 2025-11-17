@@ -1,8 +1,8 @@
-import type { AccountDataSetting } from '@/domain/accounts/entities/account-data-setting.entity';
-import type { AccountDataType } from '@/domain/accounts/entities/account-data-type.entity';
-import type { Account } from '@/domain/accounts/entities/account.entity';
-import type { CreateAccountDto } from '@/domain/accounts/entities/create-account.dto.entity';
-import type { UpsertAccountDataSettingsDto } from '@/domain/accounts/entities/upsert-account-data-settings.dto.entity';
+import type { AccountDataSetting } from '@/modules/accounts/domain/entities/account-data-setting.entity';
+import type { AccountDataType } from '@/modules/accounts/domain/entities/account-data-type.entity';
+import type { Account } from '@/modules/accounts/domain/entities/account.entity';
+import type { CreateAccountDto } from '@/modules/accounts/domain/entities/create-account.dto.entity';
+import type { UpsertAccountDataSettingsDto } from '@/modules/accounts/domain/entities/upsert-account-data-settings.dto.entity';
 import type { Address } from 'viem';
 
 export const IAccountsDatasource = Symbol('IAccountsDatasource');

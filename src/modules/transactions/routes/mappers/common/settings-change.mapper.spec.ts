@@ -14,7 +14,7 @@ import { SwapOwner } from '@/modules/transactions/routes/entities/settings-chang
 import {
   dataDecodedBuilder,
   dataDecodedParameterBuilder,
-} from '@/domain/data-decoder/v2/entities/__tests__/data-decoded.builder';
+} from '@/modules/data-decoder/domain/v2/entities/__tests__/data-decoded.builder';
 import { DataDecodedParamHelper } from '@/modules/transactions/routes/mappers/common/data-decoded-param.helper';
 import { SettingsChangeMapper } from '@/modules/transactions/routes/mappers/common/settings-change.mapper';
 

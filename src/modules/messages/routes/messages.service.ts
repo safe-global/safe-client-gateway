@@ -1,0 +1,166 @@
+import { Inject, Injectable } from '@nestjs/common';
+import groupBy from 'lodash/groupBy';
+import { Message as DomainMessage } from '@/modules/messages/domain/entities/message.entity';
+import { MessagesRepository } from '@/modules/messages/domain/messages.repository';
+import { IMessagesRepository } from '@/modules/messages/domain/messages.repository.interface';
+import { SafeRepository } from '@/modules/safe/domain/safe.repository';
+import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
+import { DateLabel } from '@/routes/common/entities/date-label.entity';
+import { Page } from '@/routes/common/entities/page.entity';
+import {
+  PaginationData,
+  cursorUrlFromLimitAndOffset,
+} from '@/routes/common/pagination/pagination.data';
+import { CreateMessageDto } from '@/modules/messages/routes/entities/create-message.dto.entity';
+import { MessageItem } from '@/modules/messages/routes/entities/message-item.entity';
+import { Message } from '@/modules/messages/routes/entities/message.entity';
+import { UpdateMessageSignatureDto } from '@/modules/messages/routes/entities/update-message-signature.entity';
+import { MessageMapper } from '@/modules/messages/routes/mappers/message-mapper';
+import { LoggingService, ILoggingService } from '@/logging/logging.interface';
+import { LogType } from '@/domain/common/entities/log-type.entity';
+import type { Address, Hash } from 'viem';
+
+@Injectable()
+export class MessagesService {
+  constructor(
+    @Inject(IMessagesRepository)
+    private readonly messagesRepository: MessagesRepository,
+    @Inject(ISafeRepository)
+    private readonly safeRepository: SafeRepository,
+    private readonly messageMapper: MessageMapper,
+    @Inject(LoggingService) private readonly loggingService: ILoggingService,
+  ) {}
+
+  async getMessageByHash(args: {
+    chainId: string;
+    messageHash: Hash;
+  }): Promise<Message> {
+    const message = await this.messagesRepository.getMessageByHash(args);
+    const safe = await this.safeRepository.getSafe({
+      chainId: args.chainId,
+      address: message.safe,
+    });
+    return this.messageMapper.mapMessage(args.chainId, message, safe);
+  }
+
+  async getMessagesBySafe(args: {
+    chainId: string;
+    safeAddress: Address;
+    paginationData: PaginationData;
+    routeUrl: Readonly<URL>;
+  }): Promise<Page<DateLabel | MessageItem>> {
+    const [safe, page] = await Promise.all([
+      this.safeRepository.getSafe({
+        chainId: args.chainId,
+        address: args.safeAddress,
+      }),
+      this.messagesRepository.getMessagesBySafe({
+        chainId: args.chainId,
+        safeAddress: args.safeAddress,
+        limit: args.paginationData.limit,
+        offset: args.paginationData.offset,
+      }),
+    ]);
+    const nextURL = cursorUrlFromLimitAndOffset(args.routeUrl, page.next);
+    const previousURL = cursorUrlFromLimitAndOffset(
+      args.routeUrl,
+      page.previous,
+    );
+    const groups = this.getOrderedGroups(page.results);
+
+    const labelledGroups = await Promise.all(
+      groups.map(async ([timestamp, messages]) => {
+        const messageItems = await this.messageMapper.mapMessageItems(
+          args.chainId,
+          messages,
+          safe,
+        );
+
+        return [new DateLabel(timestamp), ...messageItems];
+      }),
+    );
+
+    return {
+      count: page.count,
+      next: nextURL?.toString() ?? null,
+      previous: previousURL?.toString() ?? null,
+      results: labelledGroups.flat(),
+    };
+  }
+
+  /**
+   * Groups messages by creation day. For each group, a tuple containing
+   * [timestamp, message[]] is returned. Each tuple contains the UTC start
+   * of the day the messages were created, and the messages created in
+   * that UTC date.
+   *
+   * Tuples are in descending order (by timestamp).
+   *
+   * @param messages messages to group
+   * @returns ordered tuples containing [timestamp, message[]]
+   */
+  private getOrderedGroups(
+    messages: Array<DomainMessage>,
+  ): Array<[number, Array<DomainMessage>]> {
+    const groups = groupBy(messages, (m) =>
+      Date.UTC(
+        m.created.getUTCFullYear(),
+        m.created.getUTCMonth(),
+        m.created.getUTCDate(),
+      ),
+    );
+
+    return (
+      Object.keys(groups)
+        // We first sort the groups in descending order (most recent first)
+        .sort((day1, day2) => day2.localeCompare(day1))
+        // For each group we create a tuple of the timestamp of the day
+        // with the messages for that day sorted by creation in descending order
+        .map((groupKey) => {
+          const sortedMessages = groups[groupKey].sort((m1, m2) => {
+            return m2.created.getTime() - m1.created.getTime();
+          });
+          return [Number(groupKey), sortedMessages];
+        })
+    );
+  }
+
+  async createMessage(args: {
+    chainId: string;
+    safeAddress: Address;
+    createMessageDto: CreateMessageDto;
+  }): Promise<unknown> {
+    this.logProposeMessage(args);
+    return await this.messagesRepository.createMessage({
+      chainId: args.chainId,
+      safeAddress: args.safeAddress,
+      message: args.createMessageDto.message,
+      safeAppId: args.createMessageDto.safeAppId,
+      origin: args.createMessageDto.origin,
+      signature: args.createMessageDto.signature,
+    });
+  }
+
+  async updateMessageSignature(args: {
+    chainId: string;
+    messageHash: Hash;
+    updateMessageSignatureDto: UpdateMessageSignatureDto;
+  }): Promise<unknown> {
+    return await this.messagesRepository.updateMessageSignature({
+      chainId: args.chainId,
+      messageHash: args.messageHash,
+      signature: args.updateMessageSignatureDto.signature,
+    });
+  }
+
+  private logProposeMessage(
+    args: Parameters<MessagesService['createMessage']>[0],
+  ): void {
+    this.loggingService.info({
+      safeAddress: args.safeAddress,
+      chainId: args.chainId,
+      message: args.createMessageDto,
+      type: LogType.MessagePropose,
+    });
+  }
+}

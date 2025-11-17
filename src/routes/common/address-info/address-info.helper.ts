@@ -1,8 +1,8 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { ContractsRepository } from '@/domain/contracts/contracts.repository';
-import { IContractsRepository } from '@/domain/contracts/contracts.repository.interface';
-import { TokenRepository } from '@/domain/tokens/token.repository';
-import { ITokenRepository } from '@/domain/tokens/token.repository.interface';
+import { ContractsRepository } from '@/modules/contracts/domain/contracts.repository';
+import { IContractsRepository } from '@/modules/contracts/domain/contracts.repository.interface';
+import { TokenRepository } from '@/modules/tokens/domain/token.repository';
+import { ITokenRepository } from '@/modules/tokens/domain/token.repository.interface';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { AddressInfo } from '@/routes/common/entities/address-info.entity';
 import type { Address } from 'viem';

@@ -11,7 +11,7 @@ import {
   NetworkService,
 } from '@/datasources/network/network.service.interface';
 import { TransactionApi } from '@/modules/transactions/datasources/transaction-api.service';
-import { ChainSchema } from '@/domain/chains/entities/schemas/chain.schema';
+import { ChainSchema } from '@/modules/chains/domain/entities/schemas/chain.schema';
 import { IConfigApi } from '@/domain/interfaces/config-api.interface';
 import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';

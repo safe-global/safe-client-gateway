@@ -6,20 +6,20 @@ import request from 'supertest';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module';
 import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.module';
-import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
-import { safeAppBuilder } from '@/domain/safe-apps/entities/__tests__/safe-app.builder';
-import type { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
+import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
+import { safeAppBuilder } from '@/modules/safe-apps/domain/entities/__tests__/safe-app.builder';
+import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
 import {
   multisigTransactionBuilder,
   toJson as multisigToJson,
-} from '@/domain/safe/entities/__tests__/multisig-transaction.builder';
-import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
+} from '@/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
+import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import { TransactionsModule } from '@/modules/transactions/routes/transactions.module';
 import { ConfigurationModule } from '@/config/configuration.module';
 import configuration from '@/config/entities/__tests__/configuration';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import { tokenBuilder } from '@/domain/tokens/__tests__/token.builder';
+import { tokenBuilder } from '@/modules/tokens/domain/__tests__/token.builder';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
 import { NetworkService } from '@/datasources/network/network.service.interface';
@@ -36,8 +36,8 @@ import {
   LoggingService,
 } from '@/logging/logging.interface';
 import { type Address, getAddress } from 'viem';
-import { dataDecodedBuilder } from '@/domain/data-decoder/v2/entities/__tests__/data-decoded.builder';
-import { contractBuilder } from '@/domain/data-decoder/v2/entities/__tests__/contract.builder';
+import { dataDecodedBuilder } from '@/modules/data-decoder/domain/v2/entities/__tests__/data-decoded.builder';
+import { contractBuilder } from '@/modules/data-decoder/domain/v2/entities/__tests__/contract.builder';
 
 describe('Add transaction confirmations - Transactions Controller (Unit)', () => {
   let app: INestApplication<Server>;

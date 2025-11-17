@@ -1,12 +1,12 @@
 import { faker } from '@faker-js/faker';
-import type { ContractsRepository } from '@/domain/contracts/contracts.repository';
+import type { ContractsRepository } from '@/modules/contracts/domain/contracts.repository';
 import {
   baseDataDecodedBuilder,
   dataDecodedBuilder,
   dataDecodedParameterBuilder,
   multisendBuilder,
-} from '@/domain/data-decoder/v2/entities/__tests__/data-decoded.builder';
-import { Operation } from '@/domain/safe/entities/operation.entity';
+} from '@/modules/data-decoder/domain/v2/entities/__tests__/data-decoded.builder';
+import { Operation } from '@/modules/safe/domain/entities/operation.entity';
 import type { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
 import { NULL_ADDRESS } from '@/routes/common/constants';
 import { AddressInfo } from '@/routes/common/entities/address-info.entity';
@@ -15,15 +15,15 @@ import type { DataDecodedParamHelper } from '@/modules/transactions/routes/mappe
 import { TransactionDataMapper } from '@/modules/transactions/routes/mappers/common/transaction-data.mapper';
 import { type Address, getAddress } from 'viem';
 import type { MultisigTransactionInfoMapper } from '@/modules/transactions/routes/mappers/common/transaction-info.mapper';
-import type { IChainsRepository } from '@/domain/chains/chains.repository.interface';
-import type { TokenRepository } from '@/domain/tokens/token.repository';
+import type { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
+import type { TokenRepository } from '@/modules/tokens/domain/token.repository';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
-import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
+import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
 import {
   erc20TransferEncoder,
   erc20TransferFromEncoder,
-} from '@/domain/relay/contracts/__tests__/encoders/erc20-encoder.builder';
-import { erc20TokenBuilder } from '@/domain/tokens/__tests__/token.builder';
+} from '@/modules/relay/domain/contracts/__tests__/encoders/erc20-encoder.builder';
+import { erc20TokenBuilder } from '@/modules/tokens/domain/__tests__/token.builder';
 
 const addressInfoHelper = jest.mocked({
   get: jest.fn(),

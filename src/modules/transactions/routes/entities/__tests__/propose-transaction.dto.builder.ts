@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker';
-import type { Operation } from '@/domain/safe/entities/operation.entity';
+import type { Operation } from '@/modules/safe/domain/entities/operation.entity';
 import type { IBuilder } from '@/__tests__/builder';
 import { Builder } from '@/__tests__/builder';
 import type { ProposeTransactionDto } from '@/modules/transactions/routes/entities/propose-transaction.dto.entity';

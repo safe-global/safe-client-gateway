@@ -1,4 +1,4 @@
-import type { Operation } from '@/domain/safe/entities/operation.entity';
+import type { Operation } from '@/modules/safe/domain/entities/operation.entity';
 import type { ProposeTransactionDtoSchema } from '@/modules/transactions/routes/entities/schemas/propose-transaction.dto.schema';
 import type { z } from 'zod';
 import type { Address, Hash, Hex } from 'viem';

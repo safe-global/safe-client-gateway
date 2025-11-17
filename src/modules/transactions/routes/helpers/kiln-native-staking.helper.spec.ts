@@ -1,14 +1,14 @@
-import { MultiSendDecoder } from '@/domain/contracts/decoders/multi-send-decoder.helper';
+import { MultiSendDecoder } from '@/modules/contracts/domain/decoders/multi-send-decoder.helper';
 import {
   multiSendEncoder,
   multiSendTransactionsEncoder,
-} from '@/domain/contracts/__tests__/encoders/multi-send-encoder.builder';
+} from '@/modules/contracts/domain/__tests__/encoders/multi-send-encoder.builder';
 import {
   batchWithdrawCLFeeEncoder,
   depositEncoder,
   requestValidatorsExitEncoder,
-} from '@/domain/staking/contracts/decoders/__tests__/encoders/kiln-encoder.builder';
-import { KilnDecoder } from '@/domain/staking/contracts/decoders/kiln-decoder.helper';
+} from '@/modules/staking/domain/contracts/decoders/__tests__/encoders/kiln-encoder.builder';
+import { KilnDecoder } from '@/modules/staking/domain/contracts/decoders/kiln-decoder.helper';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { KilnNativeStakingHelper } from '@/modules/transactions/routes/helpers/kiln-native-staking.helper';
 import { TransactionFinder } from '@/modules/transactions/routes/helpers/transaction-finder.helper';

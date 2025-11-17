@@ -1,0 +1,14 @@
+import type { IBuilder } from '@/__tests__/builder';
+import { Builder } from '@/__tests__/builder';
+import type { LockingRank } from '@/modules/community/domain/entities/locking-rank.entity';
+import { faker } from '@faker-js/faker';
+import { getAddress } from 'viem';
+
+export function lockingRankBuilder(): IBuilder<LockingRank> {
+  return new Builder<LockingRank>()
+    .with('holder', getAddress(faker.finance.ethereumAddress()))
+    .with('position', faker.number.int())
+    .with('lockedAmount', faker.string.numeric())
+    .with('unlockedAmount', faker.string.numeric())
+    .with('withdrawnAmount', faker.string.numeric());
+}

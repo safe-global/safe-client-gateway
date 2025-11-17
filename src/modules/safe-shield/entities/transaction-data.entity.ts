@@ -1,4 +1,4 @@
-import type { DataDecoded } from '@/routes/data-decode/entities/data-decoded.entity';
+import type { DataDecoded } from '@/modules/data-decoder/routes/entities/data-decoded.entity';
 import type { Address, Hex } from 'viem';
 
 export type TransactionData = {

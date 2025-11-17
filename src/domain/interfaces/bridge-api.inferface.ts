@@ -1,8 +1,8 @@
-import type { BridgeName } from '@/domain/bridge/entities/bridge-name.entity';
-import type { BridgeStatus } from '@/domain/bridge/entities/bridge-status.entity';
+import type { BridgeName } from '@/modules/bridge/domain/entities/bridge-name.entity';
+import type { BridgeStatus } from '@/modules/bridge/domain/entities/bridge-status.entity';
 import type { Raw } from '@/validation/entities/raw.entity';
 
-import type { BridgeChainPage } from '@/domain/bridge/entities/bridge-chain.entity';
+import type { BridgeChainPage } from '@/modules/bridge/domain/entities/bridge-chain.entity';
 import type { Hash } from 'viem';
 
 export const IBridgeApi = Symbol('IBridgeApi');

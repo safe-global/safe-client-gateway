@@ -1,14 +1,14 @@
 import { faker } from '@faker-js/faker';
-import type { TokenRepository } from '@/domain/tokens/token.repository';
-import { erc20TransferBuilder } from '@/domain/safe/entities/__tests__/erc20-transfer.builder';
-import { erc721TransferBuilder } from '@/domain/safe/entities/__tests__/erc721-transfer.builder';
-import { nativeTokenTransferBuilder } from '@/domain/safe/entities/__tests__/native-token-transfer.builder';
-import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
+import type { TokenRepository } from '@/modules/tokens/domain/token.repository';
+import { erc20TransferBuilder } from '@/modules/safe/domain/entities/__tests__/erc20-transfer.builder';
+import { erc721TransferBuilder } from '@/modules/safe/domain/entities/__tests__/erc721-transfer.builder';
+import { nativeTokenTransferBuilder } from '@/modules/safe/domain/entities/__tests__/native-token-transfer.builder';
+import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
 import {
   erc20TokenBuilder,
   erc721TokenBuilder,
   tokenBuilder,
-} from '@/domain/tokens/__tests__/token.builder';
+} from '@/modules/tokens/domain/__tests__/token.builder';
 import type { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
 import { AddressInfo } from '@/routes/common/entities/address-info.entity';
 import {

@@ -1,9 +1,9 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { ModuleTransaction } from '@/domain/safe/entities/module-transaction.entity';
-import { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
-import { Operation } from '@/domain/safe/entities/operation.entity';
-import { TokenRepository } from '@/domain/tokens/token.repository';
-import { ITokenRepository } from '@/domain/tokens/token.repository.interface';
+import { ModuleTransaction } from '@/modules/safe/domain/entities/module-transaction.entity';
+import { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
+import { Operation } from '@/modules/safe/domain/entities/operation.entity';
+import { TokenRepository } from '@/modules/tokens/domain/token.repository';
+import { ITokenRepository } from '@/modules/tokens/domain/token.repository.interface';
 import { SettingsChangeTransaction } from '@/modules/transactions/routes/entities/settings-change-transaction.entity';
 import { TransactionInfo } from '@/modules/transactions/routes/entities/transaction-info.entity';
 import { CustomTransactionMapper } from '@/modules/transactions/routes/mappers/common/custom-transaction.mapper';
@@ -41,7 +41,7 @@ import {
 import {
   BaseDataDecoded,
   DataDecoded,
-} from '@/domain/data-decoder/v2/entities/data-decoded.entity';
+} from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';
 import type { Address } from 'viem';
 
 @Injectable()

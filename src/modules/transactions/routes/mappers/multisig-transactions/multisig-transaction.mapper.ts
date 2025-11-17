@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
-import { Safe } from '@/domain/safe/entities/safe.entity';
+import { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
+import { Safe } from '@/modules/safe/domain/entities/safe.entity';
 import {
   MULTISIG_TRANSACTION_PREFIX,
   TRANSACTION_ID_SEPARATOR,
@@ -15,8 +15,8 @@ import { TransactionVerifierHelper } from '@/modules/transactions/routes/helpers
 import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
 import { DataDecodedParamHelper } from '@/modules/transactions/routes/mappers/common/data-decoded-param.helper';
 import { type Address, getAddress, isAddress } from 'viem';
-import { DataDecoded } from '@/domain/data-decoder/v2/entities/data-decoded.entity';
-import { IDataDecoderRepository } from '@/domain/data-decoder/v2/data-decoder.repository.interface';
+import { DataDecoded } from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';
+import { IDataDecoderRepository } from '@/modules/data-decoder/domain/v2/data-decoder.repository.interface';
 
 @Injectable()
 export class MultisigTransactionMapper {

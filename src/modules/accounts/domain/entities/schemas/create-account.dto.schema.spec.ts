@@ -1,0 +1,78 @@
+import { createAccountDtoBuilder } from '@/modules/accounts/domain/entities/__tests__/create-account.dto.builder';
+import { CreateAccountDtoSchema } from '@/modules/accounts/domain/entities/create-account.dto.entity';
+import { ZodError } from 'zod';
+
+describe('CreateAccountDtoSchema', () => {
+  it('should validate a valid CreateAccountDto', () => {
+    const createAccountDto = createAccountDtoBuilder().build();
+
+    const result = CreateAccountDtoSchema.safeParse(createAccountDto);
+
+    expect(result.success).toBe(true);
+  });
+
+  it('should not validate an invalid CreateAccountDto', () => {
+    const createAccountDto = { invalid: 'createAccountDto' };
+
+    const result = CreateAccountDtoSchema.safeParse(createAccountDto);
+
+    expect(!result.success && result.error).toStrictEqual(
+      new ZodError([
+        {
+          code: 'invalid_type',
+          expected: 'string',
+          received: 'undefined',
+          path: ['address'],
+          message: 'Required',
+        },
+        {
+          code: 'invalid_type',
+          expected: 'string',
+          received: 'undefined',
+          path: ['name'],
+          message: 'Required',
+        },
+      ]),
+    );
+  });
+
+  describe('address', () => {
+    it('should not validate an invalid address', () => {
+      const createAccountDto = createAccountDtoBuilder().build();
+      // @ts-expect-error - address is expected to be a ETH address
+      createAccountDto.address = 'invalid address';
+
+      const result = CreateAccountDtoSchema.safeParse(createAccountDto);
+
+      expect(!result.success && result.error).toStrictEqual(
+        new ZodError([
+          {
+            code: 'custom',
+            message: 'Invalid address',
+            path: ['address'],
+          },
+        ]),
+      );
+    });
+
+    it('should not validate without an address', () => {
+      const createAccountDto = createAccountDtoBuilder().build();
+      // @ts-expect-error - inferred type doesn't allow optional properties
+      delete createAccountDto.address;
+
+      const result = CreateAccountDtoSchema.safeParse(createAccountDto);
+
+      expect(!result.success && result.error).toStrictEqual(
+        new ZodError([
+          {
+            code: 'invalid_type',
+            expected: 'string',
+            received: 'undefined',
+            path: ['address'],
+            message: 'Required',
+          },
+        ]),
+      );
+    });
+  });
+});

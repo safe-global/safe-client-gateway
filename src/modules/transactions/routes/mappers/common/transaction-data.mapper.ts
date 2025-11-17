@@ -1,13 +1,13 @@
 import { Inject, Injectable } from '@nestjs/common';
 import isEmpty from 'lodash/isEmpty';
-import { ContractsRepository } from '@/domain/contracts/contracts.repository';
-import { IContractsRepository } from '@/domain/contracts/contracts.repository.interface';
-import { Operation } from '@/domain/safe/entities/operation.entity';
+import { ContractsRepository } from '@/modules/contracts/domain/contracts.repository';
+import { IContractsRepository } from '@/modules/contracts/domain/contracts.repository.interface';
+import { Operation } from '@/modules/safe/domain/entities/operation.entity';
 import {
   BaseDataDecoded,
   DataDecoded,
   DataDecodedParameter,
-} from '@/domain/data-decoder/v2/entities/data-decoded.entity';
+} from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';
 import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
 import { NULL_ADDRESS } from '@/routes/common/constants';
 import {
@@ -25,9 +25,9 @@ import {
   Erc20Token,
   Erc721Token,
   NativeToken,
-} from '@/domain/tokens/entities/token.entity';
-import { IChainsRepository } from '@/domain/chains/chains.repository.interface';
-import { ITokenRepository } from '@/domain/tokens/token.repository.interface';
+} from '@/modules/tokens/domain/entities/token.entity';
+import { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
+import { ITokenRepository } from '@/modules/tokens/domain/token.repository.interface';
 import { MultisigTransactionInfoMapper } from '@/modules/transactions/routes/mappers/common/transaction-info.mapper';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 

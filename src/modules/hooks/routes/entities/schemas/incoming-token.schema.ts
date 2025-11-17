@@ -1,0 +1,13 @@
+import { TransactionEventType } from '@/modules/hooks/routes/entities/event-type.entity';
+import { z } from 'zod';
+import { AddressSchema } from '@/validation/entities/schemas/address.schema';
+
+export const IncomingTokenEventSchema = z.object({
+  type: z.literal(TransactionEventType.INCOMING_TOKEN),
+  address: AddressSchema,
+  chainId: z.string(),
+  tokenAddress: AddressSchema,
+  txHash: z.string(),
+});
+
+export type IncomingTokenEvent = z.infer<typeof IncomingTokenEventSchema>;

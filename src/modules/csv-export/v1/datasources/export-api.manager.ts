@@ -2,7 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
-import { ChainSchema } from '@/domain/chains/entities/schemas/chain.schema';
+import { ChainSchema } from '@/modules/chains/domain/entities/schemas/chain.schema';
 import { IConfigApi } from '@/domain/interfaces/config-api.interface';
 import type { IExportApi } from './export-api.interface';
 import { ExportApi } from './export-api.service';

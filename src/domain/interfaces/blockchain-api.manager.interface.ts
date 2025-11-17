@@ -1,4 +1,4 @@
-import { BlockchainApiManager } from '@/datasources/blockchain/blockchain-api.manager';
+import { BlockchainApiManager } from '@/modules/blockchain/datasources/blockchain-api.manager';
 import { ConfigApiModule } from '@/datasources/config-api/config-api.module';
 import { PublicClient } from 'viem';
 import { Module } from '@nestjs/common';

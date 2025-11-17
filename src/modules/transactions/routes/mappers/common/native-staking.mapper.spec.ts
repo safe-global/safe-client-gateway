@@ -1,29 +1,29 @@
 import {
   dedicatedStakingStatsBuilder,
   dedicatedStakingStatsGrossApyBuilder,
-} from '@/datasources/staking-api/entities/__tests__/dedicated-staking-stats.entity.builder';
-import { deploymentBuilder } from '@/datasources/staking-api/entities/__tests__/deployment.entity.builder';
-import { networkStatsBuilder } from '@/datasources/staking-api/entities/__tests__/network-stats.entity.builder';
-import { rewardsFeeBuilder } from '@/datasources/staking-api/entities/__tests__/rewards-fee.entity.builder';
-import { stakeBuilder } from '@/datasources/staking-api/entities/__tests__/stake.entity.builder';
+} from '@/modules/staking/datasources/entities/__tests__/dedicated-staking-stats.entity.builder';
+import { deploymentBuilder } from '@/modules/staking/datasources/entities/__tests__/deployment.entity.builder';
+import { networkStatsBuilder } from '@/modules/staking/datasources/entities/__tests__/network-stats.entity.builder';
+import { rewardsFeeBuilder } from '@/modules/staking/datasources/entities/__tests__/rewards-fee.entity.builder';
+import { stakeBuilder } from '@/modules/staking/datasources/entities/__tests__/stake.entity.builder';
 import {
   transactionStatusBuilder,
   transactionStatusReceiptBuilder,
   transactionStatusReceiptLogBuilder,
-} from '@/datasources/staking-api/entities/__tests__/transaction-status.entity.builder';
-import { StakeState } from '@/datasources/staking-api/entities/stake.entity';
-import type { ChainsRepository } from '@/domain/chains/chains.repository';
-import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
-import { MultiSendDecoder } from '@/domain/contracts/decoders/multi-send-decoder.helper';
-import { multisigTransactionBuilder } from '@/domain/safe/entities/__tests__/multisig-transaction.builder';
+} from '@/modules/staking/datasources/entities/__tests__/transaction-status.entity.builder';
+import { StakeState } from '@/modules/staking/datasources/entities/stake.entity';
+import type { ChainsRepository } from '@/modules/chains/domain/chains.repository';
+import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
+import { MultiSendDecoder } from '@/modules/contracts/domain/decoders/multi-send-decoder.helper';
+import { multisigTransactionBuilder } from '@/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
 import {
   batchWithdrawCLFeeEncoder,
   depositEventEventBuilder,
   requestValidatorsExitEncoder,
   withdrawalEventBuilder,
-} from '@/domain/staking/contracts/decoders/__tests__/encoders/kiln-encoder.builder';
-import { KilnDecoder } from '@/domain/staking/contracts/decoders/kiln-decoder.helper';
-import type { StakingRepository } from '@/domain/staking/staking.repository';
+} from '@/modules/staking/domain/contracts/decoders/__tests__/encoders/kiln-encoder.builder';
+import { KilnDecoder } from '@/modules/staking/domain/contracts/decoders/kiln-decoder.helper';
+import type { StakingRepository } from '@/modules/staking/domain/staking.repository';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { NULL_ADDRESS } from '@/routes/common/constants';
 import { StakingStatus } from '@/modules/transactions/routes/entities/staking/staking.entity';

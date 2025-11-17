@@ -1,0 +1,13 @@
+import { TransactionEventType } from '@/modules/hooks/routes/entities/event-type.entity';
+import { z } from 'zod';
+import { AddressSchema } from '@/validation/entities/schemas/address.schema';
+
+export const IncomingEtherEventSchema = z.object({
+  type: z.literal(TransactionEventType.INCOMING_ETHER),
+  address: AddressSchema,
+  chainId: z.string(),
+  txHash: z.string(),
+  value: z.string(),
+});
+
+export type IncomingEtherEvent = z.infer<typeof IncomingEtherEventSchema>;

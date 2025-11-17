@@ -1,5 +1,5 @@
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import { FullAppData } from '@/domain/swaps/entities/full-app-data.entity';
+import { FullAppData } from '@/modules/swaps/domain/entities/full-app-data.entity';
 import { Inject, Injectable, Module } from '@nestjs/common';
 
 @Injectable()

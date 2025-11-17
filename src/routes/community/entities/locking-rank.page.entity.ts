@@ -1,8 +1,0 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { Page } from '@/routes/common/entities/page.entity';
-import { LockingRank } from '@/routes/community/entities/locking-rank.entity';
-
-export class LockingRankPage extends Page<LockingRank> {
-  @ApiProperty({ type: LockingRank, isArray: true })
-  results!: Array<LockingRank>;
-}

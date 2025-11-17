@@ -1,8 +1,8 @@
 import { z } from 'zod';
 import { HexSchema } from '@/validation/entities/schemas/hex.schema';
-import { TypedDataSchema } from '@/domain/messages/entities/typed-data.entity';
+import { TypedDataSchema } from '@/modules/messages/domain/entities/typed-data.entity';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { Operation } from '@/domain/safe/entities/operation.entity';
+import { Operation } from '@/modules/safe/domain/entities/operation.entity';
 import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
 
 /**

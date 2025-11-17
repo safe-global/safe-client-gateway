@@ -3,7 +3,7 @@ import type { IBuilder } from '@/__tests__/builder';
 import { Builder } from '@/__tests__/builder';
 import type { ThreatAnalysisRequest } from '../../analysis-requests.entity';
 import { type Hex, getAddress } from 'viem';
-import { typedDataBuilder } from '@/routes/messages/entities/__tests__/typed-data.builder';
+import { typedDataBuilder } from '@/modules/messages/routes/entities/__tests__/typed-data.builder';
 import type { CounterpartyAnalysisRequestDto } from '@/modules/safe-shield/entities/dtos/counterparty-analysis-request.dto';
 
 /**

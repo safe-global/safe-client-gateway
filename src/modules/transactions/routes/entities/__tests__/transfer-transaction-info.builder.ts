@@ -1,7 +1,7 @@
 import { faker } from '@faker-js/faker';
 import type { IBuilder } from '@/__tests__/builder';
 import { Builder } from '@/__tests__/builder';
-import { erc20TransferBuilder } from '@/domain/safe/entities/__tests__/erc20-transfer.builder';
+import { erc20TransferBuilder } from '@/modules/safe/domain/entities/__tests__/erc20-transfer.builder';
 import { addressInfoBuilder } from '@/routes/common/__tests__/entities/address-info.builder';
 import type { TransferTransactionInfo } from '@/modules/transactions/routes/entities/transfer-transaction-info.entity';
 import { TransferDirection } from '@/modules/transactions/routes/entities/transfer-transaction-info.entity';

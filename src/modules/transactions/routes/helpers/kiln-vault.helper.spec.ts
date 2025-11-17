@@ -2,7 +2,7 @@ import { faker } from '@faker-js/faker';
 import { shuffle } from 'lodash';
 import { getAddress } from 'viem';
 
-import { MultiSendDecoder } from '@/domain/contracts/decoders/multi-send-decoder.helper';
+import { MultiSendDecoder } from '@/modules/contracts/domain/decoders/multi-send-decoder.helper';
 import { KilnVaultHelper } from '@/modules/transactions/routes/helpers/kiln-vault.helper';
 import { TransactionFinder } from '@/modules/transactions/routes/helpers/transaction-finder.helper';
 import {
@@ -12,8 +12,8 @@ import {
 import {
   multiSendEncoder,
   multiSendTransactionsEncoder,
-} from '@/domain/contracts/__tests__/encoders/multi-send-encoder.builder';
-import { execTransactionEncoder } from '@/domain/contracts/__tests__/encoders/safe-encoder.builder';
+} from '@/modules/contracts/domain/__tests__/encoders/multi-send-encoder.builder';
+import { execTransactionEncoder } from '@/modules/contracts/domain/__tests__/encoders/safe-encoder.builder';
 import type { ILoggingService } from '@/logging/logging.interface';
 
 const mockLoggingService = {

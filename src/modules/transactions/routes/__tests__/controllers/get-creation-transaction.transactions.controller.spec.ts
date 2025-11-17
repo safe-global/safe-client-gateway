@@ -4,13 +4,13 @@ import { IConfigurationService } from '@/config/configuration.service.interface'
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
 import { NetworkService } from '@/datasources/network/network.service.interface';
-import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
-import { dataDecodedBuilder } from '@/domain/data-decoder/v2/entities/__tests__/data-decoded.builder';
+import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
+import { dataDecodedBuilder } from '@/modules/data-decoder/domain/v2/entities/__tests__/data-decoded.builder';
 import {
   creationTransactionBuilder,
   toJson as creationTransactionToJson,
-} from '@/domain/safe/entities/__tests__/creation-transaction.builder';
-import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
+} from '@/modules/safe/domain/entities/__tests__/creation-transaction.builder';
+import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
 import { rawify } from '@/validation/entities/raw.entity';
 import type { INestApplication } from '@nestjs/common';
 import type { Server } from 'net';

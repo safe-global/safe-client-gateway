@@ -6,7 +6,7 @@ import type { ILoggingService } from '@/logging/logging.interface';
 import type { IDataDecoderApi } from '@/domain/interfaces/data-decoder-api.interface';
 import type { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
 import type { ITransactionApi } from '@/domain/interfaces/transaction-api.interface';
-import type { Erc20Decoder } from '@/domain/relay/contracts/decoders/erc-20-decoder.helper';
+import type { Erc20Decoder } from '@/modules/relay/domain/contracts/decoders/erc-20-decoder.helper';
 import { faker } from '@faker-js/faker';
 import { LogType } from '@/domain/common/entities/log-type.entity';
 import type { Address, Hex } from 'viem';
@@ -22,7 +22,7 @@ import {
 } from './contract-analysis.constants';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import { rawify } from '@/validation/entities/raw.entity';
-import { contractBuilder } from '@/domain/data-decoder/v2/entities/__tests__/contract.builder';
+import { contractBuilder } from '@/modules/data-decoder/domain/v2/entities/__tests__/contract.builder';
 import { extractContracts } from '@/modules/safe-shield/utils/extraction.utils';
 
 jest.mock('@/modules/safe-shield/utils/extraction.utils', () => ({

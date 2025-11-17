@@ -1,9 +1,9 @@
 import { faker } from '@faker-js/faker';
 import { getAddress, type Hex } from 'viem';
 import { Builder } from '@/__tests__/builder';
-import { multisigTransactionBuilder } from '@/domain/safe/entities/__tests__/multisig-transaction.builder';
-import { Operation } from '@/domain/safe/entities/operation.entity';
-import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
+import { multisigTransactionBuilder } from '@/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
+import { Operation } from '@/modules/safe/domain/entities/operation.entity';
+import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
 import {
   _getSafeDomain,
   _getSafeTxTypesAndMessage,
@@ -11,7 +11,7 @@ import {
   getSafeMessageMessageHash,
   getSafeTxHash,
 } from '@/domain/common/utils/safe';
-import { typedDataBuilder } from '@/routes/messages/entities/__tests__/typed-data.builder';
+import { typedDataBuilder } from '@/modules/messages/routes/entities/__tests__/typed-data.builder';
 import type { BaseMultisigTransaction } from '@/domain/common/utils/safe';
 import type { IBuilder } from '@/__tests__/builder';
 import {
@@ -19,7 +19,7 @@ import {
   migrateL2WithFallbackHandlerEncoder,
   migrateSingletonEncoder,
   migrateWithFallbackHandlerEncoder,
-} from '@/domain/contracts/__tests__/encoders/safe-migration-encoder.builder';
+} from '@/modules/contracts/domain/__tests__/encoders/safe-migration-encoder.builder';
 import {
   getSafeL2SingletonDeployments,
   getSafeSingletonDeployments,

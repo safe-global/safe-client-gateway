@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { Safe } from '@/domain/safe/entities/safe.entity';
-import { CreationTransaction } from '@/domain/safe/entities/creation-transaction.entity';
+import { Safe } from '@/modules/safe/domain/entities/safe.entity';
+import { CreationTransaction } from '@/modules/safe/domain/entities/creation-transaction.entity';
 import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
 import { CreationTransactionInfo } from '@/modules/transactions/routes/entities/creation-transaction-info.entity';
 import { TransactionStatus } from '@/modules/transactions/routes/entities/transaction-status.entity';

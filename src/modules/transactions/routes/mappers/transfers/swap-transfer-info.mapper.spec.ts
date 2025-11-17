@@ -1,8 +1,8 @@
-import { erc20TransferBuilder } from '@/domain/safe/entities/__tests__/erc20-transfer.builder';
-import { orderBuilder } from '@/domain/swaps/entities/__tests__/order.builder';
-import { OrdersSchema } from '@/domain/swaps/entities/order.entity';
-import type { ISwapsRepository } from '@/domain/swaps/swaps.repository';
-import { tokenBuilder } from '@/domain/tokens/__tests__/token.builder';
+import { erc20TransferBuilder } from '@/modules/safe/domain/entities/__tests__/erc20-transfer.builder';
+import { orderBuilder } from '@/modules/swaps/domain/entities/__tests__/order.builder';
+import { OrdersSchema } from '@/modules/swaps/domain/entities/order.entity';
+import type { ISwapsRepository } from '@/modules/swaps/domain/swaps.repository';
+import { tokenBuilder } from '@/modules/tokens/domain/__tests__/token.builder';
 import { addressInfoBuilder } from '@/routes/common/__tests__/entities/address-info.builder';
 import { TransferDirection } from '@/modules/transactions/routes/entities/transfer-transaction-info.entity';
 import { Erc20Transfer } from '@/modules/transactions/routes/entities/transfers/erc20-transfer.entity';

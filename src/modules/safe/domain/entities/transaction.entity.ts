@@ -1,0 +1,34 @@
+import type { CreationTransaction } from '@/modules/safe/domain/entities/creation-transaction.entity';
+import type { EthereumTransaction } from '@/modules/safe/domain/entities/ethereum-transaction.entity';
+import type { ModuleTransaction } from '@/modules/safe/domain/entities/module-transaction.entity';
+import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
+
+export type Transaction =
+  | MultisigTransaction
+  | EthereumTransaction
+  | ModuleTransaction
+  | CreationTransaction;
+
+export function isMultisigTransaction(
+  transaction: Transaction,
+): transaction is MultisigTransaction {
+  return 'safeTxHash' in transaction && transaction.safeTxHash !== undefined;
+}
+
+export function isEthereumTransaction(
+  transaction: Transaction,
+): transaction is EthereumTransaction {
+  return 'from' in transaction && transaction.from !== undefined;
+}
+
+export function isModuleTransaction(
+  transaction: Transaction,
+): transaction is ModuleTransaction {
+  return 'module' in transaction && transaction.module !== undefined;
+}
+
+export function isCreationTransaction(
+  transaction: Transaction,
+): transaction is CreationTransaction {
+  return 'creator' in transaction && transaction.creator !== undefined;
+}

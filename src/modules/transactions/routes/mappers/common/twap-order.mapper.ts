@@ -4,7 +4,7 @@ import {
   SwapOrderHelper,
   SwapOrderHelperModule,
 } from '@/modules/transactions/routes/helpers/swap-order.helper';
-import { ComposableCowDecoder } from '@/domain/swaps/contracts/decoders/composable-cow-decoder.helper';
+import { ComposableCowDecoder } from '@/modules/swaps/domain/contracts/decoders/composable-cow-decoder.helper';
 import {
   TwapOrderInfo,
   TwapOrderTransactionInfo,
@@ -17,9 +17,9 @@ import {
   KnownOrder,
   OrderKind,
   OrderStatus,
-} from '@/domain/swaps/entities/order.entity';
-import { ISwapsRepository } from '@/domain/swaps/swaps.repository';
-import { SwapsRepositoryModule } from '@/domain/swaps/swaps-repository.module';
+} from '@/modules/swaps/domain/entities/order.entity';
+import { ISwapsRepository } from '@/modules/swaps/domain/swaps.repository';
+import { SwapsRepositoryModule } from '@/modules/swaps/domain/swaps-repository.module';
 import { SwapOrderMapperModule } from '@/modules/transactions/routes/mappers/common/swap-order.mapper';
 import { GPv2OrderHelper } from '@/modules/transactions/routes/helpers/gp-v2-order.helper';
 import { IConfigurationService } from '@/config/configuration.service.interface';
@@ -28,7 +28,7 @@ import {
   SwapAppsHelper,
   SwapAppsHelperModule,
 } from '@/modules/transactions/routes/helpers/swap-apps.helper';
-import { GPv2OrderParameters } from '@/domain/swaps/contracts/decoders/gp-v2-decoder.helper';
+import { GPv2OrderParameters } from '@/modules/swaps/domain/contracts/decoders/gp-v2-decoder.helper';
 import type { Address, Hex } from 'viem';
 
 @Injectable()

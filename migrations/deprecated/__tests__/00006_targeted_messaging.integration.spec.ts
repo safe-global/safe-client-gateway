@@ -1,9 +1,9 @@
 import { TestDbFactory } from '@/__tests__/db.factory';
 import { waitMilliseconds } from '@/__tests__/util/retry';
 import { PostgresDatabaseMigrator } from '@/datasources/db/v1/postgres-database.migrator';
-import type { Outreach } from '@/domain/targeted-messaging/entities/outreach.entity';
-import type { Submission } from '@/domain/targeted-messaging/entities/submission.entity';
-import type { TargetedSafe } from '@/domain/targeted-messaging/entities/targeted-safe.entity';
+import type { Outreach } from '@/modules/targeted-messaging/domain/entities/outreach.entity';
+import type { Submission } from '@/modules/targeted-messaging/domain/entities/submission.entity';
+import type { TargetedSafe } from '@/modules/targeted-messaging/domain/entities/targeted-safe.entity';
 import { faker } from '@faker-js/faker';
 import type { Sql } from 'postgres';
 import type postgres from 'postgres';

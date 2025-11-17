@@ -14,7 +14,7 @@ import type { DecodedTransactionData } from '@/modules/safe-shield/entities/tran
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { mapDecodedTransactions } from './utils/transaction-mapping.utils';
 import { TransactionsService } from '@/modules/transactions/routes/transactions.service';
-import { Operation } from '@/domain/safe/entities/operation.entity';
+import { Operation } from '@/modules/safe/domain/entities/operation.entity';
 import type { TransactionInfo } from '@/modules/transactions/routes/entities/transaction-info.entity';
 import {
   ContractStatusGroup,
@@ -22,7 +22,7 @@ import {
 } from '@/modules/safe-shield/entities/status-group.entity';
 import { ThreatAnalysisRequest } from '@/modules/safe-shield/entities/analysis-requests.entity';
 import { IConfigApi } from '@/domain/interfaces/config-api.interface';
-import { ChainSchema } from '@/domain/chains/entities/schemas/chain.schema';
+import { ChainSchema } from '@/modules/chains/domain/entities/schemas/chain.schema';
 import { FF_RISK_MITIGATION } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-api.constants';
 import { asError } from '@/logging/utils';
 import {

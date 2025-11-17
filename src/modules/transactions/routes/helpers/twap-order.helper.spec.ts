@@ -1,15 +1,15 @@
 import {
   multiSendEncoder,
   multiSendTransactionsEncoder,
-} from '@/domain/contracts/__tests__/encoders/multi-send-encoder.builder';
+} from '@/modules/contracts/domain/__tests__/encoders/multi-send-encoder.builder';
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
-import { MultiSendDecoder } from '@/domain/contracts/decoders/multi-send-decoder.helper';
+import { MultiSendDecoder } from '@/modules/contracts/domain/decoders/multi-send-decoder.helper';
 import {
   staticInputEncoder,
   conditionalOrderParamsBuilder,
   createWithContextEncoder,
-} from '@/domain/swaps/contracts/__tests__/encoders/composable-cow-encoder.builder';
-import { ComposableCowDecoder } from '@/domain/swaps/contracts/decoders/composable-cow-decoder.helper';
+} from '@/modules/swaps/domain/contracts/__tests__/encoders/composable-cow-encoder.builder';
+import { ComposableCowDecoder } from '@/modules/swaps/domain/contracts/decoders/composable-cow-decoder.helper';
 import { TransactionFinder } from '@/modules/transactions/routes/helpers/transaction-finder.helper';
 import { TwapOrderHelper } from '@/modules/transactions/routes/helpers/twap-order.helper';
 import { faker } from '@faker-js/faker';

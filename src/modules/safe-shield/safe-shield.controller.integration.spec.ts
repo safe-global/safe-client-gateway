@@ -9,7 +9,7 @@ import configuration from '@/config/entities/__tests__/configuration';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
 import { NetworkService } from '@/datasources/network/network.service.interface';
-import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
+import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
 import { rawify } from '@/validation/entities/raw.entity';
 import { threatAnalysisRequestBuilder } from './entities/__tests__/builders/analysis-requests.builder';
 import { FF_RISK_MITIGATION } from './threat-analysis/blockaid/blockaid-api.constants';

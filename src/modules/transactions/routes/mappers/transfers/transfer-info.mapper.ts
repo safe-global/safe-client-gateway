@@ -1,9 +1,9 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { Safe } from '@/domain/safe/entities/safe.entity';
-import { Transfer as DomainTransfer } from '@/domain/safe/entities/transfer.entity';
-import { Token } from '@/domain/tokens/entities/token.entity';
-import { TokenRepository } from '@/domain/tokens/token.repository';
-import { ITokenRepository } from '@/domain/tokens/token.repository.interface';
+import { Safe } from '@/modules/safe/domain/entities/safe.entity';
+import { Transfer as DomainTransfer } from '@/modules/safe/domain/entities/transfer.entity';
+import { Token } from '@/modules/tokens/domain/entities/token.entity';
+import { TokenRepository } from '@/modules/tokens/domain/token.repository';
+import { ITokenRepository } from '@/modules/tokens/domain/token.repository.interface';
 import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
 import {
   TransferDirection,

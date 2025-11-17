@@ -2,41 +2,41 @@ import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
-import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
-import { contractBuilder as contractTokenBuilder } from '@/domain/contracts/entities/__tests__/contract.builder';
-import { contractBuilder } from '@/domain/data-decoder/v2/entities/__tests__/contract.builder';
+import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
+import { contractBuilder as contractTokenBuilder } from '@/modules/contracts/domain/entities/__tests__/contract.builder';
+import { contractBuilder } from '@/modules/data-decoder/domain/v2/entities/__tests__/contract.builder';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
-import { dataDecodedBuilder } from '@/domain/data-decoder/v2/entities/__tests__/data-decoded.builder';
-import { Operation } from '@/domain/safe/entities/operation.entity';
-import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
+import { dataDecodedBuilder } from '@/modules/data-decoder/domain/v2/entities/__tests__/data-decoded.builder';
+import { Operation } from '@/modules/safe/domain/entities/operation.entity';
+import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
 import { NetworkService } from '@/datasources/network/network.service.interface';
 import { previewTransactionDtoBuilder } from '@/modules/transactions/routes/entities/__tests__/preview-transaction.dto.builder';
 import { concat } from 'viem';
 import type { Server } from 'net';
-import { tokenBuilder } from '@/domain/tokens/__tests__/token.builder';
-import { deploymentBuilder } from '@/datasources/staking-api/entities/__tests__/deployment.entity.builder';
-import { dedicatedStakingStatsBuilder } from '@/datasources/staking-api/entities/__tests__/dedicated-staking-stats.entity.builder';
-import { networkStatsBuilder } from '@/datasources/staking-api/entities/__tests__/network-stats.entity.builder';
-import type { Stake } from '@/datasources/staking-api/entities/stake.entity';
-import { StakeState } from '@/datasources/staking-api/entities/stake.entity';
+import { tokenBuilder } from '@/modules/tokens/domain/__tests__/token.builder';
+import { deploymentBuilder } from '@/modules/staking/datasources/entities/__tests__/deployment.entity.builder';
+import { dedicatedStakingStatsBuilder } from '@/modules/staking/datasources/entities/__tests__/dedicated-staking-stats.entity.builder';
+import { networkStatsBuilder } from '@/modules/staking/datasources/entities/__tests__/network-stats.entity.builder';
+import type { Stake } from '@/modules/staking/datasources/entities/stake.entity';
+import { StakeState } from '@/modules/staking/datasources/entities/stake.entity';
 import { getNumberString } from '@/domain/common/utils/utils';
 import { NULL_ADDRESS } from '@/routes/common/constants';
-import { KilnDecoder } from '@/domain/staking/contracts/decoders/kiln-decoder.helper';
-import { stakeBuilder } from '@/datasources/staking-api/entities/__tests__/stake.entity.builder';
+import { KilnDecoder } from '@/modules/staking/domain/contracts/decoders/kiln-decoder.helper';
+import { stakeBuilder } from '@/modules/staking/datasources/entities/__tests__/stake.entity.builder';
 import {
   batchWithdrawCLFeeEncoder,
   depositEncoder,
   requestValidatorsExitEncoder,
-} from '@/domain/staking/contracts/decoders/__tests__/encoders/kiln-encoder.builder';
+} from '@/modules/staking/domain/contracts/decoders/__tests__/encoders/kiln-encoder.builder';
 import {
   multiSendEncoder,
   multiSendTransactionsEncoder,
-} from '@/domain/contracts/__tests__/encoders/multi-send-encoder.builder';
+} from '@/modules/contracts/domain/__tests__/encoders/multi-send-encoder.builder';
 import { rawify } from '@/validation/entities/raw.entity';
 import { createTestModule } from '@/__tests__/testing-module';
-import { rewardsFeeBuilder } from '@/datasources/staking-api/entities/__tests__/rewards-fee.entity.builder';
+import { rewardsFeeBuilder } from '@/modules/staking/datasources/entities/__tests__/rewards-fee.entity.builder';
 import type { Address } from 'viem';
 
 describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {

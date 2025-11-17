@@ -1,11 +1,11 @@
 import {
   DefiVaultStats,
   DefiVaultStatsAdditionalReward,
-} from '@/datasources/staking-api/entities/defi-vault-stats.entity';
-import { Deployment } from '@/datasources/staking-api/entities/deployment.entity';
+} from '@/modules/staking/datasources/entities/defi-vault-stats.entity';
+import { Deployment } from '@/modules/staking/datasources/entities/deployment.entity';
 import { getNumberString } from '@/domain/common/utils/utils';
-import { EarnRepository } from '@/domain/earn/earn.repository';
-import { ITokenRepository } from '@/domain/tokens/token.repository.interface';
+import { EarnRepository } from '@/modules/earn/domain/earn.repository';
+import { ITokenRepository } from '@/modules/tokens/domain/token.repository.interface';
 import { TokenInfo } from '@/modules/transactions/routes/entities/swaps/token-info.entity';
 import { VaultExtraReward } from '@/modules/transactions/routes/entities/vaults/vault-extra-reward.entity';
 import { VaultInfo } from '@/modules/transactions/routes/entities/vaults/vault-info.entity';

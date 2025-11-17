@@ -1,5 +1,5 @@
 import { ApiExtraModels, ApiProperty, getSchemaPath } from '@nestjs/swagger';
-import { DataDecoded } from '@/routes/data-decode/entities/data-decoded.entity';
+import { DataDecoded } from '@/modules/data-decoder/routes/entities/data-decoded.entity';
 import { SettingsChange } from '@/modules/transactions/routes/entities/settings-changes/settings-change.entity';
 import {
   TransactionInfo,
