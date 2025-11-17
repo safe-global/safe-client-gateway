@@ -44,6 +44,18 @@ export class ContractAnalysisDto
   implements GroupedAnalysisResults<ContractAnalysisResult>
 {
   @ApiPropertyOptional({
+    description: 'Logo URL for the contract',
+    example: 'https://example.com/logo.png',
+  })
+  public readonly logoUrl?: string;
+
+  @ApiPropertyOptional({
+    description: 'Name of the contract',
+    example: 'Uniswap V3 Router',
+  })
+  public readonly name?: string;
+
+  @ApiPropertyOptional({
     description:
       'Analysis results for contract verification status. ' +
       'Shows whether contracts are verified and source code is available.',
@@ -58,7 +70,7 @@ export class ContractAnalysisDto
       },
     ],
   })
-  CONTRACT_VERIFICATION?: Array<ContractAnalysisResultDto>;
+  public readonly CONTRACT_VERIFICATION?: Array<ContractAnalysisResultDto>;
 
   @ApiPropertyOptional({
     description:
@@ -75,7 +87,7 @@ export class ContractAnalysisDto
       },
     ],
   })
-  CONTRACT_INTERACTION?: Array<ContractAnalysisResultDto>;
+  public readonly CONTRACT_INTERACTION?: Array<ContractAnalysisResultDto>;
 
   @ApiPropertyOptional({
     description:
@@ -92,7 +104,7 @@ export class ContractAnalysisDto
       },
     ],
   })
-  DELEGATECALL?: Array<ContractAnalysisResultDto>;
+  public readonly DELEGATECALL?: Array<ContractAnalysisResultDto>;
 }
 
 /**

@@ -35,14 +35,9 @@ describe('Analysis Response Schemas', () => {
       });
 
       it('should validate response with multiple addresses', () => {
-        const multiAddressResponse = recipientAnalysisResponseBuilder()
-          .with(getAddress(faker.finance.ethereumAddress()), {
-            isSafe: true,
-            RECIPIENT_INTERACTION: [recipientAnalysisResultBuilder().build()],
-            RECIPIENT_ACTIVITY: [recipientAnalysisResultBuilder().build()],
-            BRIDGE: [recipientAnalysisResultBuilder().build()],
-          })
-          .build();
+        const responseA = recipientAnalysisResponseBuilder().build();
+        const responseB = recipientAnalysisResponseBuilder().build();
+        const multiAddressResponse = { ...responseA, ...responseB };
 
         const result =
           RecipientAnalysisResponseSchema.safeParse(multiAddressResponse);
@@ -124,13 +119,9 @@ describe('Analysis Response Schemas', () => {
       });
 
       it('should validate response with multiple addresses', () => {
-        const multiAddressResponse = contractAnalysisResponseBuilder()
-          .with(getAddress(faker.finance.ethereumAddress()), {
-            CONTRACT_VERIFICATION: [contractAnalysisResultBuilder().build()],
-            CONTRACT_INTERACTION: [contractAnalysisResultBuilder().build()],
-            DELEGATECALL: [contractAnalysisResultBuilder().build()],
-          })
-          .build();
+        const responseA = contractAnalysisResponseBuilder().build();
+        const responseB = contractAnalysisResponseBuilder().build();
+        const multiAddressResponse = { ...responseA, ...responseB };
 
         const result =
           ContractAnalysisResponseSchema.safeParse(multiAddressResponse);
@@ -149,6 +140,8 @@ describe('Analysis Response Schemas', () => {
       it('should validate response with empty status groups', () => {
         const responseWithEmptyGroups = contractAnalysisResponseBuilder()
           .with(getAddress(faker.finance.ethereumAddress()), {
+            logoUrl: faker.image.url(),
+            name: faker.company.name(),
             CONTRACT_VERIFICATION: [],
           })
           .build();
@@ -178,9 +171,28 @@ describe('Analysis Response Schemas', () => {
         ]);
       });
 
+      it('should validate response without logoUrl and name', () => {
+        const responseWithoutMetadata = contractAnalysisResponseBuilder()
+          .with(getAddress(faker.finance.ethereumAddress()), {
+            CONTRACT_VERIFICATION: [contractAnalysisResultBuilder().build()],
+            CONTRACT_INTERACTION: [contractAnalysisResultBuilder().build()],
+          })
+          .build();
+
+        const result = ContractAnalysisResponseSchema.safeParse(
+          responseWithoutMetadata,
+        );
+
+        expect(result.success && result.data).toStrictEqual(
+          responseWithoutMetadata,
+        );
+      });
+
       it('should reject invalid status group', () => {
         const invalidStatusGroupResponse = contractAnalysisResponseBuilder()
           .with(getAddress(faker.finance.ethereumAddress()), {
+            logoUrl: faker.image.url(),
+            name: faker.company.name(),
             ['INVALID_STATUS_GROUP' as ContractStatusGroup]: [
               contractAnalysisResultBuilder().build(),
             ],
@@ -194,7 +206,7 @@ describe('Analysis Response Schemas', () => {
         expect(!result.success && result.error.issues.length).toBeGreaterThan(
           0,
         );
-        expect(result?.error?.issues[0].code).toBe('invalid_enum_value');
+        expect(result?.error?.issues[0].code).toBe('unrecognized_keys');
       });
     });
 

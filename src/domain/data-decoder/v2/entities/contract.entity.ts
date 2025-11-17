@@ -30,7 +30,7 @@ export const ContractSchema = z.object({
   abi: AbiSchema.nullable(),
   modified: z.coerce.date(),
   trustedForDelegateCall: z.boolean(),
-  logoUrl: z.string().nullish().default(null),
+  logoUrl: z.string().optional(),
 });
 
 export type Contract = z.infer<typeof ContractSchema>;

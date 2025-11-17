@@ -9,7 +9,7 @@ import {
   TITLE_MAPPING,
 } from '@/modules/safe-shield/contract-analysis/contract-analysis.constants';
 import {
-  ContractAnalysisResponse,
+  type ContractAnalysisResponse,
   GroupedAnalysisResults,
 } from '@/modules/safe-shield/entities/analysis-responses.entity';
 import {
@@ -139,16 +139,14 @@ export class ContractAnalysisService {
   }): Promise<GroupedAnalysisResults<ContractAnalysisResult>> {
     const { chainId, safeAddress, contract, isDelegateCall } = args;
 
-    const [[verificationResult, delegateCallResult], interactionResult] =
-      await Promise.all([
-        this.verifyContract({ chainId, contract, isDelegateCall }),
-        this.analyzeInteractions({ chainId, safeAddress, contract }),
-      ]);
+    const [verificationResult, interactionResult] = await Promise.all([
+      this.verifyContract({ chainId, contract, isDelegateCall }),
+      this.analyzeInteractions({ chainId, safeAddress, contract }),
+    ]);
 
     return {
-      CONTRACT_VERIFICATION: verificationResult ? [verificationResult] : [],
-      CONTRACT_INTERACTION: interactionResult ? [interactionResult] : [],
-      DELEGATECALL: delegateCallResult ? [delegateCallResult] : [],
+      ...verificationResult,
+      ...interactionResult,
     };
   }
 
@@ -158,49 +156,51 @@ export class ContractAnalysisService {
    * @param {string} args.chainId - The chain ID.
    * @param {Address} args.contract - The contract address.
    * @param {boolean} args.isDelegateCall - Whether the contract is called via delegateCall.
-   * @returns {Promise<[ContractAnalysisResult | undefined, AnalysisResult<'UNEXPECTED_DELEGATECALL'> | undefined]>} A pair of analysis results if available: [verification result, delegateCall result].
+   * @returns {Promise<GroupedAnalysisResults<ContractAnalysisResult> & {name?: string;logoUrl?: string;}>}
+   * - Partial analysis result groups: verification result, delegateCall result.
    */
   public async verifyContract(args: {
     chainId: string;
     contract: Address;
     isDelegateCall: boolean;
   }): Promise<
-    [
-      ContractAnalysisResult | undefined,
-      AnalysisResult<'UNEXPECTED_DELEGATECALL'> | undefined,
-    ]
+    GroupedAnalysisResults<ContractAnalysisResult> & {
+      name?: string;
+      logoUrl?: string;
+    }
   > {
-    let resolvedContract: Contract | undefined;
-    let verificationResult: ContractAnalysisResult | undefined;
-
     const { chainId, contract, isDelegateCall } = args;
+
     try {
-      const rawContracts = await this.dataDecoderApi.getContracts({
+      const raw = await this.dataDecoderApi.getContracts({
         address: contract,
         chainId,
       });
-      const { count, results } = ContractPageSchema.parse(rawContracts);
+      const { count, results } = ContractPageSchema.parse(raw);
 
       if (!count) {
-        return [undefined, this.checkDelegateCall(isDelegateCall, undefined)];
+        return { ...this.withDelegate(isDelegateCall) };
       }
 
-      resolvedContract = results[0];
-      const { abi, displayName, name: rawName } = resolvedContract;
-      const type = abi ? 'VERIFIED' : 'NOT_VERIFIED';
-      const name = displayName || rawName;
+      const resolved = results[0];
+      const name = resolved.displayName || resolved.name || undefined;
+      const logoUrl = resolved.logoUrl;
+      const type = resolved.abi ? 'VERIFIED' : 'NOT_VERIFIED';
 
-      verificationResult = this.mapToAnalysisResult({ type, name });
+      return {
+        CONTRACT_VERIFICATION: [this.mapToAnalysisResult({ type, name })],
+        ...this.withDelegate(isDelegateCall, resolved),
+        name,
+        logoUrl,
+      };
     } catch {
-      verificationResult = this.mapToAnalysisResult({
-        type: 'VERIFICATION_UNAVAILABLE',
-      });
+      return {
+        CONTRACT_VERIFICATION: [
+          this.mapToAnalysisResult({ type: 'VERIFICATION_UNAVAILABLE' }),
+        ],
+        ...this.withDelegate(isDelegateCall),
+      };
     }
-
-    return [
-      verificationResult,
-      this.checkDelegateCall(isDelegateCall, resolvedContract),
-    ];
   }
 
   /**
@@ -209,13 +209,13 @@ export class ContractAnalysisService {
    * @param {string} args.chainId - The chain ID.
    * @param {Address} args.safeAddress - The Safe address.
    * @param {Address} args.contract - The contract address.
-   * @returns {Promise<ContractAnalysisResult | undefined>} The analysis result.
+   * @returns {Promise<GroupedAnalysisResults<ContractAnalysisResult>>} Partial analysis result group: interactions result.
    */
   public async analyzeInteractions(args: {
     chainId: string;
     safeAddress: Address;
     contract: Address;
-  }): Promise<ContractAnalysisResult | undefined> {
+  }): Promise<GroupedAnalysisResults<ContractAnalysisResult>> {
     const { chainId, safeAddress, contract } = args;
     try {
       const transactionApi = await this.transactionApiManager.getApi(chainId);
@@ -227,19 +227,26 @@ export class ContractAnalysisService {
         limit: 1,
       });
 
-      const multisigPage = MultisigTransactionPageSchema.parse(page);
-      const interactions = multisigPage.count ?? 0;
-      return interactions > 0
-        ? this.mapToAnalysisResult({ type: 'KNOWN_CONTRACT' })
-        : undefined;
+      const interactions = MultisigTransactionPageSchema.parse(page).count ?? 0;
+      if (interactions === 0) return {};
+
+      return {
+        CONTRACT_INTERACTION: [
+          this.mapToAnalysisResult({ type: 'KNOWN_CONTRACT' }),
+        ],
+      };
     } catch (error) {
       this.loggingService.warn(
         `Failed to analyze contract interactions: ${error}`,
       );
-      return this.mapToAnalysisResult({
-        type: 'FAILED',
-        error: 'contract interactions unavailable',
-      });
+      return {
+        CONTRACT_INTERACTION: [
+          this.mapToAnalysisResult({
+            type: 'FAILED',
+            error: 'contract interactions unavailable',
+          }),
+        ],
+      };
     }
   }
 
@@ -255,6 +262,17 @@ export class ContractAnalysisService {
   ): AnalysisResult<'UNEXPECTED_DELEGATECALL'> | undefined {
     if (!isDelegateCall || contract?.trustedForDelegateCall) return undefined;
     return this.mapToAnalysisResult({ type: 'UNEXPECTED_DELEGATECALL' });
+  }
+
+  /**
+   * Helper to include delegatecall result if applicable.
+   */
+  private withDelegate(
+    isDelegateCall: boolean,
+    resolved?: Contract,
+  ): GroupedAnalysisResults<ContractAnalysisResult> {
+    const res = this.checkDelegateCall(isDelegateCall, resolved);
+    return res ? { DELEGATECALL: [res] } : {};
   }
 
   /**

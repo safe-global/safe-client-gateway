@@ -33,7 +33,9 @@ describe('Contract Mapper', () => {
   });
 
   it('should return logoUri = null if logoUrl is null', () => {
-    const contract = dataDecodedContractBuilder().with('logoUrl', null).build();
+    const contract = dataDecodedContractBuilder()
+      .with('logoUrl', undefined)
+      .build();
 
     const actual = mapper.map(contract);
     expect(actual.logoUri).toEqual(null);

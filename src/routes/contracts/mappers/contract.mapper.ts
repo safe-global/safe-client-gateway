@@ -14,7 +14,7 @@ export class ContractMapper {
       address: contract.address,
       name: contract.name,
       displayName: contract.displayName,
-      logoUri: contract.logoUrl,
+      logoUri: contract.logoUrl ?? null,
       contractAbi,
       trustedForDelegateCall: contract.trustedForDelegateCall,
     };
