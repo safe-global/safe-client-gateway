@@ -9,7 +9,7 @@ import { MessagesRepositoryModule } from '@/domain/messages/messages.repository.
 import { SafeAppsRepositoryModule } from '@/domain/safe-apps/safe-apps.repository.interface';
 import { SafeRepositoryModule } from '@/domain/safe/safe.repository.interface';
 import { StakingRepositoryModule } from '@/domain/staking/staking.repository.module';
-import { TransactionsRepositoryModule } from '@/domain/transactions/transactions.repository.interface';
+import { TransactionsRepositoryModule } from '@/modules/transactions/domain/transactions.repository.interface';
 import { DelegatesV2RepositoryModule } from '@/domain/delegate/v2/delegates.v2.repository.interface';
 
 @Module({

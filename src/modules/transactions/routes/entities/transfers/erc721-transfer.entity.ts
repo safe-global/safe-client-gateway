@@ -1,0 +1,46 @@
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import {
+  Transfer,
+  TransferType,
+} from '@/modules/transactions/routes/entities/transfers/transfer.entity';
+import type { Address } from 'viem';
+
+export class Erc721Transfer extends Transfer {
+  @ApiProperty({ enum: [TransferType.Erc721] })
+  override type = TransferType.Erc721;
+  @ApiProperty()
+  tokenAddress: Address;
+  @ApiProperty()
+  tokenId: string;
+  @ApiPropertyOptional({ type: String, nullable: true })
+  tokenName: string | null;
+  @ApiPropertyOptional({ type: String, nullable: true })
+  tokenSymbol: string | null;
+  @ApiPropertyOptional({ type: String, nullable: true })
+  logoUri: string | null;
+  @ApiPropertyOptional({ type: Boolean, nullable: true })
+  trusted: boolean | null;
+
+  constructor(
+    tokenAddress: Address,
+    tokenId: string,
+    tokenName: string | null = null,
+    tokenSymbol: string | null = null,
+    logoUri: string | null = null,
+    trusted: boolean | null = null,
+  ) {
+    super(TransferType.Erc721);
+    this.tokenAddress = tokenAddress;
+    this.tokenId = tokenId;
+    this.tokenName = tokenName;
+    this.tokenSymbol = tokenSymbol;
+    this.logoUri = logoUri;
+    this.trusted = trusted;
+  }
+}
+
+export function isErc721Transfer(
+  transfer: Transfer,
+): transfer is Erc721Transfer {
+  return transfer.type === TransferType.Erc721;
+}

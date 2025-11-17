@@ -31,14 +31,14 @@ import { IConfigurationService } from '@/config/configuration.service.interface'
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { extractRecipients } from '../utils/recipient-extraction.utils';
 import { logCacheHit, logCacheMiss } from '@/modules/safe-shield/utils/common';
-import { TransactionInfo } from '@/routes/transactions/entities/transaction-info.entity';
+import { TransactionInfo } from '@/modules/transactions/routes/entities/transaction-info.entity';
 import {
   BridgeAndSwapTransactionInfo,
   isBridgeAndSwapTransactionInfo,
   isSwapTransactionInfo,
-} from '@/routes/transactions/entities/bridge/bridge-info.entity';
+} from '@/modules/transactions/routes/entities/bridge/bridge-info.entity';
 import { Safe } from '@/domain/safe/entities/safe.entity';
-import { TransactionsService } from '@/routes/transactions/transactions.service';
+import { TransactionsService } from '@/modules/transactions/routes/transactions.service';
 import {
   hasCanonicalDeploymentSafeToL2Migration,
   hasCanonicalDeploymentSafeToL2Setup,
@@ -52,7 +52,7 @@ import { merge } from 'lodash';
 import type { SafeCreationData } from '@/modules/safe-shield/entities/safe-creation-data.entity';
 import { ITransactionApi } from '@/domain/interfaces/transaction-api.interface';
 import { DataSourceError } from '@/domain/errors/data-source.error';
-import { isSwapOrderTransactionInfo } from '@/routes/transactions/entities/swaps/swap-order-info.entity';
+import { isSwapOrderTransactionInfo } from '@/modules/transactions/routes/entities/swaps/swap-order-info.entity';
 
 const SAFE_VERSIONS = ['1.4.1', '1.3.0', '1.2.0', '1.1.1', '1.0.0'] as const;
 type SafeVersion = (typeof SAFE_VERSIONS)[number];

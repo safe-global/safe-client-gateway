@@ -16,7 +16,7 @@ import type { QueuesRepository } from '@/domain/queues/queues-repository';
 import type { SafeAppsRepository } from '@/domain/safe-apps/safe-apps.repository';
 import type { SafeRepository } from '@/domain/safe/safe.repository';
 import type { StakingRepository } from '@/domain/staking/staking.repository';
-import type { TransactionsRepository } from '@/domain/transactions/transactions.repository';
+import type { TransactionsRepository } from '@/modules/transactions/domain/transactions.repository';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { chainUpdateEventBuilder } from '@/routes/hooks/entities/__tests__/chain-update.builder';
 import { incomingTokenEventBuilder } from '@/routes/hooks/entities/__tests__/incoming-token.builder';

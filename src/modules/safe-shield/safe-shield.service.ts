@@ -13,9 +13,9 @@ import type {
 import type { DecodedTransactionData } from '@/modules/safe-shield/entities/transaction-data.entity';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { mapDecodedTransactions } from './utils/transaction-mapping.utils';
-import { TransactionsService } from '@/routes/transactions/transactions.service';
+import { TransactionsService } from '@/modules/transactions/routes/transactions.service';
 import { Operation } from '@/domain/safe/entities/operation.entity';
-import type { TransactionInfo } from '@/routes/transactions/entities/transaction-info.entity';
+import type { TransactionInfo } from '@/modules/transactions/routes/entities/transaction-info.entity';
 import {
   ContractStatusGroup,
   RecipientStatusGroup,
