@@ -64,6 +64,10 @@ import { MembersModule } from '@/modules/spaces/routes/members.module';
 import { BullModule } from '@nestjs/bullmq';
 import { CsvExportModule } from '@/modules/csv-export/v1/csv-export.module';
 import { SafeShieldModule } from '@/modules/safe-shield/safe-shield.module';
+import { CircuitBreakerModule } from '@/datasources/circuit-breaker/circuit-breaker.module';
+import { CircuitBreakerInterceptor } from '@/routes/common/interceptors/circuit-breaker.interceptor';
+import { CircuitBreakerService } from '@/datasources/circuit-breaker/circuit-breaker.service';
+import { Reflector } from '@nestjs/core';
 
 @Module({})
 export class AppModule implements NestModule {
@@ -120,6 +124,7 @@ export class AppModule implements NestModule {
         TransactionsModule,
         // common
         CacheModule,
+        CircuitBreakerModule,
         // Module for storing and reading from the async local storage
         ClsModule.forRoot({
           global: true,
@@ -184,6 +189,19 @@ export class AppModule implements NestModule {
         {
           provide: APP_INTERCEPTOR,
           useClass: CacheControlInterceptor,
+        },
+        {
+          provide: APP_INTERCEPTOR,
+          useFactory: (
+            circuitBreakerService: CircuitBreakerService,
+            reflector: Reflector,
+          ): CircuitBreakerInterceptor => {
+            return new CircuitBreakerInterceptor(
+              circuitBreakerService,
+              reflector,
+            );
+          },
+          inject: [CircuitBreakerService, Reflector],
         },
         {
           provide: APP_FILTER,
