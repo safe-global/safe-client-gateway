@@ -29,6 +29,7 @@ import {
 } from '@/datasources/cache/cache.service.interface';
 import { CacheRouter } from '@/datasources/cache/cache.router';
 import { getNumberString } from '@/domain/common/utils/utils';
+import { getZerionHeaders } from '@/modules/balances/datasources/zerion-api.helpers';
 
 /**
  * Zerion portfolio API integration.
@@ -79,6 +80,7 @@ export class ZerionPortfolioApi implements IPortfolioApi {
     fiatCode: string;
     chainIds?: Array<string>;
     trusted?: boolean;
+    isTestnet?: boolean;
   }): Promise<Raw<Portfolio>> {
     if (!this.fiatCodes.includes(args.fiatCode.toUpperCase())) {
       throw new DataSourceError(
@@ -88,19 +90,21 @@ export class ZerionPortfolioApi implements IPortfolioApi {
     }
 
     const positions = await this._fetchPositions(args);
-    return await this._buildPortfolio(positions);
+    const isTestnet = args.isTestnet ?? false;
+    return await this._buildPortfolio(positions, isTestnet);
   }
 
   /**
    * Fetches positions from Zerion API.
    *
-   * @param {{ address: Address; fiatCode: string; trusted?: boolean }} args - Fetch parameters
+   * @param {{ address: Address; fiatCode: string; trusted?: boolean; isTestnet?: boolean }} args - Fetch parameters
    * @returns {Promise<Array<ZerionBalance>>} Promise that resolves to Zerion balance positions
    */
   private async _fetchPositions(args: {
     address: Address;
     fiatCode: string;
     trusted?: boolean;
+    isTestnet?: boolean;
   }): Promise<Array<ZerionBalance>> {
     try {
       const url = `${this.baseUri}/v1/wallets/${args.address}/positions`;
@@ -115,7 +119,7 @@ export class ZerionPortfolioApi implements IPortfolioApi {
       }
 
       const networkRequest = {
-        headers: { Authorization: `Basic ${this.apiKey}` },
+        headers: getZerionHeaders(this.apiKey, args.isTestnet ?? false),
         params,
       };
 
@@ -139,10 +143,12 @@ export class ZerionPortfolioApi implements IPortfolioApi {
    * Maps Zerion positions to domain portfolio.
    *
    * @param {Array<ZerionBalance>} positions - Zerion balance positions
+   * @param {boolean} isTestnet - Whether this is a testnet request
    * @returns {Promise<Raw<Portfolio>>} Promise that resolves to raw portfolio data
    */
   private async _buildPortfolio(
     positions: Array<ZerionBalance>,
+    isTestnet: boolean,
   ): Promise<Raw<Portfolio>> {
     const displayablePositions = positions.filter(
       (p) => p.attributes.flags.displayable,
@@ -156,8 +162,8 @@ export class ZerionPortfolioApi implements IPortfolioApi {
     );
 
     const [tokenBalances, appBalances] = await Promise.all([
-      this._buildTokenBalances(walletPositions),
-      this._buildAppBalances(appPositions),
+      this._buildTokenBalances(walletPositions, isTestnet),
+      this._buildAppBalances(appPositions, isTestnet),
     ]);
 
     const totalBalanceFiat = getNumberString(
@@ -183,17 +189,19 @@ export class ZerionPortfolioApi implements IPortfolioApi {
    * Maps Zerion wallet positions to domain TokenBalance entities.
    *
    * @param {Array<ZerionBalance>} positions - Zerion wallet positions
+   * @param {boolean} isTestnet - Whether this is a testnet request
    * @returns {Promise<Array<TokenBalance>>} Promise that resolves to token balance entities
    */
   private async _buildTokenBalances(
     positions: Array<ZerionBalance>,
+    isTestnet: boolean,
   ): Promise<Array<TokenBalance>> {
     const tokenBalances = await Promise.all(
       positions.map(async (position): Promise<TokenBalance | null> => {
         const networkName = position.relationships?.chain?.data?.id;
         if (!networkName) return null;
 
-        const chainId = await this._mapNetworkToChainId(networkName);
+        const chainId = await this._mapNetworkToChainId(networkName, isTestnet);
 
         const impl = position.attributes.fungible_info.implementations.find(
           (i) => i.chain_id === networkName,
@@ -252,10 +260,12 @@ export class ZerionPortfolioApi implements IPortfolioApi {
    * Maps Zerion app positions to domain AppBalance entities, grouped by app and group_id.
    *
    * @param {Array<ZerionBalance>} positions - Zerion app positions
+   * @param {boolean} isTestnet - Whether this is a testnet request
    * @returns {Promise<Array<AppBalance>>} Promise that resolves to app balance entities
    */
   private async _buildAppBalances(
     positions: Array<ZerionBalance>,
+    isTestnet: boolean,
   ): Promise<Array<AppBalance>> {
     const groupedByApp = new Map<string, Array<ZerionBalance>>();
 
@@ -275,7 +285,10 @@ export class ZerionPortfolioApi implements IPortfolioApi {
         async ([appName, appPositions]): Promise<AppBalance> => {
           const appMetadata = appPositions[0].attributes.application_metadata;
 
-          const positions = await this._buildAppPositions(appPositions);
+          const positions = await this._buildAppPositions(
+            appPositions,
+            isTestnet,
+          );
 
           const groups = this.groupPositions(positions);
 
@@ -322,17 +335,19 @@ export class ZerionPortfolioApi implements IPortfolioApi {
    * Maps Zerion positions to domain AppPosition entities.
    *
    * @param {Array<ZerionBalance>} positions - Zerion balance positions
+   * @param {boolean} isTestnet - Whether this is a testnet request
    * @returns {Promise<Array<AppPosition>>} Promise that resolves to app position entities
    */
   private async _buildAppPositions(
     positions: Array<ZerionBalance>,
+    isTestnet: boolean,
   ): Promise<Array<AppPosition>> {
     const appPositions = await Promise.all(
       positions.map(async (position): Promise<AppPosition | null> => {
         const networkName = position.relationships?.chain?.data?.id;
         if (!networkName) return null;
 
-        const chainId = await this._mapNetworkToChainId(networkName);
+        const chainId = await this._mapNetworkToChainId(networkName, isTestnet);
 
         const impl = position.attributes.fungible_info.implementations.find(
           (i) => i.chain_id === networkName,
@@ -415,13 +430,13 @@ export class ZerionPortfolioApi implements IPortfolioApi {
   /**
    * Retrieves cached chain mapping.
    *
+   * @param {boolean} isTestnet - Whether this is a testnet request
    * @returns {Promise<Record<string, string> | null>} Promise that resolves to cached mapping or null
    */
-  private async _getCachedChainMapping(): Promise<Record<
-    string,
-    string
-  > | null> {
-    const cacheDir = CacheRouter.getZerionChainsCacheDir();
+  private async _getCachedChainMapping(
+    isTestnet: boolean,
+  ): Promise<Record<string, string> | null> {
+    const cacheDir = CacheRouter.getZerionChainsCacheDir({ isTestnet });
     const cached = await this.cacheService.hGet(cacheDir);
 
     if (!cached) {
@@ -434,12 +449,15 @@ export class ZerionPortfolioApi implements IPortfolioApi {
   /**
    * Fetches and caches Zerion network to chain ID mapping.
    *
+   * @param {boolean} isTestnet - Whether this is a testnet request
    * @returns {Promise<Record<string, string>>} Promise that resolves to network to chain ID mapping
    */
-  private async _fetchAndCacheChainMapping(): Promise<Record<string, string>> {
+  private async _fetchAndCacheChainMapping(
+    isTestnet: boolean,
+  ): Promise<Record<string, string>> {
     const url = `${this.baseUri}/v1/chains`;
     const networkRequest = {
-      headers: { Authorization: `Basic ${this.apiKey}` },
+      headers: getZerionHeaders(this.apiKey, isTestnet),
     };
 
     const response = await this.networkService
@@ -455,7 +473,7 @@ export class ZerionPortfolioApi implements IPortfolioApi {
       mapping[networkName] = decimalChainId;
     }
 
-    const cacheDir = CacheRouter.getZerionChainsCacheDir();
+    const cacheDir = CacheRouter.getZerionChainsCacheDir({ isTestnet });
     await this.cacheService.hSet(
       cacheDir,
       JSON.stringify(mapping),
@@ -468,16 +486,19 @@ export class ZerionPortfolioApi implements IPortfolioApi {
   /**
    * Gets chain mapping from cache or fetches if missing.
    *
+   * @param {boolean} isTestnet - Whether this is a testnet request
    * @returns {Promise<Record<string, string>>} Promise that resolves to network to chain ID mapping
    */
-  private async _getChainMapping(): Promise<Record<string, string>> {
-    const cached = await this._getCachedChainMapping();
+  private async _getChainMapping(
+    isTestnet: boolean,
+  ): Promise<Record<string, string>> {
+    const cached = await this._getCachedChainMapping(isTestnet);
     if (cached) {
       return cached;
     }
 
     try {
-      return await this._fetchAndCacheChainMapping();
+      return await this._fetchAndCacheChainMapping(isTestnet);
     } catch (error) {
       this.loggingService.error(`Failed to fetch Zerion chains: ${error}`);
       return {};
@@ -488,10 +509,14 @@ export class ZerionPortfolioApi implements IPortfolioApi {
    * Maps Zerion network identifier to chain ID.
    *
    * @param {string} network - Zerion network identifier
+   * @param {boolean} isTestnet - Whether this is a testnet request
    * @returns {Promise<string>} Promise that resolves to chain ID (defaults to '1' if unknown)
    */
-  private async _mapNetworkToChainId(network: string): Promise<string> {
-    const mapping = await this._getChainMapping();
+  private async _mapNetworkToChainId(
+    network: string,
+    isTestnet: boolean,
+  ): Promise<string> {
+    const mapping = await this._getChainMapping(isTestnet);
     const chainId = mapping[network.toLowerCase()];
 
     if (!chainId) {

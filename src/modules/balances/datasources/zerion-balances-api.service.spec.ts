@@ -111,7 +111,7 @@ describe('ZerionBalancesApiService', () => {
     });
 
     it('should get the chainName from the chain parameter', async () => {
-      const chain = chainBuilder().build();
+      const chain = chainBuilder().with('isTestnet', false).build();
       const safeAddress = getAddress(faker.finance.ethereumAddress());
       const fiatCode = faker.helpers.arrayElement(supportedFiatCodes);
       mockNetworkService.get.mockResolvedValue({
@@ -128,7 +128,40 @@ describe('ZerionBalancesApiService', () => {
       expect(mockNetworkService.get).toHaveBeenCalledWith({
         url: `${zerionBaseUri}/v1/wallets/${safeAddress}/positions`,
         networkRequest: {
-          headers: { Authorization: `Basic ${zerionApiKey}` },
+          headers: {
+            Authorization: `Basic ${zerionApiKey}`,
+          },
+          params: {
+            'filter[chain_ids]': chain.balancesProvider.chainName,
+            currency: fiatCode.toLowerCase(),
+            sort: 'value',
+          },
+        },
+      });
+    });
+
+    it('should include X-Env header for testnet chains', async () => {
+      const chain = chainBuilder().with('isTestnet', true).build();
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const fiatCode = faker.helpers.arrayElement(supportedFiatCodes);
+      mockNetworkService.get.mockResolvedValue({
+        data: rawify({ data: [] }),
+        status: 200,
+      });
+
+      await service.getBalances({
+        chain,
+        safeAddress,
+        fiatCode,
+      });
+
+      expect(mockNetworkService.get).toHaveBeenCalledWith({
+        url: `${zerionBaseUri}/v1/wallets/${safeAddress}/positions`,
+        networkRequest: {
+          headers: {
+            Authorization: `Basic ${zerionApiKey}`,
+            'X-Env': 'testnet',
+          },
           params: {
             'filter[chain_ids]': chain.balancesProvider.chainName,
             currency: fiatCode.toLowerCase(),
@@ -141,6 +174,7 @@ describe('ZerionBalancesApiService', () => {
     it('should fallback to the static configuration to get the chainName', async () => {
       const chain = chainBuilder()
         .with('chainId', fallbackChainId.toString())
+        .with('isTestnet', false)
         .with(
           'balancesProvider',
           balancesProviderBuilder().with('chainName', null).build(),
@@ -162,7 +196,9 @@ describe('ZerionBalancesApiService', () => {
       expect(mockNetworkService.get).toHaveBeenCalledWith({
         url: `${zerionBaseUri}/v1/wallets/${safeAddress}/positions`,
         networkRequest: {
-          headers: { Authorization: `Basic ${zerionApiKey}` },
+          headers: {
+            Authorization: `Basic ${zerionApiKey}`,
+          },
           params: {
             'filter[chain_ids]': fallbackChainName,
             currency: fiatCode.toLowerCase(),

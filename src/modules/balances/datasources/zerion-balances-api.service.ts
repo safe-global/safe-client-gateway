@@ -40,6 +40,7 @@ import { rawify, type Raw } from '@/validation/entities/raw.entity';
 import { Inject, Injectable } from '@nestjs/common';
 import { Address, getAddress } from 'viem';
 import { z, ZodError } from 'zod';
+import { getZerionHeaders } from '@/modules/balances/datasources/zerion-api.helpers';
 
 export const IZerionBalancesApi = Symbol('IZerionBalancesApi');
 
@@ -140,7 +141,7 @@ export class ZerionBalancesApi implements IBalancesApi {
       this.loggingService.debug({ type: LogType.CacheMiss, key, field });
       const url = `${this.baseUri}/v1/wallets/${args.safeAddress}/positions`;
       const networkRequest = {
-        headers: { Authorization: `Basic ${this.apiKey}` },
+        headers: getZerionHeaders(this.apiKey, args.chain.isTestnet),
         params: {
           'filter[chain_ids]': chainName,
           currency: args.fiatCode.toLowerCase(),
@@ -199,7 +200,7 @@ export class ZerionBalancesApi implements IBalancesApi {
         const url = `${this.baseUri}/v1/wallets/${args.safeAddress}/nft-positions`;
         const pageAfter = this._encodeZerionPageOffset(args.offset);
         const networkRequest = {
-          headers: { Authorization: `Basic ${this.apiKey}` },
+          headers: getZerionHeaders(this.apiKey, args.chain.isTestnet),
           params: {
             'filter[chain_ids]': chainName,
             sort: ZerionBalancesApi.COLLECTIBLES_SORTING,
