@@ -18,9 +18,7 @@ export const CreateTargetedSafesDtoSchema = z.object({
   addresses: z.array(TargetedSafeEntrySchema),
 });
 
-export type TargetedSafeEntry =
-  | Address
-  | { address: Address; chainId: string };
+export type TargetedSafeEntry = Address | { address: Address; chainId: string };
 
 export class CreateTargetedSafesDto
   implements z.infer<typeof CreateTargetedSafesDtoSchema>
