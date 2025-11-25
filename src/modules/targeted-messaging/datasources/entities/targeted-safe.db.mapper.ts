@@ -10,6 +10,7 @@ export class TargetedSafeDbMapper {
       id: dbTargetedSafe.id,
       address: dbTargetedSafe.address,
       outreachId: dbTargetedSafe.outreach_id,
+      chainId: dbTargetedSafe.chain_id,
       created_at: convertToDate(dbTargetedSafe.created_at),
       updated_at: convertToDate(dbTargetedSafe.updated_at),
     };
