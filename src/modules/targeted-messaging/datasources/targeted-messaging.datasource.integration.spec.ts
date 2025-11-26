@@ -896,7 +896,7 @@ describe('TargetedMessagingDataSource tests', () => {
       const signerAddress = getAddress(faker.finance.ethereumAddress());
       const cacheDir = new CacheDir(
         `targeted_messaging_submission_${outreach.id}`,
-        `${createTargetedSafesDto.addresses[0] as Address}_${signerAddress}`,
+        `${createTargetedSafesDto.addresses[0] as Address}_${signerAddress}_null`,
       );
 
       await target.createSubmission({
@@ -969,7 +969,7 @@ describe('TargetedMessagingDataSource tests', () => {
       const signerAddress = getAddress(faker.finance.ethereumAddress());
       const cacheDir = new CacheDir(
         `targeted_messaging_submission_${outreach.id}`,
-        `${createTargetedSafesDto.addresses[0] as Address}_${signerAddress}`,
+        `${createTargetedSafesDto.addresses[0] as Address}_${signerAddress}_null`,
       );
 
       // first call is not cached
@@ -1023,6 +1023,67 @@ describe('TargetedMessagingDataSource tests', () => {
           signerAddress,
         }),
       ).rejects.toThrow('Error creating submission');
+    });
+
+    it('uses separate cache keys for different chainIds', async () => {
+      const createOutreachDto = createOutreachDtoBuilder().build();
+      const outreach = await target.createOutreach(createOutreachDto);
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const signerAddress = getAddress(faker.finance.ethereumAddress());
+      const chainId1 = faker.string.numeric();
+      const chainId2 = faker.string.numeric();
+
+      const targetedSafes = await target.createTargetedSafes(
+        createTargetedSafesDtoBuilder()
+          .with('outreachId', outreach.id)
+          .with('addresses', [
+            { address: safeAddress, chainId: chainId1 },
+            { address: safeAddress, chainId: chainId2 },
+          ])
+          .build(),
+      );
+
+      await target.createSubmission({
+        targetedSafe: targetedSafes[0],
+        signerAddress,
+      });
+      await target.createSubmission({
+        targetedSafe: targetedSafes[1],
+        signerAddress,
+      });
+
+      // Verify separate cache keys
+      const cacheDir1 = new CacheDir(
+        `targeted_messaging_submission_${outreach.id}`,
+        `${safeAddress}_${signerAddress}_${chainId1}`,
+      );
+      const cacheDir2 = new CacheDir(
+        `targeted_messaging_submission_${outreach.id}`,
+        `${safeAddress}_${signerAddress}_${chainId2}`,
+      );
+
+      expect(await fakeCacheService.hGet(cacheDir1)).toBeUndefined();
+      const submission1 = await target.getSubmission({
+        targetedSafe: targetedSafes[0],
+        signerAddress,
+      });
+
+      expect(
+        JSON.parse((await fakeCacheService.hGet(cacheDir1)) as string),
+      ).toHaveLength(1);
+
+      expect(await fakeCacheService.hGet(cacheDir2)).toBeUndefined();
+      const submission2 = await target.getSubmission({
+        targetedSafe: targetedSafes[1],
+        signerAddress,
+      });
+      expect(
+        JSON.parse((await fakeCacheService.hGet(cacheDir2)) as string),
+      ).toHaveLength(1);
+
+      expect(submission1.targetedSafeId).toBe(targetedSafes[0].id);
+      expect(submission2.targetedSafeId).toBe(targetedSafes[1].id);
+      expect(submission1.targetedSafeId).not.toBe(submission2.targetedSafeId);
     });
   });
 });

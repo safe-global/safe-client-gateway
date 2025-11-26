@@ -306,6 +306,7 @@ export class TargetedMessagingDatasource
         outreachId: args.targetedSafe.outreachId,
         safeAddress: args.targetedSafe.address,
         signerAddress: args.signerAddress,
+        chainId: args.targetedSafe.chainId,
       }),
       query: this.sql`
         SELECT * FROM submissions
