@@ -9,7 +9,7 @@ import { MessagesModule } from '@/modules/messages/messages.module';
 import { SafeAppsModule } from '@/modules/safe-apps/safe-apps.module';
 import { SafeRepositoryModule } from '@/modules/safe/domain/safe.repository.interface';
 import { StakingModule } from '@/modules/staking/staking.module';
-import { TransactionsRepositoryModule } from '@/modules/transactions/domain/transactions.repository.interface';
+import { TransactionsModule } from '@/modules/transactions/transactions.module';
 import { DelegatesV2RepositoryModule } from '@/modules/delegate/domain/v2/delegates.v2.repository.interface';
 
 @Module({
@@ -24,7 +24,7 @@ import { DelegatesV2RepositoryModule } from '@/modules/delegate/domain/v2/delega
     SafeAppsModule,
     SafeRepositoryModule,
     StakingModule,
-    TransactionsRepositoryModule,
+    TransactionsModule,
   ],
   providers: [EventCacheHelper],
   exports: [EventCacheHelper],

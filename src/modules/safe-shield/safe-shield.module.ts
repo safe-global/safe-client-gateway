@@ -4,7 +4,7 @@ import { ContractAnalysisModule } from '@/modules/safe-shield/contract-analysis/
 import { RecipientAnalysisModule } from '@/modules/safe-shield/recipient-analysis/recipient-analysis.module';
 import { BlockaidApiModule } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-api.module';
 import { ThreatAnalysisModule } from '@/modules/safe-shield/threat-analysis/threat-analysis.module';
-import { TransactionsModule } from '@/modules/transactions/routes/transactions.module';
+import { TransactionsModule } from '@/modules/transactions/transactions.module';
 import { SafeShieldService } from './safe-shield.service';
 import { SafeShieldController } from './safe-shield.controller';
 

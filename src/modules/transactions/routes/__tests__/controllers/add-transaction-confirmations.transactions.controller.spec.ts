@@ -15,7 +15,7 @@ import {
 } from '@/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
 import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
-import { TransactionsModule } from '@/modules/transactions/routes/transactions.module';
+import { TransactionsModule } from '@/modules/transactions/transactions.module';
 import { ConfigurationModule } from '@/config/configuration.module';
 import configuration from '@/config/entities/__tests__/configuration';
 import { IConfigurationService } from '@/config/configuration.service.interface';
