@@ -793,10 +793,11 @@ export class CacheRouter {
   static getTargetedSafeCacheDir(args: {
     outreachId: number;
     safeAddress: Address;
+    chainId?: string;
   }): CacheDir {
     return new CacheDir(
       CacheRouter.getTargetedSafeCacheKey(args.outreachId),
-      args.safeAddress,
+      `${args.safeAddress}_${args.chainId ?? 'null'}`,
     );
   }
 
@@ -808,10 +809,11 @@ export class CacheRouter {
     outreachId: number;
     safeAddress: Address;
     signerAddress: Address;
+    chainId: string | null;
   }): CacheDir {
     return new CacheDir(
       CacheRouter.getSubmissionCacheKey(args.outreachId),
-      `${args.safeAddress}_${args.signerAddress}`,
+      `${args.safeAddress}_${args.signerAddress}_${args.chainId ?? 'null'}`,
     );
   }
 

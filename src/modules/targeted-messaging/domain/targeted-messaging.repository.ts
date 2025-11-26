@@ -21,6 +21,7 @@ export class TargetedMessagingRepository
   async getTargetedSafe(args: {
     outreachId: number;
     safeAddress: Address;
+    chainId?: string;
   }): Promise<TargetedSafe> {
     return this.datasource.getTargetedSafe(args);
   }

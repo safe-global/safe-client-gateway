@@ -15,6 +15,7 @@ export interface ITargetedMessagingRepository {
   getTargetedSafe(args: {
     outreachId: number;
     safeAddress: Address;
+    chainId?: string;
   }): Promise<TargetedSafe>;
 
   addSafeToOutreach(args: {
