@@ -205,40 +205,50 @@ export class TargetedMessagingDatasource
    * Retrieves a targeted safe for a specific outreach campaign.
    *
    * This method supports chain-specific targeting with a fallback mechanism:
-   * - If chainId is provided, it matches the exact chain or falls back to NULL chain_id (legacy/multi-chain)
+   * - If chainId is provided, it matches the exact chain or falls back to NULL chain_id (legacy)
    * - If chainId is omitted, it only matches records with NULL chain_id
    *
-   * Note: Due to unique constraints, a Safe+Outreach combination can either have:
-   * - Multiple chain-specific records (chain_id='1', chain_id='10', etc.)
-   * - OR a single NULL chain_id record (legacy/multi-chain targeting)
-   * But NOT both.
+   * Note: Due to database constraints, a Safe+Outreach combination can either have:
+   * - Multiple chain-specific records (chain_id='1', chain_id='10', etc.), OR
+   * - A single NULL chain_id record (legacy)
+   * But NOT both. An exclusion constraint prevents mixing NULL and non-NULL chain_id values.
    *
    * @param args.outreachId - The outreach campaign ID
    * @param args.safeAddress - The Safe address to look up
-   * @param args.chainId - Optional chain ID. If provided, matches that chain or falls back to NULL
+   * @param args.chainId - Optional chain ID. If provided, matches that specific chain or falls back to NULL
    *
    * @returns {TargetedSafe} The targeted safe record
    * @throws {TargetedSafeNotFoundError} If no matching targeted safe is found
    *
    * @example
-   * // Find a chain-specific targeted safe
+   * // Scenario 1: Only chain-specific record exists
+   * // Database has: { address: '0xABC', outreachId: 1, chain_id: '1' }
    * const safe = await getTargetedSafe({
    *   outreachId: 1,
    *   safeAddress: '0xABC...',
    *   chainId: '1'
    * });
-   * // Returns: { ..., chain_id: '1' } if exists
-   * // OR falls back to: { ..., chain_id: null } if only legacy record exists
+   * // Returns: { ..., chainId: '1' }
    *
    * @example
-   * // Find a legacy/multi-chain targeted safe (backward compatible)
+   * // Scenario 2: Only NULL record exists (legacy), queried with chainId
+   * // Database has: { address: '0xABC', outreachId: 1, chain_id: NULL }
    * const safe = await getTargetedSafe({
    *   outreachId: 1,
-   *   safeAddress: '0xABC...'
-   *   // chainId omitted
+   *   safeAddress: '0xABC...',
+   *   chainId: '1'
    * });
-   * // Returns: { ..., chain_id: null } if exists
-   * // Throws TargetedSafeNotFoundError if only chain-specific records exist
+   * // Returns: { ..., chainId: null } (fallback behavior)
+   *
+   * @example
+   * // Scenario 3: Wrong chain queried, no fallback possible
+   * // Database has: { address: '0xABC', outreachId: 1, chain_id: '1' }
+   * const safe = await getTargetedSafe({
+   *   outreachId: 1,
+   *   safeAddress: '0xABC...',
+   *   chainId: '10'
+   * });
+   * // Throws: TargetedSafeNotFoundError (no chain='10' and no NULL to fall back to)
    */
   async getTargetedSafe(args: {
     outreachId: number;

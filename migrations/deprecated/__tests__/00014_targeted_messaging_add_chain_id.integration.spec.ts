@@ -197,5 +197,57 @@ describe('Migration 00014_targeted_messaging_add_chain_id', () => {
         },
       });
     });
+
+    it('should prevent having both NULL and specific chain_id for same address+outreach', async () => {
+      await migrator.test({
+        migration: '00014_targeted_messaging_add_chain_id',
+        after: async (sql: Sql) => {
+          const [outreach] = await sql<[Outreach]>`
+            INSERT INTO outreaches (name, start_date, end_date, source_id, type, team_name)
+            VALUES (${faker.string.alphanumeric(10)}, ${faker.date.recent()}, ${faker.date.future()}, ${faker.number.int({ min: 1000, max: 9999 })}, ${faker.string.alphanumeric(10)}, ${faker.string.alphanumeric(10)})
+            RETURNING id`;
+
+          const address = faker.finance.ethereumAddress();
+
+          // Insert with NULL chain_id first
+          await sql`
+            INSERT INTO targeted_safes (address, outreach_id, chain_id)
+            VALUES (${address}, ${outreach.id}, NULL)`;
+
+          // Try to insert with specific chain_id - should fail
+          await expect(
+            sql`
+              INSERT INTO targeted_safes (address, outreach_id, chain_id)
+              VALUES (${address}, ${outreach.id}, '1')`,
+          ).rejects.toThrow(/exclusion constraint/);
+        },
+      });
+    });
+
+    it('should prevent having both specific chain_id and NULL for same address+outreach (reverse order)', async () => {
+      await migrator.test({
+        migration: '00014_targeted_messaging_add_chain_id',
+        after: async (sql: Sql) => {
+          const [outreach] = await sql<[Outreach]>`
+            INSERT INTO outreaches (name, start_date, end_date, source_id, type, team_name)
+            VALUES (${faker.string.alphanumeric(10)}, ${faker.date.recent()}, ${faker.date.future()}, ${faker.number.int({ min: 1000, max: 9999 })}, ${faker.string.alphanumeric(10)}, ${faker.string.alphanumeric(10)})
+            RETURNING id`;
+
+          const address = faker.finance.ethereumAddress();
+
+          // Insert with specific chain_id first
+          await sql`
+            INSERT INTO targeted_safes (address, outreach_id, chain_id)
+            VALUES (${address}, ${outreach.id}, '1')`;
+
+          // Try to insert with NULL chain_id - should fail
+          await expect(
+            sql`
+              INSERT INTO targeted_safes (address, outreach_id, chain_id)
+              VALUES (${address}, ${outreach.id}, NULL)`,
+          ).rejects.toThrow(/exclusion constraint/);
+        },
+      });
+    });
   });
 });

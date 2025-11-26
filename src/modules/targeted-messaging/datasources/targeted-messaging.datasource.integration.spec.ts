@@ -375,6 +375,54 @@ describe('TargetedMessagingDataSource tests', () => {
       ).rejects.toThrow('Error adding targeted Safes');
     });
 
+    it('prevents creating both NULL and specific chain_id for same address+outreach', async () => {
+      const createOutreachDto = createOutreachDtoBuilder().build();
+      const outreach = await target.createOutreach(createOutreachDto);
+      const address = getAddress(faker.finance.ethereumAddress());
+      const chainId = faker.string.numeric();
+
+      await target.createTargetedSafes(
+        createTargetedSafesDtoBuilder()
+          .with('outreachId', outreach.id)
+          .with('addresses', [address])
+          .build(),
+      );
+
+      // Try to create with specific chain_id - should fail due to exclusion constraint
+      await expect(
+        target.createTargetedSafes(
+          createTargetedSafesDtoBuilder()
+            .with('outreachId', outreach.id)
+            .with('addresses', [{ address, chainId }])
+            .build(),
+        ),
+      ).rejects.toThrow('Error adding targeted Safes');
+    });
+
+    it('prevents creating both specific chain_id and NULL for same address+outreach (reverse order)', async () => {
+      const createOutreachDto = createOutreachDtoBuilder().build();
+      const outreach = await target.createOutreach(createOutreachDto);
+      const address = getAddress(faker.finance.ethereumAddress());
+      const chainId = faker.string.numeric();
+
+      await target.createTargetedSafes(
+        createTargetedSafesDtoBuilder()
+          .with('outreachId', outreach.id)
+          .with('addresses', [{ address, chainId }])
+          .build(),
+      );
+
+      // Try to create with NULL chain_id - should fail due to exclusion constraint
+      await expect(
+        target.createTargetedSafes(
+          createTargetedSafesDtoBuilder()
+            .with('outreachId', outreach.id)
+            .with('addresses', [address])
+            .build(),
+        ),
+      ).rejects.toThrow('Error adding targeted Safes');
+    });
+
     it('should clear the cache on targetedSafes creation', async () => {
       let cacheContent: string | undefined;
       const createOutreachDto = createOutreachDtoBuilder().build();
