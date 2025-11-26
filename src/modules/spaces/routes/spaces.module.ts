@@ -1,8 +1,7 @@
 import { AuthModule } from '@/modules/auth/auth.module';
 import { AddressBookItemsRepositoryModule } from '@/modules/spaces/domain/address-books/address-book-items.repository.module';
 import { SpacesRepositoryModule } from '@/modules/spaces/domain/spaces.repository.module';
-import { MembersRepositoryModule } from '@/modules/users/domain/members.repository.module';
-import { UserRepositoryModule } from '@/modules/users/domain/users.repository.module';
+import { UsersModule } from '@/modules/users/users.module';
 import { AddressBooksController } from '@/modules/spaces/routes/address-books.controller';
 import { AddressBooksService } from '@/modules/spaces/routes/address-books.service';
 import { SpaceSafesController } from '@/modules/spaces/routes/space-safes.controller';
@@ -15,9 +14,8 @@ import { Module } from '@nestjs/common';
   imports: [
     AddressBookItemsRepositoryModule,
     AuthModule,
-    MembersRepositoryModule,
+    UsersModule,
     SpacesRepositoryModule,
-    UserRepositoryModule,
   ],
   controllers: [AddressBooksController, SpacesController, SpaceSafesController],
   providers: [AddressBooksService, SpacesService, SpaceSafesService],
