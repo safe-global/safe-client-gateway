@@ -1,11 +1,7 @@
-import { Chain } from '@/modules/chains/domain/entities/chain.entity';
-import { Singleton } from '@/modules/chains/domain/entities/singleton.entity';
-import { Page } from '@/domain/entities/page.entity';
-import { Module } from '@nestjs/common';
-import { ChainsRepository } from '@/modules/chains/domain/chains.repository';
-import { TransactionApiManagerModule } from '@/domain/interfaces/transaction-api.manager.interface';
-import { ConfigApiModule } from '@/datasources/config-api/config-api.module';
-import { IndexingStatus } from '@/modules/indexing/domain/entities/indexing-status.entity';
+import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
+import type { Singleton } from '@/modules/chains/domain/entities/singleton.entity';
+import type { Page } from '@/domain/entities/page.entity';
+import type { IndexingStatus } from '@/modules/indexing/domain/entities/indexing-status.entity';
 
 export const IChainsRepository = Symbol('IChainsRepository');
 
@@ -56,15 +52,3 @@ export interface IChainsRepository {
    */
   isSupportedChain(chainId: string): Promise<boolean>;
 }
-
-@Module({
-  imports: [ConfigApiModule, TransactionApiManagerModule],
-  providers: [
-    {
-      provide: IChainsRepository,
-      useClass: ChainsRepository,
-    },
-  ],
-  exports: [IChainsRepository],
-})
-export class ChainsRepositoryModule {}

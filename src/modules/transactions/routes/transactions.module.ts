@@ -1,14 +1,14 @@
-import { ChainsRepositoryModule } from '@/modules/chains/domain/chains.repository.interface';
-import { ContractsRepositoryModule } from '@/modules/contracts/domain/contracts.repository.interface';
+import { ChainsModule } from '@/modules/chains/chains.module';
+import { ContractsModule } from '@/modules/contracts/contracts.module';
 import { DataDecoderRepositoryModule } from '@/modules/data-decoder/domain/v2/data-decoder.repository.module';
-import { EarnRepositoryModule } from '@/modules/earn/domain/earn.repository.module';
-import { HumanDescriptionRepositoryModule } from '@/modules/human-description/domain/human-description.repository.interface';
-import { SafeAppsRepositoryModule } from '@/modules/safe-apps/domain/safe-apps.repository.interface';
+import { EarnModule } from '@/modules/earn/earn.module';
+import { HumanDescriptionModule } from '@/modules/human-description/human-description.module';
+import { SafeAppsModule } from '@/modules/safe-apps/safe-apps.module';
 import { SafeRepositoryModule } from '@/modules/safe/domain/safe.repository.interface';
-import { StakingRepositoryModule } from '@/modules/staking/domain/staking.repository.module';
+import { StakingModule } from '@/modules/staking/staking.module';
 import { GPv2DecoderModule } from '@/modules/swaps/domain/contracts/decoders/gp-v2-decoder.helper';
-import { SwapsRepositoryModule } from '@/modules/swaps/domain/swaps-repository.module';
-import { TokenRepositoryModule } from '@/modules/tokens/domain/token.repository.interface';
+import { SwapsModule } from '@/modules/swaps/swaps.module';
+import { TokensModule } from '@/modules/tokens/tokens.module';
 import { AddressInfoModule } from '@/routes/common/address-info/address-info.module';
 import { GPv2OrderHelper } from '@/modules/transactions/routes/helpers/gp-v2-order.helper';
 import { KilnNativeStakingHelperModule } from '@/modules/transactions/routes/helpers/kiln-native-staking.helper';
@@ -56,32 +56,32 @@ import { VaultTransactionMapper } from '@/modules/transactions/routes/mappers/co
 import { BridgeTransactionMapper } from '@/modules/transactions/routes/mappers/common/bridge-transaction.mapper';
 import { LiFiDecoderModule } from '@/modules/bridge/domain/contracts/decoders/lifi-decoder.helper';
 import { LiFiHelperModule } from '@/modules/transactions/routes/helpers/lifi-helper';
-import { BridgeRepositoryModule } from '@/modules/bridge/domain/bridge.repository.module';
+import { BridgeModule } from '@/modules/bridge/bridge.module';
 
 @Module({
   controllers: [TransactionsController],
   imports: [
     AddressInfoModule,
-    BridgeRepositoryModule,
-    ChainsRepositoryModule,
-    ContractsRepositoryModule,
+    BridgeModule,
+    ChainsModule,
+    ContractsModule,
     DataDecoderRepositoryModule,
     DelegatesV2RepositoryModule,
-    EarnRepositoryModule,
+    EarnModule,
     GPv2DecoderModule,
-    HumanDescriptionRepositoryModule,
+    HumanDescriptionModule,
     KilnNativeStakingHelperModule,
     KilnVaultHelperModule,
     LiFiHelperModule,
     LiFiDecoderModule,
-    SafeAppsRepositoryModule,
+    SafeAppsModule,
     SafeRepositoryModule,
-    StakingRepositoryModule,
+    StakingModule,
     SwapAppsHelperModule,
     SwapOrderHelperModule,
     SwapOrderMapperModule,
-    SwapsRepositoryModule,
-    TokenRepositoryModule,
+    SwapsModule,
+    TokensModule,
     TwapOrderHelperModule,
     TwapOrderMapperModule,
   ],

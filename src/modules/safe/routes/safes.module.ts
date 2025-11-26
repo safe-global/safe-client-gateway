@@ -3,16 +3,16 @@ import { AddressInfoModule } from '@/routes/common/address-info/address-info.mod
 import { SafesController } from '@/modules/safe/routes/safes.controller';
 import { SafesService } from '@/modules/safe/routes/safes.service';
 import { BalancesRepositoryModule } from '@/modules/balances/domain/balances.repository.interface';
-import { ChainsRepositoryModule } from '@/modules/chains/domain/chains.repository.interface';
+import { ChainsModule } from '@/modules/chains/chains.module';
 import { SafeRepositoryModule } from '@/modules/safe/domain/safe.repository.interface';
-import { MessagesRepositoryModule } from '@/modules/messages/domain/messages.repository.interface';
+import { MessagesModule } from '@/modules/messages/messages.module';
 
 @Module({
   imports: [
     AddressInfoModule,
     BalancesRepositoryModule,
-    ChainsRepositoryModule,
-    MessagesRepositoryModule,
+    ChainsModule,
+    MessagesModule,
     SafeRepositoryModule,
   ],
   controllers: [SafesController],

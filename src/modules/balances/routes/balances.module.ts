@@ -3,14 +3,10 @@ import { BalancesController } from '@/modules/balances/routes/balances.controlle
 import { BalancesService } from '@/modules/balances/routes/balances.service';
 import { BalancesRepositoryModule } from '@/modules/balances/domain/balances.repository.interface';
 import { SafeRepositoryModule } from '@/modules/safe/domain/safe.repository.interface';
-import { ChainsRepositoryModule } from '@/modules/chains/domain/chains.repository.interface';
+import { ChainsModule } from '@/modules/chains/chains.module';
 
 @Module({
-  imports: [
-    BalancesRepositoryModule,
-    ChainsRepositoryModule,
-    SafeRepositoryModule,
-  ],
+  imports: [BalancesRepositoryModule, ChainsModule, SafeRepositoryModule],
   controllers: [BalancesController],
   providers: [BalancesService],
   exports: [BalancesService],

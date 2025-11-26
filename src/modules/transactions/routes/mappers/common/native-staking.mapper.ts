@@ -1,13 +1,11 @@
 import { Deployment } from '@/modules/staking/datasources/entities/deployment.entity';
 import { StakeState } from '@/modules/staking/datasources/entities/stake.entity';
-import {
-  ChainsRepositoryModule,
-  IChainsRepository,
-} from '@/modules/chains/domain/chains.repository.interface';
+import { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
+import { ChainsModule } from '@/modules/chains/chains.module';
 import { getNumberString } from '@/domain/common/utils/utils';
 import { KilnDecoder } from '@/modules/staking/domain/contracts/decoders/kiln-decoder.helper';
 import { IStakingRepositoryWithRewardsFee } from '@/modules/staking/domain/staking.repository.interface';
-import { StakingRepositoryModule } from '@/modules/staking/domain/staking.repository.module';
+import { StakingModule } from '@/modules/staking/staking.module';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { NULL_ADDRESS } from '@/routes/common/constants';
 import { NativeStakingDepositTransactionInfo } from '@/modules/transactions/routes/entities/staking/native-staking-deposit-info.entity';
@@ -449,11 +447,7 @@ export class NativeStakingMapper {
 }
 
 @Module({
-  imports: [
-    StakingRepositoryModule,
-    ChainsRepositoryModule,
-    KilnNativeStakingHelperModule,
-  ],
+  imports: [StakingModule, ChainsModule, KilnNativeStakingHelperModule],
   providers: [NativeStakingMapper, KilnDecoder],
   exports: [NativeStakingMapper],
 })

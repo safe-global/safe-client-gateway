@@ -1,9 +1,6 @@
-import { Collectible } from '@/modules/collectibles/domain/entities/collectible.entity';
-import { Page } from '@/domain/entities/page.entity';
-import { Module } from '@nestjs/common';
-import { CollectiblesRepository } from '@/modules/collectibles/domain/collectibles.repository';
-import { BalancesApiModule } from '@/modules/balances/datasources/balances-api.module';
-import { Chain } from '@/modules/chains/domain/entities/chain.entity';
+import type { Collectible } from '@/modules/collectibles/domain/entities/collectible.entity';
+import type { Page } from '@/domain/entities/page.entity';
+import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
 import type { Address } from 'viem';
 
 export const ICollectiblesRepository = Symbol('ICollectiblesRepository');
@@ -23,15 +20,3 @@ export interface ICollectiblesRepository {
     safeAddress: Address;
   }): Promise<void>;
 }
-
-@Module({
-  imports: [BalancesApiModule],
-  providers: [
-    {
-      provide: ICollectiblesRepository,
-      useClass: CollectiblesRepository,
-    },
-  ],
-  exports: [ICollectiblesRepository],
-})
-export class CollectiblesRepositoryModule {}

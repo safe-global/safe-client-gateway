@@ -15,4 +15,4 @@ import { IWalletsRepository } from '@/modules/wallets/domain/wallets.repository.
   ],
   exports: [IWalletsRepository],
 })
-export class WalletsRepositoryModule {}
+export class WalletsModule {}

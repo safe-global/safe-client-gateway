@@ -5,14 +5,14 @@ import { PostgresDatabaseModuleV2 } from '@/datasources/db/v2/postgres-database.
 import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
 import { UsersRepository } from '@/modules/users/domain/users.repository';
 import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
-import { WalletsRepositoryModule } from '@/modules/wallets/domain/wallets.repository.module';
+import { WalletsModule } from '@/modules/wallets/wallets.module';
 import { Member } from '@/modules/users/datasources/entities/member.entity.db';
 
 @Module({
   imports: [
     PostgresDatabaseModuleV2,
     TypeOrmModule.forFeature([User, Wallet, Member]),
-    WalletsRepositoryModule,
+    WalletsModule,
   ],
   providers: [
     {

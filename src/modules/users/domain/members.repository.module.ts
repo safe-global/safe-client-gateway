@@ -8,7 +8,7 @@ import { SpacesRepositoryModule } from '@/modules/spaces/domain/spaces.repositor
 import { MembersRepository } from '@/modules/users/domain/members.repository';
 import { IMembersRepository } from '@/modules/users/domain/members.repository.interface';
 import { UserRepositoryModule } from '@/modules/users/domain/users.repository.module';
-import { WalletsRepositoryModule } from '@/modules/wallets/domain/wallets.repository.module';
+import { WalletsModule } from '@/modules/wallets/wallets.module';
 
 @Module({
   imports: [
@@ -16,7 +16,7 @@ import { WalletsRepositoryModule } from '@/modules/wallets/domain/wallets.reposi
     TypeOrmModule.forFeature([Wallet, User, Member]),
     SpacesRepositoryModule,
     UserRepositoryModule,
-    WalletsRepositoryModule,
+    WalletsModule,
   ],
   providers: [
     {

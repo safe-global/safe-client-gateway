@@ -11,7 +11,7 @@ import {
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import type { Alert } from '@/modules/alerts/routes/entities/alert.dto.entity';
 import { EventType } from '@/modules/alerts/routes/entities/alert.dto.entity';
-import { EmailApiModule } from '@/modules/email/datasources/email-api.module';
+import { EmailModule } from '@/modules/email/email.module';
 import { TestEmailApiModule } from '@/modules/email/datasources/__tests__/test.email-api.module';
 import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
 import {
@@ -98,7 +98,7 @@ describe('Alerts (Unit)', () => {
             ),
           },
           {
-            originalModule: EmailApiModule,
+            originalModule: EmailModule,
             testModule: TestEmailApiModule,
           },
         ],

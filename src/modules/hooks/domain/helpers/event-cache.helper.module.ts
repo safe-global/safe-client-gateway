@@ -1,29 +1,29 @@
 import { Module } from '@nestjs/common';
 import { BalancesRepositoryModule } from '@/modules/balances/domain/balances.repository.interface';
-import { BlockchainRepositoryModule } from '@/modules/blockchain/domain/blockchain.repository.interface';
-import { ChainsRepositoryModule } from '@/modules/chains/domain/chains.repository.interface';
-import { CollectiblesRepositoryModule } from '@/modules/collectibles/domain/collectibles.repository.interface';
-import { EarnRepositoryModule } from '@/modules/earn/domain/earn.repository.module';
+import { BlockchainModule } from '@/modules/blockchain/blockchain.module';
+import { ChainsModule } from '@/modules/chains/chains.module';
+import { CollectiblesModule } from '@/modules/collectibles/collectibles.module';
+import { EarnModule } from '@/modules/earn/earn.module';
 import { EventCacheHelper } from '@/modules/hooks/domain/helpers/event-cache.helper';
-import { MessagesRepositoryModule } from '@/modules/messages/domain/messages.repository.interface';
-import { SafeAppsRepositoryModule } from '@/modules/safe-apps/domain/safe-apps.repository.interface';
+import { MessagesModule } from '@/modules/messages/messages.module';
+import { SafeAppsModule } from '@/modules/safe-apps/safe-apps.module';
 import { SafeRepositoryModule } from '@/modules/safe/domain/safe.repository.interface';
-import { StakingRepositoryModule } from '@/modules/staking/domain/staking.repository.module';
+import { StakingModule } from '@/modules/staking/staking.module';
 import { TransactionsRepositoryModule } from '@/modules/transactions/domain/transactions.repository.interface';
 import { DelegatesV2RepositoryModule } from '@/modules/delegate/domain/v2/delegates.v2.repository.interface';
 
 @Module({
   imports: [
     BalancesRepositoryModule,
-    BlockchainRepositoryModule,
-    ChainsRepositoryModule,
-    CollectiblesRepositoryModule,
+    BlockchainModule,
+    ChainsModule,
+    CollectiblesModule,
     DelegatesV2RepositoryModule,
-    EarnRepositoryModule,
-    MessagesRepositoryModule,
-    SafeAppsRepositoryModule,
+    EarnModule,
+    MessagesModule,
+    SafeAppsModule,
     SafeRepositoryModule,
-    StakingRepositoryModule,
+    StakingModule,
     TransactionsRepositoryModule,
   ],
   providers: [EventCacheHelper],
