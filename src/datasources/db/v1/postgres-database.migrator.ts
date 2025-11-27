@@ -157,7 +157,9 @@ export class PostgresDatabaseMigrator {
     }
 
     const latest = migrations.at(-1);
-    if (latest?.id !== migrations.length) {
+    // Allow gaps in migration numbering for deprecated migrations
+    // (e.g., when some migrations are removed)
+    if (latest && latest.id < migrations.length) {
       throw new Error('Migrations numbered inconsistency');
     }
 
