@@ -74,6 +74,7 @@ export class ZerionPositionsApi implements IPositionsApi {
     safeAddress: Address;
     fiatCode: string;
     refresh?: string;
+    sync?: boolean;
   }): Promise<Raw<Array<Position>>> {
     if (!this.fiatCodes.includes(args.fiatCode.toUpperCase())) {
       throw new DataSourceError(
@@ -108,14 +109,18 @@ export class ZerionPositionsApi implements IPositionsApi {
         field,
       });
       const url = `${this.baseUri}/v1/wallets/${args.safeAddress}/positions`;
+      const params: Record<string, string> = {
+        'filter[chain_ids]': chainName,
+        'filter[positions]': 'only_complex',
+        currency: args.fiatCode.toLowerCase(),
+        sort: 'value',
+      };
+      if (args.sync) {
+        params['sync'] = 'true';
+      }
       const networkRequest = {
         headers: getZerionHeaders(this.apiKey, args.chain.isTestnet),
-        params: {
-          'filter[chain_ids]': chainName,
-          'filter[positions]': 'only_complex',
-          currency: args.fiatCode.toLowerCase(),
-          sort: 'value',
-        },
+        params,
       };
       const zerionBalances = await this.networkService
         .get<ZerionBalances>({

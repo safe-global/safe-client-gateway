@@ -48,6 +48,7 @@ export class PortfolioRepository implements IPortfolioRepository {
     trusted?: boolean;
     excludeDust?: boolean;
     isTestnet?: boolean;
+    sync?: boolean;
   }): Promise<Portfolio> {
     const cacheDir = CacheRouter.getPortfolioCacheDir({
       address: args.address,
@@ -67,6 +68,7 @@ export class PortfolioRepository implements IPortfolioRepository {
         fiatCode: args.fiatCode,
         trusted: args.trusted,
         isTestnet: args.isTestnet,
+        sync: args.sync,
       });
 
       portfolio = PortfolioSchema.parse(rawPortfolio);

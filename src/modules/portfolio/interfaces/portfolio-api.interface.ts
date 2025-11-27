@@ -14,6 +14,7 @@ export interface IPortfolioApi {
    * @param {Array<string>} [args.chainIds] - Optional array of chain IDs to filter by
    * @param {boolean} [args.trusted] - Optional flag to filter trusted tokens only
    * @param {boolean} [args.isTestnet] - Optional flag to indicate testnet chains
+   * @param {boolean} [args.sync] - Optional flag to wait for data aggregation
    * @returns {Promise<Raw<Portfolio>>} A promise that resolves to the portfolio data
    */
   getPortfolio(args: {
@@ -22,5 +23,6 @@ export interface IPortfolioApi {
     chainIds?: Array<string>;
     trusted?: boolean;
     isTestnet?: boolean;
+    sync?: boolean;
   }): Promise<Raw<Portfolio>>;
 }
