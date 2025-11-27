@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { PostgresDatabaseModuleV2 } from '@/datasources/db/v2/postgres-database.module';
 import { User } from '@/modules/users/datasources/entities/users.entity.db';
@@ -13,7 +13,7 @@ import { UsersService } from '@/modules/users/routes/users.service';
 import { AuthModule } from '@/modules/auth/auth.module';
 import { WalletsModule } from '@/modules/wallets/wallets.module';
 import { SiweModule } from '@/modules/siwe/siwe.module';
-import { SpacesRepositoryModule } from '@/modules/spaces/domain/spaces.repository.module';
+import { SpacesModule } from '@/modules/spaces/spaces.module';
 
 @Module({
   imports: [
@@ -22,7 +22,7 @@ import { SpacesRepositoryModule } from '@/modules/spaces/domain/spaces.repositor
     WalletsModule,
     AuthModule,
     SiweModule,
-    SpacesRepositoryModule,
+    forwardRef(() => SpacesModule),
   ],
   providers: [
     {
