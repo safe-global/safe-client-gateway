@@ -81,6 +81,7 @@ export class ZerionPortfolioApi implements IPortfolioApi {
     chainIds?: Array<string>;
     trusted?: boolean;
     isTestnet?: boolean;
+    sync?: boolean;
   }): Promise<Raw<Portfolio>> {
     if (!this.fiatCodes.includes(args.fiatCode.toUpperCase())) {
       throw new DataSourceError(
@@ -105,6 +106,7 @@ export class ZerionPortfolioApi implements IPortfolioApi {
     fiatCode: string;
     trusted?: boolean;
     isTestnet?: boolean;
+    sync?: boolean;
   }): Promise<Array<ZerionBalance>> {
     try {
       const url = `${this.baseUri}/v1/wallets/${args.address}/positions`;
@@ -116,6 +118,10 @@ export class ZerionPortfolioApi implements IPortfolioApi {
 
       if (args.trusted) {
         params['filter[trash]'] = 'only_non_trash';
+      }
+
+      if (args.sync) {
+        params['sync'] = 'true';
       }
 
       const networkRequest = {
