@@ -33,12 +33,10 @@ import {
 import {
   AlertsApiConfigurationModule,
   ALERTS_API_CONFIGURATION_MODULE,
-} from '@/modules/alerts/datasources/configuration/alerts-api.configuration.module';
-import alertsApiConfiguration from '@/modules/alerts/datasources/configuration/__tests__/alerts-api.configuration';
-import {
   AlertsConfigurationModule,
   ALERTS_CONFIGURATION_MODULE,
-} from '@/modules/alerts/routes/configuration/alerts.configuration.module';
+} from '@/modules/alerts/alerts.module';
+import alertsApiConfiguration from '@/modules/alerts/datasources/configuration/__tests__/alerts-api.configuration';
 import alertsConfiguration from '@/modules/alerts/routes/configuration/__tests__/alerts.configuration';
 import type { Server } from 'net';
 import { createTestModule } from '@/__tests__/testing-module';
