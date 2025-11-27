@@ -59,6 +59,7 @@ describe('Zerion Collectibles Controller', () => {
         const chainName = faker.company.name();
         const chain = chainBuilder()
           .with('chainId', zerionChainIds[0])
+          .with('isTestnet', false)
           .with(
             'balancesProvider',
             balancesProviderBuilder().with('chainName', chainName).build(),
@@ -247,6 +248,7 @@ describe('Zerion Collectibles Controller', () => {
         const chainName = faker.company.name();
         const chain = chainBuilder()
           .with('chainId', zerionChainIds[0])
+          .with('isTestnet', false)
           .with(
             'balancesProvider',
             balancesProviderBuilder().with('chainName', chainName).build(),
@@ -318,6 +320,7 @@ describe('Zerion Collectibles Controller', () => {
         const chainName = faker.company.name();
         const chain = chainBuilder()
           .with('chainId', zerionChainIds[0])
+          .with('isTestnet', false)
           .with(
             'balancesProvider',
             balancesProviderBuilder().with('chainName', chainName).build(),
@@ -389,6 +392,7 @@ describe('Zerion Collectibles Controller', () => {
         const chainName = faker.company.name();
         const chain = chainBuilder()
           .with('chainId', zerionChainIds[0])
+          .with('isTestnet', false)
           .with(
             'balancesProvider',
             balancesProviderBuilder().with('chainName', chainName).build(),
@@ -460,7 +464,10 @@ describe('Zerion Collectibles Controller', () => {
 
     describe('Zerion Balances API Error', () => {
       it(`500 error response`, async () => {
-        const chain = chainBuilder().with('chainId', zerionChainIds[0]).build();
+        const chain = chainBuilder()
+          .with('chainId', zerionChainIds[0])
+          .with('isTestnet', false)
+          .build();
         const safeAddress = getAddress(faker.finance.ethereumAddress());
         networkService.get.mockImplementation(({ url }) => {
           switch (url) {

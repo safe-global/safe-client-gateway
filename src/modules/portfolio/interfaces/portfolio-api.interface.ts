@@ -13,6 +13,7 @@ export interface IPortfolioApi {
    * @param {string} args.fiatCode - The fiat currency code (e.g., 'USD', 'EUR')
    * @param {Array<string>} [args.chainIds] - Optional array of chain IDs to filter by
    * @param {boolean} [args.trusted] - Optional flag to filter trusted tokens only
+   * @param {boolean} [args.isTestnet] - Optional flag to indicate testnet chains
    * @returns {Promise<Raw<Portfolio>>} A promise that resolves to the portfolio data
    */
   getPortfolio(args: {
@@ -20,5 +21,6 @@ export interface IPortfolioApi {
     fiatCode: string;
     chainIds?: Array<string>;
     trusted?: boolean;
+    isTestnet?: boolean;
   }): Promise<Raw<Portfolio>>;
 }

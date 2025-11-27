@@ -87,6 +87,7 @@ describe('Balances Controller (Unit)', () => {
         const chainName = faker.company.name();
         const chain = chainBuilder()
           .with('chainId', zerionChainIds[0])
+          .with('isTestnet', false)
           .with(
             'balancesProvider',
             balancesProviderBuilder().with('chainName', chainName).build(),
@@ -239,6 +240,7 @@ describe('Balances Controller (Unit)', () => {
         const chainName = faker.company.name();
         const chain = chainBuilder()
           .with('chainId', zerionChainIds[0])
+          .with('isTestnet', false)
           .with(
             'balancesProvider',
             balancesProviderBuilder().with('chainName', chainName).build(),
@@ -389,7 +391,10 @@ describe('Balances Controller (Unit)', () => {
       });
 
       it('fails when an unsupported fiatCode is provided', async () => {
-        const chain = chainBuilder().with('chainId', zerionChainIds[0]).build();
+        const chain = chainBuilder()
+          .with('chainId', zerionChainIds[0])
+          .with('isTestnet', false)
+          .build();
         const safeAddress = getAddress(faker.finance.ethereumAddress());
         const unsupportedCurrency = faker.string.alpha({
           length: { min: 4, max: 4 },
@@ -457,7 +462,10 @@ describe('Balances Controller (Unit)', () => {
 
     describe('Zerion Balances API Error', () => {
       it(`500 error response`, async () => {
-        const chain = chainBuilder().with('chainId', zerionChainIds[0]).build();
+        const chain = chainBuilder()
+          .with('chainId', zerionChainIds[0])
+          .with('isTestnet', false)
+          .build();
         const safeAddress = faker.finance.ethereumAddress();
         const currency = sample(zerionCurrencies);
         networkService.get.mockImplementation(({ url }) => {
@@ -488,6 +496,7 @@ describe('Balances Controller (Unit)', () => {
         const chainName = faker.company.name();
         const chain = chainBuilder()
           .with('chainId', zerionChainIds[0])
+          .with('isTestnet', false)
           .with(
             'balancesProvider',
             balancesProviderBuilder().with('chainName', chainName).build(),
@@ -561,6 +570,7 @@ describe('Balances Controller (Unit)', () => {
         const chainName = faker.company.name();
         const chain = chainBuilder()
           .with('chainId', zerionChainIds[0])
+          .with('isTestnet', false)
           .with(
             'balancesProvider',
             balancesProviderBuilder().with('chainName', chainName).build(),

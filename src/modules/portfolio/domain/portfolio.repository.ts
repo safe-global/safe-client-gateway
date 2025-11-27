@@ -47,11 +47,13 @@ export class PortfolioRepository implements IPortfolioRepository {
     chainIds?: Array<string>;
     trusted?: boolean;
     excludeDust?: boolean;
+    isTestnet?: boolean;
   }): Promise<Portfolio> {
     const cacheDir = CacheRouter.getPortfolioCacheDir({
       address: args.address,
       fiatCode: args.fiatCode,
       trusted: args.trusted,
+      isTestnet: args.isTestnet,
     });
 
     const cached = await this.cacheService.hGet(cacheDir);
@@ -64,6 +66,7 @@ export class PortfolioRepository implements IPortfolioRepository {
         address: args.address,
         fiatCode: args.fiatCode,
         trusted: args.trusted,
+        isTestnet: args.isTestnet,
       });
 
       portfolio = PortfolioSchema.parse(rawPortfolio);

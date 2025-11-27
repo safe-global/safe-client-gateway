@@ -13,6 +13,7 @@ export interface IPortfolioRepository {
    * @param {Array<string>} [args.chainIds] - Optional array of chain IDs to filter by
    * @param {boolean} [args.trusted] - Optional flag to filter trusted tokens only
    * @param {boolean} [args.excludeDust] - Optional flag to exclude dust (very small value) positions
+   * @param {boolean} [args.isTestnet] - Optional flag to indicate testnet chains
    * @returns {Promise<Portfolio>} A promise that resolves to the portfolio data
    */
   getPortfolio(args: {
@@ -21,6 +22,7 @@ export interface IPortfolioRepository {
     chainIds?: Array<string>;
     trusted?: boolean;
     excludeDust?: boolean;
+    isTestnet?: boolean;
   }): Promise<Portfolio>;
 
   /**
