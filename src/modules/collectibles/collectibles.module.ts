@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { BalancesApiModule } from '@/modules/balances/datasources/balances-api.module';
+import { BalancesModule } from '@/modules/balances/balances.module';
 import { ChainsModule } from '@/modules/chains/chains.module';
 import { ICollectiblesRepository } from '@/modules/collectibles/domain/collectibles.repository.interface';
 import { CollectiblesRepository } from '@/modules/collectibles/domain/collectibles.repository';
@@ -7,7 +7,7 @@ import { CollectiblesController } from '@/modules/collectibles/routes/collectibl
 import { CollectiblesService } from '@/modules/collectibles/routes/collectibles.service';
 
 @Module({
-  imports: [BalancesApiModule, ChainsModule],
+  imports: [BalancesModule, ChainsModule],
   providers: [
     {
       provide: ICollectiblesRepository,

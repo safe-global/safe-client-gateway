@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { BalancesRepositoryModule } from '@/modules/balances/domain/balances.repository.interface';
+import { BalancesModule } from '@/modules/balances/balances.module';
 import { BlockchainModule } from '@/modules/blockchain/blockchain.module';
 import { ChainsModule } from '@/modules/chains/chains.module';
 import { CollectiblesModule } from '@/modules/collectibles/collectibles.module';
@@ -14,7 +14,7 @@ import { DelegatesV2RepositoryModule } from '@/modules/delegate/domain/v2/delega
 
 @Module({
   imports: [
-    BalancesRepositoryModule,
+    BalancesModule,
     BlockchainModule,
     ChainsModule,
     CollectiblesModule,
