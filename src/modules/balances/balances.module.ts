@@ -38,10 +38,6 @@ import { ChainsModule } from '@/modules/chains/chains.module';
     },
     BalancesService,
   ],
-  exports: [
-    IBalancesApiManager,
-    IBalancesRepository,
-    BalancesService,
-  ],
+  exports: [IBalancesApiManager, IBalancesRepository, BalancesService],
 })
 export class BalancesModule {}

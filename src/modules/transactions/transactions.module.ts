@@ -8,7 +8,7 @@ import { ITransactionsRepository } from '@/modules/transactions/domain/transacti
 import { TransactionsRepository } from '@/modules/transactions/domain/transactions.repository';
 import { ChainsModule } from '@/modules/chains/chains.module';
 import { ContractsModule } from '@/modules/contracts/contracts.module';
-import { DataDecoderRepositoryModule } from '@/modules/data-decoder/domain/v2/data-decoder.repository.module';
+import { DataDecoderModule } from '@/modules/data-decoder/data-decoder.module';
 import { EarnModule } from '@/modules/earn/earn.module';
 import { HumanDescriptionModule } from '@/modules/human-description/human-description.module';
 import { SafeAppsModule } from '@/modules/safe-apps/safe-apps.module';
@@ -74,7 +74,7 @@ import { BridgeModule } from '@/modules/bridge/bridge.module';
     ChainsModule,
     ConfigApiModule,
     ContractsModule,
-    DataDecoderRepositoryModule,
+    DataDecoderModule,
     DelegatesV2RepositoryModule,
     EarnModule,
     GPv2DecoderModule,
