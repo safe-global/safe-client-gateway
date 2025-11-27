@@ -941,8 +941,8 @@ export class CacheRouter {
     );
   }
 
-  static getZerionChainsCacheDir(args: { isTestnet: boolean }): CacheDir {
-    const field = args.isTestnet ? 'mapping_testnet' : 'mapping';
+  static getZerionChainsCacheDir(isTestnet: boolean): CacheDir {
+    const field = isTestnet ? 'mapping_testnet' : 'mapping';
     return new CacheDir(CacheRouter.ZERION_CHAINS_KEY, field);
   }
 }
