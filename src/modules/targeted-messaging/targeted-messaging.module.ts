@@ -1,13 +1,21 @@
 import { Module } from '@nestjs/common';
 import { TargetedMessagingDatasourceModule } from '@/modules/targeted-messaging/datasources/targeted-messaging.datasource.module';
-import { TargetedMessagingRepositoryModule } from '@/modules/targeted-messaging/domain/targeted-messaging.repository.interface';
-import { TargetedMessagingModule as TargetedMessagingRoutesModule } from '@/modules/targeted-messaging/routes/targeted-messaging.module';
+import { SafeRepositoryModule } from '@/modules/safe/domain/safe.repository.interface';
+import { TargetedMessagingRepository } from '@/modules/targeted-messaging/domain/targeted-messaging.repository';
+import { ITargetedMessagingRepository } from '@/modules/targeted-messaging/domain/targeted-messaging.repository.interface';
+import { TargetedMessagingController } from '@/modules/targeted-messaging/routes/targeted-messaging.controller';
+import { TargetedMessagingService } from '@/modules/targeted-messaging/routes/targeted-messaging.service';
 
 @Module({
-  imports: [
-    TargetedMessagingDatasourceModule,
-    TargetedMessagingRepositoryModule,
-    TargetedMessagingRoutesModule,
+  imports: [TargetedMessagingDatasourceModule, SafeRepositoryModule],
+  controllers: [TargetedMessagingController],
+  providers: [
+    {
+      provide: ITargetedMessagingRepository,
+      useClass: TargetedMessagingRepository,
+    },
+    TargetedMessagingService,
   ],
+  exports: [ITargetedMessagingRepository],
 })
 export class TargetedMessagingModule {}
