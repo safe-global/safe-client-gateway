@@ -1,9 +1,5 @@
 import { Module } from '@nestjs/common';
-import { CacheFirstDataSourceModule } from '@/datasources/cache/cache.first.data.source.module';
-import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
-import { ConfigApiModule } from '@/datasources/config-api/config-api.module';
-import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
-import { TransactionApiManager } from '@/modules/transactions/datasources/transaction-api.manager';
+import { TransactionApiManagerModule } from '@/domain/interfaces/transaction-api.manager.interface';
 import { ITransactionsRepository } from '@/modules/transactions/domain/transactions.repository.interface';
 import { TransactionsRepository } from '@/modules/transactions/domain/transactions.repository';
 import { ChainsModule } from '@/modules/chains/chains.module';
@@ -70,9 +66,7 @@ import { BridgeModule } from '@/modules/bridge/bridge.module';
   imports: [
     AddressInfoModule,
     BridgeModule,
-    CacheFirstDataSourceModule,
     ChainsModule,
-    ConfigApiModule,
     ContractsModule,
     DataDecoderModule,
     DelegatesV2RepositoryModule,
@@ -91,6 +85,7 @@ import { BridgeModule } from '@/modules/bridge/bridge.module';
     SwapOrderMapperModule,
     SwapsModule,
     TokensModule,
+    TransactionApiManagerModule,
     TwapOrderHelperModule,
     TwapOrderMapperModule,
   ],
@@ -103,7 +98,6 @@ import { BridgeModule } from '@/modules/bridge/bridge.module';
     Erc721TransferMapper,
     GPv2OrderHelper,
     HumanDescriptionMapper,
-    HttpErrorFactory,
     ModuleTransactionDetailsMapper,
     ModuleTransactionMapper,
     ModuleTransactionStatusMapper,
@@ -131,18 +125,10 @@ import { BridgeModule } from '@/modules/bridge/bridge.module';
     TransferMapper,
     VaultTransactionMapper,
     {
-      provide: ITransactionApiManager,
-      useClass: TransactionApiManager,
-    },
-    {
       provide: ITransactionsRepository,
       useClass: TransactionsRepository,
     },
   ],
-  exports: [
-    ITransactionApiManager,
-    ITransactionsRepository,
-    TransactionsService,
-  ],
+  exports: [ITransactionsRepository, TransactionsService],
 })
 export class TransactionsModule {}
