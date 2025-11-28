@@ -18,7 +18,7 @@ import { TestTargetedMessagingDatasourceModule } from '@/modules/targeted-messag
 import type { ModuleDefinition } from '@nestjs/core/interfaces/module-definition.interface';
 import { CacheKeyPrefix } from '@/datasources/cache/constants';
 import type { Provider } from '@nestjs/common';
-import { CsvExportModule } from '@/modules/csv-export/v1/csv-export.module';
+import { CsvExportModule } from '@/modules/csv-export/csv-export.module';
 import { TestCsvExportModule } from '@/modules/csv-export/v1/__tests__/test.csv-export.module';
 
 export interface CreateBaseTestModuleOptions {

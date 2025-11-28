@@ -1,5 +1,5 @@
 import { IBridgeRepository } from '@/modules/bridge/domain/bridge.repository.interface';
-import { BridgeRepositoryModule } from '@/modules/bridge/domain/bridge.repository.module';
+import { BridgeModule } from '@/modules/bridge/bridge.module';
 import { LiFiDecoder } from '@/modules/bridge/domain/contracts/decoders/lifi-decoder.helper';
 import { ModuleTransaction } from '@/modules/safe/domain/entities/module-transaction.entity';
 import { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
@@ -103,7 +103,7 @@ export class LiFiHelper {
   }
 }
 @Module({
-  imports: [TransactionFinderModule, BridgeRepositoryModule],
+  imports: [TransactionFinderModule, BridgeModule],
   providers: [LiFiHelper, LiFiDecoder],
   exports: [LiFiHelper, LiFiDecoder],
 })

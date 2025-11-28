@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
 import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
-import { ContractsRepositoryModule } from '@/modules/contracts/domain/contracts.repository.interface';
-import { TokenRepositoryModule } from '@/modules/tokens/domain/token.repository.interface';
+import { ContractsModule } from '@/modules/contracts/contracts.module';
+import { TokensModule } from '@/modules/tokens/tokens.module';
 
 @Module({
-  imports: [ContractsRepositoryModule, TokenRepositoryModule],
+  imports: [ContractsModule, TokensModule],
   providers: [AddressInfoHelper],
   exports: [AddressInfoHelper],
 })

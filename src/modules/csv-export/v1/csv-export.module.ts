@@ -8,11 +8,11 @@ import { Module } from '@nestjs/common';
 import { Queue } from 'bullmq';
 import { CsvExportConsumer } from '@/modules/csv-export/v1/consumers/csv-export.consumer';
 import { CsvExportController } from '@/modules/csv-export/v1/csv-export.controller';
-import { CsvModule } from '@/modules/csv-export/csv-utils/csv.module';
 import { CsvExportService } from '@/modules/csv-export/v1/csv-export.service';
 import { ExportApiManagerModule } from '@/modules/csv-export/v1/datasources/export-api.manager.interface';
 import { CloudStorageModule } from '@/datasources/storage/cloud-storage.module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
+import { CsvService } from '../csv-utils/csv.service';
 
 @Module({
   imports: [
@@ -37,7 +37,6 @@ import { IConfigurationService } from '@/config/configuration.service.interface'
       'csvExport.fileStorage.aws.basePath',
     ),
     ExportApiManagerModule,
-    CsvModule,
   ],
   controllers: [CsvExportController],
   providers: [
@@ -57,7 +56,8 @@ import { IConfigurationService } from '@/config/configuration.service.interface'
     },
     CsvExportConsumer,
     CsvExportService,
+    CsvService,
   ],
   exports: [CsvExportService, BullModule],
 })
-export class CsvExportModule {}
+export class CsvExportV1Module {}

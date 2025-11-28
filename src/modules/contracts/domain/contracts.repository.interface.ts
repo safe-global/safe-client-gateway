@@ -1,7 +1,4 @@
-import { Module } from '@nestjs/common';
-import { ContractsRepository } from '@/modules/contracts/domain/contracts.repository';
 import type { Contract } from '@/modules/data-decoder/domain/v2/entities/contract.entity';
-import { DataDecodedApiModule } from '@/modules/data-decoder/datasources/data-decoder-api.module';
 import type { Address } from 'viem';
 
 export const IContractsRepository = Symbol('IContractsRepository');
@@ -23,15 +20,3 @@ export interface IContractsRepository {
     contractAddress: Address;
   }): Promise<boolean>;
 }
-
-@Module({
-  imports: [DataDecodedApiModule],
-  providers: [
-    {
-      provide: IContractsRepository,
-      useClass: ContractsRepository,
-    },
-  ],
-  exports: [IContractsRepository],
-})
-export class ContractsRepositoryModule {}

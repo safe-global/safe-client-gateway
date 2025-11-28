@@ -1,8 +1,5 @@
-import { Page } from '@/domain/entities/page.entity';
-import { Token } from '@/modules/tokens/domain/entities/token.entity';
-import { Module } from '@nestjs/common';
-import { TokenRepository } from '@/modules/tokens/domain/token.repository';
-import { TransactionApiManagerModule } from '@/domain/interfaces/transaction-api.manager.interface';
+import type { Page } from '@/domain/entities/page.entity';
+import type { Token } from '@/modules/tokens/domain/entities/token.entity';
 import type { Address } from 'viem';
 
 export const ITokenRepository = Symbol('ITokenRepository');
@@ -16,15 +13,3 @@ export interface ITokenRepository {
     offset?: number;
   }): Promise<Page<Token>>;
 }
-
-@Module({
-  imports: [TransactionApiManagerModule],
-  providers: [
-    {
-      provide: ITokenRepository,
-      useClass: TokenRepository,
-    },
-  ],
-  exports: [ITokenRepository],
-})
-export class TokenRepositoryModule {}

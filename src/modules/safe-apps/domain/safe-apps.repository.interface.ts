@@ -1,7 +1,4 @@
-import { SafeApp } from '@/modules/safe-apps/domain/entities/safe-app.entity';
-import { Module } from '@nestjs/common';
-import { SafeAppsRepository } from '@/modules/safe-apps/domain/safe-apps.repository';
-import { ConfigApiModule } from '@/datasources/config-api/config-api.module';
+import type { SafeApp } from '@/modules/safe-apps/domain/entities/safe-app.entity';
 
 export const ISafeAppsRepository = Symbol('ISafeAppsRepository');
 
@@ -31,15 +28,3 @@ export interface ISafeAppsRepository {
    */
   getSafeAppById(chainId: string, id: number): Promise<SafeApp | null>;
 }
-
-@Module({
-  imports: [ConfigApiModule],
-  providers: [
-    {
-      provide: ISafeAppsRepository,
-      useClass: SafeAppsRepository,
-    },
-  ],
-  exports: [ISafeAppsRepository],
-})
-export class SafeAppsRepositoryModule {}

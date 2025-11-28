@@ -1,7 +1,7 @@
 import { AccountsRepositoryModule } from '@/modules/accounts/domain/accounts.repository.interface';
 import { AddressBooksRepositoryModule } from '@/modules/accounts/domain/address-books/address-books.repository.interface';
 import { CounterfactualSafesRepositoryModule } from '@/modules/accounts/domain/counterfactual-safes/counterfactual-safes.repository.interface';
-import { AuthRepositoryModule } from '@/modules/auth/domain/auth.repository.interface';
+import { AuthModule } from '@/modules/auth/auth.module';
 import { AccountsController } from '@/modules/accounts/routes/accounts.controller';
 import { AccountsService } from '@/modules/accounts/routes/accounts.service';
 import { AddressBooksController } from '@/modules/accounts/routes/address-books/address-books.controller';
@@ -14,7 +14,7 @@ import { Module } from '@nestjs/common';
   imports: [
     AccountsRepositoryModule,
     AddressBooksRepositoryModule,
-    AuthRepositoryModule,
+    AuthModule,
     CounterfactualSafesRepositoryModule,
   ],
   controllers: [

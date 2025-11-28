@@ -1,26 +1,21 @@
 import { Module } from '@nestjs/common';
+import { ConfigApiModule } from '@/datasources/config-api/config-api.module';
+import { ContractAnalysisModule } from '@/modules/safe-shield/contract-analysis/contract-analysis.module';
+import { RecipientAnalysisModule } from '@/modules/safe-shield/recipient-analysis/recipient-analysis.module';
+import { BlockaidApiModule } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-api.module';
+import { ThreatAnalysisModule } from '@/modules/safe-shield/threat-analysis/threat-analysis.module';
+import { TransactionsModule } from '@/modules/transactions/transactions.module';
 import { SafeShieldService } from './safe-shield.service';
 import { SafeShieldController } from './safe-shield.controller';
-import { RecipientAnalysisModule } from './recipient-analysis/recipient-analysis.module';
-import { ContractAnalysisModule } from './contract-analysis/contract-analysis.module';
-import { ThreatAnalysisModule } from './threat-analysis/threat-analysis.module';
-import { TransactionsModule } from '@/modules/transactions/routes/transactions.module';
-import { ConfigApiModule } from '@/datasources/config-api/config-api.module';
 
-/**
- * Main module for Safe Shield transaction analysis system.
- *
- * This module orchestrates all analysis types and provides the main
- * entry point for transaction safety checks. It imports all analysis
- * modules and exports the main SafeShieldService.
- */
 @Module({
   imports: [
-    RecipientAnalysisModule,
+    ConfigApiModule,
     ContractAnalysisModule,
+    RecipientAnalysisModule,
+    BlockaidApiModule,
     ThreatAnalysisModule,
     TransactionsModule,
-    ConfigApiModule,
   ],
   controllers: [SafeShieldController],
   providers: [SafeShieldService],

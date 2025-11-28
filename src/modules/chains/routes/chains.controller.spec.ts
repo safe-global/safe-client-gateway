@@ -18,7 +18,7 @@ import { PaginationData } from '@/routes/common/pagination/pagination.data';
 import { getAddress } from 'viem';
 import type { Server } from 'net';
 import { indexingStatusBuilder } from '@/modules/chains/domain/entities/__tests__/indexing-status.builder';
-import { BlockchainApiManagerModule } from '@/domain/interfaces/blockchain-api.manager.interface';
+import { BlockchainModule } from '@/modules/blockchain/blockchain.module';
 import { TestBlockchainApiManagerModule } from '@/modules/blockchain/datasources/__tests__/test.blockchain-api.manager';
 import { rawify } from '@/validation/entities/raw.entity';
 import { createTestModule } from '@/__tests__/testing-module';
@@ -48,7 +48,7 @@ describe('Chains Controller (Unit)', () => {
     const moduleFixture = await createTestModule({
       modules: [
         {
-          originalModule: BlockchainApiManagerModule,
+          originalModule: BlockchainModule,
           testModule: TestBlockchainApiManagerModule,
         },
       ],

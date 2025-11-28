@@ -14,12 +14,10 @@ import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.b
 import {
   AlertsApiConfigurationModule,
   ALERTS_API_CONFIGURATION_MODULE,
-} from '@/modules/alerts/datasources/configuration/alerts-api.configuration.module';
-import alertsApiConfiguration from '@/modules/alerts/datasources/configuration/__tests__/alerts-api.configuration';
-import {
   AlertsConfigurationModule,
   ALERTS_CONFIGURATION_MODULE,
-} from '@/modules/alerts/routes/configuration/alerts.configuration.module';
+} from '@/modules/alerts/alerts.module';
+import alertsApiConfiguration from '@/modules/alerts/datasources/configuration/__tests__/alerts-api.configuration';
 import alertsConfiguration from '@/modules/alerts/routes/configuration/__tests__/alerts.configuration';
 import { authPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { IJwtService } from '@/datasources/jwt/jwt.service.interface';

@@ -1,8 +1,5 @@
-import { Balance } from '@/modules/balances/domain/entities/balance.entity';
-import { Module } from '@nestjs/common';
-import { BalancesRepository } from '@/modules/balances/domain/balances.repository';
-import { BalancesApiModule } from '@/modules/balances/datasources/balances-api.module';
-import { Chain } from '@/modules/chains/domain/entities/chain.entity';
+import type { Balance } from '@/modules/balances/domain/entities/balance.entity';
+import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
 import type { Address } from 'viem';
 
 export const IBalancesRepository = Symbol('IBalancesRepository');
@@ -70,15 +67,3 @@ export interface IBalancesRepository {
    */
   clearApi(chainId: string): void;
 }
-
-@Module({
-  imports: [BalancesApiModule],
-  providers: [
-    {
-      provide: IBalancesRepository,
-      useClass: BalancesRepository,
-    },
-  ],
-  exports: [IBalancesRepository],
-})
-export class BalancesRepositoryModule {}
