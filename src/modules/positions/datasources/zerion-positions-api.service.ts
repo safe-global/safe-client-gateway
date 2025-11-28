@@ -33,6 +33,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { Address, getAddress } from 'viem';
 import { z, ZodError } from 'zod';
 import { Position } from '@/modules/positions/domain/entities/position.entity';
+import { getZerionHeaders } from '@/modules/balances/datasources/zerion-api.helpers';
 
 @Injectable()
 export class ZerionPositionsApi implements IPositionsApi {
@@ -108,7 +109,7 @@ export class ZerionPositionsApi implements IPositionsApi {
       });
       const url = `${this.baseUri}/v1/wallets/${args.safeAddress}/positions`;
       const networkRequest = {
-        headers: { Authorization: `Basic ${this.apiKey}` },
+        headers: getZerionHeaders(this.apiKey, args.chain.isTestnet),
         params: {
           'filter[chain_ids]': chainName,
           'filter[positions]': 'only_complex',

@@ -793,10 +793,11 @@ export class CacheRouter {
   static getTargetedSafeCacheDir(args: {
     outreachId: number;
     safeAddress: Address;
+    chainId?: string;
   }): CacheDir {
     return new CacheDir(
       CacheRouter.getTargetedSafeCacheKey(args.outreachId),
-      args.safeAddress,
+      `${args.safeAddress}_${args.chainId ?? 'null'}`,
     );
   }
 
@@ -808,10 +809,11 @@ export class CacheRouter {
     outreachId: number;
     safeAddress: Address;
     signerAddress: Address;
+    chainId: string | null;
   }): CacheDir {
     return new CacheDir(
       CacheRouter.getSubmissionCacheKey(args.outreachId),
-      `${args.safeAddress}_${args.signerAddress}`,
+      `${args.safeAddress}_${args.signerAddress}_${args.chainId ?? 'null'}`,
     );
   }
 
@@ -931,15 +933,18 @@ export class CacheRouter {
     address: Address;
     fiatCode: string;
     trusted?: boolean;
+    isTestnet?: boolean;
   }): CacheDir {
     const trustedSuffix = args.trusted ? '_trusted' : '';
+    const testnetSuffix = args.isTestnet ? '_testnet' : '';
     return new CacheDir(
       CacheRouter.getPortfolioCacheKey(args),
-      `${args.fiatCode.toUpperCase()}${trustedSuffix}`,
+      `${args.fiatCode.toUpperCase()}${trustedSuffix}${testnetSuffix}`,
     );
   }
 
-  static getZerionChainsCacheDir(): CacheDir {
-    return new CacheDir(CacheRouter.ZERION_CHAINS_KEY, 'mapping');
+  static getZerionChainsCacheDir(isTestnet: boolean): CacheDir {
+    const field = isTestnet ? 'mapping_testnet' : 'mapping';
+    return new CacheDir(CacheRouter.ZERION_CHAINS_KEY, field);
   }
 }

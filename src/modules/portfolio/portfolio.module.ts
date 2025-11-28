@@ -9,8 +9,10 @@ import { IPortfolioService } from '@/modules/portfolio/domain/portfolio.service.
 import { PortfolioController } from '@/modules/portfolio/v1/portfolio.controller';
 import { PortfolioApiService } from '@/modules/portfolio/v1/portfolio.service';
 import { PortfolioRouteMapper } from '@/modules/portfolio/v1/portfolio.mapper';
+import { ChainsModule } from '../chains/chains.module';
 
 @Module({
+  imports: [ChainsModule],
   controllers: [PortfolioController],
   providers: [
     HttpErrorFactory,

@@ -633,7 +633,6 @@ export class TransactionsService {
 
   /**
    * Adjusts the pagination data to return extra items in both "edges" of the current page:
-   * - If no pagination data info, then return the original pagination data.
    * - If it is the first page (offset 0), then return offset: 0, limit: limit + 1.
    * - If it is not the first page, then return offset: offset - 1, limit: limit + 2.
    * @param paginationData pagination data to adjust.
@@ -642,9 +641,6 @@ export class TransactionsService {
   private getAdjustedPaginationForQueue(
     paginationData: PaginationData,
   ): PaginationData {
-    if (!paginationData.limit || !paginationData.offset) {
-      return paginationData;
-    }
     if (paginationData.offset === 0) {
       return new PaginationData(
         paginationData.limit + 1,

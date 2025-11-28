@@ -10,6 +10,7 @@ export interface IPortfolioService {
     chainIds?: Array<string>;
     trusted?: boolean;
     excludeDust?: boolean;
+    isTestnet?: boolean;
   }): Promise<Portfolio>;
 
   clearPortfolio(args: { address: Address }): Promise<void>;

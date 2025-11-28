@@ -166,10 +166,17 @@ export class TargetedMessagingDatasource
       const inserted = await sql<[{ id: number }]>`
         INSERT INTO targeted_safes
         ${sql(
-          createTargetedSafesDto.addresses.map((address) => ({
-            outreach_id: createTargetedSafesDto.outreachId,
-            address,
-          })),
+          createTargetedSafesDto.addresses.map((entry) => {
+            // Handle both formats: string address or object with address/chainId
+            const { address, chainId = null } =
+              typeof entry === 'string' ? { address: entry } : entry;
+
+            return {
+              outreach_id: createTargetedSafesDto.outreachId,
+              address,
+              chain_id: chainId,
+            };
+          }),
         )}
         RETURNING id`.catch((err) => {
         this.loggingService.warn(
@@ -194,17 +201,70 @@ export class TargetedMessagingDatasource
     return targetedSafes;
   }
 
+  /**
+   * Retrieves a targeted safe for a specific outreach campaign.
+   *
+   * This method supports chain-specific targeting with a fallback mechanism:
+   * - If chainId is provided, it matches the exact chain or falls back to NULL chain_id (legacy)
+   * - If chainId is omitted, it only matches records with NULL chain_id
+   *
+   * Note: Due to database constraints, a Safe+Outreach combination can either have:
+   * - Multiple chain-specific records (chain_id='1', chain_id='10', etc.), OR
+   * - A single NULL chain_id record (legacy)
+   * But NOT both. An exclusion constraint prevents mixing NULL and non-NULL chain_id values.
+   *
+   * @param args.outreachId - The outreach campaign ID
+   * @param args.safeAddress - The Safe address to look up
+   * @param args.chainId - Optional chain ID. If provided, matches that specific chain or falls back to NULL
+   *
+   * @returns {TargetedSafe} The targeted safe record
+   * @throws {TargetedSafeNotFoundError} If no matching targeted safe is found
+   *
+   * @example
+   * // Scenario 1: Only chain-specific record exists
+   * // Database has: { address: '0xABC', outreachId: 1, chain_id: '1' }
+   * const safe = await getTargetedSafe({
+   *   outreachId: 1,
+   *   safeAddress: '0xABC...',
+   *   chainId: '1'
+   * });
+   * // Returns: { ..., chainId: '1' }
+   *
+   * @example
+   * // Scenario 2: Only NULL record exists (legacy), queried with chainId
+   * // Database has: { address: '0xABC', outreachId: 1, chain_id: NULL }
+   * const safe = await getTargetedSafe({
+   *   outreachId: 1,
+   *   safeAddress: '0xABC...',
+   *   chainId: '1'
+   * });
+   * // Returns: { ..., chainId: null } (fallback behavior)
+   *
+   * @example
+   * // Scenario 3: Wrong chain queried, no fallback possible
+   * // Database has: { address: '0xABC', outreachId: 1, chain_id: '1' }
+   * const safe = await getTargetedSafe({
+   *   outreachId: 1,
+   *   safeAddress: '0xABC...',
+   *   chainId: '10'
+   * });
+   * // Throws: TargetedSafeNotFoundError (no chain='10' and no NULL to fall back to)
+   */
   async getTargetedSafe(args: {
     outreachId: number;
     safeAddress: Address;
+    chainId?: string;
   }): Promise<TargetedSafe> {
+    const chainId = args.chainId ?? null;
     const [dbTargetedSafe] = await this.cachedQueryResolver.get<
       Array<DbTargetedSafe>
     >({
       cacheDir: CacheRouter.getTargetedSafeCacheDir(args),
       query: this.sql`
         SELECT * FROM targeted_safes
-        WHERE outreach_id = ${args.outreachId} AND address = ${args.safeAddress}`,
+        WHERE outreach_id = ${args.outreachId}
+          AND address = ${args.safeAddress}
+          AND (chain_id IS NOT DISTINCT FROM ${chainId} OR chain_id IS NULL)`,
       ttl: this.defaultExpirationTimeInSeconds,
     });
 
@@ -246,6 +306,7 @@ export class TargetedMessagingDatasource
         outreachId: args.targetedSafe.outreachId,
         safeAddress: args.targetedSafe.address,
         signerAddress: args.signerAddress,
+        chainId: args.targetedSafe.chainId,
       }),
       query: this.sql`
         SELECT * FROM submissions

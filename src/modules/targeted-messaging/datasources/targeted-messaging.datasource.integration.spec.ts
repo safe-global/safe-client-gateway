@@ -15,6 +15,7 @@ import { TargetedSafeNotFoundError } from '@/modules/targeted-messaging/domain/e
 import type { ILoggingService } from '@/logging/logging.interface';
 import { faker } from '@faker-js/faker/.';
 import type postgres from 'postgres';
+import type { Address } from 'viem';
 import { getAddress } from 'viem';
 
 const mockLoggingService = {
@@ -202,6 +203,7 @@ describe('TargetedMessagingDataSource tests', () => {
           id: expect.any(Number),
           outreachId: createTargetedSafesDto.outreachId,
           address: createTargetedSafesDto.addresses[0],
+          chainId: null,
           created_at: expect.any(Date),
           updated_at: expect.any(Date),
         },
@@ -209,6 +211,7 @@ describe('TargetedMessagingDataSource tests', () => {
           id: expect.any(Number),
           outreachId: createTargetedSafesDto.outreachId,
           address: createTargetedSafesDto.addresses[1],
+          chainId: null,
           created_at: expect.any(Date),
           updated_at: expect.any(Date),
         },
@@ -261,21 +264,181 @@ describe('TargetedMessagingDataSource tests', () => {
       ).rejects.toThrow('Error adding targeted Safes');
     });
 
+    it('adds targetedSafes with chainId successfully', async () => {
+      const createOutreachDto = createOutreachDtoBuilder().build();
+      const outreach = await target.createOutreach(createOutreachDto);
+      const address1 = getAddress(faker.finance.ethereumAddress());
+      const address2 = getAddress(faker.finance.ethereumAddress());
+      const chainId1 = faker.string.numeric();
+      const chainId2 = faker.string.numeric();
+      const createTargetedSafesDto = createTargetedSafesDtoBuilder()
+        .with('outreachId', outreach.id)
+        .with('addresses', [
+          { address: address1, chainId: chainId1 },
+          { address: address2, chainId: chainId2 },
+        ])
+        .build();
+
+      const result = await target.createTargetedSafes(createTargetedSafesDto);
+
+      expect(result).toStrictEqual([
+        {
+          id: expect.any(Number),
+          outreachId: createTargetedSafesDto.outreachId,
+          address: address1,
+          chainId: chainId1,
+          created_at: expect.any(Date),
+          updated_at: expect.any(Date),
+        },
+        {
+          id: expect.any(Number),
+          outreachId: createTargetedSafesDto.outreachId,
+          address: address2,
+          chainId: chainId2,
+          created_at: expect.any(Date),
+          updated_at: expect.any(Date),
+        },
+      ]);
+    });
+
+    it('adds targetedSafes with mixed format (strings and objects)', async () => {
+      const createOutreachDto = createOutreachDtoBuilder().build();
+      const outreach = await target.createOutreach(createOutreachDto);
+      const address1 = getAddress(faker.finance.ethereumAddress());
+      const address2 = getAddress(faker.finance.ethereumAddress());
+      const chainId = faker.string.numeric();
+      const createTargetedSafesDto = createTargetedSafesDtoBuilder()
+        .with('outreachId', outreach.id)
+        .with('addresses', [address1, { address: address2, chainId }])
+        .build();
+
+      const result = await target.createTargetedSafes(createTargetedSafesDto);
+
+      expect(result).toStrictEqual([
+        {
+          id: expect.any(Number),
+          outreachId: createTargetedSafesDto.outreachId,
+          address: address1,
+          chainId: null,
+          created_at: expect.any(Date),
+          updated_at: expect.any(Date),
+        },
+        {
+          id: expect.any(Number),
+          outreachId: createTargetedSafesDto.outreachId,
+          address: address2,
+          chainId,
+          created_at: expect.any(Date),
+          updated_at: expect.any(Date),
+        },
+      ]);
+    });
+
+    it('allows same address for different chainIds', async () => {
+      const createOutreachDto = createOutreachDtoBuilder().build();
+      const outreach = await target.createOutreach(createOutreachDto);
+      const address = getAddress(faker.finance.ethereumAddress());
+      const chainId1 = faker.string.numeric();
+      const chainId2 = faker.string.numeric();
+      const createTargetedSafesDto = createTargetedSafesDtoBuilder()
+        .with('outreachId', outreach.id)
+        .with('addresses', [
+          { address, chainId: chainId1 },
+          { address, chainId: chainId2 },
+        ])
+        .build();
+
+      const result = await target.createTargetedSafes(createTargetedSafesDto);
+
+      expect(result).toHaveLength(2);
+      expect(result[0].address).toBe(address);
+      expect(result[0].chainId).toBe(chainId1);
+      expect(result[1].address).toBe(address);
+      expect(result[1].chainId).toBe(chainId2);
+    });
+
+    it('fails if same address and chainId already targeted in the same outreach', async () => {
+      const createOutreachDto = createOutreachDtoBuilder().build();
+      const outreach = await target.createOutreach(createOutreachDto);
+      const address = getAddress(faker.finance.ethereumAddress());
+      const chainId = faker.string.numeric();
+      const createTargetedSafesDto = createTargetedSafesDtoBuilder()
+        .with('outreachId', outreach.id)
+        .with('addresses', [
+          { address, chainId },
+          { address, chainId },
+        ])
+        .build();
+
+      await expect(
+        target.createTargetedSafes(createTargetedSafesDto),
+      ).rejects.toThrow('Error adding targeted Safes');
+    });
+
+    it('prevents creating both NULL and specific chain_id for same address+outreach', async () => {
+      const createOutreachDto = createOutreachDtoBuilder().build();
+      const outreach = await target.createOutreach(createOutreachDto);
+      const address = getAddress(faker.finance.ethereumAddress());
+      const chainId = faker.string.numeric();
+
+      await target.createTargetedSafes(
+        createTargetedSafesDtoBuilder()
+          .with('outreachId', outreach.id)
+          .with('addresses', [address])
+          .build(),
+      );
+
+      // Try to create with specific chain_id - should fail due to exclusion constraint
+      await expect(
+        target.createTargetedSafes(
+          createTargetedSafesDtoBuilder()
+            .with('outreachId', outreach.id)
+            .with('addresses', [{ address, chainId }])
+            .build(),
+        ),
+      ).rejects.toThrow('Error adding targeted Safes');
+    });
+
+    it('prevents creating both specific chain_id and NULL for same address+outreach (reverse order)', async () => {
+      const createOutreachDto = createOutreachDtoBuilder().build();
+      const outreach = await target.createOutreach(createOutreachDto);
+      const address = getAddress(faker.finance.ethereumAddress());
+      const chainId = faker.string.numeric();
+
+      await target.createTargetedSafes(
+        createTargetedSafesDtoBuilder()
+          .with('outreachId', outreach.id)
+          .with('addresses', [{ address, chainId }])
+          .build(),
+      );
+
+      // Try to create with NULL chain_id - should fail due to exclusion constraint
+      await expect(
+        target.createTargetedSafes(
+          createTargetedSafesDtoBuilder()
+            .with('outreachId', outreach.id)
+            .with('addresses', [address])
+            .build(),
+        ),
+      ).rejects.toThrow('Error adding targeted Safes');
+    });
+
     it('should clear the cache on targetedSafes creation', async () => {
       let cacheContent: string | undefined;
       const createOutreachDto = createOutreachDtoBuilder().build();
       const outreach = await target.createOutreach(createOutreachDto);
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
       const createTargetedSafesDto = createTargetedSafesDtoBuilder()
         .with('outreachId', outreach.id)
         .with('addresses', [
-          getAddress(faker.finance.ethereumAddress()),
+          safeAddress,
           getAddress(faker.finance.ethereumAddress()),
         ])
         .build();
       await target.createTargetedSafes(createTargetedSafesDto);
       const cacheDir = new CacheDir(
         `targeted_messaging_targeted_safe_${outreach.id}`,
-        createTargetedSafesDto.addresses[0],
+        `${safeAddress}_null`,
       );
 
       // cache is empty
@@ -283,7 +446,7 @@ describe('TargetedMessagingDataSource tests', () => {
       expect(cacheContent).toBeUndefined();
       await target.getTargetedSafe({
         outreachId: outreach.id,
-        safeAddress: createTargetedSafesDto.addresses[0],
+        safeAddress,
       });
       // cache is updated
       cacheContent = await fakeCacheService.hGet(cacheDir);
@@ -292,7 +455,7 @@ describe('TargetedMessagingDataSource tests', () => {
       // second call is cached
       await target.getTargetedSafe({
         outreachId: outreach.id,
-        safeAddress: createTargetedSafesDto.addresses[0],
+        safeAddress,
       });
 
       // Clear the cache by creating new targetedSafes
@@ -313,7 +476,7 @@ describe('TargetedMessagingDataSource tests', () => {
       // third call is not cached
       await target.getTargetedSafe({
         outreachId: outreach.id,
-        safeAddress: createTargetedSafesDto.addresses[0],
+        safeAddress: createTargetedSafesDto.addresses[0] as Address,
       });
       // cache is updated
       cacheContent = await fakeCacheService.hGet(cacheDir);
@@ -325,10 +488,11 @@ describe('TargetedMessagingDataSource tests', () => {
     it('gets a targetedSafe successfully', async () => {
       const createOutreachDto = createOutreachDtoBuilder().build();
       const outreach = await target.createOutreach(createOutreachDto);
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
       const createTargetedSafesDto = createTargetedSafesDtoBuilder()
         .with('outreachId', outreach.id)
         .with('addresses', [
-          getAddress(faker.finance.ethereumAddress()),
+          safeAddress,
           getAddress(faker.finance.ethereumAddress()),
         ])
         .build();
@@ -338,13 +502,14 @@ describe('TargetedMessagingDataSource tests', () => {
 
       const result = await target.getTargetedSafe({
         outreachId: outreach.id,
-        safeAddress: createTargetedSafesDto.addresses[0],
+        safeAddress,
       });
 
       expect(result).toStrictEqual({
         id: targetedSafes[0].id,
         address: targetedSafes[0].address,
         outreachId: outreach.id,
+        chainId: null,
         created_at: expect.any(Date),
         updated_at: expect.any(Date),
       });
@@ -354,10 +519,11 @@ describe('TargetedMessagingDataSource tests', () => {
       let cacheContent: string | undefined;
       const createOutreachDto = createOutreachDtoBuilder().build();
       const outreach = await target.createOutreach(createOutreachDto);
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
       const createTargetedSafesDto = createTargetedSafesDtoBuilder()
         .with('outreachId', outreach.id)
         .with('addresses', [
-          getAddress(faker.finance.ethereumAddress()),
+          safeAddress,
           getAddress(faker.finance.ethereumAddress()),
         ])
         .build();
@@ -366,7 +532,7 @@ describe('TargetedMessagingDataSource tests', () => {
       );
       const cacheDir = new CacheDir(
         `targeted_messaging_targeted_safe_${outreach.id}`,
-        createTargetedSafesDto.addresses[0],
+        `${safeAddress}_null`,
       );
 
       // first call is not cached
@@ -374,7 +540,7 @@ describe('TargetedMessagingDataSource tests', () => {
       expect(cacheContent).toBeUndefined();
       await target.getTargetedSafe({
         outreachId: outreach.id,
-        safeAddress: createTargetedSafesDto.addresses[0],
+        safeAddress,
       });
       // cache is updated
       cacheContent = await fakeCacheService.hGet(cacheDir);
@@ -383,7 +549,7 @@ describe('TargetedMessagingDataSource tests', () => {
       // second call is cached
       const result = await target.getTargetedSafe({
         outreachId: outreach.id,
-        safeAddress: createTargetedSafesDto.addresses[0],
+        safeAddress,
       });
 
       expect(result).toStrictEqual(
@@ -404,7 +570,7 @@ describe('TargetedMessagingDataSource tests', () => {
       const safeAddress = getAddress(faker.finance.ethereumAddress());
       const cacheDir = new CacheDir(
         `targeted_messaging_targeted_safe_${outreach.id}`,
-        safeAddress,
+        `${safeAddress}_null`,
       );
 
       // first call is not cached
@@ -448,6 +614,200 @@ describe('TargetedMessagingDataSource tests', () => {
           safeAddress: getAddress(faker.finance.ethereumAddress()),
         }),
       ).rejects.toThrow(TargetedSafeNotFoundError);
+    });
+
+    describe('with chainId', () => {
+      let outreach: { id: number };
+      let safeAddress: Address;
+
+      beforeEach(async () => {
+        outreach = await target.createOutreach(
+          createOutreachDtoBuilder().build(),
+        );
+        safeAddress = getAddress(faker.finance.ethereumAddress());
+      });
+
+      it('creates and gets a targetedSafe with specific chainId', async () => {
+        const chainId = faker.number.int({ min: 1, max: 10000 }).toString();
+        await target.createTargetedSafes(
+          createTargetedSafesDtoBuilder()
+            .with('outreachId', outreach.id)
+            .with('addresses', [{ address: safeAddress, chainId }])
+            .build(),
+        );
+
+        const result = await target.getTargetedSafe({
+          outreachId: outreach.id,
+          safeAddress,
+          chainId,
+        });
+
+        expect(result).toMatchObject({
+          address: safeAddress,
+          outreachId: outreach.id,
+          chainId,
+        });
+      });
+
+      it('falls back to NULL chain_id when specific chain not found', async () => {
+        const chainId = faker.number.int({ min: 1, max: 10000 }).toString();
+        await target.createTargetedSafes(
+          createTargetedSafesDtoBuilder()
+            .with('outreachId', outreach.id)
+            .with('addresses', [safeAddress]) // String format = NULL chain_id
+            .build(),
+        );
+
+        const result = await target.getTargetedSafe({
+          outreachId: outreach.id,
+          safeAddress,
+          chainId, // Looking for a specific chain, but only NULL exists
+        });
+
+        expect(result).toMatchObject({
+          address: safeAddress,
+          outreachId: outreach.id,
+          chainId: null,
+        });
+      });
+
+      it('distinguishes between different chainIds', async () => {
+        const chainId1 = faker.number.int({ min: 1, max: 10000 }).toString();
+        const chainId2 = faker.number.int({ min: 1, max: 10000 }).toString();
+
+        await target.createTargetedSafes(
+          createTargetedSafesDtoBuilder()
+            .with('outreachId', outreach.id)
+            .with('addresses', [
+              { address: safeAddress, chainId: chainId1 },
+              { address: safeAddress, chainId: chainId2 },
+            ])
+            .build(),
+        );
+
+        const resultChain1 = await target.getTargetedSafe({
+          outreachId: outreach.id,
+          safeAddress,
+          chainId: chainId1,
+        });
+
+        const resultChain2 = await target.getTargetedSafe({
+          outreachId: outreach.id,
+          safeAddress,
+          chainId: chainId2,
+        });
+
+        expect(resultChain1.chainId).toBe(chainId1);
+        expect(resultChain2.chainId).toBe(chainId2);
+      });
+
+      it('uses separate cache keys for different chainIds', async () => {
+        const chainId1 = faker.number.int({ min: 1, max: 10000 }).toString();
+        const chainId2 = faker.number.int({ min: 1, max: 10000 }).toString();
+
+        await target.createTargetedSafes(
+          createTargetedSafesDtoBuilder()
+            .with('outreachId', outreach.id)
+            .with('addresses', [
+              { address: safeAddress, chainId: chainId1 },
+              { address: safeAddress, chainId: chainId2 },
+            ])
+            .build(),
+        );
+
+        const cacheDirChain1 = new CacheDir(
+          `targeted_messaging_targeted_safe_${outreach.id}`,
+          `${safeAddress}_${chainId1}`,
+        );
+        const cacheDirChain2 = new CacheDir(
+          `targeted_messaging_targeted_safe_${outreach.id}`,
+          `${safeAddress}_${chainId2}`,
+        );
+
+        // First call with chain 1 - not cached
+        expect(await fakeCacheService.hGet(cacheDirChain1)).toBeUndefined();
+        await target.getTargetedSafe({
+          outreachId: outreach.id,
+          safeAddress,
+          chainId: chainId1,
+        });
+        // Cache for chain 1 is updated
+        expect(
+          JSON.parse((await fakeCacheService.hGet(cacheDirChain1)) as string),
+        ).toHaveLength(1);
+
+        // First call with chain 2 - not cached
+        expect(await fakeCacheService.hGet(cacheDirChain2)).toBeUndefined();
+        await target.getTargetedSafe({
+          outreachId: outreach.id,
+          safeAddress,
+          chainId: chainId2,
+        });
+        // Cache for chain 2 is updated
+        expect(
+          JSON.parse((await fakeCacheService.hGet(cacheDirChain2)) as string),
+        ).toHaveLength(1);
+      });
+
+      it('throws when chainId provided but no matching record exists', async () => {
+        const chainId1 = faker.number.int({ min: 1, max: 10000 }).toString();
+        const chainId2 = faker.number
+          .int({ min: 10001, max: 20000 })
+          .toString();
+        await target.createTargetedSafes(
+          createTargetedSafesDtoBuilder()
+            .with('outreachId', outreach.id)
+            .with('addresses', [{ address: safeAddress, chainId: chainId1 }])
+            .build(),
+        );
+
+        // Looking for a different chain that doesn't exist
+        await expect(
+          target.getTargetedSafe({
+            outreachId: outreach.id,
+            safeAddress,
+            chainId: chainId2,
+          }),
+        ).rejects.toThrow(TargetedSafeNotFoundError);
+      });
+
+      it('gets legacy NULL chainId when no chainId provided', async () => {
+        await target.createTargetedSafes(
+          createTargetedSafesDtoBuilder()
+            .with('outreachId', outreach.id)
+            .with('addresses', [safeAddress]) // String format = NULL chain_id
+            .build(),
+        );
+
+        const result = await target.getTargetedSafe({
+          outreachId: outreach.id,
+          safeAddress,
+        });
+
+        expect(result).toMatchObject({
+          address: safeAddress,
+          outreachId: outreach.id,
+          chainId: null,
+        });
+      });
+
+      it('throws when chainId not provided and only chain-specific records exist', async () => {
+        const chainId = faker.number.int({ min: 1, max: 10000 }).toString();
+        await target.createTargetedSafes(
+          createTargetedSafesDtoBuilder()
+            .with('outreachId', outreach.id)
+            .with('addresses', [{ address: safeAddress, chainId }])
+            .build(),
+        );
+
+        // Looking without chainId should fail (no NULL record exists)
+        await expect(
+          target.getTargetedSafe({
+            outreachId: outreach.id,
+            safeAddress,
+          }),
+        ).rejects.toThrow(TargetedSafeNotFoundError);
+      });
     });
   });
 
@@ -536,7 +896,7 @@ describe('TargetedMessagingDataSource tests', () => {
       const signerAddress = getAddress(faker.finance.ethereumAddress());
       const cacheDir = new CacheDir(
         `targeted_messaging_submission_${outreach.id}`,
-        `${createTargetedSafesDto.addresses[0]}_${signerAddress}`,
+        `${createTargetedSafesDto.addresses[0] as Address}_${signerAddress}_null`,
       );
 
       await target.createSubmission({
@@ -609,7 +969,7 @@ describe('TargetedMessagingDataSource tests', () => {
       const signerAddress = getAddress(faker.finance.ethereumAddress());
       const cacheDir = new CacheDir(
         `targeted_messaging_submission_${outreach.id}`,
-        `${createTargetedSafesDto.addresses[0]}_${signerAddress}`,
+        `${createTargetedSafesDto.addresses[0] as Address}_${signerAddress}_null`,
       );
 
       // first call is not cached
@@ -663,6 +1023,67 @@ describe('TargetedMessagingDataSource tests', () => {
           signerAddress,
         }),
       ).rejects.toThrow('Error creating submission');
+    });
+
+    it('uses separate cache keys for different chainIds', async () => {
+      const createOutreachDto = createOutreachDtoBuilder().build();
+      const outreach = await target.createOutreach(createOutreachDto);
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const signerAddress = getAddress(faker.finance.ethereumAddress());
+      const chainId1 = faker.string.numeric();
+      const chainId2 = faker.string.numeric();
+
+      const targetedSafes = await target.createTargetedSafes(
+        createTargetedSafesDtoBuilder()
+          .with('outreachId', outreach.id)
+          .with('addresses', [
+            { address: safeAddress, chainId: chainId1 },
+            { address: safeAddress, chainId: chainId2 },
+          ])
+          .build(),
+      );
+
+      await target.createSubmission({
+        targetedSafe: targetedSafes[0],
+        signerAddress,
+      });
+      await target.createSubmission({
+        targetedSafe: targetedSafes[1],
+        signerAddress,
+      });
+
+      // Verify separate cache keys
+      const cacheDir1 = new CacheDir(
+        `targeted_messaging_submission_${outreach.id}`,
+        `${safeAddress}_${signerAddress}_${chainId1}`,
+      );
+      const cacheDir2 = new CacheDir(
+        `targeted_messaging_submission_${outreach.id}`,
+        `${safeAddress}_${signerAddress}_${chainId2}`,
+      );
+
+      expect(await fakeCacheService.hGet(cacheDir1)).toBeUndefined();
+      const submission1 = await target.getSubmission({
+        targetedSafe: targetedSafes[0],
+        signerAddress,
+      });
+
+      expect(
+        JSON.parse((await fakeCacheService.hGet(cacheDir1)) as string),
+      ).toHaveLength(1);
+
+      expect(await fakeCacheService.hGet(cacheDir2)).toBeUndefined();
+      const submission2 = await target.getSubmission({
+        targetedSafe: targetedSafes[1],
+        signerAddress,
+      });
+      expect(
+        JSON.parse((await fakeCacheService.hGet(cacheDir2)) as string),
+      ).toHaveLength(1);
+
+      expect(submission1.targetedSafeId).toBe(targetedSafes[0].id);
+      expect(submission2.targetedSafeId).toBe(targetedSafes[1].id);
+      expect(submission1.targetedSafeId).not.toBe(submission2.targetedSafeId);
     });
   });
 });

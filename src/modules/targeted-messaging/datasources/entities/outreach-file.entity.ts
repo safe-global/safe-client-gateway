@@ -1,5 +1,5 @@
-import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { z } from 'zod';
+import { TargetedSafeEntrySchema } from '@/modules/targeted-messaging/domain/entities/targeted-safe-entry.entity';
 
 export type OutreachFile = z.infer<typeof OutreachFileSchema>;
 
@@ -9,5 +9,5 @@ export const OutreachFileSchema = z.object({
   team_name: z.string(),
   start_date: z.coerce.date(),
   end_date: z.coerce.date(),
-  safe_addresses: z.array(AddressSchema),
+  safe_addresses: z.array(TargetedSafeEntrySchema),
 });

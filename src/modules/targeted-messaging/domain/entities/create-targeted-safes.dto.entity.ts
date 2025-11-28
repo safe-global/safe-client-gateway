@@ -1,17 +1,17 @@
-import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { z } from 'zod';
-import type { Address } from 'viem';
+import type { TargetedSafeEntry } from '@/modules/targeted-messaging/domain/entities/targeted-safe-entry.entity';
+import { TargetedSafeEntrySchema } from '@/modules/targeted-messaging/domain/entities/targeted-safe-entry.entity';
 
 export const CreateTargetedSafesDtoSchema = z.object({
   outreachId: z.number(),
-  addresses: z.array(AddressSchema),
+  addresses: z.array(TargetedSafeEntrySchema),
 });
 
 export class CreateTargetedSafesDto
   implements z.infer<typeof CreateTargetedSafesDtoSchema>
 {
   outreachId: number;
-  addresses: Array<Address>;
+  addresses: Array<TargetedSafeEntry>;
 
   constructor(props: CreateTargetedSafesDto) {
     this.outreachId = props.outreachId;

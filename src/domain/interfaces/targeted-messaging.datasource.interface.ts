@@ -28,6 +28,7 @@ export interface ITargetedMessagingDatasource {
   getTargetedSafe(args: {
     outreachId: number;
     safeAddress: Address;
+    chainId?: string;
   }): Promise<TargetedSafe>;
 
   createSubmission(args: {

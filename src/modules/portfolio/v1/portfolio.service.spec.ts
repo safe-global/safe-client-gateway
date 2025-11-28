@@ -1,6 +1,8 @@
 import { PortfolioApiService } from '@/modules/portfolio/v1/portfolio.service';
 import type { IPortfolioService as IDomainPortfolioService } from '@/modules/portfolio/domain/portfolio.service.interface';
+import type { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
 import { portfolioBuilder } from '@/modules/portfolio/domain/entities/__tests__/portfolio.builder';
+import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 import { PortfolioRouteMapper } from '@/modules/portfolio/v1/portfolio.mapper';
@@ -10,6 +12,7 @@ import { tokenBalanceBuilder } from '@/modules/portfolio/domain/entities/__tests
 describe('PortfolioApiService', () => {
   let service: PortfolioApiService;
   let mockDomainService: jest.MockedObjectDeep<IDomainPortfolioService>;
+  let mockChainsRepository: jest.MockedObjectDeep<IChainsRepository>;
   let portfolioRouteMapper: PortfolioRouteMapper;
 
   beforeEach(() => {
@@ -20,9 +23,23 @@ describe('PortfolioApiService', () => {
       clearPortfolio: jest.fn(),
     } as jest.MockedObjectDeep<IDomainPortfolioService>;
 
+    mockChainsRepository = {
+      getChain: jest.fn(),
+      getChains: jest.fn(),
+      getAllChains: jest.fn(),
+      clearChain: jest.fn(),
+      getSingletons: jest.fn(),
+      getIndexingStatus: jest.fn(),
+      isSupportedChain: jest.fn(),
+    } as jest.MockedObjectDeep<IChainsRepository>;
+
     portfolioRouteMapper = new PortfolioRouteMapper();
 
-    service = new PortfolioApiService(mockDomainService, portfolioRouteMapper);
+    service = new PortfolioApiService(
+      mockDomainService,
+      portfolioRouteMapper,
+      mockChainsRepository,
+    );
   });
 
   describe('getPortfolio', () => {
@@ -44,6 +61,7 @@ describe('PortfolioApiService', () => {
         chainIds: undefined,
         trusted: undefined,
         excludeDust: undefined,
+        isTestnet: false,
       });
 
       // Verify that result is mapped (not the raw domain portfolio)
@@ -80,12 +98,15 @@ describe('PortfolioApiService', () => {
       expect(Array.isArray(result.positionBalances[0].groups)).toBe(true);
     });
 
-    it('should pass through all parameters', async () => {
+    it('should pass through all parameters with isTestnet=false for mainnet chains', async () => {
       const address = getAddress(faker.finance.ethereumAddress());
       const fiatCode = 'EUR';
       const chainIds = ['1', '10'];
       const trusted = true;
       const excludeDust = true;
+
+      const mainnetChain = chainBuilder().with('isTestnet', false).build();
+      mockChainsRepository.getChain.mockResolvedValue(mainnetChain);
 
       const domainPortfolio = portfolioBuilder().build();
       mockDomainService.getPortfolio.mockResolvedValue(domainPortfolio);
@@ -104,6 +125,64 @@ describe('PortfolioApiService', () => {
         chainIds,
         trusted,
         excludeDust,
+        isTestnet: false,
+      });
+    });
+
+    it('should set isTestnet=true when all chainIds are testnets', async () => {
+      const address = getAddress(faker.finance.ethereumAddress());
+      const fiatCode = 'USD';
+      const chainIds = ['11155111']; // Sepolia
+
+      const testnetChain = chainBuilder().with('isTestnet', true).build();
+      mockChainsRepository.getChain.mockResolvedValue(testnetChain);
+
+      const domainPortfolio = portfolioBuilder().build();
+      mockDomainService.getPortfolio.mockResolvedValue(domainPortfolio);
+
+      await service.getPortfolio({
+        address,
+        fiatCode,
+        chainIds,
+      });
+
+      expect(mockDomainService.getPortfolio).toHaveBeenCalledWith({
+        address,
+        fiatCode,
+        chainIds,
+        trusted: undefined,
+        excludeDust: undefined,
+        isTestnet: true,
+      });
+    });
+
+    it('should set isTestnet=false when chainIds mix mainnet and testnet', async () => {
+      const address = getAddress(faker.finance.ethereumAddress());
+      const fiatCode = 'USD';
+      const chainIds = ['1', '11155111']; // Mainnet and Sepolia
+
+      const mainnetChain = chainBuilder().with('isTestnet', false).build();
+      const testnetChain = chainBuilder().with('isTestnet', true).build();
+      mockChainsRepository.getChain
+        .mockResolvedValueOnce(mainnetChain)
+        .mockResolvedValueOnce(testnetChain);
+
+      const domainPortfolio = portfolioBuilder().build();
+      mockDomainService.getPortfolio.mockResolvedValue(domainPortfolio);
+
+      await service.getPortfolio({
+        address,
+        fiatCode,
+        chainIds,
+      });
+
+      expect(mockDomainService.getPortfolio).toHaveBeenCalledWith({
+        address,
+        fiatCode,
+        chainIds,
+        trusted: undefined,
+        excludeDust: undefined,
+        isTestnet: false,
       });
     });
   });
