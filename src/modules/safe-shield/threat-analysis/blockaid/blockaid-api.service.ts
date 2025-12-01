@@ -47,4 +47,19 @@ export class BlockaidApi implements IBlockaidApi {
 
     return await this.blockaidClient.evm.jsonRpc.scan(params);
   }
+
+  public async reportTransaction(args: {
+    event: 'FALSE_POSITIVE' | 'FALSE_NEGATIVE';
+    details: string;
+    requestId: string;
+  }): Promise<void> {
+    await this.blockaidClient.evm.transaction.report({
+      event: args.event,
+      details: args.details,
+      report: {
+        type: 'request_id',
+        request_id: args.requestId,
+      },
+    });
+  }
 }

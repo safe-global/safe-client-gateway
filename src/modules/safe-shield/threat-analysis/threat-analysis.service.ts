@@ -361,4 +361,20 @@ export class ThreatAnalysisService {
   public failedAnalysisResponse(): ThreatAnalysisResponse {
     return { THREAT: [this.mapToAnalysisResult({ type: 'FAILED' })] };
   }
+
+  /**
+   * Reports a false positive or false negative transaction scan result to Blockaid.
+   * @param {Object} args - The report parameters
+   * @param {'FALSE_POSITIVE' | 'FALSE_NEGATIVE'} args.event - The type of report
+   * @param {string} args.details - Details about why this is a false result
+   * @param {string} args.requestId - The request_id from the original scan response
+   * @returns {Promise<void>}
+   */
+  public async reportTransaction(args: {
+    event: 'FALSE_POSITIVE' | 'FALSE_NEGATIVE';
+    details: string;
+    requestId: string;
+  }): Promise<void> {
+    await this.blockaidAPI.reportTransaction(args);
+  }
 }

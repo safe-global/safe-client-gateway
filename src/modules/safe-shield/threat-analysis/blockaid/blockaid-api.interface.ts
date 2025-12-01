@@ -20,4 +20,18 @@ export interface IBlockaidApi {
     message: string,
     origin?: string,
   ): Promise<TransactionScanResponse>;
+
+  /**
+   * Reports a false positive or false negative transaction scan result to Blockaid
+   * using the request_id from a previous scan.
+   * @param {'FALSE_POSITIVE' | 'FALSE_NEGATIVE'} args.event - The type of report.
+   * @param {string} args.details - Details about why this is a false result.
+   * @param {string} args.requestId - The request_id from the original scan response.
+   * @returns {Promise<void>}
+   */
+  reportTransaction(args: {
+    event: 'FALSE_POSITIVE' | 'FALSE_NEGATIVE';
+    details: string;
+    requestId: string;
+  }): Promise<void>;
 }

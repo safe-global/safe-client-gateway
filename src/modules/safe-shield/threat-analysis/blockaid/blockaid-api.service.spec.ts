@@ -10,6 +10,9 @@ const mockBlockaidClient = {
     jsonRpc: {
       scan: jest.fn(),
     },
+    transaction: {
+      report: jest.fn(),
+    },
   },
 } as jest.MockedObjectDeep<Blockaid>;
 
@@ -144,6 +147,62 @@ describe('BlockaidApi', () => {
 
       await expect(
         service.scanTransaction(chainId, safeAddress, walletAddress, message),
+      ).rejects.toThrow('Blockaid API error');
+    });
+  });
+
+  describe('reportTransaction', () => {
+    const requestId = faker.string.uuid();
+    const details = 'This transaction was incorrectly flagged';
+
+    it('should call blockaid client with correct parameters for FALSE_POSITIVE', async () => {
+      mockBlockaidClient.evm.transaction.report.mockResolvedValue({});
+
+      await service.reportTransaction({
+        event: 'FALSE_POSITIVE',
+        details,
+        requestId,
+      });
+
+      expect(mockBlockaidClient.evm.transaction.report).toHaveBeenCalledWith({
+        event: 'FALSE_POSITIVE',
+        details,
+        report: {
+          type: 'request_id',
+          request_id: requestId,
+        },
+      });
+    });
+
+    it('should call blockaid client with correct parameters for FALSE_NEGATIVE', async () => {
+      mockBlockaidClient.evm.transaction.report.mockResolvedValue({});
+
+      await service.reportTransaction({
+        event: 'FALSE_NEGATIVE',
+        details,
+        requestId,
+      });
+
+      expect(mockBlockaidClient.evm.transaction.report).toHaveBeenCalledWith({
+        event: 'FALSE_NEGATIVE',
+        details,
+        report: {
+          type: 'request_id',
+          request_id: requestId,
+        },
+      });
+    });
+
+    it('should forward errors from blockaid client', async () => {
+      const error = new Error('Blockaid API error');
+      mockBlockaidClient.evm.transaction.report.mockRejectedValue(error);
+
+      await expect(
+        service.reportTransaction({
+          event: 'FALSE_POSITIVE',
+          details,
+          requestId,
+        }),
       ).rejects.toThrow('Blockaid API error');
     });
   });
