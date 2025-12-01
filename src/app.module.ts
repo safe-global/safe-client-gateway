@@ -61,7 +61,6 @@ import { SpacesModule } from '@/modules/spaces/spaces.module';
 import { BullModule } from '@nestjs/bullmq';
 import { CsvExportModule } from '@/modules/csv-export/csv-export.module';
 import { SafeShieldModule } from '@/modules/safe-shield/safe-shield.module';
-import { DelegatesV2Module } from './modules/delegate/routes/v2/delegates.v2.module';
 
 @Module({})
 export class AppModule implements NestModule {
@@ -71,7 +70,6 @@ export class AppModule implements NestModule {
       accounts: isAccountsFeatureEnabled,
       users: isUsersFeatureEnabled,
       email: isEmailFeatureEnabled,
-      delegatesV2: isDelegatesV2Enabled,
       zerionPositions: isZerionPositionsFeatureEnabled,
     } = configFactory()['features'];
 
@@ -92,9 +90,7 @@ export class AppModule implements NestModule {
         ContractsModule,
         CsvExportModule,
         DataDecoderModule,
-        // TODO: delete/rename DelegatesModule when clients migration to v2 is completed.
         DelegateModule,
-        ...(isDelegatesV2Enabled ? [DelegatesV2Module] : []),
         // Note: this feature will not work as expected until we reintegrate the email service
         ...(isEmailFeatureEnabled ? [AlertsModule, RecoveryModule] : []),
         EstimationsModule,

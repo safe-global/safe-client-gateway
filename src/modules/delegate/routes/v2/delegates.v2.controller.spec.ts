@@ -31,7 +31,6 @@ describe('Delegates controller', () => {
       ...baseConfig,
       features: {
         ...baseConfig.features,
-        delegatesV2: true,
       },
     });
 
