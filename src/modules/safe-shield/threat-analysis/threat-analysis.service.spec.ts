@@ -1,6 +1,9 @@
 import { ThreatAnalysisService } from '@/modules/safe-shield/threat-analysis/threat-analysis.service';
 import type { ILoggingService } from '@/logging/logging.interface';
-import type { IBlockaidApi } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-api.interface';
+import type {
+  IBlockaidApi,
+  TransactionScanResponseWithRequestId,
+} from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-api.interface';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 import type { TransactionScanResponse } from '@blockaid/client/resources/evm/evm';
@@ -14,6 +17,17 @@ import {
 const mockBlockaidApi = {
   scanTransaction: jest.fn(),
 } as jest.MockedObjectDeep<IBlockaidApi>;
+
+/**
+ * Helper to create a TransactionScanResponseWithRequestId from a TransactionScanResponse
+ */
+const createScanResult = (
+  response: TransactionScanResponse,
+  request_id: string | null = faker.string.uuid(),
+): TransactionScanResponseWithRequestId => ({
+  ...response,
+  request_id,
+});
 
 const mockLoggingService = {
   debug: jest.fn(),
@@ -40,7 +54,8 @@ describe('ThreatAnalysisService', () => {
       .with('walletAddress', walletAddress)
       .build();
 
-    it('should analyze threats', async () => {
+    it('should analyze threats and include request_id in response', async () => {
+      const requestId = faker.string.uuid();
       const mockSuccessScanResponse = {
         validation: {
           status: 'Success',
@@ -65,9 +80,10 @@ describe('ThreatAnalysisService', () => {
           },
         ],
         BALANCE_CHANGE: [],
+        request_id: requestId,
       };
       mockBlockaidApi.scanTransaction.mockResolvedValue(
-        mockSuccessScanResponse,
+        createScanResult(mockSuccessScanResponse, requestId),
       );
 
       const result = await service.analyze({
@@ -84,6 +100,45 @@ describe('ThreatAnalysisService', () => {
         expect.any(String),
         request.origin,
       );
+    });
+
+    it('should handle null request_id from header', async () => {
+      const mockSuccessScanResponse = {
+        validation: {
+          status: 'Success',
+          result_type: 'Benign',
+          classification: '',
+          reason: '',
+          description: '',
+          features: [],
+        },
+        simulation: {
+          status: 'Success',
+        },
+      } as unknown as TransactionScanResponse;
+
+      mockBlockaidApi.scanTransaction.mockResolvedValue(
+        createScanResult(mockSuccessScanResponse, null),
+      );
+
+      const result = await service.analyze({
+        chainId,
+        safeAddress,
+        request,
+      });
+
+      expect(result).toEqual({
+        THREAT: [
+          {
+            severity: SEVERITY_MAPPING.NO_THREAT,
+            type: 'NO_THREAT',
+            title: TITLE_MAPPING.NO_THREAT,
+            description: DESCRIPTION_MAPPING.NO_THREAT(),
+          },
+        ],
+        BALANCE_CHANGE: [],
+        request_id: undefined,
+      });
     });
 
     it('should handle message serialization failure', async () => {
@@ -162,7 +217,9 @@ describe('ThreatAnalysisService', () => {
         },
       } as unknown as TransactionScanResponse;
 
-      mockBlockaidApi.scanTransaction.mockResolvedValue(mockScanResponse);
+      mockBlockaidApi.scanTransaction.mockResolvedValue(
+        createScanResult(mockScanResponse),
+      );
 
       await service.analyze({
         chainId,
@@ -197,6 +254,7 @@ describe('ThreatAnalysisService', () => {
     });
 
     it('should handle all results: validation, simulation and balanceChange', async () => {
+      const requestId = faker.string.uuid();
       const oldMasterCopy = getAddress(faker.finance.ethereumAddress());
       const newMasterCopy = getAddress(faker.finance.ethereumAddress());
       const erc20Address = getAddress(faker.finance.ethereumAddress());
@@ -268,7 +326,9 @@ describe('ThreatAnalysisService', () => {
         },
       } as unknown as TransactionScanResponse;
 
-      mockBlockaidApi.scanTransaction.mockResolvedValue(mockScanResponse);
+      mockBlockaidApi.scanTransaction.mockResolvedValue(
+        createScanResult(mockScanResponse, requestId),
+      );
 
       const result = await service.analyze({
         chainId,
@@ -316,11 +376,13 @@ describe('ThreatAnalysisService', () => {
             out: [],
           },
         ],
+        request_id: requestId,
       });
     });
 
     describe('validation', () => {
       it('should handle undefined validation as FAILED', async () => {
+        const requestId = faker.string.uuid();
         const mockScanResponse = {
           block: faker.string.numeric(),
           chain: 'ethereum',
@@ -330,7 +392,9 @@ describe('ThreatAnalysisService', () => {
           },
         } as unknown as TransactionScanResponse;
 
-        mockBlockaidApi.scanTransaction.mockResolvedValue(mockScanResponse);
+        mockBlockaidApi.scanTransaction.mockResolvedValue(
+          createScanResult(mockScanResponse, requestId),
+        );
 
         const result = await service.analyze({
           chainId,
@@ -349,10 +413,12 @@ describe('ThreatAnalysisService', () => {
             },
           ],
           BALANCE_CHANGE: [],
+          request_id: requestId,
         });
       });
 
       it('should handle validation result_type Error as FAILED', async () => {
+        const requestId = faker.string.uuid();
         const mockScanResponse = {
           block: faker.string.numeric(),
           chain: 'ethereum',
@@ -371,7 +437,9 @@ describe('ThreatAnalysisService', () => {
           },
         } as unknown as TransactionScanResponse;
 
-        mockBlockaidApi.scanTransaction.mockResolvedValue(mockScanResponse);
+        mockBlockaidApi.scanTransaction.mockResolvedValue(
+          createScanResult(mockScanResponse, requestId),
+        );
 
         const result = await service.analyze({
           chainId,
@@ -392,10 +460,12 @@ describe('ThreatAnalysisService', () => {
             },
           ],
           BALANCE_CHANGE: [],
+          request_id: requestId,
         });
       });
 
       it('should handle validation result_type Malicious without features', async () => {
+        const requestId = faker.string.uuid();
         const description = faker.lorem.sentence();
 
         const mockScanResponse = {
@@ -410,7 +480,9 @@ describe('ThreatAnalysisService', () => {
           },
         } as unknown as TransactionScanResponse;
 
-        mockBlockaidApi.scanTransaction.mockResolvedValue(mockScanResponse);
+        mockBlockaidApi.scanTransaction.mockResolvedValue(
+          createScanResult(mockScanResponse, requestId),
+        );
 
         const result = await service.analyze({
           chainId,
@@ -432,10 +504,12 @@ describe('ThreatAnalysisService', () => {
             },
           ],
           BALANCE_CHANGE: [],
+          request_id: requestId,
         });
       });
 
       it('should handle validation result_type Warning with features', async () => {
+        const requestId = faker.string.uuid();
         const classification = 'known_malicious';
         const reason = 'transfer_farming';
 
@@ -475,7 +549,9 @@ describe('ThreatAnalysisService', () => {
           },
         } as unknown as TransactionScanResponse;
 
-        mockBlockaidApi.scanTransaction.mockResolvedValue(mockScanResponse);
+        mockBlockaidApi.scanTransaction.mockResolvedValue(
+          createScanResult(mockScanResponse, requestId),
+        );
 
         const result = await service.analyze({
           chainId,
@@ -501,12 +577,14 @@ describe('ThreatAnalysisService', () => {
             },
           ],
           BALANCE_CHANGE: [],
+          request_id: requestId,
         });
       });
     });
 
     describe('simulation', () => {
       it('should handle undefined simulation gracefully', async () => {
+        const requestId = faker.string.uuid();
         const mockScanResponse = {
           block: faker.string.numeric(),
           chain: 'ethereum',
@@ -521,7 +599,9 @@ describe('ThreatAnalysisService', () => {
           },
         } as unknown as TransactionScanResponse;
 
-        mockBlockaidApi.scanTransaction.mockResolvedValue(mockScanResponse);
+        mockBlockaidApi.scanTransaction.mockResolvedValue(
+          createScanResult(mockScanResponse, requestId),
+        );
 
         const result = await service.analyze({
           chainId,
@@ -540,10 +620,12 @@ describe('ThreatAnalysisService', () => {
             },
           ],
           BALANCE_CHANGE: [],
+          request_id: requestId,
         });
       });
 
       it('should handle simulation with Error status as FAILED', async () => {
+        const requestId = faker.string.uuid();
         const mockScanResponse = {
           block: faker.string.numeric(),
           chain: 'ethereum',
@@ -563,7 +645,9 @@ describe('ThreatAnalysisService', () => {
           },
         } as unknown as TransactionScanResponse;
 
-        mockBlockaidApi.scanTransaction.mockResolvedValue(mockScanResponse);
+        mockBlockaidApi.scanTransaction.mockResolvedValue(
+          createScanResult(mockScanResponse, requestId),
+        );
 
         const result = await service.analyze({
           chainId,
@@ -590,10 +674,12 @@ describe('ThreatAnalysisService', () => {
             },
           ],
           BALANCE_CHANGE: undefined,
+          request_id: requestId,
         });
       });
 
       it('should handle simulation with PROXY_UPGRADE', async () => {
+        const requestId = faker.string.uuid();
         const oldMasterCopy = getAddress(faker.finance.ethereumAddress());
         const newMasterCopy = getAddress(faker.finance.ethereumAddress());
         const mockScanResponse = {
@@ -627,7 +713,9 @@ describe('ThreatAnalysisService', () => {
           },
         } as unknown as TransactionScanResponse;
 
-        mockBlockaidApi.scanTransaction.mockResolvedValue(mockScanResponse);
+        mockBlockaidApi.scanTransaction.mockResolvedValue(
+          createScanResult(mockScanResponse, requestId),
+        );
 
         const result = await service.analyze({
           chainId,
@@ -654,10 +742,12 @@ describe('ThreatAnalysisService', () => {
             },
           ],
           BALANCE_CHANGE: [],
+          request_id: requestId,
         });
       });
 
       it('should handle simulation with OWNERSHIP_CHANGE', async () => {
+        const requestId = faker.string.uuid();
         const mockScanResponse = {
           block: faker.string.numeric(),
           chain: 'ethereum',
@@ -683,7 +773,9 @@ describe('ThreatAnalysisService', () => {
           },
         } as unknown as TransactionScanResponse;
 
-        mockBlockaidApi.scanTransaction.mockResolvedValue(mockScanResponse);
+        mockBlockaidApi.scanTransaction.mockResolvedValue(
+          createScanResult(mockScanResponse, requestId),
+        );
 
         const result = await service.analyze({
           chainId,
@@ -708,10 +800,12 @@ describe('ThreatAnalysisService', () => {
             },
           ],
           BALANCE_CHANGE: [],
+          request_id: requestId,
         });
       });
 
       it('should handle simulation with MODULE_CHANGE', async () => {
+        const requestId = faker.string.uuid();
         const mockScanResponse = {
           block: faker.string.numeric(),
           chain: 'ethereum',
@@ -736,7 +830,9 @@ describe('ThreatAnalysisService', () => {
           },
         } as unknown as TransactionScanResponse;
 
-        mockBlockaidApi.scanTransaction.mockResolvedValue(mockScanResponse);
+        mockBlockaidApi.scanTransaction.mockResolvedValue(
+          createScanResult(mockScanResponse, requestId),
+        );
 
         const result = await service.analyze({
           chainId,
@@ -761,10 +857,12 @@ describe('ThreatAnalysisService', () => {
             },
           ],
           BALANCE_CHANGE: [],
+          request_id: requestId,
         });
       });
 
       it('should populate balance changes from simulation', async () => {
+        const requestId = faker.string.uuid();
         const mockErc20Address = getAddress(faker.finance.ethereumAddress());
         const tokenSymbol = faker.string.alpha(4).toUpperCase();
         const logoUrl = faker.internet.url();
@@ -810,7 +908,9 @@ describe('ThreatAnalysisService', () => {
           },
         } as unknown as TransactionScanResponse;
 
-        mockBlockaidApi.scanTransaction.mockResolvedValue(mockScanResponse);
+        mockBlockaidApi.scanTransaction.mockResolvedValue(
+          createScanResult(mockScanResponse, requestId),
+        );
 
         const result = await service.analyze({
           chainId,
@@ -847,6 +947,7 @@ describe('ThreatAnalysisService', () => {
               out: [{ value: nativeOutValue }],
             },
           ],
+          request_id: requestId,
         });
       });
     });

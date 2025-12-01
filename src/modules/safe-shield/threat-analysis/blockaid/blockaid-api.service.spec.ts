@@ -5,6 +5,26 @@ import type { Address } from 'viem';
 import { faker } from '@faker-js/faker';
 import type Blockaid from '@blockaid/client';
 
+const createMockWithResponse = (
+  data: TransactionScanResponse,
+  requestId: string | null,
+): ReturnType<typeof mockBlockaidClient.evm.jsonRpc.scan> =>
+  ({
+    withResponse: jest.fn().mockResolvedValue({
+      data,
+      response: {
+        headers: {
+          get: jest.fn().mockImplementation((header: string) => {
+            if (header.toLowerCase() === 'x-request-id') {
+              return requestId;
+            }
+            return null;
+          }),
+        },
+      },
+    }),
+  }) as unknown as ReturnType<typeof mockBlockaidClient.evm.jsonRpc.scan>;
+
 const mockBlockaidClient = {
   evm: {
     jsonRpc: {
@@ -74,17 +94,19 @@ describe('BlockaidApi', () => {
     //   },
     // };
 
-    it('should call blockaid client with correct parameters', async () => {
+    it('should call blockaid client with correct parameters and return request_id from header', async () => {
       const origin = faker.internet.url();
+      const request_id = faker.string.uuid();
 
       const mockScanResponse: TransactionScanResponse = {
         block: faker.string.numeric(),
         chain: `0x${chainId}`,
-        request_id: faker.string.uuid(),
         status: 'Success',
       } as TransactionScanResponse;
 
-      mockBlockaidClient.evm.jsonRpc.scan.mockResolvedValue(mockScanResponse);
+      mockBlockaidClient.evm.jsonRpc.scan.mockReturnValue(
+        createMockWithResponse(mockScanResponse, request_id),
+      );
 
       const result = await service.scanTransaction(
         chainId,
@@ -106,18 +128,24 @@ describe('BlockaidApi', () => {
         //state_override: stateOverride,
       });
 
-      expect(result).toEqual(mockScanResponse);
+      expect(result).toEqual({
+        ...mockScanResponse,
+        request_id,
+      });
     });
 
     it('should call blockaid client without domain parameter/ with non_dapp', async () => {
+      const request_id = faker.string.uuid();
+
       const mockScanResponse: TransactionScanResponse = {
         block: faker.string.numeric(),
         chain: `0x${chainId}`,
-        request_id: faker.string.uuid(),
         status: 'Success',
       } as TransactionScanResponse;
 
-      mockBlockaidClient.evm.jsonRpc.scan.mockResolvedValue(mockScanResponse);
+      mockBlockaidClient.evm.jsonRpc.scan.mockReturnValue(
+        createMockWithResponse(mockScanResponse, request_id),
+      );
 
       const result = await service.scanTransaction(
         chainId,
@@ -138,12 +166,41 @@ describe('BlockaidApi', () => {
         //state_override: stateOverride,
       });
 
-      expect(result).toEqual(mockScanResponse);
+      expect(result).toEqual({
+        ...mockScanResponse,
+        request_id,
+      });
+    });
+
+    it('should return null request_id when header is not present', async () => {
+      const mockScanResponse: TransactionScanResponse = {
+        block: faker.string.numeric(),
+        chain: `0x${chainId}`,
+        status: 'Success',
+      } as TransactionScanResponse;
+
+      mockBlockaidClient.evm.jsonRpc.scan.mockReturnValue(
+        createMockWithResponse(mockScanResponse, null),
+      );
+
+      const result = await service.scanTransaction(
+        chainId,
+        safeAddress,
+        walletAddress,
+        message,
+      );
+
+      expect(result).toEqual({
+        ...mockScanResponse,
+        request_id: null,
+      });
     });
 
     it('should forward errors from blockaid client', async () => {
       const error = new Error('Blockaid API error');
-      mockBlockaidClient.evm.jsonRpc.scan.mockRejectedValue(error);
+      mockBlockaidClient.evm.jsonRpc.scan.mockReturnValue({
+        withResponse: jest.fn().mockRejectedValue(error),
+      } as unknown as ReturnType<typeof mockBlockaidClient.evm.jsonRpc.scan>);
 
       await expect(
         service.scanTransaction(chainId, safeAddress, walletAddress, message),

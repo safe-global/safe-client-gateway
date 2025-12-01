@@ -1189,6 +1189,7 @@ describe('SafeShieldService', () => {
             out: [],
           },
         ],
+        request_id: faker.string.uuid(),
       };
       const mockChain = chainBuilder()
         .with('chainId', mockChainId)

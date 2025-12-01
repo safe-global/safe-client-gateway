@@ -112,16 +112,21 @@ export class ThreatAnalysisService {
     origin?: string,
   ): Promise<ThreatAnalysisResponse> {
     try {
-      const response = await this.blockaidAPI.scanTransaction(
-        chainId,
-        safeAddress,
-        walletAddress,
-        message,
-        origin,
-      );
-      const { simulation, validation } = response;
+      const { simulation, validation, request_id } =
+        await this.blockaidAPI.scanTransaction(
+          chainId,
+          safeAddress,
+          walletAddress,
+          message,
+          origin,
+        );
 
-      return this.processAnalysisResults(safeAddress, simulation, validation);
+      return this.processAnalysisResults(
+        safeAddress,
+        simulation,
+        validation,
+        request_id,
+      );
     } catch (error) {
       this.loggingService.warn(
         `Error during threat analysis for Safe ${safeAddress} on chain ${chainId}: ${error}`,
@@ -135,12 +140,14 @@ export class ThreatAnalysisService {
    * @param {Address} safeAddress - The Safe wallet address
    * @param {TransactionSimulation | TransactionSimulationError} [simulation] - The transaction simulation result
    * @param {TransactionValidation | TransactionValidationError} [validation] - The transaction validation result
+   * @param {string | null} requestId - The Blockaid request ID from x-request-id header
    * @returns {ThreatAnalysisResponse} The processed threat analysis response
    */
   private processAnalysisResults(
     safeAddress: Address,
-    simulation?: TransactionSimulation | TransactionSimulationError,
-    validation?: TransactionValidation | TransactionValidationError,
+    simulation: TransactionSimulation | TransactionSimulationError | undefined,
+    validation: TransactionValidation | TransactionValidationError | undefined,
+    requestId: string | null,
   ): ThreatAnalysisResponse {
     const [results, balanceChanges] = this.analyzeSimulation(
       safeAddress,
@@ -155,6 +162,7 @@ export class ThreatAnalysisService {
     return {
       THREAT: threatResults,
       BALANCE_CHANGE: balanceChanges,
+      request_id: requestId ?? undefined,
     };
   }
 

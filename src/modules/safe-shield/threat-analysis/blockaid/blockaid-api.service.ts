@@ -1,10 +1,14 @@
-import { IBlockaidApi } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-api.interface';
+import {
+  IBlockaidApi,
+  type TransactionScanResponseWithRequestId,
+} from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-api.interface';
 // import { GUARD_STORAGE_POSITION } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-api.constants';
 import Blockaid from '@blockaid/client';
-import { TransactionScanResponse } from '@blockaid/client/resources/evm/evm';
 import { JsonRpcScanParams } from '@blockaid/client/resources/evm/json-rpc';
 import { Injectable } from '@nestjs/common';
 import { Address, numberToHex } from 'viem';
+
+const BLOCKAID_REQUEST_ID_HEADER = 'x-request-id';
 
 @Injectable()
 export class BlockaidApi implements IBlockaidApi {
@@ -20,7 +24,7 @@ export class BlockaidApi implements IBlockaidApi {
     walletAddress: Address,
     message: string,
     origin?: string,
-  ): Promise<TransactionScanResponse> {
+  ): Promise<TransactionScanResponseWithRequestId> {
     const chain = numberToHex(Number(chainId));
     const params: JsonRpcScanParams = {
       chain,
@@ -45,7 +49,12 @@ export class BlockaidApi implements IBlockaidApi {
       // },
     };
 
-    return await this.blockaidClient.evm.jsonRpc.scan(params);
+    const { data, response } = await this.blockaidClient.evm.jsonRpc
+      .scan(params)
+      .withResponse();
+    const request_id = response.headers.get(BLOCKAID_REQUEST_ID_HEADER);
+
+    return { ...data, request_id };
   }
 
   public async reportTransaction(args: {

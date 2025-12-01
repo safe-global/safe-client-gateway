@@ -3,6 +3,13 @@ import type { Address } from 'viem';
 
 export const IBlockaidApi = Symbol('IBlockaidApi');
 
+/**
+ * Extended TransactionScanResponse that includes the request_id from x-request-id header.
+ */
+export type TransactionScanResponseWithRequestId = TransactionScanResponse & {
+  request_id: string | null;
+};
+
 export interface IBlockaidApi {
   /**
    * Scans the transaction for potential threats using the Blockaid client
@@ -11,7 +18,7 @@ export interface IBlockaidApi {
    * @param {Address} walletAddress - The wallet address initiating the transaction (signer).
    * @param {string} message - The JSON representation of typed data.
    * @param {string} origin - The origin identifier for the request (optional).
-   * @returns {Promise<TransactionScanResponse>} The scan response.
+   * @returns {Promise<TransactionScanResponseWithRequestId>} The scan response with request_id from x-request-id header.
    */
   scanTransaction(
     chainId: string,
@@ -19,7 +26,7 @@ export interface IBlockaidApi {
     walletAddress: Address,
     message: string,
     origin?: string,
-  ): Promise<TransactionScanResponse>;
+  ): Promise<TransactionScanResponseWithRequestId>;
 
   /**
    * Reports a false positive or false negative transaction scan result to Blockaid
