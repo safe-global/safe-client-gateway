@@ -1,8 +1,5 @@
-import { Module } from '@nestjs/common';
-import { PositionsRepository } from '@/modules/positions/domain/positions.repository';
-import { PositionsApiModule } from '@/modules/positions/datasources/positions-api.module';
-import { Chain } from '@/modules/chains/domain/entities/chain.entity';
-import { Position } from '@/modules/positions/domain/entities/position.entity';
+import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
+import type { Position } from '@/modules/positions/domain/entities/position.entity';
 import type { Address } from 'viem';
 
 export const IPositionsRepository = Symbol('IPositionsRepository');
@@ -22,15 +19,3 @@ export interface IPositionsRepository {
 
   getFiatCodes(): Promise<Array<string>>;
 }
-
-@Module({
-  imports: [PositionsApiModule],
-  providers: [
-    {
-      provide: IPositionsRepository,
-      useClass: PositionsRepository,
-    },
-  ],
-  exports: [IPositionsRepository],
-})
-export class PositionsRepositoryModule {}

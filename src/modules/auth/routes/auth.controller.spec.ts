@@ -1,7 +1,7 @@
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import configuration from '@/config/entities/__tests__/configuration';
-import { EmailApiModule } from '@/modules/email/datasources/email-api.module';
+import { EmailModule } from '@/modules/email/email.module';
 import { TestEmailApiModule } from '@/modules/email/datasources/__tests__/test.email-api.module';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { createTestModule } from '@/__tests__/testing-module';
@@ -26,7 +26,7 @@ describe('AuthController', () => {
       config,
       modules: [
         {
-          originalModule: EmailApiModule,
+          originalModule: EmailModule,
           testModule: TestEmailApiModule,
         },
       ],

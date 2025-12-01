@@ -11,7 +11,7 @@ import { faker } from '@faker-js/faker';
 import { Controller, Get, INestApplication, UseGuards } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
-import { AuthRepositoryModule } from '@/modules/auth/domain/auth.repository.interface';
+import { AuthModule } from '@/modules/auth/auth.module';
 import { Server } from 'net';
 import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
 
@@ -45,7 +45,7 @@ describe('OptionalAuthGuard', () => {
         TestLoggingModule,
         ConfigurationModule.register(testConfiguration),
         CacheModule,
-        AuthRepositoryModule,
+        AuthModule,
       ],
       controllers: [TestController],
       providers: [AuthGuard],

@@ -11,7 +11,7 @@ import {
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import type { Alert } from '@/modules/alerts/routes/entities/alert.dto.entity';
 import { EventType } from '@/modules/alerts/routes/entities/alert.dto.entity';
-import { EmailApiModule } from '@/modules/email/datasources/email-api.module';
+import { EmailModule } from '@/modules/email/email.module';
 import { TestEmailApiModule } from '@/modules/email/datasources/__tests__/test.email-api.module';
 import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
 import {
@@ -33,12 +33,10 @@ import {
 import {
   AlertsApiConfigurationModule,
   ALERTS_API_CONFIGURATION_MODULE,
-} from '@/modules/alerts/datasources/configuration/alerts-api.configuration.module';
-import alertsApiConfiguration from '@/modules/alerts/datasources/configuration/__tests__/alerts-api.configuration';
-import {
   AlertsConfigurationModule,
   ALERTS_CONFIGURATION_MODULE,
-} from '@/modules/alerts/routes/configuration/alerts.configuration.module';
+} from '@/modules/alerts/alerts.module';
+import alertsApiConfiguration from '@/modules/alerts/datasources/configuration/__tests__/alerts-api.configuration';
 import alertsConfiguration from '@/modules/alerts/routes/configuration/__tests__/alerts.configuration';
 import type { Server } from 'net';
 import { createTestModule } from '@/__tests__/testing-module';
@@ -98,7 +96,7 @@ describe('Alerts (Unit)', () => {
             ),
           },
           {
-            originalModule: EmailApiModule,
+            originalModule: EmailModule,
             testModule: TestEmailApiModule,
           },
         ],

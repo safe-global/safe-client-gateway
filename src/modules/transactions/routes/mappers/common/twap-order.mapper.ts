@@ -19,7 +19,7 @@ import {
   OrderStatus,
 } from '@/modules/swaps/domain/entities/order.entity';
 import { ISwapsRepository } from '@/modules/swaps/domain/swaps.repository';
-import { SwapsRepositoryModule } from '@/modules/swaps/domain/swaps-repository.module';
+import { SwapsModule } from '@/modules/swaps/swaps.module';
 import { SwapOrderMapperModule } from '@/modules/transactions/routes/mappers/common/swap-order.mapper';
 import { GPv2OrderHelper } from '@/modules/transactions/routes/helpers/gp-v2-order.helper';
 import { IConfigurationService } from '@/config/configuration.service.interface';
@@ -345,7 +345,7 @@ export class TwapOrderMapper {
 @Module({
   imports: [
     SwapOrderHelperModule,
-    SwapsRepositoryModule,
+    SwapsModule,
     SwapOrderMapperModule,
     TwapOrderHelperModule,
     SwapAppsHelperModule,

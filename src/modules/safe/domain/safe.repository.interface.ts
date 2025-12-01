@@ -10,11 +10,11 @@ import { AddConfirmationDto } from '@/modules/transactions/domain/entities/add-c
 import { ProposeTransactionDto } from '@/modules/transactions/domain/entities/propose-transaction.dto.entity';
 import { Module } from '@nestjs/common';
 import { SafeRepository } from '@/modules/safe/domain/safe.repository';
-import { ChainsRepositoryModule } from '@/modules/chains/domain/chains.repository.interface';
+import { ChainsModule } from '@/modules/chains/chains.module';
 import { TransactionApiManagerModule } from '@/domain/interfaces/transaction-api.manager.interface';
 import { TransactionVerifierHelper } from '@/modules/transactions/routes/helpers/transaction-verifier.helper';
 import { DelegatesV2RepositoryModule } from '@/modules/delegate/domain/v2/delegates.v2.repository.interface';
-import { ContractsRepositoryModule } from '@/modules/contracts/domain/contracts.repository.interface';
+import { ContractsModule } from '@/modules/contracts/contracts.module';
 import type { Address } from 'viem';
 
 export const ISafeRepository = Symbol('ISafeRepository');
@@ -221,10 +221,10 @@ export interface ISafeRepository {
 
 @Module({
   imports: [
-    ChainsRepositoryModule,
+    ChainsModule,
     TransactionApiManagerModule,
     DelegatesV2RepositoryModule,
-    ContractsRepositoryModule,
+    ContractsModule,
   ],
   providers: [
     {

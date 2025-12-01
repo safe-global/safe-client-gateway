@@ -2,7 +2,7 @@ import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { AppModule } from '@/app.module';
 import configuration from '@/config/entities/__tests__/configuration';
 import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
-import { AuthRepositoryModule } from '@/modules/auth/domain/auth.repository.interface';
+import { AuthModule } from '@/modules/auth/auth.module';
 import { authPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import {
   AuthPayload,
@@ -43,7 +43,7 @@ describe('Auth decorator', () => {
   }
 
   @Module({
-    imports: [AppModule.register(configuration), AuthRepositoryModule],
+    imports: [AppModule.register(configuration), AuthModule],
     controllers: [TestController],
   })
   class TestModule {}
