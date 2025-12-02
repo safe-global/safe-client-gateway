@@ -111,6 +111,12 @@ export const ContractAnalysisResultSchema = AnalysisResultBaseSchema.extend({
   type: z.union([ContractStatusSchema, CommonStatusSchema]),
 });
 
+/** Zod schema definition for threat (MALICIOUS or MODERATE) analysis issues */
+const ThreatIssueSchema = z.object({
+  address: z.string().optional(),
+  description: z.string(),
+});
+
 /**
  * Zod schema for threat analysis results.
  * Uses union to validate type-specific fields.
@@ -125,7 +131,7 @@ export const ThreatAnalysisResultSchema = z.union([
   // MALICIOUS or MODERATE: optional issues
   AnalysisResultBaseSchema.extend({
     type: z.union([z.literal('MALICIOUS'), z.literal('MODERATE')]),
-    issues: z.record(SeveritySchema, z.array(z.string())).optional(),
+    issues: z.record(SeveritySchema, z.array(ThreatIssueSchema)).optional(),
   }),
   // All others: no extra fields
   AnalysisResultBaseSchema.extend({
@@ -166,11 +172,16 @@ export type MasterCopyChangeThreatAnalysisResult =
     after: string;
   };
 
+export type ThreatIssue = z.infer<typeof ThreatIssueSchema>;
+export type ThreatIssues = Partial<
+  Record<keyof typeof Severity, Array<ThreatIssue>>
+>;
+
 export type MaliciousOrModerateThreatAnalysisResult = AnalysisResult<
   'MALICIOUS' | 'MODERATE'
 > & {
   /** A potential partial record of specific issues identified during threat analysis, grouped by severity */
-  issues?: Partial<Record<keyof typeof Severity, Array<string>>>;
+  issues?: ThreatIssues;
 };
 
 /**

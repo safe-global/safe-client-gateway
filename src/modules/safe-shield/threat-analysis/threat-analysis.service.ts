@@ -4,6 +4,8 @@ import { ThreatAnalysisResponse } from '@/modules/safe-shield/entities/analysis-
 import {
   CommonStatus,
   ThreatAnalysisResult,
+  ThreatIssue,
+  ThreatIssues,
 } from '@/modules/safe-shield/entities/analysis-result.entity';
 import {
   Severity,
@@ -272,31 +274,33 @@ export class ThreatAnalysisService {
   /**
    * Groups validation issues by their severity.
    * @param {Array<{ type: string; description: string }>} features - List of features detected during threat analysis
-   * @returns {Map<keyof typeof Severity, Array<string>>} Partial record of issues grouped by severity (highest to lowest)
+   * @returns {ThreatIssues} Partial record of issues grouped by severity (highest to lowest)
    */
   private groupIssuesBySeverity(
-    features: Array<{ type: string; description: string }>,
-  ): Partial<Record<keyof typeof Severity, Array<string>>> {
+    features: Array<{ type: string; description: string; address?: string }>,
+  ): ThreatIssues {
     if (!features.length) {
       return {};
     }
 
     const grouped = features
       .filter((f) => f.type === 'Malicious' || f.type === 'Warning')
-      .reduce(
-        (acc, { type, description }) => {
-          const sev = BLOCKAID_SEVERITY_MAP[type];
-          (acc[sev] ??= []).push(description);
-          return acc;
-        },
-        {} as Partial<Record<keyof typeof Severity, Array<string>>>,
-      );
+      .reduce((acc, { type, description, address }) => {
+        const sev = BLOCKAID_SEVERITY_MAP[type];
+        (acc[sev] ??= []).push({
+          description,
+          address,
+        });
+        return acc;
+      }, {} as ThreatIssues);
 
     return Object.fromEntries(
       (
-        Object.entries(grouped) as Array<[keyof typeof Severity, Array<string>]>
+        Object.entries(grouped) as Array<
+          [keyof typeof Severity, Array<ThreatIssue>]
+        >
       ).sort(([a], [b]) => compareSeverityString(b, a)),
-    ) as Partial<Record<keyof typeof Severity, Array<string>>>;
+    ) as ThreatIssues;
   }
 
   /**
@@ -306,7 +310,7 @@ export class ThreatAnalysisService {
    * @param {string} args.reason - A description about the reasons the transaction was flagged with the type
    * @param {string} args.classification - A classification explaining the reason of threat analysis result
    * @param {string} args.description - A fallback description from Blockaid in case specific mappings are not found for reason/classification
-   * @param {Map<keyof typeof Severity, Array<string>>} args.issues - A potential partial record of specific issues identified during threat analysis, grouped by severity
+   * @param {ThreatIssues} args.issues - A potential partial record of specific issues identified during threat analysis, grouped by severity
    * @param {string} args.before - The old master copy address (only for MASTERCOPY_CHANGE)
    * @param {string} args.after - The new master copy address (only for MASTERCOPY_CHANGE)
    * @param {string} args.error - An error message in case of a failure
@@ -317,7 +321,7 @@ export class ThreatAnalysisService {
     reason?: string;
     classification?: string;
     description?: string;
-    issues?: Partial<Record<keyof typeof Severity, Array<string>>>;
+    issues?: ThreatIssues;
     before?: string;
     after?: string;
     error?: string;
