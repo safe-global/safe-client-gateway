@@ -53,7 +53,7 @@ export const prepareDescription = (
   description?: string,
 ): string | undefined => {
   if (description) {
-    return description;
+    return `${description}.`;
   }
 
   const reasonMsg = reason && REASON_MAPPING[reason];
