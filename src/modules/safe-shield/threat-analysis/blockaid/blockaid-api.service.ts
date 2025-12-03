@@ -6,14 +6,18 @@ import { ReportEvent } from '@/modules/safe-shield/entities/dtos/report-false-re
 import { BLOCKAID_REQUEST_ID_HEADER } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-api.constants';
 import Blockaid from '@blockaid/client';
 import { JsonRpcScanParams } from '@blockaid/client/resources/evm/json-rpc';
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { Address, numberToHex } from 'viem';
+import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 
 @Injectable()
 export class BlockaidApi implements IBlockaidApi {
   private readonly blockaidClient: Blockaid;
 
-  constructor() {
+  constructor(
+    @Inject(LoggingService)
+    private readonly loggingService: ILoggingService,
+  ) {
     this.blockaidClient = new Blockaid();
   }
 
@@ -54,6 +58,11 @@ export class BlockaidApi implements IBlockaidApi {
     const request_id =
       response.headers.get(BLOCKAID_REQUEST_ID_HEADER) ?? undefined;
 
+    this.loggingService.debug({
+      message: 'Blockaid scan response',
+      response: this.sanitizeScanResponse({ ...data, request_id }),
+    });
+
     return { ...data, request_id };
   }
 
@@ -70,5 +79,31 @@ export class BlockaidApi implements IBlockaidApi {
         request_id: args.requestId,
       },
     });
+  }
+  private sanitizeScanResponse(
+    response: TransactionScanResponseWithRequestId,
+  ): Record<string, unknown> {
+    const { validation, simulation, chain, request_id } = response;
+
+    return {
+      chain,
+      request_id,
+      validation: validation
+        ? {
+            status: validation.status,
+            result_type: validation.result_type,
+            description: validation.description,
+            features: validation.features?.map(({ type, feature_id }) => ({
+              type,
+              feature_id,
+            })),
+          }
+        : undefined,
+      simulation: simulation
+        ? {
+            status: simulation.status,
+          }
+        : undefined,
+    };
   }
 }
