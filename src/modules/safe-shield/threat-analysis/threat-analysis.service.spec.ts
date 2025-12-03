@@ -117,9 +117,10 @@ describe('ThreatAnalysisService', () => {
         },
       } as unknown as TransactionScanResponse;
 
-      mockBlockaidApi.scanTransaction.mockResolvedValue(
-        createScanResult(mockSuccessScanResponse, null),
-      );
+      mockBlockaidApi.scanTransaction.mockResolvedValue({
+        ...mockSuccessScanResponse,
+        request_id: undefined,
+      });
 
       const result = await service.analyze({
         chainId,
