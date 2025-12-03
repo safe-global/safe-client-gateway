@@ -114,7 +114,6 @@ describe('SafeShieldController (Integration)', () => {
         .build();
       const safeAddress = getAddress(faker.finance.ethereumAddress());
       const requestBody = threatAnalysisRequestBuilder().build();
-      const requestId = faker.string.uuid();
 
       const blockaidResponse = {
         validation: {
@@ -137,10 +136,7 @@ describe('SafeShieldController (Integration)', () => {
         return Promise.reject(new Error(`No matching rule for url: ${url}`));
       });
 
-      blockaidApi.scanTransaction.mockResolvedValue({
-        ...blockaidResponse,
-        request_id: requestId,
-      });
+      blockaidApi.scanTransaction.mockResolvedValue(blockaidResponse);
 
       const response = await request(app.getHttpServer())
         .post(

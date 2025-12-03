@@ -14,7 +14,6 @@ import {
   BalanceChangesSchema,
 } from '@/modules/safe-shield/entities/threat-analysis.types';
 import { ThreatStatus } from '@/modules/safe-shield/entities/threat-status.entity';
-import { ReportEvent } from '@/modules/safe-shield/entities/dtos/report-false-result.dto';
 import { IBlockaidApi } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-api.interface';
 import {
   BLOCKAID_SEVERITY_MAP,
@@ -113,21 +112,16 @@ export class ThreatAnalysisService {
     origin?: string,
   ): Promise<ThreatAnalysisResponse> {
     try {
-      const { simulation, validation, request_id } =
-        await this.blockaidAPI.scanTransaction(
-          chainId,
-          safeAddress,
-          walletAddress,
-          message,
-          origin,
-        );
-
-      return this.processAnalysisResults(
+      const response = await this.blockaidAPI.scanTransaction(
+        chainId,
         safeAddress,
-        simulation,
-        validation,
-        request_id,
+        walletAddress,
+        message,
+        origin,
       );
+      const { simulation, validation } = response;
+
+      return this.processAnalysisResults(safeAddress, simulation, validation);
     } catch (error) {
       this.loggingService.warn(
         `Error during threat analysis for Safe ${safeAddress} on chain ${chainId}: ${error}`,
@@ -141,14 +135,12 @@ export class ThreatAnalysisService {
    * @param {Address} safeAddress - The Safe wallet address
    * @param {TransactionSimulation | TransactionSimulationError} [simulation] - The transaction simulation result
    * @param {TransactionValidation | TransactionValidationError} [validation] - The transaction validation result
-   * @param {string | undefined} requestId - The Blockaid request ID from x-request-id header
    * @returns {ThreatAnalysisResponse} The processed threat analysis response
    */
   private processAnalysisResults(
     safeAddress: Address,
     simulation?: TransactionSimulation | TransactionSimulationError,
     validation?: TransactionValidation | TransactionValidationError,
-    requestId?: string,
   ): ThreatAnalysisResponse {
     const [results, balanceChanges] = this.analyzeSimulation(
       safeAddress,
@@ -163,7 +155,6 @@ export class ThreatAnalysisService {
     return {
       THREAT: threatResults,
       BALANCE_CHANGE: balanceChanges,
-      request_id: requestId,
     };
   }
 
@@ -369,21 +360,5 @@ export class ThreatAnalysisService {
    */
   public failedAnalysisResponse(): ThreatAnalysisResponse {
     return { THREAT: [this.mapToAnalysisResult({ type: 'FAILED' })] };
-  }
-
-  /**
-   * Reports a false positive or false negative transaction scan result to Blockaid.
-   * @param {Object} args - The report parameters
-   * @param {ReportEvent} args.event - The type of report
-   * @param {string} args.details - Details about why this is a false result
-   * @param {string} args.requestId - The request_id from the original scan response
-   * @returns {Promise<void>}
-   */
-  public async reportTransaction(args: {
-    event: ReportEvent;
-    details: string;
-    requestId: string;
-  }): Promise<void> {
-    await this.blockaidAPI.reportTransaction(args);
   }
 }

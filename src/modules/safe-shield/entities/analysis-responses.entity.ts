@@ -8,6 +8,7 @@ import type {
 import {
   ContractStatusGroupSchema,
   RecipientStatusGroupSchema,
+  ThreatStatusGroupSchema,
 } from './status-group.entity';
 import type { AnalysisResult, CommonStatus } from './analysis-result.entity';
 import {
@@ -103,19 +104,30 @@ export const CounterpartyAnalysisResponseSchema = z.object({
 });
 
 /**
+ * Dynamically builds the shape object for all threat status groups.
+ * Maps THREAT to an array of threat results and BALANCE_CHANGE to balance changes schema.
+ */
+const threatGroupsShape = ThreatStatusGroupSchema.options.reduce(
+  (acc, key) => {
+    if (key === 'THREAT') {
+      acc[key] = z.array(ThreatAnalysisResultSchema).optional();
+    } else if (key === 'BALANCE_CHANGE') {
+      acc[key] = BalanceChangesSchema.optional();
+    }
+    return acc;
+  },
+  {} as Record<string, z.ZodTypeAny>,
+);
+
+/**
  * Response structure for threat analysis endpoint.
  *
  * Returns threat analysis results grouped by category along with balance changes.
  * Unlike recipient/contract analysis, threat analysis operates at the
  * transaction level rather than per-address.
- * Includes request_id from Blockaid's x-request-id header for reporting.
  */
 export const ThreatAnalysisResponseSchema = z
-  .object({
-    THREAT: z.array(ThreatAnalysisResultSchema).optional(),
-    BALANCE_CHANGE: BalanceChangesSchema.optional(),
-    request_id: z.string().optional(),
-  })
+  .object(threatGroupsShape)
   .strict();
 
 /**
