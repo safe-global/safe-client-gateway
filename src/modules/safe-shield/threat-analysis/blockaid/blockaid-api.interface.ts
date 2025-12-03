@@ -1,5 +1,6 @@
 import type { TransactionScanResponse } from '@blockaid/client/resources/index';
 import type { Address } from 'viem';
+import type { ReportEvent } from '../../entities/dtos/report-false-result.dto';
 
 export const IBlockaidApi = Symbol('IBlockaidApi');
 
@@ -32,13 +33,13 @@ export interface IBlockaidApi {
   /**
    * Reports a false positive or false negative transaction scan result to Blockaid
    * using the request_id from a previous scan.
-   * @param {'FALSE_POSITIVE' | 'FALSE_NEGATIVE'} args.event - The type of report.
+   * @param {ReportEvent} args.event - The type of report.
    * @param {string} args.details - Details about why this is a false result.
    * @param {string} args.requestId - The request_id from the original scan response.
    * @returns {Promise<void>}
    */
   reportTransaction(args: {
-    event: 'FALSE_POSITIVE' | 'FALSE_NEGATIVE';
+    event: ReportEvent;
     details: string;
     requestId: string;
   }): Promise<void>;

@@ -14,6 +14,7 @@ import {
   BalanceChangesSchema,
 } from '@/modules/safe-shield/entities/threat-analysis.types';
 import { ThreatStatus } from '@/modules/safe-shield/entities/threat-status.entity';
+import { ReportEvent } from '@/modules/safe-shield/entities/dtos/report-false-result.dto';
 import { IBlockaidApi } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-api.interface';
 import {
   BLOCKAID_SEVERITY_MAP,
@@ -373,13 +374,13 @@ export class ThreatAnalysisService {
   /**
    * Reports a false positive or false negative transaction scan result to Blockaid.
    * @param {Object} args - The report parameters
-   * @param {'FALSE_POSITIVE' | 'FALSE_NEGATIVE'} args.event - The type of report
+   * @param {ReportEvent} args.event - The type of report
    * @param {string} args.details - Details about why this is a false result
    * @param {string} args.requestId - The request_id from the original scan response
    * @returns {Promise<void>}
    */
   public async reportTransaction(args: {
-    event: 'FALSE_POSITIVE' | 'FALSE_NEGATIVE';
+    event: ReportEvent;
     details: string;
     requestId: string;
   }): Promise<void> {

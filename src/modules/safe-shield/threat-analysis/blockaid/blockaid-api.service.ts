@@ -2,13 +2,12 @@ import {
   IBlockaidApi,
   type TransactionScanResponseWithRequestId,
 } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-api.interface';
-// import { GUARD_STORAGE_POSITION } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-api.constants';
+import { ReportEvent } from '@/modules/safe-shield/entities/dtos/report-false-result.dto';
+import { BLOCKAID_REQUEST_ID_HEADER } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-api.constants';
 import Blockaid from '@blockaid/client';
 import { JsonRpcScanParams } from '@blockaid/client/resources/evm/json-rpc';
 import { Injectable } from '@nestjs/common';
 import { Address, numberToHex } from 'viem';
-
-const BLOCKAID_REQUEST_ID_HEADER = 'x-request-id';
 
 @Injectable()
 export class BlockaidApi implements IBlockaidApi {
@@ -59,7 +58,7 @@ export class BlockaidApi implements IBlockaidApi {
   }
 
   public async reportTransaction(args: {
-    event: 'FALSE_POSITIVE' | 'FALSE_NEGATIVE';
+    event: ReportEvent;
     details: string;
     requestId: string;
   }): Promise<void> {
