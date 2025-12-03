@@ -206,12 +206,14 @@ export class SafeShieldController {
   @Post('chains/:chainId/security/:safeAddress/report-false-result')
   public async reportFalseResult(
     @Param('chainId', new ValidationPipe(NumericStringSchema))
-    _chainId: string,
+    chainId: string,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
-    _safeAddress: Address,
+    safeAddress: Address,
     @Body(new ValidationPipe(ReportFalseResultRequestSchema))
     request: ReportFalseResultRequestDto,
   ): Promise<ReportFalseResultResponseDto> {
+    // chainId and safeAddress are validated for URL consistency
+    // but not used in the report as Blockaid uses request_id
     return this.safeShieldService.reportFalseResult({
       request,
     });
