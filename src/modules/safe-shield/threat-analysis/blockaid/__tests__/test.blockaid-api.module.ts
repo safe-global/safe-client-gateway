@@ -3,7 +3,6 @@ import { Module } from '@nestjs/common';
 
 const blockaidApi = {
   scanTransaction: jest.fn(),
-  reportTransaction: jest.fn(),
 };
 
 @Module({
