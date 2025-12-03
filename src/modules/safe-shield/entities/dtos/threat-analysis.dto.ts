@@ -259,4 +259,12 @@ export class ThreatAnalysisResponseDto implements ThreatAnalysisResponse {
     ],
   })
   BALANCE_CHANGE?: Array<BalanceChange>;
+
+  @ApiPropertyOptional({
+    description:
+      'Blockaid request ID from x-request-id header. ' +
+      'Used for reporting false positives/negatives via the report endpoint.',
+    example: '11111111-1111-1111-1111-111111111111',
+  })
+  request_id?: string;
 }

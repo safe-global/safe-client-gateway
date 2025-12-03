@@ -29,6 +29,7 @@ import {
   COMMON_DESCRIPTION_MAPPING,
   COMMON_SEVERITY_MAPPING,
 } from '@/modules/safe-shield/entities/common-status.constants';
+import type { ReportFalseResultRequest } from '@/modules/safe-shield/entities/dtos/report-false-result.dto';
 
 /**
  * Main orchestration service for Safe Shield transaction analysis.
@@ -208,6 +209,34 @@ export class SafeShieldService {
     } catch (error) {
       this.loggingService.warn(`The threat analysis failed. ${error}`);
       return this.threatAnalysisService.failedAnalysisResponse();
+    }
+  }
+
+  /**
+   * Reports a false positive or false negative Blockaid scan result.
+   * Uses the request_id from the original scan response.
+   *
+   * @param {ReportFalseResultRequest} args.request - The report request containing request_id
+   * @returns {Promise<{ success: boolean }>} Success response
+   */
+  public async reportFalseResult({
+    request,
+  }: {
+    request: ReportFalseResultRequest;
+  }): Promise<{ success: boolean }> {
+    try {
+      await this.threatAnalysisService.reportTransaction({
+        event: request.event,
+        details: request.details,
+        requestId: request.request_id,
+      });
+
+      return { success: true };
+    } catch (error) {
+      this.loggingService.warn(
+        `Failed to submit report for request_id ${request.request_id}: ${asError(error).message}`,
+      );
+      return { success: false };
     }
   }
 

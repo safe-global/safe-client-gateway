@@ -28,6 +28,11 @@ import { CounterpartyAnalysisDto } from '@/modules/safe-shield/entities/dtos/cou
 import { ThreatAnalysisResponseDto } from '@/modules/safe-shield/entities/dtos/threat-analysis.dto';
 import { ThreatAnalysisRequestDto } from '@/modules/safe-shield/entities/dtos/threat-analysis-request.dto';
 import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
+import {
+  ReportFalseResultRequestDto,
+  ReportFalseResultRequestSchema,
+  ReportFalseResultResponseDto,
+} from '@/modules/safe-shield/entities/dtos/report-false-result.dto';
 
 /**
  * Controller for Safe Shield security analysis endpoints.
@@ -166,6 +171,50 @@ export class SafeShieldController {
     return this.safeShieldService.analyzeThreats({
       chainId,
       safeAddress,
+      request,
+    });
+  }
+
+  @ApiOperation({
+    summary: 'Report false Blockaid scan result',
+    description:
+      'Reports a FALSE_POSITIVE or FALSE_NEGATIVE Blockaid transaction scan result for review. ' +
+      'Use the request_id from the original scan response to identify the transaction.',
+  })
+  @ApiParam({
+    name: 'chainId',
+    type: 'string',
+    description: 'Chain ID where the Safe is deployed',
+    example: '1',
+  })
+  @ApiParam({
+    name: 'safeAddress',
+    type: 'string',
+    description: 'Safe contract address',
+  })
+  @ApiBody({
+    type: ReportFalseResultRequestDto,
+    required: true,
+    description:
+      'Report details including event type, request_id from scan response, and details.',
+  })
+  @ApiOkResponse({
+    type: ReportFalseResultResponseDto,
+    description: 'Report submitted successfully.',
+  })
+  @HttpCode(HttpStatus.OK)
+  @Post('chains/:chainId/security/:safeAddress/report-false-result')
+  public async reportFalseResult(
+    @Param('chainId', new ValidationPipe(NumericStringSchema))
+    chainId: string,
+    @Param('safeAddress', new ValidationPipe(AddressSchema))
+    safeAddress: Address,
+    @Body(new ValidationPipe(ReportFalseResultRequestSchema))
+    request: ReportFalseResultRequestDto,
+  ): Promise<ReportFalseResultResponseDto> {
+    // chainId and safeAddress are validated for URL consistency
+    // but not used in the report as Blockaid uses request_id
+    return this.safeShieldService.reportFalseResult({
       request,
     });
   }

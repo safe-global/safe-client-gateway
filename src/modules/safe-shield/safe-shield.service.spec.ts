@@ -3,6 +3,7 @@ import type { RecipientAnalysisService } from './recipient-analysis/recipient-an
 import type { ContractAnalysisService } from './contract-analysis/contract-analysis.service';
 import type { ThreatAnalysisService } from './threat-analysis/threat-analysis.service';
 import type { ILoggingService } from '@/logging/logging.interface';
+import type { ReportFalseResultRequest } from './entities/dtos/report-false-result.dto';
 import type { DataDecoded } from '@/modules/data-decoder/routes/entities/data-decoded.entity';
 import type { DecodedTransactionData } from '@/modules/safe-shield/entities/transaction-data.entity';
 import type {
@@ -125,6 +126,7 @@ describe('SafeShieldService', () => {
   const mockThreatAnalysisService = {
     analyze: jest.fn(),
     failedAnalysisResponse: jest.fn(),
+    reportTransaction: jest.fn(),
   } as jest.MockedObjectDeep<ThreatAnalysisService>;
   const mockTransactionsService = {
     previewTransaction: jest.fn(),
@@ -1188,6 +1190,7 @@ describe('SafeShieldService', () => {
             out: [],
           },
         ],
+        request_id: faker.string.uuid(),
       };
       const mockChain = chainBuilder()
         .with('chainId', mockChainId)
@@ -1288,6 +1291,64 @@ describe('SafeShieldService', () => {
       );
       expect(mockConfigApi.getChain).toHaveBeenCalledWith(mockChainId);
       expect(mockThreatAnalysisService.analyze).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('reportFalseResult', () => {
+    const mockReportRequest: ReportFalseResultRequest = {
+      event: 'FALSE_POSITIVE',
+      request_id: faker.string.uuid(),
+      details: 'This transaction was incorrectly flagged as malicious',
+    };
+
+    it('should successfully report a false positive using request_id', async () => {
+      mockThreatAnalysisService.reportTransaction.mockResolvedValue(undefined);
+
+      const result = await service.reportFalseResult({
+        request: mockReportRequest,
+      });
+
+      expect(result).toEqual({ success: true });
+      expect(mockThreatAnalysisService.reportTransaction).toHaveBeenCalledWith({
+        event: mockReportRequest.event,
+        details: mockReportRequest.details,
+        requestId: mockReportRequest.request_id,
+      });
+    });
+
+    it('should successfully report a false negative using request_id', async () => {
+      const falseNegativeRequest: ReportFalseResultRequest = {
+        ...mockReportRequest,
+        event: 'FALSE_NEGATIVE',
+      };
+
+      mockThreatAnalysisService.reportTransaction.mockResolvedValue(undefined);
+
+      const result = await service.reportFalseResult({
+        request: falseNegativeRequest,
+      });
+
+      expect(result).toEqual({ success: true });
+      expect(mockThreatAnalysisService.reportTransaction).toHaveBeenCalledWith({
+        event: 'FALSE_NEGATIVE',
+        details: falseNegativeRequest.details,
+        requestId: falseNegativeRequest.request_id,
+      });
+    });
+
+    it('should return success: false and log warning when report fails', async () => {
+      mockThreatAnalysisService.reportTransaction.mockRejectedValue(
+        new Error('Blockaid API error'),
+      );
+
+      const result = await service.reportFalseResult({
+        request: mockReportRequest,
+      });
+
+      expect(result).toEqual({ success: false });
+      expect(mockLoggingService.warn).toHaveBeenCalledWith(
+        `Failed to submit report for request_id ${mockReportRequest.request_id}: Blockaid API error`,
+      );
     });
   });
 });
