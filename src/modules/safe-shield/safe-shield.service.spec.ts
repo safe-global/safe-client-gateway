@@ -3,6 +3,7 @@ import type { RecipientAnalysisService } from './recipient-analysis/recipient-an
 import type { ContractAnalysisService } from './contract-analysis/contract-analysis.service';
 import type { ThreatAnalysisService } from './threat-analysis/threat-analysis.service';
 import type { ILoggingService } from '@/logging/logging.interface';
+import type { ReportFalseResultRequest } from './entities/dtos/report-false-result.dto';
 import type { DataDecoded } from '@/modules/data-decoder/routes/entities/data-decoded.entity';
 import type { DecodedTransactionData } from '@/modules/safe-shield/entities/transaction-data.entity';
 import type {
@@ -1294,8 +1295,8 @@ describe('SafeShieldService', () => {
   });
 
   describe('reportFalseResult', () => {
-    const mockReportRequest = {
-      event: 'FALSE_POSITIVE' as const,
+    const mockReportRequest: ReportFalseResultRequest = {
+      event: 'FALSE_POSITIVE',
       request_id: faker.string.uuid(),
       details: 'This transaction was incorrectly flagged as malicious',
     };
@@ -1316,9 +1317,9 @@ describe('SafeShieldService', () => {
     });
 
     it('should successfully report a false negative using request_id', async () => {
-      const falseNegativeRequest = {
+      const falseNegativeRequest: ReportFalseResultRequest = {
         ...mockReportRequest,
-        event: 'FALSE_NEGATIVE' as const,
+        event: 'FALSE_NEGATIVE',
       };
 
       mockThreatAnalysisService.reportTransaction.mockResolvedValue(undefined);
@@ -1335,7 +1336,7 @@ describe('SafeShieldService', () => {
       });
     });
 
-    it('should return success: false and log error when report fails', async () => {
+    it('should return success: false and log warning when report fails', async () => {
       mockThreatAnalysisService.reportTransaction.mockRejectedValue(
         new Error('Blockaid API error'),
       );
@@ -1345,8 +1346,8 @@ describe('SafeShieldService', () => {
       });
 
       expect(result).toEqual({ success: false });
-      expect(mockLoggingService.error).toHaveBeenCalledWith(
-        `Failed to report false result for request_id ${mockReportRequest.request_id}: Blockaid API error`,
+      expect(mockLoggingService.warn).toHaveBeenCalledWith(
+        `Failed to submit report for request_id ${mockReportRequest.request_id}: Blockaid API error`,
       );
     });
   });

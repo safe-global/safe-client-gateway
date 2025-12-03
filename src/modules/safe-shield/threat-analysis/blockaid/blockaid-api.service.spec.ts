@@ -192,7 +192,7 @@ describe('BlockaidApi', () => {
 
       expect(result).toEqual({
         ...mockScanResponse,
-        request_id: null,
+        request_id: undefined,
       });
     });
 

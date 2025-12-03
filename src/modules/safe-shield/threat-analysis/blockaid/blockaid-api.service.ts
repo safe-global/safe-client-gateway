@@ -52,7 +52,8 @@ export class BlockaidApi implements IBlockaidApi {
     const { data, response } = await this.blockaidClient.evm.jsonRpc
       .scan(params)
       .withResponse();
-    const request_id = response.headers.get(BLOCKAID_REQUEST_ID_HEADER);
+    const request_id =
+      response.headers.get(BLOCKAID_REQUEST_ID_HEADER) ?? undefined;
 
     return { ...data, request_id };
   }

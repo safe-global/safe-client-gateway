@@ -23,7 +23,7 @@ const mockBlockaidApi = {
  */
 const createScanResult = (
   response: TransactionScanResponse,
-  request_id: string | null = faker.string.uuid(),
+  request_id: string | undefined = faker.string.uuid(),
 ): TransactionScanResponseWithRequestId => ({
   ...response,
   request_id,
@@ -102,7 +102,7 @@ describe('ThreatAnalysisService', () => {
       );
     });
 
-    it('should handle null request_id from header', async () => {
+    it('should handle undefined request_id from header', async () => {
       const mockSuccessScanResponse = {
         validation: {
           status: 'Success',

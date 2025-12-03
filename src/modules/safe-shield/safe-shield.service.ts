@@ -233,8 +233,8 @@ export class SafeShieldService {
 
       return { success: true };
     } catch (error) {
-      this.loggingService.error(
-        `Failed to report false result for request_id ${request.request_id}: ${asError(error).message}`,
+      this.loggingService.warn(
+        `Failed to submit report for request_id ${request.request_id}: ${asError(error).message}`,
       );
       return { success: false };
     }

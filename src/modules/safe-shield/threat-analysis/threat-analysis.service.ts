@@ -140,14 +140,14 @@ export class ThreatAnalysisService {
    * @param {Address} safeAddress - The Safe wallet address
    * @param {TransactionSimulation | TransactionSimulationError} [simulation] - The transaction simulation result
    * @param {TransactionValidation | TransactionValidationError} [validation] - The transaction validation result
-   * @param {string | null} requestId - The Blockaid request ID from x-request-id header
+   * @param {string | undefined} requestId - The Blockaid request ID from x-request-id header
    * @returns {ThreatAnalysisResponse} The processed threat analysis response
    */
   private processAnalysisResults(
     safeAddress: Address,
-    simulation: TransactionSimulation | TransactionSimulationError | undefined,
-    validation: TransactionValidation | TransactionValidationError | undefined,
-    requestId: string | null,
+    simulation?: TransactionSimulation | TransactionSimulationError,
+    validation?: TransactionValidation | TransactionValidationError,
+    requestId?: string,
   ): ThreatAnalysisResponse {
     const [results, balanceChanges] = this.analyzeSimulation(
       safeAddress,
@@ -162,7 +162,7 @@ export class ThreatAnalysisService {
     return {
       THREAT: threatResults,
       BALANCE_CHANGE: balanceChanges,
-      request_id: requestId ?? undefined,
+      request_id: requestId,
     };
   }
 

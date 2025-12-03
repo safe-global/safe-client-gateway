@@ -6,9 +6,10 @@ export const IBlockaidApi = Symbol('IBlockaidApi');
 /**
  * Extended TransactionScanResponse that includes the request_id from x-request-id header.
  */
-export type TransactionScanResponseWithRequestId = TransactionScanResponse & {
-  request_id: string | null;
-};
+export interface TransactionScanResponseWithRequestId
+  extends TransactionScanResponse {
+  request_id: string | undefined;
+}
 
 export interface IBlockaidApi {
   /**
