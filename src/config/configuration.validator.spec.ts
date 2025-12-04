@@ -74,6 +74,7 @@ describe('Configuration validator', () => {
     CSV_AWS_SECRET_ACCESS_KEY: faker.string.uuid(),
     CSV_EXPORT_QUEUE_CONCURRENCY: faker.number.int({ min: 1, max: 5 }),
     BLOCKAID_CLIENT_API_KEY: faker.string.uuid(),
+    TX_SERVICE_API_KEY: faker.string.hexadecimal({ length: 32 }),
   };
 
   it('should bypass this validation on test environment', () => {

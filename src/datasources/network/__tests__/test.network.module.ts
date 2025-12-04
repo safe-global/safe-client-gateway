@@ -2,6 +2,7 @@ import { Global, Module } from '@nestjs/common';
 import {
   INetworkService,
   NetworkService,
+  TxNetworkService,
 } from '@/datasources/network/network.service.interface';
 
 const networkService: INetworkService = {
@@ -29,7 +30,11 @@ const networkService: INetworkService = {
         return jest.mocked(networkService);
       },
     },
+    {
+      provide: TxNetworkService,
+      useExisting: NetworkService,
+    },
   ],
-  exports: [NetworkService],
+  exports: [NetworkService, TxNetworkService],
 })
 export class TestNetworkModule {}
