@@ -33,8 +33,11 @@ function fetchClientFactory(
   const requestTimeout = configurationService.getOrThrow<number>(
     'httpClient.requestTimeout',
   );
+  const endpointTimeouts = configurationService.getOrThrow<
+    Array<{ endpoint: string; timeout: number }>
+  >('httpClient.endpointTimeouts');
 
-  const request = createRequestFunction(requestTimeout);
+  const request = createRequestFunction(requestTimeout, endpointTimeouts);
 
   if (!cacheInFlightRequests) {
     return request;
@@ -43,13 +46,39 @@ function fetchClientFactory(
   return createCachedRequestFunction(request, loggingService);
 }
 
-function createRequestFunction(requestTimeout: number) {
+function getTimeoutForUrl(
+  url: string,
+  endpointTimeouts: Array<{ endpoint: string; timeout: number }>,
+): number | undefined {
+  try {
+    const urlPath = new URL(url).pathname;
+    // Check if URL path contains any of the endpoint patterns
+    // First match wins
+    for (const { endpoint, timeout } of endpointTimeouts) {
+      if (urlPath.includes(endpoint)) {
+        return timeout;
+      }
+    }
+  } catch {
+    // Invalid URL, ignore
+  }
+  return undefined;
+}
+
+function createRequestFunction(
+  defaultTimeout: number,
+  endpointTimeouts: Array<{ endpoint: string; timeout: number }>,
+) {
   return async <T>(
     url: string,
     options: RequestInit,
   ): Promise<NetworkResponse<T>> => {
     let urlObject: URL | null = null;
     let response: Response | null = null;
+
+    // Determine timeout: endpoint-specific > default
+    const requestTimeout =
+      getTimeoutForUrl(url, endpointTimeouts) ?? defaultTimeout;
 
     try {
       urlObject = new URL(url);

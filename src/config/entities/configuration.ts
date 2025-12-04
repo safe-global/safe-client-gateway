@@ -343,6 +343,31 @@ export default () => ({
     requestTimeout: parseInt(
       process.env.HTTP_CLIENT_REQUEST_TIMEOUT_MILLISECONDS ?? `${5_000}`,
     ),
+    // Endpoint-specific timeout overrides (in milliseconds)
+    // Format: JSON array of objects with 'endpoint' (string) and 'timeout' (number) properties
+    // Example: [{"endpoint":"all-transactions","timeout":30000}]
+    endpointTimeouts: ((): Array<{ endpoint: string; timeout: number }> => {
+      const envValue = process.env.HTTP_CLIENT_ENDPOINT_TIMEOUTS;
+      if (!envValue) {
+        return [];
+      }
+      try {
+        const parsed = JSON.parse(envValue);
+        if (!Array.isArray(parsed)) {
+          return [];
+        }
+        return parsed.filter(
+          (item): item is { endpoint: string; timeout: number } =>
+            typeof item === 'object' &&
+            item !== null &&
+            typeof item.endpoint === 'string' &&
+            typeof item.timeout === 'number' &&
+            item.timeout >= 0,
+        );
+      } catch {
+        return [];
+      }
+    })(),
   },
   jwt: {
     issuer: process.env.JWT_ISSUER,

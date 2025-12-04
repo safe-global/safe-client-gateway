@@ -30,6 +30,34 @@ const relayRulesValidator = z
   )
   .optional();
 
+const endpointTimeoutsValidator = z
+  .string()
+  .refine(
+    (value) => {
+      if (value === undefined || value === null || value === '') return true; // Optional
+      try {
+        const parsed = JSON.parse(value);
+
+        if (!Array.isArray(parsed)) return false;
+        return parsed.every(
+          (item: Record<string, unknown>) =>
+            typeof item === 'object' &&
+            item !== null &&
+            typeof item.endpoint === 'string' &&
+            typeof item.timeout === 'number' &&
+            item.timeout >= 0,
+        );
+      } catch {
+        return false;
+      }
+    },
+    {
+      message:
+        'Must be a valid JSON array of objects with endpoint (string) and timeout (number >= 0) properties',
+    },
+  )
+  .optional();
+
 export const RootConfigurationSchema = z
   .object({
     ACCOUNTS_ENCRYPTION_TYPE: z.enum(['local', 'aws']).optional(),
@@ -122,6 +150,7 @@ export const RootConfigurationSchema = z
     CSV_AWS_SECRET_ACCESS_KEY: z.string().optional(),
     CSV_EXPORT_QUEUE_CONCURRENCY: z.number({ coerce: true }).min(1).optional(),
     BLOCKAID_CLIENT_API_KEY: z.string().optional(),
+    HTTP_CLIENT_ENDPOINT_TIMEOUTS: endpointTimeoutsValidator,
   })
   .superRefine((config, ctx) =>
     // Check for AWS_* and Blockaid fields in production and staging environments

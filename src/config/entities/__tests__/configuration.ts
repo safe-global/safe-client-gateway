@@ -214,7 +214,10 @@ export default (): ReturnType<typeof configuration> => ({
     lifiTransactionsMapping: false,
     cacheInFlightRequests: false,
   },
-  httpClient: { requestTimeout: faker.number.int() },
+  httpClient: {
+    requestTimeout: faker.number.int(),
+    endpointTimeouts: [],
+  },
   locking: {
     baseUri: faker.internet.url({ appendSlash: false }),
     eligibility: {
