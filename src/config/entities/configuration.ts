@@ -345,7 +345,13 @@ export default () => ({
     ),
     // Endpoint-specific timeout overrides (in milliseconds)
     // Format: JSON array of objects with 'endpoint' (string) and 'timeout' (number) properties
-    // Example: [{"endpoint":"all-transactions","timeout":30000}]
+    // The endpoint pattern supports:
+    // - Simple substring matching: matches any URL path containing the pattern
+    //   Example: [{"endpoint":"all-transactions","timeout":30000}]
+    // - Wildcard patterns: use '*' to match any segment in the path
+    //   Example: [{"endpoint":"safes/*/multisig-transactions","timeout":25000}]
+    //   This matches /api/v1/safes/{anyAddress}/multisig-transactions/ for any address
+    // Patterns are matched in order, first match wins
     endpointTimeouts: ((): Array<{ endpoint: string; timeout: number }> => {
       const envValue = process.env.HTTP_CLIENT_ENDPOINT_TIMEOUTS;
       if (!envValue) {

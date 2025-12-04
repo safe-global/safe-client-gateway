@@ -52,10 +52,10 @@ function getTimeoutForUrl(
 ): number | undefined {
   try {
     const urlPath = new URL(url).pathname;
-    // Check if URL path contains any of the endpoint patterns
+    // Check if URL path matches any of the endpoint patterns
     // First match wins
     for (const { endpoint, timeout } of endpointTimeouts) {
-      if (urlPath.includes(endpoint)) {
+      if (matchesEndpointPattern(urlPath, endpoint)) {
         return timeout;
       }
     }
@@ -63,6 +63,32 @@ function getTimeoutForUrl(
     // Invalid URL, ignore
   }
   return undefined;
+}
+
+/**
+ * Checks if a URL path matches an endpoint pattern.
+ * Supports wildcard patterns using asterisk to match any segment.
+ * Also supports simple substring matching for backward compatibility.
+ *
+ * @param urlPath - The URL pathname to match against
+ * @param pattern - The endpoint pattern (may contain asterisk wildcards)
+ * @returns true if the path matches the pattern
+ */
+function matchesEndpointPattern(urlPath: string, pattern: string): boolean {
+  // If pattern contains wildcards, use pattern matching
+  if (pattern.includes('*')) {
+    // Escape special regex characters except '*'
+    const escapedPattern = pattern
+      .split('*')
+      .map((part) => part.replace(/[.+?^${}()|[\]\\]/g, '\\$&'))
+      .join('.*?');
+    // Create regex: match the pattern anywhere in the path
+    // Use non-greedy matching for '*' to avoid over-matching
+    const regex = new RegExp(escapedPattern);
+    return regex.test(urlPath);
+  }
+  // For backward compatibility: simple substring matching
+  return urlPath.includes(pattern);
 }
 
 function createRequestFunction(

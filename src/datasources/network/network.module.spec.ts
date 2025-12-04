@@ -474,5 +474,90 @@ describe('NetworkModule', () => {
         });
       });
     });
+
+    describe('wildcard pattern matching', () => {
+      beforeAll(async () => {
+        await initApp(false, [
+          { endpoint: 'safes/*/multisig-transactions', timeout: 25_000 },
+          { endpoint: 'safes/*/all-transactions', timeout: 30_000 },
+          { endpoint: 'safes/*', timeout: 15_000 },
+        ]);
+      });
+
+      beforeEach(() => {
+        // Ensure fetchMock is not set up to return a value
+        fetchMock.mockReset();
+      });
+
+      it('matches wildcard patterns with dynamic safe address', async () => {
+        const safeAddress = faker.string.hexadecimal();
+        const url = `${faker.internet.url({ appendSlash: false })}/api/v2/safes/${safeAddress}/multisig-transactions/`;
+
+        await expect(fetchClient(url, { method: 'GET' })).rejects.toThrow();
+
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+        expect(fetchMock).toHaveBeenCalledWith(url, {
+          method: 'GET',
+          signal: AbortSignal.timeout(25_000), // wildcard pattern match
+          keepalive: true,
+        });
+      });
+
+      it('matches wildcard patterns for all-transactions endpoint', async () => {
+        const safeAddress = faker.string.hexadecimal();
+        const url = `${faker.internet.url({ appendSlash: false })}/api/v2/safes/${safeAddress}/all-transactions/`;
+
+        await expect(fetchClient(url, { method: 'GET' })).rejects.toThrow();
+
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+        expect(fetchMock).toHaveBeenCalledWith(url, {
+          method: 'GET',
+          signal: AbortSignal.timeout(30_000), // wildcard pattern match
+          keepalive: true,
+        });
+      });
+
+      it('uses first matching wildcard pattern when multiple patterns match', async () => {
+        const safeAddress = faker.string.hexadecimal();
+        const url = `${faker.internet.url({ appendSlash: false })}/api/v2/safes/${safeAddress}/multisig-transactions/`;
+
+        await expect(fetchClient(url, { method: 'GET' })).rejects.toThrow();
+
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+        // 'safes/*/multisig-transactions' matches before 'safes/*'
+        expect(fetchMock).toHaveBeenCalledWith(url, {
+          method: 'GET',
+          signal: AbortSignal.timeout(25_000), // first specific match wins
+          keepalive: true,
+        });
+      });
+
+      it('matches wildcard pattern for any safe endpoint', async () => {
+        const safeAddress = faker.string.hexadecimal();
+        const url = `${faker.internet.url({ appendSlash: false })}/api/v1/safes/${safeAddress}`;
+
+        await expect(fetchClient(url, { method: 'GET' })).rejects.toThrow();
+
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+        expect(fetchMock).toHaveBeenCalledWith(url, {
+          method: 'GET',
+          signal: AbortSignal.timeout(15_000), // 'safes/*' pattern match
+          keepalive: true,
+        });
+      });
+
+      it('does not match wildcard pattern when path does not match', async () => {
+        const url = `${faker.internet.url({ appendSlash: false })}/api/v1/tokens/${faker.string.hexadecimal()}`;
+
+        await expect(fetchClient(url, { method: 'GET' })).rejects.toThrow();
+
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+        expect(fetchMock).toHaveBeenCalledWith(url, {
+          method: 'GET',
+          signal: AbortSignal.timeout(httpClientTimeout), // default timeout
+          keepalive: true,
+        });
+      });
+    });
   });
 });
