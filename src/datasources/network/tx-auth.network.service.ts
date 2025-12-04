@@ -60,7 +60,8 @@ export class TxAuthNetworkService implements INetworkService {
   private withAuth<TArgs extends { networkRequest?: NetworkRequest }>(
     args: TArgs,
   ): TArgs {
-    if (!(this.isDevelopment && !this.useVpcUrl) || !this.apiKey) {
+    const isTxAuthEnabled = this.isDevelopment && !this.useVpcUrl;
+    if (!isTxAuthEnabled || !this.apiKey) {
       return args;
     }
 
