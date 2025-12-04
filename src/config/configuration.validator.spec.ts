@@ -134,6 +134,21 @@ describe('Configuration validator', () => {
     },
   );
 
+  it.each(['', '   '])(
+    'should reject empty TX_SERVICE_API_KEY values in production environment',
+    (apiKey) => {
+      process.env.NODE_ENV = 'production';
+      expect(() =>
+        configurationValidator(
+          { ...validConfiguration, TX_SERVICE_API_KEY: apiKey },
+          RootConfigurationSchema,
+        ),
+      ).toThrow(
+        'Configuration is invalid: TX_SERVICE_API_KEY String must contain at least 1 character(s)',
+      );
+    },
+  );
+
   it('should detect an invalid LOG_LEVEL configuration in production environment', () => {
     process.env.NODE_ENV = 'production';
     const invalidConfiguration: Record<string, unknown> = {
