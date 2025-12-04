@@ -179,10 +179,6 @@ export interface ISafeRepository {
     ownerAddress: Address;
   }): Promise<SafeList>;
 
-  deprecated__getAllSafesByOwner(args: {
-    ownerAddress: Address;
-  }): Promise<{ [chainId: string]: Array<string> }>;
-
   getAllSafesByOwner(args: {
     ownerAddress: Address;
   }): Promise<{ [chainId: string]: Array<string> | null }>;
