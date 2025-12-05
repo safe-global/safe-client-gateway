@@ -9,6 +9,7 @@ import { JsonRpcScanParams } from '@blockaid/client/resources/evm/json-rpc';
 import { Inject, Injectable } from '@nestjs/common';
 import { Address, numberToHex } from 'viem';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import { BlockaidScanLogSchema } from '@/modules/safe-shield/threat-analysis/blockaid/schemas/blockaid-scan-log.schema';
 
 @Injectable()
 export class BlockaidApi implements IBlockaidApi {
@@ -58,11 +59,7 @@ export class BlockaidApi implements IBlockaidApi {
     const request_id =
       response.headers.get(BLOCKAID_REQUEST_ID_HEADER) ?? undefined;
 
-    this.loggingService.debug({
-      message: 'Blockaid scan response',
-      response: this.sanitizeScanResponse({ ...data, request_id }),
-    });
-
+    this.logScanResponse({ ...data, request_id });
     return { ...data, request_id };
   }
 
@@ -80,30 +77,14 @@ export class BlockaidApi implements IBlockaidApi {
       },
     });
   }
-  private sanitizeScanResponse(
-    response: TransactionScanResponseWithRequestId,
-  ): Record<string, unknown> {
-    const { validation, simulation, chain, request_id } = response;
 
-    return {
-      chain,
-      request_id,
-      validation: validation
-        ? {
-            status: validation.status,
-            result_type: validation.result_type,
-            description: validation.description,
-            features: validation.features?.map(({ type, feature_id }) => ({
-              type,
-              feature_id,
-            })),
-          }
-        : undefined,
-      simulation: simulation
-        ? {
-            status: simulation.status,
-          }
-        : undefined,
-    };
+  private logScanResponse(
+    response: TransactionScanResponseWithRequestId,
+  ): void {
+    const logData = BlockaidScanLogSchema.parse({ ...response });
+    this.loggingService.info({
+      message: 'Blockaid scan response',
+      response: logData,
+    });
   }
 }

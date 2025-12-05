@@ -38,7 +38,7 @@ const mockBlockaidClient = {
 } as jest.MockedObjectDeep<Blockaid>;
 
 const mockLoggingService = {
-  debug: jest.fn(),
+  info: jest.fn(),
 } as jest.MockedObjectDeep<ILoggingService>;
 
 describe('BlockaidApi', () => {
@@ -142,7 +142,7 @@ describe('BlockaidApi', () => {
         ...mockScanResponse,
         request_id,
       });
-      expect(mockLoggingService.debug).toHaveBeenCalledWith({
+      expect(mockLoggingService.info).toHaveBeenCalledWith({
         message: 'Blockaid scan response',
         response: {
           chain: mockScanResponse.chain,
@@ -217,7 +217,7 @@ describe('BlockaidApi', () => {
         request_id: undefined,
       });
 
-      expect(mockLoggingService.debug).toHaveBeenCalledWith({
+      expect(mockLoggingService.info).toHaveBeenCalledWith({
         message: 'Blockaid scan response',
         response: {
           chain: mockScanResponse.chain,
