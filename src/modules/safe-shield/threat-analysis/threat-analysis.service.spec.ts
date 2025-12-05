@@ -278,6 +278,7 @@ describe('ThreatAnalysisService', () => {
             {
               type: 'Warning',
               description: 'High gas price detected',
+              address: undefined,
             },
           ],
         },
@@ -348,7 +349,11 @@ describe('ThreatAnalysisService', () => {
               description:
                 'The transaction transfers tokens to a known malicious address.',
             }),
-            issues: { WARN: ['High gas price detected'] },
+            issues: {
+              WARN: [
+                { description: 'High gas price detected', address: undefined },
+              ],
+            },
           },
           {
             severity: SEVERITY_MAPPING.MASTERCOPY_CHANGE,
@@ -467,7 +472,7 @@ describe('ThreatAnalysisService', () => {
 
       it('should handle validation result_type Malicious without features', async () => {
         const requestId = faker.string.uuid();
-        const description = faker.lorem.sentence();
+        const description = faker.lorem.words();
 
         const mockScanResponse = {
           validation: {
@@ -499,7 +504,7 @@ describe('ThreatAnalysisService', () => {
               type: 'MALICIOUS',
               title: TITLE_MAPPING.MALICIOUS,
               description: DESCRIPTION_MAPPING.MALICIOUS({
-                description,
+                description: `${description}.`,
               }),
               issues: {},
             },
@@ -572,8 +577,15 @@ describe('ThreatAnalysisService', () => {
                   'The transaction transfers tokens to a known malicious address.',
               }),
               issues: {
-                CRITICAL: [features[2].description],
-                WARN: [features[0].description],
+                CRITICAL: [
+                  {
+                    description: features[2].description,
+                    address: features[2].address,
+                  },
+                ],
+                WARN: [
+                  { description: features[0].description, address: undefined },
+                ],
               },
             },
           ],
