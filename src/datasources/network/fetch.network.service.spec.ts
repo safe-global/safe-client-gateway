@@ -133,6 +133,46 @@ describe('FetchNetworkService', () => {
         response_time_ms: expect.any(Number),
       });
     });
+
+    it(`get uses custom timeout when provided`, async () => {
+      const url = faker.internet.url({ appendSlash: false });
+      const timeout = faker.number.int({ min: 1000, max: 10000 });
+      const networkRequest: NetworkRequest = {
+        timeout,
+      };
+      fetchClientMock.mockResolvedValueOnce({
+        status: 200,
+        data: {} as never,
+      });
+
+      await target.get({ url, networkRequest });
+
+      const expectedUrl = `${url}/`;
+      expect(fetchClientMock).toHaveBeenCalledTimes(1);
+      expect(fetchClientMock).toHaveBeenCalledWith(expectedUrl, {
+        method: 'GET',
+        signal: AbortSignal.timeout(timeout),
+      });
+    });
+
+    it(`get does not include signal when timeout is not provided`, async () => {
+      const url = faker.internet.url({ appendSlash: false });
+      fetchClientMock.mockResolvedValueOnce({
+        status: 200,
+        data: {} as never,
+      });
+
+      await target.get({ url });
+
+      const expectedUrl = `${url}/`;
+      expect(fetchClientMock).toHaveBeenCalledTimes(1);
+      expect(fetchClientMock).toHaveBeenCalledWith(expectedUrl, {
+        method: 'GET',
+      });
+      // Verify signal is not in the call
+      const callArgs = fetchClientMock.mock.calls[0];
+      expect(callArgs[1]).not.toHaveProperty('signal');
+    });
   });
 
   describe('POST requests', () => {
@@ -220,6 +260,32 @@ describe('FetchNetworkService', () => {
         response_time_ms: expect.any(Number),
       });
     });
+
+    it(`post uses custom timeout when provided`, async () => {
+      const url = faker.internet.url({ appendSlash: false });
+      const data = { [faker.word.sample()]: faker.string.alphanumeric() };
+      const timeout = faker.number.int({ min: 1000, max: 10000 });
+      const networkRequest: NetworkRequest = {
+        timeout,
+      };
+      fetchClientMock.mockResolvedValueOnce({
+        status: 200,
+        data: {} as never,
+      });
+
+      await target.post({ url, data, networkRequest });
+
+      const expectedUrl = `${url}/`;
+      expect(fetchClientMock).toHaveBeenCalledTimes(1);
+      expect(fetchClientMock).toHaveBeenCalledWith(expectedUrl, {
+        method: 'POST',
+        body: JSON.stringify(data),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        signal: AbortSignal.timeout(timeout),
+      });
+    });
   });
 
   describe('DELETE requests', () => {
@@ -299,6 +365,32 @@ describe('FetchNetworkService', () => {
         type: 'EXTERNAL_REQUEST',
         method: 'DELETE',
         url: `${url}/`,
+      });
+    });
+
+    it(`delete uses custom timeout when provided`, async () => {
+      const url = faker.internet.url({ appendSlash: false });
+      const data = { [faker.word.sample()]: faker.string.alphanumeric() };
+      const timeout = faker.number.int({ min: 1000, max: 10000 });
+      const networkRequest: NetworkRequest = {
+        timeout,
+      };
+      fetchClientMock.mockResolvedValueOnce({
+        status: 200,
+        data: {} as never,
+      });
+
+      await target.delete({ url, data, networkRequest });
+
+      const expectedUrl = `${url}/`;
+      expect(fetchClientMock).toHaveBeenCalledTimes(1);
+      expect(fetchClientMock).toHaveBeenCalledWith(expectedUrl, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+        signal: AbortSignal.timeout(timeout),
       });
     });
   });

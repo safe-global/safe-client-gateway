@@ -30,6 +30,9 @@ export class FetchNetworkService implements INetworkService {
       return await this.client<T>(url, {
         method: 'GET',
         headers: args.networkRequest?.headers,
+        ...(args.networkRequest?.timeout !== undefined && {
+          signal: AbortSignal.timeout(args.networkRequest.timeout),
+        }),
       });
     } catch (error) {
       this.logErrorResponse(error, performance.now() - startTimeMs);
@@ -53,6 +56,9 @@ export class FetchNetworkService implements INetworkService {
           'Content-Type': 'application/json',
           ...(args.networkRequest?.headers ?? {}),
         },
+        ...(args.networkRequest?.timeout !== undefined && {
+          signal: AbortSignal.timeout(args.networkRequest.timeout),
+        }),
       });
     } catch (error) {
       this.logErrorResponse(error, performance.now() - startTimeMs);
@@ -83,6 +89,9 @@ export class FetchNetworkService implements INetworkService {
           body: JSON.stringify(args.data),
         }),
         headers,
+        ...(args.networkRequest?.timeout !== undefined && {
+          signal: AbortSignal.timeout(args.networkRequest.timeout),
+        }),
       });
     } catch (error) {
       this.logErrorResponse(error, performance.now() - startTimeMs);

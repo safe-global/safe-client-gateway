@@ -53,9 +53,11 @@ function createRequestFunction(requestTimeout: number) {
 
     try {
       urlObject = new URL(url);
+      // Use custom signal if present, otherwise use default timeout
+      const signal = options.signal ?? AbortSignal.timeout(requestTimeout);
       response = await fetch(url, {
         ...options,
-        signal: AbortSignal.timeout(requestTimeout),
+        signal,
         keepalive: true,
       });
     } catch (error) {
