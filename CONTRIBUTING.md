@@ -56,20 +56,16 @@ Thank you for considering contributing to our project! We welcome contributions 
 To prevent issues with PRs:
 
 1. **Scope Your Changes**
-
    - Ensure each PR focuses on a single feature, bugfix, or improvement. Avoid combining unrelated changes.
 
 2. **Communicate Before Major Changes**
-
    - For significant changes, open an issue first to gather feedback and ensure alignment.
 
 3. **Adhere to Standards**
-
    - Follow the project’s coding style, structure, and standards.
    - Run all tests and ensure the build passes before submitting your PR.
 
 4. **Avoid Unsolicited Large Changes**
-
    - Do not submit large-scale refactors, redesigns, or changes to critical functionality without prior discussion.
 
 5. **Include Documentation**

@@ -34,9 +34,9 @@ export const NotificationSubscriptionSchema = RowSchema.extend({
   'push_notification_device',
   'signer_address',
 ])
-export class NotificationSubscription
-  implements z.infer<typeof NotificationSubscriptionSchema>
-{
+export class NotificationSubscription implements z.infer<
+  typeof NotificationSubscriptionSchema
+> {
   @PrimaryGeneratedColumn()
   id!: number;
 

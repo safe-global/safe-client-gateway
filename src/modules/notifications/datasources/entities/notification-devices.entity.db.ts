@@ -20,9 +20,9 @@ export const NotificationDeviceSchema = RowSchema.extend({
 
 @Entity('push_notification_devices')
 @Unique('device_uuid', ['device_uuid'])
-export class NotificationDevice
-  implements z.infer<typeof NotificationDeviceSchema>
-{
+export class NotificationDevice implements z.infer<
+  typeof NotificationDeviceSchema
+> {
   @PrimaryGeneratedColumn()
   id!: number;
 

@@ -3,9 +3,9 @@ import type { GetEstimationDtoSchema } from '@/modules/estimations/routes/entiti
 import type { z } from 'zod';
 import type { Address, Hex } from 'viem';
 
-export class GetEstimationDto
-  implements z.infer<typeof GetEstimationDtoSchema>
-{
+export class GetEstimationDto implements z.infer<
+  typeof GetEstimationDtoSchema
+> {
   to: Address;
   value: string;
   data: Hex | null;

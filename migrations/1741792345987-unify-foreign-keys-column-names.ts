@@ -1,8 +1,6 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class UnifyForeignKeysColumnNames1741792345987
-  implements MigrationInterface
-{
+export class UnifyForeignKeysColumnNames1741792345987 implements MigrationInterface {
   name = 'UnifyForeignKeysColumnNames1741792345987';
 
   public async up(queryRunner: QueryRunner): Promise<void> {

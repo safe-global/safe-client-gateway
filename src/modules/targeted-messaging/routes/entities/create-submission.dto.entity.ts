@@ -7,9 +7,9 @@ export const CreateSubmissionDtoSchema = z.object({
   }),
 });
 
-export class CreateSubmissionDto
-  implements z.infer<typeof CreateSubmissionDtoSchema>
-{
+export class CreateSubmissionDto implements z.infer<
+  typeof CreateSubmissionDtoSchema
+> {
   @ApiProperty()
   completed!: boolean;
 }

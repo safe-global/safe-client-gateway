@@ -5,7 +5,6 @@ This module generates a downloadable CSV file of Safe transactions.
 ## High-Level Flow
 
 1. **Launch** – `CsvExportController` exposes:
-
    - `POST /v1/export/chains/:chainId/:safeAddress`  
      Creates an asynchronous job to export transactions for the specified Safe.
    - `GET /v1/export/:jobId/status`  
@@ -17,14 +16,12 @@ This module generates a downloadable CSV file of Safe transactions.
 
 3. **Worker** – `CsvExportConsumer` listens to the `csv-export` queue.
    For each job:
-
    - Invokes `CsvExportService.export`.
    - Updates progress to BullMQ (enabling the controller’s status endpoint).
    - Retries failed job depending on the configured attempts count.
 
 4. **Data Retrieval** – `CsvExportService.transactionPagesGenerator` streams
    transaction pages from the Safe Transaction Service:
-
    - `ExportApiManager` resolves an `ExportApi` for the requested chain.
    - `ExportApi.export` fetches paginated data from
      `/api/v1/safes/{safeAddress}/export/`, yielding `TransactionExport` records.
@@ -49,7 +46,6 @@ This module generates a downloadable CSV file of Safe transactions.
    | `note`            | Note             |
 
 6. **Storage & URL** – `createUploadStream` decides between:
-
    - **AWS S3** (`CSV_EXPORT_FILE_STORAGE_TYPE=aws`):  
      Uses `ICloudStorageApiService.createUploadStream` with `Upload` to stream
      directly to S3. A signed download URL is generated via

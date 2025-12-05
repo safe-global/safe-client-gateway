@@ -1,8 +1,6 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class AddOrganizationsSafeUniqueIndex1741709533269
-  implements MigrationInterface
-{
+export class AddOrganizationsSafeUniqueIndex1741709533269 implements MigrationInterface {
   name = 'AddOrganizationsSafeUniqueIndex1741709533269';
 
   public async up(queryRunner: QueryRunner): Promise<void> {

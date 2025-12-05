@@ -7,9 +7,9 @@ export const UpdateAddressBookItemDtoSchema = z.object({
   address: z.string(),
 });
 
-export class UpdateAddressBookItemDto
-  implements z.infer<typeof UpdateAddressBookItemDtoSchema>
-{
+export class UpdateAddressBookItemDto implements z.infer<
+  typeof UpdateAddressBookItemDtoSchema
+> {
   id: number;
   name: string;
   address: Address;

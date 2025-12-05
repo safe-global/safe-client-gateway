@@ -1,8 +1,6 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class MigrateOrganizationsToSpaces1742571887114
-  implements MigrationInterface
-{
+export class MigrateOrganizationsToSpaces1742571887114 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
         ALTER TABLE organizations RENAME TO spaces;

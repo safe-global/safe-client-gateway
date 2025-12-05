@@ -4,9 +4,9 @@ import { z } from 'zod';
 import { PreviewTransactionDtoSchema } from '@/modules/transactions/routes/entities/schemas/preview-transaction.dto.schema';
 import type { Address, Hex } from 'viem';
 
-export class PreviewTransactionDto
-  implements z.infer<typeof PreviewTransactionDtoSchema>
-{
+export class PreviewTransactionDto implements z.infer<
+  typeof PreviewTransactionDtoSchema
+> {
   @ApiProperty()
   to!: Address;
   @ApiPropertyOptional({ type: String, nullable: true })

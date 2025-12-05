@@ -2,9 +2,7 @@ import { CreateCounterfactualSafeDto as DomainCreateCounterfactualSafeDto } from
 import { ApiProperty } from '@nestjs/swagger';
 import type { Address } from 'viem';
 
-export class CreateCounterfactualSafeDto
-  implements DomainCreateCounterfactualSafeDto
-{
+export class CreateCounterfactualSafeDto implements DomainCreateCounterfactualSafeDto {
   @ApiProperty()
   chainId!: string;
   @ApiProperty()

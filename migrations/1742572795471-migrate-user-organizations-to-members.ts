@@ -1,8 +1,6 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class MigrateUserOrganizationsToMembers1742572795471
-  implements MigrationInterface
-{
+export class MigrateUserOrganizationsToMembers1742572795471 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
         ALTER TABLE user_organizations RENAME TO members;
