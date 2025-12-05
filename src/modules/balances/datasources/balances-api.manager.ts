@@ -2,6 +2,7 @@ import { IConfigurationService } from '@/config/configuration.service.interface'
 import { SafeBalancesApi } from '@/modules/balances/datasources/safe-balances-api.service';
 import { IZerionBalancesApi } from '@/modules/balances/datasources/zerion-balances-api.service';
 import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
+import { TxCacheFirstDataSource } from '@/datasources/cache/cache.first.data.source.module';
 import {
   CacheService,
   ICacheService,
@@ -9,7 +10,7 @@ import {
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import {
   INetworkService,
-  NetworkService,
+  TxNetworkService,
 } from '@/datasources/network/network.service.interface';
 import { IBalancesApi } from '@/domain/interfaces/balances-api.interface';
 import { IBalancesApiManager } from '@/domain/interfaces/balances-api.manager.interface';
@@ -35,6 +36,7 @@ export class BalancesApiManager implements IBalancesApiManager {
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
     @Inject(IConfigApi) private readonly configApi: IConfigApi,
+    @Inject(TxCacheFirstDataSource)
     private readonly dataSource: CacheFirstDataSource,
     @Inject(CacheService) private readonly cacheService: ICacheService,
     private readonly httpErrorFactory: HttpErrorFactory,
@@ -42,7 +44,7 @@ export class BalancesApiManager implements IBalancesApiManager {
     @Inject(IPricesApi) private readonly coingeckoApi: IPricesApi,
     @Inject(ITransactionApiManager)
     private readonly transactionApiManager: ITransactionApiManager,
-    @Inject(NetworkService) private readonly networkService: INetworkService,
+    @Inject(TxNetworkService) private readonly networkService: INetworkService,
   ) {
     this.isCounterFactualBalancesEnabled =
       this.configurationService.getOrThrow<boolean>(
