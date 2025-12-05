@@ -6,14 +6,19 @@ import { ReportEvent } from '@/modules/safe-shield/entities/dtos/report-false-re
 import { BLOCKAID_REQUEST_ID_HEADER } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-api.constants';
 import Blockaid from '@blockaid/client';
 import { JsonRpcScanParams } from '@blockaid/client/resources/evm/json-rpc';
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { Address, numberToHex } from 'viem';
+import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import { BlockaidScanLogSchema } from '@/modules/safe-shield/threat-analysis/blockaid/schemas/blockaid-scan-log.schema';
 
 @Injectable()
 export class BlockaidApi implements IBlockaidApi {
   private readonly blockaidClient: Blockaid;
 
-  constructor() {
+  constructor(
+    @Inject(LoggingService)
+    private readonly loggingService: ILoggingService,
+  ) {
     this.blockaidClient = new Blockaid();
   }
 
@@ -54,6 +59,7 @@ export class BlockaidApi implements IBlockaidApi {
     const request_id =
       response.headers.get(BLOCKAID_REQUEST_ID_HEADER) ?? undefined;
 
+    this.logScanResponse({ ...data, request_id });
     return { ...data, request_id };
   }
 
@@ -69,6 +75,16 @@ export class BlockaidApi implements IBlockaidApi {
         type: 'request_id',
         request_id: args.requestId,
       },
+    });
+  }
+
+  private logScanResponse(
+    response: TransactionScanResponseWithRequestId,
+  ): void {
+    const logData = BlockaidScanLogSchema.parse({ ...response });
+    this.loggingService.info({
+      message: 'Blockaid scan response',
+      response: logData,
     });
   }
 }

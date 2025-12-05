@@ -4,6 +4,7 @@ import type { TransactionScanResponse } from '@blockaid/client/resources/evm/evm
 import type { Address } from 'viem';
 import { faker } from '@faker-js/faker';
 import type Blockaid from '@blockaid/client';
+import type { ILoggingService } from '@/logging/logging.interface';
 
 const createMockWithResponse = (
   data: TransactionScanResponse,
@@ -36,13 +37,17 @@ const mockBlockaidClient = {
   },
 } as jest.MockedObjectDeep<Blockaid>;
 
+const mockLoggingService = {
+  info: jest.fn(),
+} as jest.MockedObjectDeep<ILoggingService>;
+
 describe('BlockaidApi', () => {
   let service: BlockaidApi;
 
   beforeEach(() => {
     jest.resetAllMocks();
 
-    service = new BlockaidApi();
+    service = new BlockaidApi(mockLoggingService);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (service as any).blockaidClient = mockBlockaidClient;
   });
@@ -99,9 +104,14 @@ describe('BlockaidApi', () => {
       const request_id = faker.string.uuid();
 
       const mockScanResponse: TransactionScanResponse = {
-        block: faker.string.numeric(),
         chain: `0x${chainId}`,
-        status: 'Success',
+        block: faker.string.numeric(),
+        validation: {
+          status: 'Success',
+          result_type: 'Benign',
+          description: 'No issues detected',
+          features: [],
+        },
       } as TransactionScanResponse;
 
       mockBlockaidClient.evm.jsonRpc.scan.mockReturnValue(
@@ -132,6 +142,20 @@ describe('BlockaidApi', () => {
         ...mockScanResponse,
         request_id,
       });
+      expect(mockLoggingService.info).toHaveBeenCalledWith({
+        message: 'Blockaid scan response',
+        response: {
+          chain: mockScanResponse.chain,
+          request_id,
+          validation: {
+            status: mockScanResponse.validation?.status,
+            result_type: mockScanResponse.validation?.result_type,
+            description: mockScanResponse.validation?.description,
+            features: [],
+          },
+          simulation: undefined,
+        },
+      });
     });
 
     it('should call blockaid client without domain parameter/ with non_dapp', async () => {
@@ -140,7 +164,6 @@ describe('BlockaidApi', () => {
       const mockScanResponse: TransactionScanResponse = {
         block: faker.string.numeric(),
         chain: `0x${chainId}`,
-        status: 'Success',
       } as TransactionScanResponse;
 
       mockBlockaidClient.evm.jsonRpc.scan.mockReturnValue(
@@ -176,7 +199,6 @@ describe('BlockaidApi', () => {
       const mockScanResponse: TransactionScanResponse = {
         block: faker.string.numeric(),
         chain: `0x${chainId}`,
-        status: 'Success',
       } as TransactionScanResponse;
 
       mockBlockaidClient.evm.jsonRpc.scan.mockReturnValue(
@@ -193,6 +215,16 @@ describe('BlockaidApi', () => {
       expect(result).toEqual({
         ...mockScanResponse,
         request_id: undefined,
+      });
+
+      expect(mockLoggingService.info).toHaveBeenCalledWith({
+        message: 'Blockaid scan response',
+        response: {
+          chain: mockScanResponse.chain,
+          request_id: undefined,
+          validation: undefined,
+          simulation: undefined,
+        },
       });
     });
 
