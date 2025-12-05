@@ -19,9 +19,7 @@ import {
 import type { Address } from 'viem';
 
 @Injectable()
-export class CounterfactualSafesRepository
-  implements ICounterfactualSafesRepository
-{
+export class CounterfactualSafesRepository implements ICounterfactualSafesRepository {
   constructor(
     @Inject(ICounterfactualSafesDatasource)
     private readonly datasource: ICounterfactualSafesDatasource,

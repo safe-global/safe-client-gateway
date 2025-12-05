@@ -14,9 +14,9 @@ export const UpdateOutreachDtoSchema = z.object({
   teamName: z.string(),
 });
 
-export class UpdateOutreachDto
-  implements z.infer<typeof UpdateOutreachDtoSchema>
-{
+export class UpdateOutreachDto implements z.infer<
+  typeof UpdateOutreachDtoSchema
+> {
   name: string;
   startDate: Date;
   endDate: Date;

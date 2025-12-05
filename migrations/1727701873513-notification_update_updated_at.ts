@@ -1,8 +1,6 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class NotificationUpdateUpdatedAt1727701873513
-  implements MigrationInterface
-{
+export class NotificationUpdateUpdatedAt1727701873513 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
             CREATE TRIGGER update_push_notification_devices_updated_at

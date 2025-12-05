@@ -24,9 +24,7 @@ export class SingleRecipientAnalysisResultDto extends AnalysisResultDto<
  * This DTO is used by the analyzeRecipient endpoint which only returns
  * recipient interaction and activity statuses (not bridge analysis).
  */
-export class SingleRecipientAnalysisDto
-  implements SingleRecipientAnalysisResponse
-{
+export class SingleRecipientAnalysisDto implements SingleRecipientAnalysisResponse {
   @ApiProperty({
     description:
       'Analysis results related to recipient interaction history. ' +

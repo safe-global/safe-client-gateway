@@ -8,9 +8,7 @@ class UpsertAccountDataSettingDto {
   enabled!: boolean;
 }
 
-export class UpsertAccountDataSettingsDto
-  implements DomainUpsertAccountDataSettingsDto
-{
+export class UpsertAccountDataSettingsDto implements DomainUpsertAccountDataSettingsDto {
   @ApiProperty({ type: UpsertAccountDataSettingDto, isArray: true })
   accountDataSettings!: Array<UpsertAccountDataSettingDto>;
 }

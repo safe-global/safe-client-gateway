@@ -40,9 +40,7 @@ export class ContractAnalysisResultDto extends AnalysisResultDto<
  * Results are grouped by status group and sorted by severity (CRITICAL first).
  * Used by endpoints that return contract verification, interaction, and delegatecall analysis.
  */
-export class ContractAnalysisDto
-  implements GroupedAnalysisResults<ContractAnalysisResult>
-{
+export class ContractAnalysisDto implements GroupedAnalysisResults<ContractAnalysisResult> {
   @ApiPropertyOptional({
     description: 'Logo URL for the contract',
     example: 'https://example.com/logo.png',
@@ -134,9 +132,7 @@ export class RecipientResultDto extends AnalysisResultDto<
  * Results are grouped by status group and sorted by severity (CRITICAL first).
  * Used by endpoints that return both recipient interaction and bridge analysis.
  */
-export class RecipientAnalysisDto
-  implements GroupedAnalysisResults<RecipientAnalysisResult>
-{
+export class RecipientAnalysisDto implements GroupedAnalysisResults<RecipientAnalysisResult> {
   @ApiProperty({
     description: 'Indicates whether the analyzed recipient address is a Safe.',
     example: true,

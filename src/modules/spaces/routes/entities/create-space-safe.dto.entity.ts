@@ -14,9 +14,9 @@ export const CreateSpaceSafesSchema = z.object({
   safes: z.array(CreateSpaceSafeSchema).nonempty(),
 });
 
-export class CreateSpaceSafeDto
-  implements z.infer<typeof CreateSpaceSafeSchema>
-{
+export class CreateSpaceSafeDto implements z.infer<
+  typeof CreateSpaceSafeSchema
+> {
   @ApiProperty({ type: String })
   public readonly chainId!: SpaceSafe['chainId'];
 
@@ -24,9 +24,9 @@ export class CreateSpaceSafeDto
   public readonly address!: SpaceSafe['address'];
 }
 
-export class CreateSpaceSafesDto
-  implements z.infer<typeof CreateSpaceSafesSchema>
-{
+export class CreateSpaceSafesDto implements z.infer<
+  typeof CreateSpaceSafesSchema
+> {
   @ApiProperty({ type: CreateSpaceSafeDto, isArray: true })
   public readonly safes!: [CreateSpaceSafeDto, ...Array<CreateSpaceSafeDto>];
 }

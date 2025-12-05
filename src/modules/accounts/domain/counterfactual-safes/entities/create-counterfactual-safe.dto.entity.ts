@@ -2,9 +2,9 @@ import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { z } from 'zod';
 import type { Address } from 'viem';
 
-export class CreateCounterfactualSafeDto
-  implements z.infer<typeof CreateCounterfactualSafeDtoSchema>
-{
+export class CreateCounterfactualSafeDto implements z.infer<
+  typeof CreateCounterfactualSafeDtoSchema
+> {
   chainId: string;
   fallbackHandler: Address;
   owners: Array<Address>;

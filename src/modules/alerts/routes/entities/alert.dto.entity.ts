@@ -12,9 +12,9 @@ export class AlertLog implements z.infer<typeof AlertLogSchema> {
   data!: Address;
 }
 
-export class AlertTransaction
-  implements z.infer<typeof AlertTransactionSchema>
-{
+export class AlertTransaction implements z.infer<
+  typeof AlertTransactionSchema
+> {
   network!: string;
   block_hash!: string;
   block_number!: number;

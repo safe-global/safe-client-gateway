@@ -8,9 +8,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import type { UUID } from 'crypto';
 import type { Address } from 'viem';
 
-export class UpsertSubscriptionsSafesDto
-  implements DomainUpsertSubscriptionsSafesDto
-{
+export class UpsertSubscriptionsSafesDto implements DomainUpsertSubscriptionsSafesDto {
   @ApiProperty()
   chainId!: string;
 

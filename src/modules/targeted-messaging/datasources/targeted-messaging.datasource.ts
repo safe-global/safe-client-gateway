@@ -33,9 +33,7 @@ import postgres from 'postgres';
 import { type Address } from 'viem';
 
 @Injectable()
-export class TargetedMessagingDatasource
-  implements ITargetedMessagingDatasource
-{
+export class TargetedMessagingDatasource implements ITargetedMessagingDatasource {
   private readonly defaultExpirationTimeInSeconds: number;
 
   constructor(

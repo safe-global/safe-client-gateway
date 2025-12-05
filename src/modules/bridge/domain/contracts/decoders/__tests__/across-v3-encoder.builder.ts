@@ -109,8 +109,8 @@ type StartBridgeTokensViaAcrossV3Args = {
 };
 
 class StartBridgeTokensViaAcrossV3Encoder<
-    T extends StartBridgeTokensViaAcrossV3Args,
-  >
+  T extends StartBridgeTokensViaAcrossV3Args,
+>
   extends Builder<T>
   implements IEncoder
 {
@@ -155,8 +155,8 @@ type SwapAndStartBridgeTokensViaAcrossV3Args = {
 };
 
 class SwapAndStartBridgeTokensViaAcrossV3Encoder<
-    T extends SwapAndStartBridgeTokensViaAcrossV3Args,
-  >
+  T extends SwapAndStartBridgeTokensViaAcrossV3Args,
+>
   extends Builder<T>
   implements IEncoder
 {
@@ -217,8 +217,8 @@ type SwapTokensSingleV3ERC20ToERC20Args = {
 };
 
 class SwapTokensSingleV3ERC20ToERC20Encoder<
-    T extends SwapTokensSingleV3ERC20ToERC20Args,
-  >
+  T extends SwapTokensSingleV3ERC20ToERC20Args,
+>
   extends Builder<T>
   implements IEncoder
 {
@@ -276,8 +276,8 @@ type SwapTokensMultiV3ERC20ToERC20Args = {
 };
 
 class SwapTokensMultiV3ERC20ToERC20Encoder<
-    T extends SwapTokensMultiV3ERC20ToERC20Args,
-  >
+  T extends SwapTokensMultiV3ERC20ToERC20Args,
+>
   extends Builder<T>
   implements IEncoder
 {

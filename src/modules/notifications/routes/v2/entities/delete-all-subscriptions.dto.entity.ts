@@ -26,9 +26,7 @@ export class DeleteAllSubscriptionItemDto {
   public readonly signerAddress?: Address | null;
 }
 
-export class DeleteAllSubscriptionsDto
-  implements DomainDeleteAllSubscriptionsDto
-{
+export class DeleteAllSubscriptionsDto implements DomainDeleteAllSubscriptionsDto {
   @ApiProperty({
     isArray: true,
     type: DeleteAllSubscriptionItemDto,

@@ -4,9 +4,9 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Address, Hex } from 'viem';
 import { z } from 'zod';
 
-export class CounterpartyAnalysisRequestDto
-  implements z.infer<typeof CounterpartyAnalysisRequestSchema>
-{
+export class CounterpartyAnalysisRequestDto implements z.infer<
+  typeof CounterpartyAnalysisRequestSchema
+> {
   @ApiProperty({
     type: String,
     description: 'Recipient address of the transaction.',
