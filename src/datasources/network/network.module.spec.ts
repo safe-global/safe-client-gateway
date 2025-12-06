@@ -133,7 +133,7 @@ describe('NetworkModule', () => {
 
     it('uses custom signal when provided instead of default timeout', async () => {
       const url = faker.internet.url({ appendSlash: false });
-      const customTimeout = 2000;
+      const customTimeout = faker.number.int({ min: 1000, max: 10000 });
       const customSignal = AbortSignal.timeout(customTimeout);
 
       await expect(
@@ -148,7 +148,23 @@ describe('NetworkModule', () => {
       });
     });
 
-    it('uses default timeout when signal is not provided', async () => {
+    it('uses custom timeout when provided as third argument', async () => {
+      const url = faker.internet.url({ appendSlash: false });
+      const customTimeout = faker.number.int({ min: 1000, max: 10000 });
+
+      await expect(
+        fetchClient(url, { method: 'GET' }, customTimeout),
+      ).rejects.toThrow();
+
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(fetchMock).toHaveBeenCalledWith(url, {
+        method: 'GET',
+        signal: AbortSignal.timeout(customTimeout),
+        keepalive: true,
+      });
+    });
+
+    it('uses default timeout when timeout is not provided', async () => {
       const url = faker.internet.url({ appendSlash: false });
 
       await expect(fetchClient(url, { method: 'GET' })).rejects.toThrow();

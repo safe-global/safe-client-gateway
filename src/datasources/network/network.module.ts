@@ -15,6 +15,7 @@ import { hashSha1 } from '@/domain/common/utils/utils';
 export type FetchClient = <T>(
   url: string,
   options: RequestInit,
+  timeout?: number,
 ) => Promise<NetworkResponse<T>>;
 
 const cache: Record<string, Promise<NetworkResponse<unknown>>> = {};
@@ -47,14 +48,16 @@ function createRequestFunction(requestTimeout: number) {
   return async <T>(
     url: string,
     options: RequestInit,
+    timeout?: number,
   ): Promise<NetworkResponse<T>> => {
     let urlObject: URL | null = null;
     let response: Response | null = null;
 
     try {
       urlObject = new URL(url);
-      // Use custom signal if present, otherwise use default timeout
-      const signal = options.signal ?? AbortSignal.timeout(requestTimeout);
+      const actualTimeout = timeout ?? requestTimeout;
+      const signal = options.signal ?? AbortSignal.timeout(actualTimeout);
+
       response = await fetch(url, {
         ...options,
         signal,
@@ -82,14 +85,16 @@ function createCachedRequestFunction(
   request: <T>(
     url: string,
     options: RequestInit,
+    timeout?: number,
   ) => Promise<NetworkResponse<T>>,
   loggingService: ILoggingService,
 ) {
   return async <T>(
     url: string,
     options: RequestInit,
+    timeout?: number,
   ): Promise<NetworkResponse<T>> => {
-    const key = getCacheKey(url, options);
+    const key = getCacheKey(url, options, timeout);
     if (key in cache) {
       loggingService.debug({
         type: LogType.ExternalRequestCacheHit,
@@ -103,7 +108,7 @@ function createCachedRequestFunction(
         key,
       });
 
-      cache[key] = request(url, options)
+      cache[key] = request(url, options, timeout)
         .catch((err) => {
           loggingService.debug({
             type: LogType.ExternalRequestCacheError,
@@ -121,15 +126,19 @@ function createCachedRequestFunction(
   };
 }
 
-function getCacheKey(url: string, requestInit?: RequestInit): string {
-  if (!requestInit) {
+function getCacheKey(
+  url: string,
+  requestInit?: RequestInit,
+  timeout?: number,
+): string {
+  if (!requestInit && timeout === undefined) {
     return url;
   }
 
   // JSON.stringify does not produce a stable key but initially
   // use a naive implementation for testing the implementation
   // TODO: Revisit this and use a more stable key
-  const key = JSON.stringify({ url, ...requestInit });
+  const key = JSON.stringify({ url, ...requestInit, timeout });
   return hashSha1(key);
 }
 
