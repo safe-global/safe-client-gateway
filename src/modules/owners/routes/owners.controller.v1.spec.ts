@@ -129,6 +129,10 @@ describe('Owners Controller (Unit)', () => {
       expect(networkService.get).toHaveBeenCalledWith({
         // ValidationPipe checksums ownerAddress param
         url: `${chainResponse.transactionService}/api/v1/owners/${getAddress(ownerAddress)}/safes/`,
+        data: undefined,
+        networkRequest: {
+          timeout: expect.any(Number),
+        },
       });
     });
 

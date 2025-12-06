@@ -62,6 +62,7 @@ describe('Transaction API Manager Tests', () => {
     const indexingExpirationTimeInSeconds = faker.number.int();
     const notFoundExpireTimeSeconds = faker.number.int();
     const ownersTtlSeconds = faker.number.int();
+    const ownerTimeout = faker.number.int();
     configurationServiceMock.getOrThrow.mockImplementation((key) => {
       if (key === 'safeTransaction.useVpcUrl') return useVpcUrl;
       else if (key === 'expirationTimeInSeconds.default')
@@ -73,6 +74,7 @@ describe('Transaction API Manager Tests', () => {
       else if (key === 'expirationTimeInSeconds.notFound.token')
         return notFoundExpireTimeSeconds;
       else if (key === 'owners.ownersTtlSeconds') return ownersTtlSeconds;
+      else if (key === 'httpClient.ownersTimeout') return ownerTimeout;
       // TODO: Remove after Vault decoding has been released
       else if (key === 'application.isProduction') return true;
 
