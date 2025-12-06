@@ -27,10 +27,14 @@ export class FetchNetworkService implements INetworkService {
     this.logRequest(url, 'GET');
     const startTimeMs = performance.now();
     try {
-      return await this.client<T>(url, {
-        method: 'GET',
-        headers: args.networkRequest?.headers,
-      });
+      return await this.client<T>(
+        url,
+        {
+          method: 'GET',
+          headers: args.networkRequest?.headers,
+        },
+        args.networkRequest?.timeout,
+      );
     } catch (error) {
       this.logErrorResponse(error, performance.now() - startTimeMs);
       throw error;
@@ -46,14 +50,18 @@ export class FetchNetworkService implements INetworkService {
     this.logRequest(url, 'POST');
     const startTimeMs = performance.now();
     try {
-      return await this.client<T>(url, {
-        method: 'POST',
-        body: JSON.stringify(args.data),
-        headers: {
-          'Content-Type': 'application/json',
-          ...(args.networkRequest?.headers ?? {}),
+      return await this.client<T>(
+        url,
+        {
+          method: 'POST',
+          body: JSON.stringify(args.data),
+          headers: {
+            'Content-Type': 'application/json',
+            ...(args.networkRequest?.headers ?? {}),
+          },
         },
-      });
+        args.networkRequest?.timeout,
+      );
     } catch (error) {
       this.logErrorResponse(error, performance.now() - startTimeMs);
       throw error;
@@ -77,13 +85,17 @@ export class FetchNetworkService implements INetworkService {
     }
 
     try {
-      return await this.client<T>(url, {
-        method: 'DELETE',
-        ...(args.data && {
-          body: JSON.stringify(args.data),
-        }),
-        headers,
-      });
+      return await this.client<T>(
+        url,
+        {
+          method: 'DELETE',
+          ...(args.data && {
+            body: JSON.stringify(args.data),
+          }),
+          headers,
+        },
+        args.networkRequest?.timeout,
+      );
     } catch (error) {
       this.logErrorResponse(error, performance.now() - startTimeMs);
       throw error;

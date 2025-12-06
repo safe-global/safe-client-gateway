@@ -64,6 +64,7 @@ describe('TransactionApi', () => {
   let indexingExpirationTimeInSeconds: number;
   let notFoundExpireTimeSeconds: number;
   let ownersTtlSeconds: number;
+  let ownersTimeout: number;
 
   beforeEach(() => {
     jest.resetAllMocks();
@@ -73,6 +74,7 @@ describe('TransactionApi', () => {
     indexingExpirationTimeInSeconds = faker.number.int();
     notFoundExpireTimeSeconds = faker.number.int();
     ownersTtlSeconds = faker.number.int();
+    ownersTimeout = faker.number.int();
     mockConfigurationService.getOrThrow.mockImplementation((key) => {
       if (key === 'expirationTimeInSeconds.default') {
         return defaultExpirationTimeInSeconds;
@@ -88,6 +90,9 @@ describe('TransactionApi', () => {
       }
       if (key === 'owners.ownersTtlSeconds') {
         return ownersTtlSeconds;
+      }
+      if (key === 'httpClient.ownersTimeout') {
+        return ownersTimeout;
       }
       // TODO: Remove after Vault decoding has been released
       if (key === 'application.isProduction') {
@@ -2088,6 +2093,9 @@ describe('TransactionApi', () => {
         url: getSafesByOwnerUrl,
         notFoundExpireTimeSeconds: notFoundExpireTimeSeconds,
         expireTimeSeconds: ownersTtlSeconds,
+        networkRequest: {
+          timeout: ownersTimeout,
+        },
       });
     });
 
@@ -2121,6 +2129,9 @@ describe('TransactionApi', () => {
         url: getSafesByOwnerUrl,
         notFoundExpireTimeSeconds: notFoundExpireTimeSeconds,
         expireTimeSeconds: ownersTtlSeconds,
+        networkRequest: {
+          timeout: ownersTimeout,
+        },
       });
     });
   });
@@ -2606,6 +2617,9 @@ describe('TransactionApi', () => {
         }
         if (key === 'owners.ownersTtlSeconds') {
           return ownersTtlSeconds;
+        }
+        if (key === 'httpClient.ownersTimeout') {
+          return ownersTimeout;
         }
         // TODO: Remove after Vault decoding has been released
         if (key === 'application.isProduction') {

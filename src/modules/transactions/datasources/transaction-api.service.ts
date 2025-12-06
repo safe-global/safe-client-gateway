@@ -44,6 +44,7 @@ export class TransactionApi implements ITransactionApi {
   private readonly defaultNotFoundExpirationTimeSeconds: number;
   private readonly tokenNotFoundExpirationTimeSeconds: number;
   private readonly ownersExpirationTimeSeconds: number;
+  private readonly ownersTimeout: number;
 
   constructor(
     private readonly chainId: string,
@@ -92,6 +93,9 @@ export class TransactionApi implements ITransactionApi {
       this.ownersExpirationTimeSeconds =
         this.configurationService.getOrThrow<number>('owners.ownersTtlSeconds');
     }
+    this.ownersTimeout = this.configurationService.getOrThrow<number>(
+      'httpClient.ownersTimeout',
+    );
   }
 
   async getDataDecoded(args: {
@@ -944,6 +948,9 @@ export class TransactionApi implements ITransactionApi {
         url,
         notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
         expireTimeSeconds: this.ownersExpirationTimeSeconds,
+        networkRequest: {
+          timeout: this.ownersTimeout,
+        },
       });
     } catch (error) {
       throw this.httpErrorFactory.from(this.mapError(error));
