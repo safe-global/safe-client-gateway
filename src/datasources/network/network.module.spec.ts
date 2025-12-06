@@ -24,7 +24,7 @@ import { hashSha1 } from '@/domain/common/utils/utils';
 describe('NetworkModule', () => {
   let app: INestApplication<Server>;
   let fetchClient: FetchClient;
-  let httpClientTimeout: number;
+  let defaultTimeout: number;
   let loggingService: ILoggingService;
 
   // fetch response is not mocked but we are only concerned with RequestInit options
@@ -56,7 +56,7 @@ describe('NetworkModule', () => {
       IConfigurationService,
     );
     fetchClient = moduleFixture.get('FetchClient');
-    httpClientTimeout = configurationService.getOrThrow(
+    defaultTimeout = configurationService.getOrThrow(
       'httpClient.requestTimeout',
     );
     loggingService = moduleFixture.get<ILoggingService>(LoggingService);
@@ -87,7 +87,7 @@ describe('NetworkModule', () => {
       expect(fetchMock).toHaveBeenCalledTimes(1);
       expect(fetchMock).toHaveBeenCalledWith(url, {
         method: 'GET',
-        signal: AbortSignal.timeout(httpClientTimeout), // timeout is set
+        signal: AbortSignal.timeout(defaultTimeout), // timeout is set
         keepalive: true,
       });
     });
@@ -172,7 +172,7 @@ describe('NetworkModule', () => {
       expect(fetchMock).toHaveBeenCalledTimes(1);
       expect(fetchMock).toHaveBeenCalledWith(url, {
         method: 'GET',
-        signal: AbortSignal.timeout(httpClientTimeout),
+        signal: AbortSignal.timeout(defaultTimeout),
         keepalive: true,
       });
     });

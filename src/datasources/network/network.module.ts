@@ -31,11 +31,11 @@ function fetchClientFactory(
   const cacheInFlightRequests = configurationService.getOrThrow<boolean>(
     'features.cacheInFlightRequests',
   );
-  const requestTimeout = configurationService.getOrThrow<number>(
+  const defaultTimeout = configurationService.getOrThrow<number>(
     'httpClient.requestTimeout',
   );
 
-  const request = createRequestFunction(requestTimeout);
+  const request = createRequestFunction(defaultTimeout);
 
   if (!cacheInFlightRequests) {
     return request;
@@ -44,23 +44,22 @@ function fetchClientFactory(
   return createCachedRequestFunction(request, loggingService);
 }
 
-function createRequestFunction(requestTimeout: number) {
+function createRequestFunction(defaultTimeout: number) {
   return async <T>(
     url: string,
     options: RequestInit,
-    timeout?: number,
+    customTimeout?: number,
   ): Promise<NetworkResponse<T>> => {
     let urlObject: URL | null = null;
     let response: Response | null = null;
 
     try {
       urlObject = new URL(url);
-      const actualTimeout = timeout ?? requestTimeout;
-      const signal = options.signal ?? AbortSignal.timeout(actualTimeout);
+      const timeout = customTimeout ?? defaultTimeout;
 
       response = await fetch(url, {
         ...options,
-        signal,
+        signal: AbortSignal.timeout(timeout),
         keepalive: true,
       });
     } catch (error) {
