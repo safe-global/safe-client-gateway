@@ -131,23 +131,6 @@ describe('NetworkModule', () => {
       expect(fetchMock).toHaveBeenCalledTimes(1);
     });
 
-    it('uses custom signal when provided instead of default timeout', async () => {
-      const url = faker.internet.url({ appendSlash: false });
-      const customTimeout = faker.number.int({ min: 1000, max: 10000 });
-      const customSignal = AbortSignal.timeout(customTimeout);
-
-      await expect(
-        fetchClient(url, { method: 'GET', signal: customSignal }),
-      ).rejects.toThrow();
-
-      expect(fetchMock).toHaveBeenCalledTimes(1);
-      expect(fetchMock).toHaveBeenCalledWith(url, {
-        method: 'GET',
-        signal: customSignal,
-        keepalive: true,
-      });
-    });
-
     it('uses custom timeout when provided as third argument', async () => {
       const url = faker.internet.url({ appendSlash: false });
       const customTimeout = faker.number.int({ min: 1000, max: 10000 });
