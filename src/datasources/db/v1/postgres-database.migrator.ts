@@ -156,11 +156,6 @@ export class PostgresDatabaseMigrator {
       throw new Error('No migrations found');
     }
 
-    const latest = migrations.at(-1);
-    if (latest?.id !== migrations.length) {
-      throw new Error('Migrations numbered inconsistency');
-    }
-
     return migrations;
   }
 
