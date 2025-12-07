@@ -4,14 +4,8 @@ import type { INestApplication } from '@nestjs/common';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import configuration from '@/config/entities/__tests__/configuration';
 import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
-import { AccountsDatasourceModule } from '@/modules/accounts/datasources/accounts.datasource.module';
 import { NotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/notifications.repository.module';
-import { TestAccountsDataSourceModule } from '@/modules/accounts/datasources/__tests__/test.accounts.datasource.module';
 import { TestNotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/test.notification.repository.module';
-import { AddressBooksDatasourceModule } from '@/modules/accounts/datasources/address-books/address-books.datasource.module';
-import { TestAddressBooksDataSourceModule } from '@/modules/accounts/datasources/address-books/__tests__/test.address-books.datasource.module';
-import { CounterfactualSafesDatasourceModule } from '@/modules/accounts/datasources/counterfactual-safes/counterfactual-safes.datasource.module';
-import { TestCounterfactualSafesDataSourceModule } from '@/modules/accounts/datasources/counterfactual-safes/__tests__/test.counterfactual-safes.datasource.module';
 import { SpacesController } from '@/modules/spaces/routes/spaces.controller';
 import { checkGuardIsApplied } from '@/__tests__/util/check-guard';
 import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
@@ -62,18 +56,6 @@ describe('SpacesController', () => {
       config: testConfiguration,
       overridePostgresV2: false,
       modules: [
-        {
-          originalModule: AccountsDatasourceModule,
-          testModule: TestAccountsDataSourceModule,
-        },
-        {
-          originalModule: AddressBooksDatasourceModule,
-          testModule: TestAddressBooksDataSourceModule,
-        },
-        {
-          originalModule: CounterfactualSafesDatasourceModule,
-          testModule: TestCounterfactualSafesDataSourceModule,
-        },
         {
           originalModule: NotificationsRepositoryV2Module,
           testModule: TestNotificationsRepositoryV2Module,

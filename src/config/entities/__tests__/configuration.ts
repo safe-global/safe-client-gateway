@@ -8,26 +8,6 @@ export default (): ReturnType<typeof configuration> => ({
     version: faker.system.semver(),
     buildNumber: faker.string.numeric(),
   },
-  accounts: {
-    creationRateLimitPeriodSeconds: faker.number.int(),
-    creationRateLimitCalls: faker.number.int(),
-    counterfactualSafes: {
-      creationRateLimitPeriodSeconds: faker.number.int(),
-      creationRateLimitCalls: faker.number.int(),
-    },
-    encryption: {
-      type: faker.string.sample(),
-      awsKms: {
-        algorithm: faker.string.alphanumeric(),
-        keyId: faker.string.uuid(),
-      },
-      local: {
-        algorithm: faker.string.alphanumeric(),
-        key: faker.string.alphanumeric(),
-        iv: faker.string.alphanumeric(),
-      },
-    },
-  },
   amqp: {
     url: faker.internet.url({ appendSlash: false }),
     exchange: { name: faker.string.sample(), mode: faker.string.sample() },
@@ -178,7 +158,6 @@ export default (): ReturnType<typeof configuration> => ({
     configHooksDebugLogs: false,
     auth: false,
     counterfactualBalances: false,
-    accounts: false,
     users: false,
     hookHttpPostEvent: false,
     improvedAddressPoisoning: false,
