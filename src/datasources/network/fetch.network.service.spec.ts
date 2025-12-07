@@ -4,6 +4,7 @@ import { NetworkResponseError } from '@/datasources/network/entities/network.err
 import type { NetworkRequest } from '@/datasources/network/entities/network.request.entity';
 import type { FetchClient } from '@/datasources/network/network.module';
 import { FetchNetworkService } from '@/datasources/network/fetch.network.service';
+import { rawify } from '@/validation/entities/raw.entity';
 
 const fetchClient = jest.fn();
 
@@ -154,7 +155,7 @@ describe('FetchNetworkService', () => {
       };
       fetchClientMock.mockResolvedValueOnce({
         status: 200,
-        data: {} as never,
+        data: rawify({ data: 'some_data' }),
       });
 
       await target.get({ url, networkRequest });
@@ -174,7 +175,7 @@ describe('FetchNetworkService', () => {
       const url = faker.internet.url({ appendSlash: false });
       fetchClientMock.mockResolvedValueOnce({
         status: 200,
-        data: {} as never,
+        data: rawify({ data: 'some_data' }),
       });
 
       await target.get({ url });
@@ -297,7 +298,7 @@ describe('FetchNetworkService', () => {
       };
       fetchClientMock.mockResolvedValueOnce({
         status: 200,
-        data: {} as never,
+        data: rawify({ data: 'some_data' }),
       });
 
       await target.post({ url, data, networkRequest });
@@ -322,7 +323,7 @@ describe('FetchNetworkService', () => {
       const data = { [faker.word.sample()]: faker.string.alphanumeric() };
       fetchClientMock.mockResolvedValueOnce({
         status: 200,
-        data: {} as never,
+        data: rawify({ data: 'some_data' }),
       });
 
       await target.post({ url, data });
@@ -443,7 +444,7 @@ describe('FetchNetworkService', () => {
       };
       fetchClientMock.mockResolvedValueOnce({
         status: 200,
-        data: {} as never,
+        data: rawify({ data: 'some_data' }),
       });
 
       await target.delete({ url, data, networkRequest });
@@ -467,7 +468,7 @@ describe('FetchNetworkService', () => {
       const url = faker.internet.url({ appendSlash: false });
       fetchClientMock.mockResolvedValueOnce({
         status: 200,
-        data: {} as never,
+        data: rawify({ data: 'some_data' }),
       });
 
       await target.delete({ url });
