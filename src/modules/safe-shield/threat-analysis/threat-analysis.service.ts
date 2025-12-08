@@ -11,10 +11,7 @@ import {
   Severity,
   compareSeverityString,
 } from '@/modules/safe-shield/entities/severity.entity';
-import {
-  BalanceChange,
-  BalanceChangesSchema,
-} from '@/modules/safe-shield/entities/threat-analysis.types';
+import { BalanceChange } from '@/modules/safe-shield/entities/threat-analysis.types';
 import { ThreatStatus } from '@/modules/safe-shield/entities/threat-status.entity';
 import { ReportEvent } from '@/modules/safe-shield/entities/dtos/report-false-result.dto';
 import { IBlockaidApi } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-api.interface';
@@ -27,15 +24,13 @@ import {
   SEVERITY_MAPPING,
   TITLE_MAPPING,
 } from '@/modules/safe-shield/threat-analysis/threat-analysis.constants';
-import {
-  TransactionSimulation,
-  TransactionSimulationError,
-  TransactionValidation,
-  TransactionValidationError,
-} from '@blockaid/client/resources/index';
 import { Inject, Injectable } from '@nestjs/common';
 import { Address } from 'viem';
 import { TypedData } from '@/modules/messages/domain/entities/typed-data.entity';
+import {
+  TransactionSimulation,
+  TransactionValidation,
+} from '@/modules/safe-shield/threat-analysis/blockaid/schemas/blockaid-scan-response.schema';
 
 /**
  * Service responsible for analyzing transactions for security threats and malicious patterns.
@@ -141,15 +136,15 @@ export class ThreatAnalysisService {
   /**
    * Processes simulation and validation results into a threat analysis response.
    * @param {Address} safeAddress - The Safe wallet address
-   * @param {TransactionSimulation | TransactionSimulationError} [simulation] - The transaction simulation result
-   * @param {TransactionValidation | TransactionValidationError} [validation] - The transaction validation result
+   * @param {TransactionSimulation} [simulation] - The transaction simulation result
+   * @param {TransactionValidation} [validation] - The transaction validation result
    * @param {string | undefined} requestId - The Blockaid request ID from x-request-id header
    * @returns {ThreatAnalysisResponse} The processed threat analysis response
    */
   private processAnalysisResults(
     safeAddress: Address,
-    simulation?: TransactionSimulation | TransactionSimulationError,
-    validation?: TransactionValidation | TransactionValidationError,
+    simulation?: TransactionSimulation,
+    validation?: TransactionValidation,
     requestId?: string,
   ): ThreatAnalysisResponse {
     const [results, balanceChanges] = this.analyzeSimulation(
@@ -171,11 +166,11 @@ export class ThreatAnalysisService {
 
   /**
    * Analyzes transaction validation results and maps them to a threat analysis result.
-   * @param {TransactionValidation | TransactionValidationError} [validation] - The transaction validation result
+   * @param {TransactionValidation} [validation] - The transaction validation result
    * @returns {ThreatAnalysisResult} The analyzed threat result
    */
   private analyzeValidation(
-    validation?: TransactionValidation | TransactionValidationError,
+    validation?: TransactionValidation,
   ): ThreatAnalysisResult {
     let type: ThreatStatus | CommonStatus = 'FAILED';
 
@@ -219,12 +214,12 @@ export class ThreatAnalysisService {
   /**
    * Analyzes transaction simulation results to extract threats and balance changes.
    * @param {Address} safeAddress - The Safe wallet address
-   * @param {TransactionSimulation | TransactionSimulationError} [simulation] - The transaction simulation result
+   * @param {TransactionSimulation} [simulation] - The transaction simulation result
    * @returns {{ results: Array<ThreatAnalysisResult>; balanceChanges: BalanceChanges }} Object containing threat results and balance changes
    */
   private analyzeSimulation(
     safeAddress: Address,
-    simulation?: TransactionSimulation | TransactionSimulationError,
+    simulation?: TransactionSimulation,
   ): [Array<ThreatAnalysisResult>, Array<BalanceChange> | undefined] {
     let results: Array<ThreatAnalysisResult> = [];
     let balanceChanges: Array<BalanceChange> = [];
@@ -243,10 +238,7 @@ export class ThreatAnalysisService {
       return [results, undefined];
     }
 
-    balanceChanges = BalanceChangesSchema.parse(
-      simulation.assets_diffs?.[safeAddress] ?? [],
-    );
-
+    balanceChanges = simulation.assets_diffs?.[safeAddress] ?? [];
     results = (simulation.contract_management?.[safeAddress] ?? []).flatMap(
       (m) => {
         switch (m.type) {
@@ -254,8 +246,8 @@ export class ThreatAnalysisService {
             return [
               this.mapToAnalysisResult({
                 type: 'MASTERCOPY_CHANGE',
-                before: m.before.address,
-                after: m.after.address,
+                before: m.before?.address,
+                after: m.after?.address,
               }),
             ];
           case 'OWNERSHIP_CHANGE':
@@ -273,26 +265,33 @@ export class ThreatAnalysisService {
 
   /**
    * Groups validation issues by their severity.
-   * @param {Array<{ type: string; description: string }>} features - List of features detected during threat analysis
+   * @param {Array<{ type: string; description: string, address?: Address }>} features - List of features detected during threat analysis
    * @returns {ThreatIssues} Partial record of issues grouped by severity (highest to lowest)
    */
   private groupIssuesBySeverity(
-    features: Array<{ type: string; description: string; address?: string }>,
+    features: Array<{ type: string; description: string; address?: Address }>,
   ): ThreatIssues {
     if (!features.length) {
       return {};
     }
 
+    /**
+     * This block filters for Blockaid features labeled Malicious or Warning,
+     * maps each feature’s type to an internal severity key via BLOCKAID_SEVERITY_MAP,
+     * and groups them into ThreatIssues. As it reduces, it creates an array per severity (acc[sev] ??= [])
+     * and pushes the feature’s description and address.
+     * The result is an object whose keys are severities and values are lists of matching issues.
+     */
     const grouped = features
       .filter((f) => f.type === 'Malicious' || f.type === 'Warning')
-      .reduce((acc, { type, description, address }) => {
+      .reduce<ThreatIssues>((acc, { type, description, address }) => {
         const sev = BLOCKAID_SEVERITY_MAP[type];
         (acc[sev] ??= []).push({
           description,
           address,
         });
         return acc;
-      }, {} as ThreatIssues);
+      }, {});
 
     return Object.fromEntries(
       (
@@ -311,8 +310,8 @@ export class ThreatAnalysisService {
    * @param {string} args.classification - A classification explaining the reason of threat analysis result
    * @param {string} args.description - A fallback description from Blockaid in case specific mappings are not found for reason/classification
    * @param {ThreatIssues} args.issues - A potential partial record of specific issues identified during threat analysis, grouped by severity
-   * @param {string} args.before - The old master copy address (only for MASTERCOPY_CHANGE)
-   * @param {string} args.after - The new master copy address (only for MASTERCOPY_CHANGE)
+   * @param {Address} args.before - The old master copy address (only for MASTERCOPY_CHANGE)
+   * @param {Address} args.after - The new master copy address (only for MASTERCOPY_CHANGE)
    * @param {string} args.error - An error message in case of a failure
    * @returns {ThreatAnalysisResult} The analysis result
    */
@@ -322,8 +321,8 @@ export class ThreatAnalysisService {
     classification?: string;
     description?: string;
     issues?: ThreatIssues;
-    before?: string;
-    after?: string;
+    before?: Address;
+    after?: Address;
     error?: string;
   }): ThreatAnalysisResult {
     const {
@@ -356,8 +355,8 @@ export class ThreatAnalysisService {
           type,
           title,
           description,
-          before: before ?? '',
-          after: after ?? '',
+          before: before ?? ('0x' as Address),
+          after: after ?? ('0x' as Address),
         };
       case 'MALICIOUS':
       case 'MODERATE':

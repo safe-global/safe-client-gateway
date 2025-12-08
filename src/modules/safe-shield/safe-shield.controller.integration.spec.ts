@@ -16,7 +16,7 @@ import { FF_RISK_MITIGATION } from './threat-analysis/blockaid/blockaid-api.cons
 import { BlockaidApiModule } from './threat-analysis/blockaid/blockaid-api.module';
 import { TestBlockaidApiModule } from './threat-analysis/blockaid/__tests__/test.blockaid-api.module';
 import { IBlockaidApi } from './threat-analysis/blockaid/blockaid-api.interface';
-import type { TransactionScanResponse } from '@blockaid/client/resources/index';
+import type { BlockaidScanResponse } from '@/modules/safe-shield/threat-analysis/blockaid/schemas/blockaid-scan-response.schema';
 
 describe('SafeShieldController (Integration)', () => {
   let app: INestApplication<Server>;
@@ -116,9 +116,8 @@ describe('SafeShieldController (Integration)', () => {
       const requestBody = threatAnalysisRequestBuilder().build();
       const requestId = faker.string.uuid();
 
-      const blockaidResponse = {
+      const blockaidResponse: BlockaidScanResponse = {
         validation: {
-          status: 'Success',
           result_type: 'Benign',
           classification: '',
           reason: '',
@@ -128,7 +127,8 @@ describe('SafeShieldController (Integration)', () => {
         simulation: {
           status: 'Success',
         },
-      } as unknown as TransactionScanResponse;
+        request_id: requestId,
+      };
 
       networkService.get.mockImplementation(({ url }) => {
         if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
@@ -137,10 +137,7 @@ describe('SafeShieldController (Integration)', () => {
         return Promise.reject(new Error(`No matching rule for url: ${url}`));
       });
 
-      blockaidApi.scanTransaction.mockResolvedValue({
-        ...blockaidResponse,
-        request_id: requestId,
-      });
+      blockaidApi.scanTransaction.mockResolvedValue(blockaidResponse);
 
       const response = await request(app.getHttpServer())
         .post(

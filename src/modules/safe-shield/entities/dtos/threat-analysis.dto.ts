@@ -40,12 +40,12 @@ export class MasterCopyChangeThreatAnalysisResultDto
   @ApiProperty({
     description: 'Address of the old master copy/implementation contract',
   })
-  before!: string;
+  before!: Address;
 
   @ApiProperty({
     description: 'Address of the new master copy/implementation contract',
   })
-  after!: string;
+  after!: Address;
 }
 
 /**
@@ -55,7 +55,7 @@ export class ThreatIssueDto implements ThreatIssue {
   @ApiPropertyOptional({
     description: 'Address involved in the issue, if applicable',
   })
-  address?: string;
+  address?: Address;
 
   @ApiProperty({
     description: 'Issue description',
