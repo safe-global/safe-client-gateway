@@ -31,6 +31,7 @@ import {
   TransactionSimulation,
   TransactionValidation,
 } from '@/modules/safe-shield/threat-analysis/blockaid/schemas/blockaid-scan-response.schema';
+import { NULL_ADDRESS } from '@/routes/common/constants';
 
 /**
  * Service responsible for analyzing transactions for security threats and malicious patterns.
@@ -355,8 +356,8 @@ export class ThreatAnalysisService {
           type,
           title,
           description,
-          before: before ?? ('0x' as Address),
-          after: after ?? ('0x' as Address),
+          before: before ?? (NULL_ADDRESS as Address),
+          after: after ?? (NULL_ADDRESS as Address),
         };
       case 'MALICIOUS':
       case 'MODERATE':
