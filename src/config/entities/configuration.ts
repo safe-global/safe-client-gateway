@@ -343,6 +343,9 @@ export default () => ({
     requestTimeout: parseInt(
       process.env.HTTP_CLIENT_REQUEST_TIMEOUT_MILLISECONDS ?? `${5_000}`,
     ),
+    ownersTimeout: parseInt(
+      process.env.HTTP_CLIENT_REQUEST_TIMEOUT_MILLISECONDS_OWNERS ?? `${5_000}`,
+    ),
   },
   jwt: {
     issuer: process.env.JWT_ISSUER,

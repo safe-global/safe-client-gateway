@@ -24,7 +24,7 @@ import { hashSha1 } from '@/domain/common/utils/utils';
 describe('NetworkModule', () => {
   let app: INestApplication<Server>;
   let fetchClient: FetchClient;
-  let httpClientTimeout: number;
+  let defaultTimeout: number;
   let loggingService: ILoggingService;
 
   // fetch response is not mocked but we are only concerned with RequestInit options
@@ -56,7 +56,7 @@ describe('NetworkModule', () => {
       IConfigurationService,
     );
     fetchClient = moduleFixture.get('FetchClient');
-    httpClientTimeout = configurationService.getOrThrow(
+    defaultTimeout = configurationService.getOrThrow(
       'httpClient.requestTimeout',
     );
     loggingService = moduleFixture.get<ILoggingService>(LoggingService);
@@ -87,7 +87,7 @@ describe('NetworkModule', () => {
       expect(fetchMock).toHaveBeenCalledTimes(1);
       expect(fetchMock).toHaveBeenCalledWith(url, {
         method: 'GET',
-        signal: AbortSignal.timeout(httpClientTimeout), // timeout is set
+        signal: AbortSignal.timeout(defaultTimeout), // timeout is set
         keepalive: true,
       });
     });
@@ -129,6 +129,35 @@ describe('NetworkModule', () => {
       );
 
       expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('uses custom timeout when provided as third argument', async () => {
+      const url = faker.internet.url({ appendSlash: false });
+      const customTimeout = faker.number.int({ min: 1000, max: 10000 });
+
+      await expect(
+        fetchClient(url, { method: 'GET' }, customTimeout),
+      ).rejects.toThrow();
+
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(fetchMock).toHaveBeenCalledWith(url, {
+        method: 'GET',
+        signal: AbortSignal.timeout(customTimeout),
+        keepalive: true,
+      });
+    });
+
+    it('uses default timeout when timeout is not provided', async () => {
+      const url = faker.internet.url({ appendSlash: false });
+
+      await expect(fetchClient(url, { method: 'GET' })).rejects.toThrow();
+
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(fetchMock).toHaveBeenCalledWith(url, {
+        method: 'GET',
+        signal: AbortSignal.timeout(defaultTimeout),
+        keepalive: true,
+      });
     });
   });
 
