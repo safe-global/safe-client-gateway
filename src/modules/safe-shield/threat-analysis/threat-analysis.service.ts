@@ -28,6 +28,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { Address } from 'viem';
 import { TypedData } from '@/modules/messages/domain/entities/typed-data.entity';
 import {
+  ProxyUpgradeManagement,
   TransactionSimulation,
   TransactionValidation,
 } from '@/modules/safe-shield/threat-analysis/blockaid/schemas/blockaid-scan-response.schema';
@@ -241,16 +242,18 @@ export class ThreatAnalysisService {
 
     balanceChanges = simulation.assets_diffs?.[safeAddress] ?? [];
     results = (simulation.contract_management?.[safeAddress] ?? []).flatMap(
-      (m) => {
-        switch (m.type) {
-          case 'PROXY_UPGRADE':
+      (management) => {
+        switch (management.type) {
+          case 'PROXY_UPGRADE': {
+            const proxyUpgrade = management as ProxyUpgradeManagement;
             return [
               this.mapToAnalysisResult({
                 type: 'MASTERCOPY_CHANGE',
-                before: m.before?.address,
-                after: m.after?.address,
+                before: proxyUpgrade.before.address,
+                after: proxyUpgrade.after.address,
               }),
             ];
+          }
           case 'OWNERSHIP_CHANGE':
             return [this.mapToAnalysisResult({ type: 'OWNERSHIP_CHANGE' })];
           case 'MODULE_CHANGE':

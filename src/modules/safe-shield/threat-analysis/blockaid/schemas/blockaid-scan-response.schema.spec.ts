@@ -285,4 +285,143 @@ describe('BlockaidScanResponseSchema', () => {
     expect(result.success).toBe(true);
     expect(result.data).toEqual(response);
   });
+
+  it('parses Blockaid response with multiple OWNERSHIP_CHANGE entries', () => {
+    const owner1 = getAddress(faker.finance.ethereumAddress());
+    const owner2 = getAddress(faker.finance.ethereumAddress());
+    const owner3 = getAddress(faker.finance.ethereumAddress());
+    const owner4 = getAddress(faker.finance.ethereumAddress());
+    const trustedAddress1 = getAddress(faker.finance.ethereumAddress());
+    const trustedAddress2 = getAddress(faker.finance.ethereumAddress());
+
+    const response = {
+      request_id: faker.string.uuid(),
+      validation: {
+        result_type: 'Benign',
+        classification: '',
+        reason: '',
+        description: '',
+        features: [
+          {
+            type: 'Benign',
+            feature_id: 'TRUSTED_ADDRESS',
+            description: 'A trusted address, safe to interact with',
+            address: trustedAddress1,
+          },
+          {
+            type: 'Benign',
+            feature_id: 'TRUSTED_ADDRESS',
+            description: 'A trusted address, safe to interact with',
+            address: trustedAddress2,
+          },
+        ],
+      },
+      simulation: {
+        status: 'Success',
+        assets_diffs: {},
+        contract_management: {
+          [safeAddress]: [
+            {
+              type: 'OWNERSHIP_CHANGE',
+              before: {
+                owners: [owner1, owner2, owner3, owner4],
+              },
+              after: {
+                owners: [owner2, owner4],
+              },
+            },
+            {
+              type: 'OWNERSHIP_CHANGE',
+              before: {
+                owners: [owner1, owner2, owner3, owner4],
+              },
+              after: {
+                owners: [owner2, owner4],
+              },
+            },
+          ],
+        },
+      },
+    };
+
+    const result = BlockaidScanResponseSchema.safeParse(response);
+
+    expect(result.success).toBe(true);
+    // OWNERSHIP_CHANGE entries should only have type field after parsing
+    expect(result.data?.simulation?.contract_management?.[safeAddress]).toEqual(
+      [{ type: 'OWNERSHIP_CHANGE' }, { type: 'OWNERSHIP_CHANGE' }],
+    );
+  });
+
+  it('parses Blockaid response with mixed OWNERSHIP_CHANGE and CONTRACT_CREATION', () => {
+    const contractAddress = getAddress(faker.finance.ethereumAddress());
+    const ownerBefore = getAddress(faker.finance.ethereumAddress());
+    const ownerAfter = getAddress(faker.finance.ethereumAddress());
+    const deployerAddress = getAddress(faker.finance.ethereumAddress());
+    const storedAddress1 = getAddress(faker.finance.ethereumAddress());
+    const storedAddress2 = getAddress(faker.finance.ethereumAddress());
+    const trustedAddress1 = getAddress(faker.finance.ethereumAddress());
+    const trustedAddress2 = getAddress(faker.finance.ethereumAddress());
+    const untrustedAddress = getAddress(faker.finance.ethereumAddress());
+
+    const response = {
+      request_id: faker.string.uuid(),
+      validation: {
+        result_type: 'Warning',
+        classification: 'untrusted_address',
+        reason: 'module_change',
+        description: 'The transaction enables an untrusted address as a module',
+        features: [
+          {
+            type: 'Benign',
+            feature_id: 'TRUSTED_ADDRESS',
+            description: 'A trusted address, safe to interact with',
+            address: trustedAddress1,
+          },
+          {
+            type: 'Benign',
+            feature_id: 'TRUSTED_ADDRESS',
+            description: 'A trusted address, safe to interact with',
+            address: trustedAddress2,
+          },
+          {
+            type: 'Warning',
+            feature_id: 'UNTRUSTED_ADDRESS',
+            description: 'This address is untrusted',
+            address: untrustedAddress,
+          },
+        ],
+      },
+      simulation: {
+        status: 'Success',
+        assets_diffs: {},
+        contract_management: {
+          [contractAddress]: [
+            {
+              type: 'OWNERSHIP_CHANGE',
+              before: {
+                owners: [ownerBefore],
+              },
+              after: {
+                owners: [ownerAfter],
+              },
+            },
+            {
+              type: 'CONTRACT_CREATION',
+              deployer_address: deployerAddress,
+              stored_addresses: [storedAddress1, storedAddress2],
+            },
+          ],
+        },
+      },
+    };
+
+    const result = BlockaidScanResponseSchema.safeParse(response);
+
+    expect(result.success).toBe(true);
+    // Both entries should only have type field after parsing
+    expect(
+      result.data?.simulation?.contract_management?.[contractAddress],
+    ).toEqual([{ type: 'OWNERSHIP_CHANGE' }, { type: 'CONTRACT_CREATION' }]);
+  });
 });
