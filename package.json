@@ -57,7 +57,7 @@
     "cache-manager": "6.4.1",
     "cookie-parser": "1.4.7",
     "csv-stringify": "^6.6.0",
-    "jsonwebtoken": "9.0.2",
+    "jsonwebtoken": "9.0.3",
     "lodash": "4.17.21",
     "nestjs-cls": "6.0.1",
     "pg": "8.14.1",
