@@ -26,7 +26,6 @@ describe('Safes V2 Controller Overview (Unit)', () => {
   let safeConfigUrl: string;
   let networkService: jest.MockedObjectDeep<INetworkService>;
   let pricesProviderUrl: string;
-  let pricesApiKey: string;
   let zerionBaseUri: string;
 
   const zerionChainId = '137'; // Polygon - enabled for Zerion
@@ -60,9 +59,6 @@ describe('Safes V2 Controller Overview (Unit)', () => {
     safeConfigUrl = configurationService.getOrThrow('safeConfig.baseUri');
     pricesProviderUrl = configurationService.getOrThrow(
       'balances.providers.safe.prices.baseUri',
-    );
-    pricesApiKey = configurationService.getOrThrow(
-      'balances.providers.safe.prices.apiKey',
     );
     zerionBaseUri = configurationService.getOrThrow(
       'balances.providers.zerion.baseUri',
@@ -466,10 +462,13 @@ describe('Safes V2 Controller Overview (Unit)', () => {
         .expect(200)
         .expect(({ body }) => {
           // maxOverviews is 3, so safeInfo4 should be excluded
-          expect(body.length).toBe(3);
-          expect(
-            body.map((s: { address: { value: string } }) => s.address.value),
-          ).toEqual([safeInfo1.address, safeInfo2.address, safeInfo3.address]);
+          const overviews = body as Array<{ address: { value: string } }>;
+          expect(overviews.length).toBe(3);
+          expect(overviews.map((s) => s.address.value)).toEqual([
+            safeInfo1.address,
+            safeInfo2.address,
+            safeInfo3.address,
+          ]);
         });
     });
   });
