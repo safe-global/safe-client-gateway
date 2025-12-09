@@ -166,6 +166,99 @@ describe('PostgresDatabaseMigrator tests', () => {
         'No migrations found',
       );
     });
+
+    it('should handle migration gaps correctly', async () => {
+      // Create migrations with gaps in numbering (00001, 00005, 00010)
+      const migrationsWithGaps = [
+        {
+          name: '00001_first',
+          file: {
+            name: 'index.sql',
+            contents: `drop table if exists test;
+                       create table test (a text);
+                       insert into test (a) values ('first');`,
+          },
+        },
+        {
+          name: '00005_second',
+          file: {
+            name: 'index.sql',
+            contents: `insert into test (a) values ('second');`,
+          },
+        },
+        {
+          name: '00010_third',
+          file: {
+            name: 'index.sql',
+            contents: `insert into test (a) values ('third');`,
+          },
+        },
+      ];
+
+      // Create first migration and run it
+      const firstMigrationPath = path.join(folder, migrationsWithGaps[0].name);
+      fs.mkdirSync(firstMigrationPath, { recursive: true });
+      fs.writeFileSync(
+        path.join(firstMigrationPath, migrationsWithGaps[0].file.name),
+        migrationsWithGaps[0].file.contents,
+      );
+
+      await target.migrate(folder);
+
+      // Verify first migration was recorded
+      const recordedAfterFirst = await sql`SELECT * FROM migrations`;
+      expect(recordedAfterFirst).toStrictEqual([
+        {
+          id: 1,
+          name: 'first',
+          created_at: expect.any(Date),
+        },
+      ]);
+
+      // Add remaining migrations with gaps (00005, 00010)
+      for (const { name, file } of migrationsWithGaps.slice(1)) {
+        const migrationPath = path.join(folder, name);
+        fs.mkdirSync(migrationPath, { recursive: true });
+        fs.writeFileSync(path.join(migrationPath, file.name), file.contents);
+      }
+
+      // Migrate from last run migration
+      // This should run migrations 00005 and 00010, not skip them
+      const remaining = await target.migrate(folder);
+      expect(remaining).toHaveLength(2);
+
+      // Verify all migrations were recorded correctly
+      await expect(
+        sql`SELECT * FROM migrations ORDER BY id`,
+      ).resolves.toStrictEqual([
+        {
+          id: 1,
+          name: 'first',
+          created_at: recordedAfterFirst[0].created_at,
+        },
+        {
+          id: 5,
+          name: 'second',
+          created_at: expect.any(Date),
+        },
+        {
+          id: 10,
+          name: 'third',
+          created_at: expect.any(Date),
+        },
+      ]);
+
+      // Verify all data was inserted correctly
+      const testData = await sql`SELECT * FROM test ORDER BY a`;
+      expect(testData).toStrictEqual([
+        { a: 'first' },
+        { a: 'second' },
+        { a: 'third' },
+      ]);
+
+      // Clean up test table
+      await sql`DROP TABLE IF EXISTS test`;
+    });
   });
 
   describe('test', () => {
