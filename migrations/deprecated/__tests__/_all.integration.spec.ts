@@ -19,7 +19,5 @@ describe('Migrations', () => {
 
   it('run successfully', async () => {
     await expect(migrator.migrate()).resolves.not.toThrow();
-
-    await sql.end();
   });
 });

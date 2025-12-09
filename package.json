@@ -110,6 +110,11 @@
       "ts"
     ],
     "testRegex": ".*\\.spec\\.ts$",
+    "testPathIgnorePatterns": [
+      "\\.integration\\.spec\\.ts$",
+      "\\.e2e-spec\\.ts$"
+    ],
+    "testTimeout": 30000,
     "transform": {
       "^.+\\.(t|j)s$": "ts-jest"
     },
@@ -117,8 +122,7 @@
       "node_modules/(?!@faker-js).+"
     ],
     "roots": [
-      "./src",
-      "./migrations"
+      "./src"
     ],
     "collectCoverageFrom": [
       "**/*.(t|j)s"
@@ -128,7 +132,8 @@
       "index.ts",
       ".+\\/__tests__\\/.+\\.builder.(t|j)s",
       ".+\\/__tests__\\/.+\\.factory.(t|j)s",
-      ".e2e-spec.ts"
+      ".e2e-spec.ts",
+      ".integration.spec.ts"
     ],
     "testEnvironment": "node",
     "moduleNameMapper": {
