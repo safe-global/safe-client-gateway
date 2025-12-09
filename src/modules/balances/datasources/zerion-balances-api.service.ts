@@ -232,10 +232,7 @@ export class ZerionBalancesApi implements IBalancesApi {
     }
   }
 
-  async clearCollectibles(args: {
-    chainId: string;
-    safeAddress: Address;
-  }): Promise<void> {
+  async clearCollectibles(args: { safeAddress: Address }): Promise<void> {
     const key = CacheRouter.getZerionCollectiblesCacheKey({
       safeAddress: args.safeAddress,
     });
@@ -304,10 +301,7 @@ export class ZerionBalancesApi implements IBalancesApi {
     };
   }
 
-  async clearBalances(args: {
-    chainId: string;
-    safeAddress: Address;
-  }): Promise<void> {
+  async clearBalances(args: { safeAddress: Address }): Promise<void> {
     const key = CacheRouter.getZerionBalancesCacheKey({
       safeAddress: args.safeAddress,
     });
