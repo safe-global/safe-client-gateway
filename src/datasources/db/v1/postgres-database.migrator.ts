@@ -48,7 +48,9 @@ export class PostgresDatabaseMigrator {
     await this.assertMigrationsTable();
 
     const last = await this.getLastRunMigration();
-    const remaining = migrations.slice(last?.id ?? 0);
+    const remaining = migrations.filter(
+      (migration) => migration.id > (last?.id ?? 0),
+    );
 
     await this.sql.begin(async (transaction: TransactionSql) => {
       for (const current of remaining) {
