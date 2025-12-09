@@ -74,7 +74,7 @@
   },
   "devDependencies": {
     "@faker-js/faker": "9.9.0",
-    "@nestjs/cli": "11.0.5",
+    "@nestjs/cli": "11.0.14",
     "@nestjs/schematics": "11.0.5",
     "@nestjs/testing": "11.1.9",
     "@smithy/util-stream": "4.5.5",
