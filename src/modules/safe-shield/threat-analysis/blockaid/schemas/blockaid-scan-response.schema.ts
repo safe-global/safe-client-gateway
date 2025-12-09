@@ -17,19 +17,23 @@ const ValidationSchema = z.object({
   features: z.array(ValidationFeatureSchema),
 });
 
-const ContractManagementChangeSchema = z.object({
-  type: z.string(),
-  before: z
-    .object({
-      address: AddressSchema,
-    })
-    .optional(),
-  after: z
-    .object({
-      address: AddressSchema,
-    })
-    .optional(),
+const ProxyUpgradeManagementSchema = z.object({
+  type: z.literal('PROXY_UPGRADE'),
+  before: z.object({ address: AddressSchema }),
+  after: z.object({ address: AddressSchema }),
 });
+
+// "catch-all" branch, BUT explicitly forbids PROXY_UPGRADE
+const OtherContractManagementSchema = z.object({
+  type: z.string().refine((t) => t !== 'PROXY_UPGRADE', {
+    message: 'PROXY_UPGRADE type must match ProxyUpgradeManagementSchema',
+  }),
+});
+
+const ContractManagementChangeSchema = z.union([
+  ProxyUpgradeManagementSchema,
+  OtherContractManagementSchema,
+]);
 
 const SimulationSchema = z.object({
   status: z.string(),
@@ -47,6 +51,9 @@ export const BlockaidScanResponseSchema = z.object({
   simulation: SimulationSchema.optional(),
 });
 
+export type ProxyUpgradeManagement = z.infer<
+  typeof ProxyUpgradeManagementSchema
+>;
 export type TransactionValidation = z.infer<typeof ValidationSchema>;
 export type TransactionSimulation = z.infer<typeof SimulationSchema>;
 export type BlockaidScanResponse = z.infer<typeof BlockaidScanResponseSchema>;
