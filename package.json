@@ -110,6 +110,10 @@
       "ts"
     ],
     "testRegex": ".*\\.spec\\.ts$",
+    "testPathIgnorePatterns": [
+      "\\.integration\\.spec\\.ts$",
+      "\\.e2e-spec\\.ts$"
+    ],
     "transform": {
       "^.+\\.(t|j)s$": "ts-jest"
     },
@@ -128,7 +132,8 @@
       "index.ts",
       ".+\\/__tests__\\/.+\\.builder.(t|j)s",
       ".+\\/__tests__\\/.+\\.factory.(t|j)s",
-      ".e2e-spec.ts"
+      ".e2e-spec.ts",
+      ".integration.spec.ts"
     ],
     "testEnvironment": "node",
     "moduleNameMapper": {
