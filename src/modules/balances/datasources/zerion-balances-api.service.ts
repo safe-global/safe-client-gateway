@@ -120,7 +120,6 @@ export class ZerionBalancesApi implements IBalancesApi {
     }
 
     const cacheDir = CacheRouter.getZerionBalancesCacheDir({
-      chainId: args.chain.chainId,
       safeAddress: args.safeAddress,
       fiatCode: args.fiatCode,
     });
@@ -184,8 +183,9 @@ export class ZerionBalancesApi implements IBalancesApi {
     offset?: number;
   }): Promise<Raw<Page<Collectible>>> {
     const cacheDir = CacheRouter.getZerionCollectiblesCacheDir({
-      ...args,
-      chainId: args.chain.chainId,
+      safeAddress: args.safeAddress,
+      limit: args.limit,
+      offset: args.offset,
     });
     const cached = await this.cacheService.hGet(cacheDir);
     if (cached != null) {
@@ -236,7 +236,9 @@ export class ZerionBalancesApi implements IBalancesApi {
     chainId: string;
     safeAddress: Address;
   }): Promise<void> {
-    const key = CacheRouter.getZerionCollectiblesCacheKey(args);
+    const key = CacheRouter.getZerionCollectiblesCacheKey({
+      safeAddress: args.safeAddress,
+    });
     await this.cacheService.deleteByKey(key);
   }
 
@@ -306,7 +308,9 @@ export class ZerionBalancesApi implements IBalancesApi {
     chainId: string;
     safeAddress: Address;
   }): Promise<void> {
-    const key = CacheRouter.getZerionBalancesCacheKey(args);
+    const key = CacheRouter.getZerionBalancesCacheKey({
+      safeAddress: args.safeAddress,
+    });
     await this.cacheService.deleteByKey(key);
   }
 
