@@ -122,6 +122,27 @@ export const RootConfigurationSchema = z
     CSV_AWS_SECRET_ACCESS_KEY: z.string().optional(),
     CSV_EXPORT_QUEUE_CONCURRENCY: z.number({ coerce: true }).min(1).optional(),
     BLOCKAID_CLIENT_API_KEY: z.string().optional(),
+    CIRCUIT_BREAKER_FAILURE_THRESHOLD: z
+      .number({ coerce: true })
+      .int()
+      .min(1)
+      .optional(),
+    CIRCUIT_BREAKER_SUCCESS_THRESHOLD: z
+      .number({ coerce: true })
+      .int()
+      .min(1)
+      .optional(),
+    CIRCUIT_BREAKER_TIMEOUT: z.number({ coerce: true }).int().min(0).optional(),
+    CIRCUIT_BREAKER_ROLLING_WINDOW: z
+      .number({ coerce: true })
+      .int()
+      .min(0)
+      .optional(),
+    CIRCUIT_BREAKER_HALF_OPEN_MAX_REQUESTS: z
+      .number({ coerce: true })
+      .int()
+      .min(1)
+      .optional(),
   })
   .superRefine((config, ctx) =>
     // Check for AWS_* and Blockaid fields in production and staging environments

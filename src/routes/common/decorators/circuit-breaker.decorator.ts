@@ -1,59 +1,32 @@
+import type { CircuitBreakerInterceptorOptions } from '@/datasources/circuit-breaker/interfaces/circuit-breaker-interceptor-options.interface';
+import { CircuitBreakerInterceptor } from '@/routes/common/interceptors/circuit-breaker.interceptor';
 import { SetMetadata } from '@nestjs/common';
-import type { CircuitBreakerConfig } from '@/datasources/circuit-breaker/interfaces/circuit-breaker-config.interface';
+import { UseInterceptors, applyDecorators } from '@nestjs/common';
 
-export const CIRCUIT_BREAKER_KEY = 'circuit-breaker';
+export const CIRCUIT_BREAKER_OPTIONS_METADATA_KEY = 'CircuitBreakerOptions';
 
 /**
- * Options for configuring circuit breaker via decorator
+ * Circuit Breaker Decorator
+ *
+ * This decorator applies the circuit breaker pattern to methods or classes.
+ * It automatically applies the CircuitBreakerInterceptor and sets metadata
+ * for configuration options.
+ *
+ * @param {string} name - The name of the circuit breaker
+ * @param {Partial<CircuitBreakerInterceptorOptions>} options - Optional configuration options
+ *
+ * @returns {MethodDecorator & ClassDecorator} A decorator that can be applied to methods or classes
+ *
  */
-export interface CircuitBreakerDecoratorOptions {
-  /**
-   * Unique name for this circuit. If not provided, uses the route path
-   */
-  name?: string;
+export function CircuitBreaker(
+  name: string,
+  options?: Partial<CircuitBreakerInterceptorOptions>,
+): MethodDecorator & ClassDecorator {
+  options = options ?? {};
+  options.name = name;
 
-  /**
-   * Circuit breaker configuration
-   */
-  config?: CircuitBreakerConfig;
-
-  /**
-   * Whether to disable circuit breaker for this route
-   */
-  disabled?: boolean;
+  return applyDecorators(
+    SetMetadata(CIRCUIT_BREAKER_OPTIONS_METADATA_KEY, options),
+    UseInterceptors(CircuitBreakerInterceptor),
+  );
 }
-
-/**
- * Decorator to configure circuit breaker behavior for a specific route
- *
- * @param {CircuitBreakerDecoratorOptions} [options] - Circuit breaker configuration options
- * @returns {MethodDecorator} Method decorator
- *
- * @example
- * ```typescript
- * @Get('/external-data')
- * @CircuitBreaker({
- *   name: 'external-api',
- *   config: {
- *     failureThreshold: 3,
- *     timeout: 30000,
- *   }
- * })
- * async getData() {
- *   return await this.externalService.fetchData();
- * }
- * ```
- *
- * @example
- * ```typescript
- * // Disable circuit breaker for a specific route
- * @Get('/internal-data')
- * @CircuitBreaker({ disabled: true })
- * async getInternalData() {
- *   return await this.internalService.fetchData();
- * }
- * ```
- */
-export const CircuitBreaker = (
-  options?: CircuitBreakerDecoratorOptions,
-): MethodDecorator => SetMetadata(CIRCUIT_BREAKER_KEY, options || {});

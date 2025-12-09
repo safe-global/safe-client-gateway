@@ -347,6 +347,28 @@ export default () => ({
       process.env.HTTP_CLIENT_REQUEST_TIMEOUT_MILLISECONDS_OWNERS ?? `${5_000}`,
     ),
   },
+  circuitBreaker: {
+    // Enable or disable the circuit breaker functionality globally
+    enabled: process.env.CIRCUIT_BREAKER_ENABLED?.toLowerCase() === 'true',
+    // Number of failures before the circuit opens
+    failureThreshold: parseInt(
+      process.env.CIRCUIT_BREAKER_FAILURE_THRESHOLD ?? `${20}`,
+    ),
+    // Number of consecutive successes required to close the circuit from half-open state
+    successThreshold: parseInt(
+      process.env.CIRCUIT_BREAKER_SUCCESS_THRESHOLD ?? `${10}`,
+    ),
+    // Time in milliseconds to wait before attempting to close the circuit (timeout period)
+    timeout: parseInt(process.env.CIRCUIT_BREAKER_TIMEOUT ?? `${30_000}`), // 30 seconds
+    // Time window in milliseconds for tracking failures
+    rollingWindow: parseInt(
+      process.env.CIRCUIT_BREAKER_ROLLING_WINDOW ?? `${60_000}`,
+    ), // 10 seconds
+    // Maximum number of requests allowed in half-open state
+    halfOpenMaxRequests: parseInt(
+      process.env.CIRCUIT_BREAKER_HALF_OPEN_MAX_REQUESTS ?? `${10}`,
+    ),
+  },
   jwt: {
     issuer: process.env.JWT_ISSUER,
     secret: process.env.JWT_SECRET,

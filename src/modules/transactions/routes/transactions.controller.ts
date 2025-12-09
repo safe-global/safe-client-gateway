@@ -55,8 +55,11 @@ import { TXSMultisigTransaction } from '@/modules/transactions/routes/entities/t
 import { TXSMultisigTransactionPage } from '@/modules/transactions/routes/entities/txs-multisig-transaction-page.entity';
 import { TXSCreationTransaction } from '@/modules/transactions/routes/entities/txs-creation-transaction.entity';
 import type { Address } from 'viem';
+import { CircuitBreaker } from '@/routes/common/decorators/circuit-breaker.decorator';
+import { CircuitBreakerName } from '@/datasources/circuit-breaker/enums/circuit-name.enum';
 
 @ApiTags('transactions')
+@CircuitBreaker(CircuitBreakerName.TRANSACTIONS_API)
 @Controller({
   path: '',
   version: '1',

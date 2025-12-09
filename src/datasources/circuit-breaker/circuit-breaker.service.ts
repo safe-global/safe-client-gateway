@@ -1,8 +1,11 @@
-import { Injectable } from '@nestjs/common';
-import { CircuitMetrics } from '@/datasources/circuit-breaker/entities/circuit-state.entity';
+import { Inject, Injectable } from '@nestjs/common';
 import { CircuitState } from '@/datasources/circuit-breaker/enums/circuit-state.enum';
-import type { CircuitBreakerConfig } from '@/datasources/circuit-breaker/interfaces/circuit-breaker-config.interface';
-import { DEFAULT_CIRCUIT_BREAKER_CONFIG } from '@/datasources/circuit-breaker/constants/circuit-breaker-config.constants';
+import type {
+  ICircuitBreaker,
+  ICircuitBreakerConfig,
+  ICircuitBreakerMetrics,
+} from '@/datasources/circuit-breaker/interfaces/circuit-breaker.interface';
+import { IConfigurationService } from '@/config/configuration.service.interface';
 
 /**
  * Circuit Breaker Service
@@ -19,248 +22,333 @@ import { DEFAULT_CIRCUIT_BREAKER_CONFIG } from '@/datasources/circuit-breaker/co
  */
 @Injectable()
 export class CircuitBreakerService {
-  private readonly circuits: Map<string, CircuitMetrics> = new Map();
-  private readonly configs: Map<string, Required<CircuitBreakerConfig>> =
-    new Map();
+  private readonly DEFAULT_STATE: CircuitState = CircuitState.CLOSED;
+
+  private readonly initialConfig: ICircuitBreakerConfig;
+  private readonly circuits: Map<string, ICircuitBreaker> = new Map();
   private readonly halfOpenRequestCounts: Map<string, number> = new Map();
 
   /**
-   * Registers a circuit breaker for a specific endpoint
+   * Creates a new CircuitBreakerService instance and loads default configuration
    *
-   * @param {string} name - Unique identifier for the circuit (typically the endpoint URL or a key)
-   * @param {CircuitBreakerConfig} [config] - Configuration options for this circuit
-   * @returns {void}
+   * @param {IConfigurationService} configurationService - Configuration service for loading circuit breaker settings
    */
-  public registerCircuit(name: string, config?: CircuitBreakerConfig): void {
-    if (!this.circuits.has(name)) {
-      this.circuits.set(name, new CircuitMetrics());
-    }
-    // Always update config when provided
-    if (config) {
-      this.configs.set(name, {
-        ...DEFAULT_CIRCUIT_BREAKER_CONFIG,
-        ...config,
-      });
-    } else if (!this.configs.has(name)) {
-      this.configs.set(name, DEFAULT_CIRCUIT_BREAKER_CONFIG);
-    }
+  constructor(
+    @Inject(IConfigurationService)
+    private readonly configurationService: IConfigurationService,
+  ) {
+    this.initialConfig = {
+      failureThreshold: this.configurationService.getOrThrow(
+        'circuitBreaker.failureThreshold',
+      ),
+      successThreshold: this.configurationService.getOrThrow(
+        'circuitBreaker.successThreshold',
+      ),
+      timeout: this.configurationService.getOrThrow('circuitBreaker.timeout'),
+      rollingWindow: this.configurationService.getOrThrow(
+        'circuitBreaker.rollingWindow',
+      ),
+      halfOpenMaxRequests: this.configurationService.getOrThrow(
+        'circuitBreaker.halfOpenMaxRequests',
+      ),
+    };
   }
 
   /**
    * Checks if a request can proceed through the circuit
    *
+   * If no circuit exists, the endpoint is considered healthy and the request proceeds.
+   * Circuits are only created when failures occur.
+   *
    * @param {string} name - Circuit identifier
+   *
    * @returns {boolean} True if request can proceed, false if circuit is open
    */
   public canProceed(name: string): boolean {
-    const circuit = this.getOrCreateCircuit(name);
-    const config = this.getConfig(name);
-    const now = Date.now();
+    const circuit = this.get(name);
 
-    switch (circuit.state) {
+    if (!circuit) {
+      return true;
+    }
+
+    switch (circuit.metrics.state) {
+      case CircuitState.OPEN:
+        return this.handleOpenState(circuit);
+      case CircuitState.HALF_OPEN:
+        return this.handleHalfOpenState(circuit);
       case CircuitState.CLOSED:
-        return true;
-
-      case CircuitState.OPEN: {
-        // Check if timeout has elapsed to transition to HALF_OPEN
-        if (circuit.nextAttemptTime && now >= circuit.nextAttemptTime) {
-          this.transitionToHalfOpen(name);
-          // Fall through to HALF_OPEN logic to check request limit
-          const halfOpenCount = this.halfOpenRequestCounts.get(name) || 0;
-          if (halfOpenCount < config.halfOpenMaxRequests) {
-            this.halfOpenRequestCounts.set(name, halfOpenCount + 1);
-            return true;
-          }
-          return false;
-        }
-        return false;
-      }
-
-      case CircuitState.HALF_OPEN: {
-        // Allow limited number of test requests
-        const halfOpenCount = this.halfOpenRequestCounts.get(name) || 0;
-        if (halfOpenCount < config.halfOpenMaxRequests) {
-          this.halfOpenRequestCounts.set(name, halfOpenCount + 1);
-          return true;
-        }
-        return false;
-      }
-
       default:
-        return true;
+        return this.handleDefaultState();
     }
   }
 
   /**
-   * Records a successful request
+   * Gets an existing circuit or registers a new one if it doesn't exist
+   *
+   * This method ensures that a circuit is always available for the given name,
+   * creating it with the provided configuration if needed.
+   *
+   * @param {string} name - Unique identifier for the circuit (typically the endpoint URL or service name)
+   * @param {CircuitBreakerConfig} [config] - Optional configuration for the circuit (used only if circuit doesn't exist)
+   *
+   * @returns {Circuit} The circuit instance for the given name
+   */
+  public getOrRegisterCircuit(
+    name: string,
+    config?: ICircuitBreakerConfig,
+  ): ICircuitBreaker {
+    return this.get(name) ?? this.registerCircuit(name, config);
+  }
+
+  /**
+   * Creates and registers a new circuit with the given configuration
+   *
+   * Merges the provided config with default configuration values.
+   * Note: This will overwrite any existing circuit with the same name.
+   *
+   * @param {string} name - Unique identifier for the circuit
+   * @param {CircuitBreakerConfig} [config] - Optional configuration to override defaults
+   *
+   * @returns {ICircuitBreaker} The registered circuit
+   */
+  private registerCircuit(
+    name: string,
+    config?: ICircuitBreakerConfig,
+  ): ICircuitBreaker {
+    const initialMetrics: ICircuitBreakerMetrics = {
+      failureCount: 0,
+      successCount: 0,
+      consecutiveSuccesses: 0,
+      state: this.DEFAULT_STATE,
+      lastFailureTime: undefined,
+      nextAttemptTime: undefined,
+    };
+
+    const circuit: ICircuitBreaker = {
+      name,
+      metrics: initialMetrics,
+      config: {
+        ...this.initialConfig,
+        ...config,
+      },
+    };
+
+    this.circuits.set(name, circuit);
+
+    return circuit;
+  }
+
+  /**
+   * Retrieves an existing circuit by name
    *
    * @param {string} name - Circuit identifier
+   * @returns {Circuit | undefined} The circuit instance or undefined if not found
+   */
+  public get(name: string): ICircuitBreaker | undefined {
+    return this.circuits.get(name);
+  }
+
+  /**
+   * Handles circuit logic when in OPEN state
+   *
+   * Checks if enough time has elapsed to transition to HALF_OPEN state.
+   * If the timeout has passed, transitions to HALF_OPEN and allows a test request.
+   *
+   * @param {Circuit} circuit - The circuit instance
+   *
+   * @returns {boolean} True if request can proceed (after timeout), false otherwise
+   */
+  private handleOpenState(circuit: ICircuitBreaker): boolean {
+    const now = Date.now();
+    if (
+      circuit.metrics.nextAttemptTime &&
+      now >= circuit.metrics.nextAttemptTime
+    ) {
+      this.transitionToHalfOpen(circuit);
+      return this.handleHalfOpenState(circuit);
+    }
+    return false;
+  }
+
+  /**
+   * Transitions a circuit from OPEN to HALF_OPEN state
+   *
+   * In HALF_OPEN state, the circuit allows a limited number of test requests
+   * to determine if the downstream service has recovered.
+   *
+   * @param {ICircuitBreaker} circuit - Circuit breaker
    * @returns {void}
    */
-  public recordSuccess(name: string): void {
-    const circuit = this.getOrCreateCircuit(name);
-    const config = this.getConfig(name);
+  private transitionToHalfOpen(circuit: ICircuitBreaker): void {
+    if (circuit) {
+      circuit.metrics.consecutiveSuccesses = 0;
+      circuit.metrics.state = CircuitState.HALF_OPEN;
+      this.halfOpenRequestCounts.set(circuit.name, 0);
+    }
+  }
 
-    circuit.successCount++;
-    circuit.consecutiveSuccesses++;
+  /**
+   * Handles circuit logic when in HALF_OPEN state
+   *
+   * Allows a limited number of test requests through to check if the service has recovered.
+   * Once the maximum number of test requests is reached, additional requests are blocked.
+   *
+   * @param {string} name - Circuit identifier
+   * @param {Circuit} circuit - The circuit instance
+   * @returns {boolean} True if request can proceed (within limit), false if limit reached
+   */
+  private handleHalfOpenState(circuit: ICircuitBreaker): boolean {
+    const halfOpenCount = this.halfOpenRequestCounts.get(circuit.name) || 0;
+    if (halfOpenCount < circuit.config.halfOpenMaxRequests) {
+      this.halfOpenRequestCounts.set(circuit.name, halfOpenCount + 1);
+      return true;
+    }
 
-    if (circuit.state === CircuitState.HALF_OPEN) {
-      // Check if we have enough consecutive successes to close the circuit
-      if (circuit.consecutiveSuccesses >= config.successThreshold) {
-        this.transitionToClosed(name);
+    return false;
+  }
+
+  /**
+   * Handles circuit logic for default/CLOSED state
+   *
+   * In CLOSED state, all requests are allowed through.
+   *
+   * @returns {boolean} Always returns true (requests allowed)
+   */
+  private handleDefaultState(): boolean {
+    return true;
+  }
+
+  /**
+   * Records a successful request for the circuit
+   *
+   * Only processes success if circuit is being tracked (has had failures).
+   * Updates success metrics and handles state transitions:
+   * - In HALF_OPEN: Transitions to CLOSED and cleans up (circuit recovered from failures)
+   * - In CLOSED: Resets failure count (maintains circuit for ongoing monitoring)
+   *
+   * @param {ICircuitBreaker} circuit - Circuit Breaker
+   *
+   * @returns {void}
+   */
+  public recordSuccess(circuit: ICircuitBreaker): void {
+    circuit.metrics.successCount++;
+    circuit.metrics.consecutiveSuccesses++;
+
+    if (circuit.metrics.state === CircuitState.HALF_OPEN) {
+      // Circuit recovering from failures - close and cleanup
+      if (
+        circuit.metrics.consecutiveSuccesses >= circuit.config.successThreshold
+      ) {
+        this.transitionToClosedAndCleanup(circuit);
       }
-    } else if (circuit.state === CircuitState.CLOSED) {
-      // Reset failure count on success in closed state
-      circuit.failureCount = 0;
+    } else if (circuit.metrics.state === CircuitState.CLOSED) {
+      // Reset failure count on success in healthy state
+      circuit.metrics.failureCount = 0;
     }
   }
 
   /**
-   * Records a failed request
+   * Transitions a circuit to CLOSED state and removes it from memory
+   *
+   * Resets all failure metrics and clears timeout settings.
+   * The circuit is now healthy and removed from tracking to save memory.
    *
    * @param {string} name - Circuit identifier
    * @returns {void}
    */
-  public recordFailure(name: string): void {
-    const circuit = this.getOrCreateCircuit(name);
-    const config = this.getConfig(name);
+  private transitionToClosedAndCleanup(circuit: ICircuitBreaker): void {
+    this.removeCircuit(circuit);
+  }
+
+  /**
+   * Removes a circuit from memory
+   *
+   * Used to clean up healthy circuits to prevent memory exhaustion.
+   * Circuit will be recreated if failures occur again.
+   *
+   * @param {ICircuitBreaker} circuit - Circuit identifier
+   * @returns {void}
+   */
+  private removeCircuit(circuit: ICircuitBreaker): void {
+    this.circuits.delete(circuit.name);
+    this.halfOpenRequestCounts.delete(circuit.name);
+  }
+
+  /**
+   * Records a failed request for the circuit
+   *
+   * Creates circuit on first failure (lazy initialization).
+   * Updates failure metrics and handles state transitions:
+   * - In HALF_OPEN: Any failure immediately reopens the circuit
+   * - In CLOSED: Opens circuit if failure threshold is exceeded
+   *
+   * @param {ICircuitBreaker} circuit - Circuit Breaker
+   *
+   * @returns {void}
+   */
+  public recordFailure(circuit: ICircuitBreaker): void {
+    // Create circuit on first failure (lazy initialization)
     const now = Date.now();
 
-    circuit.failureCount++;
-    circuit.lastFailureTime = now;
-    circuit.consecutiveSuccesses = 0;
+    // Clean up failures outside the rolling window
+    if (
+      circuit.metrics.lastFailureTime &&
+      now - circuit.metrics.lastFailureTime > circuit.config.rollingWindow
+    ) {
+      circuit.metrics.failureCount = 0;
+    }
 
-    if (circuit.state === CircuitState.HALF_OPEN) {
-      // Any failure in HALF_OPEN state reopens the circuit
-      this.transitionToOpen(name);
-    } else if (circuit.state === CircuitState.CLOSED) {
-      // Check if failure threshold is exceeded
-      if (circuit.failureCount >= config.failureThreshold) {
-        this.transitionToOpen(name);
+    circuit.metrics.failureCount++;
+    circuit.metrics.lastFailureTime = now;
+    circuit.metrics.consecutiveSuccesses = 0;
+
+    if (circuit.metrics.state === CircuitState.HALF_OPEN) {
+      this.transitionToOpen(circuit);
+    } else if (circuit.metrics.state === CircuitState.CLOSED) {
+      if (circuit.metrics.failureCount >= circuit.config.failureThreshold) {
+        this.transitionToOpen(circuit);
       }
     }
   }
 
   /**
-   * Gets the current state of a circuit
+   * Transitions a circuit to OPEN state (tripped/failing)
    *
-   * @param {string} name - Circuit identifier
-   * @returns {CircuitState} Current circuit state
-   */
-  public getState(name: string): CircuitState {
-    const circuit = this.getOrCreateCircuit(name);
-    return circuit.state;
-  }
-
-  /**
-   * Gets the metrics for a circuit
-   *
-   * @param {string} name - Circuit identifier
-   * @returns {Readonly<CircuitMetrics>} Circuit metrics
-   */
-  public getMetrics(name: string): Readonly<CircuitMetrics> {
-    return this.getOrCreateCircuit(name);
-  }
-
-  /**
-   * Resets a circuit to its initial state
+   * Sets a timeout after which the circuit will transition to HALF_OPEN
+   * to test if the downstream service has recovered. All requests are
+   * blocked until the timeout expires.
    *
    * @param {string} name - Circuit identifier
    * @returns {void}
    */
-  public reset(name: string): void {
+  private transitionToOpen(circuit: ICircuitBreaker): void {
+    circuit.metrics.state = CircuitState.OPEN;
+    circuit.metrics.nextAttemptTime = Date.now() + circuit.config.timeout;
+    this.halfOpenRequestCounts.delete(circuit.name);
+  }
+
+  /**
+   * Delete a specific circuit
+   *
+   * @param {string} name - Circuit identifier to delete
+   *
+   * @returns {void}
+   */
+  public delete(name: string): void {
     const circuit = this.circuits.get(name);
     if (circuit) {
-      circuit.reset();
+      this.circuits.delete(name);
       this.halfOpenRequestCounts.delete(name);
     }
   }
 
   /**
-   * Resets all circuits
+   * Deletes all registered circuits
    *
    * @returns {void}
    */
-  public resetAll(): void {
-    this.circuits.forEach((circuit) => circuit.reset());
+  public deleteAll(): void {
+    this.circuits.clear();
     this.halfOpenRequestCounts.clear();
-  }
-
-  /**
-   * Transitions a circuit to OPEN state
-   *
-   * @param {string} name - Circuit identifier
-   * @returns {void}
-   */
-  private transitionToOpen(name: string): void {
-    const circuit = this.circuits.get(name);
-    const config = this.getConfig(name);
-
-    if (circuit) {
-      circuit.state = CircuitState.OPEN;
-      circuit.nextAttemptTime = Date.now() + config.timeout;
-      this.halfOpenRequestCounts.delete(name);
-    }
-  }
-
-  /**
-   * Transitions a circuit to HALF_OPEN state
-   *
-   * @param {string} name - Circuit identifier
-   * @returns {void}
-   */
-  private transitionToHalfOpen(name: string): void {
-    const circuit = this.circuits.get(name);
-
-    if (circuit) {
-      circuit.state = CircuitState.HALF_OPEN;
-      circuit.consecutiveSuccesses = 0;
-      this.halfOpenRequestCounts.set(name, 0);
-    }
-  }
-
-  /**
-   * Transitions a circuit to CLOSED state
-   *
-   * @param {string} name - Circuit identifier
-   * @returns {void}
-   */
-  private transitionToClosed(name: string): void {
-    const circuit = this.circuits.get(name);
-
-    if (circuit) {
-      circuit.state = CircuitState.CLOSED;
-      circuit.failureCount = 0;
-      circuit.consecutiveSuccesses = 0;
-      circuit.lastFailureTime = undefined;
-      circuit.nextAttemptTime = undefined;
-      this.halfOpenRequestCounts.delete(name);
-    }
-  }
-
-  /**
-   * Gets or creates a circuit for the given name
-   *
-   * @param {string} name - Circuit identifier
-   * @returns {CircuitMetrics} Circuit metrics instance
-   */
-  private getOrCreateCircuit(name: string): CircuitMetrics {
-    if (!this.circuits.has(name)) {
-      this.registerCircuit(name);
-    }
-    return this.circuits.get(name)!;
-  }
-
-  /**
-   * Gets the configuration for a circuit
-   *
-   * @param {string} name - Circuit identifier
-   * @returns {Required<CircuitBreakerConfig>} Circuit configuration
-   */
-  private getConfig(name: string): Required<CircuitBreakerConfig> {
-    if (!this.configs.has(name)) {
-      this.configs.set(name, DEFAULT_CIRCUIT_BREAKER_CONFIG);
-    }
-    return this.configs.get(name)!;
   }
 }

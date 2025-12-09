@@ -2,20 +2,19 @@ import {
   CallHandler,
   ExecutionContext,
   HttpException,
+  Inject,
   Injectable,
   NestInterceptor,
-  ServiceUnavailableException,
 } from '@nestjs/common';
-import { Reflector } from '@nestjs/core';
 import { Observable, throwError } from 'rxjs';
 import { catchError, tap } from 'rxjs/operators';
 import { CircuitBreakerService } from '@/datasources/circuit-breaker/circuit-breaker.service';
 import type { CircuitBreakerInterceptorOptions } from '@/datasources/circuit-breaker/interfaces/circuit-breaker-interceptor-options.interface';
-import {
-  CIRCUIT_BREAKER_KEY,
-  type CircuitBreakerDecoratorOptions,
-} from '@/routes/common/decorators/circuit-breaker.decorator';
 import type { Request } from 'express';
+import { CircuitBreakerException } from '@/datasources/circuit-breaker/exceptions/circuit-breaker.exception';
+import { Reflector } from '@nestjs/core';
+import { CIRCUIT_BREAKER_OPTIONS_METADATA_KEY } from '@/routes/common/decorators/circuit-breaker.decorator';
+import { IConfigurationService } from '@/config/configuration.service.interface';
 
 /**
  * Circuit Breaker Interceptor
@@ -24,59 +23,71 @@ import type { Request } from 'express';
  * It monitors request failures and can automatically "trip" to prevent
  * further requests to failing services.
  *
- * Usage:
+ * Usage 1 - With @CircuitBreaker decorator (recommended):
  * ```typescript
- * @UseInterceptors(new CircuitBreakerInterceptor({
- *   name: 'my-external-api',
- *   config: {
- *     failureThreshold: 5,
- *     timeout: 60000,
- *   }
- * }))
- * @Get('/example')
- * async example() {
- *   // Your route logic
+ * @CircuitBreaker('external-api', {
+ *   config: { failureThreshold: 3 }
+ * })
+ * @Get('/data')
+ * async getData() {
+ *   return await this.externalService.fetch();
  * }
+ * ```
+ *
+ * Usage 2 - Apply at controller level with default options:
+ * ```typescript
+ * @Controller('users')
+ * @UseInterceptors(CircuitBreakerInterceptor)
+ * export class UsersController {
+ *   @Get('/profile')
+ *   async getProfile() { ... }
+ * }
+ * ```
+ *
+ * Usage 3 - With custom options via constructor:
+ * ```typescript
+ * @UseInterceptors(
+ *   new CircuitBreakerInterceptor(
+ *     circuitBreakerService,
+ *     reflector,
+ *     { name: 'custom', config: { failureThreshold: 5 } }
+ *   )
+ * )
+ * @Get('/data')
+ * async getData() { ... }
  * ```
  *
  * @see https://en.wikipedia.org/wiki/Circuit_breaker_design_pattern
  */
+
 @Injectable()
 export class CircuitBreakerInterceptor implements NestInterceptor {
-  private readonly options: CircuitBreakerInterceptorOptions;
+  private readonly DEFAULT_OPEN_CIRCUIT_MESSAGE =
+    'Service temporarily unavailable, please try again later!';
 
+  private options: CircuitBreakerInterceptorOptions;
+  private isEnabled: boolean;
   /**
    * Creates a new CircuitBreakerInterceptor instance
    *
-   * @param {CircuitBreakerService} circuitBreakerService - The circuit breaker service instance
-   * @param {Reflector} reflector - NestJS Reflector for reading metadata
-   * @param {CircuitBreakerInterceptorOptions} [options] - Configuration options for the interceptor
+   * @param {CircuitBreakerService} circuitBreakerService - The circuit breaker service instance (auto-injected by NestJS)
+   * @param {Reflector} reflector - Reflector for reading metadata (auto-injected by NestJS)
    */
   public constructor(
+    @Inject(CircuitBreakerService)
     private readonly circuitBreakerService: CircuitBreakerService,
     private readonly reflector: Reflector,
-    options?: CircuitBreakerInterceptorOptions,
-  ) {
-    this.options = this.buildOptions(options);
-  }
 
-  private buildOptions(
-    options?: CircuitBreakerInterceptorOptions,
-  ): CircuitBreakerInterceptorOptions {
-    return {
-      // Default: use route path as circuit name for global interceptor
-      nameExtractor: (request): string => request.route?.path || request.path,
-      isFailure: (error: Error): boolean => this.defaultIsFailure(error),
-      openCircuitMessage:
-        'Service temporarily unavailable due to high error rate',
-      config: {
-        failureThreshold: 5,
-        successThreshold: 2,
-        timeout: 60_000,
-        halfOpenMaxRequests: 3,
-      },
-      ...options,
+    @Inject(IConfigurationService)
+    private readonly configurationService: IConfigurationService,
+  ) {
+    this.options = {
+      isFailure: (error: Error): boolean => this.isFailure(error),
+      openCircuitMessage: this.DEFAULT_OPEN_CIRCUIT_MESSAGE,
     };
+    this.isEnabled = this.configurationService.getOrThrow(
+      'circuitBreaker.enabled',
+    );
   }
 
   /**
@@ -84,119 +95,139 @@ export class CircuitBreakerInterceptor implements NestInterceptor {
    *
    * @param {ExecutionContext} context - The execution context
    * @param {CallHandler} next - The next handler in the chain
+   *
    * @returns {Observable<unknown>} Observable of the response
    */
   public intercept(
     context: ExecutionContext,
     next: CallHandler,
   ): Observable<unknown> {
-    // Check for route-specific circuit breaker configuration
-    const decoratorOptions = this.reflector.get<CircuitBreakerDecoratorOptions>(
-      CIRCUIT_BREAKER_KEY,
-      context.getHandler(),
-    );
-
-    // Skip circuit breaker if explicitly disabled for this route
-    if (decoratorOptions?.disabled) {
+    if (!this.isEnabled) {
       return next.handle();
     }
 
     const request = context.switchToHttp().getRequest<Request>();
 
-    // Merge decorator options with interceptor options
-    const mergedOptions: CircuitBreakerInterceptorOptions = {
+    this.options = {
       ...this.options,
-      ...decoratorOptions,
+      ...this.getOptionsFromMetadata(context),
     };
 
-    // Merge configs separately to handle undefined decorator options
-    if (this.options.config || decoratorOptions?.config) {
-      mergedOptions.config = {
-        ...this.options.config,
-        ...decoratorOptions?.config,
-      };
-    }
-
-    // Determine circuit name from decorator, extractor, or default
-    let circuitName: string;
-    if (decoratorOptions?.name) {
-      circuitName = decoratorOptions.name;
-    } else if (this.options.name) {
-      circuitName = this.options.name;
-    } else if (mergedOptions.nameExtractor) {
-      circuitName = mergedOptions.nameExtractor(request);
-    } else {
-      circuitName = this.getCircuitName(request);
-    }
-
-    // Register circuit if it doesn't exist
-    if (mergedOptions.config) {
-      this.circuitBreakerService.registerCircuit(
-        circuitName,
-        mergedOptions.config,
-      );
-    }
-
-    // Check if circuit allows the request
-    if (!this.circuitBreakerService.canProceed(circuitName)) {
-      throw new ServiceUnavailableException({
-        message:
-          mergedOptions.openCircuitMessage || this.options.openCircuitMessage,
-        circuitState: 'OPEN',
-        circuitName,
-      });
-    }
+    const circuitName = this.buildCircuitName(request, this.options);
+    this.handleCircuitProceed(circuitName);
 
     return next.handle().pipe(
-      tap(() => {
-        // Record success
-        this.circuitBreakerService.recordSuccess(circuitName);
-      }),
-      catchError((error: Error) => {
-        // Record failure if the error matches the failure predicate
-        const isFailureFn = mergedOptions.isFailure || this.options.isFailure!;
-        if (isFailureFn(error)) {
-          this.circuitBreakerService.recordFailure(circuitName);
-        }
-        return throwError(() => error);
-      }),
+      tap(() => this.handleCircuitSuccess(circuitName)),
+      catchError((error: Error) => this.handleCircuitError(circuitName, error)),
     );
   }
 
   /**
-   * Gets the circuit name for the current request
+   * Retrieves circuit breaker options from metadata set by the @CircuitBreaker decorator
+   *
+   * @param {ExecutionContext} context - The execution context
+   *
+   * @returns {Partial<CircuitBreakerInterceptorOptions>} The options from metadata or empty object
+   */
+  private getOptionsFromMetadata(
+    context: ExecutionContext,
+  ): Partial<CircuitBreakerInterceptorOptions> {
+    return this.reflector.getAllAndOverride<
+      Partial<CircuitBreakerInterceptorOptions>
+    >(CIRCUIT_BREAKER_OPTIONS_METADATA_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+  }
+
+  /**
+   * Builds the circuit name for the current request
+   * Uses the name from options if provided, otherwise falls back to the request route path
    *
    * @param {Request} request - The Express request object
+   * @param {CircuitBreakerInterceptorOptions} options - Merged options
+   *
    * @returns {string} The circuit name
    */
-  private getCircuitName(request: Request): string {
-    if (this.options.nameExtractor) {
-      return this.options.nameExtractor(request);
+  private buildCircuitName(
+    request: Request,
+    options: CircuitBreakerInterceptorOptions,
+  ): string {
+    const requestRoutePath = request.route?.path || request.path;
+
+    return options.name ?? requestRoutePath;
+  }
+
+  /**
+   * Checks if the circuit allows the request to proceed
+   * Throws CircuitBreakerException if the circuit is open
+   *
+   * @param {string} name - The circuit name
+   *
+   * @returns {void}
+   *
+   * @throws {CircuitBreakerException} When the circuit is open
+   */
+  private handleCircuitProceed(name: string): void {
+    if (!this.circuitBreakerService.canProceed(name)) {
+      throw new CircuitBreakerException({
+        message: this.options.openCircuitMessage,
+      });
+    }
+  }
+
+  /**
+   * Records a successful request for the circuit
+   * This helps the circuit breaker transition from half-open to closed state
+   *
+   * @param {string} name - The circuit name
+   *
+   * @returns {void}
+   */
+  private handleCircuitSuccess(name: string): void {
+    const circuit = this.circuitBreakerService.get(name);
+    if (circuit) {
+      this.circuitBreakerService.recordSuccess(circuit);
+    }
+  }
+
+  /**
+   * Handles errors from the intercepted request
+   * Records failures for qualifying errors and re-throws the original error
+   *
+   * @param {string} name - The circuit name
+   * @param {Error} error - The error that occurred
+   *
+   * @returns {Observable<never>} Observable that throws the original error
+   */
+  private handleCircuitError(name: string, error: Error): Observable<never> {
+    if (this.options.isFailure(error)) {
+      // Circuit is created lazily on first failure (memory optimization)
+      const circuit = this.circuitBreakerService.getOrRegisterCircuit(
+        name,
+        this.options.config,
+      );
+      this.circuitBreakerService.recordFailure(circuit);
     }
 
-    if (this.options.name) {
-      return this.options.name;
-    }
-
-    // Default: use the route path
-    return request.route?.path || request.path;
+    return throwError(() => error);
   }
 
   /**
    * Default predicate to determine if an error should count as a failure
-   * Only counts 5xx errors and network errors as failures
+   * Only counts 5xx HTTP errors and non-HTTP errors as failures
+   * 4xx errors are considered client errors and don't count as service failures
    *
    * @param {Error} error - The error to evaluate
+   *
    * @returns {boolean} True if the error should count as a failure
    */
-  private defaultIsFailure(error: Error): boolean {
-    // Don't count client errors (4xx) as failures
+  private isFailure(error: Error): boolean {
     if (error instanceof HttpException) {
       const status = error.getStatus();
       return status >= 500;
     }
 
-    // Count all other errors (network errors, timeouts, etc.) as failures
     return true;
   }
 }

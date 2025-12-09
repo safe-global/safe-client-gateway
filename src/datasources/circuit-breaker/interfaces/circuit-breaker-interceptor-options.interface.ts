@@ -1,5 +1,4 @@
-import type { Request } from 'express';
-import type { CircuitBreakerConfig } from '@/datasources/circuit-breaker/interfaces/circuit-breaker-config.interface';
+import type { ICircuitBreakerConfig } from '@/datasources/circuit-breaker/interfaces/circuit-breaker.interface';
 
 /**
  * Options for configuring the circuit breaker interceptor
@@ -13,22 +12,16 @@ export interface CircuitBreakerInterceptorOptions {
   /**
    * Circuit breaker configuration
    */
-  config?: CircuitBreakerConfig;
-
-  /**
-   * Function to determine the circuit name from the request
-   * Useful for creating per-endpoint or per-chain circuits
-   */
-  nameExtractor?: (request: Request) => string;
+  config?: ICircuitBreakerConfig;
 
   /**
    * Predicate to determine if an error should be counted as a failure
-   * By default, all errors are counted
+   * By default, only 5xx errors and network errors are counted
    */
-  isFailure?: (error: Error) => boolean;
+  isFailure: (error: Error) => boolean;
 
   /**
    * Custom error message when circuit is open
    */
-  openCircuitMessage?: string;
+  openCircuitMessage: string;
 }

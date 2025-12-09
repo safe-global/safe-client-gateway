@@ -5,22 +5,33 @@ import type { ExecutionContext } from '@nestjs/common';
 import { ServiceUnavailableException } from '@nestjs/common';
 import { of, throwError } from 'rxjs';
 import { HttpException, HttpStatus } from '@nestjs/common';
-import { Reflector } from '@nestjs/core';
+import type { IConfigurationService } from '@/config/configuration.service.interface';
 
 describe('CircuitBreakerInterceptor', () => {
   let interceptor: CircuitBreakerInterceptor;
   let service: CircuitBreakerService;
-  let reflector: Reflector;
+  let mockConfigurationService: jest.Mocked<IConfigurationService>;
   let mockExecutionContext: ExecutionContext;
   let mockCallHandler: {
     handle: jest.Mock;
   };
 
   beforeEach(() => {
-    service = new CircuitBreakerService();
+    mockConfigurationService = {
+      getOrThrow: jest.fn((key: string) => {
+        const config: Record<string, number> = {
+          'circuitBreaker.failureThreshold': 5,
+          'circuitBreaker.successThreshold': 2,
+          'circuitBreaker.timeout': 60_000,
+          'circuitBreaker.rollingWindow': 120_000,
+          'circuitBreaker.halfOpenMaxRequests': 3,
+        };
+        return config[key];
+      }),
+    } as unknown as jest.Mocked<IConfigurationService>;
+
+    service = new CircuitBreakerService(mockConfigurationService);
     service.resetAll(); // Ensure clean state for each test
-    reflector = new Reflector();
-    jest.spyOn(reflector, 'get').mockReturnValue(undefined);
 
     mockExecutionContext = {
       switchToHttp: jest.fn().mockReturnValue({
@@ -39,7 +50,7 @@ describe('CircuitBreakerInterceptor', () => {
 
   describe('Basic Functionality', () => {
     it('should allow request when circuit is closed', (done) => {
-      interceptor = new CircuitBreakerInterceptor(service, reflector, {
+      interceptor = new CircuitBreakerInterceptor(service, {
         name: 'test-circuit',
       });
 
@@ -57,7 +68,7 @@ describe('CircuitBreakerInterceptor', () => {
     });
 
     it('should block request when circuit is open', () => {
-      interceptor = new CircuitBreakerInterceptor(service, reflector, {
+      interceptor = new CircuitBreakerInterceptor(service, {
         name: 'test-circuit-open',
         config: { failureThreshold: 2 },
       });
@@ -78,7 +89,7 @@ describe('CircuitBreakerInterceptor', () => {
     });
 
     it('should record success on successful request', (done) => {
-      interceptor = new CircuitBreakerInterceptor(service, reflector, {
+      interceptor = new CircuitBreakerInterceptor(service, {
         name: 'test-circuit',
       });
 
@@ -96,7 +107,7 @@ describe('CircuitBreakerInterceptor', () => {
     });
 
     it('should record failure on error', (done) => {
-      interceptor = new CircuitBreakerInterceptor(service, reflector, {
+      interceptor = new CircuitBreakerInterceptor(service, {
         name: 'test-circuit',
       });
 
@@ -117,7 +128,7 @@ describe('CircuitBreakerInterceptor', () => {
 
   describe('Circuit Naming', () => {
     it('should use provided name', (done) => {
-      interceptor = new CircuitBreakerInterceptor(service, reflector, {
+      interceptor = new CircuitBreakerInterceptor(service, {
         name: 'custom-circuit',
       });
 
@@ -135,7 +146,7 @@ describe('CircuitBreakerInterceptor', () => {
     });
 
     it('should use nameExtractor if provided', (done) => {
-      interceptor = new CircuitBreakerInterceptor(service, reflector, {
+      interceptor = new CircuitBreakerInterceptor(service, {
         nameExtractor: (request): string => `circuit-${request.path}`,
       });
 
@@ -153,7 +164,7 @@ describe('CircuitBreakerInterceptor', () => {
     });
 
     it('should default to route path', (done) => {
-      interceptor = new CircuitBreakerInterceptor(service, reflector);
+      interceptor = new CircuitBreakerInterceptor(service);
 
       mockCallHandler.handle.mockReturnValue(of('success'));
 
@@ -171,7 +182,7 @@ describe('CircuitBreakerInterceptor', () => {
 
   describe('Failure Predicate', () => {
     it('should not count 4xx errors as failures by default', (done) => {
-      interceptor = new CircuitBreakerInterceptor(service, reflector, {
+      interceptor = new CircuitBreakerInterceptor(service, {
         name: 'test-circuit',
       });
 
@@ -190,7 +201,7 @@ describe('CircuitBreakerInterceptor', () => {
     });
 
     it('should count 5xx errors as failures by default', (done) => {
-      interceptor = new CircuitBreakerInterceptor(service, reflector, {
+      interceptor = new CircuitBreakerInterceptor(service, {
         name: 'test-circuit',
       });
 
@@ -212,7 +223,7 @@ describe('CircuitBreakerInterceptor', () => {
     });
 
     it('should use custom isFailure predicate', (done) => {
-      interceptor = new CircuitBreakerInterceptor(service, reflector, {
+      interceptor = new CircuitBreakerInterceptor(service, {
         name: 'test-circuit',
         isFailure: (error): boolean => error.message.includes('timeout'),
       });
@@ -232,7 +243,7 @@ describe('CircuitBreakerInterceptor', () => {
     });
 
     it('should not count error if custom predicate returns false', (done) => {
-      interceptor = new CircuitBreakerInterceptor(service, reflector, {
+      interceptor = new CircuitBreakerInterceptor(service, {
         name: 'test-circuit',
         isFailure: (): boolean => false,
       });
@@ -254,7 +265,7 @@ describe('CircuitBreakerInterceptor', () => {
 
   describe('Custom Configuration', () => {
     it('should use custom circuit configuration', () => {
-      interceptor = new CircuitBreakerInterceptor(service, reflector, {
+      interceptor = new CircuitBreakerInterceptor(service, {
         name: 'custom-config-circuit',
         config: {
           failureThreshold: 10,
@@ -286,7 +297,7 @@ describe('CircuitBreakerInterceptor', () => {
 
     it('should use custom error message', () => {
       const customMessage = 'Custom circuit open message';
-      interceptor = new CircuitBreakerInterceptor(service, reflector, {
+      interceptor = new CircuitBreakerInterceptor(service, {
         name: 'custom-message-circuit',
         config: { failureThreshold: 1 },
         openCircuitMessage: customMessage,
@@ -314,7 +325,7 @@ describe('CircuitBreakerInterceptor', () => {
 
   describe('Integration with Circuit States', () => {
     it('should trip circuit after threshold failures', (done) => {
-      interceptor = new CircuitBreakerInterceptor(service, reflector, {
+      interceptor = new CircuitBreakerInterceptor(service, {
         name: 'test-circuit',
         config: { failureThreshold: 3 },
       });
