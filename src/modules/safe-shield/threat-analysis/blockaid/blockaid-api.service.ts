@@ -1,7 +1,4 @@
-import {
-  IBlockaidApi,
-  type TransactionScanResponseWithRequestId,
-} from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-api.interface';
+import { IBlockaidApi } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-api.interface';
 import { ReportEvent } from '@/modules/safe-shield/entities/dtos/report-false-result.dto';
 import { BLOCKAID_REQUEST_ID_HEADER } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-api.constants';
 import Blockaid from '@blockaid/client';
@@ -10,6 +7,11 @@ import { Inject, Injectable } from '@nestjs/common';
 import { Address, numberToHex } from 'viem';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { BlockaidScanLogSchema } from '@/modules/safe-shield/threat-analysis/blockaid/schemas/blockaid-scan-log.schema';
+import {
+  BlockaidScanResponse,
+  BlockaidScanResponseSchema,
+} from '@/modules/safe-shield/threat-analysis/blockaid/schemas/blockaid-scan-response.schema';
+import { TransactionScanResponse } from '@blockaid/client/resources/index';
 
 @Injectable()
 export class BlockaidApi implements IBlockaidApi {
@@ -28,7 +30,7 @@ export class BlockaidApi implements IBlockaidApi {
     walletAddress: Address,
     message: string,
     origin?: string,
-  ): Promise<TransactionScanResponseWithRequestId> {
+  ): Promise<BlockaidScanResponse> {
     const chain = numberToHex(Number(chainId));
     const params: JsonRpcScanParams = {
       chain,
@@ -60,7 +62,12 @@ export class BlockaidApi implements IBlockaidApi {
       response.headers.get(BLOCKAID_REQUEST_ID_HEADER) ?? undefined;
 
     this.logScanResponse({ ...data, request_id });
-    return { ...data, request_id };
+    const parsedResponse = BlockaidScanResponseSchema.parse({
+      ...data,
+      request_id,
+    });
+
+    return parsedResponse;
   }
 
   public async reportTransaction(args: {
@@ -79,7 +86,7 @@ export class BlockaidApi implements IBlockaidApi {
   }
 
   private logScanResponse(
-    response: TransactionScanResponseWithRequestId,
+    response: TransactionScanResponse & { request_id: string | undefined },
   ): void {
     const logData = BlockaidScanLogSchema.parse({ ...response });
     this.loggingService.info({

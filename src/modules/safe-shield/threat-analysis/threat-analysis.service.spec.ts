@@ -1,33 +1,19 @@
 import { ThreatAnalysisService } from '@/modules/safe-shield/threat-analysis/threat-analysis.service';
 import type { ILoggingService } from '@/logging/logging.interface';
-import type {
-  IBlockaidApi,
-  TransactionScanResponseWithRequestId,
-} from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-api.interface';
+import type { IBlockaidApi } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-api.interface';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
-import type { TransactionScanResponse } from '@blockaid/client/resources/evm/evm';
 import { threatAnalysisRequestBuilder } from '@/modules/safe-shield/entities/__tests__/builders/analysis-requests.builder';
 import {
   DESCRIPTION_MAPPING,
   SEVERITY_MAPPING,
   TITLE_MAPPING,
 } from '@/modules/safe-shield/threat-analysis/threat-analysis.constants';
+import type { BlockaidScanResponse } from '@/modules/safe-shield/threat-analysis/blockaid/schemas/blockaid-scan-response.schema';
 
 const mockBlockaidApi = {
   scanTransaction: jest.fn(),
 } as jest.MockedObjectDeep<IBlockaidApi>;
-
-/**
- * Helper to create a TransactionScanResponseWithRequestId from a TransactionScanResponse
- */
-const createScanResult = (
-  response: TransactionScanResponse,
-  request_id: string | undefined = faker.string.uuid(),
-): TransactionScanResponseWithRequestId => ({
-  ...response,
-  request_id,
-});
 
 const mockLoggingService = {
   debug: jest.fn(),
@@ -68,7 +54,8 @@ describe('ThreatAnalysisService', () => {
         simulation: {
           status: 'Success',
         },
-      } as unknown as TransactionScanResponse;
+        request_id: requestId,
+      } as BlockaidScanResponse;
 
       const expectedResponse = {
         THREAT: [
@@ -83,7 +70,7 @@ describe('ThreatAnalysisService', () => {
         request_id: requestId,
       };
       mockBlockaidApi.scanTransaction.mockResolvedValue(
-        createScanResult(mockSuccessScanResponse, requestId),
+        mockSuccessScanResponse,
       );
 
       const result = await service.analyze({
@@ -115,12 +102,11 @@ describe('ThreatAnalysisService', () => {
         simulation: {
           status: 'Success',
         },
-      } as unknown as TransactionScanResponse;
+      } as BlockaidScanResponse;
 
-      mockBlockaidApi.scanTransaction.mockResolvedValue({
-        ...mockSuccessScanResponse,
-        request_id: undefined,
-      });
+      mockBlockaidApi.scanTransaction.mockResolvedValue(
+        mockSuccessScanResponse,
+      );
 
       const result = await service.analyze({
         chainId,
@@ -216,11 +202,9 @@ describe('ThreatAnalysisService', () => {
         simulation: {
           status: 'Success',
         },
-      } as unknown as TransactionScanResponse;
+      } as BlockaidScanResponse;
 
-      mockBlockaidApi.scanTransaction.mockResolvedValue(
-        createScanResult(mockScanResponse),
-      );
+      mockBlockaidApi.scanTransaction.mockResolvedValue(mockScanResponse);
 
       await service.analyze({
         chainId,
@@ -266,9 +250,6 @@ describe('ThreatAnalysisService', () => {
       const reason = 'transfer_farming';
 
       const mockScanResponse = {
-        block: faker.string.numeric(),
-        chain: 'ethereum',
-        account_address: safeAddress,
         validation: {
           status: 'Success',
           result_type: 'Warning',
@@ -278,6 +259,7 @@ describe('ThreatAnalysisService', () => {
             {
               type: 'Warning',
               description: 'High gas price detected',
+              address: undefined,
             },
           ],
         },
@@ -325,11 +307,10 @@ describe('ThreatAnalysisService', () => {
             ],
           },
         },
-      } as unknown as TransactionScanResponse;
+        request_id: requestId,
+      } as BlockaidScanResponse;
 
-      mockBlockaidApi.scanTransaction.mockResolvedValue(
-        createScanResult(mockScanResponse, requestId),
-      );
+      mockBlockaidApi.scanTransaction.mockResolvedValue(mockScanResponse);
 
       const result = await service.analyze({
         chainId,
@@ -348,7 +329,11 @@ describe('ThreatAnalysisService', () => {
               description:
                 'The transaction transfers tokens to a known malicious address.',
             }),
-            issues: { WARN: ['High gas price detected'] },
+            issues: {
+              WARN: [
+                { description: 'High gas price detected', address: undefined },
+              ],
+            },
           },
           {
             severity: SEVERITY_MAPPING.MASTERCOPY_CHANGE,
@@ -385,17 +370,13 @@ describe('ThreatAnalysisService', () => {
       it('should handle undefined validation as FAILED', async () => {
         const requestId = faker.string.uuid();
         const mockScanResponse = {
-          block: faker.string.numeric(),
-          chain: 'ethereum',
-          account_address: safeAddress,
+          request_id: requestId,
           simulation: {
             status: 'Success',
           },
-        } as unknown as TransactionScanResponse;
+        } as BlockaidScanResponse;
 
-        mockBlockaidApi.scanTransaction.mockResolvedValue(
-          createScanResult(mockScanResponse, requestId),
-        );
+        mockBlockaidApi.scanTransaction.mockResolvedValue(mockScanResponse);
 
         const result = await service.analyze({
           chainId,
@@ -421,9 +402,6 @@ describe('ThreatAnalysisService', () => {
       it('should handle validation result_type Error as FAILED', async () => {
         const requestId = faker.string.uuid();
         const mockScanResponse = {
-          block: faker.string.numeric(),
-          chain: 'ethereum',
-          account_address: safeAddress,
           validation: {
             status: 'Success',
             result_type: 'Error',
@@ -436,11 +414,10 @@ describe('ThreatAnalysisService', () => {
           simulation: {
             status: 'Success',
           },
-        } as unknown as TransactionScanResponse;
+          request_id: requestId,
+        } as BlockaidScanResponse;
 
-        mockBlockaidApi.scanTransaction.mockResolvedValue(
-          createScanResult(mockScanResponse, requestId),
-        );
+        mockBlockaidApi.scanTransaction.mockResolvedValue(mockScanResponse);
 
         const result = await service.analyze({
           chainId,
@@ -467,7 +444,7 @@ describe('ThreatAnalysisService', () => {
 
       it('should handle validation result_type Malicious without features', async () => {
         const requestId = faker.string.uuid();
-        const description = faker.lorem.sentence();
+        const description = faker.lorem.words();
 
         const mockScanResponse = {
           validation: {
@@ -479,11 +456,10 @@ describe('ThreatAnalysisService', () => {
           simulation: {
             status: 'Success',
           },
-        } as unknown as TransactionScanResponse;
+          request_id: requestId,
+        } as BlockaidScanResponse;
 
-        mockBlockaidApi.scanTransaction.mockResolvedValue(
-          createScanResult(mockScanResponse, requestId),
-        );
+        mockBlockaidApi.scanTransaction.mockResolvedValue(mockScanResponse);
 
         const result = await service.analyze({
           chainId,
@@ -499,7 +475,7 @@ describe('ThreatAnalysisService', () => {
               type: 'MALICIOUS',
               title: TITLE_MAPPING.MALICIOUS,
               description: DESCRIPTION_MAPPING.MALICIOUS({
-                description,
+                description: `${description}.`,
               }),
               issues: {},
             },
@@ -548,11 +524,10 @@ describe('ThreatAnalysisService', () => {
           simulation: {
             status: 'Success',
           },
-        } as unknown as TransactionScanResponse;
+          request_id: requestId,
+        } as BlockaidScanResponse;
 
-        mockBlockaidApi.scanTransaction.mockResolvedValue(
-          createScanResult(mockScanResponse, requestId),
-        );
+        mockBlockaidApi.scanTransaction.mockResolvedValue(mockScanResponse);
 
         const result = await service.analyze({
           chainId,
@@ -572,8 +547,15 @@ describe('ThreatAnalysisService', () => {
                   'The transaction transfers tokens to a known malicious address.',
               }),
               issues: {
-                CRITICAL: [features[2].description],
-                WARN: [features[0].description],
+                CRITICAL: [
+                  {
+                    description: features[2].description,
+                    address: features[2].address,
+                  },
+                ],
+                WARN: [
+                  { description: features[0].description, address: undefined },
+                ],
               },
             },
           ],
@@ -598,11 +580,10 @@ describe('ThreatAnalysisService', () => {
             reason: '',
             features: [],
           },
-        } as unknown as TransactionScanResponse;
+          request_id: requestId,
+        } as BlockaidScanResponse;
 
-        mockBlockaidApi.scanTransaction.mockResolvedValue(
-          createScanResult(mockScanResponse, requestId),
-        );
+        mockBlockaidApi.scanTransaction.mockResolvedValue(mockScanResponse);
 
         const result = await service.analyze({
           chainId,
@@ -628,9 +609,6 @@ describe('ThreatAnalysisService', () => {
       it('should handle simulation with Error status as FAILED', async () => {
         const requestId = faker.string.uuid();
         const mockScanResponse = {
-          block: faker.string.numeric(),
-          chain: 'ethereum',
-          account_address: safeAddress,
           validation: {
             status: 'Success',
             result_type: 'Benign',
@@ -644,11 +622,10 @@ describe('ThreatAnalysisService', () => {
             error: 'Simulation failed',
             description: 'Simulation could not be completed',
           },
-        } as unknown as TransactionScanResponse;
+          request_id: requestId,
+        } as BlockaidScanResponse;
 
-        mockBlockaidApi.scanTransaction.mockResolvedValue(
-          createScanResult(mockScanResponse, requestId),
-        );
+        mockBlockaidApi.scanTransaction.mockResolvedValue(mockScanResponse);
 
         const result = await service.analyze({
           chainId,
@@ -684,9 +661,6 @@ describe('ThreatAnalysisService', () => {
         const oldMasterCopy = getAddress(faker.finance.ethereumAddress());
         const newMasterCopy = getAddress(faker.finance.ethereumAddress());
         const mockScanResponse = {
-          block: faker.string.numeric(),
-          chain: 'ethereum',
-          account_address: safeAddress,
           validation: {
             status: 'Success',
             result_type: 'Benign',
@@ -697,7 +671,7 @@ describe('ThreatAnalysisService', () => {
           },
           simulation: {
             status: 'Success',
-            assets_diffs: [],
+            assets_diffs: {},
             contract_management: {
               [safeAddress]: [
                 {
@@ -712,11 +686,10 @@ describe('ThreatAnalysisService', () => {
               ],
             },
           },
-        } as unknown as TransactionScanResponse;
+          request_id: requestId,
+        } as BlockaidScanResponse;
 
-        mockBlockaidApi.scanTransaction.mockResolvedValue(
-          createScanResult(mockScanResponse, requestId),
-        );
+        mockBlockaidApi.scanTransaction.mockResolvedValue(mockScanResponse);
 
         const result = await service.analyze({
           chainId,
@@ -750,9 +723,6 @@ describe('ThreatAnalysisService', () => {
       it('should handle simulation with OWNERSHIP_CHANGE', async () => {
         const requestId = faker.string.uuid();
         const mockScanResponse = {
-          block: faker.string.numeric(),
-          chain: 'ethereum',
-          account_address: safeAddress,
           validation: {
             status: 'Success',
             result_type: 'Benign',
@@ -763,7 +733,7 @@ describe('ThreatAnalysisService', () => {
           },
           simulation: {
             status: 'Success',
-            assets_diffs: [],
+            assets_diffs: {},
             contract_management: {
               [safeAddress]: [
                 {
@@ -772,11 +742,10 @@ describe('ThreatAnalysisService', () => {
               ],
             },
           },
-        } as unknown as TransactionScanResponse;
+          request_id: requestId,
+        } as BlockaidScanResponse;
 
-        mockBlockaidApi.scanTransaction.mockResolvedValue(
-          createScanResult(mockScanResponse, requestId),
-        );
+        mockBlockaidApi.scanTransaction.mockResolvedValue(mockScanResponse);
 
         const result = await service.analyze({
           chainId,
@@ -829,11 +798,10 @@ describe('ThreatAnalysisService', () => {
               ],
             },
           },
-        } as unknown as TransactionScanResponse;
+          request_id: requestId,
+        } as BlockaidScanResponse;
 
-        mockBlockaidApi.scanTransaction.mockResolvedValue(
-          createScanResult(mockScanResponse, requestId),
-        );
+        mockBlockaidApi.scanTransaction.mockResolvedValue(mockScanResponse);
 
         const result = await service.analyze({
           chainId,
@@ -872,9 +840,6 @@ describe('ThreatAnalysisService', () => {
         const nativeOutValue = faker.string.numeric(18);
 
         const mockScanResponse = {
-          block: faker.string.numeric(),
-          chain: 'ethereum',
-          account_address: safeAddress,
           validation: {
             status: 'Success',
             result_type: 'Benign',
@@ -907,11 +872,10 @@ describe('ThreatAnalysisService', () => {
               ],
             },
           },
-        } as unknown as TransactionScanResponse;
+          request_id: requestId,
+        } as BlockaidScanResponse;
 
-        mockBlockaidApi.scanTransaction.mockResolvedValue(
-          createScanResult(mockScanResponse, requestId),
-        );
+        mockBlockaidApi.scanTransaction.mockResolvedValue(mockScanResponse);
 
         const result = await service.analyze({
           chainId,

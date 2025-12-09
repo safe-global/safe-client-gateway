@@ -1,6 +1,7 @@
 import type { TransactionScanResponse } from '@blockaid/client/resources/index';
 import type { Address } from 'viem';
 import type { ReportEvent } from '../../entities/dtos/report-false-result.dto';
+import type { BlockaidScanResponse } from '@/modules/safe-shield/threat-analysis/blockaid/schemas/blockaid-scan-response.schema';
 
 export const IBlockaidApi = Symbol('IBlockaidApi');
 
@@ -19,7 +20,7 @@ export interface IBlockaidApi {
    * @param {Address} walletAddress - The wallet address initiating the transaction (signer).
    * @param {string} message - The JSON representation of typed data.
    * @param {string} origin - The origin identifier for the request (optional).
-   * @returns {Promise<TransactionScanResponseWithRequestId>} The scan response with request_id from x-request-id header.
+   * @returns {Promise<BlockaidScanResponse>} The scan response with request_id from x-request-id header.
    */
   scanTransaction(
     chainId: string,
@@ -27,7 +28,7 @@ export interface IBlockaidApi {
     walletAddress: Address,
     message: string,
     origin?: string,
-  ): Promise<TransactionScanResponseWithRequestId>;
+  ): Promise<BlockaidScanResponse>;
 
   /**
    * Reports a false positive or false negative transaction scan result to Blockaid

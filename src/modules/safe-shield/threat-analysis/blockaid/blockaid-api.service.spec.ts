@@ -5,6 +5,7 @@ import type { Address } from 'viem';
 import { faker } from '@faker-js/faker';
 import type Blockaid from '@blockaid/client';
 import type { ILoggingService } from '@/logging/logging.interface';
+import type { BlockaidScanResponse } from '@/modules/safe-shield/threat-analysis/blockaid/schemas/blockaid-scan-response.schema';
 
 const createMockWithResponse = (
   data: TransactionScanResponse,
@@ -103,7 +104,7 @@ describe('BlockaidApi', () => {
       const origin = faker.internet.url();
       const request_id = faker.string.uuid();
 
-      const mockScanResponse: TransactionScanResponse = {
+      const mockScanResponse = {
         chain: `0x${chainId}`,
         block: faker.string.numeric(),
         validation: {
@@ -113,6 +114,15 @@ describe('BlockaidApi', () => {
           features: [],
         },
       } as TransactionScanResponse;
+
+      const expectedResponse: BlockaidScanResponse = {
+        validation: {
+          result_type: 'Benign',
+          description: 'No issues detected',
+          features: [],
+        },
+        request_id,
+      };
 
       mockBlockaidClient.evm.jsonRpc.scan.mockReturnValue(
         createMockWithResponse(mockScanResponse, request_id),
@@ -138,10 +148,7 @@ describe('BlockaidApi', () => {
         //state_override: stateOverride,
       });
 
-      expect(result).toEqual({
-        ...mockScanResponse,
-        request_id,
-      });
+      expect(result).toEqual(expectedResponse);
       expect(mockLoggingService.info).toHaveBeenCalledWith({
         message: 'Blockaid scan response',
         response: {
@@ -161,10 +168,14 @@ describe('BlockaidApi', () => {
     it('should call blockaid client without domain parameter/ with non_dapp', async () => {
       const request_id = faker.string.uuid();
 
-      const mockScanResponse: TransactionScanResponse = {
+      const mockScanResponse = {
         block: faker.string.numeric(),
         chain: `0x${chainId}`,
       } as TransactionScanResponse;
+
+      const expectedResponse: BlockaidScanResponse = {
+        request_id,
+      };
 
       mockBlockaidClient.evm.jsonRpc.scan.mockReturnValue(
         createMockWithResponse(mockScanResponse, request_id),
@@ -189,10 +200,7 @@ describe('BlockaidApi', () => {
         //state_override: stateOverride,
       });
 
-      expect(result).toEqual({
-        ...mockScanResponse,
-        request_id,
-      });
+      expect(result).toEqual(expectedResponse);
     });
 
     it('should return null request_id when header is not present', async () => {
@@ -212,10 +220,7 @@ describe('BlockaidApi', () => {
         message,
       );
 
-      expect(result).toEqual({
-        ...mockScanResponse,
-        request_id: undefined,
-      });
+      expect(result).toEqual({});
 
       expect(mockLoggingService.info).toHaveBeenCalledWith({
         message: 'Blockaid scan response',
