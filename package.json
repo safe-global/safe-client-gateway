@@ -73,7 +73,7 @@
     "zod": "3.24.2"
   },
   "devDependencies": {
-    "@faker-js/faker": "9.9.0",
+    "@faker-js/faker": "10.1.0",
     "@nestjs/cli": "11.0.14",
     "@nestjs/schematics": "11.0.5",
     "@nestjs/testing": "11.1.9",
@@ -113,6 +113,9 @@
     "transform": {
       "^.+\\.(t|j)s$": "ts-jest"
     },
+    "transformIgnorePatterns": [
+      "node_modules/(?!@faker-js).+"
+    ],
     "roots": [
       "./src",
       "./migrations"
