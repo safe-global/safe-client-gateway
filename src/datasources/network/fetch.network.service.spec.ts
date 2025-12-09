@@ -487,4 +487,203 @@ describe('FetchNetworkService', () => {
       expect(callArgs[2]).toBeUndefined();
     });
   });
+
+  describe('Header merging with defaultHeaders', () => {
+    it('should merge default headers with request headers (request headers take precedence)', async () => {
+      const defaultHeaders = {
+        Authorization: 'Bearer default-token',
+        'X-Custom': 'default',
+      };
+      const targetWithHeaders = new FetchNetworkService(
+        fetchClientMock,
+        loggingServiceMock,
+        defaultHeaders,
+      );
+      const url = faker.internet.url({ appendSlash: false });
+      const requestHeaders = { 'X-Custom': 'request-value' };
+
+      fetchClientMock.mockResolvedValueOnce({
+        status: 200,
+        data: rawify({}),
+      });
+
+      await targetWithHeaders.get({
+        url,
+        networkRequest: { headers: requestHeaders },
+      });
+
+      expect(fetchClientMock).toHaveBeenCalledWith(
+        expect.any(String),
+        {
+          method: 'GET',
+          headers: {
+            Authorization: 'Bearer default-token',
+            'X-Custom': 'request-value', // request header overrides default
+          },
+        },
+        undefined,
+      );
+    });
+
+    it('should use default headers when no request headers provided', async () => {
+      const defaultHeaders = { Authorization: 'Bearer default-token' };
+      const targetWithHeaders = new FetchNetworkService(
+        fetchClientMock,
+        loggingServiceMock,
+        defaultHeaders,
+      );
+      const url = faker.internet.url({ appendSlash: false });
+
+      fetchClientMock.mockResolvedValueOnce({
+        status: 200,
+        data: rawify({}),
+      });
+
+      await targetWithHeaders.get({ url });
+
+      expect(fetchClientMock).toHaveBeenCalledWith(
+        expect.any(String),
+        {
+          method: 'GET',
+          headers: {
+            Authorization: 'Bearer default-token',
+          },
+        },
+        undefined,
+      );
+    });
+
+    it('should merge default headers with method headers (POST Content-Type)', async () => {
+      const defaultHeaders = { Authorization: 'Bearer default-token' };
+      const targetWithHeaders = new FetchNetworkService(
+        fetchClientMock,
+        loggingServiceMock,
+        defaultHeaders,
+      );
+      const url = faker.internet.url({ appendSlash: false });
+      const data = { foo: 'bar' };
+
+      fetchClientMock.mockResolvedValueOnce({
+        status: 200,
+        data: rawify({}),
+      });
+
+      await targetWithHeaders.post({ url, data });
+
+      expect(fetchClientMock).toHaveBeenCalledWith(
+        expect.any(String),
+        {
+          method: 'POST',
+          body: JSON.stringify(data),
+          headers: {
+            Authorization: 'Bearer default-token',
+            'Content-Type': 'application/json',
+          },
+        },
+        undefined,
+      );
+    });
+
+    it('should handle empty default headers object', async () => {
+      const targetWithEmptyHeaders = new FetchNetworkService(
+        fetchClientMock,
+        loggingServiceMock,
+        {},
+      );
+      const url = faker.internet.url({ appendSlash: false });
+      const requestHeaders = { 'X-Custom': 'value' };
+
+      fetchClientMock.mockResolvedValueOnce({
+        status: 200,
+        data: rawify({}),
+      });
+
+      await targetWithEmptyHeaders.get({
+        url,
+        networkRequest: { headers: requestHeaders },
+      });
+
+      expect(fetchClientMock).toHaveBeenCalledWith(
+        expect.any(String),
+        {
+          method: 'GET',
+          headers: {
+            'X-Custom': 'value',
+          },
+        },
+        undefined,
+      );
+    });
+
+    it('should handle undefined default headers', async () => {
+      const targetNoHeaders = new FetchNetworkService(
+        fetchClientMock,
+        loggingServiceMock,
+      );
+      const url = faker.internet.url({ appendSlash: false });
+      const requestHeaders = { 'X-Custom': 'value' };
+
+      fetchClientMock.mockResolvedValueOnce({
+        status: 200,
+        data: rawify({}),
+      });
+
+      await targetNoHeaders.get({
+        url,
+        networkRequest: { headers: requestHeaders },
+      });
+
+      expect(fetchClientMock).toHaveBeenCalledWith(
+        expect.any(String),
+        {
+          method: 'GET',
+          headers: {
+            'X-Custom': 'value',
+          },
+        },
+        undefined,
+      );
+    });
+
+    it('should apply correct precedence: request > method > default', async () => {
+      const defaultHeaders = {
+        Authorization: 'Bearer default-token',
+        'Content-Type': 'default-type',
+        'X-Default': 'default',
+      };
+      const targetWithHeaders = new FetchNetworkService(
+        fetchClientMock,
+        loggingServiceMock,
+        defaultHeaders,
+      );
+      const url = faker.internet.url({ appendSlash: false });
+      const data = { foo: 'bar' };
+      const requestHeaders = { 'Content-Type': 'text/plain' };
+
+      fetchClientMock.mockResolvedValueOnce({
+        status: 200,
+        data: rawify({}),
+      });
+
+      await targetWithHeaders.post({
+        url,
+        data,
+        networkRequest: { headers: requestHeaders },
+      });
+
+      expect(fetchClientMock).toHaveBeenCalledWith(
+        expect.any(String),
+        {
+          method: 'POST',
+          body: JSON.stringify(data),
+          headers: {
+            Authorization: 'Bearer default-token', // from default
+            'X-Default': 'default', // from default
+            'Content-Type': 'text/plain', // request overrides method and default
+          },
+        },
+        undefined,
+      );
+    });
+  });
 });

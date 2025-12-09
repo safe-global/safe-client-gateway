@@ -20,6 +20,8 @@ import { CacheKeyPrefix } from '@/datasources/cache/constants';
 import type { Provider } from '@nestjs/common';
 import { CsvExportModule } from '@/modules/csv-export/csv-export.module';
 import { TestCsvExportModule } from '@/modules/csv-export/v1/__tests__/test.csv-export.module';
+import { TxAuthNetworkModule } from '@/datasources/network/tx-auth.network.module';
+import { TestTxAuthNetworkModule } from '@/datasources/network/__tests__/test.tx-auth.network.module';
 
 export interface CreateBaseTestModuleOptions {
   config?: typeof configuration;
@@ -70,6 +72,10 @@ export async function createTestModule(
       {
         originalModule: NetworkModule,
         testModule: TestNetworkModule,
+      },
+      {
+        originalModule: TxAuthNetworkModule,
+        testModule: TestTxAuthNetworkModule,
       },
       ...additionalOverrides,
     ],

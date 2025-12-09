@@ -1,10 +1,7 @@
 import { Global, Module } from '@nestjs/common';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { FetchNetworkService } from '@/datasources/network/fetch.network.service';
-import {
-  NetworkService,
-  TxNetworkService,
-} from '@/datasources/network/network.service.interface';
+import { NetworkService } from '@/datasources/network/network.service.interface';
 import { NetworkResponse } from '@/datasources/network/entities/network.response.entity';
 import {
   NetworkRequestError,
@@ -14,7 +11,6 @@ import type { Raw } from '@/validation/entities/raw.entity';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { LogType } from '@/domain/common/entities/log-type.entity';
 import { hashSha1 } from '@/domain/common/utils/utils';
-import { TxAuthNetworkService } from '@/datasources/network/tx-auth.network.service';
 
 export type FetchClient = <T>(
   url: string,
@@ -160,9 +156,11 @@ function getCacheKey(
       useFactory: fetchClientFactory,
       inject: [IConfigurationService, LoggingService],
     },
-    { provide: NetworkService, useClass: FetchNetworkService },
-    { provide: TxNetworkService, useClass: TxAuthNetworkService },
+    {
+      provide: NetworkService,
+      useClass: FetchNetworkService,
+    },
   ],
-  exports: [NetworkService, TxNetworkService],
+  exports: [NetworkService, 'FetchClient'],
 })
 export class NetworkModule {}

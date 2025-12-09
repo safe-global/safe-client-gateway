@@ -2,7 +2,6 @@ import type { NetworkRequest } from '@/datasources/network/entities/network.requ
 import type { NetworkResponse } from '@/datasources/network/entities/network.response.entity';
 
 export const NetworkService = Symbol('INetworkService');
-export const TxNetworkService = Symbol('ITxNetworkService');
 
 export interface INetworkService {
   get<T>(args: {

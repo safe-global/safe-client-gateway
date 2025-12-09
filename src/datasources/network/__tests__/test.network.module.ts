@@ -2,10 +2,9 @@ import { Global, Module } from '@nestjs/common';
 import {
   INetworkService,
   NetworkService,
-  TxNetworkService,
 } from '@/datasources/network/network.service.interface';
 
-const networkService: INetworkService = {
+export const networkService: INetworkService = {
   get: jest.fn(),
   post: jest.fn(),
   delete: jest.fn(),
@@ -30,11 +29,7 @@ const networkService: INetworkService = {
         return jest.mocked(networkService);
       },
     },
-    {
-      provide: TxNetworkService,
-      useExisting: NetworkService,
-    },
   ],
-  exports: [NetworkService, TxNetworkService],
+  exports: [NetworkService],
 })
 export class TestNetworkModule {}

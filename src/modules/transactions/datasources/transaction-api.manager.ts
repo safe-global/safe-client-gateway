@@ -1,7 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
-import { TxCacheFirstDataSource } from '@/datasources/cache/cache.first.data.source.module';
 import {
   CacheService,
   ICacheService,
@@ -9,7 +8,7 @@ import {
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import {
   INetworkService,
-  TxNetworkService,
+  NetworkService,
 } from '@/datasources/network/network.service.interface';
 import { TransactionApi } from '@/modules/transactions/datasources/transaction-api.service';
 import { ChainSchema } from '@/modules/chains/domain/entities/schemas/chain.schema';
@@ -27,11 +26,10 @@ export class TransactionApiManager implements ITransactionApiManager {
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
     @Inject(IConfigApi) private readonly configApi: IConfigApi,
-    @Inject(TxCacheFirstDataSource)
     private readonly dataSource: CacheFirstDataSource,
     @Inject(CacheService) private readonly cacheService: ICacheService,
     private readonly httpErrorFactory: HttpErrorFactory,
-    @Inject(TxNetworkService) private readonly networkService: INetworkService,
+    @Inject(NetworkService) private readonly networkService: INetworkService,
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
   ) {
     this.useVpcUrl = this.configurationService.getOrThrow<boolean>(

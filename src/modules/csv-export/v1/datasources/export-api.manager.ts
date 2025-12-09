@@ -1,7 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
-import { TxCacheFirstDataSource } from '@/datasources/cache/cache.first.data.source.module';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { ChainSchema } from '@/modules/chains/domain/entities/schemas/chain.schema';
 import { IConfigApi } from '@/domain/interfaces/config-api.interface';
@@ -18,7 +17,6 @@ export class ExportApiManager implements IExportApiManager {
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
     @Inject(IConfigApi) private readonly configApi: IConfigApi,
-    @Inject(TxCacheFirstDataSource)
     private readonly dataSource: CacheFirstDataSource,
     private readonly httpErrorFactory: HttpErrorFactory,
   ) {
