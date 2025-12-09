@@ -11,6 +11,7 @@ export const ZerionWalletPortfolioTotalSchema = z.object({
 
 export const ZerionWalletPortfolioAttributesSchema = z.object({
   total: ZerionWalletPortfolioTotalSchema,
+  positions_distribution_by_chain: z.record(z.string(), z.number()),
 });
 
 export const ZerionWalletPortfolioDataSchema = z.object({

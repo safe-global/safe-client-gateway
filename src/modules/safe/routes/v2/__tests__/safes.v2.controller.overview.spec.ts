@@ -47,6 +47,19 @@ describe('Safes V2 Controller Overview (Unit)', () => {
         counterfactualBalances: true,
         zerionBalancesChainIds: [zerionChainId],
       },
+      balances: {
+        ...configuration().balances,
+        providers: {
+          ...configuration().balances.providers,
+          zerion: {
+            ...configuration().balances.providers.zerion,
+            chains: {
+              ...configuration().balances.providers.zerion.chains,
+              137: { chainName: 'polygon' }, // Override for test
+            },
+          },
+        },
+      },
     });
 
     const moduleFixture = await createTestModule({
@@ -213,7 +226,12 @@ describe('Safes V2 Controller Overview (Unit)', () => {
           id: safeInfo.address,
           attributes: {
             total: {
-              positions: 2500.0,
+              positions: 10000.0,
+            },
+            positions_distribution_by_chain: {
+              ethereum: 5000.0,
+              polygon: 2500.0,
+              base: 2500.0,
             },
           },
         },
@@ -469,6 +487,138 @@ describe('Safes V2 Controller Overview (Unit)', () => {
             safeInfo2.address,
             safeInfo3.address,
           ]);
+        });
+    });
+
+    it('should handle Zerion API failures gracefully and continue with other Safes', async () => {
+      const chain = chainBuilder()
+        .with('chainId', zerionChainId)
+        .with('isTestnet', false)
+        .build();
+      const safeInfo1 = safeBuilder().build();
+      const safeInfo2 = safeBuilder().build();
+
+      const zerionPortfolioResponse = {
+        data: {
+          type: 'portfolio',
+          id: safeInfo2.address,
+          attributes: {
+            total: {
+              positions: 5000.0,
+            },
+            positions_distribution_by_chain: {
+              polygon: 2500.0,
+            },
+          },
+        },
+      };
+
+      const queuedTransactions = pageBuilder()
+        .with('results', [])
+        .with('count', 0)
+        .build();
+
+      networkService.get.mockImplementation(({ url }) => {
+        switch (url) {
+          case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`: {
+            return Promise.resolve({ data: rawify(chain), status: 200 });
+          }
+          case `${chain.transactionService}/api/v1/safes/${safeInfo1.address}`: {
+            return Promise.resolve({ data: rawify(safeInfo1), status: 200 });
+          }
+          case `${chain.transactionService}/api/v1/safes/${safeInfo2.address}`: {
+            return Promise.resolve({ data: rawify(safeInfo2), status: 200 });
+          }
+          case `${zerionBaseUri}/v1/wallets/${safeInfo1.address}/portfolio`: {
+            // Simulate Zerion API failure for first Safe
+            return Promise.reject(new Error('Zerion API error'));
+          }
+          case `${zerionBaseUri}/v1/wallets/${safeInfo2.address}/portfolio`: {
+            return Promise.resolve({
+              data: rawify(zerionPortfolioResponse),
+              status: 200,
+            });
+          }
+          case `${chain.transactionService}/api/v2/safes/${safeInfo1.address}/multisig-transactions/`:
+          case `${chain.transactionService}/api/v2/safes/${safeInfo2.address}/multisig-transactions/`: {
+            return Promise.resolve({
+              data: rawify(queuedTransactions),
+              status: 200,
+            });
+          }
+          default: {
+            return Promise.reject(`No matching rule for url: ${url}`);
+          }
+        }
+      });
+
+      await request(app.getHttpServer())
+        .get(
+          `/v2/safes?currency=USD&safes=${chain.chainId}:${safeInfo1.address},${chain.chainId}:${safeInfo2.address}`,
+        )
+        .expect(200)
+        .expect(({ body }) => {
+          // Should only return safeInfo2 since safeInfo1 failed
+          expect(body.length).toBe(1);
+          expect(body[0].address.value).toBe(safeInfo2.address);
+          expect(body[0].fiatTotal).toBe('2500');
+        });
+    });
+
+    it('should handle invalid Zerion response schema gracefully', async () => {
+      const chain = chainBuilder()
+        .with('chainId', zerionChainId)
+        .with('isTestnet', false)
+        .build();
+      const safeInfo = safeBuilder().build();
+
+      const invalidZerionResponse = {
+        data: {
+          type: 'invalid',
+          // Missing required fields
+        },
+      };
+
+      const queuedTransactions = pageBuilder()
+        .with('results', [])
+        .with('count', 0)
+        .build();
+
+      networkService.get.mockImplementation(({ url }) => {
+        switch (url) {
+          case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`: {
+            return Promise.resolve({ data: rawify(chain), status: 200 });
+          }
+          case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`: {
+            return Promise.resolve({ data: rawify(safeInfo), status: 200 });
+          }
+          case `${zerionBaseUri}/v1/wallets/${safeInfo.address}/portfolio`: {
+            // Return invalid response that will fail schema validation
+            return Promise.resolve({
+              data: rawify(invalidZerionResponse),
+              status: 200,
+            });
+          }
+          case `${chain.transactionService}/api/v2/safes/${safeInfo.address}/multisig-transactions/`: {
+            return Promise.resolve({
+              data: rawify(queuedTransactions),
+              status: 200,
+            });
+          }
+          default: {
+            return Promise.reject(`No matching rule for url: ${url}`);
+          }
+        }
+      });
+
+      await request(app.getHttpServer())
+        .get(
+          `/v2/safes?currency=USD&safes=${chain.chainId}:${safeInfo.address}`,
+        )
+        .expect(200)
+        .expect(({ body }) => {
+          // Should return empty array since validation failed
+          expect(body.length).toBe(0);
         });
     });
   });

@@ -18,6 +18,7 @@ import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
 export class SafesV2Service {
   private readonly maxOverviews: number;
   private readonly zerionChainIds: Array<string>;
+  private readonly zerionChainsConfig: Record<number, { chainName: string }>;
 
   constructor(
     @Inject(ISafeRepository)
@@ -37,6 +38,9 @@ export class SafesV2Service {
     this.zerionChainIds = configurationService.getOrThrow<Array<string>>(
       'features.zerionBalancesChainIds',
     );
+    this.zerionChainsConfig = configurationService.getOrThrow<
+      Record<number, { chainName: string }>
+    >('balances.providers.zerion.chains');
   }
 
   async getSafeOverview(args: {
@@ -140,6 +144,7 @@ export class SafesV2Service {
   /**
    * Gets fiat balance from Zerion Wallet Portfolio API.
    * Uses the /v1/wallets/{address}/portfolio endpoint.
+   * Extracts the per-chain value from the full portfolio response.
    */
   private async getFiatBalanceFromZerionPortfolio(args: {
     chain: Chain;
@@ -148,11 +153,37 @@ export class SafesV2Service {
   }): Promise<number> {
     const { chain, safeAddress, currency } = args;
 
-    return this.zerionWalletPortfolioApi.getPortfolioTotal({
+    const portfolio = await this.zerionWalletPortfolioApi.getPortfolio({
       address: safeAddress,
       currency,
       isTestnet: chain.isTestnet,
     });
+
+    const zerionChainName = this.getZerionChainName(chain);
+    if (!zerionChainName) {
+      this.loggingService.warn(
+        `Zerion chain name not found for chainId ${chain.chainId}`,
+      );
+      return 0;
+    }
+
+    return (
+      portfolio.data.attributes.positions_distribution_by_chain[
+        zerionChainName
+      ] ?? 0
+    );
+  }
+
+  /**
+   * Gets the Zerion chain name for a given chain.
+   * First tries to get from static configuration, then falls back to chain's balancesProvider.
+   */
+  private getZerionChainName(chain: Chain): string | undefined {
+    const chainConfig = this.zerionChainsConfig[Number(chain.chainId)];
+    if (chainConfig?.chainName) {
+      return chainConfig.chainName;
+    }
+    return chain.balancesProvider?.chainName ?? undefined;
   }
 
   /**

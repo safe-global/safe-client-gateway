@@ -4,30 +4,32 @@ import {
   INetworkService,
   NetworkService,
 } from '@/datasources/network/network.service.interface';
+import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { getZerionHeaders } from '@/modules/balances/datasources/zerion-api.helpers';
 import {
   ZerionWalletPortfolioSchema,
   type ZerionWalletPortfolio,
 } from '@/modules/balances/datasources/entities/zerion-wallet-portfolio.entity';
 import type { Address } from 'viem';
+import { ZodError } from 'zod';
 
 export const IZerionWalletPortfolioApi = Symbol('IZerionWalletPortfolioApi');
 
 export interface IZerionWalletPortfolioApi {
   /**
-   * Fetches the portfolio total for a wallet from Zerion.
+   * Fetches the portfolio data for a wallet from Zerion.
    * Uses the /v1/wallets/{address}/portfolio endpoint.
    *
    * @param args.address - Wallet address
    * @param args.currency - Fiat currency code (e.g., 'USD', 'EUR')
    * @param args.isTestnet - Whether this is a testnet chain
-   * @returns Total portfolio value in fiat
+   * @returns Portfolio data with total and per-chain breakdown
    */
-  getPortfolioTotal(args: {
+  getPortfolio(args: {
     address: Address;
     currency: string;
     isTestnet: boolean;
-  }): Promise<number>;
+  }): Promise<ZerionWalletPortfolio>;
 }
 
 @Injectable()
@@ -40,6 +42,7 @@ export class ZerionWalletPortfolioApi implements IZerionWalletPortfolioApi {
     private readonly configurationService: IConfigurationService,
     @Inject(NetworkService)
     private readonly networkService: INetworkService,
+    private readonly httpErrorFactory: HttpErrorFactory,
   ) {
     this.apiKey = this.configurationService.get<string>(
       'balances.providers.zerion.apiKey',
@@ -49,25 +52,31 @@ export class ZerionWalletPortfolioApi implements IZerionWalletPortfolioApi {
     );
   }
 
-  async getPortfolioTotal(args: {
+  async getPortfolio(args: {
     address: Address;
     currency: string;
     isTestnet: boolean;
-  }): Promise<number> {
+  }): Promise<ZerionWalletPortfolio> {
     const url = `${this.baseUri}/v1/wallets/${args.address}/portfolio`;
 
-    const { data } = await this.networkService.get<ZerionWalletPortfolio>({
-      url,
-      networkRequest: {
-        headers: getZerionHeaders(this.apiKey, args.isTestnet),
-        params: {
-          currency: args.currency.toLowerCase(),
-          'filter[positions]': 'no_filter',
+    try {
+      const { data } = await this.networkService.get<ZerionWalletPortfolio>({
+        url,
+        networkRequest: {
+          headers: getZerionHeaders(this.apiKey, args.isTestnet),
+          params: {
+            currency: args.currency.toLowerCase(),
+            'filter[positions]': 'no_filter',
+          },
         },
-      },
-    });
+      });
 
-    const validated = ZerionWalletPortfolioSchema.parse(data);
-    return validated.data.attributes.total.positions;
+      return ZerionWalletPortfolioSchema.parse(data);
+    } catch (error) {
+      if (error instanceof ZodError) {
+        throw error;
+      }
+      throw this.httpErrorFactory.from(error);
+    }
   }
 }
