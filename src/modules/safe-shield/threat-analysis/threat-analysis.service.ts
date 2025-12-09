@@ -279,19 +279,18 @@ export class ThreatAnalysisService {
     /**
      * This block filters for Blockaid features labeled Malicious or Warning,
      * maps each feature’s type to an internal severity key via BLOCKAID_SEVERITY_MAP,
-     * and groups them into ThreatIssues. As it reduces, it creates an array per severity (acc[sev] ??= [])
-     * and pushes the feature’s description and address.
+     * and groups them into ThreatIssues.
      * The result is an object whose keys are severities and values are lists of matching issues.
      */
     const grouped = features
-      .filter((f) => f.type === 'Malicious' || f.type === 'Warning')
-      .reduce<ThreatIssues>((acc, { type, description, address }) => {
-        const sev = BLOCKAID_SEVERITY_MAP[type];
-        (acc[sev] ??= []).push({
-          description,
-          address,
-        });
-        return acc;
+      .filter(({ type }) => ['Malicious', 'Warning'].includes(type))
+      .reduce<ThreatIssues>((groups, { type, description, address }) => {
+        const severity = BLOCKAID_SEVERITY_MAP[type];
+
+        groups[severity] ??= [];
+        groups[severity].push({ description, address });
+
+        return groups;
       }, {});
 
     return Object.fromEntries(
@@ -300,7 +299,7 @@ export class ThreatAnalysisService {
           [keyof typeof Severity, Array<ThreatIssue>]
         >
       ).sort(([a], [b]) => compareSeverityString(b, a)),
-    ) as ThreatIssues;
+    );
   }
 
   /**
