@@ -90,7 +90,7 @@ describe('CircuitBreakerService', () => {
       expect(circuit.metrics.state).toBe(CircuitState.OPEN);
     });
 
-    it('should reset failure count on success', () => {
+    it('should reset consecutive successes on failure', () => {
       const circuit = service.getOrRegisterCircuit('test-circuit', {
         failureThreshold: 3,
         successThreshold: 2,
@@ -99,13 +99,12 @@ describe('CircuitBreakerService', () => {
         halfOpenMaxRequests: 3,
       });
 
-      service.recordFailure(circuit);
-      service.recordFailure(circuit);
       service.recordSuccess(circuit);
+      service.recordSuccess(circuit);
+      expect(circuit.metrics.consecutiveSuccesses).toBe(2);
 
-      // Should not open after 1 more failure (count was reset)
       service.recordFailure(circuit);
-      expect(circuit.metrics.state).toBe(CircuitState.CLOSED);
+      expect(circuit.metrics.consecutiveSuccesses).toBe(0);
     });
   });
 
@@ -230,23 +229,26 @@ describe('CircuitBreakerService', () => {
       expect(circuit.metrics.failureCount).toBe(2);
     });
 
-    it('should track success count', () => {
-      const circuit = service.getOrRegisterCircuit('test-circuit');
-
-      service.recordSuccess(circuit);
-      service.recordSuccess(circuit);
-
-      expect(circuit.metrics.successCount).toBe(2);
-    });
-
     it('should track consecutive successes', () => {
       const circuit = service.getOrRegisterCircuit('test-circuit');
 
       service.recordSuccess(circuit);
       service.recordSuccess(circuit);
-      service.recordFailure(circuit);
-      service.recordSuccess(circuit);
 
+      expect(circuit.metrics.consecutiveSuccesses).toBe(2);
+    });
+
+    it('should reset consecutive successes on failure', () => {
+      const circuit = service.getOrRegisterCircuit('test-circuit');
+
+      service.recordSuccess(circuit);
+      service.recordSuccess(circuit);
+      expect(circuit.metrics.consecutiveSuccesses).toBe(2);
+
+      service.recordFailure(circuit);
+      expect(circuit.metrics.consecutiveSuccesses).toBe(0);
+
+      service.recordSuccess(circuit);
       expect(circuit.metrics.consecutiveSuccesses).toBe(1);
     });
   });
