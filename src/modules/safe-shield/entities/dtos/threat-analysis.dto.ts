@@ -10,9 +10,10 @@ import {
   MaliciousOrModerateThreatAnalysisResult,
   MasterCopyChangeThreatAnalysisResult,
   ThreatAnalysisResult,
+  ThreatIssue,
+  ThreatIssues,
 } from '../analysis-result.entity';
 import { ThreatStatus } from '../threat-status.entity';
-import { Severity } from '../severity.entity';
 import type { ThreatAnalysisResponse } from '../analysis-responses.entity';
 import {
   AssetType,
@@ -39,17 +40,33 @@ export class MasterCopyChangeThreatAnalysisResultDto
   @ApiProperty({
     description: 'Address of the old master copy/implementation contract',
   })
-  before!: string;
+  before!: Address;
 
   @ApiProperty({
     description: 'Address of the new master copy/implementation contract',
   })
-  after!: string;
+  after!: Address;
+}
+
+/**
+ * DTO for threat issue details.
+ */
+export class ThreatIssueDto implements ThreatIssue {
+  @ApiPropertyOptional({
+    description: 'Address involved in the issue, if applicable',
+  })
+  address?: Address;
+
+  @ApiProperty({
+    description: 'Issue description',
+  })
+  description!: string;
 }
 
 /**
  * DTO for malicious or moderate threat analysis result.
  */
+@ApiExtraModels(ThreatIssueDto)
 export class MaliciousOrModerateThreatAnalysisResultDto
   extends AnalysisResultDto<'MALICIOUS' | 'MODERATE'>
   implements MaliciousOrModerateThreatAnalysisResult
@@ -63,15 +80,23 @@ export class MaliciousOrModerateThreatAnalysisResultDto
   @ApiPropertyOptional({
     description:
       'A partial record of specific issues identified during threat analysis, grouped by severity.' +
-      'Record<Severity, string[]> - keys should be one of the Severity enum.',
+      'Record<Severity, ThreatIssue[]> - keys should be one of the Severity enum (OK | INFO | WARN | CRITICAL)',
     type: 'object',
-    additionalProperties: { type: 'array', items: { type: 'string' } },
+    additionalProperties: {
+      type: 'array',
+      items: { $ref: getSchemaPath(ThreatIssueDto) },
+    },
     example: {
-      CRITICAL: ['Malicious contract interaction detected'],
-      WARN: ['High gas price detected'],
+      CRITICAL: [
+        {
+          description: 'Malicious contract interaction detected',
+          address: '0x0000000000000000000000000000000000000000',
+        },
+      ],
+      WARN: [{ description: 'High gas price detected' }],
     },
   })
-  issues?: Partial<Record<keyof typeof Severity, Array<string>>>;
+  issues?: ThreatIssues;
 }
 
 /**
@@ -216,6 +241,7 @@ export class BalanceChangeDto implements BalanceChange {
   ThreatAnalysisResultDto,
   MasterCopyChangeThreatAnalysisResultDto,
   MaliciousOrModerateThreatAnalysisResultDto,
+  ThreatIssueDto,
 )
 export class ThreatAnalysisResponseDto implements ThreatAnalysisResponse {
   @ApiPropertyOptional({

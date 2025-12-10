@@ -11,6 +11,8 @@ import {
 } from './contract-status.entity';
 import { ThreatStatusSchema, type ThreatStatus } from './threat-status.entity';
 import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
+import type { Address } from 'viem';
+import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 
 /**
  * Common status code available for all analysis types.
@@ -111,6 +113,12 @@ export const ContractAnalysisResultSchema = AnalysisResultBaseSchema.extend({
   type: z.union([ContractStatusSchema, CommonStatusSchema]),
 });
 
+/** Zod schema definition for threat (MALICIOUS or MODERATE) analysis issues */
+const ThreatIssueSchema = z.object({
+  address: AddressSchema.optional(),
+  description: z.string(),
+});
+
 /**
  * Zod schema for threat analysis results.
  * Uses union to validate type-specific fields.
@@ -119,13 +127,13 @@ export const ThreatAnalysisResultSchema = z.union([
   // MASTERCOPY_CHANGE: requires before and after
   AnalysisResultBaseSchema.extend({
     type: z.literal('MASTERCOPY_CHANGE'),
-    before: z.string(),
-    after: z.string(),
+    before: AddressSchema,
+    after: AddressSchema,
   }),
   // MALICIOUS or MODERATE: optional issues
   AnalysisResultBaseSchema.extend({
     type: z.union([z.literal('MALICIOUS'), z.literal('MODERATE')]),
-    issues: z.record(SeveritySchema, z.array(z.string())).optional(),
+    issues: z.record(SeveritySchema, z.array(ThreatIssueSchema)).optional(),
   }),
   // All others: no extra fields
   AnalysisResultBaseSchema.extend({
@@ -161,16 +169,21 @@ export type ContractAnalysisResult = z.infer<
 export type MasterCopyChangeThreatAnalysisResult =
   AnalysisResult<'MASTERCOPY_CHANGE'> & {
     /** Address of the old master copy/implementation contract */
-    before: string;
+    before: Address;
     /** Address of the new master copy/implementation contract */
-    after: string;
+    after: Address;
   };
+
+export type ThreatIssue = z.infer<typeof ThreatIssueSchema>;
+export type ThreatIssues = Partial<
+  Record<keyof typeof Severity, Array<ThreatIssue>>
+>;
 
 export type MaliciousOrModerateThreatAnalysisResult = AnalysisResult<
   'MALICIOUS' | 'MODERATE'
 > & {
   /** A potential partial record of specific issues identified during threat analysis, grouped by severity */
-  issues?: Partial<Record<keyof typeof Severity, Array<string>>>;
+  issues?: ThreatIssues;
 };
 
 /**

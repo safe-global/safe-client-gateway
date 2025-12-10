@@ -56,7 +56,7 @@ export class BalancesRepository implements IBalancesRepository {
       args.chainId,
       args.safeAddress,
     );
-    await api.clearBalances(args);
+    await api.clearBalances({ safeAddress: args.safeAddress });
   }
 
   async getFiatCodes(): Promise<Array<string>> {
