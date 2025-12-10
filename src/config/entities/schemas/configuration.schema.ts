@@ -39,7 +39,6 @@ export const RootConfigurationSchema = z
     AWS_SECRET_ACCESS_KEY: z.string().optional(),
     AWS_REGION: z.string().optional(),
     CGW_ENV: z.string().optional(),
-    CIRCUIT_BREAKER_ENABLED: z.boolean({ coerce: true }).optional(),
     CIRCUIT_BREAKER_FAILURE_THRESHOLD: z
       .number({ coerce: true })
       .int()

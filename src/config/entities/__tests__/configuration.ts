@@ -219,7 +219,6 @@ export default (): ReturnType<typeof configuration> => ({
     ownersTimeout: faker.number.int(),
   },
   circuitBreaker: {
-    enabled: false,
     failureThreshold: faker.number.int(),
     successThreshold: faker.number.int(),
     timeout: faker.number.int(),

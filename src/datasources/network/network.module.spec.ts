@@ -40,10 +40,6 @@ describe('NetworkModule', () => {
         ...baseConfiguration.features,
         cacheInFlightRequests,
       },
-      circuitBreaker: {
-        ...baseConfiguration.circuitBreaker,
-        enabled: false, // Disable circuit breaker for tests
-      },
     });
 
     const moduleFixture: TestingModule = await Test.createTestingModule({

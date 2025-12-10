@@ -38,14 +38,11 @@ function fetchClientFactory(
   const defaultTimeout = configurationService.getOrThrow<number>(
     'httpClient.requestTimeout',
   );
-  const circuitBreakerEnabledByDefault =
-    configurationService.getOrThrow<boolean>('circuitBreaker.enabled');
 
   const baseRequest = createRequestFunction(defaultTimeout);
   const circuitBreakerRequest = createCircuitBreakerRequestFunction(
     baseRequest,
     circuitBreakerService,
-    circuitBreakerEnabledByDefault,
   );
 
   if (!cacheInFlightRequests) {
@@ -97,11 +94,11 @@ function createRequestFunction(defaultTimeout: number) {
  * This function intercepts requests and applies circuit breaker protection:
  * - Checks if the circuit is open before allowing the request
  * - Records successes and failures based on response status
- * - Can be enabled/disabled per request via the useCircuitBreaker parameter
+ * - Must be explicitly enabled per request via the useCircuitBreaker parameter
  *
  * @param request - The base request function to wrap
  * @param circuitBreakerService - Service managing circuit breaker state
- * @param enabledByDefault - Whether circuit breaker is enabled by default
+ *
  * @returns Wrapped request function with circuit breaker logic
  */
 function createCircuitBreakerRequestFunction(
@@ -111,7 +108,6 @@ function createCircuitBreakerRequestFunction(
     timeout?: number,
   ) => Promise<NetworkResponse<T>>,
   circuitBreakerService: CircuitBreakerService,
-  enabledByDefault: boolean,
 ) {
   return async <T>(
     url: string,
@@ -119,9 +115,7 @@ function createCircuitBreakerRequestFunction(
     timeout?: number,
     useCircuitBreaker?: boolean,
   ): Promise<NetworkResponse<T>> => {
-    const shouldUseCircuitBreaker = useCircuitBreaker ?? enabledByDefault;
-
-    if (!shouldUseCircuitBreaker) {
+    if (!useCircuitBreaker) {
       return request(url, options, timeout);
     }
 

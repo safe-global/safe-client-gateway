@@ -348,8 +348,6 @@ export default () => ({
     ),
   },
   circuitBreaker: {
-    // Enable or disable the circuit breaker functionality globally
-    enabled: process.env.CIRCUIT_BREAKER_ENABLED?.toLowerCase() === 'true',
     // Number of failures before the circuit opens
     failureThreshold: parseInt(
       process.env.CIRCUIT_BREAKER_FAILURE_THRESHOLD ?? `${20}`,
