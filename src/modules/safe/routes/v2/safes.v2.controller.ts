@@ -61,15 +61,14 @@ export class SafesV2Controller {
     required: false,
     type: Boolean,
     description:
-      'If true, only includes trusted tokens in balance calculations. Note: This parameter only applies to chains not using Zerion portfolio data. For Zerion-enabled chains, all positions are included.',
+      'If true, only includes trusted tokens in balance calculations.',
     example: false,
   })
   @ApiQuery({
     name: 'exclude_spam',
     required: false,
     type: Boolean,
-    description:
-      'If true, excludes spam tokens from balance calculations. Note: This parameter only applies to chains not using Zerion portfolio data. For Zerion-enabled chains, all positions are included.',
+    description: 'If true, excludes spam tokens from balance calculations.',
     example: true,
   })
   @ApiOkResponse({

@@ -52,11 +52,12 @@ export class SafesV2Service {
       limitedSafes.map(async ({ chainId, address }) => {
         const chain = await this.chainsRepository.getChain(chainId);
 
-        const [safe, fiatBalance] = await Promise.all([
-          this.safeRepository.getSafe({
-            chainId,
-            address,
-          }),
+        const safe = await this.safeRepository.getSafe({
+          chainId,
+          address,
+        });
+
+        const [fiatBalance, queue] = await Promise.all([
           this.getFiatBalance({
             chain,
             safeAddress: address,
@@ -64,12 +65,11 @@ export class SafesV2Service {
             trusted: args.trusted,
             excludeSpam: args.excludeSpam,
           }),
+          this.safeRepository.getTransactionQueue({
+            chainId,
+            safe,
+          }),
         ]);
-
-        const queue = await this.safeRepository.getTransactionQueue({
-          chainId,
-          safe,
-        });
 
         const awaitingConfirmation = args.walletAddress
           ? this.computeAwaitingConfirmation({
@@ -124,6 +124,8 @@ export class SafesV2Service {
         chain,
         safeAddress,
         currency,
+        trusted,
+        excludeSpam,
       });
     }
 
@@ -146,13 +148,17 @@ export class SafesV2Service {
     chain: Chain;
     safeAddress: Address;
     currency: string;
+    trusted: boolean;
+    excludeSpam: boolean;
   }): Promise<number> {
-    const { chain, safeAddress, currency } = args;
+    const { chain, safeAddress, currency, trusted, excludeSpam } = args;
 
     const portfolio = await this.zerionWalletPortfolioApi.getPortfolio({
       address: safeAddress,
       currency,
       isTestnet: chain.isTestnet,
+      trusted,
+      excludeSpam,
     });
 
     const zerionChainName = this.getZerionChainName(chain);

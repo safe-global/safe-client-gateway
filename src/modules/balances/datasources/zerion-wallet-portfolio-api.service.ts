@@ -30,12 +30,16 @@ export interface IZerionWalletPortfolioApi {
    * @param args.address - Wallet address
    * @param args.currency - Fiat currency code (e.g., 'USD', 'EUR')
    * @param args.isTestnet - Whether the returned data is for testnets or for mainnets
+   * @param args.trusted - If true, only includes trusted (non-trash) tokens (optional)
+   * @param args.excludeSpam - If true, excludes spam (trash) tokens (optional)
    * @returns Portfolio data with total and per-chain breakdown
    */
   getPortfolio(args: {
     address: Address;
     currency: string;
     isTestnet: boolean;
+    trusted?: boolean;
+    excludeSpam?: boolean;
   }): Promise<ZerionWalletPortfolio>;
 }
 
@@ -66,6 +70,8 @@ export class ZerionWalletPortfolioApi implements IZerionWalletPortfolioApi {
     address: Address;
     currency: string;
     isTestnet: boolean;
+    trusted?: boolean;
+    excludeSpam?: boolean;
   }): Promise<ZerionWalletPortfolio> {
     const cacheDir = CacheRouter.getPortfolioCacheDir({
       address: args.address,
@@ -73,27 +79,33 @@ export class ZerionWalletPortfolioApi implements IZerionWalletPortfolioApi {
       isTestnet: args.isTestnet,
     });
 
+    const { key, field } = cacheDir;
+
     const cached = await this.cacheService.hGet(cacheDir);
     if (cached != null) {
-      const { key, field } = cacheDir;
       this.loggingService.debug({ type: LogType.CacheHit, key, field });
       return ZerionWalletPortfolioSchema.parse(JSON.parse(cached));
     }
 
-    const { key, field } = cacheDir;
     this.loggingService.debug({ type: LogType.CacheMiss, key, field });
 
     const url = `${this.baseUri}/v1/wallets/${args.address}/portfolio`;
+
+    const params: Record<string, string> = {
+      currency: args.currency.toLowerCase(),
+      'filter[positions]': 'no_filter',
+    };
+
+    if (args.trusted || args.excludeSpam) {
+      params['filter[trash]'] = 'only_non_trash';
+    }
 
     try {
       const { data } = await this.networkService.get<ZerionWalletPortfolio>({
         url,
         networkRequest: {
           headers: getZerionHeaders(this.apiKey, args.isTestnet),
-          params: {
-            currency: args.currency.toLowerCase(),
-            'filter[positions]': 'no_filter',
-          },
+          params,
         },
       });
 

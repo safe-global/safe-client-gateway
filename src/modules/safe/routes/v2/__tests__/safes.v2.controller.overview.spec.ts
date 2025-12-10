@@ -610,5 +610,80 @@ describe('Safes V2 Controller Overview (Unit)', () => {
           expect(body.length).toBe(0);
         });
     });
+
+    it('should apply trusted and excludeSpam filters to Zerion API calls', async () => {
+      const chain = chainBuilder()
+        .with('chainId', zerionChainId)
+        .with('isTestnet', false)
+        .with('balancesProvider', { chainName: 'polygon', enabled: true })
+        .build();
+      const safeInfo = safeBuilder().build();
+      const currency = 'USD';
+
+      const zerionPortfolioResponse = {
+        data: {
+          type: 'portfolio',
+          id: safeInfo.address,
+          attributes: {
+            total: {
+              positions: 5000.0,
+            },
+            positions_distribution_by_chain: {
+              polygon: 5000.0,
+            },
+          },
+        },
+      };
+
+      const queuedTransactions = pageBuilder()
+        .with('results', [])
+        .with('count', 0)
+        .build();
+
+      networkService.get.mockImplementation(({ url }) => {
+        switch (url) {
+          case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`: {
+            return Promise.resolve({ data: rawify(chain), status: 200 });
+          }
+          case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`: {
+            return Promise.resolve({ data: rawify(safeInfo), status: 200 });
+          }
+          case `${zerionBaseUri}/v1/wallets/${safeInfo.address}/portfolio`: {
+            return Promise.resolve({
+              data: rawify(zerionPortfolioResponse),
+              status: 200,
+            });
+          }
+          case `${chain.transactionService}/api/v2/safes/${safeInfo.address}/multisig-transactions/`: {
+            return Promise.resolve({
+              data: rawify(queuedTransactions),
+              status: 200,
+            });
+          }
+          default: {
+            return Promise.reject(`No matching rule for url: ${url}`);
+          }
+        }
+      });
+
+      await request(app.getHttpServer())
+        .get(
+          `/v2/safes?currency=${currency}&safes=${chain.chainId}:${safeInfo.address}&trusted=true&exclude_spam=true`,
+        )
+        .expect(200);
+
+      // Verify Zerion portfolio API was called with filter[trash] parameter
+      const zerionCalls = networkService.get.mock.calls.filter((call) =>
+        call[0].url.includes('/portfolio'),
+      );
+      expect(zerionCalls.length).toBeGreaterThan(0);
+
+      // Check that the filter[trash] parameter was set to 'only_non_trash'
+      const portfolioCall = zerionCalls[0][0];
+      expect(portfolioCall.networkRequest?.params).toBeDefined();
+      expect(portfolioCall.networkRequest?.params?.['filter[trash]']).toBe(
+        'only_non_trash',
+      );
+    });
   });
 });
