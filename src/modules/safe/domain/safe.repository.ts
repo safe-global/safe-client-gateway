@@ -33,9 +33,15 @@ import { SafeSchema } from '@/modules/safe/domain/entities/schemas/safe.schema';
 import { z } from 'zod';
 import { TransactionVerifierHelper } from '@/modules/transactions/routes/helpers/transaction-verifier.helper';
 import type { Address } from 'viem';
+import {
+  CircuitBreaker,
+  CircuitBreakerOpenError,
+} from '@/modules/safe/domain/circuit-breaker';
 
 @Injectable()
 export class SafeRepository implements ISafeRepository {
+  private readonly circuitBreaker: CircuitBreaker;
+
   constructor(
     @Inject(ITransactionApiManager)
     private readonly transactionApiManager: ITransactionApiManager,
@@ -43,7 +49,15 @@ export class SafeRepository implements ISafeRepository {
     @Inject(IChainsRepository)
     private readonly chainsRepository: IChainsRepository,
     private readonly transactionVerifier: TransactionVerifierHelper,
-  ) {}
+  ) {
+    // Initialize circuit breaker with configurable thresholds
+    // 5 consecutive failures will open the circuit
+    // 60 seconds timeout before attempting recovery
+    this.circuitBreaker = new CircuitBreaker({
+      failureThreshold: 5,
+      resetTimeout: 60000, // 60 seconds
+    });
+  }
 
   async getSafe(args: { chainId: string; address: Address }): Promise<Safe> {
     const transactionService = await this.transactionApiManager.getApi(
@@ -532,15 +546,33 @@ export class SafeRepository implements ISafeRepository {
     const chains = await this.chainsRepository.getAllChains();
     const allSafeLists = await Promise.allSettled(
       chains.map(async ({ chainId }) => {
-        const safeList = await this.getSafesByOwner({
-          chainId,
-          ownerAddress: args.ownerAddress,
-        });
+        try {
+          // Use circuit breaker to protect against cascading failures
+          const safeList = await this.circuitBreaker.execute(
+            chainId,
+            async () => {
+              return await this.getSafesByOwner({
+                chainId,
+                ownerAddress: args.ownerAddress,
+              });
+            },
+          );
 
-        return {
-          chainId,
-          safeList,
-        };
+          return {
+            chainId,
+            safeList,
+          };
+        } catch (error) {
+          // Handle circuit breaker open state
+          if (error instanceof CircuitBreakerOpenError) {
+            this.loggingService.warn(
+              `Circuit breaker is OPEN for chainId=${chainId}, skipping request`,
+            );
+            throw error;
+          }
+          // Re-throw other errors to be handled by Promise.allSettled
+          throw error;
+        }
       }),
     );
 
@@ -553,8 +585,12 @@ export class SafeRepository implements ISafeRepository {
         result[chainId] = allSafeList.value.safeList.safes;
       } else {
         result[chainId] = null;
+        const errorMessage =
+          allSafeList.reason instanceof Error
+            ? allSafeList.reason.message
+            : String(allSafeList.reason);
         this.loggingService.warn(
-          `Failed to fetch Safe owners. chainId=${chainId}`,
+          `Failed to fetch Safe owners. chainId=${chainId}, error=${errorMessage}`,
         );
       }
     }
