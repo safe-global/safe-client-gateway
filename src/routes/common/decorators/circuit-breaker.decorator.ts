@@ -1,9 +1,10 @@
-import type { CircuitBreakerInterceptorOptions } from '@/datasources/circuit-breaker/interfaces/circuit-breaker-interceptor-options.interface';
-import { CircuitBreakerInterceptor } from '@/routes/common/interceptors/circuit-breaker.interceptor';
+import type { ICircuitBreakerInterceptorOptions } from '@/datasources/circuit-breaker/interfaces/circuit-breaker.interface';
+import {
+  CIRCUIT_BREAKER_OPTIONS_METADATA_KEY,
+  CircuitBreakerInterceptor,
+} from '@/routes/common/interceptors/circuit-breaker.interceptor';
 import { SetMetadata } from '@nestjs/common';
 import { UseInterceptors, applyDecorators } from '@nestjs/common';
-
-export const CIRCUIT_BREAKER_OPTIONS_METADATA_KEY = 'CircuitBreakerOptions';
 
 /**
  * Circuit Breaker Decorator
@@ -13,20 +14,22 @@ export const CIRCUIT_BREAKER_OPTIONS_METADATA_KEY = 'CircuitBreakerOptions';
  * for configuration options.
  *
  * @param {string} name - The name of the circuit breaker
- * @param {Partial<CircuitBreakerInterceptorOptions>} options - Optional configuration options
+ * @param {Partial<ICircuitBreakerInterceptorOptions>} options - Optional configuration options
  *
  * @returns {MethodDecorator & ClassDecorator} A decorator that can be applied to methods or classes
  *
  */
 export function CircuitBreaker(
   name: string,
-  options?: Partial<CircuitBreakerInterceptorOptions>,
+  options?: Partial<Exclude<ICircuitBreakerInterceptorOptions, 'name'>>,
 ): MethodDecorator & ClassDecorator {
-  options = options ?? {};
-  options.name = name;
+  const optionsWithName: Partial<ICircuitBreakerInterceptorOptions> = {
+    ...(options ?? {}),
+    name,
+  };
 
   return applyDecorators(
-    SetMetadata(CIRCUIT_BREAKER_OPTIONS_METADATA_KEY, options),
+    SetMetadata(CIRCUIT_BREAKER_OPTIONS_METADATA_KEY, optionsWithName),
     UseInterceptors(CircuitBreakerInterceptor),
   );
 }

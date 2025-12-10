@@ -9,69 +9,31 @@ import {
 import { Observable, throwError } from 'rxjs';
 import { catchError, tap } from 'rxjs/operators';
 import { CircuitBreakerService } from '@/datasources/circuit-breaker/circuit-breaker.service';
-import type { CircuitBreakerInterceptorOptions } from '@/datasources/circuit-breaker/interfaces/circuit-breaker-interceptor-options.interface';
+import type { ICircuitBreakerInterceptorOptions } from '@/datasources/circuit-breaker/interfaces/circuit-breaker.interface';
 import type { Request } from 'express';
 import { CircuitBreakerException } from '@/datasources/circuit-breaker/exceptions/circuit-breaker.exception';
 import { Reflector } from '@nestjs/core';
-import { CIRCUIT_BREAKER_OPTIONS_METADATA_KEY } from '@/routes/common/decorators/circuit-breaker.decorator';
 import { IConfigurationService } from '@/config/configuration.service.interface';
+
+export const CIRCUIT_BREAKER_OPTIONS_METADATA_KEY = 'CircuitBreakerOptions';
 
 /**
  * Circuit Breaker Interceptor
- *
- * This interceptor implements the circuit breaker pattern for HTTP endpoints.
- * It monitors request failures and can automatically "trip" to prevent
- * further requests to failing services.
- *
- * Usage 1 - With @CircuitBreaker decorator (recommended):
- * ```typescript
- * @CircuitBreaker('external-api', {
- *   config: { failureThreshold: 3 }
- * })
- * @Get('/data')
- * async getData() {
- *   return await this.externalService.fetch();
- * }
- * ```
- *
- * Usage 2 - Apply at controller level with default options:
- * ```typescript
- * @Controller('users')
- * @UseInterceptors(CircuitBreakerInterceptor)
- * export class UsersController {
- *   @Get('/profile')
- *   async getProfile() { ... }
- * }
- * ```
- *
- * Usage 3 - With custom options via constructor:
- * ```typescript
- * @UseInterceptors(
- *   new CircuitBreakerInterceptor(
- *     circuitBreakerService,
- *     reflector,
- *     { name: 'custom', config: { failureThreshold: 5 } }
- *   )
- * )
- * @Get('/data')
- * async getData() { ... }
- * ```
- *
- * @see https://en.wikipedia.org/wiki/Circuit_breaker_design_pattern
  */
-
 @Injectable()
 export class CircuitBreakerInterceptor implements NestInterceptor {
   private readonly DEFAULT_OPEN_CIRCUIT_MESSAGE =
     'Service temporarily unavailable, please try again later!';
 
-  private options: CircuitBreakerInterceptorOptions;
-  private isEnabled: boolean;
+  private readonly isEnabled: boolean;
+  private options: ICircuitBreakerInterceptorOptions;
+
   /**
    * Creates a new CircuitBreakerInterceptor instance
    *
-   * @param {CircuitBreakerService} circuitBreakerService - The circuit breaker service instance (auto-injected by NestJS)
-   * @param {Reflector} reflector - Reflector for reading metadata (auto-injected by NestJS)
+   * @param {CircuitBreakerService} circuitBreakerService - The circuit breaker service instance
+   * @param {Reflector} reflector - Reflector for reading metadata
+   * @param {IConfigurationService} configurationService - Configuration service for loading circuit breaker settings
    */
   public constructor(
     @Inject(CircuitBreakerService)
@@ -114,6 +76,7 @@ export class CircuitBreakerInterceptor implements NestInterceptor {
     };
 
     const circuitName = this.buildCircuitName(request, this.options);
+
     this.handleCircuitProceed(circuitName);
 
     return next.handle().pipe(
@@ -127,13 +90,13 @@ export class CircuitBreakerInterceptor implements NestInterceptor {
    *
    * @param {ExecutionContext} context - The execution context
    *
-   * @returns {Partial<CircuitBreakerInterceptorOptions>} The options from metadata or empty object
+   * @returns {Partial<ICircuitBreakerInterceptorOptions>} The options from metadata or empty object
    */
   private getOptionsFromMetadata(
     context: ExecutionContext,
-  ): Partial<CircuitBreakerInterceptorOptions> {
+  ): Partial<ICircuitBreakerInterceptorOptions> {
     return this.reflector.getAllAndOverride<
-      Partial<CircuitBreakerInterceptorOptions>
+      Partial<ICircuitBreakerInterceptorOptions>
     >(CIRCUIT_BREAKER_OPTIONS_METADATA_KEY, [
       context.getHandler(),
       context.getClass(),
@@ -145,13 +108,13 @@ export class CircuitBreakerInterceptor implements NestInterceptor {
    * Uses the name from options if provided, otherwise falls back to the request route path
    *
    * @param {Request} request - The Express request object
-   * @param {CircuitBreakerInterceptorOptions} options - Merged options
+   * @param {ICircuitBreakerInterceptorOptions} options - Merged options
    *
    * @returns {string} The circuit name
    */
   private buildCircuitName(
     request: Request,
-    options: CircuitBreakerInterceptorOptions,
+    options: ICircuitBreakerInterceptorOptions,
   ): string {
     const requestRoutePath = request.route?.path || request.path;
 
@@ -165,7 +128,6 @@ export class CircuitBreakerInterceptor implements NestInterceptor {
    * @param {string} name - The circuit name
    *
    * @returns {void}
-   *
    * @throws {CircuitBreakerException} When the circuit is open
    */
   private handleCircuitProceed(name: string): void {

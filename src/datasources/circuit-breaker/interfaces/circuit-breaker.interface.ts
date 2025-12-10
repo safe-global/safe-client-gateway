@@ -3,15 +3,14 @@ import type { CircuitState } from '@/datasources/circuit-breaker/enums/circuit-s
 /**
  * Configuration options for a circuit breaker
  */
-export interface ICircuitBreakerConfig {
+export interface ICircuitConfig {
   /**
    * Number of failures required to open the circuit
    */
   failureThreshold: number;
 
   /**
-   * Number of consecutive successes required in HALF_OPEN state
-   * to close the circuit
+   * Number of consecutive successes required in HALF_OPEN state to close the circuit
    */
   successThreshold: number;
 
@@ -35,9 +34,9 @@ export interface ICircuitBreakerConfig {
 /**
  * Metrics tracking the current state and performance of a circuit breaker
  */
-export interface ICircuitBreakerMetrics {
+export interface ICircuitMetrics {
   /**
-   * Current state of the circuit (CLOSED, OPEN, or HALF_OPEN)
+   * Current state of the circuit
    */
   state: CircuitState;
 
@@ -65,12 +64,17 @@ export interface ICircuitBreakerMetrics {
    * Number of consecutive successful requests (used in HALF_OPEN state)
    */
   consecutiveSuccesses: number;
+
+  /**
+   * Map tracking the number of requests made in HALF_OPEN state for a circuit
+   */
+  halfOpenRequestCounts: number;
 }
 
 /**
- * Complete circuit breaker instance containing configuration and current metrics
+ * Complete circuit breaker instance
  */
-export interface ICircuitBreaker {
+export interface ICircuit {
   /**
    * Unique name for this circuit
    */
@@ -79,10 +83,35 @@ export interface ICircuitBreaker {
   /**
    * Configuration settings for this circuit breaker
    */
-  config: ICircuitBreakerConfig;
+  config: ICircuitConfig;
 
   /**
    * Current metrics and state information
    */
-  metrics: ICircuitBreakerMetrics;
+  metrics: ICircuitMetrics;
+}
+
+/**
+ * Options for configuring the circuit breaker interceptor
+ */
+export interface ICircuitBreakerInterceptorOptions {
+  /**
+   * Unique name for this circuit. If not provided, uses the route path
+   */
+  name?: string;
+
+  /**
+   * Circuit breaker configuration to override the default configuration
+   */
+  config?: ICircuitConfig;
+
+  /**
+   * Predicate to determine if an error should be counted as a failure
+   */
+  isFailure: (error: Error) => boolean;
+
+  /**
+   * Custom error message when circuit
+   */
+  openCircuitMessage: string;
 }
