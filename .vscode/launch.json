@@ -14,7 +14,6 @@
       "console": "integratedTerminal",
       "outputCapture": "std",
       "env": {
-        "FF_ACCOUNTS": "true",
         "FF_AUTH": "true",
         "FF_COUNTERFACTUAL_BALANCES": "true",
         "FF_DELEGATES_V2": "true",
