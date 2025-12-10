@@ -5,6 +5,7 @@ import type {
   ICircuitConfig,
 } from '@/datasources/circuit-breaker/interfaces/circuit-breaker.interface';
 import { IConfigurationService } from '@/config/configuration.service.interface';
+import { Cron, CronExpression } from '@nestjs/schedule';
 
 /**
  * Circuit Breaker Service
@@ -17,6 +18,7 @@ import { IConfigurationService } from '@/config/configuration.service.interface'
 @Injectable()
 export class CircuitBreakerService {
   private readonly DEFAULT_STATE: CircuitState = CircuitState.CLOSED;
+  private readonly STALE_BUFFER_FACTOR: number = 2;
 
   private readonly initialConfig: ICircuitConfig;
   private readonly circuits: Map<string, ICircuit> = new Map();
@@ -66,12 +68,12 @@ export class CircuitBreakerService {
 
     switch (circuit.metrics.state) {
       case CircuitState.OPEN:
-        return this.handleOpenState(circuit);
+        return this.canProceedInOpenState(circuit);
       case CircuitState.HALF_OPEN:
-        return this.handleHalfOpenState(circuit);
+        return this.canProceedInHalfOpenState(circuit);
       case CircuitState.CLOSED:
       default:
-        return this.handleDefaultState();
+        return this.canProceedInClosedState();
     }
   }
 
@@ -145,7 +147,7 @@ export class CircuitBreakerService {
    *
    * @returns {boolean} True if request can proceed (after timeout), false otherwise
    */
-  private handleOpenState(circuit: ICircuit): boolean {
+  private canProceedInOpenState(circuit: ICircuit): boolean {
     const now = Date.now();
     if (
       circuit.metrics.nextAttemptTime &&
@@ -153,7 +155,7 @@ export class CircuitBreakerService {
     ) {
       this.transitionToHalfOpen(circuit);
 
-      return this.handleHalfOpenState(circuit);
+      return this.canProceedInHalfOpenState(circuit);
     }
 
     return false;
@@ -185,7 +187,7 @@ export class CircuitBreakerService {
    *
    * @returns {boolean} True if request can proceed (within limit), false if limit reached
    */
-  private handleHalfOpenState(circuit: ICircuit): boolean {
+  private canProceedInHalfOpenState(circuit: ICircuit): boolean {
     if (
       circuit.metrics.halfOpenRequestCounts < circuit.config.halfOpenMaxRequests
     ) {
@@ -204,7 +206,7 @@ export class CircuitBreakerService {
    *
    * @returns {boolean} Always returns true (requests allowed)
    */
-  private handleDefaultState(): boolean {
+  private canProceedInClosedState(): boolean {
     return true;
   }
 
@@ -266,8 +268,8 @@ export class CircuitBreakerService {
 
     if (
       circuit.metrics.state === CircuitState.HALF_OPEN ||
-      (circuit.metrics.state === CircuitState.CLOSED && // If Closed
-        circuit.metrics.failureCount >= circuit.config.failureThreshold) // And failure count exceeds threshold
+      (circuit.metrics.state === CircuitState.CLOSED &&
+        circuit.metrics.failureCount >= circuit.config.failureThreshold) // if CLOSED And failure count exceeds threshold
     ) {
       this.transitionToOpen(circuit);
     }
@@ -332,5 +334,58 @@ export class CircuitBreakerService {
    */
   public deleteAll(): void {
     this.circuits.clear();
+  }
+
+  /**
+   * Periodically cleans up stale circuits to prevent memory leaks
+   *
+   * @returns {void}
+   */
+  @Cron(CronExpression.EVERY_30_MINUTES)
+  public cleanupStaleCircuits(): void {
+    this.circuits.forEach((circuit: ICircuit): void => {
+      if (this.isStale(circuit)) {
+        this.removeCircuit(circuit);
+      }
+    });
+  }
+
+  /**
+   * Determines if a circuit is stale and should be cleaned up
+   *
+   * A circuit is considered stale if:
+   * - it's in CLOSED state and hasn't had any failures for a threshold factor times the rolling window duration
+   * - it's in OPEN state and the next attempt time has already passed. This helps prevent
+   *
+   * This helps prevent stale circuits from being removed prematurely.
+   *
+   * This helps prevent memory leaks by removing unused circuits.
+   *
+   * @param {ICircuit} circuit - The circuit to check for staleness
+   *
+   * @returns {boolean} True if the circuit is stale and should be removed
+   */
+  private isStale(circuit: ICircuit): boolean {
+    const now = Date.now();
+    if (!circuit.metrics.lastFailureTime) {
+      return false;
+    }
+
+    const timeSinceLastFailure = now - circuit.metrics.lastFailureTime;
+    const staleRollingWindow =
+      circuit.config.rollingWindow * this.STALE_BUFFER_FACTOR;
+
+    const staleNextAttemptTime = circuit.metrics.nextAttemptTime
+      ? circuit.metrics.nextAttemptTime * this.STALE_BUFFER_FACTOR
+      : undefined;
+
+    const isWaitingForNextAttempt =
+      circuit.metrics.state === CircuitState.OPEN &&
+      staleNextAttemptTime &&
+      now < staleNextAttemptTime;
+
+    return timeSinceLastFailure > staleRollingWindow && !isWaitingForNextAttempt
+      ? true
+      : false;
   }
 }
