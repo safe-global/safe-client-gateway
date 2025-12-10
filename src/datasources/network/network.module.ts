@@ -11,11 +11,14 @@ import type { Raw } from '@/validation/entities/raw.entity';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { LogType } from '@/domain/common/entities/log-type.entity';
 import { hashSha1 } from '@/domain/common/utils/utils';
+import { CircuitBreakerService } from '@/datasources/circuit-breaker/circuit-breaker.service';
+import { CircuitBreakerException } from '@/datasources/circuit-breaker/exceptions/circuit-breaker.exception';
 
 export type FetchClient = <T>(
   url: string,
   options: RequestInit,
   timeout?: number,
+  useCircuitBreaker?: boolean,
 ) => Promise<NetworkResponse<T>>;
 
 const cache: Record<string, Promise<NetworkResponse<unknown>>> = {};
@@ -26,6 +29,7 @@ const cache: Record<string, Promise<NetworkResponse<unknown>>> = {};
  */
 function fetchClientFactory(
   configurationService: IConfigurationService,
+  circuitBreakerService: CircuitBreakerService,
   loggingService: ILoggingService,
 ): FetchClient {
   const cacheInFlightRequests = configurationService.getOrThrow<boolean>(
@@ -34,14 +38,21 @@ function fetchClientFactory(
   const defaultTimeout = configurationService.getOrThrow<number>(
     'httpClient.requestTimeout',
   );
+  const circuitBreakerEnabledByDefault =
+    configurationService.getOrThrow<boolean>('circuitBreaker.enabled');
 
-  const request = createRequestFunction(defaultTimeout);
+  const baseRequest = createRequestFunction(defaultTimeout);
+  const circuitBreakerRequest = createCircuitBreakerRequestFunction(
+    baseRequest,
+    circuitBreakerService,
+    circuitBreakerEnabledByDefault,
+  );
 
   if (!cacheInFlightRequests) {
-    return request;
+    return circuitBreakerRequest;
   }
 
-  return createCachedRequestFunction(request, loggingService);
+  return createCachedRequestFunction(circuitBreakerRequest, loggingService);
 }
 
 function createRequestFunction(defaultTimeout: number) {
@@ -80,11 +91,68 @@ function createRequestFunction(defaultTimeout: number) {
   };
 }
 
+/**
+ * Wraps a request function with circuit breaker logic
+ *
+ * This function intercepts requests and applies circuit breaker protection:
+ * - Checks if the circuit is open before allowing the request
+ * - Records successes and failures based on response status
+ * - Can be enabled/disabled per request via the useCircuitBreaker parameter
+ *
+ * @param request - The base request function to wrap
+ * @param circuitBreakerService - Service managing circuit breaker state
+ * @param enabledByDefault - Whether circuit breaker is enabled by default
+ * @returns Wrapped request function with circuit breaker logic
+ */
+function createCircuitBreakerRequestFunction(
+  request: <T>(
+    url: string,
+    options: RequestInit,
+    timeout?: number,
+  ) => Promise<NetworkResponse<T>>,
+  circuitBreakerService: CircuitBreakerService,
+  enabledByDefault: boolean,
+) {
+  return async <T>(
+    url: string,
+    options: RequestInit,
+    timeout?: number,
+    useCircuitBreaker?: boolean,
+  ): Promise<NetworkResponse<T>> => {
+    const shouldUseCircuitBreaker = useCircuitBreaker ?? enabledByDefault;
+
+    if (!shouldUseCircuitBreaker) {
+      return request(url, options, timeout);
+    }
+
+    circuitBreakerService.canProceedOrFail(url);
+
+    try {
+      const response = await request(url, options, timeout);
+      circuitBreakerService.recordSuccess(url);
+
+      return response;
+    } catch (error) {
+      if (
+        (error instanceof NetworkResponseError &&
+          error.response.status >= 500) ||
+        error instanceof CircuitBreakerException
+      ) {
+        const circuit = circuitBreakerService.getOrRegisterCircuit(url);
+        circuitBreakerService.recordFailure(circuit);
+      }
+
+      throw error;
+    }
+  };
+}
+
 function createCachedRequestFunction(
   request: <T>(
     url: string,
     options: RequestInit,
     timeout?: number,
+    useCircuitBreaker?: boolean,
   ) => Promise<NetworkResponse<T>>,
   loggingService: ILoggingService,
 ) {
@@ -92,6 +160,7 @@ function createCachedRequestFunction(
     url: string,
     options: RequestInit,
     timeout?: number,
+    useCircuitBreaker?: boolean,
   ): Promise<NetworkResponse<T>> => {
     const key = getCacheKey(url, options, timeout);
     if (key in cache) {
@@ -107,7 +176,7 @@ function createCachedRequestFunction(
         key,
       });
 
-      cache[key] = request(url, options, timeout)
+      cache[key] = request(url, options, timeout, useCircuitBreaker)
         .catch((err) => {
           loggingService.debug({
             type: LogType.ExternalRequestCacheError,
@@ -129,15 +198,25 @@ function getCacheKey(
   url: string,
   requestInit?: RequestInit,
   timeout?: number,
+  useCircuitBreaker?: boolean,
 ): string {
-  if (!requestInit && timeout === undefined) {
+  if (
+    !requestInit &&
+    timeout === undefined &&
+    useCircuitBreaker === undefined
+  ) {
     return url;
   }
 
   // JSON.stringify does not produce a stable key but initially
   // use a naive implementation for testing the implementation
   // TODO: Revisit this and use a more stable key
-  const key = JSON.stringify({ url, ...requestInit, timeout });
+  const key = JSON.stringify({
+    url,
+    ...requestInit,
+    timeout,
+    useCircuitBreaker,
+  });
   return hashSha1(key);
 }
 
@@ -154,7 +233,7 @@ function getCacheKey(
     {
       provide: 'FetchClient',
       useFactory: fetchClientFactory,
-      inject: [IConfigurationService, LoggingService],
+      inject: [IConfigurationService, CircuitBreakerService, LoggingService],
     },
     { provide: NetworkService, useClass: FetchNetworkService },
   ],

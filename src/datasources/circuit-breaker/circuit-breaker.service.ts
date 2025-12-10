@@ -6,6 +6,7 @@ import type {
 } from '@/datasources/circuit-breaker/interfaces/circuit-breaker.interface';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { Cron, CronExpression } from '@nestjs/schedule';
+import { CircuitBreakerException } from '@/datasources/circuit-breaker/exceptions/circuit-breaker.exception';
 
 /**
  * Circuit Breaker Service
@@ -50,6 +51,20 @@ export class CircuitBreakerService {
   }
 
   /**
+   * Retrieves a circuit by name
+   *
+   * Returns the circuit instance if it exists, otherwise returns undefined.
+   * This is primarily used for testing and debugging purposes.
+   *
+   * @param {string} name - Circuit identifier
+   *
+   * @returns {ICircuit | undefined} The circuit instance if found, undefined otherwise
+   */
+  public get(name: string): ICircuit | undefined {
+    return this.circuits.get(name);
+  }
+
+  /**
    * Checks if a request can proceed through the circuit
    *
    * If no circuit exists, the endpoint is considered healthy and the request proceeds.
@@ -75,6 +90,29 @@ export class CircuitBreakerService {
       default:
         return this.canProceedInClosedState();
     }
+  }
+
+  /**
+   * Checks if a request can proceed through the circuit
+   *
+   * If no circuit exists, the endpoint is considered healthy and the request proceeds.
+   * Circuits are only created when failures occur.
+   *
+   * @param {string} name - Circuit identifier
+   *
+   * @returns {boolean} True if request can proceed, false if circuit is open
+   */
+  public canProceedOrFail(name: string): boolean {
+    const canProceed = this.canProceed(name);
+
+    if (!canProceed) {
+      throw new CircuitBreakerException({
+        name,
+        message: 'Circuit breaker is open',
+      });
+    }
+
+    return true;
   }
 
   /**
@@ -124,17 +162,6 @@ export class CircuitBreakerService {
     this.circuits.set(name, circuit);
 
     return circuit;
-  }
-
-  /**
-   * Retrieves an existing circuit by name
-   *
-   * @param {string} name - Circuit identifier
-   *
-   * @returns {ICircuit | undefined} The circuit instance or undefined if not found
-   */
-  public get(name: string): ICircuit | undefined {
-    return this.circuits.get(name);
   }
 
   /**
@@ -217,11 +244,17 @@ export class CircuitBreakerService {
    * Updates success metrics and handles state transitions:
    * - In HALF_OPEN: Transitions to CLOSED when the success threshold is reached and removes the circuit from memory
    *
-   * @param {ICircuit} circuit - Circuit Breaker
+   * @param {string} name - Circuit identifier
    *
    * @returns {void}
    */
-  public recordSuccess(circuit: ICircuit): void {
+  public recordSuccess(name: string): void {
+    const circuit = this.circuits.get(name);
+    if (!circuit) {
+      return;
+    }
+
+    circuit.metrics.successCount++;
     circuit.metrics.consecutiveSuccesses++;
 
     if (circuit.metrics.state === CircuitState.HALF_OPEN) {
@@ -253,7 +286,7 @@ export class CircuitBreakerService {
    * - In HALF_OPEN: Any failure immediately reopens the circuit
    * - In CLOSED: Opens circuit if failure threshold is exceeded
    *
-   * @param {ICircuit} circuit - Circuit Breaker
+   * @param {ICircuit} circuit - Circuit instance
    *
    * @returns {void}
    */

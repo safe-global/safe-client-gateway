@@ -38,7 +38,6 @@ import {
 import { type Address, getAddress } from 'viem';
 import { dataDecodedBuilder } from '@/modules/data-decoder/domain/v2/entities/__tests__/data-decoded.builder';
 import { contractBuilder } from '@/modules/data-decoder/domain/v2/entities/__tests__/contract.builder';
-import { CircuitBreakerModule } from '@/datasources/circuit-breaker/circuit-breaker.module';
 
 describe('Add transaction confirmations - Transactions Controller (Unit)', () => {
   let app: INestApplication<Server>;
@@ -53,7 +52,6 @@ describe('Add transaction confirmations - Transactions Controller (Unit)', () =>
         // feature
         TransactionsModule,
         // common
-        CircuitBreakerModule,
         TestCacheModule,
         ConfigurationModule.register(config),
         TestLoggingModule,

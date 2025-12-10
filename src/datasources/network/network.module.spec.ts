@@ -20,6 +20,7 @@ import {
   LoggingService,
 } from '@/logging/logging.interface';
 import { hashSha1 } from '@/domain/common/utils/utils';
+import { CircuitBreakerModule } from '@/datasources/circuit-breaker/circuit-breaker.module';
 
 describe('NetworkModule', () => {
   let app: INestApplication<Server>;
@@ -39,6 +40,10 @@ describe('NetworkModule', () => {
         ...baseConfiguration.features,
         cacheInFlightRequests,
       },
+      circuitBreaker: {
+        ...baseConfiguration.circuitBreaker,
+        enabled: false, // Disable circuit breaker for tests
+      },
     });
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -49,6 +54,7 @@ describe('NetworkModule', () => {
         ClsModule.forRoot({ global: true }),
         RequestScopedLoggingModule,
         ConfigurationModule.register(testConfiguration),
+        CircuitBreakerModule,
       ],
     }).compile();
 

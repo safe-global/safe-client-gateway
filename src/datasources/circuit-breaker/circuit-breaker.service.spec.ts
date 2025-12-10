@@ -99,8 +99,8 @@ describe('CircuitBreakerService', () => {
         halfOpenMaxRequests: 3,
       });
 
-      service.recordSuccess(circuit);
-      service.recordSuccess(circuit);
+      service.recordSuccess(circuit.name);
+      service.recordSuccess(circuit.name);
       expect(circuit.metrics.consecutiveSuccesses).toBe(2);
 
       service.recordFailure(circuit);
@@ -191,10 +191,10 @@ describe('CircuitBreakerService', () => {
         expect(circuit).toBeDefined();
 
         if (circuit) {
-          service.recordSuccess(circuit);
+          service.recordSuccess(circuit.name);
           expect(circuit.metrics.state).toBe(CircuitState.HALF_OPEN);
 
-          service.recordSuccess(circuit);
+          service.recordSuccess(circuit.name);
           // After threshold successes, circuit is removed (closed and cleaned up)
           const deletedCircuit = service.get('test-circuit');
           expect(deletedCircuit).toBeUndefined();
@@ -210,7 +210,7 @@ describe('CircuitBreakerService', () => {
         expect(circuit).toBeDefined();
 
         if (circuit) {
-          service.recordSuccess(circuit);
+          service.recordSuccess(circuit.name);
           service.recordFailure(circuit);
           expect(circuit.metrics.state).toBe(CircuitState.OPEN);
         }
@@ -229,26 +229,23 @@ describe('CircuitBreakerService', () => {
       expect(circuit.metrics.failureCount).toBe(2);
     });
 
+    it('should track success count', () => {
+      const circuit = service.getOrRegisterCircuit('test-circuit');
+
+      service.recordSuccess(circuit.name);
+      service.recordSuccess(circuit.name);
+
+      expect(circuit.metrics.successCount).toBe(2);
+    });
+
     it('should track consecutive successes', () => {
       const circuit = service.getOrRegisterCircuit('test-circuit');
 
-      service.recordSuccess(circuit);
-      service.recordSuccess(circuit);
-
-      expect(circuit.metrics.consecutiveSuccesses).toBe(2);
-    });
-
-    it('should reset consecutive successes on failure', () => {
-      const circuit = service.getOrRegisterCircuit('test-circuit');
-
-      service.recordSuccess(circuit);
-      service.recordSuccess(circuit);
-      expect(circuit.metrics.consecutiveSuccesses).toBe(2);
-
+      service.recordSuccess(circuit.name);
+      service.recordSuccess(circuit.name);
       service.recordFailure(circuit);
-      expect(circuit.metrics.consecutiveSuccesses).toBe(0);
+      service.recordSuccess(circuit.name);
 
-      service.recordSuccess(circuit);
       expect(circuit.metrics.consecutiveSuccesses).toBe(1);
     });
   });

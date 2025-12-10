@@ -90,28 +90,3 @@ export interface ICircuit {
    */
   metrics: ICircuitMetrics;
 }
-
-/**
- * Options for configuring the circuit breaker interceptor
- */
-export interface ICircuitBreakerInterceptorOptions {
-  /**
-   * Unique name for this circuit. If not provided, uses the route path
-   */
-  name?: string;
-
-  /**
-   * Circuit breaker configuration to override the default configuration
-   */
-  config?: ICircuitConfig;
-
-  /**
-   * Predicate to determine if an error should be counted as a failure
-   */
-  isFailure: (error: Error) => boolean;
-
-  /**
-   * Custom error message when circuit
-   */
-  openCircuitMessage: string;
-}
