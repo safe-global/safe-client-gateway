@@ -18,7 +18,6 @@ import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
 export class SafesV2Service {
   private readonly maxOverviews: number;
   private readonly zerionChainIds: Array<string>;
-  private readonly zerionChainsConfig: Record<number, { chainName: string }>;
 
   constructor(
     @Inject(ISafeRepository)
@@ -38,9 +37,6 @@ export class SafesV2Service {
     this.zerionChainIds = configurationService.getOrThrow<Array<string>>(
       'features.zerionBalancesChainIds',
     );
-    this.zerionChainsConfig = configurationService.getOrThrow<
-      Record<number, { chainName: string }>
-    >('balances.providers.zerion.chains');
   }
 
   async getSafeOverview(args: {
@@ -175,14 +171,9 @@ export class SafesV2Service {
   }
 
   /**
-   * Gets the Zerion chain name for a given chain.
-   * First tries to get from static configuration, then falls back to chain's balancesProvider.
+   * Gets the Zerion chain name for a given chain from its balancesProvider.
    */
   private getZerionChainName(chain: Chain): string | undefined {
-    const chainConfig = this.zerionChainsConfig[Number(chain.chainId)];
-    if (chainConfig?.chainName) {
-      return chainConfig.chainName;
-    }
     return chain.balancesProvider?.chainName ?? undefined;
   }
 

@@ -31,7 +31,7 @@ export class SafesV2Controller {
   @ApiOperation({
     summary: 'Get Safe overview (v2)',
     description:
-      'Retrieves an overview of multiple Safes using Zerion portfolio data for enabled chains. Supports cross-chain queries using CAIP-10 address format.',
+      'Retrieves an overview of multiple Safes. Supports cross-chain queries using chainId:address format.',
   })
   @ApiQuery({
     name: 'currency',
@@ -45,7 +45,7 @@ export class SafesV2Controller {
     required: true,
     type: String,
     description:
-      'Comma-separated list of Safe addresses in CAIP-10 format (chainId:address)',
+      'Comma-separated list of Safe addresses in chainId:address format',
     example:
       '1:0x1234567890123456789012345678901234567890,5:0xabcdefabcdefabcdefabcdefabcdefabcdefabcd',
   })

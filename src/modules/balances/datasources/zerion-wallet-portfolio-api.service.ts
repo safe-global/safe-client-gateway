@@ -22,7 +22,7 @@ export interface IZerionWalletPortfolioApi {
    *
    * @param args.address - Wallet address
    * @param args.currency - Fiat currency code (e.g., 'USD', 'EUR')
-   * @param args.isTestnet - Whether this is a testnet chain
+   * @param args.isTestnet - Whether the returned data is for testnets or for mainnets
    * @returns Portfolio data with total and per-chain breakdown
    */
   getPortfolio(args: {

@@ -47,19 +47,6 @@ describe('Safes V2 Controller Overview (Unit)', () => {
         counterfactualBalances: true,
         zerionBalancesChainIds: [zerionChainId],
       },
-      balances: {
-        ...configuration().balances,
-        providers: {
-          ...configuration().balances.providers,
-          zerion: {
-            ...configuration().balances.providers.zerion,
-            chains: {
-              ...configuration().balances.providers.zerion.chains,
-              137: { chainName: 'polygon' }, // Override for test
-            },
-          },
-        },
-      },
     });
 
     const moduleFixture = await createTestModule({
@@ -215,6 +202,7 @@ describe('Safes V2 Controller Overview (Unit)', () => {
       const chain = chainBuilder()
         .with('chainId', zerionChainId)
         .with('isTestnet', false)
+        .with('balancesProvider', { chainName: 'polygon', enabled: true })
         .build();
       const safeInfo = safeBuilder().build();
       const currency = 'USD';
@@ -494,6 +482,7 @@ describe('Safes V2 Controller Overview (Unit)', () => {
       const chain = chainBuilder()
         .with('chainId', zerionChainId)
         .with('isTestnet', false)
+        .with('balancesProvider', { chainName: 'polygon', enabled: true })
         .build();
       const safeInfo1 = safeBuilder().build();
       const safeInfo2 = safeBuilder().build();
