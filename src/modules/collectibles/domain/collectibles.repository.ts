@@ -38,6 +38,6 @@ export class CollectiblesRepository implements ICollectiblesRepository {
       args.chainId,
       args.safeAddress,
     );
-    await api.clearCollectibles(args);
+    await api.clearCollectibles({ safeAddress: args.safeAddress });
   }
 }
