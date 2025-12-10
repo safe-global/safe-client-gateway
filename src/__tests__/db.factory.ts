@@ -24,7 +24,7 @@ export class TestDbFactory {
   }
 
   async destroyTestDatabase(database: postgres.Sql): Promise<void> {
-    if (database && !database.ended) {
+    if (database) {
       await database.end();
     }
     await this
@@ -32,7 +32,7 @@ export class TestDbFactory {
   }
 
   async cleanup(): Promise<void> {
-    if (this.mainConnection && !this.mainConnection.ended) {
+    if (this.mainConnection) {
       await this.mainConnection.end();
     }
   }
