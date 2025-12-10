@@ -12,6 +12,13 @@ import {
 } from '@/modules/balances/datasources/entities/zerion-wallet-portfolio.entity';
 import type { Address } from 'viem';
 import { ZodError } from 'zod';
+import {
+  CacheService,
+  ICacheService,
+} from '@/datasources/cache/cache.service.interface';
+import { CacheRouter } from '@/datasources/cache/cache.router';
+import { LoggingService, ILoggingService } from '@/logging/logging.interface';
+import { LogType } from '@/domain/common/entities/log-type.entity';
 
 export const IZerionWalletPortfolioApi = Symbol('IZerionWalletPortfolioApi');
 
@@ -34,6 +41,7 @@ export interface IZerionWalletPortfolioApi {
 
 @Injectable()
 export class ZerionWalletPortfolioApi implements IZerionWalletPortfolioApi {
+  private static readonly CACHE_TTL_SECONDS = 10;
   private readonly apiKey: string | undefined;
   private readonly baseUri: string;
 
@@ -43,6 +51,8 @@ export class ZerionWalletPortfolioApi implements IZerionWalletPortfolioApi {
     @Inject(NetworkService)
     private readonly networkService: INetworkService,
     private readonly httpErrorFactory: HttpErrorFactory,
+    @Inject(CacheService) private readonly cacheService: ICacheService,
+    @Inject(LoggingService) private readonly loggingService: ILoggingService,
   ) {
     this.apiKey = this.configurationService.get<string>(
       'balances.providers.zerion.apiKey',
@@ -57,6 +67,22 @@ export class ZerionWalletPortfolioApi implements IZerionWalletPortfolioApi {
     currency: string;
     isTestnet: boolean;
   }): Promise<ZerionWalletPortfolio> {
+    const cacheDir = CacheRouter.getPortfolioCacheDir({
+      address: args.address,
+      fiatCode: args.currency,
+      isTestnet: args.isTestnet,
+    });
+
+    const cached = await this.cacheService.hGet(cacheDir);
+    if (cached != null) {
+      const { key, field } = cacheDir;
+      this.loggingService.debug({ type: LogType.CacheHit, key, field });
+      return ZerionWalletPortfolioSchema.parse(JSON.parse(cached));
+    }
+
+    const { key, field } = cacheDir;
+    this.loggingService.debug({ type: LogType.CacheMiss, key, field });
+
     const url = `${this.baseUri}/v1/wallets/${args.address}/portfolio`;
 
     try {
@@ -71,7 +97,15 @@ export class ZerionWalletPortfolioApi implements IZerionWalletPortfolioApi {
         },
       });
 
-      return ZerionWalletPortfolioSchema.parse(data);
+      const portfolio = ZerionWalletPortfolioSchema.parse(data);
+
+      await this.cacheService.hSet(
+        cacheDir,
+        JSON.stringify(portfolio),
+        ZerionWalletPortfolioApi.CACHE_TTL_SECONDS,
+      );
+
+      return portfolio;
     } catch (error) {
       if (error instanceof ZodError) {
         throw error;
