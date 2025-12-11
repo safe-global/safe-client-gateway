@@ -29,7 +29,7 @@ import {
 import { CacheRouter } from '@/datasources/cache/cache.router';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
-import { extractRecipients } from '../utils/recipient-extraction.utils';
+import { extractRecipients } from '../utils/extraction.utils';
 import { logCacheHit, logCacheMiss } from '@/modules/safe-shield/utils/common';
 import { TransactionInfo } from '@/modules/transactions/routes/entities/transaction-info.entity';
 import {
