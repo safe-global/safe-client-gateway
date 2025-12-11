@@ -1,20 +1,32 @@
 import { CircuitBreakerService } from '@/datasources/circuit-breaker/circuit-breaker.service';
 import { CircuitState } from '@/datasources/circuit-breaker/enums/circuit-state.enum';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
+import { faker } from '@faker-js/faker';
 
 describe('CircuitBreakerService', () => {
   let service: CircuitBreakerService;
   let mockConfigurationService: jest.Mocked<IConfigurationService>;
+  let defaultFailureThreshold: number;
+  let defaultSuccessThreshold: number;
+  let defaultTimeout: number;
+  let defaultRollingWindow: number;
+  let defaultHalfOpenMaxRequests: number;
 
   beforeEach(() => {
+    defaultFailureThreshold = faker.number.int({ min: 1, max: 10 });
+    defaultSuccessThreshold = faker.number.int({ min: 1, max: 5 });
+    defaultTimeout = faker.number.int({ min: 10_000, max: 120_000 });
+    defaultRollingWindow = faker.number.int({ min: 60_000, max: 300_000 });
+    defaultHalfOpenMaxRequests = faker.number.int({ min: 1, max: 10 });
+
     mockConfigurationService = {
       getOrThrow: jest.fn((key: string) => {
         const config: Record<string, number> = {
-          'circuitBreaker.failureThreshold': 5,
-          'circuitBreaker.successThreshold': 2,
-          'circuitBreaker.timeout': 60_000,
-          'circuitBreaker.rollingWindow': 120_000,
-          'circuitBreaker.halfOpenMaxRequests': 3,
+          'circuitBreaker.failureThreshold': defaultFailureThreshold,
+          'circuitBreaker.successThreshold': defaultSuccessThreshold,
+          'circuitBreaker.timeout': defaultTimeout,
+          'circuitBreaker.rollingWindow': defaultRollingWindow,
+          'circuitBreaker.halfOpenMaxRequests': defaultHalfOpenMaxRequests,
         };
         return config[key];
       }),
@@ -40,22 +52,26 @@ describe('CircuitBreakerService', () => {
     });
 
     it('should use custom configuration', () => {
+      const customFailureThreshold =
+        defaultFailureThreshold + faker.number.int({ min: 5, max: 10 });
       const circuit = service.getOrRegisterCircuit('test-circuit', {
-        failureThreshold: 10,
-        successThreshold: 2,
-        timeout: 30000,
-        rollingWindow: 120_000,
-        halfOpenMaxRequests: 3,
+        failureThreshold: customFailureThreshold,
+        successThreshold: defaultSuccessThreshold,
+        timeout: defaultTimeout,
+        rollingWindow: defaultRollingWindow,
+        halfOpenMaxRequests: defaultHalfOpenMaxRequests,
       });
 
-      // Should not open after 5 failures (default threshold)
-      for (let i = 0; i < 5; i++) {
+      // Should not open after defaultFailureThreshold failures (default threshold)
+      for (let i = 0; i < defaultFailureThreshold; i++) {
         service.recordFailure(circuit);
       }
       expect(circuit.metrics.state).toBe(CircuitState.CLOSED);
 
-      // Should open after 10 failures (custom threshold)
-      for (let i = 0; i < 5; i++) {
+      // Should open after customFailureThreshold failures (custom threshold)
+      const additionalFailures =
+        customFailureThreshold - defaultFailureThreshold;
+      for (let i = 0; i < additionalFailures; i++) {
         service.recordFailure(circuit);
       }
       expect(circuit.metrics.state).toBe(CircuitState.OPEN);

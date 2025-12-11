@@ -194,11 +194,7 @@ function getCacheKey(
   timeout?: number,
   useCircuitBreaker?: boolean,
 ): string {
-  if (
-    !requestInit &&
-    timeout === undefined &&
-    useCircuitBreaker === undefined
-  ) {
+  if (!requestInit && timeout === undefined && !useCircuitBreaker) {
     return url;
   }
 

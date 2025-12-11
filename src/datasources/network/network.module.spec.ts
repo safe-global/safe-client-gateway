@@ -21,24 +21,48 @@ import {
 } from '@/logging/logging.interface';
 import { hashSha1 } from '@/domain/common/utils/utils';
 import { CircuitBreakerModule } from '@/datasources/circuit-breaker/circuit-breaker.module';
+import { CircuitBreakerService } from '@/datasources/circuit-breaker/circuit-breaker.service';
+import { CircuitBreakerException } from '@/datasources/circuit-breaker/exceptions/circuit-breaker.exception';
+import type { ICircuitConfig } from '@/datasources/circuit-breaker/interfaces/circuit-breaker.interface';
 
 describe('NetworkModule', () => {
   let app: INestApplication<Server>;
   let fetchClient: FetchClient;
   let defaultTimeout: number;
   let loggingService: ILoggingService;
+  let circuitBreakerService: CircuitBreakerService;
+  let circuitBreakerConfig: ICircuitConfig | undefined;
 
   // fetch response is not mocked but we are only concerned with RequestInit options
   const fetchMock = jest.fn();
   jest.spyOn(global, 'fetch').mockImplementation(fetchMock);
 
-  async function initApp(cacheInFlightRequests: boolean): Promise<void> {
+  async function initApp(
+    cacheInFlightRequests: boolean,
+    config?: ICircuitConfig,
+  ): Promise<void> {
+    circuitBreakerConfig = config;
     const baseConfiguration = configuration();
     const testConfiguration: typeof configuration = () => ({
       ...baseConfiguration,
       features: {
         ...baseConfiguration.features,
         cacheInFlightRequests,
+      },
+      circuitBreaker: {
+        failureThreshold:
+          config?.failureThreshold ??
+          baseConfiguration.circuitBreaker.failureThreshold,
+        successThreshold:
+          config?.successThreshold ??
+          baseConfiguration.circuitBreaker.successThreshold,
+        timeout: config?.timeout ?? baseConfiguration.circuitBreaker.timeout,
+        rollingWindow:
+          config?.rollingWindow ??
+          baseConfiguration.circuitBreaker.rollingWindow,
+        halfOpenMaxRequests:
+          config?.halfOpenMaxRequests ??
+          baseConfiguration.circuitBreaker.halfOpenMaxRequests,
       },
     });
 
@@ -63,6 +87,9 @@ describe('NetworkModule', () => {
     );
     loggingService = moduleFixture.get<ILoggingService>(LoggingService);
     jest.spyOn(loggingService, 'debug');
+    circuitBreakerService = moduleFixture.get<CircuitBreakerService>(
+      CircuitBreakerService,
+    );
 
     app = moduleFixture.createNestApplication();
     await app.init();
@@ -184,7 +211,9 @@ describe('NetworkModule', () => {
 
       expect(fetchMock).toHaveBeenCalledTimes(1);
 
-      const key = hashSha1(JSON.stringify({ url, ...options }));
+      const key = hashSha1(
+        JSON.stringify({ url, ...options, circuitBreakerKey: '' }),
+      );
       expect(loggingService.debug).toHaveBeenCalledTimes(2);
       expect(loggingService.debug).toHaveBeenNthCalledWith(1, {
         type: 'EXTERNAL_REQUEST_CACHE_MISS',
@@ -288,7 +317,9 @@ describe('NetworkModule', () => {
 
         expect(fetchMock).toHaveBeenCalledTimes(1);
 
-        const key = hashSha1(JSON.stringify({ url, ...options }));
+        const key = hashSha1(
+          JSON.stringify({ url, ...options, circuitBreakerKey: '' }),
+        );
         expect(loggingService.debug).toHaveBeenCalledTimes(2);
         expect(loggingService.debug).toHaveBeenNthCalledWith(1, {
           type: 'EXTERNAL_REQUEST_CACHE_MISS',
@@ -319,7 +350,9 @@ describe('NetworkModule', () => {
 
       expect(fetchMock).toHaveBeenCalledTimes(2);
 
-      const key = hashSha1(JSON.stringify({ url, ...options }));
+      const key = hashSha1(
+        JSON.stringify({ url, ...options, circuitBreakerKey: '' }),
+      );
       expect(loggingService.debug).toHaveBeenCalledTimes(2);
       expect(loggingService.debug).toHaveBeenNthCalledWith(1, {
         type: 'EXTERNAL_REQUEST_CACHE_MISS',
@@ -357,7 +390,9 @@ describe('NetworkModule', () => {
 
       expect(fetchMock).toHaveBeenCalledTimes(2);
 
-      const key = hashSha1(JSON.stringify({ url, ...options }));
+      const key = hashSha1(
+        JSON.stringify({ url, ...options, circuitBreakerKey: '' }),
+      );
       expect(loggingService.debug).toHaveBeenCalledTimes(4);
       expect(loggingService.debug).toHaveBeenNthCalledWith(1, {
         type: 'EXTERNAL_REQUEST_CACHE_MISS',
@@ -379,6 +414,224 @@ describe('NetworkModule', () => {
         url,
         key,
       });
+    });
+  });
+
+  describe('with circuit breaker enabled', () => {
+    beforeAll(async () => {
+      await initApp(false, {
+        failureThreshold: faker.number.int({ min: 2, max: 5 }),
+        successThreshold: faker.number.int({ min: 1, max: 5 }),
+        timeout: faker.number.int({ min: 500, max: 2000 }), // Short timeout for faster tests
+        rollingWindow: faker.number.int({ min: 60_000, max: 300_000 }),
+        halfOpenMaxRequests: faker.number.int({ min: 1, max: 10 }),
+      });
+    });
+
+    beforeEach(() => {
+      // Clear all circuits before each test
+      circuitBreakerService.deleteAll();
+    });
+
+    it('allows requests when circuit breaker is enabled and circuit is closed', async () => {
+      const json = fakeJson();
+      const response = {
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve(json),
+      } as Response;
+      fetchMock.mockResolvedValue(response);
+
+      const url = faker.internet.url({ appendSlash: false });
+
+      const result = await fetchClient(url, { method: 'GET' }, undefined, true);
+
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(result.status).toBe(200);
+      expect(result.data).toEqual(json);
+    });
+
+    it('blocks requests when circuit is open', async () => {
+      const json = fakeJson();
+      const errorResponse = {
+        ok: false,
+        status: 500,
+        json: () => Promise.resolve(json),
+      } as Response;
+      fetchMock.mockResolvedValue(errorResponse);
+
+      const url = faker.internet.url({ appendSlash: false });
+      const failureThreshold = circuitBreakerConfig?.failureThreshold ?? 2;
+
+      // Trip the circuit
+      for (let i = 0; i < failureThreshold; i++) {
+        await expect(
+          fetchClient(url, { method: 'GET' }, undefined, true),
+        ).rejects.toThrow();
+      }
+
+      // Clear fetch mock to verify it's not called when circuit is open
+      fetchMock.mockClear();
+
+      // Request should be blocked by circuit breaker
+      await expect(
+        fetchClient(url, { method: 'GET' }, undefined, true),
+      ).rejects.toThrow(CircuitBreakerException);
+
+      // Fetch should not be called when circuit is open
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('bypasses circuit breaker when useCircuitBreaker is false', async () => {
+      const json = fakeJson();
+
+      const url = faker.internet.url({ appendSlash: false });
+      const failureThreshold = circuitBreakerConfig?.failureThreshold ?? 2;
+
+      // Trip the circuit first
+      const errorResponse = {
+        ok: false,
+        status: 500,
+        json: () => Promise.resolve(json),
+      } as Response;
+      for (let i = 0; i < failureThreshold; i++) {
+        fetchMock.mockResolvedValueOnce(errorResponse);
+        await expect(
+          fetchClient(url, { method: 'GET' }, undefined, true),
+        ).rejects.toThrow();
+      }
+
+      // Request with useCircuitBreaker: false should bypass circuit breaker
+      const successResponse = {
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve(json),
+      } as Response;
+      fetchMock.mockResolvedValueOnce(successResponse);
+      const result = await fetchClient(
+        url,
+        { method: 'GET' },
+        undefined,
+        false,
+      );
+
+      expect(fetchMock).toHaveBeenCalledTimes(3);
+      expect(result.status).toBe(200);
+    });
+  });
+
+  describe('with caching and circuit breaker enabled', () => {
+    beforeAll(async () => {
+      await initApp(true, {
+        failureThreshold: faker.number.int({ min: 2, max: 5 }),
+        successThreshold: faker.number.int({ min: 1, max: 5 }),
+        timeout: faker.number.int({ min: 500, max: 2000 }), // Short timeout for faster tests
+        rollingWindow: faker.number.int({ min: 60_000, max: 300_000 }),
+        halfOpenMaxRequests: faker.number.int({ min: 1, max: 10 }),
+      });
+    });
+
+    beforeEach(() => {
+      circuitBreakerService.deleteAll();
+    });
+
+    it('uses different cache keys for circuit breaker enabled vs disabled', async () => {
+      const json = fakeJson();
+      const response = {
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve(json),
+      } as Response;
+      fetchMock.mockResolvedValue(response);
+
+      const url = faker.internet.url({ appendSlash: false });
+      const options = { method: 'GET' };
+
+      // Request without circuit breaker
+      void fetchClient(url, options, undefined, false);
+      await fetchClient(url, options, undefined, false);
+
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+
+      // Request with circuit breaker enabled - should use different cache key
+      void fetchClient(url, options, undefined, true);
+      await fetchClient(url, options, undefined, true);
+
+      // Should make another fetch call due to different cache key
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+
+      const keyWithoutCB = hashSha1(
+        JSON.stringify({ url, ...options, circuitBreakerKey: '' }),
+      );
+      const keyWithCB = hashSha1(
+        JSON.stringify({ url, ...options, circuitBreakerKey: '-cb' }),
+      );
+
+      expect(keyWithoutCB).not.toBe(keyWithCB);
+    });
+
+    it('caches requests with circuit breaker enabled', async () => {
+      const json = fakeJson();
+      const response = {
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve(json),
+      } as Response;
+      fetchMock.mockResolvedValue(response);
+
+      const url = faker.internet.url({ appendSlash: false });
+      const options = { method: 'GET' };
+
+      void fetchClient(url, options, undefined, true);
+      await fetchClient(url, options, undefined, true);
+
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+
+      const key = hashSha1(
+        JSON.stringify({ url, ...options, circuitBreakerKey: '-cb' }),
+      );
+      expect(loggingService.debug).toHaveBeenCalledTimes(2);
+      expect(loggingService.debug).toHaveBeenNthCalledWith(1, {
+        type: 'EXTERNAL_REQUEST_CACHE_MISS',
+        url,
+        key,
+      });
+      expect(loggingService.debug).toHaveBeenNthCalledWith(2, {
+        type: 'EXTERNAL_REQUEST_CACHE_HIT',
+        url,
+        key,
+      });
+    });
+
+    it('does not cache when circuit breaker blocks request', async () => {
+      const json = fakeJson();
+      const errorResponse = {
+        ok: false,
+        status: 500,
+        json: () => Promise.resolve(json),
+      } as Response;
+      fetchMock.mockResolvedValue(errorResponse);
+
+      const url = faker.internet.url({ appendSlash: false });
+      const options = { method: 'GET' };
+
+      // Trip the circuit
+      await expect(
+        fetchClient(url, options, undefined, true),
+      ).rejects.toThrow();
+      await expect(
+        fetchClient(url, options, undefined, true),
+      ).rejects.toThrow();
+
+      fetchMock.mockClear();
+
+      // Circuit is now open - request should be blocked
+      await expect(fetchClient(url, options, undefined, true)).rejects.toThrow(
+        CircuitBreakerException,
+      );
+
+      // Should not cache circuit breaker exceptions
+      expect(fetchMock).not.toHaveBeenCalled();
     });
   });
 });
