@@ -47,6 +47,12 @@ export class FakeCacheService implements ICacheService, ICacheReadiness {
     );
   }
 
+  getTTL(cacheDir: CacheDir): Promise<number | null> {
+    const fields = this.cache[cacheDir.key];
+    if (fields === undefined) return Promise.resolve(-2);
+    return Promise.resolve(-1);
+  }
+
   hSet(
     cacheDir: CacheDir,
     value: string | number,

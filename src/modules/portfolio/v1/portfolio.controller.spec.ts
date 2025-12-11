@@ -5,12 +5,17 @@ import type { INestApplication } from '@nestjs/common';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import request from 'supertest';
 import { Test } from '@nestjs/testing';
+import { ClsModule } from 'nestjs-cls';
 import { PortfolioApiService } from '@/modules/portfolio/v1/portfolio.service';
 import { PortfolioController } from '@/modules/portfolio/v1/portfolio.controller';
 import { ConfigurationModule } from '@/config/configuration.module';
 import configuration from '@/config/entities/__tests__/configuration';
 import { portfolioBuilder } from '@/modules/portfolio/domain/entities/__tests__/portfolio.builder';
 import { PortfolioRouteMapper } from '@/modules/portfolio/v1/portfolio.mapper';
+import {
+  IPortfolioCacheInfoService,
+  PortfolioCacheInfoService,
+} from '@/modules/portfolio/domain/portfolio-cache-info.service';
 
 describe('PortfolioController', () => {
   let app: INestApplication<Server>;
@@ -28,12 +33,16 @@ describe('PortfolioController', () => {
     } as unknown as jest.MockedObjectDeep<PortfolioApiService>;
 
     const moduleFixture = await Test.createTestingModule({
-      imports: [ConfigurationModule.register(configuration)],
+      imports: [ConfigurationModule.register(configuration), ClsModule],
       controllers: [PortfolioController],
       providers: [
         {
           provide: PortfolioApiService,
           useValue: mockPortfolioService,
+        },
+        {
+          provide: IPortfolioCacheInfoService,
+          useClass: PortfolioCacheInfoService,
         },
       ],
     }).compile();

@@ -87,6 +87,15 @@ export class RedisCacheService
     return await this.client.hGet(key, cacheDir.field);
   }
 
+  async getTTL(cacheDir: CacheDir): Promise<number | null> {
+    const key = this._prefixKey(cacheDir.key);
+    try {
+      return await this.client.ttl(key);
+    } catch {
+      return null;
+    }
+  }
+
   async deleteByKey(key: string): Promise<number> {
     const keyWithPrefix = this._prefixKey(key);
     // see https://redis.io/commands/unlink/
