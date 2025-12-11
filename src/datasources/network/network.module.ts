@@ -12,7 +12,6 @@ import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { LogType } from '@/domain/common/entities/log-type.entity';
 import { hashSha1 } from '@/domain/common/utils/utils';
 import { CircuitBreakerService } from '@/datasources/circuit-breaker/circuit-breaker.service';
-import { CircuitBreakerException } from '@/datasources/circuit-breaker/exceptions/circuit-breaker.exception';
 
 export type FetchClient = <T>(
   url: string,
@@ -119,12 +118,10 @@ function createCircuitBreakerRequestFunction(
       return request(url, options, timeout);
     }
 
-    const { hostname } = new URL(url);
-    const circuitName = hostname;
-
-    circuitBreakerService.canProceedOrFail(circuitName);
+    const circuitName = getCircuitName(url);
 
     try {
+      circuitBreakerService.canProceedOrFail(circuitName);
       const response = await request(url, options, timeout);
       circuitBreakerService.recordSuccess(circuitName);
 
@@ -133,7 +130,6 @@ function createCircuitBreakerRequestFunction(
       if (
         (error instanceof NetworkResponseError &&
           error.response.status >= 500) ||
-        error instanceof CircuitBreakerException ||
         error instanceof NetworkRequestError
       ) {
         const circuit = circuitBreakerService.getOrRegisterCircuit(circuitName);
@@ -217,6 +213,20 @@ function getCacheKey(
     circuitBreakerKey,
   });
   return hashSha1(key);
+}
+
+function getCircuitName(url: string): string {
+  let urlObject: URL | null = null;
+  let circuitName: string;
+
+  try {
+    urlObject = new URL(url);
+    circuitName = urlObject.hostname;
+  } catch (error: unknown) {
+    throw new NetworkRequestError(urlObject, error);
+  }
+
+  return circuitName;
 }
 
 /**
