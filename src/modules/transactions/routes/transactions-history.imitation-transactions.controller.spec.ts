@@ -2908,6 +2908,8 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
     let getNotImitatedTokenAddressUrl: string;
 
     beforeEach(async () => {
+      // Reset faker seed to ensure consistent values when running all tests together
+      faker.seed(123);
       const multisigExecutionDate = new Date('2024-03-20T09:42:58Z');
       multisigToken = erc20TokenBuilder().build();
       multisigTransfer = {
