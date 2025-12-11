@@ -119,20 +119,24 @@ function createCircuitBreakerRequestFunction(
       return request(url, options, timeout);
     }
 
-    circuitBreakerService.canProceedOrFail(url);
+    const { hostname } = new URL(url);
+    const circuitName = hostname;
+
+    circuitBreakerService.canProceedOrFail(circuitName);
 
     try {
       const response = await request(url, options, timeout);
-      circuitBreakerService.recordSuccess(url);
+      circuitBreakerService.recordSuccess(circuitName);
 
       return response;
     } catch (error) {
       if (
         (error instanceof NetworkResponseError &&
           error.response.status >= 500) ||
-        error instanceof CircuitBreakerException
+        error instanceof CircuitBreakerException ||
+        error instanceof NetworkRequestError
       ) {
-        const circuit = circuitBreakerService.getOrRegisterCircuit(url);
+        const circuit = circuitBreakerService.getOrRegisterCircuit(circuitName);
         circuitBreakerService.recordFailure(circuit);
       }
 
@@ -156,7 +160,7 @@ function createCachedRequestFunction(
     timeout?: number,
     useCircuitBreaker?: boolean,
   ): Promise<NetworkResponse<T>> => {
-    const key = getCacheKey(url, options, timeout);
+    const key = getCacheKey(url, options, timeout, useCircuitBreaker);
     if (key in cache) {
       loggingService.debug({
         type: LogType.ExternalRequestCacheHit,
@@ -205,11 +209,12 @@ function getCacheKey(
   // JSON.stringify does not produce a stable key but initially
   // use a naive implementation for testing the implementation
   // TODO: Revisit this and use a more stable key
+  const circuitBreakerKey = useCircuitBreaker ? '-cb' : '';
   const key = JSON.stringify({
     url,
     ...requestInit,
     timeout,
-    useCircuitBreaker,
+    circuitBreakerKey,
   });
   return hashSha1(key);
 }

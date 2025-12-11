@@ -409,7 +409,8 @@ export class CircuitBreakerService {
       circuit.config.rollingWindow * this.STALE_BUFFER_FACTOR;
 
     const staleNextAttemptTime = circuit.metrics.nextAttemptTime
-      ? circuit.metrics.nextAttemptTime * this.STALE_BUFFER_FACTOR
+      ? circuit.metrics.nextAttemptTime +
+        circuit.config.timeout * this.STALE_BUFFER_FACTOR
       : undefined;
 
     const isWaitingForNextAttempt =
