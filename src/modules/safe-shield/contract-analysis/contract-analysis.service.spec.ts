@@ -9,7 +9,7 @@ import type { ITransactionApi } from '@/domain/interfaces/transaction-api.interf
 import type { Erc20Decoder } from '@/modules/relay/domain/contracts/decoders/erc-20-decoder.helper';
 import { faker } from '@faker-js/faker';
 import { LogType } from '@/domain/common/entities/log-type.entity';
-import type { Address, Hex } from 'viem';
+import type { Hex } from 'viem';
 import { getAddress } from 'viem';
 import type { ContractAnalysisResponse } from '@/modules/safe-shield/entities/analysis-responses.entity';
 import type { ContractAnalysisResult } from '@/modules/safe-shield/entities/analysis-result.entity';
@@ -23,6 +23,7 @@ import {
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import { rawify } from '@/validation/entities/raw.entity';
 import { contractBuilder } from '@/modules/data-decoder/domain/v2/entities/__tests__/contract.builder';
+import type { ExtractedContract } from '@/modules/safe-shield/utils/extraction.utils';
 import { extractContracts } from '@/modules/safe-shield/utils/extraction.utils';
 
 jest.mock('@/modules/safe-shield/utils/extraction.utils', () => ({
@@ -107,7 +108,7 @@ describe('ContractAnalysisService', () => {
       // Verify that no caching occurs
       const cacheDir = CacheRouter.getContractAnalysisCacheDir({
         chainId,
-        contractPairs: [],
+        contracts: [],
       });
       const cacheContent = await fakeCacheService.hGet(cacheDir);
       expect(cacheContent).toBeUndefined();
@@ -118,8 +119,11 @@ describe('ContractAnalysisService', () => {
 
     it('should return cached analysis when available', async () => {
       const contractAddress = getAddress(faker.finance.ethereumAddress());
-      const contractPairs: Array<[Address, boolean]> = [
-        [contractAddress, false],
+      const contracts = [
+        {
+          address: contractAddress,
+          isDelegateCall: false,
+        },
       ];
       // set up cache with expected response
       const cachedResponse: ContractAnalysisResponse = {
@@ -133,7 +137,7 @@ describe('ContractAnalysisService', () => {
       };
       const cacheDir = CacheRouter.getContractAnalysisCacheDir({
         chainId,
-        contractPairs,
+        contracts,
       });
 
       await fakeCacheService.hSet(
@@ -142,7 +146,7 @@ describe('ContractAnalysisService', () => {
         3600,
       );
 
-      mockExtractContracts.mockReturnValue(contractPairs);
+      mockExtractContracts.mockReturnValue(contracts);
       const analyzeContractSpy = jest.spyOn(service, 'analyzeContract');
 
       const result = await service.analyze({
@@ -166,25 +170,26 @@ describe('ContractAnalysisService', () => {
 
     it('should handle JSON parsing errors in cached data gracefully', async () => {
       const contractAddress = getAddress(faker.finance.ethereumAddress());
-      const contractPairs: Array<[Address, boolean]> = [
-        [contractAddress, false],
+      const contracts: Array<ExtractedContract> = [
+        { address: contractAddress, isDelegateCall: false },
       ];
 
       const cacheDir = CacheRouter.getContractAnalysisCacheDir({
         chainId,
-        contractPairs,
+        contracts,
       });
 
       const invalidCachedData = 'invalid json data';
       await fakeCacheService.hSet(cacheDir, invalidCachedData, 3600);
 
-      mockExtractContracts.mockReturnValue(contractPairs);
+      mockExtractContracts.mockReturnValue(contracts);
 
       // Mock analyzeContract to return a result when cache parsing fails
       const mockAnalysisResult = {
         CONTRACT_VERIFICATION: [],
         CONTRACT_INTERACTION: [],
         DELEGATECALL: [],
+        FALLBACK_HANDLER: [],
       } as Record<ContractStatusGroup, Array<ContractAnalysisResult>>;
 
       jest
@@ -213,17 +218,23 @@ describe('ContractAnalysisService', () => {
     });
 
     it('should analyze contracts and cache result when cache miss', async () => {
-      const contractPairs: Array<[Address, boolean]> = [
-        [getAddress(faker.finance.ethereumAddress()), false],
-        [getAddress(faker.finance.ethereumAddress()), true],
+      const contracts: Array<ExtractedContract> = [
+        {
+          address: getAddress(faker.finance.ethereumAddress()),
+          isDelegateCall: false,
+        },
+        {
+          address: getAddress(faker.finance.ethereumAddress()),
+          isDelegateCall: true,
+        },
       ];
 
       const cacheDir = CacheRouter.getContractAnalysisCacheDir({
         chainId,
-        contractPairs,
+        contracts,
       });
 
-      mockExtractContracts.mockReturnValue(contractPairs);
+      mockExtractContracts.mockReturnValue(contracts);
 
       const result1 = {
         CONTRACT_VERIFICATION: [
@@ -238,7 +249,7 @@ describe('ContractAnalysisService', () => {
         ],
         CONTRACT_INTERACTION: [],
         DELEGATECALL: [],
-      } as Record<ContractStatusGroup, Array<ContractAnalysisResult>>;
+      } as Partial<Record<ContractStatusGroup, Array<ContractAnalysisResult>>>;
 
       const result2 = {
         CONTRACT_VERIFICATION: [
@@ -265,11 +276,11 @@ describe('ContractAnalysisService', () => {
             description: DESCRIPTION_MAPPING.UNEXPECTED_DELEGATECALL(),
           },
         ],
-      } as Record<ContractStatusGroup, Array<ContractAnalysisResult>>;
+      } as Partial<Record<ContractStatusGroup, Array<ContractAnalysisResult>>>;
 
       const expectedResponse: ContractAnalysisResponse = {
-        [contractPairs[0][0]]: result1,
-        [contractPairs[1][0]]: result2,
+        [contracts[0].address]: result1,
+        [contracts[1].address]: result2,
       };
 
       const analyzeContractSpy = jest
@@ -291,14 +302,12 @@ describe('ContractAnalysisService', () => {
       expect(analyzeContractSpy).toHaveBeenNthCalledWith(1, {
         chainId,
         safeAddress,
-        contract: contractPairs[0][0],
-        isDelegateCall: contractPairs[0][1],
+        contract: contracts[0],
       });
       expect(analyzeContractSpy).toHaveBeenNthCalledWith(2, {
         chainId,
         safeAddress,
-        contract: contractPairs[1][0],
-        isDelegateCall: contractPairs[1][1],
+        contract: contracts[1],
       });
 
       expect(result).toEqual(expectedResponse);
@@ -320,19 +329,26 @@ describe('ContractAnalysisService', () => {
     });
 
     it('should throw error if any of the downstream contract analysis fails', async () => {
-      const contractPairs: Array<[Address, boolean]> = [
-        [getAddress(faker.finance.ethereumAddress()), false],
-        [getAddress(faker.finance.ethereumAddress()), true],
-      ];
+      const contracts: Array<ExtractedContract> = [
+        {
+          address: getAddress(faker.finance.ethereumAddress()),
+          isDelegateCall: false,
+        },
 
-      mockExtractContracts.mockReturnValue(contractPairs);
+        {
+          address: getAddress(faker.finance.ethereumAddress()),
+          isDelegateCall: true,
+        },
+      ];
+      mockExtractContracts.mockReturnValue(contracts);
 
       const analyzeContractSpy = jest
         .spyOn(service, 'analyzeContract')
-        .mockResolvedValueOnce({
+        .mockResolvedValue({
           CONTRACT_VERIFICATION: [],
           CONTRACT_INTERACTION: [],
           DELEGATECALL: [],
+          FALLBACK_HANDLER: [],
         })
         .mockRejectedValueOnce(new Error('Transaction API error'));
 
@@ -351,14 +367,12 @@ describe('ContractAnalysisService', () => {
       expect(analyzeContractSpy).toHaveBeenNthCalledWith(1, {
         chainId,
         safeAddress,
-        contract: contractPairs[0][0],
-        isDelegateCall: contractPairs[0][1],
+        contract: contracts[0],
       });
       expect(analyzeContractSpy).toHaveBeenNthCalledWith(2, {
         chainId,
         safeAddress,
-        contract: contractPairs[1][0],
-        isDelegateCall: contractPairs[1][1],
+        contract: contracts[1],
       });
     });
   });
@@ -402,8 +416,7 @@ describe('ContractAnalysisService', () => {
       const result = await service.analyzeContract({
         chainId,
         safeAddress,
-        contract: contractAddress,
-        isDelegateCall: false,
+        contract: { address: contractAddress, isDelegateCall: false },
       });
 
       expect(mockDataDecoderApi.getContracts).toHaveBeenCalledWith({
@@ -475,8 +488,7 @@ describe('ContractAnalysisService', () => {
       const result = await service.analyzeContract({
         chainId,
         safeAddress,
-        contract: contractAddress,
-        isDelegateCall: true,
+        contract: { address: contractAddress, isDelegateCall: true },
       });
 
       expect(mockDataDecoderApi.getContracts).toHaveBeenCalledWith({
@@ -552,8 +564,7 @@ describe('ContractAnalysisService', () => {
       const result = await service.analyzeContract({
         chainId,
         safeAddress,
-        contract: contractAddress,
-        isDelegateCall: false,
+        contract: { address: contractAddress, isDelegateCall: false },
       });
 
       expect(result).toEqual({
@@ -615,8 +626,7 @@ describe('ContractAnalysisService', () => {
       const result = await service.analyzeContract({
         chainId,
         safeAddress,
-        contract: contractAddress,
-        isDelegateCall: true,
+        contract: { address: contractAddress, isDelegateCall: true },
       });
 
       expect(mockDataDecoderApi.getContracts).toHaveBeenCalledWith({
@@ -677,7 +687,7 @@ describe('ContractAnalysisService', () => {
 
         const result = await service.verifyContract({
           chainId,
-          contract: contractAddress,
+          address: contractAddress,
           isDelegateCall: false,
         });
 
@@ -724,7 +734,7 @@ describe('ContractAnalysisService', () => {
 
         const result = await service.verifyContract({
           chainId,
-          contract: contractAddress,
+          address: contractAddress,
           isDelegateCall: false,
         });
 
@@ -771,7 +781,7 @@ describe('ContractAnalysisService', () => {
 
         const result = await service.verifyContract({
           chainId,
-          contract: contractAddress,
+          address: contractAddress,
           isDelegateCall: false,
         });
 
@@ -814,7 +824,7 @@ describe('ContractAnalysisService', () => {
 
         const result = await service.verifyContract({
           chainId,
-          contract: contractAddress,
+          address: contractAddress,
           isDelegateCall: false,
         });
 
@@ -849,7 +859,7 @@ describe('ContractAnalysisService', () => {
 
         const result = await service.verifyContract({
           chainId,
-          contract: contractAddress,
+          address: contractAddress,
           isDelegateCall: false,
         });
 
@@ -870,7 +880,7 @@ describe('ContractAnalysisService', () => {
 
         const result = await service.verifyContract({
           chainId,
-          contract: contractAddress,
+          address: contractAddress,
           isDelegateCall: false,
         });
 
@@ -918,7 +928,7 @@ describe('ContractAnalysisService', () => {
 
         const result = await service.verifyContract({
           chainId,
-          contract: contractAddress,
+          address: contractAddress,
           isDelegateCall: false,
         });
 
@@ -963,7 +973,7 @@ describe('ContractAnalysisService', () => {
 
         const result = await service.verifyContract({
           chainId,
-          contract: contractAddress,
+          address: contractAddress,
           isDelegateCall: true,
         });
 
@@ -998,7 +1008,7 @@ describe('ContractAnalysisService', () => {
 
         const result = await service.verifyContract({
           chainId,
-          contract: contractAddress,
+          address: contractAddress,
           isDelegateCall: true,
         });
 
@@ -1033,7 +1043,7 @@ describe('ContractAnalysisService', () => {
 
         const result = await service.verifyContract({
           chainId,
-          contract: contractAddress,
+          address: contractAddress,
           isDelegateCall: true,
         });
 
@@ -1073,7 +1083,7 @@ describe('ContractAnalysisService', () => {
 
         const result = await service.verifyContract({
           chainId,
-          contract: contractAddress,
+          address: contractAddress,
           isDelegateCall: true,
         });
 
@@ -1108,7 +1118,7 @@ describe('ContractAnalysisService', () => {
       const result = await service.analyzeInteractions({
         chainId,
         safeAddress,
-        contract: contractAddress,
+        address: contractAddress,
       });
 
       expect(mockTransactionApiManager.getApi).toHaveBeenCalledWith(chainId);
@@ -1132,7 +1142,7 @@ describe('ContractAnalysisService', () => {
       const result = await service.analyzeInteractions({
         chainId,
         safeAddress,
-        contract: contractAddress,
+        address: contractAddress,
       });
 
       expect(result).toEqual({});
@@ -1150,7 +1160,7 @@ describe('ContractAnalysisService', () => {
       const result = await service.analyzeInteractions({
         chainId,
         safeAddress,
-        contract: contractAddress,
+        address: contractAddress,
       });
 
       expect(result).toEqual({
@@ -1175,7 +1185,7 @@ describe('ContractAnalysisService', () => {
       const result = await service.analyzeInteractions({
         chainId,
         safeAddress,
-        contract: contractAddress,
+        address: contractAddress,
       });
 
       expect(result).toEqual({
@@ -1204,7 +1214,7 @@ describe('ContractAnalysisService', () => {
       const result = await service.analyzeInteractions({
         chainId,
         safeAddress,
-        contract: contractAddress,
+        address: contractAddress,
       });
 
       expect(result).toEqual({

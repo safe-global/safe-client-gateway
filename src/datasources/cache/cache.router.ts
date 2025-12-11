@@ -2,6 +2,7 @@ import crypto from 'crypto';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import type { Address, Hash } from 'viem';
 import type { TransactionInfo } from '@/modules/transactions/routes/entities/transaction-info.entity';
+import type { ExtractedContract } from '@/modules/safe-shield/utils/extraction.utils';
 
 export class CacheRouter {
   private static readonly ACCOUNT_DATA_SETTINGS_KEY = 'account_data_settings';
@@ -866,17 +867,22 @@ export class CacheRouter {
    * Gets cache directory for contract analysis results.
    *
    * @param {string} args.chainId - Chain ID
-   * @param {[Address, boolean][]} args.contractPairs - Array of pairs: contract address and isDelegateCall flag
+   * @param {ExtractedContract[]} args.contracts - Array of contract addresses and interaction metadata
    * @returns {CacheDir} - Cache directory
    */
   static getContractAnalysisCacheDir(args: {
     chainId: string;
-    contractPairs: Array<[Address, boolean]>;
+    contracts: Array<ExtractedContract>;
   }): CacheDir {
     const contractsHash = crypto.createHash('sha256');
-    contractsHash.update(
-      args.contractPairs.sort((a, b) => a[0].localeCompare(b[0])).join(','),
-    );
+    const contractsString = args.contracts
+      .sort((a, b) => a.address.localeCompare(b.address))
+      .map(
+        ({ address, isDelegateCall, fallbackHandler }) =>
+          `${address}:${isDelegateCall}:${fallbackHandler ?? 'none'}`,
+      )
+      .join(',');
+    contractsHash.update(contractsString);
     return new CacheDir(
       `${args.chainId}_${CacheRouter.CONTRACT_ANALYSIS_KEY}`,
       contractsHash.digest('hex'),

@@ -67,8 +67,16 @@ describe('extraction.utils', () => {
       const result = extractContracts(transactions, mockErc20Decoder);
 
       expect(result).toEqual([
-        [getAddress('0x0000000000000000000000000000000000000abc'), false],
-        [getAddress(contract2), false],
+        {
+          address: getAddress('0x0000000000000000000000000000000000000abc'),
+          isDelegateCall: false,
+          fallbackHandler: undefined,
+        },
+        {
+          address: getAddress(contract2),
+          isDelegateCall: false,
+          fallbackHandler: undefined,
+        },
       ]);
     });
 
@@ -116,7 +124,13 @@ describe('extraction.utils', () => {
         mockErc20Decoder,
       );
 
-      expect(result).toEqual([[contract, true]]);
+      expect(result).toEqual([
+        {
+          address: contract,
+          isDelegateCall: true,
+          fallbackHandler: undefined,
+        },
+      ]);
     });
 
     it('ignores ERC20 transfer transactions', () => {
@@ -244,8 +258,16 @@ describe('extraction.utils', () => {
       const result = extractContracts(transactions, mockErc20Decoder);
 
       expect(result).toEqual([
-        [getAddress(contract1), false],
-        [getAddress(contract2), false],
+        {
+          address: getAddress(contract1),
+          isDelegateCall: false,
+          fallbackHandler: undefined,
+        },
+        {
+          address: getAddress(contract2),
+          isDelegateCall: false,
+          fallbackHandler: undefined,
+        },
       ]);
     });
 
@@ -267,7 +289,279 @@ describe('extraction.utils', () => {
 
       const result = extractContracts(transactions, mockErc20Decoder);
 
-      expect(result).toEqual([[contract, true]]);
+      expect(result).toEqual([
+        {
+          address: contract,
+          isDelegateCall: true,
+          fallbackHandler: undefined,
+        },
+      ]);
+    });
+
+    it('sets fallback handler for a transaction with setFallbackHandler method', () => {
+      mockErc20Decoder.helpers.isTransfer.mockReturnValue(false);
+      mockErc20Decoder.helpers.isTransferFrom.mockReturnValue(false);
+
+      const contract = getAddress(faker.finance.ethereumAddress());
+      const handlerAddress = getAddress(faker.finance.ethereumAddress());
+
+      const transactions = [
+        createTransaction({
+          to: contract,
+          dataDecoded: createDataDecoded({
+            method: 'setFallbackHandler',
+            parameters: [
+              {
+                name: 'handler',
+                type: 'address',
+                value: handlerAddress,
+                valueDecoded: null,
+              },
+            ],
+          }),
+          operation: 0,
+        }),
+      ];
+
+      const result = extractContracts(transactions, mockErc20Decoder);
+
+      expect(result).toEqual([
+        {
+          address: contract,
+          isDelegateCall: false,
+          fallbackHandler: handlerAddress,
+        },
+      ]);
+    });
+
+    it('aggregates both isDelegate flag and fallbackHandler value across multiple transactions', () => {
+      mockErc20Decoder.helpers.isTransfer.mockReturnValue(false);
+      mockErc20Decoder.helpers.isTransferFrom.mockReturnValue(false);
+
+      const contract = getAddress(faker.finance.ethereumAddress());
+      const handlerAddress = getAddress(faker.finance.ethereumAddress());
+
+      const transactions = [
+        createTransaction({ to: contract, operation: 0 }),
+        createTransaction({
+          to: contract,
+          operation: 1,
+          dataDecoded: createDataDecoded({ method: 'someMethod' }),
+        }),
+        createTransaction({
+          to: contract,
+          operation: 0,
+          dataDecoded: createDataDecoded({
+            method: 'setFallbackHandler',
+            parameters: [
+              {
+                name: 'handler',
+                type: 'address',
+                value: handlerAddress,
+                valueDecoded: null,
+              },
+            ],
+          }),
+        }),
+      ];
+
+      const result = extractContracts(transactions, mockErc20Decoder);
+
+      expect(result).toEqual([
+        {
+          address: contract,
+          isDelegateCall: true,
+          fallbackHandler: handlerAddress,
+        },
+      ]);
+    });
+
+    it('uses the last fallback handler when multiple setFallbackHandler transactions exist', () => {
+      mockErc20Decoder.helpers.isTransfer.mockReturnValue(false);
+      mockErc20Decoder.helpers.isTransferFrom.mockReturnValue(false);
+
+      const contract = getAddress(faker.finance.ethereumAddress());
+      const firstHandler = getAddress(faker.finance.ethereumAddress());
+      const secondHandler = getAddress(faker.finance.ethereumAddress());
+      const thirdHandler = getAddress(faker.finance.ethereumAddress());
+
+      const transactions = [
+        createTransaction({
+          to: contract,
+          dataDecoded: createDataDecoded({
+            method: 'setFallbackHandler',
+            parameters: [
+              {
+                name: 'handler',
+                type: 'address',
+                value: firstHandler,
+                valueDecoded: null,
+              },
+            ],
+          }),
+        }),
+        createTransaction({
+          to: contract,
+          dataDecoded: createDataDecoded({ method: 'otherMethod' }),
+        }),
+        createTransaction({
+          to: contract,
+          dataDecoded: createDataDecoded({
+            method: 'setFallbackHandler',
+            parameters: [
+              {
+                name: 'handler',
+                type: 'address',
+                value: secondHandler,
+                valueDecoded: null,
+              },
+            ],
+          }),
+        }),
+        createTransaction({
+          to: contract,
+          dataDecoded: createDataDecoded({
+            method: 'setFallbackHandler',
+            parameters: [
+              {
+                name: 'handler',
+                type: 'address',
+                value: thirdHandler,
+                valueDecoded: null,
+              },
+            ],
+          }),
+        }),
+      ];
+
+      const result = extractContracts(transactions, mockErc20Decoder);
+
+      expect(result).toEqual([
+        {
+          address: contract,
+          isDelegateCall: false,
+          fallbackHandler: thirdHandler,
+        },
+      ]);
+    });
+
+    it('keeps fallbackHandler set even if subsequent transactions are not setFallbackHandler', () => {
+      mockErc20Decoder.helpers.isTransfer.mockReturnValue(false);
+      mockErc20Decoder.helpers.isTransferFrom.mockReturnValue(false);
+
+      const contract = getAddress(faker.finance.ethereumAddress());
+      const handlerAddress = getAddress(faker.finance.ethereumAddress());
+
+      const transactions = [
+        createTransaction({
+          to: contract,
+          dataDecoded: createDataDecoded({
+            method: 'setFallbackHandler',
+            parameters: [
+              {
+                name: 'handler',
+                type: 'address',
+                value: handlerAddress,
+                valueDecoded: null,
+              },
+            ],
+          }),
+        }),
+        createTransaction({
+          to: contract,
+          dataDecoded: createDataDecoded({ method: 'otherMethod' }),
+        }),
+        createTransaction({
+          to: contract,
+          dataDecoded: createDataDecoded({ method: 'anotherMethod' }),
+        }),
+      ];
+
+      const result = extractContracts(transactions, mockErc20Decoder);
+      expect(result).toEqual([
+        {
+          address: contract,
+          isDelegateCall: false,
+          fallbackHandler: handlerAddress,
+        },
+      ]);
+    });
+
+    it('handles different contracts with different delegateCall flags and fallbackHandler method', () => {
+      mockErc20Decoder.helpers.isTransfer.mockReturnValue(false);
+      mockErc20Decoder.helpers.isTransferFrom.mockReturnValue(false);
+
+      const regularContract = getAddress(faker.finance.ethereumAddress());
+      const delegateContract = getAddress(faker.finance.ethereumAddress());
+      const fallbackContract = getAddress(faker.finance.ethereumAddress());
+      const bothContract = getAddress(faker.finance.ethereumAddress());
+      const handlerAddress = getAddress(faker.finance.ethereumAddress());
+
+      const transactions = [
+        createTransaction({
+          to: regularContract,
+          dataDecoded: createDataDecoded({ method: 'regularMethod' }),
+        }),
+        createTransaction({
+          to: delegateContract,
+          operation: 1,
+          dataDecoded: createDataDecoded({ method: 'delegateMethod' }),
+        }),
+        createTransaction({
+          to: fallbackContract,
+          dataDecoded: createDataDecoded({
+            method: 'setFallbackHandler',
+            parameters: [
+              {
+                name: 'handler',
+                type: 'address',
+                value: handlerAddress,
+                valueDecoded: null,
+              },
+            ],
+          }),
+        }),
+        createTransaction({
+          to: bothContract,
+          operation: 1,
+          dataDecoded: createDataDecoded({
+            method: 'setFallbackHandler',
+            parameters: [
+              {
+                name: 'handler',
+                type: 'address',
+                value: handlerAddress,
+                valueDecoded: null,
+              },
+            ],
+          }),
+        }),
+      ];
+
+      const result = extractContracts(transactions, mockErc20Decoder);
+
+      expect(result).toEqual([
+        {
+          address: regularContract,
+          isDelegateCall: false,
+          fallbackHandler: undefined,
+        },
+        {
+          address: delegateContract,
+          isDelegateCall: true,
+          fallbackHandler: undefined,
+        },
+        {
+          address: fallbackContract,
+          isDelegateCall: false,
+          fallbackHandler: handlerAddress,
+        },
+        {
+          address: bothContract,
+          isDelegateCall: true,
+          fallbackHandler: handlerAddress,
+        },
+      ]);
     });
   });
 

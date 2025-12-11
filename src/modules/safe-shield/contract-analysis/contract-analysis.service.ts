@@ -29,7 +29,10 @@ import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { Inject, Injectable } from '@nestjs/common';
 import { Address } from 'viem';
 import { logCacheHit, logCacheMiss } from '@/modules/safe-shield/utils/common';
-import { extractContracts } from '@/modules/safe-shield/utils/extraction.utils';
+import {
+  extractContracts,
+  ExtractedContract,
+} from '@/modules/safe-shield/utils/extraction.utils';
 import { Erc20Decoder } from '@/modules/relay/domain/contracts/decoders/erc-20-decoder.helper';
 import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
 import { MultisigTransactionPageSchema } from '@/modules/safe/domain/entities/multisig-transaction.entity';
@@ -74,16 +77,13 @@ export class ContractAnalysisService {
     safeAddress: Address;
     transactions: Array<DecodedTransactionData>;
   }): Promise<ContractAnalysisResponse> {
-    const contractPairs = extractContracts(
-      args.transactions,
-      this.erc20Decoder,
-    );
-    if (!contractPairs.length) {
+    const contracts = extractContracts(args.transactions, this.erc20Decoder);
+    if (!contracts.length) {
       return {};
     }
     const cacheDir = CacheRouter.getContractAnalysisCacheDir({
       chainId: args.chainId,
-      contractPairs,
+      contracts,
     });
 
     const cached = await this.cacheService.hGet(cacheDir);
@@ -101,13 +101,12 @@ export class ContractAnalysisService {
 
     const analysisResults: ContractAnalysisResponse = Object.fromEntries(
       await Promise.all(
-        contractPairs.map(async ([contract, isDelegateCall]) => [
-          contract,
+        contracts.map(async (contract) => [
+          contract.address,
           await this.analyzeContract({
             chainId: args.chainId,
             safeAddress: args.safeAddress,
             contract,
-            isDelegateCall,
           }),
         ]),
       ),
@@ -127,21 +126,20 @@ export class ContractAnalysisService {
    *
    * @param {string} args.chainId - The chain ID.
    * @param {Address} args.safeAddress - The Safe wallet address.
-   * @param {Address} args.contract - The contract address to analyze.
-   * @param {boolean} args.isDelegateCall - Whether the contract is called via delegatecall.
+   * @param {Address} args.contract - The contract and its metadata to analyze.
    * @returns {Promise<GroupedAnalysisResults<ContractAnalysisResult>>} Grouped analysis results by category.
    */
   public async analyzeContract(args: {
     chainId: string;
     safeAddress: Address;
-    contract: Address;
-    isDelegateCall: boolean;
+    contract: ExtractedContract;
   }): Promise<GroupedAnalysisResults<ContractAnalysisResult>> {
-    const { chainId, safeAddress, contract, isDelegateCall } = args;
+    const { chainId, safeAddress, contract } = args;
+    const { address, isDelegateCall } = contract;
 
     const [verificationResult, interactionResult] = await Promise.all([
-      this.verifyContract({ chainId, contract, isDelegateCall }),
-      this.analyzeInteractions({ chainId, safeAddress, contract }),
+      this.verifyContract({ chainId, address, isDelegateCall }),
+      this.analyzeInteractions({ chainId, safeAddress, address }),
     ]);
 
     return {
@@ -154,14 +152,14 @@ export class ContractAnalysisService {
    * Verify a contract. In case of delegateCall, check for trustworthiness.
    *
    * @param {string} args.chainId - The chain ID.
-   * @param {Address} args.contract - The contract address.
+   * @param {Address} args.address - The contract address.
    * @param {boolean} args.isDelegateCall - Whether the contract is called via delegateCall.
    * @returns {Promise<GroupedAnalysisResults<ContractAnalysisResult> & {name?: string;logoUrl?: string;}>}
    * - Partial analysis result groups: verification result, delegateCall result.
    */
   public async verifyContract(args: {
     chainId: string;
-    contract: Address;
+    address: Address;
     isDelegateCall: boolean;
   }): Promise<
     GroupedAnalysisResults<ContractAnalysisResult> & {
@@ -169,11 +167,11 @@ export class ContractAnalysisService {
       logoUrl?: string;
     }
   > {
-    const { chainId, contract, isDelegateCall } = args;
+    const { chainId, address, isDelegateCall } = args;
 
     try {
       const raw = await this.dataDecoderApi.getContracts({
-        address: contract,
+        address,
         chainId,
       });
       const { count, results } = ContractPageSchema.parse(raw);
@@ -214,15 +212,15 @@ export class ContractAnalysisService {
   public async analyzeInteractions(args: {
     chainId: string;
     safeAddress: Address;
-    contract: Address;
+    address: Address;
   }): Promise<GroupedAnalysisResults<ContractAnalysisResult>> {
-    const { chainId, safeAddress, contract } = args;
+    const { chainId, safeAddress, address } = args;
     try {
       const transactionApi = await this.transactionApiManager.getApi(chainId);
 
       const page = await transactionApi.getMultisigTransactions({
         safeAddress,
-        to: contract,
+        to: address,
         executed: true,
         limit: 1,
       });
