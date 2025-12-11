@@ -22,6 +22,7 @@ export const SEVERITY_MAPPING: Record<
   NEW_CONTRACT: 'INFO',
   KNOWN_CONTRACT: 'OK',
   UNEXPECTED_DELEGATECALL: 'WARN',
+  UNOFFICIAL_FALLBACK_HANDLER: 'WARN',
 };
 
 /**
@@ -37,6 +38,7 @@ export const TITLE_MAPPING: Record<ContractStatus | CommonStatus, string> = {
   KNOWN_CONTRACT: 'Known contract',
   UNEXPECTED_DELEGATECALL: 'Unexpected delegateCall',
   FAILED: 'Contract analysis failed',
+  UNOFFICIAL_FALLBACK_HANDLER: 'Unofficial fallback handler',
 };
 
 type DescriptionArgs = {
@@ -65,4 +67,6 @@ export const DESCRIPTION_MAPPING: Record<
   KNOWN_CONTRACT: () => 'You have already interacted with this contract.',
   UNEXPECTED_DELEGATECALL: () =>
     'This transaction calls a smart contract that will be able to modify your Safe account. Learn more',
+  UNOFFICIAL_FALLBACK_HANDLER: () =>
+    'Verify the fallback handler is trusted and secure before proceeding. ',
 };

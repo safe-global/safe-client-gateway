@@ -4,45 +4,94 @@ import { isExecTransaction } from '@/modules/safe-shield/utils/transaction-mappi
 import { getAddress, type Address } from 'viem';
 import uniq from 'lodash/uniq';
 
+const SET_FALLBACK_HANDLER_METHOD = 'setFallbackHandler';
+const PARAM_NAME_HANDLER = 'handler';
+
 /**
- * Extracts the unique contract addresses and pair it with isDelegateCall flag.
- * In case of multiple interactions with the same contract, if at least one is a delegate call,
- * the flag will be true.
+ * Represents an extracted contract from a transaction.
+ */
+export interface ExtractedContract {
+  /** The contract address */
+  readonly address: Address;
+  /** Whether the interaction is a delegate call. */
+  readonly isDelegateCall: boolean;
+  /** The fallback handler address if the transaction is setting one, undefined otherwise. */
+  readonly fallbackHandler?: Address | undefined;
+}
+
+/**
+ * Extracts the unique contract addresses with their interaction metadata.
+ * In case of multiple interactions with the same contract:
+ * - If at least one is a delegate call, isDelegateCall will be true
+ * - If any transaction sets a fallback handler, the last handler address will be stored
  * @param {Array<DecodedTransactionData>} transactions - The transactions.
  * @param {Erc20Decoder} erc20Decoder - The ERC-20 decoder to identify token transfers.
- * @returns {Array<[Address, boolean]>} The unique contract addresses and isDelegateCall flag.
+ * @returns {Array<ExtractedContract>} The unique extracted contracts with their metadata.
  */
 export function extractContracts(
   transactions: Array<DecodedTransactionData>,
   erc20Decoder: Erc20Decoder,
-): Array<[Address, boolean]> {
-  const extractContract = (
-    tx: DecodedTransactionData,
-  ): [Address | undefined, boolean] => {
-    const { dataDecoded, data, to, operation } = tx;
-
-    // all cases where the transaction is not a contract interaction
-    if (
+): Array<ExtractedContract> {
+  const isNonContractInteraction = (tx: DecodedTransactionData): boolean => {
+    const { data } = tx;
+    return (
       data === '0x' ||
       !data ||
       erc20Decoder.helpers.isTransfer(data) ||
       erc20Decoder.helpers.isTransferFrom(data) ||
-      (isExecTransaction(tx) && dataDecoded?.parameters?.[2].value === '0x')
-    ) {
-      return [undefined, false];
-    }
-    return [getAddress(to), operation === 1 /* DELEGATE_CALL */];
+      (isExecTransaction(tx) && tx.dataDecoded?.parameters?.[2].value === '0x')
+    );
   };
 
-  const result: Record<Address, boolean> = {};
+  const contractsByAddress: Map<
+    Address,
+    { isDelegateCall: boolean; fallbackHandler: Address | undefined }
+  > = new Map();
 
   for (const tx of transactions) {
-    const [address, isDelegateCall] = extractContract(tx);
-    if (!address) continue;
+    if (isNonContractInteraction(tx)) continue;
 
-    result[address] = (result[address] ?? false) || isDelegateCall;
+    const contract: Address = getAddress(tx.to);
+    const isDelegateCall = tx.operation === 1;
+    const fallbackHandler = isFallbackHandler(tx);
+
+    const existing = contractsByAddress.get(contract) ?? {
+      isDelegateCall: false,
+      fallbackHandler: undefined,
+    };
+
+    contractsByAddress.set(contract, {
+      isDelegateCall: existing.isDelegateCall || isDelegateCall,
+      fallbackHandler: fallbackHandler ?? existing.fallbackHandler,
+    });
   }
-  return Object.entries(result) as Array<[Address, boolean]>;
+
+  return Array.from(contractsByAddress.entries()).map(
+    ([address, { isDelegateCall, fallbackHandler }]) => ({
+      address,
+      isDelegateCall,
+      fallbackHandler,
+    }),
+  );
+}
+
+/**
+ * Checks if a transaction is setting a fallback handler and returns the handler address.
+ * @param {DecodedTransactionData} tx - The transaction to check.
+ * @returns {Address | undefined} The fallback handler address if the transaction is setting one, undefined otherwise.
+ */
+function isFallbackHandler(tx: DecodedTransactionData): Address | undefined {
+  const { dataDecoded } = tx;
+  if (dataDecoded?.method !== SET_FALLBACK_HANDLER_METHOD) {
+    return undefined;
+  }
+  const handlerValue = dataDecoded.parameters?.find(
+    ({ name }) => name === PARAM_NAME_HANDLER,
+  )?.value;
+
+  return typeof handlerValue === 'string'
+    ? (handlerValue as Address)
+    : undefined;
 }
 
 /**
