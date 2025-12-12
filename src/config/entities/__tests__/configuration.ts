@@ -369,6 +369,7 @@ export default (): ReturnType<typeof configuration> => ({
   },
   safeTransaction: {
     useVpcUrl: false,
+    apiKey: faker.string.hexadecimal({ length: 32 }),
   },
   safeWebApp: {
     baseUri: faker.internet.url({ appendSlash: false }),

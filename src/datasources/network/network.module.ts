@@ -156,8 +156,11 @@ function getCacheKey(
       useFactory: fetchClientFactory,
       inject: [IConfigurationService, LoggingService],
     },
-    { provide: NetworkService, useClass: FetchNetworkService },
+    {
+      provide: NetworkService,
+      useClass: FetchNetworkService,
+    },
   ],
-  exports: [NetworkService],
+  exports: [NetworkService, 'FetchClient'],
 })
 export class NetworkModule {}
