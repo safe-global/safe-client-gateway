@@ -35,6 +35,18 @@ The project requires some ABIs that are generated after install. In order to man
 yarn generate-abis
 ```
 
+## Setup your env
+
+We recommend using what is available in the .env.sample file:
+
+```bash
+cp .env.sample .env
+```
+
+Then edit your `.env` file with your configuration values.
+
+Please review the required API keys in the `.env` file and ensure you have created the necessary keys for the services you plan to use.
+
 ## Running the app
 
 1. Start Redis instance. By default, it will start on port `6379` of `localhost`.
