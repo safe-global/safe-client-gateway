@@ -444,7 +444,9 @@ describe('NetworkModule', () => {
 
       const url = faker.internet.url({ appendSlash: false });
 
-      const result = await fetchClient(url, { method: 'GET' }, undefined, true);
+      const result = await fetchClient(url, { method: 'GET' }, undefined, {
+        key: 'test-circuit',
+      });
 
       expect(fetchMock).toHaveBeenCalledTimes(1);
       expect(result.status).toBe(200);
@@ -466,29 +468,27 @@ describe('NetworkModule', () => {
       // Trip the circuit
       for (let i = 0; i < failureThreshold; i++) {
         await expect(
-          fetchClient(url, { method: 'GET' }, undefined, true),
+          fetchClient(url, { method: 'GET' }, undefined, {
+            key: 'test-circuit',
+          }),
         ).rejects.toThrow();
       }
 
-      // Clear fetch mock to verify it's not called when circuit is open
       fetchMock.mockClear();
 
-      // Request should be blocked by circuit breaker
       await expect(
-        fetchClient(url, { method: 'GET' }, undefined, true),
+        fetchClient(url, { method: 'GET' }, undefined, { key: 'test-circuit' }),
       ).rejects.toThrow(CircuitBreakerException);
 
-      // Fetch should not be called when circuit is open
       expect(fetchMock).not.toHaveBeenCalled();
     });
 
-    it('bypasses circuit breaker when useCircuitBreaker is false', async () => {
+    it('bypasses circuit breaker when circuitBreaker is not provided', async () => {
       const json = fakeJson();
 
       const url = faker.internet.url({ appendSlash: false });
       const failureThreshold = circuitBreakerConfig?.failureThreshold ?? 2;
 
-      // Trip the circuit first
       const errorResponse = {
         ok: false,
         status: 500,
@@ -497,11 +497,13 @@ describe('NetworkModule', () => {
       for (let i = 0; i < failureThreshold; i++) {
         fetchMock.mockResolvedValueOnce(errorResponse);
         await expect(
-          fetchClient(url, { method: 'GET' }, undefined, true),
+          fetchClient(url, { method: 'GET' }, undefined, {
+            key: 'test-circuit',
+          }),
         ).rejects.toThrow();
       }
 
-      // Request with useCircuitBreaker: false should bypass circuit breaker
+      fetchMock.mockClear();
       const successResponse = {
         ok: true,
         status: 200,
@@ -512,10 +514,10 @@ describe('NetworkModule', () => {
         url,
         { method: 'GET' },
         undefined,
-        false,
+        undefined,
       );
 
-      expect(fetchMock).toHaveBeenCalledTimes(3);
+      expect(fetchMock).toHaveBeenCalledTimes(1);
       expect(result.status).toBe(200);
     });
   });
@@ -523,9 +525,9 @@ describe('NetworkModule', () => {
   describe('with caching and circuit breaker enabled', () => {
     beforeAll(async () => {
       await initApp(true, {
-        failureThreshold: faker.number.int({ min: 2, max: 5 }),
+        failureThreshold: 2, // Fixed threshold for predictable tests
         successThreshold: faker.number.int({ min: 1, max: 5 }),
-        timeout: faker.number.int({ min: 500, max: 2000 }), // Short timeout for faster tests
+        timeout: faker.number.int({ min: 500, max: 2000 }),
         rollingWindow: faker.number.int({ min: 60_000, max: 300_000 }),
         halfOpenMaxRequests: faker.number.int({ min: 1, max: 10 }),
       });
@@ -547,24 +549,21 @@ describe('NetworkModule', () => {
       const url = faker.internet.url({ appendSlash: false });
       const options = { method: 'GET' };
 
-      // Request without circuit breaker
-      void fetchClient(url, options, undefined, false);
-      await fetchClient(url, options, undefined, false);
+      void fetchClient(url, options, undefined, undefined);
+      await fetchClient(url, options, undefined, undefined);
 
       expect(fetchMock).toHaveBeenCalledTimes(1);
 
-      // Request with circuit breaker enabled - should use different cache key
-      void fetchClient(url, options, undefined, true);
-      await fetchClient(url, options, undefined, true);
+      void fetchClient(url, options, undefined, { key: 'test-circuit' });
+      await fetchClient(url, options, undefined, { key: 'test-circuit' });
 
-      // Should make another fetch call due to different cache key
       expect(fetchMock).toHaveBeenCalledTimes(2);
 
       const keyWithoutCB = hashSha1(
         JSON.stringify({ url, ...options, circuitBreakerKey: '' }),
       );
       const keyWithCB = hashSha1(
-        JSON.stringify({ url, ...options, circuitBreakerKey: '-cb' }),
+        JSON.stringify({ url, ...options, circuitBreakerKey: 'test-circuit' }),
       );
 
       expect(keyWithoutCB).not.toBe(keyWithCB);
@@ -582,13 +581,13 @@ describe('NetworkModule', () => {
       const url = faker.internet.url({ appendSlash: false });
       const options = { method: 'GET' };
 
-      void fetchClient(url, options, undefined, true);
-      await fetchClient(url, options, undefined, true);
+      void fetchClient(url, options, undefined, { key: 'test-circuit' });
+      await fetchClient(url, options, undefined, { key: 'test-circuit' });
 
       expect(fetchMock).toHaveBeenCalledTimes(1);
 
       const key = hashSha1(
-        JSON.stringify({ url, ...options, circuitBreakerKey: '-cb' }),
+        JSON.stringify({ url, ...options, circuitBreakerKey: 'test-circuit' }),
       );
       expect(loggingService.debug).toHaveBeenCalledTimes(2);
       expect(loggingService.debug).toHaveBeenNthCalledWith(1, {
@@ -615,22 +614,19 @@ describe('NetworkModule', () => {
       const url = faker.internet.url({ appendSlash: false });
       const options = { method: 'GET' };
 
-      // Trip the circuit
       await expect(
-        fetchClient(url, options, undefined, true),
+        fetchClient(url, options, undefined, { key: 'test-circuit' }),
       ).rejects.toThrow();
       await expect(
-        fetchClient(url, options, undefined, true),
+        fetchClient(url, options, undefined, { key: 'test-circuit' }),
       ).rejects.toThrow();
 
       fetchMock.mockClear();
 
-      // Circuit is now open - request should be blocked
-      await expect(fetchClient(url, options, undefined, true)).rejects.toThrow(
-        CircuitBreakerException,
-      );
+      await expect(
+        fetchClient(url, options, undefined, { key: 'test-circuit' }),
+      ).rejects.toThrow(CircuitBreakerException);
 
-      // Should not cache circuit breaker exceptions
       expect(fetchMock).not.toHaveBeenCalled();
     });
   });

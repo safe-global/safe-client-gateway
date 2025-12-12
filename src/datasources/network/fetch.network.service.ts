@@ -34,7 +34,7 @@ export class FetchNetworkService implements INetworkService {
           headers: args.networkRequest?.headers,
         },
         args.networkRequest?.timeout,
-        args.networkRequest?.useCircuitBreaker,
+        args.networkRequest?.circuitBreaker,
       );
     } catch (error) {
       this.logErrorResponse(error, performance.now() - startTimeMs);
@@ -62,7 +62,7 @@ export class FetchNetworkService implements INetworkService {
           },
         },
         args.networkRequest?.timeout,
-        args.networkRequest?.useCircuitBreaker,
+        args.networkRequest?.circuitBreaker,
       );
     } catch (error) {
       this.logErrorResponse(error, performance.now() - startTimeMs);
@@ -97,7 +97,7 @@ export class FetchNetworkService implements INetworkService {
           headers,
         },
         args.networkRequest?.timeout,
-        args.networkRequest?.useCircuitBreaker,
+        args.networkRequest?.circuitBreaker,
       );
     } catch (error) {
       this.logErrorResponse(error, performance.now() - startTimeMs);

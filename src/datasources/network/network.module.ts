@@ -12,12 +12,13 @@ import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { LogType } from '@/domain/common/entities/log-type.entity';
 import { hashSha1 } from '@/domain/common/utils/utils';
 import { CircuitBreakerService } from '@/datasources/circuit-breaker/circuit-breaker.service';
+import { NetworkRequest } from '@/datasources/network/entities/network.request.entity';
 
 export type FetchClient = <T>(
   url: string,
   options: RequestInit,
   timeout?: number,
-  useCircuitBreaker?: boolean,
+  circuitBreaker?: NetworkRequest['circuitBreaker'],
 ) => Promise<NetworkResponse<T>>;
 
 const cache: Record<string, Promise<NetworkResponse<unknown>>> = {};
@@ -93,7 +94,7 @@ function createRequestFunction(defaultTimeout: number) {
  * This function intercepts requests and applies circuit breaker protection:
  * - Checks if the circuit is open before allowing the request
  * - Records successes and failures based on response status
- * - Must be explicitly enabled per request via the useCircuitBreaker parameter
+ * - Must be explicitly enabled per request via the circuitBreaker parameter
  *
  * @param request - The base request function to wrap
  * @param circuitBreakerService - Service managing circuit breaker state
@@ -112,18 +113,16 @@ function createCircuitBreakerRequestFunction(
     url: string,
     options: RequestInit,
     timeout?: number,
-    useCircuitBreaker?: boolean,
+    circuitBreaker?: NetworkRequest['circuitBreaker'],
   ): Promise<NetworkResponse<T>> => {
-    if (!useCircuitBreaker) {
+    if (!circuitBreaker || !circuitBreaker.key) {
       return request(url, options, timeout);
     }
 
-    const circuitName = getCircuitName(url);
-
     try {
-      circuitBreakerService.canProceedOrFail(circuitName);
+      circuitBreakerService.canProceedOrFail(circuitBreaker.key);
       const response = await request(url, options, timeout);
-      circuitBreakerService.recordSuccess(circuitName);
+      circuitBreakerService.recordSuccess(circuitBreaker.key);
 
       return response;
     } catch (error) {
@@ -132,7 +131,9 @@ function createCircuitBreakerRequestFunction(
           error.response.status >= 500) ||
         error instanceof NetworkRequestError
       ) {
-        const circuit = circuitBreakerService.getOrRegisterCircuit(circuitName);
+        const circuit = circuitBreakerService.getOrRegisterCircuit(
+          circuitBreaker.key,
+        );
         circuitBreakerService.recordFailure(circuit);
       }
 
@@ -146,7 +147,7 @@ function createCachedRequestFunction(
     url: string,
     options: RequestInit,
     timeout?: number,
-    useCircuitBreaker?: boolean,
+    circuitBreaker?: NetworkRequest['circuitBreaker'],
   ) => Promise<NetworkResponse<T>>,
   loggingService: ILoggingService,
 ) {
@@ -154,9 +155,9 @@ function createCachedRequestFunction(
     url: string,
     options: RequestInit,
     timeout?: number,
-    useCircuitBreaker?: boolean,
+    circuitBreaker?: NetworkRequest['circuitBreaker'],
   ): Promise<NetworkResponse<T>> => {
-    const key = getCacheKey(url, options, timeout, useCircuitBreaker);
+    const key = getCacheKey(url, options, timeout, circuitBreaker);
     if (key in cache) {
       loggingService.debug({
         type: LogType.ExternalRequestCacheHit,
@@ -170,7 +171,7 @@ function createCachedRequestFunction(
         key,
       });
 
-      cache[key] = request(url, options, timeout, useCircuitBreaker)
+      cache[key] = request(url, options, timeout, circuitBreaker)
         .catch((err) => {
           loggingService.debug({
             type: LogType.ExternalRequestCacheError,
@@ -192,16 +193,16 @@ function getCacheKey(
   url: string,
   requestInit?: RequestInit,
   timeout?: number,
-  useCircuitBreaker?: boolean,
+  circuitBreaker?: NetworkRequest['circuitBreaker'],
 ): string {
-  if (!requestInit && timeout === undefined && !useCircuitBreaker) {
+  if (!requestInit && timeout === undefined && !circuitBreaker) {
     return url;
   }
 
   // JSON.stringify does not produce a stable key but initially
   // use a naive implementation for testing the implementation
   // TODO: Revisit this and use a more stable key
-  const circuitBreakerKey = useCircuitBreaker ? '-cb' : '';
+  const circuitBreakerKey = circuitBreaker?.key || '';
   const key = JSON.stringify({
     url,
     ...requestInit,
@@ -209,20 +210,6 @@ function getCacheKey(
     circuitBreakerKey,
   });
   return hashSha1(key);
-}
-
-function getCircuitName(url: string): string {
-  let urlObject: URL | null = null;
-  let circuitName: string;
-
-  try {
-    urlObject = new URL(url);
-    circuitName = urlObject.hostname;
-  } catch (error: unknown) {
-    throw new NetworkRequestError(urlObject, error);
-  }
-
-  return circuitName;
 }
 
 /**
