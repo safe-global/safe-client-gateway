@@ -40,6 +40,7 @@ describe('FetchNetworkService', () => {
           method: 'GET',
         },
         undefined,
+        undefined,
       );
       expect(loggingService.info).toHaveBeenCalledTimes(1);
       expect(loggingService.info).toHaveBeenCalledWith({
@@ -70,6 +71,7 @@ describe('FetchNetworkService', () => {
             test: 'value',
           },
         },
+        undefined,
         undefined,
       );
       expect(loggingService.info).toHaveBeenCalledTimes(1);
@@ -105,6 +107,7 @@ describe('FetchNetworkService', () => {
         {
           method: 'GET',
         },
+        undefined,
         undefined,
       );
       expect(loggingService.info).toHaveBeenCalledTimes(1);
@@ -168,6 +171,7 @@ describe('FetchNetworkService', () => {
           method: 'GET',
         },
         timeout,
+        undefined,
       );
     });
 
@@ -187,6 +191,7 @@ describe('FetchNetworkService', () => {
         {
           method: 'GET',
         },
+        undefined,
         undefined,
       );
       // Verify timeout is not passed as third argument
@@ -213,6 +218,7 @@ describe('FetchNetworkService', () => {
             'Content-Type': 'application/json',
           },
         },
+        undefined,
         undefined,
       );
       expect(loggingService.info).toHaveBeenCalledTimes(1);
@@ -247,6 +253,7 @@ describe('FetchNetworkService', () => {
           },
           body: JSON.stringify(data),
         },
+        undefined,
         undefined,
       );
       expect(loggingService.info).toHaveBeenCalledTimes(1);
@@ -315,6 +322,7 @@ describe('FetchNetworkService', () => {
           },
         },
         timeout,
+        undefined,
       );
     });
 
@@ -340,6 +348,7 @@ describe('FetchNetworkService', () => {
           },
         },
         undefined,
+        undefined,
       );
       // Verify timeout is not passed as third argument
       const callArgs = fetchClientMock.mock.calls[0];
@@ -359,6 +368,7 @@ describe('FetchNetworkService', () => {
         {
           method: 'DELETE',
         },
+        undefined,
         undefined,
       );
       expect(loggingService.info).toHaveBeenCalledTimes(1);
@@ -393,6 +403,7 @@ describe('FetchNetworkService', () => {
           },
           body: JSON.stringify(data),
         },
+        undefined,
         undefined,
       );
       expect(loggingService.info).toHaveBeenCalledTimes(1);
@@ -461,6 +472,7 @@ describe('FetchNetworkService', () => {
           body: JSON.stringify(data),
         },
         timeout,
+        undefined,
       );
     });
 
@@ -480,6 +492,7 @@ describe('FetchNetworkService', () => {
         {
           method: 'DELETE',
         },
+        undefined,
         undefined,
       );
       // Verify timeout is not passed as third argument

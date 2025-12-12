@@ -4,4 +4,5 @@ export interface NetworkRequest {
   headers?: Record<string, string>;
   params?: Record<string, Primitive>;
   timeout?: number;
+  circuitBreaker?: { key: string };
 }
