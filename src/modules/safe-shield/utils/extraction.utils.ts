@@ -1,23 +1,12 @@
 import type { Erc20Decoder } from '@/modules/relay/domain/contracts/decoders/erc-20-decoder.helper';
 import type { DecodedTransactionData } from '@/modules/safe-shield/entities/transaction-data.entity';
+import type { ExtractedContract } from '@/modules/safe-shield/entities/extracted-contract.entity';
 import { isExecTransaction } from '@/modules/safe-shield/utils/transaction-mapping.utils';
 import { getAddress, type Address } from 'viem';
 import uniq from 'lodash/uniq';
 
 const SET_FALLBACK_HANDLER_METHOD = 'setFallbackHandler';
 const PARAM_NAME_HANDLER = 'handler';
-
-/**
- * Represents an extracted contract from a transaction.
- */
-export interface ExtractedContract {
-  /** The contract address */
-  readonly address: Address;
-  /** Whether the interaction is a delegate call. */
-  readonly isDelegateCall: boolean;
-  /** The fallback handler address if the transaction is setting one, undefined otherwise. */
-  readonly fallbackHandler?: Address | undefined;
-}
 
 /**
  * Extracts the unique contract addresses with their interaction metadata.
@@ -53,7 +42,7 @@ export function extractContracts(
 
     const contract: Address = getAddress(tx.to);
     const isDelegateCall = tx.operation === 1;
-    const fallbackHandler = isFallbackHandler(tx);
+    const fallbackHandler = isSetFallbackHandler(tx);
 
     const existing = contractsByAddress.get(contract) ?? {
       isDelegateCall: false,
@@ -80,7 +69,7 @@ export function extractContracts(
  * @param {DecodedTransactionData} tx - The transaction to check.
  * @returns {Address | undefined} The fallback handler address if the transaction is setting one, undefined otherwise.
  */
-function isFallbackHandler(tx: DecodedTransactionData): Address | undefined {
+function isSetFallbackHandler(tx: DecodedTransactionData): Address | undefined {
   const { dataDecoded } = tx;
   if (dataDecoded?.method !== SET_FALLBACK_HANDLER_METHOD) {
     return undefined;
@@ -89,8 +78,9 @@ function isFallbackHandler(tx: DecodedTransactionData): Address | undefined {
     ({ name }) => name === PARAM_NAME_HANDLER,
   )?.value;
 
+  //TODO try/catch ?
   return typeof handlerValue === 'string'
-    ? (handlerValue as Address)
+    ? getAddress(handlerValue)
     : undefined;
 }
 

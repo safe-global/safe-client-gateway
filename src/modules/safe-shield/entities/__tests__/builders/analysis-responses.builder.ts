@@ -48,8 +48,19 @@ export function contractAnalysisResponseBuilder(): IBuilder<ContractAnalysisResp
       logoUrl: faker.image.url(),
       name: faker.company.name(),
       CONTRACT_VERIFICATION: [contractAnalysisResultBuilder().build()],
-      CONTRACT_INTERACTION: [contractAnalysisResultBuilder().build()],
-      DELEGATECALL: [contractAnalysisResultBuilder().build()],
+      CONTRACT_INTERACTION: [
+        contractAnalysisResultBuilder().with('type', 'KNOWN_CONTRACT').build(),
+      ],
+      DELEGATECALL: [
+        contractAnalysisResultBuilder()
+          .with('type', 'UNEXPECTED_DELEGATECALL')
+          .build(),
+      ],
+      FALLBACK_HANDLER: [
+        contractAnalysisResultBuilder()
+          .with('type', 'UNOFFICIAL_FALLBACK_HANDLER')
+          .build(),
+      ],
     },
   );
 }

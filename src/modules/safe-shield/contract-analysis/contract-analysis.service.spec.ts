@@ -19,11 +19,12 @@ import {
   SEVERITY_MAPPING,
   TITLE_MAPPING,
   DESCRIPTION_MAPPING,
+  TWAP_FALLBACK_HANDLER,
 } from './contract-analysis.constants';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import { rawify } from '@/validation/entities/raw.entity';
 import { contractBuilder } from '@/modules/data-decoder/domain/v2/entities/__tests__/contract.builder';
-import type { ExtractedContract } from '@/modules/safe-shield/utils/extraction.utils';
+import type { ExtractedContract } from '@/modules/safe-shield/entities/extracted-contract.entity';
 import { extractContracts } from '@/modules/safe-shield/utils/extraction.utils';
 
 jest.mock('@/modules/safe-shield/utils/extraction.utils', () => ({
@@ -249,6 +250,14 @@ describe('ContractAnalysisService', () => {
         ],
         CONTRACT_INTERACTION: [],
         DELEGATECALL: [],
+        FALLBACK_HANDLER: [
+          {
+            severity: SEVERITY_MAPPING.UNOFFICIAL_FALLBACK_HANDLER,
+            type: 'UNOFFICIAL_FALLBACK_HANDLER',
+            title: TITLE_MAPPING.UNOFFICIAL_FALLBACK_HANDLER,
+            description: DESCRIPTION_MAPPING.UNOFFICIAL_FALLBACK_HANDLER(),
+          },
+        ],
       } as Partial<Record<ContractStatusGroup, Array<ContractAnalysisResult>>>;
 
       const result2 = {
@@ -687,8 +696,7 @@ describe('ContractAnalysisService', () => {
 
         const result = await service.verifyContract({
           chainId,
-          address: contractAddress,
-          isDelegateCall: false,
+          contract: { address: contractAddress, isDelegateCall: false },
         });
 
         expect(mockDataDecoderApi.getContracts).toHaveBeenCalledWith({
@@ -734,8 +742,7 @@ describe('ContractAnalysisService', () => {
 
         const result = await service.verifyContract({
           chainId,
-          address: contractAddress,
-          isDelegateCall: false,
+          contract: { address: contractAddress, isDelegateCall: false },
         });
 
         expect(mockDataDecoderApi.getContracts).toHaveBeenCalledWith({
@@ -781,8 +788,7 @@ describe('ContractAnalysisService', () => {
 
         const result = await service.verifyContract({
           chainId,
-          address: contractAddress,
-          isDelegateCall: false,
+          contract: { address: contractAddress, isDelegateCall: false },
         });
 
         expect(mockDataDecoderApi.getContracts).toHaveBeenCalledWith({
@@ -824,8 +830,7 @@ describe('ContractAnalysisService', () => {
 
         const result = await service.verifyContract({
           chainId,
-          address: contractAddress,
-          isDelegateCall: false,
+          contract: { address: contractAddress, isDelegateCall: false },
         });
 
         expect(mockDataDecoderApi.getContracts).toHaveBeenCalledWith({
@@ -859,8 +864,7 @@ describe('ContractAnalysisService', () => {
 
         const result = await service.verifyContract({
           chainId,
-          address: contractAddress,
-          isDelegateCall: false,
+          contract: { address: contractAddress, isDelegateCall: false },
         });
 
         expect(mockDataDecoderApi.getContracts).toHaveBeenCalledWith({
@@ -880,8 +884,7 @@ describe('ContractAnalysisService', () => {
 
         const result = await service.verifyContract({
           chainId,
-          address: contractAddress,
-          isDelegateCall: false,
+          contract: { address: contractAddress, isDelegateCall: false },
         });
 
         expect(mockDataDecoderApi.getContracts).toHaveBeenCalledWith({
@@ -928,8 +931,7 @@ describe('ContractAnalysisService', () => {
 
         const result = await service.verifyContract({
           chainId,
-          address: contractAddress,
-          isDelegateCall: false,
+          contract: { address: contractAddress, isDelegateCall: false },
         });
 
         // Should use first result
@@ -973,8 +975,7 @@ describe('ContractAnalysisService', () => {
 
         const result = await service.verifyContract({
           chainId,
-          address: contractAddress,
-          isDelegateCall: true,
+          contract: { address: contractAddress, isDelegateCall: true },
         });
 
         expect(result).toEqual({
@@ -1008,8 +1009,7 @@ describe('ContractAnalysisService', () => {
 
         const result = await service.verifyContract({
           chainId,
-          address: contractAddress,
-          isDelegateCall: true,
+          contract: { address: contractAddress, isDelegateCall: true },
         });
 
         expect(result).toEqual({
@@ -1043,8 +1043,7 @@ describe('ContractAnalysisService', () => {
 
         const result = await service.verifyContract({
           chainId,
-          address: contractAddress,
-          isDelegateCall: true,
+          contract: { address: contractAddress, isDelegateCall: true },
         });
 
         expect(result).toEqual({
@@ -1083,8 +1082,273 @@ describe('ContractAnalysisService', () => {
 
         const result = await service.verifyContract({
           chainId,
-          address: contractAddress,
-          isDelegateCall: true,
+          contract: { address: contractAddress, isDelegateCall: true },
+        });
+
+        expect(result).toEqual({
+          logoUrl,
+          name,
+          CONTRACT_VERIFICATION: [
+            {
+              severity: SEVERITY_MAPPING.VERIFIED,
+              type: 'VERIFIED',
+              title: TITLE_MAPPING.VERIFIED,
+              description: DESCRIPTION_MAPPING.VERIFIED({ name }),
+            },
+          ],
+        });
+      });
+    });
+
+    describe('fallback handler', () => {
+      it('should return UNOFFICIAL_FALLBACK_HANDLER when handler is not official Safe or TWAP', async () => {
+        const unofficialHandler = getAddress(faker.finance.ethereumAddress());
+        const mockContractPage = pageBuilder()
+          .with('count', 1)
+          .with('results', [
+            contractBuilder()
+              .with('address', contractAddress)
+              .with('abi', {
+                abiJson: [{ type: 'function', name: 'test' }],
+                abiHash: faker.string.hexadecimal() as Hex,
+                modified: faker.date.recent(),
+              })
+              .with('displayName', name)
+              .with('logoUrl', logoUrl)
+              .build(),
+          ])
+          .build();
+
+        mockDataDecoderApi.getContracts.mockResolvedValue(
+          rawify(mockContractPage),
+        );
+
+        const result = await service.verifyContract({
+          chainId,
+          contract: {
+            address: contractAddress,
+            isDelegateCall: false,
+            fallbackHandler: unofficialHandler,
+          },
+        });
+
+        expect(result).toEqual({
+          logoUrl,
+          name,
+          CONTRACT_VERIFICATION: [
+            {
+              severity: SEVERITY_MAPPING.VERIFIED,
+              type: 'VERIFIED',
+              title: TITLE_MAPPING.VERIFIED,
+              description: DESCRIPTION_MAPPING.VERIFIED({ name }),
+            },
+          ],
+          FALLBACK_HANDLER: [
+            {
+              severity: SEVERITY_MAPPING.UNOFFICIAL_FALLBACK_HANDLER,
+              type: 'UNOFFICIAL_FALLBACK_HANDLER',
+              title: TITLE_MAPPING.UNOFFICIAL_FALLBACK_HANDLER,
+              description: DESCRIPTION_MAPPING.UNOFFICIAL_FALLBACK_HANDLER(),
+            },
+          ],
+        });
+      });
+
+      it('should omit FALLBACK_HANDLER when handler address is undefined', async () => {
+        const mockContractPage = pageBuilder()
+          .with('count', 1)
+          .with('results', [
+            contractBuilder()
+              .with('address', contractAddress)
+              .with('abi', {
+                abiJson: [{ type: 'function', name: 'test' }],
+                abiHash: faker.string.hexadecimal() as Hex,
+                modified: faker.date.recent(),
+              })
+              .with('displayName', name)
+              .with('logoUrl', logoUrl)
+              .build(),
+          ])
+          .build();
+
+        mockDataDecoderApi.getContracts.mockResolvedValue(
+          rawify(mockContractPage),
+        );
+
+        const result = await service.verifyContract({
+          chainId,
+          contract: {
+            address: contractAddress,
+            isDelegateCall: false,
+            fallbackHandler: undefined,
+          },
+        });
+
+        expect(result).toEqual({
+          logoUrl,
+          name,
+          CONTRACT_VERIFICATION: [
+            {
+              severity: SEVERITY_MAPPING.VERIFIED,
+              type: 'VERIFIED',
+              title: TITLE_MAPPING.VERIFIED,
+              description: DESCRIPTION_MAPPING.VERIFIED({ name }),
+            },
+          ],
+        });
+      });
+
+      it('should include FALLBACK_HANDLER when contract not found', async () => {
+        const unofficialHandler = getAddress(faker.finance.ethereumAddress());
+        const mockContractPage = pageBuilder()
+          .with('count', 0)
+          .with('results', [])
+          .build();
+
+        mockDataDecoderApi.getContracts.mockResolvedValue(
+          rawify(mockContractPage),
+        );
+
+        const result = await service.verifyContract({
+          chainId,
+          contract: {
+            address: contractAddress,
+            isDelegateCall: false,
+            fallbackHandler: unofficialHandler,
+          },
+        });
+
+        expect(result).toEqual({
+          FALLBACK_HANDLER: [
+            {
+              severity: SEVERITY_MAPPING.UNOFFICIAL_FALLBACK_HANDLER,
+              type: 'UNOFFICIAL_FALLBACK_HANDLER',
+              title: TITLE_MAPPING.UNOFFICIAL_FALLBACK_HANDLER,
+              description: DESCRIPTION_MAPPING.UNOFFICIAL_FALLBACK_HANDLER(),
+            },
+          ],
+        });
+      });
+
+      it('should include FALLBACK_HANDLER when contract verification fails', async () => {
+        const unofficialHandler = getAddress(faker.finance.ethereumAddress());
+        mockDataDecoderApi.getContracts.mockRejectedValue(
+          new Error('API error'),
+        );
+
+        const result = await service.verifyContract({
+          chainId,
+          contract: {
+            address: contractAddress,
+            isDelegateCall: false,
+            fallbackHandler: unofficialHandler,
+          },
+        });
+
+        expect(result).toEqual({
+          CONTRACT_VERIFICATION: [
+            {
+              severity: SEVERITY_MAPPING.VERIFICATION_UNAVAILABLE,
+              type: 'VERIFICATION_UNAVAILABLE',
+              title: TITLE_MAPPING.VERIFICATION_UNAVAILABLE,
+              description: DESCRIPTION_MAPPING.VERIFICATION_UNAVAILABLE(),
+            },
+          ],
+          FALLBACK_HANDLER: [
+            {
+              severity: SEVERITY_MAPPING.UNOFFICIAL_FALLBACK_HANDLER,
+              type: 'UNOFFICIAL_FALLBACK_HANDLER',
+              title: TITLE_MAPPING.UNOFFICIAL_FALLBACK_HANDLER,
+              description: DESCRIPTION_MAPPING.UNOFFICIAL_FALLBACK_HANDLER(),
+            },
+          ],
+        });
+      });
+
+      it('should return UNOFFICIAL_FALLBACK_HANDLER when TWAP handler used on non-TWAP network', async () => {
+        const nonTwapChainId = '999'; // Not in TWAP_FALLBACK_HANDLER_NETWORKS
+
+        const mockContractPage = pageBuilder()
+          .with('count', 1)
+          .with('results', [
+            contractBuilder()
+              .with('address', contractAddress)
+              .with('abi', {
+                abiJson: [{ type: 'function', name: 'test' }],
+                abiHash: faker.string.hexadecimal() as Hex,
+                modified: faker.date.recent(),
+              })
+              .with('displayName', name)
+              .with('logoUrl', logoUrl)
+              .build(),
+          ])
+          .build();
+
+        mockDataDecoderApi.getContracts.mockResolvedValue(
+          rawify(mockContractPage),
+        );
+
+        const result = await service.verifyContract({
+          chainId: nonTwapChainId,
+          contract: {
+            address: contractAddress,
+            isDelegateCall: false,
+            fallbackHandler: TWAP_FALLBACK_HANDLER,
+          },
+        });
+
+        expect(result).toEqual({
+          logoUrl,
+          name,
+          CONTRACT_VERIFICATION: [
+            {
+              severity: SEVERITY_MAPPING.VERIFIED,
+              type: 'VERIFIED',
+              title: TITLE_MAPPING.VERIFIED,
+              description: DESCRIPTION_MAPPING.VERIFIED({ name }),
+            },
+          ],
+          FALLBACK_HANDLER: [
+            {
+              severity: SEVERITY_MAPPING.UNOFFICIAL_FALLBACK_HANDLER,
+              type: 'UNOFFICIAL_FALLBACK_HANDLER',
+              title: TITLE_MAPPING.UNOFFICIAL_FALLBACK_HANDLER,
+              description: DESCRIPTION_MAPPING.UNOFFICIAL_FALLBACK_HANDLER(),
+            },
+          ],
+        });
+      });
+
+      it('should omit FALLBACK_HANDLER when TWAP handler used on TWAP-supported network', async () => {
+        const twapChainId = '1'; // Ethereum mainnet - in TWAP_FALLBACK_HANDLER_NETWORKS
+
+        const mockContractPage = pageBuilder()
+          .with('count', 1)
+          .with('results', [
+            contractBuilder()
+              .with('address', contractAddress)
+              .with('abi', {
+                abiJson: [{ type: 'function', name: 'test' }],
+                abiHash: faker.string.hexadecimal() as Hex,
+                modified: faker.date.recent(),
+              })
+              .with('displayName', name)
+              .with('logoUrl', logoUrl)
+              .build(),
+          ])
+          .build();
+
+        mockDataDecoderApi.getContracts.mockResolvedValue(
+          rawify(mockContractPage),
+        );
+
+        const result = await service.verifyContract({
+          chainId: twapChainId,
+          contract: {
+            address: contractAddress,
+            isDelegateCall: false,
+            fallbackHandler: TWAP_FALLBACK_HANDLER,
+          },
         });
 
         expect(result).toEqual({

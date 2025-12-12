@@ -7,6 +7,7 @@ import {
   DESCRIPTION_MAPPING,
   SEVERITY_MAPPING,
   TITLE_MAPPING,
+  tWAPFallbackHandlerAddress,
 } from '@/modules/safe-shield/contract-analysis/contract-analysis.constants';
 import {
   type ContractAnalysisResponse,
@@ -29,13 +30,15 @@ import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { Inject, Injectable } from '@nestjs/common';
 import { Address } from 'viem';
 import { logCacheHit, logCacheMiss } from '@/modules/safe-shield/utils/common';
-import {
-  extractContracts,
-  ExtractedContract,
-} from '@/modules/safe-shield/utils/extraction.utils';
+import { extractContracts } from '@/modules/safe-shield/utils/extraction.utils';
+import type { ExtractedContract } from '@/modules/safe-shield/entities/extracted-contract.entity';
 import { Erc20Decoder } from '@/modules/relay/domain/contracts/decoders/erc-20-decoder.helper';
 import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
 import { MultisigTransactionPageSchema } from '@/modules/safe/domain/entities/multisig-transaction.entity';
+import {
+  isFallbackHandlerDeployed,
+  getFallbackHandlerVersions,
+} from '@/domain/common/utils/deployments';
 
 /**
  * Service responsible for analyzing contract interactions in transactions.
@@ -135,11 +138,14 @@ export class ContractAnalysisService {
     contract: ExtractedContract;
   }): Promise<GroupedAnalysisResults<ContractAnalysisResult>> {
     const { chainId, safeAddress, contract } = args;
-    const { address, isDelegateCall } = contract;
 
     const [verificationResult, interactionResult] = await Promise.all([
-      this.verifyContract({ chainId, address, isDelegateCall }),
-      this.analyzeInteractions({ chainId, safeAddress, address }),
+      this.verifyContract({ chainId, contract }),
+      this.analyzeInteractions({
+        chainId,
+        safeAddress,
+        address: contract.address,
+      }),
     ]);
 
     return {
@@ -149,25 +155,34 @@ export class ContractAnalysisService {
   }
 
   /**
-   * Verify a contract. In case of delegateCall, check for trustworthiness.
+   * Verifies a contract and performs security checks.
    *
-   * @param {string} args.chainId - The chain ID.
-   * @param {Address} args.address - The contract address.
-   * @param {boolean} args.isDelegateCall - Whether the contract is called via delegateCall.
-   * @returns {Promise<GroupedAnalysisResults<ContractAnalysisResult> & {name?: string;logoUrl?: string;}>}
-   * - Partial analysis result groups: verification result, delegateCall result.
+   * Performs the following checks:
+   * - Contract verification: Checks if the contract has a verified ABI in the Data Decoder
+   * - Delegate call check: Warns if the contract is called via delegateCall and is not trusted
+   * - Fallback handler check: Warns if setting an unofficial/untrusted fallback handler
+   *
+   * @param {string} args.chainId - The chain ID
+   * @param {ExtractedContract} args.contract - The contract address and its metadata (address, isDelegateCall, fallbackHandler)
+   * @returns {Promise<GroupedAnalysisResults<ContractAnalysisResult> & { name?: string; logoUrl?: string; }>}
+   * Grouped analysis results containing:`CONTRACT_VERIFICATION`, `DELEGATECALL`,`FALLBACK_HANDLER`
    */
   public async verifyContract(args: {
     chainId: string;
-    address: Address;
-    isDelegateCall: boolean;
+    contract: ExtractedContract;
   }): Promise<
     GroupedAnalysisResults<ContractAnalysisResult> & {
       name?: string;
       logoUrl?: string;
     }
   > {
-    const { chainId, address, isDelegateCall } = args;
+    const { chainId, contract } = args;
+    const { address } = contract;
+
+    let verificationResult: Partial<
+      GroupedAnalysisResults<ContractAnalysisResult>
+    > & { name?: string; logoUrl?: string } = {};
+    let resolvedContract: Contract | undefined;
 
     try {
       const raw = await this.dataDecoderApi.getContracts({
@@ -176,29 +191,61 @@ export class ContractAnalysisService {
       });
       const { count, results } = ContractPageSchema.parse(raw);
 
-      if (!count) {
-        return { ...this.withDelegate(isDelegateCall) };
+      if (count && results.length > 0) {
+        resolvedContract = results[0];
+        const name = this.extractContractName(resolvedContract);
+        const verificationType = resolvedContract.abi
+          ? 'VERIFIED'
+          : 'NOT_VERIFIED';
+
+        verificationResult = {
+          CONTRACT_VERIFICATION: [
+            this.mapToAnalysisResult({ type: verificationType, name }),
+          ],
+          name,
+          logoUrl: resolvedContract.logoUrl,
+        };
       }
-
-      const resolved = results[0];
-      const name = resolved.displayName || resolved.name || undefined;
-      const logoUrl = resolved.logoUrl;
-      const type = resolved.abi ? 'VERIFIED' : 'NOT_VERIFIED';
-
-      return {
-        CONTRACT_VERIFICATION: [this.mapToAnalysisResult({ type, name })],
-        ...this.withDelegate(isDelegateCall, resolved),
-        name,
-        logoUrl,
-      };
     } catch {
-      return {
+      verificationResult = {
         CONTRACT_VERIFICATION: [
           this.mapToAnalysisResult({ type: 'VERIFICATION_UNAVAILABLE' }),
         ],
-        ...this.withDelegate(isDelegateCall),
       };
     }
+
+    return {
+      ...verificationResult,
+      ...this.buildSecurityChecks(chainId, contract, resolvedContract),
+    };
+  }
+
+  /**
+   * Extracts the contract name, preferring displayName over name.
+   * @param {Contract} contract - The contract data
+   * @returns {string | undefined} The contract name or undefined
+   */
+  private extractContractName(contract: Contract): string | undefined {
+    return contract.displayName || contract.name || undefined;
+  }
+
+  /**
+   * Builds security check results for delegate calls and fallback handlers.
+   * @param {string} chainId - The chain ID
+   * @param {ExtractedContract} contract - The contract and its metadata
+   * @param {Contract} resolvedContract - The resolved contract data (if available)
+   * @returns {GroupedAnalysisResults<ContractAnalysisResult>} Security check results
+   */
+  private buildSecurityChecks(
+    chainId: string,
+    contract: ExtractedContract,
+    resolvedContract?: Contract,
+  ): GroupedAnalysisResults<ContractAnalysisResult> {
+    const { isDelegateCall, fallbackHandler } = contract;
+    return {
+      ...this.withDelegate(isDelegateCall, resolvedContract),
+      ...this.withFallbackHandler(chainId, fallbackHandler),
+    };
   }
 
   /**
@@ -249,6 +296,28 @@ export class ContractAnalysisService {
   }
 
   /**
+   * Helper to include delegatecall result if applicable.
+   */
+  private withDelegate(
+    isDelegateCall: boolean,
+    resolved?: Contract,
+  ): GroupedAnalysisResults<ContractAnalysisResult> {
+    const res = this.checkDelegateCall(isDelegateCall, resolved);
+    return res ? { DELEGATECALL: [res] } : {};
+  }
+
+  /**
+   * Helper to include fallback handler result if applicable.
+   */
+  private withFallbackHandler(
+    chainId: string,
+    fallbackHandler: Address | undefined,
+  ): GroupedAnalysisResults<ContractAnalysisResult> {
+    const res = this.checkUntrustedFallbackHandler(chainId, fallbackHandler);
+    return res ? { FALLBACK_HANDLER: [res] } : {};
+  }
+
+  /**
    * Checks if a delegateCall is unexpected based on the contract's trust status.
    * @param {boolean} isDelegateCall - Whether the call is a delegateCall.
    * @param {Contract | undefined} contract - The contract details (if available).
@@ -263,14 +332,53 @@ export class ContractAnalysisService {
   }
 
   /**
-   * Helper to include delegatecall result if applicable.
+   * Checks if a fallback handler is untrusted (not an official Safe or TWAP handler).
+   *
+   * @param {string} chainId - The chain ID
+   * @param {Address | undefined} fallbackHandlerAddress - The fallback handler address to check
+   * @returns {AnalysisResult<'UNOFFICIAL_FALLBACK_HANDLER'> | undefined} Analysis result if untrusted, undefined otherwise
    */
-  private withDelegate(
-    isDelegateCall: boolean,
-    resolved?: Contract,
-  ): GroupedAnalysisResults<ContractAnalysisResult> {
-    const res = this.checkDelegateCall(isDelegateCall, resolved);
-    return res ? { DELEGATECALL: [res] } : {};
+  private checkUntrustedFallbackHandler(
+    chainId: string,
+    fallbackHandlerAddress: Address | undefined,
+  ): AnalysisResult<'UNOFFICIAL_FALLBACK_HANDLER'> | undefined {
+    if (!fallbackHandlerAddress) {
+      return undefined;
+    }
+
+    // Check if it's the TWAP fallback handler (CowSwap)
+    const twapFallbackHandler = tWAPFallbackHandlerAddress(chainId);
+    const isTrustedTWAPHandler =
+      !!twapFallbackHandler &&
+      fallbackHandlerAddress.toLowerCase() ===
+        twapFallbackHandler.toLowerCase();
+
+    // Check if it's an official Safe fallback handler
+    const isOfficialSafeHandler = this.isOfficialFallbackHandler(
+      fallbackHandlerAddress,
+      chainId,
+    );
+
+    return isTrustedTWAPHandler || isOfficialSafeHandler
+      ? undefined
+      : this.mapToAnalysisResult({ type: 'UNOFFICIAL_FALLBACK_HANDLER' });
+  }
+
+  /**
+   * Checks if a fallback handler address matches any official Safe fallback handler deployment
+   * across all available versions (>= 1.3.0).
+   *
+   * @param {Address} address - The fallback handler address to check
+   * @param {string} chainId - The chain ID to check deployments on
+   * @returns {boolean} True if the address matches an official Safe fallback handler deployment
+   */
+  private isOfficialFallbackHandler(
+    address: Address,
+    chainId: string,
+  ): boolean {
+    return getFallbackHandlerVersions().some((version) =>
+      isFallbackHandlerDeployed({ chainId, version, address }),
+    );
   }
 
   /**
