@@ -5,6 +5,7 @@ import {
   HttpCode,
   Param,
   Query,
+  UseInterceptors,
 } from '@nestjs/common';
 import {
   ApiOkResponse,
@@ -12,6 +13,7 @@ import {
   ApiTags,
   ApiOperation,
   ApiParam,
+  ApiHeader,
 } from '@nestjs/swagger';
 import { PortfolioApiService } from '@/modules/portfolio/v1/portfolio.service';
 import { Portfolio } from '@/modules/portfolio/v1/entities/portfolio.entity';
@@ -19,6 +21,7 @@ import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { GetPortfolioDto } from '@/modules/portfolio/v1/entities/get-portfolio.dto.entity';
 import { GetPortfolioDtoSchema } from '@/modules/portfolio/v1/entities/schemas/get-portfolio.dto.schema';
+import { PortfolioCacheHeadersInterceptor } from '@/modules/portfolio/v1/interceptors/portfolio-cache-headers.interceptor';
 import type { Address } from 'viem';
 
 /**
@@ -72,7 +75,26 @@ export class PortfolioController {
     description: 'If true, filters out dust positions (balance < $0.001 USD)',
     example: true,
   })
+  @ApiHeader({
+    name: 'Cache-Control',
+    description:
+      'Cache directive with max-age in seconds (e.g., public, max-age=30)',
+  })
+  @ApiHeader({
+    name: 'Age',
+    description: 'Age of the cached response in seconds',
+  })
+  @ApiHeader({
+    name: 'X-Cache-Status',
+    description:
+      'Cache status: HIT if served from cache, MISS if freshly fetched',
+  })
+  @ApiHeader({
+    name: 'X-Cache-TTL',
+    description: 'Remaining cache time-to-live in seconds',
+  })
   @ApiOkResponse({ type: Portfolio })
+  @UseInterceptors(PortfolioCacheHeadersInterceptor)
   @Get('/portfolio/:address')
   public async getPortfolio(
     @Param('address', new ValidationPipe(AddressSchema))
