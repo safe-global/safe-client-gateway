@@ -153,7 +153,7 @@ export default () => ({
   },
   portfolio: {
     cache: {
-      ttlSeconds: parseInt(process.env.PORTFOLIO_CACHE_TTL_SECONDS ?? `${30}`),
+      ttlSeconds: parseInt(process.env.PORTFOLIO_CACHE_TTL_SECONDS ?? `${10}`),
     },
     filters: {
       dustThresholdUsd: parseFloat(
