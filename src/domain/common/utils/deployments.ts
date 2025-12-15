@@ -21,12 +21,6 @@ type Filter = {
   version: string;
 };
 
-/**
- * Minimum Safe version that supports CompatibilityFallbackHandler.
- * CompatibilityFallbackHandler was introduced in Safe v1.3.0.
- */
-export const MIN_FALLBACK_HANDLER_VERSION = '>=1.3.0';
-
 type DeploymentGetter =
   | typeof _getProxyFactoryDeployments
   | typeof _getSafeSingletonDeployments
