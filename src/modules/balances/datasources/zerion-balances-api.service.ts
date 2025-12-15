@@ -1,5 +1,4 @@
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import { ChainAttributes } from '@/modules/balances/datasources/entities/provider-chain-attributes.entity';
 import {
   ZerionAttributes,
   ZerionBalance,
@@ -51,7 +50,6 @@ export class ZerionBalancesApi implements IBalancesApi {
   private static readonly RATE_LIMIT_CACHE_KEY_PREFIX = 'zerion';
   private readonly apiKey: string | undefined;
   private readonly baseUri: string;
-  private readonly chainsConfiguration: Record<number, ChainAttributes>;
   private readonly defaultExpirationTimeInSeconds: number;
   private readonly defaultNotFoundExpirationTimeSeconds: number;
   private readonly fiatCodes: Array<string>;
@@ -89,9 +87,6 @@ export class ZerionBalancesApi implements IBalancesApi {
       this.configurationService.getOrThrow<number>(
         'expirationTimeInSeconds.notFound.default',
       );
-    this.chainsConfiguration = this.configurationService.getOrThrow<
-      Record<number, ChainAttributes>
-    >('balances.providers.zerion.chains');
     this.fiatCodes = this.configurationService.getOrThrow<Array<string>>(
       'balances.providers.zerion.currencies',
     );
@@ -330,13 +325,6 @@ export class ZerionBalancesApi implements IBalancesApi {
     const chainName = this.chainMappings[mappingKey][chain.chainId];
 
     if (!chainName) {
-      // Fallback to hardcoded configuration
-      const fallbackChainName = this.chainsConfiguration[Number(chain.chainId)]?.chainName;
-
-      if (fallbackChainName) {
-        return fallbackChainName;
-      }
-
       throw Error(
         `Chain ${chain.chainId} balances retrieval via Zerion is not configured`,
       );
