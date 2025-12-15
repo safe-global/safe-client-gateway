@@ -293,7 +293,7 @@ export default () => ({
   features: {
     email: process.env.FF_EMAIL?.toLowerCase() === 'true',
     zerionBalancesEnabled:
-      process.env.FF_ZERION_BALANCES_ENABLED?.toLowerCase() === 'true',
+      process.env.FF_ZERION_BALANCES_CHAIN_IDS?.toLowerCase() === 'true',
     zerionPositions:
       process.env.FF_ZERION_POSITIONS_DISABLED?.toLowerCase() !== 'true',
     debugLogs: process.env.FF_DEBUG_LOGS?.toLowerCase() === 'true',
