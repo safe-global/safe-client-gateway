@@ -54,6 +54,11 @@ export class ContractAnalysisDto implements GroupedAnalysisResults<ContractAnaly
   public readonly name?: string;
 
   @ApiPropertyOptional({
+    description: 'Fallback handler address',
+  })
+  public readonly fallbackHandler?: Address;
+
+  @ApiPropertyOptional({
     description:
       'Analysis results for contract verification status. ' +
       'Shows whether contracts are verified and source code is available.',
@@ -103,6 +108,23 @@ export class ContractAnalysisDto implements GroupedAnalysisResults<ContractAnaly
     ],
   })
   public readonly DELEGATECALL?: Array<ContractAnalysisResultDto>;
+
+  @ApiPropertyOptional({
+    description:
+      'Analysis results for setFallbackHandler operations. ' +
+      'Identifies untrusted or unofficial fallback handlers in the transactions.',
+    type: [ContractAnalysisResultDto],
+    example: [
+      {
+        severity: 'WARN',
+        type: 'UNOFFICIAL_FALLBACK_HANDLER',
+        title: 'Unofficial fallback handler',
+        description:
+          'Verify the fallback handler is trusted and secure before proceeding.',
+      },
+    ],
+  })
+  public readonly FALLBACK_HANDLER?: Array<ContractAnalysisResultDto>;
 }
 
 /**

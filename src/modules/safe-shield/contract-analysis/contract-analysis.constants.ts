@@ -15,7 +15,6 @@ export const TWAP_FALLBACK_HANDLER: Address =
  * List of networks where the TWAP fallback handler is used.
  * https://github.com/cowprotocol/composable-cow/blob/main/networks.json
  */
-//TODO env config ?
 const TWAP_FALLBACK_HANDLER_NETWORKS: Array<string> = [
   '1',
   '100',
@@ -105,5 +104,5 @@ export const DESCRIPTION_MAPPING: Record<
   UNEXPECTED_DELEGATECALL: () =>
     'This transaction calls a smart contract that will be able to modify your Safe account. Learn more',
   UNOFFICIAL_FALLBACK_HANDLER: () =>
-    'Verify the fallback handler is trusted and secure before proceeding. ',
+    'Verify the fallback handler is trusted and secure before proceeding.',
 };
