@@ -29,7 +29,13 @@ describe('Zerion Collectibles Controller', () => {
     jest.clearAllMocks();
 
     const moduleFixture = await createTestModule({
-      config: configuration,
+      config: () => ({
+        ...configuration(),
+        features: {
+          ...configuration().features,
+          zerionBalancesEnabled: true,
+        },
+      }),
     });
 
     const configurationService = moduleFixture.get<IConfigurationService>(
