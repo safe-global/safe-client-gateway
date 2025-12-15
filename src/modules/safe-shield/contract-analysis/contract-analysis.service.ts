@@ -11,6 +11,7 @@ import {
 } from '@/modules/safe-shield/contract-analysis/contract-analysis.constants';
 import {
   type ContractAnalysisResponse,
+  ContractVerificationResult,
   GroupedAnalysisResults,
 } from '@/modules/safe-shield/entities/analysis-responses.entity';
 import {
@@ -164,18 +165,13 @@ export class ContractAnalysisService {
    *
    * @param {string} args.chainId - The chain ID
    * @param {ExtractedContract} args.contract - The contract address and its metadata (address, isDelegateCall, fallbackHandler)
-   * @returns {Promise<GroupedAnalysisResults<ContractAnalysisResult> & { name?: string; logoUrl?: string; }>}
+   * @returns {Promise<ContractVerificationResult>}
    * Grouped analysis results containing:`CONTRACT_VERIFICATION`, `DELEGATECALL`,`FALLBACK_HANDLER`
    */
   public async verifyContract(args: {
     chainId: string;
     contract: ExtractedContract;
-  }): Promise<
-    GroupedAnalysisResults<ContractAnalysisResult> & {
-      name?: string;
-      logoUrl?: string;
-    }
-  > {
+  }): Promise<ContractVerificationResult> {
     const { chainId, contract } = args;
     const { address } = contract;
 
@@ -312,9 +308,11 @@ export class ContractAnalysisService {
   private withFallbackHandler(
     chainId: string,
     fallbackHandler: Address | undefined,
-  ): GroupedAnalysisResults<ContractAnalysisResult> {
+  ): GroupedAnalysisResults<ContractAnalysisResult> & {
+    fallbackHandler?: Address | undefined;
+  } {
     const res = this.checkUntrustedFallbackHandler(chainId, fallbackHandler);
-    return res ? { FALLBACK_HANDLER: [res] } : {};
+    return res ? { FALLBACK_HANDLER: [res], fallbackHandler } : {};
   }
 
   /**

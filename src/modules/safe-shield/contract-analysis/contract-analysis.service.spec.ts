@@ -1135,6 +1135,7 @@ describe('ContractAnalysisService', () => {
         expect(result).toEqual({
           logoUrl,
           name,
+          fallbackHandler: unofficialHandler,
           CONTRACT_VERIFICATION: [
             {
               severity: SEVERITY_MAPPING.VERIFIED,
@@ -1187,6 +1188,7 @@ describe('ContractAnalysisService', () => {
         expect(result).toEqual({
           logoUrl,
           name,
+          fallbackHandler: undefined,
           CONTRACT_VERIFICATION: [
             {
               severity: SEVERITY_MAPPING.VERIFIED,
@@ -1219,6 +1221,7 @@ describe('ContractAnalysisService', () => {
         });
 
         expect(result).toEqual({
+          fallbackHandler: unofficialHandler,
           FALLBACK_HANDLER: [
             {
               severity: SEVERITY_MAPPING.UNOFFICIAL_FALLBACK_HANDLER,
@@ -1246,6 +1249,7 @@ describe('ContractAnalysisService', () => {
         });
 
         expect(result).toEqual({
+          fallbackHandler: unofficialHandler,
           CONTRACT_VERIFICATION: [
             {
               severity: SEVERITY_MAPPING.VERIFICATION_UNAVAILABLE,
@@ -1300,6 +1304,7 @@ describe('ContractAnalysisService', () => {
         expect(result).toEqual({
           logoUrl,
           name,
+          fallbackHandler: TWAP_FALLBACK_HANDLER,
           CONTRACT_VERIFICATION: [
             {
               severity: SEVERITY_MAPPING.VERIFIED,
