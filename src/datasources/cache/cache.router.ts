@@ -113,15 +113,11 @@ export class CacheRouter {
     );
   }
 
-  static getZerionBalancesCacheKey(args: {
-    chainId: string;
-    safeAddress: Address;
-  }): string {
-    return `${args.chainId}_${CacheRouter.ZERION_BALANCES_KEY}_${args.safeAddress}`;
+  static getZerionBalancesCacheKey(args: { safeAddress: Address }): string {
+    return `${CacheRouter.ZERION_BALANCES_KEY}_${args.safeAddress}`;
   }
 
   static getZerionBalancesCacheDir(args: {
-    chainId: string;
     safeAddress: Address;
     fiatCode: string;
   }): CacheDir {
@@ -131,15 +127,11 @@ export class CacheRouter {
     );
   }
 
-  static getZerionCollectiblesCacheKey(args: {
-    chainId: string;
-    safeAddress: Address;
-  }): string {
-    return `${args.chainId}_${CacheRouter.ZERION_COLLECTIBLES_KEY}_${args.safeAddress}`;
+  static getZerionCollectiblesCacheKey(args: { safeAddress: Address }): string {
+    return `${CacheRouter.ZERION_COLLECTIBLES_KEY}_${args.safeAddress}`;
   }
 
   static getZerionCollectiblesCacheDir(args: {
-    chainId: string;
     safeAddress: Address;
     limit?: number;
     offset?: number;
@@ -150,15 +142,11 @@ export class CacheRouter {
     );
   }
 
-  static getZerionPositionsCacheKey(args: {
-    chainId: string;
-    safeAddress: Address;
-  }): string {
-    return `${args.chainId}_${CacheRouter.ZERION_POSITIONS_KEY}_${args.safeAddress}`;
+  static getZerionPositionsCacheKey(args: { safeAddress: Address }): string {
+    return `${CacheRouter.ZERION_POSITIONS_KEY}_${args.safeAddress}`;
   }
 
   static getZerionPositionsCacheDir(args: {
-    chainId: string;
     safeAddress: Address;
     fiatCode: string;
     refresh?: string;

@@ -23,7 +23,7 @@ export interface IBalancesApi {
     excludeSpam?: boolean;
   }): Promise<Raw<Balance> | null>;
 
-  clearBalances(args: { chainId: string; safeAddress: Address }): Promise<void>;
+  clearBalances(args: { safeAddress: Address }): Promise<void>;
 
   getCollectibles(args: {
     safeAddress: Address;
@@ -34,10 +34,7 @@ export interface IBalancesApi {
     excludeSpam?: boolean;
   }): Promise<Raw<Page<Collectible>>>;
 
-  clearCollectibles(args: {
-    chainId: string;
-    safeAddress: Address;
-  }): Promise<void>;
+  clearCollectibles(args: { safeAddress: Address }): Promise<void>;
 
   getFiatCodes(): Promise<Raw<Array<string>>>;
 }

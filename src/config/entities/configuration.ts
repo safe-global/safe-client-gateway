@@ -153,7 +153,7 @@ export default () => ({
   },
   portfolio: {
     cache: {
-      ttlSeconds: parseInt(process.env.PORTFOLIO_CACHE_TTL_SECONDS ?? `${30}`),
+      ttlSeconds: parseInt(process.env.PORTFOLIO_CACHE_TTL_SECONDS ?? `${10}`),
     },
     filters: {
       dustThresholdUsd: parseFloat(
@@ -573,6 +573,7 @@ export default () => ({
       42161: 'https://api.cow.fi/arbitrum_one',
       43114: 'https://api.cow.fi/avalanche',
       11155111: 'https://api.cow.fi/sepolia',
+      59144: 'https://api.cow.fi/linea',
     },
     explorerBaseUri:
       process.env.SWAPS_EXPLORER_URI || 'https://explorer.cow.fi/',

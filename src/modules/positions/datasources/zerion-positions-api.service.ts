@@ -83,7 +83,6 @@ export class ZerionPositionsApi implements IPositionsApi {
     }
 
     const cacheDir = CacheRouter.getZerionPositionsCacheDir({
-      chainId: args.chain.chainId,
       safeAddress: args.safeAddress,
       fiatCode: args.fiatCode,
       refresh: args.refresh,
@@ -141,7 +140,9 @@ export class ZerionPositionsApi implements IPositionsApi {
     chainId: string;
     safeAddress: Address;
   }): Promise<void> {
-    const key = CacheRouter.getZerionPositionsCacheKey(args);
+    const key = CacheRouter.getZerionPositionsCacheKey({
+      safeAddress: args.safeAddress,
+    });
     await this.cacheService.deleteByKey(key);
   }
 

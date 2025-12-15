@@ -34,10 +34,10 @@
     "migration:revert": "yarn typeorm migration:revert"
   },
   "dependencies": {
-    "@aws-sdk/client-kms": "3.940.0",
-    "@aws-sdk/client-s3": "3.940.0",
-    "@aws-sdk/lib-storage": "3.940.0",
-    "@aws-sdk/s3-request-presigner": "3.940.0",
+    "@aws-sdk/client-kms": "3.947.0",
+    "@aws-sdk/client-s3": "3.947.0",
+    "@aws-sdk/lib-storage": "3.947.0",
+    "@aws-sdk/s3-request-presigner": "3.947.0",
     "@blockaid/client": "^0.65.0",
     "@fingerprintjs/fingerprintjs-pro-server-api": "6.10.0",
     "@nestjs/bullmq": "^11.0.3",
@@ -57,7 +57,7 @@
     "cache-manager": "6.4.1",
     "cookie-parser": "1.4.7",
     "csv-stringify": "^6.6.0",
-    "jsonwebtoken": "9.0.2",
+    "jsonwebtoken": "9.0.3",
     "lodash": "4.17.21",
     "nestjs-cls": "6.0.1",
     "pg": "8.14.1",
@@ -73,14 +73,14 @@
     "zod": "3.24.2"
   },
   "devDependencies": {
-    "@faker-js/faker": "9.9.0",
-    "@nestjs/cli": "11.0.5",
+    "@faker-js/faker": "10.1.0",
+    "@nestjs/cli": "11.0.14",
     "@nestjs/schematics": "11.0.5",
     "@nestjs/testing": "11.1.9",
     "@smithy/util-stream": "4.5.5",
     "@types/amqplib": "0",
     "@types/cookie-parser": "1.4.8",
-    "@types/express": "5.0.3",
+    "@types/express": "5.0.6",
     "@types/jest": "29.5.14",
     "@types/jsonwebtoken": "9",
     "@types/lodash": "4.17.18",
@@ -100,7 +100,7 @@
     "ts-loader": "9.5.4",
     "ts-node": "10.9.2",
     "tsconfig-paths": "4.2.0",
-    "typescript": "5.9.2",
+    "typescript": "5.9.3",
     "typescript-eslint": "8.31.1"
   },
   "jest": {
@@ -110,9 +110,16 @@
       "ts"
     ],
     "testRegex": ".*\\.spec\\.ts$",
+    "testPathIgnorePatterns": [
+      "\\.integration\\.spec\\.ts$",
+      "\\.e2e-spec\\.ts$"
+    ],
     "transform": {
       "^.+\\.(t|j)s$": "ts-jest"
     },
+    "transformIgnorePatterns": [
+      "node_modules/(?!@faker-js).+"
+    ],
     "roots": [
       "./src",
       "./migrations"
@@ -125,7 +132,8 @@
       "index.ts",
       ".+\\/__tests__\\/.+\\.builder.(t|j)s",
       ".+\\/__tests__\\/.+\\.factory.(t|j)s",
-      ".e2e-spec.ts"
+      ".e2e-spec.ts",
+      ".integration.spec.ts"
     ],
     "testEnvironment": "node",
     "moduleNameMapper": {
