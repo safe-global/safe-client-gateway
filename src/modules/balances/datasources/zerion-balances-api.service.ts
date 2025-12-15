@@ -58,7 +58,10 @@ export class ZerionBalancesApi implements IBalancesApi {
   // Number of allowed calls on each rate-limit cycle
   private readonly limitCalls: number;
   // In-memory chain mappings: chainId -> zerion chain name
-  private chainMappings: { mainnet: Record<string, string>; testnet: Record<string, string> } = {
+  private chainMappings: {
+    mainnet: Record<string, string>;
+    testnet: Record<string, string>;
+  } = {
     mainnet: {},
     testnet: {},
   };
@@ -335,7 +338,10 @@ export class ZerionBalancesApi implements IBalancesApi {
 
   private async _ensureChainMappings(): Promise<void> {
     // If already fetched, return immediately
-    if (Object.keys(this.chainMappings.mainnet).length > 0 || Object.keys(this.chainMappings.testnet).length > 0) {
+    if (
+      Object.keys(this.chainMappings.mainnet).length > 0 ||
+      Object.keys(this.chainMappings.testnet).length > 0
+    ) {
       return;
     }
 
@@ -356,7 +362,9 @@ export class ZerionBalancesApi implements IBalancesApi {
       const mainnetMapping = await this._fetchChainMappingForNetwork(false);
       this.chainMappings.mainnet = mainnetMapping;
     } catch (error) {
-      this.loggingService.warn(`Failed to fetch mainnet chains from Zerion: ${error}`);
+      this.loggingService.warn(
+        `Failed to fetch mainnet chains from Zerion: ${error}`,
+      );
     }
 
     try {
@@ -364,11 +372,15 @@ export class ZerionBalancesApi implements IBalancesApi {
       const testnetMapping = await this._fetchChainMappingForNetwork(true);
       this.chainMappings.testnet = testnetMapping;
     } catch (error) {
-      this.loggingService.warn(`Failed to fetch testnet chains from Zerion: ${error}`);
+      this.loggingService.warn(
+        `Failed to fetch testnet chains from Zerion: ${error}`,
+      );
     }
   }
 
-  private async _fetchChainMappingForNetwork(isTestnet: boolean): Promise<Record<string, string>> {
+  private async _fetchChainMappingForNetwork(
+    isTestnet: boolean,
+  ): Promise<Record<string, string>> {
     const url = `${this.baseUri}/v1/chains`;
     const networkRequest = {
       headers: getZerionHeaders(this.apiKey, isTestnet),
