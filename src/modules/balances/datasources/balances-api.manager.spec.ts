@@ -9,7 +9,6 @@ import type { IConfigApi } from '@/domain/interfaces/config-api.interface';
 import type { IPricesApi } from '@/modules/balances/datasources/prices-api.interface';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
-import sample from 'lodash/sample';
 import type { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
 import type { ITransactionApi } from '@/domain/interfaces/transaction-api.interface';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
@@ -76,8 +75,7 @@ const networkServiceMock = jest.mocked(networkService);
 beforeEach(() => {
   jest.resetAllMocks();
   configurationServiceMock.getOrThrow.mockImplementation((key) => {
-    if (key === 'features.zerionBalancesEnabled')
-      return false;
+    if (key === 'features.zerionBalancesEnabled') return false;
     if (key === 'features.counterfactualBalances') return true;
     // TODO: Remove after Vault decoding has been released
     else if (key === 'application.isProduction') return true;
@@ -158,8 +156,7 @@ describe('Balances API Manager Tests', () => {
           return expirationTimeInSeconds;
         else if (key === 'expirationTimeInSeconds.notFound.default')
           return notFoundExpireTimeSeconds;
-        else if (key === 'features.zerionBalancesEnabled')
-          return false;
+        else if (key === 'features.zerionBalancesEnabled') return false;
         else if (key === 'features.counterfactualBalances') return true;
         // TODO: Remove after Vault decoding has been released
         else if (key === 'application.isProduction') return true;
