@@ -38,9 +38,10 @@ import { IBalancesApi } from '@/domain/interfaces/balances-api.interface';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { rawify, type Raw } from '@/validation/entities/raw.entity';
 import { Inject, Injectable } from '@nestjs/common';
-import { Address, getAddress } from 'viem';
+import { Address, getAddress, hexToNumber, type Hex } from 'viem';
 import { z, ZodError } from 'zod';
 import { getZerionHeaders } from '@/modules/balances/datasources/zerion-api.helpers';
+import { ZerionChainsSchema } from '@/modules/portfolio/datasources/entities/zerion-chain.entity';
 
 export const IZerionBalancesApi = Symbol('IZerionBalancesApi');
 
@@ -58,6 +59,13 @@ export class ZerionBalancesApi implements IBalancesApi {
   private readonly limitPeriodSeconds: number;
   // Number of allowed calls on each rate-limit cycle
   private readonly limitCalls: number;
+  // In-memory chain mappings: chainId -> zerion chain name
+  private chainMappings: { mainnet: Record<string, string>; testnet: Record<string, string> } = {
+    mainnet: {},
+    testnet: {},
+  };
+  // Promise to handle concurrent requests during initial fetch
+  private chainMappingsPromise: Promise<void> | null = null;
 
   constructor(
     @Inject(CacheService) private readonly cacheService: ICacheService,
@@ -123,7 +131,7 @@ export class ZerionBalancesApi implements IBalancesApi {
       safeAddress: args.safeAddress,
       fiatCode: args.fiatCode,
     });
-    const chainName = this._getChainName(args.chain);
+    const chainName = await this._getChainName(args.chain);
     const cached = await this.cacheService.hGet(cacheDir);
     if (cached != null) {
       const { key, field } = cacheDir;
@@ -196,7 +204,7 @@ export class ZerionBalancesApi implements IBalancesApi {
     } else {
       try {
         await this._checkRateLimit();
-        const chainName = this._getChainName(args.chain);
+        const chainName = await this._getChainName(args.chain);
         const url = `${this.baseUri}/v1/wallets/${args.safeAddress}/nft-positions`;
         const pageAfter = this._encodeZerionPageOffset(args.offset);
         const networkRequest = {
@@ -308,18 +316,90 @@ export class ZerionBalancesApi implements IBalancesApi {
     await this.cacheService.deleteByKey(key);
   }
 
-  private _getChainName(chain: Chain): string {
+  private async _getChainName(chain: Chain): Promise<string> {
     // First try to get from chain's balancesProvider config
-    const chainName =
-      chain.balancesProvider.chainName ??
-      this.chainsConfiguration[Number(chain.chainId)]?.chainName;
+    if (chain.balancesProvider.chainName) {
+      return chain.balancesProvider.chainName;
+    }
 
-    if (!chainName)
+    // Ensure chain mappings are loaded
+    await this._ensureChainMappings();
+
+    // Get from in-memory mapping
+    const mappingKey = chain.isTestnet ? 'testnet' : 'mainnet';
+    const chainName = this.chainMappings[mappingKey][chain.chainId];
+
+    if (!chainName) {
+      // Fallback to hardcoded configuration
+      const fallbackChainName = this.chainsConfiguration[Number(chain.chainId)]?.chainName;
+
+      if (fallbackChainName) {
+        return fallbackChainName;
+      }
+
       throw Error(
         `Chain ${chain.chainId} balances retrieval via Zerion is not configured`,
       );
+    }
 
     return chainName;
+  }
+
+  private async _ensureChainMappings(): Promise<void> {
+    // If already fetched, return immediately
+    if (Object.keys(this.chainMappings.mainnet).length > 0 || Object.keys(this.chainMappings.testnet).length > 0) {
+      return;
+    }
+
+    // If fetch is in progress, wait for it
+    if (this.chainMappingsPromise) {
+      return this.chainMappingsPromise;
+    }
+
+    // Start fetching
+    this.chainMappingsPromise = this._fetchChainMappings();
+    await this.chainMappingsPromise;
+    this.chainMappingsPromise = null;
+  }
+
+  private async _fetchChainMappings(): Promise<void> {
+    try {
+      // Fetch mainnet chains
+      const mainnetMapping = await this._fetchChainMappingForNetwork(false);
+      this.chainMappings.mainnet = mainnetMapping;
+    } catch (error) {
+      this.loggingService.warn(`Failed to fetch mainnet chains from Zerion: ${error}`);
+    }
+
+    try {
+      // Fetch testnet chains
+      const testnetMapping = await this._fetchChainMappingForNetwork(true);
+      this.chainMappings.testnet = testnetMapping;
+    } catch (error) {
+      this.loggingService.warn(`Failed to fetch testnet chains from Zerion: ${error}`);
+    }
+  }
+
+  private async _fetchChainMappingForNetwork(isTestnet: boolean): Promise<Record<string, string>> {
+    const url = `${this.baseUri}/v1/chains`;
+    const networkRequest = {
+      headers: getZerionHeaders(this.apiKey, isTestnet),
+    };
+
+    const response = await this.networkService
+      .get({ url, networkRequest })
+      .then(({ data }) => ZerionChainsSchema.parse(data));
+
+    const mapping: Record<string, string> = {};
+    for (const chain of response.data) {
+      const networkName = chain.id;
+      const decimalChainId = hexToNumber(
+        chain.attributes.external_id as Hex,
+      ).toString();
+      mapping[decimalChainId] = networkName;
+    }
+
+    return mapping;
   }
 
   private _buildCollectiblesPage(

@@ -109,21 +109,12 @@ export default () => ({
       zerion: {
         apiKey: process.env.ZERION_API_KEY,
         baseUri: process.env.ZERION_BASE_URI || 'https://api.zerion.io',
+        // Chains are now fetched dynamically from Zerion API on first request
+        // Keeping minimal fallback list for when API fetch fails
         chains: {
           1: { chainName: 'ethereum' },
-          10: { chainName: 'optimism' },
-          100: { chainName: 'xdai' },
-          1101: { chainName: 'polygon-zkevm' },
-          1313161554: { chainName: 'aurora' },
           137: { chainName: 'polygon' },
-          324: { chainName: 'zksync-era' },
           42161: { chainName: 'arbitrum' },
-          42220: { chainName: 'celo' },
-          43114: { chainName: 'avalanche' },
-          534352: { chainName: 'scroll' },
-          56: { chainName: 'binance-smart-chain' },
-          8453: { chainName: 'base' },
-          11155111: { chainName: 'sepolia' },
         },
         currencies: [
           'USD',
