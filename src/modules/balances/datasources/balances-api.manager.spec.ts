@@ -73,16 +73,11 @@ const networkService = {
 
 const networkServiceMock = jest.mocked(networkService);
 
-const ZERION_BALANCES_CHAIN_IDS: Array<string> = faker.helpers.multiple(
-  () => faker.string.numeric(),
-  { count: { min: 1, max: 10 } },
-);
-
 beforeEach(() => {
   jest.resetAllMocks();
   configurationServiceMock.getOrThrow.mockImplementation((key) => {
-    if (key === 'features.zerionBalancesChainIds')
-      return ZERION_BALANCES_CHAIN_IDS;
+    if (key === 'features.zerionBalancesEnabled')
+      return false;
     if (key === 'features.counterfactualBalances') return true;
     // TODO: Remove after Vault decoding has been released
     else if (key === 'application.isProduction') return true;
@@ -91,7 +86,12 @@ beforeEach(() => {
 
 describe('Balances API Manager Tests', () => {
   describe('getApi checks', () => {
-    it('should return the Zerion API if the chainId is one of zerionBalancesChainIds', async () => {
+    it('should return the Zerion API if zerionBalancesEnabled is true', async () => {
+      configurationServiceMock.getOrThrow.mockImplementation((key) => {
+        if (key === 'features.zerionBalancesEnabled') return true;
+        if (key === 'features.counterfactualBalances') return true;
+        else if (key === 'application.isProduction') return true;
+      });
       const manager = new BalancesApiManager(
         configurationService,
         configApiMock,
@@ -104,11 +104,9 @@ describe('Balances API Manager Tests', () => {
         networkServiceMock,
       );
       const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const chainId = faker.string.numeric();
 
-      const result = await manager.getApi(
-        sample(ZERION_BALANCES_CHAIN_IDS) as string,
-        safeAddress,
-      );
+      const result = await manager.getApi(chainId, safeAddress);
 
       expect(result).toEqual(zerionBalancesApi);
     });
@@ -126,13 +124,11 @@ describe('Balances API Manager Tests', () => {
         networkServiceMock,
       );
       const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const chainId = faker.string.numeric();
       transactionApiManagerMock.getApi.mockResolvedValue(transactionApiMock);
       transactionApiMock.isSafe.mockResolvedValue(false);
 
-      const result = await manager.getApi(
-        faker.string.numeric({ exclude: ZERION_BALANCES_CHAIN_IDS }),
-        safeAddress,
-      );
+      const result = await manager.getApi(chainId, safeAddress);
 
       expect(result).toEqual(zerionBalancesApi);
     });
@@ -150,10 +146,7 @@ describe('Balances API Manager Tests', () => {
     ])('vpcUrl is %s', async (useVpcUrl, expectedUrl) => {
       const fiatCode = faker.finance.currencyCode();
       const chain = chainBuilder()
-        .with(
-          'chainId',
-          faker.string.numeric({ exclude: ZERION_BALANCES_CHAIN_IDS }),
-        )
+        .with('chainId', faker.string.numeric())
         .with('transactionService', txServiceUrl)
         .with('vpcTransactionService', vpcTxServiceUrl)
         .build();
@@ -165,8 +158,8 @@ describe('Balances API Manager Tests', () => {
           return expirationTimeInSeconds;
         else if (key === 'expirationTimeInSeconds.notFound.default')
           return notFoundExpireTimeSeconds;
-        else if (key === 'features.zerionBalancesChainIds')
-          return ZERION_BALANCES_CHAIN_IDS;
+        else if (key === 'features.zerionBalancesEnabled')
+          return false;
         else if (key === 'features.counterfactualBalances') return true;
         // TODO: Remove after Vault decoding has been released
         else if (key === 'application.isProduction') return true;

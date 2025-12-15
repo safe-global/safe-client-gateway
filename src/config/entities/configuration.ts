@@ -123,6 +123,7 @@ export default () => ({
           534352: { chainName: 'scroll' },
           56: { chainName: 'binance-smart-chain' },
           8453: { chainName: 'base' },
+          11155111: { chainName: 'sepolia' },
         },
         currencies: [
           'USD',
@@ -291,8 +292,8 @@ export default () => ({
   },
   features: {
     email: process.env.FF_EMAIL?.toLowerCase() === 'true',
-    zerionBalancesChainIds:
-      process.env.FF_ZERION_BALANCES_CHAIN_IDS?.split(',') ?? [],
+    zerionBalancesEnabled:
+      process.env.FF_ZERION_BALANCES_ENABLED?.toLowerCase() === 'true',
     zerionPositions:
       process.env.FF_ZERION_POSITIONS_DISABLED?.toLowerCase() !== 'true',
     debugLogs: process.env.FF_DEBUG_LOGS?.toLowerCase() === 'true',

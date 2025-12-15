@@ -12,6 +12,7 @@ import {
   ZerionCollectibles,
   ZerionCollectiblesSchema,
 } from '@/modules/balances/datasources/entities/zerion-collectible.entity';
+import { ZerionChainsSchema } from '@/modules/portfolio/datasources/entities/zerion-chain.entity';
 import { CacheRouter } from '@/datasources/cache/cache.router';
 import {
   CacheService,
@@ -38,7 +39,7 @@ import { IBalancesApi } from '@/domain/interfaces/balances-api.interface';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { rawify, type Raw } from '@/validation/entities/raw.entity';
 import { Inject, Injectable } from '@nestjs/common';
-import { Address, getAddress } from 'viem';
+import { Address, getAddress, hexToNumber, type Hex } from 'viem';
 import { z, ZodError } from 'zod';
 import { getZerionHeaders } from '@/modules/balances/datasources/zerion-api.helpers';
 
@@ -58,6 +59,7 @@ export class ZerionBalancesApi implements IBalancesApi {
   private readonly limitPeriodSeconds: number;
   // Number of allowed calls on each rate-limit cycle
   private readonly limitCalls: number;
+  private readonly chainsCacheTtlSeconds = 86400;
 
   constructor(
     @Inject(CacheService) private readonly cacheService: ICacheService,
@@ -123,7 +125,7 @@ export class ZerionBalancesApi implements IBalancesApi {
       safeAddress: args.safeAddress,
       fiatCode: args.fiatCode,
     });
-    const chainName = this._getChainName(args.chain);
+    const chainName = await this._getChainName(args.chain);
     const cached = await this.cacheService.hGet(cacheDir);
     if (cached != null) {
       const { key, field } = cacheDir;
@@ -196,7 +198,7 @@ export class ZerionBalancesApi implements IBalancesApi {
     } else {
       try {
         await this._checkRateLimit();
-        const chainName = this._getChainName(args.chain);
+        const chainName = await this._getChainName(args.chain);
         const url = `${this.baseUri}/v1/wallets/${args.safeAddress}/nft-positions`;
         const pageAfter = this._encodeZerionPageOffset(args.offset);
         const networkRequest = {
@@ -308,17 +310,30 @@ export class ZerionBalancesApi implements IBalancesApi {
     await this.cacheService.deleteByKey(key);
   }
 
-  private _getChainName(chain: Chain): string {
-    const chainName =
-      chain.balancesProvider.chainName ??
-      this.chainsConfiguration[Number(chain.chainId)]?.chainName;
+  private async _getChainName(chain: Chain): Promise<string> {
+    // First try to get from chain's balancesProvider config
+    if (chain.balancesProvider.chainName) {
+      return chain.balancesProvider.chainName;
+    }
 
-    if (!chainName)
-      throw Error(
-        `Chain ${chain.chainId} balances retrieval via Zerion is not configured`,
-      );
+    // Try dynamic mapping from Zerion API
+    const mapping = await this._getChainMapping(chain.isTestnet);
+    const chainName = mapping[chain.chainId];
 
-    return chainName;
+    if (chainName) {
+      return chainName;
+    }
+
+    // Fallback to hardcoded configuration
+    const fallbackChainName = this.chainsConfiguration[Number(chain.chainId)]?.chainName;
+
+    if (fallbackChainName) {
+      return fallbackChainName;
+    }
+
+    throw Error(
+      `Chain ${chain.chainId} balances retrieval via Zerion is not configured`,
+    );
   }
 
   private _buildCollectiblesPage(
@@ -390,6 +405,66 @@ export class ZerionBalancesApi implements IBalancesApi {
       );
     }
     return zerionUrl.toString();
+  }
+
+  private async _getCachedChainMapping(
+    isTestnet: boolean,
+  ): Promise<Record<string, string> | null> {
+    const cacheDir = CacheRouter.getZerionChainsCacheDir(isTestnet);
+    const cached = await this.cacheService.hGet(cacheDir);
+
+    if (!cached) {
+      return null;
+    }
+
+    return JSON.parse(cached);
+  }
+
+  private async _fetchAndCacheChainMapping(
+    isTestnet: boolean,
+  ): Promise<Record<string, string>> {
+    const url = `${this.baseUri}/v1/chains`;
+    const networkRequest = {
+      headers: getZerionHeaders(this.apiKey, isTestnet),
+    };
+
+    const response = await this.networkService
+      .get({ url, networkRequest })
+      .then(({ data }) => ZerionChainsSchema.parse(data));
+
+    const mapping: Record<string, string> = {};
+    for (const chain of response.data) {
+      const networkName = chain.id;
+      const decimalChainId = hexToNumber(
+        chain.attributes.external_id as Hex,
+      ).toString();
+      mapping[decimalChainId] = networkName;
+    }
+
+    const cacheDir = CacheRouter.getZerionChainsCacheDir(isTestnet);
+    await this.cacheService.hSet(
+      cacheDir,
+      JSON.stringify(mapping),
+      this.chainsCacheTtlSeconds,
+    );
+
+    return mapping;
+  }
+
+  private async _getChainMapping(
+    isTestnet: boolean,
+  ): Promise<Record<string, string>> {
+    const cached = await this._getCachedChainMapping(isTestnet);
+    if (cached) {
+      return cached;
+    }
+
+    try {
+      return await this._fetchAndCacheChainMapping(isTestnet);
+    } catch (error) {
+      this.loggingService.error(`Failed to fetch Zerion chains: ${error}`);
+      return {};
+    }
   }
 
   private async _checkRateLimit(): Promise<void> {
