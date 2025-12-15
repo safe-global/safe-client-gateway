@@ -93,7 +93,7 @@ describe('SpacesController', () => {
     app = await initApp();
   });
 
-  afterEach(async () => {
+  afterAll(async () => {
     await app.close();
   });
 

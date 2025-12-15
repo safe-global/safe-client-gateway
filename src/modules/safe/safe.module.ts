@@ -2,6 +2,8 @@ import { Module } from '@nestjs/common';
 import { AddressInfoModule } from '@/routes/common/address-info/address-info.module';
 import { SafesController } from '@/modules/safe/routes/safes.controller';
 import { SafesService } from '@/modules/safe/routes/safes.service';
+import { SafesV2Controller } from '@/modules/safe/routes/v2/safes.v2.controller';
+import { SafesV2Service } from '@/modules/safe/routes/v2/safes.v2.service';
 import { BalancesModule } from '@/modules/balances/balances.module';
 import { ChainsModule } from '@/modules/chains/chains.module';
 import { MessagesModule } from '@/modules/messages/messages.module';
@@ -22,7 +24,7 @@ import { ContractsModule } from '@/modules/contracts/contracts.module';
     DelegatesV2RepositoryModule,
     ContractsModule,
   ],
-  controllers: [SafesController],
+  controllers: [SafesController, SafesV2Controller],
   providers: [
     {
       provide: ISafeRepository,
@@ -30,6 +32,7 @@ import { ContractsModule } from '@/modules/contracts/contracts.module';
     },
     TransactionVerifierHelper,
     SafesService,
+    SafesV2Service,
   ],
   exports: [ISafeRepository],
 })
