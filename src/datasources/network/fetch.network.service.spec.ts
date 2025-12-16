@@ -535,6 +535,7 @@ describe('FetchNetworkService', () => {
           },
         },
         undefined,
+        undefined,
       );
     });
 
@@ -562,6 +563,7 @@ describe('FetchNetworkService', () => {
             Authorization: 'Bearer default-token',
           },
         },
+        undefined,
         undefined,
       );
     });
@@ -594,6 +596,7 @@ describe('FetchNetworkService', () => {
           },
         },
         undefined,
+        undefined,
       );
     });
 
@@ -625,6 +628,7 @@ describe('FetchNetworkService', () => {
           },
         },
         undefined,
+        undefined,
       );
     });
 
@@ -654,6 +658,7 @@ describe('FetchNetworkService', () => {
             'X-Custom': 'value',
           },
         },
+        undefined,
         undefined,
       );
     });
@@ -695,6 +700,7 @@ describe('FetchNetworkService', () => {
             'Content-Type': 'text/plain', // request overrides method and default
           },
         },
+        undefined,
         undefined,
       );
     });
