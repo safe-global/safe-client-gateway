@@ -3,6 +3,7 @@ import type { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.
 import { CacheRouter } from '@/datasources/cache/cache.router';
 import type { ICacheService } from '@/datasources/cache/cache.service.interface';
 import { MAX_TTL } from '@/datasources/cache/constants';
+import { CircuitBreakerKeys } from '@/datasources/circuit-breaker/circuit-breaker.keys';
 import type { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
@@ -950,6 +951,9 @@ export class TransactionApi implements ITransactionApi {
         expireTimeSeconds: this.ownersExpirationTimeSeconds,
         networkRequest: {
           timeout: this.ownersTimeout,
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getTransactionServiceKey(this.chainId),
+          },
         },
       });
     } catch (error) {
