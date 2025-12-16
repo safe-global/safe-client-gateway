@@ -8,7 +8,7 @@
 export class CircuitBreakerKeys {
   private static readonly SERVICE_PREFIX = {
     TRANSACTION_SERVICE: 'txs-service',
-  } as const;
+  };
 
   /**
    * Generates a circuit breaker key for the transaction service
