@@ -218,6 +218,13 @@ export default (): ReturnType<typeof configuration> => ({
     requestTimeout: faker.number.int(),
     ownersTimeout: faker.number.int(),
   },
+  circuitBreaker: {
+    failureThreshold: faker.number.int(),
+    successThreshold: faker.number.int(),
+    timeout: faker.number.int(),
+    rollingWindow: faker.number.int(),
+    halfOpenMaxRequests: faker.number.int(),
+  },
   locking: {
     baseUri: faker.internet.url({ appendSlash: false }),
     eligibility: {

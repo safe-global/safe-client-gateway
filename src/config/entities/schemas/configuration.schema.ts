@@ -39,6 +39,27 @@ export const RootConfigurationSchema = z
     AWS_SECRET_ACCESS_KEY: z.string().optional(),
     AWS_REGION: z.string().optional(),
     CGW_ENV: z.string().optional(),
+    CIRCUIT_BREAKER_FAILURE_THRESHOLD: z
+      .number({ coerce: true })
+      .int()
+      .min(1)
+      .optional(),
+    CIRCUIT_BREAKER_SUCCESS_THRESHOLD: z
+      .number({ coerce: true })
+      .int()
+      .min(1)
+      .optional(),
+    CIRCUIT_BREAKER_TIMEOUT: z.number({ coerce: true }).int().min(0).optional(),
+    CIRCUIT_BREAKER_ROLLING_WINDOW: z
+      .number({ coerce: true })
+      .int()
+      .min(0)
+      .optional(),
+    CIRCUIT_BREAKER_HALF_OPEN_MAX_REQUESTS: z
+      .number({ coerce: true })
+      .int()
+      .min(1)
+      .optional(),
     LOG_LEVEL: z
       .enum(['error', 'warn', 'info', 'http', 'verbose', 'debug', 'silly'])
       .optional(),
