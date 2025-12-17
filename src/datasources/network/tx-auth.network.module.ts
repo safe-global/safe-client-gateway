@@ -4,6 +4,7 @@ import { getTxAuthHeaders } from '@/datasources/network/auth/tx-auth-headers.hel
 import { FetchNetworkService } from '@/datasources/network/fetch.network.service';
 import { NetworkService } from '@/datasources/network/network.service.interface';
 import type { FetchClient } from '@/datasources/network/network.module';
+import { FetchClientToken } from '@/datasources/network/network.module';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
@@ -28,7 +29,7 @@ import { CacheFirstDataSourceModule } from '@/datasources/cache/cache.first.data
         const txHeaders = getTxAuthHeaders(configService);
         return new FetchNetworkService(client, loggingService, txHeaders);
       },
-      inject: ['FetchClient', LoggingService, IConfigurationService],
+      inject: [FetchClientToken, LoggingService, IConfigurationService],
     },
     CacheFirstDataSource,
     HttpErrorFactory,

@@ -5,6 +5,12 @@ import { faker } from '@faker-js/faker';
 import omit from 'lodash/omit';
 
 describe('Configuration validator', () => {
+  const originalNodeEnv = process.env.NODE_ENV;
+
+  afterEach(() => {
+    process.env.NODE_ENV = originalNodeEnv;
+  });
+
   const validConfiguration: Record<string, unknown> = {
     ...JSON.parse(fakeJson()),
     AUTH_TOKEN: faker.string.uuid(),
@@ -294,6 +300,10 @@ describe('Configuration validator', () => {
       'RELAY_NO_FEE_CAMPAIGN_MAINNET_RELAY_RULES',
       'RELAY_NO_FEE_CAMPAIGN_SEPOLIA_RELAY_RULES',
     ])('%s', (fieldKey) => {
+      beforeEach(() => {
+        process.env.NODE_ENV = 'production';
+      });
+
       it('should accept valid JSON array of relay rules', () => {
         const config = {
           ...validConfiguration,

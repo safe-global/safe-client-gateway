@@ -38,6 +38,7 @@ describe('FetchNetworkService', () => {
         expectedUrl,
         {
           method: 'GET',
+          headers: {},
         },
         undefined,
         undefined,
@@ -106,6 +107,7 @@ describe('FetchNetworkService', () => {
         expectedUrl,
         {
           method: 'GET',
+          headers: {},
         },
         undefined,
         undefined,
@@ -169,6 +171,7 @@ describe('FetchNetworkService', () => {
         expectedUrl,
         {
           method: 'GET',
+          headers: {},
         },
         timeout,
         undefined,
@@ -190,6 +193,7 @@ describe('FetchNetworkService', () => {
         expectedUrl,
         {
           method: 'GET',
+          headers: {},
         },
         undefined,
         undefined,
@@ -367,6 +371,7 @@ describe('FetchNetworkService', () => {
         `${url}/`,
         {
           method: 'DELETE',
+          headers: {},
         },
         undefined,
         undefined,
@@ -491,6 +496,7 @@ describe('FetchNetworkService', () => {
         expectedUrl,
         {
           method: 'DELETE',
+          headers: {},
         },
         undefined,
         undefined,

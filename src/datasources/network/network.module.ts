@@ -14,6 +14,8 @@ import { hashSha1 } from '@/domain/common/utils/utils';
 import { CircuitBreakerService } from '@/datasources/circuit-breaker/circuit-breaker.service';
 import { NetworkRequest } from '@/datasources/network/entities/network.request.entity';
 
+export const FetchClientToken = Symbol('FetchClient');
+
 export type FetchClient = <T>(
   url: string,
   options: RequestInit,
@@ -223,15 +225,21 @@ function getCacheKey(
 @Module({
   providers: [
     {
-      provide: 'FetchClient',
+      provide: FetchClientToken,
       useFactory: fetchClientFactory,
       inject: [IConfigurationService, CircuitBreakerService, LoggingService],
     },
     {
       provide: NetworkService,
-      useClass: FetchNetworkService,
+      useFactory: (
+        client: FetchClient,
+        loggingService: ILoggingService,
+      ): FetchNetworkService => {
+        return new FetchNetworkService(client, loggingService);
+      },
+      inject: [FetchClientToken, LoggingService],
     },
   ],
-  exports: [NetworkService, 'FetchClient'],
+  exports: [NetworkService, FetchClientToken],
 })
 export class NetworkModule {}

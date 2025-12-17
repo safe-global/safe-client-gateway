@@ -3,7 +3,10 @@ import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { NetworkRequest } from '@/datasources/network/entities/network.request.entity';
 import { NetworkResponse } from '@/datasources/network/entities/network.response.entity';
 import { INetworkService } from '@/datasources/network/network.service.interface';
-import { FetchClient } from '@/datasources/network/network.module';
+import {
+  FetchClient,
+  FetchClientToken,
+} from '@/datasources/network/network.module';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 import { LogType } from '@/domain/common/entities/log-type.entity';
 
@@ -13,7 +16,7 @@ import { LogType } from '@/domain/common/entities/log-type.entity';
 @Injectable()
 export class FetchNetworkService implements INetworkService {
   constructor(
-    @Inject('FetchClient')
+    @Inject(FetchClientToken)
     private readonly client: FetchClient,
     @Inject(LoggingService)
     private readonly loggingService: ILoggingService,
@@ -110,17 +113,11 @@ export class FetchNetworkService implements INetworkService {
     requestHeaders?: Record<string, string>,
     methodHeaders?: Record<string, string>,
   ): Record<string, string> | undefined {
-    const hasDefaultHeaders =
-      this.defaultHeaders && Object.keys(this.defaultHeaders).length > 0;
-    if (!hasDefaultHeaders && !methodHeaders) {
-      return requestHeaders;
-    }
-    const merged = {
+    return {
       ...this.defaultHeaders,
       ...methodHeaders,
       ...requestHeaders,
     };
-    return merged;
   }
 
   private buildUrl(
