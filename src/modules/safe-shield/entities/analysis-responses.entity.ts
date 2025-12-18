@@ -12,6 +12,7 @@ import {
   ThreatAnalysisResultSchema,
   type RecipientAnalysisResult,
   type ContractAnalysisResult,
+  UnofficialFallbackHandlerAnalysisResultSchema,
 } from './analysis-result.entity';
 import type { RecipientStatus } from '@/modules/safe-shield/entities/recipient-status.entity';
 import { BalanceChangesSchema } from './threat-analysis.types';
@@ -54,13 +55,14 @@ export const ContractAnalysisResponseSchema = z.record(
   AddressSchema,
   z
     .object({
-      logoUrl: z.string().optional(),
+      logoUrl: z.string().url().optional(),
       name: z.string().optional(),
-      fallbackHandler: AddressSchema.optional(),
       CONTRACT_VERIFICATION: contractGroupValueSchema,
       CONTRACT_INTERACTION: contractGroupValueSchema,
       DELEGATECALL: contractGroupValueSchema,
-      FALLBACK_HANDLER: contractGroupValueSchema,
+      FALLBACK_HANDLER: z
+        .array(UnofficialFallbackHandlerAnalysisResultSchema)
+        .optional(),
     })
     .strict(),
 );
@@ -129,7 +131,6 @@ export type ContractVerificationResult =
   GroupedAnalysisResults<ContractAnalysisResult> & {
     name?: string;
     logoUrl?: string;
-    fallbackHandler?: Address;
   };
 
 /**

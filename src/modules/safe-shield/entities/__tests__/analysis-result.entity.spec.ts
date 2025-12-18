@@ -6,6 +6,7 @@ import {
   AnalysisStatusSchema,
   type ContractAnalysisResult,
   CommonStatus,
+  UnofficialFallbackHandlerAnalysisResultSchema,
 } from '../analysis-result.entity';
 import { compareSeverityString } from '../severity.entity';
 import { RecipientStatus } from '../recipient-status.entity';
@@ -18,6 +19,7 @@ import {
   threatAnalysisResultBuilder,
   masterCopyChangeThreatBuilder,
   maliciousOrModerateThreatBuilder,
+  unofficialFallbackHandlerAnalysisResultBuilder,
 } from './builders/analysis-result.builder';
 import { omit } from 'lodash';
 
@@ -263,6 +265,37 @@ describe('AnalysisResult', () => {
       expect(() =>
         ContractAnalysisResultSchema.parse(contractResult),
       ).not.toThrow();
+    });
+
+    it('should validate UNOFFICIAL_FALLBACK_HANDLER with optional fallbackHandler object', () => {
+      const contractResultWithFallbackHandler =
+        unofficialFallbackHandlerAnalysisResultBuilder().build();
+
+      const parsed = UnofficialFallbackHandlerAnalysisResultSchema.parse(
+        contractResultWithFallbackHandler,
+      );
+      expect(parsed.type).toBe('UNOFFICIAL_FALLBACK_HANDLER');
+      expect(parsed).toHaveProperty('fallbackHandler');
+      expect(parsed.fallbackHandler).toHaveProperty('address');
+      expect(parsed.fallbackHandler).toHaveProperty('logoUrl');
+      expect(parsed.fallbackHandler).toHaveProperty('name');
+    });
+
+    it('should reject UNOFFICIAL_FALLBACK_HANDLER with invalid fallbackHandler object', () => {
+      const invalidFallbackHandler =
+        unofficialFallbackHandlerAnalysisResultBuilder()
+          .with('type', 'UNOFFICIAL_FALLBACK_HANDLER')
+          .with('fallbackHandler', {
+            address: 'not-an-address' as unknown as `0x${string}`,
+            logoUrl: 'not-a-url',
+          })
+          .build();
+
+      expect(() =>
+        UnofficialFallbackHandlerAnalysisResultSchema.parse(
+          invalidFallbackHandler,
+        ),
+      ).toThrow();
     });
 
     it('should validate common status FAILED', () => {

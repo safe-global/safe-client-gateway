@@ -241,7 +241,7 @@ describe('ContractAnalysisService', () => {
         CONTRACT_VERIFICATION: [
           {
             severity: SEVERITY_MAPPING.VERIFIED,
-            type: 'VERIFIED',
+            type: 'VERIFIED' as const,
             title: TITLE_MAPPING.VERIFIED,
             description: DESCRIPTION_MAPPING.VERIFIED({
               name: faker.company.name(),
@@ -253,18 +253,23 @@ describe('ContractAnalysisService', () => {
         FALLBACK_HANDLER: [
           {
             severity: SEVERITY_MAPPING.UNOFFICIAL_FALLBACK_HANDLER,
-            type: 'UNOFFICIAL_FALLBACK_HANDLER',
+            type: 'UNOFFICIAL_FALLBACK_HANDLER' as const,
             title: TITLE_MAPPING.UNOFFICIAL_FALLBACK_HANDLER,
             description: DESCRIPTION_MAPPING.UNOFFICIAL_FALLBACK_HANDLER(),
+            fallbackHandler: {
+              address: getAddress(faker.finance.ethereumAddress()),
+              name: faker.company.name(),
+              logoUrl: faker.internet.url(),
+            },
           },
         ],
-      } as Partial<Record<ContractStatusGroup, Array<ContractAnalysisResult>>>;
+      };
 
       const result2 = {
         CONTRACT_VERIFICATION: [
           {
             severity: SEVERITY_MAPPING.NOT_VERIFIED,
-            type: 'NOT_VERIFIED',
+            type: 'NOT_VERIFIED' as const,
             title: TITLE_MAPPING.NOT_VERIFIED,
             description: DESCRIPTION_MAPPING.NOT_VERIFIED(),
           },
@@ -272,7 +277,7 @@ describe('ContractAnalysisService', () => {
         CONTRACT_INTERACTION: [
           {
             severity: SEVERITY_MAPPING.KNOWN_CONTRACT,
-            type: 'KNOWN_CONTRACT',
+            type: 'KNOWN_CONTRACT' as const,
             title: TITLE_MAPPING.KNOWN_CONTRACT,
             description: DESCRIPTION_MAPPING.KNOWN_CONTRACT(),
           },
@@ -280,12 +285,12 @@ describe('ContractAnalysisService', () => {
         DELEGATECALL: [
           {
             severity: SEVERITY_MAPPING.UNEXPECTED_DELEGATECALL,
-            type: 'UNEXPECTED_DELEGATECALL',
+            type: 'UNEXPECTED_DELEGATECALL' as const,
             title: TITLE_MAPPING.UNEXPECTED_DELEGATECALL,
             description: DESCRIPTION_MAPPING.UNEXPECTED_DELEGATECALL(),
           },
         ],
-      } as Partial<Record<ContractStatusGroup, Array<ContractAnalysisResult>>>;
+      };
 
       const expectedResponse: ContractAnalysisResponse = {
         [contracts[0].address]: result1,

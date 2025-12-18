@@ -4,6 +4,7 @@ import { Builder } from '@/__tests__/builder';
 import type {
   MasterCopyChangeThreatAnalysisResult,
   MaliciousOrModerateThreatAnalysisResult,
+  UnofficialFallbackHandlerAnalysisResult,
 } from '../../analysis-result.entity';
 import {
   type RecipientAnalysisResult,
@@ -32,6 +33,22 @@ export function contractAnalysisResultBuilder(): IBuilder<ContractAnalysisResult
     .with('type', 'VERIFIED')
     .with('title', faker.lorem.sentence())
     .with('description', faker.lorem.paragraph());
+}
+
+/**
+ * Builder for ContractAnalysisResult: UNOFFICIAL_FALLBACK_HANDLER entities
+ */
+export function unofficialFallbackHandlerAnalysisResultBuilder(): IBuilder<UnofficialFallbackHandlerAnalysisResult> {
+  return new Builder<UnofficialFallbackHandlerAnalysisResult>()
+    .with('severity', 'WARN')
+    .with('type', 'UNOFFICIAL_FALLBACK_HANDLER')
+    .with('title', faker.lorem.sentence())
+    .with('description', faker.lorem.paragraph())
+    .with('fallbackHandler', {
+      address: getAddress(faker.finance.ethereumAddress()),
+      name: faker.company.name(),
+      logoUrl: faker.internet.url(),
+    });
 }
 
 /**

@@ -13,6 +13,7 @@ import {
   threatAnalysisResultBuilder,
   masterCopyChangeThreatBuilder,
   maliciousOrModerateThreatBuilder,
+  unofficialFallbackHandlerAnalysisResultBuilder,
 } from './analysis-result.builder';
 import type { ThreatStatus } from '../../threat-status.entity';
 import { getAddress } from 'viem';
@@ -83,7 +84,6 @@ export function contractAnalysisResponseBuilder(
     builder.with(getAddress(faker.finance.ethereumAddress()), {
       logoUrl: faker.image.url(),
       name: faker.company.name(),
-      fallbackHandler: getAddress(faker.finance.ethereumAddress()),
       CONTRACT_VERIFICATION: [contractAnalysisResultBuilder().build()],
       CONTRACT_INTERACTION: [
         contractAnalysisResultBuilder().with('type', 'KNOWN_CONTRACT').build(),
@@ -94,9 +94,7 @@ export function contractAnalysisResponseBuilder(
           .build(),
       ],
       FALLBACK_HANDLER: [
-        contractAnalysisResultBuilder()
-          .with('type', 'UNOFFICIAL_FALLBACK_HANDLER')
-          .build(),
+        unofficialFallbackHandlerAnalysisResultBuilder().build(),
       ],
     });
   }

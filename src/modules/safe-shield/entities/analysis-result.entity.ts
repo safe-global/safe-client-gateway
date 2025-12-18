@@ -108,9 +108,28 @@ export const RecipientAnalysisResultSchema = z.union([
 /**
  * Zod schema for contract analysis results.
  */
-export const ContractAnalysisResultSchema = AnalysisResultBaseSchema.extend({
-  type: z.union([ContractStatusSchema, CommonStatusSchema]),
-});
+
+export const UnofficialFallbackHandlerAnalysisResultSchema =
+  AnalysisResultBaseSchema.extend({
+    type: z.literal('UNOFFICIAL_FALLBACK_HANDLER'),
+    fallbackHandler: z
+      .object({
+        address: AddressSchema,
+        name: z.string().optional(),
+        logoUrl: z.string().url().optional(),
+      })
+      .optional(),
+  });
+
+export const ContractAnalysisResultSchema = z.union([
+  UnofficialFallbackHandlerAnalysisResultSchema,
+  AnalysisResultBaseSchema.extend({
+    type: z.union([
+      ContractStatusSchema.exclude(['UNOFFICIAL_FALLBACK_HANDLER']),
+      CommonStatusSchema,
+    ]),
+  }),
+]);
 
 /** Zod schema definition for threat (MALICIOUS or MODERATE) analysis issues */
 const ThreatIssueSchema = z.object({
@@ -169,6 +188,10 @@ export type RecipientAnalysisResult = z.infer<
  */
 export type ContractAnalysisResult = z.infer<
   typeof ContractAnalysisResultSchema
+>;
+
+export type UnofficialFallbackHandlerAnalysisResult = z.infer<
+  typeof UnofficialFallbackHandlerAnalysisResultSchema
 >;
 
 //----------------------- Threat Analysis Result Types -------------------------//
