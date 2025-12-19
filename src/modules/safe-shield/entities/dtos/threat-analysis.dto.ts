@@ -103,7 +103,10 @@ export class MaliciousOrModerateThreatAnalysisResultDto
 /**
  * DTO for failed threat analysis result.
  */
-export class FailedThreatAnalysisResultDto extends AnalysisResultDto<'FAILED'> implements FailedThreatAnalysisResult {
+export class FailedThreatAnalysisResultDto
+  extends AnalysisResultDto<'FAILED'>
+  implements FailedThreatAnalysisResult
+{
   @ApiProperty({
     description: 'Threat status code',
     enum: ['FAILED'],

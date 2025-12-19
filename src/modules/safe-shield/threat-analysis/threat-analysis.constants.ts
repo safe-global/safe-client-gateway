@@ -56,6 +56,5 @@ export const DESCRIPTION_MAPPING: Record<
     "Verify this change before proceeding as it will change the Safe's ownership",
   MODULE_CHANGE: () =>
     'Verify this change before proceeding as it will change Safe modules.',
-  FAILED: () =>
-    `Threat analysis failed. Review before processing.`
+  FAILED: () => `Threat analysis failed. Review before processing.`,
 };

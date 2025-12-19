@@ -135,11 +135,12 @@ export const MaliciousOrModerateThreatAnalysisResultSchema =
     issues: z.record(SeveritySchema, z.array(ThreatIssueSchema)).optional(),
   });
 
-export const FailedThreatAnalysisResultSchema =
-  AnalysisResultBaseSchema.extend({
+export const FailedThreatAnalysisResultSchema = AnalysisResultBaseSchema.extend(
+  {
     type: z.literal('FAILED'),
     error: z.string().optional(),
-  });
+  },
+);
 
 export const DefaultThreatAnalysisResultSchema =
   AnalysisResultBaseSchema.extend({
