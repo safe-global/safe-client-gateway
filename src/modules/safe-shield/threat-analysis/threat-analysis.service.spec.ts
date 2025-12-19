@@ -152,6 +152,7 @@ describe('ThreatAnalysisService', () => {
             type: 'FAILED',
             title: TITLE_MAPPING.FAILED,
             description: DESCRIPTION_MAPPING.FAILED(),
+            error: undefined,
           },
         ],
       });
@@ -178,6 +179,7 @@ describe('ThreatAnalysisService', () => {
             type: 'FAILED',
             title: TITLE_MAPPING.FAILED,
             description: DESCRIPTION_MAPPING.FAILED(),
+            error: undefined,
           },
         ],
       });
@@ -392,6 +394,7 @@ describe('ThreatAnalysisService', () => {
               type: 'FAILED',
               title: TITLE_MAPPING.FAILED,
               description: DESCRIPTION_MAPPING.FAILED(),
+              error: undefined,
             },
           ],
           BALANCE_CHANGE: [],
@@ -432,9 +435,8 @@ describe('ThreatAnalysisService', () => {
               severity: SEVERITY_MAPPING.FAILED,
               type: 'FAILED',
               title: TITLE_MAPPING.FAILED,
-              description: DESCRIPTION_MAPPING.FAILED({
-                error: 'Validation failed',
-              }),
+              description: DESCRIPTION_MAPPING.FAILED(),
+              error: 'Validation failed',
             },
           ],
           BALANCE_CHANGE: [],
@@ -640,9 +642,8 @@ describe('ThreatAnalysisService', () => {
               severity: SEVERITY_MAPPING.FAILED,
               type: 'FAILED',
               title: TITLE_MAPPING.FAILED,
-              description: DESCRIPTION_MAPPING.FAILED({
-                error: 'Simulation could not be completed',
-              }),
+              description: DESCRIPTION_MAPPING.FAILED(),
+              error: 'Simulation could not be completed',
             },
             {
               severity: SEVERITY_MAPPING.NO_THREAT,

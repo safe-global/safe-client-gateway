@@ -348,7 +348,6 @@ export class ThreatAnalysisService {
 
     const description = DESCRIPTION_MAPPING[type]({
       description: descriptionMsg,
-      error,
     });
 
     switch (type) {
@@ -364,6 +363,8 @@ export class ThreatAnalysisService {
       case 'MALICIOUS':
       case 'MODERATE':
         return { severity, type, title, description, issues };
+      case 'FAILED':
+        return { severity, type, title, description, error };
       default:
         return { severity, type, title, description };
     }

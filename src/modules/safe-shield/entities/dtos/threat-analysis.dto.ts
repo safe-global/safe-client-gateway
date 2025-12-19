@@ -7,6 +7,7 @@ import {
 import { AnalysisResultDto } from './analysis-result.dto';
 import {
   CommonStatus,
+  FailedThreatAnalysisResult,
   MaliciousOrModerateThreatAnalysisResult,
   MasterCopyChangeThreatAnalysisResult,
   ThreatAnalysisResult,
@@ -100,18 +101,35 @@ export class MaliciousOrModerateThreatAnalysisResultDto
 }
 
 /**
+ * DTO for failed threat analysis result.
+ */
+export class FailedThreatAnalysisResultDto extends AnalysisResultDto<'FAILED'> implements FailedThreatAnalysisResult {
+  @ApiProperty({
+    description: 'Threat status code',
+    enum: ['FAILED'],
+  })
+  declare type: Extract<CommonStatus, 'FAILED'>;
+
+  @ApiPropertyOptional({
+    description: 'Error message for failed analysis',
+  })
+  declare error?: string;
+}
+
+/**
  * DTO for generic threat analysis result.
  */
 export class ThreatAnalysisResultDto extends AnalysisResultDto<
-  ThreatStatus | CommonStatus
+  Exclude<ThreatStatus, 'MASTERCOPY_CHANGE' | 'MALICIOUS' | 'MODERATE'>
 > {
   @ApiProperty({
     description: 'Threat status code',
-    enum: ['NO_THREAT', 'OWNERSHIP_CHANGE', 'MODULE_CHANGE', ...CommonStatus],
+    enum: ['NO_THREAT', 'OWNERSHIP_CHANGE', 'MODULE_CHANGE'],
   })
-  declare type:
-    | Exclude<ThreatStatus, 'MASTERCOPY_CHANGE' | 'MALICIOUS' | 'MODERATE'>
-    | CommonStatus;
+  declare type: Exclude<
+    ThreatStatus,
+    'MASTERCOPY_CHANGE' | 'MALICIOUS' | 'MODERATE'
+  >;
 }
 
 /**
@@ -241,6 +259,7 @@ export class BalanceChangeDto implements BalanceChange {
   ThreatAnalysisResultDto,
   MasterCopyChangeThreatAnalysisResultDto,
   MaliciousOrModerateThreatAnalysisResultDto,
+  FailedThreatAnalysisResultDto,
   ThreatIssueDto,
 )
 export class ThreatAnalysisResponseDto implements ThreatAnalysisResponse {
@@ -253,6 +272,7 @@ export class ThreatAnalysisResponseDto implements ThreatAnalysisResponse {
       { $ref: getSchemaPath(ThreatAnalysisResultDto) },
       { $ref: getSchemaPath(MasterCopyChangeThreatAnalysisResultDto) },
       { $ref: getSchemaPath(MaliciousOrModerateThreatAnalysisResultDto) },
+      { $ref: getSchemaPath(FailedThreatAnalysisResultDto) },
     ],
     isArray: true,
     example: [

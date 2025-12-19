@@ -36,7 +36,6 @@ export const TITLE_MAPPING: Record<ThreatStatus | CommonStatus, string> = {
 
 type DescriptionArgs = {
   description?: string;
-  error?: string;
 };
 
 /**
@@ -57,6 +56,6 @@ export const DESCRIPTION_MAPPING: Record<
     "Verify this change before proceeding as it will change the Safe's ownership",
   MODULE_CHANGE: () =>
     'Verify this change before proceeding as it will change Safe modules.',
-  FAILED: ({ error } = {}) =>
-    `Threat analysis failed. Review before processing.${error ? ` (${error})` : ''}`,
+  FAILED: () =>
+    `Threat analysis failed. Review before processing.`
 };

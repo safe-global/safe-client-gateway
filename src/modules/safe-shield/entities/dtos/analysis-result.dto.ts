@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { getStringEnumKeys } from '@/domain/common/utils/enum';
 import { Severity } from '../severity.entity';
 import {
@@ -35,4 +35,9 @@ export class AnalysisResultDto<
       'Detailed description explaining the finding and its implications',
   })
   description!: string;
+
+  @ApiPropertyOptional({
+    description: 'Error message for failed analysis',
+  })
+  error?: string;
 }
