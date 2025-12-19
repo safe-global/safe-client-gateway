@@ -62,6 +62,7 @@ import { BullModule } from '@nestjs/bullmq';
 import { CsvExportModule } from '@/modules/csv-export/csv-export.module';
 import { SafeShieldModule } from '@/modules/safe-shield/safe-shield.module';
 import { CircuitBreakerModule } from '@/datasources/circuit-breaker/circuit-breaker.module';
+import { ShareModule } from '@/modules/share/share.module';
 
 @Module({})
 export class AppModule implements NestModule {
@@ -106,6 +107,7 @@ export class AppModule implements NestModule {
         SafeAppsModule,
         SafeModule,
         SafeShieldModule,
+        ShareModule,
         TargetedMessagingModule,
         TransactionsModule,
         // common
