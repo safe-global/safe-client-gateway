@@ -11,6 +11,7 @@ import {
   type ContractAnalysisResult,
   type ThreatAnalysisResult,
 } from '../../analysis-result.entity';
+import type { Address } from 'viem';
 import { getAddress } from 'viem';
 
 /**
@@ -38,14 +39,16 @@ export function contractAnalysisResultBuilder(): IBuilder<ContractAnalysisResult
 /**
  * Builder for ContractAnalysisResult: UNOFFICIAL_FALLBACK_HANDLER entities
  */
-export function unofficialFallbackHandlerAnalysisResultBuilder(): IBuilder<UnofficialFallbackHandlerAnalysisResult> {
+export function unofficialFallbackHandlerAnalysisResultBuilder(
+  address?: Address,
+): IBuilder<UnofficialFallbackHandlerAnalysisResult> {
   return new Builder<UnofficialFallbackHandlerAnalysisResult>()
     .with('severity', 'WARN')
     .with('type', 'UNOFFICIAL_FALLBACK_HANDLER')
     .with('title', faker.lorem.sentence())
     .with('description', faker.lorem.paragraph())
     .with('fallbackHandler', {
-      address: getAddress(faker.finance.ethereumAddress()),
+      address: address ?? getAddress(faker.finance.ethereumAddress()),
       name: faker.company.name(),
       logoUrl: faker.internet.url(),
     });

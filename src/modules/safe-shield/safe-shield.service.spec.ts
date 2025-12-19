@@ -36,6 +36,7 @@ import {
   maliciousOrModerateThreatBuilder,
   masterCopyChangeThreatBuilder,
   threatAnalysisResultBuilder,
+  unofficialFallbackHandlerAnalysisResultBuilder,
 } from '@/modules/safe-shield/entities/__tests__/builders/analysis-result.builder';
 import { Operation } from '@/modules/safe/domain/entities/operation.entity';
 import {
@@ -951,7 +952,6 @@ describe('SafeShieldService', () => {
       const mockContractAnalysisWithFallbackHandler =
         contractAnalysisResponseBuilder(false)
           .with(mockSafeAddress, {
-            fallbackHandler: unofficialHandlerAddress,
             CONTRACT_VERIFICATION: [contractAnalysisResultBuilder().build()],
             CONTRACT_INTERACTION: [
               contractAnalysisResultBuilder()
@@ -959,10 +959,9 @@ describe('SafeShieldService', () => {
                 .build(),
             ],
             FALLBACK_HANDLER: [
-              contractAnalysisResultBuilder()
-                .with('type', 'UNOFFICIAL_FALLBACK_HANDLER')
-                .with('severity', 'WARN')
-                .build(),
+              unofficialFallbackHandlerAnalysisResultBuilder(
+                unofficialHandlerAddress,
+              ).build(),
             ],
           })
           .build();
@@ -991,13 +990,13 @@ describe('SafeShieldService', () => {
       expect(result.contract[mockSafeAddress]?.FALLBACK_HANDLER).toHaveLength(
         1,
       );
-      expect(result.contract[mockSafeAddress]?.fallbackHandler).toEqual(
-        unofficialHandlerAddress,
-      );
       expect(result.contract[mockSafeAddress]?.FALLBACK_HANDLER?.[0]).toEqual(
         expect.objectContaining({
           type: 'UNOFFICIAL_FALLBACK_HANDLER',
           severity: 'WARN',
+          fallbackHandler: expect.objectContaining({
+            address: unofficialHandlerAddress,
+          }),
         }),
       );
 

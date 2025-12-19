@@ -392,13 +392,14 @@ describe('ContractAnalysisService', () => {
   });
 
   describe('analyzeContract', () => {
-    const chainId = faker.string.numeric();
+    let chainId = faker.string.numeric();
     const safeAddress = getAddress(faker.finance.ethereumAddress());
     const contractAddress = getAddress(faker.finance.ethereumAddress());
+    const fallbackHandlerAddress = getAddress(faker.finance.ethereumAddress());
     const interactionCount = faker.number.int({ min: 1, max: 10 });
     const name = faker.company.name();
 
-    it('should return combined analysis results from verification, non-delegateCall and interaction checks', async () => {
+    it('should return combined analysis results from verification, non-delegateCall, fallback handler and interaction checks', async () => {
       const mockContractPage = pageBuilder()
         .with('count', 1)
         .with('results', [
@@ -415,9 +416,20 @@ describe('ContractAnalysisService', () => {
         ])
         .build();
 
-      mockDataDecoderApi.getContracts.mockResolvedValue(
-        rawify(mockContractPage),
-      );
+      const mockFallbackContractPage = pageBuilder()
+        .with('count', 1)
+        .with('results', [
+          contractBuilder()
+            .with('address', fallbackHandlerAddress)
+            .with('displayName', name)
+            .with('logoUrl', undefined)
+            .build(),
+        ])
+        .build();
+
+      mockDataDecoderApi.getContracts
+        .mockResolvedValueOnce(rawify(mockContractPage))
+        .mockResolvedValueOnce(rawify(mockFallbackContractPage));
 
       const mockTransactionPage = pageBuilder()
         .with('count', interactionCount)
@@ -430,11 +442,19 @@ describe('ContractAnalysisService', () => {
       const result = await service.analyzeContract({
         chainId,
         safeAddress,
-        contract: { address: contractAddress, isDelegateCall: false },
+        contract: {
+          address: contractAddress,
+          isDelegateCall: false,
+          fallbackHandler: fallbackHandlerAddress,
+        },
       });
 
-      expect(mockDataDecoderApi.getContracts).toHaveBeenCalledWith({
+      expect(mockDataDecoderApi.getContracts).toHaveBeenNthCalledWith(1, {
         address: contractAddress,
+        chainId,
+      });
+      expect(mockDataDecoderApi.getContracts).toHaveBeenNthCalledWith(2, {
+        address: fallbackHandlerAddress,
         chainId,
       });
 
@@ -463,6 +483,18 @@ describe('ContractAnalysisService', () => {
             type: 'KNOWN_CONTRACT',
             title: TITLE_MAPPING.KNOWN_CONTRACT,
             description: DESCRIPTION_MAPPING.KNOWN_CONTRACT(),
+          },
+        ],
+        FALLBACK_HANDLER: [
+          {
+            severity: SEVERITY_MAPPING.UNOFFICIAL_FALLBACK_HANDLER,
+            type: 'UNOFFICIAL_FALLBACK_HANDLER',
+            title: TITLE_MAPPING.UNOFFICIAL_FALLBACK_HANDLER,
+            description: DESCRIPTION_MAPPING.UNOFFICIAL_FALLBACK_HANDLER(),
+            fallbackHandler: {
+              address: fallbackHandlerAddress,
+              name,
+            },
           },
         ],
       });
@@ -610,7 +642,8 @@ describe('ContractAnalysisService', () => {
       expect(mockTransactionApiManager.getApi).toHaveBeenCalledWith(chainId);
     });
 
-    it('should return only CONTRACT_VERIFICATION group when both delegateCallResult and interactionResult are undefined', async () => {
+    it('should return only CONTRACT_VERIFICATION group when delegateCallResult, fallbackHandlerResult and interactionResult are undefined', async () => {
+      chainId = '1';
       const logoUrl = faker.image.url();
       const mockContractPage = pageBuilder()
         .with('count', 1)
@@ -640,7 +673,11 @@ describe('ContractAnalysisService', () => {
       const result = await service.analyzeContract({
         chainId,
         safeAddress,
-        contract: { address: contractAddress, isDelegateCall: true },
+        contract: {
+          address: contractAddress,
+          isDelegateCall: true,
+          fallbackHandler: TWAP_FALLBACK_HANDLER,
+        },
       });
 
       expect(mockDataDecoderApi.getContracts).toHaveBeenCalledWith({
@@ -1124,9 +1161,20 @@ describe('ContractAnalysisService', () => {
           ])
           .build();
 
-        mockDataDecoderApi.getContracts.mockResolvedValue(
-          rawify(mockContractPage),
-        );
+        const mockFallbackHandlerContractPage = pageBuilder()
+          .with('count', 1)
+          .with('results', [
+            contractBuilder()
+              .with('address', unofficialHandler)
+              .with('displayName', name)
+              .with('logoUrl', logoUrl)
+              .build(),
+          ])
+          .build();
+
+        mockDataDecoderApi.getContracts
+          .mockResolvedValueOnce(rawify(mockContractPage))
+          .mockResolvedValueOnce(rawify(mockFallbackHandlerContractPage));
 
         const result = await service.verifyContract({
           chainId,
@@ -1140,7 +1188,6 @@ describe('ContractAnalysisService', () => {
         expect(result).toEqual({
           logoUrl,
           name,
-          fallbackHandler: unofficialHandler,
           CONTRACT_VERIFICATION: [
             {
               severity: SEVERITY_MAPPING.VERIFIED,
@@ -1155,8 +1202,22 @@ describe('ContractAnalysisService', () => {
               type: 'UNOFFICIAL_FALLBACK_HANDLER',
               title: TITLE_MAPPING.UNOFFICIAL_FALLBACK_HANDLER,
               description: DESCRIPTION_MAPPING.UNOFFICIAL_FALLBACK_HANDLER(),
+              fallbackHandler: {
+                address: unofficialHandler,
+                name,
+                logoUrl,
+              },
             },
           ],
+        });
+
+        expect(mockDataDecoderApi.getContracts).toHaveBeenNthCalledWith(1, {
+          address: contractAddress,
+          chainId,
+        });
+        expect(mockDataDecoderApi.getContracts).toHaveBeenNthCalledWith(2, {
+          address: unofficialHandler,
+          chainId,
         });
       });
 
@@ -1193,7 +1254,6 @@ describe('ContractAnalysisService', () => {
         expect(result).toEqual({
           logoUrl,
           name,
-          fallbackHandler: undefined,
           CONTRACT_VERIFICATION: [
             {
               severity: SEVERITY_MAPPING.VERIFIED,
@@ -1203,6 +1263,8 @@ describe('ContractAnalysisService', () => {
             },
           ],
         });
+
+        expect(mockDataDecoderApi.getContracts).toHaveBeenCalledTimes(1);
       });
 
       it('should include FALLBACK_HANDLER when contract not found', async () => {
@@ -1212,9 +1274,21 @@ describe('ContractAnalysisService', () => {
           .with('results', [])
           .build();
 
-        mockDataDecoderApi.getContracts.mockResolvedValue(
-          rawify(mockContractPage),
-        );
+        const mockFallbackHandlerContractPage = pageBuilder()
+          .with('count', 1)
+          .with('results', [
+            contractBuilder()
+              .with('address', unofficialHandler)
+              .with('displayName', '')
+              .with('name', '')
+              .with('logoUrl', undefined)
+              .build(),
+          ])
+          .build();
+
+        mockDataDecoderApi.getContracts
+          .mockResolvedValueOnce(rawify(mockContractPage))
+          .mockResolvedValueOnce(rawify(mockFallbackHandlerContractPage));
 
         const result = await service.verifyContract({
           chainId,
@@ -1226,23 +1300,37 @@ describe('ContractAnalysisService', () => {
         });
 
         expect(result).toEqual({
-          fallbackHandler: unofficialHandler,
           FALLBACK_HANDLER: [
             {
               severity: SEVERITY_MAPPING.UNOFFICIAL_FALLBACK_HANDLER,
               type: 'UNOFFICIAL_FALLBACK_HANDLER',
               title: TITLE_MAPPING.UNOFFICIAL_FALLBACK_HANDLER,
               description: DESCRIPTION_MAPPING.UNOFFICIAL_FALLBACK_HANDLER(),
+              fallbackHandler: {
+                address: unofficialHandler,
+              },
             },
           ],
         });
+        expect(mockDataDecoderApi.getContracts).toHaveBeenCalledTimes(2);
       });
 
       it('should include FALLBACK_HANDLER when contract verification fails', async () => {
         const unofficialHandler = getAddress(faker.finance.ethereumAddress());
-        mockDataDecoderApi.getContracts.mockRejectedValue(
-          new Error('API error'),
-        );
+        const mockFallbackHandlerContractPage = pageBuilder()
+          .with('count', 1)
+          .with('results', [
+            contractBuilder()
+              .with('address', unofficialHandler)
+              .with('displayName', name)
+              .with('logoUrl', logoUrl)
+              .build(),
+          ])
+          .build();
+
+        mockDataDecoderApi.getContracts
+          .mockRejectedValueOnce(new Error('API error'))
+          .mockResolvedValueOnce(rawify(mockFallbackHandlerContractPage));
 
         const result = await service.verifyContract({
           chainId,
@@ -1254,7 +1342,6 @@ describe('ContractAnalysisService', () => {
         });
 
         expect(result).toEqual({
-          fallbackHandler: unofficialHandler,
           CONTRACT_VERIFICATION: [
             {
               severity: SEVERITY_MAPPING.VERIFICATION_UNAVAILABLE,
@@ -1269,6 +1356,11 @@ describe('ContractAnalysisService', () => {
               type: 'UNOFFICIAL_FALLBACK_HANDLER',
               title: TITLE_MAPPING.UNOFFICIAL_FALLBACK_HANDLER,
               description: DESCRIPTION_MAPPING.UNOFFICIAL_FALLBACK_HANDLER(),
+              fallbackHandler: {
+                address: unofficialHandler,
+                name,
+                logoUrl,
+              },
             },
           ],
         });
@@ -1293,9 +1385,20 @@ describe('ContractAnalysisService', () => {
           ])
           .build();
 
-        mockDataDecoderApi.getContracts.mockResolvedValue(
-          rawify(mockContractPage),
-        );
+        const mockFallbackHandlerContractPage = pageBuilder()
+          .with('count', 1)
+          .with('results', [
+            contractBuilder()
+              .with('address', TWAP_FALLBACK_HANDLER)
+              .with('displayName', name)
+              .with('logoUrl', logoUrl)
+              .build(),
+          ])
+          .build();
+
+        mockDataDecoderApi.getContracts
+          .mockResolvedValueOnce(rawify(mockContractPage))
+          .mockResolvedValueOnce(rawify(mockFallbackHandlerContractPage));
 
         const result = await service.verifyContract({
           chainId: nonTwapChainId,
@@ -1309,7 +1412,6 @@ describe('ContractAnalysisService', () => {
         expect(result).toEqual({
           logoUrl,
           name,
-          fallbackHandler: TWAP_FALLBACK_HANDLER,
           CONTRACT_VERIFICATION: [
             {
               severity: SEVERITY_MAPPING.VERIFIED,
@@ -1324,6 +1426,11 @@ describe('ContractAnalysisService', () => {
               type: 'UNOFFICIAL_FALLBACK_HANDLER',
               title: TITLE_MAPPING.UNOFFICIAL_FALLBACK_HANDLER,
               description: DESCRIPTION_MAPPING.UNOFFICIAL_FALLBACK_HANDLER(),
+              fallbackHandler: {
+                address: TWAP_FALLBACK_HANDLER,
+                name,
+                logoUrl,
+              },
             },
           ],
         });
@@ -1373,6 +1480,7 @@ describe('ContractAnalysisService', () => {
             },
           ],
         });
+        expect(mockDataDecoderApi.getContracts).toHaveBeenCalledTimes(1);
       });
     });
   });
