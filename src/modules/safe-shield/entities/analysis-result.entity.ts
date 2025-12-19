@@ -11,7 +11,6 @@ import {
 } from './contract-status.entity';
 import { ThreatStatusSchema, type ThreatStatus } from './threat-status.entity';
 import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
-import type { Address } from 'viem';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 
 /**
@@ -121,21 +120,22 @@ const ThreatIssueSchema = z.object({
 
 /**
  * Zod schema for threat analysis results.
- * Uses union to validate type-specific fields.
+ * Split into multiple schemas to keep each variant focused and reusable.
  */
-export const ThreatAnalysisResultSchema = z.union([
-  // MASTERCOPY_CHANGE: requires before and after
+export const MasterCopyChangeThreatAnalysisResultSchema =
   AnalysisResultBaseSchema.extend({
     type: z.literal('MASTERCOPY_CHANGE'),
     before: AddressSchema,
     after: AddressSchema,
-  }),
-  // MALICIOUS or MODERATE: optional issues
+  });
+
+export const MaliciousOrModerateThreatAnalysisResultSchema =
   AnalysisResultBaseSchema.extend({
     type: z.union([z.literal('MALICIOUS'), z.literal('MODERATE')]),
     issues: z.record(SeveritySchema, z.array(ThreatIssueSchema)).optional(),
-  }),
-  // All others: no extra fields
+  });
+
+export const DefaultThreatAnalysisResultSchema =
   AnalysisResultBaseSchema.extend({
     type: z.union([
       ThreatStatusSchema.exclude([
@@ -145,7 +145,12 @@ export const ThreatAnalysisResultSchema = z.union([
       ]),
       CommonStatusSchema,
     ]),
-  }),
+  });
+
+export const ThreatAnalysisResultSchema = z.union([
+  MasterCopyChangeThreatAnalysisResultSchema,
+  MaliciousOrModerateThreatAnalysisResultSchema,
+  DefaultThreatAnalysisResultSchema,
 ]);
 
 /**
@@ -166,36 +171,20 @@ export type ContractAnalysisResult = z.infer<
 
 //----------------------- Threat Analysis Result Types -------------------------//
 
-export type MasterCopyChangeThreatAnalysisResult =
-  AnalysisResult<'MASTERCOPY_CHANGE'> & {
-    /** Address of the old master copy/implementation contract */
-    before: Address;
-    /** Address of the new master copy/implementation contract */
-    after: Address;
-  };
+export type MasterCopyChangeThreatAnalysisResult = z.infer<
+  typeof MasterCopyChangeThreatAnalysisResultSchema
+>;
 
 export type ThreatIssue = z.infer<typeof ThreatIssueSchema>;
 export type ThreatIssues = Partial<
   Record<keyof typeof Severity, Array<ThreatIssue>>
 >;
 
-export type MaliciousOrModerateThreatAnalysisResult = AnalysisResult<
-  'MALICIOUS' | 'MODERATE'
-> & {
-  /** A potential partial record of specific issues identified during threat analysis, grouped by severity */
-  issues?: ThreatIssues;
-};
+export type MaliciousOrModerateThreatAnalysisResult = z.infer<
+  typeof MaliciousOrModerateThreatAnalysisResultSchema
+>;
 
 /**
  * Type definition for threat analysis results.
- * Inferred from the Zod schema to avoid duplication.
- * Uses discriminated union to provide type-specific fields.
  */
-
-export type ThreatAnalysisResult =
-  | MasterCopyChangeThreatAnalysisResult
-  | MaliciousOrModerateThreatAnalysisResult
-  | AnalysisResult<
-      | Exclude<ThreatStatus, 'MASTERCOPY_CHANGE' | 'MALICIOUS' | 'MODERATE'>
-      | CommonStatus
-    >;
+export type ThreatAnalysisResult = z.infer<typeof ThreatAnalysisResultSchema>;

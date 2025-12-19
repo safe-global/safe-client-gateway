@@ -4,7 +4,7 @@ import {
   NetworkService,
 } from '@/datasources/network/network.service.interface';
 
-const networkService: INetworkService = {
+export const networkService: INetworkService = {
   get: jest.fn(),
   post: jest.fn(),
   delete: jest.fn(),

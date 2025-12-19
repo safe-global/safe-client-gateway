@@ -6,7 +6,10 @@ import { ConfigurationModule } from '@/config/configuration.module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import configuration from '@/config/entities/configuration';
 import type { FetchClient } from '@/datasources/network/network.module';
-import { NetworkModule } from '@/datasources/network/network.module';
+import {
+  FetchClientToken,
+  NetworkModule,
+} from '@/datasources/network/network.module';
 import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import {
@@ -81,7 +84,7 @@ describe('NetworkModule', () => {
     const configurationService = moduleFixture.get<IConfigurationService>(
       IConfigurationService,
     );
-    fetchClient = moduleFixture.get('FetchClient');
+    fetchClient = moduleFixture.get(FetchClientToken);
     defaultTimeout = configurationService.getOrThrow(
       'httpClient.requestTimeout',
     );

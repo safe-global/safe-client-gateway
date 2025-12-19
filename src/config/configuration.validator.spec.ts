@@ -5,6 +5,12 @@ import { faker } from '@faker-js/faker';
 import omit from 'lodash/omit';
 
 describe('Configuration validator', () => {
+  const originalNodeEnv = process.env.NODE_ENV;
+
+  afterEach(() => {
+    process.env.NODE_ENV = originalNodeEnv;
+  });
+
   const validConfiguration: Record<string, unknown> = {
     ...JSON.parse(fakeJson()),
     AUTH_TOKEN: faker.string.uuid(),
@@ -74,6 +80,7 @@ describe('Configuration validator', () => {
     CSV_AWS_SECRET_ACCESS_KEY: faker.string.uuid(),
     CSV_EXPORT_QUEUE_CONCURRENCY: faker.number.int({ min: 1, max: 5 }),
     BLOCKAID_CLIENT_API_KEY: faker.string.uuid(),
+    TX_SERVICE_API_KEY: faker.string.hexadecimal({ length: 32 }),
   };
 
   it('should bypass this validation on test environment', () => {
@@ -130,6 +137,21 @@ describe('Configuration validator', () => {
           RootConfigurationSchema,
         ),
       ).toThrow(`Configuration is invalid: ${key} Required`);
+    },
+  );
+
+  it.each(['', '   '])(
+    'should reject empty TX_SERVICE_API_KEY values in production environment',
+    (apiKey) => {
+      process.env.NODE_ENV = 'production';
+      expect(() =>
+        configurationValidator(
+          { ...validConfiguration, TX_SERVICE_API_KEY: apiKey },
+          RootConfigurationSchema,
+        ),
+      ).toThrow(
+        'Configuration is invalid: TX_SERVICE_API_KEY String must contain at least 1 character(s)',
+      );
     },
   );
 
@@ -278,6 +300,10 @@ describe('Configuration validator', () => {
       'RELAY_NO_FEE_CAMPAIGN_MAINNET_RELAY_RULES',
       'RELAY_NO_FEE_CAMPAIGN_SEPOLIA_RELAY_RULES',
     ])('%s', (fieldKey) => {
+      beforeEach(() => {
+        process.env.NODE_ENV = 'production';
+      });
+
       it('should accept valid JSON array of relay rules', () => {
         const config = {
           ...validConfiguration,
