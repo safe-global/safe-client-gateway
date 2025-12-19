@@ -55,6 +55,17 @@ Please review the required API keys in the `.env` file and ensure you have creat
 docker compose up -d redis
 ```
 
+If you run the service locally against a local Safe{Wallet} instance,
+
+- set `TX_SERVICE_API_KEY` to a valid key to avoid hitting the Transaction Service rate limit
+- set `CGW_ENV=development`
+- set `ALLOW_CORS=true`
+
+To generate a key, go to:
+
+- [Tx Service staging](https://developer.5afe.dev/api-keys)
+- [Tx Service production](https://developer.safe.global/api-keys)
+
 2. Start the Safe Client Gateway
 
 ```bash
