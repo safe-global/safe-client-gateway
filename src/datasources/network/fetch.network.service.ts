@@ -1,9 +1,12 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Optional } from '@nestjs/common';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { NetworkRequest } from '@/datasources/network/entities/network.request.entity';
 import { NetworkResponse } from '@/datasources/network/entities/network.response.entity';
 import { INetworkService } from '@/datasources/network/network.service.interface';
-import { FetchClient } from '@/datasources/network/network.module';
+import {
+  FetchClient,
+  FetchClientToken,
+} from '@/datasources/network/network.module';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 import { LogType } from '@/domain/common/entities/log-type.entity';
 
@@ -13,10 +16,12 @@ import { LogType } from '@/domain/common/entities/log-type.entity';
 @Injectable()
 export class FetchNetworkService implements INetworkService {
   constructor(
-    @Inject('FetchClient')
+    @Inject(FetchClientToken)
     private readonly client: FetchClient,
     @Inject(LoggingService)
     private readonly loggingService: ILoggingService,
+    @Optional()
+    private readonly defaultHeaders?: Record<string, string>,
   ) {}
 
   async get<T>(args: {
@@ -31,9 +36,10 @@ export class FetchNetworkService implements INetworkService {
         url,
         {
           method: 'GET',
-          headers: args.networkRequest?.headers,
+          headers: this.mergeHeaders(args.networkRequest?.headers),
         },
         args.networkRequest?.timeout,
+        args.networkRequest?.circuitBreaker,
       );
     } catch (error) {
       this.logErrorResponse(error, performance.now() - startTimeMs);
@@ -55,12 +61,12 @@ export class FetchNetworkService implements INetworkService {
         {
           method: 'POST',
           body: JSON.stringify(args.data),
-          headers: {
+          headers: this.mergeHeaders(args.networkRequest?.headers, {
             'Content-Type': 'application/json',
-            ...(args.networkRequest?.headers ?? {}),
-          },
+          }),
         },
         args.networkRequest?.timeout,
+        args.networkRequest?.circuitBreaker,
       );
     } catch (error) {
       this.logErrorResponse(error, performance.now() - startTimeMs);
@@ -77,12 +83,9 @@ export class FetchNetworkService implements INetworkService {
     this.logRequest(url, 'DELETE');
     const startTimeMs = performance.now();
 
-    let headers = args.networkRequest?.headers;
-
-    if (args.data) {
-      headers ??= {};
-      headers['Content-Type'] = 'application/json';
-    }
+    const contentTypeHeader = args.data
+      ? { 'Content-Type': 'application/json' }
+      : undefined;
 
     try {
       return await this.client<T>(
@@ -92,14 +95,29 @@ export class FetchNetworkService implements INetworkService {
           ...(args.data && {
             body: JSON.stringify(args.data),
           }),
-          headers,
+          headers: this.mergeHeaders(
+            args.networkRequest?.headers,
+            contentTypeHeader,
+          ),
         },
         args.networkRequest?.timeout,
+        args.networkRequest?.circuitBreaker,
       );
     } catch (error) {
       this.logErrorResponse(error, performance.now() - startTimeMs);
       throw error;
     }
+  }
+
+  private mergeHeaders(
+    requestHeaders?: Record<string, string>,
+    methodHeaders?: Record<string, string>,
+  ): Record<string, string> | undefined {
+    return {
+      ...this.defaultHeaders,
+      ...methodHeaders,
+      ...requestHeaders,
+    };
   }
 
   private buildUrl(
