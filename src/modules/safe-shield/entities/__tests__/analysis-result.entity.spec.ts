@@ -309,6 +309,23 @@ describe('AnalysisResult', () => {
       ).not.toThrow();
     });
 
+    it('should validate FAILED with optional error field', () => {
+      const failedResult = {
+        ...threatAnalysisResultBuilder().with('type', 'FAILED').build(),
+        error: 'Test error message',
+      };
+
+      expect(() =>
+        ThreatAnalysisResultSchema.parse(failedResult),
+      ).not.toThrow();
+
+      const parsed = ThreatAnalysisResultSchema.parse(failedResult);
+      expect(parsed.type).toBe('FAILED');
+      if (parsed.type === 'FAILED') {
+        expect(parsed.error).toBe('Test error message');
+      }
+    });
+
     it('should validate MASTERCOPY_CHANGE with before and after fields', () => {
       const masterCopyChange = masterCopyChangeThreatBuilder().build();
 
