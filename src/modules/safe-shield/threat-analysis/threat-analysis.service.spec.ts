@@ -152,7 +152,7 @@ describe('ThreatAnalysisService', () => {
             type: 'FAILED',
             title: TITLE_MAPPING.FAILED,
             description: DESCRIPTION_MAPPING.FAILED(),
-            error: undefined
+            error: undefined,
           },
         ],
       });
