@@ -210,7 +210,7 @@ export class ContractAnalysisService {
    * Determines if the contract has a verified ABI.
    *
    * @param {ContractFetchResult} fetchResult - The result of fetching contract metadata
-   * @returns {GroupedAnalysisResults<ContractAnalysisResult>} Verification check results
+   * @returns {GroupedAnalysisResults<ContractAnalysisResult> & {name?: string; logoUrl?: string;}} Verification check results
    */
   private performVerificationCheck(
     fetchResult: ContractFetchResult,
@@ -388,14 +388,12 @@ export class ContractAnalysisService {
       return;
     }
 
-    // Check if it's the TWAP fallback handler (CowSwap)
     const twapFallbackHandler = tWAPFallbackHandlerAddress(chainId);
     const isTrustedTWAPHandler =
       !!twapFallbackHandler &&
       fallbackHandlerAddress.toLowerCase() ===
         twapFallbackHandler.toLowerCase();
 
-    // Check if it's an official Safe fallback handler
     const isOfficialSafeHandler = this.isOfficialFallbackHandler(
       fallbackHandlerAddress,
       chainId,
@@ -405,7 +403,6 @@ export class ContractAnalysisService {
       return;
     }
 
-    // Fetch metadata for the unofficial fallback handler using centralized method
     const fetchResult = await this.fetchContractMetadata(
       chainId,
       fallbackHandlerAddress,

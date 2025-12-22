@@ -9,6 +9,26 @@ const SET_FALLBACK_HANDLER_METHOD = 'setFallbackHandler';
 const PARAM_NAME_HANDLER = 'handler';
 
 /**
+ * Checks if a transaction is a non-contract interaction (native transfer or ERC-20 token transfer).
+ * @param {DecodedTransactionData} tx - The transaction to check.
+ * @param {Erc20Decoder} erc20Decoder - The ERC-20 decoder helper.
+ * @returns {boolean} True if the transaction is a non-contract interaction, false otherwise.
+ */
+function isNonContractInteraction(
+  tx: DecodedTransactionData,
+  erc20Decoder: Erc20Decoder,
+): boolean {
+  const { data } = tx;
+  return (
+    data === '0x' ||
+    !data ||
+    erc20Decoder.helpers.isTransfer(data) ||
+    erc20Decoder.helpers.isTransferFrom(data) ||
+    (isExecTransaction(tx) && tx.dataDecoded?.parameters?.[2].value === '0x')
+  );
+}
+
+/**
  * Extracts the unique contract addresses with their interaction metadata.
  * In case of multiple interactions with the same contract:
  * - If at least one is a delegate call, isDelegateCall will be true
@@ -21,24 +41,13 @@ export function extractContracts(
   transactions: Array<DecodedTransactionData>,
   erc20Decoder: Erc20Decoder,
 ): Array<ExtractedContract> {
-  const isNonContractInteraction = (tx: DecodedTransactionData): boolean => {
-    const { data } = tx;
-    return (
-      data === '0x' ||
-      !data ||
-      erc20Decoder.helpers.isTransfer(data) ||
-      erc20Decoder.helpers.isTransferFrom(data) ||
-      (isExecTransaction(tx) && tx.dataDecoded?.parameters?.[2].value === '0x')
-    );
-  };
-
   const contractsByAddress: Map<
     Address,
     { isDelegateCall: boolean; fallbackHandler: Address | undefined }
   > = new Map();
 
   for (const tx of transactions) {
-    if (isNonContractInteraction(tx)) continue;
+    if (isNonContractInteraction(tx, erc20Decoder)) continue;
 
     const contract: Address = getAddress(tx.to);
     const isDelegateCall = tx.operation === 1;
@@ -78,7 +87,6 @@ function isSetFallbackHandler(tx: DecodedTransactionData): Address | undefined {
     ({ name }) => name === PARAM_NAME_HANDLER,
   )?.value;
 
-  //TODO try/catch ?
   return typeof handlerValue === 'string'
     ? getAddress(handlerValue)
     : undefined;
