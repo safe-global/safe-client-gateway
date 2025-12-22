@@ -368,7 +368,13 @@ export class ThreatAnalysisService {
       case 'MODERATE':
         return { severity, type, title, description, issues };
       case 'FAILED':
-        return { severity, type, title, description, error };
+        return {
+          severity,
+          type,
+          title,
+          description,
+          ...(error && { error }),
+        };
       default:
         return { severity, type, title, description };
     }
