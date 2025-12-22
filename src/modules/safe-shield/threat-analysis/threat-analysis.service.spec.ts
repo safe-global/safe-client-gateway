@@ -179,7 +179,6 @@ describe('ThreatAnalysisService', () => {
             type: 'FAILED',
             title: TITLE_MAPPING.FAILED,
             description: DESCRIPTION_MAPPING.FAILED(),
-            error: 'API Error',
           },
         ],
       });

@@ -159,7 +159,6 @@ describe('SafeShieldController (Integration)', () => {
         .build();
       const safeAddress = getAddress(faker.finance.ethereumAddress());
       const requestBody = threatAnalysisRequestBuilder().build();
-      const mockErrorMessage = 'Blockaid API error';
 
       networkService.get.mockImplementation(({ url }) => {
         if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
@@ -169,7 +168,7 @@ describe('SafeShieldController (Integration)', () => {
       });
 
       blockaidApi.scanTransaction.mockRejectedValue(
-        new Error(mockErrorMessage),
+        new Error('Blockaid API error'),
       );
 
       const response = await request(app.getHttpServer())
@@ -182,7 +181,6 @@ describe('SafeShieldController (Integration)', () => {
       expect(response.body).toHaveProperty('THREAT');
       expect(response.body.THREAT).toBeInstanceOf(Array);
       expect(response.body.THREAT[0]).toHaveProperty('type', 'FAILED');
-      expect(response.body.THREAT[0]).toHaveProperty('error', mockErrorMessage);
       expect(blockaidApi.scanTransaction).toHaveBeenCalled();
     });
   });

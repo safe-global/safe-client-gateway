@@ -133,9 +133,7 @@ export class ThreatAnalysisService {
       this.loggingService.warn(
         `Error during threat analysis for Safe ${safeAddress} on chain ${chainId}: ${error}`,
       );
-      return this.failedAnalysisResponse(
-        error instanceof Error ? error.message : String(error),
-      );
+      return this.failedAnalysisResponse();
     }
   }
 
@@ -373,7 +371,7 @@ export class ThreatAnalysisService {
           type,
           title,
           description,
-          ...(error && { error }),
+          error,
         };
       default:
         return { severity, type, title, description };
