@@ -67,9 +67,7 @@ export class ThreatAnalysisService {
     const { walletAddress, origin, data } = request;
     const message = this.serializeMessage(data);
     if (!message) {
-      return this.failedAnalysisResponse(
-        'Failed to serialize threat analysis request data',
-      );
+      return this.failedAnalysisResponse();
     }
 
     return await this.detectThreats(
@@ -380,11 +378,10 @@ export class ThreatAnalysisService {
 
   /**
    * Returns a failed threat analysis response.
-   * @param {string} [error] - Optional error message describing the failure
    * @returns {ThreatAnalysisResponse} A response indicating analysis failure
    */
-  public failedAnalysisResponse(error?: string): ThreatAnalysisResponse {
-    return { THREAT: [this.mapToAnalysisResult({ type: 'FAILED', error })] };
+  public failedAnalysisResponse(): ThreatAnalysisResponse {
+    return { THREAT: [this.mapToAnalysisResult({ type: 'FAILED' })] };
   }
 
   /**
