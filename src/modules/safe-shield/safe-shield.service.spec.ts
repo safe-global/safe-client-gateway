@@ -1233,7 +1233,6 @@ describe('SafeShieldService', () => {
             severity: COMMON_SEVERITY_MAPPING.FAILED,
             title: 'Threat analysis failed',
             description: DESCRIPTION_MAPPING.FAILED(),
-            error: undefined,
           },
         ],
       } as ThreatAnalysisResponse;
@@ -1271,7 +1270,6 @@ describe('SafeShieldService', () => {
             severity: COMMON_SEVERITY_MAPPING.FAILED,
             title: 'Threat analysis failed',
             description: DESCRIPTION_MAPPING.FAILED(),
-            error: undefined,
           },
         ],
       } as ThreatAnalysisResponse;

@@ -60,8 +60,6 @@ export class BlockaidApi implements IBlockaidApi {
       .withResponse();
     const request_id =
       response.headers.get(BLOCKAID_REQUEST_ID_HEADER) ?? undefined;
-    // TODO: remove logging after adding Blockaid error mapping:
-    console.log('!!!! data:', data);
     this.logScanResponse({ ...data, request_id });
     const parsedResponse = BlockaidScanResponseSchema.parse({
       ...data,

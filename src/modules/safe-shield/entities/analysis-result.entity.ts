@@ -122,27 +122,27 @@ const ThreatIssueSchema = z.object({
  * Zod schema for threat analysis results.
  * Split into multiple schemas to keep each variant focused and reusable.
  */
-export const MasterCopyChangeThreatAnalysisResultSchema =
+const MasterCopyChangeThreatAnalysisResultSchema =
   AnalysisResultBaseSchema.extend({
     type: z.literal('MASTERCOPY_CHANGE'),
     before: AddressSchema,
     after: AddressSchema,
   });
 
-export const MaliciousOrModerateThreatAnalysisResultSchema =
+const MaliciousOrModerateThreatAnalysisResultSchema =
   AnalysisResultBaseSchema.extend({
     type: z.union([z.literal('MALICIOUS'), z.literal('MODERATE')]),
     issues: z.record(SeveritySchema, z.array(ThreatIssueSchema)).optional(),
   });
 
-export const FailedThreatAnalysisResultSchema = AnalysisResultBaseSchema.extend(
+const FailedThreatAnalysisResultSchema = AnalysisResultBaseSchema.extend(
   {
     type: z.literal('FAILED'),
     error: z.string().optional(),
   },
 );
 
-export const DefaultThreatAnalysisResultSchema =
+const DefaultThreatAnalysisResultSchema =
   AnalysisResultBaseSchema.extend({
     type: ThreatStatusSchema.exclude([
       'MASTERCOPY_CHANGE',

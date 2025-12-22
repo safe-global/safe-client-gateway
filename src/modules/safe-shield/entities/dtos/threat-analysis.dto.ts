@@ -112,11 +112,6 @@ export class FailedThreatAnalysisResultDto
     enum: ['FAILED'],
   })
   declare type: Extract<CommonStatus, 'FAILED'>;
-
-  @ApiPropertyOptional({
-    description: 'Error message for failed analysis',
-  })
-  declare error?: string;
 }
 
 /**

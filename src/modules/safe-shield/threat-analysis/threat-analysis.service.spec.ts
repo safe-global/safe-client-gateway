@@ -152,7 +152,7 @@ describe('ThreatAnalysisService', () => {
             type: 'FAILED',
             title: TITLE_MAPPING.FAILED,
             description: DESCRIPTION_MAPPING.FAILED(),
-            error: undefined,
+            error: 'Failed to serialize threat analysis request data',
           },
         ],
       });
@@ -179,7 +179,7 @@ describe('ThreatAnalysisService', () => {
             type: 'FAILED',
             title: TITLE_MAPPING.FAILED,
             description: DESCRIPTION_MAPPING.FAILED(),
-            error: undefined,
+            error: 'API Error',
           },
         ],
       });
