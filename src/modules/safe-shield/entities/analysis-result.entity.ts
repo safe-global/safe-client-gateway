@@ -135,21 +135,18 @@ const MaliciousOrModerateThreatAnalysisResultSchema =
     issues: z.record(SeveritySchema, z.array(ThreatIssueSchema)).optional(),
   });
 
-const FailedThreatAnalysisResultSchema = AnalysisResultBaseSchema.extend(
-  {
-    type: z.literal('FAILED'),
-    error: z.string().optional(),
-  },
-);
+const FailedThreatAnalysisResultSchema = AnalysisResultBaseSchema.extend({
+  type: z.literal('FAILED'),
+  error: z.string().optional(),
+});
 
-const DefaultThreatAnalysisResultSchema =
-  AnalysisResultBaseSchema.extend({
-    type: ThreatStatusSchema.exclude([
-      'MASTERCOPY_CHANGE',
-      'MALICIOUS',
-      'MODERATE',
-    ]),
-  });
+const DefaultThreatAnalysisResultSchema = AnalysisResultBaseSchema.extend({
+  type: ThreatStatusSchema.exclude([
+    'MASTERCOPY_CHANGE',
+    'MALICIOUS',
+    'MODERATE',
+  ]),
+});
 
 export const ThreatAnalysisResultSchema = z.union([
   MasterCopyChangeThreatAnalysisResultSchema,
