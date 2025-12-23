@@ -11,6 +11,7 @@ import { z } from 'zod';
  * - CONTRACT_VERIFICATION
  * - CONTRACT_INTERACTION
  * - DELEGATECALL
+ * - FALLBACK_HANDLER
  */
 export const ContractStatus = [
   /** Contract is verified and source code is available */
@@ -33,6 +34,9 @@ export const ContractStatus = [
 
   /** Unexpected or potentially dangerous delegatecall detected */
   'UNEXPECTED_DELEGATECALL',
+
+  /** Unofficial fallback handler is detected */
+  'UNOFFICIAL_FALLBACK_HANDLER',
 ] as const;
 
 /**

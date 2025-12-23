@@ -54,7 +54,7 @@ describe('Status Entities', () => {
 
   describe('ContractStatus', () => {
     it('should have all expected values', () => {
-      expect(ContractStatus).toHaveLength(7);
+      expect(ContractStatus).toHaveLength(8);
       expect(ContractStatus).toContain('VERIFIED');
       expect(ContractStatus).toContain('NOT_VERIFIED');
       expect(ContractStatus).toContain('NOT_VERIFIED_BY_SAFE');
@@ -62,6 +62,7 @@ describe('Status Entities', () => {
       expect(ContractStatus).toContain('NEW_CONTRACT');
       expect(ContractStatus).toContain('KNOWN_CONTRACT');
       expect(ContractStatus).toContain('UNEXPECTED_DELEGATECALL');
+      expect(ContractStatus).toContain('UNOFFICIAL_FALLBACK_HANDLER');
     });
 
     it.each(ContractStatus)('should validate with schema = %s', (value) => {

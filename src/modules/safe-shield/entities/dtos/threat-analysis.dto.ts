@@ -97,7 +97,7 @@ export class MaliciousOrModerateThreatAnalysisResultDto
       WARN: [{ description: 'High gas price detected' }],
     },
   })
-  issues?: ThreatIssues;
+  public readonly issues?: ThreatIssues;
 }
 
 /**
@@ -137,13 +137,13 @@ abstract class BaseAssetDetailsDto {
   @ApiPropertyOptional({
     description: 'Token symbol (if available)',
   })
-  symbol?: string;
+  public readonly symbol?: string;
 
   @ApiPropertyOptional({
     description: 'URL to asset logo (if available)',
     example: 'https://example.com/logo.png',
   })
-  logo_url?: string;
+  public readonly logo_url?: string;
 }
 
 /**
@@ -154,7 +154,7 @@ export class NativeAssetDetailsDto extends BaseAssetDetailsDto {
     description: 'Asset type',
     enum: ['NATIVE'],
   })
-  type!: Extract<AssetType, 'NATIVE'>;
+  public readonly type!: Extract<AssetType, 'NATIVE'>;
 }
 
 /**
@@ -165,12 +165,12 @@ export class TokenAssetDetailsDto extends BaseAssetDetailsDto {
     description: 'Asset type',
     enum: ['ERC20', 'ERC721', 'ERC1155'],
   })
-  type!: Exclude<AssetType, 'NATIVE'>;
+  public readonly type!: Exclude<AssetType, 'NATIVE'>;
 
   @ApiProperty({
     description: 'Token contract address',
   })
-  address!: Address;
+  public readonly address!: Address;
 }
 
 /**
@@ -186,7 +186,7 @@ export class FungibleDiffDto implements z.infer<typeof FungibleDiffSchema> {
     description: 'Value change for fungible tokens',
     example: '1000000',
   })
-  value?: string;
+  public readonly value?: string;
 }
 
 /**
@@ -197,7 +197,7 @@ export class NFTDiffDto implements z.infer<typeof NFTDiffSchema> {
     description: 'Token ID for NFTs',
     example: 42,
   })
-  token_id!: number;
+  public readonly token_id!: number;
 }
 
 /**
@@ -217,7 +217,7 @@ export class BalanceChangeDto implements BalanceChange {
       { $ref: getSchemaPath(TokenAssetDetailsDto) },
     ],
   })
-  asset!: AssetDetailsDto;
+  public readonly asset!: AssetDetailsDto;
 
   @ApiProperty({
     description: 'Incoming asset changes',
@@ -230,7 +230,7 @@ export class BalanceChangeDto implements BalanceChange {
     },
     example: [{ value: '1000000' }],
   })
-  in!: Array<FungibleDiffDto | NFTDiffDto>;
+  public readonly in!: Array<FungibleDiffDto | NFTDiffDto>;
 
   @ApiProperty({
     description: 'Outgoing asset changes',
@@ -243,7 +243,7 @@ export class BalanceChangeDto implements BalanceChange {
     },
     example: [{ value: '500000' }],
   })
-  out!: Array<FungibleDiffDto | NFTDiffDto>;
+  public readonly out!: Array<FungibleDiffDto | NFTDiffDto>;
 }
 
 /**
@@ -282,7 +282,7 @@ export class ThreatAnalysisResponseDto implements ThreatAnalysisResponse {
       },
     ],
   })
-  THREAT?: Array<ThreatAnalysisResult>;
+  public readonly THREAT?: Array<ThreatAnalysisResult>;
 
   @ApiPropertyOptional({
     description:
@@ -302,7 +302,7 @@ export class ThreatAnalysisResponseDto implements ThreatAnalysisResponse {
       },
     ],
   })
-  BALANCE_CHANGE?: Array<BalanceChange>;
+  public readonly BALANCE_CHANGE?: Array<BalanceChange>;
 
   @ApiPropertyOptional({
     description:
@@ -310,5 +310,5 @@ export class ThreatAnalysisResponseDto implements ThreatAnalysisResponse {
       'Used for reporting false positives/negatives via the report endpoint.',
     example: '11111111-1111-1111-1111-111111111111',
   })
-  request_id?: string;
+  public readonly request_id?: string;
 }

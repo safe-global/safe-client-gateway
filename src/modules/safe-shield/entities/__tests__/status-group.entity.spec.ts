@@ -12,7 +12,7 @@ import {
 describe('StatusGroup', () => {
   describe('StatusGroup', () => {
     it('should have all expected values', () => {
-      expect(StatusGroup).toHaveLength(8);
+      expect(StatusGroup).toHaveLength(9);
       expect(StatusGroup).toContain('RECIPIENT_INTERACTION');
       expect(StatusGroup).toContain('RECIPIENT_ACTIVITY');
       expect(StatusGroup).toContain('BRIDGE');
@@ -21,6 +21,7 @@ describe('StatusGroup', () => {
       expect(StatusGroup).toContain('DELEGATECALL');
       expect(StatusGroup).toContain('THREAT');
       expect(StatusGroup).toContain('BALANCE_CHANGE');
+      expect(StatusGroup).toContain('FALLBACK_HANDLER');
     });
 
     it('should have consistent naming convention', () => {
@@ -44,10 +45,11 @@ describe('StatusGroup', () => {
 
   describe('ContractStatusGroup', () => {
     it('should have all expected values', () => {
-      expect(ContractStatusGroup).toHaveLength(3);
+      expect(ContractStatusGroup).toHaveLength(4);
       expect(ContractStatusGroup).toContain('CONTRACT_VERIFICATION');
       expect(ContractStatusGroup).toContain('CONTRACT_INTERACTION');
       expect(ContractStatusGroup).toContain('DELEGATECALL');
+      expect(ContractStatusGroup).toContain('FALLBACK_HANDLER');
     });
   });
 

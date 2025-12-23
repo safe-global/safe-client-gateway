@@ -20,6 +20,9 @@ export const ContractStatusGroup = [
 
   /** Delegatecall operation detection - potentially dangerous delegate calls */
   'DELEGATECALL',
+
+  /** Fallback handler verification - checks for unofficial handlers */
+  'FALLBACK_HANDLER',
 ] as const;
 
 export const ThreatStatusGroup = [
