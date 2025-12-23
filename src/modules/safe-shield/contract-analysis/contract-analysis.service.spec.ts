@@ -1221,6 +1221,57 @@ describe('ContractAnalysisService', () => {
         });
       });
 
+      it('should omit FALLBACK_HANDLER when handler is official Safe fallback handler', async () => {
+        const officialHandler = getAddress(
+          '0xf48f2B2d2a534e402487b3ee7C18c33Aec0Fe5e4',
+        );
+        const mainnetChainId = '1';
+
+        const mockContractPage = pageBuilder()
+          .with('count', 1)
+          .with('results', [
+            contractBuilder()
+              .with('address', contractAddress)
+              .with('abi', {
+                abiJson: [{ type: 'function', name: 'test' }],
+                abiHash: faker.string.hexadecimal() as Hex,
+                modified: faker.date.recent(),
+              })
+              .with('displayName', name)
+              .with('logoUrl', logoUrl)
+              .build(),
+          ])
+          .build();
+
+        mockDataDecoderApi.getContracts.mockResolvedValue(
+          rawify(mockContractPage),
+        );
+
+        const result = await service.verifyContract({
+          chainId: mainnetChainId,
+          contract: {
+            address: contractAddress,
+            isDelegateCall: false,
+            fallbackHandler: officialHandler,
+          },
+        });
+
+        expect(result).toEqual({
+          logoUrl,
+          name,
+          CONTRACT_VERIFICATION: [
+            {
+              severity: SEVERITY_MAPPING.VERIFIED,
+              type: 'VERIFIED',
+              title: TITLE_MAPPING.VERIFIED,
+              description: DESCRIPTION_MAPPING.VERIFIED({ name }),
+            },
+          ],
+        });
+
+        expect(mockDataDecoderApi.getContracts).toHaveBeenCalledTimes(1);
+      });
+
       it('should omit FALLBACK_HANDLER when handler address is undefined', async () => {
         const mockContractPage = pageBuilder()
           .with('count', 1)

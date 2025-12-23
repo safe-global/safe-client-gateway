@@ -137,7 +137,7 @@ export class ContractAnalysisService {
    *
    * @param {string} args.chainId - The chain ID.
    * @param {Address} args.safeAddress - The Safe wallet address.
-   * @param {Address} args.contract - The contract and its metadata to analyze.
+   * @param {ExtractedContract} args.contract - The contract and its metadata to analyze.
    * @returns {Promise<GroupedAnalysisResults<ContractAnalysisResult>>} Grouped analysis results by category.
    */
   public async analyzeContract(args: {

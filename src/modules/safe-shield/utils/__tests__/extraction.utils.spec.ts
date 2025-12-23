@@ -334,6 +334,42 @@ describe('extraction.utils', () => {
       ]);
     });
 
+    it('should not set fallback handler when setFallbackHandler has incorrect parameter name', () => {
+      mockErc20Decoder.helpers.isTransfer.mockReturnValue(false);
+      mockErc20Decoder.helpers.isTransferFrom.mockReturnValue(false);
+
+      const contract = getAddress(faker.finance.ethereumAddress());
+      const handlerAddress = getAddress(faker.finance.ethereumAddress());
+
+      const transactions = [
+        createTransaction({
+          to: contract,
+          dataDecoded: createDataDecoded({
+            method: 'setFallbackHandler',
+            parameters: [
+              {
+                name: 'wrongParameterName',
+                type: 'address',
+                value: handlerAddress,
+                valueDecoded: null,
+              },
+            ],
+          }),
+          operation: 0,
+        }),
+      ];
+
+      const result = extractContracts(transactions, mockErc20Decoder);
+
+      expect(result).toEqual([
+        {
+          address: contract,
+          isDelegateCall: false,
+          fallbackHandler: undefined,
+        },
+      ]);
+    });
+
     it('aggregates both isDelegate flag and fallbackHandler value across multiple transactions', () => {
       mockErc20Decoder.helpers.isTransfer.mockReturnValue(false);
       mockErc20Decoder.helpers.isTransferFrom.mockReturnValue(false);
