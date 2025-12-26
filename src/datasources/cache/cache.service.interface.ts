@@ -14,6 +14,13 @@ export interface ICacheService {
 
   hGet(cacheDir: CacheDir): Promise<string | undefined>;
 
+  /**
+   * Gets the remaining TTL in seconds for a cache key.
+   * @param {CacheDir} cacheDir - Cache directory
+   * @returns {Promise<number | null>} TTL in seconds, -1 if no expiry, -2 if key doesn't exist, null on error
+   */
+  getTTL(cacheDir: CacheDir): Promise<number | null>;
+
   deleteByKey(key: string): Promise<number>;
 
   increment(

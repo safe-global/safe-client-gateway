@@ -9,6 +9,10 @@ import { IPortfolioService } from '@/modules/portfolio/domain/portfolio.service.
 import { PortfolioController } from '@/modules/portfolio/v1/portfolio.controller';
 import { PortfolioApiService } from '@/modules/portfolio/v1/portfolio.service';
 import { PortfolioRouteMapper } from '@/modules/portfolio/v1/portfolio.mapper';
+import {
+  IPortfolioCacheInfoService,
+  PortfolioCacheInfoService,
+} from '@/modules/portfolio/domain/portfolio-cache-info.service';
 import { ChainsModule } from '../chains/chains.module';
 
 @Module({
@@ -25,9 +29,18 @@ import { ChainsModule } from '../chains/chains.module';
       provide: IPortfolioService,
       useClass: PortfolioService,
     },
+    {
+      provide: IPortfolioCacheInfoService,
+      useClass: PortfolioCacheInfoService,
+    },
     PortfolioApiService,
     PortfolioRouteMapper,
   ],
-  exports: [IPortfolioApi, IPortfolioRepository, IPortfolioService],
+  exports: [
+    IPortfolioApi,
+    IPortfolioRepository,
+    IPortfolioService,
+    IPortfolioCacheInfoService,
+  ],
 })
 export class PortfolioModule {}

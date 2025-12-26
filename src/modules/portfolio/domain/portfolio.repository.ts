@@ -16,6 +16,10 @@ import {
 import { CacheRouter } from '@/datasources/cache/cache.router';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { getNumberString } from '@/domain/common/utils/utils';
+import {
+  IPortfolioCacheInfoService,
+  type IPortfolioCacheInfoService as IPortfolioCacheInfoServiceType,
+} from '@/modules/portfolio/domain/portfolio-cache-info.service';
 
 /**
  * Portfolio repository.
@@ -32,6 +36,8 @@ export class PortfolioRepository implements IPortfolioRepository {
     @Inject(CacheService) private readonly cacheService: ICacheService,
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
+    @Inject(IPortfolioCacheInfoService)
+    private readonly portfolioCacheInfoService: IPortfolioCacheInfoServiceType,
   ) {
     this.cacheExpirationSeconds = this.configurationService.getOrThrow<number>(
       'portfolio.cache.ttlSeconds',
@@ -58,9 +64,11 @@ export class PortfolioRepository implements IPortfolioRepository {
 
     const cached = await this.cacheService.hGet(cacheDir);
     let portfolio: Portfolio;
+    let cacheHit = false;
 
     if (cached) {
       portfolio = PortfolioSchema.parse(JSON.parse(cached));
+      cacheHit = true;
     } else {
       const rawPortfolio = await this.portfolioApi.getPortfolio({
         address: args.address,
@@ -77,6 +85,16 @@ export class PortfolioRepository implements IPortfolioRepository {
         this.cacheExpirationSeconds,
       );
     }
+
+    const ttl = await this.cacheService.getTTL(cacheDir);
+    const ttlSeconds =
+      ttl !== null && ttl > 0 ? ttl : this.cacheExpirationSeconds;
+
+    this.portfolioCacheInfoService.setCacheInfo({
+      cacheHit,
+      ttlSeconds,
+      maxAgeSeconds: this.cacheExpirationSeconds,
+    });
 
     return this._applyFilters(portfolio, args);
   }

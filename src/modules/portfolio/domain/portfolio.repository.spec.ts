@@ -12,12 +12,14 @@ import { appPositionGroupBuilder } from '@/modules/portfolio/domain/entities/__t
 import { rawify } from '@/validation/entities/raw.entity';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
+import type { IPortfolioCacheInfoService } from '@/modules/portfolio/domain/portfolio-cache-info.service';
 
 describe('PortfolioRepository', () => {
   let repository: PortfolioRepository;
   let mockPortfolioApi: jest.MockedObjectDeep<IPortfolioApi>;
   let mockCacheService: jest.MockedObjectDeep<ICacheService>;
   let mockConfigService: jest.MockedObjectDeep<IConfigurationService>;
+  let mockPortfolioCacheInfoService: jest.MockedObjectDeep<IPortfolioCacheInfoService>;
 
   const defaultCacheTtl = 30;
   const defaultDustThreshold = 0.001;
@@ -33,6 +35,7 @@ describe('PortfolioRepository', () => {
       hGet: jest.fn(),
       hSet: jest.fn(),
       deleteByKey: jest.fn(),
+      getTTL: jest.fn().mockResolvedValue(defaultCacheTtl),
     } as jest.MockedObjectDeep<ICacheService>;
 
     mockConfigService = {
@@ -45,10 +48,16 @@ describe('PortfolioRepository', () => {
       }),
     } as unknown as jest.MockedObjectDeep<IConfigurationService>;
 
+    mockPortfolioCacheInfoService = {
+      setCacheInfo: jest.fn(),
+      getCacheInfo: jest.fn(),
+    } as jest.MockedObjectDeep<IPortfolioCacheInfoService>;
+
     repository = new PortfolioRepository(
       mockPortfolioApi,
       mockCacheService,
       mockConfigService,
+      mockPortfolioCacheInfoService,
     );
   });
 
