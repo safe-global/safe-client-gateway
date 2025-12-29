@@ -218,6 +218,13 @@ export default (): ReturnType<typeof configuration> => ({
     requestTimeout: faker.number.int(),
     ownersTimeout: faker.number.int(),
   },
+  circuitBreaker: {
+    failureThreshold: faker.number.int(),
+    successThreshold: faker.number.int(),
+    timeout: faker.number.int(),
+    rollingWindow: faker.number.int(),
+    halfOpenMaxRequests: faker.number.int(),
+  },
   locking: {
     baseUri: faker.internet.url({ appendSlash: false }),
     eligibility: {
@@ -369,6 +376,7 @@ export default (): ReturnType<typeof configuration> => ({
   },
   safeTransaction: {
     useVpcUrl: false,
+    apiKey: faker.string.hexadecimal({ length: 32 }),
   },
   safeWebApp: {
     baseUri: faker.internet.url({ appendSlash: false }),
@@ -412,6 +420,7 @@ export default (): ReturnType<typeof configuration> => ({
       42161: faker.internet.url({ appendSlash: false }),
       43114: faker.internet.url({ appendSlash: false }),
       11155111: faker.internet.url({ appendSlash: false }),
+      59144: faker.internet.url({ appendSlash: false }),
     },
     explorerBaseUri: faker.internet.url({ appendSlash: true }),
     restrictApps: false,

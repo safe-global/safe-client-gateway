@@ -40,7 +40,7 @@ export class SingleRecipientAnalysisDto implements SingleRecipientAnalysisRespon
       },
     ],
   })
-  RECIPIENT_INTERACTION!: Array<SingleRecipientAnalysisResultDto>;
+  public readonly RECIPIENT_INTERACTION!: Array<SingleRecipientAnalysisResultDto>;
 
   @ApiPropertyOptional({
     description:
@@ -57,11 +57,11 @@ export class SingleRecipientAnalysisDto implements SingleRecipientAnalysisRespon
       },
     ],
   })
-  RECIPIENT_ACTIVITY?: Array<SingleRecipientAnalysisResultDto>;
+  public readonly RECIPIENT_ACTIVITY?: Array<SingleRecipientAnalysisResultDto>;
 
   @ApiProperty({
     description: 'Indicates whether the analyzed recipient address is a Safe.',
     example: false,
   })
-  isSafe!: boolean;
+  public readonly isSafe!: boolean;
 }

@@ -35,6 +35,18 @@ The project requires some ABIs that are generated after install. In order to man
 yarn generate-abis
 ```
 
+## Setup your env
+
+We recommend using what is available in the .env.sample file:
+
+```bash
+cp .env.sample .env
+```
+
+Then edit your `.env` file with your configuration values.
+
+Please review the required API keys in the `.env` file and ensure you have created the necessary keys for the services you plan to use.
+
 ## Running the app
 
 1. Start Redis instance. By default, it will start on port `6379` of `localhost`.
@@ -42,6 +54,17 @@ yarn generate-abis
 ```shell
 docker compose up -d redis
 ```
+
+If you run the service locally against a local Safe{Wallet} instance,
+
+- set `TX_SERVICE_API_KEY` to a valid key to avoid hitting the Transaction Service rate limit
+- set `CGW_ENV=development`
+- set `ALLOW_CORS=true`
+
+To generate a key, go to:
+
+- [Tx Service staging](https://developer.5afe.dev/api-keys)
+- [Tx Service production](https://developer.safe.global/api-keys)
 
 2. Start the Safe Client Gateway
 
