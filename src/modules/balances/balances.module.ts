@@ -5,6 +5,11 @@ import {
   IZerionBalancesApi,
   ZerionBalancesApi,
 } from '@/modules/balances/datasources/zerion-balances-api.service';
+import {
+  IZerionWalletPortfolioApi,
+  ZerionWalletPortfolioApi,
+} from '@/modules/balances/datasources/zerion-wallet-portfolio-api.service';
+import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { CoingeckoApi } from '@/modules/balances/datasources/coingecko-api.service';
 import { IPricesApi } from '@/modules/balances/datasources/prices-api.interface';
 import { ConfigApiModule } from '@/datasources/config-api/config-api.module';
@@ -29,6 +34,7 @@ import { TxAuthNetworkModule } from '@/datasources/network/tx-auth.network.modul
   providers: [
     { provide: IBalancesApiManager, useClass: BalancesApiManager },
     { provide: IZerionBalancesApi, useClass: ZerionBalancesApi },
+    { provide: IZerionWalletPortfolioApi, useClass: ZerionWalletPortfolioApi },
     { provide: IPricesApi, useClass: CoingeckoApi },
     {
       provide: IBalancesRepository,
@@ -36,6 +42,11 @@ import { TxAuthNetworkModule } from '@/datasources/network/tx-auth.network.modul
     },
     BalancesService,
   ],
-  exports: [IBalancesApiManager, IBalancesRepository, BalancesService],
+  exports: [
+    IBalancesApiManager,
+    IBalancesRepository,
+    IZerionWalletPortfolioApi,
+    BalancesService,
+  ],
 })
 export class BalancesModule {}
