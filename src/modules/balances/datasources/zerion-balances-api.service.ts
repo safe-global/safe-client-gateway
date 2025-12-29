@@ -37,7 +37,7 @@ import { IBalancesApi } from '@/domain/interfaces/balances-api.interface';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { rawify, type Raw } from '@/validation/entities/raw.entity';
 import { Inject, Injectable } from '@nestjs/common';
-import { Address, getAddress, hexToNumber, type Hex } from 'viem';
+import { Address, getAddress, hexToNumber, isHex } from 'viem';
 import { z, ZodError } from 'zod';
 import { getZerionHeaders } from '@/modules/balances/datasources/zerion-api.helpers';
 import { ZerionChainsSchema } from '@/modules/portfolio/datasources/entities/zerion-chain.entity';
@@ -67,6 +67,8 @@ export class ZerionBalancesApi implements IBalancesApi {
   };
   // Promise to handle concurrent requests during initial fetch
   private chainMappingsPromise: Promise<void> | null = null;
+  // Track whether initialization has been attempted
+  private chainMappingsInitialized = false;
 
   constructor(
     @Inject(CacheService) private readonly cacheService: ICacheService,
@@ -337,11 +339,8 @@ export class ZerionBalancesApi implements IBalancesApi {
   }
 
   private async _ensureChainMappings(): Promise<void> {
-    // If already fetched, return immediately
-    if (
-      Object.keys(this.chainMappings.mainnet).length > 0 ||
-      Object.keys(this.chainMappings.testnet).length > 0
-    ) {
+    // If already initialized, return immediately
+    if (this.chainMappingsInitialized) {
       return;
     }
 
@@ -357,10 +356,14 @@ export class ZerionBalancesApi implements IBalancesApi {
   }
 
   private async _fetchChainMappings(): Promise<void> {
+    let mainnetSuccess = false;
+    let testnetSuccess = false;
+
     try {
       // Fetch mainnet chains
       const mainnetMapping = await this._fetchChainMappingForNetwork(false);
       this.chainMappings.mainnet = mainnetMapping;
+      mainnetSuccess = true;
     } catch (error) {
       this.loggingService.warn(
         `Failed to fetch mainnet chains from Zerion: ${error}`,
@@ -371,9 +374,21 @@ export class ZerionBalancesApi implements IBalancesApi {
       // Fetch testnet chains
       const testnetMapping = await this._fetchChainMappingForNetwork(true);
       this.chainMappings.testnet = testnetMapping;
+      testnetSuccess = true;
     } catch (error) {
       this.loggingService.warn(
         `Failed to fetch testnet chains from Zerion: ${error}`,
+      );
+    }
+
+    // Mark as initialized regardless of success/failure to prevent repeated attempts
+    this.chainMappingsInitialized = true;
+
+    // If both fetches failed, throw an error
+    if (!mainnetSuccess && !testnetSuccess) {
+      throw new DataSourceError(
+        'Failed to fetch chain mappings from Zerion for both mainnet and testnet',
+        500,
       );
     }
   }
@@ -393,9 +408,17 @@ export class ZerionBalancesApi implements IBalancesApi {
     const mapping: Record<string, string> = {};
     for (const chain of response.data) {
       const networkName = chain.id;
-      const decimalChainId = hexToNumber(
-        chain.attributes.external_id as Hex,
-      ).toString();
+      const externalId = chain.attributes.external_id;
+
+      // Validate that external_id is a valid hex string
+      if (!isHex(externalId)) {
+        this.loggingService.warn(
+          `Invalid external_id for chain ${networkName}: ${externalId}`,
+        );
+        continue;
+      }
+
+      const decimalChainId = hexToNumber(externalId).toString();
       mapping[decimalChainId] = networkName;
     }
 
