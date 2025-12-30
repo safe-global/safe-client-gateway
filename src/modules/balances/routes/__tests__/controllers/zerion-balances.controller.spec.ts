@@ -30,7 +30,6 @@ describe('Balances Controller (Unit)', () => {
   let safeConfigUrl: string;
   let networkService: jest.MockedObjectDeep<INetworkService>;
   let zerionBaseUri: string;
-  let zerionChainIds: Array<string>;
   let zerionCurrencies: Array<string>;
   let configurationService: jest.MockedObjectDeep<IConfigurationService>;
 
@@ -54,6 +53,7 @@ describe('Balances Controller (Unit)', () => {
       features: {
         ...defaultConfiguration.features,
         counterfactualBalances: true,
+        zerionBalancesEnabled: true,
       },
     });
 
@@ -63,9 +63,6 @@ describe('Balances Controller (Unit)', () => {
     safeConfigUrl = configurationService.getOrThrow('safeConfig.baseUri');
     zerionBaseUri = configurationService.getOrThrow(
       'balances.providers.zerion.baseUri',
-    );
-    zerionChainIds = configurationService.getOrThrow(
-      'features.zerionBalancesChainIds',
     );
     zerionCurrencies = configurationService.getOrThrow(
       'balances.providers.zerion.currencies',
@@ -85,8 +82,9 @@ describe('Balances Controller (Unit)', () => {
     describe('GET /balances', () => {
       it(`maps native coin + ERC20 token balance correctly, and sorts balances by fiatBalance`, async () => {
         const chainName = faker.company.name();
+        const chainId = faker.string.numeric();
         const chain = chainBuilder()
-          .with('chainId', zerionChainIds[0])
+          .with('chainId', chainId)
           .with('isTestnet', false)
           .with(
             'balancesProvider',
@@ -238,8 +236,9 @@ describe('Balances Controller (Unit)', () => {
 
       it('returns large numbers as is (not in scientific notation)', async () => {
         const chainName = faker.company.name();
+        const chainId = faker.string.numeric();
         const chain = chainBuilder()
-          .with('chainId', zerionChainIds[0])
+          .with('chainId', chainId)
           .with('isTestnet', false)
           .with(
             'balancesProvider',
@@ -391,8 +390,9 @@ describe('Balances Controller (Unit)', () => {
       });
 
       it('fails when an unsupported fiatCode is provided', async () => {
+        const chainId = faker.string.numeric();
         const chain = chainBuilder()
-          .with('chainId', zerionChainIds[0])
+          .with('chainId', chainId)
           .with('isTestnet', false)
           .build();
         const safeAddress = getAddress(faker.finance.ethereumAddress());
@@ -423,7 +423,7 @@ describe('Balances Controller (Unit)', () => {
 
     describe('Config API Error', () => {
       it(`500 error response`, async () => {
-        const chainId = zerionChainIds[0];
+        const chainId = faker.string.numeric();
         const safeAddress = faker.finance.ethereumAddress();
         const currency = faker.finance.currencyCode();
         const error = new NetworkResponseError(
@@ -462,8 +462,9 @@ describe('Balances Controller (Unit)', () => {
 
     describe('Zerion Balances API Error', () => {
       it(`500 error response`, async () => {
+        const chainId = faker.string.numeric();
         const chain = chainBuilder()
-          .with('chainId', zerionChainIds[0])
+          .with('chainId', chainId)
           .with('isTestnet', false)
           .build();
         const safeAddress = faker.finance.ethereumAddress();
@@ -494,8 +495,9 @@ describe('Balances Controller (Unit)', () => {
     describe('Rate Limit error', () => {
       it('does not trigger a rate-limit error', async () => {
         const chainName = faker.company.name();
+        const chainId = faker.string.numeric();
         const chain = chainBuilder()
-          .with('chainId', zerionChainIds[0])
+          .with('chainId', chainId)
           .with('isTestnet', false)
           .with(
             'balancesProvider',
@@ -568,8 +570,9 @@ describe('Balances Controller (Unit)', () => {
 
       it('triggers a rate-limit error', async () => {
         const chainName = faker.company.name();
+        const chainId = faker.string.numeric();
         const chain = chainBuilder()
-          .with('chainId', zerionChainIds[0])
+          .with('chainId', chainId)
           .with('isTestnet', false)
           .with(
             'balancesProvider',

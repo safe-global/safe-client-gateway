@@ -102,11 +102,7 @@ describe('Hook Events for Cache (Unit)', () => {
       txHash: faker.string.hexadecimal({ length: 32 }),
     },
   ])('$type clears balances', async (payload) => {
-    const chainId = faker.string.numeric({
-      exclude: configurationService.getOrThrow(
-        'features.zerionBalancesChainIds',
-      ),
-    });
+    const chainId = faker.string.numeric();
     const chain = chainBuilder().with('chainId', chainId).build();
     const safe = safeBuilder().build();
     const safeAddress = getAddress(safe.address);
@@ -384,11 +380,7 @@ describe('Hook Events for Cache (Unit)', () => {
       txHash: faker.string.hexadecimal({ length: 32 }),
     },
   ])('$type clears safe collectibles', async (payload) => {
-    const chainId = faker.string.numeric({
-      exclude: configurationService.getOrThrow(
-        'features.zerionBalancesChainIds',
-      ),
-    });
+    const chainId = faker.string.numeric();
     const chain = chainBuilder().with('chainId', chainId).build();
     const safe = safeBuilder().build();
     const safeAddress = getAddress(safe.address);
