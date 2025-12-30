@@ -108,9 +108,28 @@ export const RecipientAnalysisResultSchema = z.union([
 /**
  * Zod schema for contract analysis results.
  */
-export const ContractAnalysisResultSchema = AnalysisResultBaseSchema.extend({
-  type: z.union([ContractStatusSchema, CommonStatusSchema]),
-});
+
+export const UnofficialFallbackHandlerAnalysisResultSchema =
+  AnalysisResultBaseSchema.extend({
+    type: z.literal('UNOFFICIAL_FALLBACK_HANDLER'),
+    fallbackHandler: z
+      .object({
+        address: AddressSchema,
+        name: z.string().optional(),
+        logoUrl: z.string().url().optional(),
+      })
+      .optional(),
+  });
+
+export const ContractAnalysisResultSchema = z.union([
+  UnofficialFallbackHandlerAnalysisResultSchema,
+  AnalysisResultBaseSchema.extend({
+    type: z.union([
+      ContractStatusSchema.exclude(['UNOFFICIAL_FALLBACK_HANDLER']),
+      CommonStatusSchema,
+    ]),
+  }),
+]);
 
 /** Zod schema definition for threat (MALICIOUS or MODERATE) analysis issues */
 const ThreatIssueSchema = z.object({
@@ -122,34 +141,36 @@ const ThreatIssueSchema = z.object({
  * Zod schema for threat analysis results.
  * Split into multiple schemas to keep each variant focused and reusable.
  */
-export const MasterCopyChangeThreatAnalysisResultSchema =
+const MasterCopyChangeThreatAnalysisResultSchema =
   AnalysisResultBaseSchema.extend({
     type: z.literal('MASTERCOPY_CHANGE'),
     before: AddressSchema,
     after: AddressSchema,
   });
 
-export const MaliciousOrModerateThreatAnalysisResultSchema =
+const MaliciousOrModerateThreatAnalysisResultSchema =
   AnalysisResultBaseSchema.extend({
     type: z.union([z.literal('MALICIOUS'), z.literal('MODERATE')]),
     issues: z.record(SeveritySchema, z.array(ThreatIssueSchema)).optional(),
   });
 
-export const DefaultThreatAnalysisResultSchema =
-  AnalysisResultBaseSchema.extend({
-    type: z.union([
-      ThreatStatusSchema.exclude([
-        'MASTERCOPY_CHANGE',
-        'MALICIOUS',
-        'MODERATE',
-      ]),
-      CommonStatusSchema,
-    ]),
-  });
+const FailedThreatAnalysisResultSchema = AnalysisResultBaseSchema.extend({
+  type: z.literal('FAILED'),
+  error: z.string().optional(),
+});
+
+const DefaultThreatAnalysisResultSchema = AnalysisResultBaseSchema.extend({
+  type: ThreatStatusSchema.exclude([
+    'MASTERCOPY_CHANGE',
+    'MALICIOUS',
+    'MODERATE',
+  ]),
+});
 
 export const ThreatAnalysisResultSchema = z.union([
   MasterCopyChangeThreatAnalysisResultSchema,
   MaliciousOrModerateThreatAnalysisResultSchema,
+  FailedThreatAnalysisResultSchema,
   DefaultThreatAnalysisResultSchema,
 ]);
 
@@ -169,6 +190,10 @@ export type ContractAnalysisResult = z.infer<
   typeof ContractAnalysisResultSchema
 >;
 
+export type UnofficialFallbackHandlerAnalysisResult = z.infer<
+  typeof UnofficialFallbackHandlerAnalysisResultSchema
+>;
+
 //----------------------- Threat Analysis Result Types -------------------------//
 
 export type MasterCopyChangeThreatAnalysisResult = z.infer<
@@ -182,6 +207,10 @@ export type ThreatIssues = Partial<
 
 export type MaliciousOrModerateThreatAnalysisResult = z.infer<
   typeof MaliciousOrModerateThreatAnalysisResultSchema
+>;
+
+export type FailedThreatAnalysisResult = z.infer<
+  typeof FailedThreatAnalysisResultSchema
 >;
 
 /**

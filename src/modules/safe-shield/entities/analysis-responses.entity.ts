@@ -1,13 +1,9 @@
 import { z } from 'zod';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import type { Address } from 'viem';
+import { type Address } from 'viem';
 import type {
   ContractStatusGroup,
   RecipientStatusGroup,
-} from './status-group.entity';
-import {
-  ContractStatusGroupSchema,
-  RecipientStatusGroupSchema,
 } from './status-group.entity';
 import type { AnalysisResult, CommonStatus } from './analysis-result.entity';
 import {
@@ -16,6 +12,7 @@ import {
   ThreatAnalysisResultSchema,
   type RecipientAnalysisResult,
   type ContractAnalysisResult,
+  UnofficialFallbackHandlerAnalysisResultSchema,
 } from './analysis-result.entity';
 import type { RecipientStatus } from '@/modules/safe-shield/entities/recipient-status.entity';
 import { BalanceChangesSchema } from './threat-analysis.types';
@@ -23,20 +20,6 @@ import { BalanceChangesSchema } from './threat-analysis.types';
 const recipientGroupValueSchema = z
   .array(RecipientAnalysisResultSchema)
   .optional();
-
-/**
- * Dynamically builds the shape object for all recipient status groups.
- * This ensures that each valid RecipientStatusGroup enum value is mapped
- * to the same array schema, maintaining type safety while avoiding
- * manual repetition of each field.
- */
-const groupsShape = RecipientStatusGroupSchema.options.reduce(
-  (acc, key) => {
-    acc[key] = recipientGroupValueSchema;
-    return acc;
-  },
-  {} as Record<RecipientStatusGroup, typeof recipientGroupValueSchema>,
-);
 
 /**
  * Response structure for recipient analysis endpoint.
@@ -50,7 +33,9 @@ export const RecipientAnalysisResponseSchema = z.record(
   z
     .object({
       isSafe: z.boolean(),
-      ...groupsShape,
+      RECIPIENT_INTERACTION: recipientGroupValueSchema,
+      RECIPIENT_ACTIVITY: recipientGroupValueSchema,
+      BRIDGE: recipientGroupValueSchema,
     })
     .strict(),
 );
@@ -58,20 +43,6 @@ export const RecipientAnalysisResponseSchema = z.record(
 const contractGroupValueSchema = z
   .array(ContractAnalysisResultSchema)
   .optional();
-
-/**
- * Dynamically builds the shape object for all contract status groups.
- * This ensures that each valid ContractStatusGroup enum value is mapped
- * to the same array schema, maintaining type safety while avoiding
- * manual repetition of each field.
- */
-const contractGroupsShape = ContractStatusGroupSchema.options.reduce(
-  (acc, key) => {
-    acc[key] = contractGroupValueSchema;
-    return acc;
-  },
-  {} as Record<ContractStatusGroup, typeof contractGroupValueSchema>,
-);
 
 /**
  * Response structure for contract analysis endpoint.
@@ -84,9 +55,14 @@ export const ContractAnalysisResponseSchema = z.record(
   AddressSchema,
   z
     .object({
-      logoUrl: z.string().optional(),
+      logoUrl: z.string().url().optional(),
       name: z.string().optional(),
-      ...contractGroupsShape,
+      CONTRACT_VERIFICATION: contractGroupValueSchema,
+      CONTRACT_INTERACTION: contractGroupValueSchema,
+      DELEGATECALL: contractGroupValueSchema,
+      FALLBACK_HANDLER: z
+        .array(UnofficialFallbackHandlerAnalysisResultSchema)
+        .optional(),
     })
     .strict(),
 );
@@ -146,6 +122,16 @@ export type RecipientAnalysisResponseWithoutIsSafe = Record<
     'isSafe'
   >
 >;
+
+/**
+ * Result of contract verification with optional metadata.
+ * Includes analysis results grouped by status and contract metadata like name and logo.
+ */
+export type ContractVerificationResult =
+  GroupedAnalysisResults<ContractAnalysisResult> & {
+    name?: string;
+    logoUrl?: string;
+  };
 
 /**
  * Helper type for analysis results grouped by status group.

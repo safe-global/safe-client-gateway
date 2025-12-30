@@ -10,6 +10,7 @@ import type {
   RecipientAnalysisResponse,
   SingleRecipientAnalysisResponse,
   ThreatAnalysisResponse,
+  ContractAnalysisResponse,
 } from './entities/analysis-responses.entity';
 import type { TransactionsService } from '@/modules/transactions/routes/transactions.service';
 import type { TransactionPreview } from '@/modules/transactions/routes/entities/transaction-preview.entity';
@@ -35,6 +36,7 @@ import {
   maliciousOrModerateThreatBuilder,
   masterCopyChangeThreatBuilder,
   threatAnalysisResultBuilder,
+  unofficialFallbackHandlerAnalysisResultBuilder,
 } from '@/modules/safe-shield/entities/__tests__/builders/analysis-result.builder';
 import { Operation } from '@/modules/safe/domain/entities/operation.entity';
 import {
@@ -163,7 +165,7 @@ describe('SafeShieldService', () => {
   });
 
   const mockRecipientAnalysisResponse: RecipientAnalysisResponse =
-    recipientAnalysisResponseBuilder()
+    recipientAnalysisResponseBuilder(false)
       .with(mockRecipientAddress, {
         isSafe: true,
         RECIPIENT_INTERACTION: [recipientAnalysisResultBuilder().build()],
@@ -174,15 +176,19 @@ describe('SafeShieldService', () => {
       })
       .build();
 
-  const mockContractAnalysisResponse = contractAnalysisResponseBuilder()
-    .with(mockContractAddress, {
-      CONTRACT_VERIFICATION: [contractAnalysisResultBuilder().build()],
-      CONTRACT_INTERACTION: [
-        contractAnalysisResultBuilder().with('type', 'KNOWN_CONTRACT').build(),
-      ],
-      DELEGATECALL: [],
-    })
-    .build();
+  const mockContractAnalysisResponse: ContractAnalysisResponse =
+    contractAnalysisResponseBuilder(false)
+      .with(mockContractAddress, {
+        CONTRACT_VERIFICATION: [contractAnalysisResultBuilder().build()],
+        CONTRACT_INTERACTION: [
+          contractAnalysisResultBuilder()
+            .with('type', 'KNOWN_CONTRACT')
+            .build(),
+        ],
+        DELEGATECALL: [],
+        FALLBACK_HANDLER: [],
+      })
+      .build();
 
   describe('analyzeCounterparty', () => {
     const mockDataDecoded: DataDecoded = dataDecodedBuilder()
@@ -245,10 +251,20 @@ describe('SafeShieldService', () => {
         },
       });
 
-      expect(result).toEqual({
-        recipient: mockRecipientAnalysisResponse,
-        contract: {},
-      });
+      expect(result.recipient[mockRecipientAddress]).toBeDefined();
+      expect(result.recipient[mockRecipientAddress]?.isSafe).toBe(true);
+      expect(
+        result.recipient[mockRecipientAddress]?.RECIPIENT_INTERACTION,
+      ).toHaveLength(1);
+      expect(
+        result.recipient[mockRecipientAddress]?.RECIPIENT_ACTIVITY,
+      ).toHaveLength(1);
+      expect(
+        result.recipient[mockRecipientAddress]?.RECIPIENT_ACTIVITY?.[0]?.type,
+      ).toBe('LOW_ACTIVITY');
+      expect(result.recipient[mockRecipientAddress]?.BRIDGE).toEqual([]);
+      expect(result.contract).toEqual({});
+
       expect(mockTransactionsService.previewTransaction).toHaveBeenCalledWith({
         chainId: mockChainId,
         safeAddress: mockSafeAddress,
@@ -343,10 +359,29 @@ describe('SafeShieldService', () => {
         },
       });
 
-      expect(result).toEqual({
-        recipient: mockRecipientAnalysisResponse,
-        contract: mockContractAnalysisResponse,
-      });
+      expect(result.recipient[mockRecipientAddress]).toBeDefined();
+      expect(result.recipient[mockRecipientAddress]?.isSafe).toBe(true);
+      expect(
+        result.recipient[mockRecipientAddress]?.RECIPIENT_INTERACTION,
+      ).toHaveLength(1);
+      expect(
+        result.recipient[mockRecipientAddress]?.RECIPIENT_ACTIVITY,
+      ).toHaveLength(1);
+
+      expect(result.contract[mockContractAddress]).toBeDefined();
+      expect(
+        result.contract[mockContractAddress]?.CONTRACT_VERIFICATION,
+      ).toHaveLength(1);
+      expect(
+        result.contract[mockContractAddress]?.CONTRACT_INTERACTION,
+      ).toHaveLength(1);
+      expect(
+        result.contract[mockContractAddress]?.CONTRACT_INTERACTION?.[0]?.type,
+      ).toBe('KNOWN_CONTRACT');
+      expect(result.contract[mockContractAddress]?.DELEGATECALL).toEqual([]);
+      expect(result.contract[mockContractAddress]?.FALLBACK_HANDLER).toEqual(
+        [],
+      );
 
       // Verify that both services receive the 2 decoded inner transactions
       expect(mockRecipientAnalysisService.analyze).toHaveBeenCalledWith({
@@ -466,10 +501,13 @@ describe('SafeShieldService', () => {
           },
         });
 
-        expect(result).toEqual({
-          recipient: mockRecipientAnalysisResponse,
-          contract: {},
-        });
+        expect(result.contract).toEqual({});
+        expect(result.recipient[mockRecipientAddress]).toBeDefined();
+        expect(result.recipient[mockRecipientAddress]?.isSafe).toBe(true);
+        expect(
+          result.recipient[mockRecipientAddress]?.RECIPIENT_INTERACTION,
+        ).toHaveLength(1);
+
         expect(mockRecipientAnalysisService.analyze).toHaveBeenCalledWith({
           chainId: mockChainId,
           safeAddress: mockSafeAddress,
@@ -544,11 +582,10 @@ describe('SafeShieldService', () => {
           ],
         },
       });
-      expect(result.contract).toEqual(mockContractAnalysisResponse);
+      expect(result.contract[mockContractAddress]).toBeDefined();
       expect(mockLoggingService.warn).toHaveBeenCalledWith(
         'The counterparty analysis failed. Error: Recipient analysis failed',
       );
-
       expect(mockRecipientAnalysisService.analyze).toHaveBeenCalledWith({
         chainId: mockChainId,
         safeAddress: mockSafeAddress,
@@ -619,7 +656,8 @@ describe('SafeShieldService', () => {
           ],
         },
       });
-      expect(result.recipient).toEqual(mockRecipientAnalysisResponse);
+
+      expect(result.recipient[mockRecipientAddress]).toBeDefined();
       expect(mockLoggingService.warn).toHaveBeenCalledWith(
         'The counterparty analysis failed. Error: Contract analysis failed',
       );
@@ -796,10 +834,23 @@ describe('SafeShieldService', () => {
           },
         });
 
-        expect(result).toEqual({
-          recipient: mockRecipientAnalysisResponse,
-          contract: mockContractAnalysisResponse,
-        });
+        expect(result.recipient[mockRecipientAddress]).toBeDefined();
+        expect(result.recipient[mockRecipientAddress]?.isSafe).toBe(true);
+        expect(
+          result.recipient[mockRecipientAddress]?.RECIPIENT_INTERACTION,
+        ).toHaveLength(1);
+
+        expect(result.contract[mockContractAddress]).toBeDefined();
+        expect(
+          result.contract[mockContractAddress]?.CONTRACT_VERIFICATION,
+        ).toHaveLength(1);
+        expect(
+          result.contract[mockContractAddress]?.CONTRACT_INTERACTION,
+        ).toHaveLength(1);
+        expect(
+          result.contract[mockContractAddress]?.CONTRACT_INTERACTION?.[0]?.type,
+        ).toBe('KNOWN_CONTRACT');
+
         expect(mockTransactionsService.previewTransaction).toHaveBeenCalledWith(
           {
             chainId: mockChainId,
@@ -862,6 +913,105 @@ describe('SafeShieldService', () => {
       expect(mockRecipientAnalysisService.analyze).not.toHaveBeenCalled();
       expect(mockContractAnalysisService.analyze).not.toHaveBeenCalled();
     });
+
+    it('should include unofficial fallback handler warning in contract analysis', async () => {
+      const unofficialHandlerAddress = getAddress(
+        faker.finance.ethereumAddress(),
+      );
+      const setFallbackHandlerData: Hex = faker.string.hexadecimal({
+        length: 128,
+      }) as Hex;
+
+      const setFallbackHandlerDecoded: DataDecoded = dataDecodedBuilder()
+        .with('method', 'setFallbackHandler')
+        .with('parameters', [
+          {
+            name: 'handler',
+            type: 'address',
+            value: unofficialHandlerAddress,
+            valueDecoded: null,
+          },
+        ])
+        .with('accuracy', 'FULL_MATCH')
+        .build();
+
+      const mockTxInfo = createCustomTransactionInfo(
+        mockSafeAddress,
+        setFallbackHandlerData.length.toString(),
+        '0',
+        'setFallbackHandler',
+      );
+
+      const mockTransactionPreview = createTransactionPreviewMock({
+        txInfo: mockTxInfo,
+        hexData: setFallbackHandlerData,
+        dataDecoded: setFallbackHandlerDecoded,
+        to: mockSafeAddress,
+      });
+
+      const mockContractAnalysisWithFallbackHandler =
+        contractAnalysisResponseBuilder(false)
+          .with(mockSafeAddress, {
+            CONTRACT_VERIFICATION: [contractAnalysisResultBuilder().build()],
+            CONTRACT_INTERACTION: [
+              contractAnalysisResultBuilder()
+                .with('type', 'KNOWN_CONTRACT')
+                .build(),
+            ],
+            FALLBACK_HANDLER: [
+              unofficialFallbackHandlerAnalysisResultBuilder(
+                unofficialHandlerAddress,
+              ).build(),
+            ],
+          })
+          .build();
+
+      mockTransactionsService.previewTransaction.mockResolvedValue(
+        mockTransactionPreview,
+      );
+      mockRecipientAnalysisService.analyze.mockResolvedValue({});
+      mockContractAnalysisService.analyze.mockResolvedValue(
+        mockContractAnalysisWithFallbackHandler,
+      );
+
+      const result = await service.analyzeCounterparty({
+        chainId: mockChainId,
+        safeAddress: mockSafeAddress,
+        tx: {
+          to: mockSafeAddress,
+          data: setFallbackHandlerData,
+          value: '0',
+          operation: Operation.CALL,
+        },
+      });
+
+      expect(result.recipient).toEqual({});
+      expect(result.contract[mockSafeAddress]).toBeDefined();
+      expect(result.contract[mockSafeAddress]?.FALLBACK_HANDLER).toHaveLength(
+        1,
+      );
+      expect(result.contract[mockSafeAddress]?.FALLBACK_HANDLER?.[0]).toEqual(
+        expect.objectContaining({
+          type: 'UNOFFICIAL_FALLBACK_HANDLER',
+          severity: 'WARN',
+          fallbackHandler: expect.objectContaining({
+            address: unofficialHandlerAddress,
+          }),
+        }),
+      );
+
+      expect(mockContractAnalysisService.analyze).toHaveBeenCalledWith({
+        chainId: mockChainId,
+        safeAddress: mockSafeAddress,
+        transactions: [
+          expect.objectContaining({
+            to: mockSafeAddress,
+            data: setFallbackHandlerData,
+            dataDecoded: setFallbackHandlerDecoded,
+          }),
+        ],
+      });
+    });
   });
 
   describe('analyzeRecipients', () => {
@@ -911,7 +1061,17 @@ describe('SafeShieldService', () => {
         mockTxInfo,
       );
 
-      expect(result).toEqual(mockRecipientAnalysisResponse);
+      expect(result[mockRecipientAddress]).toBeDefined();
+      expect(result[mockRecipientAddress]?.isSafe).toBe(true);
+      expect(result[mockRecipientAddress]?.RECIPIENT_INTERACTION).toHaveLength(
+        1,
+      );
+      expect(result[mockRecipientAddress]?.RECIPIENT_ACTIVITY).toHaveLength(1);
+      expect(result[mockRecipientAddress]?.RECIPIENT_ACTIVITY?.[0]?.type).toBe(
+        'LOW_ACTIVITY',
+      );
+      expect(result[mockRecipientAddress]?.BRIDGE).toEqual([]);
+
       expect(mockRecipientAnalysisService.analyze).toHaveBeenCalledWith({
         chainId: mockChainId,
         safeAddress: mockSafeAddress,
@@ -952,7 +1112,13 @@ describe('SafeShieldService', () => {
         mockTxInfo,
       );
 
-      expect(result).toEqual(mockRecipientAnalysisResponse);
+      expect(result[mockRecipientAddress]).toBeDefined();
+      expect(result[mockRecipientAddress]?.isSafe).toBe(true);
+      expect(result[mockRecipientAddress]?.RECIPIENT_INTERACTION).toHaveLength(
+        1,
+      );
+      expect(result[mockRecipientAddress]?.RECIPIENT_ACTIVITY).toHaveLength(1);
+
       expect(mockRecipientAnalysisService.analyze).toHaveBeenCalledWith({
         chainId: mockChainId,
         safeAddress: mockSafeAddress,
@@ -972,7 +1138,13 @@ describe('SafeShieldService', () => {
         mockTransactions,
       );
 
-      expect(result).toEqual(mockRecipientAnalysisResponse);
+      expect(result[mockRecipientAddress]).toBeDefined();
+      expect(result[mockRecipientAddress]?.isSafe).toBe(true);
+      expect(result[mockRecipientAddress]?.RECIPIENT_INTERACTION).toHaveLength(
+        1,
+      );
+      expect(result[mockRecipientAddress]?.RECIPIENT_ACTIVITY).toHaveLength(1);
+
       expect(mockRecipientAnalysisService.analyze).toHaveBeenCalledWith({
         chainId: mockChainId,
         safeAddress: mockSafeAddress,
@@ -1034,7 +1206,17 @@ describe('SafeShieldService', () => {
         mockTransactions,
       );
 
-      expect(result).toEqual(mockContractAnalysisResponse);
+      expect(result[mockContractAddress]).toBeDefined();
+      expect(result[mockContractAddress]?.CONTRACT_VERIFICATION).toHaveLength(
+        1,
+      );
+      expect(result[mockContractAddress]?.CONTRACT_INTERACTION).toHaveLength(1);
+      expect(result[mockContractAddress]?.CONTRACT_INTERACTION?.[0]?.type).toBe(
+        'KNOWN_CONTRACT',
+      );
+      expect(result[mockContractAddress]?.DELEGATECALL).toEqual([]);
+      expect(result[mockContractAddress]?.FALLBACK_HANDLER).toEqual([]);
+
       expect(mockContractAnalysisService.analyze).toHaveBeenCalledWith({
         chainId: mockChainId,
         safeAddress: mockSafeAddress,
@@ -1090,6 +1272,8 @@ describe('SafeShieldService', () => {
       );
 
       expect(result).toEqual(mockInteractionResponse);
+      expect(result.RECIPIENT_INTERACTION).toBeDefined();
+      expect(result.RECIPIENT_INTERACTION).toHaveLength(1);
       expect(
         mockRecipientAnalysisService.analyzeRecipient,
       ).toHaveBeenCalledWith(
@@ -1144,6 +1328,8 @@ describe('SafeShieldService', () => {
       });
 
       expect(result).toEqual(mockThreatResponse);
+      expect(result.THREAT).toBeDefined();
+      expect(result.BALANCE_CHANGE).toBeDefined();
       expect(mockConfigApi.getChain).toHaveBeenCalledWith(mockChainId);
       expect(mockThreatAnalysisService.analyze).toHaveBeenCalledWith({
         chainId: mockChainId,
@@ -1210,7 +1396,10 @@ describe('SafeShieldService', () => {
 
       expect(result).toEqual(mockMultipleThreatsResponse);
       expect(result.THREAT).toHaveLength(3);
+      expect(result.THREAT?.[0]?.type).toBe('MALICIOUS');
       expect(result.BALANCE_CHANGE).toHaveLength(1);
+      expect(result.BALANCE_CHANGE?.[0]?.asset?.type).toBe('ERC20');
+
       expect(mockConfigApi.getChain).toHaveBeenCalledWith(mockChainId);
       expect(mockThreatAnalysisService.analyze).toHaveBeenCalledWith({
         chainId: mockChainId,
@@ -1250,6 +1439,10 @@ describe('SafeShieldService', () => {
       });
 
       expect(result).toEqual(expectedResult);
+      expect(result.THREAT).toHaveLength(1);
+      expect(result.THREAT?.[0]?.type).toBe('FAILED');
+      expect(result.THREAT?.[0]?.severity).toBe(COMMON_SEVERITY_MAPPING.FAILED);
+
       expect(mockLoggingService.warn).toHaveBeenCalledWith(
         'The threat analysis failed. Error: Threat analysis failed',
       );
@@ -1286,6 +1479,9 @@ describe('SafeShieldService', () => {
       });
 
       expect(result).toEqual(expectedResult);
+      expect(result.THREAT).toHaveLength(1);
+      expect(result.THREAT?.[0]?.type).toBe('FAILED');
+
       expect(mockLoggingService.warn).toHaveBeenCalledWith(
         'The threat analysis failed. Error: Failed to fetch chain config',
       );

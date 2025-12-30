@@ -10,7 +10,10 @@ import {
   getSafeToL2MigrationDeployments as _getSafeToL2MigrationDeployments,
   getSafeMigrationDeployments as _getSafeMigrationDeployments,
 } from '@safe-global/safe-deployments';
-import { _SAFE_DEPLOYMENTS } from '@safe-global/safe-deployments/dist/deployments';
+import {
+  _SAFE_DEPLOYMENTS,
+  _COMPAT_FALLBACK_HANDLER_DEPLOYMENTS,
+} from '@safe-global/safe-deployments/dist/deployments';
 import { getAddress, type Address } from 'viem';
 
 type Filter = {
@@ -166,6 +169,19 @@ function formatDeployments(
  */
 function getSafeVersions(): Array<string> {
   return _SAFE_DEPLOYMENTS.map((deployment) => deployment.version);
+}
+
+/**
+ * Gets the list of CompatibilityFallbackHandler versions available in the safe-deployments package.
+ * Infers versions from the _COMPAT_FALLBACK_HANDLER_DEPLOYMENTS constant exported by the package.
+ * Note: CompatibilityFallbackHandler was introduced in Safe v1.3.0.
+ *
+ * @returns {Array<string>} - a list of fallback handler versions in descending order
+ */
+export function getFallbackHandlerVersions(): Array<string> {
+  return _COMPAT_FALLBACK_HANDLER_DEPLOYMENTS.map(
+    (deployment) => deployment.version,
+  );
 }
 
 /**
