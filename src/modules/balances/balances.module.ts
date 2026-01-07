@@ -9,7 +9,6 @@ import {
   IZerionWalletPortfolioApi,
   ZerionWalletPortfolioApi,
 } from '@/modules/balances/datasources/zerion-wallet-portfolio-api.service';
-import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { CoingeckoApi } from '@/modules/balances/datasources/coingecko-api.service';
 import { IPricesApi } from '@/modules/balances/datasources/prices-api.interface';
 import { ConfigApiModule } from '@/datasources/config-api/config-api.module';
