@@ -611,7 +611,7 @@ describe('Safes V2 Controller Overview (Unit)', () => {
         });
     });
 
-    it('should apply trusted and excludeSpam filters to Zerion API calls', async () => {
+    it('should apply trusted filter to Zerion API calls', async () => {
       const chain = chainBuilder()
         .with('chainId', zerionChainId)
         .with('isTestnet', false)
@@ -668,7 +668,7 @@ describe('Safes V2 Controller Overview (Unit)', () => {
 
       await request(app.getHttpServer())
         .get(
-          `/v2/safes?currency=${currency}&safes=${chain.chainId}:${safeInfo.address}&trusted=true&exclude_spam=true`,
+          `/v2/safes?currency=${currency}&safes=${chain.chainId}:${safeInfo.address}&trusted=true`,
         )
         .expect(200);
 

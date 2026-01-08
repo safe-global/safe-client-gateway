@@ -64,13 +64,6 @@ export class SafesV2Controller {
       'If true, only includes trusted tokens in balance calculations.',
     example: false,
   })
-  @ApiQuery({
-    name: 'exclude_spam',
-    required: false,
-    type: Boolean,
-    description: 'If true, excludes spam tokens from balance calculations.',
-    example: true,
-  })
   @ApiOkResponse({
     type: SafeOverview,
     isArray: true,
@@ -83,8 +76,6 @@ export class SafesV2Controller {
     addresses: Caip10Addresses,
     @Query('trusted', new DefaultValuePipe(false), ParseBoolPipe)
     trusted: boolean,
-    @Query('exclude_spam', new DefaultValuePipe(true), ParseBoolPipe)
-    excludeSpam: boolean,
     @Query('wallet_address', new ValidationPipe(AddressSchema.optional()))
     walletAddress?: Address,
   ): Promise<Array<SafeOverview>> {
@@ -92,7 +83,6 @@ export class SafesV2Controller {
       currency,
       addresses,
       trusted,
-      excludeSpam,
       walletAddress,
     });
   }

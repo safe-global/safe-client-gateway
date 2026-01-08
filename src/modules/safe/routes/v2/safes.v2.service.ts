@@ -43,7 +43,6 @@ export class SafesV2Service {
     currency: string;
     addresses: Caip10Addresses;
     trusted: boolean;
-    excludeSpam: boolean;
     walletAddress?: Address;
   }): Promise<Array<SafeOverview>> {
     const limitedSafes = args.addresses.slice(0, this.maxOverviews);
@@ -63,7 +62,6 @@ export class SafesV2Service {
             safeAddress: address,
             currency: args.currency,
             trusted: args.trusted,
-            excludeSpam: args.excludeSpam,
           }),
           this.safeRepository.getTransactionQueue({
             chainId,
@@ -114,9 +112,8 @@ export class SafesV2Service {
     safeAddress: Address;
     currency: string;
     trusted: boolean;
-    excludeSpam: boolean;
   }): Promise<number> {
-    const { chain, safeAddress, currency, trusted, excludeSpam } = args;
+    const { chain, safeAddress, currency, trusted } = args;
 
     // Check if this chain is enabled for Zerion portfolio
     if (this.zerionChainIds.includes(chain.chainId)) {
@@ -125,7 +122,6 @@ export class SafesV2Service {
         safeAddress,
         currency,
         trusted,
-        excludeSpam,
       });
     }
 
@@ -135,7 +131,6 @@ export class SafesV2Service {
       safeAddress,
       currency,
       trusted,
-      excludeSpam,
     });
   }
 
@@ -149,16 +144,14 @@ export class SafesV2Service {
     safeAddress: Address;
     currency: string;
     trusted: boolean;
-    excludeSpam: boolean;
   }): Promise<number> {
-    const { chain, safeAddress, currency, trusted, excludeSpam } = args;
+    const { chain, safeAddress, currency, trusted } = args;
 
     const portfolio = await this.zerionWalletPortfolioApi.getPortfolio({
       address: safeAddress,
       currency,
       isTestnet: chain.isTestnet,
       trusted,
-      excludeSpam,
     });
 
     const zerionChainName = this.getZerionChainName(chain);
@@ -192,16 +185,14 @@ export class SafesV2Service {
     safeAddress: Address;
     currency: string;
     trusted: boolean;
-    excludeSpam: boolean;
   }): Promise<number> {
-    const { chain, safeAddress, currency, trusted, excludeSpam } = args;
+    const { chain, safeAddress, currency, trusted } = args;
 
     const balances = await this.balancesRepository.getBalances({
       chain,
       safeAddress,
       trusted,
       fiatCode: currency,
-      excludeSpam,
     });
 
     return balances
