@@ -24,13 +24,18 @@ describe('Zerion Collectibles Controller', () => {
   let safeConfigUrl: string;
   let networkService: jest.MockedObjectDeep<INetworkService>;
   let zerionBaseUri: string;
-  let zerionChainIds: Array<string>;
 
   beforeEach(async () => {
     jest.clearAllMocks();
 
     const moduleFixture = await createTestModule({
-      config: configuration,
+      config: () => ({
+        ...configuration(),
+        features: {
+          ...configuration().features,
+          zerionBalancesEnabled: true,
+        },
+      }),
     });
 
     const configurationService = moduleFixture.get<IConfigurationService>(
@@ -39,9 +44,6 @@ describe('Zerion Collectibles Controller', () => {
     safeConfigUrl = configurationService.getOrThrow('safeConfig.baseUri');
     zerionBaseUri = configurationService.getOrThrow(
       'balances.providers.zerion.baseUri',
-    );
-    zerionChainIds = configurationService.getOrThrow(
-      'features.zerionBalancesChainIds',
     );
     networkService = moduleFixture.get(NetworkService);
 
@@ -57,8 +59,9 @@ describe('Zerion Collectibles Controller', () => {
     describe('GET /v2/collectibles', () => {
       it('successfully gets collectibles from Zerion', async () => {
         const chainName = faker.company.name();
+        const chainId = faker.string.numeric();
         const chain = chainBuilder()
-          .with('chainId', zerionChainIds[0])
+          .with('chainId', chainId)
           .with('isTestnet', false)
           .with(
             'balancesProvider',
@@ -246,8 +249,9 @@ describe('Zerion Collectibles Controller', () => {
 
       it('successfully maps pagination option (no limit)', async () => {
         const chainName = faker.company.name();
+        const chainId = faker.string.numeric();
         const chain = chainBuilder()
-          .with('chainId', zerionChainIds[0])
+          .with('chainId', chainId)
           .with('isTestnet', false)
           .with(
             'balancesProvider',
@@ -318,8 +322,9 @@ describe('Zerion Collectibles Controller', () => {
 
       it('successfully maps pagination option (no offset)', async () => {
         const chainName = faker.company.name();
+        const chainId = faker.string.numeric();
         const chain = chainBuilder()
-          .with('chainId', zerionChainIds[0])
+          .with('chainId', chainId)
           .with('isTestnet', false)
           .with(
             'balancesProvider',
@@ -390,8 +395,9 @@ describe('Zerion Collectibles Controller', () => {
 
       it('successfully maps pagination option (both limit and offset)', async () => {
         const chainName = faker.company.name();
+        const chainId = faker.string.numeric();
         const chain = chainBuilder()
-          .with('chainId', zerionChainIds[0])
+          .with('chainId', chainId)
           .with('isTestnet', false)
           .with(
             'balancesProvider',
@@ -464,8 +470,9 @@ describe('Zerion Collectibles Controller', () => {
 
     describe('Zerion Balances API Error', () => {
       it(`500 error response`, async () => {
+        const chainId = faker.string.numeric();
         const chain = chainBuilder()
-          .with('chainId', zerionChainIds[0])
+          .with('chainId', chainId)
           .with('isTestnet', false)
           .build();
         const safeAddress = getAddress(faker.finance.ethereumAddress());

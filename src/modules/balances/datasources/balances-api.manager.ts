@@ -27,7 +27,7 @@ import type { Address } from 'viem';
 export class BalancesApiManager implements IBalancesApiManager {
   private safeBalancesApiMap: Record<string, SafeBalancesApi> = {};
   private readonly isCounterFactualBalancesEnabled: boolean;
-  private readonly zerionChainIds: Array<string>;
+  private readonly zerionBalancesEnabled: boolean;
   private readonly zerionBalancesApi: IBalancesApi;
   private readonly useVpcUrl: boolean;
 
@@ -48,8 +48,8 @@ export class BalancesApiManager implements IBalancesApiManager {
       this.configurationService.getOrThrow<boolean>(
         'features.counterfactualBalances',
       );
-    this.zerionChainIds = this.configurationService.getOrThrow<Array<string>>(
-      'features.zerionBalancesChainIds',
+    this.zerionBalancesEnabled = this.configurationService.getOrThrow<boolean>(
+      'features.zerionBalancesEnabled',
     );
     this.useVpcUrl = this.configurationService.getOrThrow<boolean>(
       'safeTransaction.useVpcUrl',
@@ -58,7 +58,7 @@ export class BalancesApiManager implements IBalancesApiManager {
   }
 
   async getApi(chainId: string, safeAddress: Address): Promise<IBalancesApi> {
-    if (this.zerionChainIds.includes(chainId)) {
+    if (this.zerionBalancesEnabled) {
       return this.zerionBalancesApi;
     }
     const transactionApi = await this.transactionApiManager.getApi(chainId);
