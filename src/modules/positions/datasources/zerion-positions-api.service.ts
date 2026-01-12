@@ -96,9 +96,7 @@ export class ZerionPositionsApi implements IPositionsApi {
     if (cached != null) {
       const { key, field } = cacheDir;
       this.loggingService.debug({ type: LogType.CacheHit, key, field });
-      const balances = z
-        .array(ZerionBalanceSchema)
-        .parse(JSON.parse(cached));
+      const balances = z.array(ZerionBalanceSchema).parse(JSON.parse(cached));
       return this._mapPositions(chainName, balances);
     }
 

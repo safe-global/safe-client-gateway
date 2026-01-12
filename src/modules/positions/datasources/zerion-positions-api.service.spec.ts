@@ -8,8 +8,9 @@ import type { ZerionBalance } from '@/modules/balances/datasources/entities/zeri
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import { ZerionPositionsApi } from '@/modules/positions/datasources/zerion-positions-api.service';
+import { rawify } from '@/validation/entities/raw.entity';
 import { faker } from '@faker-js/faker';
-import { getAddress, type Address } from 'viem';
+import { getAddress } from 'viem';
 
 const loggingService = {
   debug: jest.fn(),
@@ -24,7 +25,10 @@ const networkService = {
   delete: jest.fn(),
 } as jest.MockedObjectDeep<INetworkService>;
 
-function buildZerionLoanBalance(args: { chainName: string; value: number }) {
+function buildZerionLoanBalance(args: {
+  chainName: string;
+  value: number;
+}): ZerionBalance {
   return {
     type: 'positions',
     id: faker.string.uuid(),
@@ -39,6 +43,10 @@ function buildZerionLoanBalance(args: { chainName: string; value: number }) {
       value: args.value,
       price: 1,
       fungible_info: {
+        name: null,
+        symbol: null,
+        description: null,
+        icon: null,
         implementations: [
           {
             chain_id: args.chainName,
@@ -76,8 +84,14 @@ describe('ZerionPositionsApi', () => {
     jest.resetAllMocks();
     cacheService = new FakeCacheService();
     configurationService = new FakeConfigurationService();
-    configurationService.set('balances.providers.zerion.apiKey', 'test-api-key');
-    configurationService.set('balances.providers.zerion.baseUri', 'https://api');
+    configurationService.set(
+      'balances.providers.zerion.apiKey',
+      'test-api-key',
+    );
+    configurationService.set(
+      'balances.providers.zerion.baseUri',
+      'https://api',
+    );
     configurationService.set('expirationTimeInSeconds.zerionPositions', 60);
     configurationService.set('balances.providers.zerion.currencies', ['USD']);
     configurationService.set('balances.providers.zerion.chains', {
@@ -94,10 +108,8 @@ describe('ZerionPositionsApi', () => {
   });
 
   it('does not normalize cached balances a second time', async () => {
-    const safeAddress = getAddress(faker.finance.ethereumAddress()) as Address;
-    const cachedBalances = [
-      buildZerionLoanBalance({ chainName, value: -100 }),
-    ];
+    const safeAddress = getAddress(faker.finance.ethereumAddress());
+    const cachedBalances = [buildZerionLoanBalance({ chainName, value: -100 })];
     const cacheDir = CacheRouter.getZerionPositionsCacheDir({
       safeAddress,
       fiatCode: 'USD',
@@ -112,7 +124,10 @@ describe('ZerionPositionsApi', () => {
       chain,
       safeAddress,
       fiatCode: 'USD',
-    })) as unknown as Array<{ fiatBalance: string | null; position_type: string }>;
+    })) as unknown as Array<{
+      fiatBalance: string | null;
+      position_type: string;
+    }>;
 
     expect(networkService.get).toHaveBeenCalledTimes(0);
     expect(res).toHaveLength(1);
@@ -121,18 +136,21 @@ describe('ZerionPositionsApi', () => {
   });
 
   it('normalizes on cache miss and persists the normalized value for cache hits', async () => {
-    const safeAddress = getAddress(faker.finance.ethereumAddress()) as Address;
+    const safeAddress = getAddress(faker.finance.ethereumAddress());
     const apiBalances = [buildZerionLoanBalance({ chainName, value: 100 })];
     networkService.get.mockResolvedValueOnce({
       status: 200,
-      data: { data: apiBalances },
+      data: rawify({ data: apiBalances }),
     });
 
     const first = (await target.getPositions({
       chain,
       safeAddress,
       fiatCode: 'USD',
-    })) as unknown as Array<{ fiatBalance: string | null; position_type: string }>;
+    })) as unknown as Array<{
+      fiatBalance: string | null;
+      position_type: string;
+    }>;
 
     expect(first).toHaveLength(1);
     expect(first[0].position_type).toBe('loan');
@@ -152,7 +170,10 @@ describe('ZerionPositionsApi', () => {
       chain,
       safeAddress,
       fiatCode: 'USD',
-    })) as unknown as Array<{ fiatBalance: string | null; position_type: string }>;
+    })) as unknown as Array<{
+      fiatBalance: string | null;
+      position_type: string;
+    }>;
 
     expect(networkService.get).toHaveBeenCalledTimes(1);
     expect(second).toHaveLength(1);
@@ -160,4 +181,3 @@ describe('ZerionPositionsApi', () => {
     expect(second[0].fiatBalance).toBe('-100');
   });
 });
-
