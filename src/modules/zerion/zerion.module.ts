@@ -6,4 +6,3 @@ import { ZerionChainMappingService } from '@/modules/zerion/datasources/zerion-c
   exports: [ZerionChainMappingService],
 })
 export class ZerionModule {}
-

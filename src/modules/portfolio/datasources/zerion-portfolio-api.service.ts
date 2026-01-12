@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { groupBy } from 'lodash';
 import type { Address } from 'viem';
-import { getAddress, isAddress} from 'viem';
+import { getAddress, isAddress } from 'viem';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import {

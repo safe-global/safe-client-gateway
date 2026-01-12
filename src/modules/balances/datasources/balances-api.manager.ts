@@ -58,9 +58,19 @@ export class BalancesApiManager implements IBalancesApiManager {
   }
 
   async getApi(chainId: string, safeAddress: Address): Promise<IBalancesApi> {
+    // If Zerion balances are enabled, check if this chain supports Zerion
     if (this.zerionBalancesEnabled) {
-      return this.zerionBalancesApi;
+      const chain = await this.configApi
+        .getChain(chainId)
+        .then(ChainSchema.parse);
+
+      // Only use Zerion API if the chain has a Zerion chain name configured
+      if (chain.balancesProvider?.chainName) {
+        return this.zerionBalancesApi;
+      }
+      // If chain doesn't support Zerion, fall through to Safe balances API logic
     }
+
     const transactionApi = await this.transactionApiManager.getApi(chainId);
 
     if (!this.isCounterFactualBalancesEnabled) {

@@ -29,10 +29,6 @@ import { ZerionModule } from '@/modules/zerion/zerion.module';
     PortfolioApiService,
     PortfolioRouteMapper,
   ],
-  exports: [
-    IPortfolioApi,
-    IPortfolioRepository,
-    IPortfolioService,
-  ],
+  exports: [IPortfolioApi, IPortfolioRepository, IPortfolioService],
 })
 export class PortfolioModule {}

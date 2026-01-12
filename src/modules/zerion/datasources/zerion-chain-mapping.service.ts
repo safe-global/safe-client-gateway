@@ -188,4 +188,3 @@ export class ZerionChainMappingService {
     return mapping;
   }
 }
-

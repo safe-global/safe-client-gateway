@@ -223,10 +223,11 @@ export class ZerionPositionsApi implements IPositionsApi {
     }
 
     // Use shared service with Redis caching
-    const chainName = await this.zerionChainMappingService.getNetworkFromChainId(
-      chain.chainId,
-      chain.isTestnet,
-    );
+    const chainName =
+      await this.zerionChainMappingService.getNetworkFromChainId(
+        chain.chainId,
+        chain.isTestnet,
+      );
 
     if (!chainName) {
       throw Error(
