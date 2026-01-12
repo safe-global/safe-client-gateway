@@ -314,7 +314,8 @@ describe('Safes V2 Controller Overview (Unit)', () => {
           },
         }),
       });
-      const testApp: INestApplication<Server> = await new TestAppProvider().provide(moduleFixture);
+      const testApp: INestApplication<Server> =
+        await new TestAppProvider().provide(moduleFixture);
       await testApp.init();
 
       const testSafeConfigUrl = moduleFixture
