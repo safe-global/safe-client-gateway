@@ -1,4 +1,5 @@
 import type { ZerionBalance } from './entities/zerion-balance.entity';
+import { PositionType } from '@/modules/positions/domain/entities/position-type.entity';
 
 /**
  * Builds headers for Zerion API requests.
@@ -31,7 +32,7 @@ export function normalizeZerionBalances(
   balances: Array<ZerionBalance>,
 ): Array<ZerionBalance> {
   return balances.map((balance) => {
-    const isLoan = balance.attributes.position_type === 'loan';
+    const isLoan = balance.attributes.position_type === PositionType.loan;
 
     if (!isLoan || balance.attributes.value === null) {
       return balance;
