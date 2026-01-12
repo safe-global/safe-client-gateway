@@ -33,7 +33,10 @@ import { Inject, Injectable } from '@nestjs/common';
 import { Address, getAddress } from 'viem';
 import { z, ZodError } from 'zod';
 import { Position } from '@/modules/positions/domain/entities/position.entity';
-import { getZerionHeaders } from '@/modules/balances/datasources/zerion-api.helpers';
+import {
+  getZerionHeaders,
+  normalizeZerionBalances,
+} from '@/modules/balances/datasources/zerion-api.helpers';
 
 @Injectable()
 export class ZerionPositionsApi implements IPositionsApi {
@@ -96,7 +99,8 @@ export class ZerionPositionsApi implements IPositionsApi {
       const zerionBalances = z
         .array(ZerionBalanceSchema)
         .parse(JSON.parse(cached));
-      return this._mapPositions(chainName, zerionBalances);
+      const balances = normalizeZerionBalances(zerionBalances);
+      return this._mapPositions(chainName, balances);
     }
 
     try {
@@ -122,12 +126,13 @@ export class ZerionPositionsApi implements IPositionsApi {
           networkRequest,
         })
         .then(({ data }) => ZerionBalancesSchema.parse(data));
+      const balances = normalizeZerionBalances(zerionBalances.data);
       await this.cacheService.hSet(
         cacheDir,
-        JSON.stringify(zerionBalances.data),
+        JSON.stringify(balances),
         this.defaultExpirationTimeInSeconds,
       );
-      return this._mapPositions(chainName, zerionBalances.data);
+      return this._mapPositions(chainName, balances);
     } catch (error) {
       if (error instanceof LimitReachedError || error instanceof ZodError) {
         throw error;
@@ -165,7 +170,7 @@ export class ZerionPositionsApi implements IPositionsApi {
             `Zerion error: ${chainName} implementation not found for balance ${zb.id}`,
           );
         const { value, price, application_metadata } = zb.attributes;
-        const fiatBalance = value ? getNumberString(value) : null;
+        const fiatBalance = value !== null ? getNumberString(value) : null;
         const fiatConversion = price ? getNumberString(price) : null;
 
         return {

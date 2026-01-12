@@ -29,7 +29,10 @@ import {
 } from '@/datasources/cache/cache.service.interface';
 import { CacheRouter } from '@/datasources/cache/cache.router';
 import { getNumberString } from '@/domain/common/utils/utils';
-import { getZerionHeaders } from '@/modules/balances/datasources/zerion-api.helpers';
+import {
+  getZerionHeaders,
+  normalizeZerionBalances,
+} from '@/modules/balances/datasources/zerion-api.helpers';
 
 /**
  * Zerion portfolio API integration.
@@ -130,7 +133,7 @@ export class ZerionPortfolioApi implements IPortfolioApi {
         })
         .then(({ data }) => ZerionBalancesSchema.parse(data));
 
-      return response.data;
+      return normalizeZerionBalances(response.data);
     } catch (error) {
       if (error instanceof ZodError) {
         throw error;
