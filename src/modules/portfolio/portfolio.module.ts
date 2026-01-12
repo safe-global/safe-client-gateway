@@ -10,9 +10,10 @@ import { PortfolioController } from '@/modules/portfolio/v1/portfolio.controller
 import { PortfolioApiService } from '@/modules/portfolio/v1/portfolio.service';
 import { PortfolioRouteMapper } from '@/modules/portfolio/v1/portfolio.mapper';
 import { ChainsModule } from '../chains/chains.module';
+import { ZerionModule } from '@/modules/zerion/zerion.module';
 
 @Module({
-  imports: [ChainsModule],
+  imports: [ChainsModule, ZerionModule],
   controllers: [PortfolioController],
   providers: [
     HttpErrorFactory,
@@ -28,6 +29,10 @@ import { ChainsModule } from '../chains/chains.module';
     PortfolioApiService,
     PortfolioRouteMapper,
   ],
-  exports: [IPortfolioApi, IPortfolioRepository, IPortfolioService],
+  exports: [
+    IPortfolioApi,
+    IPortfolioRepository,
+    IPortfolioService,
+  ],
 })
 export class PortfolioModule {}

@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { groupBy } from 'lodash';
 import type { Address } from 'viem';
-import { getAddress, hexToNumber, isAddress, type Hex } from 'viem';
+import { getAddress, isAddress} from 'viem';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import {
@@ -20,16 +20,15 @@ import { DataSourceError } from '@/domain/errors/data-source.error';
 import { rawify, type Raw } from '@/validation/entities/raw.entity';
 import type { ZerionBalance } from '@/modules/balances/datasources/entities/zerion-balance.entity';
 import { ZerionBalancesSchema } from '@/modules/balances/datasources/entities/zerion-balance.entity';
-import { ZerionChainsSchema } from '@/modules/portfolio/datasources/entities/zerion-chain.entity';
 import { ZodError } from 'zod';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import {
   CacheService,
   ICacheService,
 } from '@/datasources/cache/cache.service.interface';
-import { CacheRouter } from '@/datasources/cache/cache.router';
 import { getNumberString } from '@/domain/common/utils/utils';
 import { getZerionHeaders } from '@/modules/balances/datasources/zerion-api.helpers';
+import { ZerionChainMappingService } from '@/modules/zerion/datasources/zerion-chain-mapping.service';
 
 /**
  * Zerion portfolio API integration.
@@ -53,7 +52,6 @@ export class ZerionPortfolioApi implements IPortfolioApi {
   private readonly apiKey: string | undefined;
   private readonly baseUri: string;
   private readonly fiatCodes: Array<string>;
-  private readonly chainsCacheTtlSeconds = 86400;
 
   constructor(
     @Inject(NetworkService) private readonly networkService: INetworkService,
@@ -63,6 +61,8 @@ export class ZerionPortfolioApi implements IPortfolioApi {
     @Inject(LoggingService)
     private readonly loggingService: ILoggingService,
     @Inject(CacheService) private readonly cacheService: ICacheService,
+    @Inject(ZerionChainMappingService)
+    private readonly zerionChainMappingService: ZerionChainMappingService,
   ) {
     this.apiKey = this.configurationService.get<string>(
       'balances.providers.zerion.apiKey',
@@ -428,84 +428,6 @@ export class ZerionPortfolioApi implements IPortfolioApi {
   }
 
   /**
-   * Retrieves cached chain mapping.
-   *
-   * @param {boolean} isTestnet - Whether this is a testnet request
-   * @returns {Promise<Record<string, string> | null>} Promise that resolves to cached mapping or null
-   */
-  private async _getCachedChainMapping(
-    isTestnet: boolean,
-  ): Promise<Record<string, string> | null> {
-    const cacheDir = CacheRouter.getZerionChainsCacheDir(isTestnet);
-    const cached = await this.cacheService.hGet(cacheDir);
-
-    if (!cached) {
-      return null;
-    }
-
-    return JSON.parse(cached);
-  }
-
-  /**
-   * Fetches and caches Zerion network to chain ID mapping.
-   *
-   * @param {boolean} isTestnet - Whether this is a testnet request
-   * @returns {Promise<Record<string, string>>} Promise that resolves to network to chain ID mapping
-   */
-  private async _fetchAndCacheChainMapping(
-    isTestnet: boolean,
-  ): Promise<Record<string, string>> {
-    const url = `${this.baseUri}/v1/chains`;
-    const networkRequest = {
-      headers: getZerionHeaders(this.apiKey, isTestnet),
-    };
-
-    const response = await this.networkService
-      .get({ url, networkRequest })
-      .then(({ data }) => ZerionChainsSchema.parse(data));
-
-    const mapping: Record<string, string> = {};
-    for (const chain of response.data) {
-      const networkName = chain.id;
-      const decimalChainId = hexToNumber(
-        chain.attributes.external_id as Hex,
-      ).toString();
-      mapping[networkName] = decimalChainId;
-    }
-
-    const cacheDir = CacheRouter.getZerionChainsCacheDir(isTestnet);
-    await this.cacheService.hSet(
-      cacheDir,
-      JSON.stringify(mapping),
-      this.chainsCacheTtlSeconds,
-    );
-
-    return mapping;
-  }
-
-  /**
-   * Gets chain mapping from cache or fetches if missing.
-   *
-   * @param {boolean} isTestnet - Whether this is a testnet request
-   * @returns {Promise<Record<string, string>>} Promise that resolves to network to chain ID mapping
-   */
-  private async _getChainMapping(
-    isTestnet: boolean,
-  ): Promise<Record<string, string>> {
-    const cached = await this._getCachedChainMapping(isTestnet);
-    if (cached) {
-      return cached;
-    }
-
-    try {
-      return await this._fetchAndCacheChainMapping(isTestnet);
-    } catch (error) {
-      this.loggingService.error(`Failed to fetch Zerion chains: ${error}`);
-      return {};
-    }
-  }
-
-  /**
    * Maps Zerion network identifier to chain ID.
    *
    * @param {string} network - Zerion network identifier
@@ -516,16 +438,9 @@ export class ZerionPortfolioApi implements IPortfolioApi {
     network: string,
     isTestnet: boolean,
   ): Promise<string> {
-    const mapping = await this._getChainMapping(isTestnet);
-    const chainId = mapping[network.toLowerCase()];
-
-    if (!chainId) {
-      this.loggingService.warn(
-        `Unknown Zerion network: "${network}", defaulting to Ethereum mainnet (chain ID 1)`,
-      );
-      return '1';
-    }
-
-    return chainId;
+    return this.zerionChainMappingService.getChainIdFromNetwork(
+      network,
+      isTestnet,
+    );
   }
 }

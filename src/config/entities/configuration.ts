@@ -280,6 +280,8 @@ export default () => ({
     zerionBalancesEnabled:
       !!process.env.FF_ZERION_ENABLED ||
       !!process.env.FF_ZERION_BALANCES_CHAIN_IDS,
+      // for backward compatibility in SafesV2Service:
+    zerionBalancesChainIds: process.env.FF_ZERION_BALANCES_CHAIN_IDS?.split(',') ?? [],
     zerionPositions:
       process.env.FF_ZERION_POSITIONS_DISABLED?.toLowerCase() !== 'true',
     debugLogs: process.env.FF_DEBUG_LOGS?.toLowerCase() === 'true',
