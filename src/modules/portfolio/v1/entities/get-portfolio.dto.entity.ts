@@ -30,4 +30,12 @@ export class GetPortfolioDto implements z.infer<typeof GetPortfolioDtoSchema> {
     default: true,
   })
   public readonly excludeDust!: boolean;
+
+  @ApiPropertyOptional({
+    description:
+      'If true, waits for position data to be aggregated before responding (up to 30s)',
+    example: false,
+    default: false,
+  })
+  public readonly sync!: boolean;
 }
