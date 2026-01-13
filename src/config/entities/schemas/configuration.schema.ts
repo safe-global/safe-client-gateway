@@ -32,7 +32,6 @@ const relayRulesValidator = z
 
 export const RootConfigurationSchema = z
   .object({
-    ACCOUNTS_ENCRYPTION_TYPE: z.enum(['local', 'aws']).optional(),
     AUTH_TOKEN: z.string(),
     AWS_ACCESS_KEY_ID: z.string().optional(),
     AWS_KMS_ENCRYPTION_KEY_ID: z.string().optional(),
@@ -174,7 +173,3 @@ export const RootConfigurationSchema = z
 export type FileStorageType = z.infer<
   typeof RootConfigurationSchema
 >['TARGETED_MESSAGING_FILE_STORAGE_TYPE'];
-
-export type AccountsEncryptionType = z.infer<
-  typeof RootConfigurationSchema
->['ACCOUNTS_ENCRYPTION_TYPE'];
