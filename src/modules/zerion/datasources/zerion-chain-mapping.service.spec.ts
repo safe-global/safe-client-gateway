@@ -6,6 +6,7 @@ import type { ILoggingService } from '@/logging/logging.interface';
 import { rawify } from '@/validation/entities/raw.entity';
 import { faker } from '@faker-js/faker';
 import { numberToHex } from 'viem';
+import { CacheRouter } from '@/datasources/cache/cache.router';
 
 const mockCacheService = jest.mocked({
   hGet: jest.fn(),
@@ -156,7 +157,7 @@ describe('ZerionChainMappingService', () => {
     });
 
     it('should use testnet cache when isTestnet is true', async () => {
-      const cachedMapping = JSON.stringify({ ethereum: '1' });
+      const cachedMapping = JSON.stringify({ ethereum: '11155111' });
       mockCacheService.hGet.mockResolvedValue(cachedMapping);
 
       await service.getChainIdFromNetwork('ethereum', true);
@@ -233,7 +234,7 @@ describe('ZerionChainMappingService', () => {
       const cachedMapping = JSON.stringify(testReverseMapping);
       mockCacheService.hGet.mockResolvedValue(cachedMapping);
 
-      await service.getNetworkFromChainId('1', true);
+      await service.getNetworkFromChainId('11155111', true);
 
       const cacheCall = mockCacheService.hGet.mock.calls[0][0];
       expect(cacheCall.field).toBe('mapping_reverse_testnet');
@@ -369,7 +370,7 @@ describe('ZerionChainMappingService', () => {
               type: 'chain',
               id: 'ethereum',
               attributes: {
-                external_id: numberToHex(1),
+                external_id: numberToHex(11155111),
                 name: 'Ethereum',
                 icon: null,
               },
@@ -472,7 +473,7 @@ describe('ZerionChainMappingService', () => {
               type: 'chain',
               id: 'ethereum',
               attributes: {
-                external_id: numberToHex(1),
+                external_id: numberToHex(11155111),
                 name: 'Ethereum',
                 icon: null,
               },
@@ -494,6 +495,277 @@ describe('ZerionChainMappingService', () => {
         expect.any(String),
         86400,
       );
+    });
+  });
+
+  describe('cache direction parameter', () => {
+    it('should use correct cache field for networkToChainId direction (mainnet)', async () => {
+      const testMapping = { ethereum: '1' };
+      mockCacheService.hGet.mockResolvedValue(JSON.stringify(testMapping));
+
+      await service.getChainIdFromNetwork('ethereum', false);
+
+      const cacheCall = mockCacheService.hGet.mock.calls[0][0];
+      expect(cacheCall.field).toBe('mapping');
+      expect(cacheCall.key).toBe('zerion_chains');
+    });
+
+    it('should use correct cache field for networkToChainId direction (testnet)', async () => {
+      const testMapping = { ethereum: '11155111' };
+      mockCacheService.hGet.mockResolvedValue(JSON.stringify(testMapping));
+
+      await service.getChainIdFromNetwork('ethereum', true);
+
+      const cacheCall = mockCacheService.hGet.mock.calls[0][0];
+      expect(cacheCall.field).toBe('mapping_testnet');
+      expect(cacheCall.key).toBe('zerion_chains');
+    });
+
+    it('should use correct cache field for chainIdToNetwork direction (mainnet)', async () => {
+      const testReverseMapping = { '1': 'ethereum' };
+      mockCacheService.hGet.mockResolvedValue(
+        JSON.stringify(testReverseMapping),
+      );
+
+      await service.getNetworkFromChainId('1', false);
+
+      const cacheCall = mockCacheService.hGet.mock.calls[0][0];
+      expect(cacheCall.field).toBe('mapping_reverse');
+      expect(cacheCall.key).toBe('zerion_chains');
+    });
+
+    it('should use correct cache field for chainIdToNetwork direction (testnet)', async () => {
+      const testReverseMapping = { '11155111': 'ethereum' };
+      mockCacheService.hGet.mockResolvedValue(
+        JSON.stringify(testReverseMapping),
+      );
+
+      await service.getNetworkFromChainId('11155111', true);
+
+      const cacheCall = mockCacheService.hGet.mock.calls[0][0];
+      expect(cacheCall.field).toBe('mapping_reverse_testnet');
+      expect(cacheCall.key).toBe('zerion_chains');
+    });
+
+    it('should cache networkToChainId mapping with correct field when fetching from API', async () => {
+      mockCacheService.hGet.mockResolvedValue(undefined);
+      const mockResponse = {
+        data: {
+          data: [
+            {
+              type: 'chain',
+              id: 'ethereum',
+              attributes: {
+                external_id: numberToHex(1),
+                name: 'Ethereum',
+                icon: null,
+              },
+            },
+          ],
+        },
+      };
+      mockNetworkService.get.mockResolvedValue({
+        data: rawify(mockResponse.data),
+        status: 200,
+      });
+
+      await service.getChainIdFromNetwork('ethereum', false);
+
+      const hSetCalls = mockCacheService.hSet.mock.calls;
+      const networkToChainIdCall = hSetCalls.find(
+        (call) => call[0].field === 'mapping',
+      );
+      expect(networkToChainIdCall).toBeDefined();
+      expect(networkToChainIdCall![0].key).toBe('zerion_chains');
+    });
+
+    it('should cache chainIdToNetwork mapping with correct field when building reverse mapping', async () => {
+      mockCacheService.hGet.mockResolvedValue(undefined);
+      const mockResponse = {
+        data: {
+          data: [
+            {
+              type: 'chain',
+              id: 'ethereum',
+              attributes: {
+                external_id: numberToHex(1),
+                name: 'Ethereum',
+                icon: null,
+              },
+            },
+            {
+              type: 'chain',
+              id: 'polygon',
+              attributes: {
+                external_id: numberToHex(137),
+                name: 'Polygon',
+                icon: null,
+              },
+            },
+          ],
+        },
+      };
+      mockNetworkService.get.mockResolvedValue({
+        data: rawify(mockResponse.data),
+        status: 200,
+      });
+
+      await service.getNetworkFromChainId('1', false);
+
+      const hSetCalls = mockCacheService.hSet.mock.calls;
+      // Should cache both directions
+      expect(hSetCalls.length).toBe(2);
+
+      const networkToChainIdCall = hSetCalls.find(
+        (call) => call[0].field === 'mapping',
+      );
+      expect(networkToChainIdCall).toBeDefined();
+      expect(networkToChainIdCall![0].key).toBe('zerion_chains');
+
+      const chainIdToNetworkCall = hSetCalls.find(
+        (call) => call[0].field === 'mapping_reverse',
+      );
+      expect(chainIdToNetworkCall).toBeDefined();
+      expect(chainIdToNetworkCall![0].key).toBe('zerion_chains');
+      // Verify the reverse mapping contains correct data
+      const reverseMapping = JSON.parse(chainIdToNetworkCall![1] as string);
+      expect(reverseMapping['1']).toBe('ethereum');
+      expect(reverseMapping['137']).toBe('polygon');
+    });
+
+    it('should use correct cache fields for both directions in testnet', async () => {
+      mockCacheService.hGet.mockResolvedValue(undefined);
+      const mockResponse = {
+        data: {
+          data: [
+            {
+              type: 'chain',
+              id: 'ethereum',
+              attributes: {
+                external_id: numberToHex(11155111),
+                name: 'Ethereum',
+                icon: null,
+              },
+            },
+          ],
+        },
+      };
+      mockNetworkService.get.mockResolvedValue({
+        data: rawify(mockResponse.data),
+        status: 200,
+      });
+
+      await service.getNetworkFromChainId('11155111', true);
+
+      const hSetCalls = mockCacheService.hSet.mock.calls;
+      expect(hSetCalls.length).toBe(2);
+
+      const networkToChainIdCall = hSetCalls.find(
+        (call) => call[0].field === 'mapping_testnet',
+      );
+      expect(networkToChainIdCall).toBeDefined();
+
+      const chainIdToNetworkCall = hSetCalls.find(
+        (call) => call[0].field === 'mapping_reverse_testnet',
+      );
+      expect(chainIdToNetworkCall).toBeDefined();
+    });
+
+    it('should not override cache field - field should come from CacheRouter', async () => {
+      const getZerionChainsCacheDirSpy = jest.spyOn(
+        CacheRouter,
+        'getZerionChainsCacheDir',
+      );
+
+      mockCacheService.hGet.mockResolvedValue(undefined);
+      const mockResponse = {
+        data: {
+          data: [
+            {
+              type: 'chain',
+              id: 'ethereum',
+              attributes: {
+                external_id: numberToHex(1),
+                name: 'Ethereum',
+                icon: null,
+              },
+            },
+          ],
+        },
+      };
+      mockNetworkService.get.mockResolvedValue({
+        data: rawify(mockResponse.data),
+        status: 200,
+      });
+
+      await service.getChainIdFromNetwork('ethereum', false);
+
+      expect(getZerionChainsCacheDirSpy).toHaveBeenCalledWith(
+        false,
+        'networkToChainId',
+      );
+
+      // Verify the cache field used matches what CacheRouter returns
+      const cacheDir = CacheRouter.getZerionChainsCacheDir(
+        false,
+        'networkToChainId',
+      );
+      const hSetCall = mockCacheService.hSet.mock.calls[0];
+      expect(hSetCall[0].field).toBe(cacheDir.field);
+      expect(hSetCall[0].key).toBe(cacheDir.key);
+
+      getZerionChainsCacheDirSpy.mockRestore();
+    });
+
+    it('should use CacheRouter field for chainIdToNetwork direction without overriding', async () => {
+      const getZerionChainsCacheDirSpy = jest.spyOn(
+        CacheRouter,
+        'getZerionChainsCacheDir',
+      );
+
+      mockCacheService.hGet.mockResolvedValue(undefined);
+      const mockResponse = {
+        data: {
+          data: [
+            {
+              type: 'chain',
+              id: 'ethereum',
+              attributes: {
+                external_id: numberToHex(1),
+                name: 'Ethereum',
+                icon: null,
+              },
+            },
+          ],
+        },
+      };
+      mockNetworkService.get.mockResolvedValue({
+        data: rawify(mockResponse.data),
+        status: 200,
+      });
+
+      await service.getNetworkFromChainId('1', false);
+
+      expect(getZerionChainsCacheDirSpy).toHaveBeenCalledWith(
+        false,
+        'chainIdToNetwork',
+      );
+
+      // Find the reverse mapping cache call
+      const reverseCacheCall = mockCacheService.hSet.mock.calls.find(
+        (call) => call[0].field === 'mapping_reverse',
+      );
+      expect(reverseCacheCall).toBeDefined();
+
+      // Verify the field matches what CacheRouter returns
+      const cacheDir = CacheRouter.getZerionChainsCacheDir(
+        false,
+        'chainIdToNetwork',
+      );
+      expect(reverseCacheCall![0].field).toBe(cacheDir.field);
+      expect(reverseCacheCall![0].key).toBe(cacheDir.key);
+
+      getZerionChainsCacheDirSpy.mockRestore();
     });
   });
 

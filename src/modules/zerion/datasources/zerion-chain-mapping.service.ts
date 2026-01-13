@@ -120,15 +120,9 @@ export class ZerionChainMappingService {
     isTestnet: boolean,
     direction: 'networkToChainId' | 'chainIdToNetwork',
   ): Promise<Record<string, string> | null> {
-    const cacheDir = CacheRouter.getZerionChainsCacheDir(isTestnet);
-    let field: string;
-    if (direction === 'networkToChainId') {
-      field = isTestnet ? 'mapping_testnet' : 'mapping';
-    } else {
-      field = isTestnet ? 'mapping_reverse_testnet' : 'mapping_reverse';
-    }
+    const cacheDir = CacheRouter.getZerionChainsCacheDir(isTestnet, direction);
 
-    const cached = await this.cacheService.hGet({ ...cacheDir, field });
+    const cached = await this.cacheService.hGet(cacheDir);
     if (!cached) {
       return null;
     }
@@ -141,16 +135,10 @@ export class ZerionChainMappingService {
     direction: 'networkToChainId' | 'chainIdToNetwork',
     mapping: Record<string, string>,
   ): Promise<void> {
-    const cacheDir = CacheRouter.getZerionChainsCacheDir(isTestnet);
-    let field: string;
-    if (direction === 'networkToChainId') {
-      field = isTestnet ? 'mapping_testnet' : 'mapping';
-    } else {
-      field = isTestnet ? 'mapping_reverse_testnet' : 'mapping_reverse';
-    }
+    const cacheDir = CacheRouter.getZerionChainsCacheDir(isTestnet, direction);
 
     await this.cacheService.hSet(
-      { ...cacheDir, field },
+      cacheDir,
       JSON.stringify(mapping),
       this.chainsCacheTtlSeconds,
     );
