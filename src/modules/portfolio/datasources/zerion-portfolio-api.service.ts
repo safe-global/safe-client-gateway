@@ -61,7 +61,6 @@ export class ZerionPortfolioApi implements IPortfolioApi {
     @Inject(LoggingService)
     private readonly loggingService: ILoggingService,
     @Inject(CacheService) private readonly cacheService: ICacheService,
-    @Inject(ZerionChainMappingService)
     private readonly zerionChainMappingService: ZerionChainMappingService,
   ) {
     this.apiKey = this.configurationService.get<string>(
@@ -202,6 +201,7 @@ export class ZerionPortfolioApi implements IPortfolioApi {
         if (!networkName) return null;
 
         const chainId = await this._mapNetworkToChainId(networkName, isTestnet);
+        if (!chainId) return null;
 
         const impl = position.attributes.fungible_info.implementations.find(
           (i) => i.chain_id === networkName,
@@ -348,6 +348,7 @@ export class ZerionPortfolioApi implements IPortfolioApi {
         if (!networkName) return null;
 
         const chainId = await this._mapNetworkToChainId(networkName, isTestnet);
+        if (!chainId) return null;
 
         const impl = position.attributes.fungible_info.implementations.find(
           (i) => i.chain_id === networkName,
@@ -432,12 +433,12 @@ export class ZerionPortfolioApi implements IPortfolioApi {
    *
    * @param {string} network - Zerion network identifier
    * @param {boolean} isTestnet - Whether this is a testnet request
-   * @returns {Promise<string>} Promise that resolves to chain ID (defaults to '1' if unknown)
+   * @returns {Promise<string | undefined>} Promise that resolves to chain ID, or undefined if network is unknown
    */
   private async _mapNetworkToChainId(
     network: string,
     isTestnet: boolean,
-  ): Promise<string> {
+  ): Promise<string | undefined> {
     return this.zerionChainMappingService.getChainIdFromNetwork(
       network,
       isTestnet,

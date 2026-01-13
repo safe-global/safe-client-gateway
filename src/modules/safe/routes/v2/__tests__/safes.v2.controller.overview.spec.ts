@@ -191,12 +191,11 @@ describe('Safes V2 Controller Overview (Unit)', () => {
         );
 
       // Verify balances API was called (not Zerion)
-      const balancesCalls = networkService.get.mock.calls.filter(
-        (call) =>
-          call[0].url ===
-          `${chain.transactionService}/api/v1/safes/${safeInfo.address}/balances/`,
+      expect(networkService.get).toHaveBeenCalledWith(
+        expect.objectContaining({
+          url: `${chain.transactionService}/api/v1/safes/${safeInfo.address}/balances/`,
+        }),
       );
-      expect(balancesCalls.length).toBeGreaterThan(0);
     });
 
     it('should use Zerion wallet portfolio API for Zerion-enabled chains', async () => {
@@ -296,10 +295,11 @@ describe('Safes V2 Controller Overview (Unit)', () => {
         );
 
       // Verify Zerion portfolio API was called
-      const zerionCalls = networkService.get.mock.calls.filter((call) =>
-        call[0].url.includes('/portfolio'),
+      expect(networkService.get).toHaveBeenCalledWith(
+        expect.objectContaining({
+          url: expect.stringContaining('/portfolio'),
+        }),
       );
-      expect(zerionCalls.length).toBeGreaterThan(0);
     });
 
     it('should use Safe balances API when zerionBalancesEnabled is false, even for chains with Zerion chain name', async () => {
@@ -389,18 +389,18 @@ describe('Safes V2 Controller Overview (Unit)', () => {
         .expect(200);
 
       // Verify Safe balances API was called (not Zerion)
-      const balancesCalls = testNetworkService.get.mock.calls.filter(
-        (call) =>
-          call[0].url ===
-          `${chain.transactionService}/api/v1/safes/${safeInfo.address}/balances/`,
+      expect(testNetworkService.get).toHaveBeenCalledWith(
+        expect.objectContaining({
+          url: `${chain.transactionService}/api/v1/safes/${safeInfo.address}/balances/`,
+        }),
       );
-      expect(balancesCalls.length).toBeGreaterThan(0);
 
       // Verify Zerion portfolio API was NOT called
-      const zerionCalls = testNetworkService.get.mock.calls.filter((call) =>
-        call[0].url.includes('/portfolio'),
+      expect(testNetworkService.get).not.toHaveBeenCalledWith(
+        expect.objectContaining({
+          url: expect.stringContaining('/portfolio'),
+        }),
       );
-      expect(zerionCalls.length).toBe(0);
 
       await testApp.close();
     });
@@ -780,16 +780,15 @@ describe('Safes V2 Controller Overview (Unit)', () => {
         .expect(200);
 
       // Verify Zerion portfolio API was called with filter[trash] parameter
-      const zerionCalls = networkService.get.mock.calls.filter((call) =>
-        call[0].url.includes('/portfolio'),
-      );
-      expect(zerionCalls.length).toBeGreaterThan(0);
-
-      // Check that the filter[trash] parameter was set to 'only_non_trash'
-      const portfolioCall = zerionCalls[0][0];
-      expect(portfolioCall.networkRequest?.params).toBeDefined();
-      expect(portfolioCall.networkRequest?.params?.['filter[trash]']).toBe(
-        'only_non_trash',
+      expect(networkService.get).toHaveBeenCalledWith(
+        expect.objectContaining({
+          url: expect.stringContaining('/portfolio'),
+          networkRequest: expect.objectContaining({
+            params: expect.objectContaining({
+              'filter[trash]': 'only_non_trash',
+            }),
+          }),
+        }),
       );
     });
   });

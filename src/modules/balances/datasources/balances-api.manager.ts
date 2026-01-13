@@ -58,7 +58,6 @@ export class BalancesApiManager implements IBalancesApiManager {
   }
 
   async getApi(chainId: string, safeAddress: Address): Promise<IBalancesApi> {
-    // If Zerion balances are enabled, check if this chain supports Zerion
     if (this.zerionBalancesEnabled) {
       const chain = await this.configApi
         .getChain(chainId)

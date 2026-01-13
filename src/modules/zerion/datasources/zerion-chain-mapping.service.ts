@@ -39,22 +39,22 @@ export class ZerionChainMappingService {
    * Gets chain ID from Zerion network name (for portfolio API).
    * Maps: network name -> chain ID
    *
-   * @param networkName - Zerion network identifier (e.g., "ethereum", "polygon")
-   * @param isTestnet - Whether this is a testnet request
-   * @returns Chain ID as string (defaults to '1' if unknown)
+   * @param  {string} networkName - Zerion network identifier (e.g., "ethereum", "polygon")
+   * @param  {boolean} isTestnet - Whether this is a testnet request
+   * @returns {Promise<string | undefined>} Chain ID as string, or undefined if network is unknown
    */
   async getChainIdFromNetwork(
     networkName: string,
     isTestnet: boolean,
-  ): Promise<string> {
+  ): Promise<string | undefined> {
     const mapping = await this.getNetworkToChainIdMapping(isTestnet);
     const chainId = mapping[networkName.toLowerCase()];
 
     if (!chainId) {
       this.loggingService.warn(
-        `Unknown Zerion network: "${networkName}", defaulting to Ethereum mainnet (chain ID 1)`,
+        `Unknown Zerion network: "${networkName}", omitting position/asset`,
       );
-      return '1';
+      return undefined;
     }
 
     return chainId;
@@ -73,7 +73,14 @@ export class ZerionChainMappingService {
     isTestnet: boolean,
   ): Promise<string | undefined> {
     const mapping = await this.getChainIdToNetworkMapping(isTestnet);
-    return mapping[chainId];
+    const network = mapping[chainId];
+    if (!network) {
+      this.loggingService.warn(
+        `Unknown chain ID for Zerion mapping: "${chainId}" (isTestnet: ${isTestnet})`,
+      );
+    }
+
+    return network;
   }
 
   /**
@@ -101,14 +108,15 @@ export class ZerionChainMappingService {
       return cached;
     }
 
-    // Fetch network -> chainId mapping first
     const networkToChainId = await this._fetchAndCacheMapping(isTestnet);
 
     // Build reverse mapping: chainId -> network
-    const chainIdToNetwork: Record<string, string> = {};
-    for (const [network, chainId] of Object.entries(networkToChainId)) {
-      chainIdToNetwork[chainId] = network;
-    }
+    const chainIdToNetwork: Record<string, string> = Object.fromEntries(
+      Object.entries(networkToChainId).map(([network, chainId]) => [
+        chainId,
+        network,
+      ]),
+    );
 
     // Cache the reverse mapping
     await this._cacheMapping(isTestnet, 'chainIdToNetwork', chainIdToNetwork);

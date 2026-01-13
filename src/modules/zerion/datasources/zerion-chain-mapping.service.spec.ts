@@ -135,15 +135,15 @@ describe('ZerionChainMappingService', () => {
       expect(mockCacheService.hSet).toHaveBeenCalled();
     });
 
-    it('should return default chain ID 1 for unknown network', async () => {
+    it('should return undefined for unknown network', async () => {
       const cachedMapping = JSON.stringify(testMapping);
       mockCacheService.hGet.mockResolvedValue(cachedMapping);
 
       const result = await service.getChainIdFromNetwork('unknown', false);
 
-      expect(result).toBe('1');
+      expect(result).toBeUndefined();
       expect(mockLoggingService.warn).toHaveBeenCalledWith(
-        'Unknown Zerion network: "unknown", defaulting to Ethereum mainnet (chain ID 1)',
+        'Unknown Zerion network: "unknown", omitting position/asset',
       );
     });
 
@@ -162,8 +162,11 @@ describe('ZerionChainMappingService', () => {
 
       await service.getChainIdFromNetwork('ethereum', true);
 
-      const cacheCall = mockCacheService.hGet.mock.calls[0][0];
-      expect(cacheCall.field).toBe('mapping_testnet');
+      expect(mockCacheService.hGet).toHaveBeenCalledWith(
+        expect.objectContaining({
+          field: 'mapping_testnet',
+        }),
+      );
     });
   });
 
@@ -236,8 +239,11 @@ describe('ZerionChainMappingService', () => {
 
       await service.getNetworkFromChainId('11155111', true);
 
-      const cacheCall = mockCacheService.hGet.mock.calls[0][0];
-      expect(cacheCall.field).toBe('mapping_reverse_testnet');
+      expect(mockCacheService.hGet).toHaveBeenCalledWith(
+        expect.objectContaining({
+          field: 'mapping_reverse_testnet',
+        }),
+      );
     });
   });
 
@@ -505,9 +511,12 @@ describe('ZerionChainMappingService', () => {
 
       await service.getChainIdFromNetwork('ethereum', false);
 
-      const cacheCall = mockCacheService.hGet.mock.calls[0][0];
-      expect(cacheCall.field).toBe('mapping');
-      expect(cacheCall.key).toBe('zerion_chains');
+      expect(mockCacheService.hGet).toHaveBeenCalledWith(
+        expect.objectContaining({
+          field: 'mapping',
+          key: 'zerion_chains',
+        }),
+      );
     });
 
     it('should use correct cache field for networkToChainId direction (testnet)', async () => {
@@ -516,9 +525,12 @@ describe('ZerionChainMappingService', () => {
 
       await service.getChainIdFromNetwork('ethereum', true);
 
-      const cacheCall = mockCacheService.hGet.mock.calls[0][0];
-      expect(cacheCall.field).toBe('mapping_testnet');
-      expect(cacheCall.key).toBe('zerion_chains');
+      expect(mockCacheService.hGet).toHaveBeenCalledWith(
+        expect.objectContaining({
+          field: 'mapping_testnet',
+          key: 'zerion_chains',
+        }),
+      );
     });
 
     it('should use correct cache field for chainIdToNetwork direction (mainnet)', async () => {
@@ -529,9 +541,12 @@ describe('ZerionChainMappingService', () => {
 
       await service.getNetworkFromChainId('1', false);
 
-      const cacheCall = mockCacheService.hGet.mock.calls[0][0];
-      expect(cacheCall.field).toBe('mapping_reverse');
-      expect(cacheCall.key).toBe('zerion_chains');
+      expect(mockCacheService.hGet).toHaveBeenCalledWith(
+        expect.objectContaining({
+          field: 'mapping_reverse',
+          key: 'zerion_chains',
+        }),
+      );
     });
 
     it('should use correct cache field for chainIdToNetwork direction (testnet)', async () => {
@@ -542,9 +557,12 @@ describe('ZerionChainMappingService', () => {
 
       await service.getNetworkFromChainId('11155111', true);
 
-      const cacheCall = mockCacheService.hGet.mock.calls[0][0];
-      expect(cacheCall.field).toBe('mapping_reverse_testnet');
-      expect(cacheCall.key).toBe('zerion_chains');
+      expect(mockCacheService.hGet).toHaveBeenCalledWith(
+        expect.objectContaining({
+          field: 'mapping_reverse_testnet',
+          key: 'zerion_chains',
+        }),
+      );
     });
 
     it('should cache networkToChainId mapping with correct field when fetching from API', async () => {

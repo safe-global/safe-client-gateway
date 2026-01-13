@@ -115,7 +115,6 @@ export class SafesV2Service {
   }): Promise<number> {
     const { chain, safeAddress, currency, trusted } = args;
 
-    // Check if Zerion balances are enabled globally and this chain supports Zerion
     if (this.zerionBalancesEnabled && this.getZerionChainName(chain)) {
       return this.getFiatBalanceFromZerionPortfolio({
         chain,

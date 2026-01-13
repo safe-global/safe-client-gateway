@@ -49,7 +49,6 @@ export class ZerionPositionsApi implements IPositionsApi {
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
     private readonly httpErrorFactory: HttpErrorFactory,
-    @Inject(ZerionChainMappingService)
     private readonly zerionChainMappingService: ZerionChainMappingService,
   ) {
     this.apiKey = this.configurationService.get<string>(
@@ -217,17 +216,12 @@ export class ZerionPositionsApi implements IPositionsApi {
    * @private
    */
   private async _getChainName(chain: Chain): Promise<string> {
-    // First try to get from chain's balancesProvider config
-    if (chain.balancesProvider.chainName) {
-      return chain.balancesProvider.chainName;
-    }
-
-    // Use shared service with Redis caching
     const chainName =
-      await this.zerionChainMappingService.getNetworkFromChainId(
+      chain.balancesProvider.chainName ??
+      (await this.zerionChainMappingService.getNetworkFromChainId(
         chain.chainId,
         chain.isTestnet,
-      );
+      ));
 
     if (!chainName) {
       throw Error(
