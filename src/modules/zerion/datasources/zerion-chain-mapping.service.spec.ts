@@ -628,7 +628,7 @@ describe('ZerionChainMappingService', () => {
       expect(chainIdToNetworkCall).toBeDefined();
       expect(chainIdToNetworkCall![0].key).toBe('zerion_chains');
       // Verify the reverse mapping contains correct data
-      const reverseMapping = JSON.parse(chainIdToNetworkCall![1] as string);
+      const reverseMapping = JSON.parse(chainIdToNetworkCall![1]);
       expect(reverseMapping['1']).toBe('ethereum');
       expect(reverseMapping['137']).toBe('polygon');
     });
