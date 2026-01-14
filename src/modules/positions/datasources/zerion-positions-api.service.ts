@@ -217,7 +217,7 @@ export class ZerionPositionsApi implements IPositionsApi {
    */
   private async _getChainName(chain: Chain): Promise<string> {
     const chainName =
-      chain.balancesProvider.chainName ??
+      chain.balancesProvider.chainName ||
       (await this.zerionChainMappingService.getNetworkFromChainId(
         chain.chainId,
         chain.isTestnet,
