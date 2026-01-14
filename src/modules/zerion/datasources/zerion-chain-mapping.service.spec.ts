@@ -462,12 +462,14 @@ describe('ZerionChainMappingService', () => {
       await service.getNetworkFromChainId('1', false);
 
       // Should cache both directions
-      const hSetCalls = mockCacheService.hSet.mock.calls;
-      expect(hSetCalls.length).toBeGreaterThanOrEqual(2);
-      const reverseCacheCall = hSetCalls.find(
-        (call) => call[0].field === 'mapping_reverse',
+      expect(mockCacheService.hSet).toHaveBeenCalledTimes(2);
+      expect(mockCacheService.hSet).toHaveBeenCalledWith(
+        expect.objectContaining({
+          field: 'mapping_reverse',
+        }),
+        expect.any(String),
+        expect.any(Number),
       );
-      expect(reverseCacheCall).toBeDefined();
     });
 
     it('should use different cache fields for testnet', async () => {
@@ -589,12 +591,14 @@ describe('ZerionChainMappingService', () => {
 
       await service.getChainIdFromNetwork('ethereum', false);
 
-      const hSetCalls = mockCacheService.hSet.mock.calls;
-      const networkToChainIdCall = hSetCalls.find(
-        (call) => call[0].field === 'mapping',
+      expect(mockCacheService.hSet).toHaveBeenCalledWith(
+        expect.objectContaining({
+          field: 'mapping',
+          key: 'zerion_chains',
+        }),
+        expect.any(String),
+        expect.any(Number),
       );
-      expect(networkToChainIdCall).toBeDefined();
-      expect(networkToChainIdCall![0].key).toBe('zerion_chains');
     });
 
     it('should cache chainIdToNetwork mapping with correct field when building reverse mapping', async () => {
@@ -630,25 +634,24 @@ describe('ZerionChainMappingService', () => {
 
       await service.getNetworkFromChainId('1', false);
 
-      const hSetCalls = mockCacheService.hSet.mock.calls;
-      // Should cache both directions
-      expect(hSetCalls.length).toBe(2);
-
-      const networkToChainIdCall = hSetCalls.find(
-        (call) => call[0].field === 'mapping',
+      expect(mockCacheService.hSet).toHaveBeenCalledTimes(2);
+      expect(mockCacheService.hSet).toHaveBeenCalledWith(
+        expect.objectContaining({
+          field: 'mapping',
+          key: 'zerion_chains',
+        }),
+        expect.any(String),
+        expect.any(Number),
       );
-      expect(networkToChainIdCall).toBeDefined();
-      expect(networkToChainIdCall![0].key).toBe('zerion_chains');
 
-      const chainIdToNetworkCall = hSetCalls.find(
-        (call) => call[0].field === 'mapping_reverse',
+      expect(mockCacheService.hSet).toHaveBeenCalledWith(
+        expect.objectContaining({
+          field: 'mapping_reverse',
+          key: 'zerion_chains',
+        }),
+        expect.stringMatching(/"1":"ethereum".*"137":"polygon"|"137":"polygon".*"1":"ethereum"/),
+        expect.any(Number),
       );
-      expect(chainIdToNetworkCall).toBeDefined();
-      expect(chainIdToNetworkCall![0].key).toBe('zerion_chains');
-      // Verify the reverse mapping contains correct data
-      const reverseMapping = JSON.parse(chainIdToNetworkCall![1]);
-      expect(reverseMapping['1']).toBe('ethereum');
-      expect(reverseMapping['137']).toBe('polygon');
     });
 
     it('should use correct cache fields for both directions in testnet', async () => {
@@ -675,18 +678,22 @@ describe('ZerionChainMappingService', () => {
 
       await service.getNetworkFromChainId('11155111', true);
 
-      const hSetCalls = mockCacheService.hSet.mock.calls;
-      expect(hSetCalls.length).toBe(2);
-
-      const networkToChainIdCall = hSetCalls.find(
-        (call) => call[0].field === 'mapping_testnet',
+      expect(mockCacheService.hSet).toHaveBeenCalledTimes(2);
+      expect(mockCacheService.hSet).toHaveBeenCalledWith(
+        expect.objectContaining({
+          field: 'mapping_testnet',
+        }),
+        expect.any(String),
+        expect.any(Number),
       );
-      expect(networkToChainIdCall).toBeDefined();
-
-      const chainIdToNetworkCall = hSetCalls.find(
-        (call) => call[0].field === 'mapping_reverse_testnet',
+      
+      expect(mockCacheService.hSet).toHaveBeenCalledWith(
+        expect.objectContaining({
+          field: 'mapping_reverse_testnet',
+        }),
+        expect.any(String),
+        expect.any(Number),
       );
-      expect(chainIdToNetworkCall).toBeDefined();
     });
 
     it('should not override cache field - field should come from CacheRouter', async () => {
@@ -728,9 +735,14 @@ describe('ZerionChainMappingService', () => {
         false,
         'networkToChainId',
       );
-      const hSetCall = mockCacheService.hSet.mock.calls[0];
-      expect(hSetCall[0].field).toBe(cacheDir.field);
-      expect(hSetCall[0].key).toBe(cacheDir.key);
+      expect(mockCacheService.hSet).toHaveBeenCalledWith(
+        expect.objectContaining({
+          field: cacheDir.field,
+          key: cacheDir.key,
+        }),
+        expect.any(String),
+        expect.any(Number),
+      );
 
       getZerionChainsCacheDirSpy.mockRestore();
     });
@@ -769,19 +781,19 @@ describe('ZerionChainMappingService', () => {
         'chainIdToNetwork',
       );
 
-      // Find the reverse mapping cache call
-      const reverseCacheCall = mockCacheService.hSet.mock.calls.find(
-        (call) => call[0].field === 'mapping_reverse',
-      );
-      expect(reverseCacheCall).toBeDefined();
-
-      // Verify the field matches what CacheRouter returns
+      // Verify the reverse mapping cache call was made with correct field
       const cacheDir = CacheRouter.getZerionChainsCacheDir(
         false,
         'chainIdToNetwork',
       );
-      expect(reverseCacheCall![0].field).toBe(cacheDir.field);
-      expect(reverseCacheCall![0].key).toBe(cacheDir.key);
+      expect(mockCacheService.hSet).toHaveBeenCalledWith(
+        expect.objectContaining({
+          field: cacheDir.field,
+          key: cacheDir.key,
+        }),
+        expect.any(String),
+        expect.any(Number),
+      );
 
       getZerionChainsCacheDirSpy.mockRestore();
     });
