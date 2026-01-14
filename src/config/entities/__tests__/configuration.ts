@@ -64,6 +64,7 @@ export default (): ReturnType<typeof configuration> => ({
       zerion: {
         apiKey: faker.string.hexadecimal({ length: 32 }),
         baseUri: faker.internet.url({ appendSlash: false }),
+        chainsCacheTtlSeconds: faker.number.int({ min: 3600, max: 172800 }),
         currencies: Array.from(
           new Set([
             ...Array.from(
