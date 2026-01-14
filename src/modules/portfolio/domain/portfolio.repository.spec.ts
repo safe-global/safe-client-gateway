@@ -75,7 +75,7 @@ describe('PortfolioRepository', () => {
 
       it('should fetch and cache portfolio if not cached', async () => {
         const portfolio = portfolioBuilder().build();
-        mockCacheService.hGet.mockResolvedValue(undefined);
+        mockCacheService.hGet.mockResolvedValue(null);
         mockPortfolioApi.getPortfolio.mockResolvedValue(rawify(portfolio));
 
         const result = await repository.getPortfolio({
@@ -126,7 +126,7 @@ describe('PortfolioRepository', () => {
           .with('positionBalances', [])
           .build();
 
-        mockCacheService.hGet.mockResolvedValue(undefined);
+        mockCacheService.hGet.mockResolvedValue(null);
         mockPortfolioApi.getPortfolio.mockResolvedValue(rawify(portfolio));
 
         const result = await repository.getPortfolio({
@@ -159,7 +159,7 @@ describe('PortfolioRepository', () => {
           .with('positionBalances', [])
           .build();
 
-        mockCacheService.hGet.mockResolvedValue(undefined);
+        mockCacheService.hGet.mockResolvedValue(null);
         mockPortfolioApi.getPortfolio.mockResolvedValue(rawify(portfolio));
 
         const result = await repository.getPortfolio({
@@ -185,7 +185,7 @@ describe('PortfolioRepository', () => {
           .with('positionBalances', [])
           .build();
 
-        mockCacheService.hGet.mockResolvedValue(undefined);
+        mockCacheService.hGet.mockResolvedValue(null);
         mockPortfolioApi.getPortfolio.mockResolvedValue(rawify(portfolio));
 
         const result = await repository.getPortfolio({
@@ -221,7 +221,7 @@ describe('PortfolioRepository', () => {
           .with('totalPositionsBalanceFiat', '0')
           .build();
 
-        mockCacheService.hGet.mockResolvedValue(undefined);
+        mockCacheService.hGet.mockResolvedValue(null);
         mockPortfolioApi.getPortfolio.mockResolvedValue(rawify(portfolio));
 
         const result = await repository.getPortfolio({
@@ -276,7 +276,7 @@ describe('PortfolioRepository', () => {
           .with('totalPositionsBalanceFiat', '150')
           .build();
 
-        mockCacheService.hGet.mockResolvedValue(undefined);
+        mockCacheService.hGet.mockResolvedValue(null);
         mockPortfolioApi.getPortfolio.mockResolvedValue(rawify(portfolio));
 
         const result = await repository.getPortfolio({
@@ -332,7 +332,7 @@ describe('PortfolioRepository', () => {
           .with('positionBalances', [appBalance])
           .build();
 
-        mockCacheService.hGet.mockResolvedValue(undefined);
+        mockCacheService.hGet.mockResolvedValue(null);
         mockPortfolioApi.getPortfolio.mockResolvedValue(rawify(portfolio));
 
         const result = await repository.getPortfolio({
@@ -373,7 +373,7 @@ describe('PortfolioRepository', () => {
           .with('positionBalances', [appBalance])
           .build();
 
-        mockCacheService.hGet.mockResolvedValue(undefined);
+        mockCacheService.hGet.mockResolvedValue(null);
         mockPortfolioApi.getPortfolio.mockResolvedValue(rawify(portfolio));
 
         const result = await repository.getPortfolio({
@@ -426,7 +426,7 @@ describe('PortfolioRepository', () => {
           .with('positionBalances', [appBalance])
           .build();
 
-        mockCacheService.hGet.mockResolvedValue(undefined);
+        mockCacheService.hGet.mockResolvedValue(null);
         mockPortfolioApi.getPortfolio.mockResolvedValue(rawify(portfolio));
 
         const result = await repository.getPortfolio({
@@ -464,7 +464,7 @@ describe('PortfolioRepository', () => {
           .with('positionBalances', [appBalance])
           .build();
 
-        mockCacheService.hGet.mockResolvedValue(undefined);
+        mockCacheService.hGet.mockResolvedValue(null);
         mockPortfolioApi.getPortfolio.mockResolvedValue(rawify(portfolio));
 
         const result = await repository.getPortfolio({
@@ -522,7 +522,7 @@ describe('PortfolioRepository', () => {
           .with('totalPositionsBalanceFiat', '225')
           .build();
 
-        mockCacheService.hGet.mockResolvedValue(undefined);
+        mockCacheService.hGet.mockResolvedValue(null);
         mockPortfolioApi.getPortfolio.mockResolvedValue(rawify(portfolio));
 
         const result = await repository.getPortfolio({

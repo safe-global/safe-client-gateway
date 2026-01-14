@@ -39,9 +39,9 @@ export class FakeCacheService implements ICacheService, ICacheReadiness {
       : Promise.resolve(null);
   }
 
-  hGet(cacheDir: CacheDir): Promise<string | undefined> {
+  hGet(cacheDir: CacheDir): Promise<string | null> {
     const fields = this.cache[cacheDir.key];
-    if (fields === undefined) return Promise.resolve(undefined);
+    if (fields === undefined) return Promise.resolve(null);
     return Promise.resolve(
       (this.cache[cacheDir.key] as Record<string, string>)[cacheDir.field],
     );

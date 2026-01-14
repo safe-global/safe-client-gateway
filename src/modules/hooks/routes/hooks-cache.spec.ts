@@ -137,7 +137,7 @@ describe('Hook Events for Cache (Unit)', () => {
     const cb = getSubscriptionCallback(queuesApiService);
     await cb({ content: Buffer.from(JSON.stringify(data)) } as ConsumeMessage);
 
-    await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeUndefined();
+    await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeNull();
   });
 
   it.each([
@@ -195,7 +195,7 @@ describe('Hook Events for Cache (Unit)', () => {
     const cb = getSubscriptionCallback(queuesApiService);
     await cb({ content: Buffer.from(JSON.stringify(data)) } as ConsumeMessage);
 
-    await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeUndefined();
+    await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeNull();
   });
 
   it.each([
@@ -253,7 +253,7 @@ describe('Hook Events for Cache (Unit)', () => {
     const cb = getSubscriptionCallback(queuesApiService);
     await cb({ content: Buffer.from(JSON.stringify(data)) } as ConsumeMessage);
 
-    await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeUndefined();
+    await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeNull();
   });
 
   it.each([
@@ -302,7 +302,7 @@ describe('Hook Events for Cache (Unit)', () => {
     const cb = getSubscriptionCallback(queuesApiService);
     await cb({ content: Buffer.from(JSON.stringify(data)) } as ConsumeMessage);
 
-    await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeUndefined();
+    await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeNull();
   });
 
   it.each([
@@ -357,7 +357,7 @@ describe('Hook Events for Cache (Unit)', () => {
     const cb = getSubscriptionCallback(queuesApiService);
     await cb({ content: Buffer.from(JSON.stringify(data)) } as ConsumeMessage);
 
-    await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeUndefined();
+    await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeNull();
   });
 
   it.each([
@@ -415,7 +415,7 @@ describe('Hook Events for Cache (Unit)', () => {
     const cb = getSubscriptionCallback(queuesApiService);
     await cb({ content: Buffer.from(JSON.stringify(data)) } as ConsumeMessage);
 
-    await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeUndefined();
+    await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeNull();
   });
 
   it.each([
@@ -469,7 +469,7 @@ describe('Hook Events for Cache (Unit)', () => {
     const cb = getSubscriptionCallback(queuesApiService);
     await cb({ content: Buffer.from(JSON.stringify(data)) } as ConsumeMessage);
 
-    await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeUndefined();
+    await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeNull();
   });
 
   it.each([
@@ -515,7 +515,7 @@ describe('Hook Events for Cache (Unit)', () => {
     const cb = getSubscriptionCallback(queuesApiService);
     await cb({ content: Buffer.from(JSON.stringify(data)) } as ConsumeMessage);
 
-    await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeUndefined();
+    await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeNull();
   });
 
   it.each([
@@ -556,7 +556,7 @@ describe('Hook Events for Cache (Unit)', () => {
     const cb = getSubscriptionCallback(queuesApiService);
     await cb({ content: Buffer.from(JSON.stringify(data)) } as ConsumeMessage);
 
-    await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeUndefined();
+    await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeNull();
   });
 
   it.each([
@@ -625,7 +625,7 @@ describe('Hook Events for Cache (Unit)', () => {
     const cb = getSubscriptionCallback(queuesApiService);
     await cb({ content: Buffer.from(JSON.stringify(data)) } as ConsumeMessage);
 
-    await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeUndefined();
+    await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeNull();
   });
 
   it.each([
@@ -669,7 +669,7 @@ describe('Hook Events for Cache (Unit)', () => {
     const cb = getSubscriptionCallback(queuesApiService);
     await cb({ content: Buffer.from(JSON.stringify(data)) } as ConsumeMessage);
 
-    await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeUndefined();
+    await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeNull();
   });
 
   it.each([
@@ -700,7 +700,7 @@ describe('Hook Events for Cache (Unit)', () => {
     const cb = getSubscriptionCallback(queuesApiService);
     await cb({ content: Buffer.from(JSON.stringify(data)) } as ConsumeMessage);
 
-    await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeUndefined();
+    await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeNull();
   });
 
   it.each([
@@ -734,7 +734,7 @@ describe('Hook Events for Cache (Unit)', () => {
     const cb = getSubscriptionCallback(queuesApiService);
     await cb({ content: Buffer.from(JSON.stringify(data)) } as ConsumeMessage);
 
-    await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeUndefined();
+    await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeNull();
   });
 
   it.each([
@@ -889,7 +889,7 @@ describe('Hook Events for Cache (Unit)', () => {
     const cb = getSubscriptionCallback(queuesApiService);
     await cb({ content: Buffer.from(JSON.stringify(data)) } as ConsumeMessage);
 
-    await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeUndefined();
+    await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeNull();
   });
 
   it.each([
@@ -922,7 +922,7 @@ describe('Hook Events for Cache (Unit)', () => {
     const cb = getSubscriptionCallback(queuesApiService);
     await cb({ content: Buffer.from(JSON.stringify(data)) } as ConsumeMessage);
 
-    await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeUndefined();
+    await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeNull();
   });
 
   it.each(
@@ -956,6 +956,6 @@ describe('Hook Events for Cache (Unit)', () => {
     const cb = getSubscriptionCallback(queuesApiService);
     await cb({ content: Buffer.from(JSON.stringify(event)) } as ConsumeMessage);
 
-    await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeUndefined();
+    await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeNull();
   });
 });

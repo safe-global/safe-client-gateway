@@ -136,7 +136,7 @@ describe('AuthController', () => {
           expect(setCookie[0]).toMatch(setCookieRegExp);
         });
       // Nonce deleted
-      await expect(cacheService.hGet(cacheDir)).resolves.toBe(undefined);
+      await expect(cacheService.hGet(cacheDir)).resolves.toBeNull();
     });
 
     it('should set SameSite=none if application.env is not production', async () => {
@@ -202,7 +202,7 @@ describe('AuthController', () => {
           expect(setCookie[0]).toMatch(setCookieRegExp);
         });
       // Nonce deleted
-      await expect(cacheService.hGet(cacheDir)).resolves.toBe(undefined);
+      await expect(cacheService.hGet(cacheDir)).resolves.toBeNull();
     });
 
     it('should not issue an access token if expirationTime is too high', async () => {
@@ -236,7 +236,7 @@ describe('AuthController', () => {
         })
         .expect(403)
         .expect(({ headers, body }) => {
-          expect(headers['set-cookie']).toBe(undefined);
+          expect(headers['set-cookie']).toBeUndefined();
 
           expect(body).toStrictEqual({
             error: 'Forbidden',
@@ -245,7 +245,7 @@ describe('AuthController', () => {
           });
         });
       // Nonce deleted
-      await expect(cacheService.hGet(cacheDir)).resolves.toBe(undefined);
+      await expect(cacheService.hGet(cacheDir)).resolves.toBeNull();
     });
 
     it('should not verify a signer if using an unsigned nonce', async () => {
@@ -265,7 +265,7 @@ describe('AuthController', () => {
         message,
       });
 
-      await expect(cacheService.hGet(cacheDir)).resolves.toBe(undefined);
+      await expect(cacheService.hGet(cacheDir)).resolves.toBeNull();
       await request(app.getHttpServer())
         .post('/v1/auth/verify')
         .send({
@@ -274,7 +274,7 @@ describe('AuthController', () => {
         })
         .expect(401)
         .expect(({ headers, body }) => {
-          expect(headers['set-cookie']).toBe(undefined);
+          expect(headers['set-cookie']).toBeUndefined();
 
           expect(body).toStrictEqual({
             error: 'Unauthorized',
@@ -283,7 +283,7 @@ describe('AuthController', () => {
           });
         });
       // Nonce deleted
-      await expect(cacheService.hGet(cacheDir)).resolves.toBe(undefined);
+      await expect(cacheService.hGet(cacheDir)).resolves.toBeNull();
     });
 
     it('should not verify a signer if the nonce has expired', async () => {
@@ -311,7 +311,7 @@ describe('AuthController', () => {
       // Mimic ttl expiration
       await cacheService.deleteByKey(cacheDir.key);
 
-      await expect(cacheService.hGet(cacheDir)).resolves.toBe(undefined);
+      await expect(cacheService.hGet(cacheDir)).resolves.toBeNull();
       await request(app.getHttpServer())
         .post('/v1/auth/verify')
         .set(
@@ -324,7 +324,7 @@ describe('AuthController', () => {
         })
         .expect(401)
         .expect(({ headers, body }) => {
-          expect(headers['set-cookie']).toBe(undefined);
+          expect(headers['set-cookie']).toBeUndefined();
 
           expect(body).toStrictEqual({
             error: 'Unauthorized',
@@ -333,7 +333,7 @@ describe('AuthController', () => {
           });
         });
       // Nonce deleted
-      await expect(cacheService.hGet(cacheDir)).resolves.toBe(undefined);
+      await expect(cacheService.hGet(cacheDir)).resolves.toBeNull();
     });
 
     it('should not verify a signer if the signature is invalid', async () => {
@@ -363,7 +363,7 @@ describe('AuthController', () => {
         })
         .expect(401)
         .expect(({ headers, body }) => {
-          expect(headers['set-cookie']).toBe(undefined);
+          expect(headers['set-cookie']).toBeUndefined();
 
           expect(body).toStrictEqual({
             error: 'Unauthorized',
@@ -372,7 +372,7 @@ describe('AuthController', () => {
           });
         });
       // Nonce deleted
-      await expect(cacheService.hGet(cacheDir)).resolves.toBe(undefined);
+      await expect(cacheService.hGet(cacheDir)).resolves.toBeNull();
     });
 
     it('should not verify a signer if the message has expired', async () => {
@@ -404,7 +404,7 @@ describe('AuthController', () => {
         })
         .expect(401)
         .expect(({ headers, body }) => {
-          expect(headers['set-cookie']).toBe(undefined);
+          expect(headers['set-cookie']).toBeUndefined();
 
           expect(body).toStrictEqual({
             error: 'Unauthorized',
@@ -462,7 +462,7 @@ describe('AuthController', () => {
           expect(setCookie[0]).toMatch(setCookieRegExp);
         });
       // Nonce deleted
-      await expect(cacheService.hGet(cacheDir)).resolves.toBe(undefined);
+      await expect(cacheService.hGet(cacheDir)).resolves.toBeNull();
     });
   });
 
