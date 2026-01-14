@@ -226,16 +226,13 @@ describe('ZerionChainMappingService', () => {
   });
 
   describe('error handling', () => {
-    it('should return empty mappings and log error on fetch failure', async () => {
+    it('should propagate error on fetch failure', async () => {
       mockCacheService.hGet.mockResolvedValue(undefined);
       mockNetworkService.get.mockRejectedValue(new Error('Network error'));
 
-      const result = await service.getNetworkNameFromChainId('1', false);
-
-      expect(result).toBeNull();
-      expect(mockLoggingService.error).toHaveBeenCalledWith(
-        expect.stringContaining('Failed to fetch Zerion chains'),
-      );
+      await expect(
+        service.getNetworkNameFromChainId('1', false),
+      ).rejects.toThrow('Network error');
     });
 
     it('should skip chains with invalid hex external_id', async () => {

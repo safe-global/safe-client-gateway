@@ -107,12 +107,7 @@ export class ZerionChainMappingService implements IZerionChainMappingService {
       return cached;
     }
 
-    try {
-      return await this._fetchAndCacheMappings(isTestnet);
-    } catch (error) {
-      this.loggingService.error(`Failed to fetch Zerion chains: ${error}`);
-      return { chainIdToName: {}, nameToChainId: {} };
-    }
+    return this._fetchAndCacheMappings(isTestnet);
   }
 
   private async _getCachedMappings(
