@@ -649,7 +649,9 @@ describe('ZerionChainMappingService', () => {
           field: 'mapping_reverse',
           key: 'zerion_chains',
         }),
-        expect.stringMatching(/"1":"ethereum".*"137":"polygon"|"137":"polygon".*"1":"ethereum"/),
+        expect.stringMatching(
+          /"1":"ethereum".*"137":"polygon"|"137":"polygon".*"1":"ethereum"/,
+        ),
         expect.any(Number),
       );
     });
@@ -686,7 +688,7 @@ describe('ZerionChainMappingService', () => {
         expect.any(String),
         expect.any(Number),
       );
-      
+
       expect(mockCacheService.hSet).toHaveBeenCalledWith(
         expect.objectContaining({
           field: 'mapping_reverse_testnet',
