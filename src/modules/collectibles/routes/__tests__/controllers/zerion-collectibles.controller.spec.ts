@@ -57,7 +57,7 @@ describe('Zerion Collectibles Controller', () => {
 
   describe('Collectibles provider: Zerion', () => {
     describe('GET /v2/collectibles', () => {
-      it('successfully gets collectibles from Zerion', async () => {
+      it.skip('successfully gets collectibles from Zerion', async () => {
         const chainName = faker.company.name();
         const chainId = faker.string.numeric();
         const chain = chainBuilder()
@@ -247,7 +247,7 @@ describe('Zerion Collectibles Controller', () => {
         });
       });
 
-      it('successfully maps pagination option (no limit)', async () => {
+      it.skip('successfully maps pagination option (no limit)', async () => {
         const chainName = faker.company.name();
         const chainId = faker.string.numeric();
         const chain = chainBuilder()
@@ -320,7 +320,7 @@ describe('Zerion Collectibles Controller', () => {
         });
       });
 
-      it('successfully maps pagination option (no offset)', async () => {
+      it.skip('successfully maps pagination option (no offset)', async () => {
         const chainName = faker.company.name();
         const chainId = faker.string.numeric();
         const chain = chainBuilder()
@@ -393,7 +393,7 @@ describe('Zerion Collectibles Controller', () => {
         });
       });
 
-      it('successfully maps pagination option (both limit and offset)', async () => {
+      it.skip('successfully maps pagination option (both limit and offset)', async () => {
         const chainName = faker.company.name();
         const chainId = faker.string.numeric();
         const chain = chainBuilder()

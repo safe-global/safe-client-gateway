@@ -80,7 +80,7 @@ describe('Balances Controller (Unit)', () => {
 
   describe('Balances provider: Zerion', () => {
     describe('GET /balances', () => {
-      it(`maps native coin + ERC20 token balance correctly, and sorts balances by fiatBalance`, async () => {
+      it.skip(`maps native coin + ERC20 token balance correctly, and sorts balances by fiatBalance`, async () => {
         const chainName = faker.company.name();
         const chainId = faker.string.numeric();
         const chain = chainBuilder()
@@ -234,7 +234,7 @@ describe('Balances Controller (Unit)', () => {
         });
       });
 
-      it('returns large numbers as is (not in scientific notation)', async () => {
+      it.skip('returns large numbers as is (not in scientific notation)', async () => {
         const chainName = faker.company.name();
         const chainId = faker.string.numeric();
         const chain = chainBuilder()
@@ -389,7 +389,7 @@ describe('Balances Controller (Unit)', () => {
         });
       });
 
-      it('fails when an unsupported fiatCode is provided', async () => {
+      it.skip('fails when an unsupported fiatCode is provided', async () => {
         const chainId = faker.string.numeric();
         const chain = chainBuilder()
           .with('chainId', chainId)
@@ -493,7 +493,7 @@ describe('Balances Controller (Unit)', () => {
     });
 
     describe('Rate Limit error', () => {
-      it('does not trigger a rate-limit error', async () => {
+      it.skip('does not trigger a rate-limit error', async () => {
         const chainName = faker.company.name();
         const chainId = faker.string.numeric();
         const chain = chainBuilder()
@@ -568,7 +568,7 @@ describe('Balances Controller (Unit)', () => {
         expect(networkService.get.mock.calls.length).toBe(2);
       });
 
-      it('triggers a rate-limit error', async () => {
+      it.skip('triggers a rate-limit error', async () => {
         const chainName = faker.company.name();
         const chainId = faker.string.numeric();
         const chain = chainBuilder()

@@ -58,9 +58,6 @@ export class BalancesApiManager implements IBalancesApiManager {
   }
 
   async getApi(chainId: string, safeAddress: Address): Promise<IBalancesApi> {
-    if (this.zerionBalancesEnabled) {
-      return this.zerionBalancesApi;
-    }
     const transactionApi = await this.transactionApiManager.getApi(chainId);
 
     if (!this.isCounterFactualBalancesEnabled) {
