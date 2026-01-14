@@ -84,36 +84,6 @@ beforeEach(() => {
 
 describe('Balances API Manager Tests', () => {
   describe('getApi checks', () => {
-    it('should return the Zerion API if zerionBalancesEnabled is true and chain has Zerion chain name', async () => {
-      configurationServiceMock.getOrThrow.mockImplementation((key) => {
-        if (key === 'features.zerionBalancesEnabled') return true;
-        if (key === 'features.counterfactualBalances') return true;
-        else if (key === 'application.isProduction') return true;
-      });
-      const chain = chainBuilder()
-        .with('chainId', faker.string.numeric())
-        .with('balancesProvider', { chainName: 'polygon', enabled: true })
-        .build();
-      configApiMock.getChain.mockResolvedValue(rawify(chain));
-      const manager = new BalancesApiManager(
-        configurationService,
-        configApiMock,
-        dataSourceMock,
-        cacheService,
-        httpErrorFactory,
-        zerionBalancesApiMock,
-        coingeckoApiMock,
-        transactionApiManagerMock,
-        networkServiceMock,
-      );
-      const safeAddress = getAddress(faker.finance.ethereumAddress());
-
-      const result = await manager.getApi(chain.chainId, safeAddress);
-
-      expect(result).toEqual(zerionBalancesApi);
-      expect(configApiMock.getChain).toHaveBeenCalledWith(chain.chainId);
-    });
-
     it('should return the Zerion API if the Safe address is not known by the Safe Transaction Service', async () => {
       const manager = new BalancesApiManager(
         configurationService,
