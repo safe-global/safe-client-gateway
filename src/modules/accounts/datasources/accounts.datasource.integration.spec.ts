@@ -409,18 +409,17 @@ describe('AccountsDatasource tests', () => {
         '',
       );
       const cached = await fakeCacheService.hGet(accountCacheDir);
-      expect(cached).toBeUndefined();
+      expect(cached).toBeNull();
 
       // the settings and counterfactual safes are deleted from the cache
       const accountDataSettingsCached = await fakeCacheService.hGet(
         accountDataSettingsCacheDir,
       );
-      expect(accountDataSettingsCached).toBeUndefined();
+      expect(accountDataSettingsCached).toBeNull();
       const counterfactualSafesCached = await fakeCacheService.hGet(
         counterfactualSafesCacheDir,
       );
-      expect(counterfactualSafesCached).toBeUndefined();
-
+      expect(counterfactualSafesCached).toBeNull();
       expect(mockLoggingService.debug).toHaveBeenCalledTimes(2);
       expect(mockLoggingService.debug).toHaveBeenNthCalledWith(1, {
         type: LogType.CacheHit,
