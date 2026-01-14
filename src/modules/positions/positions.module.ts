@@ -8,9 +8,10 @@ import { IPositionsRepository } from '@/modules/positions/domain/positions.repos
 import { PositionsController } from '@/modules/positions/routes/positions.controller';
 import { PositionsService } from '@/modules/positions/routes/positions.service';
 import { ChainsModule } from '@/modules/chains/chains.module';
+import { ZerionModule } from '@/modules/zerion/zerion.module';
 
 @Module({
-  imports: [CacheFirstDataSourceModule, ChainsModule],
+  imports: [CacheFirstDataSourceModule, ChainsModule, ZerionModule],
   controllers: [PositionsController],
   providers: [
     HttpErrorFactory,
