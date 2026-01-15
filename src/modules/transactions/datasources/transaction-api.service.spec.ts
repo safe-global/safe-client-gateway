@@ -402,7 +402,7 @@ describe('TransactionApi', () => {
         `${chainId}_safe_exists_${safe.address}`,
         '',
       );
-      cacheService.hGet.mockResolvedValueOnce(undefined);
+      cacheService.hGet.mockResolvedValueOnce(null);
       networkService.get.mockResolvedValueOnce({
         status: 200,
         data: rawify(safe),
@@ -453,7 +453,7 @@ describe('TransactionApi', () => {
         `${chainId}_safe_exists_${safe.address}`,
         '',
       );
-      cacheService.hGet.mockResolvedValueOnce(undefined);
+      cacheService.hGet.mockResolvedValueOnce(null);
       networkService.get.mockResolvedValueOnce({
         status: 404,
         data: rawify(null),
@@ -491,7 +491,7 @@ describe('TransactionApi', () => {
         `${chainId}_safe_exists_${safe.address}`,
         '',
       );
-      cacheService.hGet.mockResolvedValueOnce(undefined);
+      cacheService.hGet.mockResolvedValueOnce(null);
       networkService.get.mockRejectedValueOnce(
         new NetworkResponseError(
           new URL(getSafeUrl),

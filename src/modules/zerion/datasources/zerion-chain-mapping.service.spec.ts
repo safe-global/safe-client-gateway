@@ -91,7 +91,7 @@ describe('ZerionChainMappingService', () => {
     });
 
     it('should fetch and cache mapping when not cached', async () => {
-      mockCacheService.hGet.mockResolvedValue(undefined);
+      mockCacheService.hGet.mockResolvedValue(null);
       const mockResponse = {
         data: {
           data: [
@@ -188,7 +188,7 @@ describe('ZerionChainMappingService', () => {
     });
 
     it('should build reverse mapping when not cached', async () => {
-      mockCacheService.hGet.mockResolvedValue(undefined);
+      mockCacheService.hGet.mockResolvedValue(null);
       const mockResponse = {
         data: {
           data: [
@@ -249,7 +249,7 @@ describe('ZerionChainMappingService', () => {
 
   describe('_fetchAndCacheMapping', () => {
     it('should parse and map Zerion chain response correctly', async () => {
-      mockCacheService.hGet.mockResolvedValue(undefined);
+      mockCacheService.hGet.mockResolvedValue(null);
       const mockResponse = {
         data: {
           data: [
@@ -292,7 +292,7 @@ describe('ZerionChainMappingService', () => {
     });
 
     it('should skip chains with invalid hex external_id', async () => {
-      mockCacheService.hGet.mockResolvedValue(undefined);
+      mockCacheService.hGet.mockResolvedValue(null);
       const mockResponse = {
         data: {
           data: [
@@ -341,7 +341,7 @@ describe('ZerionChainMappingService', () => {
     });
 
     it('should convert network names to lowercase in mapping', async () => {
-      mockCacheService.hGet.mockResolvedValue(undefined);
+      mockCacheService.hGet.mockResolvedValue(null);
       const mockResponse = {
         data: {
           data: [
@@ -368,7 +368,7 @@ describe('ZerionChainMappingService', () => {
     });
 
     it('should include X-Env header for testnet requests', async () => {
-      mockCacheService.hGet.mockResolvedValue(undefined);
+      mockCacheService.hGet.mockResolvedValue(null);
       const mockResponse = {
         data: {
           data: [
@@ -405,7 +405,7 @@ describe('ZerionChainMappingService', () => {
 
   describe('caching', () => {
     it('should cache networkToChainId mapping with correct TTL', async () => {
-      mockCacheService.hGet.mockResolvedValue(undefined);
+      mockCacheService.hGet.mockResolvedValue(null);
       const mockResponse = {
         data: {
           data: [
@@ -438,7 +438,7 @@ describe('ZerionChainMappingService', () => {
     });
 
     it('should cache chainIdToNetwork mapping separately', async () => {
-      mockCacheService.hGet.mockResolvedValue(undefined);
+      mockCacheService.hGet.mockResolvedValue(null);
       const mockResponse = {
         data: {
           data: [
@@ -473,7 +473,7 @@ describe('ZerionChainMappingService', () => {
     });
 
     it('should use different cache fields for testnet', async () => {
-      mockCacheService.hGet.mockResolvedValue(undefined);
+      mockCacheService.hGet.mockResolvedValue(null);
       const mockResponse = {
         data: {
           data: [
@@ -568,7 +568,7 @@ describe('ZerionChainMappingService', () => {
     });
 
     it('should cache networkToChainId mapping with correct field when fetching from API', async () => {
-      mockCacheService.hGet.mockResolvedValue(undefined);
+      mockCacheService.hGet.mockResolvedValue(null);
       const mockResponse = {
         data: {
           data: [
@@ -602,7 +602,7 @@ describe('ZerionChainMappingService', () => {
     });
 
     it('should cache chainIdToNetwork mapping with correct field when building reverse mapping', async () => {
-      mockCacheService.hGet.mockResolvedValue(undefined);
+      mockCacheService.hGet.mockResolvedValue(null);
       const mockResponse = {
         data: {
           data: [
@@ -657,7 +657,7 @@ describe('ZerionChainMappingService', () => {
     });
 
     it('should use correct cache fields for both directions in testnet', async () => {
-      mockCacheService.hGet.mockResolvedValue(undefined);
+      mockCacheService.hGet.mockResolvedValue(null);
       const mockResponse = {
         data: {
           data: [
@@ -704,7 +704,7 @@ describe('ZerionChainMappingService', () => {
         'getZerionChainsCacheDir',
       );
 
-      mockCacheService.hGet.mockResolvedValue(undefined);
+      mockCacheService.hGet.mockResolvedValue(null);
       const mockResponse = {
         data: {
           data: [
@@ -755,7 +755,7 @@ describe('ZerionChainMappingService', () => {
         'getZerionChainsCacheDir',
       );
 
-      mockCacheService.hGet.mockResolvedValue(undefined);
+      mockCacheService.hGet.mockResolvedValue(null);
       const mockResponse = {
         data: {
           data: [
@@ -803,7 +803,7 @@ describe('ZerionChainMappingService', () => {
 
   describe('error handling', () => {
     it('should handle network service errors gracefully', async () => {
-      mockCacheService.hGet.mockResolvedValue(undefined);
+      mockCacheService.hGet.mockResolvedValue(null);
       mockNetworkService.get.mockRejectedValue(new Error('Network error'));
 
       await expect(

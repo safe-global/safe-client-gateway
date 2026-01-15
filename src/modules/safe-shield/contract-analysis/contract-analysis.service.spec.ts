@@ -112,7 +112,7 @@ describe('ContractAnalysisService', () => {
         contracts: [],
       });
       const cacheContent = await fakeCacheService.hGet(cacheDir);
-      expect(cacheContent).toBeUndefined();
+      expect(cacheContent).toBeNull();
 
       const analyzeContractSpy = jest.spyOn(service, 'analyzeContract');
       expect(analyzeContractSpy).not.toHaveBeenCalled();
