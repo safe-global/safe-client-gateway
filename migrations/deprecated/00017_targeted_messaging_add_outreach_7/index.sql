@@ -15,5 +15,5 @@ INSERT INTO outreaches (
     '',
     'Wallet',
     'targeted_feature_hypernative_safes_14-01-26.json',
-    '6140f3db250aa20154c93219ea24ad5a1274a3ce3c612b2a263f9dae67a7af2e'
+    '83faf913e61a8473ab788e6897b92da7ebde68360fee21dcb38316bc0a087e52'
 );
