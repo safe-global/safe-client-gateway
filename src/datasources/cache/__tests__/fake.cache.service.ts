@@ -44,11 +44,7 @@ export class FakeCacheService implements ICacheService, ICacheReadiness {
       | Record<string, string>
       | undefined;
 
-    if (!record) {
-      return Promise.resolve(null);
-    }
-
-    return Promise.resolve(record[cacheDir.field] ?? null);
+    return Promise.resolve(record?.[cacheDir.field] ?? null);
   }
 
   hSet(
