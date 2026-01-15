@@ -12,7 +12,7 @@ export interface ICacheService {
     expireDeviatePercent?: number,
   ): Promise<void>;
 
-  hGet(cacheDir: CacheDir): Promise<string | undefined>;
+  hGet(cacheDir: CacheDir): Promise<string | null>;
 
   deleteByKey(key: string): Promise<number>;
 
