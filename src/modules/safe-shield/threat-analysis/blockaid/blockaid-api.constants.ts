@@ -125,7 +125,7 @@ export const prepareDescription = (
  * @returns {string | undefined} The mapped error message if an error code is found and mapped, the original error string if no error code is found or code is not in mapping, or undefined if error is undefined or empty
  */
 export const prepareErrorMessage = (error?: string): string | undefined => {
-  if (error === undefined || error === '') return undefined;
+  if (!error) return undefined;
 
   const match = error.match(/GS\d{3}/);
   if (!match) return error;
