@@ -190,10 +190,10 @@ describe('prepareErrorMessage', () => {
       expect(result).toBeUndefined();
     });
 
-    it('should return empty string when error is empty string', () => {
+    it('should return undefined when error is empty string', () => {
       const result = prepareErrorMessage('');
 
-      expect(result).toBe('');
+      expect(result).toBeUndefined();
     });
   });
 

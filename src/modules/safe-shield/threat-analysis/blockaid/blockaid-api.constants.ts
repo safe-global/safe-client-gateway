@@ -122,26 +122,13 @@ export const prepareDescription = (
  * Extracts error code from error string and maps it to a user-friendly message.
  * Error codes follow the pattern GS followed by 3 digits (e.g., GS030, GS123, GS301).
  * @param {string} error - The error string that may contain an error code
- * @returns {string | undefined} The mapped error message if an error code is found and mapped, the original error string if no error code is found or code is not in mapping, or undefined if error is undefined
+ * @returns {string | undefined} The mapped error message if an error code is found and mapped, the original error string if no error code is found or code is not in mapping, or undefined if error is undefined or empty
  */
 export const prepareErrorMessage = (error?: string): string | undefined => {
-  if (error === undefined) {
-    return undefined;
-  }
+  if (error === undefined || error === '') return undefined;
 
-  // Match error codes in the format GS followed by 3 digits
-  const errorMsgMatchEVMRevertCode = error.match(/GS\d{3}/);
-  if (!errorMsgMatchEVMRevertCode) {
-    return error;
-  }
+  const match = error.match(/GS\d{3}/);
+  if (!match) return error;
 
-  const errorMsg = errorMsgMatchEVMRevertCode[0];
-  const mappedMessage = ERROR_MAPPING[errorMsg];
-
-  // If error code is found but not in mapping, return original error
-  if (mappedMessage === undefined) {
-    return error;
-  }
-
-  return mappedMessage;
+  return ERROR_MAPPING[match[0]] ?? error;
 };
