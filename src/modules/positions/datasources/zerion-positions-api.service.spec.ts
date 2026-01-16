@@ -1,5 +1,5 @@
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
-import { ZerionBalancesApi } from '@/modules/balances/datasources/zerion-balances-api.service';
+import { ZerionPositionsApi } from '@/modules/positions/datasources/zerion-positions-api.service';
 import type { ICacheService } from '@/datasources/cache/cache.service.interface';
 import type { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
@@ -12,9 +12,9 @@ import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 
 const mockCacheService = jest.mocked({
-  increment: jest.fn(),
   hGet: jest.fn(),
   hSet: jest.fn(),
+  deleteByKey: jest.fn(),
 } as jest.MockedObjectDeep<ICacheService>);
 
 const mockLoggingService = {
@@ -35,8 +35,8 @@ const mockChainMappingService = jest.mocked({
   getChainIdFromNetworkName: jest.fn(),
 } as jest.MockedObjectDeep<IZerionChainMappingService>);
 
-describe('ZerionBalancesApiService', () => {
-  let service: ZerionBalancesApi;
+describe('ZerionPositionsApiService', () => {
+  let service: ZerionPositionsApi;
   let fakeConfigurationService: FakeConfigurationService;
   const zerionApiKey = faker.string.sample();
   const zerionBaseUri = faker.internet.url({ appendSlash: false });
@@ -61,33 +61,25 @@ describe('ZerionBalancesApiService', () => {
       zerionBaseUri,
     );
     fakeConfigurationService.set(
-      'expirationTimeInSeconds.default',
+      'expirationTimeInSeconds.zerionPositions',
       defaultExpirationTimeInSeconds,
     );
     fakeConfigurationService.set(
       'balances.providers.zerion.currencies',
       supportedFiatCodes,
     );
-    fakeConfigurationService.set(
-      'balances.providers.zerion.limitPeriodSeconds',
-      faker.number.int(),
-    );
-    fakeConfigurationService.set(
-      'balances.providers.zerion.limitCalls',
-      faker.number.int(),
-    );
 
-    service = new ZerionBalancesApi(
+    service = new ZerionPositionsApi(
       mockCacheService,
       mockLoggingService,
       mockNetworkService,
-      mockChainMappingService,
       fakeConfigurationService,
       mockHttpErrorFactory,
+      mockChainMappingService,
     );
   });
 
-  describe('getBalances', () => {
+  describe('getPositions', () => {
     it('should fail for an invalid fiatCode', async () => {
       const chain = chainBuilder().build();
       const safeAddress = getAddress(faker.finance.ethereumAddress());
@@ -96,7 +88,7 @@ describe('ZerionBalancesApiService', () => {
       });
 
       await expect(
-        service.getBalances({
+        service.getPositions({
           chain,
           safeAddress,
           fiatCode,
@@ -108,12 +100,13 @@ describe('ZerionBalancesApiService', () => {
       const chain = chainBuilder().with('isTestnet', false).build();
       const safeAddress = getAddress(faker.finance.ethereumAddress());
       const fiatCode = faker.helpers.arrayElement(supportedFiatCodes);
+      mockCacheService.hGet.mockResolvedValue(null);
       mockNetworkService.get.mockResolvedValue({
         data: rawify({ data: [] }),
         status: 200,
       });
 
-      await service.getBalances({
+      await service.getPositions({
         chain,
         safeAddress,
         fiatCode,
@@ -127,6 +120,7 @@ describe('ZerionBalancesApiService', () => {
           },
           params: {
             'filter[chain_ids]': chain.balancesProvider.chainName,
+            'filter[positions]': 'only_complex',
             currency: fiatCode.toLowerCase(),
             sort: 'value',
           },
@@ -138,12 +132,13 @@ describe('ZerionBalancesApiService', () => {
       const chain = chainBuilder().with('isTestnet', true).build();
       const safeAddress = getAddress(faker.finance.ethereumAddress());
       const fiatCode = faker.helpers.arrayElement(supportedFiatCodes);
+      mockCacheService.hGet.mockResolvedValue(null);
       mockNetworkService.get.mockResolvedValue({
         data: rawify({ data: [] }),
         status: 200,
       });
 
-      await service.getBalances({
+      await service.getPositions({
         chain,
         safeAddress,
         fiatCode,
@@ -158,6 +153,7 @@ describe('ZerionBalancesApiService', () => {
           },
           params: {
             'filter[chain_ids]': chain.balancesProvider.chainName,
+            'filter[positions]': 'only_complex',
             currency: fiatCode.toLowerCase(),
             sort: 'value',
           },
@@ -178,10 +174,9 @@ describe('ZerionBalancesApiService', () => {
       const safeAddress = getAddress(faker.finance.ethereumAddress());
       const fiatCode = faker.helpers.arrayElement(supportedFiatCodes);
 
-      // Mock chain mapping service to return null (chain not supported)
       mockChainMappingService.getNetworkNameFromChainId.mockResolvedValue(null);
 
-      const result = await service.getBalances({
+      const result = await service.getPositions({
         chain,
         safeAddress,
         fiatCode,
@@ -189,7 +184,7 @@ describe('ZerionBalancesApiService', () => {
 
       expect(result).toEqual([]);
       expect(mockLoggingService.debug).toHaveBeenCalledWith(
-        `Chain ${unsupportedChainId} not supported by Zerion, skipping balances`,
+        `Chain ${unsupportedChainId} not supported by Zerion, skipping positions`,
       );
     });
 
@@ -210,12 +205,13 @@ describe('ZerionBalancesApiService', () => {
       mockChainMappingService.getNetworkNameFromChainId.mockResolvedValue(
         mappedChainName,
       );
+      mockCacheService.hGet.mockResolvedValue(null);
       mockNetworkService.get.mockResolvedValue({
         data: rawify({ data: [] }),
         status: 200,
       });
 
-      await service.getBalances({
+      await service.getPositions({
         chain,
         safeAddress,
         fiatCode,
@@ -232,11 +228,74 @@ describe('ZerionBalancesApiService', () => {
           },
           params: {
             'filter[chain_ids]': mappedChainName,
+            'filter[positions]': 'only_complex',
             currency: fiatCode.toLowerCase(),
             sort: 'value',
           },
         },
       });
+    });
+
+    it('should use chain mapping service with isTestnet flag', async () => {
+      const chainId = '11155111';
+      const mappedChainName = 'ethereum';
+      const chain = chainBuilder()
+        .with('chainId', chainId)
+        .with('isTestnet', true)
+        .with(
+          'balancesProvider',
+          balancesProviderBuilder().with('chainName', null).build(),
+        )
+        .build();
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const fiatCode = faker.helpers.arrayElement(supportedFiatCodes);
+
+      mockChainMappingService.getNetworkNameFromChainId.mockResolvedValue(
+        mappedChainName,
+      );
+      mockCacheService.hGet.mockResolvedValue(null);
+      mockNetworkService.get.mockResolvedValue({
+        data: rawify({ data: [] }),
+        status: 200,
+      });
+
+      await service.getPositions({
+        chain,
+        safeAddress,
+        fiatCode,
+      });
+
+      expect(
+        mockChainMappingService.getNetworkNameFromChainId,
+      ).toHaveBeenCalledWith(chainId, true);
+    });
+
+    it('should not call chain mapping service when chainName is configured', async () => {
+      const chain = chainBuilder()
+        .with('isTestnet', false)
+        .with(
+          'balancesProvider',
+          balancesProviderBuilder().with('chainName', 'ethereum').build(),
+        )
+        .build();
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const fiatCode = faker.helpers.arrayElement(supportedFiatCodes);
+
+      mockCacheService.hGet.mockResolvedValue(null);
+      mockNetworkService.get.mockResolvedValue({
+        data: rawify({ data: [] }),
+        status: 200,
+      });
+
+      await service.getPositions({
+        chain,
+        safeAddress,
+        fiatCode,
+      });
+
+      expect(
+        mockChainMappingService.getNetworkNameFromChainId,
+      ).not.toHaveBeenCalled();
     });
   });
 });

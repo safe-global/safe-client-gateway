@@ -1,8 +1,18 @@
 import { Module } from '@nestjs/common';
-import { ZerionChainMappingService } from '@/modules/zerion/datasources/zerion-chain-mapping.service';
+import { CacheFirstDataSourceModule } from '@/datasources/cache/cache.first.data.source.module';
+import {
+  IZerionChainMappingService,
+  ZerionChainMappingService,
+} from '@/modules/zerion/datasources/zerion-chain-mapping.service';
 
 @Module({
-  providers: [ZerionChainMappingService],
-  exports: [ZerionChainMappingService],
+  imports: [CacheFirstDataSourceModule],
+  providers: [
+    {
+      provide: IZerionChainMappingService,
+      useClass: ZerionChainMappingService,
+    },
+  ],
+  exports: [IZerionChainMappingService],
 })
 export class ZerionModule {}
