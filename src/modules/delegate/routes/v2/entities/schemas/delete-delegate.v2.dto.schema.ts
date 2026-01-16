@@ -9,7 +9,5 @@ export const DeleteDelegateV2DtoSchema = z
   })
   .refine(
     (value) => value.delegator || value.safe,
-    () => ({
-      message: `At least one of the fields 'safe' or 'delegator' is required`,
-    }),
+    { error: `At least one of the fields 'safe' or 'delegator' is required` },
   );

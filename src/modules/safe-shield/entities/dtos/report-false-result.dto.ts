@@ -24,7 +24,7 @@ export type ReportEvent = z.infer<typeof ReportEventSchema>;
  */
 export const ReportFalseResultRequestSchema = z.object({
   event: ReportEventSchema,
-  request_id: z.string().uuid(),
+  request_id: z.uuid(),
   details: z.string().min(1).max(1000),
 });
 

@@ -55,7 +55,7 @@ export const ContractAnalysisResponseSchema = z.record(
   AddressSchema,
   z
     .object({
-      logoUrl: z.string().url().optional(),
+      logoUrl: z.url().optional(),
       name: z.string().optional(),
       CONTRACT_VERIFICATION: contractGroupValueSchema,
       CONTRACT_INTERACTION: contractGroupValueSchema,

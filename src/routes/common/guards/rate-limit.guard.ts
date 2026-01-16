@@ -24,7 +24,9 @@ export class RateLimitGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const req: Request = context.switchToHttp().getRequest();
-    const { success: isValidIp } = z.string().ip().safeParse(req.ip);
+    const { success: isValidIp } = z
+      .union([z.ipv4(), z.ipv6()])
+      .safeParse(req.ip);
     if (!isValidIp) {
       this.logInvalidIp(req);
       throw new BadRequestException('Invalid client IP address');

@@ -28,12 +28,12 @@ export type DefiVaultStatsAdditionalReward = z.infer<
 
 export const DefiVaultStatsSchema = z.object({
   asset: AddressSchema,
-  asset_icon: z.string().url(),
+  asset_icon: z.url(),
   asset_symbol: z.string(),
   share_symbol: z.string(),
   tvl: NumericStringSchema,
   protocol: z.enum([...DefiVaultStatsProtocols, 'unknown']).catch('unknown'),
-  protocol_icon: z.string().url(),
+  protocol_icon: z.url(),
   protocol_tvl: NumericStringSchema,
   protocol_supply_limit: NumericStringSchema,
   grr: z.number(),

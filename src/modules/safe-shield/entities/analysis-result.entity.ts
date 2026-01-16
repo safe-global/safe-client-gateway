@@ -116,7 +116,7 @@ export const UnofficialFallbackHandlerAnalysisResultSchema =
       .object({
         address: AddressSchema,
         name: z.string().optional(),
-        logoUrl: z.string().url().optional(),
+        logoUrl: z.url().optional(),
       })
       .optional(),
   });
@@ -151,7 +151,7 @@ const MasterCopyChangeThreatAnalysisResultSchema =
 const MaliciousOrModerateThreatAnalysisResultSchema =
   AnalysisResultBaseSchema.extend({
     type: z.union([z.literal('MALICIOUS'), z.literal('MODERATE')]),
-    issues: z.record(SeveritySchema, z.array(ThreatIssueSchema)).optional(),
+    issues: z.partialRecord(SeveritySchema, z.array(ThreatIssueSchema)).optional(),
   });
 
 const FailedThreatAnalysisResultSchema = AnalysisResultBaseSchema.extend({

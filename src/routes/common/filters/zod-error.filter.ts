@@ -4,7 +4,7 @@ import {
   ExceptionFilter,
   HttpStatus,
 } from '@nestjs/common';
-import { ZodError, ZodIssue } from 'zod';
+import { ZodError, z } from 'zod';
 import { Response } from 'express';
 import { ZodErrorWithCode } from '@/validation/pipes/validation.pipe';
 
@@ -13,7 +13,7 @@ import { ZodErrorWithCode } from '@/validation/pipes/validation.pipe';
  * the domain or {@link ZodErrorWithCode} thrown at the route level.
  *
  * It builds a JSON payload which contains a code and a message.
- * The message is read from the initial {@link ZodIssue} and the code
+ * The message is read from the initial {@link z.core.$ZodIssue} and the code
  * from {@link ZodErrorWithCode.code} or 502 if {@link ZodError}.
  */
 @Catch(ZodError, ZodErrorWithCode)
@@ -39,9 +39,15 @@ export class ZodErrorFilter implements ExceptionFilter {
     }
   }
 
-  private mapZodErrorResponse(exception: ZodError): ZodIssue {
-    return exception.issues[0].code === 'invalid_union'
-      ? this.mapZodErrorResponse(exception.issues[0].unionErrors[0])
-      : exception.issues[0];
+  private mapZodErrorResponse(exception: ZodError): z.core.$ZodIssue {
+    const firstIssue = exception.issues[0];
+    if (
+      firstIssue.code === 'invalid_union' &&
+      'error' in firstIssue &&
+      firstIssue.error instanceof ZodError
+    ) {
+      return this.mapZodErrorResponse(firstIssue.error);
+    }
+    return firstIssue;
   }
 }

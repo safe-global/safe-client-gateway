@@ -12,5 +12,5 @@ export const GetDelegateDtoSchema = z
     (value) => {
       return Object.values(value).some(Boolean);
     },
-    () => ({ message: 'At least one property is required' }),
+    { error: 'At least one property is required' },
   );

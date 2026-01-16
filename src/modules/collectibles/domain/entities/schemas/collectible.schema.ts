@@ -14,7 +14,7 @@ export const CollectibleSchema = z.object({
   description: z.string().nullish().default(null),
   // Don't enforce URL validation as some payloads otherwise fail
   imageUri: z.string().nullish().default(null),
-  metadata: z.record(z.unknown()).nullish().default(null),
+  metadata: z.record(z.string(), z.unknown()).nullish().default(null),
 });
 
 export const CollectiblePageSchema = buildPageSchema(CollectibleSchema);

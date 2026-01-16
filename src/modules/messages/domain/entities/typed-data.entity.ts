@@ -18,8 +18,8 @@ export const _TypedDataDomainSchema = z.object({
 export const TypedDataSchema = z.object({
   domain: _TypedDataDomainSchema,
   primaryType: z.string(),
-  types: z.record(z.array(TypedDataParameterSchema)),
-  message: z.record(z.unknown()),
+  types: z.record(z.string(), z.array(TypedDataParameterSchema)),
+  message: z.record(z.string(), z.unknown()),
 });
 
 export type TypedData = z.infer<typeof TypedDataSchema>;

@@ -7,7 +7,7 @@ export const NativeCurrencySchema = z.object({
   name: z.string(),
   symbol: z.string(),
   decimals: z.number(),
-  logoUri: z.string().url(),
+  logoUri: z.url(),
 });
 
 export const RpcUriSchema = z.object({
@@ -34,7 +34,7 @@ export const ThemeSchema = z.object({
 
 export const GasPriceOracleSchema = z.object({
   type: z.literal('oracle'),
-  uri: z.string().url(),
+  uri: z.url(),
   gasParameter: z.string(),
   gweiFactor: z.string(),
 });
@@ -88,7 +88,7 @@ export const ChainSchema = z.object({
   chainId: z.string(),
   chainName: z.string(),
   description: z.string(),
-  chainLogoUri: z.string().url().nullish().default(null),
+  chainLogoUri: z.url().nullish().default(null),
   l2: z.boolean(),
   isTestnet: z.boolean(),
   zk: z
@@ -106,8 +106,8 @@ export const ChainSchema = z.object({
   nativeCurrency: NativeCurrencySchema,
   pricesProvider: PricesProviderSchema,
   balancesProvider: BalancesProviderSchema,
-  transactionService: z.string().url().transform(removeTrailingSlash),
-  vpcTransactionService: z.string().url().transform(removeTrailingSlash),
+  transactionService: z.url().transform(removeTrailingSlash),
+  vpcTransactionService: z.url().transform(removeTrailingSlash),
   theme: ThemeSchema,
   gasPrice: GasPriceSchema,
   ensRegistryAddress: AddressSchema.nullish().default(null),

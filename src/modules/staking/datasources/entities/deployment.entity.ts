@@ -20,12 +20,12 @@ export const DeploymentStatuses = [
 ] as const;
 
 export const DeploymentExternalLinksSchema = z.object({
-  deposit_url: z.string().url().nullish().default(null),
+  deposit_url: z.url().nullish().default(null),
 });
 
 export const DeploymentSchema = z.object({
-  id: z.string().uuid(),
-  organization_id: z.string().uuid(),
+  id: z.uuid(),
+  organization_id: z.uuid(),
   product_type: z.enum([...DeploymentProductTypes, 'unknown']).catch('unknown'),
   name: z.string(),
   display_name: z.string(),
