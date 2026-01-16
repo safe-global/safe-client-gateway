@@ -148,12 +148,12 @@ describe('Delete Transaction - Transactions Controller (Unit', () => {
           '',
         ),
       ),
-    ).resolves.toBeUndefined();
+    ).resolves.toBeNull();
     await expect(
       fakeCacheService.hGet(
         new CacheDir(`${chain.chainId}_multisig_transactions_${tx.safe}`, ''),
       ),
-    ).resolves.toBeUndefined();
+    ).resolves.toBeNull();
   });
 
   it('should forward an error from the Transaction Service', async () => {
