@@ -88,7 +88,7 @@ describe('ZerionChainMappingService', () => {
     });
 
     it('should fetch and cache mapping when not cached', async () => {
-      mockCacheService.hGet.mockResolvedValue(undefined);
+      mockCacheService.hGet.mockResolvedValue(null);
       const mockResponse = {
         data: {
           data: [
@@ -193,7 +193,7 @@ describe('ZerionChainMappingService', () => {
 
   describe('combined cache', () => {
     it('should store both directions in single cache entry', async () => {
-      mockCacheService.hGet.mockResolvedValue(undefined);
+      mockCacheService.hGet.mockResolvedValue(null);
       const mockResponse = {
         data: {
           data: [
@@ -227,7 +227,7 @@ describe('ZerionChainMappingService', () => {
 
   describe('error handling', () => {
     it('should propagate error on fetch failure', async () => {
-      mockCacheService.hGet.mockResolvedValue(undefined);
+      mockCacheService.hGet.mockResolvedValue(null);
       mockNetworkService.get.mockRejectedValue(new Error('Network error'));
 
       await expect(
@@ -236,7 +236,7 @@ describe('ZerionChainMappingService', () => {
     });
 
     it('should skip chains with invalid hex external_id', async () => {
-      mockCacheService.hGet.mockResolvedValue(undefined);
+      mockCacheService.hGet.mockResolvedValue(null);
       const mockResponse = {
         data: {
           data: [
@@ -278,7 +278,7 @@ describe('ZerionChainMappingService', () => {
 
   describe('testnet requests', () => {
     it('should include X-Env header for testnet requests', async () => {
-      mockCacheService.hGet.mockResolvedValue(undefined);
+      mockCacheService.hGet.mockResolvedValue(null);
       const mockResponse = {
         data: {
           data: [
@@ -313,7 +313,7 @@ describe('ZerionChainMappingService', () => {
     });
 
     it('should cache testnet mappings separately', async () => {
-      mockCacheService.hGet.mockResolvedValue(undefined);
+      mockCacheService.hGet.mockResolvedValue(null);
       const mockResponse = {
         data: {
           data: [
