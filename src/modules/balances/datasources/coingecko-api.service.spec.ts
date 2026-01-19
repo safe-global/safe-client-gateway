@@ -223,7 +223,7 @@ describe('CoingeckoAPI', () => {
         [`${lowerCaseFiatCode}_24h_change`]: change,
       },
     };
-    mockCacheService.hGet.mockResolvedValue(undefined);
+    mockCacheService.hGet.mockResolvedValue(null);
     mockNetworkService.get.mockResolvedValue({
       data: rawify(coingeckoPrice),
       status: 200,
@@ -341,7 +341,7 @@ describe('CoingeckoAPI', () => {
         [`${lowerCaseFiatCode}_24h_change`]: change,
       },
     };
-    mockCacheService.hGet.mockResolvedValue(undefined);
+    mockCacheService.hGet.mockResolvedValue(null);
     mockNetworkService.get.mockResolvedValue({
       data: rawify(coingeckoPrice),
       status: 200,
@@ -425,7 +425,7 @@ describe('CoingeckoAPI', () => {
         [`${lowerCaseFiatCode}_24h_change`]: thirdChange,
       },
     };
-    mockCacheService.hGet.mockResolvedValue(undefined);
+    mockCacheService.hGet.mockResolvedValue(null);
     mockNetworkService.get.mockResolvedValue({
       data: rawify(coingeckoPrice),
       status: 200,
@@ -577,7 +577,7 @@ describe('CoingeckoAPI', () => {
           }),
         );
       }
-      return Promise.resolve(undefined);
+      return Promise.resolve(null);
     });
     mockInMemoryCache.get.mockImplementation((key) => {
       if (
@@ -727,7 +727,7 @@ describe('CoingeckoAPI', () => {
         [`${lowerCaseFiatCode}_24h_change`]: anotherChange,
       },
     };
-    mockCacheService.hGet.mockResolvedValue(undefined);
+    mockCacheService.hGet.mockResolvedValue(null);
     mockNetworkService.get.mockResolvedValue({
       data: rawify(coingeckoPrice),
       status: 200,
@@ -852,7 +852,7 @@ describe('CoingeckoAPI', () => {
         [`${lowerCaseFiatCode}_24h_change`]: thirdChange,
       },
     };
-    mockCacheService.hGet.mockResolvedValueOnce(undefined);
+    mockCacheService.hGet.mockResolvedValueOnce(null);
     mockCacheService.hGet.mockResolvedValueOnce(
       JSON.stringify({
         [secondTokenAddress]: {
@@ -861,7 +861,7 @@ describe('CoingeckoAPI', () => {
         },
       }),
     );
-    mockCacheService.hGet.mockResolvedValueOnce(undefined);
+    mockCacheService.hGet.mockResolvedValueOnce(null);
     mockNetworkService.get.mockResolvedValue({
       data: rawify(coingeckoPrice),
       status: 200,
@@ -1000,7 +1000,7 @@ describe('CoingeckoAPI', () => {
         },
       }),
     );
-    mockCacheService.hGet.mockResolvedValueOnce(undefined);
+    mockCacheService.hGet.mockResolvedValueOnce(null);
     mockNetworkService.get.mockResolvedValue({
       data: rawify(coingeckoPrice),
       status: 200,

@@ -30,7 +30,7 @@ async function redisClientFactory(
     socket: {
       host: redisHost,
       port: Number(redisPort),
-      keepAlive: redisKeepAlive,
+      keepAliveInitialDelay: redisKeepAlive,
       connectTimeout: redisConnectTimeout,
     },
     username: redisUser,
