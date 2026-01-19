@@ -84,7 +84,7 @@ export class RedisCacheService
 
   async hGet(cacheDir: CacheDir): Promise<string | null> {
     const key = this._prefixKey(cacheDir.key);
-    return await this.client.hGet(key, cacheDir.field);
+    return (await this.client.hGet(key, cacheDir.field)) ?? null;
   }
 
   async deleteByKey(key: string): Promise<number> {
