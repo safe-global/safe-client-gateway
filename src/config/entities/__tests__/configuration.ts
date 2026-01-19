@@ -279,6 +279,7 @@ export default (): ReturnType<typeof configuration> => ({
       10: faker.string.hexadecimal({ length: 32 }),
       56: faker.string.hexadecimal({ length: 32 }),
       100: faker.string.hexadecimal({ length: 32 }),
+      130: faker.string.hexadecimal({ length: 32 }),
       137: faker.string.hexadecimal({ length: 32 }),
       1101: faker.string.hexadecimal({ length: 32 }),
       8453: faker.string.hexadecimal({ length: 32 }),

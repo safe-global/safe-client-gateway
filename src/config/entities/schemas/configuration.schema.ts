@@ -97,6 +97,7 @@ export const RootConfigurationSchema = z
     RELAY_PROVIDER_API_KEY_AVALANCHE: z.string(),
     RELAY_PROVIDER_API_KEY_LINEA: z.string(),
     RELAY_PROVIDER_API_KEY_BLAST: z.string(),
+    RELAY_PROVIDER_API_KEY_UNICHAIN: z.string(),
     RELAY_PROVIDER_API_KEY_SEPOLIA: z.string(),
     RELAY_DAILY_LIMIT_CHAIN_IDS: z
       .string()

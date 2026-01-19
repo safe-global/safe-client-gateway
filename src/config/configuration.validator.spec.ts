@@ -47,6 +47,7 @@ describe('Configuration validator', () => {
     RELAY_PROVIDER_API_KEY_AVALANCHE: faker.string.uuid(),
     RELAY_PROVIDER_API_KEY_LINEA: faker.string.uuid(),
     RELAY_PROVIDER_API_KEY_BLAST: faker.string.uuid(),
+    RELAY_PROVIDER_API_KEY_UNICHAIN: faker.string.uuid(),
     RELAY_PROVIDER_API_KEY_SEPOLIA: faker.string.uuid(),
     RELAY_NO_FEE_CAMPAIGN_SEPOLIA_SAFE_TOKEN_ADDRESS:
       faker.finance.ethereumAddress(),
