@@ -11,22 +11,22 @@ export class CounterpartyAnalysisRequestDto implements z.infer<
     type: String,
     description: 'Recipient address of the transaction.',
   })
-  to!: Address;
+  public readonly to!: Address;
 
   @ApiProperty({
     description: 'Amount to send with the transaction.',
   })
-  value!: string;
+  public readonly value!: string;
 
   @ApiProperty({
     type: String,
     description: 'Hex-encoded data payload for the transaction.',
   })
-  data!: Hex;
+  public readonly data!: Hex;
 
   @ApiProperty({
     enum: Operation,
     description: 'Operation type: 0 for CALL, 1 for DELEGATECALL.',
   })
-  operation!: Operation;
+  public readonly operation!: Operation;
 }

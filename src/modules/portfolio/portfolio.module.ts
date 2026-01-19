@@ -14,9 +14,10 @@ import {
   PortfolioCacheInfoService,
 } from '@/modules/portfolio/domain/portfolio-cache-info.service';
 import { ChainsModule } from '../chains/chains.module';
+import { ZerionModule } from '@/modules/zerion/zerion.module';
 
 @Module({
-  imports: [ChainsModule],
+  imports: [ChainsModule, ZerionModule],
   controllers: [PortfolioController],
   providers: [
     HttpErrorFactory,

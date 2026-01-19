@@ -17,15 +17,15 @@ export class ThreatAnalysisRequestDto implements ThreatAnalysisRequest {
       'Contains domain, primaryType, types, and message fields ' +
       'following the EIP-712 standard for structured data signing.',
   })
-  data!: TypedData;
+  public readonly data!: TypedData;
 
   @ApiProperty({
     description: 'Address of the transaction signer/wallet',
   })
-  walletAddress!: Address;
+  public readonly walletAddress!: Address;
 
   @ApiPropertyOptional({
     description: 'Optional origin identifier for the request',
   })
-  origin?: string;
+  public readonly origin?: string;
 }

@@ -12,7 +12,7 @@ export interface ICacheService {
     expireDeviatePercent?: number,
   ): Promise<void>;
 
-  hGet(cacheDir: CacheDir): Promise<string | undefined>;
+  hGet(cacheDir: CacheDir): Promise<string | null>;
 
   /**
    * Gets the remaining TTL in seconds for a cache key.

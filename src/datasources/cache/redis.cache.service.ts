@@ -82,7 +82,7 @@ export class RedisCacheService
     }
   }
 
-  async hGet(cacheDir: CacheDir): Promise<string | undefined> {
+  async hGet(cacheDir: CacheDir): Promise<string | null> {
     const key = this._prefixKey(cacheDir.key);
     return await this.client.hGet(key, cacheDir.field);
   }

@@ -60,7 +60,6 @@ export class BlockaidApi implements IBlockaidApi {
       .withResponse();
     const request_id =
       response.headers.get(BLOCKAID_REQUEST_ID_HEADER) ?? undefined;
-
     this.logScanResponse({ ...data, request_id });
     const parsedResponse = BlockaidScanResponseSchema.parse({
       ...data,

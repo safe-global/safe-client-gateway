@@ -18,6 +18,7 @@ import { IBlockaidApi } from '@/modules/safe-shield/threat-analysis/blockaid/blo
 import {
   BLOCKAID_SEVERITY_MAP,
   prepareDescription,
+  prepareErrorMessage,
 } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-api.constants';
 import {
   DESCRIPTION_MAPPING,
@@ -345,10 +346,10 @@ export class ThreatAnalysisService {
       classification,
       scanDescription,
     );
+    const errorMsg = prepareErrorMessage(error);
 
     const description = DESCRIPTION_MAPPING[type]({
       description: descriptionMsg,
-      error,
     });
 
     switch (type) {
@@ -364,6 +365,14 @@ export class ThreatAnalysisService {
       case 'MALICIOUS':
       case 'MODERATE':
         return { severity, type, title, description, issues };
+      case 'FAILED':
+        return {
+          severity,
+          type,
+          title,
+          description,
+          error: errorMsg ?? error,
+        };
       default:
         return { severity, type, title, description };
     }

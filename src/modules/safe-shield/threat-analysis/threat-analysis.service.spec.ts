@@ -152,6 +152,7 @@ describe('ThreatAnalysisService', () => {
             type: 'FAILED',
             title: TITLE_MAPPING.FAILED,
             description: DESCRIPTION_MAPPING.FAILED(),
+            error: undefined,
           },
         ],
       });
@@ -392,6 +393,7 @@ describe('ThreatAnalysisService', () => {
               type: 'FAILED',
               title: TITLE_MAPPING.FAILED,
               description: DESCRIPTION_MAPPING.FAILED(),
+              error: undefined,
             },
           ],
           BALANCE_CHANGE: [],
@@ -432,9 +434,8 @@ describe('ThreatAnalysisService', () => {
               severity: SEVERITY_MAPPING.FAILED,
               type: 'FAILED',
               title: TITLE_MAPPING.FAILED,
-              description: DESCRIPTION_MAPPING.FAILED({
-                error: 'Validation failed',
-              }),
+              description: DESCRIPTION_MAPPING.FAILED(),
+              error: 'Validation failed',
             },
           ],
           BALANCE_CHANGE: [],
@@ -640,9 +641,8 @@ describe('ThreatAnalysisService', () => {
               severity: SEVERITY_MAPPING.FAILED,
               type: 'FAILED',
               title: TITLE_MAPPING.FAILED,
-              description: DESCRIPTION_MAPPING.FAILED({
-                error: 'Simulation could not be completed',
-              }),
+              description: DESCRIPTION_MAPPING.FAILED(),
+              error: 'Simulation could not be completed',
             },
             {
               severity: SEVERITY_MAPPING.NO_THREAT,
@@ -653,6 +653,82 @@ describe('ThreatAnalysisService', () => {
           ],
           BALANCE_CHANGE: undefined,
           request_id: requestId,
+        });
+      });
+
+      it('should map error codes to user-friendly messages in FAILED case', async () => {
+        const requestId = faker.string.uuid();
+        const mockScanResponse = {
+          validation: {
+            status: 'Success',
+            result_type: 'Benign',
+            classification: '',
+            description: '',
+            reason: '',
+            features: [],
+          },
+          simulation: {
+            status: 'Error',
+            error: `Reverted with reason string: 'GS030'`,
+            description: undefined,
+          },
+          request_id: requestId,
+        } as BlockaidScanResponse;
+
+        mockBlockaidApi.scanTransaction.mockResolvedValue(mockScanResponse);
+
+        const result = await service.analyze({
+          chainId,
+          safeAddress,
+          request,
+        });
+
+        expect(result).toBeDefined();
+        expect(result.THREAT?.[0]).toEqual({
+          severity: SEVERITY_MAPPING.FAILED,
+          type: 'FAILED',
+          title: TITLE_MAPPING.FAILED,
+          description: DESCRIPTION_MAPPING.FAILED(),
+          error:
+            'Only Safe signers can approve this action. Please connect with a signer wallet.',
+        });
+      });
+
+      it('should return original error when error code is not in mapping', async () => {
+        const requestId = faker.string.uuid();
+        const originalError = `Reverted with reason string: 'GS999' does not exist in mapping`;
+        const mockScanResponse = {
+          validation: {
+            status: 'Success',
+            result_type: 'Benign',
+            classification: '',
+            description: '',
+            reason: '',
+            features: [],
+          },
+          simulation: {
+            status: 'Error',
+            error: originalError,
+            description: undefined,
+          },
+          request_id: requestId,
+        } as BlockaidScanResponse;
+
+        mockBlockaidApi.scanTransaction.mockResolvedValue(mockScanResponse);
+
+        const result = await service.analyze({
+          chainId,
+          safeAddress,
+          request,
+        });
+
+        expect(result).toBeDefined();
+        expect(result.THREAT?.[0]).toEqual({
+          severity: SEVERITY_MAPPING.FAILED,
+          type: 'FAILED',
+          title: TITLE_MAPPING.FAILED,
+          description: DESCRIPTION_MAPPING.FAILED(),
+          error: originalError,
         });
       });
 

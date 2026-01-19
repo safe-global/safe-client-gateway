@@ -54,7 +54,7 @@ describe('Analysis Response Schemas', () => {
       });
 
       it('should validate response with empty status groups', () => {
-        const responseWithEmptyGroups = recipientAnalysisResponseBuilder()
+        const responseWithEmptyGroups = recipientAnalysisResponseBuilder(false)
           .with(getAddress(faker.finance.ethereumAddress()), {
             isSafe: true,
             RECIPIENT_INTERACTION: [],
@@ -89,7 +89,9 @@ describe('Analysis Response Schemas', () => {
       });
 
       it('should reject invalid status group', () => {
-        const invalidStatusGroupResponse = recipientAnalysisResponseBuilder()
+        const invalidStatusGroupResponse = recipientAnalysisResponseBuilder(
+          false,
+        )
           .with(getAddress(faker.finance.ethereumAddress()), {
             isSafe: true,
             ['INVALID_STATUS_GROUP' as RecipientStatusGroup]: [
@@ -138,7 +140,7 @@ describe('Analysis Response Schemas', () => {
       });
 
       it('should validate response with empty status groups', () => {
-        const responseWithEmptyGroups = contractAnalysisResponseBuilder()
+        const responseWithEmptyGroups = contractAnalysisResponseBuilder(false)
           .with(getAddress(faker.finance.ethereumAddress()), {
             logoUrl: faker.image.url(),
             name: faker.company.name(),
@@ -172,7 +174,7 @@ describe('Analysis Response Schemas', () => {
       });
 
       it('should validate response without logoUrl and name', () => {
-        const responseWithoutMetadata = contractAnalysisResponseBuilder()
+        const responseWithoutMetadata = contractAnalysisResponseBuilder(false)
           .with(getAddress(faker.finance.ethereumAddress()), {
             CONTRACT_VERIFICATION: [contractAnalysisResultBuilder().build()],
             CONTRACT_INTERACTION: [contractAnalysisResultBuilder().build()],
@@ -189,7 +191,9 @@ describe('Analysis Response Schemas', () => {
       });
 
       it('should reject invalid status group', () => {
-        const invalidStatusGroupResponse = contractAnalysisResponseBuilder()
+        const invalidStatusGroupResponse = contractAnalysisResponseBuilder(
+          false,
+        )
           .with(getAddress(faker.finance.ethereumAddress()), {
             logoUrl: faker.image.url(),
             name: faker.company.name(),

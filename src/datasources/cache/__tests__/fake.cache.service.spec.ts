@@ -1,6 +1,7 @@
 import { faker } from '@faker-js/faker';
 import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
+
 describe('FakeCacheService', () => {
   let target: FakeCacheService;
 
@@ -32,7 +33,7 @@ describe('FakeCacheService', () => {
     await target.hSet(cacheDir, value, faker.number.int({ min: 1 }));
     await target.deleteByKey(key);
 
-    await expect(target.hGet(cacheDir)).resolves.toBe(undefined);
+    await expect(target.hGet(cacheDir)).resolves.toBeNull();
     await expect(
       target.hGet(new CacheDir(`invalidationTimeMs:${cacheDir.key}`, '')),
     ).resolves.toBe(now.toString());
