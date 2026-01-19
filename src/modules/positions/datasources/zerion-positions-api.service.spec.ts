@@ -8,6 +8,7 @@ import type { ZerionBalance } from '@/modules/balances/datasources/entities/zeri
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import { ZerionPositionsApi } from '@/modules/positions/datasources/zerion-positions-api.service';
+import type { ZerionChainMappingService } from '@/modules/zerion/datasources/zerion-chain-mapping.service';
 import { rawify } from '@/validation/entities/raw.entity';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
@@ -71,10 +72,11 @@ function buildZerionLoanBalance(args: {
 describe('ZerionPositionsApi', () => {
   let cacheService: FakeCacheService;
   let configurationService: FakeConfigurationService;
+  let zerionChainMappingService: jest.MockedObjectDeep<ZerionChainMappingService>;
   let target: ZerionPositionsApi;
 
   const chainName = 'ethereum';
-  const chain = {
+  const chain: Chain = {
     chainId: '1',
     isTestnet: false,
     balancesProvider: { chainName },
@@ -98,12 +100,18 @@ describe('ZerionPositionsApi', () => {
       1: { chainName },
     });
 
+    zerionChainMappingService = {
+      getChainIdFromNetwork: jest.fn(),
+      getNetworkFromChainId: jest.fn().mockResolvedValue(chainName),
+    } as jest.MockedObjectDeep<ZerionChainMappingService>;
+
     target = new ZerionPositionsApi(
       cacheService,
       loggingService,
       networkService,
-      configurationService as unknown as IConfigurationService,
+      configurationService as IConfigurationService,
       new HttpErrorFactory(),
+      zerionChainMappingService,
     );
   });
 

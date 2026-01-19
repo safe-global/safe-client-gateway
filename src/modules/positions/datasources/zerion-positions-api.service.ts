@@ -165,7 +165,7 @@ export class ZerionPositionsApi implements IPositionsApi {
           );
         const { value, price, application_metadata } = zb.attributes;
         const fiatBalance = value !== null ? getNumberString(value) : null;
-        const fiatConversion = price ? getNumberString(price) : null;
+        const fiatConversion = price !== null ? getNumberString(price) : null;
 
         return {
           ...(implementation.address === null
