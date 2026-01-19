@@ -346,5 +346,219 @@ describe('ZerionPortfolioApiService', () => {
       expect(portfolio.positionBalances).toHaveLength(1);
       expect(portfolio.positionBalances[0].groups).toHaveLength(0);
     });
+
+    it('should filter out unmapped tokens while keeping mapped ones', async () => {
+      const address = getAddress(faker.finance.ethereumAddress());
+      const fiatCode = faker.helpers.arrayElement(supportedFiatCodes);
+      const mappedNetwork = 'ethereum';
+      const unmappedNetwork = 'unknown-network';
+
+      const mappedToken = zerionBalanceBuilder()
+        .with(
+          'attributes',
+          zerionAttributesBuilder()
+            .with('position_type', 'wallet')
+            .with('value', 1000)
+            .with('flags', { displayable: true })
+            .with(
+              'fungible_info',
+              zerionFungibleInfoBuilder()
+                .with('name', 'Mapped Token')
+                .with('implementations', [
+                  zerionImplementationBuilder()
+                    .with('chain_id', mappedNetwork)
+                    .with('address', null)
+                    .with('decimals', 18)
+                    .build(),
+                ])
+                .build(),
+            )
+            .build(),
+        )
+        .with('relationships', {
+          chain: { data: { type: 'chain', id: mappedNetwork } },
+        })
+        .build();
+
+      const unmappedToken = zerionBalanceBuilder()
+        .with(
+          'attributes',
+          zerionAttributesBuilder()
+            .with('position_type', 'wallet')
+            .with('value', 500)
+            .with('flags', { displayable: true })
+            .with(
+              'fungible_info',
+              zerionFungibleInfoBuilder()
+                .with('name', 'Unmapped Token')
+                .with('implementations', [
+                  zerionImplementationBuilder()
+                    .with('chain_id', unmappedNetwork)
+                    .build(),
+                ])
+                .build(),
+            )
+            .build(),
+        )
+        .with('relationships', {
+          chain: { data: { type: 'chain', id: unmappedNetwork } },
+        })
+        .build();
+
+      mockChainMappingService.getChainIdFromNetworkName.mockImplementation(
+        (network: string) => {
+          if (network === mappedNetwork) return Promise.resolve('1');
+          return Promise.resolve(null);
+        },
+      );
+      mockNetworkService.get.mockResolvedValue({
+        data: rawify({ data: [mappedToken, unmappedToken] }),
+        status: 200,
+      });
+
+      const result = await service.getPortfolio({
+        address,
+        fiatCode,
+        isTestnet: false,
+      });
+
+      const portfolio = result as unknown as Portfolio;
+      expect(portfolio.tokenBalances).toHaveLength(1);
+      expect(portfolio.tokenBalances[0].tokenInfo.name).toBe('Mapped Token');
+      expect(mockLoggingService.debug).toHaveBeenCalledWith(
+        `Zerion network "${unmappedNetwork}" not mapped to chain ID, skipping token`,
+      );
+    });
+
+    it('should filter out unmapped app positions while keeping mapped ones', async () => {
+      const address = getAddress(faker.finance.ethereumAddress());
+      const fiatCode = faker.helpers.arrayElement(supportedFiatCodes);
+      const mappedNetwork = 'ethereum';
+      const unmappedNetwork = 'unknown-network';
+      const appMetadata = {
+        name: 'Aave',
+        icon: { url: 'https://aave.com/icon.png' },
+        url: 'https://aave.com',
+      };
+
+      const mappedPosition = zerionBalanceBuilder()
+        .with(
+          'attributes',
+          zerionAttributesBuilder()
+            .with('position_type', 'deposit')
+            .with('protocol', 'Aave')
+            .with('application_metadata', appMetadata)
+            .with('name', 'Mapped Position')
+            .with('value', 1000)
+            .with('flags', { displayable: true })
+            .with(
+              'fungible_info',
+              zerionFungibleInfoBuilder()
+                .with('implementations', [
+                  zerionImplementationBuilder()
+                    .with('chain_id', mappedNetwork)
+                    .with('decimals', 18)
+                    .build(),
+                ])
+                .build(),
+            )
+            .build(),
+        )
+        .with('relationships', {
+          chain: { data: { type: 'chain', id: mappedNetwork } },
+        })
+        .build();
+
+      const unmappedPosition = zerionBalanceBuilder()
+        .with(
+          'attributes',
+          zerionAttributesBuilder()
+            .with('position_type', 'deposit')
+            .with('protocol', 'Aave')
+            .with('application_metadata', appMetadata)
+            .with('name', 'Unmapped Position')
+            .with('value', 500)
+            .with('flags', { displayable: true })
+            .with(
+              'fungible_info',
+              zerionFungibleInfoBuilder()
+                .with('implementations', [
+                  zerionImplementationBuilder()
+                    .with('chain_id', unmappedNetwork)
+                    .build(),
+                ])
+                .build(),
+            )
+            .build(),
+        )
+        .with('relationships', {
+          chain: { data: { type: 'chain', id: unmappedNetwork } },
+        })
+        .build();
+
+      mockChainMappingService.getChainIdFromNetworkName.mockImplementation(
+        (network: string) => {
+          if (network === mappedNetwork) return Promise.resolve('1');
+          return Promise.resolve(null);
+        },
+      );
+      mockNetworkService.get.mockResolvedValue({
+        data: rawify({ data: [mappedPosition, unmappedPosition] }),
+        status: 200,
+      });
+
+      const result = await service.getPortfolio({
+        address,
+        fiatCode,
+        isTestnet: false,
+      });
+
+      const portfolio = result as unknown as Portfolio;
+      // Both positions belong to same app (Aave), but one is filtered out
+      expect(portfolio.positionBalances).toHaveLength(1);
+      expect(portfolio.positionBalances[0].appInfo.name).toBe('Aave');
+      expect(portfolio.positionBalances[0].groups).toHaveLength(1);
+      expect(portfolio.positionBalances[0].groups[0].items).toHaveLength(1);
+      expect(portfolio.positionBalances[0].groups[0].items[0].name).toBe(
+        'Mapped Position',
+      );
+      expect(mockLoggingService.debug).toHaveBeenCalledWith(
+        `Zerion network "${unmappedNetwork}" not mapped to chain ID, skipping position`,
+      );
+    });
+
+    it('should handle positions with missing relationships.chain', async () => {
+      const address = getAddress(faker.finance.ethereumAddress());
+      const fiatCode = faker.helpers.arrayElement(supportedFiatCodes);
+
+      const positionWithoutChain = zerionBalanceBuilder()
+        .with(
+          'attributes',
+          zerionAttributesBuilder()
+            .with('position_type', 'wallet')
+            .with('flags', { displayable: true })
+            .build(),
+        )
+        .build();
+      // Remove relationships to test the edge case
+      delete (positionWithoutChain as Record<string, unknown>).relationships;
+
+      mockNetworkService.get.mockResolvedValue({
+        data: rawify({ data: [positionWithoutChain] }),
+        status: 200,
+      });
+
+      const result = await service.getPortfolio({
+        address,
+        fiatCode,
+        isTestnet: false,
+      });
+
+      const portfolio = result as unknown as Portfolio;
+      expect(portfolio.tokenBalances).toHaveLength(0);
+      expect(
+        mockChainMappingService.getChainIdFromNetworkName,
+      ).not.toHaveBeenCalled();
+    });
   });
 });
