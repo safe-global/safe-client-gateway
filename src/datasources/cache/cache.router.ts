@@ -920,7 +920,7 @@ export class CacheRouter {
   }
 
   static getPortfolioCacheKey(args: { address: Address }): string {
-    return `${CacheRouter.PORTFOLIO_KEY}_${args.address}_zerion`;
+    return `${CacheRouter.PORTFOLIO_KEY}_${args.address.toLowerCase()}_zerion`;
   }
 
   static getPortfolioCacheDir(args: {
