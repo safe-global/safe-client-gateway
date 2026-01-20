@@ -51,8 +51,7 @@ const ERROR_MAPPING: Record<string, string> = {
     'Unable to pay transaction fees with ETH. Please ensure you have enough ETH in your Safe.',
   GS012:
     'Unable to pay transaction fees with the selected token. Please use ETH or check token balance.',
-  GS013:
-    'Transaction failed due to incorrect gas settings.',
+  GS013: 'Transaction failed due to incorrect gas settings.',
   GS020: 'Invalid signature format. Please try signing again.',
   GS021:
     'Signature validation failed. Please contact support with error code GS021.',

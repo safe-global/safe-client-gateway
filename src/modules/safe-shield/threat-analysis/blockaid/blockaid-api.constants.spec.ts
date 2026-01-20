@@ -24,10 +24,7 @@ describe('prepareErrorMessage', () => {
         'GS012',
         'Unable to pay transaction fees with the selected token. Please use ETH or check token balance.',
       ],
-      [
-        'GS013',
-        'Transaction failed due to incorrect gas settings.',
-      ],
+      ['GS013', 'Transaction failed due to incorrect gas settings.'],
       ['GS020', 'Invalid signature format. Please try signing again.'],
       [
         'GS021',
@@ -139,9 +136,7 @@ describe('prepareErrorMessage', () => {
       const error = `Reverted with reason string: 'GS013'. Additional context`;
       const result = prepareErrorMessage(error);
 
-      expect(result).toBe(
-        'Transaction failed due to incorrect gas settings.',
-      );
+      expect(result).toBe('Transaction failed due to incorrect gas settings.');
     });
   });
 
