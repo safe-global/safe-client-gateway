@@ -26,7 +26,7 @@ describe('prepareErrorMessage', () => {
       ],
       [
         'GS013',
-        'Transaction failed due to incorrect gas settings. Please set a gas price.',
+        'Transaction failed due to incorrect gas settings.',
       ],
       ['GS020', 'Invalid signature format. Please try signing again.'],
       [
@@ -140,7 +140,7 @@ describe('prepareErrorMessage', () => {
       const result = prepareErrorMessage(error);
 
       expect(result).toBe(
-        'Transaction failed due to incorrect gas settings. Please set a gas price.',
+        'Transaction failed due to incorrect gas settings.',
       );
     });
   });
