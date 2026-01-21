@@ -109,6 +109,9 @@ export default () => ({
       zerion: {
         apiKey: process.env.ZERION_API_KEY,
         baseUri: process.env.ZERION_BASE_URI || 'https://api.zerion.io',
+        chainsCacheTtlSeconds: parseInt(
+          process.env.ZERION_CHAINS_CACHE_TTL_SECONDS ?? `${86400}`,
+        ),
         currencies: [
           'USD',
           'EUR',

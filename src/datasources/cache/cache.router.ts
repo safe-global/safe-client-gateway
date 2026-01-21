@@ -937,17 +937,8 @@ export class CacheRouter {
     );
   }
 
-  static getZerionChainsCacheDir(
-    isTestnet: boolean,
-    direction?: 'networkToChainId' | 'chainIdToNetwork',
-  ): CacheDir {
-    let field: string;
-    if (direction === 'chainIdToNetwork') {
-      field = isTestnet ? 'mapping_reverse_testnet' : 'mapping_reverse';
-    } else {
-      // Default to 'networkToChainId' for backward compatibility
-      field = isTestnet ? 'mapping_testnet' : 'mapping';
-    }
+  static getZerionChainsCacheDir(isTestnet: boolean): CacheDir {
+    const field = isTestnet ? 'mapping_testnet' : 'mapping';
     return new CacheDir(CacheRouter.ZERION_CHAINS_KEY, field);
   }
 }
