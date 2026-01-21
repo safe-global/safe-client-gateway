@@ -391,6 +391,49 @@ describe('PortfolioRepository', () => {
         expect(result.positionBalances[0].balanceFiat).toBe('100');
       });
 
+      it('should not filter loan positions with negative balances as dust', async () => {
+        const depositPosition = appPositionBuilder()
+          .with('balanceFiat', '100')
+          .build();
+        const loanPosition = appPositionBuilder()
+          .with('balanceFiat', '-50')
+          .build();
+
+        const group = appPositionGroupBuilder()
+          .with('name', 'Lending')
+          .with('items', [depositPosition, loanPosition])
+          .build();
+
+        const appBalance = appBalanceBuilder()
+          .with('groups', [group])
+          .with('balanceFiat', '50')
+          .build();
+
+        const portfolio = portfolioBuilder()
+          .with('tokenBalances', [])
+          .with('positionBalances', [appBalance])
+          .build();
+
+        mockCacheService.hGet.mockResolvedValue(null);
+        mockPortfolioApi.getPortfolio.mockResolvedValue(rawify(portfolio));
+
+        const result = await repository.getPortfolio({
+          address,
+          fiatCode,
+          excludeDust: true,
+        });
+
+        expect(result.positionBalances).toHaveLength(1);
+        expect(result.positionBalances[0].groups[0].items).toHaveLength(2);
+        expect(result.positionBalances[0].groups[0].items[0].balanceFiat).toBe(
+          '100',
+        );
+        expect(result.positionBalances[0].groups[0].items[1].balanceFiat).toBe(
+          '-50',
+        );
+        expect(result.positionBalances[0].balanceFiat).toBe('50');
+      });
+
       it('should remove empty groups after filtering', async () => {
         const chain1Position = appPositionBuilder()
           .with('tokenInfo', {
