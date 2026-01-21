@@ -581,6 +581,7 @@ export default () => ({
       43114: 'https://api.cow.fi/avalanche',
       11155111: 'https://api.cow.fi/sepolia',
       59144: 'https://api.cow.fi/linea',
+      9745: 'https://api.cow.fi/plasma',
     },
     explorerBaseUri:
       process.env.SWAPS_EXPLORER_URI || 'https://explorer.cow.fi/',
