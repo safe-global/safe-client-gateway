@@ -21,9 +21,8 @@ describe('EventTopicsSchema', () => {
     expect(!result.success && result.error.issues[0]).toStrictEqual({
       code: 'too_small',
       minimum: 1,
-      type: 'array',
+      origin: 'array',
       inclusive: true,
-      exact: false,
       message: 'No event signature found',
       path: [],
     });
@@ -63,9 +62,8 @@ describe('EventTopicsSchema', () => {
     expect(!result.success && result.error.issues[0]).toStrictEqual({
       code: 'invalid_type',
       expected: 'array',
-      message: 'Expected array, received object',
+      message: 'Invalid input: expected array, received object',
       path: [],
-      received: 'object',
     });
   });
 });
