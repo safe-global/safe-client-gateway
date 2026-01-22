@@ -16,6 +16,10 @@ import {
   toJson as multisigTransactionToJson,
 } from '@/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
 import { confirmationBuilder } from '@/modules/safe/domain/entities/__tests__/multisig-transaction-confirmation.builder';
+import {
+  creationTransactionBuilder,
+  toJson as creationTransactionToJson,
+} from '@/modules/safe/domain/entities/__tests__/creation-transaction.builder';
 import { getAddress } from 'viem';
 import type { Server } from 'net';
 import { rawify } from '@/validation/entities/raw.entity';
@@ -186,6 +190,7 @@ describe('Safes V2 Controller Overview (Unit)', () => {
               fiatTotal: '5410.25',
               queued: 2,
               awaitingConfirmation: 1,
+              creator: null,
             },
           ]),
         );
@@ -290,6 +295,7 @@ describe('Safes V2 Controller Overview (Unit)', () => {
               fiatTotal: '2500',
               queued: 1,
               awaitingConfirmation: 1,
+              creator: null,
             },
           ]),
         );
@@ -493,6 +499,7 @@ describe('Safes V2 Controller Overview (Unit)', () => {
               },
               chainId: chain.chainId,
               awaitingConfirmation: null,
+              creator: null,
             },
           ]),
         );
@@ -790,6 +797,157 @@ describe('Safes V2 Controller Overview (Unit)', () => {
           }),
         }),
       );
+    });
+
+    it('should return creator when parent_address is provided', async () => {
+      const chain = chainBuilder()
+        .with('chainId', zerionChainId)
+        .with('isTestnet', false)
+        .with('balancesProvider', { chainName: 'polygon', enabled: true })
+        .build();
+      const safeInfo = safeBuilder().build();
+      const creationTransaction = creationTransactionBuilder().build();
+      const currency = 'USD';
+      const parentAddress = getAddress(faker.finance.ethereumAddress());
+
+      const zerionPortfolioResponse = {
+        data: {
+          type: 'portfolio',
+          id: safeInfo.address,
+          attributes: {
+            total: { positions: 1000.0 },
+            positions_distribution_by_chain: { polygon: 1000.0 },
+          },
+        },
+      };
+
+      const queuedTransactions = pageBuilder()
+        .with('results', [])
+        .with('count', 0)
+        .build();
+
+      networkService.get.mockImplementation(({ url }) => {
+        switch (url) {
+          case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`: {
+            return Promise.resolve({ data: rawify(chain), status: 200 });
+          }
+          case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`: {
+            return Promise.resolve({ data: rawify(safeInfo), status: 200 });
+          }
+          case `${zerionBaseUri}/v1/wallets/${safeInfo.address}/portfolio`: {
+            return Promise.resolve({
+              data: rawify(zerionPortfolioResponse),
+              status: 200,
+            });
+          }
+          case `${chain.transactionService}/api/v2/safes/${safeInfo.address}/multisig-transactions/`: {
+            return Promise.resolve({
+              data: rawify(queuedTransactions),
+              status: 200,
+            });
+          }
+          case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/creation/`: {
+            return Promise.resolve({
+              data: rawify(creationTransactionToJson(creationTransaction)),
+              status: 200,
+            });
+          }
+          default: {
+            return Promise.reject(`No matching rule for url: ${url}`);
+          }
+        }
+      });
+
+      await request(app.getHttpServer())
+        .get(
+          `/v2/safes?currency=${currency}&safes=${chain.chainId}:${safeInfo.address}&parent_address=${parentAddress}`,
+        )
+        .expect(200)
+        .expect(({ body }) =>
+          expect(body).toMatchObject([
+            {
+              address: { value: safeInfo.address },
+              chainId: chain.chainId,
+              creator: {
+                value: creationTransaction.creator,
+                name: null,
+                logoUri: null,
+              },
+            },
+          ]),
+        );
+    });
+
+    it('should return creator as null when parent_address is provided but creation transaction is unavailable', async () => {
+      const chain = chainBuilder()
+        .with('chainId', zerionChainId)
+        .with('isTestnet', false)
+        .with('balancesProvider', { chainName: 'polygon', enabled: true })
+        .build();
+      const safeInfo = safeBuilder().build();
+      const currency = 'USD';
+      const parentAddress = getAddress(faker.finance.ethereumAddress());
+
+      const zerionPortfolioResponse = {
+        data: {
+          type: 'portfolio',
+          id: safeInfo.address,
+          attributes: {
+            total: { positions: 1000.0 },
+            positions_distribution_by_chain: { polygon: 1000.0 },
+          },
+        },
+      };
+
+      const queuedTransactions = pageBuilder()
+        .with('results', [])
+        .with('count', 0)
+        .build();
+
+      networkService.get.mockImplementation(({ url }) => {
+        switch (url) {
+          case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`: {
+            return Promise.resolve({ data: rawify(chain), status: 200 });
+          }
+          case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`: {
+            return Promise.resolve({ data: rawify(safeInfo), status: 200 });
+          }
+          case `${zerionBaseUri}/v1/wallets/${safeInfo.address}/portfolio`: {
+            return Promise.resolve({
+              data: rawify(zerionPortfolioResponse),
+              status: 200,
+            });
+          }
+          case `${chain.transactionService}/api/v2/safes/${safeInfo.address}/multisig-transactions/`: {
+            return Promise.resolve({
+              data: rawify(queuedTransactions),
+              status: 200,
+            });
+          }
+          case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/creation/`: {
+            // Simulate creation transaction unavailable (counterfactual Safe)
+            return Promise.reject(new Error('Creation transaction not found'));
+          }
+          default: {
+            return Promise.reject(`No matching rule for url: ${url}`);
+          }
+        }
+      });
+
+      await request(app.getHttpServer())
+        .get(
+          `/v2/safes?currency=${currency}&safes=${chain.chainId}:${safeInfo.address}&parent_address=${parentAddress}`,
+        )
+        .expect(200)
+        .expect(({ body }) =>
+          expect(body).toMatchObject([
+            {
+              address: { value: safeInfo.address },
+              chainId: chain.chainId,
+              creator: null,
+            },
+          ]),
+        );
     });
   });
 });

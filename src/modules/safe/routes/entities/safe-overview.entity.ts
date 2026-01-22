@@ -16,6 +16,8 @@ export class SafeOverview {
   readonly queued: number;
   @ApiPropertyOptional({ type: Number, nullable: true })
   readonly awaitingConfirmation: number | null;
+  @ApiPropertyOptional({ type: AddressInfo, nullable: true })
+  readonly creator: AddressInfo | null;
 
   constructor(
     address: AddressInfo,
@@ -25,6 +27,7 @@ export class SafeOverview {
     fiatTotal: string,
     queued: number,
     awaitingConfirmation: number | null,
+    creator: AddressInfo | null,
   ) {
     this.address = address;
     this.chainId = chainId;
@@ -33,5 +36,6 @@ export class SafeOverview {
     this.fiatTotal = fiatTotal;
     this.queued = queued;
     this.awaitingConfirmation = awaitingConfirmation;
+    this.creator = creator;
   }
 }

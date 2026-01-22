@@ -9,6 +9,7 @@ import { asError } from '@/logging/utils';
 import { SafeOverview } from '@/modules/safe/routes/entities/safe-overview.entity';
 import { Caip10Addresses } from '@/modules/safe/routes/entities/caip-10-addresses.entity';
 import { AddressInfo } from '@/routes/common/entities/address-info.entity';
+import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
 import { getNumberString } from '@/domain/common/utils/utils';
 import { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
 import type { Address } from 'viem';
@@ -30,6 +31,7 @@ export class SafesV2Service {
     private readonly zerionWalletPortfolioApi: IZerionWalletPortfolioApi,
     @Inject(IConfigurationService) configurationService: IConfigurationService,
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
+    private readonly addressInfoHelper: AddressInfoHelper,
   ) {
     this.maxOverviews = configurationService.getOrThrow(
       'mappings.safe.maxOverviews',
@@ -44,6 +46,7 @@ export class SafesV2Service {
     addresses: Caip10Addresses;
     trusted: boolean;
     walletAddress?: Address;
+    parentAddress?: Address;
   }): Promise<Array<SafeOverview>> {
     const limitedSafes = args.addresses.slice(0, this.maxOverviews);
 
@@ -56,7 +59,7 @@ export class SafesV2Service {
           address,
         });
 
-        const [fiatBalance, queue] = await Promise.all([
+        const [fiatBalance, queue, creator] = await Promise.all([
           this.getFiatBalance({
             chain,
             safeAddress: address,
@@ -67,6 +70,9 @@ export class SafesV2Service {
             chainId,
             safe,
           }),
+          args.parentAddress
+            ? this.getCreator({ chainId, safeAddress: address })
+            : Promise.resolve(null),
         ]);
 
         const awaitingConfirmation = args.walletAddress
@@ -84,6 +90,7 @@ export class SafesV2Service {
           getNumberString(fiatBalance),
           queue.count ?? 0,
           awaitingConfirmation,
+          creator,
         );
       }),
     );
@@ -219,5 +226,24 @@ export class SafesV2Service {
       },
       0,
     );
+  }
+
+  private async getCreator(args: {
+    chainId: string;
+    safeAddress: Address;
+  }): Promise<AddressInfo | null> {
+    try {
+      const creation = await this.safeRepository.getCreationTransaction({
+        chainId: args.chainId,
+        safeAddress: args.safeAddress,
+      });
+      return this.addressInfoHelper.getOrDefault(
+        args.chainId,
+        creation.creator,
+        ['CONTRACT'],
+      );
+    } catch {
+      return null;
+    }
   }
 }
