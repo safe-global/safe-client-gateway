@@ -185,6 +185,31 @@ describe('PortfolioApiService', () => {
         isTestnet: false,
       });
     });
+
+    it('should pass sync parameter through to domain service', async () => {
+      const address = getAddress(faker.finance.ethereumAddress());
+      const fiatCode = 'USD';
+      const sync = true;
+
+      const domainPortfolio = portfolioBuilder().build();
+      mockDomainService.getPortfolio.mockResolvedValue(domainPortfolio);
+
+      await service.getPortfolio({
+        address,
+        fiatCode,
+        sync,
+      });
+
+      expect(mockDomainService.getPortfolio).toHaveBeenCalledWith({
+        address,
+        fiatCode,
+        chainIds: undefined,
+        trusted: undefined,
+        excludeDust: undefined,
+        sync,
+        isTestnet: false,
+      });
+    });
   });
 
   describe('clearPortfolio', () => {

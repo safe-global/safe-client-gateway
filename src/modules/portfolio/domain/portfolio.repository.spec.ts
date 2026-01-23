@@ -105,6 +105,26 @@ describe('PortfolioRepository', () => {
         const cachedValue = JSON.parse(mockCacheService.hSet.mock.calls[0][1]);
         expect(cachedValue).toMatchObject(expect.objectContaining(portfolio));
       });
+
+      it('should bypass cache when sync is true', async () => {
+        const freshPortfolio = portfolioBuilder().build();
+        mockPortfolioApi.getPortfolio.mockResolvedValue(rawify(freshPortfolio));
+
+        await repository.getPortfolio({
+          address,
+          fiatCode,
+          sync: true,
+        });
+
+        expect(mockCacheService.hGet).not.toHaveBeenCalled();
+        expect(mockPortfolioApi.getPortfolio).toHaveBeenCalledWith({
+          address,
+          fiatCode,
+          chainIds: undefined,
+          trusted: undefined,
+          sync: true,
+        });
+      });
     });
 
     describe('filtering', () => {
