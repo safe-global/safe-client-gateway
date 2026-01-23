@@ -75,7 +75,7 @@ export class PortfolioController {
     description: 'If true, filters out dust positions (balance < $0.001 USD)',
     example: true,
   })
-@ApiQuery({
+  @ApiQuery({
     name: 'sync',
     required: false,
     type: Boolean,
