@@ -75,6 +75,14 @@ export class PortfolioController {
     description: 'If true, filters out dust positions (balance < $0.001 USD)',
     example: true,
   })
+@ApiQuery({
+    name: 'sync',
+    required: false,
+    type: Boolean,
+    description:
+      'If true, waits for position data to be aggregated before responding (up to 30s)',
+    example: false,
+  })
   @ApiHeader({
     name: 'Cache-Control',
     description:
@@ -108,6 +116,7 @@ export class PortfolioController {
       chainIds: getPortfolioDto.chainIds,
       trusted: getPortfolioDto.trusted,
       excludeDust: getPortfolioDto.excludeDust,
+      sync: getPortfolioDto.sync,
     });
   }
 

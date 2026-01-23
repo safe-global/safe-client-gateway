@@ -75,6 +75,7 @@ describe('PortfolioController', () => {
         chainIds: undefined,
         trusted: true,
         excludeDust: true,
+        sync: false,
       });
 
       expect(response.body).toMatchObject({
@@ -103,6 +104,7 @@ describe('PortfolioController', () => {
         chainIds: undefined,
         trusted: true,
         excludeDust: true,
+        sync: false,
       });
     });
 
@@ -125,6 +127,7 @@ describe('PortfolioController', () => {
         chainIds: ['1', '10', '137'],
         trusted: true,
         excludeDust: true,
+        sync: false,
       });
     });
 
@@ -146,6 +149,7 @@ describe('PortfolioController', () => {
         chainIds: undefined,
         trusted: false,
         excludeDust: true,
+        sync: false,
       });
     });
 
@@ -167,6 +171,7 @@ describe('PortfolioController', () => {
         chainIds: undefined,
         trusted: true,
         excludeDust: false,
+        sync: false,
       });
     });
 
@@ -184,6 +189,7 @@ describe('PortfolioController', () => {
           chainIds: '1,10',
           trusted: 'false',
           excludeDust: 'false',
+          sync: 'true',
         })
         .expect(200);
 
@@ -193,6 +199,7 @@ describe('PortfolioController', () => {
         chainIds: ['1', '10'],
         trusted: false,
         excludeDust: false,
+        sync: true,
       });
     });
 

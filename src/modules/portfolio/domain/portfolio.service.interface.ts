@@ -11,6 +11,7 @@ export interface IPortfolioService {
     trusted?: boolean;
     excludeDust?: boolean;
     isTestnet?: boolean;
+    sync?: boolean;
   }): Promise<Portfolio>;
 
   clearPortfolio(args: { address: Address }): Promise<void>;
