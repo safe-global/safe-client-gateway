@@ -293,7 +293,7 @@ export class CounterpartyAnalysisDto implements CounterpartyAnalysisResponse {
   })
   public readonly recipient!: Record<
     Address,
-    (Partial<RecipientAnalysisDto> & { isSafe: boolean }) | undefined
+    (Partial<RecipientAnalysisDto> & { isSafe: boolean })
   >;
 
   @ApiProperty({
@@ -321,6 +321,6 @@ export class CounterpartyAnalysisDto implements CounterpartyAnalysisResponse {
   })
   public readonly contract!: Record<
     Address,
-    Partial<ContractAnalysisDto> | undefined
+    Partial<ContractAnalysisDto>
   >;
 }
