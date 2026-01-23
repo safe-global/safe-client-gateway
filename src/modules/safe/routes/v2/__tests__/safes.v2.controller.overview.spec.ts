@@ -45,7 +45,7 @@ describe('Safes V2 Controller Overview (Unit)', () => {
       features: {
         ...configuration().features,
         counterfactualBalances: true,
-        zerionBalancesChainIds: [zerionChainId],
+        zerionBalancesEnabled: true,
       },
     });
 
@@ -78,6 +78,7 @@ describe('Safes V2 Controller Overview (Unit)', () => {
       const chain = chainBuilder()
         .with('chainId', nonZerionChainId)
         .with('isTestnet', false)
+        .with('balancesProvider', { chainName: null, enabled: false })
         .build();
       const safeInfo = safeBuilder().build();
       const tokenAddress = faker.finance.ethereumAddress();
@@ -190,12 +191,11 @@ describe('Safes V2 Controller Overview (Unit)', () => {
         );
 
       // Verify balances API was called (not Zerion)
-      const balancesCalls = networkService.get.mock.calls.filter(
-        (call) =>
-          call[0].url ===
-          `${chain.transactionService}/api/v1/safes/${safeInfo.address}/balances/`,
+      expect(networkService.get).toHaveBeenCalledWith(
+        expect.objectContaining({
+          url: `${chain.transactionService}/api/v1/safes/${safeInfo.address}/balances/`,
+        }),
       );
-      expect(balancesCalls.length).toBeGreaterThan(0);
     });
 
     it('should use Zerion wallet portfolio API for Zerion-enabled chains', async () => {
@@ -295,16 +295,121 @@ describe('Safes V2 Controller Overview (Unit)', () => {
         );
 
       // Verify Zerion portfolio API was called
-      const zerionCalls = networkService.get.mock.calls.filter((call) =>
-        call[0].url.includes('/portfolio'),
+      expect(networkService.get).toHaveBeenCalledWith(
+        expect.objectContaining({
+          url: expect.stringContaining('/portfolio'),
+        }),
       );
-      expect(zerionCalls.length).toBeGreaterThan(0);
+    });
+
+    it('should use Safe balances API when zerionBalancesEnabled is false, even for chains with Zerion chain name', async () => {
+      const moduleFixture = await createTestModule({
+        config: () => ({
+          ...configuration(),
+          mappings: { ...configuration().mappings, safe: { maxOverviews: 3 } },
+          features: {
+            ...configuration().features,
+            counterfactualBalances: true,
+            zerionBalancesEnabled: false,
+          },
+        }),
+      });
+      const testApp: INestApplication<Server> =
+        await new TestAppProvider().provide(moduleFixture);
+      await testApp.init();
+
+      const testSafeConfigUrl = moduleFixture
+        .get<IConfigurationService>(IConfigurationService)
+        .getOrThrow('safeConfig.baseUri');
+      const testPricesProviderUrl = moduleFixture
+        .get<IConfigurationService>(IConfigurationService)
+        .getOrThrow('balances.providers.safe.prices.baseUri');
+      const testNetworkService: jest.MockedObjectDeep<INetworkService> =
+        moduleFixture.get(NetworkService);
+
+      const chain = chainBuilder()
+        .with('chainId', zerionChainId)
+        .with('isTestnet', false)
+        .with('balancesProvider', { chainName: 'polygon', enabled: true })
+        .build();
+      const safeInfo = safeBuilder().build();
+      const tokenAddress = getAddress(faker.finance.ethereumAddress());
+
+      testNetworkService.get.mockImplementation(({ url }: { url: string }) => {
+        if (url === `${testSafeConfigUrl}/api/v1/chains/${chain.chainId}`)
+          return Promise.resolve({ data: rawify(chain), status: 200 });
+        if (
+          url === `${chain.transactionService}/api/v1/safes/${safeInfo.address}`
+        )
+          return Promise.resolve({ data: rawify(safeInfo), status: 200 });
+        if (
+          url ===
+          `${chain.transactionService}/api/v1/safes/${safeInfo.address}/balances/`
+        )
+          return Promise.resolve({
+            data: rawify([
+              balanceBuilder()
+                .with('tokenAddress', null)
+                .with('balance', '1000000000000000000')
+                .with('token', null)
+                .build(),
+            ]),
+            status: 200,
+          });
+        if (url === `${testPricesProviderUrl}/simple/price`)
+          return Promise.resolve({
+            data: rawify({ [chain.pricesProvider.nativeCoin!]: { usd: 100 } }),
+            status: 200,
+          });
+        if (
+          url ===
+          `${testPricesProviderUrl}/simple/token_price/${chain.pricesProvider.chainName}`
+        )
+          return Promise.resolve({
+            data: rawify({ [tokenAddress]: { usd: 10 } }),
+            status: 200,
+          });
+        if (
+          url ===
+          `${chain.transactionService}/api/v2/safes/${safeInfo.address}/multisig-transactions/`
+        )
+          return Promise.resolve({
+            data: rawify(
+              pageBuilder().with('results', []).with('count', 0).build(),
+            ),
+            status: 200,
+          });
+        return Promise.reject(`No matching rule for url: ${url}`);
+      });
+
+      await request(testApp.getHttpServer())
+        .get(
+          `/v2/safes?currency=USD&safes=${chain.chainId}:${safeInfo.address}`,
+        )
+        .expect(200);
+
+      // Verify Safe balances API was called (not Zerion)
+      expect(testNetworkService.get).toHaveBeenCalledWith(
+        expect.objectContaining({
+          url: `${chain.transactionService}/api/v1/safes/${safeInfo.address}/balances/`,
+        }),
+      );
+
+      // Verify Zerion portfolio API was NOT called
+      expect(testNetworkService.get).not.toHaveBeenCalledWith(
+        expect.objectContaining({
+          url: expect.stringContaining('/portfolio'),
+        }),
+      );
+
+      await testApp.close();
     });
 
     it('returns awaiting confirmation as null if no wallet address is provided', async () => {
       const chain = chainBuilder()
         .with('chainId', nonZerionChainId)
         .with('isTestnet', false)
+        .with('balancesProvider', { chainName: null, enabled: false })
         .build();
       const safeInfo = safeBuilder().build();
       const tokenAddress = faker.finance.ethereumAddress();
@@ -397,6 +502,7 @@ describe('Safes V2 Controller Overview (Unit)', () => {
       const chain = chainBuilder()
         .with('chainId', nonZerionChainId)
         .with('isTestnet', false)
+        .with('balancesProvider', { chainName: null, enabled: false })
         .build();
       const safeInfo1 = safeBuilder().build();
       const safeInfo2 = safeBuilder().build();
@@ -558,6 +664,7 @@ describe('Safes V2 Controller Overview (Unit)', () => {
       const chain = chainBuilder()
         .with('chainId', zerionChainId)
         .with('isTestnet', false)
+        .with('balancesProvider', { chainName: 'polygon', enabled: true })
         .build();
       const safeInfo = safeBuilder().build();
 
@@ -673,16 +780,15 @@ describe('Safes V2 Controller Overview (Unit)', () => {
         .expect(200);
 
       // Verify Zerion portfolio API was called with filter[trash] parameter
-      const zerionCalls = networkService.get.mock.calls.filter((call) =>
-        call[0].url.includes('/portfolio'),
-      );
-      expect(zerionCalls.length).toBeGreaterThan(0);
-
-      // Check that the filter[trash] parameter was set to 'only_non_trash'
-      const portfolioCall = zerionCalls[0][0];
-      expect(portfolioCall.networkRequest?.params).toBeDefined();
-      expect(portfolioCall.networkRequest?.params?.['filter[trash]']).toBe(
-        'only_non_trash',
+      expect(networkService.get).toHaveBeenCalledWith(
+        expect.objectContaining({
+          url: expect.stringContaining('/portfolio'),
+          networkRequest: expect.objectContaining({
+            params: expect.objectContaining({
+              'filter[trash]': 'only_non_trash',
+            }),
+          }),
+        }),
       );
     });
   });

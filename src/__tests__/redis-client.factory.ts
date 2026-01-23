@@ -1,4 +1,4 @@
-import type { RedisClientType } from 'redis';
+import type { RedisClientType } from '@/datasources/cache/cache.module';
 import { createClient } from 'redis';
 
 export async function redisClientFactory(): Promise<RedisClientType> {

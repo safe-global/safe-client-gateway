@@ -17,7 +17,7 @@ import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
 @Injectable()
 export class SafesV2Service {
   private readonly maxOverviews: number;
-  private readonly zerionChainIds: Array<string>;
+  private readonly zerionBalancesEnabled: boolean;
 
   constructor(
     @Inject(ISafeRepository)
@@ -34,8 +34,8 @@ export class SafesV2Service {
     this.maxOverviews = configurationService.getOrThrow(
       'mappings.safe.maxOverviews',
     );
-    this.zerionChainIds = configurationService.getOrThrow<Array<string>>(
-      'features.zerionBalancesChainIds',
+    this.zerionBalancesEnabled = configurationService.getOrThrow<boolean>(
+      'features.zerionBalancesEnabled',
     );
   }
 
@@ -115,8 +115,7 @@ export class SafesV2Service {
   }): Promise<number> {
     const { chain, safeAddress, currency, trusted } = args;
 
-    // Check if this chain is enabled for Zerion portfolio
-    if (this.zerionChainIds.includes(chain.chainId)) {
+    if (this.zerionBalancesEnabled && this.getZerionChainName(chain)) {
       return this.getFiatBalanceFromZerionPortfolio({
         chain,
         safeAddress,

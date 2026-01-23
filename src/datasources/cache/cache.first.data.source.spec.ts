@@ -144,7 +144,7 @@ describe('CacheFirstDataSource', () => {
       expect(actual).toEqual(data);
       expect(mockNetworkService.get).toHaveBeenCalledTimes(1);
       expect(fakeCacheService.keyCount()).toBe(1); // only invalidation timestamp is cached
-      await expect(fakeCacheService.hGet(cacheDir)).resolves.toEqual(undefined); // item is not cached
+      await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeNull(); // item is not cached
     });
 
     it('should return the cached data without calling the underlying network interface', async () => {
@@ -254,7 +254,7 @@ describe('CacheFirstDataSource', () => {
       const expectedError = new NetworkResponseError(new URL(targetUrl), {
         status: 404,
       } as Response);
-      mockCache.hGet.mockResolvedValue(undefined);
+      mockCache.hGet.mockResolvedValue(null);
       mockNetworkService.get.mockImplementation(({ url }) => {
         switch (url) {
           case targetUrl:
@@ -298,7 +298,7 @@ describe('CacheFirstDataSource', () => {
         status: 404,
       } as Response);
       const notFoundExpireTimeSeconds = faker.number.int();
-      mockCache.hGet.mockResolvedValue(undefined);
+      mockCache.hGet.mockResolvedValue(null);
       mockNetworkService.get.mockImplementation(({ url }) => {
         switch (url) {
           case targetUrl:
@@ -428,7 +428,7 @@ describe('CacheFirstDataSource', () => {
       expect(actual).toEqual(res);
       expect(mockNetworkService.post).toHaveBeenCalledTimes(1);
       expect(fakeCacheService.keyCount()).toBe(1); // only invalidation timestamp is cached
-      await expect(fakeCacheService.hGet(cacheDir)).resolves.toEqual(undefined); // item is not cached
+      await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeNull(); // item is not cached
     });
 
     it('should return the cached data without calling the underlying network interface', async () => {
@@ -546,7 +546,7 @@ describe('CacheFirstDataSource', () => {
         status: 404,
       } as Response);
       const data = JSON.parse(fakeJson());
-      mockCache.hGet.mockResolvedValue(undefined);
+      mockCache.hGet.mockResolvedValue(null);
       mockNetworkService.post.mockImplementation(({ url }) => {
         switch (url) {
           case targetUrl:
@@ -592,7 +592,7 @@ describe('CacheFirstDataSource', () => {
       } as Response);
       const notFoundExpireTimeSeconds = faker.number.int();
       const data = JSON.parse(fakeJson());
-      mockCache.hGet.mockResolvedValue(undefined);
+      mockCache.hGet.mockResolvedValue(null);
       mockNetworkService.post.mockImplementation(({ url }) => {
         switch (url) {
           case targetUrl:
