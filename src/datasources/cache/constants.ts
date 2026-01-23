@@ -17,3 +17,15 @@ export const CacheKeyPrefix = Symbol('CacheKeyPrefix');
  * Ref: https://github.com/redis/redis/blob/cc244370a2d622d5d2fec5573ae87de6c59ed3b9/src/expire.c#L573
  */
 export const MAX_TTL = Number.MAX_SAFE_INTEGER - 1;
+
+/**
+ * Redis TTL return value indicating the key does not exist.
+ * @see https://redis.io/commands/ttl/
+ */
+export const TTL_KEY_NOT_FOUND = -2;
+
+/**
+ * Redis TTL return value indicating the key exists but has no associated expiry.
+ * @see https://redis.io/commands/ttl/
+ */
+export const TTL_NO_EXPIRY = -1;

@@ -1,4 +1,8 @@
 import type { ICacheService } from '@/datasources/cache/cache.service.interface';
+import {
+  TTL_KEY_NOT_FOUND,
+  TTL_NO_EXPIRY,
+} from '@/datasources/cache/constants';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import type { ICacheReadiness } from '@/domain/interfaces/cache-readiness.interface';
 
@@ -49,8 +53,8 @@ export class FakeCacheService implements ICacheService, ICacheReadiness {
 
   getTTL(cacheDir: CacheDir): Promise<number | null> {
     const fields = this.cache[cacheDir.key];
-    if (fields === undefined) return Promise.resolve(-2);
-    return Promise.resolve(-1);
+    if (fields === undefined) return Promise.resolve(TTL_KEY_NOT_FOUND);
+    return Promise.resolve(TTL_NO_EXPIRY);
   }
 
   hSet(
