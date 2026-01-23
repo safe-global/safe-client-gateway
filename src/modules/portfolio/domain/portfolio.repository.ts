@@ -57,7 +57,8 @@ export class PortfolioRepository implements IPortfolioRepository {
       isTestnet: args.isTestnet,
     });
 
-    const cached = await this.cacheService.hGet(cacheDir);
+    // If sync is true, we bypass the cache and fetch the portfolio from the API
+    const cached = args.sync ? null : await this.cacheService.hGet(cacheDir);
     let portfolio: Portfolio;
 
     if (cached) {
