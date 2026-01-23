@@ -229,7 +229,7 @@ describe('CounterfactualSafesDatasource tests', () => {
         createCounterfactualSafeDto:
           createCounterfactualSafeDtoBuilder().build(),
       });
-      expect(await fakeCacheService.hGet(cacheDir)).toBeUndefined();
+      expect(await fakeCacheService.hGet(cacheDir)).toBeNull();
     });
   });
 
@@ -320,7 +320,7 @@ describe('CounterfactualSafesDatasource tests', () => {
         `${counterfactualSafe.chainId}_counterfactual_safe_${counterfactualSafe.predictedAddress}`,
         '',
       );
-      expect(await fakeCacheService.hGet(cacheDir)).toBeUndefined();
+      expect(await fakeCacheService.hGet(cacheDir)).toBeNull();
       expect(mockLoggingService.debug).toHaveBeenCalledTimes(2);
       expect(mockLoggingService.debug).toHaveBeenNthCalledWith(1, {
         type: LogType.CacheMiss,
@@ -485,13 +485,13 @@ describe('CounterfactualSafesDatasource tests', () => {
       ).rejects.toThrow();
 
       const afterDeletion = await fakeCacheService.hGet(cacheDir);
-      expect(afterDeletion).toBeUndefined();
+      expect(afterDeletion).toBeNull();
       const cacheDirByAddress = new CacheDir(
         `counterfactual_safes_${createAccountDto.address}`,
         '',
       );
       const cachedByAddress = await fakeCacheService.hGet(cacheDirByAddress);
-      expect(cachedByAddress).toBeUndefined();
+      expect(cachedByAddress).toBeNull();
     });
   });
 
@@ -544,13 +544,13 @@ describe('CounterfactualSafesDatasource tests', () => {
       // cache is cleared
       expect(
         await fakeCacheService.hGet(counterfactualSafesCacheDir),
-      ).toBeUndefined();
+      ).toBeNull();
       expect(
         await fakeCacheService.hGet(counterfactualSafeCacheDirs[0]),
-      ).toBeUndefined();
+      ).toBeNull();
       expect(
         await fakeCacheService.hGet(counterfactualSafeCacheDirs[1]),
-      ).toBeUndefined();
+      ).toBeNull();
     });
   });
 });

@@ -47,27 +47,4 @@ export class OwnersControllerV1 {
   ): Promise<SafeList> {
     return this.ownersService.getSafesByOwner({ chainId, ownerAddress });
   }
-
-  @ApiOperation({
-    deprecated: true,
-    summary: 'Get all Safes by owner (deprecated)',
-    description:
-      'Retrieves Safes owned by an address across all chains. This endpoint is deprecated, please use the chain-specific version instead.',
-  })
-  @ApiParam({
-    name: 'ownerAddress',
-    type: 'string',
-    description: 'Owner address to search Safes for (0x prefixed hex string)',
-  })
-  @ApiOkResponse({
-    type: SafeList,
-    description: 'Map of chain IDs to arrays of Safe addresses',
-  })
-  @Get('owners/:ownerAddress/safes')
-  async getAllSafesByOwner(
-    @Param('ownerAddress', new ValidationPipe(AddressSchema))
-    ownerAddress: Address,
-  ): Promise<{ [chainId: string]: Array<string> }> {
-    return this.ownersService.deprecated__getAllSafesByOwner({ ownerAddress });
-  }
 }

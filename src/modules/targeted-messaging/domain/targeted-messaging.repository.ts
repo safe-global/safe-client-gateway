@@ -8,9 +8,7 @@ import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import type { Address } from 'viem';
 
 @Injectable()
-export class TargetedMessagingRepository
-  implements ITargetedMessagingRepository
-{
+export class TargetedMessagingRepository implements ITargetedMessagingRepository {
   constructor(
     @Inject(ITargetedMessagingDatasource)
     private readonly datasource: ITargetedMessagingDatasource,

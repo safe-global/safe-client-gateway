@@ -526,34 +526,6 @@ export class SafeRepository implements ISafeRepository {
     return SafeListSchema.parse(safeList);
   }
 
-  // TODO: Remove with /owners/:ownerAddress/safes
-  // @deprecated
-  async deprecated__getAllSafesByOwner(args: {
-    ownerAddress: Address;
-  }): Promise<{ [chainId: string]: Array<string> }> {
-    const chains = await this.chainsRepository.getAllChains();
-    const allSafeLists = await Promise.all(
-      chains.map(async ({ chainId }) => {
-        const safeList = await this.getSafesByOwner({
-          chainId,
-          ownerAddress: args.ownerAddress,
-        });
-
-        return {
-          chainId,
-          safeList,
-        };
-      }),
-    );
-
-    return allSafeLists.reduce((acc, { chainId, safeList }) => {
-      return {
-        ...acc,
-        [chainId]: safeList.safes,
-      };
-    }, {});
-  }
-
   async getAllSafesByOwner(args: {
     ownerAddress: Address;
   }): Promise<{ [chainId: string]: Array<string> | null }> {

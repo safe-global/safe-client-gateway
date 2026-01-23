@@ -231,7 +231,7 @@ export class PortfolioRepository implements IPortfolioRepository {
   private _filterDustPositions(portfolio: Portfolio): Portfolio {
     const isDustFree = (item: { balanceFiat?: string }): boolean => {
       if (!item.balanceFiat) return true;
-      const value = Number(item.balanceFiat);
+      const value = Math.abs(Number(item.balanceFiat));
       return value >= this.dustThresholdUsd;
     };
 

@@ -25,9 +25,9 @@ export const UpsertAddressBookItemsSchema = z.object({
 });
 
 @ApiExtraModels(AddressBookItem)
-export class UpsertAddressBookItemsDto
-  implements z.infer<typeof UpsertAddressBookItemsSchema>
-{
+export class UpsertAddressBookItemsDto implements z.infer<
+  typeof UpsertAddressBookItemsSchema
+> {
   @ApiProperty({
     items: { $ref: getSchemaPath(AddressBookItem) },
     type: 'array',

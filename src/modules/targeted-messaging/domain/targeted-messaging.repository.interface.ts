@@ -1,10 +1,6 @@
-import { TargetedMessagingDatasourceModule } from '@/modules/targeted-messaging/datasources/targeted-messaging.datasource.module';
-import { SafeRepositoryModule } from '@/modules/safe/domain/safe.repository.interface';
-import { Outreach } from '@/modules/targeted-messaging/domain/entities/outreach.entity';
-import { Submission } from '@/modules/targeted-messaging/domain/entities/submission.entity';
-import { TargetedSafe } from '@/modules/targeted-messaging/domain/entities/targeted-safe.entity';
-import { TargetedMessagingRepository } from '@/modules/targeted-messaging/domain/targeted-messaging.repository';
-import { Module } from '@nestjs/common';
+import type { Outreach } from '@/modules/targeted-messaging/domain/entities/outreach.entity';
+import type { Submission } from '@/modules/targeted-messaging/domain/entities/submission.entity';
+import type { TargetedSafe } from '@/modules/targeted-messaging/domain/entities/targeted-safe.entity';
 import type { Address } from 'viem';
 
 export const ITargetedMessagingRepository = Symbol(
@@ -36,15 +32,3 @@ export interface ITargetedMessagingRepository {
     signerAddress: Address;
   }): Promise<Submission>;
 }
-
-@Module({
-  imports: [TargetedMessagingDatasourceModule, SafeRepositoryModule],
-  providers: [
-    {
-      provide: ITargetedMessagingRepository,
-      useClass: TargetedMessagingRepository,
-    },
-  ],
-  exports: [ITargetedMessagingRepository],
-})
-export class TargetedMessagingRepositoryModule {}

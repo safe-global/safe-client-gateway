@@ -2618,7 +2618,11 @@ describe('Relay controller', () => {
       });
 
       it('should not rate limit the same address on different chains', async () => {
-        const differentChainId = faker.string.numeric({ exclude: chainId });
+        // Use a different chain from non-no-fee-campaign chains to ensure DailyLimitRelayer is used
+        const otherChains = nonnoFeeCampaignChainIds.filter(
+          (id) => id !== chainId,
+        );
+        const differentChainId = faker.helpers.arrayElement(otherChains);
         const chain = chainBuilder().with('chainId', chainId).build();
         const safe = safeBuilder().build();
         const safeAddress = getAddress(safe.address);

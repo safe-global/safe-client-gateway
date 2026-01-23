@@ -35,7 +35,7 @@ describe('PositionsService', () => {
     } as Chain);
   });
 
-  it('groups by protocol/name and displays individual positions, subtracts loans in protocol fiatTotal', async () => {
+  it('groups by protocol/name and displays individual positions, loans already negated in fiatTotal', async () => {
     const aaveDeposit = positionBuilder()
       .with('protocol', 'Aave')
       .with('name', 'USDC')
@@ -49,7 +49,7 @@ describe('PositionsService', () => {
       .with('name', 'USDC')
       .with('position_type', PositionType.loan)
       .with('balance', '40')
-      .with('fiatBalance', '40')
+      .with('fiatBalance', '-40')
       .build();
 
     const nativeDeposit = positionBuilder()
@@ -98,7 +98,7 @@ describe('PositionsService', () => {
               expect.objectContaining({
                 position_type: PositionType.loan,
                 balance: '40',
-                fiatBalance: '40',
+                fiatBalance: '-40',
               }),
             ]),
           }),
@@ -257,7 +257,7 @@ describe('PositionsService', () => {
     expect(res).toEqual([]);
   });
 
-  it('subtracts loans in fiatTotal but does not negate balances', async () => {
+  it('loans already negated in fiatTotal but balances remain positive', async () => {
     const deposit = positionBuilder()
       .with('protocol', 'Maker')
       .with('name', 'ETH')
@@ -270,7 +270,7 @@ describe('PositionsService', () => {
       .with('name', 'ETH')
       .with('position_type', PositionType.loan)
       .with('balance', '1')
-      .with('fiatBalance', '1500')
+      .with('fiatBalance', '-1500')
       .build();
     positionsRepoMock.getPositions.mockResolvedValue([deposit, loan]);
 

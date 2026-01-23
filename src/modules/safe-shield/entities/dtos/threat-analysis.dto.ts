@@ -7,12 +7,14 @@ import {
 import { AnalysisResultDto } from './analysis-result.dto';
 import {
   CommonStatus,
+  FailedThreatAnalysisResult,
   MaliciousOrModerateThreatAnalysisResult,
   MasterCopyChangeThreatAnalysisResult,
   ThreatAnalysisResult,
+  ThreatIssue,
+  ThreatIssues,
 } from '../analysis-result.entity';
 import { ThreatStatus } from '../threat-status.entity';
-import { Severity } from '../severity.entity';
 import type { ThreatAnalysisResponse } from '../analysis-responses.entity';
 import {
   AssetType,
@@ -39,17 +41,33 @@ export class MasterCopyChangeThreatAnalysisResultDto
   @ApiProperty({
     description: 'Address of the old master copy/implementation contract',
   })
-  before!: string;
+  before!: Address;
 
   @ApiProperty({
     description: 'Address of the new master copy/implementation contract',
   })
-  after!: string;
+  after!: Address;
+}
+
+/**
+ * DTO for threat issue details.
+ */
+export class ThreatIssueDto implements ThreatIssue {
+  @ApiPropertyOptional({
+    description: 'Address involved in the issue, if applicable',
+  })
+  address?: Address;
+
+  @ApiProperty({
+    description: 'Issue description',
+  })
+  description!: string;
 }
 
 /**
  * DTO for malicious or moderate threat analysis result.
  */
+@ApiExtraModels(ThreatIssueDto)
 export class MaliciousOrModerateThreatAnalysisResultDto
   extends AnalysisResultDto<'MALICIOUS' | 'MODERATE'>
   implements MaliciousOrModerateThreatAnalysisResult
@@ -63,30 +81,53 @@ export class MaliciousOrModerateThreatAnalysisResultDto
   @ApiPropertyOptional({
     description:
       'A partial record of specific issues identified during threat analysis, grouped by severity.' +
-      'Record<Severity, string[]> - keys should be one of the Severity enum.',
+      'Record<Severity, ThreatIssue[]> - keys should be one of the Severity enum (OK | INFO | WARN | CRITICAL)',
     type: 'object',
-    additionalProperties: { type: 'array', items: { type: 'string' } },
+    additionalProperties: {
+      type: 'array',
+      items: { $ref: getSchemaPath(ThreatIssueDto) },
+    },
     example: {
-      CRITICAL: ['Malicious contract interaction detected'],
-      WARN: ['High gas price detected'],
+      CRITICAL: [
+        {
+          description: 'Malicious contract interaction detected',
+          address: '0x0000000000000000000000000000000000000000',
+        },
+      ],
+      WARN: [{ description: 'High gas price detected' }],
     },
   })
-  issues?: Partial<Record<keyof typeof Severity, Array<string>>>;
+  public readonly issues?: ThreatIssues;
+}
+
+/**
+ * DTO for failed threat analysis result.
+ */
+export class FailedThreatAnalysisResultDto
+  extends AnalysisResultDto<'FAILED'>
+  implements FailedThreatAnalysisResult
+{
+  @ApiProperty({
+    description: 'Threat status code',
+    enum: ['FAILED'],
+  })
+  declare type: Extract<CommonStatus, 'FAILED'>;
 }
 
 /**
  * DTO for generic threat analysis result.
  */
 export class ThreatAnalysisResultDto extends AnalysisResultDto<
-  ThreatStatus | CommonStatus
+  Exclude<ThreatStatus, 'MASTERCOPY_CHANGE' | 'MALICIOUS' | 'MODERATE'>
 > {
   @ApiProperty({
     description: 'Threat status code',
-    enum: ['NO_THREAT', 'OWNERSHIP_CHANGE', 'MODULE_CHANGE', ...CommonStatus],
+    enum: ['NO_THREAT', 'OWNERSHIP_CHANGE', 'MODULE_CHANGE'],
   })
-  declare type:
-    | Exclude<ThreatStatus, 'MASTERCOPY_CHANGE' | 'MALICIOUS' | 'MODERATE'>
-    | CommonStatus;
+  declare type: Exclude<
+    ThreatStatus,
+    'MASTERCOPY_CHANGE' | 'MALICIOUS' | 'MODERATE'
+  >;
 }
 
 /**
@@ -96,13 +137,13 @@ abstract class BaseAssetDetailsDto {
   @ApiPropertyOptional({
     description: 'Token symbol (if available)',
   })
-  symbol?: string;
+  public readonly symbol?: string;
 
   @ApiPropertyOptional({
     description: 'URL to asset logo (if available)',
     example: 'https://example.com/logo.png',
   })
-  logo_url?: string;
+  public readonly logo_url?: string;
 }
 
 /**
@@ -113,7 +154,7 @@ export class NativeAssetDetailsDto extends BaseAssetDetailsDto {
     description: 'Asset type',
     enum: ['NATIVE'],
   })
-  type!: Extract<AssetType, 'NATIVE'>;
+  public readonly type!: Extract<AssetType, 'NATIVE'>;
 }
 
 /**
@@ -124,12 +165,12 @@ export class TokenAssetDetailsDto extends BaseAssetDetailsDto {
     description: 'Asset type',
     enum: ['ERC20', 'ERC721', 'ERC1155'],
   })
-  type!: Exclude<AssetType, 'NATIVE'>;
+  public readonly type!: Exclude<AssetType, 'NATIVE'>;
 
   @ApiProperty({
     description: 'Token contract address',
   })
-  address!: Address;
+  public readonly address!: Address;
 }
 
 /**
@@ -145,7 +186,7 @@ export class FungibleDiffDto implements z.infer<typeof FungibleDiffSchema> {
     description: 'Value change for fungible tokens',
     example: '1000000',
   })
-  value?: string;
+  public readonly value?: string;
 }
 
 /**
@@ -156,7 +197,7 @@ export class NFTDiffDto implements z.infer<typeof NFTDiffSchema> {
     description: 'Token ID for NFTs',
     example: 42,
   })
-  token_id!: number;
+  public readonly token_id!: number;
 }
 
 /**
@@ -176,7 +217,7 @@ export class BalanceChangeDto implements BalanceChange {
       { $ref: getSchemaPath(TokenAssetDetailsDto) },
     ],
   })
-  asset!: AssetDetailsDto;
+  public readonly asset!: AssetDetailsDto;
 
   @ApiProperty({
     description: 'Incoming asset changes',
@@ -189,7 +230,7 @@ export class BalanceChangeDto implements BalanceChange {
     },
     example: [{ value: '1000000' }],
   })
-  in!: Array<FungibleDiffDto | NFTDiffDto>;
+  public readonly in!: Array<FungibleDiffDto | NFTDiffDto>;
 
   @ApiProperty({
     description: 'Outgoing asset changes',
@@ -202,7 +243,7 @@ export class BalanceChangeDto implements BalanceChange {
     },
     example: [{ value: '500000' }],
   })
-  out!: Array<FungibleDiffDto | NFTDiffDto>;
+  public readonly out!: Array<FungibleDiffDto | NFTDiffDto>;
 }
 
 /**
@@ -216,6 +257,8 @@ export class BalanceChangeDto implements BalanceChange {
   ThreatAnalysisResultDto,
   MasterCopyChangeThreatAnalysisResultDto,
   MaliciousOrModerateThreatAnalysisResultDto,
+  FailedThreatAnalysisResultDto,
+  ThreatIssueDto,
 )
 export class ThreatAnalysisResponseDto implements ThreatAnalysisResponse {
   @ApiPropertyOptional({
@@ -227,6 +270,7 @@ export class ThreatAnalysisResponseDto implements ThreatAnalysisResponse {
       { $ref: getSchemaPath(ThreatAnalysisResultDto) },
       { $ref: getSchemaPath(MasterCopyChangeThreatAnalysisResultDto) },
       { $ref: getSchemaPath(MaliciousOrModerateThreatAnalysisResultDto) },
+      { $ref: getSchemaPath(FailedThreatAnalysisResultDto) },
     ],
     isArray: true,
     example: [
@@ -238,7 +282,7 @@ export class ThreatAnalysisResponseDto implements ThreatAnalysisResponse {
       },
     ],
   })
-  THREAT?: Array<ThreatAnalysisResult>;
+  public readonly THREAT?: Array<ThreatAnalysisResult>;
 
   @ApiPropertyOptional({
     description:
@@ -258,5 +302,13 @@ export class ThreatAnalysisResponseDto implements ThreatAnalysisResponse {
       },
     ],
   })
-  BALANCE_CHANGE?: Array<BalanceChange>;
+  public readonly BALANCE_CHANGE?: Array<BalanceChange>;
+
+  @ApiPropertyOptional({
+    description:
+      'Blockaid request ID from x-request-id header. ' +
+      'Used for reporting false positives/negatives via the report endpoint.',
+    example: '11111111-1111-1111-1111-111111111111',
+  })
+  public readonly request_id?: string;
 }

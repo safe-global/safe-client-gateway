@@ -3,9 +3,9 @@ import type { ProposeTransactionDtoSchema } from '@/modules/transactions/routes/
 import type { z } from 'zod';
 import type { Address, Hash, Hex } from 'viem';
 
-export class ProposeTransactionDto
-  implements z.infer<typeof ProposeTransactionDtoSchema>
-{
+export class ProposeTransactionDto implements z.infer<
+  typeof ProposeTransactionDtoSchema
+> {
   to!: Address;
   value!: string;
   data!: Hex | null;

@@ -2,12 +2,12 @@ import { faker } from '@faker-js/faker';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { RedisCacheService } from '@/datasources/cache/redis.cache.service';
-import type { RedisClientType } from 'redis';
+import type { RedisClientType } from '@/datasources/cache/cache.module';
 import { fakeJson } from '@/__tests__/faker';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import clearAllMocks = jest.clearAllMocks;
 
-const redisClientType = {
+const redisClientTypeMock = {
   isReady: true,
   hGet: jest.fn(),
   hSet: jest.fn(),
@@ -16,8 +16,7 @@ const redisClientType = {
   unlink: jest.fn(),
   quit: jest.fn(),
   scanIterator: jest.fn(),
-} as jest.MockedObjectDeep<RedisClientType>;
-const redisClientTypeMock = jest.mocked(redisClientType);
+} as unknown as jest.MockedObjectDeep<RedisClientType>;
 
 const mockLoggingService: jest.MockedObjectDeep<ILoggingService> = {
   info: jest.fn(),

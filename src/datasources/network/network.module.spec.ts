@@ -6,7 +6,10 @@ import { ConfigurationModule } from '@/config/configuration.module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import configuration from '@/config/entities/configuration';
 import type { FetchClient } from '@/datasources/network/network.module';
-import { NetworkModule } from '@/datasources/network/network.module';
+import {
+  FetchClientToken,
+  NetworkModule,
+} from '@/datasources/network/network.module';
 import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import {
@@ -20,24 +23,49 @@ import {
   LoggingService,
 } from '@/logging/logging.interface';
 import { hashSha1 } from '@/domain/common/utils/utils';
+import { CircuitBreakerModule } from '@/datasources/circuit-breaker/circuit-breaker.module';
+import { CircuitBreakerService } from '@/datasources/circuit-breaker/circuit-breaker.service';
+import { CircuitBreakerException } from '@/datasources/circuit-breaker/exceptions/circuit-breaker.exception';
+import type { ICircuitConfig } from '@/datasources/circuit-breaker/interfaces/circuit-breaker.interface';
 
 describe('NetworkModule', () => {
   let app: INestApplication<Server>;
   let fetchClient: FetchClient;
-  let httpClientTimeout: number;
+  let defaultTimeout: number;
   let loggingService: ILoggingService;
+  let circuitBreakerService: CircuitBreakerService;
+  let circuitBreakerConfig: ICircuitConfig | undefined;
 
   // fetch response is not mocked but we are only concerned with RequestInit options
   const fetchMock = jest.fn();
   jest.spyOn(global, 'fetch').mockImplementation(fetchMock);
 
-  async function initApp(cacheInFlightRequests: boolean): Promise<void> {
+  async function initApp(
+    cacheInFlightRequests: boolean,
+    config?: ICircuitConfig,
+  ): Promise<void> {
+    circuitBreakerConfig = config;
     const baseConfiguration = configuration();
     const testConfiguration: typeof configuration = () => ({
       ...baseConfiguration,
       features: {
         ...baseConfiguration.features,
         cacheInFlightRequests,
+      },
+      circuitBreaker: {
+        failureThreshold:
+          config?.failureThreshold ??
+          baseConfiguration.circuitBreaker.failureThreshold,
+        successThreshold:
+          config?.successThreshold ??
+          baseConfiguration.circuitBreaker.successThreshold,
+        timeout: config?.timeout ?? baseConfiguration.circuitBreaker.timeout,
+        rollingWindow:
+          config?.rollingWindow ??
+          baseConfiguration.circuitBreaker.rollingWindow,
+        halfOpenMaxRequests:
+          config?.halfOpenMaxRequests ??
+          baseConfiguration.circuitBreaker.halfOpenMaxRequests,
       },
     });
 
@@ -49,18 +77,22 @@ describe('NetworkModule', () => {
         ClsModule.forRoot({ global: true }),
         RequestScopedLoggingModule,
         ConfigurationModule.register(testConfiguration),
+        CircuitBreakerModule,
       ],
     }).compile();
 
     const configurationService = moduleFixture.get<IConfigurationService>(
       IConfigurationService,
     );
-    fetchClient = moduleFixture.get('FetchClient');
-    httpClientTimeout = configurationService.getOrThrow(
+    fetchClient = moduleFixture.get(FetchClientToken);
+    defaultTimeout = configurationService.getOrThrow(
       'httpClient.requestTimeout',
     );
     loggingService = moduleFixture.get<ILoggingService>(LoggingService);
     jest.spyOn(loggingService, 'debug');
+    circuitBreakerService = moduleFixture.get<CircuitBreakerService>(
+      CircuitBreakerService,
+    );
 
     app = moduleFixture.createNestApplication();
     await app.init();
@@ -87,7 +119,7 @@ describe('NetworkModule', () => {
       expect(fetchMock).toHaveBeenCalledTimes(1);
       expect(fetchMock).toHaveBeenCalledWith(url, {
         method: 'GET',
-        signal: AbortSignal.timeout(httpClientTimeout), // timeout is set
+        signal: AbortSignal.timeout(defaultTimeout), // timeout is set
         keepalive: true,
       });
     });
@@ -130,6 +162,35 @@ describe('NetworkModule', () => {
 
       expect(fetchMock).toHaveBeenCalledTimes(1);
     });
+
+    it('uses custom timeout when provided as third argument', async () => {
+      const url = faker.internet.url({ appendSlash: false });
+      const customTimeout = faker.number.int({ min: 1000, max: 10000 });
+
+      await expect(
+        fetchClient(url, { method: 'GET' }, customTimeout),
+      ).rejects.toThrow();
+
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(fetchMock).toHaveBeenCalledWith(url, {
+        method: 'GET',
+        signal: AbortSignal.timeout(customTimeout),
+        keepalive: true,
+      });
+    });
+
+    it('uses default timeout when timeout is not provided', async () => {
+      const url = faker.internet.url({ appendSlash: false });
+
+      await expect(fetchClient(url, { method: 'GET' })).rejects.toThrow();
+
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(fetchMock).toHaveBeenCalledWith(url, {
+        method: 'GET',
+        signal: AbortSignal.timeout(defaultTimeout),
+        keepalive: true,
+      });
+    });
   });
 
   describe('with caching', () => {
@@ -153,7 +214,9 @@ describe('NetworkModule', () => {
 
       expect(fetchMock).toHaveBeenCalledTimes(1);
 
-      const key = hashSha1(JSON.stringify({ url, ...options }));
+      const key = hashSha1(
+        JSON.stringify({ url, ...options, circuitBreakerKey: '' }),
+      );
       expect(loggingService.debug).toHaveBeenCalledTimes(2);
       expect(loggingService.debug).toHaveBeenNthCalledWith(1, {
         type: 'EXTERNAL_REQUEST_CACHE_MISS',
@@ -257,7 +320,9 @@ describe('NetworkModule', () => {
 
         expect(fetchMock).toHaveBeenCalledTimes(1);
 
-        const key = hashSha1(JSON.stringify({ url, ...options }));
+        const key = hashSha1(
+          JSON.stringify({ url, ...options, circuitBreakerKey: '' }),
+        );
         expect(loggingService.debug).toHaveBeenCalledTimes(2);
         expect(loggingService.debug).toHaveBeenNthCalledWith(1, {
           type: 'EXTERNAL_REQUEST_CACHE_MISS',
@@ -288,7 +353,9 @@ describe('NetworkModule', () => {
 
       expect(fetchMock).toHaveBeenCalledTimes(2);
 
-      const key = hashSha1(JSON.stringify({ url, ...options }));
+      const key = hashSha1(
+        JSON.stringify({ url, ...options, circuitBreakerKey: '' }),
+      );
       expect(loggingService.debug).toHaveBeenCalledTimes(2);
       expect(loggingService.debug).toHaveBeenNthCalledWith(1, {
         type: 'EXTERNAL_REQUEST_CACHE_MISS',
@@ -326,7 +393,9 @@ describe('NetworkModule', () => {
 
       expect(fetchMock).toHaveBeenCalledTimes(2);
 
-      const key = hashSha1(JSON.stringify({ url, ...options }));
+      const key = hashSha1(
+        JSON.stringify({ url, ...options, circuitBreakerKey: '' }),
+      );
       expect(loggingService.debug).toHaveBeenCalledTimes(4);
       expect(loggingService.debug).toHaveBeenNthCalledWith(1, {
         type: 'EXTERNAL_REQUEST_CACHE_MISS',
@@ -348,6 +417,220 @@ describe('NetworkModule', () => {
         url,
         key,
       });
+    });
+  });
+
+  describe('with circuit breaker enabled', () => {
+    beforeAll(async () => {
+      await initApp(false, {
+        failureThreshold: faker.number.int({ min: 2, max: 5 }),
+        successThreshold: faker.number.int({ min: 1, max: 5 }),
+        timeout: faker.number.int({ min: 500, max: 2000 }), // Short timeout for faster tests
+        rollingWindow: faker.number.int({ min: 60_000, max: 300_000 }),
+        halfOpenMaxRequests: faker.number.int({ min: 1, max: 10 }),
+      });
+    });
+
+    beforeEach(() => {
+      // Clear all circuits before each test
+      circuitBreakerService.deleteAll();
+    });
+
+    it('allows requests when circuit breaker is enabled and circuit is closed', async () => {
+      const json = fakeJson();
+      const response = {
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve(json),
+      } as Response;
+      fetchMock.mockResolvedValue(response);
+
+      const url = faker.internet.url({ appendSlash: false });
+
+      const result = await fetchClient(url, { method: 'GET' }, undefined, {
+        key: 'test-circuit',
+      });
+
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(result.status).toBe(200);
+      expect(result.data).toEqual(json);
+    });
+
+    it('blocks requests when circuit is open', async () => {
+      const json = fakeJson();
+      const errorResponse = {
+        ok: false,
+        status: 500,
+        json: () => Promise.resolve(json),
+      } as Response;
+      fetchMock.mockResolvedValue(errorResponse);
+
+      const url = faker.internet.url({ appendSlash: false });
+      const failureThreshold = circuitBreakerConfig?.failureThreshold ?? 2;
+
+      // Trip the circuit
+      for (let i = 0; i < failureThreshold; i++) {
+        await expect(
+          fetchClient(url, { method: 'GET' }, undefined, {
+            key: 'test-circuit',
+          }),
+        ).rejects.toThrow();
+      }
+
+      fetchMock.mockClear();
+
+      await expect(
+        fetchClient(url, { method: 'GET' }, undefined, { key: 'test-circuit' }),
+      ).rejects.toThrow(CircuitBreakerException);
+
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('bypasses circuit breaker when circuitBreaker is not provided', async () => {
+      const json = fakeJson();
+
+      const url = faker.internet.url({ appendSlash: false });
+      const failureThreshold = circuitBreakerConfig?.failureThreshold ?? 2;
+
+      const errorResponse = {
+        ok: false,
+        status: 500,
+        json: () => Promise.resolve(json),
+      } as Response;
+      for (let i = 0; i < failureThreshold; i++) {
+        fetchMock.mockResolvedValueOnce(errorResponse);
+        await expect(
+          fetchClient(url, { method: 'GET' }, undefined, {
+            key: 'test-circuit',
+          }),
+        ).rejects.toThrow();
+      }
+
+      fetchMock.mockClear();
+      const successResponse = {
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve(json),
+      } as Response;
+      fetchMock.mockResolvedValueOnce(successResponse);
+      const result = await fetchClient(
+        url,
+        { method: 'GET' },
+        undefined,
+        undefined,
+      );
+
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(result.status).toBe(200);
+    });
+  });
+
+  describe('with caching and circuit breaker enabled', () => {
+    beforeAll(async () => {
+      await initApp(true, {
+        failureThreshold: 2, // Fixed threshold for predictable tests
+        successThreshold: faker.number.int({ min: 1, max: 5 }),
+        timeout: faker.number.int({ min: 500, max: 2000 }),
+        rollingWindow: faker.number.int({ min: 60_000, max: 300_000 }),
+        halfOpenMaxRequests: faker.number.int({ min: 1, max: 10 }),
+      });
+    });
+
+    beforeEach(() => {
+      circuitBreakerService.deleteAll();
+    });
+
+    it('uses different cache keys for circuit breaker enabled vs disabled', async () => {
+      const json = fakeJson();
+      const response = {
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve(json),
+      } as Response;
+      fetchMock.mockResolvedValue(response);
+
+      const url = faker.internet.url({ appendSlash: false });
+      const options = { method: 'GET' };
+
+      void fetchClient(url, options, undefined, undefined);
+      await fetchClient(url, options, undefined, undefined);
+
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+
+      void fetchClient(url, options, undefined, { key: 'test-circuit' });
+      await fetchClient(url, options, undefined, { key: 'test-circuit' });
+
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+
+      const keyWithoutCB = hashSha1(
+        JSON.stringify({ url, ...options, circuitBreakerKey: '' }),
+      );
+      const keyWithCB = hashSha1(
+        JSON.stringify({ url, ...options, circuitBreakerKey: 'test-circuit' }),
+      );
+
+      expect(keyWithoutCB).not.toBe(keyWithCB);
+    });
+
+    it('caches requests with circuit breaker enabled', async () => {
+      const json = fakeJson();
+      const response = {
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve(json),
+      } as Response;
+      fetchMock.mockResolvedValue(response);
+
+      const url = faker.internet.url({ appendSlash: false });
+      const options = { method: 'GET' };
+
+      void fetchClient(url, options, undefined, { key: 'test-circuit' });
+      await fetchClient(url, options, undefined, { key: 'test-circuit' });
+
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+
+      const key = hashSha1(
+        JSON.stringify({ url, ...options, circuitBreakerKey: 'test-circuit' }),
+      );
+      expect(loggingService.debug).toHaveBeenCalledTimes(2);
+      expect(loggingService.debug).toHaveBeenNthCalledWith(1, {
+        type: 'EXTERNAL_REQUEST_CACHE_MISS',
+        url,
+        key,
+      });
+      expect(loggingService.debug).toHaveBeenNthCalledWith(2, {
+        type: 'EXTERNAL_REQUEST_CACHE_HIT',
+        url,
+        key,
+      });
+    });
+
+    it('does not cache when circuit breaker blocks request', async () => {
+      const json = fakeJson();
+      const errorResponse = {
+        ok: false,
+        status: 500,
+        json: () => Promise.resolve(json),
+      } as Response;
+      fetchMock.mockResolvedValue(errorResponse);
+
+      const url = faker.internet.url({ appendSlash: false });
+      const options = { method: 'GET' };
+
+      await expect(
+        fetchClient(url, options, undefined, { key: 'test-circuit' }),
+      ).rejects.toThrow();
+      await expect(
+        fetchClient(url, options, undefined, { key: 'test-circuit' }),
+      ).rejects.toThrow();
+
+      fetchMock.mockClear();
+
+      await expect(
+        fetchClient(url, options, undefined, { key: 'test-circuit' }),
+      ).rejects.toThrow(CircuitBreakerException);
+
+      expect(fetchMock).not.toHaveBeenCalled();
     });
   });
 });

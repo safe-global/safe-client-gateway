@@ -3,9 +3,9 @@ import { ApiProperty } from '@nestjs/swagger';
 import { z } from 'zod';
 import type { Address } from 'viem';
 
-export class AddRecoveryModuleDto
-  implements z.infer<typeof AddRecoveryModuleDtoSchema>
-{
+export class AddRecoveryModuleDto implements z.infer<
+  typeof AddRecoveryModuleDtoSchema
+> {
   @ApiProperty()
   moduleAddress!: Address;
 }

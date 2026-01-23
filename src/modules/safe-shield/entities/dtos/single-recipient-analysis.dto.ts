@@ -24,9 +24,7 @@ export class SingleRecipientAnalysisResultDto extends AnalysisResultDto<
  * This DTO is used by the analyzeRecipient endpoint which only returns
  * recipient interaction and activity statuses (not bridge analysis).
  */
-export class SingleRecipientAnalysisDto
-  implements SingleRecipientAnalysisResponse
-{
+export class SingleRecipientAnalysisDto implements SingleRecipientAnalysisResponse {
   @ApiProperty({
     description:
       'Analysis results related to recipient interaction history. ' +
@@ -42,7 +40,7 @@ export class SingleRecipientAnalysisDto
       },
     ],
   })
-  RECIPIENT_INTERACTION!: Array<SingleRecipientAnalysisResultDto>;
+  public readonly RECIPIENT_INTERACTION!: Array<SingleRecipientAnalysisResultDto>;
 
   @ApiPropertyOptional({
     description:
@@ -59,11 +57,11 @@ export class SingleRecipientAnalysisDto
       },
     ],
   })
-  RECIPIENT_ACTIVITY?: Array<SingleRecipientAnalysisResultDto>;
+  public readonly RECIPIENT_ACTIVITY?: Array<SingleRecipientAnalysisResultDto>;
 
   @ApiProperty({
     description: 'Indicates whether the analyzed recipient address is a Safe.',
     example: false,
   })
-  isSafe!: boolean;
+  public readonly isSafe!: boolean;
 }

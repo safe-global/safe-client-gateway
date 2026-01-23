@@ -6,6 +6,8 @@ import request from 'supertest';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module';
 import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.module';
+import { TestTxAuthNetworkModule } from '@/datasources/network/__tests__/test.tx-auth.network.module';
+import { TxAuthNetworkModule } from '@/datasources/network/tx-auth.network.module';
 import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
 import { safeAppBuilder } from '@/modules/safe-apps/domain/entities/__tests__/safe-app.builder';
 import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
@@ -15,7 +17,7 @@ import {
 } from '@/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
 import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
-import { TransactionsModule } from '@/modules/transactions/routes/transactions.module';
+import { TransactionsModule } from '@/modules/transactions/transactions.module';
 import { ConfigurationModule } from '@/config/configuration.module';
 import configuration from '@/config/entities/__tests__/configuration';
 import { IConfigurationService } from '@/config/configuration.service.interface';
@@ -65,7 +67,10 @@ describe('Add transaction confirmations - Transactions Controller (Unit)', () =>
         },
         { provide: APP_FILTER, useClass: ZodErrorFilter },
       ],
-    }).compile();
+    })
+      .overrideModule(TxAuthNetworkModule)
+      .useModule(TestTxAuthNetworkModule)
+      .compile();
 
     const configurationService = moduleFixture.get<IConfigurationService>(
       IConfigurationService,

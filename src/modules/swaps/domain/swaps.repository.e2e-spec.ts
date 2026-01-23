@@ -2,7 +2,7 @@ import type { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import '@/__tests__/matchers/to-be-string-or-null';
 import { CacheKeyPrefix } from '@/datasources/cache/constants';
-import { SwapsRepositoryModule } from '@/modules/swaps/domain/swaps-repository.module';
+import { SwapsModule } from '@/modules/swaps/swaps.module';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import { ConfigurationModule } from '@/config/configuration.module';
 import { NetworkModule } from '@/datasources/network/network.module';
@@ -112,7 +112,7 @@ describe('CowSwap E2E tests', () => {
     const moduleRef = await Test.createTestingModule({
       imports: [
         // Feature
-        SwapsRepositoryModule,
+        SwapsModule,
         // Common
         ConfigurationModule.register(configuration),
         NetworkModule,

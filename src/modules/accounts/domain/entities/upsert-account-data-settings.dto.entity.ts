@@ -1,9 +1,9 @@
 import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
 import { z } from 'zod';
 
-export class UpsertAccountDataSettingsDto
-  implements z.infer<typeof UpsertAccountDataSettingsDtoSchema>
-{
+export class UpsertAccountDataSettingsDto implements z.infer<
+  typeof UpsertAccountDataSettingsDtoSchema
+> {
   accountDataSettings: Array<{
     dataTypeId: string;
     enabled: boolean;

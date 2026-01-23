@@ -109,21 +109,6 @@ export default () => ({
       zerion: {
         apiKey: process.env.ZERION_API_KEY,
         baseUri: process.env.ZERION_BASE_URI || 'https://api.zerion.io',
-        chains: {
-          1: { chainName: 'ethereum' },
-          10: { chainName: 'optimism' },
-          100: { chainName: 'xdai' },
-          1101: { chainName: 'polygon-zkevm' },
-          1313161554: { chainName: 'aurora' },
-          137: { chainName: 'polygon' },
-          324: { chainName: 'zksync-era' },
-          42161: { chainName: 'arbitrum' },
-          42220: { chainName: 'celo' },
-          43114: { chainName: 'avalanche' },
-          534352: { chainName: 'scroll' },
-          56: { chainName: 'binance-smart-chain' },
-          8453: { chainName: 'base' },
-        },
         currencies: [
           'USD',
           'EUR',
@@ -153,7 +138,7 @@ export default () => ({
   },
   portfolio: {
     cache: {
-      ttlSeconds: parseInt(process.env.PORTFOLIO_CACHE_TTL_SECONDS ?? `${30}`),
+      ttlSeconds: parseInt(process.env.PORTFOLIO_CACHE_TTL_SECONDS ?? `${10}`),
     },
     filters: {
       dustThresholdUsd: parseFloat(
@@ -291,15 +276,16 @@ export default () => ({
   },
   features: {
     email: process.env.FF_EMAIL?.toLowerCase() === 'true',
-    zerionBalancesChainIds:
-      process.env.FF_ZERION_BALANCES_CHAIN_IDS?.split(',') ?? [],
+    // Support both new (FF_ZERION_ENABLED) and legacy (FF_ZERION_BALANCES_CHAIN_IDS) env vars
+    zerionBalancesEnabled:
+      !!process.env.FF_ZERION_ENABLED ||
+      !!process.env.FF_ZERION_BALANCES_CHAIN_IDS,
     zerionPositions:
       process.env.FF_ZERION_POSITIONS_DISABLED?.toLowerCase() !== 'true',
     debugLogs: process.env.FF_DEBUG_LOGS?.toLowerCase() === 'true',
     configHooksDebugLogs:
       process.env.FF_CONFIG_HOOKS_DEBUG_LOGS?.toLowerCase() === 'true',
     auth: process.env.FF_AUTH?.toLowerCase() === 'true',
-    delegatesV2: process.env.FF_DELEGATES_V2?.toLowerCase() === 'true',
     counterfactualBalances:
       process.env.FF_COUNTERFACTUAL_BALANCES?.toLowerCase() === 'true',
     accounts: process.env.FF_ACCOUNTS?.toLowerCase() === 'true',
@@ -343,6 +329,29 @@ export default () => ({
     // A value of 0 disables the timeout.
     requestTimeout: parseInt(
       process.env.HTTP_CLIENT_REQUEST_TIMEOUT_MILLISECONDS ?? `${5_000}`,
+    ),
+    ownersTimeout: parseInt(
+      process.env.HTTP_CLIENT_REQUEST_TIMEOUT_MILLISECONDS_OWNERS ?? `${5_000}`,
+    ),
+  },
+  circuitBreaker: {
+    // Number of failures before the circuit opens
+    failureThreshold: parseInt(
+      process.env.CIRCUIT_BREAKER_FAILURE_THRESHOLD ?? `${20}`,
+    ),
+    // Number of consecutive successes required to close the circuit from half-open state
+    successThreshold: parseInt(
+      process.env.CIRCUIT_BREAKER_SUCCESS_THRESHOLD ?? `${10}`,
+    ),
+    // Time in milliseconds to wait before attempting to close the circuit (timeout period)
+    timeout: parseInt(process.env.CIRCUIT_BREAKER_TIMEOUT ?? `${30_000}`), // 30 seconds
+    // Time window in milliseconds for tracking failures
+    rollingWindow: parseInt(
+      process.env.CIRCUIT_BREAKER_ROLLING_WINDOW ?? `${60_000}`,
+    ), // 10 seconds
+    // Maximum number of requests allowed in half-open state
+    halfOpenMaxRequests: parseInt(
+      process.env.CIRCUIT_BREAKER_HALF_OPEN_MAX_REQUESTS ?? `${10}`,
     ),
   },
   jwt: {
@@ -511,6 +520,7 @@ export default () => ({
   },
   safeTransaction: {
     useVpcUrl: process.env.USE_TX_SERVICE_VPC_URL?.toLowerCase() === 'true',
+    apiKey: process.env.TX_SERVICE_API_KEY,
   },
   safeWebApp: {
     baseUri: process.env.SAFE_WEB_APP_BASE_URI || 'https://app.safe.global',
@@ -570,6 +580,7 @@ export default () => ({
       42161: 'https://api.cow.fi/arbitrum_one',
       43114: 'https://api.cow.fi/avalanche',
       11155111: 'https://api.cow.fi/sepolia',
+      59144: 'https://api.cow.fi/linea',
     },
     explorerBaseUri:
       process.env.SWAPS_EXPLORER_URI || 'https://explorer.cow.fi/',

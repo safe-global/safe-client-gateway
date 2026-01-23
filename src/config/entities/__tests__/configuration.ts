@@ -64,21 +64,6 @@ export default (): ReturnType<typeof configuration> => ({
       zerion: {
         apiKey: faker.string.hexadecimal({ length: 32 }),
         baseUri: faker.internet.url({ appendSlash: false }),
-        chains: {
-          1: { chainName: faker.string.sample() },
-          10: { chainName: faker.string.sample() },
-          100: { chainName: faker.string.sample() },
-          1101: { chainName: faker.string.sample() },
-          1313161554: { chainName: faker.string.sample() },
-          137: { chainName: faker.string.sample() },
-          324: { chainName: faker.string.sample() },
-          42161: { chainName: faker.string.sample() },
-          42220: { chainName: faker.string.sample() },
-          43114: { chainName: faker.string.sample() },
-          534352: { chainName: faker.string.sample() },
-          56: { chainName: faker.string.sample() },
-          8453: { chainName: faker.string.sample() },
-        },
         currencies: Array.from(
           new Set([
             ...Array.from(
@@ -187,12 +172,11 @@ export default (): ReturnType<typeof configuration> => ({
   express: { jsonLimit: '1mb' },
   features: {
     email: false,
-    zerionBalancesChainIds: ['137'],
+    zerionBalancesEnabled: false,
     zerionPositions: false,
     debugLogs: false,
     configHooksDebugLogs: false,
     auth: false,
-    delegatesV2: false,
     counterfactualBalances: false,
     accounts: false,
     users: false,
@@ -215,7 +199,17 @@ export default (): ReturnType<typeof configuration> => ({
     lifiTransactionsMapping: false,
     cacheInFlightRequests: false,
   },
-  httpClient: { requestTimeout: faker.number.int() },
+  httpClient: {
+    requestTimeout: faker.number.int(),
+    ownersTimeout: faker.number.int(),
+  },
+  circuitBreaker: {
+    failureThreshold: faker.number.int(),
+    successThreshold: faker.number.int(),
+    timeout: faker.number.int(),
+    rollingWindow: faker.number.int(),
+    halfOpenMaxRequests: faker.number.int(),
+  },
   locking: {
     baseUri: faker.internet.url({ appendSlash: false }),
     eligibility: {
@@ -367,6 +361,7 @@ export default (): ReturnType<typeof configuration> => ({
   },
   safeTransaction: {
     useVpcUrl: false,
+    apiKey: faker.string.hexadecimal({ length: 32 }),
   },
   safeWebApp: {
     baseUri: faker.internet.url({ appendSlash: false }),
@@ -410,6 +405,7 @@ export default (): ReturnType<typeof configuration> => ({
       42161: faker.internet.url({ appendSlash: false }),
       43114: faker.internet.url({ appendSlash: false }),
       11155111: faker.internet.url({ appendSlash: false }),
+      59144: faker.internet.url({ appendSlash: false }),
     },
     explorerBaseUri: faker.internet.url({ appendSlash: true }),
     restrictApps: false,

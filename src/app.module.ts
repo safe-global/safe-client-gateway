@@ -10,28 +10,28 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { CacheModule as InMemoryCacheModule } from '@nestjs/cache-manager';
 import { ClsMiddleware, ClsModule } from 'nestjs-cls';
 import { join } from 'path';
-import { ChainsModule } from '@/modules/chains/routes/chains.module';
-import { BalancesModule } from '@/modules/balances/routes/balances.module';
-import { PositionsModule } from '@/modules/positions/routes/positions.module';
-import { PortfolioModule } from '@/modules/portfolio/v1/portfolio.module';
+import { ChainsModule } from '@/modules/chains/chains.module';
+import { BalancesModule } from '@/modules/balances/balances.module';
+import { PositionsModule } from '@/modules/positions/positions.module';
+import { PortfolioModule } from '@/modules/portfolio/portfolio.module';
 import { NetworkModule } from '@/datasources/network/network.module';
 import { ConfigurationModule } from '@/config/configuration.module';
 import { CacheModule } from '@/datasources/cache/cache.module';
-import { CollectiblesModule } from '@/modules/collectibles/routes/collectibles.module';
-import { CommunityModule } from '@/modules/community/routes/community.module';
-import { ContractsModule } from '@/modules/contracts/routes/contracts.module';
-import { DataDecodedModule } from '@/modules/data-decoder/routes/data-decoded.module';
-import { DelegatesModule } from '@/modules/delegate/routes/delegates.module';
-import { HooksModule } from '@/modules/hooks/routes/hooks.module';
-import { SafeAppsModule } from '@/modules/safe-apps/routes/safe-apps.module';
-import { HealthModule } from '@/modules/health/routes/health.module';
-import { OwnersModule } from '@/modules/owners/routes/owners.module';
-import { AboutModule } from '@/modules/about/routes/about.module';
-import { TransactionsModule } from '@/modules/transactions/routes/transactions.module';
-import { SafesModule } from '@/modules/safe/routes/safes.module';
-import { NotificationsModule } from '@/modules/notifications/routes/v1/notifications.module';
-import { EstimationsModule } from '@/modules/estimations/routes/estimations.module';
-import { MessagesModule } from '@/modules/messages/routes/messages.module';
+import { CollectiblesModule } from '@/modules/collectibles/collectibles.module';
+import { CommunityModule } from '@/modules/community/community.module';
+import { ContractsModule } from '@/modules/contracts/contracts.module';
+import { DataDecoderModule } from '@/modules/data-decoder/data-decoder.module';
+import { DelegateModule } from '@/modules/delegate/delegate.module';
+import { HooksModule } from '@/modules/hooks/hooks.module';
+import { SafeAppsModule } from '@/modules/safe-apps/safe-apps.module';
+import { HealthModule } from '@/modules/health/health.module';
+import { OwnersModule } from '@/modules/owners/owners.module';
+import { AboutModule } from '@/modules/about/about.module';
+import { TransactionsModule } from '@/modules/transactions/transactions.module';
+import { SafeModule } from '@/modules/safe/safe.module';
+import { NotificationsModule } from '@/modules/notifications/notifications.module';
+import { EstimationsModule } from '@/modules/estimations/estimations.module';
+import { MessagesModule } from '@/modules/messages/messages.module';
 import { RequestScopedLoggingModule } from '@/logging/logging.module';
 import { RouteLoggerInterceptor } from '@/routes/common/interceptors/route-logger.interceptor';
 import { NotFoundLoggerMiddleware } from '@/middleware/not-found-logger.middleware';
@@ -39,17 +39,15 @@ import configuration from '@/config/entities/configuration';
 import { GlobalErrorFilter } from '@/routes/common/filters/global-error.filter';
 import { DataSourceErrorFilter } from '@/routes/common/filters/data-source-error.filter';
 import { ServeStaticModule } from '@nestjs/serve-static';
-import { RootModule } from '@/modules/root/routes/root.module';
-import { AlertsControllerModule } from '@/modules/alerts/routes/alerts.controller.module';
-import { RecoveryModule } from '@/modules/recovery/routes/recovery.module';
-import { RelayControllerModule } from '@/modules/relay/routes/relay.controller.module';
+import { RootModule } from '@/modules/root/root.module';
+import { AlertsModule } from '@/modules/alerts/alerts.module';
+import { RecoveryModule } from '@/modules/recovery/recovery.module';
+import { RelayModule } from '@/modules/relay/relay.module';
 import { ZodErrorFilter } from '@/routes/common/filters/zod-error.filter';
 import { CacheControlInterceptor } from '@/routes/common/interceptors/cache-control.interceptor';
-import { AuthModule } from '@/modules/auth/routes/auth.module';
-import { DelegatesV2Module } from '@/modules/delegate/routes/v2/delegates.v2.module';
-import { AccountsModule } from '@/modules/accounts/routes/accounts.module';
-import { NotificationsModuleV2 } from '@/modules/notifications/routes/v2/notifications.module';
-import { TargetedMessagingModule } from '@/modules/targeted-messaging/routes/targeted-messaging.module';
+import { AuthModule } from '@/modules/auth/auth.module';
+import { AccountsModule } from '@/modules/accounts/accounts.module';
+import { TargetedMessagingModule } from '@/modules/targeted-messaging/targeted-messaging.module';
 import { PostgresDatabaseModule } from '@/datasources/db/v1/postgres-database.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -58,12 +56,12 @@ import {
   LoggingService,
   type ILoggingService,
 } from '@/logging/logging.interface';
-import { UsersModule } from '@/modules/users/routes/users.module';
-import { SpacesModule } from '@/modules/spaces/routes/spaces.module';
-import { MembersModule } from '@/modules/spaces/routes/members.module';
+import { UsersModule } from '@/modules/users/users.module';
+import { SpacesModule } from '@/modules/spaces/spaces.module';
 import { BullModule } from '@nestjs/bullmq';
-import { CsvExportModule } from '@/modules/csv-export/v1/csv-export.module';
+import { CsvExportModule } from '@/modules/csv-export/csv-export.module';
 import { SafeShieldModule } from '@/modules/safe-shield/safe-shield.module';
+import { CircuitBreakerModule } from '@/datasources/circuit-breaker/circuit-breaker.module';
 
 @Module({})
 export class AppModule implements NestModule {
@@ -73,7 +71,6 @@ export class AppModule implements NestModule {
       accounts: isAccountsFeatureEnabled,
       users: isUsersFeatureEnabled,
       email: isEmailFeatureEnabled,
-      delegatesV2: isDelegatesV2Enabled,
       zerionPositions: isZerionPositionsFeatureEnabled,
     } = configFactory()['features'];
 
@@ -93,33 +90,27 @@ export class AppModule implements NestModule {
         CommunityModule,
         ContractsModule,
         CsvExportModule,
-        DataDecodedModule,
-        // TODO: delete/rename DelegatesModule when clients migration to v2 is completed.
-        DelegatesModule,
-        ...(isDelegatesV2Enabled ? [DelegatesV2Module] : []),
+        DataDecoderModule,
+        DelegateModule,
         // Note: this feature will not work as expected until we reintegrate the email service
-        ...(isEmailFeatureEnabled
-          ? [AlertsControllerModule, RecoveryModule]
-          : []),
+        ...(isEmailFeatureEnabled ? [AlertsModule, RecoveryModule] : []),
         EstimationsModule,
         HealthModule,
         HooksModule,
-        NotificationsModuleV2,
-        MessagesModule,
         NotificationsModule,
-        ...(isUsersFeatureEnabled
-          ? [UsersModule, SpacesModule, MembersModule]
-          : []),
+        MessagesModule,
+        ...(isUsersFeatureEnabled ? [UsersModule, SpacesModule] : []),
         OwnersModule,
-        RelayControllerModule,
+        RelayModule,
         RootModule,
         SafeAppsModule,
-        SafesModule,
+        SafeModule,
         SafeShieldModule,
         TargetedMessagingModule,
         TransactionsModule,
         // common
         CacheModule,
+        CircuitBreakerModule,
         // Module for storing and reading from the async local storage
         ClsModule.forRoot({
           global: true,

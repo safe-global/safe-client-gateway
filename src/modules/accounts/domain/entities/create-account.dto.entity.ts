@@ -8,9 +8,9 @@ export const CreateAccountDtoSchema = z.object({
   name: NameSchema,
 });
 
-export class CreateAccountDto
-  implements z.infer<typeof CreateAccountDtoSchema>
-{
+export class CreateAccountDto implements z.infer<
+  typeof CreateAccountDtoSchema
+> {
   address: Address;
   name: string;
 

@@ -1,16 +1,26 @@
 import { IBlockaidApi } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-api.interface';
-// import { GUARD_STORAGE_POSITION } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-api.constants';
+import { ReportEvent } from '@/modules/safe-shield/entities/dtos/report-false-result.dto';
+import { BLOCKAID_REQUEST_ID_HEADER } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-api.constants';
 import Blockaid from '@blockaid/client';
-import { TransactionScanResponse } from '@blockaid/client/resources/evm/evm';
 import { JsonRpcScanParams } from '@blockaid/client/resources/evm/json-rpc';
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { Address, numberToHex } from 'viem';
+import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import { BlockaidScanLogSchema } from '@/modules/safe-shield/threat-analysis/blockaid/schemas/blockaid-scan-log.schema';
+import {
+  BlockaidScanResponse,
+  BlockaidScanResponseSchema,
+} from '@/modules/safe-shield/threat-analysis/blockaid/schemas/blockaid-scan-response.schema';
+import { TransactionScanResponse } from '@blockaid/client/resources/index';
 
 @Injectable()
 export class BlockaidApi implements IBlockaidApi {
   private readonly blockaidClient: Blockaid;
 
-  constructor() {
+  constructor(
+    @Inject(LoggingService)
+    private readonly loggingService: ILoggingService,
+  ) {
     this.blockaidClient = new Blockaid();
   }
 
@@ -20,7 +30,7 @@ export class BlockaidApi implements IBlockaidApi {
     walletAddress: Address,
     message: string,
     origin?: string,
-  ): Promise<TransactionScanResponse> {
+  ): Promise<BlockaidScanResponse> {
     const chain = numberToHex(Number(chainId));
     const params: JsonRpcScanParams = {
       chain,
@@ -45,6 +55,42 @@ export class BlockaidApi implements IBlockaidApi {
       // },
     };
 
-    return await this.blockaidClient.evm.jsonRpc.scan(params);
+    const { data, response } = await this.blockaidClient.evm.jsonRpc
+      .scan(params)
+      .withResponse();
+    const request_id =
+      response.headers.get(BLOCKAID_REQUEST_ID_HEADER) ?? undefined;
+    this.logScanResponse({ ...data, request_id });
+    const parsedResponse = BlockaidScanResponseSchema.parse({
+      ...data,
+      request_id,
+    });
+
+    return parsedResponse;
+  }
+
+  public async reportTransaction(args: {
+    event: ReportEvent;
+    details: string;
+    requestId: string;
+  }): Promise<void> {
+    await this.blockaidClient.evm.transaction.report({
+      event: args.event,
+      details: args.details,
+      report: {
+        type: 'request_id',
+        request_id: args.requestId,
+      },
+    });
+  }
+
+  private logScanResponse(
+    response: TransactionScanResponse & { request_id: string | undefined },
+  ): void {
+    const logData = BlockaidScanLogSchema.parse({ ...response });
+    this.loggingService.info({
+      message: 'Blockaid scan response',
+      response: logData,
+    });
   }
 }

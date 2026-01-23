@@ -8,9 +8,9 @@ export const CreateAddressBookItemDtoSchema = z.object({
   address: AddressSchema,
 });
 
-export class CreateAddressBookItemDto
-  implements z.infer<typeof CreateAddressBookItemDtoSchema>
-{
+export class CreateAddressBookItemDto implements z.infer<
+  typeof CreateAddressBookItemDtoSchema
+> {
   name: string;
   address: Address;
 

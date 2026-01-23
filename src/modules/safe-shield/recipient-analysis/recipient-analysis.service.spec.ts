@@ -11,7 +11,7 @@ import type { IChainsRepository } from '@/modules/chains/domain/chains.repositor
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
-import * as utils from '../utils/recipient-extraction.utils';
+import * as utils from '../utils/extraction.utils';
 import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
 import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
 import type { TransactionsService } from '@/modules/transactions/routes/transactions.service';

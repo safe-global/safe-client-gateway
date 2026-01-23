@@ -1,8 +1,6 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class UpdateWalletTimestampTrigger1737473370466
-  implements MigrationInterface
-{
+export class UpdateWalletTimestampTrigger1737473370466 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
                     CREATE TRIGGER update_wallets_updated_at

@@ -1,8 +1,6 @@
 import { Inject, Injectable, Module } from '@nestjs/common';
-import {
-  IMessagesRepository,
-  MessagesRepositoryModule,
-} from '@/modules/messages/domain/messages.repository.interface';
+import { IMessagesRepository } from '@/modules/messages/domain/messages.repository.interface';
+import { MessagesModule } from '@/modules/messages/messages.module';
 import {
   ISafeRepository,
   SafeRepositoryModule,
@@ -457,7 +455,7 @@ export class EventNotificationsHelper {
 @Module({
   imports: [
     DelegatesV2RepositoryModule,
-    MessagesRepositoryModule,
+    MessagesModule,
     SafeRepositoryModule,
     NotificationsRepositoryV2Module,
   ],

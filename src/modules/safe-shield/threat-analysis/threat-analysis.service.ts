@@ -4,35 +4,36 @@ import { ThreatAnalysisResponse } from '@/modules/safe-shield/entities/analysis-
 import {
   CommonStatus,
   ThreatAnalysisResult,
+  ThreatIssue,
+  ThreatIssues,
 } from '@/modules/safe-shield/entities/analysis-result.entity';
 import {
   Severity,
   compareSeverityString,
 } from '@/modules/safe-shield/entities/severity.entity';
-import {
-  BalanceChange,
-  BalanceChangesSchema,
-} from '@/modules/safe-shield/entities/threat-analysis.types';
+import { BalanceChange } from '@/modules/safe-shield/entities/threat-analysis.types';
 import { ThreatStatus } from '@/modules/safe-shield/entities/threat-status.entity';
+import { ReportEvent } from '@/modules/safe-shield/entities/dtos/report-false-result.dto';
 import { IBlockaidApi } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-api.interface';
 import {
   BLOCKAID_SEVERITY_MAP,
   prepareDescription,
+  prepareErrorMessage,
 } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-api.constants';
 import {
   DESCRIPTION_MAPPING,
   SEVERITY_MAPPING,
   TITLE_MAPPING,
 } from '@/modules/safe-shield/threat-analysis/threat-analysis.constants';
-import {
-  TransactionSimulation,
-  TransactionSimulationError,
-  TransactionValidation,
-  TransactionValidationError,
-} from '@blockaid/client/resources/index';
 import { Inject, Injectable } from '@nestjs/common';
 import { Address } from 'viem';
 import { TypedData } from '@/modules/messages/domain/entities/typed-data.entity';
+import {
+  ProxyUpgradeManagement,
+  TransactionSimulation,
+  TransactionValidation,
+} from '@/modules/safe-shield/threat-analysis/blockaid/schemas/blockaid-scan-response.schema';
+import { NULL_ADDRESS } from '@/routes/common/constants';
 
 /**
  * Service responsible for analyzing transactions for security threats and malicious patterns.
@@ -112,16 +113,21 @@ export class ThreatAnalysisService {
     origin?: string,
   ): Promise<ThreatAnalysisResponse> {
     try {
-      const response = await this.blockaidAPI.scanTransaction(
-        chainId,
-        safeAddress,
-        walletAddress,
-        message,
-        origin,
-      );
-      const { simulation, validation } = response;
+      const { simulation, validation, request_id } =
+        await this.blockaidAPI.scanTransaction(
+          chainId,
+          safeAddress,
+          walletAddress,
+          message,
+          origin,
+        );
 
-      return this.processAnalysisResults(safeAddress, simulation, validation);
+      return this.processAnalysisResults(
+        safeAddress,
+        simulation,
+        validation,
+        request_id,
+      );
     } catch (error) {
       this.loggingService.warn(
         `Error during threat analysis for Safe ${safeAddress} on chain ${chainId}: ${error}`,
@@ -133,14 +139,16 @@ export class ThreatAnalysisService {
   /**
    * Processes simulation and validation results into a threat analysis response.
    * @param {Address} safeAddress - The Safe wallet address
-   * @param {TransactionSimulation | TransactionSimulationError} [simulation] - The transaction simulation result
-   * @param {TransactionValidation | TransactionValidationError} [validation] - The transaction validation result
+   * @param {TransactionSimulation} [simulation] - The transaction simulation result
+   * @param {TransactionValidation} [validation] - The transaction validation result
+   * @param {string | undefined} requestId - The Blockaid request ID from x-request-id header
    * @returns {ThreatAnalysisResponse} The processed threat analysis response
    */
   private processAnalysisResults(
     safeAddress: Address,
-    simulation?: TransactionSimulation | TransactionSimulationError,
-    validation?: TransactionValidation | TransactionValidationError,
+    simulation?: TransactionSimulation,
+    validation?: TransactionValidation,
+    requestId?: string,
   ): ThreatAnalysisResponse {
     const [results, balanceChanges] = this.analyzeSimulation(
       safeAddress,
@@ -155,16 +163,17 @@ export class ThreatAnalysisService {
     return {
       THREAT: threatResults,
       BALANCE_CHANGE: balanceChanges,
+      request_id: requestId,
     };
   }
 
   /**
    * Analyzes transaction validation results and maps them to a threat analysis result.
-   * @param {TransactionValidation | TransactionValidationError} [validation] - The transaction validation result
+   * @param {TransactionValidation} [validation] - The transaction validation result
    * @returns {ThreatAnalysisResult} The analyzed threat result
    */
   private analyzeValidation(
-    validation?: TransactionValidation | TransactionValidationError,
+    validation?: TransactionValidation,
   ): ThreatAnalysisResult {
     let type: ThreatStatus | CommonStatus = 'FAILED';
 
@@ -208,12 +217,12 @@ export class ThreatAnalysisService {
   /**
    * Analyzes transaction simulation results to extract threats and balance changes.
    * @param {Address} safeAddress - The Safe wallet address
-   * @param {TransactionSimulation | TransactionSimulationError} [simulation] - The transaction simulation result
+   * @param {TransactionSimulation} [simulation] - The transaction simulation result
    * @returns {{ results: Array<ThreatAnalysisResult>; balanceChanges: BalanceChanges }} Object containing threat results and balance changes
    */
   private analyzeSimulation(
     safeAddress: Address,
-    simulation?: TransactionSimulation | TransactionSimulationError,
+    simulation?: TransactionSimulation,
   ): [Array<ThreatAnalysisResult>, Array<BalanceChange> | undefined] {
     let results: Array<ThreatAnalysisResult> = [];
     let balanceChanges: Array<BalanceChange> = [];
@@ -232,21 +241,20 @@ export class ThreatAnalysisService {
       return [results, undefined];
     }
 
-    balanceChanges = BalanceChangesSchema.parse(
-      simulation.assets_diffs?.[safeAddress] ?? [],
-    );
-
+    balanceChanges = simulation.assets_diffs?.[safeAddress] ?? [];
     results = (simulation.contract_management?.[safeAddress] ?? []).flatMap(
-      (m) => {
-        switch (m.type) {
-          case 'PROXY_UPGRADE':
+      (management) => {
+        switch (management.type) {
+          case 'PROXY_UPGRADE': {
+            const proxyUpgrade = management as ProxyUpgradeManagement;
             return [
               this.mapToAnalysisResult({
                 type: 'MASTERCOPY_CHANGE',
-                before: m.before.address,
-                after: m.after.address,
+                before: proxyUpgrade.before.address,
+                after: proxyUpgrade.after.address,
               }),
             ];
+          }
           case 'OWNERSHIP_CHANGE':
             return [this.mapToAnalysisResult({ type: 'OWNERSHIP_CHANGE' })];
           case 'MODULE_CHANGE':
@@ -262,32 +270,40 @@ export class ThreatAnalysisService {
 
   /**
    * Groups validation issues by their severity.
-   * @param {Array<{ type: string; description: string }>} features - List of features detected during threat analysis
-   * @returns {Map<keyof typeof Severity, Array<string>>} Partial record of issues grouped by severity (highest to lowest)
+   * @param {Array<{ type: string; description: string, address?: Address }>} features - List of features detected during threat analysis
+   * @returns {ThreatIssues} Partial record of issues grouped by severity (highest to lowest)
    */
   private groupIssuesBySeverity(
-    features: Array<{ type: string; description: string }>,
-  ): Partial<Record<keyof typeof Severity, Array<string>>> {
+    features: Array<{ type: string; description: string; address?: Address }>,
+  ): ThreatIssues {
     if (!features.length) {
       return {};
     }
 
+    /**
+     * This block filters for Blockaid features labeled Malicious or Warning,
+     * maps each feature’s type to an internal severity key via BLOCKAID_SEVERITY_MAP,
+     * and groups them into ThreatIssues.
+     * The result is an object whose keys are severities and values are lists of matching issues.
+     */
     const grouped = features
-      .filter((f) => f.type === 'Malicious' || f.type === 'Warning')
-      .reduce(
-        (acc, { type, description }) => {
-          const sev = BLOCKAID_SEVERITY_MAP[type];
-          (acc[sev] ??= []).push(description);
-          return acc;
-        },
-        {} as Partial<Record<keyof typeof Severity, Array<string>>>,
-      );
+      .filter(({ type }) => ['Malicious', 'Warning'].includes(type))
+      .reduce<ThreatIssues>((groups, { type, description, address }) => {
+        const severity = BLOCKAID_SEVERITY_MAP[type];
+
+        groups[severity] ??= [];
+        groups[severity].push({ description, address });
+
+        return groups;
+      }, {});
 
     return Object.fromEntries(
       (
-        Object.entries(grouped) as Array<[keyof typeof Severity, Array<string>]>
+        Object.entries(grouped) as Array<
+          [keyof typeof Severity, Array<ThreatIssue>]
+        >
       ).sort(([a], [b]) => compareSeverityString(b, a)),
-    ) as Partial<Record<keyof typeof Severity, Array<string>>>;
+    );
   }
 
   /**
@@ -297,9 +313,9 @@ export class ThreatAnalysisService {
    * @param {string} args.reason - A description about the reasons the transaction was flagged with the type
    * @param {string} args.classification - A classification explaining the reason of threat analysis result
    * @param {string} args.description - A fallback description from Blockaid in case specific mappings are not found for reason/classification
-   * @param {Map<keyof typeof Severity, Array<string>>} args.issues - A potential partial record of specific issues identified during threat analysis, grouped by severity
-   * @param {string} args.before - The old master copy address (only for MASTERCOPY_CHANGE)
-   * @param {string} args.after - The new master copy address (only for MASTERCOPY_CHANGE)
+   * @param {ThreatIssues} args.issues - A potential partial record of specific issues identified during threat analysis, grouped by severity
+   * @param {Address} args.before - The old master copy address (only for MASTERCOPY_CHANGE)
+   * @param {Address} args.after - The new master copy address (only for MASTERCOPY_CHANGE)
    * @param {string} args.error - An error message in case of a failure
    * @returns {ThreatAnalysisResult} The analysis result
    */
@@ -308,9 +324,9 @@ export class ThreatAnalysisService {
     reason?: string;
     classification?: string;
     description?: string;
-    issues?: Partial<Record<keyof typeof Severity, Array<string>>>;
-    before?: string;
-    after?: string;
+    issues?: ThreatIssues;
+    before?: Address;
+    after?: Address;
     error?: string;
   }): ThreatAnalysisResult {
     const {
@@ -330,10 +346,10 @@ export class ThreatAnalysisService {
       classification,
       scanDescription,
     );
+    const errorMsg = prepareErrorMessage(error);
 
     const description = DESCRIPTION_MAPPING[type]({
       description: descriptionMsg,
-      error,
     });
 
     switch (type) {
@@ -343,12 +359,20 @@ export class ThreatAnalysisService {
           type,
           title,
           description,
-          before: before ?? '',
-          after: after ?? '',
+          before: before ?? (NULL_ADDRESS as Address),
+          after: after ?? (NULL_ADDRESS as Address),
         };
       case 'MALICIOUS':
       case 'MODERATE':
         return { severity, type, title, description, issues };
+      case 'FAILED':
+        return {
+          severity,
+          type,
+          title,
+          description,
+          error: errorMsg ?? error,
+        };
       default:
         return { severity, type, title, description };
     }
@@ -360,5 +384,21 @@ export class ThreatAnalysisService {
    */
   public failedAnalysisResponse(): ThreatAnalysisResponse {
     return { THREAT: [this.mapToAnalysisResult({ type: 'FAILED' })] };
+  }
+
+  /**
+   * Reports a false positive or false negative transaction scan result to Blockaid.
+   * @param {Object} args - The report parameters
+   * @param {ReportEvent} args.event - The type of report
+   * @param {string} args.details - Details about why this is a false result
+   * @param {string} args.requestId - The request_id from the original scan response
+   * @returns {Promise<void>}
+   */
+  public async reportTransaction(args: {
+    event: ReportEvent;
+    details: string;
+    requestId: string;
+  }): Promise<void> {
+    await this.blockaidAPI.reportTransaction(args);
   }
 }

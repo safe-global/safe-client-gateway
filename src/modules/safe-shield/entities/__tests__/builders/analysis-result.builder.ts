@@ -4,12 +4,14 @@ import { Builder } from '@/__tests__/builder';
 import type {
   MasterCopyChangeThreatAnalysisResult,
   MaliciousOrModerateThreatAnalysisResult,
+  UnofficialFallbackHandlerAnalysisResult,
 } from '../../analysis-result.entity';
 import {
   type RecipientAnalysisResult,
   type ContractAnalysisResult,
   type ThreatAnalysisResult,
 } from '../../analysis-result.entity';
+import type { Address } from 'viem';
 import { getAddress } from 'viem';
 
 /**
@@ -32,6 +34,24 @@ export function contractAnalysisResultBuilder(): IBuilder<ContractAnalysisResult
     .with('type', 'VERIFIED')
     .with('title', faker.lorem.sentence())
     .with('description', faker.lorem.paragraph());
+}
+
+/**
+ * Builder for ContractAnalysisResult: UNOFFICIAL_FALLBACK_HANDLER entities
+ */
+export function unofficialFallbackHandlerAnalysisResultBuilder(
+  address?: Address,
+): IBuilder<UnofficialFallbackHandlerAnalysisResult> {
+  return new Builder<UnofficialFallbackHandlerAnalysisResult>()
+    .with('severity', 'WARN')
+    .with('type', 'UNOFFICIAL_FALLBACK_HANDLER')
+    .with('title', faker.lorem.sentence())
+    .with('description', faker.lorem.paragraph())
+    .with('fallbackHandler', {
+      address: address ?? getAddress(faker.finance.ethereumAddress()),
+      name: faker.company.name(),
+      logoUrl: faker.internet.url(),
+    });
 }
 
 /**
@@ -67,5 +87,12 @@ export function maliciousOrModerateThreatBuilder(): IBuilder<MaliciousOrModerate
     .with('type', 'MALICIOUS')
     .with('title', faker.lorem.sentence())
     .with('description', faker.lorem.paragraph())
-    .with('issues', { WARN: [faker.lorem.sentence()] });
+    .with('issues', {
+      WARN: [
+        {
+          description: faker.lorem.sentence(),
+          address: getAddress(faker.finance.ethereumAddress()),
+        },
+      ],
+    });
 }

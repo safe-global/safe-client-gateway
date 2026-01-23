@@ -1,5 +1,4 @@
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import { ChainAttributes } from '@/modules/balances/datasources/entities/provider-chain-attributes.entity';
 import {
   ZerionAttributes,
   ZerionBalance,
@@ -38,9 +37,10 @@ import { IBalancesApi } from '@/domain/interfaces/balances-api.interface';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { rawify, type Raw } from '@/validation/entities/raw.entity';
 import { Inject, Injectable } from '@nestjs/common';
-import { Address, getAddress } from 'viem';
+import { Address, getAddress, hexToNumber, isHex } from 'viem';
 import { z, ZodError } from 'zod';
 import { getZerionHeaders } from '@/modules/balances/datasources/zerion-api.helpers';
+import { ZerionChainsSchema } from '@/modules/portfolio/datasources/entities/zerion-chain.entity';
 
 export const IZerionBalancesApi = Symbol('IZerionBalancesApi');
 
@@ -50,7 +50,6 @@ export class ZerionBalancesApi implements IBalancesApi {
   private static readonly RATE_LIMIT_CACHE_KEY_PREFIX = 'zerion';
   private readonly apiKey: string | undefined;
   private readonly baseUri: string;
-  private readonly chainsConfiguration: Record<number, ChainAttributes>;
   private readonly defaultExpirationTimeInSeconds: number;
   private readonly defaultNotFoundExpirationTimeSeconds: number;
   private readonly fiatCodes: Array<string>;
@@ -58,6 +57,18 @@ export class ZerionBalancesApi implements IBalancesApi {
   private readonly limitPeriodSeconds: number;
   // Number of allowed calls on each rate-limit cycle
   private readonly limitCalls: number;
+  // In-memory chain mappings: chainId -> zerion chain name
+  private chainMappings: {
+    mainnet: Record<string, string>;
+    testnet: Record<string, string>;
+  } = {
+    mainnet: {},
+    testnet: {},
+  };
+  // Promise to handle concurrent requests during initial fetch
+  private chainMappingsPromise: Promise<void> | null = null;
+  // Track whether initialization has been attempted
+  private chainMappingsInitialized = false;
 
   constructor(
     @Inject(CacheService) private readonly cacheService: ICacheService,
@@ -81,9 +92,6 @@ export class ZerionBalancesApi implements IBalancesApi {
       this.configurationService.getOrThrow<number>(
         'expirationTimeInSeconds.notFound.default',
       );
-    this.chainsConfiguration = this.configurationService.getOrThrow<
-      Record<number, ChainAttributes>
-    >('balances.providers.zerion.chains');
     this.fiatCodes = this.configurationService.getOrThrow<Array<string>>(
       'balances.providers.zerion.currencies',
     );
@@ -120,11 +128,10 @@ export class ZerionBalancesApi implements IBalancesApi {
     }
 
     const cacheDir = CacheRouter.getZerionBalancesCacheDir({
-      chainId: args.chain.chainId,
       safeAddress: args.safeAddress,
       fiatCode: args.fiatCode,
     });
-    const chainName = this._getChainName(args.chain);
+    const chainName = await this._getChainName(args.chain);
     const cached = await this.cacheService.hGet(cacheDir);
     if (cached != null) {
       const { key, field } = cacheDir;
@@ -184,8 +191,9 @@ export class ZerionBalancesApi implements IBalancesApi {
     offset?: number;
   }): Promise<Raw<Page<Collectible>>> {
     const cacheDir = CacheRouter.getZerionCollectiblesCacheDir({
-      ...args,
-      chainId: args.chain.chainId,
+      safeAddress: args.safeAddress,
+      limit: args.limit,
+      offset: args.offset,
     });
     const cached = await this.cacheService.hGet(cacheDir);
     if (cached != null) {
@@ -196,7 +204,7 @@ export class ZerionBalancesApi implements IBalancesApi {
     } else {
       try {
         await this._checkRateLimit();
-        const chainName = this._getChainName(args.chain);
+        const chainName = await this._getChainName(args.chain);
         const url = `${this.baseUri}/v1/wallets/${args.safeAddress}/nft-positions`;
         const pageAfter = this._encodeZerionPageOffset(args.offset);
         const networkRequest = {
@@ -232,11 +240,10 @@ export class ZerionBalancesApi implements IBalancesApi {
     }
   }
 
-  async clearCollectibles(args: {
-    chainId: string;
-    safeAddress: Address;
-  }): Promise<void> {
-    const key = CacheRouter.getZerionCollectiblesCacheKey(args);
+  async clearCollectibles(args: { safeAddress: Address }): Promise<void> {
+    const key = CacheRouter.getZerionCollectiblesCacheKey({
+      safeAddress: args.safeAddress,
+    });
     await this.cacheService.deleteByKey(key);
   }
 
@@ -302,25 +309,120 @@ export class ZerionBalancesApi implements IBalancesApi {
     };
   }
 
-  async clearBalances(args: {
-    chainId: string;
-    safeAddress: Address;
-  }): Promise<void> {
-    const key = CacheRouter.getZerionBalancesCacheKey(args);
+  async clearBalances(args: { safeAddress: Address }): Promise<void> {
+    const key = CacheRouter.getZerionBalancesCacheKey({
+      safeAddress: args.safeAddress,
+    });
     await this.cacheService.deleteByKey(key);
   }
 
-  private _getChainName(chain: Chain): string {
-    const chainName =
-      chain.balancesProvider.chainName ??
-      this.chainsConfiguration[Number(chain.chainId)]?.chainName;
+  private async _getChainName(chain: Chain): Promise<string> {
+    // First try to get from chain's balancesProvider config
+    if (chain.balancesProvider.chainName) {
+      return chain.balancesProvider.chainName;
+    }
 
-    if (!chainName)
+    // Ensure chain mappings are loaded
+    await this._ensureChainMappings();
+
+    // Get from in-memory mapping
+    const mappingKey = chain.isTestnet ? 'testnet' : 'mainnet';
+    const chainName = this.chainMappings[mappingKey][chain.chainId];
+
+    if (!chainName) {
       throw Error(
         `Chain ${chain.chainId} balances retrieval via Zerion is not configured`,
       );
+    }
 
     return chainName;
+  }
+
+  private async _ensureChainMappings(): Promise<void> {
+    // If already initialized, return immediately
+    if (this.chainMappingsInitialized) {
+      return;
+    }
+
+    // If fetch is in progress, wait for it
+    if (this.chainMappingsPromise) {
+      return this.chainMappingsPromise;
+    }
+
+    // Start fetching
+    this.chainMappingsPromise = this._fetchChainMappings();
+    await this.chainMappingsPromise;
+    this.chainMappingsPromise = null;
+  }
+
+  private async _fetchChainMappings(): Promise<void> {
+    let mainnetSuccess = false;
+    let testnetSuccess = false;
+
+    try {
+      // Fetch mainnet chains
+      const mainnetMapping = await this._fetchChainMappingForNetwork(false);
+      this.chainMappings.mainnet = mainnetMapping;
+      mainnetSuccess = true;
+    } catch (error) {
+      this.loggingService.warn(
+        `Failed to fetch mainnet chains from Zerion: ${error}`,
+      );
+    }
+
+    try {
+      // Fetch testnet chains
+      const testnetMapping = await this._fetchChainMappingForNetwork(true);
+      this.chainMappings.testnet = testnetMapping;
+      testnetSuccess = true;
+    } catch (error) {
+      this.loggingService.warn(
+        `Failed to fetch testnet chains from Zerion: ${error}`,
+      );
+    }
+
+    // Mark as initialized regardless of success/failure to prevent repeated attempts
+    this.chainMappingsInitialized = true;
+
+    // If both fetches failed, throw an error
+    if (!mainnetSuccess && !testnetSuccess) {
+      throw new DataSourceError(
+        'Failed to fetch chain mappings from Zerion for both mainnet and testnet',
+        500,
+      );
+    }
+  }
+
+  private async _fetchChainMappingForNetwork(
+    isTestnet: boolean,
+  ): Promise<Record<string, string>> {
+    const url = `${this.baseUri}/v1/chains`;
+    const networkRequest = {
+      headers: getZerionHeaders(this.apiKey, isTestnet),
+    };
+
+    const response = await this.networkService
+      .get({ url, networkRequest })
+      .then(({ data }) => ZerionChainsSchema.parse(data));
+
+    const mapping: Record<string, string> = {};
+    for (const chain of response.data) {
+      const networkName = chain.id;
+      const externalId = chain.attributes.external_id;
+
+      // Validate that external_id is a valid hex string
+      if (!isHex(externalId)) {
+        this.loggingService.warn(
+          `Invalid external_id for chain ${networkName}: ${externalId}`,
+        );
+        continue;
+      }
+
+      const decimalChainId = hexToNumber(externalId).toString();
+      mapping[decimalChainId] = networkName;
+    }
+
+    return mapping;
   }
 
   private _buildCollectiblesPage(

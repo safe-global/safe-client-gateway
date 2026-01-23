@@ -6,9 +6,7 @@ import {
 import { ApiProperty } from '@nestjs/swagger';
 import type { Address } from 'viem';
 
-export class CreateAddressBookItemDto
-  implements DomainCreateAddressBookItemDto
-{
+export class CreateAddressBookItemDto implements DomainCreateAddressBookItemDto {
   @ApiProperty({ minLength: NAME_MIN_LENGTH, maxLength: NAME_MAX_LENGTH })
   name!: string;
   @ApiProperty()

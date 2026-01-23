@@ -18,14 +18,6 @@ export class OwnersService {
     return this.safeRepository.getSafesByOwner(args);
   }
 
-  // TODO: Remove with /owners/:ownerAddress/safes
-  // @deprecated
-  async deprecated__getAllSafesByOwner(args: {
-    ownerAddress: Address;
-  }): Promise<{ [chainId: string]: Array<string> }> {
-    return this.safeRepository.deprecated__getAllSafesByOwner(args);
-  }
-
   async getAllSafesByOwner(args: {
     ownerAddress: Address;
   }): Promise<{ [chainId: string]: Array<string> | null }> {

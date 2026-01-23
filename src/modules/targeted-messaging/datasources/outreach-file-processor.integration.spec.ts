@@ -133,7 +133,7 @@ describe('OutreachFileProcessor', () => {
     expect(
       await targetedMessagingDatasource.getUnprocessedOutreaches(),
     ).toHaveLength(1);
-    expect(await fakeCacheService.hGet(lockCacheKey)).toBeUndefined();
+    expect(await fakeCacheService.hGet(lockCacheKey)).toBeNull();
     expect(mockLoggingService.error).toHaveBeenCalledWith(
       `[Outreach ${created.id}] Error parsing data file: No source file`,
     );
@@ -176,7 +176,7 @@ describe('OutreachFileProcessor', () => {
     expect(
       await targetedMessagingDatasource.getUnprocessedOutreaches(),
     ).toHaveLength(1);
-    expect(await fakeCacheService.hGet(lockCacheKey)).toBeUndefined();
+    expect(await fakeCacheService.hGet(lockCacheKey)).toBeNull();
     expect(mockLoggingService.error).toHaveBeenCalledWith(
       `[Outreach ${created.id}] Error parsing data file: Checksum expected ${expectedChecksum}, but found ${fileChecksum}`,
     );
@@ -205,7 +205,7 @@ describe('OutreachFileProcessor', () => {
       expect(
         await targetedMessagingDatasource.getUnprocessedOutreaches(),
       ).toHaveLength(1);
-      expect(await fakeCacheService.hGet(lockCacheKey)).toBeUndefined();
+      expect(await fakeCacheService.hGet(lockCacheKey)).toBeNull();
       expect(mockLoggingService.error).toHaveBeenCalledWith(
         expect.stringContaining('is not valid JSON'),
       );
@@ -237,7 +237,7 @@ describe('OutreachFileProcessor', () => {
       expect(
         await targetedMessagingDatasource.getUnprocessedOutreaches(),
       ).toHaveLength(1);
-      expect(await fakeCacheService.hGet(lockCacheKey)).toBeUndefined();
+      expect(await fakeCacheService.hGet(lockCacheKey)).toBeNull();
       expect(mockLoggingService.error).toHaveBeenCalledWith(
         expect.stringContaining(
           `[Outreach ${created.id}] Error parsing data file`,
@@ -360,6 +360,6 @@ describe('OutreachFileProcessor', () => {
     expect(
       await targetedMessagingDatasource.getUnprocessedOutreaches(),
     ).toHaveLength(0);
-    expect(await fakeCacheService.hGet(lockCacheKey)).toBeUndefined();
+    expect(await fakeCacheService.hGet(lockCacheKey)).toBeNull();
   });
 });

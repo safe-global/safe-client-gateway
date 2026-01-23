@@ -50,7 +50,7 @@ describe('SiweApiService', () => {
 
       await expect(
         fakeCacheService.hGet(new CacheDir(`auth_nonce_${nonce}`, '')),
-      ).resolves.toBe(undefined);
+      ).resolves.toBeNull();
     });
   });
 });

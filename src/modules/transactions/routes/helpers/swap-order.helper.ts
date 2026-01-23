@@ -4,10 +4,8 @@ import {
   TransactionFinderModule,
 } from '@/modules/transactions/routes/helpers/transaction-finder.helper';
 import { GPv2Decoder } from '@/modules/swaps/domain/contracts/decoders/gp-v2-decoder.helper';
-import {
-  ITokenRepository,
-  TokenRepositoryModule,
-} from '@/modules/tokens/domain/token.repository.interface';
+import { ITokenRepository } from '@/modules/tokens/domain/token.repository.interface';
+import { TokensModule } from '@/modules/tokens/tokens.module';
 import { ISwapsRepository } from '@/modules/swaps/domain/swaps.repository';
 import { Token } from '@/modules/tokens/domain/entities/token.entity';
 import {
@@ -16,11 +14,9 @@ import {
   OrderKind,
 } from '@/modules/swaps/domain/entities/order.entity';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import { SwapsRepositoryModule } from '@/modules/swaps/domain/swaps-repository.module';
-import {
-  ChainsRepositoryModule,
-  IChainsRepository,
-} from '@/modules/chains/domain/chains.repository.interface';
+import { SwapsModule } from '@/modules/swaps/swaps.module';
+import { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
+import { ChainsModule } from '@/modules/chains/chains.module';
 import type { Address, Hex } from 'viem';
 
 @Injectable()
@@ -159,12 +155,7 @@ export class SwapOrderHelper {
 }
 
 @Module({
-  imports: [
-    ChainsRepositoryModule,
-    SwapsRepositoryModule,
-    TokenRepositoryModule,
-    TransactionFinderModule,
-  ],
+  imports: [ChainsModule, SwapsModule, TokensModule, TransactionFinderModule],
   providers: [SwapOrderHelper, GPv2Decoder],
   exports: [SwapOrderHelper],
 })

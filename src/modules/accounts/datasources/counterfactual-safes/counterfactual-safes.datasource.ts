@@ -17,9 +17,7 @@ import postgres from 'postgres';
 import type { Address } from 'viem';
 
 @Injectable()
-export class CounterfactualSafesDatasource
-  implements ICounterfactualSafesDatasource
-{
+export class CounterfactualSafesDatasource implements ICounterfactualSafesDatasource {
   private static readonly COUNTERFACTUAL_SAFES_CREATION_CACHE_PREFIX =
     'counterfactual_safes_creation';
   private readonly defaultExpirationTimeInSeconds: number;

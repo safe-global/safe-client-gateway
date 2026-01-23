@@ -95,7 +95,7 @@ describe('Positions Controller', () => {
           .with('tokenAddress', loanTokenAddress)
           .with('token', loanToken)
           .with('balance', '1')
-          .with('fiatBalance', '20')
+          .with('fiatBalance', '-20')
           .with('fiatConversion', '20')
           .with('fiatBalance24hChange', '0.5')
           .with('application_metadata', applicationMetadata)
@@ -160,7 +160,7 @@ describe('Positions Controller', () => {
                     logoUri: loanToken.logoUri,
                   },
                   balance: '1',
-                  fiatBalance: '20',
+                  fiatBalance: '-20',
                   fiatBalance24hChange: '0.5',
                   fiatConversion: '20',
                 },

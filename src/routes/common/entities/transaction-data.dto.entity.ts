@@ -9,9 +9,9 @@ export const TransactionDataDtoSchema = z.object({
   to: AddressSchema,
 });
 
-export class TransactionDataDto
-  implements z.infer<typeof TransactionDataDtoSchema>
-{
+export class TransactionDataDto implements z.infer<
+  typeof TransactionDataDtoSchema
+> {
   @ApiProperty({ description: 'Hexadecimal value' })
   data: Address;
   @ApiPropertyOptional({ description: 'The target Ethereum address' })

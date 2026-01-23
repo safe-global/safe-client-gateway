@@ -11,7 +11,6 @@ import { Position } from '@/modules/positions/routes/entities/position.entity';
 import { PositionGroup } from '@/modules/positions/routes/entities/position-group.entity';
 import { ZerionApplicationMetadataSchema } from '@/modules/balances/datasources/entities/zerion-balance.entity';
 import { z } from 'zod';
-import { PositionType } from '@/modules/positions/domain/entities/position-type.entity';
 import type { Address } from 'viem';
 
 const DUST_THRESHOLD_USD = 0.01;
@@ -84,8 +83,7 @@ export class PositionsService {
     // Calculate fiat total from all individual positions
     const fiatTotal = filteredPositions.reduce((sum, position) => {
       const fiatBalance = Number(position.fiatBalance) || 0;
-      const sign = position.position_type === PositionType.loan ? -1 : 1;
-      return sum + sign * fiatBalance;
+      return sum + fiatBalance;
     }, 0);
     return {
       protocol,

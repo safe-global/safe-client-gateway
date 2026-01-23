@@ -2,8 +2,8 @@ import type { AddConfirmationDtoSchema } from '@/modules/transactions/routes/ent
 import type { z } from 'zod';
 import type { Address } from 'viem';
 
-export class AddConfirmationDto
-  implements z.infer<typeof AddConfirmationDtoSchema>
-{
+export class AddConfirmationDto implements z.infer<
+  typeof AddConfirmationDtoSchema
+> {
   signature!: Address;
 }
