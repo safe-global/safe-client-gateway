@@ -72,6 +72,7 @@ Every code change MUST pass the following checks in sequence before commit:
 ### Branch Naming
 
 Use descriptive branch names following the pattern:
+
 - Features: `feature/description`
 - Bugfixes: `bugfix/description`
 - Documentation: `docs/description`
