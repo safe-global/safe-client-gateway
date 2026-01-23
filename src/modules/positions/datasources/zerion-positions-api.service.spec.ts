@@ -8,7 +8,7 @@ import type { ZerionBalance } from '@/modules/balances/datasources/entities/zeri
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import { ZerionPositionsApi } from '@/modules/positions/datasources/zerion-positions-api.service';
-import type { IZerionChainMappingService } from '@/modules/zerion/datasources/zerion-chain-mapping.service';
+import type { ZerionChainMappingService } from '@/modules/zerion/datasources/zerion-chain-mapping.service';
 import type { ICacheService } from '@/datasources/cache/cache.service.interface';
 import { balancesProviderBuilder } from '@/modules/chains/domain/entities/__tests__/balances-provider.builder';
 import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
@@ -76,7 +76,7 @@ describe('ZerionPositionsApi', () => {
   describe('Normalization caching tests', () => {
     let cacheService: FakeCacheService;
     let configurationService: FakeConfigurationService;
-    let zerionChainMappingService: jest.MockedObjectDeep<IZerionChainMappingService>;
+    let zerionChainMappingService: jest.MockedObjectDeep<ZerionChainMappingService>;
     let target: ZerionPositionsApi;
 
     const chainName = 'ethereum';
@@ -105,9 +105,9 @@ describe('ZerionPositionsApi', () => {
       });
 
       zerionChainMappingService = {
-        getChainIdFromNetworkName: jest.fn(),
-        getNetworkNameFromChainId: jest.fn().mockResolvedValue(chainName),
-      } as jest.MockedObjectDeep<IZerionChainMappingService>;
+        getChainIdFromNetwork: jest.fn(),
+        getNetworkFromChainId: jest.fn().mockResolvedValue(chainName),
+      } as unknown as jest.MockedObjectDeep<ZerionChainMappingService>;
 
       target = new ZerionPositionsApi(
         cacheService,
@@ -230,9 +230,9 @@ describe('ZerionPositionsApi', () => {
     } as jest.MockedObjectDeep<HttpErrorFactory>);
 
     const mockChainMappingService = jest.mocked({
-      getNetworkNameFromChainId: jest.fn(),
-      getChainIdFromNetworkName: jest.fn(),
-    } as jest.MockedObjectDeep<IZerionChainMappingService>);
+      getNetworkFromChainId: jest.fn(),
+      getChainIdFromNetwork: jest.fn(),
+    } as jest.MockedObjectDeep<ZerionChainMappingService>);
 
     beforeEach(() => {
       jest.resetAllMocks();
@@ -346,7 +346,7 @@ describe('ZerionPositionsApi', () => {
         });
       });
 
-      it('should return empty array when chain is not supported', async () => {
+      it('should throw error when chain is not supported', async () => {
         const unsupportedChainId = '999999';
         const chain = chainBuilder()
           .with('chainId', unsupportedChainId)
@@ -359,19 +359,18 @@ describe('ZerionPositionsApi', () => {
         const safeAddress = getAddress(faker.finance.ethereumAddress());
         const fiatCode = faker.helpers.arrayElement(supportedFiatCodes);
 
-        mockChainMappingService.getNetworkNameFromChainId.mockResolvedValue(
-          null,
+        mockChainMappingService.getNetworkFromChainId.mockResolvedValue(
+          undefined,
         );
 
-        const result = await service.getPositions({
-          chain,
-          safeAddress,
-          fiatCode,
-        });
-
-        expect(result).toEqual([]);
-        expect(mockLoggingService.debug).toHaveBeenCalledWith(
-          `Chain ${unsupportedChainId} not supported by Zerion, skipping positions`,
+        await expect(
+          service.getPositions({
+            chain,
+            safeAddress,
+            fiatCode,
+          }),
+        ).rejects.toThrow(
+          `Chain ${unsupportedChainId} balances retrieval via Zerion is not configured`,
         );
       });
 
@@ -389,7 +388,7 @@ describe('ZerionPositionsApi', () => {
         const safeAddress = getAddress(faker.finance.ethereumAddress());
         const fiatCode = faker.helpers.arrayElement(supportedFiatCodes);
 
-        mockChainMappingService.getNetworkNameFromChainId.mockResolvedValue(
+        mockChainMappingService.getNetworkFromChainId.mockResolvedValue(
           mappedChainName,
         );
         mockCacheService.hGet.mockResolvedValue(null);
@@ -405,7 +404,7 @@ describe('ZerionPositionsApi', () => {
         });
 
         expect(
-          mockChainMappingService.getNetworkNameFromChainId,
+          mockChainMappingService.getNetworkFromChainId,
         ).toHaveBeenCalledWith(chainId, false);
         expect(mockNetworkService.get).toHaveBeenCalledWith({
           url: `${zerionBaseUri}/v1/wallets/${safeAddress}/positions`,
@@ -437,7 +436,7 @@ describe('ZerionPositionsApi', () => {
         const safeAddress = getAddress(faker.finance.ethereumAddress());
         const fiatCode = faker.helpers.arrayElement(supportedFiatCodes);
 
-        mockChainMappingService.getNetworkNameFromChainId.mockResolvedValue(
+        mockChainMappingService.getNetworkFromChainId.mockResolvedValue(
           mappedChainName,
         );
         mockCacheService.hGet.mockResolvedValue(null);
@@ -453,7 +452,7 @@ describe('ZerionPositionsApi', () => {
         });
 
         expect(
-          mockChainMappingService.getNetworkNameFromChainId,
+          mockChainMappingService.getNetworkFromChainId,
         ).toHaveBeenCalledWith(chainId, true);
       });
 
@@ -481,7 +480,7 @@ describe('ZerionPositionsApi', () => {
         });
 
         expect(
-          mockChainMappingService.getNetworkNameFromChainId,
+          mockChainMappingService.getNetworkFromChainId,
         ).not.toHaveBeenCalled();
       });
     });

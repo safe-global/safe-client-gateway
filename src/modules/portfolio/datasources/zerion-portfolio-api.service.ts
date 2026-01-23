@@ -22,12 +22,16 @@ import type { ZerionBalance } from '@/modules/balances/datasources/entities/zeri
 import { ZerionBalancesSchema } from '@/modules/balances/datasources/entities/zerion-balance.entity';
 import { ZodError } from 'zod';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import {
+  CacheService,
+  ICacheService,
+} from '@/datasources/cache/cache.service.interface';
 import { getNumberString } from '@/domain/common/utils/utils';
 import {
   getZerionHeaders,
   normalizeZerionBalances,
 } from '@/modules/balances/datasources/zerion-api.helpers';
-import { IZerionChainMappingService } from '@/modules/zerion/datasources/zerion-chain-mapping.service';
+import { ZerionChainMappingService } from '@/modules/zerion/datasources/zerion-chain-mapping.service';
 
 /**
  * Zerion portfolio API integration.
@@ -57,9 +61,10 @@ export class ZerionPortfolioApi implements IPortfolioApi {
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
     private readonly httpErrorFactory: HttpErrorFactory,
-    @Inject(LoggingService) private readonly loggingService: ILoggingService,
-    @Inject(IZerionChainMappingService)
-    private readonly chainMappingService: IZerionChainMappingService,
+    @Inject(LoggingService)
+    private readonly loggingService: ILoggingService,
+    @Inject(CacheService) private readonly cacheService: ICacheService,
+    private readonly zerionChainMappingService: ZerionChainMappingService,
   ) {
     this.apiKey = this.configurationService.get<string>(
       'balances.providers.zerion.apiKey',
@@ -198,17 +203,8 @@ export class ZerionPortfolioApi implements IPortfolioApi {
         const networkName = position.relationships?.chain?.data?.id;
         if (!networkName) return null;
 
-        const chainId =
-          await this.chainMappingService.getChainIdFromNetworkName(
-            networkName,
-            isTestnet,
-          );
-        if (!chainId) {
-          this.loggingService.debug(
-            `Zerion network "${networkName}" not mapped to chain ID, skipping token`,
-          );
-          return null;
-        }
+        const chainId = await this._mapNetworkToChainId(networkName, isTestnet);
+        if (!chainId) return null;
 
         const impl = position.attributes.fungible_info.implementations.find(
           (i) => i.chain_id === networkName,
@@ -354,17 +350,8 @@ export class ZerionPortfolioApi implements IPortfolioApi {
         const networkName = position.relationships?.chain?.data?.id;
         if (!networkName) return null;
 
-        const chainId =
-          await this.chainMappingService.getChainIdFromNetworkName(
-            networkName,
-            isTestnet,
-          );
-        if (!chainId) {
-          this.loggingService.debug(
-            `Zerion network "${networkName}" not mapped to chain ID, skipping position`,
-          );
-          return null;
-        }
+        const chainId = await this._mapNetworkToChainId(networkName, isTestnet);
+        if (!chainId) return null;
 
         const impl = position.attributes.fungible_info.implementations.find(
           (i) => i.chain_id === networkName,
@@ -442,5 +429,22 @@ export class ZerionPortfolioApi implements IPortfolioApi {
     return positions.reduce((sum, position) => {
       return sum + (position.attributes.value ?? 0);
     }, 0);
+  }
+
+  /**
+   * Maps Zerion network identifier to chain ID.
+   *
+   * @param {string} network - Zerion network identifier
+   * @param {boolean} isTestnet - Whether this is a testnet request
+   * @returns {Promise<string | undefined>} Promise that resolves to chain ID, or undefined if network is unknown
+   */
+  private async _mapNetworkToChainId(
+    network: string,
+    isTestnet: boolean,
+  ): Promise<string | undefined> {
+    return this.zerionChainMappingService.getChainIdFromNetwork(
+      network,
+      isTestnet,
+    );
   }
 }

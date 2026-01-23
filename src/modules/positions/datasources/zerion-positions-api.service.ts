@@ -36,7 +36,7 @@ import {
   getZerionHeaders,
   normalizeZerionBalances,
 } from '@/modules/balances/datasources/zerion-api.helpers';
-import { IZerionChainMappingService } from '@/modules/zerion/datasources/zerion-chain-mapping.service';
+import { ZerionChainMappingService } from '@/modules/zerion/datasources/zerion-chain-mapping.service';
 
 @Injectable()
 export class ZerionPositionsApi implements IPositionsApi {
@@ -52,8 +52,7 @@ export class ZerionPositionsApi implements IPositionsApi {
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
     private readonly httpErrorFactory: HttpErrorFactory,
-    @Inject(IZerionChainMappingService)
-    private readonly chainMappingService: IZerionChainMappingService,
+    private readonly zerionChainMappingService: ZerionChainMappingService,
   ) {
     this.apiKey = this.configurationService.get<string>(
       'balances.providers.zerion.apiKey',
@@ -89,12 +88,6 @@ export class ZerionPositionsApi implements IPositionsApi {
       refresh: args.refresh,
     });
     const chainName = await this._getChainName(args.chain);
-    if (!chainName) {
-      this.loggingService.debug(
-        `Chain ${args.chain.chainId} not supported by Zerion, skipping positions`,
-      );
-      return rawify([]);
-    }
 
     const cached = await this.cacheService.hGet(cacheDir);
     if (cached != null) {
@@ -218,16 +211,26 @@ export class ZerionPositionsApi implements IPositionsApi {
     };
   }
 
-  private async _getChainName(chain: Chain): Promise<string | null> {
-    // First try to get from chain's balancesProvider config
-    if (chain.balancesProvider.chainName) {
-      return chain.balancesProvider.chainName;
+  /**
+   * Map chainIds to chain names that are accepted on the Zerion API.
+   * It doesn't accept conventional chain ids but expects some internal id.
+   * @param chain
+   * @private
+   */
+  private async _getChainName(chain: Chain): Promise<string> {
+    const chainName =
+      chain.balancesProvider.chainName ||
+      (await this.zerionChainMappingService.getNetworkFromChainId(
+        chain.chainId,
+        chain.isTestnet,
+      ));
+
+    if (!chainName) {
+      throw Error(
+        `Chain ${chain.chainId} balances retrieval via Zerion is not configured`,
+      );
     }
 
-    // Fall back to dynamic chain mapping service
-    return this.chainMappingService.getNetworkNameFromChainId(
-      chain.chainId,
-      chain.isTestnet,
-    );
+    return chainName;
   }
 }
