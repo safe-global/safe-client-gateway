@@ -2,16 +2,14 @@ import { z } from 'zod';
 import { ChainIdsSchema } from '@/modules/portfolio/schemas/chain-ids.schema';
 
 const BooleanStringDefaultTrueSchema = z
-  .string()
+  .enum(['true', 'false'])
   .optional()
-  .transform((val) => (val === undefined || val === '' ? true : val === 'true'))
-  .pipe(z.boolean());
+  .transform((val) => val !== 'false');
 
 const BooleanStringDefaultFalseSchema = z
-  .string()
+  .enum(['true', 'false'])
   .optional()
-  .transform((val) => val === 'true')
-  .pipe(z.boolean());
+  .transform((val) => val === 'true');
 
 export const GetPortfolioDtoSchema = z.object({
   fiatCode: z.string().optional().default('USD'),
