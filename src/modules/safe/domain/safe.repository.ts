@@ -543,7 +543,9 @@ export class SafeRepository implements ISafeRepository {
     const allSafeV2s: Array<SafeV2> = [];
     let offset = 0;
     let next: string | null = null;
-    const maxSequentialPages = 10; // Safety limit to prevent infinite loops
+    // Safety limit to prevent infinite loops
+    // todo move to config, similar to chains and contracts repositories?
+    const maxSequentialPages = 10;
 
     for (let i = 0; i < maxSequentialPages; i++) {
       const page = await transactionService.getSafesByOwnerV2({
@@ -563,12 +565,12 @@ export class SafeRepository implements ISafeRepository {
       const url = new URL(next);
       const paginationData = PaginationData.fromLimitAndOffset(url);
       offset = paginationData.offset;
+    }
 
-      if (i === maxSequentialPages - 1) {
-        this.loggingService.warn(
-          `Max sequential pages reached for getSafesByOwnerV2. chainId=${args.chainId}, ownerAddress=${args.ownerAddress}`,
-        );
-      }
+    if (next) {
+      this.loggingService.error(
+        `Max sequential pages reached for getSafesByOwnerV2. chainId=${args.chainId}, ownerAddress=${args.ownerAddress}`,
+      );
     }
 
     const allAddresses = allSafeV2s.map((safe) => safe.address);
