@@ -29,7 +29,10 @@ import { ProposeTransactionDto } from '@/modules/transactions/domain/entities/pr
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
 import { CreationTransactionSchema } from '@/modules/safe/domain/entities/schemas/creation-transaction.schema';
-import { SafeSchema, SafePageV2Schema } from '@/modules/safe/domain/entities/schemas/safe.schema';
+import {
+  SafeSchema,
+  SafePageV2Schema,
+} from '@/modules/safe/domain/entities/schemas/safe.schema';
 import { SafeV2 } from '@/modules/safe/domain/entities/safe.entity';
 import { z } from 'zod';
 import { TransactionVerifierHelper } from '@/modules/transactions/routes/helpers/transaction-verifier.helper';
