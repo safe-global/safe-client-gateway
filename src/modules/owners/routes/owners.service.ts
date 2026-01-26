@@ -18,6 +18,13 @@ export class OwnersService {
     return this.safeRepository.getSafesByOwner(args);
   }
 
+  async getSafesByOwnerV2(args: {
+    chainId: string;
+    ownerAddress: Address;
+  }): Promise<SafeList> {
+    return this.safeRepository.getSafesByOwnerV2(args);
+  }
+
   async getAllSafesByOwner(args: {
     ownerAddress: Address;
   }): Promise<{ [chainId: string]: Array<string> | null }> {

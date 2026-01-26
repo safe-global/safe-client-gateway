@@ -29,9 +29,12 @@ import { ProposeTransactionDto } from '@/modules/transactions/domain/entities/pr
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
 import { CreationTransactionSchema } from '@/modules/safe/domain/entities/schemas/creation-transaction.schema';
-import { SafeSchema } from '@/modules/safe/domain/entities/schemas/safe.schema';
+import { SafeSchema, SafePageV2Schema } from '@/modules/safe/domain/entities/schemas/safe.schema';
+import { SafeV2 } from '@/modules/safe/domain/entities/safe.entity';
 import { z } from 'zod';
 import { TransactionVerifierHelper } from '@/modules/transactions/routes/helpers/transaction-verifier.helper';
+import { PaginationData } from '@/routes/common/pagination/pagination.data';
+import { SAFE_TRANSACTION_SERVICE_MAX_LIMIT } from '@/domain/common/constants';
 import type { Address } from 'viem';
 
 @Injectable()
@@ -524,6 +527,49 @@ export class SafeRepository implements ISafeRepository {
     );
 
     return SafeListSchema.parse(safeList);
+  }
+
+  async getSafesByOwnerV2(args: {
+    chainId: string;
+    ownerAddress: Address;
+  }): Promise<SafeList> {
+    const transactionService = await this.transactionApiManager.getApi(
+      args.chainId,
+    );
+
+    const allSafeV2s: Array<SafeV2> = [];
+    let offset = 0;
+    let next: string | null = null;
+    const maxSequentialPages = 10; // Safety limit to prevent infinite loops
+
+    for (let i = 0; i < maxSequentialPages; i++) {
+      const page = await transactionService.getSafesByOwnerV2({
+        ownerAddress: args.ownerAddress,
+        limit: SAFE_TRANSACTION_SERVICE_MAX_LIMIT,
+        offset,
+      });
+
+      const parsedPage = SafePageV2Schema.parse(page);
+      allSafeV2s.push(...parsedPage.results);
+
+      next = parsedPage.next;
+      if (!next) {
+        break;
+      }
+
+      const url = new URL(next);
+      const paginationData = PaginationData.fromLimitAndOffset(url);
+      offset = paginationData.offset;
+
+      if (i === maxSequentialPages - 1) {
+        this.loggingService.warn(
+          `Max sequential pages reached for getSafesByOwnerV2. chainId=${args.chainId}, ownerAddress=${args.ownerAddress}`,
+        );
+      }
+    }
+
+    const allAddresses = allSafeV2s.map((safe) => safe.address);
+    return SafeListSchema.parse({ safes: allAddresses });
   }
 
   async getAllSafesByOwner(args: {

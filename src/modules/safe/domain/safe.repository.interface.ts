@@ -179,6 +179,11 @@ export interface ISafeRepository {
     ownerAddress: Address;
   }): Promise<SafeList>;
 
+  getSafesByOwnerV2(args: {
+    chainId: string;
+    ownerAddress: Address;
+  }): Promise<SafeList>;
+
   getAllSafesByOwner(args: {
     ownerAddress: Address;
   }): Promise<{ [chainId: string]: Array<string> | null }>;
