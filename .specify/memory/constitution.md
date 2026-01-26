@@ -1,13 +1,14 @@
 <!--
 SYNC IMPACT REPORT
 ==================
-Version change: N/A (initial) → 1.0.0
+Version change: N/A (initial) → 1.1.0
 Modified principles: N/A (initial ratification)
 Added sections:
   - Core Principles (5 principles)
   - Development Workflow
   - Quality Standards
   - Governance
+  - Core Principles VI: NestJS Architecture & Code Style (v1.1.0)
 Removed sections: N/A
 Templates requiring updates:
   - .specify/templates/plan-template.md ✅ aligned (Constitution Check section exists)
@@ -66,6 +67,88 @@ Every code change MUST pass the following checks in sequence before commit:
 - YAGNI (You Aren't Gonna Need It) principle applies
 
 **Rationale**: The codebase serves production Safe{Wallet} clients. Every change carries risk. Focused, minimal changes are easier to review, test, and revert if needed.
+
+### VI. NestJS Architecture & Code Style
+
+#### Layered Architecture
+
+The codebase follows a three-layer architecture with unidirectional dependencies:
+
+```
+Routes (Controllers) → Domain (Repositories) → Datasources (APIs/Infrastructure)
+```
+
+- **Routes**: Controllers, API DTOs (Swagger), route services, mappers
+- **Domain**: Business logic, domain entities (Zod), repository interfaces/implementations
+- **Datasources**: External API clients, infrastructure (cache, database, network)
+
+#### Modular Feature Structure
+
+Features MUST be organized under `src/modules/{feature}/`:
+
+```
+{feature}/
+├── {feature}.module.ts
+├── routes/
+│   ├── {feature}.controller.ts
+│   ├── {feature}.service.ts
+│   ├── {feature}.mapper.ts
+│   └── entities/           # API DTOs (@ApiProperty)
+├── domain/
+│   ├── {feature}.repository.ts
+│   ├── {feature}.repository.interface.ts
+│   ├── entities/           # Domain types (z.infer<Schema>)
+│   │   └── schemas/        # Zod schemas
+│   ├── errors/
+│   └── __tests__/          # Builders
+└── datasources/            # External APIs (optional)
+```
+
+#### Symbol-Based Dependency Injection
+
+Services MUST be injected via Symbols (DRY principle):
+
+```typescript
+// Interface exports Symbol + contract
+export const IFeatureRepository = Symbol('IFeatureRepository');
+export interface IFeatureRepository { ... }
+
+// Module wires implementation
+providers: [{ provide: IFeatureRepository, useClass: FeatureRepository }]
+
+// Consumer injects via Symbol
+constructor(@Inject(IFeatureRepository) private readonly repo: IFeatureRepository) {}
+```
+
+New dependencies MUST be injected as services, never imported directly.
+
+#### File Naming
+
+- `*.controller.ts`, `*.service.ts`, `*.repository.ts`, `*.repository.interface.ts`
+- `*.mapper.ts`, `*.module.ts`, `*.entity.ts`, `*.schema.ts`, `*.entity.db.ts`
+- Tests: `*.spec.ts`, `*.integration.spec.ts`, `*.e2e-spec.ts`
+- Builders: `__tests__/*.builder.ts`
+
+#### Entity Separation
+
+- **Domain entities**: `type X = z.infer<typeof XSchema>` (internal, validated)
+- **API entities**: Classes with `@ApiProperty` decorators (external, Swagger)
+- Mappers transform domain → API entities
+
+#### Infrastructure Abstractions
+
+- Configuration: `IConfigurationService` (never hardcode)
+- Logging: `ILoggingService` (never NestJS `Logger`)
+- Caching: `CacheService` + `CacheRouter`
+- HTTP: `NetworkService`
+
+#### Test Structure
+
+- Constants at module level (above `describe`)
+- Test data via `Builder<T>` pattern
+- Builders in `domain/entities/__tests__/`
+
+**Rationale**: Consistent architecture enables maintainability, testability, and onboarding. Symbol-based DI enforces loose coupling and makes mocking straightforward.
 
 ## Development Workflow
 
@@ -141,4 +224,4 @@ This constitution supersedes ad-hoc practices. All contributions MUST verify com
 - CI pipelines enforce automated quality gates
 - Complexity additions MUST be explicitly justified
 
-**Version**: 1.0.0 | **Ratified**: 2026-01-21 | **Last Amended**: 2026-01-21
+**Version**: 1.1.0 | **Ratified**: 2026-01-21 | **Last Amended**: 2026-01-26
