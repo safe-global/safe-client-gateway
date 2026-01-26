@@ -1,7 +1,6 @@
 import { SafeListSchema } from '@/modules/safe/domain/entities/schemas/safe-list.schema';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
-import { ZodError } from 'zod';
 
 describe('SafeListSchema', () => {
   it('should validate a SafeList', () => {
@@ -48,16 +47,12 @@ describe('SafeListSchema', () => {
 
     const result = SafeListSchema.safeParse(safeList);
 
-    expect(!result.success && result.error).toStrictEqual(
-      new ZodError([
-        {
-          code: 'invalid_type',
-          expected: 'array',
-          received: 'undefined',
-          path: ['safes'],
-          message: 'Required',
-        },
-      ]),
-    );
+    expect(!result.success && result.error.issues).toEqual([
+      expect.objectContaining({
+        code: 'invalid_type',
+        expected: 'array',
+        path: ['safes'],
+      }),
+    ]);
   });
 });

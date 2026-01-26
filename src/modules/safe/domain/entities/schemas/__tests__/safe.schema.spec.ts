@@ -2,7 +2,6 @@ import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.build
 import { SafeSchema } from '@/modules/safe/domain/entities/schemas/safe.schema';
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress } from 'viem';
-import { ZodError } from 'zod';
 
 describe('SafeSchema', () => {
   it('should validate a valid Safe', () => {
@@ -62,32 +61,28 @@ describe('SafeSchema', () => {
 
     const result = SafeSchema.safeParse(safe);
 
-    expect(!result.success && result.error.issues).toStrictEqual([
-      {
+    expect(!result.success && result.error.issues).toEqual([
+      expect.objectContaining({
         code: 'invalid_union',
-        unionErrors: [
-          new ZodError([
-            {
-              code: 'invalid_type',
-              expected: 'number',
-              received: type,
-              path: ['nonce'],
-              message: message ?? `Expected number, received ${type}`,
-            },
-          ]),
-          new ZodError([
-            {
-              code: 'invalid_type',
-              expected: 'string',
-              received: type,
-              path: ['nonce'],
-              message: message ?? `Expected string, received ${type}`,
-            },
-          ]),
-        ],
         path: ['nonce'],
         message: 'Invalid input',
-      },
+        errors: [
+          [
+            expect.objectContaining({
+              code: 'invalid_type',
+              expected: 'number',
+              path: [],
+            }),
+          ],
+          [
+            expect.objectContaining({
+              code: 'invalid_type',
+              expected: 'string',
+              path: [],
+            }),
+          ],
+        ],
+      }),
     ]);
   });
 
@@ -113,14 +108,12 @@ describe('SafeSchema', () => {
 
     const result = SafeSchema.safeParse(safe);
 
-    expect(!result.success && result.error.issues).toStrictEqual([
-      {
+    expect(!result.success && result.error.issues).toEqual([
+      expect.objectContaining({
         code: 'invalid_type',
         expected: expect.any(String),
-        received: type,
         path: ['threshold'],
-        message: expect.any(String),
-      },
+      }),
     ]);
   });
 
@@ -163,14 +156,12 @@ describe('SafeSchema', () => {
 
     const result = SafeSchema.safeParse(safe);
 
-    expect(!result.success && result.error.issues).toStrictEqual([
-      {
+    expect(!result.success && result.error.issues).toEqual([
+      expect.objectContaining({
         code: 'invalid_type',
         expected: expect.any(String),
-        received: type,
         path: ['version'],
-        message: `Expected string, received ${type}`,
-      },
+      }),
     ]);
   });
 
@@ -193,32 +184,28 @@ describe('SafeSchema', () => {
 
     const result = SafeSchema.safeParse(safe);
 
-    expect(!result.success && result.error.issues).toStrictEqual([
-      {
+    expect(!result.success && result.error.issues).toEqual([
+      expect.objectContaining({
         code: 'invalid_union',
         message: 'Invalid input',
         path: ['nonce'],
-        unionErrors: [
-          new ZodError([
-            {
+        errors: [
+          [
+            expect.objectContaining({
               code: 'invalid_type',
               expected: 'number',
-              received: 'undefined',
-              path: ['nonce'],
-              message: 'Required',
-            },
-          ]),
-          new ZodError([
-            {
+              path: [],
+            }),
+          ],
+          [
+            expect.objectContaining({
               code: 'invalid_type',
               expected: 'string',
-              received: 'undefined',
-              path: ['nonce'],
-              message: 'Required',
-            },
-          ]),
+              path: [],
+            }),
+          ],
         ],
-      },
+      }),
     ]);
   });
 
@@ -235,14 +222,12 @@ describe('SafeSchema', () => {
 
     const result = SafeSchema.safeParse(safe);
 
-    expect(!result.success && result.error.issues).toStrictEqual([
-      {
+    expect(!result.success && result.error.issues).toEqual([
+      expect.objectContaining({
         code: 'invalid_type',
         expected: expect.any(String),
-        received: 'undefined',
         path: [field],
-        message: 'Required',
-      },
+      }),
     ]);
   });
 });

@@ -2,7 +2,6 @@ import { delegateBuilder } from '@/modules/delegate/domain/entities/__tests__/de
 import { DelegateSchema } from '@/modules/delegate/domain/entities/schemas/delegate.schema';
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress } from 'viem';
-import { ZodError } from 'zod';
 
 describe('DelegateSchema', () => {
   it('should validate a valid delegate', () => {
@@ -51,30 +50,25 @@ describe('DelegateSchema', () => {
 
     const result = DelegateSchema.safeParse(delegate);
 
-    expect(!result.success && result.error).toStrictEqual(
-      new ZodError([
-        {
-          code: 'invalid_type',
-          expected: 'string',
-          received: 'undefined',
-          path: ['delegate'],
-          message: 'Required',
-        },
-        {
-          code: 'invalid_type',
-          expected: 'string',
-          received: 'undefined',
-          path: ['delegator'],
-          message: 'Required',
-        },
-        {
-          code: 'invalid_type',
-          expected: 'string',
-          received: 'undefined',
-          path: ['label'],
-          message: 'Required',
-        },
-      ]),
-    );
+    expect(!result.success && result.error.issues).toStrictEqual([
+      {
+        code: 'invalid_type',
+        expected: 'string',
+        message: 'Invalid input: expected string, received undefined',
+        path: ['delegate'],
+      },
+      {
+        code: 'invalid_type',
+        expected: 'string',
+        message: 'Invalid input: expected string, received undefined',
+        path: ['delegator'],
+      },
+      {
+        code: 'invalid_type',
+        expected: 'string',
+        message: 'Invalid input: expected string, received undefined',
+        path: ['label'],
+      },
+    ]);
   });
 });

@@ -2,7 +2,6 @@ import { ModuleTransactionEventSchema } from '@/modules/hooks/routes/entities/sc
 import type { TransactionEventType } from '@/modules/hooks/routes/entities/event-type.entity';
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress } from 'viem';
-import { ZodError } from 'zod';
 import { moduleTransactionEventBuilder } from '@/modules/hooks/routes/entities/__tests__/module-transaction.builder';
 
 describe('ModuleTransactionEventSchema', () => {
@@ -28,17 +27,14 @@ describe('ModuleTransactionEventSchema', () => {
       moduleTransactionEvent,
     );
 
-    expect(!result.success && result.error).toStrictEqual(
-      new ZodError([
-        {
-          received: moduleTransactionEvent.type,
-          code: 'invalid_literal',
-          expected: 'MODULE_TRANSACTION',
-          path: ['type'],
-          message: 'Invalid literal value, expected "MODULE_TRANSACTION"',
-        },
-      ]),
-    );
+    expect(!result.success && result.error.issues).toStrictEqual([
+      {
+        code: 'invalid_value',
+        values: ['MODULE_TRANSACTION'],
+        path: ['type'],
+        message: 'Invalid input: expected "MODULE_TRANSACTION"',
+      },
+    ]);
   });
 
   it.each(['address' as const, 'module' as const])(
@@ -52,15 +48,13 @@ describe('ModuleTransactionEventSchema', () => {
         moduleTransactionEvent,
       );
 
-      expect(!result.success && result.error).toStrictEqual(
-        new ZodError([
-          {
-            code: 'custom',
-            message: 'Invalid address',
-            path: [field],
-          },
-        ]),
-      );
+      expect(!result.success && result.error.issues).toStrictEqual([
+        {
+          code: 'custom',
+          message: 'Invalid address',
+          path: [field],
+        },
+      ]);
     },
   );
 

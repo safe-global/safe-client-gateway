@@ -3,7 +3,6 @@ import type { TransactionEventType } from '@/modules/hooks/routes/entities/event
 import { ExecutedTransactionEventSchema } from '@/modules/hooks/routes/entities/schemas/executed-transaction.schema';
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress } from 'viem';
-import { ZodError } from 'zod';
 
 describe('ExecutedTransactionEventSchema', () => {
   it('should validate an execution event', () => {
@@ -28,18 +27,14 @@ describe('ExecutedTransactionEventSchema', () => {
       executedTransactionEvent,
     );
 
-    expect(!result.success && result.error).toStrictEqual(
-      new ZodError([
-        {
-          received: executedTransactionEvent.type,
-          code: 'invalid_literal',
-          expected: 'EXECUTED_MULTISIG_TRANSACTION',
-          path: ['type'],
-          message:
-            'Invalid literal value, expected "EXECUTED_MULTISIG_TRANSACTION"',
-        },
-      ]),
-    );
+    expect(!result.success && result.error.issues).toEqual([
+      expect.objectContaining({
+        code: 'invalid_value',
+        values: ['EXECUTED_MULTISIG_TRANSACTION'],
+        path: ['type'],
+        message: 'Invalid input: expected "EXECUTED_MULTISIG_TRANSACTION"',
+      }),
+    ]);
   });
 
   it.each(['to' as const, 'address' as const])(
@@ -53,15 +48,13 @@ describe('ExecutedTransactionEventSchema', () => {
         executedTransactionEvent,
       );
 
-      expect(!result.success && result.error).toStrictEqual(
-        new ZodError([
-          {
-            code: 'custom',
-            message: 'Invalid address',
-            path: [field],
-          },
-        ]),
-      );
+      expect(!result.success && result.error.issues).toEqual([
+        expect.objectContaining({
+          code: 'custom',
+          message: 'Invalid address',
+          path: [field],
+        }),
+      ]);
     },
   );
 

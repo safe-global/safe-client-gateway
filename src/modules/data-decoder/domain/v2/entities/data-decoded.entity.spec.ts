@@ -1,6 +1,5 @@
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress } from 'viem';
-import { ZodError } from 'zod';
 import {
   baseDataDecodedBuilder,
   dataDecodedBuilder,
@@ -55,11 +54,10 @@ describe('DataDecoded', () => {
 
       expect(!result.success && result.error.issues).toStrictEqual([
         {
-          code: 'invalid_enum_value',
-          message: `Invalid enum value. Expected 0 | 1, received '${multisend.operation}'`,
-          options: [0, 1],
+          code: 'invalid_value',
+          message: 'Invalid option: expected one of 0|1',
           path: ['operation'],
-          received: multisend.operation,
+          values: [0, 1],
         },
       ]);
     });
@@ -118,39 +116,34 @@ describe('DataDecoded', () => {
 
       expect(!result.success && result.error.issues).toStrictEqual([
         {
-          code: 'invalid_type',
-          expected: '0 | 1',
-          message: 'Required',
+          code: 'invalid_value',
+          message: 'Invalid option: expected one of 0|1',
           path: ['operation'],
-          received: 'undefined',
+          values: [0, 1],
         },
         {
           code: 'invalid_type',
           expected: 'string',
-          message: 'Required',
+          message: 'Invalid input: expected string, received undefined',
           path: ['value'],
-          received: 'undefined',
         },
         {
           code: 'invalid_type',
           expected: 'object',
-          message: 'Required',
+          message: 'Invalid input: expected object, received undefined',
           path: ['dataDecoded'],
-          received: 'undefined',
         },
         {
           code: 'invalid_type',
           expected: 'string',
-          message: 'Required',
+          message: 'Invalid input: expected string, received undefined',
           path: ['to'],
-          received: 'undefined',
         },
         {
           code: 'invalid_type',
           expected: 'string',
-          message: 'Required',
+          message: 'Invalid input: expected string, received undefined',
           path: ['data'],
-          received: 'undefined',
         },
       ]);
     });
@@ -204,48 +197,40 @@ describe('DataDecoded', () => {
 
       const result = ValueDecodedSchema.safeParse(valueDecoded);
 
-      expect(!result.success && result.error.issues).toStrictEqual([
-        {
+      expect(!result.success && result.error.issues).toEqual([
+        expect.objectContaining({
           code: 'invalid_union',
           message: 'Invalid input',
           path: [],
-          unionErrors: [
-            new ZodError([
-              {
+          errors: [
+            [
+              expect.objectContaining({
                 code: 'invalid_type',
                 expected: 'array',
-                received: 'object',
                 path: [],
-                message: 'Expected array, received object',
-              },
-            ]),
-            new ZodError([
-              {
+              }),
+            ],
+            [
+              expect.objectContaining({
                 code: 'invalid_type',
                 expected: 'string',
-                received: 'undefined',
                 path: ['method'],
-                message: 'Required',
-              },
-              {
+              }),
+              expect.objectContaining({
                 code: 'invalid_type',
                 expected: 'array',
-                received: 'undefined',
                 path: ['parameters'],
-                message: 'Required',
-              },
-            ]),
-            new ZodError([
-              {
+              }),
+            ],
+            [
+              expect.objectContaining({
                 code: 'invalid_type',
                 expected: 'null',
-                received: 'object',
                 path: [],
-                message: 'Expected null, received object',
-              },
-            ]),
+              }),
+            ],
           ],
-        },
+        }),
       ]);
     });
   });
@@ -268,16 +253,14 @@ describe('DataDecoded', () => {
         {
           code: 'invalid_type',
           expected: 'string',
-          message: 'Required',
+          message: 'Invalid input: expected string, received undefined',
           path: ['name'],
-          received: 'undefined',
         },
         {
           code: 'invalid_type',
           expected: 'string',
-          message: 'Required',
+          message: 'Invalid input: expected string, received undefined',
           path: ['type'],
-          received: 'undefined',
         },
       ]);
     });
@@ -301,16 +284,14 @@ describe('DataDecoded', () => {
         {
           code: 'invalid_type',
           expected: 'string',
-          message: 'Required',
+          message: 'Invalid input: expected string, received undefined',
           path: ['method'],
-          received: 'undefined',
         },
         {
           code: 'invalid_type',
           expected: 'array',
-          message: 'Required',
+          message: 'Invalid input: expected array, received undefined',
           path: ['parameters'],
-          received: 'undefined',
         },
       ]);
     });
@@ -344,16 +325,14 @@ describe('DataDecoded', () => {
         {
           code: 'invalid_type',
           expected: 'string',
-          message: 'Required',
+          message: 'Invalid input: expected string, received undefined',
           path: ['method'],
-          received: 'undefined',
         },
         {
           code: 'invalid_type',
           expected: 'array',
-          message: 'Required',
+          message: 'Invalid input: expected array, received undefined',
           path: ['parameters'],
-          received: 'undefined',
         },
       ]);
     });

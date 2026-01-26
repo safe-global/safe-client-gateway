@@ -1,6 +1,5 @@
 import { balanceTokenBuilder } from '@/modules/balances/domain/entities/__tests__/balance.token.builder';
 import { BalanceTokenSchema } from '@/modules/balances/domain/entities/balance.token.entity';
-import { ZodError } from 'zod';
 
 describe('BalanceTokenSchema', () => {
   it('should validate a valid balance token', () => {
@@ -16,37 +15,31 @@ describe('BalanceTokenSchema', () => {
 
     const result = BalanceTokenSchema.safeParse(balanceToken);
 
-    expect(!result.success && result.error).toStrictEqual(
-      new ZodError([
-        {
-          code: 'invalid_type',
-          expected: 'string',
-          received: 'undefined',
-          path: ['name'],
-          message: 'Required',
-        },
-        {
-          code: 'invalid_type',
-          expected: 'string',
-          received: 'undefined',
-          path: ['symbol'],
-          message: 'Required',
-        },
-        {
-          code: 'invalid_type',
-          expected: 'number',
-          received: 'undefined',
-          path: ['decimals'],
-          message: 'Required',
-        },
-        {
-          code: 'invalid_type',
-          expected: 'string',
-          received: 'undefined',
-          path: ['logoUri'],
-          message: 'Required',
-        },
-      ]),
-    );
+    expect(!result.success && result.error?.issues).toStrictEqual([
+      {
+        code: 'invalid_type',
+        expected: 'string',
+        message: 'Invalid input: expected string, received undefined',
+        path: ['name'],
+      },
+      {
+        code: 'invalid_type',
+        expected: 'string',
+        message: 'Invalid input: expected string, received undefined',
+        path: ['symbol'],
+      },
+      {
+        code: 'invalid_type',
+        expected: 'number',
+        message: 'Invalid input: expected number, received undefined',
+        path: ['decimals'],
+      },
+      {
+        code: 'invalid_type',
+        expected: 'string',
+        message: 'Invalid input: expected string, received undefined',
+        path: ['logoUri'],
+      },
+    ]);
   });
 });

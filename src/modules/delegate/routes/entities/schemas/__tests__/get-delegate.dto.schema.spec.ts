@@ -1,7 +1,6 @@
 import { GetDelegateDtoSchema } from '@/modules/delegate/routes/entities/schemas/get-delegate.dto.schema';
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress } from 'viem';
-import { ZodError } from 'zod';
 
 describe('GetDelegateDtoSchema', () => {
   it('should validate a valid GetDelegateDto', () => {
@@ -35,15 +34,13 @@ describe('GetDelegateDtoSchema', () => {
 
     const result = GetDelegateDtoSchema.safeParse(getDelegateDto);
 
-    expect(!result.success && result.error).toStrictEqual(
-      new ZodError([
-        {
-          code: 'custom',
-          message: 'At least one property is required',
-          path: [],
-        },
-      ]),
-    );
+    expect(!result.success && result.error.issues).toStrictEqual([
+      {
+        code: 'custom',
+        message: 'At least one property is required',
+        path: [],
+      },
+    ]);
   });
 
   it.each(['safe' as const, 'delegate' as const, 'delegator' as const])(
@@ -53,15 +50,13 @@ describe('GetDelegateDtoSchema', () => {
 
       const result = GetDelegateDtoSchema.safeParse(getDelegateDto);
 
-      expect(!result.success && result.error).toStrictEqual(
-        new ZodError([
-          {
-            code: 'custom',
-            message: 'Invalid address',
-            path: [property],
-          },
-        ]),
-      );
+      expect(!result.success && result.error.issues).toStrictEqual([
+        {
+          code: 'custom',
+          message: 'Invalid address',
+          path: [property],
+        },
+      ]);
     },
   );
 
@@ -86,14 +81,12 @@ describe('GetDelegateDtoSchema', () => {
 
     const result = GetDelegateDtoSchema.safeParse(getDelegateDto);
 
-    expect(!result.success && result.error).toStrictEqual(
-      new ZodError([
-        {
-          code: 'custom',
-          message: 'At least one property is required',
-          path: [],
-        },
-      ]),
-    );
+    expect(!result.success && result.error.issues).toStrictEqual([
+      {
+        code: 'custom',
+        message: 'At least one property is required',
+        path: [],
+      },
+    ]);
   });
 });

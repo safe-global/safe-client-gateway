@@ -1,5 +1,4 @@
 import { faker } from '@faker-js/faker';
-import { ZodError } from 'zod';
 import { TransactionExportDtoSchema } from '@/modules/csv-export/v1/entities/schemas/transaction-export.dto.schema';
 
 describe('TransactionExportDtoSchema', () => {
@@ -33,23 +32,20 @@ describe('TransactionExportDtoSchema', () => {
       const payload = { executionDateGte: date, executionDateLte: date };
       const result = TransactionExportDtoSchema.safeParse(payload);
 
-      expect(result.success).toBe(false);
-      expect(!result.success && result.error).toStrictEqual(
-        new ZodError([
-          {
-            code: 'invalid_string',
-            validation: 'datetime',
-            message: 'Invalid datetime',
-            path: ['executionDateGte'],
-          },
-          {
-            code: 'invalid_string',
-            validation: 'datetime',
-            message: 'Invalid datetime',
-            path: ['executionDateLte'],
-          },
-        ]),
-      );
+      expect(!result.success && result.error.issues).toEqual([
+        expect.objectContaining({
+          code: 'invalid_format',
+          format: 'datetime',
+          path: ['executionDateGte'],
+          message: 'Invalid ISO datetime',
+        }),
+        expect.objectContaining({
+          code: 'invalid_format',
+          format: 'datetime',
+          path: ['executionDateLte'],
+          message: 'Invalid ISO datetime',
+        }),
+      ]);
     });
   });
 

@@ -3,7 +3,6 @@ import type { TransactionEventType } from '@/modules/hooks/routes/entities/event
 import { NewConfirmationEventSchema } from '@/modules/hooks/routes/entities/schemas/new-confirmation.schema';
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress } from 'viem';
-import { ZodError } from 'zod';
 
 describe('NewConfirmationEventSchema', () => {
   it('should validate a new confirmation event', () => {
@@ -24,17 +23,14 @@ describe('NewConfirmationEventSchema', () => {
 
     const result = NewConfirmationEventSchema.safeParse(newConfirmationEvent);
 
-    expect(!result.success && result.error).toStrictEqual(
-      new ZodError([
-        {
-          received: newConfirmationEvent.type,
-          code: 'invalid_literal',
-          expected: 'NEW_CONFIRMATION',
-          path: ['type'],
-          message: 'Invalid literal value, expected "NEW_CONFIRMATION"',
-        },
-      ]),
-    );
+    expect(!result.success && result.error.issues).toEqual([
+      expect.objectContaining({
+        code: 'invalid_value',
+        values: ['NEW_CONFIRMATION'],
+        path: ['type'],
+        message: 'Invalid input: expected "NEW_CONFIRMATION"',
+      }),
+    ]);
   });
 
   it.each(['address' as const, 'owner' as const])(
@@ -46,15 +42,14 @@ describe('NewConfirmationEventSchema', () => {
 
       const result = NewConfirmationEventSchema.safeParse(newConfirmationEvent);
 
-      expect(!result.success && result.error).toStrictEqual(
-        new ZodError([
-          {
-            code: 'custom',
-            message: 'Invalid address',
-            path: [field],
-          },
-        ]),
-      );
+      expect(result.success).toBe(false);
+      expect(!result.success && result.error.issues).toEqual([
+        expect.objectContaining({
+          code: 'custom',
+          message: 'Invalid address',
+          path: [field],
+        }),
+      ]);
     },
   );
 

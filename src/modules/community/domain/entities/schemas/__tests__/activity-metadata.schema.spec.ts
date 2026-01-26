@@ -1,6 +1,5 @@
 import { activityMetadataBuilder } from '@/modules/community/domain/entities/__tests__/activity-metadata.builder';
 import { ActivityMetadataSchema } from '@/modules/community/domain/entities/activity-metadata.entity';
-import { ZodError } from 'zod';
 
 describe('ActivityMetadataSchema', () => {
   it('should validate a valid activity metadata', () => {
@@ -16,30 +15,25 @@ describe('ActivityMetadataSchema', () => {
 
     const result = ActivityMetadataSchema.safeParse(activityMetadata);
 
-    expect(!result.success && result.error).toStrictEqual(
-      new ZodError([
-        {
-          code: 'invalid_type',
-          expected: 'string',
-          received: 'undefined',
-          path: ['name'],
-          message: 'Required',
-        },
-        {
-          code: 'invalid_type',
-          expected: 'string',
-          received: 'undefined',
-          path: ['description'],
-          message: 'Required',
-        },
-        {
-          code: 'invalid_type',
-          expected: 'number',
-          received: 'undefined',
-          path: ['maxPoints'],
-          message: 'Required',
-        },
-      ]),
-    );
+    expect(!result.success && result.error.issues).toStrictEqual([
+      {
+        code: 'invalid_type',
+        expected: 'string',
+        path: ['name'],
+        message: 'Invalid input: expected string, received undefined',
+      },
+      {
+        code: 'invalid_type',
+        expected: 'string',
+        path: ['description'],
+        message: 'Invalid input: expected string, received undefined',
+      },
+      {
+        code: 'invalid_type',
+        expected: 'number',
+        path: ['maxPoints'],
+        message: 'Invalid input: expected number, received undefined',
+      },
+    ]);
   });
 });

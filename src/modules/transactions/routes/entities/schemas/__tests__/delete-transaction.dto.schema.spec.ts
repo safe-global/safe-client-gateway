@@ -1,6 +1,5 @@
 import { DeleteTransactionDtoSchema } from '@/modules/transactions/routes/entities/schemas/delete-transaction.dto.schema';
 import { faker } from '@faker-js/faker';
-import { ZodError } from 'zod';
 
 describe('DeleteTransactionDtoSchema', () => {
   it('should validate a valid DeleteTransactionDto', () => {
@@ -20,16 +19,12 @@ describe('DeleteTransactionDtoSchema', () => {
 
     const result = DeleteTransactionDtoSchema.safeParse(deleteTransactionDto);
 
-    expect(!result.success && result.error).toStrictEqual(
-      new ZodError([
-        {
-          code: 'invalid_type',
-          expected: 'string',
-          received: 'undefined',
-          path: ['signature'],
-          message: 'Required',
-        },
-      ]),
-    );
+    expect(!result.success && result.error.issues).toEqual([
+      expect.objectContaining({
+        code: 'invalid_type',
+        expected: 'string',
+        path: ['signature'],
+      }),
+    ]);
   });
 });

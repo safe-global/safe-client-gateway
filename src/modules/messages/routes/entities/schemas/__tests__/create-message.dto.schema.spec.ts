@@ -2,7 +2,6 @@ import { typedDataBuilder } from '@/modules/messages/routes/entities/__tests__/t
 import { createMessageDtoBuilder } from '@/modules/messages/routes/entities/__tests__/create-message.dto.builder';
 import { CreateMessageDtoSchema } from '@/modules/messages/routes/entities/schemas/create-message.dto.schema';
 import { faker } from '@faker-js/faker';
-import { ZodError } from 'zod';
 import type { Address } from 'viem';
 
 describe('CreateMessageDtoSchema', () => {
@@ -35,32 +34,28 @@ describe('CreateMessageDtoSchema', () => {
 
       const result = CreateMessageDtoSchema.safeParse(createMessageDto);
 
-      expect(!result.success && result.error.issues).toStrictEqual([
-        {
+      expect(!result.success && result.error.issues).toEqual([
+        expect.objectContaining({
           code: 'invalid_union',
           message: 'Invalid input',
           path: ['message'],
-          unionErrors: [
-            new ZodError([
-              {
+          errors: [
+            [
+              expect.objectContaining({
                 code: 'invalid_type',
                 expected: 'string',
-                received: 'undefined',
-                path: ['message'],
-                message: 'Required',
-              },
-            ]),
-            new ZodError([
-              {
+                message: 'Invalid input: expected string, received undefined',
+              }),
+            ],
+            [
+              expect.objectContaining({
                 code: 'invalid_type',
                 expected: 'object',
-                received: 'undefined',
-                path: ['message'],
-                message: 'Required',
-              },
-            ]),
+                message: 'Invalid input: expected object, received undefined',
+              }),
+            ],
           ],
-        },
+        }),
       ]);
     });
   });
@@ -93,19 +88,16 @@ describe('CreateMessageDtoSchema', () => {
 
       const result = CreateMessageDtoSchema.safeParse(createMessageDto);
 
-      expect(!result.success && result.error).toStrictEqual(
-        new ZodError([
-          {
-            code: 'too_small',
-            minimum: 0,
-            type: 'number',
-            inclusive: true,
-            exact: false,
-            message: 'Number must be greater than or equal to 0',
-            path: ['safeAppId'],
-          },
-        ]),
-      );
+      expect(!result.success && result.error.issues).toEqual([
+        {
+          code: 'too_small',
+          minimum: 0,
+          inclusive: true,
+          message: 'Too small: expected number to be >=0',
+          path: ['safeAppId'],
+          origin: 'number',
+        },
+      ]);
     });
 
     it('should not validate a float safeAppId', () => {
@@ -115,17 +107,15 @@ describe('CreateMessageDtoSchema', () => {
 
       const result = CreateMessageDtoSchema.safeParse(createMessageDto);
 
-      expect(!result.success && result.error).toStrictEqual(
-        new ZodError([
-          {
-            code: 'invalid_type',
-            expected: 'integer',
-            received: 'float',
-            message: 'Expected integer, received float',
-            path: ['safeAppId'],
-          },
-        ]),
-      );
+      expect(!result.success && result.error.issues).toEqual([
+        {
+          code: 'invalid_type',
+          expected: 'int',
+          format: 'safeint',
+          message: 'Invalid input: expected int, received number',
+          path: ['safeAppId'],
+        },
+      ]);
     });
 
     it('should validate without safeAppId, defaulting to null', () => {
@@ -147,25 +137,23 @@ describe('CreateMessageDtoSchema', () => {
 
       const result = CreateMessageDtoSchema.safeParse(createMessageDto);
 
-      expect(!result.success && result.error).toStrictEqual(
-        new ZodError([
-          {
-            code: 'custom',
-            message: 'Invalid "0x" notated hex string',
-            path: ['signature'],
-          },
-          {
-            code: 'custom',
-            message: 'Invalid hex bytes',
-            path: ['signature'],
-          },
-          {
-            code: 'custom',
-            message: 'Invalid signature',
-            path: ['signature'],
-          },
-        ]),
-      );
+      expect(!result.success && result.error.issues).toEqual([
+        {
+          code: 'custom',
+          message: 'Invalid "0x" notated hex string',
+          path: ['signature'],
+        },
+        {
+          code: 'custom',
+          message: 'Invalid hex bytes',
+          path: ['signature'],
+        },
+        {
+          code: 'custom',
+          message: 'Invalid signature',
+          path: ['signature'],
+        },
+      ]);
     });
 
     it('should not validate without a signature', () => {
@@ -175,17 +163,14 @@ describe('CreateMessageDtoSchema', () => {
 
       const result = CreateMessageDtoSchema.safeParse(createMessageDto);
 
-      expect(!result.success && result.error).toStrictEqual(
-        new ZodError([
-          {
-            code: 'invalid_type',
-            expected: 'string',
-            received: 'undefined',
-            path: ['signature'],
-            message: 'Required',
-          },
-        ]),
-      );
+      expect(!result.success && result.error.issues).toEqual([
+        {
+          code: 'invalid_type',
+          expected: 'string',
+          message: 'Invalid input: expected string, received undefined',
+          path: ['signature'],
+        },
+      ]);
     });
   });
 

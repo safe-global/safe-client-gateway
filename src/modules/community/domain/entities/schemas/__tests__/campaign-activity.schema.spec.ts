@@ -2,7 +2,6 @@ import { campaignActivityBuilder } from '@/modules/community/domain/entities/__t
 import { CampaignActivitySchema } from '@/modules/community/domain/entities/campaign-activity.entity';
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress } from 'viem';
-import { ZodError } from 'zod';
 
 describe('CampaignActivitySchema', () => {
   it('should validate a valid CampaignActivity', () => {
@@ -70,47 +69,45 @@ describe('CampaignActivitySchema', () => {
 
     const result = CampaignActivitySchema.safeParse(campaignActivity);
 
-    expect(!result.success && result.error).toStrictEqual(
-      new ZodError([
-        {
-          code: 'invalid_date',
-          path: ['startDate'],
-          message: 'Invalid date',
-        },
-        {
-          code: 'invalid_date',
-          path: ['endDate'],
-          message: 'Invalid date',
-        },
-        {
-          code: 'invalid_type',
-          expected: 'string',
-          received: 'undefined',
-          path: ['holder'],
-          message: 'Required',
-        },
-        {
-          code: 'invalid_type',
-          expected: 'string',
-          received: 'undefined',
-          path: ['boost'],
-          message: 'Required',
-        },
-        {
-          code: 'invalid_type',
-          expected: 'string',
-          received: 'undefined',
-          path: ['totalPoints'],
-          message: 'Required',
-        },
-        {
-          code: 'invalid_type',
-          expected: 'string',
-          received: 'undefined',
-          path: ['totalBoostedPoints'],
-          message: 'Required',
-        },
-      ]),
-    );
+    expect(!result.success && result.error.issues).toStrictEqual([
+      {
+        code: 'invalid_type',
+        path: ['startDate'],
+        message: 'Invalid input: expected date, received Date',
+        expected: 'date',
+        received: 'Invalid Date',
+      },
+      {
+        code: 'invalid_type',
+        path: ['endDate'],
+        message: 'Invalid input: expected date, received Date',
+        expected: 'date',
+        received: 'Invalid Date',
+      },
+      {
+        code: 'invalid_type',
+        expected: 'string',
+        path: ['holder'],
+        message: 'Invalid input: expected string, received undefined',
+      },
+      {
+        code: 'invalid_type',
+        expected: 'string',
+        path: ['boost'],
+        message: 'Invalid input: expected string, received undefined',
+      },
+      {
+        code: 'invalid_type',
+        expected: 'string',
+        path: ['totalPoints'],
+        message: 'Invalid input: expected string, received undefined',
+      },
+      {
+        code: 'invalid_type',
+        expected: 'string',
+        path: ['totalBoostedPoints'],
+        message: 'Invalid input: expected string, received undefined',
+      },
+    ]);
   });
 });

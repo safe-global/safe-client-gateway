@@ -2,7 +2,6 @@ import { safeAppsEventBuilder } from '@/modules/hooks/routes/entities/__tests__/
 import type { ConfigEventType } from '@/modules/hooks/routes/entities/event-type.entity';
 import { SafeAppsUpdateEventSchema } from '@/modules/hooks/routes/entities/schemas/safe-apps-update.schema';
 import { faker } from '@faker-js/faker';
-import { ZodError } from 'zod';
 
 describe('SafeAppsUpdateEventSchema', () => {
   it('should validate a valid Safe Apps event', () => {
@@ -20,17 +19,14 @@ describe('SafeAppsUpdateEventSchema', () => {
 
     const result = SafeAppsUpdateEventSchema.safeParse(safeAppsEvent);
 
-    expect(!result.success && result.error).toStrictEqual(
-      new ZodError([
-        {
-          received: safeAppsEvent.type,
-          code: 'invalid_literal',
-          expected: 'SAFE_APPS_UPDATE',
-          path: ['type'],
-          message: 'Invalid literal value, expected "SAFE_APPS_UPDATE"',
-        },
-      ]),
-    );
+    expect(!result.success && result.error.issues).toEqual([
+      expect.objectContaining({
+        code: 'invalid_value',
+        values: ['SAFE_APPS_UPDATE'],
+        path: ['type'],
+        message: 'Invalid input: expected "SAFE_APPS_UPDATE"',
+      }),
+    ]);
   });
 
   it.each(['type' as const, 'chainId' as const])(

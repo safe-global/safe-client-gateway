@@ -1,7 +1,6 @@
 import { transactionDataDtoBuilder } from '@/modules/data-decoder/routes/entities/__tests__/transaction-data.dto.builder';
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress } from 'viem';
-import { ZodError } from 'zod';
 import { TransactionDataDtoSchema } from '@/routes/common/entities/transaction-data.dto.entity';
 
 describe('TransactionDataDtoSchema', () => {
@@ -43,15 +42,13 @@ describe('TransactionDataDtoSchema', () => {
 
     const result = TransactionDataDtoSchema.safeParse(transactionDataDto);
 
-    expect(!result.success && result.error).toStrictEqual(
-      new ZodError([
-        {
-          code: 'custom',
-          message: 'Invalid "0x" notated hex string',
-          path: ['data'],
-        },
-      ]),
-    );
+    expect(!result.success && result.error.issues).toStrictEqual([
+      {
+        code: 'custom',
+        message: 'Invalid "0x" notated hex string',
+        path: ['data'],
+      },
+    ]);
   });
 
   it('should not allow no hex', () => {
@@ -61,17 +58,14 @@ describe('TransactionDataDtoSchema', () => {
 
     const result = TransactionDataDtoSchema.safeParse(transactionDataDto);
 
-    expect(!result.success && result.error).toStrictEqual(
-      new ZodError([
-        {
-          code: 'invalid_type',
-          expected: 'string',
-          received: 'undefined',
-          path: ['data'],
-          message: 'Required',
-        },
-      ]),
-    );
+    expect(!result.success && result.error.issues).toStrictEqual([
+      {
+        code: 'invalid_type',
+        expected: 'string',
+        message: 'Invalid input: expected string, received undefined',
+        path: ['data'],
+      },
+    ]);
   });
 
   it('should not validate an invalid TransactionDataDto', () => {
@@ -79,23 +73,19 @@ describe('TransactionDataDtoSchema', () => {
 
     const result = TransactionDataDtoSchema.safeParse(transactionDataDto);
 
-    expect(!result.success && result.error).toStrictEqual(
-      new ZodError([
-        {
-          code: 'invalid_type',
-          expected: 'string',
-          received: 'undefined',
-          path: ['data'],
-          message: 'Required',
-        },
-        {
-          code: 'invalid_type',
-          expected: 'string',
-          received: 'undefined',
-          path: ['to'],
-          message: 'Required',
-        },
-      ]),
-    );
+    expect(!result.success && result.error.issues).toStrictEqual([
+      {
+        code: 'invalid_type',
+        expected: 'string',
+        message: 'Invalid input: expected string, received undefined',
+        path: ['data'],
+      },
+      {
+        code: 'invalid_type',
+        expected: 'string',
+        message: 'Invalid input: expected string, received undefined',
+        path: ['to'],
+      },
+    ]);
   });
 });

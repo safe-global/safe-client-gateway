@@ -13,7 +13,6 @@ import {
 } from '@/modules/community/domain/entities/schemas/locking-event.schema';
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress } from 'viem';
-import { ZodError } from 'zod';
 
 describe('Locking event schemas', () => {
   describe('LockingEventItemSchema', () => {
@@ -33,15 +32,15 @@ describe('Locking event schemas', () => {
 
       const result = LockEventItemSchema.safeParse(lockEventItem);
 
-      expect(!result.success && result.error).toStrictEqual(
-        new ZodError([
-          {
-            code: 'invalid_date',
-            path: ['executionDate'],
-            message: 'Invalid date',
-          },
-        ]),
-      );
+      expect(!result.success && result.error.issues).toStrictEqual([
+        {
+          code: 'invalid_type',
+          path: ['executionDate'],
+          message: 'Invalid input: expected date, received Date',
+          received: 'Invalid Date',
+          expected: 'date',
+        },
+      ]);
     });
 
     it('should coerce the executionDate to a date', () => {
@@ -63,15 +62,13 @@ describe('Locking event schemas', () => {
 
       const result = LockEventItemSchema.safeParse(lockEventItem);
 
-      expect(!result.success && result.error).toStrictEqual(
-        new ZodError([
-          {
-            code: 'custom',
-            message: 'Invalid "0x" notated hex string',
-            path: ['transactionHash'],
-          },
-        ]),
-      );
+      expect(!result.success && result.error.issues).toStrictEqual([
+        {
+          code: 'custom',
+          message: 'Invalid "0x" notated hex string',
+          path: ['transactionHash'],
+        },
+      ]);
     });
 
     it('should checksum the holder', () => {
@@ -98,15 +95,13 @@ describe('Locking event schemas', () => {
 
         const result = LockEventItemSchema.safeParse(lockEventItem);
 
-        expect(!result.success && result.error).toStrictEqual(
-          new ZodError([
-            {
-              code: 'custom',
-              message: 'Invalid base-10 numeric string',
-              path: [field],
-            },
-          ]),
-        );
+        expect(!result.success && result.error.issues).toStrictEqual([
+          {
+            code: 'custom',
+            message: 'Invalid base-10 numeric string',
+            path: [field],
+          },
+        ]);
       },
     );
 
@@ -115,50 +110,45 @@ describe('Locking event schemas', () => {
 
       const result = LockEventItemSchema.safeParse(lockEventItem);
 
-      expect(!result.success && result.error).toStrictEqual(
-        new ZodError([
-          {
-            code: 'invalid_date',
-            path: ['executionDate'],
-            message: 'Invalid date',
-          },
-          {
-            code: 'invalid_type',
-            expected: 'string',
-            received: 'undefined',
-            path: ['transactionHash'],
-            message: 'Required',
-          },
-          {
-            code: 'invalid_type',
-            expected: 'string',
-            received: 'undefined',
-            path: ['holder'],
-            message: 'Required',
-          },
-          {
-            code: 'invalid_type',
-            expected: 'string',
-            received: 'undefined',
-            path: ['amount'],
-            message: 'Required',
-          },
-          {
-            code: 'invalid_type',
-            expected: 'string',
-            received: 'undefined',
-            path: ['logIndex'],
-            message: 'Required',
-          },
-          // @ts-expect-error - zod can't infer enum
-          {
-            code: 'invalid_literal',
-            expected: 'LOCKED',
-            path: ['eventType'],
-            message: 'Invalid literal value, expected "LOCKED"',
-          },
-        ]),
-      );
+      expect(!result.success && result.error.issues).toStrictEqual([
+        {
+          code: 'invalid_type',
+          path: ['executionDate'],
+          message: 'Invalid input: expected date, received Date',
+          received: 'Invalid Date',
+          expected: 'date',
+        },
+        {
+          code: 'invalid_type',
+          expected: 'string',
+          path: ['transactionHash'],
+          message: 'Invalid input: expected string, received undefined',
+        },
+        {
+          code: 'invalid_type',
+          expected: 'string',
+          path: ['holder'],
+          message: 'Invalid input: expected string, received undefined',
+        },
+        {
+          code: 'invalid_type',
+          expected: 'string',
+          path: ['amount'],
+          message: 'Invalid input: expected string, received undefined',
+        },
+        {
+          code: 'invalid_type',
+          expected: 'string',
+          path: ['logIndex'],
+          message: 'Invalid input: expected string, received undefined',
+        },
+        {
+          code: 'invalid_value',
+          path: ['eventType'],
+          message: 'Invalid input: expected "LOCKED"',
+          values: ['LOCKED'],
+        },
+      ]);
     });
   });
 
@@ -179,15 +169,15 @@ describe('Locking event schemas', () => {
 
       const result = UnlockEventItemSchema.safeParse(withdrawEventItem);
 
-      expect(!result.success && result.error).toStrictEqual(
-        new ZodError([
-          {
-            code: 'invalid_date',
-            path: ['executionDate'],
-            message: 'Invalid date',
-          },
-        ]),
-      );
+      expect(!result.success && result.error.issues).toStrictEqual([
+        {
+          code: 'invalid_type',
+          path: ['executionDate'],
+          message: 'Invalid input: expected date, received Date',
+          received: 'Invalid Date',
+          expected: 'date',
+        },
+      ]);
     });
 
     it('should coerce the executionDate to a date', () => {
@@ -227,15 +217,13 @@ describe('Locking event schemas', () => {
 
       const result = UnlockEventItemSchema.safeParse(unlockEventItem);
 
-      expect(!result.success && result.error).toStrictEqual(
-        new ZodError([
-          {
-            code: 'custom',
-            message: 'Invalid base-10 numeric string',
-            path: [field],
-          },
-        ]),
-      );
+      expect(!result.success && result.error.issues).toStrictEqual([
+        {
+          code: 'custom',
+          message: 'Invalid base-10 numeric string',
+          path: [field],
+        },
+      ]);
     });
 
     it('should not validate an invalid UnlockEventItem', () => {
@@ -243,57 +231,51 @@ describe('Locking event schemas', () => {
 
       const result = UnlockEventItemSchema.safeParse(unlockEventItem);
 
-      expect(!result.success && result.error).toStrictEqual(
-        new ZodError([
-          {
-            code: 'invalid_date',
-            path: ['executionDate'],
-            message: 'Invalid date',
-          },
-          {
-            code: 'invalid_type',
-            expected: 'string',
-            received: 'undefined',
-            path: ['transactionHash'],
-            message: 'Required',
-          },
-          {
-            code: 'invalid_type',
-            expected: 'string',
-            received: 'undefined',
-            path: ['holder'],
-            message: 'Required',
-          },
-          {
-            code: 'invalid_type',
-            expected: 'string',
-            received: 'undefined',
-            path: ['amount'],
-            message: 'Required',
-          },
-          {
-            code: 'invalid_type',
-            expected: 'string',
-            received: 'undefined',
-            path: ['logIndex'],
-            message: 'Required',
-          },
-          {
-            code: 'invalid_type',
-            expected: 'string',
-            received: 'undefined',
-            path: ['unlockIndex'],
-            message: 'Required',
-          },
-          // @ts-expect-error - zod can't infer enum
-          {
-            code: 'invalid_literal',
-            expected: 'UNLOCKED',
-            path: ['eventType'],
-            message: 'Invalid literal value, expected "UNLOCKED"',
-          },
-        ]),
-      );
+      expect(!result.success && result.error.issues).toStrictEqual([
+        {
+          code: 'invalid_type',
+          path: ['executionDate'],
+          message: 'Invalid input: expected date, received Date',
+          received: 'Invalid Date',
+          expected: 'date',
+        },
+        {
+          code: 'invalid_type',
+          expected: 'string',
+          path: ['transactionHash'],
+          message: 'Invalid input: expected string, received undefined',
+        },
+        {
+          code: 'invalid_type',
+          expected: 'string',
+          path: ['holder'],
+          message: 'Invalid input: expected string, received undefined',
+        },
+        {
+          code: 'invalid_type',
+          expected: 'string',
+          path: ['amount'],
+          message: 'Invalid input: expected string, received undefined',
+        },
+        {
+          code: 'invalid_type',
+          expected: 'string',
+          path: ['logIndex'],
+          message: 'Invalid input: expected string, received undefined',
+        },
+        {
+          code: 'invalid_type',
+          expected: 'string',
+          path: ['unlockIndex'],
+          message: 'Invalid input: expected string, received undefined',
+        },
+        {
+          code: 'invalid_value',
+          path: ['eventType'],
+          message: 'Invalid input: expected "UNLOCKED"',
+          values: ['UNLOCKED'],
+        },
+      ]);
     });
   });
 
@@ -314,15 +296,15 @@ describe('Locking event schemas', () => {
 
       const result = WithdrawEventItemSchema.safeParse(withdrawEventItem);
 
-      expect(!result.success && result.error).toStrictEqual(
-        new ZodError([
-          {
-            code: 'invalid_date',
-            path: ['executionDate'],
-            message: 'Invalid date',
-          },
-        ]),
-      );
+      expect(!result.success && result.error.issues).toStrictEqual([
+        {
+          code: 'invalid_type',
+          path: ['executionDate'],
+          message: 'Invalid input: expected date, received Date',
+          received: 'Invalid Date',
+          expected: 'date',
+        },
+      ]);
     });
 
     it('should coerce the executionDate to a date', () => {
@@ -362,15 +344,13 @@ describe('Locking event schemas', () => {
 
       const result = WithdrawEventItemSchema.safeParse(withdrawEventItem);
 
-      expect(!result.success && result.error).toStrictEqual(
-        new ZodError([
-          {
-            code: 'custom',
-            message: 'Invalid base-10 numeric string',
-            path: [field],
-          },
-        ]),
-      );
+      expect(!result.success && result.error.issues).toStrictEqual([
+        {
+          code: 'custom',
+          message: 'Invalid base-10 numeric string',
+          path: [field],
+        },
+      ]);
     });
 
     it('should not validate an invalid WithdrawEventItem', () => {
@@ -378,57 +358,51 @@ describe('Locking event schemas', () => {
 
       const result = WithdrawEventItemSchema.safeParse(withdrawEventItem);
 
-      expect(!result.success && result.error).toStrictEqual(
-        new ZodError([
-          {
-            code: 'invalid_date',
-            path: ['executionDate'],
-            message: 'Invalid date',
-          },
-          {
-            code: 'invalid_type',
-            expected: 'string',
-            received: 'undefined',
-            path: ['transactionHash'],
-            message: 'Required',
-          },
-          {
-            code: 'invalid_type',
-            expected: 'string',
-            received: 'undefined',
-            path: ['holder'],
-            message: 'Required',
-          },
-          {
-            code: 'invalid_type',
-            expected: 'string',
-            received: 'undefined',
-            path: ['amount'],
-            message: 'Required',
-          },
-          {
-            code: 'invalid_type',
-            expected: 'string',
-            received: 'undefined',
-            path: ['logIndex'],
-            message: 'Required',
-          },
-          {
-            code: 'invalid_type',
-            expected: 'string',
-            received: 'undefined',
-            path: ['unlockIndex'],
-            message: 'Required',
-          },
-          // @ts-expect-error - zod can't infer enum
-          {
-            code: 'invalid_literal',
-            expected: 'WITHDRAWN',
-            path: ['eventType'],
-            message: 'Invalid literal value, expected "WITHDRAWN"',
-          },
-        ]),
-      );
+      expect(!result.success && result.error.issues).toStrictEqual([
+        {
+          code: 'invalid_type',
+          path: ['executionDate'],
+          message: 'Invalid input: expected date, received Date',
+          received: 'Invalid Date',
+          expected: 'date',
+        },
+        {
+          code: 'invalid_type',
+          expected: 'string',
+          path: ['transactionHash'],
+          message: 'Invalid input: expected string, received undefined',
+        },
+        {
+          code: 'invalid_type',
+          expected: 'string',
+          path: ['holder'],
+          message: 'Invalid input: expected string, received undefined',
+        },
+        {
+          code: 'invalid_type',
+          expected: 'string',
+          path: ['amount'],
+          message: 'Invalid input: expected string, received undefined',
+        },
+        {
+          code: 'invalid_type',
+          expected: 'string',
+          path: ['logIndex'],
+          message: 'Invalid input: expected string, received undefined',
+        },
+        {
+          code: 'invalid_type',
+          expected: 'string',
+          path: ['unlockIndex'],
+          message: 'Invalid input: expected string, received undefined',
+        },
+        {
+          code: 'invalid_value',
+          path: ['eventType'],
+          message: 'Invalid input: expected "WITHDRAWN"',
+          values: ['WITHDRAWN'],
+        },
+      ]);
     });
   });
 
@@ -450,17 +424,16 @@ describe('Locking event schemas', () => {
 
       const result = LockingEventSchema.safeParse(lockingEvent);
 
-      expect(!result.success && result.error).toStrictEqual(
-        new ZodError([
-          {
-            code: 'invalid_union_discriminator',
-            options: ['LOCKED', 'UNLOCKED', 'WITHDRAWN'],
-            path: ['eventType'],
-            message:
-              "Invalid discriminator value. Expected 'LOCKED' | 'UNLOCKED' | 'WITHDRAWN'",
-          },
-        ]),
-      );
+      expect(!result.success && result.error.issues).toStrictEqual([
+        {
+          code: 'invalid_union',
+          discriminator: 'eventType',
+          errors: [],
+          message: 'Invalid input',
+          note: 'No matching discriminator',
+          path: ['eventType'],
+        },
+      ]);
     });
   });
 
@@ -497,17 +470,16 @@ describe('Locking event schemas', () => {
 
       const result = LockingEventPageSchema.safeParse(lockingEventPage);
 
-      expect(!result.success && result.error).toStrictEqual(
-        new ZodError([
-          {
-            code: 'invalid_union_discriminator',
-            options: ['LOCKED', 'UNLOCKED', 'WITHDRAWN'],
-            path: ['results', 0, 'eventType'],
-            message:
-              "Invalid discriminator value. Expected 'LOCKED' | 'UNLOCKED' | 'WITHDRAWN'",
-          },
-        ]),
-      );
+      expect(!result.success && result.error.issues).toStrictEqual([
+        {
+          code: 'invalid_union',
+          discriminator: 'eventType',
+          errors: [],
+          message: 'Invalid input',
+          note: 'No matching discriminator',
+          path: ['results', 0, 'eventType'],
+        },
+      ]);
     });
   });
 });

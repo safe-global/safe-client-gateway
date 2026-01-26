@@ -3,7 +3,6 @@ import {
   NameSchema,
 } from '@/domain/common/entities/name.schema';
 import { faker } from '@faker-js/faker/.';
-import { ZodError } from 'zod';
 
 describe('NameSchema', () => {
   it('should validate a valid name', () => {
@@ -19,33 +18,27 @@ describe('NameSchema', () => {
 
     const result = NameSchema.safeParse(name);
 
-    expect(!result.success && result.error).toStrictEqual(
-      new ZodError([
-        {
-          code: 'invalid_type',
-          expected: 'string',
-          received: 'number',
-          path: [],
-          message: 'Expected string, received number',
-        },
-      ]),
-    );
+    expect(!result.success && result.error.issues).toStrictEqual([
+      {
+        code: 'invalid_type',
+        expected: 'string',
+        message: 'Invalid input: expected string, received number',
+        path: [],
+      },
+    ]);
   });
 
   it('should not validate null name', () => {
     const result = NameSchema.safeParse(null);
 
-    expect(!result.success && result.error).toStrictEqual(
-      new ZodError([
-        {
-          code: 'invalid_type',
-          expected: 'string',
-          received: 'null',
-          path: [],
-          message: 'Expected string, received null',
-        },
-      ]),
-    );
+    expect(!result.success && result.error.issues).toStrictEqual([
+      {
+        code: 'invalid_type',
+        expected: 'string',
+        message: 'Invalid input: expected string, received null',
+        path: [],
+      },
+    ]);
   });
 
   it('should not validate an name shorter than 3 characters', () => {
@@ -53,19 +46,16 @@ describe('NameSchema', () => {
 
     const result = NameSchema.safeParse(accountName);
 
-    expect(!result.success && result.error).toStrictEqual(
-      new ZodError([
-        {
-          code: 'too_small',
-          minimum: 3,
-          type: 'string',
-          inclusive: true,
-          exact: false,
-          message: 'Names must be at least 3 characters long',
-          path: [],
-        },
-      ]),
-    );
+    expect(!result.success && result.error.issues).toStrictEqual([
+      {
+        code: 'too_small',
+        minimum: 3,
+        inclusive: true,
+        message: 'Names must be at least 3 characters long',
+        path: [],
+        origin: 'string',
+      },
+    ]);
   });
 
   it('should not validate an name larger than 30 characters', () => {
@@ -73,19 +63,16 @@ describe('NameSchema', () => {
 
     const result = NameSchema.safeParse(accountName);
 
-    expect(!result.success && result.error).toStrictEqual(
-      new ZodError([
-        {
-          code: 'too_big',
-          maximum: 30,
-          type: 'string',
-          inclusive: true,
-          exact: false,
-          message: 'Names must be at most 30 characters long',
-          path: [],
-        },
-      ]),
-    );
+    expect(!result.success && result.error.issues).toStrictEqual([
+      {
+        code: 'too_big',
+        maximum: 30,
+        inclusive: true,
+        message: 'Names must be at most 30 characters long',
+        path: [],
+        origin: 'string',
+      },
+    ]);
   });
 
   it('should not validate an name containing not allowed characters', () => {
@@ -94,17 +81,17 @@ describe('NameSchema', () => {
 
     const result = NameSchema.safeParse(accountName);
 
-    expect(!result.success && result.error).toStrictEqual(
-      new ZodError([
-        {
-          validation: 'regex',
-          code: 'invalid_string',
-          message:
-            'Names must start with a letter or number and can contain alphanumeric characters, spaces, periods, underscores, or hyphens',
-          path: [],
-        },
-      ]),
-    );
+    expect(!result.success && result.error.issues).toStrictEqual([
+      {
+        code: 'invalid_format',
+        format: 'regex',
+        origin: 'string',
+        pattern: '/^[a-zA-Z0-9]+(?:[ ._-][a-zA-Z0-9]+)*$/',
+        message:
+          'Names must start with a letter or number and can contain alphanumeric characters, spaces, periods, underscores, or hyphens',
+        path: [],
+      },
+    ]);
   });
 });
 
@@ -140,20 +127,16 @@ describe('makeNameSchema', () => {
 
       const result = schema.safeParse(shortName);
 
-      expect(result.success).toBe(false);
-      expect(result.error).toStrictEqual(
-        new ZodError([
-          {
-            code: 'too_small',
-            minimum: 5,
-            type: 'string',
-            inclusive: true,
-            exact: false,
-            message: 'Names must be at least 5 characters long',
-            path: [],
-          },
-        ]),
-      );
+      expect(!result.success && result.error.issues).toStrictEqual([
+        {
+          code: 'too_small',
+          minimum: 5,
+          inclusive: true,
+          message: 'Names must be at least 5 characters long',
+          path: [],
+          origin: 'string',
+        },
+      ]);
     });
 
     it('should accept names that meet custom minimum length', () => {
@@ -182,20 +165,16 @@ describe('makeNameSchema', () => {
 
       const result = schema.safeParse(longName);
 
-      expect(result.success).toBe(false);
-      expect(result.error).toStrictEqual(
-        new ZodError([
-          {
-            code: 'too_big',
-            maximum: 10,
-            type: 'string',
-            inclusive: true,
-            exact: false,
-            message: 'Names must be at most 10 characters long',
-            path: [],
-          },
-        ]),
-      );
+      expect(!result.success && result.error.issues).toStrictEqual([
+        {
+          code: 'too_big',
+          maximum: 10,
+          inclusive: true,
+          message: 'Names must be at most 10 characters long',
+          path: [],
+          origin: 'string',
+        },
+      ]);
     });
 
     it('should accept names that meet custom maximum length', () => {
@@ -259,20 +238,17 @@ describe('makeNameSchema', () => {
 
       const result = schema.safeParse(invalidName);
 
-      expect(result.success).toBe(false);
-      if (!result.success) {
-        expect(result.error).toStrictEqual(
-          new ZodError([
-            {
-              validation: 'regex',
-              code: 'invalid_string',
-              message:
-                'Names must start with a letter or number and can contain alphanumeric characters, spaces, periods, underscores, or hyphens',
-              path: [],
-            },
-          ]),
-        );
-      }
+      expect(!result.success && result.error.issues).toStrictEqual([
+        {
+          code: 'invalid_format',
+          format: 'regex',
+          origin: 'string',
+          pattern: '/^[a-zA-Z0-9]+(?:[ ._-][a-zA-Z0-9]+)*$/',
+          message:
+            'Names must start with a letter or number and can contain alphanumeric characters, spaces, periods, underscores, or hyphens',
+          path: [],
+        },
+      ]);
     });
 
     it('should accept valid characters with custom lengths', () => {
@@ -310,20 +286,16 @@ describe('makeNameSchema', () => {
 
       const result = schema.safeParse(nameWithSpaces);
 
-      expect(result.success).toBe(false);
-      expect(result.error).toStrictEqual(
-        new ZodError([
-          {
-            code: 'too_small',
-            minimum: 5,
-            type: 'string',
-            inclusive: true,
-            exact: false,
-            message: 'Names must be at least 5 characters long',
-            path: [],
-          },
-        ]),
-      );
+      expect(!result.success && result.error.issues).toStrictEqual([
+        {
+          code: 'too_small',
+          minimum: 5,
+          inclusive: true,
+          message: 'Names must be at least 5 characters long',
+          path: [],
+          origin: 'string',
+        },
+      ]);
     });
   });
 
@@ -344,18 +316,14 @@ describe('makeNameSchema', () => {
 
       const result = schema.safeParse(numberInput);
 
-      expect(result.success).toBe(false);
-      expect(result.error).toStrictEqual(
-        new ZodError([
-          {
-            code: 'invalid_type',
-            expected: 'string',
-            received: 'number',
-            path: [],
-            message: 'Expected string, received number',
-          },
-        ]),
-      );
+      expect(!result.success && result.error.issues).toStrictEqual([
+        {
+          code: 'invalid_type',
+          expected: 'string',
+          message: 'Invalid input: expected string, received number',
+          path: [],
+        },
+      ]);
     });
   });
 });

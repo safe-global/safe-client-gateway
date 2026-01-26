@@ -18,7 +18,6 @@ import { pendingTransactionEventBuilder } from '@/modules/hooks/routes/entities/
 import { reorgDetectedEventBuilder } from '@/modules/hooks/routes/entities/__tests__/reorg-detected.builder';
 import { safeAppsEventBuilder } from '@/modules/hooks/routes/entities/__tests__/safe-apps-update.builder';
 import { EventSchema } from '@/modules/hooks/routes/entities/schemas/event.schema';
-import { ZodError } from 'zod';
 
 describe('EventSchema', () => {
   [
@@ -56,35 +55,15 @@ describe('EventSchema', () => {
 
     const result = EventSchema.safeParse(invalidEvent);
 
-    expect(!result.success && result.error).toStrictEqual(
-      new ZodError([
-        {
-          code: 'invalid_union_discriminator',
-          options: [
-            'CHAIN_UPDATE',
-            'DELETED_MULTISIG_TRANSACTION',
-            'EXECUTED_MULTISIG_TRANSACTION',
-            'DELETED_DELEGATE',
-            'INCOMING_ETHER',
-            'INCOMING_TOKEN',
-            'MESSAGE_CREATED',
-            'MODULE_TRANSACTION',
-            'NEW_DELEGATE',
-            'NEW_CONFIRMATION',
-            'MESSAGE_CONFIRMATION',
-            'OUTGOING_ETHER',
-            'OUTGOING_TOKEN',
-            'PENDING_MULTISIG_TRANSACTION',
-            'REORG_DETECTED',
-            'SAFE_APPS_UPDATE',
-            'SAFE_CREATED',
-            'UPDATED_DELEGATE',
-          ],
-          path: ['type'],
-          message:
-            "Invalid discriminator value. Expected 'CHAIN_UPDATE' | 'DELETED_MULTISIG_TRANSACTION' | 'EXECUTED_MULTISIG_TRANSACTION' | 'DELETED_DELEGATE' | 'INCOMING_ETHER' | 'INCOMING_TOKEN' | 'MESSAGE_CREATED' | 'MODULE_TRANSACTION' | 'NEW_DELEGATE' | 'NEW_CONFIRMATION' | 'MESSAGE_CONFIRMATION' | 'OUTGOING_ETHER' | 'OUTGOING_TOKEN' | 'PENDING_MULTISIG_TRANSACTION' | 'REORG_DETECTED' | 'SAFE_APPS_UPDATE' | 'SAFE_CREATED' | 'UPDATED_DELEGATE'",
-        },
-      ]),
-    );
+    expect(!result.success && result.error.issues).toEqual([
+      expect.objectContaining({
+        code: 'invalid_union',
+        discriminator: 'type',
+        errors: [],
+        message: 'Invalid input',
+        note: 'No matching discriminator',
+        path: ['type'],
+      }),
+    ]);
   });
 });

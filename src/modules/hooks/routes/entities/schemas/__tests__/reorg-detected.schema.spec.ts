@@ -1,4 +1,3 @@
-import { ZodError } from 'zod';
 import { faker } from '@faker-js/faker';
 import { reorgDetectedEventBuilder } from '@/modules/hooks/routes/entities/__tests__/reorg-detected.builder';
 import { ReorgDetectedEventSchema } from '@/modules/hooks/routes/entities/schemas/reorg-detected.schema';
@@ -20,17 +19,14 @@ describe('ReorgDetectedEventSchema', () => {
 
     const result = ReorgDetectedEventSchema.safeParse(executedTransactionEvent);
 
-    expect(!result.success && result.error).toStrictEqual(
-      new ZodError([
-        {
-          received: executedTransactionEvent.type,
-          code: 'invalid_literal',
-          expected: 'REORG_DETECTED',
-          path: ['type'],
-          message: 'Invalid literal value, expected "REORG_DETECTED"',
-        },
-      ]),
-    );
+    expect(!result.success && result.error.issues).toStrictEqual([
+      {
+        code: 'invalid_value',
+        values: ['REORG_DETECTED'],
+        path: ['type'],
+        message: 'Invalid input: expected "REORG_DETECTED"',
+      },
+    ]);
   });
 
   it('should not allow a non-numeric chainId', () => {
@@ -40,15 +36,13 @@ describe('ReorgDetectedEventSchema', () => {
 
     const result = ReorgDetectedEventSchema.safeParse(reorgDetectedEvent);
 
-    expect(!result.success && result.error).toStrictEqual(
-      new ZodError([
-        {
-          code: 'custom',
-          message: 'Invalid base-10 numeric string',
-          path: ['chainId'],
-        },
-      ]),
-    );
+    expect(!result.success && result.error.issues).toStrictEqual([
+      {
+        code: 'custom',
+        message: 'Invalid base-10 numeric string',
+        path: ['chainId'],
+      },
+    ]);
   });
 
   it('should not allow a non-int blockNumber', () => {
@@ -58,17 +52,15 @@ describe('ReorgDetectedEventSchema', () => {
 
     const result = ReorgDetectedEventSchema.safeParse(reorgDetectedEvent);
 
-    expect(!result.success && result.error).toStrictEqual(
-      new ZodError([
-        {
-          code: 'invalid_type',
-          expected: 'integer',
-          received: 'float',
-          message: 'Expected integer, received float',
-          path: ['blockNumber'],
-        },
-      ]),
-    );
+    expect(!result.success && result.error.issues).toStrictEqual([
+      {
+        code: 'invalid_type',
+        expected: 'int',
+        format: 'safeint',
+        message: 'Invalid input: expected int, received number',
+        path: ['blockNumber'],
+      },
+    ]);
   });
 
   it.each(['type' as const, 'chainId' as const, 'blockNumber' as const])(
