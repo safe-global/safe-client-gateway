@@ -1,8 +1,11 @@
 import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
-import { SafeSchema } from '@/modules/safe/domain/entities/schemas/safe.schema';
+import {
+  SafeSchema,
+  SafeSchemaV2,
+} from '@/modules/safe/domain/entities/schemas/safe.schema';
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress } from 'viem';
-import { ZodError } from 'zod';
+import { type z, ZodError } from 'zod';
 
 describe('SafeSchema', () => {
   it('should validate a valid Safe', () => {
@@ -244,5 +247,216 @@ describe('SafeSchema', () => {
         message: 'Required',
       },
     ]);
+  });
+});
+
+describe('SafeSchemaV2', () => {
+  const createSafeV2 = (): z.infer<typeof SafeSchemaV2> => ({
+    address: getAddress(faker.finance.ethereumAddress()),
+    owners: [getAddress(faker.finance.ethereumAddress())],
+    threshold: faker.number.int({ min: 1 }),
+    nonce: faker.number.int({ min: 0 }),
+    masterCopy: getAddress(faker.finance.ethereumAddress()),
+    fallbackHandler: getAddress(faker.finance.ethereumAddress()),
+    guard: getAddress(faker.finance.ethereumAddress()),
+    moduleGuard: getAddress(faker.finance.ethereumAddress()),
+    enabledModules: [getAddress(faker.finance.ethereumAddress())],
+  });
+
+  it('should validate a valid SafeV2', () => {
+    const safeV2 = createSafeV2();
+
+    const result = SafeSchemaV2.safeParse(safeV2);
+
+    expect(result.success).toBe(true);
+  });
+
+  it('should coerce a string nonce to a number', () => {
+    const safeV2 = createSafeV2();
+    safeV2.nonce = faker.string.numeric() as unknown as number;
+
+    const result = SafeSchemaV2.safeParse(safeV2);
+
+    expect(result.success && result.data.nonce).toBe(Number(safeV2.nonce));
+  });
+
+  it.each([
+    'address' as const,
+    'masterCopy' as const,
+    'fallbackHandler' as const,
+    'guard' as const,
+    'moduleGuard' as const,
+  ])('should checksum %s', (field) => {
+    const nonChecksummedAddress = faker.finance
+      .ethereumAddress()
+      .toLowerCase() as Address;
+    const safeV2 = createSafeV2();
+    safeV2[field] = nonChecksummedAddress;
+
+    const result = SafeSchemaV2.safeParse(safeV2);
+
+    expect(result.success && result.data[field]).toBe(
+      getAddress(nonChecksummedAddress),
+    );
+  });
+
+  it('should allow an integer nonce', () => {
+    const safeV2 = createSafeV2();
+    safeV2.nonce = faker.number.int({ min: 0 });
+
+    const result = SafeSchemaV2.safeParse(safeV2);
+
+    expect(result.success).toBe(true);
+  });
+
+  it.each([
+    ['boolean' as const, faker.datatype.boolean(), undefined],
+    ['undefined' as const, undefined, 'Required'],
+    ['null' as const, null, undefined],
+  ])('should not allow a %s nonce', (type, value, message) => {
+    const safeV2 = createSafeV2();
+    safeV2.nonce = value as unknown as number;
+
+    const result = SafeSchemaV2.safeParse(safeV2);
+
+    expect(!result.success && result.error.issues).toStrictEqual([
+      {
+        code: 'invalid_union',
+        unionErrors: [
+          new ZodError([
+            {
+              code: 'invalid_type',
+              expected: 'number',
+              received: type,
+              path: ['nonce'],
+              message: message ?? `Expected number, received ${type}`,
+            },
+          ]),
+          new ZodError([
+            {
+              code: 'invalid_type',
+              expected: 'string',
+              received: type,
+              path: ['nonce'],
+              message: message ?? `Expected string, received ${type}`,
+            },
+          ]),
+        ],
+        path: ['nonce'],
+        message: 'Invalid input',
+      },
+    ]);
+  });
+
+  it('should allow an integer threshold', () => {
+    const safeV2 = createSafeV2();
+    safeV2.threshold = faker.number.int({ min: 1 });
+
+    const result = SafeSchemaV2.safeParse(safeV2);
+
+    expect(result.success).toBe(true);
+  });
+
+  it.each([
+    ['boolean', faker.datatype.boolean()],
+    ['undefined', undefined],
+    ['null', null],
+    ['string', faker.string.numeric()],
+  ])('should not allow a %s threshold', (type, value) => {
+    const safeV2 = createSafeV2();
+    safeV2.threshold = value as unknown as number;
+
+    const result = SafeSchemaV2.safeParse(safeV2);
+
+    expect(!result.success && result.error.issues).toStrictEqual([
+      {
+        code: 'invalid_type',
+        expected: expect.any(String),
+        received: type,
+        path: ['threshold'],
+        message: expect.any(String),
+      },
+    ]);
+  });
+
+  it.each(['owners' as const, 'enabledModules' as const])(
+    'should checksum the array of %s',
+    (field) => {
+      const nonChecksummedAddresses = faker.helpers.multiple(
+        () => faker.finance.ethereumAddress().toLowerCase() as Address,
+        {
+          count: { min: 1, max: 5 },
+        },
+      );
+      const safeV2 = createSafeV2();
+      safeV2[field] = nonChecksummedAddresses;
+
+      const result = SafeSchemaV2.safeParse(safeV2);
+
+      expect(result.success && result.data[field]).toStrictEqual(
+        nonChecksummedAddresses.map((nonChecksummedAddress) =>
+          getAddress(nonChecksummedAddress),
+        ),
+      );
+    },
+  );
+
+  it('should not allow optional nonce', () => {
+    const safeV2 = createSafeV2();
+    // @ts-expect-error nonce is not optional
+    delete safeV2.nonce;
+
+    const result = SafeSchemaV2.safeParse(safeV2);
+
+    expect(!result.success && result.error.issues).toStrictEqual([
+      {
+        code: 'invalid_union',
+        message: 'Invalid input',
+        path: ['nonce'],
+        unionErrors: [
+          new ZodError([
+            {
+              code: 'invalid_type',
+              expected: 'number',
+              received: 'undefined',
+              path: ['nonce'],
+              message: 'Required',
+            },
+          ]),
+          new ZodError([
+            {
+              code: 'invalid_type',
+              expected: 'string',
+              received: 'undefined',
+              path: ['nonce'],
+              message: 'Required',
+            },
+          ]),
+        ],
+      },
+    ]);
+  });
+
+  it.each([
+    'address' as const,
+    'owners' as const,
+    'threshold' as const,
+    'masterCopy' as const,
+    'fallbackHandler' as const,
+    'guard' as const,
+    'moduleGuard' as const,
+    'enabledModules' as const,
+  ])('should not allow optional %s', (field) => {
+    const safeV2 = createSafeV2();
+    delete safeV2[field];
+
+    const result = SafeSchemaV2.safeParse(safeV2);
+
+    expect(!result.success && result.error.issues).toContainEqual(
+      expect.objectContaining({
+        path: [field],
+        message: 'Required',
+      }),
+    );
   });
 });
