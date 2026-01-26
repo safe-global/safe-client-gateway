@@ -957,6 +957,8 @@ export class TransactionApi implements ITransactionApi {
     }
   }
 
+  // Important: there is no hook which invalidates this endpoint,
+  // Therefore, this data will live in cache until [ownersExpirationTimeSeconds]
   async getSafesByOwnerV2(args: {
     ownerAddress: Address;
     limit?: number;
