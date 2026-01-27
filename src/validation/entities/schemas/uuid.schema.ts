@@ -2,7 +2,6 @@ import type { UUID } from 'crypto';
 import { z } from 'zod';
 
 export const UuidSchema = z
-  .string()
   .uuid({
     message: 'Invalid UUID',
   })

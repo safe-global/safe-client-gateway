@@ -7,7 +7,7 @@ const BasePageSchema = z.object({
   previous: z.string().nullable(),
 });
 
-export function buildPageSchema<T extends z.ZodTypeAny>(
+export function buildPageSchema<T extends z.ZodType>(
   itemSchema: T,
 ): z.ZodType<Page<z.infer<T>>> {
   return BasePageSchema.extend({ results: z.array(itemSchema) });
@@ -21,7 +21,7 @@ export const LenientBasePageSchema = BasePageSchema.extend({
  * Builds a lenient page schema that filters out invalid items from
  * the results array, setting the length of which as the count.
  */
-export function buildLenientPageSchema<T extends z.ZodTypeAny>(
+export function buildLenientPageSchema<T extends z.ZodType>(
   itemSchema: T,
 ): z.ZodType<Page<z.infer<T>>> {
   return LenientBasePageSchema.transform((data) => {

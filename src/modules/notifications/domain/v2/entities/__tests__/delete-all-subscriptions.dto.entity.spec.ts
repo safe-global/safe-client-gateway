@@ -30,7 +30,6 @@ describe('DeleteAllSubscriptionsDtoSchema', () => {
 
   it.each([
     ['chainId' as const, 'string'],
-    ['deviceUuid' as const, 'string'],
     ['safeAddress' as const, 'string'],
   ])('should require %s for each subscription', (key, expected) => {
     const subscriptions = [
@@ -56,6 +55,30 @@ describe('DeleteAllSubscriptionsDtoSchema', () => {
         expected,
         message: 'Invalid input: expected string, received undefined',
         path: ['subscriptions', 0, key],
+      },
+    ]);
+  });
+
+  it('should require deviceUuid for each subscription', () => {
+    const deleteAllSubscriptionsDto = {
+      subscriptions: [
+        {
+          chainId: faker.string.numeric(),
+          safeAddress: getAddress(faker.finance.ethereumAddress()),
+        },
+      ],
+    };
+
+    const result = DeleteAllSubscriptionsDtoSchema.safeParse(
+      deleteAllSubscriptionsDto,
+    );
+
+    expect(!result.success && result.error.issues).toStrictEqual([
+      {
+        code: 'invalid_type',
+        expected: 'string',
+        message: 'Invalid UUID',
+        path: ['subscriptions', 0, 'deviceUuid'],
       },
     ]);
   });

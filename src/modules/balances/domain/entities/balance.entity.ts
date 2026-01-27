@@ -28,8 +28,8 @@ export const FiatSchema = z.object({
 });
 
 export const BalanceSchema = z.union([
-  NativeBalanceSchema.merge(FiatSchema),
-  Erc20BalanceSchema.merge(FiatSchema),
+  NativeBalanceSchema.extend(FiatSchema.shape),
+  Erc20BalanceSchema.extend(FiatSchema.shape),
 ]);
 
 export const BalancesSchema = z.array(BalanceSchema);
