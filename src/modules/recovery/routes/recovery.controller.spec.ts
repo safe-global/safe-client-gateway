@@ -276,9 +276,8 @@ describe('Recovery (Unit)', () => {
           statusCode: 422,
           code: 'invalid_type',
           expected: 'string',
-          received: 'number',
           path: ['moduleAddress'],
-          message: 'Expected string, received number',
+          message: 'Invalid input: expected string, received number',
         });
 
       expect(networkService.get).not.toHaveBeenCalled();

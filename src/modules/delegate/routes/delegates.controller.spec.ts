@@ -170,9 +170,8 @@ describe('Delegates controller', () => {
           statusCode: 422,
           code: 'invalid_type',
           expected: 'string',
-          received: 'undefined',
           path: ['signature'],
-          message: 'Required',
+          message: 'Invalid input: expected string, received undefined',
         });
     });
 
@@ -361,9 +360,8 @@ describe('Delegates controller', () => {
           statusCode: 422,
           code: 'invalid_type',
           expected: 'string',
-          received: 'number',
           path: ['signature'],
-          message: 'Expected string, received number',
+          message: 'Invalid input: expected string, received number',
         });
     });
 
@@ -381,9 +379,8 @@ describe('Delegates controller', () => {
           statusCode: 422,
           code: 'invalid_type',
           expected: 'string',
-          received: 'undefined',
           path: ['delegator'],
-          message: 'Required',
+          message: 'Invalid input: expected string, received undefined',
         });
     });
   });
@@ -461,9 +458,8 @@ describe('Delegates controller', () => {
           statusCode: 422,
           code: 'invalid_type',
           expected: 'string',
-          received: 'boolean',
           path: ['safe'],
-          message: 'Expected string, received boolean',
+          message: 'Invalid input: expected string, received boolean',
         });
     });
   });

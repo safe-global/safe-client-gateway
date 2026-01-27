@@ -168,9 +168,8 @@ describe('Estimations Controller (Unit)', () => {
         statusCode: 422,
         code: 'invalid_type',
         expected: 'string',
-        received: 'undefined',
         path: ['value'],
-        message: 'Required',
+        message: 'Invalid input: expected string, received undefined',
       });
   });
 

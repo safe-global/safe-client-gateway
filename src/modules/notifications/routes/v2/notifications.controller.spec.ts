@@ -379,9 +379,8 @@ describe('Notifications Controller V2 (Unit)', () => {
           statusCode: 422,
           code: 'invalid_type',
           expected: 'string',
-          received: 'undefined',
           path: ['cloudMessagingToken'],
-          message: 'Required',
+          message: 'Invalid input: expected string, received undefined',
         });
     });
 
@@ -695,18 +694,23 @@ describe('Notifications Controller V2 (Unit)', () => {
         .build();
       const accessToken = jwtService.sign(authPayloadDto);
 
-      await request(app.getHttpServer())
+      const response = await request(app.getHttpServer())
         .get(
           `/v2/chains/${chainId}/notifications/devices/${invalidDeviceUuid}/safes/${safeAddress}`,
         )
         .set('Cookie', [`access_token=${accessToken}`])
-        .expect({
+        .expect(422);
+
+      expect(response.body).toEqual(
+        expect.objectContaining({
           statusCode: 422,
-          validation: 'uuid',
-          code: 'invalid_string',
+          format: 'uuid',
+          code: 'invalid_format',
           message: 'Invalid UUID',
+          origin: 'string',
           path: [],
-        });
+        }),
+      );
     });
 
     it('should return 422 if the chainId is invalid', async () => {
@@ -915,17 +919,22 @@ describe('Notifications Controller V2 (Unit)', () => {
       const safeAddress = getAddress(faker.finance.ethereumAddress());
       const invalidDeviceUuid = faker.string.alphanumeric();
 
-      await request(app.getHttpServer())
+      const response = await request(app.getHttpServer())
         .delete(
           `/v2/chains/${chainId}/notifications/devices/${invalidDeviceUuid}/safes/${safeAddress}`,
         )
-        .expect({
+        .expect(422);
+
+      expect(response.body).toEqual(
+        expect.objectContaining({
           statusCode: 422,
-          validation: 'uuid',
-          code: 'invalid_string',
+          format: 'uuid',
+          code: 'invalid_format',
           message: 'Invalid UUID',
+          origin: 'string',
           path: [],
-        });
+        }),
+      );
     });
 
     it('should return 422 if the chainId is invalid', async () => {
@@ -1031,16 +1040,21 @@ describe('Notifications Controller V2 (Unit)', () => {
         ],
       };
 
-      await request(app.getHttpServer())
+      const response = await request(app.getHttpServer())
         .delete('/v2/notifications/subscriptions')
         .send(deleteAllSubscriptionsDto)
-        .expect({
+        .expect(422);
+
+      expect(response.body).toEqual(
+        expect.objectContaining({
           statusCode: 422,
-          validation: 'uuid',
-          code: 'invalid_string',
+          format: 'uuid',
+          code: 'invalid_format',
+          origin: 'string',
           message: 'Invalid UUID',
           path: ['subscriptions', 0, 'deviceUuid'],
-        });
+        }),
+      );
     });
 
     it('should return 422 if safeAddress is invalid', async () => {
@@ -1138,17 +1152,22 @@ describe('Notifications Controller V2 (Unit)', () => {
       const chainId = faker.string.numeric();
       const invalidDeviceUuid = faker.string.alphanumeric();
 
-      await request(app.getHttpServer())
+      const response = await request(app.getHttpServer())
         .delete(
           `/v2/chains/${chainId}/notifications/devices/${invalidDeviceUuid}`,
         )
-        .expect({
+        .expect(422);
+
+      expect(response.body).toEqual(
+        expect.objectContaining({
           statusCode: 422,
-          validation: 'uuid',
-          code: 'invalid_string',
+          format: 'uuid',
+          code: 'invalid_format',
+          origin: 'string',
           message: 'Invalid UUID',
           path: [],
-        });
+        }),
+      );
     });
 
     it('should return 422 if the chainId is invalid', async () => {

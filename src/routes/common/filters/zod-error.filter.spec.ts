@@ -98,9 +98,8 @@ describe('ZodErrorFilter tests', () => {
         statusCode: 422,
         code: 'invalid_type',
         expected: 'string',
-        received: 'number',
         path: ['value'], // Only the first issue is returned
-        message: 'Expected string, received number',
+        message: 'Invalid input: expected string, received number',
       });
   });
 
@@ -113,9 +112,8 @@ describe('ZodErrorFilter tests', () => {
         statusCode: 422,
         code: 'invalid_type',
         expected: 'string',
-        received: 'boolean',
         path: ['value'], // Only the first union, first issue is returned
-        message: 'Expected string, received boolean',
+        message: 'Invalid input: expected string, received boolean',
       });
   });
 
@@ -132,9 +130,8 @@ describe('ZodErrorFilter tests', () => {
         statusCode: 422,
         code: 'invalid_type',
         expected: 'string',
-        received: 'undefined',
         path: ['value'], // Only the first union of the nested union error, first issue is returned
-        message: 'Required',
+        message: 'Invalid input: expected string, received undefined',
       });
   });
 

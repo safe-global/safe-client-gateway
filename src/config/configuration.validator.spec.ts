@@ -136,7 +136,9 @@ describe('Configuration validator', () => {
           omit(validConfiguration, key),
           RootConfigurationSchema,
         ),
-      ).toThrow(`Configuration is invalid: ${key} Required`);
+      ).toThrow(
+        `Configuration is invalid: ${key} Invalid input: expected string, received undefined`,
+      );
     },
   );
 
@@ -150,7 +152,7 @@ describe('Configuration validator', () => {
           RootConfigurationSchema,
         ),
       ).toThrow(
-        'Configuration is invalid: TX_SERVICE_API_KEY String must contain at least 1 character(s)',
+        'Configuration is invalid: TX_SERVICE_API_KEY Too small: expected string to have >=1 characters',
       );
     },
   );
@@ -198,7 +200,7 @@ describe('Configuration validator', () => {
     expect(() =>
       configurationValidator(invalidConfiguration, RootConfigurationSchema),
     ).toThrow(
-      /LOG_LEVEL Invalid enum value. Expected 'error' | 'warn' | 'info' | 'http' | 'verbose' | 'debug' | 'silly', received/,
+      /LOG_LEVEL Invalid option: expected one of "error"\|"warn"\|"info"\|"http"\|"verbose"\|"debug"\|"silly"/,
     );
   });
 
@@ -216,9 +218,7 @@ describe('Configuration validator', () => {
       expect(() =>
         configurationValidator(config, RootConfigurationSchema),
       ).toThrow(
-        new RegExp(
-          `${key} Invalid enum value. Expected 'local' | 'aws', received`,
-        ),
+        new RegExp(`${key} Invalid option: expected one of "local"\\|"aws"`),
       );
     },
   );
@@ -271,7 +271,7 @@ describe('Configuration validator', () => {
     expect(() =>
       configurationValidator(invalidConfiguration, RootConfigurationSchema),
     ).toThrow(
-      /TARGETED_MESSAGING_FILE_STORAGE_TYPE Invalid enum value. Expected 'local' | 'aws', received/,
+      /TARGETED_MESSAGING_FILE_STORAGE_TYPE Invalid option: expected one of "local"\|"aws"/,
     );
   });
 
