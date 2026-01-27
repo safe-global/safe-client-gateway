@@ -11,7 +11,7 @@ import type { CreationTransaction } from '@/modules/safe/domain/entities/creatio
 import type { ModuleTransaction } from '@/modules/safe/domain/entities/module-transaction.entity';
 import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
 import type { SafeList } from '@/modules/safe/domain/entities/safe-list.entity';
-import type { Safe } from '@/modules/safe/domain/entities/safe.entity';
+import type { Safe, SafeV2 } from '@/modules/safe/domain/entities/safe.entity';
 import type { Transaction } from '@/modules/safe/domain/entities/transaction.entity';
 import type { Transfer } from '@/modules/safe/domain/entities/transfer.entity';
 import type { Token } from '@/modules/tokens/domain/entities/token.entity';
@@ -234,6 +234,12 @@ export interface ITransactionApi {
   }): Promise<Raw<Page<Token>>>;
 
   getSafesByOwner(ownerAddress: Address): Promise<Raw<SafeList>>;
+
+  getSafesByOwnerV2(args: {
+    ownerAddress: Address;
+    limit?: number;
+    offset?: number;
+  }): Promise<Raw<Page<SafeV2>>>;
 
   getEstimation(args: {
     address: Address;
