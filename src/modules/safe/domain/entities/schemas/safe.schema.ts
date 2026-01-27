@@ -22,8 +22,8 @@ export const SafeSchemaV2 = z.object({
   nonce: CoercedNumberSchema,
   masterCopy: AddressSchema,
   fallbackHandler: AddressSchema,
-  guard: AddressSchema,
-  moduleGuard: AddressSchema,
+  guard: AddressSchema.nullable(),
+  moduleGuard: AddressSchema.nullable(),
   enabledModules: z.array(AddressSchema),
 });
 
