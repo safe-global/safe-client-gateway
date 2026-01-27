@@ -284,8 +284,6 @@ describe('SafeSchemaV2', () => {
     'address' as const,
     'masterCopy' as const,
     'fallbackHandler' as const,
-    'guard' as const,
-    'moduleGuard' as const,
   ])('should checksum %s', (field) => {
     const nonChecksummedAddress = faker.finance
       .ethereumAddress()
@@ -299,6 +297,23 @@ describe('SafeSchemaV2', () => {
       getAddress(nonChecksummedAddress),
     );
   });
+
+  it.each(['guard' as const, 'moduleGuard' as const])(
+    'should checksum %s when provided',
+    (field) => {
+      const nonChecksummedAddress = faker.finance
+        .ethereumAddress()
+        .toLowerCase() as Address;
+      const safeV2 = createSafeV2();
+      safeV2[field] = nonChecksummedAddress;
+
+      const result = SafeSchemaV2.safeParse(safeV2);
+
+      expect(result.success && result.data[field]).toBe(
+        getAddress(nonChecksummedAddress),
+      );
+    },
+  );
 
   it('should allow an integer nonce', () => {
     const safeV2 = createSafeV2();
@@ -443,8 +458,6 @@ describe('SafeSchemaV2', () => {
     'threshold' as const,
     'masterCopy' as const,
     'fallbackHandler' as const,
-    'guard' as const,
-    'moduleGuard' as const,
     'enabledModules' as const,
   ])('should not allow optional %s', (field) => {
     const safeV2 = createSafeV2();
@@ -459,4 +472,34 @@ describe('SafeSchemaV2', () => {
       }),
     );
   });
+
+  it.each(['guard' as const, 'moduleGuard' as const])(
+    'should allow null %s',
+    (field) => {
+      const safeV2 = createSafeV2();
+      safeV2[field] = null;
+
+      const result = SafeSchemaV2.safeParse(safeV2);
+
+      expect(result.success).toBe(true);
+      expect(result.success && result.data[field]).toBe(null);
+    },
+  );
+
+  it.each(['guard' as const, 'moduleGuard' as const])(
+    'should not allow undefined %s',
+    (field) => {
+      const safeV2 = createSafeV2();
+      delete safeV2[field];
+
+      const result = SafeSchemaV2.safeParse(safeV2);
+
+      expect(!result.success && result.error.issues).toContainEqual(
+        expect.objectContaining({
+          path: [field],
+          message: 'Required',
+        }),
+      );
+    },
+  );
 });
