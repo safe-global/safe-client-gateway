@@ -10,7 +10,7 @@ export const ProposeTransactionDtoSchema = z.object({
   value: NumericStringSchema,
   data: HexSchema.nullish().default(null),
   nonce: NumericStringSchema,
-  operation: z.nativeEnum(Operation),
+  operation: z.enum(Operation),
   safeTxGas: NumericStringSchema,
   baseGas: NumericStringSchema,
   gasPrice: NumericStringSchema,

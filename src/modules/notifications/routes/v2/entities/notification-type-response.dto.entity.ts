@@ -3,7 +3,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { z } from 'zod';
 
 export const NotificationTypeResponseSchema = z.object({
-  name: z.nativeEnum(NotificationTypeEnum),
+  name: z.enum(NotificationTypeEnum),
 });
 
 export class NotificationTypeResponseDto implements z.infer<

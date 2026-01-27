@@ -24,7 +24,7 @@ export enum SafeAppSocialProfilePlatforms {
 
 export const SafeAppSocialProfileSchema = z.object({
   platform: z
-    .nativeEnum(SafeAppSocialProfilePlatforms)
+    .enum(SafeAppSocialProfilePlatforms)
     .catch(SafeAppSocialProfilePlatforms.Unknown),
   url: z.url(),
 });

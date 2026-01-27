@@ -11,5 +11,5 @@ export const MessageConfirmationSchema = z.object({
   owner: AddressSchema,
   // We don't validate signature length as they are on the Transaction Service
   signature: HexBytesSchema,
-  signatureType: z.nativeEnum(SignatureType),
+  signatureType: z.enum(SignatureType),
 });
