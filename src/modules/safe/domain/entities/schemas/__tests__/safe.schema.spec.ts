@@ -51,10 +51,10 @@ describe('SafeSchema', () => {
   });
 
   it.each([
-    ['boolean' as const, faker.datatype.boolean(), undefined],
-    ['undefined' as const, undefined, 'Required'],
-    ['null' as const, null, undefined],
-  ])('should not allow a %s nonce', (type, value, message) => {
+    ['boolean' as const, faker.datatype.boolean()],
+    ['undefined' as const, undefined],
+    ['null' as const, null],
+  ])('should not allow a %s nonce', (type, value) => {
     const safe = safeBuilder()
       .with('nonce', value as unknown as number)
       .build();
@@ -72,6 +72,7 @@ describe('SafeSchema', () => {
               code: 'invalid_type',
               expected: 'number',
               path: [],
+              message: `Invalid input: expected number, received ${type}`,
             }),
           ],
           [
@@ -79,6 +80,7 @@ describe('SafeSchema', () => {
               code: 'invalid_type',
               expected: 'string',
               path: [],
+              message: `Invalid input: expected string, received ${type}`,
             }),
           ],
         ],
@@ -113,6 +115,7 @@ describe('SafeSchema', () => {
         code: 'invalid_type',
         expected: expect.any(String),
         path: ['threshold'],
+        message: `Invalid input: expected number, received ${type}`,
       }),
     ]);
   });

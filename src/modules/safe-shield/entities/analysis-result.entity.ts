@@ -151,7 +151,9 @@ const MasterCopyChangeThreatAnalysisResultSchema =
 const MaliciousOrModerateThreatAnalysisResultSchema =
   AnalysisResultBaseSchema.extend({
     type: z.union([z.literal('MALICIOUS'), z.literal('MODERATE')]),
-    issues: z.partialRecord(SeveritySchema, z.array(ThreatIssueSchema)).optional(),
+    issues: z
+      .partialRecord(SeveritySchema, z.array(ThreatIssueSchema))
+      .optional(),
   });
 
 const FailedThreatAnalysisResultSchema = AnalysisResultBaseSchema.extend({

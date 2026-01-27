@@ -114,13 +114,7 @@ describe('BlockaidScanResponseSchema', () => {
       {
         code: 'custom',
         message: 'PROXY_UPGRADE type must match ProxyUpgradeManagementSchema',
-        path: [
-          'simulation',
-          'contract_management',
-          safeAddress,
-          0,
-          'type',
-        ],
+        path: ['simulation', 'contract_management', safeAddress, 0, 'type'],
       },
     ]);
   });
@@ -152,13 +146,7 @@ describe('BlockaidScanResponseSchema', () => {
       {
         code: 'custom',
         message: 'PROXY_UPGRADE type must match ProxyUpgradeManagementSchema',
-        path: [
-          'simulation',
-          'contract_management',
-          safeAddress,
-          0,
-          'type',
-        ],
+        path: ['simulation', 'contract_management', safeAddress, 0, 'type'],
       },
     ]);
   });

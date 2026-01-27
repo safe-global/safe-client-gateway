@@ -62,7 +62,7 @@ export class KilnDecoder extends AbiDecoder<typeof KilnAbi> {
     }
   }
 
-  decodeDepositEvent(args: { data: Address; topics: Hex[] }): {
+  decodeDepositEvent(args: { data: Address; topics: Array<Hex> }): {
     pubkey: Address;
     withdrawal_credentials: Address;
     amount: Address;
@@ -84,7 +84,7 @@ export class KilnDecoder extends AbiDecoder<typeof KilnAbi> {
     }
   }
 
-  decodeWithdrawal(args: { data: Address; topics: Hex[] }): {
+  decodeWithdrawal(args: { data: Address; topics: Array<Hex> }): {
     withdrawer: Address;
     feeRecipient: Address;
     pubKeyRoot: Address;
