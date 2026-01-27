@@ -700,6 +700,62 @@ describe('Owners Controller V3 (Unit)', () => {
         });
     });
 
+    it('In case of 404 error from the tx service (no Safes found) returns empty array (not null)', async () => {
+      const ownerAddress = faker.finance.ethereumAddress();
+      const chainId = faker.string.numeric();
+      const chain = chainBuilder().with('chainId', chainId).build();
+
+      networkService.get.mockImplementation(
+        ({ url }: { url: string; networkRequest?: NetworkRequest }) => {
+          switch (url) {
+            case `${safeConfigUrl}/api/v1/chains`: {
+              return Promise.resolve({
+                data: rawify(
+                  pageBuilder()
+                    .with('results', [chain])
+                    .with('next', null)
+                    .build(),
+                ),
+                status: 200,
+              });
+            }
+
+            case `${safeConfigUrl}/api/v1/chains/${chainId}`: {
+              return Promise.resolve({
+                data: rawify(chain),
+                status: 200,
+              });
+            }
+
+            case `${chain.transactionService}/api/v2/owners/${getAddress(ownerAddress)}/safes/`: {
+              // Simulate a 404 error from the transaction service
+              const error = new NetworkResponseError(
+                new URL(
+                  `${chain.transactionService}/api/v2/owners/${getAddress(ownerAddress)}/safes/`,
+                ),
+                {
+                  status: 404,
+                } as Response,
+                { message: 'Not found' },
+              );
+              return Promise.reject(error);
+            }
+
+            default: {
+              return Promise.reject(`No matching rule for url: ${url}`);
+            }
+          }
+        },
+      );
+
+      await request(app.getHttpServer())
+        .get(`/v3/owners/${ownerAddress}/safes`)
+        .expect(200)
+        .expect({
+          [chainId]: [], // Should return empty array, not null
+        });
+    });
+
     it('Success with null guard and moduleGuard', async () => {
       const ownerAddress = faker.finance.ethereumAddress();
       const chainId = faker.string.numeric();

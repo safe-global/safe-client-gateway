@@ -38,6 +38,7 @@ import { z } from 'zod';
 import { TransactionVerifierHelper } from '@/modules/transactions/routes/helpers/transaction-verifier.helper';
 import { PaginationData } from '@/routes/common/pagination/pagination.data';
 import { SAFE_TRANSACTION_SERVICE_MAX_LIMIT } from '@/domain/common/constants';
+import { DataSourceError } from '@/domain/errors/data-source.error';
 import type { Address } from 'viem';
 
 @Injectable()
@@ -547,24 +548,34 @@ export class SafeRepository implements ISafeRepository {
     // todo move to config, similar to chains and contracts repositories?
     const maxSequentialPages = 10;
 
-    for (let i = 0; i < maxSequentialPages; i++) {
-      const page = await transactionService.getSafesByOwnerV2({
-        ownerAddress: args.ownerAddress,
-        limit: SAFE_TRANSACTION_SERVICE_MAX_LIMIT,
-        offset,
-      });
+    try {
+      for (let i = 0; i < maxSequentialPages; i++) {
+        const page = await transactionService.getSafesByOwnerV2({
+          ownerAddress: args.ownerAddress,
+          limit: SAFE_TRANSACTION_SERVICE_MAX_LIMIT,
+          offset,
+        });
 
-      const parsedPage = SafePageV2Schema.parse(page);
-      allSafeV2s.push(...parsedPage.results);
+        const parsedPage = SafePageV2Schema.parse(page);
+        allSafeV2s.push(...parsedPage.results);
 
-      next = parsedPage.next;
-      if (!next) {
-        break;
+        next = parsedPage.next;
+        if (!next) {
+          break;
+        }
+
+        const url = new URL(next);
+        const paginationData = PaginationData.fromLimitAndOffset(url);
+        offset = paginationData.offset;
       }
-
-      const url = new URL(next);
-      const paginationData = PaginationData.fromLimitAndOffset(url);
-      offset = paginationData.offset;
+    } catch (error) {
+      // If it's a 404 (no safes found), return empty result instead of null
+      // (this is done to match the logic of v2 response)
+      if (error instanceof DataSourceError && error.code === 404) {
+        return SafeListSchema.parse({ safes: [] });
+      }
+      // Re-throw other errors
+      throw error;
     }
 
     if (next) {
