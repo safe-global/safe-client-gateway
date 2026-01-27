@@ -30,4 +30,10 @@ export class OwnersService {
   }): Promise<{ [chainId: string]: Array<string> | null }> {
     return this.safeRepository.getAllSafesByOwner(args);
   }
+
+  async getAllSafesByOwnerV2(args: {
+    ownerAddress: Address;
+  }): Promise<{ [chainId: string]: Array<string> | null }> {
+    return this.safeRepository.getAllSafesByOwnerV2(args);
+  }
 }

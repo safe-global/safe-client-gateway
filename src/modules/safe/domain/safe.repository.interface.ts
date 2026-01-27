@@ -188,6 +188,10 @@ export interface ISafeRepository {
     ownerAddress: Address;
   }): Promise<{ [chainId: string]: Array<string> | null }>;
 
+  getAllSafesByOwnerV2(args: {
+    ownerAddress: Address;
+  }): Promise<{ [chainId: string]: Array<string> | null }>;
+
   getLastTransactionSortedByNonce(args: {
     chainId: string;
     safeAddress: Address;

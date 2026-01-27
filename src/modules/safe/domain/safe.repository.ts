@@ -613,6 +613,42 @@ export class SafeRepository implements ISafeRepository {
     return result;
   }
 
+  async getAllSafesByOwnerV2(args: {
+    ownerAddress: Address;
+  }): Promise<{ [chainId: string]: Array<string> | null }> {
+    const chains = await this.chainsRepository.getAllChains();
+    const allSafeLists = await Promise.allSettled(
+      chains.map(async ({ chainId }) => {
+        const safeList = await this.getSafesByOwnerV2({
+          chainId,
+          ownerAddress: args.ownerAddress,
+        });
+
+        return {
+          chainId,
+          safeList,
+        };
+      }),
+    );
+
+    const result: { [chainId: string]: Array<string> | null } = {};
+
+    for (const [index, allSafeList] of allSafeLists.entries()) {
+      const chainId = chains[index].chainId;
+
+      if (allSafeList.status === 'fulfilled') {
+        result[chainId] = allSafeList.value.safeList.safes;
+      } else {
+        result[chainId] = null;
+        this.loggingService.warn(
+          `Failed to fetch Safe owners. chainId=${chainId}`,
+        );
+      }
+    }
+
+    return result;
+  }
+
   async getLastTransactionSortedByNonce(args: {
     chainId: string;
     safeAddress: Address;
