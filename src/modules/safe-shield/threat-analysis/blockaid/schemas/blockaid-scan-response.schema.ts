@@ -46,7 +46,7 @@ const SimulationSchema = z.object({
 });
 
 export const BlockaidScanResponseSchema = z.object({
-  request_id: z.union([z.string(), z.undefined()]),
+  request_id: z.string().optional(),
   validation: ValidationSchema.optional(),
   simulation: SimulationSchema.optional(),
 });

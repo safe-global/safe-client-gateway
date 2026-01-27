@@ -35,9 +35,8 @@ describe('getAssetPriceSchema', () => {
       {
         code: 'invalid_type',
         expected: 'object',
-        message: 'Expected object, received number',
+        message: 'Invalid input: expected object, received number',
         path: [address],
-        received: 'number',
       },
     ]);
   });
@@ -58,16 +57,14 @@ describe('getAssetPriceSchema', () => {
       {
         code: 'invalid_type',
         expected: 'number',
-        message: 'Expected number, received string',
+        message: 'Invalid input: expected number, received string',
         path: [address, currency],
-        received: 'string',
       },
       {
         code: 'invalid_type',
         expected: 'number',
-        message: 'Expected number, received string',
+        message: 'Invalid input: expected number, received string',
         path: [address, `${currency}_24h_change`],
-        received: 'string',
       },
     ]);
   });

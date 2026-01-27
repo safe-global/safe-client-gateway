@@ -66,7 +66,7 @@ describe('DateStringSchema', () => {
     const result = DateStringSchema.safeParse(value);
 
     expect(result.success).toBe(false);
-    expect(result.error?.issues[0].message).toBe('Invalid datetime');
+    expect(result.error?.issues[0].message).toBe('Invalid ISO datetime');
   });
 
   it('should validate edge case datetime strings', () => {

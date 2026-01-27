@@ -22,14 +22,14 @@ describe('DedicatedStakingStatsSchema', () => {
         dedicatedStakingStats,
       );
 
-      expect(!result.success && result.error.issues.length).toBe(1);
-      expect(!result.success && result.error.issues[0]).toStrictEqual({
-        code: 'invalid_type',
-        expected: 'number',
-        message: 'Expected number, received string',
-        path: ['gross_apy', key],
-        received: 'string',
-      });
+      expect(!result.success && result.error.issues).toStrictEqual([
+        {
+          code: 'invalid_type',
+          expected: 'number',
+          message: 'Invalid input: expected number, received string',
+          path: ['gross_apy', key],
+        },
+      ]);
     },
   );
 
@@ -67,19 +67,19 @@ describe('DedicatedStakingStatsSchema', () => {
 
     const result = DedicatedStakingStatsSchema.safeParse(dedicatedStakingStats);
 
-    expect(!result.success && result.error.issues.length).toBe(2);
     expect(!result.success && result.error.issues).toStrictEqual([
       {
         code: 'invalid_type',
         expected: 'object',
-        message: 'Required',
+        message: 'Invalid input: expected object, received undefined',
         path: ['gross_apy'],
-        received: 'undefined',
       },
       {
-        code: 'invalid_date',
-        message: 'Invalid date',
+        code: 'invalid_type',
+        message: 'Invalid input: expected date, received Date',
         path: ['updated_at'],
+        expected: 'date',
+        received: 'Invalid Date',
       },
     ]);
   });

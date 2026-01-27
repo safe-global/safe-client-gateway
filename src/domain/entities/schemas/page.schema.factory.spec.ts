@@ -39,9 +39,8 @@ describe('Page schema factory', () => {
       expect(!result.success && result.error.issues[0]).toStrictEqual({
         code: 'invalid_type',
         expected: 'number',
-        message: 'Expected number, received string',
+        message: 'Invalid input: expected number, received string',
         path: ['count'],
-        received: 'string',
       });
     });
 
@@ -64,9 +63,8 @@ describe('Page schema factory', () => {
         expect(!result.success && result.error.issues[0]).toStrictEqual({
           code: 'invalid_type',
           expected: 'string',
-          message: 'Expected string, received number',
+          message: 'Invalid input: expected string, received number',
           path: [key],
-          received: 'number',
         });
       },
     );
@@ -123,9 +121,8 @@ describe('Page schema factory', () => {
       expect(!result.success && result.error.issues[0]).toStrictEqual({
         code: 'invalid_type',
         expected: 'number',
-        message: 'Expected number, received string',
+        message: 'Invalid input: expected number, received string',
         path: ['count'],
-        received: 'string',
       });
     });
 
@@ -148,9 +145,8 @@ describe('Page schema factory', () => {
         expect(!result.success && result.error.issues[0]).toStrictEqual({
           code: 'invalid_type',
           expected: 'string',
-          message: 'Expected string, received number',
+          message: 'Invalid input: expected string, received number',
           path: [key],
-          received: 'number',
         });
       },
     );

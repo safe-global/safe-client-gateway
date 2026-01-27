@@ -48,9 +48,8 @@ describe('RewardsFeeSchema', () => {
       expect(result.error?.issues[0]).toStrictEqual({
         code: 'invalid_type',
         expected: 'number',
-        message: `Expected number, received ${type}`,
+        message: `Invalid input: expected number, received ${type}`,
         path: ['fee'],
-        received: type,
       });
     },
   );

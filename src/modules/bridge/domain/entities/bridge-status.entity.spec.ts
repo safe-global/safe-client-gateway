@@ -189,16 +189,13 @@ describe('BridgeStatusSchema', () => {
 
       const result = FailedStatusDataSchema.safeParse(failedStatusData);
 
-      expect(result.success).toBe(false);
-
-      expect(result.error?.issues).toStrictEqual([
+      expect(!result.success && result.error.issues).toStrictEqual([
         {
-          code: 'invalid_enum_value',
-          options: ['FAILED', 'INVALID', 'NOT_FOUND'],
+          code: 'invalid_value',
           message:
-            "Invalid enum value. Expected 'FAILED' | 'INVALID' | 'NOT_FOUND', received 'DONE'",
+            'Invalid option: expected one of "FAILED"|"INVALID"|"NOT_FOUND"',
           path: ['status'],
-          received: 'DONE',
+          values: ['FAILED', 'INVALID', 'NOT_FOUND'],
         },
       ]);
     });
