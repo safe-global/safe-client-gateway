@@ -1,5 +1,6 @@
 import { OwnersService } from '@/modules/owners/routes/owners.service';
 import type { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
+import type { SafesByChainId } from '@/modules/safe/domain/entities/safes-by-chain-id.entity';
 import { faker } from '@faker-js/faker';
 import type { Address } from 'viem';
 
@@ -518,7 +519,7 @@ describe('OwnersService', () => {
 
     it('should handle many chains with varying safe counts', async () => {
       const ownerAddress = faker.finance.ethereumAddress() as Address;
-      const mockResult: { [chainId: string]: Array<string> | null } = {};
+      const mockResult: SafesByChainId = {};
 
       // Create 50 chains with unique IDs and varying numbers of safes
       for (let i = 0; i < 50; i++) {
@@ -642,7 +643,7 @@ describe('OwnersService', () => {
 
     it('should handle many chains with large safe counts', async () => {
       const ownerAddress = faker.finance.ethereumAddress() as Address;
-      const mockResult: { [chainId: string]: Array<string> | null } = {};
+      const mockResult: SafesByChainId = {};
 
       // Create 100 chains with unique IDs and varying numbers of safes
       for (let i = 0; i < 100; i++) {

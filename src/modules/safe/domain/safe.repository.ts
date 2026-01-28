@@ -34,6 +34,7 @@ import {
   SafePageV2Schema,
 } from '@/modules/safe/domain/entities/schemas/safe.schema';
 import { SafeV2 } from '@/modules/safe/domain/entities/safe.entity';
+import { SafesByChainId } from '@/modules/safe/domain/entities/safes-by-chain-id.entity';
 import { z } from 'zod';
 import { TransactionVerifierHelper } from '@/modules/transactions/routes/helpers/transaction-verifier.helper';
 import { PaginationData } from '@/routes/common/pagination/pagination.data';
@@ -587,7 +588,7 @@ export class SafeRepository implements ISafeRepository {
       chainId: string;
       ownerAddress: Address;
     }) => Promise<SafeList>;
-  }): Promise<{ [chainId: string]: Array<string> | null }> {
+  }): Promise<SafesByChainId> {
     const chains = await this.chainsRepository.getAllChains();
     const allSafeLists = await Promise.allSettled(
       chains.map(async ({ chainId }) => {
@@ -603,7 +604,7 @@ export class SafeRepository implements ISafeRepository {
       }),
     );
 
-    const result: { [chainId: string]: Array<string> | null } = {};
+    const result: SafesByChainId = {};
 
     for (const [index, allSafeList] of allSafeLists.entries()) {
       const chainId = chains[index].chainId;
@@ -623,7 +624,7 @@ export class SafeRepository implements ISafeRepository {
 
   async getAllSafesByOwner(args: {
     ownerAddress: Address;
-  }): Promise<{ [chainId: string]: Array<string> | null }> {
+  }): Promise<SafesByChainId> {
     return this.getAllSafesByOwnerForChains({
       ownerAddress: args.ownerAddress,
       getSafesByOwnerFn: (args) => this.getSafesByOwner(args),
@@ -632,7 +633,7 @@ export class SafeRepository implements ISafeRepository {
 
   async getAllSafesByOwnerV2(args: {
     ownerAddress: Address;
-  }): Promise<{ [chainId: string]: Array<string> | null }> {
+  }): Promise<SafesByChainId> {
     return this.getAllSafesByOwnerForChains({
       ownerAddress: args.ownerAddress,
       getSafesByOwnerFn: (args) => this.getSafesByOwnerV2(args),
