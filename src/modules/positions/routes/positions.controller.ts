@@ -30,6 +30,14 @@ export class PositionsController {
       'Cache busting parameter. Set to true to invalidate cache and fetch fresh data from Zerion',
     example: true,
   })
+  @ApiQuery({
+    name: 'sync',
+    required: false,
+    type: Boolean,
+    description:
+      'If true, waits for position data to be aggregated before responding (up to 30s)',
+    example: false,
+  })
   @Get('chains/:chainId/safes/:safeAddress/positions/:fiatCode')
   async getPositions(
     @Param('chainId') chainId: string,
@@ -38,12 +46,15 @@ export class PositionsController {
     @Param('fiatCode') fiatCode: string,
     @Query('refresh', new DefaultValuePipe(false), ParseBoolPipe)
     refresh: boolean,
+    @Query('sync', new DefaultValuePipe(false), ParseBoolPipe)
+    sync: boolean,
   ): Promise<Array<Protocol>> {
     return this.positionsService.getPositions({
       chainId,
       safeAddress,
       fiatCode,
       refresh,
+      sync,
     });
   }
 }

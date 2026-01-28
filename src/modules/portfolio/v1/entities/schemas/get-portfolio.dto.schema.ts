@@ -1,20 +1,22 @@
 import { z } from 'zod';
 import { ChainIdsSchema } from '@/modules/portfolio/schemas/chain-ids.schema';
 
-const BooleanStringSchema = z
-  .string()
+const BooleanStringDefaultTrueSchema = z
+  .enum(['true', 'false'])
   .optional()
-  .transform((val) => {
-    if (val === undefined || val === '') return true;
-    return val === 'true';
-  })
-  .pipe(z.boolean());
+  .transform((val) => val !== 'false');
+
+const BooleanStringDefaultFalseSchema = z
+  .enum(['true', 'false'])
+  .optional()
+  .transform((val) => val === 'true');
 
 export const GetPortfolioDtoSchema = z.object({
   fiatCode: z.string().optional().default('USD'),
   chainIds: ChainIdsSchema,
-  trusted: BooleanStringSchema,
-  excludeDust: BooleanStringSchema,
+  trusted: BooleanStringDefaultTrueSchema,
+  excludeDust: BooleanStringDefaultTrueSchema,
+  sync: BooleanStringDefaultFalseSchema,
 });
 
 export type GetPortfolioDto = z.infer<typeof GetPortfolioDtoSchema>;
