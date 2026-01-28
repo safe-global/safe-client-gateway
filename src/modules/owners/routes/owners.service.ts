@@ -1,5 +1,4 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { SafeRepository } from '@/modules/safe/domain/safe.repository';
 import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
 import { SafeList } from '@/modules/owners/routes/entities/safe-list.entity';
 import type { Address } from 'viem';
@@ -8,7 +7,7 @@ import type { Address } from 'viem';
 export class OwnersService {
   constructor(
     @Inject(ISafeRepository)
-    private readonly safeRepository: SafeRepository,
+    private readonly safeRepository: ISafeRepository,
   ) {}
 
   async getSafesByOwner(args: {

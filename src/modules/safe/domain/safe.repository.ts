@@ -551,7 +551,7 @@ export class SafeRepository implements ISafeRepository {
 
     const allSafeV2s: Array<SafeV2> = [];
     let offset = 0;
-    let next: string | null = null;
+    const next: string | null = null;
 
     for (let i = 0; i < this.maxSequentialPages; i++) {
       const page = await transactionService.getSafesByOwnerV2({
@@ -567,9 +567,7 @@ export class SafeRepository implements ISafeRepository {
         break;
       }
 
-      const paginationData = PaginationData.fromLimitAndOffset(
-        new URL(next)
-      );
+      const paginationData = PaginationData.fromLimitAndOffset(new URL(next));
       offset = paginationData.offset;
     }
 
