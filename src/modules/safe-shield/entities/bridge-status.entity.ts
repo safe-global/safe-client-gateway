@@ -7,19 +7,19 @@ import { z } from 'zod';
  * to identify potential compatibility issues, ownership problems, or
  * unsupported network configurations.
  */
-export const BridgeStatus = [
+export const BridgeStatus = {
   /** Target Safe version is incompatible with source Safe */
-  'INCOMPATIBLE_SAFE',
+  INCOMPATIBLE_SAFE: 'INCOMPATIBLE_SAFE',
 
   /** No ownership on the target chain */
-  'MISSING_OWNERSHIP',
+  MISSING_OWNERSHIP: 'MISSING_OWNERSHIP',
 
   /** Target network is not supported on Safe */
-  'UNSUPPORTED_NETWORK',
+  UNSUPPORTED_NETWORK: 'UNSUPPORTED_NETWORK',
 
   /** Different Safe setup on target chain */
-  'DIFFERENT_SAFE_SETUP',
-] as const;
+  DIFFERENT_SAFE_SETUP: 'DIFFERENT_SAFE_SETUP',
+} as const;
 
 /**
  * Zod schema for validating BridgeStatus enum values.

@@ -6,16 +6,16 @@ import { z } from 'zod';
  * These statuses are returned when analyzing transaction recipients to determine
  * their trustworthiness and interaction history with the Safe.
  */
-export const RecipientStatus = [
+export const RecipientStatus = {
   /** This is the first time interacting with this recipient */
-  'NEW_RECIPIENT',
+  NEW_RECIPIENT: 'NEW_RECIPIENT',
 
   /** This recipient has been interacted with before */
-  'RECURRING_RECIPIENT',
+  RECURRING_RECIPIENT: 'RECURRING_RECIPIENT',
 
   /** The recipient has sent less than 5 transactions */
-  'LOW_ACTIVITY',
-] as const;
+  LOW_ACTIVITY: 'LOW_ACTIVITY',
+} as const;
 
 /**
  * Zod schema for validating RecipientStatus enum values.

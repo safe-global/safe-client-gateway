@@ -1,6 +1,6 @@
 import type { Severity } from '@/modules/safe-shield/entities/severity.entity';
-import type { ContractStatus } from '@/modules/safe-shield/entities/contract-status.entity';
-import type { CommonStatus } from '@/modules/safe-shield/entities/analysis-result.entity';
+import { ContractStatus } from '@/modules/safe-shield/entities/contract-status.entity';
+import { CommonStatus } from '@/modules/safe-shield/entities/analysis-result.entity';
 import {
   COMMON_SEVERITY_MAPPING,
   COMMON_DESCRIPTION_MAPPING,
@@ -51,14 +51,14 @@ export const SEVERITY_MAPPING: Record<
   keyof typeof Severity
 > = {
   ...COMMON_SEVERITY_MAPPING,
-  VERIFIED: 'OK',
-  NOT_VERIFIED: 'INFO',
-  NOT_VERIFIED_BY_SAFE: 'INFO',
-  VERIFICATION_UNAVAILABLE: 'WARN',
-  NEW_CONTRACT: 'INFO',
-  KNOWN_CONTRACT: 'OK',
-  UNEXPECTED_DELEGATECALL: 'WARN',
-  UNOFFICIAL_FALLBACK_HANDLER: 'WARN',
+  [ContractStatus.VERIFIED]: 'OK',
+  [ContractStatus.NOT_VERIFIED]: 'INFO',
+  [ContractStatus.NOT_VERIFIED_BY_SAFE]: 'INFO',
+  [ContractStatus.VERIFICATION_UNAVAILABLE]: 'WARN',
+  [ContractStatus.NEW_CONTRACT]: 'INFO',
+  [ContractStatus.KNOWN_CONTRACT]: 'OK',
+  [ContractStatus.UNEXPECTED_DELEGATECALL]: 'WARN',
+  [ContractStatus.UNOFFICIAL_FALLBACK_HANDLER]: 'WARN',
 };
 
 /**
@@ -66,15 +66,15 @@ export const SEVERITY_MAPPING: Record<
  * Maps each contract status to its user-facing title.
  */
 export const TITLE_MAPPING: Record<ContractStatus | CommonStatus, string> = {
-  VERIFIED: 'Verified contract',
-  NOT_VERIFIED: 'Unverified contract',
-  NOT_VERIFIED_BY_SAFE: 'New contract',
-  VERIFICATION_UNAVAILABLE: 'Unable to verify contract',
-  NEW_CONTRACT: 'First contract interaction',
-  KNOWN_CONTRACT: 'Known contract',
-  UNEXPECTED_DELEGATECALL: 'Unexpected delegateCall',
-  FAILED: 'Contract analysis failed',
-  UNOFFICIAL_FALLBACK_HANDLER: 'Unofficial fallback handler',
+  [ContractStatus.VERIFIED]: 'Verified contract',
+  [ContractStatus.NOT_VERIFIED]: 'Unverified contract',
+  [ContractStatus.NOT_VERIFIED_BY_SAFE]: 'New contract',
+  [ContractStatus.VERIFICATION_UNAVAILABLE]: 'Unable to verify contract',
+  [ContractStatus.NEW_CONTRACT]: 'First contract interaction',
+  [ContractStatus.KNOWN_CONTRACT]: 'Known contract',
+  [ContractStatus.UNEXPECTED_DELEGATECALL]: 'Unexpected delegateCall',
+  [CommonStatus.FAILED]: 'Contract analysis failed',
+  [ContractStatus.UNOFFICIAL_FALLBACK_HANDLER]: 'Unofficial fallback handler',
 };
 
 type DescriptionArgs = {
@@ -91,18 +91,19 @@ export const DESCRIPTION_MAPPING: Record<
   (args?: DescriptionArgs) => string
 > = {
   ...COMMON_DESCRIPTION_MAPPING,
-  VERIFIED: ({ name } = {}) =>
+  [ContractStatus.VERIFIED]: ({ name } = {}) =>
     `This contract is verified${name ? ` as "${name}"` : ''}.`,
-  NOT_VERIFIED: () => 'This contract is not verified yet.',
-  NOT_VERIFIED_BY_SAFE: () =>
+  [ContractStatus.NOT_VERIFIED]: () => 'This contract is not verified yet.',
+  [ContractStatus.NOT_VERIFIED_BY_SAFE]: () =>
     'This contract has not been interacted with on Safe{Wallet}. If verified, it will be marked as such after the first transaction.',
-  VERIFICATION_UNAVAILABLE: () =>
+  [ContractStatus.VERIFICATION_UNAVAILABLE]: () =>
     'Contract verification is currently unavailable.',
-  NEW_CONTRACT: () =>
+  [ContractStatus.NEW_CONTRACT]: () =>
     'You are interacting with this contract for the first time.',
-  KNOWN_CONTRACT: () => 'You have already interacted with this contract.',
-  UNEXPECTED_DELEGATECALL: () =>
+  [ContractStatus.KNOWN_CONTRACT]: () =>
+    'You have already interacted with this contract.',
+  [ContractStatus.UNEXPECTED_DELEGATECALL]: () =>
     'This transaction calls a smart contract that will be able to modify your Safe account. Learn more',
-  UNOFFICIAL_FALLBACK_HANDLER: () =>
+  [ContractStatus.UNOFFICIAL_FALLBACK_HANDLER]: () =>
     'Verify the fallback handler is trusted and secure before proceeding.',
 };

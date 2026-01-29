@@ -30,6 +30,7 @@ import {
   COMMON_SEVERITY_MAPPING,
 } from '@/modules/safe-shield/entities/common-status.constants';
 import type { ReportFalseResultRequest } from '@/modules/safe-shield/entities/dtos/report-false-result.dto';
+import { CommonStatus } from '@/modules/safe-shield/entities/analysis-result.entity';
 
 /**
  * Main orchestration service for Safe Shield transaction analysis.
@@ -93,7 +94,7 @@ export class SafeShieldService {
           ? recipientsResult.value
           : this.handleFailedAnalysis(
               tx.to,
-              'RECIPIENT_INTERACTION',
+              RecipientStatusGroup.RECIPIENT_INTERACTION,
               recipientsResult.reason,
             ),
       contract:
@@ -101,7 +102,7 @@ export class SafeShieldService {
           ? contractsResult.value
           : this.handleFailedAnalysis(
               tx.to,
-              'CONTRACT_VERIFICATION',
+              ContractStatusGroup.CONTRACT_VERIFICATION,
               contractsResult.reason,
             ),
     };
@@ -318,7 +319,7 @@ export class SafeShieldService {
     this.loggingService.warn(`The counterparty analysis failed. ${error}`);
 
     const isRecipient = (
-      RecipientStatusGroup as ReadonlyArray<string>
+      Object.values(RecipientStatusGroup) as ReadonlyArray<string>
     ).includes(statusGroup);
 
     const isSafe = isRecipient ? { isSafe: false } : undefined;
@@ -326,7 +327,7 @@ export class SafeShieldService {
       [targetAddress]: {
         [statusGroup]: [
           {
-            type: 'FAILED',
+            type: CommonStatus.FAILED,
             severity: COMMON_SEVERITY_MAPPING.FAILED,
             title: `${isRecipient ? 'Recipient' : 'Contract'} analysis failed`,
             description: COMMON_DESCRIPTION_MAPPING.FAILED({

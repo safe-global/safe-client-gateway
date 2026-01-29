@@ -34,6 +34,7 @@ import {
   TransactionValidation,
 } from '@/modules/safe-shield/threat-analysis/blockaid/schemas/blockaid-scan-response.schema';
 import { NULL_ADDRESS } from '@/routes/common/constants';
+import { ThreatStatusGroup } from '@/modules/safe-shield/entities/status-group.entity';
 
 /**
  * Service responsible for analyzing transactions for security threats and malicious patterns.
@@ -161,8 +162,8 @@ export class ThreatAnalysisService {
     );
 
     return {
-      THREAT: threatResults,
-      BALANCE_CHANGE: balanceChanges,
+      [ThreatStatusGroup.THREAT]: threatResults,
+      [ThreatStatusGroup.BALANCE_CHANGE]: balanceChanges,
       request_id: requestId,
     };
   }
@@ -175,7 +176,7 @@ export class ThreatAnalysisService {
   private analyzeValidation(
     validation?: TransactionValidation,
   ): ThreatAnalysisResult {
-    let type: ThreatStatus | CommonStatus = 'FAILED';
+    let type: ThreatStatus | CommonStatus = CommonStatus.FAILED;
 
     if (!validation || validation.result_type === 'Error') {
       return this.mapToAnalysisResult({
@@ -193,13 +194,13 @@ export class ThreatAnalysisService {
     } = validation;
     switch (result_type) {
       case 'Benign':
-        type = 'NO_THREAT';
+        type = ThreatStatus.NO_THREAT;
         break;
       case 'Warning':
-        type = 'MODERATE';
+        type = ThreatStatus.MODERATE;
         break;
       case 'Malicious':
-        type = 'MALICIOUS';
+        type = ThreatStatus.MALICIOUS;
         break;
     }
 
@@ -234,7 +235,7 @@ export class ThreatAnalysisService {
     if (simulation.status === 'Error') {
       results = [
         this.mapToAnalysisResult({
-          type: 'FAILED',
+          type: CommonStatus.FAILED,
           error: simulation.description || simulation.error,
         }),
       ];
@@ -249,16 +250,20 @@ export class ThreatAnalysisService {
             const proxyUpgrade = management as ProxyUpgradeManagement;
             return [
               this.mapToAnalysisResult({
-                type: 'MASTERCOPY_CHANGE',
+                type: ThreatStatus.MASTERCOPY_CHANGE,
                 before: proxyUpgrade.before.address,
                 after: proxyUpgrade.after.address,
               }),
             ];
           }
           case 'OWNERSHIP_CHANGE':
-            return [this.mapToAnalysisResult({ type: 'OWNERSHIP_CHANGE' })];
+            return [
+              this.mapToAnalysisResult({ type: ThreatStatus.OWNERSHIP_CHANGE }),
+            ];
           case 'MODULE_CHANGE':
-            return [this.mapToAnalysisResult({ type: 'MODULE_CHANGE' })];
+            return [
+              this.mapToAnalysisResult({ type: ThreatStatus.MODULE_CHANGE }),
+            ];
           default:
             return [];
         }
@@ -353,7 +358,7 @@ export class ThreatAnalysisService {
     });
 
     switch (type) {
-      case 'MASTERCOPY_CHANGE':
+      case ThreatStatus.MASTERCOPY_CHANGE:
         return {
           severity,
           type,
@@ -362,10 +367,10 @@ export class ThreatAnalysisService {
           before: before ?? (NULL_ADDRESS as Address),
           after: after ?? (NULL_ADDRESS as Address),
         };
-      case 'MALICIOUS':
-      case 'MODERATE':
+      case ThreatStatus.MALICIOUS:
+      case ThreatStatus.MODERATE:
         return { severity, type, title, description, issues };
-      case 'FAILED':
+      case CommonStatus.FAILED:
         return {
           severity,
           type,
@@ -383,7 +388,11 @@ export class ThreatAnalysisService {
    * @returns {ThreatAnalysisResponse} A response indicating analysis failure
    */
   public failedAnalysisResponse(): ThreatAnalysisResponse {
-    return { THREAT: [this.mapToAnalysisResult({ type: 'FAILED' })] };
+    return {
+      [ThreatStatusGroup.THREAT]: [
+        this.mapToAnalysisResult({ type: CommonStatus.FAILED }),
+      ],
+    };
   }
 
   /**

@@ -1,6 +1,6 @@
 import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
 import { TransferPageSchema } from '@/modules/safe/domain/entities/transfer.entity';
-import type {
+import {
   AnalysisResult,
   CommonStatus,
 } from '@/modules/safe-shield/entities/analysis-result.entity';
@@ -13,8 +13,8 @@ import {
   TITLE_MAPPING,
   DESCRIPTION_MAPPING,
 } from './recipient-analysis.constants';
-import type { RecipientStatus } from '@/modules/safe-shield/entities/recipient-status.entity';
-import type { BridgeStatus } from '@/modules/safe-shield/entities/bridge-status.entity';
+import { RecipientStatus } from '@/modules/safe-shield/entities/recipient-status.entity';
+import { BridgeStatus } from '@/modules/safe-shield/entities/bridge-status.entity';
 import type { DecodedTransactionData } from '@/modules/safe-shield/entities/transaction-data.entity';
 import { Erc20Decoder } from '@/modules/relay/domain/contracts/decoders/erc-20-decoder.helper';
 import {
@@ -53,6 +53,7 @@ import type { SafeCreationData } from '@/modules/safe-shield/entities/safe-creat
 import { ITransactionApi } from '@/domain/interfaces/transaction-api.interface';
 import { DataSourceError } from '@/domain/errors/data-source.error';
 import { isSwapOrderTransactionInfo } from '@/modules/transactions/routes/entities/swaps/swap-order-info.entity';
+import { RecipientStatusGroup } from '@/modules/safe-shield/entities/status-group.entity';
 
 const SAFE_VERSIONS = ['1.4.1', '1.3.0', '1.2.0', '1.1.1', '1.0.0'] as const;
 type SafeVersion = (typeof SAFE_VERSIONS)[number];
@@ -184,7 +185,7 @@ export class RecipientAnalysisService {
     safeAddress: Address,
     recipient: Address,
   ): Promise<SingleRecipientAnalysisResponse> {
-    const failed = this.mapToAnalysisResult({ type: 'FAILED' });
+    const failed = this.mapToAnalysisResult({ type: CommonStatus.FAILED });
 
     let transactionApi: ITransactionApi;
     try {
@@ -194,8 +195,8 @@ export class RecipientAnalysisService {
         `Failed to get transaction API for chain ${chainId}: ${error}`,
       );
       return {
-        RECIPIENT_INTERACTION: [failed],
-        RECIPIENT_ACTIVITY: [failed],
+        [RecipientStatusGroup.RECIPIENT_INTERACTION]: [failed],
+        [RecipientStatusGroup.RECIPIENT_ACTIVITY]: [failed],
         isSafe: false,
       };
     }
@@ -210,11 +211,11 @@ export class RecipientAnalysisService {
     ]);
 
     const recipientActivity = activityResult
-      ? { RECIPIENT_ACTIVITY: [activityResult] }
+      ? { [RecipientStatusGroup.RECIPIENT_ACTIVITY]: [activityResult] }
       : {};
 
     return {
-      RECIPIENT_INTERACTION: [interactionResult],
+      [RecipientStatusGroup.RECIPIENT_INTERACTION]: [interactionResult],
       ...recipientActivity,
       isSafe,
     };
@@ -241,7 +242,10 @@ export class RecipientAnalysisService {
 
       const transferPage = TransferPageSchema.parse(page);
       const interactions = transferPage.count ?? 0;
-      const type = interactions > 0 ? 'RECURRING_RECIPIENT' : 'NEW_RECIPIENT';
+      const type =
+        interactions > 0
+          ? RecipientStatus.RECURRING_RECIPIENT
+          : RecipientStatus.NEW_RECIPIENT;
 
       return this.mapToAnalysisResult({ type, interactions });
     } catch (error) {
@@ -249,7 +253,7 @@ export class RecipientAnalysisService {
         `Failed to analyze recipient interactions: ${error}`,
       );
       return this.mapToAnalysisResult({
-        type: 'FAILED',
+        type: CommonStatus.FAILED,
         error: 'recipient interactions unavailable',
       });
     }
@@ -277,7 +281,7 @@ export class RecipientAnalysisService {
 
       return [
         nonce < RecipientAnalysisService.LOW_ACTIVITY_THRESHOLD
-          ? this.mapToAnalysisResult({ type: 'LOW_ACTIVITY' })
+          ? this.mapToAnalysisResult({ type: RecipientStatus.LOW_ACTIVITY })
           : undefined,
         isSafe,
       ];
@@ -291,7 +295,7 @@ export class RecipientAnalysisService {
         );
         return [
           this.mapToAnalysisResult({
-            type: 'FAILED',
+            type: CommonStatus.FAILED,
             error: 'recipient activity check unavailable',
           }),
           isSafe,
@@ -381,11 +385,11 @@ export class RecipientAnalysisService {
 
       return {
         [bridgeRecipient]: {
-          BRIDGE: [
+          [RecipientStatusGroup.BRIDGE]: [
             this.mapToAnalysisResult({
               type: resultStatus,
               error:
-                resultStatus === 'FAILED'
+                resultStatus === CommonStatus.FAILED
                   ? 'bridge compatibility unavailable'
                   : undefined,
               targetChainId,
@@ -426,7 +430,7 @@ export class RecipientAnalysisService {
       const isTargetChainSupported =
         await this.chainsRepository.isSupportedChain(targetChainId);
       if (!isTargetChainSupported) {
-        return ['UNSUPPORTED_NETWORK', targetChainId];
+        return [BridgeStatus.UNSUPPORTED_NETWORK, targetChainId];
       }
 
       const [sourceSafe, targetSafe] = await Promise.all([
@@ -444,12 +448,12 @@ export class RecipientAnalysisService {
         this.loggingService.warn(
           `Source Safe not found for address ${args.safeAddress} on chain ${args.chainId}`,
         );
-        return ['FAILED', targetChainId];
+        return [CommonStatus.FAILED, targetChainId];
       }
 
       if (targetSafe) {
         if (!this.haveSameSetup(sourceSafe, targetSafe)) {
-          return ['DIFFERENT_SAFE_SETUP', targetChainId];
+          return [BridgeStatus.DIFFERENT_SAFE_SETUP, targetChainId];
         }
         return undefined;
       } else {
@@ -462,16 +466,16 @@ export class RecipientAnalysisService {
         ]);
 
         if (!this.isNetworkCompatible(targetChain, safeCreationData)) {
-          return ['INCOMPATIBLE_SAFE', targetChainId];
+          return [BridgeStatus.INCOMPATIBLE_SAFE, targetChainId];
         }
 
-        return ['MISSING_OWNERSHIP', targetChainId];
+        return [BridgeStatus.MISSING_OWNERSHIP, targetChainId];
       }
     } catch (error) {
       this.loggingService.warn(
         `Failed to analyze target chain compatibility: ${error}`,
       );
-      return ['FAILED', targetChainId];
+      return [CommonStatus.FAILED, targetChainId];
     }
   }
 

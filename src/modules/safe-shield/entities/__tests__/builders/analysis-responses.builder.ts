@@ -15,8 +15,16 @@ import {
   maliciousOrModerateThreatBuilder,
   unofficialFallbackHandlerAnalysisResultBuilder,
 } from './analysis-result.builder';
-import type { ThreatStatus } from '../../threat-status.entity';
+import { ThreatStatus } from '../../threat-status.entity';
 import { getAddress } from 'viem';
+import {
+  ContractStatusGroup,
+  RecipientStatusGroup,
+  ThreatStatusGroup,
+} from '@/modules/safe-shield/entities/status-group.entity';
+import { RecipientStatus } from '@/modules/safe-shield/entities/recipient-status.entity';
+import { BridgeStatus } from '@/modules/safe-shield/entities/bridge-status.entity';
+import { ContractStatus } from '@/modules/safe-shield/entities/contract-status.entity';
 
 /**
  * Builder for RecipientAnalysisResponse.
@@ -43,13 +51,17 @@ export function recipientAnalysisResponseBuilder(
   if (withDefaults) {
     builder.with(getAddress(faker.finance.ethereumAddress()), {
       isSafe: true,
-      RECIPIENT_INTERACTION: [recipientAnalysisResultBuilder().build()],
-      RECIPIENT_ACTIVITY: [
-        recipientAnalysisResultBuilder().with('type', 'LOW_ACTIVITY').build(),
+      [RecipientStatusGroup.RECIPIENT_INTERACTION]: [
+        recipientAnalysisResultBuilder().build(),
       ],
-      BRIDGE: [
+      [RecipientStatusGroup.RECIPIENT_ACTIVITY]: [
         recipientAnalysisResultBuilder()
-          .with('type', 'INCOMPATIBLE_SAFE')
+          .with('type', RecipientStatus.LOW_ACTIVITY)
+          .build(),
+      ],
+      [RecipientStatusGroup.BRIDGE]: [
+        recipientAnalysisResultBuilder()
+          .with('type', BridgeStatus.INCOMPATIBLE_SAFE)
           .build(),
       ],
     });
@@ -84,16 +96,20 @@ export function contractAnalysisResponseBuilder(
     builder.with(getAddress(faker.finance.ethereumAddress()), {
       logoUrl: faker.image.url(),
       name: faker.company.name(),
-      CONTRACT_VERIFICATION: [contractAnalysisResultBuilder().build()],
-      CONTRACT_INTERACTION: [
-        contractAnalysisResultBuilder().with('type', 'KNOWN_CONTRACT').build(),
+      [ContractStatusGroup.CONTRACT_VERIFICATION]: [
+        contractAnalysisResultBuilder().build(),
       ],
-      DELEGATECALL: [
+      [ContractStatusGroup.CONTRACT_INTERACTION]: [
         contractAnalysisResultBuilder()
-          .with('type', 'UNEXPECTED_DELEGATECALL')
+          .with('type', ContractStatus.KNOWN_CONTRACT)
           .build(),
       ],
-      FALLBACK_HANDLER: [
+      [ContractStatusGroup.DELEGATECALL]: [
+        contractAnalysisResultBuilder()
+          .with('type', ContractStatus.UNEXPECTED_DELEGATECALL)
+          .build(),
+      ],
+      [ContractStatusGroup.FALLBACK_HANDLER]: [
         unofficialFallbackHandlerAnalysisResultBuilder().build(),
       ],
     });
@@ -110,9 +126,12 @@ export function threatAnalysisResponseBuilder(
   type?: ThreatStatus,
 ): IBuilder<ThreatAnalysisResponse> {
   let threatResult;
-  if (type === 'MASTERCOPY_CHANGE') {
+  if (type === ThreatStatus.MASTERCOPY_CHANGE) {
     threatResult = masterCopyChangeThreatBuilder().build();
-  } else if (type === 'MALICIOUS' || type === 'MODERATE') {
+  } else if (
+    type === ThreatStatus.MALICIOUS ||
+    type === ThreatStatus.MODERATE
+  ) {
     threatResult = maliciousOrModerateThreatBuilder()
       .with('type', type)
       .build();
@@ -123,8 +142,8 @@ export function threatAnalysisResponseBuilder(
   }
 
   return new Builder<ThreatAnalysisResponse>()
-    .with('THREAT', [threatResult])
-    .with('BALANCE_CHANGE', []);
+    .with(ThreatStatusGroup.THREAT, [threatResult])
+    .with(ThreatStatusGroup.BALANCE_CHANGE, []);
 }
 
 /**

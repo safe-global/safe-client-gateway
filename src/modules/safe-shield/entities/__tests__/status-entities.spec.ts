@@ -11,15 +11,20 @@ import { ThreatStatus, ThreatStatusSchema } from '../threat-status.entity';
 import { CommonStatus } from '@/modules/safe-shield/entities/analysis-result.entity';
 
 describe('Status Entities', () => {
+  const recipientStatus = Object.values(RecipientStatus);
+  const bridgeStatus = Object.values(BridgeStatus);
+  const contractStatus = Object.values(ContractStatus);
+  const threatStatus = Object.values(ThreatStatus);
+
   describe('RecipientStatus', () => {
     it('should have all expected values', () => {
-      expect(RecipientStatus).toHaveLength(3);
-      expect(RecipientStatus).toContain('NEW_RECIPIENT');
-      expect(RecipientStatus).toContain('RECURRING_RECIPIENT');
-      expect(RecipientStatus).toContain('LOW_ACTIVITY');
+      expect(recipientStatus).toHaveLength(3);
+      expect(recipientStatus).toContain('NEW_RECIPIENT');
+      expect(recipientStatus).toContain('RECURRING_RECIPIENT');
+      expect(recipientStatus).toContain('LOW_ACTIVITY');
     });
 
-    it.each(RecipientStatus)('should validate with schema = %s', (value) => {
+    it.each(recipientStatus)('should validate with schema = %s', (value) => {
       expect(() => RecipientStatusSchema.parse(value)).not.toThrow();
     });
 
@@ -33,14 +38,14 @@ describe('Status Entities', () => {
 
   describe('BridgeStatus', () => {
     it('should have all expected values', () => {
-      expect(BridgeStatus).toHaveLength(4);
-      expect(BridgeStatus).toContain('INCOMPATIBLE_SAFE');
-      expect(BridgeStatus).toContain('MISSING_OWNERSHIP');
-      expect(BridgeStatus).toContain('UNSUPPORTED_NETWORK');
-      expect(BridgeStatus).toContain('DIFFERENT_SAFE_SETUP');
+      expect(bridgeStatus).toHaveLength(4);
+      expect(bridgeStatus).toContain('INCOMPATIBLE_SAFE');
+      expect(bridgeStatus).toContain('MISSING_OWNERSHIP');
+      expect(bridgeStatus).toContain('UNSUPPORTED_NETWORK');
+      expect(bridgeStatus).toContain('DIFFERENT_SAFE_SETUP');
     });
 
-    it.each(BridgeStatus)('should validate with schema = %s', (value) => {
+    it.each(bridgeStatus)('should validate with schema = %s', (value) => {
       expect(() => BridgeStatusSchema.parse(value)).not.toThrow();
     });
 
@@ -54,18 +59,18 @@ describe('Status Entities', () => {
 
   describe('ContractStatus', () => {
     it('should have all expected values', () => {
-      expect(ContractStatus).toHaveLength(8);
-      expect(ContractStatus).toContain('VERIFIED');
-      expect(ContractStatus).toContain('NOT_VERIFIED');
-      expect(ContractStatus).toContain('NOT_VERIFIED_BY_SAFE');
-      expect(ContractStatus).toContain('VERIFICATION_UNAVAILABLE');
-      expect(ContractStatus).toContain('NEW_CONTRACT');
-      expect(ContractStatus).toContain('KNOWN_CONTRACT');
-      expect(ContractStatus).toContain('UNEXPECTED_DELEGATECALL');
-      expect(ContractStatus).toContain('UNOFFICIAL_FALLBACK_HANDLER');
+      expect(contractStatus).toHaveLength(8);
+      expect(contractStatus).toContain('VERIFIED');
+      expect(contractStatus).toContain('NOT_VERIFIED');
+      expect(contractStatus).toContain('NOT_VERIFIED_BY_SAFE');
+      expect(contractStatus).toContain('VERIFICATION_UNAVAILABLE');
+      expect(contractStatus).toContain('NEW_CONTRACT');
+      expect(contractStatus).toContain('KNOWN_CONTRACT');
+      expect(contractStatus).toContain('UNEXPECTED_DELEGATECALL');
+      expect(contractStatus).toContain('UNOFFICIAL_FALLBACK_HANDLER');
     });
 
-    it.each(ContractStatus)('should validate with schema = %s', (value) => {
+    it.each(contractStatus)('should validate with schema = %s', (value) => {
       expect(() => ContractStatusSchema.parse(value)).not.toThrow();
     });
 
@@ -79,16 +84,16 @@ describe('Status Entities', () => {
 
   describe('ThreatStatus', () => {
     it('should have all expected values', () => {
-      expect(ThreatStatus).toHaveLength(6);
-      expect(ThreatStatus).toContain('MALICIOUS');
-      expect(ThreatStatus).toContain('MODERATE');
-      expect(ThreatStatus).toContain('NO_THREAT');
-      expect(ThreatStatus).toContain('MASTERCOPY_CHANGE');
-      expect(ThreatStatus).toContain('OWNERSHIP_CHANGE');
-      expect(ThreatStatus).toContain('MODULE_CHANGE');
+      expect(threatStatus).toHaveLength(6);
+      expect(threatStatus).toContain('MALICIOUS');
+      expect(threatStatus).toContain('MODERATE');
+      expect(threatStatus).toContain('NO_THREAT');
+      expect(threatStatus).toContain('MASTERCOPY_CHANGE');
+      expect(threatStatus).toContain('OWNERSHIP_CHANGE');
+      expect(threatStatus).toContain('MODULE_CHANGE');
     });
 
-    it.each(ThreatStatus)('should validate with schema = %s', (value) => {
+    it.each(threatStatus)('should validate with schema = %s', (value) => {
       expect(() => ThreatStatusSchema.parse(value)).not.toThrow();
     });
 
@@ -121,16 +126,16 @@ describe('Status Entities', () => {
     });
 
     it('should have unique values across different status types', () => {
-      const allValues = [
+      const allValues = {
         ...RecipientStatus,
         ...BridgeStatus,
         ...ContractStatus,
         ...ThreatStatus,
         ...CommonStatus,
-      ];
+      };
 
-      const uniqueValues = new Set(allValues);
-      expect(uniqueValues.size).toBe(allValues.length);
+      const uniqueValues = new Set(Object.values(allValues));
+      expect(uniqueValues.size).toBe(Object.values(allValues).length);
     });
   });
 });

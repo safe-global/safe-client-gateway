@@ -26,6 +26,7 @@ import { rawify } from '@/validation/entities/raw.entity';
 import { contractBuilder } from '@/modules/data-decoder/domain/v2/entities/__tests__/contract.builder';
 import type { ExtractedContract } from '@/modules/safe-shield/entities/extracted-contract.entity';
 import { extractContracts } from '@/modules/safe-shield/utils/extraction.utils';
+import { ContractStatus } from '@/modules/safe-shield/entities/contract-status.entity';
 
 jest.mock('@/modules/safe-shield/utils/extraction.utils', () => ({
   extractContracts: jest.fn(),
@@ -241,7 +242,7 @@ describe('ContractAnalysisService', () => {
         CONTRACT_VERIFICATION: [
           {
             severity: SEVERITY_MAPPING.VERIFIED,
-            type: 'VERIFIED' as const,
+            type: ContractStatus.VERIFIED,
             title: TITLE_MAPPING.VERIFIED,
             description: DESCRIPTION_MAPPING.VERIFIED({
               name: faker.company.name(),
@@ -253,7 +254,7 @@ describe('ContractAnalysisService', () => {
         FALLBACK_HANDLER: [
           {
             severity: SEVERITY_MAPPING.UNOFFICIAL_FALLBACK_HANDLER,
-            type: 'UNOFFICIAL_FALLBACK_HANDLER' as const,
+            type: ContractStatus.UNOFFICIAL_FALLBACK_HANDLER,
             title: TITLE_MAPPING.UNOFFICIAL_FALLBACK_HANDLER,
             description: DESCRIPTION_MAPPING.UNOFFICIAL_FALLBACK_HANDLER(),
             fallbackHandler: {
@@ -269,7 +270,7 @@ describe('ContractAnalysisService', () => {
         CONTRACT_VERIFICATION: [
           {
             severity: SEVERITY_MAPPING.NOT_VERIFIED,
-            type: 'NOT_VERIFIED' as const,
+            type: ContractStatus.NOT_VERIFIED,
             title: TITLE_MAPPING.NOT_VERIFIED,
             description: DESCRIPTION_MAPPING.NOT_VERIFIED(),
           },
@@ -277,7 +278,7 @@ describe('ContractAnalysisService', () => {
         CONTRACT_INTERACTION: [
           {
             severity: SEVERITY_MAPPING.KNOWN_CONTRACT,
-            type: 'KNOWN_CONTRACT' as const,
+            type: ContractStatus.KNOWN_CONTRACT,
             title: TITLE_MAPPING.KNOWN_CONTRACT,
             description: DESCRIPTION_MAPPING.KNOWN_CONTRACT(),
           },
@@ -285,7 +286,7 @@ describe('ContractAnalysisService', () => {
         DELEGATECALL: [
           {
             severity: SEVERITY_MAPPING.UNEXPECTED_DELEGATECALL,
-            type: 'UNEXPECTED_DELEGATECALL' as const,
+            type: ContractStatus.UNEXPECTED_DELEGATECALL,
             title: TITLE_MAPPING.UNEXPECTED_DELEGATECALL,
             description: DESCRIPTION_MAPPING.UNEXPECTED_DELEGATECALL(),
           },

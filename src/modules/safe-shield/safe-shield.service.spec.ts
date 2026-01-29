@@ -3,7 +3,10 @@ import type { RecipientAnalysisService } from './recipient-analysis/recipient-an
 import type { ContractAnalysisService } from './contract-analysis/contract-analysis.service';
 import type { ThreatAnalysisService } from './threat-analysis/threat-analysis.service';
 import type { ILoggingService } from '@/logging/logging.interface';
-import type { ReportFalseResultRequest } from './entities/dtos/report-false-result.dto';
+import {
+  ReportEvent,
+  type ReportFalseResultRequest,
+} from './entities/dtos/report-false-result.dto';
 import type { DataDecoded } from '@/modules/data-decoder/routes/entities/data-decoded.entity';
 import type { DecodedTransactionData } from '@/modules/safe-shield/entities/transaction-data.entity';
 import type {
@@ -49,6 +52,15 @@ import { FF_RISK_MITIGATION } from '@/modules/safe-shield/threat-analysis/blocka
 import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
 import { rawify } from '@/validation/entities/raw.entity';
 import { DESCRIPTION_MAPPING } from '@/modules/safe-shield/threat-analysis/threat-analysis.constants';
+import {
+  ContractStatusGroup,
+  RecipientStatusGroup,
+  ThreatStatusGroup,
+} from '@/modules/safe-shield/entities/status-group.entity';
+import { ContractStatus } from '@/modules/safe-shield/entities/contract-status.entity';
+import { RecipientStatus } from '@/modules/safe-shield/entities/recipient-status.entity';
+import { ThreatStatus } from '@/modules/safe-shield/entities/threat-status.entity';
+import { CommonStatus } from '@/modules/safe-shield/entities/analysis-result.entity';
 
 // Utility function for generating Wei values
 const generateRandomWeiAmount = (): bigint =>
@@ -168,25 +180,31 @@ describe('SafeShieldService', () => {
     recipientAnalysisResponseBuilder(false)
       .with(mockRecipientAddress, {
         isSafe: true,
-        RECIPIENT_INTERACTION: [recipientAnalysisResultBuilder().build()],
-        RECIPIENT_ACTIVITY: [
-          recipientAnalysisResultBuilder().with('type', 'LOW_ACTIVITY').build(),
+        [RecipientStatusGroup.RECIPIENT_INTERACTION]: [
+          recipientAnalysisResultBuilder().build(),
         ],
-        BRIDGE: [],
+        [RecipientStatusGroup.RECIPIENT_ACTIVITY]: [
+          recipientAnalysisResultBuilder()
+            .with('type', RecipientStatus.LOW_ACTIVITY)
+            .build(),
+        ],
+        [RecipientStatusGroup.BRIDGE]: [],
       })
       .build();
 
   const mockContractAnalysisResponse: ContractAnalysisResponse =
     contractAnalysisResponseBuilder(false)
       .with(mockContractAddress, {
-        CONTRACT_VERIFICATION: [contractAnalysisResultBuilder().build()],
-        CONTRACT_INTERACTION: [
+        [ContractStatusGroup.CONTRACT_VERIFICATION]: [
+          contractAnalysisResultBuilder().build(),
+        ],
+        [ContractStatusGroup.CONTRACT_INTERACTION]: [
           contractAnalysisResultBuilder()
-            .with('type', 'KNOWN_CONTRACT')
+            .with('type', ContractStatus.KNOWN_CONTRACT)
             .build(),
         ],
-        DELEGATECALL: [],
-        FALLBACK_HANDLER: [],
+        [ContractStatusGroup.DELEGATECALL]: [],
+        [ContractStatusGroup.FALLBACK_HANDLER]: [],
       })
       .build();
 
@@ -952,13 +970,15 @@ describe('SafeShieldService', () => {
       const mockContractAnalysisWithFallbackHandler =
         contractAnalysisResponseBuilder(false)
           .with(mockSafeAddress, {
-            CONTRACT_VERIFICATION: [contractAnalysisResultBuilder().build()],
-            CONTRACT_INTERACTION: [
+            [ContractStatusGroup.CONTRACT_VERIFICATION]: [
+              contractAnalysisResultBuilder().build(),
+            ],
+            [ContractStatusGroup.CONTRACT_INTERACTION]: [
               contractAnalysisResultBuilder()
-                .with('type', 'KNOWN_CONTRACT')
+                .with('type', ContractStatus.KNOWN_CONTRACT)
                 .build(),
             ],
-            FALLBACK_HANDLER: [
+            [ContractStatusGroup.FALLBACK_HANDLER]: [
               unofficialFallbackHandlerAnalysisResultBuilder(
                 unofficialHandlerAddress,
               ).build(),
@@ -1258,7 +1278,9 @@ describe('SafeShieldService', () => {
   describe('analyzeRecipient', () => {
     it('should analyze a single recipient address', async () => {
       const mockInteractionResponse = {
-        RECIPIENT_INTERACTION: [recipientAnalysisResultBuilder().build()],
+        [RecipientStatusGroup.RECIPIENT_INTERACTION]: [
+          recipientAnalysisResultBuilder().build(),
+        ],
       } as SingleRecipientAnalysisResponse;
 
       mockRecipientAnalysisService.analyzeRecipient.mockResolvedValue(
@@ -1359,12 +1381,14 @@ describe('SafeShieldService', () => {
 
     it('should handle multiple threat results and balance changes', async () => {
       const mockMultipleThreatsResponse = {
-        THREAT: [
-          maliciousOrModerateThreatBuilder().with('type', 'MALICIOUS').build(),
+        [ThreatStatusGroup.THREAT]: [
+          maliciousOrModerateThreatBuilder()
+            .with('type', ThreatStatus.MALICIOUS)
+            .build(),
           masterCopyChangeThreatBuilder().build(),
           threatAnalysisResultBuilder().build(),
         ],
-        BALANCE_CHANGE: [
+        [ThreatStatusGroup.BALANCE_CHANGE]: [
           {
             asset: {
               type: 'ERC20' as const,
@@ -1416,9 +1440,9 @@ describe('SafeShieldService', () => {
         .build();
 
       const expectedResult = {
-        THREAT: [
+        [ThreatStatusGroup.THREAT]: [
           {
-            type: 'FAILED',
+            type: CommonStatus.FAILED,
             severity: COMMON_SEVERITY_MAPPING.FAILED,
             title: 'Threat analysis failed',
             description: DESCRIPTION_MAPPING.FAILED(),
@@ -1457,9 +1481,9 @@ describe('SafeShieldService', () => {
     it('should handle config API failure gracefully when checking if Blockaid is enabled', async () => {
       const error = new Error('Failed to fetch chain config');
       const expectedResult = {
-        THREAT: [
+        [ThreatStatusGroup.THREAT]: [
           {
-            type: 'FAILED',
+            type: CommonStatus.FAILED,
             severity: COMMON_SEVERITY_MAPPING.FAILED,
             title: 'Threat analysis failed',
             description: DESCRIPTION_MAPPING.FAILED(),
@@ -1492,7 +1516,7 @@ describe('SafeShieldService', () => {
 
   describe('reportFalseResult', () => {
     const mockReportRequest: ReportFalseResultRequest = {
-      event: 'FALSE_POSITIVE',
+      event: ReportEvent.FALSE_POSITIVE,
       request_id: faker.string.uuid(),
       details: 'This transaction was incorrectly flagged as malicious',
     };
@@ -1515,7 +1539,7 @@ describe('SafeShieldService', () => {
     it('should successfully report a false negative using request_id', async () => {
       const falseNegativeRequest: ReportFalseResultRequest = {
         ...mockReportRequest,
-        event: 'FALSE_NEGATIVE',
+        event: ReportEvent.FALSE_NEGATIVE,
       };
 
       mockThreatAnalysisService.reportTransaction.mockResolvedValue(undefined);
