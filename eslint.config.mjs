@@ -58,6 +58,7 @@ export default tseslint.config(
       '@typescript-eslint/unbound-method': 'off',
       // Added after typescript-eslint 8.1.0
       '@typescript-eslint/prefer-promise-reject-errors': 'off',
+      '@typescript-eslint/no-deprecated': 'warn',
     },
   },
   eslintConfigPrettier,

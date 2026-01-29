@@ -34,15 +34,19 @@ import {
   SafePageV2Schema,
 } from '@/modules/safe/domain/entities/schemas/safe.schema';
 import { SafeV2 } from '@/modules/safe/domain/entities/safe.entity';
+import { SafesByChainId } from '@/modules/safe/domain/entities/safes-by-chain-id.entity';
 import { z } from 'zod';
 import { TransactionVerifierHelper } from '@/modules/transactions/routes/helpers/transaction-verifier.helper';
 import { PaginationData } from '@/routes/common/pagination/pagination.data';
 import { SAFE_TRANSACTION_SERVICE_MAX_LIMIT } from '@/domain/common/constants';
 import { DataSourceError } from '@/domain/errors/data-source.error';
 import type { Address } from 'viem';
+import { IConfigurationService } from '@/config/configuration.service.interface';
 
 @Injectable()
 export class SafeRepository implements ISafeRepository {
+  private readonly maxSequentialPages: number;
+
   constructor(
     @Inject(ITransactionApiManager)
     private readonly transactionApiManager: ITransactionApiManager,
@@ -50,7 +54,13 @@ export class SafeRepository implements ISafeRepository {
     @Inject(IChainsRepository)
     private readonly chainsRepository: IChainsRepository,
     private readonly transactionVerifier: TransactionVerifierHelper,
-  ) {}
+    @Inject(IConfigurationService)
+    private readonly configurationService: IConfigurationService,
+  ) {
+    this.maxSequentialPages = this.configurationService.getOrThrow<number>(
+      'safeConfig.safes.maxSequentialPages',
+    );
+  }
 
   async getSafe(args: { chainId: string; address: Address }): Promise<Safe> {
     const transactionService = await this.transactionApiManager.getApi(
@@ -544,28 +554,25 @@ export class SafeRepository implements ISafeRepository {
     const allSafeV2s: Array<SafeV2> = [];
     let offset = 0;
     let next: string | null = null;
-    // Safety limit to prevent infinite loops
-    // todo move to config, similar to chains and contracts repositories?
-    const maxSequentialPages = 10;
 
     try {
-      for (let i = 0; i < maxSequentialPages; i++) {
+      for (let i = 0; i < this.maxSequentialPages; i++) {
         const page = await transactionService.getSafesByOwnerV2({
           ownerAddress: args.ownerAddress,
           limit: SAFE_TRANSACTION_SERVICE_MAX_LIMIT,
           offset,
         });
 
-        const parsedPage = SafePageV2Schema.parse(page);
-        allSafeV2s.push(...parsedPage.results);
+        const { next: nextUrl, results } = SafePageV2Schema.parse(page);
+        next = nextUrl;
 
-        next = parsedPage.next;
+        allSafeV2s.push(...results);
+
         if (!next) {
           break;
         }
 
-        const url = new URL(next);
-        const paginationData = PaginationData.fromLimitAndOffset(url);
+        const paginationData = PaginationData.fromLimitAndOffset(new URL(next));
         offset = paginationData.offset;
       }
     } catch (error) {
@@ -588,13 +595,17 @@ export class SafeRepository implements ISafeRepository {
     return SafeListSchema.parse({ safes: allAddresses });
   }
 
-  async getAllSafesByOwner(args: {
+  private async getAllSafesByOwnerForChains(args: {
     ownerAddress: Address;
-  }): Promise<{ [chainId: string]: Array<string> | null }> {
+    getSafesByOwnerFn: (args: {
+      chainId: string;
+      ownerAddress: Address;
+    }) => Promise<SafeList>;
+  }): Promise<SafesByChainId> {
     const chains = await this.chainsRepository.getAllChains();
     const allSafeLists = await Promise.allSettled(
       chains.map(async ({ chainId }) => {
-        const safeList = await this.getSafesByOwner({
+        const safeList = await args.getSafesByOwnerFn({
           chainId,
           ownerAddress: args.ownerAddress,
         });
@@ -606,7 +617,7 @@ export class SafeRepository implements ISafeRepository {
       }),
     );
 
-    const result: { [chainId: string]: Array<string> | null } = {};
+    const result: SafesByChainId = {};
 
     for (const [index, allSafeList] of allSafeLists.entries()) {
       const chainId = chains[index].chainId;
@@ -624,40 +635,22 @@ export class SafeRepository implements ISafeRepository {
     return result;
   }
 
+  async getAllSafesByOwner(args: {
+    ownerAddress: Address;
+  }): Promise<SafesByChainId> {
+    return this.getAllSafesByOwnerForChains({
+      ownerAddress: args.ownerAddress,
+      getSafesByOwnerFn: (args) => this.getSafesByOwner(args),
+    });
+  }
+
   async getAllSafesByOwnerV2(args: {
     ownerAddress: Address;
-  }): Promise<{ [chainId: string]: Array<string> | null }> {
-    const chains = await this.chainsRepository.getAllChains();
-    const allSafeLists = await Promise.allSettled(
-      chains.map(async ({ chainId }) => {
-        const safeList = await this.getSafesByOwnerV2({
-          chainId,
-          ownerAddress: args.ownerAddress,
-        });
-
-        return {
-          chainId,
-          safeList,
-        };
-      }),
-    );
-
-    const result: { [chainId: string]: Array<string> | null } = {};
-
-    for (const [index, allSafeList] of allSafeLists.entries()) {
-      const chainId = chains[index].chainId;
-
-      if (allSafeList.status === 'fulfilled') {
-        result[chainId] = allSafeList.value.safeList.safes;
-      } else {
-        result[chainId] = null;
-        this.loggingService.warn(
-          `Failed to fetch Safe owners. chainId=${chainId}`,
-        );
-      }
-    }
-
-    return result;
+  }): Promise<SafesByChainId> {
+    return this.getAllSafesByOwnerForChains({
+      ownerAddress: args.ownerAddress,
+      getSafesByOwnerFn: (args) => this.getSafesByOwnerV2(args),
+    });
   }
 
   async getLastTransactionSortedByNonce(args: {
