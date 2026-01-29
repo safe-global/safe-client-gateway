@@ -1,11 +1,14 @@
-import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
+import {
+  safeBuilder,
+  safeV2Builder,
+} from '@/modules/safe/domain/entities/__tests__/safe.builder';
 import {
   SafeSchema,
   SafeSchemaV2,
 } from '@/modules/safe/domain/entities/schemas/safe.schema';
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress } from 'viem';
-import { type z, ZodError } from 'zod';
+import { ZodError } from 'zod';
 
 describe('SafeSchema', () => {
   it('should validate a valid Safe', () => {
@@ -251,20 +254,8 @@ describe('SafeSchema', () => {
 });
 
 describe('SafeSchemaV2', () => {
-  const createSafeV2 = (): z.infer<typeof SafeSchemaV2> => ({
-    address: getAddress(faker.finance.ethereumAddress()),
-    owners: [getAddress(faker.finance.ethereumAddress())],
-    threshold: faker.number.int({ min: 1 }),
-    nonce: faker.number.int({ min: 0 }),
-    masterCopy: getAddress(faker.finance.ethereumAddress()),
-    fallbackHandler: getAddress(faker.finance.ethereumAddress()),
-    guard: getAddress(faker.finance.ethereumAddress()),
-    moduleGuard: getAddress(faker.finance.ethereumAddress()),
-    enabledModules: [getAddress(faker.finance.ethereumAddress())],
-  });
-
   it('should validate a valid SafeV2', () => {
-    const safeV2 = createSafeV2();
+    const safeV2 = safeV2Builder().build();
 
     const result = SafeSchemaV2.safeParse(safeV2);
 
@@ -272,8 +263,9 @@ describe('SafeSchemaV2', () => {
   });
 
   it('should coerce a string nonce to a number', () => {
-    const safeV2 = createSafeV2();
-    safeV2.nonce = faker.string.numeric() as unknown as number;
+    const safeV2 = safeV2Builder()
+      .with('nonce', faker.string.numeric() as unknown as number)
+      .build();
 
     const result = SafeSchemaV2.safeParse(safeV2);
 
@@ -288,8 +280,7 @@ describe('SafeSchemaV2', () => {
     const nonChecksummedAddress = faker.finance
       .ethereumAddress()
       .toLowerCase() as Address;
-    const safeV2 = createSafeV2();
-    safeV2[field] = nonChecksummedAddress;
+    const safeV2 = safeV2Builder().with(field, nonChecksummedAddress).build();
 
     const result = SafeSchemaV2.safeParse(safeV2);
 
@@ -304,8 +295,9 @@ describe('SafeSchemaV2', () => {
       const nonChecksummedAddress = faker.finance
         .ethereumAddress()
         .toLowerCase() as Address;
-      const safeV2 = createSafeV2();
-      safeV2[field] = nonChecksummedAddress;
+      const safeV2 = safeV2Builder()
+        .with(field, nonChecksummedAddress)
+        .build();
 
       const result = SafeSchemaV2.safeParse(safeV2);
 
@@ -316,8 +308,9 @@ describe('SafeSchemaV2', () => {
   );
 
   it('should allow an integer nonce', () => {
-    const safeV2 = createSafeV2();
-    safeV2.nonce = faker.number.int({ min: 0 });
+    const safeV2 = safeV2Builder()
+      .with('nonce', faker.number.int({ min: 0 }))
+      .build();
 
     const result = SafeSchemaV2.safeParse(safeV2);
 
@@ -329,8 +322,9 @@ describe('SafeSchemaV2', () => {
     ['undefined' as const, undefined, 'Required'],
     ['null' as const, null, undefined],
   ])('should not allow a %s nonce', (type, value, message) => {
-    const safeV2 = createSafeV2();
-    safeV2.nonce = value as unknown as number;
+    const safeV2 = safeV2Builder()
+      .with('nonce', value as unknown as number)
+      .build();
 
     const result = SafeSchemaV2.safeParse(safeV2);
 
@@ -364,8 +358,9 @@ describe('SafeSchemaV2', () => {
   });
 
   it('should allow an integer threshold', () => {
-    const safeV2 = createSafeV2();
-    safeV2.threshold = faker.number.int({ min: 1 });
+    const safeV2 = safeV2Builder()
+      .with('threshold', faker.number.int({ min: 1 }))
+      .build();
 
     const result = SafeSchemaV2.safeParse(safeV2);
 
@@ -378,8 +373,9 @@ describe('SafeSchemaV2', () => {
     ['null', null],
     ['string', faker.string.numeric()],
   ])('should not allow a %s threshold', (type, value) => {
-    const safeV2 = createSafeV2();
-    safeV2.threshold = value as unknown as number;
+    const safeV2 = safeV2Builder()
+      .with('threshold', value as unknown as number)
+      .build();
 
     const result = SafeSchemaV2.safeParse(safeV2);
 
@@ -403,8 +399,9 @@ describe('SafeSchemaV2', () => {
           count: { min: 1, max: 5 },
         },
       );
-      const safeV2 = createSafeV2();
-      safeV2[field] = nonChecksummedAddresses;
+      const safeV2 = safeV2Builder()
+        .with(field, nonChecksummedAddresses)
+        .build();
 
       const result = SafeSchemaV2.safeParse(safeV2);
 
@@ -417,7 +414,7 @@ describe('SafeSchemaV2', () => {
   );
 
   it('should not allow optional nonce', () => {
-    const safeV2 = createSafeV2();
+    const safeV2 = safeV2Builder().build();
     // @ts-expect-error nonce is not optional
     delete safeV2.nonce;
 
@@ -460,7 +457,7 @@ describe('SafeSchemaV2', () => {
     'fallbackHandler' as const,
     'enabledModules' as const,
   ])('should not allow optional %s', (field) => {
-    const safeV2 = createSafeV2();
+    const safeV2 = safeV2Builder().build();
     delete safeV2[field];
 
     const result = SafeSchemaV2.safeParse(safeV2);
@@ -476,8 +473,7 @@ describe('SafeSchemaV2', () => {
   it.each(['guard' as const, 'moduleGuard' as const])(
     'should allow null %s',
     (field) => {
-      const safeV2 = createSafeV2();
-      safeV2[field] = null;
+      const safeV2 = safeV2Builder().with(field, null).build();
 
       const result = SafeSchemaV2.safeParse(safeV2);
 
@@ -489,7 +485,7 @@ describe('SafeSchemaV2', () => {
   it.each(['guard' as const, 'moduleGuard' as const])(
     'should not allow undefined %s',
     (field) => {
-      const safeV2 = createSafeV2();
+      const safeV2 = safeV2Builder().build();
       delete safeV2[field];
 
       const result = SafeSchemaV2.safeParse(safeV2);
