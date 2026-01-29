@@ -295,9 +295,7 @@ describe('SafeSchemaV2', () => {
       const nonChecksummedAddress = faker.finance
         .ethereumAddress()
         .toLowerCase() as Address;
-      const safeV2 = safeV2Builder()
-        .with(field, nonChecksummedAddress)
-        .build();
+      const safeV2 = safeV2Builder().with(field, nonChecksummedAddress).build();
 
       const result = SafeSchemaV2.safeParse(safeV2);
 
