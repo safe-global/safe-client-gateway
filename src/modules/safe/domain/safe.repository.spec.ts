@@ -3,7 +3,7 @@ import type { ITransactionApiManager } from '@/domain/interfaces/transaction-api
 import type { ITransactionApi } from '@/domain/interfaces/transaction-api.interface';
 import type { ILoggingService } from '@/logging/logging.interface';
 import type { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
-import { TransactionVerifierHelper } from '@/modules/transactions/routes/helpers/transaction-verifier.helper';
+import type { TransactionVerifierHelper } from '@/modules/transactions/routes/helpers/transaction-verifier.helper';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import { faker } from '@faker-js/faker';
 import type { Address } from 'viem';
@@ -70,7 +70,7 @@ describe('SafeRepository', () => {
     const chainId = faker.string.numeric();
     const ownerAddress = faker.finance.ethereumAddress() as Address;
 
-    const createSafeV2 = () => ({
+    const createSafeV2 = (): SafeV2 => ({
       address: getAddress(faker.finance.ethereumAddress()),
       owners: [getAddress(faker.finance.ethereumAddress())],
       threshold: faker.number.int({ min: 1 }),
@@ -133,7 +133,10 @@ describe('SafeRepository', () => {
 
       const page1 = pageBuilder<SafeV2>()
         .with('results', safesPage1)
-        .with('next', `${baseUrl}?limit=${SAFE_TRANSACTION_SERVICE_MAX_LIMIT}&offset=${SAFE_TRANSACTION_SERVICE_MAX_LIMIT}`)
+        .with(
+          'next',
+          `${baseUrl}?limit=${SAFE_TRANSACTION_SERVICE_MAX_LIMIT}&offset=${SAFE_TRANSACTION_SERVICE_MAX_LIMIT}`,
+        )
         .with('previous', null)
         .build();
 
@@ -216,7 +219,10 @@ describe('SafeRepository', () => {
 
       const page1 = pageBuilder<SafeV2>()
         .with('results', safesPage1)
-        .with('next', `${baseUrl}?limit=${SAFE_TRANSACTION_SERVICE_MAX_LIMIT}&offset=${customOffset}`)
+        .with(
+          'next',
+          `${baseUrl}?limit=${SAFE_TRANSACTION_SERVICE_MAX_LIMIT}&offset=${customOffset}`,
+        )
         .with('previous', null)
         .build();
 
@@ -256,7 +262,7 @@ describe('SafeRepository', () => {
 
     it('should handle schema validation errors', async () => {
       const invalidPage = pageBuilder<SafeV2>()
-        .with('results', [{ invalid: 'data' }] as any)
+        .with('results', [{ invalid: 'data' }] as unknown as Array<SafeV2>)
         .with('next', null)
         .with('previous', null)
         .build();
@@ -277,7 +283,7 @@ describe('SafeRepository', () => {
   describe('getAllSafesByOwnerV2', () => {
     const ownerAddress = faker.finance.ethereumAddress() as Address;
 
-    const createSafeV2 = () => ({
+    const createSafeV2 = (): SafeV2 => ({
       address: getAddress(faker.finance.ethereumAddress()),
       owners: [getAddress(faker.finance.ethereumAddress())],
       threshold: faker.number.int({ min: 1 }),
@@ -399,7 +405,10 @@ describe('SafeRepository', () => {
 
       const page1 = pageBuilder<SafeV2>()
         .with('results', safesPage1)
-        .with('next', `${baseUrl}?limit=${SAFE_TRANSACTION_SERVICE_MAX_LIMIT}&offset=${SAFE_TRANSACTION_SERVICE_MAX_LIMIT}`)
+        .with(
+          'next',
+          `${baseUrl}?limit=${SAFE_TRANSACTION_SERVICE_MAX_LIMIT}&offset=${SAFE_TRANSACTION_SERVICE_MAX_LIMIT}`,
+        )
         .with('previous', null)
         .build();
 
