@@ -581,6 +581,7 @@ export class SafeRepository implements ISafeRepository {
 
     return SafeListSchema.parse({ safes: allAddresses });
   }
+  
   private async getAllSafesByOwnerForChains(
     getSafesByOwnerForChain: (chainId: string) => Promise<SafeList>,
   ): Promise<SafesByChainId> {
