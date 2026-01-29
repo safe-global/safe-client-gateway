@@ -581,21 +581,13 @@ export class SafeRepository implements ISafeRepository {
 
     return SafeListSchema.parse({ safes: allAddresses });
   }
-
-  private async getAllSafesByOwnerForChains(args: {
-    ownerAddress: Address;
-    getSafesByOwnerFn: (args: {
-      chainId: string;
-      ownerAddress: Address;
-    }) => Promise<SafeList>;
-  }): Promise<SafesByChainId> {
+  private async getAllSafesByOwnerForChains(
+    getSafesByOwnerForChain: (chainId: string) => Promise<SafeList>,
+  ): Promise<SafesByChainId> {
     const chains = await this.chainsRepository.getAllChains();
     const allSafeLists = await Promise.allSettled(
       chains.map(async ({ chainId }) => {
-        const safeList = await args.getSafesByOwnerFn({
-          chainId,
-          ownerAddress: args.ownerAddress,
-        });
+        const safeList = await getSafesByOwnerForChain(chainId);
 
         return {
           chainId,
@@ -625,19 +617,23 @@ export class SafeRepository implements ISafeRepository {
   async getAllSafesByOwner(args: {
     ownerAddress: Address;
   }): Promise<SafesByChainId> {
-    return this.getAllSafesByOwnerForChains({
-      ownerAddress: args.ownerAddress,
-      getSafesByOwnerFn: (args) => this.getSafesByOwner(args),
-    });
+    return this.getAllSafesByOwnerForChains((chainId) =>
+      this.getSafesByOwner({
+        chainId,
+        ownerAddress: args.ownerAddress,
+      }),
+    );
   }
 
   async getAllSafesByOwnerV2(args: {
     ownerAddress: Address;
   }): Promise<SafesByChainId> {
-    return this.getAllSafesByOwnerForChains({
-      ownerAddress: args.ownerAddress,
-      getSafesByOwnerFn: (args) => this.getSafesByOwnerV2(args),
-    });
+    return this.getAllSafesByOwnerForChains((chainId) =>
+      this.getSafesByOwnerV2({
+        chainId,
+        ownerAddress: args.ownerAddress,
+      }),
+    );
   }
 
   async getLastTransactionSortedByNonce(args: {
