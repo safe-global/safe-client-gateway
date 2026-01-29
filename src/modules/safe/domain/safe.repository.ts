@@ -29,13 +29,22 @@ import { ProposeTransactionDto } from '@/modules/transactions/domain/entities/pr
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
 import { CreationTransactionSchema } from '@/modules/safe/domain/entities/schemas/creation-transaction.schema';
-import { SafeSchema } from '@/modules/safe/domain/entities/schemas/safe.schema';
+import {
+  SafeSchema,
+  SafePageV2Schema,
+} from '@/modules/safe/domain/entities/schemas/safe.schema';
+import { SafesByChainId } from '@/modules/safe/domain/entities/safes-by-chain-id.entity';
 import { z } from 'zod';
 import { TransactionVerifierHelper } from '@/modules/transactions/routes/helpers/transaction-verifier.helper';
+import { PaginationData } from '@/routes/common/pagination/pagination.data';
+import { SAFE_TRANSACTION_SERVICE_MAX_LIMIT } from '@/domain/common/constants';
 import type { Address } from 'viem';
+import { IConfigurationService } from '@/config/configuration.service.interface';
 
 @Injectable()
 export class SafeRepository implements ISafeRepository {
+  private readonly maxSequentialPages: number;
+
   constructor(
     @Inject(ITransactionApiManager)
     private readonly transactionApiManager: ITransactionApiManager,
@@ -43,7 +52,13 @@ export class SafeRepository implements ISafeRepository {
     @Inject(IChainsRepository)
     private readonly chainsRepository: IChainsRepository,
     private readonly transactionVerifier: TransactionVerifierHelper,
-  ) {}
+    @Inject(IConfigurationService)
+    private readonly configurationService: IConfigurationService,
+  ) {
+    this.maxSequentialPages = this.configurationService.getOrThrow<number>(
+      'safeConfig.safes.maxSequentialPages',
+    );
+  }
 
   async getSafe(args: { chainId: string; address: Address }): Promise<Safe> {
     const transactionService = await this.transactionApiManager.getApi(
@@ -526,16 +541,54 @@ export class SafeRepository implements ISafeRepository {
     return SafeListSchema.parse(safeList);
   }
 
-  async getAllSafesByOwner(args: {
+  async getSafesByOwnerV2(args: {
+    chainId: string;
     ownerAddress: Address;
-  }): Promise<{ [chainId: string]: Array<string> | null }> {
+  }): Promise<SafeList> {
+    const transactionService = await this.transactionApiManager.getApi(
+      args.chainId,
+    );
+
+    const allAddresses: Array<Address> = [];
+    let offset = 0;
+    let next: string | null = null;
+
+    for (let i = 0; i < this.maxSequentialPages; i++) {
+      const page = await transactionService.getSafesByOwnerV2({
+        ownerAddress: args.ownerAddress,
+        limit: SAFE_TRANSACTION_SERVICE_MAX_LIMIT,
+        offset,
+      });
+
+      const { next: nextUrl, results } = SafePageV2Schema.parse(page);
+      next = nextUrl;
+
+      allAddresses.push(...results.map((safe) => safe.address));
+
+      if (!next) {
+        break;
+      }
+
+      const paginationData = PaginationData.fromLimitAndOffset(new URL(next));
+      offset = paginationData.offset;
+    }
+
+    if (next) {
+      this.loggingService.error(
+        `Max sequential pages reached for getSafesByOwnerV2. chainId=${args.chainId}, ownerAddress=${args.ownerAddress}`,
+      );
+    }
+
+    return SafeListSchema.parse({ safes: allAddresses });
+  }
+
+  private async getAllSafesByOwnerForChains(
+    getSafesByOwnerForChain: (chainId: string) => Promise<SafeList>,
+  ): Promise<SafesByChainId> {
     const chains = await this.chainsRepository.getAllChains();
     const allSafeLists = await Promise.allSettled(
       chains.map(async ({ chainId }) => {
-        const safeList = await this.getSafesByOwner({
-          chainId,
-          ownerAddress: args.ownerAddress,
-        });
+        const safeList = await getSafesByOwnerForChain(chainId);
 
         return {
           chainId,
@@ -544,7 +597,7 @@ export class SafeRepository implements ISafeRepository {
       }),
     );
 
-    const result: { [chainId: string]: Array<string> | null } = {};
+    const result: SafesByChainId = {};
 
     for (const [index, allSafeList] of allSafeLists.entries()) {
       const chainId = chains[index].chainId;
@@ -560,6 +613,28 @@ export class SafeRepository implements ISafeRepository {
     }
 
     return result;
+  }
+
+  async getAllSafesByOwner(args: {
+    ownerAddress: Address;
+  }): Promise<SafesByChainId> {
+    return this.getAllSafesByOwnerForChains((chainId) =>
+      this.getSafesByOwner({
+        chainId,
+        ownerAddress: args.ownerAddress,
+      }),
+    );
+  }
+
+  async getAllSafesByOwnerV2(args: {
+    ownerAddress: Address;
+  }): Promise<SafesByChainId> {
+    return this.getAllSafesByOwnerForChains((chainId) =>
+      this.getSafesByOwnerV2({
+        chainId,
+        ownerAddress: args.ownerAddress,
+      }),
+    );
   }
 
   async getLastTransactionSortedByNonce(args: {
