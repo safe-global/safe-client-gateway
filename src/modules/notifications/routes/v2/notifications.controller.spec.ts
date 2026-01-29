@@ -1,8 +1,6 @@
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import configuration from '@/config/entities/__tests__/configuration';
-import { TestAccountsDataSourceModule } from '@/modules/accounts/datasources/__tests__/test.accounts.datasource.module';
-import { AccountsDatasourceModule } from '@/modules/accounts/datasources/accounts.datasource.module';
 import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
 import { NetworkService } from '@/datasources/network/network.service.interface';
@@ -23,12 +21,8 @@ import {
 import type { Server } from 'net';
 import request from 'supertest';
 import { getAddress } from 'viem';
-import { CounterfactualSafesDatasourceModule } from '@/modules/accounts/datasources/counterfactual-safes/counterfactual-safes.datasource.module';
-import { TestCounterfactualSafesDataSourceModule } from '@/modules/accounts/datasources/counterfactual-safes/__tests__/test.counterfactual-safes.datasource.module';
 import { INotificationsRepositoryV2 } from '@/modules/notifications/domain/v2/notifications.repository.interface';
 import { NotificationType } from '@/modules/notifications/datasources/entities/notification-type.entity.db';
-import { TestAddressBooksDataSourceModule } from '@/modules/accounts/datasources/address-books/__tests__/test.address-books.datasource.module';
-import { AddressBooksDatasourceModule } from '@/modules/accounts/datasources/address-books/address-books.datasource.module';
 import { rawify } from '@/validation/entities/raw.entity';
 import { NotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/notifications.repository.module';
 import { TestNotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/test.notification.repository.module';
@@ -51,7 +45,6 @@ describe('Notifications Controller V2 (Unit)', () => {
       features: {
         ...defaultConfiguration.features,
         auth: true,
-        accounts: true,
       },
     });
 
@@ -61,18 +54,6 @@ describe('Notifications Controller V2 (Unit)', () => {
         {
           originalModule: NotificationsRepositoryV2Module,
           testModule: TestNotificationsRepositoryV2Module,
-        },
-        {
-          originalModule: AccountsDatasourceModule,
-          testModule: TestAccountsDataSourceModule,
-        },
-        {
-          originalModule: AddressBooksDatasourceModule,
-          testModule: TestAddressBooksDataSourceModule,
-        },
-        {
-          originalModule: CounterfactualSafesDatasourceModule,
-          testModule: TestCounterfactualSafesDataSourceModule,
         },
       ],
     });

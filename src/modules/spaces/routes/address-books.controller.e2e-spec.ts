@@ -1,11 +1,5 @@
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import configuration from '@/config/entities/__tests__/configuration';
-import { TestAccountsDataSourceModule } from '@/modules/accounts/datasources/__tests__/test.accounts.datasource.module';
-import { AccountsDatasourceModule } from '@/modules/accounts/datasources/accounts.datasource.module';
-import { TestAddressBooksDataSourceModule } from '@/modules/accounts/datasources/address-books/__tests__/test.address-books.datasource.module';
-import { AddressBooksDatasourceModule } from '@/modules/accounts/datasources/address-books/address-books.datasource.module';
-import { TestCounterfactualSafesDataSourceModule } from '@/modules/accounts/datasources/counterfactual-safes/__tests__/test.counterfactual-safes.datasource.module';
-import { CounterfactualSafesDatasourceModule } from '@/modules/accounts/datasources/counterfactual-safes/counterfactual-safes.datasource.module';
 import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
 import { authPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { nameBuilder } from '@/domain/common/entities/name.builder';
@@ -63,18 +57,6 @@ describe('AddressBooksController', () => {
       config: testConfiguration,
       overridePostgresV2: false,
       modules: [
-        {
-          originalModule: AccountsDatasourceModule,
-          testModule: TestAccountsDataSourceModule,
-        },
-        {
-          originalModule: AddressBooksDatasourceModule,
-          testModule: TestAddressBooksDataSourceModule,
-        },
-        {
-          originalModule: CounterfactualSafesDatasourceModule,
-          testModule: TestCounterfactualSafesDataSourceModule,
-        },
         {
           originalModule: NotificationsRepositoryV2Module,
           testModule: TestNotificationsRepositoryV2Module,
