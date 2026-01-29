@@ -33,7 +33,6 @@ import {
   SafeSchema,
   SafePageV2Schema,
 } from '@/modules/safe/domain/entities/schemas/safe.schema';
-import { SafeV2 } from '@/modules/safe/domain/entities/safe.entity';
 import { SafesByChainId } from '@/modules/safe/domain/entities/safes-by-chain-id.entity';
 import { z } from 'zod';
 import { TransactionVerifierHelper } from '@/modules/transactions/routes/helpers/transaction-verifier.helper';
@@ -550,7 +549,7 @@ export class SafeRepository implements ISafeRepository {
       args.chainId,
     );
 
-    const allSafeV2s: Array<SafeV2> = [];
+    const allAddresses: Array<Address> = [];
     let offset = 0;
     let next: string | null = null;
 
@@ -564,7 +563,7 @@ export class SafeRepository implements ISafeRepository {
       const { next: nextUrl, results } = SafePageV2Schema.parse(page);
       next = nextUrl;
 
-      allSafeV2s.push(...results);
+      allAddresses.push(...results.map((safe) => safe.address));
 
       if (!next) {
         break;
@@ -580,7 +579,6 @@ export class SafeRepository implements ISafeRepository {
       );
     }
 
-    const allAddresses = allSafeV2s.map((safe) => safe.address);
     return SafeListSchema.parse({ safes: allAddresses });
   }
 
