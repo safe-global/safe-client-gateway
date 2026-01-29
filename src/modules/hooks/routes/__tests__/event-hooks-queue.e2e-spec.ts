@@ -7,7 +7,6 @@ import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import type { ChannelWrapper } from 'amqp-connection-manager';
-import type { RedisClientType } from 'redis';
 import { getAddress } from 'viem';
 import type { Server } from 'net';
 import { TEST_SAFE } from '@/routes/common/__tests__/constants';
@@ -15,6 +14,7 @@ import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.b
 import { PushNotificationsApiModule } from '@/datasources/push-notifications-api/push-notifications-api.module';
 import { TestPushNotificationsApiModule } from '@/datasources/push-notifications-api/__tests__/test.push-notifications-api.module';
 import { createBaseTestModule } from '@/__tests__/testing-module';
+import type { RedisClientType } from '@/datasources/cache/cache.module';
 
 describe('Events queue processing e2e tests', () => {
   let app: INestApplication<Server>;

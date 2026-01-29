@@ -1,11 +1,11 @@
 import type { INestApplication } from '@nestjs/common';
-import type { RedisClientType } from 'redis';
 import request from 'supertest';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { redisClientFactory } from '@/__tests__/redis-client.factory';
 import type { SafeApp } from '@/modules/safe-apps/routes/entities/safe-app.entity';
 import type { Server } from 'net';
 import { createBaseTestModule } from '@/__tests__/testing-module';
+import type { RedisClientType } from '@/datasources/cache/cache.module';
 
 describe('Get Safe Apps e2e test', () => {
   let app: INestApplication<Server>;
