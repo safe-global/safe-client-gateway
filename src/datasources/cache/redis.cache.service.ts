@@ -171,7 +171,7 @@ export class RedisCacheService
       event: 'Closing Redis connection',
     });
     const forceQuitTimeout = setTimeout(() => {
-      void this.forceQuit();
+      this.forceQuit();
     }, this.quitTimeoutInSeconds * 1000);
     await this.client.quit();
     clearTimeout(forceQuitTimeout);
@@ -180,13 +180,13 @@ export class RedisCacheService
   /**
    * Forces the closing of the Redis connection associated with this service.
    */
-  private async forceQuit(): Promise<void> {
+  private forceQuit(): void {
     this.loggingService.warn({
       type: LogType.CacheEvent,
       source: 'RedisCacheService',
       event: 'Forcing Redis connection close',
     });
-    await this.client.disconnect();
+    this.client.destroy();
   }
 
   /**
