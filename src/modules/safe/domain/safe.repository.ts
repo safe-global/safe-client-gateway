@@ -575,8 +575,6 @@ export class SafeRepository implements ISafeRepository {
         offset = paginationData.offset;
       }
     } catch (error) {
-      // If it's a 404 (no safes found), return empty result instead of null
-      // (this is done to match the logic of v2 response)
       if (error instanceof DataSourceError && error.code === 404) {
         return SafeListSchema.parse({ safes: [] });
       }
