@@ -64,6 +64,13 @@ export class SafesV2Controller {
       'If true, only includes trusted tokens in balance calculations.',
     example: false,
   })
+  @ApiQuery({
+    name: 'parent_address',
+    required: false,
+    type: String,
+    description:
+      'Optional parent address. If provided, the creator field will be populated for each Safe.',
+  })
   @ApiOkResponse({
     type: SafeOverview,
     isArray: true,
@@ -78,12 +85,15 @@ export class SafesV2Controller {
     trusted: boolean,
     @Query('wallet_address', new ValidationPipe(AddressSchema.optional()))
     walletAddress?: Address,
+    @Query('parent_address', new ValidationPipe(AddressSchema.optional()))
+    parentAddress?: Address,
   ): Promise<Array<SafeOverview>> {
     return this.service.getSafeOverview({
       currency,
       addresses,
       trusted,
       walletAddress,
+      parentAddress,
     });
   }
 }

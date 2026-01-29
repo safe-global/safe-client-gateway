@@ -178,6 +178,7 @@ export class SafesService {
           getNumberString(fiatBalance),
           queue.count ?? 0,
           awaitingConfirmation,
+          null,
         );
       }),
     );
