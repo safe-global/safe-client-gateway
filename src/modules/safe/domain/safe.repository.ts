@@ -38,6 +38,7 @@ import { z } from 'zod';
 import { TransactionVerifierHelper } from '@/modules/transactions/routes/helpers/transaction-verifier.helper';
 import { PaginationData } from '@/routes/common/pagination/pagination.data';
 import { SAFE_TRANSACTION_SERVICE_MAX_LIMIT } from '@/domain/common/constants';
+import { DataSourceError } from '@/domain/errors/data-source.error';
 import type { Address } from 'viem';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 
@@ -553,24 +554,32 @@ export class SafeRepository implements ISafeRepository {
     let offset = 0;
     let next: string | null = null;
 
-    for (let i = 0; i < this.maxSequentialPages; i++) {
-      const page = await transactionService.getSafesByOwnerV2({
-        ownerAddress: args.ownerAddress,
-        limit: SAFE_TRANSACTION_SERVICE_MAX_LIMIT,
-        offset,
-      });
+    try {
+      for (let i = 0; i < this.maxSequentialPages; i++) {
+        const page = await transactionService.getSafesByOwnerV2({
+          ownerAddress: args.ownerAddress,
+          limit: SAFE_TRANSACTION_SERVICE_MAX_LIMIT,
+          offset,
+        });
 
-      const { next: nextUrl, results } = SafePageV2Schema.parse(page);
-      next = nextUrl;
+        const { next: nextUrl, results } = SafePageV2Schema.parse(page);
+        next = nextUrl;
 
-      allAddresses.push(...results.map((safe) => safe.address));
+        allAddresses.push(...results.map((safe) => safe.address));
 
-      if (!next) {
-        break;
+        if (!next) {
+          break;
+        }
+
+        const paginationData = PaginationData.fromLimitAndOffset(new URL(next));
+        offset = paginationData.offset;
       }
-
-      const paginationData = PaginationData.fromLimitAndOffset(new URL(next));
-      offset = paginationData.offset;
+    } catch (error) {
+      if (error instanceof DataSourceError && error.code === 404) {
+        return SafeListSchema.parse({ safes: [] });
+      }
+      // Re-throw other errors
+      throw error;
     }
 
     if (next) {
