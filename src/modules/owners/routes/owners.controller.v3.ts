@@ -8,6 +8,7 @@ import {
 import { OwnersService } from '@/modules/owners/routes/owners.service';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
+import { SafesByChainId } from '@/modules/safe/domain/entities/safes-by-chain-id.entity';
 import type { Address } from 'viem';
 
 @ApiTags('owners')
@@ -47,7 +48,7 @@ export class OwnersControllerV3 {
   async getAllSafesByOwner(
     @Param('ownerAddress', new ValidationPipe(AddressSchema))
     ownerAddress: Address,
-  ): Promise<{ [chainId: string]: Array<string> | null }> {
+  ): Promise<SafesByChainId> {
     return this.ownersService.getAllSafesByOwnerV2({ ownerAddress });
   }
 }
