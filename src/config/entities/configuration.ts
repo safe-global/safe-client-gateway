@@ -685,6 +685,10 @@ export default () => ({
       },
     },
   },
+  captcha: {
+    enabled: process.env.CAPTCHA_ENABLED?.toLowerCase() === 'true',
+    secretKey: process.env.TURNSTILE_SECRET_KEY,
+  },
 });
 
 // Helper function to parse relay rules from environment variable
