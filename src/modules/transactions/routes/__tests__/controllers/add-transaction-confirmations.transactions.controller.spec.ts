@@ -117,9 +117,8 @@ describe('Add transaction confirmations - Transactions Controller (Unit)', () =>
         statusCode: 422,
         code: 'invalid_type',
         expected: 'string',
-        received: 'number',
         path: ['signature'],
-        message: 'Expected string, received number',
+        message: 'Invalid input: expected string, received number',
       });
   });
 

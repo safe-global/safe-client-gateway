@@ -8,7 +8,6 @@ import {
   DataDecodedSchema,
 } from '@/modules/data-decoder/domain/v1/entities/schemas/data-decoded.schema';
 import { faker } from '@faker-js/faker';
-import { ZodError } from 'zod';
 
 describe('Data decoded schema', () => {
   describe('DataDecodedParameterSchema', () => {
@@ -93,17 +92,14 @@ describe('Data decoded schema', () => {
 
       const result = DataDecodedSchema.safeParse(dataDecoded);
 
-      expect(!result.success && result.error).toStrictEqual(
-        new ZodError([
-          {
-            code: 'invalid_type',
-            expected: 'string',
-            received: 'undefined',
-            path: ['method'],
-            message: 'Required',
-          },
-        ]),
-      );
+      expect(!result.success && result.error.issues).toStrictEqual([
+        {
+          code: 'invalid_type',
+          expected: 'string',
+          path: ['method'],
+          message: 'Invalid input: expected string, received undefined',
+        },
+      ]);
     });
   });
 });

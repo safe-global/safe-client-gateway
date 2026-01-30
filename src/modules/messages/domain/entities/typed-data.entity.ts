@@ -7,7 +7,7 @@ import { HexSchema } from '@/validation/entities/schemas/hex.schema';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 
 export const _TypedDataDomainSchema = z.object({
-  name: TypedDataDomainSchema.shape.name.or(z.literal('')),
+  name: z.union([TypedDataDomainSchema.shape.name, z.literal('')]),
   version: TypedDataDomainSchema.shape.version,
   // Overwrite chainId, salt and address for strictness/checksumming
   chainId: z.coerce.number().optional(),
@@ -18,8 +18,8 @@ export const _TypedDataDomainSchema = z.object({
 export const TypedDataSchema = z.object({
   domain: _TypedDataDomainSchema,
   primaryType: z.string(),
-  types: z.record(z.array(TypedDataParameterSchema)),
-  message: z.record(z.unknown()),
+  types: z.record(z.string(), z.array(TypedDataParameterSchema)),
+  message: z.record(z.string(), z.unknown()),
 });
 
 export type TypedData = z.infer<typeof TypedDataSchema>;

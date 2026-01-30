@@ -2,7 +2,6 @@ import { addRecoveryModuleDtoBuilder } from '@/modules/recovery/routes/entities/
 import { AddRecoveryModuleDtoSchema } from '@/modules/recovery/routes/entities/schemas/add-recovery-module.dto.schema';
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress } from 'viem';
-import { ZodError } from 'zod';
 
 describe('AddRecoveryModuleDtoSchema', () => {
   it('should validate a valid AddRecoveryModuleDto', () => {
@@ -31,16 +30,13 @@ describe('AddRecoveryModuleDtoSchema', () => {
   it('should not allow moduleAddress to be undefined', () => {
     const result = AddRecoveryModuleDtoSchema.safeParse({});
 
-    expect(!result.success && result.error).toStrictEqual(
-      new ZodError([
-        {
-          code: 'invalid_type',
-          expected: 'string',
-          received: 'undefined',
-          path: ['moduleAddress'],
-          message: 'Required',
-        },
-      ]),
-    );
+    expect(!result.success && result.error.issues).toEqual([
+      {
+        code: 'invalid_type',
+        expected: 'string',
+        message: 'Invalid input: expected string, received undefined',
+        path: ['moduleAddress'],
+      },
+    ]);
   });
 });

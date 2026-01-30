@@ -836,9 +836,8 @@ describe('Alerts (Unit)', () => {
             statusCode: 422,
             code: 'invalid_type',
             expected: 'string',
-            received: 'undefined',
             path: ['id'],
-            message: 'Required',
+            message: 'Invalid input: expected string, received undefined',
           });
       });
 

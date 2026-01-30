@@ -28,7 +28,6 @@ import {
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress } from 'viem';
-import { ZodError } from 'zod';
 
 describe('Chain schemas', () => {
   describe('NativeCurrencySchema', () => {
@@ -45,38 +44,32 @@ describe('Chain schemas', () => {
 
       const result = NativeCurrencySchema.safeParse(nativeCurrency);
 
-      expect(!result.success && result.error).toStrictEqual(
-        new ZodError([
-          {
-            code: 'invalid_type',
-            expected: 'string',
-            received: 'undefined',
-            path: ['name'],
-            message: 'Required',
-          },
-          {
-            code: 'invalid_type',
-            expected: 'string',
-            received: 'undefined',
-            path: ['symbol'],
-            message: 'Required',
-          },
-          {
-            code: 'invalid_type',
-            expected: 'number',
-            received: 'undefined',
-            path: ['decimals'],
-            message: 'Required',
-          },
-          {
-            code: 'invalid_type',
-            expected: 'string',
-            received: 'undefined',
-            path: ['logoUri'],
-            message: 'Required',
-          },
-        ]),
-      );
+      expect(!result.success && result.error.issues).toStrictEqual([
+        {
+          code: 'invalid_type',
+          expected: 'string',
+          path: ['name'],
+          message: 'Invalid input: expected string, received undefined',
+        },
+        {
+          code: 'invalid_type',
+          expected: 'string',
+          path: ['symbol'],
+          message: 'Invalid input: expected string, received undefined',
+        },
+        {
+          code: 'invalid_type',
+          expected: 'number',
+          path: ['decimals'],
+          message: 'Invalid input: expected number, received undefined',
+        },
+        {
+          code: 'invalid_type',
+          expected: 'string',
+          path: ['logoUri'],
+          message: 'Invalid input: expected string, received undefined',
+        },
+      ]);
     });
   });
 
@@ -104,17 +97,14 @@ describe('Chain schemas', () => {
 
       const result = RpcUriSchema.safeParse(rpcUri);
 
-      expect(!result.success && result.error).toStrictEqual(
-        new ZodError([
-          {
-            code: 'invalid_type',
-            expected: 'string',
-            received: 'undefined',
-            path: ['value'],
-            message: 'Required',
-          },
-        ]),
-      );
+      expect(!result.success && result.error.issues).toStrictEqual([
+        {
+          code: 'invalid_type',
+          expected: 'string',
+          path: ['value'],
+          message: 'Invalid input: expected string, received undefined',
+        },
+      ]);
     });
   });
 
@@ -184,24 +174,20 @@ describe('Chain schemas', () => {
 
       const result = ThemeSchema.safeParse(theme);
 
-      expect(!result.success && result.error).toStrictEqual(
-        new ZodError([
-          {
-            code: 'invalid_type',
-            expected: 'string',
-            received: 'undefined',
-            path: ['textColor'],
-            message: 'Required',
-          },
-          {
-            code: 'invalid_type',
-            expected: 'string',
-            received: 'undefined',
-            path: ['backgroundColor'],
-            message: 'Required',
-          },
-        ]),
-      );
+      expect(!result.success && result.error.issues).toStrictEqual([
+        {
+          code: 'invalid_type',
+          expected: 'string',
+          path: ['textColor'],
+          message: 'Invalid input: expected string, received undefined',
+        },
+        {
+          code: 'invalid_type',
+          expected: 'string',
+          path: ['backgroundColor'],
+          message: 'Invalid input: expected string, received undefined',
+        },
+      ]);
     });
   });
 
@@ -219,38 +205,32 @@ describe('Chain schemas', () => {
 
       const result = GasPriceOracleSchema.safeParse(gasPriceOracle);
 
-      expect(!result.success && result.error).toStrictEqual(
-        new ZodError([
-          // @ts-expect-error - inferred types don't allow literal strings
-          {
-            code: 'invalid_literal',
-            expected: 'oracle',
-            path: ['type'],
-            message: 'Invalid literal value, expected "oracle"',
-          },
-          {
-            code: 'invalid_type',
-            expected: 'string',
-            received: 'undefined',
-            path: ['uri'],
-            message: 'Required',
-          },
-          {
-            code: 'invalid_type',
-            expected: 'string',
-            received: 'undefined',
-            path: ['gasParameter'],
-            message: 'Required',
-          },
-          {
-            code: 'invalid_type',
-            expected: 'string',
-            received: 'undefined',
-            path: ['gweiFactor'],
-            message: 'Required',
-          },
-        ]),
-      );
+      expect(!result.success && result.error.issues).toStrictEqual([
+        {
+          code: 'invalid_value',
+          path: ['type'],
+          message: 'Invalid input: expected "oracle"',
+          values: ['oracle'],
+        },
+        {
+          code: 'invalid_type',
+          expected: 'string',
+          path: ['uri'],
+          message: 'Invalid input: expected string, received undefined',
+        },
+        {
+          code: 'invalid_type',
+          expected: 'string',
+          path: ['gasParameter'],
+          message: 'Invalid input: expected string, received undefined',
+        },
+        {
+          code: 'invalid_type',
+          expected: 'string',
+          path: ['gweiFactor'],
+          message: 'Invalid input: expected string, received undefined',
+        },
+      ]);
     });
   });
 
@@ -268,24 +248,20 @@ describe('Chain schemas', () => {
 
       const result = GasPriceFixedSchema.safeParse(gasPriceFixed);
 
-      expect(!result.success && result.error).toStrictEqual(
-        new ZodError([
-          // @ts-expect-error - inferred types don't allow literal strings
-          {
-            code: 'invalid_literal',
-            expected: 'fixed',
-            path: ['type'],
-            message: 'Invalid literal value, expected "fixed"',
-          },
-          {
-            code: 'invalid_type',
-            expected: 'string',
-            received: 'undefined',
-            path: ['weiValue'],
-            message: 'Required',
-          },
-        ]),
-      );
+      expect(!result.success && result.error.issues).toStrictEqual([
+        {
+          code: 'invalid_value',
+          path: ['type'],
+          message: 'Invalid input: expected "fixed"',
+          values: ['fixed'],
+        },
+        {
+          code: 'invalid_type',
+          expected: 'string',
+          path: ['weiValue'],
+          message: 'Invalid input: expected string, received undefined',
+        },
+      ]);
     });
   });
 
@@ -303,31 +279,26 @@ describe('Chain schemas', () => {
 
       const result = GasPriceFixedEip1559Schema.safeParse(gasPriceFixedEip1559);
 
-      expect(!result.success && result.error).toStrictEqual(
-        new ZodError([
-          // @ts-expect-error - inferred types don't allow literal strings
-          {
-            code: 'invalid_literal',
-            expected: 'fixed1559',
-            path: ['type'],
-            message: 'Invalid literal value, expected "fixed1559"',
-          },
-          {
-            code: 'invalid_type',
-            expected: 'string',
-            received: 'undefined',
-            path: ['maxFeePerGas'],
-            message: 'Required',
-          },
-          {
-            code: 'invalid_type',
-            expected: 'string',
-            received: 'undefined',
-            path: ['maxPriorityFeePerGas'],
-            message: 'Required',
-          },
-        ]),
-      );
+      expect(!result.success && result.error.issues).toStrictEqual([
+        {
+          code: 'invalid_value',
+          path: ['type'],
+          message: 'Invalid input: expected "fixed1559"',
+          values: ['fixed1559'],
+        },
+        {
+          code: 'invalid_type',
+          expected: 'string',
+          path: ['maxFeePerGas'],
+          message: 'Invalid input: expected string, received undefined',
+        },
+        {
+          code: 'invalid_type',
+          expected: 'string',
+          path: ['maxPriorityFeePerGas'],
+          message: 'Invalid input: expected string, received undefined',
+        },
+      ]);
     });
   });
 
@@ -352,17 +323,16 @@ describe('Chain schemas', () => {
 
       const result = GasPriceSchema.safeParse(gasPrice);
 
-      expect(!result.success && result.error).toStrictEqual(
-        new ZodError([
-          {
-            code: 'invalid_union_discriminator',
-            options: ['oracle', 'fixed', 'fixed1559'],
-            path: [0, 'type'],
-            message:
-              "Invalid discriminator value. Expected 'oracle' | 'fixed' | 'fixed1559'",
-          },
-        ]),
-      );
+      expect(!result.success && result.error.issues).toStrictEqual([
+        {
+          code: 'invalid_union',
+          discriminator: 'type',
+          errors: [],
+          message: 'Invalid input',
+          note: 'No matching discriminator',
+          path: [0, 'type'],
+        },
+      ]);
     });
   });
 
@@ -382,17 +352,14 @@ describe('Chain schemas', () => {
 
       const result = PricesProviderSchema.safeParse(pricesProvider);
 
-      expect(!result.success && result.error).toStrictEqual(
-        new ZodError([
-          {
-            code: 'invalid_type',
-            expected: 'string',
-            received: 'number',
-            path: ['chainName'],
-            message: 'Expected string, received number',
-          },
-        ]),
-      );
+      expect(!result.success && result.error.issues).toStrictEqual([
+        {
+          code: 'invalid_type',
+          expected: 'string',
+          path: ['chainName'],
+          message: 'Invalid input: expected string, received number',
+        },
+      ]);
     });
 
     it('should not validate an invalid prices provider nativeCoin', () => {
@@ -402,17 +369,14 @@ describe('Chain schemas', () => {
 
       const result = PricesProviderSchema.safeParse(pricesProvider);
 
-      expect(!result.success && result.error).toStrictEqual(
-        new ZodError([
-          {
-            code: 'invalid_type',
-            expected: 'string',
-            received: 'number',
-            path: ['nativeCoin'],
-            message: 'Expected string, received number',
-          },
-        ]),
-      );
+      expect(!result.success && result.error.issues).toStrictEqual([
+        {
+          code: 'invalid_type',
+          expected: 'string',
+          path: ['nativeCoin'],
+          message: 'Invalid input: expected string, received number',
+        },
+      ]);
     });
   });
 
@@ -432,17 +396,14 @@ describe('Chain schemas', () => {
 
       const result = BalancesProviderSchema.safeParse(balancesProvider);
 
-      expect(!result.success && result.error).toStrictEqual(
-        new ZodError([
-          {
-            code: 'invalid_type',
-            expected: 'string',
-            received: 'number',
-            path: ['chainName'],
-            message: 'Expected string, received number',
-          },
-        ]),
-      );
+      expect(!result.success && result.error.issues).toStrictEqual([
+        {
+          code: 'invalid_type',
+          expected: 'string',
+          path: ['chainName'],
+          message: 'Invalid input: expected string, received number',
+        },
+      ]);
     });
 
     it('should default balancesProvider chainName to null', () => {
@@ -462,17 +423,14 @@ describe('Chain schemas', () => {
 
       const result = BalancesProviderSchema.safeParse(balancesProvider);
 
-      expect(!result.success && result.error).toStrictEqual(
-        new ZodError([
-          {
-            code: 'invalid_type',
-            expected: 'boolean',
-            received: 'undefined',
-            path: ['enabled'],
-            message: 'Required',
-          },
-        ]),
-      );
+      expect(!result.success && result.error.issues).toStrictEqual([
+        {
+          code: 'invalid_type',
+          expected: 'boolean',
+          path: ['enabled'],
+          message: 'Invalid input: expected boolean, received undefined',
+        },
+      ]);
     });
 
     it('should not validate an invalid balancesProvider enablement status', () => {
@@ -482,17 +440,14 @@ describe('Chain schemas', () => {
 
       const result = BalancesProviderSchema.safeParse(balancesProvider);
 
-      expect(!result.success && result.error).toStrictEqual(
-        new ZodError([
-          {
-            code: 'invalid_type',
-            expected: 'boolean',
-            received: 'string',
-            path: ['enabled'],
-            message: 'Expected boolean, received string',
-          },
-        ]),
-      );
+      expect(!result.success && result.error.issues).toStrictEqual([
+        {
+          code: 'invalid_type',
+          expected: 'boolean',
+          path: ['enabled'],
+          message: 'Invalid input: expected boolean, received string',
+        },
+      ]);
     });
   });
 
@@ -610,17 +565,14 @@ describe('Chain schemas', () => {
 
       const result = ChainSchema.safeParse(chain);
 
-      expect(!result.success && result.error).toStrictEqual(
-        new ZodError([
-          {
-            code: 'invalid_type',
-            expected: 'string',
-            received: 'undefined',
-            path: [field],
-            message: 'Required',
-          },
-        ]),
-      );
+      expect(!result.success && result.error.issues).toStrictEqual([
+        {
+          code: 'invalid_type',
+          expected: 'string',
+          path: [field],
+          message: 'Invalid input: expected string, received undefined',
+        },
+      ]);
     });
 
     it.each([
@@ -643,17 +595,14 @@ describe('Chain schemas', () => {
 
       const result = ChainSchema.safeParse(chain);
 
-      expect(!result.success && result.error).toStrictEqual(
-        new ZodError([
-          {
-            code: 'invalid_type',
-            expected: 'object',
-            received: 'undefined',
-            path: [field],
-            message: 'Required',
-          },
-        ]),
-      );
+      expect(!result.success && result.error.issues).toStrictEqual([
+        {
+          code: 'invalid_type',
+          expected: 'object',
+          path: [field],
+          message: 'Invalid input: expected object, received undefined',
+        },
+      ]);
     });
   });
 

@@ -14,7 +14,7 @@ import { z } from 'zod';
 
 export const NotificationTypeSchema = z.object({
   id: z.number(),
-  name: z.nativeEnum(NotificationTypeEnum),
+  name: z.enum(NotificationTypeEnum),
   notification_subscription_notification_type: z.array(
     NotificationSubscriptionNotificationTypeSchema,
   ),

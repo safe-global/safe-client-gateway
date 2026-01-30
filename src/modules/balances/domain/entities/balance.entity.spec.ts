@@ -6,7 +6,6 @@ import {
 } from '@/modules/balances/domain/entities/balance.entity';
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress } from 'viem';
-import { ZodError } from 'zod';
 
 describe('Balance entity schemas', () => {
   describe('NativeBalanceSchema', () => {
@@ -39,17 +38,14 @@ describe('Balance entity schemas', () => {
 
       const result = NativeBalanceSchema.safeParse(nativeBalance);
 
-      expect(!result.success && result.error).toStrictEqual(
-        new ZodError([
-          {
-            code: 'invalid_type',
-            expected: 'string',
-            received: 'undefined',
-            path: ['balance'],
-            message: 'Required',
-          },
-        ]),
-      );
+      expect(!result.success && result.error?.issues).toStrictEqual([
+        {
+          code: 'invalid_type',
+          expected: 'string',
+          message: 'Invalid input: expected string, received undefined',
+          path: ['balance'],
+        },
+      ]);
     });
   });
 
@@ -82,17 +78,14 @@ describe('Balance entity schemas', () => {
 
       const result = NativeBalanceSchema.safeParse(erc20Balance);
 
-      expect(!result.success && result.error).toStrictEqual(
-        new ZodError([
-          {
-            code: 'invalid_type',
-            expected: 'string',
-            received: 'undefined',
-            path: ['balance'],
-            message: 'Required',
-          },
-        ]),
-      );
+      expect(!result.success && result.error?.issues).toStrictEqual([
+        {
+          code: 'invalid_type',
+          expected: 'string',
+          message: 'Invalid input: expected string, received undefined',
+          path: ['balance'],
+        },
+      ]);
     });
   });
 
@@ -121,57 +114,39 @@ describe('Balance entity schemas', () => {
 
       const result = BalanceSchema.safeParse(balance);
 
-      expect(!result.success && result.error).toStrictEqual(
-        new ZodError([
-          {
-            code: 'invalid_union',
-            unionErrors: [
-              // @ts-expect-error - unionError is missing some properties (zod-based error)
-              {
-                issues: [
-                  {
-                    code: 'invalid_type',
-                    expected: 'string',
-                    received: 'undefined',
-                    path: ['balance'],
-                    message: 'Required',
-                  },
-                ],
-                name: 'ZodError',
-              },
-              // @ts-expect-error - unionError is missing some properties (zod-based error)
-              {
-                issues: [
-                  {
-                    code: 'invalid_type',
-                    expected: 'string',
-                    received: 'undefined',
-                    path: ['tokenAddress'],
-                    message: 'Required',
-                  },
-                  {
-                    code: 'invalid_type',
-                    expected: 'object',
-                    received: 'undefined',
-                    path: ['token'],
-                    message: 'Required',
-                  },
-                  {
-                    code: 'invalid_type',
-                    expected: 'string',
-                    received: 'undefined',
-                    path: ['balance'],
-                    message: 'Required',
-                  },
-                ],
-                name: 'ZodError',
-              },
+      expect(!result.success && result.error?.issues).toStrictEqual([
+        {
+          code: 'invalid_union',
+          message: 'Invalid input',
+          path: [],
+          errors: [
+            [
+              expect.objectContaining({
+                code: 'invalid_type',
+                expected: 'string',
+                path: ['balance'],
+              }),
             ],
-            path: [],
-            message: 'Invalid input',
-          },
-        ]),
-      );
+            [
+              expect.objectContaining({
+                code: 'invalid_type',
+                expected: 'string',
+                path: ['tokenAddress'],
+              }),
+              expect.objectContaining({
+                code: 'invalid_type',
+                expected: 'object',
+                path: ['token'],
+              }),
+              expect.objectContaining({
+                code: 'invalid_type',
+                expected: 'string',
+                path: ['balance'],
+              }),
+            ],
+          ],
+        },
+      ]);
     });
 
     it('should allow optional fiatBalance and fiatConversion and default to null', () => {
@@ -194,43 +169,29 @@ describe('Balance entity schemas', () => {
 
       const result = BalanceSchema.safeParse(nativeBalance);
 
-      expect(!result.success && result.error).toStrictEqual(
-        new ZodError([
-          {
-            code: 'invalid_union',
-            unionErrors: [
-              // @ts-expect-error - unionError is missing some properties (zod-based error)
-              {
-                issues: [
-                  {
-                    code: 'invalid_type',
-                    expected: 'null',
-                    received: 'string',
-                    path: ['tokenAddress'],
-                    message: 'Expected null, received string',
-                  },
-                ],
-                name: 'ZodError',
-              },
-              // @ts-expect-error - unionError is missing some properties (zod-based error)
-              {
-                issues: [
-                  {
-                    code: 'invalid_type',
-                    expected: 'object',
-                    received: 'undefined',
-                    path: ['token'],
-                    message: 'Required',
-                  },
-                ],
-                name: 'ZodError',
-              },
+      expect(!result.success && result.error?.issues).toStrictEqual([
+        {
+          code: 'invalid_union',
+          message: 'Invalid input',
+          path: [],
+          errors: [
+            [
+              expect.objectContaining({
+                code: 'invalid_type',
+                expected: 'null',
+                path: ['tokenAddress'],
+              }),
             ],
-            path: [],
-            message: 'Invalid input',
-          },
-        ]),
-      );
+            [
+              expect.objectContaining({
+                code: 'invalid_type',
+                expected: 'object',
+                path: ['token'],
+              }),
+            ],
+          ],
+        },
+      ]);
     });
   });
 });

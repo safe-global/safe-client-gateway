@@ -3,7 +3,6 @@ import type { TransactionEventType } from '@/modules/hooks/routes/entities/event
 import { IncomingTokenEventSchema } from '@/modules/hooks/routes/entities/schemas/incoming-token.schema';
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress } from 'viem';
-import { ZodError } from 'zod';
 
 describe('IncomingTokenEventSchema', () => {
   it('should validate an incoming token event', () => {
@@ -21,17 +20,14 @@ describe('IncomingTokenEventSchema', () => {
 
     const result = IncomingTokenEventSchema.safeParse(incomingTokenEvent);
 
-    expect(!result.success && result.error).toStrictEqual(
-      new ZodError([
-        {
-          received: incomingTokenEvent.type,
-          code: 'invalid_literal',
-          expected: 'INCOMING_TOKEN',
-          path: ['type'],
-          message: 'Invalid literal value, expected "INCOMING_TOKEN"',
-        },
-      ]),
-    );
+    expect(!result.success && result.error.issues).toEqual([
+      expect.objectContaining({
+        code: 'invalid_value',
+        values: ['INCOMING_TOKEN'],
+        path: ['type'],
+        message: 'Invalid input: expected "INCOMING_TOKEN"',
+      }),
+    ]);
   });
 
   it.each(['address' as const, 'tokenAddress' as const])(
@@ -43,15 +39,13 @@ describe('IncomingTokenEventSchema', () => {
 
       const result = IncomingTokenEventSchema.safeParse(incomingTokenEvent);
 
-      expect(!result.success && result.error).toStrictEqual(
-        new ZodError([
-          {
-            code: 'custom',
-            message: 'Invalid address',
-            path: [field],
-          },
-        ]),
-      );
+      expect(!result.success && result.error.issues).toEqual([
+        expect.objectContaining({
+          code: 'custom',
+          message: 'Invalid address',
+          path: [field],
+        }),
+      ]);
     },
   );
 

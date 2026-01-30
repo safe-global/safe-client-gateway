@@ -63,9 +63,8 @@ describe('Token', () => {
       {
         code: 'invalid_type',
         expected: 'number',
-        message: 'Required',
+        message: 'Invalid input: expected number, received undefined',
         path: ['decimals'],
-        received: 'undefined',
       },
     ]);
   });

@@ -2,7 +2,6 @@ import { contractBuilder } from '@/modules/contracts/domain/entities/__tests__/c
 import { ContractSchema } from '@/modules/contracts/domain/entities/schemas/contract.schema';
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress } from 'viem';
-import { ZodError } from 'zod';
 
 describe('ContractSchema', () => {
   it('should validate a valid contract', () => {
@@ -46,37 +45,31 @@ describe('ContractSchema', () => {
 
     const result = ContractSchema.safeParse(contract);
 
-    expect(!result.success && result.error).toStrictEqual(
-      new ZodError([
-        {
-          code: 'invalid_type',
-          expected: 'string',
-          received: 'undefined',
-          path: ['address'],
-          message: 'Required',
-        },
-        {
-          code: 'invalid_type',
-          expected: 'string',
-          received: 'undefined',
-          path: ['name'],
-          message: 'Required',
-        },
-        {
-          code: 'invalid_type',
-          expected: 'string',
-          received: 'undefined',
-          path: ['displayName'],
-          message: 'Required',
-        },
-        {
-          code: 'invalid_type',
-          expected: 'boolean',
-          received: 'undefined',
-          path: ['trustedForDelegateCall'],
-          message: 'Required',
-        },
-      ]),
-    );
+    expect(!result.success && result.error.issues).toEqual([
+      {
+        code: 'invalid_type',
+        expected: 'string',
+        message: 'Invalid input: expected string, received undefined',
+        path: ['address'],
+      },
+      {
+        code: 'invalid_type',
+        expected: 'string',
+        message: 'Invalid input: expected string, received undefined',
+        path: ['name'],
+      },
+      {
+        code: 'invalid_type',
+        expected: 'string',
+        message: 'Invalid input: expected string, received undefined',
+        path: ['displayName'],
+      },
+      {
+        code: 'invalid_type',
+        expected: 'boolean',
+        message: 'Invalid input: expected boolean, received undefined',
+        path: ['trustedForDelegateCall'],
+      },
+    ]);
   });
 });

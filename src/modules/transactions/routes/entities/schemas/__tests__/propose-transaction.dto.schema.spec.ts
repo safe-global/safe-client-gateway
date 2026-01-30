@@ -3,7 +3,6 @@ import { proposeTransactionDtoBuilder } from '@/modules/transactions/routes/enti
 import { ProposeTransactionDtoSchema } from '@/modules/transactions/routes/entities/schemas/propose-transaction.dto.schema';
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress, type Hash, type Hex } from 'viem';
-import { ZodError } from 'zod';
 
 describe('ProposeTransactionDtoSchema', () => {
   it('should validate a valid ProposeTransactionDto', () => {
@@ -24,15 +23,13 @@ describe('ProposeTransactionDtoSchema', () => {
         proposeTransactionDto,
       );
 
-      expect(!result.success && result.error).toStrictEqual(
-        new ZodError([
-          {
-            code: 'custom',
-            message: 'Invalid address',
-            path: [field],
-          },
-        ]),
-      );
+      expect(!result.success && result.error.issues).toEqual([
+        expect.objectContaining({
+          code: 'custom',
+          message: 'Invalid address',
+          path: [field],
+        }),
+      ]);
     });
 
     it(`should checksum ${field}`, () => {
@@ -81,15 +78,13 @@ describe('ProposeTransactionDtoSchema', () => {
         proposeTransactionDto,
       );
 
-      expect(!result.success && result.error).toStrictEqual(
-        new ZodError([
-          {
-            code: 'custom',
-            message: 'Invalid base-10 numeric string',
-            path: [field],
-          },
-        ]),
-      );
+      expect(!result.success && result.error.issues).toEqual([
+        expect.objectContaining({
+          code: 'custom',
+          message: 'Invalid base-10 numeric string',
+          path: [field],
+        }),
+      ]);
     });
   });
 
@@ -110,15 +105,13 @@ describe('ProposeTransactionDtoSchema', () => {
 
     const result = ProposeTransactionDtoSchema.safeParse(proposeTransactionDto);
 
-    expect(!result.success && result.error).toStrictEqual(
-      new ZodError([
-        {
-          code: 'custom',
-          message: 'Invalid "0x" notated hex string',
-          path: ['safeTxHash'],
-        },
-      ]),
-    );
+    expect(!result.success && result.error.issues).toEqual([
+      expect.objectContaining({
+        code: 'custom',
+        message: 'Invalid "0x" notated hex string',
+        path: ['safeTxHash'],
+      }),
+    ]);
   });
 
   it('should validate if signature is hex', () => {
@@ -138,25 +131,23 @@ describe('ProposeTransactionDtoSchema', () => {
 
     const result = ProposeTransactionDtoSchema.safeParse(proposeTransactionDto);
 
-    expect(!result.success && result.error).toStrictEqual(
-      new ZodError([
-        {
-          code: 'custom',
-          message: 'Invalid "0x" notated hex string',
-          path: ['signature'],
-        },
-        {
-          code: 'custom',
-          message: 'Invalid hex bytes',
-          path: ['signature'],
-        },
-        {
-          code: 'custom',
-          message: 'Invalid signature',
-          path: ['signature'],
-        },
-      ]),
-    );
+    expect(!result.success && result.error.issues).toEqual([
+      expect.objectContaining({
+        code: 'custom',
+        message: 'Invalid "0x" notated hex string',
+        path: ['signature'],
+      }),
+      expect.objectContaining({
+        code: 'custom',
+        message: 'Invalid hex bytes',
+        path: ['signature'],
+      }),
+      expect.objectContaining({
+        code: 'custom',
+        message: 'Invalid signature',
+        path: ['signature'],
+      }),
+    ]);
   });
 
   it.each([
@@ -190,16 +181,13 @@ describe('ProposeTransactionDtoSchema', () => {
 
     const result = ProposeTransactionDtoSchema.safeParse(proposeTransactionDto);
 
-    expect(!result.success && result.error).toStrictEqual(
-      new ZodError([
-        {
-          received: 2,
-          code: 'invalid_enum_value',
-          options: [0, 1],
-          path: ['operation'],
-          message: "Invalid enum value. Expected 0 | 1, received '2'",
-        },
-      ]),
-    );
+    expect(!result.success && result.error.issues).toEqual([
+      expect.objectContaining({
+        code: 'invalid_value',
+        values: [0, 1],
+        path: ['operation'],
+        message: 'Invalid option: expected one of 0|1',
+      }),
+    ]);
   });
 });

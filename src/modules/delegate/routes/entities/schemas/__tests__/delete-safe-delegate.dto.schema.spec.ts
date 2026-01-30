@@ -3,7 +3,6 @@ import type { DeleteSafeDelegateDto } from '@/modules/delegate/routes/entities/d
 import { DeleteSafeDelegateDtoSchema } from '@/modules/delegate/routes/entities/schemas/delete-safe-delegate.dto.schema';
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress } from 'viem';
-import { ZodError } from 'zod';
 
 describe('DeleteSafeDelegateDtoSchema', () => {
   it('should validate a DeleteSafeDelegateDto', () => {
@@ -41,15 +40,13 @@ describe('DeleteSafeDelegateDtoSchema', () => {
 
     const result = DeleteSafeDelegateDtoSchema.safeParse(deleteSafeDelegateDto);
 
-    expect(!result.success && result.error).toStrictEqual(
-      new ZodError([
-        {
-          code: 'custom',
-          message: 'Invalid "0x" notated hex string',
-          path: ['signature'],
-        },
-      ]),
-    );
+    expect(!result.success && result.error.issues).toStrictEqual([
+      {
+        code: 'custom',
+        message: 'Invalid "0x" notated hex string',
+        path: ['signature'],
+      },
+    ]);
   });
 
   it.each<keyof DeleteSafeDelegateDto>(['delegate', 'safe', 'signature'])(
@@ -62,17 +59,14 @@ describe('DeleteSafeDelegateDtoSchema', () => {
         deleteSafeDelegateDto,
       );
 
-      expect(!result.success && result.error.issues).toStrictEqual(
-        expect.objectContaining([
-          {
-            code: 'invalid_type',
-            expected: expect.any(String),
-            received: 'undefined',
-            path: [key],
-            message: 'Required',
-          },
-        ]),
-      );
+      expect(!result.success && result.error.issues).toStrictEqual([
+        {
+          code: 'invalid_type',
+          expected: expect.any(String),
+          message: 'Invalid input: expected string, received undefined',
+          path: [key],
+        },
+      ]);
     },
   );
 });

@@ -8,5 +8,5 @@ export const GetEstimationDtoSchema = z.object({
   to: AddressSchema,
   value: NumericStringSchema,
   data: HexSchema.nullish().default(null),
-  operation: z.nativeEnum(Operation),
+  operation: z.enum(Operation),
 });

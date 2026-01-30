@@ -7,5 +7,5 @@ export const PreviewTransactionDtoSchema = z.object({
   to: AddressSchema,
   data: HexSchema.nullish().default(null),
   value: z.string(),
-  operation: z.nativeEnum(Operation),
+  operation: z.enum(Operation),
 });

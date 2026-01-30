@@ -409,9 +409,8 @@ describe('TargetedMessagingController', () => {
         .expect({
           code: 'invalid_type',
           expected: 'boolean',
-          message: 'Required',
+          message: 'Invalid input: expected boolean, received undefined',
           path: ['completed'],
-          received: 'undefined',
           statusCode: 422,
         });
     });

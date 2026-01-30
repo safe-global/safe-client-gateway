@@ -3,7 +3,6 @@ import type { TransactionEventType } from '@/modules/hooks/routes/entities/event
 import { MessageCreatedEventSchema } from '@/modules/hooks/routes/entities/schemas/message-created.schema';
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress } from 'viem';
-import { ZodError } from 'zod';
 
 describe('MessageCreatedEventSchema', () => {
   it('should validate a message created event', () => {
@@ -21,17 +20,14 @@ describe('MessageCreatedEventSchema', () => {
 
     const result = MessageCreatedEventSchema.safeParse(messageCreatedEvent);
 
-    expect(!result.success && result.error).toStrictEqual(
-      new ZodError([
-        {
-          received: messageCreatedEvent.type,
-          code: 'invalid_literal',
-          expected: 'MESSAGE_CREATED',
-          path: ['type'],
-          message: 'Invalid literal value, expected "MESSAGE_CREATED"',
-        },
-      ]),
-    );
+    expect(!result.success && result.error.issues).toStrictEqual([
+      {
+        code: 'invalid_value',
+        path: ['type'],
+        message: 'Invalid input: expected "MESSAGE_CREATED"',
+        values: ['MESSAGE_CREATED'],
+      },
+    ]);
   });
 
   it('should not allow a non-address address', () => {
@@ -41,15 +37,13 @@ describe('MessageCreatedEventSchema', () => {
 
     const result = MessageCreatedEventSchema.safeParse(messageCreatedEvent);
 
-    expect(!result.success && result.error).toStrictEqual(
-      new ZodError([
-        {
-          code: 'custom',
-          message: 'Invalid address',
-          path: ['address'],
-        },
-      ]),
-    );
+    expect(!result.success && result.error.issues).toStrictEqual([
+      {
+        code: 'custom',
+        message: 'Invalid address',
+        path: ['address'],
+      },
+    ]);
   });
 
   it('should checksum the address', () => {

@@ -11,13 +11,8 @@ export const ExecutedTransactionEventSchema = z.object({
   safeTxHash: HexSchema,
   txHash: HexSchema,
   failed: z.enum(['true', 'false']),
-  data: HexSchema.nullish().transform((val) => {
-    if (!val) {
-      // FirebaseNotification['data'] does not accept null values
-      return undefined;
-    }
-    return val;
-  }),
+  // FirebaseNotification['data'] does not accept null values
+  data: z.preprocess((val) => val ?? undefined, HexSchema.optional()),
 });
 
 export type ExecutedTransactionEvent = z.infer<

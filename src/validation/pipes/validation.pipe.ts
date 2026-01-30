@@ -1,21 +1,21 @@
 import type { PipeTransform } from '@nestjs/common';
 import { HttpStatus } from '@nestjs/common';
-import type { ZodIssue, ZodSchema, z } from 'zod';
+import type { ZodType, z } from 'zod';
 import { ZodError } from 'zod';
 
 export class ZodErrorWithCode extends ZodError {
   constructor(
-    public issues: Array<ZodIssue>,
-    public code: number,
+    issues: Array<z.core.$ZodIssue>,
+    public readonly code: number,
   ) {
     super(issues);
   }
 }
 
-export class ValidationPipe<T extends ZodSchema> implements PipeTransform {
+export class ValidationPipe<T extends ZodType> implements PipeTransform {
   constructor(
-    private schema: T,
-    private code = HttpStatus.UNPROCESSABLE_ENTITY,
+    private readonly schema: T,
+    private readonly code = HttpStatus.UNPROCESSABLE_ENTITY,
   ) {}
 
   transform(value: unknown): z.infer<T> {

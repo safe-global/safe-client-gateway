@@ -1,4 +1,4 @@
-import type { ZodType } from 'zod';
+import { z, type ZodType } from 'zod';
 
 /**
  * Validates the configuration against the provided schema
@@ -19,7 +19,7 @@ export default function (
     return configuration;
   }
 
-  const errors = Object.entries(result.error.flatten().fieldErrors)
+  const errors = Object.entries(z.flattenError(result.error).fieldErrors)
     .map(([field, errors]) => {
       if (Array.isArray(errors)) {
         return `${field} ${errors.join(', ')}`;

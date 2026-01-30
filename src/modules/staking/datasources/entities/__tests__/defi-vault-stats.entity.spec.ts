@@ -48,10 +48,10 @@ describe('DefiVaultStatsSchema', () => {
 
       expect(!result.success && result.error.issues.length).toBe(1);
       expect(!result.success && result.error.issues[0]).toStrictEqual({
-        code: 'invalid_string',
-        message: 'Invalid url',
+        code: 'invalid_format',
+        message: 'Invalid URL',
         path: [key],
-        validation: 'url',
+        format: 'url',
       });
     },
   );
@@ -125,114 +125,98 @@ describe('DefiVaultStatsSchema', () => {
       {
         code: 'invalid_type',
         expected: 'string',
-        message: 'Required',
+        message: 'Invalid input: expected string, received undefined',
         path: ['asset'],
-        received: 'undefined',
       },
       {
         code: 'invalid_type',
         expected: 'string',
-        message: 'Required',
+        message: 'Invalid input: expected string, received undefined',
         path: ['asset_icon'],
-        received: 'undefined',
       },
       {
         code: 'invalid_type',
         expected: 'string',
-        message: 'Required',
+        message: 'Invalid input: expected string, received undefined',
         path: ['asset_symbol'],
-        received: 'undefined',
       },
       {
         code: 'invalid_type',
         expected: 'string',
-        message: 'Required',
+        message: 'Invalid input: expected string, received undefined',
         path: ['share_symbol'],
-        received: 'undefined',
       },
       {
         code: 'invalid_type',
         expected: 'string',
-        message: 'Required',
+        message: 'Invalid input: expected string, received undefined',
         path: ['tvl'],
-        received: 'undefined',
       },
       {
         code: 'invalid_type',
         expected: 'string',
-        message: 'Required',
+        message: 'Invalid input: expected string, received undefined',
         path: ['protocol_icon'],
-        received: 'undefined',
       },
       {
         code: 'invalid_type',
         expected: 'string',
-        message: 'Required',
+        message: 'Invalid input: expected string, received undefined',
         path: ['protocol_tvl'],
-        received: 'undefined',
       },
       {
         code: 'invalid_type',
         expected: 'string',
-        message: 'Required',
+        message: 'Invalid input: expected string, received undefined',
         path: ['protocol_supply_limit'],
-        received: 'undefined',
       },
       {
         code: 'invalid_type',
         expected: 'number',
-        message: 'Required',
+        message: 'Invalid input: expected number, received undefined',
         path: ['grr'],
-        received: 'undefined',
       },
       {
         code: 'invalid_type',
         expected: 'number',
-        message: 'Required',
+        message: 'Invalid input: expected number, received undefined',
         path: ['nrr'],
-        received: 'undefined',
       },
       {
         code: 'invalid_type',
         expected: 'string',
-        message: 'Required',
+        message: 'Invalid input: expected string, received undefined',
         path: ['vault'],
-        received: 'undefined',
       },
       {
         code: 'invalid_type',
         expected: 'number',
-        message: 'Required',
+        message: 'Invalid input: expected number, received undefined',
         path: ['chain_id'],
-        received: 'undefined',
       },
       {
         code: 'invalid_type',
         expected: 'number',
-        message: 'Required',
+        message: 'Invalid input: expected number, received undefined',
         path: ['asset_decimals'],
-        received: 'undefined',
       },
       {
         code: 'invalid_type',
         expected: 'number',
-        message: 'Required',
+        message: 'Invalid input: expected number, received undefined',
         path: ['updated_at_block'],
-        received: 'undefined',
       },
       {
         code: 'invalid_type',
         expected: 'number',
-        message: 'Required',
+        message: 'Invalid input: expected number, received undefined',
         path: ['performance_fee'],
-        received: 'undefined',
       },
       {
         code: 'invalid_type',
         expected: 'number',
-        message: 'Required',
+        message: 'Invalid input: expected number, received undefined',
         path: ['additional_rewards_nrr'],
-        received: 'undefined',
       },
     ]);
   });
@@ -250,16 +234,14 @@ describe('DefiVaultStatsSchema', () => {
       {
         code: 'invalid_type',
         expected: 'string',
-        message: 'Required',
+        message: 'Invalid input: expected string, received undefined',
         path: ['asset'],
-        received: 'undefined',
       },
       {
         code: 'invalid_type',
         expected: 'number',
-        message: 'Required',
+        message: 'Invalid input: expected number, received undefined',
         path: ['nrr'],
-        received: 'undefined',
       },
     ]);
   });
@@ -309,9 +291,8 @@ describe('DefiVaultStatsSchema', () => {
     expect(!result.success && result.error.issues[0]).toStrictEqual({
       code: 'invalid_type',
       expected: 'number',
-      message: 'Expected number, received string',
+      message: 'Invalid input: expected number, received string',
       path: ['nrr'],
-      received: 'string',
     });
   });
 });

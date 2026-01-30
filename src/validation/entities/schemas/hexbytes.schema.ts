@@ -6,5 +6,5 @@ export function isHexBytes(value: Address): boolean {
 }
 
 export const HexBytesSchema = HexSchema.refine(isHexBytes, {
-  message: 'Invalid hex bytes',
+  error: 'Invalid hex bytes',
 });

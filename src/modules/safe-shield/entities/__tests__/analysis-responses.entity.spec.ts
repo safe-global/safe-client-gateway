@@ -81,8 +81,16 @@ describe('Analysis Response Schemas', () => {
 
         expect(!result.success && result.error.issues).toStrictEqual([
           {
-            code: 'custom',
-            message: 'Invalid address',
+            code: 'invalid_key',
+            issues: [
+              {
+                code: 'custom',
+                message: 'Invalid address',
+                path: [],
+              },
+            ],
+            message: 'Invalid key in record',
+            origin: 'record',
             path: ['invalid-address'],
           },
         ]);
@@ -166,8 +174,16 @@ describe('Analysis Response Schemas', () => {
 
         expect(!result.success && result.error.issues).toStrictEqual([
           {
-            code: 'custom',
-            message: 'Invalid address',
+            code: 'invalid_key',
+            issues: [
+              {
+                code: 'custom',
+                message: 'Invalid address',
+                path: [],
+              },
+            ],
+            message: 'Invalid key in record',
+            origin: 'record',
             path: ['invalid-address'],
           },
         ]);
@@ -310,7 +326,7 @@ describe('Analysis Response Schemas', () => {
         expect(!result.success && result.error.issues.length).toBeGreaterThan(
           0,
         );
-        expect(result?.error?.issues[0].code).toBe('custom');
+        expect(result?.error?.issues[0].code).toBe('invalid_key');
       });
 
       it('should reject invalid contract analysis structure', () => {
@@ -320,11 +336,21 @@ describe('Analysis Response Schemas', () => {
         } as unknown;
 
         const result = CounterpartyAnalysisResponseSchema.safeParse(response);
-
-        expect(!result.success && result.error.issues.length).toBeGreaterThan(
-          0,
-        );
-        expect(result?.error?.issues[0].code).toBe('custom');
+        expect(!result.success && result.error?.issues).toStrictEqual([
+          {
+            code: 'invalid_key',
+            issues: [
+              {
+                code: 'custom',
+                message: 'Invalid address',
+                path: [],
+              },
+            ],
+            message: 'Invalid key in record',
+            origin: 'record',
+            path: ['contract', 'invalid'],
+          },
+        ]);
       });
     });
   });

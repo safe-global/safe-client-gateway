@@ -57,30 +57,26 @@ describe('DefiMorphoExtraRewardSchema', () => {
       {
         code: 'invalid_type',
         expected: 'number',
-        message: 'Required',
+        message: 'Invalid input: expected number, received undefined',
         path: ['chain_id'],
-        received: 'undefined',
       },
       {
         code: 'invalid_type',
         expected: 'string',
-        message: 'Required',
+        message: 'Invalid input: expected string, received undefined',
         path: ['asset'],
-        received: 'undefined',
       },
       {
         code: 'invalid_type',
         expected: 'string',
-        message: 'Required',
+        message: 'Invalid input: expected string, received undefined',
         path: ['claimable'],
-        received: 'undefined',
       },
       {
         code: 'invalid_type',
         expected: 'string',
-        message: 'Required',
+        message: 'Invalid input: expected string, received undefined',
         path: ['claimable_next'],
-        received: 'undefined',
       },
     ]);
   });

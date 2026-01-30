@@ -7,7 +7,6 @@ import {
 } from '@/modules/messages/domain/entities/message.entity';
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress } from 'viem';
-import { ZodError } from 'zod';
 
 describe('Message entity schemas', () => {
   describe('MessageSchema', () => {
@@ -59,15 +58,13 @@ describe('Message entity schemas', () => {
 
         const result = MessageSchema.safeParse(message);
 
-        expect(!result.success && result.error).toStrictEqual(
-          new ZodError([
-            {
-              code: 'custom',
-              message: 'Invalid "0x" notated hex string',
-              path: [key],
-            },
-          ]),
-        );
+        expect(!result.success && result.error.issues).toEqual([
+          {
+            code: 'custom',
+            message: 'Invalid "0x" notated hex string',
+            path: [key],
+          },
+        ]);
       },
     );
 

@@ -3,7 +3,6 @@ import type { TransactionEventType } from '@/modules/hooks/routes/entities/event
 import { DeletedMultisigTransactionEventSchema } from '@/modules/hooks/routes/entities/schemas/deleted-multisig-transaction.schema';
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress } from 'viem';
-import { ZodError } from 'zod';
 
 describe('DeletedMultisigTransactionEventSchema', () => {
   it('should validate a valid delete event', () => {
@@ -30,18 +29,14 @@ describe('DeletedMultisigTransactionEventSchema', () => {
       deletedMultisigTransactionEvent,
     );
 
-    expect(!result.success && result.error).toStrictEqual(
-      new ZodError([
-        {
-          received: deletedMultisigTransactionEvent.type,
-          code: 'invalid_literal',
-          expected: 'DELETED_MULTISIG_TRANSACTION',
-          path: ['type'],
-          message:
-            'Invalid literal value, expected "DELETED_MULTISIG_TRANSACTION"',
-        },
-      ]),
-    );
+    expect(!result.success && result.error.issues).toStrictEqual([
+      {
+        code: 'invalid_value',
+        path: ['type'],
+        message: 'Invalid input: expected "DELETED_MULTISIG_TRANSACTION"',
+        values: ['DELETED_MULTISIG_TRANSACTION'],
+      },
+    ]);
   });
 
   it('should not allow a non-address address', () => {
@@ -54,15 +49,13 @@ describe('DeletedMultisigTransactionEventSchema', () => {
       deletedMultisigTransactionEvent,
     );
 
-    expect(!result.success && result.error).toStrictEqual(
-      new ZodError([
-        {
-          code: 'custom',
-          message: 'Invalid address',
-          path: ['address'],
-        },
-      ]),
-    );
+    expect(!result.success && result.error.issues).toStrictEqual([
+      {
+        code: 'custom',
+        message: 'Invalid address',
+        path: ['address'],
+      },
+    ]);
   });
 
   it('should checksum the address', () => {

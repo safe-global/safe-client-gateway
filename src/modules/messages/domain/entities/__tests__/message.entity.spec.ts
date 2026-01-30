@@ -4,7 +4,6 @@ import { typedDataBuilder } from '@/modules/messages/routes/entities/__tests__/t
 import { messageBuilder } from '@/modules/messages/domain/entities/__tests__/message.builder';
 import { MessageSchema } from '@/modules/messages/domain/entities/message.entity';
 import type { Message } from '@/modules/messages/domain/entities/message.entity';
-import { ZodError } from 'zod';
 
 describe('MessageSchema', () => {
   it('should validate a Message', () => {
@@ -117,14 +116,13 @@ describe('MessageSchema', () => {
 
     const result = MessageSchema.safeParse(message);
 
-    expect(!result.success && result.error.issues.length).toBe(1);
-    expect(!result.success && result.error.issues[0]).toStrictEqual({
-      code: 'invalid_type',
-      expected: 'array',
-      message: 'Expected array, received string',
-      path: ['confirmations'],
-      received: 'string',
-    });
+    expect(!result.success && result.error.issues).toEqual([
+      expect.objectContaining({
+        code: 'invalid_type',
+        expected: 'array',
+        path: ['confirmations'],
+      }),
+    ]);
   });
 
   it('should not validate an invalid Message', () => {
@@ -134,70 +132,58 @@ describe('MessageSchema', () => {
 
     const result = MessageSchema.safeParse(message);
 
-    expect(!result.success && result.error.issues).toStrictEqual([
-      {
-        code: 'invalid_date',
-        message: 'Invalid date',
+    expect(!result.success && result.error.issues).toEqual([
+      expect.objectContaining({
+        code: 'invalid_type',
+        expected: 'date',
         path: ['created'],
-      },
-      {
-        code: 'invalid_date',
-        message: 'Invalid date',
+      }),
+      expect.objectContaining({
+        code: 'invalid_type',
+        expected: 'date',
         path: ['modified'],
-      },
-      {
+      }),
+      expect.objectContaining({
         code: 'invalid_type',
         expected: 'string',
-        message: 'Required',
         path: ['safe'],
-        received: 'undefined',
-      },
-      {
+      }),
+      expect.objectContaining({
         code: 'invalid_type',
         expected: 'string',
-        message: 'Required',
         path: ['messageHash'],
-        received: 'undefined',
-      },
-      {
+      }),
+      expect.objectContaining({
         code: 'invalid_union',
         message: 'Invalid input',
         path: ['message'],
-        unionErrors: [
-          new ZodError([
-            {
+        errors: [
+          [
+            expect.objectContaining({
               code: 'invalid_type',
               expected: 'string',
-              received: 'undefined',
-              path: ['message'],
-              message: 'Required',
-            },
-          ]),
-          new ZodError([
-            {
+              path: [],
+            }),
+          ],
+          [
+            expect.objectContaining({
               code: 'invalid_type',
               expected: 'object',
-              received: 'undefined',
-              path: ['message'],
-              message: 'Required',
-            },
-          ]),
+              path: [],
+            }),
+          ],
         ],
-      },
-      {
+      }),
+      expect.objectContaining({
         code: 'invalid_type',
         expected: 'string',
-        message: 'Required',
         path: ['proposedBy'],
-        received: 'undefined',
-      },
-      {
+      }),
+      expect.objectContaining({
         code: 'invalid_type',
         expected: 'array',
-        message: 'Required',
         path: ['confirmations'],
-        received: 'undefined',
-      },
+      }),
     ]);
   });
 });

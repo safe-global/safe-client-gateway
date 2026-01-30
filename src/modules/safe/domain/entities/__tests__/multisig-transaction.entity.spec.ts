@@ -9,7 +9,6 @@ import {
 } from '@/modules/safe/domain/entities/multisig-transaction.entity';
 import { faker } from '@faker-js/faker/.';
 import { type Address, getAddress } from 'viem';
-import { ZodError } from 'zod';
 
 describe('MultisigTransaction', () => {
   describe('ConfirmationSchema', () => {
@@ -32,22 +31,22 @@ describe('MultisigTransaction', () => {
         {
           code: 'invalid_type',
           expected: 'string',
-          message: 'Required',
+          message: 'Invalid input: expected string, received undefined',
           path: ['owner'],
-          received: 'undefined',
-        },
-        {
-          code: 'invalid_date',
-          message: 'Invalid date',
-          path: ['submissionDate'],
         },
         {
           code: 'invalid_type',
-          expected:
-            "'CONTRACT_SIGNATURE' | 'APPROVED_HASH' | 'EOA' | 'ETH_SIGN'",
-          message: 'Required',
+          expected: 'date',
+          message: 'Invalid input: expected date, received Date',
+          path: ['submissionDate'],
+          received: 'Invalid Date',
+        },
+        {
+          code: 'invalid_value',
+          message:
+            'Invalid option: expected one of "CONTRACT_SIGNATURE"|"APPROVED_HASH"|"EOA"|"ETH_SIGN"',
           path: ['signatureType'],
-          received: 'undefined',
+          values: ['CONTRACT_SIGNATURE', 'APPROVED_HASH', 'EOA', 'ETH_SIGN'],
         },
       ]);
     });
@@ -188,11 +187,10 @@ describe('MultisigTransaction', () => {
 
       expect(!result.success && result.error.issues).toStrictEqual([
         {
-          code: 'invalid_enum_value',
-          message: `Invalid enum value. Expected 0 | 1, received '${multisigTransaction.operation}'`,
-          options: [0, 1],
+          code: 'invalid_value',
+          message: 'Invalid option: expected one of 0|1',
           path: ['operation'],
-          received: multisigTransaction.operation,
+          values: [0, 1],
         },
       ]);
     });
@@ -225,88 +223,80 @@ describe('MultisigTransaction', () => {
         {
           code: 'invalid_type',
           expected: 'string',
-          message: 'Required',
+          message: 'Invalid input: expected string, received undefined',
           path: ['safe'],
-          received: 'undefined',
         },
         {
           code: 'invalid_type',
           expected: 'string',
-          message: 'Required',
+          message: 'Invalid input: expected string, received undefined',
           path: ['to'],
-          received: 'undefined',
         },
         {
           code: 'invalid_type',
           expected: 'string',
-          message: 'Required',
+          message: 'Invalid input: expected string, received undefined',
           path: ['value'],
-          received: 'undefined',
         },
         {
-          code: 'invalid_type',
-          expected: '0 | 1',
-          message: 'Required',
+          code: 'invalid_value',
+          message: 'Invalid option: expected one of 0|1',
           path: ['operation'],
-          received: 'undefined',
+          values: [0, 1],
         },
         {
           code: 'invalid_union',
           message: 'Invalid input',
           path: ['nonce'],
-          unionErrors: [
-            new ZodError([
+          errors: [
+            [
               {
                 code: 'invalid_type',
                 expected: 'number',
-                received: 'undefined',
-                path: ['nonce'],
-                message: 'Required',
+                message: 'Invalid input: expected number, received undefined',
+                path: [],
               },
-            ]),
-            new ZodError([
+            ],
+            [
               {
                 code: 'invalid_type',
                 expected: 'string',
-                received: 'undefined',
-                path: ['nonce'],
-                message: 'Required',
+                message: 'Invalid input: expected string, received undefined',
+                path: [],
               },
-            ]),
+            ],
           ],
         },
         {
-          code: 'invalid_date',
-          message: 'Invalid date',
+          code: 'invalid_type',
+          expected: 'date',
+          message: 'Invalid input: expected date, received Date',
           path: ['submissionDate'],
+          received: 'Invalid Date',
         },
         {
           code: 'invalid_type',
           expected: 'string',
-          message: 'Required',
+          message: 'Invalid input: expected string, received undefined',
           path: ['safeTxHash'],
-          received: 'undefined',
         },
         {
           code: 'invalid_type',
           expected: 'boolean',
-          message: 'Required',
+          message: 'Invalid input: expected boolean, received undefined',
           path: ['isExecuted'],
-          received: 'undefined',
         },
         {
           code: 'invalid_type',
           expected: 'number',
-          message: 'Required',
+          message: 'Invalid input: expected number, received undefined',
           path: ['confirmationsRequired'],
-          received: 'undefined',
         },
         {
           code: 'invalid_type',
           expected: 'boolean',
-          message: 'Required',
+          message: 'Invalid input: expected boolean, received undefined',
           path: ['trusted'],
-          received: 'undefined',
         },
       ]);
     });
@@ -339,95 +329,86 @@ describe('MultisigTransaction', () => {
         {
           code: 'invalid_type',
           expected: 'string',
-          message: 'Required',
+          message: 'Invalid input: expected string, received undefined',
           path: ['safe'],
-          received: 'undefined',
         },
         {
           code: 'invalid_type',
           expected: 'string',
-          message: 'Required',
+          message: 'Invalid input: expected string, received undefined',
           path: ['to'],
-          received: 'undefined',
         },
         {
           code: 'invalid_type',
           expected: 'string',
-          message: 'Required',
+          message: 'Invalid input: expected string, received undefined',
           path: ['value'],
-          received: 'undefined',
         },
         {
-          code: 'invalid_type',
-          expected: '0 | 1',
-          message: 'Required',
+          code: 'invalid_value',
+          message: 'Invalid option: expected one of 0|1',
           path: ['operation'],
-          received: 'undefined',
+          values: [0, 1],
         },
         {
           code: 'invalid_union',
           message: 'Invalid input',
           path: ['nonce'],
-          unionErrors: [
-            new ZodError([
+          errors: [
+            [
               {
                 code: 'invalid_type',
                 expected: 'number',
-                received: 'undefined',
-                path: ['nonce'],
-                message: 'Required',
+                message: 'Invalid input: expected number, received undefined',
+                path: [],
               },
-            ]),
-            new ZodError([
+            ],
+            [
               {
                 code: 'invalid_type',
                 expected: 'string',
-                received: 'undefined',
-                path: ['nonce'],
-                message: 'Required',
+                message: 'Invalid input: expected string, received undefined',
+                path: [],
               },
-            ]),
+            ],
           ],
         },
         {
-          code: 'invalid_date',
-          message: 'Invalid date',
+          code: 'invalid_type',
+          expected: 'date',
+          message: 'Invalid input: expected date, received Date',
           path: ['submissionDate'],
+          received: 'Invalid Date',
         },
         {
           code: 'invalid_type',
           expected: 'string',
-          message: 'Required',
+          message: 'Invalid input: expected string, received undefined',
           path: ['safeTxHash'],
-          received: 'undefined',
         },
         {
           code: 'invalid_type',
           expected: 'boolean',
-          message: 'Required',
+          message: 'Invalid input: expected boolean, received undefined',
           path: ['isExecuted'],
-          received: 'undefined',
         },
         {
           code: 'invalid_type',
           expected: 'number',
-          message: 'Required',
+          message: 'Invalid input: expected number, received undefined',
           path: ['confirmationsRequired'],
-          received: 'undefined',
         },
         {
           code: 'invalid_type',
           expected: 'boolean',
-          message: 'Required',
+          message: 'Invalid input: expected boolean, received undefined',
           path: ['trusted'],
-          received: 'undefined',
         },
         {
-          code: 'invalid_literal',
-          expected: 'MULTISIG_TRANSACTION',
-          message: 'Invalid literal value, expected "MULTISIG_TRANSACTION"',
+          code: 'invalid_value',
+          message: 'Invalid input: expected "MULTISIG_TRANSACTION"',
           path: ['txType'],
-          received: undefined,
+          values: ['MULTISIG_TRANSACTION'],
         },
       ]);
     });
@@ -464,30 +445,26 @@ describe('MultisigTransaction', () => {
         {
           code: 'invalid_type',
           expected: 'number',
-          message: 'Required',
+          message: 'Invalid input: expected number, received undefined',
           path: ['count'],
-          received: 'undefined',
         },
         {
           code: 'invalid_type',
           expected: 'string',
-          message: 'Required',
+          message: 'Invalid input: expected string, received undefined',
           path: ['next'],
-          received: 'undefined',
         },
         {
           code: 'invalid_type',
           expected: 'string',
-          message: 'Required',
+          message: 'Invalid input: expected string, received undefined',
           path: ['previous'],
-          received: 'undefined',
         },
         {
           code: 'invalid_type',
           expected: 'array',
-          message: 'Required',
+          message: 'Invalid input: expected array, received undefined',
           path: ['results'],
-          received: 'undefined',
         },
       ]);
     });

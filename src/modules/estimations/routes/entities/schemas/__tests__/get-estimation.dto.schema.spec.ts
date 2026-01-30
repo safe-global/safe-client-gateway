@@ -2,7 +2,6 @@ import { getEstimationDtoBuilder } from '@/modules/estimations/routes/entities/_
 import { GetEstimationDtoSchema } from '@/modules/estimations/routes/entities/schemas/get-estimation.dto.schema';
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress } from 'viem';
-import { ZodError } from 'zod';
 
 describe('GetEstimationDtoSchema', () => {
   it('should validate a valid GetEstimationDto', () => {
@@ -47,15 +46,13 @@ describe('GetEstimationDtoSchema', () => {
 
     const result = GetEstimationDtoSchema.safeParse(getEstimationDto);
 
-    expect(!result.success && result.error).toStrictEqual(
-      new ZodError([
-        {
-          code: 'custom',
-          message: 'Invalid "0x" notated hex string',
-          path: ['data'],
-        },
-      ]),
-    );
+    expect(!result.success && result.error.issues).toStrictEqual([
+      {
+        code: 'custom',
+        message: 'Invalid "0x" notated hex string',
+        path: ['data'],
+      },
+    ]);
   });
 
   it('should allow nullish data, defaulting to null', () => {
@@ -85,17 +82,14 @@ describe('GetEstimationDtoSchema', () => {
 
     const result = GetEstimationDtoSchema.safeParse(getEstimationDto);
 
-    expect(!result.success && result.error).toStrictEqual(
-      new ZodError([
-        {
-          received: 2,
-          code: 'invalid_enum_value',
-          options: [0, 1],
-          path: ['operation'],
-          message: "Invalid enum value. Expected 0 | 1, received '2'",
-        },
-      ]),
-    );
+    expect(!result.success && result.error.issues).toStrictEqual([
+      {
+        code: 'invalid_value',
+        values: [0, 1],
+        path: ['operation'],
+        message: 'Invalid option: expected one of 0|1',
+      },
+    ]);
   });
 
   it.each(['to' as const, 'value' as const, 'operation' as const])(

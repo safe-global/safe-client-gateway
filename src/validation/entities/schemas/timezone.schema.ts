@@ -18,5 +18,5 @@ export const TimezoneSchema = z.string().refine(
       return false;
     }
   },
-  { message: 'Invalid Timezone' },
+  { error: 'Invalid Timezone' },
 );

@@ -58,9 +58,8 @@ describe('Caip10AddressesSchema', () => {
         {
           code: 'invalid_type',
           expected: 'string',
-          message: 'Required',
+          message: 'Invalid input: expected string, received undefined',
           path: ['address'],
-          received: 'undefined',
         },
       ]),
     );

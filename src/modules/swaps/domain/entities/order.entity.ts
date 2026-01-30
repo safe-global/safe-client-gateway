@@ -51,12 +51,10 @@ export const OrderSchema = z.object({
   validTo: z.number(),
   appData: z.string(),
   feeAmount: z.coerce.bigint(),
-  kind: z.nativeEnum(OrderKind).catch(OrderKind.Unknown),
+  kind: z.enum(OrderKind).catch(OrderKind.Unknown),
   partiallyFillable: z.boolean(),
-  sellTokenBalance: z
-    .nativeEnum(SellTokenBalance)
-    .catch(SellTokenBalance.Unknown),
-  buyTokenBalance: z.nativeEnum(BuyTokenBalance).catch(BuyTokenBalance.Unknown),
+  sellTokenBalance: z.enum(SellTokenBalance).catch(SellTokenBalance.Unknown),
+  buyTokenBalance: z.enum(BuyTokenBalance).catch(BuyTokenBalance.Unknown),
   signingScheme: z
     .enum(['eip712', 'ethsign', 'presign', 'eip1271', 'unknown'])
     .catch('unknown'),
@@ -64,7 +62,7 @@ export const OrderSchema = z.object({
   from: AddressSchema.nullish().default(null),
   quoteId: z.number().nullish().default(null),
   creationDate: z.coerce.date(),
-  class: z.nativeEnum(OrderClass).catch(OrderClass.Unknown),
+  class: z.enum(OrderClass).catch(OrderClass.Unknown),
   owner: AddressSchema,
   uid: z.string(),
   availableBalance: z.coerce.bigint().nullish().default(null),
@@ -73,7 +71,7 @@ export const OrderSchema = z.object({
   executedBuyAmount: z.coerce.bigint(),
   executedFeeAmount: z.coerce.bigint(),
   invalidated: z.boolean(),
-  status: z.nativeEnum(OrderStatus).catch(OrderStatus.Unknown),
+  status: z.enum(OrderStatus).catch(OrderStatus.Unknown),
   isLiquidityOrder: z.boolean(),
   ethflowData: z
     .object({

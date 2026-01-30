@@ -24,7 +24,7 @@ const relayRulesValidator = z
       }
     },
     {
-      message:
+      error:
         'Must be a valid JSON array of objects with balances (bigint >= 0) and limit (number >= 0) properties',
     },
   )
@@ -38,24 +38,20 @@ export const RootConfigurationSchema = z
     AWS_SECRET_ACCESS_KEY: z.string().optional(),
     AWS_REGION: z.string().optional(),
     CGW_ENV: z.string().optional(),
-    CIRCUIT_BREAKER_FAILURE_THRESHOLD: z
-      .number({ coerce: true })
+    CIRCUIT_BREAKER_FAILURE_THRESHOLD: z.coerce
+      .number()
       .int()
       .min(1)
       .optional(),
-    CIRCUIT_BREAKER_SUCCESS_THRESHOLD: z
-      .number({ coerce: true })
+    CIRCUIT_BREAKER_SUCCESS_THRESHOLD: z.coerce
+      .number()
       .int()
       .min(1)
       .optional(),
-    CIRCUIT_BREAKER_TIMEOUT: z.number({ coerce: true }).int().min(0).optional(),
-    CIRCUIT_BREAKER_ROLLING_WINDOW: z
-      .number({ coerce: true })
-      .int()
-      .min(0)
-      .optional(),
-    CIRCUIT_BREAKER_HALF_OPEN_MAX_REQUESTS: z
-      .number({ coerce: true })
+    CIRCUIT_BREAKER_TIMEOUT: z.coerce.number().int().min(0).optional(),
+    CIRCUIT_BREAKER_ROLLING_WINDOW: z.coerce.number().int().min(0).optional(),
+    CIRCUIT_BREAKER_HALF_OPEN_MAX_REQUESTS: z.coerce
+      .number()
       .int()
       .min(1)
       .optional(),
@@ -64,25 +60,21 @@ export const RootConfigurationSchema = z
       .optional(),
     // TODO: Reassess EMAIL_ keys after email integration
     EMAIL_API_APPLICATION_CODE: z.string(),
-    EMAIL_API_FROM_EMAIL: z.string().email(),
+    EMAIL_API_FROM_EMAIL: z.email(),
     EMAIL_API_KEY: z.string(),
     EMAIL_TEMPLATE_RECOVERY_TX: z.string(),
     EMAIL_TEMPLATE_UNKNOWN_RECOVERY_TX: z.string(),
     EMAIL_TEMPLATE_VERIFICATION_CODE: z.string(),
-    EXPIRATION_DEVIATE_PERCENT: z
-      .number({ coerce: true })
-      .min(0)
-      .max(100)
-      .optional(),
+    EXPIRATION_DEVIATE_PERCENT: z.coerce.number().min(0).max(100).optional(),
     FINGERPRINT_ENCRYPTION_KEY: z.string(),
     INFURA_API_KEY: z.string(),
     JWT_ISSUER: z.string(),
     JWT_SECRET: z.string(),
     PUSH_NOTIFICATIONS_API_PROJECT: z.string(),
-    PUSH_NOTIFICATIONS_API_SERVICE_ACCOUNT_CLIENT_EMAIL: z.string().email(),
+    PUSH_NOTIFICATIONS_API_SERVICE_ACCOUNT_CLIENT_EMAIL: z.email(),
     PUSH_NOTIFICATIONS_API_SERVICE_ACCOUNT_PRIVATE_KEY: z.string(),
-    PUSH_NOTIFICATIONS_API_OAUTH2_TOKEN_TTL_BUFFER_IN_SECONDS: z
-      .number({ coerce: true })
+    PUSH_NOTIFICATIONS_API_OAUTH2_TOKEN_TTL_BUFFER_IN_SECONDS: z.coerce
+      .number()
       .min(1)
       .max(3599)
       .optional(),
@@ -103,34 +95,34 @@ export const RootConfigurationSchema = z
       .pipe(z.array(z.string()))
       .optional(),
     RELAY_NO_FEE_CAMPAIGN_SEPOLIA_SAFE_TOKEN_ADDRESS: z.string().optional(),
-    RELAY_NO_FEE_CAMPAIGN_SEPOLIA_START_TIMESTAMP: z
-      .number({ coerce: true })
+    RELAY_NO_FEE_CAMPAIGN_SEPOLIA_START_TIMESTAMP: z.coerce
+      .number()
       .int()
       .min(0)
       .optional(),
-    RELAY_NO_FEE_CAMPAIGN_SEPOLIA_END_TIMESTAMP: z
-      .number({ coerce: true })
+    RELAY_NO_FEE_CAMPAIGN_SEPOLIA_END_TIMESTAMP: z.coerce
+      .number()
       .int()
       .min(0)
       .optional(),
-    RELAY_NO_FEE_CAMPAIGN_SEPOLIA_MAX_GAS_LIMIT: z
-      .number({ coerce: true })
+    RELAY_NO_FEE_CAMPAIGN_SEPOLIA_MAX_GAS_LIMIT: z.coerce
+      .number()
       .min(0)
       .optional(),
     RELAY_NO_FEE_CAMPAIGN_SEPOLIA_RELAY_RULES: relayRulesValidator,
     RELAY_NO_FEE_CAMPAIGN_MAINNET_SAFE_TOKEN_ADDRESS: z.string().optional(),
-    RELAY_NO_FEE_CAMPAIGN_MAINNET_START_TIMESTAMP: z
-      .number({ coerce: true })
+    RELAY_NO_FEE_CAMPAIGN_MAINNET_START_TIMESTAMP: z.coerce
+      .number()
       .int()
       .min(0)
       .optional(),
-    RELAY_NO_FEE_CAMPAIGN_MAINNET_END_TIMESTAMP: z
-      .number({ coerce: true })
+    RELAY_NO_FEE_CAMPAIGN_MAINNET_END_TIMESTAMP: z.coerce
+      .number()
       .int()
       .min(0)
       .optional(),
-    RELAY_NO_FEE_CAMPAIGN_MAINNET_MAX_GAS_LIMIT: z
-      .number({ coerce: true })
+    RELAY_NO_FEE_CAMPAIGN_MAINNET_MAX_GAS_LIMIT: z.coerce
+      .number()
       .min(0)
       .optional(),
     RELAY_NO_FEE_CAMPAIGN_MAINNET_RELAY_RULES: relayRulesValidator,
@@ -140,7 +132,7 @@ export const RootConfigurationSchema = z
     CSV_EXPORT_FILE_STORAGE_TYPE: z.enum(['local', 'aws']).optional(),
     CSV_AWS_ACCESS_KEY_ID: z.string().optional(),
     CSV_AWS_SECRET_ACCESS_KEY: z.string().optional(),
-    CSV_EXPORT_QUEUE_CONCURRENCY: z.number({ coerce: true }).min(1).optional(),
+    CSV_EXPORT_QUEUE_CONCURRENCY: z.coerce.number().min(1).optional(),
     BLOCKAID_CLIENT_API_KEY: z.string().optional(),
     TX_SERVICE_API_KEY: z.string().trim().min(1).optional(),
   })
@@ -162,7 +154,7 @@ export const RootConfigurationSchema = z
         !(config as Record<string, unknown>)[field]
       ) {
         ctx.addIssue({
-          code: z.ZodIssueCode.custom,
+          code: 'custom',
           message: `is required in production and staging environments`,
           path: [field],
         });

@@ -41,6 +41,6 @@ export class AuthRepository implements IAuthRepository {
 
   decodeToken(accessToken: string): JwtPayloadWithClaims<AuthPayloadDto> {
     const decoded = this.jwtService.decode(accessToken);
-    return AuthPayloadDtoSchema.merge(JwtClaimsSchema).parse(decoded);
+    return AuthPayloadDtoSchema.extend(JwtClaimsSchema.shape).parse(decoded);
   }
 }

@@ -7,5 +7,5 @@ export const BackboneSchema = z.object({
   secure: z.boolean(),
   host: z.string(),
   headers: z.array(z.string()).nullish().default(null),
-  settings: z.record(z.unknown()).nullish().default(null),
+  settings: z.record(z.string(), z.unknown()).nullish().default(null),
 });

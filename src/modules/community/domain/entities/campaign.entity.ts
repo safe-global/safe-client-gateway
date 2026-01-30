@@ -15,9 +15,9 @@ export const CampaignSchema = z.object({
   activitiesMetadata: z.array(ActivityMetadataSchema).nullish().default(null),
   rewardValue: NumericStringSchema.nullish().default(null),
   rewardText: z.string().nullish().default(null),
-  iconUrl: z.string().url().nullish().default(null),
-  safeAppUrl: z.string().url().nullish().default(null),
-  partnerUrl: z.string().url().nullish().default(null),
+  iconUrl: z.url().nullish().default(null),
+  safeAppUrl: z.url().nullish().default(null),
+  partnerUrl: z.url().nullish().default(null),
   isPromoted: z.boolean(),
 });
 

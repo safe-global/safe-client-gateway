@@ -28,30 +28,26 @@ describe('TypedDataSchema', () => {
       {
         code: 'invalid_type',
         expected: 'object',
-        message: 'Required',
+        message: 'Invalid input: expected object, received undefined',
         path: ['domain'],
-        received: 'undefined',
       },
       {
         code: 'invalid_type',
         expected: 'string',
-        message: 'Required',
+        message: 'Invalid input: expected string, received undefined',
         path: ['primaryType'],
-        received: 'undefined',
       },
       {
         code: 'invalid_type',
-        expected: 'object',
-        message: 'Required',
+        expected: 'record',
+        message: 'Invalid input: expected record, received undefined',
         path: ['types'],
-        received: 'undefined',
       },
       {
         code: 'invalid_type',
-        expected: 'object',
-        message: 'Required',
+        expected: 'record',
+        message: 'Invalid input: expected record, received undefined',
         path: ['message'],
-        received: 'undefined',
       },
     ]);
   });
@@ -121,7 +117,6 @@ describe('TypedDataSchema', () => {
       'should allow an optional %s',
       (key) => {
         const domain = typedDataDomainBuilder().build();
-        // @ts-expect-error - Object.keys is not type safe
         delete domain[key];
 
         const result = _TypedDataDomainSchema.safeParse(domain);
@@ -157,9 +152,8 @@ describe('TypedDataSchema', () => {
         {
           code: 'invalid_type',
           expected: 'array',
-          message: 'Expected array, received string',
+          message: 'Invalid input: expected array, received string',
           path: ['invalid'],
-          received: 'string',
         },
       ]);
     });

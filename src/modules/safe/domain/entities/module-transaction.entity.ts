@@ -12,7 +12,7 @@ export const ModuleTransactionSchema = z.object({
   to: AddressSchema,
   value: NumericStringSchema.nullish().default(null),
   data: HexSchema.nullish().default(null),
-  operation: z.nativeEnum(Operation),
+  operation: z.enum(Operation),
   created: z.coerce.date(),
   executionDate: z.coerce.date(),
   blockNumber: z.number(),

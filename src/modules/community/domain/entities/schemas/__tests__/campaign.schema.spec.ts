@@ -1,7 +1,6 @@
 import { campaignBuilder } from '@/modules/community/domain/entities/__tests__/campaign.builder';
 import { CampaignSchema } from '@/modules/community/domain/entities/campaign.entity';
 import { faker } from '@faker-js/faker';
-import { ZodError } from 'zod';
 
 describe('CampaignSchema', () => {
   it('should validate a valid campaign', () => {
@@ -53,16 +52,14 @@ describe('CampaignSchema', () => {
 
       const result = CampaignSchema.safeParse(campaign);
 
-      expect(!result.success && result.error).toStrictEqual(
-        new ZodError([
-          {
-            validation: 'url',
-            code: 'invalid_string',
-            message: 'Invalid url',
-            path: [key],
-          },
-        ]),
-      );
+      expect(!result.success && result.error.issues).toStrictEqual([
+        {
+          format: 'url',
+          code: 'invalid_format',
+          message: 'Invalid URL',
+          path: [key],
+        },
+      ]);
     },
   );
 
@@ -73,15 +70,13 @@ describe('CampaignSchema', () => {
 
     const result = CampaignSchema.safeParse(campaign);
 
-    expect(!result.success && result.error).toStrictEqual(
-      new ZodError([
-        {
-          code: 'custom',
-          message: 'Invalid base-10 numeric string',
-          path: ['rewardValue'],
-        },
-      ]),
-    );
+    expect(!result.success && result.error.issues).toStrictEqual([
+      {
+        code: 'custom',
+        message: 'Invalid base-10 numeric string',
+        path: ['rewardValue'],
+      },
+    ]);
   });
 
   it.each([
@@ -106,47 +101,45 @@ describe('CampaignSchema', () => {
 
     const result = CampaignSchema.safeParse(campaign);
 
-    expect(!result.success && result.error).toStrictEqual(
-      new ZodError([
-        {
-          code: 'invalid_type',
-          expected: 'string',
-          received: 'undefined',
-          path: ['resourceId'],
-          message: 'Required',
-        },
-        {
-          code: 'invalid_type',
-          expected: 'string',
-          received: 'undefined',
-          path: ['name'],
-          message: 'Required',
-        },
-        {
-          code: 'invalid_type',
-          expected: 'string',
-          received: 'undefined',
-          path: ['description'],
-          message: 'Required',
-        },
-        {
-          code: 'invalid_date',
-          path: ['startDate'],
-          message: 'Invalid date',
-        },
-        {
-          code: 'invalid_date',
-          path: ['endDate'],
-          message: 'Invalid date',
-        },
-        {
-          code: 'invalid_type',
-          expected: 'boolean',
-          received: 'undefined',
-          path: ['isPromoted'],
-          message: 'Required',
-        },
-      ]),
-    );
+    expect(!result.success && result.error.issues).toStrictEqual([
+      {
+        code: 'invalid_type',
+        expected: 'string',
+        path: ['resourceId'],
+        message: 'Invalid input: expected string, received undefined',
+      },
+      {
+        code: 'invalid_type',
+        expected: 'string',
+        path: ['name'],
+        message: 'Invalid input: expected string, received undefined',
+      },
+      {
+        code: 'invalid_type',
+        expected: 'string',
+        path: ['description'],
+        message: 'Invalid input: expected string, received undefined',
+      },
+      {
+        code: 'invalid_type',
+        path: ['startDate'],
+        message: 'Invalid input: expected date, received Date',
+        received: 'Invalid Date',
+        expected: 'date',
+      },
+      {
+        code: 'invalid_type',
+        path: ['endDate'],
+        message: 'Invalid input: expected date, received Date',
+        received: 'Invalid Date',
+        expected: 'date',
+      },
+      {
+        code: 'invalid_type',
+        expected: 'boolean',
+        path: ['isPromoted'],
+        message: 'Invalid input: expected boolean, received undefined',
+      },
+    ]);
   });
 });

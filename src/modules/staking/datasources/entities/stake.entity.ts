@@ -20,7 +20,7 @@ export enum StakeState {
 
 export const StakeSchema = z.object({
   validator_address: HexSchema.refine((value) => value.length === 98),
-  state: z.nativeEnum(StakeState).catch(StakeState.Unknown),
+  state: z.enum(StakeState).catch(StakeState.Unknown),
   rewards: NumericStringSchema,
   // Only returned if onchain_v1_include_net_rewards query is true
   net_claimable_consensus_rewards: NumericStringSchema.nullish().default(null),

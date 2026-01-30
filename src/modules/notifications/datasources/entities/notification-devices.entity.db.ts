@@ -13,7 +13,7 @@ import {
 import { z } from 'zod';
 
 export const NotificationDeviceSchema = RowSchema.extend({
-  device_type: z.nativeEnum(DeviceType),
+  device_type: z.enum(DeviceType),
   device_uuid: UuidSchema,
   cloud_messaging_token: z.string(),
 });

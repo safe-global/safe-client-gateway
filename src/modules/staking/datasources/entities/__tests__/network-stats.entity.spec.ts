@@ -26,9 +26,8 @@ describe('NetworkStatsSchema', () => {
     expect(!result.success && result.error.issues[0]).toStrictEqual({
       code: 'invalid_type',
       expected: 'number',
-      message: 'Expected number, received string',
+      message: 'Invalid input: expected number, received string',
       path: [key],
-      received: 'string',
     });
   });
 
@@ -47,9 +46,8 @@ describe('NetworkStatsSchema', () => {
     expect(!result.success && result.error.issues[0]).toStrictEqual({
       code: 'invalid_type',
       expected: 'number',
-      message: 'Expected number, received string',
+      message: 'Invalid input: expected number, received string',
       path: [key],
-      received: 'string',
     });
   });
 
@@ -68,9 +66,8 @@ describe('NetworkStatsSchema', () => {
     expect(!result.success && result.error.issues[0]).toStrictEqual({
       code: 'invalid_type',
       expected: 'number',
-      message: 'Expected number, received string',
+      message: 'Invalid input: expected number, received string',
       path: [key],
-      received: 'string',
     });
   });
 
@@ -108,53 +105,52 @@ describe('NetworkStatsSchema', () => {
       {
         code: 'invalid_type',
         expected: 'number',
-        message: 'Required',
+        message: 'Invalid input: expected number, received undefined',
         path: ['eth_price_usd'],
-        received: 'undefined',
       },
       {
         code: 'invalid_type',
         expected: 'number',
-        message: 'Required',
+        message: 'Invalid input: expected number, received undefined',
         path: ['nb_validators'],
-        received: 'undefined',
       },
       {
         code: 'invalid_type',
         expected: 'number',
-        message: 'Required',
+        message: 'Invalid input: expected number, received undefined',
         path: ['network_gross_apy'],
-        received: 'undefined',
       },
       {
         code: 'invalid_type',
         expected: 'number',
-        message: 'Required',
+        message: 'Invalid input: expected number, received undefined',
         path: ['supply_staked_percent'],
-        received: 'undefined',
       },
       {
         code: 'invalid_type',
         expected: 'number',
-        message: 'Required',
+        message: 'Invalid input: expected number, received undefined',
         path: ['estimated_entry_time_seconds'],
-        received: 'undefined',
       },
       {
         code: 'invalid_type',
         expected: 'number',
-        message: 'Required',
+        message: 'Invalid input: expected number, received undefined',
         path: ['estimated_exit_time_seconds'],
-        received: 'undefined',
       },
       {
         code: 'invalid_type',
         expected: 'number',
-        message: 'Required',
+        message: 'Invalid input: expected number, received undefined',
         path: ['estimated_withdrawal_time_seconds'],
-        received: 'undefined',
       },
-      { code: 'invalid_date', message: 'Invalid date', path: ['updated_at'] },
+      {
+        code: 'invalid_type',
+        expected: 'date',
+        message: 'Invalid input: expected date, received Date',
+        path: ['updated_at'],
+        received: 'Invalid Date',
+      },
     ]);
   });
 });

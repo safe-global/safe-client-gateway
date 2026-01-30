@@ -36,8 +36,7 @@ describe('StakeSchema', () => {
     expect(!result.success && result.error.issues[0]).toStrictEqual({
       code: 'invalid_type',
       expected: 'string',
-      received: 'number',
-      message: 'Expected string, received number',
+      message: 'Invalid input: expected string, received number',
       path: ['validator_address'],
     });
   });
@@ -80,16 +79,14 @@ describe('StakeSchema', () => {
       {
         code: 'invalid_type',
         expected: 'string',
-        message: 'Required',
+        message: 'Invalid input: expected string, received undefined',
         path: ['validator_address'],
-        received: 'undefined',
       },
       {
         code: 'invalid_type',
         expected: 'string',
-        message: 'Required',
+        message: 'Invalid input: expected string, received undefined',
         path: ['rewards'],
-        received: 'undefined',
       },
     ]);
   });

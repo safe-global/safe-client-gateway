@@ -35,7 +35,7 @@ export const CounterpartyAnalysisRequestSchema = z.object({
    * - 1 = DELEGATECALL - Delegate call (executes in Safe's context)
    * Used to determine security analysis scope and delegatecall risks.
    */
-  operation: z.nativeEnum(Operation),
+  operation: z.enum(Operation),
 });
 
 /**

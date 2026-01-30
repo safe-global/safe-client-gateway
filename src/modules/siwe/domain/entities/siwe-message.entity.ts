@@ -17,9 +17,8 @@ import { z } from 'zod';
  * @see https://eips.ethereum.org/EIPS/eip-4361
  */
 export const SiweMessageSchema = z
-  .string()
-  .transform(parseSiweMessage)
-  .pipe(
+  .preprocess(
+    (value) => (typeof value === 'string' ? parseSiweMessage(value) : value),
     // We only validate primitives as parseSiweMessage ensures compliance,
     // e.g. scheme, domain and uri should be RFC 3986 compliant.
     z.object({

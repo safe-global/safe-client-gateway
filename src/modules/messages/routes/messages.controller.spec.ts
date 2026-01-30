@@ -829,9 +829,8 @@ describe('Messages controller', () => {
           statusCode: 422,
           code: 'invalid_type',
           expected: 'string',
-          received: 'number',
-          path: ['message'],
-          message: 'Expected string, received number',
+          path: [],
+          message: 'Invalid input: expected string, received number',
         });
     });
 
@@ -1363,9 +1362,8 @@ describe('Messages controller', () => {
           statusCode: 422,
           code: 'invalid_type',
           expected: 'string',
-          received: 'undefined',
           path: ['signature'],
-          message: 'Required',
+          message: 'Invalid input: expected string, received undefined',
         });
     });
 

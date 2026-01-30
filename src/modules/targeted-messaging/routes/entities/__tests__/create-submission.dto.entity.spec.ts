@@ -21,9 +21,8 @@ describe('CreateSubmissionDtoSchema', () => {
       {
         code: 'invalid_type',
         expected: 'boolean',
-        message: 'Required',
+        message: 'Invalid input: expected boolean, received undefined',
         path: ['completed'],
-        received: 'undefined',
       },
     ]);
   });
@@ -39,9 +38,8 @@ describe('CreateSubmissionDtoSchema', () => {
       {
         code: 'invalid_type',
         expected: 'boolean',
-        message: 'Expected boolean, received string',
+        message: 'Invalid input: expected boolean, received string',
         path: ['completed'],
-        received: 'string',
       },
     ]);
   });
