@@ -3,6 +3,7 @@ import { CommonStatus } from '../analysis-result.entity';
 import { RecipientStatus } from '@/modules/safe-shield/entities/recipient-status.entity';
 import { AnalysisResultDto } from './analysis-result.dto';
 import { SingleRecipientAnalysisResponse } from '@/modules/safe-shield/entities/analysis-responses.entity';
+import { RecipientStatusGroup } from '@/modules/safe-shield/entities/status-group.entity';
 
 /**
  * DTO for recipient interaction analysis result.
@@ -12,7 +13,7 @@ export class SingleRecipientAnalysisResultDto extends AnalysisResultDto<
 > {
   @ApiProperty({
     description: 'Recipient interaction status code',
-    enum: [...RecipientStatus, ...CommonStatus],
+    enum: [...Object.values(RecipientStatus), ...Object.values(CommonStatus)],
     example: 'NEW_RECIPIENT',
   })
   declare type: RecipientStatus | CommonStatus;
@@ -40,7 +41,7 @@ export class SingleRecipientAnalysisDto implements SingleRecipientAnalysisRespon
       },
     ],
   })
-  public readonly RECIPIENT_INTERACTION!: Array<SingleRecipientAnalysisResultDto>;
+  public readonly [RecipientStatusGroup.RECIPIENT_INTERACTION]!: Array<SingleRecipientAnalysisResultDto>;
 
   @ApiPropertyOptional({
     description:
@@ -57,7 +58,7 @@ export class SingleRecipientAnalysisDto implements SingleRecipientAnalysisRespon
       },
     ],
   })
-  public readonly RECIPIENT_ACTIVITY?: Array<SingleRecipientAnalysisResultDto>;
+  public readonly [RecipientStatusGroup.RECIPIENT_ACTIVITY]?: Array<SingleRecipientAnalysisResultDto>;
 
   @ApiProperty({
     description: 'Indicates whether the analyzed recipient address is a Safe.',

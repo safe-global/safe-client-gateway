@@ -28,7 +28,7 @@ describe('AnalysisResult', () => {
     it('should enforce correct structure for recipient analysis', () => {
       const result = recipientAnalysisResultBuilder()
         .with('severity', 'WARN')
-        .with('type', 'NEW_RECIPIENT')
+        .with('type', RecipientStatus.NEW_RECIPIENT)
         .build();
 
       expect(result.severity).toBe('WARN');
@@ -42,7 +42,7 @@ describe('AnalysisResult', () => {
     it('should enforce correct structure for contract analysis', () => {
       const result = contractAnalysisResultBuilder()
         .with('severity', 'CRITICAL')
-        .with('type', 'NOT_VERIFIED')
+        .with('type', ContractStatus.NOT_VERIFIED)
         .build();
 
       expect(result.severity).toBe('CRITICAL');
@@ -56,7 +56,7 @@ describe('AnalysisResult', () => {
     it('should enforce correct structure for threat analysis', () => {
       const result = threatAnalysisResultBuilder()
         .with('severity', 'CRITICAL')
-        .with('type', 'MALICIOUS')
+        .with('type', ThreatStatus.MALICIOUS)
         .build();
 
       expect(result.severity).toBe('CRITICAL');
@@ -69,35 +69,35 @@ describe('AnalysisResult', () => {
   });
 
   describe('AnalysisStatusSchema', () => {
-    it.each(RecipientStatus)(
+    it.each(Object.values(RecipientStatus))(
       'should validate all recipient status values = %s',
       (value) => {
         expect(() => AnalysisStatusSchema.parse(value)).not.toThrow();
       },
     );
 
-    it.each(BridgeStatus)(
+    it.each(Object.values(BridgeStatus))(
       'should validate all bridge status values = %s',
       (value) => {
         expect(() => AnalysisStatusSchema.parse(value)).not.toThrow();
       },
     );
 
-    it.each(ContractStatus)(
+    it.each(Object.values(ContractStatus))(
       'should validate all contract status values = %s',
       (value) => {
         expect(() => AnalysisStatusSchema.parse(value)).not.toThrow();
       },
     );
 
-    it.each(ThreatStatus)(
+    it.each(Object.values(ThreatStatus))(
       'should validate all threat status values = %s',
       (value) => {
         expect(() => AnalysisStatusSchema.parse(value)).not.toThrow();
       },
     );
 
-    it.each(CommonStatus)(
+    it.each(Object.values(CommonStatus))(
       'should validate all recipient status values = %s',
       (value) => {
         expect(() => AnalysisStatusSchema.parse(value)).not.toThrow();
@@ -123,21 +123,21 @@ describe('AnalysisResult', () => {
 
     it('should validate common status FAILED across all analysis types', () => {
       const failedRecipientResult = recipientAnalysisResultBuilder()
-        .with('type', 'FAILED')
+        .with('type', CommonStatus.FAILED)
         .build();
       expect(() =>
         AnalysisResultBaseSchema.parse(failedRecipientResult),
       ).not.toThrow();
 
       const failedContractResult = contractAnalysisResultBuilder()
-        .with('type', 'FAILED')
+        .with('type', CommonStatus.FAILED)
         .build();
       expect(() =>
         AnalysisResultBaseSchema.parse(failedContractResult),
       ).not.toThrow();
 
       const failedThreatResult = threatAnalysisResultBuilder()
-        .with('type', 'FAILED')
+        .with('type', CommonStatus.FAILED)
         .build();
       expect(() =>
         AnalysisResultBaseSchema.parse(failedThreatResult),
@@ -152,7 +152,7 @@ describe('AnalysisResult', () => {
       expect(() =>
         AnalysisResultBaseSchema.parse({
           severity: 'OK',
-          type: 'NEW_RECIPIENT',
+          type: RecipientStatus.NEW_RECIPIENT,
         }),
       ).toThrow();
     });
@@ -201,7 +201,7 @@ describe('AnalysisResult', () => {
 
     it('should validate bridge status types', () => {
       const bridgeResult = recipientAnalysisResultBuilder()
-        .with('type', 'INCOMPATIBLE_SAFE')
+        .with('type', BridgeStatus.INCOMPATIBLE_SAFE)
         .build();
 
       expect(() =>
@@ -212,7 +212,7 @@ describe('AnalysisResult', () => {
     it('should validate bridge status with targetChainId', () => {
       const bridgeResult = {
         ...recipientAnalysisResultBuilder()
-          .with('type', 'INCOMPATIBLE_SAFE')
+          .with('type', BridgeStatus.INCOMPATIBLE_SAFE)
           .build(),
         targetChainId: '137',
       };
@@ -224,7 +224,7 @@ describe('AnalysisResult', () => {
 
     it('should validate common status FAILED', () => {
       const failedResult = recipientAnalysisResultBuilder()
-        .with('type', 'FAILED')
+        .with('type', CommonStatus.FAILED)
         .build();
 
       expect(() =>
@@ -234,7 +234,9 @@ describe('AnalysisResult', () => {
 
     it('should validate common status FAILED with targetChainId', () => {
       const failedResult = {
-        ...recipientAnalysisResultBuilder().with('type', 'FAILED').build(),
+        ...recipientAnalysisResultBuilder()
+          .with('type', CommonStatus.FAILED)
+          .build(),
         targetChainId: '137',
       };
 
@@ -284,7 +286,7 @@ describe('AnalysisResult', () => {
     it('should reject UNOFFICIAL_FALLBACK_HANDLER with invalid fallbackHandler object', () => {
       const invalidFallbackHandler =
         unofficialFallbackHandlerAnalysisResultBuilder()
-          .with('type', 'UNOFFICIAL_FALLBACK_HANDLER')
+          .with('type', ContractStatus.UNOFFICIAL_FALLBACK_HANDLER)
           .with('fallbackHandler', {
             address: 'not-an-address' as unknown as `0x${string}`,
             logoUrl: 'not-a-url',
@@ -300,7 +302,7 @@ describe('AnalysisResult', () => {
 
     it('should validate common status FAILED', () => {
       const failedResult = contractAnalysisResultBuilder()
-        .with('type', 'FAILED')
+        .with('type', CommonStatus.FAILED)
         .build();
 
       expect(() =>
@@ -334,7 +336,7 @@ describe('AnalysisResult', () => {
 
     it('should validate common status FAILED', () => {
       const failedResult = threatAnalysisResultBuilder()
-        .with('type', 'FAILED')
+        .with('type', CommonStatus.FAILED)
         .build();
 
       expect(() =>
@@ -344,7 +346,9 @@ describe('AnalysisResult', () => {
 
     it('should validate FAILED with optional error field', () => {
       const failedResult = {
-        ...threatAnalysisResultBuilder().with('type', 'FAILED').build(),
+        ...threatAnalysisResultBuilder()
+          .with('type', CommonStatus.FAILED)
+          .build(),
         error: 'Test error message',
       };
 
@@ -431,10 +435,14 @@ describe('AnalysisResult', () => {
   describe('real-world scenarios', () => {
     it('should handle multiple analysis results correctly', () => {
       const results: Array<ContractAnalysisResult> = [
-        contractAnalysisResultBuilder().with('type', 'KNOWN_CONTRACT').build(),
-        contractAnalysisResultBuilder().with('type', 'VERIFIED').build(),
         contractAnalysisResultBuilder()
-          .with('type', 'UNEXPECTED_DELEGATECALL')
+          .with('type', ContractStatus.KNOWN_CONTRACT)
+          .build(),
+        contractAnalysisResultBuilder()
+          .with('type', ContractStatus.VERIFIED)
+          .build(),
+        contractAnalysisResultBuilder()
+          .with('type', ContractStatus.UNEXPECTED_DELEGATECALL)
           .build(),
       ];
 
@@ -453,15 +461,15 @@ describe('AnalysisResult', () => {
       const results = [
         contractAnalysisResultBuilder()
           .with('severity', 'INFO')
-          .with('type', 'KNOWN_CONTRACT')
+          .with('type', ContractStatus.KNOWN_CONTRACT)
           .build(),
         contractAnalysisResultBuilder()
           .with('severity', 'CRITICAL')
-          .with('type', 'UNEXPECTED_DELEGATECALL')
+          .with('type', ContractStatus.UNEXPECTED_DELEGATECALL)
           .build(),
         contractAnalysisResultBuilder()
           .with('severity', 'WARN')
-          .with('type', 'NOT_VERIFIED_BY_SAFE')
+          .with('type', ContractStatus.NOT_VERIFIED_BY_SAFE)
           .build(),
       ];
 

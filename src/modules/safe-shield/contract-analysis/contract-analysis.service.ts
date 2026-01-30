@@ -41,6 +41,7 @@ import {
   isFallbackHandlerDeployed,
   getFallbackHandlerVersions,
 } from '@/domain/common/utils/deployments';
+import { ContractStatusGroup } from '@/modules/safe-shield/entities/status-group.entity';
 
 /**
  * Result type for contract metadata fetch operations.
@@ -220,8 +221,10 @@ export class ContractAnalysisService {
   } {
     if (!fetchResult.ok) {
       return {
-        CONTRACT_VERIFICATION: [
-          this.mapToAnalysisResult({ type: 'VERIFICATION_UNAVAILABLE' }),
+        [ContractStatusGroup.CONTRACT_VERIFICATION]: [
+          this.mapToAnalysisResult({
+            type: ContractStatus.VERIFICATION_UNAVAILABLE,
+          }),
         ],
       };
     }
@@ -232,9 +235,11 @@ export class ContractAnalysisService {
     const name = this.extractContractName(contract);
 
     return {
-      CONTRACT_VERIFICATION: [
+      [ContractStatusGroup.CONTRACT_VERIFICATION]: [
         this.mapToAnalysisResult({
-          type: contract.abi ? 'VERIFIED' : 'NOT_VERIFIED',
+          type: contract.abi
+            ? ContractStatus.VERIFIED
+            : ContractStatus.NOT_VERIFIED,
           name,
         }),
       ],
@@ -260,8 +265,10 @@ export class ContractAnalysisService {
     }
 
     return {
-      DELEGATECALL: [
-        this.mapToAnalysisResult({ type: 'UNEXPECTED_DELEGATECALL' }),
+      [ContractStatusGroup.DELEGATECALL]: [
+        this.mapToAnalysisResult({
+          type: ContractStatus.UNEXPECTED_DELEGATECALL,
+        }),
       ],
     };
   }
@@ -282,7 +289,7 @@ export class ContractAnalysisService {
       chainId,
       fallbackHandlerAddress,
     );
-    return result ? { FALLBACK_HANDLER: [result] } : {};
+    return result ? { [ContractStatusGroup.FALLBACK_HANDLER]: [result] } : {};
   }
 
   /**
@@ -353,8 +360,8 @@ export class ContractAnalysisService {
       if (interactions === 0) return {};
 
       return {
-        CONTRACT_INTERACTION: [
-          this.mapToAnalysisResult({ type: 'KNOWN_CONTRACT' }),
+        [ContractStatusGroup.CONTRACT_INTERACTION]: [
+          this.mapToAnalysisResult({ type: ContractStatus.KNOWN_CONTRACT }),
         ],
       };
     } catch (error) {
@@ -362,9 +369,9 @@ export class ContractAnalysisService {
         `Failed to analyze contract interactions: ${error}`,
       );
       return {
-        CONTRACT_INTERACTION: [
+        [ContractStatusGroup.CONTRACT_INTERACTION]: [
           this.mapToAnalysisResult({
-            type: 'FAILED',
+            type: CommonStatus.FAILED,
             error: 'contract interactions unavailable',
           }),
         ],
@@ -410,7 +417,9 @@ export class ContractAnalysisService {
     const contract = fetchResult.ok ? fetchResult.contract : undefined;
 
     return {
-      ...this.mapToAnalysisResult({ type: 'UNOFFICIAL_FALLBACK_HANDLER' }),
+      ...this.mapToAnalysisResult({
+        type: ContractStatus.UNOFFICIAL_FALLBACK_HANDLER,
+      }),
       fallbackHandler: {
         address: fallbackHandlerAddress,
         name: contract && this.extractContractName(contract),

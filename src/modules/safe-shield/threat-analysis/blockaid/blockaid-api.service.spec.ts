@@ -6,6 +6,7 @@ import { faker } from '@faker-js/faker';
 import type Blockaid from '@blockaid/client';
 import type { ILoggingService } from '@/logging/logging.interface';
 import type { BlockaidScanResponse } from '@/modules/safe-shield/threat-analysis/blockaid/schemas/blockaid-scan-response.schema';
+import { ReportEvent } from '@/modules/safe-shield/entities/dtos/report-false-result.dto';
 
 const createMockWithResponse = (
   data: TransactionScanResponse,
@@ -253,13 +254,13 @@ describe('BlockaidApi', () => {
       mockBlockaidClient.evm.transaction.report.mockResolvedValue({});
 
       await service.reportTransaction({
-        event: 'FALSE_POSITIVE',
+        event: ReportEvent.FALSE_POSITIVE,
         details,
         requestId,
       });
 
       expect(mockBlockaidClient.evm.transaction.report).toHaveBeenCalledWith({
-        event: 'FALSE_POSITIVE',
+        event: ReportEvent.FALSE_POSITIVE,
         details,
         report: {
           type: 'request_id',
@@ -272,13 +273,13 @@ describe('BlockaidApi', () => {
       mockBlockaidClient.evm.transaction.report.mockResolvedValue({});
 
       await service.reportTransaction({
-        event: 'FALSE_NEGATIVE',
+        event: ReportEvent.FALSE_NEGATIVE,
         details,
         requestId,
       });
 
       expect(mockBlockaidClient.evm.transaction.report).toHaveBeenCalledWith({
-        event: 'FALSE_NEGATIVE',
+        event: ReportEvent.FALSE_NEGATIVE,
         details,
         report: {
           type: 'request_id',
@@ -293,7 +294,7 @@ describe('BlockaidApi', () => {
 
       await expect(
         service.reportTransaction({
-          event: 'FALSE_POSITIVE',
+          event: ReportEvent.FALSE_POSITIVE,
           details,
           requestId,
         }),

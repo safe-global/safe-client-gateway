@@ -19,6 +19,10 @@ import { AnalysisResultDto } from './analysis-result.dto';
 import { BridgeStatus } from '@/modules/safe-shield/entities/bridge-status.entity';
 import { RecipientStatus } from '@/modules/safe-shield/entities/recipient-status.entity';
 import { Address } from 'viem';
+import {
+  ContractStatusGroup,
+  RecipientStatusGroup,
+} from '@/modules/safe-shield/entities/status-group.entity';
 
 /**
  * DTO for contract analysis result.
@@ -28,7 +32,7 @@ export class ContractAnalysisResultDto extends AnalysisResultDto<
 > {
   @ApiProperty({
     description: 'Contract verification status code',
-    enum: [...ContractStatus, ...CommonStatus],
+    enum: [...Object.values(ContractStatus), ...Object.values(CommonStatus)],
     example: 'VERIFIED',
   })
   declare type: ContractStatus | CommonStatus;
@@ -64,7 +68,7 @@ export class FallbackHandlerAnalysisResultDto
 {
   @ApiProperty({
     description: 'Status code for unofficial fallback handler',
-    enum: ['UNOFFICIAL_FALLBACK_HANDLER'],
+    enum: [ContractStatus.UNOFFICIAL_FALLBACK_HANDLER],
   })
   declare type: Extract<ContractStatus, 'UNOFFICIAL_FALLBACK_HANDLER'>;
 
@@ -110,7 +114,7 @@ export class ContractAnalysisDto implements GroupedAnalysisResults<ContractAnaly
       },
     ],
   })
-  public readonly CONTRACT_VERIFICATION?: Array<ContractAnalysisResultDto>;
+  public readonly [ContractStatusGroup.CONTRACT_VERIFICATION]?: Array<ContractAnalysisResultDto>;
 
   @ApiPropertyOptional({
     description:
@@ -127,7 +131,7 @@ export class ContractAnalysisDto implements GroupedAnalysisResults<ContractAnaly
       },
     ],
   })
-  public readonly CONTRACT_INTERACTION?: Array<ContractAnalysisResultDto>;
+  public readonly [ContractStatusGroup.CONTRACT_INTERACTION]?: Array<ContractAnalysisResultDto>;
 
   @ApiPropertyOptional({
     description:
@@ -144,7 +148,7 @@ export class ContractAnalysisDto implements GroupedAnalysisResults<ContractAnaly
       },
     ],
   })
-  public readonly DELEGATECALL?: Array<ContractAnalysisResultDto>;
+  public readonly [ContractStatusGroup.DELEGATECALL]?: Array<ContractAnalysisResultDto>;
 
   @ApiPropertyOptional({
     description:
@@ -166,7 +170,7 @@ export class ContractAnalysisDto implements GroupedAnalysisResults<ContractAnaly
       },
     ],
   })
-  public readonly FALLBACK_HANDLER?: Array<FallbackHandlerAnalysisResultDto>;
+  public readonly [ContractStatusGroup.FALLBACK_HANDLER]?: Array<FallbackHandlerAnalysisResultDto>;
 }
 
 /**
@@ -177,7 +181,11 @@ export class RecipientResultDto extends AnalysisResultDto<
 > {
   @ApiProperty({
     description: 'Bridge compatibility status code',
-    enum: [...RecipientStatus, ...BridgeStatus, ...CommonStatus],
+    enum: [
+      ...Object.values(RecipientStatus),
+      ...Object.values(BridgeStatus),
+      ...Object.values(CommonStatus),
+    ],
     example: 'MISSING_OWNERSHIP',
   })
   declare type: RecipientStatus | BridgeStatus | CommonStatus;
@@ -218,7 +226,7 @@ export class RecipientAnalysisDto implements GroupedAnalysisResults<RecipientAna
       },
     ],
   })
-  public readonly RECIPIENT_INTERACTION?: Array<RecipientResultDto>;
+  public readonly [RecipientStatusGroup.RECIPIENT_INTERACTION]?: Array<RecipientResultDto>;
 
   @ApiPropertyOptional({
     description:
@@ -234,7 +242,7 @@ export class RecipientAnalysisDto implements GroupedAnalysisResults<RecipientAna
       },
     ],
   })
-  public readonly RECIPIENT_ACTIVITY?: Array<RecipientResultDto>;
+  public readonly [RecipientStatusGroup.RECIPIENT_ACTIVITY]?: Array<RecipientResultDto>;
 
   @ApiPropertyOptional({
     description:
@@ -251,7 +259,7 @@ export class RecipientAnalysisDto implements GroupedAnalysisResults<RecipientAna
       },
     ],
   })
-  public readonly BRIDGE?: Array<RecipientResultDto>;
+  public readonly [RecipientStatusGroup.BRIDGE]?: Array<RecipientResultDto>;
 }
 
 /**

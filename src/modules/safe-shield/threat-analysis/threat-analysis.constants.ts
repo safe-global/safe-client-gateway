@@ -1,7 +1,7 @@
-import type { CommonStatus } from '@/modules/safe-shield/entities/analysis-result.entity';
+import { CommonStatus } from '@/modules/safe-shield/entities/analysis-result.entity';
 import { COMMON_SEVERITY_MAPPING } from '@/modules/safe-shield/entities/common-status.constants';
 import type { Severity } from '@/modules/safe-shield/entities/severity.entity';
-import type { ThreatStatus } from '@/modules/safe-shield/entities/threat-status.entity';
+import { ThreatStatus } from '@/modules/safe-shield/entities/threat-status.entity';
 
 /**
  * Severity mapping for threat analysis results.
@@ -12,12 +12,12 @@ export const SEVERITY_MAPPING: Record<
   keyof typeof Severity
 > = {
   ...COMMON_SEVERITY_MAPPING,
-  MALICIOUS: 'CRITICAL',
-  MODERATE: 'WARN',
-  NO_THREAT: 'OK',
-  MASTERCOPY_CHANGE: 'WARN',
-  OWNERSHIP_CHANGE: 'WARN',
-  MODULE_CHANGE: 'WARN',
+  [ThreatStatus.MALICIOUS]: 'CRITICAL',
+  [ThreatStatus.MODERATE]: 'WARN',
+  [ThreatStatus.NO_THREAT]: 'OK',
+  [ThreatStatus.MASTERCOPY_CHANGE]: 'WARN',
+  [ThreatStatus.OWNERSHIP_CHANGE]: 'WARN',
+  [ThreatStatus.MODULE_CHANGE]: 'WARN',
 };
 
 /**
@@ -25,13 +25,13 @@ export const SEVERITY_MAPPING: Record<
  * Maps each threat status to its user-facing title.
  */
 export const TITLE_MAPPING: Record<ThreatStatus | CommonStatus, string> = {
-  MALICIOUS: 'Malicious threat detected',
-  MODERATE: 'Moderate threat detected',
-  NO_THREAT: 'No threat detected',
-  MASTERCOPY_CHANGE: 'Mastercopy change',
-  OWNERSHIP_CHANGE: 'Ownership change',
-  MODULE_CHANGE: 'Modules change',
-  FAILED: 'Threat analysis failed',
+  [ThreatStatus.MALICIOUS]: 'Malicious threat detected',
+  [ThreatStatus.MODERATE]: 'Moderate threat detected',
+  [ThreatStatus.NO_THREAT]: 'No threat detected',
+  [ThreatStatus.MASTERCOPY_CHANGE]: 'Mastercopy change',
+  [ThreatStatus.OWNERSHIP_CHANGE]: 'Ownership change',
+  [ThreatStatus.MODULE_CHANGE]: 'Modules change',
+  [CommonStatus.FAILED]: 'Threat analysis failed',
 };
 
 type DescriptionArgs = {
@@ -46,15 +46,16 @@ export const DESCRIPTION_MAPPING: Record<
   ThreatStatus | CommonStatus,
   (args?: DescriptionArgs) => string
 > = {
-  MALICIOUS: ({ description } = {}) => `${description || ''}`,
-  MODERATE: ({ description } = {}) =>
+  [ThreatStatus.MALICIOUS]: ({ description } = {}) => `${description || ''}`,
+  [ThreatStatus.MODERATE]: ({ description } = {}) =>
     `${description ? `${description} ` : ''}Review before processing.`,
-  NO_THREAT: () => 'Threat analysis found no issues.',
-  MASTERCOPY_CHANGE: () =>
+  [ThreatStatus.NO_THREAT]: () => 'Threat analysis found no issues.',
+  [ThreatStatus.MASTERCOPY_CHANGE]: () =>
     'Verify this change as it may overwrite account ownership.',
-  OWNERSHIP_CHANGE: () =>
+  [ThreatStatus.OWNERSHIP_CHANGE]: () =>
     "Verify this change before proceeding as it will change the Safe's ownership",
-  MODULE_CHANGE: () =>
+  [ThreatStatus.MODULE_CHANGE]: () =>
     'Verify this change before proceeding as it will change Safe modules.',
-  FAILED: () => `Threat analysis failed. Review before processing.`,
+  [CommonStatus.FAILED]: () =>
+    `Threat analysis failed. Review before processing.`,
 };
