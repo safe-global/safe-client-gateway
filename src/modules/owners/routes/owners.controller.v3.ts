@@ -6,17 +6,17 @@ import {
   ApiParam,
 } from '@nestjs/swagger';
 import { OwnersService } from '@/modules/owners/routes/owners.service';
-import { SafesByChainId } from '@/modules/safe/domain/entities/safes-by-chain-id.entity';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
+import { SafesByChainId } from '@/modules/safe/domain/entities/safes-by-chain-id.entity';
 import type { Address } from 'viem';
 
 @ApiTags('owners')
 @Controller({
   path: '',
-  version: '2',
+  version: '3',
 })
-export class OwnersControllerV2 {
+export class OwnersControllerV3 {
   constructor(private readonly ownersService: OwnersService) {}
 
   @ApiOperation({
@@ -49,6 +49,6 @@ export class OwnersControllerV2 {
     @Param('ownerAddress', new ValidationPipe(AddressSchema))
     ownerAddress: Address,
   ): Promise<SafesByChainId> {
-    return this.ownersService.getAllSafesByOwner({ ownerAddress });
+    return this.ownersService.getAllSafesByOwnerV2({ ownerAddress });
   }
 }

@@ -492,6 +492,25 @@ export class CacheRouter {
     );
   }
 
+  static getSafesByOwnerV2CacheKey(args: {
+    chainId: string;
+    ownerAddress: Address;
+  }): string {
+    return `${args.chainId}_${CacheRouter.OWNERS_SAFE_KEY}_v2_${args.ownerAddress}`;
+  }
+
+  static getSafesByOwnerV2CacheDir(args: {
+    chainId: string;
+    ownerAddress: Address;
+    limit?: number;
+    offset?: number;
+  }): CacheDir {
+    return new CacheDir(
+      this.getSafesByOwnerV2CacheKey(args),
+      `${args.limit}_${args.offset}`,
+    );
+  }
+
   static getMessageByHashCacheKey(args: {
     chainId: string;
     messageHash: string;

@@ -477,6 +477,11 @@ export default () => ({
         process.env.SAFE_CONFIG_CHAINS_MAX_SEQUENTIAL_PAGES ?? `${3}`,
       ),
     },
+    safes: {
+      maxSequentialPages: parseInt(
+        process.env.SAFE_CONFIG_SAFES_MAX_SEQUENTIAL_PAGES ?? `${10}`,
+      ),
+    },
   },
   safeDataDecoder: {
     baseUri:

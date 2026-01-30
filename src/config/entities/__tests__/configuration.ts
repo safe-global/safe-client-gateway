@@ -334,6 +334,9 @@ export default (): ReturnType<typeof configuration> => ({
     chains: {
       maxSequentialPages: faker.number.int(),
     },
+    safes: {
+      maxSequentialPages: faker.number.int(),
+    },
   },
   safeDataDecoder: {
     baseUri: faker.internet.url({ appendSlash: false }),
