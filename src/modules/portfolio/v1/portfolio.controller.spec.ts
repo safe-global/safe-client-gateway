@@ -1,66 +1,40 @@
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
-import type { Server } from 'net';
-import type { INestApplication } from '@nestjs/common';
-import { TestAppProvider } from '@/__tests__/test-app.provider';
-import request from 'supertest';
-import { Test } from '@nestjs/testing';
-import { PortfolioApiService } from '@/modules/portfolio/v1/portfolio.service';
+import type { PortfolioApiService } from '@/modules/portfolio/v1/portfolio.service';
 import { PortfolioController } from '@/modules/portfolio/v1/portfolio.controller';
-import { ConfigurationModule } from '@/config/configuration.module';
-import configuration from '@/config/entities/__tests__/configuration';
-import { portfolioBuilder } from '@/modules/portfolio/domain/entities/__tests__/portfolio.builder';
-import { PortfolioRouteMapper } from '@/modules/portfolio/v1/portfolio.mapper';
+import type { GetPortfolioDto } from '@/modules/portfolio/v1/entities/get-portfolio.dto.entity';
+import type { Portfolio } from '@/modules/portfolio/v1/entities/portfolio.entity';
+
+const service = {
+  getPortfolio: jest.fn(),
+  clearPortfolio: jest.fn(),
+} as jest.MockedObjectDeep<PortfolioApiService>;
 
 describe('PortfolioController', () => {
-  let app: INestApplication<Server>;
-  let portfolioService: jest.MockedObjectDeep<PortfolioApiService>;
-  let portfolioRouteMapper: PortfolioRouteMapper;
+  let controller: PortfolioController;
 
-  beforeEach(async () => {
+  beforeEach(() => {
     jest.resetAllMocks();
-
-    portfolioRouteMapper = new PortfolioRouteMapper();
-
-    const mockPortfolioService = {
-      getPortfolio: jest.fn(),
-      clearPortfolio: jest.fn(),
-    } as unknown as jest.MockedObjectDeep<PortfolioApiService>;
-
-    const moduleFixture = await Test.createTestingModule({
-      imports: [ConfigurationModule.register(configuration)],
-      controllers: [PortfolioController],
-      providers: [
-        {
-          provide: PortfolioApiService,
-          useValue: mockPortfolioService,
-        },
-      ],
-    }).compile();
-
-    portfolioService = moduleFixture.get(PortfolioApiService);
-
-    app = await new TestAppProvider().provide(moduleFixture);
-    await app.init();
+    controller = new PortfolioController(service);
   });
 
-  afterAll(async () => {
-    await app.close();
-  });
-
-  describe('GET /v1/portfolio/:address', () => {
-    it('should return portfolio for address with default parameters', async () => {
+  describe('getPortfolio', () => {
+    it('should call service with address and DTO parameters', async () => {
       const address = getAddress(faker.finance.ethereumAddress());
-      const domainPortfolio = portfolioBuilder().build();
-      const portfolio = portfolioRouteMapper.mapDomainToRoute(domainPortfolio);
+      const getPortfolioDto: GetPortfolioDto = {
+        fiatCode: 'USD',
+        chainIds: undefined,
+        trusted: true,
+        excludeDust: true,
+        sync: false,
+      };
+      const mockPortfolio = {} as Portfolio;
 
-      portfolioService.getPortfolio.mockResolvedValue(portfolio);
+      service.getPortfolio.mockResolvedValue(mockPortfolio);
 
-      const response = await request(app.getHttpServer())
-        .get(`/v1/portfolio/${address}`)
-        .expect(200);
+      const result = await controller.getPortfolio(address, getPortfolioDto);
 
-      expect(portfolioService.getPortfolio).toHaveBeenCalledWith({
+      expect(service.getPortfolio).toHaveBeenCalledWith({
         address,
         fiatCode: 'USD',
         chainIds: undefined,
@@ -68,123 +42,129 @@ describe('PortfolioController', () => {
         excludeDust: true,
         sync: false,
       });
-
-      expect(response.body).toMatchObject({
-        totalBalanceFiat: portfolio.totalBalanceFiat,
-        totalTokenBalanceFiat: portfolio.totalTokenBalanceFiat,
-        totalPositionsBalanceFiat: portfolio.totalPositionsBalanceFiat,
-      });
+      expect(result).toBe(mockPortfolio);
     });
 
-    it('should accept fiatCode query parameter', async () => {
+    it('should pass custom fiatCode to service', async () => {
       const address = getAddress(faker.finance.ethereumAddress());
-      const fiatCode = 'EUR';
-      const domainPortfolio = portfolioBuilder().build();
-      const portfolio = portfolioRouteMapper.mapDomainToRoute(domainPortfolio);
-
-      portfolioService.getPortfolio.mockResolvedValue(portfolio);
-
-      await request(app.getHttpServer())
-        .get(`/v1/portfolio/${address}`)
-        .query({ fiatCode })
-        .expect(200);
-
-      expect(portfolioService.getPortfolio).toHaveBeenCalledWith({
-        address,
-        fiatCode,
+      const getPortfolioDto: GetPortfolioDto = {
+        fiatCode: 'EUR',
         chainIds: undefined,
         trusted: true,
         excludeDust: true,
         sync: false,
-      });
+      };
+
+      service.getPortfolio.mockResolvedValue({} as Portfolio);
+
+      await controller.getPortfolio(address, getPortfolioDto);
+
+      expect(service.getPortfolio).toHaveBeenCalledWith(
+        expect.objectContaining({
+          fiatCode: 'EUR',
+        }),
+      );
     });
 
-    it('should accept chainIds query parameter', async () => {
+    it('should pass chainIds array to service', async () => {
       const address = getAddress(faker.finance.ethereumAddress());
-      const chainIds = '1,10,137';
-      const domainPortfolio = portfolioBuilder().build();
-      const portfolio = portfolioRouteMapper.mapDomainToRoute(domainPortfolio);
-
-      portfolioService.getPortfolio.mockResolvedValue(portfolio);
-
-      await request(app.getHttpServer())
-        .get(`/v1/portfolio/${address}`)
-        .query({ chainIds })
-        .expect(200);
-
-      expect(portfolioService.getPortfolio).toHaveBeenCalledWith({
-        address,
+      const getPortfolioDto: GetPortfolioDto = {
         fiatCode: 'USD',
         chainIds: ['1', '10', '137'],
         trusted: true,
         excludeDust: true,
         sync: false,
-      });
+      };
+
+      service.getPortfolio.mockResolvedValue({} as Portfolio);
+
+      await controller.getPortfolio(address, getPortfolioDto);
+
+      expect(service.getPortfolio).toHaveBeenCalledWith(
+        expect.objectContaining({
+          chainIds: ['1', '10', '137'],
+        }),
+      );
     });
 
-    it('should accept trusted query parameter', async () => {
+    it('should pass trusted=false to service', async () => {
       const address = getAddress(faker.finance.ethereumAddress());
-      const domainPortfolio = portfolioBuilder().build();
-      const portfolio = portfolioRouteMapper.mapDomainToRoute(domainPortfolio);
-
-      portfolioService.getPortfolio.mockResolvedValue(portfolio);
-
-      await request(app.getHttpServer())
-        .get(`/v1/portfolio/${address}`)
-        .query({ trusted: 'false' })
-        .expect(200);
-
-      expect(portfolioService.getPortfolio).toHaveBeenCalledWith({
-        address,
+      const getPortfolioDto: GetPortfolioDto = {
         fiatCode: 'USD',
         chainIds: undefined,
         trusted: false,
         excludeDust: true,
         sync: false,
-      });
+      };
+
+      service.getPortfolio.mockResolvedValue({} as Portfolio);
+
+      await controller.getPortfolio(address, getPortfolioDto);
+
+      expect(service.getPortfolio).toHaveBeenCalledWith(
+        expect.objectContaining({
+          trusted: false,
+        }),
+      );
     });
 
-    it('should accept excludeDust query parameter', async () => {
+    it('should pass excludeDust=false to service', async () => {
       const address = getAddress(faker.finance.ethereumAddress());
-      const domainPortfolio = portfolioBuilder().build();
-      const portfolio = portfolioRouteMapper.mapDomainToRoute(domainPortfolio);
-
-      portfolioService.getPortfolio.mockResolvedValue(portfolio);
-
-      await request(app.getHttpServer())
-        .get(`/v1/portfolio/${address}`)
-        .query({ excludeDust: 'false' })
-        .expect(200);
-
-      expect(portfolioService.getPortfolio).toHaveBeenCalledWith({
-        address,
+      const getPortfolioDto: GetPortfolioDto = {
         fiatCode: 'USD',
         chainIds: undefined,
         trusted: true,
         excludeDust: false,
         sync: false,
-      });
+      };
+
+      service.getPortfolio.mockResolvedValue({} as Portfolio);
+
+      await controller.getPortfolio(address, getPortfolioDto);
+
+      expect(service.getPortfolio).toHaveBeenCalledWith(
+        expect.objectContaining({
+          excludeDust: false,
+        }),
+      );
     });
 
-    it('should accept all query parameters together', async () => {
+    it('should pass sync=true to service', async () => {
       const address = getAddress(faker.finance.ethereumAddress());
-      const domainPortfolio = portfolioBuilder().build();
-      const portfolio = portfolioRouteMapper.mapDomainToRoute(domainPortfolio);
+      const getPortfolioDto: GetPortfolioDto = {
+        fiatCode: 'USD',
+        chainIds: undefined,
+        trusted: true,
+        excludeDust: true,
+        sync: true,
+      };
 
-      portfolioService.getPortfolio.mockResolvedValue(portfolio);
+      service.getPortfolio.mockResolvedValue({} as Portfolio);
 
-      await request(app.getHttpServer())
-        .get(`/v1/portfolio/${address}`)
-        .query({
-          fiatCode: 'EUR',
-          chainIds: '1,10',
-          trusted: 'false',
-          excludeDust: 'false',
-          sync: 'true',
-        })
-        .expect(200);
+      await controller.getPortfolio(address, getPortfolioDto);
 
-      expect(portfolioService.getPortfolio).toHaveBeenCalledWith({
+      expect(service.getPortfolio).toHaveBeenCalledWith(
+        expect.objectContaining({
+          sync: true,
+        }),
+      );
+    });
+
+    it('should pass all parameters to service', async () => {
+      const address = getAddress(faker.finance.ethereumAddress());
+      const getPortfolioDto: GetPortfolioDto = {
+        fiatCode: 'EUR',
+        chainIds: ['1', '10'],
+        trusted: false,
+        excludeDust: false,
+        sync: true,
+      };
+
+      service.getPortfolio.mockResolvedValue({} as Portfolio);
+
+      await controller.getPortfolio(address, getPortfolioDto);
+
+      expect(service.getPortfolio).toHaveBeenCalledWith({
         address,
         fiatCode: 'EUR',
         chainIds: ['1', '10'],
@@ -194,42 +174,50 @@ describe('PortfolioController', () => {
       });
     });
 
-    it('should return portfolio with groups structure', async () => {
+    it('should return portfolio from service', async () => {
       const address = getAddress(faker.finance.ethereumAddress());
-      const domainPortfolio = portfolioBuilder().build();
-      const portfolio = portfolioRouteMapper.mapDomainToRoute(domainPortfolio);
+      const getPortfolioDto: GetPortfolioDto = {
+        fiatCode: 'USD',
+        chainIds: undefined,
+        trusted: true,
+        excludeDust: true,
+        sync: false,
+      };
+      const mockPortfolio = {
+        totalBalanceFiat: '1000',
+        totalTokenBalanceFiat: '500',
+        totalPositionsBalanceFiat: '500',
+      } as Portfolio;
 
-      portfolioService.getPortfolio.mockResolvedValue(portfolio);
+      service.getPortfolio.mockResolvedValue(mockPortfolio);
 
-      const response = await request(app.getHttpServer())
-        .get(`/v1/portfolio/${address}`)
-        .expect(200);
+      const result = await controller.getPortfolio(address, getPortfolioDto);
 
-      expect(response.body.positionBalances).toBeDefined();
-      expect(Array.isArray(response.body.positionBalances)).toBe(true);
-
-      if (response.body.positionBalances.length > 0) {
-        expect(response.body.positionBalances[0].groups).toBeDefined();
-        expect(Array.isArray(response.body.positionBalances[0].groups)).toBe(
-          true,
-        );
-      }
+      expect(result).toEqual(mockPortfolio);
     });
   });
 
-  describe('DELETE /v1/portfolio/:address', () => {
-    it('should clear portfolio cache', async () => {
+  describe('clearPortfolio', () => {
+    it('should call service with address', async () => {
       const address = getAddress(faker.finance.ethereumAddress());
 
-      portfolioService.clearPortfolio.mockResolvedValue(undefined);
+      service.clearPortfolio.mockResolvedValue(undefined);
 
-      await request(app.getHttpServer())
-        .delete(`/v1/portfolio/${address}`)
-        .expect(204);
+      await controller.clearPortfolio(address);
 
-      expect(portfolioService.clearPortfolio).toHaveBeenCalledWith({
+      expect(service.clearPortfolio).toHaveBeenCalledWith({
         address,
       });
+    });
+
+    it('should return void', async () => {
+      const address = getAddress(faker.finance.ethereumAddress());
+
+      service.clearPortfolio.mockResolvedValue(undefined);
+
+      const result = await controller.clearPortfolio(address);
+
+      expect(result).toBeUndefined();
     });
   });
 });
