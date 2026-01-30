@@ -10,13 +10,6 @@ import type { INetworkService } from '@/datasources/network/network.service.inte
 import { bridgeChainPageBuilder } from '@/modules/bridge/domain/entities/__tests__/bridge-chain.builder';
 import { type CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
 import { type IConfigurationService } from '@/config/configuration.service.interface';
-import { ConfigurationModule } from '@/config/configuration.module';
-import { DatabaseMigrator } from '@/datasources/db/v2/database-migrator.service';
-import { TestPostgresDatabaseModuleV2 } from '@/datasources/db/v2/test.postgres-database.module';
-import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
-import { ConfigModule, ConfigService } from '@nestjs/config';
-import { Test } from '@nestjs/testing';
-import configuration from '@/config/entities/__tests__/configuration';
 import type { Hash } from 'viem';
 
 const mockNetworkService = jest.mocked({
@@ -28,6 +21,10 @@ const mockCacheFirstDataSource = jest.mocked({
   get: jest.fn(),
 } as jest.MockedObjectDeep<CacheFirstDataSource>);
 
+const mockConfigurationService = jest.mocked({
+  getOrThrow: jest.fn(),
+} as jest.MockedObjectDeep<IConfigurationService>);
+
 describe('LifiBridgeApi', () => {
   let target: LifiBridgeApi;
 
@@ -35,9 +32,8 @@ describe('LifiBridgeApi', () => {
   let baseUrl: string;
   let apiKey: string;
   let httpErrorFactory: HttpErrorFactory;
-  let configurationService: IConfigurationService;
 
-  beforeEach(async () => {
+  beforeEach(() => {
     jest.resetAllMocks();
 
     chainId = faker.string.numeric();
@@ -45,17 +41,16 @@ describe('LifiBridgeApi', () => {
     apiKey = faker.string.uuid();
     httpErrorFactory = new HttpErrorFactory();
 
-    const moduleRef = await Test.createTestingModule({
-      imports: [
-        TestLoggingModule,
-        ConfigurationModule.register(configuration),
-        ConfigModule,
-        TestPostgresDatabaseModuleV2,
-      ],
-      providers: [DatabaseMigrator],
-    }).compile();
-
-    configurationService = moduleRef.get<ConfigService>(ConfigService);
+    // Mock configuration service to return default values
+    mockConfigurationService.getOrThrow.mockImplementation((key: string) => {
+      if (key === 'expirationTimeInSeconds.default') {
+        return 3600;
+      }
+      if (key === 'expirationTimeInSeconds.notFound.default') {
+        return 60;
+      }
+      throw new Error(`Unexpected config key: ${key}`);
+    });
 
     target = new LifiBridgeApi(
       chainId,
@@ -64,7 +59,7 @@ describe('LifiBridgeApi', () => {
       mockNetworkService,
       mockCacheFirstDataSource,
       httpErrorFactory,
-      configurationService,
+      mockConfigurationService,
     );
   });
 

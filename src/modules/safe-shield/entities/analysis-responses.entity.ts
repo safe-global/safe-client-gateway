@@ -1,9 +1,10 @@
 import { z } from 'zod';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { type Address } from 'viem';
-import type {
+import {
   ContractStatusGroup,
   RecipientStatusGroup,
+  ThreatStatusGroup,
 } from './status-group.entity';
 import type { AnalysisResult, CommonStatus } from './analysis-result.entity';
 import {
@@ -33,9 +34,9 @@ export const RecipientAnalysisResponseSchema = z.record(
   z
     .object({
       isSafe: z.boolean(),
-      RECIPIENT_INTERACTION: recipientGroupValueSchema,
-      RECIPIENT_ACTIVITY: recipientGroupValueSchema,
-      BRIDGE: recipientGroupValueSchema,
+      [RecipientStatusGroup.RECIPIENT_INTERACTION]: recipientGroupValueSchema,
+      [RecipientStatusGroup.RECIPIENT_ACTIVITY]: recipientGroupValueSchema,
+      [RecipientStatusGroup.BRIDGE]: recipientGroupValueSchema,
     })
     .strict(),
 );
@@ -55,12 +56,12 @@ export const ContractAnalysisResponseSchema = z.record(
   AddressSchema,
   z
     .object({
-      logoUrl: z.string().url().optional(),
+      logoUrl: z.url().optional(),
       name: z.string().optional(),
-      CONTRACT_VERIFICATION: contractGroupValueSchema,
-      CONTRACT_INTERACTION: contractGroupValueSchema,
-      DELEGATECALL: contractGroupValueSchema,
-      FALLBACK_HANDLER: z
+      [ContractStatusGroup.CONTRACT_VERIFICATION]: contractGroupValueSchema,
+      [ContractStatusGroup.CONTRACT_INTERACTION]: contractGroupValueSchema,
+      [ContractStatusGroup.DELEGATECALL]: contractGroupValueSchema,
+      [ContractStatusGroup.FALLBACK_HANDLER]: z
         .array(UnofficialFallbackHandlerAnalysisResultSchema)
         .optional(),
     })
@@ -88,8 +89,8 @@ export const CounterpartyAnalysisResponseSchema = z.object({
  */
 export const ThreatAnalysisResponseSchema = z
   .object({
-    THREAT: z.array(ThreatAnalysisResultSchema).optional(),
-    BALANCE_CHANGE: BalanceChangesSchema.optional(),
+    [ThreatStatusGroup.THREAT]: z.array(ThreatAnalysisResultSchema).optional(),
+    [ThreatStatusGroup.BALANCE_CHANGE]: BalanceChangesSchema.optional(),
     request_id: z.string().optional(),
   })
   .strict();

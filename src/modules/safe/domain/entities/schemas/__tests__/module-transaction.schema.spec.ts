@@ -8,7 +8,6 @@ import {
 } from '@/modules/safe/domain/entities/module-transaction.entity';
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress } from 'viem';
-import { ZodError } from 'zod';
 
 describe('ModuleTransaction schemas', () => {
   describe('ModuleTransactionSchema', () => {
@@ -59,15 +58,13 @@ describe('ModuleTransaction schemas', () => {
 
         const result = ModuleTransactionSchema.safeParse(moduleTransaction);
 
-        expect(!result.success && result.error).toStrictEqual(
-          new ZodError([
-            {
-              code: 'custom',
-              message: 'Invalid "0x" notated hex string',
-              path: [key],
-            },
-          ]),
-        );
+        expect(!result.success && result.error.issues).toEqual([
+          expect.objectContaining({
+            code: 'custom',
+            message: 'Invalid "0x" notated hex string',
+            path: [key],
+          }),
+        ]);
       },
     );
 
@@ -78,17 +75,14 @@ describe('ModuleTransaction schemas', () => {
 
       const result = ModuleTransactionSchema.safeParse(moduleTransaction);
 
-      expect(!result.success && result.error).toStrictEqual(
-        new ZodError([
-          {
-            received: 2,
-            code: 'invalid_enum_value',
-            options: [0, 1],
-            path: ['operation'],
-            message: "Invalid enum value. Expected 0 | 1, received '2'",
-          },
-        ]),
-      );
+      expect(!result.success && result.error.issues).toEqual([
+        expect.objectContaining({
+          code: 'invalid_value',
+          values: [0, 1],
+          path: ['operation'],
+          message: 'Invalid option: expected one of 0|1',
+        }),
+      ]);
     });
 
     it.each(['created' as const, 'executionDate' as const])(
@@ -113,17 +107,13 @@ describe('ModuleTransaction schemas', () => {
 
       const result = ModuleTransactionSchema.safeParse(moduleTransaction);
 
-      expect(!result.success && result.error).toStrictEqual(
-        new ZodError([
-          {
-            code: 'invalid_type',
-            expected: 'number',
-            received: 'string',
-            path: ['blockNumber'],
-            message: 'Expected number, received string',
-          },
-        ]),
-      );
+      expect(!result.success && result.error.issues).toEqual([
+        expect.objectContaining({
+          code: 'invalid_type',
+          expected: 'number',
+          path: ['blockNumber'],
+        }),
+      ]);
     });
 
     it('should not allow an invalid isSuccessful', () => {
@@ -133,17 +123,13 @@ describe('ModuleTransaction schemas', () => {
 
       const result = ModuleTransactionSchema.safeParse(moduleTransaction);
 
-      expect(!result.success && result.error).toStrictEqual(
-        new ZodError([
-          {
-            code: 'invalid_type',
-            expected: 'boolean',
-            received: 'string',
-            path: ['isSuccessful'],
-            message: 'Expected boolean, received string',
-          },
-        ]),
-      );
+      expect(!result.success && result.error.issues).toEqual([
+        expect.objectContaining({
+          code: 'invalid_type',
+          expected: 'boolean',
+          path: ['isSuccessful'],
+        }),
+      ]);
     });
 
     it('should not allow an invalid moduleTransactionId', () => {
@@ -153,17 +139,13 @@ describe('ModuleTransaction schemas', () => {
 
       const result = ModuleTransactionSchema.safeParse(moduleTransaction);
 
-      expect(!result.success && result.error).toStrictEqual(
-        new ZodError([
-          {
-            code: 'invalid_type',
-            expected: 'string',
-            received: 'number',
-            path: ['moduleTransactionId'],
-            message: 'Expected string, received number',
-          },
-        ]),
-      );
+      expect(!result.success && result.error.issues).toEqual([
+        expect.objectContaining({
+          code: 'invalid_type',
+          expected: 'string',
+          path: ['moduleTransactionId'],
+        }),
+      ]);
     });
   });
 

@@ -10,7 +10,6 @@ import {
 } from '@/modules/alerts/routes/entities/schemas/alerts.schema';
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress } from 'viem';
-import { ZodError } from 'zod';
 
 describe('Alerts schemas', () => {
   describe('AlertLogSchema', () => {
@@ -47,12 +46,11 @@ describe('Alerts schemas', () => {
       expect(!result.success && result.error.issues.length).toBe(1);
       expect(!result.success && result.error.issues[0]).toStrictEqual({
         code: 'too_small',
-        exact: false,
         inclusive: true,
-        message: 'No event signature found',
         minimum: 1,
+        message: 'No event signature found',
+        origin: 'array',
         path: ['topics'],
-        type: 'array',
       });
     });
 
@@ -61,31 +59,26 @@ describe('Alerts schemas', () => {
 
       const result = AlertLogSchema.safeParse(alertLog);
 
-      expect(!result.success && result.error).toStrictEqual(
-        new ZodError([
-          {
-            code: 'invalid_type',
-            expected: 'string',
-            received: 'undefined',
-            path: ['address'],
-            message: 'Required',
-          },
-          {
-            code: 'invalid_type',
-            expected: 'array',
-            received: 'undefined',
-            path: ['topics'],
-            message: 'Required',
-          },
-          {
-            code: 'invalid_type',
-            expected: 'string',
-            received: 'undefined',
-            path: ['data'],
-            message: 'Required',
-          },
-        ]),
-      );
+      expect(!result.success && result.error.issues).toStrictEqual([
+        {
+          code: 'invalid_type',
+          expected: 'string',
+          message: 'Invalid input: expected string, received undefined',
+          path: ['address'],
+        },
+        {
+          code: 'invalid_type',
+          expected: 'array',
+          message: 'Invalid input: expected array, received undefined',
+          path: ['topics'],
+        },
+        {
+          code: 'invalid_type',
+          expected: 'string',
+          message: 'Invalid input: expected string, received undefined',
+          path: ['data'],
+        },
+      ]);
     });
   });
 
@@ -122,122 +115,104 @@ describe('Alerts schemas', () => {
 
       const result = AlertTransactionSchema.safeParse(alertTransaction);
 
-      expect(!result.success && result.error).toStrictEqual(
-        new ZodError([
-          {
-            code: 'invalid_type',
-            expected: 'string',
-            received: 'undefined',
-            path: ['network'],
-            message: 'Required',
-          },
-          {
-            code: 'invalid_type',
-            expected: 'string',
-            received: 'undefined',
-            path: ['block_hash'],
-            message: 'Required',
-          },
-          {
-            code: 'invalid_type',
-            expected: 'number',
-            received: 'undefined',
-            path: ['block_number'],
-            message: 'Required',
-          },
-          {
-            code: 'invalid_type',
-            expected: 'string',
-            received: 'undefined',
-            path: ['hash'],
-            message: 'Required',
-          },
-          {
-            code: 'invalid_type',
-            expected: 'string',
-            received: 'undefined',
-            path: ['from'],
-            message: 'Required',
-          },
-          {
-            code: 'invalid_type',
-            expected: 'string',
-            received: 'undefined',
-            path: ['to'],
-            message: 'Required',
-          },
-          {
-            code: 'invalid_type',
-            expected: 'array',
-            received: 'undefined',
-            path: ['logs'],
-            message: 'Required',
-          },
-          {
-            code: 'invalid_type',
-            expected: 'string',
-            received: 'undefined',
-            path: ['input'],
-            message: 'Required',
-          },
-          {
-            code: 'invalid_type',
-            expected: 'string',
-            received: 'undefined',
-            path: ['value'],
-            message: 'Required',
-          },
-          {
-            code: 'invalid_type',
-            expected: 'string',
-            received: 'undefined',
-            path: ['nonce'],
-            message: 'Required',
-          },
-          {
-            code: 'invalid_type',
-            expected: 'string',
-            received: 'undefined',
-            path: ['gas'],
-            message: 'Required',
-          },
-          {
-            code: 'invalid_type',
-            expected: 'string',
-            received: 'undefined',
-            path: ['gas_used'],
-            message: 'Required',
-          },
-          {
-            code: 'invalid_type',
-            expected: 'string',
-            received: 'undefined',
-            path: ['cumulative_gas_used'],
-            message: 'Required',
-          },
-          {
-            code: 'invalid_type',
-            expected: 'string',
-            received: 'undefined',
-            path: ['gas_price'],
-            message: 'Required',
-          },
-          {
-            code: 'invalid_type',
-            expected: 'string',
-            received: 'undefined',
-            path: ['gas_tip_cap'],
-            message: 'Required',
-          },
-          {
-            code: 'invalid_type',
-            expected: 'string',
-            received: 'undefined',
-            path: ['gas_fee_cap'],
-            message: 'Required',
-          },
-        ]),
-      );
+      expect(!result.success && result.error.issues).toStrictEqual([
+        {
+          code: 'invalid_type',
+          expected: 'string',
+          message: 'Invalid input: expected string, received undefined',
+          path: ['network'],
+        },
+        {
+          code: 'invalid_type',
+          expected: 'string',
+          message: 'Invalid input: expected string, received undefined',
+          path: ['block_hash'],
+        },
+        {
+          code: 'invalid_type',
+          expected: 'number',
+          message: 'Invalid input: expected number, received undefined',
+          path: ['block_number'],
+        },
+        {
+          code: 'invalid_type',
+          expected: 'string',
+          message: 'Invalid input: expected string, received undefined',
+          path: ['hash'],
+        },
+        {
+          code: 'invalid_type',
+          expected: 'string',
+          message: 'Invalid input: expected string, received undefined',
+          path: ['from'],
+        },
+        {
+          code: 'invalid_type',
+          expected: 'string',
+          message: 'Invalid input: expected string, received undefined',
+          path: ['to'],
+        },
+        {
+          code: 'invalid_type',
+          expected: 'array',
+          message: 'Invalid input: expected array, received undefined',
+          path: ['logs'],
+        },
+        {
+          code: 'invalid_type',
+          expected: 'string',
+          message: 'Invalid input: expected string, received undefined',
+          path: ['input'],
+        },
+        {
+          code: 'invalid_type',
+          expected: 'string',
+          message: 'Invalid input: expected string, received undefined',
+          path: ['value'],
+        },
+        {
+          code: 'invalid_type',
+          expected: 'string',
+          message: 'Invalid input: expected string, received undefined',
+          path: ['nonce'],
+        },
+        {
+          code: 'invalid_type',
+          expected: 'string',
+          message: 'Invalid input: expected string, received undefined',
+          path: ['gas'],
+        },
+        {
+          code: 'invalid_type',
+          expected: 'string',
+          message: 'Invalid input: expected string, received undefined',
+          path: ['gas_used'],
+        },
+        {
+          code: 'invalid_type',
+          expected: 'string',
+          message: 'Invalid input: expected string, received undefined',
+          path: ['cumulative_gas_used'],
+        },
+        {
+          code: 'invalid_type',
+          expected: 'string',
+          message: 'Invalid input: expected string, received undefined',
+          path: ['gas_price'],
+        },
+        {
+          code: 'invalid_type',
+          expected: 'string',
+          message: 'Invalid input: expected string, received undefined',
+          path: ['gas_tip_cap'],
+        },
+        {
+          code: 'invalid_type',
+          expected: 'string',
+          message: 'Invalid input: expected string, received undefined',
+          path: ['gas_fee_cap'],
+        },
+      ]);
     });
   });
 
@@ -255,32 +230,26 @@ describe('Alerts schemas', () => {
 
       const result = AlertSchema.safeParse(alert);
 
-      expect(!result.success && result.error).toStrictEqual(
-        new ZodError([
-          {
-            code: 'invalid_type',
-            expected: 'string',
-            received: 'undefined',
-            path: ['id'],
-            message: 'Required',
-          },
-          // @ts-expect-error - enum values do not match inferred type
-          {
-            expected: "'ALERT' | 'TEST'",
-            received: 'undefined',
-            code: 'invalid_type',
-            path: ['event_type'],
-            message: 'Required',
-          },
-          {
-            code: 'invalid_type',
-            expected: 'object',
-            received: 'undefined',
-            path: ['transaction'],
-            message: 'Required',
-          },
-        ]),
-      );
+      expect(!result.success && result.error.issues).toStrictEqual([
+        {
+          code: 'invalid_type',
+          expected: 'string',
+          message: 'Invalid input: expected string, received undefined',
+          path: ['id'],
+        },
+        {
+          code: 'invalid_value',
+          message: 'Invalid option: expected one of "ALERT"|"TEST"',
+          path: ['event_type'],
+          values: ['ALERT', 'TEST'],
+        },
+        {
+          code: 'invalid_type',
+          expected: 'object',
+          message: 'Invalid input: expected object, received undefined',
+          path: ['transaction'],
+        },
+      ]);
     });
   });
 });

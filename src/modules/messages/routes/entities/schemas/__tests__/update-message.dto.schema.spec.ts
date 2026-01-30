@@ -1,7 +1,6 @@
 import { updateMessageSignatureDtoBuilder } from '@/modules/messages/routes/entities/__tests__/update-message-signature.dto.builder';
 import { UpdateMessageSignatureDtoSchema } from '@/modules/messages/routes/entities/schemas/update-message-signature.dto.schema';
 import { faker } from '@faker-js/faker';
-import { ZodError } from 'zod';
 import type { Address, Hash } from 'viem';
 
 describe('UpdateMessageSignatureDtoSchema', () => {
@@ -25,25 +24,23 @@ describe('UpdateMessageSignatureDtoSchema', () => {
       updateMessageSignatureDto,
     );
 
-    expect(!result.success && result.error).toStrictEqual(
-      new ZodError([
-        {
-          code: 'custom',
-          message: 'Invalid "0x" notated hex string',
-          path: ['signature'],
-        },
-        {
-          code: 'custom',
-          message: 'Invalid hex bytes',
-          path: ['signature'],
-        },
-        {
-          code: 'custom',
-          message: 'Invalid signature',
-          path: ['signature'],
-        },
-      ]),
-    );
+    expect(!result.success && result.error.issues).toEqual([
+      expect.objectContaining({
+        code: 'custom',
+        message: 'Invalid "0x" notated hex string',
+        path: ['signature'],
+      }),
+      expect.objectContaining({
+        code: 'custom',
+        message: 'Invalid hex bytes',
+        path: ['signature'],
+      }),
+      expect.objectContaining({
+        code: 'custom',
+        message: 'Invalid signature',
+        path: ['signature'],
+      }),
+    ]);
   });
 
   it('should not allow non-signature length hex strings', () => {
@@ -55,19 +52,17 @@ describe('UpdateMessageSignatureDtoSchema', () => {
       updateMessageSignatureDto,
     );
 
-    expect(!result.success && result.error).toStrictEqual(
-      new ZodError([
-        {
-          code: 'custom',
-          message: 'Invalid hex bytes',
-          path: ['signature'],
-        },
-        {
-          code: 'custom',
-          message: 'Invalid signature',
-          path: ['signature'],
-        },
-      ]),
-    );
+    expect(!result.success && result.error.issues).toEqual([
+      expect.objectContaining({
+        code: 'custom',
+        message: 'Invalid hex bytes',
+        path: ['signature'],
+      }),
+      expect.objectContaining({
+        code: 'custom',
+        message: 'Invalid signature',
+        path: ['signature'],
+      }),
+    ]);
   });
 });

@@ -30,7 +30,6 @@ describe('DeleteAllSubscriptionsDtoSchema', () => {
 
   it.each([
     ['chainId' as const, 'string'],
-    ['deviceUuid' as const, 'string'],
     ['safeAddress' as const, 'string'],
   ])('should require %s for each subscription', (key, expected) => {
     const subscriptions = [
@@ -54,9 +53,32 @@ describe('DeleteAllSubscriptionsDtoSchema', () => {
       {
         code: 'invalid_type',
         expected,
-        message: 'Required',
+        message: 'Invalid input: expected string, received undefined',
         path: ['subscriptions', 0, key],
-        received: 'undefined',
+      },
+    ]);
+  });
+
+  it('should require deviceUuid for each subscription', () => {
+    const deleteAllSubscriptionsDto = {
+      subscriptions: [
+        {
+          chainId: faker.string.numeric(),
+          safeAddress: getAddress(faker.finance.ethereumAddress()),
+        },
+      ],
+    };
+
+    const result = DeleteAllSubscriptionsDtoSchema.safeParse(
+      deleteAllSubscriptionsDto,
+    );
+
+    expect(!result.success && result.error.issues).toStrictEqual([
+      {
+        code: 'invalid_type',
+        expected: 'string',
+        message: 'Invalid UUID',
+        path: ['subscriptions', 0, 'deviceUuid'],
       },
     ]);
   });
@@ -76,13 +98,14 @@ describe('DeleteAllSubscriptionsDtoSchema', () => {
       deleteAllSubscriptionsDto,
     );
 
-    expect(!result.success && result.error.issues).toStrictEqual([
-      {
-        code: 'invalid_string',
+    expect(!result.success && result.error.issues).toEqual([
+      expect.objectContaining({
+        code: 'invalid_format',
+        format: 'uuid',
         message: 'Invalid UUID',
         path: ['subscriptions', 0, 'deviceUuid'],
-        validation: 'uuid',
-      },
+        origin: 'string',
+      }),
     ]);
   });
 
@@ -173,9 +196,8 @@ describe('DeleteAllSubscriptionsDtoSchema', () => {
       {
         code: 'invalid_type',
         expected: 'string',
-        message: 'Expected string, received number',
+        message: 'Invalid input: expected string, received number',
         path: ['subscriptions', 0, 'chainId'],
-        received: 'number',
       },
     ]);
   });

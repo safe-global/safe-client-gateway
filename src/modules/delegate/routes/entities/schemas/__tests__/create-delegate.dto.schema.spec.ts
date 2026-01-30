@@ -2,7 +2,6 @@ import { createDelegateDtoBuilder } from '@/modules/delegate/routes/entities/__t
 import { CreateDelegateDtoSchema } from '@/modules/delegate/routes/entities/schemas/create-delegate.dto.schema';
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress } from 'viem';
-import { ZodError } from 'zod';
 
 describe('CreateDelegateSchema', () => {
   it('should validate a valid CreateDelegateDto', () => {
@@ -51,37 +50,31 @@ describe('CreateDelegateSchema', () => {
 
     const result = CreateDelegateDtoSchema.safeParse(createDelegateDto);
 
-    expect(!result.success && result.error).toStrictEqual(
-      new ZodError([
-        {
-          code: 'invalid_type',
-          expected: 'string',
-          received: 'undefined',
-          path: ['delegate'],
-          message: 'Required',
-        },
-        {
-          code: 'invalid_type',
-          expected: 'string',
-          received: 'undefined',
-          path: ['delegator'],
-          message: 'Required',
-        },
-        {
-          code: 'invalid_type',
-          expected: 'string',
-          received: 'undefined',
-          path: ['signature'],
-          message: 'Required',
-        },
-        {
-          code: 'invalid_type',
-          expected: 'string',
-          received: 'undefined',
-          path: ['label'],
-          message: 'Required',
-        },
-      ]),
-    );
+    expect(!result.success && result.error.issues).toStrictEqual([
+      {
+        code: 'invalid_type',
+        expected: 'string',
+        message: 'Invalid input: expected string, received undefined',
+        path: ['delegate'],
+      },
+      {
+        code: 'invalid_type',
+        expected: 'string',
+        message: 'Invalid input: expected string, received undefined',
+        path: ['delegator'],
+      },
+      {
+        code: 'invalid_type',
+        expected: 'string',
+        message: 'Invalid input: expected string, received undefined',
+        path: ['signature'],
+      },
+      {
+        code: 'invalid_type',
+        expected: 'string',
+        message: 'Invalid input: expected string, received undefined',
+        path: ['label'],
+      },
+    ]);
   });
 });

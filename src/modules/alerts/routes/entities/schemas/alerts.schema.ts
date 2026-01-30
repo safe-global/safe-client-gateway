@@ -31,6 +31,6 @@ export const AlertTransactionSchema = z.object({
 
 export const AlertSchema = z.object({
   id: z.string(),
-  event_type: z.nativeEnum(EventType),
+  event_type: z.enum(EventType),
   transaction: AlertTransactionSchema,
 });

@@ -21,12 +21,11 @@ describe('OutreachFileSchema', () => {
     expect(!result.success && result.error.issues).toStrictEqual([
       {
         code: 'too_small',
-        exact: false,
         inclusive: true,
-        message: 'Number must be greater than or equal to 1',
+        message: 'Too small: expected number to be >=1',
         minimum: 1,
         path: ['campaign_id'],
-        type: 'number',
+        origin: 'number',
       },
     ]);
   });
@@ -76,40 +75,40 @@ describe('OutreachFileSchema', () => {
       {
         code: 'invalid_type',
         expected: 'number',
-        message: 'Required',
+        message: 'Invalid input: expected number, received undefined',
         path: ['campaign_id'],
-        received: 'undefined',
       },
       {
         code: 'invalid_type',
         expected: 'string',
-        message: 'Required',
+        message: 'Invalid input: expected string, received undefined',
         path: ['campaign_name'],
-        received: 'undefined',
       },
       {
         code: 'invalid_type',
         expected: 'string',
-        message: 'Required',
+        message: 'Invalid input: expected string, received undefined',
         path: ['team_name'],
-        received: 'undefined',
       },
       {
-        code: 'invalid_date',
-        message: 'Invalid date',
+        code: 'invalid_type',
+        expected: 'date',
+        message: 'Invalid input: expected date, received Date',
         path: ['start_date'],
+        received: 'Invalid Date',
       },
       {
-        code: 'invalid_date',
-        message: 'Invalid date',
+        code: 'invalid_type',
+        expected: 'date',
+        message: 'Invalid input: expected date, received Date',
         path: ['end_date'],
+        received: 'Invalid Date',
       },
       {
         code: 'invalid_type',
         expected: 'array',
-        message: 'Required',
+        message: 'Invalid input: expected array, received undefined',
         path: ['safe_addresses'],
-        received: 'undefined',
       },
     ]);
   });

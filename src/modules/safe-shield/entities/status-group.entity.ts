@@ -1,46 +1,46 @@
 import { z } from 'zod';
 
-export const RecipientStatusGroup = [
+export const RecipientStatusGroup = {
   /** Recipient interaction history - previous interactions with the recipient */
-  'RECIPIENT_INTERACTION',
+  RECIPIENT_INTERACTION: 'RECIPIENT_INTERACTION',
 
   /** Recipient activity analysis - activity frequency */
-  'RECIPIENT_ACTIVITY',
+  RECIPIENT_ACTIVITY: 'RECIPIENT_ACTIVITY',
 
   /** Cross-chain bridge analysis - compatibility and ownership checks */
-  'BRIDGE',
-] as const;
+  BRIDGE: 'BRIDGE',
+} as const;
 
-export const ContractStatusGroup = [
+export const ContractStatusGroup = {
   /** Contract verification status - whether contracts are verified */
-  'CONTRACT_VERIFICATION',
+  CONTRACT_VERIFICATION: 'CONTRACT_VERIFICATION',
 
   /** Contract interaction history - previous interactions with contracts */
-  'CONTRACT_INTERACTION',
+  CONTRACT_INTERACTION: 'CONTRACT_INTERACTION',
 
   /** Delegatecall operation detection - potentially dangerous delegate calls */
-  'DELEGATECALL',
+  DELEGATECALL: 'DELEGATECALL',
 
   /** Fallback handler verification - checks for unofficial handlers */
-  'FALLBACK_HANDLER',
-] as const;
+  FALLBACK_HANDLER: 'FALLBACK_HANDLER',
+} as const;
 
-export const ThreatStatusGroup = [
+export const ThreatStatusGroup = {
   /** Transaction-level threat analysis - malicious patterns and risks */
-  'THREAT',
+  THREAT: 'THREAT',
 
   /** Balance changes detected in the transaction */
-  'BALANCE_CHANGE',
-] as const;
+  BALANCE_CHANGE: 'BALANCE_CHANGE',
+} as const;
 
 /**
  * Status groups for categorizing different types of security analysis checks.
  */
-export const StatusGroup = [
+export const StatusGroup = {
   ...RecipientStatusGroup,
   ...ContractStatusGroup,
   ...ThreatStatusGroup,
-] as const;
+} as const;
 
 /**
  * Zod schema for validating RecipientStatusGroup enum values.

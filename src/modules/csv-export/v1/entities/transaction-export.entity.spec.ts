@@ -215,9 +215,8 @@ describe('TransactionExportSchema', () => {
     expect(result.error?.issues[0]).toStrictEqual({
       code: 'invalid_type',
       expected: 'number',
-      message: 'Expected number, received string',
+      message: 'Invalid input: expected number, received string',
       path: ['assetDecimals'],
-      received: 'string',
     });
   });
 
@@ -258,9 +257,11 @@ describe('TransactionExportSchema', () => {
 
     expect(!result.success && result.error.issues.length).toBe(1);
     expect(result.error?.issues[0]).toStrictEqual({
-      code: 'invalid_date',
-      message: 'Invalid date',
+      code: 'invalid_type',
+      expected: 'date',
+      message: 'Invalid input: expected date, received Date',
       path: ['proposedAt'],
+      received: 'Invalid Date',
     });
   });
 
@@ -273,9 +274,11 @@ describe('TransactionExportSchema', () => {
 
     expect(!result.success && result.error.issues.length).toBe(1);
     expect(result.error?.issues[0]).toStrictEqual({
-      code: 'invalid_date',
-      message: 'Invalid date',
+      code: 'invalid_type',
+      expected: 'date',
+      message: 'Invalid input: expected date, received Date',
       path: ['executedAt'],
+      received: 'Invalid Date',
     });
   });
 });

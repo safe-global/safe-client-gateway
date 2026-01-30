@@ -5,11 +5,8 @@ import {
   type RecipientStatus,
 } from './recipient-status.entity';
 import { BridgeStatusSchema, type BridgeStatus } from './bridge-status.entity';
-import {
-  ContractStatusSchema,
-  type ContractStatus,
-} from './contract-status.entity';
-import { ThreatStatusSchema, type ThreatStatus } from './threat-status.entity';
+import { ContractStatus, ContractStatusSchema } from './contract-status.entity';
+import { ThreatStatus, ThreatStatusSchema } from './threat-status.entity';
 import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 
@@ -19,10 +16,10 @@ import { AddressSchema } from '@/validation/entities/schemas/address.schema';
  * This status can be used as fallbacks across any analysis type
  * when errors or exceptional conditions occur.
  */
-export const CommonStatus = [
+export const CommonStatus = {
   /** Analysis failed due to service issues or errors */
-  'FAILED',
-] as const;
+  FAILED: 'FAILED',
+} as const;
 
 /**
  * Zod schema for validating CommonStatus enum values.
@@ -111,12 +108,12 @@ export const RecipientAnalysisResultSchema = z.union([
 
 export const UnofficialFallbackHandlerAnalysisResultSchema =
   AnalysisResultBaseSchema.extend({
-    type: z.literal('UNOFFICIAL_FALLBACK_HANDLER'),
+    type: z.literal(ContractStatus.UNOFFICIAL_FALLBACK_HANDLER),
     fallbackHandler: z
       .object({
         address: AddressSchema,
         name: z.string().optional(),
-        logoUrl: z.string().url().optional(),
+        logoUrl: z.url().optional(),
       })
       .optional(),
   });
@@ -125,7 +122,9 @@ export const ContractAnalysisResultSchema = z.union([
   UnofficialFallbackHandlerAnalysisResultSchema,
   AnalysisResultBaseSchema.extend({
     type: z.union([
-      ContractStatusSchema.exclude(['UNOFFICIAL_FALLBACK_HANDLER']),
+      ContractStatusSchema.exclude([
+        ContractStatus.UNOFFICIAL_FALLBACK_HANDLER,
+      ]),
       CommonStatusSchema,
     ]),
   }),
@@ -143,27 +142,32 @@ const ThreatIssueSchema = z.object({
  */
 const MasterCopyChangeThreatAnalysisResultSchema =
   AnalysisResultBaseSchema.extend({
-    type: z.literal('MASTERCOPY_CHANGE'),
+    type: z.literal(ThreatStatus.MASTERCOPY_CHANGE),
     before: AddressSchema,
     after: AddressSchema,
   });
 
 const MaliciousOrModerateThreatAnalysisResultSchema =
   AnalysisResultBaseSchema.extend({
-    type: z.union([z.literal('MALICIOUS'), z.literal('MODERATE')]),
-    issues: z.record(SeveritySchema, z.array(ThreatIssueSchema)).optional(),
+    type: z.union([
+      z.literal(ThreatStatus.MALICIOUS),
+      z.literal(ThreatStatus.MODERATE),
+    ]),
+    issues: z
+      .partialRecord(SeveritySchema, z.array(ThreatIssueSchema))
+      .optional(),
   });
 
 const FailedThreatAnalysisResultSchema = AnalysisResultBaseSchema.extend({
-  type: z.literal('FAILED'),
+  type: z.literal(CommonStatus.FAILED),
   error: z.string().optional(),
 });
 
 const DefaultThreatAnalysisResultSchema = AnalysisResultBaseSchema.extend({
   type: ThreatStatusSchema.exclude([
-    'MASTERCOPY_CHANGE',
-    'MALICIOUS',
-    'MODERATE',
+    ThreatStatus.MASTERCOPY_CHANGE,
+    ThreatStatus.MALICIOUS,
+    ThreatStatus.MODERATE,
   ]),
 });
 

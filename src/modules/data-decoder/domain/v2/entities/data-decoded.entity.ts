@@ -10,7 +10,7 @@ const AddressSchema = _AddressSchema as z.ZodType<Address>;
 const HexSchema = _HexSchema as z.ZodType<Address>;
 
 export const MultisendSchema = z.object({
-  operation: z.nativeEnum(Operation),
+  operation: z.enum(Operation),
   value: NumericStringSchema,
   dataDecoded: z.lazy(() => BaseDataDecodedSchema.nullable()),
   to: AddressSchema,

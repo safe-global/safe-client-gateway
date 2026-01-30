@@ -2,7 +2,6 @@ import { campaignRankBuilder } from '@/modules/community/domain/entities/__tests
 import { CampaignRankSchema } from '@/modules/community/domain/entities/campaign-rank.entity';
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress } from 'viem';
-import { ZodError } from 'zod';
 
 describe('CampaignRankSchema', () => {
   it('should validate a valid holder', () => {
@@ -33,44 +32,37 @@ describe('CampaignRankSchema', () => {
 
     const result = CampaignRankSchema.safeParse(campaignRank);
 
-    expect(!result.success && result.error).toStrictEqual(
-      new ZodError([
-        {
-          code: 'invalid_type',
-          expected: 'string',
-          received: 'undefined',
-          path: ['holder'],
-          message: 'Required',
-        },
-        {
-          code: 'invalid_type',
-          expected: 'number',
-          received: 'undefined',
-          path: ['position'],
-          message: 'Required',
-        },
-        {
-          code: 'invalid_type',
-          expected: 'number',
-          received: 'undefined',
-          path: ['boost'],
-          message: 'Required',
-        },
-        {
-          code: 'invalid_type',
-          expected: 'number',
-          received: 'undefined',
-          path: ['totalPoints'],
-          message: 'Required',
-        },
-        {
-          code: 'invalid_type',
-          expected: 'number',
-          received: 'undefined',
-          path: ['totalBoostedPoints'],
-          message: 'Required',
-        },
-      ]),
-    );
+    expect(!result.success && result.error.issues).toStrictEqual([
+      {
+        code: 'invalid_type',
+        expected: 'string',
+        path: ['holder'],
+        message: 'Invalid input: expected string, received undefined',
+      },
+      {
+        code: 'invalid_type',
+        expected: 'number',
+        path: ['position'],
+        message: 'Invalid input: expected number, received undefined',
+      },
+      {
+        code: 'invalid_type',
+        expected: 'number',
+        path: ['boost'],
+        message: 'Invalid input: expected number, received undefined',
+      },
+      {
+        code: 'invalid_type',
+        expected: 'number',
+        path: ['totalPoints'],
+        message: 'Invalid input: expected number, received undefined',
+      },
+      {
+        code: 'invalid_type',
+        expected: 'number',
+        path: ['totalBoostedPoints'],
+        message: 'Invalid input: expected number, received undefined',
+      },
+    ]);
   });
 });

@@ -7,13 +7,13 @@ import { z } from 'zod';
 const UpsertSubscriptionsDtoSafesSchema = z.object({
   chainId: z.string(),
   address: AddressSchema,
-  notificationTypes: z.array(z.nativeEnum(NotificationType)),
+  notificationTypes: z.array(z.enum(NotificationType)),
 });
 
 export const UpsertSubscriptionsDtoSchema = z.object({
   cloudMessagingToken: z.string(),
   safes: z.array(UpsertSubscriptionsDtoSafesSchema),
-  deviceType: z.nativeEnum(DeviceType),
+  deviceType: z.enum(DeviceType),
   deviceUuid: UuidSchema.nullish().default(null),
 });
 

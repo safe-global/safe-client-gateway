@@ -8,6 +8,7 @@ import { Transaction } from '@/modules/safe/domain/entities/transaction.entity';
 import { Transfer } from '@/modules/safe/domain/entities/transfer.entity';
 import { AddConfirmationDto } from '@/modules/transactions/domain/entities/add-confirmation.dto.entity';
 import { ProposeTransactionDto } from '@/modules/transactions/domain/entities/propose-transaction.dto.entity';
+import { SafesByChainId } from '@/modules/safe/domain/entities/safes-by-chain-id.entity';
 import { Module } from '@nestjs/common';
 import { SafeRepository } from '@/modules/safe/domain/safe.repository';
 import { ChainsModule } from '@/modules/chains/chains.module';
@@ -179,9 +180,16 @@ export interface ISafeRepository {
     ownerAddress: Address;
   }): Promise<SafeList>;
 
-  getAllSafesByOwner(args: {
+  getSafesByOwnerV2(args: {
+    chainId: string;
     ownerAddress: Address;
-  }): Promise<{ [chainId: string]: Array<string> | null }>;
+  }): Promise<SafeList>;
+
+  getAllSafesByOwner(args: { ownerAddress: Address }): Promise<SafesByChainId>;
+
+  getAllSafesByOwnerV2(args: {
+    ownerAddress: Address;
+  }): Promise<SafesByChainId>;
 
   getLastTransactionSortedByNonce(args: {
     chainId: string;

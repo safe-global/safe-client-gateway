@@ -1,6 +1,5 @@
 import { eligibilityBuilder } from '@/modules/community/domain/entities/__tests__/eligibility.builder';
 import { EligibilitySchema } from '@/modules/community/domain/entities/eligibility.entity';
-import { ZodError } from 'zod';
 
 describe('EligibilitySchema', () => {
   it('should validate a valid eligibility', () => {
@@ -35,17 +34,14 @@ describe('EligibilitySchema', () => {
 
     const result = EligibilitySchema.safeParse(eligibility);
 
-    expect(!result.success && result.error).toStrictEqual(
-      new ZodError([
-        {
-          code: 'invalid_type',
-          expected: 'string',
-          received: 'boolean',
-          path: ['requestId'],
-          message: 'Expected string, received boolean',
-        },
-      ]),
-    );
+    expect(!result.success && result.error.issues).toStrictEqual([
+      {
+        code: 'invalid_type',
+        expected: 'string',
+        path: ['requestId'],
+        message: 'Invalid input: expected string, received boolean',
+      },
+    ]);
   });
 
   it.each(['isAllowed' as const, 'isVpn' as const])(
@@ -57,17 +53,14 @@ describe('EligibilitySchema', () => {
 
       const result = EligibilitySchema.safeParse(eligibility);
 
-      expect(!result.success && result.error).toStrictEqual(
-        new ZodError([
-          {
-            code: 'invalid_type',
-            expected: 'boolean',
-            received: 'string',
-            path: [key],
-            message: 'Expected boolean, received string',
-          },
-        ]),
-      );
+      expect(!result.success && result.error.issues).toStrictEqual([
+        {
+          code: 'invalid_type',
+          expected: 'boolean',
+          path: [key],
+          message: 'Invalid input: expected boolean, received string',
+        },
+      ]);
     },
   );
 });

@@ -3,7 +3,6 @@ import type { TransactionEventType } from '@/modules/hooks/routes/entities/event
 import { OutgoingEtherEventSchema } from '@/modules/hooks/routes/entities/schemas/outgoing-ether.schema';
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress } from 'viem';
-import { ZodError } from 'zod';
 
 describe('OutgoingEtherEventSchema', () => {
   it('should validate an outgoing Ether event', () => {
@@ -21,17 +20,14 @@ describe('OutgoingEtherEventSchema', () => {
 
     const result = OutgoingEtherEventSchema.safeParse(outgoingEtherEvent);
 
-    expect(!result.success && result.error).toStrictEqual(
-      new ZodError([
-        {
-          received: outgoingEtherEvent.type,
-          code: 'invalid_literal',
-          expected: 'OUTGOING_ETHER',
-          path: ['type'],
-          message: 'Invalid literal value, expected "OUTGOING_ETHER"',
-        },
-      ]),
-    );
+    expect(!result.success && result.error.issues).toEqual([
+      expect.objectContaining({
+        code: 'invalid_value',
+        values: ['OUTGOING_ETHER'],
+        path: ['type'],
+        message: 'Invalid input: expected "OUTGOING_ETHER"',
+      }),
+    ]);
   });
 
   it('should not allow a non-address address', () => {
@@ -41,15 +37,13 @@ describe('OutgoingEtherEventSchema', () => {
 
     const result = OutgoingEtherEventSchema.safeParse(outgoingEtherEvent);
 
-    expect(!result.success && result.error).toStrictEqual(
-      new ZodError([
-        {
-          code: 'custom',
-          message: 'Invalid address',
-          path: ['address'],
-        },
-      ]),
-    );
+    expect(!result.success && result.error.issues).toEqual([
+      expect.objectContaining({
+        code: 'custom',
+        message: 'Invalid address',
+        path: ['address'],
+      }),
+    ]);
   });
 
   it('should checksum the address', () => {

@@ -50,11 +50,10 @@ describe('Analysis Request Schemas', () => {
 
       expect(!result.success && result.error.issues).toStrictEqual([
         {
-          code: 'invalid_enum_value',
-          message: "Invalid enum value. Expected 0 | 1, received '5'",
-          options: [0, 1],
+          code: 'invalid_value',
+          message: 'Invalid option: expected one of 0|1',
           path: ['operation'],
-          received: 5,
+          values: [0, 1],
         },
       ]);
     });
@@ -107,9 +106,8 @@ describe('Analysis Request Schemas', () => {
         {
           code: 'invalid_type',
           expected: 'string',
-          message: 'Required',
+          message: 'Invalid input: expected string, received undefined',
           path: ['walletAddress'],
-          received: 'undefined',
         },
       ]);
     });
@@ -157,16 +155,14 @@ describe('Analysis Request Schemas', () => {
         {
           code: 'invalid_type',
           expected: 'object',
-          message: 'Required',
+          message: 'Invalid input: expected object, received undefined',
           path: ['data'],
-          received: 'undefined',
         },
         {
           code: 'invalid_type',
           expected: 'string',
-          message: 'Required',
+          message: 'Invalid input: expected string, received undefined',
           path: ['walletAddress'],
-          received: 'undefined',
         },
       ]);
     });
@@ -203,9 +199,9 @@ describe('Analysis Request Schemas', () => {
         {
           code: 'invalid_type',
           expected: 'number',
-          message: 'Expected number, received nan',
+          message: 'Invalid input: expected number, received NaN',
           path: ['data', 'domain', 'chainId'],
-          received: 'nan',
+          received: 'NaN',
         },
       ]);
     });
@@ -226,9 +222,8 @@ describe('Analysis Request Schemas', () => {
         {
           code: 'invalid_type',
           expected: 'string',
-          message: 'Required',
+          message: 'Invalid input: expected string, received undefined',
           path: ['data', 'primaryType'],
-          received: 'undefined',
         },
       ]);
     });
@@ -248,10 +243,9 @@ describe('Analysis Request Schemas', () => {
       expect(!result.success && result.error.issues).toStrictEqual([
         {
           code: 'invalid_type',
-          expected: 'object',
-          message: 'Required',
+          expected: 'record',
+          message: 'Invalid input: expected record, received undefined',
           path: ['data', 'types'],
-          received: 'undefined',
         },
       ]);
     });
@@ -271,10 +265,9 @@ describe('Analysis Request Schemas', () => {
       expect(!result.success && result.error.issues).toStrictEqual([
         {
           code: 'invalid_type',
-          expected: 'object',
-          message: 'Required',
+          expected: 'record',
+          message: 'Invalid input: expected record, received undefined',
           path: ['data', 'message'],
-          received: 'undefined',
         },
       ]);
     });
@@ -291,9 +284,8 @@ describe('Analysis Request Schemas', () => {
         {
           code: 'invalid_type',
           expected: 'object',
-          message: 'Expected object, received string',
+          message: 'Invalid input: expected object, received string',
           path: ['data'],
-          received: 'string',
         },
       ]);
     });

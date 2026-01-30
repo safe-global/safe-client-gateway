@@ -90,9 +90,8 @@ describe('PooledStakingSchema', () => {
     expect(!result.success && result.error.issues[0]).toStrictEqual({
       code: 'invalid_type',
       expected: 'number',
-      message: 'Expected number, received string',
+      message: 'Invalid input: expected number, received string',
       path: [key],
-      received: 'string',
     });
   });
 
@@ -114,16 +113,14 @@ describe('PooledStakingSchema', () => {
       {
         code: 'invalid_type',
         expected: 'number',
-        message: 'Expected number, received string',
+        message: 'Invalid input: expected number, received string',
         path: [key, 'nrr'],
-        received: 'string',
       },
       {
         code: 'invalid_type',
         expected: 'number',
-        message: 'Expected number, received string',
+        message: 'Invalid input: expected number, received string',
         path: [key, 'grr'],
-        received: 'string',
       },
     ]);
   });
@@ -141,9 +138,8 @@ describe('PooledStakingSchema', () => {
       expect(!result.success && result.error.issues[0]).toStrictEqual({
         code: 'invalid_type',
         expected: 'number',
-        message: 'Expected number, received string',
+        message: 'Invalid input: expected number, received string',
         path: ['pools', 0, key],
-        received: 'string',
       });
     },
   );
@@ -173,107 +169,92 @@ describe('PooledStakingSchema', () => {
       {
         code: 'invalid_type',
         expected: 'string',
-        message: 'Required',
+        message: 'Invalid input: expected string, received undefined',
         path: ['address'],
-        received: 'undefined',
       },
       {
         code: 'invalid_type',
         expected: 'string',
-        message: 'Required',
+        message: 'Invalid input: expected string, received undefined',
         path: ['name'],
-        received: 'undefined',
       },
       {
         code: 'invalid_type',
         expected: 'string',
-        message: 'Required',
+        message: 'Invalid input: expected string, received undefined',
         path: ['symbol'],
-        received: 'undefined',
       },
       {
         code: 'invalid_type',
         expected: 'number',
-        message: 'Required',
+        message: 'Invalid input: expected number, received undefined',
         path: ['fee'],
-        received: 'undefined',
       },
       {
         code: 'invalid_type',
         expected: 'string',
-        message: 'Required',
+        message: 'Invalid input: expected string, received undefined',
         path: ['total_supply'],
-        received: 'undefined',
       },
       {
         code: 'invalid_type',
         expected: 'string',
-        message: 'Required',
+        message: 'Invalid input: expected string, received undefined',
         path: ['total_underlying_supply'],
-        received: 'undefined',
       },
       {
         code: 'invalid_type',
         expected: 'number',
-        message: 'Required',
+        message: 'Invalid input: expected number, received undefined',
         path: ['total_stakers'],
-        received: 'undefined',
       },
       {
         code: 'invalid_type',
         expected: 'number',
-        message: 'Required',
+        message: 'Invalid input: expected number, received undefined',
         path: ['nrr'],
-        received: 'undefined',
       },
       {
         code: 'invalid_type',
         expected: 'number',
-        message: 'Required',
+        message: 'Invalid input: expected number, received undefined',
         path: ['grr'],
-        received: 'undefined',
       },
       {
         code: 'invalid_type',
         expected: 'object',
-        message: 'Required',
+        message: 'Invalid input: expected object, received undefined',
         path: ['one_year'],
-        received: 'undefined',
       },
       {
         code: 'invalid_type',
         expected: 'object',
-        message: 'Required',
+        message: 'Invalid input: expected object, received undefined',
         path: ['six_month'],
-        received: 'undefined',
       },
       {
         code: 'invalid_type',
         expected: 'object',
-        message: 'Required',
+        message: 'Invalid input: expected object, received undefined',
         path: ['three_month'],
-        received: 'undefined',
       },
       {
         code: 'invalid_type',
         expected: 'object',
-        message: 'Required',
+        message: 'Invalid input: expected object, received undefined',
         path: ['one_month'],
-        received: 'undefined',
       },
       {
         code: 'invalid_type',
         expected: 'object',
-        message: 'Required',
+        message: 'Invalid input: expected object, received undefined',
         path: ['one_week'],
-        received: 'undefined',
       },
       {
         code: 'invalid_type',
         expected: 'array',
-        message: 'Required',
+        message: 'Invalid input: expected array, received undefined',
         path: ['pools'],
-        received: 'undefined',
       },
     ]);
   });

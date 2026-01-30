@@ -17,13 +17,10 @@ describe('UpsertSubscriptionsDtoSchema', () => {
     expect(result.success).toBe(true);
   });
 
-  it.each([
-    ['cloudMessagingToken' as const, 'string'],
-    ['safes' as const, 'array'],
-    ['deviceType' as const, "'ANDROID' | 'IOS' | 'WEB'"],
-  ])('should require %s', (key, expected) => {
+  it('should require cloudMessagingToken', () => {
     const upsertSubscriptionsDto = upsertSubscriptionsDtoBuilder().build();
-    delete upsertSubscriptionsDto[key];
+    // @ts-expect-error - testing required field
+    delete upsertSubscriptionsDto.cloudMessagingToken;
 
     const result = UpsertSubscriptionsDtoSchema.safeParse(
       upsertSubscriptionsDto,
@@ -32,10 +29,47 @@ describe('UpsertSubscriptionsDtoSchema', () => {
     expect(!result.success && result.error.issues).toStrictEqual([
       {
         code: 'invalid_type',
-        expected,
-        message: 'Required',
-        path: Array.isArray(result.error!.issues[0].path) ? [key] : key,
-        received: 'undefined',
+        expected: 'string',
+        message: 'Invalid input: expected string, received undefined',
+        path: ['cloudMessagingToken'],
+      },
+    ]);
+  });
+
+  it('should require safes', () => {
+    const upsertSubscriptionsDto = upsertSubscriptionsDtoBuilder().build();
+    // @ts-expect-error - testing required field
+    delete upsertSubscriptionsDto.safes;
+
+    const result = UpsertSubscriptionsDtoSchema.safeParse(
+      upsertSubscriptionsDto,
+    );
+
+    expect(!result.success && result.error.issues).toStrictEqual([
+      {
+        code: 'invalid_type',
+        expected: 'array',
+        message: 'Invalid input: expected array, received undefined',
+        path: ['safes'],
+      },
+    ]);
+  });
+
+  it('should require deviceType', () => {
+    const upsertSubscriptionsDto = upsertSubscriptionsDtoBuilder().build();
+    // @ts-expect-error - testing required field
+    delete upsertSubscriptionsDto.deviceType;
+
+    const result = UpsertSubscriptionsDtoSchema.safeParse(
+      upsertSubscriptionsDto,
+    );
+
+    expect(!result.success && result.error.issues).toStrictEqual([
+      {
+        code: 'invalid_value',
+        message: 'Invalid option: expected one of "ANDROID"|"IOS"|"WEB"',
+        path: ['deviceType'],
+        values: ['ANDROID', 'IOS', 'WEB'],
       },
     ]);
   });
@@ -51,12 +85,10 @@ describe('UpsertSubscriptionsDtoSchema', () => {
 
     expect(!result.success && result.error.issues).toStrictEqual([
       {
-        code: 'invalid_enum_value',
-        message:
-          "Invalid enum value. Expected 'ANDROID' | 'IOS' | 'WEB', received 'not-a-device-type'",
-        options: ['ANDROID', 'IOS', 'WEB'],
+        code: 'invalid_value',
+        message: 'Invalid option: expected one of "ANDROID"|"IOS"|"WEB"',
         path: ['deviceType'],
-        received: 'not-a-device-type',
+        values: ['ANDROID', 'IOS', 'WEB'],
       },
     ]);
   });
@@ -70,14 +102,13 @@ describe('UpsertSubscriptionsDtoSchema', () => {
       upsertSubscriptionsDto,
     );
 
-    expect(!result.success && result.error.issues).toStrictEqual([
-      {
-        code: 'invalid_string',
-        message: 'Invalid UUID',
-        path: ['deviceUuid'],
-        validation: 'uuid',
-      },
-    ]);
+    expect(!result.success && result.error.issues[0]).toMatchObject({
+      code: 'invalid_format',
+      format: 'uuid',
+      message: 'Invalid UUID',
+      origin: 'string',
+      path: ['deviceUuid'],
+    });
   });
 
   it('should allow a nullish deviceUuid, defaulting to null', () => {
@@ -92,11 +123,7 @@ describe('UpsertSubscriptionsDtoSchema', () => {
     expect(result.success && result.data.deviceUuid).toBe(null);
   });
 
-  it.each([
-    ['chainId' as const, 'string'],
-    ['address' as const, 'string'],
-    ['notificationTypes' as const, 'array'],
-  ])(`should require safes[number].%s`, (key, expected) => {
+  it('should require safes[number].chainId', () => {
     const upsertSubscriptionsDto = upsertSubscriptionsDtoBuilder()
       .with('safes', [
         {
@@ -108,7 +135,8 @@ describe('UpsertSubscriptionsDtoSchema', () => {
         },
       ])
       .build();
-    delete upsertSubscriptionsDto.safes[0][key];
+    // @ts-expect-error - testing required field
+    delete upsertSubscriptionsDto.safes[0].chainId;
 
     const result = UpsertSubscriptionsDtoSchema.safeParse(
       upsertSubscriptionsDto,
@@ -117,10 +145,67 @@ describe('UpsertSubscriptionsDtoSchema', () => {
     expect(!result.success && result.error.issues).toStrictEqual([
       {
         code: 'invalid_type',
-        expected,
-        message: 'Required',
-        path: ['safes', 0, key],
-        received: 'undefined',
+        expected: 'string',
+        message: 'Invalid input: expected string, received undefined',
+        path: ['safes', 0, 'chainId'],
+      },
+    ]);
+  });
+
+  it('should require safes[number].address', () => {
+    const upsertSubscriptionsDto = upsertSubscriptionsDtoBuilder()
+      .with('safes', [
+        {
+          chainId: faker.string.numeric(),
+          address: getAddress(faker.finance.ethereumAddress()),
+          notificationTypes: faker.helpers.arrayElements(
+            Object.values(NotificationType),
+          ),
+        },
+      ])
+      .build();
+    // @ts-expect-error - testing required field
+    delete upsertSubscriptionsDto.safes[0].address;
+
+    const result = UpsertSubscriptionsDtoSchema.safeParse(
+      upsertSubscriptionsDto,
+    );
+
+    expect(!result.success && result.error.issues).toStrictEqual([
+      {
+        code: 'invalid_type',
+        expected: 'string',
+        message: 'Invalid input: expected string, received undefined',
+        path: ['safes', 0, 'address'],
+      },
+    ]);
+  });
+
+  it('should require safes[number].notificationTypes', () => {
+    const upsertSubscriptionsDto = upsertSubscriptionsDtoBuilder()
+      .with('safes', [
+        {
+          chainId: faker.string.numeric(),
+          address: getAddress(faker.finance.ethereumAddress()),
+          notificationTypes: faker.helpers.arrayElements(
+            Object.values(NotificationType),
+          ),
+        },
+      ])
+      .build();
+    // @ts-expect-error - testing required field
+    delete upsertSubscriptionsDto.safes[0].notificationTypes;
+
+    const result = UpsertSubscriptionsDtoSchema.safeParse(
+      upsertSubscriptionsDto,
+    );
+
+    expect(!result.success && result.error.issues).toStrictEqual([
+      {
+        code: 'invalid_type',
+        expected: 'array',
+        message: 'Invalid input: expected array, received undefined',
+        path: ['safes', 0, 'notificationTypes'],
       },
     ]);
   });
@@ -165,10 +250,11 @@ describe('UpsertSubscriptionsDtoSchema', () => {
 
     expect(!result.success && result.error.issues).toStrictEqual([
       {
-        code: 'invalid_enum_value',
+        code: 'invalid_value',
         message:
-          "Invalid enum value. Expected 'CONFIRMATION_REQUEST' | 'DELETED_MULTISIG_TRANSACTION' | 'EXECUTED_MULTISIG_TRANSACTION' | 'INCOMING_ETHER' | 'INCOMING_TOKEN' | 'MESSAGE_CONFIRMATION_REQUEST' | 'MODULE_TRANSACTION', received 'not-a-notification-type'",
-        options: [
+          'Invalid option: expected one of "CONFIRMATION_REQUEST"|"DELETED_MULTISIG_TRANSACTION"|"EXECUTED_MULTISIG_TRANSACTION"|"INCOMING_ETHER"|"INCOMING_TOKEN"|"MESSAGE_CONFIRMATION_REQUEST"|"MODULE_TRANSACTION"',
+        path: ['safes', 0, 'notificationTypes', 0],
+        values: [
           'CONFIRMATION_REQUEST',
           'DELETED_MULTISIG_TRANSACTION',
           'EXECUTED_MULTISIG_TRANSACTION',
@@ -177,8 +263,6 @@ describe('UpsertSubscriptionsDtoSchema', () => {
           'MESSAGE_CONFIRMATION_REQUEST',
           'MODULE_TRANSACTION',
         ],
-        path: ['safes', 0, 'notificationTypes', 0],
-        received: 'not-a-notification-type',
       },
     ]);
   });

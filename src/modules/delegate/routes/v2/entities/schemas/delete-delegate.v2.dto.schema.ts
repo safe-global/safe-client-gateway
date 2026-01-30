@@ -7,9 +7,6 @@ export const DeleteDelegateV2DtoSchema = z
     safe: AddressSchema.nullish().default(null),
     signature: z.string(),
   })
-  .refine(
-    (value) => value.delegator || value.safe,
-    () => ({
-      message: `At least one of the fields 'safe' or 'delegator' is required`,
-    }),
-  );
+  .refine((value) => value.delegator || value.safe, {
+    error: `At least one of the fields 'safe' or 'delegator' is required`,
+  });

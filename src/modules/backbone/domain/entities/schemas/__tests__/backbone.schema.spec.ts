@@ -1,6 +1,5 @@
 import { backboneBuilder } from '@/modules/backbone/domain/entities/__tests__/backbone.builder';
 import { BackboneSchema } from '@/modules/backbone/domain/entities/schemas/backbone.schema';
-import { ZodError } from 'zod';
 
 describe('BackboneSchema', () => {
   it('should validate a valid backbone', () => {
@@ -52,44 +51,37 @@ describe('BackboneSchema', () => {
 
     const result = BackboneSchema.safeParse(backbone);
 
-    expect(!result.success && result.error).toStrictEqual(
-      new ZodError([
-        {
-          code: 'invalid_type',
-          expected: 'string',
-          received: 'undefined',
-          path: ['name'],
-          message: 'Required',
-        },
-        {
-          code: 'invalid_type',
-          expected: 'string',
-          received: 'undefined',
-          path: ['version'],
-          message: 'Required',
-        },
-        {
-          code: 'invalid_type',
-          expected: 'string',
-          received: 'undefined',
-          path: ['api_version'],
-          message: 'Required',
-        },
-        {
-          code: 'invalid_type',
-          expected: 'boolean',
-          received: 'undefined',
-          path: ['secure'],
-          message: 'Required',
-        },
-        {
-          code: 'invalid_type',
-          expected: 'string',
-          received: 'undefined',
-          path: ['host'],
-          message: 'Required',
-        },
-      ]),
-    );
+    expect(!result.success && result.error.issues).toStrictEqual([
+      {
+        code: 'invalid_type',
+        expected: 'string',
+        message: 'Invalid input: expected string, received undefined',
+        path: ['name'],
+      },
+      {
+        code: 'invalid_type',
+        expected: 'string',
+        message: 'Invalid input: expected string, received undefined',
+        path: ['version'],
+      },
+      {
+        code: 'invalid_type',
+        expected: 'string',
+        message: 'Invalid input: expected string, received undefined',
+        path: ['api_version'],
+      },
+      {
+        code: 'invalid_type',
+        expected: 'boolean',
+        message: 'Invalid input: expected boolean, received undefined',
+        path: ['secure'],
+      },
+      {
+        code: 'invalid_type',
+        expected: 'string',
+        message: 'Invalid input: expected string, received undefined',
+        path: ['host'],
+      },
+    ]);
   });
 });

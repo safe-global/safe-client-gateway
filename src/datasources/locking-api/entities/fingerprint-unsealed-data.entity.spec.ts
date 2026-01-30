@@ -12,7 +12,6 @@ import {
   FingerprintUnsealedDataSchema,
   FingerprintVpnSchema,
 } from '@/datasources/locking-api/entities/fingerprint-unsealed-data.entity';
-import { ZodError } from 'zod';
 import { faker } from '@faker-js/faker';
 
 describe('FingerprintUnsealedData schemas', () => {
@@ -99,17 +98,14 @@ describe('FingerprintUnsealedData schemas', () => {
 
       const result = FingerprintIpDataSchema.safeParse(fingerprintIpData);
 
-      expect(!result.success && result.error).toStrictEqual(
-        new ZodError([
-          {
-            code: 'invalid_type',
-            expected: 'string',
-            received: 'number',
-            path: ['geolocation', 'country', 'code'],
-            message: 'Expected string, received number',
-          },
-        ]),
-      );
+      expect(!result.success && result.error.issues).toStrictEqual([
+        {
+          code: 'invalid_type',
+          expected: 'string',
+          message: 'Invalid input: expected string, received number',
+          path: ['geolocation', 'country', 'code'],
+        },
+      ]);
     });
   });
 
@@ -148,17 +144,14 @@ describe('FingerprintUnsealedData schemas', () => {
         fingerprintLocationSpoofing,
       );
 
-      expect(!result.success && result.error).toStrictEqual(
-        new ZodError([
-          {
-            code: 'invalid_type',
-            expected: 'boolean',
-            received: 'string',
-            path: ['data', 'result'],
-            message: 'Expected boolean, received string',
-          },
-        ]),
-      );
+      expect(!result.success && result.error.issues).toStrictEqual([
+        {
+          code: 'invalid_type',
+          expected: 'boolean',
+          message: 'Invalid input: expected boolean, received string',
+          path: ['data', 'result'],
+        },
+      ]);
     });
   });
 
@@ -204,17 +197,14 @@ describe('FingerprintUnsealedData schemas', () => {
       const result =
         FingerprintLocationSpoofingSchema.safeParse(fingerprintVpn);
 
-      expect(!result.success && result.error).toStrictEqual(
-        new ZodError([
-          {
-            code: 'invalid_type',
-            expected: 'boolean',
-            received: 'string',
-            path: ['data', 'result'],
-            message: 'Expected boolean, received string',
-          },
-        ]),
-      );
+      expect(!result.success && result.error.issues).toStrictEqual([
+        {
+          code: 'invalid_type',
+          expected: 'boolean',
+          message: 'Invalid input: expected boolean, received string',
+          path: ['data', 'result'],
+        },
+      ]);
     });
   });
 });

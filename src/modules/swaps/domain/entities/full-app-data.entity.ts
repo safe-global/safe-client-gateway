@@ -13,7 +13,7 @@ export const FullAppDataSchema = z.object({
         return JSON.parse(jsonString);
       } catch {
         ctx.addIssue({
-          code: z.ZodIssueCode.custom,
+          code: 'custom',
           message: 'Not a valid JSON payload',
         });
         return z.NEVER;

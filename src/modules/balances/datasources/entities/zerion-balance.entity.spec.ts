@@ -18,7 +18,6 @@ import {
 } from '@/modules/balances/datasources/entities/zerion-balance.entity';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
-import { ZodError } from 'zod';
 
 describe('Zerion Balance Entity schemas', () => {
   describe('ZerionBalancesSchema', () => {
@@ -37,17 +36,14 @@ describe('Zerion Balance Entity schemas', () => {
 
       const result = ZerionBalancesSchema.safeParse(zerionBalances);
 
-      expect(!result.success && result.error).toStrictEqual(
-        new ZodError([
-          {
-            code: 'invalid_type',
-            expected: 'array',
-            received: 'string',
-            path: ['data'],
-            message: 'Expected array, received string',
-          },
-        ]),
-      );
+      expect(!result.success && result.error.issues).toStrictEqual([
+        {
+          code: 'invalid_type',
+          expected: 'array',
+          message: 'Invalid input: expected array, received string',
+          path: ['data'],
+        },
+      ]);
     });
   });
   describe('ZerionBalanceSchema', () => {
@@ -86,17 +82,14 @@ describe('Zerion Balance Entity schemas', () => {
 
       const result = ZerionBalanceSchema.safeParse(zerionBalance);
 
-      expect(!result.success && result.error).toStrictEqual(
-        new ZodError([
-          {
-            code: 'invalid_type',
-            expected: 'string',
-            received: 'number',
-            path: ['id'],
-            message: 'Expected string, received number',
-          },
-        ]),
-      );
+      expect(!result.success && result.error.issues).toStrictEqual([
+        {
+          code: 'invalid_type',
+          expected: 'string',
+          message: 'Invalid input: expected string, received number',
+          path: ['id'],
+        },
+      ]);
     });
 
     it.each(['id' as const, 'attributes' as const])(
@@ -150,17 +143,14 @@ describe('Zerion Balance Entity schemas', () => {
 
       const result = ZerionAttributesSchema.safeParse(zerionAttributes);
 
-      expect(!result.success && result.error).toStrictEqual(
-        new ZodError([
-          {
-            code: 'invalid_type',
-            expected: 'string',
-            received: 'number',
-            path: ['name'],
-            message: 'Expected string, received number',
-          },
-        ]),
-      );
+      expect(!result.success && result.error.issues).toStrictEqual([
+        {
+          code: 'invalid_type',
+          expected: 'string',
+          message: 'Invalid input: expected string, received number',
+          path: ['name'],
+        },
+      ]);
     });
 
     it('should not allow an invalid value value', () => {
@@ -170,17 +160,14 @@ describe('Zerion Balance Entity schemas', () => {
 
       const result = ZerionAttributesSchema.safeParse(zerionAttributes);
 
-      expect(!result.success && result.error).toStrictEqual(
-        new ZodError([
-          {
-            code: 'invalid_type',
-            expected: 'number',
-            received: 'string',
-            path: ['value'],
-            message: 'Expected number, received string',
-          },
-        ]),
-      );
+      expect(!result.success && result.error.issues).toStrictEqual([
+        {
+          code: 'invalid_type',
+          expected: 'number',
+          message: 'Invalid input: expected number, received string',
+          path: ['value'],
+        },
+      ]);
     });
 
     it('should not allow an invalid price value', () => {
@@ -190,17 +177,14 @@ describe('Zerion Balance Entity schemas', () => {
 
       const result = ZerionAttributesSchema.safeParse(zerionAttributes);
 
-      expect(!result.success && result.error).toStrictEqual(
-        new ZodError([
-          {
-            code: 'invalid_type',
-            expected: 'number',
-            received: 'string',
-            path: ['price'],
-            message: 'Expected number, received string',
-          },
-        ]),
-      );
+      expect(!result.success && result.error.issues).toStrictEqual([
+        {
+          code: 'invalid_type',
+          expected: 'number',
+          message: 'Invalid input: expected number, received string',
+          path: ['price'],
+        },
+      ]);
     });
   });
 
@@ -239,17 +223,14 @@ describe('Zerion Balance Entity schemas', () => {
 
       const result = ZerionQuantitySchema.safeParse(zerionQuantity);
 
-      expect(!result.success && result.error).toStrictEqual(
-        new ZodError([
-          {
-            code: 'invalid_type',
-            expected: 'string',
-            received: 'number',
-            path: ['int'],
-            message: 'Expected string, received number',
-          },
-        ]),
-      );
+      expect(!result.success && result.error.issues).toStrictEqual([
+        {
+          code: 'invalid_type',
+          expected: 'string',
+          message: 'Invalid input: expected string, received number',
+          path: ['int'],
+        },
+      ]);
     });
 
     it('should not allow an invalid decimals value', () => {
@@ -259,17 +240,14 @@ describe('Zerion Balance Entity schemas', () => {
 
       const result = ZerionQuantitySchema.safeParse(zerionQuantity);
 
-      expect(!result.success && result.error).toStrictEqual(
-        new ZodError([
-          {
-            code: 'invalid_type',
-            expected: 'number',
-            received: 'string',
-            path: ['decimals'],
-            message: 'Expected number, received string',
-          },
-        ]),
-      );
+      expect(!result.success && result.error.issues).toStrictEqual([
+        {
+          code: 'invalid_type',
+          expected: 'number',
+          message: 'Invalid input: expected number, received string',
+          path: ['decimals'],
+        },
+      ]);
     });
 
     it('should not allow an invalid float value', () => {
@@ -279,17 +257,14 @@ describe('Zerion Balance Entity schemas', () => {
 
       const result = ZerionQuantitySchema.safeParse(zerionQuantity);
 
-      expect(!result.success && result.error).toStrictEqual(
-        new ZodError([
-          {
-            code: 'invalid_type',
-            expected: 'number',
-            received: 'string',
-            path: ['float'],
-            message: 'Expected number, received string',
-          },
-        ]),
-      );
+      expect(!result.success && result.error.issues).toStrictEqual([
+        {
+          code: 'invalid_type',
+          expected: 'number',
+          message: 'Invalid input: expected number, received string',
+          path: ['float'],
+        },
+      ]);
     });
 
     it('should not allow an invalid numeric value', () => {
@@ -299,17 +274,14 @@ describe('Zerion Balance Entity schemas', () => {
 
       const result = ZerionQuantitySchema.safeParse(zerionQuantity);
 
-      expect(!result.success && result.error).toStrictEqual(
-        new ZodError([
-          {
-            code: 'invalid_type',
-            expected: 'string',
-            received: 'number',
-            path: ['numeric'],
-            message: 'Expected string, received number',
-          },
-        ]),
-      );
+      expect(!result.success && result.error.issues).toStrictEqual([
+        {
+          code: 'invalid_type',
+          expected: 'string',
+          message: 'Invalid input: expected string, received number',
+          path: ['numeric'],
+        },
+      ]);
     });
   });
 
@@ -344,17 +316,14 @@ describe('Zerion Balance Entity schemas', () => {
 
       const result = ZerionFlagsSchema.safeParse(zerionFlags);
 
-      expect(!result.success && result.error).toStrictEqual(
-        new ZodError([
-          {
-            code: 'invalid_type',
-            expected: 'boolean',
-            received: 'string',
-            path: ['displayable'],
-            message: 'Expected boolean, received string',
-          },
-        ]),
-      );
+      expect(!result.success && result.error.issues).toStrictEqual([
+        {
+          code: 'invalid_type',
+          expected: 'boolean',
+          message: 'Invalid input: expected boolean, received string',
+          path: ['displayable'],
+        },
+      ]);
     });
   });
 
@@ -374,17 +343,14 @@ describe('Zerion Balance Entity schemas', () => {
 
       const result = ZerionFungibleInfoSchema.safeParse(zerionFungibleInfo);
 
-      expect(!result.success && result.error).toStrictEqual(
-        new ZodError([
-          {
-            code: 'invalid_type',
-            expected: 'string',
-            received: 'number',
-            path: ['name'],
-            message: 'Expected string, received number',
-          },
-        ]),
-      );
+      expect(!result.success && result.error.issues).toStrictEqual([
+        {
+          code: 'invalid_type',
+          expected: 'string',
+          message: 'Invalid input: expected string, received number',
+          path: ['name'],
+        },
+      ]);
     });
 
     it('should not allow an invalid symbol value', () => {
@@ -394,17 +360,14 @@ describe('Zerion Balance Entity schemas', () => {
 
       const result = ZerionFungibleInfoSchema.safeParse(zerionFungibleInfo);
 
-      expect(!result.success && result.error).toStrictEqual(
-        new ZodError([
-          {
-            code: 'invalid_type',
-            expected: 'string',
-            received: 'number',
-            path: ['symbol'],
-            message: 'Expected string, received number',
-          },
-        ]),
-      );
+      expect(!result.success && result.error.issues).toStrictEqual([
+        {
+          code: 'invalid_type',
+          expected: 'string',
+          message: 'Invalid input: expected string, received number',
+          path: ['symbol'],
+        },
+      ]);
     });
 
     it('should not allow an invalid description value', () => {
@@ -414,17 +377,14 @@ describe('Zerion Balance Entity schemas', () => {
 
       const result = ZerionFungibleInfoSchema.safeParse(zerionFungibleInfo);
 
-      expect(!result.success && result.error).toStrictEqual(
-        new ZodError([
-          {
-            code: 'invalid_type',
-            expected: 'string',
-            received: 'number',
-            path: ['description'],
-            message: 'Expected string, received number',
-          },
-        ]),
-      );
+      expect(!result.success && result.error.issues).toStrictEqual([
+        {
+          code: 'invalid_type',
+          expected: 'string',
+          message: 'Invalid input: expected string, received number',
+          path: ['description'],
+        },
+      ]);
     });
 
     it('should not allow an invalid icon value', () => {
@@ -434,17 +394,14 @@ describe('Zerion Balance Entity schemas', () => {
 
       const result = ZerionFungibleInfoSchema.safeParse(zerionFungibleInfo);
 
-      expect(!result.success && result.error).toStrictEqual(
-        new ZodError([
-          {
-            code: 'invalid_type',
-            expected: 'object',
-            received: 'string',
-            path: ['icon'],
-            message: 'Expected object, received string',
-          },
-        ]),
-      );
+      expect(!result.success && result.error.issues).toStrictEqual([
+        {
+          code: 'invalid_type',
+          expected: 'object',
+          message: 'Invalid input: expected object, received string',
+          path: ['icon'],
+        },
+      ]);
     });
 
     it('should not allow an invalid icon url value', () => {
@@ -454,17 +411,14 @@ describe('Zerion Balance Entity schemas', () => {
 
       const result = ZerionFungibleInfoSchema.safeParse(zerionFungibleInfo);
 
-      expect(!result.success && result.error).toStrictEqual(
-        new ZodError([
-          {
-            code: 'invalid_type',
-            expected: 'string',
-            received: 'number',
-            path: ['icon', 'url'],
-            message: 'Expected string, received number',
-          },
-        ]),
-      );
+      expect(!result.success && result.error.issues).toStrictEqual([
+        {
+          code: 'invalid_type',
+          expected: 'string',
+          message: 'Invalid input: expected string, received number',
+          path: ['icon', 'url'],
+        },
+      ]);
     });
   });
 
@@ -502,17 +456,14 @@ describe('Zerion Balance Entity schemas', () => {
 
       const result = ZerionImplementationSchema.safeParse(zerionImplementation);
 
-      expect(!result.success && result.error).toStrictEqual(
-        new ZodError([
-          {
-            code: 'invalid_type',
-            expected: 'string',
-            received: 'number',
-            path: ['chain_id'],
-            message: 'Expected string, received number',
-          },
-        ]),
-      );
+      expect(!result.success && result.error.issues).toStrictEqual([
+        {
+          code: 'invalid_type',
+          expected: 'string',
+          message: 'Invalid input: expected string, received number',
+          path: ['chain_id'],
+        },
+      ]);
     });
 
     // Note: this is needed as the implementation address field can contain non-eth addresses.
@@ -532,17 +483,14 @@ describe('Zerion Balance Entity schemas', () => {
 
       const result = ZerionImplementationSchema.safeParse(zerionImplementation);
 
-      expect(!result.success && result.error).toStrictEqual(
-        new ZodError([
-          {
-            code: 'invalid_type',
-            expected: 'string',
-            received: 'number',
-            path: ['address'],
-            message: 'Expected string, received number',
-          },
-        ]),
-      );
+      expect(!result.success && result.error.issues).toStrictEqual([
+        {
+          code: 'invalid_type',
+          expected: 'string',
+          message: 'Invalid input: expected string, received number',
+          path: ['address'],
+        },
+      ]);
     });
 
     it('should checksum a valid, non-checksummed address', () => {
@@ -566,17 +514,14 @@ describe('Zerion Balance Entity schemas', () => {
 
       const result = ZerionImplementationSchema.safeParse(zerionImplementation);
 
-      expect(!result.success && result.error).toStrictEqual(
-        new ZodError([
-          {
-            code: 'invalid_type',
-            expected: 'number',
-            received: 'string',
-            path: ['decimals'],
-            message: 'Expected number, received string',
-          },
-        ]),
-      );
+      expect(!result.success && result.error.issues).toStrictEqual([
+        {
+          code: 'invalid_type',
+          expected: 'number',
+          message: 'Invalid input: expected number, received string',
+          path: ['decimals'],
+        },
+      ]);
     });
   });
 });

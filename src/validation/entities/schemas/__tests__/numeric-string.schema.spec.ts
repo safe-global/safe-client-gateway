@@ -59,9 +59,8 @@ describe('NumericStringSchema', () => {
       {
         code: 'invalid_type',
         expected: 'string',
-        message: 'Expected string, received boolean',
+        message: 'Invalid input: expected string, received boolean',
         path: [],
-        received: 'boolean',
       },
     ]);
   });

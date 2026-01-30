@@ -12,5 +12,5 @@ export function isSignatureLike(value: Hex): boolean {
 }
 
 export const SignatureSchema = HexBytesSchema.refine(isSignatureLike, {
-  message: 'Invalid signature',
+  error: 'Invalid signature',
 });

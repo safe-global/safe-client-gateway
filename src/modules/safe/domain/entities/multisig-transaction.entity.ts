@@ -16,7 +16,7 @@ export const ConfirmationSchema = z.object({
   owner: AddressSchema,
   submissionDate: z.coerce.date(),
   transactionHash: HexSchema.nullish().default(null),
-  signatureType: z.nativeEnum(SignatureType),
+  signatureType: z.enum(SignatureType),
   // We don't validate signature length as they are on the Transaction Service
   signature: HexBytesSchema.nullish().default(null),
 });
@@ -26,7 +26,7 @@ export const MultisigTransactionSchema = z.object({
   to: AddressSchema,
   value: NumericStringSchema,
   data: HexSchema.nullish().default(null),
-  operation: z.nativeEnum(Operation),
+  operation: z.enum(Operation),
   gasToken: AddressSchema.nullish().default(null),
   safeTxGas: CoercedNumberSchema.nullish().default(null),
   baseGas: CoercedNumberSchema.nullish().default(null),

@@ -1,4 +1,4 @@
-import type { CommonStatus } from './analysis-result.entity';
+import { CommonStatus } from './analysis-result.entity';
 import type { Severity } from './severity.entity';
 
 /**
@@ -9,7 +9,7 @@ export const COMMON_SEVERITY_MAPPING: Record<
   CommonStatus,
   keyof typeof Severity
 > = {
-  FAILED: 'WARN',
+  [CommonStatus.FAILED]: 'WARN',
 };
 
 /**
@@ -20,6 +20,6 @@ export const COMMON_DESCRIPTION_MAPPING: Record<
   CommonStatus,
   (args?: { error?: string }) => string
 > = {
-  FAILED: ({ error } = {}) =>
+  [CommonStatus.FAILED]: ({ error } = {}) =>
     `The analysis failed${error ? `: ${error}` : ''}. Please try again later.`,
 };

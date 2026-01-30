@@ -81,14 +81,13 @@ describe('BlockaidScanResponseSchema', () => {
       {
         code: 'invalid_type',
         expected: 'array',
-        received: 'undefined',
+        message: 'Invalid input: expected array, received undefined',
         path: ['validation', 'features'],
-        message: 'Required',
       },
     ]);
   });
 
-  it('fails when simulation contract management contains an invalid address in before', () => {
+  it('fails when PROXY_UPGRADE schema validation fails due to invalid address in before', () => {
     const invalidAddress = faker.string.alphanumeric(10);
     const response = {
       request_id: faker.string.uuid(),
@@ -114,20 +113,13 @@ describe('BlockaidScanResponseSchema', () => {
     expect(!result.success && result.error.issues).toStrictEqual([
       {
         code: 'custom',
-        message: 'Invalid address',
-        path: [
-          'simulation',
-          'contract_management',
-          safeAddress,
-          0,
-          'before',
-          'address',
-        ],
+        message: 'PROXY_UPGRADE type must match ProxyUpgradeManagementSchema',
+        path: ['simulation', 'contract_management', safeAddress, 0, 'type'],
       },
     ]);
   });
 
-  it('fails when simulation contract management contains an invalid address in after', () => {
+  it('fails when PROXY_UPGRADE schema validation fails due to invalid address in after', () => {
     const invalidAddress = faker.string.alphanumeric(10);
     const response = {
       request_id: faker.string.uuid(),
@@ -153,15 +145,8 @@ describe('BlockaidScanResponseSchema', () => {
     expect(!result.success && result.error.issues).toStrictEqual([
       {
         code: 'custom',
-        message: 'Invalid address',
-        path: [
-          'simulation',
-          'contract_management',
-          safeAddress,
-          0,
-          'after',
-          'address',
-        ],
+        message: 'PROXY_UPGRADE type must match ProxyUpgradeManagementSchema',
+        path: ['simulation', 'contract_management', safeAddress, 0, 'type'],
       },
     ]);
   });

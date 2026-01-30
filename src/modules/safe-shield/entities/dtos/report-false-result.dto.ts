@@ -7,7 +7,10 @@ import { z } from 'zod';
  * - FALSE_POSITIVE: Transaction was flagged as malicious but is actually safe
  * - FALSE_NEGATIVE: Transaction was not flagged but should have been
  */
-export const ReportEvent = ['FALSE_POSITIVE', 'FALSE_NEGATIVE'] as const;
+export const ReportEvent = {
+  FALSE_POSITIVE: 'FALSE_POSITIVE',
+  FALSE_NEGATIVE: 'FALSE_NEGATIVE',
+} as const;
 
 /**
  * Zod schema for validating ReportEvent enum values.
@@ -24,7 +27,7 @@ export type ReportEvent = z.infer<typeof ReportEventSchema>;
  */
 export const ReportFalseResultRequestSchema = z.object({
   event: ReportEventSchema,
-  request_id: z.string().uuid(),
+  request_id: z.uuid(),
   details: z.string().min(1).max(1000),
 });
 
@@ -38,7 +41,7 @@ export type ReportFalseResultRequest = z.infer<
  */
 export class ReportFalseResultRequestDto implements ReportFalseResultRequest {
   @ApiProperty({
-    enum: [...ReportEvent],
+    enum: [...Object.values(ReportEvent)],
     description:
       'Type of report: FALSE_POSITIVE if flagged incorrectly, FALSE_NEGATIVE if should have been flagged',
   })

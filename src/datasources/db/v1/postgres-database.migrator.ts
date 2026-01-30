@@ -48,7 +48,9 @@ export class PostgresDatabaseMigrator {
     await this.assertMigrationsTable();
 
     const last = await this.getLastRunMigration();
-    const remaining = migrations.slice(last?.id ?? 0);
+    const remaining = migrations.filter(
+      (migration) => migration.id > (last?.id ?? 0),
+    );
 
     await this.sql.begin(async (transaction: TransactionSql) => {
       for (const current of remaining) {
@@ -154,11 +156,6 @@ export class PostgresDatabaseMigrator {
 
     if (migrations.length === 0) {
       throw new Error('No migrations found');
-    }
-
-    const latest = migrations.at(-1);
-    if (latest?.id !== migrations.length) {
-      throw new Error('Migrations numbered inconsistency');
     }
 
     return migrations;

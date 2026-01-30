@@ -16,11 +16,11 @@ export const Caip10AddressesSchema = z.string().transform((str, ctx) => {
     } catch (e) {
       if (e instanceof z.ZodError) {
         e.issues.forEach((issue) => {
-          ctx.addIssue(issue);
+          ctx.addIssue({ ...issue });
         });
       } else {
         ctx.addIssue({
-          code: z.ZodIssueCode.custom,
+          code: 'custom',
           message: asError(e).message,
         });
       }

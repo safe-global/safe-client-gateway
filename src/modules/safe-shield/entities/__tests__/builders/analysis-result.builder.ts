@@ -13,6 +13,9 @@ import {
 } from '../../analysis-result.entity';
 import type { Address } from 'viem';
 import { getAddress } from 'viem';
+import { RecipientStatus } from '@/modules/safe-shield/entities/recipient-status.entity';
+import { ContractStatus } from '@/modules/safe-shield/entities/contract-status.entity';
+import { ThreatStatus } from '@/modules/safe-shield/entities/threat-status.entity';
 
 /**
  * Builder for RecipientAnalysisResult entities
@@ -20,7 +23,7 @@ import { getAddress } from 'viem';
 export function recipientAnalysisResultBuilder(): IBuilder<RecipientAnalysisResult> {
   return new Builder<RecipientAnalysisResult>()
     .with('severity', 'OK')
-    .with('type', 'RECURRING_RECIPIENT')
+    .with('type', RecipientStatus.RECURRING_RECIPIENT)
     .with('title', faker.lorem.sentence())
     .with('description', faker.lorem.paragraph());
 }
@@ -31,7 +34,7 @@ export function recipientAnalysisResultBuilder(): IBuilder<RecipientAnalysisResu
 export function contractAnalysisResultBuilder(): IBuilder<ContractAnalysisResult> {
   return new Builder<ContractAnalysisResult>()
     .with('severity', 'INFO')
-    .with('type', 'VERIFIED')
+    .with('type', ContractStatus.VERIFIED)
     .with('title', faker.lorem.sentence())
     .with('description', faker.lorem.paragraph());
 }
@@ -44,7 +47,7 @@ export function unofficialFallbackHandlerAnalysisResultBuilder(
 ): IBuilder<UnofficialFallbackHandlerAnalysisResult> {
   return new Builder<UnofficialFallbackHandlerAnalysisResult>()
     .with('severity', 'WARN')
-    .with('type', 'UNOFFICIAL_FALLBACK_HANDLER')
+    .with('type', ContractStatus.UNOFFICIAL_FALLBACK_HANDLER)
     .with('title', faker.lorem.sentence())
     .with('description', faker.lorem.paragraph())
     .with('fallbackHandler', {
@@ -60,7 +63,7 @@ export function unofficialFallbackHandlerAnalysisResultBuilder(
 export function threatAnalysisResultBuilder(): IBuilder<ThreatAnalysisResult> {
   return new Builder<ThreatAnalysisResult>()
     .with('severity', 'OK')
-    .with('type', 'NO_THREAT')
+    .with('type', ThreatStatus.NO_THREAT)
     .with('title', faker.lorem.sentence())
     .with('description', faker.lorem.paragraph());
 }
@@ -71,7 +74,7 @@ export function threatAnalysisResultBuilder(): IBuilder<ThreatAnalysisResult> {
 export function masterCopyChangeThreatBuilder(): IBuilder<MasterCopyChangeThreatAnalysisResult> {
   return new Builder<MasterCopyChangeThreatAnalysisResult>()
     .with('severity', 'CRITICAL')
-    .with('type', 'MASTERCOPY_CHANGE')
+    .with('type', ThreatStatus.MASTERCOPY_CHANGE)
     .with('title', faker.lorem.sentence())
     .with('description', faker.lorem.paragraph())
     .with('before', getAddress(faker.finance.ethereumAddress()))
@@ -84,7 +87,7 @@ export function masterCopyChangeThreatBuilder(): IBuilder<MasterCopyChangeThreat
 export function maliciousOrModerateThreatBuilder(): IBuilder<MaliciousOrModerateThreatAnalysisResult> {
   return new Builder<MaliciousOrModerateThreatAnalysisResult>()
     .with('severity', 'CRITICAL')
-    .with('type', 'MALICIOUS')
+    .with('type', ThreatStatus.MALICIOUS)
     .with('title', faker.lorem.sentence())
     .with('description', faker.lorem.paragraph())
     .with('issues', {

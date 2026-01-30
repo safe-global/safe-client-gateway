@@ -17,9 +17,10 @@ import {
   threatAnalysisResultBuilder,
 } from './builders/analysis-result.builder';
 import { faker } from '@faker-js/faker';
-import type {
+import {
   ContractStatusGroup,
   RecipientStatusGroup,
+  ThreatStatusGroup,
 } from '../status-group.entity';
 import { getAddress } from 'viem';
 
@@ -57,7 +58,7 @@ describe('Analysis Response Schemas', () => {
         const responseWithEmptyGroups = recipientAnalysisResponseBuilder(false)
           .with(getAddress(faker.finance.ethereumAddress()), {
             isSafe: true,
-            RECIPIENT_INTERACTION: [],
+            [RecipientStatusGroup.RECIPIENT_INTERACTION]: [],
           })
           .build();
 
@@ -81,8 +82,16 @@ describe('Analysis Response Schemas', () => {
 
         expect(!result.success && result.error.issues).toStrictEqual([
           {
-            code: 'custom',
-            message: 'Invalid address',
+            code: 'invalid_key',
+            issues: [
+              {
+                code: 'custom',
+                message: 'Invalid address',
+                path: [],
+              },
+            ],
+            message: 'Invalid key in record',
+            origin: 'record',
             path: ['invalid-address'],
           },
         ]);
@@ -144,7 +153,7 @@ describe('Analysis Response Schemas', () => {
           .with(getAddress(faker.finance.ethereumAddress()), {
             logoUrl: faker.image.url(),
             name: faker.company.name(),
-            CONTRACT_VERIFICATION: [],
+            [ContractStatusGroup.CONTRACT_VERIFICATION]: [],
           })
           .build();
 
@@ -166,8 +175,16 @@ describe('Analysis Response Schemas', () => {
 
         expect(!result.success && result.error.issues).toStrictEqual([
           {
-            code: 'custom',
-            message: 'Invalid address',
+            code: 'invalid_key',
+            issues: [
+              {
+                code: 'custom',
+                message: 'Invalid address',
+                path: [],
+              },
+            ],
+            message: 'Invalid key in record',
+            origin: 'record',
             path: ['invalid-address'],
           },
         ]);
@@ -176,8 +193,12 @@ describe('Analysis Response Schemas', () => {
       it('should validate response without logoUrl and name', () => {
         const responseWithoutMetadata = contractAnalysisResponseBuilder(false)
           .with(getAddress(faker.finance.ethereumAddress()), {
-            CONTRACT_VERIFICATION: [contractAnalysisResultBuilder().build()],
-            CONTRACT_INTERACTION: [contractAnalysisResultBuilder().build()],
+            [ContractStatusGroup.CONTRACT_VERIFICATION]: [
+              contractAnalysisResultBuilder().build(),
+            ],
+            [ContractStatusGroup.CONTRACT_INTERACTION]: [
+              contractAnalysisResultBuilder().build(),
+            ],
           })
           .build();
 
@@ -227,7 +248,7 @@ describe('Analysis Response Schemas', () => {
       });
 
       it('should validate all threat status responses', () => {
-        const safeThreats = ThreatStatus.map((threat) =>
+        const safeThreats = Object.values(ThreatStatus).map((threat) =>
           threatAnalysisResponseBuilder(threat).build(),
         );
 
@@ -240,8 +261,8 @@ describe('Analysis Response Schemas', () => {
 
       it('should validate empty THREAT and BALANCE_CHANGE arrays', () => {
         const emptyResponse = threatAnalysisResponseBuilder()
-          .with('THREAT', [])
-          .with('BALANCE_CHANGE', [])
+          .with(ThreatStatusGroup.THREAT, [])
+          .with(ThreatStatusGroup.BALANCE_CHANGE, [])
           .build();
 
         const result = ThreatAnalysisResponseSchema.safeParse(emptyResponse);
@@ -251,7 +272,7 @@ describe('Analysis Response Schemas', () => {
 
       it('should validate response with balance changes', () => {
         const responseWithBalanceChanges = threatAnalysisResponseBuilder()
-          .with('BALANCE_CHANGE', [
+          .with(ThreatStatusGroup.BALANCE_CHANGE, [
             {
               asset: {
                 type: 'ERC20',
@@ -310,7 +331,7 @@ describe('Analysis Response Schemas', () => {
         expect(!result.success && result.error.issues.length).toBeGreaterThan(
           0,
         );
-        expect(result?.error?.issues[0].code).toBe('custom');
+        expect(result?.error?.issues[0].code).toBe('invalid_key');
       });
 
       it('should reject invalid contract analysis structure', () => {
@@ -320,11 +341,21 @@ describe('Analysis Response Schemas', () => {
         } as unknown;
 
         const result = CounterpartyAnalysisResponseSchema.safeParse(response);
-
-        expect(!result.success && result.error.issues.length).toBeGreaterThan(
-          0,
-        );
-        expect(result?.error?.issues[0].code).toBe('custom');
+        expect(!result.success && result.error?.issues).toStrictEqual([
+          {
+            code: 'invalid_key',
+            issues: [
+              {
+                code: 'custom',
+                message: 'Invalid address',
+                path: [],
+              },
+            ],
+            message: 'Invalid key in record',
+            origin: 'record',
+            path: ['contract', 'invalid'],
+          },
+        ]);
       });
     });
   });

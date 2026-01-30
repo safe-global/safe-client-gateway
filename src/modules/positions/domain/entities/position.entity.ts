@@ -17,8 +17,12 @@ const PositionAttributeSchema = z.object({
 });
 
 export const PositionSchema = z.union([
-  NativeBalanceSchema.merge(FiatSchema).merge(PositionAttributeSchema),
-  Erc20BalanceSchema.merge(FiatSchema).merge(PositionAttributeSchema),
+  NativeBalanceSchema.extend(FiatSchema.shape).extend(
+    PositionAttributeSchema.shape,
+  ),
+  Erc20BalanceSchema.extend(FiatSchema.shape).extend(
+    PositionAttributeSchema.shape,
+  ),
 ]);
 
 export const PositionsSchema = z.array(PositionSchema);

@@ -22,9 +22,8 @@ describe('RelaySchema', () => {
     expect(!result.success && result.error.issues[0]).toStrictEqual({
       code: 'invalid_type',
       expected: 'string',
-      message: 'Required',
+      message: 'Invalid input: expected string, received undefined',
       path: ['taskId'],
-      received: 'undefined',
     });
   });
 
@@ -39,9 +38,8 @@ describe('RelaySchema', () => {
     expect(!result.success && result.error.issues[0]).toStrictEqual({
       code: 'invalid_type',
       expected: 'string',
-      message: 'Expected string, received number',
+      message: 'Invalid input: expected string, received number',
       path: ['taskId'],
-      received: 'number',
     });
   });
 
@@ -56,9 +54,8 @@ describe('RelaySchema', () => {
     expect(!result.success && result.error.issues[0]).toStrictEqual({
       code: 'invalid_type',
       expected: 'string',
-      message: 'Required',
+      message: 'Invalid input: expected string, received undefined',
       path: ['taskId'],
-      received: 'undefined',
     });
   });
 });

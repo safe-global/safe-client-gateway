@@ -175,16 +175,14 @@ describe('AuthPayload entity', () => {
           {
             code: 'invalid_type',
             expected: 'string',
-            message: 'Required',
+            message: 'Invalid input: expected string, received undefined',
             path: ['chain_id'],
-            received: 'undefined',
           },
           {
             code: 'invalid_type',
             expected: 'string',
-            message: 'Required',
+            message: 'Invalid input: expected string, received undefined',
             path: ['signer_address'],
-            received: 'undefined',
           },
         ]);
       });

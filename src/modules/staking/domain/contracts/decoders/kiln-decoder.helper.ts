@@ -62,10 +62,7 @@ export class KilnDecoder extends AbiDecoder<typeof KilnAbi> {
     }
   }
 
-  decodeDepositEvent(args: {
-    data: Address;
-    topics: [signature: Hex, ...args: Array<Address>];
-  }): {
+  decodeDepositEvent(args: { data: Address; topics: Array<Hex> }): {
     pubkey: Address;
     withdrawal_credentials: Address;
     amount: Address;
@@ -73,7 +70,10 @@ export class KilnDecoder extends AbiDecoder<typeof KilnAbi> {
     index: Address;
   } | null {
     try {
-      const decoded = this.decodeEventLog(args);
+      const decoded = this.decodeEventLog({
+        ...args,
+        topics: args.topics as [signature: Hex, ...args: Array<Address>],
+      });
       if (decoded.eventName !== 'DepositEvent') {
         throw new Error('Data is not of DepositEvent type');
       }
@@ -84,10 +84,7 @@ export class KilnDecoder extends AbiDecoder<typeof KilnAbi> {
     }
   }
 
-  decodeWithdrawal(args: {
-    data: Address;
-    topics: [signature: Hex, ...args: Array<Address>];
-  }): {
+  decodeWithdrawal(args: { data: Address; topics: Array<Hex> }): {
     withdrawer: Address;
     feeRecipient: Address;
     pubKeyRoot: Address;
@@ -96,7 +93,10 @@ export class KilnDecoder extends AbiDecoder<typeof KilnAbi> {
     treasuryFee: bigint;
   } | null {
     try {
-      const decoded = this.decodeEventLog(args);
+      const decoded = this.decodeEventLog({
+        ...args,
+        topics: args.topics as [signature: Hex, ...args: Array<Address>],
+      });
       if (decoded.eventName !== 'Withdrawal') {
         throw new Error('Data is not of Withdrawal type');
       }

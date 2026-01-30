@@ -2,7 +2,6 @@ import { chainUpdateEventBuilder } from '@/modules/hooks/routes/entities/__tests
 import type { ConfigEventType } from '@/modules/hooks/routes/entities/event-type.entity';
 import { ChainUpdateEventSchema } from '@/modules/hooks/routes/entities/schemas/chain-update.schema';
 import { faker } from '@faker-js/faker';
-import { ZodError } from 'zod';
 
 describe('ChainUpdateEventSchema', () => {
   it('should validate a valid chain event', () => {
@@ -20,17 +19,14 @@ describe('ChainUpdateEventSchema', () => {
 
     const result = ChainUpdateEventSchema.safeParse(chainUpdateEvent);
 
-    expect(!result.success && result.error).toStrictEqual(
-      new ZodError([
-        {
-          received: chainUpdateEvent.type,
-          code: 'invalid_literal',
-          expected: 'CHAIN_UPDATE',
-          path: ['type'],
-          message: 'Invalid literal value, expected "CHAIN_UPDATE"',
-        },
-      ]),
-    );
+    expect(!result.success && result.error.issues).toStrictEqual([
+      {
+        code: 'invalid_value',
+        values: ['CHAIN_UPDATE'],
+        path: ['type'],
+        message: 'Invalid input: expected "CHAIN_UPDATE"',
+      },
+    ]);
   });
 
   it.each(['type' as const, 'chainId' as const])(

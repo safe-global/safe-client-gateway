@@ -6,7 +6,6 @@ import { SafeAppAccessControlPolicies } from '@/modules/safe-apps/domain/entitie
 import type { SafeAppSocialProfile } from '@/modules/safe-apps/domain/entities/safe-app-social-profile.entity';
 import { SafeAppSchema } from '@/modules/safe-apps/domain/entities/schemas/safe-app.schema';
 import { faker } from '@faker-js/faker';
-import { ZodError } from 'zod';
 
 describe('SafeAppSchema', () => {
   it('should validate a valid SafeApp', () => {
@@ -41,28 +40,26 @@ describe('SafeAppSchema', () => {
 
     const result = SafeAppSchema.safeParse(safeApp);
 
-    expect(!result.success && result.error).toStrictEqual(
-      new ZodError([
-        {
-          validation: 'url',
-          code: 'invalid_string',
-          message: 'Invalid url',
-          path: ['url'],
-        },
-        {
-          validation: 'url',
-          code: 'invalid_string',
-          message: 'Invalid url',
-          path: ['iconUrl'],
-        },
-        {
-          validation: 'url',
-          code: 'invalid_string',
-          message: 'Invalid url',
-          path: ['developerWebsite'],
-        },
-      ]),
-    );
+    expect(!result.success && result.error.issues).toEqual([
+      expect.objectContaining({
+        code: 'invalid_format',
+        format: 'url',
+        message: 'Invalid URL',
+        path: ['url'],
+      }),
+      expect.objectContaining({
+        code: 'invalid_format',
+        format: 'url',
+        message: 'Invalid URL',
+        path: ['iconUrl'],
+      }),
+      expect.objectContaining({
+        code: 'invalid_format',
+        format: 'url',
+        message: 'Invalid URL',
+        path: ['developerWebsite'],
+      }),
+    ]);
   });
 
   it('should throw if a socialProfile has an invalid url', () => {
@@ -76,16 +73,14 @@ describe('SafeAppSchema', () => {
 
     const result = SafeAppSchema.safeParse(safeApp);
 
-    expect(!result.success && result.error).toStrictEqual(
-      new ZodError([
-        {
-          validation: 'url',
-          code: 'invalid_string',
-          message: 'Invalid url',
-          path: ['socialProfiles', 0, 'url'],
-        },
-      ]),
-    );
+    expect(!result.success && result.error.issues).toEqual([
+      expect.objectContaining({
+        code: 'invalid_format',
+        format: 'url',
+        message: 'Invalid URL',
+        path: ['socialProfiles', 0, 'url'],
+      }),
+    ]);
   });
 
   it('should throw if a profile has an invalid url', () => {
@@ -100,16 +95,14 @@ describe('SafeAppSchema', () => {
 
     const result = SafeAppSchema.safeParse(safeApp);
 
-    expect(!result.success && result.error).toStrictEqual(
-      new ZodError([
-        {
-          validation: 'url',
-          code: 'invalid_string',
-          message: 'Invalid url',
-          path: ['provider', 'url'],
-        },
-      ]),
-    );
+    expect(!result.success && result.error.issues).toEqual([
+      expect.objectContaining({
+        code: 'invalid_format',
+        format: 'url',
+        message: 'Invalid URL',
+        path: ['provider', 'url'],
+      }),
+    ]);
   });
 
   it('should fallback to UNKNOWN nested socialProfile', () => {
@@ -157,16 +150,14 @@ describe('SafeAppSchema', () => {
 
     const result = SafeAppSchema.safeParse(safeApp);
 
-    expect(!result.success && result.error).toStrictEqual(
-      new ZodError([
-        {
-          validation: 'url',
-          code: 'invalid_string',
-          message: 'Invalid url',
-          path: ['accessControl', 'value', 0],
-        },
-      ]),
-    );
+    expect(!result.success && result.error.issues).toEqual([
+      expect.objectContaining({
+        code: 'invalid_format',
+        format: 'url',
+        message: 'Invalid URL',
+        path: ['accessControl', 'value', 0],
+      }),
+    ]);
   });
 
   it('should validate a SafeAppAccessControlPolicies.NoRestrictions accessControl', () => {
@@ -206,79 +197,57 @@ describe('SafeAppSchema', () => {
 
     const result = SafeAppSchema.safeParse(safeApp);
 
-    expect(!result.success && result.error).toStrictEqual(
-      new ZodError([
-        {
-          code: 'invalid_type',
-          expected: 'number',
-          received: 'undefined',
-          path: ['id'],
-          message: 'Required',
-        },
-        {
-          code: 'invalid_type',
-          expected: 'string',
-          received: 'undefined',
-          path: ['url'],
-          message: 'Required',
-        },
-        {
-          code: 'invalid_type',
-          expected: 'string',
-          received: 'undefined',
-          path: ['name'],
-          message: 'Required',
-        },
-        {
-          code: 'invalid_type',
-          expected: 'string',
-          received: 'undefined',
-          path: ['description'],
-          message: 'Required',
-        },
-        {
-          code: 'invalid_type',
-          expected: 'array',
-          received: 'undefined',
-          path: ['chainIds'],
-          message: 'Required',
-        },
-        {
-          code: 'invalid_type',
-          expected: 'object',
-          received: 'undefined',
-          path: ['accessControl'],
-          message: 'Required',
-        },
-        {
-          code: 'invalid_type',
-          expected: 'array',
-          received: 'undefined',
-          path: ['tags'],
-          message: 'Required',
-        },
-        {
-          code: 'invalid_type',
-          expected: 'array',
-          received: 'undefined',
-          path: ['features'],
-          message: 'Required',
-        },
-        {
-          code: 'invalid_type',
-          expected: 'array',
-          received: 'undefined',
-          path: ['socialProfiles'],
-          message: 'Required',
-        },
-        {
-          code: 'invalid_type',
-          expected: 'boolean',
-          received: 'undefined',
-          path: ['featured'],
-          message: 'Required',
-        },
-      ]),
-    );
+    expect(!result.success && result.error.issues).toEqual([
+      expect.objectContaining({
+        code: 'invalid_type',
+        expected: 'number',
+        path: ['id'],
+      }),
+      expect.objectContaining({
+        code: 'invalid_type',
+        expected: 'string',
+        path: ['url'],
+      }),
+      expect.objectContaining({
+        code: 'invalid_type',
+        expected: 'string',
+        path: ['name'],
+      }),
+      expect.objectContaining({
+        code: 'invalid_type',
+        expected: 'string',
+        path: ['description'],
+      }),
+      expect.objectContaining({
+        code: 'invalid_type',
+        expected: 'array',
+        path: ['chainIds'],
+      }),
+      expect.objectContaining({
+        code: 'invalid_type',
+        expected: 'object',
+        path: ['accessControl'],
+      }),
+      expect.objectContaining({
+        code: 'invalid_type',
+        expected: 'array',
+        path: ['tags'],
+      }),
+      expect.objectContaining({
+        code: 'invalid_type',
+        expected: 'array',
+        path: ['features'],
+      }),
+      expect.objectContaining({
+        code: 'invalid_type',
+        expected: 'array',
+        path: ['socialProfiles'],
+      }),
+      expect.objectContaining({
+        code: 'invalid_type',
+        expected: 'boolean',
+        path: ['featured'],
+      }),
+    ]);
   });
 });

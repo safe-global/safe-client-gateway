@@ -18,35 +18,12 @@ describe('BridgeStatusSchema', () => {
 
     const result = BridgeNameSchema.safeParse(name);
 
-    expect(!result.success && result.error.issues).toStrictEqual([
-      {
-        code: 'invalid_enum_value',
-        message: `Invalid enum value. Expected 'hop' | 'cbridge' | 'celercircle' | 'hyphen' | 'optimism' | 'polygon' | 'arbitrum' | 'avalanche' | 'across' | 'stargate' | 'gnosis' | 'omni' | 'amarok' | 'lifuel' | 'celerim' | 'symbiosis' | 'thorswap' | 'squid' | 'allbridge' | 'mayan', received '${name}'`,
-        options: [
-          'hop',
-          'cbridge',
-          'celercircle',
-          'hyphen',
-          'optimism',
-          'polygon',
-          'arbitrum',
-          'avalanche',
-          'across',
-          'stargate',
-          'gnosis',
-          'omni',
-          'amarok',
-          'lifuel',
-          'celerim',
-          'symbiosis',
-          'thorswap',
-          'squid',
-          'allbridge',
-          'mayan',
-        ],
+    expect(!result.success && result.error.issues).toEqual([
+      expect.objectContaining({
+        code: 'invalid_value',
         path: [],
-        received: name,
-      },
+        values: [...Object.values(BridgeNames)],
+      }),
     ]);
   });
 });

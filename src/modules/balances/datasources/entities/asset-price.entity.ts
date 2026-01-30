@@ -7,6 +7,7 @@ export function getAssetPriceSchema<const T extends string>(
   lowerCaseFiatCode: T,
 ) {
   return z.record(
+    z.string(),
     z.object({
       [lowerCaseFiatCode]: z.number().nullish().default(null),
       [`${lowerCaseFiatCode}_24h_change`]: z.number().nullish().default(null),

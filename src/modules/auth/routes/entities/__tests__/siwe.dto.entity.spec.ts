@@ -27,9 +27,8 @@ describe('SiweDtoSchema', () => {
       {
         code: 'invalid_type',
         expected: 'string',
-        message: 'Expected string, received number',
+        message: 'Invalid input: expected string, received number',
         path: ['message'],
-        received: 'number',
       },
     ]);
   });

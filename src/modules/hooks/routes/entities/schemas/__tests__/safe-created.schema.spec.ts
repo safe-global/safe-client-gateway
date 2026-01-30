@@ -3,7 +3,6 @@ import type { TransactionEventType } from '@/modules/hooks/routes/entities/event
 import { SafeCreatedEventSchema } from '@/modules/hooks/routes/entities/schemas/safe-created.schema';
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress } from 'viem';
-import { ZodError } from 'zod';
 
 describe('SafeCreatedEventSchema', () => {
   it('should validate an SafeCreated event', () => {
@@ -34,17 +33,14 @@ describe('SafeCreatedEventSchema', () => {
 
     const result = SafeCreatedEventSchema.safeParse(safeCreatedEvent);
 
-    expect(!result.success && result.error).toStrictEqual(
-      new ZodError([
-        {
-          received: safeCreatedEvent.type,
-          code: 'invalid_literal',
-          expected: 'SAFE_CREATED',
-          path: ['type'],
-          message: 'Invalid literal value, expected "SAFE_CREATED"',
-        },
-      ]),
-    );
+    expect(!result.success && result.error.issues).toEqual([
+      expect.objectContaining({
+        code: 'invalid_value',
+        values: ['SAFE_CREATED'],
+        path: ['type'],
+        message: 'Invalid input: expected "SAFE_CREATED"',
+      }),
+    ]);
   });
 
   it('should not allow a missing chainId', () => {

@@ -3,7 +3,6 @@ import { messageConfirmationBuilder } from '@/modules/messages/domain/entities/_
 import { MessageConfirmationSchema } from '@/modules/messages/domain/entities/message-confirmation.entity';
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress } from 'viem';
-import { ZodError } from 'zod';
 
 describe('MessageConfirmationSchema', () => {
   it('should validate a valid MessageConfirmation', () => {
@@ -51,20 +50,18 @@ describe('MessageConfirmationSchema', () => {
 
     const result = MessageConfirmationSchema.safeParse(messageConfirmation);
 
-    expect(!result.success && result.error).toStrictEqual(
-      new ZodError([
-        {
-          code: 'custom',
-          message: 'Invalid "0x" notated hex string',
-          path: ['signature'],
-        },
-        {
-          code: 'custom',
-          message: 'Invalid hex bytes',
-          path: ['signature'],
-        },
-      ]),
-    );
+    expect(!result.success && result.error.issues).toEqual([
+      expect.objectContaining({
+        code: 'custom',
+        message: 'Invalid "0x" notated hex string',
+        path: ['signature'],
+      }),
+      expect.objectContaining({
+        code: 'custom',
+        message: 'Invalid hex bytes',
+        path: ['signature'],
+      }),
+    ]);
   });
 
   it('should not allow invalid signature types', () => {
@@ -74,16 +71,14 @@ describe('MessageConfirmationSchema', () => {
 
     const result = MessageConfirmationSchema.safeParse(messageConfirmation);
 
-    expect(!result.success && result.error).toStrictEqual(
-      new ZodError([
-        {
-          received: messageConfirmation.signatureType,
-          code: 'invalid_enum_value',
-          options: ['CONTRACT_SIGNATURE', 'APPROVED_HASH', 'EOA', 'ETH_SIGN'],
-          path: ['signatureType'],
-          message: `Invalid enum value. Expected 'CONTRACT_SIGNATURE' | 'APPROVED_HASH' | 'EOA' | 'ETH_SIGN', received '${messageConfirmation.signatureType}'`,
-        },
-      ]),
-    );
+    expect(!result.success && result.error.issues).toEqual([
+      expect.objectContaining({
+        code: 'invalid_value',
+        values: ['CONTRACT_SIGNATURE', 'APPROVED_HASH', 'EOA', 'ETH_SIGN'],
+        path: ['signatureType'],
+        message:
+          'Invalid option: expected one of "CONTRACT_SIGNATURE"|"APPROVED_HASH"|"EOA"|"ETH_SIGN"',
+      }),
+    ]);
   });
 });

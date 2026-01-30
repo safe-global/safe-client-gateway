@@ -23,6 +23,13 @@ import {
   CounterpartyAnalysisRequestSchema,
   ThreatAnalysisRequestSchema,
 } from '@/modules/safe-shield/entities/analysis-requests.entity';
+import {
+  ContractStatusGroup,
+  RecipientStatusGroup,
+} from '@/modules/safe-shield/entities/status-group.entity';
+import { CommonStatus } from '@/modules/safe-shield/entities/analysis-result.entity';
+import { RecipientStatus } from '@/modules/safe-shield/entities/recipient-status.entity';
+import { ContractStatus } from '@/modules/safe-shield/entities/contract-status.entity';
 
 describe('SafeShieldController (Unit)', () => {
   let controller: SafeShieldController;
@@ -61,7 +68,9 @@ describe('SafeShieldController (Unit)', () => {
   describe('analyzeRecipient', () => {
     it('should delegate to SafeShieldService and return analysis results', async () => {
       const expectedResponse = {
-        RECIPIENT_INTERACTION: [recipientAnalysisResultBuilder().build()],
+        [RecipientStatusGroup.RECIPIENT_INTERACTION]: [
+          recipientAnalysisResultBuilder().build(),
+        ],
       } as SingleRecipientAnalysisResponse;
 
       safeShieldService.analyzeRecipient.mockResolvedValue(expectedResponse);
@@ -151,9 +160,9 @@ describe('SafeShieldController (Unit)', () => {
         .with('recipient', {
           [requestBody.to]: {
             isSafe: false,
-            RECIPIENT_INTERACTION: [
+            [RecipientStatusGroup.RECIPIENT_INTERACTION]: [
               {
-                type: 'FAILED',
+                type: CommonStatus.FAILED,
                 severity: 'CRITICAL',
                 title: 'Analysis Failed',
                 description: 'Unable to complete analysis',
@@ -163,9 +172,9 @@ describe('SafeShieldController (Unit)', () => {
         })
         .with('contract', {
           [requestBody.to]: {
-            CONTRACT_VERIFICATION: [
+            [ContractStatusGroup.CONTRACT_VERIFICATION]: [
               {
-                type: 'FAILED',
+                type: CommonStatus.FAILED,
                 severity: 'CRITICAL',
                 title: 'Analysis Failed',
                 description: 'Unable to complete analysis',
@@ -196,9 +205,9 @@ describe('SafeShieldController (Unit)', () => {
       const successfulRecipientAnalysis = {
         [requestBody.to]: {
           isSafe: true,
-          RECIPIENT_INTERACTION: [
+          [RecipientStatusGroup.RECIPIENT_INTERACTION]: [
             recipientAnalysisResultBuilder()
-              .with('type', 'NEW_RECIPIENT')
+              .with('type', RecipientStatus.NEW_RECIPIENT)
               .build(),
           ],
         },
@@ -207,9 +216,9 @@ describe('SafeShieldController (Unit)', () => {
         .with('recipient', successfulRecipientAnalysis)
         .with('contract', {
           [requestBody.to]: {
-            CONTRACT_VERIFICATION: [
+            [ContractStatusGroup.CONTRACT_VERIFICATION]: [
               {
-                type: 'FAILED',
+                type: CommonStatus.FAILED,
                 severity: 'CRITICAL',
                 title: 'Analysis Failed',
                 description: 'Unable to complete analysis',
@@ -238,8 +247,10 @@ describe('SafeShieldController (Unit)', () => {
     it('should handle partial success with contract analysis succeeding but recipient failing', async () => {
       const successfulContractAnalysis = {
         [requestBody.to]: {
-          CONTRACT_VERIFICATION: [
-            contractAnalysisResultBuilder().with('type', 'VERIFIED').build(),
+          [ContractStatusGroup.CONTRACT_VERIFICATION]: [
+            contractAnalysisResultBuilder()
+              .with('type', ContractStatus.VERIFIED)
+              .build(),
           ],
         },
       };
@@ -247,9 +258,9 @@ describe('SafeShieldController (Unit)', () => {
         .with('recipient', {
           [requestBody.to]: {
             isSafe: false,
-            RECIPIENT_INTERACTION: [
+            [RecipientStatusGroup.RECIPIENT_INTERACTION]: [
               {
-                type: 'FAILED',
+                type: CommonStatus.FAILED,
                 severity: 'CRITICAL',
                 title: 'Analysis Failed',
                 description: 'Unable to complete analysis',

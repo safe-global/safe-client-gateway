@@ -22,13 +22,15 @@ describe('DeploymentSchema', () => {
 
       const result = DeploymentSchema.safeParse(deployment);
 
-      expect(!result.success && result.error.issues.length).toBe(1);
-      expect(!result.success && result.error.issues[0]).toStrictEqual({
-        code: 'invalid_string',
-        message: 'Invalid uuid',
-        path: [key],
-        validation: 'uuid',
-      });
+      expect(!result.success && result.error.issues).toEqual([
+        expect.objectContaining({
+          code: 'invalid_format',
+          format: 'uuid',
+          message: 'Invalid UUID',
+          origin: 'string',
+          path: [key],
+        }),
+      ]);
     },
   );
 
@@ -52,14 +54,14 @@ describe('DeploymentSchema', () => {
 
     const result = DeploymentSchema.safeParse(deployment);
 
-    expect(!result.success && result.error.issues.length).toBe(1);
-    expect(!result.success && result.error.issues[0]).toStrictEqual({
-      code: 'invalid_type',
-      expected: 'number',
-      message: 'Expected number, received string',
-      path: ['chain_id'],
-      received: 'string',
-    });
+    expect(!result.success && result.error.issues).toStrictEqual([
+      {
+        code: 'invalid_type',
+        expected: 'number',
+        message: 'Invalid input: expected number, received string',
+        path: ['chain_id'],
+      },
+    ]);
   });
 
   it('should checksum the address field', () => {
@@ -104,13 +106,14 @@ describe('DeploymentSchema', () => {
 
     const result = DeploymentSchema.safeParse(deployment);
 
-    expect(!result.success && result.error.issues.length).toBe(1);
-    expect(!result.success && result.error.issues[0]).toStrictEqual({
-      code: 'invalid_string',
-      message: 'Invalid url',
-      path: ['external_links', 'deposit_url'],
-      validation: 'url',
-    });
+    expect(!result.success && result.error.issues).toStrictEqual([
+      {
+        code: 'invalid_format',
+        format: 'url',
+        message: 'Invalid URL',
+        path: ['external_links', 'deposit_url'],
+      },
+    ]);
   });
 
   it.each([
@@ -142,51 +145,44 @@ describe('DeploymentSchema', () => {
       {
         code: 'invalid_type',
         expected: 'string',
-        message: 'Required',
+        message: 'Invalid input: expected string, received undefined',
         path: ['id'],
-        received: 'undefined',
       },
       {
         code: 'invalid_type',
         expected: 'string',
-        message: 'Required',
+        message: 'Invalid input: expected string, received undefined',
         path: ['organization_id'],
-        received: 'undefined',
       },
       {
         code: 'invalid_type',
         expected: 'string',
-        message: 'Required',
+        message: 'Invalid input: expected string, received undefined',
         path: ['name'],
-        received: 'undefined',
       },
       {
         code: 'invalid_type',
         expected: 'string',
-        message: 'Required',
+        message: 'Invalid input: expected string, received undefined',
         path: ['display_name'],
-        received: 'undefined',
       },
       {
         code: 'invalid_type',
         expected: 'string',
-        message: 'Required',
+        message: 'Invalid input: expected string, received undefined',
         path: ['description'],
-        received: 'undefined',
       },
       {
         code: 'invalid_type',
         expected: 'number',
-        message: 'Required',
+        message: 'Invalid input: expected number, received undefined',
         path: ['chain_id'],
-        received: 'undefined',
       },
       {
         code: 'invalid_type',
         expected: 'string',
-        message: 'Required',
+        message: 'Invalid input: expected string, received undefined',
         path: ['address'],
-        received: 'undefined',
       },
     ]);
   });

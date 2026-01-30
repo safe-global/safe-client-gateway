@@ -15,7 +15,7 @@ const DEFAULT_ERC721_DECIMALS = 0;
 
 const BaseTokenSchema = z.object({
   address: AddressSchema,
-  logoUri: z.string().url(),
+  logoUri: z.url(),
   name: z.string(),
   symbol: z.string(),
   trusted: z.boolean(),

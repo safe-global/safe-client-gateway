@@ -30,10 +30,10 @@ describe('Contract', () => {
 
       expect(!result.success && result.error.issues).toStrictEqual([
         {
-          code: 'invalid_string',
-          message: 'Invalid url',
+          code: 'invalid_format',
+          format: 'url',
+          message: 'Invalid URL',
           path: ['logoFile'],
-          validation: 'url',
         },
       ]);
     });
@@ -47,16 +47,14 @@ describe('Contract', () => {
         {
           code: 'invalid_type',
           expected: 'string',
-          message: 'Required',
+          message: 'Invalid input: expected string, received undefined',
           path: ['description'],
-          received: 'undefined',
         },
         {
           code: 'invalid_type',
           expected: 'string',
-          message: 'Required',
+          message: 'Invalid input: expected string, received undefined',
           path: ['logoFile'],
-          received: 'undefined',
         },
       ]);
     });
@@ -83,10 +81,9 @@ describe('Contract', () => {
       expect(!result.success && result.error.issues).toStrictEqual([
         {
           code: 'invalid_type',
-          expected: 'object',
-          message: 'Expected object, received string',
+          expected: 'record',
+          message: 'Invalid input: expected record, received string',
           path: ['abiJson', 0],
-          received: 'string',
         },
       ]);
     });
@@ -127,21 +124,21 @@ describe('Contract', () => {
         {
           code: 'invalid_type',
           expected: 'array',
-          message: 'Required',
+          message: 'Invalid input: expected array, received undefined',
           path: ['abiJson'],
-          received: 'undefined',
         },
         {
           code: 'invalid_type',
           expected: 'string',
-          message: 'Required',
+          message: 'Invalid input: expected string, received undefined',
           path: ['abiHash'],
-          received: 'undefined',
         },
         {
-          code: 'invalid_date',
-          message: 'Invalid date',
+          code: 'invalid_type',
+          expected: 'date',
+          message: 'Invalid input: expected date, received Date',
           path: ['modified'],
+          received: 'Invalid Date',
         },
       ]);
     });
@@ -202,56 +199,51 @@ describe('Contract', () => {
         {
           code: 'invalid_type',
           expected: 'string',
-          message: 'Required',
+          message: 'Invalid input: expected string, received undefined',
           path: ['address'],
-          received: 'undefined',
         },
         {
           code: 'invalid_type',
           expected: 'string',
-          message: 'Required',
+          message: 'Invalid input: expected string, received undefined',
           path: ['name'],
-          received: 'undefined',
         },
         {
           code: 'invalid_type',
           expected: 'string',
-          message: 'Required',
+          message: 'Invalid input: expected string, received undefined',
           path: ['displayName'],
-          received: 'undefined',
         },
         {
           code: 'invalid_type',
           expected: 'number',
-          message: 'Required',
+          message: 'Invalid input: expected number, received undefined',
           path: ['chainId'],
-          received: 'undefined',
         },
         {
           code: 'invalid_type',
           expected: 'object',
-          message: 'Required',
+          message: 'Invalid input: expected object, received undefined',
           path: ['project'],
-          received: 'undefined',
         },
         {
           code: 'invalid_type',
           expected: 'object',
-          message: 'Required',
+          message: 'Invalid input: expected object, received undefined',
           path: ['abi'],
-          received: 'undefined',
         },
         {
-          code: 'invalid_date',
-          message: 'Invalid date',
+          code: 'invalid_type',
+          expected: 'date',
+          message: 'Invalid input: expected date, received Date',
           path: ['modified'],
+          received: 'Invalid Date',
         },
         {
           code: 'invalid_type',
           expected: 'boolean',
-          message: 'Required',
+          message: 'Invalid input: expected boolean, received undefined',
           path: ['trustedForDelegateCall'],
-          received: 'undefined',
         },
       ]);
     });

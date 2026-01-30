@@ -24,6 +24,7 @@ import {
 } from '../threat-analysis.types';
 import { Address } from 'viem';
 import type { z } from 'zod';
+import { ThreatStatusGroup } from '@/modules/safe-shield/entities/status-group.entity';
 
 /**
  * DTO for master copy change threat analysis result.
@@ -34,7 +35,7 @@ export class MasterCopyChangeThreatAnalysisResultDto
 {
   @ApiProperty({
     description: 'Threat status code',
-    enum: ['MASTERCOPY_CHANGE'],
+    enum: [ThreatStatus.MASTERCOPY_CHANGE],
   })
   declare type: Extract<ThreatStatus, 'MASTERCOPY_CHANGE'>;
 
@@ -74,7 +75,7 @@ export class MaliciousOrModerateThreatAnalysisResultDto
 {
   @ApiProperty({
     description: 'Threat status code',
-    enum: ['MALICIOUS', 'MODERATE'],
+    enum: [ThreatStatus.MALICIOUS, ThreatStatus.MODERATE],
   })
   declare type: Extract<ThreatStatus, 'MALICIOUS' | 'MODERATE'>;
 
@@ -109,7 +110,7 @@ export class FailedThreatAnalysisResultDto
 {
   @ApiProperty({
     description: 'Threat status code',
-    enum: ['FAILED'],
+    enum: [CommonStatus.FAILED],
   })
   declare type: Extract<CommonStatus, 'FAILED'>;
 }
@@ -122,7 +123,11 @@ export class ThreatAnalysisResultDto extends AnalysisResultDto<
 > {
   @ApiProperty({
     description: 'Threat status code',
-    enum: ['NO_THREAT', 'OWNERSHIP_CHANGE', 'MODULE_CHANGE'],
+    enum: [
+      ThreatStatus.NO_THREAT,
+      ThreatStatus.OWNERSHIP_CHANGE,
+      ThreatStatus.MODULE_CHANGE,
+    ],
   })
   declare type: Exclude<
     ThreatStatus,
@@ -282,7 +287,7 @@ export class ThreatAnalysisResponseDto implements ThreatAnalysisResponse {
       },
     ],
   })
-  public readonly THREAT?: Array<ThreatAnalysisResult>;
+  public readonly [ThreatStatusGroup.THREAT]?: Array<ThreatAnalysisResult>;
 
   @ApiPropertyOptional({
     description:
@@ -302,7 +307,7 @@ export class ThreatAnalysisResponseDto implements ThreatAnalysisResponse {
       },
     ],
   })
-  public readonly BALANCE_CHANGE?: Array<BalanceChange>;
+  public readonly [ThreatStatusGroup.BALANCE_CHANGE]?: Array<BalanceChange>;
 
   @ApiPropertyOptional({
     description:

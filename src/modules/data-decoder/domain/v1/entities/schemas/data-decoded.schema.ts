@@ -6,7 +6,10 @@ export const DataDecodedParameterSchema = z.object({
   // z.unknown() makes the property optional but it should be defined
   value: z.custom<Required<unknown>>(),
   valueDecoded: z
-    .union([z.record(z.unknown()), z.array(z.record(z.unknown()))])
+    .union([
+      z.record(z.string(), z.unknown()),
+      z.array(z.record(z.string(), z.unknown())),
+    ])
     .nullish()
     .default(null),
 });

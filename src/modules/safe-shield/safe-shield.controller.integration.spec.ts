@@ -18,7 +18,7 @@ import { TestBlockaidApiModule } from './threat-analysis/blockaid/__tests__/test
 import { IBlockaidApi } from './threat-analysis/blockaid/blockaid-api.interface';
 import type { BlockaidScanResponse } from '@/modules/safe-shield/threat-analysis/blockaid/schemas/blockaid-scan-response.schema';
 
-describe('SafeShieldController (Integration)', () => {
+describe('SafeShieldController', () => {
   let app: INestApplication<Server>;
   let safeConfigUrl: string;
   let networkService: jest.MockedObjectDeep<INetworkService>;

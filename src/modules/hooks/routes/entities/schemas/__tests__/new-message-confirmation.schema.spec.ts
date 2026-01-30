@@ -3,7 +3,6 @@ import type { TransactionEventType } from '@/modules/hooks/routes/entities/event
 import { NewMessageConfirmationEventSchema } from '@/modules/hooks/routes/entities/schemas/new-message-confirmation.schema';
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress } from 'viem';
-import { ZodError } from 'zod';
 
 describe('NewMessageConfirmationEventSchema', () => {
   it('should validate a message confirmation event', () => {
@@ -29,17 +28,14 @@ describe('NewMessageConfirmationEventSchema', () => {
       newMessageConfirmationEvent,
     );
 
-    expect(!result.success && result.error).toStrictEqual(
-      new ZodError([
-        {
-          received: newMessageConfirmationEvent.type,
-          code: 'invalid_literal',
-          expected: 'MESSAGE_CONFIRMATION',
-          path: ['type'],
-          message: 'Invalid literal value, expected "MESSAGE_CONFIRMATION"',
-        },
-      ]),
-    );
+    expect(!result.success && result.error.issues).toStrictEqual([
+      {
+        code: 'invalid_value',
+        path: ['type'],
+        message: 'Invalid input: expected "MESSAGE_CONFIRMATION"',
+        values: ['MESSAGE_CONFIRMATION'],
+      },
+    ]);
   });
 
   it('should not allow non-address address', () => {
@@ -51,15 +47,13 @@ describe('NewMessageConfirmationEventSchema', () => {
       newMessageConfirmationEvent,
     );
 
-    expect(!result.success && result.error).toStrictEqual(
-      new ZodError([
-        {
-          code: 'custom',
-          message: 'Invalid address',
-          path: ['address'],
-        },
-      ]),
-    );
+    expect(!result.success && result.error.issues).toStrictEqual([
+      {
+        code: 'custom',
+        message: 'Invalid address',
+        path: ['address'],
+      },
+    ]);
   });
 
   it('should checksum the address', () => {

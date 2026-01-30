@@ -2,7 +2,6 @@ import { previewTransactionDtoBuilder } from '@/modules/transactions/routes/enti
 import { PreviewTransactionDtoSchema } from '@/modules/transactions/routes/entities/schemas/preview-transaction.dto.schema';
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress } from 'viem';
-import { ZodError } from 'zod';
 
 describe('PreviewTransactionDtoSchema', () => {
   it('should validate a valid PreviewTransactionDto', () => {
@@ -45,31 +44,23 @@ describe('PreviewTransactionDtoSchema', () => {
 
     const result = PreviewTransactionDtoSchema.safeParse(previewTransactionDto);
 
-    expect(!result.success && result.error).toStrictEqual(
-      new ZodError([
-        {
-          code: 'invalid_type',
-          expected: 'string',
-          received: 'undefined',
-          path: ['to'],
-          message: 'Required',
-        },
-        {
-          code: 'invalid_type',
-          expected: 'string',
-          received: 'undefined',
-          path: ['value'],
-          message: 'Required',
-        },
-        // @ts-expect-error - enum values cannot be inferred by zod (zod-based error)
-        {
-          expected: '0 | 1',
-          received: 'undefined',
-          code: 'invalid_type',
-          path: ['operation'],
-          message: 'Required',
-        },
-      ]),
-    );
+    expect(!result.success && result.error.issues).toEqual([
+      expect.objectContaining({
+        code: 'invalid_type',
+        expected: 'string',
+        path: ['to'],
+      }),
+      expect.objectContaining({
+        code: 'invalid_type',
+        expected: 'string',
+        path: ['value'],
+      }),
+      expect.objectContaining({
+        code: 'invalid_value',
+        values: [0, 1],
+        path: ['operation'],
+        message: 'Invalid option: expected one of 0|1',
+      }),
+    ]);
   });
 });

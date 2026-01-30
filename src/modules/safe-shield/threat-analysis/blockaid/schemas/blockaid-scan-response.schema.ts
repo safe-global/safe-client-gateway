@@ -39,14 +39,14 @@ const SimulationSchema = z.object({
   status: z.string(),
   description: z.string().optional(),
   error: z.string().optional(),
-  assets_diffs: z.record(BalanceChangesSchema).optional(),
+  assets_diffs: z.record(z.string(), BalanceChangesSchema).optional(),
   contract_management: z
-    .record(z.array(ContractManagementChangeSchema))
+    .record(z.string(), z.array(ContractManagementChangeSchema))
     .optional(),
 });
 
 export const BlockaidScanResponseSchema = z.object({
-  request_id: z.union([z.string(), z.undefined()]),
+  request_id: z.string().optional(),
   validation: ValidationSchema.optional(),
   simulation: SimulationSchema.optional(),
 });

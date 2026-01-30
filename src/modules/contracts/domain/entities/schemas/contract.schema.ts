@@ -6,6 +6,6 @@ export const ContractSchema = z.object({
   name: z.string(),
   displayName: z.string(),
   logoUri: z.string().nullish().default(null),
-  contractAbi: z.record(z.unknown()).nullish().default(null),
+  contractAbi: z.record(z.string(), z.unknown()).nullish().default(null),
   trustedForDelegateCall: z.boolean(),
 });

@@ -1,6 +1,5 @@
 import { AddConfirmationDtoSchema } from '@/modules/transactions/routes/entities/schemas/add-confirmation.dto.schema';
 import { faker } from '@faker-js/faker';
-import { ZodError } from 'zod';
 import type { Address } from 'viem';
 
 describe('AddConfirmationDtoSchema', () => {
@@ -31,32 +30,28 @@ describe('AddConfirmationDtoSchema', () => {
     const value = { invalid: 'addConfirmationDto' };
     const result = AddConfirmationDtoSchema.safeParse(value);
 
-    expect(!result.success && result.error.issues).toStrictEqual([
-      {
+    expect(!result.success && result.error.issues).toEqual([
+      expect.objectContaining({
         code: 'invalid_union',
         message: 'Invalid input',
         path: [],
-        unionErrors: [
-          new ZodError([
-            {
+        errors: [
+          [
+            expect.objectContaining({
               code: 'invalid_type',
               expected: 'string',
-              received: 'undefined',
               path: ['signature'],
-              message: 'Required',
-            },
-          ]),
-          new ZodError([
-            {
+            }),
+          ],
+          [
+            expect.objectContaining({
               code: 'invalid_type',
               expected: 'string',
-              received: 'undefined',
               path: ['signedSafeTxHash'],
-              message: 'Required',
-            },
-          ]),
+            }),
+          ],
         ],
-      },
+      }),
     ]);
   });
 });

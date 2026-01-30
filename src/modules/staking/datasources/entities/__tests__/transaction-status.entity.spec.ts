@@ -70,16 +70,14 @@ describe('TransactionStatus', () => {
         {
           code: 'invalid_type',
           expected: 'array',
-          message: 'Required',
+          message: 'Invalid input: expected array, received undefined',
           path: ['topics'],
-          received: 'undefined',
         },
         {
           code: 'invalid_type',
           expected: 'string',
-          message: 'Required',
+          message: 'Invalid input: expected string, received undefined',
           path: ['data'],
-          received: 'undefined',
         },
       ]);
     });
@@ -122,9 +120,8 @@ describe('TransactionStatus', () => {
         {
           code: 'invalid_type',
           expected: 'array',
-          message: 'Required',
+          message: 'Invalid input: expected array, received undefined',
           path: ['logs'],
-          received: 'undefined',
         },
       ]);
     });
@@ -153,9 +150,8 @@ describe('TransactionStatus', () => {
         {
           code: 'invalid_type',
           expected: 'object',
-          message: 'Required',
+          message: 'Invalid input: expected object, received undefined',
           path: ['receipt'],
-          received: 'undefined',
         },
       ]);
     });

@@ -6,7 +6,7 @@ export const AddressSchema = z.string().transform((value, ctx) => {
     return getAddress(value);
   } catch {
     ctx.addIssue({
-      code: z.ZodIssueCode.custom,
+      code: 'custom',
       message: 'Invalid address',
     });
     return z.NEVER;

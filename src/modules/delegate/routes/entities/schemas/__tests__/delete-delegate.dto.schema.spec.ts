@@ -2,7 +2,6 @@ import { deleteDelegateDtoBuilder } from '@/modules/delegate/routes/entities/__t
 import { DeleteDelegateDtoSchema } from '@/modules/delegate/routes/entities/schemas/delete-delegate.dto.schema';
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress } from 'viem';
-import { ZodError } from 'zod';
 
 describe('DeleteDelegateSchema', () => {
   it('should validate a valid DeleteDelegateDto', () => {
@@ -37,30 +36,26 @@ describe('DeleteDelegateSchema', () => {
 
     const result = DeleteDelegateDtoSchema.safeParse(deleteDelegateDto);
 
-    expect(!result.success && result.error).toStrictEqual(
-      new ZodError([
-        {
-          code: 'invalid_type',
-          expected: 'string',
-          received: 'undefined',
-          path: ['delegate'],
-          message: 'Required',
-        },
-        {
-          code: 'invalid_type',
-          expected: 'string',
-          received: 'undefined',
-          path: ['delegator'],
-          message: 'Required',
-        },
-        {
-          code: 'invalid_type',
-          expected: 'string',
-          received: 'undefined',
-          path: ['signature'],
-          message: 'Required',
-        },
-      ]),
-    );
+    expect(result.success).toBe(false);
+    expect(!result.success && result.error.issues).toStrictEqual([
+      {
+        code: 'invalid_type',
+        expected: 'string',
+        message: 'Invalid input: expected string, received undefined',
+        path: ['delegate'],
+      },
+      {
+        code: 'invalid_type',
+        expected: 'string',
+        message: 'Invalid input: expected string, received undefined',
+        path: ['delegator'],
+      },
+      {
+        code: 'invalid_type',
+        expected: 'string',
+        message: 'Invalid input: expected string, received undefined',
+        path: ['signature'],
+      },
+    ]);
   });
 });
