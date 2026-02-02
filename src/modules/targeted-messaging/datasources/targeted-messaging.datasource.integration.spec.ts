@@ -64,7 +64,10 @@ describe('TargetedMessagingDataSource tests', () => {
   });
 
   beforeEach(async () => {
-    await sql`TRUNCATE TABLE submissions, targeted_safes, outreaches CASCADE`;
+    // Truncate in dependency order with RESTART IDENTITY to avoid constraint violations
+    await sql`TRUNCATE TABLE submissions RESTART IDENTITY CASCADE`;
+    await sql`TRUNCATE TABLE targeted_safes RESTART IDENTITY CASCADE`;
+    await sql`TRUNCATE TABLE outreaches RESTART IDENTITY CASCADE`;
     jest.clearAllMocks();
   });
 
