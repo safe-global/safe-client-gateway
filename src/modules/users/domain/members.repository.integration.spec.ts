@@ -131,16 +131,31 @@ describe('MembersRepository', () => {
   afterEach(async () => {
     jest.resetAllMocks();
 
-    await Promise.all(
-      [Member, Space, User, Wallet].map(async (entity) => {
-        const repository = dataSource.getRepository(entity);
-        return await repository
-          .createQueryBuilder()
-          .delete()
-          .where('1=1')
-          .execute();
-      }),
-    );
+    // Delete in dependency order to avoid deadlocks
+    await dataSource
+      .getRepository(Member)
+      .createQueryBuilder()
+      .delete()
+      .where('1=1')
+      .execute();
+    await dataSource
+      .getRepository(Space)
+      .createQueryBuilder()
+      .delete()
+      .where('1=1')
+      .execute();
+    await dataSource
+      .getRepository(Wallet)
+      .createQueryBuilder()
+      .delete()
+      .where('1=1')
+      .execute();
+    await dataSource
+      .getRepository(User)
+      .createQueryBuilder()
+      .delete()
+      .where('1=1')
+      .execute();
   });
 
   afterAll(async () => {
