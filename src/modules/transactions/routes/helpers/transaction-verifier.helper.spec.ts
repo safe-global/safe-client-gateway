@@ -1,6 +1,6 @@
 import { faker } from '@faker-js/faker';
 import { get } from 'lodash';
-import { type Address, concat, getAddress } from 'viem';
+import { type Address, type Hex, concat, getAddress } from 'viem';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 import { SignatureType } from '@/domain/common/entities/signature-type.entity';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
@@ -2139,14 +2139,18 @@ describe('TransactionVerifierHelper', () => {
             safe,
             signatureType,
           });
-        const v = transaction.confirmations![0].signature?.slice(-2);
+
+        const signature = transaction.confirmations![0].signature as Hex;
+        // Replace one hex digit in the r component with 'g' (invalid hex char)
+        const invalidSignature =
+          `${signature.slice(0, 65)}g${signature.slice(66)}` as Hex;
 
         expect(() => {
           return target.verifyConfirmation({
             chainId,
             safe,
             transaction,
-            signature: `0x${'-'.repeat(128)}${v}`,
+            signature: invalidSignature,
           });
         }).toThrow(new Error('Could not recover address'));
 

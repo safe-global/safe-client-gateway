@@ -29,6 +29,12 @@ const mockConfigurationService = jest.mocked({
   getOrThrow: jest.fn(),
 } as jest.MockedObjectDeep<IConfigurationService>);
 
+const buildDistinctChainIds = (): [string, string] => {
+  const chainId1 = faker.number.int({ min: 1, max: 10000 }).toString();
+  const chainId2 = faker.number.int({ min: 10001, max: 20000 }).toString();
+  return [chainId1, chainId2];
+};
+
 describe('TargetedMessagingDataSource tests', () => {
   let fakeCacheService: FakeCacheService;
   let sql: postgres.Sql;
@@ -58,7 +64,10 @@ describe('TargetedMessagingDataSource tests', () => {
   });
 
   beforeEach(async () => {
-    await sql`TRUNCATE TABLE submissions, targeted_safes, outreaches CASCADE`;
+    // Truncate in dependency order with RESTART IDENTITY to avoid constraint violations
+    await sql`TRUNCATE TABLE submissions RESTART IDENTITY CASCADE`;
+    await sql`TRUNCATE TABLE targeted_safes RESTART IDENTITY CASCADE`;
+    await sql`TRUNCATE TABLE outreaches RESTART IDENTITY CASCADE`;
     jest.clearAllMocks();
   });
 
@@ -672,8 +681,7 @@ describe('TargetedMessagingDataSource tests', () => {
       });
 
       it('distinguishes between different chainIds', async () => {
-        const chainId1 = faker.number.int({ min: 1, max: 10000 }).toString();
-        const chainId2 = faker.number.int({ min: 1, max: 10000 }).toString();
+        const [chainId1, chainId2] = buildDistinctChainIds();
 
         await target.createTargetedSafes(
           createTargetedSafesDtoBuilder()
@@ -702,8 +710,7 @@ describe('TargetedMessagingDataSource tests', () => {
       });
 
       it('uses separate cache keys for different chainIds', async () => {
-        const chainId1 = faker.number.int({ min: 1, max: 10000 }).toString();
-        const chainId2 = faker.number.int({ min: 1, max: 10000 }).toString();
+        const [chainId1, chainId2] = buildDistinctChainIds();
 
         await target.createTargetedSafes(
           createTargetedSafesDtoBuilder()
@@ -1030,8 +1037,7 @@ describe('TargetedMessagingDataSource tests', () => {
       const outreach = await target.createOutreach(createOutreachDto);
       const safeAddress = getAddress(faker.finance.ethereumAddress());
       const signerAddress = getAddress(faker.finance.ethereumAddress());
-      const chainId1 = faker.string.numeric();
-      const chainId2 = faker.string.numeric();
+      const [chainId1, chainId2] = buildDistinctChainIds();
 
       const targetedSafes = await target.createTargetedSafes(
         createTargetedSafesDtoBuilder()
