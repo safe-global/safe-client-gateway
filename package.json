@@ -50,7 +50,7 @@
     "@nestjs/serve-static": "5.0.4",
     "@nestjs/swagger": "11.2.0",
     "@nestjs/typeorm": "11.0.0",
-    "@safe-global/safe-deployments": "1.37.45",
+    "@safe-global/safe-deployments": "1.37.51",
     "amqp-connection-manager": "5.0.0",
     "amqplib": "0.10.8",
     "bullmq": "^5.56.0",
@@ -73,7 +73,7 @@
     "zod": "4.3.6"
   },
   "devDependencies": {
-    "@faker-js/faker": "10.1.0",
+    "@faker-js/faker": "10.2.0",
     "@nestjs/cli": "11.0.14",
     "@nestjs/schematics": "11.0.5",
     "@nestjs/testing": "11.1.11",

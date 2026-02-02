@@ -1459,10 +1459,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@faker-js/faker@npm:10.1.0":
-  version: 10.1.0
-  resolution: "@faker-js/faker@npm:10.1.0"
-  checksum: 10/3332795debec5793dfaea79e740ed44bd7d94fb43cea8b1bd5d59af19f15c4a9533fa696cfebf024a9bba5d9d1a8a28cde40a92670c03cc11170a3025e551e65
+"@faker-js/faker@npm:10.2.0":
+  version: 10.2.0
+  resolution: "@faker-js/faker@npm:10.2.0"
+  checksum: 10/5b1b9690ff3339405cf32e2a1ae6f98305ffd118fb84c2d16daae7f2759408cba1e4f264ba95a7e5fb473a07fd492e4077ec38f0280baddcb43f901fa5653a5c
   languageName: node
   linkType: hard
 
@@ -2861,12 +2861,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@safe-global/safe-deployments@npm:1.37.45":
-  version: 1.37.45
-  resolution: "@safe-global/safe-deployments@npm:1.37.45"
+"@safe-global/safe-deployments@npm:1.37.51":
+  version: 1.37.51
+  resolution: "@safe-global/safe-deployments@npm:1.37.51"
   dependencies:
     semver: "npm:^7.6.2"
-  checksum: 10/5ee52114ad57a8db93245f0ca37afe8f50b825ad562ffd6b3122f63c55006a0344947473d209331deb3e01296a444ce25a15b5797e28a1f77443df46a5e4ed3f
+  checksum: 10/25f2ae53812bcf282de9468bc0a3cc60464db1ade1910d8af839ac84ec38a80a5e4bd1a28aefc311f7eb1bbe8c3b1794ddc909da407b856c7b98c5c8dcb5d625
   languageName: node
   linkType: hard
 
@@ -9683,7 +9683,7 @@ __metadata:
     "@aws-sdk/lib-storage": "npm:3.958.0"
     "@aws-sdk/s3-request-presigner": "npm:3.958.0"
     "@blockaid/client": "npm:^0.65.0"
-    "@faker-js/faker": "npm:10.1.0"
+    "@faker-js/faker": "npm:10.2.0"
     "@fingerprintjs/fingerprintjs-pro-server-api": "npm:6.10.0"
     "@nestjs/bullmq": "npm:^11.0.3"
     "@nestjs/cache-manager": "npm:3.0.1"
@@ -9698,7 +9698,7 @@ __metadata:
     "@nestjs/swagger": "npm:11.2.0"
     "@nestjs/testing": "npm:11.1.11"
     "@nestjs/typeorm": "npm:11.0.0"
-    "@safe-global/safe-deployments": "npm:1.37.45"
+    "@safe-global/safe-deployments": "npm:1.37.51"
     "@smithy/util-stream": "npm:4.5.5"
     "@types/amqplib": "npm:0"
     "@types/cookie-parser": "npm:1.4.8"
