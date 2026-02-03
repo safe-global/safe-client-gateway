@@ -302,6 +302,24 @@ export default () => ({
       process.env.HTTP_CLIENT_REQUEST_TIMEOUT_MILLISECONDS_OWNERS ?? `${5_000}`,
     ),
   },
+  undici: {
+    // Maximum number of connections per origin. Defaults to 100.
+    connections: parseInt(process.env.UNDICI_CONNECTIONS ?? `${100}`),
+    // Number of requests to pipeline. Defaults to 1 (no pipelining).
+    pipelining: parseInt(process.env.UNDICI_PIPELINING ?? `${1}`),
+    // Timeout for socket connection in milliseconds. Defaults to 10000 (10 seconds).
+    connectTimeout: parseInt(
+      process.env.UNDICI_CONNECT_TIMEOUT_MILLISECONDS ?? `${10_000}`,
+    ),
+    // Time of inactivity on socket in milliseconds before closing. Defaults to 30000 (30 seconds).
+    keepAliveTimeout: parseInt(
+      process.env.UNDICI_KEEP_ALIVE_TIMEOUT_MILLISECONDS ?? `${30_000}`,
+    ),
+    // Maximum time to keep a connection alive in milliseconds. Defaults to 600000 (600 seconds / 10 minutes).
+    keepAliveMaxTimeout: parseInt(
+      process.env.UNDICI_KEEP_ALIVE_MAX_TIMEOUT_MILLISECONDS ?? `${600_000}`,
+    ),
+  },
   circuitBreaker: {
     // Number of failures before the circuit opens
     failureThreshold: parseInt(

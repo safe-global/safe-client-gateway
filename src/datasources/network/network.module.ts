@@ -13,6 +13,11 @@ import { LogType } from '@/domain/common/entities/log-type.entity';
 import { hashSha1 } from '@/domain/common/utils/utils';
 import { CircuitBreakerService } from '@/datasources/circuit-breaker/circuit-breaker.service';
 import { NetworkRequest } from '@/datasources/network/entities/network.request.entity';
+import { setGlobalDispatcher, Agent } from 'undici';
+import {
+  UndiciAgent,
+  UndiciShutdownHook,
+} from '@/datasources/network/undici.shutdown.hook';
 
 export const FetchClientToken = Symbol('FetchClient');
 
@@ -215,6 +220,45 @@ function getCacheKey(
 }
 
 /**
+ * Sets up the global Undici dispatcher with configured connection pooling
+ * Returns the Agent instance for graceful shutdown
+ */
+function setupUndiciDispatcher(
+  configurationService: IConfigurationService,
+): Agent {
+  const connections =
+    configurationService.getOrThrow<number>('undici.connections');
+  const pipelining =
+    configurationService.getOrThrow<number>('undici.pipelining');
+  const connectTimeout = configurationService.getOrThrow<number>(
+    'undici.connectTimeout',
+  );
+  const keepAliveTimeout = configurationService.getOrThrow<number>(
+    'undici.keepAliveTimeout',
+  );
+  const keepAliveMaxTimeout = configurationService.getOrThrow<number>(
+    'undici.keepAliveMaxTimeout',
+  );
+
+  const agent = new Agent({
+    connections,
+    pipelining,
+    connect: {
+      timeout: connectTimeout,
+      keepAlive: true,
+    },
+    keepAliveTimeout,
+    keepAliveMaxTimeout,
+    headersTimeout: connectTimeout,
+    bodyTimeout: connectTimeout,
+  });
+
+  setGlobalDispatcher(agent);
+
+  return agent;
+}
+
+/**
  * A {@link Global} Module which provides HTTP support via {@link NetworkService}
  * Feature Modules don't need to import this module directly in order to inject
  * the {@link NetworkService}.
@@ -224,6 +268,12 @@ function getCacheKey(
 @Global()
 @Module({
   providers: [
+    {
+      provide: UndiciAgent,
+      useFactory: setupUndiciDispatcher,
+      inject: [IConfigurationService],
+    },
+    UndiciShutdownHook,
     {
       provide: FetchClientToken,
       useFactory: fetchClientFactory,
