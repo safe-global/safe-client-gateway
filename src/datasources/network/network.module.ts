@@ -18,6 +18,7 @@ import {
   UndiciAgent,
   UndiciShutdownHook,
 } from '@/datasources/network/undici.shutdown.hook';
+import { asError } from '@/logging/utils';
 
 export const FetchClientToken = Symbol('FetchClient');
 
@@ -225,6 +226,7 @@ function getCacheKey(
  */
 function setupUndiciDispatcher(
   configurationService: IConfigurationService,
+  loggingService: ILoggingService,
 ): Agent {
   const connections =
     configurationService.getOrThrow<number>('undici.connections');
@@ -240,22 +242,26 @@ function setupUndiciDispatcher(
     'undici.keepAliveMaxTimeout',
   );
 
-  const agent = new Agent({
-    connections,
-    pipelining,
-    connect: {
-      timeout: connectTimeout,
-      keepAlive: true,
-    },
-    keepAliveTimeout,
-    keepAliveMaxTimeout,
-    headersTimeout: connectTimeout,
-    bodyTimeout: connectTimeout,
-  });
+  try {
+    const agent = new Agent({
+      connections,
+      pipelining,
+      connect: {
+        timeout: connectTimeout,
+        keepAlive: true,
+      },
+      keepAliveTimeout,
+      keepAliveMaxTimeout,
+    });
 
-  setGlobalDispatcher(agent);
-
-  return agent;
+    setGlobalDispatcher(agent);
+    return agent;
+  } catch (error) {
+    loggingService.error(
+      `Failed to setup Undici global dispatcher: ${asError(error).message}`,
+    );
+    throw error;
+  }
 }
 
 /**
@@ -271,7 +277,7 @@ function setupUndiciDispatcher(
     {
       provide: UndiciAgent,
       useFactory: setupUndiciDispatcher,
-      inject: [IConfigurationService],
+      inject: [IConfigurationService, LoggingService],
     },
     UndiciShutdownHook,
     {
