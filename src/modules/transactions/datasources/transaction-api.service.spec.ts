@@ -3,6 +3,7 @@ import type { IConfigurationService } from '@/config/configuration.service.inter
 import type { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
 import type { ICacheService } from '@/datasources/cache/cache.service.interface';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
+import { CircuitBreakerKeys } from '@/datasources/circuit-breaker/circuit-breaker.keys';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
 import { TransactionApi } from '@/modules/transactions/datasources/transaction-api.service';
@@ -2095,6 +2096,9 @@ describe('TransactionApi', () => {
         expireTimeSeconds: ownersTtlSeconds,
         networkRequest: {
           timeout: ownersTimeout,
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getTransactionServiceKey(chainId),
+          },
         },
       });
     });
@@ -2131,6 +2135,9 @@ describe('TransactionApi', () => {
         expireTimeSeconds: ownersTtlSeconds,
         networkRequest: {
           timeout: ownersTimeout,
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getTransactionServiceKey(chainId),
+          },
         },
       });
     });
