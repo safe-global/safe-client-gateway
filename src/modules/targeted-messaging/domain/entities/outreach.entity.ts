@@ -1,6 +1,10 @@
 import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
 import { RowSchema } from '@/datasources/db/v1/entities/row.entity';
 import { z } from 'zod';
+import {
+  NullableCoercedDateSchema,
+  NullableStringSchema,
+} from '@/validation/entities/schemas/nullable.schema';
 
 export type Outreach = z.infer<typeof OutreachSchema>;
 
@@ -15,8 +19,8 @@ export const OutreachSchema = RowSchema.extend({
     .lte(DB_MAX_SAFE_INTEGER - 1),
   type: z.string(),
   teamName: z.string(),
-  sourceFile: z.string().nullish().default(null),
-  sourceFileProcessedDate: z.coerce.date().nullish().default(null),
-  sourceFileChecksum: z.string().nullish().default(null),
+  sourceFile: NullableStringSchema,
+  sourceFileProcessedDate: NullableCoercedDateSchema,
+  sourceFileChecksum: NullableStringSchema,
   targetAll: z.boolean(),
 });

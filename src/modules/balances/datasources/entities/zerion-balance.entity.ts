@@ -9,6 +9,10 @@ import {
   PositionTypeSchema,
   PositionType,
 } from '@/modules/positions/domain/entities/position-type.entity';
+import {
+  NullableNumberSchema,
+  NullableStringSchema,
+} from '@/validation/entities/schemas/nullable.schema';
 
 export type ZerionFungibleInfo = z.infer<typeof ZerionFungibleInfoSchema>;
 
@@ -44,12 +48,12 @@ export const ZerionImplementationSchema = z.object({
 });
 
 export const ZerionFungibleInfoSchema = z.object({
-  name: z.string().nullish().default(null),
-  symbol: z.string().nullish().default(null),
-  description: z.string().nullish().default(null),
+  name: NullableStringSchema,
+  symbol: NullableStringSchema,
+  description: NullableStringSchema,
   icon: z
     .object({
-      url: z.string().nullish().default(null),
+      url: NullableStringSchema,
     })
     .nullish()
     .default(null),
@@ -76,7 +80,7 @@ export const ZerionFlagsSchema = z.object({
 export const ZerionApplicationMetadataSchema = z.object({
   name: z.string(),
   icon: z.object({
-    url: z.string().nullish().default(null),
+    url: NullableStringSchema,
   }),
   url: z.string(),
 });
@@ -89,16 +93,16 @@ export const ZerionBalanceChangeSchema = z.object({
 export const ZerionAttributesSchema = z.object({
   name: z.string(),
   quantity: ZerionQuantitySchema,
-  value: z.number().nullish().default(null),
-  price: z.number().nullish().default(null),
+  value: NullableNumberSchema,
+  price: NullableNumberSchema,
   fungible_info: ZerionFungibleInfoSchema,
   flags: ZerionFlagsSchema,
-  protocol: z.string().nullish().default(null),
+  protocol: NullableStringSchema,
   application_metadata: ZerionApplicationMetadataSchema.nullish().default(null),
   changes: ZerionBalanceChangeSchema.nullish().default(null),
   position_type: PositionTypeSchema.catch(PositionType.unknown),
-  pool_address: z.string().nullish().default(null),
-  group_id: z.string().nullish().default(null),
+  pool_address: NullableStringSchema,
+  group_id: NullableStringSchema,
 });
 
 export const ZerionBalanceSchema = z.object({

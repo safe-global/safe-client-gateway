@@ -1,11 +1,11 @@
 import { z } from 'zod';
-import { AddressSchema } from '@/validation/entities/schemas/address.schema';
+import { NullableAddressSchema } from '@/validation/entities/schemas/nullable.schema';
 
 const FiatStringSchema = z.string().regex(/^-?(?:0|[1-9]\d*)(?:\.\d+)?$/);
 const PercentageStringSchema = z.string().regex(/^-?(?:0|[1-9]\d*)(?:\.\d+)?$/);
 
 export const TokenBalanceTokenInfoSchema = z.object({
-  address: AddressSchema.nullish().default(null),
+  address: NullableAddressSchema,
   decimals: z.number(),
   symbol: z.string(),
   name: z.string(),

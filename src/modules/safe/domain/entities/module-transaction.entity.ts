@@ -2,16 +2,19 @@ import { buildPageSchema } from '@/domain/entities/schemas/page.schema.factory';
 import { Operation } from '@/modules/safe/domain/entities/operation.entity';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { HexSchema } from '@/validation/entities/schemas/hex.schema';
-import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
 import { z } from 'zod';
+import {
+  NullableHexSchema,
+  NullableNumericStringSchema,
+} from '@/validation/entities/schemas/nullable.schema';
 
 export type ModuleTransaction = z.infer<typeof ModuleTransactionSchema>;
 
 export const ModuleTransactionSchema = z.object({
   safe: AddressSchema,
   to: AddressSchema,
-  value: NumericStringSchema.nullish().default(null),
-  data: HexSchema.nullish().default(null),
+  value: NullableNumericStringSchema,
+  data: NullableHexSchema,
   operation: z.enum(Operation),
   created: z.coerce.date(),
   executionDate: z.coerce.date(),

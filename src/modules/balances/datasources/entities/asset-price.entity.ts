@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { NullableNumberSchema } from '@/validation/entities/schemas/nullable.schema';
 
 export type AssetPrice = z.infer<ReturnType<typeof getAssetPriceSchema>>;
 
@@ -9,8 +10,8 @@ export function getAssetPriceSchema<const T extends string>(
   return z.record(
     z.string(),
     z.object({
-      [lowerCaseFiatCode]: z.number().nullish().default(null),
-      [`${lowerCaseFiatCode}_24h_change`]: z.number().nullish().default(null),
+      [lowerCaseFiatCode]: NullableNumberSchema,
+      [`${lowerCaseFiatCode}_24h_change`]: NullableNumberSchema,
     }),
   );
 }

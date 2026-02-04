@@ -7,6 +7,14 @@ import { NumericStringSchema } from '@/validation/entities/schemas/numeric-strin
 import { z } from 'zod';
 import { CoercedNumberSchema } from '@/validation/entities/schemas/coerced-number.schema';
 import { HexBytesSchema } from '@/validation/entities/schemas/hexbytes.schema';
+import {
+  NullableAddressSchema,
+  NullableCoercedDateSchema,
+  NullableHexSchema,
+  NullableNumberSchema,
+  NullableNumericStringSchema,
+  NullableStringSchema,
+} from '@/validation/entities/schemas/nullable.schema';
 
 export type Confirmation = z.infer<typeof ConfirmationSchema>;
 
@@ -15,7 +23,7 @@ export type MultisigTransaction = z.infer<typeof MultisigTransactionSchema>;
 export const ConfirmationSchema = z.object({
   owner: AddressSchema,
   submissionDate: z.coerce.date(),
-  transactionHash: HexSchema.nullish().default(null),
+  transactionHash: NullableHexSchema,
   signatureType: z.enum(SignatureType),
   // We don't validate signature length as they are on the Transaction Service
   signature: HexBytesSchema.nullish().default(null),
@@ -25,32 +33,32 @@ export const MultisigTransactionSchema = z.object({
   safe: AddressSchema,
   to: AddressSchema,
   value: NumericStringSchema,
-  data: HexSchema.nullish().default(null),
+  data: NullableHexSchema,
   operation: z.enum(Operation),
-  gasToken: AddressSchema.nullish().default(null),
+  gasToken: NullableAddressSchema,
   safeTxGas: CoercedNumberSchema.nullish().default(null),
   baseGas: CoercedNumberSchema.nullish().default(null),
-  gasPrice: NumericStringSchema.nullish().default(null),
-  proposer: AddressSchema.nullish().default(null),
-  proposedByDelegate: AddressSchema.nullish().default(null),
-  refundReceiver: AddressSchema.nullish().default(null),
+  gasPrice: NullableNumericStringSchema,
+  proposer: NullableAddressSchema,
+  proposedByDelegate: NullableAddressSchema,
+  refundReceiver: NullableAddressSchema,
   nonce: CoercedNumberSchema,
-  executionDate: z.coerce.date().nullish().default(null),
+  executionDate: NullableCoercedDateSchema,
   submissionDate: z.coerce.date(),
-  modified: z.coerce.date().nullish().default(null),
-  blockNumber: z.number().nullish().default(null),
-  transactionHash: HexSchema.nullish().default(null),
+  modified: NullableCoercedDateSchema,
+  blockNumber: NullableNumberSchema,
+  transactionHash: NullableHexSchema,
   safeTxHash: HexSchema,
-  executor: AddressSchema.nullish().default(null),
+  executor: NullableAddressSchema,
   isExecuted: z.boolean(),
   isSuccessful: z.boolean().nullish().default(null),
-  ethGasPrice: NumericStringSchema.nullish().default(null),
-  gasUsed: z.number().nullish().default(null),
-  fee: NumericStringSchema.nullish().default(null),
-  origin: z.string().nullish().default(null),
+  ethGasPrice: NullableNumericStringSchema,
+  gasUsed: NullableNumberSchema,
+  fee: NullableNumericStringSchema,
+  origin: NullableStringSchema,
   confirmationsRequired: z.number(),
   confirmations: z.array(ConfirmationSchema).nullish().default(null),
-  signatures: HexSchema.nullish().default(null),
+  signatures: NullableHexSchema,
   trusted: z.boolean(),
 });
 

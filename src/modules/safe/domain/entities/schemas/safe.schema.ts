@@ -2,6 +2,7 @@ import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { CoercedNumberSchema } from '@/validation/entities/schemas/coerced-number.schema';
 import { z } from 'zod';
 import { buildPageSchema } from '@/domain/entities/schemas/page.schema.factory';
+import { NullableStringSchema } from '@/validation/entities/schemas/nullable.schema';
 
 export const SafeSchema = z.object({
   address: AddressSchema,
@@ -12,7 +13,7 @@ export const SafeSchema = z.object({
   modules: z.array(AddressSchema).nullish().default(null),
   fallbackHandler: AddressSchema,
   guard: AddressSchema,
-  version: z.string().nullish().default(null),
+  version: NullableStringSchema,
 });
 
 export const SafeSchemaV2 = z.object({
