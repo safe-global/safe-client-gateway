@@ -657,6 +657,10 @@ export default () => ({
       },
     },
   },
+  gasPrice: {
+    etherscanApiKey: process.env.ETHERSCAN_API_KEY,
+    cacheTtlSeconds: parseInt(process.env.GAS_PRICE_CACHE_TTL_SECONDS ?? '10'),
+  },
 });
 
 // Helper function to parse relay rules from environment variable

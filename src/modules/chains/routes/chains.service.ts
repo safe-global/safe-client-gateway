@@ -1,5 +1,7 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { IConfigurationService } from '@/config/configuration.service.interface';
+import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
+import { CacheRouter } from '@/datasources/cache/cache.router';
 import { IBackboneRepository } from '@/modules/backbone/domain/backbone.repository.interface';
 import { Backbone } from '@/modules/backbone/domain/entities/backbone.entity';
 import { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
@@ -7,6 +9,7 @@ import { MasterCopy } from '@/modules/chains/routes/entities/master-copy.entity'
 import { Page } from '@/domain/entities/page.entity';
 import { AboutChain } from '@/modules/chains/routes/entities/about-chain.entity';
 import { Chain } from '@/modules/chains/routes/entities/chain.entity';
+import { GasPriceResponse } from '@/modules/chains/routes/entities/gas-price-response.entity';
 import {
   PaginationData,
   cursorUrlFromLimitAndOffset,
@@ -22,6 +25,7 @@ export class ChainsService {
     private readonly chainsRepository: IChainsRepository,
     @Inject(IBackboneRepository)
     private readonly backboneRepository: IBackboneRepository,
+    private readonly dataSource: CacheFirstDataSource,
   ) {}
 
   async getChains(
@@ -98,5 +102,51 @@ export class ChainsService {
       synced: indexingStatus.synced,
       lastSync,
     });
+  }
+
+  async getGasPrice(chainId: string): Promise<GasPriceResponse> {
+    const chain = await this.chainsRepository.getChain(chainId);
+    const oracleConfig = chain.gasPrice.find((gp) => gp.type === 'oracle');
+
+    if (!oracleConfig || oracleConfig.type !== 'oracle') {
+      throw new NotFoundException(`No gas price oracle for chain ${chainId}`);
+    }
+
+    const url = this.buildGasPriceUrl(oracleConfig.uri);
+    const cacheDir = CacheRouter.getGasPriceCacheDir(chainId);
+    const cacheTtl = this.configurationService.getOrThrow<number>(
+      'gasPrice.cacheTtlSeconds',
+    );
+
+    const result = await this.dataSource.get({
+      cacheDir,
+      url,
+      expireTimeSeconds: cacheTtl,
+      notFoundExpireTimeSeconds: cacheTtl,
+    });
+
+    return {
+      result:
+        (result as { result?: unknown; data?: unknown }).result ??
+        (result as { result?: unknown; data?: unknown }).data ??
+        result,
+      gasParameter: oracleConfig.gasParameter,
+      gweiFactor: oracleConfig.gweiFactor,
+    };
+  }
+
+  private buildGasPriceUrl(baseUri: string): string {
+    const url = new URL(baseUri);
+    // Remove any existing apikey from config-service URI
+    url.searchParams.delete('apikey');
+    url.searchParams.delete('apiKey');
+
+    const apiKey = this.configurationService.get<string>(
+      'gasPrice.etherscanApiKey',
+    );
+    if (apiKey) {
+      url.searchParams.set('apikey', apiKey);
+    }
+    return url.toString();
   }
 }
