@@ -11,6 +11,7 @@ import { getAddress } from 'viem';
 import type { Server } from 'net';
 import { rawify } from '@/validation/entities/raw.entity';
 import { createTestModule } from '@/__tests__/testing-module';
+import { CircuitBreakerKeys } from '@/datasources/circuit-breaker/circuit-breaker.keys';
 
 describe('Owners Controller (Unit)', () => {
   let app: INestApplication<Server>;
@@ -132,6 +133,9 @@ describe('Owners Controller (Unit)', () => {
         data: undefined,
         networkRequest: {
           timeout: expect.any(Number),
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getTransactionServiceKey(chainId),
+          },
         },
       });
     });
