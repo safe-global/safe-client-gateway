@@ -118,21 +118,16 @@ export class ChainsService {
       'gasPrice.cacheTtlSeconds',
     );
 
-    const result = await this.dataSource.get({
+    const response = await this.dataSource.get<GasPriceResponse>({
       cacheDir,
       url,
       expireTimeSeconds: cacheTtl,
       notFoundExpireTimeSeconds: cacheTtl,
     });
 
-    return {
-      result:
-        (result as { result?: unknown; data?: unknown }).result ??
-        (result as { result?: unknown; data?: unknown }).data ??
-        result,
-      gasParameter: oracleConfig.gasParameter,
-      gweiFactor: oracleConfig.gweiFactor,
-    };
+    // Return the raw oracle response in Etherscan API format
+    // The response is wrapped in Raw<T> type, cast it back to the actual type
+    return response as unknown as GasPriceResponse;
   }
 
   private buildGasPriceUrl(baseUri: string): string {

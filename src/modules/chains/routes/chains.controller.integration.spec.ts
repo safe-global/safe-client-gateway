@@ -817,4 +817,116 @@ describe('Chains Controller', () => {
         });
     });
   });
+
+  describe('GET /:chainId/gas-price', () => {
+    it('should return gas price in Etherscan API format', async () => {
+      const chainDomain = chainBuilder()
+        .with('gasPrice', [
+          {
+            type: 'oracle',
+            uri: 'https://api.etherscan.io/api?module=gastracker&action=gasoracle',
+            gasParameter: 'FastGasPrice',
+            gweiFactor: '1000000000',
+          },
+        ])
+        .build();
+
+      // Mock the Etherscan API response
+      const etherscanResponse = {
+        status: '1',
+        message: 'OK',
+        result: {
+          LastBlock: '23467872',
+          SafeGasPrice: '0.496839934',
+          ProposeGasPrice: '0.496840168',
+          FastGasPrice: '0.55411917',
+          suggestBaseFee: '0.496839934',
+          gasUsedRatio: '0.5,0.6,0.7',
+        },
+      };
+
+      networkService.get.mockResolvedValueOnce({
+        data: rawify(chainDomain),
+        status: 200,
+      });
+
+      networkService.get.mockResolvedValueOnce({
+        data: rawify(etherscanResponse),
+        status: 200,
+      });
+
+      const response = await request(app.getHttpServer())
+        .get(`/v1/chains/${chainDomain.chainId}/gas-price`)
+        .expect(200);
+
+      // Verify the response matches Etherscan format exactly
+      expect(response.body).toEqual({
+        status: '1',
+        message: 'OK',
+        result: {
+          LastBlock: '23467872',
+          SafeGasPrice: '0.496839934',
+          ProposeGasPrice: '0.496840168',
+          FastGasPrice: '0.55411917',
+          suggestBaseFee: '0.496839934',
+          gasUsedRatio: '0.5,0.6,0.7',
+        },
+      });
+    });
+
+    it('should return 404 when no oracle is configured', async () => {
+      const chainDomain = chainBuilder()
+        .with('gasPrice', [
+          {
+            type: 'fixed',
+            weiValue: '1000000000',
+          },
+        ])
+        .build();
+
+      networkService.get.mockResolvedValueOnce({
+        data: rawify(chainDomain),
+        status: 200,
+      });
+
+      await request(app.getHttpServer())
+        .get(`/v1/chains/${chainDomain.chainId}/gas-price`)
+        .expect(404)
+        .expect({
+          message: `No gas price oracle for chain ${chainDomain.chainId}`,
+          error: 'Not Found',
+          statusCode: 404,
+        });
+    });
+
+    it('should handle oracle API errors', async () => {
+      const chainDomain = chainBuilder()
+        .with('gasPrice', [
+          {
+            type: 'oracle',
+            uri: 'https://api.etherscan.io/api?module=gastracker&action=gasoracle',
+            gasParameter: 'FastGasPrice',
+            gweiFactor: '1000000000',
+          },
+        ])
+        .build();
+
+      networkService.get.mockResolvedValueOnce({
+        data: rawify(chainDomain),
+        status: 200,
+      });
+
+      const error = new NetworkResponseError(
+        new URL('https://api.etherscan.io/api'),
+        {
+          status: 503,
+        } as Response,
+      );
+      networkService.get.mockRejectedValueOnce(error);
+
+      await request(app.getHttpServer())
+        .get(`/v1/chains/${chainDomain.chainId}/gas-price`)
+        .expect(500);
+    });
+  });
 });
