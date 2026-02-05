@@ -2,6 +2,11 @@ import { Inject, Injectable } from '@nestjs/common';
 import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
 import { SafeList } from '@/modules/owners/routes/entities/safe-list.entity';
 import { SafesByChainId } from '@/modules/safe/domain/entities/safes-by-chain-id.entity';
+import { findSimilarAddressPairs } from '@/modules/owners/routes/utils/address-poisoning';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
 import type { Address } from 'viem';
 
 @Injectable()
@@ -9,6 +14,8 @@ export class OwnersService {
   constructor(
     @Inject(ISafeRepository)
     private readonly safeRepository: ISafeRepository,
+    @Inject(LoggingService)
+    private readonly loggingService: ILoggingService,
   ) {}
 
   async getSafesByOwner(args: {

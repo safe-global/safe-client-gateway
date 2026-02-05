@@ -12,12 +12,19 @@ const safeRepositoryMock: jest.MockedObjectDeep<SafeRepository> = {
   getCreationTransaction: jest.fn(),
 } as jest.MockedObjectDeep<SafeRepository>;
 
+const loggingServiceMock: jest.MockedObjectDeep<ILoggingService> = {
+  info: jest.fn(),
+  debug: jest.fn(),
+  error: jest.fn(),
+  warn: jest.fn(),
+};
+
 describe('OwnersService', () => {
   let service: OwnersService;
 
   beforeEach(() => {
     jest.resetAllMocks();
-    service = new OwnersService(safeRepositoryMock);
+    service = new OwnersService(safeRepositoryMock, loggingServiceMock);
   });
 
   describe('getSafesByOwner', () => {
@@ -127,6 +134,112 @@ describe('OwnersService', () => {
       await expect(
         service.getAllSafesByOwner({ ownerAddress }),
       ).rejects.toThrow('Failed to fetch chains');
+    });
+
+    it('should filter out poisoned addresses (newer address removed)', async () => {
+      const ownerAddress = faker.finance.ethereumAddress() as Address;
+      const chainId = '1';
+      const legitimateAddress = '0x1234aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaAbCd';
+      const poisonedAddress = '0x1234bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbBaBcD';
+      const unrelatedAddress = faker.finance.ethereumAddress();
+
+      safeRepositoryMock.getAllSafesByOwner.mockResolvedValue({
+        [chainId]: [legitimateAddress, poisonedAddress, unrelatedAddress],
+      });
+
+      safeRepositoryMock.getCreationTransaction.mockImplementation(
+        ({ safeAddress }: { safeAddress: Address }) => {
+          if (safeAddress === (legitimateAddress as Address)) {
+            return Promise.resolve({
+              created: new Date('2023-01-01'),
+              creator: faker.finance.ethereumAddress() as Address,
+              transactionHash: '0xabc' as `0x${string}`,
+              factoryAddress: faker.finance.ethereumAddress() as Address,
+              masterCopy: null,
+              setupData: null,
+              saltNonce: null,
+            });
+          }
+          if (safeAddress === (poisonedAddress as Address)) {
+            return Promise.resolve({
+              created: new Date('2024-01-01'),
+              creator: faker.finance.ethereumAddress() as Address,
+              transactionHash: '0xdef' as `0x${string}`,
+              factoryAddress: faker.finance.ethereumAddress() as Address,
+              masterCopy: null,
+              setupData: null,
+              saltNonce: null,
+            });
+          }
+          return Promise.reject(new Error('Unexpected address'));
+        },
+      );
+
+      const result = await service.getAllSafesByOwner({ ownerAddress });
+
+      expect(result[chainId]).toEqual([legitimateAddress, unrelatedAddress]);
+    });
+
+    it('should keep both addresses when creation date fetch fails', async () => {
+      const ownerAddress = faker.finance.ethereumAddress() as Address;
+      const chainId = '1';
+      const address1 = '0x1234aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaAbCd';
+      const address2 = '0x1234bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbBaBcD';
+
+      safeRepositoryMock.getAllSafesByOwner.mockResolvedValue({
+        [chainId]: [address1, address2],
+      });
+
+      safeRepositoryMock.getCreationTransaction.mockRejectedValue(
+        new Error('Network error'),
+      );
+
+      const result = await service.getAllSafesByOwner({ ownerAddress });
+
+      expect(result[chainId]).toEqual([address1, address2]);
+      expect(loggingServiceMock.warn).toHaveBeenCalledTimes(1);
+    });
+
+    it('should keep both addresses when creation dates are equal', async () => {
+      const ownerAddress = faker.finance.ethereumAddress() as Address;
+      const chainId = '1';
+      const address1 = '0x1234aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaAbCd';
+      const address2 = '0x1234bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbBaBcD';
+
+      safeRepositoryMock.getAllSafesByOwner.mockResolvedValue({
+        [chainId]: [address1, address2],
+      });
+
+      safeRepositoryMock.getCreationTransaction.mockResolvedValue({
+        created: new Date('2023-01-01'),
+        creator: faker.finance.ethereumAddress() as Address,
+        transactionHash: '0xabc' as `0x${string}`,
+        factoryAddress: faker.finance.ethereumAddress() as Address,
+        masterCopy: null,
+        setupData: null,
+        saltNonce: null,
+      });
+
+      const result = await service.getAllSafesByOwner({ ownerAddress });
+
+      expect(result[chainId]).toEqual([address1, address2]);
+      expect(loggingServiceMock.warn).toHaveBeenCalledTimes(1);
+      expect(loggingServiceMock.warn).toHaveBeenCalledWith(
+        expect.stringContaining('equal creation dates'),
+      );
+    });
+
+    it('should pass through null chains', async () => {
+      const ownerAddress = faker.finance.ethereumAddress() as Address;
+      const chainId = '1';
+
+      safeRepositoryMock.getAllSafesByOwner.mockResolvedValue({
+        [chainId]: null,
+      });
+
+      const result = await service.getAllSafesByOwner({ ownerAddress });
+
+      expect(result[chainId]).toBeNull();
     });
   });
 
