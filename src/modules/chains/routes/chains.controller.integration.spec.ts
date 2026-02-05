@@ -9,6 +9,7 @@ import { NetworkService } from '@/datasources/network/network.service.interface'
 import { backboneBuilder } from '@/modules/backbone/domain/entities/__tests__/backbone.builder';
 import type { Backbone } from '@/modules/backbone/domain/entities/backbone.entity';
 import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
+import { gasPriceOracleBuilder } from '@/modules/chains/domain/entities/__tests__/gas-price-oracle.builder';
 import { singletonBuilder } from '@/modules/chains/domain/entities/__tests__/singleton.builder';
 import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
 import type { Singleton } from '@/modules/chains/domain/entities/singleton.entity';
@@ -820,15 +821,14 @@ describe('Chains Controller', () => {
 
   describe('GET /:chainId/gas-price', () => {
     it('should return gas price in Etherscan API format', async () => {
+      const gasPriceOracle = gasPriceOracleBuilder()
+        .with(
+          'uri',
+          'https://api.etherscan.io/v2/api?module=gastracker&action=gasoracle',
+        )
+        .build();
       const chainDomain = chainBuilder()
-        .with('gasPrice', [
-          {
-            type: 'oracle',
-            uri: 'https://api.etherscan.io/api?module=gastracker&action=gasoracle',
-            gasParameter: 'FastGasPrice',
-            gweiFactor: '1000000000',
-          },
-        ])
+        .with('gasPrice', [gasPriceOracle])
         .build();
 
       // Mock the Etherscan API response
@@ -900,15 +900,14 @@ describe('Chains Controller', () => {
     });
 
     it('should handle oracle API errors', async () => {
+      const gasPriceOracle = gasPriceOracleBuilder()
+        .with(
+          'uri',
+          'https://api.etherscan.io/v2/api?module=gastracker&action=gasoracle',
+        )
+        .build();
       const chainDomain = chainBuilder()
-        .with('gasPrice', [
-          {
-            type: 'oracle',
-            uri: 'https://api.etherscan.io/api?module=gastracker&action=gasoracle',
-            gasParameter: 'FastGasPrice',
-            gweiFactor: '1000000000',
-          },
-        ])
+        .with('gasPrice', [gasPriceOracle])
         .build();
 
       networkService.get.mockResolvedValueOnce({
@@ -917,7 +916,7 @@ describe('Chains Controller', () => {
       });
 
       const error = new NetworkResponseError(
-        new URL('https://api.etherscan.io/api'),
+        new URL('https://api.etherscan.io/v2/api'),
         {
           status: 503,
         } as Response,
