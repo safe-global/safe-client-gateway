@@ -479,7 +479,7 @@ describe('Notifications Controller V2', () => {
 
       it('should return 403 if token is invalid', async () => {
         const upsertSubscriptionsDto = upsertSubscriptionsDtoBuilder().build();
-        const accessToken = faker.string.sample();
+        const accessToken = faker.string.alphanumeric();
 
         expect(() => jwtService.verify(accessToken)).toThrow('jwt malformed');
         await request(app.getHttpServer())
