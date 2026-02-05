@@ -13,6 +13,8 @@ import {
   NullableNumberSchema,
   NullableStringSchema,
 } from '@/validation/entities/schemas/nullable.schema';
+import type { ApplicationMetadataSchema } from '@/modules/positions/domain/entities/position.entity';
+import { PositionAttributeSchema } from '@/modules/positions/domain/entities/position.entity';
 
 export type ZerionFungibleInfo = z.infer<typeof ZerionFungibleInfoSchema>;
 
@@ -25,7 +27,7 @@ export type ZerionFlags = z.infer<typeof ZerionFlagsSchema>;
 export type ZerionAttributes = z.infer<typeof ZerionAttributesSchema>;
 
 export type ZerionApplicationMetadata = z.infer<
-  typeof ZerionApplicationMetadataSchema
+  typeof ApplicationMetadataSchema
 >;
 
 export type ZerionChanges = z.infer<typeof ZerionBalanceChangeSchema>;
@@ -77,28 +79,17 @@ export const ZerionFlagsSchema = z.object({
   is_trash: z.boolean().optional(),
 });
 
-export const ZerionApplicationMetadataSchema = z.object({
-  name: z.string(),
-  icon: z.object({
-    url: NullableStringSchema,
-  }),
-  url: z.string(),
-});
-
 export const ZerionBalanceChangeSchema = z.object({
   absolute_1d: z.number(),
   percent_1d: z.number(),
 });
 
-export const ZerionAttributesSchema = z.object({
-  name: z.string(),
+export const ZerionAttributesSchema = PositionAttributeSchema.extend({
   quantity: ZerionQuantitySchema,
   value: NullableNumberSchema,
   price: NullableNumberSchema,
   fungible_info: ZerionFungibleInfoSchema,
   flags: ZerionFlagsSchema,
-  protocol: NullableStringSchema,
-  application_metadata: ZerionApplicationMetadataSchema.nullish().default(null),
   changes: ZerionBalanceChangeSchema.nullish().default(null),
   position_type: PositionTypeSchema.catch(PositionType.unknown),
   pool_address: NullableStringSchema,
