@@ -20,6 +20,10 @@ import {
   LoggingService,
 } from '@/logging/logging.interface';
 import { createTestModule } from '@/__tests__/testing-module';
+import {
+  creationTransactionBuilder,
+  toJson,
+} from '@/modules/safe/domain/entities/__tests__/creation-transaction.builder';
 
 describe('Owners Controller (Unit)', () => {
   let app: INestApplication<Server>;
@@ -366,6 +370,153 @@ describe('Owners Controller (Unit)', () => {
         .get(`/v2/owners/${ownerAddress}/safes`)
         .expect(502)
         .expect({ statusCode: 502, message: 'Bad gateway' });
+    });
+
+    it('should filter out poisoned addresses', async () => {
+      const chainId = faker.string.numeric();
+      const chain = chainBuilder().with('chainId', chainId).build();
+
+      // Two addresses with same first 4 and last 4 hex chars
+      const legitimateAddress = '0xAbCd1111111111111111111111111111111189aB';
+      const poisonedAddress = '0xaBcD2222222222222222222222222222222289Ab';
+      const unrelatedAddress = faker.finance.ethereumAddress();
+
+      const ownerAddress = faker.finance.ethereumAddress();
+
+      const olderCreation = creationTransactionBuilder()
+        .with('created', new Date('2023-01-01'))
+        .build();
+      const newerCreation = creationTransactionBuilder()
+        .with('created', new Date('2024-06-01'))
+        .build();
+
+      networkService.get.mockImplementation(({ url }) => {
+        switch (url) {
+          case `${safeConfigUrl}/api/v1/chains`: {
+            return Promise.resolve({
+              data: rawify(
+                pageBuilder()
+                  .with('results', [chain])
+                  .with('next', null)
+                  .build(),
+              ),
+              status: 200,
+            });
+          }
+
+          case `${safeConfigUrl}/api/v1/chains/${chainId}`: {
+            return Promise.resolve({
+              data: rawify(chain),
+              status: 200,
+            });
+          }
+
+          case `${chain.transactionService}/api/v1/owners/${getAddress(ownerAddress)}/safes/`: {
+            return Promise.resolve({
+              data: rawify({
+                safes: [
+                  getAddress(legitimateAddress),
+                  getAddress(poisonedAddress),
+                  getAddress(unrelatedAddress),
+                ],
+              }),
+              status: 200,
+            });
+          }
+
+          case `${chain.transactionService}/api/v1/safes/${getAddress(legitimateAddress)}/creation/`: {
+            return Promise.resolve({
+              data: rawify(toJson(olderCreation)),
+              status: 200,
+            });
+          }
+
+          case `${chain.transactionService}/api/v1/safes/${getAddress(poisonedAddress)}/creation/`: {
+            return Promise.resolve({
+              data: rawify(toJson(newerCreation)),
+              status: 200,
+            });
+          }
+
+          default: {
+            return Promise.reject(`No matching rule for url: ${url}`);
+          }
+        }
+      });
+
+      await request(app.getHttpServer())
+        .get(`/v2/owners/${ownerAddress}/safes`)
+        .expect(200)
+        .expect((res) => {
+          expect(res.body[chainId]).toEqual([
+            getAddress(legitimateAddress),
+            getAddress(unrelatedAddress),
+          ]);
+        });
+    });
+
+    it('should preserve all addresses when creation date fetch fails', async () => {
+      jest.spyOn(loggingService, 'warn');
+      const chainId = faker.string.numeric();
+      const chain = chainBuilder().with('chainId', chainId).build();
+
+      const address1 = '0xAbCd1111111111111111111111111111111189aB';
+      const address2 = '0xaBcD2222222222222222222222222222222289Ab';
+      const ownerAddress = faker.finance.ethereumAddress();
+
+      networkService.get.mockImplementation(({ url }) => {
+        switch (url) {
+          case `${safeConfigUrl}/api/v1/chains`: {
+            return Promise.resolve({
+              data: rawify(
+                pageBuilder()
+                  .with('results', [chain])
+                  .with('next', null)
+                  .build(),
+              ),
+              status: 200,
+            });
+          }
+
+          case `${safeConfigUrl}/api/v1/chains/${chainId}`: {
+            return Promise.resolve({
+              data: rawify(chain),
+              status: 200,
+            });
+          }
+
+          case `${chain.transactionService}/api/v1/owners/${getAddress(ownerAddress)}/safes/`: {
+            return Promise.resolve({
+              data: rawify({
+                safes: [getAddress(address1), getAddress(address2)],
+              }),
+              status: 200,
+            });
+          }
+
+          case `${chain.transactionService}/api/v1/safes/${getAddress(address1)}/creation/`:
+          case `${chain.transactionService}/api/v1/safes/${getAddress(address2)}/creation/`: {
+            return Promise.reject(new Error('Network error'));
+          }
+
+          default: {
+            return Promise.reject(`No matching rule for url: ${url}`);
+          }
+        }
+      });
+
+      await request(app.getHttpServer())
+        .get(`/v2/owners/${ownerAddress}/safes`)
+        .expect(200)
+        .expect((res) => {
+          expect(res.body[chainId]).toEqual(
+            expect.arrayContaining([
+              getAddress(address1),
+              getAddress(address2),
+            ]),
+          );
+          expect(res.body[chainId]).toHaveLength(2);
+        });
     });
   });
 });
