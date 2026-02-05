@@ -9,6 +9,9 @@ process.env.EMAIL_API_FROM_EMAIL = 'changeme@example.com';
 process.env.EMAIL_API_KEY = 'fake-api-key';
 process.env.FINGERPRINT_ENCRYPTION_KEY = 'fake-encryption-key';
 process.env.INFURA_API_KEY = 'fake-api-key';
+process.env.BLOCKLIST_ENCRYPTED_DATA = 'fake-encrypted-data';
+process.env.BLOCKLIST_SECRET_KEY = 'fake-secret-key';
+process.env.BLOCKLIST_SECRET_SALT = 'fake-secret-salt';
 
 // For E2E tests, connect to the test database
 process.env.POSTGRES_HOST = 'localhost';
