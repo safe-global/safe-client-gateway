@@ -64,6 +64,38 @@ export class ChainsRepository implements IChainsRepository {
     return valid;
   }
 
+  async getChainsV2(limit?: number, offset?: number): Promise<Page<Chain>> {
+    const serviceKey = this.configurationService.getOrThrow<string>(
+      'safeConfig.serviceKey',
+    );
+    const page = await this.configApi
+      .getChainsV2(serviceKey, { limit, offset })
+      .then(LenientBasePageSchema.parse);
+    const valid = ChainLenientPageSchema.parse(page);
+    if (valid.results.length < page.results.length) {
+      this.loggingService.error({
+        message: 'Some chains could not be parsed',
+        errors: differenceBy(page.results, valid.results, 'chainId'),
+      });
+    }
+    return valid;
+  }
+
+  async getChainV2(chainId: string): Promise<Chain> {
+    const serviceKey = this.configurationService.getOrThrow<string>(
+      'safeConfig.serviceKey',
+    );
+    const chain = await this.configApi.getChainV2(serviceKey, chainId);
+    return ChainSchema.parse(chain);
+  }
+
+  async clearChainV2(chainId: string): Promise<void> {
+    const serviceKey = this.configurationService.getOrThrow<string>(
+      'safeConfig.serviceKey',
+    );
+    return this.configApi.clearChainV2(serviceKey, chainId);
+  }
+
   async getAllChains(): Promise<Array<Chain>> {
     const chains: Array<Chain> = [];
 

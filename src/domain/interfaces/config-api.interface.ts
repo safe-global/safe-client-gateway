@@ -15,6 +15,18 @@ export interface IConfigApi {
 
   clearChain(chainId: string): Promise<void>;
 
+  getChainsV2(
+    serviceKey: string,
+    args: {
+      limit?: number;
+      offset?: number;
+    },
+  ): Promise<Raw<Page<Chain>>>;
+
+  getChainV2(serviceKey: string, chainId: string): Promise<Raw<Chain>>;
+
+  clearChainV2(serviceKey: string, chainId: string): Promise<void>;
+
   getSafeApps(args: {
     chainId?: string;
     clientUrl?: string;

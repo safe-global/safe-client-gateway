@@ -45,16 +45,19 @@ yarn start:dev
 ### 4. Test the New Endpoints
 
 **Get all chains (v2)**:
+
 ```bash
 curl http://localhost:3000/v2/chains
 ```
 
 **Get single chain (v2)**:
+
 ```bash
 curl http://localhost:3000/v2/chains/1
 ```
 
 **Compare with v1** (should still work unchanged):
+
 ```bash
 curl http://localhost:3000/v1/chains
 curl http://localhost:3000/v1/chains/1
@@ -81,13 +84,13 @@ yarn test:integration --testPathPattern=chains.v2
 
 ## File Locations
 
-| Component | Path |
-| --------- | ---- |
-| v2 Controller | `src/modules/chains/routes/v2/chains.v2.controller.ts` |
-| v2 Service | `src/modules/chains/routes/v2/chains.v2.service.ts` |
-| Config API v2 methods | `src/datasources/config-api/config-api.service.ts` |
-| Cache Router v2 keys | `src/datasources/cache/cache.router.ts` |
-| Configuration | `src/config/entities/configuration.ts` |
+| Component             | Path                                                   |
+| --------------------- | ------------------------------------------------------ |
+| v2 Controller         | `src/modules/chains/routes/v2/chains.v2.controller.ts` |
+| v2 Service            | `src/modules/chains/routes/v2/chains.v2.service.ts`    |
+| Config API v2 methods | `src/datasources/config-api/config-api.service.ts`     |
+| Cache Router v2 keys  | `src/datasources/cache/cache.router.ts`                |
+| Configuration         | `src/config/entities/configuration.ts`                 |
 
 ## Key Implementation Notes
 
@@ -104,6 +107,7 @@ yarn test:integration --testPathPattern=chains.v2
 ### "Config Service v2 unavailable" errors
 
 Verify the Config Service v2 endpoints are accessible:
+
 ```bash
 curl https://safe-config.safe.global/api/v2/chains/frontend/
 ```
@@ -111,6 +115,7 @@ curl https://safe-config.safe.global/api/v2/chains/frontend/
 ### Cache issues
 
 Clear Redis cache:
+
 ```bash
 docker-compose exec redis redis-cli FLUSHALL
 ```
@@ -118,12 +123,14 @@ docker-compose exec redis redis-cli FLUSHALL
 ### Service key not recognized
 
 Ensure the service key is registered in Config Service. Common values:
+
 - `frontend` (default)
 - `cgw`
 
 ## API Documentation
 
 Once running, Swagger UI is available at:
+
 ```
 http://localhost:3000/api
 ```

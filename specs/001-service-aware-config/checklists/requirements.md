@@ -32,20 +32,20 @@
 
 ## Validation Summary
 
-| Category | Status | Notes |
-| -------- | ------ | ----- |
-| Content Quality | ✅ Pass | All sections complete, no tech stack details |
+| Category                 | Status  | Notes                                                                          |
+| ------------------------ | ------- | ------------------------------------------------------------------------------ |
+| Content Quality          | ✅ Pass | All sections complete, no tech stack details                                   |
 | Requirement Completeness | ✅ Pass | 10 functional requirements (FR-001 to FR-009 + FR-002a, FR-003a), all testable |
-| Feature Readiness | ✅ Pass | 4 user stories covering core flows |
+| Feature Readiness        | ✅ Pass | 4 user stories covering core flows                                             |
 
 ## Clarification Session Summary (2026-02-04)
 
-| # | Question | Answer |
-| - | -------- | ------ |
-| 1 | Modify v1 or add new v2 endpoints? | Add new v2 CGW endpoints; v1 unchanged |
-| 2 | Internal components use v2? | No; only external v2 endpoints use Config v2 |
-| 3 | Which endpoints get v2 versions? | Only `GET /v2/chains` and `GET /v2/chains/:chainId` |
-| 4 | v1 deprecation plan? | Decide later based on v2 adoption metrics |
+| #   | Question                           | Answer                                              |
+| --- | ---------------------------------- | --------------------------------------------------- |
+| 1   | Modify v1 or add new v2 endpoints? | Add new v2 CGW endpoints; v1 unchanged              |
+| 2   | Internal components use v2?        | No; only external v2 endpoints use Config v2        |
+| 3   | Which endpoints get v2 versions?   | Only `GET /v2/chains` and `GET /v2/chains/:chainId` |
+| 4   | v1 deprecation plan?               | Decide later based on v2 adoption metrics           |
 
 ## Notes
 

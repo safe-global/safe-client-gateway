@@ -484,6 +484,7 @@ export default () => ({
         process.env.SAFE_CONFIG_SAFES_MAX_SEQUENTIAL_PAGES ?? `${10}`,
       ),
     },
+    serviceKey: process.env.CONFIG_SERVICE_FRONTEND_KEY || 'frontend',
   },
   safeDataDecoder: {
     baseUri:

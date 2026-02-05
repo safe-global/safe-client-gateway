@@ -17,7 +17,7 @@
 
 **Purpose**: Create directory structure for v2 components
 
-- [ ] T001 Create v2 routes directory at `src/modules/chains/routes/v2/`
+- [x] T001 Create v2 routes directory at `src/modules/chains/routes/v2/`
 
 ---
 
@@ -29,33 +29,33 @@
 
 ### Configuration (FR-004, FR-005)
 
-- [ ] T002 Add `safeConfig.serviceKey` configuration with `CONFIG_SERVICE_FRONTEND_KEY` env var (default "frontend") in `src/config/entities/configuration.ts`
-- [ ] T003 [P] Add serviceKey to configuration schema in `src/config/entities/schemas/configuration.schema.ts`
+- [x] T002 Add `safeConfig.serviceKey` configuration with `CONFIG_SERVICE_FRONTEND_KEY` env var (default "frontend") in `src/config/entities/configuration.ts`
+- [x] T003 [P] Add serviceKey to configuration schema in `src/config/entities/schemas/configuration.schema.ts`
 
 ### Interface Extensions
 
-- [ ] T004 [P] Add `getChainsV2()`, `getChainV2()`, `clearChainV2()` method signatures to `src/domain/interfaces/config-api.interface.ts`
-- [ ] T005 [P] Add `getChainsV2()`, `getChainV2()` method signatures to `src/modules/chains/domain/chains.repository.interface.ts`
+- [x] T004 [P] Add `getChainsV2()`, `getChainV2()`, `clearChainV2()` method signatures to `src/domain/interfaces/config-api.interface.ts`
+- [x] T005 [P] Add `getChainsV2()`, `getChainV2()` method signatures to `src/modules/chains/domain/chains.repository.interface.ts`
 
 ### Cache Router
 
-- [ ] T006 [P] Add `getChainsCacheKeyV2(serviceKey)` method to `src/datasources/cache/cache.router.ts`
-- [ ] T007 [P] Add `getChainsCacheDirV2(serviceKey, args)` method to `src/datasources/cache/cache.router.ts`
-- [ ] T008 [P] Add `getChainCacheKeyV2(serviceKey, chainId)` method to `src/datasources/cache/cache.router.ts`
-- [ ] T009 [P] Add `getChainCacheDirV2(serviceKey, chainId)` method to `src/datasources/cache/cache.router.ts`
+- [x] T006 [P] Add `getChainsCacheKeyV2(serviceKey)` method to `src/datasources/cache/cache.router.ts`
+- [x] T007 [P] Add `getChainsCacheDirV2(serviceKey, args)` method to `src/datasources/cache/cache.router.ts`
+- [x] T008 [P] Add `getChainCacheKeyV2(serviceKey, chainId)` method to `src/datasources/cache/cache.router.ts`
+- [x] T009 [P] Add `getChainCacheDirV2(serviceKey, chainId)` method to `src/datasources/cache/cache.router.ts`
 
 ### Config API Service
 
-- [ ] T010 Implement `getChainsV2(serviceKey, args)` method in `src/datasources/config-api/config-api.service.ts`
-- [ ] T011 Implement `getChainV2(serviceKey, chainId)` method in `src/datasources/config-api/config-api.service.ts`
-- [ ] T012 Implement `clearChainV2(serviceKey, chainId)` method in `src/datasources/config-api/config-api.service.ts`
-- [ ] T013 Add unit tests for v2 methods in `src/datasources/config-api/config-api.service.spec.ts`
+- [x] T010 Implement `getChainsV2(serviceKey, args)` method in `src/datasources/config-api/config-api.service.ts`
+- [x] T011 Implement `getChainV2(serviceKey, chainId)` method in `src/datasources/config-api/config-api.service.ts`
+- [x] T012 Implement `clearChainV2(serviceKey, chainId)` method in `src/datasources/config-api/config-api.service.ts`
+- [x] T013 Add unit tests for v2 methods in `src/datasources/config-api/config-api.service.spec.ts`
 
 ### Chains Repository
 
-- [ ] T014 Implement `getChainsV2(limit, offset)` method in `src/modules/chains/domain/chains.repository.ts`
-- [ ] T015 Implement `getChainV2(chainId)` method in `src/modules/chains/domain/chains.repository.ts`
-- [ ] T016 Add unit tests for v2 methods in `src/modules/chains/domain/chains.repository.spec.ts`
+- [x] T014 Implement `getChainsV2(limit, offset)` method in `src/modules/chains/domain/chains.repository.ts`
+- [x] T015 Implement `getChainV2(chainId)` method in `src/modules/chains/domain/chains.repository.ts`
+- [x] T016 Add unit tests for v2 methods in `src/modules/chains/domain/chains.repository.spec.ts`
 
 **Checkpoint**: Foundation ready - user story implementation can now begin
 
@@ -69,14 +69,14 @@
 
 ### Implementation for User Story 1
 
-- [ ] T017 [US1] Create `ChainsV2Service` class in `src/modules/chains/routes/v2/chains.v2.service.ts`
-- [ ] T018 [US1] Implement `getChains(routeUrl, paginationData)` method in `ChainsV2Service`
-- [ ] T019 [US1] Create `ChainsV2Controller` with `@Controller({ path: 'chains', version: '2' })` in `src/modules/chains/routes/v2/chains.v2.controller.ts`
-- [ ] T020 [US1] Implement `GET /v2/chains` endpoint with pagination support in `ChainsV2Controller`
-- [ ] T021 [US1] Add OpenAPI decorators (`@ApiTags`, `@ApiOperation`, `@ApiOkResponse`, `@ApiQuery`) to chains list endpoint
-- [ ] T022 [US1] Register `ChainsV2Controller` and `ChainsV2Service` in `src/modules/chains/chains.module.ts`
-- [ ] T023 [US1] Add unit tests for `ChainsV2Service.getChains()` in `src/modules/chains/routes/v2/chains.v2.service.spec.ts`
-- [ ] T024 [US1] Add integration tests for `GET /v2/chains` in `src/modules/chains/routes/v2/chains.v2.controller.integration.spec.ts`
+- [x] T017 [US1] Create `ChainsV2Service` class in `src/modules/chains/routes/v2/chains.v2.service.ts`
+- [x] T018 [US1] Implement `getChains(routeUrl, paginationData)` method in `ChainsV2Service`
+- [x] T019 [US1] Create `ChainsV2Controller` with `@Controller({ path: 'chains', version: '2' })` in `src/modules/chains/routes/v2/chains.v2.controller.ts`
+- [x] T020 [US1] Implement `GET /v2/chains` endpoint with pagination support in `ChainsV2Controller`
+- [x] T021 [US1] Add OpenAPI decorators (`@ApiTags`, `@ApiOperation`, `@ApiOkResponse`, `@ApiQuery`) to chains list endpoint
+- [x] T022 [US1] Register `ChainsV2Controller` and `ChainsV2Service` in `src/modules/chains/chains.module.ts`
+- [x] T023 [US1] Add unit tests for `ChainsV2Service.getChains()` in `src/modules/chains/routes/v2/chains.v2.service.spec.ts`
+- [x] T024 [US1] Add integration tests for `GET /v2/chains` in `src/modules/chains/routes/v2/chains.v2.controller.integration.spec.ts`
 
 **Checkpoint**: User Story 1 complete - `GET /v2/chains` is functional and tested
 
@@ -90,11 +90,11 @@
 
 ### Implementation for User Story 2
 
-- [ ] T025 [US2] Implement `getChain(chainId)` method in `ChainsV2Service` in `src/modules/chains/routes/v2/chains.v2.service.ts`
-- [ ] T026 [US2] Implement `GET /v2/chains/:chainId` endpoint in `ChainsV2Controller` in `src/modules/chains/routes/v2/chains.v2.controller.ts`
-- [ ] T027 [US2] Add OpenAPI decorators (`@ApiParam`, `@ApiOperation`, `@ApiOkResponse`) to single chain endpoint
-- [ ] T028 [US2] Add unit tests for `ChainsV2Service.getChain()` in `src/modules/chains/routes/v2/chains.v2.service.spec.ts`
-- [ ] T029 [US2] Add integration tests for `GET /v2/chains/:chainId` (success and 404 cases) in `src/modules/chains/routes/v2/chains.v2.controller.integration.spec.ts`
+- [x] T025 [US2] Implement `getChain(chainId)` method in `ChainsV2Service` in `src/modules/chains/routes/v2/chains.v2.service.ts`
+- [x] T026 [US2] Implement `GET /v2/chains/:chainId` endpoint in `ChainsV2Controller` in `src/modules/chains/routes/v2/chains.v2.controller.ts`
+- [x] T027 [US2] Add OpenAPI decorators (`@ApiParam`, `@ApiOperation`, `@ApiOkResponse`) to single chain endpoint
+- [x] T028 [US2] Add unit tests for `ChainsV2Service.getChain()` in `src/modules/chains/routes/v2/chains.v2.service.spec.ts`
+- [x] T029 [US2] Add integration tests for `GET /v2/chains/:chainId` (success and 404 cases) in `src/modules/chains/routes/v2/chains.v2.controller.integration.spec.ts`
 
 **Checkpoint**: User Story 2 complete - `GET /v2/chains/:chainId` is functional and tested
 
@@ -108,9 +108,9 @@
 
 ### Implementation for User Story 3
 
-- [ ] T030 [US3] Add configuration validation test for `safeConfig.serviceKey` in `src/config/configuration.validator.spec.ts`
+- [x] T030 [US3] Add configuration validation test for `safeConfig.serviceKey` in `src/config/configuration.validator.spec.ts`
 - [ ] T031 [US3] Update `.env.sample` with `CONFIG_SERVICE_FRONTEND_KEY` documentation
-- [ ] T032 [US3] Add integration test verifying service key is used in Config Service v2 calls in `src/modules/chains/routes/v2/chains.v2.controller.integration.spec.ts`
+- [x] T032 [US3] Add integration test verifying service key is used in Config Service v2 calls in `src/modules/chains/routes/v2/chains.v2.controller.integration.spec.ts`
 
 **Checkpoint**: User Story 3 complete - service key is configurable and validated
 
@@ -124,10 +124,10 @@
 
 ### Implementation for User Story 4
 
-- [ ] T033 [US4] Implement `clearChainsV2()` method in `ChainsRepository` in `src/modules/chains/domain/chains.repository.ts`
-- [ ] T034 [US4] Add cache invalidation handling for v2 chains in hooks controller (if needed) in `src/modules/hooks/routes/hooks.controller.ts`
-- [ ] T035 [US4] Add unit tests for v2 cache invalidation in `src/modules/chains/domain/chains.repository.spec.ts`
-- [ ] T036 [US4] Add integration test for cache invalidation via hooks in `src/modules/hooks/routes/hooks-cache.integration.spec.ts`
+- [x] T033 [US4] Implement `clearChainsV2()` method in `ChainsRepository` in `src/modules/chains/domain/chains.repository.ts`
+- [x] T034 [US4] Add cache invalidation handling for v2 chains in hooks controller (if needed) in `src/modules/hooks/routes/hooks.controller.ts`
+- [x] T035 [US4] Add unit tests for v2 cache invalidation in `src/modules/chains/domain/chains.repository.spec.ts`
+- [x] T036 [US4] Add integration test for cache invalidation via hooks in `src/modules/hooks/routes/hooks-cache.integration.spec.ts`
 
 **Checkpoint**: User Story 4 complete - cache invalidation works for v2 endpoints
 
@@ -137,9 +137,9 @@
 
 **Purpose**: Final quality checks and documentation
 
-- [ ] T037 [P] Run `yarn format` to ensure code formatting
-- [ ] T038 [P] Run `yarn lint --fix` to fix linting issues
-- [ ] T039 Run `yarn test` to verify all unit tests pass
+- [x] T037 [P] Run `yarn format` to ensure code formatting
+- [x] T038 [P] Run `yarn lint --fix` to fix linting issues
+- [x] T039 Run `yarn test` to verify all unit tests pass
 - [ ] T040 Run `yarn test:integration` to verify all integration tests pass
 - [ ] T041 [P] Verify v1 endpoints still work unchanged (regression test)
 - [ ] T042 [P] Update Swagger documentation if needed
@@ -161,12 +161,12 @@
 
 ### User Story Dependencies
 
-| Story | Dependencies | Can Parallel With |
-| ----- | ------------ | ----------------- |
-| US1 (P1) | Phase 2 complete | US2, US3 |
-| US2 (P1) | Phase 2 complete | US1, US3 |
-| US3 (P2) | Phase 2 complete | US1, US2 |
-| US4 (P2) | US1/US2 cache patterns | - |
+| Story    | Dependencies           | Can Parallel With |
+| -------- | ---------------------- | ----------------- |
+| US1 (P1) | Phase 2 complete       | US2, US3          |
+| US2 (P1) | Phase 2 complete       | US1, US3          |
+| US3 (P2) | Phase 2 complete       | US1, US2          |
+| US4 (P2) | US1/US2 cache patterns | -                 |
 
 ### Within Each User Story
 
@@ -177,6 +177,7 @@
 ### Parallel Opportunities
 
 **Phase 2 (Foundational)**:
+
 ```
 Parallel Group A (Interfaces):
   - T004: IConfigApi interface
@@ -191,6 +192,7 @@ Then Sequential:
 ```
 
 **Phase 3-5 (User Stories 1-3)**:
+
 ```
 After Phase 2 completes, US1/US2/US3 can start in parallel:
   - Developer A: US1 (T017-T024)
@@ -224,6 +226,7 @@ After Phase 2 completes, US1/US2/US3 can start in parallel:
 Execute in order: T001 → T002 → ... → T043
 
 Commit checkpoints:
+
 - After Phase 2 (foundation complete)
 - After each user story phase
 - After Polish phase

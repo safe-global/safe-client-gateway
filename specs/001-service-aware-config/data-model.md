@@ -35,7 +35,7 @@ interface Chain {
   gasPrice: GasPrice[];
   ensRegistryAddress: string | null;
   disabledWallets: string[];
-  features: string[];  // Service-scoped features from v2 API
+  features: string[]; // Service-scoped features from v2 API
   balancesProvider: BalancesProvider;
   contractAddresses: ContractAddresses;
   recommendedMasterCopyVersion: string | null;
@@ -66,12 +66,18 @@ interface Page<T> {
 ```typescript
 interface IConfigApi {
   // Existing v1 methods (unchanged)
-  getChains(args: { limit?: number; offset?: number }): Promise<Raw<Page<Chain>>>;
+  getChains(args: {
+    limit?: number;
+    offset?: number;
+  }): Promise<Raw<Page<Chain>>>;
   getChain(chainId: string): Promise<Raw<Chain>>;
   clearChain(chainId: string): Promise<void>;
-  
+
   // NEW: v2 methods with service key
-  getChainsV2(serviceKey: string, args: { limit?: number; offset?: number }): Promise<Raw<Page<Chain>>>;
+  getChainsV2(
+    serviceKey: string,
+    args: { limit?: number; offset?: number },
+  ): Promise<Raw<Page<Chain>>>;
   getChainV2(serviceKey: string, chainId: string): Promise<Raw<Chain>>;
   clearChainV2(serviceKey: string, chainId: string): Promise<void>;
 }
@@ -87,7 +93,7 @@ interface IChainsRepository {
   getChain(chainId: string): Promise<Chain>;
   getChains(limit?: number, offset?: number): Promise<Page<Chain>>;
   clearChain(chainId: string): Promise<void>;
-  
+
   // NEW: v2 methods
   getChainV2(chainId: string): Promise<Chain>;
   getChainsV2(limit?: number, offset?: number): Promise<Page<Chain>>;
@@ -121,9 +127,13 @@ chains_v2_{serviceKey}                    → List of chains for service
 ```typescript
 safeConfig: {
   baseUri: string;
-  chains: { maxSequentialPages: number };
-  safes: { maxSequentialPages: number };
-  serviceKey: string;  // NEW: Default "frontend"
+  chains: {
+    maxSequentialPages: number;
+  }
+  safes: {
+    maxSequentialPages: number;
+  }
+  serviceKey: string; // NEW: Default "frontend"
 }
 ```
 
@@ -132,11 +142,11 @@ safeConfig: {
 
 ## Validation Rules
 
-| Field | Rule | Source |
-| ----- | ---- | ------ |
-| serviceKey | Non-empty string | FR-004, FR-005 |
-| chainId | String, validated by existing schema | Existing |
-| limit/offset | Positive integers | Existing pagination |
+| Field        | Rule                                 | Source              |
+| ------------ | ------------------------------------ | ------------------- |
+| serviceKey   | Non-empty string                     | FR-004, FR-005      |
+| chainId      | String, validated by existing schema | Existing            |
+| limit/offset | Positive integers                    | Existing pagination |
 
 ## State Transitions
 
