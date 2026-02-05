@@ -1,13 +1,11 @@
 import { z } from 'zod';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { NullableStringSchema } from '@/validation/entities/schemas/nullable.schema';
+import { TokenDetailsSchema } from '@/domain/common/schemas/token-metadata.schema';
 
-export const TokenSchema = z.object({
+export const TokenSchema = TokenDetailsSchema.extend({
   chainId: z.coerce.string(),
   address: AddressSchema,
-  symbol: z.string(),
-  decimals: z.number(),
-  name: z.string(),
   coinKey: NullableStringSchema,
   logoURI: NullableStringSchema,
   priceUSD: z.string(),

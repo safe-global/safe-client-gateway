@@ -1,15 +1,13 @@
 import { z } from 'zod';
 import { NullableAddressSchema } from '@/validation/entities/schemas/nullable.schema';
+import { TokenDetailsSchema } from '@/domain/common/schemas/token-metadata.schema';
 
 export const FiatStringSchema = z
   .string()
   .regex(/^-?(?:0|[1-9]\d*)(?:\.\d+)?$/);
 
-export const TokenInfoSchema = z.object({
+export const TokenInfoSchema = TokenDetailsSchema.extend({
   address: NullableAddressSchema,
-  decimals: z.number(),
-  symbol: z.string(),
-  name: z.string(),
   logoUri: z.string(),
   chainId: z.string(),
   trusted: z.boolean(),

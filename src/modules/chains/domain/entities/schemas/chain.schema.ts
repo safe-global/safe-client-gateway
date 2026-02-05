@@ -1,15 +1,13 @@
 import { z } from 'zod';
 import { RpcUriAuthentication } from '@/modules/chains/domain/entities/rpc-uri-authentication.entity';
 import { buildLenientPageSchema } from '@/domain/entities/schemas/page.schema.factory';
+import { TokenDetailsSchema } from '@/domain/common/schemas/token-metadata.schema';
 import {
   NullableAddressSchema,
   NullableStringSchema,
 } from '@/validation/entities/schemas/nullable.schema';
 
-export const NativeCurrencySchema = z.object({
-  name: z.string(),
-  symbol: z.string(),
-  decimals: z.number(),
+export const NativeCurrencySchema = TokenDetailsSchema.extend({
   logoUri: z.url(),
 });
 
