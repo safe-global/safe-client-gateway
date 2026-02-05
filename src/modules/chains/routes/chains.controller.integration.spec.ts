@@ -9,7 +9,6 @@ import { NetworkService } from '@/datasources/network/network.service.interface'
 import { backboneBuilder } from '@/modules/backbone/domain/entities/__tests__/backbone.builder';
 import type { Backbone } from '@/modules/backbone/domain/entities/backbone.entity';
 import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
-import { gasPriceOracleBuilder } from '@/modules/chains/domain/entities/__tests__/gas-price-oracle.builder';
 import { singletonBuilder } from '@/modules/chains/domain/entities/__tests__/singleton.builder';
 import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
 import type { Singleton } from '@/modules/chains/domain/entities/singleton.entity';
@@ -820,16 +819,8 @@ describe('Chains Controller', () => {
   });
 
   describe('GET /:chainId/gas-price', () => {
-    it('should return gas price in Etherscan API format', async () => {
-      const gasPriceOracle = gasPriceOracleBuilder()
-        .with(
-          'uri',
-          'https://api.etherscan.io/v2/api?module=gastracker&action=gasoracle',
-        )
-        .build();
-      const chainDomain = chainBuilder()
-        .with('gasPrice', [gasPriceOracle])
-        .build();
+    it('should proxy Etherscan gas price API', async () => {
+      const chainId = '1';
 
       // Mock the Etherscan API response
       const etherscanResponse = {
@@ -846,17 +837,12 @@ describe('Chains Controller', () => {
       };
 
       networkService.get.mockResolvedValueOnce({
-        data: rawify(chainDomain),
-        status: 200,
-      });
-
-      networkService.get.mockResolvedValueOnce({
         data: rawify(etherscanResponse),
         status: 200,
       });
 
       const response = await request(app.getHttpServer())
-        .get(`/v1/chains/${chainDomain.chainId}/gas-price`)
+        .get(`/v1/chains/${chainId}/gas-price`)
         .expect(200);
 
       // Verify the response matches Etherscan format exactly
@@ -872,48 +858,19 @@ describe('Chains Controller', () => {
           gasUsedRatio: '0.5,0.6,0.7',
         },
       });
+
+      // Verify correct Etherscan URL was called
+      expect(networkService.get).toHaveBeenCalledWith(
+        expect.objectContaining({
+          url: expect.stringContaining(
+            'https://api.etherscan.io/v2/api?chainid=1&module=gastracker&action=gasoracle',
+          ),
+        }),
+      );
     });
 
-    it('should return 404 when no oracle is configured', async () => {
-      const chainDomain = chainBuilder()
-        .with('gasPrice', [
-          {
-            type: 'fixed',
-            weiValue: '1000000000',
-          },
-        ])
-        .build();
-
-      networkService.get.mockResolvedValueOnce({
-        data: rawify(chainDomain),
-        status: 200,
-      });
-
-      await request(app.getHttpServer())
-        .get(`/v1/chains/${chainDomain.chainId}/gas-price`)
-        .expect(404)
-        .expect({
-          message: `No gas price oracle for chain ${chainDomain.chainId}`,
-          error: 'Not Found',
-          statusCode: 404,
-        });
-    });
-
-    it('should handle oracle API errors', async () => {
-      const gasPriceOracle = gasPriceOracleBuilder()
-        .with(
-          'uri',
-          'https://api.etherscan.io/v2/api?module=gastracker&action=gasoracle',
-        )
-        .build();
-      const chainDomain = chainBuilder()
-        .with('gasPrice', [gasPriceOracle])
-        .build();
-
-      networkService.get.mockResolvedValueOnce({
-        data: rawify(chainDomain),
-        status: 200,
-      });
+    it('should handle Etherscan API errors', async () => {
+      const chainId = '1';
 
       const error = new NetworkResponseError(
         new URL('https://api.etherscan.io/v2/api'),
@@ -924,8 +881,38 @@ describe('Chains Controller', () => {
       networkService.get.mockRejectedValueOnce(error);
 
       await request(app.getHttpServer())
-        .get(`/v1/chains/${chainDomain.chainId}/gas-price`)
+        .get(`/v1/chains/${chainId}/gas-price`)
         .expect(500);
+    });
+
+    it('should include API key when configured', async () => {
+      const chainId = '1';
+
+      const etherscanResponse = {
+        status: '1',
+        message: 'OK',
+        result: {
+          LastBlock: '23467872',
+          SafeGasPrice: '0.5',
+          ProposeGasPrice: '0.6',
+          FastGasPrice: '0.7',
+          suggestBaseFee: '0.5',
+          gasUsedRatio: '0.5,0.6,0.7',
+        },
+      };
+
+      networkService.get.mockResolvedValueOnce({
+        data: rawify(etherscanResponse),
+        status: 200,
+      });
+
+      await request(app.getHttpServer())
+        .get(`/v1/chains/${chainId}/gas-price`)
+        .expect(200);
+
+      // Verify API key is included if configured
+      const calls = networkService.get.mock.calls;
+      expect(calls[0][0].url).toMatch(/apikey=/);
     });
   });
 });

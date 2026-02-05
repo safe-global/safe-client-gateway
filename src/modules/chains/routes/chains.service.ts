@@ -1,4 +1,4 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
 import { CacheRouter } from '@/datasources/cache/cache.router';
@@ -105,14 +105,7 @@ export class ChainsService {
   }
 
   async getGasPrice(chainId: string): Promise<GasPriceResponse> {
-    const chain = await this.chainsRepository.getChain(chainId);
-    const oracleConfig = chain.gasPrice.find((gp) => gp.type === 'oracle');
-
-    if (!oracleConfig || oracleConfig.type !== 'oracle') {
-      throw new NotFoundException(`No gas price oracle for chain ${chainId}`);
-    }
-
-    const url = this.buildGasPriceUrl(oracleConfig.uri);
+    const url = this.buildEtherscanGasPriceUrl(chainId);
     const cacheDir = CacheRouter.getGasPriceCacheDir(chainId);
     const cacheTtl = this.configurationService.getOrThrow<number>(
       'gasPrice.cacheTtlSeconds',
@@ -126,15 +119,14 @@ export class ChainsService {
     });
 
     // Return the raw oracle response in Etherscan API format
-    // The response is wrapped in Raw<T> type, cast it back to the actual type
     return response as unknown as GasPriceResponse;
   }
 
-  private buildGasPriceUrl(baseUri: string): string {
-    const url = new URL(baseUri);
-    // Remove any existing apikey from config-service URI
-    url.searchParams.delete('apikey');
-    url.searchParams.delete('apiKey');
+  private buildEtherscanGasPriceUrl(chainId: string): string {
+    const url = new URL('https://api.etherscan.io/v2/api');
+    url.searchParams.set('chainid', chainId);
+    url.searchParams.set('module', 'gastracker');
+    url.searchParams.set('action', 'gasoracle');
 
     const apiKey = this.configurationService.get<string>(
       'gasPrice.etherscanApiKey',
