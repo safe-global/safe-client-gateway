@@ -971,6 +971,9 @@ describe('Transactions History Controller', () => {
           // Param ValidationPipe checksums address
           safe: getAddress(safeAddress),
         },
+        circuitBreaker: {
+          key: `txs-service-${chainId}`,
+        },
       },
     });
   });

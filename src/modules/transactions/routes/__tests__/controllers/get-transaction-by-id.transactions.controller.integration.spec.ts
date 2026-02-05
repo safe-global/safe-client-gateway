@@ -157,6 +157,11 @@ describe('Get by id - Transactions Controller', () => {
     expect(networkService.get).toHaveBeenCalledWith({ url: getChainUrl });
     expect(networkService.get).toHaveBeenCalledWith({
       url: getModuleTransactionUrl,
+      networkRequest: {
+        circuitBreaker: {
+          key: `txs-service-${chain.chainId}`,
+        },
+      },
     });
   });
 
