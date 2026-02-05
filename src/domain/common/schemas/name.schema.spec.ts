@@ -1,7 +1,7 @@
 import {
   makeNameSchema,
   NameSchema,
-} from '@/domain/common/entities/name.schema';
+} from '@/domain/common/schemas/name.schema';
 import { faker } from '@faker-js/faker/.';
 
 describe('NameSchema', () => {

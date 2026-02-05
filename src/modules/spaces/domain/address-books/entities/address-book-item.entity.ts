@@ -1,5 +1,5 @@
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { makeNameSchema } from '@/domain/common/entities/name.schema';
+import { makeNameSchema } from '@/domain/common/schemas/name.schema';
 import { z } from 'zod';
 
 export const ADDRESS_BOOK_NAME_MAX_LENGTH = 50;
