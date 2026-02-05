@@ -4,25 +4,22 @@ import { z } from 'zod';
 import { buildPageSchema } from '@/domain/entities/schemas/page.schema.factory';
 import { NullableStringSchema } from '@/validation/entities/schemas/nullable.schema';
 
-export const SafeSchema = z.object({
+const SafeBaseSchema = z.object({
   address: AddressSchema,
   nonce: CoercedNumberSchema,
   threshold: z.number(),
   owners: z.array(AddressSchema),
   masterCopy: AddressSchema,
-  modules: z.array(AddressSchema).nullish().default(null),
   fallbackHandler: AddressSchema,
   guard: AddressSchema,
+});
+
+export const SafeSchema = SafeBaseSchema.extend({
+  modules: z.array(AddressSchema).nullish().default(null),
   version: NullableStringSchema,
 });
 
-export const SafeSchemaV2 = z.object({
-  address: AddressSchema,
-  owners: z.array(AddressSchema),
-  threshold: z.number(),
-  nonce: CoercedNumberSchema,
-  masterCopy: AddressSchema,
-  fallbackHandler: AddressSchema,
+export const SafeSchemaV2 = SafeBaseSchema.extend({
   guard: AddressSchema.nullable(),
   moduleGuard: AddressSchema.nullable(),
   enabledModules: z.array(AddressSchema),
