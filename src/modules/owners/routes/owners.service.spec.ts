@@ -1,14 +1,16 @@
 import { OwnersService } from '@/modules/owners/routes/owners.service';
-import type { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
+import type { SafeRepository } from '@/modules/safe/domain/safe.repository';
+import type { ILoggingService } from '@/logging/logging.interface';
 import { faker } from '@faker-js/faker';
 import type { Address } from 'viem';
 
-const safeRepositoryMock: jest.MockedObjectDeep<ISafeRepository> = {
+const safeRepositoryMock: jest.MockedObjectDeep<SafeRepository> = {
   getSafesByOwner: jest.fn(),
   getSafesByOwnerV2: jest.fn(),
   getAllSafesByOwner: jest.fn(),
   getAllSafesByOwnerV2: jest.fn(),
-} as jest.MockedObjectDeep<ISafeRepository>;
+  getCreationTransaction: jest.fn(),
+} as jest.MockedObjectDeep<SafeRepository>;
 
 describe('OwnersService', () => {
   let service: OwnersService;

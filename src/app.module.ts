@@ -5,7 +5,7 @@ import {
   NestModule,
   RequestMethod,
 } from '@nestjs/common';
-import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
+import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ScheduleModule } from '@nestjs/schedule';
 import { CacheModule as InMemoryCacheModule } from '@nestjs/cache-manager';
 import { ClsMiddleware, ClsModule } from 'nestjs-cls';
@@ -35,6 +35,7 @@ import { MessagesModule } from '@/modules/messages/messages.module';
 import { RequestScopedLoggingModule } from '@/logging/logging.module';
 import { RouteLoggerInterceptor } from '@/routes/common/interceptors/route-logger.interceptor';
 import { NotFoundLoggerMiddleware } from '@/middleware/not-found-logger.middleware';
+import { BlocklistGuard } from '@/routes/common/guards/blocklist.guard';
 import configuration from '@/config/entities/configuration';
 import { GlobalErrorFilter } from '@/routes/common/filters/global-error.filter';
 import { DataSourceErrorFilter } from '@/routes/common/filters/data-source-error.filter';
@@ -61,6 +62,7 @@ import { BullModule } from '@nestjs/bullmq';
 import { CsvExportModule } from '@/modules/csv-export/csv-export.module';
 import { SafeShieldModule } from '@/modules/safe-shield/safe-shield.module';
 import { CircuitBreakerModule } from '@/datasources/circuit-breaker/circuit-breaker.module';
+import { BlocklistModule } from '@/config/entities/blocklist.module';
 
 @Module({})
 export class AppModule implements NestModule {
@@ -106,6 +108,7 @@ export class AppModule implements NestModule {
         TargetedMessagingModule,
         TransactionsModule,
         // common
+        BlocklistModule,
         CacheModule,
         CircuitBreakerModule,
         // Module for storing and reading from the async local storage
@@ -172,6 +175,10 @@ export class AppModule implements NestModule {
         {
           provide: APP_INTERCEPTOR,
           useClass: CacheControlInterceptor,
+        },
+        {
+          provide: APP_GUARD,
+          useClass: BlocklistGuard,
         },
         {
           provide: APP_FILTER,
