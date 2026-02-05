@@ -1,12 +1,6 @@
-import { z } from 'zod';
-import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
-import { Operation } from '@/modules/safe/domain/entities/operation.entity';
+import { TransactionBaseSchema } from '@/domain/common/schemas/transaction-base.schema';
 import { NullableHexSchema } from '@/validation/entities/schemas/nullable.schema';
 
-export const GetEstimationDtoSchema = z.object({
-  to: AddressSchema,
-  value: NumericStringSchema,
+export const GetEstimationDtoSchema = TransactionBaseSchema.extend({
   data: NullableHexSchema,
-  operation: z.enum(Operation),
 });
