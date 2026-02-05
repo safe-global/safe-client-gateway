@@ -33,6 +33,13 @@ import { GlobalErrorFilter } from '@/routes/common/filters/global-error.filter';
 import { APP_FILTER } from '@nestjs/core';
 import { SignatureType } from '@/domain/common/entities/signature-type.entity';
 import { ZodErrorFilter } from '@/routes/common/filters/zod-error.filter';
+
+// Mock the getBlocklist function
+jest.mock('@/config/entities/blocklist.config');
+
+import { getBlocklist } from '@/config/entities/blocklist.config';
+
+const mockGetBlocklist = jest.mocked(getBlocklist);
 import {
   type ILoggingService,
   LoggingService,
@@ -89,6 +96,9 @@ describe('Add transaction confirmations - Transactions Controller (Unit)', () =>
 
   beforeEach(async () => {
     jest.resetAllMocks();
+
+    // Reset and mock getBlocklist to return empty array by default
+    mockGetBlocklist.mockReturnValue([]);
 
     const baseConfiguration = configuration();
     const testConfiguration = (): typeof baseConfiguration => ({
@@ -582,12 +592,15 @@ describe('Add transaction confirmations - Transactions Controller (Unit)', () =>
       const chain = chainBuilder().build();
       const privateKey = generatePrivateKey();
       const signer = privateKeyToAccount(privateKey);
+
+      // Mock getBlocklist to return the blocked address
+      mockGetBlocklist.mockReturnValue([signer.address]);
+
       const defaultConfiguration = configuration();
       const testConfiguration = (): ReturnType<typeof configuration> => ({
         ...defaultConfiguration,
-        blockchain: {
-          ...defaultConfiguration.blockchain,
-          blocklist: [signer.address],
+        features: {
+          ...defaultConfiguration.features,
         },
       });
       await initApp(testConfiguration);

@@ -34,6 +34,13 @@ import {
 } from '@/logging/logging.interface';
 import { createTestModule } from '@/__tests__/testing-module';
 
+// Mock the getBlocklist function
+jest.mock('@/config/entities/blocklist.config');
+
+import { getBlocklist } from '@/config/entities/blocklist.config';
+
+const mockGetBlocklist = jest.mocked(getBlocklist);
+
 describe('Messages controller', () => {
   let app: INestApplication<Server>;
   let safeConfigUrl: string;
@@ -68,6 +75,9 @@ describe('Messages controller', () => {
 
   beforeEach(async () => {
     jest.resetAllMocks();
+
+    // Reset and mock getBlocklist to return empty array by default
+    mockGetBlocklist.mockReturnValue([]);
 
     await initApp(configuration);
   });
@@ -1056,14 +1066,14 @@ describe('Messages controller', () => {
         const chain = chainBuilder().build();
         const privateKey = generatePrivateKey();
         const signer = privateKeyToAccount(privateKey);
+
+        // Mock getBlocklist to return the blocked address
+        mockGetBlocklist.mockReturnValue([signer.address]);
+
         const defaultConfiguration = configuration();
         const testConfiguration = (): ReturnType<typeof configuration> => {
           return {
             ...defaultConfiguration,
-            blockchain: {
-              ...defaultConfiguration.blockchain,
-              blocklist: [signer.address],
-            },
           };
         };
         await initApp(testConfiguration);
@@ -1624,14 +1634,14 @@ describe('Messages controller', () => {
         const chain = chainBuilder().build();
         const privateKey = generatePrivateKey();
         const signer = privateKeyToAccount(privateKey);
+
+        // Mock getBlocklist to return the blocked address
+        mockGetBlocklist.mockReturnValue([signer.address]);
+
         const defaultConfiguration = configuration();
         const testConfiguration = (): ReturnType<typeof configuration> => {
           return {
             ...defaultConfiguration,
-            blockchain: {
-              ...defaultConfiguration.blockchain,
-              blocklist: [signer.address],
-            },
           };
         };
         await initApp(testConfiguration);

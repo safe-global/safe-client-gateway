@@ -21,6 +21,13 @@ import type { IContractsRepository } from '@/modules/contracts/domain/contracts.
 import { getSafeTxHash } from '@/domain/common/utils/safe';
 import { confirmationBuilder } from '@/modules/safe/domain/entities/__tests__/multisig-transaction-confirmation.builder';
 
+// Mock the getBlocklist function
+jest.mock('@/config/entities/blocklist.config');
+
+import { getBlocklist } from '@/config/entities/blocklist.config';
+
+const mockGetBlocklist = jest.mocked(getBlocklist);
+
 const mockConfigurationService = jest.mocked({
   getOrThrow: jest.fn(),
 } as jest.MockedObjectDeep<IConfigurationService>);
@@ -55,6 +62,9 @@ describe('TransactionVerifierHelper', () => {
 
   beforeEach(() => {
     jest.resetAllMocks();
+
+    // Reset and mock getBlocklist to return empty array by default
+    mockGetBlocklist.mockReturnValue([]);
 
     initTarget(configuration);
   });
@@ -451,14 +461,14 @@ describe('TransactionVerifierHelper', () => {
     it('should throw and log if a signer is blocked', async () => {
       const privateKey = generatePrivateKey();
       const signer = privateKeyToAccount(privateKey);
+
+      // Mock getBlocklist to return the blocked address
+      mockGetBlocklist.mockReturnValue([signer.address]);
+
       const defaultConfiguration = configuration();
       const testConfiguration = (): ReturnType<typeof configuration> => {
         return {
           ...defaultConfiguration,
-          blockchain: {
-            ...defaultConfiguration.blockchain,
-            blocklist: [signer.address],
-          },
         };
       };
       initTarget(testConfiguration);
@@ -1394,14 +1404,14 @@ describe('TransactionVerifierHelper', () => {
           return privateKeyToAccount(privateKey);
         },
       );
+
+      // Mock getBlocklist to return the blocked address
+      mockGetBlocklist.mockReturnValue([signers[0].address]);
+
       const defaultConfiguration = configuration();
       const testConfiguration = (): ReturnType<typeof configuration> => {
         return {
           ...defaultConfiguration,
-          blockchain: {
-            ...defaultConfiguration.blockchain,
-            blocklist: [signers[0].address],
-          },
         };
       };
       initTarget(testConfiguration);
@@ -2162,14 +2172,14 @@ describe('TransactionVerifierHelper', () => {
           return privateKeyToAccount(privateKey);
         },
       );
+
+      // Mock getBlocklist to return the blocked address
+      mockGetBlocklist.mockReturnValue([blockedSigner.address]);
+
       const defaultConfiguration = configuration();
       const testConfiguration = (): ReturnType<typeof configuration> => {
         return {
           ...defaultConfiguration,
-          blockchain: {
-            ...defaultConfiguration.blockchain,
-            blocklist: [blockedSigner.address],
-          },
         };
       };
       initTarget(testConfiguration);

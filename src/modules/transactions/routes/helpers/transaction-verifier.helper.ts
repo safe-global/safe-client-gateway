@@ -19,6 +19,7 @@ import { type Address, type Hash, Hex, isAddressEqual } from 'viem';
 import { IContractsRepository } from '@/modules/contracts/domain/contracts.repository.interface';
 import { Operation } from '@/modules/safe/domain/entities/operation.entity';
 import { parseSignaturesByType } from '@/domain/common/utils/signatures';
+import { getBlocklist } from '@/config/entities/blocklist.config';
 
 enum ErrorMessage {
   MalformedHash = 'Could not calculate safeTxHash',
@@ -70,9 +71,7 @@ export class TransactionVerifierHelper {
       this.configurationService.getOrThrow(
         'features.signatureVerification.proposal',
       );
-    this.blocklist = this.configurationService.getOrThrow(
-      'blockchain.blocklist',
-    );
+    this.blocklist = getBlocklist();
   }
 
   public verifyApiTransaction(args: {
