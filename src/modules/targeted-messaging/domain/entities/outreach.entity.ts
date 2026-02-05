@@ -8,7 +8,7 @@ import {
 
 export type Outreach = z.infer<typeof OutreachSchema>;
 
-export const OutreachSchema = RowSchema.extend({
+export const OutreachBaseSchema = z.object({
   name: z.string(),
   startDate: z.coerce.date(),
   endDate: z.coerce.date(),
@@ -19,8 +19,13 @@ export const OutreachSchema = RowSchema.extend({
     .lte(DB_MAX_SAFE_INTEGER - 1),
   type: z.string(),
   teamName: z.string(),
-  sourceFile: NullableStringSchema,
-  sourceFileProcessedDate: NullableCoercedDateSchema,
-  sourceFileChecksum: NullableStringSchema,
-  targetAll: z.boolean(),
 });
+
+export const OutreachSchema = RowSchema.extend(OutreachBaseSchema.shape).extend(
+  {
+    sourceFile: NullableStringSchema,
+    sourceFileProcessedDate: NullableCoercedDateSchema,
+    sourceFileChecksum: NullableStringSchema,
+    targetAll: z.boolean(),
+  },
+);
