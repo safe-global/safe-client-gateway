@@ -9,6 +9,7 @@ import { Singleton } from '@/modules/chains/domain/entities/singleton.entity';
 import { SingletonsSchema } from '@/modules/chains/domain/entities/schemas/singleton.schema';
 import { Page } from '@/domain/entities/page.entity';
 import { IConfigApi } from '@/domain/interfaces/config-api.interface';
+import { IEtherscanApi } from '@/domain/interfaces/etherscan-api.interface';
 import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
 import {
   IndexingStatus,
@@ -19,6 +20,10 @@ import differenceBy from 'lodash/differenceBy';
 import { PaginationData } from '@/routes/common/pagination/pagination.data';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { LenientBasePageSchema } from '@/domain/entities/schemas/page.schema.factory';
+import {
+  GasPriceResponse,
+  GasPriceResponseSchema,
+} from '@/modules/chains/routes/entities/gas-price-response.entity';
 
 @Injectable()
 export class ChainsRepository implements IChainsRepository {
@@ -31,6 +36,7 @@ export class ChainsRepository implements IChainsRepository {
   constructor(
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
     @Inject(IConfigApi) private readonly configApi: IConfigApi,
+    @Inject(IEtherscanApi) private readonly etherscanApi: IEtherscanApi,
     @Inject(ITransactionApiManager)
     private readonly transactionApiManager: ITransactionApiManager,
     @Inject(IConfigurationService)
@@ -110,5 +116,10 @@ export class ChainsRepository implements IChainsRepository {
     return this.getChain(chainId)
       .then(() => true)
       .catch(() => false);
+  }
+
+  async getGasPrice(chainId: string): Promise<GasPriceResponse> {
+    const gasPrice = await this.etherscanApi.getGasPrice(chainId);
+    return GasPriceResponseSchema.parse(gasPrice);
   }
 }

@@ -1,7 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
-import { CacheRouter } from '@/datasources/cache/cache.router';
 import { IBackboneRepository } from '@/modules/backbone/domain/backbone.repository.interface';
 import { Backbone } from '@/modules/backbone/domain/entities/backbone.entity';
 import { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
@@ -25,7 +23,6 @@ export class ChainsService {
     private readonly chainsRepository: IChainsRepository,
     @Inject(IBackboneRepository)
     private readonly backboneRepository: IBackboneRepository,
-    private readonly dataSource: CacheFirstDataSource,
   ) {}
 
   async getChains(
@@ -105,35 +102,6 @@ export class ChainsService {
   }
 
   async getGasPrice(chainId: string): Promise<GasPriceResponse> {
-    const url = this.buildEtherscanGasPriceUrl(chainId);
-    const cacheDir = CacheRouter.getGasPriceCacheDir(chainId);
-    const cacheTtl = this.configurationService.getOrThrow<number>(
-      'gasPrice.cacheTtlSeconds',
-    );
-
-    const response = await this.dataSource.get<GasPriceResponse>({
-      cacheDir,
-      url,
-      expireTimeSeconds: cacheTtl,
-      notFoundExpireTimeSeconds: cacheTtl,
-    });
-
-    // Return the raw oracle response in Etherscan API format
-    return response as unknown as GasPriceResponse;
-  }
-
-  private buildEtherscanGasPriceUrl(chainId: string): string {
-    const url = new URL('https://api.etherscan.io/v2/api');
-    url.searchParams.set('chainid', chainId);
-    url.searchParams.set('module', 'gastracker');
-    url.searchParams.set('action', 'gasoracle');
-
-    const apiKey = this.configurationService.get<string>(
-      'gasPrice.etherscanApiKey',
-    );
-    if (apiKey) {
-      url.searchParams.set('apikey', apiKey);
-    }
-    return url.toString();
+    return this.chainsRepository.getGasPrice(chainId);
   }
 }

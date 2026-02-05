@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
-import { CacheFirstDataSourceModule } from '@/datasources/cache/cache.first.data.source.module';
 import { ConfigApiModule } from '@/datasources/config-api/config-api.module';
+import { EtherscanApiModule } from '@/datasources/etherscan-api/etherscan-api.module';
 import { TransactionApiManagerModule } from '@/domain/interfaces/transaction-api.manager.interface';
 import { BackboneModule } from '@/modules/backbone/backbone.module';
 import { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
@@ -10,8 +10,8 @@ import { ChainsService } from '@/modules/chains/routes/chains.service';
 
 @Module({
   imports: [
-    CacheFirstDataSourceModule,
     ConfigApiModule,
+    EtherscanApiModule,
     TransactionApiManagerModule,
     BackboneModule,
   ],

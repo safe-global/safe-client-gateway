@@ -1,4 +1,20 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { z } from 'zod';
+
+export const GasPriceResultSchema = z.object({
+  LastBlock: z.string(),
+  SafeGasPrice: z.string(),
+  ProposeGasPrice: z.string(),
+  FastGasPrice: z.string(),
+  suggestBaseFee: z.string(),
+  gasUsedRatio: z.string(),
+});
+
+export const GasPriceResponseSchema = z.object({
+  status: z.string(),
+  message: z.string(),
+  result: GasPriceResultSchema,
+});
 
 class GasPriceResult {
   @ApiProperty({ description: 'Last block number', example: '23467872' })

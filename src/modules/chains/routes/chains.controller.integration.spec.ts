@@ -882,7 +882,7 @@ describe('Chains Controller', () => {
 
       await request(app.getHttpServer())
         .get(`/v1/chains/${chainId}/gas-price`)
-        .expect(500);
+        .expect(503);
     });
 
     it('should include API key when configured', async () => {

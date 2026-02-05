@@ -657,9 +657,11 @@ export default () => ({
       },
     },
   },
-  gasPrice: {
-    etherscanApiKey: process.env.ETHERSCAN_API_KEY,
-    cacheTtlSeconds: parseInt(process.env.GAS_PRICE_CACHE_TTL_SECONDS ?? '10'),
+  etherscan: {
+    apiKey: process.env.ETHERSCAN_API_KEY,
+    gasPriceCacheTtlSeconds: parseInt(
+      process.env.ETHERSCAN_GAS_PRICE_CACHE_TTL_SECONDS ?? '2',
+    ),
   },
 });
 

@@ -448,8 +448,8 @@ export default (): ReturnType<typeof configuration> => ({
       },
     },
   },
-  gasPrice: {
-    etherscanApiKey: faker.string.hexadecimal({ length: 32 }),
-    cacheTtlSeconds: faker.number.int({ min: 5, max: 30 }),
+  etherscan: {
+    apiKey: faker.string.hexadecimal({ length: 32 }),
+    gasPriceCacheTtlSeconds: faker.number.int({ min: 1, max: 10 }),
   },
 });
