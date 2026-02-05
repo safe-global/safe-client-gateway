@@ -2,6 +2,23 @@
 
 This document contains guidelines for AI agents (like Claude Code) working on this codebase.
 
+## Architecture
+
+```
+Controller → Service → Repository → Datasource → CacheFirstDataSource
+```
+
+- **Datasources** (`src/datasources/`): HTTP + caching, use `HttpErrorFactory` for errors
+- **Repositories** (`src/modules/*/domain/`): Inject datasources, validate with Zod schemas
+- **Services** (`src/modules/*/routes/`): Business logic, call repositories (never datasources)
+
+Each external API gets its own datasource:
+- Interface in `src/domain/interfaces/` (Symbol-based DI)
+- Implementation in `src/datasources/<api-name>/`
+- Own NestJS module exporting the interface
+
+When adding constructor dependencies, update all spec files that instantiate the class.
+
 ## Pre-Commit Checklist
 
 Before creating **EACH** commit, you MUST run the following commands in sequence and fix any issues:
