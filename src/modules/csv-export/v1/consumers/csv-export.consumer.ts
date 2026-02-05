@@ -1,7 +1,7 @@
 import {
   CSV_EXPORT_QUEUE,
   CSV_EXPORT_WORKER_CONCURRENCY,
-} from '@/domain/common/entities/jobs.constants';
+} from '@/domain/common/jobs.constants';
 import { LogType } from '@/domain/common/entities/log-type.entity';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { CsvExportService } from '@/modules/csv-export/v1/csv-export.service';

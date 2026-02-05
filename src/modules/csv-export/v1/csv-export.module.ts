@@ -1,6 +1,6 @@
 import { JobQueueService } from '@/datasources/job-queue/job-queue.service';
 import { JobQueueShutdownHook } from '@/datasources/job-queue/job-queue.shutdown.hook';
-import { CSV_EXPORT_QUEUE } from '@/domain/common/entities/jobs.constants';
+import { CSV_EXPORT_QUEUE } from '@/domain/common/jobs.constants';
 import { IJobQueueService } from '@/domain/interfaces/job-queue.interface';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { BullModule, getQueueToken } from '@nestjs/bullmq';

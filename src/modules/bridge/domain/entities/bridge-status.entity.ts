@@ -1,6 +1,10 @@
 import { z } from 'zod';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { TokenSchema } from '@/modules/bridge/domain/entities/token.entity';
+import {
+  NullableNumberSchema,
+  NullableStringSchema,
+} from '@/validation/entities/schemas/nullable.schema';
 
 // Adapted from StatusResponse of @lifi/types
 // @see https://github.com/lifinance/types/blob/f87f67730de3aa22e63fe2b4337115d2998c76ea/src/api.ts#L535
@@ -69,7 +73,7 @@ export const BaseStatusDataSchema = z.object({
       'UNKNOWN',
     ])
     .catch('UNKNOWN'),
-  substatusMessage: z.string().nullish().default(null),
+  substatusMessage: NullableStringSchema,
 });
 
 export const BaseTransactionInfoSchema = z.object({
@@ -87,14 +91,14 @@ export const PendingReceivingInfoSchema = z.object({
 export type PendingReceivingInfo = z.infer<typeof PendingReceivingInfoSchema>;
 
 export const ExtendedTransactionInfoSchema = BaseTransactionInfoSchema.extend({
-  amount: z.string().nullish().default(null),
+  amount: NullableStringSchema,
   token: TokenSchema.nullish().default(null),
   gasPrice: z.string(),
   gasUsed: z.string(),
   gasToken: TokenSchema,
   gasAmount: z.string(),
-  timestamp: z.number().nullish().default(null),
-  value: z.string().nullish().default(null),
+  timestamp: NullableNumberSchema,
+  value: NullableStringSchema,
 });
 
 export type ExtendedTransactionInfo = z.infer<
@@ -114,7 +118,7 @@ export const SuccessStatusDataSchema = BaseStatusDataSchema.extend({
   receiving: ExtendedTransactionInfoSchema,
   lifiExplorerLink: z.string(),
   metadata: TransferMetadataSchema,
-  bridgeExplorerLink: z.string().nullish().default(null),
+  bridgeExplorerLink: NullableStringSchema,
   fromAddress: AddressSchema,
   toAddress: AddressSchema,
 });

@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { buildPageSchema } from '@/domain/entities/schemas/page.schema.factory';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
+import { TokenMetadataSchema } from '@/domain/common/schemas/token-metadata.schema';
 
 /**
  * ERC-20 decimals are optional
@@ -13,11 +14,9 @@ const DEFAULT_ERC20_DECIMALS = 0;
  */
 const DEFAULT_ERC721_DECIMALS = 0;
 
-const BaseTokenSchema = z.object({
+const BaseTokenSchema = TokenMetadataSchema.extend({
   address: AddressSchema,
   logoUri: z.url(),
-  name: z.string(),
-  symbol: z.string(),
   trusted: z.boolean(),
 });
 

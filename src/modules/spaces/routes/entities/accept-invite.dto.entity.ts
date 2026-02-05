@@ -1,7 +1,7 @@
 import {
   NAME_MAX_LENGTH,
   NAME_MIN_LENGTH,
-} from '@/domain/common/entities/name.schema';
+} from '@/domain/common/schemas/name.schema';
 import { ApiProperty } from '@nestjs/swagger';
 import { z } from 'zod';
 

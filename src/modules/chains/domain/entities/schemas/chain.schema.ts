@@ -1,12 +1,13 @@
 import { z } from 'zod';
 import { RpcUriAuthentication } from '@/modules/chains/domain/entities/rpc-uri-authentication.entity';
 import { buildLenientPageSchema } from '@/domain/entities/schemas/page.schema.factory';
-import { AddressSchema } from '@/validation/entities/schemas/address.schema';
+import { TokenDetailsSchema } from '@/domain/common/schemas/token-metadata.schema';
+import {
+  NullableAddressSchema,
+  NullableStringSchema,
+} from '@/validation/entities/schemas/nullable.schema';
 
-export const NativeCurrencySchema = z.object({
-  name: z.string(),
-  symbol: z.string(),
-  decimals: z.number(),
+export const NativeCurrencySchema = TokenDetailsSchema.extend({
   logoUri: z.url(),
 });
 
@@ -24,7 +25,7 @@ export const BlockExplorerUriTemplateSchema = z.object({
 });
 
 export const BeaconChainExplorerUriTemplateSchema = z.object({
-  publicKey: z.string().nullish().default(null),
+  publicKey: NullableStringSchema,
 });
 
 export const ThemeSchema = z.object({
@@ -59,25 +60,25 @@ export const GasPriceSchema = z.array(
 );
 
 export const PricesProviderSchema = z.object({
-  chainName: z.string().nullish().default(null),
-  nativeCoin: z.string().nullish().default(null),
+  chainName: NullableStringSchema,
+  nativeCoin: NullableStringSchema,
 });
 
 export const BalancesProviderSchema = z.object({
-  chainName: z.string().nullish().default(null),
+  chainName: NullableStringSchema,
   enabled: z.boolean(),
 });
 
 export const ContractAddressesSchema = z.object({
-  safeSingletonAddress: AddressSchema.nullish().default(null),
-  safeProxyFactoryAddress: AddressSchema.nullish().default(null),
-  multiSendAddress: AddressSchema.nullish().default(null),
-  multiSendCallOnlyAddress: AddressSchema.nullish().default(null),
-  fallbackHandlerAddress: AddressSchema.nullish().default(null),
-  signMessageLibAddress: AddressSchema.nullish().default(null),
-  createCallAddress: AddressSchema.nullish().default(null),
-  simulateTxAccessorAddress: AddressSchema.nullish().default(null),
-  safeWebAuthnSignerFactoryAddress: AddressSchema.nullish().default(null),
+  safeSingletonAddress: NullableAddressSchema,
+  safeProxyFactoryAddress: NullableAddressSchema,
+  multiSendAddress: NullableAddressSchema,
+  multiSendCallOnlyAddress: NullableAddressSchema,
+  fallbackHandlerAddress: NullableAddressSchema,
+  signMessageLibAddress: NullableAddressSchema,
+  createCallAddress: NullableAddressSchema,
+  simulateTxAccessorAddress: NullableAddressSchema,
+  safeWebAuthnSignerFactoryAddress: NullableAddressSchema,
 });
 
 function removeTrailingSlash(url: string): string {
@@ -110,7 +111,7 @@ export const ChainSchema = z.object({
   vpcTransactionService: z.url().transform(removeTrailingSlash),
   theme: ThemeSchema,
   gasPrice: GasPriceSchema,
-  ensRegistryAddress: AddressSchema.nullish().default(null),
+  ensRegistryAddress: NullableAddressSchema,
   disabledWallets: z.array(z.string()),
   features: z.array(z.string()),
   // TODO: Extract and use RelayDtoSchema['version'] when fully migrated to zod
