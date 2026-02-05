@@ -1,9 +1,8 @@
 import { buildPageSchema } from '@/domain/entities/schemas/page.schema.factory';
 import { SignatureType } from '@/domain/common/entities/signature-type.entity';
-import { Operation } from '@/modules/safe/domain/entities/operation.entity';
+import { TransactionBaseSchema } from '@/domain/common/schemas/transaction-base.schema';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { HexSchema } from '@/validation/entities/schemas/hex.schema';
-import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
 import { z } from 'zod';
 import { CoercedNumberSchema } from '@/validation/entities/schemas/coerced-number.schema';
 import { HexBytesSchema } from '@/validation/entities/schemas/hexbytes.schema';
@@ -29,12 +28,9 @@ export const ConfirmationSchema = z.object({
   signature: HexBytesSchema.nullish().default(null),
 });
 
-export const MultisigTransactionSchema = z.object({
+export const MultisigTransactionSchema = TransactionBaseSchema.extend({
   safe: AddressSchema,
-  to: AddressSchema,
-  value: NumericStringSchema,
   data: NullableHexSchema,
-  operation: z.enum(Operation),
   gasToken: NullableAddressSchema,
   safeTxGas: CoercedNumberSchema.nullish().default(null),
   baseGas: CoercedNumberSchema.nullish().default(null),

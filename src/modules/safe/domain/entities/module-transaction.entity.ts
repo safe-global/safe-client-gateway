@@ -1,5 +1,5 @@
 import { buildPageSchema } from '@/domain/entities/schemas/page.schema.factory';
-import { Operation } from '@/modules/safe/domain/entities/operation.entity';
+import { TransactionBaseSchema } from '@/domain/common/schemas/transaction-base.schema';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { HexSchema } from '@/validation/entities/schemas/hex.schema';
 import { z } from 'zod';
@@ -10,12 +10,10 @@ import {
 
 export type ModuleTransaction = z.infer<typeof ModuleTransactionSchema>;
 
-export const ModuleTransactionSchema = z.object({
+export const ModuleTransactionSchema = TransactionBaseSchema.extend({
   safe: AddressSchema,
-  to: AddressSchema,
   value: NullableNumericStringSchema,
   data: NullableHexSchema,
-  operation: z.enum(Operation),
   created: z.coerce.date(),
   executionDate: z.coerce.date(),
   blockNumber: z.number(),
