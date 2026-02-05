@@ -2,7 +2,7 @@ import { RowSchema } from '@/datasources/db/v2/entities/row.entity';
 import type { Space } from '@/modules/spaces/domain/entities/space.entity';
 import { SpaceSchema } from '@/modules/spaces/domain/entities/space.entity';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { makeNameSchema } from '@/domain/common/entities/name.schema';
+import { makeNameSchema } from '@/domain/common/schemas/name.schema';
 import { z } from 'zod';
 import { ADDRESS_BOOK_NAME_MAX_LENGTH } from '@/modules/spaces/domain/address-books/entities/address-book-item.entity';
 import type { Address } from 'viem';

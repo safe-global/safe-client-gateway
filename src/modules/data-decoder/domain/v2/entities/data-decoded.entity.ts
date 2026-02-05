@@ -1,20 +1,17 @@
 import { z } from 'zod';
 import { AddressSchema as _AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { HexSchema as _HexSchema } from '@/validation/entities/schemas/hex.schema';
-import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
-import { Operation } from '@/modules/safe/domain/entities/operation.entity';
 import type { Address } from 'viem';
+import { TransactionBaseSchema } from '@/domain/common/schemas/transaction-base.schema';
 
 // ZodEffects cannot be recursively inferred and need be casted
 const AddressSchema = _AddressSchema as z.ZodType<Address>;
 const HexSchema = _HexSchema as z.ZodType<Address>;
 
-export const MultisendSchema = z.object({
-  operation: z.enum(Operation),
-  value: NumericStringSchema,
-  dataDecoded: z.lazy(() => BaseDataDecodedSchema.nullable()),
+export const MultisendSchema = TransactionBaseSchema.extend({
   to: AddressSchema,
   data: HexSchema.nullable(),
+  dataDecoded: z.lazy(() => BaseDataDecodedSchema.nullable()),
 });
 
 export const ValueDecodedSchema = z.union([

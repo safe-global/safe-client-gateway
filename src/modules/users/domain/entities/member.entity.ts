@@ -6,7 +6,7 @@ import { getStringEnumKeys } from '@/domain/common/utils/enum';
 import type { Space } from '@/modules/spaces/domain/entities/space.entity';
 import type { User } from '@/modules/users/domain/entities/user.entity';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { NameSchema } from '@/domain/common/entities/name.schema';
+import { NameSchema } from '@/domain/common/schemas/name.schema';
 import type { Address } from 'viem';
 
 export enum MemberRole {

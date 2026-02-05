@@ -4,6 +4,11 @@ import { TypedDataSchema } from '@/modules/messages/domain/entities/typed-data.e
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { HexSchema } from '@/validation/entities/schemas/hex.schema';
 import { z } from 'zod';
+import {
+  NullableHexSchema,
+  NullableNumberSchema,
+  NullableStringSchema,
+} from '@/validation/entities/schemas/nullable.schema';
 
 export type Message = z.infer<typeof MessageSchema>;
 
@@ -14,10 +19,10 @@ export const MessageSchema = z.object({
   messageHash: HexSchema,
   message: z.union([z.string(), TypedDataSchema]),
   proposedBy: AddressSchema,
-  safeAppId: z.number().nullish().default(null),
+  safeAppId: NullableNumberSchema,
   confirmations: z.array(MessageConfirmationSchema),
-  preparedSignature: HexSchema.nullish().default(null),
-  origin: z.string().nullish().default(null),
+  preparedSignature: NullableHexSchema,
+  origin: NullableStringSchema,
 });
 
 export const MessagePageSchema = buildPageSchema(MessageSchema);

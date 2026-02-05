@@ -5,7 +5,7 @@ import { getStringEnumKeys } from '@/domain/common/utils/enum';
 import type { Member } from '@/modules/users/domain/entities/member.entity';
 import { SpaceSafeSchema } from '@/modules/spaces/domain/entities/space-safe.entity';
 import type { Space as DbSpace } from '@/modules/spaces/datasources/entities/space.entity.db';
-import { NameSchema } from '@/domain/common/entities/name.schema';
+import { NameSchema } from '@/domain/common/schemas/name.schema';
 
 export enum SpaceStatus {
   ACTIVE = 1,
