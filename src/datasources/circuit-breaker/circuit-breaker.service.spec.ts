@@ -1,11 +1,13 @@
 import { CircuitBreakerService } from '@/datasources/circuit-breaker/circuit-breaker.service';
 import { CircuitState } from '@/datasources/circuit-breaker/enums/circuit-state.enum';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
+import type { ILoggingService } from '@/logging/logging.interface';
 import { faker } from '@faker-js/faker';
 
 describe('CircuitBreakerService', () => {
   let service: CircuitBreakerService;
   let mockConfigurationService: jest.Mocked<IConfigurationService>;
+  let mockLoggingService: jest.MockedObjectDeep<ILoggingService>;
   let defaultFailureThreshold: number;
   let defaultSuccessThreshold: number;
   let defaultTimeout: number;
@@ -32,7 +34,17 @@ describe('CircuitBreakerService', () => {
       }),
     } as unknown as jest.Mocked<IConfigurationService>;
 
-    service = new CircuitBreakerService(mockConfigurationService);
+    mockLoggingService = {
+      info: jest.fn(),
+      debug: jest.fn(),
+      error: jest.fn(),
+      warn: jest.fn(),
+    } as jest.MockedObjectDeep<ILoggingService>;
+
+    service = new CircuitBreakerService(
+      mockConfigurationService,
+      mockLoggingService,
+    );
   });
 
   describe('Circuit Registration', () => {
