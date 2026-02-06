@@ -22,6 +22,7 @@ import type { IContractsRepository } from '@/modules/contracts/domain/contracts.
 import { Operation } from '@/modules/safe/domain/entities/operation.entity';
 import { dataDecodedBuilder } from '@/modules/data-decoder/domain/v2/entities/__tests__/data-decoded.builder';
 import type { Address } from 'viem';
+import type { IBlocklistService } from '@/config/entities/blocklist.interface';
 
 const addressInfoHelper = jest.mocked({
   getOrDefault: jest.fn(),
@@ -69,6 +70,11 @@ const mockContractsRepository = jest.mocked({
   isTrustedForDelegateCall: jest.fn(),
 } as jest.MockedObjectDeep<IContractsRepository>);
 
+const mockBlocklistService = jest.mocked({
+  getBlocklist: jest.fn(),
+  clearCache: jest.fn(),
+} as jest.MockedObjectDeep<IBlocklistService>);
+
 describe('MultisigTransactionDetails mapper (Unit)', () => {
   let mapper: MultisigTransactionDetailsMapper;
 
@@ -76,8 +82,9 @@ describe('MultisigTransactionDetails mapper (Unit)', () => {
     ethSign: boolean;
     blocklist: Array<Address>;
   }): void {
-    mockConfigurationService.getOrThrow.mockImplementation((key) => {
-      if (key === 'blockchain.blocklist') return args.blocklist;
+    mockBlocklistService.getBlocklist.mockReturnValue(args.blocklist);
+
+    mockConfigurationService.getOrThrow.mockImplementation((key): boolean => {
       return [
         'features.hashVerification.api',
         'features.signatureVerification.api',
@@ -99,6 +106,7 @@ describe('MultisigTransactionDetails mapper (Unit)', () => {
         mockDelegatesRepository,
         mockLoggingService,
         mockContractsRepository,
+        mockBlocklistService,
       ),
     );
   }

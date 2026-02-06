@@ -22,6 +22,18 @@ import { CsvExportModule } from '@/modules/csv-export/csv-export.module';
 import { TestCsvExportModule } from '@/modules/csv-export/v1/__tests__/test.csv-export.module';
 import { TxAuthNetworkModule } from '@/datasources/network/tx-auth.network.module';
 import { TestTxAuthNetworkModule } from '@/datasources/network/__tests__/test.tx-auth.network.module';
+import type { Address } from 'viem';
+import { IBlocklistService } from '@/config/entities/blocklist.interface';
+
+// Create a mock blocklist service for tests
+const testBlocklistService: IBlocklistService = {
+  getBlocklist(): Array<Address> {
+    return [];
+  },
+  clearCache(): void {
+    // No-op in tests
+  },
+};
 
 export interface CreateBaseTestModuleOptions {
   config?: typeof configuration;
@@ -100,6 +112,8 @@ export async function createBaseTestModule(
   })
     .overrideProvider(CacheKeyPrefix)
     .useValue(cacheKeyPrefix)
+    .overrideProvider(IBlocklistService)
+    .useValue(testBlocklistService)
     .overrideModule(PostgresDatabaseModule)
     .useModule(TestPostgresDatabaseModule)
     .overrideModule(TargetedMessagingDatasourceModule)
