@@ -9,7 +9,7 @@ import { Raw } from '@/validation/entities/raw.entity';
 
 @Injectable()
 export class EtherscanApi implements IEtherscanApi {
-  private readonly baseUri: string = 'https://api.etherscan.io/v2/api';
+  private readonly baseUri: string;
   private readonly apiKey: string | undefined;
   private readonly cacheTimeSeconds: number;
   private readonly notFoundCacheTimeSeconds: number;
@@ -21,6 +21,9 @@ export class EtherscanApi implements IEtherscanApi {
     private readonly httpErrorFactory: HttpErrorFactory,
   ) {
     this.apiKey = this.configurationService.get<string>('etherscan.apiKey');
+    this.baseUri =
+      this.configurationService.getOrThrow<string>('etherscan.baseUri');
+
     this.cacheTimeSeconds = this.configurationService.getOrThrow<number>(
       'etherscan.gasPriceCacheTtlSeconds',
     );

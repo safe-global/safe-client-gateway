@@ -23,7 +23,7 @@ import { LenientBasePageSchema } from '@/domain/entities/schemas/page.schema.fac
 import {
   GasPriceResponse,
   GasPriceResponseSchema,
-} from '@/modules/chains/routes/entities/gas-price-response.entity';
+} from '@/modules/chains/domain/entities/gas-price-response.entity';
 
 @Injectable()
 export class ChainsRepository implements IChainsRepository {

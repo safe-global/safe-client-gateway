@@ -13,6 +13,7 @@ Controller → Service → Repository → Datasource → CacheFirstDataSource
 - **Services** (`src/modules/*/routes/`): Business logic, call repositories (never datasources)
 
 Each external API gets its own datasource:
+
 - Interface in `src/domain/interfaces/` (Symbol-based DI)
 - Implementation in `src/datasources/<api-name>/`
 - Own NestJS module exporting the interface

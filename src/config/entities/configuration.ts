@@ -658,9 +658,11 @@ export default () => ({
     },
   },
   etherscan: {
+    baseUri:
+      process.env.ETHERSCAN_BASE_URI || 'https://api.etherscan.io/v2/api',
     apiKey: process.env.ETHERSCAN_API_KEY,
     gasPriceCacheTtlSeconds: parseInt(
-      process.env.ETHERSCAN_GAS_PRICE_CACHE_TTL_SECONDS ?? '2',
+      process.env.ETHERSCAN_GAS_PRICE_CACHE_TTL_SECONDS ?? `${10}`,
     ),
   },
 });

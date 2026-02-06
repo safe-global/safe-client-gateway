@@ -1,22 +1,10 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { z } from 'zod';
+import {
+  GasPriceResult as DomainGasPriceResult,
+  GasPriceResponse as DomainGasPriceResponse,
+} from '@/modules/chains/domain/entities/gas-price-response.entity';
 
-export const GasPriceResultSchema = z.object({
-  LastBlock: z.string(),
-  SafeGasPrice: z.string(),
-  ProposeGasPrice: z.string(),
-  FastGasPrice: z.string(),
-  suggestBaseFee: z.string(),
-  gasUsedRatio: z.string(),
-});
-
-export const GasPriceResponseSchema = z.object({
-  status: z.string(),
-  message: z.string(),
-  result: GasPriceResultSchema,
-});
-
-class GasPriceResult {
+class GasPriceResult implements DomainGasPriceResult {
   @ApiProperty({ description: 'Last block number', example: '23467872' })
   LastBlock!: string;
 
@@ -51,7 +39,7 @@ class GasPriceResult {
   gasUsedRatio!: string;
 }
 
-export class GasPriceResponse {
+export class GasPriceResponse implements DomainGasPriceResponse {
   @ApiProperty({ description: 'Status code ("1" = success)', example: '1' })
   status!: string;
 
