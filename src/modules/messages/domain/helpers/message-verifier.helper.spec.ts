@@ -10,6 +10,7 @@ import configuration from '@/config/entities/__tests__/configuration';
 import { SignatureType } from '@/domain/common/entities/signature-type.entity';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import type { ILoggingService } from '@/logging/logging.interface';
+import type { IBlocklistService } from '@/config/entities/blocklist.interface';
 
 const mockConfigurationService = jest.mocked({
   getOrThrow: jest.fn(),
@@ -18,6 +19,11 @@ const mockConfigurationService = jest.mocked({
 const mockLoggingRepository = jest.mocked({
   error: jest.fn(),
 } as jest.MockedObjectDeep<ILoggingService>);
+
+const mockBlocklistService = jest.mocked({
+  getBlocklist: jest.fn(),
+  clearCache: jest.fn(),
+} as jest.MockedObjectDeep<IBlocklistService>);
 
 describe('MessageVerifierHelper', () => {
   let target: MessageVerifierHelper;
@@ -30,11 +36,15 @@ describe('MessageVerifierHelper', () => {
     target = new MessageVerifierHelper(
       mockConfigurationService,
       mockLoggingRepository,
+      mockBlocklistService,
     );
   }
 
   beforeEach(() => {
     jest.resetAllMocks();
+
+    // Mock blocklist service to return empty array by default
+    mockBlocklistService.getBlocklist.mockReturnValue([]);
 
     initTarget(configuration);
   });
@@ -305,14 +315,14 @@ describe('MessageVerifierHelper', () => {
       const chainId = faker.string.numeric();
       const privateKey = generatePrivateKey();
       const signer = privateKeyToAccount(privateKey);
+
+      // Mock getBlocklist to return the blocked address
+      mockBlocklistService.getBlocklist.mockReturnValue([signer.address]);
+
       const defaultConfiguration = configuration();
       const testConfiguration = (): ReturnType<typeof configuration> => {
         return {
           ...defaultConfiguration,
-          blockchain: {
-            ...defaultConfiguration.blockchain,
-            blocklist: [signer.address],
-          },
         };
       };
       initTarget(testConfiguration);
@@ -708,6 +718,10 @@ describe('MessageVerifierHelper', () => {
       const chainId = faker.string.numeric();
       const privateKey = generatePrivateKey();
       const signer = privateKeyToAccount(privateKey);
+
+      // Mock getBlocklist to return the blocked address
+      mockBlocklistService.getBlocklist.mockReturnValue([signer.address]);
+
       const defaultConfiguration = configuration();
       const testConfiguration = (): ReturnType<typeof configuration> => {
         return {
@@ -715,10 +729,6 @@ describe('MessageVerifierHelper', () => {
           features: {
             ...defaultConfiguration.features,
             ethSign: true,
-          },
-          blockchain: {
-            ...defaultConfiguration.blockchain,
-            blocklist: [signer.address],
           },
         };
       };

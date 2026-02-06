@@ -19,6 +19,7 @@ import { type Address, type Hash, Hex, isAddressEqual } from 'viem';
 import { IContractsRepository } from '@/modules/contracts/domain/contracts.repository.interface';
 import { Operation } from '@/modules/safe/domain/entities/operation.entity';
 import { parseSignaturesByType } from '@/domain/common/utils/signatures';
+import { IBlocklistService } from '@/config/entities/blocklist.interface';
 
 enum ErrorMessage {
   MalformedHash = 'Could not calculate safeTxHash',
@@ -38,7 +39,6 @@ export class TransactionVerifierHelper {
   private readonly isApiSignatureVerificationEnabled: boolean;
   private readonly isProposalHashVerificationEnabled: boolean;
   private readonly isProposalSignatureVerificationEnabled: boolean;
-  private readonly blocklist: Array<Address>;
 
   constructor(
     @Inject(IConfigurationService)
@@ -49,6 +49,8 @@ export class TransactionVerifierHelper {
     private readonly loggingService: ILoggingService,
     @Inject(IContractsRepository)
     private readonly contractsRepository: IContractsRepository,
+    @Inject(IBlocklistService)
+    private readonly blocklistService: IBlocklistService,
   ) {
     this.isTrustedDelegateCallEnabled = this.configurationService.getOrThrow(
       'features.trustedDelegateCall',
@@ -70,9 +72,10 @@ export class TransactionVerifierHelper {
       this.configurationService.getOrThrow(
         'features.signatureVerification.proposal',
       );
-    this.blocklist = this.configurationService.getOrThrow(
-      'blockchain.blocklist',
-    );
+  }
+
+  private get blocklist(): Array<Address> {
+    return this.blocklistService.getBlocklist();
   }
 
   public verifyApiTransaction(args: {
