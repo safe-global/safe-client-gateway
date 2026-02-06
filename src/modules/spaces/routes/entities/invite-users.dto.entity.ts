@@ -6,7 +6,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import {
   NAME_MAX_LENGTH,
   NAME_MIN_LENGTH,
-} from '@/domain/common/entities/name.schema';
+} from '@/domain/common/schemas/name.schema';
 import type { Address } from 'viem';
 
 const InviteUserDtoSchema = z

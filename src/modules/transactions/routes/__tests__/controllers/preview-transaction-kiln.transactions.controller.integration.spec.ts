@@ -62,7 +62,7 @@ describe('Preview transaction - Kiln - Transactions Controller', () => {
     await app.init();
   });
 
-  afterAll(async () => {
+  afterEach(async () => {
     await app.close();
   });
 

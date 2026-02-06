@@ -1,10 +1,8 @@
 import { TransactionEventType } from '@/modules/hooks/routes/entities/event-type.entity';
-import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { z } from 'zod';
+import { HookEventBaseSchema } from '@/modules/hooks/routes/entities/schemas/hook-event-base.schema';
 
-export const SafeCreatedEventSchema = z.object({
+export const SafeCreatedEventSchema = HookEventBaseSchema.extend({
   type: z.literal(TransactionEventType.SAFE_CREATED),
-  chainId: z.string(),
-  address: AddressSchema,
   blockNumber: z.number(),
 });

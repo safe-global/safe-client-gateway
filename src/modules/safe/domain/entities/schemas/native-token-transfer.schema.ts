@@ -1,14 +1,7 @@
 import { z } from 'zod';
-import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { HexSchema } from '@/validation/entities/schemas/hex.schema';
+import { TransferBaseSchema } from '@/modules/safe/domain/entities/schemas/transfer-base.schema';
 
-export const NativeTokenTransferSchema = z.object({
+export const NativeTokenTransferSchema = TransferBaseSchema.extend({
   type: z.literal('ETHER_TRANSFER'),
-  executionDate: z.coerce.date(),
-  blockNumber: z.number(),
-  transactionHash: HexSchema,
-  to: AddressSchema,
-  from: AddressSchema,
   value: z.string(),
-  transferId: z.string(),
 });

@@ -116,24 +116,6 @@ describe('DataDecoded', () => {
 
       expect(!result.success && result.error.issues).toStrictEqual([
         {
-          code: 'invalid_value',
-          message: 'Invalid option: expected one of 0|1',
-          path: ['operation'],
-          values: [0, 1],
-        },
-        {
-          code: 'invalid_type',
-          expected: 'string',
-          message: 'Invalid input: expected string, received undefined',
-          path: ['value'],
-        },
-        {
-          code: 'invalid_type',
-          expected: 'object',
-          message: 'Invalid input: expected object, received undefined',
-          path: ['dataDecoded'],
-        },
-        {
           code: 'invalid_type',
           expected: 'string',
           message: 'Invalid input: expected string, received undefined',
@@ -143,7 +125,25 @@ describe('DataDecoded', () => {
           code: 'invalid_type',
           expected: 'string',
           message: 'Invalid input: expected string, received undefined',
+          path: ['value'],
+        },
+        {
+          code: 'invalid_type',
+          expected: 'string',
+          message: 'Invalid input: expected string, received undefined',
           path: ['data'],
+        },
+        {
+          code: 'invalid_value',
+          message: 'Invalid option: expected one of 0|1',
+          path: ['operation'],
+          values: [0, 1],
+        },
+        {
+          code: 'invalid_type',
+          expected: 'object',
+          message: 'Invalid input: expected object, received undefined',
+          path: ['dataDecoded'],
         },
       ]);
     });

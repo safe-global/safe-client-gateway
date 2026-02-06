@@ -2,15 +2,10 @@ import { RowSchema } from '@/datasources/db/v2/entities/row.entity';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { Auth } from '@/modules/auth/routes/decorators/auth.decorator';
 import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
-import {
-  CreateSpaceSafesDto,
-  CreateSpaceSafesSchema,
-} from '@/modules/spaces/routes/entities/create-space-safe.dto.entity';
-import {
-  DeleteSpaceSafesDto,
-  DeleteSpaceSafesSchema,
-} from '@/modules/spaces/routes/entities/delete-space-safe.dto.entity';
+import { CreateSpaceSafesDto } from '@/modules/spaces/routes/entities/create-space-safe.dto.entity';
+import { DeleteSpaceSafesDto } from '@/modules/spaces/routes/entities/delete-space-safe.dto.entity';
 import { GetSpaceSafeResponse } from '@/modules/spaces/routes/entities/get-space-safe.dto.entity';
+import { SpaceSafesSchema } from '@/modules/spaces/routes/entities/space-safe.dto.entity';
 import { SpaceSafesService } from '@/modules/spaces/routes/space-safes.service';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import {
@@ -82,7 +77,7 @@ export class SpaceSafesController {
   })
   @Post()
   public async create(
-    @Body(new ValidationPipe(CreateSpaceSafesSchema))
+    @Body(new ValidationPipe(SpaceSafesSchema))
     body: CreateSpaceSafesDto,
     @Param('spaceId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
     spaceId: number,
@@ -163,7 +158,7 @@ export class SpaceSafesController {
   @Delete()
   @HttpCode(204)
   public async delete(
-    @Body(new ValidationPipe(DeleteSpaceSafesSchema))
+    @Body(new ValidationPipe(SpaceSafesSchema))
     body: DeleteSpaceSafesDto,
     @Param('spaceId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
     spaceId: number,

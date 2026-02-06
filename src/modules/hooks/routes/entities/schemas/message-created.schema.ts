@@ -1,11 +1,9 @@
 import { TransactionEventType } from '@/modules/hooks/routes/entities/event-type.entity';
 import { z } from 'zod';
-import { AddressSchema } from '@/validation/entities/schemas/address.schema';
+import { HookEventBaseSchema } from '@/modules/hooks/routes/entities/schemas/hook-event-base.schema';
 
-export const MessageCreatedEventSchema = z.object({
+export const MessageCreatedEventSchema = HookEventBaseSchema.extend({
   type: z.literal(TransactionEventType.MESSAGE_CREATED),
-  address: AddressSchema,
-  chainId: z.string(),
   messageHash: z.string(),
 });
 

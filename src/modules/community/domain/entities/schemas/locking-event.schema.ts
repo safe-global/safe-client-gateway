@@ -22,29 +22,13 @@ export const LockEventItemSchema = LockEventSchema.extend({
   eventType: z.literal(LockingEventType.LOCKED),
 });
 
-const UnlockEventSchema = z.object({
-  executionDate: z.coerce.date(),
-  transactionHash: HexSchema,
-  holder: AddressSchema,
-  amount: NumericStringSchema,
-  logIndex: NumericStringSchema,
+export const UnlockEventItemSchema = LockEventSchema.extend({
   unlockIndex: NumericStringSchema,
-});
-
-export const UnlockEventItemSchema = UnlockEventSchema.extend({
   eventType: z.literal(LockingEventType.UNLOCKED),
 });
 
-const WithdrawEventSchema = z.object({
-  executionDate: z.coerce.date(),
-  transactionHash: HexSchema,
-  holder: AddressSchema,
-  amount: NumericStringSchema,
-  logIndex: NumericStringSchema,
+export const WithdrawEventItemSchema = LockEventSchema.extend({
   unlockIndex: NumericStringSchema,
-});
-
-export const WithdrawEventItemSchema = WithdrawEventSchema.extend({
   eventType: z.literal(LockingEventType.WITHDRAWN),
 });
 

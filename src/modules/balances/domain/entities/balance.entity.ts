@@ -1,6 +1,7 @@
 import { BalanceTokenSchema } from '@/modules/balances/domain/entities/balance.token.entity';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { z } from 'zod';
+import { NullableStringSchema } from '@/validation/entities/schemas/nullable.schema';
 
 export type NativeBalance = z.infer<typeof NativeBalanceSchema>;
 
@@ -22,9 +23,9 @@ export const Erc20BalanceSchema = z.object({
 });
 
 export const FiatSchema = z.object({
-  fiatBalance: z.string().nullish().default(null),
+  fiatBalance: NullableStringSchema,
   fiatBalance24hChange: z.coerce.string().nullish().default(null),
-  fiatConversion: z.string().nullish().default(null),
+  fiatConversion: NullableStringSchema,
 });
 
 export const BalanceSchema = z.union([
