@@ -19,7 +19,6 @@ import { type Address, type Hash, Hex, isAddressEqual } from 'viem';
 import { IContractsRepository } from '@/modules/contracts/domain/contracts.repository.interface';
 import { Operation } from '@/modules/safe/domain/entities/operation.entity';
 import { parseSignaturesByType } from '@/domain/common/utils/signatures';
-import { getBlocklist } from '@/config/entities/blocklist.config';
 import { IBlocklistService } from '@/config/entities/blocklist.interface';
 
 enum ErrorMessage {
