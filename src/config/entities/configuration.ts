@@ -1,4 +1,3 @@
-import { getBlocklist } from '@/config/entities/blocklist.config';
 import type { RelayRules } from '@/modules/relay/domain/entities/relay.configuration';
 import { randomBytes } from 'crypto';
 
@@ -147,7 +146,9 @@ export default () => ({
     },
   },
   blockchain: {
-    blocklist: getBlocklist(),
+    blocklistSecretData: process.env.BLOCKLIST_ENCRYPTED_DATA,
+    blocklistSecretKey: process.env.BLOCKLIST_SECRET_KEY,
+    blocklistSecretSalt: process.env.BLOCKLIST_SECRET_SALT,
     infura: {
       apiKey: process.env.INFURA_API_KEY,
     },

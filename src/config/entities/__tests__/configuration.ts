@@ -1,6 +1,5 @@
-import { faker } from '@faker-js/faker';
+import { faker } from '@faker-js/faker/.';
 import type configuration from '@/config/entities/configuration';
-import { getAddress } from 'viem';
 
 export default (): ReturnType<typeof configuration> => ({
   about: {
@@ -90,10 +89,9 @@ export default (): ReturnType<typeof configuration> => ({
     },
   },
   blockchain: {
-    blocklist: faker.helpers.multiple(
-      () => getAddress(faker.finance.ethereumAddress()),
-      { count: { min: 1, max: 5 } },
-    ),
+    blocklistSecretData: faker.string.hexadecimal({ length: 64 }),
+    blocklistSecretKey: faker.string.hexadecimal({ length: 64 }),
+    blocklistSecretSalt: faker.string.hexadecimal({ length: 64 }),
     infura: {
       apiKey: faker.string.hexadecimal({ length: 32 }),
     },

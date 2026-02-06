@@ -1,4 +1,6 @@
 export enum LogType {
+  AwsCloudStorageUpload = 'AWS_S3_UPLOAD',
+  BlocklistHit = 'BLOCKLIST_HIT',
   CacheError = 'CACHE_ERROR',
   CacheEvent = 'CACHE_EVENT',
   CacheHit = 'CACHE_HIT',
@@ -21,5 +23,4 @@ export enum LogType {
   TransactionValidity = 'TRANSACTION_VALIDITY',
   TxnExportFetchRequest = 'TRANSACTION_EXPORT_FETCH_REQUEST',
   TxnExportFetchRequestError = 'TRANSACTION_EXPORT_FETCH_REQUEST_ERROR',
-  AwsCloudStorageUpload = 'AWS_S3_UPLOAD',
 }

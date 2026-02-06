@@ -11,6 +11,13 @@ import { SignatureType } from '@/domain/common/entities/signature-type.entity';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import type { ILoggingService } from '@/logging/logging.interface';
 
+// Mock the getBlocklist function
+jest.mock('@/config/entities/blocklist.config');
+
+import { getBlocklist } from '@/config/entities/blocklist.config';
+
+const mockGetBlocklist = jest.mocked(getBlocklist);
+
 const mockConfigurationService = jest.mocked({
   getOrThrow: jest.fn(),
 } as jest.MockedObjectDeep<IConfigurationService>);
@@ -35,6 +42,9 @@ describe('MessageVerifierHelper', () => {
 
   beforeEach(() => {
     jest.resetAllMocks();
+
+    // Reset and mock getBlocklist to return empty array by default
+    mockGetBlocklist.mockReturnValue([]);
 
     initTarget(configuration);
   });
@@ -305,14 +315,14 @@ describe('MessageVerifierHelper', () => {
       const chainId = faker.string.numeric();
       const privateKey = generatePrivateKey();
       const signer = privateKeyToAccount(privateKey);
+
+      // Mock getBlocklist to return the blocked address
+      mockGetBlocklist.mockReturnValue([signer.address]);
+
       const defaultConfiguration = configuration();
       const testConfiguration = (): ReturnType<typeof configuration> => {
         return {
           ...defaultConfiguration,
-          blockchain: {
-            ...defaultConfiguration.blockchain,
-            blocklist: [signer.address],
-          },
         };
       };
       initTarget(testConfiguration);
@@ -708,6 +718,10 @@ describe('MessageVerifierHelper', () => {
       const chainId = faker.string.numeric();
       const privateKey = generatePrivateKey();
       const signer = privateKeyToAccount(privateKey);
+
+      // Mock getBlocklist to return the blocked address
+      mockGetBlocklist.mockReturnValue([signer.address]);
+
       const defaultConfiguration = configuration();
       const testConfiguration = (): ReturnType<typeof configuration> => {
         return {
@@ -715,10 +729,6 @@ describe('MessageVerifierHelper', () => {
           features: {
             ...defaultConfiguration.features,
             ethSign: true,
-          },
-          blockchain: {
-            ...defaultConfiguration.blockchain,
-            blocklist: [signer.address],
           },
         };
       };

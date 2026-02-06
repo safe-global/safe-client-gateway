@@ -54,6 +54,9 @@ services:
       PRICES_PROVIDER_API_KEY: ${PRICES_PROVIDER_API_KEY-example_api_key}
       APPLICATION_PORT: ${APPLICATION_PORT-3000}
       AUTH_TOKEN: ${AUTH_TOKEN-example_auth_token}
+      BLOCKLIST_ENCRYPTED_DATA: ${BLOCKLIST_ENCRYPTED_DATA-fake-encrypted-data}
+      BLOCKLIST_SECRET_KEY: ${BLOCKLIST_SECRET_KEY-fake-secret-key}
+      BLOCKLIST_SECRET_SALT: ${BLOCKLIST_SECRET_SALT-fake-secret-salt}
       EMAIL_API_APPLICATION_CODE: ${EMAIL_API_APPLICATION_CODE-example_application_code}
       EMAIL_API_FROM_EMAIL: ${EMAIL_API_FROM_EMAIL-changeme@example.com}
       EMAIL_API_KEY: ${EMAIL_API_KEY-example_api_key}

@@ -36,6 +36,10 @@ import { confirmationBuilder } from '@/modules/safe/domain/entities/__tests__/mu
 import { dataDecodedBuilder } from '@/modules/data-decoder/domain/v2/entities/__tests__/data-decoded.builder';
 import { createTestModule } from '@/__tests__/testing-module';
 import { contractBuilder } from '@/modules/data-decoder/domain/v2/entities/__tests__/contract.builder';
+import { getBlocklist } from '@/config/entities/blocklist.config';
+
+jest.mock('@/config/entities/blocklist.config');
+const mockGetBlocklist = jest.mocked(getBlocklist);
 
 describe('Propose transaction - Transactions Controller (Unit)', () => {
   let app: INestApplication<Server>;
@@ -73,6 +77,7 @@ describe('Propose transaction - Transactions Controller (Unit)', () => {
 
   beforeEach(async () => {
     jest.resetAllMocks();
+    mockGetBlocklist.mockReturnValue([]);
 
     const baseConfiguration = configuration();
     const testConfiguration = (): typeof baseConfiguration => ({
@@ -1273,12 +1278,13 @@ describe('Propose transaction - Transactions Controller (Unit)', () => {
       const chain = chainBuilder().build();
       const privateKey = generatePrivateKey();
       const signer = privateKeyToAccount(privateKey);
+      mockGetBlocklist.mockReturnValue([signer.address]);
+
       const defaultConfiguration = configuration();
       const testConfiguration = (): ReturnType<typeof configuration> => ({
         ...defaultConfiguration,
-        blockchain: {
-          ...defaultConfiguration.blockchain,
-          blocklist: [signer.address],
+        features: {
+          ...defaultConfiguration.features,
         },
       });
       await initApp(testConfiguration);

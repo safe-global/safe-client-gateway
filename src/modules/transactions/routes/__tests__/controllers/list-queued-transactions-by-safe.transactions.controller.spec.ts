@@ -30,6 +30,13 @@ import request from 'supertest';
 import { getAddress, type Hash } from 'viem';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 
+// Mock the getBlocklist function
+jest.mock('@/config/entities/blocklist.config');
+
+import { getBlocklist } from '@/config/entities/blocklist.config';
+
+const mockGetBlocklist = jest.mocked(getBlocklist);
+
 describe('List queued transactions by Safe - Transactions Controller (Unit)', () => {
   let app: INestApplication<Server>;
   let safeConfigUrl: string;
@@ -65,6 +72,9 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
 
   beforeEach(async () => {
     jest.resetAllMocks();
+
+    // Reset and mock getBlocklist to return empty array by default
+    mockGetBlocklist.mockReturnValue([]);
 
     const baseConfiguration = configuration();
     const testConfiguration = (): typeof baseConfiguration => ({
@@ -1046,14 +1056,14 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
       const chainResponse = chainBuilder().build();
       const privateKey = generatePrivateKey();
       const signer = privateKeyToAccount(privateKey);
+
+      // Mock getBlocklist to return the blocked address
+      mockGetBlocklist.mockReturnValue([signer.address]);
+
       const defaultConfiguration = configuration();
       const testConfiguration = (): ReturnType<typeof configuration> => {
         return {
           ...defaultConfiguration,
-          blockchain: {
-            ...defaultConfiguration.blockchain,
-            blocklist: [signer.address],
-          },
         };
       };
       await initApp(testConfiguration);

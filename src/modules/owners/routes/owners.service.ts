@@ -79,9 +79,9 @@ export class OwnersService {
     return poisoned;
   }
 
-  private async filterPoisonedAddresses(
-    safesByChainId: { [chainId: string]: Array<string> | null },
-  ): Promise<{ [chainId: string]: Array<string> | null }> {
+  private async filterPoisonedAddresses(safesByChainId: {
+    [chainId: string]: Array<string> | null;
+  }): Promise<{ [chainId: string]: Array<string> | null }> {
     const entries = Object.entries(safesByChainId);
     const results = await Promise.all(
       entries.map(async ([chainId, addresses]) => {
