@@ -82,6 +82,7 @@ export class CacheRouter {
   private static readonly TRANSACTIONS_EXPORT_KEY = 'transactions_export';
   private static readonly CONTRACT_ANALYSIS_KEY = 'contract_analysis';
   private static readonly RECIPIENT_ANALYSIS_KEY = 'recipient_analysis';
+  private static readonly GAS_PRICE_KEY = 'gas_price';
 
   static getAuthNonceCacheKey(nonce: string): string {
     return `${CacheRouter.AUTH_NONCE_KEY}_${nonce}`;
@@ -968,5 +969,9 @@ export class CacheRouter {
       field = isTestnet ? 'mapping_testnet' : 'mapping';
     }
     return new CacheDir(CacheRouter.ZERION_CHAINS_KEY, field);
+  }
+
+  static getGasPriceCacheDir(chainId: string): CacheDir {
+    return new CacheDir(`${chainId}_${CacheRouter.GAS_PRICE_KEY}`, '');
   }
 }

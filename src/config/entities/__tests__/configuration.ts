@@ -447,4 +447,9 @@ export default (): ReturnType<typeof configuration> => ({
       },
     },
   },
+  etherscan: {
+    baseUri: faker.internet.url({ appendSlash: false }),
+    apiKey: faker.string.hexadecimal({ length: 32 }),
+    gasPriceCacheTtlSeconds: faker.number.int({ min: 1, max: 10 }),
+  },
 });

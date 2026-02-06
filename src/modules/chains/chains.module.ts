@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigApiModule } from '@/datasources/config-api/config-api.module';
+import { EtherscanApiModule } from '@/datasources/etherscan-api/etherscan-api.module';
 import { TransactionApiManagerModule } from '@/domain/interfaces/transaction-api.manager.interface';
 import { BackboneModule } from '@/modules/backbone/backbone.module';
 import { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
@@ -8,7 +9,12 @@ import { ChainsController } from '@/modules/chains/routes/chains.controller';
 import { ChainsService } from '@/modules/chains/routes/chains.service';
 
 @Module({
-  imports: [ConfigApiModule, TransactionApiManagerModule, BackboneModule],
+  imports: [
+    ConfigApiModule,
+    EtherscanApiModule,
+    TransactionApiManagerModule,
+    BackboneModule,
+  ],
   providers: [
     {
       provide: IChainsRepository,
