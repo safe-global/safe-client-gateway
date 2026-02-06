@@ -98,10 +98,6 @@ describe('NetworkModule', () => {
     await app.init();
   }
 
-  afterAll(async () => {
-    await app.close();
-  });
-
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -109,6 +105,10 @@ describe('NetworkModule', () => {
   describe('without caching', () => {
     beforeAll(async () => {
       await initApp(false);
+    });
+
+    afterAll(async () => {
+      await app.close();
     });
 
     it(`fetch client is created with timeout and is kept alive`, async () => {
@@ -196,6 +196,10 @@ describe('NetworkModule', () => {
   describe('with caching', () => {
     beforeAll(async () => {
       await initApp(true);
+    });
+
+    afterAll(async () => {
+      await app.close();
     });
 
     it('caches GET requests based on URL and options', async () => {
@@ -431,6 +435,10 @@ describe('NetworkModule', () => {
       });
     });
 
+    afterAll(async () => {
+      await app.close();
+    });
+
     beforeEach(() => {
       // Clear all circuits before each test
       circuitBreakerService.deleteAll();
@@ -534,6 +542,10 @@ describe('NetworkModule', () => {
         rollingWindow: faker.number.int({ min: 60_000, max: 300_000 }),
         halfOpenMaxRequests: faker.number.int({ min: 1, max: 10 }),
       });
+    });
+
+    afterAll(async () => {
+      await app.close();
     });
 
     beforeEach(() => {

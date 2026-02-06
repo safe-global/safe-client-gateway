@@ -90,7 +90,7 @@ describe('Get by id - Transactions Controller', () => {
     await initApp(testConfiguration);
   });
 
-  afterAll(async () => {
+  afterEach(async () => {
     await app.close();
   });
   it('Failure: Config API fails', async () => {

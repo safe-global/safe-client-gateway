@@ -87,7 +87,7 @@ describe('Propose transaction - Transactions Controller', () => {
     await initApp(testConfiguration);
   });
 
-  afterAll(async () => {
+  afterEach(async () => {
     await app.close();
   });
 

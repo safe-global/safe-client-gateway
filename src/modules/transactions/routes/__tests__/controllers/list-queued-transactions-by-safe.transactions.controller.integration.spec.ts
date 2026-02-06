@@ -78,7 +78,7 @@ describe('List queued transactions by Safe - Transactions Controller', () => {
     await initApp(testConfiguration);
   });
 
-  afterAll(async () => {
+  afterEach(async () => {
     await app.close();
   });
 

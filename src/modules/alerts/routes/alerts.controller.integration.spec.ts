@@ -108,7 +108,7 @@ describe('Alerts Controller', () => {
       await app.init();
     });
 
-    afterAll(async () => {
+    afterEach(async () => {
       await app.close();
     });
 
@@ -877,7 +877,7 @@ describe('Alerts Controller', () => {
         await app.init();
       });
 
-      afterAll(async () => {
+      afterEach(async () => {
         await app.close();
       });
 

@@ -37,7 +37,7 @@ describe('List module transactions by Safe - Transactions Controller', () => {
     await app.init();
   });
 
-  afterAll(async () => {
+  afterEach(async () => {
     await app.close();
   });
 
