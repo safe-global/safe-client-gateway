@@ -135,6 +135,11 @@ describe('TransactionApi', () => {
           data,
           to,
         },
+        networkRequest: {
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getTransactionServiceKey(chainId),
+          },
+        },
       });
     });
 
@@ -170,6 +175,11 @@ describe('TransactionApi', () => {
         data: {
           data,
           to,
+        },
+        networkRequest: {
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getTransactionServiceKey(chainId),
+          },
         },
       });
     });
@@ -346,6 +356,11 @@ describe('TransactionApi', () => {
         url: getSafeUrl,
         notFoundExpireTimeSeconds: notFoundExpireTimeSeconds,
         expireTimeSeconds: defaultExpirationTimeInSeconds,
+        networkRequest: {
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getTransactionServiceKey(chainId),
+          },
+        },
       });
     });
 
@@ -379,6 +394,11 @@ describe('TransactionApi', () => {
         url: getSafeUrl,
         notFoundExpireTimeSeconds: notFoundExpireTimeSeconds,
         expireTimeSeconds: defaultExpirationTimeInSeconds,
+        networkRequest: {
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getTransactionServiceKey(chainId),
+          },
+        },
       });
     });
   });
@@ -555,6 +575,9 @@ describe('TransactionApi', () => {
         url: getDelegatesUrl,
         notFoundExpireTimeSeconds: notFoundExpireTimeSeconds,
         networkRequest: {
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getTransactionServiceKey(chainId),
+          },
           params: {
             ...delegate,
             limit,
@@ -606,6 +629,9 @@ describe('TransactionApi', () => {
         url: getDelegatesUrl,
         notFoundExpireTimeSeconds: notFoundExpireTimeSeconds,
         networkRequest: {
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getTransactionServiceKey(chainId),
+          },
           params: {
             ...delegate,
             limit,
@@ -840,6 +866,11 @@ describe('TransactionApi', () => {
         expireTimeSeconds: defaultExpirationTimeInSeconds,
         notFoundExpireTimeSeconds: notFoundExpireTimeSeconds,
         url: getTransferUrl,
+        networkRequest: {
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getTransactionServiceKey(chainId),
+          },
+        },
       });
     });
 
@@ -873,6 +904,11 @@ describe('TransactionApi', () => {
         expireTimeSeconds: defaultExpirationTimeInSeconds,
         notFoundExpireTimeSeconds: notFoundExpireTimeSeconds,
         url: getTransferUrl,
+        networkRequest: {
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getTransactionServiceKey(chainId),
+          },
+        },
       });
     });
   });
@@ -909,6 +945,9 @@ describe('TransactionApi', () => {
         notFoundExpireTimeSeconds: notFoundExpireTimeSeconds,
         url: getTransfersUrl,
         networkRequest: {
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getTransactionServiceKey(chainId),
+          },
           params: {
             erc20: onlyErc20,
             erc721: onlyErc721,
@@ -952,6 +991,9 @@ describe('TransactionApi', () => {
         notFoundExpireTimeSeconds: notFoundExpireTimeSeconds,
         url: getTransfersUrl,
         networkRequest: {
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getTransactionServiceKey(chainId),
+          },
           params: {
             erc20: onlyErc20,
             erc721: onlyErc721,
@@ -1009,6 +1051,9 @@ describe('TransactionApi', () => {
         notFoundExpireTimeSeconds: notFoundExpireTimeSeconds,
         url: getTransfersUrl,
         networkRequest: {
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getTransactionServiceKey(chainId),
+          },
           params: {
             erc20: onlyErc20,
             erc721: onlyErc721,
@@ -1077,6 +1122,9 @@ describe('TransactionApi', () => {
         notFoundExpireTimeSeconds: notFoundExpireTimeSeconds,
         url: getIncomingTransfersUrl,
         networkRequest: {
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getTransactionServiceKey(chainId),
+          },
           params: {
             execution_date__gte: executionDateGte,
             execution_date__lte: executionDateLte,
@@ -1145,6 +1193,9 @@ describe('TransactionApi', () => {
         notFoundExpireTimeSeconds: notFoundExpireTimeSeconds,
         url: getIncomingTransfersUrl,
         networkRequest: {
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getTransactionServiceKey(chainId),
+          },
           params: {
             execution_date__gte: executionDateGte,
             execution_date__lte: executionDateLte,
@@ -1261,6 +1312,11 @@ describe('TransactionApi', () => {
       expect(mockNetworkService.get).toHaveBeenCalledTimes(1);
       expect(mockNetworkService.get).toHaveBeenCalledWith({
         url: getSafesByModuleUrl,
+        networkRequest: {
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getTransactionServiceKey(chainId),
+          },
+        },
       });
     });
 
@@ -1292,6 +1348,11 @@ describe('TransactionApi', () => {
       expect(mockNetworkService.get).toHaveBeenCalledTimes(1);
       expect(mockNetworkService.get).toHaveBeenCalledWith({
         url: getSafesByModuleUrl,
+        networkRequest: {
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getTransactionServiceKey(chainId),
+          },
+        },
       });
     });
   });
@@ -1316,6 +1377,11 @@ describe('TransactionApi', () => {
         expireTimeSeconds: defaultExpirationTimeInSeconds,
         notFoundExpireTimeSeconds: notFoundExpireTimeSeconds,
         url: getModuleTransactionUrl,
+        networkRequest: {
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getTransactionServiceKey(chainId),
+          },
+        },
       });
     });
 
@@ -1354,6 +1420,11 @@ describe('TransactionApi', () => {
         expireTimeSeconds: defaultExpirationTimeInSeconds,
         notFoundExpireTimeSeconds: notFoundExpireTimeSeconds,
         url: getModuleTransactionUrl,
+        networkRequest: {
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getTransactionServiceKey(chainId),
+          },
+        },
       });
     });
   });
@@ -1390,6 +1461,9 @@ describe('TransactionApi', () => {
         notFoundExpireTimeSeconds: notFoundExpireTimeSeconds,
         url: getModuleTransactionsUrl,
         networkRequest: {
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getTransactionServiceKey(chainId),
+          },
           params: {
             to: moduleTransaction.to,
             module: moduleTransaction.module,
@@ -1446,6 +1520,9 @@ describe('TransactionApi', () => {
         notFoundExpireTimeSeconds: notFoundExpireTimeSeconds,
         url: getModuleTransactionsUrl,
         networkRequest: {
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getTransactionServiceKey(chainId),
+          },
           params: {
             to: moduleTransaction.to,
             module: moduleTransaction.module,
@@ -1514,6 +1591,9 @@ describe('TransactionApi', () => {
         notFoundExpireTimeSeconds: notFoundExpireTimeSeconds,
         url: getMultisigTransactionsUrl,
         networkRequest: {
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getTransactionServiceKey(chainId),
+          },
           params: {
             safe: multisigTransaction.safe,
             ordering,
@@ -1586,6 +1666,9 @@ describe('TransactionApi', () => {
         notFoundExpireTimeSeconds: notFoundExpireTimeSeconds,
         url: getMultisigTransactionsUrl,
         networkRequest: {
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getTransactionServiceKey(chainId),
+          },
           params: {
             safe: multisigTransaction.safe,
             ordering,
@@ -1639,6 +1722,11 @@ describe('TransactionApi', () => {
         expireTimeSeconds: defaultExpirationTimeInSeconds,
         notFoundExpireTimeSeconds: notFoundExpireTimeSeconds,
         url: getMultisigTransactionUrl,
+        networkRequest: {
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getTransactionServiceKey(chainId),
+          },
+        },
       });
     });
 
@@ -1677,6 +1765,11 @@ describe('TransactionApi', () => {
         expireTimeSeconds: defaultExpirationTimeInSeconds,
         notFoundExpireTimeSeconds: notFoundExpireTimeSeconds,
         url: getMultisigTransactionUrl,
+        networkRequest: {
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getTransactionServiceKey(chainId),
+          },
+        },
       });
     });
   });
@@ -1777,6 +1870,11 @@ describe('TransactionApi', () => {
         expireTimeSeconds: defaultExpirationTimeInSeconds,
         notFoundExpireTimeSeconds: notFoundExpireTimeSeconds,
         url: getCreationTransactionUrl,
+        networkRequest: {
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getTransactionServiceKey(chainId),
+          },
+        },
       });
     });
 
@@ -1815,6 +1913,11 @@ describe('TransactionApi', () => {
         expireTimeSeconds: defaultExpirationTimeInSeconds,
         notFoundExpireTimeSeconds: notFoundExpireTimeSeconds,
         url: getCreationTransactionUrl,
+        networkRequest: {
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getTransactionServiceKey(chainId),
+          },
+        },
       });
     });
   });
@@ -1856,6 +1959,9 @@ describe('TransactionApi', () => {
         notFoundExpireTimeSeconds: notFoundExpireTimeSeconds,
         url: getAllTransactionsUrl,
         networkRequest: {
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getTransactionServiceKey(chainId),
+          },
           params: {
             safe: safeAddress,
             ordering,
@@ -1916,6 +2022,9 @@ describe('TransactionApi', () => {
         notFoundExpireTimeSeconds: notFoundExpireTimeSeconds,
         url: getAllTransactionsUrl,
         networkRequest: {
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getTransactionServiceKey(chainId),
+          },
           params: {
             safe: safeAddress,
             ordering,
@@ -1958,6 +2067,11 @@ describe('TransactionApi', () => {
         expireTimeSeconds: defaultExpirationTimeInSeconds,
         notFoundExpireTimeSeconds: notFoundExpireTimeSeconds,
         url: getTokenUrl,
+        networkRequest: {
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getTransactionServiceKey(chainId),
+          },
+        },
       });
     });
 
@@ -1991,6 +2105,11 @@ describe('TransactionApi', () => {
         expireTimeSeconds: defaultExpirationTimeInSeconds,
         notFoundExpireTimeSeconds: notFoundExpireTimeSeconds,
         url: getTokenUrl,
+        networkRequest: {
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getTransactionServiceKey(chainId),
+          },
+        },
       });
     });
   });
@@ -2018,6 +2137,9 @@ describe('TransactionApi', () => {
         notFoundExpireTimeSeconds: notFoundExpireTimeSeconds,
         url: getTokensUrl,
         networkRequest: {
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getTransactionServiceKey(chainId),
+          },
           params: {
             limit,
             offset,
@@ -2063,6 +2185,9 @@ describe('TransactionApi', () => {
         notFoundExpireTimeSeconds: notFoundExpireTimeSeconds,
         url: getTokensUrl,
         networkRequest: {
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getTransactionServiceKey(chainId),
+          },
           params: {
             limit,
             offset,
@@ -2184,6 +2309,9 @@ describe('TransactionApi', () => {
         notFoundExpireTimeSeconds: notFoundExpireTimeSeconds,
         expireTimeSeconds: ownersTtlSeconds,
         networkRequest: {
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getTransactionServiceKey(chainId),
+          },
           params: {
             limit,
             offset,
@@ -2229,6 +2357,9 @@ describe('TransactionApi', () => {
         notFoundExpireTimeSeconds: notFoundExpireTimeSeconds,
         expireTimeSeconds: ownersTtlSeconds,
         networkRequest: {
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getTransactionServiceKey(chainId),
+          },
           params: {
             limit: undefined,
             offset: undefined,
@@ -2280,6 +2411,9 @@ describe('TransactionApi', () => {
         notFoundExpireTimeSeconds: notFoundExpireTimeSeconds,
         expireTimeSeconds: ownersTtlSeconds,
         networkRequest: {
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getTransactionServiceKey(chainId),
+          },
           params: {
             limit,
             offset,
@@ -2386,6 +2520,11 @@ describe('TransactionApi', () => {
         expireTimeSeconds: defaultExpirationTimeInSeconds,
         notFoundExpireTimeSeconds: notFoundExpireTimeSeconds,
         url: getMessageByHashUrl,
+        networkRequest: {
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getTransactionServiceKey(chainId),
+          },
+        },
       });
     });
 
@@ -2421,6 +2560,11 @@ describe('TransactionApi', () => {
         expireTimeSeconds: defaultExpirationTimeInSeconds,
         notFoundExpireTimeSeconds: notFoundExpireTimeSeconds,
         url: getMessageByHashUrl,
+        networkRequest: {
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getTransactionServiceKey(chainId),
+          },
+        },
       });
     });
   });
@@ -2452,6 +2596,9 @@ describe('TransactionApi', () => {
         notFoundExpireTimeSeconds: notFoundExpireTimeSeconds,
         url: getMessageBySafeUrl,
         networkRequest: {
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getTransactionServiceKey(chainId),
+          },
           params: {
             limit,
             offset,
@@ -2502,6 +2649,9 @@ describe('TransactionApi', () => {
         notFoundExpireTimeSeconds: notFoundExpireTimeSeconds,
         url: getMessageBySafeUrl,
         networkRequest: {
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getTransactionServiceKey(chainId),
+          },
           params: {
             limit,
             offset,
@@ -2817,6 +2967,9 @@ describe('TransactionApi', () => {
         notFoundExpireTimeSeconds: hoodiExpirationTime,
         url: getTokensUrl,
         networkRequest: {
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getTransactionServiceKey(hoodiChainId),
+          },
           params: {
             limit,
             offset,
