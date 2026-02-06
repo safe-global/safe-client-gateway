@@ -7,6 +7,8 @@ import type {
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { CircuitBreakerException } from '@/datasources/circuit-breaker/exceptions/circuit-breaker.exception';
+import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import { LogType } from '@/domain/common/entities/log-type.entity';
 
 /**
  * Circuit Breaker Service
@@ -28,10 +30,13 @@ export class CircuitBreakerService {
    * Creates a new CircuitBreakerService instance and loads default configuration
    *
    * @param {IConfigurationService} configurationService - Configuration service for loading circuit breaker settings
+   * @param {ILoggingService} loggingService - Logging service for tracking circuit breaker state changes
    */
   constructor(
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
+    @Inject(LoggingService)
+    private readonly loggingService: ILoggingService,
   ) {
     this.initialConfig = {
       failureThreshold: this.configurationService.getOrThrow(
@@ -161,6 +166,20 @@ export class CircuitBreakerService {
 
     this.circuits.set(name, circuit);
 
+    this.loggingService.info({
+      type: LogType.CircuitBreakerRegistered,
+      circuit: circuit.name,
+      state: circuit.metrics.state,
+      config: {
+        failureThreshold: circuit.config.failureThreshold,
+        successThreshold: circuit.config.successThreshold,
+        timeout: circuit.config.timeout,
+        rollingWindow: circuit.config.rollingWindow,
+        halfOpenMaxRequests: circuit.config.halfOpenMaxRequests,
+      },
+      message: `Circuit "${circuit.name}" registered with initial state ${this.DEFAULT_STATE}`,
+    });
+
     return circuit;
   }
 
@@ -185,6 +204,19 @@ export class CircuitBreakerService {
       return this.canProceedInHalfOpenState(circuit);
     }
 
+    const timeUntilRetry = circuit.metrics.nextAttemptTime
+      ? Math.ceil((circuit.metrics.nextAttemptTime - now) / 1000)
+      : 0;
+
+    this.loggingService.warn({
+      type: LogType.CircuitBreakerRequestBlocked,
+      circuit: circuit.name,
+      state: CircuitState.OPEN,
+      failureCount: circuit.metrics.failureCount,
+      timeUntilRetrySeconds: timeUntilRetry,
+      message: `Request blocked: Circuit "${circuit.name}" is OPEN. Retry in ${timeUntilRetry}s`,
+    });
+
     return false;
   }
 
@@ -202,6 +234,15 @@ export class CircuitBreakerService {
     circuit.metrics.consecutiveSuccesses = 0;
     circuit.metrics.state = CircuitState.HALF_OPEN;
     circuit.metrics.halfOpenRequestCounts = 0;
+
+    this.loggingService.info({
+      type: LogType.CircuitBreakerStateTransition,
+      circuit: circuit.name,
+      from: CircuitState.OPEN,
+      to: CircuitState.HALF_OPEN,
+      maxTestRequests: circuit.config.halfOpenMaxRequests,
+      message: `Circuit "${circuit.name}" transitioned from OPEN to HALF_OPEN. Allowing ${circuit.config.halfOpenMaxRequests} test requests`,
+    });
   }
 
   /**
@@ -220,8 +261,25 @@ export class CircuitBreakerService {
     ) {
       circuit.metrics.halfOpenRequestCounts++;
 
+      this.loggingService.debug({
+        type: LogType.CircuitBreakerHalfOpenRequest,
+        circuit: circuit.name,
+        state: CircuitState.HALF_OPEN,
+        testRequestNumber: circuit.metrics.halfOpenRequestCounts,
+        maxTestRequests: circuit.config.halfOpenMaxRequests,
+        message: `Circuit "${circuit.name}" allowing test request ${circuit.metrics.halfOpenRequestCounts}/${circuit.config.halfOpenMaxRequests} in HALF_OPEN state`,
+      });
+
       return true;
     }
+
+    this.loggingService.warn({
+      type: LogType.CircuitBreakerRequestBlocked,
+      circuit: circuit.name,
+      state: CircuitState.HALF_OPEN,
+      reason: 'Max test requests reached',
+      message: `Request blocked: Circuit "${circuit.name}" is HALF_OPEN and max test requests (${circuit.config.halfOpenMaxRequests}) reached`,
+    });
 
     return false;
   }
@@ -257,13 +315,46 @@ export class CircuitBreakerService {
     circuit.metrics.successCount++;
     circuit.metrics.consecutiveSuccesses++;
 
+    this.loggingService.debug({
+      type: LogType.CircuitBreakerSuccessRecorded,
+      circuit: circuit.name,
+      state: circuit.metrics.state,
+      consecutiveSuccesses: circuit.metrics.consecutiveSuccesses,
+      successThreshold: circuit.config.successThreshold,
+      message: `Success recorded for circuit "${circuit.name}" (${circuit.metrics.consecutiveSuccesses}/${circuit.config.successThreshold} consecutive successes)`,
+    });
+
     if (circuit.metrics.state === CircuitState.HALF_OPEN) {
       if (
         circuit.metrics.consecutiveSuccesses >= circuit.config.successThreshold
       ) {
-        this.removeCircuit(circuit);
+        this.transitionToClosed(circuit);
       }
     }
+  }
+
+  /**
+   * Transitions a circuit to CLOSED state and removes it from memory
+   *
+   * This happens when the circuit successfully recovers in HALF_OPEN state.
+   * The circuit is removed to prevent memory exhaustion and will be
+   * recreated if failures occur again.
+   *
+   * @param {ICircuit} circuit - Circuit instance
+   * @returns {void}
+   */
+  private transitionToClosed(circuit: ICircuit): void {
+    this.loggingService.info({
+      type: LogType.CircuitBreakerStateTransition,
+      circuit: circuit.name,
+      from: CircuitState.HALF_OPEN,
+      to: CircuitState.CLOSED,
+      totalSuccesses: circuit.metrics.successCount,
+      totalFailures: circuit.metrics.failureCount,
+      message: `Circuit "${circuit.name}" transitioned from HALF_OPEN to CLOSED. Service recovered successfully`,
+    });
+
+    this.removeCircuit(circuit);
   }
 
   /**
@@ -299,6 +390,15 @@ export class CircuitBreakerService {
     circuit.metrics.lastFailureTime = now;
     circuit.metrics.consecutiveSuccesses = 0;
 
+    this.loggingService.warn({
+      type: LogType.CircuitBreakerFailureRecorded,
+      circuit: circuit.name,
+      state: circuit.metrics.state,
+      failureCount: circuit.metrics.failureCount,
+      failureThreshold: circuit.config.failureThreshold,
+      message: `Failure recorded for circuit "${circuit.name}" (${circuit.metrics.failureCount}/${circuit.config.failureThreshold} failures in rolling window)`,
+    });
+
     if (
       circuit.metrics.state === CircuitState.HALF_OPEN ||
       (circuit.metrics.state === CircuitState.CLOSED &&
@@ -330,7 +430,19 @@ export class CircuitBreakerService {
       currentTimestamp - circuit.metrics.lastFailureTime >
         circuit.config.rollingWindow
     ) {
+      const oldFailureCount = circuit.metrics.failureCount;
       circuit.metrics.failureCount = 0;
+
+      if (oldFailureCount > 0) {
+        this.loggingService.debug({
+          type: LogType.CircuitBreakerFailuresDiscarded,
+          circuit: circuit.name,
+          state: circuit.metrics.state,
+          discardedFailures: oldFailureCount,
+          rollingWindowMs: circuit.config.rollingWindow,
+          message: `Discarded ${oldFailureCount} old failure(s) for circuit "${circuit.name}" (outside rolling window)`,
+        });
+      }
     }
   }
 
@@ -341,12 +453,27 @@ export class CircuitBreakerService {
    * to test if the downstream service has recovered. All requests are
    * blocked until the timeout expires.
    *
-   * @param {string} name - Circuit identifier
+   * @param {ICircuit} circuit - Circuit instance
    * @returns {void}
    */
   private transitionToOpen(circuit: ICircuit): void {
+    const previousState = circuit.metrics.state;
     circuit.metrics.state = CircuitState.OPEN;
     circuit.metrics.nextAttemptTime = Date.now() + circuit.config.timeout;
+
+    const timeoutSeconds = Math.ceil(circuit.config.timeout / 1000);
+
+    this.loggingService.error({
+      type: LogType.CircuitBreakerStateTransition,
+      circuit: circuit.name,
+      from: previousState,
+      to: CircuitState.OPEN,
+      failureCount: circuit.metrics.failureCount,
+      failureThreshold: circuit.config.failureThreshold,
+      timeoutSeconds: timeoutSeconds,
+      nextAttemptTime: new Date(circuit.metrics.nextAttemptTime).toISOString(),
+      message: `Circuit "${circuit.name}" transitioned from ${previousState} to OPEN. Failure threshold reached (${circuit.metrics.failureCount}/${circuit.config.failureThreshold}). Will retry in ${timeoutSeconds}s`,
+    });
   }
 
   /**
@@ -376,11 +503,33 @@ export class CircuitBreakerService {
    */
   @Cron(CronExpression.EVERY_30_MINUTES)
   public cleanupStaleCircuits(): void {
+    const circuitCount = this.circuits.size;
+    const staleCircuits: Array<string> = [];
+
     this.circuits.forEach((circuit: ICircuit): void => {
       if (this.isStale(circuit)) {
+        staleCircuits.push(circuit.name);
         this.removeCircuit(circuit);
       }
     });
+
+    if (staleCircuits.length > 0) {
+      this.loggingService.info({
+        type: LogType.CircuitBreakerCleanup,
+        totalCircuits: circuitCount,
+        staleCircuitsRemoved: staleCircuits.length,
+        remainingCircuits: this.circuits.size,
+        removedCircuits: staleCircuits,
+        message: `Cleaned up ${staleCircuits.length} stale circuit(s): ${staleCircuits.join(', ')}`,
+      });
+    } else {
+      this.loggingService.debug({
+        type: LogType.CircuitBreakerCleanup,
+        totalCircuits: circuitCount,
+        staleCircuitsRemoved: 0,
+        message: `Circuit cleanup ran: no stale circuits found (${circuitCount} active)`,
+      });
+    }
   }
 
   /**
