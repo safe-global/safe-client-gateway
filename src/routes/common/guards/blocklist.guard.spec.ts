@@ -2,34 +2,35 @@ import { BlocklistGuard } from './blocklist.guard';
 import { ForbiddenException } from '@nestjs/common';
 import type { ExecutionContext } from '@nestjs/common';
 import type { ILoggingService } from '@/logging/logging.interface';
+import type { IConfigurationService } from '@/config/configuration.service.interface';
 import { faker } from '@faker-js/faker/.';
 import { getAddress } from 'viem';
-import * as blocklistConfig from '@/config/entities/blocklist.config';
-
-// Mock the getBlocklist function
-jest.mock('@/config/entities/blocklist.config', () => ({
-  getBlocklist: jest.fn(),
-}));
+import type { IBlocklistService } from '@/config/entities/blocklist.interface';
 
 const mockLoggingService = {
   warn: jest.fn(),
 } as jest.MockedObjectDeep<ILoggingService>;
 
-describe('BlocklistGuard', () => {
-  let mockGetBlocklist: jest.MockedFunction<
-    typeof blocklistConfig.getBlocklist
-  >;
+const mockConfigurationService = {
+  getOrThrow: jest.fn(),
+} as jest.MockedObjectDeep<IConfigurationService>;
 
+const mockBlocklistService = {
+  getBlocklist: jest.fn(),
+  clearCache: jest.fn(),
+} as jest.MockedObjectDeep<IBlocklistService>;
+
+describe('BlocklistGuard', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockGetBlocklist = jest.mocked(blocklistConfig.getBlocklist);
+    mockConfigurationService.getOrThrow.mockReturnValue(true);
   });
 
   describe('with default parameter name (safeAddress)', () => {
     it('should allow access when address is not in blocklist', () => {
       const safeAddress = getAddress(faker.finance.ethereumAddress());
       const blockedAddress = getAddress(faker.finance.ethereumAddress());
-      mockGetBlocklist.mockReturnValue([blockedAddress]);
+      mockBlocklistService.getBlocklist.mockReturnValue([blockedAddress]);
 
       const mockExecutionContext = {
         switchToHttp: jest.fn().mockReturnValue({
@@ -42,7 +43,11 @@ describe('BlocklistGuard', () => {
         }),
       } as jest.MockedObjectDeep<ExecutionContext>;
 
-      const guard = new BlocklistGuard(mockLoggingService);
+      const guard = new BlocklistGuard(
+        mockLoggingService,
+        mockConfigurationService,
+        mockBlocklistService,
+      );
 
       const result = guard.canActivate(mockExecutionContext);
 
@@ -52,7 +57,7 @@ describe('BlocklistGuard', () => {
 
     it('should block access when address is in blocklist', () => {
       const blockedAddress = getAddress(faker.finance.ethereumAddress());
-      mockGetBlocklist.mockReturnValue([blockedAddress]);
+      mockBlocklistService.getBlocklist.mockReturnValue([blockedAddress]);
 
       const route = '/chains/1/safes/:safeAddress';
       const ip = faker.internet.ipv4();
@@ -67,7 +72,11 @@ describe('BlocklistGuard', () => {
         }),
       } as jest.MockedObjectDeep<ExecutionContext>;
 
-      const guard = new BlocklistGuard(mockLoggingService);
+      const guard = new BlocklistGuard(
+        mockLoggingService,
+        mockConfigurationService,
+        mockBlocklistService,
+      );
 
       expect(() => guard.canActivate(mockExecutionContext)).toThrow(
         new ForbiddenException('Access to this Safe is restricted'),
@@ -87,7 +96,7 @@ describe('BlocklistGuard', () => {
     it('should normalize addresses before checking blocklist', () => {
       const address = faker.finance.ethereumAddress();
       const normalizedAddress = getAddress(address);
-      mockGetBlocklist.mockReturnValue([normalizedAddress]);
+      mockBlocklistService.getBlocklist.mockReturnValue([normalizedAddress]);
 
       // Test with lowercase version
       const mockExecutionContext = {
@@ -101,7 +110,11 @@ describe('BlocklistGuard', () => {
         }),
       } as jest.MockedObjectDeep<ExecutionContext>;
 
-      const guard = new BlocklistGuard(mockLoggingService);
+      const guard = new BlocklistGuard(
+        mockLoggingService,
+        mockConfigurationService,
+        mockBlocklistService,
+      );
 
       expect(() => guard.canActivate(mockExecutionContext)).toThrow(
         ForbiddenException,
@@ -109,7 +122,7 @@ describe('BlocklistGuard', () => {
     });
 
     it('should allow access when route does not have safeAddress parameter', () => {
-      mockGetBlocklist.mockReturnValue([
+      mockBlocklistService.getBlocklist.mockReturnValue([
         getAddress(faker.finance.ethereumAddress()),
       ]);
 
@@ -123,16 +136,20 @@ describe('BlocklistGuard', () => {
         }),
       } as jest.MockedObjectDeep<ExecutionContext>;
 
-      const guard = new BlocklistGuard(mockLoggingService);
+      const guard = new BlocklistGuard(
+        mockLoggingService,
+        mockConfigurationService,
+        mockBlocklistService,
+      );
 
       const result = guard.canActivate(mockExecutionContext);
 
       expect(result).toBe(true);
-      expect(mockGetBlocklist).not.toHaveBeenCalled();
+      expect(mockBlocklistService.getBlocklist).not.toHaveBeenCalled();
     });
 
     it('should allow access when safeAddress is invalid', () => {
-      mockGetBlocklist.mockReturnValue([
+      mockBlocklistService.getBlocklist.mockReturnValue([
         getAddress(faker.finance.ethereumAddress()),
       ]);
 
@@ -146,12 +163,16 @@ describe('BlocklistGuard', () => {
         }),
       } as jest.MockedObjectDeep<ExecutionContext>;
 
-      const guard = new BlocklistGuard(mockLoggingService);
+      const guard = new BlocklistGuard(
+        mockLoggingService,
+        mockConfigurationService,
+        mockBlocklistService,
+      );
 
       const result = guard.canActivate(mockExecutionContext);
 
       expect(result).toBe(true);
-      expect(mockGetBlocklist).not.toHaveBeenCalled();
+      expect(mockBlocklistService.getBlocklist).not.toHaveBeenCalled();
     });
 
     it('should check multiple addresses in blocklist', () => {
@@ -160,7 +181,7 @@ describe('BlocklistGuard', () => {
       const blockedAddress3 = getAddress(faker.finance.ethereumAddress());
       const allowedAddress = getAddress(faker.finance.ethereumAddress());
 
-      mockGetBlocklist.mockReturnValue([
+      mockBlocklistService.getBlocklist.mockReturnValue([
         blockedAddress1,
         blockedAddress2,
         blockedAddress3,
@@ -176,7 +197,11 @@ describe('BlocklistGuard', () => {
         }),
       } as jest.MockedObjectDeep<ExecutionContext>;
 
-      const guard = new BlocklistGuard(mockLoggingService);
+      const guard = new BlocklistGuard(
+        mockLoggingService,
+        mockConfigurationService,
+        mockBlocklistService,
+      );
 
       const result = guard.canActivate(mockExecutionContext);
 
@@ -187,7 +212,7 @@ describe('BlocklistGuard', () => {
   describe('with custom parameter name', () => {
     it('should check custom parameter name when extended', () => {
       const blockedAddress = getAddress(faker.finance.ethereumAddress());
-      mockGetBlocklist.mockReturnValue([blockedAddress]);
+      mockBlocklistService.getBlocklist.mockReturnValue([blockedAddress]);
 
       // Create a custom guard class for testing with a different parameter name
       class CustomBlocklistGuard extends BlocklistGuard {
@@ -205,7 +230,11 @@ describe('BlocklistGuard', () => {
         }),
       } as jest.MockedObjectDeep<ExecutionContext>;
 
-      const guard = new CustomBlocklistGuard(mockLoggingService);
+      const guard = new CustomBlocklistGuard(
+        mockLoggingService,
+        mockConfigurationService,
+        mockBlocklistService,
+      );
 
       expect(() => guard.canActivate(mockExecutionContext)).toThrow(
         ForbiddenException,
@@ -215,7 +244,7 @@ describe('BlocklistGuard', () => {
     it('should ignore default parameter when custom parameter is specified', () => {
       const blockedAddress = getAddress(faker.finance.ethereumAddress());
       const allowedAddress = getAddress(faker.finance.ethereumAddress());
-      mockGetBlocklist.mockReturnValue([blockedAddress]);
+      mockBlocklistService.getBlocklist.mockReturnValue([blockedAddress]);
 
       // Create a custom guard class for testing with a different parameter name
       class CustomBlocklistGuard extends BlocklistGuard {
@@ -235,7 +264,11 @@ describe('BlocklistGuard', () => {
         }),
       } as jest.MockedObjectDeep<ExecutionContext>;
 
-      const guard = new CustomBlocklistGuard(mockLoggingService);
+      const guard = new CustomBlocklistGuard(
+        mockLoggingService,
+        mockConfigurationService,
+        mockBlocklistService,
+      );
 
       const result = guard.canActivate(mockExecutionContext);
 
@@ -245,7 +278,7 @@ describe('BlocklistGuard', () => {
 
   describe('error handling', () => {
     it('should allow access if getBlocklist throws an error', () => {
-      mockGetBlocklist.mockImplementation(() => {
+      mockBlocklistService.getBlocklist.mockImplementation(() => {
         throw new Error('Decryption failed');
       });
 
@@ -261,7 +294,11 @@ describe('BlocklistGuard', () => {
         }),
       } as jest.MockedObjectDeep<ExecutionContext>;
 
-      const guard = new BlocklistGuard(mockLoggingService);
+      const guard = new BlocklistGuard(
+        mockLoggingService,
+        mockConfigurationService,
+        mockBlocklistService,
+      );
 
       const result = guard.canActivate(mockExecutionContext);
 

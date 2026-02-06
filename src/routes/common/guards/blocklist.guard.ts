@@ -1,4 +1,5 @@
-import { getBlocklist } from '@/config/entities/blocklist.config';
+import { IConfigurationService } from '@/config/configuration.service.interface';
+import { IBlocklistService } from '@/config/entities/blocklist.interface';
 import { LogType } from '@/domain/common/entities/log-type.entity';
 import {
   LoggingService,
@@ -21,9 +22,21 @@ export class BlocklistGuard implements CanActivate {
   constructor(
     @Inject(LoggingService)
     private readonly loggingService: ILoggingService,
+    @Inject(IConfigurationService)
+    private readonly configurationService: IConfigurationService,
+    @Inject(IBlocklistService)
+    private readonly blocklistService: IBlocklistService,
   ) {}
 
   canActivate(context: ExecutionContext): boolean {
+    const isBlocklistEnabled = this.configurationService.getOrThrow(
+      'blockchain.blocklistEnabled',
+    );
+
+    if (!isBlocklistEnabled) {
+      return true;
+    }
+
     const request: Request = context.switchToHttp().getRequest();
     const addressParam = request.params[this.parameterName];
 
@@ -33,7 +46,7 @@ export class BlocklistGuard implements CanActivate {
 
     try {
       const normalizedAddress = getAddress(addressParam);
-      const blocklist = getBlocklist();
+      const blocklist = this.blocklistService.getBlocklist();
 
       if (blocklist.includes(normalizedAddress)) {
         this.loggingService.warn({

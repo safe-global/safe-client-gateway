@@ -63,6 +63,7 @@ import { BullModule } from '@nestjs/bullmq';
 import { CsvExportModule } from '@/modules/csv-export/csv-export.module';
 import { SafeShieldModule } from '@/modules/safe-shield/safe-shield.module';
 import { CircuitBreakerModule } from '@/datasources/circuit-breaker/circuit-breaker.module';
+import { BlocklistModule } from '@/config/entities/blocklist.module';
 
 @Module({})
 export class AppModule implements NestModule {
@@ -110,6 +111,7 @@ export class AppModule implements NestModule {
         TargetedMessagingModule,
         TransactionsModule,
         // common
+        BlocklistModule,
         CacheModule,
         CircuitBreakerModule,
         // Module for storing and reading from the async local storage

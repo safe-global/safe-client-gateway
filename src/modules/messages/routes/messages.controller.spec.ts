@@ -33,19 +33,14 @@ import {
   LoggingService,
 } from '@/logging/logging.interface';
 import { createTestModule } from '@/__tests__/testing-module';
-
-// Mock the getBlocklist function
-jest.mock('@/config/entities/blocklist.config');
-
-import { getBlocklist } from '@/config/entities/blocklist.config';
-
-const mockGetBlocklist = jest.mocked(getBlocklist);
+import { IBlocklistService } from '@/config/entities/blocklist.interface';
 
 describe('Messages controller', () => {
   let app: INestApplication<Server>;
   let safeConfigUrl: string;
   let networkService: jest.MockedObjectDeep<INetworkService>;
   let loggingService: jest.MockedObjectDeep<ILoggingService>;
+  let blocklistService: jest.MockedObjectDeep<IBlocklistService>;
 
   async function initApp(config: typeof configuration): Promise<void> {
     const moduleFixture: TestingModule = await createTestModule({
@@ -65,6 +60,7 @@ describe('Messages controller', () => {
     safeConfigUrl = configurationService.getOrThrow('safeConfig.baseUri');
     networkService = moduleFixture.get(NetworkService);
     loggingService = moduleFixture.get(LoggingService);
+    blocklistService = moduleFixture.get(IBlocklistService);
 
     // TODO: Override module to avoid spying
     jest.spyOn(loggingService, 'error');
@@ -76,10 +72,10 @@ describe('Messages controller', () => {
   beforeEach(async () => {
     jest.resetAllMocks();
 
-    // Reset and mock getBlocklist to return empty array by default
-    mockGetBlocklist.mockReturnValue([]);
-
     await initApp(configuration);
+
+    // Reset and mock getBlocklist to return empty array by default (after initApp)
+    jest.spyOn(blocklistService, 'getBlocklist').mockReturnValue([]);
   });
 
   describe('GET messages by hash', () => {
@@ -1068,7 +1064,9 @@ describe('Messages controller', () => {
         const signer = privateKeyToAccount(privateKey);
 
         // Mock getBlocklist to return the blocked address
-        mockGetBlocklist.mockReturnValue([signer.address]);
+        jest
+          .spyOn(blocklistService, 'getBlocklist')
+          .mockReturnValue([signer.address]);
 
         const defaultConfiguration = configuration();
         const testConfiguration = (): ReturnType<typeof configuration> => {
@@ -1636,7 +1634,9 @@ describe('Messages controller', () => {
         const signer = privateKeyToAccount(privateKey);
 
         // Mock getBlocklist to return the blocked address
-        mockGetBlocklist.mockReturnValue([signer.address]);
+        jest
+          .spyOn(blocklistService, 'getBlocklist')
+          .mockReturnValue([signer.address]);
 
         const defaultConfiguration = configuration();
         const testConfiguration = (): ReturnType<typeof configuration> => {

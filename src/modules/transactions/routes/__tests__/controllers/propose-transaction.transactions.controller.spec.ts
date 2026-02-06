@@ -36,10 +36,7 @@ import { confirmationBuilder } from '@/modules/safe/domain/entities/__tests__/mu
 import { dataDecodedBuilder } from '@/modules/data-decoder/domain/v2/entities/__tests__/data-decoded.builder';
 import { createTestModule } from '@/__tests__/testing-module';
 import { contractBuilder } from '@/modules/data-decoder/domain/v2/entities/__tests__/contract.builder';
-import { getBlocklist } from '@/config/entities/blocklist.config';
-
-jest.mock('@/config/entities/blocklist.config');
-const mockGetBlocklist = jest.mocked(getBlocklist);
+import { IBlocklistService } from '@/config/entities/blocklist.interface';
 
 describe('Propose transaction - Transactions Controller (Unit)', () => {
   let app: INestApplication<Server>;
@@ -47,6 +44,7 @@ describe('Propose transaction - Transactions Controller (Unit)', () => {
   let safeDecoderUrl: string;
   let networkService: jest.MockedObjectDeep<INetworkService>;
   let loggingService: jest.MockedObjectDeep<ILoggingService>;
+  let blocklistService: jest.MockedObjectDeep<IBlocklistService>;
 
   async function initApp(config: typeof configuration): Promise<void> {
     const moduleFixture = await createTestModule({
@@ -67,6 +65,7 @@ describe('Propose transaction - Transactions Controller (Unit)', () => {
     safeDecoderUrl = configurationService.getOrThrow('safeDataDecoder.baseUri');
     networkService = moduleFixture.get(NetworkService);
     loggingService = moduleFixture.get(LoggingService);
+    blocklistService = moduleFixture.get(IBlocklistService);
 
     // TODO: Override module to avoid spying
     jest.spyOn(loggingService, 'error');
@@ -77,7 +76,6 @@ describe('Propose transaction - Transactions Controller (Unit)', () => {
 
   beforeEach(async () => {
     jest.resetAllMocks();
-    mockGetBlocklist.mockReturnValue([]);
 
     const baseConfiguration = configuration();
     const testConfiguration = (): typeof baseConfiguration => ({
@@ -90,6 +88,9 @@ describe('Propose transaction - Transactions Controller (Unit)', () => {
     });
 
     await initApp(testConfiguration);
+
+    // Spy on blocklist service after initApp (after service is initialized)
+    jest.spyOn(blocklistService, 'getBlocklist').mockReturnValue([]);
   });
 
   afterAll(async () => {
@@ -1278,7 +1279,9 @@ describe('Propose transaction - Transactions Controller (Unit)', () => {
       const chain = chainBuilder().build();
       const privateKey = generatePrivateKey();
       const signer = privateKeyToAccount(privateKey);
-      mockGetBlocklist.mockReturnValue([signer.address]);
+      jest
+        .spyOn(blocklistService, 'getBlocklist')
+        .mockReturnValue([signer.address]);
 
       const defaultConfiguration = configuration();
       const testConfiguration = (): ReturnType<typeof configuration> => ({

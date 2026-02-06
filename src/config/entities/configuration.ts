@@ -146,6 +146,7 @@ export default () => ({
     },
   },
   blockchain: {
+    blocklistEnabled: process.env.BLOCKLIST_ENABLED?.toLowerCase() !== 'false',
     blocklistSecretData: process.env.BLOCKLIST_ENCRYPTED_DATA,
     blocklistSecretKey: process.env.BLOCKLIST_SECRET_KEY,
     blocklistSecretSalt: process.env.BLOCKLIST_SECRET_SALT,

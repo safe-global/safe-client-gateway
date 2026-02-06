@@ -31,11 +31,8 @@ import { getAddress, type Hash } from 'viem';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 
 // Mock the getBlocklist function
-jest.mock('@/config/entities/blocklist.config');
 
-import { getBlocklist } from '@/config/entities/blocklist.config';
-
-const mockGetBlocklist = jest.mocked(getBlocklist);
+import { IBlocklistService } from '@/config/entities/blocklist.interface';
 
 describe('List queued transactions by Safe - Transactions Controller (Unit)', () => {
   let app: INestApplication<Server>;
@@ -43,6 +40,7 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
   let safeDecoderUrl: string;
   let networkService: jest.MockedObjectDeep<INetworkService>;
   let loggingService: jest.MockedObjectDeep<ILoggingService>;
+  let blocklistService: jest.MockedObjectDeep<IBlocklistService>;
 
   async function initApp(config: typeof configuration): Promise<void> {
     const moduleFixture = await createTestModule({
@@ -62,6 +60,7 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
     safeDecoderUrl = configurationService.getOrThrow('safeDataDecoder.baseUri');
     networkService = moduleFixture.get(NetworkService);
     loggingService = moduleFixture.get(LoggingService);
+    blocklistService = moduleFixture.get(IBlocklistService);
 
     // TODO: Override module to avoid spying
     jest.spyOn(loggingService, 'error');
@@ -73,9 +72,6 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
   beforeEach(async () => {
     jest.resetAllMocks();
 
-    // Reset and mock getBlocklist to return empty array by default
-    mockGetBlocklist.mockReturnValue([]);
-
     const baseConfiguration = configuration();
     const testConfiguration = (): typeof baseConfiguration => ({
       ...baseConfiguration,
@@ -86,6 +82,9 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
     });
 
     await initApp(testConfiguration);
+
+    // Reset and mock getBlocklist to return empty array by default (after initApp)
+    jest.spyOn(blocklistService, 'getBlocklist').mockReturnValue([]);
   });
 
   afterAll(async () => {
@@ -1058,7 +1057,9 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
       const signer = privateKeyToAccount(privateKey);
 
       // Mock getBlocklist to return the blocked address
-      mockGetBlocklist.mockReturnValue([signer.address]);
+      jest
+        .spyOn(blocklistService, 'getBlocklist')
+        .mockReturnValue([signer.address]);
 
       const defaultConfiguration = configuration();
       const testConfiguration = (): ReturnType<typeof configuration> => {

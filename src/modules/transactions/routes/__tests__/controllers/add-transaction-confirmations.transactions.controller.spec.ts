@@ -35,11 +35,9 @@ import { SignatureType } from '@/domain/common/entities/signature-type.entity';
 import { ZodErrorFilter } from '@/routes/common/filters/zod-error.filter';
 
 // Mock the getBlocklist function
-jest.mock('@/config/entities/blocklist.config');
 
-import { getBlocklist } from '@/config/entities/blocklist.config';
+import { IBlocklistService } from '@/config/entities/blocklist.interface';
 
-const mockGetBlocklist = jest.mocked(getBlocklist);
 import {
   type ILoggingService,
   LoggingService,
@@ -47,6 +45,7 @@ import {
 import { type Address, getAddress } from 'viem';
 import { dataDecodedBuilder } from '@/modules/data-decoder/domain/v2/entities/__tests__/data-decoded.builder';
 import { contractBuilder } from '@/modules/data-decoder/domain/v2/entities/__tests__/contract.builder';
+import { TestBlocklistModule } from '@/config/entities/__tests__/test.blocklist.module';
 
 describe('Add transaction confirmations - Transactions Controller (Unit)', () => {
   let app: INestApplication<Server>;
@@ -54,6 +53,7 @@ describe('Add transaction confirmations - Transactions Controller (Unit)', () =>
   let safeDecoderUrl: string;
   let networkService: jest.MockedObjectDeep<INetworkService>;
   let loggingService: jest.MockedObjectDeep<ILoggingService>;
+  let blocklistService: jest.MockedObjectDeep<IBlocklistService>;
 
   async function initApp(config: typeof configuration): Promise<void> {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -61,6 +61,7 @@ describe('Add transaction confirmations - Transactions Controller (Unit)', () =>
         // feature
         TransactionsModule,
         // common
+        TestBlocklistModule,
         TestCacheModule,
         ConfigurationModule.register(config),
         TestLoggingModule,
@@ -86,6 +87,7 @@ describe('Add transaction confirmations - Transactions Controller (Unit)', () =>
     safeDecoderUrl = configurationService.getOrThrow('safeDataDecoder.baseUri');
     networkService = moduleFixture.get(NetworkService);
     loggingService = moduleFixture.get(LoggingService);
+    blocklistService = moduleFixture.get(IBlocklistService);
 
     // TODO: Override module to avoid spying
     jest.spyOn(loggingService, 'error');
@@ -97,9 +99,6 @@ describe('Add transaction confirmations - Transactions Controller (Unit)', () =>
   beforeEach(async () => {
     jest.resetAllMocks();
 
-    // Reset and mock getBlocklist to return empty array by default
-    mockGetBlocklist.mockReturnValue([]);
-
     const baseConfiguration = configuration();
     const testConfiguration = (): typeof baseConfiguration => ({
       ...baseConfiguration,
@@ -110,6 +109,9 @@ describe('Add transaction confirmations - Transactions Controller (Unit)', () =>
     });
 
     await initApp(testConfiguration);
+
+    // Reset and mock getBlocklist to return empty array by default (after initApp)
+    jest.spyOn(blocklistService, 'getBlocklist').mockReturnValue([]);
   });
 
   afterAll(async () => {
@@ -593,9 +595,6 @@ describe('Add transaction confirmations - Transactions Controller (Unit)', () =>
       const privateKey = generatePrivateKey();
       const signer = privateKeyToAccount(privateKey);
 
-      // Mock getBlocklist to return the blocked address
-      mockGetBlocklist.mockReturnValue([signer.address]);
-
       const defaultConfiguration = configuration();
       const testConfiguration = (): ReturnType<typeof configuration> => ({
         ...defaultConfiguration,
@@ -604,6 +603,11 @@ describe('Add transaction confirmations - Transactions Controller (Unit)', () =>
         },
       });
       await initApp(testConfiguration);
+
+      // Mock getBlocklist to return the blocked address (after initApp)
+      jest
+        .spyOn(blocklistService, 'getBlocklist')
+        .mockReturnValue([signer.address]);
       const safe = safeBuilder().with('owners', [signer.address]).build();
       const transaction = multisigToJson(
         await multisigTransactionBuilder()
