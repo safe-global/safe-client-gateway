@@ -28,7 +28,7 @@ describe('HooksController', () => {
       await initApp();
     });
 
-    afterAll(async () => {
+    afterEach(async () => {
       await app.close();
     });
 
@@ -93,7 +93,7 @@ describe('HooksController', () => {
       await initApp();
     });
 
-    afterAll(async () => {
+    afterEach(async () => {
       await app.close();
     });
 

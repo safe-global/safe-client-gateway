@@ -100,7 +100,7 @@ describe('Get by id - Transactions Controller', () => {
     jest.spyOn(blocklistService, 'getBlocklist').mockReturnValue([]);
   });
 
-  afterAll(async () => {
+  afterEach(async () => {
     await app.close();
   });
   it('Failure: Config API fails', async () => {

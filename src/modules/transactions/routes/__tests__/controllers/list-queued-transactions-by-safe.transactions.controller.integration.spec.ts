@@ -87,7 +87,7 @@ describe('List queued transactions by Safe - Transactions Controller', () => {
     jest.spyOn(blocklistService, 'getBlocklist').mockReturnValue([]);
   });
 
-  afterAll(async () => {
+  afterEach(async () => {
     await app.close();
   });
 

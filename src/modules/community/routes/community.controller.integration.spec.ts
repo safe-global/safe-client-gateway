@@ -67,7 +67,7 @@ describe('Community Controller', () => {
     await app.init();
   });
 
-  afterAll(async () => {
+  afterEach(async () => {
     await app.close();
   });
 

@@ -114,7 +114,7 @@ describe('Add transaction confirmations - Transactions Controller', () => {
     jest.spyOn(blocklistService, 'getBlocklist').mockReturnValue([]);
   });
 
-  afterAll(async () => {
+  afterEach(async () => {
     await app.close();
   });
 

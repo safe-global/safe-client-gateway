@@ -93,7 +93,7 @@ describe('Propose transaction - Transactions Controller', () => {
     jest.spyOn(blocklistService, 'getBlocklist').mockReturnValue([]);
   });
 
-  afterAll(async () => {
+  afterEach(async () => {
     await app.close();
   });
 
