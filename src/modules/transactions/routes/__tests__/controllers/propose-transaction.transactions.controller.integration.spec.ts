@@ -88,9 +88,6 @@ describe('Propose transaction - Transactions Controller', () => {
     });
 
     await initApp(testConfiguration);
-
-    // Spy on blocklist service after initApp (after service is initialized)
-    jest.spyOn(blocklistService, 'getBlocklist').mockReturnValue([]);
   });
 
   afterAll(async () => {
@@ -1278,9 +1275,6 @@ describe('Propose transaction - Transactions Controller', () => {
       const chain = chainBuilder().build();
       const privateKey = generatePrivateKey();
       const signer = privateKeyToAccount(privateKey);
-      jest
-        .spyOn(blocklistService, 'getBlocklist')
-        .mockReturnValue([signer.address]);
 
       const defaultConfiguration = configuration();
       const testConfiguration = (): ReturnType<typeof configuration> => ({
@@ -1290,6 +1284,11 @@ describe('Propose transaction - Transactions Controller', () => {
         },
       });
       await initApp(testConfiguration);
+
+      jest
+        .spyOn(blocklistService, 'getBlocklist')
+        .mockReturnValue([signer.address]);
+
       const safe = safeBuilder().with('owners', [signer.address]).build();
       const transaction = await multisigTransactionBuilder()
         .with('safe', safe.address)
