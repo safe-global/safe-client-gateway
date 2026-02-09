@@ -144,4 +144,17 @@ export class SpaceSafesService {
 
     return mapValues(grouped, (items) => items.map((item) => item.address));
   }
+
+  /**
+   * Count total number of safes across all chains.
+   *
+   * @param safes - Object with chainId keys and address arrays as values
+   * @returns Total count of safes
+   */
+  public countTotalSafes(safes: GetSpaceSafeResponse['safes']): number {
+    return Object.values(safes).reduce(
+      (total, addresses) => total + addresses.length,
+      0,
+    );
+  }
 }

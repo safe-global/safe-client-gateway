@@ -7,7 +7,7 @@ import { User } from '@/modules/users/domain/entities/user.entity';
 import { IMembersRepository } from '@/modules/users/domain/members.repository.interface';
 import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
 import { CreateSpaceResponse } from '@/modules/spaces/routes/entities/create-space.dto.entity';
-import type { GetSpaceResponse } from '@/modules/spaces/routes/entities/get-space.dto.entity';
+import { SafesMode, type GetSpaceResponse } from '@/modules/spaces/routes/entities/get-space.dto.entity';
 import type {
   UpdateSpaceDto,
   UpdateSpaceResponse,
@@ -19,6 +19,7 @@ import {
 } from '@nestjs/common';
 import { In } from 'typeorm';
 import type { Address } from 'viem';
+import { SpaceSafesService } from '@/modules/spaces/routes/space-safes.service';
 
 export class SpacesService {
   public constructor(
@@ -28,6 +29,8 @@ export class SpacesService {
     private readonly spacesRepository: ISpacesRepository,
     @Inject(IMembersRepository)
     private readonly membersRepository: IMembersRepository,
+    @Inject(SpaceSafesService)
+    private readonly spaceSafesService: SpaceSafesService,
   ) {}
 
   public async create(args: {
@@ -75,6 +78,7 @@ export class SpacesService {
 
   public async getActiveOrInvitedSpaces(
     authPayload: AuthPayload,
+    safesMode?: SafesMode,
   ): Promise<Array<GetSpaceResponse>> {
     this.assertSignerAddress(authPayload);
     const { id: userId } = await this.userRepository.findByWalletAddressOrFail(
@@ -84,10 +88,40 @@ export class SpacesService {
       where: { user: { id: userId }, status: In(['ACTIVE', 'INVITED']) },
       relations: ['space'],
     });
-    return await this.spacesRepository.find({
+    const spaces = await this.spacesRepository.find({
       where: { id: In(members.map((member) => member.space.id)) },
       relations: { members: { user: true } },
     });
+
+    if (!safesMode) {
+      return spaces.map((space) => ({
+        id: space.id,
+        name: space.name,
+        status: space.status,
+        members: space.members,
+      }));
+    }
+
+    const result: Array<GetSpaceResponse> = [];
+
+    for (const space of spaces) {
+      const safesResponse = await this.spaceSafesService.get(
+        space.id,
+        authPayload,
+      );
+
+      const spaceWithSafes: GetSpaceResponse = {
+        ...space,
+        safes:
+          safesMode === SafesMode.passCount
+            ? this.spaceSafesService.countTotalSafes(safesResponse.safes)
+            : safesResponse.safes,
+      };
+
+      result.push(spaceWithSafes);
+    }
+
+    return result;
   }
 
   public async getActiveOrInvitedSpace(
