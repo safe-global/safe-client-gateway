@@ -33,6 +33,8 @@ import { GlobalErrorFilter } from '@/routes/common/filters/global-error.filter';
 import { APP_FILTER } from '@nestjs/core';
 import { SignatureType } from '@/domain/common/entities/signature-type.entity';
 import { ZodErrorFilter } from '@/routes/common/filters/zod-error.filter';
+import { IBlocklistService } from '@/config/entities/blocklist.interface';
+
 import {
   type ILoggingService,
   LoggingService,
@@ -40,6 +42,7 @@ import {
 import { type Address, getAddress } from 'viem';
 import { dataDecodedBuilder } from '@/modules/data-decoder/domain/v2/entities/__tests__/data-decoded.builder';
 import { contractBuilder } from '@/modules/data-decoder/domain/v2/entities/__tests__/contract.builder';
+import { TestBlocklistModule } from '@/config/entities/__tests__/test.blocklist.module';
 
 describe('Add transaction confirmations - Transactions Controller', () => {
   let app: INestApplication<Server>;
@@ -47,6 +50,7 @@ describe('Add transaction confirmations - Transactions Controller', () => {
   let safeDecoderUrl: string;
   let networkService: jest.MockedObjectDeep<INetworkService>;
   let loggingService: jest.MockedObjectDeep<ILoggingService>;
+  let blocklistService: jest.MockedObjectDeep<IBlocklistService>;
 
   async function initApp(config: typeof configuration): Promise<void> {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -54,6 +58,7 @@ describe('Add transaction confirmations - Transactions Controller', () => {
         // feature
         TransactionsModule,
         // common
+        TestBlocklistModule,
         TestCacheModule,
         ConfigurationModule.register(config),
         TestLoggingModule,
@@ -79,6 +84,7 @@ describe('Add transaction confirmations - Transactions Controller', () => {
     safeDecoderUrl = configurationService.getOrThrow('safeDataDecoder.baseUri');
     networkService = moduleFixture.get(NetworkService);
     loggingService = moduleFixture.get(LoggingService);
+    blocklistService = moduleFixture.get(IBlocklistService);
 
     // TODO: Override module to avoid spying
     jest.spyOn(loggingService, 'error');
@@ -581,15 +587,20 @@ describe('Add transaction confirmations - Transactions Controller', () => {
       const chain = chainBuilder().build();
       const privateKey = generatePrivateKey();
       const signer = privateKeyToAccount(privateKey);
+
       const defaultConfiguration = configuration();
       const testConfiguration = (): ReturnType<typeof configuration> => ({
         ...defaultConfiguration,
-        blockchain: {
-          ...defaultConfiguration.blockchain,
-          blocklist: [signer.address],
+        features: {
+          ...defaultConfiguration.features,
         },
       });
       await initApp(testConfiguration);
+
+      jest
+        .spyOn(blocklistService, 'getBlocklist')
+        .mockReturnValue([signer.address]);
+
       const safe = safeBuilder().with('owners', [signer.address]).build();
       const transaction = multisigToJson(
         await multisigTransactionBuilder()

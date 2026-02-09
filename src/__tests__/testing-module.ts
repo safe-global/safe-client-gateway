@@ -22,6 +22,8 @@ import { CsvExportModule } from '@/modules/csv-export/csv-export.module';
 import { TestCsvExportModule } from '@/modules/csv-export/v1/__tests__/test.csv-export.module';
 import { TxAuthNetworkModule } from '@/datasources/network/tx-auth.network.module';
 import { TestTxAuthNetworkModule } from '@/datasources/network/__tests__/test.tx-auth.network.module';
+import { BlocklistModule } from '@/config/entities/blocklist.module';
+import { TestBlocklistModule } from '@/config/entities/__tests__/test.blocklist.module';
 
 export interface CreateBaseTestModuleOptions {
   config?: typeof configuration;
@@ -61,6 +63,10 @@ export async function createTestModule(
     guards,
     providers,
     modules: [
+      {
+        originalModule: BlocklistModule,
+        testModule: TestBlocklistModule,
+      },
       {
         originalModule: CacheModule,
         testModule: TestCacheModule,

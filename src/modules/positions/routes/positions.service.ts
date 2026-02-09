@@ -1,7 +1,10 @@
 import { groupBy } from 'lodash';
 import { Inject, Injectable } from '@nestjs/common';
 import { IPositionsRepository } from '@/modules/positions/domain/positions.repository.interface';
-import { Position as DomainPosition } from '@/modules/positions/domain/entities/position.entity';
+import {
+  ApplicationMetadataSchema,
+  Position as DomainPosition,
+} from '@/modules/positions/domain/entities/position.entity';
 import { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
 import { NativeCurrency } from '@/modules/chains/domain/entities/native.currency.entity';
 import { NULL_ADDRESS } from '@/routes/common/constants';
@@ -9,7 +12,6 @@ import { getNumberString } from '@/domain/common/utils/utils';
 import { Protocol } from '@/modules/positions/routes/entities/protocol.entity';
 import { Position } from '@/modules/positions/routes/entities/position.entity';
 import { PositionGroup } from '@/modules/positions/routes/entities/position-group.entity';
-import { ZerionApplicationMetadataSchema } from '@/modules/balances/datasources/entities/zerion-balance.entity';
 import { z } from 'zod';
 import type { Address } from 'viem';
 
@@ -18,7 +20,7 @@ const DUST_THRESHOLD_USD = 0.01;
 interface PositionEntry extends Position {
   protocol?: string;
   name: string;
-  application_metadata?: z.infer<typeof ZerionApplicationMetadataSchema>;
+  application_metadata?: z.infer<typeof ApplicationMetadataSchema>;
 }
 
 @Injectable()

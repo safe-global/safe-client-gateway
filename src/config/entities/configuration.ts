@@ -1,4 +1,3 @@
-import { getBlocklist } from '@/config/entities/blocklist.config';
 import type { RelayRules } from '@/modules/relay/domain/entities/relay.configuration';
 
 // Custom configuration for the application
@@ -113,7 +112,10 @@ export default () => ({
     },
   },
   blockchain: {
-    blocklist: getBlocklist(),
+    blocklistEnabled: process.env.BLOCKLIST_ENABLED?.toLowerCase() !== 'false',
+    blocklistSecretData: process.env.BLOCKLIST_ENCRYPTED_DATA,
+    blocklistSecretKey: process.env.BLOCKLIST_SECRET_KEY,
+    blocklistSecretSalt: process.env.BLOCKLIST_SECRET_SALT,
     infura: {
       apiKey: process.env.INFURA_API_KEY,
     },
@@ -414,6 +416,8 @@ export default () => ({
       56: process.env.RELAY_PROVIDER_API_KEY_BSC,
       // Gnosis
       100: process.env.RELAY_PROVIDER_API_KEY_GNOSIS_CHAIN,
+      // Unichain
+      130: process.env.RELAY_PROVIDER_API_KEY_UNICHAIN,
       // Polygon
       137: process.env.RELAY_PROVIDER_API_KEY_POLYGON,
       // Polygon zkEVM

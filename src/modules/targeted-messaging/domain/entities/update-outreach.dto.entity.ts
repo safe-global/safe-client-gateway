@@ -1,22 +1,7 @@
-import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
-import { z } from 'zod';
+import type { OutreachBaseSchema } from '@/modules/targeted-messaging/domain/entities/outreach.entity';
+import type { z } from 'zod';
 
-export const UpdateOutreachDtoSchema = z.object({
-  name: z.string(),
-  startDate: z.coerce.date(),
-  endDate: z.coerce.date(),
-  sourceId: z
-    .number()
-    .int()
-    .gte(1)
-    .lte(DB_MAX_SAFE_INTEGER - 1),
-  type: z.string(),
-  teamName: z.string(),
-});
-
-export class UpdateOutreachDto implements z.infer<
-  typeof UpdateOutreachDtoSchema
-> {
+export class UpdateOutreachDto implements z.infer<typeof OutreachBaseSchema> {
   name: string;
   startDate: Date;
   endDate: Date;

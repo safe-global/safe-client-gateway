@@ -12,7 +12,7 @@ import type {
 } from '@/modules/csv-export/v1/entities/csv-export-job-data.entity';
 import { faker } from '@faker-js/faker/.';
 import type { Job } from 'bullmq';
-import { CSV_EXPORT_WORKER_CONCURRENCY } from '@/domain/common/entities/jobs.constants';
+import { CSV_EXPORT_WORKER_CONCURRENCY } from '@/domain/common/jobs.constants';
 
 const csvExportService = {
   export: jest.fn(),

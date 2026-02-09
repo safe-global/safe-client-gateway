@@ -1,42 +1,17 @@
 import { z } from 'zod';
-import { HexSchema } from '@/validation/entities/schemas/hex.schema';
 import { TypedDataSchema } from '@/modules/messages/domain/entities/typed-data.entity';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { Operation } from '@/modules/safe/domain/entities/operation.entity';
-import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
+import { TransactionBaseSchema } from '@/domain/common/schemas/transaction-base.schema';
 
 /**
  * Request schema for counterparty analysis endpoint.
  *
  * Accepts the minimal Safe transaction payload required to perform
  * combined recipient and contract analysis in a single request.
+ *
+ * Uses the same structure as TransactionBaseSchema for consistency and reusability.
  */
-export const CounterpartyAnalysisRequestSchema = z.object({
-  /** Target address for the transaction */
-  to: AddressSchema,
-
-  /**
-   * Amount of ETH (in wei) being sent with the transaction.
-   * Represented as a string to handle large numbers without precision loss.
-   */
-  value: NumericStringSchema,
-
-  /**
-   * Transaction data payload as a hex string.
-   * Contains encoded function calls, parameters, or arbitrary data.
-   * For simple transfers: "0x" (empty)
-   * For contract calls: encoded function signature + parameters
-   */
-  data: HexSchema,
-
-  /**
-   * Type of operation being performed (Safe-specific).
-   * - 0 = CALL - Regular transaction call
-   * - 1 = DELEGATECALL - Delegate call (executes in Safe's context)
-   * Used to determine security analysis scope and delegatecall risks.
-   */
-  operation: z.enum(Operation),
-});
+export const CounterpartyAnalysisRequestSchema = TransactionBaseSchema;
 
 /**
  * Request schema for EIP-712 typed data threat analysis endpoint.

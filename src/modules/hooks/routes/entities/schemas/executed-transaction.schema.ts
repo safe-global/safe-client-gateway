@@ -2,12 +2,11 @@ import { TransactionEventType } from '@/modules/hooks/routes/entities/event-type
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { HexSchema } from '@/validation/entities/schemas/hex.schema';
 import { z } from 'zod';
+import { HookEventBaseSchema } from '@/modules/hooks/routes/entities/schemas/hook-event-base.schema';
 
-export const ExecutedTransactionEventSchema = z.object({
+export const ExecutedTransactionEventSchema = HookEventBaseSchema.extend({
   type: z.literal(TransactionEventType.EXECUTED_MULTISIG_TRANSACTION),
   to: AddressSchema,
-  address: AddressSchema,
-  chainId: z.string(),
   safeTxHash: HexSchema,
   txHash: HexSchema,
   failed: z.enum(['true', 'false']),

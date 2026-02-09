@@ -1,6 +1,6 @@
 import { faker } from '@faker-js/faker';
 import { get } from 'lodash';
-import { type Address, concat, getAddress } from 'viem';
+import { type Address, type Hex, concat, getAddress } from 'viem';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 import { SignatureType } from '@/domain/common/entities/signature-type.entity';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
@@ -20,6 +20,7 @@ import type { Delegate } from '@/modules/delegate/domain/entities/delegate.entit
 import type { IContractsRepository } from '@/modules/contracts/domain/contracts.repository.interface';
 import { getSafeTxHash } from '@/domain/common/utils/safe';
 import { confirmationBuilder } from '@/modules/safe/domain/entities/__tests__/multisig-transaction-confirmation.builder';
+import type { IBlocklistService } from '@/config/entities/blocklist.interface';
 
 const mockConfigurationService = jest.mocked({
   getOrThrow: jest.fn(),
@@ -37,6 +38,11 @@ const mockContractsRepository = jest.mocked({
   isTrustedForDelegateCall: jest.fn(),
 } as jest.MockedObjectDeep<IContractsRepository>);
 
+const mockBlocklistService = jest.mocked({
+  getBlocklist: jest.fn(),
+  clearCache: jest.fn(),
+} as jest.MockedObjectDeep<IBlocklistService>);
+
 describe('TransactionVerifierHelper', () => {
   let target: TransactionVerifierHelper;
 
@@ -50,12 +56,14 @@ describe('TransactionVerifierHelper', () => {
       mockDelegatesRepository,
       mockLoggingRepository,
       mockContractsRepository,
+      mockBlocklistService,
     );
   }
 
   beforeEach(() => {
     jest.resetAllMocks();
 
+    mockBlocklistService.getBlocklist.mockReturnValue([]);
     initTarget(configuration);
   });
 
@@ -451,14 +459,13 @@ describe('TransactionVerifierHelper', () => {
     it('should throw and log if a signer is blocked', async () => {
       const privateKey = generatePrivateKey();
       const signer = privateKeyToAccount(privateKey);
+
+      mockBlocklistService.getBlocklist.mockReturnValue([signer.address]);
+
       const defaultConfiguration = configuration();
       const testConfiguration = (): ReturnType<typeof configuration> => {
         return {
           ...defaultConfiguration,
-          blockchain: {
-            ...defaultConfiguration.blockchain,
-            blocklist: [signer.address],
-          },
         };
       };
       initTarget(testConfiguration);
@@ -1394,14 +1401,13 @@ describe('TransactionVerifierHelper', () => {
           return privateKeyToAccount(privateKey);
         },
       );
+
+      mockBlocklistService.getBlocklist.mockReturnValue([signers[0].address]);
+
       const defaultConfiguration = configuration();
       const testConfiguration = (): ReturnType<typeof configuration> => {
         return {
           ...defaultConfiguration,
-          blockchain: {
-            ...defaultConfiguration.blockchain,
-            blocklist: [signers[0].address],
-          },
         };
       };
       initTarget(testConfiguration);
@@ -2139,14 +2145,18 @@ describe('TransactionVerifierHelper', () => {
             safe,
             signatureType,
           });
-        const v = transaction.confirmations![0].signature?.slice(-2);
+
+        const signature = transaction.confirmations![0].signature as Hex;
+        // Replace one hex digit in the r component with 'g' (invalid hex char)
+        const invalidSignature =
+          `${signature.slice(0, 65)}g${signature.slice(66)}` as Hex;
 
         expect(() => {
           return target.verifyConfirmation({
             chainId,
             safe,
             transaction,
-            signature: `0x${'-'.repeat(128)}${v}`,
+            signature: invalidSignature,
           });
         }).toThrow(new Error('Could not recover address'));
 
@@ -2162,14 +2172,15 @@ describe('TransactionVerifierHelper', () => {
           return privateKeyToAccount(privateKey);
         },
       );
+
+      mockBlocklistService.getBlocklist.mockReturnValue([
+        blockedSigner.address,
+      ]);
+
       const defaultConfiguration = configuration();
       const testConfiguration = (): ReturnType<typeof configuration> => {
         return {
           ...defaultConfiguration,
-          blockchain: {
-            ...defaultConfiguration.blockchain,
-            blocklist: [blockedSigner.address],
-          },
         };
       };
       initTarget(testConfiguration);

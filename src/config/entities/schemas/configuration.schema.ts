@@ -37,6 +37,9 @@ export const RootConfigurationSchema = z
     AWS_KMS_ENCRYPTION_KEY_ID: z.string().optional(),
     AWS_SECRET_ACCESS_KEY: z.string().optional(),
     AWS_REGION: z.string().optional(),
+    BLOCKLIST_ENCRYPTED_DATA: z.string(),
+    BLOCKLIST_SECRET_KEY: z.string(),
+    BLOCKLIST_SECRET_SALT: z.string(),
     CGW_ENV: z.string().optional(),
     CIRCUIT_BREAKER_FAILURE_THRESHOLD: z.coerce
       .number()
@@ -88,6 +91,7 @@ export const RootConfigurationSchema = z
     RELAY_PROVIDER_API_KEY_AVALANCHE: z.string(),
     RELAY_PROVIDER_API_KEY_LINEA: z.string(),
     RELAY_PROVIDER_API_KEY_BLAST: z.string(),
+    RELAY_PROVIDER_API_KEY_UNICHAIN: z.string(),
     RELAY_PROVIDER_API_KEY_SEPOLIA: z.string(),
     RELAY_DAILY_LIMIT_CHAIN_IDS: z
       .string()

@@ -1,7 +1,6 @@
 import { z } from 'zod';
 import { AppPositionGroupsSchema } from '@/modules/portfolio/domain/entities/app-position.entity';
-
-const FiatStringSchema = z.string().regex(/^-?(?:0|[1-9]\d*)(?:\.\d+)?$/);
+import { FiatStringSchema } from '@/modules/portfolio/domain/entities/token-info.entity';
 
 export const AppBalanceAppInfoSchema = z.object({
   name: z.string(),

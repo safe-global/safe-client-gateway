@@ -224,12 +224,6 @@ describe('MultisigTransaction', () => {
           code: 'invalid_type',
           expected: 'string',
           message: 'Invalid input: expected string, received undefined',
-          path: ['safe'],
-        },
-        {
-          code: 'invalid_type',
-          expected: 'string',
-          message: 'Invalid input: expected string, received undefined',
           path: ['to'],
         },
         {
@@ -243,6 +237,12 @@ describe('MultisigTransaction', () => {
           message: 'Invalid option: expected one of 0|1',
           path: ['operation'],
           values: [0, 1],
+        },
+        {
+          code: 'invalid_type',
+          expected: 'string',
+          message: 'Invalid input: expected string, received undefined',
+          path: ['safe'],
         },
         {
           code: 'invalid_union',
@@ -330,12 +330,6 @@ describe('MultisigTransaction', () => {
           code: 'invalid_type',
           expected: 'string',
           message: 'Invalid input: expected string, received undefined',
-          path: ['safe'],
-        },
-        {
-          code: 'invalid_type',
-          expected: 'string',
-          message: 'Invalid input: expected string, received undefined',
           path: ['to'],
         },
         {
@@ -349,6 +343,12 @@ describe('MultisigTransaction', () => {
           message: 'Invalid option: expected one of 0|1',
           path: ['operation'],
           values: [0, 1],
+        },
+        {
+          code: 'invalid_type',
+          expected: 'string',
+          message: 'Invalid input: expected string, received undefined',
+          path: ['safe'],
         },
         {
           code: 'invalid_union',

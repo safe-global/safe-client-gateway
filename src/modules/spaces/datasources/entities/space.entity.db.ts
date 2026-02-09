@@ -12,7 +12,7 @@ import {
 import { Member } from '@/modules/users/datasources/entities/member.entity.db';
 import { databaseEnumTransformer } from '@/domain/common/utils/enum';
 import { SpaceSafe } from '@/modules/spaces/datasources/entities/space-safes.entity.db';
-import { NAME_MAX_LENGTH } from '@/domain/common/entities/name.schema';
+import { NAME_MAX_LENGTH } from '@/domain/common/schemas/name.schema';
 
 @Entity('spaces')
 export class Space implements DomainSpace {
