@@ -81,7 +81,9 @@ export class GetSpaceResponse {
     description:
       'Optional: safes data. Returns addresses grouped by chainId (passFullData) or total count (passCount).',
   })
-  public safes?: { [chainId: SpaceSafe['chainId']]: Array<SpaceSafe['address']> } | number;
+  public safes?:
+    | { [chainId: SpaceSafe['chainId']]: Array<SpaceSafe['address']> }
+    | number;
 }
 
 export enum SafesMode {

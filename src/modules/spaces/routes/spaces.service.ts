@@ -7,7 +7,10 @@ import { User } from '@/modules/users/domain/entities/user.entity';
 import { IMembersRepository } from '@/modules/users/domain/members.repository.interface';
 import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
 import { CreateSpaceResponse } from '@/modules/spaces/routes/entities/create-space.dto.entity';
-import { SafesMode, type GetSpaceResponse } from '@/modules/spaces/routes/entities/get-space.dto.entity';
+import {
+  SafesMode,
+  type GetSpaceResponse,
+} from '@/modules/spaces/routes/entities/get-space.dto.entity';
 import type {
   UpdateSpaceDto,
   UpdateSpaceResponse,
