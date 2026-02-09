@@ -350,9 +350,6 @@ describe('ChainsRepository', () => {
         limit,
         offset,
       });
-      expect(mockConfigurationService.getOrThrow).toHaveBeenCalledWith(
-        'safeConfig.serviceKey',
-      );
     });
 
     it('should return single chain from v2 endpoint', async () => {
@@ -374,9 +371,6 @@ describe('ChainsRepository', () => {
         'frontend',
         chainId,
       );
-      expect(mockConfigurationService.getOrThrow).toHaveBeenCalledWith(
-        'safeConfig.serviceKey',
-      );
     });
 
     it('should clear v2 cache for a chain', async () => {
@@ -389,9 +383,6 @@ describe('ChainsRepository', () => {
       expect(mockConfigApi.clearChainV2).toHaveBeenCalledWith(
         'frontend',
         chainId,
-      );
-      expect(mockConfigurationService.getOrThrow).toHaveBeenCalledWith(
-        'safeConfig.serviceKey',
       );
     });
   });

@@ -27,6 +27,7 @@ export class ChainsRepository implements IChainsRepository {
   static readonly MAX_LIMIT = 40;
 
   private readonly maxSequentialPages: number;
+  private readonly serviceKey: string;
 
   constructor(
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
@@ -38,6 +39,9 @@ export class ChainsRepository implements IChainsRepository {
   ) {
     this.maxSequentialPages = this.configurationService.getOrThrow<number>(
       'safeConfig.chains.maxSequentialPages',
+    );
+    this.serviceKey = this.configurationService.getOrThrow<string>(
+      'safeConfig.serviceKey',
     );
   }
 
@@ -65,11 +69,8 @@ export class ChainsRepository implements IChainsRepository {
   }
 
   async getChainsV2(limit?: number, offset?: number): Promise<Page<Chain>> {
-    const serviceKey = this.configurationService.getOrThrow<string>(
-      'safeConfig.serviceKey',
-    );
     const page = await this.configApi
-      .getChainsV2(serviceKey, { limit, offset })
+      .getChainsV2(this.serviceKey, { limit, offset })
       .then(LenientBasePageSchema.parse);
     const valid = ChainLenientPageSchema.parse(page);
     if (valid.results.length < page.results.length) {
@@ -82,18 +83,12 @@ export class ChainsRepository implements IChainsRepository {
   }
 
   async getChainV2(chainId: string): Promise<Chain> {
-    const serviceKey = this.configurationService.getOrThrow<string>(
-      'safeConfig.serviceKey',
-    );
-    const chain = await this.configApi.getChainV2(serviceKey, chainId);
+    const chain = await this.configApi.getChainV2(this.serviceKey, chainId);
     return ChainSchema.parse(chain);
   }
 
-  async clearChainV2(chainId: string): Promise<void> {
-    const serviceKey = this.configurationService.getOrThrow<string>(
-      'safeConfig.serviceKey',
-    );
-    return this.configApi.clearChainV2(serviceKey, chainId);
+  async clearChainV2(chainId: string, serviceKey?: string): Promise<void> {
+    return this.configApi.clearChainV2(serviceKey ?? this.serviceKey, chainId);
   }
 
   async getAllChains(): Promise<Array<Chain>> {
