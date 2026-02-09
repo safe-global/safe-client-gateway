@@ -519,7 +519,7 @@ export class EventCacheHelper {
     return [
       Promise.all([
         this.chainsRepository.clearChain(event.chainId),
-        this.chainsRepository.clearChainV2(event.chainId),
+        this.chainsRepository.clearChainV2(event.chainId, event.service),
       ]).then(() => {
         // RPC may have changed
         this.blockchainRepository.clearApi(event.chainId);

@@ -54,7 +54,7 @@ export interface IChainsRepository {
    *
    * @param chainId
    */
-  clearChainV2(chainId: string): Promise<void>;
+  clearChainV2(chainId: string, serviceKey?: string): Promise<void>;
 
   /**
    * Gets the supported {@link Singleton} associated with {@link chainId}
