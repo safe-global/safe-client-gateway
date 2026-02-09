@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
 import { SafeList } from '@/modules/owners/routes/entities/safe-list.entity';
 import { SafesByChainId } from '@/modules/safe/domain/entities/safes-by-chain-id.entity';
+import { SafesByChainIdV3 } from '@/modules/safe/domain/entities/safes-by-chain-id-v3.entity';
 import { findSimilarAddressPairs } from '@/modules/owners/routes/utils/address-poisoning';
 import {
   type ILoggingService,
@@ -23,13 +24,6 @@ export class OwnersService {
     ownerAddress: Address;
   }): Promise<SafeList> {
     return this.safeRepository.getSafesByOwner(args);
-  }
-
-  async getSafesByOwnerV2(args: {
-    chainId: string;
-    ownerAddress: Address;
-  }): Promise<SafeList> {
-    return this.safeRepository.getSafesByOwnerV2(args);
   }
 
   async getAllSafesByOwner(args: {
@@ -108,9 +102,9 @@ export class OwnersService {
     return Object.fromEntries(results);
   }
 
-  async getAllSafesByOwnerV2(args: {
+  async getAllSafesByOwnerV3(args: {
     ownerAddress: Address;
-  }): Promise<SafesByChainId> {
-    return this.safeRepository.getAllSafesByOwnerV2(args);
+  }): Promise<SafesByChainIdV3> {
+    return this.safeRepository.getAllSafesByOwnerV3(args);
   }
 }

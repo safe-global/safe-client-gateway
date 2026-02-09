@@ -13,6 +13,7 @@ import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.b
 import { rawify } from '@/validation/entities/raw.entity';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import type { SafeV2 } from '@/modules/safe/domain/entities/safe.entity';
+import { DataSourceError } from '@/domain/errors/data-source.error';
 
 const mockTransactionApiManager = {
   getApi: jest.fn(),
@@ -66,7 +67,7 @@ describe('SafeRepository', () => {
     );
   });
 
-  describe('getSafesByOwnerV2', () => {
+  describe('getSafesByOwnerV3', () => {
     const chainId = faker.string.numeric();
     const ownerAddress = faker.finance.ethereumAddress() as Address;
 
@@ -82,7 +83,7 @@ describe('SafeRepository', () => {
       enabledModules: [getAddress(faker.finance.ethereumAddress())],
     });
 
-    it('should return safes from a single page', async () => {
+    it('should return safes as a map from a single page', async () => {
       const safes = [createSafeV2(), createSafeV2()];
       const page = pageBuilder<SafeV2>()
         .with('results', safes)
@@ -92,7 +93,7 @@ describe('SafeRepository', () => {
 
       mockTransactionApi.getSafesByOwnerV2.mockResolvedValue(rawify(page));
 
-      const result = await repository.getSafesByOwnerV2({
+      const result = await repository.getSafesByOwnerV3({
         chainId,
         ownerAddress,
       });
@@ -103,9 +104,9 @@ describe('SafeRepository', () => {
         limit: SAFE_TRANSACTION_SERVICE_MAX_LIMIT,
         offset: 0,
       });
-      expect(result).toEqual({
-        safes: safes.map((safe) => safe.address),
-      });
+      expect(result).toEqual(
+        Object.fromEntries(safes.map((safe) => [safe.address, safe])),
+      );
       expect(mockLoggingService.error).not.toHaveBeenCalled();
     });
 
@@ -118,12 +119,12 @@ describe('SafeRepository', () => {
 
       mockTransactionApi.getSafesByOwnerV2.mockResolvedValue(rawify(page));
 
-      const result = await repository.getSafesByOwnerV2({
+      const result = await repository.getSafesByOwnerV3({
         chainId,
         ownerAddress,
       });
 
-      expect(result).toEqual({ safes: [] });
+      expect(result).toEqual({});
     });
 
     it('should paginate through multiple pages', async () => {
@@ -150,7 +151,7 @@ describe('SafeRepository', () => {
         .mockResolvedValueOnce(rawify(page1))
         .mockResolvedValueOnce(rawify(page2));
 
-      const result = await repository.getSafesByOwnerV2({
+      const result = await repository.getSafesByOwnerV3({
         chainId,
         ownerAddress,
       });
@@ -168,19 +169,19 @@ describe('SafeRepository', () => {
       });
 
       const allSafes = [...safesPage1, ...safesPage2];
-      expect(result).toEqual({
-        safes: allSafes.map((safe) => safe.address),
-      });
+      expect(result).toEqual(
+        Object.fromEntries(allSafes.map((safe) => [safe.address, safe])),
+      );
     });
 
     it('should handle max sequential pages limit', async () => {
       const baseUrl = 'https://example.com/api/v2/owners/safes/';
-      const safes = [createSafeV2()];
 
-      // Create pages that exceed maxSequentialPages
-      const pages = Array.from({ length: maxSequentialPages + 1 }, (_, i) =>
-        pageBuilder<SafeV2>()
-          .with('results', safes)
+      // Create pages that exceed maxSequentialPages, each with a unique safe
+      const pages = Array.from({ length: maxSequentialPages + 1 }, (_, i) => {
+        const safe = createSafeV2();
+        return pageBuilder<SafeV2>()
+          .with('results', [safe])
           .with(
             'next',
             i < maxSequentialPages
@@ -188,8 +189,8 @@ describe('SafeRepository', () => {
               : null,
           )
           .with('previous', null)
-          .build(),
-      );
+          .build();
+      });
 
       pages.forEach((page) => {
         mockTransactionApi.getSafesByOwnerV2.mockResolvedValueOnce(
@@ -197,7 +198,7 @@ describe('SafeRepository', () => {
         );
       });
 
-      const result = await repository.getSafesByOwnerV2({
+      const result = await repository.getSafesByOwnerV3({
         chainId,
         ownerAddress,
       });
@@ -206,9 +207,9 @@ describe('SafeRepository', () => {
         maxSequentialPages,
       );
       expect(mockLoggingService.error).toHaveBeenCalledWith(
-        `Max sequential pages reached for getSafesByOwnerV2. chainId=${chainId}, ownerAddress=${ownerAddress}`,
+        `Max sequential pages reached for getSafesByOwnerV3. chainId=${chainId}, ownerAddress=${ownerAddress}`,
       );
-      expect(result.safes).toHaveLength(maxSequentialPages);
+      expect(Object.keys(result)).toHaveLength(maxSequentialPages);
     });
 
     it('should extract offset from next URL correctly', async () => {
@@ -236,7 +237,7 @@ describe('SafeRepository', () => {
         .mockResolvedValueOnce(rawify(page1))
         .mockResolvedValueOnce(rawify(page2));
 
-      await repository.getSafesByOwnerV2({
+      await repository.getSafesByOwnerV3({
         chainId,
         ownerAddress,
       });
@@ -248,39 +249,63 @@ describe('SafeRepository', () => {
       });
     });
 
+    it('should handle 404 errors by returning empty map', async () => {
+      const error = new DataSourceError('Not found', 404);
+
+      mockTransactionApi.getSafesByOwnerV2.mockRejectedValue(error);
+
+      const result = await repository.getSafesByOwnerV3({
+        chainId,
+        ownerAddress,
+      });
+
+      expect(result).toEqual({});
+    });
+
     it('should handle API errors', async () => {
       const error = new Error('API error');
       mockTransactionApi.getSafesByOwnerV2.mockRejectedValue(error);
 
       await expect(
-        repository.getSafesByOwnerV2({
+        repository.getSafesByOwnerV3({
           chainId,
           ownerAddress,
         }),
       ).rejects.toThrow('API error');
     });
 
-    it('should handle schema validation errors', async () => {
-      const invalidPage = pageBuilder<SafeV2>()
-        .with('results', [{ invalid: 'data' }] as unknown as Array<SafeV2>)
+    it('should handle null guard and moduleGuard', async () => {
+      const safe = {
+        address: getAddress(faker.finance.ethereumAddress()),
+        owners: [getAddress(faker.finance.ethereumAddress())],
+        threshold: faker.number.int({ min: 1 }),
+        nonce: faker.number.int({ min: 0 }),
+        masterCopy: getAddress(faker.finance.ethereumAddress()),
+        fallbackHandler: getAddress(faker.finance.ethereumAddress()),
+        guard: null,
+        moduleGuard: null,
+        enabledModules: [],
+      };
+      const page = pageBuilder<SafeV2>()
+        .with('results', [safe])
         .with('next', null)
         .with('previous', null)
         .build();
 
-      mockTransactionApi.getSafesByOwnerV2.mockResolvedValue(
-        rawify(invalidPage),
-      );
+      mockTransactionApi.getSafesByOwnerV2.mockResolvedValue(rawify(page));
 
-      await expect(
-        repository.getSafesByOwnerV2({
-          chainId,
-          ownerAddress,
-        }),
-      ).rejects.toThrow();
+      const result = await repository.getSafesByOwnerV3({
+        chainId,
+        ownerAddress,
+      });
+
+      expect(result).toEqual({
+        [safe.address]: safe,
+      });
     });
   });
 
-  describe('getAllSafesByOwnerV2', () => {
+  describe('getAllSafesByOwnerV3', () => {
     const ownerAddress = faker.finance.ethereumAddress() as Address;
 
     const createSafeV2 = (): SafeV2 => ({
@@ -295,7 +320,7 @@ describe('SafeRepository', () => {
       enabledModules: [getAddress(faker.finance.ethereumAddress())],
     });
 
-    it('should return safes from several chains', async () => {
+    it('should return safes from several chains as maps', async () => {
       const chain1 = chainBuilder().with('chainId', '1').build();
       const chain2 = chainBuilder().with('chainId', '137').build();
       const chains = [chain1, chain2];
@@ -322,13 +347,17 @@ describe('SafeRepository', () => {
         .mockResolvedValueOnce(rawify(page1))
         .mockResolvedValueOnce(rawify(page2));
 
-      const result = await repository.getAllSafesByOwnerV2({ ownerAddress });
+      const result = await repository.getAllSafesByOwnerV3({ ownerAddress });
 
       expect(mockChainsRepository.getAllChains).toHaveBeenCalledTimes(1);
       expect(mockTransactionApi.getSafesByOwnerV2).toHaveBeenCalledTimes(2);
       expect(result).toEqual({
-        '1': safesChain1.map((safe) => safe.address),
-        '137': safesChain2.map((safe) => safe.address),
+        '1': Object.fromEntries(
+          safesChain1.map((safe) => [safe.address, safe]),
+        ),
+        '137': Object.fromEntries(
+          safesChain2.map((safe) => [safe.address, safe]),
+        ),
       });
     });
 
@@ -353,10 +382,12 @@ describe('SafeRepository', () => {
         .mockResolvedValueOnce(rawify(page1))
         .mockRejectedValueOnce(error);
 
-      const result = await repository.getAllSafesByOwnerV2({ ownerAddress });
+      const result = await repository.getAllSafesByOwnerV3({ ownerAddress });
 
       expect(result).toEqual({
-        '1': safesChain1.map((safe) => safe.address),
+        '1': Object.fromEntries(
+          safesChain1.map((safe) => [safe.address, safe]),
+        ),
         '137': null,
       });
       expect(mockLoggingService.warn).toHaveBeenCalledWith(
@@ -372,9 +403,10 @@ describe('SafeRepository', () => {
       const error = new Error('API error');
 
       mockChainsRepository.getAllChains.mockResolvedValue(chains);
+      mockTransactionApiManager.getApi.mockResolvedValue(mockTransactionApi);
       mockTransactionApi.getSafesByOwnerV2.mockRejectedValue(error);
 
-      const result = await repository.getAllSafesByOwnerV2({ ownerAddress });
+      const result = await repository.getAllSafesByOwnerV3({ ownerAddress });
 
       expect(result).toEqual({
         '1': null,
@@ -386,7 +418,7 @@ describe('SafeRepository', () => {
     it('should handle empty chains list', async () => {
       mockChainsRepository.getAllChains.mockResolvedValue([]);
 
-      const result = await repository.getAllSafesByOwnerV2({ ownerAddress });
+      const result = await repository.getAllSafesByOwnerV3({ ownerAddress });
 
       expect(result).toEqual({});
       expect(mockTransactionApi.getSafesByOwnerV2).not.toHaveBeenCalled();
@@ -422,12 +454,12 @@ describe('SafeRepository', () => {
         .mockResolvedValueOnce(rawify(page1))
         .mockResolvedValueOnce(rawify(page2));
 
-      const result = await repository.getAllSafesByOwnerV2({ ownerAddress });
+      const result = await repository.getAllSafesByOwnerV3({ ownerAddress });
 
       expect(mockTransactionApi.getSafesByOwnerV2).toHaveBeenCalledTimes(2);
       const allSafes = [...safesPage1, ...safesPage2];
       expect(result).toEqual({
-        '1': allSafes.map((safe) => safe.address),
+        '1': Object.fromEntries(allSafes.map((safe) => [safe.address, safe])),
       });
     });
 
@@ -436,7 +468,7 @@ describe('SafeRepository', () => {
       mockChainsRepository.getAllChains.mockRejectedValue(error);
 
       await expect(
-        repository.getAllSafesByOwnerV2({ ownerAddress }),
+        repository.getAllSafesByOwnerV3({ ownerAddress }),
       ).rejects.toThrow('Failed to get chains');
     });
   });

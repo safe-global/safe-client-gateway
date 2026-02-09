@@ -6,9 +6,8 @@ import type { Address } from 'viem';
 
 const safeRepositoryMock: jest.MockedObjectDeep<SafeRepository> = {
   getSafesByOwner: jest.fn(),
-  getSafesByOwnerV2: jest.fn(),
   getAllSafesByOwner: jest.fn(),
-  getAllSafesByOwnerV2: jest.fn(),
+  getAllSafesByOwnerV3: jest.fn(),
   getCreationTransaction: jest.fn(),
 } as jest.MockedObjectDeep<SafeRepository>;
 
@@ -59,44 +58,6 @@ describe('OwnersService', () => {
       await expect(
         service.getSafesByOwner({ chainId, ownerAddress }),
       ).rejects.toThrow('Repository error');
-    });
-  });
-
-  describe('getSafesByOwnerV2', () => {
-    it('should call repository.getSafesByOwnerV2 with correct arguments', async () => {
-      const chainId = faker.string.numeric();
-      const ownerAddress = faker.finance.ethereumAddress() as Address;
-      const mockSafes = [
-        faker.finance.ethereumAddress() as Address,
-        faker.finance.ethereumAddress() as Address,
-      ];
-      const mockResult = { safes: mockSafes };
-
-      safeRepositoryMock.getSafesByOwnerV2.mockResolvedValue(mockResult);
-
-      const result = await service.getSafesByOwnerV2({
-        chainId,
-        ownerAddress,
-      });
-
-      expect(safeRepositoryMock.getSafesByOwnerV2).toHaveBeenCalledTimes(1);
-      expect(safeRepositoryMock.getSafesByOwnerV2).toHaveBeenCalledWith({
-        chainId,
-        ownerAddress,
-      });
-      expect(result).toEqual(mockResult);
-    });
-
-    it('should propagate errors from repository', async () => {
-      const chainId = faker.string.numeric();
-      const ownerAddress = faker.finance.ethereumAddress() as Address;
-      const error = new Error('Repository error V2');
-
-      safeRepositoryMock.getSafesByOwnerV2.mockRejectedValue(error);
-
-      await expect(
-        service.getSafesByOwnerV2({ chainId, ownerAddress }),
-      ).rejects.toThrow('Repository error V2');
     });
   });
 
@@ -243,26 +204,51 @@ describe('OwnersService', () => {
     });
   });
 
-  describe('getAllSafesByOwnerV2', () => {
-    it('should call repository.getAllSafesByOwnerV2 with correct arguments', async () => {
+  describe('getAllSafesByOwnerV3', () => {
+    it('should call repository.getAllSafesByOwnerV3 with correct arguments', async () => {
       const ownerAddress = faker.finance.ethereumAddress() as Address;
       const chainId1 = faker.string.numeric();
       const chainId2 = faker.string.numeric({ exclude: [chainId1] });
 
-      const mockResult = {
-        [chainId1]: [
-          faker.finance.ethereumAddress(),
-          faker.finance.ethereumAddress(),
-        ],
-        [chainId2]: [faker.finance.ethereumAddress()],
+      const safe1 = {
+        address: faker.finance.ethereumAddress() as Address,
+        owners: [faker.finance.ethereumAddress() as Address],
+        threshold: faker.number.int({ min: 1 }),
+        nonce: faker.number.int({ min: 0 }),
+        masterCopy: faker.finance.ethereumAddress() as Address,
+        fallbackHandler: faker.finance.ethereumAddress() as Address,
+        guard: faker.finance.ethereumAddress() as Address,
+        moduleGuard: faker.finance.ethereumAddress() as Address,
+        enabledModules: [faker.finance.ethereumAddress() as Address],
       };
 
-      safeRepositoryMock.getAllSafesByOwnerV2.mockResolvedValue(mockResult);
+      const safe2 = {
+        address: faker.finance.ethereumAddress() as Address,
+        owners: [faker.finance.ethereumAddress() as Address],
+        threshold: faker.number.int({ min: 1 }),
+        nonce: faker.number.int({ min: 0 }),
+        masterCopy: faker.finance.ethereumAddress() as Address,
+        fallbackHandler: faker.finance.ethereumAddress() as Address,
+        guard: faker.finance.ethereumAddress() as Address,
+        moduleGuard: faker.finance.ethereumAddress() as Address,
+        enabledModules: [faker.finance.ethereumAddress() as Address],
+      };
 
-      const result = await service.getAllSafesByOwnerV2({ ownerAddress });
+      const mockResult = {
+        [chainId1]: {
+          [safe1.address]: safe1,
+        },
+        [chainId2]: {
+          [safe2.address]: safe2,
+        },
+      };
 
-      expect(safeRepositoryMock.getAllSafesByOwnerV2).toHaveBeenCalledTimes(1);
-      expect(safeRepositoryMock.getAllSafesByOwnerV2).toHaveBeenCalledWith({
+      safeRepositoryMock.getAllSafesByOwnerV3.mockResolvedValue(mockResult);
+
+      const result = await service.getAllSafesByOwnerV3({ ownerAddress });
+
+      expect(safeRepositoryMock.getAllSafesByOwnerV3).toHaveBeenCalledTimes(1);
+      expect(safeRepositoryMock.getAllSafesByOwnerV3).toHaveBeenCalledWith({
         ownerAddress,
       });
       expect(result).toEqual(mockResult);
@@ -270,13 +256,13 @@ describe('OwnersService', () => {
 
     it('should propagate errors from repository', async () => {
       const ownerAddress = faker.finance.ethereumAddress() as Address;
-      const error = new Error('Failed to fetch chains V2');
+      const error = new Error('Failed to fetch chains V3');
 
-      safeRepositoryMock.getAllSafesByOwnerV2.mockRejectedValue(error);
+      safeRepositoryMock.getAllSafesByOwnerV3.mockRejectedValue(error);
 
       await expect(
-        service.getAllSafesByOwnerV2({ ownerAddress }),
-      ).rejects.toThrow('Failed to fetch chains V2');
+        service.getAllSafesByOwnerV3({ ownerAddress }),
+      ).rejects.toThrow('Failed to fetch chains V3');
     });
   });
 });
