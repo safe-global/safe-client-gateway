@@ -987,6 +987,9 @@ export class TransactionApi implements ITransactionApi {
             offset: args.offset,
           },
           timeout: this.ownersTimeout,
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getTransactionServiceKey(this.chainId),
+          },
         },
       });
     } catch (error) {
