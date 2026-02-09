@@ -38,9 +38,6 @@ import {
   type ILoggingService,
   LoggingService,
 } from '@/logging/logging.interface';
-
-// Mock the getBlocklist function
-
 import { IBlocklistService } from '@/config/entities/blocklist.interface';
 
 import { dataDecodedBuilder } from '@/modules/data-decoder/domain/v2/entities/__tests__/data-decoded.builder';
@@ -95,9 +92,6 @@ describe('Get by id - Transactions Controller', () => {
     });
 
     await initApp(testConfiguration);
-
-    // Reset and mock getBlocklist to return empty array by default (after initApp)
-    jest.spyOn(blocklistService, 'getBlocklist').mockReturnValue([]);
   });
 
   afterEach(async () => {
@@ -1393,11 +1387,6 @@ describe('Get by id - Transactions Controller', () => {
       const privateKey = generatePrivateKey();
       const signer = privateKeyToAccount(privateKey);
 
-      // Mock getBlocklist to return the blocked address
-      jest
-        .spyOn(blocklistService, 'getBlocklist')
-        .mockReturnValue([signer.address]);
-
       const defaultConfiguration = configuration();
       const testConfiguration = (): ReturnType<typeof configuration> => {
         return {
@@ -1408,6 +1397,11 @@ describe('Get by id - Transactions Controller', () => {
         };
       };
       await initApp(testConfiguration);
+
+      jest
+        .spyOn(blocklistService, 'getBlocklist')
+        .mockReturnValue([signer.address]);
+
       const safe = safeBuilder().with('owners', [signer.address]).build();
       const multisigTransaction = await multisigTransactionBuilder()
         .with('safe', safe.address)

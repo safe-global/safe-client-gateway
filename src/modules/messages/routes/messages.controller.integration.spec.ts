@@ -73,9 +73,6 @@ describe('Messages controller', () => {
     jest.resetAllMocks();
 
     await initApp(configuration);
-
-    // Reset and mock getBlocklist to return empty array by default (after initApp)
-    jest.spyOn(blocklistService, 'getBlocklist').mockReturnValue([]);
   });
 
   describe('GET messages by hash', () => {
@@ -1062,11 +1059,6 @@ describe('Messages controller', () => {
         const privateKey = generatePrivateKey();
         const signer = privateKeyToAccount(privateKey);
 
-        // Mock getBlocklist to return the blocked address
-        jest
-          .spyOn(blocklistService, 'getBlocklist')
-          .mockReturnValue([signer.address]);
-
         const defaultConfiguration = configuration();
         const testConfiguration = (): ReturnType<typeof configuration> => {
           return {
@@ -1074,6 +1066,7 @@ describe('Messages controller', () => {
           };
         };
         await initApp(testConfiguration);
+
         const safe = safeBuilder().with('owners', [signer.address]).build();
         const message = await messageBuilder()
           .with('safe', safe.address)
@@ -1082,6 +1075,10 @@ describe('Messages controller', () => {
             safe,
             signers: [signer],
           });
+
+        jest
+          .spyOn(blocklistService, 'getBlocklist')
+          .mockReturnValue([signer.address]);
         networkService.get.mockImplementation(({ url }) => {
           switch (url) {
             case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
@@ -1631,11 +1628,6 @@ describe('Messages controller', () => {
         const privateKey = generatePrivateKey();
         const signer = privateKeyToAccount(privateKey);
 
-        // Mock getBlocklist to return the blocked address
-        jest
-          .spyOn(blocklistService, 'getBlocklist')
-          .mockReturnValue([signer.address]);
-
         const defaultConfiguration = configuration();
         const testConfiguration = (): ReturnType<typeof configuration> => {
           return {
@@ -1643,6 +1635,7 @@ describe('Messages controller', () => {
           };
         };
         await initApp(testConfiguration);
+
         const safe = safeBuilder().with('owners', [signer.address]).build();
         const message = await messageBuilder()
           .with('safeAppId', null)
@@ -1653,6 +1646,10 @@ describe('Messages controller', () => {
             safe,
             signers: [signer],
           });
+
+        jest
+          .spyOn(blocklistService, 'getBlocklist')
+          .mockReturnValue([signer.address]);
         networkService.get.mockImplementation(({ url }) => {
           switch (url) {
             case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:

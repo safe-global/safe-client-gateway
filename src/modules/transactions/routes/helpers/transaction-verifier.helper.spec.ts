@@ -63,9 +63,7 @@ describe('TransactionVerifierHelper', () => {
   beforeEach(() => {
     jest.resetAllMocks();
 
-    // Mock blocklist service to return empty array by default
     mockBlocklistService.getBlocklist.mockReturnValue([]);
-
     initTarget(configuration);
   });
 
@@ -462,7 +460,6 @@ describe('TransactionVerifierHelper', () => {
       const privateKey = generatePrivateKey();
       const signer = privateKeyToAccount(privateKey);
 
-      // Mock getBlocklist to return the blocked address
       mockBlocklistService.getBlocklist.mockReturnValue([signer.address]);
 
       const defaultConfiguration = configuration();
@@ -1405,7 +1402,6 @@ describe('TransactionVerifierHelper', () => {
         },
       );
 
-      // Mock getBlocklist to return the blocked address
       mockBlocklistService.getBlocklist.mockReturnValue([signers[0].address]);
 
       const defaultConfiguration = configuration();
@@ -2177,7 +2173,6 @@ describe('TransactionVerifierHelper', () => {
         },
       );
 
-      // Mock getBlocklist to return the blocked address
       mockBlocklistService.getBlocklist.mockReturnValue([
         blockedSigner.address,
       ]);
