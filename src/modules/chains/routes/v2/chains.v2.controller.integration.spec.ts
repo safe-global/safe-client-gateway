@@ -2,6 +2,7 @@ import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { IConfigurationService } from '@/config/configuration.service.interface';
+import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
 import { NetworkService } from '@/datasources/network/network.service.interface';
 import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
@@ -51,6 +52,10 @@ describe('Chains V2 Controller', () => {
     await app.init();
   });
 
+  afterEach(async () => {
+    await app.close();
+  });
+
   describe('GET /v2/chains', () => {
     it('should return paginated chains from Config Service v2', async () => {
       networkService.get.mockResolvedValueOnce({
@@ -82,7 +87,7 @@ describe('Chains V2 Controller', () => {
       });
 
       await request(app.getHttpServer())
-        .get('/v2/chains?limit=10&offset=20')
+        .get('/v2/chains?cursor=limit%3D10%26offset%3D20')
         .expect(200);
 
       expect(networkService.get).toHaveBeenCalledWith(
@@ -103,7 +108,7 @@ describe('Chains V2 Controller', () => {
         new Error('Config Service unavailable'),
       );
 
-      await request(app.getHttpServer()).get('/v2/chains').expect(500);
+      await request(app.getHttpServer()).get('/v2/chains').expect(503);
     });
   });
 
@@ -132,11 +137,14 @@ describe('Chains V2 Controller', () => {
 
     it('should return 404 for non-existent chain', async () => {
       const chainId = '999';
-      networkService.get.mockRejectedValueOnce({
-        response: {
+      const error = new NetworkResponseError(
+        new URL(`${safeConfigUrl}/api/v2/chains/${serviceKey}/${chainId}`),
+        {
           status: 404,
-        },
-      });
+        } as Response,
+        { message: 'Not Found' },
+      );
+      networkService.get.mockRejectedValueOnce(error);
 
       await request(app.getHttpServer())
         .get(`/v2/chains/${chainId}`)
