@@ -137,7 +137,7 @@ safeConfig: {
 }
 ```
 
-**Environment Variable**: `CONFIG_SERVICE_FRONTEND_KEY`
+**Environment Variable**: `SAFE_CONFIG_FRONTEND_KEY`
 **Default Value**: `"frontend"`
 
 ## Validation Rules

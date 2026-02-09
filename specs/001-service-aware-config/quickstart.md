@@ -16,7 +16,7 @@ Add the following to your `.env` file:
 
 ```bash
 # Optional: Override default service key (defaults to "frontend")
-CONFIG_SERVICE_FRONTEND_KEY=frontend
+SAFE_CONFIG_FRONTEND_KEY=frontend
 
 # Existing required variables
 SAFE_CONFIG_BASE_URI=https://safe-config.safe.global/
@@ -94,7 +94,7 @@ yarn test:integration --testPathPattern=chains.v2
 
 ## Key Implementation Notes
 
-1. **Service Key**: Configured via `CONFIG_SERVICE_FRONTEND_KEY` env var, defaults to `"frontend"`
+1. **Service Key**: Configured via `SAFE_CONFIG_FRONTEND_KEY` env var, defaults to `"frontend"`
 
 2. **Cache Isolation**: v2 endpoints use separate cache keys (`chains_v2_{serviceKey}`) to prevent pollution
 

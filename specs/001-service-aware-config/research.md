@@ -24,7 +24,7 @@
 
 **Task**: Determine how to configure the service key in CGW.
 
-**Decision**: Add `safeConfig.serviceKey` configuration with environment variable `CONFIG_SERVICE_FRONTEND_KEY`, defaulting to `"frontend"`.
+**Decision**: Add `safeConfig.serviceKey` configuration with environment variable `SAFE_CONFIG_FRONTEND_KEY`, defaulting to `"frontend"`.
 
 **Rationale**:
 

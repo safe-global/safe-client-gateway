@@ -29,7 +29,7 @@
 
 ### Configuration (FR-004, FR-005)
 
-- [x] T002 Add `safeConfig.serviceKey` configuration with `CONFIG_SERVICE_FRONTEND_KEY` env var (default "frontend") in `src/config/entities/configuration.ts`
+- [x] T002 Add `safeConfig.serviceKey` configuration with `SAFE_CONFIG_FRONTEND_KEY` env var (default "frontend") in `src/config/entities/configuration.ts`
 - [x] T003 [P] Add serviceKey to configuration schema in `src/config/entities/schemas/configuration.schema.ts`
 
 ### Interface Extensions
@@ -102,14 +102,14 @@
 
 ## Phase 5: User Story 3 - Configurable Service Key (Priority: P2)
 
-**Goal**: Operators can configure the service key via `CONFIG_SERVICE_FRONTEND_KEY` environment variable
+**Goal**: Operators can configure the service key via `SAFE_CONFIG_FRONTEND_KEY` environment variable
 
-**Independent Test**: Set `CONFIG_SERVICE_FRONTEND_KEY=custom` and verify v2 endpoints call Config Service with "custom" service key
+**Independent Test**: Set `SAFE_CONFIG_FRONTEND_KEY=custom` and verify v2 endpoints call Config Service with "custom" service key
 
 ### Implementation for User Story 3
 
 - [x] T030 [US3] Add configuration validation test for `safeConfig.serviceKey` in `src/config/configuration.validator.spec.ts`
-- [ ] T031 [US3] Update `.env.sample` with `CONFIG_SERVICE_FRONTEND_KEY` documentation
+- [ ] T031 [US3] Update `.env.sample` with `SAFE_CONFIG_FRONTEND_KEY` documentation
 - [x] T032 [US3] Add integration test verifying service key is used in Config Service v2 calls in `src/modules/chains/routes/v2/chains.v2.controller.integration.spec.ts`
 
 **Checkpoint**: User Story 3 complete - service key is configurable and validated

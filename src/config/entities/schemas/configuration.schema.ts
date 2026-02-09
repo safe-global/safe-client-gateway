@@ -55,7 +55,7 @@ export const RootConfigurationSchema = z
       .int()
       .min(1)
       .optional(),
-    CONFIG_SERVICE_FRONTEND_KEY: z.string().optional(),
+    SAFE_CONFIG_FRONTEND_KEY: z.string().optional(),
     LOG_LEVEL: z
       .enum(['error', 'warn', 'info', 'http', 'verbose', 'debug', 'silly'])
       .optional(),
