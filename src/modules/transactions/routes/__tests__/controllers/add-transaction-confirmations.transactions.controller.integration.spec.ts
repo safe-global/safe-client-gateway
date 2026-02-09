@@ -33,9 +33,6 @@ import { GlobalErrorFilter } from '@/routes/common/filters/global-error.filter';
 import { APP_FILTER } from '@nestjs/core';
 import { SignatureType } from '@/domain/common/entities/signature-type.entity';
 import { ZodErrorFilter } from '@/routes/common/filters/zod-error.filter';
-
-// Mock the getBlocklist function
-
 import { IBlocklistService } from '@/config/entities/blocklist.interface';
 
 import {
@@ -109,9 +106,6 @@ describe('Add transaction confirmations - Transactions Controller', () => {
     });
 
     await initApp(testConfiguration);
-
-    // Reset and mock getBlocklist to return empty array by default (after initApp)
-    jest.spyOn(blocklistService, 'getBlocklist').mockReturnValue([]);
   });
 
   afterAll(async () => {
@@ -603,10 +597,10 @@ describe('Add transaction confirmations - Transactions Controller', () => {
       });
       await initApp(testConfiguration);
 
-      // Mock getBlocklist to return the blocked address (after initApp)
       jest
         .spyOn(blocklistService, 'getBlocklist')
         .mockReturnValue([signer.address]);
+
       const safe = safeBuilder().with('owners', [signer.address]).build();
       const transaction = multisigToJson(
         await multisigTransactionBuilder()

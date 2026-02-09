@@ -29,9 +29,6 @@ import type { Server } from 'net';
 import request from 'supertest';
 import { getAddress, type Hash } from 'viem';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
-
-// Mock the getBlocklist function
-
 import { IBlocklistService } from '@/config/entities/blocklist.interface';
 
 describe('List queued transactions by Safe - Transactions Controller', () => {
@@ -82,9 +79,6 @@ describe('List queued transactions by Safe - Transactions Controller', () => {
     });
 
     await initApp(testConfiguration);
-
-    // Reset and mock getBlocklist to return empty array by default (after initApp)
-    jest.spyOn(blocklistService, 'getBlocklist').mockReturnValue([]);
   });
 
   afterAll(async () => {
@@ -1056,11 +1050,6 @@ describe('List queued transactions by Safe - Transactions Controller', () => {
       const privateKey = generatePrivateKey();
       const signer = privateKeyToAccount(privateKey);
 
-      // Mock getBlocklist to return the blocked address
-      jest
-        .spyOn(blocklistService, 'getBlocklist')
-        .mockReturnValue([signer.address]);
-
       const defaultConfiguration = configuration();
       const testConfiguration = (): ReturnType<typeof configuration> => {
         return {
@@ -1068,6 +1057,11 @@ describe('List queued transactions by Safe - Transactions Controller', () => {
         };
       };
       await initApp(testConfiguration);
+
+      jest
+        .spyOn(blocklistService, 'getBlocklist')
+        .mockReturnValue([signer.address]);
+
       const safeAddress = getAddress(faker.finance.ethereumAddress());
       const safeResponse = safeBuilder()
         .with('address', safeAddress)

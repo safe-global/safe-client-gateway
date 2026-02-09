@@ -42,8 +42,6 @@ describe('MessageVerifierHelper', () => {
 
   beforeEach(() => {
     jest.resetAllMocks();
-
-    // Mock blocklist service to return empty array by default
     mockBlocklistService.getBlocklist.mockReturnValue([]);
 
     initTarget(configuration);
@@ -316,7 +314,6 @@ describe('MessageVerifierHelper', () => {
       const privateKey = generatePrivateKey();
       const signer = privateKeyToAccount(privateKey);
 
-      // Mock getBlocklist to return the blocked address
       mockBlocklistService.getBlocklist.mockReturnValue([signer.address]);
 
       const defaultConfiguration = configuration();
@@ -719,7 +716,6 @@ describe('MessageVerifierHelper', () => {
       const privateKey = generatePrivateKey();
       const signer = privateKeyToAccount(privateKey);
 
-      // Mock getBlocklist to return the blocked address
       mockBlocklistService.getBlocklist.mockReturnValue([signer.address]);
 
       const defaultConfiguration = configuration();
