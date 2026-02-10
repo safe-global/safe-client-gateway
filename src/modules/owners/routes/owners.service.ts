@@ -1,7 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
 import { SafeList } from '@/modules/owners/routes/entities/safe-list.entity';
-import { SafesByChainId } from '@/modules/safe/domain/entities/safes-by-chain-id.entity';
 import { SafesByChainIdV3 } from '@/modules/safe/domain/entities/safes-by-chain-id-v3.entity';
 import { findSimilarAddressPairs } from '@/modules/owners/routes/utils/address-poisoning';
 import {
