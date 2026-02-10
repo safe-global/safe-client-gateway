@@ -22,8 +22,11 @@ describe('Get creation transaction', () => {
   let safeDecoderUrl: string;
   let networkService: jest.MockedObjectDeep<INetworkService>;
 
-  beforeEach(async () => {
+  beforeEach(() => {
     jest.resetAllMocks();
+  });
+
+  beforeAll(async () => {
     const moduleFixture = await createTestModule();
 
     const configurationService = moduleFixture.get<IConfigurationService>(
@@ -37,7 +40,7 @@ describe('Get creation transaction', () => {
     await app.init();
   });
 
-  afterEach(async () => {
+  afterAll(async () => {
     await app.close();
   });
 

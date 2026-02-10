@@ -18,9 +18,7 @@ describe('Safe Apps Controller', () => {
   let safeConfigUrl: string;
   let networkService: jest.MockedObjectDeep<INetworkService>;
 
-  beforeEach(async () => {
-    jest.resetAllMocks();
-
+  beforeAll(async () => {
     const moduleFixture = await createTestModule();
 
     const configurationService = moduleFixture.get<IConfigurationService>(
@@ -33,8 +31,12 @@ describe('Safe Apps Controller', () => {
     await app.init();
   });
 
-  afterEach(async () => {
+  afterAll(async () => {
     await app.close();
+  });
+
+  beforeEach(() => {
+    jest.resetAllMocks();
   });
 
   describe('Get Safe Apps', () => {

@@ -42,10 +42,6 @@ describe('GlobalErrorFilter tests', () => {
   let app: INestApplication<Server>;
   let loggingService: ILoggingService;
 
-  beforeEach(() => {
-    jest.resetAllMocks();
-  });
-
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [TestLoggingModule, ConfigurationModule.register(configuration)],
@@ -67,8 +63,12 @@ describe('GlobalErrorFilter tests', () => {
     await app.init();
   });
 
-  afterEach(async () => {
+  afterAll(async () => {
     await app.close();
+  });
+
+  beforeEach(() => {
+    jest.resetAllMocks();
   });
 
   describe('responses', () => {

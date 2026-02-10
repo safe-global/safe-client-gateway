@@ -33,9 +33,7 @@ describe('Balances Controller', () => {
   let zerionCurrencies: Array<string>;
   let configurationService: jest.MockedObjectDeep<IConfigurationService>;
 
-  beforeEach(async () => {
-    jest.resetAllMocks();
-
+  beforeAll(async () => {
     const defaultConfiguration = configuration();
     const testConfiguration = (): typeof defaultConfiguration => ({
       ...defaultConfiguration,
@@ -74,8 +72,12 @@ describe('Balances Controller', () => {
     await app.init();
   });
 
-  afterEach(async () => {
+  afterAll(async () => {
     await app.close();
+  });
+
+  beforeEach(() => {
+    jest.resetAllMocks();
   });
 
   describe('Balances provider: Zerion', () => {

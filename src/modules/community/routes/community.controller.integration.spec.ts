@@ -44,8 +44,7 @@ describe('Community Controller', () => {
   let networkService: jest.MockedObjectDeep<INetworkService>;
   let identityApi: jest.MockedObjectDeep<IIdentityApi>;
 
-  beforeEach(async () => {
-    jest.resetAllMocks();
+  beforeAll(async () => {
     const moduleFixture = await createTestModule({
       config: configuration,
       modules: [
@@ -67,8 +66,12 @@ describe('Community Controller', () => {
     await app.init();
   });
 
-  afterEach(async () => {
+  afterAll(async () => {
     await app.close();
+  });
+
+  beforeEach(() => {
+    jest.resetAllMocks();
   });
 
   describe('GET /community/campaigns', () => {

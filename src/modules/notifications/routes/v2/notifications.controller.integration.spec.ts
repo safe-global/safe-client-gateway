@@ -36,9 +36,7 @@ describe('Notifications Controller V2', () => {
   let networkService: jest.MockedObjectDeep<INetworkService>;
   let notificationsRepository: jest.MockedObjectDeep<INotificationsRepositoryV2>;
 
-  beforeEach(async () => {
-    jest.resetAllMocks();
-
+  beforeAll(async () => {
     const defaultConfiguration = configuration();
     const testConfiguration = (): typeof defaultConfiguration => ({
       ...defaultConfiguration,
@@ -70,8 +68,12 @@ describe('Notifications Controller V2', () => {
     await app.init();
   });
 
-  afterEach(async () => {
+  afterAll(async () => {
     await app.close();
+  });
+
+  beforeEach(() => {
+    jest.resetAllMocks();
   });
 
   describe('POST /v2/register/notifications', () => {
