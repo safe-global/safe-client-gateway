@@ -2,6 +2,7 @@ import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
 import type { Singleton } from '@/modules/chains/domain/entities/singleton.entity';
 import type { Page } from '@/domain/entities/page.entity';
 import type { IndexingStatus } from '@/modules/indexing/domain/entities/indexing-status.entity';
+import type { GasPriceResponse } from '@/modules/chains/routes/entities/gas-price-response.entity';
 
 export const IChainsRepository = Symbol('IChainsRepository');
 
@@ -51,4 +52,11 @@ export interface IChainsRepository {
    * @param chainId
    */
   isSupportedChain(chainId: string): Promise<boolean>;
+
+  /**
+   * Gets the gas price from Etherscan for the given chain.
+   *
+   * @param chainId
+   */
+  getGasPrice(chainId: string): Promise<GasPriceResponse>;
 }

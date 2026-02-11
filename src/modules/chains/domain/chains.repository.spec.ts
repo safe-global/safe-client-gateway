@@ -10,6 +10,7 @@ import { ChainsRepository } from '@/modules/chains/domain/chains.repository';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
 import type { IConfigApi } from '@/domain/interfaces/config-api.interface';
+import type { IEtherscanApi } from '@/domain/interfaces/etherscan-api.interface';
 import type { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
 import type { Page } from '@/domain/entities/page.entity';
 import type { ILoggingService } from '@/logging/logging.interface';
@@ -21,6 +22,9 @@ const mockLoggingService = {
 const mockConfigApi = {
   getChains: jest.fn(),
 } as jest.MockedObjectDeep<IConfigApi>;
+const mockEtherscanApi = {
+  getGasPrice: jest.fn(),
+} as jest.MockedObjectDeep<IEtherscanApi>;
 const mockTransactionApiManager =
   {} as jest.MockedObjectDeep<ITransactionApiManager>;
 const mockConfigurationService = jest.mocked({
@@ -52,6 +56,7 @@ describe('ChainsRepository', () => {
     target = new ChainsRepository(
       mockLoggingService,
       mockConfigApi,
+      mockEtherscanApi,
       mockTransactionApiManager,
       mockConfigurationService,
     );
