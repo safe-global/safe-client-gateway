@@ -139,6 +139,8 @@ export const RootConfigurationSchema = z
     CSV_EXPORT_QUEUE_CONCURRENCY: z.coerce.number().min(1).optional(),
     BLOCKAID_CLIENT_API_KEY: z.string().optional(),
     TX_SERVICE_API_KEY: z.string().trim().min(1).optional(),
+    CAPTCHA_ENABLED: z.string().optional().default('false'),
+    TURNSTILE_SECRET_KEY: z.string().optional(),
   })
   .superRefine((config, ctx) =>
     // Check for AWS_* and Blockaid fields in production and staging environments
