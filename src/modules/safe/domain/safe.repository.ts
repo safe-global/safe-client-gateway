@@ -6,7 +6,7 @@ import { CreationTransaction } from '@/modules/safe/domain/entities/creation-tra
 import { ModuleTransaction } from '@/modules/safe/domain/entities/module-transaction.entity';
 import { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
 import { SafeList } from '@/modules/safe/domain/entities/safe-list.entity';
-import { Safe } from '@/modules/safe/domain/entities/safe.entity';
+import { Safe, SafeV2 } from '@/modules/safe/domain/entities/safe.entity';
 import { Transaction } from '@/modules/safe/domain/entities/transaction.entity';
 import {
   Transfer,
@@ -34,6 +34,7 @@ import {
   SafePageV2Schema,
 } from '@/modules/safe/domain/entities/schemas/safe.schema';
 import { SafesByChainId } from '@/modules/safe/domain/entities/safes-by-chain-id.entity';
+import { SafesByChainIdV3 } from '@/modules/safe/domain/entities/safes-by-chain-id-v3.entity';
 import { z } from 'zod';
 import { TransactionVerifierHelper } from '@/modules/transactions/routes/helpers/transaction-verifier.helper';
 import { PaginationData } from '@/routes/common/pagination/pagination.data';
@@ -542,55 +543,6 @@ export class SafeRepository implements ISafeRepository {
     return SafeListSchema.parse(safeList);
   }
 
-  async getSafesByOwnerV2(args: {
-    chainId: string;
-    ownerAddress: Address;
-  }): Promise<SafeList> {
-    const transactionService = await this.transactionApiManager.getApi(
-      args.chainId,
-    );
-
-    const allAddresses: Array<Address> = [];
-    let offset = 0;
-    let next: string | null = null;
-
-    try {
-      for (let i = 0; i < this.maxSequentialPages; i++) {
-        const page = await transactionService.getSafesByOwnerV2({
-          ownerAddress: args.ownerAddress,
-          limit: SAFE_TRANSACTION_SERVICE_MAX_LIMIT,
-          offset,
-        });
-
-        const { next: nextUrl, results } = SafePageV2Schema.parse(page);
-        next = nextUrl;
-
-        allAddresses.push(...results.map((safe) => safe.address));
-
-        if (!next) {
-          break;
-        }
-
-        const paginationData = PaginationData.fromLimitAndOffset(new URL(next));
-        offset = paginationData.offset;
-      }
-    } catch (error) {
-      if (error instanceof DataSourceError && error.code === 404) {
-        return SafeListSchema.parse({ safes: [] });
-      }
-      // Re-throw other errors
-      throw error;
-    }
-
-    if (next) {
-      this.loggingService.error(
-        `Max sequential pages reached for getSafesByOwnerV2. chainId=${args.chainId}, ownerAddress=${args.ownerAddress}`,
-      );
-    }
-
-    return SafeListSchema.parse({ safes: allAddresses });
-  }
-
   private async getAllSafesByOwnerForChains(
     getSafesByOwnerForChain: (chainId: string) => Promise<SafeList>,
   ): Promise<SafesByChainId> {
@@ -635,11 +587,97 @@ export class SafeRepository implements ISafeRepository {
     );
   }
 
-  async getAllSafesByOwnerV2(args: {
+  async getSafesByOwnerV3(args: {
+    chainId: string;
     ownerAddress: Address;
-  }): Promise<SafesByChainId> {
-    return this.getAllSafesByOwnerForChains((chainId) =>
-      this.getSafesByOwnerV2({
+  }): Promise<Record<Address, SafeV2>> {
+    const transactionService = await this.transactionApiManager.getApi(
+      args.chainId,
+    );
+
+    const allSafes: Array<SafeV2> = [];
+    let offset = 0;
+    let next: string | null = null;
+
+    try {
+      for (let i = 0; i < this.maxSequentialPages; i++) {
+        const page = await transactionService.getSafesByOwnerV2({
+          ownerAddress: args.ownerAddress,
+          limit: SAFE_TRANSACTION_SERVICE_MAX_LIMIT,
+          offset,
+        });
+
+        const { next: nextUrl, results } = SafePageV2Schema.parse(page);
+        next = nextUrl;
+
+        allSafes.push(...results);
+
+        if (!next) {
+          break;
+        }
+
+        const paginationData = PaginationData.fromLimitAndOffset(new URL(next));
+        offset = paginationData.offset;
+      }
+    } catch (error) {
+      if (error instanceof DataSourceError && error.code === 404) {
+        return {};
+      }
+      // Re-throw other errors
+      throw error;
+    }
+
+    if (next) {
+      this.loggingService.error(
+        `Max sequential pages reached for getSafesByOwnerV3. chainId=${args.chainId}, ownerAddress=${args.ownerAddress}`,
+      );
+    }
+
+    return Object.fromEntries(
+      allSafes.map((safe) => [safe.address, safe]),
+    ) as Record<Address, SafeV2>;
+  }
+
+  private async getAllSafesByOwnerV3ForChains(
+    getSafesByOwnerForChain: (
+      chainId: string,
+    ) => Promise<Record<Address, SafeV2>>,
+  ): Promise<SafesByChainIdV3> {
+    const chains = await this.chainsRepository.getAllChains();
+    const allSafeMaps = await Promise.allSettled(
+      chains.map(async ({ chainId }) => {
+        const safeMap = await getSafesByOwnerForChain(chainId);
+
+        return {
+          chainId,
+          safeMap,
+        };
+      }),
+    );
+
+    const result: SafesByChainIdV3 = {};
+
+    for (const [index, allSafeMap] of allSafeMaps.entries()) {
+      const chainId = chains[index].chainId;
+
+      if (allSafeMap.status === 'fulfilled') {
+        result[chainId] = allSafeMap.value.safeMap;
+      } else {
+        result[chainId] = null;
+        this.loggingService.warn(
+          `Failed to fetch Safe owners. chainId=${chainId}`,
+        );
+      }
+    }
+
+    return result;
+  }
+
+  async getAllSafesByOwnerV3(args: {
+    ownerAddress: Address;
+  }): Promise<SafesByChainIdV3> {
+    return this.getAllSafesByOwnerV3ForChains((chainId) =>
+      this.getSafesByOwnerV3({
         chainId,
         ownerAddress: args.ownerAddress,
       }),

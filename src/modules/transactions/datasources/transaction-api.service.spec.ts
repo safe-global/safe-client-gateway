@@ -2189,6 +2189,9 @@ describe('TransactionApi', () => {
             offset,
           },
           timeout: ownersTimeout,
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getTransactionServiceKey(chainId),
+          },
         },
       });
     });
@@ -2234,6 +2237,9 @@ describe('TransactionApi', () => {
             offset: undefined,
           },
           timeout: ownersTimeout,
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getTransactionServiceKey(chainId),
+          },
         },
       });
     });
@@ -2285,6 +2291,9 @@ describe('TransactionApi', () => {
             offset,
           },
           timeout: ownersTimeout,
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getTransactionServiceKey(chainId),
+          },
         },
       });
     });

@@ -58,16 +58,40 @@ describe('Owners Controller V3 (Unit)', () => {
       const chain1 = chainBuilder().with('chainId', chainId1).build();
       const chain2 = chainBuilder().with('chainId', chainId2).build();
 
-      const safesOnChain1 = [
+      const safesOnChain1Addresses = [
         faker.finance.ethereumAddress(),
         faker.finance.ethereumAddress(),
         faker.finance.ethereumAddress(),
       ];
-      const safesOnChain2 = [
+      const safesOnChain2Addresses = [
         faker.finance.ethereumAddress(),
         faker.finance.ethereumAddress(),
         faker.finance.ethereumAddress(),
       ];
+
+      const safesOnChain1 = safesOnChain1Addresses.map((address) => ({
+        address: getAddress(address),
+        owners: [getAddress(faker.finance.ethereumAddress())],
+        threshold: faker.number.int({ min: 1 }),
+        nonce: faker.number.int({ min: 0 }),
+        masterCopy: getAddress(faker.finance.ethereumAddress()),
+        fallbackHandler: getAddress(faker.finance.ethereumAddress()),
+        guard: getAddress(faker.finance.ethereumAddress()),
+        moduleGuard: getAddress(faker.finance.ethereumAddress()),
+        enabledModules: [getAddress(faker.finance.ethereumAddress())],
+      }));
+
+      const safesOnChain2 = safesOnChain2Addresses.map((address) => ({
+        address: getAddress(address),
+        owners: [getAddress(faker.finance.ethereumAddress())],
+        threshold: faker.number.int({ min: 1 }),
+        nonce: faker.number.int({ min: 0 }),
+        masterCopy: getAddress(faker.finance.ethereumAddress()),
+        fallbackHandler: getAddress(faker.finance.ethereumAddress()),
+        guard: getAddress(faker.finance.ethereumAddress()),
+        moduleGuard: getAddress(faker.finance.ethereumAddress()),
+        enabledModules: [getAddress(faker.finance.ethereumAddress())],
+      }));
 
       networkService.get.mockImplementation(
         ({
@@ -114,28 +138,7 @@ describe('Owners Controller V3 (Unit)', () => {
                 return Promise.resolve({
                   data: rawify(
                     pageBuilder()
-                      .with(
-                        'results',
-                        safesOnChain1.map((address) => ({
-                          address: getAddress(address),
-                          owners: [getAddress(faker.finance.ethereumAddress())],
-                          threshold: faker.number.int({ min: 1 }),
-                          nonce: faker.number.int({ min: 0 }),
-                          masterCopy: getAddress(
-                            faker.finance.ethereumAddress(),
-                          ),
-                          fallbackHandler: getAddress(
-                            faker.finance.ethereumAddress(),
-                          ),
-                          guard: getAddress(faker.finance.ethereumAddress()),
-                          moduleGuard: getAddress(
-                            faker.finance.ethereumAddress(),
-                          ),
-                          enabledModules: [
-                            getAddress(faker.finance.ethereumAddress()),
-                          ],
-                        })),
-                      )
+                      .with('results', safesOnChain1)
                       .with('count', safesOnChain1.length)
                       .with('next', null)
                       .build(),
@@ -155,28 +158,7 @@ describe('Owners Controller V3 (Unit)', () => {
                 return Promise.resolve({
                   data: rawify(
                     pageBuilder()
-                      .with(
-                        'results',
-                        safesOnChain2.map((address) => ({
-                          address: getAddress(address),
-                          owners: [getAddress(faker.finance.ethereumAddress())],
-                          threshold: faker.number.int({ min: 1 }),
-                          nonce: faker.number.int({ min: 0 }),
-                          masterCopy: getAddress(
-                            faker.finance.ethereumAddress(),
-                          ),
-                          fallbackHandler: getAddress(
-                            faker.finance.ethereumAddress(),
-                          ),
-                          guard: getAddress(faker.finance.ethereumAddress()),
-                          moduleGuard: getAddress(
-                            faker.finance.ethereumAddress(),
-                          ),
-                          enabledModules: [
-                            getAddress(faker.finance.ethereumAddress()),
-                          ],
-                        })),
-                      )
+                      .with('results', safesOnChain2)
                       .with('count', safesOnChain2.length)
                       .with('next', null)
                       .build(),
@@ -199,8 +181,12 @@ describe('Owners Controller V3 (Unit)', () => {
         .expect(200)
         .expect({
           // Validation schema checksums addresses
-          [chainId1]: safesOnChain1.map((safe) => getAddress(safe)),
-          [chainId2]: safesOnChain2.map((safe) => getAddress(safe)),
+          [chainId1]: Object.fromEntries(
+            safesOnChain1.map((safe) => [safe.address, safe]),
+          ),
+          [chainId2]: Object.fromEntries(
+            safesOnChain2.map((safe) => [safe.address, safe]),
+          ),
         });
     });
 
@@ -224,16 +210,40 @@ describe('Owners Controller V3 (Unit)', () => {
         .with('next', null)
         .build();
 
-      const safesOnChain1 = [
+      const safesOnChain1Addresses = [
         faker.finance.ethereumAddress(),
         faker.finance.ethereumAddress(),
         faker.finance.ethereumAddress(),
       ];
-      const safesOnChain2 = [
+      const safesOnChain2Addresses = [
         faker.finance.ethereumAddress(),
         faker.finance.ethereumAddress(),
         faker.finance.ethereumAddress(),
       ];
+
+      const safesOnChain1 = safesOnChain1Addresses.map((address) => ({
+        address: getAddress(address),
+        owners: [getAddress(faker.finance.ethereumAddress())],
+        threshold: faker.number.int({ min: 1 }),
+        nonce: faker.number.int({ min: 0 }),
+        masterCopy: getAddress(faker.finance.ethereumAddress()),
+        fallbackHandler: getAddress(faker.finance.ethereumAddress()),
+        guard: getAddress(faker.finance.ethereumAddress()),
+        moduleGuard: getAddress(faker.finance.ethereumAddress()),
+        enabledModules: [getAddress(faker.finance.ethereumAddress())],
+      }));
+
+      const safesOnChain2 = safesOnChain2Addresses.map((address) => ({
+        address: getAddress(address),
+        owners: [getAddress(faker.finance.ethereumAddress())],
+        threshold: faker.number.int({ min: 1 }),
+        nonce: faker.number.int({ min: 0 }),
+        masterCopy: getAddress(faker.finance.ethereumAddress()),
+        fallbackHandler: getAddress(faker.finance.ethereumAddress()),
+        guard: getAddress(faker.finance.ethereumAddress()),
+        moduleGuard: getAddress(faker.finance.ethereumAddress()),
+        enabledModules: [getAddress(faker.finance.ethereumAddress())],
+      }));
 
       networkService.get.mockImplementation(
         ({
@@ -282,26 +292,7 @@ describe('Owners Controller V3 (Unit)', () => {
               return Promise.resolve({
                 data: rawify(
                   pageBuilder()
-                    .with(
-                      'results',
-                      safesOnChain1.map((address) => ({
-                        address: getAddress(address),
-                        owners: [getAddress(faker.finance.ethereumAddress())],
-                        threshold: faker.number.int({ min: 1 }),
-                        nonce: faker.number.int({ min: 0 }),
-                        masterCopy: getAddress(faker.finance.ethereumAddress()),
-                        fallbackHandler: getAddress(
-                          faker.finance.ethereumAddress(),
-                        ),
-                        guard: getAddress(faker.finance.ethereumAddress()),
-                        moduleGuard: getAddress(
-                          faker.finance.ethereumAddress(),
-                        ),
-                        enabledModules: [
-                          getAddress(faker.finance.ethereumAddress()),
-                        ],
-                      })),
-                    )
+                    .with('results', safesOnChain1)
                     .with('count', safesOnChain1.length)
                     .with('next', null)
                     .build(),
@@ -324,26 +315,7 @@ describe('Owners Controller V3 (Unit)', () => {
               return Promise.resolve({
                 data: rawify(
                   pageBuilder()
-                    .with(
-                      'results',
-                      safesOnChain2.map((address) => ({
-                        address: getAddress(address),
-                        owners: [getAddress(faker.finance.ethereumAddress())],
-                        threshold: faker.number.int({ min: 1 }),
-                        nonce: faker.number.int({ min: 0 }),
-                        masterCopy: getAddress(faker.finance.ethereumAddress()),
-                        fallbackHandler: getAddress(
-                          faker.finance.ethereumAddress(),
-                        ),
-                        guard: getAddress(faker.finance.ethereumAddress()),
-                        moduleGuard: getAddress(
-                          faker.finance.ethereumAddress(),
-                        ),
-                        enabledModules: [
-                          getAddress(faker.finance.ethereumAddress()),
-                        ],
-                      })),
-                    )
+                    .with('results', safesOnChain2)
                     .with('count', safesOnChain2.length)
                     .with('next', null)
                     .build(),
@@ -363,8 +335,12 @@ describe('Owners Controller V3 (Unit)', () => {
         .expect(200)
         .expect({
           // Validation schema checksums addresses
-          [chainId1]: safesOnChain1.map((safe) => getAddress(safe)),
-          [chainId2]: safesOnChain2.map((safe) => getAddress(safe)),
+          [chainId1]: Object.fromEntries(
+            safesOnChain1.map((safe) => [safe.address, safe]),
+          ),
+          [chainId2]: Object.fromEntries(
+            safesOnChain2.map((safe) => [safe.address, safe]),
+          ),
         });
     });
 
@@ -375,11 +351,24 @@ describe('Owners Controller V3 (Unit)', () => {
       const chainId2 = faker.string.numeric({ exclude: [chainId1] });
       const chain1 = chainBuilder().with('chainId', chainId1).build();
       const chain2 = chainBuilder().with('chainId', chainId2).build();
-      const safesOnChain1 = [
+      const safesOnChain1Addresses = [
         faker.finance.ethereumAddress(),
         faker.finance.ethereumAddress(),
         faker.finance.ethereumAddress(),
       ];
+
+      const safesOnChain1 = safesOnChain1Addresses.map((address) => ({
+        address: getAddress(address),
+        owners: [getAddress(faker.finance.ethereumAddress())],
+        threshold: faker.number.int({ min: 1 }),
+        nonce: faker.number.int({ min: 0 }),
+        masterCopy: getAddress(faker.finance.ethereumAddress()),
+        fallbackHandler: getAddress(faker.finance.ethereumAddress()),
+        guard: getAddress(faker.finance.ethereumAddress()),
+        moduleGuard: getAddress(faker.finance.ethereumAddress()),
+        enabledModules: [getAddress(faker.finance.ethereumAddress())],
+      }));
+
       networkService.get.mockImplementation(
         ({
           url,
@@ -422,28 +411,7 @@ describe('Owners Controller V3 (Unit)', () => {
                 return Promise.resolve({
                   data: rawify(
                     pageBuilder()
-                      .with(
-                        'results',
-                        safesOnChain1.map((address) => ({
-                          address: getAddress(address),
-                          owners: [getAddress(faker.finance.ethereumAddress())],
-                          threshold: faker.number.int({ min: 1 }),
-                          nonce: faker.number.int({ min: 0 }),
-                          masterCopy: getAddress(
-                            faker.finance.ethereumAddress(),
-                          ),
-                          fallbackHandler: getAddress(
-                            faker.finance.ethereumAddress(),
-                          ),
-                          guard: getAddress(faker.finance.ethereumAddress()),
-                          moduleGuard: getAddress(
-                            faker.finance.ethereumAddress(),
-                          ),
-                          enabledModules: [
-                            getAddress(faker.finance.ethereumAddress()),
-                          ],
-                        })),
-                      )
+                      .with('results', safesOnChain1)
                       .with('count', safesOnChain1.length)
                       .with('next', null)
                       .build(),
@@ -467,7 +435,9 @@ describe('Owners Controller V3 (Unit)', () => {
         .get(`/v3/owners/${ownerAddress}/safes`)
         .expect(200)
         .expect({
-          [chainId1]: safesOnChain1.map((safe) => getAddress(safe)),
+          [chainId1]: Object.fromEntries(
+            safesOnChain1.map((safe) => [safe.address, safe]),
+          ),
           [chainId2]: null,
         });
       expect(loggingService.warn).toHaveBeenCalledTimes(1);
@@ -696,11 +666,11 @@ describe('Owners Controller V3 (Unit)', () => {
         .get(`/v3/owners/${ownerAddress}/safes`)
         .expect(200)
         .expect({
-          [chainId]: [],
+          [chainId]: {},
         });
     });
 
-    it('In case of 404 error from the tx service (no Safes found) returns empty array (not null)', async () => {
+    it('In case of 404 error from the tx service (no Safes found) returns empty object (not null)', async () => {
       const ownerAddress = faker.finance.ethereumAddress();
       const chainId = faker.string.numeric();
       const chain = chainBuilder().with('chainId', chainId).build();
@@ -752,7 +722,7 @@ describe('Owners Controller V3 (Unit)', () => {
         .get(`/v3/owners/${ownerAddress}/safes`)
         .expect(200)
         .expect({
-          [chainId]: [], // Should return empty array, not null
+          [chainId]: {}, // Should return empty object, not null
         });
     });
 
@@ -762,6 +732,18 @@ describe('Owners Controller V3 (Unit)', () => {
       const chain = chainBuilder().with('chainId', chainId).build();
 
       const safeAddress = faker.finance.ethereumAddress();
+
+      const safe = {
+        address: getAddress(safeAddress),
+        owners: [getAddress(faker.finance.ethereumAddress())],
+        threshold: faker.number.int({ min: 1 }),
+        nonce: faker.number.int({ min: 0 }),
+        masterCopy: getAddress(faker.finance.ethereumAddress()),
+        fallbackHandler: getAddress(faker.finance.ethereumAddress()),
+        guard: null,
+        moduleGuard: null,
+        enabledModules: [],
+      };
 
       networkService.get.mockImplementation(
         ({
@@ -800,23 +782,7 @@ describe('Owners Controller V3 (Unit)', () => {
                 return Promise.resolve({
                   data: rawify(
                     pageBuilder()
-                      .with('results', [
-                        {
-                          address: getAddress(safeAddress),
-                          owners: [getAddress(faker.finance.ethereumAddress())],
-                          threshold: faker.number.int({ min: 1 }),
-                          nonce: faker.number.int({ min: 0 }),
-                          masterCopy: getAddress(
-                            faker.finance.ethereumAddress(),
-                          ),
-                          fallbackHandler: getAddress(
-                            faker.finance.ethereumAddress(),
-                          ),
-                          guard: null,
-                          moduleGuard: null,
-                          enabledModules: [],
-                        },
-                      ])
+                      .with('results', [safe])
                       .with('count', 1)
                       .with('next', null)
                       .build(),
@@ -838,7 +804,9 @@ describe('Owners Controller V3 (Unit)', () => {
         .get(`/v3/owners/${ownerAddress}/safes`)
         .expect(200)
         .expect({
-          [chainId]: [getAddress(safeAddress)],
+          [chainId]: {
+            [safe.address]: safe,
+          },
         });
     });
 
@@ -848,14 +816,38 @@ describe('Owners Controller V3 (Unit)', () => {
       const chain = chainBuilder().with('chainId', chainId).build();
 
       // Create more safes than the limit to trigger pagination
-      const safesPage1 = Array.from(
+      const safesPage1Addresses = Array.from(
         { length: SAFE_TRANSACTION_SERVICE_MAX_LIMIT },
         () => faker.finance.ethereumAddress(),
       );
-      const safesPage2 = [
+      const safesPage2Addresses = [
         faker.finance.ethereumAddress(),
         faker.finance.ethereumAddress(),
       ];
+
+      const safesPage1 = safesPage1Addresses.map((address) => ({
+        address: getAddress(address),
+        owners: [getAddress(faker.finance.ethereumAddress())],
+        threshold: faker.number.int({ min: 1 }),
+        nonce: faker.number.int({ min: 0 }),
+        masterCopy: getAddress(faker.finance.ethereumAddress()),
+        fallbackHandler: getAddress(faker.finance.ethereumAddress()),
+        guard: getAddress(faker.finance.ethereumAddress()),
+        moduleGuard: getAddress(faker.finance.ethereumAddress()),
+        enabledModules: [getAddress(faker.finance.ethereumAddress())],
+      }));
+
+      const safesPage2 = safesPage2Addresses.map((address) => ({
+        address: getAddress(address),
+        owners: [getAddress(faker.finance.ethereumAddress())],
+        threshold: faker.number.int({ min: 1 }),
+        nonce: faker.number.int({ min: 0 }),
+        masterCopy: getAddress(faker.finance.ethereumAddress()),
+        fallbackHandler: getAddress(faker.finance.ethereumAddress()),
+        guard: getAddress(faker.finance.ethereumAddress()),
+        moduleGuard: getAddress(faker.finance.ethereumAddress()),
+        enabledModules: [getAddress(faker.finance.ethereumAddress())],
+      }));
 
       const transactionServiceUrl = `${chain.transactionService}/api/v2/owners/${getAddress(ownerAddress)}/safes/`;
       const nextUrl = limitAndOffsetUrlFactory(
@@ -901,28 +893,7 @@ describe('Owners Controller V3 (Unit)', () => {
                 return Promise.resolve({
                   data: rawify(
                     pageBuilder()
-                      .with(
-                        'results',
-                        safesPage1.map((address) => ({
-                          address: getAddress(address),
-                          owners: [getAddress(faker.finance.ethereumAddress())],
-                          threshold: faker.number.int({ min: 1 }),
-                          nonce: faker.number.int({ min: 0 }),
-                          masterCopy: getAddress(
-                            faker.finance.ethereumAddress(),
-                          ),
-                          fallbackHandler: getAddress(
-                            faker.finance.ethereumAddress(),
-                          ),
-                          guard: getAddress(faker.finance.ethereumAddress()),
-                          moduleGuard: getAddress(
-                            faker.finance.ethereumAddress(),
-                          ),
-                          enabledModules: [
-                            getAddress(faker.finance.ethereumAddress()),
-                          ],
-                        })),
-                      )
+                      .with('results', safesPage1)
                       .with('count', safesPage1.length + safesPage2.length)
                       .with('next', nextUrl)
                       .build(),
@@ -939,28 +910,7 @@ describe('Owners Controller V3 (Unit)', () => {
                 return Promise.resolve({
                   data: rawify(
                     pageBuilder()
-                      .with(
-                        'results',
-                        safesPage2.map((address) => ({
-                          address: getAddress(address),
-                          owners: [getAddress(faker.finance.ethereumAddress())],
-                          threshold: faker.number.int({ min: 1 }),
-                          nonce: faker.number.int({ min: 0 }),
-                          masterCopy: getAddress(
-                            faker.finance.ethereumAddress(),
-                          ),
-                          fallbackHandler: getAddress(
-                            faker.finance.ethereumAddress(),
-                          ),
-                          guard: getAddress(faker.finance.ethereumAddress()),
-                          moduleGuard: getAddress(
-                            faker.finance.ethereumAddress(),
-                          ),
-                          enabledModules: [
-                            getAddress(faker.finance.ethereumAddress()),
-                          ],
-                        })),
-                      )
+                      .with('results', safesPage2)
                       .with('count', safesPage1.length + safesPage2.length)
                       .with('next', null)
                       .build(),
@@ -982,8 +932,8 @@ describe('Owners Controller V3 (Unit)', () => {
         .get(`/v3/owners/${ownerAddress}/safes`)
         .expect(200)
         .expect({
-          [chainId]: [...safesPage1, ...safesPage2].map((safe) =>
-            getAddress(safe),
+          [chainId]: Object.fromEntries(
+            [...safesPage1, ...safesPage2].map((safe) => [safe.address, safe]),
           ),
         });
     });
@@ -994,6 +944,18 @@ describe('Owners Controller V3 (Unit)', () => {
       const chain = chainBuilder().with('chainId', chainId).build();
 
       const safeAddress = faker.finance.ethereumAddress();
+
+      const safe = {
+        address: getAddress(safeAddress),
+        owners: [getAddress(faker.finance.ethereumAddress())],
+        threshold: faker.number.int({ min: 1 }),
+        nonce: faker.number.int({ min: 0 }),
+        masterCopy: getAddress(faker.finance.ethereumAddress()),
+        fallbackHandler: getAddress(faker.finance.ethereumAddress()),
+        guard: getAddress(faker.finance.ethereumAddress()),
+        moduleGuard: getAddress(faker.finance.ethereumAddress()),
+        enabledModules: [],
+      };
 
       networkService.get.mockImplementation(
         ({
@@ -1032,25 +994,7 @@ describe('Owners Controller V3 (Unit)', () => {
                 return Promise.resolve({
                   data: rawify(
                     pageBuilder()
-                      .with('results', [
-                        {
-                          address: getAddress(safeAddress),
-                          owners: [getAddress(faker.finance.ethereumAddress())],
-                          threshold: faker.number.int({ min: 1 }),
-                          nonce: faker.number.int({ min: 0 }),
-                          masterCopy: getAddress(
-                            faker.finance.ethereumAddress(),
-                          ),
-                          fallbackHandler: getAddress(
-                            faker.finance.ethereumAddress(),
-                          ),
-                          guard: getAddress(faker.finance.ethereumAddress()),
-                          moduleGuard: getAddress(
-                            faker.finance.ethereumAddress(),
-                          ),
-                          enabledModules: [],
-                        },
-                      ])
+                      .with('results', [safe])
                       .with('count', 1)
                       .with('next', null)
                       .build(),
@@ -1072,7 +1016,9 @@ describe('Owners Controller V3 (Unit)', () => {
         .get(`/v3/owners/${ownerAddress}/safes`)
         .expect(200)
         .expect({
-          [chainId]: [getAddress(safeAddress)],
+          [chainId]: {
+            [safe.address]: safe,
+          },
         });
     });
   });
