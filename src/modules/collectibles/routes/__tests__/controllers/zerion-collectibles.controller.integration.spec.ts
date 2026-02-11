@@ -25,9 +25,7 @@ describe('Zerion Collectibles Controller', () => {
   let networkService: jest.MockedObjectDeep<INetworkService>;
   let zerionBaseUri: string;
 
-  beforeEach(async () => {
-    jest.clearAllMocks();
-
+  beforeAll(async () => {
     const moduleFixture = await createTestModule({
       config: () => ({
         ...configuration(),
@@ -53,6 +51,10 @@ describe('Zerion Collectibles Controller', () => {
 
   afterAll(async () => {
     await app.close();
+  });
+
+  beforeEach(() => {
+    jest.clearAllMocks();
   });
 
   describe('Collectibles provider: Zerion', () => {

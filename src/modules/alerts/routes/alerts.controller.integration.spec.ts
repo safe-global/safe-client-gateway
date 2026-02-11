@@ -70,7 +70,7 @@ describe('Alerts Controller', () => {
     let app: INestApplication<Server>;
     let signingKey: string;
 
-    beforeEach(async () => {
+    beforeAll(async () => {
       jest.resetAllMocks();
 
       const defaultConfiguration = configuration();
@@ -854,49 +854,49 @@ describe('Alerts Controller', () => {
           .expect(403);
       });
     });
+  });
 
-    describe('/alerts route disabled', () => {
-      let app: INestApplication<Server>;
+  describe('/alerts route disabled', () => {
+    let app: INestApplication<Server>;
 
-      beforeEach(async () => {
-        jest.resetAllMocks();
+    beforeAll(async () => {
+      jest.resetAllMocks();
 
-        const defaultConfiguration = configuration();
-        const testConfiguration = (): typeof defaultConfiguration => ({
-          ...defaultConfiguration,
-          features: {
-            ...defaultConfiguration.features,
-            email: false,
-          },
-        });
-
-        const moduleFixture = await createTestModule({
-          config: testConfiguration,
-        });
-        app = moduleFixture.createNestApplication();
-        await app.init();
+      const defaultConfiguration = configuration();
+      const testConfiguration = (): typeof defaultConfiguration => ({
+        ...defaultConfiguration,
+        features: {
+          ...defaultConfiguration.features,
+          email: false,
+        },
       });
 
-      afterAll(async () => {
-        await app.close();
+      const moduleFixture = await createTestModule({
+        config: testConfiguration,
+      });
+      app = moduleFixture.createNestApplication();
+      await app.init();
+    });
+
+    afterAll(async () => {
+      await app.close();
+    });
+
+    it('returns 404 (Not found) for valid signature/invalid payload', async () => {
+      const alert = alertBuilder().build();
+      const timestamp = Date.now().toString();
+      const signature = fakeTenderlySignature({
+        signingKey: faker.string.nanoid(32),
+        alert,
+        timestamp,
       });
 
-      it('returns 404 (Not found) for valid signature/invalid payload', async () => {
-        const alert = alertBuilder().build();
-        const timestamp = Date.now().toString();
-        const signature = fakeTenderlySignature({
-          signingKey: faker.string.nanoid(32),
-          alert,
-          timestamp,
-        });
-
-        await request(app.getHttpServer())
-          .post('/v1/alerts')
-          .set('x-tenderly-signature', signature)
-          .set('date', timestamp)
-          .send(alert)
-          .expect(404);
-      });
+      await request(app.getHttpServer())
+        .post('/v1/alerts')
+        .set('x-tenderly-signature', signature)
+        .set('date', timestamp)
+        .send(alert)
+        .expect(404);
     });
   });
 });
