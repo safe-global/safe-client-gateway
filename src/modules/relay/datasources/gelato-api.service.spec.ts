@@ -69,7 +69,9 @@ describe('GelatoApi', () => {
       mockNetworkService.post.mockResolvedValueOnce({
         status: 200,
         data: rawify({
-          taskId,
+          jsonrpc: '2.0',
+          result: taskId,
+          id: 1,
         }),
       });
 
@@ -81,12 +83,22 @@ describe('GelatoApi', () => {
       });
 
       expect(mockNetworkService.post).toHaveBeenCalledWith({
-        url: `${baseUri}/relays/v2/sponsored-call`,
+        url: `${baseUri}/rpc`,
         data: {
-          sponsorApiKey: apiKey,
-          chainId,
-          target: address,
-          data,
+          id: 1,
+          jsonrpc: '2.0',
+          method: 'relayer_sendTransaction',
+          params: {
+            chainId,
+            to: address,
+            data,
+            payment: { type: 'sponsored' },
+          },
+        },
+        networkRequest: {
+          headers: {
+            'X-API-Key': apiKey,
+          },
         },
       });
     });
@@ -102,7 +114,9 @@ describe('GelatoApi', () => {
       mockNetworkService.post.mockResolvedValueOnce({
         status: 200,
         data: rawify({
-          taskId,
+          jsonrpc: '2.0',
+          result: taskId,
+          id: 1,
         }),
       });
 
@@ -114,13 +128,23 @@ describe('GelatoApi', () => {
       });
 
       expect(mockNetworkService.post).toHaveBeenCalledWith({
-        url: `${baseUri}/relays/v2/sponsored-call`,
+        url: `${baseUri}/rpc`,
         data: {
-          sponsorApiKey: apiKey,
-          chainId,
-          target: address,
-          data,
-          gasLimit: (gasLimit + BigInt(150_000)).toString(),
+          id: 1,
+          jsonrpc: '2.0',
+          method: 'relayer_sendTransaction',
+          params: {
+            chainId,
+            to: address,
+            data,
+            payment: { type: 'sponsored' },
+            gasLimit: (gasLimit + BigInt(150_000)).toString(),
+          },
+        },
+        networkRequest: {
+          headers: {
+            'X-API-Key': apiKey,
+          },
         },
       });
     });
@@ -147,7 +171,7 @@ describe('GelatoApi', () => {
       const status = faker.internet.httpStatusCode({ types: ['serverError'] });
       const apiKey = faker.string.sample();
       const error = new NetworkResponseError(
-        new URL(`${baseUri}/relays/v2/sponsored-call`),
+        new URL(`${baseUri}/rpc`),
         {
           status,
         } as Response,
