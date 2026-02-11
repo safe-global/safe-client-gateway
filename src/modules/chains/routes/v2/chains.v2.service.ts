@@ -12,13 +12,15 @@ export class ChainsV2Service {
   constructor(
     @Inject(IChainsRepository)
     private readonly chainsRepository: IChainsRepository,
-  ) {}
+  ) { }
 
   async getChains(
+    serviceKey: string,
     routeUrl: Readonly<URL>,
     paginationData: PaginationData,
   ): Promise<Page<Chain>> {
     const result = await this.chainsRepository.getChainsV2(
+      serviceKey,
       paginationData.limit,
       paginationData.offset,
     );
@@ -38,8 +40,8 @@ export class ChainsV2Service {
     };
   }
 
-  async getChain(chainId: string): Promise<Chain> {
-    const result = await this.chainsRepository.getChainV2(chainId);
+  async getChain(serviceKey: string, chainId: string): Promise<Chain> {
+    const result = await this.chainsRepository.getChainV2(serviceKey, chainId);
     return new Chain(result);
   }
 }

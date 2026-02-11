@@ -14,10 +14,11 @@ import { createTestModule } from '@/__tests__/testing-module';
 import { BlockchainModule } from '@/modules/blockchain/blockchain.module';
 import { TestBlockchainApiManagerModule } from '@/modules/blockchain/datasources/__tests__/test.blockchain-api.manager';
 
+const SERVICE_KEY = 'WALLET_WEB';
+
 describe('Chains V2 Controller', () => {
   let app: INestApplication<Server>;
   let safeConfigUrl: string;
-  let serviceKey: string;
   let networkService: jest.MockedObjectDeep<INetworkService>;
 
   const chainsResponse: Page<Chain> = {
@@ -45,7 +46,6 @@ describe('Chains V2 Controller', () => {
       IConfigurationService,
     );
     safeConfigUrl = configurationService.getOrThrow('safeConfig.baseUri');
-    serviceKey = configurationService.getOrThrow('safeConfig.serviceKey');
     networkService = moduleFixture.get(NetworkService);
 
     app = await new TestAppProvider().provide(moduleFixture);
@@ -56,7 +56,7 @@ describe('Chains V2 Controller', () => {
     await app.close();
   });
 
-  describe('GET /v2/chains', () => {
+  describe('GET /v2/chains/:serviceKey', () => {
     it('should return paginated chains from Config Service v2', async () => {
       networkService.get.mockResolvedValueOnce({
         data: rawify(chainsResponse),
@@ -64,7 +64,7 @@ describe('Chains V2 Controller', () => {
       });
 
       await request(app.getHttpServer())
-        .get('/v2/chains')
+        .get(`/v2/chains/${SERVICE_KEY}`)
         .expect(200)
         .expect((res) => {
           expect(res.body).toHaveProperty('count');
@@ -75,7 +75,7 @@ describe('Chains V2 Controller', () => {
 
       expect(networkService.get).toHaveBeenCalledWith(
         expect.objectContaining({
-          url: `${safeConfigUrl}/api/v2/chains/${serviceKey}`,
+          url: `${safeConfigUrl}/api/v2/chains/${SERVICE_KEY}`,
         }),
       );
     });
@@ -87,12 +87,12 @@ describe('Chains V2 Controller', () => {
       });
 
       await request(app.getHttpServer())
-        .get('/v2/chains?cursor=limit%3D10%26offset%3D20')
+        .get(`/v2/chains/${SERVICE_KEY}?cursor=limit%3D10%26offset%3D20`)
         .expect(200);
 
       expect(networkService.get).toHaveBeenCalledWith(
         expect.objectContaining({
-          url: `${safeConfigUrl}/api/v2/chains/${serviceKey}`,
+          url: `${safeConfigUrl}/api/v2/chains/${SERVICE_KEY}`,
           networkRequest: expect.objectContaining({
             params: expect.objectContaining({
               limit: 10,
@@ -108,11 +108,13 @@ describe('Chains V2 Controller', () => {
         new Error('Config Service unavailable'),
       );
 
-      await request(app.getHttpServer()).get('/v2/chains').expect(503);
+      await request(app.getHttpServer())
+        .get(`/v2/chains/${SERVICE_KEY}`)
+        .expect(503);
     });
   });
 
-  describe('GET /v2/chains/:chainId', () => {
+  describe('GET /v2/chains/:serviceKey/:chainId', () => {
     it('should return single chain from Config Service v2', async () => {
       const chainId = '1';
       networkService.get.mockResolvedValueOnce({
@@ -121,7 +123,7 @@ describe('Chains V2 Controller', () => {
       });
 
       await request(app.getHttpServer())
-        .get(`/v2/chains/${chainId}`)
+        .get(`/v2/chains/${SERVICE_KEY}/${chainId}`)
         .expect(200)
         .expect((res) => {
           expect(res.body).toHaveProperty('chainId');
@@ -130,7 +132,7 @@ describe('Chains V2 Controller', () => {
 
       expect(networkService.get).toHaveBeenCalledWith(
         expect.objectContaining({
-          url: `${safeConfigUrl}/api/v2/chains/${serviceKey}/${chainId}`,
+          url: `${safeConfigUrl}/api/v2/chains/${SERVICE_KEY}/${chainId}`,
         }),
       );
     });
@@ -138,7 +140,7 @@ describe('Chains V2 Controller', () => {
     it('should return 404 for non-existent chain', async () => {
       const chainId = '999';
       const error = new NetworkResponseError(
-        new URL(`${safeConfigUrl}/api/v2/chains/${serviceKey}/${chainId}`),
+        new URL(`${safeConfigUrl}/api/v2/chains/${SERVICE_KEY}/${chainId}`),
         {
           status: 404,
         } as Response,
@@ -147,23 +149,25 @@ describe('Chains V2 Controller', () => {
       networkService.get.mockRejectedValueOnce(error);
 
       await request(app.getHttpServer())
-        .get(`/v2/chains/${chainId}`)
+        .get(`/v2/chains/${SERVICE_KEY}/${chainId}`)
         .expect(404);
     });
   });
 
-  describe('Service key configuration', () => {
-    it('should use configured service key in Config Service v2 calls', async () => {
+  describe('Service key from URL', () => {
+    it('should use service key from URL in Config Service v2 calls', async () => {
       networkService.get.mockResolvedValueOnce({
         data: rawify(chainsResponse),
         status: 200,
       });
 
-      await request(app.getHttpServer()).get('/v2/chains').expect(200);
+      await request(app.getHttpServer())
+        .get(`/v2/chains/${SERVICE_KEY}`)
+        .expect(200);
 
       expect(networkService.get).toHaveBeenCalledWith(
         expect.objectContaining({
-          url: expect.stringContaining(`/api/v2/chains/${serviceKey}`),
+          url: expect.stringContaining(`/api/v2/chains/${SERVICE_KEY}`),
         }),
       );
     });
@@ -180,21 +184,23 @@ describe('Chains V2 Controller', () => {
           status: 200,
         });
 
-      await request(app.getHttpServer()).get('/v2/chains').expect(200);
       await request(app.getHttpServer())
-        .get(`/v2/chains/${chainId}`)
+        .get(`/v2/chains/${SERVICE_KEY}`)
+        .expect(200);
+      await request(app.getHttpServer())
+        .get(`/v2/chains/${SERVICE_KEY}/${chainId}`)
         .expect(200);
 
       expect(networkService.get).toHaveBeenNthCalledWith(
         1,
         expect.objectContaining({
-          url: `${safeConfigUrl}/api/v2/chains/${serviceKey}`,
+          url: `${safeConfigUrl}/api/v2/chains/${SERVICE_KEY}`,
         }),
       );
       expect(networkService.get).toHaveBeenNthCalledWith(
         2,
         expect.objectContaining({
-          url: `${safeConfigUrl}/api/v2/chains/${serviceKey}/${chainId}`,
+          url: `${safeConfigUrl}/api/v2/chains/${SERVICE_KEY}/${chainId}`,
         }),
       );
     });
