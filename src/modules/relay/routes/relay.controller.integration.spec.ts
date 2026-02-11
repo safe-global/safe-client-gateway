@@ -209,9 +209,9 @@ describe('Relay controller', () => {
               });
               networkService.post.mockImplementation(({ url }) => {
                 switch (url) {
-                  case `${relayUrl}/relays/v2/sponsored-call`:
+                  case `${relayUrl}/rpc`:
                     return Promise.resolve({
-                      data: rawify({ taskId }),
+                      data: rawify({ jsonrpc: '2.0', result: taskId, id: 1 }),
                       status: 200,
                     });
                   default:
@@ -297,9 +297,9 @@ describe('Relay controller', () => {
               });
               networkService.post.mockImplementation(({ url }) => {
                 switch (url) {
-                  case `${relayUrl}/relays/v2/sponsored-call`:
+                  case `${relayUrl}/rpc`:
                     return Promise.resolve({
-                      data: rawify({ taskId }),
+                      data: rawify({ jsonrpc: '2.0', result: taskId, id: 1 }),
                       status: 200,
                     });
                   default:
@@ -353,9 +353,9 @@ describe('Relay controller', () => {
                 });
                 networkService.post.mockImplementation(({ url }) => {
                   switch (url) {
-                    case `${relayUrl}/relays/v2/sponsored-call`:
+                    case `${relayUrl}/rpc`:
                       return Promise.resolve({
-                        data: rawify({ taskId }),
+                        data: rawify({ jsonrpc: '2.0', result: taskId, id: 1 }),
                         status: 200,
                       });
                     default:
@@ -402,9 +402,9 @@ describe('Relay controller', () => {
                 });
                 networkService.post.mockImplementation(({ url }) => {
                   switch (url) {
-                    case `${relayUrl}/relays/v2/sponsored-call`:
+                    case `${relayUrl}/rpc`:
                       return Promise.resolve({
-                        data: rawify({ taskId }),
+                        data: rawify({ jsonrpc: '2.0', result: taskId, id: 1 }),
                         status: 200,
                       });
                     default:
@@ -430,10 +430,13 @@ describe('Relay controller', () => {
                   BigInt(gasLimit) + BigInt(150_000)
                 ).toString();
                 expect(networkService.post).toHaveBeenCalledWith({
-                  url: `${relayUrl}/relays/v2/sponsored-call`,
+                  url: `${relayUrl}/rpc`,
                   data: expect.objectContaining({
-                    gasLimit: expectedGasLimit,
+                    params: expect.objectContaining({
+                      gasLimit: expectedGasLimit,
+                    }),
                   }),
+                  networkRequest: expect.any(Object),
                 });
               });
 
@@ -498,9 +501,13 @@ describe('Relay controller', () => {
                   });
                   networkService.post.mockImplementation(({ url }) => {
                     switch (url) {
-                      case `${relayUrl}/relays/v2/sponsored-call`:
+                      case `${relayUrl}/rpc`:
                         return Promise.resolve({
-                          data: rawify({ taskId }),
+                          data: rawify({
+                            jsonrpc: '2.0',
+                            result: taskId,
+                            id: 1,
+                          }),
                           status: 200,
                         });
                       default:
@@ -552,9 +559,9 @@ describe('Relay controller', () => {
                 });
                 networkService.post.mockImplementation(({ url }) => {
                   switch (url) {
-                    case `${relayUrl}/relays/v2/sponsored-call`:
+                    case `${relayUrl}/rpc`:
                       return Promise.resolve({
-                        data: rawify({ taskId }),
+                        data: rawify({ jsonrpc: '2.0', result: taskId, id: 1 }),
                         status: 200,
                       });
                     default:
@@ -631,9 +638,9 @@ describe('Relay controller', () => {
                 });
                 networkService.post.mockImplementation(({ url }) => {
                   switch (url) {
-                    case `${relayUrl}/relays/v2/sponsored-call`:
+                    case `${relayUrl}/rpc`:
                       return Promise.resolve({
-                        data: rawify({ taskId }),
+                        data: rawify({ jsonrpc: '2.0', result: taskId, id: 1 }),
                         status: 200,
                       });
                     default:
@@ -710,9 +717,9 @@ describe('Relay controller', () => {
                 });
                 networkService.post.mockImplementation(({ url }) => {
                   switch (url) {
-                    case `${relayUrl}/relays/v2/sponsored-call`:
+                    case `${relayUrl}/rpc`:
                       return Promise.resolve({
-                        data: rawify({ taskId }),
+                        data: rawify({ jsonrpc: '2.0', result: taskId, id: 1 }),
                         status: 200,
                       });
                     default:
@@ -782,9 +789,13 @@ describe('Relay controller', () => {
                   });
                   networkService.post.mockImplementation(({ url }) => {
                     switch (url) {
-                      case `${relayUrl}/relays/v2/sponsored-call`:
+                      case `${relayUrl}/rpc`:
                         return Promise.resolve({
-                          data: rawify({ taskId }),
+                          data: rawify({
+                            jsonrpc: '2.0',
+                            result: taskId,
+                            id: 1,
+                          }),
                           status: 200,
                         });
                       default:
@@ -844,9 +855,13 @@ describe('Relay controller', () => {
                   });
                   networkService.post.mockImplementation(({ url }) => {
                     switch (url) {
-                      case `${relayUrl}/relays/v2/sponsored-call`:
+                      case `${relayUrl}/rpc`:
                         return Promise.resolve({
-                          data: rawify({ taskId }),
+                          data: rawify({
+                            jsonrpc: '2.0',
+                            result: taskId,
+                            id: 1,
+                          }),
                           status: 200,
                         });
                       default:
@@ -913,9 +928,13 @@ describe('Relay controller', () => {
                   });
                   networkService.post.mockImplementation(({ url }) => {
                     switch (url) {
-                      case `${relayUrl}/relays/v2/sponsored-call`:
+                      case `${relayUrl}/rpc`:
                         return Promise.resolve({
-                          data: rawify({ taskId }),
+                          data: rawify({
+                            jsonrpc: '2.0',
+                            result: taskId,
+                            id: 1,
+                          }),
                           status: 200,
                         });
                       default:
@@ -975,9 +994,13 @@ describe('Relay controller', () => {
                   });
                   networkService.post.mockImplementation(({ url }) => {
                     switch (url) {
-                      case `${relayUrl}/relays/v2/sponsored-call`:
+                      case `${relayUrl}/rpc`:
                         return Promise.resolve({
-                          data: rawify({ taskId }),
+                          data: rawify({
+                            jsonrpc: '2.0',
+                            result: taskId,
+                            id: 1,
+                          }),
                           status: 200,
                         });
                       default:
@@ -1055,9 +1078,9 @@ describe('Relay controller', () => {
                 });
                 networkService.post.mockImplementation(({ url }) => {
                   switch (url) {
-                    case `${relayUrl}/relays/v2/sponsored-call`:
+                    case `${relayUrl}/rpc`:
                       return Promise.resolve({
-                        data: rawify({ taskId }),
+                        data: rawify({ jsonrpc: '2.0', result: taskId, id: 1 }),
                         status: 200,
                       });
                     default:
@@ -1119,9 +1142,9 @@ describe('Relay controller', () => {
                 });
                 networkService.post.mockImplementation(({ url }) => {
                   switch (url) {
-                    case `${relayUrl}/relays/v2/sponsored-call`:
+                    case `${relayUrl}/rpc`:
                       return Promise.resolve({
-                        data: rawify({ taskId }),
+                        data: rawify({ jsonrpc: '2.0', result: taskId, id: 1 }),
                         status: 200,
                       });
                     default:
@@ -1214,9 +1237,9 @@ describe('Relay controller', () => {
                 });
                 networkService.post.mockImplementation(({ url }) => {
                   switch (url) {
-                    case `${relayUrl}/relays/v2/sponsored-call`:
+                    case `${relayUrl}/rpc`:
                       return Promise.resolve({
-                        data: rawify({ taskId }),
+                        data: rawify({ jsonrpc: '2.0', result: taskId, id: 1 }),
                         status: 200,
                       });
                     default:
@@ -1306,9 +1329,9 @@ describe('Relay controller', () => {
                 });
                 networkService.post.mockImplementation(({ url }) => {
                   switch (url) {
-                    case `${relayUrl}/relays/v2/sponsored-call`:
+                    case `${relayUrl}/rpc`:
                       return Promise.resolve({
-                        data: rawify({ taskId }),
+                        data: rawify({ jsonrpc: '2.0', result: taskId, id: 1 }),
                         status: 200,
                       });
                     default:
@@ -1398,9 +1421,9 @@ describe('Relay controller', () => {
                 });
                 networkService.post.mockImplementation(({ url }) => {
                   switch (url) {
-                    case `${relayUrl}/relays/v2/sponsored-call`:
+                    case `${relayUrl}/rpc`:
                       return Promise.resolve({
-                        data: rawify({ taskId }),
+                        data: rawify({ jsonrpc: '2.0', result: taskId, id: 1 }),
                         status: 200,
                       });
                     default:
@@ -1482,9 +1505,9 @@ describe('Relay controller', () => {
                 });
                 networkService.post.mockImplementation(({ url }) => {
                   switch (url) {
-                    case `${relayUrl}/relays/v2/sponsored-call`:
+                    case `${relayUrl}/rpc`:
                       return Promise.resolve({
-                        data: rawify({ taskId }),
+                        data: rawify({ jsonrpc: '2.0', result: taskId, id: 1 }),
                         status: 200,
                       });
                     default:
@@ -1823,9 +1846,9 @@ describe('Relay controller', () => {
                 });
                 networkService.post.mockImplementation(({ url }) => {
                   switch (url) {
-                    case `${relayUrl}/relays/v2/sponsored-call`:
+                    case `${relayUrl}/rpc`:
                       return Promise.resolve({
-                        data: rawify({ taskId }),
+                        data: rawify({ jsonrpc: '2.0', result: taskId, id: 1 }),
                         status: 200,
                       });
                     default:
@@ -2154,7 +2177,7 @@ describe('Relay controller', () => {
         });
         networkService.post.mockImplementation(({ url }) => {
           switch (url) {
-            case `${relayUrl}/relays/v2/sponsored-call`:
+            case `${relayUrl}/rpc`:
               return Promise.reject(new Error('Relayer error'));
             default:
               return Promise.reject(`No matching rule for url: ${url}`);
@@ -2219,9 +2242,9 @@ describe('Relay controller', () => {
             });
             networkService.post.mockImplementation(({ url }) => {
               switch (url) {
-                case `${relayUrl}/relays/v2/sponsored-call`:
+                case `${relayUrl}/rpc`:
                   return Promise.resolve({
-                    data: rawify({ taskId }),
+                    data: rawify({ jsonrpc: '2.0', result: taskId, id: 1 }),
                     status: 200,
                   });
                 default:
@@ -2312,9 +2335,9 @@ describe('Relay controller', () => {
             });
             networkService.post.mockImplementation(({ url }) => {
               switch (url) {
-                case `${relayUrl}/relays/v2/sponsored-call`:
+                case `${relayUrl}/rpc`:
                   return Promise.resolve({
-                    data: rawify({ taskId }),
+                    data: rawify({ jsonrpc: '2.0', result: taskId, id: 1 }),
                     status: 200,
                   });
                 default:
@@ -2375,9 +2398,9 @@ describe('Relay controller', () => {
             });
             networkService.post.mockImplementation(({ url }) => {
               switch (url) {
-                case `${relayUrl}/relays/v2/sponsored-call`:
+                case `${relayUrl}/rpc`:
                   return Promise.resolve({
-                    data: rawify({ taskId }),
+                    data: rawify({ jsonrpc: '2.0', result: taskId, id: 1 }),
                     status: 200,
                   });
                 default:
@@ -2453,9 +2476,9 @@ describe('Relay controller', () => {
             });
             networkService.post.mockImplementation(({ url }) => {
               switch (url) {
-                case `${relayUrl}/relays/v2/sponsored-call`:
+                case `${relayUrl}/rpc`:
                   return Promise.resolve({
-                    data: rawify({ taskId }),
+                    data: rawify({ jsonrpc: '2.0', result: taskId, id: 1 }),
                     status: 200,
                   });
                 default:
@@ -2525,9 +2548,9 @@ describe('Relay controller', () => {
             });
             networkService.post.mockImplementation(({ url }) => {
               switch (url) {
-                case `${relayUrl}/relays/v2/sponsored-call`:
+                case `${relayUrl}/rpc`:
                   return Promise.resolve({
-                    data: rawify({ taskId }),
+                    data: rawify({ jsonrpc: '2.0', result: taskId, id: 1 }),
                     status: 200,
                   });
                 default:
@@ -2581,9 +2604,9 @@ describe('Relay controller', () => {
         });
         networkService.post.mockImplementation(({ url }) => {
           switch (url) {
-            case `${relayUrl}/relays/v2/sponsored-call`:
+            case `${relayUrl}/rpc`:
               return Promise.resolve({
-                data: rawify({ taskId }),
+                data: rawify({ jsonrpc: '2.0', result: taskId, id: 1 }),
                 status: 200,
               });
             default:
@@ -2643,9 +2666,9 @@ describe('Relay controller', () => {
         });
         networkService.post.mockImplementation(({ url }) => {
           switch (url) {
-            case `${relayUrl}/relays/v2/sponsored-call`:
+            case `${relayUrl}/rpc`:
               return Promise.resolve({
-                data: rawify({ taskId }),
+                data: rawify({ jsonrpc: '2.0', result: taskId, id: 1 }),
                 status: 200,
               });
             default:
@@ -2692,9 +2715,9 @@ describe('Relay controller', () => {
         });
         networkService.post.mockImplementation(({ url }) => {
           switch (url) {
-            case `${relayUrl}/relays/v2/sponsored-call`:
+            case `${relayUrl}/rpc`:
               return Promise.resolve({
-                data: rawify({ taskId }),
+                data: rawify({ jsonrpc: '2.0', result: taskId, id: 1 }),
                 status: 200,
               });
             default:
@@ -2759,8 +2782,11 @@ describe('Relay controller', () => {
         });
         networkService.post.mockImplementation(({ url }) => {
           switch (url) {
-            case `${relayUrl}/relays/v2/sponsored-call`:
-              return Promise.resolve({ data: rawify({ taskId }), status: 200 });
+            case `${relayUrl}/rpc`:
+              return Promise.resolve({
+                data: rawify({ jsonrpc: '2.0', result: taskId, id: 1 }),
+                status: 200,
+              });
             default:
               return Promise.reject(`No matching rule for url: ${url}`);
           }
@@ -3205,9 +3231,9 @@ describe('Relay controller', () => {
                 // Mock the relay API call
                 networkService.post.mockImplementation(({ url }) => {
                   switch (url) {
-                    case `${relayUrl}/relays/v2/sponsored-call`:
+                    case `${relayUrl}/rpc`:
                       return Promise.resolve({
-                        data: rawify({ taskId }),
+                        data: rawify({ jsonrpc: '2.0', result: taskId, id: 1 }),
                         status: 200,
                       });
                     default:
@@ -3336,13 +3362,17 @@ describe('Relay controller', () => {
                 networkService.post.mockImplementation(
                   ({ url, data: postData }) => {
                     switch (url) {
-                      case `${relayUrl}/relays/v2/sponsored-call`:
+                      case `${relayUrl}/rpc`:
                         relayApiCall = (postData ?? {}) as Record<
                           string,
                           unknown
                         >;
                         return Promise.resolve({
-                          data: rawify({ taskId }),
+                          data: rawify({
+                            jsonrpc: '2.0',
+                            result: taskId,
+                            id: 1,
+                          }),
                           status: 200,
                         });
                       default:
@@ -3371,9 +3401,8 @@ describe('Relay controller', () => {
                   .expect({ taskId });
 
                 // Verify that relay API was called with the expected gasLimit
-                expect(relayApiCall.gasLimit).toBe(
-                  expectedActualGasLimit.toString(),
-                );
+                const params = relayApiCall.params as Record<string, unknown>;
+                expect(params.gasLimit).toBe(expectedActualGasLimit.toString());
               });
             },
           );
