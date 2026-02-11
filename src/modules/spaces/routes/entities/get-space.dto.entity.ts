@@ -8,8 +8,7 @@ import {
   MemberStatus,
 } from '@/modules/users/domain/entities/member.entity';
 import { UserStatus } from '@/modules/users/domain/entities/user.entity';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { SpaceSafe } from '@/modules/spaces/datasources/entities/space-safes.entity.db';
+import { ApiProperty } from '@nestjs/swagger';
 
 class UserDto extends User {
   @ApiProperty({ type: Number })
@@ -61,32 +60,10 @@ export class GetSpaceResponse {
   @ApiProperty({ type: MemberDto, isArray: true })
   public members!: Array<MemberDto>;
 
-  @ApiPropertyOptional({
-    oneOf: [
-      {
-        type: 'object',
-        additionalProperties: {
-          type: 'array',
-          items: { type: 'string' },
-        },
-        description: 'Safes grouped by chainId (when safes=passFullData)',
-        example: { '1': ['0xabc...', '0xdef...'] },
-      },
-      {
-        type: 'number',
-        description: 'Total count of safes in the space (when safes=passCount)',
-        example: 5,
-      },
-    ],
-    description:
-      'Optional: safes data. Returns addresses grouped by chainId (passFullData) or total count (passCount).',
+  @ApiProperty({
+    type: Number,
+    description: 'Total count of Safes in the space',
+    example: 5,
   })
-  public safes?:
-    | { [chainId: SpaceSafe['chainId']]: Array<SpaceSafe['address']> }
-    | number;
-}
-
-export enum SafesMode {
-  passFullData = 'passFullData',
-  passCount = 'passCount',
+  public safeCount!: number;
 }

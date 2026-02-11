@@ -5,7 +5,6 @@ import {
   ApiOkResponse,
   ApiOperation,
   ApiParam,
-  ApiQuery,
   ApiResponse,
   ApiTags,
   ApiUnauthorizedResponse,
@@ -21,7 +20,6 @@ import {
   ParseIntPipe,
   Patch,
   Post,
-  Query,
   UseGuards,
 } from '@nestjs/common';
 import { SpacesService } from '@/modules/spaces/routes/spaces.service';
@@ -34,10 +32,7 @@ import {
   CreateSpaceResponse,
   CreateSpaceSchema,
 } from '@/modules/spaces/routes/entities/create-space.dto.entity';
-import {
-  GetSpaceResponse,
-  SafesMode,
-} from '@/modules/spaces/routes/entities/get-space.dto.entity';
+import { GetSpaceResponse } from '@/modules/spaces/routes/entities/get-space.dto.entity';
 import {
   UpdateSpaceDto,
   UpdateSpaceResponse,
@@ -129,15 +124,7 @@ export class SpacesController {
   @ApiOperation({
     summary: 'Get user spaces',
     description:
-      'Retrieves all spaces that the authenticated user is a member of or has been invited to.',
-  })
-  @ApiQuery({
-    name: 'safes',
-    required: false,
-    description:
-      'Optional: include Safe data. Values: passFullData (returns addresses), passCount (returns count).',
-    enum: SafesMode,
-    enumName: 'SafesMode',
+      'Retrieves all spaces that the authenticated user is a member of or has been invited to, including the count of Safes in each space.',
   })
   @ApiOkResponse({
     description: 'User spaces retrieved successfully',
@@ -157,12 +144,8 @@ export class SpacesController {
   @Get()
   public async get(
     @Auth() authPayload: AuthPayload,
-    @Query('safes') safesMode?: SafesMode,
   ): Promise<Array<GetSpaceResponse>> {
-    return await this.spacesService.getActiveOrInvitedSpaces(
-      authPayload,
-      safesMode,
-    );
+    return await this.spacesService.getActiveOrInvitedSpaces(authPayload);
   }
 
   @ApiOperation({
