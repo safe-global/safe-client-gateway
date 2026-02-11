@@ -12,7 +12,7 @@ export class ChainsV2Service {
   constructor(
     @Inject(IChainsRepository)
     private readonly chainsRepository: IChainsRepository,
-  ) { }
+  ) {}
 
   async getChains(
     serviceKey: string,

@@ -20,7 +20,7 @@ import { PaginationData } from '@/routes/common/pagination/pagination.data';
   version: '2',
 })
 export class ChainsV2Controller {
-  constructor(private readonly chainsV2Service: ChainsV2Service) { }
+  constructor(private readonly chainsV2Service: ChainsV2Service) {}
 
   @ApiOperation({
     summary: 'Get chain details (v2)',

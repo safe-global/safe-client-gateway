@@ -553,9 +553,9 @@ export class EventCacheHelper {
       Event,
       {
         type:
-        | TransactionEventType.NEW_DELEGATE
-        | TransactionEventType.UPDATED_DELEGATE
-        | TransactionEventType.DELETED_DELEGATE;
+          | TransactionEventType.NEW_DELEGATE
+          | TransactionEventType.UPDATED_DELEGATE
+          | TransactionEventType.DELETED_DELEGATE;
       }
     >,
   ): Array<Promise<void>> {
@@ -574,10 +574,10 @@ export class EventCacheHelper {
       Event,
       {
         type:
-        | TransactionEventType.PENDING_MULTISIG_TRANSACTION
-        | TransactionEventType.DELETED_MULTISIG_TRANSACTION
-        | TransactionEventType.EXECUTED_MULTISIG_TRANSACTION
-        | TransactionEventType.NEW_CONFIRMATION;
+          | TransactionEventType.PENDING_MULTISIG_TRANSACTION
+          | TransactionEventType.DELETED_MULTISIG_TRANSACTION
+          | TransactionEventType.EXECUTED_MULTISIG_TRANSACTION
+          | TransactionEventType.NEW_CONFIRMATION;
       }
     >,
   ): void {
@@ -595,11 +595,11 @@ export class EventCacheHelper {
       Event,
       {
         type:
-        | TransactionEventType.MODULE_TRANSACTION
-        | TransactionEventType.INCOMING_ETHER
-        | TransactionEventType.OUTGOING_ETHER
-        | TransactionEventType.INCOMING_TOKEN
-        | TransactionEventType.OUTGOING_TOKEN;
+          | TransactionEventType.MODULE_TRANSACTION
+          | TransactionEventType.INCOMING_ETHER
+          | TransactionEventType.OUTGOING_ETHER
+          | TransactionEventType.INCOMING_TOKEN
+          | TransactionEventType.OUTGOING_TOKEN;
       }
     >,
   ): void {
@@ -617,8 +617,8 @@ export class EventCacheHelper {
       Event,
       {
         type:
-        | TransactionEventType.MESSAGE_CREATED
-        | TransactionEventType.MESSAGE_CONFIRMATION;
+          | TransactionEventType.MESSAGE_CREATED
+          | TransactionEventType.MESSAGE_CONFIRMATION;
       }
     >,
   ): void {
