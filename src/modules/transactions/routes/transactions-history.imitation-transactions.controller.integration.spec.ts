@@ -93,7 +93,7 @@ describe('Transactions History Controller - Imitation Transactions', () => {
     await app.init();
   });
 
-  afterAll(async () => {
+  afterEach(async () => {
     await app.close();
   });
 

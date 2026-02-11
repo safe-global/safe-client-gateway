@@ -97,7 +97,7 @@ describe('Hook Events for Notifications pt. 1', () => {
     await initApp();
   });
 
-  afterAll(async () => {
+  afterEach(async () => {
     await app.close();
   });
 
@@ -2217,7 +2217,7 @@ describe('Hook Events for Notifications (Unit) pt. 2', () => {
     await initApp();
   });
 
-  afterAll(async () => {
+  afterEach(async () => {
     await app.close();
   });
 

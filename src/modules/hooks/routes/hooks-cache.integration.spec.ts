@@ -76,7 +76,7 @@ describe('Hook Events for Cache', () => {
     await initApp(configuration);
   });
 
-  afterAll(async () => {
+  afterEach(async () => {
     await app.close();
   });
 

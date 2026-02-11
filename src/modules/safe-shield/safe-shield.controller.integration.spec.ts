@@ -24,9 +24,7 @@ describe('SafeShieldController', () => {
   let networkService: jest.MockedObjectDeep<INetworkService>;
   let blockaidApi: jest.MockedObjectDeep<IBlockaidApi>;
 
-  beforeEach(async () => {
-    jest.resetAllMocks();
-
+  beforeAll(async () => {
     const defaultConfiguration = configuration();
     const testConfiguration = (): typeof defaultConfiguration => ({
       ...defaultConfiguration,
@@ -58,6 +56,10 @@ describe('SafeShieldController', () => {
 
   afterAll(async () => {
     await app.close();
+  });
+
+  beforeEach(() => {
+    jest.resetAllMocks();
   });
 
   describe('POST /v1/chains/:chainId/security/:safeAddress/threat-analysis', () => {

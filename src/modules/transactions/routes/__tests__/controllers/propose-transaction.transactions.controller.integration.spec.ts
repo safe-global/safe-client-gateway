@@ -36,6 +36,7 @@ import { confirmationBuilder } from '@/modules/safe/domain/entities/__tests__/mu
 import { dataDecodedBuilder } from '@/modules/data-decoder/domain/v2/entities/__tests__/data-decoded.builder';
 import { createTestModule } from '@/__tests__/testing-module';
 import { contractBuilder } from '@/modules/data-decoder/domain/v2/entities/__tests__/contract.builder';
+import { IBlocklistService } from '@/config/entities/blocklist.interface';
 
 describe('Propose transaction - Transactions Controller', () => {
   let app: INestApplication<Server>;
@@ -43,6 +44,7 @@ describe('Propose transaction - Transactions Controller', () => {
   let safeDecoderUrl: string;
   let networkService: jest.MockedObjectDeep<INetworkService>;
   let loggingService: jest.MockedObjectDeep<ILoggingService>;
+  let blocklistService: jest.MockedObjectDeep<IBlocklistService>;
 
   async function initApp(config: typeof configuration): Promise<void> {
     const moduleFixture = await createTestModule({
@@ -63,6 +65,7 @@ describe('Propose transaction - Transactions Controller', () => {
     safeDecoderUrl = configurationService.getOrThrow('safeDataDecoder.baseUri');
     networkService = moduleFixture.get(NetworkService);
     loggingService = moduleFixture.get(LoggingService);
+    blocklistService = moduleFixture.get(IBlocklistService);
 
     // TODO: Override module to avoid spying
     jest.spyOn(loggingService, 'error');
@@ -87,7 +90,7 @@ describe('Propose transaction - Transactions Controller', () => {
     await initApp(testConfiguration);
   });
 
-  afterAll(async () => {
+  afterEach(async () => {
     await app.close();
   });
 
@@ -1272,15 +1275,20 @@ describe('Propose transaction - Transactions Controller', () => {
       const chain = chainBuilder().build();
       const privateKey = generatePrivateKey();
       const signer = privateKeyToAccount(privateKey);
+
       const defaultConfiguration = configuration();
       const testConfiguration = (): ReturnType<typeof configuration> => ({
         ...defaultConfiguration,
-        blockchain: {
-          ...defaultConfiguration.blockchain,
-          blocklist: [signer.address],
+        features: {
+          ...defaultConfiguration.features,
         },
       });
       await initApp(testConfiguration);
+
+      jest
+        .spyOn(blocklistService, 'getBlocklist')
+        .mockReturnValue([signer.address]);
+
       const safe = safeBuilder().with('owners', [signer.address]).build();
       const transaction = await multisigTransactionBuilder()
         .with('safe', safe.address)

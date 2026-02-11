@@ -12,7 +12,7 @@ describe('HooksController', () => {
     let authToken: string;
     let configurationService: IConfigurationService;
 
-    async function initApp(): Promise<void> {
+    beforeAll(async () => {
       const moduleFixture = await createTestModule();
 
       app = moduleFixture.createNestApplication();
@@ -21,11 +21,6 @@ describe('HooksController', () => {
       authToken = configurationService.getOrThrow('auth.token');
 
       await app.init();
-    }
-
-    beforeEach(async () => {
-      jest.resetAllMocks();
-      await initApp();
     });
 
     afterAll(async () => {
@@ -66,7 +61,7 @@ describe('HooksController', () => {
     let authToken: string;
     let configurationService: IConfigurationService;
 
-    async function initApp(): Promise<void> {
+    beforeAll(async () => {
       const defaultConfiguration = configuration();
 
       const testConfiguration = (): typeof defaultConfiguration => ({
@@ -86,11 +81,6 @@ describe('HooksController', () => {
       authToken = configurationService.getOrThrow('auth.token');
 
       await app.init();
-    }
-
-    beforeEach(async () => {
-      jest.resetAllMocks();
-      await initApp();
     });
 
     afterAll(async () => {

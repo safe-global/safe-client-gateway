@@ -69,7 +69,7 @@ describe('Safes V2 Controller Overview', () => {
     await app.init();
   });
 
-  afterAll(async () => {
+  afterEach(async () => {
     await app.close();
   });
 

@@ -11,6 +11,7 @@ import { LoggingService, ILoggingService } from '@/logging/logging.interface';
 import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import type { Address, Hash, Hex } from 'viem';
 import { isAddressEqual } from 'viem';
+import { IBlocklistService } from '@/config/entities/blocklist.interface';
 
 enum ErrorMessage {
   MalformedHash = 'Could not calculate messageHash',
@@ -25,22 +26,24 @@ export class MessageVerifierHelper {
 
   private readonly isEthSignEnabled: boolean;
   private readonly isMessageVerificationEnabled: boolean;
-  private readonly blocklist: Array<Address>;
 
   constructor(
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
     @Inject(LoggingService)
     private readonly loggingService: ILoggingService,
+    @Inject(IBlocklistService)
+    private readonly blocklistService: IBlocklistService,
   ) {
     this.isEthSignEnabled =
       this.configurationService.getOrThrow('features.ethSign');
     this.isMessageVerificationEnabled = this.configurationService.getOrThrow(
       'features.messageVerification',
     );
-    this.blocklist = this.configurationService.getOrThrow(
-      'blockchain.blocklist',
-    );
+  }
+
+  private get blocklist(): Array<Address> {
+    return this.blocklistService.getBlocklist();
   }
 
   public verifyCreation(args: {

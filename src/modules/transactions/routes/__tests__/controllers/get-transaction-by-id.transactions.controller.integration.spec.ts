@@ -38,6 +38,8 @@ import {
   type ILoggingService,
   LoggingService,
 } from '@/logging/logging.interface';
+import { IBlocklistService } from '@/config/entities/blocklist.interface';
+
 import { dataDecodedBuilder } from '@/modules/data-decoder/domain/v2/entities/__tests__/data-decoded.builder';
 import { createTestModule } from '@/__tests__/testing-module';
 
@@ -47,6 +49,7 @@ describe('Get by id - Transactions Controller', () => {
   let safeDecoderUrl: string;
   let networkService: jest.MockedObjectDeep<INetworkService>;
   let loggingService: jest.MockedObjectDeep<ILoggingService>;
+  let blocklistService: jest.MockedObjectDeep<IBlocklistService>;
 
   async function initApp(config: typeof configuration): Promise<void> {
     const moduleFixture = await createTestModule({
@@ -67,6 +70,7 @@ describe('Get by id - Transactions Controller', () => {
     safeDecoderUrl = configurationService.getOrThrow('safeDataDecoder.baseUri');
     networkService = moduleFixture.get(NetworkService);
     loggingService = moduleFixture.get(LoggingService);
+    blocklistService = moduleFixture.get(IBlocklistService);
 
     // TODO: Override module to avoid spying
     jest.spyOn(loggingService, 'error');
@@ -90,7 +94,7 @@ describe('Get by id - Transactions Controller', () => {
     await initApp(testConfiguration);
   });
 
-  afterAll(async () => {
+  afterEach(async () => {
     await app.close();
   });
   it('Failure: Config API fails', async () => {
@@ -1382,17 +1386,22 @@ describe('Get by id - Transactions Controller', () => {
       const chain = chainBuilder().build();
       const privateKey = generatePrivateKey();
       const signer = privateKeyToAccount(privateKey);
+
       const defaultConfiguration = configuration();
       const testConfiguration = (): ReturnType<typeof configuration> => {
         return {
           ...defaultConfiguration,
-          blockchain: {
-            ...defaultConfiguration.blockchain,
-            blocklist: [signer.address],
+          features: {
+            ...defaultConfiguration.features,
           },
         };
       };
       await initApp(testConfiguration);
+
+      jest
+        .spyOn(blocklistService, 'getBlocklist')
+        .mockReturnValue([signer.address]);
+
       const safe = safeBuilder().with('owners', [signer.address]).build();
       const multisigTransaction = await multisigTransactionBuilder()
         .with('safe', safe.address)
