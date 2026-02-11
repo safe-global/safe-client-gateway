@@ -26,9 +26,9 @@ A new CGW v2 chains endpoint retrieves a list of all supported chains with confi
 
 **Acceptance Scenarios**:
 
-1. **Given** the CGW is configured with a service key (e.g., "frontend"), **When** a request is made to the new v2 chains endpoint, **Then** the CGW fetches chain data from the Config Service v2 endpoint using that service key and returns the scoped chain list.
+1. **Given** a request to `/v2/chains/{serviceKey}` (e.g. `WALLET_WEB`), **When** the request is processed, **Then** the CGW fetches chain data from the Config Service v2 endpoint using that service key and returns the scoped chain list.
 
-2. **Given** the CGW is configured with a service key, **When** the Config Service v2 endpoint is unavailable, **Then** the new v2 CGW endpoint handles the error gracefully and returns an appropriate error response.
+2. **Given** a request to the v2 chains endpoint, **When** the Config Service v2 endpoint is unavailable, **Then** the new v2 CGW endpoint handles the error gracefully and returns an appropriate error response.
 
 3. **Given** a request is made to the new v2 chains endpoint, **Then** the response structure is compatible with the existing v1 chains endpoint format (same Chain entity schema).
 
@@ -46,7 +46,7 @@ A new CGW v2 single-chain endpoint retrieves configuration for a specific chain 
 
 **Acceptance Scenarios**:
 
-1. **Given** the CGW is configured with a service key, **When** a request is made to the new v2 chain endpoint for a specific chain (e.g., chainId "1"), **Then** the CGW fetches that chain's data from Config Service `GET /api/v2/chains/{service_key}/{chain_id}/` and returns the scoped configuration.
+1. **Given** a request to `/v2/chains/{serviceKey}/1`, **When** the request is processed, **Then** the CGW fetches that chain's data from Config Service `GET /api/v2/chains/{service_key}/{chain_id}/` and returns the scoped configuration.
 
 2. **Given** a request is made to the new v2 chain endpoint for a non-existent chain, **Then** the CGW returns a 404 error.
 
@@ -56,21 +56,21 @@ A new CGW v2 single-chain endpoint retrieves configuration for a specific chain 
 
 ---
 
-### User Story 3 - Configurable Service Key (Priority: P2)
+### User Story 3 - Service Key via URL (Priority: P2)
 
-Operators can configure which service key the CGW uses when communicating with the Config Service. This allows flexibility in deployment scenarios where the CGW might serve different contexts.
+Clients pass the service key as a URL path parameter when requesting v2 chain data. This allows different clients to request different service-scoped configs from the same CGW instance without configuration.
 
-**Why this priority**: Important for operational flexibility but has a reasonable default ("frontend" per user requirements).
+**Why this priority**: Enables per-request service scoping without deployment-level configuration.
 
-**Independent Test**: Can be tested by deploying with different service key configurations and verifying the correct endpoints are called.
+**Independent Test**: Request `/v2/chains/WALLET_WEB` and verify Config Service is called with WALLET_WEB.
 
 **Acceptance Scenarios**:
 
-1. **Given** no service key is explicitly configured, **When** the CGW starts, **Then** it uses "frontend" as the default service key.
+1. **Given** a request to `/v2/chains/{serviceKey}`, **When** the request is processed, **Then** the CGW calls Config Service v2 with that service key.
 
-2. **Given** a custom service key is configured via environment variable, **When** the CGW starts, **Then** it uses the configured service key for all Config Service v2 calls.
+2. **Given** a request to `/v2/chains/{serviceKey}/{chainId}`, **When** the request is processed, **Then** the CGW calls Config Service v2 with that service key and chain ID.
 
-3. **Given** the service key configuration is changed, **When** the cache is invalidated, **Then** subsequent requests use the new service key.
+3. **Given** different service keys in the URL, **When** requests are made, **Then** each uses its own cache namespace (no cross-service pollution).
 
 ---
 
@@ -102,9 +102,9 @@ When chain configurations are updated in the Config Service, the CGW's cached da
 
 ### Functional Requirements
 
-- **FR-001**: System MUST expose `GET /v2/chains` endpoint that fetches data from Config Service v2 `GET /api/v2/chains/{service_key}/` using the configured service key.
+- **FR-001**: System MUST expose `GET /v2/chains/:service_key` endpoint that fetches data from Config Service v2 `GET /api/v2/chains/{service_key}/` using the configured service key.
 
-- **FR-002**: System MUST expose `GET /v2/chains/:chainId` endpoint that fetches data from Config Service v2 `GET /api/v2/chains/{service_key}/{chain_id}/` using the configured service key.
+- **FR-002**: System MUST expose `GET /v2/chains/:service_key/:chainId` endpoint that fetches data from Config Service v2 `GET /api/v2/chains/{service_key}/{chain_id}/` using the configured service key.
 
 - **FR-002a**: Other chain-related endpoints (`/about`, `/about/backbone`, `/about/master-copies`, `/about/indexing`) do NOT require v2 versions as they fetch data from Transaction Service, not Config Service.
 
