@@ -44,12 +44,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/Chain'
         '404':
-          description: Service not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '404':
           description: Chain not found
           content:
             application/json:
