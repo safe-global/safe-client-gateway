@@ -100,20 +100,20 @@
 
 ---
 
-## Phase 5: User Story 3 - Service Key via URL (Priority: P2)
+## Phase 5: User Story 3 - Service Key via Query (Priority: P2)
 
-**Goal**: Service key passed as URL path parameter (e.g. `/v2/chains/WALLET_WEB`, `/v2/chains/WALLET_WEB/1`)
+**Goal**: Service key passed as query parameter (e.g. `/v2/chains?serviceKey=WALLET_WEB`, `/v2/chains/1?serviceKey=WALLET_WEB`)
 
-**Independent Test**: Request `/v2/chains/WALLET_WEB` and verify Config Service is called with WALLET_WEB
+**Independent Test**: Request `/v2/chains?serviceKey=WALLET_WEB` and verify Config Service is called with WALLET_WEB
 
 ### Implementation for User Story 3
 
 - [x] T030 [US3] Add configuration validation test for `safeConfig.serviceKey` in `src/config/configuration.validator.spec.ts` (obsolete: removed config, tests removed)
-- [x] T031 [US3] ~~Update `.env.sample` with `SAFE_CONFIG_FRONTEND_KEY`~~ Obsolete: service key now from URL, removed from .env
-- [x] T032 [US3] Add integration test verifying service key from URL is used in Config Service v2 calls in `src/modules/chains/routes/v2/chains.v2.controller.integration.spec.ts`
-- [x] T031b [US3] Migrate v2 chains endpoints to accept serviceKey as URL param; remove SAFE_CONFIG_FRONTEND_KEY
+- [x] T031 [US3] ~~Update `.env.sample` with `SAFE_CONFIG_FRONTEND_KEY`~~ Obsolete: service key now from query, removed from .env
+- [x] T032 [US3] Add integration test verifying service key from query is used in Config Service v2 calls in `src/modules/chains/routes/v2/chains.v2.controller.integration.spec.ts`
+- [x] T031b [US3] Migrate v2 chains endpoints to accept serviceKey as query param; remove SAFE_CONFIG_FRONTEND_KEY
 
-**Checkpoint**: User Story 3 complete - service key comes from URL
+**Checkpoint**: User Story 3 complete - service key comes from query parameter
 
 ---
 

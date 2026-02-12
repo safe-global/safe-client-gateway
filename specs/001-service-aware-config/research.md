@@ -24,18 +24,20 @@
 
 **Task**: Determine how to pass the service key to v2 endpoints.
 
-**Decision**: Accept `serviceKey` as a URL path parameter (e.g. `/v2/chains/WALLET_WEB`, `/v2/chains/WALLET_WEB/1`).
+**Decision**: Accept `serviceKey` as a required query parameter (e.g. `/v2/chains?serviceKey=WALLET_WEB`, `/v2/chains/1?serviceKey=WALLET_WEB`).
 
 **Rationale**:
 
 - Allows different clients to request different service-scoped configs in the same CGW instance
 - No configuration needed - each request is self-describing
-- Aligns with Config Service v2 API structure
+- Avoids route conflicts with other v2 endpoints (e.g. delegates at `/v2/chains/:chainId/delegates`)
+- Mirrors v1 path structure (`/v2/chains`, `/v2/chains/:chainId`)
 
 **Alternatives considered**:
 
+- Path parameter (`/v2/chains/:serviceKey`) - Rejected: Conflicts with delegates v2 routes
 - Environment variable `SAFE_CONFIG_FRONTEND_KEY` - Rejected: Single key per CGW instance, limits flexibility
-- Per-request header - Rejected: Path parameter is more explicit and RESTful
+- Per-request header - Rejected: Query parameter is more explicit and RESTful
 
 ### 3. Cache Key Strategy for v2 Endpoints
 
@@ -129,7 +131,7 @@
 All research tasks resolved. Key decisions:
 
 1. New v2 methods in existing interfaces (not separate interfaces)
-2. Service key via environment variable with "frontend" default
+2. Service key via required query parameter (avoids route conflicts)
 3. Separate cache namespace for v2 endpoints
 4. Follow existing v2 controller patterns
 5. No fallback behavior - v2 failures propagate as errors

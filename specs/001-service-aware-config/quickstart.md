@@ -41,16 +41,16 @@ yarn start:dev
 
 ### 4. Test the New Endpoints
 
-**Get all chains (v2)** (service key in URL path):
+**Get all chains (v2)** (service key as query parameter):
 
 ```bash
-curl http://localhost:3000/v2/chains/WALLET_WEB
+curl http://localhost:3000/v2/chains?serviceKey=WALLET_WEB
 ```
 
 **Get single chain (v2)**:
 
 ```bash
-curl http://localhost:3000/v2/chains/WALLET_WEB/1
+curl http://localhost:3000/v2/chains/1?serviceKey=WALLET_WEB
 ```
 
 **Compare with v1** (should still work unchanged):
@@ -91,7 +91,7 @@ yarn test:integration --testPathPattern=chains.v2
 
 ## Key Implementation Notes
 
-1. **Service Key**: Passed as URL path parameter (e.g. `/v2/chains/WALLET_WEB` or `/v2/chains/WALLET_WEB/1`)
+1. **Service Key**: Passed as required query parameter (e.g. `/v2/chains?serviceKey=WALLET_WEB` or `/v2/chains/1?serviceKey=WALLET_WEB`)
 
 2. **Cache Isolation**: v2 endpoints use separate cache keys (`chains_v2_{serviceKey}`) to prevent pollution
 
@@ -106,7 +106,7 @@ yarn test:integration --testPathPattern=chains.v2
 Verify the Config Service v2 endpoints are accessible:
 
 ```bash
-curl https://safe-config.safe.global/api/v2/chains/frontend/
+curl "https://safe-config.safe.global/api/v2/chains/WALLET_WEB/"
 ```
 
 ### Cache issues

@@ -56,7 +56,7 @@ describe('Chains V2 Controller', () => {
     await app.close();
   });
 
-  describe('GET /v2/chains/:serviceKey', () => {
+  describe('GET /v2/chains', () => {
     it('should return paginated chains from Config Service v2', async () => {
       networkService.get.mockResolvedValueOnce({
         data: rawify(chainsResponse),
@@ -64,7 +64,7 @@ describe('Chains V2 Controller', () => {
       });
 
       await request(app.getHttpServer())
-        .get(`/v2/chains/${SERVICE_KEY}`)
+        .get(`/v2/chains?serviceKey=${SERVICE_KEY}`)
         .expect(200)
         .expect((res) => {
           expect(res.body).toHaveProperty('count');
@@ -87,7 +87,9 @@ describe('Chains V2 Controller', () => {
       });
 
       await request(app.getHttpServer())
-        .get(`/v2/chains/${SERVICE_KEY}?cursor=limit%3D10%26offset%3D20`)
+        .get(
+          `/v2/chains?serviceKey=${SERVICE_KEY}&cursor=limit%3D10%26offset%3D20`,
+        )
         .expect(200);
 
       expect(networkService.get).toHaveBeenCalledWith(
@@ -109,12 +111,16 @@ describe('Chains V2 Controller', () => {
       );
 
       await request(app.getHttpServer())
-        .get(`/v2/chains/${SERVICE_KEY}`)
+        .get(`/v2/chains?serviceKey=${SERVICE_KEY}`)
         .expect(503);
+    });
+
+    it('should return 422 when serviceKey is missing', async () => {
+      await request(app.getHttpServer()).get('/v2/chains').expect(422);
     });
   });
 
-  describe('GET /v2/chains/:serviceKey/:chainId', () => {
+  describe('GET /v2/chains/:chainId', () => {
     it('should return single chain from Config Service v2', async () => {
       const chainId = '1';
       networkService.get.mockResolvedValueOnce({
@@ -123,7 +129,7 @@ describe('Chains V2 Controller', () => {
       });
 
       await request(app.getHttpServer())
-        .get(`/v2/chains/${SERVICE_KEY}/${chainId}`)
+        .get(`/v2/chains/${chainId}?serviceKey=${SERVICE_KEY}`)
         .expect(200)
         .expect((res) => {
           expect(res.body).toHaveProperty('chainId');
@@ -149,20 +155,24 @@ describe('Chains V2 Controller', () => {
       networkService.get.mockRejectedValueOnce(error);
 
       await request(app.getHttpServer())
-        .get(`/v2/chains/${SERVICE_KEY}/${chainId}`)
+        .get(`/v2/chains/${chainId}?serviceKey=${SERVICE_KEY}`)
         .expect(404);
+    });
+
+    it('should return 422 when serviceKey is missing', async () => {
+      await request(app.getHttpServer()).get('/v2/chains/1').expect(422);
     });
   });
 
-  describe('Service key from URL', () => {
-    it('should use service key from URL in Config Service v2 calls', async () => {
+  describe('Service key from query', () => {
+    it('should use service key from query in Config Service v2 calls', async () => {
       networkService.get.mockResolvedValueOnce({
         data: rawify(chainsResponse),
         status: 200,
       });
 
       await request(app.getHttpServer())
-        .get(`/v2/chains/${SERVICE_KEY}`)
+        .get(`/v2/chains?serviceKey=${SERVICE_KEY}`)
         .expect(200);
 
       expect(networkService.get).toHaveBeenCalledWith(
@@ -185,10 +195,10 @@ describe('Chains V2 Controller', () => {
         });
 
       await request(app.getHttpServer())
-        .get(`/v2/chains/${SERVICE_KEY}`)
+        .get(`/v2/chains?serviceKey=${SERVICE_KEY}`)
         .expect(200);
       await request(app.getHttpServer())
-        .get(`/v2/chains/${SERVICE_KEY}/${chainId}`)
+        .get(`/v2/chains/${chainId}?serviceKey=${SERVICE_KEY}`)
         .expect(200);
 
       expect(networkService.get).toHaveBeenNthCalledWith(

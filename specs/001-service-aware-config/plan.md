@@ -5,7 +5,7 @@
 
 ## Summary
 
-Add new v2 CGW chain endpoints (`GET /v2/chains` and `GET /v2/chains/:chainId`) that fetch service-scoped configuration from the Config Service v2 API. The existing v1 endpoints remain unchanged. This enables frontend-specific feature visibility while maintaining backward compatibility.
+Add new v2 CGW chain endpoints (`GET /v2/chains?serviceKey=` and `GET /v2/chains/:chainId?serviceKey=`) that fetch service-scoped configuration from the Config Service v2 API. The existing v1 endpoints remain unchanged. Service key is passed as a query parameter to avoid route conflicts with other v2 endpoints (e.g. delegates).
 
 ## Technical Context
 

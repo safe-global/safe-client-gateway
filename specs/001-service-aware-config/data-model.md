@@ -127,7 +127,7 @@ chains_v2_{serviceKey}                    → List of chains for service
 
 | Field        | Rule                                 | Source              |
 | ------------ | ------------------------------------ | ------------------- |
-| serviceKey   | Non-empty string                     | FR-004, FR-005      |
+| serviceKey   | Required non-empty string (query)    | FR-004              |
 | chainId      | String, validated by existing schema | Existing            |
 | limit/offset | Positive integers                    | Existing pagination |
 
