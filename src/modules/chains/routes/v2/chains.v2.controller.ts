@@ -9,7 +9,7 @@ import {
 import { ChainsV2Service } from './chains.v2.service';
 import { ChainPage } from '@/modules/chains/routes/entities/chain-page.entity';
 import { Chain } from '@/modules/chains/routes/entities/chain.entity';
-import { ChainsV2QuerySchema } from '@/modules/chains/routes/v2/entities/schemas/chains-v2-query.schema';
+import { ServiceKeyQuerySchema } from '@/modules/chains/routes/v2/entities/schemas/chains-v2-query.schema';
 import { PaginationDataDecorator } from '@/routes/common/decorators/pagination.data.decorator';
 import { RouteUrlDecorator } from '@/routes/common/decorators/route.url.decorator';
 import { Page } from '@/routes/common/entities/page.entity';
@@ -50,16 +50,12 @@ export class ChainsV2Controller {
   })
   @Get()
   async getChains(
-    @Query(new ValidationPipe(ChainsV2QuerySchema))
-    query: { serviceKey: string },
+    @Query('serviceKey', new ValidationPipe(ServiceKeyQuerySchema))
+    serviceKey: string,
     @RouteUrlDecorator() routeUrl: URL,
     @PaginationDataDecorator() paginationData: PaginationData,
   ): Promise<Page<Chain>> {
-    return this.chainsV2Service.getChains(
-      query.serviceKey,
-      routeUrl,
-      paginationData,
-    );
+    return this.chainsV2Service.getChains(serviceKey, routeUrl, paginationData);
   }
 
   @ApiOperation({
@@ -88,9 +84,9 @@ export class ChainsV2Controller {
   @Get(':chainId')
   async getChain(
     @Param('chainId') chainId: string,
-    @Query(new ValidationPipe(ChainsV2QuerySchema))
-    query: { serviceKey: string },
+    @Query('serviceKey', new ValidationPipe(ServiceKeyQuerySchema))
+    serviceKey: string,
   ): Promise<Chain> {
-    return this.chainsV2Service.getChain(query.serviceKey, chainId);
+    return this.chainsV2Service.getChain(serviceKey, chainId);
   }
 }

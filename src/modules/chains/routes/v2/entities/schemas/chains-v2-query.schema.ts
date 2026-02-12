@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
-export const ChainsV2QuerySchema = z.object({
-  serviceKey: z.string().min(1, 'serviceKey is required'),
-});
+const serviceKeyErrorMessage = 'serviceKey query parameter is required';
+
+export const ServiceKeyQuerySchema = z
+  .string({ error: serviceKeyErrorMessage })
+  .min(1, { message: serviceKeyErrorMessage });
