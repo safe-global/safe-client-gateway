@@ -98,7 +98,6 @@ describe('SpacesService', () => {
       const mockSpace = {
         id: spaceId,
         name: 'Test Space',
-        status: 'ACTIVE' as const,
         members: [
           {
             id: 1,
@@ -121,7 +120,6 @@ describe('SpacesService', () => {
         {
           id: spaceId,
           name: 'Test Space',
-          status: 'ACTIVE',
           members: mockSpace.members,
           safeCount: 3,
         },
@@ -170,14 +168,12 @@ describe('SpacesService', () => {
         {
           id: faker.number.int(),
           space: { id: spaceId } as Space,
-          status: 'ACTIVE',
         } as Member,
       ]);
 
       const mockSpace = {
         id: spaceId,
         name: 'Empty Space',
-        status: 'ACTIVE' as const,
         members: [],
         safes: [],
       } as unknown as Space;

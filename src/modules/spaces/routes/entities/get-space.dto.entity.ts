@@ -14,10 +14,8 @@ class UserDto extends User {
 }
 
 class MemberDto {
-
   @ApiProperty({ type: String, enum: getStringEnumKeys(MemberRole) })
   public role!: Member['role'];
-
 
   @ApiProperty({ type: String })
   public invitedBy!: Member['invitedBy'];
