@@ -138,6 +138,17 @@ describe('SpacesService', () => {
       });
       expect(spacesRepositoryMock.find).toHaveBeenCalledWith({
         where: { id: expect.anything() },
+        select: {
+          id: true,
+          name: true,
+          members: {
+            role: true,
+            invitedBy: true,
+            status: true,
+            user: { id: true },
+          },
+          safes: { id: true },
+        },
         relations: { members: { user: true }, safes: true },
       });
     });
