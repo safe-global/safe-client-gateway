@@ -60,9 +60,6 @@ services:
       EMAIL_API_APPLICATION_CODE: ${EMAIL_API_APPLICATION_CODE-example_application_code}
       EMAIL_API_FROM_EMAIL: ${EMAIL_API_FROM_EMAIL-changeme@example.com}
       EMAIL_API_KEY: ${EMAIL_API_KEY-example_api_key}
-      EMAIL_TEMPLATE_UNKNOWN_RECOVERY_TX: ${EMAIL_TEMPLATE_UNKNOWN_RECOVERY_TX-example_template_unknown_recovery_tx}
-      EMAIL_TEMPLATE_RECOVERY_TX: ${EMAIL_TEMPLATE_RECOVERY_TX-example_template_recovery_tx}
-      EMAIL_TEMPLATE_VERIFICATION_CODE: ${EMAIL_TEMPLATE_VERIFICATION_CODE-example_template_verification_code}
       INFURA_API_KEY: ${INFURA_API_KEY-example_api_key}
       JWT_ISSUER: ${JWT_ISSUER-example_issuer}
       JWT_TOKEN: ${JWT_TOKEN-example_token}

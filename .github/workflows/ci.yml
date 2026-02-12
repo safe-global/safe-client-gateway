@@ -15,6 +15,17 @@ env:
   DOCKER_BUILD_IMAGE_TAG: buildcache
 
 jobs:
+  env-validation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+      - uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
+        with:
+          node-version: '24.11.0' # Krypton
+          cache: 'yarn'
+      - run: yarn install --immutable
+      - run: yarn run env:validate:silent
+
   prettier:
     runs-on: ubuntu-latest
     steps:
@@ -181,7 +192,7 @@ jobs:
 
   docker-publish-staging:
     if: (github.event_name == 'push' && github.ref == 'refs/heads/main')
-    needs: [prettier, es-lint, tests-finish]
+    needs: [env-validation, prettier, es-lint, tests-finish]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
@@ -210,7 +221,7 @@ jobs:
 
   docker-publish-release:
     if: (github.event_name == 'release' && github.event.action == 'released')
-    needs: [prettier, es-lint, tests-finish]
+    needs: [env-validation, prettier, es-lint, tests-finish]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
