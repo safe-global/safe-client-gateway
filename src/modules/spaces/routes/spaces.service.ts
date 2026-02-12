@@ -103,7 +103,6 @@ export class SpacesService {
     return spaces.map((space) => ({
       id: space.id,
       name: space.name,
-      status: space.status,
       members: space.members,
       safeCount: space.safes?.length ?? 0,
     }));
