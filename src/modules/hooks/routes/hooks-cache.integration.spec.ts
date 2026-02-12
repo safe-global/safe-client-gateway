@@ -743,9 +743,7 @@ describe('Hook Events for Cache', () => {
     },
   ])('$type clears v2 chain cache', async (payload) => {
     const chain = chainBuilder().build();
-    const serviceKey = configurationService.getOrThrow<string>(
-      'safeConfig.serviceKey',
-    );
+    const serviceKey = 'WALLET_WEB';
     const cacheDir = new CacheDir(
       `${chain.chainId}_chain_v2_${serviceKey}`,
       '',
@@ -782,9 +780,7 @@ describe('Hook Events for Cache', () => {
     },
   ])('$type clears v2 chains list cache', async (payload) => {
     const chain = chainBuilder().build();
-    const serviceKey = configurationService.getOrThrow<string>(
-      'safeConfig.serviceKey',
-    );
+    const serviceKey = 'WALLET_WEB';
     const cacheDir = new CacheDir(`chains_v2_${serviceKey}`, '');
     await fakeCacheService.hSet(
       cacheDir,

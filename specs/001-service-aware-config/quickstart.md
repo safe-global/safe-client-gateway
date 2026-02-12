@@ -15,9 +15,6 @@
 Add the following to your `.env` file:
 
 ```bash
-# Optional: Override default service key (defaults to "frontend")
-SAFE_CONFIG_FRONTEND_KEY=frontend
-
 # Existing required variables
 SAFE_CONFIG_BASE_URI=https://safe-config.safe.global/
 ```
@@ -44,16 +41,16 @@ yarn start:dev
 
 ### 4. Test the New Endpoints
 
-**Get all chains (v2)**:
+**Get all chains (v2)** (service key in URL path):
 
 ```bash
-curl http://localhost:3000/v2/chains
+curl http://localhost:3000/v2/chains/WALLET_WEB
 ```
 
 **Get single chain (v2)**:
 
 ```bash
-curl http://localhost:3000/v2/chains/1
+curl http://localhost:3000/v2/chains/WALLET_WEB/1
 ```
 
 **Compare with v1** (should still work unchanged):
@@ -94,7 +91,7 @@ yarn test:integration --testPathPattern=chains.v2
 
 ## Key Implementation Notes
 
-1. **Service Key**: Configured via `SAFE_CONFIG_FRONTEND_KEY` env var, defaults to `"frontend"`
+1. **Service Key**: Passed as URL path parameter (e.g. `/v2/chains/WALLET_WEB` or `/v2/chains/WALLET_WEB/1`)
 
 2. **Cache Isolation**: v2 endpoints use separate cache keys (`chains_v2_{serviceKey}`) to prevent pollution
 
@@ -124,8 +121,9 @@ docker-compose exec redis redis-cli FLUSHALL
 
 Ensure the service key is registered in Config Service. Common values:
 
-- `frontend` (default)
-- `cgw`
+- `WALLET_WEB`
+- `MOBILE`
+- `CGW`
 
 ## API Documentation
 

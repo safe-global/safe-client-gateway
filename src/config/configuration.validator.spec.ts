@@ -439,35 +439,4 @@ describe('Configuration validator', () => {
       });
     });
   });
-
-  describe('SAFE_CONFIG_FRONTEND_KEY', () => {
-    it('should accept valid service key', () => {
-      const config = {
-        ...validConfiguration,
-        SAFE_CONFIG_FRONTEND_KEY: 'frontend',
-      };
-      expect(() =>
-        configurationValidator(config, RootConfigurationSchema),
-      ).not.toThrow();
-    });
-
-    it('should accept custom service key', () => {
-      const config = {
-        ...validConfiguration,
-        SAFE_CONFIG_FRONTEND_KEY: 'cgw',
-      };
-      expect(() =>
-        configurationValidator(config, RootConfigurationSchema),
-      ).not.toThrow();
-    });
-
-    it('should be optional (defaults to "frontend")', () => {
-      const configWithoutKey = omit(validConfiguration, [
-        'SAFE_CONFIG_FRONTEND_KEY',
-      ]);
-      expect(() =>
-        configurationValidator(configWithoutKey, RootConfigurationSchema),
-      ).not.toThrow();
-    });
-  });
 });

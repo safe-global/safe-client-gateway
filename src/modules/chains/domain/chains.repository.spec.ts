@@ -50,7 +50,6 @@ describe('ChainsRepository', () => {
     mockConfigurationService.getOrThrow.mockImplementation((key) => {
       if (key === 'safeConfig.chains.maxSequentialPages')
         return maxSequentialPages;
-      if (key === 'safeConfig.serviceKey') return 'frontend';
     });
 
     target = new ChainsRepository(
@@ -313,6 +312,8 @@ describe('ChainsRepository', () => {
   });
 
   describe('V2 API methods', () => {
+    const serviceKey = 'WALLET_WEB';
+
     it('should return chains from v2 endpoint', async () => {
       const limit = faker.number.int({ max: 10 });
       const offset = faker.number.int({ max: 10 });
@@ -327,7 +328,7 @@ describe('ChainsRepository', () => {
       );
       mockConfigApi.getChainsV2.mockResolvedValueOnce(page);
 
-      const result = await target.getChainsV2(limit, offset);
+      const result = await target.getChainsV2(serviceKey, limit, offset);
 
       expect(result.count).toBe(chains.length);
       expect(result.results).toHaveLength(chains.length);
@@ -346,7 +347,7 @@ describe('ChainsRepository', () => {
       expect(result.next).toBeNull();
       expect(result.previous).toBeNull();
       expect(mockConfigApi.getChainsV2).toHaveBeenCalledTimes(1);
-      expect(mockConfigApi.getChainsV2).toHaveBeenCalledWith('frontend', {
+      expect(mockConfigApi.getChainsV2).toHaveBeenCalledWith(serviceKey, {
         limit,
         offset,
       });
@@ -358,7 +359,7 @@ describe('ChainsRepository', () => {
       const rawChain = rawify(chain);
       mockConfigApi.getChainV2.mockResolvedValueOnce(rawChain);
 
-      const result = await target.getChainV2(chainId);
+      const result = await target.getChainV2(serviceKey, chainId);
 
       expect(result).toStrictEqual({
         ...chain,
@@ -368,7 +369,7 @@ describe('ChainsRepository', () => {
       });
       expect(mockConfigApi.getChainV2).toHaveBeenCalledTimes(1);
       expect(mockConfigApi.getChainV2).toHaveBeenCalledWith(
-        'frontend',
+        serviceKey,
         chainId,
       );
     });
@@ -377,11 +378,11 @@ describe('ChainsRepository', () => {
       const chainId = faker.string.numeric();
       mockConfigApi.clearChainV2.mockResolvedValueOnce(undefined);
 
-      await target.clearChainV2(chainId);
+      await target.clearChainV2(chainId, serviceKey);
 
       expect(mockConfigApi.clearChainV2).toHaveBeenCalledTimes(1);
       expect(mockConfigApi.clearChainV2).toHaveBeenCalledWith(
-        'frontend',
+        serviceKey,
         chainId,
       );
     });

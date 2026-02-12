@@ -95,8 +95,13 @@ interface IChainsRepository {
   clearChain(chainId: string): Promise<void>;
 
   // NEW: v2 methods
-  getChainV2(chainId: string): Promise<Chain>;
-  getChainsV2(limit?: number, offset?: number): Promise<Page<Chain>>;
+  getChainV2(serviceKey: string, chainId: string): Promise<Chain>;
+  getChainsV2(
+    serviceKey: string,
+    limit?: number,
+    offset?: number,
+  ): Promise<Page<Chain>>;
+  clearChainV2(chainId: string, serviceKey: string): Promise<void>;
 }
 ```
 
@@ -117,28 +122,6 @@ chains_v2_{serviceKey}                    → List of chains for service
 ```
 
 **Rationale**: Separate namespace prevents cache pollution between v1/v2 and between different service keys.
-
-## Configuration Schema
-
-### New Configuration Property
-
-**Location**: `src/config/entities/configuration.ts`
-
-```typescript
-safeConfig: {
-  baseUri: string;
-  chains: {
-    maxSequentialPages: number;
-  }
-  safes: {
-    maxSequentialPages: number;
-  }
-  serviceKey: string; // NEW: Default "frontend"
-}
-```
-
-**Environment Variable**: `SAFE_CONFIG_FRONTEND_KEY`
-**Default Value**: `"frontend"`
 
 ## Validation Rules
 

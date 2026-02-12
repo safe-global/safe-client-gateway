@@ -27,7 +27,6 @@ export class ChainsRepository implements IChainsRepository {
   static readonly MAX_LIMIT = 40;
 
   private readonly maxSequentialPages: number;
-  private readonly serviceKey: string;
 
   constructor(
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
@@ -39,9 +38,6 @@ export class ChainsRepository implements IChainsRepository {
   ) {
     this.maxSequentialPages = this.configurationService.getOrThrow<number>(
       'safeConfig.chains.maxSequentialPages',
-    );
-    this.serviceKey = this.configurationService.getOrThrow<string>(
-      'safeConfig.serviceKey',
     );
   }
 
@@ -68,9 +64,13 @@ export class ChainsRepository implements IChainsRepository {
     return valid;
   }
 
-  async getChainsV2(limit?: number, offset?: number): Promise<Page<Chain>> {
+  async getChainsV2(
+    serviceKey: string,
+    limit?: number,
+    offset?: number,
+  ): Promise<Page<Chain>> {
     const page = await this.configApi
-      .getChainsV2(this.serviceKey, { limit, offset })
+      .getChainsV2(serviceKey, { limit, offset })
       .then(LenientBasePageSchema.parse);
     const valid = ChainLenientPageSchema.parse(page);
     if (valid.results.length < page.results.length) {
@@ -82,13 +82,13 @@ export class ChainsRepository implements IChainsRepository {
     return valid;
   }
 
-  async getChainV2(chainId: string): Promise<Chain> {
-    const chain = await this.configApi.getChainV2(this.serviceKey, chainId);
+  async getChainV2(serviceKey: string, chainId: string): Promise<Chain> {
+    const chain = await this.configApi.getChainV2(serviceKey, chainId);
     return ChainSchema.parse(chain);
   }
 
-  async clearChainV2(chainId: string, serviceKey?: string): Promise<void> {
-    return this.configApi.clearChainV2(serviceKey ?? this.serviceKey, chainId);
+  async clearChainV2(chainId: string, serviceKey: string): Promise<void> {
+    return this.configApi.clearChainV2(serviceKey, chainId);
   }
 
   async getAllChains(): Promise<Array<Chain>> {

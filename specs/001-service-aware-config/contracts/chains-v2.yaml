@@ -12,46 +12,23 @@ servers:
     description: CGW v2 API
 
 paths:
-  /chains:
-    get:
-      summary: Get supported chains (v2)
-      description: |
-        Retrieves a paginated list of all blockchain networks supported by the Safe infrastructure,
-        with features scoped to the configured service key (e.g., "frontend").
-      operationId: getChainsV2
-      tags:
-        - chains
-      parameters:
-        - name: cursor
-          in: query
-          required: false
-          description: Pagination cursor for retrieving the next set of results
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Paginated list of supported chains with service-scoped features
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ChainPage'
-        '500':
-          description: Internal server error (Config Service unavailable)
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-
-  /chains/{chainId}:
+  /chains/{serviceKey}/{chainId}:
     get:
       summary: Get chain details (v2)
       description: |
         Retrieves detailed information about a specific blockchain network,
-        with features scoped to the configured service key.
+        with features scoped to the service key.
       operationId: getChainV2
       tags:
         - chains
       parameters:
+        - name: serviceKey
+          in: path
+          required: true
+          description: Service key for scoping chain features (e.g., WALLET_WEB, MOBILE)
+          schema:
+            type: string
+          example: 'WALLET_WEB'
         - name: chainId
           in: path
           required: true
@@ -74,6 +51,49 @@ paths:
                 $ref: '#/components/schemas/Error'
         '500':
           description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /chains/{serviceKey}:
+    get:
+      summary: Get supported chains (v2)
+      description: |
+        Retrieves a paginated list of all blockchain networks supported by the Safe infrastructure,
+        with features scoped to the service key.
+      operationId: getChainsV2
+      tags:
+        - chains
+      parameters:
+        - name: serviceKey
+          in: path
+          required: true
+          description: Service key for scoping chain features (e.g., WALLET_WEB, MOBILE)
+          schema:
+            type: string
+          example: 'WALLET_WEB'
+        - name: cursor
+          in: query
+          required: false
+          description: Pagination cursor for retrieving the next set of results
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Paginated list of supported chains with service-scoped features
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChainPage'
+        '404':
+          description: Service not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error (Config Service unavailable)
           content:
             application/json:
               schema:

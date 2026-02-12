@@ -22,20 +22,20 @@
 
 ### 2. Service Key Configuration Pattern
 
-**Task**: Determine how to configure the service key in CGW.
+**Task**: Determine how to pass the service key to v2 endpoints.
 
-**Decision**: Add `safeConfig.serviceKey` configuration with environment variable `SAFE_CONFIG_FRONTEND_KEY`, defaulting to `"frontend"`.
+**Decision**: Accept `serviceKey` as a URL path parameter (e.g. `/v2/chains/WALLET_WEB`, `/v2/chains/WALLET_WEB/1`).
 
 **Rationale**:
 
-- Follows existing configuration patterns in `configuration.ts`
-- Environment variable allows runtime configuration without code changes
-- Default "frontend" per spec requirements (FR-005)
+- Allows different clients to request different service-scoped configs in the same CGW instance
+- No configuration needed - each request is self-describing
+- Aligns with Config Service v2 API structure
 
 **Alternatives considered**:
 
-- Feature flag approach - Rejected: Service key is a required parameter, not optional behavior
-- Per-request header - Rejected: Spec requires CGW-level configuration, not per-request
+- Environment variable `SAFE_CONFIG_FRONTEND_KEY` - Rejected: Single key per CGW instance, limits flexibility
+- Per-request header - Rejected: Path parameter is more explicit and RESTful
 
 ### 3. Cache Key Strategy for v2 Endpoints
 

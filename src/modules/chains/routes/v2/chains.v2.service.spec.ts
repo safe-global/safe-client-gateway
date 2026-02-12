@@ -24,7 +24,8 @@ describe('ChainsV2Service', () => {
 
   describe('getChains', () => {
     it('should return paginated chains with cursor URLs', async () => {
-      const routeUrl = new URL('https://example.com/v2/chains');
+      const serviceKey = 'WALLET_WEB';
+      const routeUrl = new URL(`https://example.com/v2/chains/${serviceKey}`);
       const limit = 10;
       const offset = 0;
       const chains = [
@@ -36,14 +37,17 @@ describe('ChainsV2Service', () => {
         .with('count', chains.length)
         .with(
           'next',
-          `https://config.example.com/api/v2/chains/frontend?limit=${limit}&offset=${limit}`,
+          `https://config.example.com/api/v2/chains/${serviceKey}?limit=${limit}&offset=${limit}`,
         )
         .with('previous', null)
         .build();
 
       mockChainsRepository.getChainsV2.mockResolvedValue(domainPage);
 
-      const result = await service.getChains(routeUrl, { limit, offset });
+      const result = await service.getChains(serviceKey, routeUrl, {
+        limit,
+        offset,
+      });
 
       expect(result.count).toBe(chains.length);
       expect(result.results).toHaveLength(2);
@@ -53,13 +57,15 @@ describe('ChainsV2Service', () => {
       expect(result.next).toContain('cursor=');
       expect(result.previous).toBeNull();
       expect(mockChainsRepository.getChainsV2).toHaveBeenCalledWith(
+        serviceKey,
         limit,
         offset,
       );
     });
 
     it('should handle chains with ENS registry addresses', async () => {
-      const routeUrl = new URL('https://example.com/v2/chains');
+      const serviceKey = 'WALLET_WEB';
+      const routeUrl = new URL(`https://example.com/v2/chains/${serviceKey}`);
       const chain = chainBuilder()
         .with('chainId', '1')
         .with('ensRegistryAddress', faker.finance.ethereumAddress() as Address)
@@ -73,7 +79,7 @@ describe('ChainsV2Service', () => {
 
       mockChainsRepository.getChainsV2.mockResolvedValue(domainPage);
 
-      const result = await service.getChains(routeUrl, {
+      const result = await service.getChains(serviceKey, routeUrl, {
         limit: 10,
         offset: 0,
       });
@@ -88,18 +94,23 @@ describe('ChainsV2Service', () => {
 
   describe('getChain', () => {
     it('should return single chain', async () => {
+      const serviceKey = 'WALLET_WEB';
       const chainId = '1';
       const chain = chainBuilder().with('chainId', chainId).build();
 
       mockChainsRepository.getChainV2.mockResolvedValue(chain);
 
-      const result = await service.getChain(chainId);
+      const result = await service.getChain(serviceKey, chainId);
 
       expect(result.chainId).toBe(chainId);
-      expect(mockChainsRepository.getChainV2).toHaveBeenCalledWith(chainId);
+      expect(mockChainsRepository.getChainV2).toHaveBeenCalledWith(
+        serviceKey,
+        chainId,
+      );
     });
 
     it('should handle chain with ENS registry address', async () => {
+      const serviceKey = 'WALLET_WEB';
       const chainId = '1';
       const ensAddress = faker.finance.ethereumAddress() as Address;
       const chain = chainBuilder()
@@ -109,7 +120,7 @@ describe('ChainsV2Service', () => {
 
       mockChainsRepository.getChainV2.mockResolvedValue(chain);
 
-      const result = await service.getChain(chainId);
+      const result = await service.getChain(serviceKey, chainId);
 
       if (chain.ensRegistryAddress) {
         expect(result.ensRegistryAddress?.toLowerCase()).toBe(
