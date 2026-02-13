@@ -2750,6 +2750,101 @@ describe('Relay controller', () => {
           });
       });
     });
+    describe('GET /v1/chains/:chainId/relay/status/:taskId', () => {
+      it('should return task status with receipt', async () => {
+        const taskId = faker.string.hexadecimal({ length: 64 });
+        const createdAt = faker.number.int();
+        const blockHash = faker.string.hexadecimal({ length: 64 });
+        const blockNumber = faker.string.numeric();
+        const gasUsed = faker.string.numeric();
+        const transactionHash = faker.string.hexadecimal({ length: 64 });
+        const taskStatus = {
+          chainId,
+          createdAt,
+          id: taskId,
+          status: 200,
+          receipt: { blockHash, blockNumber, gasUsed, transactionHash },
+        };
+        networkService.post.mockImplementation(({ url }) => {
+          switch (url) {
+            case `${relayUrl}/rpc`:
+              return Promise.resolve({
+                data: rawify({
+                  jsonrpc: '2.0',
+                  result: taskStatus,
+                  id: 1,
+                }),
+                status: 200,
+              });
+            default:
+              return Promise.reject(`No matching rule for url: ${url}`);
+          }
+        });
+
+        await request(app.getHttpServer())
+          .get(`/v1/chains/${chainId}/relay/status/${taskId}`)
+          .expect(200)
+          .expect({
+            chainId,
+            createdAt,
+            id: taskId,
+            status: 200,
+            receipt: { blockHash, blockNumber, gasUsed, transactionHash },
+          });
+      });
+
+      it('should return task status without receipt (pending)', async () => {
+        const taskId = faker.string.hexadecimal({ length: 64 });
+        const createdAt = faker.number.int();
+        networkService.post.mockImplementation(({ url }) => {
+          switch (url) {
+            case `${relayUrl}/rpc`:
+              return Promise.resolve({
+                data: rawify({
+                  jsonrpc: '2.0',
+                  result: {
+                    chainId,
+                    createdAt,
+                    id: taskId,
+                    status: 100,
+                  },
+                  id: 1,
+                }),
+                status: 200,
+              });
+            default:
+              return Promise.reject(`No matching rule for url: ${url}`);
+          }
+        });
+
+        await request(app.getHttpServer())
+          .get(`/v1/chains/${chainId}/relay/status/${taskId}`)
+          .expect(200)
+          .expect({
+            chainId,
+            createdAt,
+            id: taskId,
+            status: 100,
+          });
+      });
+
+      it('should forward error from relay provider', async () => {
+        const taskId = faker.string.hexadecimal({ length: 64 });
+        networkService.post.mockImplementation(({ url }) => {
+          switch (url) {
+            case `${relayUrl}/rpc`:
+              return Promise.reject(new Error('Task not found'));
+            default:
+              return Promise.reject(`No matching rule for url: ${url}`);
+          }
+        });
+
+        await request(app.getHttpServer())
+          .get(`/v1/chains/${chainId}/relay/status/${taskId}`)
+          .expect(503);
+      });
+    });
+
     describe('GET /v1/chains/:chainId/relay/:safeAddress', () => {
       it('should return the limit and remaining relay attempts', async () => {
         const safeAddress = faker.finance.ethereumAddress();
