@@ -75,13 +75,14 @@ describe('GelatoApi', () => {
         }),
       });
 
-      await target.relay({
+      const result = await target.relay({
         chainId,
         to: address,
         data,
         gasLimit: null,
       });
 
+      expect(result).toEqual({ taskId });
       expect(mockNetworkService.post).toHaveBeenCalledWith({
         url: `${baseUri}/rpc`,
         data: {

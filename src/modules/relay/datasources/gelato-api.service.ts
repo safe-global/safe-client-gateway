@@ -11,12 +11,14 @@ import {
   CacheService,
   ICacheService,
 } from '@/datasources/cache/cache.service.interface';
-import type { Relay } from '@/modules/relay/domain/entities/relay.entity';
+import {
+  type Relay,
+  GelatoRelayResponseSchema,
+} from '@/modules/relay/domain/entities/relay.entity';
 import {
   type RelayTaskStatus,
   RelayTaskStatusSchema,
 } from '@/modules/relay/domain/entities/relay-task-status.entity';
-import type { Raw } from '@/validation/entities/raw.entity';
 import type { Address } from 'viem';
 
 @Injectable()
@@ -48,7 +50,7 @@ export class GelatoApi implements IRelayApi {
     to: Address;
     data: string;
     gasLimit: bigint | null;
-  }): Promise<Raw<Relay>> {
+  }): Promise<Relay> {
     const apiKey = this.configurationService.getOrThrow<string>(
       `relay.apiKey.${args.chainId}`,
     );
@@ -77,8 +79,8 @@ export class GelatoApi implements IRelayApi {
           },
         },
       });
-      const response = data as unknown as { result: string };
-      return { taskId: response.result } as unknown as Raw<Relay>;
+      const response = GelatoRelayResponseSchema.parse(data);
+      return { taskId: response.result };
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
