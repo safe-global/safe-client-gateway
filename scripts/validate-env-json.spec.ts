@@ -13,7 +13,10 @@ import {
 } from './env-json-helpers';
 
 jest.mock('fs');
-jest.mock('./env-json-helpers');
+jest.mock('./env-json-helpers', () => ({
+  ...jest.requireActual('./env-json-helpers'),
+  readDirectory: jest.fn(),
+}));
 
 const mockFs = jest.mocked(fs);
 const mockReadDirectory = jest.mocked(readDirectory);

@@ -4,6 +4,10 @@ import {
   PROJECT_ROOT,
   loadEnvJson,
   setFilePermissions,
+  isSymbolicLink,
+  sanitizeEnvValue,
+  formatRequiredVar,
+  formatOptionalVar,
 } from './env-json-helpers';
 
 const ENV_OUTPUT_PATH = path.join(PROJECT_ROOT, '.env');
@@ -47,23 +51,30 @@ const MESSAGES = {
       `# MISSING OPTIONAL VARIABLES - Added by env:update on ${timestamp}`,
     uncommentNote:
       '# Uncomment and modify these variables if you want to override the defaults',
-    default: (value: string): string => `# Default: ${value}`,
   },
 };
 
-/**
- * Sanitize a string value by removing control characters and ensuring it's a string type.
- *
- * @param value - The value to sanitize
- *
- * @returns Sanitized string with control characters removed
- */
-function sanitizeEnvValue(value: unknown): string {
-  const strValue = String(value);
+const SECTION_SEPARATOR =
+  '# ==============================================================================';
 
-  // eslint-disable-next-line no-control-regex
-  return strValue.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
+/**
+ * Guard against writing to a symbolic link.
+ * Prevents symlink clobber attacks by exiting if the target path is a symlink.
+ */
+function assertNotSymlink(): void {
+  if (isSymbolicLink(ENV_OUTPUT_PATH)) {
+    console.error(
+      MESSAGES.error.generic(
+        '.env file is a symbolic link. Remove it before generating.',
+      ),
+    );
+    process.exit(1);
+  }
 }
+
+// ---------------------------------------------------------------------------
+// Public API
+// ---------------------------------------------------------------------------
 
 /**
  * Parse existing .env file and extract variable names (both active and commented).
@@ -102,10 +113,8 @@ export function parseExistingEnv(): Map<string, string> {
     const commentedVarMatch = trimmed.match(/^#\s*([A-Z_][A-Z0-9_]*)=(.*)$/);
     if (commentedVarMatch) {
       const [, name] = commentedVarMatch;
-      // Validate name pattern and mark as existing but with empty value
       if (/^[A-Z_][A-Z0-9_]*$/.test(name) && !envMap.has(name)) {
-        const safeName = String(name); // Explicit cast for safety
-        envMap.set(safeName, '');
+        envMap.set(String(name), '');
       }
     }
   }
@@ -150,48 +159,31 @@ export function updateEnvFile(): void {
 
   if (missingRequired.length > 0) {
     linesToAdd.push('');
-    linesToAdd.push(
-      '# ==============================================================================',
-    );
+    linesToAdd.push(SECTION_SEPARATOR);
     linesToAdd.push(MESSAGES.headers.missingRequired(new Date().toISOString()));
-    linesToAdd.push(
-      '# ==============================================================================',
-    );
+    linesToAdd.push(SECTION_SEPARATOR);
     linesToAdd.push('');
 
     for (const envVar of missingRequired) {
-      linesToAdd.push(`# ${envVar.description}`);
-      if (envVar.defaultValue !== null) {
-        linesToAdd.push(`${envVar.name}=${envVar.defaultValue}`);
-      } else {
-        linesToAdd.push(`${envVar.name}=`);
-      }
-      linesToAdd.push('');
+      linesToAdd.push(...formatRequiredVar(envVar));
     }
   }
 
   if (missingOptional.length > 0) {
     linesToAdd.push('');
-    linesToAdd.push(
-      '# ==============================================================================',
-    );
+    linesToAdd.push(SECTION_SEPARATOR);
     linesToAdd.push(MESSAGES.headers.missingOptional(new Date().toISOString()));
-    linesToAdd.push(
-      '# ==============================================================================',
-    );
+    linesToAdd.push(SECTION_SEPARATOR);
     linesToAdd.push(MESSAGES.headers.uncommentNote);
-    linesToAdd.push(
-      '# ==============================================================================',
-    );
+    linesToAdd.push(SECTION_SEPARATOR);
     linesToAdd.push('');
 
     for (const envVar of missingOptional) {
-      linesToAdd.push(`# ${envVar.description}`);
-      linesToAdd.push(MESSAGES.headers.default(envVar.defaultValue as string));
-      linesToAdd.push(`# ${envVar.name}=${envVar.defaultValue}`);
-      linesToAdd.push('');
+      linesToAdd.push(...formatOptionalVar(envVar));
     }
   }
+
+  assertNotSymlink();
 
   fs.appendFileSync(ENV_OUTPUT_PATH, linesToAdd.join('\n'), 'utf-8');
   setFilePermissions(ENV_OUTPUT_PATH, MESSAGES.error.generic);
@@ -230,70 +222,45 @@ export function generateNewEnvFile(): void {
 
   const lines: Array<string> = [];
 
-  lines.push(
-    '# ==============================================================================',
-  );
+  lines.push(SECTION_SEPARATOR);
   lines.push('# Safe Client Gateway Environment Variables');
-  lines.push(
-    '# ==============================================================================',
-  );
+  lines.push(SECTION_SEPARATOR);
   lines.push(
     '# This file was generated from .env.sample.json with required variables and defaults.',
   );
   lines.push(
     '# Please update the placeholder values with your actual configuration.',
   );
-  lines.push(
-    '# ==============================================================================',
-  );
+  lines.push(SECTION_SEPARATOR);
   lines.push('');
 
   if (requiredVars.length > 0) {
-    lines.push(
-      '# ==============================================================================',
-    );
+    lines.push(SECTION_SEPARATOR);
     lines.push('# REQUIRED VARIABLES');
-    lines.push(
-      '# ==============================================================================',
-    );
+    lines.push(SECTION_SEPARATOR);
     lines.push('');
 
     for (const envVar of requiredVars) {
-      lines.push(`# ${envVar.description}`);
-      if (envVar.defaultValue !== null) {
-        lines.push(`${envVar.name}=${envVar.defaultValue}`);
-      } else {
-        lines.push(`${envVar.name}=`);
-      }
-
-      lines.push('');
+      lines.push(...formatRequiredVar(envVar));
     }
   }
 
   if (optionalVarsWithDefaults.length > 0) {
-    lines.push(
-      '# ==============================================================================',
-    );
+    lines.push(SECTION_SEPARATOR);
     lines.push('# OPTIONAL VARIABLES WITH DEFAULTS');
-    lines.push(
-      '# ==============================================================================',
-    );
+    lines.push(SECTION_SEPARATOR);
     lines.push(
       '# Uncomment and modify these variables if you want to override the defaults',
     );
-    lines.push(
-      '# ==============================================================================',
-    );
+    lines.push(SECTION_SEPARATOR);
     lines.push('');
 
     for (const envVar of optionalVarsWithDefaults) {
-      lines.push(`# ${envVar.description}`);
-      lines.push(MESSAGES.headers.default(String(envVar.defaultValue || '')));
-      lines.push(`# ${envVar.name}=${envVar.defaultValue}`);
-
-      lines.push('');
+      lines.push(...formatOptionalVar(envVar));
     }
   }
+
+  assertNotSymlink();
 
   fs.writeFileSync(ENV_OUTPUT_PATH, lines.join('\n'), 'utf-8');
   setFilePermissions(ENV_OUTPUT_PATH, MESSAGES.error.generic);

@@ -4,6 +4,7 @@ import {
   PROJECT_ROOT,
   loadEnvJson,
   readDirectory,
+  findDuplicateNames,
   type EnvVariable,
 } from './env-json-helpers';
 
@@ -126,18 +127,11 @@ export function extractProcessEnvVariables(): Set<string> {
 }
 
 /**
- * Check for duplicate variable names
+ * Check for duplicate variable names.
+ * Uses the shared findDuplicateNames helper and reports errors via console.
  */
 export function checkDuplicates(envVars: Array<EnvVariable>): boolean {
-  const seen = new Set<string>();
-  const duplicates: Array<string> = [];
-
-  for (const envVar of envVars) {
-    if (seen.has(envVar.name)) {
-      duplicates.push(envVar.name);
-    }
-    seen.add(envVar.name);
-  }
+  const duplicates = findDuplicateNames(envVars);
 
   if (duplicates.length > 0) {
     console.error(MESSAGES.duplicatesFound);

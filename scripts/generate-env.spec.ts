@@ -9,14 +9,26 @@ import {
 import {
   loadEnvJson,
   PROJECT_ROOT,
+  isSymbolicLink,
   type EnvVariable,
 } from './env-json-helpers';
+import {
+  mockProcessExit,
+  captureWriteContent,
+  captureAppendContent,
+} from './test-utils';
 
 jest.mock('fs');
-jest.mock('./env-json-helpers');
+jest.mock('./env-json-helpers', () => ({
+  ...jest.requireActual('./env-json-helpers'),
+  loadEnvJson: jest.fn(),
+  isSymbolicLink: jest.fn(),
+  setFilePermissions: jest.fn(),
+}));
 
-const mockFs = fs as jest.Mocked<typeof fs>;
-const mockLoadEnvJson = loadEnvJson as jest.MockedFunction<typeof loadEnvJson>;
+const mockFs = jest.mocked(fs);
+const mockLoadEnvJson = jest.mocked(loadEnvJson);
+const mockIsSymbolicLink = jest.mocked(isSymbolicLink);
 
 describe('generate-env', () => {
   const ENV_OUTPUT_PATH = path.join(PROJECT_ROOT, '.env');
@@ -26,6 +38,7 @@ describe('generate-env', () => {
     jest.spyOn(console, 'log').mockImplementation();
     jest.spyOn(console, 'error').mockImplementation();
     jest.spyOn(Date, 'now').mockReturnValue(1234567890000);
+    mockIsSymbolicLink.mockReturnValue(false);
   });
 
   afterEach(() => {
@@ -204,6 +217,173 @@ ANOTHER_VAR=123
     });
   });
 
+  describe('security: content injection prevention', () => {
+    it('should escape newlines in description fields to prevent injection', () => {
+      const mockEnvVars: Array<EnvVariable> = [
+        {
+          name: 'MALICIOUS_VAR',
+          description: 'Safe description\nINJECTED_VAR=malicious_value',
+          defaultValue: 'safe-value',
+          required: true,
+        },
+      ];
+
+      mockLoadEnvJson.mockReturnValue(mockEnvVars);
+      mockFs.existsSync.mockReturnValue(false);
+      const written = captureWriteContent(mockFs.writeFileSync);
+
+      generateNewEnvFile();
+
+      expect(mockFs.writeFileSync).toHaveBeenCalled();
+      expect(written.content).toContain(
+        'Safe description INJECTED_VAR=malicious_value',
+      );
+      expect(
+        written.content
+          .split('\n')
+          .filter((line) => line.trim() === 'INJECTED_VAR=malicious_value'),
+      ).toHaveLength(0);
+    });
+
+    it('should escape newlines in defaultValue fields in comments', () => {
+      const mockEnvVars: Array<EnvVariable> = [
+        {
+          name: 'OPTIONAL_VAR',
+          description: 'Optional variable',
+          defaultValue: 'default\nSECRET_KEY=injected',
+          required: false,
+        },
+      ];
+
+      mockLoadEnvJson.mockReturnValue(mockEnvVars);
+      mockFs.existsSync.mockReturnValue(false);
+      const written = captureWriteContent(mockFs.writeFileSync);
+
+      generateNewEnvFile();
+
+      expect(written.content).toContain('default SECRET_KEY=injected');
+      expect(
+        written.content
+          .split('\n')
+          .filter((line) => line.trim() === 'SECRET_KEY=injected'),
+      ).toHaveLength(0);
+    });
+
+    it('should strip CR/LF from required defaults in actual assignments', () => {
+      const mockEnvVars: Array<EnvVariable> = [
+        {
+          name: 'REQUIRED_VAR',
+          description: 'Required variable',
+          defaultValue: 'value\nINJECTED=evil',
+          required: true,
+        },
+      ];
+
+      mockLoadEnvJson.mockReturnValue(mockEnvVars);
+      mockFs.existsSync.mockReturnValue(false);
+      const written = captureWriteContent(mockFs.writeFileSync);
+
+      generateNewEnvFile();
+
+      expect(written.content).toContain('REQUIRED_VAR=valueINJECTED=evil');
+      const activeLines = written.content
+        .split('\n')
+        .filter((line) => !line.startsWith('#') && line.trim() !== '');
+      expect(
+        activeLines.filter((line) => line.trim() === 'INJECTED=evil'),
+      ).toHaveLength(0);
+    });
+
+    it('should escape newlines in optional defaults in update mode comment line', () => {
+      const mockEnvVars: Array<EnvVariable> = [
+        {
+          name: 'EXISTING_VAR',
+          description: 'Existing',
+          defaultValue: null,
+          required: true,
+        },
+        {
+          name: 'NEW_OPTIONAL',
+          description: 'New optional',
+          defaultValue: 'default\nHIJACK=evil',
+          required: false,
+        },
+      ];
+
+      const mockContent = 'EXISTING_VAR=value';
+
+      mockFs.existsSync.mockReturnValue(true);
+      mockFs.readFileSync.mockReturnValue(mockContent);
+      mockLoadEnvJson.mockReturnValue(mockEnvVars);
+      const appended = captureAppendContent(mockFs.appendFileSync);
+
+      updateEnvFile();
+
+      expect(appended.content).toContain('# NEW_OPTIONAL=default HIJACK=evil');
+      const activeLines = appended.content
+        .split('\n')
+        .filter((line) => !line.startsWith('#') && line.trim() !== '');
+      expect(
+        activeLines.filter((line) => line.trim() === 'HIJACK=evil'),
+      ).toHaveLength(0);
+    });
+  });
+
+  describe('security: symlink protection', () => {
+    it('should exit with error when .env is a symlink (updateEnvFile)', () => {
+      const mockEnvVars: Array<EnvVariable> = [
+        {
+          name: 'NEW_VAR',
+          description: 'New',
+          defaultValue: null,
+          required: true,
+        },
+      ];
+
+      mockLoadEnvJson.mockReturnValue(mockEnvVars);
+      mockFs.existsSync.mockReturnValue(true);
+      mockFs.readFileSync.mockReturnValue('EXISTING_VAR=value\n');
+      mockIsSymbolicLink.mockReturnValue(true);
+
+      const exitSpy = mockProcessExit();
+      const errorSpy = jest.spyOn(console, 'error').mockImplementation();
+
+      expect(() => updateEnvFile()).toThrow('process.exit: 1');
+      expect(errorSpy).toHaveBeenCalledWith(
+        expect.stringContaining('symbolic link'),
+      );
+
+      exitSpy.mockRestore();
+      errorSpy.mockRestore();
+    });
+
+    it('should exit with error when .env is a symlink (generateNewEnvFile)', () => {
+      const mockEnvVars: Array<EnvVariable> = [
+        {
+          name: 'VAR',
+          description: 'Test',
+          defaultValue: null,
+          required: true,
+        },
+      ];
+
+      mockLoadEnvJson.mockReturnValue(mockEnvVars);
+      mockFs.existsSync.mockReturnValue(false);
+      mockIsSymbolicLink.mockReturnValue(true);
+
+      const exitSpy = mockProcessExit();
+      const errorSpy = jest.spyOn(console, 'error').mockImplementation();
+
+      expect(() => generateNewEnvFile()).toThrow('process.exit: 1');
+      expect(errorSpy).toHaveBeenCalledWith(
+        expect.stringContaining('symbolic link'),
+      );
+
+      exitSpy.mockRestore();
+      errorSpy.mockRestore();
+    });
+  });
+
   describe('generateNewEnvFile', () => {
     it('should generate .env file with required and optional variables', () => {
       const mockEnvVars: Array<EnvVariable> = [
@@ -234,10 +414,7 @@ ANOTHER_VAR=123
       ];
 
       mockLoadEnvJson.mockReturnValue(mockEnvVars);
-      let writtenContent = '';
-      mockFs.writeFileSync.mockImplementation((_, content) => {
-        writtenContent = content as string;
-      });
+      const written = captureWriteContent(mockFs.writeFileSync);
 
       generateNewEnvFile();
 
@@ -246,10 +423,10 @@ ANOTHER_VAR=123
         expect.any(String),
         'utf-8',
       );
-      expect(writtenContent).toContain('REQUIRED_VAR=');
-      expect(writtenContent).toContain('REQUIRED_WITH_DEFAULT=default123');
-      expect(writtenContent).toContain('# OPTIONAL_VAR=optional123');
-      expect(writtenContent).not.toContain('OPTIONAL_NO_DEFAULT');
+      expect(written.content).toContain('REQUIRED_VAR=');
+      expect(written.content).toContain('REQUIRED_WITH_DEFAULT=default123');
+      expect(written.content).toContain('# OPTIONAL_VAR=optional123');
+      expect(written.content).not.toContain('OPTIONAL_NO_DEFAULT');
     });
 
     it('should include proper headers and sections', () => {
@@ -263,18 +440,15 @@ ANOTHER_VAR=123
       ];
 
       mockLoadEnvJson.mockReturnValue(mockEnvVars);
-      let writtenContent = '';
-      mockFs.writeFileSync.mockImplementation((path, content) => {
-        writtenContent = content as string;
-      });
+      const written = captureWriteContent(mockFs.writeFileSync);
 
       generateNewEnvFile();
 
-      expect(writtenContent).toContain(
+      expect(written.content).toContain(
         'Safe Client Gateway Environment Variables',
       );
-      expect(writtenContent).toContain('REQUIRED VARIABLES');
-      expect(writtenContent).toContain('# API Key');
+      expect(written.content).toContain('REQUIRED VARIABLES');
+      expect(written.content).toContain('# API Key');
     });
 
     it('should handle only required variables', () => {
@@ -294,16 +468,13 @@ ANOTHER_VAR=123
       ];
 
       mockLoadEnvJson.mockReturnValue(mockEnvVars);
-      let writtenContent = '';
-      mockFs.writeFileSync.mockImplementation((_, content) => {
-        writtenContent = content as string;
-      });
+      const written = captureWriteContent(mockFs.writeFileSync);
 
       generateNewEnvFile();
 
-      expect(writtenContent).toContain('VAR_1=');
-      expect(writtenContent).toContain('VAR_2=default');
-      expect(writtenContent).not.toContain('OPTIONAL VARIABLES');
+      expect(written.content).toContain('VAR_1=');
+      expect(written.content).toContain('VAR_2=default');
+      expect(written.content).not.toContain('OPTIONAL VARIABLES');
     });
 
     it('should handle only optional variables with defaults', () => {
@@ -323,38 +494,30 @@ ANOTHER_VAR=123
       ];
 
       mockLoadEnvJson.mockReturnValue(mockEnvVars);
-      let writtenContent = '';
-      mockFs.writeFileSync.mockImplementation((path, content) => {
-        writtenContent = content as string;
-      });
+      const written = captureWriteContent(mockFs.writeFileSync);
 
       generateNewEnvFile();
 
-      expect(writtenContent).toContain('# OPT_1=default1');
-      expect(writtenContent).toContain('# OPT_2=default2');
-      expect(writtenContent).toContain('OPTIONAL VARIABLES WITH DEFAULTS');
+      expect(written.content).toContain('# OPT_1=default1');
+      expect(written.content).toContain('# OPT_2=default2');
+      expect(written.content).toContain('OPTIONAL VARIABLES WITH DEFAULTS');
     });
   });
 
   describe('generateEnvFile', () => {
     it('should fail if .env exists without force mode', () => {
       mockFs.existsSync.mockReturnValue(true);
-      const mockExit = jest
-        .spyOn(process, 'exit')
-        .mockImplementation((code?: string | number | null) => {
-          throw new Error(`process.exit: ${code}`);
-        });
-      const mockConsoleError = jest
-        .spyOn(console, 'error')
-        .mockImplementation();
+
+      const exitSpy = mockProcessExit();
+      const errorSpy = jest.spyOn(console, 'error').mockImplementation();
 
       expect(() => generateEnvFile()).toThrow('process.exit: 1');
-      expect(mockConsoleError).toHaveBeenCalledWith(
+      expect(errorSpy).toHaveBeenCalledWith(
         expect.stringContaining('.env file already exists'),
       );
 
-      mockExit.mockRestore();
-      mockConsoleError.mockRestore();
+      exitSpy.mockRestore();
+      errorSpy.mockRestore();
     });
 
     it('should create .env file if it does not exist', () => {
@@ -426,15 +589,11 @@ EXISTING_VAR=value
       mockFs.readFileSync.mockReturnValue(mockContent);
       mockLoadEnvJson.mockReturnValue(mockEnvVars);
 
-      const mockExit = jest
-        .spyOn(process, 'exit')
-        .mockImplementation((code?: string | number | null) => {
-          throw new Error(`process.exit: ${code}`);
-        });
+      const exitSpy = mockProcessExit();
 
       expect(() => updateEnvFile()).toThrow('process.exit: 0');
 
-      mockExit.mockRestore();
+      exitSpy.mockRestore();
     });
 
     it('should add missing required variables', () => {
@@ -458,16 +617,13 @@ EXISTING_VAR=value
       mockFs.existsSync.mockReturnValue(true);
       mockFs.readFileSync.mockReturnValue(mockContent);
       mockLoadEnvJson.mockReturnValue(mockEnvVars);
-      let appendedContent = '';
-      mockFs.appendFileSync.mockImplementation((path, content) => {
-        appendedContent = content as string;
-      });
+      const appended = captureAppendContent(mockFs.appendFileSync);
 
       updateEnvFile();
 
       expect(mockFs.appendFileSync).toHaveBeenCalled();
-      expect(appendedContent).toContain('NEW_REQUIRED_VAR=');
-      expect(appendedContent).toContain('MISSING REQUIRED VARIABLES');
+      expect(appended.content).toContain('NEW_REQUIRED_VAR=');
+      expect(appended.content).toContain('MISSING REQUIRED VARIABLES');
     });
 
     it('should add missing optional variables as comments', () => {
@@ -491,16 +647,13 @@ EXISTING_VAR=value
       mockFs.existsSync.mockReturnValue(true);
       mockFs.readFileSync.mockReturnValue(mockContent);
       mockLoadEnvJson.mockReturnValue(mockEnvVars);
-      let appendedContent = '';
-      mockFs.appendFileSync.mockImplementation((_, content) => {
-        appendedContent = content as string;
-      });
+      const appended = captureAppendContent(mockFs.appendFileSync);
 
       updateEnvFile();
 
       expect(mockFs.appendFileSync).toHaveBeenCalled();
-      expect(appendedContent).toContain('# NEW_OPTIONAL_VAR=default123');
-      expect(appendedContent).toContain('MISSING OPTIONAL VARIABLES');
+      expect(appended.content).toContain('# NEW_OPTIONAL_VAR=default123');
+      expect(appended.content).toContain('MISSING OPTIONAL VARIABLES');
     });
 
     it('should not duplicate already existing commented variables', () => {
@@ -528,16 +681,12 @@ ACTIVE_VAR=value
       mockFs.readFileSync.mockReturnValue(mockContent);
       mockLoadEnvJson.mockReturnValue(mockEnvVars);
 
-      const mockExit = jest
-        .spyOn(process, 'exit')
-        .mockImplementation((code?: string | number | null) => {
-          throw new Error(`process.exit: ${code}`);
-        });
+      const exitSpy = mockProcessExit();
 
       expect(() => updateEnvFile()).toThrow('process.exit: 0');
       expect(mockFs.appendFileSync).not.toHaveBeenCalled();
 
-      mockExit.mockRestore();
+      exitSpy.mockRestore();
     });
   });
 });
