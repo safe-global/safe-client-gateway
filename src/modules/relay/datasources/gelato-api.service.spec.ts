@@ -193,6 +193,110 @@ describe('GelatoApi', () => {
     });
   });
 
+  describe('getTaskStatus', () => {
+    it('should return the task status', async () => {
+      const chainId = faker.string.numeric();
+      const taskId = faker.string.hexadecimal({ length: 64 });
+      const apiKey = faker.string.sample();
+      const taskStatus = {
+        chainId,
+        createdAt: faker.number.int(),
+        id: taskId,
+        status: 200,
+        receipt: {
+          blockHash: faker.string.hexadecimal({ length: 64 }),
+          blockNumber: faker.string.numeric(),
+          gasUsed: faker.string.numeric(),
+          transactionHash: faker.string.hexadecimal({ length: 64 }),
+        },
+      };
+      fakeConfigurationService.set(`relay.apiKey.${chainId}`, apiKey);
+      mockNetworkService.post.mockResolvedValueOnce({
+        status: 200,
+        data: rawify({
+          jsonrpc: '2.0',
+          result: taskStatus,
+          id: 1,
+        }),
+      });
+
+      const result = await target.getTaskStatus({ chainId, taskId });
+
+      expect(result).toEqual(taskStatus);
+      expect(mockNetworkService.post).toHaveBeenCalledWith({
+        url: `${baseUri}/rpc`,
+        data: {
+          id: 1,
+          jsonrpc: '2.0',
+          method: 'relayer_getStatus',
+          params: {
+            id: taskId,
+            logs: false,
+          },
+        },
+        networkRequest: {
+          headers: {
+            'X-API-Key': apiKey,
+          },
+        },
+      });
+    });
+
+    it('should return the task status without receipt', async () => {
+      const chainId = faker.string.numeric();
+      const taskId = faker.string.hexadecimal({ length: 64 });
+      const apiKey = faker.string.sample();
+      const taskStatus = {
+        chainId,
+        createdAt: faker.number.int(),
+        id: taskId,
+        status: 100,
+      };
+      fakeConfigurationService.set(`relay.apiKey.${chainId}`, apiKey);
+      mockNetworkService.post.mockResolvedValueOnce({
+        status: 200,
+        data: rawify({
+          jsonrpc: '2.0',
+          result: taskStatus,
+          id: 1,
+        }),
+      });
+
+      const result = await target.getTaskStatus({ chainId, taskId });
+
+      expect(result).toEqual(taskStatus);
+    });
+
+    it('should throw if there is no API key preset', async () => {
+      const chainId = faker.string.numeric();
+      const taskId = faker.string.hexadecimal({ length: 64 });
+
+      await expect(target.getTaskStatus({ chainId, taskId })).rejects.toThrow();
+    });
+
+    it('should forward error', async () => {
+      const chainId = faker.string.numeric();
+      const taskId = faker.string.hexadecimal({ length: 64 });
+      const status = faker.internet.httpStatusCode({ types: ['serverError'] });
+      const apiKey = faker.string.sample();
+      const error = new NetworkResponseError(
+        new URL(`${baseUri}/rpc`),
+        {
+          status,
+        } as Response,
+        {
+          message: 'Unexpected error',
+        },
+      );
+      fakeConfigurationService.set(`relay.apiKey.${chainId}`, apiKey);
+      mockNetworkService.post.mockRejectedValueOnce(error);
+
+      await expect(target.getTaskStatus({ chainId, taskId })).rejects.toThrow(
+        new DataSourceError('Unexpected error', status),
+      );
+    });
+  });
+
   describe('getRelayCount', () => {
     it('should return the count', async () => {
       const chainId = faker.string.numeric();

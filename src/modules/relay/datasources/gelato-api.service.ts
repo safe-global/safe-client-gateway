@@ -12,6 +12,10 @@ import {
   ICacheService,
 } from '@/datasources/cache/cache.service.interface';
 import type { Relay } from '@/modules/relay/domain/entities/relay.entity';
+import {
+  type RelayTaskStatus,
+  RelayTaskStatusSchema,
+} from '@/modules/relay/domain/entities/relay-task-status.entity';
 import type { Raw } from '@/validation/entities/raw.entity';
 import type { Address } from 'viem';
 
@@ -82,6 +86,45 @@ export class GelatoApi implements IRelayApi {
 
   private getRelayGasLimit(gasLimit: bigint): bigint {
     return gasLimit + GelatoApi.GAS_LIMIT_BUFFER;
+  }
+
+  /**
+   * Proxies the task status request to Gelato's relayer_getStatus JSON-RPC method.
+   * @see https://docs.gelato.cloud/gasless-with-relay/relayer-api-endpoints/relayer/relayer_getstatus
+   */
+  async getTaskStatus(args: {
+    chainId: string;
+    taskId: string;
+  }): Promise<RelayTaskStatus> {
+    const apiKey = this.configurationService.getOrThrow<string>(
+      `relay.apiKey.${args.chainId}`,
+    );
+
+    try {
+      const url = `${this.baseUri}/rpc`;
+      const { data } = await this.networkService.post<RelayTaskStatus>({
+        url,
+        data: {
+          id: 1,
+          jsonrpc: '2.0',
+          method: 'relayer_getStatus',
+          params: {
+            id: args.taskId,
+            logs: false,
+          },
+        },
+        networkRequest: {
+          headers: {
+            'X-API-Key': apiKey,
+          },
+        },
+      });
+
+      const response = data as unknown as { result: RelayTaskStatus };
+      return RelayTaskStatusSchema.parse(response.result);
+    } catch (error) {
+      throw this.httpErrorFactory.from(error);
+    }
   }
 
   async getRelayCount(args: {
