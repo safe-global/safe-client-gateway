@@ -5,11 +5,18 @@ import {
   EnvVariableSchema,
   EnvConfigSchema,
   loadEnvJson,
+  isSymbolicLink,
+  sanitizeEnvValue,
+  formatRequiredVar,
+  formatOptionalVar,
+  findDuplicateNames,
+  type EnvVariable,
 } from './env-json-helpers';
+import { createMockStats, mockProcessExit } from './test-utils';
 
 // Mock fs module
 jest.mock('fs');
-const mockFs = fs as jest.Mocked<typeof fs>;
+const mockFs = jest.mocked(fs);
 
 describe('env-json-helpers', () => {
   beforeEach(() => {
@@ -156,44 +163,32 @@ describe('env-json-helpers', () => {
 
     it('should exit with error if file does not exist', () => {
       mockFs.existsSync.mockReturnValue(false);
-      const mockExit = jest
-        .spyOn(process, 'exit')
-        .mockImplementation((code?: string | number | null) => {
-          throw new Error(`process.exit: ${code}`);
-        });
-      const mockConsoleError = jest
-        .spyOn(console, 'error')
-        .mockImplementation();
+      const exitSpy = mockProcessExit();
+      const errorSpy = jest.spyOn(console, 'error').mockImplementation();
 
       expect(() => loadEnvJson()).toThrow('process.exit: 1');
-      expect(mockConsoleError).toHaveBeenCalledWith(
+      expect(errorSpy).toHaveBeenCalledWith(
         '❌ Error: .env.sample.json file not found',
       );
 
-      mockExit.mockRestore();
-      mockConsoleError.mockRestore();
+      exitSpy.mockRestore();
+      errorSpy.mockRestore();
     });
 
     it('should exit with error on invalid JSON', () => {
       mockFs.existsSync.mockReturnValue(true);
       mockFs.readFileSync.mockReturnValue('invalid json {');
 
-      const mockExit = jest
-        .spyOn(process, 'exit')
-        .mockImplementation((code?: string | number | null) => {
-          throw new Error(`process.exit: ${code}`);
-        });
-      const mockConsoleError = jest
-        .spyOn(console, 'error')
-        .mockImplementation();
+      const exitSpy = mockProcessExit();
+      const errorSpy = jest.spyOn(console, 'error').mockImplementation();
 
       expect(() => loadEnvJson()).toThrow('process.exit: 1');
-      expect(mockConsoleError).toHaveBeenCalledWith(
+      expect(errorSpy).toHaveBeenCalledWith(
         '❌ Error: Invalid JSON in .env.sample.json',
       );
 
-      mockExit.mockRestore();
-      mockConsoleError.mockRestore();
+      exitSpy.mockRestore();
+      errorSpy.mockRestore();
     });
 
     it('should exit with error on invalid structure', () => {
@@ -209,22 +204,16 @@ describe('env-json-helpers', () => {
       mockFs.existsSync.mockReturnValue(true);
       mockFs.readFileSync.mockReturnValue(JSON.stringify(invalidData));
 
-      const mockExit = jest
-        .spyOn(process, 'exit')
-        .mockImplementation((code?: string | number | null) => {
-          throw new Error(`process.exit: ${code}`);
-        });
-      const mockConsoleError = jest
-        .spyOn(console, 'error')
-        .mockImplementation();
+      const exitSpy = mockProcessExit();
+      const errorSpy = jest.spyOn(console, 'error').mockImplementation();
 
       expect(() => loadEnvJson()).toThrow('process.exit: 1');
-      expect(mockConsoleError).toHaveBeenCalledWith(
+      expect(errorSpy).toHaveBeenCalledWith(
         '❌ Error: Invalid structure in .env.sample.json',
       );
 
-      mockExit.mockRestore();
-      mockConsoleError.mockRestore();
+      exitSpy.mockRestore();
+      errorSpy.mockRestore();
     });
 
     it('should handle multiple valid variables', () => {
@@ -258,6 +247,274 @@ describe('env-json-helpers', () => {
       expect(result[0].name).toBe('VAR_ONE');
       expect(result[1].defaultValue).toBe(null);
       expect(result[2].required).toBe(true);
+    });
+
+    it('should exit with error on duplicate variable names', () => {
+      const mockData = [
+        {
+          name: 'DUPLICATE_VAR',
+          description: 'First occurrence',
+          defaultValue: 'value1',
+          required: true,
+        },
+        {
+          name: 'UNIQUE_VAR',
+          description: 'Unique variable',
+          defaultValue: null,
+          required: false,
+        },
+        {
+          name: 'DUPLICATE_VAR',
+          description: 'Second occurrence',
+          defaultValue: 'value2',
+          required: true,
+        },
+      ];
+
+      mockFs.existsSync.mockReturnValue(true);
+      mockFs.readFileSync.mockReturnValue(JSON.stringify(mockData));
+
+      const exitSpy = mockProcessExit();
+      const errorSpy = jest.spyOn(console, 'error').mockImplementation();
+
+      expect(() => loadEnvJson()).toThrow('process.exit: 1');
+      expect(errorSpy).toHaveBeenCalledWith(
+        '❌ Error: Duplicate variable names in .env.sample.json:',
+      );
+      expect(errorSpy).toHaveBeenCalledWith(
+        expect.stringContaining('DUPLICATE_VAR'),
+      );
+
+      exitSpy.mockRestore();
+      errorSpy.mockRestore();
+    });
+  });
+
+  describe('isSymbolicLink', () => {
+    it('should return true for symbolic links', () => {
+      mockFs.lstatSync.mockReturnValue(createMockStats(true));
+
+      const result = isSymbolicLink('/path/to/symlink');
+
+      expect(result).toBe(true);
+      expect(mockFs.lstatSync).toHaveBeenCalledWith('/path/to/symlink');
+    });
+
+    it('should return false for regular files', () => {
+      mockFs.lstatSync.mockReturnValue(createMockStats(false));
+
+      const result = isSymbolicLink('/path/to/regular-file');
+
+      expect(result).toBe(false);
+    });
+
+    it('should return false when file does not exist', () => {
+      mockFs.lstatSync.mockImplementation(() => {
+        throw new Error('ENOENT: no such file');
+      });
+
+      const result = isSymbolicLink('/path/to/nonexistent');
+
+      expect(result).toBe(false);
+    });
+
+    it('should return false on permission errors', () => {
+      mockFs.lstatSync.mockImplementation(() => {
+        throw new Error('EACCES: permission denied');
+      });
+
+      const result = isSymbolicLink('/path/to/restricted');
+
+      expect(result).toBe(false);
+    });
+  });
+
+  describe('sanitizeEnvValue', () => {
+    it('should remove control characters', () => {
+      expect(sanitizeEnvValue('hello\x00\x01\x02world')).toBe('helloworld');
+    });
+
+    it('should strip newlines and carriage returns', () => {
+      expect(sanitizeEnvValue('line1\nline2\rline3')).toBe('line1line2line3');
+    });
+
+    it('should preserve tabs', () => {
+      expect(sanitizeEnvValue('before\tafter')).toBe('before\tafter');
+    });
+
+    it('should cast non-string values to string', () => {
+      expect(sanitizeEnvValue(123)).toBe('123');
+      expect(sanitizeEnvValue(true)).toBe('true');
+      expect(sanitizeEnvValue(null)).toBe('null');
+    });
+  });
+
+  describe('formatRequiredVar', () => {
+    it('should format a required var with default value', () => {
+      const envVar: EnvVariable = {
+        name: 'API_KEY',
+        description: 'The API key',
+        defaultValue: 'secret',
+        required: true,
+      };
+
+      const lines = formatRequiredVar(envVar);
+
+      expect(lines).toEqual(['# The API key', 'API_KEY=secret', '']);
+    });
+
+    it('should format a required var without default value', () => {
+      const envVar: EnvVariable = {
+        name: 'DB_HOST',
+        description: 'Database host',
+        defaultValue: null,
+        required: true,
+      };
+
+      const lines = formatRequiredVar(envVar);
+
+      expect(lines).toEqual(['# Database host', 'DB_HOST=', '']);
+    });
+
+    it('should escape newlines in description', () => {
+      const envVar: EnvVariable = {
+        name: 'VAR',
+        description: 'Line one\nLine two',
+        defaultValue: null,
+        required: true,
+      };
+
+      const lines = formatRequiredVar(envVar);
+
+      expect(lines[0]).toBe('# Line one Line two');
+    });
+
+    it('should sanitize control characters in default value', () => {
+      const envVar: EnvVariable = {
+        name: 'VAR',
+        description: 'Variable',
+        defaultValue: 'val\nINJECTED=evil',
+        required: true,
+      };
+
+      const lines = formatRequiredVar(envVar);
+
+      expect(lines[1]).toBe('VAR=valINJECTED=evil');
+    });
+  });
+
+  describe('formatOptionalVar', () => {
+    it('should format an optional var as commented lines', () => {
+      const envVar: EnvVariable = {
+        name: 'OPT_VAR',
+        description: 'Optional variable',
+        defaultValue: 'default123',
+        required: false,
+      };
+
+      const lines = formatOptionalVar(envVar);
+
+      expect(lines).toEqual([
+        '# Optional variable',
+        '# Default: default123',
+        '# OPT_VAR=default123',
+        '',
+      ]);
+    });
+
+    it('should escape newlines in default value', () => {
+      const envVar: EnvVariable = {
+        name: 'OPT',
+        description: 'Optional',
+        defaultValue: 'val\nINJECTED=evil',
+        required: false,
+      };
+
+      const lines = formatOptionalVar(envVar);
+
+      expect(lines[1]).toBe('# Default: val INJECTED=evil');
+      expect(lines[2]).toBe('# OPT=val INJECTED=evil');
+    });
+  });
+
+  describe('findDuplicateNames', () => {
+    it('should return empty array when no duplicates', () => {
+      const envVars: Array<EnvVariable> = [
+        {
+          name: 'VAR_A',
+          description: 'A',
+          defaultValue: null,
+          required: true,
+        },
+        {
+          name: 'VAR_B',
+          description: 'B',
+          defaultValue: null,
+          required: true,
+        },
+      ];
+
+      expect(findDuplicateNames(envVars)).toEqual([]);
+    });
+
+    it('should detect single duplicate', () => {
+      const envVars: Array<EnvVariable> = [
+        {
+          name: 'DUP',
+          description: 'First',
+          defaultValue: null,
+          required: true,
+        },
+        {
+          name: 'UNIQUE',
+          description: 'Unique',
+          defaultValue: null,
+          required: true,
+        },
+        {
+          name: 'DUP',
+          description: 'Second',
+          defaultValue: null,
+          required: true,
+        },
+      ];
+
+      expect(findDuplicateNames(envVars)).toEqual(['DUP']);
+    });
+
+    it('should detect multiple duplicates', () => {
+      const envVars: Array<EnvVariable> = [
+        {
+          name: 'A',
+          description: 'A1',
+          defaultValue: null,
+          required: true,
+        },
+        {
+          name: 'B',
+          description: 'B1',
+          defaultValue: null,
+          required: true,
+        },
+        {
+          name: 'A',
+          description: 'A2',
+          defaultValue: null,
+          required: true,
+        },
+        {
+          name: 'B',
+          description: 'B2',
+          defaultValue: null,
+          required: true,
+        },
+      ];
+
+      expect(findDuplicateNames(envVars)).toEqual(['A', 'B']);
+    });
+
+    it('should return empty array for empty input', () => {
+      expect(findDuplicateNames([])).toEqual([]);
     });
   });
 });
