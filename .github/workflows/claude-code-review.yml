@@ -31,7 +31,7 @@ jobs:
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           claude_args: |
-            --model claude-sonnet-4-5-latest
+            --model claude-sonnet-4-5-20250929
           prompt: |
             Please review this pull request and provide feedback on:
             - Code quality and best practices
