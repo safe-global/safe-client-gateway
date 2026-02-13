@@ -113,6 +113,11 @@ export class TransactionApi implements ITransactionApi {
           data: args.data,
           to: args.to,
         },
+        networkRequest: {
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getTransactionServiceKey(this.chainId),
+          },
+        },
       });
       return dataDecoded;
     } catch (error) {
@@ -181,6 +186,11 @@ export class TransactionApi implements ITransactionApi {
         url,
         notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
         expireTimeSeconds: this.defaultExpirationTimeInSeconds,
+        networkRequest: {
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getTransactionServiceKey(this.chainId),
+          },
+        },
       });
     } catch (error) {
       throw this.httpErrorFactory.from(this.mapError(error));
@@ -285,6 +295,9 @@ export class TransactionApi implements ITransactionApi {
             limit: args.limit,
             offset: args.offset,
           },
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getTransactionServiceKey(this.chainId),
+          },
         },
       });
     } catch (error) {
@@ -318,6 +331,9 @@ export class TransactionApi implements ITransactionApi {
             label: args.label,
             limit: args.limit,
             offset: args.offset,
+          },
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getTransactionServiceKey(this.chainId),
           },
         },
       });
@@ -457,6 +473,11 @@ export class TransactionApi implements ITransactionApi {
         url,
         notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
         expireTimeSeconds: this.defaultExpirationTimeInSeconds,
+        networkRequest: {
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getTransactionServiceKey(this.chainId),
+          },
+        },
       });
     } catch (error) {
       throw this.httpErrorFactory.from(this.mapError(error));
@@ -488,6 +509,9 @@ export class TransactionApi implements ITransactionApi {
             limit: args.limit,
             offset: args.offset,
             to: args.to,
+          },
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getTransactionServiceKey(this.chainId),
           },
         },
         expireTimeSeconds: this.defaultExpirationTimeInSeconds,
@@ -537,6 +561,9 @@ export class TransactionApi implements ITransactionApi {
             offset: args.offset,
             transaction_hash: args.txHash,
           },
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getTransactionServiceKey(this.chainId),
+          },
         },
         expireTimeSeconds: this.defaultExpirationTimeInSeconds,
       });
@@ -573,7 +600,14 @@ export class TransactionApi implements ITransactionApi {
   async getSafesByModule(moduleAddress: Address): Promise<Raw<SafeList>> {
     try {
       const url = `${this.baseUrl}/api/v1/modules/${moduleAddress}/safes/`;
-      const { data } = await this.networkService.get<SafeList>({ url });
+      const { data } = await this.networkService.get<SafeList>({
+        url,
+        networkRequest: {
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getTransactionServiceKey(this.chainId),
+          },
+        },
+      });
       return data;
     } catch (error) {
       throw this.httpErrorFactory.from(this.mapError(error));
@@ -596,6 +630,11 @@ export class TransactionApi implements ITransactionApi {
         url,
         notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
         expireTimeSeconds: this.defaultExpirationTimeInSeconds,
+        networkRequest: {
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getTransactionServiceKey(this.chainId),
+          },
+        },
       });
     } catch (error) {
       throw this.httpErrorFactory.from(this.mapError(error));
@@ -627,6 +666,9 @@ export class TransactionApi implements ITransactionApi {
             module: args.module,
             limit: args.limit,
             offset: args.offset,
+          },
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getTransactionServiceKey(this.chainId),
           },
         },
         expireTimeSeconds: this.defaultExpirationTimeInSeconds,
@@ -669,6 +711,9 @@ export class TransactionApi implements ITransactionApi {
         url,
         notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
         networkRequest: {
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getTransactionServiceKey(this.chainId),
+          },
           params: {
             safe: args.safeAddress,
             ordering: args.ordering,
@@ -731,6 +776,9 @@ export class TransactionApi implements ITransactionApi {
           url,
           networkRequest: {
             params,
+            circuitBreaker: {
+              key: CircuitBreakerKeys.getTransactionServiceKey(this.chainId),
+            },
           },
         },
       );
@@ -762,6 +810,11 @@ export class TransactionApi implements ITransactionApi {
         url,
         notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
         expireTimeSeconds: this.defaultExpirationTimeInSeconds,
+        networkRequest: {
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getTransactionServiceKey(this.chainId),
+          },
+        },
       });
     } catch (error) {
       throw this.httpErrorFactory.from(this.mapError(error));
@@ -775,6 +828,11 @@ export class TransactionApi implements ITransactionApi {
       const url = `${this.baseUrl}/api/v2/multisig-transactions/${safeTransactionHash}/`;
       const { data } = await this.networkService.get<Raw<MultisigTransaction>>({
         url,
+        networkRequest: {
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getTransactionServiceKey(this.chainId),
+          },
+        },
       });
       return data;
     } catch (error) {
@@ -823,6 +881,11 @@ export class TransactionApi implements ITransactionApi {
         url,
         notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
         expireTimeSeconds: this.defaultExpirationTimeInSeconds,
+        networkRequest: {
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getTransactionServiceKey(this.chainId),
+          },
+        },
       });
     } catch (error) {
       throw this.httpErrorFactory.from(this.mapError(error));
@@ -836,6 +899,11 @@ export class TransactionApi implements ITransactionApi {
       const url = `${this.baseUrl}/api/v1/safes/${safeAddress}/creation/`;
       const { data } = await this.networkService.get({
         url,
+        networkRequest: {
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getTransactionServiceKey(this.chainId),
+          },
+        },
       });
       return data;
     } catch (error) {
@@ -862,6 +930,9 @@ export class TransactionApi implements ITransactionApi {
         url,
         notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
         networkRequest: {
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getTransactionServiceKey(this.chainId),
+          },
           params: {
             safe: args.safeAddress,
             ordering: args.ordering,
@@ -900,6 +971,11 @@ export class TransactionApi implements ITransactionApi {
         url,
         notFoundExpireTimeSeconds: this.tokenNotFoundExpirationTimeSeconds,
         expireTimeSeconds: this.defaultExpirationTimeInSeconds,
+        networkRequest: {
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getTransactionServiceKey(this.chainId),
+          },
+        },
       });
     } catch (error) {
       throw this.httpErrorFactory.from(this.mapError(error));
@@ -926,6 +1002,9 @@ export class TransactionApi implements ITransactionApi {
           params: {
             limit: args.limit,
             offset: args.offset,
+          },
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getTransactionServiceKey(this.chainId),
           },
         },
         expireTimeSeconds: this.defaultExpirationTimeInSeconds,
@@ -987,6 +1066,9 @@ export class TransactionApi implements ITransactionApi {
             offset: args.offset,
           },
           timeout: this.ownersTimeout,
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getTransactionServiceKey(this.chainId),
+          },
         },
       });
     } catch (error) {
@@ -1029,6 +1111,11 @@ export class TransactionApi implements ITransactionApi {
         url,
         notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
         expireTimeSeconds: this.defaultExpirationTimeInSeconds,
+        networkRequest: {
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getTransactionServiceKey(this.chainId),
+          },
+        },
       });
     } catch (error) {
       throw this.httpErrorFactory.from(this.mapError(error));
@@ -1054,6 +1141,9 @@ export class TransactionApi implements ITransactionApi {
           params: {
             limit: args.limit,
             offset: args.offset,
+          },
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getTransactionServiceKey(this.chainId),
           },
         },
         expireTimeSeconds: this.defaultExpirationTimeInSeconds,
