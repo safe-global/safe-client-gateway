@@ -69,7 +69,9 @@ describe('GelatoApi', () => {
       mockNetworkService.post.mockResolvedValueOnce({
         status: 200,
         data: rawify({
-          taskId,
+          jsonrpc: '2.0',
+          result: taskId,
+          id: 1,
         }),
       });
 
@@ -81,12 +83,22 @@ describe('GelatoApi', () => {
       });
 
       expect(mockNetworkService.post).toHaveBeenCalledWith({
-        url: `${baseUri}/relays/v2/sponsored-call`,
+        url: `${baseUri}/rpc`,
         data: {
-          sponsorApiKey: apiKey,
-          chainId,
-          target: address,
-          data,
+          id: 1,
+          jsonrpc: '2.0',
+          method: 'relayer_sendTransaction',
+          params: {
+            chainId,
+            to: address,
+            data,
+            payment: { type: 'sponsored' },
+          },
+        },
+        networkRequest: {
+          headers: {
+            'X-API-Key': apiKey,
+          },
         },
       });
     });
@@ -102,7 +114,9 @@ describe('GelatoApi', () => {
       mockNetworkService.post.mockResolvedValueOnce({
         status: 200,
         data: rawify({
-          taskId,
+          jsonrpc: '2.0',
+          result: taskId,
+          id: 1,
         }),
       });
 
@@ -114,13 +128,23 @@ describe('GelatoApi', () => {
       });
 
       expect(mockNetworkService.post).toHaveBeenCalledWith({
-        url: `${baseUri}/relays/v2/sponsored-call`,
+        url: `${baseUri}/rpc`,
         data: {
-          sponsorApiKey: apiKey,
-          chainId,
-          target: address,
-          data,
-          gasLimit: (gasLimit + BigInt(150_000)).toString(),
+          id: 1,
+          jsonrpc: '2.0',
+          method: 'relayer_sendTransaction',
+          params: {
+            chainId,
+            to: address,
+            data,
+            payment: { type: 'sponsored' },
+            gasLimit: (gasLimit + BigInt(150_000)).toString(),
+          },
+        },
+        networkRequest: {
+          headers: {
+            'X-API-Key': apiKey,
+          },
         },
       });
     });
@@ -147,7 +171,7 @@ describe('GelatoApi', () => {
       const status = faker.internet.httpStatusCode({ types: ['serverError'] });
       const apiKey = faker.string.sample();
       const error = new NetworkResponseError(
-        new URL(`${baseUri}/relays/v2/sponsored-call`),
+        new URL(`${baseUri}/rpc`),
         {
           status,
         } as Response,
@@ -166,6 +190,110 @@ describe('GelatoApi', () => {
           gasLimit: null,
         }),
       ).rejects.toThrow(new DataSourceError('Unexpected error', status));
+    });
+  });
+
+  describe('getTaskStatus', () => {
+    it('should return the task status', async () => {
+      const chainId = faker.string.numeric();
+      const taskId = faker.string.hexadecimal({ length: 64 });
+      const apiKey = faker.string.sample();
+      const taskStatus = {
+        chainId,
+        createdAt: faker.number.int(),
+        id: taskId,
+        status: 200,
+        receipt: {
+          blockHash: faker.string.hexadecimal({ length: 64 }),
+          blockNumber: faker.string.numeric(),
+          gasUsed: faker.string.numeric(),
+          transactionHash: faker.string.hexadecimal({ length: 64 }),
+        },
+      };
+      fakeConfigurationService.set(`relay.apiKey.${chainId}`, apiKey);
+      mockNetworkService.post.mockResolvedValueOnce({
+        status: 200,
+        data: rawify({
+          jsonrpc: '2.0',
+          result: taskStatus,
+          id: 1,
+        }),
+      });
+
+      const result = await target.getTaskStatus({ chainId, taskId });
+
+      expect(result).toEqual(taskStatus);
+      expect(mockNetworkService.post).toHaveBeenCalledWith({
+        url: `${baseUri}/rpc`,
+        data: {
+          id: 1,
+          jsonrpc: '2.0',
+          method: 'relayer_getStatus',
+          params: {
+            id: taskId,
+            logs: false,
+          },
+        },
+        networkRequest: {
+          headers: {
+            'X-API-Key': apiKey,
+          },
+        },
+      });
+    });
+
+    it('should return the task status without receipt', async () => {
+      const chainId = faker.string.numeric();
+      const taskId = faker.string.hexadecimal({ length: 64 });
+      const apiKey = faker.string.sample();
+      const taskStatus = {
+        chainId,
+        createdAt: faker.number.int(),
+        id: taskId,
+        status: 100,
+      };
+      fakeConfigurationService.set(`relay.apiKey.${chainId}`, apiKey);
+      mockNetworkService.post.mockResolvedValueOnce({
+        status: 200,
+        data: rawify({
+          jsonrpc: '2.0',
+          result: taskStatus,
+          id: 1,
+        }),
+      });
+
+      const result = await target.getTaskStatus({ chainId, taskId });
+
+      expect(result).toEqual(taskStatus);
+    });
+
+    it('should throw if there is no API key preset', async () => {
+      const chainId = faker.string.numeric();
+      const taskId = faker.string.hexadecimal({ length: 64 });
+
+      await expect(target.getTaskStatus({ chainId, taskId })).rejects.toThrow();
+    });
+
+    it('should forward error', async () => {
+      const chainId = faker.string.numeric();
+      const taskId = faker.string.hexadecimal({ length: 64 });
+      const status = faker.internet.httpStatusCode({ types: ['serverError'] });
+      const apiKey = faker.string.sample();
+      const error = new NetworkResponseError(
+        new URL(`${baseUri}/rpc`),
+        {
+          status,
+        } as Response,
+        {
+          message: 'Unexpected error',
+        },
+      );
+      fakeConfigurationService.set(`relay.apiKey.${chainId}`, apiKey);
+      mockNetworkService.post.mockRejectedValueOnce(error);
+
+      await expect(target.getTaskStatus({ chainId, taskId })).rejects.toThrow(
+        new DataSourceError('Unexpected error', status),
+      );
     });
   });
 

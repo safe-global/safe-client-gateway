@@ -400,7 +400,7 @@ export default () => ({
   },
   relay: {
     baseUri:
-      process.env.RELAY_PROVIDER_API_BASE_URI || 'https://api.gelato.digital',
+      process.env.RELAY_PROVIDER_API_BASE_URI || 'https://api.gelato.cloud',
     limit: parseInt(process.env.RELAY_THROTTLE_LIMIT ?? `${5}`),
     ttlSeconds: parseInt(
       process.env.RELAY_THROTTLE_TTL_SECONDS ?? `${60 * 60 * 24}`,
