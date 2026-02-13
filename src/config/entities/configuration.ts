@@ -486,6 +486,7 @@ export default () => ({
         process.env.SAFE_CONFIG_SAFES_MAX_SEQUENTIAL_PAGES ?? `${10}`,
       ),
     },
+    cgwServiceKey: process.env.SAFE_CONFIG_CGW_KEY || 'CGW',
   },
   safeDataDecoder: {
     baseUri:

@@ -337,6 +337,7 @@ export default (): ReturnType<typeof configuration> => ({
     safes: {
       maxSequentialPages: faker.number.int(),
     },
+    cgwServiceKey: 'CGW',
   },
   safeDataDecoder: {
     baseUri: faker.internet.url({ appendSlash: false }),
