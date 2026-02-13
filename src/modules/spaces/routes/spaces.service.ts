@@ -84,10 +84,29 @@ export class SpacesService {
       where: { user: { id: userId }, status: In(['ACTIVE', 'INVITED']) },
       relations: ['space'],
     });
-    return await this.spacesRepository.find({
+    const spaces = await this.spacesRepository.find({
       where: { id: In(members.map((member) => member.space.id)) },
-      relations: { members: { user: true } },
+      select: {
+        id: true,
+        name: true,
+        members: {
+          role: true,
+          name: true,
+          invitedBy: true,
+          status: true,
+          user: { id: true },
+        },
+        safes: { id: true },
+      },
+      relations: { members: { user: true }, safes: true },
     });
+
+    return spaces.map((space) => ({
+      id: space.id,
+      name: space.name,
+      members: space.members,
+      safeCount: space.safes?.length ?? 0,
+    }));
   }
 
   public async getActiveOrInvitedSpace(

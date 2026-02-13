@@ -124,7 +124,7 @@ export class SpacesController {
   @ApiOperation({
     summary: 'Get user spaces',
     description:
-      'Retrieves all spaces that the authenticated user is a member of or has been invited to.',
+      'Retrieves all spaces that the authenticated user is a member of or has been invited to, including the count of Safes in each space.',
   })
   @ApiOkResponse({
     description: 'User spaces retrieved successfully',
