@@ -72,10 +72,6 @@ function assertNotSymlink(): void {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Public API
-// ---------------------------------------------------------------------------
-
 /**
  * Parse existing .env file and extract variable names (both active and commented).
  * This detects both uncommented variables (VARIABLE=value) and commented ones (# VARIABLE=value)
