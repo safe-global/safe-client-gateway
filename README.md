@@ -96,10 +96,13 @@ yarn env:generate
 # Generate .env file (force overwrite existing)
 yarn env:generate:force
 
+# Generate or update .env file (creates if missing, updates if exists)
+yarn env:generate:update
+
 # Validate that all env vars are documented (verbose)
 yarn env:validate
 
-# Validate silently (CI uses this)
+# Validate silently (Only exit if there is an error)
 yarn env:validate:silent
 ```
 

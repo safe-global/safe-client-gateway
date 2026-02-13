@@ -4,7 +4,7 @@
   "private": true,
   "license": "MIT",
   "scripts": {
-    "build": "yarn generate-abis && nest build",
+    "build": "yarn env:generate:update && yarn generate-abis && nest build",
     "format": "prettier --write .",
     "format-check": "prettier --check .",
     "generate-abis": "node ./scripts/generate-abis.js",
@@ -35,7 +35,8 @@
     "env:validate": "ts-node scripts/validate-env-json.ts",
     "env:validate:silent": "ts-node scripts/validate-env-json.ts --silent",
     "env:generate": "ts-node scripts/generate-env.ts",
-    "env:generate:force": "ts-node scripts/generate-env.ts --force"
+    "env:generate:force": "ts-node scripts/generate-env.ts --force",
+    "env:generate:update": "ts-node scripts/generate-env.ts --update"
   },
   "dependencies": {
     "@aws-sdk/client-kms": "3.980.0",

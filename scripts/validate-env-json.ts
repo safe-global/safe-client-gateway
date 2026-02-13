@@ -16,17 +16,45 @@ const IGNORE_VARIABLES = new Set([
   'APPLICATION_BUILD_NUMBER',
 ]);
 
+const MESSAGES = {
+  validating: '🔍 Validating environment variables...\n',
+  loading: '📖 Loading .env.sample.json...',
+  validStructure: (count: number): string =>
+    `✅ Valid JSON structure with ${count} variables\n`,
+  checkingDuplicates: '🔎 Checking for duplicates...',
+  noDuplicates: '✅ No duplicates found\n',
+  extracting: '📖 Extracting variables from src directory...',
+  foundInCode: (count: number): string =>
+    `Found ${count} process.env.* variables in code\n`,
+
+  duplicatesFound: '❌ Error: Duplicate variables found in .env.sample.json:',
+  missingInJson: '❌ Missing variables in .env.sample.json:\n',
+  validationFailed:
+    '❌ Validation failed: .env.sample.json is missing required variables.\n',
+  genericError: (message: string): string => `❌ Error: ${message}`,
+
+  extraInJson:
+    '⚠️  Extra variables in .env.sample.json (not found in configuration.ts):\n',
+  extraVarsDeprecated: '\n💡 These variables may be outdated or deprecated.\n',
+  validationWarning: '⚠️  Validation passed with warnings.\n',
+
+  allDocumented: '✅ All environment variables are properly documented!\n',
+
+  statistics: '📊 Statistics:',
+  totalVars: (count: number): string => `   Total variables:      ${count}`,
+  required: (count: number): string => `   Required:             ${count}`,
+  optional: (count: number): string => `   Optional:             ${count}`,
+  withDefaults: (count: number): string => `   With default values:  ${count}`,
+
+  listItem: (name: string): string => `   - ${name}`,
+};
+
 /**
  * Log a message to console only if not in silent mode.
  * Use for progress updates, success messages, and statistics.
  *
  * @param message - The message to log
  * @returns void
- *
- * @example
- * log('✅ Validation passed');
- * // Output (verbose): "✅ Validation passed"
- * // Output (silent): [no output]
  */
 function log(message: string): void {
   if (!SILENT_MODE) {
@@ -105,8 +133,8 @@ function checkDuplicates(envVars: Array<EnvVariable>): boolean {
   }
 
   if (duplicates.length > 0) {
-    console.error('❌ Error: Duplicate variables found in .env.sample.json:');
-    duplicates.forEach((name) => console.error(`   - ${name}`));
+    console.error(MESSAGES.duplicatesFound);
+    duplicates.forEach((name) => console.error(MESSAGES.listItem(name)));
     return false;
   }
 
@@ -137,21 +165,21 @@ function checkDuplicates(envVars: Array<EnvVariable>): boolean {
  * - Perfect for development and debugging
  */
 function main(): void {
-  log('🔍 Validating environment variables...\n');
+  log(MESSAGES.validating);
 
-  log('📖 Loading .env.sample.json...');
+  log(MESSAGES.loading);
   const envVars = loadEnvJson();
-  log(`✅ Valid JSON structure with ${envVars.length} variables\n`);
+  log(MESSAGES.validStructure(envVars.length));
 
-  log('🔎 Checking for duplicates...');
+  log(MESSAGES.checkingDuplicates);
   if (!checkDuplicates(envVars)) {
     process.exit(1);
   }
-  log('✅ No duplicates found\n');
+  log(MESSAGES.noDuplicates);
 
-  log('📖 Extracting variables from src directory...');
+  log(MESSAGES.extracting);
   const configVars = extractProcessEnvVariables();
-  log(`Found ${configVars.size} process.env.* variables in code\n`);
+  log(MESSAGES.foundInCode(configVars.size));
 
   const envVarMap = new Map(envVars.map((v) => [v.name, v]));
   const missingInJson = Array.from(configVars).filter(
@@ -166,21 +194,19 @@ function main(): void {
 
   if (missingInJson.length > 0) {
     hasErrors = true;
-    console.error('❌ Missing variables in .env.sample.json:\n');
+    console.error(MESSAGES.missingInJson);
     missingInJson.forEach((name) => {
-      console.error(`   - ${name}`);
+      console.error(MESSAGES.listItem(name));
     });
     console.error('');
   }
 
   if (extraInJson.length > 0) {
-    log(
-      '⚠️  Extra variables in .env.sample.json (not found in configuration.ts):\n',
-    );
+    log(MESSAGES.extraInJson);
     extraInJson.forEach((name) => {
-      log(`   - ${name}`);
+      log(MESSAGES.listItem(name));
     });
-    log('\n💡 These variables may be outdated or deprecated.\n');
+    log(MESSAGES.extraVarsDeprecated);
   }
 
   const requiredCount = envVars.filter((v) => v.required).length;
@@ -189,26 +215,24 @@ function main(): void {
     (v) => v.defaultValue !== null,
   ).length;
 
-  log('📊 Statistics:');
-  log(`   Total variables:      ${envVars.length}`);
-  log(`   Required:             ${requiredCount}`);
-  log(`   Optional:             ${optionalCount}`);
-  log(`   With default values:  ${withDefaultsCount}`);
+  log(MESSAGES.statistics);
+  log(MESSAGES.totalVars(envVars.length));
+  log(MESSAGES.required(requiredCount));
+  log(MESSAGES.optional(optionalCount));
+  log(MESSAGES.withDefaults(withDefaultsCount));
   log('');
 
   if (!hasErrors && extraInJson.length === 0) {
-    log('✅ All environment variables are properly documented!\n');
+    log(MESSAGES.allDocumented);
     process.exit(0);
   }
 
   if (hasErrors) {
-    console.error(
-      '❌ Validation failed: .env.sample.json is missing required variables.\n',
-    );
+    console.error(MESSAGES.validationFailed);
     process.exit(1);
   }
 
-  log('⚠️  Validation passed with warnings.\n');
+  log(MESSAGES.validationWarning);
   process.exit(0);
 }
 
@@ -216,13 +240,13 @@ try {
   main();
 } catch (error: unknown) {
   if (error instanceof Error) {
-    console.error('❌ Error: ' + error.message);
+    console.error(MESSAGES.genericError(error.message));
     if (error.stack) {
       console.error(error.stack);
     }
     process.exit(1);
   }
 
-  console.error('❌ Error: ' + String(error));
+  console.error(MESSAGES.genericError(String(error)));
   process.exit(1);
 }
