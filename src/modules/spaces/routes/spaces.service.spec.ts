@@ -6,50 +6,21 @@ import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity'
 import { UnauthorizedException } from '@nestjs/common';
 import { faker } from '@faker-js/faker';
 import type { Address } from 'viem';
-import type { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
-import type { Member } from '@/modules/users/datasources/entities/member.entity.db';
-import type { User } from '@/modules/users/domain/entities/user.entity';
+import { userBuilder } from '@/modules/users/datasources/entities/__tests__/users.entity.db.builder';
+import { memberBuilder } from '@/modules/users/datasources/entities/__tests__/member.entity.db.builder';
+import { spaceBuilder } from '@/modules/spaces/domain/entities/__tests__/space.entity.db.builder';
+import type { SpaceSafe } from '@/modules/spaces/datasources/entities/space-safes.entity.db';
 
-const userRepositoryMock: jest.MockedObjectDeep<IUsersRepository> = {
-  createWithWallet: jest.fn(),
-  create: jest.fn(),
-  getWithWallets: jest.fn(),
-  addWalletToUser: jest.fn(),
-  delete: jest.fn(),
-  deleteWalletFromUser: jest.fn(),
+const userRepositoryMock = {
   findByWalletAddressOrFail: jest.fn(),
-  findByWalletAddress: jest.fn(),
-  update: jest.fn(),
-  updateStatus: jest.fn(),
 } as jest.MockedObjectDeep<IUsersRepository>;
 
-const spacesRepositoryMock: jest.MockedObjectDeep<ISpacesRepository> = {
-  create: jest.fn(),
-  findOneOrFail: jest.fn(),
-  findOne: jest.fn(),
-  findOrFail: jest.fn(),
+const spacesRepositoryMock = {
   find: jest.fn(),
-  findByUserIdOrFail: jest.fn(),
-  findByUserId: jest.fn(),
-  findOneByUserIdOrFail: jest.fn(),
-  findOneByUserId: jest.fn(),
-  update: jest.fn(),
-  delete: jest.fn(),
 } as jest.MockedObjectDeep<ISpacesRepository>;
 
-const membersRepositoryMock: jest.MockedObjectDeep<IMembersRepository> = {
-  findOneOrFail: jest.fn(),
-  findOne: jest.fn(),
-  findOrFail: jest.fn(),
+const membersRepositoryMock = {
   find: jest.fn(),
-  inviteUsers: jest.fn(),
-  acceptInvite: jest.fn(),
-  declineInvite: jest.fn(),
-  findAuthorizedMembersOrFail: jest.fn(),
-  updateRole: jest.fn(),
-  updateAlias: jest.fn(),
-  removeUser: jest.fn(),
-  removeSelf: jest.fn(),
 } as jest.MockedObjectDeep<IMembersRepository>;
 
 describe('SpacesService', () => {
@@ -65,52 +36,32 @@ describe('SpacesService', () => {
   });
 
   describe('getActiveOrInvitedSpaces', () => {
-    const buildMockUser = (id: number): User => ({
-      id,
-      status: 'ACTIVE',
-      wallets: [],
-      members: [],
-      createdAt: faker.date.recent(),
-      updatedAt: faker.date.recent(),
-    });
-
     it('should return spaces with safeCount computed from safes length', async () => {
       const signerAddress = faker.finance.ethereumAddress() as Address;
       const authPayload = new AuthPayload({
         signer_address: signerAddress,
         chain_id: '1',
       });
-      const userId = faker.number.int();
-      const spaceId = faker.number.int();
+      const user = userBuilder().build();
+      const space = spaceBuilder().build();
+      const member = memberBuilder()
+        .with('user', user)
+        .with('space', space)
+        .build();
 
-      userRepositoryMock.findByWalletAddressOrFail.mockResolvedValue(
-        buildMockUser(userId),
-      );
+      userRepositoryMock.findByWalletAddressOrFail.mockResolvedValue(user);
+      membersRepositoryMock.find.mockResolvedValue([member]);
 
-      membersRepositoryMock.find.mockResolvedValue([
-        {
-          id: faker.number.int(),
-          space: { id: spaceId } as Space,
-          status: 'ACTIVE',
-        } as Member,
-      ]);
-
-      const mockSpace = {
-        id: spaceId,
-        name: 'Test Space',
-        members: [
-          {
-            id: 1,
-            role: 'ADMIN',
-            name: 'Alice',
-            alias: null,
-            invitedBy: null,
-            status: 'ACTIVE',
-            user: { id: userId, status: 'ACTIVE' },
-          },
-        ],
-        safes: [{ id: 1 }, { id: 2 }, { id: 3 }],
-      } as unknown as Space;
+      const mockSpace = spaceBuilder()
+        .with('id', space.id)
+        .with('name', space.name)
+        .with('members', [member])
+        .with('safes', [
+          { id: 1 } as SpaceSafe,
+          { id: 2 } as SpaceSafe,
+          { id: 3 } as SpaceSafe,
+        ])
+        .build();
 
       spacesRepositoryMock.find.mockResolvedValue([mockSpace]);
 
@@ -118,9 +69,9 @@ describe('SpacesService', () => {
 
       expect(result).toEqual([
         {
-          id: spaceId,
-          name: 'Test Space',
-          members: mockSpace.members,
+          id: space.id,
+          name: space.name,
+          members: [member],
           safeCount: 3,
         },
       ]);
@@ -129,7 +80,7 @@ describe('SpacesService', () => {
       );
       expect(membersRepositoryMock.find).toHaveBeenCalledWith({
         where: {
-          user: { id: userId },
+          user: { id: user.id },
           status: expect.anything(),
         },
         relations: ['space'],
@@ -141,6 +92,7 @@ describe('SpacesService', () => {
           name: true,
           members: {
             role: true,
+            name: true,
             invitedBy: true,
             status: true,
             user: { id: true },
@@ -157,26 +109,21 @@ describe('SpacesService', () => {
         signer_address: signerAddress,
         chain_id: '1',
       });
-      const userId = faker.number.int();
-      const spaceId = faker.number.int();
+      const user = userBuilder().build();
+      const space = spaceBuilder().build();
+      const member = memberBuilder()
+        .with('user', user)
+        .with('space', space)
+        .build();
 
-      userRepositoryMock.findByWalletAddressOrFail.mockResolvedValue(
-        buildMockUser(userId),
-      );
+      userRepositoryMock.findByWalletAddressOrFail.mockResolvedValue(user);
+      membersRepositoryMock.find.mockResolvedValue([member]);
 
-      membersRepositoryMock.find.mockResolvedValue([
-        {
-          id: faker.number.int(),
-          space: { id: spaceId } as Space,
-        } as Member,
-      ]);
-
-      const mockSpace = {
-        id: spaceId,
-        name: 'Empty Space',
-        members: [],
-        safes: [],
-      } as unknown as Space;
+      const mockSpace = spaceBuilder()
+        .with('id', space.id)
+        .with('members', [])
+        .with('safes', [])
+        .build();
 
       spacesRepositoryMock.find.mockResolvedValue([mockSpace]);
 
@@ -192,28 +139,21 @@ describe('SpacesService', () => {
         signer_address: signerAddress,
         chain_id: '1',
       });
-      const userId = faker.number.int();
-      const spaceId = faker.number.int();
+      const user = userBuilder().build();
+      const space = spaceBuilder().build();
+      const member = memberBuilder()
+        .with('user', user)
+        .with('space', space)
+        .build();
 
-      userRepositoryMock.findByWalletAddressOrFail.mockResolvedValue(
-        buildMockUser(userId),
-      );
+      userRepositoryMock.findByWalletAddressOrFail.mockResolvedValue(user);
+      membersRepositoryMock.find.mockResolvedValue([member]);
 
-      membersRepositoryMock.find.mockResolvedValue([
-        {
-          id: faker.number.int(),
-          space: { id: spaceId } as Space,
-          status: 'ACTIVE',
-        } as Member,
-      ]);
-
-      const mockSpace = {
-        id: spaceId,
-        name: 'No Safes Space',
-        status: 'ACTIVE' as const,
-        members: [],
-        // safes is undefined (not loaded)
-      } as unknown as Space;
+      const mockSpace = spaceBuilder()
+        .with('id', space.id)
+        .with('members', [])
+        .build();
+      // safes is undefined (not set via builder)
 
       spacesRepositoryMock.find.mockResolvedValue([mockSpace]);
 
@@ -229,12 +169,9 @@ describe('SpacesService', () => {
         signer_address: signerAddress,
         chain_id: '1',
       });
-      const userId = faker.number.int();
+      const user = userBuilder().build();
 
-      userRepositoryMock.findByWalletAddressOrFail.mockResolvedValue(
-        buildMockUser(userId),
-      );
-
+      userRepositoryMock.findByWalletAddressOrFail.mockResolvedValue(user);
       membersRepositoryMock.find.mockResolvedValue([]);
       spacesRepositoryMock.find.mockResolvedValue([]);
 
@@ -249,43 +186,35 @@ describe('SpacesService', () => {
         signer_address: signerAddress,
         chain_id: '1',
       });
-      const userId = faker.number.int();
-      const spaceId1 = faker.number.int();
-      const spaceId2 = faker.number.int();
+      const user = userBuilder().build();
+      const space1 = spaceBuilder().build();
+      const space2 = spaceBuilder().build();
+      const member1 = memberBuilder()
+        .with('user', user)
+        .with('space', space1)
+        .with('status', 'ACTIVE')
+        .build();
+      const member2 = memberBuilder()
+        .with('user', user)
+        .with('space', space2)
+        .with('status', 'INVITED')
+        .build();
 
-      userRepositoryMock.findByWalletAddressOrFail.mockResolvedValue(
-        buildMockUser(userId),
-      );
-
-      membersRepositoryMock.find.mockResolvedValue([
-        {
-          id: faker.number.int(),
-          space: { id: spaceId1 } as Space,
-          status: 'ACTIVE',
-        } as Member,
-        {
-          id: faker.number.int(),
-          space: { id: spaceId2 } as Space,
-          status: 'INVITED',
-        } as Member,
-      ]);
+      userRepositoryMock.findByWalletAddressOrFail.mockResolvedValue(user);
+      membersRepositoryMock.find.mockResolvedValue([member1, member2]);
 
       const mockSpaces = [
-        {
-          id: spaceId1,
-          name: 'Space One',
-          status: 'ACTIVE' as const,
-          members: [],
-          safes: [{ id: 1 }, { id: 2 }],
-        },
-        {
-          id: spaceId2,
-          name: 'Space Two',
-          status: 'ACTIVE' as const,
-          members: [],
-          safes: [{ id: 3 }],
-        },
-      ] as unknown as Array<Space>;
+        spaceBuilder()
+          .with('id', space1.id)
+          .with('members', [])
+          .with('safes', [{ id: 1 } as SpaceSafe, { id: 2 } as SpaceSafe])
+          .build(),
+        spaceBuilder()
+          .with('id', space2.id)
+          .with('members', [])
+          .with('safes', [{ id: 3 } as SpaceSafe])
+          .build(),
+      ];
 
       spacesRepositoryMock.find.mockResolvedValue(mockSpaces);
 

@@ -91,6 +91,7 @@ export class SpacesService {
         name: true,
         members: {
           role: true,
+          name: true,
           invitedBy: true,
           status: true,
           user: { id: true },

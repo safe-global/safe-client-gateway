@@ -18,6 +18,9 @@ class MemberDto {
   public role!: Member['role'];
 
   @ApiProperty({ type: String })
+  public name!: Member['name'];
+
+  @ApiProperty({ type: String })
   public invitedBy!: Member['invitedBy'];
 
   @ApiProperty({
