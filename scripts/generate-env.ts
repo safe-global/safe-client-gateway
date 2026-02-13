@@ -288,7 +288,7 @@ export function generateNewEnvFile(): void {
 
     for (const envVar of optionalVarsWithDefaults) {
       lines.push(`# ${envVar.description}`);
-      lines.push(MESSAGES.headers.default(envVar.defaultValue || ''));
+      lines.push(MESSAGES.headers.default(String(envVar.defaultValue || '')));
       lines.push(`# ${envVar.name}=${envVar.defaultValue}`);
 
       lines.push('');

@@ -9,7 +9,7 @@ export const EnvVariableSchema = z.object({
     .string()
     .regex(/^[A-Z_][A-Z0-9_]*$/, 'Must be uppercase with underscores'),
   description: z.string().min(1, 'Description is required'),
-  defaultValue: z.string().nullable(),
+  defaultValue: z.union([z.number(), z.boolean(), z.string()]).nullable(),
   required: z.boolean(),
 });
 export const EnvConfigSchema = z.array(EnvVariableSchema);
