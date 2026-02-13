@@ -104,7 +104,7 @@ describe('GelatoApi', () => {
       });
     });
 
-    it('should add a gas buffer if a gas limit is provided', async () => {
+    it('should not send gasLimit to Gelato even if provided', async () => {
       const chainId = faker.string.numeric();
       const address = getAddress(faker.finance.ethereumAddress());
       const data = faker.string.hexadecimal() as Hex;
@@ -139,7 +139,6 @@ describe('GelatoApi', () => {
             to: address,
             data,
             payment: { type: 'sponsored' },
-            gasLimit: (gasLimit + BigInt(150_000)).toString(),
           },
         },
         networkRequest: {
