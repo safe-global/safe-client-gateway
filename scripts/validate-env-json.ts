@@ -3,6 +3,7 @@ import * as path from 'path';
 import {
   PROJECT_ROOT,
   loadEnvJson,
+  readDirectory,
   type EnvVariable,
 } from './env-json-helpers';
 
@@ -70,17 +71,17 @@ function log(message: string): void {
  *
  * @returns Array of absolute file paths to TypeScript files
  */
-function findTsFiles(dir: string): Array<string> {
+export function findTsFiles(dir: string): Array<string> {
   const files: Array<string> = [];
-  const entries = fs.readdirSync(dir, { withFileTypes: true });
+  const entries = readDirectory(dir);
 
   for (const entry of entries) {
     const fullPath = path.join(dir, entry.name);
 
-    if (entry.isDirectory() && entry.name !== 'node_modules') {
+    if (entry.isDirectory && entry.name !== 'node_modules') {
       files.push(...findTsFiles(fullPath));
     } else if (
-      entry.isFile() &&
+      entry.isFile &&
       entry.name.endsWith('.ts') &&
       !entry.name.endsWith('.spec.ts')
     ) {
@@ -98,7 +99,7 @@ function findTsFiles(dir: string): Array<string> {
  *
  * @returns Set of environment variable names found in the codebase
  */
-function extractProcessEnvVariables(): Set<string> {
+export function extractProcessEnvVariables(): Set<string> {
   const variables = new Set<string>();
   const regex = /process\.env\.([A-Z_][A-Z0-9_]*)/g;
   const tsFiles = findTsFiles(SRC_PATH);
@@ -121,7 +122,7 @@ function extractProcessEnvVariables(): Set<string> {
 /**
  * Check for duplicate variable names
  */
-function checkDuplicates(envVars: Array<EnvVariable>): boolean {
+export function checkDuplicates(envVars: Array<EnvVariable>): boolean {
   const seen = new Set<string>();
   const duplicates: Array<string> = [];
 
@@ -164,7 +165,7 @@ function checkDuplicates(envVars: Array<EnvVariable>): boolean {
  * - Shows warnings for extra variables
  * - Perfect for development and debugging
  */
-function main(): void {
+export function main(): void {
   log(MESSAGES.validating);
 
   log(MESSAGES.loading);
@@ -236,17 +237,19 @@ function main(): void {
   process.exit(0);
 }
 
-try {
-  main();
-} catch (error: unknown) {
-  if (error instanceof Error) {
-    console.error(MESSAGES.genericError(error.message));
-    if (error.stack) {
-      console.error(error.stack);
+if (process.env.NODE_ENV !== 'test') {
+  try {
+    main();
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      console.error(MESSAGES.genericError(error.message));
+      if (error.stack) {
+        console.error(error.stack);
+      }
+      process.exit(1);
     }
+
+    console.error(MESSAGES.genericError(String(error)));
     process.exit(1);
   }
-
-  console.error(MESSAGES.genericError(String(error)));
-  process.exit(1);
 }

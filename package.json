@@ -127,7 +127,8 @@
     ],
     "roots": [
       "./src",
-      "./migrations"
+      "./migrations",
+      "./scripts"
     ],
     "collectCoverageFrom": [
       "**/*.(t|j)s"

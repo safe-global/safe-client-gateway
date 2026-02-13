@@ -55,7 +55,7 @@ const MESSAGES = {
  * @returns Map of variable names to their current values (commented vars have empty string value)
  *
  */
-function parseExistingEnv(): Map<string, string> {
+export function parseExistingEnv(): Map<string, string> {
   const envMap = new Map<string, string>();
 
   if (!fs.existsSync(ENV_OUTPUT_PATH)) {
@@ -100,7 +100,7 @@ function parseExistingEnv(): Map<string, string> {
  *
  * @returns void - Exits process with code 0 on success, 1 on failure
  */
-function updateEnvFile(): void {
+export function updateEnvFile(): void {
   const envExists = fs.existsSync(ENV_OUTPUT_PATH);
 
   if (!envExists) {
@@ -199,7 +199,7 @@ function updateEnvFile(): void {
  *
  * @returns void
  */
-function generateNewEnvFile(): void {
+export function generateNewEnvFile(): void {
   const envVars = loadEnvJson();
   const requiredVars = envVars.filter((v) => v.required);
   const optionalVarsWithDefaults = envVars.filter(
@@ -291,7 +291,7 @@ function generateNewEnvFile(): void {
  *
  * @returns void - Exits process with code 0 on success, 1 on failure
  */
-function generateEnvFile(): void {
+export function generateEnvFile(): void {
   if (fs.existsSync(ENV_OUTPUT_PATH) && !FORCE_MODE) {
     console.error(MESSAGES.generate.fileExists);
     process.exit(1);
@@ -304,7 +304,7 @@ function generateEnvFile(): void {
  * Main entry point.
  * Routes to appropriate function based on command-line flags.
  */
-function main(): void {
+export function main(): void {
   if (UPDATE_MODE) {
     updateEnvFile();
   } else {
@@ -312,17 +312,19 @@ function main(): void {
   }
 }
 
-try {
-  main();
-} catch (error: unknown) {
-  if (error instanceof Error) {
-    console.error(MESSAGES.error.generic(error.message));
-    if (error.stack) {
-      console.error(error.stack);
+if (process.env.NODE_ENV !== 'test') {
+  try {
+    main();
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      console.error(MESSAGES.error.generic(error.message));
+      if (error.stack) {
+        console.error(error.stack);
+      }
+      process.exit(1);
     }
+
+    console.error(MESSAGES.error.generic(String(error)));
     process.exit(1);
   }
-
-  console.error(MESSAGES.error.generic(String(error)));
-  process.exit(1);
 }
