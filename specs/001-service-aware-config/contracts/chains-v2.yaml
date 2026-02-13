@@ -1,0 +1,300 @@
+openapi: 3.0.3
+info:
+  title: Safe Client Gateway - Chains v2 API
+  description: |
+    Service-aware chain configuration endpoints.
+    These v2 endpoints fetch chain data from Config Service v2, 
+    which provides service-scoped feature visibility.
+  version: 2.0.0
+
+servers:
+  - url: /v2
+    description: CGW v2 API
+
+paths:
+  /chains/{serviceKey}/{chainId}:
+    get:
+      summary: Get chain details (v2)
+      description: |
+        Retrieves detailed information about a specific blockchain network,
+        with features scoped to the service key.
+      operationId: getChainV2
+      tags:
+        - chains
+      parameters:
+        - name: serviceKey
+          in: path
+          required: true
+          description: Service key for scoping chain features (e.g., WALLET_WEB, MOBILE)
+          schema:
+            type: string
+          example: 'WALLET_WEB'
+        - name: chainId
+          in: path
+          required: true
+          description: Chain ID of the blockchain network
+          schema:
+            type: string
+          example: '1'
+      responses:
+        '200':
+          description: Chain details with service-scoped features
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Chain'
+        '404':
+          description: Chain not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /chains/{serviceKey}:
+    get:
+      summary: Get supported chains (v2)
+      description: |
+        Retrieves a paginated list of all blockchain networks supported by the Safe infrastructure,
+        with features scoped to the service key.
+      operationId: getChainsV2
+      tags:
+        - chains
+      parameters:
+        - name: serviceKey
+          in: path
+          required: true
+          description: Service key for scoping chain features (e.g., WALLET_WEB, MOBILE)
+          schema:
+            type: string
+          example: 'WALLET_WEB'
+        - name: cursor
+          in: query
+          required: false
+          description: Pagination cursor for retrieving the next set of results
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Paginated list of supported chains with service-scoped features
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChainPage'
+        '404':
+          description: Service not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error (Config Service unavailable)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  schemas:
+    ChainPage:
+      type: object
+      description: Paginated list of chains
+      properties:
+        count:
+          type: integer
+          nullable: true
+          description: Total number of chains
+        next:
+          type: string
+          nullable: true
+          description: URL to next page
+        previous:
+          type: string
+          nullable: true
+          description: URL to previous page
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Chain'
+      required:
+        - results
+
+    Chain:
+      type: object
+      description: Blockchain network configuration
+      properties:
+        chainId:
+          type: string
+          description: Unique chain identifier
+          example: '1'
+        chainName:
+          type: string
+          description: Human-readable chain name
+          example: 'Ethereum'
+        description:
+          type: string
+          description: Chain description
+        chainLogoUri:
+          type: string
+          nullable: true
+          description: URL to chain logo
+        l2:
+          type: boolean
+          description: Whether this is a Layer 2 chain
+        isTestnet:
+          type: boolean
+          description: Whether this is a testnet
+        shortName:
+          type: string
+          description: Short name for the chain
+          example: 'eth'
+        rpcUri:
+          $ref: '#/components/schemas/RpcUri'
+        safeAppsRpcUri:
+          $ref: '#/components/schemas/RpcUri'
+        publicRpcUri:
+          $ref: '#/components/schemas/RpcUri'
+        blockExplorerUriTemplate:
+          $ref: '#/components/schemas/BlockExplorerUriTemplate'
+        nativeCurrency:
+          $ref: '#/components/schemas/NativeCurrency'
+        transactionService:
+          type: string
+          description: Transaction Service URL
+        vpcTransactionService:
+          type: string
+          description: VPC Transaction Service URL
+        theme:
+          $ref: '#/components/schemas/Theme'
+        gasPrice:
+          type: array
+          items:
+            $ref: '#/components/schemas/GasPrice'
+        ensRegistryAddress:
+          type: string
+          nullable: true
+          description: ENS registry contract address
+        disabledWallets:
+          type: array
+          items:
+            type: string
+          description: List of disabled wallet identifiers
+        features:
+          type: array
+          items:
+            type: string
+          description: Service-scoped feature flags
+        recommendedMasterCopyVersion:
+          type: string
+          nullable: true
+          description: Recommended Safe master copy version
+      required:
+        - chainId
+        - chainName
+        - description
+        - l2
+        - isTestnet
+        - shortName
+        - rpcUri
+        - safeAppsRpcUri
+        - publicRpcUri
+        - blockExplorerUriTemplate
+        - nativeCurrency
+        - transactionService
+        - vpcTransactionService
+        - theme
+        - gasPrice
+        - disabledWallets
+        - features
+
+    RpcUri:
+      type: object
+      properties:
+        authentication:
+          type: string
+          enum: [NO_AUTHENTICATION, API_KEY_PATH, UNKNOWN]
+        value:
+          type: string
+      required:
+        - authentication
+        - value
+
+    BlockExplorerUriTemplate:
+      type: object
+      properties:
+        address:
+          type: string
+        txHash:
+          type: string
+        api:
+          type: string
+      required:
+        - address
+        - txHash
+        - api
+
+    NativeCurrency:
+      type: object
+      properties:
+        name:
+          type: string
+        symbol:
+          type: string
+        decimals:
+          type: integer
+        logoUri:
+          type: string
+      required:
+        - name
+        - symbol
+        - decimals
+        - logoUri
+
+    Theme:
+      type: object
+      properties:
+        textColor:
+          type: string
+        backgroundColor:
+          type: string
+      required:
+        - textColor
+        - backgroundColor
+
+    GasPrice:
+      type: object
+      properties:
+        type:
+          type: string
+        uri:
+          type: string
+          nullable: true
+        gasParameter:
+          type: string
+          nullable: true
+        gweiFactor:
+          type: string
+          nullable: true
+        fixedWeiValue:
+          type: string
+          nullable: true
+      required:
+        - type
+
+    Error:
+      type: object
+      properties:
+        statusCode:
+          type: integer
+        message:
+          type: string
+        error:
+          type: string
+      required:
+        - statusCode
+        - message

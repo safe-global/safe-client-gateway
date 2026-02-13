@@ -94,6 +94,62 @@ export class ConfigApi implements IConfigApi {
     ]);
   }
 
+  async getChainsV2(
+    serviceKey: string,
+    args: {
+      limit?: number;
+      offset?: number;
+    },
+  ): Promise<Raw<Page<Chain>>> {
+    try {
+      const url = `${this.baseUri}/api/v2/chains/${serviceKey}`;
+      const params = { limit: args.limit, offset: args.offset };
+      const cacheDir = CacheRouter.getChainsCacheDirV2(serviceKey, args);
+      return await this.dataSource.get<Chain>({
+        cacheDir,
+        url,
+        notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
+        networkRequest: { params },
+        expireTimeSeconds: this.defaultExpirationTimeInSeconds,
+      });
+    } catch (error) {
+      throw this.httpErrorFactory.from(error);
+    }
+  }
+
+  async getChainV2(serviceKey: string, chainId: string): Promise<Raw<Chain>> {
+    try {
+      const url = `${this.baseUri}/api/v2/chains/${serviceKey}/${chainId}`;
+      const cacheDir = CacheRouter.getChainCacheDirV2(serviceKey, chainId);
+      return await this.dataSource.get<Chain>({
+        cacheDir,
+        url,
+        notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
+        networkRequest: undefined,
+        expireTimeSeconds: this.defaultExpirationTimeInSeconds,
+      });
+    } catch (error) {
+      throw this.httpErrorFactory.from(error);
+    }
+  }
+
+  async clearChainV2(serviceKey: string, chainId: string): Promise<void> {
+    const chainCacheKey = CacheRouter.getChainCacheKeyV2(serviceKey, chainId);
+    const chainsCacheKey = CacheRouter.getChainsCacheKeyV2(serviceKey);
+    if (this.areConfigHooksDebugLogsEnabled) {
+      this.loggingService.info(
+        `Clearing chain v2 ${chainId} for service ${serviceKey}: ${chainCacheKey}`,
+      );
+      this.loggingService.info(
+        `Clearing chains v2 for service ${serviceKey}: ${chainsCacheKey}`,
+      );
+    }
+    await Promise.all([
+      this.cacheService.deleteByKey(chainCacheKey),
+      this.cacheService.deleteByKey(chainsCacheKey),
+    ]);
+  }
+
   async getSafeApps(args: {
     chainId?: string;
     clientUrl?: string;

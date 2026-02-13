@@ -567,6 +567,34 @@ export class CacheRouter {
     return new CacheDir(CacheRouter.getChainCacheKey(chainId), '');
   }
 
+  static getChainsCacheKeyV2(serviceKey: string): string {
+    return `${CacheRouter.CHAINS_KEY}_v2_${serviceKey}`;
+  }
+
+  static getChainsCacheDirV2(
+    serviceKey: string,
+    args: {
+      limit?: number;
+      offset?: number;
+    },
+  ): CacheDir {
+    return new CacheDir(
+      CacheRouter.getChainsCacheKeyV2(serviceKey),
+      `${args.limit}_${args.offset}`,
+    );
+  }
+
+  static getChainCacheKeyV2(serviceKey: string, chainId: string): string {
+    return `${chainId}_${CacheRouter.CHAIN_KEY}_v2_${serviceKey}`;
+  }
+
+  static getChainCacheDirV2(serviceKey: string, chainId: string): CacheDir {
+    return new CacheDir(
+      CacheRouter.getChainCacheKeyV2(serviceKey, chainId),
+      '',
+    );
+  }
+
   static getRelayKey(args: { chainId: string; address: Address }): string {
     return `${args.chainId}_${CacheRouter.RELAY_KEY}_${args.address}`;
   }

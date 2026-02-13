@@ -741,6 +741,83 @@ describe('Hook Events for Cache', () => {
     {
       type: 'CHAIN_UPDATE',
     },
+  ])('$type clears v2 chain cache', async (payload) => {
+    const chain = chainBuilder().build();
+    const serviceKey = 'WALLET_WEB';
+    const cacheDir = new CacheDir(
+      `${chain.chainId}_chain_v2_${serviceKey}`,
+      '',
+    );
+    await fakeCacheService.hSet(
+      cacheDir,
+      JSON.stringify(chain),
+      faker.number.int({ min: 1 }),
+    );
+    const data = {
+      chainId: chain.chainId,
+      ...payload,
+    };
+    networkService.get.mockImplementation(({ url }) => {
+      switch (url) {
+        case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+          return Promise.resolve({ data: rawify(chain), status: 200 });
+        case `${safeConfigUrl}/api/v2/chains/${serviceKey}/${chain.chainId}`:
+          return Promise.resolve({ data: rawify(chain), status: 200 });
+        default:
+          return Promise.reject(new Error(`Could not match ${url}`));
+      }
+    });
+
+    const cb = getSubscriptionCallback(queuesApiService);
+    await cb({ content: Buffer.from(JSON.stringify(data)) } as ConsumeMessage);
+
+    await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeNull();
+  });
+
+  it.each([
+    {
+      type: 'CHAIN_UPDATE',
+    },
+  ])('$type clears v2 chains list cache', async (payload) => {
+    const chain = chainBuilder().build();
+    const serviceKey = 'WALLET_WEB';
+    const cacheDir = new CacheDir(`chains_v2_${serviceKey}`, '');
+    await fakeCacheService.hSet(
+      cacheDir,
+      JSON.stringify(chain),
+      faker.number.int({ min: 1 }),
+    );
+    const data = {
+      chainId: chain.chainId,
+      ...payload,
+    };
+    networkService.get.mockImplementation(({ url }) => {
+      switch (url) {
+        case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+          return Promise.resolve({
+            data: rawify(chainBuilder().with('chainId', chain.chainId).build()),
+            status: 200,
+          });
+        case `${safeConfigUrl}/api/v2/chains/${serviceKey}/${chain.chainId}`:
+          return Promise.resolve({
+            data: rawify(chainBuilder().with('chainId', chain.chainId).build()),
+            status: 200,
+          });
+        default:
+          return Promise.reject(new Error(`Could not match ${url}`));
+      }
+    });
+
+    const cb = getSubscriptionCallback(queuesApiService);
+    await cb({ content: Buffer.from(JSON.stringify(data)) } as ConsumeMessage);
+
+    await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeNull();
+  });
+
+  it.each([
+    {
+      type: 'CHAIN_UPDATE',
+    },
   ])('$type clears the staking API', async (payload) => {
     const chainId = faker.string.numeric();
     const data = {
