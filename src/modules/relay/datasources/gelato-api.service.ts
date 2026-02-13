@@ -23,14 +23,6 @@ import type { Address } from 'viem';
 
 @Injectable()
 export class GelatoApi implements IRelayApi {
-  /**
-   * If you are using your own custom gas limit, please add a 150k gas buffer on top of the expected
-   * gas usage for the transaction. This is for the Gelato Relay execution overhead, and adding this
-   * buffer reduces your chance of the task cancelling before it is executed on-chain.
-   * @see https://docs.gelato.cloud/gasless-with-relay/relayer-api-endpoints/relayer/relayer_sendtransaction
-   */
-  private static GAS_LIMIT_BUFFER = BigInt(150_000);
-
   private readonly baseUri: string;
 
   constructor(
@@ -68,9 +60,6 @@ export class GelatoApi implements IRelayApi {
             to: args.to,
             data: args.data,
             payment: { type: 'sponsored' },
-            ...(args.gasLimit && {
-              gasLimit: this.getRelayGasLimit(args.gasLimit).toString(),
-            }),
           },
         },
         networkRequest: {
@@ -84,10 +73,6 @@ export class GelatoApi implements IRelayApi {
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
-  }
-
-  private getRelayGasLimit(gasLimit: bigint): bigint {
-    return gasLimit + GelatoApi.GAS_LIMIT_BUFFER;
   }
 
   /**
