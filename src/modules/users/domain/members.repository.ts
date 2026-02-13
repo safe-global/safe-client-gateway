@@ -106,7 +106,12 @@ export class MembersRepository implements IMembersRepository {
     const membersRepository =
       await this.postgresDatabaseService.getRepository(DbMember);
     const activeAdmin = await membersRepository.findOne({
-      where: { user: { id: admin.id }, status: 'ACTIVE', role: 'ADMIN' },
+      where: {
+        user: { id: admin.id },
+        space: { id: args.spaceId },
+        status: 'ACTIVE',
+        role: 'ADMIN',
+      },
     });
     if (!activeAdmin) {
       throw new UnauthorizedException('Signer is not an active admin.');
