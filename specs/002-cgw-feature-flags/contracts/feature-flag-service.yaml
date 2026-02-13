@@ -1,0 +1,58 @@
+openapi: 3.0.3
+info:
+  title: CGW Feature Flag Service Interface
+  description: |
+    Internal service interface for feature flag evaluation in CGW.
+    This is not a REST API endpoint, but rather a TypeScript interface
+    for dependency injection within the NestJS application.
+  version: 1.0.0
+
+# Note: This is a TypeScript service interface, not a REST API
+# The OpenAPI format is used here for documentation purposes only
+
+components:
+  schemas:
+    FeatureFlagCheck:
+      type: object
+      properties:
+        chainId:
+          type: string
+          description: Chain identifier (required for chain-scoped checks)
+          example: '1'
+        featureKey:
+          type: string
+          description: Feature flag key as defined in Config Service
+          example: 'SPACES'
+        enabled:
+          type: boolean
+          description: Whether the feature flag is enabled
+          example: true
+
+  interfaces:
+    IFeatureFlagService:
+      description: |
+        Injectable NestJS service for checking feature flag status.
+        Can be injected into any component (services, controllers, guards, etc.)
+        using NestJS dependency injection.
+      methods:
+        isFeatureEnabled:
+          description: Checks if a feature flag is enabled for a specific chain
+          parameters:
+            - name: chainId
+              type: string
+              required: true
+              description: The chain identifier
+            - name: featureKey
+              type: string
+              required: true
+              description: The feature flag key from Config Service
+          returns:
+            type: Promise<boolean>
+            description: |
+              Returns true if feature is enabled, false if disabled or missing.
+              Never throws exceptions - returns false for missing flags (fail-safe).
+          example: |
+            const enabled = await featureFlagService.isFeatureEnabled("1", "SPACES");
+            if (enabled) {
+              // Use Spaces feature
+            }
