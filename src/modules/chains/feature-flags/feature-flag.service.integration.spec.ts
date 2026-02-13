@@ -23,7 +23,7 @@ describe('FeatureFlagService Integration', () => {
   });
 
   afterEach(async () => {
-    await app.close();
+    if (app) await app.close();
   });
 
   describe('Service key configuration', () => {
