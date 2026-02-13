@@ -1,7 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { z } from 'zod';
 import { RelayDtoSchema } from '@/modules/relay/routes/entities/schemas/relay.dto.schema';
-import type { Address } from 'viem';
+import type { Address, Hex } from 'viem';
 
 export class RelayDto implements z.infer<typeof RelayDtoSchema> {
   @ApiProperty()
@@ -11,7 +11,7 @@ export class RelayDto implements z.infer<typeof RelayDtoSchema> {
   to!: Address;
 
   @ApiProperty()
-  data!: Address;
+  data!: Hex;
 
   @ApiPropertyOptional({
     type: String,
