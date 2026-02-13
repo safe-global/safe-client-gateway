@@ -1,6 +1,10 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { PROJECT_ROOT, loadEnvJson } from './env-json-helpers';
+import {
+  PROJECT_ROOT,
+  loadEnvJson,
+  setFilePermissions,
+} from './env-json-helpers';
 
 const ENV_OUTPUT_PATH = path.join(PROJECT_ROOT, '.env');
 const FORCE_MODE = process.argv.includes('--force');
@@ -48,12 +52,25 @@ const MESSAGES = {
 };
 
 /**
+ * Sanitize a string value by removing control characters and ensuring it's a string type.
+ *
+ * @param value - The value to sanitize
+ *
+ * @returns Sanitized string with control characters removed
+ */
+function sanitizeEnvValue(value: unknown): string {
+  const strValue = String(value);
+
+  // eslint-disable-next-line no-control-regex
+  return strValue.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
+}
+
+/**
  * Parse existing .env file and extract variable names (both active and commented).
  * This detects both uncommented variables (VARIABLE=value) and commented ones (# VARIABLE=value)
  * to prevent duplicate additions when variables already exist as comments.
  *
  * @returns Map of variable names to their current values (commented vars have empty string value)
- *
  */
 export function parseExistingEnv(): Map<string, string> {
   const envMap = new Map<string, string>();
@@ -68,23 +85,27 @@ export function parseExistingEnv(): Map<string, string> {
   for (const line of lines) {
     const trimmed = line.trim();
 
-    if (trimmed === '') {
+    if (trimmed === '' || trimmed.length > 10000) {
       continue;
     }
 
     const activeVarMatch = trimmed.match(/^([A-Z_][A-Z0-9_]*)=(.*)$/);
     if (activeVarMatch) {
       const [, name, value] = activeVarMatch;
-      envMap.set(name, value);
+      if (/^[A-Z_][A-Z0-9_]*$/.test(name)) {
+        const safeValue = sanitizeEnvValue(value);
+        envMap.set(String(name), safeValue);
+      }
       continue;
     }
 
     const commentedVarMatch = trimmed.match(/^#\s*([A-Z_][A-Z0-9_]*)=(.*)$/);
     if (commentedVarMatch) {
       const [, name] = commentedVarMatch;
-      // Mark as existing but with empty value to indicate it's commented
-      if (!envMap.has(name)) {
-        envMap.set(name, '');
+      // Validate name pattern and mark as existing but with empty value
+      if (/^[A-Z_][A-Z0-9_]*$/.test(name) && !envMap.has(name)) {
+        const safeName = String(name); // Explicit cast for safety
+        envMap.set(safeName, '');
       }
     }
   }
@@ -173,6 +194,7 @@ export function updateEnvFile(): void {
   }
 
   fs.appendFileSync(ENV_OUTPUT_PATH, linesToAdd.join('\n'), 'utf-8');
+  setFilePermissions(ENV_OUTPUT_PATH, MESSAGES.error.generic);
 
   console.log(MESSAGES.update.success);
   console.log('');
@@ -274,6 +296,7 @@ export function generateNewEnvFile(): void {
   }
 
   fs.writeFileSync(ENV_OUTPUT_PATH, lines.join('\n'), 'utf-8');
+  setFilePermissions(ENV_OUTPUT_PATH, MESSAGES.error.generic);
 
   console.log(MESSAGES.generate.success);
   console.log();

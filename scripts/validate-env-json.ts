@@ -17,6 +17,8 @@ const IGNORE_VARIABLES = new Set([
   'APPLICATION_BUILD_NUMBER',
 ]);
 
+const PROCESS_ENV_REGEX = /process\.env\.([A-Z_][A-Z0-9_]*)/g;
+
 const MESSAGES = {
   validating: '🔍 Validating environment variables...\n',
   loading: '📖 Loading .env.sample.json...',
@@ -68,8 +70,11 @@ function log(message: string): void {
  * Excludes node_modules and test files (.spec.ts).
  *
  * @param dir - The directory path to search
- *
  * @returns Array of absolute file paths to TypeScript files
+ *
+ * Performance note: For large codebases, consider implementing file system caching
+ * or using a more efficient traversal approach (e.g., fast-glob package).
+ * Currently performs full directory scan on each invocation.
  */
 export function findTsFiles(dir: string): Array<string> {
   const files: Array<string> = [];
@@ -101,14 +106,15 @@ export function findTsFiles(dir: string): Array<string> {
  */
 export function extractProcessEnvVariables(): Set<string> {
   const variables = new Set<string>();
-  const regex = /process\.env\.([A-Z_][A-Z0-9_]*)/g;
   const tsFiles = findTsFiles(SRC_PATH);
 
   for (const filePath of tsFiles) {
     const content = fs.readFileSync(filePath, 'utf-8');
     let match;
+    // Reset regex lastIndex for each file to ensure proper matching
+    PROCESS_ENV_REGEX.lastIndex = 0;
 
-    while ((match = regex.exec(content)) !== null) {
+    while ((match = PROCESS_ENV_REGEX.exec(content)) !== null) {
       const varName = match[1];
       if (!IGNORE_VARIABLES.has(varName)) {
         variables.add(varName);

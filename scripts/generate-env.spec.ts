@@ -169,6 +169,39 @@ EMPTY_VAR=
       expect(result.get('JWT_SECRET')).toBe('abc123!@#$%^&*()');
       expect(result.get('EMPTY_VAR')).toBe('');
     });
+
+    it('should sanitize control characters from values', () => {
+      const mockContent = `
+API_KEY=secret\x00\x01\x02value
+DATABASE_HOST=local\x1Bhost
+MALICIOUS=evil\x7Fcode
+`;
+      mockFs.existsSync.mockReturnValue(true);
+      mockFs.readFileSync.mockReturnValue(mockContent);
+
+      const result = parseExistingEnv();
+
+      expect(result.size).toBe(3);
+      expect(result.get('API_KEY')).toBe('secretvalue');
+      expect(result.get('DATABASE_HOST')).toBe('localhost');
+      expect(result.get('MALICIOUS')).toBe('evilcode');
+    });
+
+    it('should cast variable names and values to string type', () => {
+      const mockContent = `
+VALID_VAR=normalValue
+ANOTHER_VAR=123
+`;
+      mockFs.existsSync.mockReturnValue(true);
+      mockFs.readFileSync.mockReturnValue(mockContent);
+
+      const result = parseExistingEnv();
+
+      expect(result.size).toBe(2);
+      expect(typeof result.get('VALID_VAR')).toBe('string');
+      expect(typeof result.get('ANOTHER_VAR')).toBe('string');
+      expect(result.get('ANOTHER_VAR')).toBe('123');
+    });
   });
 
   describe('generateNewEnvFile', () => {

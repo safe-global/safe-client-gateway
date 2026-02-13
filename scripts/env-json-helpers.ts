@@ -75,3 +75,29 @@ export function loadEnvJson(): Array<EnvVariable> {
 
   return result.data;
 }
+
+/**
+ * Set file permissions to 600 (read/write for owner only).
+ * This is commonly used for sensitive files like .env to restrict access.
+ * Exits with code 1 if the chmod operation fails.
+ *
+ * @param path - The file path to set permissions on
+ * @param errorMessage - Function to format error messages for display
+ *
+ * @returns void - Exits process with code 0 on success, 1 on failure
+ *
+ * @throws Exits process with code 1 on permission setting failure
+ */
+export function setFilePermissions(
+  path: string,
+  errorMessage: (message: string) => string,
+): void {
+  try {
+    fs.chmodSync(path, 0o600);
+  } catch (error: unknown) {
+    console.error(
+      errorMessage(error instanceof Error ? error.message : 'UNKNOWN_ERROR'),
+    );
+    process.exit(1);
+  }
+}
