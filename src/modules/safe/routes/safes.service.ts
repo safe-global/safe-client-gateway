@@ -141,11 +141,11 @@ export class SafesService {
     const settledOverviews = await Promise.allSettled(
       limitedSafes.map(async ({ chainId, address }) => {
         const chain = await this.chainsRepository.getChain(chainId);
-        const [safe, balances] = await Promise.all([
-          this.safeRepository.getSafe({
-            chainId,
-            address,
-          }),
+        const safe = await this.safeRepository.getSafe({
+          chainId,
+          address,
+        });
+        const [balances, queue] = await Promise.all([
           this.balancesRepository.getBalances({
             chain,
             safeAddress: address,
@@ -153,11 +153,11 @@ export class SafesService {
             fiatCode: args.currency,
             excludeSpam: args.excludeSpam,
           }),
+          this.safeRepository.getTransactionQueue({
+            chainId,
+            safe,
+          }),
         ]);
-        const queue = await this.safeRepository.getTransactionQueue({
-          chainId,
-          safe,
-        });
 
         const fiatBalance = balances
           .filter((b) => b.fiatBalance !== null)
