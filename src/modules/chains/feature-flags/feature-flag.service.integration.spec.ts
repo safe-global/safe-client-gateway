@@ -3,7 +3,11 @@ import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { IFeatureFlagService } from '@/modules/chains/feature-flags/feature-flag.service.interface';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { createTestModule } from '@/__tests__/testing-module';
+import configuration from '@/config/entities/__tests__/configuration';
+import { NetworkService } from '@/datasources/network/network.service.interface';
 import type { Server } from 'net';
+
+const CUSTOM_CGW_KEY = 'CUSTOM_CGW_KEY';
 
 describe('FeatureFlagService Integration', () => {
   let app: INestApplication<Server>;
@@ -34,12 +38,39 @@ describe('FeatureFlagService Integration', () => {
       expect(cgwServiceKey).toBe('CGW');
     });
 
-    it('should allow custom CGW service key from environment variable', () => {
-      const cgwServiceKey = configurationService.getOrThrow<string>(
-        'safeConfig.cgwServiceKey',
+    it('should use custom CGW service key when configured', async () => {
+      const customConfig = () => ({
+        ...configuration(),
+        safeConfig: {
+          ...configuration().safeConfig,
+          cgwServiceKey: CUSTOM_CGW_KEY,
+        },
+      });
+      const moduleFixture = await createTestModule({ config: customConfig });
+      const configService = moduleFixture.get<IConfigurationService>(
+        IConfigurationService,
       );
-      expect(typeof cgwServiceKey).toBe('string');
-      expect(cgwServiceKey.length).toBeGreaterThan(0);
+      const featureFlagSvc =
+        moduleFixture.get<IFeatureFlagService>(IFeatureFlagService);
+      const networkService = moduleFixture.get(NetworkService);
+
+      expect(configService.getOrThrow<string>('safeConfig.cgwServiceKey')).toBe(
+        CUSTOM_CGW_KEY,
+      );
+
+      networkService.get.mockRejectedValueOnce(
+        new Error('Config Service unavailable'),
+      );
+      const app = await new TestAppProvider().provide(moduleFixture);
+      await app.init();
+      await featureFlagSvc.isFeatureEnabled('1', 'test');
+
+      expect(networkService.get).toHaveBeenCalledWith(
+        expect.objectContaining({
+          url: expect.stringContaining(`/api/v2/chains/${CUSTOM_CGW_KEY}/1`),
+        }),
+      );
+      await app.close();
     });
   });
 
