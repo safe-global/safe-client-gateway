@@ -4,6 +4,7 @@ import { IFeatureFlagService } from '@/modules/chains/feature-flags/feature-flag
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { createTestModule } from '@/__tests__/testing-module';
 import configuration from '@/config/entities/__tests__/configuration';
+import type { INetworkService } from '@/datasources/network/network.service.interface';
 import { NetworkService } from '@/datasources/network/network.service.interface';
 import type { Server } from 'net';
 
@@ -39,7 +40,7 @@ describe('FeatureFlagService Integration', () => {
     });
 
     it('should use custom CGW service key when configured', async () => {
-      const customConfig = () => ({
+      const customConfig = (): ReturnType<typeof configuration> => ({
         ...configuration(),
         safeConfig: {
           ...configuration().safeConfig,
@@ -52,7 +53,10 @@ describe('FeatureFlagService Integration', () => {
       );
       const featureFlagSvc =
         moduleFixture.get<IFeatureFlagService>(IFeatureFlagService);
-      const networkService = moduleFixture.get(NetworkService);
+      const networkService =
+        moduleFixture.get<jest.MockedObjectDeep<INetworkService>>(
+          NetworkService,
+        );
 
       expect(configService.getOrThrow<string>('safeConfig.cgwServiceKey')).toBe(
         CUSTOM_CGW_KEY,
