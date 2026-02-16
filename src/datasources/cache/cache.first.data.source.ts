@@ -5,23 +5,23 @@ import {
 } from '@/datasources/cache/cache.service.interface';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
-import { NetworkRequest } from '@/datasources/network/entities/network.request.entity';
+import { type NetworkRequest } from '@/datasources/network/entities/network.request.entity';
 import {
   INetworkService,
   NetworkService,
 } from '@/datasources/network/network.service.interface';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
-import { Page } from '@/domain/entities/page.entity';
+import { type Page } from '@/domain/entities/page.entity';
 import {
   isMultisigTransaction,
   isEthereumTransaction,
   isModuleTransaction,
   isCreationTransaction,
-  Transaction,
+  type Transaction,
 } from '@/modules/safe/domain/entities/transaction.entity';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import { Safe } from '@/modules/safe/domain/entities/safe.entity';
-import { Raw } from '@/validation/entities/raw.entity';
+import { type Safe } from '@/modules/safe/domain/entities/safe.entity';
+import { type Raw } from '@/validation/entities/raw.entity';
 import { LogType } from '@/domain/common/entities/log-type.entity';
 
 /**

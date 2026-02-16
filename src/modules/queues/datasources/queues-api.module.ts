@@ -5,10 +5,10 @@ import { QueuesApiShutdownHook } from '@/modules/queues/datasources/queues-api.s
 import { QueueReadiness } from '@/domain/interfaces/queue-readiness.interface';
 import { Module } from '@nestjs/common';
 import amqp, {
-  AmqpConnectionManager,
-  ChannelWrapper,
+  type AmqpConnectionManager,
+  type ChannelWrapper,
 } from 'amqp-connection-manager';
-import { Channel } from 'amqplib';
+import { type Channel } from 'amqplib';
 
 export interface QueueConsumer {
   connection: AmqpConnectionManager;

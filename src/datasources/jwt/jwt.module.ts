@@ -3,7 +3,7 @@ import { Module } from '@nestjs/common';
 import { JwtService } from '@/datasources/jwt/jwt.service';
 import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
 import { toSecondsTimestamp } from '@/domain/common/utils/time';
-import { JwtPayloadWithClaims } from '@/datasources/jwt/jwt-claims.entity';
+import { type JwtPayloadWithClaims } from '@/datasources/jwt/jwt-claims.entity';
 
 // Use inferred type
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type

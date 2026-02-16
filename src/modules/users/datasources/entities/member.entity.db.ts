@@ -4,7 +4,7 @@ import { NAME_MAX_LENGTH } from '@/domain/common/schemas/name.schema';
 import { nullableDatabaseAddressTransformer } from '@/domain/common/transformers/nullableDatabaseAddress.transformer';
 import { databaseEnumTransformer } from '@/domain/common/utils/enum';
 import {
-  Member as DomainMember,
+  type Member as DomainMember,
   MemberRole,
   MemberStatus,
 } from '@/modules/users/domain/entities/member.entity';

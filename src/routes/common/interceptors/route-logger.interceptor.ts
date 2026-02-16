@@ -1,16 +1,16 @@
 import {
-  CallHandler,
-  ExecutionContext,
+  type CallHandler,
+  type ExecutionContext,
   HttpException,
   HttpStatus,
   Injectable,
-  NestInterceptor,
+  type NestInterceptor,
 } from '@nestjs/common';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { Inject } from '@nestjs/common/decorators';
 import { Observable, tap } from 'rxjs';
 import { formatRouteLogMessage } from '@/logging/utils';
-import { Request, Response } from 'express';
+import { type Request, type Response } from 'express';
 import isNumber from 'lodash/isNumber';
 import { ZodError } from 'zod';
 

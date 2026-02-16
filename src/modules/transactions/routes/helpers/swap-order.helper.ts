@@ -7,10 +7,10 @@ import { GPv2Decoder } from '@/modules/swaps/domain/contracts/decoders/gp-v2-dec
 import { ITokenRepository } from '@/modules/tokens/domain/token.repository.interface';
 import { TokensModule } from '@/modules/tokens/tokens.module';
 import { ISwapsRepository } from '@/modules/swaps/domain/swaps.repository';
-import { Token } from '@/modules/tokens/domain/entities/token.entity';
+import { type Token } from '@/modules/tokens/domain/entities/token.entity';
 import {
-  KnownOrder,
-  Order,
+  type KnownOrder,
+  type Order,
   OrderKind,
 } from '@/modules/swaps/domain/entities/order.entity';
 import { IConfigurationService } from '@/config/configuration.service.interface';

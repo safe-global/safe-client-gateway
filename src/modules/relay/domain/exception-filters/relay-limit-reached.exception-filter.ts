@@ -1,9 +1,9 @@
 import { RelayLimitReachedError } from '@/modules/relay/domain/errors/relay-limit-reached.error';
-import { Response } from 'express';
+import { type Response } from 'express';
 import {
   Catch,
-  ExceptionFilter,
-  ArgumentsHost,
+  type ExceptionFilter,
+  type ArgumentsHost,
   HttpStatus,
 } from '@nestjs/common';
 

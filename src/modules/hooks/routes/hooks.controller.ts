@@ -11,7 +11,7 @@ import { ApiExcludeController } from '@nestjs/swagger';
 import { HooksService } from '@/modules/hooks/routes/hooks.service';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import { BasicAuthGuard } from '@/routes/common/auth/basic-auth.guard';
-import { Event } from '@/modules/hooks/routes/entities/event.entity';
+import { type Event } from '@/modules/hooks/routes/entities/event.entity';
 import { EventSchema } from '@/modules/hooks/routes/entities/schemas/event.schema';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { EventProtocolChangedError } from '@/modules/hooks/routes/errors/event-protocol-changed.error';

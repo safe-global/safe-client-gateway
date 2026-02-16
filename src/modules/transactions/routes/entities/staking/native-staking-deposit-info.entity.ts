@@ -1,7 +1,7 @@
 import {
   StakingStatus,
-  StakingTimeInfo,
-  StakingFinancialInfo,
+  type StakingTimeInfo,
+  type StakingFinancialInfo,
 } from '@/modules/transactions/routes/entities/staking/staking.entity';
 import { TokenInfo } from '@/modules/transactions/routes/entities/swaps/token-info.entity';
 import {

@@ -1,7 +1,11 @@
 import { AuthController } from '@/modules/auth/routes/auth.controller';
 import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
-import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
-import { Request } from 'express';
+import {
+  type CanActivate,
+  type ExecutionContext,
+  Injectable,
+} from '@nestjs/common';
+import { type Request } from 'express';
 
 @Injectable()
 export class OptionalAuthGuard implements CanActivate {

@@ -1,4 +1,10 @@
-import { Body, Controller, Get, INestApplication, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  type INestApplication,
+  Post,
+} from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import request from 'supertest';

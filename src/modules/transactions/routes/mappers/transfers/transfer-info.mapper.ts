@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { Safe } from '@/modules/safe/domain/entities/safe.entity';
-import { Transfer as DomainTransfer } from '@/modules/safe/domain/entities/transfer.entity';
-import { Token } from '@/modules/tokens/domain/entities/token.entity';
+import { type Safe } from '@/modules/safe/domain/entities/safe.entity';
+import { type Transfer as DomainTransfer } from '@/modules/safe/domain/entities/transfer.entity';
+import { type Token } from '@/modules/tokens/domain/entities/token.entity';
 import { TokenRepository } from '@/modules/tokens/domain/token.repository';
 import { ITokenRepository } from '@/modules/tokens/domain/token.repository.interface';
 import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';

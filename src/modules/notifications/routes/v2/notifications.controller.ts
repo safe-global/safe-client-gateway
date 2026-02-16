@@ -30,7 +30,7 @@ import {
   ApiBadRequestResponse,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { UUID } from 'crypto';
+import { type UUID } from 'crypto';
 import { OptionalAuthGuard } from '@/modules/auth/routes/guards/optional-auth.guard';
 import { NotificationTypeResponseDto } from '@/modules/notifications/routes/v2/entities/notification-type-response.dto.entity';
 import { DeleteAllSubscriptionsDtoSchema } from '@/modules/notifications/domain/v2/entities/delete-all-subscriptions.dto.entity';

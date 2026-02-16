@@ -7,9 +7,9 @@ import { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
 import type { ISpaceSafesRepository } from '@/modules/spaces/domain/space-safes.repository.interface';
 import { BadRequestException, Inject, NotFoundException } from '@nestjs/common';
 import {
-  FindOptionsRelations,
-  FindOptionsSelect,
-  FindOptionsWhere,
+  type FindOptionsRelations,
+  type FindOptionsSelect,
+  type FindOptionsWhere,
 } from 'typeorm';
 
 export class SpaceSafesRepository implements ISpaceSafesRepository {

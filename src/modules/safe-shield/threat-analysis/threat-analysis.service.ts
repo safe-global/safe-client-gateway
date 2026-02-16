@@ -1,17 +1,17 @@
 import { LoggingService, ILoggingService } from '@/logging/logging.interface';
-import { ThreatAnalysisRequest } from '@/modules/safe-shield/entities/analysis-requests.entity';
-import { ThreatAnalysisResponse } from '@/modules/safe-shield/entities/analysis-responses.entity';
+import { type ThreatAnalysisRequest } from '@/modules/safe-shield/entities/analysis-requests.entity';
+import { type ThreatAnalysisResponse } from '@/modules/safe-shield/entities/analysis-responses.entity';
 import {
   CommonStatus,
-  ThreatAnalysisResult,
-  ThreatIssue,
-  ThreatIssues,
+  type ThreatAnalysisResult,
+  type ThreatIssue,
+  type ThreatIssues,
 } from '@/modules/safe-shield/entities/analysis-result.entity';
 import {
   Severity,
   compareSeverityString,
 } from '@/modules/safe-shield/entities/severity.entity';
-import { BalanceChange } from '@/modules/safe-shield/entities/threat-analysis.types';
+import { type BalanceChange } from '@/modules/safe-shield/entities/threat-analysis.types';
 import { ThreatStatus } from '@/modules/safe-shield/entities/threat-status.entity';
 import { ReportEvent } from '@/modules/safe-shield/entities/dtos/report-false-result.dto';
 import { IBlockaidApi } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-api.interface';
@@ -26,12 +26,12 @@ import {
   TITLE_MAPPING,
 } from '@/modules/safe-shield/threat-analysis/threat-analysis.constants';
 import { Inject, Injectable } from '@nestjs/common';
-import { Address } from 'viem';
-import { TypedData } from '@/modules/messages/domain/entities/typed-data.entity';
+import { type Address } from 'viem';
+import { type TypedData } from '@/modules/messages/domain/entities/typed-data.entity';
 import {
-  ProxyUpgradeManagement,
-  TransactionSimulation,
-  TransactionValidation,
+  type ProxyUpgradeManagement,
+  type TransactionSimulation,
+  type TransactionValidation,
 } from '@/modules/safe-shield/threat-analysis/blockaid/schemas/blockaid-scan-response.schema';
 import { NULL_ADDRESS } from '@/routes/common/constants';
 import { ThreatStatusGroup } from '@/modules/safe-shield/entities/status-group.entity';

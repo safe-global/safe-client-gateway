@@ -19,7 +19,7 @@ import {
   ConfigEventType,
   TransactionEventType,
 } from '@/modules/hooks/routes/entities/event-type.entity';
-import { Event } from '@/modules/hooks/routes/entities/event.entity';
+import { type Event } from '@/modules/hooks/routes/entities/event.entity';
 import { Inject, Injectable } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import memoize from 'lodash/memoize';

@@ -1,7 +1,7 @@
-import { UpsertSubscriptionsDto } from '@/modules/notifications/domain/v2/entities/upsert-subscriptions.dto.entity';
-import { FirebaseNotification } from '@/datasources/push-notifications-api/entities/firebase-notification.entity';
+import { type UpsertSubscriptionsDto } from '@/modules/notifications/domain/v2/entities/upsert-subscriptions.dto.entity';
+import { type FirebaseNotification } from '@/datasources/push-notifications-api/entities/firebase-notification.entity';
 import { IPushNotificationsApi } from '@/domain/interfaces/push-notifications-api.interface';
-import { UUID } from 'crypto';
+import { type UUID } from 'crypto';
 import type { INotificationsRepositoryV2 } from '@/modules/notifications/domain/v2/notifications.repository.interface';
 import {
   Inject,

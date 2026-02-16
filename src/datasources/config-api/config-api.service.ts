@@ -6,12 +6,12 @@ import {
   ICacheService,
 } from '@/datasources/cache/cache.service.interface';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
-import { Chain } from '@/modules/chains/domain/entities/chain.entity';
-import { Page } from '@/domain/entities/page.entity';
+import { type Chain } from '@/modules/chains/domain/entities/chain.entity';
+import { type Page } from '@/domain/entities/page.entity';
 import { IConfigApi } from '@/domain/interfaces/config-api.interface';
-import { SafeApp } from '@/modules/safe-apps/domain/entities/safe-app.entity';
+import { type SafeApp } from '@/modules/safe-apps/domain/entities/safe-app.entity';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
-import { Raw } from '@/validation/entities/raw.entity';
+import { type Raw } from '@/validation/entities/raw.entity';
 import { Inject, Injectable } from '@nestjs/common';
 
 @Injectable()

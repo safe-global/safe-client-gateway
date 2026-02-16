@@ -24,7 +24,7 @@ import {
   ApiUnauthorizedResponse,
   ApiBadRequestResponse,
 } from '@nestjs/swagger';
-import { CookieOptions, Response } from 'express';
+import { type CookieOptions, type Response } from 'express';
 
 /**
  * The AuthController is responsible for handling authentication:

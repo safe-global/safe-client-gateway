@@ -20,7 +20,7 @@ import {
   ContractStatusGroup,
   RecipientStatusGroup,
 } from '@/modules/safe-shield/entities/status-group.entity';
-import { ThreatAnalysisRequest } from '@/modules/safe-shield/entities/analysis-requests.entity';
+import { type ThreatAnalysisRequest } from '@/modules/safe-shield/entities/analysis-requests.entity';
 import { IConfigApi } from '@/domain/interfaces/config-api.interface';
 import { ChainSchema } from '@/modules/chains/domain/entities/schemas/chain.schema';
 import { FF_RISK_MITIGATION } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-api.constants';

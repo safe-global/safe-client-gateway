@@ -6,7 +6,7 @@ import {
 } from '@/modules/transactions/routes/helpers/swap-order.helper';
 import { ComposableCowDecoder } from '@/modules/swaps/domain/contracts/decoders/composable-cow-decoder.helper';
 import {
-  TwapOrderInfo,
+  type TwapOrderInfo,
   TwapOrderTransactionInfo,
 } from '@/modules/transactions/routes/entities/swaps/twap-order-info.entity';
 import {
@@ -14,7 +14,7 @@ import {
   TwapOrderHelperModule,
 } from '@/modules/transactions/routes/helpers/twap-order.helper';
 import {
-  KnownOrder,
+  type KnownOrder,
   OrderKind,
   OrderStatus,
 } from '@/modules/swaps/domain/entities/order.entity';
@@ -28,7 +28,7 @@ import {
   SwapAppsHelper,
   SwapAppsHelperModule,
 } from '@/modules/transactions/routes/helpers/swap-apps.helper';
-import { GPv2OrderParameters } from '@/modules/swaps/domain/contracts/decoders/gp-v2-decoder.helper';
+import { type GPv2OrderParameters } from '@/modules/swaps/domain/contracts/decoders/gp-v2-decoder.helper';
 import type { Address, Hex } from 'viem';
 
 @Injectable()

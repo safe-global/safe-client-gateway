@@ -2,7 +2,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { CommonStatus } from '../analysis-result.entity';
 import { RecipientStatus } from '@/modules/safe-shield/entities/recipient-status.entity';
 import { AnalysisResultDto } from './analysis-result.dto';
-import { SingleRecipientAnalysisResponse } from '@/modules/safe-shield/entities/analysis-responses.entity';
+import { type SingleRecipientAnalysisResponse } from '@/modules/safe-shield/entities/analysis-responses.entity';
 import { RecipientStatusGroup } from '@/modules/safe-shield/entities/status-group.entity';
 
 /**

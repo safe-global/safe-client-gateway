@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
-import { Safe } from '@/modules/safe/domain/entities/safe.entity';
+import { type MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
+import { type Safe } from '@/modules/safe/domain/entities/safe.entity';
 import { TransactionStatus } from '@/modules/transactions/routes/entities/transaction-status.entity';
 
 @Injectable()

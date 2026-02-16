@@ -1,6 +1,6 @@
 import { convertToDate } from '@/datasources/common/utils';
 import { TargetedSafe as DbTargetedSafe } from '@/modules/targeted-messaging/datasources/entities/targeted-safe.entity';
-import { TargetedSafe } from '@/modules/targeted-messaging/domain/entities/targeted-safe.entity';
+import { type TargetedSafe } from '@/modules/targeted-messaging/domain/entities/targeted-safe.entity';
 import { Injectable } from '@nestjs/common';
 
 @Injectable()

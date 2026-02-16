@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import type { UUID } from 'crypto';
-import { DeleteAllSubscriptionsDto as DomainDeleteAllSubscriptionsDto } from '@/modules/notifications/domain/v2/entities/delete-all-subscriptions.dto.entity';
+import { type DeleteAllSubscriptionsDto as DomainDeleteAllSubscriptionsDto } from '@/modules/notifications/domain/v2/entities/delete-all-subscriptions.dto.entity';
 import type { Address } from 'viem';
 
 export class DeleteAllSubscriptionItemDto {

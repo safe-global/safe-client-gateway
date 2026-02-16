@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import groupBy from 'lodash/groupBy';
-import { Message as DomainMessage } from '@/modules/messages/domain/entities/message.entity';
+import { type Message as DomainMessage } from '@/modules/messages/domain/entities/message.entity';
 import { MessagesRepository } from '@/modules/messages/domain/messages.repository';
 import { IMessagesRepository } from '@/modules/messages/domain/messages.repository.interface';
 import { SafeRepository } from '@/modules/safe/domain/safe.repository';

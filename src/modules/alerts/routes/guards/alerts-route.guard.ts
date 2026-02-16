@@ -1,4 +1,4 @@
-import { CanActivate, Inject, Injectable } from '@nestjs/common';
+import { type CanActivate, Inject, Injectable } from '@nestjs/common';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 
 @Injectable()

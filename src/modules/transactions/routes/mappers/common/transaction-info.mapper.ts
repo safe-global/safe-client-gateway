@@ -1,6 +1,6 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { ModuleTransaction } from '@/modules/safe/domain/entities/module-transaction.entity';
-import { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
+import { type ModuleTransaction } from '@/modules/safe/domain/entities/module-transaction.entity';
+import { type MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
 import { Operation } from '@/modules/safe/domain/entities/operation.entity';
 import { TokenRepository } from '@/modules/tokens/domain/token.repository';
 import { ITokenRepository } from '@/modules/tokens/domain/token.repository.interface';
@@ -39,8 +39,8 @@ import {
   SwapTransactionInfo,
 } from '@/modules/transactions/routes/entities/bridge/bridge-info.entity';
 import {
-  BaseDataDecoded,
-  DataDecoded,
+  type BaseDataDecoded,
+  type DataDecoded,
 } from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';
 import type { Address } from 'viem';
 

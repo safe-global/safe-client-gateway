@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
-  SafeAppAccessControl as DomainSafeAppAccessControl,
+  type SafeAppAccessControl as DomainSafeAppAccessControl,
   SafeAppAccessControlPolicies,
 } from '@/modules/safe-apps/domain/entities/safe-app-access-control.entity';
 
