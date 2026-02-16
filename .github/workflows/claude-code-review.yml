@@ -17,7 +17,7 @@ jobs:
     timeout-minutes: 5
     permissions:
       contents: read
-      pull-requests: read
+      pull-requests: write
       issues: read
       id-token: write
 
@@ -32,7 +32,7 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          track_progress:
+          track_progress: true
           prompt: |
             REPO: ${{ github.repository }}
             PR NUMBER: ${{ github.event.pull_request.number || github.event.issue.number }}
@@ -49,6 +49,5 @@ jobs:
             Only focus on things to improve.
             Do not need to check the comments of the PR.
           claude_args: |
-            --model claude-sonnet-4-5-20250929
-
+            --model claude-sonnet-4-5-20250929 --allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*)"
           trigger_phrase: '@claude review'
