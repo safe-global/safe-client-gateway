@@ -7,8 +7,8 @@ import {
   type ILoggingService,
 } from '@/logging/logging.interface';
 import {
-  CanActivate,
-  ExecutionContext,
+  type CanActivate,
+  type ExecutionContext,
   ForbiddenException,
   Inject,
   Injectable,
@@ -40,7 +40,10 @@ export class BlocklistGuard implements CanActivate {
     }
 
     const request: Request = context.switchToHttp().getRequest();
-    const addressParam = request.params[this.parameterName];
+    const addressParamRaw = request.params[this.parameterName];
+    const addressParam = Array.isArray(addressParamRaw)
+      ? addressParamRaw[0]
+      : addressParamRaw;
 
     if (!addressParam || !isAddress(addressParam)) {
       return true;

@@ -1,12 +1,12 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ISwapsApiFactory } from '@/domain/interfaces/swaps-api.factory';
 import {
-  Order,
+  type Order,
   OrderSchema,
   OrdersSchema,
 } from '@/modules/swaps/domain/entities/order.entity';
 import {
-  FullAppData,
+  type FullAppData,
   FullAppDataSchema,
 } from '@/modules/swaps/domain/entities/full-app-data.entity';
 import type { Address, Hex } from 'viem';

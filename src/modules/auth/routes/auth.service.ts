@@ -2,8 +2,8 @@ import { ForbiddenException, Inject, Injectable } from '@nestjs/common';
 import { SiweDto } from '@/modules/auth/routes/entities/siwe.dto.entity';
 import { ISiweRepository } from '@/modules/siwe/domain/siwe.repository.interface';
 import { IAuthRepository } from '@/modules/auth/domain/auth.repository.interface';
-import { AuthPayloadDto } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { JwtPayloadWithClaims } from '@/datasources/jwt/jwt-claims.entity';
+import { type AuthPayloadDto } from '@/modules/auth/domain/entities/auth-payload.entity';
+import { type JwtPayloadWithClaims } from '@/datasources/jwt/jwt-claims.entity';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 
 @Injectable()

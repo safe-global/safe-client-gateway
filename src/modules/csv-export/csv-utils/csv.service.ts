@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { ColumnOption, Options, stringify } from 'csv-stringify';
+import { type ColumnOption, type Options, stringify } from 'csv-stringify';
 import { Readable, Writable } from 'stream';
 import { pipeline } from 'stream/promises';
 

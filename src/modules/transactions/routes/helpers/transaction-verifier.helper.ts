@@ -1,12 +1,12 @@
 import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import {
-  BaseMultisigTransaction,
+  type BaseMultisigTransaction,
   getBaseMultisigTransaction,
   getSafeTxHash,
 } from '@/domain/common/utils/safe';
-import { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
-import { Safe } from '@/modules/safe/domain/entities/safe.entity';
+import { type MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
+import { type Safe } from '@/modules/safe/domain/entities/safe.entity';
 import { ProposeTransactionDto } from '@/modules/transactions/domain/entities/propose-transaction.dto.entity';
 import { IDelegatesV2Repository } from '@/modules/delegate/domain/v2/delegates.v2.repository.interface';
 import { HttpExceptionNoLog } from '@/domain/common/errors/http-exception-no-log.error';
@@ -15,7 +15,7 @@ import { LogType } from '@/domain/common/entities/log-type.entity';
 import { SafeSignature } from '@/domain/common/entities/safe-signature';
 import { SignatureType } from '@/domain/common/entities/signature-type.entity';
 import { LogSource } from '@/domain/common/entities/log-source.entity';
-import { type Address, type Hash, Hex, isAddressEqual } from 'viem';
+import { type Address, type Hash, type Hex, isAddressEqual } from 'viem';
 import { IContractsRepository } from '@/modules/contracts/domain/contracts.repository.interface';
 import { Operation } from '@/modules/safe/domain/entities/operation.entity';
 import { parseSignaturesByType } from '@/domain/common/utils/signatures';

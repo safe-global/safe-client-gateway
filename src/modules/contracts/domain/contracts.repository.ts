@@ -8,7 +8,7 @@ import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { SAFE_TRANSACTION_SERVICE_MAX_LIMIT } from '@/domain/common/constants';
 import { IDataDecoderApi } from '@/domain/interfaces/data-decoder-api.interface';
 import {
-  Contract,
+  type Contract,
   ContractPageSchema,
 } from '@/modules/data-decoder/domain/v2/entities/contract.entity';
 

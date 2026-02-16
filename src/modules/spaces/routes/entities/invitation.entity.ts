@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
-  Member,
+  type Member,
   MemberRole,
   MemberStatus,
 } from '@/modules/users/domain/entities/member.entity';

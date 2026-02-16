@@ -7,7 +7,7 @@ import {
   AWS_BUCKET_NAME,
   AWS_SECRET_ACCESS_KEY,
 } from '@/datasources/storage/constants';
-import { DynamicModule, Module } from '@nestjs/common';
+import { type DynamicModule, Module } from '@nestjs/common';
 
 @Module({})
 export class CloudStorageModule {

@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { BlockExplorerUriTemplate as DomainBlockExplorerUriTemplate } from '@/modules/chains/domain/entities/block-explorer-uri-template.entity';
+import { type BlockExplorerUriTemplate as DomainBlockExplorerUriTemplate } from '@/modules/chains/domain/entities/block-explorer-uri-template.entity';
 
 export class BlockExplorerUriTemplate implements DomainBlockExplorerUriTemplate {
   @ApiProperty()

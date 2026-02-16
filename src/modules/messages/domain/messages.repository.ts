@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { Page } from '@/domain/entities/page.entity';
+import { type Page } from '@/domain/entities/page.entity';
 import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
-import { Message } from '@/modules/messages/domain/entities/message.entity';
+import { type Message } from '@/modules/messages/domain/entities/message.entity';
 import { IMessagesRepository } from '@/modules/messages/domain/messages.repository.interface';
 import {
   MessagePageSchema,
@@ -9,7 +9,7 @@ import {
 } from '@/modules/messages/domain/entities/message.entity';
 import { MessageVerifierHelper } from '@/modules/messages/domain/helpers/message-verifier.helper';
 import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
-import { TypedData } from '@/modules/messages/domain/entities/typed-data.entity';
+import { type TypedData } from '@/modules/messages/domain/entities/typed-data.entity';
 import type { Address, Hash, Hex } from 'viem';
 
 @Injectable()

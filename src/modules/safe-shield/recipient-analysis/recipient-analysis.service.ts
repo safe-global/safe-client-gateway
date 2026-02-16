@@ -1,11 +1,11 @@
 import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
 import { TransferPageSchema } from '@/modules/safe/domain/entities/transfer.entity';
 import {
-  AnalysisResult,
+  type AnalysisResult,
   CommonStatus,
 } from '@/modules/safe-shield/entities/analysis-result.entity';
 import { Inject, Injectable } from '@nestjs/common';
-import { getAddress, Hex, zeroAddress, type Address } from 'viem';
+import { getAddress, type Hex, zeroAddress, type Address } from 'viem';
 import { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
 import { SafeSchema } from '@/modules/safe/domain/entities/schemas/safe.schema';
 import {
@@ -18,9 +18,9 @@ import { BridgeStatus } from '@/modules/safe-shield/entities/bridge-status.entit
 import type { DecodedTransactionData } from '@/modules/safe-shield/entities/transaction-data.entity';
 import { Erc20Decoder } from '@/modules/relay/domain/contracts/decoders/erc-20-decoder.helper';
 import {
-  RecipientAnalysisResponse,
-  RecipientAnalysisResponseWithoutIsSafe,
-  SingleRecipientAnalysisResponse,
+  type RecipientAnalysisResponse,
+  type RecipientAnalysisResponseWithoutIsSafe,
+  type SingleRecipientAnalysisResponse,
 } from '@/modules/safe-shield/entities/analysis-responses.entity';
 import {
   CacheService,
@@ -37,7 +37,7 @@ import {
   isBridgeAndSwapTransactionInfo,
   isSwapTransactionInfo,
 } from '@/modules/transactions/routes/entities/bridge/bridge-info.entity';
-import { Safe } from '@/modules/safe/domain/entities/safe.entity';
+import { type Safe } from '@/modules/safe/domain/entities/safe.entity';
 import { TransactionsService } from '@/modules/transactions/routes/transactions.service';
 import {
   hasCanonicalDeploymentSafeToL2Migration,
@@ -50,7 +50,7 @@ import {
 import { Chain } from '@/modules/chains/routes/entities/chain.entity';
 import { merge } from 'lodash';
 import type { SafeCreationData } from '@/modules/safe-shield/entities/safe-creation-data.entity';
-import { ITransactionApi } from '@/domain/interfaces/transaction-api.interface';
+import { type ITransactionApi } from '@/domain/interfaces/transaction-api.interface';
 import { DataSourceError } from '@/domain/errors/data-source.error';
 import { isSwapOrderTransactionInfo } from '@/modules/transactions/routes/entities/swaps/swap-order-info.entity';
 import { RecipientStatusGroup } from '@/modules/safe-shield/entities/status-group.entity';

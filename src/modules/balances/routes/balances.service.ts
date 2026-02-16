@@ -1,8 +1,8 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { IBalancesRepository } from '@/modules/balances/domain/balances.repository.interface';
-import { Balance as DomainBalance } from '@/modules/balances/domain/entities/balance.entity';
+import { type Balance as DomainBalance } from '@/modules/balances/domain/entities/balance.entity';
 import { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
-import { NativeCurrency } from '@/modules/chains/domain/entities/native.currency.entity';
+import { type NativeCurrency } from '@/modules/chains/domain/entities/native.currency.entity';
 import { Balance } from '@/modules/balances/routes/entities/balance.entity';
 import { Balances } from '@/modules/balances/routes/entities/balances.entity';
 import {

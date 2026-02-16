@@ -4,7 +4,7 @@ import { IRelayer } from '@/modules/relay/domain/interfaces/relayer.interface';
 import { DailyLimitRelayer } from '@/modules/relay/domain/relayers/daily-limit.relayer';
 import { NoFeeCampaignRelayer } from '@/modules/relay/domain/relayers/no-fee-campaign.relayer';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import { NoFeeCampaignConfiguration } from '@/modules/relay/domain/entities/relay.configuration';
+import { type NoFeeCampaignConfiguration } from '@/modules/relay/domain/entities/relay.configuration';
 
 @Injectable()
 export class RelayManager implements IRelayManager {

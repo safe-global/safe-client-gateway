@@ -1,10 +1,10 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { IPositionsRepository } from '@/modules/positions/domain/positions.repository.interface';
 import { IPositionsApi } from '@/domain/interfaces/positions-api.interface';
-import { Chain } from '@/modules/chains/domain/entities/chain.entity';
+import { type Chain } from '@/modules/chains/domain/entities/chain.entity';
 import { z } from 'zod';
 import {
-  Position,
+  type Position,
   PositionsSchema,
 } from '@/modules/positions/domain/entities/position.entity';
 import type { Address } from 'viem';

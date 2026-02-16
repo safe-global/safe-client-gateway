@@ -4,15 +4,15 @@ import {
   CacheService,
   ICacheService,
 } from '@/datasources/cache/cache.service.interface';
-import { Chain as DomainChain } from '@/modules/chains/domain/entities/chain.entity';
+import { type Chain as DomainChain } from '@/modules/chains/domain/entities/chain.entity';
 import { RpcUriAuthentication } from '@/modules/chains/domain/entities/rpc-uri-authentication.entity';
 import { ChainSchema } from '@/modules/chains/domain/entities/schemas/chain.schema';
 import { IBlockchainApiManager } from '@/domain/interfaces/blockchain-api.manager.interface';
 import { IConfigApi } from '@/domain/interfaces/config-api.interface';
 import { Inject, Injectable } from '@nestjs/common';
 import {
-  Chain,
-  PublicClient,
+  type Chain,
+  type PublicClient,
   RpcRequestError,
   createPublicClient,
   custom,

@@ -11,8 +11,8 @@ import { RelayLimitReachedError } from '@/modules/relay/domain/errors/relay-limi
 import { ExceedsMaxGasLimitError } from '@/modules/relay/domain/errors/exceeds-max-gas-limit';
 import { BalancesService } from '@/modules/balances/routes/balances.service';
 import {
-  NoFeeCampaignConfiguration,
-  RelayRules,
+  type NoFeeCampaignConfiguration,
+  type RelayRules,
 } from '@/modules/relay/domain/entities/relay.configuration';
 
 @Injectable()

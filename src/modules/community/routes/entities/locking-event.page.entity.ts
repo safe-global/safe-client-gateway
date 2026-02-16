@@ -1,7 +1,7 @@
 import {
-  LockEventItem as DomainLockEventItem,
-  UnlockEventItem as DomainUnlockEventItem,
-  WithdrawEventItem as DomainWithdrawEventItem,
+  type LockEventItem as DomainLockEventItem,
+  type UnlockEventItem as DomainUnlockEventItem,
+  type WithdrawEventItem as DomainWithdrawEventItem,
 } from '@/modules/community/domain/entities/locking-event.entity';
 import { LockingEventType } from '@/modules/community/domain/entities/schemas/locking-event.schema';
 import { Page } from '@/routes/common/entities/page.entity';

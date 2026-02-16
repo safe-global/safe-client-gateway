@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { Estimation } from '@/modules/estimations/domain/entities/estimation.entity';
+import { type Estimation } from '@/modules/estimations/domain/entities/estimation.entity';
 import { GetEstimationDto } from '@/modules/estimations/domain/entities/get-estimation.dto.entity';
 import { IEstimationsRepository } from '@/modules/estimations/domain/estimations.repository.interface';
 import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';

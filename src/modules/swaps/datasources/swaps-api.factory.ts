@@ -3,7 +3,7 @@ import {
   INetworkService,
   NetworkService,
 } from '@/datasources/network/network.service.interface';
-import { ISwapsApi } from '@/domain/interfaces/swaps-api.interface';
+import { type ISwapsApi } from '@/domain/interfaces/swaps-api.interface';
 import { ISwapsApiFactory } from '@/domain/interfaces/swaps-api.factory';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { IConfigurationService } from '@/config/configuration.service.interface';

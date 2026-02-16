@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {
-  GasPriceResult as DomainGasPriceResult,
-  GasPriceResponse as DomainGasPriceResponse,
+  type GasPriceResult as DomainGasPriceResult,
+  type GasPriceResponse as DomainGasPriceResponse,
 } from '@/modules/chains/domain/entities/gas-price-response.entity';
 
 class GasPriceResult implements DomainGasPriceResult {

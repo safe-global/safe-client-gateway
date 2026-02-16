@@ -8,7 +8,7 @@ import {
 import { OwnersService } from '@/modules/owners/routes/owners.service';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { SafesByChainId } from '@/modules/safe/domain/entities/safes-by-chain-id.entity';
+import { type SafesByChainId } from '@/modules/safe/domain/entities/safes-by-chain-id.entity';
 import type { Address } from 'viem';
 
 @ApiTags('owners')

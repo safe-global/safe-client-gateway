@@ -7,8 +7,8 @@ import {
 } from '@nestjs/swagger';
 import {
   CommonStatus,
-  RecipientAnalysisResult,
-  UnofficialFallbackHandlerAnalysisResult,
+  type RecipientAnalysisResult,
+  type UnofficialFallbackHandlerAnalysisResult,
   type ContractAnalysisResult,
 } from '../analysis-result.entity';
 import type {
@@ -19,7 +19,7 @@ import { ContractStatus } from '@/modules/safe-shield/entities/contract-status.e
 import { AnalysisResultDto } from './analysis-result.dto';
 import { BridgeStatus } from '@/modules/safe-shield/entities/bridge-status.entity';
 import { RecipientStatus } from '@/modules/safe-shield/entities/recipient-status.entity';
-import { Address } from 'viem';
+import { type Address } from 'viem';
 import {
   ContractStatusGroup,
   DeadlockStatusGroup,

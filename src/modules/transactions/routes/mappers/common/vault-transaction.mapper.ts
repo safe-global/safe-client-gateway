@@ -1,8 +1,8 @@
 import {
-  DefiVaultStats,
-  DefiVaultStatsAdditionalReward,
+  type DefiVaultStats,
+  type DefiVaultStatsAdditionalReward,
 } from '@/modules/staking/datasources/entities/defi-vault-stats.entity';
-import { Deployment } from '@/modules/staking/datasources/entities/deployment.entity';
+import { type Deployment } from '@/modules/staking/datasources/entities/deployment.entity';
 import { getNumberString } from '@/domain/common/utils/utils';
 import { EarnRepository } from '@/modules/earn/domain/earn.repository';
 import { ITokenRepository } from '@/modules/tokens/domain/token.repository.interface';

@@ -1,23 +1,23 @@
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
 import { CacheRouter } from '@/datasources/cache/cache.router';
-import { ICacheService } from '@/datasources/cache/cache.service.interface';
+import type { ICacheService } from '@/datasources/cache/cache.service.interface';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { INetworkService } from '@/datasources/network/network.service.interface';
 import {
-  Balance,
+  type Balance,
   BalancesSchema,
 } from '@/modules/balances/domain/entities/balance.entity';
-import { Collectible } from '@/modules/collectibles/domain/entities/collectible.entity';
+import { type Collectible } from '@/modules/collectibles/domain/entities/collectible.entity';
 import { getNumberString } from '@/domain/common/utils/utils';
-import { Page } from '@/domain/entities/page.entity';
-import { IBalancesApi } from '@/domain/interfaces/balances-api.interface';
+import { type Page } from '@/domain/entities/page.entity';
+import { type IBalancesApi } from '@/domain/interfaces/balances-api.interface';
 import { IPricesApi } from '@/modules/balances/datasources/prices-api.interface';
 import { Injectable } from '@nestjs/common';
-import { Chain } from '@/modules/chains/domain/entities/chain.entity';
+import { type Chain } from '@/modules/chains/domain/entities/chain.entity';
 import { rawify, type Raw } from '@/validation/entities/raw.entity';
 import {
-  AssetPrice,
+  type AssetPrice,
   getAssetPricesSchema,
 } from '@/modules/balances/datasources/entities/asset-price.entity';
 import { ZodError } from 'zod';
