@@ -1,0 +1,15 @@
+repos:
+  - repo: https://github.com/Lucas-C/pre-commit-hooks
+    rev: v1.5.5
+    hooks:
+      - id: insert-license
+        name: insert-license-ts
+        files: \.(ts|tsx|js|mjs)$
+        exclude: (node_modules/|dist/|coverage/|abis/)
+        stages: [pre-commit]
+        args:
+          - --license-filepath
+          - LICENSE_HEADER.txt
+          - --comment-style
+          - //
+          - --no-extra-eol
