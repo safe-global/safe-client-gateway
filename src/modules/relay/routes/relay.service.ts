@@ -1,6 +1,5 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { RelayRepository } from '@/modules/relay/domain/relay.repository';
-import { IRelayApi } from '@/domain/interfaces/relay-api.interface';
 import { RelayDto } from '@/modules/relay/routes/entities/relay.dto.entity';
 import { Relay } from '@/modules/relay/routes/entities/relay.entity';
 import { RelayTaskStatus } from '@/modules/relay/routes/entities/relay-task-status.entity';
@@ -9,10 +8,7 @@ import type { Address } from 'viem';
 
 @Injectable()
 export class RelayService {
-  constructor(
-    private readonly relayRepository: RelayRepository,
-    @Inject(IRelayApi) private readonly relayApi: IRelayApi,
-  ) {}
+  constructor(private readonly relayRepository: RelayRepository) {}
 
   async relay(args: { chainId: string; relayDto: RelayDto }): Promise<Relay> {
     const relay = await this.relayRepository.relay({
@@ -30,7 +26,7 @@ export class RelayService {
     chainId: string;
     taskId: string;
   }): Promise<RelayTaskStatus> {
-    const taskStatus = await this.relayApi.getTaskStatus({
+    const taskStatus = await this.relayRepository.getTaskStatus({
       chainId: args.chainId,
       taskId: args.taskId,
     });
