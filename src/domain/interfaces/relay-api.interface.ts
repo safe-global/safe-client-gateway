@@ -5,12 +5,7 @@ import type { Address } from 'viem';
 export const IRelayApi = Symbol('IRelayApi');
 
 export interface IRelayApi {
-  relay(args: {
-    chainId: string;
-    to: Address;
-    data: string;
-    gasLimit: bigint | null;
-  }): Promise<Relay>;
+  relay(args: { chainId: string; to: Address; data: string }): Promise<Relay>;
 
   getTaskStatus(args: {
     chainId: string;

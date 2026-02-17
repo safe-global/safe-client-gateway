@@ -43,7 +43,6 @@ export class GelatoApi implements IRelayApi {
     chainId: string;
     to: Address;
     data: string;
-    gasLimit: bigint | null;
   }): Promise<Relay> {
     const apiKey = this.configurationService.getOrThrow<string>(
       `relay.apiKey.${args.chainId}`,

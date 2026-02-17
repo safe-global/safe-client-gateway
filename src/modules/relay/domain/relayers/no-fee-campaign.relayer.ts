@@ -98,8 +98,9 @@ export class NoFeeCampaignRelayer implements IRelayer {
     }
 
     const relayResponse = await this.relayApi.relay({
-      ...args,
-      gasLimit,
+      chainId: args.chainId,
+      to: args.to,
+      data: args.data,
     });
 
     // If we fail to increment count, we should not fail the relay

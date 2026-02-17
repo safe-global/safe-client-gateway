@@ -61,7 +61,11 @@ export class DailyLimitRelayer implements IRelayer {
       }
     }
 
-    const relayResponse = await this.relayApi.relay(args);
+    const relayResponse = await this.relayApi.relay({
+      chainId: args.chainId,
+      to: args.to,
+      data: args.data,
+    });
 
     // If we fail to increment count, we should not fail the relay
     for (const address of relayAddresses) {

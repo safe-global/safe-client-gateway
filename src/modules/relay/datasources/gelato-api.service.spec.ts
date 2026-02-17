@@ -79,55 +79,9 @@ describe('GelatoApi', () => {
         chainId,
         to: address,
         data,
-        gasLimit: null,
       });
 
       expect(result).toEqual({ taskId });
-      expect(mockNetworkService.post).toHaveBeenCalledWith({
-        url: `${baseUri}/rpc`,
-        data: {
-          id: 1,
-          jsonrpc: '2.0',
-          method: 'relayer_sendTransaction',
-          params: {
-            chainId,
-            to: address,
-            data,
-            payment: { type: 'sponsored' },
-          },
-        },
-        networkRequest: {
-          headers: {
-            'X-API-Key': apiKey,
-          },
-        },
-      });
-    });
-
-    it('should not send gasLimit to Gelato even if provided', async () => {
-      const chainId = faker.string.numeric();
-      const address = getAddress(faker.finance.ethereumAddress());
-      const data = faker.string.hexadecimal() as Hex;
-      const gasLimit = faker.number.bigInt();
-      const apiKey = faker.string.sample();
-      const taskId = faker.string.uuid();
-      fakeConfigurationService.set(`relay.apiKey.${chainId}`, apiKey);
-      mockNetworkService.post.mockResolvedValueOnce({
-        status: 200,
-        data: rawify({
-          jsonrpc: '2.0',
-          result: taskId,
-          id: 1,
-        }),
-      });
-
-      await target.relay({
-        chainId,
-        to: address,
-        data,
-        gasLimit,
-      });
-
       expect(mockNetworkService.post).toHaveBeenCalledWith({
         url: `${baseUri}/rpc`,
         data: {
@@ -159,7 +113,6 @@ describe('GelatoApi', () => {
           chainId,
           to: address,
           data,
-          gasLimit: null,
         }),
       ).rejects.toThrow();
     });
@@ -187,7 +140,6 @@ describe('GelatoApi', () => {
           chainId,
           to: address,
           data,
-          gasLimit: null,
         }),
       ).rejects.toThrow(new DataSourceError('Unexpected error', status));
     });
