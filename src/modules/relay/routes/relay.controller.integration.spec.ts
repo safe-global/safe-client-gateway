@@ -2782,11 +2782,8 @@ describe('Relay controller', () => {
           .get(`/v1/chains/${chainId}/relay/status/${taskId}`)
           .expect(200)
           .expect({
-            chainId,
-            createdAt,
-            id: taskId,
             status: 200,
-            receipt: { blockHash, blockNumber, gasUsed, transactionHash },
+            receipt: { transactionHash },
           });
       });
 
@@ -2818,9 +2815,6 @@ describe('Relay controller', () => {
           .get(`/v1/chains/${chainId}/relay/status/${taskId}`)
           .expect(200)
           .expect({
-            chainId,
-            createdAt,
-            id: taskId,
             status: 100,
           });
       });
