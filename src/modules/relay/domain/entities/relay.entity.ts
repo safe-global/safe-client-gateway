@@ -6,6 +6,8 @@ export const GelatoRelayResponseSchema = z.object({
   id: z.number(),
 });
 
+export type GelatoRelayResponse = z.infer<typeof GelatoRelayResponseSchema>;
+
 export const RelaySchema = z.object({
   taskId: z.string(),
 });

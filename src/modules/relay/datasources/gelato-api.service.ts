@@ -13,11 +13,13 @@ import {
 } from '@/datasources/cache/cache.service.interface';
 import {
   type Relay,
+  type GelatoRelayResponse,
   GelatoRelayResponseSchema,
 } from '@/modules/relay/domain/entities/relay.entity';
 import {
   type RelayTaskStatus,
-  RelayTaskStatusSchema,
+  type GelatoTaskStatusResponse,
+  GelatoTaskStatusResponseSchema,
 } from '@/modules/relay/domain/entities/relay-task-status.entity';
 import type { Address } from 'viem';
 
@@ -49,7 +51,7 @@ export class GelatoApi implements IRelayApi {
 
     try {
       const url = `${this.baseUri}/rpc`;
-      const { data } = await this.networkService.post<Relay>({
+      const { data } = await this.networkService.post<GelatoRelayResponse>({
         url,
         data: {
           id: 1,
@@ -89,26 +91,28 @@ export class GelatoApi implements IRelayApi {
 
     try {
       const url = `${this.baseUri}/rpc`;
-      const { data } = await this.networkService.post<RelayTaskStatus>({
-        url,
-        data: {
-          id: 1,
-          jsonrpc: '2.0',
-          method: 'relayer_getStatus',
-          params: {
-            id: args.taskId,
-            logs: false,
+      const { data } = await this.networkService.post<GelatoTaskStatusResponse>(
+        {
+          url,
+          data: {
+            id: 1,
+            jsonrpc: '2.0',
+            method: 'relayer_getStatus',
+            params: {
+              id: args.taskId,
+              logs: false,
+            },
+          },
+          networkRequest: {
+            headers: {
+              'X-API-Key': apiKey,
+            },
           },
         },
-        networkRequest: {
-          headers: {
-            'X-API-Key': apiKey,
-          },
-        },
-      });
+      );
 
-      const response = data as unknown as { result: RelayTaskStatus };
-      return RelayTaskStatusSchema.parse(response.result);
+      const response = GelatoTaskStatusResponseSchema.parse(data);
+      return response.result;
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }

@@ -18,3 +18,13 @@ export const RelayTaskStatusSchema = z.object({
 });
 
 export type RelayTaskStatus = z.infer<typeof RelayTaskStatusSchema>;
+
+export const GelatoTaskStatusResponseSchema = z.object({
+  jsonrpc: z.literal('2.0'),
+  result: RelayTaskStatusSchema,
+  id: z.number(),
+});
+
+export type GelatoTaskStatusResponse = z.infer<
+  typeof GelatoTaskStatusResponseSchema
+>;
