@@ -3,8 +3,8 @@ repos:
     rev: v1.5.5
     hooks:
       - id: insert-license
-        name: insert-license-ts
-        files: \.(ts|tsx|js|mjs)$
+        name: insert-license
+        files: \.(ts|tsx|js|mjs|yaml|yml|md)$
         exclude: (node_modules/|dist/|coverage/|abis/)
         stages: [pre-commit]
         args:
