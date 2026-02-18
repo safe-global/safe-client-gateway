@@ -17,7 +17,7 @@ repos:
           - --no-extra-eol
       - id: insert-license
         name: insert-license
-        files: \.(yaml|yml|md)$
+        files: \.(yaml|yml|md|sh|Dockerfile)$
         exclude: (node_modules/|dist/|coverage/|abis/)
         stages: [pre-commit]
         args:
