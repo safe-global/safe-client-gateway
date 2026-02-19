@@ -430,4 +430,35 @@ describe('Configuration validator', () => {
       });
     });
   });
+
+  describe('SAFE_CONFIG_CGW_KEY', () => {
+    it('should accept a valid SAFE_CONFIG_CGW_KEY', () => {
+      process.env.NODE_ENV = 'production';
+      const config = {
+        ...validConfiguration,
+        SAFE_CONFIG_CGW_KEY: 'custom-cgw-key',
+      };
+      expect(() =>
+        configurationValidator(config, RootConfigurationSchema),
+      ).not.toThrow();
+    });
+
+    it('should accept missing SAFE_CONFIG_CGW_KEY (optional)', () => {
+      process.env.NODE_ENV = 'production';
+      const config = omit(validConfiguration, 'SAFE_CONFIG_CGW_KEY');
+      expect(() =>
+        configurationValidator(config, RootConfigurationSchema),
+      ).not.toThrow();
+    });
+
+    it('should reject empty SAFE_CONFIG_CGW_KEY', () => {
+      process.env.NODE_ENV = 'production';
+      const config = { ...validConfiguration, SAFE_CONFIG_CGW_KEY: '' };
+      expect(() =>
+        configurationValidator(config, RootConfigurationSchema),
+      ).toThrow(
+        'Configuration is invalid: SAFE_CONFIG_CGW_KEY Too small: expected string to have >=1 characters',
+      );
+    });
+  });
 });
