@@ -4,7 +4,6 @@ import { IFeatureFlagService } from '@/modules/chains/feature-flags/feature-flag
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { createTestModule } from '@/__tests__/testing-module';
 import configuration from '@/config/entities/__tests__/configuration';
-import type { INetworkService } from '@/datasources/network/network.service.interface';
 import { NetworkService } from '@/datasources/network/network.service.interface';
 import type { Server } from 'net';
 
@@ -53,18 +52,13 @@ describe('FeatureFlagService Integration', () => {
       );
       const featureFlagSvc =
         moduleFixture.get<IFeatureFlagService>(IFeatureFlagService);
-      const networkService =
-        moduleFixture.get<jest.MockedObjectDeep<INetworkService>>(
-          NetworkService,
-        );
+      const networkService = moduleFixture.get(NetworkService);
 
       expect(configService.getOrThrow<string>('safeConfig.cgwServiceKey')).toBe(
         CUSTOM_CGW_KEY,
       );
 
-      networkService.get.mockRejectedValueOnce(
-        new Error('Config Service unavailable'),
-      );
+      networkService.get.mockResolvedValueOnce({ data: null, status: 200 })
       const app = await new TestAppProvider().provide(moduleFixture);
       await app.init();
       await featureFlagSvc.isFeatureEnabled('1', 'test');
