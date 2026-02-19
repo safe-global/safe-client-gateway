@@ -14,30 +14,44 @@ describe('FeatureFlagService Integration', () => {
   let featureFlagService: IFeatureFlagService;
   let configurationService: IConfigurationService;
 
-  beforeEach(async () => {
-    const moduleFixture = await createTestModule();
-    configurationService = moduleFixture.get<IConfigurationService>(
-      IConfigurationService,
-    );
-    featureFlagService =
-      moduleFixture.get<IFeatureFlagService>(IFeatureFlagService);
-
-    app = await new TestAppProvider().provide(moduleFixture);
-    await app.init();
-  });
-
   afterEach(async () => {
     if (app) await app.close();
   });
 
-  describe('Service key configuration', () => {
-    it('should use default "CGW" service key for CGW internal feature flag fetching', () => {
-      const cgwServiceKey = configurationService.getOrThrow<string>(
-        'safeConfig.cgwServiceKey',
+  describe('with default config', () => {
+    beforeEach(async () => {
+      const moduleFixture = await createTestModule();
+      configurationService = moduleFixture.get<IConfigurationService>(
+        IConfigurationService,
       );
-      expect(cgwServiceKey).toBe('CGW');
+      featureFlagService =
+        moduleFixture.get<IFeatureFlagService>(IFeatureFlagService);
+
+      app = await new TestAppProvider().provide(moduleFixture);
+      await app.init();
     });
 
+    describe('Service key configuration', () => {
+      it('should use default "CGW" service key for CGW internal feature flag fetching', () => {
+        const cgwServiceKey = configurationService.getOrThrow<string>(
+          'safeConfig.cgwServiceKey',
+        );
+        expect(cgwServiceKey).toBe('CGW');
+      });
+    });
+
+    describe('isFeatureEnabled', () => {
+      it('should be injectable and callable', async () => {
+        expect(featureFlagService).toBeDefined();
+        expect(typeof featureFlagService.isFeatureEnabled).toBe('function');
+
+        const result = await featureFlagService.isFeatureEnabled('1', 'test');
+        expect(typeof result).toBe('boolean');
+      });
+    });
+  });
+
+  describe('with custom config', () => {
     it('should use custom CGW service key when configured', async () => {
       const customConfig = (): ReturnType<typeof configuration> => ({
         ...configuration(),
@@ -58,7 +72,7 @@ describe('FeatureFlagService Integration', () => {
         CUSTOM_CGW_KEY,
       );
 
-      networkService.get.mockResolvedValueOnce({ data: null, status: 200 })
+      networkService.get.mockResolvedValueOnce({ data: null, status: 200 });
       const app = await new TestAppProvider().provide(moduleFixture);
       await app.init();
       await featureFlagSvc.isFeatureEnabled('1', 'test');
@@ -69,16 +83,6 @@ describe('FeatureFlagService Integration', () => {
         }),
       );
       await app.close();
-    });
-  });
-
-  describe('isFeatureEnabled', () => {
-    it('should be injectable and callable', async () => {
-      expect(featureFlagService).toBeDefined();
-      expect(typeof featureFlagService.isFeatureEnabled).toBe('function');
-
-      const result = await featureFlagService.isFeatureEnabled('1', 'test');
-      expect(typeof result).toBe('boolean');
     });
   });
 });
