@@ -5,6 +5,8 @@ import { IConfigurationService } from '@/config/configuration.service.interface'
 import { createTestModule } from '@/__tests__/testing-module';
 import configuration from '@/config/entities/__tests__/configuration';
 import { NetworkService } from '@/datasources/network/network.service.interface';
+import type { INetworkService } from '@/datasources/network/network.service.interface';
+import { rawify } from '@/validation/entities/raw.entity';
 import type { Server } from 'net';
 
 const CUSTOM_CGW_KEY = 'CUSTOM_CGW_KEY';
@@ -66,13 +68,19 @@ describe('FeatureFlagService Integration', () => {
       );
       const featureFlagSvc =
         moduleFixture.get<IFeatureFlagService>(IFeatureFlagService);
-      const networkService = moduleFixture.get(NetworkService);
+      const networkService =
+        moduleFixture.get<jest.MockedObjectDeep<INetworkService>>(
+          NetworkService,
+        );
 
       expect(configService.getOrThrow<string>('safeConfig.cgwServiceKey')).toBe(
         CUSTOM_CGW_KEY,
       );
 
-      networkService.get.mockResolvedValueOnce({ data: null, status: 200 });
+      networkService.get.mockResolvedValueOnce({
+        data: rawify(null),
+        status: 200,
+      });
       const app = await new TestAppProvider().provide(moduleFixture);
       await app.init();
       await featureFlagSvc.isFeatureEnabled('1', 'test');
