@@ -29,7 +29,7 @@ import {
 export class ChainsRepository implements IChainsRepository {
   // According to the limits of the Config Service
   // @see https://github.com/safe-global/safe-config-service/blob/main/src/chains/views.py#L14-L16
-  static readonly MAX_LIMIT = 40;
+  static readonly MAX_LIMIT = 100;
 
   private readonly maxSequentialPages: number;
 
