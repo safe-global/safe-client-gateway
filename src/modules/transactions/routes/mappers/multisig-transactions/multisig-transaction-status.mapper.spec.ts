@@ -8,7 +8,12 @@ describe('Multisig Transaction status mapper (Unit)', () => {
   let mapper: MultisigTransactionStatusMapper;
 
   beforeEach(() => {
+    jest.useFakeTimers();
     mapper = new MultisigTransactionStatusMapper();
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
   });
 
   it('should return a SUCCESS status', () => {
@@ -44,6 +49,54 @@ describe('Multisig Transaction status mapper (Unit)', () => {
 
     expect(mapper.mapTransactionStatus(transaction, safe)).toBe(
       TransactionStatus.Cancelled,
+    );
+  });
+
+  it('should return CANCELLED when nonce passed and not enough confirmations even if recently modified', () => {
+    jest.setSystemTime(new Date('2026-02-19T14:22:00.000Z'));
+    const transaction = multisigTransactionBuilder()
+      .with('isExecuted', false)
+      .with('nonce', 2)
+      .with('confirmations', [confirmationBuilder().build()])
+      .with('confirmationsRequired', 3)
+      .with('modified', new Date('2026-02-19T14:21:50.000Z'))
+      .build();
+    const safe = { ...safeBuilder().build(), nonce: 3 };
+
+    expect(mapper.mapTransactionStatus(transaction, safe)).toBe(
+      TransactionStatus.Cancelled,
+    );
+  });
+
+  it('should return CANCELLED when nonce passed and enough confirmations but modified long ago', () => {
+    jest.setSystemTime(new Date('2026-02-19T14:22:00.000Z'));
+    const transaction = multisigTransactionBuilder()
+      .with('isExecuted', false)
+      .with('nonce', 2)
+      .with('confirmations', [confirmationBuilder().build()])
+      .with('confirmationsRequired', 1)
+      .with('modified', new Date('2026-02-19T14:00:00.000Z'))
+      .build();
+    const safe = { ...safeBuilder().build(), nonce: 3 };
+
+    expect(mapper.mapTransactionStatus(transaction, safe)).toBe(
+      TransactionStatus.Cancelled,
+    );
+  });
+
+  it('should return AWAITING_EXECUTION instead of CANCELLED during indexing grace period', () => {
+    jest.setSystemTime(new Date('2026-02-19T14:22:10.000Z'));
+    const transaction = multisigTransactionBuilder()
+      .with('isExecuted', false)
+      .with('nonce', 46)
+      .with('confirmations', [confirmationBuilder().build()])
+      .with('confirmationsRequired', 1)
+      .with('modified', new Date('2026-02-19T14:22:02.139Z'))
+      .build();
+    const safe = { ...safeBuilder().build(), nonce: 47 };
+
+    expect(mapper.mapTransactionStatus(transaction, safe)).toBe(
+      TransactionStatus.AwaitingExecution,
     );
   });
 
