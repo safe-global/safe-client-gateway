@@ -44,12 +44,15 @@ describe('FeatureFlagService Integration', () => {
     });
 
     describe('isFeatureEnabled', () => {
-      it('should be injectable and callable', async () => {
+      it('should be injectable and callable', () => {
         expect(featureFlagService).toBeDefined();
         expect(typeof featureFlagService.isFeatureEnabled).toBe('function');
+      });
 
-        const result = await featureFlagService.isFeatureEnabled('1', 'test');
-        expect(typeof result).toBe('boolean');
+      it('should throw when chain config is unavailable', async () => {
+        await expect(
+          featureFlagService.isFeatureEnabled('1', 'test'),
+        ).rejects.toThrow();
       });
     });
   });
@@ -84,7 +87,7 @@ describe('FeatureFlagService Integration', () => {
       });
       const app = await new TestAppProvider().provide(moduleFixture);
       await app.init();
-      await featureFlagSvc.isFeatureEnabled('1', 'test');
+      await featureFlagSvc.isFeatureEnabled('1', 'test').catch(() => {});
 
       expect(networkService.get).toHaveBeenCalledWith(
         expect.objectContaining({

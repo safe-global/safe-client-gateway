@@ -4,7 +4,6 @@ import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.b
 import { FeatureFlagService } from '@/modules/chains/feature-flags/feature-flag.service';
 import type { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
-import type { ILoggingService } from '@/logging/logging.interface';
 
 const mockChainsRepository = {
   getChainV2: jest.fn(),
@@ -13,11 +12,6 @@ const mockChainsRepository = {
 const mockConfigurationService = jest.mocked({
   getOrThrow: jest.fn(),
 } as jest.MockedObjectDeep<IConfigurationService>);
-
-const mockLoggingService = {
-  warn: jest.fn(),
-  error: jest.fn(),
-} as jest.MockedObjectDeep<ILoggingService>;
 
 describe('FeatureFlagService', () => {
   let target: FeatureFlagService;
@@ -31,7 +25,6 @@ describe('FeatureFlagService', () => {
     target = new FeatureFlagService(
       mockChainsRepository,
       mockConfigurationService,
-      mockLoggingService,
     );
   });
 
@@ -74,49 +67,37 @@ describe('FeatureFlagService', () => {
       );
     });
 
-    it('should return false when chain config is unavailable (Config Service errors)', async () => {
+    it('should throw when chain config is unavailable (Config Service errors)', async () => {
       const chainId = faker.string.numeric();
       const featureKey = 'test-feature';
       const error = new Error('Config Service unavailable');
       mockChainsRepository.getChainV2.mockRejectedValueOnce(error);
 
-      const result = await target.isFeatureEnabled(chainId, featureKey);
-
-      expect(result).toBe(false);
-      expect(mockLoggingService.warn).toHaveBeenCalledTimes(1);
-      expect(mockLoggingService.warn).toHaveBeenCalledWith(
-        expect.objectContaining({
-          message: expect.stringContaining(
-            'Unable to fetch chain configuration',
-          ),
-          chainId,
-          error,
-        }),
-      );
+      await expect(
+        target.isFeatureEnabled(chainId, featureKey),
+      ).rejects.toThrow('Config Service unavailable');
     });
 
-    it('should return false when chain config is unavailable (network issues)', async () => {
+    it('should throw when chain config is unavailable (network issues)', async () => {
       const chainId = faker.string.numeric();
       const featureKey = 'test-feature';
       const error = new Error('Network timeout');
       mockChainsRepository.getChainV2.mockRejectedValueOnce(error);
 
-      const result = await target.isFeatureEnabled(chainId, featureKey);
-
-      expect(result).toBe(false);
-      expect(mockLoggingService.warn).toHaveBeenCalledTimes(1);
+      await expect(
+        target.isFeatureEnabled(chainId, featureKey),
+      ).rejects.toThrow('Network timeout');
     });
 
-    it('should return false when chain does not exist', async () => {
+    it('should throw when chain does not exist', async () => {
       const chainId = '999';
       const featureKey = 'test-feature';
       const error = new Error('Chain not found');
       mockChainsRepository.getChainV2.mockRejectedValueOnce(error);
 
-      const result = await target.isFeatureEnabled(chainId, featureKey);
-
-      expect(result).toBe(false);
-      expect(mockLoggingService.warn).toHaveBeenCalledTimes(1);
+      await expect(
+        target.isFeatureEnabled(chainId, featureKey),
+      ).rejects.toThrow('Chain not found');
     });
 
     it('should fetch chain config on-demand when chain has not been fetched/cached yet', async () => {
