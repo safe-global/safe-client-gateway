@@ -1,5 +1,5 @@
-import { ModuleTransaction } from '@/modules/safe/domain/entities/module-transaction.entity';
-import { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
+import { type ModuleTransaction } from '@/modules/safe/domain/entities/module-transaction.entity';
+import { type MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
 import { KilnDecoder } from '@/modules/staking/domain/contracts/decoders/kiln-decoder.helper';
 import { Erc4262Decoder } from '@/modules/transactions/routes/decoders/erc4262-decoder.helper';
 import {
@@ -8,9 +8,9 @@ import {
 } from '@/modules/transactions/routes/helpers/transaction-finder.helper';
 import { Injectable, Module } from '@nestjs/common';
 import {
-  Address,
-  ContractFunctionName,
-  DecodeFunctionDataReturnType,
+  type Address,
+  type ContractFunctionName,
+  type DecodeFunctionDataReturnType,
   erc4626Abi,
   getAbiItem,
   toFunctionSelector,

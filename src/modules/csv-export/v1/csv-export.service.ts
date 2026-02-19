@@ -3,12 +3,12 @@ import { ICloudStorageApiService } from '@/datasources/storage/cloud-storage-api
 import { CsvService } from '@/modules/csv-export/csv-utils/csv.service';
 import { JobType } from '@/datasources/job-queue/types/job-types';
 import { IJobQueueService } from '@/domain/interfaces/job-queue.interface';
-import { CsvExportJobData } from '@/modules/csv-export/v1/entities/csv-export-job-data.entity';
+import { type CsvExportJobData } from '@/modules/csv-export/v1/entities/csv-export-job-data.entity';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 
 import { IExportApiManager } from '@/modules/csv-export/v1/datasources/export-api.manager.interface';
 import {
-  TransactionExport,
+  type TransactionExport,
   TransactionExportPageSchema,
 } from '@/modules/csv-export/v1/entities/transaction-export.entity';
 import { Inject, Injectable } from '@nestjs/common';
@@ -18,15 +18,15 @@ import fs from 'fs';
 import { UnrecoverableError } from 'bullmq';
 import {
   JobStatusDto,
-  JobStatusResponseDto,
+  type JobStatusResponseDto,
   toJobStatusDto,
 } from '@/routes/jobs/entities/job-status.dto';
 import { LogType } from '@/domain/common/entities/log-type.entity';
-import { FileStorageType } from '@/config/entities/schemas/configuration.schema';
+import { type FileStorageType } from '@/config/entities/schemas/configuration.schema';
 import { asError } from '@/logging/utils';
 import { DataSourceError } from '@/domain/errors/data-source.error';
 import { CSV_OPTIONS } from '@/modules/csv-export/v1/entities/csv-export.options';
-import { CompleteMultipartUploadCommandOutput } from '@aws-sdk/client-s3';
+import { type CompleteMultipartUploadCommandOutput } from '@aws-sdk/client-s3';
 import type { Address } from 'viem';
 
 @Injectable()

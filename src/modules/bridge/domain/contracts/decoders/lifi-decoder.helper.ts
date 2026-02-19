@@ -1,10 +1,10 @@
 import { Injectable, Module } from '@nestjs/common';
 import {
-  AbiParameterToPrimitiveType,
-  Address,
+  type AbiParameterToPrimitiveType,
+  type Address,
   decodeAbiParameters,
   decodeFunctionData,
-  Hex,
+  type Hex,
   isAddressEqual,
   parseAbi,
   parseAbiParameter,

@@ -2,7 +2,7 @@ import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { IAlertsRepository } from '@/modules/alerts/domain/alerts.repository.interface';
 import { AlertsRepository } from '@/modules/alerts/domain/alerts.repository';
 import { AddRecoveryModuleDto } from '@/modules/recovery/routes/entities/add-recovery-module.dto.entity';
-import { AlertsRegistration } from '@/modules/alerts/domain/entities/alerts-registration.entity';
+import { type AlertsRegistration } from '@/modules/alerts/domain/entities/alerts-registration.entity';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
 import type { Address } from 'viem';

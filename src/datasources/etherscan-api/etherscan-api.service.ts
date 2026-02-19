@@ -5,7 +5,7 @@ import { CacheRouter } from '@/datasources/cache/cache.router';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { IEtherscanApi } from '@/domain/interfaces/etherscan-api.interface';
 import { GasPriceResponse } from '@/modules/chains/routes/entities/gas-price-response.entity';
-import { Raw } from '@/validation/entities/raw.entity';
+import { type Raw } from '@/validation/entities/raw.entity';
 
 @Injectable()
 export class EtherscanApi implements IEtherscanApi {

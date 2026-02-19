@@ -7,7 +7,7 @@ import {
 } from 'typeorm';
 import {
   UserStatus,
-  User as DomainUser,
+  type User as DomainUser,
 } from '@/modules/users/domain/entities/user.entity';
 import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
 import { Member } from '@/modules/users/datasources/entities/member.entity.db';

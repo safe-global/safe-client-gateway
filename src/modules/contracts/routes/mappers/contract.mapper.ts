@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { Contract } from '@/modules/contracts/domain/entities/contract.entity';
-import { Contract as DataDecoderContract } from '@/modules/data-decoder/domain/v2/entities/contract.entity';
+import { type Contract } from '@/modules/contracts/domain/entities/contract.entity';
+import { type Contract as DataDecoderContract } from '@/modules/data-decoder/domain/v2/entities/contract.entity';
 
 @Injectable()
 export class ContractMapper {

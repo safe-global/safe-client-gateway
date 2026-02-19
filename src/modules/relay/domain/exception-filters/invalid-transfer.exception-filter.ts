@@ -1,8 +1,8 @@
-import { Response } from 'express';
+import { type Response } from 'express';
 import {
   Catch,
-  ExceptionFilter,
-  ArgumentsHost,
+  type ExceptionFilter,
+  type ArgumentsHost,
   HttpStatus,
 } from '@nestjs/common';
 import { InvalidTransferError } from '@/modules/relay/domain/errors/invalid-transfer.error';

@@ -2,16 +2,16 @@ import { IBlockaidApi } from '@/modules/safe-shield/threat-analysis/blockaid/blo
 import { ReportEvent } from '@/modules/safe-shield/entities/dtos/report-false-result.dto';
 import { BLOCKAID_REQUEST_ID_HEADER } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-api.constants';
 import Blockaid from '@blockaid/client';
-import { JsonRpcScanParams } from '@blockaid/client/resources/evm/json-rpc';
+import { type JsonRpcScanParams } from '@blockaid/client/resources/evm/json-rpc';
 import { Inject, Injectable } from '@nestjs/common';
-import { Address, numberToHex } from 'viem';
+import { type Address, numberToHex } from 'viem';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { BlockaidScanLogSchema } from '@/modules/safe-shield/threat-analysis/blockaid/schemas/blockaid-scan-log.schema';
 import {
-  BlockaidScanResponse,
+  type BlockaidScanResponse,
   BlockaidScanResponseSchema,
 } from '@/modules/safe-shield/threat-analysis/blockaid/schemas/blockaid-scan-response.schema';
-import { TransactionScanResponse } from '@blockaid/client/resources/index';
+import { type TransactionScanResponse } from '@blockaid/client/resources/index';
 
 @Injectable()
 export class BlockaidApi implements IBlockaidApi {

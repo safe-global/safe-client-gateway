@@ -1,44 +1,44 @@
 import { IStakingApiManager } from '@/domain/interfaces/staking-api.manager.interface';
 import {
-  NetworkStats,
+  type NetworkStats,
   NetworkStatsSchema,
 } from '@/modules/staking/datasources/entities/network-stats.entity';
 import {
-  PooledStakingStats,
+  type PooledStakingStats,
   PooledStakingStatsSchema,
 } from '@/modules/staking/datasources/entities/pooled-staking-stats.entity';
 import { IStakingRepositoryWithRewardsFee } from '@/modules/staking/domain/staking.repository.interface';
 import { Inject, Injectable } from '@nestjs/common';
 import {
-  DedicatedStakingStats,
+  type DedicatedStakingStats,
   DedicatedStakingStatsSchema,
 } from '@/modules/staking/datasources/entities/dedicated-staking-stats.entity';
 import {
-  Deployment,
+  type Deployment,
   DeploymentsSchema,
 } from '@/modules/staking/datasources/entities/deployment.entity';
 import {
   DefiVaultsStateSchema,
-  DefiVaultStats,
+  type DefiVaultStats,
 } from '@/modules/staking/datasources/entities/defi-vault-stats.entity';
 import {
-  Stake,
+  type Stake,
   StakesSchema,
 } from '@/modules/staking/datasources/entities/stake.entity';
 import {
-  TransactionStatus,
+  type TransactionStatus,
   TransactionStatusSchema,
 } from '@/modules/staking/datasources/entities/transaction-status.entity';
 import {
-  DefiVaultStake,
+  type DefiVaultStake,
   DefiVaultStakesSchema,
 } from '@/modules/staking/datasources/entities/defi-vault-stake.entity';
 import {
-  DefiMorphoExtraReward,
+  type DefiMorphoExtraReward,
   DefiMorphoExtraRewardsSchema,
 } from '@/modules/staking/datasources/entities/defi-morpho-extra-reward.entity';
 import {
-  RewardsFee,
+  type RewardsFee,
   RewardsFeeSchema,
 } from '@/modules/staking/datasources/entities/rewards-fee.entity';
 import type { Address, Hash } from 'viem';

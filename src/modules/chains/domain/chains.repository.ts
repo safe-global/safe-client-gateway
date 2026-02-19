@@ -4,15 +4,15 @@ import {
   ChainLenientPageSchema,
   ChainSchema,
 } from '@/modules/chains/domain/entities/schemas/chain.schema';
-import { Chain } from '@/modules/chains/domain/entities/chain.entity';
-import { Singleton } from '@/modules/chains/domain/entities/singleton.entity';
+import { type Chain } from '@/modules/chains/domain/entities/chain.entity';
+import { type Singleton } from '@/modules/chains/domain/entities/singleton.entity';
 import { SingletonsSchema } from '@/modules/chains/domain/entities/schemas/singleton.schema';
-import { Page } from '@/domain/entities/page.entity';
+import { type Page } from '@/domain/entities/page.entity';
 import { IConfigApi } from '@/domain/interfaces/config-api.interface';
 import { IEtherscanApi } from '@/domain/interfaces/etherscan-api.interface';
 import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
 import {
-  IndexingStatus,
+  type IndexingStatus,
   IndexingStatusSchema,
 } from '@/modules/indexing/domain/entities/indexing-status.entity';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
@@ -21,7 +21,7 @@ import { PaginationData } from '@/routes/common/pagination/pagination.data';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { LenientBasePageSchema } from '@/domain/entities/schemas/page.schema.factory';
 import {
-  GasPriceResponse,
+  type GasPriceResponse,
   GasPriceResponseSchema,
 } from '@/modules/chains/domain/entities/gas-price-response.entity';
 

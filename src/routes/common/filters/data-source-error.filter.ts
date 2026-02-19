@@ -1,11 +1,11 @@
 import {
-  ArgumentsHost,
+  type ArgumentsHost,
   Catch,
-  ExceptionFilter,
+  type ExceptionFilter,
   HttpStatus,
 } from '@nestjs/common';
 import { DataSourceError } from '@/domain/errors/data-source.error';
-import { Response } from 'express';
+import { type Response } from 'express';
 
 /**
  * This {@link ExceptionFilter} catches any {@link DataSourceError} thrown

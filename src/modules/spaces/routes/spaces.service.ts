@@ -3,7 +3,7 @@ import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.en
 import { getEnumKey } from '@/domain/common/utils/enum';
 import { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
 import { MemberRole } from '@/modules/users/domain/entities/member.entity';
-import { User } from '@/modules/users/domain/entities/user.entity';
+import { type User } from '@/modules/users/domain/entities/user.entity';
 import { IMembersRepository } from '@/modules/users/domain/members.repository.interface';
 import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
 import { CreateSpaceResponse } from '@/modules/spaces/routes/entities/create-space.dto.entity';

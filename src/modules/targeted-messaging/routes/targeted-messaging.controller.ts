@@ -27,7 +27,7 @@ import {
   ApiOkResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { Response } from 'express';
+import { type Response } from 'express';
 import type { Address } from 'viem';
 
 @ApiTags('targeted-messaging')

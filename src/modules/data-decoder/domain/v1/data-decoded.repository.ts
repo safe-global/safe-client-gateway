@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { IDataDecodedRepository } from '@/modules/data-decoder/domain/v1/data-decoded.repository.interface';
-import { DataDecoded } from '@/modules/data-decoder/domain/v1/entities/data-decoded.entity';
+import { type DataDecoded } from '@/modules/data-decoder/domain/v1/entities/data-decoded.entity';
 import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
 import { DataDecodedSchema } from '@/modules/data-decoder/domain/v1/entities/schemas/data-decoded.schema';
 import type { Address } from 'viem';

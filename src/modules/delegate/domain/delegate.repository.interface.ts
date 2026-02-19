@@ -1,5 +1,5 @@
-import { Delegate } from '@/modules/delegate/domain/entities/delegate.entity';
-import { Page } from '@/domain/entities/page.entity';
+import { type Delegate } from '@/modules/delegate/domain/entities/delegate.entity';
+import { type Page } from '@/domain/entities/page.entity';
 import { Module } from '@nestjs/common';
 import { DelegateRepository } from '@/modules/delegate/domain/delegate.repository';
 import { TransactionApiManagerModule } from '@/domain/interfaces/transaction-api.manager.interface';

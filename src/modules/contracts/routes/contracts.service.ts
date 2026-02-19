@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ContractsRepository } from '@/modules/contracts/domain/contracts.repository';
 import { IContractsRepository } from '@/modules/contracts/domain/contracts.repository.interface';
-import { Contract } from '@/modules/contracts/domain/entities/contract.entity';
+import { type Contract } from '@/modules/contracts/domain/entities/contract.entity';
 import { ContractMapper } from '@/modules/contracts/routes/mappers/contract.mapper';
 import type { Address } from 'viem';
 

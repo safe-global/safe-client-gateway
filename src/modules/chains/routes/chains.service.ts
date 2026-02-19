@@ -1,10 +1,10 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { IBackboneRepository } from '@/modules/backbone/domain/backbone.repository.interface';
-import { Backbone } from '@/modules/backbone/domain/entities/backbone.entity';
+import { type Backbone } from '@/modules/backbone/domain/entities/backbone.entity';
 import { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
 import { MasterCopy } from '@/modules/chains/routes/entities/master-copy.entity';
-import { Page } from '@/domain/entities/page.entity';
+import { type Page } from '@/domain/entities/page.entity';
 import { AboutChain } from '@/modules/chains/routes/entities/about-chain.entity';
 import { Chain } from '@/modules/chains/routes/entities/chain.entity';
 import { GasPriceResponse } from '@/modules/chains/routes/entities/gas-price-response.entity';

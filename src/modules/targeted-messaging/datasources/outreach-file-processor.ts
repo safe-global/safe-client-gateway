@@ -1,5 +1,5 @@
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import { FileStorageType } from '@/config/entities/schemas/configuration.schema';
+import { type FileStorageType } from '@/config/entities/schemas/configuration.schema';
 import { CacheRouter } from '@/datasources/cache/cache.router';
 import {
   CacheService,
@@ -9,7 +9,7 @@ import { MAX_TTL } from '@/datasources/cache/constants';
 import { ICloudStorageApiService } from '@/datasources/storage/cloud-storage-api.service';
 import { OutreachFileSchema } from '@/modules/targeted-messaging/datasources/entities/outreach-file.entity';
 import { ITargetedMessagingDatasource } from '@/domain/interfaces/targeted-messaging.datasource.interface';
-import { Outreach } from '@/modules/targeted-messaging/domain/entities/outreach.entity';
+import { type Outreach } from '@/modules/targeted-messaging/domain/entities/outreach.entity';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { asError } from '@/logging/utils';
 import { Inject, Injectable, type OnModuleInit } from '@nestjs/common';

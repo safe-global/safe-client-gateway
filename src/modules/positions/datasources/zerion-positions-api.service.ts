@@ -1,9 +1,9 @@
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import {
-  ZerionAttributes,
-  ZerionBalance,
+  type ZerionAttributes,
+  type ZerionBalance,
   ZerionBalanceSchema,
-  ZerionBalances,
+  type ZerionBalances,
   ZerionBalancesSchema,
 } from '@/modules/balances/datasources/entities/zerion-balance.entity';
 import { CacheRouter } from '@/datasources/cache/cache.router';
@@ -18,10 +18,10 @@ import {
   NetworkService,
 } from '@/datasources/network/network.service.interface';
 import {
-  Erc20Balance,
-  NativeBalance,
+  type Erc20Balance,
+  type NativeBalance,
 } from '@/modules/balances/domain/entities/balance.entity';
-import { Chain } from '@/modules/chains/domain/entities/chain.entity';
+import { type Chain } from '@/modules/chains/domain/entities/chain.entity';
 import { LogType } from '@/domain/common/entities/log-type.entity';
 import { getNumberString } from '@/domain/common/utils/utils';
 import { DataSourceError } from '@/domain/errors/data-source.error';
@@ -29,9 +29,9 @@ import { IPositionsApi } from '@/domain/interfaces/positions-api.interface';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { rawify, type Raw } from '@/validation/entities/raw.entity';
 import { Inject, Injectable } from '@nestjs/common';
-import { Address, getAddress } from 'viem';
+import { type Address, getAddress } from 'viem';
 import { z, ZodError } from 'zod';
-import { Position } from '@/modules/positions/domain/entities/position.entity';
+import { type Position } from '@/modules/positions/domain/entities/position.entity';
 import {
   getZerionHeaders,
   normalizeZerionBalances,

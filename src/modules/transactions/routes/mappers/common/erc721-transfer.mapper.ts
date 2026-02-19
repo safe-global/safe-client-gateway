@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import { ModuleTransaction } from '@/modules/safe/domain/entities/module-transaction.entity';
-import { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
-import { Erc721Token } from '@/modules/tokens/domain/entities/token.entity';
+import { type ModuleTransaction } from '@/modules/safe/domain/entities/module-transaction.entity';
+import { type MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
+import { type Erc721Token } from '@/modules/tokens/domain/entities/token.entity';
 import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
 import { NULL_ADDRESS } from '@/routes/common/constants';
 import { TransferTransactionInfo } from '@/modules/transactions/routes/entities/transfer-transaction-info.entity';

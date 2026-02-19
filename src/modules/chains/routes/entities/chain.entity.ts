@@ -13,8 +13,8 @@ import {
   BlockExplorerUriTemplate as ApiBlockExplorerUriTemplate,
 } from '@/modules/chains/routes/entities/block-explorer-uri-template.entity';
 import {
-  BeaconChainExplorerUriTemplate,
-  BeaconChainExplorerUriTemplate as ApiBeaconChainExplorerUriTemplate,
+  type BeaconChainExplorerUriTemplate,
+  type BeaconChainExplorerUriTemplate as ApiBeaconChainExplorerUriTemplate,
 } from '@/modules/chains/domain/entities/beacon-chain-explorer-uri-template.entity';
 import {
   GasPriceOracle,

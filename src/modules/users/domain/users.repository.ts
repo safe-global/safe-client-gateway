@@ -6,7 +6,10 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import type { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
-import { User, UserStatus } from '@/modules/users/domain/entities/user.entity';
+import {
+  type User,
+  UserStatus,
+} from '@/modules/users/domain/entities/user.entity';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { User as DbUser } from '@/modules/users/datasources/entities/users.entity.db';

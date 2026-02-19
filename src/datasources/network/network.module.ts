@@ -2,7 +2,7 @@ import { Global, Module } from '@nestjs/common';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { FetchNetworkService } from '@/datasources/network/fetch.network.service';
 import { NetworkService } from '@/datasources/network/network.service.interface';
-import { NetworkResponse } from '@/datasources/network/entities/network.response.entity';
+import { type NetworkResponse } from '@/datasources/network/entities/network.response.entity';
 import {
   NetworkRequestError,
   NetworkResponseError,
@@ -12,7 +12,7 @@ import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { LogType } from '@/domain/common/entities/log-type.entity';
 import { hashSha1 } from '@/domain/common/utils/utils';
 import { CircuitBreakerService } from '@/datasources/circuit-breaker/circuit-breaker.service';
-import { NetworkRequest } from '@/datasources/network/entities/network.request.entity';
+import { type NetworkRequest } from '@/datasources/network/entities/network.request.entity';
 
 export const FetchClientToken = Symbol('FetchClient');
 

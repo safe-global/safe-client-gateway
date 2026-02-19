@@ -15,9 +15,9 @@ import { TargetedSafe as DbTargetedSafe } from '@/modules/targeted-messaging/dat
 import { ITargetedMessagingDatasource } from '@/domain/interfaces/targeted-messaging.datasource.interface';
 import { CreateOutreachDto } from '@/modules/targeted-messaging/domain/entities/create-outreach.dto.entity';
 import { CreateTargetedSafesDto } from '@/modules/targeted-messaging/domain/entities/create-targeted-safes.dto.entity';
-import { Outreach } from '@/modules/targeted-messaging/domain/entities/outreach.entity';
-import { Submission } from '@/modules/targeted-messaging/domain/entities/submission.entity';
-import { TargetedSafe } from '@/modules/targeted-messaging/domain/entities/targeted-safe.entity';
+import { type Outreach } from '@/modules/targeted-messaging/domain/entities/outreach.entity';
+import { type Submission } from '@/modules/targeted-messaging/domain/entities/submission.entity';
+import { type TargetedSafe } from '@/modules/targeted-messaging/domain/entities/targeted-safe.entity';
 import { UpdateOutreachDto } from '@/modules/targeted-messaging/domain/entities/update-outreach.dto.entity';
 import { SubmissionNotFoundError } from '@/modules/targeted-messaging/domain/errors/submission-not-found.error';
 import { TargetedSafeNotFoundError } from '@/modules/targeted-messaging/domain/errors/targeted-safe-not-found.error';

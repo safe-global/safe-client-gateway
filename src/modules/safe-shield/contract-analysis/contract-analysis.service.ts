@@ -1,5 +1,5 @@
 import {
-  Contract,
+  type Contract,
   ContractPageSchema,
 } from '@/modules/data-decoder/domain/v2/entities/contract.entity';
 import { IDataDecoderApi } from '@/domain/interfaces/data-decoder-api.interface';
@@ -11,17 +11,17 @@ import {
 } from '@/modules/safe-shield/contract-analysis/contract-analysis.constants';
 import {
   type ContractAnalysisResponse,
-  ContractVerificationResult,
-  GroupedAnalysisResults,
+  type ContractVerificationResult,
+  type GroupedAnalysisResults,
 } from '@/modules/safe-shield/entities/analysis-responses.entity';
 import {
-  AnalysisResult,
+  type AnalysisResult,
   CommonStatus,
-  ContractAnalysisResult,
-  UnofficialFallbackHandlerAnalysisResult,
+  type ContractAnalysisResult,
+  type UnofficialFallbackHandlerAnalysisResult,
 } from '@/modules/safe-shield/entities/analysis-result.entity';
 import { ContractStatus } from '@/modules/safe-shield/entities/contract-status.entity';
-import { DecodedTransactionData } from '@/modules/safe-shield/entities/transaction-data.entity';
+import { type DecodedTransactionData } from '@/modules/safe-shield/entities/transaction-data.entity';
 import {
   CacheService,
   ICacheService,
@@ -30,7 +30,7 @@ import { CacheRouter } from '@/datasources/cache/cache.router';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { Inject, Injectable } from '@nestjs/common';
-import { Address } from 'viem';
+import { type Address } from 'viem';
 import { logCacheHit, logCacheMiss } from '@/modules/safe-shield/utils/common';
 import { extractContracts } from '@/modules/safe-shield/utils/extraction.utils';
 import type { ExtractedContract } from '@/modules/safe-shield/entities/extracted-contract.entity';

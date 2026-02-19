@@ -1,8 +1,8 @@
 import { DeviceType } from '@/modules/notifications/domain/v2/entities/device-type.entity';
 import { NotificationType } from '@/modules/notifications/domain/v2/entities/notification-type.entity';
 import {
-  UpsertSubscriptionsSafesDto as DomainUpsertSubscriptionsSafesDto,
-  UpsertSubscriptionsDto as DomainUpsertSubscriptionsDto,
+  type UpsertSubscriptionsSafesDto as DomainUpsertSubscriptionsSafesDto,
+  type UpsertSubscriptionsDto as DomainUpsertSubscriptionsDto,
 } from '@/modules/notifications/domain/v2/entities/upsert-subscriptions.dto.entity';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import type { UUID } from 'crypto';

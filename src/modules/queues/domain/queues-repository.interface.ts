@@ -1,7 +1,7 @@
 import { QueuesApiModule } from '@/modules/queues/datasources/queues-api.module';
 import { QueuesRepository } from '@/modules/queues/domain/queues-repository';
 import { Module } from '@nestjs/common';
-import { ConsumeMessage } from 'amqplib';
+import { type ConsumeMessage } from 'amqplib';
 
 export const IQueuesRepository = Symbol('IQueuesRepository');
 

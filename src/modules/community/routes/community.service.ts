@@ -1,15 +1,15 @@
-import { Page } from '@/domain/entities/page.entity';
-import { Campaign } from '@/modules/community/domain/entities/campaign.entity';
-import { CampaignRank } from '@/modules/community/domain/entities/campaign-rank.entity';
-import { LockingEvent } from '@/modules/community/domain/entities/locking-event.entity';
-import { LockingRank } from '@/modules/community/domain/entities/locking-rank.entity';
+import { type Page } from '@/domain/entities/page.entity';
+import { type Campaign } from '@/modules/community/domain/entities/campaign.entity';
+import { type CampaignRank } from '@/modules/community/domain/entities/campaign-rank.entity';
+import { type LockingEvent } from '@/modules/community/domain/entities/locking-event.entity';
+import { type LockingRank } from '@/modules/community/domain/entities/locking-rank.entity';
 import { ICommunityRepository } from '@/modules/community/domain/community.repository.interface';
 import {
   PaginationData,
   cursorUrlFromLimitAndOffset,
 } from '@/routes/common/pagination/pagination.data';
 import { Inject, Injectable } from '@nestjs/common';
-import { CampaignActivity } from '@/modules/community/domain/entities/campaign-activity.entity';
+import { type CampaignActivity } from '@/modules/community/domain/entities/campaign-activity.entity';
 import { Eligibility } from '@/modules/community/routes/entities/eligibility.entity';
 import { EligibilityRequest } from '@/modules/community/routes/entities/eligibility-request.entity';
 import type { Address } from 'viem';

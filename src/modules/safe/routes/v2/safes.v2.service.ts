@@ -7,10 +7,10 @@ import { IConfigurationService } from '@/config/configuration.service.interface'
 import { LoggingService, ILoggingService } from '@/logging/logging.interface';
 import { asError } from '@/logging/utils';
 import { SafeOverview } from '@/modules/safe/routes/entities/safe-overview.entity';
-import { Caip10Addresses } from '@/modules/safe/routes/entities/caip-10-addresses.entity';
+import { type Caip10Addresses } from '@/modules/safe/routes/entities/caip-10-addresses.entity';
 import { AddressInfo } from '@/routes/common/entities/address-info.entity';
 import { getNumberString } from '@/domain/common/utils/utils';
-import { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
+import { type MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
 import type { Address } from 'viem';
 import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
 
