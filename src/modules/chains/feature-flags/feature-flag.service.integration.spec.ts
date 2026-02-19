@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { INestApplication } from '@nestjs/common';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { IFeatureFlagService } from '@/modules/chains/feature-flags/feature-flag.service.interface';

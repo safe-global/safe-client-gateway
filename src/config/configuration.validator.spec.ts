@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { fakeJson } from '@/__tests__/faker';
 import configurationValidator from '@/config/configuration.validator';
 import { RootConfigurationSchema } from '@/config/entities/schemas/configuration.schema';

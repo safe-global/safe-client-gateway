@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { RelayRules } from '@/modules/relay/domain/entities/relay.configuration';
 
 // Custom configuration for the application

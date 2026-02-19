@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
 const relayRulesValidator = z
   .string()

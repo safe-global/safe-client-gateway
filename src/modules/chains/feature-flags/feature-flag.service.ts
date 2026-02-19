@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import { IFeatureFlagService } from '@/modules/chains/feature-flags/feature-flag.service.interface';
 import { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';

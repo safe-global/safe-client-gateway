@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
 import type { Singleton } from '@/modules/chains/domain/entities/singleton.entity';
 import type { Page } from '@/domain/entities/page.entity';

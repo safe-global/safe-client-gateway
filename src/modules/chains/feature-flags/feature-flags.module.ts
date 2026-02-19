@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Module } from '@nestjs/common';
 import { ChainsModule } from '@/modules/chains/chains.module';
 import { FeatureFlagService } from '@/modules/chains/feature-flags/feature-flag.service';
