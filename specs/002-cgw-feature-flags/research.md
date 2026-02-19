@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: FSL-1.1-MIT
 # Research: CGW Feature Flag System
 
 **Feature Branch**: `002-cgw-feature-flags`  

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: FSL-1.1-MIT
 openapi: 3.0.3
 info:
   title: CGW Feature Flag Service Interface
