@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker/.';
 import type configuration from '@/config/entities/configuration';
 
@@ -337,6 +338,7 @@ export default (): ReturnType<typeof configuration> => ({
     safes: {
       maxSequentialPages: faker.number.int(),
     },
+    cgwServiceKey: 'CGW',
   },
   safeDataDecoder: {
     baseUri: faker.internet.url({ appendSlash: false }),

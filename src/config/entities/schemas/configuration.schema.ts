@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
 const relayRulesValidator = z
   .string()
@@ -58,6 +59,7 @@ export const RootConfigurationSchema = z
       .int()
       .min(1)
       .optional(),
+    SAFE_CONFIG_CGW_KEY: z.string().min(1).optional(),
     LOG_LEVEL: z
       .enum(['error', 'warn', 'info', 'http', 'verbose', 'debug', 'silly'])
       .optional(),

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { RelayRules } from '@/modules/relay/domain/entities/relay.configuration';
 
 // Custom configuration for the application
@@ -486,6 +487,7 @@ export default () => ({
         process.env.SAFE_CONFIG_SAFES_MAX_SEQUENTIAL_PAGES ?? `${10}`,
       ),
     },
+    cgwServiceKey: process.env.SAFE_CONFIG_CGW_KEY || 'CGW',
   },
   safeDataDecoder: {
     baseUri:
