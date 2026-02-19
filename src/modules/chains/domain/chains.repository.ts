@@ -1,9 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
-import {
-  ChainLenientPageSchema,
-  ChainSchema,
-} from '@/modules/chains/domain/entities/schemas/chain.schema';
+import { ChainSchema } from '@/modules/chains/domain/entities/schemas/chain.schema';
 import { Chain } from '@/modules/chains/domain/entities/chain.entity';
 import { Singleton } from '@/modules/chains/domain/entities/singleton.entity';
 import { SingletonsSchema } from '@/modules/chains/domain/entities/schemas/singleton.schema';
@@ -16,7 +13,7 @@ import {
   IndexingStatusSchema,
 } from '@/modules/indexing/domain/entities/indexing-status.entity';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
-import differenceBy from 'lodash/differenceBy';
+
 import { PaginationData } from '@/routes/common/pagination/pagination.data';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { LenientBasePageSchema } from '@/domain/entities/schemas/page.schema.factory';
@@ -60,14 +57,23 @@ export class ChainsRepository implements IChainsRepository {
     const page = await this.configApi
       .getChains({ limit, offset })
       .then(LenientBasePageSchema.parse);
-    const valid = ChainLenientPageSchema.parse(page);
-    if (valid.results.length < page.results.length) {
+    const valid: Array<Chain> = [];
+    const invalid: Array<unknown> = [];
+    for (const item of page.results) {
+      const result = ChainSchema.safeParse(item);
+      if (result.success) {
+        valid.push(result.data);
+      } else {
+        invalid.push(item);
+      }
+    }
+    if (invalid.length > 0) {
       this.loggingService.error({
         message: 'Some chains could not be parsed',
-        errors: differenceBy(page.results, valid.results, 'chainId'),
+        errors: invalid,
       });
     }
-    return valid;
+    return { ...page, results: valid };
   }
 
   async getChainsV2(
@@ -78,14 +84,23 @@ export class ChainsRepository implements IChainsRepository {
     const page = await this.configApi
       .getChainsV2(serviceKey, { limit, offset })
       .then(LenientBasePageSchema.parse);
-    const valid = ChainLenientPageSchema.parse(page);
-    if (valid.results.length < page.results.length) {
+    const valid: Array<Chain> = [];
+    const invalid: Array<unknown> = [];
+    for (const item of page.results) {
+      const result = ChainSchema.safeParse(item);
+      if (result.success) {
+        valid.push(result.data);
+      } else {
+        invalid.push(item);
+      }
+    }
+    if (invalid.length > 0) {
       this.loggingService.error({
         message: 'Some chains could not be parsed',
-        errors: differenceBy(page.results, valid.results, 'chainId'),
+        errors: invalid,
       });
     }
-    return valid;
+    return { ...page, results: valid };
   }
 
   async getChainV2(serviceKey: string, chainId: string): Promise<Chain> {
@@ -98,27 +113,40 @@ export class ChainsRepository implements IChainsRepository {
   }
 
   async getAllChains(): Promise<Array<Chain>> {
-    const chains: Array<Chain> = [];
+    const firstPage = await this.getChains(ChainsRepository.MAX_LIMIT, 0);
+    const chains: Array<Chain> = [...firstPage.results];
 
-    let offset = 0;
-    let next = null;
-
-    for (let i = 0; i < this.maxSequentialPages; i++) {
-      const result = await this.getChains(ChainsRepository.MAX_LIMIT, offset);
-
-      next = result.next;
-      chains.push(...result.results);
-
-      if (!next) {
-        break;
-      }
-
-      const url = new URL(next);
-      const paginationData = PaginationData.fromLimitAndOffset(url);
-      offset = paginationData.offset;
+    if (!firstPage.next) {
+      return chains;
     }
 
-    if (next) {
+    const totalCount = firstPage.count ?? firstPage.results.length;
+    const totalPages = Math.ceil(totalCount / ChainsRepository.MAX_LIMIT);
+    const remainingPageCount = Math.min(
+      totalPages - 1,
+      this.maxSequentialPages - 1,
+    );
+
+    const firstNextUrl = new URL(firstPage.next);
+    const firstNextOffset =
+      PaginationData.fromLimitAndOffset(firstNextUrl).offset;
+
+    const remainingOffsets: Array<number> = [];
+    for (let i = 0; i < remainingPageCount; i++) {
+      remainingOffsets.push(firstNextOffset + i * ChainsRepository.MAX_LIMIT);
+    }
+
+    const remainingPages = await Promise.all(
+      remainingOffsets.map((offset) =>
+        this.getChains(ChainsRepository.MAX_LIMIT, offset),
+      ),
+    );
+
+    for (const page of remainingPages) {
+      chains.push(...page.results);
+    }
+
+    if (totalPages > this.maxSequentialPages) {
       this.loggingService.error(
         'More chains available despite request limit reached',
       );
