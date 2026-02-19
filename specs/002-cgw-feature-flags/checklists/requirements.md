@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: FSL-1.1-MIT
+
 # Specification Quality Checklist: CGW Feature Flag System
 
 **Purpose**: Validate specification completeness and quality before proceeding to planning
