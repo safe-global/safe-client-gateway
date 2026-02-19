@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Controller, Post, Param, Get, UseFilters, Body } from '@nestjs/common';
 import {
   ApiOkResponse,
