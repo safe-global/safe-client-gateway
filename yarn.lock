@@ -3955,10 +3955,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/lodash@npm:4.17.18":
-  version: 4.17.18
-  resolution: "@types/lodash@npm:4.17.18"
-  checksum: 10/54ebb15b29925112dbe9da3abd99fb80d7202bc5ba20fc1b4fc8ea835d0012f00cbd9a3e7f367b70e7c3f2d5ee635964e3920a489625647b558f02994b3dd381
+"@types/lodash@npm:4.17.23":
+  version: 4.17.23
+  resolution: "@types/lodash@npm:4.17.23"
+  checksum: 10/05935534a44aadef67c2158b2fb4a042a226970088106a40ddc67e4f063783149fe5cf02279d7dd4a1e72c98d9189b9430face659645dbf77270f8c4c3e387f5
   languageName: node
   linkType: hard
 
@@ -8241,6 +8241,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"lodash@npm:4.17.23":
+  version: 4.17.23
+  resolution: "lodash@npm:4.17.23"
+  checksum: 10/82504c88250f58da7a5a4289f57a4f759c44946c005dd232821c7688b5fcfbf4a6268f6a6cdde4b792c91edd2f3b5398c1d2a0998274432cff76def48735e233
+  languageName: node
+  linkType: hard
+
 "log-symbols@npm:^4.1.0":
   version: 4.1.0
   resolution: "log-symbols@npm:4.1.0"
@@ -9705,7 +9712,7 @@ __metadata:
     "@types/express": "npm:5.0.6"
     "@types/jest": "npm:29.5.14"
     "@types/jsonwebtoken": "npm:9"
-    "@types/lodash": "npm:4.17.18"
+    "@types/lodash": "npm:4.17.23"
     "@types/node": "npm:24.10.0"
     "@types/sanitize-html": "npm:2"
     "@types/semver": "npm:7.7.0"
@@ -9722,7 +9729,7 @@ __metadata:
     husky: "npm:9.1.7"
     jest: "npm:29.7.0"
     jsonwebtoken: "npm:9.0.3"
-    lodash: "npm:4.17.21"
+    lodash: "npm:4.17.23"
     nestjs-cls: "npm:6.0.1"
     pg: "npm:8.14.1"
     postgres: "npm:3.4.7"
