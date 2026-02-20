@@ -45,10 +45,12 @@ export class Oauth implements DomainOauth {
     name: 'updated_at',
     type: 'timestamp with time zone',
     default: () => 'CURRENT_TIMESTAMP',
+    update: false,
   })
   updatedAt!: Date;
 
-  @ManyToOne(() => User, (user: User) => user.oauths, {
+  @ManyToOne(() => User, (user: User) => user.id, {
+    onDelete: 'CASCADE',
     nullable: false,
   })
   @JoinColumn({
