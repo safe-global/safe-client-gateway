@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import {
   Column,
   Entity,
@@ -11,6 +12,7 @@ import {
 } from '@/modules/users/domain/entities/user.entity';
 import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
 import { Member } from '@/modules/users/datasources/entities/member.entity.db';
+import { Auth } from '@/modules/auth/datasources/entities/auth.entity.db';
 import { databaseEnumTransformer } from '@/domain/common/utils/enum';
 
 @Entity('users')
@@ -49,4 +51,7 @@ export class User implements DomainUser {
 
   @OneToMany(() => Member, (member: Member) => member.user)
   members!: Array<Member>;
+
+  @OneToMany(() => Auth, (auth: Auth) => auth.user)
+  auths!: Array<Auth>;
 }
