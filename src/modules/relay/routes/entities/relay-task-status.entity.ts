@@ -28,6 +28,8 @@ export class RelayTaskStatus {
 
   constructor(taskStatus: DomainRelayTaskStatus) {
     this.status = taskStatus.status;
-    this.receipt = taskStatus.receipt && { transactionHash: taskStatus.receipt.transactionHash };
+    this.receipt = taskStatus.receipt && {
+      transactionHash: taskStatus.receipt.transactionHash,
+    };
   }
 }

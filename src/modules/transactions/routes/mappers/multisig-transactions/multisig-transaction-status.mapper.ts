@@ -1,17 +1,24 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+import { IConfigurationService } from '@/config/configuration.service.interface';
 import { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
 import { Safe } from '@/modules/safe/domain/entities/safe.entity';
 import { TransactionStatus } from '@/modules/transactions/routes/entities/transaction-status.entity';
 
-// Grace period to account for Transaction Service indexing lag.
-// During this window, a fully-confirmed transaction whose nonce has been
-// consumed on-chain but whose isExecuted flag has not yet been indexed
-// will show as AwaitingExecution instead of the incorrect Cancelled.
-const INDEXING_GRACE_PERIOD_MS = 3 * 60 * 1000;
-
+// Grace period for Transaction Service indexing lag (config: transactions.statusIndexingGracePeriodMs, default 1 min).
 @Injectable()
 export class MultisigTransactionStatusMapper {
+  private readonly indexingGracePeriodMs: number;
+
+  constructor(
+    @Inject(IConfigurationService)
+    private readonly configurationService: IConfigurationService,
+  ) {
+    this.indexingGracePeriodMs = this.configurationService.getOrThrow<number>(
+      'transactions.statusIndexingGracePeriodMs',
+    );
+  }
+
   mapTransactionStatus(
     transaction: MultisigTransaction,
     safe: Safe,
@@ -52,7 +59,7 @@ export class MultisigTransactionStatusMapper {
     const recentlyModified =
       transaction.modified != null &&
       Date.now() - new Date(transaction.modified).getTime() <
-        INDEXING_GRACE_PERIOD_MS;
+        this.indexingGracePeriodMs;
 
     return hasEnoughConfirmations && recentlyModified;
   }

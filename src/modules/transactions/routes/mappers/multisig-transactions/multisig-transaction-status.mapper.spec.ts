@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import type { IConfigurationService } from '@/config/configuration.service.interface';
 import { TransactionStatus } from '@/modules/transactions/routes/entities/transaction-status.entity';
 import { multisigTransactionBuilder } from '@/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
 import { confirmationBuilder } from '@/modules/safe/domain/entities/__tests__/multisig-transaction-confirmation.builder';
@@ -6,11 +7,21 @@ import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.build
 import { MultisigTransactionStatusMapper } from '@/modules/transactions/routes/mappers/multisig-transactions/multisig-transaction-status.mapper';
 
 describe('Multisig Transaction status mapper (Unit)', () => {
+  const INDEXING_GRACE_PERIOD_MS = 60 * 1000; // 1 minute (default)
   let mapper: MultisigTransactionStatusMapper;
 
   beforeEach(() => {
     jest.useFakeTimers();
-    mapper = new MultisigTransactionStatusMapper();
+    const configurationService = {
+      get: jest.fn(),
+      getOrThrow: jest.fn(<T>(key: string): T => {
+        if (key === 'transactions.statusIndexingGracePeriodMs') {
+          return INDEXING_GRACE_PERIOD_MS as T;
+        }
+        throw new Error(`Unexpected config key: ${key}`);
+      }),
+    } as unknown as IConfigurationService;
+    mapper = new MultisigTransactionStatusMapper(configurationService);
   });
 
   afterEach(() => {

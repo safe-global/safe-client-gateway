@@ -498,6 +498,11 @@ export default () => ({
     useVpcUrl: process.env.USE_TX_SERVICE_VPC_URL?.toLowerCase() === 'true',
     apiKey: process.env.TX_SERVICE_API_KEY,
   },
+  transactions: {
+    statusIndexingGracePeriodMs: parseInt(
+      process.env.TRANSACTION_STATUS_INDEXING_GRACE_PERIOD_MS ?? `${60 * 1000}`,
+    ),
+  },
   safeWebApp: {
     baseUri: process.env.SAFE_WEB_APP_BASE_URI || 'https://app.safe.global',
   },
