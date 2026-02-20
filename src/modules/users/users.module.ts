@@ -15,12 +15,11 @@ import { AuthModule } from '@/modules/auth/auth.module';
 import { WalletsModule } from '@/modules/wallets/wallets.module';
 import { SiweModule } from '@/modules/siwe/siwe.module';
 import { SpacesModule } from '@/modules/spaces/spaces.module';
-import { Oauth } from '@/modules/auth/datasources/entities/oauth.entity.db';
 
 @Module({
   imports: [
     PostgresDatabaseModuleV2,
-    TypeOrmModule.forFeature([User, Member, Oauth, Wallet]),
+    TypeOrmModule.forFeature([User, Member, Wallet]),
     WalletsModule,
     AuthModule,
     SiweModule,

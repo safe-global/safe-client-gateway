@@ -5,20 +5,20 @@ import { UserSchema } from '@/modules/users/domain/entities/user.entity';
 import type { User } from '@/modules/users/domain/entities/user.entity';
 import { RowSchema } from '@/datasources/db/v2/entities/row.entity';
 
-export enum OauthType {
+export enum AuthType {
   GOOGLE = 1,
 }
 
-export const OauthSchema: z.ZodType<
+export const AuthSchema: z.ZodType<
   z.infer<typeof RowSchema> & {
-    type: keyof typeof OauthType;
+    type: keyof typeof AuthType;
     extUserId: string;
     user: User;
   }
 > = RowSchema.extend({
-  type: z.enum(getStringEnumKeys(OauthType)),
-  extUserId: z.string(),
+  type: z.enum(getStringEnumKeys(AuthType)),
+  extUserId: z.string().min(1).max(255),
   user: z.lazy(() => UserSchema),
 });
 
-export type Oauth = z.infer<typeof OauthSchema>;
+export type Auth = z.infer<typeof AuthSchema>;

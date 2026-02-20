@@ -10,25 +10,25 @@ import {
 } from 'typeorm';
 import { User } from '@/modules/users/datasources/entities/users.entity.db';
 import {
-  OauthType,
-  Oauth as DomainOauth,
-} from '@/modules/auth/domain/entities/oauth.entity';
+  AuthType,
+  Auth as DomainAuth,
+} from '@/modules/auth/domain/entities/auth.entity';
 import { databaseEnumTransformer } from '@/domain/common/utils/enum';
 
-@Entity('oauth')
-@Unique('UQ_oauth_type_ext_user_id', ['type', 'extUserId'])
-@Index('idx_oauth_user_id', ['user'])
-export class Oauth implements DomainOauth {
+@Entity('auth')
+@Unique('UQ_auth_type_ext_user_id', ['type', 'extUserId'])
+@Index('idx_auth_user_id', ['user'])
+export class Auth implements DomainAuth {
   @PrimaryGeneratedColumn({
-    primaryKeyConstraintName: 'PK_oauth_id',
+    primaryKeyConstraintName: 'PK_auth_id',
   })
   id!: number;
 
   @Column({
     type: 'integer',
-    transformer: databaseEnumTransformer(OauthType),
+    transformer: databaseEnumTransformer(AuthType),
   })
-  type!: keyof typeof OauthType;
+  type!: keyof typeof AuthType;
 
   @Column({ name: 'ext_user_id', type: 'varchar', length: 255 })
   extUserId!: string;
@@ -55,7 +55,7 @@ export class Oauth implements DomainOauth {
   })
   @JoinColumn({
     name: 'user_id',
-    foreignKeyConstraintName: 'FK_oauth_user_id',
+    foreignKeyConstraintName: 'FK_auth_user_id',
   })
   user!: User;
 }

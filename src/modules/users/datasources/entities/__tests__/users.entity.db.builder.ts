@@ -12,7 +12,7 @@ export function userBuilder(): IBuilder<User> {
     .with('status', faker.helpers.arrayElement(getStringEnumKeys(UserStatus)))
     .with('wallets', [])
     .with('members', [])
-    .with('oauths', [])
+    .with('auths', [])
     .with('createdAt', new Date())
     .with('updatedAt', new Date());
 }

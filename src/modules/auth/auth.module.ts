@@ -7,11 +7,10 @@ import { AuthRepository } from '@/modules/auth/domain/auth.repository';
 import { AuthController } from '@/modules/auth/routes/auth.controller';
 import { AuthService } from '@/modules/auth/routes/auth.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { User } from '@/modules/users/datasources/entities/users.entity.db';
-import { Oauth } from '@/modules/auth/datasources/entities/oauth.entity.db';
+import { Auth } from '@/modules/auth/datasources/entities/auth.entity.db';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([User, Oauth]), JwtModule, SiweModule],
+  imports: [TypeOrmModule.forFeature([Auth]), JwtModule, SiweModule],
   providers: [
     {
       provide: IAuthRepository,
