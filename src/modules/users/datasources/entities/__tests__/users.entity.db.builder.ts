@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { IBuilder } from '@/__tests__/builder';
 import { Builder } from '@/__tests__/builder';
 import { faker } from '@faker-js/faker/.';
@@ -11,6 +12,7 @@ export function userBuilder(): IBuilder<User> {
     .with('status', faker.helpers.arrayElement(getStringEnumKeys(UserStatus)))
     .with('wallets', [])
     .with('members', [])
+    .with('oauths', [])
     .with('createdAt', new Date())
     .with('updatedAt', new Date());
 }
