@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
 import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
@@ -12,6 +13,7 @@ import { AddressInfo } from '@/routes/common/entities/address-info.entity';
 import { getNumberString } from '@/domain/common/utils/utils';
 import { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
 import type { Address } from 'viem';
+import { IFeatureFlagService } from '@/modules/chains/feature-flags/feature-flag.service.interface';
 import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
 
 @Injectable()
@@ -30,6 +32,8 @@ export class SafesV2Service {
     private readonly zerionWalletPortfolioApi: IZerionWalletPortfolioApi,
     @Inject(IConfigurationService) configurationService: IConfigurationService,
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
+    @Inject(IFeatureFlagService)
+    private readonly featureFlagService: IFeatureFlagService,
   ) {
     this.maxOverviews = configurationService.getOrThrow(
       'mappings.safe.maxOverviews',
@@ -103,6 +107,23 @@ export class SafesV2Service {
     return safeOverviews;
   }
 
+  private async isPortfolioEndpointFeatureEnabled(
+    chain: Chain,
+  ): Promise<boolean> {
+    let isEnabled = false;
+    try {
+      isEnabled = await this.featureFlagService.isFeatureEnabled(
+        chain.chainId,
+        'PORTFOLIO_ENDPOINT',
+      );
+    } catch (error) {
+      this.loggingService.warn(
+        `Error while checking feature flag: ${asError(error)} `,
+      );
+    }
+    return isEnabled;
+  }
+
   /**
    * Gets fiat balance using Zerion wallet portfolio API for enabled chains,
    * falling back to balances repository for other chains.
@@ -115,7 +136,11 @@ export class SafesV2Service {
   }): Promise<number> {
     const { chain, safeAddress, currency, trusted } = args;
 
-    if (this.zerionBalancesEnabled && this.getZerionChainName(chain)) {
+    if (
+      this.zerionBalancesEnabled &&
+      this.getZerionChainName(chain) &&
+      (await this.isPortfolioEndpointFeatureEnabled(chain))
+    ) {
       return this.getFiatBalanceFromZerionPortfolio({
         chain,
         safeAddress,
