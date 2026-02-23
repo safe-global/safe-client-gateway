@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: FSL-1.1-MIT
 import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
 import { contractBuilder } from '@/modules/contracts/domain/entities/__tests__/contract.builder';
 import {
@@ -33,9 +32,9 @@ describe('MultisigTransactionMapper', () => {
   const addressInfoHelper = jest.mocked({
     getCollection: jest.fn(),
   } as jest.MockedObjectDeep<AddressInfoHelper>);
-  const statusMapper = {
+  const statusMapper = jest.mocked({
     mapTransactionStatus: jest.fn(),
-  } as unknown as jest.Mocked<MultisigTransactionStatusMapper>;
+  } as jest.Mocked<MultisigTransactionStatusMapper>);
   const transactionInfoMapper = {
     mapTransactionInfo: jest.fn(),
   } as unknown as jest.Mocked<MultisigTransactionInfoMapper>;

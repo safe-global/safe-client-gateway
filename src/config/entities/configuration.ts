@@ -401,7 +401,7 @@ export default () => ({
   },
   relay: {
     baseUri:
-      process.env.RELAY_PROVIDER_API_BASE_URI || 'https://api.gelato.cloud',
+      process.env.RELAY_PROVIDER_API_BASE_URI || 'https://api.gelato.digital',
     limit: parseInt(process.env.RELAY_THROTTLE_LIMIT ?? `${5}`),
     ttlSeconds: parseInt(
       process.env.RELAY_THROTTLE_TTL_SECONDS ?? `${60 * 60 * 24}`,
@@ -497,11 +497,6 @@ export default () => ({
   safeTransaction: {
     useVpcUrl: process.env.USE_TX_SERVICE_VPC_URL?.toLowerCase() === 'true',
     apiKey: process.env.TX_SERVICE_API_KEY,
-  },
-  transactions: {
-    statusIndexingGracePeriodMs: parseInt(
-      process.env.TRANSACTION_STATUS_INDEXING_GRACE_PERIOD_MS ?? `${60 * 1000}`,
-    ),
   },
   safeWebApp: {
     baseUri: process.env.SAFE_WEB_APP_BASE_URI || 'https://app.safe.global',
