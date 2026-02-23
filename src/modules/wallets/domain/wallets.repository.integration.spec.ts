@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { DataSource } from 'typeorm';
 import { type Address, getAddress } from 'viem';
@@ -15,6 +16,7 @@ import type { ILoggingService } from '@/logging/logging.interface';
 import { Member } from '@/modules/users/datasources/entities/member.entity.db';
 import { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
 import { SpaceSafe } from '@/modules/spaces/datasources/entities/space-safes.entity.db';
+import { Auth } from '@/modules/auth/datasources/entities/auth.entity.db';
 
 const mockLoggingService = {
   debug: jest.fn(),
@@ -42,7 +44,7 @@ describe('WalletsRepository', () => {
       database: testDatabaseName,
     }),
     migrationsTableName: testConfiguration.db.orm.migrationsTableName,
-    entities: [Member, Space, SpaceSafe, User, Wallet],
+    entities: [Auth, Member, Space, SpaceSafe, User, Wallet],
   });
 
   beforeAll(async () => {

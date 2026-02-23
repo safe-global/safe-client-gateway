@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import configuration from '@/config/entities/__tests__/configuration';
 import { postgresConfig } from '@/config/entities/postgres.config';
@@ -30,6 +31,7 @@ import type { ConfigService } from '@nestjs/config';
 import { DataSource, In } from 'typeorm';
 import type { Address } from 'viem';
 import { getAddress } from 'viem';
+import { Auth } from '@/modules/auth/datasources/entities/auth.entity.db';
 
 const mockLoggingService = {
   debug: jest.fn(),
@@ -63,7 +65,7 @@ describe('MembersRepository', () => {
       database: testDatabaseName,
     }),
     migrationsTableName: testConfiguration.db.orm.migrationsTableName,
-    entities: [Member, Space, SpaceSafe, User, Wallet],
+    entities: [Auth, Member, Space, SpaceSafe, User, Wallet],
   });
 
   const dbWalletRepo = dataSource.getRepository(Wallet);

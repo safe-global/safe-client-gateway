@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { DataSource } from 'typeorm';
 import { getAddress, maxUint256 } from 'viem';
@@ -19,6 +20,7 @@ import type { ILoggingService } from '@/logging/logging.interface';
 import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { UniqueConstraintError } from '@/datasources/errors/unique-constraint-error';
+import { Auth } from '@/modules/auth/datasources/entities/auth.entity.db';
 
 const mockLoggingService = {
   debug: jest.fn(),
@@ -51,7 +53,7 @@ describe('SpaceSafesRepository', () => {
       database: testDatabaseName,
     }),
     migrationsTableName: testConfiguration.db.orm.migrationsTableName,
-    entities: [Member, Space, SpaceSafe, User, Wallet],
+    entities: [Auth, Member, Space, SpaceSafe, User, Wallet],
   });
 
   const maxSafesPerSpace = 5;

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { DataSource, EntityNotFoundError, In } from 'typeorm';
 import configuration from '@/config/entities/__tests__/configuration';
@@ -18,6 +19,7 @@ import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
 import { SpaceSafe } from '@/modules/spaces/datasources/entities/space-safes.entity.db';
 import { nameBuilder } from '@/domain/common/entities/name.builder';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
+import { Auth } from '@/modules/auth/datasources/entities/auth.entity.db';
 
 const mockLoggingService = {
   debug: jest.fn(),
@@ -49,7 +51,7 @@ describe('SpacesRepository', () => {
       database: testDatabaseName,
     }),
     migrationsTableName: testConfiguration.db.orm.migrationsTableName,
-    entities: [Member, Space, SpaceSafe, User, Wallet],
+    entities: [Auth, Member, Space, SpaceSafe, User, Wallet],
   });
 
   const dbUserRepo = dataSource.getRepository(User);

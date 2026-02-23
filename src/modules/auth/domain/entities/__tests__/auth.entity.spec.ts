@@ -142,63 +142,34 @@ describe('Auth entity', () => {
       }
     });
 
-    it('should reject invalid user object', () => {
+    it.each([
+      ['invalid object', { invalid: 'user' }],
+      ['null', null],
+      ['undefined', undefined],
+    ])('should reject %s user', (_, invalidUser) => {
       const auth = authBuilder().build();
-      const invalidAuth = { ...auth, user: { invalid: 'user' } };
+      const invalidAuth = { ...auth, user: invalidUser };
 
       const result = AuthSchema.safeParse(invalidAuth);
 
       expect(result.success).toBe(false);
     });
 
-    it('should reject null user', () => {
+    it.each([
+      ['empty string', ''],
+      ['non-string (number)', 12345],
+      ['null', null],
+      ['exceeding 255 characters', 'a'.repeat(256)],
+    ])('should reject %s extUserId', (_, invalidExtUserId) => {
       const auth = authBuilder().build();
-      const invalidAuth = { ...auth, user: null };
+      const invalidAuth = { ...auth, extUserId: invalidExtUserId };
 
       const result = AuthSchema.safeParse(invalidAuth);
 
       expect(result.success).toBe(false);
-    });
-
-    it('should reject undefined user', () => {
-      const auth = authBuilder().build();
-      const invalidAuth = { ...auth, user: undefined };
-
-      const result = AuthSchema.safeParse(invalidAuth);
-
-      expect(result.success).toBe(false);
-    });
-
-    it('should reject empty string extUserId', () => {
-      const auth = authBuilder().with('extUserId', '').build();
-
-      const result = AuthSchema.safeParse(auth);
-
-      expect(result.success).toBe(false);
-      expect(!result.success && result.error.issues[0].path).toStrictEqual([
-        'extUserId',
-      ]);
-    });
-
-    it('should reject non-string extUserId', () => {
-      const auth = authBuilder().build();
-      const invalidAuth = { ...auth, extUserId: 12345 };
-
-      const result = AuthSchema.safeParse(invalidAuth);
-
-      expect(result.success).toBe(false);
-      expect(!result.success && result.error.issues[0].path).toStrictEqual([
-        'extUserId',
-      ]);
-    });
-
-    it('should reject null extUserId', () => {
-      const auth = authBuilder().build();
-      const invalidAuth = { ...auth, extUserId: null };
-
-      const result = AuthSchema.safeParse(invalidAuth);
-
-      expect(result.success).toBe(false);
+      if (!result.success && typeof invalidExtUserId !== 'object') {
+        expect(result.error.issues[0].path).toStrictEqual(['extUserId']);
+      }
     });
 
     it('should allow extUserId up to 255 characters', () => {
@@ -209,18 +180,6 @@ describe('Auth entity', () => {
 
       expect(result.success).toBe(true);
       expect(result.success && result.data.extUserId).toBe(maxLengthExtUserId);
-    });
-
-    it('should reject extUserId exceeding 255 characters', () => {
-      const tooLongExtUserId = 'a'.repeat(256);
-      const auth = authBuilder().with('extUserId', tooLongExtUserId).build();
-
-      const result = AuthSchema.safeParse(auth);
-
-      expect(result.success).toBe(false);
-      expect(!result.success && result.error.issues[0].path).toStrictEqual([
-        'extUserId',
-      ]);
     });
   });
 
