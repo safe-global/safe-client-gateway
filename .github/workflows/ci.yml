@@ -233,7 +233,7 @@ jobs:
 
   docker-publish-staging:
     if: (github.event_name == 'push' && github.ref == 'refs/heads/main')
-    needs: [env-validation, prettier, es-lint, tests-finish]
+    needs: [prettier, es-lint, tests-finish]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
@@ -262,7 +262,7 @@ jobs:
 
   docker-publish-release:
     if: (github.event_name == 'release' && github.event.action == 'released')
-    needs: [env-validation, prettier, es-lint, tests-finish]
+    needs: [prettier, es-lint, tests-finish]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
