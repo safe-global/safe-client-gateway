@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Module } from '@nestjs/common';
 import { IExternalAuthDatasource } from '@/modules/auth/datasources/external-auth.datasource.interface';
 import { MockExternalAuthDatasource } from '@/modules/auth/datasources/external-auth.mock.datasource';

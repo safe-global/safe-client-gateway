@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@/datasources/jwt/jwt.module';
 import { SiweModule } from '@/modules/siwe/siwe.module';
