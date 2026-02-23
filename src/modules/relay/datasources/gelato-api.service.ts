@@ -12,20 +12,20 @@ import {
   CacheService,
   ICacheService,
 } from '@/datasources/cache/cache.service.interface';
-import {
-  type Relay,
-  type GelatoRelayResponse,
-  GelatoRelayResponseSchema,
-} from '@/modules/relay/domain/entities/relay.entity';
-import {
-  type RelayTaskStatus,
-  type GelatoTaskStatusResponse,
-  GelatoTaskStatusResponseSchema,
-} from '@/modules/relay/domain/entities/relay-task-status.entity';
+import type { Relay } from '@/modules/relay/domain/entities/relay.entity';
+import type { Raw } from '@/validation/entities/raw.entity';
 import type { Address } from 'viem';
 
 @Injectable()
 export class GelatoApi implements IRelayApi {
+  /**
+   * If you are using your own custom gas limit, please add a 150k gas buffer on top of the expected
+   * gas usage for the transaction. This is for the Gelato Relay execution overhead, and adding this
+   * buffer reduces your chance of the task cancelling before it is executed on-chain.
+   * @see https://docs.gelato.network/developer-services/relay/quick-start/optional-parameters
+   */
+  private static GAS_LIMIT_BUFFER = BigInt(150_000);
+
   private readonly baseUri: string;
 
   constructor(
@@ -44,78 +44,34 @@ export class GelatoApi implements IRelayApi {
     chainId: string;
     to: Address;
     data: string;
-  }): Promise<Relay> {
-    const apiKey = this.configurationService.getOrThrow<string>(
+    gasLimit: bigint | null;
+  }): Promise<Raw<Relay>> {
+    const sponsorApiKey = this.configurationService.getOrThrow<string>(
       `relay.apiKey.${args.chainId}`,
     );
 
     try {
-      const url = `${this.baseUri}/rpc`;
-      const { data } = await this.networkService.post<GelatoRelayResponse>({
+      const url = `${this.baseUri}/relays/v2/sponsored-call`;
+      const { data } = await this.networkService.post<Relay>({
         url,
         data: {
-          id: 1,
-          jsonrpc: '2.0',
-          method: 'relayer_sendTransaction',
-          params: {
-            chainId: args.chainId,
-            to: args.to,
-            data: args.data,
-            payment: { type: 'sponsored' },
-          },
-        },
-        networkRequest: {
-          headers: {
-            'X-API-Key': apiKey,
-          },
+          sponsorApiKey,
+          chainId: args.chainId,
+          target: args.to,
+          data: args.data,
+          ...(args.gasLimit && {
+            gasLimit: this.getRelayGasLimit(args.gasLimit).toString(),
+          }),
         },
       });
-      const response = GelatoRelayResponseSchema.parse(data);
-      return { taskId: response.result };
+      return data;
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
   }
 
-  /**
-   * Proxies the task status request to Gelato's relayer_getStatus JSON-RPC method.
-   * @see https://docs.gelato.cloud/gasless-with-relay/relayer-api-endpoints/relayer/relayer_getstatus
-   */
-  async getTaskStatus(args: {
-    chainId: string;
-    taskId: string;
-  }): Promise<RelayTaskStatus> {
-    const apiKey = this.configurationService.getOrThrow<string>(
-      `relay.apiKey.${args.chainId}`,
-    );
-
-    try {
-      const url = `${this.baseUri}/rpc`;
-      const { data } = await this.networkService.post<GelatoTaskStatusResponse>(
-        {
-          url,
-          data: {
-            id: 1,
-            jsonrpc: '2.0',
-            method: 'relayer_getStatus',
-            params: {
-              id: args.taskId,
-              logs: false,
-            },
-          },
-          networkRequest: {
-            headers: {
-              'X-API-Key': apiKey,
-            },
-          },
-        },
-      );
-
-      const response = GelatoTaskStatusResponseSchema.parse(data);
-      return response.result;
-    } catch (error) {
-      throw this.httpErrorFactory.from(error);
-    }
+  private getRelayGasLimit(gasLimit: bigint): bigint {
+    return gasLimit + GelatoApi.GAS_LIMIT_BUFFER;
   }
 
   async getRelayCount(args: {

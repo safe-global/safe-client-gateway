@@ -347,12 +347,6 @@ export default (): ReturnType<typeof configuration> => ({
     useVpcUrl: false,
     apiKey: faker.string.hexadecimal({ length: 32 }),
   },
-  transactions: {
-    statusIndexingGracePeriodMs: faker.number.int({
-      min: 60_000,
-      max: 300_000,
-    }),
-  },
   safeWebApp: {
     baseUri: faker.internet.url({ appendSlash: false }),
   },

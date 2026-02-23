@@ -6,7 +6,10 @@ import { IConfigurationService } from '@/config/configuration.service.interface'
 import { IRelayApi } from '@/domain/interfaces/relay-api.interface';
 import { LimitAddressesMapper } from '@/modules/relay/domain/limit-addresses.mapper';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
-import type { Relay } from '@/modules/relay/domain/entities/relay.entity';
+import {
+  Relay,
+  RelaySchema,
+} from '@/modules/relay/domain/entities/relay.entity';
 import { RelayLimitReachedError } from '@/modules/relay/domain/errors/relay-limit-reached.error';
 import { ExceedsMaxGasLimitError } from '@/modules/relay/domain/errors/exceeds-max-gas-limit';
 import { BalancesService } from '@/modules/balances/routes/balances.service';
@@ -98,11 +101,12 @@ export class NoFeeCampaignRelayer implements IRelayer {
       }
     }
 
-    const relayResponse = await this.relayApi.relay({
-      chainId: args.chainId,
-      to: args.to,
-      data: args.data,
-    });
+    const relayResponse = await this.relayApi
+      .relay({
+        ...args,
+        gasLimit,
+      })
+      .then(RelaySchema.parse);
 
     // If we fail to increment count, we should not fail the relay
     for (const address of relayAddresses) {

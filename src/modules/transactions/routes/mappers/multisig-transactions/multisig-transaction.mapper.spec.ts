@@ -33,9 +33,9 @@ describe('MultisigTransactionMapper', () => {
   const addressInfoHelper = jest.mocked({
     getCollection: jest.fn(),
   } as jest.MockedObjectDeep<AddressInfoHelper>);
-  const statusMapper = {
+  const statusMapper = jest.mocked({
     mapTransactionStatus: jest.fn(),
-  } as unknown as jest.Mocked<MultisigTransactionStatusMapper>;
+  } as jest.Mocked<MultisigTransactionStatusMapper>);
   const transactionInfoMapper = {
     mapTransactionInfo: jest.fn(),
   } as unknown as jest.Mocked<MultisigTransactionInfoMapper>;
