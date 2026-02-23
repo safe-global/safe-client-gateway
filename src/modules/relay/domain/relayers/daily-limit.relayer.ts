@@ -6,10 +6,7 @@ import { IConfigurationService } from '@/config/configuration.service.interface'
 import { IRelayApi } from '@/domain/interfaces/relay-api.interface';
 import { LimitAddressesMapper } from '@/modules/relay/domain/limit-addresses.mapper';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
-import {
-  Relay,
-  RelaySchema,
-} from '@/modules/relay/domain/entities/relay.entity';
+import type { Relay } from '@/modules/relay/domain/entities/relay.entity';
 import { RelayLimitReachedError } from '@/modules/relay/domain/errors/relay-limit-reached.error';
 
 @Injectable()
@@ -65,9 +62,11 @@ export class DailyLimitRelayer implements IRelayer {
       }
     }
 
-    const relayResponse = await this.relayApi
-      .relay(args)
-      .then(RelaySchema.parse);
+    const relayResponse = await this.relayApi.relay({
+      chainId: args.chainId,
+      to: args.to,
+      data: args.data,
+    });
 
     // If we fail to increment count, we should not fail the relay
     for (const address of relayAddresses) {
