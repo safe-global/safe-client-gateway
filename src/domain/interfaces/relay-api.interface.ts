@@ -1,16 +1,17 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { Relay } from '@/modules/relay/domain/entities/relay.entity';
-import type { Raw } from '@/validation/entities/raw.entity';
+import type { RelayTaskStatus } from '@/modules/relay/domain/entities/relay-task-status.entity';
 import type { Address } from 'viem';
 
 export const IRelayApi = Symbol('IRelayApi');
 
 export interface IRelayApi {
-  relay(args: {
+  relay(args: { chainId: string; to: Address; data: string }): Promise<Relay>;
+
+  getTaskStatus(args: {
     chainId: string;
-    to: Address;
-    data: string;
-    gasLimit: bigint | null;
-  }): Promise<Raw<Relay>>;
+    taskId: string;
+  }): Promise<RelayTaskStatus>;
 
   getRelayCount(args: { chainId: string; address: Address }): Promise<number>;
 

@@ -1,7 +1,8 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { z } from 'zod';
 import { RelayDtoSchema } from '@/modules/relay/routes/entities/schemas/relay.dto.schema';
-import type { Address } from 'viem';
+import type { Address, Hex } from 'viem';
 
 export class RelayDto implements z.infer<typeof RelayDtoSchema> {
   @ApiProperty()
@@ -11,14 +12,12 @@ export class RelayDto implements z.infer<typeof RelayDtoSchema> {
   to!: Address;
 
   @ApiProperty()
-  data!: Address;
+  data!: Hex;
 
   @ApiPropertyOptional({
     type: String,
     nullable: true,
-    description: `If specified, a gas buffer of 150k will be added on top of the expected gas usage for the transaction.
-      This is for the <a href="https://docs.gelato.network/developer-services/relay/quick-start/optional-parameters" target="_blank">
-      Gelato Relay execution overhead</a>, reducing the chance of the task cancelling before it is executed on-chain.`,
+    description: `Accepted for backward compatibility and validation; not forwarded to the relay provider (Gelato).`,
   })
   gasLimit!: bigint | null;
 }
