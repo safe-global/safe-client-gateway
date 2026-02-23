@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import { GelatoApi } from '@/modules/relay/datasources/gelato-api.service';
 import { faker } from '@faker-js/faker';

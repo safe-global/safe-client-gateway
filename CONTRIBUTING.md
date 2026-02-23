@@ -94,3 +94,30 @@ If you’re unsure about anything, don’t hesitate to ask for help! Open an iss
 ---
 
 We appreciate your contributions and effort to make this project better. Thank you for being a part of our community!
+
+## Licensing & CLA
+
+This repository contains code under two licensing regimes, split by a cut-over date:
+
+- **Up to and including February 16, 2026**
+  © Safe Ecosystem Foundation, licensed under the **MIT License**
+- **From February 17, 2026 onward**
+  © Safe Labs GmbH, licensed under the
+  **Functional Source License v1.1 (MIT Future License)**
+
+By submitting a Pull Request, you agree that your contribution will be licensed under
+the regime applicable at the time your PR is merged.
+
+For contributions merged on or after **February 17, 2026**, acceptance of the
+Safe Labs Contributor License Agreement (CLA) is required and enforced via CI.
+
+For details, see:
+
+- `LICENSE.md`
+- `NOTICE.md`
+
+## Process
+
+- Open an issue or Pull Request with a clear description of your change
+- Keep PRs focused and minimal
+- Follow the guidance in `README.md`

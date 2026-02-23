@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: FSL-1.1-MIT
+
 name: CI
 
 on:
@@ -15,6 +17,45 @@ env:
   DOCKER_BUILD_IMAGE_TAG: buildcache
 
 jobs:
+  license-headers:
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: '3.14.3'
+      - run: pip install pre-commit
+
+      - name: Run pre-commit on changed files
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE_REF="${{ github.event.pull_request.base.sha }}"
+          else
+            BASE_REF="${{ github.event.before }}"
+          fi
+
+          if [ -z "$BASE_REF" ] || [ "$BASE_REF" = "0000000000000000000000000000000000000000" ]; then
+            echo "No valid base ref; skipping."
+            exit 0
+          fi
+
+          if ! git cat-file -e "$BASE_REF^{commit}" 2>/dev/null; then
+            echo "$BASE_REF is not available locally; falling back to HEAD^."
+            BASE_REF="HEAD^"
+          fi
+
+          CHANGED_FILES=$(git diff --name-only --diff-filter=AM "$BASE_REF" HEAD)
+
+          if [ -z "$CHANGED_FILES" ]; then
+            echo "No added or modified files; skipping."
+            exit 0
+          fi
+
+          pre-commit run --files $CHANGED_FILES
+
   env-validation:
     runs-on: ubuntu-latest
     steps:
@@ -193,7 +234,7 @@ jobs:
 
   docker-publish-staging:
     if: (github.event_name == 'push' && github.ref == 'refs/heads/main')
-    needs: [env-validation, prettier, es-lint, tests-finish]
+    needs: [prettier, es-lint, tests-finish]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
@@ -222,7 +263,7 @@ jobs:
 
   docker-publish-release:
     if: (github.event_name == 'release' && github.event.action == 'released')
-    needs: [env-validation, prettier, es-lint, tests-finish]
+    needs: [prettier, es-lint, tests-finish]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0

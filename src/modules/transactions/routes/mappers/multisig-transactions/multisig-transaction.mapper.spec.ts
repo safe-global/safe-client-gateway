@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
 import { contractBuilder } from '@/modules/contracts/domain/entities/__tests__/contract.builder';
 import {
