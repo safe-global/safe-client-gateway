@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { DataSource, EntityNotFoundError, In } from 'typeorm';
 import configuration from '@/config/entities/__tests__/configuration';
@@ -238,6 +239,7 @@ describe('SpacesRepository', () => {
         updatedAt: expect.any(Date),
         user: {
           id: userId,
+          extUserId: null,
           status: userStatus,
           createdAt: expect.any(Date),
           updatedAt: expect.any(Date),
@@ -328,6 +330,7 @@ describe('SpacesRepository', () => {
         updatedAt: expect.any(Date),
         user: {
           id: userId,
+          extUserId: null,
           status: userStatus,
           createdAt: expect.any(Date),
           updatedAt: expect.any(Date),
