@@ -21,7 +21,18 @@ export class MockExternalAuthDatasource implements IExternalAuthDatasource {
     private readonly configurationService: IConfigurationService,
   ) {}
 
-  async getOAuthAuthorizationUrl(args: {
+  /**
+   * Returns the URL to the mock consent page.
+   * @param args - The arguments for the authorization URL.
+   * @param args.provider - The provider to use.
+   * @param args.clientId - The client ID to use.
+   * @param args.codeChallenge - The code challenge to use.
+   * @param args.codeChallengeMethod - The code challenge method to use.
+   * @param args.redirectUri - The redirect URI to use.
+   * @param args.state - The state to use.
+   * @returns The URL to the mock consent page.
+   */
+  getOAuthAuthorizationUrl(args: {
     provider: 'google' | 'microsoft';
     clientId: string;
     codeChallenge: string;
@@ -39,24 +50,36 @@ export class MockExternalAuthDatasource implements IExternalAuthDatasource {
       code_challenge: args.codeChallenge,
       code_challenge_method: args.codeChallengeMethod,
     });
-    return `${baseUrl}/v1/auth/mock/consent?${params.toString()}`;
+    return Promise.resolve(
+      `${baseUrl}/v1/auth/mock/consent?${params.toString()}`,
+    );
   }
 
-  async exchangeOAuthCode(args: {
+  /**
+   * Exchanges the code for an external auth user.
+   * @param args - The arguments for the code exchange.
+   * @param args.code - The code to exchange.
+   * @param args.codeVerifier - The code verifier to use.
+   * @param args.redirectUri - The redirect URI to use.
+   * @returns The external auth user.
+   */
+  exchangeOAuthCode(args: {
     code: string;
     codeVerifier: string;
     redirectUri: string;
   }): Promise<ExternalAuthUser> {
     if (args.code === 'invalid') {
-      throw new UnauthorizedException('Invalid authorization code');
+      return Promise.reject(
+        new UnauthorizedException('Invalid authorization code'),
+      );
     }
     const email = args.code.startsWith('mock_')
       ? decodeURIComponent(args.code.slice('mock_'.length))
       : 'mock@example.com';
-    return {
+    return Promise.resolve({
       externalId: `mock_${email}`,
       email,
       emailVerified: true,
-    };
+    });
   }
 }
