@@ -5,9 +5,10 @@ import { IAuthRepository } from '@/modules/auth/domain/auth.repository.interface
 import { AuthRepository } from '@/modules/auth/domain/auth.repository';
 import { AuthController } from '@/modules/auth/routes/auth.controller';
 import { AuthService } from '@/modules/auth/routes/auth.service';
+import { ExternalAuthModule } from '@/modules/auth/external-auth.module';
 
 @Module({
-  imports: [JwtModule, SiweModule],
+  imports: [JwtModule, SiweModule, ExternalAuthModule],
   providers: [
     {
       provide: IAuthRepository,

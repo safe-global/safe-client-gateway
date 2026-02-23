@@ -292,6 +292,12 @@ export default () => ({
       process.env.HTTP_CLIENT_CACHE_IN_FLIGHT_REQUESTS?.toLowerCase() ===
       'true',
   },
+  externalAuth: {
+    // Base URL for the CGW-hosted mock consent page. Should be the public URL
+    // of the CGW instance so the browser can reach it.
+    mockBaseUrl:
+      process.env.EXTERNAL_AUTH_MOCK_BASE_URL ?? 'http://localhost:3000',
+  },
   httpClient: {
     // Timeout in milliseconds to be used for the HTTP client.
     // A value of 0 disables the timeout.
