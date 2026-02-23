@@ -28,7 +28,12 @@ describe('MockConsentController', () => {
       const email = faker.internet.email();
       const redirectUri = 'http://localhost:3000/v1/auth/google/callback';
 
-      const html = controller.getConsentPage(state, redirectUri, undefined, email);
+      const html = controller.getConsentPage(
+        state,
+        redirectUri,
+        undefined,
+        email,
+      );
 
       expect(html).toContain(email);
       expect(html).toContain(

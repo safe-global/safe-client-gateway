@@ -19,7 +19,7 @@ export class MockExternalAuthDatasource implements IExternalAuthDatasource {
   constructor(
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
-  ) { }
+  ) {}
 
   async getOAuthAuthorizationUrl(args: {
     provider: 'google' | 'microsoft';

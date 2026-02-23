@@ -18,7 +18,8 @@ import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 export class MockConsentController {
   @ApiOperation({
     summary: 'Get mock consent page',
-    description: 'Serves a minimal HTML consent page that simulates the Google OAuth consent screen.',
+    description:
+      'Serves a minimal HTML consent page that simulates the Google OAuth consent screen.',
   })
   @ApiOkResponse({
     description: 'Mock consent page served successfully',
