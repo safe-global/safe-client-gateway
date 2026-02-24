@@ -1,13 +1,13 @@
 import {
-  CanActivate,
-  ExecutionContext,
+  type CanActivate,
+  type ExecutionContext,
   Inject,
   Injectable,
 } from '@nestjs/common';
 import { IAuthRepository } from '@/modules/auth/domain/auth.repository.interface';
 import { AuthController } from '@/modules/auth/routes/auth.controller';
-import { AuthPayloadDto } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { Request } from 'express';
+import { type AuthPayloadDto } from '@/modules/auth/domain/entities/auth-payload.entity';
+import { type Request } from 'express';
 
 declare module 'express' {
   // Inject AuthPayload to express.Request

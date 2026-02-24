@@ -9,9 +9,9 @@ import { LogType } from '@/domain/common/entities/log-type.entity';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { asError } from '@/logging/utils';
 import {
-  CompleteMultipartUploadCommandOutput,
+  type CompleteMultipartUploadCommandOutput,
   GetObjectCommand,
-  PutObjectCommandInput,
+  type PutObjectCommandInput,
   S3,
 } from '@aws-sdk/client-s3';
 import { Upload } from '@aws-sdk/lib-storage';

@@ -1,6 +1,6 @@
 import { secp256k1 } from '@noble/curves/secp256k1';
 import { memoize } from 'lodash';
-import { Address, getAddress, hashMessage, Hex } from 'viem';
+import { type Address, getAddress, hashMessage, type Hex } from 'viem';
 import { publicKeyToAddress } from 'viem/utils';
 import { SignatureType } from '@/domain/common/entities/signature-type.entity';
 import {

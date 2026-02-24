@@ -1,9 +1,9 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { MessageConfirmation as DomainMessageConfirmation } from '@/modules/messages/domain/entities/message-confirmation.entity';
-import { Message as DomainMessage } from '@/modules/messages/domain/entities/message.entity';
+import { type MessageConfirmation as DomainMessageConfirmation } from '@/modules/messages/domain/entities/message-confirmation.entity';
+import { type Message as DomainMessage } from '@/modules/messages/domain/entities/message.entity';
 import { SafeAppsRepository } from '@/modules/safe-apps/domain/safe-apps.repository';
 import { ISafeAppsRepository } from '@/modules/safe-apps/domain/safe-apps.repository.interface';
-import { Safe } from '@/modules/safe/domain/entities/safe.entity';
+import { type Safe } from '@/modules/safe/domain/entities/safe.entity';
 import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
 import { MessageConfirmation } from '@/modules/messages/routes/entities/message-confirmation.entity';
 import { MessageItem } from '@/modules/messages/routes/entities/message-item.entity';

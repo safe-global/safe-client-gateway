@@ -1,11 +1,11 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { IBridgeRepository } from '@/modules/bridge/domain/bridge.repository.interface';
 import {
-  BridgeStatus,
+  type BridgeStatus,
   BridgeStatusSchema,
 } from '@/modules/bridge/domain/entities/bridge-status.entity';
 import { IBridgeApiFactory } from '@/domain/interfaces/bridge-api.factory.interface';
-import { BridgeName } from '@/modules/bridge/domain/entities/bridge-name.entity';
+import { type BridgeName } from '@/modules/bridge/domain/entities/bridge-name.entity';
 import { BridgeChainPageSchema } from '@/modules/bridge/domain/entities/bridge-chain.entity';
 import type { Address, Hash } from 'viem';
 

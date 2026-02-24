@@ -10,32 +10,32 @@ import {
   ConfigEventType,
 } from '@/modules/hooks/routes/entities/event-type.entity';
 import { LoggingService, ILoggingService } from '@/logging/logging.interface';
-import { Event } from '@/modules/hooks/routes/entities/event.entity';
+import { type Event } from '@/modules/hooks/routes/entities/event.entity';
 import { INotificationsRepositoryV2 } from '@/modules/notifications/domain/v2/notifications.repository.interface';
-import { DeletedMultisigTransactionEvent } from '@/modules/hooks/routes/entities/schemas/deleted-multisig-transaction.schema';
-import { ExecutedTransactionEvent } from '@/modules/hooks/routes/entities/schemas/executed-transaction.schema';
-import { IncomingEtherEvent } from '@/modules/hooks/routes/entities/schemas/incoming-ether.schema';
-import { IncomingTokenEvent } from '@/modules/hooks/routes/entities/schemas/incoming-token.schema';
-import { ModuleTransactionEvent } from '@/modules/hooks/routes/entities/schemas/module-transaction.schema';
-import { PendingTransactionEvent } from '@/modules/hooks/routes/entities/schemas/pending-transaction.schema';
-import { MessageCreatedEvent } from '@/modules/hooks/routes/entities/schemas/message-created.schema';
+import { type DeletedMultisigTransactionEvent } from '@/modules/hooks/routes/entities/schemas/deleted-multisig-transaction.schema';
+import { type ExecutedTransactionEvent } from '@/modules/hooks/routes/entities/schemas/executed-transaction.schema';
+import { type IncomingEtherEvent } from '@/modules/hooks/routes/entities/schemas/incoming-ether.schema';
+import { type IncomingTokenEvent } from '@/modules/hooks/routes/entities/schemas/incoming-token.schema';
+import { type ModuleTransactionEvent } from '@/modules/hooks/routes/entities/schemas/module-transaction.schema';
+import { type PendingTransactionEvent } from '@/modules/hooks/routes/entities/schemas/pending-transaction.schema';
+import { type MessageCreatedEvent } from '@/modules/hooks/routes/entities/schemas/message-created.schema';
 import {
-  IncomingEtherNotification,
-  IncomingTokenNotification,
-  ConfirmationRequestNotification,
-  MessageConfirmationNotification,
-  Notification,
+  type IncomingEtherNotification,
+  type IncomingTokenNotification,
+  type ConfirmationRequestNotification,
+  type MessageConfirmationNotification,
+  type Notification,
   NotificationType,
 } from '@/modules/notifications/domain/v2/entities/notification.entity';
 import {
   DelegatesV2RepositoryModule,
   IDelegatesV2Repository,
 } from '@/modules/delegate/domain/v2/delegates.v2.repository.interface';
-import { UUID } from 'crypto';
+import { type UUID } from 'crypto';
 import { NotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/notifications.repository.module';
 import uniqBy from 'lodash/uniqBy';
-import { Confirmation } from '@/modules/safe/domain/entities/multisig-transaction.entity';
-import { MessageConfirmation } from '@/modules/messages/domain/entities/message-confirmation.entity';
+import { type Confirmation } from '@/modules/safe/domain/entities/multisig-transaction.entity';
+import { type MessageConfirmation } from '@/modules/messages/domain/entities/message-confirmation.entity';
 import { LogType } from '@/domain/common/entities/log-type.entity';
 import { asError } from '@/logging/utils';
 import type { Address } from 'viem';

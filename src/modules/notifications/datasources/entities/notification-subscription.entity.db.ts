@@ -15,7 +15,7 @@ import {
   OneToMany,
   JoinColumn,
 } from 'typeorm';
-import { Address, getAddress } from 'viem';
+import { type Address, getAddress } from 'viem';
 import { z } from 'zod';
 
 export const NotificationSubscriptionSchema = RowSchema.extend({

@@ -1,7 +1,7 @@
-import { DataDecoded } from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';
+import { type DataDecoded } from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';
 import {
-  Confirmation,
-  MultisigTransaction as DomainMultisigTransaction,
+  type Confirmation,
+  type MultisigTransaction as DomainMultisigTransaction,
 } from '@/modules/safe/domain/entities/multisig-transaction.entity';
 import { Operation } from '@/modules/safe/domain/entities/operation.entity';
 import { ApiProperty } from '@nestjs/swagger';

@@ -1,6 +1,6 @@
 import { convertToDate } from '@/datasources/common/utils';
 import { Outreach as DbOutreach } from '@/modules/targeted-messaging/datasources/entities/outreach.entity';
-import { Outreach } from '@/modules/targeted-messaging/domain/entities/outreach.entity';
+import { type Outreach } from '@/modules/targeted-messaging/domain/entities/outreach.entity';
 import { Injectable } from '@nestjs/common';
 
 @Injectable()

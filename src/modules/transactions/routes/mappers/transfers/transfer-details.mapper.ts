@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { Safe } from '@/modules/safe/domain/entities/safe.entity';
-import { Transfer } from '@/modules/safe/domain/entities/transfer.entity';
+import { type Safe } from '@/modules/safe/domain/entities/safe.entity';
+import { type Transfer } from '@/modules/safe/domain/entities/transfer.entity';
 import {
   TRANSACTION_ID_SEPARATOR,
   TRANSFER_PREFIX,

@@ -7,22 +7,22 @@ import {
 import { AnalysisResultDto } from './analysis-result.dto';
 import {
   CommonStatus,
-  FailedThreatAnalysisResult,
-  MaliciousOrModerateThreatAnalysisResult,
-  MasterCopyChangeThreatAnalysisResult,
-  ThreatAnalysisResult,
-  ThreatIssue,
-  ThreatIssues,
+  type FailedThreatAnalysisResult,
+  type MaliciousOrModerateThreatAnalysisResult,
+  type MasterCopyChangeThreatAnalysisResult,
+  type ThreatAnalysisResult,
+  type ThreatIssue,
+  type ThreatIssues,
 } from '../analysis-result.entity';
 import { ThreatStatus } from '../threat-status.entity';
 import type { ThreatAnalysisResponse } from '../analysis-responses.entity';
 import {
-  AssetType,
-  BalanceChange,
+  type AssetType,
+  type BalanceChange,
   FungibleDiffSchema,
   NFTDiffSchema,
 } from '../threat-analysis.types';
-import { Address } from 'viem';
+import { type Address } from 'viem';
 import type { z } from 'zod';
 import { ThreatStatusGroup } from '@/modules/safe-shield/entities/status-group.entity';
 

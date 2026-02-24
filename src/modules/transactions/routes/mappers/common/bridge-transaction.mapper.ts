@@ -5,9 +5,9 @@ import { ITokenRepository } from '@/modules/tokens/domain/token.repository.inter
 import { TokenInfo } from '@/modules/transactions/routes/entities/swaps/token-info.entity';
 import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
 import { IBridgeRepository } from '@/modules/bridge/domain/bridge.repository.interface';
-import { BridgeStatus } from '@/modules/bridge/domain/entities/bridge-status.entity';
+import { type BridgeStatus } from '@/modules/bridge/domain/entities/bridge-status.entity';
 import { BridgeAndSwapTransactionInfo } from '@/modules/transactions/routes/entities/bridge/bridge-info.entity';
-import { Token } from '@/modules/tokens/domain/entities/token.entity';
+import { type Token } from '@/modules/tokens/domain/entities/token.entity';
 import { NULL_ADDRESS } from '@/routes/common/constants';
 import { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
 import { BridgeFee } from '@/modules/transactions/routes/entities/bridge/fees.entity';

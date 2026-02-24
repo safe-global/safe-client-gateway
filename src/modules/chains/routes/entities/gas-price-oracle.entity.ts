@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { GasPriceOracle as DomainGasPriceOracle } from '@/modules/chains/domain/entities/gas-price-oracle.entity';
+import { type GasPriceOracle as DomainGasPriceOracle } from '@/modules/chains/domain/entities/gas-price-oracle.entity';
 
 export class GasPriceOracle implements DomainGasPriceOracle {
   @ApiProperty({ enum: ['oracle'] })

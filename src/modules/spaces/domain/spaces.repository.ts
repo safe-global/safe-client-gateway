@@ -17,9 +17,9 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import {
-  FindOptionsRelations,
-  FindOptionsSelect,
-  FindOptionsWhere,
+  type FindOptionsRelations,
+  type FindOptionsSelect,
+  type FindOptionsWhere,
   In,
   IsNull,
 } from 'typeorm';

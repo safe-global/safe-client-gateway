@@ -7,7 +7,7 @@ import {
 } from 'typeorm';
 import {
   SpaceStatus,
-  Space as DomainSpace,
+  type Space as DomainSpace,
 } from '@/modules/spaces/domain/entities/space.entity';
 import { Member } from '@/modules/users/datasources/entities/member.entity.db';
 import { databaseEnumTransformer } from '@/domain/common/utils/enum';

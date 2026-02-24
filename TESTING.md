@@ -32,28 +32,28 @@ This document describes the testing strategy and organization for the Safe Clien
 
 ```bash
 # Run all unit tests (default config from package.json)
-yarn test
+bun test
 
 # Run unit tests explicitly (uses test/jest-unit.json config)
-yarn test:unit
+bun test:unit
 
 # Run unit tests with coverage
-yarn test:unit:cov
+bun test:unit:cov
 
 # Run integration tests (uses test/jest-integration.json config)
-yarn test:integration
+bun test:integration
 
 # Run integration tests with coverage
-yarn test:integration:cov
+bun test:integration:cov
 
 # Run all tests (unit + integration)
-yarn test:all
+bun test:all
 
 # Run in watch mode
-yarn test:watch
+bun test:watch
 ```
 
-**Note**: Both `yarn test` and `yarn test:unit` run the same unit tests, but `yarn test` uses the default Jest configuration from `package.json` while `yarn test:unit` explicitly uses `test/jest-unit.json`.
+**Note**: Both `bun test` and `bun test:unit` run the same unit tests, but `bun test` uses the default Jest configuration from `package.json` while `bun test:unit` explicitly uses `test/jest-unit.json`.
 
 ### CI/CD
 
@@ -126,10 +126,10 @@ export REDIS_HOST=localhost
 export REDIS_PORT=6379
 
 # Run integration tests
-yarn test:integration
+bun test:integration
 ```
 
-**Note**: Unit tests (`yarn test` or `yarn test:unit`) do NOT require these services and can run without Docker.
+**Note**: Unit tests (`bun test` or `bun test:unit`) do NOT require these services and can run without Docker.
 
 ## Writing Tests
 
@@ -174,23 +174,23 @@ Keep integration tests co-located with the code they test to maintain feature or
 
 ```bash
 # Debug unit tests
-yarn test:debug
+bun test:debug
 
 # Debug specific test file
-yarn test:debug path/to/file.spec.ts
+bun test:debug path/to/file.spec.ts
 
 # Run tests with verbose output
-yarn test --verbose
+bun test --verbose
 ```
 
 ## Coverage
 
 ```bash
 # Generate coverage report for unit tests
-yarn test:unit:cov
+bun test:unit:cov
 
 # Generate coverage report for integration tests
-yarn test:integration:cov
+bun test:integration:cov
 
 # View coverage report
 open coverage/lcov-report/index.html

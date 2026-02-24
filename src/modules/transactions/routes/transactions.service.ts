@@ -1,5 +1,5 @@
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
-import { MultisigTransaction as DomainMultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
+import { type MultisigTransaction as DomainMultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
 import { SafeRepository } from '@/modules/safe/domain/safe.repository';
 import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
 import { AddConfirmationDto } from '@/modules/transactions/domain/entities/add-confirmation.dto.entity';

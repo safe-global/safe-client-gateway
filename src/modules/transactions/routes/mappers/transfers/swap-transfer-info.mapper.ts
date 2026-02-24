@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { Transfer as DomainTransfer } from '@/modules/safe/domain/entities/transfer.entity';
+import { type Transfer as DomainTransfer } from '@/modules/safe/domain/entities/transfer.entity';
 import { TransferDirection } from '@/modules/transactions/routes/entities/transfer-transaction-info.entity';
 import { Transfer } from '@/modules/transactions/routes/entities/transfers/transfer.entity';
 import { GPv2OrderHelper } from '@/modules/transactions/routes/helpers/gp-v2-order.helper';
@@ -8,7 +8,7 @@ import { AddressInfo } from '@/routes/common/entities/address-info.entity';
 import { SwapTransferTransactionInfo } from '@/modules/transactions/routes/swap-transfer-transaction-info.entity';
 import { type Address, getAddress, isAddressEqual } from 'viem';
 import { ISwapsRepository } from '@/modules/swaps/domain/swaps.repository';
-import { Order } from '@/modules/swaps/domain/entities/order.entity';
+import { type Order } from '@/modules/swaps/domain/entities/order.entity';
 import { SwapAppsHelper } from '@/modules/transactions/routes/helpers/swap-apps.helper';
 
 @Injectable()

@@ -1,4 +1,4 @@
-import { DynamicModule, Module } from '@nestjs/common';
+import { type DynamicModule, Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { IAlertsApi } from '@/domain/interfaces/alerts-api.interface';
@@ -15,7 +15,7 @@ import { AlertsController } from '@/modules/alerts/routes/alerts.controller';
 import { AlertsService } from '@/modules/alerts/routes/alerts.service';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { NestConfigurationService } from '@/config/nest.configuration.service';
-import { ConfigFactory } from '@nestjs/config/dist/interfaces/config-factory.interface';
+import { type ConfigFactory } from '@nestjs/config/dist/interfaces/config-factory.interface';
 import alertsConfiguration from '@/modules/alerts/routes/configuration/alerts.configuration';
 import alertsApiConfiguration from '@/modules/alerts/datasources/configuration/alerts-api.configuration';
 

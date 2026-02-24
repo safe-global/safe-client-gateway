@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { Page } from '@/domain/entities/page.entity';
+import { type Page } from '@/domain/entities/page.entity';
 import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
-import { Token } from '@/modules/tokens/domain/entities/token.entity';
+import { type Token } from '@/modules/tokens/domain/entities/token.entity';
 import { ITokenRepository } from '@/modules/tokens/domain/token.repository.interface';
 import {
   TokenPageSchema,

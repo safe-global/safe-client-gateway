@@ -5,7 +5,7 @@ import {
   Get,
   HttpException,
   HttpStatus,
-  INestApplication,
+  type INestApplication,
   Query,
 } from '@nestjs/common';
 import request from 'supertest';

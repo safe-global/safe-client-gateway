@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import {
-  DynamicModule,
-  MiddlewareConsumer,
+  type DynamicModule,
+  type MiddlewareConsumer,
   Module,
-  NestModule,
+  type NestModule,
   RequestMethod,
 } from '@nestjs/common';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';

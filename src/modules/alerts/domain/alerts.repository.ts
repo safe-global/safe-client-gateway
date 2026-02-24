@@ -2,15 +2,15 @@ import { Inject, Injectable } from '@nestjs/common';
 import { type Hex } from 'viem';
 import { IAlertsRepository } from '@/modules/alerts/domain/alerts.repository.interface';
 import { IAlertsApi } from '@/domain/interfaces/alerts-api.interface';
-import { AlertsRegistration } from '@/modules/alerts/domain/entities/alerts-registration.entity';
-import { AlertsDeletion } from '@/modules/alerts/domain/entities/alerts-deletion.entity';
+import { type AlertsRegistration } from '@/modules/alerts/domain/entities/alerts-registration.entity';
+import { type AlertsDeletion } from '@/modules/alerts/domain/entities/alerts-deletion.entity';
 import { AlertLog } from '@/modules/alerts/routes/entities/alert.dto.entity';
 import { DelayModifierDecoder } from '@/modules/alerts/domain/contracts/decoders/delay-modifier-decoder.helper';
 import { SafeDecoder } from '@/modules/contracts/domain/decoders/safe-decoder.helper';
 import { MultiSendDecoder } from '@/modules/contracts/domain/decoders/multi-send-decoder.helper';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
-import { Safe } from '@/modules/safe/domain/entities/safe.entity';
+import { type Safe } from '@/modules/safe/domain/entities/safe.entity';
 
 @Injectable()
 export class AlertsRepository implements IAlertsRepository {

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import { IRelayManager } from '@/modules/relay/domain/interfaces/relay-manager.interface';
-import { Relay } from '@/modules/relay/domain/entities/relay.entity';
+import { type Relay } from '@/modules/relay/domain/entities/relay.entity';
 import type { Address } from 'viem';
 
 @Injectable()

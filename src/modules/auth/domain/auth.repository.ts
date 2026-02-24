@@ -2,12 +2,12 @@ import { Inject, Injectable } from '@nestjs/common';
 import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
 import { IAuthRepository } from '@/modules/auth/domain/auth.repository.interface';
 import {
-  AuthPayloadDto,
+  type AuthPayloadDto,
   AuthPayloadDtoSchema,
 } from '@/modules/auth/domain/entities/auth-payload.entity';
 import {
   JwtClaimsSchema,
-  JwtPayloadWithClaims,
+  type JwtPayloadWithClaims,
 } from '@/datasources/jwt/jwt-claims.entity';
 
 @Injectable()

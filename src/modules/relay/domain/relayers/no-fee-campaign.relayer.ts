@@ -7,15 +7,15 @@ import { IRelayApi } from '@/domain/interfaces/relay-api.interface';
 import { LimitAddressesMapper } from '@/modules/relay/domain/limit-addresses.mapper';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import {
-  Relay,
+  type Relay,
   RelaySchema,
 } from '@/modules/relay/domain/entities/relay.entity';
 import { RelayLimitReachedError } from '@/modules/relay/domain/errors/relay-limit-reached.error';
 import { ExceedsMaxGasLimitError } from '@/modules/relay/domain/errors/exceeds-max-gas-limit';
 import { BalancesService } from '@/modules/balances/routes/balances.service';
 import {
-  NoFeeCampaignConfiguration,
-  RelayRules,
+  type NoFeeCampaignConfiguration,
+  type RelayRules,
 } from '@/modules/relay/domain/entities/relay.configuration';
 
 @Injectable()

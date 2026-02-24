@@ -3,7 +3,7 @@ import type { Address } from 'viem';
 import { IPortfolioRepository } from '@/modules/portfolio/domain/portfolio.repository.interface';
 import { IPortfolioApi } from '@/modules/portfolio/interfaces/portfolio-api.interface';
 import {
-  Portfolio,
+  type Portfolio,
   PortfolioSchema,
 } from '@/modules/portfolio/domain/entities/portfolio.entity';
 import type { TokenBalance } from '@/modules/portfolio/domain/entities/token-balance.entity';

@@ -1,5 +1,5 @@
 import {
-  BridgeStatus,
+  type BridgeStatus,
   StatusMessages,
   SubstatusesDone,
   SubstatusesFailed,

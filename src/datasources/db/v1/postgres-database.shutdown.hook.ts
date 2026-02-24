@@ -1,4 +1,4 @@
-import { Inject, Injectable, OnModuleDestroy } from '@nestjs/common';
+import { Inject, Injectable, type OnModuleDestroy } from '@nestjs/common';
 import postgres from 'postgres';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 

@@ -1,8 +1,8 @@
 import { ITargetedMessagingDatasource } from '@/domain/interfaces/targeted-messaging.datasource.interface';
 import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
-import { Outreach } from '@/modules/targeted-messaging/domain/entities/outreach.entity';
-import { Submission } from '@/modules/targeted-messaging/domain/entities/submission.entity';
-import { TargetedSafe } from '@/modules/targeted-messaging/domain/entities/targeted-safe.entity';
+import { type Outreach } from '@/modules/targeted-messaging/domain/entities/outreach.entity';
+import { type Submission } from '@/modules/targeted-messaging/domain/entities/submission.entity';
+import { type TargetedSafe } from '@/modules/targeted-messaging/domain/entities/targeted-safe.entity';
 import { ITargetedMessagingRepository } from '@/modules/targeted-messaging/domain/targeted-messaging.repository.interface';
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import type { Address } from 'viem';

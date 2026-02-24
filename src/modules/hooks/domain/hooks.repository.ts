@@ -1,9 +1,9 @@
-import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
+import { Inject, Injectable, type OnModuleInit } from '@nestjs/common';
 import { LoggingService, ILoggingService } from '@/logging/logging.interface';
-import { Event } from '@/modules/hooks/routes/entities/event.entity';
+import { type Event } from '@/modules/hooks/routes/entities/event.entity';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { IQueuesRepository } from '@/modules/queues/domain/queues-repository.interface';
-import { ConsumeMessage } from 'amqplib';
+import { type ConsumeMessage } from 'amqplib';
 import { EventSchema } from '@/modules/hooks/routes/entities/schemas/event.schema';
 import { IHooksRepository } from '@/modules/hooks/domain/hooks.repository.interface';
 import { EventNotificationsHelper } from '@/modules/hooks/domain/helpers/event-notifications.helper';

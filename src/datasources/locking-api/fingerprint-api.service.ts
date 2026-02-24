@@ -1,6 +1,6 @@
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import {
-  FingerprintUnsealedData,
+  type FingerprintUnsealedData,
   FingerprintUnsealedDataSchema,
 } from '@/datasources/locking-api/entities/fingerprint-unsealed-data.entity';
 import type { EligibilityRequest } from '@/modules/community/domain/entities/eligibility-request.entity';

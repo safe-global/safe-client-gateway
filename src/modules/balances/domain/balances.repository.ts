@@ -1,12 +1,12 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { IBalancesRepository } from '@/modules/balances/domain/balances.repository.interface';
 import {
-  Balance,
+  type Balance,
   BalanceSchema,
   BalancesSchema,
 } from '@/modules/balances/domain/entities/balance.entity';
 import { IBalancesApiManager } from '@/domain/interfaces/balances-api.manager.interface';
-import { Chain } from '@/modules/chains/domain/entities/chain.entity';
+import { type Chain } from '@/modules/chains/domain/entities/chain.entity';
 import { z } from 'zod';
 import type { Address } from 'viem';
 

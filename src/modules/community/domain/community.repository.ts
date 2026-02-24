@@ -1,17 +1,17 @@
-import { Page } from '@/domain/entities/page.entity';
+import { type Page } from '@/domain/entities/page.entity';
 import { ILockingApi } from '@/domain/interfaces/locking-api.interface';
 import {
-  Campaign,
+  type Campaign,
   CampaignPageSchema,
   CampaignSchema,
 } from '@/modules/community/domain/entities/campaign.entity';
 import {
-  CampaignRank,
+  type CampaignRank,
   CampaignRankPageSchema,
   CampaignRankSchema,
 } from '@/modules/community/domain/entities/campaign-rank.entity';
-import { LockingEvent } from '@/modules/community/domain/entities/locking-event.entity';
-import { LockingRank } from '@/modules/community/domain/entities/locking-rank.entity';
+import { type LockingEvent } from '@/modules/community/domain/entities/locking-event.entity';
+import { type LockingRank } from '@/modules/community/domain/entities/locking-rank.entity';
 import { LockingEventPageSchema } from '@/modules/community/domain/entities/schemas/locking-event.schema';
 import {
   LockingRankPageSchema,
@@ -20,11 +20,11 @@ import {
 import { ICommunityRepository } from '@/modules/community/domain/community.repository.interface';
 import { Inject, Injectable } from '@nestjs/common';
 import {
-  CampaignActivity,
+  type CampaignActivity,
   CampaignActivityPageSchema,
 } from '@/modules/community/domain/entities/campaign-activity.entity';
-import { EligibilityRequest } from '@/modules/community/domain/entities/eligibility-request.entity';
-import { Eligibility } from '@/modules/community/domain/entities/eligibility.entity';
+import { type EligibilityRequest } from '@/modules/community/domain/entities/eligibility-request.entity';
+import { type Eligibility } from '@/modules/community/domain/entities/eligibility.entity';
 import { asError } from '@/logging/utils';
 import { LoggingService, ILoggingService } from '@/logging/logging.interface';
 import { IIdentityApi } from '@/domain/interfaces/identity-api.interface';

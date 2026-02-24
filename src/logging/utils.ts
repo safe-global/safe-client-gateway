@@ -24,11 +24,12 @@ export function formatRouteLogMessage(
 } {
   const clientIp = request.header(HEADER_IP_ADDRESS) ?? null;
   const safeAppUserAgent = request.header(HEADER_SAFE_APP_USER_AGENT) ?? null;
-  const chainId = request.params['chainId'] ?? null;
+  const chainIdParam = request.params['chainId'];
+  const chainId = Array.isArray(chainIdParam) ? chainIdParam[0] : chainIdParam;
   const origin = request.header(HEADER_ORIGIN) ?? null;
 
   return {
-    chain_id: chainId,
+    chain_id: chainId ?? null,
     client_ip: clientIp,
     method: request.method,
     response_time_ms: performance.now() - startTimeMs,

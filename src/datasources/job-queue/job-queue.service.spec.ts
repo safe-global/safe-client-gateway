@@ -35,7 +35,7 @@ describe('JobQueueService', () => {
 
     it('should return null if job does not exist', async () => {
       const jobId = faker.string.uuid();
-      mockQueue.getJob.mockResolvedValue(null);
+      mockQueue.getJob.mockResolvedValue(undefined);
 
       const result = await service.getJob(jobId);
 
