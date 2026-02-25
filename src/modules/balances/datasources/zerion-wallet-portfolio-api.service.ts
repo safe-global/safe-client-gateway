@@ -31,7 +31,6 @@ export interface IZerionWalletPortfolioApi {
    * @param args.currency - Fiat currency code (e.g., 'USD', 'EUR')
    * @param args.isTestnet - Whether the returned data is for testnets or for mainnets
    * @param args.trusted - If true, only includes trusted (non-trash) tokens (optional)
-   * @param args.excludeSpam - If true, excludes spam (trash) tokens (optional)
    * @returns Portfolio data with total and per-chain breakdown
    */
   getPortfolio(args: {
@@ -39,7 +38,6 @@ export interface IZerionWalletPortfolioApi {
     currency: string;
     isTestnet: boolean;
     trusted?: boolean;
-    excludeSpam?: boolean;
   }): Promise<ZerionWalletPortfolio>;
 }
 
@@ -71,12 +69,11 @@ export class ZerionWalletPortfolioApi implements IZerionWalletPortfolioApi {
     currency: string;
     isTestnet: boolean;
     trusted?: boolean;
-    excludeSpam?: boolean;
   }): Promise<ZerionWalletPortfolio> {
     const cacheDir = CacheRouter.getZerionWalletPortfolioCacheDir({
       address: args.address,
       fiatCode: args.currency,
-      trusted: args.trusted ?? args.excludeSpam,
+      trusted: args.trusted,
       isTestnet: args.isTestnet,
     });
 
@@ -97,7 +94,7 @@ export class ZerionWalletPortfolioApi implements IZerionWalletPortfolioApi {
       'filter[positions]': 'no_filter',
     };
 
-    if (args.trusted || args.excludeSpam) {
+    if (args.trusted) {
       params['filter[trash]'] = 'only_non_trash';
     }
 
