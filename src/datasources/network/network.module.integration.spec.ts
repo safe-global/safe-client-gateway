@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { TestingModule } from '@nestjs/testing';
 import { Test } from '@nestjs/testing';
 import { RequestScopedLoggingModule } from '@/logging/logging.module';

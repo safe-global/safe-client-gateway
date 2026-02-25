@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Injectable, Inject, OnModuleDestroy } from '@nestjs/common';
 import type { Agent } from 'undici';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';

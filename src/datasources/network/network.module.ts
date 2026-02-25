@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Global, Module } from '@nestjs/common';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { FetchNetworkService } from '@/datasources/network/fetch.network.service';
