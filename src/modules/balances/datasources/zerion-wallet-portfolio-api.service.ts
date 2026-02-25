@@ -73,9 +73,10 @@ export class ZerionWalletPortfolioApi implements IZerionWalletPortfolioApi {
     trusted?: boolean;
     excludeSpam?: boolean;
   }): Promise<ZerionWalletPortfolio> {
-    const cacheDir = CacheRouter.getPortfolioCacheDir({
+    const cacheDir = CacheRouter.getZerionWalletPortfolioCacheDir({
       address: args.address,
       fiatCode: args.currency,
+      trusted: args.trusted ?? args.excludeSpam,
       isTestnet: args.isTestnet,
     });
 
