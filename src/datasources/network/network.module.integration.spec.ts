@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { TestingModule } from '@nestjs/testing';
 import { Test } from '@nestjs/testing';
 import { RequestScopedLoggingModule } from '@/logging/logging.module';
@@ -27,6 +28,8 @@ import { CircuitBreakerModule } from '@/datasources/circuit-breaker/circuit-brea
 import { CircuitBreakerService } from '@/datasources/circuit-breaker/circuit-breaker.service';
 import { CircuitBreakerException } from '@/datasources/circuit-breaker/exceptions/circuit-breaker.exception';
 import type { ICircuitConfig } from '@/datasources/circuit-breaker/interfaces/circuit-breaker.interface';
+import { getGlobalDispatcher } from 'undici';
+import { UndiciShutdownHook } from '@/datasources/network/undici.shutdown.hook';
 
 describe('NetworkModule', () => {
   let app: INestApplication<Server>;
@@ -643,6 +646,49 @@ describe('NetworkModule', () => {
       ).rejects.toThrow(CircuitBreakerException);
 
       expect(fetchMock).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('Undici global dispatcher setup', () => {
+    beforeAll(async () => {
+      await initApp(false);
+    });
+
+    it('sets up Undici Agent as global dispatcher', () => {
+      const globalDispatcher = getGlobalDispatcher();
+
+      // Verify the global dispatcher is our configured Undici Agent
+      expect(globalDispatcher).toBeDefined();
+      expect(globalDispatcher.constructor.name).toBe('Agent');
+
+      // Note: Node.js's global fetch uses the global dispatcher set by setGlobalDispatcher()
+      // This is a documented behavior of Node.js v18+ fetch implementation
+    });
+
+    it('provides shutdown hook for graceful connection cleanup', async () => {
+      const moduleFixture: TestingModule = await Test.createTestingModule({
+        imports: [
+          NetworkModule,
+          ClsModule.forRoot({ global: true }),
+          RequestScopedLoggingModule,
+          ConfigurationModule.register(configuration),
+          CircuitBreakerModule,
+        ],
+      }).compile();
+
+      const shutdownHook =
+        moduleFixture.get<UndiciShutdownHook>(UndiciShutdownHook);
+      expect(shutdownHook).toBeDefined();
+
+      // Spy on the agent's close method
+      const agent = getGlobalDispatcher();
+      const closeSpy = jest.spyOn(agent, 'close');
+
+      // Trigger module destruction
+      await moduleFixture.close();
+
+      expect(closeSpy).toHaveBeenCalled();
+      closeSpy.mockRestore();
     });
   });
 });

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Global, Module } from '@nestjs/common';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { FetchNetworkService } from '@/datasources/network/fetch.network.service';
@@ -13,6 +14,12 @@ import { LogType } from '@/domain/common/entities/log-type.entity';
 import { hashSha1 } from '@/domain/common/utils/utils';
 import { CircuitBreakerService } from '@/datasources/circuit-breaker/circuit-breaker.service';
 import { NetworkRequest } from '@/datasources/network/entities/network.request.entity';
+import { setGlobalDispatcher, Agent } from 'undici';
+import {
+  UndiciAgent,
+  UndiciShutdownHook,
+} from '@/datasources/network/undici.shutdown.hook';
+import { asError } from '@/logging/utils';
 
 export const FetchClientToken = Symbol('FetchClient');
 
@@ -215,6 +222,50 @@ function getCacheKey(
 }
 
 /**
+ * Sets up the global Undici dispatcher with configured connection pooling
+ * Returns the Agent instance for graceful shutdown
+ */
+function setupUndiciDispatcher(
+  configurationService: IConfigurationService,
+  loggingService: ILoggingService,
+): Agent {
+  const connections =
+    configurationService.getOrThrow<number>('undici.connections');
+  const pipelining =
+    configurationService.getOrThrow<number>('undici.pipelining');
+  const connectTimeout = configurationService.getOrThrow<number>(
+    'undici.connectTimeout',
+  );
+  const keepAliveTimeout = configurationService.getOrThrow<number>(
+    'undici.keepAliveTimeout',
+  );
+  const keepAliveMaxTimeout = configurationService.getOrThrow<number>(
+    'undici.keepAliveMaxTimeout',
+  );
+
+  try {
+    const agent = new Agent({
+      connections,
+      pipelining,
+      connect: {
+        timeout: connectTimeout,
+        keepAlive: true,
+      },
+      keepAliveTimeout,
+      keepAliveMaxTimeout,
+    });
+
+    setGlobalDispatcher(agent);
+    return agent;
+  } catch (error) {
+    loggingService.error(
+      `Failed to setup Undici global dispatcher: ${asError(error).message}`,
+    );
+    throw error;
+  }
+}
+
+/**
  * A {@link Global} Module which provides HTTP support via {@link NetworkService}
  * Feature Modules don't need to import this module directly in order to inject
  * the {@link NetworkService}.
@@ -224,6 +275,12 @@ function getCacheKey(
 @Global()
 @Module({
   providers: [
+    {
+      provide: UndiciAgent,
+      useFactory: setupUndiciDispatcher,
+      inject: [IConfigurationService, LoggingService],
+    },
+    UndiciShutdownHook,
     {
       provide: FetchClientToken,
       useFactory: fetchClientFactory,

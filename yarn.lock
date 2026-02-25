@@ -9761,6 +9761,7 @@ __metadata:
     typeorm: "npm:0.3.28"
     typescript: "npm:5.9.3"
     typescript-eslint: "npm:8.31.1"
+    undici: "npm:7.20.0"
     viem: "npm:2.23.5"
     winston: "npm:3.17.0"
     zod: "npm:4.3.6"
@@ -10935,6 +10936,13 @@ __metadata:
   version: 7.16.0
   resolution: "undici-types@npm:7.16.0"
   checksum: 10/db43439f69c2d94cc29f75cbfe9de86df87061d6b0c577ebe9bb3255f49b22c50162a7d7eb413b0458b6510b8ca299ac7cff38c3a29fbd31af9f504bcf7fbc0d
+  languageName: node
+  linkType: hard
+
+"undici@npm:7.20.0":
+  version: 7.20.0
+  resolution: "undici@npm:7.20.0"
+  checksum: 10/09ca3e1255cf05f3c76e6dff2ae760131ea5bba57290b9b184bd94f5167939548e7ea73292c524c25eb91f5a2152623394d4c6124e222d34fcd53ef733c6b156
   languageName: node
   linkType: hard
 
