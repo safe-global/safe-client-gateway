@@ -8,6 +8,7 @@ import {
   ApiBody,
   ApiBadRequestResponse,
   ApiTooManyRequestsResponse,
+  ApiNotFoundResponse,
 } from '@nestjs/swagger';
 import { RelayDto } from '@/modules/relay/routes/entities/relay.dto.entity';
 import { RelayService } from '@/modules/relay/routes/relay.service';
@@ -21,6 +22,7 @@ import { UnofficialProxyFactoryExceptionFilter } from '@/modules/relay/domain/ex
 import { RelayDtoSchema } from '@/modules/relay/routes/entities/schemas/relay.dto.schema';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { Relay } from '@/modules/relay/routes/entities/relay.entity';
+import { RelayTaskStatus } from '@/modules/relay/routes/entities/relay-task-status.entity';
 import { RelaysRemaining } from '@/modules/relay/routes/entities/relays-remaining.entity';
 import type { Address } from 'viem';
 
@@ -74,6 +76,37 @@ export class RelayController {
     relayDto: RelayDto,
   ): Promise<Relay> {
     return this.relayService.relay({ chainId, relayDto });
+  }
+
+  @ApiOperation({
+    summary: 'Get relay task status',
+    description:
+      'Retrieves the status of a relay task from the relay provider. This is a proxy endpoint to securely query task status without exposing the API key.',
+  })
+  @ApiParam({
+    name: 'chainId',
+    type: 'string',
+    description: 'Chain ID associated with the relay task',
+    example: '11155111',
+  })
+  @ApiParam({
+    name: 'taskId',
+    type: 'string',
+    description: 'Task ID returned from the relay transaction',
+  })
+  @ApiOkResponse({
+    type: RelayTaskStatus,
+    description: 'Task status retrieved successfully',
+  })
+  @ApiNotFoundResponse({
+    description: 'Task not found',
+  })
+  @Get('status/:taskId')
+  async getTaskStatus(
+    @Param('chainId') chainId: string,
+    @Param('taskId') taskId: string,
+  ): Promise<RelayTaskStatus> {
+    return this.relayService.getTaskStatus({ chainId, taskId });
   }
 
   @ApiOperation({
