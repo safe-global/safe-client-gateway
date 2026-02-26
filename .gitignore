@@ -45,6 +45,7 @@ lerna-debug.log*
 
 # env
 .env
+.env.auth
 .env.test
 .env.dev
 .envrc
