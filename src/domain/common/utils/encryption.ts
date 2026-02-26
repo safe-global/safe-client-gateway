@@ -5,6 +5,20 @@ import {
   scryptSync,
 } from 'crypto';
 
+const derivedKeyCache = new Map<string, Buffer>();
+
+function getDerivedKey(encryptionKey: string, salt: string): Buffer {
+  const cacheKey = `${encryptionKey}:${salt}`;
+  const cached = derivedKeyCache.get(cacheKey);
+  if (cached) {
+    return cached;
+  }
+  const derived = scryptSync(encryptionKey, Buffer.from(salt, 'utf8'), 32);
+  derivedKeyCache.set(cacheKey, derived);
+
+  return derived;
+}
+
 /**
  * Encrypts data using AES-256-GCM encryption.
  *
@@ -25,8 +39,7 @@ export function encryptData<T>(
   }
 
   try {
-    const saltBuffer = Buffer.from(salt, 'utf8');
-    const key = scryptSync(encryptionKey, saltBuffer, 32);
+    const key = getDerivedKey(encryptionKey, salt);
     const iv = randomBytes(16);
     const cipher = createCipheriv('aes-256-gcm', key, iv);
     const dataString = JSON.stringify(data);
@@ -63,8 +76,7 @@ export function decryptData<T>(
   }
 
   try {
-    const saltBuffer = Buffer.from(salt, 'utf8');
-    const key = scryptSync(encryptionKey, saltBuffer, 32);
+    const key = getDerivedKey(encryptionKey, salt);
     const buffer = Buffer.from(encryptedData, 'base64');
     const iv = buffer.subarray(0, 16);
     const authTag = buffer.subarray(16, 32);

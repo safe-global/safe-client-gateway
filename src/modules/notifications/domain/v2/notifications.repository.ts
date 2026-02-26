@@ -173,27 +173,36 @@ export class NotificationsRepositoryV2 implements INotificationsRepositoryV2 {
       upsertSubscriptionsDto: UpsertSubscriptionsDto;
     },
   ): Promise<void> {
-    for (const safe of args.upsertSubscriptionsDto.safes) {
-      await entityManager
-        .createQueryBuilder()
-        .delete()
-        .from(NotificationSubscription)
-        .where(
-          `chain_id = :chainId
-          AND safe_address = :safeAddress
-          AND push_notification_device.id = :deviceId
-          AND (
-            signer_address = :signerAddress OR signer_address IS NULL
-          )`,
-          {
-            chainId: safe.chainId,
-            safeAddress: safe.address,
-            deviceId: args.deviceId,
-            signerAddress: args.signerAddress ?? null,
-          },
-        )
-        .execute();
+    const safes = args.upsertSubscriptionsDto.safes;
+    if (safes.length === 0) {
+      return undefined;
     }
+
+    const conditions = safes.map((_, i) => {
+      return `(chain_id = :chainId${i} AND safe_address = :safeAddress${i})`;
+    });
+    const parameters: Record<string, unknown> = {
+      deviceId: args.deviceId,
+      signerAddress: args.signerAddress ?? null,
+    };
+    for (let i = 0; i < safes.length; i++) {
+      parameters[`chainId${i}`] = safes[i].chainId;
+      parameters[`safeAddress${i}`] = safes[i].address;
+    }
+
+    await entityManager
+      .createQueryBuilder()
+      .delete()
+      .from(NotificationSubscription)
+      .where(
+        `(${conditions.join(' OR ')})
+        AND push_notification_device.id = :deviceId
+        AND (
+          signer_address = :signerAddress OR signer_address IS NULL
+        )`,
+        parameters,
+      )
+      .execute();
   }
 
   private async upsertSubscription(
@@ -468,17 +477,13 @@ export class NotificationsRepositoryV2 implements INotificationsRepositoryV2 {
     }
 
     await notificationsSubscriptionsRepository.remove(subscriptions);
-    for (const subscription of subscriptions) {
-      await this.removeGetSubscribersBySafeCache({
-        entityManager: notificationsSubscriptionsRepository.manager,
-        safes: [
-          {
-            chainId: subscription.chain_id,
-            address: subscription.safe_address,
-          },
-        ],
-      });
-    }
+    await this.removeGetSubscribersBySafeCache({
+      entityManager: notificationsSubscriptionsRepository.manager,
+      safes: subscriptions.map((subscription) => ({
+        chainId: subscription.chain_id,
+        address: subscription.safe_address,
+      })),
+    });
   }
 
   public async deleteDevice(deviceUuid: UUID): Promise<void> {
@@ -520,15 +525,15 @@ export class NotificationsRepositoryV2 implements INotificationsRepositoryV2 {
     entityManager: EntityManager;
     safes: Array<{ chainId: string; address: Address }>;
   }): Promise<void> {
-    for (const safe of args.safes) {
-      const subscriptionsCacheKey = this.getSubscribersBySafeCacheKey({
+    const cacheKeys = args.safes.map((safe) =>
+      this.getSubscribersBySafeCacheKey({
         chainId: safe.chainId,
         safeAddress: safe.address,
-      });
+      }),
+    );
 
-      await args.entityManager.connection.queryResultCache?.remove([
-        subscriptionsCacheKey,
-      ]);
+    if (cacheKeys.length > 0) {
+      await args.entityManager.connection.queryResultCache?.remove(cacheKeys);
     }
   }
 }
