@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: FSL-1.1-MIT
 services:
   redis:
     image: redis/redis-stack:7.2.0-v10
@@ -15,6 +16,22 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
     ports:
       - '${POSTGRES_PORT:-5432}:5432'
+
+  redis-auth:
+    image: redis/redis-stack:7.2.0-v10
+    ports:
+      - ${REDIS_PORT-6380}:6379
+
+  db-auth:
+    image: postgres:14.8-alpine
+    volumes:
+      - ./data/db-auth:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-safe-auth-service}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    ports:
+      - '${POSTGRES_PORT:-5434}:5432'
 
   db-test:
     image: postgres:14.8-alpine
@@ -78,6 +95,20 @@ services:
     depends_on:
       - redis
       - db
+
+  auth-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.auth
+    tty: true
+    env_file:
+      - .env.auth
+    environment:
+    ports:
+      - '${APPLICATION_PORT-3001}:${APPLICATION_PORT-3001}'
+    depends_on:
+      - redis-auth
+      - db-auth
 
   pgadmin:
     image: dpage/pgadmin4

@@ -1,4 +1,5 @@
-import { Inject, Injectable } from '@nestjs/common';
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { Inject, Injectable, Optional } from '@nestjs/common';
 import { HealthEntity } from '@/modules/health/domain/entities/health.entity';
 import { IHealthRepository } from '@/modules/health/domain/health.repository.interface';
 import {
@@ -17,7 +18,9 @@ export class HealthRepository implements IHealthRepository {
   public constructor(
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
     @Inject(CacheReadiness) private readonly cacheService: ICacheReadiness,
-    @Inject(QueueReadiness) private readonly queuesApi: IQueueReadiness,
+    @Optional()
+    @Inject(QueueReadiness)
+    private readonly queuesApi: IQueueReadiness | null,
   ) {}
 
   public async isAlive(): Promise<HealthEntity> {
@@ -62,6 +65,11 @@ export class HealthRepository implements IHealthRepository {
   }
 
   private isAmqpHealthy(): boolean {
+    // Skip AMQP check if queue service is not configured (e.g., auth-service)
+    if (!this.queuesApi) {
+      return true;
+    }
+
     if (!this.queuesApi.isReady()) {
       throw new HealthCheckError('AMQP connection is not established');
     }
