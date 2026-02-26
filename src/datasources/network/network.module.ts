@@ -124,7 +124,11 @@ function createCircuitBreakerRequestFunction(
     timeout?: number,
     circuitBreaker?: NetworkRequest['circuitBreaker'],
   ): Promise<NetworkResponse<T>> => {
-    if (!circuitBreaker || !circuitBreaker.key) {
+    if (
+      !circuitBreakerService.isEnabled() ||
+      !circuitBreaker ||
+      !circuitBreaker.key
+    ) {
       return request(url, options, timeout);
     }
 

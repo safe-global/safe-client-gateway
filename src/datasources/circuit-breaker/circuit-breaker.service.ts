@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import { CircuitState } from '@/datasources/circuit-breaker/enums/circuit-state.enum';
 import type {
@@ -23,6 +24,7 @@ export class CircuitBreakerService {
   private readonly DEFAULT_STATE: CircuitState = CircuitState.CLOSED;
   private readonly STALE_BUFFER_FACTOR: number = 2;
 
+  private readonly enabled: boolean;
   private readonly initialConfig: ICircuitConfig;
   private readonly circuits: Map<string, ICircuit> = new Map();
 
@@ -38,6 +40,9 @@ export class CircuitBreakerService {
     @Inject(LoggingService)
     private readonly loggingService: ILoggingService,
   ) {
+    this.enabled = this.configurationService.getOrThrow<boolean>(
+      'circuitBreaker.enabled',
+    );
     this.initialConfig = {
       failureThreshold: this.configurationService.getOrThrow(
         'circuitBreaker.failureThreshold',
@@ -53,6 +58,15 @@ export class CircuitBreakerService {
         'circuitBreaker.halfOpenMaxRequests',
       ),
     };
+  }
+
+  /**
+   * Checks if the circuit breaker is enabled
+   *
+   * @returns {boolean} True if the circuit breaker is enabled, false otherwise
+   */
+  public isEnabled(): boolean {
+    return this.enabled;
   }
 
   /**
