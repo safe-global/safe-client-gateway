@@ -56,6 +56,7 @@ describe('NetworkModule', () => {
         cacheInFlightRequests,
       },
       circuitBreaker: {
+        enabled: baseConfiguration.circuitBreaker.enabled,
         failureThreshold:
           config?.failureThreshold ??
           baseConfiguration.circuitBreaker.failureThreshold,
