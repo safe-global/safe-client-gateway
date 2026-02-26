@@ -178,6 +178,9 @@ export default (): ReturnType<typeof configuration> => ({
     lifiTransactionsMapping: false,
     cacheInFlightRequests: false,
   },
+  externalAuth: {
+    mockBaseUrl: 'http://localhost:3000',
+  },
   httpClient: {
     requestTimeout: faker.number.int(),
     ownersTimeout: faker.number.int(),
