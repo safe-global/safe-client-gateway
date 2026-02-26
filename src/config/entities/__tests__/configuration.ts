@@ -190,6 +190,7 @@ export default (): ReturnType<typeof configuration> => ({
     keepAliveMaxTimeout: faker.number.int({ min: 100000, max: 600000 }),
   },
   circuitBreaker: {
+    enabled: true,
     failureThreshold: faker.number.int(),
     successThreshold: faker.number.int(),
     timeout: faker.number.int(),
