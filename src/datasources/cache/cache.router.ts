@@ -986,7 +986,7 @@ export class CacheRouter {
     const testnetSuffix = args.isTestnet ? '_testnet' : '';
     return new CacheDir(
       CacheRouter.getPortfolioCacheKey(args),
-      `${args.fiatCode.toUpperCase()}${trustedSuffix}${testnetSuffix}`,
+      `${args.fiatCode.toLowerCase()}${trustedSuffix}${testnetSuffix}`,
     );
   }
 
@@ -1007,7 +1007,7 @@ export class CacheRouter {
     const testnetSuffix = args.isTestnet ? '_testnet' : '';
     return new CacheDir(
       CacheRouter.getZerionWalletPortfolioCacheKey(args),
-      `${args.fiatCode.toUpperCase()}${trustedSuffix}${testnetSuffix}`,
+      `${args.fiatCode.toLowerCase()}${trustedSuffix}${testnetSuffix}`,
     );
   }
 
