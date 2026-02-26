@@ -61,15 +61,6 @@ export class CircuitBreakerService {
   }
 
   /**
-   * Checks if the circuit breaker is enabled
-   *
-   * @returns {boolean} True if the circuit breaker is enabled, false otherwise
-   */
-  public isEnabled(): boolean {
-    return this.enabled;
-  }
-
-  /**
    * Retrieves a circuit by name
    *
    * Returns the circuit instance if it exists, otherwise returns undefined.
@@ -96,7 +87,7 @@ export class CircuitBreakerService {
   public canProceed(name: string): boolean {
     const circuit = this.circuits.get(name);
 
-    if (!circuit) {
+    if (!this.enabled || !circuit) {
       return true;
     }
 

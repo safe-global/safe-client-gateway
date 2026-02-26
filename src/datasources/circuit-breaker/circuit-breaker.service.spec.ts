@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { CircuitBreakerService } from '@/datasources/circuit-breaker/circuit-breaker.service';
 import { CircuitState } from '@/datasources/circuit-breaker/enums/circuit-state.enum';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
@@ -23,7 +24,8 @@ describe('CircuitBreakerService', () => {
 
     mockConfigurationService = {
       getOrThrow: jest.fn((key: string) => {
-        const config: Record<string, number> = {
+        const config: Record<string, number | boolean> = {
+          'circuitBreaker.enabled': true,
           'circuitBreaker.failureThreshold': defaultFailureThreshold,
           'circuitBreaker.successThreshold': defaultSuccessThreshold,
           'circuitBreaker.timeout': defaultTimeout,
@@ -317,6 +319,46 @@ describe('CircuitBreakerService', () => {
       service.canProceed('new-circuit');
       const circuit = service.get('new-circuit');
       expect(circuit).toBeUndefined();
+    });
+  });
+
+  describe('Enabled/Disabled', () => {
+    it('should enforce circuit breaker logic when circuitBreaker is enabled (the default behavior)', () => {
+      const circuit = service.getOrRegisterCircuit('test-circuit');
+
+      expect(service.canProceed('test-circuit')).toBe(true);
+
+      for (let i = 0; i < defaultFailureThreshold; i++) {
+        service.recordFailure(circuit);
+      }
+
+      expect(circuit.metrics.state).toBe(CircuitState.OPEN);
+      expect(service.canProceed('test-circuit')).toBe(false);
+    });
+
+    it('should bypass circuit breaker logic when circuitBreaker is disabled', () => {
+      const disabledConfigService = {
+        getOrThrow: jest.fn((key: string) => {
+          if (key === 'circuitBreaker.enabled') {
+            return false;
+          }
+          return mockConfigurationService.getOrThrow(key);
+        }),
+      } as unknown as jest.Mocked<IConfigurationService>;
+
+      const disabledService = new CircuitBreakerService(
+        disabledConfigService,
+        mockLoggingService,
+      );
+
+      const circuit = disabledService.getOrRegisterCircuit('test-circuit');
+
+      for (let i = 0; i < defaultFailureThreshold; i++) {
+        disabledService.recordFailure(circuit);
+      }
+
+      expect(circuit.metrics.state).toBe(CircuitState.OPEN);
+      expect(disabledService.canProceed('test-circuit')).toBe(true);
     });
   });
 });
