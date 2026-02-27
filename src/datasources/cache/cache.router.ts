@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import crypto from 'crypto';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import type { Address, Hash } from 'viem';
@@ -78,6 +79,8 @@ export class CacheRouter {
   private static readonly ZERION_POSITIONS_KEY = 'zerion_positions';
   private static readonly ZERION_CHAINS_KEY = 'zerion_chains';
   private static readonly PORTFOLIO_KEY = 'portfolio';
+  private static readonly ZERION_WALLET_PORTFOLIO_KEY =
+    'zerion_wallet_portfolio';
   private static readonly ORM_QUERY_CACHE_KEY = 'orm_query_cache';
   private static readonly TRANSACTIONS_EXPORT_KEY = 'transactions_export';
   private static readonly CONTRACT_ANALYSIS_KEY = 'contract_analysis';
@@ -971,6 +974,9 @@ export class CacheRouter {
     return `${CacheRouter.PORTFOLIO_KEY}_${args.address}_zerion`;
   }
 
+  /**
+   * Cache for full portfolio (positions endpoint). Zerion /v1/wallets/{address}/positions.
+   */
   static getPortfolioCacheDir(args: {
     address: Address;
     fiatCode: string;
@@ -981,7 +987,28 @@ export class CacheRouter {
     const testnetSuffix = args.isTestnet ? '_testnet' : '';
     return new CacheDir(
       CacheRouter.getPortfolioCacheKey(args),
-      `${args.fiatCode.toUpperCase()}${trustedSuffix}${testnetSuffix}`,
+      `${args.fiatCode.toLowerCase()}${trustedSuffix}${testnetSuffix}`,
+    );
+  }
+
+  static getZerionWalletPortfolioCacheKey(args: { address: Address }): string {
+    return `${CacheRouter.ZERION_WALLET_PORTFOLIO_KEY}_${args.address}`;
+  }
+
+  /**
+   * Cache for wallet portfolio summary. Zerion /v1/wallets/{address}/portfolio.
+   */
+  static getZerionWalletPortfolioCacheDir(args: {
+    address: Address;
+    fiatCode: string;
+    trusted?: boolean;
+    isTestnet?: boolean;
+  }): CacheDir {
+    const trustedSuffix = args.trusted ? '_trusted' : '';
+    const testnetSuffix = args.isTestnet ? '_testnet' : '';
+    return new CacheDir(
+      CacheRouter.getZerionWalletPortfolioCacheKey(args),
+      `${args.fiatCode.toLowerCase()}${trustedSuffix}${testnetSuffix}`,
     );
   }
 
