@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
 import { RowSchema } from '@/datasources/db/v2/entities/row.entity';
 import { WalletSchema } from '@/modules/wallets/domain/entities/wallet.entity';
@@ -17,11 +18,13 @@ export type User = z.infer<typeof UserSchema>;
 export const UserSchema: z.ZodType<
   z.infer<typeof RowSchema> & {
     status: keyof typeof UserStatus;
+    extUserId: string | null;
     wallets: Array<Wallet>;
     members: Array<Member>;
   }
 > = RowSchema.extend({
   status: z.enum(getStringEnumKeys(UserStatus)),
+  extUserId: z.string().min(1).max(255).nullable(),
   wallets: z.array(WalletSchema),
   members: z.array(z.lazy(() => MemberSchema)),
 });

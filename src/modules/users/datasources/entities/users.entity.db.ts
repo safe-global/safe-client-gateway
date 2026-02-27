@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import {
   Column,
   Entity,
@@ -25,6 +26,18 @@ export class User implements DomainUser {
     transformer: databaseEnumTransformer(UserStatus),
   })
   status!: keyof typeof UserStatus;
+
+  @Index('idx_users_ext_user_id', {
+    unique: true,
+    where: '"ext_user_id" IS NOT NULL',
+  })
+  @Column({
+    name: 'ext_user_id',
+    type: 'varchar',
+    length: 255,
+    nullable: true,
+  })
+  extUserId!: string | null;
 
   @OneToMany(() => Wallet, (wallet: Wallet) => wallet.id, {
     onDelete: 'CASCADE',
