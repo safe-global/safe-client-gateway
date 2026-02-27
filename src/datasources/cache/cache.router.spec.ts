@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { CacheRouter } from '@/datasources/cache/cache.router';
 import { getAddress } from 'viem';
 

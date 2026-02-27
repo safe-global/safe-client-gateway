@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import crypto from 'crypto';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import type { Address, Hash } from 'viem';
