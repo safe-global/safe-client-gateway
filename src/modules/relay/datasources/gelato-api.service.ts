@@ -12,6 +12,8 @@ import {
   CacheService,
   ICacheService,
 } from '@/datasources/cache/cache.service.interface';
+import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import { asError } from '@/logging/utils';
 import {
   type Relay,
   type GelatoRelayResponse,
@@ -35,6 +37,7 @@ export class GelatoApi implements IRelayApi {
     private readonly configurationService: IConfigurationService,
     private readonly httpErrorFactory: HttpErrorFactory,
     @Inject(CacheService) private readonly cacheService: ICacheService,
+    @Inject(LoggingService) private readonly loggingService: ILoggingService,
   ) {
     this.baseUri =
       this.configurationService.getOrThrow<string>('relay.baseUri');
@@ -73,6 +76,9 @@ export class GelatoApi implements IRelayApi {
       const response = GelatoRelayResponseSchema.parse(data);
       return { taskId: response.result };
     } catch (error) {
+      this.loggingService.error(
+        `Error relaying transaction for chain ${args.chainId}: ${asError(error).message}`,
+      );
       throw this.httpErrorFactory.from(error);
     }
   }
@@ -114,6 +120,9 @@ export class GelatoApi implements IRelayApi {
       const response = GelatoTaskStatusResponseSchema.parse(data);
       return response.result;
     } catch (error) {
+      this.loggingService.error(
+        `Error getting task status ${args.taskId} for chain ${args.chainId}: ${asError(error).message}`,
+      );
       throw this.httpErrorFactory.from(error);
     }
   }
