@@ -1,4 +1,5 @@
-import { convertToDate } from '@/datasources/common/utils';
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { convertToDate } from '@/modules/targeted-messaging/datasources/entities/utils';
 import { Outreach as DbOutreach } from '@/modules/targeted-messaging/datasources/entities/outreach.entity';
 import { Outreach } from '@/modules/targeted-messaging/domain/entities/outreach.entity';
 import { Injectable } from '@nestjs/common';
