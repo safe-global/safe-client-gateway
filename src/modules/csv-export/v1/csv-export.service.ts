@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { ICloudStorageApiService } from '@/datasources/storage/cloud-storage-api.service';
 import { CsvService } from '@/modules/csv-export/csv-utils/csv.service';
@@ -20,7 +21,7 @@ import {
   JobStatusDto,
   JobStatusResponseDto,
   toJobStatusDto,
-} from '@/routes/jobs/entities/job-status.dto';
+} from '@/modules/csv-export/v1/entities/job-status.dto';
 import { LogType } from '@/domain/common/entities/log-type.entity';
 import { FileStorageType } from '@/config/entities/schemas/configuration.schema';
 import { asError } from '@/logging/utils';
