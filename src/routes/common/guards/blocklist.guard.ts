@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { IBlocklistService } from '@/config/entities/blocklist.interface';
 import { LogType } from '@/domain/common/entities/log-type.entity';
