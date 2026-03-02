@@ -182,7 +182,15 @@ export default (): ReturnType<typeof configuration> => ({
     requestTimeout: faker.number.int(),
     ownersTimeout: faker.number.int(),
   },
+  undici: {
+    connections: faker.number.int({ min: 1, max: 50 }),
+    pipelining: faker.number.int({ min: 0, max: 10 }),
+    connectTimeout: faker.number.int({ min: 1000, max: 30000 }),
+    keepAliveTimeout: faker.number.int({ min: 1000, max: 10000 }),
+    keepAliveMaxTimeout: faker.number.int({ min: 100000, max: 600000 }),
+  },
   circuitBreaker: {
+    enabled: true,
     failureThreshold: faker.number.int(),
     successThreshold: faker.number.int(),
     timeout: faker.number.int(),
@@ -346,6 +354,12 @@ export default (): ReturnType<typeof configuration> => ({
   safeTransaction: {
     useVpcUrl: false,
     apiKey: faker.string.hexadecimal({ length: 32 }),
+  },
+  transactions: {
+    statusIndexingGracePeriodMs: faker.number.int({
+      min: 60_000,
+      max: 300_000,
+    }),
   },
   safeWebApp: {
     baseUri: faker.internet.url({ appendSlash: false }),

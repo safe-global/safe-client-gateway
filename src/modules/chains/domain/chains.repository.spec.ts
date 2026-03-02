@@ -43,8 +43,8 @@ const mockConfigurationService = jest.mocked({
 describe('ChainsRepository', () => {
   // According to the limits of the Config Service
   // @see https://github.com/safe-global/safe-config-service/blob/main/src/chains/views.py#L14-L16
-  const OFFSET = 40;
-  const MAX_LIMIT = 40;
+  const OFFSET = 100;
+  const MAX_LIMIT = 100;
 
   let target: ChainsRepository;
   const maxSequentialPages = 3;
