@@ -54,6 +54,10 @@ describe('Safes Controller', () => {
     await app.init();
   });
 
+  afterEach(async () => {
+    await app.close();
+  });
+
   it('safe info is correctly serialised', async () => {
     const masterCopyVersion = faker.system.semver();
     const chain = chainBuilder()

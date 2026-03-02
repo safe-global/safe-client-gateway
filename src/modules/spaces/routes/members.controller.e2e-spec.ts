@@ -367,6 +367,59 @@ describe('MembersController', () => {
         });
     });
 
+    it('should throw a 401 if the signer is an admin of another space', async () => {
+      const adminAuthPayloadDto = authPayloadDtoBuilder().build();
+      const adminAccessToken = jwtService.sign(adminAuthPayloadDto);
+      const targetSpaceOwnerAuthPayloadDto = authPayloadDtoBuilder().build();
+      const targetSpaceOwnerAccessToken = jwtService.sign(
+        targetSpaceOwnerAuthPayloadDto,
+      );
+      const user = getAddress(faker.finance.ethereumAddress());
+      const userName = faker.person.firstName();
+
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${adminAccessToken}`])
+        .expect(201);
+
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${targetSpaceOwnerAccessToken}`])
+        .expect(201);
+
+      await request(app.getHttpServer())
+        .post('/v1/spaces')
+        .set('Cookie', [`access_token=${adminAccessToken}`])
+        .send({ name: nameBuilder() })
+        .expect(201);
+
+      const targetSpaceResponse = await request(app.getHttpServer())
+        .post('/v1/spaces')
+        .set('Cookie', [`access_token=${targetSpaceOwnerAccessToken}`])
+        .send({ name: nameBuilder() })
+        .expect(201);
+      const targetSpaceId = targetSpaceResponse.body.id;
+
+      await request(app.getHttpServer())
+        .post(`/v1/spaces/${targetSpaceId}/members/invite`)
+        .set('Cookie', [`access_token=${adminAccessToken}`])
+        .send({
+          users: [
+            {
+              role: 'MEMBER',
+              address: user,
+              name: userName,
+            },
+          ],
+        })
+        .expect(401)
+        .expect({
+          message: 'Signer is not an active admin.',
+          error: 'Unauthorized',
+          statusCode: 401,
+        });
+    });
+
     it('should throw a 401 if the signer is not an admin', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);

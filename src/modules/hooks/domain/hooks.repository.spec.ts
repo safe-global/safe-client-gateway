@@ -34,6 +34,7 @@ const mockChainsRepository = jest.mocked({
   getChain: jest.fn(),
   getChains: jest.fn(),
   clearChain: jest.fn(),
+  clearChainV2: jest.fn(),
   isSupportedChain: jest.fn(),
 } as jest.MockedObjectDeep<ChainsRepository>);
 
@@ -166,6 +167,7 @@ describe('HooksRepository (Unit)', () => {
       .build();
     mockChainsRepository.isSupportedChain.mockResolvedValue(false);
     mockChainsRepository.clearChain.mockResolvedValue();
+    mockChainsRepository.clearChainV2.mockResolvedValue();
 
     // same event 3 times
     await hooksRepository.onEvent(event);
@@ -180,6 +182,7 @@ describe('HooksRepository (Unit)', () => {
 
     // 3 calls to repositories
     expect(mockChainsRepository.clearChain).toHaveBeenCalledTimes(3);
+    expect(mockChainsRepository.clearChainV2).toHaveBeenCalledTimes(3);
     expect(mockBlockchainRepository.clearApi).toHaveBeenCalledTimes(3);
     expect(mockStakingRepository.clearApi).toHaveBeenCalledTimes(3);
     expect(mockEarnRepository.clearApi).toHaveBeenCalledTimes(3);
@@ -194,6 +197,7 @@ describe('HooksRepository (Unit)', () => {
       .build();
     mockChainsRepository.isSupportedChain.mockResolvedValue(true);
     mockChainsRepository.clearChain.mockResolvedValue();
+    mockChainsRepository.clearChainV2.mockResolvedValue();
 
     await hooksRepository.onEvent(event);
     await hooksRepository.onEvent(event);

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Module } from '@nestjs/common';
 import { AddressInfoModule } from '@/routes/common/address-info/address-info.module';
 import { SafesController } from '@/modules/safe/routes/safes.controller';
@@ -13,6 +14,7 @@ import { TransactionApiManagerModule } from '@/domain/interfaces/transaction-api
 import { TransactionVerifierHelper } from '@/modules/transactions/routes/helpers/transaction-verifier.helper';
 import { DelegatesV2RepositoryModule } from '@/modules/delegate/domain/v2/delegates.v2.repository.interface';
 import { ContractsModule } from '@/modules/contracts/contracts.module';
+import { FeatureFlagsModule } from '@/modules/chains/feature-flags/feature-flags.module';
 
 @Module({
   imports: [
@@ -23,6 +25,7 @@ import { ContractsModule } from '@/modules/contracts/contracts.module';
     TransactionApiManagerModule,
     DelegatesV2RepositoryModule,
     ContractsModule,
+    FeatureFlagsModule,
   ],
   controllers: [SafesController, SafesV2Controller],
   providers: [

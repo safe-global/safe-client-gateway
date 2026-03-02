@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import crypto from 'crypto';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import type { Address, Hash } from 'viem';
@@ -78,10 +79,13 @@ export class CacheRouter {
   private static readonly ZERION_POSITIONS_KEY = 'zerion_positions';
   private static readonly ZERION_CHAINS_KEY = 'zerion_chains';
   private static readonly PORTFOLIO_KEY = 'portfolio';
+  private static readonly ZERION_WALLET_PORTFOLIO_KEY =
+    'zerion_wallet_portfolio';
   private static readonly ORM_QUERY_CACHE_KEY = 'orm_query_cache';
   private static readonly TRANSACTIONS_EXPORT_KEY = 'transactions_export';
   private static readonly CONTRACT_ANALYSIS_KEY = 'contract_analysis';
   private static readonly RECIPIENT_ANALYSIS_KEY = 'recipient_analysis';
+  private static readonly GAS_PRICE_KEY = 'gas_price';
 
   static getAuthNonceCacheKey(nonce: string): string {
     return `${CacheRouter.AUTH_NONCE_KEY}_${nonce}`;
@@ -566,6 +570,34 @@ export class CacheRouter {
     return new CacheDir(CacheRouter.getChainCacheKey(chainId), '');
   }
 
+  static getChainsCacheKeyV2(serviceKey: string): string {
+    return `${CacheRouter.CHAINS_KEY}_v2_${serviceKey}`;
+  }
+
+  static getChainsCacheDirV2(
+    serviceKey: string,
+    args: {
+      limit?: number;
+      offset?: number;
+    },
+  ): CacheDir {
+    return new CacheDir(
+      CacheRouter.getChainsCacheKeyV2(serviceKey),
+      `${args.limit}_${args.offset}`,
+    );
+  }
+
+  static getChainCacheKeyV2(serviceKey: string, chainId: string): string {
+    return `${chainId}_${CacheRouter.CHAIN_KEY}_v2_${serviceKey}`;
+  }
+
+  static getChainCacheDirV2(serviceKey: string, chainId: string): CacheDir {
+    return new CacheDir(
+      CacheRouter.getChainCacheKeyV2(serviceKey, chainId),
+      '',
+    );
+  }
+
   static getRelayKey(args: { chainId: string; address: Address }): string {
     return `${args.chainId}_${CacheRouter.RELAY_KEY}_${args.address}`;
   }
@@ -942,6 +974,9 @@ export class CacheRouter {
     return `${CacheRouter.PORTFOLIO_KEY}_${args.address}_zerion`;
   }
 
+  /**
+   * Cache for full portfolio (positions endpoint). Zerion /v1/wallets/{address}/positions.
+   */
   static getPortfolioCacheDir(args: {
     address: Address;
     fiatCode: string;
@@ -952,7 +987,28 @@ export class CacheRouter {
     const testnetSuffix = args.isTestnet ? '_testnet' : '';
     return new CacheDir(
       CacheRouter.getPortfolioCacheKey(args),
-      `${args.fiatCode.toUpperCase()}${trustedSuffix}${testnetSuffix}`,
+      `${args.fiatCode.toLowerCase()}${trustedSuffix}${testnetSuffix}`,
+    );
+  }
+
+  static getZerionWalletPortfolioCacheKey(args: { address: Address }): string {
+    return `${CacheRouter.ZERION_WALLET_PORTFOLIO_KEY}_${args.address}`;
+  }
+
+  /**
+   * Cache for wallet portfolio summary. Zerion /v1/wallets/{address}/portfolio.
+   */
+  static getZerionWalletPortfolioCacheDir(args: {
+    address: Address;
+    fiatCode: string;
+    trusted?: boolean;
+    isTestnet?: boolean;
+  }): CacheDir {
+    const trustedSuffix = args.trusted ? '_trusted' : '';
+    const testnetSuffix = args.isTestnet ? '_testnet' : '';
+    return new CacheDir(
+      CacheRouter.getZerionWalletPortfolioCacheKey(args),
+      `${args.fiatCode.toLowerCase()}${trustedSuffix}${testnetSuffix}`,
     );
   }
 
@@ -968,5 +1024,9 @@ export class CacheRouter {
       field = isTestnet ? 'mapping_testnet' : 'mapping';
     }
     return new CacheDir(CacheRouter.ZERION_CHAINS_KEY, field);
+  }
+
+  static getGasPriceCacheDir(chainId: string): CacheDir {
+    return new CacheDir(`${chainId}_${CacheRouter.GAS_PRICE_KEY}`, '');
   }
 }

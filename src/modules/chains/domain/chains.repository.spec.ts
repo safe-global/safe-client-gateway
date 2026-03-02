@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker/.';
 import chunk from 'lodash/chunk';
 import { getAddress } from 'viem';
@@ -10,6 +11,7 @@ import { ChainsRepository } from '@/modules/chains/domain/chains.repository';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
 import type { IConfigApi } from '@/domain/interfaces/config-api.interface';
+import type { IEtherscanApi } from '@/domain/interfaces/etherscan-api.interface';
 import type { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
 import type { Page } from '@/domain/entities/page.entity';
 import type { ILoggingService } from '@/logging/logging.interface';
@@ -20,7 +22,13 @@ const mockLoggingService = {
 } as jest.MockedObjectDeep<ILoggingService>;
 const mockConfigApi = {
   getChains: jest.fn(),
+  getChainsV2: jest.fn(),
+  getChainV2: jest.fn(),
+  clearChainV2: jest.fn(),
 } as jest.MockedObjectDeep<IConfigApi>;
+const mockEtherscanApi = {
+  getGasPrice: jest.fn(),
+} as jest.MockedObjectDeep<IEtherscanApi>;
 const mockTransactionApiManager =
   {} as jest.MockedObjectDeep<ITransactionApiManager>;
 const mockConfigurationService = jest.mocked({
@@ -35,8 +43,8 @@ const mockConfigurationService = jest.mocked({
 describe('ChainsRepository', () => {
   // According to the limits of the Config Service
   // @see https://github.com/safe-global/safe-config-service/blob/main/src/chains/views.py#L14-L16
-  const OFFSET = 40;
-  const MAX_LIMIT = 40;
+  const OFFSET = 100;
+  const MAX_LIMIT = 100;
 
   let target: ChainsRepository;
   const maxSequentialPages = 3;
@@ -52,6 +60,7 @@ describe('ChainsRepository', () => {
     target = new ChainsRepository(
       mockLoggingService,
       mockConfigApi,
+      mockEtherscanApi,
       mockTransactionApiManager,
       mockConfigurationService,
     );
@@ -306,5 +315,130 @@ describe('ChainsRepository', () => {
       1,
       'More chains available despite request limit reached',
     );
+  });
+
+  describe('V2 API methods', () => {
+    const serviceKey = 'WALLET_WEB';
+
+    it('should return chains from v2 endpoint', async () => {
+      const limit = faker.number.int({ max: 10 });
+      const offset = faker.number.int({ max: 10 });
+      const chains = [chainBuilder().build(), chainBuilder().build()];
+      const page = rawify(
+        pageBuilder<Chain>()
+          .with('results', chains)
+          .with('count', chains.length)
+          .with('previous', null)
+          .with('next', null)
+          .build(),
+      );
+      mockConfigApi.getChainsV2.mockResolvedValueOnce(page);
+
+      const result = await target.getChainsV2(serviceKey, limit, offset);
+
+      expect(result.count).toBe(chains.length);
+      expect(result.results).toHaveLength(chains.length);
+      expect(result.results[0].chainId).toBe(chains[0].chainId);
+      expect(result.results[1].chainId).toBe(chains[1].chainId);
+      expect(result.results[0].ensRegistryAddress).toBe(
+        chains[0].ensRegistryAddress
+          ? getAddress(chains[0].ensRegistryAddress)
+          : null,
+      );
+      expect(result.results[1].ensRegistryAddress).toBe(
+        chains[1].ensRegistryAddress
+          ? getAddress(chains[1].ensRegistryAddress)
+          : null,
+      );
+      expect(result.next).toBeNull();
+      expect(result.previous).toBeNull();
+      expect(mockConfigApi.getChainsV2).toHaveBeenCalledTimes(1);
+      expect(mockConfigApi.getChainsV2).toHaveBeenCalledWith(serviceKey, {
+        limit,
+        offset,
+      });
+    });
+
+    it('should return single chain from v2 endpoint', async () => {
+      const chainId = faker.string.numeric();
+      const chain = chainBuilder().with('chainId', chainId).build();
+      const rawChain = rawify(chain);
+      mockConfigApi.getChainV2.mockResolvedValueOnce(rawChain);
+
+      const result = await target.getChainV2(serviceKey, chainId);
+
+      expect(result).toStrictEqual({
+        ...chain,
+        ensRegistryAddress: chain.ensRegistryAddress
+          ? getAddress(chain.ensRegistryAddress)
+          : null,
+      });
+      expect(mockConfigApi.getChainV2).toHaveBeenCalledTimes(1);
+      expect(mockConfigApi.getChainV2).toHaveBeenCalledWith(
+        serviceKey,
+        chainId,
+      );
+    });
+
+    it('should return chains from v2 endpoint using CGW service key', async () => {
+      const serviceKey = 'CGW';
+      const limit = faker.number.int({ max: 10 });
+      const offset = faker.number.int({ max: 10 });
+      const chains = [chainBuilder().build(), chainBuilder().build()];
+      const page = rawify(
+        pageBuilder<Chain>()
+          .with('results', chains)
+          .with('count', chains.length)
+          .with('previous', null)
+          .with('next', null)
+          .build(),
+      );
+      mockConfigApi.getChainsV2.mockResolvedValueOnce(page);
+
+      const result = await target.getChainsV2(serviceKey, limit, offset);
+
+      expect(result.count).toBe(chains.length);
+      expect(result.results).toHaveLength(chains.length);
+      expect(mockConfigApi.getChainsV2).toHaveBeenCalledTimes(1);
+      expect(mockConfigApi.getChainsV2).toHaveBeenCalledWith(serviceKey, {
+        limit,
+        offset,
+      });
+    });
+
+    it('should return single chain from v2 endpoint using CGW service key', async () => {
+      const serviceKey = 'CGW';
+      const chainId = faker.string.numeric();
+      const chain = chainBuilder().with('chainId', chainId).build();
+      const rawChain = rawify(chain);
+      mockConfigApi.getChainV2.mockResolvedValueOnce(rawChain);
+
+      const result = await target.getChainV2(serviceKey, chainId);
+
+      expect(result).toStrictEqual({
+        ...chain,
+        ensRegistryAddress: chain.ensRegistryAddress
+          ? getAddress(chain.ensRegistryAddress)
+          : null,
+      });
+      expect(mockConfigApi.getChainV2).toHaveBeenCalledTimes(1);
+      expect(mockConfigApi.getChainV2).toHaveBeenCalledWith(
+        serviceKey,
+        chainId,
+      );
+    });
+
+    it('should clear v2 cache for a chain', async () => {
+      const chainId = faker.string.numeric();
+      mockConfigApi.clearChainV2.mockResolvedValueOnce(undefined);
+
+      await target.clearChainV2(chainId, serviceKey);
+
+      expect(mockConfigApi.clearChainV2).toHaveBeenCalledTimes(1);
+      expect(mockConfigApi.clearChainV2).toHaveBeenCalledWith(
+        serviceKey,
+        chainId,
+      );
+    });
   });
 });

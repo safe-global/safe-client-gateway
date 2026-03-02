@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
 import {
@@ -9,6 +10,7 @@ import { Singleton } from '@/modules/chains/domain/entities/singleton.entity';
 import { SingletonsSchema } from '@/modules/chains/domain/entities/schemas/singleton.schema';
 import { Page } from '@/domain/entities/page.entity';
 import { IConfigApi } from '@/domain/interfaces/config-api.interface';
+import { IEtherscanApi } from '@/domain/interfaces/etherscan-api.interface';
 import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
 import {
   IndexingStatus,
@@ -19,18 +21,23 @@ import differenceBy from 'lodash/differenceBy';
 import { PaginationData } from '@/routes/common/pagination/pagination.data';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { LenientBasePageSchema } from '@/domain/entities/schemas/page.schema.factory';
+import {
+  GasPriceResponse,
+  GasPriceResponseSchema,
+} from '@/modules/chains/domain/entities/gas-price-response.entity';
 
 @Injectable()
 export class ChainsRepository implements IChainsRepository {
   // According to the limits of the Config Service
   // @see https://github.com/safe-global/safe-config-service/blob/main/src/chains/views.py#L14-L16
-  static readonly MAX_LIMIT = 40;
+  static readonly MAX_LIMIT = 100;
 
   private readonly maxSequentialPages: number;
 
   constructor(
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
     @Inject(IConfigApi) private readonly configApi: IConfigApi,
+    @Inject(IEtherscanApi) private readonly etherscanApi: IEtherscanApi,
     @Inject(ITransactionApiManager)
     private readonly transactionApiManager: ITransactionApiManager,
     @Inject(IConfigurationService)
@@ -62,6 +69,33 @@ export class ChainsRepository implements IChainsRepository {
       });
     }
     return valid;
+  }
+
+  async getChainsV2(
+    serviceKey: string,
+    limit?: number,
+    offset?: number,
+  ): Promise<Page<Chain>> {
+    const page = await this.configApi
+      .getChainsV2(serviceKey, { limit, offset })
+      .then(LenientBasePageSchema.parse);
+    const valid = ChainLenientPageSchema.parse(page);
+    if (valid.results.length < page.results.length) {
+      this.loggingService.error({
+        message: 'Some chains could not be parsed',
+        errors: differenceBy(page.results, valid.results, 'chainId'),
+      });
+    }
+    return valid;
+  }
+
+  async getChainV2(serviceKey: string, chainId: string): Promise<Chain> {
+    const chain = await this.configApi.getChainV2(serviceKey, chainId);
+    return ChainSchema.parse(chain);
+  }
+
+  async clearChainV2(chainId: string, serviceKey: string): Promise<void> {
+    return this.configApi.clearChainV2(serviceKey, chainId);
   }
 
   async getAllChains(): Promise<Array<Chain>> {
@@ -110,5 +144,10 @@ export class ChainsRepository implements IChainsRepository {
     return this.getChain(chainId)
       .then(() => true)
       .catch(() => false);
+  }
+
+  async getGasPrice(chainId: string): Promise<GasPriceResponse> {
+    const gasPrice = await this.etherscanApi.getGasPrice(chainId);
+    return GasPriceResponseSchema.parse(gasPrice);
   }
 }

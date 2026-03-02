@@ -10,6 +10,7 @@ import { ChainsService } from '@/modules/chains/routes/chains.service';
 import { AboutChain } from '@/modules/chains/routes/entities/about-chain.entity';
 import { ChainPage } from '@/modules/chains/routes/entities/chain-page.entity';
 import { Chain } from '@/modules/chains/routes/entities/chain.entity';
+import { GasPriceResponse } from '@/modules/chains/routes/entities/gas-price-response.entity';
 import { MasterCopy } from '@/modules/chains/routes/entities/master-copy.entity';
 import { PaginationDataDecorator } from '@/routes/common/decorators/pagination.data.decorator';
 import { RouteUrlDecorator } from '@/routes/common/decorators/route.url.decorator';
@@ -155,5 +156,15 @@ export class ChainsController {
     @Param('chainId') chainId: string,
   ): Promise<IndexingStatus> {
     return this.chainsService.getIndexingStatus(chainId);
+  }
+
+  @ApiOperation({ summary: 'Get gas price from oracle' })
+  @ApiParam({ name: 'chainId', type: 'string', example: '1' })
+  @ApiOkResponse({ type: GasPriceResponse })
+  @Get('/:chainId/gas-price')
+  async getGasPrice(
+    @Param('chainId') chainId: string,
+  ): Promise<GasPriceResponse> {
+    return this.chainsService.getGasPrice(chainId);
   }
 }

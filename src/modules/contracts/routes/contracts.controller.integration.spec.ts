@@ -18,9 +18,7 @@ describe('Contracts controller', () => {
   let safeDataDecoderUrl: string;
   let networkService: jest.MockedObjectDeep<INetworkService>;
 
-  beforeEach(async () => {
-    jest.resetAllMocks();
-
+  beforeAll(async () => {
     const moduleFixture = await createTestModule();
 
     const configurationService = moduleFixture.get<IConfigurationService>(
@@ -38,6 +36,10 @@ describe('Contracts controller', () => {
 
   afterAll(async () => {
     await app.close();
+  });
+
+  beforeEach(() => {
+    jest.resetAllMocks();
   });
 
   describe('GET contract data for an address', () => {

@@ -85,7 +85,7 @@ describe('Transactions History Controller', () => {
     await app.init();
   });
 
-  afterAll(async () => {
+  afterEach(async () => {
     await app.close();
   });
 
@@ -970,6 +970,9 @@ describe('Transactions History Controller', () => {
           queued: false,
           // Param ValidationPipe checksums address
           safe: getAddress(safeAddress),
+        },
+        circuitBreaker: {
+          key: `txs-service-${chainId}`,
         },
       },
     });

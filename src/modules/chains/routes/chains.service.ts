@@ -7,6 +7,7 @@ import { MasterCopy } from '@/modules/chains/routes/entities/master-copy.entity'
 import { Page } from '@/domain/entities/page.entity';
 import { AboutChain } from '@/modules/chains/routes/entities/about-chain.entity';
 import { Chain } from '@/modules/chains/routes/entities/chain.entity';
+import { GasPriceResponse } from '@/modules/chains/routes/entities/gas-price-response.entity';
 import {
   PaginationData,
   cursorUrlFromLimitAndOffset,
@@ -98,5 +99,9 @@ export class ChainsService {
       synced: indexingStatus.synced,
       lastSync,
     });
+  }
+
+  async getGasPrice(chainId: string): Promise<GasPriceResponse> {
+    return this.chainsRepository.getGasPrice(chainId);
   }
 }

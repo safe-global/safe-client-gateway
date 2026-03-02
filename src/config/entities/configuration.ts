@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { RelayRules } from '@/modules/relay/domain/entities/relay.configuration';
 
 // Custom configuration for the application
@@ -301,7 +302,27 @@ export default () => ({
       process.env.HTTP_CLIENT_REQUEST_TIMEOUT_MILLISECONDS_OWNERS ?? `${5_000}`,
     ),
   },
+  undici: {
+    // Maximum number of connections per origin. Defaults to 100.
+    connections: parseInt(process.env.UNDICI_CONNECTIONS ?? `${100}`),
+    // Number of requests to pipeline. Defaults to 1 (no pipelining).
+    pipelining: parseInt(process.env.UNDICI_PIPELINING ?? `${1}`),
+    // Timeout for socket connection in milliseconds. Defaults to 10000 (10 seconds).
+    connectTimeout: parseInt(
+      process.env.UNDICI_CONNECT_TIMEOUT_MILLISECONDS ?? `${10_000}`,
+    ),
+    // Time of inactivity on socket in milliseconds before closing. Defaults to 30000 (30 seconds).
+    keepAliveTimeout: parseInt(
+      process.env.UNDICI_KEEP_ALIVE_TIMEOUT_MILLISECONDS ?? `${30_000}`,
+    ),
+    // Maximum time to keep a connection alive in milliseconds. Defaults to 600000 (600 seconds / 10 minutes).
+    keepAliveMaxTimeout: parseInt(
+      process.env.UNDICI_KEEP_ALIVE_MAX_TIMEOUT_MILLISECONDS ?? `${600_000}`,
+    ),
+  },
   circuitBreaker: {
+    // Whether the circuit breaker is enabled
+    enabled: process.env.CIRCUIT_BREAKER_ENABLED?.toLowerCase() !== 'false',
     // Number of failures before the circuit opens
     failureThreshold: parseInt(
       process.env.CIRCUIT_BREAKER_FAILURE_THRESHOLD ?? `${20}`,
@@ -400,7 +421,7 @@ export default () => ({
   },
   relay: {
     baseUri:
-      process.env.RELAY_PROVIDER_API_BASE_URI || 'https://api.gelato.digital',
+      process.env.RELAY_PROVIDER_API_BASE_URI || 'https://api.gelato.cloud',
     limit: parseInt(process.env.RELAY_THROTTLE_LIMIT ?? `${5}`),
     ttlSeconds: parseInt(
       process.env.RELAY_THROTTLE_TTL_SECONDS ?? `${60 * 60 * 24}`,
@@ -486,6 +507,7 @@ export default () => ({
         process.env.SAFE_CONFIG_SAFES_MAX_SEQUENTIAL_PAGES ?? `${10}`,
       ),
     },
+    cgwServiceKey: process.env.SAFE_CONFIG_CGW_KEY || 'CGW',
   },
   safeDataDecoder: {
     baseUri:
@@ -495,6 +517,11 @@ export default () => ({
   safeTransaction: {
     useVpcUrl: process.env.USE_TX_SERVICE_VPC_URL?.toLowerCase() === 'true',
     apiKey: process.env.TX_SERVICE_API_KEY,
+  },
+  transactions: {
+    statusIndexingGracePeriodMs: parseInt(
+      process.env.TRANSACTION_STATUS_INDEXING_GRACE_PERIOD_MS ?? `${60 * 1000}`,
+    ),
   },
   safeWebApp: {
     baseUri: process.env.SAFE_WEB_APP_BASE_URI || 'https://app.safe.global',
@@ -658,6 +685,14 @@ export default () => ({
         apiKey: process.env.BLOCKAID_CLIENT_API_KEY,
       },
     },
+  },
+  etherscan: {
+    baseUri:
+      process.env.ETHERSCAN_BASE_URI || 'https://api.etherscan.io/v2/api',
+    apiKey: process.env.ETHERSCAN_API_KEY,
+    gasPriceCacheTtlSeconds: parseInt(
+      process.env.ETHERSCAN_GAS_PRICE_CACHE_TTL_SECONDS ?? `${10}`,
+    ),
   },
   captcha: {
     enabled: process.env.CAPTCHA_ENABLED?.toLowerCase() === 'true',

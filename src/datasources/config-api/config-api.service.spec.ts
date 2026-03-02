@@ -224,6 +224,93 @@ describe('ConfigApi', () => {
     expect(mockHttpErrorFactory.from).toHaveBeenCalledTimes(1);
   });
 
+  describe('V2 API methods', () => {
+    it('should return the chains retrieved from v2 endpoint', async () => {
+      const serviceKey = faker.word.sample();
+      const limit = faker.number.int({ max: 10 });
+      const offset = faker.number.int({ max: 10 });
+      const chains = [chainBuilder().build()];
+      const expected = rawify(chains);
+      mockDataSource.get.mockResolvedValueOnce(expected);
+
+      const actual = await service.getChainsV2(serviceKey, { limit, offset });
+
+      expect(actual).toBe(expected);
+      expect(mockDataSource.get).toHaveBeenCalledWith({
+        cacheDir: new CacheDir(`chains_v2_${serviceKey}`, `${limit}_${offset}`),
+        url: `${baseUri}/api/v2/chains/${serviceKey}`,
+        notFoundExpireTimeSeconds: notFoundExpirationTimeInSeconds,
+        networkRequest: { params: { limit, offset } },
+        expireTimeSeconds: expirationTimeInSeconds,
+      });
+    });
+
+    it('should return the chain retrieved from v2 endpoint', async () => {
+      const serviceKey = faker.word.sample();
+      const chainId = faker.string.numeric();
+      const chain = chainBuilder().build();
+      const expected = rawify(chain);
+      mockDataSource.get.mockResolvedValueOnce(expected);
+
+      const actual = await service.getChainV2(serviceKey, chainId);
+
+      expect(actual).toBe(expected);
+      expect(mockDataSource.get).toHaveBeenCalledWith({
+        cacheDir: new CacheDir(`${chainId}_chain_v2_${serviceKey}`, ''),
+        url: `${baseUri}/api/v2/chains/${serviceKey}/${chainId}`,
+        notFoundExpireTimeSeconds: notFoundExpirationTimeInSeconds,
+        networkRequest: undefined,
+        expireTimeSeconds: expirationTimeInSeconds,
+      });
+    });
+
+    it('should clear v2 cache for a given service and chain', async () => {
+      const serviceKey = faker.word.sample();
+      const chainId = faker.string.numeric();
+
+      await service.clearChainV2(serviceKey, chainId);
+
+      expect(mockCacheService.deleteByKey).toHaveBeenCalledTimes(2);
+      expect(mockCacheService.deleteByKey).toHaveBeenCalledWith(
+        `${chainId}_chain_v2_${serviceKey}`,
+      );
+      expect(mockCacheService.deleteByKey).toHaveBeenCalledWith(
+        `chains_v2_${serviceKey}`,
+      );
+    });
+
+    it('should forward error from v2 chains endpoint', async () => {
+      const serviceKey = faker.word.sample();
+      const error = new DataSourceError('Some error', 500);
+      const expected = new DataSourceError('Some error', 500);
+      mockDataSource.get.mockRejectedValueOnce(error);
+      mockHttpErrorFactory.from.mockReturnValueOnce(expected);
+
+      await expect(service.getChainsV2(serviceKey, {})).rejects.toThrow(
+        expected,
+      );
+
+      expect(mockDataSource.get).toHaveBeenCalledTimes(1);
+      expect(mockHttpErrorFactory.from).toHaveBeenCalledTimes(1);
+    });
+
+    it('should forward error from v2 chain endpoint', async () => {
+      const serviceKey = faker.word.sample();
+      const chainId = faker.string.numeric();
+      const error = new DataSourceError('Some error', 500);
+      const expected = new DataSourceError('Some error', 500);
+      mockDataSource.get.mockRejectedValueOnce(error);
+      mockHttpErrorFactory.from.mockReturnValueOnce(expected);
+
+      await expect(service.getChainV2(serviceKey, chainId)).rejects.toThrow(
+        expected,
+      );
+
+      expect(mockDataSource.get).toHaveBeenCalledTimes(1);
+      expect(mockHttpErrorFactory.from).toHaveBeenCalledTimes(1);
+    });
+  });
+
   describe('Cache-clearing tests', () => {
     beforeEach(() => {
       jest.useFakeTimers();

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import {
   DynamicModule,
   MiddlewareConsumer,
@@ -11,6 +12,7 @@ import { CacheModule as InMemoryCacheModule } from '@nestjs/cache-manager';
 import { ClsMiddleware, ClsModule } from 'nestjs-cls';
 import { join } from 'path';
 import { ChainsModule } from '@/modules/chains/chains.module';
+import { FeatureFlagsModule } from '@/modules/chains/feature-flags/feature-flags.module';
 import { BalancesModule } from '@/modules/balances/balances.module';
 import { PositionsModule } from '@/modules/positions/positions.module';
 import { PortfolioModule } from '@/modules/portfolio/portfolio.module';
@@ -85,6 +87,7 @@ export class AppModule implements NestModule {
         ...(isZerionPositionsFeatureEnabled ? [PositionsModule] : []),
         PortfolioModule,
         ChainsModule,
+        FeatureFlagsModule,
         CollectiblesModule,
         CommunityModule,
         ContractsModule,

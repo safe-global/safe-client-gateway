@@ -20,7 +20,6 @@ describe('Safe Apps Controller', () => {
 
   beforeEach(async () => {
     jest.resetAllMocks();
-
     const moduleFixture = await createTestModule();
 
     const configurationService = moduleFixture.get<IConfigurationService>(
@@ -33,7 +32,7 @@ describe('Safe Apps Controller', () => {
     await app.init();
   });
 
-  afterAll(async () => {
+  afterEach(async () => {
     await app.close();
   });
 

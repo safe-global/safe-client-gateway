@@ -94,7 +94,7 @@ describe('Get by id - Transactions Controller', () => {
     await initApp(testConfiguration);
   });
 
-  afterAll(async () => {
+  afterEach(async () => {
     await app.close();
   });
   it('Failure: Config API fails', async () => {
@@ -161,6 +161,11 @@ describe('Get by id - Transactions Controller', () => {
     expect(networkService.get).toHaveBeenCalledWith({ url: getChainUrl });
     expect(networkService.get).toHaveBeenCalledWith({
       url: getModuleTransactionUrl,
+      networkRequest: {
+        circuitBreaker: {
+          key: `txs-service-${chain.chainId}`,
+        },
+      },
     });
   });
 

@@ -18,6 +18,7 @@ import { PaginationData } from '@/routes/common/pagination/pagination.data';
 import { getAddress } from 'viem';
 import type { Server } from 'net';
 import { indexingStatusBuilder } from '@/modules/chains/domain/entities/__tests__/indexing-status.builder';
+import { gasPriceResponseBuilder } from '@/modules/chains/domain/entities/__tests__/gas-price-response.builder';
 import { BlockchainModule } from '@/modules/blockchain/blockchain.module';
 import { TestBlockchainApiManagerModule } from '@/modules/blockchain/datasources/__tests__/test.blockchain-api.manager';
 import { rawify } from '@/validation/entities/raw.entity';
@@ -30,6 +31,7 @@ describe('Chains Controller', () => {
   let name: string;
   let version: string;
   let buildNumber: string;
+  let etherscanBaseUri: string;
   let networkService: jest.MockedObjectDeep<INetworkService>;
 
   const chainsResponse: Page<Chain> = {
@@ -61,6 +63,7 @@ describe('Chains Controller', () => {
     name = configurationService.getOrThrow('about.name');
     version = configurationService.getOrThrow('about.version');
     buildNumber = configurationService.getOrThrow('about.buildNumber');
+    etherscanBaseUri = configurationService.getOrThrow('etherscan.baseUri');
     networkService = moduleFixture.get(NetworkService);
 
     app = await new TestAppProvider().provide(moduleFixture);
@@ -815,6 +818,70 @@ describe('Chains Controller', () => {
           message: 'An error occurred',
           code: 503,
         });
+    });
+  });
+
+  describe('GET /:chainId/gas-price', () => {
+    it('should proxy Etherscan gas price API', async () => {
+      const chainId = '1';
+      const etherscanResponse = gasPriceResponseBuilder().build();
+
+      networkService.get.mockResolvedValueOnce({
+        data: rawify(etherscanResponse),
+        status: 200,
+      });
+
+      const response = await request(app.getHttpServer())
+        .get(`/v1/chains/${chainId}/gas-price`)
+        .expect(200);
+
+      expect(response.body).toEqual({
+        status: etherscanResponse.status,
+        message: etherscanResponse.message,
+        result: etherscanResponse.result,
+      });
+
+      // Verify correct Etherscan URL was called
+      expect(networkService.get).toHaveBeenCalledWith(
+        expect.objectContaining({
+          url: expect.stringContaining(
+            `${etherscanBaseUri}/?chainid=${chainId}&module=gastracker&action=gasoracle`,
+          ),
+        }),
+      );
+    });
+
+    it('should handle Etherscan API errors', async () => {
+      const chainId = '1';
+      const error = new NetworkResponseError(new URL(etherscanBaseUri), {
+        status: 503,
+      } as Response);
+
+      networkService.get.mockRejectedValueOnce(error);
+
+      await request(app.getHttpServer())
+        .get(`/v1/chains/${chainId}/gas-price`)
+        .expect(503);
+    });
+
+    it('should include API key when configured', async () => {
+      const chainId = '1';
+      const etherscanResponse = gasPriceResponseBuilder().build();
+
+      networkService.get.mockResolvedValueOnce({
+        data: rawify(etherscanResponse),
+        status: 200,
+      });
+
+      await request(app.getHttpServer())
+        .get(`/v1/chains/${chainId}/gas-price`)
+        .expect(200);
+
+      expect(networkService.get).toHaveBeenCalledWith(
+        expect.objectContaining({
+          url: expect.stringMatching(/apikey=/),
+        }),
+      );
     });
   });
 });

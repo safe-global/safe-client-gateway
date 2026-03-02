@@ -43,9 +43,68 @@ We recommend using what is available in the .env.sample file:
 cp .env.sample .env
 ```
 
-Then edit your `.env` file with your configuration values.
+Then uncomment the variables you need and edit your `.env` file with your configuration values.
 
 Please review the required API keys in the `.env` file and ensure you have created the necessary keys for the services you plan to use.
+
+### Environment Variable Configuration
+
+**Configuration Files:**
+
+1. **`.env.sample.json`**: The source of truth for all environment variables
+   - Contains variable names, descriptions, default values, and required status
+   - Structured as an array of JSON objects
+   - Version-controlled and validated
+
+2. **`.env`**: Your local configuration (not in version control)
+   - Copy variables from `.env.sample.json` as needed
+   - Set required variables and override defaults
+
+**For Developers Adding New Environment Variables:**
+
+1. Add your variable to `.env.sample.json`:
+
+   ```json
+   {
+     "name": "MY_NEW_VARIABLE",
+     "description": "Description of what this variable does",
+     "defaultValue": "default-value",
+     "required": false
+   }
+   ```
+
+2. Add to Zod schema in `configuration.schema.ts` (if validation needed):
+
+   ```typescript
+   MY_NEW_VARIABLE: z.string().optional(),
+   ```
+
+3. Use in `configuration.ts`:
+
+   ```typescript
+   myNewVariable: process.env.MY_NEW_VARIABLE || 'default-value',
+   ```
+
+4. When you commit, the pre-commit hook will validate that all variables are documented
+
+**Manual Commands:**
+
+```bash
+# Generate .env file from required variables
+yarn env:generate
+
+# Generate .env file (force overwrite existing)
+yarn env:generate:force
+
+# Generate or update .env file (creates if missing, updates if exists)
+yarn env:generate:update
+
+# Validate that all env vars are documented (verbose)
+yarn env:validate
+
+# Validate silently (Only exit if there is an error)
+yarn env:validate:silent
+```
 
 ## Running the app
 
@@ -133,3 +192,18 @@ For migrations to be generated automatically, the entity file must follow this s
 `src/**/entities/*.entity.db.ts`
 
 The file should be located in the `src` folder, inside an `entities` directory. The filename should follow the format `{FILE_NAME}.entity.db.ts`, where `{FILE_NAME}` is replaced with your desired name.
+
+## Licensing
+
+This repository contains code developed under two different ownership and licensing regimes, split by a defined cut-over date.
+
+- **Up to and including February 16, 2026**
+  Code is © Safe Ecosystem Foundation and licensed under the **MIT License**.
+  The final SEF-owned MIT snapshot is tagged as: **`sef-mit-final`**
+- **From February 17, 2026 onward**
+  New development is © Safe Labs GmbH and licensed under the
+  **Functional Source License, Version 1.1 (MIT Future License)**.
+
+Users who require a purely MIT-licensed codebase should base their work on the `sef-mit-final` tag. The historical MIT-licensed code remains MIT and is not retroactively relicensed.
+
+For full details, see `LICENSE.md` and `NOTICE.md`.
