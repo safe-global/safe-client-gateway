@@ -46,6 +46,10 @@ describe('ZerionBalancesApiService', () => {
 
   beforeEach(() => {
     jest.resetAllMocks();
+
+    mockCacheService.hGet.mockResolvedValue(null);
+    mockCacheService.hSet.mockResolvedValue();
+
     fakeConfigurationService = new FakeConfigurationService();
     fakeConfigurationService.set(
       'balances.providers.zerion.apiKey',

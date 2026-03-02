@@ -84,7 +84,17 @@ export class RedisCacheService
 
   async hGet(cacheDir: CacheDir): Promise<string | null> {
     const key = this._prefixKey(cacheDir.key);
-    return await this.client.hGet(key, cacheDir.field);
+    try {
+      return await this.client.hGet(key, cacheDir.field);
+    } catch (error) {
+      this.loggingService.debug({
+        type: LogType.CacheError,
+        source: 'RedisCacheService',
+        event: `Error getting ${key}:${cacheDir.field}`,
+        error,
+      });
+      throw error;
+    }
   }
 
   async deleteByKey(key: string): Promise<number> {

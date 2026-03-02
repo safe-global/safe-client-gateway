@@ -132,7 +132,7 @@ export class ZerionBalancesApi implements IBalancesApi {
       fiatCode: args.fiatCode,
     });
     const chainName = await this._getChainName(args.chain);
-    const cached = await this.cacheService.hGet(cacheDir);
+    const cached = await this.cacheService.hGet(cacheDir).catch(() => null);
     if (cached != null) {
       const { key, field } = cacheDir;
       this.loggingService.debug({ type: LogType.CacheHit, key, field });
@@ -161,11 +161,13 @@ export class ZerionBalancesApi implements IBalancesApi {
           networkRequest,
         })
         .then(({ data }) => ZerionBalancesSchema.parse(data));
-      await this.cacheService.hSet(
-        cacheDir,
-        JSON.stringify(zerionBalances.data),
-        this.defaultExpirationTimeInSeconds,
-      );
+      await this.cacheService
+        .hSet(
+          cacheDir,
+          JSON.stringify(zerionBalances.data),
+          this.defaultExpirationTimeInSeconds,
+        )
+        .catch(() => null);
       return this._mapBalances(chainName, zerionBalances.data);
     } catch (error) {
       if (error instanceof LimitReachedError || error instanceof ZodError) {
@@ -195,7 +197,7 @@ export class ZerionBalancesApi implements IBalancesApi {
       limit: args.limit,
       offset: args.offset,
     });
-    const cached = await this.cacheService.hGet(cacheDir);
+    const cached = await this.cacheService.hGet(cacheDir).catch(() => null);
     if (cached != null) {
       const { key, field } = cacheDir;
       this.loggingService.debug({ type: LogType.CacheHit, key, field });
@@ -222,11 +224,13 @@ export class ZerionBalancesApi implements IBalancesApi {
             networkRequest,
           })
           .then(({ data }) => ZerionCollectiblesSchema.parse(data));
-        await this.cacheService.hSet(
-          cacheDir,
-          JSON.stringify(zerionCollectibles),
-          this.defaultExpirationTimeInSeconds,
-        );
+        await this.cacheService
+          .hSet(
+            cacheDir,
+            JSON.stringify(zerionCollectibles),
+            this.defaultExpirationTimeInSeconds,
+          )
+          .catch(() => null);
         return this._buildCollectiblesPage(
           zerionCollectibles.links.next,
           zerionCollectibles.data,

@@ -81,7 +81,7 @@ export class ZerionWalletPortfolioApi implements IZerionWalletPortfolioApi {
 
     const { key, field } = cacheDir;
 
-    const cached = await this.cacheService.hGet(cacheDir);
+    const cached = await this.cacheService.hGet(cacheDir).catch(() => null);
     if (cached != null) {
       this.loggingService.debug({ type: LogType.CacheHit, key, field });
       return ZerionWalletPortfolioSchema.parse(JSON.parse(cached));
@@ -111,11 +111,13 @@ export class ZerionWalletPortfolioApi implements IZerionWalletPortfolioApi {
 
       const portfolio = ZerionWalletPortfolioSchema.parse(data);
 
-      await this.cacheService.hSet(
-        cacheDir,
-        JSON.stringify(portfolio),
-        ZerionWalletPortfolioApi.CACHE_TTL_SECONDS,
-      );
+      await this.cacheService
+        .hSet(
+          cacheDir,
+          JSON.stringify(portfolio),
+          ZerionWalletPortfolioApi.CACHE_TTL_SECONDS,
+        )
+        .catch(() => null);
 
       return portfolio;
     } catch (error) {
