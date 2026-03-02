@@ -581,7 +581,7 @@ export class EventCacheHelper {
       }
     >,
   ): void {
-    this.loggingService.info({
+    this.loggingService.debug({
       type: EventCacheHelper.HOOK_TYPE,
       event_type: event.type,
       address: event.address,

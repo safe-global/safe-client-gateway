@@ -142,7 +142,7 @@ export class FetchNetworkService implements INetworkService {
    * @param method
    */
   private logRequest(url: string, method: string): void {
-    this.loggingService.info({
+    this.loggingService.debug({
       type: LogType.ExternalRequest,
       method,
       url,
