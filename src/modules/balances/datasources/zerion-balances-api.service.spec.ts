@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import { ZerionBalancesApi } from '@/modules/balances/datasources/zerion-balances-api.service';
 import type { ICacheService } from '@/datasources/cache/cache.service.interface';
