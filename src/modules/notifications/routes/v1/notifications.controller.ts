@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import {
   BadRequestException,
   Body,
@@ -73,8 +74,6 @@ export class NotificationsController {
     const compatibleV2Requests =
       await this.createV2RegisterDto(registerDeviceDto);
 
-    const v2Requests = [];
-
     const deleteAllDeviceOwners =
       registerDeviceDto.deviceType !== DeviceType.Web;
 
@@ -85,14 +84,11 @@ export class NotificationsController {
       await this.notificationServiceV2.deleteDevice(registerDeviceDto.uuid);
     }
 
-    for (const compatibleV2Request of compatibleV2Requests) {
-      v2Requests.push(
-        await this.notificationServiceV2.upsertSubscriptions(
-          compatibleV2Request,
-        ),
-      );
-    }
-    await Promise.all(v2Requests);
+    await Promise.all(
+      compatibleV2Requests.map((compatibleV2Request) =>
+        this.notificationServiceV2.upsertSubscriptions(compatibleV2Request),
+      ),
+    );
   }
 
   private async createV2RegisterDto(

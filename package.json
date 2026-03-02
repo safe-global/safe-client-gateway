@@ -39,10 +39,10 @@
     "env:generate:update": "ts-node scripts/generate-env.ts --update"
   },
   "dependencies": {
-    "@aws-sdk/client-kms": "3.995.0",
-    "@aws-sdk/client-s3": "3.995.0",
-    "@aws-sdk/lib-storage": "3.995.0",
-    "@aws-sdk/s3-request-presigner": "3.995.0",
+    "@aws-sdk/client-kms": "3.1000.0",
+    "@aws-sdk/client-s3": "3.1000.0",
+    "@aws-sdk/lib-storage": "3.1000.0",
+    "@aws-sdk/s3-request-presigner": "3.1000.0",
     "@blockaid/client": "^0.65.0",
     "@fingerprintjs/fingerprintjs-pro-server-api": "6.10.0",
     "@nestjs/bullmq": "^11.0.3",
@@ -53,7 +53,7 @@
     "@nestjs/platform-express": "11.1.14",
     "@nestjs/schedule": "6.0.0",
     "@nestjs/serve-static": "5.0.4",
-    "@nestjs/swagger": "11.2.0",
+    "@nestjs/swagger": "11.2.6",
     "@nestjs/typeorm": "11.0.0",
     "@safe-global/safe-deployments": "1.37.51",
     "amqp-connection-manager": "5.0.0",
@@ -64,7 +64,7 @@
     "csv-stringify": "^6.6.0",
     "jsonwebtoken": "9.0.3",
     "lodash": "4.17.23",
-    "nestjs-cls": "6.0.1",
+    "nestjs-cls": "6.2.0",
     "pg": "8.18.0",
     "postgres": "3.4.7",
     "redis": "5.10.0",
@@ -90,7 +90,7 @@
     "@types/jest": "29.5.14",
     "@types/jsonwebtoken": "9",
     "@types/lodash": "4.17.24",
-    "@types/node": "24.10.0",
+    "@types/node": "25.3.3",
     "@types/sanitize-html": "2",
     "@types/semver": "7.7.0",
     "@types/supertest": "6.0.3",
@@ -107,7 +107,7 @@
     "ts-node": "10.9.2",
     "tsconfig-paths": "4.2.0",
     "typescript": "5.9.3",
-    "typescript-eslint": "8.31.1"
+    "typescript-eslint": "8.56.1"
   },
   "jest": {
     "moduleFileExtensions": [
