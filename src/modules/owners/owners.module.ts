@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Module } from '@nestjs/common';
 import { OwnersControllerV1 } from '@/modules/owners/routes/owners.controller.v1';
 import { OwnersControllerV2 } from '@/modules/owners/routes/owners.controller.v2';
