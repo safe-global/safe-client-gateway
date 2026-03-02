@@ -7,7 +7,7 @@ WORKDIR /app
 COPY --chown=node:node .yarn/releases ./.yarn/releases
 COPY --chown=node:node package.json yarn.lock .yarnrc.yml tsconfig*.json ./
 # Custom Swagger branding
-COPY --chown=node:node assets ./assets 
+COPY --chown=node:node assets ./assets
 COPY --chown=node:node migrations ./migrations
 COPY --chown=node:node src ./src
 # Skip postinstall (generate-abis) - auth service doesn't need contract ABIs
