@@ -43,8 +43,8 @@ describe('FetchNetworkService', () => {
         undefined,
         undefined,
       );
-      expect(loggingService.info).toHaveBeenCalledTimes(1);
-      expect(loggingService.info).toHaveBeenCalledWith({
+      expect(loggingService.debug).toHaveBeenCalledTimes(1);
+      expect(loggingService.debug).toHaveBeenCalledWith({
         type: 'EXTERNAL_REQUEST',
         method: 'GET',
         url: expectedUrl,
@@ -75,8 +75,8 @@ describe('FetchNetworkService', () => {
         undefined,
         undefined,
       );
-      expect(loggingService.info).toHaveBeenCalledTimes(1);
-      expect(loggingService.info).toHaveBeenCalledWith({
+      expect(loggingService.debug).toHaveBeenCalledTimes(1);
+      expect(loggingService.debug).toHaveBeenCalledWith({
         type: 'EXTERNAL_REQUEST',
         method: 'GET',
         url: expectedUrl,
@@ -112,8 +112,8 @@ describe('FetchNetworkService', () => {
         undefined,
         undefined,
       );
-      expect(loggingService.info).toHaveBeenCalledTimes(1);
-      expect(loggingService.info).toHaveBeenCalledWith({
+      expect(loggingService.debug).toHaveBeenCalledTimes(1);
+      expect(loggingService.debug).toHaveBeenCalledWith({
         type: 'EXTERNAL_REQUEST',
         method: 'GET',
         url: expectedUrl,
@@ -134,13 +134,12 @@ describe('FetchNetworkService', () => {
 
       await expect(target.get({ url })).rejects.toThrow(error);
 
-      expect(loggingService.info).toHaveBeenCalledTimes(1);
-      expect(loggingService.info).toHaveBeenCalledWith({
+      expect(loggingService.debug).toHaveBeenCalledTimes(2);
+      expect(loggingService.debug).toHaveBeenCalledWith({
         type: 'EXTERNAL_REQUEST',
         method: 'GET',
         url: `${url}/`,
       });
-      expect(loggingService.debug).toHaveBeenCalledTimes(1);
       expect(loggingService.debug).toHaveBeenCalledWith({
         type: 'EXTERNAL_REQUEST',
         protocol: error.url.protocol,
@@ -225,8 +224,8 @@ describe('FetchNetworkService', () => {
         undefined,
         undefined,
       );
-      expect(loggingService.info).toHaveBeenCalledTimes(1);
-      expect(loggingService.info).toHaveBeenCalledWith({
+      expect(loggingService.debug).toHaveBeenCalledTimes(1);
+      expect(loggingService.debug).toHaveBeenCalledWith({
         type: 'EXTERNAL_REQUEST',
         method: 'POST',
         url: expectedUrl,
@@ -260,8 +259,8 @@ describe('FetchNetworkService', () => {
         undefined,
         undefined,
       );
-      expect(loggingService.info).toHaveBeenCalledTimes(1);
-      expect(loggingService.info).toHaveBeenCalledWith({
+      expect(loggingService.debug).toHaveBeenCalledTimes(1);
+      expect(loggingService.debug).toHaveBeenCalledWith({
         type: 'EXTERNAL_REQUEST',
         method: 'POST',
         url: expectedUrl,
@@ -282,13 +281,12 @@ describe('FetchNetworkService', () => {
 
       await expect(target.post({ url, data: {} })).rejects.toThrow(error);
 
-      expect(loggingService.info).toHaveBeenCalledTimes(1);
-      expect(loggingService.info).toHaveBeenCalledWith({
+      expect(loggingService.debug).toHaveBeenCalledTimes(2);
+      expect(loggingService.debug).toHaveBeenCalledWith({
         type: 'EXTERNAL_REQUEST',
         method: 'POST',
         url: `${url}/`,
       });
-      expect(loggingService.debug).toHaveBeenCalledTimes(1);
       expect(loggingService.debug).toHaveBeenCalledWith({
         type: 'EXTERNAL_REQUEST',
         protocol: error.url.protocol,
@@ -376,8 +374,8 @@ describe('FetchNetworkService', () => {
         undefined,
         undefined,
       );
-      expect(loggingService.info).toHaveBeenCalledTimes(1);
-      expect(loggingService.info).toHaveBeenCalledWith({
+      expect(loggingService.debug).toHaveBeenCalledTimes(1);
+      expect(loggingService.debug).toHaveBeenCalledWith({
         type: 'EXTERNAL_REQUEST',
         method: 'DELETE',
         url: `${url}/`,
@@ -411,8 +409,8 @@ describe('FetchNetworkService', () => {
         undefined,
         undefined,
       );
-      expect(loggingService.info).toHaveBeenCalledTimes(1);
-      expect(loggingService.info).toHaveBeenCalledWith({
+      expect(loggingService.debug).toHaveBeenCalledTimes(1);
+      expect(loggingService.debug).toHaveBeenCalledWith({
         type: 'EXTERNAL_REQUEST',
         method: 'DELETE',
         url: expectedUrl,
@@ -433,7 +431,7 @@ describe('FetchNetworkService', () => {
 
       await expect(target.delete({ url })).rejects.toThrow(error);
 
-      expect(loggingService.debug).toHaveBeenCalledTimes(1);
+      expect(loggingService.debug).toHaveBeenCalledTimes(2);
       expect(loggingService.debug).toHaveBeenCalledWith({
         type: 'EXTERNAL_REQUEST',
         protocol: error.url.protocol,
@@ -443,8 +441,7 @@ describe('FetchNetworkService', () => {
         detail: error.response.statusText,
         response_time_ms: expect.any(Number),
       });
-      expect(loggingService.info).toHaveBeenCalledTimes(1);
-      expect(loggingService.info).toHaveBeenCalledWith({
+      expect(loggingService.debug).toHaveBeenCalledWith({
         type: 'EXTERNAL_REQUEST',
         method: 'DELETE',
         url: `${url}/`,
