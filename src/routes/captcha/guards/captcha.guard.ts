@@ -9,6 +9,7 @@ import {
 import { Request } from 'express';
 import { CaptchaService } from '@/routes/captcha/captcha.service';
 import { IConfigurationService } from '@/config/configuration.service.interface';
+import { getClientIp } from '@/routes/common/utils/request.utils';
 
 @Injectable()
 export class CaptchaGuard implements CanActivate {
@@ -31,10 +32,7 @@ export class CaptchaGuard implements CanActivate {
       throw new UnauthorizedException('CAPTCHA token is required');
     }
 
-    const remoteip =
-      (request.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ||
-      request.ip ||
-      request.socket.remoteAddress;
+    const remoteip = getClientIp(request);
 
     const isValid = await this.captchaService.verifyToken(token, remoteip);
 

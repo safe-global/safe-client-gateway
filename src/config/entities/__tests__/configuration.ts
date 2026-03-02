@@ -468,4 +468,8 @@ export default (): ReturnType<typeof configuration> => ({
     apiKey: faker.string.hexadecimal({ length: 32 }),
     gasPriceCacheTtlSeconds: faker.number.int({ min: 1, max: 10 }),
   },
+  captcha: {
+    enabled: faker.datatype.boolean(),
+    secretKey: faker.string.alphanumeric(32),
+  },
 });

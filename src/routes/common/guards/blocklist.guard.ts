@@ -14,6 +14,7 @@ import {
 } from '@nestjs/common';
 import type { Request } from 'express';
 import { getAddress, isAddress } from 'viem';
+import { getClientIp } from '@/routes/common/utils/request.utils';
 
 @Injectable()
 export class BlocklistGuard implements CanActivate {
@@ -54,7 +55,7 @@ export class BlocklistGuard implements CanActivate {
           address: normalizedAddress,
           route: request.route?.path || request.path,
           method: request.method,
-          clientIp: request.ip,
+          clientIp: getClientIp(request),
         });
 
         throw new ForbiddenException('Access to this Safe is restricted');

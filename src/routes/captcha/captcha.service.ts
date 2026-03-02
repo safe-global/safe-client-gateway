@@ -6,13 +6,7 @@ import {
   type INetworkService,
 } from '@/datasources/network/network.service.interface';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
-
-interface TurnstileVerifyResponse {
-  success: boolean;
-  'error-codes'?: Array<string>;
-  challenge_ts?: string;
-  hostname?: string;
-}
+import { TurnstileVerifyResponseSchema } from '@/routes/captcha/entities/turnstile-verify-response.entity';
 
 @Injectable()
 export class CaptchaService {
@@ -48,7 +42,7 @@ export class CaptchaService {
     }
 
     try {
-      const response = await this.networkService.post<TurnstileVerifyResponse>({
+      const response = await this.networkService.post({
         url: this.verifyUrl,
         data: {
           secret: secretKey,
@@ -57,15 +51,13 @@ export class CaptchaService {
         },
       });
 
-      // response.data is Raw<TurnstileVerifyResponse>, cast to actual type
-      const verifyResponse =
-        response.data as unknown as TurnstileVerifyResponse;
-      const isValid = verifyResponse?.success === true;
+      const verifyResponse = TurnstileVerifyResponseSchema.parse(response.data);
+      const isValid = verifyResponse.success === true;
 
       if (!isValid) {
         this.loggingService.debug({
           type: 'captcha_verification_failed',
-          errorCodes: verifyResponse?.['error-codes'] || [],
+          errorCodes: verifyResponse['error-codes'] ?? [],
         });
       }
 
