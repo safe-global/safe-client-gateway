@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
 import { ChainSchema } from '@/modules/chains/domain/entities/schemas/chain.schema';
@@ -26,7 +27,7 @@ import {
 export class ChainsRepository implements IChainsRepository {
   // According to the limits of the Config Service
   // @see https://github.com/safe-global/safe-config-service/blob/main/src/chains/views.py#L14-L16
-  static readonly MAX_LIMIT = 40;
+  static readonly MAX_LIMIT = 100;
 
   private readonly maxSequentialPages: number;
 

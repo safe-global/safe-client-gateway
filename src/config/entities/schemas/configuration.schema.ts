@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
 const relayRulesValidator = z
   .string()
@@ -58,8 +59,26 @@ export const RootConfigurationSchema = z
       .int()
       .min(1)
       .optional(),
+    SAFE_CONFIG_CGW_KEY: z.string().min(1).optional(),
     LOG_LEVEL: z
       .enum(['error', 'warn', 'info', 'http', 'verbose', 'debug', 'silly'])
+      .optional(),
+    UNDICI_CONNECTIONS: z.coerce.number().int().min(1).optional(),
+    UNDICI_PIPELINING: z.coerce.number().int().min(0).optional(),
+    UNDICI_CONNECT_TIMEOUT_MILLISECONDS: z.coerce
+      .number()
+      .int()
+      .min(0)
+      .optional(),
+    UNDICI_KEEP_ALIVE_TIMEOUT_MILLISECONDS: z.coerce
+      .number()
+      .int()
+      .min(0)
+      .optional(),
+    UNDICI_KEEP_ALIVE_MAX_TIMEOUT_MILLISECONDS: z.coerce
+      .number()
+      .int()
+      .min(0)
       .optional(),
     // TODO: Reassess EMAIL_ keys after email integration
     EMAIL_API_APPLICATION_CODE: z.string(),

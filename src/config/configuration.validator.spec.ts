@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { fakeJson } from '@/__tests__/faker';
 import configurationValidator from '@/config/configuration.validator';
 import { RootConfigurationSchema } from '@/config/entities/schemas/configuration.schema';
@@ -428,6 +429,111 @@ describe('Configuration validator', () => {
           ),
         );
       });
+    });
+  });
+
+  describe('SAFE_CONFIG_CGW_KEY', () => {
+    it('should accept a valid SAFE_CONFIG_CGW_KEY', () => {
+      process.env.NODE_ENV = 'production';
+      const config = {
+        ...validConfiguration,
+        SAFE_CONFIG_CGW_KEY: 'custom-cgw-key',
+      };
+      expect(() =>
+        configurationValidator(config, RootConfigurationSchema),
+      ).not.toThrow();
+    });
+
+    it('should accept missing SAFE_CONFIG_CGW_KEY (optional)', () => {
+      process.env.NODE_ENV = 'production';
+      const config = omit(validConfiguration, 'SAFE_CONFIG_CGW_KEY');
+      expect(() =>
+        configurationValidator(config, RootConfigurationSchema),
+      ).not.toThrow();
+    });
+
+    it('should reject empty SAFE_CONFIG_CGW_KEY', () => {
+      process.env.NODE_ENV = 'production';
+      const config = { ...validConfiguration, SAFE_CONFIG_CGW_KEY: '' };
+      expect(() =>
+        configurationValidator(config, RootConfigurationSchema),
+      ).toThrow(
+        'Configuration is invalid: SAFE_CONFIG_CGW_KEY Too small: expected string to have >=1 characters',
+      );
+    });
+  });
+
+  describe('Undici configuration validation', () => {
+    beforeEach(() => {
+      process.env.NODE_ENV = 'production';
+    });
+
+    it('should accept valid Undici configuration', () => {
+      const config = {
+        ...validConfiguration,
+        UNDICI_CONNECTIONS: '10',
+        UNDICI_PIPELINING: '1',
+        UNDICI_CONNECT_TIMEOUT_MILLISECONDS: '10000',
+        UNDICI_KEEP_ALIVE_TIMEOUT_MILLISECONDS: '4000',
+        UNDICI_KEEP_ALIVE_MAX_TIMEOUT_MILLISECONDS: '600000',
+      };
+      expect(() =>
+        configurationValidator(config, RootConfigurationSchema),
+      ).not.toThrow();
+    });
+
+    it('should accept configuration without optional Undici settings', () => {
+      expect(() =>
+        configurationValidator(validConfiguration, RootConfigurationSchema),
+      ).not.toThrow();
+    });
+
+    it.each([
+      { key: 'UNDICI_CONNECTIONS', value: '-1', min: 1 },
+      { key: 'UNDICI_CONNECTIONS', value: '0', min: 1 },
+      { key: 'UNDICI_PIPELINING', value: '-1', min: 0 },
+      { key: 'UNDICI_CONNECT_TIMEOUT_MILLISECONDS', value: '-1', min: 0 },
+      { key: 'UNDICI_KEEP_ALIVE_TIMEOUT_MILLISECONDS', value: '-1', min: 0 },
+      {
+        key: 'UNDICI_KEEP_ALIVE_MAX_TIMEOUT_MILLISECONDS',
+        value: '-1',
+        min: 0,
+      },
+    ])(
+      'should reject invalid $key with value $value',
+      ({ key, value, min }) => {
+        const config = {
+          ...validConfiguration,
+          [key]: value,
+        };
+        expect(() =>
+          configurationValidator(config, RootConfigurationSchema),
+        ).toThrow(
+          new RegExp(
+            `Configuration is invalid: ${key} Too small: expected number to be >=${min}`,
+          ),
+        );
+      },
+    );
+
+    it('should accept zero UNDICI_PIPELINING', () => {
+      const config = {
+        ...validConfiguration,
+        UNDICI_PIPELINING: '0',
+      };
+      expect(() =>
+        configurationValidator(config, RootConfigurationSchema),
+      ).not.toThrow();
+    });
+
+    it('should reject non-numeric UNDICI_CONNECTIONS', () => {
+      const config = {
+        ...validConfiguration,
+        UNDICI_CONNECTIONS: 'not-a-number',
+      };
+      expect(() =>
+        configurationValidator(config, RootConfigurationSchema),
+      ).toThrow(/Configuration is invalid: UNDICI_CONNECTIONS/);
     });
   });
 });

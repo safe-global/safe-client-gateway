@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker/.';
 import chunk from 'lodash/chunk';
 import { getAddress } from 'viem';
@@ -42,8 +43,8 @@ const mockConfigurationService = jest.mocked({
 describe('ChainsRepository', () => {
   // According to the limits of the Config Service
   // @see https://github.com/safe-global/safe-config-service/blob/main/src/chains/views.py#L14-L16
-  const OFFSET = 40;
-  const MAX_LIMIT = 40;
+  const OFFSET = 100;
+  const MAX_LIMIT = 100;
 
   let target: ChainsRepository;
   const maxSequentialPages = 3;
@@ -359,6 +360,54 @@ describe('ChainsRepository', () => {
     });
 
     it('should return single chain from v2 endpoint', async () => {
+      const chainId = faker.string.numeric();
+      const chain = chainBuilder().with('chainId', chainId).build();
+      const rawChain = rawify(chain);
+      mockConfigApi.getChainV2.mockResolvedValueOnce(rawChain);
+
+      const result = await target.getChainV2(serviceKey, chainId);
+
+      expect(result).toStrictEqual({
+        ...chain,
+        ensRegistryAddress: chain.ensRegistryAddress
+          ? getAddress(chain.ensRegistryAddress)
+          : null,
+      });
+      expect(mockConfigApi.getChainV2).toHaveBeenCalledTimes(1);
+      expect(mockConfigApi.getChainV2).toHaveBeenCalledWith(
+        serviceKey,
+        chainId,
+      );
+    });
+
+    it('should return chains from v2 endpoint using CGW service key', async () => {
+      const serviceKey = 'CGW';
+      const limit = faker.number.int({ max: 10 });
+      const offset = faker.number.int({ max: 10 });
+      const chains = [chainBuilder().build(), chainBuilder().build()];
+      const page = rawify(
+        pageBuilder<Chain>()
+          .with('results', chains)
+          .with('count', chains.length)
+          .with('previous', null)
+          .with('next', null)
+          .build(),
+      );
+      mockConfigApi.getChainsV2.mockResolvedValueOnce(page);
+
+      const result = await target.getChainsV2(serviceKey, limit, offset);
+
+      expect(result.count).toBe(chains.length);
+      expect(result.results).toHaveLength(chains.length);
+      expect(mockConfigApi.getChainsV2).toHaveBeenCalledTimes(1);
+      expect(mockConfigApi.getChainsV2).toHaveBeenCalledWith(serviceKey, {
+        limit,
+        offset,
+      });
+    });
+
+    it('should return single chain from v2 endpoint using CGW service key', async () => {
+      const serviceKey = 'CGW';
       const chainId = faker.string.numeric();
       const chain = chainBuilder().with('chainId', chainId).build();
       const rawChain = rawify(chain);
