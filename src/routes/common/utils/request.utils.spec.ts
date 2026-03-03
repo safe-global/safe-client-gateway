@@ -9,7 +9,7 @@ function buildRequest(
     ip: string;
     socketAddress: string;
   }> = {},
-): Request {
+): Partial<Request> {
   const headers: Record<string, string | undefined> = {};
   if (overrides.forwardedFor !== undefined) {
     headers['x-forwarded-for'] = overrides.forwardedFor;
@@ -19,7 +19,7 @@ function buildRequest(
     headers,
     ip: overrides.ip,
     socket: { remoteAddress: overrides.socketAddress },
-  } as unknown as Request;
+  } as Partial<Request>;
 }
 
 describe('getClientIp', () => {
@@ -70,7 +70,7 @@ describe('getClientIp', () => {
 
   it('should not throw when headers is undefined', () => {
     const ip = faker.internet.ipv4();
-    const request = { ip, socket: {} } as unknown as Request;
+    const request = { ip, socket: {} } as Partial<Request>;
 
     expect(() => getClientIp(request)).not.toThrow();
     expect(getClientIp(request)).toBe(ip);

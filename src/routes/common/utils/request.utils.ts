@@ -9,7 +9,7 @@ import type { Request } from 'express';
  * 2. `request.ip` (Express-resolved IP, already proxy-aware when trust proxy is set)
  * 3. Raw `request.socket.remoteAddress` as a final fallback
  */
-export function getClientIp(request: Request): string | undefined {
+export function getClientIp(request: Partial<Request>): string | undefined {
   return (
     (request.headers?.['x-forwarded-for'] as string | undefined)
       ?.split(',')[0]
