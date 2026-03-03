@@ -5,6 +5,8 @@ export enum LogType {
   CacheEvent = 'CACHE_EVENT',
   CacheHit = 'CACHE_HIT',
   CacheMiss = 'CACHE_MISS',
+  CaptchaVerificationFailed = 'CAPTCHA_VERIFICATION_FAILED',
+  CaptchaVerificationError = 'CAPTCHA_VERIFICATION_ERROR',
   CircuitBreakerCleanup = 'CIRCUIT_BREAKER_CLEANUP',
   CircuitBreakerFailureRecorded = 'CIRCUIT_BREAKER_FAILURE_RECORDED',
   CircuitBreakerFailuresDiscarded = 'CIRCUIT_BREAKER_FAILURES_DISCARDED',

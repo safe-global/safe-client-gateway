@@ -143,7 +143,7 @@ describe('CaptchaService', () => {
 
         expect(result).toBe(false);
         expect(mockLoggingService.debug).toHaveBeenCalledWith({
-          type: 'captcha_verification_failed',
+          type: 'CAPTCHA_VERIFICATION_FAILED',
           errorCodes,
         });
       });
@@ -158,7 +158,7 @@ describe('CaptchaService', () => {
 
         expect(result).toBe(false);
         expect(mockLoggingService.debug).toHaveBeenCalledWith({
-          type: 'captcha_verification_failed',
+          type: 'CAPTCHA_VERIFICATION_FAILED',
           errorCodes: [],
         });
       });
@@ -171,7 +171,7 @@ describe('CaptchaService', () => {
 
         expect(result).toBe(false);
         expect(mockLoggingService.error).toHaveBeenCalledWith({
-          type: 'captcha_verification_error',
+          type: 'CAPTCHA_VERIFICATION_ERROR',
           error: networkError.message,
         });
       });
@@ -183,7 +183,7 @@ describe('CaptchaService', () => {
 
         expect(result).toBe(false);
         expect(mockLoggingService.error).toHaveBeenCalledWith({
-          type: 'captcha_verification_error',
+          type: 'CAPTCHA_VERIFICATION_ERROR',
           error: 'string error',
         });
       });
@@ -198,7 +198,7 @@ describe('CaptchaService', () => {
 
         expect(result).toBe(false);
         expect(mockLoggingService.error).toHaveBeenCalledWith(
-          expect.objectContaining({ type: 'captcha_verification_error' }),
+          expect.objectContaining({ type: 'CAPTCHA_VERIFICATION_ERROR' }),
         );
       });
     });

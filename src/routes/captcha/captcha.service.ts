@@ -8,6 +8,7 @@ import {
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { TurnstileVerifyResponseSchema } from '@/routes/captcha/entities/turnstile-verify-response.entity';
 import { asError } from '@/logging/utils';
+import { LogType } from '@/domain/common/entities/log-type.entity';
 
 @Injectable()
 export class CaptchaService {
@@ -59,7 +60,7 @@ export class CaptchaService {
 
       if (!isValid) {
         this.loggingService.debug({
-          type: 'captcha_verification_failed',
+          type: LogType.CaptchaVerificationFailed,
           errorCodes: verifyResponse['error-codes'] ?? [],
         });
       }
@@ -67,7 +68,7 @@ export class CaptchaService {
       return isValid;
     } catch (error) {
       this.loggingService.error({
-        type: 'captcha_verification_error',
+        type: LogType.CaptchaVerificationError,
         error: asError(error).message,
       });
       return false;
