@@ -696,7 +696,7 @@ export default () => ({
   },
   captcha: {
     enabled: process.env.CAPTCHA_ENABLED?.toLowerCase() === 'true',
-    secretKey: process.env.TURNSTILE_SECRET_KEY,
+    secretKey: process.env.CAPTCHA_SECRET_KEY,
   },
 });
 
