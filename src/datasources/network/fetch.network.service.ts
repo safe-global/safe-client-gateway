@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable, Optional } from '@nestjs/common';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { NetworkRequest } from '@/datasources/network/entities/network.request.entity';
@@ -142,7 +143,7 @@ export class FetchNetworkService implements INetworkService {
    * @param method
    */
   private logRequest(url: string, method: string): void {
-    this.loggingService.info({
+    this.loggingService.debug({
       type: LogType.ExternalRequest,
       method,
       url,

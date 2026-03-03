@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { CacheRouter } from '@/datasources/cache/cache.router';
 import {
   CacheService,
@@ -581,7 +582,7 @@ export class EventCacheHelper {
       }
     >,
   ): void {
-    this.loggingService.info({
+    this.loggingService.debug({
       type: EventCacheHelper.HOOK_TYPE,
       event_type: event.type,
       address: event.address,
