@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { INestApplication } from '@nestjs/common';
 import configuration from '@/config/entities/__tests__/configuration';
 import type { Server } from 'net';
@@ -493,13 +494,11 @@ describe('Hook Events for Notifications pt. 1', () => {
       const multisigTransaction = multisigTransactionBuilder()
         .with(
           'confirmations',
-          await Promise.all(
-            subscribers.map((subscriber) => {
-              return confirmationBuilder()
-                .with('owner', subscriber.subscriber)
-                .build();
-            }),
-          ),
+          subscribers.map((subscriber) => {
+            return confirmationBuilder()
+              .with('owner', subscriber.subscriber)
+              .build();
+          }),
         )
         .build();
 
@@ -1139,13 +1138,11 @@ describe('Hook Events for Notifications pt. 1', () => {
           .with('safe', event.address)
           .build();
       });
-      const confirmations = await Promise.all(
-        subscribers.map((subscriber) => {
-          return confirmationBuilder()
-            .with('owner', subscriber.subscriber)
-            .build();
-        }),
-      );
+      const confirmations = subscribers.map((subscriber) => {
+        return confirmationBuilder()
+          .with('owner', subscriber.subscriber)
+          .build();
+      });
       const multisigTransaction = multisigTransactionBuilder()
         .with('confirmations', confirmations)
         .build();
@@ -1214,13 +1211,12 @@ describe('Hook Events for Notifications pt. 1', () => {
       notificationsRepository.getSubscribersBySafe.mockResolvedValue(
         subscribers,
       );
-      const confirmations = await Promise.all(
-        faker.helpers
-          .arrayElements(owners, { min: 1, max: owners.length - 1 })
-          .map((owner) => {
-            return confirmationBuilder().with('owner', owner).build();
-          }),
-      );
+      const confirmations = faker.helpers
+        .arrayElements(owners, { min: 1, max: owners.length - 1 })
+        .map((owner) => {
+          return confirmationBuilder().with('owner', owner).build();
+        });
+
       const delegates = owners
         .filter((owner) => {
           return confirmations.every(
