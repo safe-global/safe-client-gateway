@@ -13,15 +13,19 @@ import { getClientIp } from '@/routes/common/utils/request.utils';
 
 @Injectable()
 export class CaptchaGuard implements CanActivate {
+  private readonly isEnabled: boolean;
+
   constructor(
     private readonly captchaService: CaptchaService,
     @Inject(IConfigurationService)
-    private readonly configurationService: IConfigurationService,
-  ) {}
+    configurationService: IConfigurationService,
+  ) {
+    this.isEnabled =
+      configurationService.get<boolean>('captcha.enabled') ?? false;
+  }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const isEnabled = this.configurationService.get<boolean>('captcha.enabled');
-    if (!isEnabled) {
+    if (!this.isEnabled) {
       return true;
     }
 

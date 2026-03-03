@@ -43,14 +43,16 @@ describe('CaptchaGuard', () => {
 
   beforeEach(() => {
     jest.resetAllMocks();
-    fakeConfigurationService = new FakeConfigurationService();
-    guard = new CaptchaGuard(mockCaptchaService, fakeConfigurationService);
   });
 
   describe('when CAPTCHA is disabled', () => {
-    it('should allow the request without verifying the token', async () => {
+    beforeEach(() => {
+      fakeConfigurationService = new FakeConfigurationService();
       fakeConfigurationService.set('captcha.enabled', false);
+      guard = new CaptchaGuard(mockCaptchaService, fakeConfigurationService);
+    });
 
+    it('should allow the request without verifying the token', async () => {
       const result = await guard.canActivate(buildExecutionContext());
 
       expect(result).toBe(true);
@@ -60,7 +62,9 @@ describe('CaptchaGuard', () => {
 
   describe('when CAPTCHA is enabled', () => {
     beforeEach(() => {
+      fakeConfigurationService = new FakeConfigurationService();
       fakeConfigurationService.set('captcha.enabled', true);
+      guard = new CaptchaGuard(mockCaptchaService, fakeConfigurationService);
     });
 
     it('should throw UnauthorizedException when token header is missing', async () => {
