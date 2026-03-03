@@ -469,7 +469,7 @@ export default (): ReturnType<typeof configuration> => ({
     gasPriceCacheTtlSeconds: faker.number.int({ min: 1, max: 10 }),
   },
   captcha: {
-    enabled: faker.datatype.boolean(),
-    secretKey: faker.string.alphanumeric(32),
+    enabled: false,
+    secretKey: '',
   },
 });
