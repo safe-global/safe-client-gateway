@@ -17,9 +17,9 @@ const mockNetworkService = jest.mocked({
   post: jest.fn(),
 } as jest.MockedObjectDeep<INetworkService>);
 
-const mockLoggingService = {
+const mockLoggingService = jest.mocked({
   error: jest.fn(),
-} as jest.MockedObjectDeep<ILoggingService>;
+} as jest.MockedObjectDeep<ILoggingService>);
 
 describe('GelatoApi', () => {
   let target: GelatoApi;
@@ -151,7 +151,7 @@ describe('GelatoApi', () => {
         }),
       ).rejects.toThrow(new DataSourceError('Unexpected error', status));
       expect(mockLoggingService.error).toHaveBeenCalledWith(
-        expect.stringContaining('Error relaying transaction'),
+        expect.stringContaining(`Error relaying transaction for chain ${chainId}`),
       );
     });
   });
@@ -258,7 +258,9 @@ describe('GelatoApi', () => {
         new DataSourceError('Unexpected error', status),
       );
       expect(mockLoggingService.error).toHaveBeenCalledWith(
-        expect.stringContaining('Error getting task status'),
+        expect.stringContaining(
+          `Error getting task status ${taskId} for chain ${chainId}`,
+        ),
       );
     });
   });
