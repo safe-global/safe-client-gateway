@@ -13,24 +13,29 @@ export class CaptchaService {
   private readonly verifyUrl =
     'https://challenges.cloudflare.com/turnstile/v0/siteverify';
 
+  private readonly isEnabled: boolean;
+  private readonly secretKey: string;
+
   constructor(
     @Inject(IConfigurationService)
-    private readonly configurationService: IConfigurationService,
+    configurationService: IConfigurationService,
     @Inject(NetworkService)
     private readonly networkService: INetworkService,
     @Inject(LoggingService)
     private readonly loggingService: ILoggingService,
-  ) {}
+  ) {
+    this.isEnabled =
+      configurationService.get<boolean>('captcha.enabled') ?? false;
+    this.secretKey =
+      configurationService.get<string>('captcha.secretKey') ?? '';
+  }
 
   async verifyToken(token: string, remoteip?: string): Promise<boolean> {
-    const isEnabled = this.configurationService.get<boolean>('captcha.enabled');
-    if (!isEnabled) {
+    if (!this.isEnabled) {
       return true;
     }
 
-    const secretKey =
-      this.configurationService.get<string>('captcha.secretKey');
-    if (!secretKey) {
+    if (!this.secretKey) {
       this.loggingService.warn(
         'CAPTCHA is enabled but secret key is not configured',
       );
@@ -45,7 +50,7 @@ export class CaptchaService {
       const response = await this.networkService.post({
         url: this.verifyUrl,
         data: {
-          secret: secretKey,
+          secret: this.secretKey,
           response: token,
           ...(remoteip && { remoteip }),
         },

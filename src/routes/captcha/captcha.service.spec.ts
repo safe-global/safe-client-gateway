@@ -22,18 +22,21 @@ describe('CaptchaService', () => {
 
   beforeEach(() => {
     jest.resetAllMocks();
-    fakeConfigurationService = new FakeConfigurationService();
-    service = new CaptchaService(
-      fakeConfigurationService,
-      mockNetworkService,
-      mockLoggingService,
-    );
   });
 
   describe('when CAPTCHA is disabled', () => {
-    it('should return true without calling the network service', async () => {
+    beforeEach(() => {
+      fakeConfigurationService = new FakeConfigurationService();
       fakeConfigurationService.set('captcha.enabled', false);
 
+      service = new CaptchaService(
+        fakeConfigurationService,
+        mockNetworkService,
+        mockLoggingService,
+      );
+    });
+
+    it('should return true without calling the network service', async () => {
       const result = await service.verifyToken(faker.string.alphanumeric());
 
       expect(result).toBe(true);
@@ -43,7 +46,14 @@ describe('CaptchaService', () => {
 
   describe('when CAPTCHA is enabled', () => {
     beforeEach(() => {
+      fakeConfigurationService = new FakeConfigurationService();
       fakeConfigurationService.set('captcha.enabled', true);
+
+      service = new CaptchaService(
+        fakeConfigurationService,
+        mockNetworkService,
+        mockLoggingService,
+      );
     });
 
     it('should return false and warn when the secret key is not configured', async () => {
@@ -60,7 +70,15 @@ describe('CaptchaService', () => {
       const secretKey = faker.string.alphanumeric(32);
 
       beforeEach(() => {
+        fakeConfigurationService = new FakeConfigurationService();
+        fakeConfigurationService.set('captcha.enabled', true);
         fakeConfigurationService.set('captcha.secretKey', secretKey);
+
+        service = new CaptchaService(
+          fakeConfigurationService,
+          mockNetworkService,
+          mockLoggingService,
+        );
       });
 
       it('should return true for a valid token', async () => {
