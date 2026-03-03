@@ -7,6 +7,7 @@ import {
 } from '@/datasources/network/network.service.interface';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { TurnstileVerifyResponseSchema } from '@/routes/captcha/entities/turnstile-verify-response.entity';
+import { asError } from '@/logging/utils';
 
 @Injectable()
 export class CaptchaService {
@@ -70,7 +71,7 @@ export class CaptchaService {
     } catch (error) {
       this.loggingService.error({
         type: 'captcha_verification_error',
-        error: error instanceof Error ? error.message : String(error),
+        error: asError(error).message,
       });
       return false;
     }
