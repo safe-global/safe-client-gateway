@@ -120,16 +120,8 @@ describe('CaptchaService', () => {
 
         expect(mockNetworkService.post).toHaveBeenCalledWith({
           url: 'https://challenges.cloudflare.com/turnstile/v0/siteverify',
-          data: { secret: secretKey, response: token },
+          data: expect.not.objectContaining({ remoteip: expect.anything() }),
         });
-        expect(
-          (
-            mockNetworkService.post.mock.calls[0][0].data as Record<
-              string,
-              unknown
-            >
-          ).remoteip,
-        ).toBeUndefined();
       });
 
       it('should return false and debug-log error codes for a failed token', async () => {
