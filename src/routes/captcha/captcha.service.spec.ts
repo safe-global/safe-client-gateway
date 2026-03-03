@@ -45,8 +45,6 @@ describe('CaptchaService', () => {
   });
 
   describe('when CAPTCHA is enabled', () => {
-    beforeEach(() => {});
-
     describe('with no secret key configured', () => {
       it('should throw an error when the secret key is not configured', () => {
         fakeConfigurationService = new FakeConfigurationService();
