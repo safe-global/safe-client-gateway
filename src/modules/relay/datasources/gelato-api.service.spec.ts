@@ -150,6 +150,9 @@ describe('GelatoApi', () => {
           data,
         }),
       ).rejects.toThrow(new DataSourceError('Unexpected error', status));
+      expect(mockLoggingService.error).toHaveBeenCalledWith(
+        expect.stringContaining('Error relaying transaction'),
+      );
     });
   });
 
@@ -253,6 +256,9 @@ describe('GelatoApi', () => {
 
       await expect(target.getTaskStatus({ chainId, taskId })).rejects.toThrow(
         new DataSourceError('Unexpected error', status),
+      );
+      expect(mockLoggingService.error).toHaveBeenCalledWith(
+        expect.stringContaining('Error getting task status'),
       );
     });
   });
