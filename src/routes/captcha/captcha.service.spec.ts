@@ -45,25 +45,21 @@ describe('CaptchaService', () => {
   });
 
   describe('when CAPTCHA is enabled', () => {
-    beforeEach(() => {
-      fakeConfigurationService = new FakeConfigurationService();
-      fakeConfigurationService.set('captcha.enabled', true);
+    beforeEach(() => {});
 
-      service = new CaptchaService(
-        fakeConfigurationService,
-        mockNetworkService,
-        mockLoggingService,
-      );
-    });
+    describe('with no secret key configured', () => {
+      it('should throw an error when the secret key is not configured', () => {
+        fakeConfigurationService = new FakeConfigurationService();
+        fakeConfigurationService.set('captcha.enabled', true);
 
-    it('should return false and warn when the secret key is not configured', async () => {
-      const result = await service.verifyToken(faker.string.alphanumeric());
-
-      expect(result).toBe(false);
-      expect(mockLoggingService.warn).toHaveBeenCalledWith(
-        'CAPTCHA is enabled but secret key is not configured',
-      );
-      expect(mockNetworkService.post).not.toHaveBeenCalled();
+        expect(() => {
+          service = new CaptchaService(
+            fakeConfigurationService,
+            mockNetworkService,
+            mockLoggingService,
+          );
+        }).toThrow('CAPTCHA is enabled but secret key is not configured');
+      });
     });
 
     describe('with secret key configured', () => {

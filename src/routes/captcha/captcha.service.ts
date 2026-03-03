@@ -29,18 +29,15 @@ export class CaptchaService {
       configurationService.get<boolean>('captcha.enabled') ?? false;
     this.secretKey =
       configurationService.get<string>('captcha.secretKey') ?? '';
+
+    if (this.isEnabled && !this.secretKey) {
+      throw new Error('CAPTCHA is enabled but secret key is not configured');
+    }
   }
 
   async verifyToken(token: string, remoteip?: string): Promise<boolean> {
     if (!this.isEnabled) {
       return true;
-    }
-
-    if (!this.secretKey) {
-      this.loggingService.warn(
-        'CAPTCHA is enabled but secret key is not configured',
-      );
-      return false;
     }
 
     if (!token) {
