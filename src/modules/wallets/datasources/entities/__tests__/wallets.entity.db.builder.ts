@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { IBuilder } from '@/__tests__/builder';
 import { Builder } from '@/__tests__/builder';
 import { faker } from '@faker-js/faker/.';
@@ -10,6 +11,7 @@ export function walletBuilder(): IBuilder<Wallet> {
     .with('id', faker.number.int())
     .with('user', userBuilder().build())
     .with('address', getAddress(faker.finance.ethereumAddress()))
-    .with('created_at', new Date())
-    .with('updated_at', new Date());
+    .with('addressHash', null)
+    .with('createdAt', new Date())
+    .with('updatedAt', new Date());
 }

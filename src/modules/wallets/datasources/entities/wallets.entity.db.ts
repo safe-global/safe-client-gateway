@@ -1,7 +1,7 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import {
   Column,
   Entity,
-  Unique,
   PrimaryGeneratedColumn,
   ManyToOne,
   JoinColumn,
@@ -9,11 +9,9 @@ import {
 import { z } from 'zod';
 import { User } from '@/modules/users/datasources/entities/users.entity.db';
 import { WalletSchema } from '@/modules/wallets/domain/entities/wallet.entity';
-import { databaseAddressTransformer } from '@/domain/common/transformers/databaseAddress.transformer';
 import type { Address } from 'viem';
 
 @Entity('wallets')
-@Unique('UQ_wallet_address', ['address'])
 export class Wallet implements z.infer<typeof WalletSchema> {
   @PrimaryGeneratedColumn({ primaryKeyConstraintName: 'PK_wallet_id' })
   id!: number;
@@ -28,12 +26,16 @@ export class Wallet implements z.infer<typeof WalletSchema> {
   })
   user!: User;
 
-  @Column({
-    type: 'varchar',
-    length: 42,
-    transformer: databaseAddressTransformer,
-  })
+  @Column({ type: 'text' })
   address!: Address;
+
+  @Column({
+    name: 'address_hash',
+    type: 'varchar',
+    length: 64,
+    nullable: true,
+  })
+  addressHash!: string | null;
 
   @Column({
     name: 'created_at',

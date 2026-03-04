@@ -1,6 +1,7 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
-import { type EntityManager } from 'typeorm';
+import { type EntityManager, IsNull } from 'typeorm';
 import type {
   DeleteResult,
   FindOptionsRelations,
@@ -11,6 +12,7 @@ import type {
 import type { User } from '@/modules/users/domain/entities/user.entity';
 import type { IWalletsRepository } from '@/modules/wallets/domain/wallets.repository.interface';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
+import { IFieldEncryptionService } from '@/datasources/encryption/encryption.service.interface';
 import type { Address } from 'viem';
 
 @Injectable()
@@ -18,6 +20,8 @@ export class WalletsRepository implements IWalletsRepository {
   public constructor(
     @Inject(PostgresDatabaseService)
     private readonly postgresDatabaseService: PostgresDatabaseService,
+    @Inject(IFieldEncryptionService)
+    private readonly encryptionService: IFieldEncryptionService,
   ) {}
 
   public async findOneOrFail(
@@ -88,7 +92,12 @@ export class WalletsRepository implements IWalletsRepository {
     address: Address,
     relations?: FindOptionsRelations<Wallet>,
   ): Promise<Wallet | null> {
-    return await this.findOne({ address }, relations);
+    const hash = this.encryptionService.hmac(address);
+    // Dual-read: hash-based lookup with plaintext fallback for unmigrated rows
+    return await this.findOne(
+      [{ addressHash: hash }, { address, addressHash: IsNull() }],
+      relations,
+    );
   }
 
   public async findByUser(
@@ -124,8 +133,12 @@ export class WalletsRepository implements IWalletsRepository {
     const walletRepository =
       await this.postgresDatabaseService.getRepository(Wallet);
 
-    return await walletRepository.delete({
-      address,
-    });
+    const hash = this.encryptionService.hmac(address);
+    // Dual-read: delete by hash or by plaintext for unmigrated rows
+    const hashResult = await walletRepository.delete({ addressHash: hash });
+    if (hashResult.affected && hashResult.affected > 0) {
+      return hashResult;
+    }
+    return await walletRepository.delete({ address, addressHash: IsNull() });
   }
 }

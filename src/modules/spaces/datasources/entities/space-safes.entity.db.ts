@@ -1,5 +1,5 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
-import { databaseAddressTransformer } from '@/domain/common/transformers/databaseAddress.transformer';
 import { SpaceSafe as DomainSpaceSafe } from '@/modules/spaces/domain/entities/space-safe.entity';
 import { CHAIN_ID_MAXLENGTH } from '@/routes/common/constants';
 import {
@@ -8,12 +8,10 @@ import {
   ManyToOne,
   JoinColumn,
   PrimaryGeneratedColumn,
-  Unique,
 } from 'typeorm';
 import type { Address } from 'viem';
 
 @Entity('space_safes')
-@Unique('UQ_SS_chainId_address_space', ['chainId', 'address', 'space'])
 export class SpaceSafe implements DomainSpaceSafe {
   @PrimaryGeneratedColumn({
     primaryKeyConstraintName: 'PK_SS_id',
@@ -27,12 +25,16 @@ export class SpaceSafe implements DomainSpaceSafe {
   })
   public readonly chainId!: string;
 
-  @Column({
-    type: 'varchar',
-    length: 42,
-    transformer: databaseAddressTransformer,
-  })
+  @Column({ type: 'text' })
   public readonly address!: Address;
+
+  @Column({
+    name: 'address_hash',
+    type: 'varchar',
+    length: 64,
+    nullable: true,
+  })
+  public readonly addressHash!: string | null;
 
   @Column({
     name: 'created_at',

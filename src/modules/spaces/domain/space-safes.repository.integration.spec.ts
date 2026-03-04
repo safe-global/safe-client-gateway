@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { DataSource } from 'typeorm';
 import { getAddress, maxUint256 } from 'viem';
@@ -18,7 +19,8 @@ import type { ConfigService } from '@nestjs/config';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
-import { UniqueConstraintError } from '@/datasources/errors/unique-constraint-error';
+import type { IFieldEncryptionService } from '@/datasources/encryption/encryption.service.interface';
+import { EncryptionLocator } from '@/datasources/encryption/encryption-locator';
 
 const mockLoggingService = {
   debug: jest.fn(),
@@ -103,9 +105,16 @@ describe('SpaceSafesRepository', () => {
     );
     await migrator.migrate();
 
+    const mockEncryptionService = {
+      encrypt: jest.fn((v: string) => v),
+      decrypt: jest.fn((v: string) => v),
+      hmac: jest.fn((v: string) => v.toLowerCase()),
+    } as unknown as jest.MockedObjectDeep<IFieldEncryptionService>;
+    EncryptionLocator.setService(mockEncryptionService);
     spaceSafesRepo = new SpaceSafesRepository(
       postgresDatabaseService,
       mockConfigService,
+      mockEncryptionService,
     );
 
     dbWalletRepo = dataSource.getRepository(Wallet);
@@ -116,7 +125,7 @@ describe('SpaceSafesRepository', () => {
   });
 
   afterEach(async () => {
-    jest.resetAllMocks();
+    jest.clearAllMocks();
 
     // Delete in dependency order to avoid deadlocks
     await dbMembersRepository
@@ -139,6 +148,7 @@ describe('SpaceSafesRepository', () => {
   });
 
   afterAll(async () => {
+    EncryptionLocator.reset();
     await postgresDatabaseService.getDataSource().dropDatabase();
     await postgresDatabaseService.destroyDatabaseConnection();
   });
@@ -222,11 +232,10 @@ describe('SpaceSafesRepository', () => {
   });
 
   describe('address', () => {
-    it('should store non-checksummed addresses, checksummed', async () => {
+    it('should store addresses as-is', async () => {
       const nonChecksummedAddress = faker.finance
         .ethereumAddress()
         .toLowerCase();
-      const checksummedAddress = getAddress(nonChecksummedAddress);
 
       const space = await dbSpaceRepository.insert({
         status: faker.helpers.arrayElement(getStringEnumKeys(SpaceStatus)),
@@ -243,10 +252,10 @@ describe('SpaceSafesRepository', () => {
         },
       });
 
-      expect(spaceSafe.address).toEqual(checksummedAddress);
+      expect(spaceSafe.address).toEqual(nonChecksummedAddress);
     });
 
-    it('should update non-checksummed addresses, checksummed', async () => {
+    it('should update addresses as-is', async () => {
       const nonChecksummedAddress = faker.finance
         .ethereumAddress()
         .toLowerCase();
@@ -274,7 +283,7 @@ describe('SpaceSafesRepository', () => {
         },
       });
 
-      expect(spaceSafe.address).toEqual(checksummedAddress);
+      expect(spaceSafe.address).toEqual(nonChecksummedAddress);
     });
   });
 
@@ -318,13 +327,13 @@ describe('SpaceSafesRepository', () => {
           where: { chainId, address },
         }),
       ).resolves.toEqual([
-        {
+        expect.objectContaining({
           id: expect.any(Number),
           chainId,
           address,
           createdAt: expect.any(Date),
           updatedAt: expect.any(Date),
-        },
+        }),
       ]);
     });
 
@@ -363,13 +372,15 @@ describe('SpaceSafesRepository', () => {
       });
 
       await expect(dbSpaceSafesRepository.find()).resolves.toEqual(
-        payload.map(({ chainId, address }) => ({
-          id: expect.any(Number),
-          chainId,
-          address,
-          createdAt: expect.any(Date),
-          updatedAt: expect.any(Date),
-        })),
+        payload.map(({ chainId, address }) =>
+          expect.objectContaining({
+            id: expect.any(Number),
+            chainId,
+            address,
+            createdAt: expect.any(Date),
+            updatedAt: expect.any(Date),
+          }),
+        ),
       );
     });
 
@@ -431,51 +442,32 @@ describe('SpaceSafesRepository', () => {
       );
     });
 
-    it('should fail if a SpaceSafe with the same address and chainId already exists', async () => {
+    it('should fail if a SpaceSafe with the same address_hash and chainId already exists', async () => {
       const chainId = faker.string.numeric();
       const address = getAddress(faker.finance.ethereumAddress());
-      const user = await dbUserRepo.insert({
-        status: 'ACTIVE',
-      });
-      const userId = user.identifiers[0].id as User['id'];
-      await dbWalletRepo.insert({
-        user: { id: userId },
-        address: getAddress(faker.finance.ethereumAddress()),
-      });
+      const addressHash = address.toLowerCase();
       const space = await dbSpaceRepository.insert({
         status: faker.helpers.arrayElement(getStringEnumKeys(SpaceStatus)),
         name: faker.word.noun(),
       });
       const spaceId = space.identifiers[0].id as Space['id'];
-      await dbMembersRepository.insert({
-        user: { id: userId },
-        role: 'ADMIN',
-        status: 'ACTIVE',
-        name: faker.word.noun(),
+
+      await dbSpaceSafesRepository.insert({
+        chainId,
+        address,
+        addressHash,
         space: { id: spaceId },
       });
 
       await expect(
-        Promise.all([
-          spaceSafesRepo.create({
-            spaceId: spaceId,
-            payload: [{ chainId, address }],
-          }),
-          spaceSafesRepo.create({
-            spaceId: spaceId,
-            payload: [
-              { chainId, address },
-              {
-                chainId: faker.string.numeric(),
-                address: getAddress(faker.finance.ethereumAddress()),
-              },
-            ],
-          }),
-        ]),
+        dbSpaceSafesRepository.insert({
+          chainId,
+          address,
+          addressHash,
+          space: { id: spaceId },
+        }),
       ).rejects.toThrow(
-        new UniqueConstraintError(
-          `A SpaceSafe with the same chainId and address already exists: Key (chain_id, address, space_id)=(${chainId}, ${address}, ${spaceId}) already exists.`,
-        ),
+        'duplicate key value violates unique constraint "UQ_SS_chainId_addressHash_space"',
       );
     });
   });
@@ -548,13 +540,15 @@ describe('SpaceSafesRepository', () => {
         }),
       ).resolves.toEqual(
         expect.arrayContaining(
-          spaceSafes.map(({ chainId, address }) => ({
-            id: expect.any(Number),
-            chainId,
-            address,
-            createdAt: expect.any(Date),
-            updatedAt: expect.any(Date),
-          })),
+          spaceSafes.map(({ chainId, address }) =>
+            expect.objectContaining({
+              id: expect.any(Number),
+              chainId,
+              address,
+              createdAt: expect.any(Date),
+              updatedAt: expect.any(Date),
+            }),
+          ),
         ),
       );
     });
@@ -598,13 +592,15 @@ describe('SpaceSafesRepository', () => {
           where: { space: { id: spaceId } },
         }),
       ).resolves.toEqual(
-        spaceSafes.map(({ chainId, address }) => ({
-          id: expect.any(Number),
-          chainId,
-          address,
-          createdAt: expect.any(Date),
-          updatedAt: expect.any(Date),
-        })),
+        spaceSafes.map(({ chainId, address }) =>
+          expect.objectContaining({
+            id: expect.any(Number),
+            chainId,
+            address,
+            createdAt: expect.any(Date),
+            updatedAt: expect.any(Date),
+          }),
+        ),
       );
     });
 
@@ -790,6 +786,67 @@ describe('SpaceSafesRepository', () => {
           ],
         }),
       ).resolves.toBeUndefined();
+    });
+
+    it('should delete a migrated SpaceSafe by hash', async () => {
+      const chainId = faker.string.numeric();
+      const address = getAddress(faker.finance.ethereumAddress());
+      const hash = address.toLowerCase();
+      const space = await dbSpaceRepository.insert({
+        status: faker.helpers.arrayElement(getStringEnumKeys(SpaceStatus)),
+        name: faker.word.noun(),
+      });
+      const spaceId = space.identifiers[0].id as Space['id'];
+      // Insert with addressHash (migrated row)
+      await dbSpaceSafesRepository.insert({
+        chainId,
+        address,
+        addressHash: hash,
+        space: { id: spaceId },
+      });
+      await expect(dbSpaceSafesRepository.find()).resolves.toHaveLength(1);
+
+      await spaceSafesRepo.delete({
+        spaceId,
+        payload: [{ chainId, address }],
+      });
+
+      await expect(dbSpaceSafesRepository.find()).resolves.toEqual([]);
+    });
+
+    it('should delete both migrated and unmigrated SpaceSafes in one call', async () => {
+      const migratedAddress = getAddress(faker.finance.ethereumAddress());
+      const unmigratedAddress = getAddress(faker.finance.ethereumAddress());
+      const chainId = faker.string.numeric();
+      const space = await dbSpaceRepository.insert({
+        status: faker.helpers.arrayElement(getStringEnumKeys(SpaceStatus)),
+        name: faker.word.noun(),
+      });
+      const spaceId = space.identifiers[0].id as Space['id'];
+      // Insert migrated row (has addressHash)
+      await dbSpaceSafesRepository.insert({
+        chainId,
+        address: migratedAddress,
+        addressHash: migratedAddress.toLowerCase(),
+        space: { id: spaceId },
+      });
+      // Insert unmigrated row (no addressHash)
+      await dbSpaceSafesRepository.insert({
+        chainId,
+        address: unmigratedAddress,
+        space: { id: spaceId },
+      });
+      await expect(dbSpaceSafesRepository.find()).resolves.toHaveLength(2);
+
+      await spaceSafesRepo.delete({
+        spaceId,
+        payload: [
+          { chainId, address: migratedAddress },
+          { chainId, address: unmigratedAddress },
+        ],
+      });
+
+      await expect(dbSpaceSafesRepository.find()).resolves.toEqual([]);
     });
   });
 });
