@@ -80,6 +80,12 @@ export const RootConfigurationSchema = z
       .int()
       .min(0)
       .optional(),
+    ENCRYPTION_PROVIDER: z.enum(['aws', 'local']).optional(),
+    ENCRYPTION_DEK_V1_ENCRYPTED: z.string().optional(),
+    ENCRYPTION_HMAC_KEY_ENCRYPTED: z.string().optional(),
+    ENCRYPTION_CURRENT_VERSION: z.coerce.number().int().min(1).optional(),
+    ENCRYPTION_HMAC_SECRET: z.string().optional(),
+    ENCRYPTION_LOCAL_KEY: z.string().optional(),
     // TODO: Reassess EMAIL_ keys after email integration
     EMAIL_API_APPLICATION_CODE: z.string(),
     EMAIL_API_FROM_EMAIL: z.email(),
@@ -166,6 +172,8 @@ export const RootConfigurationSchema = z
       'CSV_AWS_ACCESS_KEY_ID',
       'CSV_AWS_SECRET_ACCESS_KEY',
       'BLOCKAID_CLIENT_API_KEY',
+      'ENCRYPTION_DEK_V1_ENCRYPTED',
+      'ENCRYPTION_HMAC_KEY_ENCRYPTED',
     ].forEach((field) => {
       if (
         config.CGW_ENV &&

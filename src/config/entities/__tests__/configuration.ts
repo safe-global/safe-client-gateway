@@ -128,6 +128,14 @@ export default (): ReturnType<typeof configuration> => ({
       apiKey: faker.string.hexadecimal({ length: 32 }),
     },
   },
+  encryption: {
+    provider: 'local',
+    dekV1Encrypted: undefined,
+    hmacKeyEncrypted: undefined,
+    currentVersion: 1,
+    localKey: faker.string.hexadecimal({ length: 64 }),
+    hmacSecret: faker.string.hexadecimal({ length: 64 }),
+  },
   email: {
     applicationCode: faker.string.alphanumeric(),
     baseUri: faker.internet.url({ appendSlash: false }),
