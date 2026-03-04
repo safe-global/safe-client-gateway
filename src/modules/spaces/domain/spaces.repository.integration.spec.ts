@@ -1,9 +1,12 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { DataSource, EntityNotFoundError, In } from 'typeorm';
 import configuration from '@/config/entities/__tests__/configuration';
 import { postgresConfig } from '@/config/entities/postgres.config';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { DatabaseMigrator } from '@/datasources/db/v2/database-migrator.service';
+import { EncryptionLocator } from '@/datasources/encryption/encryption-locator';
+import type { IFieldEncryptionService } from '@/datasources/encryption/encryption.service.interface';
 import { User } from '@/modules/users/datasources/entities/users.entity.db';
 import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
 import type { ConfigService } from '@nestjs/config';
@@ -104,6 +107,11 @@ describe('SpacesRepository', () => {
       }
     });
     await migrator.migrate();
+    EncryptionLocator.setService({
+      encrypt: jest.fn((v: string) => v),
+      decrypt: jest.fn((v: string) => v),
+      hmac: jest.fn((v: string) => v.toLowerCase()),
+    } as unknown as jest.MockedObjectDeep<IFieldEncryptionService>);
     spacesRepository = new SpacesRepository(
       postgresDatabaseService,
       mockConfigurationService,
@@ -111,7 +119,7 @@ describe('SpacesRepository', () => {
   });
 
   afterEach(async () => {
-    jest.resetAllMocks();
+    jest.clearAllMocks();
 
     // Delete in dependency order to avoid deadlocks
     await dataSource
@@ -141,6 +149,7 @@ describe('SpacesRepository', () => {
   });
 
   afterAll(async () => {
+    EncryptionLocator.reset();
     await postgresDatabaseService.getDataSource().dropDatabase();
     await postgresDatabaseService.destroyDatabaseConnection();
   });
