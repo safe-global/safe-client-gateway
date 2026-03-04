@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import configuration from '@/config/entities/__tests__/configuration';
 import { postgresConfig } from '@/config/entities/postgres.config';
@@ -8,6 +9,8 @@ import { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
 import { Member } from '@/modules/users/datasources/entities/member.entity.db';
 import { User } from '@/modules/users/datasources/entities/users.entity.db';
 import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
+import { EncryptionLocator } from '@/datasources/encryption/encryption-locator';
+import type { IFieldEncryptionService } from '@/datasources/encryption/encryption.service.interface';
 import { authPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
@@ -40,6 +43,12 @@ const mockLoggingService = {
 const mockConfigurationService = jest.mocked({
   getOrThrow: jest.fn(),
 } as jest.MockedObjectDeep<IConfigurationService>);
+
+const mockEncryptionService = {
+  encrypt: jest.fn((v: string) => v),
+  decrypt: jest.fn((v: string) => v),
+  hmac: jest.fn((v: string) => v.toLowerCase()),
+} as unknown as jest.MockedObjectDeep<IFieldEncryptionService>;
 
 const UserStatusKeys = getStringEnumKeys(UserStatus);
 const SpaceStatusKeys = getStringEnumKeys(SpaceStatus);
@@ -114,12 +123,17 @@ describe('MembersRepository', () => {
       mockConfigService,
     );
     await migrator.migrate();
+
+    EncryptionLocator.setService(mockEncryptionService);
     mockConfigurationService.getOrThrow.mockImplementation((key) => {
       if (key === 'spaces.maxSpaceCreationsPerUser') {
         return testConfiguration.spaces.maxSpaceCreationsPerUser;
       }
     });
-    const walletsRepo = new WalletsRepository(postgresDatabaseService);
+    const walletsRepo = new WalletsRepository(
+      postgresDatabaseService,
+      mockEncryptionService,
+    );
     membersRepository = new MembersRepository(
       postgresDatabaseService,
       new UsersRepository(postgresDatabaseService, walletsRepo),
@@ -129,7 +143,7 @@ describe('MembersRepository', () => {
   });
 
   afterEach(async () => {
-    jest.resetAllMocks();
+    jest.clearAllMocks();
 
     // Delete in dependency order to avoid deadlocks
     await dataSource
@@ -159,6 +173,7 @@ describe('MembersRepository', () => {
   });
 
   afterAll(async () => {
+    EncryptionLocator.reset();
     await postgresDatabaseService.getDataSource().dropDatabase();
     await postgresDatabaseService.destroyDatabaseConnection();
   });
@@ -273,16 +288,18 @@ describe('MembersRepository', () => {
 
       await expect(
         membersRepository.findOneOrFail({ id: memberId }),
-      ).resolves.toEqual({
-        createdAt: expect.any(Date),
-        id: memberId,
-        name: memberName,
-        alias: null,
-        role: memberRole,
-        status: memberStatus,
-        invitedBy: memberInvitedBy,
-        updatedAt: expect.any(Date),
-      });
+      ).resolves.toEqual(
+        expect.objectContaining({
+          createdAt: expect.any(Date),
+          id: memberId,
+          name: memberName,
+          alias: null,
+          role: memberRole,
+          status: memberStatus,
+          invitedBy: memberInvitedBy,
+          updatedAt: expect.any(Date),
+        }),
+      );
     });
 
     it('should throw an error if the member does not exist', async () => {
@@ -325,16 +342,18 @@ describe('MembersRepository', () => {
 
       await expect(
         membersRepository.findOne({ id: memberId }),
-      ).resolves.toEqual({
-        createdAt: expect.any(Date),
-        id: memberId,
-        name: memberName,
-        alias: null,
-        role: memberRole,
-        status: memberStatus,
-        invitedBy: memberInvitedBy,
-        updatedAt: expect.any(Date),
-      });
+      ).resolves.toEqual(
+        expect.objectContaining({
+          createdAt: expect.any(Date),
+          id: memberId,
+          name: memberName,
+          alias: null,
+          role: memberRole,
+          status: memberStatus,
+          invitedBy: memberInvitedBy,
+          updatedAt: expect.any(Date),
+        }),
+      );
     });
 
     it('should return null if the member does not exist', async () => {
@@ -397,7 +416,7 @@ describe('MembersRepository', () => {
           where: { id: In([memberId1, memberId2]) },
         }),
       ).resolves.toEqual([
-        {
+        expect.objectContaining({
           createdAt: expect.any(Date),
           id: memberId1,
           name: memberName1,
@@ -406,8 +425,8 @@ describe('MembersRepository', () => {
           status: memberStatus1,
           invitedBy: member1InvitedBy,
           updatedAt: expect.any(Date),
-        },
-        {
+        }),
+        expect.objectContaining({
           createdAt: expect.any(Date),
           id: memberId2,
           name: memberName2,
@@ -416,7 +435,7 @@ describe('MembersRepository', () => {
           status: memberStatus2,
           invitedBy: member2InvitedBy,
           updatedAt: expect.any(Date),
-        },
+        }),
       ]);
     });
 
@@ -478,7 +497,7 @@ describe('MembersRepository', () => {
       await expect(
         membersRepository.find({ where: { id: In([memberId1, memberId2]) } }),
       ).resolves.toEqual([
-        {
+        expect.objectContaining({
           createdAt: expect.any(Date),
           id: memberId1,
           name: memberName1,
@@ -487,8 +506,8 @@ describe('MembersRepository', () => {
           status: memberStatus1,
           invitedBy: member1InvitedBy,
           updatedAt: expect.any(Date),
-        },
-        {
+        }),
+        expect.objectContaining({
           createdAt: expect.any(Date),
           id: memberId2,
           name: memberName2,
@@ -497,7 +516,7 @@ describe('MembersRepository', () => {
           status: member2Status,
           invitedBy: member2InvitedBy,
           updatedAt: expect.any(Date),
-        },
+        }),
       ]);
     });
 
@@ -557,14 +576,14 @@ describe('MembersRepository', () => {
 
       expect(member).toEqual(
         users.map((user) => {
-          return {
+          return expect.objectContaining({
             userId: expect.any(Number),
             spaceId,
             name: user.name,
             role: user.role,
             status: 'INVITED',
             invitedBy: authPayloadDto.signer_address,
-          };
+          });
         }),
       );
     });
@@ -624,18 +643,18 @@ describe('MembersRepository', () => {
           relations: { user: true },
         }),
       ).resolves.toEqual([
-        {
+        expect.objectContaining({
           address: memberWallet,
           createdAt: expect.any(Date),
           id: expect.any(Number),
           updatedAt: expect.any(Date),
-          user: {
+          user: expect.objectContaining({
             createdAt: expect.any(Date),
             id: member.generatedMaps[0].id,
             status: 'ACTIVE',
             updatedAt: expect.any(Date),
-          },
-        },
+          }),
+        }),
       ]);
     });
 
@@ -970,26 +989,30 @@ describe('MembersRepository', () => {
         dbMembersRepository.findOneOrFail({
           where: { id: memberId },
         }),
-      ).resolves.toEqual({
-        createdAt: expect.any(Date),
-        id: memberId,
-        name: memberName,
-        alias: null,
-        role: memberRole,
-        status: 'ACTIVE',
-        invitedBy: memberInvitedBy,
-        updatedAt: expect.any(Date),
-      });
+      ).resolves.toEqual(
+        expect.objectContaining({
+          createdAt: expect.any(Date),
+          id: memberId,
+          name: memberName,
+          alias: null,
+          role: memberRole,
+          status: 'ACTIVE',
+          invitedBy: memberInvitedBy,
+          updatedAt: expect.any(Date),
+        }),
+      );
       await expect(
         dbUserRepo.findOneOrFail({
           where: { id: user.generatedMaps[0].id },
         }),
-      ).resolves.toEqual({
-        createdAt: expect.any(Date),
-        id: userId,
-        status: 'ACTIVE', // No longer PENDING
-        updatedAt: expect.any(Date),
-      });
+      ).resolves.toEqual(
+        expect.objectContaining({
+          createdAt: expect.any(Date),
+          id: userId,
+          status: 'ACTIVE', // No longer PENDING
+          updatedAt: expect.any(Date),
+        }),
+      );
     });
 
     it('should accept an invite to a space and override the name', async () => {
@@ -1050,26 +1073,30 @@ describe('MembersRepository', () => {
         dbMembersRepository.findOneOrFail({
           where: { id: memberId },
         }),
-      ).resolves.toEqual({
-        createdAt: expect.any(Date),
-        id: memberId,
-        name: updatedName,
-        alias: null,
-        role: memberRole,
-        status: 'ACTIVE',
-        invitedBy: memberInvitedBy,
-        updatedAt: expect.any(Date),
-      });
+      ).resolves.toEqual(
+        expect.objectContaining({
+          createdAt: expect.any(Date),
+          id: memberId,
+          name: updatedName,
+          alias: null,
+          role: memberRole,
+          status: 'ACTIVE',
+          invitedBy: memberInvitedBy,
+          updatedAt: expect.any(Date),
+        }),
+      );
       await expect(
         dbUserRepo.findOneOrFail({
           where: { id: user.generatedMaps[0].id },
         }),
-      ).resolves.toEqual({
-        createdAt: expect.any(Date),
-        id: userId,
-        status: 'ACTIVE', // No longer PENDING
-        updatedAt: expect.any(Date),
-      });
+      ).resolves.toEqual(
+        expect.objectContaining({
+          createdAt: expect.any(Date),
+          id: userId,
+          status: 'ACTIVE', // No longer PENDING
+          updatedAt: expect.any(Date),
+        }),
+      );
     });
 
     it('should not accept the invite if the user was not invited', async () => {
@@ -1344,26 +1371,30 @@ describe('MembersRepository', () => {
         dbMembersRepository.findOneOrFail({
           where: { id: memberId },
         }),
-      ).resolves.toEqual({
-        createdAt: expect.any(Date),
-        id: memberId,
-        name: memberName,
-        alias: null,
-        role: memberRole,
-        status: 'DECLINED',
-        invitedBy: memberInvitedBy,
-        updatedAt: expect.any(Date),
-      });
+      ).resolves.toEqual(
+        expect.objectContaining({
+          createdAt: expect.any(Date),
+          id: memberId,
+          name: memberName,
+          alias: null,
+          role: memberRole,
+          status: 'DECLINED',
+          invitedBy: memberInvitedBy,
+          updatedAt: expect.any(Date),
+        }),
+      );
       await expect(
         dbUserRepo.findOneOrFail({
           where: { id: user.generatedMaps[0].id },
         }),
-      ).resolves.toEqual({
-        createdAt: expect.any(Date),
-        id: userId,
-        status: 'PENDING', // Remains PENDING
-        updatedAt: expect.any(Date),
-      });
+      ).resolves.toEqual(
+        expect.objectContaining({
+          createdAt: expect.any(Date),
+          id: userId,
+          status: 'PENDING', // Remains PENDING
+          updatedAt: expect.any(Date),
+        }),
+      );
     });
 
     it('should not decline the invite if the user was not invited', async () => {
@@ -1600,7 +1631,7 @@ describe('MembersRepository', () => {
           spaceId,
         }),
       ).resolves.toEqual([
-        {
+        expect.objectContaining({
           createdAt: expect.any(Date),
           id: memberId,
           name: memberName,
@@ -1609,13 +1640,13 @@ describe('MembersRepository', () => {
           status: 'ACTIVE',
           invitedBy: memberInvitedBy,
           updatedAt: expect.any(Date),
-          user: {
+          user: expect.objectContaining({
             createdAt: expect.any(Date),
             id: user.generatedMaps[0].id,
             status: userStatus,
             updatedAt: expect.any(Date),
-          },
-        },
+          }),
+        }),
       ]);
     });
 
@@ -1851,17 +1882,19 @@ describe('MembersRepository', () => {
           },
           { space: true },
         ),
-      ).resolves.toEqual({
-        createdAt: expect.any(Date),
-        id: expect.any(Number),
-        name: memberName,
-        alias: null,
-        role: 'ADMIN',
-        status: 'ACTIVE',
-        invitedBy: expect.any(String),
-        updatedAt: expect.any(Date),
-        space: expect.objectContaining({ id: spaceId }),
-      });
+      ).resolves.toEqual(
+        expect.objectContaining({
+          createdAt: expect.any(Date),
+          id: expect.any(Number),
+          name: memberName,
+          alias: null,
+          role: 'ADMIN',
+          status: 'ACTIVE',
+          invitedBy: expect.any(String),
+          updatedAt: expect.any(Date),
+          space: expect.objectContaining({ id: spaceId }),
+        }),
+      );
       // Member role in space2 should not be affected
       await expect(
         membersRepository.findOneOrFail(
@@ -1871,17 +1904,19 @@ describe('MembersRepository', () => {
           },
           { space: true },
         ),
-      ).resolves.toEqual({
-        createdAt: expect.any(Date),
-        id: expect.any(Number),
-        name: member2Name,
-        alias: null,
-        role: 'MEMBER',
-        status: 'ACTIVE',
-        invitedBy: expect.any(String),
-        updatedAt: expect.any(Date),
-        space: expect.objectContaining({ id: space2Id }),
-      });
+      ).resolves.toEqual(
+        expect.objectContaining({
+          createdAt: expect.any(Date),
+          id: expect.any(Number),
+          name: member2Name,
+          alias: null,
+          role: 'MEMBER',
+          status: 'ACTIVE',
+          invitedBy: expect.any(String),
+          updatedAt: expect.any(Date),
+          space: expect.objectContaining({ id: space2Id }),
+        }),
+      );
     });
 
     it('should not allow updating MEMBERs if the signer is not an ADMIN', async () => {
@@ -2267,16 +2302,18 @@ describe('MembersRepository', () => {
       // Ensure still a member of space2
       await expect(
         dbMembersRepository.findOne({ where: { id: member2memberId } }),
-      ).resolves.toEqual({
-        createdAt: expect.any(Date),
-        id: member2memberId,
-        name: member2Name,
-        alias: null,
-        role: 'MEMBER',
-        status: 'ACTIVE',
-        invitedBy: member2InvitedBy,
-        updatedAt: expect.any(Date),
-      });
+      ).resolves.toEqual(
+        expect.objectContaining({
+          createdAt: expect.any(Date),
+          id: member2memberId,
+          name: member2Name,
+          alias: null,
+          role: 'MEMBER',
+          status: 'ACTIVE',
+          invitedBy: member2InvitedBy,
+          updatedAt: expect.any(Date),
+        }),
+      );
     });
 
     it('should not allow removing a user if the user is not an ADMIN', async () => {
@@ -2663,16 +2700,18 @@ describe('MembersRepository', () => {
       // Should still be in second space
       await expect(
         dbMembersRepository.findOne({ where: { id: signerMemberId2 } }),
-      ).resolves.toEqual({
-        createdAt: expect.any(Date),
-        id: signerMemberId2,
-        name: member2Name,
-        alias: null,
-        role: 'MEMBER',
-        status: 'ACTIVE',
-        invitedBy: signerMember2InvitedBy,
-        updatedAt: expect.any(Date),
-      });
+      ).resolves.toEqual(
+        expect.objectContaining({
+          createdAt: expect.any(Date),
+          id: signerMemberId2,
+          name: member2Name,
+          alias: null,
+          role: 'MEMBER',
+          status: 'ACTIVE',
+          invitedBy: signerMember2InvitedBy,
+          updatedAt: expect.any(Date),
+        }),
+      );
     });
 
     it('should throw an error if the signer is the last ACTIVE ADMIN', async () => {

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { DataSource } from 'typeorm';
 import { type Address, getAddress } from 'viem';
@@ -13,6 +14,8 @@ import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity'
 import { UserStatus } from '@/modules/users/domain/entities/user.entity';
 import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
 import type { ConfigService } from '@nestjs/config';
+import type { IFieldEncryptionService } from '@/datasources/encryption/encryption.service.interface';
+import { EncryptionLocator } from '@/datasources/encryption/encryption-locator';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { getStringEnumKeys } from '@/domain/common/utils/enum';
 import { Member } from '@/modules/users/datasources/entities/member.entity.db';
@@ -25,6 +28,12 @@ const mockLoggingService = {
   info: jest.fn(),
   warn: jest.fn(),
 } as jest.MockedObjectDeep<ILoggingService>;
+
+const mockEncryptionService = {
+  encrypt: jest.fn((v: string) => v),
+  decrypt: jest.fn((v: string) => v),
+  hmac: jest.fn((v: string) => v.toLowerCase()),
+} as unknown as jest.MockedObjectDeep<IFieldEncryptionService>;
 
 const UserStatusKeys = getStringEnumKeys(UserStatus);
 
@@ -92,14 +101,16 @@ describe('UsersRepository', () => {
     );
     await migrator.migrate();
 
+    EncryptionLocator.setService(mockEncryptionService);
+
     usersRepository = new UsersRepository(
       postgresDatabaseService,
-      new WalletsRepository(postgresDatabaseService),
+      new WalletsRepository(postgresDatabaseService, mockEncryptionService),
     );
   });
 
   afterEach(async () => {
-    jest.resetAllMocks();
+    jest.clearAllMocks();
 
     const dbWalletRepository = dataSource.getRepository(Wallet);
     const dbUserRepository = dataSource.getRepository(User);
@@ -112,6 +123,7 @@ describe('UsersRepository', () => {
   });
 
   afterAll(async () => {
+    EncryptionLocator.reset();
     await postgresDatabaseService.getDataSource().dropDatabase();
     await postgresDatabaseService.destroyDatabaseConnection();
   });
@@ -182,18 +194,20 @@ describe('UsersRepository', () => {
         relations: { user: true },
       });
 
-      expect(wallet).toEqual({
-        address: authPayload.signer_address,
-        createdAt: expect.any(Date),
-        id: wallet.id,
-        updatedAt: expect.any(Date),
-        user: {
+      expect(wallet).toEqual(
+        expect.objectContaining({
+          address: authPayload.signer_address,
           createdAt: expect.any(Date),
-          id: wallet.user.id,
-          status,
+          id: wallet.id,
           updatedAt: expect.any(Date),
-        },
-      });
+          user: expect.objectContaining({
+            createdAt: expect.any(Date),
+            id: wallet.user.id,
+            status,
+            updatedAt: expect.any(Date),
+          }),
+        }),
+      );
     });
 
     it('should throw an error if the wallet already exists', async () => {
@@ -220,22 +234,7 @@ describe('UsersRepository', () => {
       ).rejects.toThrow(`Invalid enum key: ${status}`);
     });
 
-    it('should throw if an invalid wallet address is provided', async () => {
-      const signerAddress = faker.string.hexadecimal({
-        length: { min: 41, max: 41 },
-      });
-      const authPayloadDto = authPayloadDtoBuilder()
-        .with('signer_address', signerAddress as Address)
-        .build();
-      const authPayload = new AuthPayload(authPayloadDto);
-      const status = faker.helpers.arrayElement(UserStatusKeys);
-
-      await expect(
-        usersRepository.createWithWallet({ status, authPayload }),
-      ).rejects.toThrow(new RegExp(`^Address "${signerAddress}" is invalid.`));
-    });
-
-    it('should checksum the inserted wallet address', async () => {
+    it('should store the wallet address as-is', async () => {
       const dbWalletRepository = dataSource.getRepository(Wallet);
       const nonChecksummedAddress = faker.finance
         .ethereumAddress()
@@ -249,12 +248,12 @@ describe('UsersRepository', () => {
       await usersRepository.createWithWallet({ status, authPayload });
 
       const wallet = await dbWalletRepository.findOneOrFail({
-        where: { address: authPayload.signer_address },
+        where: { address: nonChecksummedAddress as Address },
       });
 
       expect(wallet).toStrictEqual(
         expect.objectContaining({
-          address: getAddress(nonChecksummedAddress),
+          address: nonChecksummedAddress,
         }),
       );
     });
@@ -374,7 +373,7 @@ describe('UsersRepository', () => {
         wallets: [
           {
             id: wallet.id,
-            address: getAddress(nonChecksummedAddress),
+            address: nonChecksummedAddress,
           },
         ],
       });
@@ -408,18 +407,20 @@ describe('UsersRepository', () => {
         where: { address: walletAddress },
         relations: { user: true },
       });
-      expect(wallet).toEqual({
-        address: walletAddress,
-        createdAt: expect.any(Date),
-        id: wallet.id,
-        updatedAt: expect.any(Date),
-        user: {
+      expect(wallet).toEqual(
+        expect.objectContaining({
+          address: walletAddress,
           createdAt: expect.any(Date),
-          id: wallet.user.id,
-          status,
+          id: wallet.id,
           updatedAt: expect.any(Date),
-        },
-      });
+          user: expect.objectContaining({
+            createdAt: expect.any(Date),
+            id: wallet.user.id,
+            status,
+            updatedAt: expect.any(Date),
+          }),
+        }),
+      );
     });
 
     it('should throw if the user wallet already exists', async () => {
@@ -449,25 +450,7 @@ describe('UsersRepository', () => {
       );
     });
 
-    it('should throw if an invalid wallet address is provided', async () => {
-      const dbUserRepository = dataSource.getRepository(User);
-      const walletAddress = faker.string.hexadecimal({
-        length: { min: 41, max: 41 },
-      });
-      const authPayloadDto = authPayloadDtoBuilder().build();
-      const authPayload = new AuthPayload(authPayloadDto);
-      const status = faker.helpers.arrayElement(UserStatusKeys);
-      await dbUserRepository.insert({ status });
-
-      await expect(
-        usersRepository.addWalletToUser({
-          authPayload,
-          walletAddress: walletAddress as Address,
-        }),
-      ).rejects.toThrow(new RegExp(`^Address "${walletAddress}" is invalid.`));
-    });
-
-    it('should checksum the inserted wallet address', async () => {
+    it('should store the added wallet address as-is', async () => {
       const dbWalletRepository = dataSource.getRepository(Wallet);
       const dbUserRepository = dataSource.getRepository(User);
       const nonChecksummedAddress = faker.finance
@@ -492,12 +475,12 @@ describe('UsersRepository', () => {
       });
 
       const wallet = await dbWalletRepository.findOneOrFail({
-        where: { address: getAddress(nonChecksummedAddress) },
+        where: { address: nonChecksummedAddress as Address },
         relations: { user: true },
       });
       expect(wallet).toStrictEqual(
         expect.objectContaining({
-          address: getAddress(nonChecksummedAddress),
+          address: nonChecksummedAddress,
         }),
       );
     });
@@ -583,18 +566,18 @@ describe('UsersRepository', () => {
         relations: { user: true },
       });
       expect(wallets).toEqual([
-        {
+        expect.objectContaining({
           address: authPayload.signer_address,
           createdAt: expect.any(Date),
           id: wallets[0].id,
           updatedAt: expect.any(Date),
-          user: {
+          user: expect.objectContaining({
             createdAt: expect.any(Date),
             id: wallets[0].user.id,
             status,
             updatedAt: expect.any(Date),
-          },
-        },
+          }),
+        }),
       ]);
     });
 

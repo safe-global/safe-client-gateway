@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import configuration from '@/config/entities/__tests__/configuration';
 import { postgresConfig } from '@/config/entities/postgres.config';
@@ -9,6 +10,8 @@ import { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
 import { Member } from '@/modules/users/datasources/entities/member.entity.db';
 import { User } from '@/modules/users/datasources/entities/users.entity.db';
 import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
+import type { IFieldEncryptionService } from '@/datasources/encryption/encryption.service.interface';
+import { EncryptionLocator } from '@/datasources/encryption/encryption-locator';
 import { authPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
@@ -39,6 +42,12 @@ const mockConfigurationService = jest.mocked({
   getOrThrow: jest.fn(),
 } as jest.MockedObjectDeep<IConfigurationService>);
 
+const mockEncryptionService = {
+  encrypt: jest.fn((v: string) => v),
+  decrypt: jest.fn((v: string) => v),
+  hmac: jest.fn((v: string) => v.toLowerCase()),
+} as unknown as jest.MockedObjectDeep<IFieldEncryptionService>;
+
 describe('AddressBookItemsRepository', () => {
   let dbService: PostgresDatabaseService;
   let addressBookItemsRepository: IAddressBookItemsRepository;
@@ -67,6 +76,8 @@ describe('AddressBookItemsRepository', () => {
     dataSource.getRepository(AddressBookItem);
 
   beforeAll(async () => {
+    EncryptionLocator.setService(mockEncryptionService);
+
     // Create database
     const testDataSource = new DataSource({
       ...postgresConfig({
@@ -120,16 +131,20 @@ describe('AddressBookItemsRepository', () => {
     addressBookItemsRepository = new AddressBookItemsRepository(
       dbService,
       new SpacesRepository(dbService, mockConfigurationService),
-      new UsersRepository(dbService, new WalletsRepository(dbService)),
+      new UsersRepository(
+        dbService,
+        new WalletsRepository(dbService, mockEncryptionService),
+      ),
       mockConfigService,
     );
   });
 
   afterEach(() => {
-    jest.resetAllMocks();
+    jest.clearAllMocks();
   });
 
   afterAll(async () => {
+    EncryptionLocator.reset();
     await dbService.getDataSource().dropDatabase();
     await dbService.destroyDatabaseConnection();
   });

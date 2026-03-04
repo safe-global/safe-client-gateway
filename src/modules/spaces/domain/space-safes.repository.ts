@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { isUniqueConstraintError } from '@/datasources/errors/helpers/is-unique-constraint-error.helper';
@@ -5,11 +6,13 @@ import { UniqueConstraintError } from '@/datasources/errors/unique-constraint-er
 import { SpaceSafe } from '@/modules/spaces/datasources/entities/space-safes.entity.db';
 import { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
 import type { ISpaceSafesRepository } from '@/modules/spaces/domain/space-safes.repository.interface';
+import { IFieldEncryptionService } from '@/datasources/encryption/encryption.service.interface';
 import { BadRequestException, Inject, NotFoundException } from '@nestjs/common';
 import {
   FindOptionsRelations,
   FindOptionsSelect,
   FindOptionsWhere,
+  IsNull,
 } from 'typeorm';
 
 export class SpaceSafesRepository implements ISpaceSafesRepository {
@@ -20,6 +23,8 @@ export class SpaceSafesRepository implements ISpaceSafesRepository {
     private readonly postgresDatabaseService: PostgresDatabaseService,
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
+    @Inject(IFieldEncryptionService)
+    private readonly encryptionService: IFieldEncryptionService,
   ) {
     this.maxSafesPerSpace = this.configurationService.getOrThrow<number>(
       'spaces.maxSafesPerSpace',
@@ -106,13 +111,23 @@ export class SpaceSafesRepository implements ISpaceSafesRepository {
     const spaceSafeRepository =
       await this.postgresDatabaseService.getRepository(SpaceSafe);
 
+    // Dual-read: hash-based lookup with plaintext fallback for unmigrated rows
     const findSpaceSafesWhereClause: Array<FindOptionsWhere<SpaceSafe>> =
-      args.payload.map((safe) => {
-        return {
-          space: { id: args.spaceId },
-          chainId: safe.chainId,
-          address: safe.address,
-        };
+      args.payload.flatMap((safe) => {
+        const hash = this.encryptionService.hmac(safe.address);
+        return [
+          {
+            space: { id: args.spaceId },
+            chainId: safe.chainId,
+            addressHash: hash,
+          },
+          {
+            space: { id: args.spaceId },
+            chainId: safe.chainId,
+            address: safe.address,
+            addressHash: IsNull(),
+          },
+        ];
       });
 
     const spaceSafes = await this.findOrFail({

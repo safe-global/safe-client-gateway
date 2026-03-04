@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
 import { RowSchema } from '@/datasources/db/v2/entities/row.entity';
 import type { SpaceSafe as DbSpaceSafe } from '@/modules/spaces/datasources/entities/space-safes.entity.db';
@@ -13,10 +14,12 @@ export const SpaceSafeSchema: z.ZodType<
   z.infer<typeof RowSchema> & {
     chainId: DbSpaceSafe['chainId'];
     address: DbSpaceSafe['address'];
+    addressHash: string | null;
     space?: DbSpaceSafe['space'];
   }
 > = RowSchema.extend({
   chainId: NumericStringSchema,
   address: AddressSchema as z.ZodType<Address>,
+  addressHash: z.string().nullable(),
   space: z.lazy(() => SpaceSchema).optional(),
 });
