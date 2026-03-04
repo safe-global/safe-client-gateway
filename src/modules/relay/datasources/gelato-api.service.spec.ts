@@ -151,7 +151,9 @@ describe('GelatoApi', () => {
         }),
       ).rejects.toThrow(new DataSourceError('Unexpected error', status));
       expect(mockLoggingService.error).toHaveBeenCalledWith(
-        expect.stringContaining(`Error relaying transaction for chain ${chainId}`),
+        expect.stringContaining(
+          `Error relaying transaction for chain ${chainId}`,
+        ),
       );
     });
   });
