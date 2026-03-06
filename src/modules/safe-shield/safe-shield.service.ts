@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import { RecipientAnalysisService } from './recipient-analysis/recipient-analysis.service';
 import { ContractAnalysisService } from './contract-analysis/contract-analysis.service';

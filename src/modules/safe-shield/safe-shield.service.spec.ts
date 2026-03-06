@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { SafeShieldService } from './safe-shield.service';
 import type { RecipientAnalysisService } from './recipient-analysis/recipient-analysis.service';
 import type { ContractAnalysisService } from './contract-analysis/contract-analysis.service';

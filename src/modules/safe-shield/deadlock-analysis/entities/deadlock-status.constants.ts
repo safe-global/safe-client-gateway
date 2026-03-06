@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { DeadlockStatus } from './deadlock-status.entity';
 import type { Severity } from '../../entities/severity.entity';
 
