@@ -6,21 +6,16 @@ import type { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.
 import type { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { balancesProviderBuilder } from '@/modules/chains/domain/entities/__tests__/balances-provider.builder';
 import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
-import type { ILoggingService } from '@/logging/logging.interface';
 import { rawify } from '@/validation/entities/raw.entity';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
+import type { ZerionChainMappingService } from '@/modules/zerion/datasources/zerion-chain-mapping.service';
 
 const mockCacheService = jest.mocked({
   increment: jest.fn(),
   hGet: jest.fn(),
   hSet: jest.fn(),
 } as jest.MockedObjectDeep<ICacheService>);
-
-const mockLoggingService = {
-  debug: jest.fn(),
-  warn: jest.fn(),
-} as jest.MockedObjectDeep<ILoggingService>;
 
 const mockDataSource = jest.mocked({
   get: jest.fn(),
@@ -29,6 +24,10 @@ const mockDataSource = jest.mocked({
 const mockHttpErrorFactory = jest.mocked({
   from: jest.fn(),
 } as jest.MockedObjectDeep<HttpErrorFactory>);
+
+const mockZerionChainMappingService = jest.mocked({
+  getNetworkFromChainId: jest.fn(),
+} as jest.MockedObjectDeep<ZerionChainMappingService>);
 
 describe('ZerionBalancesApiService', () => {
   let service: ZerionBalancesApi;
@@ -79,10 +78,10 @@ describe('ZerionBalancesApiService', () => {
 
     service = new ZerionBalancesApi(
       mockCacheService,
-      mockLoggingService,
       fakeConfigurationService,
       mockDataSource,
       mockHttpErrorFactory,
+      mockZerionChainMappingService,
     );
   });
 
@@ -183,10 +182,9 @@ describe('ZerionBalancesApiService', () => {
       const safeAddress = getAddress(faker.finance.ethereumAddress());
       const fiatCode = faker.helpers.arrayElement(supportedFiatCodes);
 
-      // Mock Zerion chains API to return empty results (chain not supported)
-      mockDataSource.get
-        .mockResolvedValueOnce(rawify({ data: [] }))
-        .mockResolvedValueOnce(rawify({ data: [] }));
+      mockZerionChainMappingService.getNetworkFromChainId.mockResolvedValue(
+        undefined,
+      );
 
       await expect(
         service.getBalances({
@@ -197,6 +195,7 @@ describe('ZerionBalancesApiService', () => {
       ).rejects.toThrow(
         `Chain ${unsupportedChainId} balances retrieval via Zerion is not configured`,
       );
+      expect(mockDataSource.get).not.toHaveBeenCalled();
     });
   });
 });
