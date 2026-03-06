@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigApiModule } from '@/datasources/config-api/config-api.module';
 import { ContractAnalysisModule } from '@/modules/safe-shield/contract-analysis/contract-analysis.module';
+import { DeadlockAnalysisModule } from '@/modules/safe-shield/deadlock-analysis/deadlock-analysis.module';
 import { RecipientAnalysisModule } from '@/modules/safe-shield/recipient-analysis/recipient-analysis.module';
 import { BlockaidApiModule } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-api.module';
 import { ThreatAnalysisModule } from '@/modules/safe-shield/threat-analysis/threat-analysis.module';
@@ -12,6 +13,7 @@ import { SafeShieldController } from './safe-shield.controller';
   imports: [
     ConfigApiModule,
     ContractAnalysisModule,
+    DeadlockAnalysisModule,
     RecipientAnalysisModule,
     BlockaidApiModule,
     ThreatAnalysisModule,
