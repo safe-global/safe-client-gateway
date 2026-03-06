@@ -1,8 +1,9 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import { ZerionBalancesApi } from '@/modules/balances/datasources/zerion-balances-api.service';
 import type { ICacheService } from '@/datasources/cache/cache.service.interface';
+import type { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
 import type { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
-import type { INetworkService } from '@/datasources/network/network.service.interface';
 import { balancesProviderBuilder } from '@/modules/chains/domain/entities/__tests__/balances-provider.builder';
 import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
 import type { ILoggingService } from '@/logging/logging.interface';
@@ -21,9 +22,9 @@ const mockLoggingService = {
   warn: jest.fn(),
 } as jest.MockedObjectDeep<ILoggingService>;
 
-const mockNetworkService = jest.mocked({
+const mockDataSource = jest.mocked({
   get: jest.fn(),
-} as jest.MockedObjectDeep<INetworkService>);
+} as jest.MockedObjectDeep<CacheFirstDataSource>);
 
 const mockHttpErrorFactory = jest.mocked({
   from: jest.fn(),
@@ -79,8 +80,8 @@ describe('ZerionBalancesApiService', () => {
     service = new ZerionBalancesApi(
       mockCacheService,
       mockLoggingService,
-      mockNetworkService,
       fakeConfigurationService,
+      mockDataSource,
       mockHttpErrorFactory,
     );
   });
@@ -106,10 +107,7 @@ describe('ZerionBalancesApiService', () => {
       const chain = chainBuilder().with('isTestnet', false).build();
       const safeAddress = getAddress(faker.finance.ethereumAddress());
       const fiatCode = faker.helpers.arrayElement(supportedFiatCodes);
-      mockNetworkService.get.mockResolvedValue({
-        data: rawify({ data: [] }),
-        status: 200,
-      });
+      mockDataSource.get.mockResolvedValue(rawify({ data: [] }));
 
       await service.getBalances({
         chain,
@@ -117,8 +115,13 @@ describe('ZerionBalancesApiService', () => {
         fiatCode,
       });
 
-      expect(mockNetworkService.get).toHaveBeenCalledWith({
+      expect(mockDataSource.get).toHaveBeenCalledWith({
+        cacheDir: expect.objectContaining({
+          key: `zerion_balances_${safeAddress}`,
+          field: fiatCode.toUpperCase(),
+        }),
         url: `${zerionBaseUri}/v1/wallets/${safeAddress}/positions`,
+        notFoundExpireTimeSeconds: notFoundExpirationTimeInSeconds,
         networkRequest: {
           headers: {
             Authorization: `Basic ${zerionApiKey}`,
@@ -129,6 +132,7 @@ describe('ZerionBalancesApiService', () => {
             sort: 'value',
           },
         },
+        expireTimeSeconds: defaultExpirationTimeInSeconds,
       });
     });
 
@@ -136,10 +140,7 @@ describe('ZerionBalancesApiService', () => {
       const chain = chainBuilder().with('isTestnet', true).build();
       const safeAddress = getAddress(faker.finance.ethereumAddress());
       const fiatCode = faker.helpers.arrayElement(supportedFiatCodes);
-      mockNetworkService.get.mockResolvedValue({
-        data: rawify({ data: [] }),
-        status: 200,
-      });
+      mockDataSource.get.mockResolvedValue(rawify({ data: [] }));
 
       await service.getBalances({
         chain,
@@ -147,8 +148,13 @@ describe('ZerionBalancesApiService', () => {
         fiatCode,
       });
 
-      expect(mockNetworkService.get).toHaveBeenCalledWith({
+      expect(mockDataSource.get).toHaveBeenCalledWith({
+        cacheDir: expect.objectContaining({
+          key: `zerion_balances_${safeAddress}`,
+          field: fiatCode.toUpperCase(),
+        }),
         url: `${zerionBaseUri}/v1/wallets/${safeAddress}/positions`,
+        notFoundExpireTimeSeconds: notFoundExpirationTimeInSeconds,
         networkRequest: {
           headers: {
             Authorization: `Basic ${zerionApiKey}`,
@@ -160,6 +166,7 @@ describe('ZerionBalancesApiService', () => {
             sort: 'value',
           },
         },
+        expireTimeSeconds: defaultExpirationTimeInSeconds,
       });
     });
 
@@ -177,15 +184,9 @@ describe('ZerionBalancesApiService', () => {
       const fiatCode = faker.helpers.arrayElement(supportedFiatCodes);
 
       // Mock Zerion chains API to return empty results (chain not supported)
-      mockNetworkService.get
-        .mockResolvedValueOnce({
-          data: rawify({ data: [] }),
-          status: 200,
-        })
-        .mockResolvedValueOnce({
-          data: rawify({ data: [] }),
-          status: 200,
-        });
+      mockDataSource.get
+        .mockResolvedValueOnce(rawify({ data: [] }))
+        .mockResolvedValueOnce(rawify({ data: [] }));
 
       await expect(
         service.getBalances({

@@ -1,8 +1,8 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import {
   ZerionAttributes,
   ZerionBalance,
-  ZerionBalanceSchema,
   ZerionBalances,
   ZerionBalancesSchema,
 } from '@/modules/balances/datasources/entities/zerion-balance.entity';
@@ -11,6 +11,7 @@ import {
   ZerionCollectibles,
   ZerionCollectiblesSchema,
 } from '@/modules/balances/datasources/entities/zerion-collectible.entity';
+import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
 import { CacheRouter } from '@/datasources/cache/cache.router';
 import {
   CacheService,
@@ -19,17 +20,12 @@ import {
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { LimitReachedError } from '@/datasources/network/entities/errors/limit-reached.error';
 import {
-  INetworkService,
-  NetworkService,
-} from '@/datasources/network/network.service.interface';
-import {
   Balance,
   Erc20Balance,
   NativeBalance,
 } from '@/modules/balances/domain/entities/balance.entity';
 import { Chain } from '@/modules/chains/domain/entities/chain.entity';
 import { Collectible } from '@/modules/collectibles/domain/entities/collectible.entity';
-import { LogType } from '@/domain/common/entities/log-type.entity';
 import { getNumberString } from '@/domain/common/utils/utils';
 import { Page } from '@/domain/entities/page.entity';
 import { DataSourceError } from '@/domain/errors/data-source.error';
@@ -38,9 +34,12 @@ import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { rawify, type Raw } from '@/validation/entities/raw.entity';
 import { Inject, Injectable } from '@nestjs/common';
 import { Address, getAddress, hexToNumber, isHex } from 'viem';
-import { z, ZodError } from 'zod';
+import { ZodError } from 'zod';
 import { getZerionHeaders } from '@/modules/balances/datasources/zerion-api.helpers';
-import { ZerionChainsSchema } from '@/modules/portfolio/datasources/entities/zerion-chain.entity';
+import {
+  ZerionChains,
+  ZerionChainsSchema,
+} from '@/modules/portfolio/datasources/entities/zerion-chain.entity';
 
 export const IZerionBalancesApi = Symbol('IZerionBalancesApi');
 
@@ -73,9 +72,9 @@ export class ZerionBalancesApi implements IBalancesApi {
   constructor(
     @Inject(CacheService) private readonly cacheService: ICacheService,
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
-    @Inject(NetworkService) private readonly networkService: INetworkService,
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
+    private readonly dataSource: CacheFirstDataSource,
     private readonly httpErrorFactory: HttpErrorFactory,
   ) {
     this.apiKey = this.configurationService.get<string>(
@@ -127,45 +126,31 @@ export class ZerionBalancesApi implements IBalancesApi {
       );
     }
 
+    await this._checkRateLimit();
+
     const cacheDir = CacheRouter.getZerionBalancesCacheDir({
       safeAddress: args.safeAddress,
       fiatCode: args.fiatCode,
     });
     const chainName = await this._getChainName(args.chain);
-    const cached = await this.cacheService.hGet(cacheDir);
-    if (cached != null) {
-      const { key, field } = cacheDir;
-      this.loggingService.debug({ type: LogType.CacheHit, key, field });
-      const zerionBalances = z
-        .array(ZerionBalanceSchema)
-        .parse(JSON.parse(cached));
-      return this._mapBalances(chainName, zerionBalances);
-    }
+    const url = `${this.baseUri}/v1/wallets/${args.safeAddress}/positions`;
 
     try {
-      await this._checkRateLimit();
-      const { key, field } = cacheDir;
-      this.loggingService.debug({ type: LogType.CacheMiss, key, field });
-      const url = `${this.baseUri}/v1/wallets/${args.safeAddress}/positions`;
-      const networkRequest = {
-        headers: getZerionHeaders(this.apiKey, args.chain.isTestnet),
-        params: {
-          'filter[chain_ids]': chainName,
-          currency: args.fiatCode.toLowerCase(),
-          sort: 'value',
-        },
-      };
-      const zerionBalances = await this.networkService
-        .get<ZerionBalances>({
-          url,
-          networkRequest,
-        })
-        .then(({ data }) => ZerionBalancesSchema.parse(data));
-      await this.cacheService.hSet(
+      const data = await this.dataSource.get<ZerionBalances>({
         cacheDir,
-        JSON.stringify(zerionBalances.data),
-        this.defaultExpirationTimeInSeconds,
-      );
+        url,
+        notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
+        networkRequest: {
+          headers: getZerionHeaders(this.apiKey, args.chain.isTestnet),
+          params: {
+            'filter[chain_ids]': chainName,
+            currency: args.fiatCode.toLowerCase(),
+            sort: 'value',
+          },
+        },
+        expireTimeSeconds: this.defaultExpirationTimeInSeconds,
+      });
+      const zerionBalances = ZerionBalancesSchema.parse(data);
       return this._mapBalances(chainName, zerionBalances.data);
     } catch (error) {
       if (error instanceof LimitReachedError || error instanceof ZodError) {
@@ -190,24 +175,24 @@ export class ZerionBalancesApi implements IBalancesApi {
     limit?: number;
     offset?: number;
   }): Promise<Raw<Page<Collectible>>> {
+    // Rate limit check before dataSource.get (trade-off)
+    await this._checkRateLimit();
+
     const cacheDir = CacheRouter.getZerionCollectiblesCacheDir({
       safeAddress: args.safeAddress,
       limit: args.limit,
       offset: args.offset,
     });
-    const cached = await this.cacheService.hGet(cacheDir);
-    if (cached != null) {
-      const { key, field } = cacheDir;
-      this.loggingService.debug({ type: LogType.CacheHit, key, field });
-      const data = ZerionCollectiblesSchema.parse(JSON.parse(cached));
-      return this._buildCollectiblesPage(data.links.next, data.data);
-    } else {
-      try {
-        await this._checkRateLimit();
-        const chainName = await this._getChainName(args.chain);
-        const url = `${this.baseUri}/v1/wallets/${args.safeAddress}/nft-positions`;
-        const pageAfter = this._encodeZerionPageOffset(args.offset);
-        const networkRequest = {
+    const chainName = await this._getChainName(args.chain);
+    const url = `${this.baseUri}/v1/wallets/${args.safeAddress}/nft-positions`;
+    const pageAfter = this._encodeZerionPageOffset(args.offset);
+
+    try {
+      const data = await this.dataSource.get<ZerionCollectibles>({
+        cacheDir,
+        url,
+        notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
+        networkRequest: {
           headers: getZerionHeaders(this.apiKey, args.chain.isTestnet),
           params: {
             'filter[chain_ids]': chainName,
@@ -215,28 +200,19 @@ export class ZerionBalancesApi implements IBalancesApi {
             'page[size]': args.limit,
             ...(pageAfter && { 'page[after]': pageAfter }),
           },
-        };
-        const zerionCollectibles = await this.networkService
-          .get<ZerionCollectibles>({
-            url,
-            networkRequest,
-          })
-          .then(({ data }) => ZerionCollectiblesSchema.parse(data));
-        await this.cacheService.hSet(
-          cacheDir,
-          JSON.stringify(zerionCollectibles),
-          this.defaultExpirationTimeInSeconds,
-        );
-        return this._buildCollectiblesPage(
-          zerionCollectibles.links.next,
-          zerionCollectibles.data,
-        );
-      } catch (error) {
-        if (error instanceof ZodError) {
-          throw error;
-        }
-        throw this.httpErrorFactory.from(error);
+        },
+        expireTimeSeconds: this.defaultExpirationTimeInSeconds,
+      });
+      const zerionCollectibles = ZerionCollectiblesSchema.parse(data);
+      return this._buildCollectiblesPage(
+        zerionCollectibles.links.next,
+        zerionCollectibles.data,
+      );
+    } catch (error) {
+      if (error instanceof ZodError) {
+        throw error;
       }
+      throw this.httpErrorFactory.from(error);
     }
   }
 
@@ -396,14 +372,20 @@ export class ZerionBalancesApi implements IBalancesApi {
   private async _fetchChainMappingForNetwork(
     isTestnet: boolean,
   ): Promise<Record<string, string>> {
+    const cacheDir = CacheRouter.getZerionChainsCacheDir(isTestnet);
     const url = `${this.baseUri}/v1/chains`;
-    const networkRequest = {
-      headers: getZerionHeaders(this.apiKey, isTestnet),
-    };
 
-    const response = await this.networkService
-      .get({ url, networkRequest })
-      .then(({ data }) => ZerionChainsSchema.parse(data));
+    const data = await this.dataSource.get<ZerionChains>({
+      cacheDir,
+      url,
+      notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
+      networkRequest: {
+        headers: getZerionHeaders(this.apiKey, isTestnet),
+      },
+      expireTimeSeconds: this.defaultExpirationTimeInSeconds,
+    });
+
+    const response = ZerionChainsSchema.parse(data);
 
     const mapping: Record<string, string> = {};
     for (const chain of response.data) {
