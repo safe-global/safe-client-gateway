@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 export enum LogType {
   AwsCloudStorageUpload = 'AWS_S3_UPLOAD',
   BlocklistHit = 'BLOCKLIST_HIT',
@@ -5,6 +6,8 @@ export enum LogType {
   CacheEvent = 'CACHE_EVENT',
   CacheHit = 'CACHE_HIT',
   CacheMiss = 'CACHE_MISS',
+  CaptchaVerificationFailed = 'CAPTCHA_VERIFICATION_FAILED',
+  CaptchaVerificationError = 'CAPTCHA_VERIFICATION_ERROR',
   CircuitBreakerCleanup = 'CIRCUIT_BREAKER_CLEANUP',
   CircuitBreakerFailureRecorded = 'CIRCUIT_BREAKER_FAILURE_RECORDED',
   CircuitBreakerFailuresDiscarded = 'CIRCUIT_BREAKER_FAILURES_DISCARDED',
