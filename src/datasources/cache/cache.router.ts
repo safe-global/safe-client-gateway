@@ -947,20 +947,22 @@ export class CacheRouter {
    *
    * @param {string} args.chainId - Chain ID
    * @param {Address} args.safeAddress - Safe address
-   * @param {BaseDataDecoded} args.dataDecoded - The decoded owner change function data
+   * @param {Array<BaseDataDecoded>} args.dataDecoded - The decoded owner change function data
    * @returns {CacheDir} - Cache directory
    */
   static getDeadlockAnalysisCacheDir(args: {
     chainId: string;
     safeAddress: Address;
-    dataDecoded: BaseDataDecoded;
+    dataDecoded: Array<BaseDataDecoded>;
   }): CacheDir {
     const hash = crypto.createHash('sha256');
-    const params =
-      args.dataDecoded.parameters
-        ?.map((p) => `${p.name}=${JSON.stringify(p.value)}`)
-        .join('|') ?? 'none';
-    hash.update(`${args.dataDecoded.method}:${params}`);
+    for (const dd of args.dataDecoded) {
+      const params =
+        dd.parameters
+          ?.map((p) => `${p.name}=${JSON.stringify(p.value)}`)
+          .join('|') ?? 'none';
+      hash.update(`${dd.method}:${params};`);
+    }
     return new CacheDir(
       `${args.chainId}_${CacheRouter.DEADLOCK_ANALYSIS_KEY}_${args.safeAddress}`,
       hash.digest('hex'),

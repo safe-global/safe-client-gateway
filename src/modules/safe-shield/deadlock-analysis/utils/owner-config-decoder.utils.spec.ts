@@ -1,19 +1,19 @@
 import { getAddress } from 'viem';
 import {
-  isOwnerChangeTransaction,
+  isOwnerConfigTransaction,
   computeProjectedState,
-} from './owner-change-decoder.utils';
+} from './owner-config-decoder.utils';
 import { faker } from '@faker-js/faker';
 import type { BaseDataDecoded } from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';
 
-describe('owner-change-decoder.utils', () => {
-  describe('isOwnerChangeTransaction', () => {
+describe('owner-config-decoder.utils', () => {
+  describe('isOwnerConfigTransaction', () => {
     it('should return true for addOwnerWithThreshold', () => {
       const dataDecoded = {
         method: 'addOwnerWithThreshold',
         parameters: [],
       } as BaseDataDecoded;
-      expect(isOwnerChangeTransaction(dataDecoded)).toBe(true);
+      expect(isOwnerConfigTransaction(dataDecoded)).toBe(true);
     });
 
     it('should return true for removeOwner', () => {
@@ -21,7 +21,7 @@ describe('owner-change-decoder.utils', () => {
         method: 'removeOwner',
         parameters: [],
       } as BaseDataDecoded;
-      expect(isOwnerChangeTransaction(dataDecoded)).toBe(true);
+      expect(isOwnerConfigTransaction(dataDecoded)).toBe(true);
     });
 
     it('should return true for swapOwner', () => {
@@ -29,7 +29,7 @@ describe('owner-change-decoder.utils', () => {
         method: 'swapOwner',
         parameters: [],
       } as BaseDataDecoded;
-      expect(isOwnerChangeTransaction(dataDecoded)).toBe(true);
+      expect(isOwnerConfigTransaction(dataDecoded)).toBe(true);
     });
 
     it('should return true for changeThreshold', () => {
@@ -37,19 +37,19 @@ describe('owner-change-decoder.utils', () => {
         method: 'changeThreshold',
         parameters: [],
       } as BaseDataDecoded;
-      expect(isOwnerChangeTransaction(dataDecoded)).toBe(true);
+      expect(isOwnerConfigTransaction(dataDecoded)).toBe(true);
     });
 
-    it('should return false for non-owner-change transaction', () => {
+    it('should return false for non-owner-config transaction', () => {
       const dataDecoded = {
         method: 'transfer',
         parameters: [],
       } as BaseDataDecoded;
-      expect(isOwnerChangeTransaction(dataDecoded)).toBe(false);
+      expect(isOwnerConfigTransaction(dataDecoded)).toBe(false);
     });
 
     it('should return false for null dataDecoded', () => {
-      expect(isOwnerChangeTransaction(null)).toBe(false);
+      expect(isOwnerConfigTransaction(null)).toBe(false);
     });
   });
 

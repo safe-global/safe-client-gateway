@@ -9,22 +9,22 @@ export enum OwnerConfigMethod {
   ChangeThreshold = 'changeThreshold',
 }
 
-const OWNER_CHANGE_METHODS: Set<string> = new Set(
+const OWNER_CONFIG_METHODS: Set<string> = new Set(
   Object.values(OwnerConfigMethod),
 );
 
-export function isOwnerChangeTransaction(
+export function isOwnerConfigTransaction(
   dataDecoded: BaseDataDecoded | null,
 ): boolean {
-  return dataDecoded !== null && OWNER_CHANGE_METHODS.has(dataDecoded.method);
+  return dataDecoded !== null && OWNER_CONFIG_METHODS.has(dataDecoded.method);
 }
 /**
- * Computes the projected state after applying an owner change transaction.
+ * Computes the projected state after applying an owner config transaction.
  *
  * @param {Object} args - The arguments object containing the current owners and threshold, and the data decoded.
  * @param {Array<Address>} args.currentOwners - The current owners of the Safe.
  * @param {number} args.currentThreshold - The current threshold of the Safe.
- * @param {BaseDataDecoded} args.dataDecoded - The data decoded of the owner change transaction.
+ * @param {BaseDataDecoded} args.dataDecoded - The data decoded of the owner config transaction.
  * @returns {Object} The projected state containing the owners and threshold.
  */
 export function computeProjectedState(args: {

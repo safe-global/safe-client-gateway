@@ -11,6 +11,7 @@ import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.build
 import type { Safe } from '@/modules/safe/domain/entities/safe.entity';
 import type { DecodedTransactionData } from '@/modules/safe-shield/entities/transaction-data.entity';
 import type { BaseDataDecoded } from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';
+import { DataSourceError } from '@/domain/errors/data-source.error';
 import { DeadlockStatus } from './entities/deadlock-status.entity';
 import { DeadlockStatusGroup } from '../entities/status-group.entity';
 
@@ -234,12 +235,8 @@ describe('DeadlockAnalysisService', () => {
             }),
           );
         }
-        return Promise.reject(new Error('Unknown address'));
+        return Promise.reject(new DataSourceError('Not found', 404));
       });
-
-      mockTransactionApi.isSafe.mockImplementation((address: Address) =>
-        Promise.resolve(address.toLowerCase() === safeBAddress.toLowerCase()),
-      );
 
       const result = await service.analyze({
         chainId,
@@ -281,12 +278,8 @@ describe('DeadlockAnalysisService', () => {
             }),
           );
         }
-        return Promise.reject(new Error('Unknown address'));
+        return Promise.reject(new DataSourceError('Not found', 404));
       });
-
-      mockTransactionApi.isSafe.mockImplementation((address: Address) =>
-        Promise.resolve(address.toLowerCase() === safeBAddress.toLowerCase()),
-      );
 
       const result = await service.analyze({
         chainId,
@@ -329,12 +322,8 @@ describe('DeadlockAnalysisService', () => {
             }),
           );
         }
-        return Promise.reject(new Error('Unknown'));
+        return Promise.reject(new DataSourceError('Not found', 404));
       });
-
-      mockTransactionApi.isSafe.mockImplementation((address: Address) =>
-        Promise.resolve(address.toLowerCase() === safeBAddress.toLowerCase()),
-      );
 
       const result = await service.analyze({
         chainId,
@@ -377,12 +366,8 @@ describe('DeadlockAnalysisService', () => {
             }),
           );
         }
-        return Promise.reject(new Error('Unknown'));
+        return Promise.reject(new DataSourceError('Not found', 404));
       });
-
-      mockTransactionApi.isSafe.mockImplementation((address: Address) =>
-        Promise.resolve(address.toLowerCase() === safeBAddress.toLowerCase()),
-      );
 
       const result = await service.analyze({
         chainId,
@@ -426,12 +411,8 @@ describe('DeadlockAnalysisService', () => {
             }),
           );
         }
-        return Promise.reject(new Error('Unknown'));
+        return Promise.reject(new DataSourceError('Not found', 404));
       });
-
-      mockTransactionApi.isSafe.mockImplementation((address: Address) =>
-        Promise.resolve(address.toLowerCase() === safeBAddress.toLowerCase()),
-      );
 
       const result = await service.analyze({
         chainId,
@@ -457,11 +438,14 @@ describe('DeadlockAnalysisService', () => {
         }),
       ];
 
-      mockTransactionApi.getSafe.mockResolvedValue(
-        mockSafe({ address: safeAddress, owners: [eoa1], threshold: 1 }),
-      );
-
-      mockTransactionApi.isSafe.mockResolvedValue(false);
+      mockTransactionApi.getSafe.mockImplementation((address: Address) => {
+        if (address.toLowerCase() === safeAddress.toLowerCase()) {
+          return Promise.resolve(
+            mockSafe({ address: safeAddress, owners: [eoa1], threshold: 1 }),
+          );
+        }
+        return Promise.reject(new DataSourceError('Not found', 404));
+      });
 
       const result = await service.analyze({
         chainId,
@@ -502,14 +486,7 @@ describe('DeadlockAnalysisService', () => {
             }),
           );
         }
-        return Promise.reject(new Error('Unknown'));
-      });
-
-      mockTransactionApi.isSafe.mockImplementation((address: Address) => {
-        if (address.toLowerCase() === safeBAddress.toLowerCase()) {
-          return Promise.resolve(true);
-        }
-        return Promise.resolve(false);
+        return Promise.reject(new DataSourceError('Not found', 404));
       });
 
       const result = await service.analyze({
@@ -554,14 +531,7 @@ describe('DeadlockAnalysisService', () => {
             }),
           );
         }
-        return Promise.reject(new Error('Unknown'));
-      });
-
-      mockTransactionApi.isSafe.mockImplementation((address: Address) => {
-        if (address.toLowerCase() === safeBAddress.toLowerCase()) {
-          return Promise.resolve(true);
-        }
-        return Promise.resolve(false);
+        return Promise.reject(new DataSourceError('Not found', 404));
       });
 
       const result = await service.analyze({
@@ -604,13 +574,10 @@ describe('DeadlockAnalysisService', () => {
             }),
           );
         }
-        return Promise.reject(new Error('Unknown'));
+        return Promise.reject(new DataSourceError('Not found', 404));
       });
 
       mockTransactionApi.isSafe.mockImplementation((address: Address) => {
-        if (address.toLowerCase() === safeBAddress.toLowerCase()) {
-          return Promise.resolve(true);
-        }
         if (address.toLowerCase() === safeCAddress.toLowerCase()) {
           return Promise.resolve(true);
         }
@@ -656,15 +623,10 @@ describe('DeadlockAnalysisService', () => {
             }),
           );
         }
-        return Promise.reject(new Error('Unknown'));
+        return Promise.reject(new DataSourceError('Not found', 404));
       });
 
-      mockTransactionApi.isSafe.mockImplementation((address: Address) => {
-        if (address.toLowerCase() === safeBAddress.toLowerCase()) {
-          return Promise.resolve(true);
-        }
-        return Promise.resolve(false);
-      });
+      mockTransactionApi.isSafe.mockResolvedValue(false);
 
       const result = await service.analyze({
         chainId,
@@ -678,153 +640,327 @@ describe('DeadlockAnalysisService', () => {
     });
   });
 
-  describe('WARN: DEADLOCK_UNKNOWN', () => {
-    it('should return WARN when getSafe fails for a Safe owner', async () => {
-      const safeBAddress = getAddress(faker.finance.ethereumAddress());
-      const eoa1 = getAddress(faker.finance.ethereumAddress());
+  describe('getSafe rejection handling', () => {
+    describe('404 errors (not a Safe — treated as EOA)', () => {
+      it('should return NO_DEADLOCK when all owners return 404', async () => {
+        const safeBAddress = getAddress(faker.finance.ethereumAddress());
+        const eoa1 = getAddress(faker.finance.ethereumAddress());
 
-      const transactions = [
-        buildDecodedTx({
-          to: safeAddress,
-          dataDecoded: addOwnerBaseDataDecoded(safeBAddress, 1),
-        }),
-      ];
+        const transactions = [
+          buildDecodedTx({
+            to: safeAddress,
+            dataDecoded: addOwnerBaseDataDecoded(safeBAddress, 1),
+          }),
+        ];
 
-      mockTransactionApi.getSafe.mockImplementation((address: Address) => {
-        if (address.toLowerCase() === safeAddress.toLowerCase()) {
-          return Promise.resolve(
-            mockSafe({ address: safeAddress, owners: [eoa1], threshold: 1 }),
-          );
-        }
-        return Promise.reject(new Error('Network error'));
+        mockTransactionApi.getSafe.mockImplementation((address: Address) => {
+          if (address.toLowerCase() === safeAddress.toLowerCase()) {
+            return Promise.resolve(
+              mockSafe({
+                address: safeAddress,
+                owners: [eoa1],
+                threshold: 1,
+              }),
+            );
+          }
+          return Promise.reject(new DataSourceError('Not found', 404));
+        });
+
+        const result = await service.analyze({
+          chainId,
+          safeAddress,
+          transactions,
+        });
+
+        expect(result[DeadlockStatusGroup.DEADLOCK]?.[0]?.type).toBe(
+          DeadlockStatus.NO_DEADLOCK,
+        );
       });
 
-      mockTransactionApi.isSafe.mockImplementation((address: Address) => {
-        if (address.toLowerCase() === safeBAddress.toLowerCase()) {
-          return Promise.resolve(true);
-        }
-        return Promise.resolve(false);
+      it('should skip 404 owners without marking unknown state', async () => {
+        const safeBAddress = getAddress(faker.finance.ethereumAddress());
+        const safeCAddress = getAddress(faker.finance.ethereumAddress());
+        const eoa1 = getAddress(faker.finance.ethereumAddress());
+
+        const transactions = [
+          buildDecodedTx({
+            to: safeAddress,
+            dataDecoded: addOwnerBaseDataDecoded(safeBAddress, 2),
+          }),
+        ];
+
+        mockTransactionApi.getSafe.mockImplementation((address: Address) => {
+          if (address.toLowerCase() === safeAddress.toLowerCase()) {
+            return Promise.resolve(
+              mockSafe({
+                address: safeAddress,
+                owners: [eoa1, safeCAddress],
+                threshold: 1,
+              }),
+            );
+          }
+          if (address.toLowerCase() === safeBAddress.toLowerCase()) {
+            return Promise.resolve(
+              mockSafe({
+                address: safeBAddress,
+                owners: [safeAddress],
+                threshold: 1,
+              }),
+            );
+          }
+          return Promise.reject(new DataSourceError('Not found', 404));
+        });
+
+        mockTransactionApi.isSafe.mockResolvedValue(false);
+
+        const result = await service.analyze({
+          chainId,
+          safeAddress,
+          transactions,
+        });
+
+        // safeCAddress 404 → EOA, skipped
+        // safeBAddress fulfilled but no deadlock (targetNonDependent >= threshold)
+        expect(result[DeadlockStatusGroup.DEADLOCK]?.[0]?.type).toBe(
+          DeadlockStatus.NO_DEADLOCK,
+        );
       });
 
-      const result = await service.analyze({
-        chainId,
-        safeAddress,
-        transactions,
-      });
+      it('should still detect deadlock when some owners return 404', async () => {
+        const safeBAddress = getAddress(faker.finance.ethereumAddress());
+        const safeCAddress = getAddress(faker.finance.ethereumAddress());
 
-      expect(result[DeadlockStatusGroup.DEADLOCK]?.[0]?.type).toBe(
-        DeadlockStatus.DEADLOCK_UNKNOWN,
-      );
-      expect(result[DeadlockStatusGroup.DEADLOCK]?.[0]?.severity).toBe('WARN');
+        const transactions = [
+          buildDecodedTx({
+            to: safeAddress,
+            dataDecoded: addOwnerBaseDataDecoded(safeBAddress, 2),
+          }),
+        ];
+
+        mockTransactionApi.getSafe.mockImplementation((address: Address) => {
+          if (address.toLowerCase() === safeAddress.toLowerCase()) {
+            return Promise.resolve(
+              mockSafe({
+                address: safeAddress,
+                owners: [safeCAddress],
+                threshold: 1,
+              }),
+            );
+          }
+          if (address.toLowerCase() === safeBAddress.toLowerCase()) {
+            return Promise.resolve(
+              mockSafe({
+                address: safeBAddress,
+                owners: [safeAddress],
+                threshold: 1,
+              }),
+            );
+          }
+          return Promise.reject(new DataSourceError('Not found', 404));
+        });
+
+        const result = await service.analyze({
+          chainId,
+          safeAddress,
+          transactions,
+        });
+
+        expect(result[DeadlockStatusGroup.DEADLOCK]?.[0]?.type).toBe(
+          DeadlockStatus.DEADLOCK_DETECTED,
+        );
+      });
     });
 
-    it('should return UNKNOWN when fetch fails but no deadlock on successfully fetched Safes', async () => {
-      const safeBAddress = getAddress(faker.finance.ethereumAddress());
-      const safeCAddress = getAddress(faker.finance.ethereumAddress());
-      const eoa1 = getAddress(faker.finance.ethereumAddress());
+    describe('non-404 errors (API failure — unknown state)', () => {
+      it('should return DEADLOCK_UNKNOWN when getSafe fails with non-404 error for all owners', async () => {
+        const safeBAddress = getAddress(faker.finance.ethereumAddress());
+        const eoa1 = getAddress(faker.finance.ethereumAddress());
 
-      const transactions = [
-        buildDecodedTx({
-          to: safeAddress,
-          dataDecoded: addOwnerBaseDataDecoded(safeBAddress, 2),
-        }),
-      ];
+        const transactions = [
+          buildDecodedTx({
+            to: safeAddress,
+            dataDecoded: addOwnerBaseDataDecoded(safeBAddress, 1),
+          }),
+        ];
 
-      mockTransactionApi.getSafe.mockImplementation((address: Address) => {
-        if (address.toLowerCase() === safeAddress.toLowerCase()) {
-          return Promise.resolve(
-            mockSafe({
-              address: safeAddress,
-              owners: [eoa1, safeCAddress],
-              threshold: 1,
-            }),
+        mockTransactionApi.getSafe.mockImplementation((address: Address) => {
+          if (address.toLowerCase() === safeAddress.toLowerCase()) {
+            return Promise.resolve(
+              mockSafe({
+                address: safeAddress,
+                owners: [eoa1],
+                threshold: 1,
+              }),
+            );
+          }
+          return Promise.reject(
+            new DataSourceError('Service unavailable', 503),
           );
-        }
-        if (address.toLowerCase() === safeBAddress.toLowerCase()) {
-          return Promise.resolve(
-            mockSafe({
-              address: safeBAddress,
-              owners: [safeAddress],
-              threshold: 1,
-            }),
+        });
+
+        const result = await service.analyze({
+          chainId,
+          safeAddress,
+          transactions,
+        });
+
+        expect(result[DeadlockStatusGroup.DEADLOCK]?.[0]?.type).toBe(
+          DeadlockStatus.DEADLOCK_UNKNOWN,
+        );
+      });
+
+      it('should return DEADLOCK_UNKNOWN when some owners fail with API error and no deadlock from fulfilled', async () => {
+        const safeBAddress = getAddress(faker.finance.ethereumAddress());
+        const safeCAddress = getAddress(faker.finance.ethereumAddress());
+        const eoa1 = getAddress(faker.finance.ethereumAddress());
+
+        const transactions = [
+          buildDecodedTx({
+            to: safeAddress,
+            dataDecoded: addOwnerBaseDataDecoded(safeBAddress, 2),
+          }),
+        ];
+
+        mockTransactionApi.getSafe.mockImplementation((address: Address) => {
+          if (address.toLowerCase() === safeAddress.toLowerCase()) {
+            return Promise.resolve(
+              mockSafe({
+                address: safeAddress,
+                owners: [eoa1, safeCAddress],
+                threshold: 1,
+              }),
+            );
+          }
+          if (address.toLowerCase() === safeBAddress.toLowerCase()) {
+            return Promise.resolve(
+              mockSafe({
+                address: safeBAddress,
+                owners: [eoa1],
+                threshold: 1,
+              }),
+            );
+          }
+          // safeCAddress fails with API error
+          return Promise.reject(
+            new DataSourceError('Service unavailable', 503),
           );
-        }
-        return Promise.reject(new Error('Network error'));
+        });
+
+        mockTransactionApi.isSafe.mockResolvedValue(false);
+
+        const result = await service.analyze({
+          chainId,
+          safeAddress,
+          transactions,
+        });
+
+        expect(result[DeadlockStatusGroup.DEADLOCK]?.[0]?.type).toBe(
+          DeadlockStatus.DEADLOCK_UNKNOWN,
+        );
       });
 
-      mockTransactionApi.isSafe.mockImplementation((address: Address) => {
-        if (
-          address.toLowerCase() === safeBAddress.toLowerCase() ||
-          address.toLowerCase() === safeCAddress.toLowerCase()
-        ) {
-          return Promise.resolve(true);
-        }
-        return Promise.resolve(false);
-      });
+      it('should return DEADLOCK_UNKNOWN when deadlock would exist but API failure occurred', async () => {
+        const safeBAddress = getAddress(faker.finance.ethereumAddress());
+        const safeCAddress = getAddress(faker.finance.ethereumAddress());
 
-      const result = await service.analyze({
-        chainId,
-        safeAddress,
-        transactions,
-      });
+        const transactions = [
+          buildDecodedTx({
+            to: safeAddress,
+            dataDecoded: addOwnerBaseDataDecoded(safeBAddress, 2),
+          }),
+        ];
 
-      expect(result[DeadlockStatusGroup.DEADLOCK]?.[0]?.type).toBe(
-        DeadlockStatus.DEADLOCK_UNKNOWN,
-      );
-    });
-
-    it('should return UNKNOWN when deadlock check passes but fetch failure exists', async () => {
-      const safeBAddress = getAddress(faker.finance.ethereumAddress());
-      const safeCAddress = getAddress(faker.finance.ethereumAddress());
-
-      const transactions = [
-        buildDecodedTx({
-          to: safeAddress,
-          dataDecoded: addOwnerBaseDataDecoded(safeBAddress, 1),
-        }),
-      ];
-
-      mockTransactionApi.getSafe.mockImplementation((address: Address) => {
-        if (address.toLowerCase() === safeAddress.toLowerCase()) {
-          return Promise.resolve(
-            mockSafe({
-              address: safeAddress,
-              owners: [safeCAddress],
-              threshold: 1,
-            }),
+        mockTransactionApi.getSafe.mockImplementation((address: Address) => {
+          if (address.toLowerCase() === safeAddress.toLowerCase()) {
+            return Promise.resolve(
+              mockSafe({
+                address: safeAddress,
+                owners: [safeCAddress],
+                threshold: 1,
+              }),
+            );
+          }
+          if (address.toLowerCase() === safeBAddress.toLowerCase()) {
+            return Promise.resolve(
+              mockSafe({
+                address: safeBAddress,
+                owners: [safeAddress],
+                threshold: 1,
+              }),
+            );
+          }
+          // safeCAddress fails with API error
+          return Promise.reject(
+            new DataSourceError('Service unavailable', 503),
           );
-        }
-        if (address.toLowerCase() === safeBAddress.toLowerCase()) {
-          return Promise.resolve(
-            mockSafe({
-              address: safeBAddress,
-              owners: [safeAddress],
-              threshold: 1,
-            }),
+        });
+
+        const result = await service.analyze({
+          chainId,
+          safeAddress,
+          transactions,
+        });
+
+        // API failure short-circuits to unknown — can't trust partial analysis
+        expect(result[DeadlockStatusGroup.DEADLOCK]?.[0]?.type).toBe(
+          DeadlockStatus.DEADLOCK_UNKNOWN,
+        );
+      });
+
+      it('should return DEADLOCK_UNKNOWN for mixed 404 + API error when no deadlock from fulfilled', async () => {
+        const safeBAddress = getAddress(faker.finance.ethereumAddress());
+        const eoa1 = getAddress(faker.finance.ethereumAddress());
+        const eoa2 = getAddress(faker.finance.ethereumAddress());
+
+        const transactions = [
+          buildDecodedTx({
+            to: safeAddress,
+            dataDecoded: addOwnerBaseDataDecoded(safeBAddress, 1),
+          }),
+        ];
+
+        mockTransactionApi.getSafe.mockImplementation((address: Address) => {
+          if (address.toLowerCase() === safeAddress.toLowerCase()) {
+            return Promise.resolve(
+              mockSafe({
+                address: safeAddress,
+                owners: [eoa1, eoa2],
+                threshold: 1,
+              }),
+            );
+          }
+          if (address.toLowerCase() === safeBAddress.toLowerCase()) {
+            return Promise.resolve(
+              mockSafe({
+                address: safeBAddress,
+                owners: [eoa2],
+                threshold: 1,
+              }),
+            );
+          }
+          if (address.toLowerCase() === eoa1.toLowerCase()) {
+            // eoa1: 404 → not a Safe
+            return Promise.reject(new DataSourceError('Not found', 404));
+          }
+          // eoa2: API failure
+          return Promise.reject(
+            new DataSourceError('Service unavailable', 503),
           );
-        }
-        return Promise.reject(new Error('Network error'));
-      });
+        });
 
-      mockTransactionApi.isSafe.mockImplementation((address: Address) => {
-        if (
-          address.toLowerCase() === safeBAddress.toLowerCase() ||
-          address.toLowerCase() === safeCAddress.toLowerCase()
-        ) {
-          return Promise.resolve(true);
-        }
-        return Promise.resolve(false);
-      });
+        mockTransactionApi.isSafe.mockResolvedValue(false);
 
-      const result = await service.analyze({
-        chainId,
-        safeAddress,
-        transactions,
-      });
+        const result = await service.analyze({
+          chainId,
+          safeAddress,
+          transactions,
+        });
 
-      expect(result[DeadlockStatusGroup.DEADLOCK]?.[0]?.type).toBe(
-        DeadlockStatus.DEADLOCK_UNKNOWN,
-      );
+        // eoa2 has API failure → unknownState, no deadlock from fulfilled → DEADLOCK_UNKNOWN
+        expect(result[DeadlockStatusGroup.DEADLOCK]?.[0]?.type).toBe(
+          DeadlockStatus.DEADLOCK_UNKNOWN,
+        );
+      });
     });
   });
 
@@ -854,12 +990,8 @@ describe('DeadlockAnalysisService', () => {
             }),
           );
         }
-        return Promise.reject(new Error('Unknown'));
+        return Promise.reject(new DataSourceError('Not found', 404));
       });
-
-      mockTransactionApi.isSafe.mockImplementation((address: Address) =>
-        Promise.resolve(address.toLowerCase() === safeBAddress.toLowerCase()),
-      );
 
       const result = await service.analyze({
         chainId,
@@ -919,10 +1051,14 @@ describe('DeadlockAnalysisService', () => {
         }),
       ];
 
-      mockTransactionApi.getSafe.mockResolvedValue(
-        mockSafe({ address: safeAddress, owners: [eoa1], threshold: 1 }),
-      );
-      mockTransactionApi.isSafe.mockResolvedValue(false);
+      mockTransactionApi.getSafe.mockImplementation((address: Address) => {
+        if (address.toLowerCase() === safeAddress.toLowerCase()) {
+          return Promise.resolve(
+            mockSafe({ address: safeAddress, owners: [eoa1], threshold: 1 }),
+          );
+        }
+        return Promise.reject(new DataSourceError('Not found', 404));
+      });
 
       await service.analyze({ chainId, safeAddress, transactions });
 
@@ -934,7 +1070,7 @@ describe('DeadlockAnalysisService', () => {
       );
     });
 
-    it('should not cache when no owner change transaction is found', async () => {
+    it('should not cache when no owner config transaction is found', async () => {
       const transactions = [
         buildDecodedTx({
           to: safeAddress,
@@ -964,10 +1100,14 @@ describe('DeadlockAnalysisService', () => {
         }),
       ];
 
-      mockTransactionApi.getSafe.mockResolvedValue(
-        mockSafe({ address: safeAddress, owners: [eoa1], threshold: 1 }),
-      );
-      mockTransactionApi.isSafe.mockResolvedValue(false);
+      mockTransactionApi.getSafe.mockImplementation((address: Address) => {
+        if (address.toLowerCase() === safeAddress.toLowerCase()) {
+          return Promise.resolve(
+            mockSafe({ address: safeAddress, owners: [eoa1], threshold: 1 }),
+          );
+        }
+        return Promise.reject(new DataSourceError('Not found', 404));
+      });
 
       const result = await service.analyze({
         chainId,
@@ -1030,28 +1170,22 @@ describe('DeadlockAnalysisService', () => {
             }),
           );
         }
-        return Promise.reject(new Error('Unknown'));
-      });
-
-      mockTransactionApi.isSafe.mockImplementation((address: Address) => {
-        const lower = address.toLowerCase();
-        return Promise.resolve(
-          lower === safeBAddress.toLowerCase() ||
-            lower === safeCAddress.toLowerCase(),
-        );
+        return Promise.reject(new DataSourceError('Not found', 404));
       });
 
       await service.analyze({ chainId, safeAddress, transactions });
 
       // getSafe called once for target Safe, then once each for safeB + safeC in parallel
-      // Verify both Safe owner getSafe calls happened (batched via Promise.allSettled)
+      // Plus once each for eoa1 (rejected) in the batch
       const safeOwnerCalls = callOrder.filter(
         (c) => c !== `getSafe:${safeAddress.toLowerCase()}`,
       );
-      expect(safeOwnerCalls).toHaveLength(2);
+      expect(safeOwnerCalls.length).toBeGreaterThanOrEqual(2);
+      expect(safeOwnerCalls).toContain(`getSafe:${safeBAddress.toLowerCase()}`);
+      expect(safeOwnerCalls).toContain(`getSafe:${safeCAddress.toLowerCase()}`);
     });
 
-    it('should batch all nested isSafe checks into a single Promise.all', async () => {
+    it('should batch all nested isSafe checks into a single Promise.allSettled', async () => {
       const safeBAddress = getAddress(faker.finance.ethereumAddress());
       const safeCAddress = getAddress(faker.finance.ethereumAddress());
       const eoa1 = getAddress(faker.finance.ethereumAddress());
@@ -1094,28 +1228,211 @@ describe('DeadlockAnalysisService', () => {
             }),
           );
         }
-        return Promise.reject(new Error('Unknown'));
+        return Promise.reject(new DataSourceError('Not found', 404));
       });
 
+      // isSafe is only called for nested candidates now (depth 1)
       mockTransactionApi.isSafe.mockResolvedValue(false);
-      // Override for safeB and safeC only at depth-0 check
-      mockTransactionApi.isSafe.mockImplementation((address: Address) => {
-        const lower = address.toLowerCase();
-        return Promise.resolve(
-          lower === safeBAddress.toLowerCase() ||
-            lower === safeCAddress.toLowerCase(),
-        );
-      });
 
       await service.analyze({ chainId, safeAddress, transactions });
 
-      // isSafe calls: 3 for projected owners (depth 0) + 2 for nested (depth 1) = 5
-      // The 2 nested calls (nestedOwner1, nestedOwner2) should be in a single batch
+      // isSafe calls: only for nested candidates (nestedOwner1, nestedOwner2)
+      // No depth-0 isSafe calls since getSafe handles that
       const isSafeCalls = mockTransactionApi.isSafe.mock.calls.map((c) =>
         c[0].toLowerCase(),
       );
       expect(isSafeCalls).toContain(nestedOwner1.toLowerCase());
       expect(isSafeCalls).toContain(nestedOwner2.toLowerCase());
+    });
+  });
+
+  describe('multiSend (multiple owner configs)', () => {
+    it('should apply multiple owner configs sequentially to detect deadlock', async () => {
+      const safeBAddress = getAddress(faker.finance.ethereumAddress());
+      const eoa1 = getAddress(faker.finance.ethereumAddress());
+
+      const transactions = [
+        buildDecodedTx({
+          to: safeAddress,
+          dataDecoded: addOwnerBaseDataDecoded(safeBAddress, 1),
+        }),
+        buildDecodedTx({
+          to: safeAddress,
+          dataDecoded: changeThresholdBaseDataDecoded(2),
+        }),
+      ];
+
+      mockTransactionApi.getSafe.mockImplementation((address: Address) => {
+        if (address.toLowerCase() === safeAddress.toLowerCase()) {
+          return Promise.resolve(
+            mockSafe({
+              address: safeAddress,
+              owners: [eoa1],
+              threshold: 1,
+            }),
+          );
+        }
+        if (address.toLowerCase() === safeBAddress.toLowerCase()) {
+          return Promise.resolve(
+            mockSafe({
+              address: safeBAddress,
+              owners: [safeAddress],
+              threshold: 1,
+            }),
+          );
+        }
+        return Promise.reject(new DataSourceError('Not found', 404));
+      });
+
+      const result = await service.analyze({
+        chainId,
+        safeAddress,
+        transactions,
+      });
+
+      expect(result[DeadlockStatusGroup.DEADLOCK]?.[0]?.type).toBe(
+        DeadlockStatus.DEADLOCK_DETECTED,
+      );
+    });
+
+    it('should return no deadlock when multiple addOwner calls leave Safe healthy', async () => {
+      const eoa1 = getAddress(faker.finance.ethereumAddress());
+      const eoa2 = getAddress(faker.finance.ethereumAddress());
+      const eoa3 = getAddress(faker.finance.ethereumAddress());
+
+      const transactions = [
+        buildDecodedTx({
+          to: safeAddress,
+          dataDecoded: addOwnerBaseDataDecoded(eoa2, 1),
+        }),
+        buildDecodedTx({
+          to: safeAddress,
+          dataDecoded: addOwnerBaseDataDecoded(eoa3, 1),
+        }),
+      ];
+
+      mockTransactionApi.getSafe.mockImplementation((address: Address) => {
+        if (address.toLowerCase() === safeAddress.toLowerCase()) {
+          return Promise.resolve(
+            mockSafe({
+              address: safeAddress,
+              owners: [eoa1],
+              threshold: 1,
+            }),
+          );
+        }
+        return Promise.reject(new DataSourceError('Not found', 404));
+      });
+
+      const result = await service.analyze({
+        chainId,
+        safeAddress,
+        transactions,
+      });
+
+      expect(result[DeadlockStatusGroup.DEADLOCK]?.[0]?.type).toBe(
+        DeadlockStatus.NO_DEADLOCK,
+      );
+    });
+
+    it('should ignore non-owner-config txns mixed in the array', async () => {
+      const safeBAddress = getAddress(faker.finance.ethereumAddress());
+
+      const transactions = [
+        buildDecodedTx({
+          to: safeAddress,
+          dataDecoded: {
+            method: 'transfer',
+            parameters: [],
+          } as BaseDataDecoded,
+        }),
+        buildDecodedTx({
+          to: safeAddress,
+          dataDecoded: addOwnerBaseDataDecoded(safeBAddress, 1),
+        }),
+        buildDecodedTx({
+          to: getAddress(faker.finance.ethereumAddress()),
+          dataDecoded: {
+            method: 'approve',
+            parameters: [],
+          } as BaseDataDecoded,
+        }),
+      ];
+
+      mockTransactionApi.getSafe.mockImplementation((address: Address) => {
+        if (address.toLowerCase() === safeAddress.toLowerCase()) {
+          return Promise.resolve(
+            mockSafe({
+              address: safeAddress,
+              owners: [],
+              threshold: 1,
+            }),
+          );
+        }
+        if (address.toLowerCase() === safeBAddress.toLowerCase()) {
+          return Promise.resolve(
+            mockSafe({
+              address: safeBAddress,
+              owners: [safeAddress],
+              threshold: 1,
+            }),
+          );
+        }
+        return Promise.reject(new DataSourceError('Not found', 404));
+      });
+
+      const result = await service.analyze({
+        chainId,
+        safeAddress,
+        transactions,
+      });
+
+      expect(result[DeadlockStatusGroup.DEADLOCK]?.[0]?.type).toBe(
+        DeadlockStatus.DEADLOCK_DETECTED,
+      );
+    });
+
+    it('should produce same result as single-config when only one owner config exists', async () => {
+      const safeBAddress = getAddress(faker.finance.ethereumAddress());
+
+      const transactions = [
+        buildDecodedTx({
+          to: safeAddress,
+          dataDecoded: addOwnerBaseDataDecoded(safeBAddress, 1),
+        }),
+      ];
+
+      mockTransactionApi.getSafe.mockImplementation((address: Address) => {
+        if (address.toLowerCase() === safeAddress.toLowerCase()) {
+          return Promise.resolve(
+            mockSafe({
+              address: safeAddress,
+              owners: [],
+              threshold: 1,
+            }),
+          );
+        }
+        if (address.toLowerCase() === safeBAddress.toLowerCase()) {
+          return Promise.resolve(
+            mockSafe({
+              address: safeBAddress,
+              owners: [safeAddress],
+              threshold: 1,
+            }),
+          );
+        }
+        return Promise.reject(new DataSourceError('Not found', 404));
+      });
+
+      const result = await service.analyze({
+        chainId,
+        safeAddress,
+        transactions,
+      });
+
+      expect(result[DeadlockStatusGroup.DEADLOCK]?.[0]?.type).toBe(
+        DeadlockStatus.DEADLOCK_DETECTED,
+      );
     });
   });
 });
