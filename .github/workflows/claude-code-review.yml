@@ -13,15 +13,14 @@ jobs:
   claude-review:
     if: |
       github.event_name == 'workflow_dispatch' ||
-      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude review')) ||
-      (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude review'))
+      (contains(github.event.comment.body, '@claude review') &&
+       contains(fromJSON('["MEMBER", "OWNER", "COLLABORATOR"]'), github.event.comment.author_association))
 
     runs-on: ubuntu-latest
     permissions:
       contents: read
       pull-requests: read
       issues: read
-      id-token: write
 
     steps:
       - name: Checkout repository
