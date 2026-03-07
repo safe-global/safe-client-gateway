@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { DataSource } from 'typeorm';
 import { type Address, getAddress } from 'viem';
@@ -189,6 +190,7 @@ describe('UsersRepository', () => {
         updatedAt: expect.any(Date),
         user: {
           createdAt: expect.any(Date),
+          extUserId: null,
           id: wallet.user.id,
           status,
           updatedAt: expect.any(Date),
@@ -276,6 +278,7 @@ describe('UsersRepository', () => {
       expect(users).toEqual([
         {
           createdAt: expect.any(Date),
+          extUserId: null,
           id: users[0].id,
           status,
           updatedAt: expect.any(Date),
@@ -415,6 +418,7 @@ describe('UsersRepository', () => {
         updatedAt: expect.any(Date),
         user: {
           createdAt: expect.any(Date),
+          extUserId: null,
           id: wallet.user.id,
           status,
           updatedAt: expect.any(Date),
@@ -590,6 +594,7 @@ describe('UsersRepository', () => {
           updatedAt: expect.any(Date),
           user: {
             createdAt: expect.any(Date),
+            extUserId: null,
             id: wallets[0].user.id,
             status,
             updatedAt: expect.any(Date),
@@ -644,6 +649,7 @@ describe('UsersRepository', () => {
         usersRepository.findByWalletAddressOrFail(address),
       ).resolves.toEqual({
         createdAt: expect.any(Date),
+        extUserId: null,
         id: userInsertResult.identifiers[0].id,
         status,
         updatedAt: expect.any(Date),
@@ -679,6 +685,7 @@ describe('UsersRepository', () => {
         usersRepository.findByWalletAddress(address),
       ).resolves.toEqual({
         createdAt: expect.any(Date),
+        extUserId: null,
         id: userInsertResult.identifiers[0].id,
         status,
         updatedAt: expect.any(Date),
@@ -716,6 +723,7 @@ describe('UsersRepository', () => {
 
       expect(user).toEqual({
         createdAt: expect.any(Date),
+        extUserId: null,
         id: userId,
         status: 'ACTIVE',
         updatedAt: expect.any(Date),
@@ -746,10 +754,66 @@ describe('UsersRepository', () => {
 
       expect(user).toEqual({
         createdAt: expect.any(Date),
+        extUserId: null,
         id: userId,
         status,
         updatedAt: expect.any(Date),
       });
+    });
+  });
+
+  describe('extUserId uniqueness', () => {
+    it('should allow multiple users with null extUserId', async () => {
+      const dbUserRepository = dataSource.getRepository(User);
+      const status = faker.helpers.arrayElement(UserStatusKeys);
+
+      await dbUserRepository.insert({ status, extUserId: null });
+      await dbUserRepository.insert({ status, extUserId: null });
+
+      const users = await dbUserRepository.find();
+      expect(users).toHaveLength(2);
+      expect(users[0].extUserId).toBeNull();
+      expect(users[1].extUserId).toBeNull();
+    });
+
+    it('should allow a user with a unique extUserId', async () => {
+      const dbUserRepository = dataSource.getRepository(User);
+      const status = faker.helpers.arrayElement(UserStatusKeys);
+      const extUserId = faker.string.uuid();
+
+      await dbUserRepository.insert({ status, extUserId });
+
+      const user = await dbUserRepository.findOneOrFail({
+        where: { extUserId },
+      });
+      expect(user.extUserId).toBe(extUserId);
+    });
+
+    it('should reject duplicate extUserId values', async () => {
+      const dbUserRepository = dataSource.getRepository(User);
+      const status = faker.helpers.arrayElement(UserStatusKeys);
+      const extUserId = faker.string.uuid();
+
+      await dbUserRepository.insert({ status, extUserId });
+
+      await expect(
+        dbUserRepository.insert({ status, extUserId }),
+      ).rejects.toThrow(/duplicate key value violates unique constraint/);
+    });
+
+    it('should allow different extUserId values for different users', async () => {
+      const dbUserRepository = dataSource.getRepository(User);
+      const status = faker.helpers.arrayElement(UserStatusKeys);
+      const extUserId1 = faker.string.uuid();
+      const extUserId2 = faker.string.uuid();
+
+      await dbUserRepository.insert({ status, extUserId: extUserId1 });
+      await dbUserRepository.insert({ status, extUserId: extUserId2 });
+
+      const users = await dbUserRepository.find({ order: { id: 'ASC' } });
+      expect(users).toHaveLength(2);
+      expect(users[0].extUserId).toBe(extUserId1);
+      expect(users[1].extUserId).toBe(extUserId2);
     });
   });
 });
