@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
 
 export const RecipientStatusGroup = {
@@ -33,6 +34,11 @@ export const ThreatStatusGroup = {
   BALANCE_CHANGE: 'BALANCE_CHANGE',
 } as const;
 
+export const DeadlockStatusGroup = {
+  /** Groups all deadlock analysis results */
+  DEADLOCK: 'DEADLOCK',
+} as const;
+
 /**
  * Status groups for categorizing different types of security analysis checks.
  */
@@ -40,6 +46,7 @@ export const StatusGroup = {
   ...RecipientStatusGroup,
   ...ContractStatusGroup,
   ...ThreatStatusGroup,
+  ...DeadlockStatusGroup,
 } as const;
 
 /**
@@ -73,6 +80,11 @@ export const ContractStatusGroupSchema = z.enum(ContractStatusGroup);
 export const ThreatStatusGroupSchema = z.enum(ThreatStatusGroup);
 
 /**
+ * Zod schema for validating DeadlockStatusGroup enum values.
+ */
+export const DeadlockStatusGroupSchema = z.enum(DeadlockStatusGroup);
+
+/**
  * Zod schema for validating StatusGroup values.
  *
  * @example
@@ -85,4 +97,5 @@ export const StatusGroupSchema = z.enum(StatusGroup);
 export type RecipientStatusGroup = z.infer<typeof RecipientStatusGroupSchema>;
 export type ContractStatusGroup = z.infer<typeof ContractStatusGroupSchema>;
 export type ThreatStatusGroup = z.infer<typeof ThreatStatusGroupSchema>;
+export type DeadlockStatusGroup = z.infer<typeof DeadlockStatusGroupSchema>;
 export type StatusGroup = z.infer<typeof StatusGroupSchema>;

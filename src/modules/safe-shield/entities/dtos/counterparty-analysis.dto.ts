@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import {
   ApiExtraModels,
   ApiProperty,
@@ -12,6 +13,7 @@ import {
 } from '../analysis-result.entity';
 import type {
   CounterpartyAnalysisResponse,
+  DeadlockAnalysisResponse,
   GroupedAnalysisResults,
 } from '@/modules/safe-shield/entities/analysis-responses.entity';
 import { ContractStatus } from '@/modules/safe-shield/entities/contract-status.entity';
@@ -21,8 +23,10 @@ import { RecipientStatus } from '@/modules/safe-shield/entities/recipient-status
 import { Address } from 'viem';
 import {
   ContractStatusGroup,
+  DeadlockStatusGroup,
   RecipientStatusGroup,
 } from '@/modules/safe-shield/entities/status-group.entity';
+import { DeadlockStatus } from '@/modules/safe-shield/deadlock-analysis/entities/deadlock-status.entity';
 
 /**
  * DTO for contract analysis result.
@@ -263,6 +267,44 @@ export class RecipientAnalysisDto implements GroupedAnalysisResults<RecipientAna
 }
 
 /**
+ * DTO for deadlock analysis result.
+ */
+export class DeadlockAnalysisResultDto extends AnalysisResultDto<
+  DeadlockStatus | CommonStatus
+> {
+  @ApiProperty({
+    description: 'Deadlock analysis status code',
+    enum: [...Object.values(DeadlockStatus), ...Object.values(CommonStatus)],
+    example: 'DEADLOCK_DETECTED',
+  })
+  declare type: DeadlockStatus | CommonStatus;
+}
+
+/**
+ * DTO for deadlock analysis response.
+ *
+ * Contains deadlock analysis results under the DEADLOCK status group.
+ */
+export class DeadlockAnalysisDto implements DeadlockAnalysisResponse {
+  @ApiPropertyOptional({
+    description:
+      'Deadlock analysis findings. ' +
+      'Identifies signing deadlock risks in nested Safe configurations.',
+    type: [DeadlockAnalysisResultDto],
+    example: [
+      {
+        severity: 'CRITICAL',
+        type: 'DEADLOCK_DETECTED',
+        title: 'Signing deadlock risk detected',
+        description:
+          'This change may create a signing cycle between Safes and can permanently lock funds. You will not be allowed to proceed forward.',
+      },
+    ],
+  })
+  public readonly [DeadlockStatusGroup.DEADLOCK]?: Array<DeadlockAnalysisResultDto>;
+}
+
+/**
  * DTO for counterparty analysis response.
  *
  * Combines recipient and contract analysis results for a transaction simulation.
@@ -271,6 +313,7 @@ export class RecipientAnalysisDto implements GroupedAnalysisResults<RecipientAna
 @ApiExtraModels(
   RecipientAnalysisDto,
   ContractAnalysisDto,
+  DeadlockAnalysisDto,
   FallbackHandlerAnalysisResultDto,
   FallbackHandlerInfoDto,
 )
@@ -328,4 +371,12 @@ export class CounterpartyAnalysisDto implements CounterpartyAnalysisResponse {
     },
   })
   public readonly contract!: Record<Address, Partial<ContractAnalysisDto>>;
+
+  @ApiPropertyOptional({
+    description:
+      'Deadlock analysis results. ' +
+      'Only present when the transaction targets an owner/threshold management function.',
+    type: DeadlockAnalysisDto,
+  })
+  public readonly deadlock?: DeadlockAnalysisDto;
 }

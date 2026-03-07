@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import {
   StatusGroup,
   StatusGroupSchema,
@@ -17,7 +18,7 @@ describe('StatusGroup', () => {
 
   describe('StatusGroup', () => {
     it('should have all expected values', () => {
-      expect(statusGroup).toHaveLength(9);
+      expect(statusGroup).toHaveLength(10);
       expect(statusGroup).toContain('RECIPIENT_INTERACTION');
       expect(statusGroup).toContain('RECIPIENT_ACTIVITY');
       expect(statusGroup).toContain('BRIDGE');
@@ -27,6 +28,7 @@ describe('StatusGroup', () => {
       expect(statusGroup).toContain('THREAT');
       expect(statusGroup).toContain('BALANCE_CHANGE');
       expect(statusGroup).toContain('FALLBACK_HANDLER');
+      expect(statusGroup).toContain('DEADLOCK');
     });
 
     it('should have consistent naming convention', () => {

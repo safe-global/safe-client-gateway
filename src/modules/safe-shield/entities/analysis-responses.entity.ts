@@ -1,8 +1,10 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { type Address } from 'viem';
 import {
   ContractStatusGroup,
+  DeadlockStatusGroup,
   RecipientStatusGroup,
   ThreatStatusGroup,
 } from './status-group.entity';
@@ -15,6 +17,7 @@ import {
   type ContractAnalysisResult,
   UnofficialFallbackHandlerAnalysisResultSchema,
 } from './analysis-result.entity';
+import { DeadlockAnalysisResultSchema } from '../deadlock-analysis/entities/deadlock-analysis-result.entity';
 import type { RecipientStatus } from '@/modules/safe-shield/entities/recipient-status.entity';
 import { BalanceChangesSchema } from './threat-analysis.types';
 
@@ -69,14 +72,31 @@ export const ContractAnalysisResponseSchema = z.record(
 );
 
 /**
+ * Response structure for deadlock analysis.
+ *
+ * Contains deadlock analysis results grouped under the DEADLOCK status group.
+ * Unlike recipient/contract analysis, this is not per-address but about the
+ * Safe's overall signer configuration.
+ */
+export const DeadlockAnalysisResponseSchema = z
+  .object({
+    [DeadlockStatusGroup.DEADLOCK]: z
+      .array(DeadlockAnalysisResultSchema)
+      .optional(),
+  })
+  .strict();
+
+/**
  * Response structure for counterparty analysis endpoint.
  *
  * Combines recipient and contract analysis results for a single
- * transaction simulation.
+ * transaction simulation. Optionally includes deadlock analysis
+ * when the transaction targets an owner/threshold management function.
  */
 export const CounterpartyAnalysisResponseSchema = z.object({
   recipient: RecipientAnalysisResponseSchema,
   contract: ContractAnalysisResponseSchema,
+  deadlock: DeadlockAnalysisResponseSchema.optional(),
 });
 
 /**
@@ -110,6 +130,9 @@ export type ThreatAnalysisResponse = z.infer<
 >;
 export type CounterpartyAnalysisResponse = z.infer<
   typeof CounterpartyAnalysisResponseSchema
+>;
+export type DeadlockAnalysisResponse = z.infer<
+  typeof DeadlockAnalysisResponseSchema
 >;
 
 /**
