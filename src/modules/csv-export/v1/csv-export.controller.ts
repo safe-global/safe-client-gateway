@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import {
   Body,
   Controller,
@@ -21,7 +22,7 @@ import {
   JobStatusDto,
   JobStatusErrorDto,
   JobStatusResponseDto,
-} from '@/routes/jobs/entities/job-status.dto';
+} from '@/modules/csv-export/v1/entities/job-status.dto';
 import { TransactionExportDtoSchema } from '@/modules/csv-export/v1/entities/schemas/transaction-export.dto.schema';
 import { TransactionExportDto } from '@/modules/csv-export/v1/entities/transaction-export-request';
 import type { Address } from 'viem';
