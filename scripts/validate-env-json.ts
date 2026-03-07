@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import * as fs from 'fs';
 import * as path from 'path';
 import {
@@ -66,9 +67,12 @@ function log(message: string): void {
   }
 }
 
+// Directories to skip when scanning for process.env variables
+const IGNORE_DIRECTORIES = new Set(['node_modules', 'auth-service']);
+
 /**
  * Recursively find all TypeScript files in a directory.
- * Excludes node_modules and test files (.spec.ts).
+ * Excludes node_modules, auth-service, and test files (.spec.ts).
  *
  * @param dir - The directory path to search
  * @returns Array of absolute file paths to TypeScript files
@@ -84,7 +88,7 @@ export function findTsFiles(dir: string): Array<string> {
   for (const entry of entries) {
     const fullPath = path.join(dir, entry.name);
 
-    if (entry.isDirectory && entry.name !== 'node_modules') {
+    if (entry.isDirectory && !IGNORE_DIRECTORIES.has(entry.name)) {
       files.push(...findTsFiles(fullPath));
     } else if (
       entry.isFile &&
