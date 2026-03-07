@@ -236,7 +236,9 @@ export class DeadlockAnalysisService {
   ): Array<{ address: Address; owners: Array<Address>; threshold: number }> {
     return results
       .filter(
-        (r): r is PromiseFulfilledResult<{
+        (
+          r,
+        ): r is PromiseFulfilledResult<{
           address: Address;
           owners: Array<Address>;
           threshold: number;

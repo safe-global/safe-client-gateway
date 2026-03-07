@@ -7,7 +7,6 @@ export const DeadlockStatus = {
 
   /** Nested Safe owners exist at depth > 1; cannot fully verify deadlock-freedom */
   NESTED_SAFE_WARNING: 'NESTED_SAFE_WARNING',
-
 } as const;
 
 export const DeadlockStatusSchema = z.enum(DeadlockStatus);
