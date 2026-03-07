@@ -275,7 +275,7 @@ export class DeadlockAnalysisResultDto extends AnalysisResultDto<
   @ApiProperty({
     description: 'Deadlock analysis status code',
     enum: [...Object.values(DeadlockStatus), ...Object.values(CommonStatus)],
-    example: 'NO_DEADLOCK',
+    example: 'DEADLOCK_DETECTED',
   })
   declare type: DeadlockStatus | CommonStatus;
 }
@@ -293,11 +293,11 @@ export class DeadlockAnalysisDto implements DeadlockAnalysisResponse {
     type: [DeadlockAnalysisResultDto],
     example: [
       {
-        severity: 'OK',
-        type: 'NO_DEADLOCK',
-        title: 'No signing deadlock detected',
+        severity: 'CRITICAL',
+        type: 'DEADLOCK_DETECTED',
+        title: 'Signing deadlock risk detected',
         description:
-          'The proposed owner and threshold configuration does not create any signing deadlocks.',
+          'This change may create a signing cycle between Safes and can permanently lock funds. You will not be allowed to proceed forward.',
       },
     ],
   })

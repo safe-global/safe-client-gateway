@@ -1513,16 +1513,7 @@ describe('SafeShieldService', () => {
     ];
 
     it('should delegate to deadlockAnalysisService.analyze with correct args', async () => {
-      const mockDeadlockResponse = {
-        [DeadlockStatusGroup.DEADLOCK]: [
-          {
-            severity: 'OK' as const,
-            type: 'NO_DEADLOCK' as const,
-            title: 'No signing deadlock detected',
-            description: 'No deadlock.',
-          },
-        ],
-      };
+      const mockDeadlockResponse = {};
 
       mockDeadlockAnalysisService.analyze.mockResolvedValue(
         mockDeadlockResponse,

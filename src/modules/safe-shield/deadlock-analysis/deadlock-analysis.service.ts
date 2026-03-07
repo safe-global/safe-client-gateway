@@ -134,14 +134,14 @@ export class DeadlockAnalysisService {
 
     const hasApiFailure = safeOwnerResults.some((r) => r.status === 'rejected');
     if (hasApiFailure) {
-      return this.buildResponse(DeadlockStatus.DEADLOCK_UNKNOWN);
+      return this.buildResponse(DeadlockStatus.NESTED_SAFE_WARNING);
     }
 
     const hasSafeOwners = safeOwnerResults.some(
       (r) => r.status === 'fulfilled' && r.value !== null,
     );
     if (!hasSafeOwners) {
-      return this.buildResponse(DeadlockStatus.NO_DEADLOCK);
+      return {};
     }
 
     const { deadlockDetected, nestedCandidates } = this.checkMutualDependencies(
@@ -161,7 +161,7 @@ export class DeadlockAnalysisService {
       return this.buildResponse(DeadlockStatus.NESTED_SAFE_WARNING);
     }
 
-    return this.buildResponse(DeadlockStatus.NO_DEADLOCK);
+    return {};
   }
 
   private async fetchProjectedState(
@@ -200,37 +200,17 @@ export class DeadlockAnalysisService {
     deadlockDetected: boolean;
     nestedCandidates: Set<Address>;
   } {
-    let deadlockDetected = false;
+    const safeOwners = this.extractSafeOwners(safeOwnerResults);
+
+    for (const ownerSafe of safeOwners) {
+      if (this.isDeadlocked(projected, ownerSafe, safeAddress)) {
+        return { deadlockDetected: true, nestedCandidates: new Set() };
+      }
+    }
+
+    // Collect sub-owners of Safe-type owners for depth-2 nesting check
     const nestedCandidates = new Set<Address>();
-
-    for (const result of safeOwnerResults) {
-      if (result.status !== 'fulfilled' || result.value === null) {
-        continue;
-      }
-
-      const ownerSafe = result.value;
-
-      const hasMutualDep = ownerSafe.owners.some((o) =>
-        isAddressEqual(o, safeAddress),
-      );
-
-      if (hasMutualDep) {
-        const targetNonDependent = projected.owners.filter(
-          (o) => !isAddressEqual(o, ownerSafe.address),
-        ).length;
-        const ownerNonDependent = ownerSafe.owners.filter(
-          (o) => !isAddressEqual(o, safeAddress),
-        ).length;
-
-        if (
-          targetNonDependent < projected.threshold &&
-          ownerNonDependent < ownerSafe.threshold
-        ) {
-          deadlockDetected = true;
-          return { deadlockDetected, nestedCandidates };
-        }
-      }
-
+    for (const ownerSafe of safeOwners) {
       for (const o of ownerSafe.owners) {
         if (!isAddressEqual(o, safeAddress)) {
           nestedCandidates.add(o);
@@ -238,7 +218,62 @@ export class DeadlockAnalysisService {
       }
     }
 
-    return { deadlockDetected, nestedCandidates };
+    return { deadlockDetected: false, nestedCandidates };
+  }
+
+  /**
+   * Extracts successfully resolved Safe owner data, discarding
+   * rejected results and null values (404 = not a Safe).
+   */
+  private extractSafeOwners(
+    results: Array<
+      PromiseSettledResult<{
+        address: Address;
+        owners: Array<Address>;
+        threshold: number;
+      } | null>
+    >,
+  ): Array<{ address: Address; owners: Array<Address>; threshold: number }> {
+    return results
+      .filter(
+        (r): r is PromiseFulfilledResult<{
+          address: Address;
+          owners: Array<Address>;
+          threshold: number;
+        }> => r.status === 'fulfilled' && r.value !== null,
+      )
+      .map((r) => r.value);
+  }
+
+  /**
+   * Two Safes are deadlocked when:
+   * 1. They each list the other as an owner (mutual dependency), AND
+   * 2. Neither Safe has enough *other* owners to meet its threshold
+   *    without the co-dependent Safe's signature.
+   */
+  private isDeadlocked(
+    targetSafe: { owners: Array<Address>; threshold: number },
+    ownerSafe: { address: Address; owners: Array<Address>; threshold: number },
+    safeAddress: Address,
+  ): boolean {
+    const hasMutualDep = ownerSafe.owners.some((o) =>
+      isAddressEqual(o, safeAddress),
+    );
+    if (!hasMutualDep) {
+      return false;
+    }
+
+    const targetNonDependent = targetSafe.owners.filter(
+      (o) => !isAddressEqual(o, ownerSafe.address),
+    ).length;
+    const ownerNonDependent = ownerSafe.owners.filter(
+      (o) => !isAddressEqual(o, safeAddress),
+    ).length;
+
+    return (
+      targetNonDependent < targetSafe.threshold &&
+      ownerNonDependent < ownerSafe.threshold
+    );
   }
 
   private async checkNestedSafes(

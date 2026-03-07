@@ -288,9 +288,7 @@ describe('DeadlockAnalysisService', () => {
         transactions,
       });
 
-      expect(result[DeadlockStatusGroup.DEADLOCK]?.[0]?.type).toBe(
-        DeadlockStatus.NO_DEADLOCK,
-      );
+      expect(result).toEqual({});
     });
 
     it('should detect deadlock with removeOwner leaving only mutual dependency', async () => {
@@ -427,7 +425,7 @@ describe('DeadlockAnalysisService', () => {
     });
   });
 
-  describe('OK: NO_DEADLOCK', () => {
+  describe('no deadlock (empty response)', () => {
     it('should return OK when all owners are EOAs', async () => {
       const eoa1 = getAddress(faker.finance.ethereumAddress());
       const newEoa = getAddress(faker.finance.ethereumAddress());
@@ -454,10 +452,7 @@ describe('DeadlockAnalysisService', () => {
         transactions,
       });
 
-      expect(result[DeadlockStatusGroup.DEADLOCK]?.[0]?.type).toBe(
-        DeadlockStatus.NO_DEADLOCK,
-      );
-      expect(result[DeadlockStatusGroup.DEADLOCK]?.[0]?.severity).toBe('OK');
+      expect(result).toEqual({});
     });
 
     it('should return OK when Safe owner exists but no circular dependency', async () => {
@@ -496,9 +491,7 @@ describe('DeadlockAnalysisService', () => {
         transactions,
       });
 
-      expect(result[DeadlockStatusGroup.DEADLOCK]?.[0]?.type).toBe(
-        DeadlockStatus.NO_DEADLOCK,
-      );
+      expect(result).toEqual({});
     });
 
     it('should return OK when mutual ownership exists but threshold can be met without the other Safe', async () => {
@@ -541,9 +534,7 @@ describe('DeadlockAnalysisService', () => {
         transactions,
       });
 
-      expect(result[DeadlockStatusGroup.DEADLOCK]?.[0]?.type).toBe(
-        DeadlockStatus.NO_DEADLOCK,
-      );
+      expect(result).toEqual({});
     });
   });
 
@@ -635,15 +626,13 @@ describe('DeadlockAnalysisService', () => {
         transactions,
       });
 
-      expect(result[DeadlockStatusGroup.DEADLOCK]?.[0]?.type).toBe(
-        DeadlockStatus.NO_DEADLOCK,
-      );
+      expect(result).toEqual({});
     });
   });
 
   describe('getSafe rejection handling', () => {
     describe('404 errors (not a Safe — treated as EOA)', () => {
-      it('should return NO_DEADLOCK when all owners return 404', async () => {
+      it('should return empty when all owners return 404', async () => {
         const safeBAddress = getAddress(faker.finance.ethereumAddress());
         const eoa1 = getAddress(faker.finance.ethereumAddress());
 
@@ -673,12 +662,10 @@ describe('DeadlockAnalysisService', () => {
           transactions,
         });
 
-        expect(result[DeadlockStatusGroup.DEADLOCK]?.[0]?.type).toBe(
-          DeadlockStatus.NO_DEADLOCK,
-        );
+        expect(result).toEqual({});
       });
 
-      it('should skip 404 owners without marking unknown state', async () => {
+      it('should skip 404 owners and still check remaining owners', async () => {
         const safeBAddress = getAddress(faker.finance.ethereumAddress());
         const safeCAddress = getAddress(faker.finance.ethereumAddress());
         const eoa1 = getAddress(faker.finance.ethereumAddress());
@@ -722,9 +709,7 @@ describe('DeadlockAnalysisService', () => {
 
         // safeCAddress 404 → EOA, skipped
         // safeBAddress fulfilled but no deadlock (targetNonDependent >= threshold)
-        expect(result[DeadlockStatusGroup.DEADLOCK]?.[0]?.type).toBe(
-          DeadlockStatus.NO_DEADLOCK,
-        );
+        expect(result).toEqual({});
       });
 
       it('should still detect deadlock when some owners return 404', async () => {
@@ -772,8 +757,8 @@ describe('DeadlockAnalysisService', () => {
       });
     });
 
-    describe('non-404 errors (API failure — unknown state)', () => {
-      it('should return DEADLOCK_UNKNOWN when getSafe fails with non-404 error for all owners', async () => {
+    describe('non-404 errors (API failure)', () => {
+      it('should return NESTED_SAFE_WARNING when getSafe fails with non-404 error for all owners', async () => {
         const safeBAddress = getAddress(faker.finance.ethereumAddress());
         const eoa1 = getAddress(faker.finance.ethereumAddress());
 
@@ -806,11 +791,11 @@ describe('DeadlockAnalysisService', () => {
         });
 
         expect(result[DeadlockStatusGroup.DEADLOCK]?.[0]?.type).toBe(
-          DeadlockStatus.DEADLOCK_UNKNOWN,
+          DeadlockStatus.NESTED_SAFE_WARNING,
         );
       });
 
-      it('should return DEADLOCK_UNKNOWN when some owners fail with API error and no deadlock from fulfilled', async () => {
+      it('should return NESTED_SAFE_WARNING when some owners fail with API error and no deadlock from fulfilled', async () => {
         const safeBAddress = getAddress(faker.finance.ethereumAddress());
         const safeCAddress = getAddress(faker.finance.ethereumAddress());
         const eoa1 = getAddress(faker.finance.ethereumAddress());
@@ -856,11 +841,11 @@ describe('DeadlockAnalysisService', () => {
         });
 
         expect(result[DeadlockStatusGroup.DEADLOCK]?.[0]?.type).toBe(
-          DeadlockStatus.DEADLOCK_UNKNOWN,
+          DeadlockStatus.NESTED_SAFE_WARNING,
         );
       });
 
-      it('should return DEADLOCK_UNKNOWN when deadlock would exist but API failure occurred', async () => {
+      it('should return NESTED_SAFE_WARNING when deadlock would exist but API failure occurred', async () => {
         const safeBAddress = getAddress(faker.finance.ethereumAddress());
         const safeCAddress = getAddress(faker.finance.ethereumAddress());
 
@@ -902,13 +887,13 @@ describe('DeadlockAnalysisService', () => {
           transactions,
         });
 
-        // API failure short-circuits to unknown — can't trust partial analysis
+        // API failure short-circuits to NESTED_SAFE_WARNING — can't trust partial analysis
         expect(result[DeadlockStatusGroup.DEADLOCK]?.[0]?.type).toBe(
-          DeadlockStatus.DEADLOCK_UNKNOWN,
+          DeadlockStatus.NESTED_SAFE_WARNING,
         );
       });
 
-      it('should return DEADLOCK_UNKNOWN for mixed 404 + API error when no deadlock from fulfilled', async () => {
+      it('should return NESTED_SAFE_WARNING for mixed 404 + API error when no deadlock from fulfilled', async () => {
         const safeBAddress = getAddress(faker.finance.ethereumAddress());
         const eoa1 = getAddress(faker.finance.ethereumAddress());
         const eoa2 = getAddress(faker.finance.ethereumAddress());
@@ -957,9 +942,9 @@ describe('DeadlockAnalysisService', () => {
           transactions,
         });
 
-        // eoa2 has API failure → unknownState, no deadlock from fulfilled → DEADLOCK_UNKNOWN
+        // eoa2 has API failure → short-circuits to NESTED_SAFE_WARNING
         expect(result[DeadlockStatusGroup.DEADLOCK]?.[0]?.type).toBe(
-          DeadlockStatus.DEADLOCK_UNKNOWN,
+          DeadlockStatus.NESTED_SAFE_WARNING,
         );
       });
     });
@@ -1008,16 +993,7 @@ describe('DeadlockAnalysisService', () => {
 
   describe('caching', () => {
     it('should return cached result on cache hit', async () => {
-      const cachedResponse = {
-        [DeadlockStatusGroup.DEADLOCK]: [
-          {
-            severity: 'OK',
-            type: DeadlockStatus.NO_DEADLOCK,
-            title: 'No signing deadlock detected',
-            description: 'No signing deadlock detected.',
-          },
-        ],
-      };
+      const cachedResponse = {};
       mockCacheService.hGet.mockResolvedValue(JSON.stringify(cachedResponse));
 
       const transactions = [
@@ -1117,9 +1093,7 @@ describe('DeadlockAnalysisService', () => {
       });
 
       expect(mockLoggingService.warn).toHaveBeenCalledTimes(1);
-      expect(result[DeadlockStatusGroup.DEADLOCK]?.[0]?.type).toBe(
-        DeadlockStatus.NO_DEADLOCK,
-      );
+      expect(result).toEqual({});
       expect(mockCacheService.hSet).toHaveBeenCalledTimes(1);
     });
   });
@@ -1331,9 +1305,7 @@ describe('DeadlockAnalysisService', () => {
         transactions,
       });
 
-      expect(result[DeadlockStatusGroup.DEADLOCK]?.[0]?.type).toBe(
-        DeadlockStatus.NO_DEADLOCK,
-      );
+      expect(result).toEqual({});
     });
 
     it('should ignore non-owner-config txns mixed in the array', async () => {

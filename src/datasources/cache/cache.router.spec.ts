@@ -2,9 +2,9 @@
 import { CacheRouter } from '@/datasources/cache/cache.router';
 import type { BaseDataDecoded } from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';
 import { getAddress } from 'viem';
+import { faker } from '@faker-js/faker';
 
-const address = getAddress('0x1234567890123456789012345678901234567890');
-const safeAddress = getAddress('0xABCDABCDABCDABCDABCDABCDABCDABCDABCDABCD');
+const address = getAddress(faker.finance.ethereumAddress());
 
 describe('CacheRouter', () => {
   describe('portfolio cache keys', () => {
@@ -65,6 +65,7 @@ describe('CacheRouter', () => {
 
   describe('deadlock analysis cache keys', () => {
     const chainId = '1';
+    const safeAddress = getAddress(faker.finance.ethereumAddress());
 
     const addOwnerDecoded: BaseDataDecoded = {
       method: 'addOwnerWithThreshold',

@@ -117,7 +117,7 @@ export class SafeShieldService {
     // Include deadlock result only when non-empty
     if (deadlockResult.status === 'fulfilled') {
       const deadlock = deadlockResult.value;
-      if (Object.keys(deadlock).length > 0) {
+      if (deadlock.DEADLOCK) {
         response.deadlock = deadlock;
       }
     } else {
