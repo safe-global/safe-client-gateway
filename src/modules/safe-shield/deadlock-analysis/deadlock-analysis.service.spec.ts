@@ -126,9 +126,7 @@ function changeThresholdBaseDataDecoded(threshold: number): BaseDataDecoded {
   } as BaseDataDecoded;
 }
 
-function expectedResponse(
-  status: DeadlockStatus,
-): DeadlockAnalysisResponse {
+function expectedResponse(status: DeadlockStatus): DeadlockAnalysisResponse {
   return {
     [DeadlockStatusGroup.DEADLOCK]: [
       {

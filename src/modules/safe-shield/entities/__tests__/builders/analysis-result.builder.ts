@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import type { IBuilder } from '@/__tests__/builder';
 import { Builder } from '@/__tests__/builder';
@@ -105,7 +106,9 @@ export function maliciousOrModerateThreatBuilder(): IBuilder<MaliciousOrModerate
 /**
  * Builder for DeadlockAnalysisResult entities (default: DEADLOCK_DETECTED)
  */
-export function deadlockAnalysisResultBuilder(): IBuilder<AnalysisResult<DeadlockStatus>> {
+export function deadlockAnalysisResultBuilder(): IBuilder<
+  AnalysisResult<DeadlockStatus>
+> {
   return new Builder<AnalysisResult<DeadlockStatus>>()
     .with('severity', 'CRITICAL')
     .with('type', DeadlockStatus.DEADLOCK_DETECTED)

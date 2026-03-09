@@ -163,7 +163,11 @@ describe('owner-config-decoder.utils', () => {
     const addOwnerDecoded = {
       method: 'addOwnerWithThreshold',
       parameters: [
-        { name: 'owner', type: 'address', value: getAddress(faker.finance.ethereumAddress()) },
+        {
+          name: 'owner',
+          type: 'address',
+          value: getAddress(faker.finance.ethereumAddress()),
+        },
         { name: '_threshold', type: 'uint256', value: '2' },
       ],
     } as BaseDataDecoded;
@@ -171,8 +175,16 @@ describe('owner-config-decoder.utils', () => {
     const removeOwnerDecoded = {
       method: 'removeOwner',
       parameters: [
-        { name: 'prevOwner', type: 'address', value: getAddress(faker.finance.ethereumAddress()) },
-        { name: 'owner', type: 'address', value: getAddress(faker.finance.ethereumAddress()) },
+        {
+          name: 'prevOwner',
+          type: 'address',
+          value: getAddress(faker.finance.ethereumAddress()),
+        },
+        {
+          name: 'owner',
+          type: 'address',
+          value: getAddress(faker.finance.ethereumAddress()),
+        },
         { name: '_threshold', type: 'uint256', value: '1' },
       ],
     } as BaseDataDecoded;

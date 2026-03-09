@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { ThreatStatus } from '@/modules/safe-shield/entities/threat-status.entity';
 import {
   RecipientAnalysisResponseSchema,
@@ -319,8 +320,7 @@ describe('Analysis Response Schemas', () => {
       it('should validate correct deadlock analysis response', () => {
         const validResponse = deadlockAnalysisResponseBuilder().build();
 
-        const result =
-          DeadlockAnalysisResponseSchema.safeParse(validResponse);
+        const result = DeadlockAnalysisResponseSchema.safeParse(validResponse);
 
         expect(result.success && result.data).toStrictEqual(validResponse);
       });
@@ -336,8 +336,7 @@ describe('Analysis Response Schemas', () => {
           .with(DeadlockStatusGroup.DEADLOCK, [])
           .build();
 
-        const result =
-          DeadlockAnalysisResponseSchema.safeParse(emptyResponse);
+        const result = DeadlockAnalysisResponseSchema.safeParse(emptyResponse);
 
         expect(result.success && result.data).toStrictEqual(emptyResponse);
       });
@@ -351,9 +350,9 @@ describe('Analysis Response Schemas', () => {
         const result =
           DeadlockAnalysisResponseSchema.safeParse(invalidResponse);
 
-        expect(
-          !result.success && result.error.issues.length,
-        ).toBeGreaterThan(0);
+        expect(!result.success && result.error.issues.length).toBeGreaterThan(
+          0,
+        );
         expect(result?.error?.issues[0].code).toBe('unrecognized_keys');
       });
     });

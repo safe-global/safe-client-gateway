@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import {
   AnalysisResultBaseSchema,
   RecipientAnalysisResultSchema,
@@ -472,9 +473,7 @@ describe('AnalysisResult', () => {
           .with('type', status)
           .build();
 
-        expect(() =>
-          DeadlockAnalysisResultSchema.parse(result),
-        ).not.toThrow();
+        expect(() => DeadlockAnalysisResultSchema.parse(result)).not.toThrow();
       },
     );
 
@@ -508,9 +507,7 @@ describe('AnalysisResult', () => {
     it('should reject threat status types', () => {
       const threatResult = threatAnalysisResultBuilder().build();
 
-      expect(() =>
-        DeadlockAnalysisResultSchema.parse(threatResult),
-      ).toThrow();
+      expect(() => DeadlockAnalysisResultSchema.parse(threatResult)).toThrow();
     });
   });
 
