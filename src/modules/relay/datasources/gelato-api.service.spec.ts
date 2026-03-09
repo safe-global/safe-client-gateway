@@ -11,10 +11,15 @@ import { DataSourceError } from '@/domain/errors/data-source.error';
 import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { rawify } from '@/validation/entities/raw.entity';
+import type { ILoggingService } from '@/logging/logging.interface';
 
 const mockNetworkService = jest.mocked({
   post: jest.fn(),
 } as jest.MockedObjectDeep<INetworkService>);
+
+const mockLoggingService = jest.mocked({
+  error: jest.fn(),
+} as jest.MockedObjectDeep<ILoggingService>);
 
 describe('GelatoApi', () => {
   let target: GelatoApi;
@@ -40,6 +45,7 @@ describe('GelatoApi', () => {
       fakeConfigurationService,
       httpErrorFactory,
       fakeCacheService,
+      mockLoggingService,
     );
   });
 
@@ -55,6 +61,7 @@ describe('GelatoApi', () => {
           fakeConfigurationService,
           httpErrorFactory,
           fakeCacheService,
+          mockLoggingService,
         ),
     ).toThrow();
   });
@@ -143,6 +150,11 @@ describe('GelatoApi', () => {
           data,
         }),
       ).rejects.toThrow(new DataSourceError('Unexpected error', status));
+      expect(mockLoggingService.error).toHaveBeenCalledWith(
+        expect.stringContaining(
+          `Error relaying transaction for chain ${chainId}`,
+        ),
+      );
     });
   });
 
@@ -246,6 +258,11 @@ describe('GelatoApi', () => {
 
       await expect(target.getTaskStatus({ chainId, taskId })).rejects.toThrow(
         new DataSourceError('Unexpected error', status),
+      );
+      expect(mockLoggingService.error).toHaveBeenCalledWith(
+        expect.stringContaining(
+          `Error getting task status ${taskId} for chain ${chainId}`,
+        ),
       );
     });
   });
