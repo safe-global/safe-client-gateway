@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { IBlocklistService } from '@/config/entities/blocklist.interface';
 import { LogType } from '@/domain/common/entities/log-type.entity';
@@ -14,6 +15,7 @@ import {
 } from '@nestjs/common';
 import type { Request } from 'express';
 import { getAddress, isAddress } from 'viem';
+import { getClientIp } from '@/routes/common/utils/request.utils';
 
 @Injectable()
 export class BlocklistGuard implements CanActivate {
@@ -54,7 +56,7 @@ export class BlocklistGuard implements CanActivate {
           address: normalizedAddress,
           route: request.route?.path || request.path,
           method: request.method,
-          clientIp: request.ip,
+          clientIp: getClientIp(request),
         });
 
         throw new ForbiddenException('Access to this Safe is restricted');

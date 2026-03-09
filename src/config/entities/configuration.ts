@@ -694,6 +694,10 @@ export default () => ({
       process.env.ETHERSCAN_GAS_PRICE_CACHE_TTL_SECONDS ?? `${10}`,
     ),
   },
+  captcha: {
+    enabled: process.env.CAPTCHA_ENABLED?.toLowerCase() === 'true',
+    secretKey: process.env.CAPTCHA_SECRET_KEY,
+  },
 });
 
 // Helper function to parse relay rules from environment variable
