@@ -63,6 +63,11 @@ export class DeadlockAnalysisService {
    * changeThreshold) targeting the Safe itself, then checks whether the projected
    * state would create a mutual ownership cycle that prevents signing.
    * Results are cached to avoid redundant API calls.
+   *
+   * @param {string} args.chainId - The chain ID.
+   * @param {Address} args.safeAddress - The Safe wallet address.
+   * @param {Array<DecodedTransactionData>} args.transactions - The transactions to analyze for potential signing deadlocks.
+   * @returns {Promise<DeadlockAnalysisResponse>} The deadlock analysis response.
    */
   async analyze(args: {
     chainId: string;
@@ -111,10 +116,15 @@ export class DeadlockAnalysisService {
   }
 
   /**
-   * Core analysis logic: fetches the projected Safe state after applying queued
-   * owner config transactions, looks up which owners are themselves Safes, and
-   * checks for mutual ownership deadlocks at depth 1 and nested Safe presence
+   * Performs the deadlock analysis by fetching the projected Safe state after applying queued
+   * owner config transactions, looking up which owners are themselves Safes, and
+   * checking for mutual ownership deadlocks at depth 1 and nested Safe presence
    * at depth 2.
+   *
+   * @param {string} chainId - The chain ID.
+   * @param {Address} safeAddress - The Safe wallet address.
+   * @param {Array<BaseDataDecoded>} ownerConfigs - The owner configuration transactions.
+   * @returns {Promise<DeadlockAnalysisResponse>} The deadlock analysis response.
    */
   private async performAnalysis(
     chainId: string,
@@ -135,7 +145,11 @@ export class DeadlockAnalysisService {
         try {
           const raw = await transactionApi.getSafe(address);
           const safe = SafeSchema.parse(raw);
-          return { address, owners: safe.owners, threshold: safe.threshold } as SafeOwnerInfo;
+          return {
+            address,
+            owners: safe.owners,
+            threshold: safe.threshold,
+          } as SafeOwnerInfo;
         } catch (error) {
           if (error instanceof DataSourceError && error.code === 404) {
             return null; // Not a Safe — treat as EOA
@@ -149,7 +163,9 @@ export class DeadlockAnalysisService {
       return this.buildResponse(DeadlockStatus.NESTED_SAFE_WARNING);
     }
 
-    const ownersThatAreSafes = this.extractOwnersThatAreSafes(ownersThatAreSafesLookupResults);
+    const ownersThatAreSafes = this.extractOwnersThatAreSafes(
+      ownersThatAreSafesLookupResults,
+    );
     if (ownersThatAreSafes.length === 0) {
       return {};
     }
@@ -177,6 +193,11 @@ export class DeadlockAnalysisService {
   /**
    * Fetches the current Safe state and sequentially applies all queued owner
    * configuration changes to compute the projected owners list and threshold.
+   *
+   * @param {ITransactionApi} transactionApi - The transaction API.
+   * @param {Address} safeAddress - The Safe wallet address.
+   * @param {Array<BaseDataDecoded>} ownerConfigs - The owner configuration transactions.
+   * @returns {Promise<Omit<SafeOwnerInfo, 'address'>>} The projected Safe state.
    */
   private async fetchProjectedState(
     transactionApi: ITransactionApi,
@@ -204,6 +225,13 @@ export class DeadlockAnalysisService {
    * Checks for depth-1 mutual ownership deadlocks between the target Safe
    * and each of its Safe-type owners. Also collects sub-owners of Safe-type
    * owners as candidates for the depth-2 nested Safe check.
+   *
+   * @param {Array<SafeOwnerInfo>} ownersThatAreSafes - The owners that are Safes and their owners and threshold.
+   * @param {Address} safeAddress - The Safe wallet address.
+   * @param {Omit<SafeOwnerInfo, 'address'>} projectedSafeState - The projected Safe state.
+   * @returns {Promise<{ deadlockDetected: boolean; nestedCandidates: Set<Address> }>} The mutual ownership deadlock detection result.
+   * @returns {boolean} deadlockDetected - Whether a mutual ownership deadlock was detected.
+   * @returns {Set<Address>} nestedCandidates - The owners that are Safes.
    */
   private checkMutualDependencies(
     ownersThatAreSafes: Array<SafeOwnerInfo>,
@@ -231,6 +259,9 @@ export class DeadlockAnalysisService {
   /**
    * Extracts successfully resolved Safe owner data, discarding
    * rejected results and null values (404 = not a Safe).
+   *
+   * @param {Array<PromiseSettledResult<SafeOwnerInfo | null>>} results - The results of the batch process.
+   * @returns {Array<SafeOwnerInfo>} The owners that are Safes and their owners and threshold.
    */
   private extractOwnersThatAreSafes(
     results: Array<PromiseSettledResult<SafeOwnerInfo | null>>,
@@ -248,6 +279,11 @@ export class DeadlockAnalysisService {
    * 1. They each list the other as an owner (mutual dependency), AND
    * 2. Neither Safe has enough *other* owners to meet its threshold
    *    without the co-dependent Safe's signature.
+   *
+   * @param {Omit<SafeOwnerInfo, 'address'>} targetSafe - The target Safe and its owners and threshold.
+   * @param {SafeOwnerInfo} ownerSafe - The owner Safe and its owners and threshold.
+   * @param {Address} safeAddress - The Safe wallet address.
+   * @returns {boolean} Whether the target Safe is deadlocked with the owner Safe.
    */
   private isDeadlocked(
     targetSafe: Omit<SafeOwnerInfo, 'address'>,
@@ -277,6 +313,10 @@ export class DeadlockAnalysisService {
   /**
    * Checks whether any of the candidate addresses are themselves Safes,
    * indicating nested Safe ownership at depth 2 that cannot be fully verified.
+   *
+   * @param {ITransactionApi} transactionApi - The transaction API.
+   * @param {Array<Address>} candidates - The candidates to check.
+   * @returns {Promise<boolean>} Whether any of the candidates are themselves Safes.
    */
   private async checkNestedSafes(
     transactionApi: ITransactionApi,
@@ -291,6 +331,10 @@ export class DeadlockAnalysisService {
   /**
    * Processes items in batches using Promise.allSettled to avoid overwhelming
    * the transaction API. Each batch runs concurrently; batches run sequentially.
+   *
+   * @param {Array<T>} items - The items to process.
+   * @param {function(item: T): Promise<R>} fn - The function to apply to each item.
+   * @returns {Promise<Array<PromiseSettledResult<R>>>} The results of the batch process.
    */
   private async batchProcess<T, R>(
     items: Array<T>,
