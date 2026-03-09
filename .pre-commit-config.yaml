@@ -34,6 +34,5 @@ repos:
         args:
           - --license-filepath
           - LICENSE_HEADER.txt
-          - --comment-style
-          - '--'
+          - --comment-style=--
           - --no-extra-eol
