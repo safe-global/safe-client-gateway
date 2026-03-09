@@ -4,21 +4,25 @@ import {
   ContractAnalysisResponseSchema,
   CounterpartyAnalysisResponseSchema,
   ThreatAnalysisResponseSchema,
+  DeadlockAnalysisResponseSchema,
 } from '../analysis-responses.entity';
 import {
   recipientAnalysisResponseBuilder,
   contractAnalysisResponseBuilder,
   counterpartyAnalysisResponseBuilder,
   threatAnalysisResponseBuilder,
+  deadlockAnalysisResponseBuilder,
 } from './builders/analysis-responses.builder';
 import {
   contractAnalysisResultBuilder,
   recipientAnalysisResultBuilder,
   threatAnalysisResultBuilder,
+  deadlockAnalysisResultBuilder,
 } from './builders/analysis-result.builder';
 import { faker } from '@faker-js/faker';
 import {
   ContractStatusGroup,
+  DeadlockStatusGroup,
   RecipientStatusGroup,
   ThreatStatusGroup,
 } from '../status-group.entity';
@@ -311,6 +315,49 @@ describe('Analysis Response Schemas', () => {
       });
     });
 
+    describe('DeadlockAnalysisResponseSchema', () => {
+      it('should validate correct deadlock analysis response', () => {
+        const validResponse = deadlockAnalysisResponseBuilder().build();
+
+        const result =
+          DeadlockAnalysisResponseSchema.safeParse(validResponse);
+
+        expect(result.success && result.data).toStrictEqual(validResponse);
+      });
+
+      it('should validate empty response', () => {
+        const result = DeadlockAnalysisResponseSchema.safeParse({});
+
+        expect(result.success && result.data).toStrictEqual({});
+      });
+
+      it('should validate response with empty DEADLOCK array', () => {
+        const emptyResponse = deadlockAnalysisResponseBuilder(false)
+          .with(DeadlockStatusGroup.DEADLOCK, [])
+          .build();
+
+        const result =
+          DeadlockAnalysisResponseSchema.safeParse(emptyResponse);
+
+        expect(result.success && result.data).toStrictEqual(emptyResponse);
+      });
+
+      it('should reject invalid status group', () => {
+        const invalidResponse = {
+          ...deadlockAnalysisResponseBuilder().build(),
+          INVALID_STATUS_GROUP: [deadlockAnalysisResultBuilder().build()],
+        };
+
+        const result =
+          DeadlockAnalysisResponseSchema.safeParse(invalidResponse);
+
+        expect(
+          !result.success && result.error.issues.length,
+        ).toBeGreaterThan(0);
+        expect(result?.error?.issues[0].code).toBe('unrecognized_keys');
+      });
+    });
+
     describe('CounterpartyAnalysisResponseSchema', () => {
       it('should validate counterparty analysis response', () => {
         const response = counterpartyAnalysisResponseBuilder().build();
@@ -332,6 +379,19 @@ describe('Analysis Response Schemas', () => {
           0,
         );
         expect(result?.error?.issues[0].code).toBe('invalid_key');
+      });
+
+      it('should reject invalid deadlock analysis structure', () => {
+        const response = {
+          ...counterpartyAnalysisResponseBuilder().build(),
+          deadlock: { INVALID_GROUP: [] },
+        } as unknown;
+
+        const result = CounterpartyAnalysisResponseSchema.safeParse(response);
+
+        expect(!result.success && result.error.issues.length).toBeGreaterThan(
+          0,
+        );
       });
 
       it('should reject invalid contract analysis structure', () => {
@@ -366,6 +426,7 @@ describe('Analysis Response Schemas', () => {
         recipient: recipientAnalysisResponseBuilder().build(),
         contract: contractAnalysisResponseBuilder().build(),
         threat: threatAnalysisResponseBuilder().build(),
+        deadlock: deadlockAnalysisResponseBuilder().build(),
       };
 
       const recipientResult = RecipientAnalysisResponseSchema.safeParse(
@@ -377,6 +438,9 @@ describe('Analysis Response Schemas', () => {
       const threatResult = ThreatAnalysisResponseSchema.safeParse(
         multiSendResponse.threat,
       );
+      const deadlockResult = DeadlockAnalysisResponseSchema.safeParse(
+        multiSendResponse.deadlock,
+      );
 
       expect(recipientResult.success && recipientResult.data).toStrictEqual(
         multiSendResponse.recipient,
@@ -386,6 +450,9 @@ describe('Analysis Response Schemas', () => {
       );
       expect(threatResult.success && threatResult.data).toStrictEqual(
         multiSendResponse.threat,
+      );
+      expect(deadlockResult.success && deadlockResult.data).toStrictEqual(
+        multiSendResponse.deadlock,
       );
     });
   });

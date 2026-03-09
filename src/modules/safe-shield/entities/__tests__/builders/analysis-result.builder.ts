@@ -16,6 +16,8 @@ import { getAddress } from 'viem';
 import { RecipientStatus } from '@/modules/safe-shield/entities/recipient-status.entity';
 import { ContractStatus } from '@/modules/safe-shield/entities/contract-status.entity';
 import { ThreatStatus } from '@/modules/safe-shield/entities/threat-status.entity';
+import { DeadlockStatus } from '@/modules/safe-shield/entities/deadlock-status.entity';
+import type { AnalysisResult } from '../../analysis-result.entity';
 
 /**
  * Builder for RecipientAnalysisResult entities
@@ -98,4 +100,15 @@ export function maliciousOrModerateThreatBuilder(): IBuilder<MaliciousOrModerate
         },
       ],
     });
+}
+
+/**
+ * Builder for DeadlockAnalysisResult entities (default: DEADLOCK_DETECTED)
+ */
+export function deadlockAnalysisResultBuilder(): IBuilder<AnalysisResult<DeadlockStatus>> {
+  return new Builder<AnalysisResult<DeadlockStatus>>()
+    .with('severity', 'CRITICAL')
+    .with('type', DeadlockStatus.DEADLOCK_DETECTED)
+    .with('title', faker.lorem.sentence())
+    .with('description', faker.lorem.paragraph());
 }

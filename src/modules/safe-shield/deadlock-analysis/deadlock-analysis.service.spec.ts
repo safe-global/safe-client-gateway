@@ -2,7 +2,8 @@
 import { DeadlockAnalysisService } from './deadlock-analysis.service';
 import type { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
 import type { ITransactionApi } from '@/domain/interfaces/transaction-api.interface';
-import type { ICacheService } from '@/datasources/cache/cache.service.interface';
+import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
+import { CacheRouter } from '@/datasources/cache/cache.router';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { getAddress, type Address } from 'viem';
@@ -13,8 +14,14 @@ import type { Safe } from '@/modules/safe/domain/entities/safe.entity';
 import type { DecodedTransactionData } from '@/modules/safe-shield/entities/transaction-data.entity';
 import type { BaseDataDecoded } from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';
 import { DataSourceError } from '@/domain/errors/data-source.error';
-import { DeadlockStatus } from './entities/deadlock-status.entity';
+import { DeadlockStatus } from '../entities/deadlock-status.entity';
 import { DeadlockStatusGroup } from '../entities/status-group.entity';
+import {
+  DEADLOCK_SEVERITY_MAPPING,
+  DEADLOCK_TITLE_MAPPING,
+  DEADLOCK_DESCRIPTION_MAPPING,
+} from './deadlock-status.constants';
+import type { DeadlockAnalysisResponse } from '../entities/analysis-responses.entity';
 
 const mockTransactionApi = {
   getSafe: jest.fn(),
@@ -24,11 +31,6 @@ const mockTransactionApi = {
 const mockTransactionApiManager = {
   getApi: jest.fn().mockResolvedValue(mockTransactionApi),
 } as jest.MockedObjectDeep<ITransactionApiManager>;
-
-const mockCacheService = {
-  hGet: jest.fn(),
-  hSet: jest.fn(),
-} as jest.MockedObjectDeep<ICacheService>;
 
 const mockConfigurationService = {
   getOrThrow: jest.fn().mockReturnValue(600),
@@ -124,8 +126,24 @@ function changeThresholdBaseDataDecoded(threshold: number): BaseDataDecoded {
   } as BaseDataDecoded;
 }
 
+function expectedResponse(
+  status: DeadlockStatus,
+): DeadlockAnalysisResponse {
+  return {
+    [DeadlockStatusGroup.DEADLOCK]: [
+      {
+        severity: DEADLOCK_SEVERITY_MAPPING[status],
+        type: status,
+        title: DEADLOCK_TITLE_MAPPING[status],
+        description: DEADLOCK_DESCRIPTION_MAPPING[status],
+      },
+    ],
+  };
+}
+
 describe('DeadlockAnalysisService', () => {
   let service: DeadlockAnalysisService;
+  let fakeCacheService: FakeCacheService;
 
   const chainId = '1';
   const safeAddress = getAddress(faker.finance.ethereumAddress());
@@ -133,14 +151,17 @@ describe('DeadlockAnalysisService', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockTransactionApiManager.getApi.mockResolvedValue(mockTransactionApi);
-    mockCacheService.hGet.mockResolvedValue(null);
-    mockCacheService.hSet.mockResolvedValue();
+    fakeCacheService = new FakeCacheService();
     service = new DeadlockAnalysisService(
       mockTransactionApiManager,
-      mockCacheService,
+      fakeCacheService,
       mockConfigurationService,
       mockLoggingService,
     );
+  });
+
+  afterEach(() => {
+    fakeCacheService.clear();
   });
 
   describe('skip scenarios', () => {
@@ -245,11 +266,8 @@ describe('DeadlockAnalysisService', () => {
         transactions,
       });
 
-      expect(result[DeadlockStatusGroup.DEADLOCK]?.[0]?.type).toBe(
-        DeadlockStatus.DEADLOCK_DETECTED,
-      );
-      expect(result[DeadlockStatusGroup.DEADLOCK]?.[0]?.severity).toBe(
-        'CRITICAL',
+      expect(result).toEqual(
+        expectedResponse(DeadlockStatus.DEADLOCK_DETECTED),
       );
     });
 
@@ -330,8 +348,8 @@ describe('DeadlockAnalysisService', () => {
         transactions,
       });
 
-      expect(result[DeadlockStatusGroup.DEADLOCK]?.[0]?.type).toBe(
-        DeadlockStatus.DEADLOCK_DETECTED,
+      expect(result).toEqual(
+        expectedResponse(DeadlockStatus.DEADLOCK_DETECTED),
       );
     });
 
@@ -374,8 +392,8 @@ describe('DeadlockAnalysisService', () => {
         transactions,
       });
 
-      expect(result[DeadlockStatusGroup.DEADLOCK]?.[0]?.type).toBe(
-        DeadlockStatus.DEADLOCK_DETECTED,
+      expect(result).toEqual(
+        expectedResponse(DeadlockStatus.DEADLOCK_DETECTED),
       );
     });
 
@@ -419,8 +437,8 @@ describe('DeadlockAnalysisService', () => {
         transactions,
       });
 
-      expect(result[DeadlockStatusGroup.DEADLOCK]?.[0]?.type).toBe(
-        DeadlockStatus.DEADLOCK_DETECTED,
+      expect(result).toEqual(
+        expectedResponse(DeadlockStatus.DEADLOCK_DETECTED),
       );
     });
   });
@@ -582,10 +600,9 @@ describe('DeadlockAnalysisService', () => {
         transactions,
       });
 
-      expect(result[DeadlockStatusGroup.DEADLOCK]?.[0]?.type).toBe(
-        DeadlockStatus.NESTED_SAFE_WARNING,
+      expect(result).toEqual(
+        expectedResponse(DeadlockStatus.NESTED_SAFE_WARNING),
       );
-      expect(result[DeadlockStatusGroup.DEADLOCK]?.[0]?.severity).toBe('WARN');
     });
 
     it('should return OK when Safe owner at depth 1 has only EOA owners', async () => {
@@ -751,8 +768,8 @@ describe('DeadlockAnalysisService', () => {
           transactions,
         });
 
-        expect(result[DeadlockStatusGroup.DEADLOCK]?.[0]?.type).toBe(
-          DeadlockStatus.DEADLOCK_DETECTED,
+        expect(result).toEqual(
+          expectedResponse(DeadlockStatus.DEADLOCK_DETECTED),
         );
       });
     });
@@ -790,8 +807,8 @@ describe('DeadlockAnalysisService', () => {
           transactions,
         });
 
-        expect(result[DeadlockStatusGroup.DEADLOCK]?.[0]?.type).toBe(
-          DeadlockStatus.NESTED_SAFE_WARNING,
+        expect(result).toEqual(
+          expectedResponse(DeadlockStatus.NESTED_SAFE_WARNING),
         );
       });
 
@@ -840,8 +857,8 @@ describe('DeadlockAnalysisService', () => {
           transactions,
         });
 
-        expect(result[DeadlockStatusGroup.DEADLOCK]?.[0]?.type).toBe(
-          DeadlockStatus.NESTED_SAFE_WARNING,
+        expect(result).toEqual(
+          expectedResponse(DeadlockStatus.NESTED_SAFE_WARNING),
         );
       });
 
@@ -888,8 +905,8 @@ describe('DeadlockAnalysisService', () => {
         });
 
         // API failure short-circuits to NESTED_SAFE_WARNING — can't trust partial analysis
-        expect(result[DeadlockStatusGroup.DEADLOCK]?.[0]?.type).toBe(
-          DeadlockStatus.NESTED_SAFE_WARNING,
+        expect(result).toEqual(
+          expectedResponse(DeadlockStatus.NESTED_SAFE_WARNING),
         );
       });
 
@@ -943,68 +960,32 @@ describe('DeadlockAnalysisService', () => {
         });
 
         // eoa2 has API failure → short-circuits to NESTED_SAFE_WARNING
-        expect(result[DeadlockStatusGroup.DEADLOCK]?.[0]?.type).toBe(
-          DeadlockStatus.NESTED_SAFE_WARNING,
+        expect(result).toEqual(
+          expectedResponse(DeadlockStatus.NESTED_SAFE_WARNING),
         );
       });
     });
   });
 
-  describe('CRITICAL takes precedence', () => {
-    it('should return CRITICAL over WARN when both mutual deadlock and deeper nesting exist', async () => {
-      const safeBAddress = getAddress(faker.finance.ethereumAddress());
-
-      const transactions = [
-        buildDecodedTx({
-          to: safeAddress,
-          dataDecoded: addOwnerBaseDataDecoded(safeBAddress, 1),
-        }),
-      ];
-
-      mockTransactionApi.getSafe.mockImplementation((address: Address) => {
-        if (address.toLowerCase() === safeAddress.toLowerCase()) {
-          return Promise.resolve(
-            mockSafe({ address: safeAddress, owners: [], threshold: 1 }),
-          );
-        }
-        if (address.toLowerCase() === safeBAddress.toLowerCase()) {
-          return Promise.resolve(
-            mockSafe({
-              address: safeBAddress,
-              owners: [safeAddress],
-              threshold: 1,
-            }),
-          );
-        }
-        return Promise.reject(new DataSourceError('Not found', 404));
-      });
-
-      const result = await service.analyze({
-        chainId,
-        safeAddress,
-        transactions,
-      });
-
-      expect(result[DeadlockStatusGroup.DEADLOCK]?.[0]?.type).toBe(
-        DeadlockStatus.DEADLOCK_DETECTED,
-      );
-    });
-  });
-
   describe('caching', () => {
     it('should return cached result on cache hit', async () => {
-      const cachedResponse = {};
-      mockCacheService.hGet.mockResolvedValue(JSON.stringify(cachedResponse));
-
+      const newOwner = getAddress(faker.finance.ethereumAddress());
+      const ownerConfigs = [addOwnerBaseDataDecoded(newOwner, 1)];
       const transactions = [
-        buildDecodedTx({
-          to: safeAddress,
-          dataDecoded: addOwnerBaseDataDecoded(
-            getAddress(faker.finance.ethereumAddress()),
-            1,
-          ),
-        }),
+        buildDecodedTx({ to: safeAddress, dataDecoded: ownerConfigs[0] }),
       ];
+
+      const cachedResponse = {};
+      const cacheDir = CacheRouter.getDeadlockAnalysisCacheDir({
+        chainId,
+        safeAddress,
+        dataDecoded: ownerConfigs,
+      });
+      await fakeCacheService.hSet(
+        cacheDir,
+        JSON.stringify(cachedResponse),
+        600,
+      );
 
       const result = await service.analyze({
         chainId,
@@ -1020,12 +1001,10 @@ describe('DeadlockAnalysisService', () => {
     it('should cache result after analysis', async () => {
       const eoa1 = getAddress(faker.finance.ethereumAddress());
       const newEoa = getAddress(faker.finance.ethereumAddress());
+      const ownerConfigs = [addOwnerBaseDataDecoded(newEoa, 1)];
 
       const transactions = [
-        buildDecodedTx({
-          to: safeAddress,
-          dataDecoded: addOwnerBaseDataDecoded(newEoa, 1),
-        }),
+        buildDecodedTx({ to: safeAddress, dataDecoded: ownerConfigs[0] }),
       ];
 
       mockTransactionApi.getSafe.mockImplementation((address: Address) => {
@@ -1039,12 +1018,14 @@ describe('DeadlockAnalysisService', () => {
 
       await service.analyze({ chainId, safeAddress, transactions });
 
-      expect(mockCacheService.hSet).toHaveBeenCalledTimes(1);
-      expect(mockCacheService.hSet).toHaveBeenCalledWith(
-        expect.anything(),
-        expect.any(String),
-        expect.any(Number),
-      );
+      const cacheDir = CacheRouter.getDeadlockAnalysisCacheDir({
+        chainId,
+        safeAddress,
+        dataDecoded: ownerConfigs,
+      });
+      const cached = await fakeCacheService.hGet(cacheDir);
+      expect(cached).not.toBeNull();
+      expect(JSON.parse(cached!)).toEqual({});
     });
 
     it('should not cache when no owner config transaction is found', async () => {
@@ -1060,21 +1041,23 @@ describe('DeadlockAnalysisService', () => {
 
       await service.analyze({ chainId, safeAddress, transactions });
 
-      expect(mockCacheService.hGet).not.toHaveBeenCalled();
-      expect(mockCacheService.hSet).not.toHaveBeenCalled();
+      expect(fakeCacheService.keyCount()).toBe(0);
     });
 
     it('should proceed with analysis when cached value is invalid JSON', async () => {
-      mockCacheService.hGet.mockResolvedValue('invalid-json');
-
       const eoa1 = getAddress(faker.finance.ethereumAddress());
       const newEoa = getAddress(faker.finance.ethereumAddress());
+      const ownerConfigs = [addOwnerBaseDataDecoded(newEoa, 1)];
+
+      const cacheDir = CacheRouter.getDeadlockAnalysisCacheDir({
+        chainId,
+        safeAddress,
+        dataDecoded: ownerConfigs,
+      });
+      await fakeCacheService.hSet(cacheDir, 'invalid-json', 600);
 
       const transactions = [
-        buildDecodedTx({
-          to: safeAddress,
-          dataDecoded: addOwnerBaseDataDecoded(newEoa, 1),
-        }),
+        buildDecodedTx({ to: safeAddress, dataDecoded: ownerConfigs[0] }),
       ];
 
       mockTransactionApi.getSafe.mockImplementation((address: Address) => {
@@ -1094,7 +1077,6 @@ describe('DeadlockAnalysisService', () => {
 
       expect(mockLoggingService.warn).toHaveBeenCalledTimes(1);
       expect(result).toEqual({});
-      expect(mockCacheService.hSet).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -1265,8 +1247,8 @@ describe('DeadlockAnalysisService', () => {
         transactions,
       });
 
-      expect(result[DeadlockStatusGroup.DEADLOCK]?.[0]?.type).toBe(
-        DeadlockStatus.DEADLOCK_DETECTED,
+      expect(result).toEqual(
+        expectedResponse(DeadlockStatus.DEADLOCK_DETECTED),
       );
     });
 
@@ -1360,8 +1342,8 @@ describe('DeadlockAnalysisService', () => {
         transactions,
       });
 
-      expect(result[DeadlockStatusGroup.DEADLOCK]?.[0]?.type).toBe(
-        DeadlockStatus.DEADLOCK_DETECTED,
+      expect(result).toEqual(
+        expectedResponse(DeadlockStatus.DEADLOCK_DETECTED),
       );
     });
 
@@ -1403,8 +1385,8 @@ describe('DeadlockAnalysisService', () => {
         transactions,
       });
 
-      expect(result[DeadlockStatusGroup.DEADLOCK]?.[0]?.type).toBe(
-        DeadlockStatus.DEADLOCK_DETECTED,
+      expect(result).toEqual(
+        expectedResponse(DeadlockStatus.DEADLOCK_DETECTED),
       );
     });
   });

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { DeadlockStatus } from './deadlock-status.entity';
-import type { Severity } from '../../entities/severity.entity';
+import { DeadlockStatus } from '../entities/deadlock-status.entity';
+import type { Severity } from '../entities/severity.entity';
 
 export const DEADLOCK_SEVERITY_MAPPING: Record<
   DeadlockStatus,

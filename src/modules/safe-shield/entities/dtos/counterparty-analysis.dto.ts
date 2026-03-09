@@ -26,7 +26,7 @@ import {
   DeadlockStatusGroup,
   RecipientStatusGroup,
 } from '@/modules/safe-shield/entities/status-group.entity';
-import { DeadlockStatus } from '@/modules/safe-shield/deadlock-analysis/entities/deadlock-status.entity';
+import { DeadlockStatus } from '@/modules/safe-shield/entities/deadlock-status.entity';
 
 /**
  * DTO for contract analysis result.
@@ -372,11 +372,11 @@ export class CounterpartyAnalysisDto implements CounterpartyAnalysisResponse {
   })
   public readonly contract!: Record<Address, Partial<ContractAnalysisDto>>;
 
-  @ApiPropertyOptional({
+  @ApiProperty({
     description:
       'Deadlock analysis results. ' +
-      'Only present when the transaction targets an owner/threshold management function.',
+      'Contains signing deadlock risk findings for owner/threshold management transactions.',
     type: DeadlockAnalysisDto,
   })
-  public readonly deadlock?: DeadlockAnalysisDto;
+  public readonly deadlock!: DeadlockAnalysisDto;
 }

@@ -8,6 +8,10 @@ import {
   ContractStatusSchema,
 } from '../contract-status.entity';
 import { ThreatStatus, ThreatStatusSchema } from '../threat-status.entity';
+import {
+  DeadlockStatus,
+  DeadlockStatusSchema,
+} from '../deadlock-status.entity';
 import { CommonStatus } from '@/modules/safe-shield/entities/analysis-result.entity';
 
 describe('Status Entities', () => {
@@ -15,6 +19,7 @@ describe('Status Entities', () => {
   const bridgeStatus = Object.values(BridgeStatus);
   const contractStatus = Object.values(ContractStatus);
   const threatStatus = Object.values(ThreatStatus);
+  const deadlockStatus = Object.values(DeadlockStatus);
 
   describe('RecipientStatus', () => {
     it('should have all expected values', () => {
@@ -105,6 +110,25 @@ describe('Status Entities', () => {
     );
   });
 
+  describe('DeadlockStatus', () => {
+    it('should have all expected values', () => {
+      expect(deadlockStatus).toHaveLength(2);
+      expect(deadlockStatus).toContain('DEADLOCK_DETECTED');
+      expect(deadlockStatus).toContain('NESTED_SAFE_WARNING');
+    });
+
+    it.each(deadlockStatus)('should validate with schema = %s', (value) => {
+      expect(() => DeadlockStatusSchema.parse(value)).not.toThrow();
+    });
+
+    it.each(['INVALID', '', null, undefined, 123] as const)(
+      'should reject invalid value = %s',
+      (invalidValue) => {
+        expect(() => DeadlockStatusSchema.parse(invalidValue)).toThrow();
+      },
+    );
+  });
+
   describe('cross-entity consistency', () => {
     it('should maintain consistent naming patterns', () => {
       const allStatusEnums = [
@@ -112,6 +136,7 @@ describe('Status Entities', () => {
         BridgeStatus,
         ContractStatus,
         ThreatStatus,
+        DeadlockStatus,
         CommonStatus,
       ];
 
@@ -131,6 +156,7 @@ describe('Status Entities', () => {
         ...BridgeStatus,
         ...ContractStatus,
         ...ThreatStatus,
+        ...DeadlockStatus,
         ...CommonStatus,
       };
 

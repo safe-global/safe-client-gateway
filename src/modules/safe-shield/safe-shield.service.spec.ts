@@ -33,6 +33,7 @@ import {
   recipientAnalysisResponseBuilder,
   contractAnalysisResponseBuilder,
   threatAnalysisResponseBuilder,
+  deadlockAnalysisResponseBuilder,
 } from './entities/__tests__/builders/analysis-responses.builder';
 import { dataDecodedBuilder } from '@/modules/data-decoder/domain/v2/entities/__tests__/data-decoded.builder';
 import {
@@ -473,6 +474,7 @@ describe('SafeShieldService', () => {
       expect(result).toEqual({
         recipient: {},
         contract: {},
+        deadlock: {},
       });
       expect(mockLoggingService.warn).toHaveBeenCalledWith(
         expect.stringContaining('Failed to decode transaction'),
@@ -711,9 +713,10 @@ describe('SafeShieldService', () => {
       });
     });
 
-    it('should handle both analysis services failing simultaneously', async () => {
+    it('should handle all analysis services failing simultaneously', async () => {
       const recipientError = new Error('Recipient analysis failed');
       const contractError = new Error('Contract analysis failed');
+      const deadlockError = new Error('Deadlock analysis failed');
 
       const mockTxInfo = createTransferTransactionInfo(
         mockSafeAddress,
@@ -731,6 +734,7 @@ describe('SafeShieldService', () => {
       );
       mockRecipientAnalysisService.analyze.mockRejectedValue(recipientError);
       mockContractAnalysisService.analyze.mockRejectedValue(contractError);
+      mockDeadlockAnalysisService.analyze.mockRejectedValue(deadlockError);
 
       const result = await service.analyzeCounterparty({
         chainId: mockChainId,
@@ -772,6 +776,18 @@ describe('SafeShieldService', () => {
           ],
         },
       });
+      expect(result.deadlock).toEqual({
+        [DeadlockStatusGroup.DEADLOCK]: [
+          {
+            type: 'FAILED',
+            severity: COMMON_SEVERITY_MAPPING.FAILED,
+            title: 'Deadlock analysis failed',
+            description: COMMON_DESCRIPTION_MAPPING.FAILED({
+              error: 'Deadlock analysis failed',
+            }),
+          },
+        ],
+      });
 
       expect(mockLoggingService.warn).toHaveBeenNthCalledWith(
         1,
@@ -781,7 +797,11 @@ describe('SafeShieldService', () => {
         2,
         'The counterparty analysis failed. Error: Contract analysis failed',
       );
-      expect(mockLoggingService.warn).toHaveBeenCalledTimes(2);
+      expect(mockLoggingService.warn).toHaveBeenNthCalledWith(
+        3,
+        'The counterparty analysis failed. Error: Deadlock analysis failed',
+      );
+      expect(mockLoggingService.warn).toHaveBeenCalledTimes(3);
 
       expect(mockRecipientAnalysisService.analyze).toHaveBeenCalledWith({
         chainId: mockChainId,
@@ -795,6 +815,16 @@ describe('SafeShieldService', () => {
         txInfo: mockTxInfo,
       });
       expect(mockContractAnalysisService.analyze).toHaveBeenCalledWith({
+        chainId: mockChainId,
+        safeAddress: mockSafeAddress,
+        transactions: [
+          expect.objectContaining({
+            to: mockRecipientAddress,
+            data: mockData,
+          }),
+        ],
+      });
+      expect(mockDeadlockAnalysisService.analyze).toHaveBeenCalledWith({
         chainId: mockChainId,
         safeAddress: mockSafeAddress,
         transactions: [
@@ -934,6 +964,7 @@ describe('SafeShieldService', () => {
       expect(result).toEqual({
         recipient: {},
         contract: {},
+        deadlock: {},
       });
 
       expect(mockRecipientAnalysisService.analyze).not.toHaveBeenCalled();
@@ -1042,16 +1073,7 @@ describe('SafeShieldService', () => {
     });
 
     it('should include deadlock result in counterparty response when non-empty', async () => {
-      const mockDeadlockResponse = {
-        [DeadlockStatusGroup.DEADLOCK]: [
-          {
-            severity: 'CRITICAL' as const,
-            type: 'DEADLOCK_DETECTED' as const,
-            title: 'Signing deadlock risk detected',
-            description: 'This change may create a signing cycle.',
-          },
-        ],
-      };
+      const mockDeadlockResponse = deadlockAnalysisResponseBuilder().build();
 
       const mockTxInfo = createTransferTransactionInfo(
         mockSafeAddress,
@@ -1097,7 +1119,7 @@ describe('SafeShieldService', () => {
       });
     });
 
-    it('should exclude deadlock from counterparty response when empty', async () => {
+    it('should include empty deadlock in counterparty response when no deadlock found', async () => {
       const mockTxInfo = createTransferTransactionInfo(
         mockSafeAddress,
         mockRecipientAddress,
@@ -1127,7 +1149,7 @@ describe('SafeShieldService', () => {
         },
       });
 
-      expect(result.deadlock).toBeUndefined();
+      expect(result.deadlock).toEqual({});
     });
 
     it('should handle deadlock analysis service failure in counterparty', async () => {
@@ -1175,85 +1197,8 @@ describe('SafeShieldService', () => {
         ],
       });
       expect(mockLoggingService.warn).toHaveBeenCalledWith(
-        'The deadlock analysis failed. Error: Deadlock analysis failed',
+        'The counterparty analysis failed. Error: Deadlock analysis failed',
       );
-    });
-
-    it('should handle all three services failing simultaneously including deadlock', async () => {
-      const recipientError = new Error('Recipient analysis failed');
-      const contractError = new Error('Contract analysis failed');
-      const deadlockError = new Error('Deadlock analysis failed');
-
-      const mockTxInfo = createTransferTransactionInfo(
-        mockSafeAddress,
-        mockRecipientAddress,
-      );
-      const mockTransactionPreview = createTransactionPreviewMock({
-        txInfo: mockTxInfo,
-        hexData: mockData,
-        dataDecoded: mockDataDecoded,
-        to: mockRecipientAddress,
-      });
-
-      mockTransactionsService.previewTransaction.mockResolvedValue(
-        mockTransactionPreview,
-      );
-      mockRecipientAnalysisService.analyze.mockRejectedValue(recipientError);
-      mockContractAnalysisService.analyze.mockRejectedValue(contractError);
-      mockDeadlockAnalysisService.analyze.mockRejectedValue(deadlockError);
-
-      const result = await service.analyzeCounterparty({
-        chainId: mockChainId,
-        safeAddress: mockSafeAddress,
-        tx: {
-          to: mockRecipientAddress,
-          data: mockData,
-          value: '0',
-          operation: Operation.CALL,
-        },
-      });
-
-      expect(result.recipient).toEqual({
-        [mockRecipientAddress]: {
-          isSafe: false,
-          RECIPIENT_INTERACTION: [
-            {
-              type: 'FAILED',
-              severity: COMMON_SEVERITY_MAPPING.FAILED,
-              title: 'Recipient analysis failed',
-              description: COMMON_DESCRIPTION_MAPPING.FAILED({
-                error: 'Recipient analysis failed',
-              }),
-            },
-          ],
-        },
-      });
-      expect(result.contract).toEqual({
-        [mockRecipientAddress]: {
-          CONTRACT_VERIFICATION: [
-            {
-              type: 'FAILED',
-              severity: COMMON_SEVERITY_MAPPING.FAILED,
-              title: 'Contract analysis failed',
-              description: COMMON_DESCRIPTION_MAPPING.FAILED({
-                error: 'Contract analysis failed',
-              }),
-            },
-          ],
-        },
-      });
-      expect(result.deadlock).toEqual({
-        [DeadlockStatusGroup.DEADLOCK]: [
-          {
-            type: 'FAILED',
-            severity: COMMON_SEVERITY_MAPPING.FAILED,
-            title: 'Deadlock analysis failed',
-            description: COMMON_DESCRIPTION_MAPPING.FAILED({
-              error: 'Deadlock analysis failed',
-            }),
-          },
-        ],
-      });
     });
   });
 
@@ -1512,7 +1457,7 @@ describe('SafeShieldService', () => {
       },
     ];
 
-    it('should delegate to deadlockAnalysisService.analyze with correct args', async () => {
+    it('should analyze a deadlock', async () => {
       const mockDeadlockResponse = {};
 
       mockDeadlockAnalysisService.analyze.mockResolvedValue(

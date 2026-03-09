@@ -100,6 +100,7 @@ export class SafeShieldService {
         recipientsResult.status === 'fulfilled'
           ? recipientsResult.value
           : this.handleFailedAnalysis(
+              'Recipient',
               tx.to,
               RecipientStatusGroup.RECIPIENT_INTERACTION,
               recipientsResult.reason,
@@ -108,24 +109,21 @@ export class SafeShieldService {
         contractsResult.status === 'fulfilled'
           ? contractsResult.value
           : this.handleFailedAnalysis(
+              'Contract',
               tx.to,
               ContractStatusGroup.CONTRACT_VERIFICATION,
               contractsResult.reason,
             ),
+      deadlock:
+        deadlockResult.status === 'fulfilled'
+          ? deadlockResult.value
+          : this.handleFailedAnalysis(
+              'Deadlock',
+              tx.to,
+              DeadlockStatusGroup.DEADLOCK,
+              deadlockResult.reason,
+            ),
     };
-
-    // Include deadlock result only when non-empty
-    if (deadlockResult.status === 'fulfilled') {
-      const deadlock = deadlockResult.value;
-      if (deadlock.DEADLOCK) {
-        response.deadlock = deadlock;
-      }
-    } else {
-      response.deadlock = this.handleFailedDeadlockAnalysis(
-        deadlockResult.reason,
-      );
-    }
-
     return response;
   }
 
@@ -346,67 +344,46 @@ export class SafeShieldService {
   }
 
   /**
-   * Handles failed deadlock analysis by creating a FAILED result placeholder.
-   *
-   * @param {unknown} reason - The error reason from the rejected promise
-   * @returns {DeadlockAnalysisResponse} Deadlock analysis response with FAILED status
-   */
-  private handleFailedDeadlockAnalysis(
-    reason?: unknown,
-  ): DeadlockAnalysisResponse {
-    const error = asError(reason);
-    this.loggingService.warn(`The deadlock analysis failed. ${error}`);
-
-    return {
-      [DeadlockStatusGroup.DEADLOCK]: [
-        {
-          type: CommonStatus.FAILED,
-          severity: COMMON_SEVERITY_MAPPING.FAILED,
-          title: 'Deadlock analysis failed',
-          description: COMMON_DESCRIPTION_MAPPING.FAILED({
-            error: error?.message,
-          }),
-        },
-      ],
-    };
-  }
-
-  /**
    * Handles failed analysis by creating a FAILED result placeholder.
-   *
-   * @param {Address} targetAddress - The address to attach the failure to
-   * @param {StatusGroup} statusGroup - The status group for the failure
-   * @param {unknown} reason - The error reason from the rejected promise
-   * @returns {<RecipientAnalysisResponse | ContractAnalysisResponse>} Analysis response with FAILED status
+   * Deadlock responses are keyed by status group; recipient/contract are keyed by address.
    */
   private handleFailedAnalysis<
-    T extends RecipientAnalysisResponse | ContractAnalysisResponse,
+    T extends
+      | RecipientAnalysisResponse
+      | ContractAnalysisResponse
+      | DeadlockAnalysisResponse,
   >(
+    analysisType: 'Recipient' | 'Contract' | 'Deadlock',
     targetAddress: Address,
-    statusGroup: RecipientStatusGroup | ContractStatusGroup,
+    statusGroup:
+      | RecipientStatusGroup
+      | ContractStatusGroup
+      | DeadlockStatusGroup,
     reason?: unknown,
   ): T {
     const error = asError(reason);
     this.loggingService.warn(`The counterparty analysis failed. ${error}`);
 
-    const isRecipient = (
-      Object.values(RecipientStatusGroup) as ReadonlyArray<string>
-    ).includes(statusGroup);
+    const failedResult = {
+      type: CommonStatus.FAILED,
+      severity: COMMON_SEVERITY_MAPPING.FAILED,
+      title: `${analysisType} analysis failed`,
+      description: COMMON_DESCRIPTION_MAPPING.FAILED({
+        error: error?.message,
+      }),
+    };
 
-    const isSafe = isRecipient ? { isSafe: false } : undefined;
+    // Deadlock responses are keyed by status group
+    if (analysisType === 'Deadlock') {
+      return {
+        [statusGroup]: [failedResult],
+      } as T;
+    }
+
     return {
       [targetAddress]: {
-        [statusGroup]: [
-          {
-            type: CommonStatus.FAILED,
-            severity: COMMON_SEVERITY_MAPPING.FAILED,
-            title: `${isRecipient ? 'Recipient' : 'Contract'} analysis failed`,
-            description: COMMON_DESCRIPTION_MAPPING.FAILED({
-              error: error?.message,
-            }),
-          },
-        ],
-        ...isSafe,
+        [statusGroup]: [failedResult],
+        ...(analysisType === 'Recipient' ? { isSafe: false } : undefined),
       },
     } as T;
   }

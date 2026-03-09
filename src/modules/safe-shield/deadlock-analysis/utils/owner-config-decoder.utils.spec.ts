@@ -2,6 +2,7 @@
 import { getAddress } from 'viem';
 import {
   isOwnerConfigTransaction,
+  extractOwnerConfigs,
   computeProjectedState,
 } from './owner-config-decoder.utils';
 import { faker } from '@faker-js/faker';
@@ -136,6 +137,99 @@ describe('owner-config-decoder.utils', () => {
 
       expect(result.owners).toEqual([owner1, owner2]);
       expect(result.threshold).toBe(1);
+    });
+
+    it('should throw when a required parameter is missing', () => {
+      expect(() =>
+        computeProjectedState({
+          currentOwners: [owner1, owner2],
+          currentThreshold: 1,
+          dataDecoded: {
+            method: 'addOwnerWithThreshold',
+            parameters: [
+              { name: 'owner', type: 'address', value: newOwner },
+              // Missing '_threshold' parameter
+            ],
+          } as BaseDataDecoded,
+        }),
+      ).toThrow("Parameter '_threshold' not found");
+    });
+  });
+
+  describe('extractOwnerConfigs', () => {
+    const safeAddress = getAddress(faker.finance.ethereumAddress());
+    const otherAddress = getAddress(faker.finance.ethereumAddress());
+
+    const addOwnerDecoded = {
+      method: 'addOwnerWithThreshold',
+      parameters: [
+        { name: 'owner', type: 'address', value: getAddress(faker.finance.ethereumAddress()) },
+        { name: '_threshold', type: 'uint256', value: '2' },
+      ],
+    } as BaseDataDecoded;
+
+    const removeOwnerDecoded = {
+      method: 'removeOwner',
+      parameters: [
+        { name: 'prevOwner', type: 'address', value: getAddress(faker.finance.ethereumAddress()) },
+        { name: 'owner', type: 'address', value: getAddress(faker.finance.ethereumAddress()) },
+        { name: '_threshold', type: 'uint256', value: '1' },
+      ],
+    } as BaseDataDecoded;
+
+    it('should return decoded data for owner config txs targeting the Safe', () => {
+      const transactions = [
+        { to: safeAddress, dataDecoded: addOwnerDecoded },
+        { to: safeAddress, dataDecoded: removeOwnerDecoded },
+      ];
+
+      const result = extractOwnerConfigs(transactions, safeAddress);
+
+      expect(result).toEqual([addOwnerDecoded, removeOwnerDecoded]);
+    });
+
+    it('should return empty array when no transactions match', () => {
+      const result = extractOwnerConfigs([], safeAddress);
+
+      expect(result).toEqual([]);
+    });
+
+    it('should filter out txs not targeting the Safe address', () => {
+      const transactions = [
+        { to: otherAddress, dataDecoded: addOwnerDecoded },
+        { to: safeAddress, dataDecoded: removeOwnerDecoded },
+      ];
+
+      const result = extractOwnerConfigs(transactions, safeAddress);
+
+      expect(result).toEqual([removeOwnerDecoded]);
+    });
+
+    it('should filter out txs with non-owner-config methods', () => {
+      const transferDecoded = {
+        method: 'transfer',
+        parameters: [],
+      } as BaseDataDecoded;
+
+      const transactions = [
+        { to: safeAddress, dataDecoded: transferDecoded },
+        { to: safeAddress, dataDecoded: addOwnerDecoded },
+      ];
+
+      const result = extractOwnerConfigs(transactions, safeAddress);
+
+      expect(result).toEqual([addOwnerDecoded]);
+    });
+
+    it('should filter out txs with null dataDecoded', () => {
+      const transactions = [
+        { to: safeAddress, dataDecoded: null },
+        { to: safeAddress, dataDecoded: addOwnerDecoded },
+      ];
+
+      const result = extractOwnerConfigs(transactions, safeAddress);
+
+      expect(result).toEqual([addOwnerDecoded]);
     });
   });
 });

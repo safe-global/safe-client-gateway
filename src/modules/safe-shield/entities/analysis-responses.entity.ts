@@ -17,7 +17,7 @@ import {
   type ContractAnalysisResult,
   UnofficialFallbackHandlerAnalysisResultSchema,
 } from './analysis-result.entity';
-import { DeadlockAnalysisResultSchema } from '../deadlock-analysis/entities/deadlock-analysis-result.entity';
+import { DeadlockAnalysisResultSchema } from './analysis-result.entity';
 import type { RecipientStatus } from '@/modules/safe-shield/entities/recipient-status.entity';
 import { BalanceChangesSchema } from './threat-analysis.types';
 
@@ -96,7 +96,7 @@ export const DeadlockAnalysisResponseSchema = z
 export const CounterpartyAnalysisResponseSchema = z.object({
   recipient: RecipientAnalysisResponseSchema,
   contract: ContractAnalysisResponseSchema,
-  deadlock: DeadlockAnalysisResponseSchema.optional(),
+  deadlock: DeadlockAnalysisResponseSchema,
 });
 
 /**

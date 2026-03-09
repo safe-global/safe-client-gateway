@@ -19,6 +19,24 @@ export function isOwnerConfigTransaction(
 ): boolean {
   return dataDecoded !== null && OWNER_CONFIG_METHODS.has(dataDecoded.method);
 }
+
+/**
+ * Extracts decoded owner configuration data from transactions targeting a specific Safe.
+ * Filters for addOwnerWithThreshold, removeOwner, swapOwner, and changeThreshold
+ * calls where `tx.to === safeAddress`.
+ */
+export function extractOwnerConfigs(
+  transactions: Array<{ to: Address; dataDecoded: BaseDataDecoded | null }>,
+  safeAddress: Address,
+): Array<BaseDataDecoded> {
+  return transactions
+    .filter(
+      (tx) =>
+        isAddressEqual(tx.to, safeAddress) &&
+        isOwnerConfigTransaction(tx.dataDecoded),
+    )
+    .map((tx) => tx.dataDecoded!);
+}
 /**
  * Computes the projected state after applying an owner config transaction.
  *

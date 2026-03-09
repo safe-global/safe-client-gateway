@@ -11,7 +11,7 @@ import { ThreatStatus, ThreatStatusSchema } from './threat-status.entity';
 import {
   DeadlockStatusSchema,
   type DeadlockStatus,
-} from '../deadlock-analysis/entities/deadlock-status.entity';
+} from './deadlock-status.entity';
 import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 
@@ -184,6 +184,13 @@ export const ThreatAnalysisResultSchema = z.union([
   FailedThreatAnalysisResultSchema,
   DefaultThreatAnalysisResultSchema,
 ]);
+
+/**
+ * Zod schema for deadlock analysis results.
+ */
+export const DeadlockAnalysisResultSchema = AnalysisResultBaseSchema.extend({
+  type: z.union([DeadlockStatusSchema, CommonStatusSchema]),
+});
 
 /**
  * Type definition for recipient analysis results.

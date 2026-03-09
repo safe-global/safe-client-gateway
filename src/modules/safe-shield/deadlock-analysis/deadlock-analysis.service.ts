@@ -8,15 +8,15 @@ import { SafeSchema } from '@/modules/safe/domain/entities/schemas/safe.schema';
 import type { BaseDataDecoded } from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';
 import type { DeadlockAnalysisResponse } from '../entities/analysis-responses.entity';
 import type { DecodedTransactionData } from '@/modules/safe-shield/entities/transaction-data.entity';
-import { DeadlockStatus } from './entities/deadlock-status.entity';
+import { DeadlockStatus } from '../entities/deadlock-status.entity';
 import { DeadlockStatusGroup } from '../entities/status-group.entity';
 import {
   DEADLOCK_SEVERITY_MAPPING,
   DEADLOCK_TITLE_MAPPING,
   DEADLOCK_DESCRIPTION_MAPPING,
-} from './entities/deadlock-status.constants';
+} from './deadlock-status.constants';
 import {
-  isOwnerConfigTransaction,
+  extractOwnerConfigs,
   computeProjectedState,
 } from './utils/owner-config-decoder.utils';
 import {
@@ -28,6 +28,12 @@ import { IConfigurationService } from '@/config/configuration.service.interface'
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { DataSourceError } from '@/domain/errors/data-source.error';
 import { logCacheHit, logCacheMiss } from '@/modules/safe-shield/utils/common';
+
+type SafeOwnerInfo = {
+  address: Address;
+  owners: Array<Address>;
+  threshold: number;
+};
 
 @Injectable()
 export class DeadlockAnalysisService {
@@ -50,6 +56,14 @@ export class DeadlockAnalysisService {
       );
   }
 
+  /**
+   * Analyzes a batch of transactions for potential signing deadlocks.
+   *
+   * Filters for owner configuration transactions (addOwner, removeOwner, swapOwner,
+   * changeThreshold) targeting the Safe itself, then checks whether the projected
+   * state would create a mutual ownership cycle that prevents signing.
+   * Results are cached to avoid redundant API calls.
+   */
   async analyze(args: {
     chainId: string;
     safeAddress: Address;
@@ -57,17 +71,10 @@ export class DeadlockAnalysisService {
   }): Promise<DeadlockAnalysisResponse> {
     const { chainId, safeAddress, transactions } = args;
 
-    // Find all owner configuration transactions targeting the Safe itself
-    const ownerConfigTxs = transactions.filter(
-      (tx) =>
-        isAddressEqual(tx.to, safeAddress) &&
-        isOwnerConfigTransaction(tx.dataDecoded),
-    );
-
-    if (ownerConfigTxs.length === 0) {
+    const ownerConfigs = extractOwnerConfigs(transactions, safeAddress);
+    if (ownerConfigs.length === 0) {
       return {};
     }
-    const ownerConfigs = ownerConfigTxs.map((tx) => tx.dataDecoded!);
 
     const cacheDir = CacheRouter.getDeadlockAnalysisCacheDir({
       chainId,
@@ -75,7 +82,7 @@ export class DeadlockAnalysisService {
       dataDecoded: ownerConfigs,
     });
 
-    const cached = await this.cacheService.hGet(cacheDir);
+    const cached = await this.cacheService.hGet(cacheDir).catch(() => null);
     if (cached) {
       logCacheHit(cacheDir, this.loggingService);
       try {
@@ -103,6 +110,12 @@ export class DeadlockAnalysisService {
     return result;
   }
 
+  /**
+   * Core analysis logic: fetches the projected Safe state after applying queued
+   * owner config transactions, looks up which owners are themselves Safes, and
+   * checks for mutual ownership deadlocks at depth 1 and nested Safe presence
+   * at depth 2.
+   */
   private async performAnalysis(
     chainId: string,
     safeAddress: Address,
@@ -110,19 +123,19 @@ export class DeadlockAnalysisService {
   ): Promise<DeadlockAnalysisResponse> {
     const transactionApi = await this.transactionApiManager.getApi(chainId);
 
-    const projected = await this.fetchProjectedState(
+    const projectedSafeState = await this.fetchProjectedState(
       transactionApi,
       safeAddress,
       ownerConfigs,
     );
 
-    const safeOwnerResults = await this.batchProcess(
-      projected.owners,
+    const ownersThatAreSafesLookupResults = await this.batchProcess(
+      projectedSafeState.owners,
       async (address) => {
         try {
           const raw = await transactionApi.getSafe(address);
           const safe = SafeSchema.parse(raw);
-          return { address, owners: safe.owners, threshold: safe.threshold };
+          return { address, owners: safe.owners, threshold: safe.threshold } as SafeOwnerInfo;
         } catch (error) {
           if (error instanceof DataSourceError && error.code === 404) {
             return null; // Not a Safe — treat as EOA
@@ -132,22 +145,19 @@ export class DeadlockAnalysisService {
       },
     );
 
-    const hasApiFailure = safeOwnerResults.some((r) => r.status === 'rejected');
-    if (hasApiFailure) {
+    if (ownersThatAreSafesLookupResults.some((r) => r.status === 'rejected')) {
       return this.buildResponse(DeadlockStatus.NESTED_SAFE_WARNING);
     }
 
-    const hasSafeOwners = safeOwnerResults.some(
-      (r) => r.status === 'fulfilled' && r.value !== null,
-    );
-    if (!hasSafeOwners) {
+    const ownersThatAreSafes = this.extractOwnersThatAreSafes(ownersThatAreSafesLookupResults);
+    if (ownersThatAreSafes.length === 0) {
       return {};
     }
 
     const { deadlockDetected, nestedCandidates } = this.checkMutualDependencies(
-      safeOwnerResults,
+      ownersThatAreSafes,
       safeAddress,
-      projected,
+      projectedSafeState,
     );
 
     if (deadlockDetected) {
@@ -164,11 +174,15 @@ export class DeadlockAnalysisService {
     return {};
   }
 
+  /**
+   * Fetches the current Safe state and sequentially applies all queued owner
+   * configuration changes to compute the projected owners list and threshold.
+   */
   private async fetchProjectedState(
     transactionApi: ITransactionApi,
     safeAddress: Address,
     ownerConfigs: Array<BaseDataDecoded>,
-  ): Promise<{ owners: Array<Address>; threshold: number }> {
+  ): Promise<Omit<SafeOwnerInfo, 'address'>> {
     const rawSafe = await transactionApi.getSafe(safeAddress);
     const currentSafe = SafeSchema.parse(rawSafe);
 
@@ -186,31 +200,24 @@ export class DeadlockAnalysisService {
     return state;
   }
 
+  /**
+   * Checks for depth-1 mutual ownership deadlocks between the target Safe
+   * and each of its Safe-type owners. Also collects sub-owners of Safe-type
+   * owners as candidates for the depth-2 nested Safe check.
+   */
   private checkMutualDependencies(
-    safeOwnerResults: Array<
-      PromiseSettledResult<{
-        address: Address;
-        owners: Array<Address>;
-        threshold: number;
-      } | null>
-    >,
+    ownersThatAreSafes: Array<SafeOwnerInfo>,
     safeAddress: Address,
-    projected: { owners: Array<Address>; threshold: number },
+    projectedSafeState: Omit<SafeOwnerInfo, 'address'>,
   ): {
     deadlockDetected: boolean;
     nestedCandidates: Set<Address>;
   } {
-    const safeOwners = this.extractSafeOwners(safeOwnerResults);
-
-    for (const ownerSafe of safeOwners) {
-      if (this.isDeadlocked(projected, ownerSafe, safeAddress)) {
+    const nestedCandidates = new Set<Address>();
+    for (const ownerSafe of ownersThatAreSafes) {
+      if (this.isDeadlocked(projectedSafeState, ownerSafe, safeAddress)) {
         return { deadlockDetected: true, nestedCandidates: new Set() };
       }
-    }
-
-    // Collect sub-owners of Safe-type owners for depth-2 nesting check
-    const nestedCandidates = new Set<Address>();
-    for (const ownerSafe of safeOwners) {
       for (const o of ownerSafe.owners) {
         if (!isAddressEqual(o, safeAddress)) {
           nestedCandidates.add(o);
@@ -225,24 +232,13 @@ export class DeadlockAnalysisService {
    * Extracts successfully resolved Safe owner data, discarding
    * rejected results and null values (404 = not a Safe).
    */
-  private extractSafeOwners(
-    results: Array<
-      PromiseSettledResult<{
-        address: Address;
-        owners: Array<Address>;
-        threshold: number;
-      } | null>
-    >,
-  ): Array<{ address: Address; owners: Array<Address>; threshold: number }> {
+  private extractOwnersThatAreSafes(
+    results: Array<PromiseSettledResult<SafeOwnerInfo | null>>,
+  ): Array<SafeOwnerInfo> {
     return results
       .filter(
-        (
-          r,
-        ): r is PromiseFulfilledResult<{
-          address: Address;
-          owners: Array<Address>;
-          threshold: number;
-        }> => r.status === 'fulfilled' && r.value !== null,
+        (r): r is PromiseFulfilledResult<SafeOwnerInfo> =>
+          r.status === 'fulfilled' && r.value !== null,
       )
       .map((r) => r.value);
   }
@@ -254,8 +250,8 @@ export class DeadlockAnalysisService {
    *    without the co-dependent Safe's signature.
    */
   private isDeadlocked(
-    targetSafe: { owners: Array<Address>; threshold: number },
-    ownerSafe: { address: Address; owners: Array<Address>; threshold: number },
+    targetSafe: Omit<SafeOwnerInfo, 'address'>,
+    ownerSafe: SafeOwnerInfo,
     safeAddress: Address,
   ): boolean {
     const hasMutualDep = ownerSafe.owners.some((o) =>
@@ -278,6 +274,10 @@ export class DeadlockAnalysisService {
     );
   }
 
+  /**
+   * Checks whether any of the candidate addresses are themselves Safes,
+   * indicating nested Safe ownership at depth 2 that cannot be fully verified.
+   */
   private async checkNestedSafes(
     transactionApi: ITransactionApi,
     candidates: Array<Address>,
@@ -288,6 +288,10 @@ export class DeadlockAnalysisService {
     return results.some((r) => r.status === 'fulfilled' && r.value);
   }
 
+  /**
+   * Processes items in batches using Promise.allSettled to avoid overwhelming
+   * the transaction API. Each batch runs concurrently; batches run sequentially.
+   */
   private async batchProcess<T, R>(
     items: Array<T>,
     fn: (item: T) => Promise<R>,

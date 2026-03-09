@@ -35,7 +35,7 @@ export const ThreatStatusGroup = {
 } as const;
 
 export const DeadlockStatusGroup = {
-  /** Groups all deadlock analysis results */
+  /** Signing deadlock analysis - mutual ownership cycles between Safes */
   DEADLOCK: 'DEADLOCK',
 } as const;
 
