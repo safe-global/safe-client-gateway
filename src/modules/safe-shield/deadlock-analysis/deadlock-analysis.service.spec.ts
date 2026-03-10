@@ -22,6 +22,8 @@ import {
   DEADLOCK_DESCRIPTION_MAPPING,
 } from './deadlock-status.constants';
 import type { DeadlockAnalysisResponse } from '../entities/analysis-responses.entity';
+import { deadlockAnalysisResponseBuilder } from '../entities/__tests__/builders/analysis-responses.builder';
+import { deadlockAnalysisResultBuilder } from '../entities/__tests__/builders/analysis-result.builder';
 
 const mockTransactionApi = {
   getSafe: jest.fn(),
@@ -127,16 +129,16 @@ function changeThresholdBaseDataDecoded(threshold: number): BaseDataDecoded {
 }
 
 function expectedResponse(status: DeadlockStatus): DeadlockAnalysisResponse {
-  return {
-    [DeadlockStatusGroup.DEADLOCK]: [
-      {
-        severity: DEADLOCK_SEVERITY_MAPPING[status],
-        type: status,
-        title: DEADLOCK_TITLE_MAPPING[status],
-        description: DEADLOCK_DESCRIPTION_MAPPING[status],
-      },
-    ],
-  };
+  return deadlockAnalysisResponseBuilder(false)
+    .with(DeadlockStatusGroup.DEADLOCK, [
+      deadlockAnalysisResultBuilder()
+        .with('type', status)
+        .with('severity', DEADLOCK_SEVERITY_MAPPING[status])
+        .with('title', DEADLOCK_TITLE_MAPPING[status])
+        .with('description', DEADLOCK_DESCRIPTION_MAPPING[status])
+        .build(),
+    ])
+    .build();
 }
 
 describe('DeadlockAnalysisService', () => {
