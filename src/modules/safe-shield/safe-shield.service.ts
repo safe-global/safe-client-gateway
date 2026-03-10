@@ -95,7 +95,7 @@ export class SafeShieldService {
         this.analyzeDeadlock(chainId, safeAddress, transactions),
       ]);
 
-    const response: CounterpartyAnalysisResponse = {
+    return {
       recipient:
         recipientsResult.status === 'fulfilled'
           ? recipientsResult.value
@@ -124,7 +124,6 @@ export class SafeShieldService {
               deadlockResult.reason,
             ),
     };
-    return response;
   }
 
   /**
