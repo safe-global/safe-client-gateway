@@ -3,22 +3,44 @@ import { NumericStringSchema } from '@/validation/entities/schemas/numeric-strin
 import { z } from 'zod';
 import type { Address } from 'viem';
 
-export type AuthPayloadDto = z.infer<typeof AuthPayloadDtoSchema>;
-
-export const AuthPayloadDtoSchema = z.object({
+export const SiweAuthPayloadDtoSchema = z.object({
   chain_id: NumericStringSchema,
   signer_address: AddressSchema,
+  user_id: NumericStringSchema.optional(),
 });
 
-// This is Partial in order to allow `AuthPayload` instances to always be returned by
-// the `Auth` decorator, should there not be a payload
-export class AuthPayload implements Partial<AuthPayloadDto> {
+export const OidcAuthPayloadDtoSchema = z.object({
+  user_id: NumericStringSchema,
+});
+
+export const AuthPayloadDtoSchema = z.union([
+  SiweAuthPayloadDtoSchema,
+  OidcAuthPayloadDtoSchema,
+]);
+
+export type SiweAuthPayloadDto = z.infer<typeof SiweAuthPayloadDtoSchema>;
+export type OidcAuthPayloadDto = z.infer<typeof OidcAuthPayloadDtoSchema>;
+export type AuthPayloadDto = z.infer<typeof AuthPayloadDtoSchema>;
+
+// All fields are optional to allow `AuthPayload` instances to always be
+// returned by the `Auth` decorator, should there not be a payload.
+export class AuthPayload {
   chain_id?: string;
   signer_address?: Address;
+  user_id?: string;
 
   constructor(props?: AuthPayloadDto) {
-    this.chain_id = props?.chain_id;
-    this.signer_address = props?.signer_address;
+    if (props && 'chain_id' in props) {
+      this.chain_id = props.chain_id;
+      this.signer_address = props.signer_address;
+      this.user_id = props.user_id;
+    } else if (props && 'user_id' in props) {
+      this.user_id = props.user_id;
+    }
+  }
+
+  getUserId(): string | undefined {
+    return this.user_id;
   }
 
   isForChain(chainId: string): boolean {
@@ -28,7 +50,6 @@ export class AuthPayload implements Partial<AuthPayloadDto> {
   isForSigner(signerAddress: Address): boolean {
     return (
       !!this.signer_address &&
-      // Lowercase ensures a mixture of (non-)checksummed addresses are compared correctly
       this.signer_address.toLowerCase() === signerAddress.toLowerCase()
     );
   }

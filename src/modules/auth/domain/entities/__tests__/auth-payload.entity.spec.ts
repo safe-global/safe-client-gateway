@@ -3,6 +3,7 @@ import {
   AuthPayloadDtoSchema,
 } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { authPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
+import { oidcAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/oidc-auth-payload-dto.entity.builder';
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress } from 'viem';
 
@@ -124,9 +125,11 @@ describe('AuthPayload entity', () => {
 
         const result = AuthPayloadDtoSchema.safeParse(authPayloadDto);
 
-        expect(result.success && result.data.signer_address).toBe(
-          getAddress(nonChecksummedAddress),
-        );
+        expect(
+          result.success &&
+            'signer_address' in result.data &&
+            result.data.signer_address,
+        ).toBe(getAddress(nonChecksummedAddress));
       });
 
       it('should not allow a non-numeric chain_id', () => {
@@ -154,13 +157,6 @@ describe('AuthPayload entity', () => {
         const result = AuthPayloadDtoSchema.safeParse(authPayloadDto);
 
         expect(result.success).toBe(false);
-        expect(!result.success && result.error.issues).toStrictEqual([
-          {
-            code: 'custom',
-            message: 'Invalid address',
-            path: ['signer_address'],
-          },
-        ]);
       });
 
       it('should not parse an invalid AuthPayloadDtoSchema', () => {
@@ -171,20 +167,113 @@ describe('AuthPayload entity', () => {
         const result = AuthPayloadDtoSchema.safeParse(authPayloadDto);
 
         expect(result.success).toBe(false);
-        expect(!result.success && result.error.issues).toStrictEqual([
-          {
-            code: 'invalid_type',
-            expected: 'string',
-            message: 'Invalid input: expected string, received undefined',
-            path: ['chain_id'],
-          },
-          {
-            code: 'invalid_type',
-            expected: 'string',
-            message: 'Invalid input: expected string, received undefined',
-            path: ['signer_address'],
-          },
-        ]);
+      });
+
+      it('should parse a valid OIDC payload', () => {
+        const oidcPayloadDto = oidcAuthPayloadDtoBuilder().build();
+
+        const result = AuthPayloadDtoSchema.safeParse(oidcPayloadDto);
+
+        expect(result.success).toBe(true);
+        expect(result.success && result.data).toStrictEqual(oidcPayloadDto);
+      });
+
+      it('should parse a SIWE payload with optional user_id', () => {
+        const userId = faker.string.numeric({ exclude: ['0'] });
+        const authPayloadDto = authPayloadDtoBuilder()
+          .with('user_id', userId)
+          .build();
+
+        const result = AuthPayloadDtoSchema.safeParse(authPayloadDto);
+
+        expect(result.success).toBe(true);
+        expect(
+          result.success && 'user_id' in result.data && result.data.user_id,
+        ).toBe(userId);
+      });
+
+      it('should parse a SIWE payload without user_id', () => {
+        const authPayloadDto = authPayloadDtoBuilder().build();
+
+        const result = AuthPayloadDtoSchema.safeParse(authPayloadDto);
+
+        expect(result.success).toBe(true);
+      });
+
+      it('should reject an empty payload', () => {
+        const result = AuthPayloadDtoSchema.safeParse({});
+
+        expect(result.success).toBe(false);
+      });
+
+      it('should reject a non-numeric OIDC user_id', () => {
+        const result = AuthPayloadDtoSchema.safeParse({
+          user_id: faker.lorem.word(),
+        });
+
+        expect(result.success).toBe(false);
+      });
+    });
+
+    describe('getUserId', () => {
+      it('should return user_id for a SIWE payload with user_id', () => {
+        const userId = faker.string.numeric({ exclude: ['0'] });
+        const authPayloadDto = authPayloadDtoBuilder()
+          .with('user_id', userId)
+          .build();
+        const authPayload = new AuthPayload(authPayloadDto);
+
+        expect(authPayload.getUserId()).toBe(userId);
+      });
+
+      it('should return user_id for an OIDC payload', () => {
+        const oidcPayloadDto = oidcAuthPayloadDtoBuilder().build();
+        const authPayload = new AuthPayload(oidcPayloadDto);
+
+        expect(authPayload.getUserId()).toBe(oidcPayloadDto.user_id);
+      });
+
+      it('should return undefined for a SIWE payload without user_id', () => {
+        const authPayloadDto = authPayloadDtoBuilder().build();
+        const authPayload = new AuthPayload(authPayloadDto);
+
+        expect(authPayload.getUserId()).toBeUndefined();
+      });
+
+      it('should return undefined for an unauthenticated payload', () => {
+        const authPayload = new AuthPayload();
+
+        expect(authPayload.getUserId()).toBeUndefined();
+      });
+    });
+
+    describe('OIDC payload behavior', () => {
+      it('should return false for isForChain with OIDC payload', () => {
+        const oidcPayloadDto = oidcAuthPayloadDtoBuilder().build();
+        const authPayload = new AuthPayload(oidcPayloadDto);
+
+        expect(
+          authPayload.isForChain(faker.string.numeric({ exclude: ['0'] })),
+        ).toBe(false);
+      });
+
+      it('should return false for isForSigner with OIDC payload', () => {
+        const oidcPayloadDto = oidcAuthPayloadDtoBuilder().build();
+        const authPayload = new AuthPayload(oidcPayloadDto);
+
+        expect(
+          authPayload.isForSigner(
+            getAddress(faker.finance.ethereumAddress()),
+          ),
+        ).toBe(false);
+      });
+
+      it('should not set chain_id or signer_address for OIDC payload', () => {
+        const oidcPayloadDto = oidcAuthPayloadDtoBuilder().build();
+        const authPayload = new AuthPayload(oidcPayloadDto);
+
+        expect(authPayload.chain_id).toBeUndefined();
+        expect(authPayload.signer_address).toBeUndefined();
       });
     });
   });

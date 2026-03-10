@@ -5,6 +5,7 @@ import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module
 import { CacheModule } from '@/datasources/cache/cache.module';
 import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
 import { authPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
+import { oidcAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/oidc-auth-payload-dto.entity.builder';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import { OptionalAuthGuard } from '@/modules/auth/routes/guards/optional-auth.guard';
 import { faker } from '@faker-js/faker';
@@ -209,5 +210,18 @@ describe('OptionalAuthGuard', () => {
         .expect(200)
         .expect({ secret: 'This is a secret message' });
     });
+  });
+
+  it('should allow access for a valid OIDC token', async () => {
+    const oidcPayloadDto = oidcAuthPayloadDtoBuilder().build();
+    const accessToken = jwtService.sign(oidcPayloadDto);
+
+    expect(() => jwtService.verify(accessToken)).not.toThrow();
+
+    await request(app.getHttpServer())
+      .get('/valid')
+      .set('Cookie', [`access_token=${accessToken}`])
+      .expect(200)
+      .expect({ secret: 'This is a secret message' });
   });
 });
