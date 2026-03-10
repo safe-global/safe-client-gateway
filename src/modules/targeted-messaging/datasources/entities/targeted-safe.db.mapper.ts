@@ -1,4 +1,5 @@
-import { convertToDate } from '@/datasources/common/utils';
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { convertToDate } from '@/modules/targeted-messaging/datasources/entities/utils';
 import { TargetedSafe as DbTargetedSafe } from '@/modules/targeted-messaging/datasources/entities/targeted-safe.entity';
 import { TargetedSafe } from '@/modules/targeted-messaging/domain/entities/targeted-safe.entity';
 import { Injectable } from '@nestjs/common';
