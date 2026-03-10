@@ -21,6 +21,7 @@ import { SpacesController } from '@/modules/spaces/routes/spaces.controller';
 import { SpacesService } from '@/modules/spaces/routes/spaces.service';
 import { MembersController } from '@/modules/spaces/routes/members.controller';
 import { MembersService } from '@/modules/spaces/routes/members.service';
+import { ChainsModule } from '@/modules/chains/chains.module';
 import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
@@ -29,6 +30,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
     PostgresDatabaseModuleV2,
     TypeOrmModule.forFeature([Space, SpaceSafe, Member, AddressBookItem]),
     AuthModule,
+    ChainsModule,
     forwardRef(() => UsersModule),
   ],
   controllers: [

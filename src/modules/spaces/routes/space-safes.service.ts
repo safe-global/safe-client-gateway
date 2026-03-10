@@ -6,7 +6,16 @@ import { IUsersRepository } from '@/modules/users/domain/users.repository.interf
 import { CreateSpaceSafeDto } from '@/modules/spaces/routes/entities/create-space-safe.dto.entity';
 import { DeleteSpaceSafeDto } from '@/modules/spaces/routes/entities/delete-space-safe.dto.entity';
 import { GetSpaceSafeResponse } from '@/modules/spaces/routes/entities/get-space-safe.dto.entity';
-import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  SpaceMultisigTransactionPage,
+  SpaceMultisigTransactionPageSchema,
+} from '@/modules/spaces/routes/entities/get-space-multisig-transactions.dto.entity';
+import {
+  INetworkService,
+  NetworkService,
+} from '@/datasources/network/network.service.interface';
+import { IConfigurationService } from '@/config/configuration.service.interface';
+import { Inject, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { groupBy, mapValues } from 'lodash';
 import { ISpaceSafesRepository } from '@/modules/spaces/domain/space-safes.repository.interface';
 import { IMembersRepository } from '@/modules/users/domain/members.repository.interface';
@@ -15,6 +24,8 @@ import type { Address } from 'viem';
 
 @Injectable()
 export class SpaceSafesService {
+  private static readonly MAX_PENDING_TX_LIMIT = 20;
+
   public constructor(
     @Inject(IUsersRepository)
     private readonly userRepository: IUsersRepository,
@@ -24,7 +35,11 @@ export class SpaceSafesService {
     private readonly spaceSafesRepository: ISpaceSafesRepository,
     @Inject(IMembersRepository)
     private readonly membersRepository: IMembersRepository,
-  ) {}
+    @Inject(NetworkService)
+    private readonly networkService: INetworkService,
+    @Inject(IConfigurationService)
+    private readonly configurationService: IConfigurationService,
+  ) { }
 
   public async create(args: {
     spaceId: Space['id'];
@@ -66,6 +81,61 @@ export class SpaceSafesService {
       spaceId: args.spaceId,
       payload: args.payload,
     });
+  }
+
+  public async getPendingTransactions(args: {
+    spaceId: Space['id'];
+    authPayload: AuthPayload;
+    limit?: number;
+    offset?: number;
+  }): Promise<SpaceMultisigTransactionPage> {
+    this.assertSignerAddress(args.authPayload);
+    await this.isMember(args.spaceId, args.authPayload.signer_address);
+
+    const spaceSafes =
+      await this.spaceSafesRepository.findBySpaceId(args.spaceId);
+
+    if (spaceSafes.length === 0) {
+      throw new NotFoundException('Space has no Safes.');
+    }
+    const mockSafes = ["0x8E2b4d4844364F844A6a292C313F58da38e2e137"]
+    const safeAddresses = [
+      // ...new Set(spaceSafes.map((safe) => safe.address)),
+      ...mockSafes
+    ];
+
+    const limit = Math.min(
+      args.limit ?? SpaceSafesService.MAX_PENDING_TX_LIMIT,
+      SpaceSafesService.MAX_PENDING_TX_LIMIT,
+    );
+
+    try {
+      const queueServiceBaseUri = this.configurationService.getOrThrow<string>('queueService.baseUri');
+
+      const url = new URL(
+        `${queueServiceBaseUri}/api/v1/multisig-transactions/`,
+      );
+      for (const safe of safeAddresses) {
+        url.searchParams.append('safes', safe);
+      }
+      if (limit != null) {
+        url.searchParams.append('limit', String(limit));
+      }
+      if (args.offset != null) {
+        url.searchParams.append('offset', String(args.offset));
+      }
+      url.searchParams.append('executed', 'false');
+
+
+      const { data } = await this.networkService.get<SpaceMultisigTransactionPage>({
+        url: url.toString(),
+      });
+      console.log('### data --------------------------', data);
+      return SpaceMultisigTransactionPageSchema.parse(data);
+    } catch (error) {
+      console.log('## error --------------------------', error);
+      throw error;
+    }
   }
 
   private assertSignerAddress(

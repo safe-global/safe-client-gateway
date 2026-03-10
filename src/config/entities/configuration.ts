@@ -526,6 +526,9 @@ export default () => ({
   safeWebApp: {
     baseUri: process.env.SAFE_WEB_APP_BASE_URI || 'https://app.safe.global',
   },
+  queueService: {
+    baseUri: process.env.QUEUE_SERVICE_BASE_URI,
+  },
   spaces: {
     addressBooks: {
       maxItems: parseInt(

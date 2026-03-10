@@ -6,11 +6,13 @@ import { CreateSpaceSafesDto } from '@/modules/spaces/routes/entities/create-spa
 import { DeleteSpaceSafesDto } from '@/modules/spaces/routes/entities/delete-space-safe.dto.entity';
 import { GetSpaceSafeResponse } from '@/modules/spaces/routes/entities/get-space-safe.dto.entity';
 import { SpaceSafesSchema } from '@/modules/spaces/routes/entities/space-safe.dto.entity';
+import type { SpaceMultisigTransactionPage } from '@/modules/spaces/routes/entities/get-space-multisig-transactions.dto.entity';
 import { SpaceSafesService } from '@/modules/spaces/routes/space-safes.service';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import {
   Body,
   Controller,
+  DefaultValuePipe,
   Delete,
   Get,
   HttpCode,
@@ -18,6 +20,7 @@ import {
   Param,
   ParseIntPipe,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -30,6 +33,7 @@ import {
   ApiUnauthorizedResponse,
   ApiOperation,
   ApiParam,
+  ApiQuery,
   ApiForbiddenResponse,
 } from '@nestjs/swagger';
 
@@ -122,6 +126,73 @@ export class SpaceSafesController {
     @Auth() authPayload: AuthPayload,
   ): Promise<GetSpaceSafeResponse> {
     return await this.spaceSafesService.get(spaceId, authPayload);
+  }
+
+  @ApiOperation({
+    summary: 'Get pending transactions for space Safes',
+    description:
+      'Retrieves pending (not yet executed) multisig transactions for all Safes in a space. Results are paginated with a maximum limit of 20.',
+  })
+  @ApiParam({
+    name: 'spaceId',
+    type: 'number',
+    description: 'Space ID to get pending transactions for',
+    example: 1,
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Maximum number of results to return (max 20)',
+    example: 20,
+  })
+  @ApiQuery({
+    name: 'offset',
+    required: false,
+    type: Number,
+    description: 'Offset for pagination',
+    example: 0,
+  })
+  @ApiOkResponse({
+    description: 'Pending multisig transactions retrieved successfully',
+  })
+  @ApiUnauthorizedResponse({
+    description:
+      'Authentication required or user unauthorized to access this space',
+  })
+  @ApiNotFoundResponse({
+    description: 'User or space not found, or space has no Safes',
+  })
+  @ApiForbiddenResponse({
+    description: 'Access forbidden - user is not a member of this space',
+  })
+  @Get('pending-transactions')
+  public async getPendingTransactions(
+    @Param('spaceId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
+    spaceId: number,
+    @Auth() authPayload: AuthPayload,
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe)
+    limit: number,
+    @Query('offset', new DefaultValuePipe(0), ParseIntPipe)
+    offset: number,
+  ): Promise<SpaceMultisigTransactionPage> {
+    // return {
+    //   spaceId,
+    //   authPayload,
+    //   limit,
+    //   offset,
+    //   results: [],
+    //   count: 0,
+    //   next: null,
+    //   previous: null,
+    // } as any 
+
+    return await this.spaceSafesService.getPendingTransactions({
+      spaceId,
+      authPayload,
+      limit,
+      offset,
+    });
   }
 
   @ApiOperation({
