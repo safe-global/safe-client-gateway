@@ -160,7 +160,10 @@ export class DeadlockAnalysisService {
     );
 
     if (ownersThatAreSafesLookupResults.some((r) => r.status === 'rejected')) {
-      return this.buildResponse(DeadlockStatus.NESTED_SAFE_WARNING);
+      return this.buildResponse(
+        safeAddress,
+        DeadlockStatus.NESTED_SAFE_WARNING,
+      );
     }
 
     const ownersThatAreSafes = this.extractOwnersThatAreSafes(
@@ -177,14 +180,17 @@ export class DeadlockAnalysisService {
     );
 
     if (deadlockDetected) {
-      return this.buildResponse(DeadlockStatus.DEADLOCK_DETECTED);
+      return this.buildResponse(safeAddress, DeadlockStatus.DEADLOCK_DETECTED);
     }
 
     if (
       nestedCandidates.size > 0 &&
       (await this.checkNestedSafes(transactionApi, [...nestedCandidates]))
     ) {
-      return this.buildResponse(DeadlockStatus.NESTED_SAFE_WARNING);
+      return this.buildResponse(
+        safeAddress,
+        DeadlockStatus.NESTED_SAFE_WARNING,
+      );
     }
 
     return {};
@@ -348,16 +354,21 @@ export class DeadlockAnalysisService {
     return results;
   }
 
-  private buildResponse(status: DeadlockStatus): DeadlockAnalysisResponse {
+  private buildResponse(
+    safeAddress: Address,
+    status: DeadlockStatus,
+  ): DeadlockAnalysisResponse {
     return {
-      [DeadlockStatusGroup.DEADLOCK]: [
-        {
-          severity: DEADLOCK_SEVERITY_MAPPING[status],
-          type: status,
-          title: DEADLOCK_TITLE_MAPPING[status],
-          description: DEADLOCK_DESCRIPTION_MAPPING[status],
-        },
-      ],
+      [safeAddress]: {
+        [DeadlockStatusGroup.DEADLOCK]: [
+          {
+            severity: DEADLOCK_SEVERITY_MAPPING[status],
+            type: status,
+            title: DEADLOCK_TITLE_MAPPING[status],
+            description: DEADLOCK_DESCRIPTION_MAPPING[status],
+          },
+        ],
+      },
     };
   }
 }

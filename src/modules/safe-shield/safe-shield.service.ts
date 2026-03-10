@@ -119,7 +119,7 @@ export class SafeShieldService {
           ? deadlockResult.value
           : this.handleFailedAnalysis(
               'Deadlock',
-              tx.to,
+              safeAddress,
               DeadlockStatusGroup.DEADLOCK,
               deadlockResult.reason,
             ),
@@ -344,7 +344,7 @@ export class SafeShieldService {
 
   /**
    * Handles failed analysis by creating a FAILED result placeholder.
-   * Deadlock responses are keyed by status group; recipient/contract are keyed by address.
+   * All response types are address-keyed.
    */
   private handleFailedAnalysis<
     T extends
@@ -371,13 +371,6 @@ export class SafeShieldService {
         error: error?.message,
       }),
     };
-
-    // Deadlock responses are keyed by status group
-    if (analysisType === 'Deadlock') {
-      return {
-        [statusGroup]: [failedResult],
-      } as T;
-    }
 
     return {
       [targetAddress]: {

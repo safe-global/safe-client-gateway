@@ -777,16 +777,18 @@ describe('SafeShieldService', () => {
         },
       });
       expect(result.deadlock).toEqual({
-        [DeadlockStatusGroup.DEADLOCK]: [
-          {
-            type: 'FAILED',
-            severity: COMMON_SEVERITY_MAPPING.FAILED,
-            title: 'Deadlock analysis failed',
-            description: COMMON_DESCRIPTION_MAPPING.FAILED({
-              error: 'Deadlock analysis failed',
-            }),
-          },
-        ],
+        [mockSafeAddress]: {
+          [DeadlockStatusGroup.DEADLOCK]: [
+            {
+              type: 'FAILED',
+              severity: COMMON_SEVERITY_MAPPING.FAILED,
+              title: 'Deadlock analysis failed',
+              description: COMMON_DESCRIPTION_MAPPING.FAILED({
+                error: 'Deadlock analysis failed',
+              }),
+            },
+          ],
+        },
       });
 
       expect(mockLoggingService.warn).toHaveBeenNthCalledWith(
@@ -1185,16 +1187,18 @@ describe('SafeShieldService', () => {
       });
 
       expect(result.deadlock).toEqual({
-        [DeadlockStatusGroup.DEADLOCK]: [
-          {
-            type: 'FAILED',
-            severity: COMMON_SEVERITY_MAPPING.FAILED,
-            title: 'Deadlock analysis failed',
-            description: COMMON_DESCRIPTION_MAPPING.FAILED({
-              error: 'Deadlock analysis failed',
-            }),
-          },
-        ],
+        [mockSafeAddress]: {
+          [DeadlockStatusGroup.DEADLOCK]: [
+            {
+              type: 'FAILED',
+              severity: COMMON_SEVERITY_MAPPING.FAILED,
+              title: 'Deadlock analysis failed',
+              description: COMMON_DESCRIPTION_MAPPING.FAILED({
+                error: 'Deadlock analysis failed',
+              }),
+            },
+          ],
+        },
       });
       expect(mockLoggingService.warn).toHaveBeenCalledWith(
         'The counterparty analysis failed. Error: Deadlock analysis failed',

@@ -74,17 +74,19 @@ export const ContractAnalysisResponseSchema = z.record(
 /**
  * Response structure for deadlock analysis.
  *
- * Contains deadlock analysis results grouped under the DEADLOCK status group.
- * Unlike recipient/contract analysis, this is not per-address but about the
- * Safe's overall signer configuration.
+ * Maps Safe addresses to their deadlock analysis results grouped by status group.
+ * Follows the same address-keyed pattern as recipient/contract analysis responses.
  */
-export const DeadlockAnalysisResponseSchema = z
-  .object({
-    [DeadlockStatusGroup.DEADLOCK]: z
-      .array(DeadlockAnalysisResultSchema)
-      .optional(),
-  })
-  .strict();
+export const DeadlockAnalysisResponseSchema = z.record(
+  AddressSchema,
+  z
+    .object({
+      [DeadlockStatusGroup.DEADLOCK]: z
+        .array(DeadlockAnalysisResultSchema)
+        .optional(),
+    })
+    .strict(),
+);
 
 /**
  * Response structure for counterparty analysis endpoint.

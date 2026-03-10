@@ -128,16 +128,21 @@ function changeThresholdBaseDataDecoded(threshold: number): BaseDataDecoded {
   } as BaseDataDecoded;
 }
 
-function expectedResponse(status: DeadlockStatus): DeadlockAnalysisResponse {
+function expectedResponse(
+  safeAddress: Address,
+  status: DeadlockStatus,
+): DeadlockAnalysisResponse {
   return deadlockAnalysisResponseBuilder(false)
-    .with(DeadlockStatusGroup.DEADLOCK, [
-      deadlockAnalysisResultBuilder()
-        .with('type', status)
-        .with('severity', DEADLOCK_SEVERITY_MAPPING[status])
-        .with('title', DEADLOCK_TITLE_MAPPING[status])
-        .with('description', DEADLOCK_DESCRIPTION_MAPPING[status])
-        .build(),
-    ])
+    .with(safeAddress, {
+      [DeadlockStatusGroup.DEADLOCK]: [
+        deadlockAnalysisResultBuilder()
+          .with('type', status)
+          .with('severity', DEADLOCK_SEVERITY_MAPPING[status])
+          .with('title', DEADLOCK_TITLE_MAPPING[status])
+          .with('description', DEADLOCK_DESCRIPTION_MAPPING[status])
+          .build(),
+      ],
+    })
     .build();
 }
 
@@ -267,7 +272,7 @@ describe('DeadlockAnalysisService', () => {
       });
 
       expect(result).toEqual(
-        expectedResponse(DeadlockStatus.DEADLOCK_DETECTED),
+        expectedResponse(safeAddress, DeadlockStatus.DEADLOCK_DETECTED),
       );
     });
 
@@ -349,7 +354,7 @@ describe('DeadlockAnalysisService', () => {
       });
 
       expect(result).toEqual(
-        expectedResponse(DeadlockStatus.DEADLOCK_DETECTED),
+        expectedResponse(safeAddress, DeadlockStatus.DEADLOCK_DETECTED),
       );
     });
 
@@ -393,7 +398,7 @@ describe('DeadlockAnalysisService', () => {
       });
 
       expect(result).toEqual(
-        expectedResponse(DeadlockStatus.DEADLOCK_DETECTED),
+        expectedResponse(safeAddress, DeadlockStatus.DEADLOCK_DETECTED),
       );
     });
 
@@ -438,7 +443,7 @@ describe('DeadlockAnalysisService', () => {
       });
 
       expect(result).toEqual(
-        expectedResponse(DeadlockStatus.DEADLOCK_DETECTED),
+        expectedResponse(safeAddress, DeadlockStatus.DEADLOCK_DETECTED),
       );
     });
   });
@@ -601,7 +606,7 @@ describe('DeadlockAnalysisService', () => {
       });
 
       expect(result).toEqual(
-        expectedResponse(DeadlockStatus.NESTED_SAFE_WARNING),
+        expectedResponse(safeAddress, DeadlockStatus.NESTED_SAFE_WARNING),
       );
     });
 
@@ -769,7 +774,7 @@ describe('DeadlockAnalysisService', () => {
         });
 
         expect(result).toEqual(
-          expectedResponse(DeadlockStatus.DEADLOCK_DETECTED),
+          expectedResponse(safeAddress, DeadlockStatus.DEADLOCK_DETECTED),
         );
       });
     });
@@ -808,7 +813,7 @@ describe('DeadlockAnalysisService', () => {
         });
 
         expect(result).toEqual(
-          expectedResponse(DeadlockStatus.NESTED_SAFE_WARNING),
+          expectedResponse(safeAddress, DeadlockStatus.NESTED_SAFE_WARNING),
         );
       });
 
@@ -858,7 +863,7 @@ describe('DeadlockAnalysisService', () => {
         });
 
         expect(result).toEqual(
-          expectedResponse(DeadlockStatus.NESTED_SAFE_WARNING),
+          expectedResponse(safeAddress, DeadlockStatus.NESTED_SAFE_WARNING),
         );
       });
 
@@ -906,7 +911,7 @@ describe('DeadlockAnalysisService', () => {
 
         // API failure short-circuits to NESTED_SAFE_WARNING — can't trust partial analysis
         expect(result).toEqual(
-          expectedResponse(DeadlockStatus.NESTED_SAFE_WARNING),
+          expectedResponse(safeAddress, DeadlockStatus.NESTED_SAFE_WARNING),
         );
       });
 
@@ -961,7 +966,7 @@ describe('DeadlockAnalysisService', () => {
 
         // eoa2 has API failure → short-circuits to NESTED_SAFE_WARNING
         expect(result).toEqual(
-          expectedResponse(DeadlockStatus.NESTED_SAFE_WARNING),
+          expectedResponse(safeAddress, DeadlockStatus.NESTED_SAFE_WARNING),
         );
       });
     });
@@ -1248,7 +1253,7 @@ describe('DeadlockAnalysisService', () => {
       });
 
       expect(result).toEqual(
-        expectedResponse(DeadlockStatus.DEADLOCK_DETECTED),
+        expectedResponse(safeAddress, DeadlockStatus.DEADLOCK_DETECTED),
       );
     });
 
@@ -1343,7 +1348,7 @@ describe('DeadlockAnalysisService', () => {
       });
 
       expect(result).toEqual(
-        expectedResponse(DeadlockStatus.DEADLOCK_DETECTED),
+        expectedResponse(safeAddress, DeadlockStatus.DEADLOCK_DETECTED),
       );
     });
 
@@ -1386,7 +1391,7 @@ describe('DeadlockAnalysisService', () => {
       });
 
       expect(result).toEqual(
-        expectedResponse(DeadlockStatus.DEADLOCK_DETECTED),
+        expectedResponse(safeAddress, DeadlockStatus.DEADLOCK_DETECTED),
       );
     });
   });

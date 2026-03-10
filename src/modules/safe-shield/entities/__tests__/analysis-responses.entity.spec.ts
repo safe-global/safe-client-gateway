@@ -332,8 +332,11 @@ describe('Analysis Response Schemas', () => {
       });
 
       it('should validate response with empty DEADLOCK array', () => {
+        const address = getAddress(faker.finance.ethereumAddress());
         const emptyResponse = deadlockAnalysisResponseBuilder(false)
-          .with(DeadlockStatusGroup.DEADLOCK, [])
+          .with(address, {
+            [DeadlockStatusGroup.DEADLOCK]: [],
+          })
           .build();
 
         const result = DeadlockAnalysisResponseSchema.safeParse(emptyResponse);
@@ -341,10 +344,45 @@ describe('Analysis Response Schemas', () => {
         expect(result.success && result.data).toStrictEqual(emptyResponse);
       });
 
+      it('should reject invalid address format', () => {
+        const invalidAddressResponse = {
+          'invalid-address': {
+            [DeadlockStatusGroup.DEADLOCK]: [
+              deadlockAnalysisResultBuilder().build(),
+            ],
+          },
+        };
+
+        const result = DeadlockAnalysisResponseSchema.safeParse(
+          invalidAddressResponse,
+        );
+
+        expect(!result.success && result.error.issues).toStrictEqual([
+          {
+            code: 'invalid_key',
+            issues: [
+              {
+                code: 'custom',
+                message: 'Invalid address',
+                path: [],
+              },
+            ],
+            message: 'Invalid key in record',
+            origin: 'record',
+            path: ['invalid-address'],
+          },
+        ]);
+      });
+
       it('should reject invalid status group', () => {
+        const address = getAddress(faker.finance.ethereumAddress());
         const invalidResponse = {
-          ...deadlockAnalysisResponseBuilder().build(),
-          INVALID_STATUS_GROUP: [deadlockAnalysisResultBuilder().build()],
+          [address]: {
+            [DeadlockStatusGroup.DEADLOCK]: [
+              deadlockAnalysisResultBuilder().build(),
+            ],
+            INVALID_STATUS_GROUP: [deadlockAnalysisResultBuilder().build()],
+          },
         };
 
         const result =
@@ -383,7 +421,7 @@ describe('Analysis Response Schemas', () => {
       it('should reject invalid deadlock analysis structure', () => {
         const response = {
           ...counterpartyAnalysisResponseBuilder().build(),
-          deadlock: { INVALID_GROUP: [] },
+          deadlock: { 'invalid-address': {} },
         } as unknown;
 
         const result = CounterpartyAnalysisResponseSchema.safeParse(response);

@@ -13,7 +13,6 @@ import {
 } from '../analysis-result.entity';
 import type {
   CounterpartyAnalysisResponse,
-  DeadlockAnalysisResponse,
   GroupedAnalysisResults,
 } from '@/modules/safe-shield/entities/analysis-responses.entity';
 import { ContractStatus } from '@/modules/safe-shield/entities/contract-status.entity';
@@ -281,11 +280,11 @@ export class DeadlockAnalysisResultDto extends AnalysisResultDto<
 }
 
 /**
- * DTO for deadlock analysis response.
+ * DTO for deadlock analysis response value.
  *
  * Contains deadlock analysis results under the DEADLOCK status group.
  */
-export class DeadlockAnalysisDto implements DeadlockAnalysisResponse {
+export class DeadlockAnalysisDto {
   @ApiPropertyOptional({
     description:
       'Deadlock analysis findings. ' +
@@ -374,9 +373,25 @@ export class CounterpartyAnalysisDto implements CounterpartyAnalysisResponse {
 
   @ApiProperty({
     description:
-      'Deadlock analysis results. ' +
+      'Deadlock analysis results mapped by Safe address. ' +
       'Contains signing deadlock risk findings for owner/threshold management transactions.',
-    type: DeadlockAnalysisDto,
+    type: 'object',
+    additionalProperties: {
+      $ref: getSchemaPath(DeadlockAnalysisDto),
+    },
+    example: {
+      '0x0000000000000000000000000000000000000000': {
+        DEADLOCK: [
+          {
+            severity: 'CRITICAL',
+            type: 'DEADLOCK_DETECTED',
+            title: 'Signing deadlock risk detected',
+            description:
+              'This change may create a signing cycle between Safes and can permanently lock funds. You will not be allowed to proceed forward.',
+          },
+        ],
+      },
+    },
   })
-  public readonly deadlock!: DeadlockAnalysisDto;
+  public readonly deadlock!: Record<Address, Partial<DeadlockAnalysisDto>>;
 }

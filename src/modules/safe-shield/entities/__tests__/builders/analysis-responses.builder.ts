@@ -162,9 +162,9 @@ export function deadlockAnalysisResponseBuilder(
   const builder = new Builder<DeadlockAnalysisResponse>();
 
   if (withDefaults) {
-    builder.with(DeadlockStatusGroup.DEADLOCK, [
-      deadlockAnalysisResultBuilder().build(),
-    ]);
+    builder.with(getAddress(faker.finance.ethereumAddress()), {
+      [DeadlockStatusGroup.DEADLOCK]: [deadlockAnalysisResultBuilder().build()],
+    });
   }
 
   return builder;
