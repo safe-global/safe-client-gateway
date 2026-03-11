@@ -27,11 +27,17 @@ export const AuthPayloadDtoSchema = z.discriminatedUnion('auth_method', [
   OidcAuthPayloadDtoSchema,
 ]);
 
+// Omit `sub` from JwtClaimsSchema to avoid conflict with the auth schemas'
+// required NumericString `sub`. Without this, the optional `z.string()` sub
+// from JwtClaimsSchema is silently overridden by `.extend()` — which works
+// today but depends on Zod's merge-order semantics.
+const JwtClaimsWithoutSub = JwtClaimsSchema.omit({ sub: true });
+
 export const AuthPayloadWithClaimsDtoSchema = z.discriminatedUnion(
   'auth_method',
   [
-    JwtClaimsSchema.extend(SiweAuthPayloadDtoSchema.shape),
-    JwtClaimsSchema.extend(OidcAuthPayloadDtoSchema.shape),
+    JwtClaimsWithoutSub.extend(SiweAuthPayloadDtoSchema.shape),
+    JwtClaimsWithoutSub.extend(OidcAuthPayloadDtoSchema.shape),
   ],
 );
 
