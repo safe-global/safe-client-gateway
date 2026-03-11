@@ -370,7 +370,8 @@ describe('MembersController', () => {
     it('should throw a 401 if the signer is an admin of another space', async () => {
       const adminAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
       const adminAccessToken = jwtService.sign(adminAuthPayloadDto);
-      const targetSpaceOwnerAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
+      const targetSpaceOwnerAuthPayloadDto =
+        siweAuthPayloadDtoBuilder().build();
       const targetSpaceOwnerAccessToken = jwtService.sign(
         targetSpaceOwnerAuthPayloadDto,
       );
