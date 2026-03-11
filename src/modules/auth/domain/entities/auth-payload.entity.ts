@@ -48,6 +48,14 @@ export type AuthPayloadWithClaimsDto = z.infer<
 export type SiweAuthPayloadDto = z.infer<typeof SiweAuthPayloadDtoSchema>;
 export type OidcAuthPayloadDto = z.infer<typeof OidcAuthPayloadDtoSchema>;
 
+/**
+ * Narrowed type for an authenticated AuthPayload where `sub` and
+ * `auth_method` are guaranteed to be present. Use the
+ * {@link AuthPayload.isAuthenticated} type guard to narrow.
+ */
+export type AuthenticatedAuthPayload = AuthPayload &
+  Required<Pick<AuthPayload, 'sub' | 'auth_method'>>;
+
 export class AuthPayload {
   sub?: string;
   auth_method?: (typeof AuthMethod)[keyof typeof AuthMethod];
@@ -61,6 +69,14 @@ export class AuthPayload {
       this.chain_id = props.chain_id;
       this.signer_address = props.signer_address;
     }
+  }
+
+  /**
+   * Type guard that narrows to {@link AuthenticatedAuthPayload},
+   * guaranteeing `sub` and `auth_method` are present.
+   */
+  isAuthenticated(): this is AuthenticatedAuthPayload {
+    return this.sub !== undefined && this.auth_method !== undefined;
   }
 
   getUserId(): string | undefined {
