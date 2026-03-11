@@ -24,8 +24,7 @@ import { IMembersRepository } from '@/modules/users/domain/members.repository.in
     {
       provide: IUsersRepository,
       useValue: {
-        findOrCreateByWalletAddress: (): Promise<number> =>
-          Promise.resolve(1),
+        findOrCreateByWalletAddress: (): Promise<number> => Promise.resolve(1),
       },
     },
     {

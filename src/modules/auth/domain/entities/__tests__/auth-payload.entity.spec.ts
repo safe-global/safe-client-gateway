@@ -51,16 +51,11 @@ describe('AuthPayload entity', () => {
       describe('should return true if `signerAddress` matches `AuthPayload[signer_address]`', () => {
         it('if both are checksummed', () => {
           const authPayloadDto = authPayloadDtoBuilder()
-            .with(
-              'signer_address',
-              getAddress(faker.finance.ethereumAddress()),
-            )
+            .with('signer_address', getAddress(faker.finance.ethereumAddress()))
             .build();
           const authPayload = new AuthPayload(authPayloadDto);
 
-          const result = authPayload.isForSigner(
-            authPayloadDto.signer_address,
-          );
+          const result = authPayload.isForSigner(authPayloadDto.signer_address);
 
           expect(result).toBe(true);
         });
@@ -74,19 +69,14 @@ describe('AuthPayload entity', () => {
             .build();
           const authPayload = new AuthPayload(authPayloadDto);
 
-          const result = authPayload.isForSigner(
-            authPayloadDto.signer_address,
-          );
+          const result = authPayload.isForSigner(authPayloadDto.signer_address);
 
           expect(result).toBe(true);
         });
 
         it('if `signer_address` is checksummed and `signerAddress` is not', () => {
           const authPayloadDto = authPayloadDtoBuilder()
-            .with(
-              'signer_address',
-              getAddress(faker.finance.ethereumAddress()),
-            )
+            .with('signer_address', getAddress(faker.finance.ethereumAddress()))
             .build();
           const signerAddress =
             authPayloadDto.signer_address.toLowerCase() as Address;
@@ -140,9 +130,7 @@ describe('AuthPayload entity', () => {
     describe('getUserId', () => {
       it('should return sub for SIWE payloads', () => {
         const sub = faker.string.numeric({ exclude: ['0'] });
-        const authPayloadDto = authPayloadDtoBuilder()
-          .with('sub', sub)
-          .build();
+        const authPayloadDto = authPayloadDtoBuilder().with('sub', sub).build();
         const authPayload = new AuthPayload(authPayloadDto);
 
         expect(authPayload.getUserId()).toBe(sub);
