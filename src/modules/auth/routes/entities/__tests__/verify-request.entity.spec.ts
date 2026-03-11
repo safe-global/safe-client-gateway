@@ -1,7 +1,7 @@
+import { auth0DtoBuilder } from '@/modules/auth/routes/entities/__tests__/auth0.dto.builder';
 import { VerifyAuthRequestSchema } from '@/modules/auth/routes/entities/verify-auth.request.entity';
 import { siweMessageBuilder } from '@/modules/siwe/domain/entities/__tests__/siwe-message.builder';
 import { faker } from '@faker-js/faker';
-import jwt from 'jsonwebtoken';
 import { createSiweMessage } from 'viem/siwe';
 
 describe('VerifyAuthRequestSchema', () => {
@@ -17,13 +17,7 @@ describe('VerifyAuthRequestSchema', () => {
   });
 
   it('should validate an Auth0 request', () => {
-    const auth0Request = {
-      access_token: jwt.sign(
-        { sub: faker.string.uuid() },
-        faker.string.alphanumeric(32),
-        { algorithm: 'HS256' },
-      ),
-    };
+    const auth0Request = auth0DtoBuilder().build();
 
     const result = VerifyAuthRequestSchema.safeParse(auth0Request);
 
@@ -40,11 +34,7 @@ describe('VerifyAuthRequestSchema', () => {
     const result = VerifyAuthRequestSchema.safeParse({
       message: createSiweMessage(siweMessageBuilder().build()),
       signature: faker.string.hexadecimal(),
-      access_token: jwt.sign(
-        { sub: faker.string.uuid() },
-        faker.string.alphanumeric(32),
-        { algorithm: 'HS256' },
-      ),
+      ...auth0DtoBuilder().build(),
     });
 
     expect(result.success).toBe(false);

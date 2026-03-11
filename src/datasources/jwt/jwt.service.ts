@@ -17,8 +17,8 @@ export class JwtService implements IJwtService {
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
   ) {
-    this.issuer = configurationService.getOrThrow<string>('jwt.issuer');
-    this.secret = configurationService.getOrThrow<string>('jwt.secret');
+    this.issuer = this.configurationService.getOrThrow<string>('jwt.issuer');
+    this.secret = this.configurationService.getOrThrow<string>('jwt.secret');
   }
 
   sign<

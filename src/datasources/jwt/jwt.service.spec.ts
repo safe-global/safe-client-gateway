@@ -118,7 +118,7 @@ describe('JwtService', () => {
       expect(jwtClientMock.verify).toHaveBeenCalledTimes(1);
       expect(jwtClientMock.verify).toHaveBeenCalledWith(token, {
         issuer: customIssuer,
-        audience: configIssuer,
+        audience: configIssuer, //TODO change
         secretOrPrivateKey: customSecret,
         algorithms: undefined,
       });
@@ -138,7 +138,7 @@ describe('JwtService', () => {
       expect(jwtClientMock.verify).toHaveBeenCalledTimes(1);
       expect(jwtClientMock.verify).toHaveBeenCalledWith(token, {
         issuer: customIssuer,
-        audience: configIssuer,
+        audience: configIssuer, //TODO change
         secretOrPrivateKey: customSecret,
         algorithms: ['RS256'],
       });

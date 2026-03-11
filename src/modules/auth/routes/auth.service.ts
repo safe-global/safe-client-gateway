@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { ForbiddenException, Inject, Injectable } from '@nestjs/common';
-import { SiweDto } from '@/modules/auth/routes/entities/siwe.dto.entity';
 import { ISiweRepository } from '@/modules/siwe/domain/siwe.repository.interface';
 import { IAuthRepository } from '@/modules/auth/domain/auth.repository.interface';
 import {
@@ -10,9 +9,11 @@ import {
 import { JwtPayloadWithClaims } from '@/datasources/jwt/jwt-claims.entity';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
-import { VerifyAuthRequest } from '@/modules/auth/routes/entities/verify-auth.request.entity';
-import { Auth0Dto } from '@/modules/auth/routes/entities/auth0.dto.entity';
+import { IAuth0Service } from '@/datasources/auth0/auth0.service.interface';
 
+type AuthTokenResponse = {
+  accessToken: string;
+};
 @Injectable()
 export class AuthService {
   private readonly maxValidityPeriodInSeconds: number;
@@ -26,6 +27,8 @@ export class AuthService {
     private readonly configurationService: IConfigurationService,
     @Inject(IUsersRepository)
     private readonly usersRepository: IUsersRepository,
+    @Inject(IAuth0Service)
+    private readonly auth0Service: IAuth0Service,
   ) {
     this.maxValidityPeriodInSeconds = this.configurationService.getOrThrow(
       'auth.maxValidityPeriodSeconds',
@@ -38,11 +41,30 @@ export class AuthService {
     return await this.siweRepository.generateNonce();
   }
 
-  async getAccessToken(args: VerifyAuthRequest): Promise<{
-    accessToken: string;
-  }> {
+  verifyOidc(accessToken: string): AuthTokenResponse {
+    this.auth0Service.verify(accessToken);
+
+    // TODO: Extract claims from OIDC token
+    const token = this.authRepository.signToken(
+      {
+        chain_id: '0',
+        signer_address: '0x0000000000000000000000000000000000000000',
+      },
+      {
+        exp: this.getMaxExpirationTime(),
+        iat: new Date(),
+      },
+    );
+
+    return { accessToken: token };
+  }
+
+  async verifySiwe(args: {
+    message: string;
+    signature: `0x${string}`;
+  }): Promise<AuthTokenResponse> {
     const { chainId, address, notBefore, issuedAt, expirationTime } =
-      await this.siweRepository.getValidatedSiweMessage(args as SiweDto);
+      await this.siweRepository.getValidatedSiweMessage(args);
 
     const maxExpirationTime = this.getMaxExpirationTime();
 
@@ -63,9 +85,7 @@ export class AuthService {
         signer_address: address,
       },
       {
-        ...(notBefore && {
-          nbf: new Date(notBefore),
-        }),
+        ...(notBefore && { nbf: new Date(notBefore) }),
         exp: expirationTime
           ? new Date(expirationTime)
           : new Date(maxExpirationTime),
@@ -73,21 +93,10 @@ export class AuthService {
       },
     );
 
-    return {
-      accessToken,
-    };
+    return { accessToken };
   }
 
-  async verifyAuth0(args: Auth0Dto): Promise<void> {
-    //TODO implement Auth0 token verification logic here
-    return;
-  }
-
-  async verifySiwe(accessToken: string): Promise<void> {
-    return;
-  }
-
-  private getTokenPayloadWithClaims(
+  getTokenPayloadWithClaims(
     accessToken: string,
   ): JwtPayloadWithClaims<AuthPayloadDto> {
     return this.authRepository.decodeToken(accessToken);

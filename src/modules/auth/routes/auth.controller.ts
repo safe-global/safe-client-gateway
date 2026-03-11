@@ -106,9 +106,10 @@ export class AuthController {
     @Body(new ValidationPipe(VerifyAuthRequestSchema))
     verifyAuthRequest: VerifyAuthRequest,
   ): Promise<void> {
-    const { accessToken } = await this.authService.getAccessToken(
-      verifyAuthRequest,
-    );
+    const { accessToken } =
+      'access_token' in verifyAuthRequest
+        ? this.authService.verifyOidc(verifyAuthRequest.access_token)
+        : await this.authService.verifySiwe(verifyAuthRequest);
 
     res.cookie(AuthController.ACCESS_TOKEN_COOKIE_NAME, accessToken, {
       ...this.getCookieOptions(),

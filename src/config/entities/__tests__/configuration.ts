@@ -27,6 +27,11 @@ export default (): ReturnType<typeof configuration> => ({
     token: faker.string.hexadecimal({ length: 32 }),
     nonceTtlSeconds: faker.number.int(),
     maxValidityPeriodSeconds: faker.number.int({ min: 1, max: 60 * 1_000 }),
+    auth0: {
+      domain: faker.internet.domainName(),
+      apiIdentifier: faker.internet.url({ appendSlash: false }),
+      signingSecret: faker.string.alphanumeric({ length: 64 }),
+    },
   },
   balances: {
     providers: {

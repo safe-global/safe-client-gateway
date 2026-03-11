@@ -8,7 +8,6 @@ export class SiweDto implements z.infer<typeof SiweDtoSchema> {
   message!: string;
   @ApiProperty()
   signature!: Address;
-
 }
 
 export const SiweDtoSchema = z

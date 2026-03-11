@@ -1,5 +1,7 @@
+import { auth0DtoBuilder } from '@/modules/auth/routes/entities/__tests__/auth0.dto.builder';
 import { Auth0DtoSchema } from '@/modules/auth/routes/entities/auth0.dto.entity';
 import { faker } from '@faker-js/faker';
+import { generateKeyPairSync } from 'crypto';
 import jwt from 'jsonwebtoken';
 
 describe('Auth0DtoSchema', () => {
@@ -11,14 +13,9 @@ describe('Auth0DtoSchema', () => {
   };
 
   it('should validate Auth0Dto', () => {
-    const accessToken = jwt.sign(
-      { sub: faker.string.uuid() },
-      faker.string.alphanumeric(32),
-      { algorithm: 'HS256' },
-    );
+    const auth0Dto = auth0DtoBuilder().build();
 
-    const result = Auth0DtoSchema.safeParse({ access_token: accessToken });
-
+    const result = Auth0DtoSchema.safeParse(auth0Dto);
     expect(result.success).toBe(true);
   });
 
@@ -33,7 +30,7 @@ describe('Auth0DtoSchema', () => {
   });
 
   it('should not validate a JWT with a non-HS256 algorithm', () => {
-    const { privateKey } = require('crypto').generateKeyPairSync('ec', {
+    const { privateKey } = generateKeyPairSync('ec', {
       namedCurve: 'P-256',
     });
     const accessToken = jwt.sign({ sub: faker.string.uuid() }, privateKey, {
