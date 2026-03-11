@@ -13,34 +13,12 @@ import {
 } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { Auth } from '@/modules/auth/routes/decorators/auth.decorator';
 import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
-import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
-import { IMembersRepository } from '@/modules/users/domain/members.repository.interface';
 import { UsersModule } from '@/modules/users/users.module';
-import {
-  INestApplication,
-  Controller,
-  Get,
-  Module,
-  UseGuards,
-} from '@nestjs/common';
+import { TestUsersModule } from '@/modules/users/__tests__/test.users.module';
+import { INestApplication, Controller, Get, UseGuards } from '@nestjs/common';
 import { TestingModule, Test } from '@nestjs/testing';
 import { Server } from 'net';
 import request from 'supertest';
-
-@Module({
-  providers: [
-    {
-      provide: IUsersRepository,
-      useValue: {},
-    },
-    {
-      provide: IMembersRepository,
-      useValue: {},
-    },
-  ],
-  exports: [IUsersRepository, IMembersRepository],
-})
-class TestUsersModule {}
 
 describe('Auth decorator', () => {
   let app: INestApplication<Server>;

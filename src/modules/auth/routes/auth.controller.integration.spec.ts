@@ -1,4 +1,4 @@
-import { Module, type INestApplication } from '@nestjs/common';
+import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import configuration from '@/config/entities/__tests__/configuration';
 import { EmailModule } from '@/modules/email/email.module';
@@ -16,25 +16,7 @@ import { getSecondsUntil } from '@/domain/common/utils/time';
 import type { Server } from 'net';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { UsersModule } from '@/modules/users/users.module';
-import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
-import { IMembersRepository } from '@/modules/users/domain/members.repository.interface';
-
-@Module({
-  providers: [
-    {
-      provide: IUsersRepository,
-      useValue: {
-        findOrCreateByWalletAddress: (): Promise<number> => Promise.resolve(1),
-      },
-    },
-    {
-      provide: IMembersRepository,
-      useValue: {},
-    },
-  ],
-  exports: [IUsersRepository, IMembersRepository],
-})
-class TestUsersModule {}
+import { TestUsersModule } from '@/modules/users/__tests__/test.users.module';
 
 describe('AuthController', () => {
   let app: INestApplication<Server>;

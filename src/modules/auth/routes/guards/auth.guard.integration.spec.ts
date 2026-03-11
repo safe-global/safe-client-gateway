@@ -8,36 +8,14 @@ import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__test
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
 import { faker } from '@faker-js/faker';
-import {
-  Controller,
-  Get,
-  INestApplication,
-  Module,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Get, INestApplication, UseGuards } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 import { AuthModule } from '@/modules/auth/auth.module';
 import { Server } from 'net';
-import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
-import { IMembersRepository } from '@/modules/users/domain/members.repository.interface';
 import { UsersModule } from '@/modules/users/users.module';
+import { TestUsersModule } from '@/modules/users/__tests__/test.users.module';
 import { getAddress } from 'viem';
-
-@Module({
-  providers: [
-    {
-      provide: IUsersRepository,
-      useValue: {},
-    },
-    {
-      provide: IMembersRepository,
-      useValue: {},
-    },
-  ],
-  exports: [IUsersRepository, IMembersRepository],
-})
-class TestUsersModule {}
 
 @Controller()
 class TestController {
