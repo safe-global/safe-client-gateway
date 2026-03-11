@@ -29,10 +29,6 @@ export type AuthPayloadDto = z.infer<typeof AuthPayloadDtoSchema>;
 export type SiweAuthPayloadDto = z.infer<typeof SiweAuthPayloadDtoSchema>;
 export type OidcAuthPayloadDto = z.infer<typeof OidcAuthPayloadDtoSchema>;
 
-/**
- * This is Partial in order to allow `AuthPayload` instances to always be
- * returned by the `Auth` decorator, should there not be a payload.
- */
 export class AuthPayload {
   sub?: string;
   auth_method?: (typeof AuthMethod)[keyof typeof AuthMethod];
@@ -67,6 +63,7 @@ export class AuthPayload {
   isForSigner(signerAddress: Address): boolean {
     return (
       !!this.signer_address &&
+      // Lowercase ensures a mixture of (non-)checksummed addresses are compared correctly
       this.signer_address.toLowerCase() === signerAddress.toLowerCase()
     );
   }
