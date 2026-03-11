@@ -2,10 +2,7 @@ import { SpacesService } from '@/modules/spaces/routes/spaces.service';
 import type { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
 import type { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
 import type { IMembersRepository } from '@/modules/users/domain/members.repository.interface';
-import {
-  AuthMethod,
-  AuthPayload,
-} from '@/modules/auth/domain/entities/auth-payload.entity';
+import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { UnauthorizedException } from '@nestjs/common';
 import { faker } from '@faker-js/faker';
 import type { Address } from 'viem';
