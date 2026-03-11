@@ -8,12 +8,37 @@ import { IMembersRepository } from '@/modules/users/domain/members.repository.in
     {
       provide: IUsersRepository,
       useValue: {
+        createWithWallet: jest.fn(),
+        create: jest.fn(),
+        getWithWallets: jest.fn(),
+        addWalletToUser: jest.fn(),
+        delete: jest.fn(),
+        deleteWalletFromUser: jest.fn(),
+        findByWalletAddressOrFail: jest.fn(),
+        findByWalletAddress: jest.fn(),
+        // Plain function (not jest.fn) so it survives jest.resetAllMocks()
+        // in tests that call getAccessToken → findOrCreateByWalletAddress.
         findOrCreateByWalletAddress: (): Promise<number> => Promise.resolve(1),
+        update: jest.fn(),
+        updateStatus: jest.fn(),
       },
     },
     {
       provide: IMembersRepository,
-      useValue: {},
+      useValue: {
+        findOneOrFail: jest.fn(),
+        findOne: jest.fn(),
+        findOrFail: jest.fn(),
+        find: jest.fn(),
+        inviteUsers: jest.fn(),
+        acceptInvite: jest.fn(),
+        declineInvite: jest.fn(),
+        findAuthorizedMembersOrFail: jest.fn(),
+        updateRole: jest.fn(),
+        updateAlias: jest.fn(),
+        removeUser: jest.fn(),
+        removeSelf: jest.fn(),
+      },
     },
   ],
   exports: [IUsersRepository, IMembersRepository],
