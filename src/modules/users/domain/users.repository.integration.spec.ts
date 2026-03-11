@@ -695,6 +695,83 @@ describe('UsersRepository', () => {
     });
   });
 
+  describe('findOrCreateByWalletAddress', () => {
+    it('should return the existing user id if the wallet already exists', async () => {
+      const dbUserRepository = dataSource.getRepository(User);
+      const dbWalletRepository = dataSource.getRepository(Wallet);
+      const address = getAddress(faker.finance.ethereumAddress());
+      const status = faker.helpers.arrayElement(UserStatusKeys);
+      const userInsertResult = await dbUserRepository.insert({ status });
+      const userId = userInsertResult.identifiers[0].id;
+      await dbWalletRepository.insert({
+        user: { id: userId },
+        address,
+      });
+
+      const result = await usersRepository.findOrCreateByWalletAddress(address);
+
+      expect(result).toBe(userId);
+      // No additional user or wallet should have been created
+      await expect(dbUserRepository.find()).resolves.toHaveLength(1);
+      await expect(dbWalletRepository.find()).resolves.toHaveLength(1);
+    });
+
+    it('should create a new user and wallet if none exists', async () => {
+      const dbUserRepository = dataSource.getRepository(User);
+      const dbWalletRepository = dataSource.getRepository(Wallet);
+      const address = getAddress(faker.finance.ethereumAddress());
+
+      const userId = await usersRepository.findOrCreateByWalletAddress(address);
+
+      const user = await dbUserRepository.findOneOrFail({
+        where: { id: userId },
+      });
+      expect(user).toEqual({
+        createdAt: expect.any(Date),
+        id: userId,
+        status: 'ACTIVE',
+        updatedAt: expect.any(Date),
+      });
+
+      const wallet = await dbWalletRepository.findOneOrFail({
+        where: { address },
+        relations: { user: true },
+      });
+      expect(wallet).toEqual({
+        address,
+        createdAt: expect.any(Date),
+        id: wallet.id,
+        updatedAt: expect.any(Date),
+        user: {
+          createdAt: expect.any(Date),
+          id: userId,
+          status: 'ACTIVE',
+          updatedAt: expect.any(Date),
+        },
+      });
+    });
+
+    it('should checksum the wallet address when creating', async () => {
+      const dbWalletRepository = dataSource.getRepository(Wallet);
+      const nonChecksummedAddress = faker.finance
+        .ethereumAddress()
+        .toLowerCase();
+
+      await usersRepository.findOrCreateByWalletAddress(
+        nonChecksummedAddress as Address,
+      );
+
+      const wallet = await dbWalletRepository.findOneOrFail({
+        where: { address: getAddress(nonChecksummedAddress) },
+      });
+      expect(wallet).toStrictEqual(
+        expect.objectContaining({
+          address: getAddress(nonChecksummedAddress),
+        }),
+      );
+    });
+  });
+
   describe('update', () => {
     it('should update a User', async () => {
       const dbUserRepository = dataSource.getRepository(User);
