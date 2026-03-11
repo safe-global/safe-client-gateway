@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import request from 'supertest';
 import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { type Server } from 'http';
 import request from 'supertest';
 import type { INestApplication } from '@nestjs/common';

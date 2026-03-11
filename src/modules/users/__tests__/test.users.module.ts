@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Module } from '@nestjs/common';
 import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
 import { IMembersRepository } from '@/modules/users/domain/members.repository.interface';

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { SpacesService } from '@/modules/spaces/routes/spaces.service';
 import type { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
 import type { IUsersRepository } from '@/modules/users/domain/users.repository.interface';

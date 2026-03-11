@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { JwtPayloadWithClaims } from '@/datasources/jwt/jwt-claims.entity';
 import type { Algorithm } from 'jsonwebtoken';
 
