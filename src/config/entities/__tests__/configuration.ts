@@ -134,9 +134,9 @@ export default (): ReturnType<typeof configuration> => ({
     dekV2Encrypted: undefined,
     hmacKeyEncrypted: undefined,
     currentVersion: 1,
-    localKey: faker.string.hexadecimal({ length: 64 }),
+    localKey: 'a'.repeat(64),
     localKeyV2: undefined,
-    hmacSecret: faker.string.hexadecimal({ length: 64 }),
+    hmacSecret: 'b'.repeat(64),
   },
   email: {
     applicationCode: faker.string.alphanumeric(),
@@ -161,6 +161,7 @@ export default (): ReturnType<typeof configuration> => ({
   },
   express: { jsonLimit: '1mb' },
   features: {
+    encryption: false,
     email: false,
     zerionBalancesEnabled: false,
     zerionPositions: false,

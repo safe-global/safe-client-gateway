@@ -75,6 +75,7 @@ export class AppModule implements NestModule {
       users: isUsersFeatureEnabled,
       email: isEmailFeatureEnabled,
       zerionPositions: isZerionPositionsFeatureEnabled,
+      encryption: isEncryptionEnabled,
     } = configFactory()['features'];
 
     return {
@@ -115,7 +116,7 @@ export class AppModule implements NestModule {
         BlocklistModule,
         CacheModule,
         CircuitBreakerModule,
-        EncryptionModule.register(),
+        ...(isEncryptionEnabled ? [EncryptionModule.register()] : []),
         // Module for storing and reading from the async local storage
         ClsModule.forRoot({
           global: true,
