@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: FSL-1.1-MIT -->
+
 # Self-Signed Test Certificates
 
 The files under `db_config/test` were generated for the purpose of testing the SSL connection locally.
@@ -7,7 +9,7 @@ This can be achieved by setting the Read/Write permissions for the owner only: `
 
 **Do not use these files in a live environment**
 
-Additionally, the self-signed certificate is a X509 certificate generated on March 3, 2025, with validity
+Additionally, the self-signed certificate is a X509 certificate generated on March 11, 2026, with validity
 of 365 days.
 
 The CN used was `localhost`.
