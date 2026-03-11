@@ -174,18 +174,32 @@ export class UsersRepository implements IUsersRepository {
       return existing.id;
     }
 
-    return this.postgresDatabaseService.transaction(
-      async (entityManager: EntityManager) => {
-        const userId = await this.create('ACTIVE', entityManager);
+    try {
+      return await this.postgresDatabaseService.transaction(
+        async (entityManager: EntityManager) => {
+          const userId = await this.create('ACTIVE', entityManager);
 
-        await this.walletsRepository.create(
-          { userId, walletAddress: address },
-          entityManager,
-        );
+          await this.walletsRepository.create(
+            { userId, walletAddress: address },
+            entityManager,
+          );
 
-        return userId;
-      },
-    );
+          return userId;
+        },
+      );
+    } catch (error) {
+      // Handle race condition: a concurrent call may have created the
+      // wallet between our find and insert, causing a unique constraint
+      // violation. Retry the lookup in that case.
+      if (
+        error instanceof Error &&
+        error.message.includes('UQ_wallet_address')
+      ) {
+        const user = await this.findByWalletAddressOrFail(address);
+        return user.id;
+      }
+      throw error;
+    }
   }
 
   public async update(args: {

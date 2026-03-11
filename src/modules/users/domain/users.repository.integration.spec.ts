@@ -770,6 +770,23 @@ describe('UsersRepository', () => {
         }),
       );
     });
+
+    it('should return the existing user id on concurrent duplicate insert', async () => {
+      const dbUserRepository = dataSource.getRepository(User);
+      const dbWalletRepository = dataSource.getRepository(Wallet);
+      const address = getAddress(faker.finance.ethereumAddress());
+
+      // Run two calls concurrently — one will win the insert, the other
+      // should catch the unique constraint violation and retry the find.
+      const [id1, id2] = await Promise.all([
+        usersRepository.findOrCreateByWalletAddress(address),
+        usersRepository.findOrCreateByWalletAddress(address),
+      ]);
+
+      expect(id1).toBe(id2);
+      await expect(dbUserRepository.find()).resolves.toHaveLength(1);
+      await expect(dbWalletRepository.find()).resolves.toHaveLength(1);
+    });
   });
 
   describe('update', () => {
