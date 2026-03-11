@@ -27,6 +27,8 @@ import { rawify } from '@/validation/entities/raw.entity';
 import { NotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/notifications.repository.module';
 import { TestNotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/test.notification.repository.module';
 import type { DeleteAllSubscriptionsDto } from '@/modules/notifications/domain/v2/entities/delete-all-subscriptions.dto.entity';
+import { UsersModule } from '@/modules/users/users.module';
+import { TestUsersModule } from '@/modules/users/__tests__/test.users.module';
 import { createTestModule } from '@/__tests__/testing-module';
 
 describe('Notifications Controller V2', () => {
@@ -52,6 +54,10 @@ describe('Notifications Controller V2', () => {
         {
           originalModule: NotificationsRepositoryV2Module,
           testModule: TestNotificationsRepositoryV2Module,
+        },
+        {
+          originalModule: UsersModule,
+          testModule: TestUsersModule,
         },
       ],
     });
@@ -141,6 +147,8 @@ describe('Notifications Controller V2', () => {
         notificationsRepository.upsertSubscriptions,
       ).toHaveBeenNthCalledWith(1, {
         authPayload: {
+          sub: authPayloadDto.sub,
+          auth_method: authPayloadDto.auth_method,
           signer_address: signerAddress,
           chain_id: authPayloadDto.chain_id,
         },
@@ -216,6 +224,8 @@ describe('Notifications Controller V2', () => {
         notificationsRepository.upsertSubscriptions,
       ).toHaveBeenNthCalledWith(1, {
         authPayload: {
+          sub: authPayloadDto.sub,
+          auth_method: authPayloadDto.auth_method,
           signer_address: signerAddress,
           chain_id: authPayloadDto.chain_id,
         },
@@ -289,6 +299,8 @@ describe('Notifications Controller V2', () => {
         notificationsRepository.upsertSubscriptions,
       ).toHaveBeenNthCalledWith(1, {
         authPayload: {
+          sub: authPayloadDto.sub,
+          auth_method: authPayloadDto.auth_method,
           signer_address: signerAddress,
           chain_id: authPayloadDto.chain_id,
         },
@@ -676,6 +688,8 @@ describe('Notifications Controller V2', () => {
         notificationsRepository.getSafeSubscription,
       ).toHaveBeenNthCalledWith(1, {
         authPayload: {
+          sub: authPayloadDto.sub,
+          auth_method: authPayloadDto.auth_method,
           chain_id: authPayloadDto.chain_id,
           signer_address: authPayloadDto.signer_address,
         },
