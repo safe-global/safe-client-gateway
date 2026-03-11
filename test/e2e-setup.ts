@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 process.env.SAFE_CONFIG_BASE_URI = 'https://safe-config.staging.5afe.dev';
 process.env.EXPIRATION_TIME_DEFAULT_SECONDS = `${60}`; // long enough timeout for cache state assertions
 process.env.ALERTS_PROVIDER_SIGNING_KEY = 'fake-signing-key';
@@ -8,6 +9,12 @@ process.env.EMAIL_API_APPLICATION_CODE = 'fake-application-code';
 process.env.EMAIL_API_FROM_EMAIL = 'changeme@example.com';
 process.env.EMAIL_API_KEY = 'fake-api-key';
 process.env.FINGERPRINT_ENCRYPTION_KEY = 'fake-encryption-key';
+process.env.ENCRYPTION_PROVIDER = 'local';
+process.env.ENCRYPTION_LOCAL_KEY =
+  'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+process.env.ENCRYPTION_HMAC_SECRET =
+  'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
+process.env.ENCRYPTION_CURRENT_VERSION = '1';
 process.env.INFURA_API_KEY = 'fake-api-key';
 process.env.BLOCKLIST_ENCRYPTED_DATA = 'fake-encrypted-data';
 process.env.BLOCKLIST_SECRET_KEY = 'fake-secret-key';
