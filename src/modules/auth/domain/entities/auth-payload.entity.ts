@@ -2,6 +2,7 @@ import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
 import { z } from 'zod';
 import type { Address } from 'viem';
+import { JwtClaimsSchema } from '@/datasources/jwt/jwt-claims.entity';
 
 export const AuthMethod = {
   Siwe: 'siwe',
@@ -25,7 +26,18 @@ export const AuthPayloadDtoSchema = z.discriminatedUnion('auth_method', [
   OidcAuthPayloadDtoSchema,
 ]);
 
+export const AuthPayloadWithClaimsDtoSchema = z.discriminatedUnion(
+  'auth_method',
+  [
+    JwtClaimsSchema.extend(SiweAuthPayloadDtoSchema.shape),
+    JwtClaimsSchema.extend(OidcAuthPayloadDtoSchema.shape),
+  ],
+);
+
 export type AuthPayloadDto = z.infer<typeof AuthPayloadDtoSchema>;
+export type AuthPayloadWithClaimsDto = z.infer<
+  typeof AuthPayloadWithClaimsDtoSchema
+>;
 export type SiweAuthPayloadDto = z.infer<typeof SiweAuthPayloadDtoSchema>;
 export type OidcAuthPayloadDto = z.infer<typeof OidcAuthPayloadDtoSchema>;
 
