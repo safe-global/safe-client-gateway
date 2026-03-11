@@ -37,6 +37,7 @@ function jwtClientFactory() {
       token: string,
       options: {
         issuer: string;
+        audience?: string;
         secretOrPrivateKey: string;
         algorithms?: Array<jwt.Algorithm>;
       },
@@ -44,6 +45,7 @@ function jwtClientFactory() {
       return jwt.verify(token, options.secretOrPrivateKey, {
         algorithms: options.algorithms,
         issuer: options.issuer,
+        audience: options.audience,
         // Return only payload without claims, e.g. no exp, nbf, etc.
         complete: false,
       }) as T;
@@ -52,6 +54,7 @@ function jwtClientFactory() {
       token: string,
       options: {
         issuer: string;
+        audience?: string;
         secretOrPrivateKey: string;
         algorithms?: Array<jwt.Algorithm>;
       },
@@ -60,6 +63,7 @@ function jwtClientFactory() {
       const { payload } = jwt.verify(token, options.secretOrPrivateKey, {
         algorithms: options.algorithms,
         issuer: options.issuer,
+        audience: options.audience,
         // Return headers, payload (with claims) and signature
         complete: true,
       });

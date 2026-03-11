@@ -9,6 +9,7 @@ import {
   JwtClaimsSchema,
   JwtPayloadWithClaims,
 } from '@/datasources/jwt/jwt-claims.entity';
+import { z } from 'zod';
 
 @Injectable()
 export class AuthRepository implements IAuthRepository {
@@ -41,6 +42,8 @@ export class AuthRepository implements IAuthRepository {
 
   decodeToken(accessToken: string): JwtPayloadWithClaims<AuthPayloadDto> {
     const decoded = this.jwtService.decode(accessToken);
-    return AuthPayloadDtoSchema.extend(JwtClaimsSchema.shape).parse(decoded);
+    return z
+      .intersection(AuthPayloadDtoSchema, JwtClaimsSchema)
+      .parse(decoded);
   }
 }

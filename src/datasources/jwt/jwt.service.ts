@@ -37,6 +37,7 @@ export class JwtService implements IJwtService {
     return this.client.sign(
       {
         iss: 'iss' in payload ? payload.iss : this.issuer,
+        aud: 'aud' in payload ? payload.aud : this.issuer,
         ...payload,
       },
       { ...options, algorithm: options.algorithm ?? JwtService.ALGORITHM },
@@ -47,10 +48,12 @@ export class JwtService implements IJwtService {
     token: string,
     options: {
       issuer: string;
+      audience?: string;
       secretOrPrivateKey: string;
       algorithms?: Array<Algorithm>;
     } = {
       issuer: this.issuer,
+      audience: this.issuer,
       secretOrPrivateKey: this.secret,
     },
   ): T {
@@ -61,10 +64,12 @@ export class JwtService implements IJwtService {
     token: string,
     options: {
       issuer: string;
+      audience?: string;
       secretOrPrivateKey: string;
       algorithms?: Array<Algorithm>;
     } = {
       issuer: this.issuer,
+      audience: this.issuer,
       secretOrPrivateKey: this.secret,
     },
   ): JwtPayloadWithClaims<T> {

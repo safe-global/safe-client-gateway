@@ -2,7 +2,10 @@ import { SpacesService } from '@/modules/spaces/routes/spaces.service';
 import type { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
 import type { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
 import type { IMembersRepository } from '@/modules/users/domain/members.repository.interface';
-import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
+import {
+  AuthMethod,
+  AuthPayload,
+} from '@/modules/auth/domain/entities/auth-payload.entity';
 import { UnauthorizedException } from '@nestjs/common';
 import { faker } from '@faker-js/faker';
 import type { Address } from 'viem';
@@ -39,6 +42,8 @@ describe('SpacesService', () => {
     it('should return spaces with safeCount computed from safes length', async () => {
       const signerAddress = faker.finance.ethereumAddress() as Address;
       const authPayload = new AuthPayload({
+        auth_method: AuthMethod.Siwe,
+        sub: faker.string.numeric({ exclude: ['0'] }),
         signer_address: signerAddress,
         chain_id: '1',
       });
@@ -106,6 +111,8 @@ describe('SpacesService', () => {
     it('should return safeCount 0 when space has no safes', async () => {
       const signerAddress = faker.finance.ethereumAddress() as Address;
       const authPayload = new AuthPayload({
+        auth_method: AuthMethod.Siwe,
+        sub: faker.string.numeric({ exclude: ['0'] }),
         signer_address: signerAddress,
         chain_id: '1',
       });
@@ -136,6 +143,8 @@ describe('SpacesService', () => {
     it('should return safeCount 0 when space.safes is undefined', async () => {
       const signerAddress = faker.finance.ethereumAddress() as Address;
       const authPayload = new AuthPayload({
+        auth_method: AuthMethod.Siwe,
+        sub: faker.string.numeric({ exclude: ['0'] }),
         signer_address: signerAddress,
         chain_id: '1',
       });
@@ -166,6 +175,8 @@ describe('SpacesService', () => {
     it('should return empty array when user has no memberships', async () => {
       const signerAddress = faker.finance.ethereumAddress() as Address;
       const authPayload = new AuthPayload({
+        auth_method: AuthMethod.Siwe,
+        sub: faker.string.numeric({ exclude: ['0'] }),
         signer_address: signerAddress,
         chain_id: '1',
       });
@@ -183,6 +194,8 @@ describe('SpacesService', () => {
     it('should return multiple spaces with correct safeCount each', async () => {
       const signerAddress = faker.finance.ethereumAddress() as Address;
       const authPayload = new AuthPayload({
+        auth_method: AuthMethod.Siwe,
+        sub: faker.string.numeric({ exclude: ['0'] }),
         signer_address: signerAddress,
         chain_id: '1',
       });
@@ -240,6 +253,8 @@ describe('SpacesService', () => {
     it('should propagate error when user is not found', async () => {
       const signerAddress = faker.finance.ethereumAddress() as Address;
       const authPayload = new AuthPayload({
+        auth_method: AuthMethod.Siwe,
+        sub: faker.string.numeric({ exclude: ['0'] }),
         signer_address: signerAddress,
         chain_id: '1',
       });

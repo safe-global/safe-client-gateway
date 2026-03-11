@@ -20,7 +20,7 @@ import { SpacesModule } from '@/modules/spaces/spaces.module';
     PostgresDatabaseModuleV2,
     TypeOrmModule.forFeature([User, Member, Wallet]),
     WalletsModule,
-    AuthModule,
+    forwardRef(() => AuthModule),
     SiweModule,
     forwardRef(() => SpacesModule),
   ],

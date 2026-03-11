@@ -165,6 +165,28 @@ export class UsersRepository implements IUsersRepository {
     return wallet?.user;
   }
 
+  public async findOrCreateByWalletAddress(
+    address: Address,
+  ): Promise<User['id']> {
+    const existing = await this.findByWalletAddress(address);
+    if (existing) {
+      return existing.id;
+    }
+
+    return this.postgresDatabaseService.transaction(
+      async (entityManager: EntityManager) => {
+        const userId = await this.create('ACTIVE', entityManager);
+
+        await this.walletsRepository.create(
+          { userId, walletAddress: address },
+          entityManager,
+        );
+
+        return userId;
+      },
+    );
+  }
+
   public async update(args: {
     userId: User['id'];
     user: Partial<User>;

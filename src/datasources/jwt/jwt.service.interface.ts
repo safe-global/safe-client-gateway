@@ -22,7 +22,9 @@ export interface IJwtService {
     token: string,
     options?: {
       issuer: string;
+      audience?: string;
       secretOrPrivateKey: string;
+      algorithms?: Array<Algorithm>;
     },
   ): T;
 
@@ -30,7 +32,9 @@ export interface IJwtService {
     token: string,
     options?: {
       issuer: string;
+      audience?: string;
       secretOrPrivateKey: string;
+      algorithms?: Array<Algorithm>;
     },
   ): JwtPayloadWithClaims<T>;
 }

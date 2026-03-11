@@ -1,4 +1,4 @@
-import type { INestApplication } from '@nestjs/common';
+import { Module, type INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import configuration from '@/config/entities/__tests__/configuration';
 import { EmailModule } from '@/modules/email/email.module';
@@ -15,6 +15,27 @@ import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { getSecondsUntil } from '@/domain/common/utils/time';
 import type { Server } from 'net';
 import { IConfigurationService } from '@/config/configuration.service.interface';
+import { UsersModule } from '@/modules/users/users.module';
+import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
+import { IMembersRepository } from '@/modules/users/domain/members.repository.interface';
+
+@Module({
+  providers: [
+    {
+      provide: IUsersRepository,
+      useValue: {
+        findOrCreateByWalletAddress: (): Promise<number> =>
+          Promise.resolve(1),
+      },
+    },
+    {
+      provide: IMembersRepository,
+      useValue: {},
+    },
+  ],
+  exports: [IUsersRepository, IMembersRepository],
+})
+class TestUsersModule {}
 
 describe('AuthController', () => {
   let app: INestApplication<Server>;
@@ -28,6 +49,10 @@ describe('AuthController', () => {
         {
           originalModule: EmailModule,
           testModule: TestEmailApiModule,
+        },
+        {
+          originalModule: UsersModule,
+          testModule: TestUsersModule,
         },
       ],
     });

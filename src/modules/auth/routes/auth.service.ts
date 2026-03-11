@@ -2,9 +2,13 @@ import { ForbiddenException, Inject, Injectable } from '@nestjs/common';
 import { SiweDto } from '@/modules/auth/routes/entities/siwe.dto.entity';
 import { ISiweRepository } from '@/modules/siwe/domain/siwe.repository.interface';
 import { IAuthRepository } from '@/modules/auth/domain/auth.repository.interface';
-import { AuthPayloadDto } from '@/modules/auth/domain/entities/auth-payload.entity';
+import {
+  AuthMethod,
+  AuthPayloadDto,
+} from '@/modules/auth/domain/entities/auth-payload.entity';
 import { JwtPayloadWithClaims } from '@/datasources/jwt/jwt-claims.entity';
 import { IConfigurationService } from '@/config/configuration.service.interface';
+import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
 
 @Injectable()
 export class AuthService {
@@ -17,6 +21,8 @@ export class AuthService {
     private readonly authRepository: IAuthRepository,
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
+    @Inject(IUsersRepository)
+    private readonly usersRepository: IUsersRepository,
   ) {
     this.maxValidityPeriodInSeconds = this.configurationService.getOrThrow(
       'auth.maxValidityPeriodSeconds',
@@ -43,8 +49,13 @@ export class AuthService {
       );
     }
 
+    const userId =
+      await this.usersRepository.findOrCreateByWalletAddress(address);
+
     const accessToken = this.authRepository.signToken(
       {
+        auth_method: AuthMethod.Siwe,
+        sub: userId.toString(),
         chain_id: chainId.toString(),
         signer_address: address,
       },

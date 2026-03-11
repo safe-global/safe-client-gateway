@@ -42,6 +42,8 @@ export interface IUsersRepository {
 
   findByWalletAddress(address: Address): Promise<User | undefined>;
 
+  findOrCreateByWalletAddress(address: Address): Promise<User['id']>;
+
   update(args: {
     userId: User['id'];
     user: Partial<User>;

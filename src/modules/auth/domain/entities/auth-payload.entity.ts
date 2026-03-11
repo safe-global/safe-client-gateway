@@ -3,22 +3,61 @@ import { NumericStringSchema } from '@/validation/entities/schemas/numeric-strin
 import { z } from 'zod';
 import type { Address } from 'viem';
 
-export type AuthPayloadDto = z.infer<typeof AuthPayloadDtoSchema>;
+export const AuthMethod = {
+  Siwe: 'siwe',
+  Oidc: 'oidc',
+} as const;
 
-export const AuthPayloadDtoSchema = z.object({
+export const SiweAuthPayloadDtoSchema = z.object({
+  auth_method: z.literal(AuthMethod.Siwe),
+  sub: NumericStringSchema,
   chain_id: NumericStringSchema,
   signer_address: AddressSchema,
 });
 
-// This is Partial in order to allow `AuthPayload` instances to always be returned by
-// the `Auth` decorator, should there not be a payload
-export class AuthPayload implements Partial<AuthPayloadDto> {
+export const OidcAuthPayloadDtoSchema = z.object({
+  auth_method: z.literal(AuthMethod.Oidc),
+  sub: NumericStringSchema,
+});
+
+export const AuthPayloadDtoSchema = z.discriminatedUnion('auth_method', [
+  SiweAuthPayloadDtoSchema,
+  OidcAuthPayloadDtoSchema,
+]);
+
+export type AuthPayloadDto = z.infer<typeof AuthPayloadDtoSchema>;
+export type SiweAuthPayloadDto = z.infer<typeof SiweAuthPayloadDtoSchema>;
+export type OidcAuthPayloadDto = z.infer<typeof OidcAuthPayloadDtoSchema>;
+
+/**
+ * This is Partial in order to allow `AuthPayload` instances to always be
+ * returned by the `Auth` decorator, should there not be a payload.
+ */
+export class AuthPayload {
+  sub?: string;
+  auth_method?: (typeof AuthMethod)[keyof typeof AuthMethod];
   chain_id?: string;
   signer_address?: Address;
 
   constructor(props?: AuthPayloadDto) {
-    this.chain_id = props?.chain_id;
-    this.signer_address = props?.signer_address;
+    this.sub = props?.sub;
+    this.auth_method = props?.auth_method;
+    if (props?.auth_method === AuthMethod.Siwe) {
+      this.chain_id = props.chain_id;
+      this.signer_address = props.signer_address;
+    }
+  }
+
+  getUserId(): string | undefined {
+    return this.sub;
+  }
+
+  isSiwe(): boolean {
+    return this.auth_method === AuthMethod.Siwe;
+  }
+
+  isOidc(): boolean {
+    return this.auth_method === AuthMethod.Oidc;
   }
 
   isForChain(chainId: string): boolean {
@@ -28,7 +67,6 @@ export class AuthPayload implements Partial<AuthPayloadDto> {
   isForSigner(signerAddress: Address): boolean {
     return (
       !!this.signer_address &&
-      // Lowercase ensures a mixture of (non-)checksummed addresses are compared correctly
       this.signer_address.toLowerCase() === signerAddress.toLowerCase()
     );
   }

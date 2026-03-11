@@ -28,7 +28,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
   imports: [
     PostgresDatabaseModuleV2,
     TypeOrmModule.forFeature([Space, SpaceSafe, Member, AddressBookItem]),
-    AuthModule,
+    forwardRef(() => AuthModule),
     forwardRef(() => UsersModule),
   ],
   controllers: [
