@@ -77,6 +77,7 @@ const mockTransactionsRepository = jest.mocked({
 } as jest.MockedObjectDeep<TransactionsRepository>);
 
 const mockLoggingService = jest.mocked({
+  debug: jest.fn(),
   error: jest.fn(),
   info: jest.fn(),
   warn: jest.fn(),
