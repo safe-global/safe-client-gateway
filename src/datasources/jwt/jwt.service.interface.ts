@@ -22,9 +22,9 @@ export interface IJwtService {
   verify<T extends object>(
     token: string,
     options?: {
-      issuer: string;
+      issuer?: string;
       audience?: string;
-      secretOrPrivateKey: string;
+      secretOrPrivateKey?: string;
       algorithms?: Array<Algorithm>;
     },
   ): T;
@@ -32,9 +32,9 @@ export interface IJwtService {
   decode<T extends object>(
     token: string,
     options?: {
-      issuer: string;
+      issuer?: string;
       audience?: string;
-      secretOrPrivateKey: string;
+      secretOrPrivateKey?: string;
       algorithms?: Array<Algorithm>;
     },
   ): JwtPayloadWithClaims<T>;

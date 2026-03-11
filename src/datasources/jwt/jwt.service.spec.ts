@@ -101,10 +101,11 @@ describe('JwtService', () => {
         issuer: configIssuer,
         audience: configIssuer,
         secretOrPrivateKey: configSecret,
+        algorithms: undefined,
       });
     });
 
-    it('should verify a token with custom issuer/secret', () => {
+    it('should verify a token with custom issuer/secret and default audience', () => {
       const token = faker.string.alphanumeric();
       const customIssuer = faker.word.noun();
       const customSecret = faker.string.alphanumeric();
@@ -117,7 +118,9 @@ describe('JwtService', () => {
       expect(jwtClientMock.verify).toHaveBeenCalledTimes(1);
       expect(jwtClientMock.verify).toHaveBeenCalledWith(token, {
         issuer: customIssuer,
+        audience: configIssuer,
         secretOrPrivateKey: customSecret,
+        algorithms: undefined,
       });
     });
 
@@ -135,6 +138,7 @@ describe('JwtService', () => {
       expect(jwtClientMock.verify).toHaveBeenCalledTimes(1);
       expect(jwtClientMock.verify).toHaveBeenCalledWith(token, {
         issuer: customIssuer,
+        audience: configIssuer,
         secretOrPrivateKey: customSecret,
         algorithms: ['RS256'],
       });
@@ -152,10 +156,11 @@ describe('JwtService', () => {
         issuer: configIssuer,
         audience: configIssuer,
         secretOrPrivateKey: configSecret,
+        algorithms: undefined,
       });
     });
 
-    it('should decode a token with custom issuer/secret', () => {
+    it('should decode a token with custom issuer/secret and default audience', () => {
       const token = faker.string.alphanumeric();
       const customIssuer = faker.word.noun();
       const customSecret = faker.string.alphanumeric();
@@ -168,7 +173,9 @@ describe('JwtService', () => {
       expect(jwtClientMock.decode).toHaveBeenCalledTimes(1);
       expect(jwtClientMock.decode).toHaveBeenCalledWith(token, {
         issuer: customIssuer,
+        audience: configIssuer,
         secretOrPrivateKey: customSecret,
+        algorithms: undefined,
       });
     });
 
@@ -186,6 +193,7 @@ describe('JwtService', () => {
       expect(jwtClientMock.decode).toHaveBeenCalledTimes(1);
       expect(jwtClientMock.decode).toHaveBeenCalledWith(token, {
         issuer: customIssuer,
+        audience: configIssuer,
         secretOrPrivateKey: customSecret,
         algorithms: ['RS256'],
       });

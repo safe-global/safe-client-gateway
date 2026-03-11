@@ -31,9 +31,7 @@ export class JwtService implements IJwtService {
     },
   >(
     payload: T,
-    options: { secretOrPrivateKey: string; algorithm?: Algorithm } = {
-      secretOrPrivateKey: this.secret,
-    },
+    options?: { secretOrPrivateKey: string; algorithm?: Algorithm },
   ): string {
     return this.client.sign(
       {
@@ -41,39 +39,44 @@ export class JwtService implements IJwtService {
         aud: 'aud' in payload ? payload.aud : this.issuer,
         ...payload,
       },
-      { ...options, algorithm: options.algorithm ?? JwtService.ALGORITHM },
+      {
+        secretOrPrivateKey: options?.secretOrPrivateKey ?? this.secret,
+        algorithm: options?.algorithm ?? JwtService.ALGORITHM,
+      },
     );
   }
 
   verify<T extends object>(
     token: string,
-    options: {
-      issuer: string;
+    options?: {
+      issuer?: string;
       audience?: string;
-      secretOrPrivateKey: string;
+      secretOrPrivateKey?: string;
       algorithms?: Array<Algorithm>;
-    } = {
-      issuer: this.issuer,
-      audience: this.issuer,
-      secretOrPrivateKey: this.secret,
     },
   ): T {
-    return this.client.verify(token, options);
+    return this.client.verify(token, {
+      issuer: options?.issuer ?? this.issuer,
+      audience: options?.audience ?? this.issuer,
+      secretOrPrivateKey: options?.secretOrPrivateKey ?? this.secret,
+      algorithms: options?.algorithms,
+    });
   }
 
   decode<T extends object>(
     token: string,
-    options: {
-      issuer: string;
+    options?: {
+      issuer?: string;
       audience?: string;
-      secretOrPrivateKey: string;
+      secretOrPrivateKey?: string;
       algorithms?: Array<Algorithm>;
-    } = {
-      issuer: this.issuer,
-      audience: this.issuer,
-      secretOrPrivateKey: this.secret,
     },
   ): JwtPayloadWithClaims<T> {
-    return this.client.decode(token, options);
+    return this.client.decode(token, {
+      issuer: options?.issuer ?? this.issuer,
+      audience: options?.audience ?? this.issuer,
+      secretOrPrivateKey: options?.secretOrPrivateKey ?? this.secret,
+      algorithms: options?.algorithms,
+    });
   }
 }
