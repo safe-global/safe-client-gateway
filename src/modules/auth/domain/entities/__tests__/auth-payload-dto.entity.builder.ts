@@ -8,7 +8,7 @@ import { AuthMethod } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 
-export function authPayloadDtoBuilder(): IBuilder<SiweAuthPayloadDto> {
+export function siweAuthPayloadDtoBuilder(): IBuilder<SiweAuthPayloadDto> {
   return new Builder<SiweAuthPayloadDto>()
     .with('auth_method', AuthMethod.Siwe)
     .with('sub', faker.string.numeric({ exclude: ['0'] }))

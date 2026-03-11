@@ -11,7 +11,7 @@ import { notificationTypeBuilder } from '@/modules/notifications/datasources/ent
 import { notificationSubscriptionBuilder } from '@/modules/notifications/datasources/entities/__tests__/notification-subscription.entity.db.builder';
 import { NotificationSubscription } from '@/modules/notifications/datasources/entities/notification-subscription.entity.db';
 import { upsertSubscriptionsDtoBuilder } from '@/modules/notifications/routes/v2/entities/__tests__/upsert-subscriptions.dto.builder';
-import { authPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
+import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { NotificationDevice } from '@/modules/notifications/datasources/entities/notification-devices.entity.db';
 import { mockEntityManager } from '@/datasources/db/v2/__tests__/entity-manager.mock';
 import { mockPostgresDatabaseService } from '@/datasources/db/v2/__tests__/postgresql-database.service.mock';
@@ -72,7 +72,7 @@ describe('NotificationsRepositoryV2', () => {
     });
 
     it('Should insert a new device when upserting a subscription', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const authPayload = new AuthPayload(authPayloadDto);
       const upsertSubscriptionsDto = upsertSubscriptionsDtoBuilder().build();
 
@@ -112,7 +112,7 @@ describe('NotificationsRepositoryV2', () => {
     });
 
     it('Should delete previous subscriptions when upserting a new one', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const authPayload = new AuthPayload(authPayloadDto);
       const upsertSubscriptionsDto = upsertSubscriptionsDtoBuilder().build();
       const mockNotificationTypes = Array.from({ length: 4 }, () =>
@@ -155,7 +155,7 @@ describe('NotificationsRepositoryV2', () => {
     });
 
     it('Should insert the subscription object when upserting a new subscription', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const authPayload = new AuthPayload(authPayloadDto);
       const upsertSubscriptionsDto = upsertSubscriptionsDtoBuilder().build();
 
@@ -195,7 +195,7 @@ describe('NotificationsRepositoryV2', () => {
     });
 
     it('Should insert the notification subscription type object when upserting a new subscription', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const authPayload = new AuthPayload(authPayloadDto);
       const upsertSubscriptionsDto = upsertSubscriptionsDtoBuilder().build();
 
@@ -233,7 +233,7 @@ describe('NotificationsRepositoryV2', () => {
         notificationTypeRepository,
       );
 
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const authPayload = new AuthPayload(authPayloadDto);
 
       const args = {
@@ -262,7 +262,7 @@ describe('NotificationsRepositoryV2', () => {
     });
 
     it('Should throw UnauthorizedException if signer_address is not passed', async () => {
-      const authPayloadDto = authPayloadDtoBuilder()
+      const authPayloadDto = siweAuthPayloadDtoBuilder()
         .with('signer_address', '' as Address)
         .build();
       const authPayload = new AuthPayload(authPayloadDto);
@@ -287,7 +287,7 @@ describe('NotificationsRepositoryV2', () => {
         notificationTypeRepository,
       );
 
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const authPayload = new AuthPayload(authPayloadDto);
 
       const args = {

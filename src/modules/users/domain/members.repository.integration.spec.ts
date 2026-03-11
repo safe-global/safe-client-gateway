@@ -8,7 +8,7 @@ import { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
 import { Member } from '@/modules/users/datasources/entities/member.entity.db';
 import { User } from '@/modules/users/datasources/entities/users.entity.db';
 import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
-import { authPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
+import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
 import { nameBuilder } from '@/domain/common/entities/name.builder';
@@ -515,7 +515,7 @@ describe('MembersRepository', () => {
 
   describe('inviteUsers', () => {
     it('should invite users to a space and return the members', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const spaceName = nameBuilder();
       const adminName = nameBuilder();
       const owner = await dbUserRepo.insert({
@@ -570,7 +570,7 @@ describe('MembersRepository', () => {
     });
 
     it('should not create PENDING users for existing ones', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const spaceName = nameBuilder();
       const adminName = nameBuilder();
       const owner = await dbUserRepo.insert({
@@ -640,7 +640,7 @@ describe('MembersRepository', () => {
     });
 
     it('should throw an error if the signer_address does not exist', async () => {
-      const authPayloadDto = authPayloadDtoBuilder()
+      const authPayloadDto = siweAuthPayloadDtoBuilder()
         .with('signer_address', undefined as unknown as Address)
         .build();
       const spaceId = faker.number.int({
@@ -663,7 +663,7 @@ describe('MembersRepository', () => {
     });
 
     it('should throw if the signer_address has no user', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const spaceId = faker.number.int({
         min: 69420,
         max: DB_MAX_SAFE_INTEGER,
@@ -684,7 +684,7 @@ describe('MembersRepository', () => {
     });
 
     it('should not allow inviting users if the user is not an ADMIN', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const spaceName = nameBuilder();
       const memberName = nameBuilder();
       const owner = await dbUserRepo.insert({
@@ -730,7 +730,7 @@ describe('MembersRepository', () => {
     });
 
     it('should not allow inviting users if the user is a NON-ACTIVE ADMIN', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const spaceName = nameBuilder();
       const memberName = nameBuilder();
       const owner = await dbUserRepo.insert({
@@ -776,7 +776,7 @@ describe('MembersRepository', () => {
     });
 
     it('should not allow inviting users if the signer is an admin of another space', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const sourceSpaceName = nameBuilder();
       const targetSpaceName = nameBuilder();
       const memberName = nameBuilder();
@@ -827,7 +827,7 @@ describe('MembersRepository', () => {
     });
 
     it('should throw an error if the space does not exist', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const owner = await dbUserRepo.insert({
         status: 'ACTIVE',
       });
@@ -855,8 +855,8 @@ describe('MembersRepository', () => {
     });
 
     it('should throw an error if the signer_address member is not ACTIVE', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
-      const pendingAuthPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
+      const pendingAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
       const spaceName = nameBuilder();
       const adminName = nameBuilder();
       const admin = await dbUserRepo.insert({
@@ -914,7 +914,7 @@ describe('MembersRepository', () => {
 
   describe('acceptInvite', () => {
     it('should accept an invite to a space, setting the member and user to ACTIVE', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const memberInvitedBy = getAddress(faker.finance.ethereumAddress());
       const spaceName = nameBuilder();
       const adminName = nameBuilder();
@@ -993,7 +993,7 @@ describe('MembersRepository', () => {
     });
 
     it('should accept an invite to a space and override the name', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const memberInvitedBy = getAddress(faker.finance.ethereumAddress());
       const spaceName = nameBuilder();
       const adminName = nameBuilder();
@@ -1073,8 +1073,8 @@ describe('MembersRepository', () => {
     });
 
     it('should not accept the invite if the user was not invited', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
-      const memberAuthPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
+      const memberAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
       const spaceName = nameBuilder();
       const adminName = nameBuilder();
       const admin = await dbUserRepo.insert({
@@ -1118,7 +1118,7 @@ describe('MembersRepository', () => {
     });
 
     it('should throw an error if the signer_address does not exist', async () => {
-      const authPayloadDto = authPayloadDtoBuilder()
+      const authPayloadDto = siweAuthPayloadDtoBuilder()
         .with('signer_address', undefined as unknown as Address)
         .build();
       const spaceId = faker.number.int({
@@ -1139,7 +1139,7 @@ describe('MembersRepository', () => {
     });
 
     it('should throw if the signer_address has no user', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const spaceId = faker.number.int({
         min: 69420,
         max: DB_MAX_SAFE_INTEGER,
@@ -1158,7 +1158,7 @@ describe('MembersRepository', () => {
     });
 
     it('should throw an error if the space does not exist', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const memberName = nameBuilder();
       const user = await dbUserRepo.insert({
         status: 'PENDING',
@@ -1184,8 +1184,8 @@ describe('MembersRepository', () => {
     });
 
     it('should throw an error if the user is already a member of the space', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
-      const memberAuthPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
+      const memberAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
       const spaceName = nameBuilder();
       const adminName = nameBuilder();
       const memberName = nameBuilder();
@@ -1236,7 +1236,7 @@ describe('MembersRepository', () => {
     });
 
     it('should throw an error if the user is not INVITED to the space', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const spaceName = nameBuilder();
       const adminName = nameBuilder();
       const memberName = nameBuilder();
@@ -1291,7 +1291,7 @@ describe('MembersRepository', () => {
 
   describe('declineInvite', () => {
     it('should accept an invite to a space, setting the member to DECLINED', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const memberInvitedBy = getAddress(faker.finance.ethereumAddress());
       const spaceName = nameBuilder();
       const adminName = nameBuilder();
@@ -1367,8 +1367,8 @@ describe('MembersRepository', () => {
     });
 
     it('should not decline the invite if the user was not invited', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
-      const memberAuthPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
+      const memberAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
       const spaceName = nameBuilder();
       const adminName = nameBuilder();
       const admin = await dbUserRepo.insert({
@@ -1409,7 +1409,7 @@ describe('MembersRepository', () => {
     });
 
     it('should throw an error if the signer_address does not exist', async () => {
-      const authPayloadDto = authPayloadDtoBuilder()
+      const authPayloadDto = siweAuthPayloadDtoBuilder()
         .with('signer_address', undefined as unknown as Address)
         .build();
       const spaceId = faker.number.int({
@@ -1426,7 +1426,7 @@ describe('MembersRepository', () => {
     });
 
     it('should throw if the signer_address has no user', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const spaceId = faker.number.int({
         min: 69420,
         max: DB_MAX_SAFE_INTEGER,
@@ -1441,7 +1441,7 @@ describe('MembersRepository', () => {
     });
 
     it('should throw an error if the space does not exist', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const user = await dbUserRepo.insert({
         status: 'PENDING',
       });
@@ -1463,8 +1463,8 @@ describe('MembersRepository', () => {
     });
 
     it('should throw an error if the user is already a member of the space', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
-      const memberAuthPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
+      const memberAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
       const spaceName = nameBuilder();
       const adminName = nameBuilder();
       const memberName = nameBuilder();
@@ -1514,7 +1514,7 @@ describe('MembersRepository', () => {
     });
 
     it('should throw an error if the user is not INVITED to the space', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const spaceName = nameBuilder();
       const adminName = nameBuilder();
       const memberName = nameBuilder();
@@ -1566,7 +1566,7 @@ describe('MembersRepository', () => {
 
   describe('findAuthorizedMembersOrFail', () => {
     it('should find members by space id', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const spaceName = nameBuilder();
       const memberName = nameBuilder();
       const userStatus = faker.helpers.arrayElement(UserStatusKeys);
@@ -1620,7 +1620,7 @@ describe('MembersRepository', () => {
     });
 
     it('should throw an error if the signer_address does not exist', async () => {
-      const authPayloadDto = authPayloadDtoBuilder()
+      const authPayloadDto = siweAuthPayloadDtoBuilder()
         .with('signer_address', undefined as unknown as Address)
         .build();
       const spaceId = faker.number.int({
@@ -1637,7 +1637,7 @@ describe('MembersRepository', () => {
     });
 
     it('should throw if the signer_address has no user', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const spaceId = faker.number.int({
         min: 69420,
         max: DB_MAX_SAFE_INTEGER,
@@ -1652,7 +1652,7 @@ describe('MembersRepository', () => {
     });
 
     it('should throw an error if the user is not a member of the space', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const userStatus = faker.helpers.arrayElement(UserStatusKeys);
       const spaceName = nameBuilder();
       const user = await dbUserRepo.insert({
@@ -1681,7 +1681,7 @@ describe('MembersRepository', () => {
     });
 
     it('should throw an error if the user is not an active member of the space', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const spaceName = nameBuilder();
       const user = await dbUserRepo.insert({
         status: 'ACTIVE',
@@ -1719,7 +1719,7 @@ describe('MembersRepository', () => {
 
   describe('updateRole', () => {
     it('should update the role of a member', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const spaceName = nameBuilder();
       const adminName = nameBuilder();
       const memberName = nameBuilder();
@@ -1771,8 +1771,8 @@ describe('MembersRepository', () => {
     });
 
     it('should update the role of a member within the space only', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
-      const authPayloadDto2 = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
+      const authPayloadDto2 = siweAuthPayloadDtoBuilder().build();
       const spaceName = nameBuilder();
       const space2Name = faker.word.noun();
       const adminName = nameBuilder();
@@ -1885,8 +1885,8 @@ describe('MembersRepository', () => {
     });
 
     it('should not allow updating MEMBERs if the signer is not an ADMIN', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
-      const memberAuthPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
+      const memberAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
       const spaceName = nameBuilder();
       const memberName = nameBuilder();
       const memberName2 = nameBuilder();
@@ -1938,8 +1938,8 @@ describe('MembersRepository', () => {
     });
 
     it('should not allow updating ADMINs if the signer is not an ADMIN', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
-      const memberAuthPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
+      const memberAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
       const spaceName = nameBuilder();
       const memberName = nameBuilder();
       const memberName2 = nameBuilder();
@@ -1991,7 +1991,7 @@ describe('MembersRepository', () => {
     });
 
     it('should throw an error if the signer_address does not exist', async () => {
-      const authPayloadDto = authPayloadDtoBuilder()
+      const authPayloadDto = siweAuthPayloadDtoBuilder()
         .with('signer_address', undefined as unknown as Address)
         .build();
       const spaceId = faker.number.int({
@@ -2014,7 +2014,7 @@ describe('MembersRepository', () => {
     });
 
     it('should throw if the signer_address has no user', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const spaceId = faker.number.int({
         min: 69420,
         max: DB_MAX_SAFE_INTEGER,
@@ -2035,7 +2035,7 @@ describe('MembersRepository', () => {
     });
 
     it('should throw an error if user does not have access to upgrade to ADMIN', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const spaceName = nameBuilder();
       const memberName = nameBuilder();
       const memberName2 = nameBuilder();
@@ -2087,7 +2087,7 @@ describe('MembersRepository', () => {
     });
 
     it('should throw an error if downgrading the last ACTIVE ADMIN', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const spaceName = nameBuilder();
       const memberName = nameBuilder();
       const user = await dbUserRepo.insert({
@@ -2125,7 +2125,7 @@ describe('MembersRepository', () => {
 
   describe('removeUser', () => {
     it('should remove the user', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const spaceName = nameBuilder();
       const memberName = nameBuilder();
       const memberName2 = nameBuilder();
@@ -2181,7 +2181,7 @@ describe('MembersRepository', () => {
     });
 
     it('should keep the user as a member of other spaces', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const spaceName = nameBuilder();
       const space2Name = faker.word.noun();
       const adminName = nameBuilder();
@@ -2280,8 +2280,8 @@ describe('MembersRepository', () => {
     });
 
     it('should not allow removing a user if the user is not an ADMIN', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
-      const memberAuthPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
+      const memberAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
       const spaceName = nameBuilder();
       const adminName = nameBuilder();
       const memberName = nameBuilder();
@@ -2332,7 +2332,7 @@ describe('MembersRepository', () => {
     });
 
     it('should throw an error if the signer_address does not exist', async () => {
-      const authPayloadDto = authPayloadDtoBuilder()
+      const authPayloadDto = siweAuthPayloadDtoBuilder()
         .with('signer_address', undefined as unknown as Address)
         .build();
       const spaceId = faker.number.int({
@@ -2354,7 +2354,7 @@ describe('MembersRepository', () => {
     });
 
     it('should throw if the signer_address has no user', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const spaceId = faker.number.int({
         min: 69420,
         max: DB_MAX_SAFE_INTEGER,
@@ -2374,7 +2374,7 @@ describe('MembersRepository', () => {
     });
 
     it('should throw an error if removing the last ACTIVE ADMIN', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const spaceName = nameBuilder();
       const memberName = nameBuilder();
       const user = await dbUserRepo.insert({
@@ -2409,7 +2409,7 @@ describe('MembersRepository', () => {
     });
 
     it('should throw an error if there are no members for the given space id', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const user = await dbUserRepo.insert({
         status: 'ACTIVE',
       });
@@ -2433,7 +2433,7 @@ describe('MembersRepository', () => {
     });
 
     it('should throw an error if the user is not a member of the space', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const spaceName = nameBuilder();
       const adminName = nameBuilder();
       const admin = await dbUserRepo.insert({
@@ -2477,7 +2477,7 @@ describe('MembersRepository', () => {
 
   describe('removeSelf', () => {
     it('should remove the signer', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const spaceName = nameBuilder();
       const adminName = nameBuilder();
       const memberName = nameBuilder();
@@ -2531,7 +2531,7 @@ describe('MembersRepository', () => {
     });
 
     it('should remove the signer even if they are not an ACTIVE ADMIN', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const spaceName = nameBuilder();
       const memberName = nameBuilder();
       const adminName = nameBuilder();
@@ -2585,7 +2585,7 @@ describe('MembersRepository', () => {
     });
 
     it('should keep the signer as a member of other spaces', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const space1Name = nameBuilder();
       const space2Name = faker.word.noun();
       const member1Name = nameBuilder();
@@ -2676,7 +2676,7 @@ describe('MembersRepository', () => {
     });
 
     it('should throw an error if the signer is the last ACTIVE ADMIN', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const spaceName = nameBuilder();
       const signerMemberName = nameBuilder();
       const signerUser = await dbUserRepo.insert({
@@ -2709,7 +2709,7 @@ describe('MembersRepository', () => {
     });
 
     it('should throw an error if the signer is not a member of the space', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const spaceName = nameBuilder();
       const adminName = nameBuilder();
       const signerUser = await dbUserRepo.insert({
@@ -2751,7 +2751,7 @@ describe('MembersRepository', () => {
 
   describe('updateAlias', () => {
     it('should add an alias for the authenticated user', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const spaceName = nameBuilder();
       const memberName = nameBuilder();
       const newAlias = nameBuilder();
@@ -2792,7 +2792,7 @@ describe('MembersRepository', () => {
     });
 
     it('should update alias from one value to another', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const spaceName = nameBuilder();
       const memberName = nameBuilder();
       const newAlias = nameBuilder();
@@ -2834,7 +2834,7 @@ describe('MembersRepository', () => {
     });
 
     it('should update alias to null', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const spaceName = nameBuilder();
       const memberName = nameBuilder();
 
@@ -2875,7 +2875,7 @@ describe('MembersRepository', () => {
     });
 
     it('should throw NotFoundException if user is not found', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const spaceName = nameBuilder();
       const newAlias = nameBuilder();
 
@@ -2895,7 +2895,7 @@ describe('MembersRepository', () => {
     });
 
     it('should throw NotFoundException if signer is not a member of the space', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const spaceName = nameBuilder();
       const memberName = nameBuilder();
       const newAlias = nameBuilder();

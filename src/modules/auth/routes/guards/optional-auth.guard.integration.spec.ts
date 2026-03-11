@@ -4,7 +4,7 @@ import configuration from '@/config/entities/__tests__/configuration';
 import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module';
 import { CacheModule } from '@/datasources/cache/cache.module';
 import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
-import { authPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
+import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import { OptionalAuthGuard } from '@/modules/auth/routes/guards/optional-auth.guard';
 import { faker } from '@faker-js/faker';
@@ -108,7 +108,7 @@ describe('OptionalAuthGuard', () => {
   });
 
   it('should not allow access if a token is not yet valid', async () => {
-    const authPayloadDto = authPayloadDtoBuilder().build();
+    const authPayloadDto = siweAuthPayloadDtoBuilder().build();
     const accessToken = jwtService.sign({
       ...authPayloadDto,
       nbf: faker.date.future(),
@@ -128,7 +128,7 @@ describe('OptionalAuthGuard', () => {
   });
 
   it('should not allow access if a token has expired', async () => {
-    const authPayloadDto = authPayloadDtoBuilder().build();
+    const authPayloadDto = siweAuthPayloadDtoBuilder().build();
     const accessToken = jwtService.sign({
       ...authPayloadDto,
       exp: new Date(), // Now
@@ -169,7 +169,7 @@ describe('OptionalAuthGuard', () => {
 
   describe('should allow access if the AuthPayload is valid', () => {
     it('when nbf nor exp is specified', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
 
       expect(() => jwtService.verify(accessToken)).not.toThrow();
@@ -182,7 +182,7 @@ describe('OptionalAuthGuard', () => {
     });
 
     it('when nbf is and exp is not specified', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign({
         ...authPayloadDto,
         nbf: faker.date.past(),
@@ -198,7 +198,7 @@ describe('OptionalAuthGuard', () => {
     });
 
     it('when exp is and nbf is not specified', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign({
         ...authPayloadDto,
         exp: faker.date.future(),
@@ -214,7 +214,7 @@ describe('OptionalAuthGuard', () => {
     });
 
     it('when nbf and exp are specified', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign({
         ...authPayloadDto,
         nbf: faker.date.past(),

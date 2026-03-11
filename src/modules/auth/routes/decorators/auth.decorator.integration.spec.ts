@@ -6,7 +6,7 @@ import { CacheModule } from '@/datasources/cache/cache.module';
 import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import { AuthModule } from '@/modules/auth/auth.module';
-import { authPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
+import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import {
   AuthPayload,
   AuthPayloadDto,
@@ -106,7 +106,7 @@ describe('Auth decorator', () => {
   });
 
   it('with token', async () => {
-    const authPayloadDto = authPayloadDtoBuilder().build();
+    const authPayloadDto = siweAuthPayloadDtoBuilder().build();
     const accessToken = jwtService.sign(authPayloadDto);
 
     await request(app.getHttpServer())

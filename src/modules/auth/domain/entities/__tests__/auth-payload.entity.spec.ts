@@ -4,7 +4,7 @@ import {
   AuthPayloadDtoSchema,
 } from '@/modules/auth/domain/entities/auth-payload.entity';
 import {
-  authPayloadDtoBuilder,
+  siweAuthPayloadDtoBuilder,
   oidcAuthPayloadDtoBuilder,
 } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { faker } from '@faker-js/faker';
@@ -15,7 +15,7 @@ describe('AuthPayload entity', () => {
     describe('isForChain', () => {
       it("should return true if `chainId` matches `AuthPayload['chain_id']`", () => {
         const chainId = faker.string.numeric({ exclude: ['0'] });
-        const authPayloadDto = authPayloadDtoBuilder()
+        const authPayloadDto = siweAuthPayloadDtoBuilder()
           .with('chain_id', chainId)
           .build();
         const authPayload = new AuthPayload(authPayloadDto);
@@ -26,7 +26,7 @@ describe('AuthPayload entity', () => {
       });
 
       it('should return false if `chainId` does not match `AuthPayload[chain_id]`', () => {
-        const authPayloadDto = authPayloadDtoBuilder().build();
+        const authPayloadDto = siweAuthPayloadDtoBuilder().build();
         const chainId = faker.string.numeric({
           exclude: [authPayloadDto.chain_id],
         });
@@ -50,7 +50,7 @@ describe('AuthPayload entity', () => {
     describe('isForSigner', () => {
       describe('should return true if `signerAddress` matches `AuthPayload[signer_address]`', () => {
         it('if both are checksummed', () => {
-          const authPayloadDto = authPayloadDtoBuilder()
+          const authPayloadDto = siweAuthPayloadDtoBuilder()
             .with('signer_address', getAddress(faker.finance.ethereumAddress()))
             .build();
           const authPayload = new AuthPayload(authPayloadDto);
@@ -61,7 +61,7 @@ describe('AuthPayload entity', () => {
         });
 
         it('if neither are checksummed', () => {
-          const authPayloadDto = authPayloadDtoBuilder()
+          const authPayloadDto = siweAuthPayloadDtoBuilder()
             .with(
               'signer_address',
               faker.finance.ethereumAddress().toLowerCase() as Address,
@@ -75,7 +75,7 @@ describe('AuthPayload entity', () => {
         });
 
         it('if `signer_address` is checksummed and `signerAddress` is not', () => {
-          const authPayloadDto = authPayloadDtoBuilder()
+          const authPayloadDto = siweAuthPayloadDtoBuilder()
             .with('signer_address', getAddress(faker.finance.ethereumAddress()))
             .build();
           const signerAddress =
@@ -88,7 +88,7 @@ describe('AuthPayload entity', () => {
         });
 
         it('if `signer_address` is not checksummed and `signerAddress` is', () => {
-          const authPayloadDto = authPayloadDtoBuilder()
+          const authPayloadDto = siweAuthPayloadDtoBuilder()
             .with(
               'signer_address',
               faker.finance.ethereumAddress().toLowerCase() as Address,
@@ -104,7 +104,7 @@ describe('AuthPayload entity', () => {
       });
 
       it('should return false if `signerAddress` does not match `AuthPayload[signer_address]`', () => {
-        const authPayloadDto = authPayloadDtoBuilder()
+        const authPayloadDto = siweAuthPayloadDtoBuilder()
           .with('signer_address', getAddress(faker.finance.ethereumAddress()))
           .build();
         const signerAddress = getAddress(faker.finance.ethereumAddress());
@@ -130,7 +130,7 @@ describe('AuthPayload entity', () => {
     describe('getUserId', () => {
       it('should return sub for SIWE payloads', () => {
         const sub = faker.string.numeric({ exclude: ['0'] });
-        const authPayloadDto = authPayloadDtoBuilder().with('sub', sub).build();
+        const authPayloadDto = siweAuthPayloadDtoBuilder().with('sub', sub).build();
         const authPayload = new AuthPayload(authPayloadDto);
 
         expect(authPayload.getUserId()).toBe(sub);
@@ -155,7 +155,7 @@ describe('AuthPayload entity', () => {
 
     describe('isSiwe', () => {
       it('should return true for SIWE payloads', () => {
-        const authPayloadDto = authPayloadDtoBuilder().build();
+        const authPayloadDto = siweAuthPayloadDtoBuilder().build();
         const authPayload = new AuthPayload(authPayloadDto);
 
         expect(authPayload.isSiwe()).toBe(true);
@@ -178,7 +178,7 @@ describe('AuthPayload entity', () => {
       });
 
       it('should return false for SIWE payloads', () => {
-        const authPayloadDto = authPayloadDtoBuilder().build();
+        const authPayloadDto = siweAuthPayloadDtoBuilder().build();
         const authPayload = new AuthPayload(authPayloadDto);
 
         expect(authPayload.isOidc()).toBe(false);
@@ -187,7 +187,7 @@ describe('AuthPayload entity', () => {
 
     describe('AuthPayloadDtoSchema', () => {
       it('should parse a valid SIWE AuthPayloadDto', () => {
-        const authPayloadDto = authPayloadDtoBuilder().build();
+        const authPayloadDto = siweAuthPayloadDtoBuilder().build();
 
         const result = AuthPayloadDtoSchema.safeParse(authPayloadDto);
 
@@ -208,7 +208,7 @@ describe('AuthPayload entity', () => {
         const nonChecksummedAddress = faker.finance
           .ethereumAddress()
           .toLowerCase();
-        const authPayloadDto = authPayloadDtoBuilder()
+        const authPayloadDto = siweAuthPayloadDtoBuilder()
           .with('signer_address', nonChecksummedAddress as Address)
           .build();
 
@@ -222,7 +222,7 @@ describe('AuthPayload entity', () => {
       });
 
       it('should not allow a non-numeric chain_id', () => {
-        const authPayloadDto = authPayloadDtoBuilder()
+        const authPayloadDto = siweAuthPayloadDtoBuilder()
           .with('chain_id', faker.lorem.word())
           .build();
 
@@ -232,7 +232,7 @@ describe('AuthPayload entity', () => {
       });
 
       it('should not allow a non-address signer_address', () => {
-        const authPayloadDto = authPayloadDtoBuilder()
+        const authPayloadDto = siweAuthPayloadDtoBuilder()
           .with('signer_address', faker.lorem.word() as Address)
           .build();
 

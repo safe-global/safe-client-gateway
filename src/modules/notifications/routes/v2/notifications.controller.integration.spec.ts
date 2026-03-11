@@ -4,7 +4,7 @@ import configuration from '@/config/entities/__tests__/configuration';
 import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
 import { NetworkService } from '@/datasources/network/network.service.interface';
-import { authPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
+import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
 import { delegateBuilder } from '@/modules/delegate/domain/entities/__tests__/delegate.builder';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
@@ -89,7 +89,7 @@ describe('Notifications Controller V2', () => {
         },
         {},
       );
-      const authPayloadDto = authPayloadDtoBuilder()
+      const authPayloadDto = siweAuthPayloadDtoBuilder()
         .with('signer_address', signerAddress)
         .with(
           'chain_id',
@@ -160,7 +160,7 @@ describe('Notifications Controller V2', () => {
         },
         {},
       );
-      const authPayloadDto = authPayloadDtoBuilder()
+      const authPayloadDto = siweAuthPayloadDtoBuilder()
         .with('signer_address', signerAddress)
         .with(
           'chain_id',
@@ -235,7 +235,7 @@ describe('Notifications Controller V2', () => {
         },
         {},
       );
-      const authPayloadDto = authPayloadDtoBuilder()
+      const authPayloadDto = siweAuthPayloadDtoBuilder()
         .with('signer_address', signerAddress)
         .with(
           'chain_id',
@@ -312,7 +312,7 @@ describe('Notifications Controller V2', () => {
         },
         {},
       );
-      const authPayloadDto = authPayloadDtoBuilder()
+      const authPayloadDto = siweAuthPayloadDtoBuilder()
         .with('signer_address', signerAddress)
         .with(
           'chain_id',
@@ -367,7 +367,7 @@ describe('Notifications Controller V2', () => {
       const signerAddress = getAddress(faker.finance.ethereumAddress());
       const chainId = faker.string.numeric();
       const upsertSubscriptionsDto = { invalid: 'upsertSubscriptionsDto' };
-      const authPayloadDto = authPayloadDtoBuilder()
+      const authPayloadDto = siweAuthPayloadDtoBuilder()
         .with('signer_address', signerAddress)
         .with('chain_id', chainId)
         .build();
@@ -398,7 +398,7 @@ describe('Notifications Controller V2', () => {
         },
         {},
       );
-      const authPayloadDto = authPayloadDtoBuilder()
+      const authPayloadDto = siweAuthPayloadDtoBuilder()
         .with('signer_address', signerAddress)
         .with(
           'chain_id',
@@ -510,7 +510,7 @@ describe('Notifications Controller V2', () => {
             ),
           )
           .build();
-        const authPayloadDto = authPayloadDtoBuilder()
+        const authPayloadDto = siweAuthPayloadDtoBuilder()
           .with('chain_id', chainId)
           .build();
         // @ts-expect-error - we're checking the behavior when the signer_address is missing
@@ -544,7 +544,7 @@ describe('Notifications Controller V2', () => {
             ),
           )
           .build();
-        const authPayloadDto = authPayloadDtoBuilder().build();
+        const authPayloadDto = siweAuthPayloadDtoBuilder().build();
         // @ts-expect-error - we're checking the behavior when the chain_id is missing
         delete authPayloadDto.chain_id;
         const accessToken = jwtService.sign(authPayloadDto);
@@ -560,7 +560,7 @@ describe('Notifications Controller V2', () => {
       it('should return 403 if token is not yet valid', async () => {
         const signerAddress = getAddress(faker.finance.ethereumAddress());
         const upsertSubscriptionsDto = upsertSubscriptionsDtoBuilder().build();
-        const authPayloadDto = authPayloadDtoBuilder()
+        const authPayloadDto = siweAuthPayloadDtoBuilder()
           .with('signer_address', signerAddress)
           .with(
             'chain_id',
@@ -583,7 +583,7 @@ describe('Notifications Controller V2', () => {
       it('should return 403 if token has expired', async () => {
         const signerAddress = getAddress(faker.finance.ethereumAddress());
         const upsertSubscriptionsDto = upsertSubscriptionsDtoBuilder().build();
-        const authPayloadDto = authPayloadDtoBuilder()
+        const authPayloadDto = siweAuthPayloadDtoBuilder()
           .with('signer_address', signerAddress)
           .with(
             'chain_id',
@@ -614,7 +614,7 @@ describe('Notifications Controller V2', () => {
       const notificationTypes = faker.helpers.arrayElements(
         Object.values(NotificationType),
       );
-      const authPayloadDto = authPayloadDtoBuilder()
+      const authPayloadDto = siweAuthPayloadDtoBuilder()
         .with('signer_address', signerAddress)
         .with('chain_id', chainId)
         .build();
@@ -652,7 +652,7 @@ describe('Notifications Controller V2', () => {
       const notificationTypes = faker.helpers.arrayElements(
         Object.values(NotificationType),
       );
-      const authPayloadDto = authPayloadDtoBuilder()
+      const authPayloadDto = siweAuthPayloadDtoBuilder()
         .with('signer_address', signerAddress)
         .with('chain_id', faker.string.numeric({ exclude: chainId }))
         .build();
@@ -690,7 +690,7 @@ describe('Notifications Controller V2', () => {
       const chainId = faker.string.numeric();
       const safeAddress = getAddress(faker.finance.ethereumAddress());
       const invalidDeviceUuid = faker.string.alphanumeric();
-      const authPayloadDto = authPayloadDtoBuilder()
+      const authPayloadDto = siweAuthPayloadDtoBuilder()
         .with('signer_address', signerAddress)
         .with('chain_id', chainId)
         .build();
@@ -721,7 +721,7 @@ describe('Notifications Controller V2', () => {
       const invalidChainId = faker.string.alpha();
       const safeAddress = getAddress(faker.finance.ethereumAddress());
       const deviceUuid = faker.string.uuid();
-      const authPayloadDto = authPayloadDtoBuilder()
+      const authPayloadDto = siweAuthPayloadDtoBuilder()
         .with('signer_address', signerAddress)
         .with('chain_id', chainId)
         .build();
@@ -745,7 +745,7 @@ describe('Notifications Controller V2', () => {
       const chainId = faker.string.numeric();
       const safeAddress = getAddress(faker.finance.ethereumAddress());
       const deviceUuid = faker.string.uuid();
-      const authPayloadDto = authPayloadDtoBuilder()
+      const authPayloadDto = siweAuthPayloadDtoBuilder()
         .with('signer_address', signerAddress)
         .with('chain_id', chainId)
         .build();
@@ -796,7 +796,7 @@ describe('Notifications Controller V2', () => {
         const chainId = faker.string.numeric();
         const safeAddress = getAddress(faker.finance.ethereumAddress());
         const deviceUuid = faker.string.uuid();
-        const authPayloadDto = authPayloadDtoBuilder()
+        const authPayloadDto = siweAuthPayloadDtoBuilder()
           .with('chain_id', chainId)
           .build();
         // @ts-expect-error - we're checking the behavior when the signer_address is missing
@@ -816,7 +816,7 @@ describe('Notifications Controller V2', () => {
         const chainId = faker.string.numeric();
         const safeAddress = getAddress(faker.finance.ethereumAddress());
         const deviceUuid = faker.string.uuid();
-        const authPayloadDto = authPayloadDtoBuilder()
+        const authPayloadDto = siweAuthPayloadDtoBuilder()
           .with('chain_id', chainId)
           .build();
         // @ts-expect-error - we're checking the behavior when the chain_id is missing
@@ -837,7 +837,7 @@ describe('Notifications Controller V2', () => {
         const chainId = faker.string.numeric();
         const safeAddress = getAddress(faker.finance.ethereumAddress());
         const deviceUuid = faker.string.uuid();
-        const authPayloadDto = authPayloadDtoBuilder()
+        const authPayloadDto = siweAuthPayloadDtoBuilder()
           .with('signer_address', signerAddress)
           .with('chain_id', chainId)
           .build();
@@ -860,7 +860,7 @@ describe('Notifications Controller V2', () => {
         const chainId = faker.string.numeric();
         const safeAddress = getAddress(faker.finance.ethereumAddress());
         const deviceUuid = faker.string.uuid();
-        const authPayloadDto = authPayloadDtoBuilder()
+        const authPayloadDto = siweAuthPayloadDtoBuilder()
           .with('signer_address', signerAddress)
           .with('chain_id', chainId)
           .build();

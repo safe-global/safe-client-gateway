@@ -9,7 +9,7 @@ import { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
 import { Member } from '@/modules/users/datasources/entities/member.entity.db';
 import { User } from '@/modules/users/datasources/entities/users.entity.db';
 import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
-import { authPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
+import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
 import { nameBuilder } from '@/domain/common/entities/name.builder';
@@ -538,7 +538,7 @@ describe('AddressBookItemsRepository', () => {
     user: User;
     authPayload: AuthPayload;
   }> => {
-    const authPayload = new AuthPayload(authPayloadDtoBuilder().build());
+    const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
     const user = await dbUserRepo.insert({
       status: 'ACTIVE',
     });
