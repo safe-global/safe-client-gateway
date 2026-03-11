@@ -9,13 +9,11 @@ export class SiweDto implements z.infer<typeof SiweDtoSchema> {
   @ApiProperty()
   signature!: Address;
 
-  constructor(props: SiweDto) {
-    this.message = props.message;
-    this.signature = props.signature;
-  }
 }
 
-export const SiweDtoSchema = z.object({
-  message: z.string(),
-  signature: HexSchema,
-});
+export const SiweDtoSchema = z
+  .object({
+    message: z.string(),
+    signature: HexSchema,
+  })
+  .strict();

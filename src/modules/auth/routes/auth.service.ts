@@ -10,6 +10,8 @@ import {
 import { JwtPayloadWithClaims } from '@/datasources/jwt/jwt-claims.entity';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
+import { VerifyAuthRequest } from '@/modules/auth/routes/entities/verify-auth.request.entity';
+import { Auth0Dto } from '@/modules/auth/routes/entities/auth0.dto.entity';
 
 @Injectable()
 export class AuthService {
@@ -36,11 +38,11 @@ export class AuthService {
     return await this.siweRepository.generateNonce();
   }
 
-  async getAccessToken(args: SiweDto): Promise<{
+  async getAccessToken(args: VerifyAuthRequest): Promise<{
     accessToken: string;
   }> {
     const { chainId, address, notBefore, issuedAt, expirationTime } =
-      await this.siweRepository.getValidatedSiweMessage(args);
+      await this.siweRepository.getValidatedSiweMessage(args as SiweDto);
 
     const maxExpirationTime = this.getMaxExpirationTime();
 
@@ -76,7 +78,16 @@ export class AuthService {
     };
   }
 
-  getTokenPayloadWithClaims(
+  async verifyAuth0(args: Auth0Dto): Promise<void> {
+    //TODO implement Auth0 token verification logic here
+    return;
+  }
+
+  async verifySiwe(accessToken: string): Promise<void> {
+    return;
+  }
+
+  private getTokenPayloadWithClaims(
     accessToken: string,
   ): JwtPayloadWithClaims<AuthPayloadDto> {
     return this.authRepository.decodeToken(accessToken);

@@ -3,14 +3,13 @@ import { JwtClient } from '@/datasources/jwt/jwt.module';
 import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
 import { Inject, Injectable } from '@nestjs/common';
 import { IConfigurationService } from '@/config/configuration.service.interface';
+import { JWT_ALGORITHM } from '@/datasources/jwt/jwt.constants';
 import type { Algorithm, JwtPayload } from 'jsonwebtoken';
 
 @Injectable()
 export class JwtService implements IJwtService {
-  private static readonly ALGORITHM: Algorithm = 'HS256';
-
-  issuer: string;
-  secret: string;
+  private readonly issuer: string;
+  private readonly secret: string;
 
   constructor(
     @Inject('JwtClient')
