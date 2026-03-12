@@ -632,6 +632,7 @@ describe('MembersRepository', () => {
           updatedAt: expect.any(Date),
           user: {
             createdAt: expect.any(Date),
+            extUserId: null,
             id: member.generatedMaps[0].id,
             status: 'ACTIVE',
             updatedAt: expect.any(Date),
@@ -987,6 +988,7 @@ describe('MembersRepository', () => {
         }),
       ).resolves.toEqual({
         createdAt: expect.any(Date),
+        extUserId: null,
         id: userId,
         status: 'ACTIVE', // No longer PENDING
         updatedAt: expect.any(Date),
@@ -1067,6 +1069,7 @@ describe('MembersRepository', () => {
         }),
       ).resolves.toEqual({
         createdAt: expect.any(Date),
+        extUserId: null,
         id: userId,
         status: 'ACTIVE', // No longer PENDING
         updatedAt: expect.any(Date),
@@ -1361,6 +1364,7 @@ describe('MembersRepository', () => {
         }),
       ).resolves.toEqual({
         createdAt: expect.any(Date),
+        extUserId: null,
         id: userId,
         status: 'PENDING', // Remains PENDING
         updatedAt: expect.any(Date),
@@ -1612,6 +1616,7 @@ describe('MembersRepository', () => {
           updatedAt: expect.any(Date),
           user: {
             createdAt: expect.any(Date),
+            extUserId: null,
             id: user.generatedMaps[0].id,
             status: userStatus,
             updatedAt: expect.any(Date),
