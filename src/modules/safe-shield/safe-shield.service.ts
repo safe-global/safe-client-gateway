@@ -92,7 +92,7 @@ export class SafeShieldService {
       await Promise.allSettled([
         this.analyzeRecipients(chainId, safeAddress, transactions, txInfo),
         this.analyzeContracts(chainId, safeAddress, transactions),
-        this.analyzeDeadlock(chainId, safeAddress, transactions),
+        this.analyzeDeadlock(chainId, transactions),
       ]);
 
     return {
@@ -201,19 +201,16 @@ export class SafeShieldService {
    * Analyzes potential signing deadlocks for owner/threshold management transactions.
    *
    * @param {string} chainId - The chain ID
-   * @param {Address} safeAddress - The Safe address
    * @param {Array<DecodedTransactionData>} transactions - A list of decoded transactions
    * @returns {Promise<DeadlockAnalysisResponse>} Deadlock analysis results (empty if not applicable)
    */
   public async analyzeDeadlock(
     chainId: string,
-    safeAddress: Address,
     transactions: Array<DecodedTransactionData>,
   ): Promise<DeadlockAnalysisResponse> {
     if (transactions.length) {
       return this.deadlockAnalysisService.analyze({
         chainId,
-        safeAddress,
         transactions,
       });
     }

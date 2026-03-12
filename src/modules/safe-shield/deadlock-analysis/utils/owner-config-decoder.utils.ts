@@ -21,21 +21,35 @@ export function isOwnerConfigTransaction(
 }
 
 /**
- * Extracts decoded owner configuration data from transactions targeting a specific Safe.
- * Filters for addOwnerWithThreshold, removeOwner, swapOwner, and changeThreshold
- * calls where `tx.to === safeAddress`.
+ * Groups owner configuration transactions by their target Safe address.
+ *
+ * Scans all transactions for owner config methods (addOwnerWithThreshold,
+ * removeOwner, swapOwner, changeThreshold) and groups them by normalized
+ * `tx.to` address. Preserves transaction order within each group, which
+ * is important for sequential state projection via `computeProjectedState()`.
+ *
+ * @param transactions - The flattened list of decoded transactions (e.g., from a multi-send).
+ * @returns Map of target Safe address to ordered list of owner config operations.
+ *          Empty map if no owner config transactions are found.
  */
-export function extractOwnerConfigs(
+export function groupOwnerConfigsByTarget(
   transactions: Array<{ to: Address; dataDecoded: BaseDataDecoded | null }>,
-  safeAddress: Address,
-): Array<BaseDataDecoded> {
-  return transactions
-    .filter(
-      (tx) =>
-        isAddressEqual(tx.to, safeAddress) &&
-        isOwnerConfigTransaction(tx.dataDecoded),
-    )
-    .map((tx) => tx.dataDecoded!);
+): Map<Address, Array<BaseDataDecoded>> {
+  const groups = new Map<Address, Array<BaseDataDecoded>>();
+
+  for (const tx of transactions) {
+    if (!isOwnerConfigTransaction(tx.dataDecoded)) continue;
+
+    const normalizedAddress = getAddress(tx.to);
+    const existing = groups.get(normalizedAddress);
+    if (existing) {
+      existing.push(tx.dataDecoded!);
+    } else {
+      groups.set(normalizedAddress, [tx.dataDecoded!]);
+    }
+  }
+
+  return groups;
 }
 /**
  * Computes the projected state after applying an owner config transaction.

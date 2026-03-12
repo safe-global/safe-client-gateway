@@ -828,7 +828,6 @@ describe('SafeShieldService', () => {
       });
       expect(mockDeadlockAnalysisService.analyze).toHaveBeenCalledWith({
         chainId: mockChainId,
-        safeAddress: mockSafeAddress,
         transactions: [
           expect.objectContaining({
             to: mockRecipientAddress,
@@ -1111,7 +1110,6 @@ describe('SafeShieldService', () => {
       expect(result.deadlock).toEqual(mockDeadlockResponse);
       expect(mockDeadlockAnalysisService.analyze).toHaveBeenCalledWith({
         chainId: mockChainId,
-        safeAddress: mockSafeAddress,
         transactions: expect.arrayContaining([
           expect.objectContaining({
             to: mockRecipientAddress,
@@ -1470,24 +1468,18 @@ describe('SafeShieldService', () => {
 
       const result = await service.analyzeDeadlock(
         mockChainId,
-        mockSafeAddress,
         mockTransactions,
       );
 
       expect(result).toEqual(mockDeadlockResponse);
       expect(mockDeadlockAnalysisService.analyze).toHaveBeenCalledWith({
         chainId: mockChainId,
-        safeAddress: mockSafeAddress,
         transactions: mockTransactions,
       });
     });
 
     it('should return empty object when transactions array is empty', async () => {
-      const result = await service.analyzeDeadlock(
-        mockChainId,
-        mockSafeAddress,
-        [],
-      );
+      const result = await service.analyzeDeadlock(mockChainId, []);
 
       expect(result).toEqual({});
       expect(mockDeadlockAnalysisService.analyze).not.toHaveBeenCalled();
@@ -1498,12 +1490,11 @@ describe('SafeShieldService', () => {
       mockDeadlockAnalysisService.analyze.mockRejectedValue(error);
 
       await expect(
-        service.analyzeDeadlock(mockChainId, mockSafeAddress, mockTransactions),
+        service.analyzeDeadlock(mockChainId, mockTransactions),
       ).rejects.toThrow('Deadlock analysis failed');
 
       expect(mockDeadlockAnalysisService.analyze).toHaveBeenCalledWith({
         chainId: mockChainId,
-        safeAddress: mockSafeAddress,
         transactions: mockTransactions,
       });
     });

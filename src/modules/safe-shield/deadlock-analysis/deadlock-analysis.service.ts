@@ -16,8 +16,8 @@ import {
   DEADLOCK_DESCRIPTION_MAPPING,
 } from './deadlock-status.constants';
 import {
-  extractOwnerConfigs,
   computeProjectedState,
+  groupOwnerConfigsByTarget,
 } from './utils/owner-config-decoder.utils';
 import {
   CacheService,
@@ -28,6 +28,11 @@ import { IConfigurationService } from '@/config/configuration.service.interface'
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { DataSourceError } from '@/domain/errors/data-source.error';
 import { logCacheHit, logCacheMiss } from '@/modules/safe-shield/utils/common';
+import { asError } from '@/logging/utils';
+import {
+  CommonStatus,
+  type AnalysisResult,
+} from '@/modules/safe-shield/entities/analysis-result.entity';
 
 type SafeOwnerInfo = {
   address: Address;
@@ -59,28 +64,71 @@ export class DeadlockAnalysisService {
   /**
    * Analyzes a batch of transactions for potential signing deadlocks.
    *
-   * Filters for owner configuration transactions (addOwner, removeOwner, swapOwner,
-   * changeThreshold) targeting the Safe itself, then checks whether the projected
-   * state would create a mutual ownership cycle that prevents signing.
-   * Results are cached to avoid redundant API calls.
+   * Groups owner configuration transactions (addOwner, removeOwner, swapOwner,
+   * changeThreshold) by their target Safe address and analyzes each Safe
+   * independently and concurrently. This supports multi-send batches that
+   * modify owner/threshold configs on multiple Safes in a single transaction.
+   * Results are cached per-Safe to avoid redundant API calls.
    *
    * @param {string} args.chainId - The chain ID.
-   * @param {Address} args.safeAddress - The Safe wallet address.
    * @param {Array<DecodedTransactionData>} args.transactions - The transactions to analyze for potential signing deadlocks.
-   * @returns {Promise<DeadlockAnalysisResponse>} The deadlock analysis response.
+   * @returns {Promise<DeadlockAnalysisResponse>} Address-keyed deadlock analysis results for all target Safes.
    */
   async analyze(args: {
     chainId: string;
-    safeAddress: Address;
     transactions: Array<DecodedTransactionData>;
   }): Promise<DeadlockAnalysisResponse> {
-    const { chainId, safeAddress, transactions } = args;
+    const { chainId, transactions } = args;
 
-    const ownerConfigs = extractOwnerConfigs(transactions, safeAddress);
-    if (ownerConfigs.length === 0) {
+    const ownerConfigGroups = groupOwnerConfigsByTarget(transactions);
+    if (ownerConfigGroups.size === 0) {
       return {};
     }
 
+    const entries = [...ownerConfigGroups];
+    const results = await Promise.allSettled(
+      entries.map(([safeAddress, ownerConfigs]) =>
+        this.analyzeSingleSafe(chainId, safeAddress, ownerConfigs),
+      ),
+    );
+
+    let merged: DeadlockAnalysisResponse = {};
+    for (let i = 0; i < results.length; i++) {
+      const result = results[i];
+      if (result.status === 'fulfilled') {
+        merged = { ...merged, ...result.value };
+      } else {
+        const [safeAddress] = entries[i];
+        const error = asError(result.reason);
+        this.loggingService.warn(
+          `Deadlock analysis failed for Safe ${safeAddress}: ${error.message}`,
+        );
+        merged = {
+          ...merged,
+          ...this.buildResponse(safeAddress, CommonStatus.FAILED, {
+            error: error.message,
+          }),
+        };
+      }
+    }
+
+    return merged;
+  }
+
+  /**
+   * Analyzes a single Safe for deadlock risks given its owner config operations.
+   * Handles cache lookup/store and delegates to `performAnalysis()`.
+   *
+   * @param chainId - The chain ID.
+   * @param safeAddress - The target Safe address.
+   * @param ownerConfigs - The owner configuration transactions for this Safe.
+   * @returns The deadlock analysis response for this Safe.
+   */
+  private async analyzeSingleSafe(
+    chainId: string,
+    safeAddress: Address,
+    ownerConfigs: Array<BaseDataDecoded>,
+  ): Promise<DeadlockAnalysisResponse> {
     const cacheDir = CacheRouter.getDeadlockAnalysisCacheDir({
       chainId,
       safeAddress,
@@ -354,19 +402,36 @@ export class DeadlockAnalysisService {
     return results;
   }
 
+  /**
+   * Maps a deadlock or common status to a typed analysis result by looking up
+   * the severity, title, and description from the deadlock constants mappings.
+   *
+   * @param args.type - The deadlock or common status to map.
+   * @param args.error - Optional error message for failed analysis results.
+   * @returns The analysis result with severity, type, title, and description.
+   */
+  private mapToAnalysisResult<T extends DeadlockStatus | CommonStatus>(args: {
+    type: T;
+    error?: string;
+  }): AnalysisResult<T> {
+    const { type, error } = args;
+    return {
+      severity: DEADLOCK_SEVERITY_MAPPING[type],
+      type,
+      title: DEADLOCK_TITLE_MAPPING[type],
+      description: DEADLOCK_DESCRIPTION_MAPPING[type]({ error }),
+    };
+  }
+
   private buildResponse(
     safeAddress: Address,
-    status: DeadlockStatus,
+    status: DeadlockStatus | CommonStatus,
+    args?: { error?: string },
   ): DeadlockAnalysisResponse {
     return {
       [safeAddress]: {
         [DeadlockStatusGroup.DEADLOCK]: [
-          {
-            severity: DEADLOCK_SEVERITY_MAPPING[status],
-            type: status,
-            title: DEADLOCK_TITLE_MAPPING[status],
-            description: DEADLOCK_DESCRIPTION_MAPPING[status],
-          },
+          this.mapToAnalysisResult({ type: status, error: args?.error }),
         ],
       },
     };
