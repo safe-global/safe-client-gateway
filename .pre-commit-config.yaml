@@ -17,7 +17,7 @@ repos:
           - --no-extra-eol
       - id: insert-license
         name: insert-license
-        files: \.(yaml|yml|md|sh|Dockerfile)$
+        files: \.(yaml|yml|sh|Dockerfile)$
         exclude: (node_modules/|dist/|coverage/|abis/)
         stages: [pre-commit]
         args:
@@ -25,6 +25,17 @@ repos:
           - LICENSE_HEADER.txt
           - --comment-style
           - '#'
+          - --no-extra-eol
+      - id: insert-license
+        name: insert-license
+        files: \.(md)$
+        exclude: (node_modules/|dist/|coverage/|abis/)
+        stages: [pre-commit]
+        args:
+          - --license-filepath
+          - LICENSE_HEADER.txt
+          - --comment-style
+          - '<!--| | -->'
           - --no-extra-eol
       - id: insert-license
         name: insert-license
