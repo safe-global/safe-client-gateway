@@ -1434,14 +1434,15 @@ describe('DeadlockAnalysisService', () => {
     it('should return DEADLOCK_DETECTED for Safe A and clean for Safe B', async () => {
       const safeA = getAddress(faker.finance.ethereumAddress());
       const safeB = getAddress(faker.finance.ethereumAddress());
+      const eoaA = getAddress(faker.finance.ethereumAddress());
       const newOwnerB = getAddress(faker.finance.ethereumAddress());
 
-      // Safe A adds Safe B as owner (creates mutual dependency)
+      // Safe A adds Safe B as owner with threshold=2 (creates mutual dependency)
       // Safe B adds a new EOA owner (no deadlock risk for Safe B)
       const transactions = [
         buildDecodedTx({
           to: safeA,
-          dataDecoded: addOwnerBaseDataDecoded(safeB, 1),
+          dataDecoded: addOwnerBaseDataDecoded(safeB, 2),
         }),
         buildDecodedTx({
           to: safeB,
@@ -1451,9 +1452,9 @@ describe('DeadlockAnalysisService', () => {
 
       mockTransactionApi.getSafe.mockImplementation((address: Address) => {
         if (address === safeA) {
-          // Safe A currently has only safeB as owner, threshold=1
+          // Safe A currently has eoaA as owner, threshold=1
           return Promise.resolve(
-            mockSafe({ address: safeA, owners: [safeB], threshold: 1 }),
+            mockSafe({ address: safeA, owners: [eoaA], threshold: 1 }),
           );
         }
         if (address === safeB) {

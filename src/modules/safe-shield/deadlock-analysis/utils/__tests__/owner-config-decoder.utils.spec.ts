@@ -196,6 +196,29 @@ describe('computeProjectedState', () => {
     expect(result.threshold).toBe(1);
   });
 
+  it('should throw for unsupported method', () => {
+    expect(() =>
+      computeProjectedState({
+        currentOwners: [owner1, owner2],
+        currentThreshold: 1,
+        dataDecoded: {
+          method: 'execTransaction',
+          parameters: [],
+        } as BaseDataDecoded,
+      }),
+    ).toThrow('Unsupported function: execTransaction');
+  });
+
+  it('should throw when adding a duplicate owner via addOwnerWithThreshold', () => {
+    expect(() =>
+      computeProjectedState({
+        currentOwners: [owner1, owner2],
+        currentThreshold: 1,
+        dataDecoded: addOwnerDecoded(owner1, 2),
+      }),
+    ).toThrow(`Duplicate owner: ${owner1} is already an owner`);
+  });
+
   it('should throw when a required parameter is missing', () => {
     expect(() =>
       computeProjectedState({
@@ -308,6 +331,19 @@ describe('groupOwnerConfigsByTarget', () => {
 
     expect(result.size).toBe(1);
     expect(result.get(safe)).toEqual([op1, op2]);
+  });
+
+  it('should merge case-variant addresses into a single group', () => {
+    const lower = '0xabcdef1234567890abcdef1234567890abcdef12' as Address;
+    const upper = '0xABCDEF1234567890ABCDEF1234567890ABCDEF12' as Address;
+    const normalized = getAddress(lower);
+    const op1 = addOwnerDecoded(addr(), 2);
+    const op2 = changeThresholdDecoded(1);
+
+    const result = groupOwnerConfigsByTarget([tx(lower, op1), tx(upper, op2)]);
+
+    expect(result.size).toBe(1);
+    expect(result.get(normalized)).toEqual([op1, op2]);
   });
 
   it('should return empty map for empty transaction list', () => {

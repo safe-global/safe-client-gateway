@@ -72,8 +72,14 @@ export function computeProjectedState(args: {
     case OwnerConfigMethod.AddOwnerWithThreshold: {
       const owner = getParam(params, 'owner');
       const threshold = getParam(params, '_threshold');
+      const normalizedOwner = getAddress(owner);
+      if (currentOwners.some((o) => isAddressEqual(o, normalizedOwner))) {
+        throw new Error(
+          `Duplicate owner: ${normalizedOwner} is already an owner`,
+        );
+      }
       return {
-        owners: [...currentOwners, getAddress(owner)],
+        owners: [...currentOwners, normalizedOwner],
         threshold: Number(threshold),
       };
     }
