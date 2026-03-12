@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { DataSource } from 'typeorm';
 import { type Address, getAddress } from 'viem';
@@ -8,7 +9,7 @@ import { DatabaseMigrator } from '@/datasources/db/v2/database-migrator.service'
 import { User } from '@/modules/users/datasources/entities/users.entity.db';
 import { UsersRepository } from '@/modules/users/domain/users.repository';
 import { WalletsRepository } from '@/modules/wallets/domain/wallets.repository';
-import { authPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
+import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { UserStatus } from '@/modules/users/domain/entities/user.entity';
 import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
@@ -171,7 +172,7 @@ describe('UsersRepository', () => {
   describe('createWithWallet', () => {
     it('should insert a new user and a linked wallet', async () => {
       const dbWalletRepository = dataSource.getRepository(Wallet);
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const authPayload = new AuthPayload(authPayloadDto);
       const status = faker.helpers.arrayElement(UserStatusKeys);
 
@@ -197,7 +198,7 @@ describe('UsersRepository', () => {
     });
 
     it('should throw an error if the wallet already exists', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const authPayload = new AuthPayload(authPayloadDto);
       const status = faker.helpers.arrayElement(UserStatusKeys);
 
@@ -211,7 +212,7 @@ describe('UsersRepository', () => {
     });
 
     it('should throw if an incorrect UserStatus is provided', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const authPayload = new AuthPayload(authPayloadDto);
       const status = faker.string.alpha() as unknown as keyof typeof UserStatus;
 
@@ -224,7 +225,7 @@ describe('UsersRepository', () => {
       const signerAddress = faker.string.hexadecimal({
         length: { min: 41, max: 41 },
       });
-      const authPayloadDto = authPayloadDtoBuilder()
+      const authPayloadDto = siweAuthPayloadDtoBuilder()
         .with('signer_address', signerAddress as Address)
         .build();
       const authPayload = new AuthPayload(authPayloadDto);
@@ -240,7 +241,7 @@ describe('UsersRepository', () => {
       const nonChecksummedAddress = faker.finance
         .ethereumAddress()
         .toLowerCase();
-      const authPayloadDto = authPayloadDtoBuilder()
+      const authPayloadDto = siweAuthPayloadDtoBuilder()
         .with('signer_address', nonChecksummedAddress as Address)
         .build();
       const authPayload = new AuthPayload(authPayloadDto);
@@ -298,7 +299,7 @@ describe('UsersRepository', () => {
     it('should return a user with their wallets', async () => {
       const dbWalletRepository = dataSource.getRepository(Wallet);
       const dbUserRepository = dataSource.getRepository(User);
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const authPayload = new AuthPayload(authPayloadDto);
       const status = faker.helpers.arrayElement(UserStatusKeys);
       const userInsertResult = await dbUserRepository.insert({
@@ -331,7 +332,7 @@ describe('UsersRepository', () => {
 
     it('should throw if no user wallet is found', async () => {
       const dbUserRepository = dataSource.getRepository(User);
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const authPayload = new AuthPayload(authPayloadDto);
       const status = faker.helpers.arrayElement(UserStatusKeys);
       await dbUserRepository.insert({ status });
@@ -347,7 +348,7 @@ describe('UsersRepository', () => {
       const nonChecksummedAddress = faker.finance
         .ethereumAddress()
         .toLowerCase() as Address;
-      const authPayloadDto = authPayloadDtoBuilder()
+      const authPayloadDto = siweAuthPayloadDtoBuilder()
         .with('signer_address', nonChecksummedAddress)
         .build();
       const authPayload = new AuthPayload(authPayloadDto);
@@ -386,7 +387,7 @@ describe('UsersRepository', () => {
       const dbWalletRepository = dataSource.getRepository(Wallet);
       const dbUserRepository = dataSource.getRepository(User);
       const walletAddress = getAddress(faker.finance.ethereumAddress());
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const authPayload = new AuthPayload(authPayloadDto);
       const status = faker.helpers.arrayElement(UserStatusKeys);
       const userInsertResult = await dbUserRepository.insert({
@@ -425,7 +426,7 @@ describe('UsersRepository', () => {
     it('should throw if the user wallet already exists', async () => {
       const dbWalletRepository = dataSource.getRepository(Wallet);
       const dbUserRepository = dataSource.getRepository(User);
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const authPayload = new AuthPayload(authPayloadDto);
       const status = faker.helpers.arrayElement(UserStatusKeys);
       const userInsertResult = await dbUserRepository.insert({
@@ -454,7 +455,7 @@ describe('UsersRepository', () => {
       const walletAddress = faker.string.hexadecimal({
         length: { min: 41, max: 41 },
       });
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const authPayload = new AuthPayload(authPayloadDto);
       const status = faker.helpers.arrayElement(UserStatusKeys);
       await dbUserRepository.insert({ status });
@@ -473,7 +474,7 @@ describe('UsersRepository', () => {
       const nonChecksummedAddress = faker.finance
         .ethereumAddress()
         .toLowerCase();
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const authPayload = new AuthPayload(authPayloadDto);
       const status = faker.helpers.arrayElement(UserStatusKeys);
       const userInsertResult = await dbUserRepository.insert({
@@ -508,7 +509,7 @@ describe('UsersRepository', () => {
       const dbWalletRepository = dataSource.getRepository(Wallet);
       const dbUserRepository = dataSource.getRepository(User);
       const walletAddress = getAddress(faker.finance.ethereumAddress());
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const authPayload = new AuthPayload(authPayloadDto);
       const status = faker.helpers.arrayElement(UserStatusKeys);
       const userInsertResult = await dbUserRepository.insert({
@@ -537,7 +538,7 @@ describe('UsersRepository', () => {
 
     it('should throw if no user wallet is found', async () => {
       const dbUserRepository = dataSource.getRepository(User);
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const authPayload = new AuthPayload(authPayloadDto);
       const status = faker.helpers.arrayElement(UserStatusKeys);
       await dbUserRepository.insert({ status });
@@ -553,7 +554,7 @@ describe('UsersRepository', () => {
       const dbWalletRepository = dataSource.getRepository(Wallet);
       const dbUserRepository = dataSource.getRepository(User);
       const walletAddress = getAddress(faker.finance.ethereumAddress());
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const authPayload = new AuthPayload(authPayloadDto);
       const status = faker.helpers.arrayElement(UserStatusKeys);
       const userInsertResult = await dbUserRepository.insert({
@@ -602,7 +603,7 @@ describe('UsersRepository', () => {
       const dbWalletRepository = dataSource.getRepository(Wallet);
       const dbUserRepository = dataSource.getRepository(User);
       const walletAddress = getAddress(faker.finance.ethereumAddress());
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const authPayload = new AuthPayload(authPayloadDto);
       const status = faker.helpers.arrayElement(UserStatusKeys);
       const userInsertResult = await dbUserRepository.insert({
@@ -691,6 +692,100 @@ describe('UsersRepository', () => {
       await expect(
         usersRepository.findByWalletAddress(address),
       ).resolves.toBeUndefined();
+    });
+  });
+
+  describe('findOrCreateByWalletAddress', () => {
+    it('should return the existing user id if the wallet already exists', async () => {
+      const dbUserRepository = dataSource.getRepository(User);
+      const dbWalletRepository = dataSource.getRepository(Wallet);
+      const address = getAddress(faker.finance.ethereumAddress());
+      const status = faker.helpers.arrayElement(UserStatusKeys);
+      const userInsertResult = await dbUserRepository.insert({ status });
+      const userId = userInsertResult.identifiers[0].id;
+      await dbWalletRepository.insert({
+        user: { id: userId },
+        address,
+      });
+
+      const result = await usersRepository.findOrCreateByWalletAddress(address);
+
+      expect(result).toBe(userId);
+      // No additional user or wallet should have been created
+      await expect(dbUserRepository.find()).resolves.toHaveLength(1);
+      await expect(dbWalletRepository.find()).resolves.toHaveLength(1);
+    });
+
+    it('should create a new user and wallet if none exists', async () => {
+      const dbUserRepository = dataSource.getRepository(User);
+      const dbWalletRepository = dataSource.getRepository(Wallet);
+      const address = getAddress(faker.finance.ethereumAddress());
+
+      const userId = await usersRepository.findOrCreateByWalletAddress(address);
+
+      const user = await dbUserRepository.findOneOrFail({
+        where: { id: userId },
+      });
+      expect(user).toEqual({
+        createdAt: expect.any(Date),
+        id: userId,
+        status: 'ACTIVE',
+        updatedAt: expect.any(Date),
+      });
+
+      const wallet = await dbWalletRepository.findOneOrFail({
+        where: { address },
+        relations: { user: true },
+      });
+      expect(wallet).toEqual({
+        address,
+        createdAt: expect.any(Date),
+        id: wallet.id,
+        updatedAt: expect.any(Date),
+        user: {
+          createdAt: expect.any(Date),
+          id: userId,
+          status: 'ACTIVE',
+          updatedAt: expect.any(Date),
+        },
+      });
+    });
+
+    it('should checksum the wallet address when creating', async () => {
+      const dbWalletRepository = dataSource.getRepository(Wallet);
+      const nonChecksummedAddress = faker.finance
+        .ethereumAddress()
+        .toLowerCase();
+
+      await usersRepository.findOrCreateByWalletAddress(
+        nonChecksummedAddress as Address,
+      );
+
+      const wallet = await dbWalletRepository.findOneOrFail({
+        where: { address: getAddress(nonChecksummedAddress) },
+      });
+      expect(wallet).toStrictEqual(
+        expect.objectContaining({
+          address: getAddress(nonChecksummedAddress),
+        }),
+      );
+    });
+
+    it('should return the existing user id on concurrent duplicate insert', async () => {
+      const dbUserRepository = dataSource.getRepository(User);
+      const dbWalletRepository = dataSource.getRepository(Wallet);
+      const address = getAddress(faker.finance.ethereumAddress());
+
+      // Run two calls concurrently — one will win the insert, the other
+      // should catch the unique constraint violation and retry the find.
+      const [id1, id2] = await Promise.all([
+        usersRepository.findOrCreateByWalletAddress(address),
+        usersRepository.findOrCreateByWalletAddress(address),
+      ]);
+
+      expect(id1).toBe(id2);
+      await expect(dbUserRepository.find()).resolves.toHaveLength(1);
+      await expect(dbWalletRepository.find()).resolves.toHaveLength(1);
     });
   });
 
