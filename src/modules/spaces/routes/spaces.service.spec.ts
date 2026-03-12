@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { SpacesService } from '@/modules/spaces/routes/spaces.service';
 import type { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
 import type { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
@@ -10,6 +11,7 @@ import { userBuilder } from '@/modules/users/datasources/entities/__tests__/user
 import { memberBuilder } from '@/modules/users/datasources/entities/__tests__/member.entity.db.builder';
 import { spaceBuilder } from '@/modules/spaces/domain/entities/__tests__/space.entity.db.builder';
 import type { SpaceSafe } from '@/modules/spaces/datasources/entities/space-safes.entity.db';
+import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 
 const userRepositoryMock = {
   findByWalletAddressOrFail: jest.fn(),
@@ -38,10 +40,9 @@ describe('SpacesService', () => {
   describe('getActiveOrInvitedSpaces', () => {
     it('should return spaces with safeCount computed from safes length', async () => {
       const signerAddress = faker.finance.ethereumAddress() as Address;
-      const authPayload = new AuthPayload({
-        signer_address: signerAddress,
-        chain_id: '1',
-      });
+      const authPayload = siweAuthPayloadDtoBuilder()
+        .with('signer_address', signerAddress)
+        .build() as AuthPayload;
       const user = userBuilder().build();
       const space = spaceBuilder().build();
       const member = memberBuilder()
@@ -105,10 +106,9 @@ describe('SpacesService', () => {
 
     it('should return safeCount 0 when space has no safes', async () => {
       const signerAddress = faker.finance.ethereumAddress() as Address;
-      const authPayload = new AuthPayload({
-        signer_address: signerAddress,
-        chain_id: '1',
-      });
+      const authPayload = siweAuthPayloadDtoBuilder()
+        .with('signer_address', signerAddress)
+        .build() as AuthPayload;
       const user = userBuilder().build();
       const space = spaceBuilder().build();
       const member = memberBuilder()
@@ -135,10 +135,9 @@ describe('SpacesService', () => {
 
     it('should return safeCount 0 when space.safes is undefined', async () => {
       const signerAddress = faker.finance.ethereumAddress() as Address;
-      const authPayload = new AuthPayload({
-        signer_address: signerAddress,
-        chain_id: '1',
-      });
+      const authPayload = siweAuthPayloadDtoBuilder()
+        .with('signer_address', signerAddress)
+        .build() as AuthPayload;
       const user = userBuilder().build();
       const space = spaceBuilder().build();
       const member = memberBuilder()
@@ -165,10 +164,9 @@ describe('SpacesService', () => {
 
     it('should return empty array when user has no memberships', async () => {
       const signerAddress = faker.finance.ethereumAddress() as Address;
-      const authPayload = new AuthPayload({
-        signer_address: signerAddress,
-        chain_id: '1',
-      });
+      const authPayload = siweAuthPayloadDtoBuilder()
+        .with('signer_address', signerAddress)
+        .build() as AuthPayload;
       const user = userBuilder().build();
 
       userRepositoryMock.findByWalletAddressOrFail.mockResolvedValue(user);
@@ -182,10 +180,9 @@ describe('SpacesService', () => {
 
     it('should return multiple spaces with correct safeCount each', async () => {
       const signerAddress = faker.finance.ethereumAddress() as Address;
-      const authPayload = new AuthPayload({
-        signer_address: signerAddress,
-        chain_id: '1',
-      });
+      const authPayload = siweAuthPayloadDtoBuilder()
+        .with('signer_address', signerAddress)
+        .build() as AuthPayload;
       const user = userBuilder().build();
       const space1 = spaceBuilder().build();
       const space2 = spaceBuilder().build();
@@ -239,10 +236,9 @@ describe('SpacesService', () => {
 
     it('should propagate error when user is not found', async () => {
       const signerAddress = faker.finance.ethereumAddress() as Address;
-      const authPayload = new AuthPayload({
-        signer_address: signerAddress,
-        chain_id: '1',
-      });
+      const authPayload = siweAuthPayloadDtoBuilder()
+        .with('signer_address', signerAddress)
+        .build() as AuthPayload;
       const error = new Error('User not found');
 
       userRepositoryMock.findByWalletAddressOrFail.mockRejectedValue(error);
