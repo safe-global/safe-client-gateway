@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { type Address, getAddress } from 'viem';
 import { faker } from '@faker-js/faker';
 import request from 'supertest';
@@ -7,7 +8,7 @@ import configuration from '@/config/entities/__tests__/configuration';
 import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
 import { NotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/notifications.repository.module';
 import { TestNotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/test.notification.repository.module';
-import { authPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
+import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { UsersController } from '@/modules/users/routes/users.controller';
 import { checkGuardIsApplied } from '@/__tests__/util/check-guard';
 import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
@@ -80,7 +81,7 @@ describe('UsersController', () => {
 
   describe('GET /v1/users', () => {
     it('should return the user with wallets', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
 
       await request(app.getHttpServer())
@@ -116,7 +117,7 @@ describe('UsersController', () => {
     });
 
     it('should return a 403 is the AuthPayload is empty', async () => {
-      const authPayloadDto = authPayloadDtoBuilder()
+      const authPayloadDto = siweAuthPayloadDtoBuilder()
         .with('signer_address', undefined as unknown as Address)
         .build();
       const accessToken = jwtService.sign(authPayloadDto);
@@ -133,7 +134,7 @@ describe('UsersController', () => {
     });
 
     it('should return a 404 if the wallet is not found', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
 
       await request(app.getHttpServer())
@@ -151,7 +152,7 @@ describe('UsersController', () => {
   describe('DELETE /v1/users', () => {
     // TODO: Check wallet/user entities are removed in integration test (and other tests don't)
     it('should delete the user', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
 
       await request(app.getHttpServer())
@@ -179,7 +180,7 @@ describe('UsersController', () => {
     });
 
     it('should return a 403 is the AuthPayload is empty', async () => {
-      const authPayloadDto = authPayloadDtoBuilder()
+      const authPayloadDto = siweAuthPayloadDtoBuilder()
         .with('signer_address', undefined as unknown as Address)
         .build();
       const accessToken = jwtService.sign(authPayloadDto);
@@ -196,7 +197,7 @@ describe('UsersController', () => {
     });
 
     it('should return a 404 if the user is not found', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
 
       await request(app.getHttpServer())
@@ -213,7 +214,7 @@ describe('UsersController', () => {
 
   describe('POST /v1/users/wallet', () => {
     it('should create a user with a wallet', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
 
       await request(app.getHttpServer())
@@ -240,7 +241,7 @@ describe('UsersController', () => {
     });
 
     it('should return a 403 is the AuthPayload is empty', async () => {
-      const authPayloadDto = authPayloadDtoBuilder()
+      const authPayloadDto = siweAuthPayloadDtoBuilder()
         .with('signer_address', undefined as unknown as Address)
         .build();
       const accessToken = jwtService.sign(authPayloadDto);
@@ -257,7 +258,7 @@ describe('UsersController', () => {
     });
 
     it('should return a 409 if the wallet already exists', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
 
       await request(app.getHttpServer())
@@ -300,7 +301,7 @@ describe('UsersController', () => {
         message,
       });
 
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
 
       await request(app.getHttpServer())
@@ -336,7 +337,7 @@ describe('UsersController', () => {
     });
 
     it('should return a 403 is the AuthPayload is empty', async () => {
-      const authPayloadDto = authPayloadDtoBuilder()
+      const authPayloadDto = siweAuthPayloadDtoBuilder()
         .with('signer_address', undefined as unknown as Address)
         .build();
       const accessToken = jwtService.sign(authPayloadDto);
@@ -359,7 +360,7 @@ describe('UsersController', () => {
       const nonce: string = nonceResponse.body.nonce;
       const cacheDir = new CacheDir(`auth_nonce_${nonce}`, '');
 
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
 
       await request(app.getHttpServer())
@@ -417,7 +418,7 @@ ${messageObj.resources?.reduce((acc, cur) => `${acc}\n- ${cur}`, 'Resources:')}`
         message,
       });
 
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
 
       await request(app.getHttpServer())
@@ -465,7 +466,7 @@ ${messageObj.resources?.reduce((acc, cur) => `${acc}\n- ${cur}`, 'Resources:')}`
         message,
       });
 
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
 
       await request(app.getHttpServer())
@@ -511,7 +512,7 @@ ${messageObj.resources?.reduce((acc, cur) => `${acc}\n- ${cur}`, 'Resources:')}`
         message,
       });
 
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
 
       await request(app.getHttpServer())
@@ -561,7 +562,7 @@ ${messageObj.resources?.reduce((acc, cur) => `${acc}\n- ${cur}`, 'Resources:')}`
         message,
       });
 
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
 
       await request(app.getHttpServer())
@@ -598,7 +599,7 @@ ${messageObj.resources?.reduce((acc, cur) => `${acc}\n- ${cur}`, 'Resources:')}`
         message,
       });
 
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
 
       await request(app.getHttpServer())
@@ -638,7 +639,7 @@ ${messageObj.resources?.reduce((acc, cur) => `${acc}\n- ${cur}`, 'Resources:')}`
         message,
       });
 
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
 
       await request(app.getHttpServer())
@@ -681,7 +682,7 @@ ${messageObj.resources?.reduce((acc, cur) => `${acc}\n- ${cur}`, 'Resources:')}`
         message: faker.lorem.sentence(),
       });
 
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
 
       await request(app.getHttpServer())
@@ -738,7 +739,7 @@ ${messageObj.resources?.reduce((acc, cur) => `${acc}\n- ${cur}`, 'Resources:')}`
         message: message2,
       });
 
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
 
       await request(app.getHttpServer())
@@ -791,7 +792,7 @@ ${messageObj.resources?.reduce((acc, cur) => `${acc}\n- ${cur}`, 'Resources:')}`
         message,
       });
 
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
 
       await request(app.getHttpServer())
@@ -831,7 +832,7 @@ ${messageObj.resources?.reduce((acc, cur) => `${acc}\n- ${cur}`, 'Resources:')}`
         message,
       });
       const walletAddress = getAddress(faker.finance.ethereumAddress());
-      const authPayloadDto = authPayloadDtoBuilder()
+      const authPayloadDto = siweAuthPayloadDtoBuilder()
         .with('signer_address', walletAddress)
         .build();
       const accessToken = jwtService.sign(authPayloadDto);
@@ -873,7 +874,7 @@ ${messageObj.resources?.reduce((acc, cur) => `${acc}\n- ${cur}`, 'Resources:')}`
 
     it('should return a 403 is the AuthPayload is empty', async () => {
       const walletAddress = getAddress(faker.finance.ethereumAddress());
-      const authPayloadDto = authPayloadDtoBuilder()
+      const authPayloadDto = siweAuthPayloadDtoBuilder()
         .with('signer_address', undefined as unknown as Address)
         .build();
       const accessToken = jwtService.sign(authPayloadDto);
@@ -891,7 +892,7 @@ ${messageObj.resources?.reduce((acc, cur) => `${acc}\n- ${cur}`, 'Resources:')}`
 
     it('should return a 409 if it is the authenticated one', async () => {
       const walletAddress = getAddress(faker.finance.ethereumAddress());
-      const authPayloadDto = authPayloadDtoBuilder()
+      const authPayloadDto = siweAuthPayloadDtoBuilder()
         .with('signer_address', walletAddress)
         .build();
       const accessToken = jwtService.sign(authPayloadDto);
@@ -914,7 +915,7 @@ ${messageObj.resources?.reduce((acc, cur) => `${acc}\n- ${cur}`, 'Resources:')}`
 
     it('should return a 404 if the user is not found', async () => {
       const walletAddress = getAddress(faker.finance.ethereumAddress());
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
 
       await request(app.getHttpServer())
