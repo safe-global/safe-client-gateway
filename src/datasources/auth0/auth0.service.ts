@@ -29,6 +29,8 @@ export class Auth0Service implements IAuth0Service {
   }
 
   verify(accessToken: string): void {
+    //TODO should it be verify or decode?
+    //TODO how/where are errors handled? try/catch?
     this.jwtService.verify(accessToken, {
       issuer: this.issuer,
       audience: this.audience,
