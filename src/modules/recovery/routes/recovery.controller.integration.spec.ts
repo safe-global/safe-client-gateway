@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import request from 'supertest';
 import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
@@ -19,7 +20,7 @@ import {
 } from '@/modules/alerts/alerts.module';
 import alertsApiConfiguration from '@/modules/alerts/datasources/configuration/__tests__/alerts-api.configuration';
 import alertsConfiguration from '@/modules/alerts/routes/configuration/__tests__/alerts.configuration';
-import { authPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
+import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
 import { getAddress } from 'viem';
 import type { Server } from 'net';
@@ -105,7 +106,7 @@ describe('Recovery Controller', () => {
       const chain = chainBuilder().build();
       const safe = safeBuilder().build();
       const signerAddress = safe.owners[0];
-      const authPayloadDto = authPayloadDtoBuilder()
+      const authPayloadDto = siweAuthPayloadDtoBuilder()
         .with('chain_id', chain.chainId)
         .with('signer_address', signerAddress)
         .build();
@@ -150,7 +151,7 @@ describe('Recovery Controller', () => {
       const chain = chainBuilder().build();
       const safe = safeBuilder().build();
       const signerAddress = safe.owners[0];
-      const authPayloadDto = authPayloadDtoBuilder()
+      const authPayloadDto = siweAuthPayloadDtoBuilder()
         .with('chain_id', faker.string.numeric({ exclude: [chain.chainId] }))
         .with('signer_address', signerAddress)
         .build();
@@ -181,7 +182,7 @@ describe('Recovery Controller', () => {
       const addRecoveryModuleDto = addRecoveryModuleDtoBuilder().build();
       const chain = chainBuilder().build();
       const safe = safeBuilder().build();
-      const authPayloadDto = authPayloadDtoBuilder()
+      const authPayloadDto = siweAuthPayloadDtoBuilder()
         .with('chain_id', chain.chainId)
         .build();
       const accessToken = jwtService.sign(authPayloadDto);
@@ -212,7 +213,7 @@ describe('Recovery Controller', () => {
       const chain = chainBuilder().build();
       const safe = safeBuilder().build();
       const signerAddress = safe.owners[0];
-      const authPayloadDto = authPayloadDtoBuilder()
+      const authPayloadDto = siweAuthPayloadDtoBuilder()
         .with('chain_id', chain.chainId)
         .with('signer_address', signerAddress)
         .build();
@@ -261,7 +262,7 @@ describe('Recovery Controller', () => {
       const chain = chainBuilder().build();
       const safe = safeBuilder().build();
       const signerAddress = safe.owners[0];
-      const authPayloadDto = authPayloadDtoBuilder()
+      const authPayloadDto = siweAuthPayloadDtoBuilder()
         .with('chain_id', chain.chainId)
         .with('signer_address', signerAddress)
         .build();
@@ -384,7 +385,7 @@ describe('Recovery Controller', () => {
       const chain = chainBuilder().build();
       const safe = safeBuilder().build();
       const signerAddress = safe.owners[0];
-      const authPayloadDto = authPayloadDtoBuilder()
+      const authPayloadDto = siweAuthPayloadDtoBuilder()
         .with('chain_id', chain.chainId)
         .with('signer_address', signerAddress)
         .build();
@@ -421,7 +422,7 @@ describe('Recovery Controller', () => {
       const chain = chainBuilder().build();
       const safe = safeBuilder().build();
       const signerAddress = safe.owners[0];
-      const authPayloadDto = authPayloadDtoBuilder()
+      const authPayloadDto = siweAuthPayloadDtoBuilder()
         .with('chain_id', faker.string.numeric({ exclude: [chain.chainId] }))
         .with('signer_address', signerAddress)
         .build();
@@ -453,7 +454,7 @@ describe('Recovery Controller', () => {
       const moduleAddress = getAddress(faker.finance.ethereumAddress());
       const chain = chainBuilder().build();
       const safe = safeBuilder().build();
-      const authPayloadDto = authPayloadDtoBuilder()
+      const authPayloadDto = siweAuthPayloadDtoBuilder()
         .with('chain_id', chain.chainId)
         .build();
       const accessToken = jwtService.sign(authPayloadDto);
@@ -485,7 +486,7 @@ describe('Recovery Controller', () => {
       const chain = chainBuilder().build();
       const safe = safeBuilder().build();
       const signerAddress = safe.owners[0];
-      const authPayloadDto = authPayloadDtoBuilder()
+      const authPayloadDto = siweAuthPayloadDtoBuilder()
         .with('chain_id', chain.chainId)
         .with('signer_address', signerAddress)
         .build();
@@ -538,7 +539,7 @@ describe('Recovery Controller', () => {
       const chain = chainBuilder().build();
       const safe = safeBuilder().build();
       const signerAddress = safe.owners[0];
-      const authPayloadDto = authPayloadDtoBuilder()
+      const authPayloadDto = siweAuthPayloadDtoBuilder()
         .with('chain_id', chain.chainId)
         .with('signer_address', signerAddress)
         .build();
