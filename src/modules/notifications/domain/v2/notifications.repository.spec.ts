@@ -129,29 +129,31 @@ describe('NotificationsRepositoryV2', () => {
       expect(
         mockEntityManager.createQueryBuilder().delete().from,
       ).toHaveBeenNthCalledWith(1, NotificationSubscription);
-      for (const [index, safe] of upsertSubscriptionsDto.safes.entries()) {
-        const nthTime = index + 1; // Index is zero based for that reason we need to add 1 to it
-        expect(
-          mockEntityManager
-            .createQueryBuilder()
-            .delete()
-            .from(NotificationSubscription).where,
-        ).toHaveBeenNthCalledWith(
-          nthTime,
-          `chain_id = :chainId
-          AND safe_address = :safeAddress
-          AND push_notification_device.id = :deviceId
-          AND (
-            signer_address = :signerAddress OR signer_address IS NULL
-          )`,
-          {
-            chainId: safe.chainId,
-            safeAddress: safe.address,
-            deviceId: deviceId,
-            signerAddress: authPayload.signer_address ?? null,
-          },
-        );
+
+      const conditions = upsertSubscriptionsDto.safes.map((_, i) => {
+        return `(chain_id = :chainId${i} AND safe_address = :safeAddress${i})`;
+      });
+      const parameters: Record<string, unknown> = {
+        deviceId: deviceId,
+        signerAddress: authPayload.signer_address ?? null,
+      };
+      for (let i = 0; i < upsertSubscriptionsDto.safes.length; i++) {
+        parameters[`chainId${i}`] = upsertSubscriptionsDto.safes[i].chainId;
+        parameters[`safeAddress${i}`] = upsertSubscriptionsDto.safes[i].address;
       }
+      expect(
+        mockEntityManager
+          .createQueryBuilder()
+          .delete()
+          .from(NotificationSubscription).where,
+      ).toHaveBeenCalledWith(
+        `(${conditions.join(' OR ')})
+        AND push_notification_device.id = :deviceId
+        AND (
+          signer_address = :signerAddress OR signer_address IS NULL
+        )`,
+        parameters,
+      );
     });
 
     it('Should insert the subscription object when upserting a new subscription', async () => {
@@ -592,7 +594,7 @@ describe('NotificationsRepositoryV2', () => {
       expect(notificationSubscriptionsRepository.remove).not.toHaveBeenCalled();
     });
 
-    it('Should clear cache for each subscription after deletion', async () => {
+    it('Should clear cache for all subscriptions in a single batched call after deletion', async () => {
       const mockSubscriptions = Array.from({ length: 2 }, () =>
         notificationSubscriptionBuilder().build(),
       );
@@ -625,7 +627,7 @@ describe('NotificationsRepositoryV2', () => {
       expect(
         notificationSubscriptionsRepository.manager.connection.queryResultCache
           ?.remove,
-      ).toHaveBeenCalledTimes(mockSubscriptions.length);
+      ).toHaveBeenCalledTimes(1);
     });
 
     it('Should handle empty subscriptions array', async () => {
