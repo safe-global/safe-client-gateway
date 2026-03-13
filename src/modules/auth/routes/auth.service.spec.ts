@@ -28,10 +28,11 @@ const mockConfigurationService = {
 
 const mockUsersRepository = {
   findOrCreateByWalletAddress: jest.fn(),
+  findOrCreateByExtUserId: jest.fn(),
 } as jest.MockedObjectDeep<IUsersRepository>;
 
 const mockAuth0Service = {
-  verify: jest.fn(),
+  verifyAndDecode: jest.fn(),
 } as jest.MockedObjectDeep<IAuth0Service>;
 
 describe('AuthService', () => {
@@ -227,6 +228,164 @@ describe('AuthService', () => {
       await expect(service.verifySiwe(siweArgs)).resolves.toEqual({
         accessToken: 'token',
       });
+    });
+  });
+
+  describe('verifyOidc', () => {
+    let extUserId: string;
+    let userId: number;
+
+    beforeEach(() => {
+      extUserId = faker.string.uuid();
+      userId = faker.number.int({ min: 1, max: 1000 });
+
+      mockAuth0Service.verifyAndDecode.mockReturnValue({ sub: extUserId });
+      mockUsersRepository.findOrCreateByExtUserId.mockResolvedValue(userId);
+      mockAuthRepository.signToken.mockReturnValue('token');
+    });
+
+    it('should sign a token with OIDC claims (no chain_id or signer_address)', async () => {
+      const expectedToken = faker.string.alphanumeric(32);
+      const exp = new Date(now.getTime() + 30 * 60 * 1_000);
+      const iat = now;
+      mockAuth0Service.verifyAndDecode.mockReturnValue({
+        sub: extUserId,
+        exp,
+        iat,
+      });
+      mockAuthRepository.signToken.mockReturnValue(expectedToken);
+
+      const accessToken = faker.string.alphanumeric(64);
+      const result = await service.verifyOidc(accessToken);
+
+      expect(result).toEqual({ accessToken: expectedToken });
+      expect(mockAuth0Service.verifyAndDecode).toHaveBeenCalledWith(
+        accessToken,
+      );
+      expect(mockUsersRepository.findOrCreateByExtUserId).toHaveBeenCalledWith(
+        extUserId,
+      );
+      expect(mockAuthRepository.signToken).toHaveBeenCalledWith(
+        {
+          auth_method: 'oidc',
+          sub: userId.toString(),
+        },
+        {
+          exp,
+          iat,
+        },
+      );
+    });
+
+    it('should use max expiration time when exp is not set', async () => {
+      await service.verifyOidc(faker.string.alphanumeric(64));
+
+      const maxExpiration = new Date(
+        now.getTime() + maxValidityPeriodInSeconds * 1_000,
+      );
+      expect(mockAuthRepository.signToken).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          exp: maxExpiration,
+        }),
+      );
+    });
+
+    it('should throw ForbiddenException when exp exceeds max validity', async () => {
+      const tooFarExpiration = new Date(
+        now.getTime() + (maxValidityPeriodInSeconds + 1) * 1_000,
+      );
+      mockAuth0Service.verifyAndDecode.mockReturnValue({
+        sub: extUserId,
+        exp: tooFarExpiration,
+      });
+
+      await expect(
+        service.verifyOidc(faker.string.alphanumeric(64)),
+      ).rejects.toThrow(
+        new ForbiddenException(
+          `Cannot issue token for longer than ${maxValidityPeriodInSeconds} seconds`,
+        ),
+      );
+
+      expect(mockAuthRepository.signToken).not.toHaveBeenCalled();
+    });
+
+    it('should not throw when exp equals max validity', async () => {
+      const exactMaxExpiration = new Date(
+        now.getTime() + maxValidityPeriodInSeconds * 1_000,
+      );
+      mockAuth0Service.verifyAndDecode.mockReturnValue({
+        sub: extUserId,
+        exp: exactMaxExpiration,
+      });
+
+      await expect(
+        service.verifyOidc(faker.string.alphanumeric(64)),
+      ).resolves.toEqual({ accessToken: 'token' });
+    });
+
+    it('should forward nbf from Auth0 token when present', async () => {
+      const nbf = new Date(now.getTime() + 60 * 1_000);
+      const iat = now;
+      mockAuth0Service.verifyAndDecode.mockReturnValue({
+        sub: extUserId,
+        nbf,
+        iat,
+      });
+
+      await service.verifyOidc(faker.string.alphanumeric(64));
+
+      expect(mockAuthRepository.signToken).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          nbf,
+        }),
+      );
+    });
+
+    it('should pass undefined nbf when not present in Auth0 token', async () => {
+      await service.verifyOidc(faker.string.alphanumeric(64));
+
+      expect(mockAuthRepository.signToken).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ nbf: undefined }),
+      );
+    });
+
+    it('should use current date for iat when not present in Auth0 token', async () => {
+      await service.verifyOidc(faker.string.alphanumeric(64));
+
+      expect(mockAuthRepository.signToken).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          iat: now,
+        }),
+      );
+    });
+
+    it('should propagate errors from auth0Service.verifyAndDecode', async () => {
+      const error = new Error('Invalid token');
+      mockAuth0Service.verifyAndDecode.mockImplementation(() => {
+        throw error;
+      });
+
+      await expect(
+        service.verifyOidc(faker.string.alphanumeric(64)),
+      ).rejects.toThrow(error);
+
+      expect(mockAuthRepository.signToken).not.toHaveBeenCalled();
+    });
+
+    it('should propagate errors from findOrCreateByExtUserId', async () => {
+      const error = new Error('Database connection failed');
+      mockUsersRepository.findOrCreateByExtUserId.mockRejectedValue(error);
+
+      await expect(
+        service.verifyOidc(faker.string.alphanumeric(64)),
+      ).rejects.toThrow(error);
+
+      expect(mockAuthRepository.signToken).not.toHaveBeenCalled();
     });
   });
 });

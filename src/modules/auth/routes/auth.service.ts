@@ -36,33 +36,45 @@ export class AuthService {
     );
   }
 
-  async getNonce(): Promise<{
+  public async getNonce(): Promise<{
     nonce: string;
   }> {
     return await this.siweRepository.generateNonce();
   }
 
-  verifyOidc(accessToken: string): AuthTokenResponse {
-    this.auth0Service.verify(accessToken);
+  public async verifyOidc(accessToken: string): Promise<AuthTokenResponse> {
+    const {
+      sub: extUserId,
+      exp: expirationTime,
+      nbf,
+      iat,
+    } = this.auth0Service.verifyAndDecode(accessToken);
 
-    // TODO: Extract claims from OIDC token
+    const maxExpirationTime = this.getMaxExpirationTime();
+
+    if (expirationTime) {
+      this.assertExpirationTime(expirationTime, maxExpirationTime);
+    }
+
+    const userId =
+      await this.usersRepository.findOrCreateByExtUserId(extUserId);
+
     const token = this.authRepository.signToken(
       {
         auth_method: AuthMethod.Oidc,
-        sub: 'oidc-user-id',
-        chain_id: '0',
-        signer_address: '0x0000000000000000000000000000000000000000',
+        sub: userId.toString(),
       },
       {
-        exp: this.getMaxExpirationTime(),
-        iat: new Date(),
+        nbf,
+        exp: expirationTime ?? maxExpirationTime,
+        iat: iat ?? new Date(),
       },
     );
 
     return { accessToken: token };
   }
 
-  async verifySiwe(args: {
+  public async verifySiwe(args: {
     message: string;
     signature: Hex;
   }): Promise<AuthTokenResponse> {
@@ -71,10 +83,8 @@ export class AuthService {
 
     const maxExpirationTime = this.getMaxExpirationTime();
 
-    if (expirationTime && expirationTime > maxExpirationTime) {
-      throw new ForbiddenException(
-        `Cannot issue token for longer than ${this.maxValidityPeriodInSeconds} seconds`,
-      );
+    if (expirationTime) {
+      this.assertExpirationTime(expirationTime, maxExpirationTime);
     }
 
     const userId =
@@ -99,7 +109,7 @@ export class AuthService {
     return { accessToken };
   }
 
-  getTokenPayloadWithClaims(
+  public getTokenPayloadWithClaims(
     accessToken: string,
   ): JwtPayloadWithClaims<AuthPayloadDto> {
     return this.authRepository.decodeToken(accessToken);
@@ -107,5 +117,16 @@ export class AuthService {
 
   private getMaxExpirationTime(): Date {
     return new Date(Date.now() + this.maxValidityPeriodInSeconds * 1_000);
+  }
+
+  private assertExpirationTime(
+    expirationTime: Date,
+    maxExpirationTime: Date,
+  ): void {
+    if (expirationTime > maxExpirationTime) {
+      throw new ForbiddenException(
+        `Cannot issue token for longer than ${this.maxValidityPeriodInSeconds} seconds`,
+      );
+    }
   }
 }

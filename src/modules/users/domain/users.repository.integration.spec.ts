@@ -734,6 +734,7 @@ describe('UsersRepository', () => {
       });
       expect(user).toEqual({
         createdAt: expect.any(Date),
+        extUserId: null,
         id: userId,
         status: 'ACTIVE',
         updatedAt: expect.any(Date),
@@ -751,6 +752,7 @@ describe('UsersRepository', () => {
         updatedAt: expect.any(Date),
         user: {
           createdAt: expect.any(Date),
+          extUserId: null,
           id: userId,
           status: 'ACTIVE',
           updatedAt: expect.any(Date),
