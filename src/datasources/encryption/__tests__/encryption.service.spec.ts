@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { FieldEncryptionService } from '@/datasources/encryption/field-encryption.service';
+import { EncryptionService } from '@/datasources/encryption/encryption.service';
 import { faker } from '@faker-js/faker/.';
 import { randomBytes } from 'crypto';
 
@@ -7,10 +7,10 @@ const dekV1 = randomBytes(32);
 const dekV2 = randomBytes(32);
 const hmacKey = randomBytes(32);
 
-describe('FieldEncryptionService', () => {
+describe('EncryptionService', () => {
   describe('constructor validation', () => {
     it('should throw if no DEK versions are provided', () => {
-      expect(() => new FieldEncryptionService(new Map(), 1, hmacKey)).toThrow(
+      expect(() => new EncryptionService(new Map(), 1, hmacKey)).toThrow(
         'At least one DEK version must be provided',
       );
     });
@@ -18,7 +18,7 @@ describe('FieldEncryptionService', () => {
     it('should throw if current version is not in the DEK map', () => {
       const deks = new Map([[1, dekV1]]);
 
-      expect(() => new FieldEncryptionService(deks, 2, hmacKey)).toThrow(
+      expect(() => new EncryptionService(deks, 2, hmacKey)).toThrow(
         'Current version 2 not found in DEK versions [1]',
       );
     });
@@ -27,7 +27,7 @@ describe('FieldEncryptionService', () => {
       const shortKey = randomBytes(16);
       const deks = new Map([[1, shortKey]]);
 
-      expect(() => new FieldEncryptionService(deks, 1, hmacKey)).toThrow(
+      expect(() => new EncryptionService(deks, 1, hmacKey)).toThrow(
         'DEK for version 1 must be 32 bytes, got 16',
       );
     });
@@ -35,7 +35,7 @@ describe('FieldEncryptionService', () => {
     it('should accept valid single-DEK configuration', () => {
       const deks = new Map([[1, dekV1]]);
 
-      expect(() => new FieldEncryptionService(deks, 1, hmacKey)).not.toThrow();
+      expect(() => new EncryptionService(deks, 1, hmacKey)).not.toThrow();
     });
 
     it('should accept valid multi-DEK configuration', () => {
@@ -44,16 +44,16 @@ describe('FieldEncryptionService', () => {
         [2, dekV2],
       ]);
 
-      expect(() => new FieldEncryptionService(deks, 2, hmacKey)).not.toThrow();
+      expect(() => new EncryptionService(deks, 2, hmacKey)).not.toThrow();
     });
   });
 
   describe('encrypt/decrypt round-trip', () => {
-    let service: FieldEncryptionService;
+    let service: EncryptionService;
 
     beforeEach(() => {
       const deks = new Map([[1, dekV1]]);
-      service = new FieldEncryptionService(deks, 1, hmacKey);
+      service = new EncryptionService(deks, 1, hmacKey);
     });
 
     it('should encrypt and decrypt a string', () => {
@@ -119,7 +119,7 @@ describe('FieldEncryptionService', () => {
         [1, dekV1],
         [2, dekV2],
       ]);
-      const service = new FieldEncryptionService(deks, 2, hmacKey);
+      const service = new EncryptionService(deks, 2, hmacKey);
 
       const { version } = service.encrypt('test');
 
@@ -128,7 +128,7 @@ describe('FieldEncryptionService', () => {
 
     it('should decrypt old data (v1) after rotating to v2', () => {
       // Phase 1: encrypt with v1
-      const serviceV1 = new FieldEncryptionService(
+      const serviceV1 = new EncryptionService(
         new Map([[1, dekV1]]),
         1,
         hmacKey,
@@ -136,7 +136,7 @@ describe('FieldEncryptionService', () => {
       const { ciphertext: oldCt } = serviceV1.encrypt('old-data');
 
       // Phase 2: deploy new service with both keys, current = v2
-      const serviceV2 = new FieldEncryptionService(
+      const serviceV2 = new EncryptionService(
         new Map([
           [1, dekV1],
           [2, dekV2],
@@ -161,11 +161,11 @@ describe('FieldEncryptionService', () => {
       ]);
 
       // Encrypt with v1
-      const serviceV1 = new FieldEncryptionService(deks, 1, hmacKey);
+      const serviceV1 = new EncryptionService(deks, 1, hmacKey);
       const { ciphertext: v1Ct } = serviceV1.encrypt('migrate-me');
 
       // Re-encrypt: decrypt with v1, encrypt with v2
-      const serviceV2 = new FieldEncryptionService(deks, 2, hmacKey);
+      const serviceV2 = new EncryptionService(deks, 2, hmacKey);
       const plaintext = serviceV2.decrypt(v1Ct, 1);
       const { ciphertext: v2Ct, version } = serviceV2.encrypt(plaintext);
 
@@ -174,7 +174,7 @@ describe('FieldEncryptionService', () => {
     });
 
     it('should fail to decrypt v1 data with v2 key (key isolation)', () => {
-      const serviceV1 = new FieldEncryptionService(
+      const serviceV1 = new EncryptionService(
         new Map([[1, dekV1]]),
         1,
         hmacKey,
@@ -182,7 +182,7 @@ describe('FieldEncryptionService', () => {
       const { ciphertext } = serviceV1.encrypt('secret');
 
       // Service with ONLY v2 — v1 key is gone
-      const serviceV2Only = new FieldEncryptionService(
+      const serviceV2Only = new EncryptionService(
         new Map([[2, dekV2]]),
         2,
         hmacKey,
@@ -197,7 +197,7 @@ describe('FieldEncryptionService', () => {
   describe('app restart / DEK determinism', () => {
     it('should decrypt after restart with same key material', () => {
       // Simulate first boot
-      const service1 = new FieldEncryptionService(
+      const service1 = new EncryptionService(
         new Map([[1, dekV1]]),
         1,
         hmacKey,
@@ -205,7 +205,7 @@ describe('FieldEncryptionService', () => {
       const { ciphertext, version } = service1.encrypt('survive-restart');
 
       // Simulate restart — new instance, same key bytes
-      const service2 = new FieldEncryptionService(
+      const service2 = new EncryptionService(
         new Map([[1, Buffer.from(dekV1)]]),
         1,
         Buffer.from(hmacKey),
@@ -215,7 +215,7 @@ describe('FieldEncryptionService', () => {
     });
 
     it('should produce same HMAC after restart with same key', () => {
-      const service1 = new FieldEncryptionService(
+      const service1 = new EncryptionService(
         new Map([[1, dekV1]]),
         1,
         hmacKey,
@@ -223,7 +223,7 @@ describe('FieldEncryptionService', () => {
       const hash1 = service1.hmac('0xABC123');
 
       // Restart
-      const service2 = new FieldEncryptionService(
+      const service2 = new EncryptionService(
         new Map([[1, Buffer.from(dekV1)]]),
         1,
         Buffer.from(hmacKey),
@@ -234,7 +234,7 @@ describe('FieldEncryptionService', () => {
     });
 
     it('should fail to decrypt if DEK is lost (different key on restart)', () => {
-      const service1 = new FieldEncryptionService(
+      const service1 = new EncryptionService(
         new Map([[1, dekV1]]),
         1,
         hmacKey,
@@ -243,7 +243,7 @@ describe('FieldEncryptionService', () => {
 
       // Restart with WRONG key (simulates DEK loss)
       const wrongKey = randomBytes(32);
-      const service2 = new FieldEncryptionService(
+      const service2 = new EncryptionService(
         new Map([[1, wrongKey]]),
         1,
         hmacKey,
@@ -258,7 +258,7 @@ describe('FieldEncryptionService', () => {
       const plaintext = 'yearly-rotation-test';
 
       // Step 1: v1 only
-      const phase1 = new FieldEncryptionService(
+      const phase1 = new EncryptionService(
         new Map([[1, dekV1]]),
         1,
         hmacKey,
@@ -266,7 +266,7 @@ describe('FieldEncryptionService', () => {
       const { ciphertext: v1Ct } = phase1.encrypt(plaintext);
 
       // Step 2: deploy with both keys, write as v2
-      const phase2 = new FieldEncryptionService(
+      const phase2 = new EncryptionService(
         new Map([
           [1, dekV1],
           [2, dekV2],
@@ -285,7 +285,7 @@ describe('FieldEncryptionService', () => {
       expect(reEncrypted.version).toBe(2);
 
       // Step 4: remove v1 key (all data is v2 now)
-      const phase3 = new FieldEncryptionService(
+      const phase3 = new EncryptionService(
         new Map([[2, dekV2]]),
         2,
         hmacKey,
@@ -301,10 +301,10 @@ describe('FieldEncryptionService', () => {
   });
 
   describe('encryption_version field semantics', () => {
-    let service: FieldEncryptionService;
+    let service: EncryptionService;
 
     beforeEach(() => {
-      service = new FieldEncryptionService(
+      service = new EncryptionService(
         new Map([
           [1, dekV1],
           [2, dekV2],
@@ -328,7 +328,7 @@ describe('FieldEncryptionService', () => {
     });
 
     it('version=1 means encrypted with v1 DEK', () => {
-      const { ciphertext } = new FieldEncryptionService(
+      const { ciphertext } = new EncryptionService(
         new Map([[1, dekV1]]),
         1,
         hmacKey,
@@ -370,10 +370,10 @@ describe('FieldEncryptionService', () => {
   });
 
   describe('tamper detection (AES-GCM integrity)', () => {
-    let service: FieldEncryptionService;
+    let service: EncryptionService;
 
     beforeEach(() => {
-      service = new FieldEncryptionService(new Map([[1, dekV1]]), 1, hmacKey);
+      service = new EncryptionService(new Map([[1, dekV1]]), 1, hmacKey);
     });
 
     it('should detect tampered ciphertext', () => {
@@ -441,10 +441,10 @@ describe('FieldEncryptionService', () => {
   });
 
   describe('hmac', () => {
-    let service: FieldEncryptionService;
+    let service: EncryptionService;
 
     beforeEach(() => {
-      service = new FieldEncryptionService(new Map([[1, dekV1]]), 1, hmacKey);
+      service = new EncryptionService(new Map([[1, dekV1]]), 1, hmacKey);
     });
 
     it('should produce a deterministic 64-char hex string', () => {
@@ -475,7 +475,7 @@ describe('FieldEncryptionService', () => {
 
     it('should produce different hashes with different HMAC keys', () => {
       const otherHmacKey = randomBytes(32);
-      const otherService = new FieldEncryptionService(
+      const otherService = new EncryptionService(
         new Map([[1, dekV1]]),
         1,
         otherHmacKey,
@@ -490,7 +490,7 @@ describe('FieldEncryptionService', () => {
     it('should survive restart with same HMAC key', () => {
       const hash1 = service.hmac('deterministic');
 
-      const restarted = new FieldEncryptionService(
+      const restarted = new EncryptionService(
         new Map([[1, dekV1]]),
         1,
         Buffer.from(hmacKey),

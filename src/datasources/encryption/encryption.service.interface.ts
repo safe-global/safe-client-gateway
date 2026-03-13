@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
-export const IFieldEncryptionService = Symbol('IFieldEncryptionService');
+export const IEncryptionService = Symbol('IEncryptionService');
 
 export interface EncryptedField {
   /** Raw base64-encoded ciphertext (no version prefix) */
@@ -9,7 +9,7 @@ export interface EncryptedField {
   version: number;
 }
 
-export interface IFieldEncryptionService {
+export interface IEncryptionService {
   /**
    * The current encryption version used for new encryptions.
    */

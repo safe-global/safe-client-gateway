@@ -2,8 +2,8 @@
 import { DynamicModule, Global, Module } from '@nestjs/common';
 import { DecryptCommand, KMSClient } from '@aws-sdk/client-kms';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import { IFieldEncryptionService } from '@/datasources/encryption/encryption.service.interface';
-import { FieldEncryptionService } from '@/datasources/encryption/field-encryption.service';
+import { IEncryptionService } from '@/datasources/encryption/encryption.service.interface';
+import { EncryptionService } from '@/datasources/encryption/encryption.service';
 import { EncryptionLocator } from '@/datasources/encryption/encryption-locator';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { LoggingService } from '@/logging/logging.interface';
@@ -21,11 +21,11 @@ export class EncryptionModule {
       module: EncryptionModule,
       providers: [
         {
-          provide: IFieldEncryptionService,
+          provide: IEncryptionService,
           useFactory: async (
             configService: IConfigurationService,
             loggingService: ILoggingService,
-          ): Promise<IFieldEncryptionService> => {
+          ): Promise<IEncryptionService> => {
             const provider = configService.getOrThrow<string>(
               'encryption.provider',
             );
@@ -33,7 +33,7 @@ export class EncryptionModule {
               'encryption.currentVersion',
             );
 
-            let service: IFieldEncryptionService;
+            let service: IEncryptionService;
 
             switch (provider as EncryptionProvider) {
               case EncryptionProvider.AWS: {
@@ -69,14 +69,14 @@ export class EncryptionModule {
           inject: [IConfigurationService, LoggingService],
         },
       ],
-      exports: [IFieldEncryptionService],
+      exports: [IEncryptionService],
     };
   }
 
   private static async createAwsService(
     configService: IConfigurationService,
     currentVersion: number,
-  ): Promise<FieldEncryptionService> {
+  ): Promise<EncryptionService> {
     const kmsClient = new KMSClient({});
     const dekVersions = new Map<number, Buffer>();
 
@@ -124,7 +124,7 @@ export class EncryptionModule {
       dekVersions.set(2, Buffer.from(dekV2Result.Plaintext));
     }
 
-    return new FieldEncryptionService(
+    return new EncryptionService(
       dekVersions,
       currentVersion,
       Buffer.from(hmacResult.Plaintext),
@@ -134,7 +134,7 @@ export class EncryptionModule {
   private static createLocalService(
     configService: IConfigurationService,
     currentVersion: number,
-  ): FieldEncryptionService {
+  ): EncryptionService {
     const localKey = Buffer.from(
       configService.getOrThrow<string>('encryption.localKey'),
       'hex',
@@ -153,6 +153,6 @@ export class EncryptionModule {
       dekVersions.set(2, Buffer.from(localKeyV2, 'hex'));
     }
 
-    return new FieldEncryptionService(dekVersions, currentVersion, hmacSecret);
+    return new EncryptionService(dekVersions, currentVersion, hmacSecret);
   }
 }

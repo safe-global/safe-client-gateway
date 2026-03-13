@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { EncryptionLocator } from '@/datasources/encryption/encryption-locator';
-import type { IFieldEncryptionService } from '@/datasources/encryption/encryption.service.interface';
+import type { IEncryptionService } from '@/datasources/encryption/encryption.service.interface';
 
 const mockService = {
   encrypt: jest.fn(),
   decrypt: jest.fn(),
   hmac: jest.fn(),
   currentVersion: 1,
-} as jest.MockedObjectDeep<IFieldEncryptionService>;
+} as jest.MockedObjectDeep<IEncryptionService>;
 
 describe('EncryptionLocator', () => {
   afterEach(() => {

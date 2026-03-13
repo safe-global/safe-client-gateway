@@ -7,7 +7,7 @@ import {
 } from 'crypto';
 import type {
   EncryptedField,
-  IFieldEncryptionService,
+  IEncryptionService,
 } from '@/datasources/encryption/encryption.service.interface';
 
 const ALGORITHM = 'aes-256-gcm';
@@ -23,7 +23,7 @@ const DEK_LENGTH = 32;
  * The version is NOT embedded in the ciphertext — callers must persist it
  * in a separate `encryption_version` column.
  */
-export class FieldEncryptionService implements IFieldEncryptionService {
+export class EncryptionService implements IEncryptionService {
   readonly currentVersion: number;
 
   constructor(

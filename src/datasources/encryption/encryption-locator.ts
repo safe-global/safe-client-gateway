@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import type { IFieldEncryptionService } from '@/datasources/encryption/encryption.service.interface';
+import type { IEncryptionService } from '@/datasources/encryption/encryption.service.interface';
 
 /**
  * Static service accessor for TypeORM transformers, which cannot use NestJS DI.
@@ -8,13 +8,13 @@ import type { IFieldEncryptionService } from '@/datasources/encryption/encryptio
  * Transformers call {@link getService} synchronously during column read/write.
  */
 export class EncryptionLocator {
-  private static service: IFieldEncryptionService | null = null;
+  private static service: IEncryptionService | null = null;
 
-  static setService(svc: IFieldEncryptionService): void {
+  static setService(svc: IEncryptionService): void {
     EncryptionLocator.service = svc;
   }
 
-  static getService(): IFieldEncryptionService {
+  static getService(): IEncryptionService {
     if (!EncryptionLocator.service) {
       throw new Error(
         'EncryptionLocator: service not set. Ensure EncryptionModule has been initialized.',

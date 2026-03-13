@@ -9,7 +9,7 @@ import {
   EncryptionModule,
   EncryptionProvider,
 } from '@/datasources/encryption/encryption.module';
-import { IFieldEncryptionService } from '@/datasources/encryption/encryption.service.interface';
+import { IEncryptionService } from '@/datasources/encryption/encryption.service.interface';
 import { ConfigurationModule } from '@/config/configuration.module';
 import testConfiguration from '@/config/entities/__tests__/configuration';
 import type configuration from '@/config/entities/configuration';
@@ -88,8 +88,8 @@ describe('EncryptionModule', () => {
         ],
       }).compile();
 
-      const service = await module.resolve<IFieldEncryptionService>(
-        IFieldEncryptionService,
+      const service = await module.resolve<IEncryptionService>(
+        IEncryptionService,
       );
 
       const { ciphertext, version } = service.encrypt('test');
@@ -185,8 +185,8 @@ describe('EncryptionModule', () => {
         ],
       }).compile();
 
-      const service = await module.resolve<IFieldEncryptionService>(
-        IFieldEncryptionService,
+      const service = await module.resolve<IEncryptionService>(
+        IEncryptionService,
       );
 
       expect(service.currentVersion).toBe(2);
@@ -247,8 +247,8 @@ describe('EncryptionModule', () => {
         ],
       }).compile();
 
-      const service = await module.resolve<IFieldEncryptionService>(
-        IFieldEncryptionService,
+      const service = await module.resolve<IEncryptionService>(
+        IEncryptionService,
       );
 
       const { ciphertext, version } = service.encrypt('aws-test');
@@ -380,8 +380,8 @@ describe('EncryptionModule', () => {
         ],
       }).compile();
 
-      const service = await module.resolve<IFieldEncryptionService>(
-        IFieldEncryptionService,
+      const service = await module.resolve<IEncryptionService>(
+        IEncryptionService,
       );
 
       // Encrypt with v2
@@ -392,8 +392,8 @@ describe('EncryptionModule', () => {
 
       // v1 data encrypted with dekPlaintext is still decryptable
       const v1Service = new (
-        await import('@/datasources/encryption/field-encryption.service')
-      ).FieldEncryptionService(new Map([[1, dekPlaintext]]), 1, hmacPlaintext);
+        await import('@/datasources/encryption/encryption.service')
+      ).EncryptionService(new Map([[1, dekPlaintext]]), 1, hmacPlaintext);
       const { ciphertext: v1Ct } = v1Service.encrypt('v1-aws');
       expect(service.decrypt(v1Ct, 1)).toBe('v1-aws');
 
