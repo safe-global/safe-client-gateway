@@ -2,7 +2,6 @@ import { Inject, Injectable } from '@nestjs/common';
 import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { IAuth0Service } from '@/datasources/auth0/auth0.service.interface';
-import { JWT_ALGORITHM } from '@/datasources/jwt/jwt.constants';
 
 @Injectable()
 export class Auth0Service implements IAuth0Service {
@@ -35,7 +34,6 @@ export class Auth0Service implements IAuth0Service {
       issuer: this.issuer,
       audience: this.audience,
       secretOrPrivateKey: this.signingSecret,
-      algorithms: [JWT_ALGORITHM],
     });
   }
 }

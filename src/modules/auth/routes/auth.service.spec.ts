@@ -6,6 +6,8 @@ import type { IConfigurationService } from '@/config/configuration.service.inter
 import type { IAuth0Service } from '@/datasources/auth0/auth0.service.interface';
 import { siweMessageBuilder } from '@/modules/siwe/domain/entities/__tests__/siwe-message.builder';
 import { faker } from '@faker-js/faker';
+import type { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
+import type { Hex } from 'viem';
 
 const maxValidityPeriodInSeconds = 60 * 60; // 1 hour
 
@@ -23,6 +25,10 @@ const mockAuthRepository = {
 const mockConfigurationService = {
   getOrThrow: jest.fn(),
 } as jest.MockedObjectDeep<IConfigurationService>;
+
+const mockUsersRepository = {
+  findOrCreateByWalletAddress: jest.fn(),
+} as jest.MockedObjectDeep<IUsersRepository>;
 
 const mockAuth0Service = {
   verify: jest.fn(),
@@ -45,6 +51,7 @@ describe('AuthService', () => {
       mockSiweRepository,
       mockAuthRepository,
       mockConfigurationService,
+      mockUsersRepository,
       mockAuth0Service,
     );
   });
@@ -54,10 +61,21 @@ describe('AuthService', () => {
   });
 
   describe('verifySiwe', () => {
-    const siweArgs = {
-      message: faker.lorem.sentence(),
-      signature: `0x${faker.string.hexadecimal({ length: 130, prefix: '' })}`,
+    let siweArgs: {
+      message: string;
+      signature: Hex;
     };
+    let userId: number;
+
+    beforeEach(() => {
+      siweArgs = {
+        message: faker.lorem.sentence(),
+        signature: `0x${faker.string.hexadecimal({ length: 130, prefix: '' })}`,
+      };
+      userId = faker.number.int({ min: 1, max: 1000 });
+
+      mockUsersRepository.findOrCreateByWalletAddress.mockResolvedValue(userId);
+    });
 
     it('should sign a token with validated SIWE message fields', async () => {
       const expectedToken = faker.string.alphanumeric(32);
@@ -79,8 +97,13 @@ describe('AuthService', () => {
       expect(mockSiweRepository.getValidatedSiweMessage).toHaveBeenCalledWith(
         siweArgs,
       );
+      expect(
+        mockUsersRepository.findOrCreateByWalletAddress,
+      ).toHaveBeenCalledWith(siweMessage.address);
       expect(mockAuthRepository.signToken).toHaveBeenCalledWith(
         {
+          auth_method: 'siwe',
+          sub: userId.toString(),
           chain_id: siweMessage.chainId.toString(),
           signer_address: siweMessage.address,
         },
@@ -169,6 +192,21 @@ describe('AuthService', () => {
           `Cannot issue token for longer than ${maxValidityPeriodInSeconds} seconds`,
         ),
       );
+
+      expect(mockAuthRepository.signToken).not.toHaveBeenCalled();
+    });
+
+    it('should propagate errors from findOrCreateByWalletAddress', async () => {
+      const siweMessage = siweMessageBuilder()
+        .with('expirationTime', new Date(now.getTime() + 30 * 60 * 1_000))
+        .with('issuedAt', now)
+        .build();
+
+      mockSiweRepository.getValidatedSiweMessage.mockResolvedValue(siweMessage);
+      const error = new Error('Database connection failed');
+      mockUsersRepository.findOrCreateByWalletAddress.mockRejectedValue(error);
+
+      await expect(service.verifySiwe(siweArgs)).rejects.toThrow(error);
 
       expect(mockAuthRepository.signToken).not.toHaveBeenCalled();
     });

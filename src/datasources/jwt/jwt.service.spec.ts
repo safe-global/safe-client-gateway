@@ -101,26 +101,28 @@ describe('JwtService', () => {
         issuer: configIssuer,
         audience: configIssuer,
         secretOrPrivateKey: configSecret,
-        algorithms: undefined,
+        algorithms: ['HS256'],
       });
     });
 
-    it('should verify a token with custom issuer/secret and default audience', () => {
+    it('should verify a token with custom issuer/secret/audience', () => {
       const token = faker.string.alphanumeric();
       const customIssuer = faker.word.noun();
+      const customAud = faker.word.noun();
       const customSecret = faker.string.alphanumeric();
 
       service.verify(token, {
         issuer: customIssuer,
+        audience: customAud,
         secretOrPrivateKey: customSecret,
       });
 
       expect(jwtClientMock.verify).toHaveBeenCalledTimes(1);
       expect(jwtClientMock.verify).toHaveBeenCalledWith(token, {
         issuer: customIssuer,
-        audience: configIssuer, //TODO change
+        audience: customAud,
         secretOrPrivateKey: customSecret,
-        algorithms: undefined,
+        algorithms: ['HS256'],
       });
     });
 
@@ -138,7 +140,7 @@ describe('JwtService', () => {
       expect(jwtClientMock.verify).toHaveBeenCalledTimes(1);
       expect(jwtClientMock.verify).toHaveBeenCalledWith(token, {
         issuer: customIssuer,
-        audience: configIssuer, //TODO change
+        audience: configIssuer,
         secretOrPrivateKey: customSecret,
         algorithms: ['RS256'],
       });

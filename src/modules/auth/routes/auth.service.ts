@@ -10,6 +10,7 @@ import { JwtPayloadWithClaims } from '@/datasources/jwt/jwt-claims.entity';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
 import { IAuth0Service } from '@/datasources/auth0/auth0.service.interface';
+import { Hex } from 'viem';
 
 type AuthTokenResponse = {
   accessToken: string;
@@ -47,6 +48,8 @@ export class AuthService {
     // TODO: Extract claims from OIDC token
     const token = this.authRepository.signToken(
       {
+        auth_method: AuthMethod.Oidc,
+        sub: 'oidc-user-id',
         chain_id: '0',
         signer_address: '0x0000000000000000000000000000000000000000',
       },
@@ -61,7 +64,7 @@ export class AuthService {
 
   async verifySiwe(args: {
     message: string;
-    signature: `0x${string}`;
+    signature: Hex;
   }): Promise<AuthTokenResponse> {
     const { chainId, address, notBefore, issuedAt, expirationTime } =
       await this.siweRepository.getValidatedSiweMessage(args);

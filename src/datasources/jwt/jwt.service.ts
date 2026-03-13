@@ -39,7 +39,7 @@ export class JwtService implements IJwtService {
       },
       {
         secretOrPrivateKey: options?.secretOrPrivateKey ?? this.secret,
-        algorithm: options?.algorithm ?? JwtService.ALGORITHM,
+        algorithm: options?.algorithm ?? JWT_ALGORITHM,
       },
     );
   }
@@ -57,7 +57,7 @@ export class JwtService implements IJwtService {
       issuer: options?.issuer ?? this.issuer,
       audience: options?.audience ?? this.issuer,
       secretOrPrivateKey: options?.secretOrPrivateKey ?? this.secret,
-      algorithms: options?.algorithms,
+      algorithms: options?.algorithms ?? [JWT_ALGORITHM],
     });
   }
 
