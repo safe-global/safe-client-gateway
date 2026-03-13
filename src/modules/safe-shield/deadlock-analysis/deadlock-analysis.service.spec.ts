@@ -77,7 +77,6 @@ function buildDecodedTx(args: {
   } as DecodedTransactionData;
 }
 
-
 function expectedResponse(
   safeAddress: Address,
   status: DeadlockStatus,
@@ -1291,7 +1290,6 @@ describe('DeadlockAnalysisService', () => {
         expectedResponse(safeAddress, DeadlockStatus.DEADLOCK_DETECTED),
       );
     });
-
   });
 
   describe('multi-Safe analysis', () => {
