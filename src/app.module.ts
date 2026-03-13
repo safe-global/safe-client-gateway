@@ -65,6 +65,7 @@ import { CsvExportModule } from '@/modules/csv-export/csv-export.module';
 import { SafeShieldModule } from '@/modules/safe-shield/safe-shield.module';
 import { CircuitBreakerModule } from '@/datasources/circuit-breaker/circuit-breaker.module';
 import { BlocklistModule } from '@/config/entities/blocklist.module';
+import { EncryptionModule } from '@/datasources/encryption/encryption.module';
 
 @Module({})
 export class AppModule implements NestModule {
@@ -74,6 +75,7 @@ export class AppModule implements NestModule {
       users: isUsersFeatureEnabled,
       email: isEmailFeatureEnabled,
       zerionPositions: isZerionPositionsFeatureEnabled,
+      encryption: isEncryptionEnabled,
     } = configFactory()['features'];
 
     return {
@@ -114,6 +116,7 @@ export class AppModule implements NestModule {
         BlocklistModule,
         CacheModule,
         CircuitBreakerModule,
+        ...(isEncryptionEnabled ? [EncryptionModule.register()] : []),
         // Module for storing and reading from the async local storage
         ClsModule.forRoot({
           global: true,

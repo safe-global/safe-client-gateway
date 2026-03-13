@@ -207,6 +207,16 @@ export default () => ({
       apiKey: process.env.EARN_MAINNET_API_KEY,
     },
   },
+  encryption: {
+    provider: process.env.ENCRYPTION_PROVIDER || 'local',
+    dekV1Encrypted: process.env.ENCRYPTION_DEK_V1_ENCRYPTED,
+    dekV2Encrypted: process.env.ENCRYPTION_DEK_V2_ENCRYPTED,
+    hmacKeyEncrypted: process.env.ENCRYPTION_HMAC_KEY_ENCRYPTED,
+    currentVersion: parseInt(process.env.ENCRYPTION_CURRENT_VERSION || '1'),
+    localKey: process.env.ENCRYPTION_LOCAL_KEY,
+    localKeyV2: process.env.ENCRYPTION_LOCAL_KEY_V2,
+    hmacSecret: process.env.ENCRYPTION_HMAC_SECRET,
+  },
   email: {
     applicationCode: process.env.EMAIL_API_APPLICATION_CODE,
     baseUri: process.env.EMAIL_API_BASE_URI || 'https://api.pushwoosh.com',
@@ -244,6 +254,7 @@ export default () => ({
     jsonLimit: process.env.EXPRESS_JSON_LIMIT ?? '1mb',
   },
   features: {
+    encryption: process.env.FF_ENCRYPTION_ENABLED?.toLowerCase() === 'true',
     email: process.env.FF_EMAIL?.toLowerCase() === 'true',
     // Support both new (FF_ZERION_ENABLED) and legacy (FF_ZERION_BALANCES_CHAIN_IDS) env vars
     zerionBalancesEnabled:
