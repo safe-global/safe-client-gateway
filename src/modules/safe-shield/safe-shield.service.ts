@@ -1,10 +1,13 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import { RecipientAnalysisService } from './recipient-analysis/recipient-analysis.service';
 import { ContractAnalysisService } from './contract-analysis/contract-analysis.service';
+import { DeadlockAnalysisService } from './deadlock-analysis/deadlock-analysis.service';
 import { ThreatAnalysisService } from './threat-analysis/threat-analysis.service';
 import { type Address, type Hex } from 'viem';
 import type {
   ContractAnalysisResponse,
+  DeadlockAnalysisResponse,
   RecipientAnalysisResponse,
   CounterpartyAnalysisResponse,
   SingleRecipientAnalysisResponse,
@@ -18,6 +21,7 @@ import { Operation } from '@/modules/safe/domain/entities/operation.entity';
 import type { TransactionInfo } from '@/modules/transactions/routes/entities/transaction-info.entity';
 import {
   ContractStatusGroup,
+  DeadlockStatusGroup,
   RecipientStatusGroup,
 } from '@/modules/safe-shield/entities/status-group.entity';
 import { ThreatAnalysisRequest } from '@/modules/safe-shield/entities/analysis-requests.entity';
@@ -44,6 +48,7 @@ export class SafeShieldService {
   constructor(
     private readonly recipientAnalysisService: RecipientAnalysisService,
     private readonly contractAnalysisService: ContractAnalysisService,
+    private readonly deadlockAnalysisService: DeadlockAnalysisService,
     private readonly threatAnalysisService: ThreatAnalysisService,
     @Inject(LoggingService)
     private readonly loggingService: ILoggingService,
@@ -83,16 +88,19 @@ export class SafeShieldService {
       tx,
     });
 
-    const [recipientsResult, contractsResult] = await Promise.allSettled([
-      this.analyzeRecipients(chainId, safeAddress, transactions, txInfo),
-      this.analyzeContracts(chainId, safeAddress, transactions),
-    ]);
+    const [recipientsResult, contractsResult, deadlockResult] =
+      await Promise.allSettled([
+        this.analyzeRecipients(chainId, safeAddress, transactions, txInfo),
+        this.analyzeContracts(chainId, safeAddress, transactions),
+        this.analyzeDeadlock(chainId, transactions),
+      ]);
 
     return {
       recipient:
         recipientsResult.status === 'fulfilled'
           ? recipientsResult.value
           : this.handleFailedAnalysis(
+              'Recipient',
               tx.to,
               RecipientStatusGroup.RECIPIENT_INTERACTION,
               recipientsResult.reason,
@@ -101,9 +109,19 @@ export class SafeShieldService {
         contractsResult.status === 'fulfilled'
           ? contractsResult.value
           : this.handleFailedAnalysis(
+              'Contract',
               tx.to,
               ContractStatusGroup.CONTRACT_VERIFICATION,
               contractsResult.reason,
+            ),
+      deadlock:
+        deadlockResult.status === 'fulfilled'
+          ? deadlockResult.value
+          : this.handleFailedAnalysis(
+              'Deadlock',
+              safeAddress,
+              DeadlockStatusGroup.DEADLOCK,
+              deadlockResult.reason,
             ),
     };
   }
@@ -172,6 +190,27 @@ export class SafeShieldService {
       return this.contractAnalysisService.analyze({
         chainId,
         safeAddress,
+        transactions,
+      });
+    }
+
+    return {};
+  }
+
+  /**
+   * Analyzes potential signing deadlocks for owner/threshold management transactions.
+   *
+   * @param {string} chainId - The chain ID
+   * @param {Array<DecodedTransactionData>} transactions - A list of decoded transactions
+   * @returns {Promise<DeadlockAnalysisResponse>} Deadlock analysis results (empty if not applicable)
+   */
+  public async analyzeDeadlock(
+    chainId: string,
+    transactions: Array<DecodedTransactionData>,
+  ): Promise<DeadlockAnalysisResponse> {
+    if (transactions.length) {
+      return this.deadlockAnalysisService.analyze({
+        chainId,
         transactions,
       });
     }
@@ -302,40 +341,38 @@ export class SafeShieldService {
 
   /**
    * Handles failed analysis by creating a FAILED result placeholder.
-   *
-   * @param {Address} targetAddress - The address to attach the failure to
-   * @param {StatusGroup} statusGroup - The status group for the failure
-   * @param {unknown} reason - The error reason from the rejected promise
-   * @returns {<RecipientAnalysisResponse | ContractAnalysisResponse>} Analysis response with FAILED status
+   * All response types are address-keyed.
    */
   private handleFailedAnalysis<
-    T extends RecipientAnalysisResponse | ContractAnalysisResponse,
+    T extends
+      | RecipientAnalysisResponse
+      | ContractAnalysisResponse
+      | DeadlockAnalysisResponse,
   >(
+    analysisType: 'Recipient' | 'Contract' | 'Deadlock',
     targetAddress: Address,
-    statusGroup: RecipientStatusGroup | ContractStatusGroup,
+    statusGroup:
+      | RecipientStatusGroup
+      | ContractStatusGroup
+      | DeadlockStatusGroup,
     reason?: unknown,
   ): T {
     const error = asError(reason);
     this.loggingService.warn(`The counterparty analysis failed. ${error}`);
 
-    const isRecipient = (
-      Object.values(RecipientStatusGroup) as ReadonlyArray<string>
-    ).includes(statusGroup);
+    const failedResult = {
+      type: CommonStatus.FAILED,
+      severity: COMMON_SEVERITY_MAPPING.FAILED,
+      title: `${analysisType} analysis failed`,
+      description: COMMON_DESCRIPTION_MAPPING.FAILED({
+        error: error?.message,
+      }),
+    };
 
-    const isSafe = isRecipient ? { isSafe: false } : undefined;
     return {
       [targetAddress]: {
-        [statusGroup]: [
-          {
-            type: CommonStatus.FAILED,
-            severity: COMMON_SEVERITY_MAPPING.FAILED,
-            title: `${isRecipient ? 'Recipient' : 'Contract'} analysis failed`,
-            description: COMMON_DESCRIPTION_MAPPING.FAILED({
-              error: error?.message,
-            }),
-          },
-        ],
-        ...isSafe,
+        [statusGroup]: [failedResult],
+        ...(analysisType === 'Recipient' ? { isSafe: false } : undefined),
       },
     } as T;
   }

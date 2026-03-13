@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
 import { SeveritySchema, type Severity } from './severity.entity';
 import {
@@ -7,6 +8,10 @@ import {
 import { BridgeStatusSchema, type BridgeStatus } from './bridge-status.entity';
 import { ContractStatus, ContractStatusSchema } from './contract-status.entity';
 import { ThreatStatus, ThreatStatusSchema } from './threat-status.entity';
+import {
+  DeadlockStatusSchema,
+  type DeadlockStatus,
+} from './deadlock-status.entity';
 import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 
@@ -59,7 +64,8 @@ export type AnalysisStatus =
   | RecipientStatus
   | BridgeStatus
   | ContractStatus
-  | ThreatStatus;
+  | ThreatStatus
+  | DeadlockStatus;
 
 /**
  * Zod schema for validating any status enum value.
@@ -70,6 +76,7 @@ export const AnalysisStatusSchema = z.union([
   BridgeStatusSchema,
   ContractStatusSchema,
   ThreatStatusSchema,
+  DeadlockStatusSchema,
 ]);
 
 /**
@@ -177,6 +184,13 @@ export const ThreatAnalysisResultSchema = z.union([
   FailedThreatAnalysisResultSchema,
   DefaultThreatAnalysisResultSchema,
 ]);
+
+/**
+ * Zod schema for deadlock analysis results.
+ */
+export const DeadlockAnalysisResultSchema = AnalysisResultBaseSchema.extend({
+  type: z.union([DeadlockStatusSchema, CommonStatusSchema]),
+});
 
 /**
  * Type definition for recipient analysis results.

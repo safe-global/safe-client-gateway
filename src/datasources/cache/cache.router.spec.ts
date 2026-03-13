@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { CacheRouter } from '@/datasources/cache/cache.router';
+import type { BaseDataDecoded } from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';
 import { getAddress } from 'viem';
+import { faker } from '@faker-js/faker';
 
-const address = getAddress('0x1234567890123456789012345678901234567890');
+const address = getAddress(faker.finance.ethereumAddress());
 
 describe('CacheRouter', () => {
   describe('portfolio cache keys', () => {
@@ -58,6 +60,67 @@ describe('CacheRouter', () => {
       expect(dirLower.key).toBe(dirUpper.key);
       expect(dirLower.field).toBe(dirUpper.field);
       expect(dirLower.field).toBe('usd');
+    });
+  });
+
+  describe('deadlock analysis cache keys', () => {
+    const chainId = '1';
+    const safeAddress = getAddress(faker.finance.ethereumAddress());
+
+    const addOwnerDecoded: BaseDataDecoded = {
+      method: 'addOwnerWithThreshold',
+      parameters: [
+        { name: 'owner', type: 'address', value: address },
+        { name: '_threshold', type: 'uint256', value: '1' },
+      ],
+    } as BaseDataDecoded;
+
+    const changeThresholdDecoded: BaseDataDecoded = {
+      method: 'changeThreshold',
+      parameters: [{ name: '_threshold', type: 'uint256', value: '2' }],
+    } as BaseDataDecoded;
+
+    it('should accept an array with a single item', () => {
+      const dir = CacheRouter.getDeadlockAnalysisCacheDir({
+        chainId,
+        safeAddress,
+        dataDecoded: [addOwnerDecoded],
+      });
+
+      expect(dir.key).toBe(`${chainId}_deadlock_analysis_${safeAddress}`);
+      expect(dir.field).toEqual(expect.any(String));
+      expect(dir.field.length).toBe(64); // sha256 hex
+    });
+
+    it('should produce different hashes for different orderings', () => {
+      const dir1 = CacheRouter.getDeadlockAnalysisCacheDir({
+        chainId,
+        safeAddress,
+        dataDecoded: [addOwnerDecoded, changeThresholdDecoded],
+      });
+      const dir2 = CacheRouter.getDeadlockAnalysisCacheDir({
+        chainId,
+        safeAddress,
+        dataDecoded: [changeThresholdDecoded, addOwnerDecoded],
+      });
+
+      expect(dir1.key).toBe(dir2.key);
+      expect(dir1.field).not.toBe(dir2.field);
+    });
+
+    it('should produce different hashes for single vs multiple items', () => {
+      const dirSingle = CacheRouter.getDeadlockAnalysisCacheDir({
+        chainId,
+        safeAddress,
+        dataDecoded: [addOwnerDecoded],
+      });
+      const dirMulti = CacheRouter.getDeadlockAnalysisCacheDir({
+        chainId,
+        safeAddress,
+        dataDecoded: [addOwnerDecoded, changeThresholdDecoded],
+      });
+
+      expect(dirSingle.field).not.toBe(dirMulti.field);
     });
   });
 });

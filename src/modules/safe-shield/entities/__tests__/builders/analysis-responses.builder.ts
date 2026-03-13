@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import type { IBuilder } from '@/__tests__/builder';
 import { Builder } from '@/__tests__/builder';
@@ -6,6 +7,7 @@ import {
   type ContractAnalysisResponse,
   type ThreatAnalysisResponse,
   type CounterpartyAnalysisResponse,
+  type DeadlockAnalysisResponse,
 } from '../../analysis-responses.entity';
 import {
   contractAnalysisResultBuilder,
@@ -14,11 +16,13 @@ import {
   masterCopyChangeThreatBuilder,
   maliciousOrModerateThreatBuilder,
   unofficialFallbackHandlerAnalysisResultBuilder,
+  deadlockAnalysisResultBuilder,
 } from './analysis-result.builder';
 import { ThreatStatus } from '../../threat-status.entity';
 import { getAddress } from 'viem';
 import {
   ContractStatusGroup,
+  DeadlockStatusGroup,
   RecipientStatusGroup,
   ThreatStatusGroup,
 } from '@/modules/safe-shield/entities/status-group.entity';
@@ -147,6 +151,26 @@ export function threatAnalysisResponseBuilder(
 }
 
 /**
+ * Builder for DeadlockAnalysisResponse.
+ *
+ * @param withDefaults - If true (default), includes a DEADLOCK group with one result.
+ *                       If false, returns an empty builder for custom configuration.
+ */
+export function deadlockAnalysisResponseBuilder(
+  withDefaults = true,
+): IBuilder<DeadlockAnalysisResponse> {
+  const builder = new Builder<DeadlockAnalysisResponse>();
+
+  if (withDefaults) {
+    builder.with(getAddress(faker.finance.ethereumAddress()), {
+      [DeadlockStatusGroup.DEADLOCK]: [deadlockAnalysisResultBuilder().build()],
+    });
+  }
+
+  return builder;
+}
+
+/**
  * Builder for CounterpartyAnalysisResponse.
  *
  * @param withDefaults - If true (default), includes default random data for both recipient and contract.
@@ -172,7 +196,8 @@ export function counterpartyAnalysisResponseBuilder(
   if (withDefaults) {
     builder
       .with('recipient', recipientAnalysisResponseBuilder().build())
-      .with('contract', contractAnalysisResponseBuilder().build());
+      .with('contract', contractAnalysisResponseBuilder().build())
+      .with('deadlock', deadlockAnalysisResponseBuilder().build());
   }
 
   return builder;

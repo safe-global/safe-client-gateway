@@ -4,6 +4,7 @@ import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import type { Address, Hash } from 'viem';
 import type { TransactionInfo } from '@/modules/transactions/routes/entities/transaction-info.entity';
 import type { ExtractedContract } from '@/modules/safe-shield/entities/extracted-contract.entity';
+import type { BaseDataDecoded } from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';
 
 export class CacheRouter {
   private static readonly ACCOUNT_DATA_SETTINGS_KEY = 'account_data_settings';
@@ -84,6 +85,7 @@ export class CacheRouter {
   private static readonly ORM_QUERY_CACHE_KEY = 'orm_query_cache';
   private static readonly TRANSACTIONS_EXPORT_KEY = 'transactions_export';
   private static readonly CONTRACT_ANALYSIS_KEY = 'contract_analysis';
+  private static readonly DEADLOCK_ANALYSIS_KEY = 'deadlock_analysis';
   private static readonly RECIPIENT_ANALYSIS_KEY = 'recipient_analysis';
   private static readonly GAS_PRICE_KEY = 'gas_price';
 
@@ -937,6 +939,33 @@ export class CacheRouter {
     return new CacheDir(
       `${args.chainId}_${CacheRouter.CONTRACT_ANALYSIS_KEY}`,
       contractsHash.digest('hex'),
+    );
+  }
+
+  /**
+   * Gets cache directory for deadlock analysis results.
+   *
+   * @param {string} args.chainId - Chain ID
+   * @param {Address} args.safeAddress - Safe address
+   * @param {Array<BaseDataDecoded>} args.dataDecoded - The decoded owner change function data
+   * @returns {CacheDir} - Cache directory
+   */
+  static getDeadlockAnalysisCacheDir(args: {
+    chainId: string;
+    safeAddress: Address;
+    dataDecoded: Array<BaseDataDecoded>;
+  }): CacheDir {
+    const hash = crypto.createHash('sha256');
+    for (const dd of args.dataDecoded) {
+      const params =
+        dd.parameters
+          ?.map((p) => `${p.name}=${JSON.stringify(p.value)}`)
+          .join('|') ?? 'none';
+      hash.update(`${dd.method}:${params};`);
+    }
+    return new CacheDir(
+      `${args.chainId}_${CacheRouter.DEADLOCK_ANALYSIS_KEY}_${args.safeAddress}`,
+      hash.digest('hex'),
     );
   }
 

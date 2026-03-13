@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import {
   StatusGroup,
   StatusGroupSchema,
@@ -7,6 +8,8 @@ import {
   ContractStatusGroupSchema,
   ThreatStatusGroup,
   ThreatStatusGroupSchema,
+  DeadlockStatusGroup,
+  DeadlockStatusGroupSchema,
 } from '../status-group.entity';
 
 describe('StatusGroup', () => {
@@ -14,10 +17,11 @@ describe('StatusGroup', () => {
   const recipientStatusGroup = Object.values(RecipientStatusGroup);
   const contractStatusGroup = Object.values(ContractStatusGroup);
   const threatStatusGroup = Object.values(ThreatStatusGroup);
+  const deadlockStatusGroup = Object.values(DeadlockStatusGroup);
 
   describe('StatusGroup', () => {
     it('should have all expected values', () => {
-      expect(statusGroup).toHaveLength(9);
+      expect(statusGroup).toHaveLength(10);
       expect(statusGroup).toContain('RECIPIENT_INTERACTION');
       expect(statusGroup).toContain('RECIPIENT_ACTIVITY');
       expect(statusGroup).toContain('BRIDGE');
@@ -27,6 +31,7 @@ describe('StatusGroup', () => {
       expect(statusGroup).toContain('THREAT');
       expect(statusGroup).toContain('BALANCE_CHANGE');
       expect(statusGroup).toContain('FALLBACK_HANDLER');
+      expect(statusGroup).toContain('DEADLOCK');
     });
 
     it('should have consistent naming convention', () => {
@@ -63,6 +68,13 @@ describe('StatusGroup', () => {
       expect(threatStatusGroup).toHaveLength(2);
       expect(threatStatusGroup).toContain('THREAT');
       expect(threatStatusGroup).toContain('BALANCE_CHANGE');
+    });
+  });
+
+  describe('DeadlockStatusGroup', () => {
+    it('should have all expected values', () => {
+      expect(deadlockStatusGroup).toHaveLength(1);
+      expect(deadlockStatusGroup).toContain('DEADLOCK');
     });
   });
 
@@ -126,6 +138,26 @@ describe('StatusGroup', () => {
       'should reject non-threat status group = %s',
       (invalidValue) => {
         expect(() => ThreatStatusGroupSchema.parse(invalidValue)).toThrow();
+      },
+    );
+  });
+
+  describe('DeadlockStatusGroupSchema', () => {
+    it.each(deadlockStatusGroup)(
+      'should validate deadlock status group = %s',
+      (value) => {
+        expect(() => DeadlockStatusGroupSchema.parse(value)).not.toThrow();
+      },
+    );
+
+    it.each([
+      ...recipientStatusGroup,
+      ...contractStatusGroup,
+      ...threatStatusGroup,
+    ] as const)(
+      'should reject non-deadlock status group = %s',
+      (invalidValue) => {
+        expect(() => DeadlockStatusGroupSchema.parse(invalidValue)).toThrow();
       },
     );
   });

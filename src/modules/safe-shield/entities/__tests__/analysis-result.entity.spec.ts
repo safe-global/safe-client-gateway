@@ -1,8 +1,10 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import {
   AnalysisResultBaseSchema,
   RecipientAnalysisResultSchema,
   ContractAnalysisResultSchema,
   ThreatAnalysisResultSchema,
+  DeadlockAnalysisResultSchema,
   AnalysisStatusSchema,
   type ContractAnalysisResult,
   CommonStatus,
@@ -13,10 +15,12 @@ import { RecipientStatus } from '../recipient-status.entity';
 import { BridgeStatus } from '../bridge-status.entity';
 import { ContractStatus } from '../contract-status.entity';
 import { ThreatStatus } from '../threat-status.entity';
+import { DeadlockStatus } from '../deadlock-status.entity';
 import {
   recipientAnalysisResultBuilder,
   contractAnalysisResultBuilder,
   threatAnalysisResultBuilder,
+  deadlockAnalysisResultBuilder,
   masterCopyChangeThreatBuilder,
   maliciousOrModerateThreatBuilder,
   unofficialFallbackHandlerAnalysisResultBuilder,
@@ -66,6 +70,20 @@ describe('AnalysisResult', () => {
       expect(result.description).toStrictEqual(expect.any(String));
       expect(result.description).not.toHaveLength(0);
     });
+
+    it('should enforce correct structure for deadlock analysis', () => {
+      const result = deadlockAnalysisResultBuilder()
+        .with('severity', 'WARN')
+        .with('type', DeadlockStatus.NESTED_SAFE_WARNING)
+        .build();
+
+      expect(result.severity).toBe('WARN');
+      expect(result.type).toBe('NESTED_SAFE_WARNING');
+      expect(result.title).toStrictEqual(expect.any(String));
+      expect(result.title).not.toHaveLength(0);
+      expect(result.description).toStrictEqual(expect.any(String));
+      expect(result.description).not.toHaveLength(0);
+    });
   });
 
   describe('AnalysisStatusSchema', () => {
@@ -97,8 +115,15 @@ describe('AnalysisResult', () => {
       },
     );
 
+    it.each(Object.values(DeadlockStatus))(
+      'should validate all deadlock status values = %s',
+      (value) => {
+        expect(() => AnalysisStatusSchema.parse(value)).not.toThrow();
+      },
+    );
+
     it.each(Object.values(CommonStatus))(
-      'should validate all recipient status values = %s',
+      'should validate all common status values = %s',
       (value) => {
         expect(() => AnalysisStatusSchema.parse(value)).not.toThrow();
       },
@@ -429,6 +454,60 @@ describe('AnalysisResult', () => {
       const recipientResult = recipientAnalysisResultBuilder().build();
 
       expect(() => ThreatAnalysisResultSchema.parse(recipientResult)).toThrow();
+    });
+  });
+
+  describe('DeadlockAnalysisResultSchema', () => {
+    it('should validate deadlock status types', () => {
+      const deadlockResult = deadlockAnalysisResultBuilder().build();
+
+      expect(() =>
+        DeadlockAnalysisResultSchema.parse(deadlockResult),
+      ).not.toThrow();
+    });
+
+    it.each(Object.values(DeadlockStatus))(
+      'should validate deadlock status = %s',
+      (status) => {
+        const result = deadlockAnalysisResultBuilder()
+          .with('type', status)
+          .build();
+
+        expect(() => DeadlockAnalysisResultSchema.parse(result)).not.toThrow();
+      },
+    );
+
+    it('should validate common status FAILED', () => {
+      const failedResult = {
+        ...deadlockAnalysisResultBuilder().build(),
+        type: CommonStatus.FAILED,
+      };
+
+      expect(() =>
+        DeadlockAnalysisResultSchema.parse(failedResult),
+      ).not.toThrow();
+    });
+
+    it('should reject recipient status types', () => {
+      const recipientResult = recipientAnalysisResultBuilder().build();
+
+      expect(() =>
+        DeadlockAnalysisResultSchema.parse(recipientResult),
+      ).toThrow();
+    });
+
+    it('should reject contract status types', () => {
+      const contractResult = contractAnalysisResultBuilder().build();
+
+      expect(() =>
+        DeadlockAnalysisResultSchema.parse(contractResult),
+      ).toThrow();
+    });
+
+    it('should reject threat status types', () => {
+      const threatResult = threatAnalysisResultBuilder().build();
+
+      expect(() => DeadlockAnalysisResultSchema.parse(threatResult)).toThrow();
     });
   });
 
