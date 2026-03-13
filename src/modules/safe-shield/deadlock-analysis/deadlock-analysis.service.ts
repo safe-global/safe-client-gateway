@@ -85,34 +85,30 @@ export class DeadlockAnalysisService {
       return {};
     }
 
-    const entries = [...ownerConfigGroups];
-    const results = await Promise.allSettled(
-      entries.map(([safeAddress, ownerConfigs]) =>
-        this.analyzeSingleSafe(chainId, safeAddress, ownerConfigs),
-      ),
+    const results = await Promise.all(
+      [...ownerConfigGroups].map(async ([safeAddress, ownerConfigs]) => {
+        try {
+          return await this.analyzeSingleSafe(
+            chainId,
+            safeAddress,
+            ownerConfigs,
+          );
+        } catch (e) {
+          const error = asError(e);
+          this.loggingService.warn(
+            `Deadlock analysis failed for Safe ${safeAddress}: ${error.message}`,
+          );
+          return this.buildResponse(safeAddress, CommonStatus.FAILED, {
+            error: error.message,
+          });
+        }
+      }),
     );
 
-    let merged: DeadlockAnalysisResponse = {};
-    for (let i = 0; i < results.length; i++) {
-      const result = results[i];
-      if (result.status === 'fulfilled') {
-        merged = { ...merged, ...result.value };
-      } else {
-        const [safeAddress] = entries[i];
-        const error = asError(result.reason);
-        this.loggingService.warn(
-          `Deadlock analysis failed for Safe ${safeAddress}: ${error.message}`,
-        );
-        merged = {
-          ...merged,
-          ...this.buildResponse(safeAddress, CommonStatus.FAILED, {
-            error: error.message,
-          }),
-        };
-      }
-    }
-
-    return merged;
+    return results.reduce<DeadlockAnalysisResponse>(
+      (merged, result) => ({ ...merged, ...result }),
+      {},
+    );
   }
 
   /**

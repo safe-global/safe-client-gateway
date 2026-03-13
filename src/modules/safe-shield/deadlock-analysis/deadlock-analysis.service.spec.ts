@@ -14,6 +14,12 @@ import type { Safe } from '@/modules/safe/domain/entities/safe.entity';
 import type { DecodedTransactionData } from '@/modules/safe-shield/entities/transaction-data.entity';
 import type { BaseDataDecoded } from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';
 import { DataSourceError } from '@/domain/errors/data-source.error';
+import {
+  addOwnerDecoded,
+  removeOwnerDecoded,
+  swapOwnerDecoded,
+  changeThresholdDecoded,
+} from './utils/__tests__/helpers/base-data-decoded.helpers';
 import { DeadlockStatus } from '../entities/deadlock-status.entity';
 import { CommonStatus } from '../entities/analysis-result.entity';
 import { DeadlockStatusGroup } from '../entities/status-group.entity';
@@ -71,63 +77,6 @@ function buildDecodedTx(args: {
   } as DecodedTransactionData;
 }
 
-function addOwnerBaseDataDecoded(
-  owner: Address,
-  threshold: number,
-): BaseDataDecoded {
-  return {
-    method: 'addOwnerWithThreshold',
-    parameters: [
-      { name: 'owner', type: 'address', value: owner },
-      { name: '_threshold', type: 'uint256', value: String(threshold) },
-    ],
-  } as BaseDataDecoded;
-}
-
-function removeOwnerBaseDataDecoded(
-  owner: Address,
-  threshold: number,
-): BaseDataDecoded {
-  return {
-    method: 'removeOwner',
-    parameters: [
-      {
-        name: 'prevOwner',
-        type: 'address',
-        value: getAddress(faker.finance.ethereumAddress()),
-      },
-      { name: 'owner', type: 'address', value: owner },
-      { name: '_threshold', type: 'uint256', value: String(threshold) },
-    ],
-  } as BaseDataDecoded;
-}
-
-function swapOwnerBaseDataDecoded(
-  oldOwner: Address,
-  newOwner: Address,
-): BaseDataDecoded {
-  return {
-    method: 'swapOwner',
-    parameters: [
-      {
-        name: 'prevOwner',
-        type: 'address',
-        value: getAddress(faker.finance.ethereumAddress()),
-      },
-      { name: 'oldOwner', type: 'address', value: oldOwner },
-      { name: 'newOwner', type: 'address', value: newOwner },
-    ],
-  } as BaseDataDecoded;
-}
-
-function changeThresholdBaseDataDecoded(threshold: number): BaseDataDecoded {
-  return {
-    method: 'changeThreshold',
-    parameters: [
-      { name: '_threshold', type: 'uint256', value: String(threshold) },
-    ],
-  } as BaseDataDecoded;
-}
 
 function expectedResponse(
   safeAddress: Address,
@@ -178,7 +127,7 @@ describe('DeadlockAnalysisService', () => {
       const transactions = [
         buildDecodedTx({
           to: otherAddress,
-          dataDecoded: addOwnerBaseDataDecoded(newOwner, 1),
+          dataDecoded: addOwnerDecoded(newOwner, 1),
         }),
       ];
 
@@ -256,7 +205,7 @@ describe('DeadlockAnalysisService', () => {
       const transactions = [
         buildDecodedTx({
           to: safeAddress,
-          dataDecoded: addOwnerBaseDataDecoded(safeBAddress, 1),
+          dataDecoded: addOwnerDecoded(safeBAddress, 1),
         }),
       ];
 
@@ -295,7 +244,7 @@ describe('DeadlockAnalysisService', () => {
       const transactions = [
         buildDecodedTx({
           to: safeAddress,
-          dataDecoded: addOwnerBaseDataDecoded(safeBAddress, 1),
+          dataDecoded: addOwnerDecoded(safeBAddress, 1),
         }),
       ];
 
@@ -332,7 +281,7 @@ describe('DeadlockAnalysisService', () => {
       const transactions = [
         buildDecodedTx({
           to: safeAddress,
-          dataDecoded: removeOwnerBaseDataDecoded(eoa1, 1),
+          dataDecoded: removeOwnerDecoded(eoa1, 1),
         }),
       ];
 
@@ -375,7 +324,7 @@ describe('DeadlockAnalysisService', () => {
       const transactions = [
         buildDecodedTx({
           to: safeAddress,
-          dataDecoded: changeThresholdBaseDataDecoded(2),
+          dataDecoded: changeThresholdDecoded(2),
         }),
       ];
 
@@ -419,7 +368,7 @@ describe('DeadlockAnalysisService', () => {
       const transactions = [
         buildDecodedTx({
           to: safeAddress,
-          dataDecoded: swapOwnerBaseDataDecoded(eoa1, safeBAddress),
+          dataDecoded: swapOwnerDecoded(eoa1, safeBAddress),
         }),
       ];
 
@@ -464,7 +413,7 @@ describe('DeadlockAnalysisService', () => {
       const transactions = [
         buildDecodedTx({
           to: safeAddress,
-          dataDecoded: addOwnerBaseDataDecoded(newEoa, 1),
+          dataDecoded: addOwnerDecoded(newEoa, 1),
         }),
       ];
 
@@ -493,7 +442,7 @@ describe('DeadlockAnalysisService', () => {
       const transactions = [
         buildDecodedTx({
           to: safeAddress,
-          dataDecoded: addOwnerBaseDataDecoded(safeBAddress, 1),
+          dataDecoded: addOwnerDecoded(safeBAddress, 1),
         }),
       ];
 
@@ -531,7 +480,7 @@ describe('DeadlockAnalysisService', () => {
       const transactions = [
         buildDecodedTx({
           to: safeAddress,
-          dataDecoded: addOwnerBaseDataDecoded(safeBAddress, 1),
+          dataDecoded: addOwnerDecoded(safeBAddress, 1),
         }),
       ];
 
@@ -575,7 +524,7 @@ describe('DeadlockAnalysisService', () => {
       const transactions = [
         buildDecodedTx({
           to: safeAddress,
-          dataDecoded: addOwnerBaseDataDecoded(safeBAddress, 1),
+          dataDecoded: addOwnerDecoded(safeBAddress, 1),
         }),
       ];
 
@@ -622,7 +571,7 @@ describe('DeadlockAnalysisService', () => {
       const transactions = [
         buildDecodedTx({
           to: safeAddress,
-          dataDecoded: addOwnerBaseDataDecoded(safeBAddress, 1),
+          dataDecoded: addOwnerDecoded(safeBAddress, 1),
         }),
       ];
 
@@ -664,7 +613,7 @@ describe('DeadlockAnalysisService', () => {
         const transactions = [
           buildDecodedTx({
             to: safeAddress,
-            dataDecoded: addOwnerBaseDataDecoded(safeBAddress, 1),
+            dataDecoded: addOwnerDecoded(safeBAddress, 1),
           }),
         ];
 
@@ -697,7 +646,7 @@ describe('DeadlockAnalysisService', () => {
         const transactions = [
           buildDecodedTx({
             to: safeAddress,
-            dataDecoded: addOwnerBaseDataDecoded(safeBAddress, 2),
+            dataDecoded: addOwnerDecoded(safeBAddress, 2),
           }),
         ];
 
@@ -742,7 +691,7 @@ describe('DeadlockAnalysisService', () => {
         const transactions = [
           buildDecodedTx({
             to: safeAddress,
-            dataDecoded: addOwnerBaseDataDecoded(safeBAddress, 2),
+            dataDecoded: addOwnerDecoded(safeBAddress, 2),
           }),
         ];
 
@@ -787,7 +736,7 @@ describe('DeadlockAnalysisService', () => {
         const transactions = [
           buildDecodedTx({
             to: safeAddress,
-            dataDecoded: addOwnerBaseDataDecoded(safeBAddress, 1),
+            dataDecoded: addOwnerDecoded(safeBAddress, 1),
           }),
         ];
 
@@ -824,7 +773,7 @@ describe('DeadlockAnalysisService', () => {
         const transactions = [
           buildDecodedTx({
             to: safeAddress,
-            dataDecoded: addOwnerBaseDataDecoded(safeBAddress, 2),
+            dataDecoded: addOwnerDecoded(safeBAddress, 2),
           }),
         ];
 
@@ -872,7 +821,7 @@ describe('DeadlockAnalysisService', () => {
         const transactions = [
           buildDecodedTx({
             to: safeAddress,
-            dataDecoded: addOwnerBaseDataDecoded(safeBAddress, 2),
+            dataDecoded: addOwnerDecoded(safeBAddress, 2),
           }),
         ];
 
@@ -920,7 +869,7 @@ describe('DeadlockAnalysisService', () => {
         const transactions = [
           buildDecodedTx({
             to: safeAddress,
-            dataDecoded: addOwnerBaseDataDecoded(safeBAddress, 1),
+            dataDecoded: addOwnerDecoded(safeBAddress, 1),
           }),
         ];
 
@@ -971,7 +920,7 @@ describe('DeadlockAnalysisService', () => {
   describe('caching', () => {
     it('should return cached result on cache hit', async () => {
       const newOwner = getAddress(faker.finance.ethereumAddress());
-      const ownerConfigs = [addOwnerBaseDataDecoded(newOwner, 1)];
+      const ownerConfigs = [addOwnerDecoded(newOwner, 1)];
       const transactions = [
         buildDecodedTx({ to: safeAddress, dataDecoded: ownerConfigs[0] }),
       ];
@@ -1001,7 +950,7 @@ describe('DeadlockAnalysisService', () => {
     it('should cache result after analysis', async () => {
       const eoa1 = getAddress(faker.finance.ethereumAddress());
       const newEoa = getAddress(faker.finance.ethereumAddress());
-      const ownerConfigs = [addOwnerBaseDataDecoded(newEoa, 1)];
+      const ownerConfigs = [addOwnerDecoded(newEoa, 1)];
 
       const transactions = [
         buildDecodedTx({ to: safeAddress, dataDecoded: ownerConfigs[0] }),
@@ -1047,7 +996,7 @@ describe('DeadlockAnalysisService', () => {
     it('should proceed with analysis when cached value is invalid JSON', async () => {
       const eoa1 = getAddress(faker.finance.ethereumAddress());
       const newEoa = getAddress(faker.finance.ethereumAddress());
-      const ownerConfigs = [addOwnerBaseDataDecoded(newEoa, 1)];
+      const ownerConfigs = [addOwnerDecoded(newEoa, 1)];
 
       const cacheDir = CacheRouter.getDeadlockAnalysisCacheDir({
         chainId,
@@ -1090,7 +1039,7 @@ describe('DeadlockAnalysisService', () => {
       const transactions = [
         buildDecodedTx({
           to: safeAddress,
-          dataDecoded: addOwnerBaseDataDecoded(safeBAddress, 2),
+          dataDecoded: addOwnerDecoded(safeBAddress, 2),
         }),
       ];
 
@@ -1151,7 +1100,7 @@ describe('DeadlockAnalysisService', () => {
       const transactions = [
         buildDecodedTx({
           to: safeAddress,
-          dataDecoded: addOwnerBaseDataDecoded(safeBAddress, 2),
+          dataDecoded: addOwnerDecoded(safeBAddress, 2),
         }),
       ];
 
@@ -1210,11 +1159,11 @@ describe('DeadlockAnalysisService', () => {
       const transactions = [
         buildDecodedTx({
           to: safeAddress,
-          dataDecoded: addOwnerBaseDataDecoded(safeBAddress, 1),
+          dataDecoded: addOwnerDecoded(safeBAddress, 1),
         }),
         buildDecodedTx({
           to: safeAddress,
-          dataDecoded: changeThresholdBaseDataDecoded(2),
+          dataDecoded: changeThresholdDecoded(2),
         }),
       ];
 
@@ -1258,11 +1207,11 @@ describe('DeadlockAnalysisService', () => {
       const transactions = [
         buildDecodedTx({
           to: safeAddress,
-          dataDecoded: addOwnerBaseDataDecoded(eoa2, 1),
+          dataDecoded: addOwnerDecoded(eoa2, 1),
         }),
         buildDecodedTx({
           to: safeAddress,
-          dataDecoded: addOwnerBaseDataDecoded(eoa3, 1),
+          dataDecoded: addOwnerDecoded(eoa3, 1),
         }),
       ];
 
@@ -1300,7 +1249,7 @@ describe('DeadlockAnalysisService', () => {
         }),
         buildDecodedTx({
           to: safeAddress,
-          dataDecoded: addOwnerBaseDataDecoded(safeBAddress, 1),
+          dataDecoded: addOwnerDecoded(safeBAddress, 1),
         }),
         buildDecodedTx({
           to: getAddress(faker.finance.ethereumAddress()),
@@ -1343,47 +1292,6 @@ describe('DeadlockAnalysisService', () => {
       );
     });
 
-    it('should produce same result as single-config when only one owner config exists', async () => {
-      const safeBAddress = getAddress(faker.finance.ethereumAddress());
-
-      const transactions = [
-        buildDecodedTx({
-          to: safeAddress,
-          dataDecoded: addOwnerBaseDataDecoded(safeBAddress, 1),
-        }),
-      ];
-
-      mockTransactionApi.getSafe.mockImplementation((address: Address) => {
-        if (address.toLowerCase() === safeAddress.toLowerCase()) {
-          return Promise.resolve(
-            mockSafe({
-              address: safeAddress,
-              owners: [],
-              threshold: 1,
-            }),
-          );
-        }
-        if (address.toLowerCase() === safeBAddress.toLowerCase()) {
-          return Promise.resolve(
-            mockSafe({
-              address: safeBAddress,
-              owners: [safeAddress],
-              threshold: 1,
-            }),
-          );
-        }
-        return Promise.reject(new DataSourceError('Not found', 404));
-      });
-
-      const result = await service.analyze({
-        chainId,
-        transactions,
-      });
-
-      expect(result).toEqual(
-        expectedResponse(safeAddress, DeadlockStatus.DEADLOCK_DETECTED),
-      );
-    });
   });
 
   describe('multi-Safe analysis', () => {
@@ -1398,11 +1306,11 @@ describe('DeadlockAnalysisService', () => {
       const transactions = [
         buildDecodedTx({
           to: safeA,
-          dataDecoded: addOwnerBaseDataDecoded(newOwnerA, 1),
+          dataDecoded: addOwnerDecoded(newOwnerA, 1),
         }),
         buildDecodedTx({
           to: safeB,
-          dataDecoded: addOwnerBaseDataDecoded(newOwnerB, 1),
+          dataDecoded: addOwnerDecoded(newOwnerB, 1),
         }),
       ];
 
@@ -1442,11 +1350,11 @@ describe('DeadlockAnalysisService', () => {
       const transactions = [
         buildDecodedTx({
           to: safeA,
-          dataDecoded: addOwnerBaseDataDecoded(safeB, 2),
+          dataDecoded: addOwnerDecoded(safeB, 2),
         }),
         buildDecodedTx({
           to: safeB,
-          dataDecoded: addOwnerBaseDataDecoded(newOwnerB, 1),
+          dataDecoded: addOwnerDecoded(newOwnerB, 1),
         }),
       ];
 
@@ -1495,14 +1403,14 @@ describe('DeadlockAnalysisService', () => {
       const transactions = [
         buildDecodedTx({
           to: safeA,
-          dataDecoded: addOwnerBaseDataDecoded(
+          dataDecoded: addOwnerDecoded(
             getAddress(faker.finance.ethereumAddress()),
             1,
           ),
         }),
         buildDecodedTx({
           to: safeB,
-          dataDecoded: addOwnerBaseDataDecoded(newOwnerB, 1),
+          dataDecoded: addOwnerDecoded(newOwnerB, 1),
         }),
       ];
 
@@ -1552,11 +1460,11 @@ describe('DeadlockAnalysisService', () => {
       const transactions = [
         buildDecodedTx({
           to: targetSafe,
-          dataDecoded: addOwnerBaseDataDecoded(newOwner, 2),
+          dataDecoded: addOwnerDecoded(newOwner, 2),
         }),
         buildDecodedTx({
           to: targetSafe,
-          dataDecoded: changeThresholdBaseDataDecoded(1),
+          dataDecoded: changeThresholdDecoded(1),
         }),
       ];
 
@@ -1602,7 +1510,7 @@ describe('DeadlockAnalysisService', () => {
         // Owner config targeting Safe A
         buildDecodedTx({
           to: safeA,
-          dataDecoded: addOwnerBaseDataDecoded(newOwner, 1),
+          dataDecoded: addOwnerDecoded(newOwner, 1),
         }),
         // Another non-owner-config: approve
         buildDecodedTx({
@@ -1650,7 +1558,7 @@ describe('DeadlockAnalysisService', () => {
         }),
         buildDecodedTx({
           to: otherSafe,
-          dataDecoded: addOwnerBaseDataDecoded(newOwner, 1),
+          dataDecoded: addOwnerDecoded(newOwner, 1),
         }),
       ];
 

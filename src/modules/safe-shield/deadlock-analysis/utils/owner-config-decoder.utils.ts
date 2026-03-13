@@ -72,14 +72,13 @@ export function computeProjectedState(args: {
     case OwnerConfigMethod.AddOwnerWithThreshold: {
       const owner = getParam(params, 'owner');
       const threshold = getParam(params, '_threshold');
-      const normalizedOwner = getAddress(owner);
-      if (currentOwners.some((o) => isAddressEqual(o, normalizedOwner))) {
+      if (currentOwners.some((o) => isAddressEqual(o, owner as Address))) {
         throw new Error(
-          `Duplicate owner: ${normalizedOwner} is already an owner`,
+          `Duplicate owner: ${owner} is already an owner`,
         );
       }
       return {
-        owners: [...currentOwners, normalizedOwner],
+        owners: [...currentOwners, owner as Address],
         threshold: Number(threshold),
       };
     }
@@ -98,7 +97,7 @@ export function computeProjectedState(args: {
       const newOwner = getParam(params, 'newOwner');
       return {
         owners: currentOwners.map((o) =>
-          isAddressEqual(o, oldOwner as Address) ? getAddress(newOwner) : o,
+          isAddressEqual(o, oldOwner as Address) ? newOwner as Address : o,
         ),
         threshold: currentThreshold,
       };
@@ -111,7 +110,10 @@ export function computeProjectedState(args: {
       };
     }
     default:
-      throw new Error(`Unsupported function: ${dataDecoded.method}`);
+      return {
+        owners: currentOwners,
+        threshold: currentThreshold,
+      };
   }
 }
 

@@ -1,63 +1,18 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { getAddress, type Address } from 'viem';
-import { faker } from '@faker-js/faker';
 import type { BaseDataDecoded } from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';
 import {
   isOwnerConfigTransaction,
   computeProjectedState,
   groupOwnerConfigsByTarget,
 } from '../owner-config-decoder.utils';
-
-function addr(): Address {
-  return getAddress(faker.finance.ethereumAddress());
-}
-
-function addOwnerDecoded(owner: Address, threshold: number): BaseDataDecoded {
-  return {
-    method: 'addOwnerWithThreshold',
-    parameters: [
-      { name: 'owner', type: 'address', value: owner },
-      { name: '_threshold', type: 'uint256', value: String(threshold) },
-    ],
-  } as BaseDataDecoded;
-}
-
-function removeOwnerDecoded(
-  owner: Address,
-  threshold: number,
-): BaseDataDecoded {
-  return {
-    method: 'removeOwner',
-    parameters: [
-      { name: 'prevOwner', type: 'address', value: addr() },
-      { name: 'owner', type: 'address', value: owner },
-      { name: '_threshold', type: 'uint256', value: String(threshold) },
-    ],
-  } as BaseDataDecoded;
-}
-
-function swapOwnerDecoded(
-  oldOwner: Address,
-  newOwner: Address,
-): BaseDataDecoded {
-  return {
-    method: 'swapOwner',
-    parameters: [
-      { name: 'prevOwner', type: 'address', value: addr() },
-      { name: 'oldOwner', type: 'address', value: oldOwner },
-      { name: 'newOwner', type: 'address', value: newOwner },
-    ],
-  } as BaseDataDecoded;
-}
-
-function changeThresholdDecoded(threshold: number): BaseDataDecoded {
-  return {
-    method: 'changeThreshold',
-    parameters: [
-      { name: '_threshold', type: 'uint256', value: String(threshold) },
-    ],
-  } as BaseDataDecoded;
-}
+import {
+  addr,
+  addOwnerDecoded,
+  removeOwnerDecoded,
+  swapOwnerDecoded,
+  changeThresholdDecoded,
+} from './helpers/base-data-decoded.helpers';
 
 function tx(
   to: Address,
@@ -68,35 +23,21 @@ function tx(
 
 describe('isOwnerConfigTransaction', () => {
   it('should return true for addOwnerWithThreshold', () => {
-    const dataDecoded = {
-      method: 'addOwnerWithThreshold',
-      parameters: [],
-    } as BaseDataDecoded;
-    expect(isOwnerConfigTransaction(dataDecoded)).toBe(true);
+    expect(isOwnerConfigTransaction(addOwnerDecoded(addr(), 1))).toBe(true);
   });
 
   it('should return true for removeOwner', () => {
-    const dataDecoded = {
-      method: 'removeOwner',
-      parameters: [],
-    } as BaseDataDecoded;
-    expect(isOwnerConfigTransaction(dataDecoded)).toBe(true);
+    expect(isOwnerConfigTransaction(removeOwnerDecoded(addr(), 1))).toBe(true);
   });
 
   it('should return true for swapOwner', () => {
-    const dataDecoded = {
-      method: 'swapOwner',
-      parameters: [],
-    } as BaseDataDecoded;
-    expect(isOwnerConfigTransaction(dataDecoded)).toBe(true);
+    expect(isOwnerConfigTransaction(swapOwnerDecoded(addr(), addr()))).toBe(
+      true,
+    );
   });
 
   it('should return true for changeThreshold', () => {
-    const dataDecoded = {
-      method: 'changeThreshold',
-      parameters: [],
-    } as BaseDataDecoded;
-    expect(isOwnerConfigTransaction(dataDecoded)).toBe(true);
+    expect(isOwnerConfigTransaction(changeThresholdDecoded(1))).toBe(true);
   });
 
   it('should return false for non-owner-config transaction', () => {
@@ -113,21 +54,15 @@ describe('isOwnerConfigTransaction', () => {
 });
 
 describe('computeProjectedState', () => {
-  const owner1 = getAddress(faker.finance.ethereumAddress());
-  const owner2 = getAddress(faker.finance.ethereumAddress());
-  const newOwner = getAddress(faker.finance.ethereumAddress());
+  const owner1 = addr();
+  const owner2 = addr();
+  const newOwner = addr();
 
   it('should add owner and set threshold for addOwnerWithThreshold', () => {
     const result = computeProjectedState({
       currentOwners: [owner1, owner2],
       currentThreshold: 1,
-      dataDecoded: {
-        method: 'addOwnerWithThreshold',
-        parameters: [
-          { name: 'owner', type: 'address', value: newOwner },
-          { name: '_threshold', type: 'uint256', value: '2' },
-        ],
-      } as BaseDataDecoded,
+      dataDecoded: addOwnerDecoded(newOwner, 2),
     });
 
     expect(result.owners).toHaveLength(3);
@@ -139,18 +74,7 @@ describe('computeProjectedState', () => {
     const result = computeProjectedState({
       currentOwners: [owner1, owner2],
       currentThreshold: 2,
-      dataDecoded: {
-        method: 'removeOwner',
-        parameters: [
-          {
-            name: 'prevOwner',
-            type: 'address',
-            value: getAddress(faker.finance.ethereumAddress()),
-          },
-          { name: 'owner', type: 'address', value: owner2 },
-          { name: '_threshold', type: 'uint256', value: '1' },
-        ],
-      } as BaseDataDecoded,
+      dataDecoded: removeOwnerDecoded(owner2, 1),
     });
 
     expect(result.owners).toHaveLength(1);
@@ -162,18 +86,7 @@ describe('computeProjectedState', () => {
     const result = computeProjectedState({
       currentOwners: [owner1, owner2],
       currentThreshold: 2,
-      dataDecoded: {
-        method: 'swapOwner',
-        parameters: [
-          {
-            name: 'prevOwner',
-            type: 'address',
-            value: getAddress(faker.finance.ethereumAddress()),
-          },
-          { name: 'oldOwner', type: 'address', value: owner1 },
-          { name: 'newOwner', type: 'address', value: newOwner },
-        ],
-      } as BaseDataDecoded,
+      dataDecoded: swapOwnerDecoded(owner1, newOwner),
     });
 
     expect(result.owners).toHaveLength(2);
@@ -186,27 +99,25 @@ describe('computeProjectedState', () => {
     const result = computeProjectedState({
       currentOwners: [owner1, owner2],
       currentThreshold: 2,
-      dataDecoded: {
-        method: 'changeThreshold',
-        parameters: [{ name: '_threshold', type: 'uint256', value: '1' }],
-      } as BaseDataDecoded,
+      dataDecoded: changeThresholdDecoded(1),
     });
 
     expect(result.owners).toEqual([owner1, owner2]);
     expect(result.threshold).toBe(1);
   });
 
-  it('should throw for unsupported method', () => {
-    expect(() =>
-      computeProjectedState({
-        currentOwners: [owner1, owner2],
-        currentThreshold: 1,
-        dataDecoded: {
-          method: 'execTransaction',
-          parameters: [],
-        } as BaseDataDecoded,
-      }),
-    ).toThrow('Unsupported function: execTransaction');
+  it('should return unchanged state for unsupported method', () => {
+    const result = computeProjectedState({
+      currentOwners: [owner1, owner2],
+      currentThreshold: 1,
+      dataDecoded: {
+        method: 'execTransaction',
+        parameters: [],
+      } as BaseDataDecoded,
+    });
+
+    expect(result.owners).toEqual([owner1, owner2]);
+    expect(result.threshold).toBe(1);
   });
 
   it('should throw when adding a duplicate owner via addOwnerWithThreshold', () => {
