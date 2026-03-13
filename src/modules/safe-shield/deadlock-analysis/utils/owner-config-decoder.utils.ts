@@ -108,10 +108,7 @@ export function computeProjectedState(args: {
       };
     }
     default:
-      return {
-        owners: currentOwners,
-        threshold: currentThreshold,
-      };
+      throw new Error(`Unsupported function: ${dataDecoded.method}`);
   }
 }
 

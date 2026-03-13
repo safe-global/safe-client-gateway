@@ -106,18 +106,17 @@ describe('computeProjectedState', () => {
     expect(result.threshold).toBe(1);
   });
 
-  it('should return unchanged state for unsupported method', () => {
-    const result = computeProjectedState({
-      currentOwners: [owner1, owner2],
-      currentThreshold: 1,
-      dataDecoded: {
-        method: 'execTransaction',
-        parameters: [],
-      } as BaseDataDecoded,
-    });
-
-    expect(result.owners).toEqual([owner1, owner2]);
-    expect(result.threshold).toBe(1);
+  it('should throw for unsupported method', () => {
+    expect(() =>
+      computeProjectedState({
+        currentOwners: [owner1, owner2],
+        currentThreshold: 1,
+        dataDecoded: {
+          method: 'execTransaction',
+          parameters: [],
+        } as BaseDataDecoded,
+      }),
+    ).toThrow('Unsupported function: execTransaction');
   });
 
   it('should throw when adding a duplicate owner via addOwnerWithThreshold', () => {
