@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { Auth0Token } from '@/datasources/auth0/entities/auth0-token.entity';
 
 export const IAuth0Service = Symbol('IAuth0Service');

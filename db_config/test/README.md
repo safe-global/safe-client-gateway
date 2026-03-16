@@ -1,4 +1,6 @@
-<!-- SPDX-License-Identifier: FSL-1.1-MIT -->
+<!--
+  SPDX-License-Identifier: FSL-1.1-MIT
+  -->
 
 # Self-Signed Test Certificates
 

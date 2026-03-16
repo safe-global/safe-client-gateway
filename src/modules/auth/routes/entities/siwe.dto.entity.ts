@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { HexSchema } from '@/validation/entities/schemas/hex.schema';
 import { ApiProperty } from '@nestjs/swagger';
 import { z } from 'zod';

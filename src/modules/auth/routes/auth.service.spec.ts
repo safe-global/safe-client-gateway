@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { ForbiddenException } from '@nestjs/common';
 import { AuthService } from '@/modules/auth/routes/auth.service';
 import type { ISiweRepository } from '@/modules/siwe/domain/siwe.repository.interface';

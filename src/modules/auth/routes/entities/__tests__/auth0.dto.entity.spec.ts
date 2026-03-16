@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { auth0DtoBuilder } from '@/modules/auth/routes/entities/__tests__/auth0.dto.builder';
 import { Auth0DtoSchema } from '@/modules/auth/routes/entities/auth0.dto.entity';
 import { faker } from '@faker-js/faker';

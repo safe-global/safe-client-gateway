@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Module } from '@nestjs/common';
 import { IAuth0Service } from '@/datasources/auth0/auth0.service.interface';
 

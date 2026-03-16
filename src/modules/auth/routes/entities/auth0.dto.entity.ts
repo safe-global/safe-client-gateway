@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { JWT_ALGORITHM } from '@/datasources/jwt/jwt.constants';
 import { ApiProperty } from '@nestjs/swagger';
 import { z } from 'zod';
