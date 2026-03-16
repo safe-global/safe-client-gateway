@@ -1,0 +1,35 @@
+# Auth Service Docker Compose
+# Run from repo root: docker compose -f src/auth-service/docker-compose.yml up
+# Create .env.auth at repo root from .env.sample in this directory
+services:
+  redis:
+    image: redis/redis-stack:7.2.0-v10
+    ports:
+      - ${AUTH_REDIS_PORT:-6380}:6379
+
+  db:
+    image: postgres:14.8-alpine
+    volumes:
+      - auth-db-data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-safe-auth-service}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    ports:
+      - '${AUTH_POSTGRES_PORT:-5434}:5432'
+
+  auth-service:
+    build:
+      context: ../..
+      dockerfile: src/auth-service/Dockerfile
+    tty: true
+    env_file:
+      - ../../.env.auth
+    ports:
+      - '${APPLICATION_PORT:-3001}:${APPLICATION_PORT:-3001}'
+    depends_on:
+      - redis
+      - db
+
+volumes:
+  auth-db-data:

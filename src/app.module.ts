@@ -97,7 +97,7 @@ export class AppModule implements NestModule {
         // Note: this feature will not work as expected until we reintegrate the email service
         ...(isEmailFeatureEnabled ? [AlertsModule, RecoveryModule] : []),
         EstimationsModule,
-        HealthModule,
+        HealthModule.register(),
         HooksModule,
         NotificationsModule,
         MessagesModule,
