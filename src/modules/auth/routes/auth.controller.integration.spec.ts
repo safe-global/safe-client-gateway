@@ -644,7 +644,7 @@ describe('AuthController', () => {
         await request(app.getHttpServer())
           .post('/v1/auth/verify')
           .send({ access_token: accessToken })
-          .expect(500)
+          .expect(401)
           .expect(({ headers }) => {
             expect(headers['set-cookie']).toBeUndefined();
           });
@@ -660,7 +660,7 @@ describe('AuthController', () => {
         await request(app.getHttpServer())
           .post('/v1/auth/verify')
           .send({ access_token: accessToken })
-          .expect(500)
+          .expect(401)
           .expect(({ headers }) => {
             expect(headers['set-cookie']).toBeUndefined();
           });
@@ -681,7 +681,7 @@ describe('AuthController', () => {
         await request(app.getHttpServer())
           .post('/v1/auth/verify')
           .send({ access_token: accessToken })
-          .expect(500)
+          .expect(401)
           .expect(({ headers }) => {
             expect(headers['set-cookie']).toBeUndefined();
           });
@@ -702,7 +702,7 @@ describe('AuthController', () => {
         await request(app.getHttpServer())
           .post('/v1/auth/verify')
           .send({ access_token: accessToken })
-          .expect(500)
+          .expect(401)
           .expect(({ headers }) => {
             expect(headers['set-cookie']).toBeUndefined();
           });

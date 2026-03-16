@@ -3,6 +3,8 @@ import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.
 import { Auth0Service } from '@/datasources/auth0/auth0.service';
 import type { IJwtService } from '@/datasources/jwt/jwt.service.interface';
 import { faker } from '@faker-js/faker';
+import { UnauthorizedException } from '@nestjs/common';
+import { JsonWebTokenError, TokenExpiredError } from 'jsonwebtoken';
 
 const jwtServiceMock = {
   decode: jest.fn(),
@@ -75,9 +77,33 @@ describe('Auth0Service', () => {
       expect(() => service.verifyAndDecode(accessToken)).toThrow();
     });
 
-    it('should propagate errors from jwtService.decode', () => {
+    it('should throw UnauthorizedException for JsonWebTokenError', () => {
       const accessToken = faker.string.alphanumeric();
-      const error = new Error('invalid token');
+      jwtServiceMock.decode.mockImplementation(() => {
+        throw new JsonWebTokenError(
+          'jwt audience invalid. expected: https://secret.example.com/',
+        );
+      });
+
+      expect(() => service.verifyAndDecode(accessToken)).toThrow(
+        new UnauthorizedException('Invalid access token'),
+      );
+    });
+
+    it('should throw UnauthorizedException for TokenExpiredError', () => {
+      const accessToken = faker.string.alphanumeric();
+      jwtServiceMock.decode.mockImplementation(() => {
+        throw new TokenExpiredError('jwt expired', new Date());
+      });
+
+      expect(() => service.verifyAndDecode(accessToken)).toThrow(
+        new UnauthorizedException('Invalid access token'),
+      );
+    });
+
+    it('should propagate non-JWT errors from jwtService.decode', () => {
+      const accessToken = faker.string.alphanumeric();
+      const error = new Error('unexpected error');
       jwtServiceMock.decode.mockImplementation(() => {
         throw error;
       });
