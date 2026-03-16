@@ -66,6 +66,7 @@ import { SafeShieldModule } from '@/modules/safe-shield/safe-shield.module';
 import { CircuitBreakerModule } from '@/datasources/circuit-breaker/circuit-breaker.module';
 import { BlocklistModule } from '@/config/entities/blocklist.module';
 import { EncryptionModule } from '@/datasources/encryption/encryption.module';
+import { EncryptionSubscribersModule } from '@/datasources/encryption/encryption-subscribers.module';
 
 @Module({})
 export class AppModule implements NestModule {
@@ -116,6 +117,7 @@ export class AppModule implements NestModule {
         BlocklistModule,
         CacheModule,
         CircuitBreakerModule,
+        EncryptionSubscribersModule,
         ...(isEncryptionEnabled ? [EncryptionModule.register()] : []),
         // Module for storing and reading from the async local storage
         ClsModule.forRoot({

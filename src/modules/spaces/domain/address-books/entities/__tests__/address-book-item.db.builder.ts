@@ -19,6 +19,8 @@ export function addressBookItemBuilder(): IBuilder<AddressBookItem> {
     )
     .with('address', getAddress(faker.finance.ethereumAddress()))
     .with('name', nameBuilder())
+    .with('nameHash', null)
+    .with('encryptionVersion', null)
     .with('createdBy', getAddress(faker.finance.ethereumAddress()))
     .with('lastUpdatedBy', getAddress(faker.finance.ethereumAddress()));
 }

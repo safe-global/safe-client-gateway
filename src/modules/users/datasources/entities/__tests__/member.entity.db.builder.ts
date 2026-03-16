@@ -13,6 +13,8 @@ export function memberBuilder(): IBuilder<Member> {
     .with('user', { id: faker.number.int() } as User)
     .with('space', { id: faker.number.int() } as Space)
     .with('name', nameBuilder())
+    .with('nameHash', null)
+    .with('encryptionVersion', null)
     .with('alias', null)
     .with('role', 'ADMIN')
     .with('status', 'ACTIVE')

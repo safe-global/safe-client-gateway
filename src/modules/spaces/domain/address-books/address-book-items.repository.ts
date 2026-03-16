@@ -143,11 +143,13 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
       if (!patch) {
         continue;
       }
-      await repository.update(item.id, {
+      // save() instead of update() so TypeORM subscriber can encrypt the name
+      Object.assign(item, {
         name: patch.name,
         chainIds: patch.chainIds,
         lastUpdatedBy: args.authPayload.signer_address,
       });
+      await repository.save(item);
     }
     return existingAddressBookItems.map((item) => item.address);
   }

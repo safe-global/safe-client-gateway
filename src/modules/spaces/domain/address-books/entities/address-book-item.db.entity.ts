@@ -14,6 +14,8 @@ export const AddressBookDbItemSchema: z.ZodType<
     chainIds: Array<string>;
     address: Address;
     name: string;
+    nameHash: string | null;
+    encryptionVersion: number | null;
     createdBy: Address;
     lastUpdatedBy: Address;
   }
@@ -22,6 +24,8 @@ export const AddressBookDbItemSchema: z.ZodType<
   chainIds: z.array(z.string()),
   address: AddressSchema as z.ZodType<Address>,
   name: makeNameSchema({ maxLength: ADDRESS_BOOK_NAME_MAX_LENGTH }),
+  nameHash: z.string().nullable(),
+  encryptionVersion: z.number().int().nullable(),
   createdBy: AddressSchema as z.ZodType<Address>,
   lastUpdatedBy: AddressSchema as z.ZodType<Address>,
 });

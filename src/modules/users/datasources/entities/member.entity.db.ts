@@ -1,6 +1,5 @@
 import { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
 import { User } from '@/modules/users/datasources/entities/users.entity.db';
-import { NAME_MAX_LENGTH } from '@/domain/common/schemas/name.schema';
 import { nullableDatabaseAddressTransformer } from '@/domain/common/transformers/nullableDatabaseAddress.transformer';
 import { databaseEnumTransformer } from '@/domain/common/utils/enum';
 import {
@@ -17,11 +16,11 @@ import {
   PrimaryGeneratedColumn,
   Unique,
 } from 'typeorm';
+import { NAME_MAX_LENGTH } from '@/domain/common/schemas/name.schema';
 import type { Address } from 'viem';
 
 @Entity('members')
 @Unique('UQ_members', ['user', 'space'])
-@Index('idx_members_name', ['name'])
 @Index('idx_members_role_status', ['role', 'status'])
 export class Member implements DomainMember {
   @PrimaryGeneratedColumn({
@@ -49,8 +48,21 @@ export class Member implements DomainMember {
   })
   space!: Space;
 
-  @Column({ type: 'varchar', length: NAME_MAX_LENGTH })
+  /** Plaintext in memory; AES-256-GCM ciphertext in DB when encrypted */
+  @Column({ type: 'text' })
   name!: string;
+
+  /** HMAC-SHA256 blind index for equality lookups without decrypting */
+  @Column({ name: 'name_hash', type: 'varchar', length: 64, nullable: true })
+  nameHash!: string | null;
+
+  /** DEK version used to encrypt; null = legacy plaintext row */
+  @Column({
+    name: 'encryption_version',
+    type: 'integer',
+    nullable: true,
+  })
+  encryptionVersion!: number | null;
 
   @Column({ type: 'varchar', length: NAME_MAX_LENGTH, nullable: true })
   alias!: string | null;

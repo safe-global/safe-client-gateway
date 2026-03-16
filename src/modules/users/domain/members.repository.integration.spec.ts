@@ -3,6 +3,9 @@ import configuration from '@/config/entities/__tests__/configuration';
 import { postgresConfig } from '@/config/entities/postgres.config';
 import { DatabaseMigrator } from '@/datasources/db/v2/database-migrator.service';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
+import { EncryptionLocator } from '@/datasources/encryption/encryption-locator';
+import { EncryptionService } from '@/datasources/encryption/encryption.service';
+import { MemberSubscriber } from '@/datasources/encryption/subscribers/member.subscriber';
 import { SpaceSafe } from '@/modules/spaces/datasources/entities/space-safes.entity.db';
 import { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
 import { Member } from '@/modules/users/datasources/entities/member.entity.db';
@@ -27,6 +30,7 @@ import type { ILoggingService } from '@/logging/logging.interface';
 import { faker } from '@faker-js/faker';
 import { UnauthorizedException } from '@nestjs/common';
 import type { ConfigService } from '@nestjs/config';
+import { randomBytes } from 'crypto';
 import { DataSource, In } from 'typeorm';
 import type { Address } from 'viem';
 import { getAddress } from 'viem';
@@ -2952,6 +2956,133 @@ describe('MembersRepository', () => {
           alias: newAlias,
         }),
       ).rejects.toThrow('Signer address not provided.');
+    });
+  });
+
+  describe('encryption', () => {
+    const encryptionService = new EncryptionService(
+      new Map([[1, randomBytes(32)]]),
+      1,
+      randomBytes(32),
+    );
+
+    beforeAll(() => {
+      new MemberSubscriber(dataSource);
+      EncryptionLocator.setService(encryptionService);
+    });
+
+    afterAll(() => {
+      EncryptionLocator.reset();
+    });
+
+    // Reads raw DB columns to verify what the subscriber actually persisted
+    const getRawEncryptionColumns = async (
+      memberId: number,
+    ): Promise<{
+      name: string;
+      name_hash: string | null;
+      encryption_version: number | null;
+    }> => {
+      const rows = await dataSource.query(
+        `SELECT name, name_hash, encryption_version FROM members WHERE id = $1`,
+        [memberId],
+      );
+      return rows[0];
+    };
+
+    const insertMember = async (
+      name: string,
+    ): Promise<{ memberId: number }> => {
+      const user = await dbUserRepo.insert({ status: 'ACTIVE' });
+      const space = await dbSpacesRepository.insert({
+        name: nameBuilder(),
+        status: 'ACTIVE',
+      });
+      const result = await dbMembersRepository.insert({
+        user: user.generatedMaps[0],
+        space: space.generatedMaps[0],
+        name,
+        status: 'ACTIVE',
+        role: 'ADMIN',
+        invitedBy: getAddress(faker.finance.ethereumAddress()),
+      });
+      return { memberId: result.identifiers[0].id };
+    };
+
+    it('should store ciphertext, hash, and version in DB on insert', async () => {
+      const name = nameBuilder();
+      const { memberId } = await insertMember(name);
+
+      const raw = await getRawEncryptionColumns(memberId);
+
+      expect(raw.name).not.toBe(name);
+      expect(raw.name_hash).toBe(encryptionService.hmac(name));
+      expect(raw.name_hash).toHaveLength(64);
+      expect(raw.encryption_version).toBe(1);
+    });
+
+    it('should decrypt name transparently on read', async () => {
+      const name = nameBuilder();
+      const { memberId } = await insertMember(name);
+
+      const member = await dbMembersRepository.findOneOrFail({
+        where: { id: memberId },
+      });
+
+      expect(member.name).toBe(name);
+    });
+
+    it('should re-encrypt name on update via save()', async () => {
+      const { memberId } = await insertMember(nameBuilder());
+      const member = await dbMembersRepository.findOneOrFail({
+        where: { id: memberId },
+      });
+
+      const newName = nameBuilder();
+      member.name = newName;
+      await dbMembersRepository.save(member);
+
+      const raw = await getRawEncryptionColumns(memberId);
+      expect(raw.name).not.toBe(newName);
+      expect(raw.name_hash).toBe(encryptionService.hmac(newName));
+      expect(raw.encryption_version).toBe(1);
+
+      const reloaded = await dbMembersRepository.findOneOrFail({
+        where: { id: memberId },
+      });
+      expect(reloaded.name).toBe(newName);
+    });
+
+    it('should pass through plaintext rows (null encryption_version)', async () => {
+      const name = nameBuilder();
+      const user = await dbUserRepo.insert({ status: 'ACTIVE' });
+      const space = await dbSpacesRepository.insert({
+        name: nameBuilder(),
+        status: 'ACTIVE',
+      });
+
+      // Raw SQL bypasses the subscriber — simulates a pre-encryption legacy row
+      await dataSource.query(
+        `INSERT INTO members (user_id, space_id, name, name_hash, encryption_version, role, status, invited_by)
+         VALUES ($1, $2, $3, NULL, NULL, $4, $5, $6)`,
+        [
+          user.generatedMaps[0].id,
+          space.generatedMaps[0].id,
+          name,
+          MemberRole.ADMIN,
+          MemberStatus.ACTIVE,
+          getAddress(faker.finance.ethereumAddress()),
+        ],
+      );
+
+      const member = await dbMembersRepository.findOne({
+        where: {
+          user: { id: user.generatedMaps[0].id },
+          space: { id: space.generatedMaps[0].id },
+        },
+      });
+
+      expect(member!.name).toBe(name);
     });
   });
 });

@@ -1,5 +1,4 @@
 import { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
-import { NAME_MAX_LENGTH } from '@/domain/common/schemas/name.schema';
 import { databaseAddressTransformer } from '@/domain/common/transformers/databaseAddress.transformer';
 import { AddressBookDbItem as DomainAddressBookItem } from '@/modules/spaces/domain/address-books/entities/address-book-item.db.entity';
 import {
@@ -50,11 +49,21 @@ export class AddressBookItem implements DomainAddressBookItem {
   })
   address!: Address;
 
-  @Column({
-    type: 'varchar',
-    length: NAME_MAX_LENGTH,
-  })
+  /** Plaintext in memory; AES-256-GCM ciphertext in DB when encrypted */
+  @Column({ type: 'text' })
   name!: string;
+
+  /** HMAC-SHA256 blind index for equality lookups without decrypting */
+  @Column({ name: 'name_hash', type: 'varchar', length: 64, nullable: true })
+  nameHash!: string | null;
+
+  /** DEK version used to encrypt; null = legacy plaintext row */
+  @Column({
+    name: 'encryption_version',
+    type: 'integer',
+    nullable: true,
+  })
+  encryptionVersion!: number | null;
 
   @Column({
     name: 'created_by',

@@ -3,6 +3,9 @@ import configuration from '@/config/entities/__tests__/configuration';
 import { postgresConfig } from '@/config/entities/postgres.config';
 import { DatabaseMigrator } from '@/datasources/db/v2/database-migrator.service';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
+import { EncryptionLocator } from '@/datasources/encryption/encryption-locator';
+import { EncryptionService } from '@/datasources/encryption/encryption.service';
+import { AddressBookItemSubscriber } from '@/datasources/encryption/subscribers/address-book-item.subscriber';
 import { AddressBookItem } from '@/modules/spaces/datasources/entities/address-book-item.entity.db';
 import { SpaceSafe } from '@/modules/spaces/datasources/entities/space-safes.entity.db';
 import { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
@@ -24,6 +27,7 @@ import type { ILoggingService } from '@/logging/logging.interface';
 import { faker } from '@faker-js/faker/.';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import type { ConfigService } from '@nestjs/config';
+import { randomBytes } from 'crypto';
 import { range } from 'lodash';
 import { DataSource } from 'typeorm';
 import { type Address, getAddress } from 'viem';
@@ -548,4 +552,122 @@ describe('AddressBookItemsRepository', () => {
     });
     return { user: user.raw[0], authPayload };
   };
+
+  describe('encryption', () => {
+    const encryptionService = new EncryptionService(
+      new Map([[1, randomBytes(32)]]),
+      1,
+      randomBytes(32),
+    );
+
+    beforeAll(() => {
+      new AddressBookItemSubscriber(dataSource);
+      EncryptionLocator.setService(encryptionService);
+    });
+
+    afterAll(() => {
+      EncryptionLocator.reset();
+    });
+
+    // Reads raw DB columns to verify what the subscriber actually persisted
+    const getRawEncryptionColumns = async (
+      itemId: number,
+    ): Promise<{
+      name: string;
+      name_hash: string | null;
+      encryption_version: number | null;
+    }> => {
+      const rows = await dataSource.query(
+        `SELECT name, name_hash, encryption_version FROM space_address_book_items WHERE id = $1`,
+        [itemId],
+      );
+      return rows[0];
+    };
+
+    const insertItem = async (
+      name: string,
+      spaceId: number,
+    ): Promise<{ address: Address; itemId: number }> => {
+      const address = getAddress(faker.finance.ethereumAddress());
+      const createdBy = getAddress(faker.finance.ethereumAddress());
+      const result = await dbAddressBookItemsRepository.insert({
+        space: { id: spaceId },
+        chainIds: ['1'],
+        address,
+        name,
+        createdBy,
+        lastUpdatedBy: createdBy,
+      });
+      return { address, itemId: result.identifiers[0].id };
+    };
+
+    it('should store ciphertext, hash, and version in DB on insert', async () => {
+      const name = nameBuilder();
+      const { spaceId } = await createSpaceAsAdmin();
+      const { itemId } = await insertItem(name, spaceId);
+
+      const raw = await getRawEncryptionColumns(itemId);
+
+      expect(raw.name).not.toBe(name);
+      expect(raw.name_hash).toBe(encryptionService.hmac(name));
+      expect(raw.name_hash).toHaveLength(64);
+      expect(raw.encryption_version).toBe(1);
+    });
+
+    it('should decrypt name transparently on read', async () => {
+      const name = nameBuilder();
+      const { spaceId } = await createSpaceAsAdmin();
+      const { address } = await insertItem(name, spaceId);
+
+      const item = await dbAddressBookItemsRepository.findOneBy({
+        address,
+        space: { id: spaceId },
+      });
+
+      expect(item!.name).toBe(name);
+    });
+
+    it('should re-encrypt name on update via save()', async () => {
+      const { spaceId } = await createSpaceAsAdmin();
+      const { address, itemId } = await insertItem(nameBuilder(), spaceId);
+
+      const item = await dbAddressBookItemsRepository.findOneOrFail({
+        where: { address, space: { id: spaceId } },
+      });
+      const newName = nameBuilder();
+      item.name = newName;
+      await dbAddressBookItemsRepository.save(item);
+
+      const raw = await getRawEncryptionColumns(itemId);
+      expect(raw.name).not.toBe(newName);
+      expect(raw.name_hash).toBe(encryptionService.hmac(newName));
+      expect(raw.encryption_version).toBe(1);
+
+      const reloaded = await dbAddressBookItemsRepository.findOneOrFail({
+        where: { id: itemId },
+      });
+      expect(reloaded.name).toBe(newName);
+    });
+
+    it('should pass through plaintext rows (null encryption_version)', async () => {
+      const name = nameBuilder();
+      const address = getAddress(faker.finance.ethereumAddress());
+      const createdBy = getAddress(faker.finance.ethereumAddress());
+      const { spaceId } = await createSpaceAsAdmin();
+
+      // Raw SQL bypasses the subscriber — simulates a pre-encryption legacy row
+      await dataSource.query(
+        `INSERT INTO space_address_book_items (space_id, chain_ids, address, name, name_hash, encryption_version, created_by, last_updated_by)
+         VALUES ($1, $2, $3, $4, NULL, NULL, $5, $6)`,
+        [spaceId, ['1'], address.toLowerCase(), name, createdBy, createdBy],
+      );
+
+      const item = await dbAddressBookItemsRepository.findOneBy({
+        address,
+        space: { id: spaceId },
+      });
+
+      expect(item!.name).toBe(name);
+    });
+  });
 });

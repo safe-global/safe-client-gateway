@@ -26,6 +26,8 @@ export const MemberSchema: z.ZodType<
     user: User;
     space: Space;
     name: string;
+    nameHash: string | null;
+    encryptionVersion: number | null;
     alias: string | null;
     role: keyof typeof MemberRole;
     status: keyof typeof MemberStatus;
@@ -35,6 +37,8 @@ export const MemberSchema: z.ZodType<
   user: z.lazy(() => UserSchema),
   space: z.lazy(() => SpaceSchema),
   name: NameSchema,
+  nameHash: z.string().nullable(),
+  encryptionVersion: z.number().int().nullable(),
   alias: NameSchema.nullable(),
   role: z.enum(getStringEnumKeys(MemberRole)),
   status: z.enum(getStringEnumKeys(MemberStatus)),

@@ -202,10 +202,10 @@ export class MembersRepository implements IMembersRepository {
     const member = space.members[0];
 
     await this.postgresDatabaseService.transaction(async (entityManager) => {
-      await entityManager.update(DbMember, member.id, {
-        status: 'ACTIVE',
-        name: args.payload.name,
-      });
+      // save() instead of update() so TypeORM subscriber can encrypt the name
+      member.status = 'ACTIVE';
+      member.name = args.payload.name;
+      await entityManager.save(DbMember, member);
 
       await this.usersRepository.updateStatus({
         userId: user.id,
