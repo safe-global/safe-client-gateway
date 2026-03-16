@@ -6,7 +6,7 @@ import { faker } from '@faker-js/faker';
 
 const jwtServiceMock = {
   decode: jest.fn(),
-} as unknown as jest.MockedObjectDeep<IJwtService>;
+} as jest.MockedObjectDeep<IJwtService>;
 
 describe('Auth0Service', () => {
   let service: Auth0Service;
@@ -57,7 +57,7 @@ describe('Auth0Service', () => {
 
     it('should parse a token without optional claims', () => {
       const accessToken = faker.string.alphanumeric();
-      const decoded = { sub: faker.string.uuid() };
+      const decoded = { sub: faker.string.numeric() };
       jwtServiceMock.decode.mockReturnValue(decoded);
 
       const result = service.verifyAndDecode(accessToken);
