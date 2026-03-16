@@ -239,7 +239,12 @@ describe('AuthService', () => {
       extUserId = faker.string.uuid();
       userId = faker.number.int({ min: 1, max: 1000 });
 
-      mockAuth0Service.verifyAndDecode.mockReturnValue({ sub: extUserId });
+      mockAuth0Service.verifyAndDecode.mockReturnValue({
+        sub: extUserId,
+        exp: undefined,
+        nbf: undefined,
+        iat: undefined,
+      });
       mockUsersRepository.findOrCreateByExtUserId.mockResolvedValue(userId);
       mockAuthRepository.signToken.mockReturnValue('token');
     });
@@ -252,6 +257,7 @@ describe('AuthService', () => {
         sub: extUserId,
         exp,
         iat,
+        nbf: undefined,
       });
       mockAuthRepository.signToken.mockReturnValue(expectedToken);
 
@@ -298,6 +304,8 @@ describe('AuthService', () => {
       mockAuth0Service.verifyAndDecode.mockReturnValue({
         sub: extUserId,
         exp: tooFarExpiration,
+        nbf: undefined,
+        iat: undefined,
       });
 
       await expect(
@@ -318,6 +326,8 @@ describe('AuthService', () => {
       mockAuth0Service.verifyAndDecode.mockReturnValue({
         sub: extUserId,
         exp: exactMaxExpiration,
+        nbf: undefined,
+        iat: undefined,
       });
 
       await expect(
@@ -330,6 +340,7 @@ describe('AuthService', () => {
       const iat = now;
       mockAuth0Service.verifyAndDecode.mockReturnValue({
         sub: extUserId,
+        exp: undefined,
         nbf,
         iat,
       });

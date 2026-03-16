@@ -849,6 +849,17 @@ describe('UsersRepository', () => {
       expect(id1).toBe(id2);
       await expect(dbUserRepository.find()).resolves.toHaveLength(1);
     });
+
+    it('should rethrow non-constraint-violation errors', async () => {
+      const extUserId = faker.string.uuid();
+      const error = new Error('unexpected failure');
+
+      jest.spyOn(usersRepository, 'create').mockRejectedValueOnce(error);
+
+      await expect(
+        usersRepository.findOrCreateByExtUserId(extUserId),
+      ).rejects.toThrow(error);
+    });
   });
 
   describe('update', () => {

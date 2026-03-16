@@ -18,11 +18,17 @@ import type { Server } from 'net';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { UsersModule } from '@/modules/users/users.module';
 import { TestUsersModule } from '@/modules/users/__tests__/test.users.module';
+import jwt from 'jsonwebtoken';
 
 describe('AuthController', () => {
   let app: INestApplication<Server>;
   let cacheService: FakeCacheService;
   let maxValidityPeriodInMs: number;
+  let auth0Config: {
+    domain: string;
+    apiIdentifier: string;
+    signingSecret: string;
+  };
 
   async function initApp(config: typeof configuration): Promise<void> {
     const moduleFixture = await createTestModule({
@@ -45,6 +51,15 @@ describe('AuthController', () => {
     );
     maxValidityPeriodInMs =
       configService.getOrThrow<number>('auth.maxValidityPeriodSeconds') * 1_000;
+    auth0Config = {
+      domain: configService.getOrThrow<string>('auth.auth0.domain'),
+      apiIdentifier: configService.getOrThrow<string>(
+        'auth.auth0.apiIdentifier',
+      ),
+      signingSecret: configService.getOrThrow<string>(
+        'auth.auth0.signingSecret',
+      ),
+    };
 
     app = await new TestAppProvider().provide(moduleFixture);
 
@@ -471,6 +486,233 @@ describe('AuthController', () => {
           });
         // Nonce deleted
         await expect(cacheService.hGet(cacheDir)).resolves.toBeNull();
+      });
+    });
+
+    describe('OIDC', () => {
+      function signAuth0Token(claims: {
+        sub: string;
+        exp?: number;
+        iat?: number;
+        nbf?: number;
+      }): string {
+        return jwt.sign(claims, auth0Config.signingSecret, {
+          algorithm: 'HS256',
+          issuer: `https://${auth0Config.domain}/`,
+          audience: auth0Config.apiIdentifier,
+          noTimestamp: true,
+        });
+      }
+
+      it('should verify an Auth0 access token and set cookie', async () => {
+        jest.setSystemTime(0);
+
+        const expirationTime = faker.date.between({
+          from: new Date(),
+          to: new Date(Date.now() + maxValidityPeriodInMs),
+        });
+        const accessToken = signAuth0Token({
+          sub: faker.string.uuid(),
+          exp: Math.floor(expirationTime.getTime() / 1_000),
+          iat: Math.floor(Date.now() / 1_000),
+        });
+        const maxAge = getSecondsUntil(expirationTime);
+
+        await request(app.getHttpServer())
+          .post('/v1/auth/verify')
+          .send({ access_token: accessToken })
+          .expect(200)
+          .expect(({ headers }) => {
+            const setCookie = headers['set-cookie'];
+            const setCookieRegExp = new RegExp(
+              `access_token=([^;]*); Max-Age=${maxAge}; Path=/; Expires=${expirationTime.toUTCString()}; HttpOnly; Secure; SameSite=Lax`,
+            );
+
+            expect(setCookie).toHaveLength(1);
+            expect(setCookie[0]).toMatch(setCookieRegExp);
+          });
+      });
+
+      it('should set SameSite=none if application.env is not production', async () => {
+        jest.setSystemTime(0);
+
+        const defaultConfiguration = configuration();
+        const testConfiguration = (): typeof defaultConfiguration => ({
+          ...defaultConfiguration,
+          application: {
+            ...defaultConfiguration.application,
+            isProduction: false,
+          },
+          features: {
+            ...defaultConfiguration.features,
+            auth: true,
+          },
+        });
+
+        await initApp(testConfiguration);
+
+        const expirationTime = faker.date.between({
+          from: new Date(),
+          to: new Date(Date.now() + maxValidityPeriodInMs),
+        });
+        const accessToken = signAuth0Token({
+          sub: faker.string.uuid(),
+          exp: Math.floor(expirationTime.getTime() / 1_000),
+          iat: Math.floor(Date.now() / 1_000),
+        });
+        const maxAge = getSecondsUntil(expirationTime);
+
+        await request(app.getHttpServer())
+          .post('/v1/auth/verify')
+          .send({ access_token: accessToken })
+          .expect(200)
+          .expect(({ headers }) => {
+            const setCookie = headers['set-cookie'];
+            const setCookieRegExp = new RegExp(
+              `access_token=([^;]*); Max-Age=${maxAge}; Path=/; Expires=${expirationTime.toUTCString()}; HttpOnly; Secure; SameSite=None`,
+            );
+
+            expect(setCookie).toHaveLength(1);
+            expect(setCookie[0]).toMatch(setCookieRegExp);
+          });
+      });
+
+      it('should use max expiration time when exp is not set', async () => {
+        jest.setSystemTime(0);
+
+        const accessToken = signAuth0Token({
+          sub: faker.string.uuid(),
+          iat: Math.floor(Date.now() / 1_000),
+        });
+        const expectedExpirationTime = new Date(
+          Date.now() + maxValidityPeriodInMs,
+        );
+        const maxAge = getSecondsUntil(expectedExpirationTime);
+
+        await request(app.getHttpServer())
+          .post('/v1/auth/verify')
+          .send({ access_token: accessToken })
+          .expect(200)
+          .expect(({ headers }) => {
+            const setCookie = headers['set-cookie'];
+            const setCookieRegExp = new RegExp(
+              `access_token=([^;]*); Max-Age=${maxAge}; Path=/; Expires=${expectedExpirationTime.toUTCString()}; HttpOnly; Secure; SameSite=Lax`,
+            );
+
+            expect(setCookie).toHaveLength(1);
+            expect(setCookie[0]).toMatch(setCookieRegExp);
+          });
+      });
+
+      it('should not issue a token if exp exceeds max validity', async () => {
+        const tooFarExpiration = faker.date.future({
+          refDate: new Date(Date.now() + maxValidityPeriodInMs),
+        });
+        const accessToken = signAuth0Token({
+          sub: faker.string.uuid(),
+          exp: Math.floor(tooFarExpiration.getTime() / 1_000),
+          iat: Math.floor(Date.now() / 1_000),
+        });
+
+        await request(app.getHttpServer())
+          .post('/v1/auth/verify')
+          .send({ access_token: accessToken })
+          .expect(403)
+          .expect(({ headers, body }) => {
+            expect(headers['set-cookie']).toBeUndefined();
+
+            expect(body).toStrictEqual({
+              error: 'Forbidden',
+              message: `Cannot issue token for longer than ${maxValidityPeriodInMs / 1_000} seconds`,
+              statusCode: 403,
+            });
+          });
+      });
+
+      it('should reject a token signed with the wrong secret', async () => {
+        const wrongSecret = faker.string.alphanumeric(64);
+        const accessToken = jwt.sign(
+          { sub: faker.string.uuid() },
+          wrongSecret,
+          {
+            algorithm: 'HS256',
+            issuer: `https://${auth0Config.domain}/`,
+            audience: auth0Config.apiIdentifier,
+          },
+        );
+
+        await request(app.getHttpServer())
+          .post('/v1/auth/verify')
+          .send({ access_token: accessToken })
+          .expect(500)
+          .expect(({ headers }) => {
+            expect(headers['set-cookie']).toBeUndefined();
+          });
+      });
+
+      it('should reject an expired token', async () => {
+        const accessToken = signAuth0Token({
+          sub: faker.string.uuid(),
+          exp: Math.floor(Date.now() / 1_000) - 60,
+          iat: Math.floor(Date.now() / 1_000) - 120,
+        });
+
+        await request(app.getHttpServer())
+          .post('/v1/auth/verify')
+          .send({ access_token: accessToken })
+          .expect(500)
+          .expect(({ headers }) => {
+            expect(headers['set-cookie']).toBeUndefined();
+          });
+      });
+
+      it('should reject a token with wrong issuer', async () => {
+        const wrongIssuer = `https://${faker.internet.domainName()}/`;
+        const accessToken = jwt.sign(
+          { sub: faker.string.uuid() },
+          auth0Config.signingSecret,
+          {
+            algorithm: 'HS256',
+            issuer: wrongIssuer,
+            audience: auth0Config.apiIdentifier,
+          },
+        );
+
+        await request(app.getHttpServer())
+          .post('/v1/auth/verify')
+          .send({ access_token: accessToken })
+          .expect(500)
+          .expect(({ headers }) => {
+            expect(headers['set-cookie']).toBeUndefined();
+          });
+      });
+
+      it('should reject a token with wrong audience', async () => {
+        const wrongAudience = faker.internet.url({ appendSlash: false });
+        const accessToken = jwt.sign(
+          { sub: faker.string.uuid() },
+          auth0Config.signingSecret,
+          {
+            algorithm: 'HS256',
+            issuer: `https://${auth0Config.domain}/`,
+            audience: wrongAudience,
+          },
+        );
+
+        await request(app.getHttpServer())
+          .post('/v1/auth/verify')
+          .send({ access_token: accessToken })
+          .expect(500)
+          .expect(({ headers }) => {
+            expect(headers['set-cookie']).toBeUndefined();
+          });
+      });
+
+      it('should return 422 for invalid request body', async () => {
+        await request(app.getHttpServer())
+          .post('/v1/auth/verify')
+          .send({ access_token: 'not-a-jwt' })
+          .expect(422);
       });
     });
   });

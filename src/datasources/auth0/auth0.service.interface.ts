@@ -1,14 +1,4 @@
-/**
- * Decoded payload from a verified Auth0 access token.
- * Standard JWT claims (exp, nbf, iat) are transformed from
- * numeric timestamps to Date instances by the JWT decode layer.
- */
-export type Auth0DecodedToken = {
-  sub: string;
-  exp?: Date;
-  nbf?: Date;
-  iat?: Date;
-};
+import type { Auth0Token } from '@/datasources/auth0/entities/auth0-token.entity';
 
 export const IAuth0Service = Symbol('IAuth0Service');
 
@@ -20,5 +10,5 @@ export interface IAuth0Service {
    * @returns The decoded token payload containing the `sub` claim.
    * @throws If the token is invalid, expired, or fails verification.
    */
-  verifyAndDecode(accessToken: string): Auth0DecodedToken;
+  verifyAndDecode(accessToken: string): Auth0Token;
 }

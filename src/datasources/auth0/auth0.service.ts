@@ -1,10 +1,11 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
 import { IConfigurationService } from '@/config/configuration.service.interface';
+import { IAuth0Service } from '@/datasources/auth0/auth0.service.interface';
 import {
-  type Auth0DecodedToken,
-  IAuth0Service,
-} from '@/datasources/auth0/auth0.service.interface';
+  Auth0Token,
+  Auth0TokenSchema,
+} from '@/datasources/auth0/entities/auth0-token.entity';
 
 @Injectable()
 export class Auth0Service implements IAuth0Service {
@@ -30,11 +31,12 @@ export class Auth0Service implements IAuth0Service {
     );
   }
 
-  public verifyAndDecode(accessToken: string): Auth0DecodedToken {
-    return this.jwtService.decode<Auth0DecodedToken>(accessToken, {
+  public verifyAndDecode(accessToken: string): Auth0Token {
+    const decoded = this.jwtService.decode<{ sub: string }>(accessToken, {
       issuer: this.issuer,
       audience: this.audience,
       secretOrPrivateKey: this.signingSecret,
     });
+    return Auth0TokenSchema.parse(decoded);
   }
 }
