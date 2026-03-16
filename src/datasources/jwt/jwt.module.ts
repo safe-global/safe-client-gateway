@@ -4,7 +4,6 @@ import { Module } from '@nestjs/common';
 import { JwtService } from '@/datasources/jwt/jwt.service';
 import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
 import { toSecondsTimestamp } from '@/domain/common/utils/time';
-import { JwtPayloadWithClaims } from '@/datasources/jwt/jwt-claims.entity';
 
 // Use inferred type
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
@@ -59,7 +58,7 @@ function jwtClientFactory() {
         secretOrPrivateKey: string;
         algorithms?: Array<jwt.Algorithm>;
       },
-    ): JwtPayloadWithClaims<T> => {
+    ): jwt.JwtPayload & T => {
       // Client has `decode` method but we also want to verify the signature
       const { payload } = jwt.verify(token, options.secretOrPrivateKey, {
         algorithms: options.algorithms,
@@ -69,7 +68,7 @@ function jwtClientFactory() {
         complete: true,
       });
 
-      return payload as JwtPayloadWithClaims<T>;
+      return payload as jwt.JwtPayload & T;
     },
   };
 }
