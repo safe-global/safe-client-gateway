@@ -1,6 +1,7 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Module } from '@nestjs/common';
 import { EventCacheHelperModule } from '@/modules/hooks/domain/helpers/event-cache.helper.module';
-import { EventNotificationsHelperModule } from '@/modules/hooks/domain/helpers/event-notifications.helper';
+import { PushNotificationModule } from '@/modules/notifications/domain/push/push-notification.module';
 import { HooksRepository } from '@/modules/hooks/domain/hooks.repository';
 import { IHooksRepository } from '@/modules/hooks/domain/hooks.repository.interface';
 import { HooksController } from '@/modules/hooks/routes/hooks.controller';
@@ -10,7 +11,7 @@ import { QueuesRepositoryModule } from '../queues/domain/queues-repository.inter
 @Module({
   imports: [
     EventCacheHelperModule,
-    EventNotificationsHelperModule,
+    PushNotificationModule,
     QueuesRepositoryModule,
   ],
   controllers: [HooksController],

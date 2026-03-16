@@ -10,7 +10,6 @@ import type { DelegatesV2Repository } from '@/modules/delegate/domain/v2/delegat
 import type { EarnRepository } from '@/modules/earn/domain/earn.repository';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import { EventCacheHelper } from '@/modules/hooks/domain/helpers/event-cache.helper';
-import type { EventNotificationsHelper } from '@/modules/hooks/domain/helpers/event-notifications.helper';
 import { HooksRepository } from '@/modules/hooks/domain/hooks.repository';
 import type { MessagesRepository } from '@/modules/messages/domain/messages.repository';
 import type { QueuesRepository } from '@/modules/queues/domain/queues-repository';
@@ -19,6 +18,7 @@ import type { SafeRepository } from '@/modules/safe/domain/safe.repository';
 import type { StakingRepository } from '@/modules/staking/domain/staking.repository';
 import type { TransactionsRepository } from '@/modules/transactions/domain/transactions.repository';
 import type { ILoggingService } from '@/logging/logging.interface';
+import type { IPushNotificationService } from '@/modules/notifications/domain/push/push-notification.service.interface';
 import { chainUpdateEventBuilder } from '@/modules/hooks/routes/entities/__tests__/chain-update.builder';
 import { incomingTokenEventBuilder } from '@/modules/hooks/routes/entities/__tests__/incoming-token.builder';
 
@@ -92,9 +92,9 @@ const mockConfigurationService = jest.mocked({
   getOrThrow: jest.fn(),
 } as jest.MockedObjectDeep<IConfigurationService>);
 
-const mockEventNotificationsHelper = jest.mocked({
-  onEventEnqueueNotifications: jest.fn(),
-} as jest.MockedObjectDeep<EventNotificationsHelper>);
+const mockPushNotificationService = jest.mocked({
+  enqueueEvent: jest.fn(),
+} as jest.MockedObjectDeep<IPushNotificationService>);
 
 describe('HooksRepository (Unit)', () => {
   let hooksRepository: HooksRepository;
@@ -120,11 +120,12 @@ describe('HooksRepository (Unit)', () => {
       mockLoggingService,
       fakeCacheService,
     );
+    mockPushNotificationService.enqueueEvent.mockResolvedValue();
     hooksRepository = new HooksRepository(
       mockLoggingService,
       mockQueuesRepository,
       mockConfigurationService,
-      mockEventNotificationsHelper,
+      mockPushNotificationService,
       eventCacheHelper,
     );
   });
@@ -325,5 +326,47 @@ describe('HooksRepository (Unit)', () => {
     // cache should be cleared after logging
     await expect(fakeCacheService.getCounter(cacheKeys[0])).resolves.toBeNull();
     await expect(fakeCacheService.getCounter(cacheKeys[1])).resolves.toBeNull();
+  });
+
+  it('should call enqueueEvent for supported chain events', async () => {
+    const chain = chainBuilder().build();
+    const event = incomingTokenEventBuilder()
+      .with('chainId', chain.chainId)
+      .build();
+    mockChainsRepository.isSupportedChain.mockResolvedValue(true);
+
+    await hooksRepository.onEvent(event);
+
+    expect(mockPushNotificationService.enqueueEvent).toHaveBeenCalledTimes(1);
+    expect(mockPushNotificationService.enqueueEvent).toHaveBeenCalledWith(
+      event,
+    );
+  });
+
+  it('should continue processing if enqueueEvent rejects', async () => {
+    const chain = chainBuilder().build();
+    const event = incomingTokenEventBuilder()
+      .with('chainId', chain.chainId)
+      .build();
+    mockChainsRepository.isSupportedChain.mockResolvedValue(true);
+    mockPushNotificationService.enqueueEvent.mockRejectedValue(
+      new Error('Queue unavailable'),
+    );
+
+    await expect(hooksRepository.onEvent(event)).resolves.not.toThrow();
+
+    expect(mockPushNotificationService.enqueueEvent).toHaveBeenCalledTimes(1);
+  });
+
+  it('should not call enqueueEvent for unsupported chain events', async () => {
+    const chain = chainBuilder().build();
+    const event = incomingTokenEventBuilder()
+      .with('chainId', chain.chainId)
+      .build();
+    mockChainsRepository.isSupportedChain.mockResolvedValue(false);
+
+    await hooksRepository.onEvent(event);
+
+    expect(mockPushNotificationService.enqueueEvent).not.toHaveBeenCalled();
   });
 });

@@ -246,6 +246,22 @@ export default (): ReturnType<typeof configuration> => ({
     },
     getSubscribersBySafeTtlMilliseconds: faker.number.int({ min: 1, max: 100 }),
     oauth2TokenTtlBufferInSeconds: faker.number.int({ min: 30, max: 100 }),
+    queue: {
+      removeOnComplete: {
+        age: faker.number.int({ min: 0, max: 3600 }),
+        count: faker.number.int({ min: 0, max: 5000 }),
+      },
+      removeOnFail: {
+        age: faker.number.int({ min: 0, max: 43200 }),
+        count: faker.number.int({ min: 0, max: 500 }),
+      },
+      backoff: {
+        type: 'exponential',
+        delay: faker.number.int({ min: 0, max: 1000 }),
+      },
+      attempts: faker.number.int({ min: 0, max: 3 }),
+      concurrency: faker.number.int({ min: 1, max: 5 }),
+    },
   },
   redis: {
     user: process.env.REDIS_USER,
