@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { JwtClient } from '@/datasources/jwt/jwt.module';
 import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
-import { JwtPayloadWithClaims } from '@/datasources/jwt/jwt-claims.entity';
 import { Inject, Injectable } from '@nestjs/common';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import type { Algorithm } from 'jsonwebtoken';
+import type { Algorithm, JwtPayload } from 'jsonwebtoken';
 
 @Injectable()
 export class JwtService implements IJwtService {
@@ -71,7 +70,7 @@ export class JwtService implements IJwtService {
       secretOrPrivateKey?: string;
       algorithms?: Array<Algorithm>;
     },
-  ): JwtPayloadWithClaims<T> {
+  ): JwtPayload & T {
     return this.client.decode(token, {
       issuer: options?.issuer ?? this.issuer,
       audience: options?.audience ?? this.issuer,

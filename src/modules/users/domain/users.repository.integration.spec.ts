@@ -737,6 +737,7 @@ describe('UsersRepository', () => {
         id: userId,
         status: 'ACTIVE',
         updatedAt: expect.any(Date),
+        extUserId: null,
       });
 
       const wallet = await dbWalletRepository.findOneOrFail({
@@ -753,6 +754,7 @@ describe('UsersRepository', () => {
           id: userId,
           status: 'ACTIVE',
           updatedAt: expect.any(Date),
+          extUserId: null,
         },
       });
     });
