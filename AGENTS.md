@@ -1,4 +1,6 @@
-<!-- SPDX-License-Identifier: FSL-1.1-MIT -->
+<!--
+  SPDX-License-Identifier: FSL-1.1-MIT
+ -->
 
 # Agent Guidelines
 
@@ -66,14 +68,16 @@ git commit -m "Your commit message"
 
 ## License Headers
 
-All source files **must** include an SPDX license header as the very first line. The header format depends on the file type:
+All source files **must** include an SPDX license header at the very top of the file. The header format depends on the file type:
 
-| File type                            | Comment style | Header                                          |
-| ------------------------------------ | ------------- | ----------------------------------------------- |
-| `.ts`, `.tsx`, `.js`, `.mjs`         | `//`          | `// SPDX-License-Identifier: FSL-1.1-MIT`       |
-| `.yaml`, `.yml`, `.sh`, `Dockerfile` | `#`           | `# SPDX-License-Identifier: FSL-1.1-MIT`        |
-| `.md`                                | HTML comment  | `<!-- SPDX-License-Identifier: FSL-1.1-MIT -->` |
-| `.sql`                               | `--`          | `-- SPDX-License-Identifier: FSL-1.1-MIT`       |
+| File type                            | Comment style | Header                                    |
+| ------------------------------------ | ------------- | ----------------------------------------- |
+| `.ts`, `.tsx`, `.js`, `.mjs`         | `//`          | `// SPDX-License-Identifier: FSL-1.1-MIT` |
+| `.yaml`, `.yml`, `.sh`, `Dockerfile` | `#`           | `# SPDX-License-Identifier: FSL-1.1-MIT`  |
+| `.md`                                | HTML comment  | Multi-line: `<!--\n  SPDX-...\n -->`      |
+| `.sql`                               | `--`          | `-- SPDX-License-Identifier: FSL-1.1-MIT` |
+
+For `.md` files the hook uses a multi-line HTML comment style (`<!--| | -->`), so the header spans three lines.
 
 This is enforced by a `pre-commit` hook (`insert-license` from `Lucas-C/pre-commit-hooks`) and a `license-headers` CI job. The canonical header text lives in `LICENSE_HEADER.txt`.
 
