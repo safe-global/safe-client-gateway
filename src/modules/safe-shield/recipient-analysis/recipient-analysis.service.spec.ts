@@ -85,6 +85,20 @@ describe('RecipientAnalysisService', () => {
   const mockSafeAddress = getAddress(faker.finance.ethereumAddress());
   const mockRecipientAddress = getAddress(faker.finance.ethereumAddress());
 
+  /**
+   * Generates a chain ID that is guaranteed to differ from mockChainId.
+   * Using faker.string.numeric(3) for both mockChainId and targetChainId
+   * has a ~0.1% chance of collision (1/1000), causing tests to fail
+   * when the mock implementation returns the source safe for both chains.
+   */
+  const uniqueTargetChainId = (): string => {
+    let id: string;
+    do {
+      id = faker.string.numeric(3);
+    } while (id === mockChainId);
+    return id;
+  };
+
   const createMockTxInfo = (
     recipient: string,
     toChain: string,
@@ -630,7 +644,7 @@ describe('RecipientAnalysisService', () => {
     });
 
     it('should analyze BridgeAndSwap with recipient same as Safe address', async () => {
-      const targetChainId = faker.string.numeric(3);
+      const targetChainId = uniqueTargetChainId();
       const mockBridgeTxInfo = createMockTxInfo(mockSafeAddress, targetChainId);
 
       extractRecipientsSpy.mockReturnValue([]);
@@ -733,7 +747,7 @@ describe('RecipientAnalysisService', () => {
     });
 
     it('should handle getSafe errors gracefully', async () => {
-      const targetChainId = faker.string.numeric(3);
+      const targetChainId = uniqueTargetChainId();
       const mockTxInfo = createMockTxInfo(mockSafeAddress, targetChainId);
 
       mockChainsRepository.isSupportedChain.mockResolvedValue(true);
@@ -1317,7 +1331,7 @@ describe('RecipientAnalysisService', () => {
     });
 
     it('should handle Safe setup comparison with different owners', async () => {
-      const targetChainId = faker.string.numeric(3);
+      const targetChainId = uniqueTargetChainId();
       const mockTxInfo = createMockTxInfo(mockSafeAddress, targetChainId);
       const owner1 = getAddress(faker.finance.ethereumAddress());
       const owner2 = getAddress(faker.finance.ethereumAddress());
@@ -1384,10 +1398,8 @@ describe('RecipientAnalysisService', () => {
     });
 
     it('should handle Safe setup comparison with different owner counts', async () => {
-      const mockTxInfo = createMockTxInfo(
-        mockSafeAddress,
-        faker.string.numeric(3),
-      );
+      const targetChainId = uniqueTargetChainId();
+      const mockTxInfo = createMockTxInfo(mockSafeAddress, targetChainId);
       const owner1 = getAddress(faker.finance.ethereumAddress());
       const owner2 = getAddress(faker.finance.ethereumAddress());
       const owner3 = getAddress(faker.finance.ethereumAddress());
@@ -1408,7 +1420,7 @@ describe('RecipientAnalysisService', () => {
 
       mockChainsRepository.isSupportedChain.mockResolvedValue(true);
       mockChainsRepository.getChain.mockResolvedValue(
-        chainBuilder().with('chainId', faker.string.numeric(3)).build(),
+        chainBuilder().with('chainId', targetChainId).build(),
       );
 
       mockTransactionApiManager.getApi.mockImplementation((chainId) => {
@@ -1437,10 +1449,8 @@ describe('RecipientAnalysisService', () => {
     });
 
     it('should handle Safe setup comparison with different thresholds', async () => {
-      const mockTxInfo = createMockTxInfo(
-        mockSafeAddress,
-        faker.string.numeric(3),
-      );
+      const targetChainId = uniqueTargetChainId();
+      const mockTxInfo = createMockTxInfo(mockSafeAddress, targetChainId);
       const owner1 = getAddress(faker.finance.ethereumAddress());
       const owner2 = getAddress(faker.finance.ethereumAddress());
 
@@ -1460,7 +1470,7 @@ describe('RecipientAnalysisService', () => {
 
       mockChainsRepository.isSupportedChain.mockResolvedValue(true);
       mockChainsRepository.getChain.mockResolvedValue(
-        chainBuilder().with('chainId', faker.string.numeric(3)).build(),
+        chainBuilder().with('chainId', targetChainId).build(),
       );
 
       mockTransactionApiManager.getApi.mockImplementation((chainId) => {
@@ -1522,7 +1532,7 @@ describe('RecipientAnalysisService', () => {
     });
 
     it('should return MISSING_OWNERSHIP when target Safe does not exist but network is compatible', async () => {
-      const targetChainId = faker.string.numeric(3);
+      const targetChainId = uniqueTargetChainId();
       const mockTxInfo = createMockTxInfo(mockSafeAddress, targetChainId);
 
       mockTransactionApiManager.getApi.mockImplementation((chainId) => {
@@ -1651,22 +1661,14 @@ describe('RecipientAnalysisService', () => {
     });
 
     it('should return INCOMPATIBLE_SAFE when target Safe does not exist and target network is incompatible', async () => {
-      const mockTxInfo = createMockTxInfo(
-        mockSafeAddress,
-        faker.string.numeric(3),
-      );
+      const targetChainId = uniqueTargetChainId();
+      const mockTxInfo = createMockTxInfo(mockSafeAddress, targetChainId);
 
       mockTransactionApiManager.getApi.mockImplementation((chainId) => {
         if (chainId === mockChainId) {
           return Promise.resolve({
             ...mockTransactionApi,
             getSafe: jest.fn().mockResolvedValue(mockSourceSafe),
-          });
-        }
-        if (chainId !== mockChainId) {
-          return Promise.resolve({
-            ...mockTransactionApi,
-            getSafe: jest.fn().mockResolvedValue(null),
           });
         }
         return Promise.resolve({
@@ -1687,7 +1689,7 @@ describe('RecipientAnalysisService', () => {
 
       mockChainsRepository.isSupportedChain.mockResolvedValue(true);
       mockChainsRepository.getChain.mockResolvedValue(
-        chainBuilder().with('chainId', faker.string.numeric(3)).build(),
+        chainBuilder().with('chainId', targetChainId).build(),
       );
 
       const result = await service.analyzeBridge({
@@ -1703,7 +1705,7 @@ describe('RecipientAnalysisService', () => {
     });
 
     it('should return UNSUPPORTED_NETWORK when target chain is not supported', async () => {
-      const unsupportedChainId = faker.string.numeric(3);
+      const unsupportedChainId = uniqueTargetChainId();
       const mockTxInfo = createMockTxInfo(mockSafeAddress, unsupportedChainId);
 
       mockChainsRepository.isSupportedChain.mockImplementation((chainId) => {
@@ -1794,7 +1796,7 @@ describe('RecipientAnalysisService', () => {
     });
 
     it('should handle bridge analysis errors gracefully', async () => {
-      const targetChainId = faker.string.numeric(3);
+      const targetChainId = uniqueTargetChainId();
       const mockTxInfo = createMockTxInfo(mockSafeAddress, targetChainId);
 
       mockChainsRepository.isSupportedChain.mockRejectedValue(
