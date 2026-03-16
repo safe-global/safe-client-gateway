@@ -86,18 +86,8 @@ describe('RecipientAnalysisService', () => {
   const mockSafeAddress = getAddress(faker.finance.ethereumAddress());
   const mockRecipientAddress = getAddress(faker.finance.ethereumAddress());
 
-  /**
-   * Generates a chain ID that is guaranteed to differ from mockChainId.
-   * Using faker.string.numeric(3) for both mockChainId and targetChainId
-   * has a ~0.1% chance of collision (1/1000), causing tests to fail
-   * when the mock implementation returns the source safe for both chains.
-   */
   const uniqueTargetChainId = (): string => {
-    let id: string;
-    do {
-      id = faker.string.numeric(3);
-    } while (id === mockChainId);
-    return id;
+    return faker.string.numeric({ length: 3, exclude: [mockChainId] });
   };
 
   const createMockTxInfo = (
