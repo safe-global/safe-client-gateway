@@ -1,10 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import {
-  INetworkService,
-  NetworkService,
-} from '@/datasources/network/network.service.interface';
+import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
+import { CacheRouter } from '@/datasources/cache/cache.router';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { getZerionHeaders } from '@/modules/balances/datasources/zerion-api.helpers';
 import {
@@ -13,13 +11,6 @@ import {
 } from '@/modules/balances/datasources/entities/zerion-wallet-portfolio.entity';
 import type { Address } from 'viem';
 import { ZodError } from 'zod';
-import {
-  CacheService,
-  ICacheService,
-} from '@/datasources/cache/cache.service.interface';
-import { CacheRouter } from '@/datasources/cache/cache.router';
-import { LoggingService, ILoggingService } from '@/logging/logging.interface';
-import { LogType } from '@/domain/common/entities/log-type.entity';
 
 export const IZerionWalletPortfolioApi = Symbol('IZerionWalletPortfolioApi');
 
@@ -47,15 +38,13 @@ export class ZerionWalletPortfolioApi implements IZerionWalletPortfolioApi {
   private static readonly CACHE_TTL_SECONDS = 10;
   private readonly apiKey: string | undefined;
   private readonly baseUri: string;
+  private readonly defaultNotFoundExpirationTimeSeconds: number;
 
   constructor(
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
-    @Inject(NetworkService)
-    private readonly networkService: INetworkService,
+    private readonly dataSource: CacheFirstDataSource,
     private readonly httpErrorFactory: HttpErrorFactory,
-    @Inject(CacheService) private readonly cacheService: ICacheService,
-    @Inject(LoggingService) private readonly loggingService: ILoggingService,
   ) {
     this.apiKey = this.configurationService.get<string>(
       'balances.providers.zerion.apiKey',
@@ -63,6 +52,10 @@ export class ZerionWalletPortfolioApi implements IZerionWalletPortfolioApi {
     this.baseUri = this.configurationService.getOrThrow<string>(
       'balances.providers.zerion.baseUri',
     );
+    this.defaultNotFoundExpirationTimeSeconds =
+      this.configurationService.getOrThrow<number>(
+        'expirationTimeInSeconds.notFound.default',
+      );
   }
 
   async getPortfolio(args: {
@@ -78,18 +71,7 @@ export class ZerionWalletPortfolioApi implements IZerionWalletPortfolioApi {
       isTestnet: args.isTestnet,
     });
 
-    const { key, field } = cacheDir;
-
-    const cached = await this.cacheService.hGet(cacheDir);
-    if (cached != null) {
-      this.loggingService.debug({ type: LogType.CacheHit, key, field });
-      return ZerionWalletPortfolioSchema.parse(JSON.parse(cached));
-    }
-
-    this.loggingService.debug({ type: LogType.CacheMiss, key, field });
-
     const url = `${this.baseUri}/v1/wallets/${args.address}/portfolio`;
-
     const params: Record<string, string> = {
       currency: args.currency.toLowerCase(),
       'filter[positions]': 'no_filter',
@@ -100,23 +82,18 @@ export class ZerionWalletPortfolioApi implements IZerionWalletPortfolioApi {
     }
 
     try {
-      const { data } = await this.networkService.get<ZerionWalletPortfolio>({
+      const data = await this.dataSource.get<ZerionWalletPortfolio>({
+        cacheDir,
         url,
         networkRequest: {
           headers: getZerionHeaders(this.apiKey, args.isTestnet),
           params,
         },
+        notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
+        expireTimeSeconds: ZerionWalletPortfolioApi.CACHE_TTL_SECONDS,
       });
 
-      const portfolio = ZerionWalletPortfolioSchema.parse(data);
-
-      await this.cacheService.hSet(
-        cacheDir,
-        JSON.stringify(portfolio),
-        ZerionWalletPortfolioApi.CACHE_TTL_SECONDS,
-      );
-
-      return portfolio;
+      return ZerionWalletPortfolioSchema.parse(data);
     } catch (error) {
       if (error instanceof ZodError) {
         throw error;

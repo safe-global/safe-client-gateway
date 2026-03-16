@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Module } from '@nestjs/common';
 import { BalancesApiManager } from '@/modules/balances/datasources/balances-api.manager';
 import { IBalancesApiManager } from '@/domain/interfaces/balances-api.manager.interface';
@@ -20,6 +21,7 @@ import { BalancesService } from '@/modules/balances/routes/balances.service';
 import { SafeRepositoryModule } from '@/modules/safe/domain/safe.repository.interface';
 import { ChainsModule } from '@/modules/chains/chains.module';
 import { TxAuthNetworkModule } from '@/datasources/network/tx-auth.network.module';
+import { ZerionModule } from '@/modules/zerion/zerion.module';
 
 @Module({
   imports: [
@@ -28,6 +30,7 @@ import { TxAuthNetworkModule } from '@/datasources/network/tx-auth.network.modul
     TxAuthNetworkModule,
     ChainsModule,
     SafeRepositoryModule,
+    ZerionModule,
   ],
   controllers: [BalancesController],
   providers: [
