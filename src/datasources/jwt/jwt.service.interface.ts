@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import type { JwtPayloadWithClaims } from '@/datasources/jwt/jwt-claims.entity';
-import type { Algorithm } from 'jsonwebtoken';
+import type { Algorithm, JwtPayload } from 'jsonwebtoken';
 
 export const IJwtService = Symbol('IJwtService');
 
@@ -37,5 +36,5 @@ export interface IJwtService {
       secretOrPrivateKey?: string;
       algorithms?: Array<Algorithm>;
     },
-  ): JwtPayloadWithClaims<T>;
+  ): JwtPayload & T;
 }
