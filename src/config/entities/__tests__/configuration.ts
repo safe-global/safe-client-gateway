@@ -128,6 +128,16 @@ export default (): ReturnType<typeof configuration> => ({
       apiKey: faker.string.hexadecimal({ length: 32 }),
     },
   },
+  encryption: {
+    provider: 'local',
+    dekV1Encrypted: undefined,
+    dekV2Encrypted: undefined,
+    hmacKeyEncrypted: undefined,
+    currentVersion: 1,
+    localKey: 'a'.repeat(64),
+    localKeyV2: undefined,
+    hmacSecret: 'b'.repeat(64),
+  },
   email: {
     applicationCode: faker.string.alphanumeric(),
     baseUri: faker.internet.url({ appendSlash: false }),
@@ -151,6 +161,7 @@ export default (): ReturnType<typeof configuration> => ({
   },
   express: { jsonLimit: '1mb' },
   features: {
+    encryption: false,
     email: false,
     zerionBalancesEnabled: false,
     zerionPositions: false,
