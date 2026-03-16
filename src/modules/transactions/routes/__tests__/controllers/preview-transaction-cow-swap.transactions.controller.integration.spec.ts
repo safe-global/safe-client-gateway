@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
@@ -687,6 +688,7 @@ describe('Preview transaction - CoW Swap - Transactions Controller', () => {
         .with('address', ComposableCowAddress)
         .build();
       const contractPage = pageBuilder().with('results', [contract]).build();
+      networkService.get.mockReset();
       networkService.get.mockImplementation(({ url }) => {
         if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
           return Promise.resolve({ data: rawify(chain), status: 200 });
@@ -716,6 +718,7 @@ describe('Preview transaction - CoW Swap - Transactions Controller', () => {
         }
         return Promise.reject(new Error(`Could not match ${url}`));
       });
+      networkService.post.mockReset();
       networkService.post.mockImplementation(({ url }) => {
         if (url === `${dataDecoderUrl}/api/v1/data-decoder`) {
           return Promise.resolve({
@@ -824,6 +827,7 @@ describe('Preview transaction - CoW Swap - Transactions Controller', () => {
       const tokenResponse = tokenBuilder()
         .with('address', ComposableCowAddress)
         .build();
+      networkService.get.mockReset();
       networkService.get.mockImplementation(({ url }) => {
         if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
           return Promise.resolve({ data: rawify(chain), status: 200 });
@@ -859,6 +863,7 @@ describe('Preview transaction - CoW Swap - Transactions Controller', () => {
         }
         return Promise.reject(new Error(`Could not match ${url}`));
       });
+      networkService.post.mockReset();
       networkService.post.mockImplementation(({ url }) => {
         if (url === `${dataDecoderUrl}/api/v1/data-decoder`) {
           return Promise.resolve({
@@ -952,6 +957,7 @@ describe('Preview transaction - CoW Swap - Transactions Controller', () => {
         .with('address', ComposableCowAddress)
         .build();
       const contractPage = pageBuilder().with('results', [contract]).build();
+      networkService.get.mockReset();
       networkService.get.mockImplementation(({ url }) => {
         if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
           return Promise.resolve({ data: rawify(chain), status: 200 });
@@ -981,6 +987,7 @@ describe('Preview transaction - CoW Swap - Transactions Controller', () => {
         }
         return Promise.reject(new Error(`Could not match ${url}`));
       });
+      networkService.post.mockReset();
       networkService.post.mockImplementation(({ url }) => {
         if (url === `${dataDecoderUrl}/api/v1/data-decoder`) {
           return Promise.resolve({
@@ -1012,6 +1019,7 @@ describe('Preview transaction - CoW Swap - Transactions Controller', () => {
         .with('address', ComposableCowAddress)
         .build();
       const contractPage = pageBuilder().with('results', [contract]).build();
+      networkService.get.mockReset();
       networkService.get.mockImplementation(({ url }) => {
         if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
           return Promise.resolve({ data: rawify(chain), status: 200 });
@@ -1041,6 +1049,7 @@ describe('Preview transaction - CoW Swap - Transactions Controller', () => {
         }
         return Promise.reject(new Error(`Could not match ${url}`));
       });
+      networkService.post.mockReset();
       networkService.post.mockImplementation(({ url }) => {
         if (url === `${dataDecoderUrl}/api/v1/data-decoder`) {
           return Promise.resolve({
@@ -1079,6 +1088,7 @@ describe('Preview transaction - CoW Swap - Transactions Controller', () => {
             'restricted app code',
         }),
       };
+      networkService.get.mockReset();
       networkService.get.mockImplementation(({ url }) => {
         if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
           return Promise.resolve({ data: rawify(chain), status: 200 });
@@ -1108,6 +1118,7 @@ describe('Preview transaction - CoW Swap - Transactions Controller', () => {
         }
         return Promise.reject(new Error(`Could not match ${url}`));
       });
+      networkService.post.mockReset();
       networkService.post.mockImplementation(({ url }) => {
         if (url === `${dataDecoderUrl}/api/v1/data-decoder`) {
           return Promise.resolve({

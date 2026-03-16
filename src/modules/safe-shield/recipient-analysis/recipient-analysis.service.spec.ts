@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { RecipientAnalysisService } from './recipient-analysis.service';
 import type { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
 import type { Erc20Decoder } from '@/modules/relay/domain/contracts/decoders/erc-20-decoder.helper';
