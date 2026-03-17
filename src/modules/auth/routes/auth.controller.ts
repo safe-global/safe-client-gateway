@@ -34,9 +34,18 @@ import { CookieOptions, Response } from 'express';
 /**
  * The AuthController is responsible for handling authentication:
  *
+ * SiWE (Sign-In with Ethereum):
  * 1. Calling `/v1/auth/nonce` returns a unique nonce to be signed.
  * 2. The client signs this nonce in a SiWe message, sending it and
  *    the signature to `/v1/auth/verify` for verification.
+ * 3. If verification succeeds, JWT token is added to `access_token`
+ *    Set-Cookie.
+ *
+ * OIDC (e.g. Auth0):
+ * 1. The client authenticates with the OIDC provider and obtains an
+ *    access token.
+ * 2. The client sends the access token to `/v1/auth/verify` for
+ *    verification.
  * 3. If verification succeeds, JWT token is added to `access_token`
  *    Set-Cookie.
  */

@@ -29,7 +29,6 @@ export class SiweRepository implements ISiweRepository {
     };
   }
 
-  //TODO what if we move the logic of validating the message and signature to the controller layer?
   async getValidatedSiweMessage(args: {
     message: string;
     signature: Hex;
