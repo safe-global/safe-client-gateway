@@ -68,7 +68,7 @@ git commit -m "Your commit message"
 
 ## License Headers
 
-All source files **must** include an SPDX license header at the very top of the file. The header format depends on the file type:
+All source files changed after Feb 16th 2026 **must** include an SPDX license header at the very top of the file. The header format depends on the file type:
 
 | File type                            | Comment style | Header                                    |
 | ------------------------------------ | ------------- | ----------------------------------------- |
