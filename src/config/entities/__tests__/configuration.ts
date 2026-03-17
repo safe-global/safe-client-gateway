@@ -130,13 +130,13 @@ export default (): ReturnType<typeof configuration> => ({
   },
   encryption: {
     provider: 'local',
-    dekV1Encrypted: undefined,
-    dekV2Encrypted: undefined,
+    deksEncrypted: undefined,
     hmacKeyEncrypted: undefined,
     currentVersion: 1,
-    localKey: 'a'.repeat(64),
-    localKeyV2: undefined,
-    hmacSecret: 'b'.repeat(64),
+    localKeys: {
+      '1': faker.string.hexadecimal({ length: 64, prefix: '' }),
+    },
+    hmacSecret: faker.string.hexadecimal({ length: 64, prefix: '' }),
   },
   email: {
     applicationCode: faker.string.alphanumeric(),

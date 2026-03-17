@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
@@ -1031,6 +1030,7 @@ describe('Transactions History Controller', () => {
       .then(({ body }) => {
         expect(
           // the amount of TransactionItems is limited to the max value
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-call
           body.results.filter(
             (item: TransactionItem) => item.type === 'TRANSACTION',
           ),

@@ -14,6 +14,7 @@ const ALGORITHM = 'aes-256-gcm';
 const IV_LENGTH = 12;
 const AUTH_TAG_LENGTH = 16;
 const DEK_LENGTH = 32;
+const HMAC_KEY_MIN_LENGTH = 32;
 
 /**
  * Synchronous field-level encryption service using AES-256-GCM.
@@ -24,11 +25,9 @@ const DEK_LENGTH = 32;
  * in a separate `encryption_version` column.
  */
 export class EncryptionService implements IEncryptionService {
-  readonly currentVersion: number;
-
   constructor(
     private readonly dekVersions: ReadonlyMap<number, Buffer>,
-    currentVersion: number,
+    private readonly currentVersion: number,
     private readonly hmacKey: Buffer,
   ) {
     if (dekVersions.size === 0) {
@@ -43,16 +42,20 @@ export class EncryptionService implements IEncryptionService {
       }
     }
 
+    if (hmacKey.length < HMAC_KEY_MIN_LENGTH) {
+      throw new Error(
+        `HMAC key must be at least ${HMAC_KEY_MIN_LENGTH} bytes, got ${hmacKey.length}`,
+      );
+    }
+
     if (!dekVersions.has(currentVersion)) {
       throw new Error(
         `Current version ${currentVersion} not found in DEK versions [${[...dekVersions.keys()].join(', ')}]`,
       );
     }
-
-    this.currentVersion = currentVersion;
   }
 
-  encrypt(plaintext: string): EncryptedField {
+  public encrypt(plaintext: string): EncryptedField {
     const dek = this.dekVersions.get(this.currentVersion)!;
     const iv = randomBytes(IV_LENGTH);
     const cipher = createCipheriv(ALGORITHM, dek, iv, {
@@ -72,7 +75,7 @@ export class EncryptionService implements IEncryptionService {
     };
   }
 
-  decrypt(ciphertext: string, version: number): string {
+  public decrypt(ciphertext: string, version: number): string {
     const dek = this.dekVersions.get(version);
     if (!dek) {
       throw new Error(
@@ -102,7 +105,7 @@ export class EncryptionService implements IEncryptionService {
     );
   }
 
-  hmac(value: string): string {
+  public hmac(value: string): string {
     return createHmac('sha256', this.hmacKey)
       .update(value.toLowerCase())
       .digest('hex');

@@ -1,6 +1,15 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type { RelayRules } from '@/modules/relay/domain/entities/relay.configuration';
 
+const parseJsonRecord = (
+  envValue: string | undefined,
+): Record<string, string> | undefined => {
+  if (!envValue) {
+    return undefined;
+  }
+  return JSON.parse(envValue) as Record<string, string>;
+};
+
 // Custom configuration for the application
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 export default () => ({
@@ -209,12 +218,10 @@ export default () => ({
   },
   encryption: {
     provider: process.env.ENCRYPTION_PROVIDER || 'local',
-    dekV1Encrypted: process.env.ENCRYPTION_DEK_V1_ENCRYPTED,
-    dekV2Encrypted: process.env.ENCRYPTION_DEK_V2_ENCRYPTED,
+    deksEncrypted: parseJsonRecord(process.env.ENCRYPTION_DEKS_ENCRYPTED),
     hmacKeyEncrypted: process.env.ENCRYPTION_HMAC_KEY_ENCRYPTED,
     currentVersion: parseInt(process.env.ENCRYPTION_CURRENT_VERSION || '1'),
-    localKey: process.env.ENCRYPTION_LOCAL_KEY,
-    localKeyV2: process.env.ENCRYPTION_LOCAL_KEY_V2,
+    localKeys: parseJsonRecord(process.env.ENCRYPTION_LOCAL_KEYS),
     hmacSecret: process.env.ENCRYPTION_HMAC_SECRET,
   },
   email: {

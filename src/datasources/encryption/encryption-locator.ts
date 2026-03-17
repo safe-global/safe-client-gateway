@@ -36,8 +36,4 @@ export class EncryptionLocator {
     }
     return EncryptionLocator.service;
   }
-
-  static reset(): void {
-    EncryptionLocator.service = null;
-  }
 }

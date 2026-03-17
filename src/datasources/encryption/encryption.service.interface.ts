@@ -11,11 +11,6 @@ export interface EncryptedField {
 
 export interface IEncryptionService {
   /**
-   * The current encryption version used for new encryptions.
-   */
-  readonly currentVersion: number;
-
-  /**
    * Encrypts a plaintext string using AES-256-GCM with the current version DEK.
    * Returns the ciphertext and the version used — the caller is responsible
    * for persisting the version in a separate column.

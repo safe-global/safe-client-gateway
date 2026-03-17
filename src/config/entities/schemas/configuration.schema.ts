@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
+import { EncryptionProvider } from '@/datasources/encryption/encryption.module';
 const relayRulesValidator = z
   .string()
   .refine(
@@ -80,14 +81,14 @@ export const RootConfigurationSchema = z
       .int()
       .min(0)
       .optional(),
-    ENCRYPTION_PROVIDER: z.enum(['aws', 'local']).optional(),
-    ENCRYPTION_DEK_V1_ENCRYPTED: z.string().optional(),
-    ENCRYPTION_DEK_V2_ENCRYPTED: z.string().optional(),
+    ENCRYPTION_PROVIDER: z
+      .enum([EncryptionProvider.AWS, EncryptionProvider.LOCAL])
+      .optional(),
+    ENCRYPTION_DEKS_ENCRYPTED: z.string().optional(),
     ENCRYPTION_HMAC_KEY_ENCRYPTED: z.string().optional(),
     ENCRYPTION_CURRENT_VERSION: z.coerce.number().int().min(1).optional(),
     ENCRYPTION_HMAC_SECRET: z.string().optional(),
-    ENCRYPTION_LOCAL_KEY: z.string().optional(),
-    ENCRYPTION_LOCAL_KEY_V2: z.string().optional(),
+    ENCRYPTION_LOCAL_KEYS: z.string().optional(),
     // TODO: Reassess EMAIL_ keys after email integration
     EMAIL_API_APPLICATION_CODE: z.string(),
     EMAIL_API_FROM_EMAIL: z.email(),
@@ -166,8 +167,17 @@ export const RootConfigurationSchema = z
     CAPTCHA_ENABLED: z.string().optional().default('false'),
     CAPTCHA_SECRET_KEY: z.string().optional(),
   })
-  .superRefine((config, ctx) =>
-    // Check for AWS_* and Blockaid fields in production and staging environments
+  .superRefine((config, ctx) => {
+    const isProdOrStaging =
+      config.CGW_ENV &&
+      config instanceof Object &&
+      ['production', 'staging'].includes(config.CGW_ENV);
+
+    if (!isProdOrStaging) {
+      return;
+    }
+
+    // Required fields in production and staging
     [
       'AWS_ACCESS_KEY_ID',
       'AWS_KMS_ENCRYPTION_KEY_ID',
@@ -176,23 +186,30 @@ export const RootConfigurationSchema = z
       'CSV_AWS_ACCESS_KEY_ID',
       'CSV_AWS_SECRET_ACCESS_KEY',
       'BLOCKAID_CLIENT_API_KEY',
-      'ENCRYPTION_DEK_V1_ENCRYPTED',
+      'ENCRYPTION_DEKS_ENCRYPTED',
       'ENCRYPTION_HMAC_KEY_ENCRYPTED',
     ].forEach((field) => {
-      if (
-        config.CGW_ENV &&
-        config instanceof Object &&
-        ['production', 'staging'].includes(config.CGW_ENV) &&
-        !(config as Record<string, unknown>)[field]
-      ) {
+      if (!(config as Record<string, unknown>)[field]) {
         ctx.addIssue({
           code: 'custom',
           message: `is required in production and staging environments`,
           path: [field],
         });
       }
-    }),
-  );
+    });
+
+    // Enforce AWS encryption provider in production/staging
+    if (
+      config.ENCRYPTION_PROVIDER &&
+      config.ENCRYPTION_PROVIDER !== EncryptionProvider.AWS
+    ) {
+      ctx.addIssue({
+        code: 'custom',
+        message: `must be "${EncryptionProvider.AWS}" in production and staging environments`,
+        path: ['ENCRYPTION_PROVIDER'],
+      });
+    }
+  });
 
 export type FileStorageType = z.infer<
   typeof RootConfigurationSchema

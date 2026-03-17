@@ -83,6 +83,10 @@ describe('Configuration validator', () => {
     CSV_EXPORT_QUEUE_CONCURRENCY: faker.number.int({ min: 1, max: 5 }),
     BLOCKAID_CLIENT_API_KEY: faker.string.uuid(),
     TX_SERVICE_API_KEY: faker.string.hexadecimal({ length: 32 }),
+    ENCRYPTION_DEKS_ENCRYPTED: JSON.stringify({
+      '1': faker.string.alphanumeric(44),
+    }),
+    ENCRYPTION_HMAC_KEY_ENCRYPTED: faker.string.alphanumeric(44),
   };
 
   it('should bypass this validation on test environment', () => {
@@ -280,6 +284,8 @@ describe('Configuration validator', () => {
       { key: 'CSV_AWS_ACCESS_KEY_ID' },
       { key: 'CSV_AWS_SECRET_ACCESS_KEY' },
       { key: 'BLOCKAID_CLIENT_API_KEY' },
+      { key: 'ENCRYPTION_DEKS_ENCRYPTED' },
+      { key: 'ENCRYPTION_HMAC_KEY_ENCRYPTED' },
     ])(`should require $key configuration in ${env} environment`, ({ key }) => {
       process.env.NODE_ENV = 'production';
       const config = { ...omit(validConfiguration, key), CGW_ENV: env };

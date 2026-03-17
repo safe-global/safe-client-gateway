@@ -32,6 +32,15 @@ describe('EncryptionService', () => {
       );
     });
 
+    it('should throw if HMAC key is too short', () => {
+      const shortHmac = randomBytes(16);
+      const deks = new Map([[1, dekV1]]);
+
+      expect(() => new EncryptionService(deks, 1, shortHmac)).toThrow(
+        'HMAC key must be at least 32 bytes, got 16',
+      );
+    });
+
     it('should accept valid single-DEK configuration', () => {
       const deks = new Map([[1, dekV1]]);
 

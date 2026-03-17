@@ -78,56 +78,36 @@ export class EncryptionModule {
     currentVersion: number,
   ): Promise<EncryptionService> {
     const kmsClient = new KMSClient({});
-    const dekVersions = new Map<number, Buffer>();
 
-    const dekV1Encrypted = configService.getOrThrow<string>(
-      'encryption.dekV1Encrypted',
+    const deksEncrypted = configService.getOrThrow<Record<string, string>>(
+      'encryption.deksEncrypted',
     );
     const hmacKeyEncrypted = configService.getOrThrow<string>(
       'encryption.hmacKeyEncrypted',
     );
 
-    const [dekV1Result, hmacResult] = await Promise.all([
-      kmsClient.send(
+    const kmsDecrypt = async (ciphertext: string): Promise<Buffer> => {
+      const { Plaintext } = await kmsClient.send(
         new DecryptCommand({
-          CiphertextBlob: Buffer.from(dekV1Encrypted, 'base64'),
+          CiphertextBlob: Buffer.from(ciphertext, 'base64'),
         }),
-      ),
-      kmsClient.send(
-        new DecryptCommand({
-          CiphertextBlob: Buffer.from(hmacKeyEncrypted, 'base64'),
-        }),
-      ),
+      );
+      if (!Plaintext) {
+        throw new Error('KMS Decrypt returned empty plaintext');
+      }
+      return Buffer.from(Plaintext);
+    };
+
+    const dekEntries = Object.entries(deksEncrypted);
+    const [hmacKey, ...dekPlaintexts] = await Promise.all([
+      kmsDecrypt(hmacKeyEncrypted),
+      ...dekEntries.map(([, encrypted]) => kmsDecrypt(encrypted)),
     ]);
 
-    if (!dekV1Result.Plaintext || !hmacResult.Plaintext) {
-      throw new Error(
-        'KMS Decrypt returned empty plaintext for DEK or HMAC key',
-      );
-    }
-
-    dekVersions.set(1, Buffer.from(dekV1Result.Plaintext));
-
-    // Decrypt additional DEK versions if configured
-    const dekV2Encrypted = configService.get<string>(
-      'encryption.dekV2Encrypted',
-    );
-    if (dekV2Encrypted) {
-      const dekV2Result = await kmsClient.send(
-        new DecryptCommand({
-          CiphertextBlob: Buffer.from(dekV2Encrypted, 'base64'),
-        }),
-      );
-      if (!dekV2Result.Plaintext) {
-        throw new Error('KMS Decrypt returned empty plaintext for DEK v2');
-      }
-      dekVersions.set(2, Buffer.from(dekV2Result.Plaintext));
-    }
-
     return new EncryptionService(
-      dekVersions,
+      new Map(dekEntries.map(([v], i) => [Number(v), dekPlaintexts[i]])),
       currentVersion,
-      Buffer.from(hmacResult.Plaintext),
+      hmacKey,
     );
   }
 
@@ -135,9 +115,8 @@ export class EncryptionModule {
     configService: IConfigurationService,
     currentVersion: number,
   ): EncryptionService {
-    const localKey = Buffer.from(
-      configService.getOrThrow<string>('encryption.localKey'),
-      'hex',
+    const localKeys = configService.getOrThrow<Record<string, string>>(
+      'encryption.localKeys',
     );
     const hmacSecret = Buffer.from(
       configService.getOrThrow<string>('encryption.hmacSecret'),
@@ -145,12 +124,8 @@ export class EncryptionModule {
     );
 
     const dekVersions = new Map<number, Buffer>();
-    dekVersions.set(1, localKey);
-
-    // Support a second local key for testing key rotation
-    const localKeyV2 = configService.get<string>('encryption.localKeyV2');
-    if (localKeyV2) {
-      dekVersions.set(2, Buffer.from(localKeyV2, 'hex'));
+    for (const [version, hex] of Object.entries(localKeys)) {
+      dekVersions.set(Number(version), Buffer.from(hex, 'hex'));
     }
 
     return new EncryptionService(dekVersions, currentVersion, hmacSecret);

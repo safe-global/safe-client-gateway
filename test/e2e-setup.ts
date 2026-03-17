@@ -10,8 +10,8 @@ process.env.EMAIL_API_FROM_EMAIL = 'changeme@example.com';
 process.env.EMAIL_API_KEY = 'fake-api-key';
 process.env.FINGERPRINT_ENCRYPTION_KEY = 'fake-encryption-key';
 process.env.ENCRYPTION_PROVIDER = 'local';
-process.env.ENCRYPTION_LOCAL_KEY =
-  'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+process.env.ENCRYPTION_LOCAL_KEYS =
+  '{"1":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}';
 process.env.ENCRYPTION_HMAC_SECRET =
   'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
 process.env.ENCRYPTION_CURRENT_VERSION = '1';

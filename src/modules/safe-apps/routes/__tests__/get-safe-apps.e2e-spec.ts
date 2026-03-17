@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: FSL-1.1-MIT
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
@@ -36,7 +35,7 @@ describe('Get Safe Apps e2e test', () => {
       .expect(200)
       .expect(({ body }) => {
         expect(body).toBeInstanceOf(Array);
-
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-call
         body.forEach((safeApp: SafeApp) =>
           expect(safeApp).toEqual(
             expect.objectContaining({

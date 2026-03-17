@@ -6,12 +6,11 @@ const mockService = {
   encrypt: jest.fn(),
   decrypt: jest.fn(),
   hmac: jest.fn(),
-  currentVersion: 1,
 } as jest.MockedObjectDeep<IEncryptionService>;
 
 describe('EncryptionLocator', () => {
   afterEach(() => {
-    EncryptionLocator.reset();
+    EncryptionLocator['service'] = null;
   });
 
   it('should throw when service is not set', () => {
@@ -28,7 +27,7 @@ describe('EncryptionLocator', () => {
 
   it('should reset the service', () => {
     EncryptionLocator.setService(mockService);
-    EncryptionLocator.reset();
+    EncryptionLocator['service'] = null;
 
     expect(() => EncryptionLocator.getService()).toThrow();
   });
@@ -46,7 +45,7 @@ describe('EncryptionLocator', () => {
 
     it('should return null after reset', () => {
       EncryptionLocator.setService(mockService);
-      EncryptionLocator.reset();
+      EncryptionLocator['service'] = null;
 
       expect(EncryptionLocator.getServiceOrNull()).toBeNull();
     });

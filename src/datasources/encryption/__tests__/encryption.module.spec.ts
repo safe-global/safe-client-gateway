@@ -33,29 +33,20 @@ function createTestConfig(
         ...overrides,
       },
     };
-    if (overrides.localKey === undefined && 'localKey' in overrides) {
-      delete config.encryption.localKey;
+    if (overrides.localKeys === undefined && 'localKeys' in overrides) {
+      delete (config.encryption as Record<string, unknown>).localKeys;
     }
     if (overrides.hmacSecret === undefined && 'hmacSecret' in overrides) {
-      delete config.encryption.hmacSecret;
+      delete (config.encryption as Record<string, unknown>).hmacSecret;
     }
-    if (
-      overrides.dekV1Encrypted === undefined &&
-      'dekV1Encrypted' in overrides
-    ) {
-      delete config.encryption.dekV1Encrypted;
+    if (overrides.deksEncrypted === undefined && 'deksEncrypted' in overrides) {
+      delete (config.encryption as Record<string, unknown>).deksEncrypted;
     }
     if (
       overrides.hmacKeyEncrypted === undefined &&
       'hmacKeyEncrypted' in overrides
     ) {
-      delete config.encryption.hmacKeyEncrypted;
-    }
-    if (
-      overrides.dekV2Encrypted === undefined &&
-      'dekV2Encrypted' in overrides
-    ) {
-      delete config.encryption.dekV2Encrypted;
+      delete (config.encryption as Record<string, unknown>).hmacKeyEncrypted;
     }
     return config;
   };
@@ -64,7 +55,7 @@ function createTestConfig(
 describe('EncryptionModule', () => {
   beforeEach(() => {
     kmsMock.reset();
-    EncryptionLocator.reset();
+    EncryptionLocator['service'] = null;
   });
 
   describe('local provider', () => {
@@ -78,7 +69,7 @@ describe('EncryptionModule', () => {
           ConfigurationModule.register(
             createTestConfig({
               provider: EncryptionProvider.LOCAL,
-              localKey,
+              localKeys: { '1': localKey },
               hmacSecret,
               currentVersion: 1,
             }),
@@ -98,7 +89,7 @@ describe('EncryptionModule', () => {
       await module.close();
     });
 
-    it('should throw when localKey is missing', async () => {
+    it('should throw when localKeys is missing', async () => {
       const hmacSecret = randomBytes(32).toString('hex');
 
       await expect(
@@ -108,7 +99,7 @@ describe('EncryptionModule', () => {
             ConfigurationModule.register(
               createTestConfig({
                 provider: EncryptionProvider.LOCAL,
-                localKey: undefined as unknown as string,
+                localKeys: undefined as unknown as Record<string, string>,
                 hmacSecret,
                 currentVersion: 1,
               }),
@@ -130,7 +121,7 @@ describe('EncryptionModule', () => {
             ConfigurationModule.register(
               createTestConfig({
                 provider: EncryptionProvider.LOCAL,
-                localKey,
+                localKeys: { '1': localKey },
                 hmacSecret: undefined as unknown as string,
                 currentVersion: 1,
               }),
@@ -150,7 +141,7 @@ describe('EncryptionModule', () => {
             ConfigurationModule.register(
               createTestConfig({
                 provider: EncryptionProvider.LOCAL,
-                localKey: 'not-valid-hex!!!',
+                localKeys: { '1': 'not-valid-hex!!!' },
                 hmacSecret: randomBytes(32).toString('hex'),
                 currentVersion: 1,
               }),
@@ -162,7 +153,7 @@ describe('EncryptionModule', () => {
       ).rejects.toThrow('DEK for version 1 must be 32 bytes');
     });
 
-    it('should support localKeyV2 for DEK rotation', async () => {
+    it('should support multiple local keys for DEK rotation', async () => {
       const localKey = randomBytes(32).toString('hex');
       const localKeyV2 = randomBytes(32).toString('hex');
       const hmacSecret = randomBytes(32).toString('hex');
@@ -173,8 +164,7 @@ describe('EncryptionModule', () => {
           ConfigurationModule.register(
             createTestConfig({
               provider: EncryptionProvider.LOCAL,
-              localKey,
-              localKeyV2,
+              localKeys: { '1': localKey, '2': localKeyV2 },
               hmacSecret,
               currentVersion: 2,
             }),
@@ -187,7 +177,6 @@ describe('EncryptionModule', () => {
       const service =
         await module.resolve<IEncryptionService>(IEncryptionService);
 
-      expect(service.currentVersion).toBe(2);
       const { ciphertext, version } = service.encrypt('rotated');
       expect(version).toBe(2);
       expect(service.decrypt(ciphertext, version)).toBe('rotated');
@@ -195,7 +184,7 @@ describe('EncryptionModule', () => {
       await module.close();
     });
 
-    it('should throw when currentVersion is 2 but localKeyV2 is not provided', async () => {
+    it('should throw when currentVersion is 2 but no key for v2 is provided', async () => {
       const localKey = randomBytes(32).toString('hex');
       const hmacSecret = randomBytes(32).toString('hex');
 
@@ -206,8 +195,7 @@ describe('EncryptionModule', () => {
             ConfigurationModule.register(
               createTestConfig({
                 provider: EncryptionProvider.LOCAL,
-                localKey,
-                localKeyV2: undefined,
+                localKeys: { '1': localKey },
                 hmacSecret,
                 currentVersion: 2,
               }),
@@ -235,7 +223,7 @@ describe('EncryptionModule', () => {
           ConfigurationModule.register(
             createTestConfig({
               provider: EncryptionProvider.AWS,
-              dekV1Encrypted,
+              deksEncrypted: { '1': dekV1Encrypted },
               hmacKeyEncrypted,
               currentVersion: 1,
             }),
@@ -264,7 +252,7 @@ describe('EncryptionModule', () => {
             ConfigurationModule.register(
               createTestConfig({
                 provider: EncryptionProvider.AWS,
-                dekV1Encrypted,
+                deksEncrypted: { '1': dekV1Encrypted },
                 hmacKeyEncrypted,
                 currentVersion: 1,
               }),
@@ -286,7 +274,7 @@ describe('EncryptionModule', () => {
             ConfigurationModule.register(
               createTestConfig({
                 provider: EncryptionProvider.AWS,
-                dekV1Encrypted,
+                deksEncrypted: { '1': dekV1Encrypted },
                 hmacKeyEncrypted,
                 currentVersion: 1,
               }),
@@ -298,7 +286,7 @@ describe('EncryptionModule', () => {
       ).rejects.toThrow();
     });
 
-    it('should throw when dekV1Encrypted is missing', async () => {
+    it('should throw when deksEncrypted is missing', async () => {
       await expect(
         Test.createTestingModule({
           imports: [
@@ -306,7 +294,7 @@ describe('EncryptionModule', () => {
             ConfigurationModule.register(
               createTestConfig({
                 provider: EncryptionProvider.AWS,
-                dekV1Encrypted: undefined as unknown as string,
+                deksEncrypted: undefined as unknown as Record<string, string>,
                 hmacKeyEncrypted,
                 currentVersion: 1,
               }),
@@ -326,7 +314,7 @@ describe('EncryptionModule', () => {
             ConfigurationModule.register(
               createTestConfig({
                 provider: EncryptionProvider.AWS,
-                dekV1Encrypted,
+                deksEncrypted: { '1': dekV1Encrypted },
                 hmacKeyEncrypted: undefined as unknown as string,
                 currentVersion: 1,
               }),
@@ -338,21 +326,22 @@ describe('EncryptionModule', () => {
       ).rejects.toThrow();
     });
 
-    // Key isolation (v1 ciphertext cannot be decrypted with v2 DEK) is tested
-    // in field-encryption.service.spec.ts → "DEK rotation" / "KMS exchange"
-    it('should support dekV2Encrypted for key rotation', async () => {
+    it('should support multiple DEKs for key rotation', async () => {
       const dekV2Plaintext = randomBytes(32);
       const dekV2Encrypted = Buffer.from(dekV2Plaintext).toString('base64');
 
       let callCount = 0;
       kmsMock.on(DecryptCommand).callsFake(() => {
         callCount++;
-        // Call order: dekV1, hmac (parallel), then dekV2
-        if (callCount <= 2) {
+        // Call order: hmac first (parallel), then deks in order
+        if (callCount === 1) {
           return Promise.resolve({
-            Plaintext: new Uint8Array(
-              callCount === 1 ? dekPlaintext : hmacPlaintext,
-            ),
+            Plaintext: new Uint8Array(hmacPlaintext),
+          });
+        }
+        if (callCount === 2) {
+          return Promise.resolve({
+            Plaintext: new Uint8Array(dekPlaintext),
           });
         }
         return Promise.resolve({
@@ -366,8 +355,10 @@ describe('EncryptionModule', () => {
           ConfigurationModule.register(
             createTestConfig({
               provider: EncryptionProvider.AWS,
-              dekV1Encrypted,
-              dekV2Encrypted,
+              deksEncrypted: {
+                '1': dekV1Encrypted,
+                '2': dekV2Encrypted,
+              },
               hmacKeyEncrypted,
               currentVersion: 2,
             }),
@@ -381,7 +372,6 @@ describe('EncryptionModule', () => {
         await module.resolve<IEncryptionService>(IEncryptionService);
 
       // Encrypt with v2
-      expect(service.currentVersion).toBe(2);
       const { ciphertext: v2Ct, version } = service.encrypt('v2-aws');
       expect(version).toBe(2);
       expect(service.decrypt(v2Ct, 2)).toBe('v2-aws');
@@ -396,16 +386,13 @@ describe('EncryptionModule', () => {
       await module.close();
     });
 
-    it('should throw when dekV2Encrypted is provided but KMS returns empty for v2', async () => {
-      const dekV2Encrypted = Buffer.from(randomBytes(32)).toString('base64');
+    it('should throw when KMS returns empty for a DEK', async () => {
       let callCount = 0;
       kmsMock.on(DecryptCommand).callsFake(() => {
         callCount++;
-        if (callCount <= 2) {
+        if (callCount === 1) {
           return Promise.resolve({
-            Plaintext: new Uint8Array(
-              callCount === 1 ? dekPlaintext : hmacPlaintext,
-            ),
+            Plaintext: new Uint8Array(hmacPlaintext),
           });
         }
         return Promise.resolve({ Plaintext: undefined });
@@ -418,20 +405,19 @@ describe('EncryptionModule', () => {
             ConfigurationModule.register(
               createTestConfig({
                 provider: EncryptionProvider.AWS,
-                dekV1Encrypted,
-                dekV2Encrypted,
+                deksEncrypted: { '1': dekV1Encrypted },
                 hmacKeyEncrypted,
-                currentVersion: 2,
+                currentVersion: 1,
               }),
             ),
             ClsModule.forRoot({ global: true }),
             RequestScopedLoggingModule,
           ],
         }).compile(),
-      ).rejects.toThrow('KMS Decrypt returned empty plaintext for DEK v2');
+      ).rejects.toThrow('KMS Decrypt returned empty plaintext');
     });
 
-    it('should throw when currentVersion is 2 but dekV2Encrypted is not provided', async () => {
+    it('should throw when currentVersion has no matching DEK', async () => {
       kmsMock.on(DecryptCommand).resolves({
         Plaintext: new Uint8Array(dekPlaintext),
       });
@@ -443,8 +429,7 @@ describe('EncryptionModule', () => {
             ConfigurationModule.register(
               createTestConfig({
                 provider: EncryptionProvider.AWS,
-                dekV1Encrypted,
-                dekV2Encrypted: undefined,
+                deksEncrypted: { '1': dekV1Encrypted },
                 hmacKeyEncrypted,
                 currentVersion: 2,
               }),
@@ -466,7 +451,9 @@ describe('EncryptionModule', () => {
             ConfigurationModule.register(
               createTestConfig({
                 provider: 'invalid' as EncryptionProvider,
-                localKey: randomBytes(32).toString('hex'),
+                localKeys: {
+                  '1': randomBytes(32).toString('hex'),
+                },
                 hmacSecret: randomBytes(32).toString('hex'),
                 currentVersion: 1,
               }),
