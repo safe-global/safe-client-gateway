@@ -142,7 +142,6 @@ describe('PushNotificationConsumer', () => {
           safeAddress: deliveryData.safeAddress,
           notificationType: deliveryData.notificationType,
           deviceUuid: deliveryData.deviceUuid,
-          token: deliveryData.token,
         }),
       );
     });

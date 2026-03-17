@@ -652,7 +652,6 @@ describe('PushNotificationService (Unit)', () => {
         safeAddress: data.safeAddress,
         notificationType: data.notificationType,
         deviceUuid: data.deviceUuid,
-        token: data.token,
       });
     });
 
@@ -954,6 +953,135 @@ describe('PushNotificationService (Unit)', () => {
           notificationType: event.type,
         }),
       );
+    });
+
+    it('should map EXECUTED_MULTISIG_TRANSACTION to explicit notification fields', async () => {
+      const event = executedTransactionEventBuilder().build();
+      const sub = createSubscriber();
+
+      mockNotificationsRepository.getSubscribersBySafe.mockResolvedValue([sub]);
+      mockJobQueueService.addJob.mockResolvedValue({} as Job);
+
+      await service.processEvent(event);
+
+      expect(mockJobQueueService.addJob).toHaveBeenCalledWith(
+        JobType.PUSH_NOTIFICATION_DELIVERY,
+        expect.objectContaining({
+          notification: {
+            data: {
+              type: event.type,
+              chainId: event.chainId,
+              address: event.address,
+              to: event.to,
+              safeTxHash: event.safeTxHash,
+              txHash: event.txHash,
+              failed: event.failed,
+              data: event.data,
+            },
+          },
+        }),
+      );
+    });
+
+    it('should map DELETED_MULTISIG_TRANSACTION to explicit notification fields', async () => {
+      const event = deletedMultisigTransactionEventBuilder().build();
+      const sub = createSubscriber();
+
+      mockNotificationsRepository.getSubscribersBySafe.mockResolvedValue([sub]);
+      mockJobQueueService.addJob.mockResolvedValue({} as Job);
+
+      await service.processEvent(event);
+
+      expect(mockJobQueueService.addJob).toHaveBeenCalledWith(
+        JobType.PUSH_NOTIFICATION_DELIVERY,
+        expect.objectContaining({
+          notification: {
+            data: {
+              type: event.type,
+              chainId: event.chainId,
+              address: event.address,
+              safeTxHash: event.safeTxHash,
+            },
+          },
+        }),
+      );
+    });
+
+    it('should map MODULE_TRANSACTION to explicit notification fields', async () => {
+      const event = moduleTransactionEventBuilder().build();
+      const sub = createSubscriber();
+
+      mockNotificationsRepository.getSubscribersBySafe.mockResolvedValue([sub]);
+      mockJobQueueService.addJob.mockResolvedValue({} as Job);
+
+      await service.processEvent(event);
+
+      expect(mockJobQueueService.addJob).toHaveBeenCalledWith(
+        JobType.PUSH_NOTIFICATION_DELIVERY,
+        expect.objectContaining({
+          notification: {
+            data: {
+              type: event.type,
+              chainId: event.chainId,
+              address: event.address,
+              module: event.module,
+              txHash: event.txHash,
+            },
+          },
+        }),
+      );
+    });
+  });
+
+  describe('processEvent - subscriber lookup failure', () => {
+    it('should propagate error when getSubscribersBySafe throws', async () => {
+      const event = executedTransactionEventBuilder().build();
+      const error = new Error('Database connection lost');
+      mockNotificationsRepository.getSubscribersBySafe.mockRejectedValue(error);
+
+      await expect(service.processEvent(event)).rejects.toThrow(error);
+
+      expect(mockJobQueueService.addJob).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('processEvent - concurrent execution', () => {
+    it('should handle concurrent processEvent calls for the same Safe without interference', async () => {
+      const sharedAddress = addr();
+      const sharedChainId = faker.string.numeric();
+
+      const event1 = executedTransactionEventBuilder()
+        .with('address', sharedAddress)
+        .with('chainId', sharedChainId)
+        .build();
+      const event2 = deletedMultisigTransactionEventBuilder()
+        .with('address', sharedAddress)
+        .with('chainId', sharedChainId)
+        .build();
+
+      const sub1 = createSubscriber();
+      const sub2 = createSubscriber();
+
+      mockNotificationsRepository.getSubscribersBySafe
+        .mockResolvedValueOnce([sub1])
+        .mockResolvedValueOnce([sub2]);
+      mockJobQueueService.addJob.mockResolvedValue({} as Job);
+
+      const [result1, result2] = await Promise.all([
+        service.processEvent(event1),
+        service.processEvent(event2),
+      ]);
+
+      expect(result1).toBe(1);
+      expect(result2).toBe(1);
+      expect(mockJobQueueService.addJob).toHaveBeenCalledTimes(2);
+
+      const calls = mockJobQueueService.addJob.mock.calls;
+      const types = calls.map(
+        (call) => (call[1] as { notificationType: string }).notificationType,
+      );
+      expect(types).toContain(event1.type);
+      expect(types).toContain(event2.type);
     });
   });
 });

@@ -142,7 +142,6 @@ export class PushNotificationService implements IPushNotificationService {
           safeAddress: notification.address,
           notificationType: notification.type,
           deviceUuid: subscription.deviceUuid,
-          token: subscription.cloudMessagingToken,
         });
         return true;
       }),
@@ -184,7 +183,6 @@ export class PushNotificationService implements IPushNotificationService {
       safeAddress: data.safeAddress,
       notificationType: data.notificationType,
       deviceUuid: data.deviceUuid,
-      token: data.token,
     });
     return { delivered: true };
   }
@@ -347,9 +345,38 @@ export class PushNotificationService implements IPushNotificationService {
         return null;
       }
       return this.mapMessageCreatedEventNotification(event, subscriber, safe);
-    } else {
-      return event;
+    } else if (
+      event.type === TransactionEventType.DELETED_MULTISIG_TRANSACTION
+    ) {
+      return {
+        type: event.type,
+        chainId: event.chainId,
+        address: event.address,
+        safeTxHash: event.safeTxHash,
+      };
+    } else if (
+      event.type === TransactionEventType.EXECUTED_MULTISIG_TRANSACTION
+    ) {
+      return {
+        type: event.type,
+        chainId: event.chainId,
+        address: event.address,
+        to: event.to,
+        safeTxHash: event.safeTxHash,
+        txHash: event.txHash,
+        failed: event.failed,
+        data: event.data,
+      };
+    } else if (event.type === TransactionEventType.MODULE_TRANSACTION) {
+      return {
+        type: event.type,
+        chainId: event.chainId,
+        address: event.address,
+        module: event.module,
+        txHash: event.txHash,
+      };
     }
+    return null;
   }
 
   /**

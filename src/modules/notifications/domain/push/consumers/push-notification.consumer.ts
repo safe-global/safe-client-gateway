@@ -78,7 +78,6 @@ export class PushNotificationConsumer extends WorkerHost {
         safeAddress: deliveryData.safeAddress,
         notificationType: deliveryData.notificationType,
         deviceUuid: deliveryData.deviceUuid,
-        token: deliveryData.token,
       }),
     });
   }
