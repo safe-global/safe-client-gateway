@@ -404,7 +404,12 @@ export class PushNotificationService implements IPushNotificationService {
         return null;
       });
 
-    const transfer = incomingTransfers?.results?.find(
+    // Transfer lookup failed suppress rather than risk notifying on a self-send
+    if (incomingTransfers === null) {
+      return null;
+    }
+
+    const transfer = incomingTransfers.results?.find(
       (result: { transactionHash: string }) => {
         return result.transactionHash === event.txHash;
       },

@@ -265,27 +265,35 @@ describe('PushNotificationService (Unit)', () => {
   // ── processEvent: Notification Mapping ──
 
   describe('processEvent - notification mapping', () => {
-    it('should suppress incoming asset self-send (from === address)', async () => {
-      const event = incomingTokenEventBuilder().build();
-      const sub = createSubscriber();
+    it.each([
+      ['INCOMING_TOKEN', incomingTokenEventBuilder],
+      ['INCOMING_ETHER', incomingEtherEventBuilder],
+    ])(
+      'should suppress %s self-send (from === address)',
+      async (_type, builderFn) => {
+        const event = builderFn().build();
+        const sub = createSubscriber();
 
-      mockNotificationsRepository.getSubscribersBySafe.mockResolvedValue([sub]);
-      mockSafeRepository.getIncomingTransfers.mockResolvedValue(
-        pageBuilder<Transfer>()
-          .with('results', [
-            nativeTokenTransferBuilder()
-              .with('transactionHash', event.txHash as Hash)
-              .with('from', event.address)
-              .build(),
-          ])
-          .build(),
-      );
+        mockNotificationsRepository.getSubscribersBySafe.mockResolvedValue([
+          sub,
+        ]);
+        mockSafeRepository.getIncomingTransfers.mockResolvedValue(
+          pageBuilder<Transfer>()
+            .with('results', [
+              nativeTokenTransferBuilder()
+                .with('transactionHash', event.txHash as Hash)
+                .with('from', event.address)
+                .build(),
+            ])
+            .build(),
+        );
 
-      const result = await service.processEvent(event);
+        const result = await service.processEvent(event);
 
-      expect(result).toBe(0);
-      expect(mockJobQueueService.addJob).not.toHaveBeenCalled();
-    });
+        expect(result).toBe(0);
+        expect(mockJobQueueService.addJob).not.toHaveBeenCalled();
+      },
+    );
 
     it('should create ConfirmationRequest for pending TX with threshold > 1 and unsigned subscriber', async () => {
       const ownerAddress = addr();
@@ -513,7 +521,7 @@ describe('PushNotificationService (Unit)', () => {
   // ── processEvent: Logging ──
 
   describe('processEvent - logging on silent errors', () => {
-    it('should log warning when getIncomingTransfers fails', async () => {
+    it('should log warning and suppress notification when getIncomingTransfers fails', async () => {
       const event = incomingTokenEventBuilder().build();
       const sub = createSubscriber();
 
@@ -521,16 +529,16 @@ describe('PushNotificationService (Unit)', () => {
       mockSafeRepository.getIncomingTransfers.mockRejectedValue(
         new Error('Service unavailable'),
       );
-      mockJobQueueService.addJob.mockResolvedValue({} as Job);
 
       // Should not throw — error is caught and logged
-      await service.processEvent(event);
+      const result = await service.processEvent(event);
 
       expect(mockLoggingService.warn).toHaveBeenCalledWith(
         expect.stringContaining('Failed to fetch incoming transfers'),
       );
-      // Still creates a delivery job (null transfer → not self-send)
-      expect(mockJobQueueService.addJob).toHaveBeenCalledTimes(1);
+      // Suppressed — no delivery job created when transfer lookup fails
+      expect(result).toBe(0);
+      expect(mockJobQueueService.addJob).not.toHaveBeenCalled();
     });
   });
 
