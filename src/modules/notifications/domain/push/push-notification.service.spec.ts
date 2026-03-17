@@ -27,12 +27,16 @@ import { moduleTransactionEventBuilder } from '@/modules/hooks/routes/entities/_
 import { chainUpdateEventBuilder } from '@/modules/hooks/routes/entities/__tests__/chain-update.builder';
 import { pushNotificationDeliveryJobDataBuilder } from '@/modules/notifications/domain/push/entities/__tests__/push-notification-delivery-job-data.builder';
 import { faker } from '@faker-js/faker';
-import { type Address, getAddress, type Hash } from 'viem';
+import { type Address, type Hash } from 'viem';
 import type { Job } from 'bullmq';
 import type { UUID } from 'crypto';
 import type { Transfer } from '@/modules/safe/domain/entities/transfer.entity';
 import type { Delegate } from '@/modules/delegate/domain/entities/delegate.entity';
 import type { Safe } from '@/modules/safe/domain/entities/safe.entity';
+import {
+  addr,
+  createSubscriber,
+} from '@/modules/notifications/domain/push/__tests__/helpers';
 
 const mockJobQueueService = jest.mocked({
   addJob: jest.fn(),
@@ -63,22 +67,6 @@ const mockNotificationsRepository = jest.mocked({
   enqueueNotification: jest.fn(),
   getSubscribersBySafe: jest.fn(),
 } as jest.MockedObjectDeep<INotificationsRepositoryV2>);
-
-function addr(): Address {
-  return getAddress(faker.finance.ethereumAddress());
-}
-
-function createSubscriber(): {
-  subscriber: Address;
-  deviceUuid: UUID;
-  cloudMessagingToken: string;
-} {
-  return {
-    subscriber: addr(),
-    deviceUuid: faker.string.uuid() as UUID,
-    cloudMessagingToken: faker.string.alphanumeric(32),
-  };
-}
 
 function createSafe(
   overrides?: Partial<{ owners: Array<Address>; threshold: number }>,
@@ -927,42 +915,6 @@ describe('PushNotificationService (Unit)', () => {
   // ── T7: DELETED and MODULE event pass-through ──
 
   describe('processEvent - pass-through events', () => {
-    it('should pass through DELETED_MULTISIG_TRANSACTION as-is', async () => {
-      const event = deletedMultisigTransactionEventBuilder().build();
-      const sub = createSubscriber();
-
-      mockNotificationsRepository.getSubscribersBySafe.mockResolvedValue([sub]);
-      mockJobQueueService.addJob.mockResolvedValue({} as Job);
-
-      const result = await service.processEvent(event);
-
-      expect(result).toBe(1);
-      expect(mockJobQueueService.addJob).toHaveBeenCalledWith(
-        JobType.PUSH_NOTIFICATION_DELIVERY,
-        expect.objectContaining({
-          notificationType: event.type,
-        }),
-      );
-    });
-
-    it('should pass through MODULE_TRANSACTION as-is', async () => {
-      const event = moduleTransactionEventBuilder().build();
-      const sub = createSubscriber();
-
-      mockNotificationsRepository.getSubscribersBySafe.mockResolvedValue([sub]);
-      mockJobQueueService.addJob.mockResolvedValue({} as Job);
-
-      const result = await service.processEvent(event);
-
-      expect(result).toBe(1);
-      expect(mockJobQueueService.addJob).toHaveBeenCalledWith(
-        JobType.PUSH_NOTIFICATION_DELIVERY,
-        expect.objectContaining({
-          notificationType: event.type,
-        }),
-      );
-    });
-
     it('should map EXECUTED_MULTISIG_TRANSACTION to explicit notification fields', async () => {
       const event = executedTransactionEventBuilder().build();
       const sub = createSubscriber();

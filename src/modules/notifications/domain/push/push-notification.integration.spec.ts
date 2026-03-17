@@ -41,30 +41,17 @@ import type {
 } from '@/modules/safe/domain/entities/transfer.entity';
 import { rawify } from '@/validation/entities/raw.entity';
 import { faker } from '@faker-js/faker';
-import { getAddress, type Address, type Hash } from 'viem';
+import { type Address, type Hash } from 'viem';
 import { getQueueToken } from '@nestjs/bullmq';
 import { PUSH_NOTIFICATION_QUEUE } from '@/domain/common/jobs.constants';
 import type { Queue } from 'bullmq';
-import type { UUID } from 'crypto';
 import configuration from '@/config/entities/__tests__/configuration';
 import { CacheService } from '@/datasources/cache/cache.service.interface';
 import type { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
-
-function addr(): Address {
-  return getAddress(faker.finance.ethereumAddress());
-}
-
-function createSubscribers(count: number): Array<{
-  subscriber: Address;
-  deviceUuid: UUID;
-  cloudMessagingToken: string;
-}> {
-  return Array.from({ length: count }, () => ({
-    subscriber: addr(),
-    deviceUuid: faker.string.uuid() as UUID,
-    cloudMessagingToken: faker.string.alphanumeric({ length: 20 }),
-  }));
-}
+import {
+  addr,
+  createSubscribers,
+} from '@/modules/notifications/domain/push/__tests__/helpers';
 
 type IncomingAssetFactory = (safeAddress: Address) => {
   event: IncomingEtherEvent | IncomingTokenEvent;

@@ -116,40 +116,45 @@ export class PushNotificationService implements IPushNotificationService {
 
     const subscriptions = await this.getRelevantSubscribers(event, safe);
 
-    const results = await Promise.allSettled(
-      subscriptions.map(async (subscription) => {
-        const notification = await this.mapEventNotification(
-          event,
-          subscription.subscriber,
-          safe,
-        );
+    const deliveryJobCount = (
+      await Promise.all(
+        subscriptions.map(async (subscription) => {
+          try {
+            const notification = await this.mapEventNotification(
+              event,
+              subscription.subscriber,
+              safe,
+            );
 
-        if (!notification) {
-          return false;
-        }
+            if (!notification) {
+              return 0;
+            }
 
-        await this.jobQueueService.addJob(JobType.PUSH_NOTIFICATION_DELIVERY, {
-          token: subscription.cloudMessagingToken,
-          deviceUuid: subscription.deviceUuid,
-          notification: { data: notification },
-          chainId: notification.chainId,
-          safeAddress: notification.address,
-          notificationType: notification.type,
-        });
-        this.loggingService.info({
-          type: LogType.NotificationDeliveryQueued,
-          chainId: notification.chainId,
-          safeAddress: notification.address,
-          notificationType: notification.type,
-          deviceUuid: subscription.deviceUuid,
-        });
-        return true;
-      }),
-    );
-
-    const deliveryJobCount = results.filter(
-      (r) => r.status === 'fulfilled' && r.value === true,
-    ).length;
+            await this.jobQueueService.addJob(
+              JobType.PUSH_NOTIFICATION_DELIVERY,
+              {
+                token: subscription.cloudMessagingToken,
+                deviceUuid: subscription.deviceUuid,
+                notification: { data: notification },
+                chainId: notification.chainId,
+                safeAddress: notification.address,
+                notificationType: notification.type,
+              },
+            );
+            this.loggingService.info({
+              type: LogType.NotificationDeliveryQueued,
+              chainId: notification.chainId,
+              safeAddress: notification.address,
+              notificationType: notification.type,
+              deviceUuid: subscription.deviceUuid,
+            });
+            return 1 as number;
+          } catch {
+            return 0 as number;
+          }
+        }),
+      )
+    ).reduce((sum, n) => sum + n, 0);
 
     this.loggingService.info({
       type: LogType.NotificationEventProcessed,
