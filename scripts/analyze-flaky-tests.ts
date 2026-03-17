@@ -690,8 +690,9 @@ async function main(): Promise<void> {
   const ciRunsData = {
     generated_at: now,
     period,
+    flaky_shas: Array.from(flakyShas),
     runs: runs
-      .filter((r) => r.failed_tests.length > 0)
+      .filter((r) => r.failed_tests.length > 0 && flakyShas.has(r.sha))
       .sort(
         (a, b) =>
           new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),

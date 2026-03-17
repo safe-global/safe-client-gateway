@@ -1,12 +1,12 @@
 # Flaky Test Baseline Report
 
-Generated: 2026-03-17T00:51:53.410Z | Period: 2026-01-16 to 2026-03-17
+Generated: 2026-03-17T01:20:51.304Z | Period: 2026-01-16 to 2026-03-17
 
 ## Summary
 
 | Metric | Value |
 |--------|-------|
-| Total unique commits | 540 |
+| Total unique commits | 541 |
 | Flaky commits (pass + fail on same SHA) | 41 |
 | Flakiness rate | 7.6% |
 | Cascade baseline | 1 failures (7 tests) |
@@ -26,7 +26,27 @@ Generated: 2026-03-17T00:51:53.410Z | Period: 2026-01-16 to 2026-03-17
 | 2026-03-02 | 71 | 5 | 7% |
 | 2026-03-08 | 3 | 0 | 0% |
 | 2026-03-09 | 44 | 1 | 2.3% |
-| 2026-03-16 | 30 | 3 | 10% |
+| 2026-03-16 | 31 | 3 | 9.7% |
+
+## Per-Test Flakiness Heatmap
+
+Failures per week for non-cascade flaky tests (only on commits where CI also passed).
+
+| Test | 1/12 | 1/19 | 1/26 | 2/2 | 2/9 | 2/15 | 2/16 | 2/23 | 3/2 | 3/8 | 3/9 | 3/16 | Total |
+|------|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|------:|
+| targeted-messaging/targeted-messaging.datasource [Fixed] | . | **5** | **7** | . | . | . | . | . | . | . | . | . | 12 |
+| users/members.repository [Fixed] | . | 1 | **4** | . | . | . | . | . | . | . | . | . | 5 |
+| transactions/preview-transaction-kiln.transactions.controller [Fixed] | . | . | . | . | 2 | . | 1 | . | 1 | . | . | . | 4 |
+| safe-shield/recipient-analysis.service | . | . | . | . | 1 | . | . | . | 1 | . | . | 2 | 4 |
+| cache/redis.cache.service | . | . | 2 | . | . | . | . | 1 | . | . | . | . | 3 |
+| transactions/add-transaction-confirmations.transactions.controller [Fixed] | . | . | 1 | . | . | . | . | . | 2 | . | . | . | 3 |
+| transactions/transaction-verifier.helper [Fixed] | 1 | 2 | . | . | . | . | . | . | . | . | . | . | 3 |
+| transactions/preview-transaction-cow-swap.transactions.controller [Fixed] | . | . | . | 1 | . | . | 1 | . | . | . | . | 1 | 3 |
+| notifications/notifications.controller [Fixed] | . | . | . | 1 | . | . | . | . | 1 | . | 1 | . | 3 |
+| transactions/transaction-data.mapper | . | . | 1 | . | . | . | 1 | . | . | . | . | . | 2 |
+| common/rate-limit.guard | . | . | . | 1 | . | . | . | . | 1 | . | . | . | 2 |
+
+Legend: `.` = no failures, **bold** = 3+ failures that week
 
 ## Flaky Test Leaderboard (Non-Cascade)
 
