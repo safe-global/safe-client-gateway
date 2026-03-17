@@ -1,186 +1,63 @@
 # Flaky Test Baseline Report
 
-Generated: 2026-03-16T18:37:20.516Z | Period: 2026-01-15 to 2026-03-16
+Generated: 2026-03-17T00:51:53.410Z | Period: 2026-01-16 to 2026-03-17
 
 ## Summary
 
 | Metric | Value |
 |--------|-------|
-| Total unique commits | 542 |
-| Flaky commits (test failures) | 132 |
-| Flakiness rate | 24.4% |
-| Cascade baseline | 6 failures (41 tests) |
+| Total unique commits | 540 |
+| Flaky commits (pass + fail on same SHA) | 41 |
+| Flakiness rate | 7.6% |
+| Cascade baseline | 1 failures (7 tests) |
 
 ## Weekly Trend
 
 | Week | Commits | Flaky | Rate |
 |------|---------|-------|------|
-| 2026-01-12 | 12 | 1 | 8.3% |
-| 2026-01-19 | 37 | 11 | 29.7% |
-| 2026-01-26 | 65 | 20 | 30.8% |
-| 2026-02-02 | 74 | 16 | 21.6% |
-| 2026-02-09 | 72 | 15 | 20.8% |
+| 2026-01-12 | 7 | 1 | 14.3% |
+| 2026-01-19 | 37 | 7 | 18.9% |
+| 2026-01-26 | 65 | 10 | 15.4% |
+| 2026-02-02 | 74 | 4 | 5.4% |
+| 2026-02-09 | 72 | 5 | 6.9% |
 | 2026-02-15 | 1 | 1 | 100% |
-| 2026-02-16 | 79 | 20 | 25.3% |
-| 2026-02-23 | 57 | 11 | 19.3% |
-| 2026-03-02 | 71 | 16 | 22.5% |
-| 2026-03-08 | 3 | 1 | 33.3% |
-| 2026-03-09 | 44 | 14 | 31.8% |
-| 2026-03-16 | 27 | 6 | 22.2% |
+| 2026-02-16 | 79 | 3 | 3.8% |
+| 2026-02-23 | 57 | 1 | 1.8% |
+| 2026-03-02 | 71 | 5 | 7% |
+| 2026-03-08 | 3 | 0 | 0% |
+| 2026-03-09 | 44 | 1 | 2.3% |
+| 2026-03-16 | 30 | 3 | 10% |
 
 ## Flaky Test Leaderboard (Non-Cascade)
 
 | File | Failures | Status | Fix PR |
 |------|----------|--------|--------|
-| `src/modules/owners/routes/owners.controller.v2.integration.spec.ts` | 38 | Fixed | [#2911](https://github.com/safe-global/safe-client-gateway/pull/2911) |
-| `src/modules/safe-shield/safe-shield.controller.integration.spec.ts` | 36 | Open | [#2842](https://github.com/safe-global/safe-client-gateway/pull/2842) |
-| `src/modules/transactions/routes/__tests__/controllers/preview-transaction-kiln.transactions.controller.integration.spec.ts` | 36 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
-| `src/modules/safe/routes/safes.controller.overview.integration.spec.ts` | 34 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
-| `src/modules/owners/routes/owners.controller.v3.integration.spec.ts` | 34 | Fixed | [#2911](https://github.com/safe-global/safe-client-gateway/pull/2911) |
-| `src/modules/users/domain/members.repository.integration.spec.ts` | 33 | Fixed | [#2891](https://github.com/safe-global/safe-client-gateway/pull/2891) |
-| `src/modules/transactions/routes/__tests__/controllers/get-transaction-by-id.transactions.controller.integration.spec.ts` | 33 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
-| `src/modules/delegate/routes/v2/delegates.v2.controller.integration.spec.ts` | 32 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
-| `src/modules/transactions/routes/transactions-history.controller.integration.spec.ts` | 32 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
-| `src/modules/transactions/routes/__tests__/controllers/preview-transaction-cow-swap.transactions.controller.integration.spec.ts` | 32 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
-| `src/modules/notifications/routes/v2/notifications.controller.integration.spec.ts` | 31 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
-| `src/modules/targeted-messaging/datasources/targeted-messaging.datasource.integration.spec.ts` | 30 | Fixed | [#2891](https://github.com/safe-global/safe-client-gateway/pull/2891) |
-| `src/modules/transactions/routes/__tests__/controllers/propose-transaction.transactions.controller.integration.spec.ts` | 30 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
-| `src/modules/spaces/domain/spaces.repository.integration.spec.ts` | 30 | Fixed | [#2891](https://github.com/safe-global/safe-client-gateway/pull/2891) |
-| `src/modules/safe-apps/routes/safe-apps.controller.integration.spec.ts` | 27 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
-| `src/modules/transactions/routes/__tests__/controllers/get-creation-transaction.transactions.controller.integration.spec.ts` | 27 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
-| `src/modules/notifications/routes/v1/notifications.controller.integration.spec.ts` | 27 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
-| `src/modules/transactions/routes/__tests__/controllers/preview-transaction.transactions.controller.integration.spec.ts` | 27 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
-| `src/modules/relay/routes/relay.controller.integration.spec.ts` | 26 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
-| `src/modules/transactions/routes/transactions-history.imitation-transactions.controller.integration.spec.ts` | 26 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
-| `src/modules/hooks/routes/hooks-notifications.integration.spec.ts` | 26 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
-| `src/modules/messages/routes/messages.controller.integration.spec.ts` | 26 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
-| `src/modules/safe/routes/safes.controller.integration.spec.ts` | 26 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
-| `src/modules/transactions/routes/__tests__/controllers/list-queued-transactions-by-safe.transactions.controller.integration.spec.ts` | 26 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
-| `src/modules/balances/routes/balances.controller.integration.spec.ts` | 26 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
-| `src/modules/hooks/routes/hooks-cache.integration.spec.ts` | 26 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
-| `src/modules/safe/routes/v2/__tests__/safes.v2.controller.overview.integration.spec.ts` | 26 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
-| `src/modules/transactions/routes/__tests__/controllers/list-multisig-transactions-by-safe.transactions.controller.integration.spec.ts` | 26 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
-| `src/modules/chains/routes/chains.controller.integration.spec.ts` | 26 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
-| `src/modules/users/domain/users.repository.integration.spec.ts` | 26 | Open | - |
-| `src/modules/transactions/routes/__tests__/controllers/list-incoming-transfers-by-safe.transactions.controller.integration.spec.ts` | 26 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
-| `src/modules/balances/routes/__tests__/controllers/zerion-balances.controller.integration.spec.ts` | 26 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
-| `src/modules/recovery/routes/recovery.controller.integration.spec.ts` | 26 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
-| `src/modules/spaces/domain/address-books/address-book-items.repository.integration.spec.ts` | 26 | Open | - |
-| `src/modules/targeted-messaging/routes/targeted-messaging.controller.integration.spec.ts` | 26 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
-| `src/modules/delegate/routes/delegates.controller.integration.spec.ts` | 26 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
-| `src/modules/auth/routes/auth.controller.integration.spec.ts` | 26 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
-| `src/modules/estimations/routes/estimations.controller.integration.spec.ts` | 26 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
-| `src/modules/collectibles/routes/collectibles.controller.integration.spec.ts` | 26 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
-| `src/modules/transactions/routes/__tests__/controllers/list-module-transactions-by-safe.transactions.controller.integration.spec.ts` | 26 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
-| `src/modules/transactions/routes/__tests__/controllers/delete-transaction.transactions.controller.integration.spec.ts` | 26 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
-| `src/modules/owners/routes/owners.controller.v1.integration.spec.ts` | 26 | Fixed | [#2911](https://github.com/safe-global/safe-client-gateway/pull/2911) |
-| `src/modules/safe/routes/safes.controller.nonces.integration.spec.ts` | 26 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
-| `src/modules/hooks/routes/hooks.controller.integration.spec.ts` | 26 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
-| `src/modules/health/routes/health.controller.integration.spec.ts` | 26 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
-| `src/modules/chains/routes/v2/chains.v2.controller.integration.spec.ts` | 26 | Open | - |
-| `src/modules/alerts/routes/alerts.controller.integration.spec.ts` | 25 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
-| `src/modules/contracts/routes/contracts.controller.integration.spec.ts` | 25 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
-| `src/modules/auth/routes/decorators/auth.decorator.integration.spec.ts` | 25 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
-| `src/modules/root/routes/root.controller.integration.spec.ts` | 25 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
-| `src/modules/community/routes/community.controller.integration.spec.ts` | 24 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
-| `src/modules/spaces/domain/space-safes.repository.integration.spec.ts` | 24 | Fixed | [#2891](https://github.com/safe-global/safe-client-gateway/pull/2891) |
-| `src/modules/wallets/domain/wallets.repository.integration.spec.ts` | 24 | Open | - |
-| `src/modules/collectibles/routes/__tests__/controllers/zerion-collectibles.controller.integration.spec.ts` | 24 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
-| `src/modules/auth/routes/guards/optional-auth.guard.integration.spec.ts` | 23 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
-| `src/modules/auth/routes/guards/auth.guard.integration.spec.ts` | 23 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
-| `src/modules/chains/feature-flags/feature-flag.service.integration.spec.ts` | 23 | Open | - |
-| `src/modules/transactions/routes/helpers/transaction-verifier.helper.spec.ts` | 18 | Fixed | [#2891](https://github.com/safe-global/safe-client-gateway/pull/2891) |
-| `src/modules/transactions/routes/__tests__/controllers/add-transaction-confirmations.transactions.controller.integration.spec.ts` | 16 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
-| `src/modules/messages/domain/helpers/message-verifier.helper.spec.ts` | 15 | Fixed | [#2913](https://github.com/safe-global/safe-client-gateway/pull/2913) |
-| `src/modules/notifications/domain/v2/notifications.repository.integration.spec.ts` | 13 | Open | - |
-| `src/modules/targeted-messaging/datasources/outreach-file-processor.integration.spec.ts` | 13 | Open | - |
-| `src/datasources/db/v1/postgres-database.migrator.integration.spec.ts` | 13 | Fixed | [#2740](https://github.com/safe-global/safe-client-gateway/pull/2740) |
-| `src/datasources/db/v2/postgres-database.service.integration.spec.ts` | 13 | Fixed | [#2911](https://github.com/safe-global/safe-client-gateway/pull/2911) |
-| `src/datasources/db/v1/postgres-database.migration.hook.integration.spec.ts` | 13 | Fixed | [#2740](https://github.com/safe-global/safe-client-gateway/pull/2740) |
-| `src/datasources/db/v2/postgres-database.module.integration.spec.ts` | 13 | Open | - |
-| `src/datasources/db/v1/postgres-database.module.integration.spec.ts` | 13 | Open | - |
-| `src/datasources/db/v2/database-migrator.service.integration.spec.ts` | 12 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
-| `src/routes/common/filters/global-error.filter.integration.spec.ts` | 12 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
-| `src/routes/common/filters/zod-error.filter.integration.spec.ts` | 12 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
-| `src/modules/notifications/routes/v2/notifications.controller.spec.ts` | 8 | Open | - |
-| `src/modules/safe/routes/safes.controller.overview.spec.ts` | 8 | Open | - |
-| `src/modules/transactions/routes/__tests__/controllers/preview-transaction-cow-swap.transactions.controller.spec.ts` | 7 | Open | - |
-| `src/modules/transactions/routes/mappers/common/transaction-data.mapper.spec.ts` | 7 | Open | - |
-| `src/datasources/job-queue/__tests__/job-queue.service.integration.spec.ts` | 7 | Open | [#2781](https://github.com/safe-global/safe-client-gateway/pull/2781) |
-| `src/datasources/cache/redis.cache.service.integration.spec.ts` | 7 | Open | - |
-| `src/modules/transactions/routes/__tests__/controllers/preview-transaction-kiln.transactions.controller.spec.ts` | 7 | Open | - |
-| `src/modules/owners/routes/owners.service.spec.ts` | 5 | Open | - |
-| `src/modules/transactions/datasources/transaction-api.service.spec.ts` | 4 | Open | - |
-| `src/modules/transactions/routes/mappers/multisig-transactions/multisig-transaction.mapper.spec.ts` | 4 | Open | - |
-| `src/domain/common/entities/safe-signature.spec.ts` | 3 | Fixed | [#2647](https://github.com/safe-global/safe-client-gateway/pull/2647) |
-| `src/modules/transactions/routes/__tests__/controllers/get-transaction-by-id.transactions.controller.spec.ts` | 2 | Open | - |
-| `src/modules/spaces/routes/spaces.service.spec.ts` | 2 | Open | - |
-| `src/modules/chains/domain/chains.repository.spec.ts` | 2 | Open | - |
-| `src/datasources/network/fetch.network.service.spec.ts` | 2 | Open | [#2013](https://github.com/safe-global/safe-client-gateway/pull/2013) |
-| `src/modules/accounts/datasources/accounts.datasource.integration.spec.ts` | 1 | Open | - |
-| `src/modules/accounts/datasources/counterfactual-safes/counterfactual-safes.datasource.integration.spec.ts` | 1 | Open | - |
-| `src/modules/accounts/datasources/address-books/address-books.datasource.integration.spec.ts` | 1 | Open | - |
-| `src/modules/transactions/routes/__tests__/controllers/propose-transaction.transactions.controller.spec.ts` | 1 | Open | - |
-| `src/modules/messages/routes/messages.controller.spec.ts` | 1 | Open | - |
-| `src/modules/transactions/routes/__tests__/controllers/list-queued-transactions-by-safe.transactions.controller.spec.ts` | 1 | Open | - |
-| `src/modules/transactions/routes/__tests__/controllers/add-transaction-confirmations.transactions.controller.spec.ts` | 1 | Open | - |
-| `src/modules/positions/routes/positions.controller.spec.ts` | 1 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
-| `src/modules/portfolio/v1/portfolio.controller.spec.ts` | 1 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
-| `src/modules/auth/routes/guards/optional-auth.guard.spec.ts` | 1 | Open | - |
-| `src/modules/auth/routes/guards/auth.guard.spec.ts` | 1 | Open | - |
-| `src/datasources/db/v2/database-migrator.service.spec.ts` | 1 | Open | [#2013](https://github.com/safe-global/safe-client-gateway/pull/2013) |
-| `src/modules/bridge/datasources/lifi-api.service.spec.ts` | 1 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
-| `src/routes/common/filters/global-error.filter.spec.ts` | 1 | Open | - |
-| `src/routes/common/filters/zod-error.filter.spec.ts` | 1 | Open | - |
+| `src/modules/targeted-messaging/datasources/targeted-messaging.datasource.integration.spec.ts` | 12 | Fixed | [#2891](https://github.com/safe-global/safe-client-gateway/pull/2891) |
+| `src/modules/users/domain/members.repository.integration.spec.ts` | 5 | Fixed | [#2891](https://github.com/safe-global/safe-client-gateway/pull/2891) |
+| `src/modules/transactions/routes/__tests__/controllers/preview-transaction-kiln.transactions.controller.integration.spec.ts` | 4 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
+| `src/modules/safe-shield/recipient-analysis/recipient-analysis.service.spec.ts` | 4 | Open | [#2977](https://github.com/safe-global/safe-client-gateway/pull/2977) |
+| `src/datasources/cache/redis.cache.service.integration.spec.ts` | 3 | Open | - |
+| `src/modules/transactions/routes/__tests__/controllers/add-transaction-confirmations.transactions.controller.integration.spec.ts` | 3 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
+| `src/modules/transactions/routes/helpers/transaction-verifier.helper.spec.ts` | 3 | Fixed | [#2891](https://github.com/safe-global/safe-client-gateway/pull/2891) |
+| `src/modules/transactions/routes/__tests__/controllers/preview-transaction-cow-swap.transactions.controller.integration.spec.ts` | 3 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
+| `src/modules/notifications/routes/v2/notifications.controller.integration.spec.ts` | 3 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
+| `src/modules/transactions/routes/mappers/common/transaction-data.mapper.spec.ts` | 2 | Open | - |
+| `src/routes/common/guards/rate-limit.guard.spec.ts` | 2 | Open | - |
 
 ## Cascade Tests
 
-These 41 tests all failed exactly 6 times, suggesting they fail together as a cascade (e.g., shared infrastructure issue).
+These 7 tests all failed exactly 1 times, suggesting they fail together as a cascade (e.g., shared infrastructure issue).
 
 <details>
 <summary>Click to expand cascade test list</summary>
 
-- `src/routes/common/guards/rate-limit.guard.spec.ts`
-- `src/modules/transactions/routes/transactions-history.imitation-transactions.controller.spec.ts`
-- `src/modules/safe/routes/safes.controller.spec.ts`
-- `src/modules/hooks/routes/hooks-notifications.spec.ts`
-- `src/modules/relay/routes/relay.controller.spec.ts`
-- `src/modules/transactions/routes/transactions-history.controller.spec.ts`
-- `src/modules/balances/routes/balances.controller.spec.ts`
-- `src/modules/community/routes/community.controller.spec.ts`
-- `src/modules/alerts/routes/alerts.controller.spec.ts`
-- `src/modules/accounts/routes/counterfactual-safes/counterfactual-safes.controller.spec.ts`
-- `src/modules/hooks/routes/hooks-cache.spec.ts`
-- `src/modules/chains/routes/chains.controller.spec.ts`
-- `src/modules/transactions/routes/__tests__/controllers/list-multisig-transactions-by-safe.transactions.controller.spec.ts`
-- `src/modules/safe/routes/v2/__tests__/safes.v2.controller.overview.spec.ts`
-- `src/modules/transactions/routes/__tests__/controllers/list-incoming-transfers-by-safe.transactions.controller.spec.ts`
-- `src/modules/accounts/routes/address-books/address-books.controller.spec.ts`
-- `src/modules/balances/routes/__tests__/controllers/zerion-balances.controller.spec.ts`
-- `src/modules/recovery/routes/recovery.controller.spec.ts`
-- `src/modules/targeted-messaging/routes/targeted-messaging.controller.spec.ts`
-- `src/modules/collectibles/routes/__tests__/controllers/zerion-collectibles.controller.spec.ts`
-- `src/modules/delegate/routes/v2/delegates.v2.controller.spec.ts`
-- `src/modules/accounts/routes/accounts.controller.spec.ts`
-- `src/modules/delegate/routes/delegates.controller.spec.ts`
-- `src/modules/owners/routes/owners.controller.v2.spec.ts`
-- `src/modules/auth/routes/auth.controller.spec.ts`
-- `src/modules/notifications/routes/v1/notifications.controller.spec.ts`
-- `src/modules/estimations/routes/estimations.controller.spec.ts`
-- `src/modules/collectibles/routes/collectibles.controller.spec.ts`
-- `src/modules/transactions/routes/__tests__/controllers/list-module-transactions-by-safe.transactions.controller.spec.ts`
-- `src/modules/contracts/routes/contracts.controller.spec.ts`
-- `src/modules/safe-apps/routes/safe-apps.controller.spec.ts`
-- `src/modules/transactions/routes/__tests__/controllers/delete-transaction.transactions.controller.spec.ts`
-- `src/modules/transactions/routes/__tests__/controllers/get-creation-transaction.transactions.controller.spec.ts`
-- `src/modules/owners/routes/owners.controller.v1.spec.ts`
-- `src/modules/safe/routes/safes.controller.nonces.spec.ts`
-- `src/modules/health/routes/health.controller.spec.ts`
-- `src/modules/hooks/routes/hooks.http.controller.spec.ts`
-- `src/modules/hooks/routes/hooks.controller.spec.ts`
-- `src/modules/root/routes/root.controller.spec.ts`
-- `src/datasources/network/network.module.integration.spec.ts`
-- `src/modules/safe-shield/recipient-analysis/recipient-analysis.service.spec.ts`
+- `src/modules/transactions/routes/__tests__/controllers/preview-transaction-cow-swap.transactions.controller.spec.ts`
+- `src/modules/transactions/routes/__tests__/controllers/preview-transaction-kiln.transactions.controller.spec.ts`
+- `src/modules/safe-shield/safe-shield.controller.integration.spec.ts`
+- `src/modules/safe-apps/routes/safe-apps.controller.integration.spec.ts`
+- `src/modules/transactions/routes/__tests__/controllers/get-transaction-by-id.transactions.controller.integration.spec.ts`
+- `src/modules/transactions/routes/__tests__/controllers/propose-transaction.transactions.controller.integration.spec.ts`
+- `src/datasources/job-queue/__tests__/job-queue.service.integration.spec.ts`
 
 </details>
 
@@ -643,42 +520,10 @@ These 41 tests all failed exactly 6 times, suggesting they fail together as a ca
 
 ## Still-Open Flaky Tests
 
-- `src/modules/safe-shield/safe-shield.controller.integration.spec.ts` (36 failures)
-- `src/modules/users/domain/users.repository.integration.spec.ts` (26 failures)
-- `src/modules/spaces/domain/address-books/address-book-items.repository.integration.spec.ts` (26 failures)
-- `src/modules/chains/routes/v2/chains.v2.controller.integration.spec.ts` (26 failures)
-- `src/modules/wallets/domain/wallets.repository.integration.spec.ts` (24 failures)
-- `src/modules/chains/feature-flags/feature-flag.service.integration.spec.ts` (23 failures)
-- `src/modules/notifications/domain/v2/notifications.repository.integration.spec.ts` (13 failures)
-- `src/modules/targeted-messaging/datasources/outreach-file-processor.integration.spec.ts` (13 failures)
-- `src/datasources/db/v2/postgres-database.module.integration.spec.ts` (13 failures)
-- `src/datasources/db/v1/postgres-database.module.integration.spec.ts` (13 failures)
-- `src/modules/notifications/routes/v2/notifications.controller.spec.ts` (8 failures)
-- `src/modules/safe/routes/safes.controller.overview.spec.ts` (8 failures)
-- `src/modules/transactions/routes/__tests__/controllers/preview-transaction-cow-swap.transactions.controller.spec.ts` (7 failures)
-- `src/modules/transactions/routes/mappers/common/transaction-data.mapper.spec.ts` (7 failures)
-- `src/datasources/job-queue/__tests__/job-queue.service.integration.spec.ts` (7 failures)
-- `src/datasources/cache/redis.cache.service.integration.spec.ts` (7 failures)
-- `src/modules/transactions/routes/__tests__/controllers/preview-transaction-kiln.transactions.controller.spec.ts` (7 failures)
-- `src/modules/owners/routes/owners.service.spec.ts` (5 failures)
-- `src/modules/transactions/datasources/transaction-api.service.spec.ts` (4 failures)
-- `src/modules/transactions/routes/mappers/multisig-transactions/multisig-transaction.mapper.spec.ts` (4 failures)
-- `src/modules/transactions/routes/__tests__/controllers/get-transaction-by-id.transactions.controller.spec.ts` (2 failures)
-- `src/modules/spaces/routes/spaces.service.spec.ts` (2 failures)
-- `src/modules/chains/domain/chains.repository.spec.ts` (2 failures)
-- `src/datasources/network/fetch.network.service.spec.ts` (2 failures)
-- `src/modules/accounts/datasources/accounts.datasource.integration.spec.ts` (1 failures)
-- `src/modules/accounts/datasources/counterfactual-safes/counterfactual-safes.datasource.integration.spec.ts` (1 failures)
-- `src/modules/accounts/datasources/address-books/address-books.datasource.integration.spec.ts` (1 failures)
-- `src/modules/transactions/routes/__tests__/controllers/propose-transaction.transactions.controller.spec.ts` (1 failures)
-- `src/modules/messages/routes/messages.controller.spec.ts` (1 failures)
-- `src/modules/transactions/routes/__tests__/controllers/list-queued-transactions-by-safe.transactions.controller.spec.ts` (1 failures)
-- `src/modules/transactions/routes/__tests__/controllers/add-transaction-confirmations.transactions.controller.spec.ts` (1 failures)
-- `src/modules/auth/routes/guards/optional-auth.guard.spec.ts` (1 failures)
-- `src/modules/auth/routes/guards/auth.guard.spec.ts` (1 failures)
-- `src/datasources/db/v2/database-migrator.service.spec.ts` (1 failures)
-- `src/routes/common/filters/global-error.filter.spec.ts` (1 failures)
-- `src/routes/common/filters/zod-error.filter.spec.ts` (1 failures)
+- `src/modules/safe-shield/recipient-analysis/recipient-analysis.service.spec.ts` (4 failures)
+- `src/datasources/cache/redis.cache.service.integration.spec.ts` (3 failures)
+- `src/modules/transactions/routes/mappers/common/transaction-data.mapper.spec.ts` (2 failures)
+- `src/routes/common/guards/rate-limit.guard.spec.ts` (2 failures)
 
 ---
 

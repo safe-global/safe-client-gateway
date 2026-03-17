@@ -1,44 +1,44 @@
 {
-  "generated_at": "2026-03-16T18:37:20.507Z",
+  "generated_at": "2026-03-17T00:51:53.390Z",
   "summary": {
-    "total_commits": 542,
-    "flaky_commits": 132,
-    "flakiness_rate": 24.4,
+    "total_commits": 540,
+    "flaky_commits": 41,
+    "flakiness_rate": 7.6,
     "period": {
-      "from": "2026-01-15",
-      "to": "2026-03-16"
+      "from": "2026-01-16",
+      "to": "2026-03-17"
     }
   },
   "weekly_trend": [
     {
       "week": "2026-01-12",
-      "commits": 12,
+      "commits": 7,
       "flaky": 1,
-      "rate": 8.3
+      "rate": 14.3
     },
     {
       "week": "2026-01-19",
       "commits": 37,
-      "flaky": 11,
-      "rate": 29.7
+      "flaky": 7,
+      "rate": 18.9
     },
     {
       "week": "2026-01-26",
       "commits": 65,
-      "flaky": 20,
-      "rate": 30.8
+      "flaky": 10,
+      "rate": 15.4
     },
     {
       "week": "2026-02-02",
       "commits": 74,
-      "flaky": 16,
-      "rate": 21.6
+      "flaky": 4,
+      "rate": 5.4
     },
     {
       "week": "2026-02-09",
       "commits": 72,
-      "flaky": 15,
-      "rate": 20.8
+      "flaky": 5,
+      "rate": 6.9
     },
     {
       "week": "2026-02-15",
@@ -49,94 +49,44 @@
     {
       "week": "2026-02-16",
       "commits": 79,
-      "flaky": 20,
-      "rate": 25.3
+      "flaky": 3,
+      "rate": 3.8
     },
     {
       "week": "2026-02-23",
       "commits": 57,
-      "flaky": 11,
-      "rate": 19.3
+      "flaky": 1,
+      "rate": 1.8
     },
     {
       "week": "2026-03-02",
       "commits": 71,
-      "flaky": 16,
-      "rate": 22.5
+      "flaky": 5,
+      "rate": 7
     },
     {
       "week": "2026-03-08",
       "commits": 3,
-      "flaky": 1,
-      "rate": 33.3
+      "flaky": 0,
+      "rate": 0
     },
     {
       "week": "2026-03-09",
       "commits": 44,
-      "flaky": 14,
-      "rate": 31.8
+      "flaky": 1,
+      "rate": 2.3
     },
     {
       "week": "2026-03-16",
-      "commits": 27,
-      "flaky": 6,
-      "rate": 22.2
+      "commits": 30,
+      "flaky": 3,
+      "rate": 10
     }
   ],
   "tests": [
     {
-      "file": "src/modules/owners/routes/owners.controller.v2.integration.spec.ts",
-      "failure_count": 38,
-      "is_cascade": false,
-      "status": "fixed",
-      "fix_pr": {
-        "number": 2911,
-        "url": "https://github.com/safe-global/safe-client-gateway/pull/2911"
-      }
-    },
-    {
-      "file": "src/modules/safe-shield/safe-shield.controller.integration.spec.ts",
-      "failure_count": 36,
-      "is_cascade": false,
-      "status": "open",
-      "fix_pr": {
-        "number": 2842,
-        "url": "https://github.com/safe-global/safe-client-gateway/pull/2842"
-      }
-    },
-    {
-      "file": "src/modules/transactions/routes/__tests__/controllers/preview-transaction-kiln.transactions.controller.integration.spec.ts",
-      "failure_count": 36,
-      "is_cascade": false,
-      "status": "fixed",
-      "fix_pr": {
-        "number": 2890,
-        "url": "https://github.com/safe-global/safe-client-gateway/pull/2890"
-      }
-    },
-    {
-      "file": "src/modules/safe/routes/safes.controller.overview.integration.spec.ts",
-      "failure_count": 34,
-      "is_cascade": false,
-      "status": "fixed",
-      "fix_pr": {
-        "number": 2890,
-        "url": "https://github.com/safe-global/safe-client-gateway/pull/2890"
-      }
-    },
-    {
-      "file": "src/modules/owners/routes/owners.controller.v3.integration.spec.ts",
-      "failure_count": 34,
-      "is_cascade": false,
-      "status": "fixed",
-      "fix_pr": {
-        "number": 2911,
-        "url": "https://github.com/safe-global/safe-client-gateway/pull/2911"
-      }
-    },
-    {
-      "file": "src/modules/users/domain/members.repository.integration.spec.ts",
-      "failure_count": 33,
+      "file": "src/modules/targeted-messaging/datasources/targeted-messaging.datasource.integration.spec.ts",
+      "failure_count": 12,
       "is_cascade": false,
       "status": "fixed",
       "fix_pr": {
@@ -145,8 +95,18 @@
       }
     },
     {
-      "file": "src/modules/transactions/routes/__tests__/controllers/get-transaction-by-id.transactions.controller.integration.spec.ts",
-      "failure_count": 33,
+      "file": "src/modules/users/domain/members.repository.integration.spec.ts",
+      "failure_count": 5,
+      "is_cascade": false,
+      "status": "fixed",
+      "fix_pr": {
+        "number": 2891,
+        "url": "https://github.com/safe-global/safe-client-gateway/pull/2891"
+      }
+    },
+    {
+      "file": "src/modules/transactions/routes/__tests__/controllers/preview-transaction-kiln.transactions.controller.integration.spec.ts",
+      "failure_count": 4,
       "is_cascade": false,
       "status": "fixed",
       "fix_pr": {
@@ -155,8 +115,25 @@
       }
     },
     {
-      "file": "src/modules/delegate/routes/v2/delegates.v2.controller.integration.spec.ts",
-      "failure_count": 32,
+      "file": "src/modules/safe-shield/recipient-analysis/recipient-analysis.service.spec.ts",
+      "failure_count": 4,
+      "is_cascade": false,
+      "status": "open",
+      "fix_pr": {
+        "number": 2977,
+        "url": "https://github.com/safe-global/safe-client-gateway/pull/2977"
+      }
+    },
+    {
+      "file": "src/datasources/cache/redis.cache.service.integration.spec.ts",
+      "failure_count": 3,
+      "is_cascade": false,
+      "status": "open",
+      "fix_pr": null
+    },
+    {
+      "file": "src/modules/transactions/routes/__tests__/controllers/add-transaction-confirmations.transactions.controller.integration.spec.ts",
+      "failure_count": 3,
       "is_cascade": false,
       "status": "fixed",
       "fix_pr": {
@@ -165,18 +142,18 @@
       }
     },
     {
-      "file": "src/modules/transactions/routes/transactions-history.controller.integration.spec.ts",
-      "failure_count": 32,
+      "file": "src/modules/transactions/routes/helpers/transaction-verifier.helper.spec.ts",
+      "failure_count": 3,
       "is_cascade": false,
       "status": "fixed",
       "fix_pr": {
-        "number": 2890,
-        "url": "https://github.com/safe-global/safe-client-gateway/pull/2890"
+        "number": 2891,
+        "url": "https://github.com/safe-global/safe-client-gateway/pull/2891"
       }
     },
     {
       "file": "src/modules/transactions/routes/__tests__/controllers/preview-transaction-cow-swap.transactions.controller.integration.spec.ts",
-      "failure_count": 32,
+      "failure_count": 3,
       "is_cascade": false,
       "status": "fixed",
       "fix_pr": {
@@ -186,1052 +163,56 @@
     },
     {
       "file": "src/modules/notifications/routes/v2/notifications.controller.integration.spec.ts",
-      "failure_count": 31,
+      "failure_count": 3,
       "is_cascade": false,
       "status": "fixed",
       "fix_pr": {
         "number": 2890,
         "url": "https://github.com/safe-global/safe-client-gateway/pull/2890"
       }
-    },
-    {
-      "file": "src/modules/targeted-messaging/datasources/targeted-messaging.datasource.integration.spec.ts",
-      "failure_count": 30,
-      "is_cascade": false,
-      "status": "fixed",
-      "fix_pr": {
-        "number": 2891,
-        "url": "https://github.com/safe-global/safe-client-gateway/pull/2891"
-      }
-    },
-    {
-      "file": "src/modules/transactions/routes/__tests__/controllers/propose-transaction.transactions.controller.integration.spec.ts",
-      "failure_count": 30,
-      "is_cascade": false,
-      "status": "fixed",
-      "fix_pr": {
-        "number": 2890,
-        "url": "https://github.com/safe-global/safe-client-gateway/pull/2890"
-      }
-    },
-    {
-      "file": "src/modules/spaces/domain/spaces.repository.integration.spec.ts",
-      "failure_count": 30,
-      "is_cascade": false,
-      "status": "fixed",
-      "fix_pr": {
-        "number": 2891,
-        "url": "https://github.com/safe-global/safe-client-gateway/pull/2891"
-      }
-    },
-    {
-      "file": "src/modules/safe-apps/routes/safe-apps.controller.integration.spec.ts",
-      "failure_count": 27,
-      "is_cascade": false,
-      "status": "fixed",
-      "fix_pr": {
-        "number": 2890,
-        "url": "https://github.com/safe-global/safe-client-gateway/pull/2890"
-      }
-    },
-    {
-      "file": "src/modules/transactions/routes/__tests__/controllers/get-creation-transaction.transactions.controller.integration.spec.ts",
-      "failure_count": 27,
-      "is_cascade": false,
-      "status": "fixed",
-      "fix_pr": {
-        "number": 2890,
-        "url": "https://github.com/safe-global/safe-client-gateway/pull/2890"
-      }
-    },
-    {
-      "file": "src/modules/notifications/routes/v1/notifications.controller.integration.spec.ts",
-      "failure_count": 27,
-      "is_cascade": false,
-      "status": "fixed",
-      "fix_pr": {
-        "number": 2890,
-        "url": "https://github.com/safe-global/safe-client-gateway/pull/2890"
-      }
-    },
-    {
-      "file": "src/modules/transactions/routes/__tests__/controllers/preview-transaction.transactions.controller.integration.spec.ts",
-      "failure_count": 27,
-      "is_cascade": false,
-      "status": "fixed",
-      "fix_pr": {
-        "number": 2890,
-        "url": "https://github.com/safe-global/safe-client-gateway/pull/2890"
-      }
-    },
-    {
-      "file": "src/modules/relay/routes/relay.controller.integration.spec.ts",
-      "failure_count": 26,
-      "is_cascade": false,
-      "status": "fixed",
-      "fix_pr": {
-        "number": 2890,
-        "url": "https://github.com/safe-global/safe-client-gateway/pull/2890"
-      }
-    },
-    {
-      "file": "src/modules/transactions/routes/transactions-history.imitation-transactions.controller.integration.spec.ts",
-      "failure_count": 26,
-      "is_cascade": false,
-      "status": "fixed",
-      "fix_pr": {
-        "number": 2890,
-        "url": "https://github.com/safe-global/safe-client-gateway/pull/2890"
-      }
-    },
-    {
-      "file": "src/modules/hooks/routes/hooks-notifications.integration.spec.ts",
-      "failure_count": 26,
-      "is_cascade": false,
-      "status": "fixed",
-      "fix_pr": {
-        "number": 2890,
-        "url": "https://github.com/safe-global/safe-client-gateway/pull/2890"
-      }
-    },
-    {
-      "file": "src/modules/messages/routes/messages.controller.integration.spec.ts",
-      "failure_count": 26,
-      "is_cascade": false,
-      "status": "fixed",
-      "fix_pr": {
-        "number": 2890,
-        "url": "https://github.com/safe-global/safe-client-gateway/pull/2890"
-      }
-    },
-    {
-      "file": "src/modules/safe/routes/safes.controller.integration.spec.ts",
-      "failure_count": 26,
-      "is_cascade": false,
-      "status": "fixed",
-      "fix_pr": {
-        "number": 2890,
-        "url": "https://github.com/safe-global/safe-client-gateway/pull/2890"
-      }
-    },
-    {
-      "file": "src/modules/transactions/routes/__tests__/controllers/list-queued-transactions-by-safe.transactions.controller.integration.spec.ts",
-      "failure_count": 26,
-      "is_cascade": false,
-      "status": "fixed",
-      "fix_pr": {
-        "number": 2890,
-        "url": "https://github.com/safe-global/safe-client-gateway/pull/2890"
-      }
-    },
-    {
-      "file": "src/modules/balances/routes/balances.controller.integration.spec.ts",
-      "failure_count": 26,
-      "is_cascade": false,
-      "status": "fixed",
-      "fix_pr": {
-        "number": 2890,
-        "url": "https://github.com/safe-global/safe-client-gateway/pull/2890"
-      }
-    },
-    {
-      "file": "src/modules/hooks/routes/hooks-cache.integration.spec.ts",
-      "failure_count": 26,
-      "is_cascade": false,
-      "status": "fixed",
-      "fix_pr": {
-        "number": 2890,
-        "url": "https://github.com/safe-global/safe-client-gateway/pull/2890"
-      }
-    },
-    {
-      "file": "src/modules/safe/routes/v2/__tests__/safes.v2.controller.overview.integration.spec.ts",
-      "failure_count": 26,
-      "is_cascade": false,
-      "status": "fixed",
-      "fix_pr": {
-        "number": 2890,
-        "url": "https://github.com/safe-global/safe-client-gateway/pull/2890"
-      }
-    },
-    {
-      "file": "src/modules/transactions/routes/__tests__/controllers/list-multisig-transactions-by-safe.transactions.controller.integration.spec.ts",
-      "failure_count": 26,
-      "is_cascade": false,
-      "status": "fixed",
-      "fix_pr": {
-        "number": 2890,
-        "url": "https://github.com/safe-global/safe-client-gateway/pull/2890"
-      }
-    },
-    {
-      "file": "src/modules/chains/routes/chains.controller.integration.spec.ts",
-      "failure_count": 26,
-      "is_cascade": false,
-      "status": "fixed",
-      "fix_pr": {
-        "number": 2890,
-        "url": "https://github.com/safe-global/safe-client-gateway/pull/2890"
-      }
-    },
-    {
-      "file": "src/modules/users/domain/users.repository.integration.spec.ts",
-      "failure_count": 26,
-      "is_cascade": false,
-      "status": "open",
-      "fix_pr": null
-    },
-    {
-      "file": "src/modules/transactions/routes/__tests__/controllers/list-incoming-transfers-by-safe.transactions.controller.integration.spec.ts",
-      "failure_count": 26,
-      "is_cascade": false,
-      "status": "fixed",
-      "fix_pr": {
-        "number": 2890,
-        "url": "https://github.com/safe-global/safe-client-gateway/pull/2890"
-      }
-    },
-    {
-      "file": "src/modules/balances/routes/__tests__/controllers/zerion-balances.controller.integration.spec.ts",
-      "failure_count": 26,
-      "is_cascade": false,
-      "status": "fixed",
-      "fix_pr": {
-        "number": 2890,
-        "url": "https://github.com/safe-global/safe-client-gateway/pull/2890"
-      }
-    },
-    {
-      "file": "src/modules/recovery/routes/recovery.controller.integration.spec.ts",
-      "failure_count": 26,
-      "is_cascade": false,
-      "status": "fixed",
-      "fix_pr": {
-        "number": 2890,
-        "url": "https://github.com/safe-global/safe-client-gateway/pull/2890"
-      }
-    },
-    {
-      "file": "src/modules/spaces/domain/address-books/address-book-items.repository.integration.spec.ts",
-      "failure_count": 26,
-      "is_cascade": false,
-      "status": "open",
-      "fix_pr": null
-    },
-    {
-      "file": "src/modules/targeted-messaging/routes/targeted-messaging.controller.integration.spec.ts",
-      "failure_count": 26,
-      "is_cascade": false,
-      "status": "fixed",
-      "fix_pr": {
-        "number": 2890,
-        "url": "https://github.com/safe-global/safe-client-gateway/pull/2890"
-      }
-    },
-    {
-      "file": "src/modules/delegate/routes/delegates.controller.integration.spec.ts",
-      "failure_count": 26,
-      "is_cascade": false,
-      "status": "fixed",
-      "fix_pr": {
-        "number": 2890,
-        "url": "https://github.com/safe-global/safe-client-gateway/pull/2890"
-      }
-    },
-    {
-      "file": "src/modules/auth/routes/auth.controller.integration.spec.ts",
-      "failure_count": 26,
-      "is_cascade": false,
-      "status": "fixed",
-      "fix_pr": {
-        "number": 2890,
-        "url": "https://github.com/safe-global/safe-client-gateway/pull/2890"
-      }
-    },
-    {
-      "file": "src/modules/estimations/routes/estimations.controller.integration.spec.ts",
-      "failure_count": 26,
-      "is_cascade": false,
-      "status": "fixed",
-      "fix_pr": {
-        "number": 2890,
-        "url": "https://github.com/safe-global/safe-client-gateway/pull/2890"
-      }
-    },
-    {
-      "file": "src/modules/collectibles/routes/collectibles.controller.integration.spec.ts",
-      "failure_count": 26,
-      "is_cascade": false,
-      "status": "fixed",
-      "fix_pr": {
-        "number": 2890,
-        "url": "https://github.com/safe-global/safe-client-gateway/pull/2890"
-      }
-    },
-    {
-      "file": "src/modules/transactions/routes/__tests__/controllers/list-module-transactions-by-safe.transactions.controller.integration.spec.ts",
-      "failure_count": 26,
-      "is_cascade": false,
-      "status": "fixed",
-      "fix_pr": {
-        "number": 2890,
-        "url": "https://github.com/safe-global/safe-client-gateway/pull/2890"
-      }
-    },
-    {
-      "file": "src/modules/transactions/routes/__tests__/controllers/delete-transaction.transactions.controller.integration.spec.ts",
-      "failure_count": 26,
-      "is_cascade": false,
-      "status": "fixed",
-      "fix_pr": {
-        "number": 2890,
-        "url": "https://github.com/safe-global/safe-client-gateway/pull/2890"
-      }
-    },
-    {
-      "file": "src/modules/owners/routes/owners.controller.v1.integration.spec.ts",
-      "failure_count": 26,
-      "is_cascade": false,
-      "status": "fixed",
-      "fix_pr": {
-        "number": 2911,
-        "url": "https://github.com/safe-global/safe-client-gateway/pull/2911"
-      }
-    },
-    {
-      "file": "src/modules/safe/routes/safes.controller.nonces.integration.spec.ts",
-      "failure_count": 26,
-      "is_cascade": false,
-      "status": "fixed",
-      "fix_pr": {
-        "number": 2890,
-        "url": "https://github.com/safe-global/safe-client-gateway/pull/2890"
-      }
-    },
-    {
-      "file": "src/modules/hooks/routes/hooks.controller.integration.spec.ts",
-      "failure_count": 26,
-      "is_cascade": false,
-      "status": "fixed",
-      "fix_pr": {
-        "number": 2890,
-        "url": "https://github.com/safe-global/safe-client-gateway/pull/2890"
-      }
-    },
-    {
-      "file": "src/modules/health/routes/health.controller.integration.spec.ts",
-      "failure_count": 26,
-      "is_cascade": false,
-      "status": "fixed",
-      "fix_pr": {
-        "number": 2890,
-        "url": "https://github.com/safe-global/safe-client-gateway/pull/2890"
-      }
-    },
-    {
-      "file": "src/modules/chains/routes/v2/chains.v2.controller.integration.spec.ts",
-      "failure_count": 26,
-      "is_cascade": false,
-      "status": "open",
-      "fix_pr": null
-    },
-    {
-      "file": "src/modules/alerts/routes/alerts.controller.integration.spec.ts",
-      "failure_count": 25,
-      "is_cascade": false,
-      "status": "fixed",
-      "fix_pr": {
-        "number": 2890,
-        "url": "https://github.com/safe-global/safe-client-gateway/pull/2890"
-      }
-    },
-    {
-      "file": "src/modules/contracts/routes/contracts.controller.integration.spec.ts",
-      "failure_count": 25,
-      "is_cascade": false,
-      "status": "fixed",
-      "fix_pr": {
-        "number": 2890,
-        "url": "https://github.com/safe-global/safe-client-gateway/pull/2890"
-      }
-    },
-    {
-      "file": "src/modules/auth/routes/decorators/auth.decorator.integration.spec.ts",
-      "failure_count": 25,
-      "is_cascade": false,
-      "status": "fixed",
-      "fix_pr": {
-        "number": 2890,
-        "url": "https://github.com/safe-global/safe-client-gateway/pull/2890"
-      }
-    },
-    {
-      "file": "src/modules/root/routes/root.controller.integration.spec.ts",
-      "failure_count": 25,
-      "is_cascade": false,
-      "status": "fixed",
-      "fix_pr": {
-        "number": 2890,
-        "url": "https://github.com/safe-global/safe-client-gateway/pull/2890"
-      }
-    },
-    {
-      "file": "src/modules/community/routes/community.controller.integration.spec.ts",
-      "failure_count": 24,
-      "is_cascade": false,
-      "status": "fixed",
-      "fix_pr": {
-        "number": 2890,
-        "url": "https://github.com/safe-global/safe-client-gateway/pull/2890"
-      }
-    },
-    {
-      "file": "src/modules/spaces/domain/space-safes.repository.integration.spec.ts",
-      "failure_count": 24,
-      "is_cascade": false,
-      "status": "fixed",
-      "fix_pr": {
-        "number": 2891,
-        "url": "https://github.com/safe-global/safe-client-gateway/pull/2891"
-      }
-    },
-    {
-      "file": "src/modules/wallets/domain/wallets.repository.integration.spec.ts",
-      "failure_count": 24,
-      "is_cascade": false,
-      "status": "open",
-      "fix_pr": null
-    },
-    {
-      "file": "src/modules/collectibles/routes/__tests__/controllers/zerion-collectibles.controller.integration.spec.ts",
-      "failure_count": 24,
-      "is_cascade": false,
-      "status": "fixed",
-      "fix_pr": {
-        "number": 2890,
-        "url": "https://github.com/safe-global/safe-client-gateway/pull/2890"
-      }
-    },
-    {
-      "file": "src/modules/auth/routes/guards/optional-auth.guard.integration.spec.ts",
-      "failure_count": 23,
-      "is_cascade": false,
-      "status": "fixed",
-      "fix_pr": {
-        "number": 2890,
-        "url": "https://github.com/safe-global/safe-client-gateway/pull/2890"
-      }
-    },
-    {
-      "file": "src/modules/auth/routes/guards/auth.guard.integration.spec.ts",
-      "failure_count": 23,
-      "is_cascade": false,
-      "status": "fixed",
-      "fix_pr": {
-        "number": 2890,
-        "url": "https://github.com/safe-global/safe-client-gateway/pull/2890"
-      }
-    },
-    {
-      "file": "src/modules/chains/feature-flags/feature-flag.service.integration.spec.ts",
-      "failure_count": 23,
-      "is_cascade": false,
-      "status": "open",
-      "fix_pr": null
-    },
-    {
-      "file": "src/modules/transactions/routes/helpers/transaction-verifier.helper.spec.ts",
-      "failure_count": 18,
-      "is_cascade": false,
-      "status": "fixed",
-      "fix_pr": {
-        "number": 2891,
-        "url": "https://github.com/safe-global/safe-client-gateway/pull/2891"
-      }
-    },
-    {
-      "file": "src/modules/transactions/routes/__tests__/controllers/add-transaction-confirmations.transactions.controller.integration.spec.ts",
-      "failure_count": 16,
-      "is_cascade": false,
-      "status": "fixed",
-      "fix_pr": {
-        "number": 2890,
-        "url": "https://github.com/safe-global/safe-client-gateway/pull/2890"
-      }
-    },
-    {
-      "file": "src/modules/messages/domain/helpers/message-verifier.helper.spec.ts",
-      "failure_count": 15,
-      "is_cascade": false,
-      "status": "fixed",
-      "fix_pr": {
-        "number": 2913,
-        "url": "https://github.com/safe-global/safe-client-gateway/pull/2913"
-      }
-    },
-    {
-      "file": "src/modules/notifications/domain/v2/notifications.repository.integration.spec.ts",
-      "failure_count": 13,
-      "is_cascade": false,
-      "status": "open",
-      "fix_pr": null
-    },
-    {
-      "file": "src/modules/targeted-messaging/datasources/outreach-file-processor.integration.spec.ts",
-      "failure_count": 13,
-      "is_cascade": false,
-      "status": "open",
-      "fix_pr": null
-    },
-    {
-      "file": "src/datasources/db/v1/postgres-database.migrator.integration.spec.ts",
-      "failure_count": 13,
-      "is_cascade": false,
-      "status": "fixed",
-      "fix_pr": {
-        "number": 2740,
-        "url": "https://github.com/safe-global/safe-client-gateway/pull/2740"
-      }
-    },
-    {
-      "file": "src/datasources/db/v2/postgres-database.service.integration.spec.ts",
-      "failure_count": 13,
-      "is_cascade": false,
-      "status": "fixed",
-      "fix_pr": {
-        "number": 2911,
-        "url": "https://github.com/safe-global/safe-client-gateway/pull/2911"
-      }
-    },
-    {
-      "file": "src/datasources/db/v1/postgres-database.migration.hook.integration.spec.ts",
-      "failure_count": 13,
-      "is_cascade": false,
-      "status": "fixed",
-      "fix_pr": {
-        "number": 2740,
-        "url": "https://github.com/safe-global/safe-client-gateway/pull/2740"
-      }
-    },
-    {
-      "file": "src/datasources/db/v2/postgres-database.module.integration.spec.ts",
-      "failure_count": 13,
-      "is_cascade": false,
-      "status": "open",
-      "fix_pr": null
-    },
-    {
-      "file": "src/datasources/db/v1/postgres-database.module.integration.spec.ts",
-      "failure_count": 13,
-      "is_cascade": false,
-      "status": "open",
-      "fix_pr": null
-    },
-    {
-      "file": "src/datasources/db/v2/database-migrator.service.integration.spec.ts",
-      "failure_count": 12,
-      "is_cascade": false,
-      "status": "fixed",
-      "fix_pr": {
-        "number": 2890,
-        "url": "https://github.com/safe-global/safe-client-gateway/pull/2890"
-      }
-    },
-    {
-      "file": "src/routes/common/filters/global-error.filter.integration.spec.ts",
-      "failure_count": 12,
-      "is_cascade": false,
-      "status": "fixed",
-      "fix_pr": {
-        "number": 2890,
-        "url": "https://github.com/safe-global/safe-client-gateway/pull/2890"
-      }
-    },
-    {
-      "file": "src/routes/common/filters/zod-error.filter.integration.spec.ts",
-      "failure_count": 12,
-      "is_cascade": false,
-      "status": "fixed",
-      "fix_pr": {
-        "number": 2890,
-        "url": "https://github.com/safe-global/safe-client-gateway/pull/2890"
-      }
-    },
-    {
-      "file": "src/modules/notifications/routes/v2/notifications.controller.spec.ts",
-      "failure_count": 8,
-      "is_cascade": false,
-      "status": "open",
-      "fix_pr": null
-    },
-    {
-      "file": "src/modules/safe/routes/safes.controller.overview.spec.ts",
-      "failure_count": 8,
-      "is_cascade": false,
-      "status": "open",
-      "fix_pr": null
-    },
-    {
-      "file": "src/modules/transactions/routes/__tests__/controllers/preview-transaction-cow-swap.transactions.controller.spec.ts",
-      "failure_count": 7,
-      "is_cascade": false,
-      "status": "open",
-      "fix_pr": null
     },
     {
       "file": "src/modules/transactions/routes/mappers/common/transaction-data.mapper.spec.ts",
-      "failure_count": 7,
-      "is_cascade": false,
-      "status": "open",
-      "fix_pr": null
-    },
-    {
-      "file": "src/datasources/job-queue/__tests__/job-queue.service.integration.spec.ts",
-      "failure_count": 7,
-      "is_cascade": false,
-      "status": "open",
-      "fix_pr": {
-        "number": 2781,
-        "url": "https://github.com/safe-global/safe-client-gateway/pull/2781"
-      }
-    },
-    {
-      "file": "src/datasources/cache/redis.cache.service.integration.spec.ts",
-      "failure_count": 7,
-      "is_cascade": false,
-      "status": "open",
-      "fix_pr": null
-    },
-    {
-      "file": "src/modules/transactions/routes/__tests__/controllers/preview-transaction-kiln.transactions.controller.spec.ts",
-      "failure_count": 7,
+      "failure_count": 2,
       "is_cascade": false,
       "status": "open",
       "fix_pr": null
     },
     {
       "file": "src/routes/common/guards/rate-limit.guard.spec.ts",
-      "failure_count": 6,
-      "is_cascade": true,
-      "status": "open",
-      "fix_pr": null
-    },
-    {
-      "file": "src/modules/transactions/routes/transactions-history.imitation-transactions.controller.spec.ts",
-      "failure_count": 6,
-      "is_cascade": true,
-      "status": "fixed",
-      "fix_pr": {
-        "number": 2846,
-        "url": "https://github.com/safe-global/safe-client-gateway/pull/2846"
-      }
-    },
-    {
-      "file": "src/modules/safe/routes/safes.controller.spec.ts",
-      "failure_count": 6,
-      "is_cascade": true,
-      "status": "open",
-      "fix_pr": null
-    },
-    {
-      "file": "src/modules/hooks/routes/hooks-notifications.spec.ts",
-      "failure_count": 6,
-      "is_cascade": true,
-      "status": "open",
-      "fix_pr": null
-    },
-    {
-      "file": "src/modules/relay/routes/relay.controller.spec.ts",
-      "failure_count": 6,
-      "is_cascade": true,
-      "status": "open",
-      "fix_pr": null
-    },
-    {
-      "file": "src/modules/transactions/routes/transactions-history.controller.spec.ts",
-      "failure_count": 6,
-      "is_cascade": true,
-      "status": "open",
-      "fix_pr": null
-    },
-    {
-      "file": "src/modules/balances/routes/balances.controller.spec.ts",
-      "failure_count": 6,
-      "is_cascade": true,
-      "status": "open",
-      "fix_pr": null
-    },
-    {
-      "file": "src/modules/community/routes/community.controller.spec.ts",
-      "failure_count": 6,
-      "is_cascade": true,
-      "status": "open",
-      "fix_pr": null
-    },
-    {
-      "file": "src/modules/alerts/routes/alerts.controller.spec.ts",
-      "failure_count": 6,
-      "is_cascade": true,
-      "status": "open",
-      "fix_pr": null
-    },
-    {
-      "file": "src/modules/accounts/routes/counterfactual-safes/counterfactual-safes.controller.spec.ts",
-      "failure_count": 6,
-      "is_cascade": true,
-      "status": "open",
-      "fix_pr": null
-    },
-    {
-      "file": "src/modules/hooks/routes/hooks-cache.spec.ts",
-      "failure_count": 6,
-      "is_cascade": true,
-      "status": "open",
-      "fix_pr": null
-    },
-    {
-      "file": "src/modules/chains/routes/chains.controller.spec.ts",
-      "failure_count": 6,
-      "is_cascade": true,
-      "status": "open",
-      "fix_pr": null
-    },
-    {
-      "file": "src/modules/transactions/routes/__tests__/controllers/list-multisig-transactions-by-safe.transactions.controller.spec.ts",
-      "failure_count": 6,
-      "is_cascade": true,
-      "status": "open",
-      "fix_pr": null
-    },
-    {
-      "file": "src/modules/safe/routes/v2/__tests__/safes.v2.controller.overview.spec.ts",
-      "failure_count": 6,
-      "is_cascade": true,
-      "status": "open",
-      "fix_pr": null
-    },
-    {
-      "file": "src/modules/transactions/routes/__tests__/controllers/list-incoming-transfers-by-safe.transactions.controller.spec.ts",
-      "failure_count": 6,
-      "is_cascade": true,
-      "status": "open",
-      "fix_pr": null
-    },
-    {
-      "file": "src/modules/accounts/routes/address-books/address-books.controller.spec.ts",
-      "failure_count": 6,
-      "is_cascade": true,
-      "status": "open",
-      "fix_pr": null
-    },
-    {
-      "file": "src/modules/balances/routes/__tests__/controllers/zerion-balances.controller.spec.ts",
-      "failure_count": 6,
-      "is_cascade": true,
-      "status": "fixed",
-      "fix_pr": {
-        "number": 2806,
-        "url": "https://github.com/safe-global/safe-client-gateway/pull/2806"
-      }
-    },
-    {
-      "file": "src/modules/recovery/routes/recovery.controller.spec.ts",
-      "failure_count": 6,
-      "is_cascade": true,
-      "status": "open",
-      "fix_pr": null
-    },
-    {
-      "file": "src/modules/targeted-messaging/routes/targeted-messaging.controller.spec.ts",
-      "failure_count": 6,
-      "is_cascade": true,
-      "status": "open",
-      "fix_pr": null
-    },
-    {
-      "file": "src/modules/collectibles/routes/__tests__/controllers/zerion-collectibles.controller.spec.ts",
-      "failure_count": 6,
-      "is_cascade": true,
-      "status": "fixed",
-      "fix_pr": {
-        "number": 2806,
-        "url": "https://github.com/safe-global/safe-client-gateway/pull/2806"
-      }
-    },
-    {
-      "file": "src/modules/delegate/routes/v2/delegates.v2.controller.spec.ts",
-      "failure_count": 6,
-      "is_cascade": true,
-      "status": "open",
-      "fix_pr": null
-    },
-    {
-      "file": "src/modules/accounts/routes/accounts.controller.spec.ts",
-      "failure_count": 6,
-      "is_cascade": true,
-      "status": "open",
-      "fix_pr": null
-    },
-    {
-      "file": "src/modules/delegate/routes/delegates.controller.spec.ts",
-      "failure_count": 6,
-      "is_cascade": true,
-      "status": "open",
-      "fix_pr": null
-    },
-    {
-      "file": "src/modules/owners/routes/owners.controller.v2.spec.ts",
-      "failure_count": 6,
-      "is_cascade": true,
-      "status": "open",
-      "fix_pr": null
-    },
-    {
-      "file": "src/modules/auth/routes/auth.controller.spec.ts",
-      "failure_count": 6,
-      "is_cascade": true,
-      "status": "open",
-      "fix_pr": null
-    },
-    {
-      "file": "src/modules/notifications/routes/v1/notifications.controller.spec.ts",
-      "failure_count": 6,
-      "is_cascade": true,
-      "status": "open",
-      "fix_pr": null
-    },
-    {
-      "file": "src/modules/estimations/routes/estimations.controller.spec.ts",
-      "failure_count": 6,
-      "is_cascade": true,
-      "status": "open",
-      "fix_pr": null
-    },
-    {
-      "file": "src/modules/collectibles/routes/collectibles.controller.spec.ts",
-      "failure_count": 6,
-      "is_cascade": true,
-      "status": "open",
-      "fix_pr": null
-    },
-    {
-      "file": "src/modules/transactions/routes/__tests__/controllers/list-module-transactions-by-safe.transactions.controller.spec.ts",
-      "failure_count": 6,
-      "is_cascade": true,
-      "status": "open",
-      "fix_pr": null
-    },
-    {
-      "file": "src/modules/contracts/routes/contracts.controller.spec.ts",
-      "failure_count": 6,
-      "is_cascade": true,
-      "status": "open",
-      "fix_pr": null
-    },
-    {
-      "file": "src/modules/safe-apps/routes/safe-apps.controller.spec.ts",
-      "failure_count": 6,
-      "is_cascade": true,
-      "status": "open",
-      "fix_pr": null
-    },
-    {
-      "file": "src/modules/transactions/routes/__tests__/controllers/delete-transaction.transactions.controller.spec.ts",
-      "failure_count": 6,
-      "is_cascade": true,
-      "status": "open",
-      "fix_pr": null
-    },
-    {
-      "file": "src/modules/transactions/routes/__tests__/controllers/get-creation-transaction.transactions.controller.spec.ts",
-      "failure_count": 6,
-      "is_cascade": true,
-      "status": "open",
-      "fix_pr": null
-    },
-    {
-      "file": "src/modules/owners/routes/owners.controller.v1.spec.ts",
-      "failure_count": 6,
-      "is_cascade": true,
-      "status": "open",
-      "fix_pr": null
-    },
-    {
-      "file": "src/modules/safe/routes/safes.controller.nonces.spec.ts",
-      "failure_count": 6,
-      "is_cascade": true,
-      "status": "open",
-      "fix_pr": null
-    },
-    {
-      "file": "src/modules/health/routes/health.controller.spec.ts",
-      "failure_count": 6,
-      "is_cascade": true,
-      "status": "open",
-      "fix_pr": null
-    },
-    {
-      "file": "src/modules/hooks/routes/hooks.http.controller.spec.ts",
-      "failure_count": 6,
-      "is_cascade": true,
-      "status": "fixed",
-      "fix_pr": {
-        "number": 2890,
-        "url": "https://github.com/safe-global/safe-client-gateway/pull/2890"
-      }
-    },
-    {
-      "file": "src/modules/hooks/routes/hooks.controller.spec.ts",
-      "failure_count": 6,
-      "is_cascade": true,
-      "status": "fixed",
-      "fix_pr": {
-        "number": 2890,
-        "url": "https://github.com/safe-global/safe-client-gateway/pull/2890"
-      }
-    },
-    {
-      "file": "src/modules/root/routes/root.controller.spec.ts",
-      "failure_count": 6,
-      "is_cascade": true,
-      "status": "open",
-      "fix_pr": null
-    },
-    {
-      "file": "src/datasources/network/network.module.integration.spec.ts",
-      "failure_count": 6,
-      "is_cascade": true,
-      "status": "fixed",
-      "fix_pr": {
-        "number": 2890,
-        "url": "https://github.com/safe-global/safe-client-gateway/pull/2890"
-      }
-    },
-    {
-      "file": "src/modules/safe-shield/recipient-analysis/recipient-analysis.service.spec.ts",
-      "failure_count": 6,
-      "is_cascade": true,
-      "status": "open",
-      "fix_pr": {
-        "number": 2977,
-        "url": "https://github.com/safe-global/safe-client-gateway/pull/2977"
-      }
-    },
-    {
-      "file": "src/modules/owners/routes/owners.service.spec.ts",
-      "failure_count": 5,
-      "is_cascade": false,
-      "status": "open",
-      "fix_pr": null
-    },
-    {
-      "file": "src/modules/transactions/datasources/transaction-api.service.spec.ts",
-      "failure_count": 4,
-      "is_cascade": false,
-      "status": "open",
-      "fix_pr": null
-    },
-    {
-      "file": "src/modules/transactions/routes/mappers/multisig-transactions/multisig-transaction.mapper.spec.ts",
-      "failure_count": 4,
-      "is_cascade": false,
-      "status": "open",
-      "fix_pr": null
-    },
-    {
-      "file": "src/domain/common/entities/safe-signature.spec.ts",
-      "failure_count": 3,
-      "is_cascade": false,
-      "status": "fixed",
-      "fix_pr": {
-        "number": 2647,
-        "url": "https://github.com/safe-global/safe-client-gateway/pull/2647"
-      }
-    },
-    {
-      "file": "src/modules/transactions/routes/__tests__/controllers/get-transaction-by-id.transactions.controller.spec.ts",
       "failure_count": 2,
       "is_cascade": false,
       "status": "open",
       "fix_pr": null
     },
     {
-      "file": "src/modules/spaces/routes/spaces.service.spec.ts",
-      "failure_count": 2,
-      "is_cascade": false,
+      "file": "src/modules/transactions/routes/__tests__/controllers/preview-transaction-cow-swap.transactions.controller.spec.ts",
+      "failure_count": 1,
+      "is_cascade": true,
       "status": "open",
       "fix_pr": null
     },
     {
-      "file": "src/modules/chains/domain/chains.repository.spec.ts",
-      "failure_count": 2,
-      "is_cascade": false,
+      "file": "src/modules/transactions/routes/__tests__/controllers/preview-transaction-kiln.transactions.controller.spec.ts",
+      "failure_count": 1,
+      "is_cascade": true,
       "status": "open",
       "fix_pr": null
     },
     {
-      "file": "src/datasources/network/fetch.network.service.spec.ts",
-      "failure_count": 2,
-      "is_cascade": false,
+      "file": "src/modules/safe-shield/safe-shield.controller.integration.spec.ts",
+      "failure_count": 1,
+      "is_cascade": true,
       "status": "open",
       "fix_pr": {
-        "number": 2013,
-        "url": "https://github.com/safe-global/safe-client-gateway/pull/2013"
+        "number": 2842,
+        "url": "https://github.com/safe-global/safe-client-gateway/pull/2842"
       }
     },
     {
-      "file": "src/modules/accounts/datasources/accounts.datasource.integration.spec.ts",
+      "file": "src/modules/safe-apps/routes/safe-apps.controller.integration.spec.ts",
       "failure_count": 1,
-      "is_cascade": false,
-      "status": "open",
-      "fix_pr": null
-    },
-    {
-      "file": "src/modules/accounts/datasources/counterfactual-safes/counterfactual-safes.datasource.integration.spec.ts",
-      "failure_count": 1,
-      "is_cascade": false,
-      "status": "open",
-      "fix_pr": null
-    },
-    {
-      "file": "src/modules/accounts/datasources/address-books/address-books.datasource.integration.spec.ts",
-      "failure_count": 1,
-      "is_cascade": false,
-      "status": "open",
-      "fix_pr": null
-    },
-    {
-      "file": "src/modules/transactions/routes/__tests__/controllers/propose-transaction.transactions.controller.spec.ts",
-      "failure_count": 1,
-      "is_cascade": false,
-      "status": "open",
-      "fix_pr": null
-    },
-    {
-      "file": "src/modules/messages/routes/messages.controller.spec.ts",
-      "failure_count": 1,
-      "is_cascade": false,
-      "status": "open",
-      "fix_pr": null
-    },
-    {
-      "file": "src/modules/transactions/routes/__tests__/controllers/list-queued-transactions-by-safe.transactions.controller.spec.ts",
-      "failure_count": 1,
-      "is_cascade": false,
-      "status": "open",
-      "fix_pr": null
-    },
-    {
-      "file": "src/modules/transactions/routes/__tests__/controllers/add-transaction-confirmations.transactions.controller.spec.ts",
-      "failure_count": 1,
-      "is_cascade": false,
-      "status": "open",
-      "fix_pr": null
-    },
-    {
-      "file": "src/modules/positions/routes/positions.controller.spec.ts",
-      "failure_count": 1,
-      "is_cascade": false,
+      "is_cascade": true,
       "status": "fixed",
       "fix_pr": {
         "number": 2890,
@@ -1239,9 +220,9 @@
       }
     },
     {
-      "file": "src/modules/portfolio/v1/portfolio.controller.spec.ts",
+      "file": "src/modules/transactions/routes/__tests__/controllers/get-transaction-by-id.transactions.controller.integration.spec.ts",
       "failure_count": 1,
-      "is_cascade": false,
+      "is_cascade": true,
       "status": "fixed",
       "fix_pr": {
         "number": 2890,
@@ -1249,33 +230,9 @@
       }
     },
     {
-      "file": "src/modules/auth/routes/guards/optional-auth.guard.spec.ts",
+      "file": "src/modules/transactions/routes/__tests__/controllers/propose-transaction.transactions.controller.integration.spec.ts",
       "failure_count": 1,
-      "is_cascade": false,
-      "status": "open",
-      "fix_pr": null
-    },
-    {
-      "file": "src/modules/auth/routes/guards/auth.guard.spec.ts",
-      "failure_count": 1,
-      "is_cascade": false,
-      "status": "open",
-      "fix_pr": null
-    },
-    {
-      "file": "src/datasources/db/v2/database-migrator.service.spec.ts",
-      "failure_count": 1,
-      "is_cascade": false,
-      "status": "open",
-      "fix_pr": {
-        "number": 2013,
-        "url": "https://github.com/safe-global/safe-client-gateway/pull/2013"
-      }
-    },
-    {
-      "file": "src/modules/bridge/datasources/lifi-api.service.spec.ts",
-      "failure_count": 1,
-      "is_cascade": false,
+      "is_cascade": true,
       "status": "fixed",
       "fix_pr": {
         "number": 2890,
@@ -1283,20 +240,16 @@
       }
     },
     {
-      "file": "src/routes/common/filters/global-error.filter.spec.ts",
+      "file": "src/datasources/job-queue/__tests__/job-queue.service.integration.spec.ts",
       "failure_count": 1,
-      "is_cascade": false,
+      "is_cascade": true,
       "status": "open",
-      "fix_pr": null
-    },
-    {
-      "file": "src/routes/common/filters/zod-error.filter.spec.ts",
-      "failure_count": 1,
-      "is_cascade": false,
-      "status": "open",
-      "fix_pr": null
+      "fix_pr": {
+        "number": 2781,
+        "url": "https://github.com/safe-global/safe-client-gateway/pull/2781"
+      }
     }
   ],
-  "cascade_baseline": 6,
-  "cascade_tests_count": 41
+  "cascade_baseline": 1,
+  "cascade_tests_count": 7
 }

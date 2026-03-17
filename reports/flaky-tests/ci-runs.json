@@ -1,10 +1,78 @@
 {
-  "generated_at": "2026-03-16T18:37:20.507Z",
+  "generated_at": "2026-03-17T00:51:53.390Z",
   "period": {
-    "from": "2026-01-15",
-    "to": "2026-03-16"
+    "from": "2026-01-16",
+    "to": "2026-03-17"
   },
   "runs": [
+    {
+      "id": 23166110738,
+      "sha": "036393d",
+      "branch": "feat/add-notification-queue",
+      "conclusion": "failure",
+      "created_at": "2026-03-16T21:11:04Z",
+      "failed_jobs": [
+        "integration-tests"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/modules/hooks/routes/hooks-notifications.integration.spec.ts",
+          "name": "Hook Events for Notifications pt. 1 › should enqueue DELETED_MULTISIG_TRANSACTION event notifications as is",
+          "error": "expect(jest.fn()).toHaveBeenCalledTimes(expected)"
+        }
+      ]
+    },
+    {
+      "id": 23166109084,
+      "sha": "036393d",
+      "branch": "feat/add-notification-queue",
+      "conclusion": "failure",
+      "created_at": "2026-03-16T21:11:02Z",
+      "failed_jobs": [
+        "integration-tests"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/modules/hooks/routes/hooks-notifications.integration.spec.ts",
+          "name": "Hook Events for Notifications pt. 1 › should enqueue DELETED_MULTISIG_TRANSACTION event notifications as is",
+          "error": "expect(jest.fn()).toHaveBeenCalledTimes(expected)"
+        }
+      ]
+    },
+    {
+      "id": 23165995926,
+      "sha": "0eba6ae",
+      "branch": "feat/add-notification-queue",
+      "conclusion": "failure",
+      "created_at": "2026-03-16T21:08:01Z",
+      "failed_jobs": [
+        "integration-tests"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/modules/hooks/routes/hooks-notifications.integration.spec.ts",
+          "name": "Hook Events for Notifications pt. 1 › should enqueue DELETED_MULTISIG_TRANSACTION event notifications as is",
+          "error": "expect(jest.fn()).toHaveBeenCalledTimes(expected)"
+        }
+      ]
+    },
+    {
+      "id": 23165872791,
+      "sha": "0eba6ae",
+      "branch": "feat/add-notification-queue",
+      "conclusion": "failure",
+      "created_at": "2026-03-16T21:04:51Z",
+      "failed_jobs": [
+        "integration-tests"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/modules/hooks/routes/hooks-notifications.integration.spec.ts",
+          "name": "Hook Events for Notifications pt. 1 › should enqueue DELETED_MULTISIG_TRANSACTION event notifications as is",
+          "error": "expect(jest.fn()).toHaveBeenCalledTimes(expected)"
+        }
+      ]
+    },
     {
       "id": 23151427343,
       "sha": "89b3a65",

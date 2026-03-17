@@ -415,7 +415,7 @@ function generateReport(args: {
   lines.push(`| Metric | Value |`);
   lines.push(`|--------|-------|`);
   lines.push(`| Total unique commits | ${summary.total_commits} |`);
-  lines.push(`| Flaky commits (test failures) | ${summary.flaky_commits} |`);
+  lines.push(`| Flaky commits (pass + fail on same SHA) | ${summary.flaky_commits} |`);
   lines.push(`| Flakiness rate | ${summary.flakiness_rate}% |`);
   lines.push(
     `| Cascade baseline | ${cascadeBaseline} failures (${cascadeTestsCount} tests) |`,
@@ -585,24 +585,31 @@ async function main(): Promise<void> {
     await sleep(DELAY_MS);
   }
 
-  // 3. Identify flaky commits
+  // 3. Identify flaky commits (same SHA with both pass + fail = non-deterministic)
   const shaMap = identifyFlakyCommits(runs);
   const uniqueCommits = shaMap.size;
   const flakyCommits = Array.from(shaMap.values()).filter(
-    (v) => v.fail,
+    (v) => v.pass && v.fail,
   ).length;
   const flakinessRate =
     uniqueCommits > 0
       ? Math.round((flakyCommits / uniqueCommits) * 1000) / 10
       : 0;
 
+  // Build set of truly flaky SHAs for filtering test counts
+  const flakyShas = new Set<string>();
+  for (const [sha, state] of shaMap) {
+    if (state.pass && state.fail) flakyShas.add(sha);
+  }
+
   console.log(
     `\nFlakiness: ${flakyCommits}/${uniqueCommits} commits = ${flakinessRate}%`,
   );
 
-  // 4. Build test failure counts
+  // 4. Build test failure counts (only from flaky commits — same SHA passed elsewhere)
   const testFailureCounts = new Map<string, number>();
   for (const run of runs) {
+    if (!flakyShas.has(run.sha)) continue;
     for (const test of run.failed_tests) {
       testFailureCounts.set(
         test.file,
@@ -646,7 +653,7 @@ async function main(): Promise<void> {
     };
   });
 
-  // 8. Build weekly trend
+  // 8. Build weekly trend (only count truly flaky: same SHA passed + failed)
   const weeklyMap = new Map<
     string,
     { commits: Set<string>; flaky: Set<string> }
@@ -658,7 +665,7 @@ async function main(): Promise<void> {
       flaky: new Set(),
     };
     entry.commits.add(run.sha);
-    if (run.conclusion === 'failure' && run.failed_tests.length > 0) {
+    if (flakyShas.has(run.sha)) {
       entry.flaky.add(run.sha);
     }
     weeklyMap.set(week, entry);
