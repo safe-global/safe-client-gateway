@@ -81,7 +81,7 @@ For `.md` files the hook uses a multi-line HTML comment style (`<!--| | -->`), s
 
 This is enforced by a `pre-commit` hook (`insert-license` from `Lucas-C/pre-commit-hooks`) and a `license-headers` CI job. The canonical header text lives in `LICENSE_HEADER.txt`.
 
-If you create or modify a file and the pre-commit hook adds the header automatically, include that change in your commit. If CI fails on `license-headers`, add the missing header manually.
+Every file you create or modify in a PR **MUST** have the correct license header. Add it yourself — do not rely on the pre-commit hook to do it for you. If the pre-commit hook adds it automatically, include that change in your commit.
 
 ## Important Notes
 
