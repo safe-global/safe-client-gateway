@@ -15,17 +15,52 @@ import type { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { getSecondsUntil } from '@/domain/common/utils/time';
 import type { Server } from 'net';
+import { sign } from 'jsonwebtoken';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { UsersModule } from '@/modules/users/users.module';
 import { TestUsersModule } from '@/modules/users/__tests__/test.users.module';
+import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
+import {
+  NetworkService,
+  type INetworkService,
+} from '@/datasources/network/network.service.interface';
+import type { TestingModule } from '@nestjs/testing';
+import { rawify } from '@/validation/entities/raw.entity';
 
 describe('AuthController', () => {
   let app: INestApplication<Server>;
   let cacheService: FakeCacheService;
+  let networkService: jest.MockedObjectDeep<INetworkService>;
+  let jwtService: IJwtService;
+
   let maxValidityPeriodInMs: number;
+  let auth0Config: {
+    baseUri: string;
+    clientId: string;
+    clientSecret: string;
+    redirectUri: string;
+    audience: string;
+    signingSecret: string;
+    scope: string;
+  };
+  let postLoginRedirectUri: string;
+
+  function signAuth0Token(claims: {
+    sub: string;
+    exp?: number;
+    iat?: number;
+    nbf?: number;
+  }): string {
+    return sign(claims, auth0Config.signingSecret, {
+      algorithm: 'HS256',
+      issuer: auth0Config.baseUri,
+      audience: auth0Config.audience,
+      noTimestamp: true,
+    });
+  }
 
   async function initApp(config: typeof configuration): Promise<void> {
-    const moduleFixture = await createTestModule({
+    const moduleFixture: TestingModule = await createTestModule({
       config,
       modules: [
         {
@@ -40,14 +75,31 @@ describe('AuthController', () => {
     });
 
     cacheService = moduleFixture.get(CacheService);
+    networkService = moduleFixture.get(NetworkService);
+    jwtService = moduleFixture.get(IJwtService);
+
     const configService: IConfigurationService = moduleFixture.get(
       IConfigurationService,
     );
+
     maxValidityPeriodInMs =
       configService.getOrThrow<number>('auth.maxValidityPeriodSeconds') * 1_000;
+    postLoginRedirectUri = configService.getOrThrow<string>(
+      'auth.postLoginRedirectUri',
+    );
+    auth0Config = {
+      baseUri: configService.getOrThrow<string>('auth.auth0.baseUri'),
+      clientId: configService.getOrThrow<string>('auth.auth0.clientId'),
+      clientSecret: configService.getOrThrow<string>('auth.auth0.clientSecret'),
+      redirectUri: configService.getOrThrow<string>('auth.auth0.redirectUri'),
+      audience: configService.getOrThrow<string>('auth.auth0.audience'),
+      signingSecret: configService.getOrThrow<string>(
+        'auth.auth0.signingSecret',
+      ),
+      scope: configService.getOrThrow<string>('auth.auth0.scope'),
+    };
 
     app = await new TestAppProvider().provide(moduleFixture);
-
     await app.init();
   }
 
@@ -62,6 +114,10 @@ describe('AuthController', () => {
         ...defaultConfiguration.application,
         isProduction: true,
       },
+      // auth: {
+      //   ...defaultConfiguration.auth,
+      //   stateTtlMs: 300_000,
+      // },
       features: {
         ...defaultConfiguration.features,
         auth: true,
@@ -92,6 +148,35 @@ describe('AuthController', () => {
           const cacheDir = new CacheDir(`auth_nonce_${body.nonce}`, '');
           await expect(cacheService.hGet(cacheDir)).resolves.toBe(body.nonce);
         });
+    });
+  });
+
+  describe('GET /v1/auth/oidc/authorize', () => {
+    it('should redirect to Auth0 and set the state cookie', async () => {
+      const response = await request(app.getHttpServer())
+        .get('/v1/auth/oidc/authorize')
+        .expect(302);
+
+      const location = new URL(response.headers.location);
+
+      expect(location.origin).toBe(new URL(auth0Config.baseUri).origin);
+      expect(location.pathname).toBe('/authorize');
+      expect(location.searchParams.get('response_type')).toBe('code');
+      expect(location.searchParams.get('client_id')).toBe(auth0Config.clientId);
+      expect(location.searchParams.get('redirect_uri')).toBe(
+        auth0Config.redirectUri,
+      );
+      expect(location.searchParams.get('scope')).toBe(auth0Config.scope);
+      expect(location.searchParams.get('audience')).toBe(auth0Config.audience);
+      expect(location.searchParams.get('state')).toEqual(expect.any(String));
+
+      expect(response.headers['set-cookie']).toEqual(
+        expect.arrayContaining([
+          expect.stringMatching(
+            /^auth_state=.*; Max-Age=300; Path=\/; Expires=.*; HttpOnly; Secure; SameSite=Lax$/,
+          ),
+        ]),
+      );
     });
   });
 
@@ -470,6 +555,140 @@ describe('AuthController', () => {
         });
       // Nonce deleted
       await expect(cacheService.hGet(cacheDir)).resolves.toBeNull();
+    });
+  });
+
+  describe('GET /v1/auth/oidc/callback', () => {
+    it('should exchange the authorization code, set the access token cookie and redirect', async () => {
+      jest.setSystemTime(0);
+
+      const expirationTime = faker.date.between({
+        from: new Date(),
+        to: new Date(Date.now() + maxValidityPeriodInMs),
+      });
+
+      const auth0Token = signAuth0Token({
+        sub: faker.string.uuid(),
+        exp: Math.floor(expirationTime.getTime() / 1_000),
+        iat: Math.floor(Date.now() / 1_000),
+      });
+      const maxAge = getSecondsUntil(expirationTime);
+
+      networkService.post.mockResolvedValueOnce({
+        status: 200,
+        data: rawify({
+          access_token: auth0Token,
+          refresh_token: 'auth0-refresh-token',
+          id_token: 'auth0-id-token',
+          token_type: 'Bearer',
+        }),
+      });
+
+      const authorizeResponse = await request(app.getHttpServer())
+        .get('/v1/auth/oidc/authorize')
+        .expect(302);
+
+      const state = new URL(
+        authorizeResponse.headers.location,
+      ).searchParams.get('state');
+
+      const stateCookie = (
+        authorizeResponse.headers['set-cookie'] as unknown as Array<string>
+      )
+        .find((cookie: string) => cookie.startsWith('auth_state='))
+        ?.split(';')[0];
+
+      if (!stateCookie) {
+        throw new Error('auth state cookie missing');
+      }
+
+      const callbackResponse = await request(app.getHttpServer())
+        .get('/v1/auth/oidc/callback')
+        .set('Cookie', stateCookie)
+        .query({
+          code: 'auth-code',
+          state,
+        })
+        .expect(302);
+
+      expect(callbackResponse.headers.location).toBe(postLoginRedirectUri);
+      expect(networkService.post).toHaveBeenCalledWith({
+        url: new URL('/oauth/token', auth0Config.baseUri).toString(),
+        data: {
+          grant_type: 'authorization_code',
+          client_id: auth0Config.clientId,
+          client_secret: auth0Config.clientSecret,
+          code: 'auth-code',
+          redirect_uri: auth0Config.redirectUri,
+        },
+        networkRequest: {
+          headers: { 'content-type': 'application/x-www-form-urlencoded' },
+        },
+      });
+
+      const setCookie = callbackResponse.headers[
+        'set-cookie'
+      ] as unknown as Array<string>;
+      const gatewayAccessTokenCookie = setCookie.find((cookie: string) =>
+        cookie.startsWith('access_token='),
+      );
+      expect(gatewayAccessTokenCookie).toMatch(
+        new RegExp(
+          `^access_token=([^;]*); Max-Age=${maxAge}; Path=/; Expires=${expirationTime.toUTCString()}; HttpOnly; Secure; SameSite=Lax$`,
+        ),
+      );
+      expect(setCookie).toEqual(
+        expect.arrayContaining([
+          'auth_state=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; Secure; SameSite=Lax',
+        ]),
+      );
+
+      if (!gatewayAccessTokenCookie) {
+        throw new Error('access token cookie missing');
+      }
+
+      const accessTokenMatch = /^access_token=([^;]+)/.exec(
+        gatewayAccessTokenCookie,
+      );
+      if (!accessTokenMatch) {
+        throw new Error('access token missing');
+      }
+
+      expect(
+        jwtService.verify<{ auth_method: string; sub: string }>(
+          accessTokenMatch[1],
+        ),
+      ).toMatchObject({
+        auth_method: 'oidc',
+        sub: '1',
+      });
+    });
+
+    it('should reject the callback when the state does not match', async () => {
+      const agent = request.agent(app.getHttpServer());
+      await agent.get('/v1/auth/oidc/authorize').expect(302);
+
+      await agent
+        .get('/v1/auth/oidc/callback')
+        .query({
+          code: 'auth-code',
+          state: 'wrong-state',
+        })
+        .expect(401)
+        .expect(({ body, headers }) => {
+          expect(body).toStrictEqual({
+            error: 'Unauthorized',
+            message: 'Invalid OAuth state',
+            statusCode: 401,
+          });
+          expect(headers['set-cookie']).toEqual(
+            expect.arrayContaining([
+              'auth_state=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; Secure; SameSite=Lax',
+            ]),
+          );
+        });
+
+      expect(networkService.post).not.toHaveBeenCalled();
     });
   });
 

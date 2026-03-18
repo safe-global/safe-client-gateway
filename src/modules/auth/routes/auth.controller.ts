@@ -8,23 +8,29 @@ import {
 } from '@/modules/auth/routes/entities/siwe.dto.entity';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import {
+  BadRequestException,
   Body,
   Controller,
   Get,
   HttpCode,
   Inject,
   Post,
+  Query,
+  Req,
   Res,
+  UnauthorizedException,
 } from '@nestjs/common';
 import {
+  ApiFoundResponse,
   ApiOkResponse,
   ApiTags,
   ApiOperation,
   ApiBody,
   ApiUnauthorizedResponse,
   ApiBadRequestResponse,
+  ApiQuery,
 } from '@nestjs/swagger';
-import { CookieOptions, Response } from 'express';
+import { CookieOptions, Request, Response } from 'express';
 
 /**
  * The AuthController is responsible for handling authentication:
@@ -32,13 +38,16 @@ import { CookieOptions, Response } from 'express';
  * 1. Calling `/v1/auth/nonce` returns a unique nonce to be signed.
  * 2. The client signs this nonce in a SiWe message, sending it and
  *    the signature to `/v1/auth/verify` for verification.
- * 3. If verification succeeds, JWT token is added to `access_token`
+ * 3. For Auth0, `/v1/auth/oidc/authorize` starts the authorization code flow
+ *    and `/v1/auth/oidc/callback` exchanges the code for the gateway JWT.
+ * 4. If verification succeeds, JWT token is added to `access_token`
  *    Set-Cookie.
  */
 @ApiTags('auth')
 @Controller({ path: 'auth', version: '1' })
 export class AuthController {
   static readonly ACCESS_TOKEN_COOKIE_NAME = 'access_token';
+  static readonly OIDC_STATE_COOKIE_NAME = 'auth_state';
   static readonly ACCESS_TOKEN_COOKIE_SAME_SITE_LAX = 'lax';
   static readonly ACCESS_TOKEN_COOKIE_SAME_SITE_NONE = 'none';
   private readonly isProduction: boolean;
@@ -68,6 +77,111 @@ export class AuthController {
   }
 
   @ApiOperation({
+    summary: 'Start OIDC authorization code flow',
+    description:
+      'Redirects the browser to OIDC provider login page with a generated state value stored in an HTTP-only cookie.',
+  })
+  @ApiFoundResponse({
+    description: 'Redirect to OIDC authorize endpoint',
+  })
+  @Get('oidc/authorize')
+  authorize(
+    @Res({ passthrough: true })
+    res: Response,
+  ): void {
+    const { authorizationUrl, state, stateMaxAge } =
+      this.authService.createOidcAuthorizationRequest();
+
+    res.cookie(AuthController.OIDC_STATE_COOKIE_NAME, state, {
+      ...this.getCookieOptions(),
+      maxAge: stateMaxAge,
+    });
+    res.redirect(authorizationUrl);
+  }
+
+  @ApiOperation({
+    summary: 'Handle OIDC authorization callback',
+    description:
+      'Exchanges the OIDC authorization code for user information, mints the internal JWT cookie, and redirects to the configured post-login URL.',
+  })
+  @ApiQuery({
+    name: 'code',
+    required: false,
+    type: String,
+    description: 'Authorization code returned by the OIDC provider',
+    example: 'SplxlOBeZQQYbYS6WxSbIA',
+  })
+  @ApiQuery({
+    name: 'state',
+    required: false,
+    type: String,
+    description: 'State parameter returned by the OIDC provider',
+    example: 'af0ifjsldkj',
+  })
+  @ApiQuery({
+    name: 'error',
+    required: false,
+    type: String,
+    description: 'Error parameter returned by the OIDC provider',
+    example: 'access_denied',
+  })
+  @ApiQuery({
+    name: 'error_description',
+    required: false,
+    type: String,
+    description:
+      'Description of the error returned by the OIDC provider (if failed)',
+    example: 'The user has denied the request',
+  })
+  @ApiFoundResponse({
+    description: 'Redirect to the configured post-login URL',
+  })
+  @ApiBadRequestResponse({
+    description: 'Authorization code and state are required',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Authentication failed or the OAuth state is invalid',
+  })
+  @Get('oidc/callback')
+  async callback(
+    @Req() req: Request,
+    @Res({ passthrough: true })
+    res: Response,
+    @Query('code') code?: string,
+    @Query('state') state?: string,
+    @Query('error') error?: string,
+    @Query('error_description') errorDescription?: string,
+  ): Promise<void> {
+    const expectedState = req.cookies?.[AuthController.OIDC_STATE_COOKIE_NAME];
+    // Always clear the one-time state cookie
+    res.clearCookie(
+      AuthController.OIDC_STATE_COOKIE_NAME,
+      this.getCookieOptions(),
+    );
+
+    if (error) {
+      throw new UnauthorizedException(errorDescription ?? error);
+    }
+
+    if (!code || !state) {
+      throw new BadRequestException(
+        'Authorization code and state are required',
+      );
+    }
+
+    if (!expectedState || expectedState !== state) {
+      throw new UnauthorizedException('Invalid OAuth state');
+    }
+
+    const { accessToken } = await this.authService.authenticateWithOidc(code);
+    res.cookie(AuthController.ACCESS_TOKEN_COOKIE_NAME, accessToken, {
+      ...this.getCookieOptions(),
+      maxAge: this.getMaxAge(accessToken), //TODO why decode it twice?
+    });
+    res.redirect(this.authService.getPostLoginRedirectUri());
+  }
+
+  @ApiOperation({
     summary: 'Verify authentication',
     description:
       'Verifies a signed Sign-In with Ethereum (SiWE) message and nonce. On successful verification, sets an HTTP-only JWT cookie for subsequent authenticated requests.',
@@ -94,7 +208,8 @@ export class AuthController {
     @Body(new ValidationPipe(SiweDtoSchema))
     siweDto: SiweDto,
   ): Promise<void> {
-    const { accessToken } = await this.authService.getAccessToken(siweDto);
+    const { accessToken } =
+      await this.authService.authenticateWithSiwe(siweDto);
 
     res.cookie(AuthController.ACCESS_TOKEN_COOKIE_NAME, accessToken, {
       ...this.getCookieOptions(),
