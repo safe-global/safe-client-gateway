@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import configuration from '@/config/entities/__tests__/configuration';
 import { postgresConfig } from '@/config/entities/postgres.config';
@@ -12,6 +13,7 @@ import { authPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
 import { nameBuilder } from '@/domain/common/entities/name.builder';
+import type { UUID } from 'crypto';
 import { getStringEnumKeys } from '@/domain/common/utils/enum';
 import { SpaceStatus } from '@/modules/spaces/domain/entities/space.entity';
 import { SpacesRepository } from '@/modules/spaces/domain/spaces.repository';
@@ -643,10 +645,7 @@ describe('MembersRepository', () => {
       const authPayloadDto = authPayloadDtoBuilder()
         .with('signer_address', undefined as unknown as Address)
         .build();
-      const spaceId = faker.number.int({
-        min: 69420,
-        max: DB_MAX_SAFE_INTEGER,
-      });
+      const spaceId = faker.string.uuid() as UUID;
       const users: Array<{
         address: Address;
         role: keyof typeof MemberRole;
@@ -664,10 +663,7 @@ describe('MembersRepository', () => {
 
     it('should throw if the signer_address has no user', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
-      const spaceId = faker.number.int({
-        min: 69420,
-        max: DB_MAX_SAFE_INTEGER,
-      });
+      const spaceId = faker.string.uuid() as UUID;
       const users: Array<{
         address: Address;
         role: keyof typeof MemberRole;
@@ -835,10 +831,7 @@ describe('MembersRepository', () => {
         user: owner.generatedMaps[0],
         address: authPayloadDto.signer_address,
       });
-      const spaceId = faker.number.int({
-        min: 69420,
-        max: DB_MAX_SAFE_INTEGER,
-      });
+      const spaceId = faker.string.uuid() as UUID;
       const users: Array<{
         address: Address;
         role: keyof typeof MemberRole;
@@ -1121,10 +1114,7 @@ describe('MembersRepository', () => {
       const authPayloadDto = authPayloadDtoBuilder()
         .with('signer_address', undefined as unknown as Address)
         .build();
-      const spaceId = faker.number.int({
-        min: 69420,
-        max: DB_MAX_SAFE_INTEGER,
-      });
+      const spaceId = faker.string.uuid() as UUID;
       const memberName = nameBuilder();
 
       await expect(
@@ -1140,10 +1130,7 @@ describe('MembersRepository', () => {
 
     it('should throw if the signer_address has no user', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
-      const spaceId = faker.number.int({
-        min: 69420,
-        max: DB_MAX_SAFE_INTEGER,
-      });
+      const spaceId = faker.string.uuid() as UUID;
       const memberName = nameBuilder();
 
       await expect(
@@ -1167,10 +1154,7 @@ describe('MembersRepository', () => {
         user: user.generatedMaps[0],
         address: authPayloadDto.signer_address,
       });
-      const spaceId = faker.number.int({
-        min: 69420,
-        max: DB_MAX_SAFE_INTEGER,
-      });
+      const spaceId = faker.string.uuid() as UUID;
 
       await expect(
         membersRepository.acceptInvite({
@@ -1412,10 +1396,7 @@ describe('MembersRepository', () => {
       const authPayloadDto = authPayloadDtoBuilder()
         .with('signer_address', undefined as unknown as Address)
         .build();
-      const spaceId = faker.number.int({
-        min: 69420,
-        max: DB_MAX_SAFE_INTEGER,
-      });
+      const spaceId = faker.string.uuid() as UUID;
 
       await expect(
         membersRepository.declineInvite({
@@ -1427,10 +1408,7 @@ describe('MembersRepository', () => {
 
     it('should throw if the signer_address has no user', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
-      const spaceId = faker.number.int({
-        min: 69420,
-        max: DB_MAX_SAFE_INTEGER,
-      });
+      const spaceId = faker.string.uuid() as UUID;
 
       await expect(
         membersRepository.declineInvite({
@@ -1449,10 +1427,7 @@ describe('MembersRepository', () => {
         user: user.generatedMaps[0],
         address: authPayloadDto.signer_address,
       });
-      const spaceId = faker.number.int({
-        min: 69420,
-        max: DB_MAX_SAFE_INTEGER,
-      });
+      const spaceId = faker.string.uuid() as UUID;
 
       await expect(
         membersRepository.declineInvite({
@@ -1623,10 +1598,7 @@ describe('MembersRepository', () => {
       const authPayloadDto = authPayloadDtoBuilder()
         .with('signer_address', undefined as unknown as Address)
         .build();
-      const spaceId = faker.number.int({
-        min: 69420,
-        max: DB_MAX_SAFE_INTEGER,
-      });
+      const spaceId = faker.string.uuid() as UUID;
 
       await expect(
         membersRepository.findAuthorizedMembersOrFail({
@@ -1638,10 +1610,7 @@ describe('MembersRepository', () => {
 
     it('should throw if the signer_address has no user', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
-      const spaceId = faker.number.int({
-        min: 69420,
-        max: DB_MAX_SAFE_INTEGER,
-      });
+      const spaceId = faker.string.uuid() as UUID;
 
       await expect(
         membersRepository.findAuthorizedMembersOrFail({
@@ -1994,10 +1963,7 @@ describe('MembersRepository', () => {
       const authPayloadDto = authPayloadDtoBuilder()
         .with('signer_address', undefined as unknown as Address)
         .build();
-      const spaceId = faker.number.int({
-        min: 69420,
-        max: DB_MAX_SAFE_INTEGER,
-      });
+      const spaceId = faker.string.uuid() as UUID;
       const userId = faker.number.int({
         min: 69420,
         max: DB_MAX_SAFE_INTEGER,
@@ -2015,10 +1981,7 @@ describe('MembersRepository', () => {
 
     it('should throw if the signer_address has no user', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
-      const spaceId = faker.number.int({
-        min: 69420,
-        max: DB_MAX_SAFE_INTEGER,
-      });
+      const spaceId = faker.string.uuid() as UUID;
       const userId = faker.number.int({
         min: 69420,
         max: DB_MAX_SAFE_INTEGER,
@@ -2335,10 +2298,7 @@ describe('MembersRepository', () => {
       const authPayloadDto = authPayloadDtoBuilder()
         .with('signer_address', undefined as unknown as Address)
         .build();
-      const spaceId = faker.number.int({
-        min: 69420,
-        max: DB_MAX_SAFE_INTEGER,
-      });
+      const spaceId = faker.string.uuid() as UUID;
       const userId = faker.number.int({
         min: 69420,
         max: DB_MAX_SAFE_INTEGER,
@@ -2355,10 +2315,7 @@ describe('MembersRepository', () => {
 
     it('should throw if the signer_address has no user', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
-      const spaceId = faker.number.int({
-        min: 69420,
-        max: DB_MAX_SAFE_INTEGER,
-      });
+      const spaceId = faker.string.uuid() as UUID;
       const userId = faker.number.int({
         min: 69420,
         max: DB_MAX_SAFE_INTEGER,
@@ -2417,10 +2374,7 @@ describe('MembersRepository', () => {
         user: user.generatedMaps[0],
         address: authPayloadDto.signer_address,
       });
-      const spaceId = faker.number.int({
-        min: 69420,
-        max: DB_MAX_SAFE_INTEGER,
-      });
+      const spaceId = faker.string.uuid() as UUID;
       const userId = user.generatedMaps[0].id;
 
       await expect(
