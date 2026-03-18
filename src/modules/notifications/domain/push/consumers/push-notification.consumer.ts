@@ -20,6 +20,10 @@ import { OnWorkerEvent, Processor, WorkerHost } from '@nestjs/bullmq';
 import { Inject } from '@nestjs/common';
 import { Job } from 'bullmq';
 
+type PushNotificationJob = Job<
+  PushNotificationEventJobData | PushNotificationDeliveryJobData
+>;
+
 @Processor(PUSH_NOTIFICATION_QUEUE, {
   concurrency: PUSH_NOTIFICATION_WORKER_CONCURRENCY,
 })
@@ -32,7 +36,9 @@ export class PushNotificationConsumer extends WorkerHost {
     super();
   }
 
-  async process(job: Job): Promise<PushNotificationJobResponse | number> {
+  async process(
+    job: PushNotificationJob,
+  ): Promise<PushNotificationJobResponse | number> {
     const jobName = job.name as JobTypeName;
     switch (jobName) {
       case JobType.PUSH_NOTIFICATION_EVENT:
@@ -49,36 +55,25 @@ export class PushNotificationConsumer extends WorkerHost {
   }
 
   @OnWorkerEvent('completed')
-  onCompleted(job: Job): void {
-    this.loggingService.info({
+  onCompleted(job: PushNotificationJob): void {
+    const { ...metadata } = getJobMetadata(job);
+    this.loggingService.debug({
       type: LogType.JobEvent,
       source: 'PushNotificationConsumer',
       event: `Job ${job.id} completed`,
-      jobName: job.name,
-      attemptsMade: job.attemptsMade,
+      ...metadata,
     });
   }
 
   @OnWorkerEvent('failed')
-  onFailed(job: Job, error: Error): void {
-    const isDeliveryJob =
-      (job.name as JobTypeName) === JobType.PUSH_NOTIFICATION_DELIVERY;
-    const deliveryData = isDeliveryJob
-      ? (job as Job<PushNotificationDeliveryJobData>).data
-      : null;
-
+  onFailed(job: PushNotificationJob, error: Error): void {
+    const { ...metadata } = getJobMetadata(job);
     this.loggingService.error({
-      type: isDeliveryJob ? LogType.NotificationError : LogType.JobError,
+      // if deviceUuid is present, it's a delivery job
+      type: metadata.deviceUuid ? LogType.NotificationError : LogType.JobError,
       source: 'PushNotificationConsumer',
       event: `Job ${job.id} failed. ${error}`,
-      jobName: job.name,
-      attemptsMade: job.attemptsMade,
-      ...(deliveryData && {
-        chainId: deliveryData.chainId,
-        safeAddress: deliveryData.safeAddress,
-        notificationType: deliveryData.notificationType,
-        deviceUuid: deliveryData.deviceUuid,
-      }),
+      ...metadata,
     });
   }
 
@@ -90,4 +85,33 @@ export class PushNotificationConsumer extends WorkerHost {
       event: `Worker encountered an error: ${asError(error).message}`,
     });
   }
+}
+
+/**
+ * Extracts delivery-specific metadata from a job for structured logging.
+ * Returns enriched fields for delivery jobs, base fields for event jobs.
+ */
+function getJobMetadata(job: PushNotificationJob): {
+  jobName: string;
+  attemptsMade: number;
+  chainId?: string;
+  safeAddress?: string;
+  notificationType?: string;
+  deviceUuid?: string;
+} {
+  const deliveryData =
+    (job.name as JobTypeName) === JobType.PUSH_NOTIFICATION_DELIVERY
+      ? (job as Job<PushNotificationDeliveryJobData>).data
+      : null;
+
+  return {
+    jobName: job.name,
+    attemptsMade: job.attemptsMade,
+    ...(deliveryData && {
+      chainId: deliveryData.chainId,
+      safeAddress: deliveryData.safeAddress,
+      notificationType: deliveryData.notificationType,
+      deviceUuid: deliveryData.deviceUuid,
+    }),
+  };
 }

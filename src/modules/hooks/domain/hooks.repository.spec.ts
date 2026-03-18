@@ -343,7 +343,7 @@ describe('HooksRepository (Unit)', () => {
     );
   });
 
-  it('should continue processing if enqueueEvent rejects', async () => {
+  it('should not throw if enqueueEvent rejects', async () => {
     const chain = chainBuilder().build();
     const event = incomingTokenEventBuilder()
       .with('chainId', chain.chainId)

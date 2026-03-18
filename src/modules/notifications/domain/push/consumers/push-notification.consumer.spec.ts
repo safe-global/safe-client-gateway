@@ -83,7 +83,7 @@ describe('PushNotificationConsumer', () => {
     });
 
     it('should throw on unknown job type', async () => {
-      const job = createMockJob('unknown-job-type', {});
+      const job = createMockJob('unknown-job-type', {} as never);
 
       await expect(consumer.process(job)).rejects.toThrow(
         'Unknown job type: unknown-job-type',
@@ -93,30 +93,63 @@ describe('PushNotificationConsumer', () => {
     it('should return delivery job count from processEvent', async () => {
       const eventJobData = pushNotificationEventJobDataBuilder().build();
       const job = createMockJob(JobType.PUSH_NOTIFICATION_EVENT, eventJobData);
+      const deliveryCount = 3;
 
-      mockPushNotificationService.processEvent.mockResolvedValue(3);
+      mockPushNotificationService.processEvent.mockResolvedValue(deliveryCount);
 
       const result = await consumer.process(job);
 
-      expect(result).toBe(3);
+      expect(result).toBe(deliveryCount);
     });
   });
 
   describe('lifecycle event handlers', () => {
-    it('onCompleted should log with JobEvent type', () => {
+    it('onCompleted should log with JobEvent type and enriched fields for delivery jobs', () => {
+      const deliveryData = pushNotificationDeliveryJobDataBuilder().build();
       const job = createMockJob(
         JobType.PUSH_NOTIFICATION_DELIVERY,
-        {},
+        deliveryData,
         { attemptsMade: 1 },
       );
 
       consumer.onCompleted(job);
 
-      expect(mockLoggingService.info).toHaveBeenCalledWith(
+      expect(mockLoggingService.debug).toHaveBeenCalledWith(
         expect.objectContaining({
+          type: LogType.JobEvent,
           source: 'PushNotificationConsumer',
           jobName: JobType.PUSH_NOTIFICATION_DELIVERY,
           attemptsMade: 1,
+          chainId: deliveryData.chainId,
+          safeAddress: deliveryData.safeAddress,
+          notificationType: deliveryData.notificationType,
+          deviceUuid: deliveryData.deviceUuid,
+        }),
+      );
+    });
+
+    it('onCompleted should log with JobEvent type and no enriched fields for event jobs', () => {
+      const eventJobData = pushNotificationEventJobDataBuilder().build();
+      const job = createMockJob(JobType.PUSH_NOTIFICATION_EVENT, eventJobData, {
+        attemptsMade: 0,
+      });
+
+      consumer.onCompleted(job);
+
+      expect(mockLoggingService.debug).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: LogType.JobEvent,
+          source: 'PushNotificationConsumer',
+          jobName: JobType.PUSH_NOTIFICATION_EVENT,
+          attemptsMade: 0,
+        }),
+      );
+      expect(mockLoggingService.debug).toHaveBeenCalledWith(
+        expect.not.objectContaining({
+          chainId: expect.anything(),
+          safeAddress: expect.anything(),
+          notificationType: expect.anything(),
+          deviceUuid: expect.anything(),
         }),
       );
     });

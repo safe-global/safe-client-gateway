@@ -7,13 +7,14 @@ import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { asError } from '@/logging/utils';
 import { TransactionEventType } from '@/modules/hooks/routes/entities/event-type.entity';
 import type { Event } from '@/modules/hooks/routes/entities/event.entity';
-import type { DeletedMultisigTransactionEvent } from '@/modules/hooks/routes/entities/schemas/deleted-multisig-transaction.schema';
-import type { ExecutedTransactionEvent } from '@/modules/hooks/routes/entities/schemas/executed-transaction.schema';
 import type { IncomingEtherEvent } from '@/modules/hooks/routes/entities/schemas/incoming-ether.schema';
 import type { IncomingTokenEvent } from '@/modules/hooks/routes/entities/schemas/incoming-token.schema';
-import type { ModuleTransactionEvent } from '@/modules/hooks/routes/entities/schemas/module-transaction.schema';
 import type { PendingTransactionEvent } from '@/modules/hooks/routes/entities/schemas/pending-transaction.schema';
 import type { MessageCreatedEvent } from '@/modules/hooks/routes/entities/schemas/message-created.schema';
+import {
+  NOTIFIABLE_EVENT_TYPES,
+  type EventToNotify,
+} from '@/modules/notifications/domain/push/entities/event-to-notify.entity';
 import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
 import type { Safe } from '@/modules/safe/domain/entities/safe.entity';
 import type { Confirmation } from '@/modules/safe/domain/entities/multisig-transaction.entity';
@@ -37,29 +38,6 @@ import type {
 import type { Address } from 'viem';
 import type { UUID } from 'crypto';
 import uniqBy from 'lodash/uniqBy';
-
-type EventToNotify =
-  | DeletedMultisigTransactionEvent
-  | ExecutedTransactionEvent
-  | IncomingEtherEvent
-  | IncomingTokenEvent
-  | ModuleTransactionEvent
-  | MessageCreatedEvent
-  | PendingTransactionEvent;
-
-/**
- * Static allowlist of event types that trigger push notifications.
- * New event types are excluded by default unless explicitly added here.
- */
-const NOTIFIABLE_EVENT_TYPES: ReadonlySet<string> = new Set([
-  TransactionEventType.DELETED_MULTISIG_TRANSACTION,
-  TransactionEventType.EXECUTED_MULTISIG_TRANSACTION,
-  TransactionEventType.INCOMING_ETHER,
-  TransactionEventType.INCOMING_TOKEN,
-  TransactionEventType.MODULE_TRANSACTION,
-  TransactionEventType.MESSAGE_CREATED,
-  TransactionEventType.PENDING_MULTISIG_TRANSACTION,
-]);
 
 @Injectable()
 export class PushNotificationService implements IPushNotificationService {
@@ -118,7 +96,7 @@ export class PushNotificationService implements IPushNotificationService {
 
     const deliveryJobCount = (
       await Promise.all(
-        subscriptions.map(async (subscription) => {
+        subscriptions.map(async (subscription): Promise<number> => {
           try {
             const notification = await this.mapEventNotification(
               event,
@@ -148,9 +126,9 @@ export class PushNotificationService implements IPushNotificationService {
               notificationType: notification.type,
               deviceUuid: subscription.deviceUuid,
             });
-            return 1 as number;
+            return 1;
           } catch {
-            return 0 as number;
+            return 0;
           }
         }),
       )
