@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
 import { ApiProperty } from '@nestjs/swagger';
 import { z } from 'zod';
@@ -15,6 +16,6 @@ export class CreateSpaceResponse {
   @ApiProperty({ type: String })
   public readonly name!: Space['name'];
 
-  @ApiProperty({ type: Number })
+  @ApiProperty({ type: String })
   public readonly id!: Space['id'];
 }

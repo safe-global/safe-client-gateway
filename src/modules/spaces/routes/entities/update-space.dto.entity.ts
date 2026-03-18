@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
 import { getStringEnumKeys } from '@/domain/common/utils/enum';
 import { SpaceStatus } from '@/modules/spaces/domain/entities/space.entity';
@@ -20,6 +21,6 @@ export class UpdateSpaceDto implements z.infer<typeof UpdateSpaceSchema> {
 }
 
 export class UpdateSpaceResponse {
-  @ApiProperty({ type: Number })
+  @ApiProperty({ type: String })
   public readonly id!: Space['id'];
 }

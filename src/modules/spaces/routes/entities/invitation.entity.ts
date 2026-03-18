@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   Member,
@@ -15,7 +16,7 @@ export class Invitation {
   @ApiProperty({ type: String })
   name!: Member['name'];
 
-  @ApiProperty({ type: Number })
+  @ApiProperty({ type: String })
   spaceId!: Space['id'];
 
   @ApiProperty({ enum: getStringEnumKeys(MemberRole) })
