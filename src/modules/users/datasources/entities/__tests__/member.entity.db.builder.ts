@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { IBuilder } from '@/__tests__/builder';
 import { Builder } from '@/__tests__/builder';
 import type { Member } from '@/modules/users/datasources/entities/member.entity.db';
@@ -11,7 +12,7 @@ export function memberBuilder(): IBuilder<Member> {
   return new Builder<Member>()
     .with('id', faker.number.int())
     .with('user', { id: faker.number.int() } as User)
-    .with('space', { id: faker.number.int() } as Space)
+    .with('space', { id: faker.string.uuid() } as Space)
     .with('name', nameBuilder())
     .with('alias', null)
     .with('role', 'ADMIN')

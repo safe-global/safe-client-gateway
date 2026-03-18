@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { type Server } from 'http';
 import request from 'supertest';
 import type { INestApplication } from '@nestjs/common';
@@ -105,7 +106,7 @@ describe('SpacesController', () => {
         .expect(201)
         .expect(({ body }) =>
           expect(body).toEqual({
-            id: expect.any(Number),
+            id: expect.any(String),
             name: spaceName,
           }),
         );
@@ -177,7 +178,7 @@ describe('SpacesController', () => {
         .expect(201)
         .expect(({ body }) =>
           expect(body).toEqual({
-            id: expect.any(Number),
+            id: expect.any(String),
             name: expect.any(String),
           }),
         );
@@ -248,7 +249,7 @@ describe('SpacesController', () => {
         .expect(201)
         .expect(({ body }) =>
           expect(body).toEqual({
-            id: expect.any(Number),
+            id: expect.any(String),
             name: spaceName,
           }),
         );
@@ -266,7 +267,7 @@ describe('SpacesController', () => {
         .expect(201)
         .expect(({ body }) =>
           expect(body).toEqual({
-            id: expect.any(Number),
+            id: expect.any(String),
             name: spaceName,
           }),
         );
@@ -350,7 +351,7 @@ describe('SpacesController', () => {
         .expect(({ body }) => {
           expect(body).toEqual([
             {
-              id: expect.any(Number),
+              id: expect.any(String),
               name: firstSpaceName,
               status: getEnumKey(SpaceStatus, SpaceStatus.ACTIVE),
               createdAt: expect.any(String),
@@ -375,7 +376,7 @@ describe('SpacesController', () => {
               ],
             },
             {
-              id: expect.any(Number),
+              id: expect.any(String),
               name: secondSpaceName,
               status: getEnumKey(SpaceStatus, SpaceStatus.ACTIVE),
               createdAt: expect.any(String),
@@ -617,7 +618,7 @@ describe('SpacesController', () => {
     it('Should return a 404 if a space id does not exist', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const spaceId = faker.number.int({ min: 10000, max: 20000 });
+      const spaceId = faker.string.uuid();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -638,7 +639,7 @@ describe('SpacesController', () => {
     it('Should return a 404 if the user does not exist', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const spaceId = faker.number.int({ min: 10000, max: 20000 });
+      const spaceId = faker.string.uuid();
 
       await request(app.getHttpServer())
         .get(`/v1/spaces/${spaceId}`)
@@ -711,7 +712,7 @@ describe('SpacesController', () => {
     });
 
     it('should return a 403 if not authenticated', async () => {
-      const spaceId = faker.number.int({ min: 900000, max: 990000 });
+      const spaceId = faker.string.uuid();
 
       await request(app.getHttpServer())
         .patch(`/v1/spaces/${spaceId}`)
@@ -728,7 +729,7 @@ describe('SpacesController', () => {
         .with('signer_address', undefined as unknown as Address)
         .build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const spaceId = faker.number.int({ min: 1 });
+      const spaceId = faker.string.uuid();
 
       await request(app.getHttpServer())
         .patch(`/v1/spaces/${spaceId}`)
@@ -745,7 +746,7 @@ describe('SpacesController', () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const spaceName = nameBuilder();
-      const spaceId = faker.number.int({ min: 900000, max: 990000 });
+      const spaceId = faker.string.uuid();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -937,7 +938,7 @@ describe('SpacesController', () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const spaceName = nameBuilder();
-      const spaceId = faker.number.int({ min: 900000, max: 990000 });
+      const spaceId = faker.string.uuid();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -1092,7 +1093,7 @@ describe('SpacesController', () => {
         .with('signer_address', undefined as unknown as Address)
         .build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const spaceId = faker.number.int({ min: 1 });
+      const spaceId = faker.string.uuid();
 
       await request(app.getHttpServer())
         .delete(`/v1/spaces/${spaceId}`)
@@ -1106,7 +1107,7 @@ describe('SpacesController', () => {
     });
 
     it('should return a 403 if not authenticated', async () => {
-      const spaceId = faker.number.int({ min: 900000, max: 990000 });
+      const spaceId = faker.string.uuid();
 
       await request(app.getHttpServer())
         .delete(`/v1/spaces/${spaceId}`)
