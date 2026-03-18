@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { DataSource } from 'typeorm';
 import { getAddress, maxUint256 } from 'viem';
@@ -16,7 +17,7 @@ import { SpaceStatus } from '@/modules/spaces/domain/entities/space.entity';
 import type { Repository } from 'typeorm';
 import type { ConfigService } from '@nestjs/config';
 import type { ILoggingService } from '@/logging/logging.interface';
-import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
+import type { UUID } from 'crypto';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { UniqueConstraintError } from '@/datasources/errors/unique-constraint-error';
 
@@ -511,9 +512,7 @@ describe('SpaceSafesRepository', () => {
 
     it('should return empty array if no space Safes found', async () => {
       await expect(
-        spaceSafesRepo.findBySpaceId(
-          faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
-        ),
+        spaceSafesRepo.findBySpaceId(faker.string.uuid() as UUID),
       ).resolves.toEqual([]);
     });
   });

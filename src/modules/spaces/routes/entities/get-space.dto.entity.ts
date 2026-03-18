@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
 import { Member } from '@/modules/users/datasources/entities/member.entity.db';
 import { User } from '@/modules/users/datasources/entities/users.entity.db';
@@ -34,7 +35,7 @@ class MemberDto {
 }
 
 export class GetSpaceResponse {
-  @ApiProperty({ type: Number })
+  @ApiProperty({ type: String })
   public id!: Space['id'];
 
   @ApiProperty({ type: String })

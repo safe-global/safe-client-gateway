@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import request from 'supertest';
 import { getAddress } from 'viem';
@@ -134,7 +135,7 @@ describe('MembersController', () => {
     it('should throw a 409 if there are too many invites', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const spaceId = faker.number.int();
+      const spaceId = faker.string.uuid();
       const invites = Array.from({ length: maxInvites + 1 }).map(() => {
         return {
           role: faker.helpers.arrayElement(['ADMIN', 'MEMBER']),
@@ -275,10 +276,7 @@ describe('MembersController', () => {
     it('should throw a 404 if the space does not exist', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const spaceId = faker.number.int({
-        min: 69420,
-        max: DB_MAX_SAFE_INTEGER,
-      });
+      const spaceId = faker.string.uuid();
       const user1 = getAddress(faker.finance.ethereumAddress());
       const user1Name = faker.person.firstName();
       const user2 = getAddress(faker.finance.ethereumAddress());
@@ -757,10 +755,7 @@ describe('MembersController', () => {
     it('should throw a 404 if the space does not exist', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const spaceId = faker.number.int({
-        min: 69420,
-        max: DB_MAX_SAFE_INTEGER,
-      });
+      const spaceId = faker.string.uuid();
       const memberName = nameBuilder();
 
       await request(app.getHttpServer())
@@ -1061,10 +1056,7 @@ describe('MembersController', () => {
     it('should throw a 404 if the space does not exist', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const spaceId = faker.number.int({
-        min: 69420,
-        max: DB_MAX_SAFE_INTEGER,
-      });
+      const spaceId = faker.string.uuid();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -1370,10 +1362,7 @@ describe('MembersController', () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       // Space does not even exist
-      const spaceId = faker.number.int({
-        min: 69420,
-        max: DB_MAX_SAFE_INTEGER,
-      });
+      const spaceId = faker.string.uuid();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -1846,10 +1835,7 @@ describe('MembersController', () => {
     it('should throw a 404 if the space does not exist', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const spaceId = faker.number.int({
-        min: 69420,
-        max: DB_MAX_SAFE_INTEGER,
-      });
+      const spaceId = faker.string.uuid();
 
       const createUserResponse = await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -2129,10 +2115,7 @@ describe('MembersController', () => {
     it('should throw a 404 if the space does not exist', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const spaceId = faker.number.int({
-        min: 69420,
-        max: DB_MAX_SAFE_INTEGER,
-      });
+      const spaceId = faker.string.uuid();
       const newAlias = nameBuilder();
 
       await request(app.getHttpServer())
