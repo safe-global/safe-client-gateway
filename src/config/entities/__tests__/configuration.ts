@@ -27,6 +27,17 @@ export default (): ReturnType<typeof configuration> => ({
     token: faker.string.hexadecimal({ length: 32 }),
     nonceTtlSeconds: faker.number.int(),
     maxValidityPeriodSeconds: faker.number.int({ min: 1, max: 60 * 1_000 }),
+    stateTtlMs: faker.number.int({ min: 60_000, max: 600_000 }),
+    postLoginRedirectUri: faker.internet.url(),
+    auth0: {
+      baseUri: faker.internet.url({ appendSlash: false }),
+      clientId: faker.string.uuid(),
+      clientSecret: faker.string.uuid(),
+      redirectUri: faker.internet.url(),
+      audience: faker.internet.url({ appendSlash: false }),
+      signingSecret: faker.string.alphanumeric(32),
+      scope: 'openid email',
+    },
   },
   balances: {
     providers: {
