@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
@@ -205,7 +206,7 @@ export class SpacesRepository implements ISpacesRepository {
   }
 
   // @todo Add a soft delete method
-  public async delete(id: number): Promise<void> {
+  public async delete(id: Space['id']): Promise<void> {
     const spaceRepository =
       await this.postgresDatabaseService.getRepository(Space);
 
