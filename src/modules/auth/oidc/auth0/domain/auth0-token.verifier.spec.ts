@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
-import { Auth0TokenVerifier } from '@/modules/auth/auth0/domain/auth0-token.verifier';
+import { Auth0TokenVerifier } from '@/modules/auth/oidc/auth0/domain/auth0-token.verifier';
 import type { IJwtService } from '@/datasources/jwt/jwt.service.interface';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { faker } from '@faker-js/faker';

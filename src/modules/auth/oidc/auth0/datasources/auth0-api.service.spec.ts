@@ -3,7 +3,7 @@ import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
-import { Auth0Api } from '@/modules/auth/auth0/datasources/auth0-api.service';
+import { Auth0Api } from '@/modules/auth/oidc/auth0/datasources/auth0-api.service';
 import { rawify } from '@/validation/entities/raw.entity';
 import { faker } from '@faker-js/faker';
 
