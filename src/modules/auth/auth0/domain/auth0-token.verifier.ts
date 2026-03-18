@@ -1,0 +1,46 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { IConfigurationService } from '@/config/configuration.service.interface';
+import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
+import type { Auth0Token } from '@/modules/auth/auth0/domain/entities/auth0-token.entity';
+import { Auth0TokenSchema } from '@/modules/auth/auth0/domain/entities/auth0-token.entity';
+import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
+import { JsonWebTokenError } from 'jsonwebtoken';
+
+@Injectable()
+export class Auth0TokenVerifier {
+  private readonly issuer: string;
+  private readonly audience: string;
+  private readonly signingSecret: string;
+
+  constructor(
+    @Inject(IJwtService)
+    private readonly jwtService: IJwtService,
+    @Inject(IConfigurationService)
+    private readonly configurationService: IConfigurationService,
+  ) {
+    this.issuer =
+      this.configurationService.getOrThrow<string>('auth.auth0.baseUri');
+    this.audience = this.configurationService.getOrThrow<string>(
+      'auth.auth0.audience',
+    );
+    this.signingSecret = this.configurationService.getOrThrow<string>(
+      'auth.auth0.signingSecret',
+    );
+  }
+
+  verifyAndDecode(accessToken: string): Auth0Token {
+    try {
+      const decoded = this.jwtService.decode<{ sub: string }>(accessToken, {
+        issuer: this.issuer,
+        audience: this.audience,
+        secretOrPrivateKey: this.signingSecret,
+      });
+      return Auth0TokenSchema.parse(decoded);
+    } catch (error) {
+      if (error instanceof JsonWebTokenError) {
+        throw new UnauthorizedException('Invalid access token');
+      }
+      throw error;
+    }
+  }
+}
