@@ -19,6 +19,6 @@ import { AuthService } from '@/modules/auth/routes/auth.service';
     AuthService,
   ],
   controllers: [AuthController],
-  exports: [IAuthRepository],
+  exports: [IAuthRepository, Auth0Module],
 })
 export class AuthModule {}

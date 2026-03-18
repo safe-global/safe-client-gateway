@@ -120,6 +120,10 @@ describe('AuthController', () => {
         ...defaultConfiguration.application,
         isProduction: true,
       },
+      // auth: {
+      //   ...defaultConfiguration.auth,
+      //   stateTtlMs: 300_000,
+      // },
       features: {
         ...defaultConfiguration.features,
         auth: true,

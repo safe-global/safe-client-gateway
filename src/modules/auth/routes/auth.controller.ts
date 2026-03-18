@@ -12,6 +12,7 @@ import {
 } from '@/modules/auth/routes/entities/siwe.dto.entity';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import {
+  BadRequestException,
   Body,
   Controller,
   Get,

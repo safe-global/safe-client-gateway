@@ -20,6 +20,8 @@ type AuthTokenResponse = {
 @Injectable()
 export class AuthService {
   private readonly maxValidityPeriodInSeconds: number;
+  private readonly stateTtlMs: number;
+  private readonly postLoginRedirectUri: string;
 
   constructor(
     @Inject(ISiweRepository)
@@ -35,6 +37,11 @@ export class AuthService {
   ) {
     this.maxValidityPeriodInSeconds = this.configurationService.getOrThrow(
       'auth.maxValidityPeriodSeconds',
+    );
+    this.stateTtlMs =
+      this.configurationService.getOrThrow<number>('auth.stateTtlMs');
+    this.postLoginRedirectUri = this.configurationService.getOrThrow<string>(
+      'auth.postLoginRedirectUri',
     );
   }
 
@@ -56,6 +63,11 @@ export class AuthService {
 
     const userId =
       await this.usersRepository.findOrCreateByWalletAddress(address);
+    const maxExpirationTime = this.getMaxExpirationTime();
+
+    if (expirationTime) {
+      this.assertExpirationTime(expirationTime, maxExpirationTime);
+    }
 
     const accessToken = this.authRepository.signToken(
       {
