@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
@@ -641,14 +642,6 @@ describe('Preview transaction - CoW Swap - Transactions Controller', () => {
   });
 
   describe('TWAPs', () => {
-    beforeAll(() => {
-      jest.useFakeTimers();
-    });
-
-    afterAll(() => {
-      jest.useRealTimers();
-    });
-
     const ComposableCowAddress = '0xfdaFc9d1902f4e0b84f65F49f244b32b31013b74';
 
     /**
@@ -673,6 +666,7 @@ describe('Preview transaction - CoW Swap - Transactions Controller', () => {
       .build();
 
     it('should preview a transaction', async () => {
+      jest.useFakeTimers();
       const now = new Date();
       jest.setSystemTime(now);
 
@@ -795,9 +789,11 @@ describe('Preview transaction - CoW Swap - Transactions Controller', () => {
             tokenInfoIndex: null,
           },
         });
+      jest.useRealTimers();
     });
 
     it('should preview a batched transaction', async () => {
+      jest.useFakeTimers();
       const now = new Date();
       jest.setSystemTime(now);
 
@@ -938,6 +934,7 @@ describe('Preview transaction - CoW Swap - Transactions Controller', () => {
             tokenInfoIndex: null,
           },
         });
+      jest.useRealTimers();
     });
 
     it('should return a "standard" transaction preview if buy token is not available', async () => {
