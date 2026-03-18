@@ -34,6 +34,7 @@ describe('AuthController', () => {
   let jwtService: IJwtService;
 
   let maxValidityPeriodInMs: number;
+  let stateTtlMs: number;
   let auth0Config: {
     baseUri: string;
     clientId: string;
@@ -87,6 +88,7 @@ describe('AuthController', () => {
     postLoginRedirectUri = configService.getOrThrow<string>(
       'auth.postLoginRedirectUri',
     );
+    stateTtlMs = configService.getOrThrow<number>('auth.stateTtlMs');
     auth0Config = {
       baseUri: configService.getOrThrow<string>('auth.auth0.baseUri'),
       clientId: configService.getOrThrow<string>('auth.auth0.clientId'),
@@ -114,10 +116,6 @@ describe('AuthController', () => {
         ...defaultConfiguration.application,
         isProduction: true,
       },
-      // auth: {
-      //   ...defaultConfiguration.auth,
-      //   stateTtlMs: 300_000,
-      // },
       features: {
         ...defaultConfiguration.features,
         auth: true,
@@ -153,11 +151,14 @@ describe('AuthController', () => {
 
   describe('GET /v1/auth/oidc/authorize', () => {
     it('should redirect to Auth0 and set the state cookie', async () => {
+      jest.setSystemTime(0);
+
       const response = await request(app.getHttpServer())
         .get('/v1/auth/oidc/authorize')
         .expect(302);
 
       const location = new URL(response.headers.location);
+      const stateMaxAge = Math.floor(stateTtlMs / 1_000);
 
       expect(location.origin).toBe(new URL(auth0Config.baseUri).origin);
       expect(location.pathname).toBe('/authorize');
@@ -173,10 +174,67 @@ describe('AuthController', () => {
       expect(response.headers['set-cookie']).toEqual(
         expect.arrayContaining([
           expect.stringMatching(
-            /^auth_state=.*; Max-Age=300; Path=\/; Expires=.*; HttpOnly; Secure; SameSite=Lax$/,
+            new RegExp(
+              `^auth_state=.*; Max-Age=${stateMaxAge}; Path=/; Expires=.*; HttpOnly; Secure; SameSite=Lax$`,
+            ),
           ),
         ]),
       );
+    });
+
+    it('should set SameSite=None on the state cookie if application.env is not production', async () => {
+      jest.setSystemTime(0);
+
+      const defaultConfiguration = configuration();
+      const testConfiguration = (): typeof defaultConfiguration => ({
+        ...defaultConfiguration,
+        application: {
+          ...defaultConfiguration.application,
+          isProduction: false,
+        },
+        features: {
+          ...defaultConfiguration.features,
+          auth: true,
+        },
+      });
+
+      await initApp(testConfiguration);
+      const stateMaxAge = Math.floor(stateTtlMs / 1_000);
+
+      const response = await request(app.getHttpServer())
+        .get('/v1/auth/oidc/authorize')
+        .expect(302);
+
+      expect(response.headers['set-cookie']).toEqual(
+        expect.arrayContaining([
+          expect.stringMatching(
+            new RegExp(
+              `^auth_state=.*; Max-Age=${stateMaxAge}; Path=/; Expires=.*; HttpOnly; Secure; SameSite=None$`,
+            ),
+          ),
+        ]),
+      );
+    });
+
+    it('should generate a unique state on each call', async () => {
+      const first = await request(app.getHttpServer())
+        .get('/v1/auth/oidc/authorize')
+        .expect(302);
+
+      const second = await request(app.getHttpServer())
+        .get('/v1/auth/oidc/authorize')
+        .expect(302);
+
+      const firstState = new URL(first.headers.location).searchParams.get(
+        'state',
+      );
+      const secondState = new URL(second.headers.location).searchParams.get(
+        'state',
+      );
+
+      expect(firstState).toEqual(expect.any(String));
+      expect(secondState).toEqual(expect.any(String));
+      expect(firstState).not.toBe(secondState);
     });
   });
 
@@ -591,27 +649,49 @@ describe('AuthController', () => {
       const state = new URL(
         authorizeResponse.headers.location,
       ).searchParams.get('state');
-
       const stateCookie = (
         authorizeResponse.headers['set-cookie'] as unknown as Array<string>
       )
-        .find((cookie: string) => cookie.startsWith('auth_state='))
+        .find((cookie) => cookie.startsWith('auth_state='))
         ?.split(';')[0];
 
-      if (!stateCookie) {
-        throw new Error('auth state cookie missing');
-      }
-
-      const callbackResponse = await request(app.getHttpServer())
+      await request(app.getHttpServer())
         .get('/v1/auth/oidc/callback')
-        .set('Cookie', stateCookie)
+        .set('Cookie', stateCookie!)
         .query({
           code: 'auth-code',
           state,
         })
-        .expect(302);
+        .expect(302)
+        .expect(({ headers }) => {
+          expect(headers.location).toBe(postLoginRedirectUri);
 
-      expect(callbackResponse.headers.location).toBe(postLoginRedirectUri);
+          const setCookie = headers['set-cookie'] as unknown as Array<string>;
+          const accessTokenCookieRegExp = new RegExp(
+            `^access_token=([^;]*); Max-Age=${maxAge}; Path=/; Expires=${expirationTime.toUTCString()}; HttpOnly; Secure; SameSite=Lax$`,
+          );
+
+          expect(setCookie).toEqual(
+            expect.arrayContaining([
+              expect.stringMatching(accessTokenCookieRegExp),
+              'auth_state=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; Secure; SameSite=Lax',
+            ]),
+          );
+
+          const accessToken = setCookie
+            .find((cookie) => cookie.startsWith('access_token='))
+            ?.match(/^access_token=([^;]+)/)?.[1];
+
+          expect(
+            jwtService.verify<{ auth_method: string; sub: string }>(
+              accessToken!,
+            ),
+          ).toMatchObject({
+            auth_method: 'oidc',
+            sub: '1',
+          });
+        });
+
       expect(networkService.post).toHaveBeenCalledWith({
         url: new URL('/oauth/token', auth0Config.baseUri).toString(),
         data: {
@@ -625,67 +705,236 @@ describe('AuthController', () => {
           headers: { 'content-type': 'application/x-www-form-urlencoded' },
         },
       });
-
-      const setCookie = callbackResponse.headers[
-        'set-cookie'
-      ] as unknown as Array<string>;
-      const gatewayAccessTokenCookie = setCookie.find((cookie: string) =>
-        cookie.startsWith('access_token='),
-      );
-      expect(gatewayAccessTokenCookie).toMatch(
-        new RegExp(
-          `^access_token=([^;]*); Max-Age=${maxAge}; Path=/; Expires=${expirationTime.toUTCString()}; HttpOnly; Secure; SameSite=Lax$`,
-        ),
-      );
-      expect(setCookie).toEqual(
-        expect.arrayContaining([
-          'auth_state=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; Secure; SameSite=Lax',
-        ]),
-      );
-
-      if (!gatewayAccessTokenCookie) {
-        throw new Error('access token cookie missing');
-      }
-
-      const accessTokenMatch = /^access_token=([^;]+)/.exec(
-        gatewayAccessTokenCookie,
-      );
-      if (!accessTokenMatch) {
-        throw new Error('access token missing');
-      }
-
-      expect(
-        jwtService.verify<{ auth_method: string; sub: string }>(
-          accessTokenMatch[1],
-        ),
-      ).toMatchObject({
-        auth_method: 'oidc',
-        sub: '1',
-      });
     });
 
-    it('should reject the callback when the state does not match', async () => {
-      const agent = request.agent(app.getHttpServer());
-      await agent.get('/v1/auth/oidc/authorize').expect(302);
+    it('should return 401 when the token verification fails', async () => {
+      const invalidToken = sign(
+        { sub: faker.string.uuid() },
+        'wrong-signing-secret',
+        { algorithm: 'HS256' },
+      );
 
-      await agent
+      networkService.post.mockResolvedValueOnce({
+        status: 200,
+        data: rawify({
+          access_token: invalidToken,
+          refresh_token: 'auth0-refresh-token',
+          id_token: 'auth0-id-token',
+          token_type: 'Bearer',
+        }),
+      });
+
+      const authorizeResponse = await request(app.getHttpServer())
+        .get('/v1/auth/oidc/authorize')
+        .expect(302);
+
+      const state = new URL(
+        authorizeResponse.headers.location,
+      ).searchParams.get('state');
+      const stateCookie = (
+        authorizeResponse.headers['set-cookie'] as unknown as Array<string>
+      )
+        .find((cookie) => cookie.startsWith('auth_state='))
+        ?.split(';')[0];
+
+      await request(app.getHttpServer())
         .get('/v1/auth/oidc/callback')
+        .set('Cookie', stateCookie!)
         .query({
           code: 'auth-code',
-          state: 'wrong-state',
+          state,
         })
         .expect(401)
-        .expect(({ body, headers }) => {
-          expect(body).toStrictEqual({
-            error: 'Unauthorized',
-            message: 'Invalid OAuth state',
-            statusCode: 401,
-          });
+        .expect(({ headers, body }) => {
           expect(headers['set-cookie']).toEqual(
             expect.arrayContaining([
               'auth_state=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; Secure; SameSite=Lax',
             ]),
           );
+
+          expect(body).toStrictEqual({
+            error: 'Unauthorized',
+            message: 'Invalid access token',
+            statusCode: 401,
+          });
+        });
+    });
+
+    it('should reject the callback when the state does not match', async () => {
+      const authorizeResponse = await request(app.getHttpServer())
+        .get('/v1/auth/oidc/authorize')
+        .expect(302);
+
+      const stateCookie = (
+        authorizeResponse.headers['set-cookie'] as unknown as Array<string>
+      )
+        .find((cookie) => cookie.startsWith('auth_state='))
+        ?.split(';')[0];
+
+      await request(app.getHttpServer())
+        .get('/v1/auth/oidc/callback')
+        .set('Cookie', stateCookie!)
+        .query({
+          code: 'auth-code',
+          state: 'wrong-state',
+        })
+        .expect(401)
+        .expect(({ headers, body }) => {
+          expect(headers['set-cookie']).toEqual(
+            expect.arrayContaining([
+              'auth_state=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; Secure; SameSite=Lax',
+            ]),
+          );
+
+          expect(body).toStrictEqual({
+            error: 'Unauthorized',
+            message: 'Invalid OAuth state',
+            statusCode: 401,
+          });
+        });
+
+      expect(networkService.post).not.toHaveBeenCalled();
+    });
+
+    it('should reject the callback when no state cookie is present', async () => {
+      await request(app.getHttpServer())
+        .get('/v1/auth/oidc/callback')
+        .query({
+          code: 'auth-code',
+          state: 'some-state',
+        })
+        .expect(401)
+        .expect(({ headers, body }) => {
+          expect(headers['set-cookie']).toEqual(
+            expect.arrayContaining([
+              'auth_state=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; Secure; SameSite=Lax',
+            ]),
+          );
+
+          expect(body).toStrictEqual({
+            error: 'Unauthorized',
+            message: 'Invalid OAuth state',
+            statusCode: 401,
+          });
+        });
+
+      expect(networkService.post).not.toHaveBeenCalled();
+    });
+
+    it('should return 400 when code is missing', async () => {
+      const authorizeResponse = await request(app.getHttpServer())
+        .get('/v1/auth/oidc/authorize')
+        .expect(302);
+
+      const stateCookie = (
+        authorizeResponse.headers['set-cookie'] as unknown as Array<string>
+      )
+        .find((cookie) => cookie.startsWith('auth_state='))
+        ?.split(';')[0];
+
+      const state = new URL(
+        authorizeResponse.headers.location,
+      ).searchParams.get('state');
+
+      await request(app.getHttpServer())
+        .get('/v1/auth/oidc/callback')
+        .set('Cookie', stateCookie!)
+        .query({ state })
+        .expect(400)
+        .expect(({ headers, body }) => {
+          expect(headers['set-cookie']).toEqual(
+            expect.arrayContaining([
+              'auth_state=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; Secure; SameSite=Lax',
+            ]),
+          );
+
+          expect(body).toStrictEqual({
+            error: 'Bad Request',
+            message: 'Authorization code and state are required',
+            statusCode: 400,
+          });
+        });
+
+      expect(networkService.post).not.toHaveBeenCalled();
+    });
+
+    it('should return 400 when state is missing', async () => {
+      const authorizeResponse = await request(app.getHttpServer())
+        .get('/v1/auth/oidc/authorize')
+        .expect(302);
+
+      const stateCookie = (
+        authorizeResponse.headers['set-cookie'] as unknown as Array<string>
+      )
+        .find((cookie) => cookie.startsWith('auth_state='))
+        ?.split(';')[0];
+
+      await request(app.getHttpServer())
+        .get('/v1/auth/oidc/callback')
+        .set('Cookie', stateCookie!)
+        .query({ code: 'auth-code' })
+        .expect(400)
+        .expect(({ headers, body }) => {
+          expect(headers['set-cookie']).toEqual(
+            expect.arrayContaining([
+              'auth_state=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; Secure; SameSite=Lax',
+            ]),
+          );
+
+          expect(body).toStrictEqual({
+            error: 'Bad Request',
+            message: 'Authorization code and state are required',
+            statusCode: 400,
+          });
+        });
+
+      expect(networkService.post).not.toHaveBeenCalled();
+    });
+
+    it('should return 401 when the OIDC provider returns an error with description', async () => {
+      await request(app.getHttpServer())
+        .get('/v1/auth/oidc/callback')
+        .query({
+          error: 'access_denied',
+          error_description: 'The user denied the request',
+        })
+        .expect(401)
+        .expect(({ headers, body }) => {
+          expect(headers['set-cookie']).toEqual(
+            expect.arrayContaining([
+              'auth_state=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; Secure; SameSite=Lax',
+            ]),
+          );
+
+          expect(body).toStrictEqual({
+            error: 'Unauthorized',
+            message: 'The user denied the request',
+            statusCode: 401,
+          });
+        });
+
+      expect(networkService.post).not.toHaveBeenCalled();
+    });
+
+    it('should return 401 with the error code when the OIDC provider returns an error without description', async () => {
+      await request(app.getHttpServer())
+        .get('/v1/auth/oidc/callback')
+        .query({
+          error: 'access_denied',
+        })
+        .expect(401)
+        .expect(({ headers, body }) => {
+          expect(headers['set-cookie']).toEqual(
+            expect.arrayContaining([
+              'auth_state=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; Secure; SameSite=Lax',
+            ]),
+          );
+
+          expect(body).toStrictEqual({
+            error: 'Unauthorized',
+            message: 'access_denied',
+            statusCode: 401,
+          });
         });
 
       expect(networkService.post).not.toHaveBeenCalled();
