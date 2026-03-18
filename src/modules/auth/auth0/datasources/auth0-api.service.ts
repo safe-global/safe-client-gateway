@@ -13,10 +13,6 @@ import { Inject, Injectable } from '@nestjs/common';
 export class Auth0Api implements IAuth0Api {
   private static readonly AUTHORIZATION_CODE_GRANT_TYPE = 'authorization_code';
 
-  private static readonly FORM_URLENCODED_CONTENT_TYPE_HEADER = {
-    'content-type': 'application/x-www-form-urlencoded',
-  };
-
   constructor(
     @Inject(NetworkService)
     private readonly networkService: INetworkService,
@@ -31,7 +27,7 @@ export class Auth0Api implements IAuth0Api {
     redirectUri: string;
   }): Promise<Raw<Auth0TokenResponse>> {
     try {
-      const response = await this.networkService.post({
+      const response = await this.networkService.postForm({
         url: new URL('/oauth/token', args.baseUri).toString(),
         data: {
           grant_type: Auth0Api.AUTHORIZATION_CODE_GRANT_TYPE,
@@ -39,9 +35,6 @@ export class Auth0Api implements IAuth0Api {
           client_secret: args.clientSecret,
           code: args.code,
           redirect_uri: args.redirectUri,
-        },
-        networkRequest: {
-          headers: { ...Auth0Api.FORM_URLENCODED_CONTENT_TYPE_HEADER },
         },
       });
 

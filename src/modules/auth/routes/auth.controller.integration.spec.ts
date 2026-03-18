@@ -632,13 +632,13 @@ describe('AuthController', () => {
       });
       const maxAge = getSecondsUntil(expirationTime);
 
-      networkService.post.mockResolvedValueOnce({
+      networkService.postForm.mockResolvedValueOnce({
         status: 200,
         data: rawify({
           access_token: auth0Token,
-          refresh_token: 'auth0-refresh-token',
           id_token: 'auth0-id-token',
           token_type: 'Bearer',
+          scope: faker.lorem.words(),
         }),
       });
 
@@ -692,7 +692,7 @@ describe('AuthController', () => {
           });
         });
 
-      expect(networkService.post).toHaveBeenCalledWith({
+      expect(networkService.postForm).toHaveBeenCalledWith({
         url: new URL('/oauth/token', auth0Config.baseUri).toString(),
         data: {
           grant_type: 'authorization_code',
@@ -700,9 +700,6 @@ describe('AuthController', () => {
           client_secret: auth0Config.clientSecret,
           code: 'auth-code',
           redirect_uri: auth0Config.redirectUri,
-        },
-        networkRequest: {
-          headers: { 'content-type': 'application/x-www-form-urlencoded' },
         },
       });
     });
@@ -714,7 +711,7 @@ describe('AuthController', () => {
         { algorithm: 'HS256' },
       );
 
-      networkService.post.mockResolvedValueOnce({
+      networkService.postForm.mockResolvedValueOnce({
         status: 200,
         data: rawify({
           access_token: invalidToken,
@@ -793,7 +790,7 @@ describe('AuthController', () => {
           });
         });
 
-      expect(networkService.post).not.toHaveBeenCalled();
+      expect(networkService.postForm).not.toHaveBeenCalled();
     });
 
     it('should reject the callback when no state cookie is present', async () => {
@@ -818,7 +815,7 @@ describe('AuthController', () => {
           });
         });
 
-      expect(networkService.post).not.toHaveBeenCalled();
+      expect(networkService.postForm).not.toHaveBeenCalled();
     });
 
     it('should return 400 when code is missing', async () => {
@@ -855,7 +852,7 @@ describe('AuthController', () => {
           });
         });
 
-      expect(networkService.post).not.toHaveBeenCalled();
+      expect(networkService.postForm).not.toHaveBeenCalled();
     });
 
     it('should return 400 when state is missing', async () => {
@@ -888,7 +885,7 @@ describe('AuthController', () => {
           });
         });
 
-      expect(networkService.post).not.toHaveBeenCalled();
+      expect(networkService.postForm).not.toHaveBeenCalled();
     });
 
     it('should return 401 when the OIDC provider returns an error with description', async () => {
@@ -913,7 +910,7 @@ describe('AuthController', () => {
           });
         });
 
-      expect(networkService.post).not.toHaveBeenCalled();
+      expect(networkService.postForm).not.toHaveBeenCalled();
     });
 
     it('should return 401 with the error code when the OIDC provider returns an error without description', async () => {
@@ -937,7 +934,7 @@ describe('AuthController', () => {
           });
         });
 
-      expect(networkService.post).not.toHaveBeenCalled();
+      expect(networkService.postForm).not.toHaveBeenCalled();
     });
   });
 

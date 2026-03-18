@@ -7,7 +7,7 @@ import { rawify } from '@/validation/entities/raw.entity';
 import { faker } from '@faker-js/faker';
 
 const networkService = {
-  post: jest.fn(),
+  postForm: jest.fn(),
 } as jest.MockedObjectDeep<INetworkService>;
 
 describe('Auth0Api', () => {
@@ -32,7 +32,7 @@ describe('Auth0Api', () => {
         token_type: 'Bearer',
         expires_in: faker.number.int({ min: 60, max: 3_600 }),
       };
-      networkService.post.mockResolvedValueOnce({
+      networkService.postForm.mockResolvedValueOnce({
         status: 200,
         data: rawify(tokenResponse),
       });
@@ -47,7 +47,7 @@ describe('Auth0Api', () => {
         }),
       ).resolves.toBe(tokenResponse);
 
-      expect(networkService.post).toHaveBeenCalledWith({
+      expect(networkService.postForm).toHaveBeenCalledWith({
         url: new URL('/oauth/token', baseUri).toString(),
         data: {
           grant_type: 'authorization_code',
@@ -56,15 +56,12 @@ describe('Auth0Api', () => {
           code,
           redirect_uri: redirectUri,
         },
-        networkRequest: {
-          headers: { 'content-type': 'application/x-www-form-urlencoded' },
-        },
       });
     });
 
     it('should map network errors', async () => {
       const baseUri = faker.internet.url({ appendSlash: false });
-      networkService.post.mockRejectedValueOnce(
+      networkService.postForm.mockRejectedValueOnce(
         new NetworkResponseError(
           new URL('/oauth/token', baseUri),
           {
