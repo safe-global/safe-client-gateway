@@ -120,10 +120,6 @@ describe('AuthController', () => {
         ...defaultConfiguration.application,
         isProduction: true,
       },
-      // auth: {
-      //   ...defaultConfiguration.auth,
-      //   stateTtlMs: 300_000,
-      // },
       features: {
         ...defaultConfiguration.features,
         auth: true,
@@ -243,6 +239,45 @@ describe('AuthController', () => {
       expect(firstState).toEqual(expect.any(String));
       expect(secondState).toEqual(expect.any(String));
       expect(firstState).not.toBe(secondState);
+    });
+
+    it('should include connection=email in the Auth0 redirect URL', async () => {
+      const response = await request(app.getHttpServer())
+        .get('/v1/auth/oidc/authorize?connection=email')
+        .expect(302);
+
+      const location = new URL(response.headers.location);
+      expect(location.searchParams.get('connection')).toBe('email');
+    });
+
+    it('should include connection=google-oauth2 in the Auth0 redirect URL', async () => {
+      const response = await request(app.getHttpServer())
+        .get('/v1/auth/oidc/authorize?connection=google-oauth2')
+        .expect(302);
+
+      const location = new URL(response.headers.location);
+      expect(location.searchParams.get('connection')).toBe('google-oauth2');
+    });
+
+    it('should not include connection param when not provided', async () => {
+      const response = await request(app.getHttpServer())
+        .get('/v1/auth/oidc/authorize')
+        .expect(302);
+
+      const location = new URL(response.headers.location);
+      expect(location.searchParams.has('connection')).toBe(false);
+    });
+
+    it('should return 422 for an invalid connection value', async () => {
+      await request(app.getHttpServer())
+        .get('/v1/auth/oidc/authorize?connection=facebook')
+        .expect(422);
+    });
+
+    it('should return 422 for an empty connection value', async () => {
+      await request(app.getHttpServer())
+        .get('/v1/auth/oidc/authorize?connection=')
+        .expect(422);
     });
   });
 

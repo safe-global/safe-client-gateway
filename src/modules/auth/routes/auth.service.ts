@@ -21,6 +21,7 @@ import {
   OidcStateSchema,
 } from '@/modules/auth/routes/entities/oidc-state.entity';
 import { IAuth0Repository } from '@/modules/auth/auth0/domain/auth0.repository.interface';
+import type { OidcConnection } from '@/modules/auth/routes/entities/oidc-connection.entity';
 import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
 
 type AuthTokenResponse = {
@@ -30,8 +31,6 @@ type AuthTokenResponse = {
 @Injectable()
 export class AuthService {
   private readonly maxValidityPeriodInSeconds: number;
-  private readonly stateTtlMs: number;
-  private readonly postLoginRedirectUri: string;
 
   constructor(
     @Inject(ISiweRepository)
@@ -47,11 +46,6 @@ export class AuthService {
   ) {
     this.maxValidityPeriodInSeconds = this.configurationService.getOrThrow(
       'auth.maxValidityPeriodSeconds',
-    );
-    this.stateTtlMs =
-      this.configurationService.getOrThrow<number>('auth.stateTtlMs');
-    this.postLoginRedirectUri = this.configurationService.getOrThrow<string>(
-      'auth.postLoginRedirectUri',
     );
   }
 
@@ -133,10 +127,15 @@ export class AuthService {
    *
    * @param redirectUrl - Optional post-login redirect URL. Must be
    *   same-origin as the configured {@link postLoginRedirectUri}.
+   * @param connection - Optional OIDC connection name to route directly
+   *   to a specific identity provider.
    * @returns The OIDC authorization URL, the encoded state, and its TTL.
    * @throws {BadRequestException} If {@link redirectUrl} is not same-origin.
    */
-  public createOidcAuthorizationRequest(redirectUrl?: string): {
+  public createOidcAuthorizationRequest(
+    redirectUrl?: string,
+    connection?: OidcConnection,
+  ): {
     authorizationUrl: string;
     state: string;
     stateMaxAge: number;
@@ -155,7 +154,10 @@ export class AuthService {
     );
 
     return {
-      authorizationUrl: this.auth0Repository.getAuthorizationUrl(state),
+      authorizationUrl: this.auth0Repository.getAuthorizationUrl(
+        state,
+        connection,
+      ),
       state,
       stateMaxAge: this.auth0Repository.getStateTtlMs(),
     };

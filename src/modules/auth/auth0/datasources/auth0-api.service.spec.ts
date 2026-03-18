@@ -60,6 +60,21 @@ describe('Auth0Api', () => {
       expect(url.searchParams.get('scope')).toBe(scope);
       expect(url.searchParams.get('state')).toBe(state);
       expect(url.searchParams.get('audience')).toBe(audience);
+      expect(url.searchParams.has('connection')).toBe(false);
+    });
+
+    it('should append the connection parameter when provided', () => {
+      const state = faker.string.alphanumeric(32);
+
+      const url = new URL(target.getAuthorizationUrl(state, 'google-oauth2'));
+      expect(url.searchParams.get('connection')).toBe('google-oauth2');
+    });
+
+    it('should append the email connection parameter when provided', () => {
+      const state = faker.string.alphanumeric(32);
+
+      const url = new URL(target.getAuthorizationUrl(state, 'email'));
+      expect(url.searchParams.get('connection')).toBe('email');
     });
   });
 

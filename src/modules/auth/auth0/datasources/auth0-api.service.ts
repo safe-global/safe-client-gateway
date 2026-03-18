@@ -49,7 +49,7 @@ export class Auth0Api implements IAuth0Api {
     );
   }
 
-  public getAuthorizationUrl(state: string): string {
+  public getAuthorizationUrl(state: string, connection?: string): string {
     const url = new URL('/authorize', this.baseUri);
     url.searchParams.set('response_type', 'code');
     url.searchParams.set('client_id', this.clientId);
@@ -57,6 +57,10 @@ export class Auth0Api implements IAuth0Api {
     url.searchParams.set('scope', this.scope);
     url.searchParams.set('state', state);
     url.searchParams.set('audience', this.audience);
+
+    if (connection) {
+      url.searchParams.set('connection', connection);
+    }
 
     return url.toString();
   }
