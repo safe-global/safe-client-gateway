@@ -203,6 +203,28 @@ describe('AuthPayload entity', () => {
     });
   });
 
+  describe('isAuthenticated', () => {
+    it('should return true for SIWE payload', () => {
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
+      const authPayload = new AuthPayload(authPayloadDto);
+
+      expect(authPayload.isAuthenticated()).toBe(true);
+    });
+
+    it('should return true for OIDC payload', () => {
+      const authPayloadDto = oidcAuthPayloadDtoBuilder().build();
+      const authPayload = new AuthPayload(authPayloadDto);
+
+      expect(authPayload.isAuthenticated()).toBe(true);
+    });
+
+    it('should return false when no payload is provided', () => {
+      const authPayload = new AuthPayload();
+
+      expect(authPayload.isAuthenticated()).toBe(false);
+    });
+  });
+
   describe('AuthPayloadDtoSchema', () => {
     describe('SIWE', () => {
       it('should parse a valid SIWE AuthPayloadDto', () => {

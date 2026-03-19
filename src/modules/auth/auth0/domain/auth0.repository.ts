@@ -14,7 +14,7 @@ export class Auth0Repository implements IAuth0Repository {
     private readonly auth0TokenVerifier: Auth0TokenVerifier,
   ) {}
 
-  getAuthorizationUrl(state: string): string {
+  public getAuthorizationUrl(state: string): string {
     return this.auth0Api.getAuthorizationUrl(state);
   }
 

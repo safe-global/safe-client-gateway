@@ -187,7 +187,7 @@ export class AuthController {
       this.loggingService.error(
         `Auth callback: authentication failed: ${err instanceof Error ? err.message : 'Unknown error'}`,
       );
-      res.redirect(this.buildErrorRedirectUrl('server_error'));
+      res.redirect(this.buildErrorRedirectUrl('authentication_failed'));
     }
   }
 

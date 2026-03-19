@@ -723,7 +723,7 @@ describe('AuthController', () => {
       });
     });
 
-    it('should redirect with server_error when the token verification fails', async () => {
+    it('should redirect with authentication_failed when the token verification fails', async () => {
       const invalidToken = sign(
         { sub: faker.string.uuid() },
         'wrong-signing-secret',
@@ -761,7 +761,7 @@ describe('AuthController', () => {
           state,
         });
 
-      expectErrorRedirect(response, 'server_error');
+      expectErrorRedirect(response, 'authentication_failed');
     });
 
     it('should redirect with error when the state does not match', async () => {
@@ -843,7 +843,19 @@ describe('AuthController', () => {
       expect(networkService.postForm).not.toHaveBeenCalled();
     });
 
-    it('should redirect with error when the OIDC provider returns an error with description', async () => {
+    it('should redirect with only error when the OIDC provider returns an error with description', async () => {
+      const response = await request(app.getHttpServer())
+        .get('/v1/auth/oidc/callback')
+        .query({
+          error: 'access_denied',
+          error_description: 'User denied access',
+        });
+
+      expectErrorRedirect(response, 'access_denied');
+      expect(networkService.postForm).not.toHaveBeenCalled();
+    });
+
+    it('should redirect with error when the OIDC provider returns an error without description', async () => {
       const response = await request(app.getHttpServer())
         .get('/v1/auth/oidc/callback')
         .query({
@@ -854,15 +866,115 @@ describe('AuthController', () => {
       expect(networkService.postForm).not.toHaveBeenCalled();
     });
 
-    it('should redirect with error code when the OIDC provider returns an error without description', async () => {
+    it('should redirect with authentication_failed when the code exchange fails', async () => {
+      networkService.postForm.mockRejectedValueOnce(new Error('Network error'));
+
+      const authorizeResponse = await request(app.getHttpServer())
+        .get('/v1/auth/oidc/authorize')
+        .expect(302);
+
+      const state = new URL(
+        authorizeResponse.headers.location,
+      ).searchParams.get('state');
+      const stateCookie = (
+        authorizeResponse.headers['set-cookie'] as unknown as Array<string>
+      )
+        .find((cookie) => cookie.startsWith('auth_state='))
+        ?.split(';')[0];
+
       const response = await request(app.getHttpServer())
         .get('/v1/auth/oidc/callback')
+        .set('Cookie', stateCookie!)
         .query({
-          error: 'access_denied',
+          code: 'auth-code',
+          state,
         });
 
-      expectErrorRedirect(response, 'access_denied');
-      expect(networkService.postForm).not.toHaveBeenCalled();
+      expectErrorRedirect(response, 'authentication_failed');
+    });
+
+    it('should redirect with authentication_failed when the Auth0 token has expired', async () => {
+      const expiredToken = signAuth0Token({
+        sub: faker.string.uuid(),
+        exp: Math.floor(Date.now() / 1_000) - 60,
+        iat: Math.floor(Date.now() / 1_000) - 120,
+      });
+
+      networkService.postForm.mockResolvedValueOnce({
+        status: 200,
+        data: rawify({
+          access_token: expiredToken,
+          id_token: 'auth0-id-token',
+          token_type: 'Bearer',
+        }),
+      });
+
+      const authorizeResponse = await request(app.getHttpServer())
+        .get('/v1/auth/oidc/authorize')
+        .expect(302);
+
+      const state = new URL(
+        authorizeResponse.headers.location,
+      ).searchParams.get('state');
+      const stateCookie = (
+        authorizeResponse.headers['set-cookie'] as unknown as Array<string>
+      )
+        .find((cookie) => cookie.startsWith('auth_state='))
+        ?.split(';')[0];
+
+      const response = await request(app.getHttpServer())
+        .get('/v1/auth/oidc/callback')
+        .set('Cookie', stateCookie!)
+        .query({
+          code: 'auth-code',
+          state,
+        });
+
+      expectErrorRedirect(response, 'authentication_failed');
+    });
+
+    it('should redirect with authentication_failed when Auth0 token exp exceeds max validity', async () => {
+      jest.setSystemTime(0);
+
+      const farFutureExp =
+        Math.floor(Date.now() / 1_000) + maxValidityPeriodInMs / 1_000 + 3600;
+      const auth0Token = signAuth0Token({
+        sub: faker.string.uuid(),
+        exp: farFutureExp,
+        iat: Math.floor(Date.now() / 1_000),
+      });
+
+      networkService.postForm.mockResolvedValueOnce({
+        status: 200,
+        data: rawify({
+          access_token: auth0Token,
+          id_token: 'auth0-id-token',
+          token_type: 'Bearer',
+        }),
+      });
+
+      const authorizeResponse = await request(app.getHttpServer())
+        .get('/v1/auth/oidc/authorize')
+        .expect(302);
+
+      const state = new URL(
+        authorizeResponse.headers.location,
+      ).searchParams.get('state');
+      const stateCookie = (
+        authorizeResponse.headers['set-cookie'] as unknown as Array<string>
+      )
+        .find((cookie) => cookie.startsWith('auth_state='))
+        ?.split(';')[0];
+
+      const response = await request(app.getHttpServer())
+        .get('/v1/auth/oidc/callback')
+        .set('Cookie', stateCookie!)
+        .query({
+          code: 'auth-code',
+          state,
+        });
+
+      expectErrorRedirect(response, 'authentication_failed');
     });
   });
 

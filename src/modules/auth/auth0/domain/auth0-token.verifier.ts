@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { IConfigurationService } from '@/config/configuration.service.interface';
+import { JWT_ALGORITHM } from '@/datasources/jwt/jwt.constants';
 import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import type { Auth0Token } from '@/modules/auth/auth0/domain/entities/auth0-token.entity';
@@ -38,6 +39,7 @@ export class Auth0TokenVerifier {
         issuer: this.issuer,
         audience: this.audience,
         secretOrPrivateKey: this.signingSecret,
+        algorithms: [JWT_ALGORITHM],
       });
       return Auth0TokenSchema.parse(decoded);
     } catch (error) {

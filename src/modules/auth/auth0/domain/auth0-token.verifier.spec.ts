@@ -64,6 +64,7 @@ describe('Auth0TokenVerifier', () => {
         issuer,
         audience,
         secretOrPrivateKey: signingSecret,
+        algorithms: ['HS256'],
       });
     });
 

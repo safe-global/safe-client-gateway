@@ -99,5 +99,39 @@ describe('Auth0Repository', () => {
         target.authenticateWithAuthorizationCode(code),
       ).rejects.toThrow(error);
     });
+
+    it('should throw when Auth0 returns an invalid token response', async () => {
+      const code = faker.string.alphanumeric(32);
+
+      auth0ApiMock.exchangeAuthorizationCode.mockResolvedValue(
+        rawify({
+          access_token: '',
+          id_token: faker.string.alphanumeric(64),
+          token_type: 'Bearer',
+        }),
+      );
+
+      await expect(
+        target.authenticateWithAuthorizationCode(code),
+      ).rejects.toThrow();
+      expect(auth0TokenVerifierMock.verifyAndDecode).not.toHaveBeenCalled();
+    });
+
+    it('should throw when Auth0 returns an unexpected token_type', async () => {
+      const code = faker.string.alphanumeric(32);
+
+      auth0ApiMock.exchangeAuthorizationCode.mockResolvedValue(
+        rawify({
+          access_token: faker.string.alphanumeric(64),
+          id_token: faker.string.alphanumeric(64),
+          token_type: 'MAC',
+        }),
+      );
+
+      await expect(
+        target.authenticateWithAuthorizationCode(code),
+      ).rejects.toThrow();
+      expect(auth0TokenVerifierMock.verifyAndDecode).not.toHaveBeenCalled();
+    });
   });
 });
