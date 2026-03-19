@@ -6,6 +6,7 @@ import { ACCESS_TOKEN_COOKIE_NAME } from '@/modules/auth/routes/auth.constants';
 import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
 import { AuthService } from '@/modules/auth/routes/auth.service';
 import { AuthNonce } from '@/modules/auth/routes/entities/auth-nonce.entity';
+import { RedirectUrlSchema } from '@/validation/entities/schemas/redirect-url.schema';
 import {
   SiweDto,
   SiweDtoSchema,
@@ -99,6 +100,14 @@ export class AuthController {
     description:
       'Redirects the browser to OIDC provider login page with a generated state value stored in an HTTP-only cookie.',
   })
+  @ApiQuery({
+    name: 'redirect_url',
+    required: false,
+    type: String,
+    description:
+      'URL to redirect to after successful login. Must be same-origin as the configured post-login redirect URI.',
+    example: '/settings',
+  })
   @ApiFoundResponse({
     description: 'Redirect to OIDC authorize endpoint',
   })
@@ -106,9 +115,11 @@ export class AuthController {
   authorize(
     @Res({ passthrough: true })
     res: Response,
+    @Query('redirect_url', new ValidationPipe(RedirectUrlSchema))
+    redirectUrl?: string,
   ): void {
     const { authorizationUrl, state, stateMaxAge } =
-      this.authService.createOidcAuthorizationRequest();
+      this.authService.createOidcAuthorizationRequest(redirectUrl);
 
     res.cookie(AuthController.OIDC_STATE_COOKIE_NAME, state, {
       ...this.getCookieOptions(),
@@ -198,7 +209,7 @@ export class AuthController {
         ...this.getCookieOptions(),
         maxAge: this.getMaxAge(accessToken),
       });
-      res.redirect(this.authService.getPostLoginRedirectUri());
+      res.redirect(this.authService.getPostLoginRedirectUri(state));
     } catch (err) {
       this.loggingService.error(
         `Auth callback: authentication failed: ${err instanceof Error ? err.message : 'Unknown error'}`,

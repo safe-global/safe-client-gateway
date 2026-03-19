@@ -7,7 +7,11 @@ import { AuthService } from '@/modules/auth/routes/auth.service';
 import type { ISiweRepository } from '@/modules/siwe/domain/siwe.repository.interface';
 import type { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
 import { faker } from '@faker-js/faker';
-import { ForbiddenException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { siweMessageBuilder } from '@/modules/siwe/domain/entities/__tests__/siwe-message.builder';
 import type { Hex } from 'viem';
 
@@ -431,24 +435,88 @@ describe('AuthService', () => {
   });
 
   describe('createOidcAuthorizationRequest', () => {
-    it('should return authorizationUrl, state, and stateMaxAge', () => {
+    it('should return base64url-encoded state with csrf token', () => {
       const authorizationUrl = faker.internet.url();
       auth0RepositoryMock.getAuthorizationUrl.mockReturnValue(authorizationUrl);
 
       const result = target.createOidcAuthorizationRequest();
 
       expect(result.authorizationUrl).toBe(authorizationUrl);
-      expect(result.state).toHaveLength(64); // 32 bytes hex-encoded
       expect(result.stateMaxAge).toBe(stateTtlMs);
+
+      const decoded = JSON.parse(
+        Buffer.from(result.state, 'base64url').toString('utf-8'),
+      );
+      expect(decoded.csrf).toHaveLength(64); // 32 bytes hex-encoded
+      expect(decoded.redirectUrl).toBeUndefined();
       expect(auth0RepositoryMock.getAuthorizationUrl).toHaveBeenCalledWith(
         result.state,
       );
     });
+
+    it('should encode redirectUrl in the state', () => {
+      const authorizationUrl = faker.internet.url();
+      auth0RepositoryMock.getAuthorizationUrl.mockReturnValue(authorizationUrl);
+
+      const redirectUrl = new URL('/settings', postLoginRedirectUri).toString();
+      const result = target.createOidcAuthorizationRequest(redirectUrl);
+
+      const decoded = JSON.parse(
+        Buffer.from(result.state, 'base64url').toString('utf-8'),
+      );
+      expect(decoded.csrf).toHaveLength(64);
+      expect(decoded.redirectUrl).toBe(redirectUrl);
+    });
+
+    it('should resolve a relative path to an absolute URL', () => {
+      const authorizationUrl = faker.internet.url();
+      auth0RepositoryMock.getAuthorizationUrl.mockReturnValue(authorizationUrl);
+
+      const path = `/${faker.word.noun()}`;
+      const result = target.createOidcAuthorizationRequest(path);
+
+      const decoded = JSON.parse(
+        Buffer.from(result.state, 'base64url').toString('utf-8'),
+      );
+      const expectedUrl = new URL(path, postLoginRedirectUri).toString();
+      expect(decoded.redirectUrl).toBe(expectedUrl);
+    });
+
+    it('should throw BadRequestException for cross-origin redirectUrl', () => {
+      expect(() =>
+        target.createOidcAuthorizationRequest('https://evil.com/phish'),
+      ).toThrow(BadRequestException);
+    });
   });
 
   describe('getPostLoginRedirectUri', () => {
-    it('should return the configured redirect URI', () => {
+    it('should return the configured redirect URI when called without state', () => {
       expect(target.getPostLoginRedirectUri()).toBe(postLoginRedirectUri);
+    });
+
+    it('should return the configured redirect URI when state has no redirectUrl', () => {
+      const state = Buffer.from(JSON.stringify({ csrf: 'abc' })).toString(
+        'base64url',
+      );
+      expect(target.getPostLoginRedirectUri(state)).toBe(postLoginRedirectUri);
+    });
+
+    it('should return redirectUrl from state when present and same-origin', () => {
+      const redirectUrl = new URL(
+        '/dashboard',
+        postLoginRedirectUri,
+      ).toString();
+      const state = Buffer.from(
+        JSON.stringify({ csrf: 'abc', redirectUrl }),
+      ).toString('base64url');
+
+      expect(target.getPostLoginRedirectUri(state)).toBe(redirectUrl);
+    });
+
+    it('should throw UnauthorizedException for malformed state', () => {
+      expect(() => target.getPostLoginRedirectUri('not-valid-base64!')).toThrow(
+        UnauthorizedException,
+      );
     });
   });
 });
