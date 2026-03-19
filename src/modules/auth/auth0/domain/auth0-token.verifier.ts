@@ -21,8 +21,9 @@ export class Auth0TokenVerifier {
     @Inject(LoggingService)
     private readonly loggingService: ILoggingService,
   ) {
-    this.issuer =
-      this.configurationService.getOrThrow<string>('auth.auth0.baseUri');
+    const domain =
+      this.configurationService.getOrThrow<string>('auth.auth0.domain');
+    this.issuer = `https://${domain}/`;
     this.audience = this.configurationService.getOrThrow<string>(
       'auth.auth0.audience',
     );

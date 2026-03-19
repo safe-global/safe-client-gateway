@@ -52,7 +52,7 @@ export default () => ({
     ),
     postLoginRedirectUri: process.env.AUTH_POST_LOGIN_REDIRECT_URI,
     auth0: {
-      baseUri: process.env.AUTH0_BASE_URI,
+      domain: process.env.AUTH0_DOMAIN,
       clientId: process.env.AUTH0_CLIENT_ID,
       clientSecret: process.env.AUTH0_CLIENT_SECRET,
       redirectUri: process.env.AUTH0_REDIRECT_URI,

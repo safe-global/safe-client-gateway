@@ -36,7 +36,7 @@ export const RootConfigurationSchema = z
     AUTH_TOKEN: z.string(),
     AUTH_POST_LOGIN_REDIRECT_URI: z.url().optional(),
     AUTH0_API_AUDIENCE: z.string().optional(),
-    AUTH0_BASE_URI: z.url().optional(),
+    AUTH0_DOMAIN: z.string().optional(),
     AUTH0_CLIENT_ID: z.string().optional(),
     AUTH0_CLIENT_SECRET: z.string().optional(),
     AUTH0_REDIRECT_URI: z.url().optional(),

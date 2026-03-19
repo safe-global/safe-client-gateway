@@ -24,12 +24,13 @@ describe('Auth0TokenVerifier', () => {
   beforeEach(() => {
     jest.resetAllMocks();
 
-    issuer = faker.internet.url({ appendSlash: false });
+    const domain = faker.internet.domainName();
+    issuer = `https://${domain}/`;
     audience = faker.string.alphanumeric();
     signingSecret = faker.string.alphanumeric(32);
 
     const fakeConfigurationService = new FakeConfigurationService();
-    fakeConfigurationService.set('auth.auth0.baseUri', issuer);
+    fakeConfigurationService.set('auth.auth0.domain', domain);
     fakeConfigurationService.set('auth.auth0.audience', audience);
     fakeConfigurationService.set('auth.auth0.signingSecret', signingSecret);
 

@@ -36,7 +36,7 @@ describe('AuthController', () => {
   let maxValidityPeriodInMs: number;
   let stateTtlMs: number;
   let auth0Config: {
-    baseUri: string;
+    domain: string;
     clientId: string;
     clientSecret: string;
     redirectUri: string;
@@ -54,7 +54,7 @@ describe('AuthController', () => {
   }): string {
     return sign(claims, auth0Config.signingSecret, {
       algorithm: 'HS256',
-      issuer: auth0Config.baseUri,
+      issuer: `https://${auth0Config.domain}/`,
       audience: auth0Config.audience,
       noTimestamp: true,
     });
@@ -90,7 +90,7 @@ describe('AuthController', () => {
     );
     stateTtlMs = configService.getOrThrow<number>('auth.stateTtlMs');
     auth0Config = {
-      baseUri: configService.getOrThrow<string>('auth.auth0.baseUri'),
+      domain: configService.getOrThrow<string>('auth.auth0.domain'),
       clientId: configService.getOrThrow<string>('auth.auth0.clientId'),
       clientSecret: configService.getOrThrow<string>('auth.auth0.clientSecret'),
       redirectUri: configService.getOrThrow<string>('auth.auth0.redirectUri'),
@@ -160,7 +160,7 @@ describe('AuthController', () => {
       const location = new URL(response.headers.location);
       const stateMaxAge = Math.floor(stateTtlMs / 1_000);
 
-      expect(location.origin).toBe(new URL(auth0Config.baseUri).origin);
+      expect(location.origin).toBe(`https://${auth0Config.domain}`);
       expect(location.pathname).toBe('/authorize');
       expect(location.searchParams.get('response_type')).toBe('code');
       expect(location.searchParams.get('client_id')).toBe(auth0Config.clientId);
@@ -712,7 +712,7 @@ describe('AuthController', () => {
         });
 
       expect(networkService.postForm).toHaveBeenCalledWith({
-        url: new URL('/oauth/token', auth0Config.baseUri).toString(),
+        url: `https://${auth0Config.domain}/oauth/token`,
         data: {
           grant_type: 'authorization_code',
           client_id: auth0Config.clientId,

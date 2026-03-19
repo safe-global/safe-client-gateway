@@ -23,7 +23,8 @@ describe('Auth0Api', () => {
   beforeEach(() => {
     jest.resetAllMocks();
 
-    baseUri = faker.internet.url({ appendSlash: false });
+    const domain = faker.internet.domainName();
+    baseUri = `https://${domain}`;
     clientId = faker.string.uuid();
     clientSecret = faker.string.uuid();
     redirectUri = faker.internet.url();
@@ -31,7 +32,7 @@ describe('Auth0Api', () => {
     scope = 'openid';
 
     const fakeConfigurationService = new FakeConfigurationService();
-    fakeConfigurationService.set('auth.auth0.baseUri', baseUri);
+    fakeConfigurationService.set('auth.auth0.domain', domain);
     fakeConfigurationService.set('auth.auth0.clientId', clientId);
     fakeConfigurationService.set('auth.auth0.clientSecret', clientSecret);
     fakeConfigurationService.set('auth.auth0.redirectUri', redirectUri);

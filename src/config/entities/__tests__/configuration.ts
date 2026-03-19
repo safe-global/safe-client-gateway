@@ -30,7 +30,7 @@ export default (): ReturnType<typeof configuration> => ({
     stateTtlMs: faker.number.int({ min: 60_000, max: 600_000 }),
     postLoginRedirectUri: faker.internet.url(),
     auth0: {
-      baseUri: faker.internet.url({ appendSlash: false }),
+      domain: faker.internet.domainName(),
       clientId: faker.string.uuid(),
       clientSecret: faker.string.uuid(),
       redirectUri: faker.internet.url(),

@@ -28,9 +28,10 @@ export class Auth0Api implements IAuth0Api {
     private readonly httpErrorFactory: HttpErrorFactory,
   ) {
     const prefix = 'auth.auth0';
-    this.baseUri = this.configurationService.getOrThrow<string>(
-      `${prefix}.baseUri`,
+    const domain = this.configurationService.getOrThrow<string>(
+      `${prefix}.domain`,
     );
+    this.baseUri = `https://${domain}`;
     this.clientId = this.configurationService.getOrThrow<string>(
       `${prefix}.clientId`,
     );
