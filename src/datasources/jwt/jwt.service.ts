@@ -3,14 +3,13 @@ import { JwtClient } from '@/datasources/jwt/jwt.module';
 import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
 import { Inject, Injectable } from '@nestjs/common';
 import { IConfigurationService } from '@/config/configuration.service.interface';
+import { JWT_ALGORITHM } from '@/datasources/jwt/jwt.constants';
 import type { Algorithm, JwtPayload } from 'jsonwebtoken';
 
 @Injectable()
 export class JwtService implements IJwtService {
-  private static readonly ALGORITHM: Algorithm = 'HS256';
-
-  issuer: string;
-  secret: string;
+  private readonly issuer: string;
+  private readonly secret: string;
 
   constructor(
     @Inject('JwtClient')
@@ -18,8 +17,8 @@ export class JwtService implements IJwtService {
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
   ) {
-    this.issuer = configurationService.getOrThrow<string>('jwt.issuer');
-    this.secret = configurationService.getOrThrow<string>('jwt.secret');
+    this.issuer = this.configurationService.getOrThrow<string>('jwt.issuer');
+    this.secret = this.configurationService.getOrThrow<string>('jwt.secret');
   }
 
   sign<
@@ -40,7 +39,7 @@ export class JwtService implements IJwtService {
       },
       {
         secretOrPrivateKey: options?.secretOrPrivateKey ?? this.secret,
-        algorithm: options?.algorithm ?? JwtService.ALGORITHM,
+        algorithm: options?.algorithm ?? JWT_ALGORITHM,
       },
     );
   }
@@ -58,7 +57,7 @@ export class JwtService implements IJwtService {
       issuer: options?.issuer ?? this.issuer,
       audience: options?.audience ?? this.issuer,
       secretOrPrivateKey: options?.secretOrPrivateKey ?? this.secret,
-      algorithms: options?.algorithms,
+      algorithms: options?.algorithms ?? [JWT_ALGORITHM],
     });
   }
 

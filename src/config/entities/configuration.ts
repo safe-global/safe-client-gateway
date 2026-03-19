@@ -47,6 +47,11 @@ export default () => ({
     maxValidityPeriodSeconds: parseInt(
       process.env.AUTH_VALIDITY_PERIOD_SECONDS ?? `${24 * 60 * 60}`, // 24 hours
     ),
+    auth0: {
+      domain: process.env.AUTH0_DOMAIN,
+      apiIdentifier: process.env.AUTH0_API_IDENTIFIER,
+      signingSecret: process.env.AUTH0_API_SIGNING_SECRET,
+    },
   },
   balances: {
     providers: {

@@ -1,11 +1,14 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { getMillisecondsUntil } from '@/domain/common/utils/time';
 import { AuthService } from '@/modules/auth/routes/auth.service';
 import { AuthNonce } from '@/modules/auth/routes/entities/auth-nonce.entity';
+import { Auth0Dto } from '@/modules/auth/routes/entities/auth0.dto.entity';
+import { SiweDto } from '@/modules/auth/routes/entities/siwe.dto.entity';
 import {
-  SiweDto,
-  SiweDtoSchema,
-} from '@/modules/auth/routes/entities/siwe.dto.entity';
+  VerifyAuthRequest,
+  VerifyAuthRequestSchema,
+} from '@/modules/auth/routes/entities/verify-auth.request.entity';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import {
   Body,
@@ -17,25 +20,37 @@ import {
   Res,
 } from '@nestjs/common';
 import {
+  ApiExtraModels,
   ApiOkResponse,
   ApiTags,
   ApiOperation,
   ApiBody,
   ApiUnauthorizedResponse,
   ApiBadRequestResponse,
+  getSchemaPath,
 } from '@nestjs/swagger';
 import { CookieOptions, Response } from 'express';
 
 /**
  * The AuthController is responsible for handling authentication:
  *
+ * SiWE (Sign-In with Ethereum):
  * 1. Calling `/v1/auth/nonce` returns a unique nonce to be signed.
  * 2. The client signs this nonce in a SiWe message, sending it and
  *    the signature to `/v1/auth/verify` for verification.
  * 3. If verification succeeds, JWT token is added to `access_token`
  *    Set-Cookie.
+ *
+ * OIDC (e.g. Auth0):
+ * 1. The client authenticates with the OIDC provider and obtains an
+ *    access token.
+ * 2. The client sends the access token to `/v1/auth/verify` for
+ *    verification.
+ * 3. If verification succeeds, JWT token is added to `access_token`
+ *    Set-Cookie.
  */
 @ApiTags('auth')
+@ApiExtraModels(SiweDto, Auth0Dto)
 @Controller({ path: 'auth', version: '1' })
 export class AuthController {
   static readonly ACCESS_TOKEN_COOKIE_NAME = 'access_token';
@@ -70,31 +85,41 @@ export class AuthController {
   @ApiOperation({
     summary: 'Verify authentication',
     description:
-      'Verifies a signed Sign-In with Ethereum (SiWE) message and nonce. On successful verification, sets an HTTP-only JWT cookie for subsequent authenticated requests.',
+      'Verifies authentication via either a signed Sign-In with Ethereum (SiWE) message or an Auth0 access token. On successful verification, sets an HTTP-only JWT cookie for subsequent authenticated requests.',
   })
   @ApiBody({
-    type: SiweDto,
-    description: 'Sign-In with Ethereum message and signature for verification',
+    schema: {
+      oneOf: [
+        { $ref: getSchemaPath(SiweDto) },
+        { $ref: getSchemaPath(Auth0Dto) },
+      ],
+    },
+    description:
+      'Sign-In with Ethereum message and signature, or Auth0 access token for verification',
   })
   @ApiOkResponse({
     description:
       'Authentication successful. JWT token set as HTTP-only cookie named "access_token".',
   })
   @ApiBadRequestResponse({
-    description: 'Invalid SiWE message format or signature verification failed',
+    description:
+      'Invalid SiWE message format, signature verification failed, or invalid Auth0 access token',
   })
   @ApiUnauthorizedResponse({
-    description: 'Authentication failed - invalid or expired nonce',
+    description: 'Authentication failed - invalid credentials provided',
   })
   @HttpCode(200)
   @Post('verify')
   async verify(
     @Res({ passthrough: true })
     res: Response,
-    @Body(new ValidationPipe(SiweDtoSchema))
-    siweDto: SiweDto,
+    @Body(new ValidationPipe(VerifyAuthRequestSchema))
+    verifyAuthRequest: VerifyAuthRequest,
   ): Promise<void> {
-    const { accessToken } = await this.authService.getAccessToken(siweDto);
+    const { accessToken } =
+      'access_token' in verifyAuthRequest
+        ? await this.authService.verifyOidc(verifyAuthRequest.access_token)
+        : await this.authService.verifySiwe(verifyAuthRequest);
 
     res.cookie(AuthController.ACCESS_TOKEN_COOKIE_NAME, accessToken, {
       ...this.getCookieOptions(),
