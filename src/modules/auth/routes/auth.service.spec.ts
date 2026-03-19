@@ -219,6 +219,9 @@ describe('AuthService', () => {
         ),
       );
 
+      expect(
+        usersRepositoryMock.findOrCreateByWalletAddress,
+      ).not.toHaveBeenCalled();
       expect(authRepositoryMock.signToken).not.toHaveBeenCalled();
     });
 
@@ -343,7 +346,6 @@ describe('AuthService', () => {
       jest.setSystemTime(now);
 
       const extUserId = `auth0|${faker.string.uuid()}`;
-      const userId = faker.number.int();
       const exp = new Date(
         now.getTime() + (maxValidityPeriodInSeconds + 60) * 1_000,
       );
@@ -354,12 +356,14 @@ describe('AuthService', () => {
         nbf: undefined,
         iat: undefined,
       });
-      usersRepositoryMock.findOrCreateByExtUserId.mockResolvedValue(userId);
 
       await expect(
         target.authenticateWithOidc(faker.string.alphanumeric(32)),
       ).rejects.toThrow(ForbiddenException);
 
+      expect(
+        usersRepositoryMock.findOrCreateByExtUserId,
+      ).not.toHaveBeenCalled();
       expect(authRepositoryMock.signToken).not.toHaveBeenCalled();
     });
 

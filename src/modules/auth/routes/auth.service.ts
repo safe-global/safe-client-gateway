@@ -55,13 +55,14 @@ export class AuthService {
     const { chainId, address, notBefore, issuedAt, expirationTime } =
       await this.siweRepository.getValidatedSiweMessage(args);
 
-    const userId =
-      await this.usersRepository.findOrCreateByWalletAddress(address);
     const maxExpirationTime = this.getMaxExpirationTime();
 
     if (expirationTime) {
       this.assertExpirationTime(expirationTime, maxExpirationTime);
     }
+
+    const userId =
+      await this.usersRepository.findOrCreateByWalletAddress(address);
 
     const accessToken = this.authRepository.signToken(
       {
@@ -92,13 +93,14 @@ export class AuthService {
       iat,
     } = await this.auth0Repository.authenticateWithAuthorizationCode(code);
 
-    const userId =
-      await this.usersRepository.findOrCreateByExtUserId(extUserId);
     const maxExpirationTime = this.getMaxExpirationTime();
 
     if (expirationTime) {
       this.assertExpirationTime(expirationTime, maxExpirationTime);
     }
+
+    const userId =
+      await this.usersRepository.findOrCreateByExtUserId(extUserId);
     const accessToken = this.authRepository.signToken(
       {
         auth_method: AuthMethod.Oidc,
