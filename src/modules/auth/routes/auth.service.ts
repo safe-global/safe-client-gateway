@@ -69,6 +69,9 @@ export class AuthService {
       this.assertExpirationTime(expirationTime, maxExpirationTime);
     }
 
+    const userId =
+      await this.usersRepository.findOrCreateByWalletAddress(address);
+
     const accessToken = this.authRepository.signToken(
       {
         auth_method: AuthMethod.Siwe,
