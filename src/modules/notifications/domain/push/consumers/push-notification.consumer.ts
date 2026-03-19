@@ -54,7 +54,7 @@ export class PushNotificationConsumer extends WorkerHost {
 
   @OnWorkerEvent('completed')
   onCompleted(job: PushNotificationJob): void {
-    const { ...metadata } = this.getJobMetadata(job);
+    const metadata = this.getJobMetadata(job);
     this.loggingService.debug({
       type: LogType.JobEvent,
       source: 'PushNotificationConsumer',
@@ -65,7 +65,7 @@ export class PushNotificationConsumer extends WorkerHost {
 
   @OnWorkerEvent('failed')
   onFailed(job: PushNotificationJob, error: Error): void {
-    const { ...metadata } = this.getJobMetadata(job);
+    const metadata = this.getJobMetadata(job);
     this.loggingService.error({
       // if deviceUuid is present, it's a delivery job
       type: metadata.deviceUuid ? LogType.NotificationError : LogType.JobError,

@@ -8,6 +8,8 @@ import { incomingEtherEventBuilder } from '@/modules/hooks/routes/entities/__tes
 import { executedTransactionEventBuilder } from '@/modules/hooks/routes/entities/__tests__/executed-transaction.builder';
 import { deletedMultisigTransactionEventBuilder } from '@/modules/hooks/routes/entities/__tests__/deleted-multisig-transaction.builder';
 import { moduleTransactionEventBuilder } from '@/modules/hooks/routes/entities/__tests__/module-transaction.builder';
+import { pendingTransactionEventBuilder } from '@/modules/hooks/routes/entities/__tests__/pending-transaction.builder';
+import { messageCreatedEventBuilder } from '@/modules/hooks/routes/entities/__tests__/message-created.builder';
 
 const eventBuilders = [
   incomingTokenEventBuilder,
@@ -15,6 +17,8 @@ const eventBuilders = [
   executedTransactionEventBuilder,
   deletedMultisigTransactionEventBuilder,
   moduleTransactionEventBuilder,
+  pendingTransactionEventBuilder,
+  messageCreatedEventBuilder,
 ];
 
 export function pushNotificationEventJobDataBuilder(): IBuilder<PushNotificationEventJobData> {

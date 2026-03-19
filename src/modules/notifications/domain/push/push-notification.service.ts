@@ -127,7 +127,13 @@ export class PushNotificationService implements IPushNotificationService {
               deviceUuid: subscription.deviceUuid,
             });
             return 1;
-          } catch {
+          } catch (error) {
+            this.loggingService.warn({
+              type: LogType.NotificationError,
+              event: `Failed to process subscription: ${asError(error).message}`,
+              chainId: event.chainId,
+              safeAddress: event.address,
+            });
             return 0;
           }
         }),
