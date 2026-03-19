@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
@@ -12,19 +13,58 @@ const networkService = {
 
 describe('Auth0Api', () => {
   let target: Auth0Api;
+  let baseUri: string;
+  let clientId: string;
+  let clientSecret: string;
+  let redirectUri: string;
+  let audience: string;
+  let scope: string;
 
   beforeEach(() => {
     jest.resetAllMocks();
-    target = new Auth0Api(networkService, new HttpErrorFactory());
+
+    baseUri = faker.internet.url({ appendSlash: false });
+    clientId = faker.string.uuid();
+    clientSecret = faker.string.uuid();
+    redirectUri = faker.internet.url();
+    audience = faker.internet.url({ appendSlash: false });
+    scope = 'openid';
+
+    const fakeConfigurationService = new FakeConfigurationService();
+    fakeConfigurationService.set('auth.auth0.baseUri', baseUri);
+    fakeConfigurationService.set('auth.auth0.clientId', clientId);
+    fakeConfigurationService.set('auth.auth0.clientSecret', clientSecret);
+    fakeConfigurationService.set('auth.auth0.redirectUri', redirectUri);
+    fakeConfigurationService.set('auth.auth0.audience', audience);
+    fakeConfigurationService.set('auth.auth0.scope', scope);
+
+    target = new Auth0Api(
+      networkService,
+      fakeConfigurationService,
+      new HttpErrorFactory(),
+    );
+  });
+
+  describe('getAuthorizationUrl', () => {
+    it('should build the Auth0 authorize URL', () => {
+      const state = faker.string.alphanumeric(32);
+
+      const url = new URL(target.getAuthorizationUrl(state));
+
+      expect(url.origin).toBe(new URL(baseUri).origin);
+      expect(url.pathname).toBe('/authorize');
+      expect(url.searchParams.get('response_type')).toBe('code');
+      expect(url.searchParams.get('client_id')).toBe(clientId);
+      expect(url.searchParams.get('redirect_uri')).toBe(redirectUri);
+      expect(url.searchParams.get('scope')).toBe(scope);
+      expect(url.searchParams.get('state')).toBe(state);
+      expect(url.searchParams.get('audience')).toBe(audience);
+    });
   });
 
   describe('exchangeAuthorizationCode', () => {
     it('should exchange an authorization code for tokens', async () => {
-      const baseUri = faker.internet.url({ appendSlash: false });
-      const clientId = faker.string.uuid();
-      const clientSecret = faker.string.uuid();
       const code = faker.string.alphanumeric(32);
-      const redirectUri = faker.internet.url();
       const tokenResponse = {
         access_token: faker.string.alphanumeric(),
         refresh_token: faker.string.alphanumeric(),
@@ -37,15 +77,9 @@ describe('Auth0Api', () => {
         data: rawify(tokenResponse),
       });
 
-      await expect(
-        target.exchangeAuthorizationCode({
-          baseUri,
-          clientId,
-          clientSecret,
-          code,
-          redirectUri,
-        }),
-      ).resolves.toBe(tokenResponse);
+      await expect(target.exchangeAuthorizationCode(code)).resolves.toBe(
+        tokenResponse,
+      );
 
       expect(networkService.postForm).toHaveBeenCalledWith({
         url: new URL('/oauth/token', baseUri).toString(),
@@ -60,7 +94,6 @@ describe('Auth0Api', () => {
     });
 
     it('should map network errors', async () => {
-      const baseUri = faker.internet.url({ appendSlash: false });
       networkService.postForm.mockRejectedValueOnce(
         new NetworkResponseError(
           new URL('/oauth/token', baseUri),
@@ -72,13 +105,7 @@ describe('Auth0Api', () => {
       );
 
       await expect(
-        target.exchangeAuthorizationCode({
-          baseUri,
-          clientId: faker.string.uuid(),
-          clientSecret: faker.string.uuid(),
-          code: faker.string.alphanumeric(32),
-          redirectUri: faker.internet.url(),
-        }),
+        target.exchangeAuthorizationCode(faker.string.alphanumeric(32)),
       ).rejects.toThrow('Unauthorized');
     });
   });

@@ -6,16 +6,18 @@ export const IAuth0Api = Symbol('IAuth0Api');
 
 export interface IAuth0Api {
   /**
+   * Builds the Auth0 authorization URL used to start the Authorization Code Flow.
+   *
+   * @param state - Opaque anti-CSRF state value that will be echoed back by Auth0.
+   * @returns The fully qualified Auth0 `/authorize` URL.
+   */
+  getAuthorizationUrl(state: string): string;
+
+  /**
    * Exchanges an OAuth 2.0 authorization code for Auth0 tokens.
    *
-   * @param args - Auth0 tenant and client credentials plus the received authorization code.
+   * @param code - Authorization code received from the Auth0 callback.
    * @returns The raw Auth0 token response.
    */
-  exchangeAuthorizationCode(args: {
-    baseUri: string;
-    clientId: string;
-    clientSecret: string;
-    code: string;
-    redirectUri: string;
-  }): Promise<Raw<Auth0TokenResponse>>;
+  exchangeAuthorizationCode(code: string): Promise<Raw<Auth0TokenResponse>>;
 }
