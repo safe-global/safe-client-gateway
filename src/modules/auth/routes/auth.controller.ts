@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { getMillisecondsUntil } from '@/domain/common/utils/time';
+import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { AuthService } from '@/modules/auth/routes/auth.service';
 import { AuthNonce } from '@/modules/auth/routes/entities/auth-nonce.entity';
 import {
@@ -9,7 +10,6 @@ import {
 } from '@/modules/auth/routes/entities/siwe.dto.entity';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import {
-  BadRequestException,
   Body,
   Controller,
   Get,
@@ -19,7 +19,6 @@ import {
   Query,
   Req,
   Res,
-  UnauthorizedException,
 } from '@nestjs/common';
 import {
   ApiFoundResponse,
@@ -57,6 +56,8 @@ export class AuthController {
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
     private readonly authService: AuthService,
+    @Inject(LoggingService)
+    private readonly loggingService: ILoggingService,
   ) {
     this.isProduction = this.configurationService.getOrThrow<boolean>(
       'application.isProduction',
@@ -135,13 +136,8 @@ export class AuthController {
     example: 'The user has denied the request',
   })
   @ApiFoundResponse({
-    description: 'Redirect to the configured post-login URL',
-  })
-  @ApiBadRequestResponse({
-    description: 'Authorization code and state are required',
-  })
-  @ApiUnauthorizedResponse({
-    description: 'Authentication failed or the OAuth state is invalid',
+    description:
+      'Redirect to the configured post-login URL. On error, includes error query parameter.',
   })
   @Get('oidc/callback')
   async callback(
@@ -161,25 +157,38 @@ export class AuthController {
     );
 
     if (error) {
-      throw new UnauthorizedException(errorDescription ?? error);
+      this.loggingService.warn(
+        `Auth callback: provider error: ${error}${errorDescription ? ` - ${errorDescription}` : ''}`,
+      );
+      res.redirect(this.buildErrorRedirectUrl(error));
+      return;
     }
 
     if (!code || !state) {
-      throw new BadRequestException(
-        'Authorization code and state are required',
-      );
+      this.loggingService.warn('Auth callback: missing code or state');
+      res.redirect(this.buildErrorRedirectUrl('invalid_request'));
+      return;
     }
 
     if (!expectedState || expectedState !== state) {
-      throw new UnauthorizedException('Invalid OAuth state');
+      this.loggingService.warn('Auth callback: state mismatch');
+      res.redirect(this.buildErrorRedirectUrl('invalid_request'));
+      return;
     }
 
-    const { accessToken } = await this.authService.authenticateWithOidc(code);
-    res.cookie(AuthController.ACCESS_TOKEN_COOKIE_NAME, accessToken, {
-      ...this.getCookieOptions(),
-      maxAge: this.getMaxAge(accessToken), //TODO why decode it twice?
-    });
-    res.redirect(this.authService.getPostLoginRedirectUri());
+    try {
+      const { accessToken } = await this.authService.authenticateWithOidc(code);
+      res.cookie(AuthController.ACCESS_TOKEN_COOKIE_NAME, accessToken, {
+        ...this.getCookieOptions(),
+        maxAge: this.getMaxAge(accessToken),
+      });
+      res.redirect(this.authService.getPostLoginRedirectUri());
+    } catch (err) {
+      this.loggingService.error(
+        `Auth callback: authentication failed: ${err instanceof Error ? err.message : 'Unknown error'}`,
+      );
+      res.redirect(this.buildErrorRedirectUrl('server_error'));
+    }
   }
 
   @ApiOperation({
@@ -246,6 +255,19 @@ export class AuthController {
         : AuthController.ACCESS_TOKEN_COOKIE_SAME_SITE_NONE,
       path: '/',
     };
+  }
+
+  /**
+   * Builds a redirect URL with the given error message as a query parameter.
+   * This is used to redirect the user back to the client application with an error message
+   * in case of authentication failure during the OIDC callback.
+   * @param error error message to include in the redirect URL
+   * @returns fully qualified URL to redirect the user to
+   */
+  private buildErrorRedirectUrl(error: string): string {
+    const url = new URL(this.authService.getPostLoginRedirectUri());
+    url.searchParams.set('error', error);
+    return url.toString();
   }
 
   /**
