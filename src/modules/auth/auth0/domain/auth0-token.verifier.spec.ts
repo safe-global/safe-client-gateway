@@ -2,6 +2,7 @@
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import { Auth0TokenVerifier } from '@/modules/auth/auth0/domain/auth0-token.verifier';
 import type { IJwtService } from '@/datasources/jwt/jwt.service.interface';
+import type { ILoggingService } from '@/logging/logging.interface';
 import { faker } from '@faker-js/faker';
 import { UnauthorizedException } from '@nestjs/common';
 import { JsonWebTokenError, TokenExpiredError } from 'jsonwebtoken';
@@ -9,6 +10,10 @@ import { JsonWebTokenError, TokenExpiredError } from 'jsonwebtoken';
 const jwtServiceMock = {
   decode: jest.fn(),
 } as jest.MockedObjectDeep<IJwtService>;
+
+const loggingServiceMock = {
+  debug: jest.fn(),
+} as jest.MockedObjectDeep<ILoggingService>;
 
 describe('Auth0TokenVerifier', () => {
   let target: Auth0TokenVerifier;
@@ -28,7 +33,11 @@ describe('Auth0TokenVerifier', () => {
     fakeConfigurationService.set('auth.auth0.audience', audience);
     fakeConfigurationService.set('auth.auth0.signingSecret', signingSecret);
 
-    target = new Auth0TokenVerifier(jwtServiceMock, fakeConfigurationService);
+    target = new Auth0TokenVerifier(
+      jwtServiceMock,
+      fakeConfigurationService,
+      loggingServiceMock,
+    );
   });
 
   describe('verifyAndDecode', () => {
@@ -79,25 +88,34 @@ describe('Auth0TokenVerifier', () => {
 
     it('should throw UnauthorizedException for JsonWebTokenError', () => {
       const accessToken = faker.string.alphanumeric();
+      const message =
+        'jwt audience invalid. expected: https://secret.example.com/';
       jwtServiceMock.decode.mockImplementation(() => {
-        throw new JsonWebTokenError(
-          'jwt audience invalid. expected: https://secret.example.com/',
-        );
+        throw new JsonWebTokenError(message);
       });
 
       expect(() => target.verifyAndDecode(accessToken)).toThrow(
         new UnauthorizedException('Invalid access token'),
       );
+      expect(loggingServiceMock.debug).toHaveBeenCalledTimes(1);
+      expect(loggingServiceMock.debug).toHaveBeenCalledWith(
+        `Auth0: JWT verification failed: ${message}`,
+      );
     });
 
     it('should throw UnauthorizedException for TokenExpiredError', () => {
       const accessToken = faker.string.alphanumeric();
+      const message = 'jwt expired';
       jwtServiceMock.decode.mockImplementation(() => {
-        throw new TokenExpiredError('jwt expired', new Date());
+        throw new TokenExpiredError(message, new Date());
       });
 
       expect(() => target.verifyAndDecode(accessToken)).toThrow(
         new UnauthorizedException('Invalid access token'),
+      );
+      expect(loggingServiceMock.debug).toHaveBeenCalledTimes(1);
+      expect(loggingServiceMock.debug).toHaveBeenCalledWith(
+        `Auth0: JWT verification failed: ${message}`,
       );
     });
 

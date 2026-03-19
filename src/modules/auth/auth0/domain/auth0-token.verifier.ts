@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
+import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import type { Auth0Token } from '@/modules/auth/auth0/domain/entities/auth0-token.entity';
 import { Auth0TokenSchema } from '@/modules/auth/auth0/domain/entities/auth0-token.entity';
 import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
@@ -17,6 +18,8 @@ export class Auth0TokenVerifier {
     private readonly jwtService: IJwtService,
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
+    @Inject(LoggingService)
+    private readonly loggingService: ILoggingService,
   ) {
     this.issuer =
       this.configurationService.getOrThrow<string>('auth.auth0.baseUri');
@@ -38,6 +41,9 @@ export class Auth0TokenVerifier {
       return Auth0TokenSchema.parse(decoded);
     } catch (error) {
       if (error instanceof JsonWebTokenError) {
+        this.loggingService.debug(
+          `Auth0: JWT verification failed: ${error.message}`,
+        );
         throw new UnauthorizedException('Invalid access token');
       }
       throw error;
