@@ -15,14 +15,12 @@ import type {
   PushNotificationEventJobData,
   PushNotificationDeliveryJobData,
   PushNotificationJobResponse,
+  PushNotificationJob,
+  JobMetadata,
 } from '@/modules/notifications/domain/push/entities/push-notification-job-data.entity';
 import { OnWorkerEvent, Processor, WorkerHost } from '@nestjs/bullmq';
 import { Inject } from '@nestjs/common';
 import { Job } from 'bullmq';
-
-type PushNotificationJob = Job<
-  PushNotificationEventJobData | PushNotificationDeliveryJobData
->;
 
 @Processor(PUSH_NOTIFICATION_QUEUE, {
   concurrency: PUSH_NOTIFICATION_WORKER_CONCURRENCY,
@@ -56,7 +54,7 @@ export class PushNotificationConsumer extends WorkerHost {
 
   @OnWorkerEvent('completed')
   onCompleted(job: PushNotificationJob): void {
-    const { ...metadata } = getJobMetadata(job);
+    const { ...metadata } = this.getJobMetadata(job);
     this.loggingService.debug({
       type: LogType.JobEvent,
       source: 'PushNotificationConsumer',
@@ -67,7 +65,7 @@ export class PushNotificationConsumer extends WorkerHost {
 
   @OnWorkerEvent('failed')
   onFailed(job: PushNotificationJob, error: Error): void {
-    const { ...metadata } = getJobMetadata(job);
+    const { ...metadata } = this.getJobMetadata(job);
     this.loggingService.error({
       // if deviceUuid is present, it's a delivery job
       type: metadata.deviceUuid ? LogType.NotificationError : LogType.JobError,
@@ -85,33 +83,26 @@ export class PushNotificationConsumer extends WorkerHost {
       event: `Worker encountered an error: ${asError(error).message}`,
     });
   }
-}
 
-/**
- * Extracts delivery-specific metadata from a job for structured logging.
- * Returns enriched fields for delivery jobs, base fields for event jobs.
- */
-function getJobMetadata(job: PushNotificationJob): {
-  jobName: string;
-  attemptsMade: number;
-  chainId?: string;
-  safeAddress?: string;
-  notificationType?: string;
-  deviceUuid?: string;
-} {
-  const deliveryData =
-    (job.name as JobTypeName) === JobType.PUSH_NOTIFICATION_DELIVERY
-      ? (job as Job<PushNotificationDeliveryJobData>).data
-      : null;
+  /**
+   * Extracts delivery-specific metadata from a job for structured logging.
+   * Returns enriched fields for delivery jobs, base fields for event jobs.
+   */
+  private getJobMetadata(job: PushNotificationJob): JobMetadata {
+    const deliveryData =
+      (job.name as JobTypeName) === JobType.PUSH_NOTIFICATION_DELIVERY
+        ? (job as Job<PushNotificationDeliveryJobData>).data
+        : null;
 
-  return {
-    jobName: job.name,
-    attemptsMade: job.attemptsMade,
-    ...(deliveryData && {
-      chainId: deliveryData.chainId,
-      safeAddress: deliveryData.safeAddress,
-      notificationType: deliveryData.notificationType,
-      deviceUuid: deliveryData.deviceUuid,
-    }),
-  };
+    return {
+      jobName: job.name,
+      attemptsMade: job.attemptsMade,
+      ...(deliveryData && {
+        chainId: deliveryData.chainId,
+        safeAddress: deliveryData.safeAddress,
+        notificationType: deliveryData.notificationType,
+        deviceUuid: deliveryData.deviceUuid,
+      }),
+    };
+  }
 }

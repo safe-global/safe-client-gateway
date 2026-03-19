@@ -5,6 +5,7 @@ import type {
   JobResponse,
 } from '@/datasources/job-queue/types/job-types';
 import type { Event } from '@/modules/hooks/routes/entities/event.entity';
+import type { Job } from 'bullmq';
 import type { UUID } from 'crypto';
 
 export interface PushNotificationEventJobData extends JobData {
@@ -23,3 +24,16 @@ export interface PushNotificationDeliveryJobData extends JobData {
 export interface PushNotificationJobResponse extends JobResponse {
   delivered: boolean;
 }
+
+export type PushNotificationJob = Job<
+  PushNotificationEventJobData | PushNotificationDeliveryJobData
+>;
+
+export type JobMetadata = {
+  jobName: string;
+  attemptsMade: number;
+  chainId?: string;
+  safeAddress?: string;
+  notificationType?: string;
+  deviceUuid?: string;
+};
