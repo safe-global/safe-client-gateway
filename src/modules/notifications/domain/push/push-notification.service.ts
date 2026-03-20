@@ -34,9 +34,10 @@ import type { IPushNotificationService } from '@/modules/notifications/domain/pu
 import type {
   PushNotificationDeliveryJobData,
   PushNotificationJobResponse,
+  ResolvedSubscriber,
 } from '@/modules/notifications/domain/push/entities/push-notification-job-data.entity';
+import type { Delegate } from '@/modules/delegate/domain/entities/delegate.entity';
 import type { Address } from 'viem';
-import type { UUID } from 'crypto';
 import uniqBy from 'lodash/uniqBy';
 
 @Injectable()
@@ -102,6 +103,7 @@ export class PushNotificationService implements IPushNotificationService {
               event,
               subscription.subscriber,
               safe,
+              subscription.delegates ?? [],
             );
 
             if (!notification) {
@@ -205,22 +207,17 @@ export class PushNotificationService implements IPushNotificationService {
 
   /**
    * Gets subscribers and their device UUID/cloud messaging tokens for the
-   * given Safe depending on the event type.
+   * given Safe depending on the event type. For owner-only events, resolves
+   * delegate records and attaches them to each subscriber for downstream use.
    *
    * @param event - The webhook {@link Event} to get subscribers for
    * @param safe - The safe to get subscribers for
-   * @returns A promise that resolves with the relevant subscribers
+   * @returns Resolved subscribers with pre-fetched delegate records
    */
   private async getRelevantSubscribers(
     event: EventToNotify,
     safe: Safe | null,
-  ): Promise<
-    Array<{
-      subscriber: Address | null;
-      deviceUuid: UUID;
-      cloudMessagingToken: string;
-    }>
-  > {
+  ): Promise<Array<ResolvedSubscriber>> {
     // If two or more owner keys are registered for the same device we shouldn't send the notification multiple times and therefore we need to group by their cloudMessagingToken
     const subscriptions = uniqBy(
       await this.notificationsRepository.getSubscribersBySafe({
@@ -234,50 +231,53 @@ export class PushNotificationService implements IPushNotificationService {
       return subscriptions;
     }
 
-    const ownersAndDelegates = await Promise.allSettled(
-      subscriptions.map(async (subscription) => {
-        if (!subscription.subscriber) {
-          return;
-        }
+    const resolved = await Promise.allSettled(
+      subscriptions.map(
+        async (subscription): Promise<ResolvedSubscriber | null> => {
+          if (!subscription.subscriber) {
+            return null;
+          }
 
-        const isOwnerOrDelegate = await this.isOwnerOrDelegate({
-          safe,
-          chainId: event.chainId,
-          safeAddress: event.address,
-          subscriber: subscription.subscriber,
-        });
+          const delegates = await this.resolveSubscriberDelegates({
+            safe,
+            chainId: event.chainId,
+            safeAddress: event.address,
+            subscriber: subscription.subscriber,
+          });
 
-        if (!isOwnerOrDelegate) {
-          return;
-        }
+          if (!delegates) {
+            return null;
+          }
 
-        return subscription;
-      }),
+          return { ...subscription, delegates };
+        },
+      ),
     );
 
-    return ownersAndDelegates
+    return resolved
       .filter(
-        <T>(
-          item: PromiseSettledResult<T>,
-        ): item is PromiseFulfilledResult<NonNullable<T>> => {
-          return item.status === 'fulfilled' && !!item.value;
+        (
+          item,
+        ): item is PromiseFulfilledResult<NonNullable<ResolvedSubscriber>> => {
+          return item.status === 'fulfilled' && item.value !== null;
         },
       )
       .map((result) => result.value);
   }
 
   /**
-   * Checks if the subscriber is an owner or delegate.
+   * Resolves the subscriber's delegate records if they are an owner or delegate.
    *
    * @param args - The arguments to check
-   * @returns True if the subscriber is an owner or delegate, false otherwise
+   * @returns Delegate records for the subscriber, or null if not an owner/delegate.
+   *          Empty array means the subscriber is a direct owner (no delegate lookup needed).
    */
-  private async isOwnerOrDelegate(args: {
+  private async resolveSubscriberDelegates(args: {
     safe: Safe | null;
     chainId: string;
     safeAddress: Address;
     subscriber: Address;
-  }): Promise<boolean> {
+  }): Promise<Array<Delegate> | null> {
     // We don't use Promise.all to avoid unnecessary calls for delegates
     const safe =
       args.safe ??
@@ -287,7 +287,7 @@ export class PushNotificationService implements IPushNotificationService {
       }));
 
     if (safe.owners.includes(args.subscriber)) {
-      return true;
+      return [];
     }
     // Unfortunately, the delegate endpoint does not return any results when querying for the delegators of a safe. Instead, you need to query for the delegators of a delegate key.
     const delegates = await this.delegatesRepository.getDelegates({
@@ -295,9 +295,12 @@ export class PushNotificationService implements IPushNotificationService {
       delegate: args.subscriber,
     });
 
-    return (delegates?.results ?? []).some((delegate: { delegator: Address }) =>
+    const results = delegates?.results ?? [];
+    const isDelegate = results.some((delegate: { delegator: Address }) =>
       safe.owners.includes(delegate.delegator),
     );
+
+    return isDelegate ? results : null;
   }
 
   /**
@@ -305,13 +308,16 @@ export class PushNotificationService implements IPushNotificationService {
    *
    * @param event - {@link EventToNotify} to map
    * @param subscriber - Subscriber address
+   * @param safe - Pre-fetched Safe (null for non-owner events)
+   * @param delegates - Pre-fetched delegate records for this subscriber
    *
-   * @returns - The {@link Notification} if the conditions are met, otherwise null
+   * @returns The {@link Notification} if the conditions are met, otherwise null
    */
   private async mapEventNotification(
     event: EventToNotify,
     subscriber: Address | null,
     safe: Safe | null,
+    delegates: Array<Delegate>,
   ): Promise<Notification | null> {
     if (
       event.type === TransactionEventType.INCOMING_ETHER ||
@@ -328,12 +334,18 @@ export class PushNotificationService implements IPushNotificationService {
         event,
         subscriber,
         safe,
+        delegates,
       );
     } else if (event.type === TransactionEventType.MESSAGE_CREATED) {
       if (!subscriber) {
         return null;
       }
-      return this.mapMessageCreatedEventNotification(event, subscriber, safe);
+      return this.mapMessageCreatedEventNotification(
+        event,
+        subscriber,
+        safe,
+        delegates,
+      );
     } else if (
       event.type === TransactionEventType.DELETED_MULTISIG_TRANSACTION
     ) {
@@ -416,17 +428,20 @@ export class PushNotificationService implements IPushNotificationService {
    * Maps {@link PendingTransactionEvent} to {@link ConfirmationRequestNotification} if:
    *
    * - The Safe has a threshold > 1.
-   * - The subscriber didn't create the transaction.
+   * - The subscriber (or their delegator) hasn't already signed.
    *
    * @param event - {@link PendingTransactionEvent} to map
    * @param subscriber - Subscriber address
+   * @param safe - Pre-fetched Safe (null triggers lazy fetch)
+   * @param delegates - Pre-fetched delegate records for this subscriber
    *
-   * @returns - The {@link ConfirmationRequestNotification} if the conditions are met, otherwise null
+   * @returns The {@link ConfirmationRequestNotification} if the conditions are met, otherwise null
    */
   private async mapPendingMultisigTransactionEventNotification(
     event: PendingTransactionEvent,
     subscriber: Address,
     safe: Safe | null,
+    delegates: Array<Delegate>,
   ): Promise<ConfirmationRequestNotification | null> {
     const resolvedSafe =
       safe ??
@@ -450,12 +465,9 @@ export class PushNotificationService implements IPushNotificationService {
       return null;
     }
 
-    const hasSubscriberSigned = await this.hasSubscriberSigned(
-      event.chainId,
-      subscriber,
-      transaction.confirmations,
-    );
-    if (hasSubscriberSigned) {
+    if (
+      this.hasSubscriberSigned(subscriber, transaction.confirmations, delegates)
+    ) {
       return null;
     }
 
@@ -472,17 +484,20 @@ export class PushNotificationService implements IPushNotificationService {
    * Maps {@link MessageCreatedEvent} to {@link MessageConfirmationNotification} if:
    *
    * - The Safe has a threshold > 1.
-   * - The subscriber didn't create the message.
+   * - The subscriber (or their delegator) hasn't already signed.
    *
    * @param event - {@link MessageCreatedEvent} to map
    * @param subscriber - Subscriber address
+   * @param safe - Pre-fetched Safe (null triggers lazy fetch)
+   * @param delegates - Pre-fetched delegate records for this subscriber
    *
-   * @returns - The {@link MessageConfirmationNotification} if the conditions are met, otherwise null
+   * @returns The {@link MessageConfirmationNotification} if the conditions are met, otherwise null
    */
   private async mapMessageCreatedEventNotification(
     event: MessageCreatedEvent,
     subscriber: Address,
     safe: Safe | null,
+    delegates: Array<Delegate>,
   ): Promise<MessageConfirmationNotification | null> {
     const resolvedSafe =
       safe ??
@@ -506,12 +521,9 @@ export class PushNotificationService implements IPushNotificationService {
       return null;
     }
 
-    const hasSubscriberSigned = await this.hasSubscriberSigned(
-      event.chainId,
-      subscriber,
-      message.confirmations,
-    );
-    if (hasSubscriberSigned) {
+    if (
+      this.hasSubscriberSigned(subscriber, message.confirmations, delegates)
+    ) {
       return null;
     }
 
@@ -524,27 +536,22 @@ export class PushNotificationService implements IPushNotificationService {
   }
 
   /**
-   * Checks if the subscriber has signed the confirmation.
+   * Checks if the subscriber (or one of their delegators) has already signed.
    *
-   * @param chainId - The chain ID
-   * @param subscriber - The subscriber to check
-   * @param confirmations - The confirmations to check
-   * @returns True if the subscriber has signed the confirmation, false otherwise
+   * @param subscriber - The subscriber address to check
+   * @param confirmations - The confirmations to check against
+   * @param delegates - Pre-fetched delegate records for this subscriber
+   * @returns True if the subscriber or a delegator has signed
    */
-  private async hasSubscriberSigned(
-    chainId: string,
+  private hasSubscriberSigned(
     subscriber: Address,
     confirmations: Array<Confirmation | MessageConfirmation>,
-  ): Promise<boolean> {
-    const delegates = await this.delegatesRepository.getDelegates({
-      chainId,
-      delegate: subscriber,
-    });
-    const delegators =
-      delegates?.results.map(
-        (delegate: { delegator: Address }) => delegate.delegator,
-      ) ?? [];
-    return confirmations?.some((confirmation) => {
+    delegates: Array<Delegate>,
+  ): boolean {
+    const delegators = delegates.map(
+      (delegate: { delegator: Address }) => delegate.delegator,
+    );
+    return confirmations.some((confirmation) => {
       return (
         confirmation.owner === subscriber ||
         delegators.includes(confirmation.owner)

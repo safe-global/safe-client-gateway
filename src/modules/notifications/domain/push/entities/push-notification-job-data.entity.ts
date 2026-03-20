@@ -5,7 +5,9 @@ import type {
   JobResponse,
 } from '@/datasources/job-queue/types/job-types';
 import type { Event } from '@/modules/hooks/routes/entities/event.entity';
+import type { Delegate } from '@/modules/delegate/domain/entities/delegate.entity';
 import type { Job } from 'bullmq';
+import type { Address } from 'viem';
 import type { UUID } from 'crypto';
 
 export interface PushNotificationEventJobData extends JobData {
@@ -28,6 +30,13 @@ export interface PushNotificationJobResponse extends JobResponse {
 export type PushNotificationJob = Job<
   PushNotificationEventJobData | PushNotificationDeliveryJobData
 >;
+
+export type ResolvedSubscriber = {
+  subscriber: Address | null;
+  deviceUuid: UUID;
+  cloudMessagingToken: string;
+  delegates?: Array<Delegate>;
+};
 
 export type JobMetadata = {
   jobName: string;

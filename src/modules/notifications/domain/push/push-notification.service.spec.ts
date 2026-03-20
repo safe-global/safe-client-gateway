@@ -349,15 +349,6 @@ describe('PushNotificationService (Unit)', () => {
 
       mockNotificationsRepository.getSubscribersBySafe.mockResolvedValue([sub]);
       mockSafeRepository.getSafe.mockResolvedValue(safe);
-      mockDelegatesRepository.getDelegates
-        // First call: getRelevantSubscribers → isOwnerOrDelegate
-        .mockResolvedValueOnce(
-          pageBuilder<Delegate>().with('results', []).build(),
-        )
-        // Second call: hasSubscriberSigned
-        .mockResolvedValueOnce(
-          pageBuilder<Delegate>().with('results', []).build(),
-        );
       mockSafeRepository.getMultiSigTransaction.mockResolvedValue(
         multisigTransactionBuilder()
           .with('confirmations', [
@@ -672,19 +663,13 @@ describe('PushNotificationService (Unit)', () => {
 
       mockNotificationsRepository.getSubscribersBySafe.mockResolvedValue([sub]);
       mockSafeRepository.getSafe.mockResolvedValue(safe);
-      mockDelegatesRepository.getDelegates
-        // First call: isOwnerOrDelegate — delegate's delegator IS an owner
-        .mockResolvedValueOnce(
-          pageBuilder<Delegate>()
-            .with('results', [
-              delegateBuilder().with('delegator', ownerAddress).build(),
-            ])
-            .build(),
-        )
-        // Second call: hasSubscriberSigned
-        .mockResolvedValueOnce(
-          pageBuilder<Delegate>().with('results', []).build(),
-        );
+      mockDelegatesRepository.getDelegates.mockResolvedValue(
+        pageBuilder<Delegate>()
+          .with('results', [
+            delegateBuilder().with('delegator', ownerAddress).build(),
+          ])
+          .build(),
+      );
       mockSafeRepository.getMultiSigTransaction.mockResolvedValue(
         multisigTransactionBuilder().with('confirmations', []).build(),
       );
@@ -773,23 +758,13 @@ describe('PushNotificationService (Unit)', () => {
 
       mockNotificationsRepository.getSubscribersBySafe.mockResolvedValue([sub]);
       mockSafeRepository.getSafe.mockResolvedValue(safe);
-      mockDelegatesRepository.getDelegates
-        // First call: isOwnerOrDelegate — delegate's delegator IS owner
-        .mockResolvedValueOnce(
-          pageBuilder<Delegate>()
-            .with('results', [
-              delegateBuilder().with('delegator', ownerAddress).build(),
-            ])
-            .build(),
-        )
-        // Second call: hasSubscriberSigned — same delegator already signed
-        .mockResolvedValueOnce(
-          pageBuilder<Delegate>()
-            .with('results', [
-              delegateBuilder().with('delegator', ownerAddress).build(),
-            ])
-            .build(),
-        );
+      mockDelegatesRepository.getDelegates.mockResolvedValue(
+        pageBuilder<Delegate>()
+          .with('results', [
+            delegateBuilder().with('delegator', ownerAddress).build(),
+          ])
+          .build(),
+      );
       mockSafeRepository.getMultiSigTransaction.mockResolvedValue(
         multisigTransactionBuilder()
           .with('confirmations', [
@@ -813,21 +788,13 @@ describe('PushNotificationService (Unit)', () => {
 
       mockNotificationsRepository.getSubscribersBySafe.mockResolvedValue([sub]);
       mockSafeRepository.getSafe.mockResolvedValue(safe);
-      mockDelegatesRepository.getDelegates
-        .mockResolvedValueOnce(
-          pageBuilder<Delegate>()
-            .with('results', [
-              delegateBuilder().with('delegator', ownerAddress).build(),
-            ])
-            .build(),
-        )
-        .mockResolvedValueOnce(
-          pageBuilder<Delegate>()
-            .with('results', [
-              delegateBuilder().with('delegator', ownerAddress).build(),
-            ])
-            .build(),
-        );
+      mockDelegatesRepository.getDelegates.mockResolvedValue(
+        pageBuilder<Delegate>()
+          .with('results', [
+            delegateBuilder().with('delegator', ownerAddress).build(),
+          ])
+          .build(),
+      );
       mockMessagesRepository.getMessageByHash.mockResolvedValue(
         messageBuilder()
           .with('confirmations', [
