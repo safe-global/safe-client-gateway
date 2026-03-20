@@ -6,6 +6,10 @@ import { EmailModule } from '@/modules/email/email.module';
 import { TestEmailApiModule } from '@/modules/email/datasources/__tests__/test.email-api.module';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { createTestModule } from '@/__tests__/testing-module';
+import {
+  oidcAuthPayloadDtoBuilder,
+  siweAuthPayloadDtoBuilder,
+} from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { siweMessageBuilder } from '@/modules/siwe/domain/entities/__tests__/siwe-message.builder';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 import { faker } from '@faker-js/faker';
@@ -1018,6 +1022,39 @@ describe('AuthController', () => {
             'access_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; Secure; SameSite=Lax',
           );
         });
+    });
+  });
+
+  describe('GET /v1/auth/me', () => {
+    it('should return 204 with a valid Siwe access token', async () => {
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+
+      await request(app.getHttpServer())
+        .get('/v1/auth/me')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(204);
+    });
+
+    it('should return 204 with a valid OIDC access token', async () => {
+      const authPayloadDto = oidcAuthPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+
+      await request(app.getHttpServer())
+        .get('/v1/auth/me')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(204);
+    });
+
+    it('should return 403 without an access token', async () => {
+      await request(app.getHttpServer()).get('/v1/auth/me').expect(403);
+    });
+
+    it('should return 403 with an invalid access token', async () => {
+      await request(app.getHttpServer())
+        .get('/v1/auth/me')
+        .set('Cookie', ['access_token=invalid-token'])
+        .expect(403);
     });
   });
 });

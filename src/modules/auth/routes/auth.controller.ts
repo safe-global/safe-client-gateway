@@ -2,6 +2,8 @@
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { getMillisecondsUntil } from '@/domain/common/utils/time';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import { ACCESS_TOKEN_COOKIE_NAME } from '@/modules/auth/routes/auth.constants';
+import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
 import { AuthService } from '@/modules/auth/routes/auth.service';
 import { AuthNonce } from '@/modules/auth/routes/entities/auth-nonce.entity';
 import {
@@ -19,6 +21,7 @@ import {
   Query,
   Req,
   Res,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ApiFoundResponse,
@@ -26,6 +29,7 @@ import {
   ApiTags,
   ApiOperation,
   ApiBody,
+  ApiNoContentResponse,
   ApiUnauthorizedResponse,
   ApiBadRequestResponse,
   ApiQuery,
@@ -46,7 +50,6 @@ import { CookieOptions, Request, Response } from 'express';
 @ApiTags('auth')
 @Controller({ path: 'auth', version: '1' })
 export class AuthController {
-  static readonly ACCESS_TOKEN_COOKIE_NAME = 'access_token';
   static readonly OIDC_STATE_COOKIE_NAME = 'auth_state';
   static readonly ACCESS_TOKEN_COOKIE_SAME_SITE_LAX = 'lax';
   static readonly ACCESS_TOKEN_COOKIE_SAME_SITE_NONE = 'none';
@@ -63,6 +66,17 @@ export class AuthController {
       'application.isProduction',
     );
   }
+
+  @ApiOperation({
+    summary: 'Check authentication status',
+    description:
+      'Returns 204 if a valid session cookie is present, 403 otherwise.',
+  })
+  @ApiNoContentResponse({ description: 'Authenticated' })
+  @HttpCode(204)
+  @UseGuards(AuthGuard)
+  @Get('me')
+  getMe(): void {}
 
   @ApiOperation({
     summary: 'Get authentication nonce',
@@ -178,7 +192,7 @@ export class AuthController {
 
     try {
       const { accessToken } = await this.authService.authenticateWithOidc(code);
-      res.cookie(AuthController.ACCESS_TOKEN_COOKIE_NAME, accessToken, {
+      res.cookie(ACCESS_TOKEN_COOKIE_NAME, accessToken, {
         ...this.getCookieOptions(),
         maxAge: this.getMaxAge(accessToken),
       });
@@ -221,7 +235,7 @@ export class AuthController {
     const { accessToken } =
       await this.authService.authenticateWithSiwe(siweDto);
 
-    res.cookie(AuthController.ACCESS_TOKEN_COOKIE_NAME, accessToken, {
+    res.cookie(ACCESS_TOKEN_COOKIE_NAME, accessToken, {
       ...this.getCookieOptions(),
       // Extract maxAge from token as it may slightly differ to SiWe message
       maxAge: this.getMaxAge(accessToken),
@@ -240,10 +254,7 @@ export class AuthController {
   @HttpCode(200)
   @Post('logout')
   logout(@Res({ passthrough: true }) res: Response): void {
-    res.clearCookie(
-      AuthController.ACCESS_TOKEN_COOKIE_NAME,
-      this.getCookieOptions(),
-    );
+    res.clearCookie(ACCESS_TOKEN_COOKIE_NAME, this.getCookieOptions());
   }
 
   private getCookieOptions(): CookieOptions {
