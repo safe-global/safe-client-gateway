@@ -47,32 +47,61 @@ export class FetchNetworkService implements INetworkService {
       throw error;
     }
   }
+  private async postWithBody<T>(args: {
+    url: string;
+    body?: string;
+    contentType: string;
+    networkRequest?: NetworkRequest;
+  }): Promise<NetworkResponse<T>> {
+    const { url, body, contentType, networkRequest } = args;
+    const requestUrl = this.buildUrl(url, networkRequest?.params);
+
+    this.logRequest(requestUrl, 'POST');
+    const startTimeMs = performance.now();
+
+    try {
+      return await this.client<T>(
+        requestUrl,
+        {
+          method: 'POST',
+          body,
+          headers: this.mergeHeaders(networkRequest?.headers, {
+            'Content-Type': contentType,
+          }),
+        },
+        networkRequest?.timeout,
+        networkRequest?.circuitBreaker,
+      );
+    } catch (error) {
+      this.logErrorResponse(error, performance.now() - startTimeMs);
+      throw error;
+    }
+  }
 
   async post<T>(args: {
     url: string;
     data?: object;
     networkRequest?: NetworkRequest;
   }): Promise<NetworkResponse<T>> {
-    const url = this.buildUrl(args.url, args.networkRequest?.params);
-    this.logRequest(url, 'POST');
-    const startTimeMs = performance.now();
-    try {
-      return await this.client<T>(
-        url,
-        {
-          method: 'POST',
-          body: JSON.stringify(args.data),
-          headers: this.mergeHeaders(args.networkRequest?.headers, {
-            'Content-Type': 'application/json',
-          }),
-        },
-        args.networkRequest?.timeout,
-        args.networkRequest?.circuitBreaker,
-      );
-    } catch (error) {
-      this.logErrorResponse(error, performance.now() - startTimeMs);
-      throw error;
-    }
+    return this.postWithBody<T>({
+      url: args.url,
+      body: JSON.stringify(args.data),
+      contentType: 'application/json',
+      networkRequest: args.networkRequest,
+    });
+  }
+
+  async postForm<T>(args: {
+    url: string;
+    data: Record<string, string>;
+    networkRequest?: NetworkRequest;
+  }): Promise<NetworkResponse<T>> {
+    return this.postWithBody<T>({
+      url: args.url,
+      body: new URLSearchParams(args.data).toString(),
+      contentType: 'application/x-www-form-urlencoded',
+      networkRequest: args.networkRequest,
+    });
   }
 
   async delete<T>(args: {

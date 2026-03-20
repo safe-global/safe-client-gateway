@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { NetworkRequest } from '@/datasources/network/entities/network.request.entity';
 import type { NetworkResponse } from '@/datasources/network/entities/network.response.entity';
 
@@ -12,6 +13,15 @@ export interface INetworkService {
   post<T>(args: {
     url: string;
     data?: object;
+    networkRequest?: NetworkRequest;
+  }): Promise<NetworkResponse<T>>;
+
+  /**
+   * Sends a POST request with a URL-encoded form body.
+   */
+  postForm<T>(args: {
+    url: string;
+    data: Record<string, string>;
     networkRequest?: NetworkRequest;
   }): Promise<NetworkResponse<T>>;
 
