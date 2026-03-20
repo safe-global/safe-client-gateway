@@ -29,6 +29,8 @@ export enum LogType {
   MessageValidity = 'MESSAGE_VALIDITY',
   NotificationError = 'NOTIFICATION_ERROR',
   NotificationSent = 'NOTIFICATION_SENT',
+  NotificationEventProcessed = 'NOTIFICATION_EVENT_PROCESSED',
+  NotificationDeliveryQueued = 'NOTIFICATION_DELIVERY_QUEUED',
   RateLimit = 'RATE_LIMIT',
   TransactionPropose = 'TRANSACTION_PROPOSE',
   TransactionValidity = 'TRANSACTION_VALIDITY',

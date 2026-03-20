@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
 import { LoggingService, ILoggingService } from '@/logging/logging.interface';
 import { Event } from '@/modules/hooks/routes/entities/event.entity';
@@ -6,9 +7,9 @@ import { IQueuesRepository } from '@/modules/queues/domain/queues-repository.int
 import { ConsumeMessage } from 'amqplib';
 import { EventSchema } from '@/modules/hooks/routes/entities/schemas/event.schema';
 import { IHooksRepository } from '@/modules/hooks/domain/hooks.repository.interface';
-import { EventNotificationsHelper } from '@/modules/hooks/domain/helpers/event-notifications.helper';
 import { EventCacheHelper } from '@/modules/hooks/domain/helpers/event-cache.helper';
 import { ConfigEventType } from '@/modules/hooks/routes/entities/event-type.entity';
+import { IPushNotificationService } from '@/modules/notifications/domain/push/push-notification.service.interface';
 
 @Injectable()
 export class HooksRepository implements IHooksRepository, OnModuleInit {
@@ -21,8 +22,8 @@ export class HooksRepository implements IHooksRepository, OnModuleInit {
     private readonly queuesRepository: IQueuesRepository,
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
-    @Inject(EventNotificationsHelper)
-    private readonly eventNotificationsHelper: EventNotificationsHelper,
+    @Inject(IPushNotificationService)
+    private readonly pushNotificationService: IPushNotificationService,
     @Inject(EventCacheHelper)
     private readonly eventCacheHelper: EventCacheHelper,
   ) {
@@ -51,7 +52,7 @@ export class HooksRepository implements IHooksRepository, OnModuleInit {
     if (isSupportedChainId || event.type === ConfigEventType.CHAIN_UPDATE) {
       return Promise.allSettled([
         this.eventCacheHelper.onEventClearCache(event),
-        this.eventNotificationsHelper.onEventEnqueueNotifications(event),
+        this.pushNotificationService.enqueueEvent(event),
       ]).finally(() => {
         this.eventCacheHelper.onEventLog(event);
       });
