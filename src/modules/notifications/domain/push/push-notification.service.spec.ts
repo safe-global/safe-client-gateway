@@ -472,6 +472,40 @@ describe('PushNotificationService (Unit)', () => {
 
       // Exactly 1 getSafe call, not 2M (where M = subscribers)
       expect(mockSafeRepository.getSafe).toHaveBeenCalledTimes(1);
+      // Owner subscribers skip getDelegates entirely (early return in resolveSubscriberDelegates)
+      expect(mockDelegatesRepository.getDelegates).not.toHaveBeenCalled();
+    });
+
+    it('should call getDelegates exactly once per delegate subscriber', async () => {
+      const delegate1 = addr();
+      const delegate2 = addr();
+      const ownerAddress = addr();
+      const event = pendingTransactionEventBuilder().build();
+      const sub1 = { ...createSubscriber(), subscriber: delegate1 };
+      const sub2 = { ...createSubscriber(), subscriber: delegate2 };
+      const safe = createSafe({ owners: [ownerAddress], threshold: 2 });
+
+      mockNotificationsRepository.getSubscribersBySafe.mockResolvedValue([
+        sub1,
+        sub2,
+      ]);
+      mockSafeRepository.getSafe.mockResolvedValue(safe);
+      mockDelegatesRepository.getDelegates.mockResolvedValue(
+        pageBuilder<Delegate>()
+          .with('results', [
+            delegateBuilder().with('delegator', ownerAddress).build(),
+          ])
+          .build(),
+      );
+      mockSafeRepository.getMultiSigTransaction.mockResolvedValue(
+        multisigTransactionBuilder().with('confirmations', []).build(),
+      );
+      mockJobQueueService.addJob.mockResolvedValue({} as Job);
+
+      await service.processEvent(event);
+
+      // Exactly 1 getDelegates call per subscriber
+      expect(mockDelegatesRepository.getDelegates).toHaveBeenCalledTimes(2);
     });
 
     it('should not call getSafe for non-owner-only events (INCOMING_TOKEN)', async () => {
