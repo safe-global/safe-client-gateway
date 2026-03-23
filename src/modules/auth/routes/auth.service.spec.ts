@@ -30,6 +30,8 @@ const usersRepositoryMock = {
 const auth0RepositoryMock = {
   getAuthorizationUrl: jest.fn(),
   authenticateWithAuthorizationCode: jest.fn(),
+  getStateTtlMs: jest.fn(),
+  getPostLoginRedirectUri: jest.fn(),
 } as jest.MockedObjectDeep<IAuth0Repository>;
 
 describe('AuthService', () => {
@@ -46,15 +48,15 @@ describe('AuthService', () => {
     stateTtlMs = faker.number.int({ min: 60_000, max: 300_000 });
     postLoginRedirectUri = faker.internet.url();
 
+    auth0RepositoryMock.getStateTtlMs.mockReturnValue(stateTtlMs);
+    auth0RepositoryMock.getPostLoginRedirectUri.mockReturnValue(
+      postLoginRedirectUri,
+    );
+
     const fakeConfigurationService = new FakeConfigurationService();
     fakeConfigurationService.set(
       'auth.maxValidityPeriodSeconds',
       maxValidityPeriodInSeconds,
-    );
-    fakeConfigurationService.set('auth.stateTtlMs', stateTtlMs);
-    fakeConfigurationService.set(
-      'auth.postLoginRedirectUri',
-      postLoginRedirectUri,
     );
 
     target = new AuthService(

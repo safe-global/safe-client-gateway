@@ -2,6 +2,7 @@
 import type { IAuth0Api } from '@/modules/auth/auth0/datasources/auth0-api.interface';
 import { Auth0Repository } from '@/modules/auth/auth0/domain/auth0.repository';
 import type { Auth0TokenVerifier } from '@/modules/auth/auth0/domain/auth0-token.verifier';
+import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import { rawify } from '@/validation/entities/raw.entity';
 import { faker } from '@faker-js/faker';
 
@@ -16,11 +17,24 @@ const auth0TokenVerifierMock = {
 
 describe('Auth0Repository', () => {
   let target: Auth0Repository;
+  const stateTtlMs = faker.number.int({ min: 1000, max: 60000 });
+  const postLoginRedirectUri = faker.internet.url();
 
   beforeEach(() => {
     jest.resetAllMocks();
 
-    target = new Auth0Repository(auth0ApiMock, auth0TokenVerifierMock);
+    const fakeConfigurationService = new FakeConfigurationService();
+    fakeConfigurationService.set('auth.stateTtlMs', stateTtlMs);
+    fakeConfigurationService.set(
+      'auth.postLoginRedirectUri',
+      postLoginRedirectUri,
+    );
+
+    target = new Auth0Repository(
+      auth0ApiMock,
+      auth0TokenVerifierMock,
+      fakeConfigurationService,
+    );
   });
 
   describe('getAuthorizationUrl', () => {

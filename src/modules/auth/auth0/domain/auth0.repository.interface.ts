@@ -19,4 +19,14 @@ export interface IAuth0Repository {
    * @returns The decoded Auth0 token with claims.
    */
   authenticateWithAuthorizationCode(code: string): Promise<Auth0Token>;
+
+  /**
+   * @returns The TTL in milliseconds for the OIDC state parameter.
+   */
+  getStateTtlMs(): number;
+
+  /**
+   * @returns The URI to redirect to after a successful OIDC login.
+   */
+  getPostLoginRedirectUri(): string;
 }
