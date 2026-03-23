@@ -24,6 +24,7 @@ import { ModuleTransaction } from '@/modules/transactions/routes/entities/module
 import { MultisigTransaction } from '@/modules/transactions/routes/entities/multisig-transaction.entity';
 import { PreviewTransactionDto } from '@/modules/transactions/routes/entities/preview-transaction.dto.entity';
 import { QueuedItem } from '@/modules/transactions/routes/entities/queued-item.entity';
+import { SafeQueuedTransaction } from '@/modules/transactions/routes/entities/safe-queued-transaction.entity';
 import { TransactionDetails } from '@/modules/transactions/routes/entities/transaction-details/transaction-details.entity';
 import { TransactionItemPage } from '@/modules/transactions/routes/entities/transaction-item-page.entity';
 import { TransactionPreview } from '@/modules/transactions/routes/entities/transaction-preview.entity';
@@ -52,11 +53,14 @@ import { TXSCreationTransaction } from '@/modules/transactions/routes/entities/t
 import { ITokenRepository } from '@/modules/tokens/domain/token.repository.interface';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { IDataDecoderRepository } from '@/modules/data-decoder/domain/v2/data-decoder.repository.interface';
+import type { Caip10Addresses } from '@/modules/safe/routes/entities/caip-10-addresses.entity';
+import { asError } from '@/logging/utils';
 import type { Address } from 'viem';
 
 @Injectable()
 export class TransactionsService {
   private readonly isFilterValueParsingEnabled: boolean;
+  private readonly maxOverviews: number;
 
   constructor(
     @Inject(ISafeRepository) private readonly safeRepository: SafeRepository,
@@ -80,6 +84,9 @@ export class TransactionsService {
   ) {
     this.isFilterValueParsingEnabled = this.configurationService.getOrThrow(
       'features.filterValueParsing',
+    );
+    this.maxOverviews = this.configurationService.getOrThrow(
+      'mappings.safe.maxOverviews',
     );
   }
 
@@ -629,6 +636,83 @@ export class TransactionsService {
   }): Promise<TXSCreationTransaction> {
     const tx = await this.safeRepository.getCreationTransaction(args);
     return new TXSCreationTransaction(tx);
+  }
+
+  private static readonly MULTI_SAFE_QUEUE_BATCH_SIZE = 3;
+
+  async getMultiSafeTransactionQueue(args: {
+    addresses: Caip10Addresses;
+    trusted: boolean;
+    limit: number;
+  }): Promise<Array<SafeQueuedTransaction>> {
+    const limitedSafes = args.addresses.slice(0, this.maxOverviews);
+    const transactions: Array<SafeQueuedTransaction> = [];
+
+    for (
+      let i = 0;
+      i < limitedSafes.length;
+      i += TransactionsService.MULTI_SAFE_QUEUE_BATCH_SIZE
+    ) {
+      const batch = limitedSafes.slice(
+        i,
+        i + TransactionsService.MULTI_SAFE_QUEUE_BATCH_SIZE,
+      );
+
+      const settledResults = await Promise.allSettled(
+        batch.map(async ({ chainId, address }) => {
+          const safe = await this.safeRepository.getSafe({
+            chainId,
+            address,
+          });
+          const queue = await this.safeRepository.getTransactionQueue({
+            chainId,
+            safe,
+            limit: args.limit,
+            offset: 0,
+            trusted: args.trusted,
+          });
+
+          if (queue.results.length === 0) return [];
+
+          await this.multisigTransactionMapper.prefetchAddressInfos({
+            chainId,
+            transactions: queue.results,
+          });
+
+          return Promise.all(
+            queue.results.map(async (tx) => {
+              const dataDecoded =
+                await this.dataDecoderRepository.getTransactionDataDecoded({
+                  chainId,
+                  transaction: tx,
+                });
+              const transaction =
+                await this.multisigTransactionMapper.mapTransaction(
+                  chainId,
+                  tx,
+                  safe,
+                  dataDecoded,
+                );
+              return new SafeQueuedTransaction(address, chainId, transaction);
+            }),
+          );
+        }),
+      );
+
+      for (const result of settledResults) {
+        if (result.status === 'rejected') {
+          this.loggingService.warn(
+            `Error fetching multi-safe queue: ${asError(result.reason)}`,
+          );
+        } else {
+          transactions.push(...result.value);
+        }
+      }
+    }
+
+    return transactions
+      .sort((a, b) => a.transaction.timestamp - b.transaction.timestamp)
+      .slice(0, args.limit);
   }
 
   /**

@@ -37,6 +37,7 @@ import { PreviewTransactionDto } from '@/modules/transactions/routes/entities/pr
 import { ProposeTransactionDto } from '@/modules/transactions/routes/entities/propose-transaction.dto.entity';
 import { QueuedItemPage } from '@/modules/transactions/routes/entities/queued-item-page.entity';
 import { QueuedItem } from '@/modules/transactions/routes/entities/queued-item.entity';
+import { SafeQueuedTransaction } from '@/modules/transactions/routes/entities/safe-queued-transaction.entity';
 import { TransactionDetails } from '@/modules/transactions/routes/entities/transaction-details/transaction-details.entity';
 import { TransactionItemPage } from '@/modules/transactions/routes/entities/transaction-item-page.entity';
 import { TransactionPreview } from '@/modules/transactions/routes/entities/transaction-preview.entity';
@@ -49,6 +50,10 @@ import { DeleteTransactionDto } from '@/modules/transactions/routes/entities/del
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import { DeleteTransactionDtoSchema } from '@/modules/transactions/routes/entities/schemas/delete-transaction.dto.schema';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
+import {
+  Caip10AddressesSchema,
+  type Caip10Addresses,
+} from '@/modules/safe/routes/entities/caip-10-addresses.entity';
 import { CreationTransaction } from '@/modules/transactions/routes/entities/creation-transaction.entity';
 import { TimezoneSchema } from '@/validation/entities/schemas/timezone.schema';
 import { TXSMultisigTransaction } from '@/modules/transactions/routes/entities/txs-multisig-transaction.entity';
@@ -658,6 +663,56 @@ export class TransactionsController {
       safeAddress,
       paginationData,
       trusted,
+    });
+  }
+
+  @ApiOperation({
+    summary: 'Get queued transactions across multiple Safes',
+    description:
+      'Retrieves queued transactions across multiple Safes, merged and sorted by timestamp. Accepts Safes in CAIP-10 format and returns the top N transactions.',
+  })
+  @ApiQuery({
+    name: 'safes',
+    required: true,
+    type: String,
+    description:
+      'Comma-separated list of Safe addresses in CAIP-10 format (chainId:address)',
+    example:
+      '1:0x1234567890123456789012345678901234567890,5:0xabcdefabcdefabcdefabcdefabcdefabcdefabcd',
+  })
+  @ApiQuery({
+    name: 'trusted',
+    required: false,
+    type: Boolean,
+    description:
+      'Filter by trust status (default: true)',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description:
+      'Maximum number of queued transactions to return (default: 10)',
+  })
+  @ApiOkResponse({
+    type: SafeQueuedTransaction,
+    isArray: true,
+    description:
+      'Array of queued transactions enriched with Safe address and chain ID',
+  })
+  @Get('multi-safe/transactions/queued')
+  async getMultiSafeTransactionQueue(
+    @Query('safes', new ValidationPipe(Caip10AddressesSchema))
+    addresses: Caip10Addresses,
+    @Query('trusted', new DefaultValuePipe(true), ParseBoolPipe)
+    trusted: boolean,
+    @Query('limit', new DefaultValuePipe(10), ParseIntPipe)
+    limit: number,
+  ): Promise<Array<SafeQueuedTransaction>> {
+    return this.transactionsService.getMultiSafeTransactionQueue({
+      addresses,
+      trusted,
+      limit,
     });
   }
 
