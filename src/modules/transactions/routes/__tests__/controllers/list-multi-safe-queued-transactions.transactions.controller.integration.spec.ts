@@ -341,7 +341,6 @@ describe('Multi-Safe queued transactions - Transactions Controller', () => {
       });
   });
 
-
   it('should return 422 for invalid safes query parameter', async () => {
     await request(app.getHttpServer())
       .get(
