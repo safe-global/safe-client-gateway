@@ -472,4 +472,7 @@ export default (): ReturnType<typeof configuration> => ({
     enabled: false,
     secretKey: '',
   },
+  queueService: {
+    baseUri: 'https://queue-service.example.com',
+  },
 });
