@@ -495,9 +495,15 @@ describe('AuthService', () => {
     });
 
     it('should return the configured redirect URI when state has no redirectUrl', () => {
-      const state = Buffer.from(JSON.stringify({ csrf: 'abc' })).toString(
-        'base64url',
-      );
+      const state = Buffer.from(
+        JSON.stringify({
+          csrf: faker.string.hexadecimal({
+            length: 64,
+            casing: 'lower',
+            prefix: '',
+          }),
+        }),
+      ).toString('base64url');
       expect(target.getPostLoginRedirectUri(state)).toBe(postLoginRedirectUri);
     });
 
@@ -507,7 +513,14 @@ describe('AuthService', () => {
         postLoginRedirectUri,
       ).toString();
       const state = Buffer.from(
-        JSON.stringify({ csrf: 'abc', redirectUrl }),
+        JSON.stringify({
+          csrf: faker.string.hexadecimal({
+            length: 64,
+            casing: 'lower',
+            prefix: '',
+          }),
+          redirectUrl,
+        }),
       ).toString('base64url');
 
       expect(target.getPostLoginRedirectUri(state)).toBe(redirectUrl);

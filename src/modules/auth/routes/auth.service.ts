@@ -16,7 +16,10 @@ import {
 } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { JwtPayloadWithClaims } from '@/datasources/jwt/jwt-claims.entity';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import { OidcStateSchema } from '@/modules/auth/routes/entities/oidc-state.entity';
+import {
+  OidcState,
+  OidcStateSchema,
+} from '@/modules/auth/routes/entities/oidc-state.entity';
 import { IAuth0Repository } from '@/modules/auth/auth0/domain/auth0.repository.interface';
 import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
 
@@ -146,7 +149,7 @@ export class AuthService {
 
     const statePayload = {
       csrf: randomBytes(32).toString('hex'),
-      ...(resolvedRedirectUrl ? { redirectUrl: resolvedRedirectUrl } : {}),
+      redirectUrl: resolvedRedirectUrl,
     };
 
     const state = Buffer.from(JSON.stringify(statePayload)).toString(
@@ -191,7 +194,7 @@ export class AuthService {
     }
   }
 
-  private decodeState(state: string): { csrf: string; redirectUrl?: string } {
+  private decodeState(state: string): OidcState {
     try {
       const json = Buffer.from(state, 'base64url').toString('utf-8');
       return OidcStateSchema.parse(JSON.parse(json));
