@@ -32,6 +32,7 @@ import {
   ApiNoContentResponse,
   ApiUnauthorizedResponse,
   ApiBadRequestResponse,
+  ApiForbiddenResponse,
   ApiQuery,
 } from '@nestjs/swagger';
 import { CookieOptions, Request, Response } from 'express';
@@ -73,6 +74,7 @@ export class AuthController {
       'Returns 204 if a valid session cookie is present, 403 otherwise.',
   })
   @ApiNoContentResponse({ description: 'Authenticated' })
+  @ApiForbiddenResponse({ description: 'Not authenticated' })
   @HttpCode(204)
   @UseGuards(AuthGuard)
   @Get('me')
