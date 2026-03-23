@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import configuration from '@/config/entities/__tests__/configuration';
 import { postgresConfig } from '@/config/entities/postgres.config';
@@ -11,7 +12,7 @@ import { User } from '@/modules/users/datasources/entities/users.entity.db';
 import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
 import { authPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
+import type { UUID } from 'crypto';
 import { nameBuilder } from '@/domain/common/entities/name.builder';
 import { AddressBookItemsRepository } from '@/modules/spaces/domain/address-books/address-book-items.repository';
 import type { IAddressBookItemsRepository } from '@/modules/spaces/domain/address-books/address-book-items.repository.interface';
@@ -220,7 +221,7 @@ describe('AddressBookItemsRepository', () => {
       await expect(
         addressBookItemsRepository.findAllBySpaceId({
           authPayload,
-          spaceId: faker.number.int({ min: 1, max: DB_MAX_SAFE_INTEGER }),
+          spaceId: faker.string.uuid() as UUID,
         }),
       ).rejects.toThrow(new NotFoundException('Space not found.'));
     });
@@ -358,7 +359,7 @@ describe('AddressBookItemsRepository', () => {
       await expect(
         addressBookItemsRepository.upsertMany({
           authPayload,
-          spaceId: faker.number.int({ min: 1, max: DB_MAX_SAFE_INTEGER }),
+          spaceId: faker.string.uuid() as UUID,
           addressBookItems,
         }),
       ).rejects.toThrow(new NotFoundException('Space not found.'));
@@ -456,7 +457,7 @@ describe('AddressBookItemsRepository', () => {
       await expect(
         addressBookItemsRepository.deleteByAddress({
           authPayload,
-          spaceId: faker.number.int({ min: 1, max: DB_MAX_SAFE_INTEGER }),
+          spaceId: faker.string.uuid() as UUID,
           address: addressBookItem.address,
         }),
       ).rejects.toThrow(new NotFoundException('Space not found.'));

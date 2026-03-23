@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import {
   Column,
   Entity,
@@ -13,11 +14,12 @@ import { Member } from '@/modules/users/datasources/entities/member.entity.db';
 import { databaseEnumTransformer } from '@/domain/common/utils/enum';
 import { SpaceSafe } from '@/modules/spaces/datasources/entities/space-safes.entity.db';
 import { NAME_MAX_LENGTH } from '@/domain/common/schemas/name.schema';
+import type { UUID } from 'crypto';
 
 @Entity('spaces')
 export class Space implements DomainSpace {
-  @PrimaryGeneratedColumn({ primaryKeyConstraintName: 'PK_spaces_id' })
-  id!: number;
+  @PrimaryGeneratedColumn('uuid', { primaryKeyConstraintName: 'PK_spaces_id' })
+  id!: UUID;
 
   @Column({ type: 'varchar', length: NAME_MAX_LENGTH })
   name!: string;
