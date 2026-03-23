@@ -1,3 +1,7 @@
+<!--
+  SPDX-License-Identifier: FSL-1.1-MIT
+ -->
+
 # Agent Guidelines
 
 This document contains guidelines for AI agents (like Claude Code) working on this codebase.
@@ -61,6 +65,23 @@ yarn test
 git add <files>
 git commit -m "Your commit message"
 ```
+
+## License Headers
+
+All source files changed after Feb 16th 2026 **must** include an SPDX license header at the very top of the file. The header format depends on the file type:
+
+| File type                            | Comment style | Header                                    |
+| ------------------------------------ | ------------- | ----------------------------------------- |
+| `.ts`, `.tsx`, `.js`, `.mjs`         | `//`          | `// SPDX-License-Identifier: FSL-1.1-MIT` |
+| `.yaml`, `.yml`, `.sh`, `Dockerfile` | `#`           | `# SPDX-License-Identifier: FSL-1.1-MIT`  |
+| `.md`                                | HTML comment  | Multi-line: `<!--\n  SPDX-...\n -->`      |
+| `.sql`                               | `--`          | `-- SPDX-License-Identifier: FSL-1.1-MIT` |
+
+For `.md` files the hook uses a multi-line HTML comment style (`<!--| | -->`), so the header spans three lines.
+
+This is enforced by a `pre-commit` hook (`insert-license` from `Lucas-C/pre-commit-hooks`) and a `license-headers` CI job. The canonical header text lives in `LICENSE_HEADER.txt`.
+
+Every file you create or modify in a PR **MUST** have the correct license header. Add it yourself — do not rely on the pre-commit hook to do it for you. If the pre-commit hook adds it automatically, include that change in your commit.
 
 ## Important Notes
 
