@@ -408,6 +408,38 @@ export default () => ({
       process.env.PUSH_NOTIFICATIONS_API_OAUTH2_TOKEN_TTL_BUFFER_IN_SECONDS ??
         `${120}`,
     ),
+    queue: {
+      removeOnComplete: {
+        age: parseInt(
+          process.env.PUSH_NOTIFICATION_QUEUE_REMOVE_ON_COMPLETE_AGE ??
+            `${3600}`,
+        ),
+        count: parseInt(
+          process.env.PUSH_NOTIFICATION_QUEUE_REMOVE_ON_COMPLETE_COUNT ??
+            `${5000}`,
+        ),
+      },
+      removeOnFail: {
+        age: parseInt(
+          process.env.PUSH_NOTIFICATION_QUEUE_REMOVE_ON_FAIL_AGE ?? `${43200}`,
+        ),
+        count: parseInt(
+          process.env.PUSH_NOTIFICATION_QUEUE_REMOVE_ON_FAIL_COUNT ?? `${500}`,
+        ),
+      },
+      backoff: {
+        type: process.env.PUSH_NOTIFICATION_QUEUE_BACKOFF_TYPE || 'exponential',
+        delay: parseInt(
+          process.env.PUSH_NOTIFICATION_QUEUE_BACKOFF_DELAY ?? `${1000}`,
+        ),
+      },
+      attempts: parseInt(
+        process.env.PUSH_NOTIFICATION_QUEUE_ATTEMPTS ?? `${3}`,
+      ),
+      concurrency: parseInt(
+        process.env.PUSH_NOTIFICATION_QUEUE_CONCURRENCY ?? `${5}`,
+      ),
+    },
   },
   redis: {
     user: process.env.REDIS_USER,

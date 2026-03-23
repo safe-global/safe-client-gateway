@@ -153,6 +153,7 @@ export const RootConfigurationSchema = z
     CSV_AWS_ACCESS_KEY_ID: z.string().optional(),
     CSV_AWS_SECRET_ACCESS_KEY: z.string().optional(),
     CSV_EXPORT_QUEUE_CONCURRENCY: z.coerce.number().min(1).optional(),
+    PUSH_NOTIFICATION_QUEUE_CONCURRENCY: z.coerce.number().min(1).optional(),
     BLOCKAID_CLIENT_API_KEY: z.string().optional(),
     TX_SERVICE_API_KEY: z.string().trim().min(1).optional(),
     CAPTCHA_ENABLED: z.string().optional().default('false'),

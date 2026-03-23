@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Test, type TestingModule } from '@nestjs/testing';
 import { AppModule } from '@/app.module';
 import configuration from '@/config/entities/__tests__/configuration';
@@ -20,6 +21,8 @@ import { CacheKeyPrefix } from '@/datasources/cache/constants';
 import type { Provider } from '@nestjs/common';
 import { CsvExportModule } from '@/modules/csv-export/csv-export.module';
 import { TestCsvExportModule } from '@/modules/csv-export/v1/__tests__/test.csv-export.module';
+import { PushNotificationModule } from '@/modules/notifications/domain/push/push-notification.module';
+import { TestPushNotificationModule } from '@/modules/notifications/domain/push/__tests__/test.push-notification.module';
 import { TxAuthNetworkModule } from '@/datasources/network/tx-auth.network.module';
 import { TestTxAuthNetworkModule } from '@/datasources/network/__tests__/test.tx-auth.network.module';
 import { BlocklistModule } from '@/config/entities/blocklist.module';
@@ -113,7 +116,9 @@ export async function createBaseTestModule(
     .overrideModule(QueuesApiModule)
     .useModule(TestQueuesApiModule)
     .overrideModule(CsvExportModule)
-    .useModule(TestCsvExportModule);
+    .useModule(TestCsvExportModule)
+    .overrideModule(PushNotificationModule)
+    .useModule(TestPushNotificationModule);
 
   if (overridePostgresV2) {
     moduleBuilder
