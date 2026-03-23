@@ -37,6 +37,8 @@ function createMockJob<T>(
   } as unknown as Job<T>;
 }
 
+const randomAttempts = (): number => faker.number.int({ min: 0, max: 10 });
+
 describe('PushNotificationConsumer', () => {
   let consumer: PushNotificationConsumer;
 
@@ -83,10 +85,11 @@ describe('PushNotificationConsumer', () => {
     });
 
     it('should throw on unknown job type', async () => {
-      const job = createMockJob('unknown-job-type', {} as never);
+      const unknownJobType = 'unknown-job-type';
+      const job = createMockJob(unknownJobType, {} as never);
 
       await expect(consumer.process(job)).rejects.toThrow(
-        'Unknown job type: unknown-job-type',
+        `Unknown job type: ${unknownJobType}`,
       );
     });
 
@@ -106,10 +109,11 @@ describe('PushNotificationConsumer', () => {
   describe('lifecycle event handlers', () => {
     it('onCompleted should log with JobEvent type and enriched fields for delivery jobs', () => {
       const deliveryData = pushNotificationDeliveryJobDataBuilder().build();
+      const attemptsMade = randomAttempts();
       const job = createMockJob(
         JobType.PUSH_NOTIFICATION_DELIVERY,
         deliveryData,
-        { attemptsMade: 1 },
+        { attemptsMade },
       );
 
       consumer.onCompleted(job);
@@ -119,7 +123,7 @@ describe('PushNotificationConsumer', () => {
           type: LogType.JobEvent,
           source: 'PushNotificationConsumer',
           jobName: JobType.PUSH_NOTIFICATION_DELIVERY,
-          attemptsMade: 1,
+          attemptsMade,
           chainId: deliveryData.chainId,
           safeAddress: deliveryData.safeAddress,
           notificationType: deliveryData.notificationType,
@@ -130,8 +134,9 @@ describe('PushNotificationConsumer', () => {
 
     it('onCompleted should log with JobEvent type and no enriched fields for event jobs', () => {
       const eventJobData = pushNotificationEventJobDataBuilder().build();
+      const attemptsMade = randomAttempts();
       const job = createMockJob(JobType.PUSH_NOTIFICATION_EVENT, eventJobData, {
-        attemptsMade: 0,
+        attemptsMade,
       });
 
       consumer.onCompleted(job);
@@ -141,7 +146,7 @@ describe('PushNotificationConsumer', () => {
           type: LogType.JobEvent,
           source: 'PushNotificationConsumer',
           jobName: JobType.PUSH_NOTIFICATION_EVENT,
-          attemptsMade: 0,
+          attemptsMade,
         }),
       );
       expect(mockLoggingService.debug).toHaveBeenCalledWith(
@@ -156,10 +161,11 @@ describe('PushNotificationConsumer', () => {
 
     it('onFailed should log with NotificationError type and enriched fields for delivery jobs', () => {
       const deliveryData = pushNotificationDeliveryJobDataBuilder().build();
+      const attemptsMade = randomAttempts();
       const job = createMockJob(
         JobType.PUSH_NOTIFICATION_DELIVERY,
         deliveryData,
-        { attemptsMade: 3 },
+        { attemptsMade },
       );
       const error = new Error('FCM service unavailable');
 
@@ -170,7 +176,7 @@ describe('PushNotificationConsumer', () => {
           type: LogType.NotificationError,
           source: 'PushNotificationConsumer',
           jobName: JobType.PUSH_NOTIFICATION_DELIVERY,
-          attemptsMade: 3,
+          attemptsMade,
           chainId: deliveryData.chainId,
           safeAddress: deliveryData.safeAddress,
           notificationType: deliveryData.notificationType,
@@ -181,8 +187,9 @@ describe('PushNotificationConsumer', () => {
 
     it('onFailed should log with JobError type and no enriched fields for event jobs', () => {
       const eventJobData = pushNotificationEventJobDataBuilder().build();
+      const attemptsMade = randomAttempts();
       const job = createMockJob(JobType.PUSH_NOTIFICATION_EVENT, eventJobData, {
-        attemptsMade: 2,
+        attemptsMade,
       });
       const error = new Error('Event processing failed');
 
@@ -193,7 +200,7 @@ describe('PushNotificationConsumer', () => {
           type: LogType.JobError,
           source: 'PushNotificationConsumer',
           jobName: JobType.PUSH_NOTIFICATION_EVENT,
-          attemptsMade: 2,
+          attemptsMade,
           event: expect.stringContaining('Event processing failed'),
         }),
       );

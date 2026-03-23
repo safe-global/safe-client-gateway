@@ -90,8 +90,9 @@ export class PushNotificationConsumer extends WorkerHost {
    */
   private getJobMetadata(job: PushNotificationJob): JobMetadata {
     const deliveryData =
-      (job.name as JobTypeName) === JobType.PUSH_NOTIFICATION_DELIVERY
-        ? (job as Job<PushNotificationDeliveryJobData>).data
+      (job.name as JobTypeName) === JobType.PUSH_NOTIFICATION_DELIVERY &&
+      'chainId' in job.data
+        ? job.data
         : null;
 
     return {
