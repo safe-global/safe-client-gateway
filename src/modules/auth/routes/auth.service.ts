@@ -220,7 +220,9 @@ export class AuthService {
       }
       return target.toString();
     } catch {
-      throw new BadRequestException('Invalid redirect URL');
+      throw new BadRequestException(
+        'Invalid redirect URL: must be properly formed and same-origin as post-login URI',
+      );
     }
   }
 }
