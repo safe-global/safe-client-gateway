@@ -435,7 +435,7 @@ describe('AuthService', () => {
   });
 
   describe('createOidcAuthorizationRequest', () => {
-    it('should return base64url-encoded state with csrf token', () => {
+    it('should return authorizationUrl, stateMaxAge and base64url-encoded state with csrf token', () => {
       const authorizationUrl = faker.internet.url();
       auth0RepositoryMock.getAuthorizationUrl.mockReturnValue(authorizationUrl);
 
