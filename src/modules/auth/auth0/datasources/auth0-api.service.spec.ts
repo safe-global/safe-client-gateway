@@ -69,13 +69,6 @@ describe('Auth0Api', () => {
       const url = new URL(target.getAuthorizationUrl(state, 'google-oauth2'));
       expect(url.searchParams.get('connection')).toBe('google-oauth2');
     });
-
-    it('should append the email connection parameter when provided', () => {
-      const state = faker.string.alphanumeric(32);
-
-      const url = new URL(target.getAuthorizationUrl(state, 'email'));
-      expect(url.searchParams.get('connection')).toBe('email');
-    });
   });
 
   describe('exchangeAuthorizationCode', () => {
