@@ -6,6 +6,10 @@ import { EmailModule } from '@/modules/email/email.module';
 import { TestEmailApiModule } from '@/modules/email/datasources/__tests__/test.email-api.module';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { createTestModule } from '@/__tests__/testing-module';
+import {
+  oidcAuthPayloadDtoBuilder,
+  siweAuthPayloadDtoBuilder,
+} from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { siweMessageBuilder } from '@/modules/siwe/domain/entities/__tests__/siwe-message.builder';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 import { faker } from '@faker-js/faker';
@@ -15,17 +19,53 @@ import type { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { getSecondsUntil } from '@/domain/common/utils/time';
 import type { Server } from 'net';
+import { sign } from 'jsonwebtoken';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { UsersModule } from '@/modules/users/users.module';
 import { TestUsersModule } from '@/modules/users/__tests__/test.users.module';
+import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
+import {
+  NetworkService,
+  type INetworkService,
+} from '@/datasources/network/network.service.interface';
+import type { TestingModule } from '@nestjs/testing';
+import { rawify } from '@/validation/entities/raw.entity';
 
 describe('AuthController', () => {
   let app: INestApplication<Server>;
   let cacheService: FakeCacheService;
+  let networkService: jest.MockedObjectDeep<INetworkService>;
+  let jwtService: IJwtService;
+
   let maxValidityPeriodInMs: number;
+  let stateTtlMs: number;
+  let auth0Config: {
+    domain: string;
+    clientId: string;
+    clientSecret: string;
+    redirectUri: string;
+    audience: string;
+    signingSecret: string;
+    scope: string;
+  };
+  let postLoginRedirectUri: string;
+
+  function signAuth0Token(claims: {
+    sub: string;
+    exp?: number;
+    iat?: number;
+    nbf?: number;
+  }): string {
+    return sign(claims, auth0Config.signingSecret, {
+      algorithm: 'HS256',
+      issuer: `https://${auth0Config.domain}/`,
+      audience: auth0Config.audience,
+      noTimestamp: true,
+    });
+  }
 
   async function initApp(config: typeof configuration): Promise<void> {
-    const moduleFixture = await createTestModule({
+    const moduleFixture: TestingModule = await createTestModule({
       config,
       modules: [
         {
@@ -40,14 +80,32 @@ describe('AuthController', () => {
     });
 
     cacheService = moduleFixture.get(CacheService);
+    networkService = moduleFixture.get(NetworkService);
+    jwtService = moduleFixture.get(IJwtService);
+
     const configService: IConfigurationService = moduleFixture.get(
       IConfigurationService,
     );
+
     maxValidityPeriodInMs =
       configService.getOrThrow<number>('auth.maxValidityPeriodSeconds') * 1_000;
+    postLoginRedirectUri = configService.getOrThrow<string>(
+      'auth.postLoginRedirectUri',
+    );
+    stateTtlMs = configService.getOrThrow<number>('auth.stateTtlMs');
+    auth0Config = {
+      domain: configService.getOrThrow<string>('auth.auth0.domain'),
+      clientId: configService.getOrThrow<string>('auth.auth0.clientId'),
+      clientSecret: configService.getOrThrow<string>('auth.auth0.clientSecret'),
+      redirectUri: configService.getOrThrow<string>('auth.auth0.redirectUri'),
+      audience: configService.getOrThrow<string>('auth.auth0.audience'),
+      signingSecret: configService.getOrThrow<string>(
+        'auth.auth0.signingSecret',
+      ),
+      scope: configService.getOrThrow<string>('auth.auth0.scope'),
+    };
 
     app = await new TestAppProvider().provide(moduleFixture);
-
     await app.init();
   }
 
@@ -92,6 +150,95 @@ describe('AuthController', () => {
           const cacheDir = new CacheDir(`auth_nonce_${body.nonce}`, '');
           await expect(cacheService.hGet(cacheDir)).resolves.toBe(body.nonce);
         });
+    });
+  });
+
+  describe('GET /v1/auth/oidc/authorize', () => {
+    it('should redirect to Auth0 and set the state cookie', async () => {
+      jest.setSystemTime(0);
+
+      const response = await request(app.getHttpServer())
+        .get('/v1/auth/oidc/authorize')
+        .expect(302);
+
+      const location = new URL(response.headers.location);
+      const stateMaxAge = Math.floor(stateTtlMs / 1_000);
+
+      expect(location.origin).toBe(`https://${auth0Config.domain}`);
+      expect(location.pathname).toBe('/authorize');
+      expect(location.searchParams.get('response_type')).toBe('code');
+      expect(location.searchParams.get('client_id')).toBe(auth0Config.clientId);
+      expect(location.searchParams.get('redirect_uri')).toBe(
+        auth0Config.redirectUri,
+      );
+      expect(location.searchParams.get('scope')).toBe(auth0Config.scope);
+      expect(location.searchParams.get('audience')).toBe(auth0Config.audience);
+      expect(location.searchParams.get('state')).toEqual(expect.any(String));
+
+      expect(response.headers['set-cookie']).toEqual(
+        expect.arrayContaining([
+          expect.stringMatching(
+            new RegExp(
+              `^auth_state=.*; Max-Age=${stateMaxAge}; Path=/; Expires=.*; HttpOnly; Secure; SameSite=Lax$`,
+            ),
+          ),
+        ]),
+      );
+    });
+
+    it('should set SameSite=None on the state cookie if application.env is not production', async () => {
+      jest.setSystemTime(0);
+
+      const defaultConfiguration = configuration();
+      const testConfiguration = (): typeof defaultConfiguration => ({
+        ...defaultConfiguration,
+        application: {
+          ...defaultConfiguration.application,
+          isProduction: false,
+        },
+        features: {
+          ...defaultConfiguration.features,
+          auth: true,
+        },
+      });
+
+      await initApp(testConfiguration);
+      const stateMaxAge = Math.floor(stateTtlMs / 1_000);
+
+      const response = await request(app.getHttpServer())
+        .get('/v1/auth/oidc/authorize')
+        .expect(302);
+
+      expect(response.headers['set-cookie']).toEqual(
+        expect.arrayContaining([
+          expect.stringMatching(
+            new RegExp(
+              `^auth_state=.*; Max-Age=${stateMaxAge}; Path=/; Expires=.*; HttpOnly; Secure; SameSite=None$`,
+            ),
+          ),
+        ]),
+      );
+    });
+
+    it('should generate a unique state on each call', async () => {
+      const first = await request(app.getHttpServer())
+        .get('/v1/auth/oidc/authorize')
+        .expect(302);
+
+      const second = await request(app.getHttpServer())
+        .get('/v1/auth/oidc/authorize')
+        .expect(302);
+
+      const firstState = new URL(first.headers.location).searchParams.get(
+        'state',
+      );
+      const secondState = new URL(second.headers.location).searchParams.get(
+        'state',
+      );
+
+      expect(firstState).toEqual(expect.any(String));
+      expect(secondState).toEqual(expect.any(String));
+      expect(firstState).not.toBe(secondState);
     });
   });
 
@@ -473,6 +620,368 @@ describe('AuthController', () => {
     });
   });
 
+  describe('GET /v1/auth/oidc/callback', () => {
+    function expectErrorRedirect(
+      response: request.Response,
+      expectedError: string,
+    ): void {
+      expect(response.status).toBe(302);
+      const location = new URL(response.headers.location);
+      const redirectBase = new URL(postLoginRedirectUri);
+      expect(location.origin + location.pathname).toBe(
+        redirectBase.origin + redirectBase.pathname,
+      );
+      expect(location.searchParams.get('error')).toBe(expectedError);
+      // State cookie should always be cleared
+      expect(response.headers['set-cookie']).toEqual(
+        expect.arrayContaining([
+          'auth_state=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; Secure; SameSite=Lax',
+        ]),
+      );
+    }
+
+    it('should exchange the authorization code, set the access token cookie and redirect', async () => {
+      jest.setSystemTime(0);
+
+      const expirationTime = faker.date.between({
+        from: new Date(),
+        to: new Date(Date.now() + maxValidityPeriodInMs),
+      });
+
+      const auth0Token = signAuth0Token({
+        sub: faker.string.uuid(),
+        exp: Math.floor(expirationTime.getTime() / 1_000),
+        iat: Math.floor(Date.now() / 1_000),
+      });
+      const maxAge = getSecondsUntil(expirationTime);
+
+      networkService.postForm.mockResolvedValueOnce({
+        status: 200,
+        data: rawify({
+          access_token: auth0Token,
+          id_token: 'auth0-id-token',
+          token_type: 'Bearer',
+          scope: faker.lorem.words(),
+        }),
+      });
+
+      const authorizeResponse = await request(app.getHttpServer())
+        .get('/v1/auth/oidc/authorize')
+        .expect(302);
+
+      const state = new URL(
+        authorizeResponse.headers.location,
+      ).searchParams.get('state');
+      const stateCookie = (
+        authorizeResponse.headers['set-cookie'] as unknown as Array<string>
+      )
+        .find((cookie) => cookie.startsWith('auth_state='))
+        ?.split(';')[0];
+
+      await request(app.getHttpServer())
+        .get('/v1/auth/oidc/callback')
+        .set('Cookie', stateCookie!)
+        .query({
+          code: 'auth-code',
+          state,
+        })
+        .expect(302)
+        .expect(({ headers }) => {
+          expect(headers.location).toBe(postLoginRedirectUri);
+
+          const setCookie = headers['set-cookie'] as unknown as Array<string>;
+          const accessTokenCookieRegExp = new RegExp(
+            `^access_token=([^;]*); Max-Age=${maxAge}; Path=/; Expires=${expirationTime.toUTCString()}; HttpOnly; Secure; SameSite=Lax$`,
+          );
+
+          expect(setCookie).toEqual(
+            expect.arrayContaining([
+              expect.stringMatching(accessTokenCookieRegExp),
+              'auth_state=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; Secure; SameSite=Lax',
+            ]),
+          );
+
+          const accessToken = setCookie
+            .find((cookie) => cookie.startsWith('access_token='))
+            ?.match(/^access_token=([^;]+)/)?.[1];
+
+          expect(
+            jwtService.verify<{ auth_method: string; sub: string }>(
+              accessToken!,
+            ),
+          ).toMatchObject({
+            auth_method: 'oidc',
+            sub: '1',
+          });
+        });
+
+      expect(networkService.postForm).toHaveBeenCalledWith({
+        url: `https://${auth0Config.domain}/oauth/token`,
+        data: {
+          grant_type: 'authorization_code',
+          client_id: auth0Config.clientId,
+          client_secret: auth0Config.clientSecret,
+          code: 'auth-code',
+          redirect_uri: auth0Config.redirectUri,
+        },
+      });
+    });
+
+    it('should redirect with authentication_failed when the token verification fails', async () => {
+      const invalidToken = sign(
+        { sub: faker.string.uuid() },
+        'wrong-signing-secret',
+        { algorithm: 'HS256' },
+      );
+
+      networkService.postForm.mockResolvedValueOnce({
+        status: 200,
+        data: rawify({
+          access_token: invalidToken,
+          refresh_token: 'auth0-refresh-token',
+          id_token: 'auth0-id-token',
+          token_type: 'Bearer',
+        }),
+      });
+
+      const authorizeResponse = await request(app.getHttpServer())
+        .get('/v1/auth/oidc/authorize')
+        .expect(302);
+
+      const state = new URL(
+        authorizeResponse.headers.location,
+      ).searchParams.get('state');
+      const stateCookie = (
+        authorizeResponse.headers['set-cookie'] as unknown as Array<string>
+      )
+        .find((cookie) => cookie.startsWith('auth_state='))
+        ?.split(';')[0];
+
+      const response = await request(app.getHttpServer())
+        .get('/v1/auth/oidc/callback')
+        .set('Cookie', stateCookie!)
+        .query({
+          code: 'auth-code',
+          state,
+        });
+
+      expectErrorRedirect(response, 'authentication_failed');
+    });
+
+    it('should redirect with error when the state does not match', async () => {
+      const authorizeResponse = await request(app.getHttpServer())
+        .get('/v1/auth/oidc/authorize')
+        .expect(302);
+
+      const stateCookie = (
+        authorizeResponse.headers['set-cookie'] as unknown as Array<string>
+      )
+        .find((cookie) => cookie.startsWith('auth_state='))
+        ?.split(';')[0];
+
+      const response = await request(app.getHttpServer())
+        .get('/v1/auth/oidc/callback')
+        .set('Cookie', stateCookie!)
+        .query({
+          code: 'auth-code',
+          state: 'wrong-state',
+        });
+
+      expectErrorRedirect(response, 'invalid_request');
+      expect(networkService.postForm).not.toHaveBeenCalled();
+    });
+
+    it('should redirect with error when no state cookie is present', async () => {
+      const response = await request(app.getHttpServer())
+        .get('/v1/auth/oidc/callback')
+        .query({
+          code: 'auth-code',
+          state: 'some-state',
+        });
+
+      expectErrorRedirect(response, 'invalid_request');
+      expect(networkService.postForm).not.toHaveBeenCalled();
+    });
+
+    it('should redirect with error when code is missing', async () => {
+      const authorizeResponse = await request(app.getHttpServer())
+        .get('/v1/auth/oidc/authorize')
+        .expect(302);
+
+      const stateCookie = (
+        authorizeResponse.headers['set-cookie'] as unknown as Array<string>
+      )
+        .find((cookie) => cookie.startsWith('auth_state='))
+        ?.split(';')[0];
+
+      const state = new URL(
+        authorizeResponse.headers.location,
+      ).searchParams.get('state');
+
+      const response = await request(app.getHttpServer())
+        .get('/v1/auth/oidc/callback')
+        .set('Cookie', stateCookie!)
+        .query({ state });
+
+      expectErrorRedirect(response, 'invalid_request');
+      expect(networkService.postForm).not.toHaveBeenCalled();
+    });
+
+    it('should redirect with error when state is missing', async () => {
+      const authorizeResponse = await request(app.getHttpServer())
+        .get('/v1/auth/oidc/authorize')
+        .expect(302);
+
+      const stateCookie = (
+        authorizeResponse.headers['set-cookie'] as unknown as Array<string>
+      )
+        .find((cookie) => cookie.startsWith('auth_state='))
+        ?.split(';')[0];
+
+      const response = await request(app.getHttpServer())
+        .get('/v1/auth/oidc/callback')
+        .set('Cookie', stateCookie!)
+        .query({ code: 'auth-code' });
+
+      expectErrorRedirect(response, 'invalid_request');
+      expect(networkService.postForm).not.toHaveBeenCalled();
+    });
+
+    it('should redirect with only error when the OIDC provider returns an error with description', async () => {
+      const response = await request(app.getHttpServer())
+        .get('/v1/auth/oidc/callback')
+        .query({
+          error: 'access_denied',
+          error_description: 'User denied access',
+        });
+
+      expectErrorRedirect(response, 'access_denied');
+      expect(networkService.postForm).not.toHaveBeenCalled();
+    });
+
+    it('should redirect with error when the OIDC provider returns an error without description', async () => {
+      const response = await request(app.getHttpServer())
+        .get('/v1/auth/oidc/callback')
+        .query({
+          error: 'access_denied',
+        });
+
+      expectErrorRedirect(response, 'access_denied');
+      expect(networkService.postForm).not.toHaveBeenCalled();
+    });
+
+    it('should redirect with authentication_failed when the code exchange fails', async () => {
+      networkService.postForm.mockRejectedValueOnce(new Error('Network error'));
+
+      const authorizeResponse = await request(app.getHttpServer())
+        .get('/v1/auth/oidc/authorize')
+        .expect(302);
+
+      const state = new URL(
+        authorizeResponse.headers.location,
+      ).searchParams.get('state');
+      const stateCookie = (
+        authorizeResponse.headers['set-cookie'] as unknown as Array<string>
+      )
+        .find((cookie) => cookie.startsWith('auth_state='))
+        ?.split(';')[0];
+
+      const response = await request(app.getHttpServer())
+        .get('/v1/auth/oidc/callback')
+        .set('Cookie', stateCookie!)
+        .query({
+          code: 'auth-code',
+          state,
+        });
+
+      expectErrorRedirect(response, 'authentication_failed');
+    });
+
+    it('should redirect with authentication_failed when the Auth0 token has expired', async () => {
+      const expiredToken = signAuth0Token({
+        sub: faker.string.uuid(),
+        exp: Math.floor(Date.now() / 1_000) - 60,
+        iat: Math.floor(Date.now() / 1_000) - 120,
+      });
+
+      networkService.postForm.mockResolvedValueOnce({
+        status: 200,
+        data: rawify({
+          access_token: expiredToken,
+          id_token: 'auth0-id-token',
+          token_type: 'Bearer',
+        }),
+      });
+
+      const authorizeResponse = await request(app.getHttpServer())
+        .get('/v1/auth/oidc/authorize')
+        .expect(302);
+
+      const state = new URL(
+        authorizeResponse.headers.location,
+      ).searchParams.get('state');
+      const stateCookie = (
+        authorizeResponse.headers['set-cookie'] as unknown as Array<string>
+      )
+        .find((cookie) => cookie.startsWith('auth_state='))
+        ?.split(';')[0];
+
+      const response = await request(app.getHttpServer())
+        .get('/v1/auth/oidc/callback')
+        .set('Cookie', stateCookie!)
+        .query({
+          code: 'auth-code',
+          state,
+        });
+
+      expectErrorRedirect(response, 'authentication_failed');
+    });
+
+    it('should redirect with authentication_failed when Auth0 token exp exceeds max validity', async () => {
+      jest.setSystemTime(0);
+
+      const farFutureExp =
+        Math.floor(Date.now() / 1_000) + maxValidityPeriodInMs / 1_000 + 3600;
+      const auth0Token = signAuth0Token({
+        sub: faker.string.uuid(),
+        exp: farFutureExp,
+        iat: Math.floor(Date.now() / 1_000),
+      });
+
+      networkService.postForm.mockResolvedValueOnce({
+        status: 200,
+        data: rawify({
+          access_token: auth0Token,
+          id_token: 'auth0-id-token',
+          token_type: 'Bearer',
+        }),
+      });
+
+      const authorizeResponse = await request(app.getHttpServer())
+        .get('/v1/auth/oidc/authorize')
+        .expect(302);
+
+      const state = new URL(
+        authorizeResponse.headers.location,
+      ).searchParams.get('state');
+      const stateCookie = (
+        authorizeResponse.headers['set-cookie'] as unknown as Array<string>
+      )
+        .find((cookie) => cookie.startsWith('auth_state='))
+        ?.split(';')[0];
+
+      const response = await request(app.getHttpServer())
+        .get('/v1/auth/oidc/callback')
+        .set('Cookie', stateCookie!)
+        .query({
+          code: 'auth-code',
+          state,
+        });
+
+      expectErrorRedirect(response, 'authentication_failed');
+    });
+  });
+
   describe('POST /v1/auth/logout', () => {
     it('should log a signer out', async () => {
       const privateKey = generatePrivateKey();
@@ -513,6 +1022,39 @@ describe('AuthController', () => {
             'access_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; Secure; SameSite=Lax',
           );
         });
+    });
+  });
+
+  describe('GET /v1/auth/me', () => {
+    it('should return 204 with a valid Siwe access token', async () => {
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+
+      await request(app.getHttpServer())
+        .get('/v1/auth/me')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(204);
+    });
+
+    it('should return 204 with a valid OIDC access token', async () => {
+      const authPayloadDto = oidcAuthPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+
+      await request(app.getHttpServer())
+        .get('/v1/auth/me')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(204);
+    });
+
+    it('should return 403 without an access token', async () => {
+      await request(app.getHttpServer()).get('/v1/auth/me').expect(403);
+    });
+
+    it('should return 403 with an invalid access token', async () => {
+      await request(app.getHttpServer())
+        .get('/v1/auth/me')
+        .set('Cookie', ['access_token=invalid-token'])
+        .expect(403);
     });
   });
 });
