@@ -1,4 +1,6 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { encryptData, decryptData } from '@/domain/common/utils/encryption';
+import { MAX_DERIVED_KEY_CACHE_SIZE } from '@/datasources/cache/constants';
 import { faker } from '@faker-js/faker/.';
 import { getAddress } from 'viem';
 
@@ -166,6 +168,42 @@ describe('Encryption Utils', () => {
       expect(() => decryptData(encrypted, testKey, wrongSalt)).toThrow(
         'Failed to decrypt data',
       );
+    });
+  });
+
+  describe('cache behavior', () => {
+    it('should not collide cache keys for ambiguous (key, salt) pairs', () => {
+      const data = { value: faker.string.alphanumeric() };
+
+      // These two pairs produce the same naive "${key}:${salt}" cache key "a:b:c"
+      const encrypted1 = encryptData(data, 'a:b', 'c');
+      const encrypted2 = encryptData(data, 'a', 'b:c');
+
+      expect(decryptData(encrypted1, 'a:b', 'c')).toEqual(data);
+      expect(decryptData(encrypted2, 'a', 'b:c')).toEqual(data);
+
+      expect(() => decryptData(encrypted1, 'a', 'b:c')).toThrow(
+        'Failed to decrypt data',
+      );
+      expect(() => decryptData(encrypted2, 'a:b', 'c')).toThrow(
+        'Failed to decrypt data',
+      );
+    });
+
+    it('should still work correctly after cache eviction', () => {
+      const data = { value: faker.string.alphanumeric() };
+      const firstKey = faker.string.alphanumeric(16);
+      const firstSalt = faker.string.alphanumeric(8);
+
+      const encrypted = encryptData(data, firstKey, firstSalt);
+
+      // Overflow the cache with unique pairs to trigger eviction
+      for (let i = 0; i < MAX_DERIVED_KEY_CACHE_SIZE + 1; i++) {
+        encryptData(data, `eviction-key-${i}`, `eviction-salt-${i}`);
+      }
+
+      // firstKey/firstSalt entry was evicted; key must be re-derived on decrypt
+      expect(decryptData(encrypted, firstKey, firstSalt)).toEqual(data);
     });
   });
 

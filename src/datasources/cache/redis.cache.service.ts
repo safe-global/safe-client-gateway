@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable, OnModuleDestroy } from '@nestjs/common';
 import { RedisClientType } from '@/datasources/cache/cache.module';
 import { ICacheService } from '@/datasources/cache/cache.service.interface';
@@ -105,7 +106,8 @@ export class RedisCacheService
       .expire(invalidationKey, expirationTime, 'NX')
       .exec();
 
-    return results[0] as unknown as number;
+    const unlinkResult = results[0];
+    return typeof unlinkResult === 'number' ? unlinkResult : 0;
   }
 
   async increment(

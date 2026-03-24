@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
@@ -125,5 +126,15 @@ describe('RedisCacheService with a Key Prefix', () => {
     );
     expect(multiMock.exec).toHaveBeenCalled();
     jest.useRealTimers();
+  });
+
+  it('deleteByKey should return 0 if the pipeline unlink result is not a number', async () => {
+    multiMock.exec.mockResolvedValueOnce([new Error('Pipeline error'), 1, true]);
+
+    const result = await redisCacheService.deleteByKey(
+      faker.string.alphanumeric(),
+    );
+
+    expect(result).toBe(0);
   });
 });
