@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
@@ -198,15 +199,18 @@ describe('Safes Controller Overview', () => {
         `${chain.transactionService}/api/v1/safes/${safeInfo.address}`,
       );
       expect(networkService.get.mock.calls[3][0].url).toBe(
+        `${chain.transactionService}/api/v2/safes/${safeInfo.address}/multisig-transactions/`,
+      );
+      expect(networkService.get.mock.calls[4][0].url).toBe(
         `${chain.transactionService}/api/v1/safes/${safeInfo.address}/balances/`,
       );
-      expect(networkService.get.mock.calls[3][0].networkRequest).toStrictEqual({
+      expect(networkService.get.mock.calls[4][0].networkRequest).toStrictEqual({
         params: { trusted: false, exclude_spam: true },
       });
-      expect(networkService.get.mock.calls[4][0].url).toBe(
+      expect(networkService.get.mock.calls[5][0].url).toBe(
         `${pricesProviderUrl}/simple/token_price/${chain.pricesProvider.chainName}`,
       );
-      expect(networkService.get.mock.calls[4][0].networkRequest).toStrictEqual({
+      expect(networkService.get.mock.calls[5][0].networkRequest).toStrictEqual({
         headers: { 'x-cg-pro-api-key': pricesApiKey },
         params: {
           vs_currencies: currency.toLowerCase(),
@@ -217,10 +221,10 @@ describe('Safes Controller Overview', () => {
           include_24hr_change: true,
         },
       });
-      expect(networkService.get.mock.calls[5][0].url).toBe(
+      expect(networkService.get.mock.calls[6][0].url).toBe(
         `${pricesProviderUrl}/simple/price`,
       );
-      expect(networkService.get.mock.calls[5][0].networkRequest).toStrictEqual({
+      expect(networkService.get.mock.calls[6][0].networkRequest).toStrictEqual({
         headers: { 'x-cg-pro-api-key': pricesApiKey },
         params: {
           ids: chain.pricesProvider.nativeCoin,
@@ -228,9 +232,6 @@ describe('Safes Controller Overview', () => {
           include_24hr_change: true,
         },
       });
-      expect(networkService.get.mock.calls[6][0].url).toBe(
-        `${chain.transactionService}/api/v2/safes/${safeInfo.address}/multisig-transactions/`,
-      );
     });
 
     it('should not return awaiting confirmations if no more confirmations are required', async () => {
@@ -368,15 +369,18 @@ describe('Safes Controller Overview', () => {
         `${chain.transactionService}/api/v1/safes/${safeInfo.address}`,
       );
       expect(networkService.get.mock.calls[3][0].url).toBe(
+        `${chain.transactionService}/api/v2/safes/${safeInfo.address}/multisig-transactions/`,
+      );
+      expect(networkService.get.mock.calls[4][0].url).toBe(
         `${chain.transactionService}/api/v1/safes/${safeInfo.address}/balances/`,
       );
-      expect(networkService.get.mock.calls[3][0].networkRequest).toStrictEqual({
+      expect(networkService.get.mock.calls[4][0].networkRequest).toStrictEqual({
         params: { trusted: false, exclude_spam: true },
       });
-      expect(networkService.get.mock.calls[4][0].url).toBe(
+      expect(networkService.get.mock.calls[5][0].url).toBe(
         `${pricesProviderUrl}/simple/token_price/${chain.pricesProvider.chainName}`,
       );
-      expect(networkService.get.mock.calls[4][0].networkRequest).toStrictEqual({
+      expect(networkService.get.mock.calls[5][0].networkRequest).toStrictEqual({
         headers: { 'x-cg-pro-api-key': pricesApiKey },
         params: {
           vs_currencies: currency.toLowerCase(),
@@ -387,10 +391,10 @@ describe('Safes Controller Overview', () => {
           include_24hr_change: true,
         },
       });
-      expect(networkService.get.mock.calls[5][0].url).toBe(
+      expect(networkService.get.mock.calls[6][0].url).toBe(
         `${pricesProviderUrl}/simple/price`,
       );
-      expect(networkService.get.mock.calls[5][0].networkRequest).toStrictEqual({
+      expect(networkService.get.mock.calls[6][0].networkRequest).toStrictEqual({
         headers: { 'x-cg-pro-api-key': pricesApiKey },
         params: {
           ids: chain.pricesProvider.nativeCoin,
@@ -398,9 +402,6 @@ describe('Safes Controller Overview', () => {
           include_24hr_change: true,
         },
       });
-      expect(networkService.get.mock.calls[6][0].url).toBe(
-        `${chain.transactionService}/api/v2/safes/${safeInfo.address}/multisig-transactions/`,
-      );
     });
 
     it('overview of multiple Safes across different chains is correctly serialised', async () => {
@@ -965,15 +966,18 @@ describe('Safes Controller Overview', () => {
         `${chain.transactionService}/api/v1/safes/${safeInfo.address}`,
       );
       expect(networkService.get.mock.calls[3][0].url).toBe(
+        `${chain.transactionService}/api/v2/safes/${safeInfo.address}/multisig-transactions/`,
+      );
+      expect(networkService.get.mock.calls[4][0].url).toBe(
         `${chain.transactionService}/api/v1/safes/${safeInfo.address}/balances/`,
       );
-      expect(networkService.get.mock.calls[3][0].networkRequest).toStrictEqual({
+      expect(networkService.get.mock.calls[4][0].networkRequest).toStrictEqual({
         params: { trusted: false, exclude_spam: true },
       });
-      expect(networkService.get.mock.calls[4][0].url).toBe(
+      expect(networkService.get.mock.calls[5][0].url).toBe(
         `${pricesProviderUrl}/simple/token_price/${chain.pricesProvider.chainName}`,
       );
-      expect(networkService.get.mock.calls[4][0].networkRequest).toStrictEqual({
+      expect(networkService.get.mock.calls[5][0].networkRequest).toStrictEqual({
         headers: { 'x-cg-pro-api-key': pricesApiKey },
         params: {
           vs_currencies: currency.toLowerCase(),
@@ -984,10 +988,10 @@ describe('Safes Controller Overview', () => {
           include_24hr_change: true,
         },
       });
-      expect(networkService.get.mock.calls[5][0].url).toBe(
+      expect(networkService.get.mock.calls[6][0].url).toBe(
         `${pricesProviderUrl}/simple/price`,
       );
-      expect(networkService.get.mock.calls[5][0].networkRequest).toStrictEqual({
+      expect(networkService.get.mock.calls[6][0].networkRequest).toStrictEqual({
         headers: { 'x-cg-pro-api-key': pricesApiKey },
         params: {
           ids: chain.pricesProvider.nativeCoin,
@@ -995,9 +999,6 @@ describe('Safes Controller Overview', () => {
           include_24hr_change: true,
         },
       });
-      expect(networkService.get.mock.calls[6][0].url).toBe(
-        `${chain.transactionService}/api/v2/safes/${safeInfo.address}/multisig-transactions/`,
-      );
     });
 
     it('forwards trusted and exclude spam queries', async () => {
@@ -1117,16 +1118,19 @@ describe('Safes Controller Overview', () => {
         `${chain.transactionService}/api/v1/safes/${safeInfo.address}`,
       );
       expect(networkService.get.mock.calls[3][0].url).toBe(
+        `${chain.transactionService}/api/v2/safes/${safeInfo.address}/multisig-transactions/`,
+      );
+      expect(networkService.get.mock.calls[4][0].url).toBe(
         `${chain.transactionService}/api/v1/safes/${safeInfo.address}/balances/`,
       );
-      expect(networkService.get.mock.calls[3][0].networkRequest).toStrictEqual({
+      expect(networkService.get.mock.calls[4][0].networkRequest).toStrictEqual({
         // Forwarded params
         params: { trusted: true, exclude_spam: false },
       });
-      expect(networkService.get.mock.calls[4][0].url).toBe(
+      expect(networkService.get.mock.calls[5][0].url).toBe(
         `${pricesProviderUrl}/simple/token_price/${chain.pricesProvider.chainName}`,
       );
-      expect(networkService.get.mock.calls[4][0].networkRequest).toStrictEqual({
+      expect(networkService.get.mock.calls[5][0].networkRequest).toStrictEqual({
         headers: { 'x-cg-pro-api-key': pricesApiKey },
         params: {
           vs_currencies: currency.toLowerCase(),
@@ -1137,10 +1141,10 @@ describe('Safes Controller Overview', () => {
           include_24hr_change: true,
         },
       });
-      expect(networkService.get.mock.calls[5][0].url).toBe(
+      expect(networkService.get.mock.calls[6][0].url).toBe(
         `${pricesProviderUrl}/simple/price`,
       );
-      expect(networkService.get.mock.calls[5][0].networkRequest).toStrictEqual({
+      expect(networkService.get.mock.calls[6][0].networkRequest).toStrictEqual({
         headers: { 'x-cg-pro-api-key': pricesApiKey },
         params: {
           ids: chain.pricesProvider.nativeCoin,
@@ -1148,9 +1152,6 @@ describe('Safes Controller Overview', () => {
           include_24hr_change: true,
         },
       });
-      expect(networkService.get.mock.calls[6][0].url).toBe(
-        `${chain.transactionService}/api/v2/safes/${safeInfo.address}/multisig-transactions/`,
-      );
     });
   });
 

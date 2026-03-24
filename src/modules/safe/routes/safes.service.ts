@@ -151,6 +151,8 @@ export class SafesService {
           fiatCode: args.currency,
           excludeSpam: args.excludeSpam,
         });
+        // Prevent unhandled rejection if safePromise rejects first
+        balancesPromise.catch(() => {});
 
         const safe = await safePromise;
         const [balances, queue] = await Promise.all([

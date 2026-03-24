@@ -219,6 +219,7 @@ describe('Owners Controller V3 (Unit)', () => {
       const offset = 1;
       const chainsPage1 = pageBuilder()
         .with('results', [chain1])
+        .with('count', ChainsRepository.MAX_LIMIT + 1)
         .with('next', limitAndOffsetUrlFactory(undefined, offset, chainsUrl))
         .build();
       const chainsPage2 = pageBuilder()
