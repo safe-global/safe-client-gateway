@@ -624,10 +624,11 @@ describe('AuthController', () => {
     function expectErrorRedirect(
       response: request.Response,
       expectedError: string,
+      expectedBaseUrl?: string,
     ): void {
       expect(response.status).toBe(302);
       const location = new URL(response.headers.location);
-      const redirectBase = new URL(postLoginRedirectUri);
+      const redirectBase = new URL(expectedBaseUrl ?? postLoginRedirectUri);
       expect(location.origin + location.pathname).toBe(
         redirectBase.origin + redirectBase.pathname,
       );
@@ -979,6 +980,190 @@ describe('AuthController', () => {
         });
 
       expectErrorRedirect(response, 'authentication_failed');
+    });
+
+    it('should redirect to the custom redirect_url after login', async () => {
+      jest.setSystemTime(0);
+
+      const customRedirectUrl = new URL(
+        `/${faker.word.noun()}`,
+        postLoginRedirectUri,
+      ).toString();
+      const expirationTime = faker.date.between({
+        from: new Date(),
+        to: new Date(Date.now() + maxValidityPeriodInMs),
+      });
+
+      const auth0Token = signAuth0Token({
+        sub: faker.string.uuid(),
+        exp: Math.floor(expirationTime.getTime() / 1_000),
+        iat: Math.floor(Date.now() / 1_000),
+      });
+
+      networkService.postForm.mockResolvedValueOnce({
+        status: 200,
+        data: rawify({
+          access_token: auth0Token,
+          id_token: 'auth0-id-token',
+          token_type: 'Bearer',
+          scope: faker.lorem.words(),
+        }),
+      });
+
+      const authorizeResponse = await request(app.getHttpServer())
+        .get('/v1/auth/oidc/authorize')
+        .query({ redirect_url: customRedirectUrl })
+        .expect(302);
+
+      const state = new URL(
+        authorizeResponse.headers.location,
+      ).searchParams.get('state');
+      const stateCookie = (
+        authorizeResponse.headers['set-cookie'] as unknown as Array<string>
+      )
+        .find((cookie) => cookie.startsWith('auth_state='))
+        ?.split(';')[0];
+
+      await request(app.getHttpServer())
+        .get('/v1/auth/oidc/callback')
+        .set('Cookie', stateCookie!)
+        .query({
+          code: 'auth-code',
+          state,
+        })
+        .expect(302)
+        .expect(({ headers }) => {
+          expect(headers.location).toBe(customRedirectUrl);
+        });
+    });
+
+    it('should redirect errors to the custom redirect_url from state when provider returns error', async () => {
+      const customRedirectUrl = new URL(
+        `/${faker.word.noun()}`,
+        postLoginRedirectUri,
+      ).toString();
+
+      const authorizeResponse = await request(app.getHttpServer())
+        .get('/v1/auth/oidc/authorize')
+        .query({ redirect_url: customRedirectUrl })
+        .expect(302);
+
+      const stateCookie = (
+        authorizeResponse.headers['set-cookie'] as unknown as Array<string>
+      )
+        .find((cookie) => cookie.startsWith('auth_state='))
+        ?.split(';')[0];
+
+      const response = await request(app.getHttpServer())
+        .get('/v1/auth/oidc/callback')
+        .set('Cookie', stateCookie!)
+        .query({
+          error: 'access_denied',
+          error_description: 'User denied access',
+        });
+
+      expectErrorRedirect(response, 'access_denied', customRedirectUrl);
+      expect(networkService.postForm).not.toHaveBeenCalled();
+    });
+
+    it('should redirect errors to the custom redirect_url from state when authentication fails', async () => {
+      const customRedirectUrl = new URL(
+        `/${faker.word.noun()}`,
+        postLoginRedirectUri,
+      ).toString();
+
+      const invalidToken = sign(
+        { sub: faker.string.uuid() },
+        'wrong-signing-secret',
+        { algorithm: 'HS256' },
+      );
+
+      networkService.postForm.mockResolvedValueOnce({
+        status: 200,
+        data: rawify({
+          access_token: invalidToken,
+          id_token: 'auth0-id-token',
+          token_type: 'Bearer',
+        }),
+      });
+
+      const authorizeResponse = await request(app.getHttpServer())
+        .get('/v1/auth/oidc/authorize')
+        .query({ redirect_url: customRedirectUrl })
+        .expect(302);
+
+      const state = new URL(
+        authorizeResponse.headers.location,
+      ).searchParams.get('state');
+      const stateCookie = (
+        authorizeResponse.headers['set-cookie'] as unknown as Array<string>
+      )
+        .find((cookie) => cookie.startsWith('auth_state='))
+        ?.split(';')[0];
+
+      const response = await request(app.getHttpServer())
+        .get('/v1/auth/oidc/callback')
+        .set('Cookie', stateCookie!)
+        .query({
+          code: 'auth-code',
+          state,
+        });
+
+      expectErrorRedirect(response, 'authentication_failed', customRedirectUrl);
+    });
+
+    it('should redirect errors to the custom redirect_url from state when code is missing', async () => {
+      const customRedirectUrl = new URL(
+        `/${faker.word.noun()}`,
+        postLoginRedirectUri,
+      ).toString();
+
+      const authorizeResponse = await request(app.getHttpServer())
+        .get('/v1/auth/oidc/authorize')
+        .query({ redirect_url: customRedirectUrl })
+        .expect(302);
+
+      const state = new URL(
+        authorizeResponse.headers.location,
+      ).searchParams.get('state');
+      const stateCookie = (
+        authorizeResponse.headers['set-cookie'] as unknown as Array<string>
+      )
+        .find((cookie) => cookie.startsWith('auth_state='))
+        ?.split(';')[0];
+
+      const response = await request(app.getHttpServer())
+        .get('/v1/auth/oidc/callback')
+        .set('Cookie', stateCookie!)
+        .query({ state });
+
+      expectErrorRedirect(response, 'invalid_request', customRedirectUrl);
+      expect(networkService.postForm).not.toHaveBeenCalled();
+    });
+
+    it('should return 400 when redirect_url is cross-origin', async () => {
+      await request(app.getHttpServer())
+        .get('/v1/auth/oidc/authorize')
+        .query({ redirect_url: 'https://evil.com/phish' })
+        .expect(400)
+        .expect(({ body }) => {
+          expect(body.message).toContain('Invalid redirect URL');
+        });
+    });
+
+    it('should return 422 when redirect_url contains control characters', async () => {
+      await request(app.getHttpServer())
+        .get('/v1/auth/oidc/authorize')
+        .query({ redirect_url: '/settings\r\nX-Injected: true' })
+        .expect(422);
+    });
+
+    it('should return 422 when redirect_url exceeds max length', async () => {
+      const longUrl = '/' + 'a'.repeat(2048);
+      await request(app.getHttpServer())
+        .get('/v1/auth/oidc/authorize')
+        .query({ redirect_url: longUrl })
+        .expect(422);
     });
   });
 
