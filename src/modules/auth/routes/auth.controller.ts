@@ -6,6 +6,10 @@ import { ACCESS_TOKEN_COOKIE_NAME } from '@/modules/auth/routes/auth.constants';
 import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
 import { AuthService } from '@/modules/auth/routes/auth.service';
 import { AuthNonce } from '@/modules/auth/routes/entities/auth-nonce.entity';
+import {
+  OidcConnectionSchema,
+  type OidcConnection,
+} from '@/modules/auth/routes/entities/oidc-connection.entity';
 import { RedirectUrlSchema } from '@/validation/entities/schemas/redirect-url.schema';
 import {
   SiweDto,
@@ -108,6 +112,13 @@ export class AuthController {
       'URL to redirect to after successful login. Must be same-origin as the configured post-login redirect URI.',
     example: '/settings',
   })
+  @ApiQuery({
+    name: 'connection',
+    required: false,
+    type: String,
+    description:
+      'OIDC connection name to route to a specific identity provider.',
+  })
   @ApiFoundResponse({
     description: 'Redirect to OIDC authorize endpoint',
   })
@@ -117,9 +128,11 @@ export class AuthController {
     res: Response,
     @Query('redirect_url', new ValidationPipe(RedirectUrlSchema))
     redirectUrl?: string,
+    @Query('connection', new ValidationPipe(OidcConnectionSchema.optional()))
+    connection?: OidcConnection,
   ): void {
     const { authorizationUrl, state, stateMaxAge } =
-      this.authService.createOidcAuthorizationRequest(redirectUrl);
+      this.authService.createOidcAuthorizationRequest(redirectUrl, connection);
 
     res.cookie(AuthController.OIDC_STATE_COOKIE_NAME, state, {
       ...this.getCookieOptions(),
