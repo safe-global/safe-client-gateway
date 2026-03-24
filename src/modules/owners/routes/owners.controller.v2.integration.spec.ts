@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
@@ -143,6 +144,7 @@ describe('Owners Controller (Unit)', () => {
       const offset = 1;
       const chainsPage1 = pageBuilder()
         .with('results', [chain1])
+        .with('count', ChainsRepository.MAX_LIMIT + 1)
         .with('next', limitAndOffsetUrlFactory(undefined, offset, chainsUrl))
         .build();
       const chainsPage2 = pageBuilder()
