@@ -1,4 +1,5 @@
-import { AuthController } from '@/modules/auth/routes/auth.controller';
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { ACCESS_TOKEN_COOKIE_NAME } from '@/modules/auth/routes/auth.constants';
 import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
 import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { Request } from 'express';
@@ -10,7 +11,7 @@ export class OptionalAuthGuard implements CanActivate {
     const request: Request = context.switchToHttp().getRequest();
 
     const accessToken: string | undefined =
-      request.cookies[AuthController.ACCESS_TOKEN_COOKIE_NAME];
+      request.cookies[ACCESS_TOKEN_COOKIE_NAME];
 
     /**
      * If there is no access token, we allow the request to proceed as

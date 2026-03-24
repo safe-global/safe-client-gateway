@@ -47,6 +47,19 @@ export default () => ({
     maxValidityPeriodSeconds: parseInt(
       process.env.AUTH_VALIDITY_PERIOD_SECONDS ?? `${24 * 60 * 60}`, // 24 hours
     ),
+    stateTtlMs: parseInt(
+      process.env.AUTH_STATE_TTL_MILLISECONDS ?? `${5 * 60 * 1_000}`, // 5 minutes
+    ),
+    postLoginRedirectUri: process.env.AUTH_POST_LOGIN_REDIRECT_URI,
+    auth0: {
+      domain: process.env.AUTH0_DOMAIN,
+      clientId: process.env.AUTH0_CLIENT_ID,
+      clientSecret: process.env.AUTH0_CLIENT_SECRET,
+      redirectUri: process.env.AUTH0_REDIRECT_URI,
+      audience: process.env.AUTH0_API_AUDIENCE,
+      signingSecret: process.env.AUTH0_SIGNING_SECRET,
+      scope: process.env.AUTH0_SCOPE || 'openid',
+    },
   },
   balances: {
     providers: {
