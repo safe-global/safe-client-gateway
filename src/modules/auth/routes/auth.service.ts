@@ -15,7 +15,7 @@ import { JwtPayloadWithClaims } from '@/datasources/jwt/jwt-claims.entity';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
 
-export type AuthTokenResponse = {
+type AuthTokenResponse = {
   accessToken: string;
 };
 @Injectable()

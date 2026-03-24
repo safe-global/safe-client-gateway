@@ -44,8 +44,6 @@ import { type CookieOptions, Response } from 'express';
  * 3. If verification succeeds, JWT token is added to `access_token`
  *    Set-Cookie.
  *
- * OIDC authentication is handled by {@link OidcAuthController} in the
- * {@link OidcAuthModule}, gated by the `FF_OIDC` feature flag.
  */
 @ApiTags('auth')
 @Controller({ path: 'auth', version: '1' })

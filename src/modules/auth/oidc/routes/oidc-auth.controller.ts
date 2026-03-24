@@ -21,6 +21,20 @@ import {
 } from '@nestjs/swagger';
 import { type CookieOptions, Request, Response } from 'express';
 
+/**
+ * The OidcAuthController handles OIDC (Auth0) authentication:
+ *
+ * 1. Calling `/v1/auth/oidc/authorize` redirects the browser to the
+ *    OIDC provider login page with a generated state value stored in
+ *    an HTTP-only cookie.
+ * 2. The provider redirects back to `/v1/auth/oidc/callback` with an
+ *    authorization code, which is exchanged for user information.
+ * 3. If verification succeeds, a JWT token is added to the
+ *    `access_token` Set-Cookie.
+ * 4. Finally, the user is redirected to the post-login URL.
+ *
+ * Note: OIDC authentication is gated by the `FF_OIDC_AUTH` feature flag.
+ */
 @ApiTags('auth')
 @Controller({ path: 'auth', version: '1' })
 export class OidcAuthController {

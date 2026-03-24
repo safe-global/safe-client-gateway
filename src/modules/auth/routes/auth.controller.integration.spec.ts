@@ -33,6 +33,7 @@ describe('AuthController', () => {
   let maxValidityPeriodInMs: number;
 
   async function initApp(config: typeof configuration): Promise<void> {
+    await app?.close();
     const moduleFixture: TestingModule = await createTestModule({
       config,
       modules: [
@@ -81,12 +82,9 @@ describe('AuthController', () => {
     await initApp(testConfiguration);
   });
 
-  afterAll(async () => {
-    await app.close();
-  });
-
-  afterEach(() => {
+  afterEach(async () => {
     jest.useRealTimers();
+    await app?.close();
   });
 
   describe('GET /v1/auth/nonce', () => {
