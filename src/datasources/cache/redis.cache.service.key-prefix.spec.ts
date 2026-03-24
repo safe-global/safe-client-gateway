@@ -129,7 +129,11 @@ describe('RedisCacheService with a Key Prefix', () => {
   });
 
   it('deleteByKey should return 0 if the pipeline unlink result is not a number', async () => {
-    multiMock.exec.mockResolvedValueOnce([new Error('Pipeline error'), 1, true]);
+    multiMock.exec.mockResolvedValueOnce([
+      new Error('Pipeline error'),
+      1,
+      true,
+    ]);
 
     const result = await redisCacheService.deleteByKey(
       faker.string.alphanumeric(),
