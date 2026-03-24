@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { UpsertSubscriptionsDto } from '@/modules/notifications/domain/v2/entities/upsert-subscriptions.dto.entity';
 import { FirebaseNotification } from '@/datasources/push-notifications-api/entities/firebase-notification.entity';
 import { IPushNotificationsApi } from '@/domain/interfaces/push-notifications-api.interface';

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { MultisigTransaction as DomainMultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
 import { SafeRepository } from '@/modules/safe/domain/safe.repository';
