@@ -1,21 +1,26 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import {
   createCipheriv,
   createDecipheriv,
   randomBytes,
   scryptSync,
 } from 'crypto';
+import { MAX_DERIVED_KEY_CACHE_SIZE } from '@/datasources/cache/constants';
 
 const derivedKeyCache = new Map<string, Buffer>();
 
 function getDerivedKey(encryptionKey: string, salt: string): Buffer {
-  const cacheKey = `${encryptionKey}:${salt}`;
+  // Length-prefix the key to avoid collisions e.g. ("a:b","c") vs ("a","b:c")
+  const cacheKey = `${encryptionKey.length}:${encryptionKey}:${salt}`;
   const cached = derivedKeyCache.get(cacheKey);
   if (cached) {
     return cached;
   }
   const derived = scryptSync(encryptionKey, Buffer.from(salt, 'utf8'), 32);
+  if (derivedKeyCache.size >= MAX_DERIVED_KEY_CACHE_SIZE) {
+    derivedKeyCache.delete(derivedKeyCache.keys().next().value!);
+  }
   derivedKeyCache.set(cacheKey, derived);
-
   return derived;
 }
 

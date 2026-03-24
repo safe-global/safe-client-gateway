@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import max from 'lodash/max';
 import semver from 'semver';
@@ -141,22 +142,20 @@ export class SafesService {
     const settledOverviews = await Promise.allSettled(
       limitedSafes.map(async ({ chainId, address }) => {
         const chain = await this.chainsRepository.getChain(chainId);
-        const safe = await this.safeRepository.getSafe({
-          chainId,
-          address,
+
+        const safePromise = this.safeRepository.getSafe({ chainId, address });
+        const balancesPromise = this.balancesRepository.getBalances({
+          chain,
+          safeAddress: address,
+          trusted: args.trusted,
+          fiatCode: args.currency,
+          excludeSpam: args.excludeSpam,
         });
+
+        const safe = await safePromise;
         const [balances, queue] = await Promise.all([
-          this.balancesRepository.getBalances({
-            chain,
-            safeAddress: address,
-            trusted: args.trusted,
-            fiatCode: args.currency,
-            excludeSpam: args.excludeSpam,
-          }),
-          this.safeRepository.getTransactionQueue({
-            chainId,
-            safe,
-          }),
+          balancesPromise,
+          this.safeRepository.getTransactionQueue({ chainId, safe }),
         ]);
 
         const fiatBalance = balances
