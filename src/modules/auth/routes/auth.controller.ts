@@ -6,6 +6,7 @@ import { ACCESS_TOKEN_COOKIE_NAME } from '@/modules/auth/routes/auth.constants';
 import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
 import { AuthService } from '@/modules/auth/routes/auth.service';
 import { AuthNonce } from '@/modules/auth/routes/entities/auth-nonce.entity';
+import { RedirectUrlSchema } from '@/validation/entities/schemas/redirect-url.schema';
 import {
   SiweDto,
   SiweDtoSchema,
@@ -99,6 +100,14 @@ export class AuthController {
     description:
       'Redirects the browser to OIDC provider login page with a generated state value stored in an HTTP-only cookie.',
   })
+  @ApiQuery({
+    name: 'redirect_url',
+    required: false,
+    type: String,
+    description:
+      'URL to redirect to after successful login. Must be same-origin as the configured post-login redirect URI.',
+    example: '/settings',
+  })
   @ApiFoundResponse({
     description: 'Redirect to OIDC authorize endpoint',
   })
@@ -106,9 +115,11 @@ export class AuthController {
   authorize(
     @Res({ passthrough: true })
     res: Response,
+    @Query('redirect_url', new ValidationPipe(RedirectUrlSchema))
+    redirectUrl?: string,
   ): void {
     const { authorizationUrl, state, stateMaxAge } =
-      this.authService.createOidcAuthorizationRequest();
+      this.authService.createOidcAuthorizationRequest(redirectUrl);
 
     res.cookie(AuthController.OIDC_STATE_COOKIE_NAME, state, {
       ...this.getCookieOptions(),
@@ -120,7 +131,7 @@ export class AuthController {
   @ApiOperation({
     summary: 'Handle OIDC authorization callback',
     description:
-      'Exchanges the OIDC authorization code for user information, mints the internal JWT cookie, and redirects to the configured post-login URL.',
+      'Exchanges the OIDC authorization code for user information, mints the internal JWT cookie, and redirects to the provided post-login URL or a configured default one.',
   })
   @ApiQuery({
     name: 'code',
@@ -153,7 +164,7 @@ export class AuthController {
   })
   @ApiFoundResponse({
     description:
-      'Redirect to the configured post-login URL. On error, includes error query parameter.',
+      'Redirect to the post-login URL. On error, includes error query parameter.',
   })
   @Get('oidc/callback')
   async callback(
@@ -165,7 +176,8 @@ export class AuthController {
     @Query('error') error?: string,
     @Query('error_description') errorDescription?: string,
   ): Promise<void> {
-    const expectedState = req.cookies?.[AuthController.OIDC_STATE_COOKIE_NAME];
+    const expectedState: string | undefined =
+      req.cookies?.[AuthController.OIDC_STATE_COOKIE_NAME];
     // Always clear the one-time state cookie
     res.clearCookie(
       AuthController.OIDC_STATE_COOKIE_NAME,
@@ -176,13 +188,15 @@ export class AuthController {
       this.loggingService.warn(
         `Auth callback: provider error: ${error}${errorDescription ? ` - ${errorDescription}` : ''}`,
       );
-      res.redirect(this.buildErrorRedirectUrl(error));
+      res.redirect(this.buildErrorRedirectUrl(error, expectedState));
       return;
     }
 
     if (!code || !state) {
       this.loggingService.warn('Auth callback: missing code or state');
-      res.redirect(this.buildErrorRedirectUrl('invalid_request'));
+      res.redirect(
+        this.buildErrorRedirectUrl('invalid_request', expectedState),
+      );
       return;
     }
 
@@ -198,12 +212,12 @@ export class AuthController {
         ...this.getCookieOptions(),
         maxAge: this.getMaxAge(accessToken),
       });
-      res.redirect(this.authService.getPostLoginRedirectUri());
+      res.redirect(this.authService.getPostLoginRedirectUri(state));
     } catch (err) {
       this.loggingService.error(
         `Auth callback: authentication failed: ${err instanceof Error ? err.message : 'Unknown error'}`,
       );
-      res.redirect(this.buildErrorRedirectUrl('authentication_failed'));
+      res.redirect(this.buildErrorRedirectUrl('authentication_failed', state));
     }
   }
 
@@ -272,13 +286,14 @@ export class AuthController {
 
   /**
    * Builds a redirect URL with the given error message as a query parameter.
-   * This is used to redirect the user back to the client application with an error message
-   * in case of authentication failure during the OIDC callback.
    * @param error error message to include in the redirect URL
+   * @param state optional OIDC state value used to resolve the redirect URL
+   * from the original authorization request. If omitted, falls back to the
+   * configured default post-login redirect URI.
    * @returns fully qualified URL to redirect the user to
    */
-  private buildErrorRedirectUrl(error: string): string {
-    const url = new URL(this.authService.getPostLoginRedirectUri());
+  private buildErrorRedirectUrl(error: string, state?: string): string {
+    const url = new URL(this.authService.getPostLoginRedirectUri(state));
     url.searchParams.set('error', error);
     return url.toString();
   }
