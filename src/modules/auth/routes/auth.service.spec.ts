@@ -451,6 +451,23 @@ describe('AuthService', () => {
       expect(decoded.redirectUrl).toBeUndefined();
       expect(auth0RepositoryMock.getAuthorizationUrl).toHaveBeenCalledWith(
         result.state,
+        undefined,
+      );
+    });
+
+    it('should pass connection through to the repository', () => {
+      const authorizationUrl = faker.internet.url();
+      auth0RepositoryMock.getAuthorizationUrl.mockReturnValue(authorizationUrl);
+
+      const result = target.createOidcAuthorizationRequest(
+        undefined,
+        'google-oauth2',
+      );
+
+      expect(result.authorizationUrl).toBe(authorizationUrl);
+      expect(auth0RepositoryMock.getAuthorizationUrl).toHaveBeenCalledWith(
+        result.state,
+        'google-oauth2',
       );
     });
 

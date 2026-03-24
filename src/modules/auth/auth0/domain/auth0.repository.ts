@@ -26,8 +26,8 @@ export class Auth0Repository implements IAuth0Repository {
     );
   }
 
-  public getAuthorizationUrl(state: string): string {
-    return this.auth0Api.getAuthorizationUrl(state);
+  public getAuthorizationUrl(state: string, connection?: string): string {
+    return this.auth0Api.getAuthorizationUrl(state, connection);
   }
 
   public async authenticateWithAuthorizationCode(
