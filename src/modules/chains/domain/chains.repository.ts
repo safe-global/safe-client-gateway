@@ -58,23 +58,7 @@ export class ChainsRepository implements IChainsRepository {
     const page = await this.configApi
       .getChains({ limit, offset })
       .then(LenientBasePageSchema.parse);
-    const valid: Array<Chain> = [];
-    const invalid: Array<unknown> = [];
-    for (const item of page.results) {
-      const result = ChainSchema.safeParse(item);
-      if (result.success) {
-        valid.push(result.data);
-      } else {
-        invalid.push(item);
-      }
-    }
-    if (invalid.length > 0) {
-      this.loggingService.error({
-        message: 'Some chains could not be parsed',
-        errors: invalid,
-      });
-    }
-    return { ...page, results: valid };
+    return this.parseChainPage(page);
   }
 
   async getChainsV2(
@@ -85,6 +69,21 @@ export class ChainsRepository implements IChainsRepository {
     const page = await this.configApi
       .getChainsV2(serviceKey, { limit, offset })
       .then(LenientBasePageSchema.parse);
+    return this.parseChainPage(page);
+  }
+
+  async getChainV2(serviceKey: string, chainId: string): Promise<Chain> {
+    const chain = await this.configApi.getChainV2(serviceKey, chainId);
+    return ChainSchema.parse(chain);
+  }
+
+  async clearChainV2(chainId: string, serviceKey: string): Promise<void> {
+    return this.configApi.clearChainV2(serviceKey, chainId);
+  }
+
+  private parseChainPage(
+    page: Page<unknown>,
+  ): Page<Chain> {
     const valid: Array<Chain> = [];
     const invalid: Array<unknown> = [];
     for (const item of page.results) {
@@ -102,15 +101,6 @@ export class ChainsRepository implements IChainsRepository {
       });
     }
     return { ...page, results: valid };
-  }
-
-  async getChainV2(serviceKey: string, chainId: string): Promise<Chain> {
-    const chain = await this.configApi.getChainV2(serviceKey, chainId);
-    return ChainSchema.parse(chain);
-  }
-
-  async clearChainV2(chainId: string, serviceKey: string): Promise<void> {
-    return this.configApi.clearChainV2(serviceKey, chainId);
   }
 
   async getAllChains(): Promise<Array<Chain>> {

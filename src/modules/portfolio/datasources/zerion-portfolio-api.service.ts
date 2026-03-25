@@ -305,7 +305,7 @@ export class ZerionPortfolioApi implements IPortfolioApi {
             url: appMetadata?.url ?? undefined,
           },
           balanceFiat: getNumberString(
-            this._calculatePositionsBalance(appPositions),
+            this._calculateTotalBalance(appPositions),
           ),
           groups,
         };
@@ -414,18 +414,6 @@ export class ZerionPortfolioApi implements IPortfolioApi {
    * @returns {number} Total fiat value
    */
   private _calculateTotalBalance(positions: Array<ZerionBalance>): number {
-    return positions.reduce((sum, position) => {
-      return sum + (position.attributes.value ?? 0);
-    }, 0);
-  }
-
-  /**
-   * Calculates total fiat value of app positions.
-   *
-   * @param {Array<ZerionBalance>} positions - App positions to calculate balance for
-   * @returns {number} Total fiat value
-   */
-  private _calculatePositionsBalance(positions: Array<ZerionBalance>): number {
     return positions.reduce((sum, position) => {
       return sum + (position.attributes.value ?? 0);
     }, 0);
