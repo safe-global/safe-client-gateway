@@ -168,6 +168,7 @@ export default (): ReturnType<typeof configuration> => ({
     debugLogs: false,
     configHooksDebugLogs: false,
     auth: false,
+    oidc_auth: false,
     counterfactualBalances: false,
     users: false,
     hookHttpPostEvent: false,

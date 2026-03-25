@@ -20,9 +20,6 @@ import { INestApplication, Controller, Get, UseGuards } from '@nestjs/common';
 import { TestingModule, Test } from '@nestjs/testing';
 import { Server } from 'net';
 import request from 'supertest';
-import { Auth0Module } from '@/modules/auth/auth0/auth0.module';
-import { TestAuth0Module } from '@/modules/auth/auth0/__tests__/test.auth0.module';
-
 describe('Auth decorator', () => {
   let app: INestApplication<Server>;
   let jwtService: IJwtService;
@@ -69,8 +66,6 @@ describe('Auth decorator', () => {
       .useModule(TestCacheModule)
       .overrideModule(UsersModule)
       .useModule(TestUsersModule)
-      .overrideModule(Auth0Module)
-      .useModule(TestAuth0Module)
       .compile();
 
     app = await new TestAppProvider().provide(moduleFixture);

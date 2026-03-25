@@ -15,8 +15,6 @@ import request from 'supertest';
 import { AuthModule } from '@/modules/auth/auth.module';
 import { Server } from 'net';
 import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
-import { Auth0Module } from '@/modules/auth/auth0/auth0.module';
-import { TestAuth0Module } from '@/modules/auth/auth0/__tests__/test.auth0.module';
 import { UsersModule } from '@/modules/users/users.module';
 import { TestUsersModule } from '@/modules/users/__tests__/test.users.module';
 
@@ -57,8 +55,6 @@ describe('OptionalAuthGuard', () => {
     })
       .overrideModule(CacheModule)
       .useModule(TestCacheModule)
-      .overrideModule(Auth0Module)
-      .useModule(TestAuth0Module)
       .overrideModule(UsersModule)
       .useModule(TestUsersModule)
       .compile();

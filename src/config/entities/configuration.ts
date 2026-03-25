@@ -268,6 +268,7 @@ export default () => ({
     configHooksDebugLogs:
       process.env.FF_CONFIG_HOOKS_DEBUG_LOGS?.toLowerCase() === 'true',
     auth: process.env.FF_AUTH?.toLowerCase() === 'true',
+    oidc_auth: process.env.FF_OIDC_AUTH?.toLowerCase() === 'true',
     counterfactualBalances:
       process.env.FF_COUNTERFACTUAL_BALANCES?.toLowerCase() === 'true',
     users: process.env.FF_USERS?.toLowerCase() === 'true',

@@ -6,7 +6,7 @@ import {
   Injectable,
 } from '@nestjs/common';
 import { IAuthRepository } from '@/modules/auth/domain/auth.repository.interface';
-import { ACCESS_TOKEN_COOKIE_NAME } from '@/modules/auth/routes/auth.constants';
+import { ACCESS_TOKEN_COOKIE_NAME } from '@/modules/auth/utils/auth-cookie.utils';
 import { AuthPayloadDto } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { Request } from 'express';
 

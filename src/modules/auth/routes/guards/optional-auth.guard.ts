@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { ACCESS_TOKEN_COOKIE_NAME } from '@/modules/auth/routes/auth.constants';
+import { ACCESS_TOKEN_COOKIE_NAME } from '@/modules/auth/utils/auth-cookie.utils';
 import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
 import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { Request } from 'express';

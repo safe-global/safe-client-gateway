@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
-import { OidcStateSchema } from '@/modules/auth/routes/entities/oidc-state.entity';
+import { OidcStateSchema } from '@/modules/auth/oidc/routes/entities/oidc-state.entity';
 
 describe('OidcStateSchema', () => {
   describe('csrf', () => {
