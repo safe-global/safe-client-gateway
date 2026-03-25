@@ -69,18 +69,6 @@ export const BalancesProviderSchema = z.object({
   enabled: z.boolean(),
 });
 
-export const ContractAddressesSchema = z.object({
-  safeSingletonAddress: NullableAddressSchema,
-  safeProxyFactoryAddress: NullableAddressSchema,
-  multiSendAddress: NullableAddressSchema,
-  multiSendCallOnlyAddress: NullableAddressSchema,
-  fallbackHandlerAddress: NullableAddressSchema,
-  signMessageLibAddress: NullableAddressSchema,
-  createCallAddress: NullableAddressSchema,
-  simulateTxAccessorAddress: NullableAddressSchema,
-  safeWebAuthnSignerFactoryAddress: NullableAddressSchema,
-});
-
 function removeTrailingSlash(url: string): string {
   return url.replace(/\/$/, '');
 }
@@ -103,7 +91,6 @@ export const ChainSchema = z.object({
   publicRpcUri: RpcUriSchema,
   blockExplorerUriTemplate: BlockExplorerUriTemplateSchema,
   beaconChainExplorerUriTemplate: BeaconChainExplorerUriTemplateSchema,
-  contractAddresses: ContractAddressesSchema,
   nativeCurrency: NativeCurrencySchema,
   pricesProvider: PricesProviderSchema,
   balancesProvider: BalancesProviderSchema,
