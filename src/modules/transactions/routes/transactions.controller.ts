@@ -700,7 +700,7 @@ export class TransactionsController {
     description:
       'Array of queued transactions enriched with Safe address and chain ID',
   })
-  @Get('multi-safe/transactions/queued')
+  @Get('transactions/queued')
   async getMultiSafeTransactionQueue(
     @Query('safes', new ValidationPipe(Caip10AddressesSchema))
     addresses: Caip10Addresses,

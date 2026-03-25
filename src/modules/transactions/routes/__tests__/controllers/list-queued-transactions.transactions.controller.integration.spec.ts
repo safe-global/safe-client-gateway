@@ -7,14 +7,11 @@ import { TestIdentityApiModule } from '@/datasources/locking-api/__tests__/test.
 import { IdentityApiModule } from '@/datasources/locking-api/identity-api.module';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
 import { NetworkService } from '@/datasources/network/network.service.interface';
-import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
 import { contractBuilder } from '@/modules/data-decoder/domain/v2/entities/__tests__/contract.builder';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import {
   toJson as multisigToJson,
-  multisigTransactionBuilder,
 } from '@/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
-import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
 import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
 import {
   type ILoggingService,
@@ -25,10 +22,9 @@ import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import type { Server } from 'net';
 import request from 'supertest';
-import { getAddress } from 'viem';
-import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
+import { buildSafeWithTransaction } from '@/modules/transactions/routes/__tests__/entities/safe-with-transaction.builder';
 
-describe('Multi-Safe queued transactions - Transactions Controller', () => {
+describe('Queued transactions across multiple Safes - Transactions Controller', () => {
   let app: INestApplication<Server>;
   let safeConfigUrl: string;
   let networkService: jest.MockedObjectDeep<INetworkService>;
@@ -63,13 +59,14 @@ describe('Multi-Safe queued transactions - Transactions Controller', () => {
     jest.resetAllMocks();
 
     const baseConfiguration = configuration();
+    const maxOverviews = faker.number.int({ min: 5, max: 20 });
     const testConfiguration = (): typeof baseConfiguration => ({
       ...baseConfiguration,
       mappings: {
         ...baseConfiguration.mappings,
         safe: {
           ...baseConfiguration.mappings.safe,
-          maxOverviews: 10,
+          maxOverviews,
         },
       },
     });
@@ -81,54 +78,16 @@ describe('Multi-Safe queued transactions - Transactions Controller', () => {
     await app.close();
   });
 
-  async function buildSafeWithTransaction(args: {
-    nonce: number;
-    submissionDate: Date;
-  }): Promise<{
-    chain: ReturnType<typeof chainBuilder>['build'] extends () => infer R
-      ? R
-      : never;
-    safeAddress: string;
-    safe: ReturnType<typeof safeBuilder>['build'] extends () => infer R
-      ? R
-      : never;
-    transaction: MultisigTransaction;
-  }> {
-    const chain = chainBuilder().build();
-    const signers = Array.from({ length: 2 }, () =>
-      privateKeyToAccount(generatePrivateKey()),
-    );
-    const safeAddress = getAddress(faker.finance.ethereumAddress());
-    const safe = safeBuilder()
-      .with('address', safeAddress)
-      .with('nonce', args.nonce)
-      .with(
-        'owners',
-        signers.map((s) => s.address),
-      )
-      .build();
-    const tx = await multisigTransactionBuilder()
-      .with('safe', safeAddress)
-      .with('isExecuted', false)
-      .with('nonce', args.nonce)
-      .with('submissionDate', args.submissionDate)
-      .with('modified', args.submissionDate)
-      .buildWithConfirmations({
-        safe,
-        chainId: chain.chainId,
-        signers: [signers[0]],
-      });
-    return { chain, safeAddress, safe, transaction: tx };
-  }
-
   it('should return queued transactions across multiple safes sorted by timestamp', async () => {
+    const date1 = faker.date.past();
+    const date2 = faker.date.past({ refDate: new Date(date1.getTime() + 1000) });
     const safe1Data = await buildSafeWithTransaction({
       nonce: 1,
-      submissionDate: new Date('2024-01-01T00:00:00Z'),
+      submissionDate: date1,
     });
     const safe2Data = await buildSafeWithTransaction({
       nonce: 1,
-      submissionDate: new Date('2024-06-01T00:00:00Z'),
+      submissionDate: date2,
     });
 
     // Build a combined mock that handles both chains
@@ -186,7 +145,7 @@ describe('Multi-Safe queued transactions - Transactions Controller', () => {
 
     await request(app.getHttpServer())
       .get(
-        `/v1/multi-safe/transactions/queued?safes=${safesParam}&trusted=true&limit=10`,
+        `/v1/transactions/queued?safes=${safesParam}&trusted=true&limit=10`,
       )
       .expect(200)
       .then(({ body }) => {
@@ -224,13 +183,15 @@ describe('Multi-Safe queued transactions - Transactions Controller', () => {
   });
 
   it('should respect the limit parameter', async () => {
+    const date1 = faker.date.past();
+    const date2 = faker.date.past({ refDate: new Date(date1.getTime() + 1000) });
     const safe1Data = await buildSafeWithTransaction({
       nonce: 1,
-      submissionDate: new Date('2024-01-01T00:00:00Z'),
+      submissionDate: date1,
     });
     const safe2Data = await buildSafeWithTransaction({
       nonce: 1,
-      submissionDate: new Date('2024-06-01T00:00:00Z'),
+      submissionDate: date2,
     });
 
     const allMocks = [safe1Data, safe2Data];
@@ -287,7 +248,7 @@ describe('Multi-Safe queued transactions - Transactions Controller', () => {
 
     await request(app.getHttpServer())
       .get(
-        `/v1/multi-safe/transactions/queued?safes=${safesParam}&trusted=true&limit=1`,
+        `/v1/transactions/queued?safes=${safesParam}&trusted=true&limit=1`,
       )
       .expect(200)
       .then(({ body }) => {
@@ -332,7 +293,7 @@ describe('Multi-Safe queued transactions - Transactions Controller', () => {
 
     await request(app.getHttpServer())
       .get(
-        `/v1/multi-safe/transactions/queued?safes=${safesParam}&trusted=true&limit=10`,
+        `/v1/transactions/queued?safes=${safesParam}&trusted=true&limit=10`,
       )
       .expect(200)
       .then(({ body }) => {
@@ -344,7 +305,7 @@ describe('Multi-Safe queued transactions - Transactions Controller', () => {
   it('should return 422 for invalid safes query parameter', async () => {
     await request(app.getHttpServer())
       .get(
-        `/v1/multi-safe/transactions/queued?safes=invalid&trusted=true&limit=10`,
+        `/v1/transactions/queued?safes=invalid&trusted=true&limit=10`,
       )
       .expect(422);
   });
@@ -384,7 +345,7 @@ describe('Multi-Safe queued transactions - Transactions Controller', () => {
     const safesParam = `${chain.chainId}:${safeAddress}`;
 
     await request(app.getHttpServer())
-      .get(`/v1/multi-safe/transactions/queued?safes=${safesParam}`)
+      .get(`/v1/transactions/queued?safes=${safesParam}`)
       .expect(200)
       .then(({ body }) => {
         expect(body).toBeInstanceOf(Array);

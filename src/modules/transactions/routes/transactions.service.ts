@@ -45,6 +45,7 @@ import {
   parseEther,
   parseUnits,
 } from 'viem';
+import { chunk } from 'lodash';
 import { LoggingService, ILoggingService } from '@/logging/logging.interface';
 import { MultisigTransactionNoteMapper } from '@/modules/transactions/routes/mappers/multisig-transactions/multisig-transaction-note.mapper';
 import { LogType } from '@/domain/common/entities/log-type.entity';
@@ -57,16 +58,25 @@ import { IDataDecoderRepository } from '@/modules/data-decoder/domain/v2/data-de
 import type { Caip10Addresses } from '@/modules/safe/routes/entities/caip-10-addresses.entity';
 import { asError } from '@/logging/utils';
 import type { Address } from 'viem';
+import crypto from 'crypto';
+import {
+  CacheService,
+  ICacheService,
+} from '@/datasources/cache/cache.service.interface';
+import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 
 @Injectable()
 export class TransactionsService {
   private readonly isFilterValueParsingEnabled: boolean;
   private readonly maxOverviews: number;
+  private readonly multiSafeQueueCacheTTLSeconds: number;
+  private static readonly MULTI_SAFE_QUEUE_BATCH_SIZE = 3;
 
   constructor(
     @Inject(ISafeRepository) private readonly safeRepository: SafeRepository,
     @Inject(IDataDecoderRepository)
     private readonly dataDecoderRepository: IDataDecoderRepository,
+    @Inject(CacheService) private readonly cacheService: ICacheService,
     private readonly multisigTransactionMapper: MultisigTransactionMapper,
     private readonly transferMapper: TransferMapper,
     private readonly moduleTransactionMapper: ModuleTransactionMapper,
@@ -88,6 +98,9 @@ export class TransactionsService {
     );
     this.maxOverviews = this.configurationService.getOrThrow(
       'mappings.safe.maxOverviews',
+    );
+    this.multiSafeQueueCacheTTLSeconds = this.configurationService.getOrThrow<number>(
+      'expirationTimeInSeconds.multiSafeQueue',
     );
   }
 
@@ -639,9 +652,33 @@ export class TransactionsService {
     return new TXSCreationTransaction(tx);
   }
 
-  private static readonly MULTI_SAFE_QUEUE_BATCH_SIZE = 3;
-
   async getMultiSafeTransactionQueue(args: {
+    addresses: Caip10Addresses;
+    trusted: boolean;
+    limit: number;
+  }): Promise<Array<SafeQueuedTransaction>> {
+    const cacheDir = new CacheDir(
+      this.buildMultiSafeQueueCacheKey(args),
+      '',
+    );
+
+    const cached = await this.cacheService.hGet(cacheDir);
+    if (cached) {
+      return JSON.parse(cached);
+    }
+
+    const results = await this._computeMultiSafeQueue(args);
+
+    await this.cacheService.hSet(
+      cacheDir,
+      JSON.stringify(results),
+      this.multiSafeQueueCacheTTLSeconds,
+    );
+
+    return results;
+  }
+
+  private async _computeMultiSafeQueue(args: {
     addresses: Caip10Addresses;
     trusted: boolean;
     limit: number;
@@ -649,16 +686,7 @@ export class TransactionsService {
     const limitedSafes = args.addresses.slice(0, this.maxOverviews);
     const transactions: Array<SafeQueuedTransaction> = [];
 
-    for (
-      let i = 0;
-      i < limitedSafes.length;
-      i += TransactionsService.MULTI_SAFE_QUEUE_BATCH_SIZE
-    ) {
-      const batch = limitedSafes.slice(
-        i,
-        i + TransactionsService.MULTI_SAFE_QUEUE_BATCH_SIZE,
-      );
-
+    for (const batch of chunk(limitedSafes, TransactionsService.MULTI_SAFE_QUEUE_BATCH_SIZE)) {
       const settledResults = await Promise.allSettled(
         batch.map(async ({ chainId, address }) => {
           const safe = await this.safeRepository.getSafe({
@@ -694,7 +722,11 @@ export class TransactionsService {
                   safe,
                   dataDecoded,
                 );
-              return new SafeQueuedTransaction(address, chainId, transaction);
+              return {
+                safeAddress: address,
+                chainId,
+                transaction,
+              } as SafeQueuedTransaction;
             }),
           );
         }),
@@ -714,6 +746,18 @@ export class TransactionsService {
     return transactions
       .sort((a, b) => a.transaction.timestamp - b.transaction.timestamp)
       .slice(0, args.limit);
+  }
+
+  private buildMultiSafeQueueCacheKey(args: {
+    addresses: Caip10Addresses;
+    trusted: boolean;
+    limit: number;
+  }): string {
+    const addressHash = crypto
+      .createHash('sha256')
+      .update(JSON.stringify(args.addresses))
+      .digest('hex');
+    return `multi_safe_queue:${addressHash}:${args.trusted}:${args.limit}`;
   }
 
   /**
