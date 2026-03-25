@@ -81,9 +81,7 @@ export class ChainsRepository implements IChainsRepository {
     return this.configApi.clearChainV2(serviceKey, chainId);
   }
 
-  private parseChainPage(
-    page: Page<unknown>,
-  ): Page<Chain> {
+  private parseChainPage(page: Page<unknown>): Page<Chain> {
     const valid: Array<Chain> = [];
     const invalid: Array<unknown> = [];
     for (const item of page.results) {
