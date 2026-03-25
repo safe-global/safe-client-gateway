@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { SafeBalancesApi } from '@/modules/balances/datasources/safe-balances-api.service';
 import { IZerionBalancesApi } from '@/modules/balances/datasources/zerion-balances-api.service';
@@ -11,7 +12,7 @@ import {
   INetworkService,
   NetworkService,
 } from '@/datasources/network/network.service.interface';
-import { IBalancesApi } from '@/domain/interfaces/balances-api.interface';
+import { type IBalancesApi } from '@/domain/interfaces/balances-api.interface';
 import { IBalancesApiManager } from '@/domain/interfaces/balances-api.manager.interface';
 import { IConfigApi } from '@/domain/interfaces/config-api.interface';
 import { IPricesApi } from '@/modules/balances/datasources/prices-api.interface';

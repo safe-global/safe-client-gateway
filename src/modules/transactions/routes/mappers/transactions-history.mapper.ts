@@ -1,14 +1,14 @@
 import { Inject, Injectable } from '@nestjs/common';
 import groupBy from 'lodash/groupBy';
-import { Safe } from '@/modules/safe/domain/entities/safe.entity';
+import { type Safe } from '@/modules/safe/domain/entities/safe.entity';
 import {
   isCreationTransaction,
   isEthereumTransaction,
   isModuleTransaction,
   isMultisigTransaction,
-  Transaction as TransactionDomain,
+  type Transaction as TransactionDomain,
 } from '@/modules/safe/domain/entities/transaction.entity';
-import { Transfer } from '@/modules/safe/domain/entities/transfer.entity';
+import { type Transfer } from '@/modules/safe/domain/entities/transfer.entity';
 import { DateLabel } from '@/routes/common/entities/date-label.entity';
 import { TransactionItem } from '@/modules/transactions/routes/entities/transaction-item.entity';
 import { CreationTransactionMapper } from '@/modules/transactions/routes/mappers/creation-transaction/creation-transaction.mapper';
@@ -21,9 +21,9 @@ import {
   calculateTimezoneOffset,
   convertToTimezone,
 } from '@/modules/transactions/routes/helpers/timezone.helper';
-import { EthereumTransaction } from '@/modules/safe/domain/entities/ethereum-transaction.entity';
+import { type EthereumTransaction } from '@/modules/safe/domain/entities/ethereum-transaction.entity';
 import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
-import { DataDecoded } from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';
+import { type DataDecoded } from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';
 import { IDataDecoderRepository } from '@/modules/data-decoder/domain/v2/data-decoder.repository.interface';
 import type { Address } from 'viem';
 

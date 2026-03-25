@@ -1,5 +1,6 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Injectable } from '@nestjs/common';
-import { ColumnOption, Options, stringify } from 'csv-stringify';
+import { type ColumnOption, type Options, stringify } from 'csv-stringify';
 import { Readable, Writable } from 'stream';
 import { pipeline } from 'stream/promises';
 

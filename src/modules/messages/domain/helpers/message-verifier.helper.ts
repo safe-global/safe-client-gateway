@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { LogSource } from '@/domain/common/entities/log-source.entity';
 import { LogType } from '@/domain/common/entities/log-type.entity';
@@ -5,8 +6,8 @@ import { SafeSignature } from '@/domain/common/entities/safe-signature';
 import { SignatureType } from '@/domain/common/entities/signature-type.entity';
 import { HttpExceptionNoLog } from '@/domain/common/errors/http-exception-no-log.error';
 import { getSafeMessageMessageHash } from '@/domain/common/utils/safe';
-import { Message } from '@/modules/messages/domain/entities/message.entity';
-import { Safe } from '@/modules/safe/domain/entities/safe.entity';
+import { type Message } from '@/modules/messages/domain/entities/message.entity';
+import { type Safe } from '@/modules/safe/domain/entities/safe.entity';
 import { LoggingService, ILoggingService } from '@/logging/logging.interface';
 import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import type { Address, Hash, Hex } from 'viem';

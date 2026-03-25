@@ -1,12 +1,13 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import isEmpty from 'lodash/isEmpty';
 import { ContractsRepository } from '@/modules/contracts/domain/contracts.repository';
 import { IContractsRepository } from '@/modules/contracts/domain/contracts.repository.interface';
 import { Operation } from '@/modules/safe/domain/entities/operation.entity';
 import {
-  BaseDataDecoded,
-  DataDecoded,
-  DataDecodedParameter,
+  type BaseDataDecoded,
+  type DataDecoded,
+  type DataDecodedParameter,
 } from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';
 import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
 import { NULL_ADDRESS } from '@/routes/common/constants';
@@ -22,9 +23,9 @@ import { AddressInfo } from '@/routes/common/entities/address-info.entity';
 import type { Address } from 'viem';
 import { getAddress } from 'viem';
 import {
-  Erc20Token,
-  Erc721Token,
-  NativeToken,
+  type Erc20Token,
+  type Erc721Token,
+  type NativeToken,
 } from '@/modules/tokens/domain/entities/token.entity';
 import { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
 import { ITokenRepository } from '@/modules/tokens/domain/token.repository.interface';

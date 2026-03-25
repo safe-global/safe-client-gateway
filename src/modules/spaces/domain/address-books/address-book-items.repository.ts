@@ -1,11 +1,12 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { AddressBookItem as DbAddressBookItem } from '@/modules/spaces/datasources/entities/address-book-item.entity.db';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { IAddressBookItemsRepository } from '@/modules/spaces/domain/address-books/address-book-items.repository.interface';
 import type { AddressBookDbItem } from '@/modules/spaces/domain/address-books/entities/address-book-item.db.entity';
-import { AddressBookItem } from '@/modules/spaces/domain/address-books/entities/address-book-item.entity';
-import { Space } from '@/modules/spaces/domain/entities/space.entity';
+import { type AddressBookItem } from '@/modules/spaces/domain/address-books/entities/address-book-item.entity';
+import { type Space } from '@/modules/spaces/domain/entities/space.entity';
 import { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
 import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
 import {

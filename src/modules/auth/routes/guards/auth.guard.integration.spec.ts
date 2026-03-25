@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { ConfigurationModule } from '@/config/configuration.module';
 import configuration from '@/config/entities/__tests__/configuration';
@@ -8,7 +9,12 @@ import { authPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
 import { faker } from '@faker-js/faker';
-import { Controller, Get, INestApplication, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  type INestApplication,
+  UseGuards,
+} from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 import { AuthModule } from '@/modules/auth/auth.module';

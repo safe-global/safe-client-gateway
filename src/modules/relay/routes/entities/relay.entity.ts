@@ -1,5 +1,6 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { ApiProperty } from '@nestjs/swagger';
-import { Relay as DomainRelay } from '@/modules/relay/domain/entities/relay.entity';
+import { type Relay as DomainRelay } from '@/modules/relay/domain/entities/relay.entity';
 
 export class Relay implements DomainRelay {
   @ApiProperty()

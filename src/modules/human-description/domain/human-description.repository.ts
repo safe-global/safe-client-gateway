@@ -1,9 +1,10 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import { toFunctionSelector } from 'viem';
 import { HumanDescriptionTemplate } from '@/modules/human-description/domain/entities/human-description-template.entity';
 import {
-  FunctionSignatureHash,
-  HumanDescriptionFragment,
+  type FunctionSignatureHash,
+  type HumanDescriptionFragment,
 } from '@/modules/human-description/domain/entities/human-description.entity';
 import { IHumanDescriptionRepository } from '@/modules/human-description/domain/human-description.repository.interface';
 import { IHumanDescriptionApi } from '@/domain/interfaces/human-description-api.interface';

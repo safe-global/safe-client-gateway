@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import {
   CSV_EXPORT_QUEUE,
   CSV_EXPORT_WORKER_CONCURRENCY,
@@ -6,8 +7,8 @@ import { LogType } from '@/domain/common/entities/log-type.entity';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { CsvExportService } from '@/modules/csv-export/v1/csv-export.service';
 import {
-  CsvExportJobData,
-  CsvExportJobResponse,
+  type CsvExportJobData,
+  type CsvExportJobResponse,
 } from '@/modules/csv-export/v1/entities/csv-export-job-data.entity';
 import { OnWorkerEvent, Processor, WorkerHost } from '@nestjs/bullmq';
 import { Inject } from '@nestjs/common';

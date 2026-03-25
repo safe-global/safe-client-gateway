@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { getMillisecondsUntil } from '@/domain/common/utils/time';
 import { AuthService } from '@/modules/auth/routes/auth.service';
@@ -24,7 +25,7 @@ import {
   ApiUnauthorizedResponse,
   ApiBadRequestResponse,
 } from '@nestjs/swagger';
-import { CookieOptions, Response } from 'express';
+import { type CookieOptions, type Response } from 'express';
 
 /**
  * The AuthController is responsible for handling authentication:

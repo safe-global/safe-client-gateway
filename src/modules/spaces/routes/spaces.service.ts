@@ -1,9 +1,10 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { getEnumKey } from '@/domain/common/utils/enum';
 import { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
 import { MemberRole } from '@/modules/users/domain/entities/member.entity';
-import { User } from '@/modules/users/domain/entities/user.entity';
+import { type User } from '@/modules/users/domain/entities/user.entity';
 import { IMembersRepository } from '@/modules/users/domain/members.repository.interface';
 import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
 import { CreateSpaceResponse } from '@/modules/spaces/routes/entities/create-space.dto.entity';

@@ -1,11 +1,12 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { EventProtocolChangedError } from '@/modules/hooks/routes/errors/event-protocol-changed.error';
 import {
-  ArgumentsHost,
+  type ArgumentsHost,
   Catch,
-  ExceptionFilter,
+  type ExceptionFilter,
   HttpStatus,
 } from '@nestjs/common';
-import { Response } from 'express';
+import { type Response } from 'express';
 
 @Catch(EventProtocolChangedError)
 export class EventProtocolChangedFilter implements ExceptionFilter {

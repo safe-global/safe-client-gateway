@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Controller, Get, Param } from '@nestjs/common';
 import {
   ApiOkResponse,
@@ -5,7 +6,7 @@ import {
   ApiOperation,
   ApiParam,
 } from '@nestjs/swagger';
-import { Contract } from '@/modules/contracts/domain/entities/contract.entity';
+import { type Contract } from '@/modules/contracts/domain/entities/contract.entity';
 import { ContractsService } from '@/modules/contracts/routes/contracts.service';
 import { Contract as ApiContract } from '@/modules/contracts/routes/entities/contract.entity';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';

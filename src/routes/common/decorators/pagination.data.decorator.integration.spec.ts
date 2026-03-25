@@ -1,4 +1,4 @@
-import { Controller, Get, INestApplication, Module } from '@nestjs/common';
+import { Controller, Get, type INestApplication, Module } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 import { PaginationDataDecorator } from '@/routes/common/decorators/pagination.data.decorator';

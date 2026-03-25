@@ -1,4 +1,5 @@
-import { Collectible as DomainCollectible } from '@/modules/collectibles/domain/entities/collectible.entity';
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { type Collectible as DomainCollectible } from '@/modules/collectibles/domain/entities/collectible.entity';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import type { Address } from 'viem';
 

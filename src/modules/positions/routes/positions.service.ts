@@ -1,12 +1,13 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { groupBy } from 'lodash';
 import { Inject, Injectable } from '@nestjs/common';
 import { IPositionsRepository } from '@/modules/positions/domain/positions.repository.interface';
 import {
   ApplicationMetadataSchema,
-  Position as DomainPosition,
+  type Position as DomainPosition,
 } from '@/modules/positions/domain/entities/position.entity';
 import { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
-import { NativeCurrency } from '@/modules/chains/domain/entities/native.currency.entity';
+import { type NativeCurrency } from '@/modules/chains/domain/entities/native.currency.entity';
 import { NULL_ADDRESS } from '@/routes/common/constants';
 import { getNumberString } from '@/domain/common/utils/utils';
 import { Protocol } from '@/modules/positions/routes/entities/protocol.entity';

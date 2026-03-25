@@ -1,4 +1,5 @@
-import { TypedData as DomainTypedData } from '@/modules/messages/domain/entities/typed-data.entity';
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { type TypedData as DomainTypedData } from '@/modules/messages/domain/entities/typed-data.entity';
 import {
   ApiExtraModels,
   ApiProperty,

@@ -1,8 +1,9 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { ApiProperty } from '@nestjs/swagger';
 import {
-  NativeToken as DomainNativeToken,
-  Erc20Token as DomainErc20Token,
-  Erc721Token as DomainErc721Token,
+  type NativeToken as DomainNativeToken,
+  type Erc20Token as DomainErc20Token,
+  type Erc721Token as DomainErc721Token,
 } from '@/modules/tokens/domain/entities/token.entity';
 import type { Address } from 'viem';
 

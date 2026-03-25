@@ -3,7 +3,7 @@ import { Global, Module } from '@nestjs/common';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { FetchNetworkService } from '@/datasources/network/fetch.network.service';
 import { NetworkService } from '@/datasources/network/network.service.interface';
-import { NetworkResponse } from '@/datasources/network/entities/network.response.entity';
+import { type NetworkResponse } from '@/datasources/network/entities/network.response.entity';
 import {
   NetworkRequestError,
   NetworkResponseError,

@@ -1,4 +1,5 @@
-import { Backbone as DomainBackbone } from '@/modules/backbone/domain/entities/backbone.entity';
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { type Backbone as DomainBackbone } from '@/modules/backbone/domain/entities/backbone.entity';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class Backbone implements DomainBackbone {

@@ -1,5 +1,6 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { ApiProperty } from '@nestjs/swagger';
-import { SafeAppSocialProfile as DomainSafeAppSocialProfile } from '@/modules/safe-apps/domain/entities/safe-app-social-profile.entity';
+import { type SafeAppSocialProfile as DomainSafeAppSocialProfile } from '@/modules/safe-apps/domain/entities/safe-app-social-profile.entity';
 import { SafeAppSocialProfilePlatforms } from '@/modules/safe-apps/domain/entities/schemas/safe-app.schema';
 
 export class SafeAppSocialProfile implements DomainSafeAppSocialProfile {

@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
-import { Safe } from '@/modules/safe/domain/entities/safe.entity';
+import { type MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
+import { type Safe } from '@/modules/safe/domain/entities/safe.entity';
 import {
   MULTISIG_TRANSACTION_PREFIX,
   TRANSACTION_ID_SEPARATOR,
@@ -15,7 +15,7 @@ import { TransactionVerifierHelper } from '@/modules/transactions/routes/helpers
 import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
 import { DataDecodedParamHelper } from '@/modules/transactions/routes/mappers/common/data-decoded-param.helper';
 import { type Address, getAddress, isAddress } from 'viem';
-import { DataDecoded } from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';
+import { type DataDecoded } from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';
 import { IDataDecoderRepository } from '@/modules/data-decoder/domain/v2/data-decoder.repository.interface';
 
 @Injectable()

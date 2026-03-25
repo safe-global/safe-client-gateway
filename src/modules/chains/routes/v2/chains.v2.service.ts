@@ -1,6 +1,7 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
-import { Page } from '@/domain/entities/page.entity';
+import { type Page } from '@/domain/entities/page.entity';
 import { Chain } from '@/modules/chains/routes/entities/chain.entity';
 import {
   PaginationData,

@@ -1,6 +1,7 @@
-import { Delegate } from '@/modules/delegate/domain/entities/delegate.entity';
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { type Delegate } from '@/modules/delegate/domain/entities/delegate.entity';
 import { DelegatesV2Repository } from '@/modules/delegate/domain/v2/delegates.v2.repository';
-import { Page } from '@/domain/entities/page.entity';
+import { type Page } from '@/domain/entities/page.entity';
 import { TransactionApiManagerModule } from '@/domain/interfaces/transaction-api.manager.interface';
 import { Module } from '@nestjs/common';
 import type { Address } from 'viem';

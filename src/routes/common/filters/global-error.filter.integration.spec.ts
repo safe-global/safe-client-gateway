@@ -5,7 +5,7 @@ import {
   Get,
   HttpException,
   HttpStatus,
-  INestApplication,
+  type INestApplication,
   Post,
 } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';

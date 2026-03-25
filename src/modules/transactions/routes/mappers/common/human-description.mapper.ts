@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Hex } from 'viem/types/misc';
 import { Inject, Injectable } from '@nestjs/common';
 import { formatUnits, isAddress, isHex } from 'viem';
@@ -8,12 +9,12 @@ import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { IHumanDescriptionRepository } from '@/modules/human-description/domain/human-description.repository.interface';
 import { HumanDescriptionRepository } from '@/modules/human-description/domain/human-description.repository';
 import {
-  HumanDescriptionFragment,
-  TokenValueFragment,
+  type HumanDescriptionFragment,
+  type TokenValueFragment,
   ValueType,
 } from '@/modules/human-description/domain/entities/human-description.entity';
-import { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
-import { ModuleTransaction } from '@/modules/safe/domain/entities/module-transaction.entity';
+import { type MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
+import { type ModuleTransaction } from '@/modules/safe/domain/entities/module-transaction.entity';
 import { isMultisigTransaction } from '@/modules/safe/domain/entities/transaction.entity';
 import {
   RichAddressFragment,

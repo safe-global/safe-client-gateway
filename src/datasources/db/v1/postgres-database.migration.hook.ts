@@ -1,4 +1,5 @@
-import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { Inject, Injectable, type OnModuleInit } from '@nestjs/common';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import postgres from 'postgres';
 import { PostgresDatabaseMigrator } from '@/datasources/db/v1/postgres-database.migrator';

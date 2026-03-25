@@ -1,6 +1,7 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
-import { AlertsRegistration } from '@/modules/alerts/domain/entities/alerts-registration.entity';
-import { AlertsDeletion } from '@/modules/alerts/domain/entities/alerts-deletion.entity';
+import { type AlertsRegistration } from '@/modules/alerts/domain/entities/alerts-registration.entity';
+import { type AlertsDeletion } from '@/modules/alerts/domain/entities/alerts-deletion.entity';
 import { IAlertsApi } from '@/domain/interfaces/alerts-api.interface';
 import {
   INetworkService,

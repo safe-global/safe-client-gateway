@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { AppModule } from '@/app.module';
 import configuration from '@/config/entities/__tests__/configuration';
@@ -6,12 +7,12 @@ import { AuthModule } from '@/modules/auth/auth.module';
 import { authPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import {
   AuthPayload,
-  AuthPayloadDto,
+  type AuthPayloadDto,
 } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { Auth } from '@/modules/auth/routes/decorators/auth.decorator';
 import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
 import {
-  INestApplication,
+  type INestApplication,
   Controller,
   Get,
   Module,
