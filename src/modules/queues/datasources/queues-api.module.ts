@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { QueueApiService } from '@/modules/queues/datasources/queues-api.service';
 import { IQueuesApiService } from '@/modules/queues/datasources/queues-api.service.interface';

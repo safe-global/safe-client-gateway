@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { type Delegate } from '@/modules/delegate/domain/entities/delegate.entity';
 import { type Page } from '@/domain/entities/page.entity';
 import { Module } from '@nestjs/common';

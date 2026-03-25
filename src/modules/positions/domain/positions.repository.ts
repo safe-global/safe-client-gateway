@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import { IPositionsRepository } from '@/modules/positions/domain/positions.repository.interface';
 import { IPositionsApi } from '@/domain/interfaces/positions-api.interface';

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import { ICollectiblesRepository } from '@/modules/collectibles/domain/collectibles.repository.interface';
 import { CollectiblePageSchema } from '@/modules/collectibles/domain/entities/schemas/collectible.schema';

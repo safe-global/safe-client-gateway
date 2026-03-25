@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { UpsertSubscriptionsDto } from '@/modules/notifications/routes/v2/entities/upsert-subscriptions.dto.entity';
 import { UpsertSubscriptionsDtoSchema } from '@/modules/notifications/domain/v2/entities/upsert-subscriptions.dto.entity';

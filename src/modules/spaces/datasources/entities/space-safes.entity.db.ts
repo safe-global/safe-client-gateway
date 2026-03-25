@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
 import { databaseAddressTransformer } from '@/domain/common/transformers/databaseAddress.transformer';
 import { type SpaceSafe as DomainSpaceSafe } from '@/modules/spaces/domain/entities/space-safe.entity';

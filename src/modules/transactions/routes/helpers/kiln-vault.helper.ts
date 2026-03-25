@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { type ModuleTransaction } from '@/modules/safe/domain/entities/module-transaction.entity';
 import { type MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
 import { KilnDecoder } from '@/modules/staking/domain/contracts/decoders/kiln-decoder.helper';

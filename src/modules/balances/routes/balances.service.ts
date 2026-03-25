@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import { IBalancesRepository } from '@/modules/balances/domain/balances.repository.interface';
 import { type Balance as DomainBalance } from '@/modules/balances/domain/entities/balance.entity';

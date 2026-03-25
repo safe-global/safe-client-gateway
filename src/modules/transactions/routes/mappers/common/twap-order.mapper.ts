@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable, Module } from '@nestjs/common';
 import { TokenInfo } from '@/modules/transactions/routes/entities/swaps/token-info.entity';
 import {

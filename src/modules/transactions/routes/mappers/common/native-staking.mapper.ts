@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { type Deployment } from '@/modules/staking/datasources/entities/deployment.entity';
 import { StakeState } from '@/modules/staking/datasources/entities/stake.entity';
 import { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';

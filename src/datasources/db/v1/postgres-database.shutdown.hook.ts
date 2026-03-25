@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable, type OnModuleDestroy } from '@nestjs/common';
 import postgres from 'postgres';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';

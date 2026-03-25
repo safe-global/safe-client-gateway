@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { ITargetedMessagingDatasource } from '@/domain/interfaces/targeted-messaging.datasource.interface';
 import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
 import { type Outreach } from '@/modules/targeted-messaging/domain/entities/outreach.entity';

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { IStakingApiManager } from '@/domain/interfaces/staking-api.manager.interface';
 import {
   type NetworkStats,

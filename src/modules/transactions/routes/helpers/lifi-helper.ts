@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { IBridgeRepository } from '@/modules/bridge/domain/bridge.repository.interface';
 import { BridgeModule } from '@/modules/bridge/bridge.module';
 import { LiFiDecoder } from '@/modules/bridge/domain/contracts/decoders/lifi-decoder.helper';

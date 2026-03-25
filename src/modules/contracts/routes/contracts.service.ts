@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import { ContractsRepository } from '@/modules/contracts/domain/contracts.repository';
 import { IContractsRepository } from '@/modules/contracts/domain/contracts.repository.interface';

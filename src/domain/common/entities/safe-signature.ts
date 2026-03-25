@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { secp256k1 } from '@noble/curves/secp256k1';
 import { memoize } from 'lodash';
 import { type Address, getAddress, hashMessage, type Hex } from 'viem';

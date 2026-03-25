@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import { IConfigApi } from '@/domain/interfaces/config-api.interface';
 import { type SafeApp } from '@/modules/safe-apps/domain/entities/safe-app.entity';

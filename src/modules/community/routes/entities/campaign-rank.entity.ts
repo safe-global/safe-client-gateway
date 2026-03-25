@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { type CampaignRank as DomainCampaignRank } from '@/modules/community/domain/entities/campaign-rank.entity';
 import { ApiProperty } from '@nestjs/swagger';
 import type { Address } from 'viem';

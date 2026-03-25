@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { type QueueConsumer } from '@/modules/queues/datasources/queues-api.module';
 import { IQueuesApiService } from '@/modules/queues/datasources/queues-api.service.interface';
 import { IQueueReadiness } from '@/domain/interfaces/queue-readiness.interface';

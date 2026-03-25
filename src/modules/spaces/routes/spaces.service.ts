@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { getEnumKey } from '@/domain/common/utils/enum';

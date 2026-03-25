@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { RelayLimitReachedError } from '@/modules/relay/domain/errors/relay-limit-reached.error';
 import { type Response } from 'express';
 import {

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { CommonStatus } from '../analysis-result.entity';
 import { RecipientStatus } from '@/modules/safe-shield/entities/recipient-status.entity';

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { EventProtocolChangedError } from '@/modules/hooks/routes/errors/event-protocol-changed.error';
 import {
   type ArgumentsHost,

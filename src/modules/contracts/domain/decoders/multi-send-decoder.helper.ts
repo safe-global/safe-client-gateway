@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { AbiDecoder } from '@/modules/contracts/domain/decoders/abi-decoder.helper';
 import { Inject, Injectable } from '@nestjs/common';
 import {

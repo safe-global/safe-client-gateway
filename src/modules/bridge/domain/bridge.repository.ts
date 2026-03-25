@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { IBridgeRepository } from '@/modules/bridge/domain/bridge.repository.interface';
 import {

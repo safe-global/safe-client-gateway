@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { ConflictException, Inject } from '@nestjs/common';
 import { IMembersRepository } from '@/modules/users/domain/members.repository.interface';
 import { type User } from '@/modules/users/domain/entities/user.entity';

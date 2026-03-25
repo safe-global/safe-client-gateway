@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { IContractsRepository } from '@/modules/contracts/domain/contracts.repository.interface';
 import type { Address } from 'viem';

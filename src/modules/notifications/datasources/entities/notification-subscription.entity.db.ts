@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { RowSchema } from '@/datasources/db/v1/entities/row.entity';
 import { NotificationDevice } from '@/modules/notifications/datasources/entities/notification-devices.entity.db';
 import {

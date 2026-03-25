@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
 import { TransferPageSchema } from '@/modules/safe/domain/entities/transfer.entity';
 import {

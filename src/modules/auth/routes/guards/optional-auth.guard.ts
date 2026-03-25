@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { AuthController } from '@/modules/auth/routes/auth.controller';
 import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
 import {

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import { IDelegateRepository } from '@/modules/delegate/domain/delegate.repository.interface';
 import { type Delegate } from '@/modules/delegate/domain/entities/delegate.entity';

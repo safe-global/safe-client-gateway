@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { ISiweApi } from '@/domain/interfaces/siwe-api.interface';
 import { ISiweRepository } from '@/modules/siwe/domain/siwe.repository.interface';
 import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';

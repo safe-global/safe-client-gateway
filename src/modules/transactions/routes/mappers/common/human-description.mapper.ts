@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Hex } from 'viem/types/misc';
 import { Inject, Injectable } from '@nestjs/common';
 import { formatUnits, isAddress, isHex } from 'viem';

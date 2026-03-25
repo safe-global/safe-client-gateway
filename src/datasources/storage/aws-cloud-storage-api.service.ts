@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { ICloudStorageApiService } from '@/datasources/storage/cloud-storage-api.service';
 import {
   AWS_BUCKET_NAME,

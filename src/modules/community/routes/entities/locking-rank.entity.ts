@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { type LockingRank as DomainLockingRank } from '@/modules/community/domain/entities/locking-rank.entity';
 import { ApiProperty } from '@nestjs/swagger';
 import type { Address } from 'viem';

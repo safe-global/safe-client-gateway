@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Injectable } from '@nestjs/common';
 import { Queue, Job } from 'bullmq';
 import { IJobQueueService } from '@/domain/interfaces/job-queue.interface';

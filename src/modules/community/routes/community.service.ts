@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { type Page } from '@/domain/entities/page.entity';
 import { type Campaign } from '@/modules/community/domain/entities/campaign.entity';
 import { type CampaignRank } from '@/modules/community/domain/entities/campaign-rank.entity';

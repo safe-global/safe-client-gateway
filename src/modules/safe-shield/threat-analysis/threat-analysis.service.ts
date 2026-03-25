@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { LoggingService, ILoggingService } from '@/logging/logging.interface';
 import { type ThreatAnalysisRequest } from '@/modules/safe-shield/entities/analysis-requests.entity';
 import { type ThreatAnalysisResponse } from '@/modules/safe-shield/entities/analysis-responses.entity';
