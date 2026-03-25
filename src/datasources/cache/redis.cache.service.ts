@@ -82,7 +82,7 @@ export class RedisCacheService
         source: 'RedisCacheService',
         event: `Error setting/expiring ${key}:${cacheDir.field}`,
       });
-      await this.client.unlink(key);
+      await this.client.unlink(key).catch(() => {});
       throw error;
     }
   }
