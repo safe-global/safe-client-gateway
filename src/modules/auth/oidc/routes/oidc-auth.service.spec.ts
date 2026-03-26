@@ -438,6 +438,14 @@ describe('OidcAuthService', () => {
         expect(decoded.redirectUrl).toBe(redirectUrl);
       });
 
+      it('should reject a non-HTTPS URL', () => {
+        expect(() =>
+          domainTarget.createOidcAuthorizationRequest(
+            `http://${allowedDomain}/settings`,
+          ),
+        ).toThrow(BadRequestException);
+      });
+
       it('should reject a URL with userinfo even if hostname matches', () => {
         expect(() =>
           domainTarget.createOidcAuthorizationRequest(

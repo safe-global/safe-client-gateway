@@ -29,7 +29,7 @@ export default (): ReturnType<typeof configuration> => ({
     maxValidityPeriodSeconds: faker.number.int({ min: 1, max: 60 * 1_000 }),
     stateTtlMs: faker.number.int({ min: 60_000, max: 600_000 }),
     postLoginRedirectUri: faker.internet.url(),
-    allowedRedirectDomain: faker.internet.domainName(),
+    allowedRedirectDomain: undefined,
     auth0: {
       domain: faker.internet.domainName(),
       clientId: faker.string.uuid(),

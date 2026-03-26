@@ -186,14 +186,21 @@ export class OidcAuthService {
   }
 
   private isAllowedRedirectUrl(target: URL): boolean {
-    // Reject URLs with userinfo (e.g. https://attacker.com@allowed.dev) or
-    // non-default ports to prevent credential-based attacks and restrict
-    // redirects to standard HTTPS endpoints.
-    if (target.username || target.password || target.port) {
-      return false;
-    }
-
     if (this.allowedRedirectDomain) {
+      /*
+       * Reject non-HTTPS schemes, URLs with userinfo
+       * (e.g. https://attacker.com@allowed.dev), or non-default ports to
+       * prevent protocol downgrades, credential-based attacks, and restrict
+       * redirects to standard HTTPS endpoints.
+       */
+      if (
+        target.protocol !== 'https:' ||
+        target.username ||
+        target.password ||
+        target.port
+      ) {
+        return false;
+      }
       const suffix = this.allowedRedirectDomain.startsWith('.')
         ? this.allowedRedirectDomain
         : `.${this.allowedRedirectDomain}`;
