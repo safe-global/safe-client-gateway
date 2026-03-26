@@ -33,6 +33,7 @@ export class OidcAuthService {
   private readonly stateTtlMs: number;
   private readonly postLoginRedirectUri: string;
   private readonly allowedRedirectDomain: string | undefined;
+  private readonly isProduction: boolean;
 
   constructor(
     @Inject(IAuthRepository)
@@ -54,6 +55,9 @@ export class OidcAuthService {
     );
     this.allowedRedirectDomain = this.configurationService.get<string>(
       'auth.allowedRedirectDomain',
+    );
+    this.isProduction = this.configurationService.getOrThrow<boolean>(
+      'application.isProduction',
     );
   }
 
@@ -166,6 +170,8 @@ export class OidcAuthService {
    * validates the target hostname. When {@link allowedRedirectDomain} is set,
    * the target must be on that domain (or a subdomain of it). Otherwise, the
    * target must share the exact origin with {@link postLoginRedirectUri}.
+   * ({@link allowedRedirectDomain} is allowed only on non-production
+   * environments to enable testing against custom setups.)
    *
    * @throws {BadRequestException} On domain/origin mismatch or malformed input.
    */
@@ -186,7 +192,7 @@ export class OidcAuthService {
   }
 
   private isAllowedRedirectUrl(target: URL): boolean {
-    if (this.allowedRedirectDomain) {
+    if (!this.isProduction && this.allowedRedirectDomain) {
       /*
        * Reject non-HTTPS schemes, URLs with userinfo
        * (e.g. https://attacker.com@allowed.dev), or non-default ports to

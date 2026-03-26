@@ -51,6 +51,7 @@ describe('OidcAuthService', () => {
       'auth.postLoginRedirectUri',
       postLoginRedirectUri,
     );
+    fakeConfigurationService.set('application.isProduction', false);
 
     target = new OidcAuthService(
       authRepositoryMock,
@@ -302,7 +303,7 @@ describe('OidcAuthService', () => {
       ).toThrow(BadRequestException);
     });
 
-    describe('with allowedRedirectDomain', () => {
+    describe('with allowedRedirectDomain, test env', () => {
       let domainTarget: OidcAuthService;
       const allowedDomain = '5afe.dev';
 
@@ -321,6 +322,7 @@ describe('OidcAuthService', () => {
           'auth.allowedRedirectDomain',
           allowedDomain,
         );
+        fakeConfigurationService.set('application.isProduction', false);
 
         domainTarget = new OidcAuthService(
           authRepositoryMock,
@@ -417,6 +419,7 @@ describe('OidcAuthService', () => {
           'auth.allowedRedirectDomain',
           `.${allowedDomain}`,
         );
+        fakeConfigurationService.set('application.isProduction', false);
 
         const dotTarget = new OidcAuthService(
           authRepositoryMock,
@@ -458,6 +461,38 @@ describe('OidcAuthService', () => {
         expect(() =>
           domainTarget.createOidcAuthorizationRequest(
             `https://${allowedDomain}:8080/settings`,
+          ),
+        ).toThrow(BadRequestException);
+      });
+    });
+
+    describe('with allowedRedirectDomain, production env', () => {
+      it('should ignore allowedRedirectDomain and fall back to exact-origin check', () => {
+        const fakeConfigurationService = new FakeConfigurationService();
+        fakeConfigurationService.set(
+          'auth.maxValidityPeriodSeconds',
+          maxValidityPeriodInSeconds,
+        );
+        fakeConfigurationService.set('auth.stateTtlMs', stateTtlMs);
+        fakeConfigurationService.set(
+          'auth.postLoginRedirectUri',
+          `https://app.5afe.dev/welcome`,
+        );
+        fakeConfigurationService.set('auth.allowedRedirectDomain', '5afe.dev');
+        fakeConfigurationService.set('application.isProduction', true);
+
+        const prodTarget = new OidcAuthService(
+          authRepositoryMock,
+          fakeConfigurationService,
+          usersRepositoryMock,
+          auth0RepositoryMock,
+        );
+
+        // A subdomain that would pass the domain-suffix check should be
+        // rejected because production uses exact-origin matching instead.
+        expect(() =>
+          prodTarget.createOidcAuthorizationRequest(
+            'https://preview.5afe.dev/settings',
           ),
         ).toThrow(BadRequestException);
       });

@@ -623,50 +623,87 @@ describe('OidcAuthController', () => {
   describe('allowedRedirectDomain is present', () => {
     const allowedDomain = '5afe.dev';
 
-    beforeEach(async () => {
-      const defaultConfiguration = configuration();
-      const testConfiguration = (): typeof defaultConfiguration => ({
-        ...defaultConfiguration,
-        application: {
-          ...defaultConfiguration.application,
-          isProduction: true,
-        },
-        auth: {
-          ...defaultConfiguration.auth,
-          postLoginRedirectUri: `https://app.${allowedDomain}/welcome`,
-          allowedRedirectDomain: allowedDomain,
-        },
-        features: {
-          ...defaultConfiguration.features,
-          oidc_auth: true,
-        },
+    describe('non-production environment', () => {
+      beforeEach(async () => {
+        const defaultConfiguration = configuration();
+        const testConfiguration = (): typeof defaultConfiguration => ({
+          ...defaultConfiguration,
+          application: {
+            ...defaultConfiguration.application,
+            isProduction: false,
+          },
+          auth: {
+            ...defaultConfiguration.auth,
+            postLoginRedirectUri: `https://app.${allowedDomain}/welcome`,
+            allowedRedirectDomain: allowedDomain,
+          },
+          features: {
+            ...defaultConfiguration.features,
+            oidc_auth: true,
+          },
+        });
+
+        await initApp(testConfiguration);
       });
 
-      await initApp(testConfiguration);
+      afterEach(async () => {
+        jest.useRealTimers();
+        await app?.close();
+      });
+
+      it('should accept a subdomain of the allowed domain', async () => {
+        const redirectUrl = `https://preview.${allowedDomain}/settings`;
+
+        await request(app.getHttpServer())
+          .get('/v1/auth/oidc/authorize')
+          .query({ redirect_url: redirectUrl })
+          .expect(302);
+      });
+
+      it('should reject a different domain', async () => {
+        await request(app.getHttpServer())
+          .get('/v1/auth/oidc/authorize')
+          .query({ redirect_url: 'https://evil.com/phish' })
+          .expect(400)
+          .expect(({ body }) => {
+            expect(body.message).toContain('Invalid redirect URL');
+          });
+      });
     });
 
-    afterEach(async () => {
-      jest.useRealTimers();
-      await app?.close();
-    });
+    describe('production environment', () => {
+      afterEach(async () => {
+        jest.useRealTimers();
+        await app?.close();
+      });
 
-    it('should accept a subdomain of the allowed domain', async () => {
-      const redirectUrl = `https://preview.${allowedDomain}/settings`;
-
-      await request(app.getHttpServer())
-        .get('/v1/auth/oidc/authorize')
-        .query({ redirect_url: redirectUrl })
-        .expect(302);
-    });
-
-    it('should reject a different domain', async () => {
-      await request(app.getHttpServer())
-        .get('/v1/auth/oidc/authorize')
-        .query({ redirect_url: 'https://evil.com/phish' })
-        .expect(400)
-        .expect(({ body }) => {
-          expect(body.message).toContain('Invalid redirect URL');
+      it('should reject a domain of the allowed domain if not exact post-login url match', async () => {
+        const defaultConfiguration = configuration();
+        const testConfiguration = (): typeof defaultConfiguration => ({
+          ...defaultConfiguration,
+          application: {
+            ...defaultConfiguration.application,
+            isProduction: true,
+          },
+          auth: {
+            ...defaultConfiguration.auth,
+            postLoginRedirectUri: `https://app.${allowedDomain}/welcome`,
+            allowedRedirectDomain: allowedDomain,
+          },
+          features: {
+            ...defaultConfiguration.features,
+            oidc_auth: true,
+          },
         });
+
+        await initApp(testConfiguration);
+        const redirectUrl = `https://preview.${allowedDomain}/settings`;
+
+        await request(app.getHttpServer())
+          .get('/v1/auth/oidc/authorize')
+          .query({ redirect_url: redirectUrl })
+          .expect(400);
+      });
     });
   });
 });
