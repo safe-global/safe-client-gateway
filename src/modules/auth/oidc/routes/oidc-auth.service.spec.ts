@@ -301,6 +301,143 @@ describe('OidcAuthService', () => {
         target.createOidcAuthorizationRequest('https://evil.com/phish'),
       ).toThrow(BadRequestException);
     });
+
+    describe('with allowedRedirectDomain', () => {
+      let domainTarget: OidcAuthService;
+      const allowedDomain = '5afe.dev';
+
+      beforeEach(() => {
+        const fakeConfigurationService = new FakeConfigurationService();
+        fakeConfigurationService.set(
+          'auth.maxValidityPeriodSeconds',
+          maxValidityPeriodInSeconds,
+        );
+        fakeConfigurationService.set('auth.stateTtlMs', stateTtlMs);
+        fakeConfigurationService.set(
+          'auth.postLoginRedirectUri',
+          `https://safe-wallet-web.dev.${allowedDomain}/welcome`,
+        );
+        fakeConfigurationService.set(
+          'auth.allowedRedirectDomain',
+          allowedDomain,
+        );
+
+        domainTarget = new OidcAuthService(
+          authRepositoryMock,
+          fakeConfigurationService,
+          usersRepositoryMock,
+          auth0RepositoryMock,
+        );
+      });
+
+      it('should accept a subdomain of the allowed domain', () => {
+        auth0RepositoryMock.getAuthorizationUrl.mockReturnValue(
+          faker.internet.url(),
+        );
+
+        const redirectUrl = `https://feat_branch--walletweb.review.${allowedDomain}/welcome/spaces`;
+        const result = domainTarget.createOidcAuthorizationRequest(redirectUrl);
+
+        const decoded = JSON.parse(
+          Buffer.from(result.state, 'base64url').toString('utf-8'),
+        );
+        expect(decoded.redirectUrl).toBe(redirectUrl);
+      });
+
+      it('should accept the exact allowed domain', () => {
+        auth0RepositoryMock.getAuthorizationUrl.mockReturnValue(
+          faker.internet.url(),
+        );
+
+        const redirectUrl = `https://${allowedDomain}/settings`;
+        const result = domainTarget.createOidcAuthorizationRequest(redirectUrl);
+
+        const decoded = JSON.parse(
+          Buffer.from(result.state, 'base64url').toString('utf-8'),
+        );
+        expect(decoded.redirectUrl).toBe(redirectUrl);
+      });
+
+      it('should reject a different domain', () => {
+        expect(() =>
+          domainTarget.createOidcAuthorizationRequest('https://evil.com/phish'),
+        ).toThrow(BadRequestException);
+      });
+
+      it('should reject a domain that only contains the suffix as a substring', () => {
+        expect(() =>
+          domainTarget.createOidcAuthorizationRequest(
+            `https://evil-${allowedDomain}/phish`,
+          ),
+        ).toThrow(BadRequestException);
+      });
+
+      it('should accept a deeply nested subdomain', () => {
+        auth0RepositoryMock.getAuthorizationUrl.mockReturnValue(
+          faker.internet.url(),
+        );
+
+        const redirectUrl = `https://a.b.c.${allowedDomain}/welcome`;
+        const result = domainTarget.createOidcAuthorizationRequest(redirectUrl);
+
+        const decoded = JSON.parse(
+          Buffer.from(result.state, 'base64url').toString('utf-8'),
+        );
+        expect(decoded.redirectUrl).toBe(redirectUrl);
+      });
+
+      it('should resolve a relative path against postLoginRedirectUri', () => {
+        auth0RepositoryMock.getAuthorizationUrl.mockReturnValue(
+          faker.internet.url(),
+        );
+
+        const path = `/${faker.word.noun()}`;
+        const result = domainTarget.createOidcAuthorizationRequest(path);
+
+        const decoded = JSON.parse(
+          Buffer.from(result.state, 'base64url').toString('utf-8'),
+        );
+        expect(decoded.redirectUrl).toBe(
+          `https://safe-wallet-web.dev.${allowedDomain}${path}`,
+        );
+      });
+
+      it('should work when allowedRedirectDomain has a leading dot', () => {
+        const fakeConfigurationService = new FakeConfigurationService();
+        fakeConfigurationService.set(
+          'auth.maxValidityPeriodSeconds',
+          maxValidityPeriodInSeconds,
+        );
+        fakeConfigurationService.set('auth.stateTtlMs', stateTtlMs);
+        fakeConfigurationService.set(
+          'auth.postLoginRedirectUri',
+          `https://safe-wallet-web.dev.${allowedDomain}/welcome`,
+        );
+        fakeConfigurationService.set(
+          'auth.allowedRedirectDomain',
+          `.${allowedDomain}`,
+        );
+
+        const dotTarget = new OidcAuthService(
+          authRepositoryMock,
+          fakeConfigurationService,
+          usersRepositoryMock,
+          auth0RepositoryMock,
+        );
+
+        auth0RepositoryMock.getAuthorizationUrl.mockReturnValue(
+          faker.internet.url(),
+        );
+
+        const redirectUrl = `https://preview.${allowedDomain}/settings`;
+        const result = dotTarget.createOidcAuthorizationRequest(redirectUrl);
+
+        const decoded = JSON.parse(
+          Buffer.from(result.state, 'base64url').toString('utf-8'),
+        );
+        expect(decoded.redirectUrl).toBe(redirectUrl);
+      });
+    });
   });
 
   describe('getPostLoginRedirectUri', () => {

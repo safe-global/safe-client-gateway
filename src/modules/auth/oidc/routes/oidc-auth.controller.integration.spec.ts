@@ -103,11 +103,18 @@ describe('OidcAuthController', () => {
     jest.resetAllMocks();
 
     const defaultConfiguration = configuration();
+    const postLoginHost = new URL(
+      defaultConfiguration.auth.postLoginRedirectUri!,
+    ).hostname;
     const testConfiguration = (): typeof defaultConfiguration => ({
       ...defaultConfiguration,
       application: {
         ...defaultConfiguration.application,
         isProduction: true,
+      },
+      auth: {
+        ...defaultConfiguration.auth,
+        allowedRedirectDomain: postLoginHost,
       },
       features: {
         ...defaultConfiguration.features,
@@ -160,11 +167,18 @@ describe('OidcAuthController', () => {
       jest.setSystemTime(0);
 
       const defaultConfiguration = configuration();
+      const nonProdPostLoginHost = new URL(
+        defaultConfiguration.auth.postLoginRedirectUri!,
+      ).hostname;
       const testConfiguration = (): typeof defaultConfiguration => ({
         ...defaultConfiguration,
         application: {
           ...defaultConfiguration.application,
           isProduction: false,
+        },
+        auth: {
+          ...defaultConfiguration.auth,
+          allowedRedirectDomain: nonProdPostLoginHost,
         },
         features: {
           ...defaultConfiguration.features,

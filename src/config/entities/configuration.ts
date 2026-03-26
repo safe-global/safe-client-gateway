@@ -51,6 +51,7 @@ export default () => ({
       process.env.AUTH_STATE_TTL_MILLISECONDS ?? `${5 * 60 * 1_000}`, // 5 minutes
     ),
     postLoginRedirectUri: process.env.AUTH_POST_LOGIN_REDIRECT_URI,
+    allowedRedirectDomain: process.env.AUTH_ALLOWED_REDIRECT_DOMAIN,
     auth0: {
       domain: process.env.AUTH0_DOMAIN,
       clientId: process.env.AUTH0_CLIENT_ID,
