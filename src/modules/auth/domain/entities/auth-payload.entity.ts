@@ -1,24 +1,94 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
 import { z } from 'zod';
 import type { Address } from 'viem';
+import { JwtClaimsSchema } from '@/datasources/jwt/jwt-claims.entity';
 
-export type AuthPayloadDto = z.infer<typeof AuthPayloadDtoSchema>;
+export const AuthMethod = {
+  Siwe: 'siwe',
+  Oidc: 'oidc',
+} as const;
 
-export const AuthPayloadDtoSchema = z.object({
+export const SiweAuthPayloadDtoSchema = z.object({
+  auth_method: z.literal(AuthMethod.Siwe),
+  sub: NumericStringSchema,
   chain_id: NumericStringSchema,
   signer_address: AddressSchema,
 });
 
-// This is Partial in order to allow `AuthPayload` instances to always be returned by
-// the `Auth` decorator, should there not be a payload
-export class AuthPayload implements Partial<AuthPayloadDto> {
+export const OidcAuthPayloadDtoSchema = z.object({
+  auth_method: z.literal(AuthMethod.Oidc),
+  sub: NumericStringSchema,
+});
+
+export const AuthPayloadDtoSchema = z.discriminatedUnion('auth_method', [
+  SiweAuthPayloadDtoSchema,
+  OidcAuthPayloadDtoSchema,
+]);
+
+// Omit `sub` from JwtClaimsSchema to avoid conflict with the auth schemas'
+// required NumericString `sub`. Without this, the optional `z.string()` sub
+// from JwtClaimsSchema is silently overridden by `.extend()` — which works
+// today but depends on Zod's merge-order semantics.
+const JwtClaimsWithoutSub = JwtClaimsSchema.omit({ sub: true });
+
+export const AuthPayloadWithClaimsDtoSchema = z.discriminatedUnion(
+  'auth_method',
+  [
+    JwtClaimsWithoutSub.extend(SiweAuthPayloadDtoSchema.shape),
+    JwtClaimsWithoutSub.extend(OidcAuthPayloadDtoSchema.shape),
+  ],
+);
+
+export type AuthPayloadDto = z.infer<typeof AuthPayloadDtoSchema>;
+export type AuthPayloadWithClaimsDto = z.infer<
+  typeof AuthPayloadWithClaimsDtoSchema
+>;
+export type SiweAuthPayloadDto = z.infer<typeof SiweAuthPayloadDtoSchema>;
+export type OidcAuthPayloadDto = z.infer<typeof OidcAuthPayloadDtoSchema>;
+
+/**
+ * Narrowed type for an authenticated AuthPayload where `sub` and
+ * `auth_method` are guaranteed to be present. Use the
+ * {@link AuthPayload.isAuthenticated} type guard to narrow.
+ */
+export type AuthenticatedAuthPayload = AuthPayload &
+  Required<Pick<AuthPayload, 'sub' | 'auth_method'>>;
+
+export class AuthPayload {
+  sub?: string;
+  auth_method?: (typeof AuthMethod)[keyof typeof AuthMethod];
   chain_id?: string;
   signer_address?: Address;
 
   constructor(props?: AuthPayloadDto) {
-    this.chain_id = props?.chain_id;
-    this.signer_address = props?.signer_address;
+    this.sub = props?.sub;
+    this.auth_method = props?.auth_method;
+    if (props?.auth_method === AuthMethod.Siwe) {
+      this.chain_id = props.chain_id;
+      this.signer_address = props.signer_address;
+    }
+  }
+
+  /**
+   * Type guard that narrows to {@link AuthenticatedAuthPayload},
+   * guaranteeing `sub` and `auth_method` are present.
+   */
+  isAuthenticated(): this is AuthenticatedAuthPayload {
+    return this.sub !== undefined && this.auth_method !== undefined;
+  }
+
+  getUserId(): string | undefined {
+    return this.sub;
+  }
+
+  isSiwe(): boolean {
+    return this.auth_method === AuthMethod.Siwe;
+  }
+
+  isOidc(): boolean {
+    return this.auth_method === AuthMethod.Oidc;
   }
 
   isForChain(chainId: string): boolean {

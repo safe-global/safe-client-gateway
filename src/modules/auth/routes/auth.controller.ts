@@ -1,5 +1,11 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { getMillisecondsUntil } from '@/domain/common/utils/time';
+import {
+  ACCESS_TOKEN_COOKIE_NAME,
+  getCookieOptions,
+} from '@/modules/auth/utils/auth-cookie.utils';
+import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
 import { AuthService } from '@/modules/auth/routes/auth.service';
 import { AuthNonce } from '@/modules/auth/routes/entities/auth-nonce.entity';
 import {
@@ -15,32 +21,33 @@ import {
   Inject,
   Post,
   Res,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ApiOkResponse,
   ApiTags,
   ApiOperation,
   ApiBody,
+  ApiNoContentResponse,
   ApiUnauthorizedResponse,
   ApiBadRequestResponse,
+  ApiForbiddenResponse,
 } from '@nestjs/swagger';
-import { CookieOptions, Response } from 'express';
+import { type CookieOptions, Response } from 'express';
 
 /**
- * The AuthController is responsible for handling authentication:
+ * The AuthController is responsible for handling SiWe authentication:
  *
  * 1. Calling `/v1/auth/nonce` returns a unique nonce to be signed.
  * 2. The client signs this nonce in a SiWe message, sending it and
  *    the signature to `/v1/auth/verify` for verification.
  * 3. If verification succeeds, JWT token is added to `access_token`
  *    Set-Cookie.
+ *
  */
 @ApiTags('auth')
 @Controller({ path: 'auth', version: '1' })
 export class AuthController {
-  static readonly ACCESS_TOKEN_COOKIE_NAME = 'access_token';
-  static readonly ACCESS_TOKEN_COOKIE_SAME_SITE_LAX = 'lax';
-  static readonly ACCESS_TOKEN_COOKIE_SAME_SITE_NONE = 'none';
   private readonly isProduction: boolean;
 
   constructor(
@@ -52,6 +59,18 @@ export class AuthController {
       'application.isProduction',
     );
   }
+
+  @ApiOperation({
+    summary: 'Check authentication status',
+    description:
+      'Returns 204 if a valid session cookie is present, 403 otherwise.',
+  })
+  @ApiNoContentResponse({ description: 'Authenticated' })
+  @ApiForbiddenResponse({ description: 'Not authenticated' })
+  @HttpCode(204)
+  @UseGuards(AuthGuard)
+  @Get('me')
+  getMe(): void {}
 
   @ApiOperation({
     summary: 'Get authentication nonce',
@@ -94,9 +113,10 @@ export class AuthController {
     @Body(new ValidationPipe(SiweDtoSchema))
     siweDto: SiweDto,
   ): Promise<void> {
-    const { accessToken } = await this.authService.getAccessToken(siweDto);
+    const { accessToken } =
+      await this.authService.authenticateWithSiwe(siweDto);
 
-    res.cookie(AuthController.ACCESS_TOKEN_COOKIE_NAME, accessToken, {
+    res.cookie(ACCESS_TOKEN_COOKIE_NAME, accessToken, {
       ...this.getCookieOptions(),
       // Extract maxAge from token as it may slightly differ to SiWe message
       maxAge: this.getMaxAge(accessToken),
@@ -115,21 +135,11 @@ export class AuthController {
   @HttpCode(200)
   @Post('logout')
   logout(@Res({ passthrough: true }) res: Response): void {
-    res.clearCookie(
-      AuthController.ACCESS_TOKEN_COOKIE_NAME,
-      this.getCookieOptions(),
-    );
+    res.clearCookie(ACCESS_TOKEN_COOKIE_NAME, this.getCookieOptions());
   }
 
   private getCookieOptions(): CookieOptions {
-    return {
-      httpOnly: true,
-      secure: true,
-      sameSite: this.isProduction
-        ? AuthController.ACCESS_TOKEN_COOKIE_SAME_SITE_LAX
-        : AuthController.ACCESS_TOKEN_COOKIE_SAME_SITE_NONE,
-      path: '/',
-    };
+    return getCookieOptions(this.isProduction);
   }
 
   /**

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import type {
   User,
@@ -18,6 +19,7 @@ export interface IUsersRepository {
   create(
     status: keyof typeof UserStatus,
     entityManager: EntityManager,
+    options?: { extUserId?: string },
   ): Promise<User['id']>;
 
   getWithWallets(authPayload: AuthPayload): Promise<{
@@ -41,6 +43,10 @@ export interface IUsersRepository {
   findByWalletAddressOrFail(address: Address): Promise<User>;
 
   findByWalletAddress(address: Address): Promise<User | undefined>;
+
+  findOrCreateByWalletAddress(address: Address): Promise<User['id']>;
+
+  findOrCreateByExtUserId(extUserId: string): Promise<User['id']>;
 
   update(args: {
     userId: User['id'];

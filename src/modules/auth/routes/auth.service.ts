@@ -1,11 +1,23 @@
-import { ForbiddenException, Inject, Injectable } from '@nestjs/common';
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { Inject, Injectable } from '@nestjs/common';
+import {
+  assertExpirationTime,
+  getMaxExpirationTime,
+} from '@/modules/auth/utils/token-expiration.utils';
 import { SiweDto } from '@/modules/auth/routes/entities/siwe.dto.entity';
 import { ISiweRepository } from '@/modules/siwe/domain/siwe.repository.interface';
 import { IAuthRepository } from '@/modules/auth/domain/auth.repository.interface';
-import { AuthPayloadDto } from '@/modules/auth/domain/entities/auth-payload.entity';
+import {
+  AuthMethod,
+  AuthPayloadDto,
+} from '@/modules/auth/domain/entities/auth-payload.entity';
 import { JwtPayloadWithClaims } from '@/datasources/jwt/jwt-claims.entity';
 import { IConfigurationService } from '@/config/configuration.service.interface';
+import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
 
+type AuthTokenResponse = {
+  accessToken: string;
+};
 @Injectable()
 export class AuthService {
   private readonly maxValidityPeriodInSeconds: number;
@@ -17,34 +29,42 @@ export class AuthService {
     private readonly authRepository: IAuthRepository,
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
+    @Inject(IUsersRepository)
+    private readonly usersRepository: IUsersRepository,
   ) {
     this.maxValidityPeriodInSeconds = this.configurationService.getOrThrow(
       'auth.maxValidityPeriodSeconds',
     );
   }
 
-  async getNonce(): Promise<{
+  public async getNonce(): Promise<{
     nonce: string;
   }> {
     return await this.siweRepository.generateNonce();
   }
 
-  async getAccessToken(args: SiweDto): Promise<{
-    accessToken: string;
-  }> {
+  public async authenticateWithSiwe(args: SiweDto): Promise<AuthTokenResponse> {
     const { chainId, address, notBefore, issuedAt, expirationTime } =
       await this.siweRepository.getValidatedSiweMessage(args);
 
-    const maxExpirationTime = this.getMaxExpirationTime();
+    const maxExpirationTime = getMaxExpirationTime(
+      this.maxValidityPeriodInSeconds,
+    );
 
-    if (expirationTime && expirationTime > maxExpirationTime) {
-      throw new ForbiddenException(
-        `Cannot issue token for longer than ${this.maxValidityPeriodInSeconds} seconds`,
+    if (expirationTime) {
+      assertExpirationTime(
+        expirationTime,
+        maxExpirationTime,
+        this.maxValidityPeriodInSeconds,
       );
     }
 
+    const userId =
+      await this.usersRepository.findOrCreateByWalletAddress(address);
     const accessToken = this.authRepository.signToken(
       {
+        auth_method: AuthMethod.Siwe,
+        sub: userId.toString(),
         chain_id: chainId.toString(),
         signer_address: address,
       },
@@ -59,18 +79,12 @@ export class AuthService {
       },
     );
 
-    return {
-      accessToken,
-    };
+    return { accessToken };
   }
 
-  getTokenPayloadWithClaims(
+  public getTokenPayloadWithClaims(
     accessToken: string,
   ): JwtPayloadWithClaims<AuthPayloadDto> {
     return this.authRepository.decodeToken(accessToken);
-  }
-
-  private getMaxExpirationTime(): Date {
-    return new Date(Date.now() + this.maxValidityPeriodInSeconds * 1_000);
   }
 }

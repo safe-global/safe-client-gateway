@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import configuration from '@/config/entities/__tests__/configuration';
@@ -5,6 +6,10 @@ import { EmailModule } from '@/modules/email/email.module';
 import { TestEmailApiModule } from '@/modules/email/datasources/__tests__/test.email-api.module';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { createTestModule } from '@/__tests__/testing-module';
+import {
+  oidcAuthPayloadDtoBuilder,
+  siweAuthPayloadDtoBuilder,
+} from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { siweMessageBuilder } from '@/modules/siwe/domain/entities/__tests__/siwe-message.builder';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 import { faker } from '@faker-js/faker';
@@ -15,32 +20,45 @@ import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { getSecondsUntil } from '@/domain/common/utils/time';
 import type { Server } from 'net';
 import { IConfigurationService } from '@/config/configuration.service.interface';
+import { UsersModule } from '@/modules/users/users.module';
+import { TestUsersModule } from '@/modules/users/__tests__/test.users.module';
+import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
+import type { TestingModule } from '@nestjs/testing';
 
 describe('AuthController', () => {
   let app: INestApplication<Server>;
   let cacheService: FakeCacheService;
+  let jwtService: IJwtService;
+
   let maxValidityPeriodInMs: number;
 
   async function initApp(config: typeof configuration): Promise<void> {
-    const moduleFixture = await createTestModule({
+    await app?.close();
+    const moduleFixture: TestingModule = await createTestModule({
       config,
       modules: [
         {
           originalModule: EmailModule,
           testModule: TestEmailApiModule,
         },
+        {
+          originalModule: UsersModule,
+          testModule: TestUsersModule,
+        },
       ],
     });
 
     cacheService = moduleFixture.get(CacheService);
+    jwtService = moduleFixture.get(IJwtService);
+
     const configService: IConfigurationService = moduleFixture.get(
       IConfigurationService,
     );
+
     maxValidityPeriodInMs =
       configService.getOrThrow<number>('auth.maxValidityPeriodSeconds') * 1_000;
 
     app = await new TestAppProvider().provide(moduleFixture);
-
     await app.init();
   }
 
@@ -64,12 +82,9 @@ describe('AuthController', () => {
     await initApp(testConfiguration);
   });
 
-  afterAll(async () => {
-    await app.close();
-  });
-
-  afterEach(() => {
+  afterEach(async () => {
     jest.useRealTimers();
+    await app?.close();
   });
 
   describe('GET /v1/auth/nonce', () => {
@@ -308,6 +323,7 @@ describe('AuthController', () => {
       const signature = await signer.signMessage({
         message,
       });
+
       // Mimic ttl expiration
       await cacheService.deleteByKey(cacheDir.key);
 
@@ -506,6 +522,39 @@ describe('AuthController', () => {
             'access_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; Secure; SameSite=Lax',
           );
         });
+    });
+  });
+
+  describe('GET /v1/auth/me', () => {
+    it('should return 204 with a valid Siwe access token', async () => {
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+
+      await request(app.getHttpServer())
+        .get('/v1/auth/me')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(204);
+    });
+
+    it('should return 204 with a valid OIDC access token', async () => {
+      const authPayloadDto = oidcAuthPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+
+      await request(app.getHttpServer())
+        .get('/v1/auth/me')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(204);
+    });
+
+    it('should return 403 without an access token', async () => {
+      await request(app.getHttpServer()).get('/v1/auth/me').expect(403);
+    });
+
+    it('should return 403 with an invalid access token', async () => {
+      await request(app.getHttpServer())
+        .get('/v1/auth/me')
+        .set('Cookie', ['access_token=invalid-token'])
+        .expect(403);
     });
   });
 });

@@ -1,16 +1,15 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { JwtClient } from '@/datasources/jwt/jwt.module';
 import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
-import { JwtPayloadWithClaims } from '@/datasources/jwt/jwt-claims.entity';
 import { Inject, Injectable } from '@nestjs/common';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import type { Algorithm } from 'jsonwebtoken';
+import type { Algorithm, JwtPayload } from 'jsonwebtoken';
+import { JWT_ALGORITHM } from '@/datasources/jwt/jwt.constants';
 
 @Injectable()
 export class JwtService implements IJwtService {
-  private static readonly ALGORITHM: Algorithm = 'HS256';
-
-  issuer: string;
-  secret: string;
+  private readonly issuer: string;
+  private readonly secret: string;
 
   constructor(
     @Inject('JwtClient')
@@ -18,8 +17,8 @@ export class JwtService implements IJwtService {
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
   ) {
-    this.issuer = configurationService.getOrThrow<string>('jwt.issuer');
-    this.secret = configurationService.getOrThrow<string>('jwt.secret');
+    this.issuer = this.configurationService.getOrThrow<string>('jwt.issuer');
+    this.secret = this.configurationService.getOrThrow<string>('jwt.secret');
   }
 
   sign<
@@ -30,44 +29,52 @@ export class JwtService implements IJwtService {
     },
   >(
     payload: T,
-    options: { secretOrPrivateKey: string; algorithm?: Algorithm } = {
-      secretOrPrivateKey: this.secret,
-    },
+    options?: { secretOrPrivateKey: string; algorithm?: Algorithm },
   ): string {
     return this.client.sign(
       {
         iss: 'iss' in payload ? payload.iss : this.issuer,
+        aud: 'aud' in payload ? payload.aud : this.issuer,
         ...payload,
       },
-      { ...options, algorithm: options.algorithm ?? JwtService.ALGORITHM },
+      {
+        secretOrPrivateKey: options?.secretOrPrivateKey ?? this.secret,
+        algorithm: options?.algorithm ?? JWT_ALGORITHM,
+      },
     );
   }
 
   verify<T extends object>(
     token: string,
-    options: {
-      issuer: string;
-      secretOrPrivateKey: string;
+    options?: {
+      issuer?: string;
+      audience?: string;
+      secretOrPrivateKey?: string;
       algorithms?: Array<Algorithm>;
-    } = {
-      issuer: this.issuer,
-      secretOrPrivateKey: this.secret,
     },
   ): T {
-    return this.client.verify(token, options);
+    return this.client.verify(token, {
+      issuer: options?.issuer ?? this.issuer,
+      audience: options?.audience ?? this.issuer,
+      secretOrPrivateKey: options?.secretOrPrivateKey ?? this.secret,
+      algorithms: options?.algorithms ?? [JWT_ALGORITHM],
+    });
   }
 
   decode<T extends object>(
     token: string,
-    options: {
-      issuer: string;
-      secretOrPrivateKey: string;
+    options?: {
+      issuer?: string;
+      audience?: string;
+      secretOrPrivateKey?: string;
       algorithms?: Array<Algorithm>;
-    } = {
-      issuer: this.issuer,
-      secretOrPrivateKey: this.secret,
     },
-  ): JwtPayloadWithClaims<T> {
-    return this.client.decode(token, options);
+  ): JwtPayload & T {
+    return this.client.decode(token, {
+      issuer: options?.issuer ?? this.issuer,
+      audience: options?.audience ?? this.issuer,
+      secretOrPrivateKey: options?.secretOrPrivateKey ?? this.secret,
+      algorithms: options?.algorithms ?? [JWT_ALGORITHM],
+    });
   }
 }

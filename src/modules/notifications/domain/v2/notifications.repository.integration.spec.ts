@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { type ILoggingService } from '@/logging/logging.interface';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { NotificationsRepositoryV2 } from '@/modules/notifications/domain/v2/notifications.repository';
@@ -6,7 +7,7 @@ import { NotificationType } from '@/modules/notifications/datasources/entities/n
 import type { INotificationsRepositoryV2 } from '@/modules/notifications/domain/v2/notifications.repository.interface';
 import { NotificationSubscription } from '@/modules/notifications/datasources/entities/notification-subscription.entity.db';
 import { upsertSubscriptionsDtoBuilder } from '@/modules/notifications/routes/v2/entities/__tests__/upsert-subscriptions.dto.builder';
-import { authPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
+import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { NotificationDevice } from '@/modules/notifications/datasources/entities/notification-devices.entity.db';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { DataSource, In, type EntityManager } from 'typeorm';
@@ -235,7 +236,7 @@ describe('NotificationsRepositoryV2', () => {
   describe('upsertSubscription()', () => {
     it('Should insert a new device when upserting a subscription', async () => {
       jest.spyOn(dataSource, 'transaction');
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const authPayload = new AuthPayload(authPayloadDto);
       const upsertSubscriptionsDto = upsertSubscriptionsDtoBuilder().build();
       await notificationsRepositoryService.upsertSubscriptions({
@@ -256,7 +257,7 @@ describe('NotificationsRepositoryV2', () => {
 
     it('Should remove subscriptions cache when upserting a subscription', async () => {
       jest.spyOn(dataSource, 'transaction');
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const authPayload = new AuthPayload(authPayloadDto);
       const upsertSubscriptionsDto = upsertSubscriptionsDtoBuilder().build();
 
@@ -309,8 +310,8 @@ describe('NotificationsRepositoryV2', () => {
 
     it('Should not remove other devices subscriptions cache when upserting a new subscription', async () => {
       jest.spyOn(dataSource, 'transaction');
-      const authPayloadDto_1 = authPayloadDtoBuilder().build();
-      const authPayloadDto_2 = authPayloadDtoBuilder().build();
+      const authPayloadDto_1 = siweAuthPayloadDtoBuilder().build();
+      const authPayloadDto_2 = siweAuthPayloadDtoBuilder().build();
       const authPayload_1 = new AuthPayload(authPayloadDto_1);
       const upsertSubscriptionsDto_1 = upsertSubscriptionsDtoBuilder().build();
       const authPayload_2 = new AuthPayload(authPayloadDto_2);
@@ -397,7 +398,7 @@ describe('NotificationsRepositoryV2', () => {
     });
 
     it('Should deletePreviousSubscriptions() when upserting a subscription', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const authPayload = new AuthPayload(authPayloadDto);
       const upsertSubscriptionsDto = upsertSubscriptionsDtoBuilder().build();
 
@@ -440,7 +441,7 @@ describe('NotificationsRepositoryV2', () => {
 
     it('Should upsert a new subscription object when upserting subscriptions', async () => {
       jest.spyOn(dataSource, 'transaction');
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const authPayload = new AuthPayload(authPayloadDto);
       const upsertSubscriptionsDto = upsertSubscriptionsDtoBuilder().build();
 
@@ -468,7 +469,7 @@ describe('NotificationsRepositoryV2', () => {
 
     it('Should upsert subscription notification types object when upserting subscriptions', async () => {
       jest.spyOn(dataSource, 'transaction');
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const authPayload = new AuthPayload(authPayloadDto);
       const upsertSubscriptionsDto = upsertSubscriptionsDtoBuilder().build();
 
@@ -547,7 +548,7 @@ describe('NotificationsRepositoryV2', () => {
               throw new Error('Error');
             });
 
-          const authPayloadDto = authPayloadDtoBuilder().build();
+          const authPayloadDto = siweAuthPayloadDtoBuilder().build();
           const authPayload = new AuthPayload(authPayloadDto);
           const upsertSubscriptionsDto =
             upsertSubscriptionsDtoBuilder().build();
@@ -587,7 +588,7 @@ describe('NotificationsRepositoryV2', () => {
 
   describe('getSafeSubscription()', () => {
     it('Should return a safe subscriptions successfully', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const authPayload = new AuthPayload(authPayloadDto);
       const upsertSubscriptionsDto = upsertSubscriptionsDtoBuilder().build();
 
@@ -608,7 +609,7 @@ describe('NotificationsRepositoryV2', () => {
       }
     });
     it('Should return an empty array if no subscriptions found', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const authPayload = new AuthPayload(authPayloadDto);
       const upsertSubscriptionsDto = upsertSubscriptionsDtoBuilder().build();
 
@@ -626,9 +627,9 @@ describe('NotificationsRepositoryV2', () => {
 
   describe('getSubscribersBySafe()', () => {
     it('Should get safe subscribers successfully', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const authPayload = new AuthPayload(authPayloadDto);
-      const secondAuthPayloadDto = authPayloadDtoBuilder().build();
+      const secondAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
       const secondAuthPayload = new AuthPayload(secondAuthPayloadDto);
       const upsertSubscriptionsDto = upsertSubscriptionsDtoBuilder().build();
 
@@ -663,9 +664,9 @@ describe('NotificationsRepositoryV2', () => {
     });
 
     it('Should cache safe subscribers successfully', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const authPayload = new AuthPayload(authPayloadDto);
-      const secondAuthPayloadDto = authPayloadDtoBuilder().build();
+      const secondAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
       const secondAuthPayload = new AuthPayload(secondAuthPayloadDto);
       const upsertSubscriptionsDto = upsertSubscriptionsDtoBuilder().build();
 
@@ -712,7 +713,7 @@ describe('NotificationsRepositoryV2', () => {
 
   describe('deleteSubscription()', () => {
     it('Should delete a subscription successfully', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const authPayload = new AuthPayload(authPayloadDto);
       const upsertSubscriptionsDto = upsertSubscriptionsDtoBuilder().build();
 
@@ -750,7 +751,7 @@ describe('NotificationsRepositoryV2', () => {
     });
 
     it('Should remove cache when deleting a subscription', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const authPayload = new AuthPayload(authPayloadDto);
       const upsertSubscriptionsDto = upsertSubscriptionsDtoBuilder().build();
 
@@ -808,7 +809,7 @@ describe('NotificationsRepositoryV2', () => {
     });
 
     it('Should throw NotFoundException if a subscription does not exist', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const authPayload = new AuthPayload(authPayloadDto);
       const upsertSubscriptionsDto = upsertSubscriptionsDtoBuilder().build();
 
@@ -836,7 +837,7 @@ describe('NotificationsRepositoryV2', () => {
     });
 
     it('Should not try to remove if a subscription does not exist', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const authPayload = new AuthPayload(authPayloadDto);
       const upsertSubscriptionsDto = upsertSubscriptionsDtoBuilder().build();
 
@@ -897,7 +898,7 @@ describe('NotificationsRepositoryV2', () => {
     });
 
     it('Should delete a device with its subscription', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const authPayload = new AuthPayload(authPayloadDto);
       const upsertSubscriptionsDto = upsertSubscriptionsDtoBuilder().build();
       await notificationsRepositoryService.upsertSubscriptions({
@@ -934,7 +935,7 @@ describe('NotificationsRepositoryV2', () => {
     });
 
     it('Should remove device subscriptions cache when deleting a device', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const authPayload = new AuthPayload(authPayloadDto);
       const upsertSubscriptionsDto = upsertSubscriptionsDtoBuilder().build();
       await notificationsRepositoryService.upsertSubscriptions({
@@ -989,7 +990,7 @@ describe('NotificationsRepositoryV2', () => {
 
   describe('deleteAllSubscriptions()', () => {
     it('Should delete all subscriptions successfully', async () => {
-      const authPayloadDto1 = authPayloadDtoBuilder().build();
+      const authPayloadDto1 = siweAuthPayloadDtoBuilder().build();
       const authPayload1 = new AuthPayload(authPayloadDto1);
       const upsertSubscriptionsDto1 = upsertSubscriptionsDtoBuilder().build();
       await notificationsRepositoryService.upsertSubscriptions({
@@ -997,7 +998,7 @@ describe('NotificationsRepositoryV2', () => {
         upsertSubscriptionsDto: upsertSubscriptionsDto1,
       });
 
-      const authPayloadDto2 = authPayloadDtoBuilder().build();
+      const authPayloadDto2 = siweAuthPayloadDtoBuilder().build();
       const authPayload2 = new AuthPayload(authPayloadDto2);
       const upsertSubscriptionsDto2 = upsertSubscriptionsDtoBuilder().build();
       await notificationsRepositoryService.upsertSubscriptions({
@@ -1072,7 +1073,7 @@ describe('NotificationsRepositoryV2', () => {
     });
 
     it('Should clear cache for all deleted subscriptions', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const authPayload = new AuthPayload(authPayloadDto);
       const upsertSubscriptionsDto = upsertSubscriptionsDtoBuilder().build();
       await notificationsRepositoryService.upsertSubscriptions({
@@ -1133,7 +1134,7 @@ describe('NotificationsRepositoryV2', () => {
     });
 
     it('Should only delete matching subscriptions', async () => {
-      const authPayloadDto1 = authPayloadDtoBuilder().build();
+      const authPayloadDto1 = siweAuthPayloadDtoBuilder().build();
       const authPayload1 = new AuthPayload(authPayloadDto1);
       const upsertSubscriptionsDto1 = upsertSubscriptionsDtoBuilder().build();
       await notificationsRepositoryService.upsertSubscriptions({
@@ -1141,7 +1142,7 @@ describe('NotificationsRepositoryV2', () => {
         upsertSubscriptionsDto: upsertSubscriptionsDto1,
       });
 
-      const authPayloadDto2 = authPayloadDtoBuilder().build();
+      const authPayloadDto2 = siweAuthPayloadDtoBuilder().build();
       const authPayload2 = new AuthPayload(authPayloadDto2);
       const upsertSubscriptionsDto2 = upsertSubscriptionsDtoBuilder().build();
       await notificationsRepositoryService.upsertSubscriptions({
@@ -1191,7 +1192,7 @@ describe('NotificationsRepositoryV2', () => {
 
     it('Should delete subscriptions with specific signerAddress when provided', async () => {
       const signerAddress = getAddress(faker.finance.ethereumAddress());
-      const authPayloadDto = authPayloadDtoBuilder()
+      const authPayloadDto = siweAuthPayloadDtoBuilder()
         .with('signer_address', signerAddress)
         .build();
       const authPayload = new AuthPayload(authPayloadDto);
@@ -1239,7 +1240,7 @@ describe('NotificationsRepositoryV2', () => {
     it('Should not delete subscriptions with different signerAddress when signerAddress is specified', async () => {
       const signerAddress1 = getAddress(faker.finance.ethereumAddress());
       const signerAddress2 = getAddress(faker.finance.ethereumAddress());
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const authPayload = new AuthPayload(authPayloadDto);
       const upsertSubscriptionsDto = upsertSubscriptionsDtoBuilder().build();
 
