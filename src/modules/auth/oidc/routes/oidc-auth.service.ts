@@ -32,6 +32,7 @@ export class OidcAuthService {
   private readonly maxValidityPeriodInSeconds: number;
   private readonly stateTtlMs: number;
   private readonly postLoginRedirectUri: string;
+  private readonly allowedRedirectDomain: string | undefined;
 
   constructor(
     @Inject(IAuthRepository)
@@ -50,6 +51,9 @@ export class OidcAuthService {
       this.configurationService.getOrThrow<number>('auth.stateTtlMs');
     this.postLoginRedirectUri = this.configurationService.getOrThrow<string>(
       'auth.postLoginRedirectUri',
+    );
+    this.allowedRedirectDomain = this.configurationService.get<string>(
+      'auth.allowedRedirectDomain',
     );
   }
 
@@ -159,23 +163,37 @@ export class OidcAuthService {
 
   /**
    * Resolves {@link redirectUrl} against the configured post-login URI and
-   * validates that it shares the same origin. Returns the resolved absolute URL.
+   * validates the target hostname. When {@link allowedRedirectDomain} is set,
+   * the target must be on that domain (or a subdomain of it). Otherwise, the
+   * target must share the exact origin with {@link postLoginRedirectUri}.
    *
-   * @throws {BadRequestException} On origin mismatch or malformed input.
+   * @throws {BadRequestException} On domain/origin mismatch or malformed input.
    */
   private resolveAndValidateRedirectUrl(redirectUrl: string): string {
     try {
-      const allowed = new URL(this.postLoginRedirectUri);
       const target = new URL(redirectUrl, this.postLoginRedirectUri);
 
-      if (target.origin !== allowed.origin) {
+      if (!this.isAllowedRedirectUrl(target)) {
         throw new Error();
       }
+
       return target.toString();
     } catch {
       throw new BadRequestException(
-        'Invalid redirect URL: must be properly formed and same-origin as post-login URI',
+        'Invalid redirect URL: must be properly formed and on an allowed domain',
       );
     }
+  }
+
+  private isAllowedRedirectUrl(target: URL): boolean {
+    if (this.allowedRedirectDomain) {
+      const suffix = this.allowedRedirectDomain.startsWith('.')
+        ? this.allowedRedirectDomain
+        : `.${this.allowedRedirectDomain}`;
+      return (
+        target.hostname === suffix.slice(1) || target.hostname.endsWith(suffix)
+      );
+    }
+    return target.origin === new URL(this.postLoginRedirectUri).origin;
   }
 }
