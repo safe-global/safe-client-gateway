@@ -437,6 +437,22 @@ describe('OidcAuthService', () => {
         );
         expect(decoded.redirectUrl).toBe(redirectUrl);
       });
+
+      it('should reject a URL with userinfo even if hostname matches', () => {
+        expect(() =>
+          domainTarget.createOidcAuthorizationRequest(
+            `https://attacker.com@${allowedDomain}/phish`,
+          ),
+        ).toThrow(BadRequestException);
+      });
+
+      it('should reject a URL with a port', () => {
+        expect(() =>
+          domainTarget.createOidcAuthorizationRequest(
+            `https://${allowedDomain}:8080/settings`,
+          ),
+        ).toThrow(BadRequestException);
+      });
     });
   });
 
