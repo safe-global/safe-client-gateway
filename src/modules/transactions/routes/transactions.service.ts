@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { MultisigTransaction as DomainMultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
 import { SafeRepository } from '@/modules/safe/domain/safe.repository';
@@ -24,6 +25,7 @@ import { ModuleTransaction } from '@/modules/transactions/routes/entities/module
 import { MultisigTransaction } from '@/modules/transactions/routes/entities/multisig-transaction.entity';
 import { PreviewTransactionDto } from '@/modules/transactions/routes/entities/preview-transaction.dto.entity';
 import { QueuedItem } from '@/modules/transactions/routes/entities/queued-item.entity';
+import { SafeQueuedTransaction } from '@/modules/transactions/routes/entities/safe-queued-transaction.entity';
 import { TransactionDetails } from '@/modules/transactions/routes/entities/transaction-details/transaction-details.entity';
 import { TransactionItemPage } from '@/modules/transactions/routes/entities/transaction-item-page.entity';
 import { TransactionPreview } from '@/modules/transactions/routes/entities/transaction-preview.entity';
@@ -43,6 +45,7 @@ import {
   parseEther,
   parseUnits,
 } from 'viem';
+import { chunk } from 'lodash';
 import { LoggingService, ILoggingService } from '@/logging/logging.interface';
 import { MultisigTransactionNoteMapper } from '@/modules/transactions/routes/mappers/multisig-transactions/multisig-transaction-note.mapper';
 import { LogType } from '@/domain/common/entities/log-type.entity';
@@ -52,16 +55,28 @@ import { TXSCreationTransaction } from '@/modules/transactions/routes/entities/t
 import { ITokenRepository } from '@/modules/tokens/domain/token.repository.interface';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { IDataDecoderRepository } from '@/modules/data-decoder/domain/v2/data-decoder.repository.interface';
+import type { Caip10Addresses } from '@/modules/safe/routes/entities/caip-10-addresses.entity';
+import { asError } from '@/logging/utils';
 import type { Address } from 'viem';
+import crypto from 'crypto';
+import {
+  CacheService,
+  ICacheService,
+} from '@/datasources/cache/cache.service.interface';
+import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 
 @Injectable()
 export class TransactionsService {
   private readonly isFilterValueParsingEnabled: boolean;
+  private readonly maxOverviews: number;
+  private readonly multiSafeQueueCacheTTLSeconds: number;
+  private static readonly MULTI_SAFE_QUEUE_BATCH_SIZE = 3;
 
   constructor(
     @Inject(ISafeRepository) private readonly safeRepository: SafeRepository,
     @Inject(IDataDecoderRepository)
     private readonly dataDecoderRepository: IDataDecoderRepository,
+    @Inject(CacheService) private readonly cacheService: ICacheService,
     private readonly multisigTransactionMapper: MultisigTransactionMapper,
     private readonly transferMapper: TransferMapper,
     private readonly moduleTransactionMapper: ModuleTransactionMapper,
@@ -80,6 +95,12 @@ export class TransactionsService {
   ) {
     this.isFilterValueParsingEnabled = this.configurationService.getOrThrow(
       'features.filterValueParsing',
+    );
+    this.maxOverviews = this.configurationService.getOrThrow(
+      'mappings.safe.maxOverviews',
+    );
+    this.multiSafeQueueCacheTTLSeconds = this.configurationService.getOrThrow<number>(
+      'expirationTimeInSeconds.multiSafeQueue',
     );
   }
 
@@ -629,6 +650,114 @@ export class TransactionsService {
   }): Promise<TXSCreationTransaction> {
     const tx = await this.safeRepository.getCreationTransaction(args);
     return new TXSCreationTransaction(tx);
+  }
+
+  async getMultiSafeTransactionQueue(args: {
+    addresses: Caip10Addresses;
+    trusted: boolean;
+    limit: number;
+  }): Promise<Array<SafeQueuedTransaction>> {
+    const cacheDir = new CacheDir(
+      this.buildMultiSafeQueueCacheKey(args),
+      '',
+    );
+
+    const cached = await this.cacheService.hGet(cacheDir);
+    if (cached) {
+      return JSON.parse(cached);
+    }
+
+    const results = await this._computeMultiSafeQueue(args);
+
+    await this.cacheService.hSet(
+      cacheDir,
+      JSON.stringify(results),
+      this.multiSafeQueueCacheTTLSeconds,
+    );
+
+    return results;
+  }
+
+  private async _computeMultiSafeQueue(args: {
+    addresses: Caip10Addresses;
+    trusted: boolean;
+    limit: number;
+  }): Promise<Array<SafeQueuedTransaction>> {
+    const limitedSafes = args.addresses.slice(0, this.maxOverviews);
+    const transactions: Array<SafeQueuedTransaction> = [];
+
+    for (const batch of chunk(limitedSafes, TransactionsService.MULTI_SAFE_QUEUE_BATCH_SIZE)) {
+      const settledResults = await Promise.allSettled(
+        batch.map(async ({ chainId, address }) => {
+          const safe = await this.safeRepository.getSafe({
+            chainId,
+            address,
+          });
+          const queue = await this.safeRepository.getTransactionQueue({
+            chainId,
+            safe,
+            limit: args.limit,
+            offset: 0,
+            trusted: args.trusted,
+          });
+
+          if (queue.results.length === 0) return [];
+
+          await this.multisigTransactionMapper.prefetchAddressInfos({
+            chainId,
+            transactions: queue.results,
+          });
+
+          return Promise.all(
+            queue.results.map(async (tx) => {
+              const dataDecoded =
+                await this.dataDecoderRepository.getTransactionDataDecoded({
+                  chainId,
+                  transaction: tx,
+                });
+              const transaction =
+                await this.multisigTransactionMapper.mapTransaction(
+                  chainId,
+                  tx,
+                  safe,
+                  dataDecoded,
+                );
+              return {
+                safeAddress: address,
+                chainId,
+                transaction,
+              } as SafeQueuedTransaction;
+            }),
+          );
+        }),
+      );
+
+      for (const result of settledResults) {
+        if (result.status === 'rejected') {
+          this.loggingService.warn(
+            `Error fetching multi-safe queue: ${asError(result.reason)}`,
+          );
+        } else {
+          transactions.push(...result.value);
+        }
+      }
+    }
+
+    return transactions
+      .sort((a, b) => a.transaction.timestamp - b.transaction.timestamp)
+      .slice(0, args.limit);
+  }
+
+  private buildMultiSafeQueueCacheKey(args: {
+    addresses: Caip10Addresses;
+    trusted: boolean;
+    limit: number;
+  }): string {
+    const addressHash = crypto
+      .createHash('sha256')
+      .update(JSON.stringify(args.addresses))
+      .digest('hex');
+    return `multi_safe_queue:${addressHash}:${args.trusted}:${args.limit}`;
   }
 
   /**

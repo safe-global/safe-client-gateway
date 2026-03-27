@@ -238,6 +238,9 @@ export default () => ({
     zerionPositions: parseInt(
       process.env.EXPIRATION_TIME_POSITIONS_SECONDS ?? `${300}`,
     ),
+    multiSafeQueue: parseInt(
+      process.env.EXPIRATION_TIME_MULTI_SAFE_QUEUE_SECONDS ?? `${10}`,
+    ),
     notFound: {
       default: parseInt(
         process.env.DEFAULT_NOT_FOUND_EXPIRE_TIME_SECONDS ?? `${30}`,
