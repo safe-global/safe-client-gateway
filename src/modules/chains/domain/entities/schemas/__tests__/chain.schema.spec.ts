@@ -1,7 +1,6 @@
 import { balancesProviderBuilder } from '@/modules/chains/domain/entities/__tests__/balances-provider.builder';
 import { beaconChainExplorerUriTemplateBuilder } from '@/modules/chains/domain/entities/__tests__/beacon-chain-explorer-uri-template.builder';
 import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
-import { contractAddressesBuilder } from '@/modules/chains/domain/entities/__tests__/contract-addresses.builder';
 import { gasPriceFixedEIP1559Builder } from '@/modules/chains/domain/entities/__tests__/gas-price-fixed-eip-1559.builder';
 import { gasPriceFixedBuilder } from '@/modules/chains/domain/entities/__tests__/gas-price-fixed.builder';
 import { gasPriceOracleBuilder } from '@/modules/chains/domain/entities/__tests__/gas-price-oracle.builder';
@@ -21,13 +20,11 @@ import {
   PricesProviderSchema,
   RpcUriSchema,
   ThemeSchema,
-  ContractAddressesSchema,
   ChainLenientPageSchema,
   BeaconChainExplorerUriTemplateSchema,
 } from '@/modules/chains/domain/entities/schemas/chain.schema';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import { faker } from '@faker-js/faker';
-import { type Address, getAddress } from 'viem';
 
 describe('Chain schemas', () => {
   describe('NativeCurrencySchema', () => {
@@ -451,49 +448,6 @@ describe('Chain schemas', () => {
     });
   });
 
-  describe('ContractAddressesSchema', () => {
-    it('should validate a valid ContractAddresses', () => {
-      const contractAddresses = contractAddressesBuilder().build();
-
-      const result = ContractAddressesSchema.safeParse(contractAddresses);
-
-      expect(result.success).toBe(true);
-    });
-
-    [
-      'safeSingletonAddress' as const,
-      'safeProxyFactoryAddress' as const,
-      'multiSendAddress' as const,
-      'multiSendCallOnlyAddress' as const,
-      'fallbackHandlerAddress' as const,
-      'signMessageLibAddress' as const,
-      'createCallAddress' as const,
-      'simulateTxAccessorAddress' as const,
-      'safeWebAuthnSignerFactoryAddress' as const,
-    ].forEach((field) => {
-      it(`should checksum the ${field}`, () => {
-        const contractAddresses = contractAddressesBuilder()
-          .with(field, faker.finance.ethereumAddress().toLowerCase() as Address)
-          .build();
-
-        const result = ContractAddressesSchema.safeParse(contractAddresses);
-
-        expect(result.success && result.data[field]).toBe(
-          getAddress(contractAddresses[field]!),
-        );
-      });
-
-      it(`should allow undefined ${field} and default to null`, () => {
-        const contractAddresses = contractAddressesBuilder().build();
-        delete contractAddresses[field];
-
-        const result = ContractAddressesSchema.safeParse(contractAddresses);
-
-        expect(result.success && result.data[field]).toBe(null);
-      });
-    });
-  });
-
   describe('ChainSchema', () => {
     it('should validate a valid chain', () => {
       const chain = chainBuilder().build();
@@ -507,7 +461,6 @@ describe('Chain schemas', () => {
     // @see https://github.com/safe-global/safe-config-service/pull/1339
     it('should default zk to false', () => {
       const chain = chainBuilder().build();
-      // @ts-expect-error - zk is expected to be a boolean
       delete chain.zk;
 
       const result = ChainSchema.safeParse(chain);
@@ -581,7 +534,6 @@ describe('Chain schemas', () => {
       ['publicRpcUri' as const],
       ['blockExplorerUriTemplate' as const],
       ['beaconChainExplorerUriTemplate' as const],
-      ['contractAddresses' as const],
       ['nativeCurrency' as const],
       ['pricesProvider' as const],
       ['balancesProvider' as const],

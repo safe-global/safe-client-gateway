@@ -111,7 +111,6 @@ describe('Chains Controller', () => {
               disabledWallets: chainsResponse.results[0].disabledWallets,
               features: chainsResponse.results[0].features,
               balancesProvider: chainsResponse.results[0].balancesProvider,
-              contractAddresses: chainsResponse.results[0].contractAddresses,
               recommendedMasterCopyVersion:
                 chainsResponse.results[0].recommendedMasterCopyVersion,
             },
@@ -141,7 +140,6 @@ describe('Chains Controller', () => {
               disabledWallets: chainsResponse.results[1].disabledWallets,
               features: chainsResponse.results[1].features,
               balancesProvider: chainsResponse.results[1].balancesProvider,
-              contractAddresses: chainsResponse.results[1].contractAddresses,
               recommendedMasterCopyVersion:
                 chainsResponse.results[1].recommendedMasterCopyVersion,
             },
@@ -230,7 +228,6 @@ describe('Chains Controller', () => {
               disabledWallets: chainsResponse.results[0].disabledWallets,
               features: chainsResponse.results[0].features,
               balancesProvider: chainsResponse.results[0].balancesProvider,
-              contractAddresses: chainsResponse.results[0].contractAddresses,
               recommendedMasterCopyVersion:
                 chainsResponse.results[0].recommendedMasterCopyVersion,
             },
@@ -260,7 +257,6 @@ describe('Chains Controller', () => {
               disabledWallets: chainsResponse.results[1].disabledWallets,
               features: chainsResponse.results[1].features,
               balancesProvider: chainsResponse.results[1].balancesProvider,
-              contractAddresses: chainsResponse.results[1].contractAddresses,
               recommendedMasterCopyVersion:
                 chainsResponse.results[1].recommendedMasterCopyVersion,
             },
@@ -335,7 +331,6 @@ describe('Chains Controller', () => {
           ? getAddress(chainDomain.ensRegistryAddress)
           : chainDomain.ensRegistryAddress,
         balancesProvider: chainDomain.balancesProvider,
-        contractAddresses: chainDomain.contractAddresses,
         recommendedMasterCopyVersion: chainDomain.recommendedMasterCopyVersion,
       };
       networkService.get.mockResolvedValueOnce({

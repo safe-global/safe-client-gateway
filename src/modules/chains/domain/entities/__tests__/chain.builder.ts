@@ -11,7 +11,6 @@ import { themeBuilder } from '@/modules/chains/domain/entities/__tests__/theme.b
 import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
 import { pricesProviderBuilder } from '@/modules/chains/domain/entities/__tests__/prices-provider.builder';
 import { balancesProviderBuilder } from '@/modules/chains/domain/entities/__tests__/balances-provider.builder';
-import { contractAddressesBuilder } from '@/modules/chains/domain/entities/__tests__/contract-addresses.builder';
 import { beaconChainExplorerUriTemplateBuilder } from '@/modules/chains/domain/entities/__tests__/beacon-chain-explorer-uri-template.builder';
 import type { Address } from 'viem';
 
@@ -36,7 +35,6 @@ export function chainBuilder(): IBuilder<Chain> {
     .with('nativeCurrency', nativeCurrencyBuilder().build())
     .with('pricesProvider', pricesProviderBuilder().build())
     .with('balancesProvider', balancesProviderBuilder().build())
-    .with('contractAddresses', contractAddressesBuilder().build())
     .with('transactionService', faker.internet.url({ appendSlash: false }))
     .with('vpcTransactionService', faker.internet.url({ appendSlash: false }))
     .with('theme', themeBuilder().build())
