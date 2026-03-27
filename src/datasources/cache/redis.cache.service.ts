@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable, OnModuleDestroy } from '@nestjs/common';
 import { RedisClientType } from '@/datasources/cache/cache.module';
 import { ICacheService } from '@/datasources/cache/cache.service.interface';
@@ -67,17 +68,21 @@ export class RedisCacheService
     );
 
     try {
-      await this.client.hSet(key, cacheDir.field, value);
-      // NX - Set expiry only when the key has no expiry
-      // See https://redis.io/commands/expire/
-      await this.client.expire(key, expirationTime, 'NX');
+      // Pipeline hSet + expire into a single round-trip
+      await this.client
+        .multi()
+        .hSet(key, cacheDir.field, value)
+        // NX - Set expiry only when the key has no expiry
+        // See https://redis.io/commands/expire/
+        .expire(key, expirationTime, 'NX')
+        .exec();
     } catch (error) {
       this.loggingService.error({
         type: LogType.CacheError,
         source: 'RedisCacheService',
         event: `Error setting/expiring ${key}:${cacheDir.field}`,
       });
-      await this.client.unlink(key);
+      await this.client.unlink(key).catch(() => {});
       throw error;
     }
   }
@@ -89,16 +94,20 @@ export class RedisCacheService
 
   async deleteByKey(key: string): Promise<number> {
     const keyWithPrefix = this._prefixKey(key);
-    // see https://redis.io/commands/unlink/
-    const result = await this.client.unlink(keyWithPrefix);
-
-    await this.hSet(
-      new CacheDir(`invalidationTimeMs:${key}`, ''),
-      Date.now().toString(),
+    const invalidationKey = this._prefixKey(`invalidationTimeMs:${key}`);
+    const expirationTime = this.enforceMaxRedisTTL(
       this.defaultExpirationTimeInSeconds,
-      0,
     );
-    return result;
+
+    const results = await this.client
+      .multi()
+      .unlink(keyWithPrefix)
+      .hSet(invalidationKey, '', Date.now().toString())
+      .expire(invalidationKey, expirationTime, 'NX')
+      .exec();
+
+    const unlinkResult = results[0];
+    return typeof unlinkResult === 'number' ? unlinkResult : 0;
   }
 
   async increment(

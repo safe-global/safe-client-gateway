@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { MultisigTransaction as DomainMultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
 import { SafeRepository } from '@/modules/safe/domain/safe.repository';
@@ -233,14 +234,16 @@ export class TransactionsService {
         offset: args.paginationData.offset,
       });
 
-    const safeInfo = await this.safeRepository.getSafe({
-      chainId: args.chainId,
-      address: args.safeAddress,
-    });
-    await this.multisigTransactionMapper.prefetchAddressInfos({
-      chainId: args.chainId,
-      transactions: domainTransactions.results,
-    });
+    const [safeInfo] = await Promise.all([
+      this.safeRepository.getSafe({
+        chainId: args.chainId,
+        address: args.safeAddress,
+      }),
+      this.multisigTransactionMapper.prefetchAddressInfos({
+        chainId: args.chainId,
+        transactions: domainTransactions.results,
+      }),
+    ]);
 
     const dataDecoded = await Promise.all(
       domainTransactions.results.map((domainTransaction) => {

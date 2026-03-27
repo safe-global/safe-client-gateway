@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
@@ -6,6 +7,13 @@ import type { RedisClientType } from '@/datasources/cache/cache.module';
 import { fakeJson } from '@/__tests__/faker';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import clearAllMocks = jest.clearAllMocks;
+
+const multiMock = {
+  hSet: jest.fn().mockReturnThis(),
+  expire: jest.fn().mockReturnThis(),
+  unlink: jest.fn().mockReturnThis(),
+  exec: jest.fn().mockResolvedValue([]),
+};
 
 const redisClientTypeMock = {
   isReady: true,
@@ -16,6 +24,7 @@ const redisClientTypeMock = {
   unlink: jest.fn(),
   quit: jest.fn(),
   scanIterator: jest.fn(),
+  multi: jest.fn().mockReturnValue(multiMock),
 } as unknown as jest.MockedObjectDeep<RedisClientType>;
 
 const mockLoggingService: jest.MockedObjectDeep<ILoggingService> = {
@@ -68,16 +77,18 @@ describe('RedisCacheService with a Key Prefix', () => {
 
     await redisCacheService.hSet(cacheDir, value, expireTime, 0);
 
-    expect(redisClientTypeMock.hSet).toHaveBeenCalledWith(
+    expect(redisClientTypeMock.multi).toHaveBeenCalled();
+    expect(multiMock.hSet).toHaveBeenCalledWith(
       `${keyPrefix}-${cacheDir.key}`,
       cacheDir.field,
       value,
     );
-    expect(redisClientTypeMock.expire).toHaveBeenCalledWith(
+    expect(multiMock.expire).toHaveBeenCalledWith(
       `${keyPrefix}-${cacheDir.key}`,
       expireTime,
       'NX',
     );
+    expect(multiMock.exec).toHaveBeenCalled();
   });
 
   it('getting a key should get with prefix', async () => {
@@ -97,19 +108,37 @@ describe('RedisCacheService with a Key Prefix', () => {
     jest.useFakeTimers();
     const now = jest.now();
     const key = faker.string.alphanumeric();
+    multiMock.exec.mockResolvedValueOnce([1, 1, true]);
 
     await redisCacheService.deleteByKey(key);
 
-    expect(redisClientTypeMock.hSet).toHaveBeenCalledWith(
+    expect(redisClientTypeMock.multi).toHaveBeenCalled();
+    expect(multiMock.unlink).toHaveBeenCalledWith(`${keyPrefix}-${key}`);
+    expect(multiMock.hSet).toHaveBeenCalledWith(
       `${keyPrefix}-invalidationTimeMs:${key}`,
       '',
       now.toString(),
     );
-    expect(redisClientTypeMock.expire).toHaveBeenCalledWith(
+    expect(multiMock.expire).toHaveBeenCalledWith(
       `${keyPrefix}-invalidationTimeMs:${key}`,
       defaultExpirationTimeInSeconds,
       'NX',
     );
+    expect(multiMock.exec).toHaveBeenCalled();
     jest.useRealTimers();
+  });
+
+  it('deleteByKey should return 0 if the pipeline unlink result is not a number', async () => {
+    multiMock.exec.mockResolvedValueOnce([
+      new Error('Pipeline error'),
+      1,
+      true,
+    ]);
+
+    const result = await redisCacheService.deleteByKey(
+      faker.string.alphanumeric(),
+    );
+
+    expect(result).toBe(0);
   });
 });

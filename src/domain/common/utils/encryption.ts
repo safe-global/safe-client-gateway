@@ -1,9 +1,28 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import {
   createCipheriv,
   createDecipheriv,
   randomBytes,
   scryptSync,
 } from 'crypto';
+import { MAX_DERIVED_KEY_CACHE_SIZE } from '@/datasources/cache/constants';
+
+const derivedKeyCache = new Map<string, Buffer>();
+
+function getDerivedKey(encryptionKey: string, salt: string): Buffer {
+  // Length-prefix the key to avoid collisions e.g. ("a:b","c") vs ("a","b:c")
+  const cacheKey = `${encryptionKey.length}:${encryptionKey}:${salt}`;
+  const cached = derivedKeyCache.get(cacheKey);
+  if (cached) {
+    return cached;
+  }
+  const derived = scryptSync(encryptionKey, Buffer.from(salt, 'utf8'), 32);
+  if (derivedKeyCache.size >= MAX_DERIVED_KEY_CACHE_SIZE) {
+    derivedKeyCache.delete(derivedKeyCache.keys().next().value!);
+  }
+  derivedKeyCache.set(cacheKey, derived);
+  return derived;
+}
 
 /**
  * Encrypts data using AES-256-GCM encryption.
@@ -25,8 +44,7 @@ export function encryptData<T>(
   }
 
   try {
-    const saltBuffer = Buffer.from(salt, 'utf8');
-    const key = scryptSync(encryptionKey, saltBuffer, 32);
+    const key = getDerivedKey(encryptionKey, salt);
     const iv = randomBytes(16);
     const cipher = createCipheriv('aes-256-gcm', key, iv);
     const dataString = JSON.stringify(data);
@@ -63,8 +81,7 @@ export function decryptData<T>(
   }
 
   try {
-    const saltBuffer = Buffer.from(salt, 'utf8');
-    const key = scryptSync(encryptionKey, saltBuffer, 32);
+    const key = getDerivedKey(encryptionKey, salt);
     const buffer = Buffer.from(encryptedData, 'base64');
     const iv = buffer.subarray(0, 16);
     const authTag = buffer.subarray(16, 32);
