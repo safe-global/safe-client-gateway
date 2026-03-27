@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { randomBytes } from 'node:crypto';
-import {
-  BadRequestException,
-  Inject,
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import {
   assertExpirationTime,
   getMaxExpirationTime,
 } from '@/modules/auth/utils/token-expiration.utils';
+import {
+  getRedirectConfig,
+  resolveAndValidateRedirectUrl,
+  type RedirectConfig,
+} from '@/modules/auth/utils/auth-redirect.helper';
 import { IAuthRepository } from '@/modules/auth/domain/auth.repository.interface';
 import { AuthMethod } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { IConfigurationService } from '@/config/configuration.service.interface';
@@ -31,9 +31,7 @@ type OidcAuthTokenResponse = {
 export class OidcAuthService {
   private readonly maxValidityPeriodInSeconds: number;
   private readonly stateTtlMs: number;
-  private readonly postLoginRedirectUri: string;
-  private readonly allowedRedirectDomain: string | undefined;
-  private readonly isProduction: boolean;
+  private readonly redirectConfig: RedirectConfig;
 
   constructor(
     @Inject(IAuthRepository)
@@ -50,15 +48,7 @@ export class OidcAuthService {
     );
     this.stateTtlMs =
       this.configurationService.getOrThrow<number>('auth.stateTtlMs');
-    this.postLoginRedirectUri = this.configurationService.getOrThrow<string>(
-      'auth.postLoginRedirectUri',
-    );
-    this.allowedRedirectDomain = this.configurationService.get<string>(
-      'auth.allowedRedirectDomain',
-    );
-    this.isProduction = this.configurationService.getOrThrow<boolean>(
-      'application.isProduction',
-    );
+    this.redirectConfig = getRedirectConfig(this.configurationService);
   }
 
   public async authenticateWithOidc(
@@ -126,7 +116,7 @@ export class OidcAuthService {
     stateMaxAge: number;
   } {
     const resolvedRedirectUrl = redirectUrl
-      ? this.resolveAndValidateRedirectUrl(redirectUrl)
+      ? resolveAndValidateRedirectUrl(this.redirectConfig, redirectUrl)
       : undefined;
 
     const statePayload = {
@@ -150,10 +140,13 @@ export class OidcAuthService {
 
   public getPostLoginRedirectUri(state?: string): string {
     if (!state) {
-      return this.postLoginRedirectUri;
+      return this.redirectConfig.postLoginRedirectUri;
     }
 
-    return this.decodeState(state).redirectUrl || this.postLoginRedirectUri;
+    return (
+      this.decodeState(state).redirectUrl ||
+      this.redirectConfig.postLoginRedirectUri
+    );
   }
 
   private decodeState(state: string): OidcState {
@@ -163,57 +156,5 @@ export class OidcAuthService {
     } catch {
       throw new UnauthorizedException('Invalid OAuth state');
     }
-  }
-
-  /**
-   * Resolves {@link redirectUrl} against the configured post-login URI and
-   * validates the target hostname. When {@link allowedRedirectDomain} is set,
-   * the target must be on that domain (or a subdomain of it). Otherwise, the
-   * target must share the exact origin with {@link postLoginRedirectUri}.
-   * ({@link allowedRedirectDomain} is allowed only on non-production
-   * environments to enable testing against custom setups.)
-   *
-   * @throws {BadRequestException} On domain/origin mismatch or malformed input.
-   */
-  private resolveAndValidateRedirectUrl(redirectUrl: string): string {
-    try {
-      const target = new URL(redirectUrl, this.postLoginRedirectUri);
-
-      if (!this.isAllowedRedirectUrl(target)) {
-        throw new Error();
-      }
-
-      return target.toString();
-    } catch {
-      throw new BadRequestException(
-        'Invalid redirect URL: must be properly formed and on an allowed domain',
-      );
-    }
-  }
-
-  private isAllowedRedirectUrl(target: URL): boolean {
-    if (!this.isProduction && this.allowedRedirectDomain) {
-      /*
-       * Reject non-HTTPS schemes, URLs with userinfo
-       * (e.g. https://attacker.com@allowed.dev), or non-default ports to
-       * prevent protocol downgrades, credential-based attacks, and restrict
-       * redirects to standard HTTPS endpoints.
-       */
-      if (
-        target.protocol !== 'https:' ||
-        target.username ||
-        target.password ||
-        target.port
-      ) {
-        return false;
-      }
-      const suffix = this.allowedRedirectDomain.startsWith('.')
-        ? this.allowedRedirectDomain
-        : `.${this.allowedRedirectDomain}`;
-      return (
-        target.hostname === suffix.slice(1) || target.hostname.endsWith(suffix)
-      );
-    }
-    return target.origin === new URL(this.postLoginRedirectUri).origin;
   }
 }

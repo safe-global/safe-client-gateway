@@ -31,13 +31,24 @@ const relayRulesValidator = z
   )
   .optional();
 
+const DomainSchema = z.string().refine(
+  (val) => {
+    try {
+      return new URL(`https://${val}`).hostname === val;
+    } catch {
+      return false;
+    }
+  },
+  { message: 'Must be a valid domain (e.g. tenant.auth0.com)' },
+);
+
 export const RootConfigurationSchema = z
   .object({
     AUTH_TOKEN: z.string(),
-    AUTH_POST_LOGIN_REDIRECT_URI: z.url().optional(),
-    AUTH_ALLOWED_REDIRECT_DOMAIN: z.string().optional(),
+    AUTH_POST_LOGIN_REDIRECT_URI: z.url(),
+    AUTH_ALLOWED_REDIRECT_DOMAIN: DomainSchema.optional(),
     AUTH0_API_AUDIENCE: z.string().optional(),
-    AUTH0_DOMAIN: z.string().optional(),
+    AUTH0_DOMAIN: DomainSchema.optional(),
     AUTH0_CLIENT_ID: z.string().optional(),
     AUTH0_CLIENT_SECRET: z.string().optional(),
     AUTH0_REDIRECT_URI: z.url().optional(),

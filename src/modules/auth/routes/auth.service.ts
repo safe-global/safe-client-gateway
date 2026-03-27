@@ -1,9 +1,16 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
+import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import {
   assertExpirationTime,
   getMaxExpirationTime,
 } from '@/modules/auth/utils/token-expiration.utils';
+import {
+  buildAuth0LogoutBaseUrl,
+  getRedirectConfig,
+  resolveAndValidateRedirectUrl,
+  type RedirectConfig,
+} from '@/modules/auth/utils/auth-redirect.helper';
 import { SiweDto } from '@/modules/auth/routes/entities/siwe.dto.entity';
 import { ISiweRepository } from '@/modules/siwe/domain/siwe.repository.interface';
 import { IAuthRepository } from '@/modules/auth/domain/auth.repository.interface';
@@ -21,6 +28,8 @@ type AuthTokenResponse = {
 @Injectable()
 export class AuthService {
   private readonly maxValidityPeriodInSeconds: number;
+  private readonly auth0LogoutBaseUrl: string | null;
+  private readonly redirectConfig: RedirectConfig;
 
   constructor(
     @Inject(ISiweRepository)
@@ -31,10 +40,16 @@ export class AuthService {
     private readonly configurationService: IConfigurationService,
     @Inject(IUsersRepository)
     private readonly usersRepository: IUsersRepository,
+    @Inject(LoggingService)
+    private readonly loggingService: ILoggingService,
   ) {
     this.maxValidityPeriodInSeconds = this.configurationService.getOrThrow(
       'auth.maxValidityPeriodSeconds',
     );
+    this.auth0LogoutBaseUrl = buildAuth0LogoutBaseUrl(
+      this.configurationService,
+    );
+    this.redirectConfig = getRedirectConfig(this.configurationService);
   }
 
   public async getNonce(): Promise<{
@@ -86,5 +101,33 @@ export class AuthService {
     accessToken: string,
   ): JwtPayloadWithClaims<AuthPayloadDto> {
     return this.authRepository.decodeToken(accessToken);
+  }
+
+  public getLogoutRedirectUrl(
+    accessToken: string | undefined,
+    redirectUrl?: string,
+  ): string {
+    const resolvedRedirect = resolveAndValidateRedirectUrl(
+      this.redirectConfig,
+      redirectUrl,
+    );
+
+    if (accessToken && this.auth0LogoutBaseUrl) {
+      try {
+        const payload =
+          this.authRepository.decodeTokenWithoutVerification(accessToken);
+        if (payload.auth_method === AuthMethod.Oidc) {
+          const url = new URL(this.auth0LogoutBaseUrl);
+          url.searchParams.set('returnTo', resolvedRedirect);
+          return url.toString();
+        }
+      } catch (error) {
+        this.loggingService.debug(
+          `Failed to decode access token during logout: ${error}`,
+        );
+      }
+    }
+
+    return resolvedRedirect;
   }
 }

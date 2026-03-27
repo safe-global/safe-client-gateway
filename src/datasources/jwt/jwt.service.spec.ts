@@ -9,6 +9,7 @@ const jwtClientMock: jest.MockedObjectDeep<JwtClient> = jest.mocked({
   sign: jest.fn(),
   verify: jest.fn(),
   decode: jest.fn(),
+  decodeWithoutVerification: jest.fn(),
 });
 
 describe('JwtService', () => {
@@ -201,6 +202,19 @@ describe('JwtService', () => {
         secretOrPrivateKey: customSecret,
         algorithms: ['RS256'],
       });
+    });
+  });
+
+  describe('decodeWithoutVerification', () => {
+    it('should delegate to client without any options', () => {
+      const token = faker.string.alphanumeric();
+
+      service.decodeWithoutVerification(token);
+
+      expect(jwtClientMock.decodeWithoutVerification).toHaveBeenCalledTimes(1);
+      expect(jwtClientMock.decodeWithoutVerification).toHaveBeenCalledWith(
+        token,
+      );
     });
   });
 });

@@ -42,4 +42,11 @@ export class AuthRepository implements IAuthRepository {
     const decoded = this.jwtService.decode(accessToken);
     return AuthPayloadWithClaimsDtoSchema.parse(decoded);
   }
+
+  decodeTokenWithoutVerification(
+    accessToken: string,
+  ): JwtPayloadWithClaims<AuthPayloadDto> {
+    const decoded = this.jwtService.decodeWithoutVerification(accessToken);
+    return AuthPayloadWithClaimsDtoSchema.parse(decoded);
+  }
 }

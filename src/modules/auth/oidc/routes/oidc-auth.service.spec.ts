@@ -404,43 +404,6 @@ describe('OidcAuthService', () => {
         );
       });
 
-      it('should work when allowedRedirectDomain has a leading dot', () => {
-        const fakeConfigurationService = new FakeConfigurationService();
-        fakeConfigurationService.set(
-          'auth.maxValidityPeriodSeconds',
-          maxValidityPeriodInSeconds,
-        );
-        fakeConfigurationService.set('auth.stateTtlMs', stateTtlMs);
-        fakeConfigurationService.set(
-          'auth.postLoginRedirectUri',
-          `https://safe-wallet-web.dev.${allowedDomain}/welcome`,
-        );
-        fakeConfigurationService.set(
-          'auth.allowedRedirectDomain',
-          `.${allowedDomain}`,
-        );
-        fakeConfigurationService.set('application.isProduction', false);
-
-        const dotTarget = new OidcAuthService(
-          authRepositoryMock,
-          fakeConfigurationService,
-          usersRepositoryMock,
-          auth0RepositoryMock,
-        );
-
-        auth0RepositoryMock.getAuthorizationUrl.mockReturnValue(
-          faker.internet.url(),
-        );
-
-        const redirectUrl = `https://preview.${allowedDomain}/settings`;
-        const result = dotTarget.createOidcAuthorizationRequest(redirectUrl);
-
-        const decoded = JSON.parse(
-          Buffer.from(result.state, 'base64url').toString('utf-8'),
-        );
-        expect(decoded.redirectUrl).toBe(redirectUrl);
-      });
-
       it('should reject a non-HTTPS URL', () => {
         expect(() =>
           domainTarget.createOidcAuthorizationRequest(

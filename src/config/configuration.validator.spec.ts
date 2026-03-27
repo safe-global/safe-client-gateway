@@ -15,6 +15,7 @@ describe('Configuration validator', () => {
   const validConfiguration: Record<string, unknown> = {
     ...JSON.parse(fakeJson()),
     AUTH_TOKEN: faker.string.uuid(),
+    AUTH_POST_LOGIN_REDIRECT_URI: faker.internet.url(),
     AWS_ACCESS_KEY_ID: faker.string.uuid(),
     AWS_KMS_ENCRYPTION_KEY_ID: faker.string.uuid(),
     AWS_SECRET_ACCESS_KEY: faker.string.uuid(),
@@ -460,6 +461,52 @@ describe('Configuration validator', () => {
       ).toThrow(
         'Configuration is invalid: SAFE_CONFIG_CGW_KEY Too small: expected string to have >=1 characters',
       );
+    });
+  });
+
+  describe('AUTH0_DOMAIN validation', () => {
+    beforeEach(() => {
+      process.env.NODE_ENV = 'production';
+    });
+
+    it('should accept a valid domain', () => {
+      const config = {
+        ...validConfiguration,
+        AUTH0_DOMAIN: faker.internet.domainName(),
+      };
+      expect(() =>
+        configurationValidator(config, RootConfigurationSchema),
+      ).not.toThrow();
+    });
+
+    it('should accept missing AUTH0_DOMAIN (optional)', () => {
+      const config = omit(validConfiguration, 'AUTH0_DOMAIN');
+      expect(() =>
+        configurationValidator(config, RootConfigurationSchema),
+      ).not.toThrow();
+    });
+
+    it.each([
+      {
+        reason: 'domain with path',
+        value: 'tenant.auth0.com/foo',
+      },
+      {
+        reason: 'domain with port',
+        value: 'tenant.auth0.com:8080',
+      },
+      {
+        reason: 'full URL',
+        value: 'https://tenant.auth0.com',
+      },
+    ])('should reject $reason', ({ value }) => {
+      const config = {
+        ...validConfiguration,
+        AUTH0_DOMAIN: value,
+      };
+      expect(() =>
+        configurationValidator(config, RootConfigurationSchema),
+      ).toThrow(/AUTH0_DOMAIN Must be a valid domain/);
     });
   });
 
