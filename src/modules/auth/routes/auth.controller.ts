@@ -156,7 +156,8 @@ export class AuthController {
   @ApiQuery({
     name: 'redirect_url',
     required: false,
-    description: 'Post-logout redirect URL (must be same-origin as pre-configured URL)',
+    description:
+      'Post-logout redirect URL (must be same-origin as pre-configured URL)',
   })
   @ApiFoundResponse({
     description:

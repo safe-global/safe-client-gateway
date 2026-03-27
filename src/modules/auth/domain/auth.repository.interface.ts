@@ -16,4 +16,8 @@ export interface IAuthRepository {
   verifyToken(accessToken: string): AuthPayloadDto;
 
   decodeToken(accessToken: string): AuthPayloadWithClaims<AuthPayloadDto>;
+
+  decodeTokenWithoutVerification(
+    accessToken: string,
+  ): AuthPayloadWithClaims<AuthPayloadDto>;
 }

@@ -21,6 +21,7 @@ const authRepositoryMock = {
   signToken: jest.fn(),
   verifyToken: jest.fn(),
   decodeToken: jest.fn(),
+  decodeTokenWithoutVerification: jest.fn(),
 } as jest.MockedObjectDeep<IAuthRepository>;
 
 const usersRepositoryMock = {
@@ -285,7 +286,7 @@ describe('AuthService', () => {
 
   describe('getLogoutRedirectUrl', () => {
     it('should return Auth0 logout URL for OIDC token when Auth0 is configured', () => {
-      authRepositoryMock.decodeToken.mockReturnValue({
+      authRepositoryMock.decodeTokenWithoutVerification.mockReturnValue({
         auth_method: 'oidc',
       } as unknown as JwtPayloadWithClaims<AuthPayloadDto>);
 
@@ -297,7 +298,7 @@ describe('AuthService', () => {
     });
 
     it('should include redirect_url in Auth0 returnTo for OIDC token', () => {
-      authRepositoryMock.decodeToken.mockReturnValue({
+      authRepositoryMock.decodeTokenWithoutVerification.mockReturnValue({
         auth_method: 'oidc',
       } as unknown as JwtPayloadWithClaims<AuthPayloadDto>);
 
@@ -313,9 +314,9 @@ describe('AuthService', () => {
     });
 
     it('should return direct redirect URL for SiWe token', () => {
-      authRepositoryMock.decodeToken.mockReturnValue({
+      authRepositoryMock.decodeTokenWithoutVerification.mockReturnValue({
         auth_method: 'siwe',
-      } as unknown as ReturnType<typeof authRepositoryMock.decodeToken>);
+      } as unknown as JwtPayloadWithClaims<AuthPayloadDto>);
 
       const result = target.getLogoutRedirectUrl('some-access-token');
 
@@ -326,13 +327,17 @@ describe('AuthService', () => {
       const result = target.getLogoutRedirectUrl(undefined);
 
       expect(result).toBe(postLoginRedirectUri);
-      expect(authRepositoryMock.decodeToken).not.toHaveBeenCalled();
+      expect(
+        authRepositoryMock.decodeTokenWithoutVerification,
+      ).not.toHaveBeenCalled();
     });
 
     it('should return direct redirect URL when token is corrupt', () => {
-      authRepositoryMock.decodeToken.mockImplementation(() => {
-        throw new Error('Invalid token');
-      });
+      authRepositoryMock.decodeTokenWithoutVerification.mockImplementation(
+        () => {
+          throw new Error('Invalid token');
+        },
+      );
 
       const result = target.getLogoutRedirectUrl('corrupt-token');
 
@@ -341,9 +346,9 @@ describe('AuthService', () => {
 
     it('should return direct redirect URL for OIDC token when Auth0 is not configured', () => {
       const serviceWithoutAuth0 = createService();
-      authRepositoryMock.decodeToken.mockReturnValue({
+      authRepositoryMock.decodeTokenWithoutVerification.mockReturnValue({
         auth_method: 'oidc',
-      } as unknown as ReturnType<typeof authRepositoryMock.decodeToken>);
+      } as unknown as JwtPayloadWithClaims<AuthPayloadDto>);
 
       const result =
         serviceWithoutAuth0.getLogoutRedirectUrl('some-access-token');

@@ -601,6 +601,27 @@ describe('AuthController', () => {
         });
     });
 
+    it('should redirect expired OIDC token through Auth0 logout', async () => {
+      const authPayloadDto = oidcAuthPayloadDtoBuilder().build();
+      // Sign with an already-expired expiration
+      const accessToken = jwtService.sign({
+        ...authPayloadDto,
+        exp: new Date(Date.now() - 60_000),
+      });
+
+      await request(app.getHttpServer())
+        .get('/v1/auth/logout')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(302)
+        .expect(({ headers }) => {
+          expect(headers.location).toMatch(
+            /^https:\/\/.*\/v2\/logout\?client_id=.*&returnTo=/,
+          );
+          const setCookie = headers['set-cookie'].toString();
+          expect(setCookie).toContain('access_token=;');
+        });
+    });
+
     it('should return 400 for cross-origin redirect_url', async () => {
       await request(app.getHttpServer())
         .get(

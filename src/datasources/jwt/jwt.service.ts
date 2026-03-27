@@ -77,4 +77,8 @@ export class JwtService implements IJwtService {
       algorithms: options?.algorithms ?? [JWT_ALGORITHM],
     });
   }
+
+  decodeWithoutVerification<T extends object>(token: string): JwtPayload & T {
+    return this.client.decodeWithoutVerification(token);
+  }
 }

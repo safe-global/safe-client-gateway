@@ -70,6 +70,11 @@ function jwtClientFactory() {
 
       return payload as jwt.JwtPayload & T;
     },
+    decodeWithoutVerification: <T extends object>(
+      token: string,
+    ): jwt.JwtPayload & T => {
+      return jwt.decode(token, { json: true }) as jwt.JwtPayload & T;
+    },
   };
 }
 

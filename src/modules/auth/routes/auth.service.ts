@@ -114,8 +114,8 @@ export class AuthService {
 
     if (accessToken && this.auth0LogoutBaseUrl) {
       try {
-        //TODO change to decode without verifying signature after
-        const payload = this.authRepository.decodeToken(accessToken);
+        const payload =
+          this.authRepository.decodeTokenWithoutVerification(accessToken);
         if (payload.auth_method === AuthMethod.Oidc) {
           const url = new URL(this.auth0LogoutBaseUrl);
           url.searchParams.set('returnTo', resolvedRedirect);
