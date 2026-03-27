@@ -22,6 +22,8 @@ import {
   HttpCode,
   Inject,
   Post,
+  Query,
+  Req,
   Res,
   UseGuards,
 } from '@nestjs/common';
@@ -33,9 +35,12 @@ import {
   ApiUnauthorizedResponse,
   ApiBadRequestResponse,
   ApiForbiddenResponse,
+  ApiFoundResponse,
+  ApiQuery,
 } from '@nestjs/swagger';
-import { type CookieOptions, Response } from 'express';
+import { type CookieOptions, Request, Response } from 'express';
 import { UserSession } from '@/modules/auth/routes/entities/user-session.entity';
+import { RedirectUrlSchema } from '@/validation/entities/schemas/redirect-url.schema';
 
 /**
  * The AuthController is responsible for handling SiWe authentication:
@@ -139,6 +144,42 @@ export class AuthController {
   @Post('logout')
   logout(@Res({ passthrough: true }) res: Response): void {
     res.clearCookie(ACCESS_TOKEN_COOKIE_NAME, this.getCookieOptions());
+  }
+
+  @ApiOperation({
+    summary: 'Logout (with redirect)',
+    description:
+      'Clears the authentication cookie and redirects the browser. ' +
+      'For OIDC users, redirects through identity platform to clear their session cookie. ' +
+      'For SiWe users, redirects directly to the app.',
+  })
+  @ApiQuery({
+    name: 'redirect_url',
+    required: false,
+    description: 'Post-logout redirect URL (must be same-origin as pre-configured URL)',
+  })
+  @ApiFoundResponse({
+    description:
+      'Redirects to identity platform logout (OIDC) or directly to the app.',
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid redirect URL',
+  })
+  @Get('logout')
+  logoutWithRedirect(
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+    @Query('redirect_url', new ValidationPipe(RedirectUrlSchema))
+    redirectUrl?: string,
+  ): void {
+    const accessToken: string | undefined =
+      req.cookies?.[ACCESS_TOKEN_COOKIE_NAME];
+    res.clearCookie(ACCESS_TOKEN_COOKIE_NAME, this.getCookieOptions());
+    const location = this.authService.getLogoutRedirectUrl(
+      accessToken,
+      redirectUrl,
+    );
+    res.redirect(location);
   }
 
   private getCookieOptions(): CookieOptions {
