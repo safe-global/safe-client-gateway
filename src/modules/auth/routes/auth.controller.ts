@@ -35,6 +35,7 @@ import {
   ApiForbiddenResponse,
 } from '@nestjs/swagger';
 import { type CookieOptions, Response } from 'express';
+import { UserSession } from '@/modules/auth/routes/entities/user-session.entity';
 
 /**
  * The AuthController is responsible for handling SiWe authentication:
@@ -66,11 +67,11 @@ export class AuthController {
     description:
       'Returns the authenticated user ID if a valid session cookie is present, 403 otherwise.',
   })
-  @ApiOkResponse({ description: 'Authenticated user ID' })
+  @ApiOkResponse({ description: 'Authenticated user ID', type: UserSession })
   @ApiForbiddenResponse({ description: 'Not authenticated' })
   @UseGuards(AuthGuard)
   @Get('me')
-  getMe(@Auth() authPayload: AuthPayload): { id: string | undefined } {
+  getMe(@Auth() authPayload: AuthPayload): UserSession {
     return { id: authPayload.getUserId() };
   }
 
