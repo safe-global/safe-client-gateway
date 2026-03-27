@@ -5,6 +5,8 @@ import {
   ACCESS_TOKEN_COOKIE_NAME,
   getCookieOptions,
 } from '@/modules/auth/utils/auth-cookie.utils';
+import { Auth } from '@/modules/auth/routes/decorators/auth.decorator';
+import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
 import { AuthService } from '@/modules/auth/routes/auth.service';
 import { AuthNonce } from '@/modules/auth/routes/entities/auth-nonce.entity';
@@ -28,7 +30,6 @@ import {
   ApiTags,
   ApiOperation,
   ApiBody,
-  ApiNoContentResponse,
   ApiUnauthorizedResponse,
   ApiBadRequestResponse,
   ApiForbiddenResponse,
@@ -61,16 +62,17 @@ export class AuthController {
   }
 
   @ApiOperation({
-    summary: 'Check authentication status',
+    summary: 'Get authenticated user',
     description:
-      'Returns 204 if a valid session cookie is present, 403 otherwise.',
+      'Returns the authenticated user ID if a valid session cookie is present, 403 otherwise.',
   })
-  @ApiNoContentResponse({ description: 'Authenticated' })
+  @ApiOkResponse({ description: 'Authenticated user ID' })
   @ApiForbiddenResponse({ description: 'Not authenticated' })
-  @HttpCode(204)
   @UseGuards(AuthGuard)
   @Get('me')
-  getMe(): void {}
+  getMe(@Auth() authPayload: AuthPayload): { id: string | undefined } {
+    return { id: authPayload.getUserId() };
+  }
 
   @ApiOperation({
     summary: 'Get authentication nonce',

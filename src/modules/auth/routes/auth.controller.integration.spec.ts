@@ -526,24 +526,30 @@ describe('AuthController', () => {
   });
 
   describe('GET /v1/auth/me', () => {
-    it('should return 204 with a valid Siwe access token', async () => {
+    it('should return 200 with user id for a valid Siwe access token', async () => {
       const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
 
       await request(app.getHttpServer())
         .get('/v1/auth/me')
         .set('Cookie', [`access_token=${accessToken}`])
-        .expect(204);
+        .expect(200)
+        .expect(({ body }) => {
+          expect(body).toEqual({ id: authPayloadDto.sub });
+        });
     });
 
-    it('should return 204 with a valid OIDC access token', async () => {
+    it('should return 200 with user id for a valid OIDC access token', async () => {
       const authPayloadDto = oidcAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
 
       await request(app.getHttpServer())
         .get('/v1/auth/me')
         .set('Cookie', [`access_token=${accessToken}`])
-        .expect(204);
+        .expect(200)
+        .expect(({ body }) => {
+          expect(body).toEqual({ id: authPayloadDto.sub });
+        });
     });
 
     it('should return 403 without an access token', async () => {
