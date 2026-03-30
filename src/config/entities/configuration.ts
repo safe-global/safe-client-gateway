@@ -61,6 +61,12 @@ export default () => ({
       signingSecret: process.env.AUTH0_SIGNING_SECRET,
       scope: process.env.AUTH0_SCOPE || 'openid',
     },
+    rateLimit: {
+      max: parseInt(process.env.AUTH_RATE_LIMIT_MAX ?? `${5}`),
+      windowSeconds: parseInt(
+        process.env.AUTH_RATE_LIMIT_WINDOW_SECONDS ?? `${60}`,
+      ),
+    },
   },
   balances: {
     providers: {
