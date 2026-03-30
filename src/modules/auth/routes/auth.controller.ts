@@ -22,7 +22,6 @@ import {
   HttpCode,
   Inject,
   Post,
-  Query,
   Req,
   Res,
   UseGuards,
@@ -35,8 +34,7 @@ import {
   ApiUnauthorizedResponse,
   ApiBadRequestResponse,
   ApiForbiddenResponse,
-  ApiFoundResponse,
-  ApiQuery,
+  ApiResponse,
 } from '@nestjs/swagger';
 import { type CookieOptions, Request, Response } from 'express';
 import { UserSession } from '@/modules/auth/routes/entities/user-session.entity';
@@ -153,24 +151,33 @@ export class AuthController {
       'For OIDC users, redirects through identity platform to clear their session cookie. ' +
       'For SiWe users, redirects directly to the app.',
   })
-  @ApiQuery({
-    name: 'redirect_url',
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        redirect_url: {
+          type: 'string',
+          description:
+            'Post-logout redirect URL (must be same-origin as pre-configured URL)',
+        },
+      },
+    },
     required: false,
-    description:
-      'Post-logout redirect URL (must be same-origin as pre-configured URL)',
   })
-  @ApiFoundResponse({
+  @ApiResponse({
+    status: 303,
     description:
       'Redirects to identity platform logout (OIDC) or directly to the app.',
   })
   @ApiBadRequestResponse({
     description: 'Invalid redirect URL',
   })
-  @Get('logout')
+  @HttpCode(303)
+  @Post('logout/redirect')
   logoutWithRedirect(
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
-    @Query('redirect_url', new ValidationPipe(RedirectUrlSchema))
+    @Body('redirect_url', new ValidationPipe(RedirectUrlSchema))
     redirectUrl?: string,
   ): void {
     const accessToken: string | undefined =
@@ -180,7 +187,7 @@ export class AuthController {
       accessToken,
       redirectUrl,
     );
-    res.redirect(location);
+    res.redirect(303, location);
   }
 
   private getCookieOptions(): CookieOptions {

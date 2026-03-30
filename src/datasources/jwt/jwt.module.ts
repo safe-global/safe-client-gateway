@@ -72,8 +72,8 @@ function jwtClientFactory() {
     },
     decodeWithoutVerification: <T extends object>(
       token: string,
-    ): jwt.JwtPayload & T => {
-      return jwt.decode(token, { json: true }) as jwt.JwtPayload & T;
+    ): (jwt.JwtPayload & T) | null => {
+      return jwt.decode(token, { json: true }) as (jwt.JwtPayload & T) | null;
     },
   };
 }

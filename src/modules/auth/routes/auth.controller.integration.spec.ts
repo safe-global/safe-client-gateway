@@ -525,15 +525,15 @@ describe('AuthController', () => {
     });
   });
 
-  describe('GET /v1/auth/logout', () => {
+  describe('POST /v1/auth/logout/redirect', () => {
     it('should redirect OIDC user through Auth0 logout', async () => {
       const authPayloadDto = oidcAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
 
       await request(app.getHttpServer())
-        .get('/v1/auth/logout')
+        .post('/v1/auth/logout/redirect')
         .set('Cookie', [`access_token=${accessToken}`])
-        .expect(302)
+        .expect(303)
         .expect(({ headers }) => {
           expect(headers.location).toMatch(
             /^https:\/\/.*\/v2\/logout\?client_id=.*&returnTo=/,
@@ -556,9 +556,9 @@ describe('AuthController', () => {
       );
 
       await request(app.getHttpServer())
-        .get('/v1/auth/logout')
+        .post('/v1/auth/logout/redirect')
         .set('Cookie', [`access_token=${accessToken}`])
-        .expect(302)
+        .expect(303)
         .expect(({ headers }) => {
           expect(headers.location).toBe(postLoginRedirectUri);
           const setCookie = headers['set-cookie'].toString();
@@ -575,8 +575,8 @@ describe('AuthController', () => {
       );
 
       await request(app.getHttpServer())
-        .get('/v1/auth/logout')
-        .expect(302)
+        .post('/v1/auth/logout/redirect')
+        .expect(303)
         .expect(({ headers }) => {
           expect(headers.location).toBe(postLoginRedirectUri);
           const setCookie = headers['set-cookie'].toString();
@@ -594,8 +594,9 @@ describe('AuthController', () => {
       const redirectUrl = `${postLoginRedirectUri}/settings`;
 
       await request(app.getHttpServer())
-        .get(`/v1/auth/logout?redirect_url=${encodeURIComponent(redirectUrl)}`)
-        .expect(302)
+        .post('/v1/auth/logout/redirect')
+        .send({ redirect_url: redirectUrl })
+        .expect(303)
         .expect(({ headers }) => {
           expect(headers.location).toBe(redirectUrl);
         });
@@ -610,9 +611,9 @@ describe('AuthController', () => {
       });
 
       await request(app.getHttpServer())
-        .get('/v1/auth/logout')
+        .post('/v1/auth/logout/redirect')
         .set('Cookie', [`access_token=${accessToken}`])
-        .expect(302)
+        .expect(303)
         .expect(({ headers }) => {
           expect(headers.location).toMatch(
             /^https:\/\/.*\/v2\/logout\?client_id=.*&returnTo=/,
@@ -624,9 +625,8 @@ describe('AuthController', () => {
 
     it('should return 400 for cross-origin redirect_url', async () => {
       await request(app.getHttpServer())
-        .get(
-          `/v1/auth/logout?redirect_url=${encodeURIComponent('https://evil.com')}`,
-        )
+        .post('/v1/auth/logout/redirect')
+        .send({ redirect_url: 'https://evil.com' })
         .expect(400);
     });
   });

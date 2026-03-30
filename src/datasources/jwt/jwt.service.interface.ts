@@ -42,5 +42,7 @@ export interface IJwtService {
    * Decodes a JWT payload without verifying signature or expiration.
    * Useful when you need to read claims from potentially expired tokens (logout flow).
    */
-  decodeWithoutVerification<T extends object>(token: string): JwtPayload & T;
+  decodeWithoutVerification<T extends object>(
+    token: string,
+  ): (JwtPayload & T) | null;
 }

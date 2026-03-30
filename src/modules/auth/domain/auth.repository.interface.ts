@@ -20,5 +20,5 @@ export interface IAuthRepository {
 
   decodeTokenWithoutVerification(
     accessToken: string,
-  ): AuthPayloadWithClaims<AuthPayloadDto>;
+  ): AuthPayloadWithClaims<AuthPayloadDto> | null;
 }

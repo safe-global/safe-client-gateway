@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export class UserSession {
-  @ApiProperty()
+  @ApiPropertyOptional()
   id?: string;
 }

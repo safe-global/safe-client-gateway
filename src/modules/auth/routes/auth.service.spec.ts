@@ -344,6 +344,14 @@ describe('AuthService', () => {
       expect(result).toBe(postLoginRedirectUri);
     });
 
+    it('should return direct redirect URL when token decode returns null', () => {
+      authRepositoryMock.decodeTokenWithoutVerification.mockReturnValue(null);
+
+      const result = target.getLogoutRedirectUrl('malformed-token');
+
+      expect(result).toBe(postLoginRedirectUri);
+    });
+
     it('should return direct redirect URL for OIDC token when Auth0 is not configured', () => {
       const serviceWithoutAuth0 = createService();
       authRepositoryMock.decodeTokenWithoutVerification.mockReturnValue({

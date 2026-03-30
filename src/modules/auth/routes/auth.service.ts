@@ -116,7 +116,7 @@ export class AuthService {
       try {
         const payload =
           this.authRepository.decodeTokenWithoutVerification(accessToken);
-        if (payload.auth_method === AuthMethod.Oidc) {
+        if (payload?.auth_method === AuthMethod.Oidc) {
           const url = new URL(this.auth0LogoutBaseUrl);
           url.searchParams.set('returnTo', resolvedRedirect);
           return url.toString();
