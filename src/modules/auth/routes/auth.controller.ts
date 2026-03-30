@@ -75,7 +75,7 @@ export class AuthController {
   @UseGuards(AuthGuard)
   @Get('me')
   getMe(@Auth() authPayload: AuthPayload): UserSession {
-    return { id: authPayload.getUserId() };
+    return { id: authPayload.getUserId() as string };
   }
 
   @ApiOperation({
