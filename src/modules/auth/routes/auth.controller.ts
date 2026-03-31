@@ -38,7 +38,10 @@ import {
 } from '@nestjs/swagger';
 import { type CookieOptions, Request, Response } from 'express';
 import { UserSession } from '@/modules/auth/routes/entities/user-session.entity';
-import { RedirectUrlSchema } from '@/validation/entities/schemas/redirect-url.schema';
+import {
+  LogoutDto,
+  LogoutDtoSchema,
+} from '@/modules/auth/routes/entities/logout.dto.entity';
 
 /**
  * The AuthController is responsible for handling SiWe authentication:
@@ -151,19 +154,7 @@ export class AuthController {
       'For OIDC users, redirects through identity platform to clear their session cookie. ' +
       'For SiWe users, redirects directly to the app.',
   })
-  @ApiBody({
-    schema: {
-      type: 'object',
-      properties: {
-        redirect_url: {
-          type: 'string',
-          description:
-            'Post-logout redirect URL (must be same-origin as pre-configured URL)',
-        },
-      },
-    },
-    required: false,
-  })
+  @ApiBody({ type: LogoutDto, required: false })
   @ApiResponse({
     status: 303,
     description:
@@ -177,15 +168,15 @@ export class AuthController {
   logoutWithRedirect(
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
-    @Body('redirect_url', new ValidationPipe(RedirectUrlSchema))
-    redirectUrl?: string,
+    @Body(new ValidationPipe(LogoutDtoSchema))
+    body: LogoutDto,
   ): void {
     const accessToken: string | undefined =
       req.cookies?.[ACCESS_TOKEN_COOKIE_NAME];
     res.clearCookie(ACCESS_TOKEN_COOKIE_NAME, this.getCookieOptions());
     const location = this.authService.getLogoutRedirectUrl(
       accessToken,
-      redirectUrl,
+      body.redirect_url,
     );
     res.redirect(303, location);
   }
