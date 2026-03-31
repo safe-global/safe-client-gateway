@@ -525,6 +525,116 @@ describe('AuthController', () => {
     });
   });
 
+  describe('POST /v1/auth/logout/redirect', () => {
+    it('should redirect OIDC user through Auth0 logout', async () => {
+      const authPayloadDto = oidcAuthPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+
+      await request(app.getHttpServer())
+        .post('/v1/auth/logout/redirect')
+        .send({})
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(303)
+        .expect(({ headers }) => {
+          expect(headers.location).toMatch(
+            /^https:\/\/.*\/v2\/logout\?client_id=.*&returnTo=/,
+          );
+          const setCookie = headers['set-cookie'].toString();
+          expect(setCookie).toContain('access_token=;');
+          expect(setCookie).toContain('Expires=Thu, 01 Jan 1970 00:00:00 GMT');
+        });
+    });
+
+    it('should redirect SiWe user directly to postLoginRedirectUri', async () => {
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+
+      const configService: IConfigurationService = app.get(
+        IConfigurationService,
+      );
+      const postLoginRedirectUri = configService.getOrThrow<string>(
+        'auth.postLoginRedirectUri',
+      );
+
+      await request(app.getHttpServer())
+        .post('/v1/auth/logout/redirect')
+        .send({})
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(303)
+        .expect(({ headers }) => {
+          expect(headers.location).toBe(postLoginRedirectUri);
+          const setCookie = headers['set-cookie'].toString();
+          expect(setCookie).toContain('access_token=;');
+        });
+    });
+
+    it('should redirect to postLoginRedirectUri when no token present', async () => {
+      const configService: IConfigurationService = app.get(
+        IConfigurationService,
+      );
+      const postLoginRedirectUri = configService.getOrThrow<string>(
+        'auth.postLoginRedirectUri',
+      );
+
+      await request(app.getHttpServer())
+        .post('/v1/auth/logout/redirect')
+        .send({})
+        .expect(303)
+        .expect(({ headers }) => {
+          expect(headers.location).toBe(postLoginRedirectUri);
+          const setCookie = headers['set-cookie'].toString();
+          expect(setCookie).toContain('access_token=;');
+        });
+    });
+
+    it('should include redirect_url in the redirect location', async () => {
+      const configService: IConfigurationService = app.get(
+        IConfigurationService,
+      );
+      const postLoginRedirectUri = configService.getOrThrow<string>(
+        'auth.postLoginRedirectUri',
+      );
+      const redirectUrl = `${postLoginRedirectUri}/settings`;
+
+      await request(app.getHttpServer())
+        .post('/v1/auth/logout/redirect')
+        .send({ redirect_url: redirectUrl })
+        .expect(303)
+        .expect(({ headers }) => {
+          expect(headers.location).toBe(redirectUrl);
+        });
+    });
+
+    it('should redirect expired OIDC token through Auth0 logout', async () => {
+      const authPayloadDto = oidcAuthPayloadDtoBuilder().build();
+      // Sign with an already-expired expiration
+      const accessToken = jwtService.sign({
+        ...authPayloadDto,
+        exp: new Date(Date.now() - 60_000),
+      });
+
+      await request(app.getHttpServer())
+        .post('/v1/auth/logout/redirect')
+        .send({})
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(303)
+        .expect(({ headers }) => {
+          expect(headers.location).toMatch(
+            /^https:\/\/.*\/v2\/logout\?client_id=.*&returnTo=/,
+          );
+          const setCookie = headers['set-cookie'].toString();
+          expect(setCookie).toContain('access_token=;');
+        });
+    });
+
+    it('should return 400 for cross-origin redirect_url', async () => {
+      await request(app.getHttpServer())
+        .post('/v1/auth/logout/redirect')
+        .send({ redirect_url: 'https://evil.com' })
+        .expect(400);
+    });
+  });
+
   describe('GET /v1/auth/me', () => {
     it('should return 200 with user id for a valid Siwe access token', async () => {
       const authPayloadDto = siweAuthPayloadDtoBuilder().build();

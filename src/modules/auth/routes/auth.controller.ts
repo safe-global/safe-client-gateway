@@ -22,6 +22,7 @@ import {
   HttpCode,
   Inject,
   Post,
+  Req,
   Res,
   UseGuards,
 } from '@nestjs/common';
@@ -33,8 +34,14 @@ import {
   ApiUnauthorizedResponse,
   ApiBadRequestResponse,
   ApiForbiddenResponse,
+  ApiResponse,
 } from '@nestjs/swagger';
-import { type CookieOptions, Response } from 'express';
+import { type CookieOptions, Request, Response } from 'express';
+import { UserSession } from '@/modules/auth/routes/entities/user-session.entity';
+import {
+  LogoutDto,
+  LogoutDtoSchema,
+} from '@/modules/auth/routes/entities/logout.dto.entity';
 
 /**
  * The AuthController is responsible for handling SiWe authentication:
@@ -66,12 +73,12 @@ export class AuthController {
     description:
       'Returns the authenticated user ID if a valid session cookie is present, 403 otherwise.',
   })
-  @ApiOkResponse({ description: 'Authenticated user ID' })
+  @ApiOkResponse({ description: 'Authenticated user ID', type: UserSession })
   @ApiForbiddenResponse({ description: 'Not authenticated' })
   @UseGuards(AuthGuard)
   @Get('me')
-  getMe(@Auth() authPayload: AuthPayload): { id: string | undefined } {
-    return { id: authPayload.getUserId() };
+  getMe(@Auth() authPayload: AuthPayload): UserSession {
+    return { id: authPayload.getUserId() as string };
   }
 
   @ApiOperation({
@@ -138,6 +145,40 @@ export class AuthController {
   @Post('logout')
   logout(@Res({ passthrough: true }) res: Response): void {
     res.clearCookie(ACCESS_TOKEN_COOKIE_NAME, this.getCookieOptions());
+  }
+
+  @ApiOperation({
+    summary: 'Logout (with redirect)',
+    description:
+      'Clears the authentication cookie and redirects the browser. ' +
+      'For OIDC users, redirects through identity platform to clear their session cookie. ' +
+      'For SiWe users, redirects directly to the app.',
+  })
+  @ApiBody({ type: LogoutDto, required: false })
+  @ApiResponse({
+    status: 303,
+    description:
+      'Redirects to identity platform logout (OIDC) or directly to the app.',
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid redirect URL',
+  })
+  @HttpCode(303)
+  @Post('logout/redirect')
+  logoutWithRedirect(
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+    @Body(new ValidationPipe(LogoutDtoSchema))
+    body: LogoutDto,
+  ): void {
+    const accessToken: string | undefined =
+      req.cookies?.[ACCESS_TOKEN_COOKIE_NAME];
+    res.clearCookie(ACCESS_TOKEN_COOKIE_NAME, this.getCookieOptions());
+    const location = this.authService.getLogoutRedirectUrl(
+      accessToken,
+      body.redirect_url,
+    );
+    res.redirect(303, location);
   }
 
   private getCookieOptions(): CookieOptions {

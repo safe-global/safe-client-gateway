@@ -4,10 +4,13 @@ import type { IAuthRepository } from '@/modules/auth/domain/auth.repository.inte
 import { AuthService } from '@/modules/auth/routes/auth.service';
 import type { ISiweRepository } from '@/modules/siwe/domain/siwe.repository.interface';
 import type { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
+import type { ILoggingService } from '@/logging/logging.interface';
 import { faker } from '@faker-js/faker';
-import { ForbiddenException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException } from '@nestjs/common';
 import { siweMessageBuilder } from '@/modules/siwe/domain/entities/__tests__/siwe-message.builder';
 import type { Hex } from 'viem';
+import type { JwtPayloadWithClaims } from '@/datasources/jwt/jwt-claims.entity';
+import type { AuthPayloadDto } from '@/modules/auth/domain/entities/auth-payload.entity';
 
 const siweRepositoryMock = {
   generateNonce: jest.fn(),
@@ -18,34 +21,72 @@ const authRepositoryMock = {
   signToken: jest.fn(),
   verifyToken: jest.fn(),
   decodeToken: jest.fn(),
+  decodeTokenWithoutVerification: jest.fn(),
 } as jest.MockedObjectDeep<IAuthRepository>;
 
 const usersRepositoryMock = {
   findOrCreateByWalletAddress: jest.fn(),
 } as unknown as jest.MockedObjectDeep<IUsersRepository>;
 
+const loggingServiceMock = {
+  debug: jest.fn(),
+} as jest.MockedObjectDeep<ILoggingService>;
+
 describe('AuthService', () => {
   let target: AuthService;
   let maxValidityPeriodInSeconds: number;
+  let postLoginRedirectUri: string;
+  let auth0Domain: string;
+  let auth0ClientId: string;
+
+  function createService(
+    overrides?: Partial<{
+      auth0Domain: string;
+      auth0ClientId: string;
+      postLoginRedirectUri: string;
+    }>,
+  ): AuthService {
+    const fakeConfigurationService = new FakeConfigurationService();
+    fakeConfigurationService.set(
+      'auth.maxValidityPeriodSeconds',
+      maxValidityPeriodInSeconds,
+    );
+    fakeConfigurationService.set(
+      'auth.postLoginRedirectUri',
+      overrides?.postLoginRedirectUri ?? postLoginRedirectUri,
+    );
+    fakeConfigurationService.set('application.isProduction', true);
+    if (overrides?.auth0Domain) {
+      fakeConfigurationService.set('auth.auth0.domain', overrides.auth0Domain);
+    }
+    if (overrides?.auth0ClientId) {
+      fakeConfigurationService.set(
+        'auth.auth0.clientId',
+        overrides.auth0ClientId,
+      );
+    }
+    return new AuthService(
+      siweRepositoryMock,
+      authRepositoryMock,
+      fakeConfigurationService,
+      usersRepositoryMock,
+      loggingServiceMock,
+    );
+  }
 
   beforeEach(() => {
     jest.resetAllMocks();
     jest.useFakeTimers();
 
     maxValidityPeriodInSeconds = faker.number.int({ min: 3600, max: 86400 });
+    postLoginRedirectUri = faker.internet.url({ appendSlash: false });
+    auth0Domain = faker.internet.domainName();
+    auth0ClientId = faker.string.uuid();
 
-    const fakeConfigurationService = new FakeConfigurationService();
-    fakeConfigurationService.set(
-      'auth.maxValidityPeriodSeconds',
-      maxValidityPeriodInSeconds,
-    );
-
-    target = new AuthService(
-      siweRepositoryMock,
-      authRepositoryMock,
-      fakeConfigurationService,
-      usersRepositoryMock,
-    );
+    target = createService({
+      auth0Domain,
+      auth0ClientId,
+    });
   });
 
   afterEach(() => {
@@ -240,6 +281,93 @@ describe('AuthService', () => {
       await expect(target.authenticateWithSiwe(siweArgs)).resolves.toEqual({
         accessToken: 'token',
       });
+    });
+  });
+
+  describe('getLogoutRedirectUrl', () => {
+    it('should return Auth0 logout URL for OIDC token when Auth0 is configured', () => {
+      authRepositoryMock.decodeTokenWithoutVerification.mockReturnValue({
+        auth_method: 'oidc',
+      } as unknown as JwtPayloadWithClaims<AuthPayloadDto>);
+
+      const result = target.getLogoutRedirectUrl('some-access-token');
+
+      expect(result).toBe(
+        `https://${auth0Domain}/v2/logout?client_id=${auth0ClientId}&returnTo=${encodeURIComponent(postLoginRedirectUri)}`,
+      );
+    });
+
+    it('should include redirect_url in Auth0 returnTo for OIDC token', () => {
+      authRepositoryMock.decodeTokenWithoutVerification.mockReturnValue({
+        auth_method: 'oidc',
+      } as unknown as JwtPayloadWithClaims<AuthPayloadDto>);
+
+      const redirectUrl = `${postLoginRedirectUri}/settings`;
+      const result = target.getLogoutRedirectUrl(
+        'some-access-token',
+        redirectUrl,
+      );
+
+      expect(result).toBe(
+        `https://${auth0Domain}/v2/logout?client_id=${auth0ClientId}&returnTo=${encodeURIComponent(redirectUrl)}`,
+      );
+    });
+
+    it('should return direct redirect URL for SiWe token', () => {
+      authRepositoryMock.decodeTokenWithoutVerification.mockReturnValue({
+        auth_method: 'siwe',
+      } as unknown as JwtPayloadWithClaims<AuthPayloadDto>);
+
+      const result = target.getLogoutRedirectUrl('some-access-token');
+
+      expect(result).toBe(postLoginRedirectUri);
+    });
+
+    it('should return direct redirect URL when no access token', () => {
+      const result = target.getLogoutRedirectUrl(undefined);
+
+      expect(result).toBe(postLoginRedirectUri);
+      expect(
+        authRepositoryMock.decodeTokenWithoutVerification,
+      ).not.toHaveBeenCalled();
+    });
+
+    it('should return direct redirect URL when token is corrupt', () => {
+      authRepositoryMock.decodeTokenWithoutVerification.mockImplementation(
+        () => {
+          throw new Error('Invalid token');
+        },
+      );
+
+      const result = target.getLogoutRedirectUrl('corrupt-token');
+
+      expect(result).toBe(postLoginRedirectUri);
+    });
+
+    it('should return direct redirect URL when token decode returns null', () => {
+      authRepositoryMock.decodeTokenWithoutVerification.mockReturnValue(null);
+
+      const result = target.getLogoutRedirectUrl('malformed-token');
+
+      expect(result).toBe(postLoginRedirectUri);
+    });
+
+    it('should return direct redirect URL for OIDC token when Auth0 is not configured', () => {
+      const serviceWithoutAuth0 = createService();
+      authRepositoryMock.decodeTokenWithoutVerification.mockReturnValue({
+        auth_method: 'oidc',
+      } as unknown as JwtPayloadWithClaims<AuthPayloadDto>);
+
+      const result =
+        serviceWithoutAuth0.getLogoutRedirectUrl('some-access-token');
+
+      expect(result).toBe(postLoginRedirectUri);
+    });
+
+    it('should throw BadRequestException for cross-origin redirect_url', () => {
+      expect(() =>
+        target.getLogoutRedirectUrl(undefined, 'https://evil.com'),
+      ).toThrow(BadRequestException);
     });
   });
 });
