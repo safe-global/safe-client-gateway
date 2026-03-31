@@ -155,7 +155,7 @@ export class AuthController {
       'For OIDC users, redirects through identity platform to clear their session cookie. ' +
       'For SiWe users, redirects directly to the app.',
   })
-  @ApiConsumes('application/x-www-form-urlencoded', 'application/json')
+  @ApiConsumes('application/x-www-form-urlencoded')
   @ApiBody({ type: LogoutDto, required: false })
   @ApiResponse({
     status: 303,

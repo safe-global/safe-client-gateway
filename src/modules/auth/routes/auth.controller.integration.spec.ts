@@ -627,25 +627,7 @@ describe('AuthController', () => {
         });
     });
 
-    it('should accept application/x-www-form-urlencoded body', async () => {
-      const configService: IConfigurationService = app.get(
-        IConfigurationService,
-      );
-      const postLoginRedirectUri = configService.getOrThrow<string>(
-        'auth.postLoginRedirectUri',
-      );
-
-      await request(app.getHttpServer())
-        .post('/v1/auth/logout/redirect')
-        .type('form')
-        .send({})
-        .expect(303)
-        .expect(({ headers }) => {
-          expect(headers.location).toBe(postLoginRedirectUri);
-        });
-    });
-
-    it('should accept redirect_url from urlencoded body', async () => {
+    it('should accept redirect_url from application/x-www-form-urlencoded body', async () => {
       const configService: IConfigurationService = app.get(
         IConfigurationService,
       );
