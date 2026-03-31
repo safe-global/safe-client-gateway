@@ -39,6 +39,10 @@ export default (): ReturnType<typeof configuration> => ({
       signingSecret: faker.string.alphanumeric(32),
       scope: 'openid email',
     },
+    rateLimit: {
+      max: faker.number.int({ min: 100, max: 200 }),
+      windowSeconds: faker.number.int({ min: 100, max: 200 }),
+    },
   },
   balances: {
     providers: {

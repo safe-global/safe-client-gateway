@@ -5,6 +5,7 @@ import {
   ACCESS_TOKEN_COOKIE_NAME,
   getCookieOptions,
 } from '@/modules/auth/utils/auth-cookie.utils';
+import { OidcAuthRateLimitGuard } from '@/modules/auth/oidc/routes/guards/oidc-auth-rate-limit.guard';
 import { OidcAuthService } from '@/modules/auth/oidc/routes/oidc-auth.service';
 import {
   OidcConnectionSchema,
@@ -12,7 +13,15 @@ import {
 } from '@/modules/auth/oidc/routes/entities/oidc-connection.entity';
 import { RedirectUrlSchema } from '@/validation/entities/schemas/redirect-url.schema';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
-import { Controller, Get, Inject, Query, Req, Res } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Inject,
+  Query,
+  Req,
+  Res,
+  UseGuards,
+} from '@nestjs/common';
 import {
   ApiFoundResponse,
   ApiTags,
@@ -36,6 +45,7 @@ import { type CookieOptions, Request, Response } from 'express';
  * Note: OIDC authentication is gated by the `FF_OIDC_AUTH` feature flag.
  */
 @ApiTags('auth')
+@UseGuards(OidcAuthRateLimitGuard)
 @Controller({ path: 'auth', version: '1' })
 export class OidcAuthController {
   static readonly OIDC_STATE_COOKIE_NAME = 'auth_state';

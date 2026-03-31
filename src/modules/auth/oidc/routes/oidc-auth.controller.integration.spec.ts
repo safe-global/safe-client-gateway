@@ -620,6 +620,60 @@ describe('OidcAuthController', () => {
     });
   });
 
+  describe('rate limiting', () => {
+    beforeEach(async () => {
+      jest.resetAllMocks();
+
+      const defaultConfiguration = configuration();
+      const testConfiguration = (): typeof defaultConfiguration => ({
+        ...defaultConfiguration,
+        application: {
+          ...defaultConfiguration.application,
+          isProduction: true,
+        },
+        auth: {
+          ...defaultConfiguration.auth,
+          rateLimit: {
+            max: 1,
+            windowSeconds: 60,
+          },
+        },
+        features: {
+          ...defaultConfiguration.features,
+          oidc_auth: true,
+        },
+      });
+
+      await initApp(testConfiguration);
+    });
+
+    afterEach(async () => {
+      await app?.close();
+    });
+
+    it('should return 429 when rate limit is exceeded on /v1/auth/oidc/authorize', async () => {
+      await request(app.getHttpServer())
+        .get('/v1/auth/oidc/authorize')
+        .expect(302);
+
+      await request(app.getHttpServer())
+        .get('/v1/auth/oidc/authorize')
+        .expect(429);
+    });
+
+    it('should return 429 when rate limit is exceeded on /v1/auth/oidc/callback', async () => {
+      await request(app.getHttpServer())
+        .get('/v1/auth/oidc/callback')
+        .query({ error: 'access_denied' })
+        .expect(302);
+
+      await request(app.getHttpServer())
+        .get('/v1/auth/oidc/callback')
+        .query({ error: 'access_denied' })
+        .expect(429);
+    });
+  });
+
   describe('allowedRedirectDomain is present', () => {
     const allowedDomain = '5afe.dev';
 
