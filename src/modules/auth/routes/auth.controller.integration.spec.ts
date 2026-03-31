@@ -532,6 +532,7 @@ describe('AuthController', () => {
 
       await request(app.getHttpServer())
         .post('/v1/auth/logout/redirect')
+        .send({})
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(303)
         .expect(({ headers }) => {
@@ -557,6 +558,7 @@ describe('AuthController', () => {
 
       await request(app.getHttpServer())
         .post('/v1/auth/logout/redirect')
+        .send({})
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(303)
         .expect(({ headers }) => {
@@ -576,6 +578,7 @@ describe('AuthController', () => {
 
       await request(app.getHttpServer())
         .post('/v1/auth/logout/redirect')
+        .send({})
         .expect(303)
         .expect(({ headers }) => {
           expect(headers.location).toBe(postLoginRedirectUri);
@@ -612,6 +615,7 @@ describe('AuthController', () => {
 
       await request(app.getHttpServer())
         .post('/v1/auth/logout/redirect')
+        .send({})
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(303)
         .expect(({ headers }) => {

@@ -2,6 +2,7 @@
 import { BadRequestException } from '@nestjs/common';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 
+const AUTH0_LOGOUT_PATH = '/v2/logout';
 /**
  * Builds the Auth0 {@link https://auth0.com/docs/api/authentication/logout/auth-0-logout}
  * base URL from {@link IConfigurationService}.
@@ -26,7 +27,7 @@ export function buildAuth0LogoutBaseUrl(
   if (!domain || !clientId?.trim()) return null;
 
   try {
-    const url = new URL('/v2/logout', `https://${domain}`);
+    const url = new URL(AUTH0_LOGOUT_PATH, `https://${domain}`);
     url.searchParams.set('client_id', clientId.trim());
     return url.toString();
   } catch {
