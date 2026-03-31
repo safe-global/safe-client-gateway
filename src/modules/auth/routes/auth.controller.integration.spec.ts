@@ -627,6 +627,43 @@ describe('AuthController', () => {
         });
     });
 
+    it('should accept application/x-www-form-urlencoded body', async () => {
+      const configService: IConfigurationService = app.get(
+        IConfigurationService,
+      );
+      const postLoginRedirectUri = configService.getOrThrow<string>(
+        'auth.postLoginRedirectUri',
+      );
+
+      await request(app.getHttpServer())
+        .post('/v1/auth/logout/redirect')
+        .type('form')
+        .send({})
+        .expect(303)
+        .expect(({ headers }) => {
+          expect(headers.location).toBe(postLoginRedirectUri);
+        });
+    });
+
+    it('should accept redirect_url from urlencoded body', async () => {
+      const configService: IConfigurationService = app.get(
+        IConfigurationService,
+      );
+      const postLoginRedirectUri = configService.getOrThrow<string>(
+        'auth.postLoginRedirectUri',
+      );
+      const redirectUrl = `${postLoginRedirectUri}/settings`;
+
+      await request(app.getHttpServer())
+        .post('/v1/auth/logout/redirect')
+        .type('form')
+        .send(`redirect_url=${encodeURIComponent(redirectUrl)}`)
+        .expect(303)
+        .expect(({ headers }) => {
+          expect(headers.location).toBe(redirectUrl);
+        });
+    });
+
     it('should return 400 for cross-origin redirect_url', async () => {
       await request(app.getHttpServer())
         .post('/v1/auth/logout/redirect')
