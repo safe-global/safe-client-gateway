@@ -280,8 +280,7 @@ export class CircuitBreakerService {
   private getEffectiveFailureThreshold(circuit: ICircuit): number {
     if (circuit.metrics.state === CircuitState.HALF_OPEN) {
       return Math.ceil(
-        (this.config.threshold *
-          this.config.halfOpenFailureRateThreshold) /
+        (this.config.threshold * this.config.halfOpenFailureRateThreshold) /
           100,
       );
     }
@@ -481,6 +480,8 @@ export class CircuitBreakerService {
       staleNextAttemptTime &&
       now < staleNextAttemptTime;
 
-    return timeSinceLastFailure > staleRollingWindow && !isWaitingForNextAttempt;
+    return (
+      timeSinceLastFailure > staleRollingWindow && !isWaitingForNextAttempt
+    );
   }
 }
