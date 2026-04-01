@@ -128,20 +128,21 @@ function createCircuitBreakerRequestFunction(
       return request(url, options, timeout);
     }
 
+    circuitBreakerService.canProceedOrFail(circuitBreaker.key);
+
     try {
-      circuitBreakerService.canProceedOrFail(circuitBreaker.key);
       const response = await request(url, options, timeout);
       circuitBreakerService.recordSuccess(circuitBreaker.key);
-
       return response;
     } catch (error) {
-      if (
-        (error instanceof NetworkResponseError &&
-          error.response.status >= 500) ||
-        error instanceof NetworkRequestError
-      ) {
+      const isServerError =
+        error instanceof NetworkResponseError && error.response.status >= 500;
+      const isNetworkError = error instanceof NetworkRequestError;
+      if (isServerError || isNetworkError) {
         circuitBreakerService.getOrRegisterCircuit(circuitBreaker.key);
         circuitBreakerService.recordFailure(circuitBreaker.key);
+      } else {
+        circuitBreakerService.recordSuccess(circuitBreaker.key);
       }
 
       throw error;
