@@ -601,13 +601,14 @@ describe('NetworkModule', () => {
 
       const url = faker.internet.url({ appendSlash: false });
       const options = { method: 'GET' };
+      const threshold = defaultThreshold;
 
-      await expect(
-        fetchClient(url, options, undefined, { key: 'test-circuit' }),
-      ).rejects.toThrow();
-      await expect(
-        fetchClient(url, options, undefined, { key: 'test-circuit' }),
-      ).rejects.toThrow();
+      // Trip the circuit
+      for (let i = 0; i < threshold; i++) {
+        await expect(
+          fetchClient(url, options, undefined, { key: 'test-circuit' }),
+        ).rejects.toThrow();
+      }
 
       fetchMock.mockClear();
 
