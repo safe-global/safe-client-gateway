@@ -140,10 +140,8 @@ function createCircuitBreakerRequestFunction(
           error.response.status >= 500) ||
         error instanceof NetworkRequestError
       ) {
-        const circuit = circuitBreakerService.getOrRegisterCircuit(
-          circuitBreaker.key,
-        );
-        circuitBreakerService.recordFailure(circuit);
+        circuitBreakerService.getOrRegisterCircuit(circuitBreaker.key);
+        circuitBreakerService.recordFailure(circuitBreaker.key);
       }
 
       throw error;

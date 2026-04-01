@@ -27,7 +27,6 @@ import { hashSha1 } from '@/domain/common/utils/utils';
 import { CircuitBreakerModule } from '@/datasources/circuit-breaker/circuit-breaker.module';
 import { CircuitBreakerService } from '@/datasources/circuit-breaker/circuit-breaker.service';
 import { CircuitBreakerException } from '@/datasources/circuit-breaker/exceptions/circuit-breaker.exception';
-import type { ICircuitConfig } from '@/datasources/circuit-breaker/interfaces/circuit-breaker.interface';
 import { getGlobalDispatcher } from 'undici';
 import { UndiciShutdownHook } from '@/datasources/network/undici.shutdown.hook';
 
@@ -35,41 +34,20 @@ describe('NetworkModule', () => {
   let app: INestApplication<Server>;
   let fetchClient: FetchClient;
   let defaultTimeout: number;
+  let defaultThreshold: number;
   let loggingService: ILoggingService;
   let circuitBreakerService: CircuitBreakerService;
-  let circuitBreakerConfig: ICircuitConfig | undefined;
-
   // fetch response is not mocked but we are only concerned with RequestInit options
   const fetchMock = jest.fn();
   jest.spyOn(global, 'fetch').mockImplementation(fetchMock);
 
-  async function initApp(
-    cacheInFlightRequests: boolean,
-    config?: ICircuitConfig,
-  ): Promise<void> {
-    circuitBreakerConfig = config;
+  async function initApp(cacheInFlightRequests: boolean): Promise<void> {
     const baseConfiguration = configuration();
     const testConfiguration: typeof configuration = () => ({
       ...baseConfiguration,
       features: {
         ...baseConfiguration.features,
         cacheInFlightRequests,
-      },
-      circuitBreaker: {
-        enabled: baseConfiguration.circuitBreaker.enabled,
-        failureThreshold:
-          config?.failureThreshold ??
-          baseConfiguration.circuitBreaker.failureThreshold,
-        successThreshold:
-          config?.successThreshold ??
-          baseConfiguration.circuitBreaker.successThreshold,
-        timeout: config?.timeout ?? baseConfiguration.circuitBreaker.timeout,
-        rollingWindow:
-          config?.rollingWindow ??
-          baseConfiguration.circuitBreaker.rollingWindow,
-        halfOpenMaxRequests:
-          config?.halfOpenMaxRequests ??
-          baseConfiguration.circuitBreaker.halfOpenMaxRequests,
       },
     });
 
@@ -91,6 +69,9 @@ describe('NetworkModule', () => {
     fetchClient = moduleFixture.get(FetchClientToken);
     defaultTimeout = configurationService.getOrThrow(
       'httpClient.requestTimeout',
+    );
+    defaultThreshold = configurationService.getOrThrow(
+      'circuitBreaker.threshold',
     );
     loggingService = moduleFixture.get<ILoggingService>(LoggingService);
     jest.spyOn(loggingService, 'debug');
@@ -430,13 +411,7 @@ describe('NetworkModule', () => {
 
   describe('with circuit breaker enabled', () => {
     beforeAll(async () => {
-      await initApp(false, {
-        failureThreshold: faker.number.int({ min: 2, max: 5 }),
-        successThreshold: faker.number.int({ min: 1, max: 5 }),
-        timeout: faker.number.int({ min: 500, max: 2000 }), // Short timeout for faster tests
-        rollingWindow: faker.number.int({ min: 60_000, max: 300_000 }),
-        halfOpenMaxRequests: faker.number.int({ min: 1, max: 10 }),
-      });
+      await initApp(false);
     });
 
     afterAll(async () => {
@@ -478,10 +453,10 @@ describe('NetworkModule', () => {
       fetchMock.mockResolvedValue(errorResponse);
 
       const url = faker.internet.url({ appendSlash: false });
-      const failureThreshold = circuitBreakerConfig?.failureThreshold ?? 2;
+      const threshold = defaultThreshold;
 
       // Trip the circuit
-      for (let i = 0; i < failureThreshold; i++) {
+      for (let i = 0; i < threshold; i++) {
         await expect(
           fetchClient(url, { method: 'GET' }, undefined, {
             key: 'test-circuit',
@@ -502,14 +477,14 @@ describe('NetworkModule', () => {
       const json = fakeJson();
 
       const url = faker.internet.url({ appendSlash: false });
-      const failureThreshold = circuitBreakerConfig?.failureThreshold ?? 2;
+      const threshold = defaultThreshold;
 
       const errorResponse = {
         ok: false,
         status: 500,
         json: () => Promise.resolve(json),
       } as Response;
-      for (let i = 0; i < failureThreshold; i++) {
+      for (let i = 0; i < threshold; i++) {
         fetchMock.mockResolvedValueOnce(errorResponse);
         await expect(
           fetchClient(url, { method: 'GET' }, undefined, {
@@ -539,13 +514,7 @@ describe('NetworkModule', () => {
 
   describe('with caching and circuit breaker enabled', () => {
     beforeAll(async () => {
-      await initApp(true, {
-        failureThreshold: 2, // Fixed threshold for predictable tests
-        successThreshold: faker.number.int({ min: 1, max: 5 }),
-        timeout: faker.number.int({ min: 500, max: 2000 }),
-        rollingWindow: faker.number.int({ min: 60_000, max: 300_000 }),
-        halfOpenMaxRequests: faker.number.int({ min: 1, max: 10 }),
-      });
+      await initApp(true);
     });
 
     afterAll(async () => {
