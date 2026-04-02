@@ -56,6 +56,10 @@ export type OidcAuthPayloadDto = z.infer<typeof OidcAuthPayloadDtoSchema>;
 export type AuthenticatedAuthPayload = AuthPayload &
   Required<Pick<AuthPayload, 'sub' | 'auth_method'>>;
 
+export type SiweAuthPayload = AuthenticatedAuthPayload &
+  Required<Pick<AuthPayload, 'chain_id' | 'signer_address'>>;
+
+
 export class AuthPayload {
   sub?: string;
   auth_method?: (typeof AuthMethod)[keyof typeof AuthMethod];
@@ -83,7 +87,7 @@ export class AuthPayload {
     return this.sub;
   }
 
-  isSiwe(): boolean {
+  isSiwe(): this is SiweAuthPayload {
     return this.auth_method === AuthMethod.Siwe;
   }
 

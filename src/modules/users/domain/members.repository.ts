@@ -10,10 +10,7 @@ import { type Address, isAddressEqual } from 'viem';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import {
-  assertAuthenticated,
-  getAuthenticatedUserId,
-} from '@/modules/auth/utils/assert-authenticated.utils';
+import { getAuthenticatedUserId } from '@/modules/auth/utils/assert-authenticated.utils';
 import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
 import { Member as DbMember } from '@/modules/users/datasources/entities/member.entity.db';
 import { IWalletsRepository } from '@/modules/wallets/domain/wallets.repository.interface';
@@ -100,8 +97,7 @@ export class MembersRepository implements IMembersRepository {
       role: Member['role'];
     }>;
   }): Promise<Array<Invitation>> {
-    assertAuthenticated(args.authPayload);
-    const userId = Number(args.authPayload.sub);
+    const userId = getAuthenticatedUserId(args.authPayload);
 
     const space = await this.spacesRepository.findOneOrFail({
       where: { id: args.spaceId },
@@ -130,7 +126,7 @@ export class MembersRepository implements IMembersRepository {
     // TODO: Until OIDC invite flow is set up, OIDC admins have no wallet
     // address to store here. Revisit when OIDC invite identifiers are available.
     const invitedBy = args.authPayload.isSiwe()
-      ? args.authPayload.signer_address!
+      ? args.authPayload.signer_address
       : null;
 
     await this.postgresDatabaseService.transaction(async (entityManager) => {
