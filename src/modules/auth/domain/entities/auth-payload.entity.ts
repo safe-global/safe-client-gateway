@@ -59,7 +59,6 @@ export type AuthenticatedAuthPayload = AuthPayload &
 export type SiweAuthPayload = AuthenticatedAuthPayload &
   Required<Pick<AuthPayload, 'chain_id' | 'signer_address'>>;
 
-
 export class AuthPayload {
   sub?: string;
   auth_method?: (typeof AuthMethod)[keyof typeof AuthMethod];

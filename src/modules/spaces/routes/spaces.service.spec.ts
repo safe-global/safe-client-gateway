@@ -221,28 +221,25 @@ describe('SpacesService', () => {
     it.each([
       ['SIWE', siweAuthPayloadDtoBuilder] as const,
       ['OIDC', oidcAuthPayloadDtoBuilder] as const,
-    ])(
-      'should return a space by ID for %s user',
-      async (_label, builder) => {
-        const authPayload = new AuthPayload(builder().build());
-        const userId = Number(authPayload.sub);
-        const space = spaceBuilder().build();
-        const member = memberBuilder()
-          .with('user', userBuilder().with('id', userId).build())
-          .with('space', space)
-          .build();
+    ])('should return a space by ID for %s user', async (_label, builder) => {
+      const authPayload = new AuthPayload(builder().build());
+      const userId = Number(authPayload.sub);
+      const space = spaceBuilder().build();
+      const member = memberBuilder()
+        .with('user', userBuilder().with('id', userId).build())
+        .with('space', space)
+        .build();
 
-        membersRepositoryMock.find.mockResolvedValue([member]);
-        spacesRepositoryMock.find.mockResolvedValue([space]);
+      membersRepositoryMock.find.mockResolvedValue([member]);
+      spacesRepositoryMock.find.mockResolvedValue([space]);
 
-        const result = await service.getActiveOrInvitedSpace(
-          space.id,
-          authPayload,
-        );
+      const result = await service.getActiveOrInvitedSpace(
+        space.id,
+        authPayload,
+      );
 
-        expect(result.id).toBe(space.id);
-      },
-    );
+      expect(result.id).toBe(space.id);
+    });
 
     it.each([
       ['SIWE', siweAuthPayloadDtoBuilder] as const,
