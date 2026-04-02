@@ -41,7 +41,6 @@ import {
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import { RowSchema } from '@/datasources/db/v1/entities/row.entity';
 import { getEnumKey } from '@/domain/common/utils/enum';
-import { UserStatus } from '@/modules/users/domain/entities/user.entity';
 import { SpacesCreationRateLimitGuard } from '@/modules/spaces/routes/guards/spaces-creation-rate-limit.guard';
 
 @ApiTags('spaces')
@@ -62,10 +61,6 @@ export class SpacesController {
   @ApiOkResponse({
     description: 'Space created successfully',
     type: CreateSpaceResponse,
-  })
-  @ApiNotFoundResponse({
-    description:
-      'User not found - the authenticated wallet is not associated with any user',
   })
   @ApiForbiddenResponse({
     description: 'Forbidden resource - user lacks permission to create spaces',
@@ -90,14 +85,14 @@ export class SpacesController {
   @ApiOperation({
     summary: 'Create space with user',
     description:
-      'Creates a new space and automatically creates a user account if one does not exist for the authenticated wallet.',
+      'Creates a new space for the authenticated user. Activates the user if their status is PENDING.',
   })
   @ApiBody({
     type: CreateSpaceDto,
     description: 'Space creation data including the name of the space',
   })
   @ApiOkResponse({
-    description: 'Space and user created successfully',
+    description: 'Space created successfully',
     type: CreateSpaceResponse,
   })
   @ApiForbiddenResponse({
@@ -113,11 +108,10 @@ export class SpacesController {
     body: CreateSpaceDto,
     @Auth() authPayload: AuthPayload,
   ): Promise<CreateSpaceResponse> {
-    return await this.spacesService.createWithUser({
+    return await this.spacesService.create({
       authPayload,
       name: body.name,
       status: getEnumKey(SpaceStatus, SpaceStatus.ACTIVE),
-      userStatus: getEnumKey(UserStatus, UserStatus.ACTIVE),
     });
   }
 
@@ -130,10 +124,6 @@ export class SpacesController {
     description: 'User spaces retrieved successfully',
     type: GetSpaceResponse,
     isArray: true,
-  })
-  @ApiNotFoundResponse({
-    description:
-      'User not found - the authenticated wallet is not associated with any user',
   })
   @ApiForbiddenResponse({
     description: 'Forbidden resource - user lacks permission to view spaces',
@@ -164,7 +154,7 @@ export class SpacesController {
     type: GetSpaceResponse,
   })
   @ApiNotFoundResponse({
-    description: 'Space not found or user not found',
+    description: 'Space not found',
   })
   @ApiForbiddenResponse({
     description: 'Forbidden resource - user is not a member of this space',
@@ -208,7 +198,7 @@ export class SpacesController {
       'Authentication required or user unauthorized to update this space',
   })
   @ApiNotFoundResponse({
-    description: 'User or space not found',
+    description: 'Space not found',
   })
   @Patch('/:id')
   @UseGuards(SpacesCreationRateLimitGuard)
@@ -249,7 +239,7 @@ export class SpacesController {
       'Authentication required or user unauthorized to delete this space',
   })
   @ApiNotFoundResponse({
-    description: 'User or space not found',
+    description: 'Space not found',
   })
   @Delete('/:id')
   @HttpCode(HttpStatus.NO_CONTENT)

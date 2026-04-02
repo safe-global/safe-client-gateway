@@ -1,27 +1,28 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
 import { SpaceSafe } from '@/modules/spaces/datasources/entities/space-safes.entity.db';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
-import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
+import { getAuthenticatedUserId } from '@/modules/auth/utils/assert-authenticated.utils';
 import { CreateSpaceSafeDto } from '@/modules/spaces/routes/entities/create-space-safe.dto.entity';
 import { DeleteSpaceSafeDto } from '@/modules/spaces/routes/entities/delete-space-safe.dto.entity';
 import { GetSpaceSafeResponse } from '@/modules/spaces/routes/entities/get-space-safe.dto.entity';
-import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
-import { groupBy, mapValues } from 'lodash';
 import { ISpaceSafesRepository } from '@/modules/spaces/domain/space-safes.repository.interface';
+import { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
 import { IMembersRepository } from '@/modules/users/domain/members.repository.interface';
-import { In } from 'typeorm';
-import type { Address } from 'viem';
+import {
+  assertAdmin,
+  assertMember,
+} from '@/modules/spaces/routes/utils/space-assert.utils';
+import { Inject, Injectable } from '@nestjs/common';
+import { groupBy, mapValues } from 'lodash';
 
 @Injectable()
 export class SpaceSafesService {
   public constructor(
-    @Inject(IUsersRepository)
-    private readonly userRepository: IUsersRepository,
-    @Inject(ISpacesRepository)
-    private readonly spacesRepository: ISpacesRepository,
     @Inject(ISpaceSafesRepository)
     private readonly spaceSafesRepository: ISpaceSafesRepository,
+    @Inject(ISpacesRepository)
+    private readonly spacesRepository: ISpacesRepository,
     @Inject(IMembersRepository)
     private readonly membersRepository: IMembersRepository,
   ) {}
@@ -31,8 +32,8 @@ export class SpaceSafesService {
     authPayload: AuthPayload;
     payload: Array<CreateSpaceSafeDto>;
   }): Promise<void> {
-    this.assertSignerAddress(args.authPayload);
-    await this.isAdmin(args.spaceId, args.authPayload.signer_address);
+    const userId = getAuthenticatedUserId(args.authPayload);
+    await assertAdmin(this.spacesRepository, args.spaceId, userId);
 
     return await this.spaceSafesRepository.create({
       spaceId: args.spaceId,
@@ -44,8 +45,8 @@ export class SpaceSafesService {
     spaceId: Space['id'],
     authPayload: AuthPayload,
   ): Promise<GetSpaceSafeResponse> {
-    this.assertSignerAddress(authPayload);
-    await this.isMember(spaceId, authPayload.signer_address);
+    const userId = getAuthenticatedUserId(authPayload);
+    await assertMember(this.membersRepository, spaceId, userId);
 
     const spaceSafes = await this.spaceSafesRepository.findBySpaceId(spaceId);
 
@@ -59,68 +60,13 @@ export class SpaceSafesService {
     authPayload: AuthPayload;
     payload: Array<DeleteSpaceSafeDto>;
   }): Promise<void> {
-    this.assertSignerAddress(args.authPayload);
-    await this.isAdmin(args.spaceId, args.authPayload.signer_address);
+    const userId = getAuthenticatedUserId(args.authPayload);
+    await assertAdmin(this.spacesRepository, args.spaceId, userId);
 
     await this.spaceSafesRepository.delete({
       spaceId: args.spaceId,
       payload: args.payload,
     });
-  }
-
-  private assertSignerAddress(
-    authPayload: AuthPayload,
-  ): asserts authPayload is AuthPayload & { signer_address: Address } {
-    if (!authPayload.signer_address) {
-      throw new UnauthorizedException('Signer address not provided');
-    }
-  }
-
-  private async isAdmin(
-    spaceId: Space['id'],
-    signerAddress: Address,
-  ): Promise<void> {
-    const { id: userId } =
-      await this.userRepository.findByWalletAddressOrFail(signerAddress);
-
-    const space = await this.spacesRepository.findOne({
-      where: {
-        id: spaceId,
-        members: {
-          role: 'ADMIN',
-          status: 'ACTIVE',
-          user: {
-            id: userId,
-          },
-        },
-      },
-    });
-
-    if (!space) {
-      throw new UnauthorizedException(
-        'User is unauthorized. signer_address= ' + signerAddress,
-      );
-    }
-  }
-
-  private async isMember(
-    spaceId: Space['id'],
-    signerAddress: Address,
-  ): Promise<void> {
-    const { id: userId } =
-      await this.userRepository.findByWalletAddressOrFail(signerAddress);
-
-    const member = await this.membersRepository.findOne({
-      user: { id: userId },
-      space: { id: spaceId },
-      status: In(['ACTIVE', 'INVITED']),
-    });
-
-    if (!member) {
-      throw new UnauthorizedException(
-        'User is unauthorized. signer_address= ' + signerAddress,
-      );
-    }
   }
 
   /**

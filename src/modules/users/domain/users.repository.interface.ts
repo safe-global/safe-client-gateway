@@ -59,4 +59,6 @@ export interface IUsersRepository {
     status: User['status'];
     entityManager: EntityManager;
   }): Promise<void>;
+
+  activateIfPending(userId: User['id']): Promise<void>;
 }

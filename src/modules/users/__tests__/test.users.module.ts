@@ -22,6 +22,7 @@ import { IMembersRepository } from '@/modules/users/domain/members.repository.in
         findOrCreateByExtUserId: (): Promise<number> => Promise.resolve(1),
         update: jest.fn(),
         updateStatus: jest.fn(),
+        activateIfPending: jest.fn(),
       },
     },
     {

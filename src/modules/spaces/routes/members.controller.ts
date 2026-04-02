@@ -278,9 +278,9 @@ export class MembersController {
       'Update the alias of the authenticated member in a space. Users can only update their own alias.',
   })
   @ApiOkResponse({ description: 'Alias updated' })
-  @ApiForbiddenResponse({ description: 'Signer not authorized' })
+  @ApiForbiddenResponse({ description: 'User not authorized' })
   @ApiNotFoundResponse({
-    description: 'Signer, space or member not found',
+    description: 'Space or member not found',
   })
   @Patch('/:spaceId/members/alias')
   @UseGuards(AuthGuard)
@@ -351,12 +351,12 @@ export class MembersController {
     description: 'Remove own membership from a space.',
   })
   @ApiOkResponse({ description: 'Membership deleted' })
-  @ApiForbiddenResponse({ description: 'Signer not authorized' })
+  @ApiForbiddenResponse({ description: 'User not authorized' })
   @ApiNotFoundResponse({
-    description: 'Signer or space not found',
+    description: 'Space not found',
   })
   @ApiUnauthorizedResponse({
-    description: 'Signer address not provided',
+    description: 'Not authenticated',
   })
   @ApiConflictResponse({ description: 'Cannot remove last admin' })
   @Delete('/:spaceId/members')

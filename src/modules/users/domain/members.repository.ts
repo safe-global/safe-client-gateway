@@ -9,6 +9,10 @@ import { type Address, isAddressEqual } from 'viem';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
+import {
+  assertAuthenticated,
+  getAuthenticatedUserId,
+} from '@/modules/auth/utils/assert-authenticated.utils';
 import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
 import { Member as DbMember } from '@/modules/users/datasources/entities/member.entity.db';
 import { IWalletsRepository } from '@/modules/wallets/domain/wallets.repository.interface';
@@ -95,11 +99,9 @@ export class MembersRepository implements IMembersRepository {
       role: Member['role'];
     }>;
   }): Promise<Array<Invitation>> {
-    this.assertSignerAddress(args.authPayload);
-    const { signer_address: adminAddress } = args.authPayload;
+    assertAuthenticated(args.authPayload);
+    const userId = Number(args.authPayload.sub);
 
-    const admin =
-      await this.usersRepository.findByWalletAddressOrFail(adminAddress);
     const space = await this.spacesRepository.findOneOrFail({
       where: { id: args.spaceId },
     });
@@ -107,14 +109,14 @@ export class MembersRepository implements IMembersRepository {
       await this.postgresDatabaseService.getRepository(DbMember);
     const activeAdmin = await membersRepository.findOne({
       where: {
-        user: { id: admin.id },
+        user: { id: userId },
         space: { id: args.spaceId },
         status: 'ACTIVE',
         role: 'ADMIN',
       },
     });
     if (!activeAdmin) {
-      throw new UnauthorizedException('Signer is not an active admin.');
+      throw new UnauthorizedException('User is not an active admin.');
     }
 
     const invitedAddresses = args.users.map((user) => user.address);
@@ -123,6 +125,12 @@ export class MembersRepository implements IMembersRepository {
       relations: { user: true },
     });
     const invitations: Array<Invitation> = [];
+
+    // TODO: Until OIDC invite flow is set up, OIDC admins have no wallet
+    // address to store here. Revisit when OIDC invite identifiers are available.
+    const invitedBy = args.authPayload.isSiwe()
+      ? args.authPayload.signer_address!
+      : null;
 
     await this.postgresDatabaseService.transaction(async (entityManager) => {
       for (const userToInvite of args.users) {
@@ -144,7 +152,7 @@ export class MembersRepository implements IMembersRepository {
             name: userToInvite.name,
             role: userToInvite.role,
             status: 'INVITED',
-            invitedBy: adminAddress,
+            invitedBy,
           });
         } catch (err) {
           if (isUniqueConstraintError(err)) {
@@ -161,7 +169,7 @@ export class MembersRepository implements IMembersRepository {
           name: userToInvite.name,
           role: userToInvite.role,
           status: 'INVITED',
-          invitedBy: adminAddress,
+          invitedBy,
         });
       }
     });
@@ -187,15 +195,12 @@ export class MembersRepository implements IMembersRepository {
     spaceId: Space['id'];
     payload: Pick<Member, 'name'>;
   }): Promise<void> {
-    this.assertSignerAddress(args.authPayload);
+    const userId = getAuthenticatedUserId(args.authPayload);
 
-    const user = await this.usersRepository.findByWalletAddressOrFail(
-      args.authPayload.signer_address,
-    );
     const space = await this.spacesRepository.findOneOrFail({
       where: {
         id: args.spaceId,
-        members: { user: { id: user.id }, status: 'INVITED' },
+        members: { user: { id: userId }, status: 'INVITED' },
       },
       relations: { members: { user: true } },
     });
@@ -208,7 +213,7 @@ export class MembersRepository implements IMembersRepository {
       });
 
       await this.usersRepository.updateStatus({
-        userId: user.id,
+        userId,
         status: 'ACTIVE',
         entityManager,
       });
@@ -219,15 +224,12 @@ export class MembersRepository implements IMembersRepository {
     authPayload: AuthPayload;
     spaceId: Space['id'];
   }): Promise<void> {
-    this.assertSignerAddress(args.authPayload);
+    const userId = getAuthenticatedUserId(args.authPayload);
 
-    const user = await this.usersRepository.findByWalletAddressOrFail(
-      args.authPayload.signer_address,
-    );
     const space = await this.spacesRepository.findOneOrFail({
       where: {
         id: args.spaceId,
-        members: { user: { id: user.id }, status: 'INVITED' },
+        members: { user: { id: userId }, status: 'INVITED' },
       },
       relations: { members: { user: true } },
     });
@@ -244,16 +246,13 @@ export class MembersRepository implements IMembersRepository {
     authPayload: AuthPayload;
     spaceId: Space['id'];
   }): Promise<Array<Member>> {
-    this.assertSignerAddress(args.authPayload);
+    const userId = getAuthenticatedUserId(args.authPayload);
 
-    const user = await this.usersRepository.findByWalletAddressOrFail(
-      args.authPayload.signer_address,
-    );
     const membersRepository =
       await this.postgresDatabaseService.getRepository(DbMember);
     const member = await membersRepository.findOne({
       where: {
-        user: { id: user.id },
+        user: { id: userId },
         space: { id: args.spaceId },
         status: In(['ACTIVE', 'INVITED']),
       },
@@ -284,18 +283,17 @@ export class MembersRepository implements IMembersRepository {
     userId: User['id'];
     role: Member['role'];
   }): Promise<void> {
-    this.assertSignerAddress(args.authPayload);
-
-    const user = await this.usersRepository.findByWalletAddressOrFail(
-      args.authPayload.signer_address,
-    );
+    const actingUserId = getAuthenticatedUserId(args.authPayload);
 
     const activeAdmins = await this.findActiveAdminsOrFail(args.spaceId);
 
-    this.assertIsActiveAdmin({ members: activeAdmins, userId: user.id });
-    const isSelf = user.id === args.userId;
+    this.assertIsActiveAdmin({ members: activeAdmins, userId: actingUserId });
+    const isSelf = actingUserId === args.userId;
     if (isSelf && args.role !== 'ADMIN') {
-      this.assertIsNotLastAdmin({ members: activeAdmins, userId: user.id });
+      this.assertIsNotLastAdmin({
+        members: activeAdmins,
+        userId: actingUserId,
+      });
     }
 
     const membersRepository =
@@ -315,16 +313,12 @@ export class MembersRepository implements IMembersRepository {
     spaceId: Space['id'];
     alias: Member['alias'];
   }): Promise<void> {
-    this.assertSignerAddress(args.authPayload);
-
-    const user = await this.usersRepository.findByWalletAddressOrFail(
-      args.authPayload.signer_address,
-    );
+    const userId = getAuthenticatedUserId(args.authPayload);
 
     const membersRepository =
       await this.postgresDatabaseService.getRepository(DbMember);
     const updateResult = await membersRepository.update(
-      { user: { id: user.id }, space: { id: args.spaceId } },
+      { user: { id: userId }, space: { id: args.spaceId } },
       { alias: args.alias },
     );
 
@@ -338,18 +332,17 @@ export class MembersRepository implements IMembersRepository {
     userId: User['id'];
     spaceId: Space['id'];
   }): Promise<void> {
-    this.assertSignerAddress(args.authPayload);
-
-    const user = await this.usersRepository.findByWalletAddressOrFail(
-      args.authPayload.signer_address,
-    );
+    const actingUserId = getAuthenticatedUserId(args.authPayload);
 
     const activeAdmins = await this.findActiveAdminsOrFail(args.spaceId);
 
-    this.assertIsActiveAdmin({ members: activeAdmins, userId: user.id });
-    const isSelf = user.id === args.userId;
+    this.assertIsActiveAdmin({ members: activeAdmins, userId: actingUserId });
+    const isSelf = actingUserId === args.userId;
     if (isSelf) {
-      this.assertIsNotLastAdmin({ members: activeAdmins, userId: user.id });
+      this.assertIsNotLastAdmin({
+        members: activeAdmins,
+        userId: actingUserId,
+      });
     }
 
     const membersRepository =
@@ -368,34 +361,22 @@ export class MembersRepository implements IMembersRepository {
     authPayload: AuthPayload;
     spaceId: Space['id'];
   }): Promise<void> {
-    this.assertSignerAddress(args.authPayload);
-
-    const user = await this.usersRepository.findByWalletAddressOrFail(
-      args.authPayload.signer_address,
-    );
+    const userId = getAuthenticatedUserId(args.authPayload);
 
     const activeAdmins = await this.findActiveAdminsOrFail(args.spaceId);
 
-    this.assertIsNotLastAdmin({ members: activeAdmins, userId: user.id });
+    this.assertIsNotLastAdmin({ members: activeAdmins, userId });
 
     const membersRepository =
       await this.postgresDatabaseService.getRepository(DbMember);
 
     const deleteResult = await membersRepository.delete({
-      user: { id: user.id },
+      user: { id: userId },
       space: { id: args.spaceId },
     });
 
     if (deleteResult.affected === 0) {
       throw new NotFoundException('Member not found.');
-    }
-  }
-
-  private assertSignerAddress(
-    authPayload: AuthPayload,
-  ): asserts authPayload is AuthPayload & { signer_address: Address } {
-    if (!authPayload.signer_address) {
-      throw new UnauthorizedException('Signer address not provided.');
     }
   }
 
@@ -408,7 +389,7 @@ export class MembersRepository implements IMembersRepository {
         return this.isActiveAdmin(member) && member.user.id === args.userId;
       })
     ) {
-      throw new UnauthorizedException('Signer is not an active admin.');
+      throw new UnauthorizedException('User is not an active admin.');
     }
   }
 

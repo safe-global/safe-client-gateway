@@ -1,29 +1,36 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { SpacesService } from '@/modules/spaces/routes/spaces.service';
 import type { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
-import type { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
 import type { IMembersRepository } from '@/modules/users/domain/members.repository.interface';
+import type { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { UnauthorizedException } from '@nestjs/common';
 import { faker } from '@faker-js/faker';
-import type { Address } from 'viem';
 import { userBuilder } from '@/modules/users/datasources/entities/__tests__/users.entity.db.builder';
 import { memberBuilder } from '@/modules/users/datasources/entities/__tests__/member.entity.db.builder';
 import { spaceBuilder } from '@/modules/spaces/domain/entities/__tests__/space.entity.db.builder';
 import type { SpaceSafe } from '@/modules/spaces/datasources/entities/space-safes.entity.db';
-import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
-
-const userRepositoryMock = {
-  findByWalletAddressOrFail: jest.fn(),
-} as jest.MockedObjectDeep<IUsersRepository>;
+import {
+  siweAuthPayloadDtoBuilder,
+  oidcAuthPayloadDtoBuilder,
+} from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 
 const spacesRepositoryMock = {
+  create: jest.fn(),
   find: jest.fn(),
+  findOne: jest.fn(),
+  update: jest.fn(),
+  delete: jest.fn(),
 } as jest.MockedObjectDeep<ISpacesRepository>;
 
 const membersRepositoryMock = {
   find: jest.fn(),
+  findOne: jest.fn(),
 } as jest.MockedObjectDeep<IMembersRepository>;
+
+const usersRepositoryMock = {
+  activateIfPending: jest.fn(),
+} as jest.MockedObjectDeep<IUsersRepository>;
 
 describe('SpacesService', () => {
   let service: SpacesService;
@@ -31,26 +38,26 @@ describe('SpacesService', () => {
   beforeEach(() => {
     jest.resetAllMocks();
     service = new SpacesService(
-      userRepositoryMock,
       spacesRepositoryMock,
       membersRepositoryMock,
+      usersRepositoryMock,
     );
   });
 
   describe('getActiveOrInvitedSpaces', () => {
-    it('should return spaces with safeCount computed from safes length', async () => {
-      const signerAddress = faker.finance.ethereumAddress() as Address;
-      const authPayload = siweAuthPayloadDtoBuilder()
-        .with('signer_address', signerAddress)
-        .build() as AuthPayload;
-      const user = userBuilder().build();
+    it.each([
+      ['SIWE', siweAuthPayloadDtoBuilder] as const,
+      ['OIDC', oidcAuthPayloadDtoBuilder] as const,
+    ])('should return spaces for %s user', async (_label, builder) => {
+      const authPayload = new AuthPayload(builder().build());
+      const userId = Number(authPayload.sub);
+      const user = userBuilder().with('id', userId).build();
       const space = spaceBuilder().build();
       const member = memberBuilder()
         .with('user', user)
         .with('space', space)
         .build();
 
-      userRepositoryMock.findByWalletAddressOrFail.mockResolvedValue(user);
       membersRepositoryMock.find.mockResolvedValue([member]);
 
       const mockSpace = spaceBuilder()
@@ -76,178 +83,267 @@ describe('SpacesService', () => {
           safeCount: 3,
         },
       ]);
-      expect(userRepositoryMock.findByWalletAddressOrFail).toHaveBeenCalledWith(
-        signerAddress,
-      );
-      expect(membersRepositoryMock.find).toHaveBeenCalledWith({
-        where: {
-          user: { id: user.id },
-          status: expect.anything(),
-        },
-        relations: ['space'],
-      });
-      expect(spacesRepositoryMock.find).toHaveBeenCalledWith({
-        where: { id: expect.anything() },
-        select: {
-          id: true,
-          name: true,
-          members: {
-            role: true,
-            name: true,
-            invitedBy: true,
-            status: true,
-            user: { id: true },
-          },
-          safes: { id: true },
-        },
-        relations: { members: { user: true }, safes: true },
-      });
     });
 
-    it('should return safeCount 0 when space has no safes', async () => {
-      const signerAddress = faker.finance.ethereumAddress() as Address;
-      const authPayload = siweAuthPayloadDtoBuilder()
-        .with('signer_address', signerAddress)
-        .build() as AuthPayload;
-      const user = userBuilder().build();
-      const space = spaceBuilder().build();
-      const member = memberBuilder()
-        .with('user', user)
-        .with('space', space)
-        .build();
+    it.each([
+      ['SIWE', siweAuthPayloadDtoBuilder] as const,
+      ['OIDC', oidcAuthPayloadDtoBuilder] as const,
+    ])(
+      'should return safeCount 0 when %s space has no safes',
+      async (_label, builder) => {
+        const authPayload = new AuthPayload(builder().build());
+        const userId = Number(authPayload.sub);
+        const space = spaceBuilder().build();
+        const member = memberBuilder()
+          .with('user', userBuilder().with('id', userId).build())
+          .with('space', space)
+          .build();
 
-      userRepositoryMock.findByWalletAddressOrFail.mockResolvedValue(user);
-      membersRepositoryMock.find.mockResolvedValue([member]);
+        membersRepositoryMock.find.mockResolvedValue([member]);
+        spacesRepositoryMock.find.mockResolvedValue([
+          spaceBuilder()
+            .with('id', space.id)
+            .with('members', [])
+            .with('safes', [])
+            .build(),
+        ]);
 
-      const mockSpace = spaceBuilder()
-        .with('id', space.id)
-        .with('members', [])
-        .with('safes', [])
-        .build();
+        const result = await service.getActiveOrInvitedSpaces(authPayload);
 
-      spacesRepositoryMock.find.mockResolvedValue([mockSpace]);
+        expect(result).toHaveLength(1);
+        expect(result[0].safeCount).toBe(0);
+      },
+    );
 
-      const result = await service.getActiveOrInvitedSpaces(authPayload);
+    it.each([
+      ['SIWE', siweAuthPayloadDtoBuilder] as const,
+      ['OIDC', oidcAuthPayloadDtoBuilder] as const,
+    ])(
+      'should return safeCount 0 when %s space.safes is undefined',
+      async (_label, builder) => {
+        const authPayload = new AuthPayload(builder().build());
+        const userId = Number(authPayload.sub);
+        const space = spaceBuilder().build();
+        const member = memberBuilder()
+          .with('user', userBuilder().with('id', userId).build())
+          .with('space', space)
+          .build();
 
-      expect(result).toHaveLength(1);
-      expect(result[0].safeCount).toBe(0);
-    });
+        membersRepositoryMock.find.mockResolvedValue([member]);
+        spacesRepositoryMock.find.mockResolvedValue([
+          spaceBuilder().with('id', space.id).with('members', []).build(),
+        ]);
 
-    it('should return safeCount 0 when space.safes is undefined', async () => {
-      const signerAddress = faker.finance.ethereumAddress() as Address;
-      const authPayload = siweAuthPayloadDtoBuilder()
-        .with('signer_address', signerAddress)
-        .build() as AuthPayload;
-      const user = userBuilder().build();
-      const space = spaceBuilder().build();
-      const member = memberBuilder()
-        .with('user', user)
-        .with('space', space)
-        .build();
+        const result = await service.getActiveOrInvitedSpaces(authPayload);
 
-      userRepositoryMock.findByWalletAddressOrFail.mockResolvedValue(user);
-      membersRepositoryMock.find.mockResolvedValue([member]);
+        expect(result).toHaveLength(1);
+        expect(result[0].safeCount).toBe(0);
+      },
+    );
 
-      const mockSpace = spaceBuilder()
-        .with('id', space.id)
-        .with('members', [])
-        .build();
-      // safes is undefined (not set via builder)
+    it.each([
+      ['SIWE', siweAuthPayloadDtoBuilder] as const,
+      ['OIDC', oidcAuthPayloadDtoBuilder] as const,
+    ])(
+      'should return empty array when %s user has no memberships',
+      async (_label, builder) => {
+        const authPayload = new AuthPayload(builder().build());
 
-      spacesRepositoryMock.find.mockResolvedValue([mockSpace]);
+        membersRepositoryMock.find.mockResolvedValue([]);
 
-      const result = await service.getActiveOrInvitedSpaces(authPayload);
+        const result = await service.getActiveOrInvitedSpaces(authPayload);
 
-      expect(result).toHaveLength(1);
-      expect(result[0].safeCount).toBe(0);
-    });
+        expect(result).toEqual([]);
+        expect(spacesRepositoryMock.find).not.toHaveBeenCalled();
+      },
+    );
 
-    it('should return empty array when user has no memberships', async () => {
-      const signerAddress = faker.finance.ethereumAddress() as Address;
-      const authPayload = siweAuthPayloadDtoBuilder()
-        .with('signer_address', signerAddress)
-        .build() as AuthPayload;
-      const user = userBuilder().build();
+    it.each([
+      ['SIWE', siweAuthPayloadDtoBuilder] as const,
+      ['OIDC', oidcAuthPayloadDtoBuilder] as const,
+    ])(
+      'should return multiple spaces with correct safeCount for %s user',
+      async (_label, builder) => {
+        const authPayload = new AuthPayload(builder().build());
+        const userId = Number(authPayload.sub);
+        const user = userBuilder().with('id', userId).build();
+        const space1 = spaceBuilder().build();
+        const space2 = spaceBuilder().build();
+        const member1 = memberBuilder()
+          .with('user', user)
+          .with('space', space1)
+          .with('status', 'ACTIVE')
+          .build();
+        const member2 = memberBuilder()
+          .with('user', user)
+          .with('space', space2)
+          .with('status', 'INVITED')
+          .build();
 
-      userRepositoryMock.findByWalletAddressOrFail.mockResolvedValue(user);
-      membersRepositoryMock.find.mockResolvedValue([]);
-      spacesRepositoryMock.find.mockResolvedValue([]);
+        membersRepositoryMock.find.mockResolvedValue([member1, member2]);
+        spacesRepositoryMock.find.mockResolvedValue([
+          spaceBuilder()
+            .with('id', space1.id)
+            .with('members', [])
+            .with('safes', [{ id: 1 } as SpaceSafe, { id: 2 } as SpaceSafe])
+            .build(),
+          spaceBuilder()
+            .with('id', space2.id)
+            .with('members', [])
+            .with('safes', [{ id: 3 } as SpaceSafe])
+            .build(),
+        ]);
 
-      const result = await service.getActiveOrInvitedSpaces(authPayload);
+        const result = await service.getActiveOrInvitedSpaces(authPayload);
 
-      expect(result).toEqual([]);
-    });
+        expect(result).toHaveLength(2);
+        expect(result[0].safeCount).toBe(2);
+        expect(result[1].safeCount).toBe(1);
+      },
+    );
 
-    it('should return multiple spaces with correct safeCount each', async () => {
-      const signerAddress = faker.finance.ethereumAddress() as Address;
-      const authPayload = siweAuthPayloadDtoBuilder()
-        .with('signer_address', signerAddress)
-        .build() as AuthPayload;
-      const user = userBuilder().build();
-      const space1 = spaceBuilder().build();
-      const space2 = spaceBuilder().build();
-      const member1 = memberBuilder()
-        .with('user', user)
-        .with('space', space1)
-        .with('status', 'ACTIVE')
-        .build();
-      const member2 = memberBuilder()
-        .with('user', user)
-        .with('space', space2)
-        .with('status', 'INVITED')
-        .build();
-
-      userRepositoryMock.findByWalletAddressOrFail.mockResolvedValue(user);
-      membersRepositoryMock.find.mockResolvedValue([member1, member2]);
-
-      const mockSpaces = [
-        spaceBuilder()
-          .with('id', space1.id)
-          .with('members', [])
-          .with('safes', [{ id: 1 } as SpaceSafe, { id: 2 } as SpaceSafe])
-          .build(),
-        spaceBuilder()
-          .with('id', space2.id)
-          .with('members', [])
-          .with('safes', [{ id: 3 } as SpaceSafe])
-          .build(),
-      ];
-
-      spacesRepositoryMock.find.mockResolvedValue(mockSpaces);
-
-      const result = await service.getActiveOrInvitedSpaces(authPayload);
-
-      expect(result).toHaveLength(2);
-      expect(result[0].safeCount).toBe(2);
-      expect(result[1].safeCount).toBe(1);
-    });
-
-    it('should throw UnauthorizedException when signer_address is not provided', async () => {
+    it('should throw UnauthorizedException for unauthenticated payload', async () => {
       const authPayload = new AuthPayload();
 
       await expect(
         service.getActiveOrInvitedSpaces(authPayload),
       ).rejects.toThrow(UnauthorizedException);
 
-      expect(
-        userRepositoryMock.findByWalletAddressOrFail,
-      ).not.toHaveBeenCalled();
+      expect(membersRepositoryMock.find).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('create', () => {
+    it.each([
+      ['SIWE', siweAuthPayloadDtoBuilder] as const,
+      ['OIDC', oidcAuthPayloadDtoBuilder] as const,
+    ])('should create space for %s user', async (_label, builder) => {
+      const authPayload = new AuthPayload(builder().build());
+      const userId = Number(authPayload.sub);
+      const name = faker.word.noun();
+      const expectedResponse = { id: faker.number.int(), name };
+
+      spacesRepositoryMock.create.mockResolvedValue(expectedResponse);
+
+      const result = await service.create({
+        name,
+        status: 'ACTIVE',
+        authPayload,
+      });
+
+      expect(result).toEqual(expectedResponse);
+      expect(usersRepositoryMock.activateIfPending).toHaveBeenCalledWith(
+        userId,
+      );
+      expect(spacesRepositoryMock.create).toHaveBeenCalledWith(
+        expect.objectContaining({ userId }),
+      );
     });
 
-    it('should propagate error when user is not found', async () => {
-      const signerAddress = faker.finance.ethereumAddress() as Address;
-      const authPayload = siweAuthPayloadDtoBuilder()
-        .with('signer_address', signerAddress)
-        .build() as AuthPayload;
-      const error = new Error('User not found');
+    it('should activate a PENDING user when creating space', async () => {
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      const userId = Number(authPayload.sub);
+      const expectedResponse = {
+        id: faker.number.int(),
+        name: faker.word.noun(),
+      };
 
-      userRepositoryMock.findByWalletAddressOrFail.mockRejectedValue(error);
+      spacesRepositoryMock.create.mockResolvedValue(expectedResponse);
+
+      await service.create({
+        name: expectedResponse.name,
+        status: 'ACTIVE',
+        authPayload,
+      });
+
+      expect(usersRepositoryMock.activateIfPending).toHaveBeenCalledWith(
+        userId,
+      );
+    });
+
+    it('should throw UnauthorizedException for unauthenticated payload', async () => {
+      await expect(
+        service.create({
+          name: faker.word.noun(),
+          status: 'ACTIVE',
+          authPayload: new AuthPayload(),
+        }),
+      ).rejects.toThrow(UnauthorizedException);
+      expect(usersRepositoryMock.activateIfPending).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('update', () => {
+    it.each([
+      ['SIWE', siweAuthPayloadDtoBuilder] as const,
+      ['OIDC', oidcAuthPayloadDtoBuilder] as const,
+    ])('should update space for %s admin', async (_label, builder) => {
+      const spaceId = faker.number.int();
+      const authPayload = new AuthPayload(builder().build());
+      const updatePayload = { name: faker.word.noun() };
+      const expectedResponse = { id: spaceId, name: updatePayload.name };
+
+      spacesRepositoryMock.findOne.mockResolvedValue(
+        spaceBuilder().with('id', spaceId).build(),
+      );
+      spacesRepositoryMock.update.mockResolvedValue(expectedResponse);
+
+      const result = await service.update({
+        id: spaceId,
+        updatePayload,
+        authPayload,
+      });
+
+      expect(result).toEqual(expectedResponse);
+    });
+
+    it.each([
+      ['SIWE', siweAuthPayloadDtoBuilder] as const,
+      ['OIDC', oidcAuthPayloadDtoBuilder] as const,
+    ])('should throw when %s user is not admin', async (_label, builder) => {
+      const authPayload = new AuthPayload(builder().build());
+      spacesRepositoryMock.findOne.mockResolvedValue(null);
 
       await expect(
-        service.getActiveOrInvitedSpaces(authPayload),
-      ).rejects.toThrow('User not found');
+        service.update({
+          id: faker.number.int(),
+          updatePayload: { name: faker.word.noun() },
+          authPayload,
+        }),
+      ).rejects.toThrow(UnauthorizedException);
+    });
+  });
 
-      expect(membersRepositoryMock.find).not.toHaveBeenCalled();
+  describe('delete', () => {
+    it.each([
+      ['SIWE', siweAuthPayloadDtoBuilder] as const,
+      ['OIDC', oidcAuthPayloadDtoBuilder] as const,
+    ])('should delete space for %s admin', async (_label, builder) => {
+      const spaceId = faker.number.int();
+      const authPayload = new AuthPayload(builder().build());
+
+      spacesRepositoryMock.findOne.mockResolvedValue(
+        spaceBuilder().with('id', spaceId).build(),
+      );
+
+      await service.delete({ id: spaceId, authPayload });
+
+      expect(spacesRepositoryMock.delete).toHaveBeenCalledWith(spaceId);
+    });
+
+    it.each([
+      ['SIWE', siweAuthPayloadDtoBuilder] as const,
+      ['OIDC', oidcAuthPayloadDtoBuilder] as const,
+    ])('should throw when %s user is not admin', async (_label, builder) => {
+      const authPayload = new AuthPayload(builder().build());
+      spacesRepositoryMock.findOne.mockResolvedValue(null);
+
+      await expect(
+        service.delete({
+          id: faker.number.int(),
+          authPayload,
+        }),
+      ).rejects.toThrow(UnauthorizedException);
     });
   });
 });
