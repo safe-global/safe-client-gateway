@@ -4,7 +4,7 @@ import type { ISpaceSafesRepository } from '@/modules/spaces/domain/space-safes.
 import type { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
 import type { IMembersRepository } from '@/modules/users/domain/members.repository.interface';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { UnauthorizedException } from '@nestjs/common';
+import { ForbiddenException, UnauthorizedException } from '@nestjs/common';
 import { faker } from '@faker-js/faker';
 import {
   siweAuthPayloadDtoBuilder,
@@ -90,7 +90,7 @@ describe('SpaceSafesService', () => {
             authPayload,
             payload: [],
           }),
-        ).rejects.toThrow(UnauthorizedException);
+        ).rejects.toThrow(ForbiddenException);
       },
     );
   });
@@ -150,7 +150,7 @@ describe('SpaceSafesService', () => {
 
         await expect(
           service.get(faker.number.int(), authPayload),
-        ).rejects.toThrow(UnauthorizedException);
+        ).rejects.toThrow(ForbiddenException);
 
         expect(spaceSafesRepositoryMock.findBySpaceId).not.toHaveBeenCalled();
       },
@@ -205,7 +205,7 @@ describe('SpaceSafesService', () => {
             authPayload,
             payload: [],
           }),
-        ).rejects.toThrow(UnauthorizedException);
+        ).rejects.toThrow(ForbiddenException);
       },
     );
   });

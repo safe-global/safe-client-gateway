@@ -101,7 +101,7 @@ describe('AddressBooksService', () => {
       expect(repositoryMock.upsertMany).not.toHaveBeenCalled();
     });
 
-    it('should throw for unauthenticated user', async () => {
+    it('should throw ForbiddenException for unauthenticated user (no wallet)', async () => {
       const spaceId = faker.number.int();
       const authPayload = new AuthPayload();
 
@@ -143,7 +143,7 @@ describe('AddressBooksService', () => {
       expect(repositoryMock.deleteByAddress).not.toHaveBeenCalled();
     });
 
-    it('should throw for unauthenticated user', async () => {
+    it('should throw ForbiddenException for unauthenticated user (no wallet)', async () => {
       const spaceId = faker.number.int();
       const address = getAddress(faker.finance.ethereumAddress());
       const authPayload = new AuthPayload();

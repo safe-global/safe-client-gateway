@@ -4,7 +4,11 @@ import type { ISpacesRepository } from '@/modules/spaces/domain/spaces.repositor
 import type { IMembersRepository } from '@/modules/users/domain/members.repository.interface';
 import type { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { UnauthorizedException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { faker } from '@faker-js/faker';
 import { userBuilder } from '@/modules/users/datasources/entities/__tests__/users.entity.db.builder';
 import { memberBuilder } from '@/modules/users/datasources/entities/__tests__/member.entity.db.builder';
@@ -213,6 +217,73 @@ describe('SpacesService', () => {
     });
   });
 
+  describe('getActiveOrInvitedSpace', () => {
+    it.each([
+      ['SIWE', siweAuthPayloadDtoBuilder] as const,
+      ['OIDC', oidcAuthPayloadDtoBuilder] as const,
+    ])(
+      'should return a space by ID for %s user',
+      async (_label, builder) => {
+        const authPayload = new AuthPayload(builder().build());
+        const userId = Number(authPayload.sub);
+        const space = spaceBuilder().build();
+        const member = memberBuilder()
+          .with('user', userBuilder().with('id', userId).build())
+          .with('space', space)
+          .build();
+
+        membersRepositoryMock.find.mockResolvedValue([member]);
+        spacesRepositoryMock.find.mockResolvedValue([space]);
+
+        const result = await service.getActiveOrInvitedSpace(
+          space.id,
+          authPayload,
+        );
+
+        expect(result.id).toBe(space.id);
+      },
+    );
+
+    it.each([
+      ['SIWE', siweAuthPayloadDtoBuilder] as const,
+      ['OIDC', oidcAuthPayloadDtoBuilder] as const,
+    ])(
+      'should throw NotFoundException when space ID not found for %s user',
+      async (_label, builder) => {
+        const authPayload = new AuthPayload(builder().build());
+        const userId = Number(authPayload.sub);
+        const space = spaceBuilder().build();
+        const member = memberBuilder()
+          .with('user', userBuilder().with('id', userId).build())
+          .with('space', space)
+          .build();
+
+        membersRepositoryMock.find.mockResolvedValue([member]);
+        spacesRepositoryMock.find.mockResolvedValue([space]);
+
+        await expect(
+          service.getActiveOrInvitedSpace(999999, authPayload),
+        ).rejects.toThrow(new NotFoundException('Space not found.'));
+      },
+    );
+
+    it.each([
+      ['SIWE', siweAuthPayloadDtoBuilder] as const,
+      ['OIDC', oidcAuthPayloadDtoBuilder] as const,
+    ])(
+      'should throw NotFoundException when %s user has no spaces',
+      async (_label, builder) => {
+        const authPayload = new AuthPayload(builder().build());
+
+        membersRepositoryMock.find.mockResolvedValue([]);
+
+        await expect(
+          service.getActiveOrInvitedSpace(1, authPayload),
+        ).rejects.toThrow(new NotFoundException('Space not found.'));
+      },
+    );
+  });
+
   describe('create', () => {
     it.each([
       ['SIWE', siweAuthPayloadDtoBuilder] as const,
@@ -310,7 +381,7 @@ describe('SpacesService', () => {
           updatePayload: { name: faker.word.noun() },
           authPayload,
         }),
-      ).rejects.toThrow(UnauthorizedException);
+      ).rejects.toThrow(ForbiddenException);
     });
   });
 
@@ -343,7 +414,7 @@ describe('SpacesService', () => {
           id: faker.number.int(),
           authPayload,
         }),
-      ).rejects.toThrow(UnauthorizedException);
+      ).rejects.toThrow(ForbiddenException);
     });
   });
 });

@@ -4,7 +4,7 @@ import type { ISpacesRepository } from '@/modules/spaces/domain/spaces.repositor
 import type { IMembersRepository } from '@/modules/users/domain/members.repository.interface';
 import { getEnumKey } from '@/domain/common/utils/enum';
 import { MemberRole } from '@/modules/users/domain/entities/member.entity';
-import { UnauthorizedException } from '@nestjs/common';
+import { ForbiddenException } from '@nestjs/common';
 import { In } from 'typeorm';
 
 export async function assertAdmin(
@@ -24,7 +24,7 @@ export async function assertAdmin(
   });
 
   if (!space) {
-    throw new UnauthorizedException('User is not an admin of this space');
+    throw new ForbiddenException('User is not an admin of this space');
   }
 }
 
@@ -40,6 +40,6 @@ export async function assertMember(
   });
 
   if (!member) {
-    throw new UnauthorizedException('User is not a member of this space');
+    throw new ForbiddenException('User is not a member of this space');
   }
 }

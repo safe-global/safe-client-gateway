@@ -5,7 +5,7 @@ import {
 } from '@/modules/spaces/routes/utils/space-assert.utils';
 import type { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
 import type { IMembersRepository } from '@/modules/users/domain/members.repository.interface';
-import { UnauthorizedException } from '@nestjs/common';
+import { ForbiddenException } from '@nestjs/common';
 import { faker } from '@faker-js/faker';
 import { spaceBuilder } from '@/modules/spaces/domain/entities/__tests__/space.entity.db.builder';
 import { memberBuilder } from '@/modules/users/datasources/entities/__tests__/member.entity.db.builder';
@@ -46,7 +46,7 @@ describe('space-assert.utils', () => {
       );
     });
 
-    it('should throw UnauthorizedException when user is not admin', async () => {
+    it('should throw ForbiddenException when user is not admin', async () => {
       spacesRepositoryMock.findOne.mockResolvedValue(null);
 
       await expect(
@@ -56,7 +56,7 @@ describe('space-assert.utils', () => {
           faker.number.int(),
         ),
       ).rejects.toThrow(
-        new UnauthorizedException('User is not an admin of this space'),
+        new ForbiddenException('User is not an admin of this space'),
       );
     });
   });
@@ -80,7 +80,7 @@ describe('space-assert.utils', () => {
       );
     });
 
-    it('should throw UnauthorizedException when user is not member', async () => {
+    it('should throw ForbiddenException when user is not member', async () => {
       membersRepositoryMock.findOne.mockResolvedValue(null);
 
       await expect(
@@ -90,7 +90,7 @@ describe('space-assert.utils', () => {
           faker.number.int(),
         ),
       ).rejects.toThrow(
-        new UnauthorizedException('User is not a member of this space'),
+        new ForbiddenException('User is not a member of this space'),
       );
     });
   });
