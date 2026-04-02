@@ -61,7 +61,7 @@
     "bullmq": "^5.56.0",
     "cache-manager": "6.4.1",
     "cookie-parser": "1.4.7",
-    "csv-stringify": "^6.6.0",
+    "csv-stringify": "^6.7.0",
     "jsonwebtoken": "9.0.3",
     "lodash": "4.17.23",
     "nestjs-cls": "6.2.0",
