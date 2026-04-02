@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import {
   ConflictException,
+  ForbiddenException,
   Inject,
   Injectable,
   NotFoundException,
-  UnauthorizedException,
 } from '@nestjs/common';
 import { type Address, isAddressEqual } from 'viem';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
@@ -113,7 +113,7 @@ export class MembersRepository implements IMembersRepository {
       },
     });
     if (!activeAdmin) {
-      throw new UnauthorizedException('User is not an active admin.');
+      throw new ForbiddenException('User is not an active admin.');
     }
 
     const invitedAddresses = args.users.map((user) => user.address);
@@ -255,7 +255,7 @@ export class MembersRepository implements IMembersRepository {
       },
     });
     if (!member) {
-      throw new UnauthorizedException(
+      throw new ForbiddenException(
         'The user is not an active member of the space.',
       );
     }
@@ -386,7 +386,7 @@ export class MembersRepository implements IMembersRepository {
         return this.isActiveAdmin(member) && member.user.id === args.userId;
       })
     ) {
-      throw new UnauthorizedException('User is not an active admin.');
+      throw new ForbiddenException('User is not an active admin.');
     }
   }
 
