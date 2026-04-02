@@ -551,6 +551,40 @@ describe('UsersRepository', () => {
     });
   });
 
+  describe('activateIfPending', () => {
+    it('should activate a PENDING user', async () => {
+      const dbUserRepository = dataSource.getRepository(User);
+      const userInsertResult = await dbUserRepository.insert({
+        status: 'PENDING',
+      });
+      const userId = userInsertResult.identifiers[0].id as number;
+
+      await usersRepository.activateIfPending(userId);
+
+      const user = await dbUserRepository.findOneBy({ id: userId });
+      expect(user?.status).toBe('ACTIVE');
+    });
+
+    it('should not change an already ACTIVE user', async () => {
+      const dbUserRepository = dataSource.getRepository(User);
+      const userInsertResult = await dbUserRepository.insert({
+        status: 'ACTIVE',
+      });
+      const userId = userInsertResult.identifiers[0].id as number;
+
+      await usersRepository.activateIfPending(userId);
+
+      const user = await dbUserRepository.findOneBy({ id: userId });
+      expect(user?.status).toBe('ACTIVE');
+    });
+
+    it('should not throw for non-existent userId', async () => {
+      await expect(
+        usersRepository.activateIfPending(999999),
+      ).resolves.toBeUndefined();
+    });
+  });
+
   describe('delete', () => {
     it('should delete a user and their wallets', async () => {
       const dbWalletRepository = dataSource.getRepository(Wallet);

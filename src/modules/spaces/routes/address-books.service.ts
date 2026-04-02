@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
