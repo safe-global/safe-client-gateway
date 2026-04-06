@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { getAuthenticatedUserId } from '@/modules/auth/utils/assert-authenticated.utils';
+import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
 import { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
 import { IMembersRepository } from '@/modules/users/domain/members.repository.interface';
 import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
@@ -17,12 +17,12 @@ import { In } from 'typeorm';
 
 export class SpacesService {
   public constructor(
+    @Inject(IUsersRepository)
+    private readonly usersRepository: IUsersRepository,
     @Inject(ISpacesRepository)
     private readonly spacesRepository: ISpacesRepository,
     @Inject(IMembersRepository)
     private readonly membersRepository: IMembersRepository,
-    @Inject(IUsersRepository)
-    private readonly usersRepository: IUsersRepository,
   ) {}
 
   public async create(args: {
@@ -30,7 +30,7 @@ export class SpacesService {
     status: Space['status'];
     authPayload: AuthPayload;
   }): Promise<CreateSpaceResponse> {
-    const userId = getAuthenticatedUserId(args.authPayload);
+    const userId = getAuthenticatedUserIdOrFail(args.authPayload);
     await this.usersRepository.activateIfPending(userId);
 
     return await this.spacesRepository.create({ userId, ...args });
@@ -39,7 +39,7 @@ export class SpacesService {
   public async getActiveOrInvitedSpaces(
     authPayload: AuthPayload,
   ): Promise<Array<GetSpaceResponse>> {
-    const userId = getAuthenticatedUserId(authPayload);
+    const userId = getAuthenticatedUserIdOrFail(authPayload);
 
     const members = await this.membersRepository.find({
       where: { user: { id: userId }, status: In(['ACTIVE', 'INVITED']) },
@@ -90,7 +90,7 @@ export class SpacesService {
     updatePayload: UpdateSpaceDto;
     authPayload: AuthPayload;
   }): Promise<UpdateSpaceResponse> {
-    const userId = getAuthenticatedUserId(args.authPayload);
+    const userId = getAuthenticatedUserIdOrFail(args.authPayload);
     await assertAdmin(this.spacesRepository, args.id, userId);
 
     return await this.spacesRepository.update(args);
@@ -100,7 +100,7 @@ export class SpacesService {
     id: Space['id'];
     authPayload: AuthPayload;
   }): ReturnType<ISpacesRepository['delete']> {
-    const userId = getAuthenticatedUserId(args.authPayload);
+    const userId = getAuthenticatedUserIdOrFail(args.authPayload);
     await assertAdmin(this.spacesRepository, args.id, userId);
 
     return await this.spacesRepository.delete(args.id);

@@ -2,7 +2,7 @@
 import { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
 import { SpaceSafe } from '@/modules/spaces/datasources/entities/space-safes.entity.db';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { getAuthenticatedUserId } from '@/modules/auth/utils/assert-authenticated.utils';
+import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
 import { CreateSpaceSafeDto } from '@/modules/spaces/routes/entities/create-space-safe.dto.entity';
 import { DeleteSpaceSafeDto } from '@/modules/spaces/routes/entities/delete-space-safe.dto.entity';
 import { GetSpaceSafeResponse } from '@/modules/spaces/routes/entities/get-space-safe.dto.entity';
@@ -32,7 +32,7 @@ export class SpaceSafesService {
     authPayload: AuthPayload;
     payload: Array<CreateSpaceSafeDto>;
   }): Promise<void> {
-    const userId = getAuthenticatedUserId(args.authPayload);
+    const userId = getAuthenticatedUserIdOrFail(args.authPayload);
     await assertAdmin(this.spacesRepository, args.spaceId, userId);
 
     return await this.spaceSafesRepository.create({
@@ -45,7 +45,7 @@ export class SpaceSafesService {
     spaceId: Space['id'],
     authPayload: AuthPayload,
   ): Promise<GetSpaceSafeResponse> {
-    const userId = getAuthenticatedUserId(authPayload);
+    const userId = getAuthenticatedUserIdOrFail(authPayload);
     await assertMember(this.membersRepository, spaceId, userId);
 
     const spaceSafes = await this.spaceSafesRepository.findBySpaceId(spaceId);
@@ -60,7 +60,7 @@ export class SpaceSafesService {
     authPayload: AuthPayload;
     payload: Array<DeleteSpaceSafeDto>;
   }): Promise<void> {
-    const userId = getAuthenticatedUserId(args.authPayload);
+    const userId = getAuthenticatedUserIdOrFail(args.authPayload);
     await assertAdmin(this.spacesRepository, args.spaceId, userId);
 
     await this.spaceSafesRepository.delete({

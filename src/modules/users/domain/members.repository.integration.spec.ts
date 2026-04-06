@@ -29,7 +29,7 @@ import { UsersRepository } from '@/modules/users/domain/users.repository';
 import { WalletsRepository } from '@/modules/wallets/domain/wallets.repository';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { faker } from '@faker-js/faker';
-import { UnauthorizedException } from '@nestjs/common';
+import { ForbiddenException } from '@nestjs/common';
 import type { ConfigService } from '@nestjs/config';
 import { DataSource, In } from 'typeorm';
 import type { Address } from 'viem';
@@ -736,9 +736,7 @@ describe('MembersRepository', () => {
           spaceId,
           users,
         }),
-      ).rejects.toThrow(
-        new UnauthorizedException('User is not an active admin.'),
-      );
+      ).rejects.toThrow(new ForbiddenException('User is not an active admin.'));
     });
 
     it('should not allow inviting users if the user is a NON-ACTIVE ADMIN', async () => {
@@ -775,9 +773,7 @@ describe('MembersRepository', () => {
           spaceId,
           users,
         }),
-      ).rejects.toThrow(
-        new UnauthorizedException('User is not an active admin.'),
-      );
+      ).rejects.toThrow(new ForbiddenException('User is not an active admin.'));
     });
 
     it('should not allow inviting users if the signer is an admin of another space', async () => {
@@ -819,9 +815,7 @@ describe('MembersRepository', () => {
           spaceId: targetSpaceId,
           users,
         }),
-      ).rejects.toThrow(
-        new UnauthorizedException('User is not an active admin.'),
-      );
+      ).rejects.toThrow(new ForbiddenException('User is not an active admin.'));
     });
 
     it('should throw an error if the space does not exist', async () => {
@@ -884,9 +878,7 @@ describe('MembersRepository', () => {
           spaceId,
           users,
         }),
-      ).rejects.toThrow(
-        new UnauthorizedException('User is not an active admin.'),
-      );
+      ).rejects.toThrow(new ForbiddenException('User is not an active admin.'));
     });
   });
 
@@ -1691,7 +1683,7 @@ describe('MembersRepository', () => {
           spaceId,
         }),
       ).rejects.toThrow(
-        new UnauthorizedException(
+        new ForbiddenException(
           'The user is not an active member of the space.',
         ),
       );
@@ -1715,7 +1707,7 @@ describe('MembersRepository', () => {
           spaceId,
         }),
       ).rejects.toThrow(
-        new UnauthorizedException(
+        new ForbiddenException(
           'The user is not an active member of the space.',
         ),
       );
@@ -1744,7 +1736,7 @@ describe('MembersRepository', () => {
           spaceId,
         }),
       ).rejects.toThrow(
-        new UnauthorizedException(
+        new ForbiddenException(
           'The user is not an active member of the space.',
         ),
       );

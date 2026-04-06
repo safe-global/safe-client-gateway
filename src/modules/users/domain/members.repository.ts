@@ -10,7 +10,7 @@ import { type Address, isAddressEqual } from 'viem';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { getAuthenticatedUserId } from '@/modules/auth/utils/assert-authenticated.utils';
+import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
 import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
 import { Member as DbMember } from '@/modules/users/datasources/entities/member.entity.db';
 import { IWalletsRepository } from '@/modules/wallets/domain/wallets.repository.interface';
@@ -97,7 +97,7 @@ export class MembersRepository implements IMembersRepository {
       role: Member['role'];
     }>;
   }): Promise<Array<Invitation>> {
-    const userId = getAuthenticatedUserId(args.authPayload);
+    const userId = getAuthenticatedUserIdOrFail(args.authPayload);
 
     const space = await this.spacesRepository.findOneOrFail({
       where: { id: args.spaceId },
@@ -192,7 +192,7 @@ export class MembersRepository implements IMembersRepository {
     spaceId: Space['id'];
     payload: Pick<Member, 'name'>;
   }): Promise<void> {
-    const userId = getAuthenticatedUserId(args.authPayload);
+    const userId = getAuthenticatedUserIdOrFail(args.authPayload);
 
     const space = await this.spacesRepository.findOneOrFail({
       where: {
@@ -221,7 +221,7 @@ export class MembersRepository implements IMembersRepository {
     authPayload: AuthPayload;
     spaceId: Space['id'];
   }): Promise<void> {
-    const userId = getAuthenticatedUserId(args.authPayload);
+    const userId = getAuthenticatedUserIdOrFail(args.authPayload);
 
     const space = await this.spacesRepository.findOneOrFail({
       where: {
@@ -243,7 +243,7 @@ export class MembersRepository implements IMembersRepository {
     authPayload: AuthPayload;
     spaceId: Space['id'];
   }): Promise<Array<Member>> {
-    const userId = getAuthenticatedUserId(args.authPayload);
+    const userId = getAuthenticatedUserIdOrFail(args.authPayload);
 
     const membersRepository =
       await this.postgresDatabaseService.getRepository(DbMember);
@@ -280,7 +280,7 @@ export class MembersRepository implements IMembersRepository {
     userId: User['id'];
     role: Member['role'];
   }): Promise<void> {
-    const actingUserId = getAuthenticatedUserId(args.authPayload);
+    const actingUserId = getAuthenticatedUserIdOrFail(args.authPayload);
 
     const activeAdmins = await this.findActiveAdminsOrFail(args.spaceId);
 
@@ -310,7 +310,7 @@ export class MembersRepository implements IMembersRepository {
     spaceId: Space['id'];
     alias: Member['alias'];
   }): Promise<void> {
-    const userId = getAuthenticatedUserId(args.authPayload);
+    const userId = getAuthenticatedUserIdOrFail(args.authPayload);
 
     const membersRepository =
       await this.postgresDatabaseService.getRepository(DbMember);
@@ -329,7 +329,7 @@ export class MembersRepository implements IMembersRepository {
     userId: User['id'];
     spaceId: Space['id'];
   }): Promise<void> {
-    const actingUserId = getAuthenticatedUserId(args.authPayload);
+    const actingUserId = getAuthenticatedUserIdOrFail(args.authPayload);
 
     const activeAdmins = await this.findActiveAdminsOrFail(args.spaceId);
 
@@ -358,7 +358,7 @@ export class MembersRepository implements IMembersRepository {
     authPayload: AuthPayload;
     spaceId: Space['id'];
   }): Promise<void> {
-    const userId = getAuthenticatedUserId(args.authPayload);
+    const userId = getAuthenticatedUserIdOrFail(args.authPayload);
 
     const activeAdmins = await this.findActiveAdminsOrFail(args.spaceId);
 

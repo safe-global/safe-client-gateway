@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import {
   assertAuthenticated,
-  getAuthenticatedUserId,
+  getAuthenticatedUserIdOrFail,
 } from '@/modules/auth/utils/assert-authenticated.utils';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import {
@@ -30,7 +30,7 @@ describe('assert-authenticated.utils', () => {
     );
   });
 
-  describe('getAuthenticatedUserId', () => {
+  describe('getAuthenticatedUserIdOrFail', () => {
     it.each([
       ['SIWE', siweAuthPayloadDtoBuilder],
       ['OIDC', oidcAuthPayloadDtoBuilder],
@@ -40,7 +40,7 @@ describe('assert-authenticated.utils', () => {
         const dto = builder().build();
         const authPayload = new AuthPayload(dto);
 
-        const userId = getAuthenticatedUserId(authPayload);
+        const userId = getAuthenticatedUserIdOrFail(authPayload);
 
         expect(userId).toBe(Number(dto.sub));
         expect(Number.isInteger(userId)).toBe(true);
@@ -48,7 +48,7 @@ describe('assert-authenticated.utils', () => {
     );
 
     it('should throw UnauthorizedException for unauthenticated payload', () => {
-      expect(() => getAuthenticatedUserId(new AuthPayload())).toThrow(
+      expect(() => getAuthenticatedUserIdOrFail(new AuthPayload())).toThrow(
         new UnauthorizedException('Not authenticated'),
       );
     });

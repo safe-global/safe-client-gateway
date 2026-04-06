@@ -71,7 +71,10 @@ describe('AddressBooksService', () => {
     it('should upsert items for SIWE user', async () => {
       const spaceId = faker.number.int();
       const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
-      const items = [addressBookItemBuilder().build()];
+      const items = faker.helpers.multiple(
+        () => addressBookItemBuilder().build(),
+        { count: { min: 2, max: 5 } },
+      );
       repositoryMock.upsertMany.mockResolvedValue(items);
 
       const result = await service.upsertMany(authPayload, spaceId, {
@@ -83,7 +86,7 @@ describe('AddressBooksService', () => {
       });
 
       expect(result.spaceId).toBe(spaceId.toString());
-      expect(result.data).toHaveLength(1);
+      expect(result.data).toHaveLength(items.length);
       expect(repositoryMock.upsertMany).toHaveBeenCalled();
     });
 

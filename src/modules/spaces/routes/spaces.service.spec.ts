@@ -42,9 +42,9 @@ describe('SpacesService', () => {
   beforeEach(() => {
     jest.resetAllMocks();
     service = new SpacesService(
+      usersRepositoryMock,
       spacesRepositoryMock,
       membersRepositoryMock,
-      usersRepositoryMock,
     );
   });
 

@@ -9,7 +9,7 @@ import {
 import type { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
 import { User, UserStatus } from '@/modules/users/domain/entities/user.entity';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { getAuthenticatedUserId } from '@/modules/auth/utils/assert-authenticated.utils';
+import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { User as DbUser } from '@/modules/users/datasources/entities/users.entity.db';
 import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
@@ -69,7 +69,7 @@ export class UsersRepository implements IUsersRepository {
     status: User['status'];
     wallets: Array<Pick<Wallet, 'id' | 'address'>>;
   }> {
-    const userId = getAuthenticatedUserId(authPayload);
+    const userId = getAuthenticatedUserIdOrFail(authPayload);
 
     const userRepository =
       await this.postgresDatabaseService.getRepository(DbUser);
@@ -118,7 +118,7 @@ export class UsersRepository implements IUsersRepository {
   }
 
   public async delete(authPayload: AuthPayload): Promise<void> {
-    const userId = getAuthenticatedUserId(authPayload);
+    const userId = getAuthenticatedUserIdOrFail(authPayload);
 
     const userRepository =
       await this.postgresDatabaseService.getRepository(DbUser);

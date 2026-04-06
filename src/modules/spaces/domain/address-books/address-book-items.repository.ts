@@ -8,7 +8,7 @@ import type { AddressBookDbItem } from '@/modules/spaces/domain/address-books/en
 import { AddressBookItem } from '@/modules/spaces/domain/address-books/entities/address-book-item.entity';
 import { Space } from '@/modules/spaces/domain/entities/space.entity';
 import { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
-import { getAuthenticatedUserId } from '@/modules/auth/utils/assert-authenticated.utils';
+import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
 import {
   BadRequestException,
   ForbiddenException,
@@ -105,7 +105,7 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
     spaceId: Space['id'];
     memberRoleIn: Array<keyof typeof MemberRole>;
   }): Promise<Space> {
-    const userId = getAuthenticatedUserId(args.authPayload);
+    const userId = getAuthenticatedUserIdOrFail(args.authPayload);
 
     return this.spacesRepository.findOneOrFail({
       where: {
@@ -125,7 +125,7 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
     space: Space;
     entityManager: EntityManager;
   }): Promise<Array<DbAddressBookItem['address']>> {
-    if (!args.authPayload.signer_address) {
+    if (!args.authPayload.isSiwe()) {
       throw new ForbiddenException(
         'Address book writes require wallet authentication',
       );
@@ -157,7 +157,7 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
     space: Space;
     entityManager: EntityManager;
   }): Promise<Array<DbAddressBookItem['id']>> {
-    if (!args.authPayload.signer_address) {
+    if (!args.authPayload.isSiwe()) {
       throw new ForbiddenException(
         'Address book writes require wallet authentication',
       );
