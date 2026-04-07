@@ -88,15 +88,12 @@ describe('CircuitBreakerService', () => {
       expect(circuit.metrics.state).toBe(CircuitState.OPEN);
     });
 
-    it('should reset consecutive successes on failure', () => {
+    it('should not increment consecutive successes in CLOSED state', () => {
       const service = createService({ threshold: 3 });
       const circuit = service.getOrRegisterCircuit('test-circuit');
 
       service.recordSuccess(circuit.name);
       service.recordSuccess(circuit.name);
-      expect(circuit.metrics.consecutiveSuccesses).toBe(2);
-
-      service.recordFailure(circuit.name);
       expect(circuit.metrics.consecutiveSuccesses).toBe(0);
     });
   });
@@ -260,16 +257,51 @@ describe('CircuitBreakerService', () => {
       expect(circuit.metrics.failureCount).toBe(2);
     });
 
-    it('should track consecutive successes', () => {
-      const service = createService();
+    it('should track consecutive successes in HALF_OPEN state', (done) => {
+      const service = createService({ threshold: 5, timeout: 100 });
       const circuit = service.getOrRegisterCircuit('test-circuit');
 
-      service.recordSuccess(circuit.name);
-      service.recordSuccess(circuit.name);
-      service.recordFailure(circuit.name);
-      service.recordSuccess(circuit.name);
+      for (let i = 0; i < 5; i++) {
+        service.recordFailure(circuit.name);
+      }
 
-      expect(circuit.metrics.consecutiveSuccesses).toBe(1);
+      setTimeout(() => {
+        service.canProceed('test-circuit');
+        expect(circuit.metrics.state).toBe(CircuitState.HALF_OPEN);
+
+        service.recordSuccess(circuit.name);
+        service.recordSuccess(circuit.name);
+        expect(circuit.metrics.consecutiveSuccesses).toBe(2);
+
+        service.recordFailure(circuit.name);
+        expect(circuit.metrics.consecutiveSuccesses).toBe(0);
+        done();
+      }, 150);
+    });
+  });
+
+  describe('Rolling Window', () => {
+    it('should discard old failures outside the rolling window', () => {
+      const rollingWindow = 100;
+      const service = createService({
+        threshold: 5,
+        rollingWindow,
+      });
+      const circuit = service.getOrRegisterCircuit('test-circuit');
+
+      service.recordFailure(circuit.name);
+      service.recordFailure(circuit.name);
+      expect(circuit.metrics.failureCount).toBe(2);
+
+      // Advance time past rolling window
+      const original = Date.now;
+      Date.now = jest.fn(() => original() + rollingWindow + 1);
+
+      service.recordFailure(circuit.name);
+      // Old failures discarded, only the new one counts
+      expect(circuit.metrics.failureCount).toBe(1);
+
+      Date.now = original;
     });
   });
 
@@ -345,6 +377,19 @@ describe('CircuitBreakerService', () => {
       expect(service.get('test-circuit')).toBeDefined();
 
       Date.now = original;
+    });
+
+    it('should remove zero-failure circuits as stale', () => {
+      const service = createService({
+        threshold: 3,
+        rollingWindow: 100,
+        timeout: 50,
+      });
+      service.getOrRegisterCircuit('idle-circuit');
+      expect(service.get('idle-circuit')).toBeDefined();
+
+      service.cleanupStaleCircuits();
+      expect(service.get('idle-circuit')).toBeUndefined();
     });
   });
 

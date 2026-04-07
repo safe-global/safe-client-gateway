@@ -226,22 +226,21 @@ export class CircuitBreakerService {
       return;
     }
 
-    circuit.metrics.consecutiveSuccesses++;
+    if (circuit.metrics.state === CircuitState.HALF_OPEN) {
+      circuit.metrics.consecutiveSuccesses++;
 
-    this.loggingService.debug({
-      type: LogType.CircuitBreakerSuccessRecorded,
-      circuit: circuit.name,
-      state: circuit.metrics.state,
-      consecutiveSuccesses: circuit.metrics.consecutiveSuccesses,
-      threshold: this.config.threshold,
-      message: `Success recorded for circuit "${circuit.name}" (${circuit.metrics.consecutiveSuccesses}/${this.config.threshold} consecutive successes)`,
-    });
+      this.loggingService.debug({
+        type: LogType.CircuitBreakerSuccessRecorded,
+        circuit: circuit.name,
+        state: circuit.metrics.state,
+        consecutiveSuccesses: circuit.metrics.consecutiveSuccesses,
+        threshold: this.config.threshold,
+        message: `Success recorded for circuit "${circuit.name}" (${circuit.metrics.consecutiveSuccesses}/${this.config.threshold} consecutive successes)`,
+      });
 
-    if (
-      circuit.metrics.state === CircuitState.HALF_OPEN &&
-      circuit.metrics.consecutiveSuccesses >= this.config.threshold
-    ) {
-      this.transitionToClosed(circuit);
+      if (circuit.metrics.consecutiveSuccesses >= this.config.threshold) {
+        this.transitionToClosed(circuit);
+      }
     }
   }
 
@@ -465,7 +464,7 @@ export class CircuitBreakerService {
   private isStale(circuit: ICircuit): boolean {
     const now = Date.now();
     if (!circuit.metrics.lastFailureTime) {
-      return false;
+      return true;
     }
 
     const timeSinceLastFailure = now - circuit.metrics.lastFailureTime;
