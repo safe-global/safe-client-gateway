@@ -10,7 +10,7 @@ import { TestNotificationsRepositoryV2Module } from '@/modules/notifications/dom
 import { SpacesController } from '@/modules/spaces/routes/spaces.controller';
 import { checkGuardIsApplied } from '@/__tests__/util/check-guard';
 import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
-import { authPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
+import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { faker } from '@faker-js/faker/.';
 import { SpaceStatus } from '@/modules/spaces/domain/entities/space.entity';
 import {
@@ -91,7 +91,7 @@ describe('SpacesController', () => {
 
   describe('POST /v1/spaces', () => {
     it('Should create a space', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const spaceName = nameBuilder();
 
@@ -113,7 +113,7 @@ describe('SpacesController', () => {
     });
 
     it('Should rate limit creations', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const app = await initApp({ rateLimit: { max: 1, windowSeconds: 60 } });
 
@@ -145,7 +145,7 @@ describe('SpacesController', () => {
     });
 
     it('Should return a 403 if the AuthPayload is empty', async () => {
-      const authPayloadDto = authPayloadDtoBuilder()
+      const authPayloadDto = siweAuthPayloadDtoBuilder()
         .with('signer_address', undefined as unknown as Address)
         .build();
       const accessToken = jwtService.sign(authPayloadDto);
@@ -162,7 +162,7 @@ describe('SpacesController', () => {
     });
 
     it('Should return a 403 if the MAX_SPACE_CREATIONS_PER_USER limit is reached', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const app = await initApp({ maxSpaceCreationsPerUser: 1 });
 
@@ -196,7 +196,7 @@ describe('SpacesController', () => {
     });
 
     it('Should return a 404 if user is not found', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const spaceName = nameBuilder();
 
@@ -213,7 +213,7 @@ describe('SpacesController', () => {
     });
 
     it('Should return a 422 if no name is provided', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
 
       await request(app.getHttpServer())
@@ -234,7 +234,7 @@ describe('SpacesController', () => {
 
   describe('POST /v1/spaces/create-with-user', () => {
     it('Should create a space when user exists', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const spaceName = nameBuilder();
 
@@ -256,7 +256,7 @@ describe('SpacesController', () => {
     });
 
     it('Should create a space with user does not exist', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const spaceName = nameBuilder();
 
@@ -285,7 +285,7 @@ describe('SpacesController', () => {
     });
 
     it('Should return a 403 if the AuthPayload is empty', async () => {
-      const authPayloadDto = authPayloadDtoBuilder()
+      const authPayloadDto = siweAuthPayloadDtoBuilder()
         .with('signer_address', undefined as unknown as Address)
         .build();
       const accessToken = jwtService.sign(authPayloadDto);
@@ -302,7 +302,7 @@ describe('SpacesController', () => {
     });
 
     it('Should return a 422 if no name is provided', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
 
       await request(app.getHttpServer())
@@ -323,7 +323,7 @@ describe('SpacesController', () => {
 
   describe('GET /spaces', () => {
     it('Should return a list of spaces', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const firstSpaceName = nameBuilder();
       const secondSpaceName = nameBuilder();
@@ -405,7 +405,7 @@ describe('SpacesController', () => {
     });
 
     it('Should return a 404 if the user does not exist', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
 
       await request(app.getHttpServer())
@@ -428,7 +428,7 @@ describe('SpacesController', () => {
     });
 
     it('Should return a 403 is the AuthPayload is empty', async () => {
-      const authPayloadDto = authPayloadDtoBuilder()
+      const authPayloadDto = siweAuthPayloadDtoBuilder()
         .with('signer_address', undefined as unknown as Address)
         .build();
       const accessToken = jwtService.sign(authPayloadDto);
@@ -447,7 +447,7 @@ describe('SpacesController', () => {
 
   describe('GET /spaces/:id', () => {
     it('Should return a space by its id', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const spaceName = nameBuilder();
 
@@ -498,9 +498,9 @@ describe('SpacesController', () => {
     });
 
     it('Should return a space by its id for an invited member', async () => {
-      const adminAuthPayloadDto = authPayloadDtoBuilder().build();
+      const adminAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
       const adminAccessToken = jwtService.sign(adminAuthPayloadDto);
-      const memberAuthPayloadDto = authPayloadDtoBuilder().build();
+      const memberAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
       const memberAccessToken = jwtService.sign(memberAuthPayloadDto);
       const spaceName = nameBuilder();
 
@@ -566,9 +566,9 @@ describe('SpacesController', () => {
     });
 
     it('Should return a 404 if the user declined the membership', async () => {
-      const adminAuthPayloadDto = authPayloadDtoBuilder().build();
+      const adminAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
       const adminAccessToken = jwtService.sign(adminAuthPayloadDto);
-      const memberAuthPayloadDto = authPayloadDtoBuilder().build();
+      const memberAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
       const memberAccessToken = jwtService.sign(memberAuthPayloadDto);
       const spaceName = nameBuilder();
 
@@ -616,7 +616,7 @@ describe('SpacesController', () => {
     });
 
     it('Should return a 404 if a space id does not exist', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const spaceId = faker.string.uuid();
 
@@ -637,7 +637,7 @@ describe('SpacesController', () => {
     });
 
     it('Should return a 404 if the user does not exist', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const spaceId = faker.string.uuid();
 
@@ -661,7 +661,7 @@ describe('SpacesController', () => {
     });
 
     it('Should return a 403 is the AuthPayload is empty', async () => {
-      const authPayloadDto = authPayloadDtoBuilder()
+      const authPayloadDto = siweAuthPayloadDtoBuilder()
         .with('signer_address', undefined as unknown as Address)
         .build();
       const accessToken = jwtService.sign(authPayloadDto);
@@ -680,7 +680,7 @@ describe('SpacesController', () => {
 
   describe('PATCH /spaces/:id', () => {
     it('Should update a space', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const previousSpaceName = nameBuilder();
       const newSpaceName = nameBuilder();
@@ -725,7 +725,7 @@ describe('SpacesController', () => {
     });
 
     it('Should return a 403 is the AuthPayload is empty', async () => {
-      const authPayloadDto = authPayloadDtoBuilder()
+      const authPayloadDto = siweAuthPayloadDtoBuilder()
         .with('signer_address', undefined as unknown as Address)
         .build();
       const accessToken = jwtService.sign(authPayloadDto);
@@ -743,7 +743,7 @@ describe('SpacesController', () => {
     });
 
     it('Should throw a 401 if user can not update a space because the space does not exist', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const spaceName = nameBuilder();
       const spaceId = faker.string.uuid();
@@ -772,9 +772,9 @@ describe('SpacesController', () => {
     });
 
     it('Should throw a 401 if a member of the space does not have access to update a space', async () => {
-      const adminAuthPayloadDto = authPayloadDtoBuilder().build();
+      const adminAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
       const adminAccessToken = jwtService.sign(adminAuthPayloadDto);
-      const memberAuthPayloadDto = authPayloadDtoBuilder().build();
+      const memberAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
       const memberAccessToken = jwtService.sign(memberAuthPayloadDto);
       const previousSpaceName = nameBuilder();
       const newSpaceName = nameBuilder();
@@ -821,9 +821,9 @@ describe('SpacesController', () => {
         });
     });
     it('Should throw a 401 if a an inactive admin tries to update the space', async () => {
-      const activeAdminAuthPayloadDto = authPayloadDtoBuilder().build();
+      const activeAdminAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
       const activeAdminAccessToken = jwtService.sign(activeAdminAuthPayloadDto);
-      const inactiveAdminAuthPayloadDto = authPayloadDtoBuilder().build();
+      const inactiveAdminAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
       const inactiveAdminAccessToken = jwtService.sign(
         inactiveAdminAuthPayloadDto,
       );
@@ -873,9 +873,9 @@ describe('SpacesController', () => {
     });
 
     it('Should throw a 401 if user does not have access to update a space', async () => {
-      const adminAuthPayloadDto = authPayloadDtoBuilder().build();
+      const adminAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
       const adminAccessToken = jwtService.sign(adminAuthPayloadDto);
-      const nonMemberAuthPayloadDto = authPayloadDtoBuilder().build();
+      const nonMemberAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
       const nonMemberAccessToken = jwtService.sign(nonMemberAuthPayloadDto);
       const previousSpaceName = nameBuilder();
       const newSpaceName = nameBuilder();
@@ -913,7 +913,7 @@ describe('SpacesController', () => {
 
   describe('DELETE /spaces/:id', () => {
     it('Should delete a space', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const spaceName = nameBuilder();
 
@@ -935,7 +935,7 @@ describe('SpacesController', () => {
     });
 
     it('Should throw a 401 if user can not update a space because the space does not exist', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const spaceName = nameBuilder();
       const spaceId = faker.string.uuid();
@@ -964,9 +964,9 @@ describe('SpacesController', () => {
     });
 
     it('Should throw a 401 if a member of the space does not have access to delete a space', async () => {
-      const adminAuthPayloadDto = authPayloadDtoBuilder().build();
+      const adminAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
       const adminAccessToken = jwtService.sign(adminAuthPayloadDto);
-      const memberAuthPayloadDto = authPayloadDtoBuilder().build();
+      const memberAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
       const memberAccessToken = jwtService.sign(memberAuthPayloadDto);
       const spaceName = nameBuilder();
       const memberName = nameBuilder();
@@ -1009,9 +1009,9 @@ describe('SpacesController', () => {
     });
 
     it('Should throw a 401 if an inactive admin tries to delete the space', async () => {
-      const activeAdminAuthPayloadDto = authPayloadDtoBuilder().build();
+      const activeAdminAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
       const activeAdminAccessToken = jwtService.sign(activeAdminAuthPayloadDto);
-      const inactiveAdminAuthPayloadDto = authPayloadDtoBuilder().build();
+      const inactiveAdminAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
       const inactiveAdminAccessToken = jwtService.sign(
         inactiveAdminAuthPayloadDto,
       );
@@ -1056,9 +1056,9 @@ describe('SpacesController', () => {
     });
 
     it('Should throw a 401 if user does not have access to delete a space', async () => {
-      const adminAuthPayloadDto = authPayloadDtoBuilder().build();
+      const adminAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
       const adminAccessToken = jwtService.sign(adminAuthPayloadDto);
-      const nonMemberAuthPayloadDto = authPayloadDtoBuilder().build();
+      const nonMemberAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
       const nonMemberAccessToken = jwtService.sign(nonMemberAuthPayloadDto);
       const spaceName = nameBuilder();
 
@@ -1089,7 +1089,7 @@ describe('SpacesController', () => {
     });
 
     it('Should return a 403 is the AuthPayload is empty', async () => {
-      const authPayloadDto = authPayloadDtoBuilder()
+      const authPayloadDto = siweAuthPayloadDtoBuilder()
         .with('signer_address', undefined as unknown as Address)
         .build();
       const accessToken = jwtService.sign(authPayloadDto);

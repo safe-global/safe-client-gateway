@@ -359,6 +359,63 @@ describe('FetchNetworkService', () => {
     });
   });
 
+  describe('POST form-urlencoded requests', () => {
+    it('postForm sends URL-encoded body with correct content-type', async () => {
+      const url = faker.internet.url({ appendSlash: false });
+      const data = { key: 'value', redirect_uri: 'https://example.com/cb' };
+
+      await target.postForm({ url, data });
+
+      const expectedUrl = `${url}/`;
+      expect(fetchClientMock).toHaveBeenCalledTimes(1);
+      expect(fetchClientMock).toHaveBeenCalledWith(
+        expectedUrl,
+        {
+          method: 'POST',
+          body: new URLSearchParams(data).toString(),
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+        },
+        undefined,
+        undefined,
+      );
+    });
+
+    it('postForm logs response error', async () => {
+      const url = faker.internet.url({ appendSlash: false });
+      const error = new NetworkResponseError(
+        new URL(faker.internet.url()),
+        {
+          status: 400,
+          statusText: 'Bad Request',
+        } as Response,
+        'data',
+      );
+      fetchClientMock.mockRejectedValueOnce(error);
+
+      await expect(
+        target.postForm({ url, data: { key: 'value' } }),
+      ).rejects.toThrow(error);
+
+      expect(loggingService.debug).toHaveBeenCalledTimes(2);
+      expect(loggingService.debug).toHaveBeenCalledWith({
+        type: 'EXTERNAL_REQUEST',
+        method: 'POST',
+        url: `${url}/`,
+      });
+      expect(loggingService.debug).toHaveBeenCalledWith({
+        type: 'EXTERNAL_REQUEST',
+        protocol: error.url.protocol,
+        target_host: error.url.host,
+        path: error.url.pathname,
+        request_status: error.response.status,
+        detail: error.response.statusText,
+        response_time_ms: expect.any(Number),
+      });
+    });
+  });
+
   describe('DELETE requests', () => {
     it(`delete uses DELETE method`, async () => {
       const url = faker.internet.url({ appendSlash: false });

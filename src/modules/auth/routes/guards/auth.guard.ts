@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import {
   CanActivate,
   ExecutionContext,
@@ -5,7 +6,7 @@ import {
   Injectable,
 } from '@nestjs/common';
 import { IAuthRepository } from '@/modules/auth/domain/auth.repository.interface';
-import { AuthController } from '@/modules/auth/routes/auth.controller';
+import { ACCESS_TOKEN_COOKIE_NAME } from '@/modules/auth/utils/auth-cookie.utils';
 import { AuthPayloadDto } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { Request } from 'express';
 
@@ -40,7 +41,7 @@ export class AuthGuard implements CanActivate {
     const request: Request = context.switchToHttp().getRequest();
 
     const accessToken: string | undefined =
-      request.cookies[AuthController.ACCESS_TOKEN_COOKIE_NAME];
+      request.cookies[ACCESS_TOKEN_COOKIE_NAME];
 
     // No token in the request
     if (!accessToken) {

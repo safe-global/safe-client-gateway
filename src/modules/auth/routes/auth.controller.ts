@@ -1,5 +1,13 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { getMillisecondsUntil } from '@/domain/common/utils/time';
+import {
+  ACCESS_TOKEN_COOKIE_NAME,
+  getCookieOptions,
+} from '@/modules/auth/utils/auth-cookie.utils';
+import { Auth } from '@/modules/auth/routes/decorators/auth.decorator';
+import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
+import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
 import { AuthService } from '@/modules/auth/routes/auth.service';
 import { AuthNonce } from '@/modules/auth/routes/entities/auth-nonce.entity';
 import {
@@ -14,33 +22,41 @@ import {
   HttpCode,
   Inject,
   Post,
+  Req,
   Res,
+  UseGuards,
 } from '@nestjs/common';
 import {
+  ApiConsumes,
   ApiOkResponse,
   ApiTags,
   ApiOperation,
   ApiBody,
   ApiUnauthorizedResponse,
   ApiBadRequestResponse,
+  ApiForbiddenResponse,
+  ApiResponse,
 } from '@nestjs/swagger';
-import { CookieOptions, Response } from 'express';
+import { type CookieOptions, Request, Response } from 'express';
+import { UserSession } from '@/modules/auth/routes/entities/user-session.entity';
+import {
+  LogoutDto,
+  LogoutDtoSchema,
+} from '@/modules/auth/routes/entities/logout.dto.entity';
 
 /**
- * The AuthController is responsible for handling authentication:
+ * The AuthController is responsible for handling SiWe authentication:
  *
  * 1. Calling `/v1/auth/nonce` returns a unique nonce to be signed.
  * 2. The client signs this nonce in a SiWe message, sending it and
  *    the signature to `/v1/auth/verify` for verification.
  * 3. If verification succeeds, JWT token is added to `access_token`
  *    Set-Cookie.
+ *
  */
 @ApiTags('auth')
 @Controller({ path: 'auth', version: '1' })
 export class AuthController {
-  static readonly ACCESS_TOKEN_COOKIE_NAME = 'access_token';
-  static readonly ACCESS_TOKEN_COOKIE_SAME_SITE_LAX = 'lax';
-  static readonly ACCESS_TOKEN_COOKIE_SAME_SITE_NONE = 'none';
   private readonly isProduction: boolean;
 
   constructor(
@@ -51,6 +67,19 @@ export class AuthController {
     this.isProduction = this.configurationService.getOrThrow<boolean>(
       'application.isProduction',
     );
+  }
+
+  @ApiOperation({
+    summary: 'Get authenticated user',
+    description:
+      'Returns the authenticated user ID if a valid session cookie is present, 403 otherwise.',
+  })
+  @ApiOkResponse({ description: 'Authenticated user ID', type: UserSession })
+  @ApiForbiddenResponse({ description: 'Not authenticated' })
+  @UseGuards(AuthGuard)
+  @Get('me')
+  getMe(@Auth() authPayload: AuthPayload): UserSession {
+    return { id: authPayload.getUserId() as string };
   }
 
   @ApiOperation({
@@ -94,9 +123,10 @@ export class AuthController {
     @Body(new ValidationPipe(SiweDtoSchema))
     siweDto: SiweDto,
   ): Promise<void> {
-    const { accessToken } = await this.authService.getAccessToken(siweDto);
+    const { accessToken } =
+      await this.authService.authenticateWithSiwe(siweDto);
 
-    res.cookie(AuthController.ACCESS_TOKEN_COOKIE_NAME, accessToken, {
+    res.cookie(ACCESS_TOKEN_COOKIE_NAME, accessToken, {
       ...this.getCookieOptions(),
       // Extract maxAge from token as it may slightly differ to SiWe message
       maxAge: this.getMaxAge(accessToken),
@@ -115,21 +145,46 @@ export class AuthController {
   @HttpCode(200)
   @Post('logout')
   logout(@Res({ passthrough: true }) res: Response): void {
-    res.clearCookie(
-      AuthController.ACCESS_TOKEN_COOKIE_NAME,
-      this.getCookieOptions(),
+    res.clearCookie(ACCESS_TOKEN_COOKIE_NAME, this.getCookieOptions());
+  }
+
+  @ApiOperation({
+    summary: 'Logout (with redirect)',
+    description:
+      'Clears the authentication cookie and redirects the browser. ' +
+      'For OIDC users, redirects through identity platform to clear their session cookie. ' +
+      'For SiWe users, redirects directly to the app.',
+  })
+  @ApiConsumes('application/x-www-form-urlencoded')
+  @ApiBody({ type: LogoutDto, required: false })
+  @ApiResponse({
+    status: 303,
+    description:
+      'Redirects to identity platform logout (OIDC) or directly to the app.',
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid redirect URL',
+  })
+  @HttpCode(303)
+  @Post('logout/redirect')
+  logoutWithRedirect(
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+    @Body(new ValidationPipe(LogoutDtoSchema))
+    body: LogoutDto,
+  ): void {
+    const accessToken: string | undefined =
+      req.cookies?.[ACCESS_TOKEN_COOKIE_NAME];
+    res.clearCookie(ACCESS_TOKEN_COOKIE_NAME, this.getCookieOptions());
+    const location = this.authService.getLogoutRedirectUrl(
+      accessToken,
+      body.redirect_url,
     );
+    res.redirect(303, location);
   }
 
   private getCookieOptions(): CookieOptions {
-    return {
-      httpOnly: true,
-      secure: true,
-      sameSite: this.isProduction
-        ? AuthController.ACCESS_TOKEN_COOKIE_SAME_SITE_LAX
-        : AuthController.ACCESS_TOKEN_COOKIE_SAME_SITE_NONE,
-      path: '/',
-    };
+    return getCookieOptions(this.isProduction);
   }
 
   /**

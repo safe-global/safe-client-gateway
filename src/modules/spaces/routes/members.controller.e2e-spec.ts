@@ -10,7 +10,7 @@ import { MembersController } from '@/modules/spaces/routes/members.controller';
 import { checkGuardIsApplied } from '@/__tests__/util/check-guard';
 import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
 import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
-import { authPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
+import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import type { INestApplication } from '@nestjs/common';
@@ -72,7 +72,7 @@ describe('MembersController', () => {
 
   describe('POST /v1/spaces/:spaceId/members/invite', () => {
     it('should invite users', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const spaceName = nameBuilder();
       const user1 = getAddress(faker.finance.ethereumAddress());
@@ -133,7 +133,7 @@ describe('MembersController', () => {
     });
 
     it('should throw a 409 if there are too many invites', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const spaceId = faker.string.uuid();
       const invites = Array.from({ length: maxInvites + 1 }).map(() => {
@@ -157,7 +157,7 @@ describe('MembersController', () => {
     });
 
     it('should throw a 403 if the user is not authenticated', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const spaceName = nameBuilder();
       const user1 = getAddress(faker.finance.ethereumAddress());
@@ -202,7 +202,7 @@ describe('MembersController', () => {
     });
 
     it('should throw a 422 if no addresses are provided', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const spaceName = nameBuilder();
 
@@ -226,9 +226,9 @@ describe('MembersController', () => {
     });
 
     it('should throw a 404 if the signer_address does not have a user', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const nonUserAuthPayloadDto = authPayloadDtoBuilder().build();
+      const nonUserAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
       const nonUserAccessToken = jwtService.sign(nonUserAuthPayloadDto);
       const spaceName = nameBuilder();
       const user1 = getAddress(faker.finance.ethereumAddress());
@@ -274,7 +274,7 @@ describe('MembersController', () => {
     });
 
     it('should throw a 404 if the space does not exist', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const spaceId = faker.string.uuid();
       const user1 = getAddress(faker.finance.ethereumAddress());
@@ -313,9 +313,9 @@ describe('MembersController', () => {
     });
 
     it('should throw a 401 if the signer is not a member of the space', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const nonMemberAuthPayloadDto = authPayloadDtoBuilder().build();
+      const nonMemberAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
       const nonMemberAccessToken = jwtService.sign(nonMemberAuthPayloadDto);
       const spaceName = nameBuilder();
       const user1 = getAddress(faker.finance.ethereumAddress());
@@ -366,9 +366,10 @@ describe('MembersController', () => {
     });
 
     it('should throw a 401 if the signer is an admin of another space', async () => {
-      const adminAuthPayloadDto = authPayloadDtoBuilder().build();
+      const adminAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
       const adminAccessToken = jwtService.sign(adminAuthPayloadDto);
-      const targetSpaceOwnerAuthPayloadDto = authPayloadDtoBuilder().build();
+      const targetSpaceOwnerAuthPayloadDto =
+        siweAuthPayloadDtoBuilder().build();
       const targetSpaceOwnerAccessToken = jwtService.sign(
         targetSpaceOwnerAuthPayloadDto,
       );
@@ -419,9 +420,9 @@ describe('MembersController', () => {
     });
 
     it('should throw a 401 if the signer is not an admin', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const inviteeAuthPayloadDto = authPayloadDtoBuilder().build();
+      const inviteeAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
       const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
       const spaceName = nameBuilder();
       const user = getAddress(faker.finance.ethereumAddress());
@@ -474,9 +475,9 @@ describe('MembersController', () => {
     });
 
     it('should throw a 401 if the signer is not an active admin', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const inviteeAuthPayloadDto = authPayloadDtoBuilder().build();
+      const inviteeAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
       const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
       const spaceName = nameBuilder();
       const user = getAddress(faker.finance.ethereumAddress());
@@ -529,7 +530,7 @@ describe('MembersController', () => {
     });
 
     it('should throw a 409 if the user is already a member of the space', async () => {
-      const adminAuthPayloadDto = authPayloadDtoBuilder().build();
+      const adminAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
       const adminAccessToken = jwtService.sign(adminAuthPayloadDto);
       const memberAddress = getAddress(faker.finance.ethereumAddress());
       const memberName = nameBuilder();
@@ -584,9 +585,9 @@ describe('MembersController', () => {
 
   describe('POST /v1/spaces/:spaceId/members/accept', () => {
     it('should accept an invite for a user', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const inviteeAuthPayloadDto = authPayloadDtoBuilder().build();
+      const inviteeAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
       const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
       const spaceName = nameBuilder();
       const memberName = nameBuilder();
@@ -628,9 +629,9 @@ describe('MembersController', () => {
     });
 
     it('should accept an invite for a user, changing name', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const inviteeAuthPayloadDto = authPayloadDtoBuilder().build();
+      const inviteeAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
       const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
       const spaceName = nameBuilder();
       const invitedMemberName = faker.person.firstName();
@@ -673,9 +674,9 @@ describe('MembersController', () => {
     });
 
     it('should throw a 403 if the user is not authenticated', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const inviteeAuthPayloadDto = authPayloadDtoBuilder().build();
+      const inviteeAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
       const spaceName = nameBuilder();
       const memberName = nameBuilder();
 
@@ -719,9 +720,9 @@ describe('MembersController', () => {
     });
 
     it('should throw a 404 if the signer_address does not have a user', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const nonUserAuthPayloadDto = authPayloadDtoBuilder().build();
+      const nonUserAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
       const nonUserAccessToken = jwtService.sign(nonUserAuthPayloadDto);
       const spaceName = nameBuilder();
       const memberName = nameBuilder();
@@ -753,7 +754,7 @@ describe('MembersController', () => {
     });
 
     it('should throw a 404 if the space does not exist', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const spaceId = faker.string.uuid();
       const memberName = nameBuilder();
@@ -778,9 +779,9 @@ describe('MembersController', () => {
     });
 
     it('should throw a 404 if the member does not exist', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const nonMemberAuthPayloadDto = authPayloadDtoBuilder().build();
+      const nonMemberAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
       const nonMemberAuthPayload = jwtService.sign(nonMemberAuthPayloadDto);
       const spaceName = nameBuilder();
       const user = getAddress(faker.finance.ethereumAddress());
@@ -832,9 +833,9 @@ describe('MembersController', () => {
     });
 
     it('should throw a 404 if the status of the member is not INVITED', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const inviteeAuthPayloadDto = authPayloadDtoBuilder().build();
+      const inviteeAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
       const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
       const spaceName = nameBuilder();
       const memberName = nameBuilder();
@@ -889,9 +890,9 @@ describe('MembersController', () => {
     });
 
     it('should throw a 422 if the user name is not provided', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const inviteeAuthPayloadDto = authPayloadDtoBuilder().build();
+      const inviteeAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
       const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
       const spaceName = nameBuilder();
       const memberName = nameBuilder();
@@ -940,9 +941,9 @@ describe('MembersController', () => {
 
   describe('POST /v1/spaces/:spaceId/members/decline', () => {
     it('should decline an invite for a user', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const inviteeAuthPayloadDto = authPayloadDtoBuilder().build();
+      const inviteeAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
       const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
       const spaceName = nameBuilder();
       const memberName = nameBuilder();
@@ -981,9 +982,9 @@ describe('MembersController', () => {
     });
 
     it('should throw a 403 if the user is not authenticated', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const inviteeAuthPayloadDto = authPayloadDtoBuilder().build();
+      const inviteeAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
       const spaceName = nameBuilder();
       const memberName = nameBuilder();
 
@@ -1024,9 +1025,9 @@ describe('MembersController', () => {
     });
 
     it('should throw a 404 if the signer_address does not have a user', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const nonUserAuthPayloadDto = authPayloadDtoBuilder().build();
+      const nonUserAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
       const nonUserAccessToken = jwtService.sign(nonUserAuthPayloadDto);
       const spaceName = nameBuilder();
 
@@ -1054,7 +1055,7 @@ describe('MembersController', () => {
     });
 
     it('should throw a 404 if the space does not exist', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const spaceId = faker.string.uuid();
 
@@ -1075,9 +1076,9 @@ describe('MembersController', () => {
     });
 
     it('should throw a 404 if the member does not exist', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const nonMemberAuthPayloadDto = authPayloadDtoBuilder().build();
+      const nonMemberAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
       const nonMemberAuthPayload = jwtService.sign(nonMemberAuthPayloadDto);
       const spaceName = nameBuilder();
       const memberName = nameBuilder();
@@ -1126,9 +1127,9 @@ describe('MembersController', () => {
     });
 
     it('should throw a 404 if the status of the member is not INVITED', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const inviteeAuthPayloadDto = authPayloadDtoBuilder().build();
+      const inviteeAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
       const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
       const spaceName = nameBuilder();
       const memberName = nameBuilder();
@@ -1179,7 +1180,7 @@ describe('MembersController', () => {
 
   describe('GET /v1/spaces/:spaceId/members', () => {
     it('should return a list of members of a space', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const spaceName = nameBuilder();
       const user1 = getAddress(faker.finance.ethereumAddress());
@@ -1279,7 +1280,7 @@ describe('MembersController', () => {
     });
 
     it('should throw a 403 if the user is not authenticated', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const spaceName = nameBuilder();
       const user1 = getAddress(faker.finance.ethereumAddress());
@@ -1329,9 +1330,9 @@ describe('MembersController', () => {
     });
 
     it('should throw a 404 if the signer_address does not have a user', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const nonUserAuthPayloadDto = authPayloadDtoBuilder().build();
+      const nonUserAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
       const nonUserAccessToken = jwtService.sign(nonUserAuthPayloadDto);
       const spaceName = nameBuilder();
 
@@ -1359,7 +1360,7 @@ describe('MembersController', () => {
     });
 
     it('should throw a 401 if the user is not a member of the space', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       // Space does not even exist
       const spaceId = faker.string.uuid();
@@ -1381,11 +1382,11 @@ describe('MembersController', () => {
     });
 
     it('should throw a 404 if the user is not an active member of the space', async () => {
-      const adminAuthPayloadDto = authPayloadDtoBuilder().build();
+      const adminAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
       const adminAccessToken = jwtService.sign(adminAuthPayloadDto);
       const spaceName = nameBuilder();
       const nonMemberAddress = getAddress(faker.finance.ethereumAddress());
-      const nonMemberAuthPayloadDto = authPayloadDtoBuilder()
+      const nonMemberAuthPayloadDto = siweAuthPayloadDtoBuilder()
         .with('signer_address', nonMemberAddress)
         .build();
       const memberAccessToken = jwtService.sign(nonMemberAuthPayloadDto);
@@ -1416,9 +1417,9 @@ describe('MembersController', () => {
 
   describe('PATCH /v1/spaces/:spaceId/members/:userId/role', () => {
     it('should update the role of userId', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const inviteeAuthPayloadDto = authPayloadDtoBuilder().build();
+      const inviteeAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
       const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
       const spaceName = nameBuilder();
       const memberName = nameBuilder();
@@ -1467,9 +1468,9 @@ describe('MembersController', () => {
     });
 
     it('should throw a 403 if the user is not authenticated', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const inviteeAuthPayloadDto = authPayloadDtoBuilder().build();
+      const inviteeAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
       const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
       const spaceName = nameBuilder();
       const memberName = nameBuilder();
@@ -1521,11 +1522,11 @@ describe('MembersController', () => {
     });
 
     it('should throw a 404 if the signer_address does not have a user', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const inviteeAuthPayloadDto = authPayloadDtoBuilder().build();
+      const inviteeAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
       const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
-      const nonUserAuthPayloadDto = authPayloadDtoBuilder().build();
+      const nonUserAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
       const nonUserAccessToken = jwtService.sign(nonUserAuthPayloadDto);
       const spaceName = nameBuilder();
       const memberName = nameBuilder();
@@ -1578,9 +1579,9 @@ describe('MembersController', () => {
     });
 
     it('should throw a 401 if the status of the signer member is not ACTIVE', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const inviteeAuthPayloadDto = authPayloadDtoBuilder().build();
+      const inviteeAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
       const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
       const spaceName = nameBuilder();
       const memberName = nameBuilder();
@@ -1625,9 +1626,9 @@ describe('MembersController', () => {
     });
 
     it('should throw a 401 if the signer member is not of ADMIN role', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const inviteeAuthPayloadDto = authPayloadDtoBuilder().build();
+      const inviteeAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
       const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
       const spaceName = nameBuilder();
       const memberName = nameBuilder();
@@ -1680,7 +1681,7 @@ describe('MembersController', () => {
     });
 
     it('should throw a 409 if downgrading the last ACTIVE ADMIN', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const spaceName = nameBuilder();
 
@@ -1710,9 +1711,9 @@ describe('MembersController', () => {
     });
 
     it('should throw a 404 if the user-to-update member does not exist', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const nonMemberAuthPayloadDto = authPayloadDtoBuilder().build();
+      const nonMemberAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
       const nonMemberAuthPayload = jwtService.sign(nonMemberAuthPayloadDto);
       const spaceName = nameBuilder();
 
@@ -1749,9 +1750,9 @@ describe('MembersController', () => {
 
   describe('DELETE /v1/spaces/:spaceId/members/:userId', () => {
     it('should remove a user', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const inviteeAuthPayloadDto = authPayloadDtoBuilder().build();
+      const inviteeAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
       const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
       const spaceName = nameBuilder();
       const memberName = nameBuilder();
@@ -1799,9 +1800,9 @@ describe('MembersController', () => {
     });
 
     it('should throw a 404 if the signer_address does not have a user', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const nonUserAuthPayloadDto = authPayloadDtoBuilder().build();
+      const nonUserAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
       const nonUserAccessToken = jwtService.sign(nonUserAuthPayloadDto);
       const spaceName = nameBuilder();
       const userId = faker.number.int({
@@ -1833,7 +1834,7 @@ describe('MembersController', () => {
     });
 
     it('should throw a 404 if the space does not exist', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const spaceId = faker.string.uuid();
 
@@ -1855,9 +1856,9 @@ describe('MembersController', () => {
     });
 
     it('should throw a 401 if the status of the signer member is not ACTIVE', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const inviteeAuthPayloadDto = authPayloadDtoBuilder().build();
+      const inviteeAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
       const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
       const member = getAddress(faker.finance.ethereumAddress());
       const spaceName = nameBuilder();
@@ -1908,9 +1909,9 @@ describe('MembersController', () => {
     });
 
     it('should throw a 401 if the signer member is not of ADMIN status', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const inviteeAuthPayloadDto = authPayloadDtoBuilder().build();
+      const inviteeAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
       const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
       const spaceName = nameBuilder();
       const memberName = nameBuilder();
@@ -1962,7 +1963,7 @@ describe('MembersController', () => {
     });
 
     it('should throw a 409 if removing the last ACTIVE ADMIN', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const spaceName = nameBuilder();
 
@@ -1993,7 +1994,7 @@ describe('MembersController', () => {
 
   describe('PATCH /v1/spaces/:spaceId/members/alias', () => {
     it('should set the alias for the authenticated user when they are admin of the space', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const spaceName = nameBuilder();
       const newAlias = nameBuilder();
@@ -2026,9 +2027,9 @@ describe('MembersController', () => {
     });
 
     it('should set the alias for the authenticated user when they are a member of the space', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const inviteeAuthPayloadDto = authPayloadDtoBuilder().build();
+      const inviteeAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
       const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
       const spaceName = nameBuilder();
       const memberName = nameBuilder();
@@ -2084,7 +2085,7 @@ describe('MembersController', () => {
     });
 
     it('should throw a 403 if the user is not authenticated', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const spaceName = nameBuilder();
       const newAlias = nameBuilder();
@@ -2113,7 +2114,7 @@ describe('MembersController', () => {
     });
 
     it('should throw a 404 if the space does not exist', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const spaceId = faker.string.uuid();
       const newAlias = nameBuilder();
@@ -2136,9 +2137,9 @@ describe('MembersController', () => {
     });
 
     it('should throw a 404 if the user is not a member of the space', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const nonMemberAuthPayloadDto = authPayloadDtoBuilder().build();
+      const nonMemberAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
       const nonMemberAccessToken = jwtService.sign(nonMemberAuthPayloadDto);
       const spaceName = nameBuilder();
       const newAlias = nameBuilder();
@@ -2173,7 +2174,7 @@ describe('MembersController', () => {
     });
 
     it('should update alias from null to a value', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const spaceName = nameBuilder();
       const newAlias = nameBuilder();
@@ -2215,7 +2216,7 @@ describe('MembersController', () => {
     });
 
     it('should update alias from one value to another', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const spaceName = nameBuilder();
       const originalAlias = nameBuilder();
@@ -2265,7 +2266,7 @@ describe('MembersController', () => {
     });
 
     it('should validate alias format', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const spaceName = nameBuilder();
       const invalidAlias = '1';

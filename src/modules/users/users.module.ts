@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { PostgresDatabaseModuleV2 } from '@/datasources/db/v2/postgres-database.module';
@@ -20,7 +21,7 @@ import { SpacesModule } from '@/modules/spaces/spaces.module';
     PostgresDatabaseModuleV2,
     TypeOrmModule.forFeature([User, Member, Wallet]),
     WalletsModule,
-    AuthModule,
+    forwardRef(() => AuthModule),
     SiweModule,
     forwardRef(() => SpacesModule),
   ],

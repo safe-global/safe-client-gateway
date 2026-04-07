@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import {
   ConflictException,
   Inject,
@@ -52,9 +53,11 @@ export class UsersRepository implements IUsersRepository {
   public async create(
     status: keyof typeof UserStatus,
     entityManager: EntityManager,
+    options?: { extUserId?: string },
   ): Promise<User['id']> {
     const userInsertResult = await entityManager.insert(DbUser, {
       status,
+      ...(options?.extUserId && { extUserId: options.extUserId }),
     });
 
     return userInsertResult.identifiers[0].id;
@@ -163,6 +166,76 @@ export class UsersRepository implements IUsersRepository {
     });
 
     return wallet?.user;
+  }
+
+  public async findOrCreateByWalletAddress(
+    address: Address,
+  ): Promise<User['id']> {
+    const existing = await this.findByWalletAddress(address);
+    if (existing) {
+      return existing.id;
+    }
+
+    try {
+      return await this.postgresDatabaseService.transaction(
+        async (entityManager: EntityManager) => {
+          const userId = await this.create('ACTIVE', entityManager);
+
+          await this.walletsRepository.create(
+            { userId, walletAddress: address },
+            entityManager,
+          );
+
+          return userId;
+        },
+      );
+    } catch (error) {
+      // Handle race condition: a concurrent call may have created the
+      // wallet between our find and insert, causing a unique constraint
+      // violation. Retry the lookup in that case.
+      if (
+        error instanceof Error &&
+        error.message.includes('UQ_wallet_address')
+      ) {
+        const user = await this.findByWalletAddressOrFail(address);
+        return user.id;
+      }
+      throw error;
+    }
+  }
+
+  public async findOrCreateByExtUserId(extUserId: string): Promise<User['id']> {
+    const userRepository =
+      await this.postgresDatabaseService.getRepository(DbUser);
+
+    const existing = await userRepository.findOne({
+      where: { extUserId },
+    });
+    if (existing) {
+      return existing.id;
+    }
+
+    try {
+      return await this.postgresDatabaseService.transaction(
+        async (entityManager: EntityManager) => {
+          return await this.create('ACTIVE', entityManager, { extUserId });
+        },
+      );
+    } catch (error) {
+      // Handle race condition: a concurrent call may have created the
+      // user between our find and insert, causing a unique constraint
+      // violation. Retry the lookup in that case.
+      if (
+        error instanceof Error &&
+        error.message.includes('idx_users_ext_user_id')
+      ) {
+        const user = await userRepository.findOneOrFail({
+          where: { extUserId },
+        });
+        return user.id;
+      }
+      throw error;
+    }
   }
 
   public async update(args: {

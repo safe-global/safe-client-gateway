@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { DataSource } from 'typeorm';
 import { type Address, getAddress } from 'viem';
@@ -8,7 +9,7 @@ import { DatabaseMigrator } from '@/datasources/db/v2/database-migrator.service'
 import { User } from '@/modules/users/datasources/entities/users.entity.db';
 import { UsersRepository } from '@/modules/users/domain/users.repository';
 import { WalletsRepository } from '@/modules/wallets/domain/wallets.repository';
-import { authPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
+import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { UserStatus } from '@/modules/users/domain/entities/user.entity';
 import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
@@ -171,7 +172,7 @@ describe('UsersRepository', () => {
   describe('createWithWallet', () => {
     it('should insert a new user and a linked wallet', async () => {
       const dbWalletRepository = dataSource.getRepository(Wallet);
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const authPayload = new AuthPayload(authPayloadDto);
       const status = faker.helpers.arrayElement(UserStatusKeys);
 
@@ -189,6 +190,7 @@ describe('UsersRepository', () => {
         updatedAt: expect.any(Date),
         user: {
           createdAt: expect.any(Date),
+          extUserId: null,
           id: wallet.user.id,
           status,
           updatedAt: expect.any(Date),
@@ -197,7 +199,7 @@ describe('UsersRepository', () => {
     });
 
     it('should throw an error if the wallet already exists', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const authPayload = new AuthPayload(authPayloadDto);
       const status = faker.helpers.arrayElement(UserStatusKeys);
 
@@ -211,7 +213,7 @@ describe('UsersRepository', () => {
     });
 
     it('should throw if an incorrect UserStatus is provided', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const authPayload = new AuthPayload(authPayloadDto);
       const status = faker.string.alpha() as unknown as keyof typeof UserStatus;
 
@@ -224,7 +226,7 @@ describe('UsersRepository', () => {
       const signerAddress = faker.string.hexadecimal({
         length: { min: 41, max: 41 },
       });
-      const authPayloadDto = authPayloadDtoBuilder()
+      const authPayloadDto = siweAuthPayloadDtoBuilder()
         .with('signer_address', signerAddress as Address)
         .build();
       const authPayload = new AuthPayload(authPayloadDto);
@@ -240,7 +242,7 @@ describe('UsersRepository', () => {
       const nonChecksummedAddress = faker.finance
         .ethereumAddress()
         .toLowerCase();
-      const authPayloadDto = authPayloadDtoBuilder()
+      const authPayloadDto = siweAuthPayloadDtoBuilder()
         .with('signer_address', nonChecksummedAddress as Address)
         .build();
       const authPayload = new AuthPayload(authPayloadDto);
@@ -276,6 +278,7 @@ describe('UsersRepository', () => {
       expect(users).toEqual([
         {
           createdAt: expect.any(Date),
+          extUserId: null,
           id: users[0].id,
           status,
           updatedAt: expect.any(Date),
@@ -298,7 +301,7 @@ describe('UsersRepository', () => {
     it('should return a user with their wallets', async () => {
       const dbWalletRepository = dataSource.getRepository(Wallet);
       const dbUserRepository = dataSource.getRepository(User);
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const authPayload = new AuthPayload(authPayloadDto);
       const status = faker.helpers.arrayElement(UserStatusKeys);
       const userInsertResult = await dbUserRepository.insert({
@@ -331,7 +334,7 @@ describe('UsersRepository', () => {
 
     it('should throw if no user wallet is found', async () => {
       const dbUserRepository = dataSource.getRepository(User);
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const authPayload = new AuthPayload(authPayloadDto);
       const status = faker.helpers.arrayElement(UserStatusKeys);
       await dbUserRepository.insert({ status });
@@ -347,7 +350,7 @@ describe('UsersRepository', () => {
       const nonChecksummedAddress = faker.finance
         .ethereumAddress()
         .toLowerCase() as Address;
-      const authPayloadDto = authPayloadDtoBuilder()
+      const authPayloadDto = siweAuthPayloadDtoBuilder()
         .with('signer_address', nonChecksummedAddress)
         .build();
       const authPayload = new AuthPayload(authPayloadDto);
@@ -386,7 +389,7 @@ describe('UsersRepository', () => {
       const dbWalletRepository = dataSource.getRepository(Wallet);
       const dbUserRepository = dataSource.getRepository(User);
       const walletAddress = getAddress(faker.finance.ethereumAddress());
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const authPayload = new AuthPayload(authPayloadDto);
       const status = faker.helpers.arrayElement(UserStatusKeys);
       const userInsertResult = await dbUserRepository.insert({
@@ -415,6 +418,7 @@ describe('UsersRepository', () => {
         updatedAt: expect.any(Date),
         user: {
           createdAt: expect.any(Date),
+          extUserId: null,
           id: wallet.user.id,
           status,
           updatedAt: expect.any(Date),
@@ -425,7 +429,7 @@ describe('UsersRepository', () => {
     it('should throw if the user wallet already exists', async () => {
       const dbWalletRepository = dataSource.getRepository(Wallet);
       const dbUserRepository = dataSource.getRepository(User);
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const authPayload = new AuthPayload(authPayloadDto);
       const status = faker.helpers.arrayElement(UserStatusKeys);
       const userInsertResult = await dbUserRepository.insert({
@@ -454,7 +458,7 @@ describe('UsersRepository', () => {
       const walletAddress = faker.string.hexadecimal({
         length: { min: 41, max: 41 },
       });
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const authPayload = new AuthPayload(authPayloadDto);
       const status = faker.helpers.arrayElement(UserStatusKeys);
       await dbUserRepository.insert({ status });
@@ -473,7 +477,7 @@ describe('UsersRepository', () => {
       const nonChecksummedAddress = faker.finance
         .ethereumAddress()
         .toLowerCase();
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const authPayload = new AuthPayload(authPayloadDto);
       const status = faker.helpers.arrayElement(UserStatusKeys);
       const userInsertResult = await dbUserRepository.insert({
@@ -508,7 +512,7 @@ describe('UsersRepository', () => {
       const dbWalletRepository = dataSource.getRepository(Wallet);
       const dbUserRepository = dataSource.getRepository(User);
       const walletAddress = getAddress(faker.finance.ethereumAddress());
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const authPayload = new AuthPayload(authPayloadDto);
       const status = faker.helpers.arrayElement(UserStatusKeys);
       const userInsertResult = await dbUserRepository.insert({
@@ -537,7 +541,7 @@ describe('UsersRepository', () => {
 
     it('should throw if no user wallet is found', async () => {
       const dbUserRepository = dataSource.getRepository(User);
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const authPayload = new AuthPayload(authPayloadDto);
       const status = faker.helpers.arrayElement(UserStatusKeys);
       await dbUserRepository.insert({ status });
@@ -553,7 +557,7 @@ describe('UsersRepository', () => {
       const dbWalletRepository = dataSource.getRepository(Wallet);
       const dbUserRepository = dataSource.getRepository(User);
       const walletAddress = getAddress(faker.finance.ethereumAddress());
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const authPayload = new AuthPayload(authPayloadDto);
       const status = faker.helpers.arrayElement(UserStatusKeys);
       const userInsertResult = await dbUserRepository.insert({
@@ -590,6 +594,7 @@ describe('UsersRepository', () => {
           updatedAt: expect.any(Date),
           user: {
             createdAt: expect.any(Date),
+            extUserId: null,
             id: wallets[0].user.id,
             status,
             updatedAt: expect.any(Date),
@@ -602,7 +607,7 @@ describe('UsersRepository', () => {
       const dbWalletRepository = dataSource.getRepository(Wallet);
       const dbUserRepository = dataSource.getRepository(User);
       const walletAddress = getAddress(faker.finance.ethereumAddress());
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const authPayload = new AuthPayload(authPayloadDto);
       const status = faker.helpers.arrayElement(UserStatusKeys);
       const userInsertResult = await dbUserRepository.insert({
@@ -644,6 +649,7 @@ describe('UsersRepository', () => {
         usersRepository.findByWalletAddressOrFail(address),
       ).resolves.toEqual({
         createdAt: expect.any(Date),
+        extUserId: null,
         id: userInsertResult.identifiers[0].id,
         status,
         updatedAt: expect.any(Date),
@@ -679,6 +685,7 @@ describe('UsersRepository', () => {
         usersRepository.findByWalletAddress(address),
       ).resolves.toEqual({
         createdAt: expect.any(Date),
+        extUserId: null,
         id: userInsertResult.identifiers[0].id,
         status,
         updatedAt: expect.any(Date),
@@ -691,6 +698,165 @@ describe('UsersRepository', () => {
       await expect(
         usersRepository.findByWalletAddress(address),
       ).resolves.toBeUndefined();
+    });
+  });
+
+  describe('findOrCreateByWalletAddress', () => {
+    it('should return the existing user id if the wallet already exists', async () => {
+      const dbUserRepository = dataSource.getRepository(User);
+      const dbWalletRepository = dataSource.getRepository(Wallet);
+      const address = getAddress(faker.finance.ethereumAddress());
+      const status = faker.helpers.arrayElement(UserStatusKeys);
+      const userInsertResult = await dbUserRepository.insert({ status });
+      const userId = userInsertResult.identifiers[0].id;
+      await dbWalletRepository.insert({
+        user: { id: userId },
+        address,
+      });
+
+      const result = await usersRepository.findOrCreateByWalletAddress(address);
+
+      expect(result).toBe(userId);
+      // No additional user or wallet should have been created
+      await expect(dbUserRepository.find()).resolves.toHaveLength(1);
+      await expect(dbWalletRepository.find()).resolves.toHaveLength(1);
+    });
+
+    it('should create a new user and wallet if none exists', async () => {
+      const dbUserRepository = dataSource.getRepository(User);
+      const dbWalletRepository = dataSource.getRepository(Wallet);
+      const address = getAddress(faker.finance.ethereumAddress());
+
+      const userId = await usersRepository.findOrCreateByWalletAddress(address);
+
+      const user = await dbUserRepository.findOneOrFail({
+        where: { id: userId },
+      });
+      expect(user).toEqual({
+        createdAt: expect.any(Date),
+        id: userId,
+        status: 'ACTIVE',
+        updatedAt: expect.any(Date),
+        extUserId: null,
+      });
+
+      const wallet = await dbWalletRepository.findOneOrFail({
+        where: { address },
+        relations: { user: true },
+      });
+      expect(wallet).toEqual({
+        address,
+        createdAt: expect.any(Date),
+        id: wallet.id,
+        updatedAt: expect.any(Date),
+        user: {
+          createdAt: expect.any(Date),
+          id: userId,
+          status: 'ACTIVE',
+          updatedAt: expect.any(Date),
+          extUserId: null,
+        },
+      });
+    });
+
+    it('should checksum the wallet address when creating', async () => {
+      const dbWalletRepository = dataSource.getRepository(Wallet);
+      const nonChecksummedAddress = faker.finance
+        .ethereumAddress()
+        .toLowerCase();
+
+      await usersRepository.findOrCreateByWalletAddress(
+        nonChecksummedAddress as Address,
+      );
+
+      const wallet = await dbWalletRepository.findOneOrFail({
+        where: { address: getAddress(nonChecksummedAddress) },
+      });
+      expect(wallet).toStrictEqual(
+        expect.objectContaining({
+          address: getAddress(nonChecksummedAddress),
+        }),
+      );
+    });
+
+    it('should return the existing user id on concurrent duplicate insert', async () => {
+      const dbUserRepository = dataSource.getRepository(User);
+      const dbWalletRepository = dataSource.getRepository(Wallet);
+      const address = getAddress(faker.finance.ethereumAddress());
+
+      // Run two calls concurrently — one will win the insert, the other
+      // should catch the unique constraint violation and retry the find.
+      const [id1, id2] = await Promise.all([
+        usersRepository.findOrCreateByWalletAddress(address),
+        usersRepository.findOrCreateByWalletAddress(address),
+      ]);
+
+      expect(id1).toBe(id2);
+      await expect(dbUserRepository.find()).resolves.toHaveLength(1);
+      await expect(dbWalletRepository.find()).resolves.toHaveLength(1);
+    });
+  });
+
+  describe('findOrCreateByExtUserId', () => {
+    it('should return the existing user id if the extUserId already exists', async () => {
+      const dbUserRepository = dataSource.getRepository(User);
+      const extUserId = faker.string.uuid();
+      const status = faker.helpers.arrayElement(UserStatusKeys);
+      const userInsertResult = await dbUserRepository.insert({
+        status,
+        extUserId,
+      });
+      const userId = userInsertResult.identifiers[0].id;
+
+      const result = await usersRepository.findOrCreateByExtUserId(extUserId);
+
+      expect(result).toBe(userId);
+      // No additional user should have been created
+      await expect(dbUserRepository.find()).resolves.toHaveLength(1);
+    });
+
+    it('should create a new user if none exists with the given extUserId', async () => {
+      const dbUserRepository = dataSource.getRepository(User);
+      const extUserId = faker.string.uuid();
+
+      const userId = await usersRepository.findOrCreateByExtUserId(extUserId);
+
+      const user = await dbUserRepository.findOneOrFail({
+        where: { id: userId },
+      });
+      expect(user).toEqual({
+        createdAt: expect.any(Date),
+        extUserId,
+        id: userId,
+        status: 'ACTIVE',
+        updatedAt: expect.any(Date),
+      });
+    });
+
+    it('should return the existing user id on concurrent duplicate insert', async () => {
+      const dbUserRepository = dataSource.getRepository(User);
+      const extUserId = faker.string.uuid();
+
+      // Run two calls concurrently — one will win the insert, the other
+      // should catch the unique constraint violation and retry the find.
+      const [id1, id2] = await Promise.all([
+        usersRepository.findOrCreateByExtUserId(extUserId),
+        usersRepository.findOrCreateByExtUserId(extUserId),
+      ]);
+
+      expect(id1).toBe(id2);
+      await expect(dbUserRepository.find()).resolves.toHaveLength(1);
+    });
+
+    it('should rethrow non-constraint-violation errors', async () => {
+      const extUserId = faker.string.uuid();
+      const error = new Error('unexpected failure');
+
+      jest.spyOn(usersRepository, 'create').mockRejectedValueOnce(error);
+
+      await expect(
+        usersRepository.findOrCreateByExtUserId(extUserId),
+      ).rejects.toThrow(error);
     });
   });
 
@@ -716,6 +882,7 @@ describe('UsersRepository', () => {
 
       expect(user).toEqual({
         createdAt: expect.any(Date),
+        extUserId: null,
         id: userId,
         status: 'ACTIVE',
         updatedAt: expect.any(Date),
@@ -746,10 +913,66 @@ describe('UsersRepository', () => {
 
       expect(user).toEqual({
         createdAt: expect.any(Date),
+        extUserId: null,
         id: userId,
         status,
         updatedAt: expect.any(Date),
       });
+    });
+  });
+
+  describe('extUserId uniqueness', () => {
+    it('should allow multiple users with null extUserId', async () => {
+      const dbUserRepository = dataSource.getRepository(User);
+      const status = faker.helpers.arrayElement(UserStatusKeys);
+
+      await dbUserRepository.insert({ status, extUserId: null });
+      await dbUserRepository.insert({ status, extUserId: null });
+
+      const users = await dbUserRepository.find();
+      expect(users).toHaveLength(2);
+      expect(users[0].extUserId).toBeNull();
+      expect(users[1].extUserId).toBeNull();
+    });
+
+    it('should allow a user with a unique extUserId', async () => {
+      const dbUserRepository = dataSource.getRepository(User);
+      const status = faker.helpers.arrayElement(UserStatusKeys);
+      const extUserId = faker.string.uuid();
+
+      await dbUserRepository.insert({ status, extUserId });
+
+      const user = await dbUserRepository.findOneOrFail({
+        where: { extUserId },
+      });
+      expect(user.extUserId).toBe(extUserId);
+    });
+
+    it('should reject duplicate extUserId values', async () => {
+      const dbUserRepository = dataSource.getRepository(User);
+      const status = faker.helpers.arrayElement(UserStatusKeys);
+      const extUserId = faker.string.uuid();
+
+      await dbUserRepository.insert({ status, extUserId });
+
+      await expect(
+        dbUserRepository.insert({ status, extUserId }),
+      ).rejects.toThrow(/duplicate key value violates unique constraint/);
+    });
+
+    it('should allow different extUserId values for different users', async () => {
+      const dbUserRepository = dataSource.getRepository(User);
+      const status = faker.helpers.arrayElement(UserStatusKeys);
+      const extUserId1 = faker.string.uuid();
+      const extUserId2 = faker.string.uuid();
+
+      await dbUserRepository.insert({ status, extUserId: extUserId1 });
+      await dbUserRepository.insert({ status, extUserId: extUserId2 });
+
+      const users = await dbUserRepository.find({ order: { id: 'ASC' } });
+      expect(users).toHaveLength(2);
+      expect(users[0].extUserId).toBe(extUserId1);
+      expect(users[1].extUserId).toBe(extUserId2);
     });
   });
 });
