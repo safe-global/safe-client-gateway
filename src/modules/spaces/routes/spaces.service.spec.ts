@@ -33,6 +33,7 @@ const membersRepositoryMock = {
 } as jest.MockedObjectDeep<IMembersRepository>;
 
 const usersRepositoryMock = {
+  findOneOrFail: jest.fn(),
   activateIfPending: jest.fn(),
 } as jest.MockedObjectDeep<IUsersRepository>;
 
@@ -308,26 +309,55 @@ describe('SpacesService', () => {
       );
     });
 
-    it('should activate a PENDING user when creating space', async () => {
-      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
-      const userId = Number(authPayload.sub);
-      const expectedResponse = {
-        id: faker.number.int(),
-        name: faker.word.noun(),
-      };
+    it.each([
+      ['SIWE', siweAuthPayloadDtoBuilder] as const,
+      ['OIDC', oidcAuthPayloadDtoBuilder] as const,
+    ])(
+      'should activate a PENDING %s user when creating space',
+      async (_label, builder) => {
+        const authPayload = new AuthPayload(builder().build());
+        const userId = Number(authPayload.sub);
+        const expectedResponse = {
+          id: faker.number.int(),
+          name: faker.word.noun(),
+        };
 
-      spacesRepositoryMock.create.mockResolvedValue(expectedResponse);
+        spacesRepositoryMock.create.mockResolvedValue(expectedResponse);
 
-      await service.create({
-        name: expectedResponse.name,
-        status: 'ACTIVE',
-        authPayload,
-      });
+        await service.create({
+          name: expectedResponse.name,
+          status: 'ACTIVE',
+          authPayload,
+        });
 
-      expect(usersRepositoryMock.activateIfPending).toHaveBeenCalledWith(
-        userId,
-      );
-    });
+        expect(usersRepositoryMock.activateIfPending).toHaveBeenCalledWith(
+          userId,
+        );
+      },
+    );
+
+    it.each([
+      ['SIWE', siweAuthPayloadDtoBuilder] as const,
+      ['OIDC', oidcAuthPayloadDtoBuilder] as const,
+    ])(
+      'should throw NotFoundException when %s user no longer exists',
+      async (_label, builder) => {
+        const authPayload = new AuthPayload(builder().build());
+        usersRepositoryMock.findOneOrFail.mockRejectedValue(
+          new NotFoundException('User not found.'),
+        );
+
+        await expect(
+          service.create({
+            name: faker.word.noun(),
+            status: 'ACTIVE',
+            authPayload,
+          }),
+        ).rejects.toThrow(new NotFoundException('User not found.'));
+        expect(usersRepositoryMock.activateIfPending).not.toHaveBeenCalled();
+        expect(spacesRepositoryMock.create).not.toHaveBeenCalled();
+      },
+    );
 
     it('should throw UnauthorizedException for unauthenticated payload', async () => {
       await expect(
@@ -337,6 +367,7 @@ describe('SpacesService', () => {
           authPayload: new AuthPayload(),
         }),
       ).rejects.toThrow(UnauthorizedException);
+      expect(usersRepositoryMock.findOneOrFail).not.toHaveBeenCalled();
       expect(usersRepositoryMock.activateIfPending).not.toHaveBeenCalled();
     });
   });

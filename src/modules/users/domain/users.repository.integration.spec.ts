@@ -16,8 +16,10 @@ import {
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { UserStatus } from '@/modules/users/domain/entities/user.entity';
 import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
+import { NotFoundException } from '@nestjs/common';
 import type { ConfigService } from '@nestjs/config';
 import type { ILoggingService } from '@/logging/logging.interface';
+import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
 import { getStringEnumKeys } from '@/domain/common/utils/enum';
 import { Member } from '@/modules/users/datasources/entities/member.entity.db';
 import { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
@@ -169,6 +171,29 @@ describe('UsersRepository', () => {
       expect(prevUpdatedAt.getTime()).toBeLessThanOrEqual(
         updatedUser.updatedAt.getTime(),
       );
+    });
+  });
+
+  describe('findOneOrFail', () => {
+    it('should return a user by ID', async () => {
+      const dbUserRepository = dataSource.getRepository(User);
+      const userInsertResult = await dbUserRepository.insert({
+        status: 'ACTIVE',
+      });
+      const userId = userInsertResult.identifiers[0].id as number;
+
+      const user = await usersRepository.findOneOrFail({ id: userId });
+
+      expect(user.id).toBe(userId);
+      expect(user.status).toBe('ACTIVE');
+    });
+
+    it('should throw NotFoundException for non-existent user', async () => {
+      await expect(
+        usersRepository.findOneOrFail({
+          id: faker.number.int({ min: 999999, max: DB_MAX_SAFE_INTEGER }),
+        }),
+      ).rejects.toThrow(new NotFoundException('User not found.'));
     });
   });
 

@@ -31,6 +31,7 @@ export class SpacesService {
     authPayload: AuthPayload;
   }): Promise<CreateSpaceResponse> {
     const userId = getAuthenticatedUserIdOrFail(args.authPayload);
+    await this.usersRepository.findOneOrFail({ id: userId });
     await this.usersRepository.activateIfPending(userId);
 
     return await this.spacesRepository.create({ userId, ...args });

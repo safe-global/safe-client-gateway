@@ -8,6 +8,7 @@ import { IMembersRepository } from '@/modules/users/domain/members.repository.in
     {
       provide: IUsersRepository,
       useValue: {
+        findOneOrFail: jest.fn(),
         createWithWallet: jest.fn(),
         create: jest.fn(),
         getWithWallets: jest.fn(),

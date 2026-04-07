@@ -14,6 +14,7 @@ import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.s
 import { User as DbUser } from '@/modules/users/datasources/entities/users.entity.db';
 import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
 import { EntityManager } from 'typeorm';
+import type { FindOptionsRelations, FindOptionsWhere } from 'typeorm';
 import { IWalletsRepository } from '@/modules/wallets/domain/wallets.repository.interface';
 import type { Address } from 'viem';
 
@@ -24,6 +25,21 @@ export class UsersRepository implements IUsersRepository {
     @Inject(IWalletsRepository)
     private readonly walletsRepository: IWalletsRepository,
   ) {}
+
+  public async findOneOrFail(
+    where: Array<FindOptionsWhere<DbUser>> | FindOptionsWhere<DbUser>,
+    relations?: FindOptionsRelations<DbUser>,
+  ): Promise<DbUser> {
+    const userRepository =
+      await this.postgresDatabaseService.getRepository(DbUser);
+    const user = await userRepository.findOne({ where, relations });
+
+    if (!user) {
+      throw new NotFoundException('User not found.');
+    }
+
+    return user;
+  }
 
   public async createWithWallet(args: {
     status: keyof typeof UserStatus;

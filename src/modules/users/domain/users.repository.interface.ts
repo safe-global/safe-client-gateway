@@ -5,12 +5,22 @@ import type {
   UserStatus,
 } from '@/modules/users/domain/entities/user.entity';
 import type { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
-import type { EntityManager } from 'typeorm';
+import type { User as DbUser } from '@/modules/users/datasources/entities/users.entity.db';
+import type {
+  EntityManager,
+  FindOptionsRelations,
+  FindOptionsWhere,
+} from 'typeorm';
 import type { Address } from 'viem';
 
 export const IUsersRepository = Symbol('IUsersRepository');
 
 export interface IUsersRepository {
+  findOneOrFail(
+    where: Array<FindOptionsWhere<DbUser>> | FindOptionsWhere<DbUser>,
+    relations?: FindOptionsRelations<DbUser>,
+  ): Promise<DbUser>;
+
   createWithWallet(args: {
     status: keyof typeof UserStatus;
     authPayload: AuthPayload;
