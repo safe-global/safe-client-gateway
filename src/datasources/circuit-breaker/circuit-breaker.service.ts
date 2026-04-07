@@ -198,7 +198,6 @@ export class CircuitBreakerService {
   private transitionToHalfOpen(circuit: ICircuit): void {
     circuit.metrics.consecutiveSuccesses = 0;
     circuit.metrics.failureCount = 0;
-    circuit.metrics.lastFailureTime = undefined;
     circuit.metrics.state = CircuitState.HALF_OPEN;
 
     this.loggingService.info({
@@ -311,7 +310,9 @@ export class CircuitBreakerService {
 
     const now = Date.now();
 
-    this.discardOldFailures(circuit, now);
+    if (circuit.metrics.state !== CircuitState.HALF_OPEN) {
+      this.discardOldFailures(circuit, now);
+    }
 
     circuit.metrics.failureCount++;
     circuit.metrics.lastFailureTime = now;
