@@ -10,11 +10,12 @@ import {
   siweAuthPayloadDtoBuilder,
   oidcAuthPayloadDtoBuilder,
 } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
+import type { Address } from 'viem';
 import { getAddress } from 'viem';
 import { spaceBuilder } from '@/modules/spaces/domain/entities/__tests__/space.entity.db.builder';
 import { memberBuilder } from '@/modules/users/datasources/entities/__tests__/member.entity.db.builder';
 
-const addr = (): `0x${string}` => getAddress(faker.finance.ethereumAddress());
+const addr = (): Address => getAddress(faker.finance.ethereumAddress());
 
 const spaceSafesRepositoryMock = {
   create: jest.fn(),
