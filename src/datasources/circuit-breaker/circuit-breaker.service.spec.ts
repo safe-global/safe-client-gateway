@@ -361,6 +361,32 @@ describe('CircuitBreakerService', () => {
     });
   });
 
+  describe('canProceedOrFail', () => {
+    it('should not throw when circuit does not exist', () => {
+      const service = createService();
+      expect(() => service.canProceedOrFail('new-circuit')).not.toThrow();
+    });
+
+    it('should not throw when circuit is CLOSED', () => {
+      const service = createService({ threshold: 5 });
+      service.getOrRegisterCircuit('test-circuit');
+      service.recordFailure('test-circuit');
+      expect(() => service.canProceedOrFail('test-circuit')).not.toThrow();
+    });
+
+    it('should throw CircuitBreakerException when circuit is OPEN', () => {
+      const service = createService({ threshold: 2 });
+      const circuit = service.getOrRegisterCircuit('test-circuit');
+      service.recordFailure(circuit.name);
+      service.recordFailure(circuit.name);
+
+      expect(circuit.metrics.state).toBe(CircuitState.OPEN);
+      expect(() => service.canProceedOrFail('test-circuit')).toThrow(
+        'Circuit breaker is open',
+      );
+    });
+  });
+
   describe('Enabled/Disabled', () => {
     it('should enforce circuit breaker logic when enabled', () => {
       const threshold = faker.number.int({ min: 1, max: 10 });
