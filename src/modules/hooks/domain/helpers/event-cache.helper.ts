@@ -26,6 +26,7 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import memoize from 'lodash/memoize';
 import type { MemoizedFunction } from 'lodash';
 import { EarnRepository } from '@/modules/earn/domain/earn.repository';
+import { ServiceKey } from '@/modules/chains/routes/v2/entities/schemas/serviceKey.schema';
 
 @Injectable()
 export class EventCacheHelper {
@@ -517,13 +518,16 @@ export class EventCacheHelper {
         (unsupportedChain) => unsupportedChain !== event.chainId,
       );
     }
+    // Clear the v2 chain cache for the service key if provided, otherwise clear for all service keys
+    const clearV2 = event.service
+      ? [this.chainsRepository.clearChainV2(event.chainId, event.service)]
+      : Object.values(ServiceKey).map((key) =>
+          this.chainsRepository.clearChainV2(event.chainId, key),
+        );
     return [
       Promise.all([
         this.chainsRepository.clearChain(event.chainId),
-        this.chainsRepository.clearChainV2(
-          event.chainId,
-          event.service ?? 'WALLET_WEB',
-        ),
+        ...clearV2,
       ]).then(() => {
         // RPC may have changed
         this.blockchainRepository.clearApi(event.chainId);

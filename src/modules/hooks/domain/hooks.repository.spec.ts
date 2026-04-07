@@ -185,12 +185,32 @@ describe('HooksRepository (Unit)', () => {
 
     // 3 calls to repositories
     expect(mockChainsRepository.clearChain).toHaveBeenCalledTimes(3);
-    expect(mockChainsRepository.clearChainV2).toHaveBeenCalledTimes(3);
+    // 3 events × 3 service keys (no service in event → clears all)
+    expect(mockChainsRepository.clearChainV2).toHaveBeenCalledTimes(9);
     expect(mockBlockchainRepository.clearApi).toHaveBeenCalledTimes(3);
     expect(mockStakingRepository.clearApi).toHaveBeenCalledTimes(3);
     expect(mockEarnRepository.clearApi).toHaveBeenCalledTimes(3);
     expect(mockTransactionsRepository.clearApi).toHaveBeenCalledTimes(3);
     expect(mockBalancesRepository.clearApi).toHaveBeenCalledTimes(3);
+  });
+
+  it('should clear only the specified service key v2 cache on CHAIN_UPDATE with service', async () => {
+    const chain = chainBuilder().build();
+    const event = chainUpdateEventBuilder()
+      .with('chainId', chain.chainId)
+      .with('service', 'MOBILE')
+      .build();
+    mockChainsRepository.isSupportedChain.mockResolvedValue(false);
+    mockChainsRepository.clearChain.mockResolvedValue();
+    mockChainsRepository.clearChainV2.mockResolvedValue();
+
+    await hooksRepository.onEvent(event);
+
+    expect(mockChainsRepository.clearChainV2).toHaveBeenCalledTimes(1);
+    expect(mockChainsRepository.clearChainV2).toHaveBeenCalledWith(
+      chain.chainId,
+      'MOBILE',
+    );
   });
 
   it('should clear the chain lookup cache on a CHAIN_UPDATE event', async () => {

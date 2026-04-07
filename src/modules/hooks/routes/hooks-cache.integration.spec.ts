@@ -27,6 +27,7 @@ import {
   updatedDelegateEventBuilder,
 } from '@/modules/hooks/routes/entities/__tests__/delegate-events.builder';
 import { createTestModule } from '@/__tests__/testing-module';
+import { ServiceKey } from '@/modules/chains/routes/v2/entities/schemas/serviceKey.schema';
 
 function getSubscriptionCallback(
   queuesApiService: jest.MockedObjectDeep<IQueuesApiService>,
@@ -741,77 +742,150 @@ describe('Hook Events for Cache', () => {
     {
       type: 'CHAIN_UPDATE',
     },
-  ])('$type clears v2 chain cache', async (payload) => {
+  ])('$type clears v2 chain cache for all service keys', async (payload) => {
     const chain = chainBuilder().build();
-    const serviceKey = 'WALLET_WEB';
-    const cacheDir = new CacheDir(
-      `${chain.chainId}_chain_v2_${serviceKey}`,
-      '',
+    const serviceKeys = Object.values(ServiceKey);
+    const cacheDirs = serviceKeys.map(
+      (key) => new CacheDir(`${chain.chainId}_chain_v2_${key}`, ''),
     );
-    await fakeCacheService.hSet(
-      cacheDir,
-      JSON.stringify(chain),
-      faker.number.int({ min: 1 }),
-    );
+    for (const cacheDir of cacheDirs) {
+      await fakeCacheService.hSet(
+        cacheDir,
+        JSON.stringify(chain),
+        faker.number.int({ min: 1 }),
+      );
+    }
     const data = {
       chainId: chain.chainId,
       ...payload,
     };
     networkService.get.mockImplementation(({ url }) => {
-      switch (url) {
-        case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
-          return Promise.resolve({ data: rawify(chain), status: 200 });
-        case `${safeConfigUrl}/api/v2/chains/${serviceKey}/${chain.chainId}`:
-          return Promise.resolve({ data: rawify(chain), status: 200 });
-        default:
-          return Promise.reject(new Error(`Could not match ${url}`));
+      if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
+        return Promise.resolve({ data: rawify(chain), status: 200 });
       }
+      for (const key of serviceKeys) {
+        if (url === `${safeConfigUrl}/api/v2/chains/${key}/${chain.chainId}`) {
+          return Promise.resolve({ data: rawify(chain), status: 200 });
+        }
+      }
+      return Promise.reject(new Error(`Could not match ${url}`));
     });
 
     const cb = getSubscriptionCallback(queuesApiService);
-    await cb({ content: Buffer.from(JSON.stringify(data)) } as ConsumeMessage);
+    await cb({
+      content: Buffer.from(JSON.stringify(data)),
+    } as ConsumeMessage);
 
-    await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeNull();
+    for (const cacheDir of cacheDirs) {
+      await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeNull();
+    }
   });
 
   it.each([
     {
       type: 'CHAIN_UPDATE',
     },
-  ])('$type clears v2 chains list cache', async (payload) => {
+  ])(
+    '$type clears v2 chains list cache for all service keys',
+    async (payload) => {
+      const chain = chainBuilder().build();
+      const serviceKeys = Object.values(ServiceKey);
+      const cacheDirs = serviceKeys.map(
+        (key) => new CacheDir(`chains_v2_${key}`, ''),
+      );
+      for (const cacheDir of cacheDirs) {
+        await fakeCacheService.hSet(
+          cacheDir,
+          JSON.stringify(chain),
+          faker.number.int({ min: 1 }),
+        );
+      }
+      const data = {
+        chainId: chain.chainId,
+        ...payload,
+      };
+      networkService.get.mockImplementation(({ url }) => {
+        if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
+          return Promise.resolve({
+            data: rawify(chainBuilder().with('chainId', chain.chainId).build()),
+            status: 200,
+          });
+        }
+        for (const key of serviceKeys) {
+          if (
+            url === `${safeConfigUrl}/api/v2/chains/${key}/${chain.chainId}`
+          ) {
+            return Promise.resolve({
+              data: rawify(
+                chainBuilder().with('chainId', chain.chainId).build(),
+              ),
+              status: 200,
+            });
+          }
+        }
+        return Promise.reject(new Error(`Could not match ${url}`));
+      });
+
+      const cb = getSubscriptionCallback(queuesApiService);
+      await cb({
+        content: Buffer.from(JSON.stringify(data)),
+      } as ConsumeMessage);
+
+      for (const cacheDir of cacheDirs) {
+        await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeNull();
+      }
+    },
+  );
+
+  it('CHAIN_UPDATE with explicit service clears only that service key v2 cache', async () => {
     const chain = chainBuilder().build();
-    const serviceKey = 'WALLET_WEB';
-    const cacheDir = new CacheDir(`chains_v2_${serviceKey}`, '');
+    const mobileCacheDir = new CacheDir(
+      `${chain.chainId}_chain_v2_${ServiceKey.MOBILE}`,
+      '',
+    );
+    const walletWebCacheDir = new CacheDir(
+      `${chain.chainId}_chain_v2_${ServiceKey.WALLET_WEB}`,
+      '',
+    );
     await fakeCacheService.hSet(
-      cacheDir,
+      mobileCacheDir,
+      JSON.stringify(chain),
+      faker.number.int({ min: 1 }),
+    );
+    await fakeCacheService.hSet(
+      walletWebCacheDir,
       JSON.stringify(chain),
       faker.number.int({ min: 1 }),
     );
     const data = {
+      type: 'CHAIN_UPDATE',
       chainId: chain.chainId,
-      ...payload,
+      service: ServiceKey.MOBILE,
     };
     networkService.get.mockImplementation(({ url }) => {
-      switch (url) {
-        case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
-          return Promise.resolve({
-            data: rawify(chainBuilder().with('chainId', chain.chainId).build()),
-            status: 200,
-          });
-        case `${safeConfigUrl}/api/v2/chains/${serviceKey}/${chain.chainId}`:
-          return Promise.resolve({
-            data: rawify(chainBuilder().with('chainId', chain.chainId).build()),
-            status: 200,
-          });
-        default:
-          return Promise.reject(new Error(`Could not match ${url}`));
+      if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
+        return Promise.resolve({ data: rawify(chain), status: 200 });
       }
+      if (
+        url ===
+        `${safeConfigUrl}/api/v2/chains/${ServiceKey.MOBILE}/${chain.chainId}`
+      ) {
+        return Promise.resolve({ data: rawify(chain), status: 200 });
+      }
+      return Promise.reject(new Error(`Could not match ${url}`));
     });
 
     const cb = getSubscriptionCallback(queuesApiService);
-    await cb({ content: Buffer.from(JSON.stringify(data)) } as ConsumeMessage);
+    await cb({
+      content: Buffer.from(JSON.stringify(data)),
+    } as ConsumeMessage);
 
-    await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeNull();
+    // MOBILE cache should be cleared
+    await expect(fakeCacheService.hGet(mobileCacheDir)).resolves.toBeNull();
+    // WALLET_WEB cache should remain
+    await expect(
+      fakeCacheService.hGet(walletWebCacheDir),
+    ).resolves.not.toBeNull();
   });
 
   it.each([
