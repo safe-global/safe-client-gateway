@@ -19,8 +19,6 @@ import type { IAddressBookItemsRepository } from '@/modules/spaces/domain/addres
 import { addressBookItemBuilder } from '@/modules/spaces/domain/address-books/entities/__tests__/address-book-item.db.builder';
 import { spaceBuilder } from '@/modules/spaces/domain/entities/__tests__/space.entity.db.builder';
 import { SpacesRepository } from '@/modules/spaces/domain/spaces.repository';
-import { UsersRepository } from '@/modules/users/domain/users.repository';
-import { WalletsRepository } from '@/modules/wallets/domain/wallets.repository';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { faker } from '@faker-js/faker/.';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
@@ -121,7 +119,6 @@ describe('AddressBookItemsRepository', () => {
     addressBookItemsRepository = new AddressBookItemsRepository(
       dbService,
       new SpacesRepository(dbService, mockConfigurationService),
-      new UsersRepository(dbService, new WalletsRepository(dbService)),
       mockConfigService,
     );
   });
@@ -539,10 +536,13 @@ describe('AddressBookItemsRepository', () => {
     user: User;
     authPayload: AuthPayload;
   }> => {
-    const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
     const user = await dbUserRepo.insert({
       status: 'ACTIVE',
     });
+    const authPayloadDto = siweAuthPayloadDtoBuilder()
+      .with('sub', (user.generatedMaps[0].id as number).toString())
+      .build();
+    const authPayload = new AuthPayload(authPayloadDto);
     await dbWalletRepo.insert({
       user: user.generatedMaps[0],
       address: authPayload.signer_address,

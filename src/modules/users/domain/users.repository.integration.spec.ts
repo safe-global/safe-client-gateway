@@ -9,12 +9,17 @@ import { DatabaseMigrator } from '@/datasources/db/v2/database-migrator.service'
 import { User } from '@/modules/users/datasources/entities/users.entity.db';
 import { UsersRepository } from '@/modules/users/domain/users.repository';
 import { WalletsRepository } from '@/modules/wallets/domain/wallets.repository';
-import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
+import {
+  oidcAuthPayloadDtoBuilder,
+  siweAuthPayloadDtoBuilder,
+} from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { UserStatus } from '@/modules/users/domain/entities/user.entity';
 import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
+import { NotFoundException } from '@nestjs/common';
 import type { ConfigService } from '@nestjs/config';
 import type { ILoggingService } from '@/logging/logging.interface';
+import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
 import { getStringEnumKeys } from '@/domain/common/utils/enum';
 import { Member } from '@/modules/users/datasources/entities/member.entity.db';
 import { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
@@ -169,6 +174,29 @@ describe('UsersRepository', () => {
     });
   });
 
+  describe('findOneOrFail', () => {
+    it('should return a user by ID', async () => {
+      const dbUserRepository = dataSource.getRepository(User);
+      const userInsertResult = await dbUserRepository.insert({
+        status: 'ACTIVE',
+      });
+      const userId = userInsertResult.identifiers[0].id as number;
+
+      const user = await usersRepository.findOneOrFail({ id: userId });
+
+      expect(user.id).toBe(userId);
+      expect(user.status).toBe('ACTIVE');
+    });
+
+    it('should throw NotFoundException for non-existent user', async () => {
+      await expect(
+        usersRepository.findOneOrFail({
+          id: faker.number.int({ min: 999999, max: DB_MAX_SAFE_INTEGER }),
+        }),
+      ).rejects.toThrow(new NotFoundException('User not found.'));
+    });
+  });
+
   describe('createWithWallet', () => {
     it('should insert a new user and a linked wallet', async () => {
       const dbWalletRepository = dataSource.getRepository(Wallet);
@@ -301,12 +329,14 @@ describe('UsersRepository', () => {
     it('should return a user with their wallets', async () => {
       const dbWalletRepository = dataSource.getRepository(Wallet);
       const dbUserRepository = dataSource.getRepository(User);
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const authPayload = new AuthPayload(authPayloadDto);
       const status = faker.helpers.arrayElement(UserStatusKeys);
       const userInsertResult = await dbUserRepository.insert({
         status,
       });
+      const authPayloadDto = siweAuthPayloadDtoBuilder()
+        .with('sub', (userInsertResult.identifiers[0].id as number).toString())
+        .build();
+      const authPayload = new AuthPayload(authPayloadDto);
       await dbWalletRepository.insert({
         user: {
           id: userInsertResult.identifiers[0].id,
@@ -332,32 +362,21 @@ describe('UsersRepository', () => {
       });
     });
 
-    it('should throw if no user wallet is found', async () => {
-      const dbUserRepository = dataSource.getRepository(User);
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const authPayload = new AuthPayload(authPayloadDto);
-      const status = faker.helpers.arrayElement(UserStatusKeys);
-      await dbUserRepository.insert({ status });
-
-      await expect(usersRepository.getWithWallets(authPayload)).rejects.toThrow(
-        `Wallet not found. Address=${authPayload.signer_address}`,
-      );
-    });
-
     it('should find by non-checksummed address', async () => {
       const dbWalletRepository = dataSource.getRepository(Wallet);
       const dbUserRepository = dataSource.getRepository(User);
       const nonChecksummedAddress = faker.finance
         .ethereumAddress()
         .toLowerCase() as Address;
-      const authPayloadDto = siweAuthPayloadDtoBuilder()
-        .with('signer_address', nonChecksummedAddress)
-        .build();
-      const authPayload = new AuthPayload(authPayloadDto);
       const status = faker.helpers.arrayElement(UserStatusKeys);
       const userInsertResult = await dbUserRepository.insert({
         status,
       });
+      const authPayloadDto = siweAuthPayloadDtoBuilder()
+        .with('signer_address', nonChecksummedAddress)
+        .with('sub', (userInsertResult.identifiers[0].id as number).toString())
+        .build();
+      const authPayload = new AuthPayload(authPayloadDto);
       await dbWalletRepository.insert({
         user: {
           id: userInsertResult.identifiers[0].id,
@@ -380,6 +399,56 @@ describe('UsersRepository', () => {
             address: getAddress(nonChecksummedAddress),
           },
         ],
+      });
+    });
+
+    it('should return wallets linked to an OIDC user', async () => {
+      const dbUserRepository = dataSource.getRepository(User);
+      const dbWalletRepository = dataSource.getRepository(Wallet);
+      const status = faker.helpers.arrayElement(UserStatusKeys);
+      const userInsertResult = await dbUserRepository.insert({ status });
+      const userId = userInsertResult.identifiers[0].id as number;
+      const authPayloadDto = oidcAuthPayloadDtoBuilder()
+        .with('sub', userId.toString())
+        .build();
+      const authPayload = new AuthPayload(authPayloadDto);
+      const walletAddress = getAddress(faker.finance.ethereumAddress());
+      const walletInsertResult = await dbWalletRepository.insert({
+        user: { id: userId },
+        address: walletAddress,
+      });
+      const walletId = walletInsertResult.identifiers[0].id;
+
+      await expect(
+        usersRepository.getWithWallets(authPayload),
+      ).resolves.toEqual({
+        id: userId,
+        status,
+        wallets: [
+          {
+            id: walletId,
+            address: walletAddress,
+          },
+        ],
+      });
+    });
+
+    it('should return user with empty wallets for OIDC user', async () => {
+      const dbUserRepository = dataSource.getRepository(User);
+      const status = faker.helpers.arrayElement(UserStatusKeys);
+      const userInsertResult = await dbUserRepository.insert({ status });
+      const userId = userInsertResult.identifiers[0].id as number;
+      const authPayloadDto = oidcAuthPayloadDtoBuilder()
+        .with('sub', userId.toString())
+        .build();
+      const authPayload = new AuthPayload(authPayloadDto);
+
+      await expect(
+        usersRepository.getWithWallets(authPayload),
+      ).resolves.toEqual({
+        id: userId,
+        status,
+        wallets: [],
       });
     });
   });
@@ -507,18 +576,54 @@ describe('UsersRepository', () => {
     });
   });
 
+  describe('activateIfPending', () => {
+    it('should activate a PENDING user', async () => {
+      const dbUserRepository = dataSource.getRepository(User);
+      const userInsertResult = await dbUserRepository.insert({
+        status: 'PENDING',
+      });
+      const userId = userInsertResult.identifiers[0].id as number;
+
+      await usersRepository.activateIfPending(userId);
+
+      const user = await dbUserRepository.findOneBy({ id: userId });
+      expect(user?.status).toBe('ACTIVE');
+    });
+
+    it('should not change an already ACTIVE user', async () => {
+      const dbUserRepository = dataSource.getRepository(User);
+      const userInsertResult = await dbUserRepository.insert({
+        status: 'ACTIVE',
+      });
+      const userId = userInsertResult.identifiers[0].id as number;
+
+      await usersRepository.activateIfPending(userId);
+
+      const user = await dbUserRepository.findOneBy({ id: userId });
+      expect(user?.status).toBe('ACTIVE');
+    });
+
+    it('should not throw for non-existent userId', async () => {
+      await expect(
+        usersRepository.activateIfPending(999999),
+      ).resolves.toBeUndefined();
+    });
+  });
+
   describe('delete', () => {
     it('should delete a user and their wallets', async () => {
       const dbWalletRepository = dataSource.getRepository(Wallet);
       const dbUserRepository = dataSource.getRepository(User);
       const walletAddress = getAddress(faker.finance.ethereumAddress());
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const authPayload = new AuthPayload(authPayloadDto);
       const status = faker.helpers.arrayElement(UserStatusKeys);
       const userInsertResult = await dbUserRepository.insert({
         status,
       });
-      const userId = userInsertResult.identifiers[0].id;
+      const userId = userInsertResult.identifiers[0].id as number;
+      const authPayloadDto = siweAuthPayloadDtoBuilder()
+        .with('sub', userId.toString())
+        .build();
+      const authPayload = new AuthPayload(authPayloadDto);
       await dbWalletRepository.insert({
         user: {
           id: userId,
@@ -539,16 +644,19 @@ describe('UsersRepository', () => {
       await expect(dbWalletRepository.find()).resolves.toEqual([]);
     });
 
-    it('should throw if no user wallet is found', async () => {
+    it('should delete OIDC user', async () => {
       const dbUserRepository = dataSource.getRepository(User);
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const authPayload = new AuthPayload(authPayloadDto);
       const status = faker.helpers.arrayElement(UserStatusKeys);
-      await dbUserRepository.insert({ status });
+      const userInsertResult = await dbUserRepository.insert({ status });
+      const userId = userInsertResult.identifiers[0].id as number;
+      const authPayloadDto = oidcAuthPayloadDtoBuilder()
+        .with('sub', userId.toString())
+        .build();
+      const authPayload = new AuthPayload(authPayloadDto);
 
-      await expect(usersRepository.delete(authPayload)).rejects.toThrow(
-        `Wallet not found. Address=${authPayload.signer_address}`,
-      );
+      await usersRepository.delete(authPayload);
+
+      await expect(dbUserRepository.find()).resolves.toEqual([]);
     });
   });
 
