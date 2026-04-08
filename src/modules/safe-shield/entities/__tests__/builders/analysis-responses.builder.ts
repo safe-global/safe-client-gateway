@@ -2,12 +2,12 @@
 import { faker } from '@faker-js/faker';
 import type { IBuilder } from '@/__tests__/builder';
 import { Builder } from '@/__tests__/builder';
-import {
-  type RecipientAnalysisResponse,
-  type ContractAnalysisResponse,
-  type ThreatAnalysisResponse,
-  type CounterpartyAnalysisResponse,
-  type DeadlockAnalysisResponse,
+import type {
+  RecipientAnalysisResponse,
+  ContractAnalysisResponse,
+  ThreatAnalysisResponse,
+  CounterpartyAnalysisResponse,
+  DeadlockAnalysisResponse,
 } from '../../analysis-responses.entity';
 import {
   contractAnalysisResultBuilder,

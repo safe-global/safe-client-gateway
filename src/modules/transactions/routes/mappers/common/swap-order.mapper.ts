@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Injectable, Module } from '@nestjs/common';
 import { GPv2Decoder } from '@/modules/swaps/domain/contracts/decoders/gp-v2-decoder.helper';
 import { SwapOrderTransactionInfo } from '@/modules/transactions/routes/entities/swaps/swap-order-info.entity';

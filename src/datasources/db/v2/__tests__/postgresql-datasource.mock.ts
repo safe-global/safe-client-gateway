@@ -1,5 +1,6 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { DataSource } from 'typeorm';
-import { type QueryResultCache } from 'typeorm/cache/QueryResultCache';
+import type { QueryResultCache } from 'typeorm/cache/QueryResultCache';
 
 export const mockQueryResultCache = {
   remove: jest.fn(),

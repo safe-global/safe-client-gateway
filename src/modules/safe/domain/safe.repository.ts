@@ -1,15 +1,16 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import isEmpty from 'lodash/isEmpty';
-import { Page } from '@/domain/entities/page.entity';
+import type { Page } from '@/domain/entities/page.entity';
 import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
-import { CreationTransaction } from '@/modules/safe/domain/entities/creation-transaction.entity';
-import { ModuleTransaction } from '@/modules/safe/domain/entities/module-transaction.entity';
-import { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
-import { SafeList } from '@/modules/safe/domain/entities/safe-list.entity';
-import { Safe } from '@/modules/safe/domain/entities/safe.entity';
-import { Transaction } from '@/modules/safe/domain/entities/transaction.entity';
+import type { CreationTransaction } from '@/modules/safe/domain/entities/creation-transaction.entity';
+import type { ModuleTransaction } from '@/modules/safe/domain/entities/module-transaction.entity';
+import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
+import type { SafeList } from '@/modules/safe/domain/entities/safe-list.entity';
+import type { Safe } from '@/modules/safe/domain/entities/safe.entity';
+import type { Transaction } from '@/modules/safe/domain/entities/transaction.entity';
 import {
-  Transfer,
+  type Transfer,
   TransferPageSchema,
   TransferSchema,
 } from '@/modules/safe/domain/entities/transfer.entity';
@@ -22,18 +23,21 @@ import {
   MultisigTransactionSchema,
 } from '@/modules/safe/domain/entities/multisig-transaction.entity';
 import { SafeListSchema } from '@/modules/safe/domain/entities/schemas/safe-list.schema';
-import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
+import type { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
 import { TransactionTypePageSchema } from '@/modules/safe/domain/entities/schemas/transaction-type.schema';
-import { AddConfirmationDto } from '@/modules/transactions/domain/entities/add-confirmation.dto.entity';
-import { ProposeTransactionDto } from '@/modules/transactions/domain/entities/propose-transaction.dto.entity';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import type { AddConfirmationDto } from '@/modules/transactions/domain/entities/add-confirmation.dto.entity';
+import type { ProposeTransactionDto } from '@/modules/transactions/domain/entities/propose-transaction.dto.entity';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
 import { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
 import { CreationTransactionSchema } from '@/modules/safe/domain/entities/schemas/creation-transaction.schema';
 import {
   SafeSchema,
   SafePageV2Schema,
 } from '@/modules/safe/domain/entities/schemas/safe.schema';
-import { SafesByChainId } from '@/modules/safe/domain/entities/safes-by-chain-id.entity';
+import type { SafesByChainId } from '@/modules/safe/domain/entities/safes-by-chain-id.entity';
 import { z } from 'zod';
 import { TransactionVerifierHelper } from '@/modules/transactions/routes/helpers/transaction-verifier.helper';
 import { PaginationData } from '@/routes/common/pagination/pagination.data';

@@ -1,5 +1,12 @@
-import { Body, Controller, Get, INestApplication, Post } from '@nestjs/common';
-import { Test, TestingModule } from '@nestjs/testing';
+// SPDX-License-Identifier: FSL-1.1-MIT
+import {
+  Body,
+  Controller,
+  Get,
+  type INestApplication,
+  Post,
+} from '@nestjs/common';
+import { Test, type TestingModule } from '@nestjs/testing';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import request from 'supertest';
 import { APP_FILTER } from '@nestjs/core';
@@ -10,7 +17,7 @@ import { ZodErrorFilter } from '@/routes/common/filters/zod-error.filter';
 import { z } from 'zod';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import { faker } from '@faker-js/faker';
-import { Server } from 'net';
+import type { Server } from 'net';
 
 const ZodSchema = z.object({
   value: z.string(),

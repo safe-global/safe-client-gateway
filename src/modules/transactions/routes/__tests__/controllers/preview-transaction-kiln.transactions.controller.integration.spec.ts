@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
@@ -153,7 +154,7 @@ describe('Preview transaction - Kiln - Transactions Controller', () => {
         const expectedMonthlyReward = expectedAnnualReward / 12;
         const expectedFiatAnnualReward =
           (expectedAnnualReward * networkStats.eth_price_usd) /
-          Math.pow(10, chain.nativeCurrency.decimals);
+          10 ** chain.nativeCurrency.decimals;
         const expectedFiatMonthlyReward = expectedFiatAnnualReward / 12;
 
         await request(app.getHttpServer())
@@ -322,7 +323,7 @@ describe('Preview transaction - Kiln - Transactions Controller', () => {
         const expectedMonthlyReward = expectedAnnualReward / 12;
         const expectedFiatAnnualReward =
           (expectedAnnualReward * networkStats.eth_price_usd) /
-          Math.pow(10, chain.nativeCurrency.decimals);
+          10 ** chain.nativeCurrency.decimals;
         const expectedFiatMonthlyReward = expectedFiatAnnualReward / 12;
 
         await request(app.getHttpServer())

@@ -1,18 +1,19 @@
-import { ILoggingService } from '@/logging/logging.interface';
-import { Test, TestingModule } from '@nestjs/testing';
+// SPDX-License-Identifier: FSL-1.1-MIT
+import type { ILoggingService } from '@/logging/logging.interface';
+import { Test, type TestingModule } from '@nestjs/testing';
 import {
   Controller,
   Get,
   HttpException,
   HttpStatus,
-  INestApplication,
+  type INestApplication,
   Query,
 } from '@nestjs/common';
 import request from 'supertest';
 import { DataSourceError } from '@/domain/errors/data-source.error';
 import { faker } from '@faker-js/faker';
 import { RouteLoggerInterceptor } from '@/routes/common/interceptors/route-logger.interceptor';
-import { Server } from 'net';
+import type { Server } from 'net';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
 import { ZodError } from 'zod';
@@ -56,7 +57,6 @@ class TestController {
     );
   }
 
-  /* eslint-disable @typescript-eslint/no-unused-vars */
   @Get('validation-error')
   validationError(
     @Query('numeric_string', new ValidationPipe(NumericStringSchema))

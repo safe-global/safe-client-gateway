@@ -1,5 +1,6 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Injectable } from '@nestjs/common';
-import { DataDecoded } from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';
+import type { DataDecoded } from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';
 import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
 import { NULL_ADDRESS } from '@/routes/common/constants';
 import { AddressInfo } from '@/routes/common/entities/address-info.entity';
@@ -12,7 +13,7 @@ import { EnableModule } from '@/modules/transactions/routes/entities/settings-ch
 import { RemoveOwner } from '@/modules/transactions/routes/entities/settings-changes/remove-owner.entity';
 import { SetFallbackHandler } from '@/modules/transactions/routes/entities/settings-changes/set-fallback-handler.entity';
 import { SetGuard } from '@/modules/transactions/routes/entities/settings-changes/set-guard.entity';
-import { SettingsChange } from '@/modules/transactions/routes/entities/settings-changes/settings-change.entity';
+import type { SettingsChange } from '@/modules/transactions/routes/entities/settings-changes/settings-change.entity';
 import { SwapOwner } from '@/modules/transactions/routes/entities/settings-changes/swap-owner.entity';
 import { DataDecodedParamHelper } from '@/modules/transactions/routes/mappers/common/data-decoded-param.helper';
 import { getAddress } from 'viem';

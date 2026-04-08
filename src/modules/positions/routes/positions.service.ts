@@ -1,18 +1,19 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { groupBy } from 'lodash';
 import { Inject, Injectable } from '@nestjs/common';
 import { IPositionsRepository } from '@/modules/positions/domain/positions.repository.interface';
-import {
+import type {
   ApplicationMetadataSchema,
   Position as DomainPosition,
 } from '@/modules/positions/domain/entities/position.entity';
 import { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
-import { NativeCurrency } from '@/modules/chains/domain/entities/native.currency.entity';
+import type { NativeCurrency } from '@/modules/chains/domain/entities/native.currency.entity';
 import { NULL_ADDRESS } from '@/routes/common/constants';
 import { getNumberString } from '@/domain/common/utils/utils';
-import { Protocol } from '@/modules/positions/routes/entities/protocol.entity';
-import { Position } from '@/modules/positions/routes/entities/position.entity';
-import { PositionGroup } from '@/modules/positions/routes/entities/position-group.entity';
-import { z } from 'zod';
+import type { Protocol } from '@/modules/positions/routes/entities/protocol.entity';
+import type { Position } from '@/modules/positions/routes/entities/position.entity';
+import type { PositionGroup } from '@/modules/positions/routes/entities/position-group.entity';
+import type { z } from 'zod';
 import type { Address } from 'viem';
 
 const DUST_THRESHOLD_USD = 0.01;

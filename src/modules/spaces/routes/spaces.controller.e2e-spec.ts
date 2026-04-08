@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { type Server } from 'http';
+import type { Server } from 'http';
 import request from 'supertest';
 import type { INestApplication } from '@nestjs/common';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
@@ -83,7 +83,6 @@ describe('SpacesController', () => {
   it('should require authentication for every endpoint', () => {
     const endpoints = Object.values(
       SpacesController.prototype,
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
     ) as Array<Function>;
 
     endpoints.forEach((fn) => checkGuardIsApplied(AuthGuard, fn));

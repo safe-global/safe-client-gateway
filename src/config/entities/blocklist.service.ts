@@ -1,5 +1,6 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import { IBlocklistService } from '@/config/entities/blocklist.interface';
+import type { IBlocklistService } from '@/config/entities/blocklist.interface';
 import { decryptData } from '@/domain/common/utils/encryption';
 import { Inject, Injectable } from '@nestjs/common';
 import { getAddress, type Address } from 'viem';

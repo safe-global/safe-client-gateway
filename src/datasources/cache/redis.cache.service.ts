@@ -1,9 +1,13 @@
-import { Inject, Injectable, OnModuleDestroy } from '@nestjs/common';
-import { RedisClientType } from '@/datasources/cache/cache.module';
-import { ICacheService } from '@/datasources/cache/cache.service.interface';
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { Inject, Injectable, type OnModuleDestroy } from '@nestjs/common';
+import type { RedisClientType } from '@/datasources/cache/cache.module';
+import type { ICacheService } from '@/datasources/cache/cache.service.interface';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
-import { ICacheReadiness } from '@/domain/interfaces/cache-readiness.interface';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import type { ICacheReadiness } from '@/domain/interfaces/cache-readiness.interface';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { CacheKeyPrefix, MAX_TTL } from '@/datasources/cache/constants';
 import { LogType } from '@/domain/common/entities/log-type.entity';

@@ -44,7 +44,7 @@ import {
   AcceptInviteDtoSchema,
 } from '@/modules/spaces/routes/entities/accept-invite.dto.entity';
 import {
-  UpdateMemberAliasDto,
+  type UpdateMemberAliasDto,
   UpdateMemberAliasDtoSchema,
 } from '@/modules/spaces/routes/entities/update-member-name.dto.entity';
 

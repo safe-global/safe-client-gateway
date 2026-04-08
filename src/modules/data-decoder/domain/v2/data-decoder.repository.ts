@@ -1,12 +1,16 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import {
-  DataDecoded,
+  type DataDecoded,
   DataDecodedSchema,
 } from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';
-import { IDataDecoderRepository } from '@/modules/data-decoder/domain/v2/data-decoder.repository.interface';
+import type { IDataDecoderRepository } from '@/modules/data-decoder/domain/v2/data-decoder.repository.interface';
 import { IDataDecoderApi } from '@/domain/interfaces/data-decoder-api.interface';
-import { Transaction } from '@/modules/safe/domain/entities/transaction.entity';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import type { Transaction } from '@/modules/safe/domain/entities/transaction.entity';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
 import { asError } from '@/logging/utils';
 import type { Address } from 'viem';
 

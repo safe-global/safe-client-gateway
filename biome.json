@@ -1,0 +1,105 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.4.10/schema.json",
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "useIgnoreFile": true
+  },
+  "files": {
+    "includes": [
+      "**/src/**/*.ts",
+      "**/apps/**/*.ts",
+      "**/libs/**/*.ts",
+      "**/test/**/*.ts",
+      "**/migrations/**/*.ts"
+    ]
+  },
+  "javascript": {
+    "parser": {
+      "unsafeParameterDecoratorsEnabled": true
+    }
+  },
+  "formatter": {
+    "enabled": false
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "recommended": true,
+      "correctness": {
+        "noUnusedVariables": "error",
+        "noUnusedImports": "error",
+        "noUnusedFunctionParameters": "off",
+        "noUnusedPrivateClassMembers": "off",
+        "useParseIntRadix": "off",
+        "noVoidTypeReturn": "off"
+      },
+      "style": {
+        "useImportType": "off",
+        "useConsistentArrayType": {
+          "level": "error",
+          "options": {
+            "syntax": "generic"
+          }
+        },
+        "noNonNullAssertion": "off",
+        "noNestedTernary": "error",
+        "useNodejsImportProtocol": "off",
+        "useTemplate": "off",
+        "useLiteralEnumMembers": "off",
+        "noRestrictedImports": {
+          "level": "error",
+          "options": {
+            "paths": {
+              "@safe-global/safe-deployments": "Please import from @/domain/common/utils/deployments instead."
+            }
+          }
+        }
+      },
+      "suspicious": {
+        "noExplicitAny": "error",
+        "noControlCharactersInRegex": "off",
+        "noAssignInExpressions": "off",
+        "noDoubleEquals": "off",
+        "noGlobalIsNan": "off",
+        "useIterableCallbackReturn": "off",
+        "noTemplateCurlyInString": "off",
+        "noImplicitAnyLet": "off",
+        "noExportsInTest": "off"
+      },
+      "complexity": {
+        "noForEach": "off",
+        "noStaticOnlyClass": "off",
+        "useLiteralKeys": "off",
+        "noUselessConstructor": "off",
+        "useDateNow": "off",
+        "useOptionalChain": "off",
+        "noBannedTypes": "off",
+        "noUselessSwitchCase": "off",
+        "noUselessTernary": "off"
+      },
+      "performance": {
+        "noAccumulatingSpread": "off"
+      }
+    }
+  },
+  "overrides": [
+    {
+      "includes": ["**/src/domain/common/utils/deployments.ts"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": "off"
+          }
+        }
+      }
+    }
+  ],
+  "assist": {
+    "actions": {
+      "source": {
+        "organizeImports": "off"
+      }
+    }
+  }
+}

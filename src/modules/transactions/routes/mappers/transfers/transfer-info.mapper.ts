@@ -1,24 +1,28 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
-import { Safe } from '@/modules/safe/domain/entities/safe.entity';
-import { Transfer as DomainTransfer } from '@/modules/safe/domain/entities/transfer.entity';
-import { Token } from '@/modules/tokens/domain/entities/token.entity';
-import { TokenRepository } from '@/modules/tokens/domain/token.repository';
+import type { Safe } from '@/modules/safe/domain/entities/safe.entity';
+import type { Transfer as DomainTransfer } from '@/modules/safe/domain/entities/transfer.entity';
+import type { Token } from '@/modules/tokens/domain/entities/token.entity';
+import type { TokenRepository } from '@/modules/tokens/domain/token.repository';
 import { ITokenRepository } from '@/modules/tokens/domain/token.repository.interface';
 import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
 import {
-  TransferDirection,
+  type TransferDirection,
   TransferTransactionInfo,
 } from '@/modules/transactions/routes/entities/transfer-transaction-info.entity';
 import { Erc20Transfer } from '@/modules/transactions/routes/entities/transfers/erc20-transfer.entity';
 import { Erc721Transfer } from '@/modules/transactions/routes/entities/transfers/erc721-transfer.entity';
 import { NativeCoinTransfer } from '@/modules/transactions/routes/entities/transfers/native-coin-transfer.entity';
 import { getTransferDirection } from '@/modules/transactions/routes/mappers/common/transfer-direction.helper';
-import { Transfer } from '@/modules/transactions/routes/entities/transfers/transfer.entity';
-import { SwapTransferInfoMapper } from '@/modules/transactions/routes/mappers/transfers/swap-transfer-info.mapper';
-import { SwapTransferTransactionInfo } from '@/modules/transactions/routes/swap-transfer-transaction-info.entity';
-import { AddressInfo } from '@/routes/common/entities/address-info.entity';
-import { LoggingService, ILoggingService } from '@/logging/logging.interface';
-import { type Address } from 'viem';
+import type { Transfer } from '@/modules/transactions/routes/entities/transfers/transfer.entity';
+import type { SwapTransferInfoMapper } from '@/modules/transactions/routes/mappers/transfers/swap-transfer-info.mapper';
+import type { SwapTransferTransactionInfo } from '@/modules/transactions/routes/swap-transfer-transaction-info.entity';
+import type { AddressInfo } from '@/routes/common/entities/address-info.entity';
+import {
+  LoggingService,
+  type ILoggingService,
+} from '@/logging/logging.interface';
+import type { Address } from 'viem';
 
 @Injectable()
 export class TransferInfoMapper {

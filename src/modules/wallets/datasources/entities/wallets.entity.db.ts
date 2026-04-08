@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import {
   Column,
   Entity,
@@ -6,9 +7,9 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
-import { z } from 'zod';
+import type { z } from 'zod';
 import { User } from '@/modules/users/datasources/entities/users.entity.db';
-import { WalletSchema } from '@/modules/wallets/domain/entities/wallet.entity';
+import type { WalletSchema } from '@/modules/wallets/domain/entities/wallet.entity';
 import { databaseAddressTransformer } from '@/domain/common/transformers/databaseAddress.transformer';
 import type { Address } from 'viem';
 

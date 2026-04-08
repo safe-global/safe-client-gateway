@@ -8,7 +8,10 @@ import type {
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { CircuitBreakerException } from '@/datasources/circuit-breaker/exceptions/circuit-breaker.exception';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
 import { LogType } from '@/domain/common/entities/log-type.entity';
 
 /**

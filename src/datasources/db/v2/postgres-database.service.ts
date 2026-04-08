@@ -1,14 +1,15 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import {
   LoggingService,
   type ILoggingService,
 } from '@/logging/logging.interface';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { Inject, Injectable } from '@nestjs/common';
-import {
+import type {
   DataSource,
-  type EntityManager,
-  type ObjectLiteral,
-  type Repository,
+  EntityManager,
+  ObjectLiteral,
+  Repository,
 } from 'typeorm';
 
 @Injectable()

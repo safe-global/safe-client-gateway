@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { ThreatAnalysisService } from '@/modules/safe-shield/threat-analysis/threat-analysis.service';
 import type { ILoggingService } from '@/logging/logging.interface';
 import type { IBlockaidApi } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-api.interface';
@@ -129,13 +130,12 @@ describe('ThreatAnalysisService', () => {
     });
 
     it('should handle message serialization failure', async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // biome-ignore lint/suspicious/noExplicitAny: required here
       const circularData: any = { domain: {} };
       circularData.domain.circular = circularData;
 
       const requestWithCircularData = threatAnalysisRequestBuilder()
         .with('walletAddress', walletAddress)
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         .with('data', circularData)
         .build();
 

@@ -1,4 +1,5 @@
-import { CreateMessageDtoSchema } from '@/modules/messages/routes/entities/schemas/create-message.dto.schema';
+// SPDX-License-Identifier: FSL-1.1-MIT
+import type { CreateMessageDtoSchema } from '@/modules/messages/routes/entities/schemas/create-message.dto.schema';
 import { TypedData } from '@/modules/messages/routes/entities/typed-data.entity';
 import {
   ApiExtraModels,
@@ -6,7 +7,7 @@ import {
   ApiPropertyOptional,
   getSchemaPath,
 } from '@nestjs/swagger';
-import { z } from 'zod';
+import type { z } from 'zod';
 import type { Address } from 'viem';
 
 @ApiExtraModels(TypedData)

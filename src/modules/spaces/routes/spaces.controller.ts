@@ -26,7 +26,7 @@ import {
 import { SpacesService } from '@/modules/spaces/routes/spaces.service';
 import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
 import { Auth } from '@/modules/auth/routes/decorators/auth.decorator';
-import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
+import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { SpaceStatus } from '@/modules/spaces/domain/entities/space.entity';
 import {
   CreateSpaceDto,

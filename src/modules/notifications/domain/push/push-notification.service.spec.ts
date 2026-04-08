@@ -27,7 +27,7 @@ import { moduleTransactionEventBuilder } from '@/modules/hooks/routes/entities/_
 import { chainUpdateEventBuilder } from '@/modules/hooks/routes/entities/__tests__/chain-update.builder';
 import { pushNotificationDeliveryJobDataBuilder } from '@/modules/notifications/domain/push/entities/__tests__/push-notification-delivery-job-data.builder';
 import { faker } from '@faker-js/faker';
-import { type Address, type Hash } from 'viem';
+import type { Address, Hash } from 'viem';
 import type { Job } from 'bullmq';
 import type { UUID } from 'crypto';
 import type { Transfer } from '@/modules/safe/domain/entities/transfer.entity';

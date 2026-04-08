@@ -1,12 +1,13 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import {
-  INetworkService,
+  type INetworkService,
   NetworkService,
 } from '@/datasources/network/network.service.interface';
-import { CreateEmailMessageDto } from '@/modules/email/domain/entities/create-email-message.dto.entity';
-import { IEmailApi } from '@/domain/interfaces/email-api.interface';
+import type { CreateEmailMessageDto } from '@/modules/email/domain/entities/create-email-message.dto.entity';
+import type { IEmailApi } from '@/domain/interfaces/email-api.interface';
 
 @Injectable()
 export class PushwooshApi implements IEmailApi {

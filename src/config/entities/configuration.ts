@@ -2,7 +2,6 @@
 import type { RelayRules } from '@/modules/relay/domain/entities/relay.configuration';
 
 // Custom configuration for the application
-// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 export default () => ({
   about: {
     name: 'safe-client-gateway',

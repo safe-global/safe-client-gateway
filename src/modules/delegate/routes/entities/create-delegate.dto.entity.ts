@@ -1,6 +1,7 @@
-import { CreateDelegateDtoSchema } from '@/modules/delegate/routes/entities/schemas/create-delegate.dto.schema';
+// SPDX-License-Identifier: FSL-1.1-MIT
+import type { CreateDelegateDtoSchema } from '@/modules/delegate/routes/entities/schemas/create-delegate.dto.schema';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { z } from 'zod';
+import type { z } from 'zod';
 import type { Address } from 'viem';
 
 export class CreateDelegateDto implements z.infer<

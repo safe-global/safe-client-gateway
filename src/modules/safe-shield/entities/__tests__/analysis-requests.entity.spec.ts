@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import {
   counterpartyAnalysisRequestDtoBuilder,
   threatAnalysisRequestBuilder,
@@ -70,7 +71,6 @@ describe('Analysis Request Schemas', () => {
 
     it('should validate without origin field', () => {
       const request = threatAnalysisRequestBuilder().build();
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { origin, ...requestWoOrigin } = request;
 
       const result = ThreatAnalysisRequestSchema.safeParse(requestWoOrigin);
@@ -97,7 +97,6 @@ describe('Analysis Request Schemas', () => {
 
     it('should reject missing walletAddress', () => {
       const request = threatAnalysisRequestBuilder().build();
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { walletAddress, ...requestWoAddress } = request;
 
       const result = ThreatAnalysisRequestSchema.safeParse(requestWoAddress);
@@ -208,7 +207,6 @@ describe('Analysis Request Schemas', () => {
 
     it('should reject typed data with missing primaryType', () => {
       const typedData = typedDataBuilder().build();
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { primaryType, ...invalidTypedData } = typedData;
 
       const invalidRequest = {
@@ -230,7 +228,6 @@ describe('Analysis Request Schemas', () => {
 
     it('should reject typed data with missing types', () => {
       const typedData = typedDataBuilder().build();
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { types, ...invalidTypedData } = typedData;
 
       const invalidRequest = {
@@ -252,7 +249,6 @@ describe('Analysis Request Schemas', () => {
 
     it('should reject typed data with missing message', () => {
       const typedData = typedDataBuilder().build();
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { message, ...invalidTypedData } = typedData;
 
       const invalidRequest = {

@@ -2,7 +2,7 @@
 import type { UUID } from 'crypto';
 import { faker } from '@faker-js/faker/.';
 import { NotFoundException, UnauthorizedException } from '@nestjs/common';
-import { type ILoggingService } from '@/logging/logging.interface';
+import type { ILoggingService } from '@/logging/logging.interface';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { NotificationsRepositoryV2 } from '@/modules/notifications/domain/v2/notifications.repository';
 import type { IPushNotificationsApi } from '@/domain/interfaces/push-notifications-api.interface';

@@ -1,6 +1,10 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable, Module } from '@nestjs/common';
 import { AbiDecoder } from '@/modules/contracts/domain/decoders/abi-decoder.helper';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
 import {
   BuyTokenBalance,
   OrderKind,
@@ -717,7 +721,6 @@ export class GPv2Decoder extends AbiDecoder<typeof GPv2Abi> {
   }
 
   // Use inferred return type
-  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
   private decodeSettle(data: Address) {
     if (!this.helpers.isSettle(data)) {
       return null;

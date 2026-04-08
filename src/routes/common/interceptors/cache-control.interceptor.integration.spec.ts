@@ -2,15 +2,15 @@
 import {
   Controller,
   Get,
-  INestApplication,
+  type INestApplication,
   Res,
   UseInterceptors,
 } from '@nestjs/common';
 import { CacheControlInterceptor } from '@/routes/common/interceptors/cache-control.interceptor';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
-import { Server } from 'net';
-import { Response } from 'express';
+import type { Server } from 'net';
+import type { Response } from 'express';
 
 @Controller()
 @UseInterceptors(CacheControlInterceptor)

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
-import { Member } from '@/modules/users/datasources/entities/member.entity.db';
+import type { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
+import type { Member } from '@/modules/users/datasources/entities/member.entity.db';
 import { User } from '@/modules/users/datasources/entities/users.entity.db';
 import { getStringEnumKeys } from '@/domain/common/utils/enum';
 import {

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
@@ -20,7 +21,7 @@ import {
 } from '@/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
 import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
 import { erc20TokenBuilder } from '@/modules/tokens/domain/__tests__/token.builder';
-import { type Token } from '@/modules/tokens/domain/entities/token.entity';
+import type { Token } from '@/modules/tokens/domain/entities/token.entity';
 import type {
   ERC20Transfer,
   Transfer,

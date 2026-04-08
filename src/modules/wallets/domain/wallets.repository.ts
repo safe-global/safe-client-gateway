@@ -1,6 +1,7 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
-import { type EntityManager } from 'typeorm';
+import type { EntityManager } from 'typeorm';
 import type {
   DeleteResult,
   FindOptionsRelations,

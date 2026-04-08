@@ -37,10 +37,10 @@ Before creating **EACH** commit, you MUST run the following commands in sequence
 2. **Run linter and fix issues:**
 
    ```bash
-   yarn lint --fix
+   yarn lint
    ```
 
-   If there are any remaining lint errors, fix them manually before proceeding.
+   This runs Biome with `--fix`. If there are any remaining lint errors, fix them manually before proceeding.
 
 3. **Run tests:**
 
@@ -58,7 +58,8 @@ The correct workflow for making commits is:
 # 1. Make your code changes
 # 2. Run quality checks
 yarn format
-yarn lint --fix
+yarn lint
+yarn env:validate  # STOP if this fails
 yarn test
 
 # 3. Only after all checks pass, commit

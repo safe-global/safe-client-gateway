@@ -1,7 +1,8 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Operation } from '@/modules/safe/domain/entities/operation.entity';
-import { z } from 'zod';
-import { PreviewTransactionDtoSchema } from '@/modules/transactions/routes/entities/schemas/preview-transaction.dto.schema';
+import type { z } from 'zod';
+import type { PreviewTransactionDtoSchema } from '@/modules/transactions/routes/entities/schemas/preview-transaction.dto.schema';
 import type { Address, Hex } from 'viem';
 
 export class PreviewTransactionDto implements z.infer<

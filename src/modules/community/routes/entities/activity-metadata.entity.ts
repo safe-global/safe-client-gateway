@@ -1,4 +1,5 @@
-import { ActivityMetadata as DomainActivityMetadata } from '@/modules/community/domain/entities/activity-metadata.entity';
+// SPDX-License-Identifier: FSL-1.1-MIT
+import type { ActivityMetadata as DomainActivityMetadata } from '@/modules/community/domain/entities/activity-metadata.entity';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class ActivityMetadata implements DomainActivityMetadata {

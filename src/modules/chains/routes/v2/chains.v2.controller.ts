@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Controller, Get, Param, Query } from '@nestjs/common';
 import {
   ApiOkResponse,
@@ -12,8 +13,8 @@ import { Chain } from '@/modules/chains/routes/entities/chain.entity';
 import { ServiceKeyQuerySchema } from '@/modules/chains/routes/v2/entities/schemas/serviceKey.schema';
 import { PaginationDataDecorator } from '@/routes/common/decorators/pagination.data.decorator';
 import { RouteUrlDecorator } from '@/routes/common/decorators/route.url.decorator';
-import { Page } from '@/routes/common/entities/page.entity';
-import { PaginationData } from '@/routes/common/pagination/pagination.data';
+import type { Page } from '@/routes/common/entities/page.entity';
+import type { PaginationData } from '@/routes/common/pagination/pagination.data';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 
 @ApiTags('chains')

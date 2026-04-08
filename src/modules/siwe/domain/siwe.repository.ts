@@ -1,8 +1,9 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { ISiweApi } from '@/domain/interfaces/siwe-api.interface';
-import { ISiweRepository } from '@/modules/siwe/domain/siwe.repository.interface';
+import type { ISiweRepository } from '@/modules/siwe/domain/siwe.repository.interface';
 import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { verifyMessage } from 'viem';
-import { generateSiweNonce, SiweMessage } from 'viem/siwe';
+import { generateSiweNonce, type SiweMessage } from 'viem/siwe';
 import { SiweMessageSchema } from '@/modules/siwe/domain/entities/siwe-message.entity';
 import type { Hex } from 'viem';
 

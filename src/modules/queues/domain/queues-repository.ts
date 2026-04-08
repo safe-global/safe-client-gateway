@@ -1,7 +1,8 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { IQueuesApiService } from '@/modules/queues/datasources/queues-api.service.interface';
-import { IQueuesRepository } from '@/modules/queues/domain/queues-repository.interface';
+import type { IQueuesRepository } from '@/modules/queues/domain/queues-repository.interface';
 import { Inject, Injectable } from '@nestjs/common';
-import { ConsumeMessage } from 'amqplib';
+import type { ConsumeMessage } from 'amqplib';
 
 @Injectable()
 export class QueuesRepository implements IQueuesRepository {

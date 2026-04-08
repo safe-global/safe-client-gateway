@@ -6,7 +6,7 @@ import {
   getCookieOptions,
 } from '@/modules/auth/utils/auth-cookie.utils';
 import { Auth } from '@/modules/auth/routes/decorators/auth.decorator';
-import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
+import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
 import { AuthService } from '@/modules/auth/routes/auth.service';
 import { AuthNonce } from '@/modules/auth/routes/entities/auth-nonce.entity';
@@ -38,7 +38,7 @@ import {
   ApiForbiddenResponse,
   ApiResponse,
 } from '@nestjs/swagger';
-import { type CookieOptions, Request, Response } from 'express';
+import type { CookieOptions, Request, Response } from 'express';
 import { UserSession } from '@/modules/auth/routes/entities/user-session.entity';
 import {
   LogoutDto,

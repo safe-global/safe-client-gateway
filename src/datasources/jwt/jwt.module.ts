@@ -6,7 +6,6 @@ import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
 import { toSecondsTimestamp } from '@/domain/common/utils/time';
 
 // Use inferred type
-// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 function jwtClientFactory() {
   return {
     sign: <

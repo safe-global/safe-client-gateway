@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import {
   multiSendEncoder,
   multiSendTransactionsEncoder,
@@ -30,7 +31,6 @@ describe('TransactionFinder', () => {
       }),
       value: faker.string.numeric(),
     };
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const isTransactionData = (_: unknown): boolean => true;
 
     const result = target.findTransaction(isTransactionData, transaction);
@@ -81,7 +81,6 @@ describe('TransactionFinder', () => {
       }),
       value: faker.string.numeric(),
     };
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const isTransactionData = (_: unknown): boolean => false;
 
     const result = target.findTransaction(isTransactionData, transaction);

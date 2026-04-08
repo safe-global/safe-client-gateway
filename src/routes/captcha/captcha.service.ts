@@ -5,7 +5,10 @@ import {
   NetworkService,
   type INetworkService,
 } from '@/datasources/network/network.service.interface';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
 import { TurnstileVerifyResponseSchema } from '@/routes/captcha/entities/turnstile-verify-response.entity';
 import { asError } from '@/logging/utils';
 import { LogType } from '@/domain/common/entities/log-type.entity';

@@ -1,4 +1,5 @@
-import { TokenInfo } from '@/modules/transactions/routes/entities/swaps/token-info.entity';
+// SPDX-License-Identifier: FSL-1.1-MIT
+import type { TokenInfo } from '@/modules/transactions/routes/entities/swaps/token-info.entity';
 import {
   TransactionInfo,
   TransactionInfoType,

@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { ValueTransformer } from 'typeorm';
 
 /**
@@ -67,12 +67,14 @@ type NumericEnumKeysTuple<T> = UnionToTuple<ExcludeNumberKeys<T>>;
 type ExcludeNumberKeys<T> = Exclude<keyof T, `${number}`>;
 
 // Recursively removes last element of union and pushes it to tuple
+// biome-ignore lint/suspicious/noExplicitAny: required for variadic tuple type
 type UnionToTuple<T, R extends Array<any> = []> = [T] extends [never]
   ? R
   : UnionToTuple<Exclude<T, LastOf<T>>, [LastOf<T>, ...R]>;
 
 // Gets the last element of a union
 type LastOf<T> =
+  // biome-ignore lint/suspicious/noExplicitAny: required for conditional type distribution
   UnionToIntersection<T extends any ? (x: T) => 0 : never> extends (
     x: infer Last,
   ) => 0
@@ -80,8 +82,10 @@ type LastOf<T> =
     : never;
 
 // Converts a union to an intersection of functions
+// biome-ignore lint/suspicious/noExplicitAny: required for union-to-intersection type trick
 type UnionToIntersection<U> = (U extends any ? (x: U) => any : never) extends (
   x: infer I,
+  // biome-ignore lint/suspicious/noExplicitAny: required for conditional type distribution
 ) => any
   ? I
   : never;

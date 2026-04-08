@@ -1,43 +1,44 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import {
   ApiExtraModels,
   ApiProperty,
   ApiPropertyOptional,
   getSchemaPath,
 } from '@nestjs/swagger';
-import {
+import type {
   NativeCurrency,
   NativeCurrency as ApiNativeCurrency,
 } from '@/modules/chains/routes/entities/native-currency.entity';
-import {
+import type {
   BlockExplorerUriTemplate,
   BlockExplorerUriTemplate as ApiBlockExplorerUriTemplate,
 } from '@/modules/chains/routes/entities/block-explorer-uri-template.entity';
-import {
+import type {
   BeaconChainExplorerUriTemplate,
   BeaconChainExplorerUriTemplate as ApiBeaconChainExplorerUriTemplate,
 } from '@/modules/chains/domain/entities/beacon-chain-explorer-uri-template.entity';
 import {
-  GasPriceOracle,
+  type GasPriceOracle,
   GasPriceOracle as ApiGasPriceOracle,
 } from '@/modules/chains/routes/entities/gas-price-oracle.entity';
 import {
-  GasPriceFixed,
+  type GasPriceFixed,
   GasPriceFixed as ApiGasPriceFixed,
 } from '@/modules/chains/routes/entities/gas-price-fixed.entity';
 import {
-  GasPriceFixedEIP1559,
+  type GasPriceFixedEIP1559,
   GasPriceFixedEIP1559 as ApiGasPriceFixedEIP1559,
 } from '@/modules/chains/routes/entities/gas-price-fixed-eip-1559.entity';
-import {
+import type {
   RpcUri,
   RpcUri as ApiRpcUri,
 } from '@/modules/chains/routes/entities/rpc-uri.entity';
-import {
+import type {
   Theme,
   Theme as ApiTheme,
 } from '@/modules/chains/routes/entities/theme.entity';
-import { BalancesProvider } from '@/modules/chains/routes/entities/balances-provider.entity';
-import { ContractAddresses } from '@/modules/chains/routes/entities/contract-addresses.entity';
+import type { BalancesProvider } from '@/modules/chains/routes/entities/balances-provider.entity';
+import type { ContractAddresses } from '@/modules/chains/routes/entities/contract-addresses.entity';
 import type { Address } from 'viem';
 
 @ApiExtraModels(ApiGasPriceOracle, ApiGasPriceFixed, ApiGasPriceFixedEIP1559)

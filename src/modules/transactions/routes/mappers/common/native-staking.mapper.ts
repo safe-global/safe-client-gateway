@@ -1,4 +1,5 @@
-import { Deployment } from '@/modules/staking/datasources/entities/deployment.entity';
+// SPDX-License-Identifier: FSL-1.1-MIT
+import type { Deployment } from '@/modules/staking/datasources/entities/deployment.entity';
 import { StakeState } from '@/modules/staking/datasources/entities/stake.entity';
 import { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
 import { ChainsModule } from '@/modules/chains/chains.module';
@@ -6,7 +7,10 @@ import { getNumberString } from '@/domain/common/utils/utils';
 import { KilnDecoder } from '@/modules/staking/domain/contracts/decoders/kiln-decoder.helper';
 import { IStakingRepositoryWithRewardsFee } from '@/modules/staking/domain/staking.repository.interface';
 import { StakingModule } from '@/modules/staking/staking.module';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
 import { NULL_ADDRESS } from '@/routes/common/constants';
 import { NativeStakingDepositTransactionInfo } from '@/modules/transactions/routes/entities/staking/native-staking-deposit-info.entity';
 import { NativeStakingValidatorsExitTransactionInfo } from '@/modules/transactions/routes/entities/staking/native-staking-validators-exit-info.entity';
@@ -78,7 +82,7 @@ export class NativeStakingMapper {
     const value = args.value ? Number(args.value) : 0;
     const numValidators = Math.floor(
       value /
-        Math.pow(10, chain.nativeCurrency.decimals) /
+        10 ** chain.nativeCurrency.decimals /
         NativeStakingMapper.ETH_ETHERS_PER_VALIDATOR,
     );
     const fee = rewardsFee.fee ?? 0;
@@ -89,7 +93,7 @@ export class NativeStakingMapper {
     const expectedMonthlyReward = expectedAnnualReward / 12;
     const expectedFiatAnnualReward =
       (expectedAnnualReward * (networkStats.eth_price_usd ?? 0)) /
-      Math.pow(10, chain.nativeCurrency.decimals);
+      10 ** chain.nativeCurrency.decimals;
     const expectedFiatMonthlyReward = expectedFiatAnnualReward / 12;
 
     return new NativeStakingDepositTransactionInfo({
@@ -190,7 +194,7 @@ export class NativeStakingMapper {
     const value =
       publicKeys.length *
       NativeStakingMapper.ETH_ETHERS_PER_VALIDATOR *
-      Math.pow(10, chain.nativeCurrency.decimals);
+      10 ** chain.nativeCurrency.decimals;
     const [status, networkStats] = await Promise.all([
       this._getStatus({
         chainId: args.chainId,

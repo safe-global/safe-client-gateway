@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import type { DataDecoded } from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';
 import type { Contract } from '@/modules/data-decoder/domain/v2/entities/contract.entity';

@@ -1,43 +1,47 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import {
-  ZerionAttributes,
-  ZerionBalance,
+  type ZerionAttributes,
+  type ZerionBalance,
   ZerionBalanceSchema,
-  ZerionBalances,
+  type ZerionBalances,
   ZerionBalancesSchema,
 } from '@/modules/balances/datasources/entities/zerion-balance.entity';
 import {
-  ZerionCollectible,
-  ZerionCollectibles,
+  type ZerionCollectible,
+  type ZerionCollectibles,
   ZerionCollectiblesSchema,
 } from '@/modules/balances/datasources/entities/zerion-collectible.entity';
 import { CacheRouter } from '@/datasources/cache/cache.router';
 import {
   CacheService,
-  ICacheService,
+  type ICacheService,
 } from '@/datasources/cache/cache.service.interface';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { LimitReachedError } from '@/datasources/network/entities/errors/limit-reached.error';
 import {
-  INetworkService,
+  type INetworkService,
   NetworkService,
 } from '@/datasources/network/network.service.interface';
-import {
+import type {
   Balance,
   Erc20Balance,
   NativeBalance,
 } from '@/modules/balances/domain/entities/balance.entity';
-import { Chain } from '@/modules/chains/domain/entities/chain.entity';
-import { Collectible } from '@/modules/collectibles/domain/entities/collectible.entity';
+import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
+import type { Collectible } from '@/modules/collectibles/domain/entities/collectible.entity';
 import { LogType } from '@/domain/common/entities/log-type.entity';
 import { getNumberString } from '@/domain/common/utils/utils';
-import { Page } from '@/domain/entities/page.entity';
+import type { Page } from '@/domain/entities/page.entity';
 import { DataSourceError } from '@/domain/errors/data-source.error';
-import { IBalancesApi } from '@/domain/interfaces/balances-api.interface';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import type { IBalancesApi } from '@/domain/interfaces/balances-api.interface';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
 import { rawify, type Raw } from '@/validation/entities/raw.entity';
 import { Inject, Injectable } from '@nestjs/common';
-import { Address, getAddress, hexToNumber, isHex } from 'viem';
+import { type Address, getAddress, hexToNumber, isHex } from 'viem';
 import { z, ZodError } from 'zod';
 import { getZerionHeaders } from '@/modules/balances/datasources/zerion-api.helpers';
 import { ZerionChainsSchema } from '@/modules/portfolio/datasources/entities/zerion-chain.entity';
@@ -103,7 +107,6 @@ export class ZerionBalancesApi implements IBalancesApi {
     );
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars,@typescript-eslint/require-await
   async getBalance(_args: {
     safeAddress: Address;
     fiatCode: string;

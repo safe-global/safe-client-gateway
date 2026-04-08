@@ -2,17 +2,20 @@
 import { Inject, Injectable } from '@nestjs/common';
 import {
   NetworkService,
-  INetworkService,
+  type INetworkService,
 } from '@/datasources/network/network.service.interface';
-import { IRelayApi } from '@/domain/interfaces/relay-api.interface';
+import type { IRelayApi } from '@/domain/interfaces/relay-api.interface';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { CacheRouter } from '@/datasources/cache/cache.router';
 import {
   CacheService,
-  ICacheService,
+  type ICacheService,
 } from '@/datasources/cache/cache.service.interface';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
 import { asError } from '@/logging/utils';
 import {
   type Relay,

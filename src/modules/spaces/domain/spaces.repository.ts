@@ -5,8 +5,8 @@ import { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
 import { Member } from '@/modules/users/datasources/entities/member.entity.db';
 import { User } from '@/modules/users/datasources/entities/users.entity.db';
 import { getEnumKey } from '@/domain/common/utils/enum';
-import { SpaceStatus } from '@/modules/spaces/domain/entities/space.entity';
-import { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
+import type { SpaceStatus } from '@/modules/spaces/domain/entities/space.entity';
+import type { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
 import {
   MemberRole,
   MemberStatus,
@@ -18,13 +18,13 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import {
-  FindOptionsRelations,
-  FindOptionsSelect,
-  FindOptionsWhere,
+  type FindOptionsRelations,
+  type FindOptionsSelect,
+  type FindOptionsWhere,
   In,
   IsNull,
 } from 'typeorm';
-import { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
+import type { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
 
 // TODO: Add tests
 @Injectable()

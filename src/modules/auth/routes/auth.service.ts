@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
 import {
   assertExpirationTime,
   getMaxExpirationTime,
@@ -11,14 +14,14 @@ import {
   resolveAndValidateRedirectUrl,
   type RedirectConfig,
 } from '@/modules/auth/utils/auth-redirect.helper';
-import { SiweDto } from '@/modules/auth/routes/entities/siwe.dto.entity';
+import type { SiweDto } from '@/modules/auth/routes/entities/siwe.dto.entity';
 import { ISiweRepository } from '@/modules/siwe/domain/siwe.repository.interface';
 import { IAuthRepository } from '@/modules/auth/domain/auth.repository.interface';
 import {
   AuthMethod,
-  AuthPayloadDto,
+  type AuthPayloadDto,
 } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { JwtPayloadWithClaims } from '@/datasources/jwt/jwt-claims.entity';
+import type { JwtPayloadWithClaims } from '@/datasources/jwt/jwt-claims.entity';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
 

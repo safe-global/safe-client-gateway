@@ -9,7 +9,7 @@ import {
 import { type Address, isAddressEqual } from 'viem';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
-import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
+import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
 import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
 import { Member as DbMember } from '@/modules/users/datasources/entities/member.entity.db';
@@ -25,7 +25,7 @@ import type { IMembersRepository } from '@/modules/users/domain/members.reposito
 import type { Space } from '@/modules/spaces/domain/entities/space.entity';
 import type { User } from '@/modules/users/domain/entities/user.entity';
 import type { Invitation } from '@/modules/users/domain/entities/invitation.entity';
-import { type Member } from '@/modules/users/domain/entities/member.entity';
+import type { Member } from '@/modules/users/domain/entities/member.entity';
 import { isUniqueConstraintError } from '@/datasources/errors/helpers/is-unique-constraint-error.helper';
 import { UniqueConstraintError } from '@/datasources/errors/unique-constraint-error';
 

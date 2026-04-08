@@ -1,4 +1,4 @@
-// eslint-disable-next-line no-restricted-imports
+// SPDX-License-Identifier: FSL-1.1-MIT
 import {
   getMultiSendCallOnlyDeployments as _getMultiSendCallOnlyDeployments,
   getMultiSendDeployments as _getMultiSendDeployments,

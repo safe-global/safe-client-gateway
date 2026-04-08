@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { BlockaidApi } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-api.service';
 // import { GUARD_STORAGE_POSITION } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-api.constants';
 import type { TransactionScanResponse } from '@blockaid/client/resources/evm/evm';
@@ -50,7 +51,7 @@ describe('BlockaidApi', () => {
     jest.resetAllMocks();
 
     service = new BlockaidApi(mockLoggingService);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // biome-ignore lint/suspicious/noExplicitAny: required here
     (service as any).blockaidClient = mockBlockaidClient;
   });
 

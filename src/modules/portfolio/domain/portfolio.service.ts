@@ -1,6 +1,7 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import type { Address } from 'viem';
-import { IPortfolioService } from '@/modules/portfolio/domain/portfolio.service.interface';
+import type { IPortfolioService } from '@/modules/portfolio/domain/portfolio.service.interface';
 import { IPortfolioRepository } from '@/modules/portfolio/domain/portfolio.repository.interface';
 import type { Portfolio } from '@/modules/portfolio/domain/entities/portfolio.entity';
 

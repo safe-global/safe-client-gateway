@@ -1,15 +1,16 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
 import {
   CacheService,
-  ICacheService,
+  type ICacheService,
 } from '@/datasources/cache/cache.service.interface';
-import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
+import type { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { KilnApi } from '@/modules/staking/datasources/kiln-api.service';
 import { ChainSchema } from '@/modules/chains/domain/entities/schemas/chain.schema';
 import { IConfigApi } from '@/domain/interfaces/config-api.interface';
-import { IStakingApi } from '@/domain/interfaces/staking-api.interface';
-import { IStakingApiManager } from '@/domain/interfaces/staking-api.manager.interface';
+import type { IStakingApi } from '@/domain/interfaces/staking-api.interface';
+import type { IStakingApiManager } from '@/domain/interfaces/staking-api.manager.interface';
 import { Inject, Injectable } from '@nestjs/common';
 
 // Note: This mirrors that of StakingApiManager but as each widget deployment

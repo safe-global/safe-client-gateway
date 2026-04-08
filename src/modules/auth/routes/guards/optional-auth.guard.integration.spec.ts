@@ -9,11 +9,16 @@ import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__test
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import { OptionalAuthGuard } from '@/modules/auth/routes/guards/optional-auth.guard';
 import { faker } from '@faker-js/faker';
-import { Controller, Get, INestApplication, UseGuards } from '@nestjs/common';
-import { Test, TestingModule } from '@nestjs/testing';
+import {
+  Controller,
+  Get,
+  type INestApplication,
+  UseGuards,
+} from '@nestjs/common';
+import { Test, type TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 import { AuthModule } from '@/modules/auth/auth.module';
-import { Server } from 'net';
+import type { Server } from 'net';
 import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
 import { UsersModule } from '@/modules/users/users.module';
 import { TestUsersModule } from '@/modules/users/__tests__/test.users.module';

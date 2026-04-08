@@ -2725,7 +2725,6 @@ describe('Relay controller', () => {
           }
         });
 
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         for (const _ of Array.from({ length: 5 })) {
           await request(app.getHttpServer())
             .post(`/v1/chains/${chain.chainId}/relay`)
@@ -2895,7 +2894,6 @@ describe('Relay controller', () => {
           }
         });
 
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         for (const _ of Array.from({ length: 6 })) {
           await request(app.getHttpServer())
             .post(`/v1/chains/${chain.chainId}/relay`)

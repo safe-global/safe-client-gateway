@@ -1,12 +1,13 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
+import type { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { ChainSchema } from '@/modules/chains/domain/entities/schemas/chain.schema';
 import { IConfigApi } from '@/domain/interfaces/config-api.interface';
 import type { IExportApi } from './export-api.interface';
 import { ExportApi } from './export-api.service';
-import { IExportApiManager } from '@/modules/csv-export/v1/datasources/export-api.manager.interface';
+import type { IExportApiManager } from '@/modules/csv-export/v1/datasources/export-api.manager.interface';
 
 @Injectable()
 export class ExportApiManager implements IExportApiManager {

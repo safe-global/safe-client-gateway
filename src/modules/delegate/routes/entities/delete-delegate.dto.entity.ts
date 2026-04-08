@@ -1,6 +1,7 @@
-import { DeleteDelegateDtoSchema } from '@/modules/delegate/routes/entities/schemas/delete-delegate.dto.schema';
+// SPDX-License-Identifier: FSL-1.1-MIT
+import type { DeleteDelegateDtoSchema } from '@/modules/delegate/routes/entities/schemas/delete-delegate.dto.schema';
 import { ApiProperty } from '@nestjs/swagger';
-import { z } from 'zod';
+import type { z } from 'zod';
 import type { Address } from 'viem';
 
 export class DeleteDelegateDto implements z.infer<

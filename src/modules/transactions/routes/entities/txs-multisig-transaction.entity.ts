@@ -1,5 +1,6 @@
-import { DataDecoded } from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';
-import {
+// SPDX-License-Identifier: FSL-1.1-MIT
+import type { DataDecoded } from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';
+import type {
   Confirmation,
   MultisigTransaction as DomainMultisigTransaction,
 } from '@/modules/safe/domain/entities/multisig-transaction.entity';

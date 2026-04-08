@@ -1,8 +1,9 @@
-import {
+// SPDX-License-Identifier: FSL-1.1-MIT
+import type {
   DefiVaultStats,
   DefiVaultStatsAdditionalReward,
 } from '@/modules/staking/datasources/entities/defi-vault-stats.entity';
-import { Deployment } from '@/modules/staking/datasources/entities/deployment.entity';
+import type { Deployment } from '@/modules/staking/datasources/entities/deployment.entity';
 import { getNumberString } from '@/domain/common/utils/utils';
 import { EarnRepository } from '@/modules/earn/domain/earn.repository';
 import { ITokenRepository } from '@/modules/tokens/domain/token.repository.interface';
@@ -11,7 +12,7 @@ import { VaultExtraReward } from '@/modules/transactions/routes/entities/vaults/
 import { VaultInfo } from '@/modules/transactions/routes/entities/vaults/vault-info.entity';
 import {
   VaultDepositTransactionInfo,
-  VaultRedeemTransactionInfo as VaultRedeemTransactionInfo,
+  VaultRedeemTransactionInfo,
 } from '@/modules/transactions/routes/entities/vaults/vault-transaction-info.entity';
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import type { Address } from 'viem';

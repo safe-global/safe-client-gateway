@@ -1,11 +1,15 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { JobQueueService } from '@/datasources/job-queue/job-queue.service';
 import { JobQueueShutdownHook } from '@/datasources/job-queue/job-queue.shutdown.hook';
 import { CSV_EXPORT_QUEUE } from '@/domain/common/jobs.constants';
 import { IJobQueueService } from '@/domain/interfaces/job-queue.interface';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
 import { BullModule, getQueueToken } from '@nestjs/bullmq';
 import { Module } from '@nestjs/common';
-import { Queue } from 'bullmq';
+import type { Queue } from 'bullmq';
 import { CsvExportConsumer } from '@/modules/csv-export/v1/consumers/csv-export.consumer';
 import { CsvExportController } from '@/modules/csv-export/v1/csv-export.controller';
 import { CsvExportService } from '@/modules/csv-export/v1/csv-export.service';

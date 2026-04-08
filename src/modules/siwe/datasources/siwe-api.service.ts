@@ -1,9 +1,10 @@
-import { ISiweApi } from '@/domain/interfaces/siwe-api.interface';
+// SPDX-License-Identifier: FSL-1.1-MIT
+import type { ISiweApi } from '@/domain/interfaces/siwe-api.interface';
 import { Inject, Injectable } from '@nestjs/common';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import {
   CacheService,
-  ICacheService,
+  type ICacheService,
 } from '@/datasources/cache/cache.service.interface';
 import { CacheRouter } from '@/datasources/cache/cache.router';
 

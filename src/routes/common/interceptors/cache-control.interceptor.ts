@@ -1,11 +1,12 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import {
-  CallHandler,
-  ExecutionContext,
+  type CallHandler,
+  type ExecutionContext,
   Injectable,
-  NestInterceptor,
+  type NestInterceptor,
 } from '@nestjs/common';
-import { Response } from 'express';
-import { Observable, tap } from 'rxjs';
+import type { Response } from 'express';
+import { type Observable, tap } from 'rxjs';
 
 /**
  * This interceptor can be used to set the `Cache-Control` header to `no-cache`.

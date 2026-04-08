@@ -1,4 +1,5 @@
-import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
+// SPDX-License-Identifier: FSL-1.1-MIT
+import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { UpsertSubscriptionsDto } from '@/modules/notifications/routes/v2/entities/upsert-subscriptions.dto.entity';
 import { UpsertSubscriptionsDtoSchema } from '@/modules/notifications/domain/v2/entities/upsert-subscriptions.dto.entity';
 import { NotificationsServiceV2 } from '@/modules/notifications/routes/v2/notifications.service';
@@ -30,11 +31,11 @@ import {
   ApiBadRequestResponse,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { UUID } from 'crypto';
+import type { UUID } from 'crypto';
 import { OptionalAuthGuard } from '@/modules/auth/routes/guards/optional-auth.guard';
 import { NotificationTypeResponseDto } from '@/modules/notifications/routes/v2/entities/notification-type-response.dto.entity';
 import { DeleteAllSubscriptionsDtoSchema } from '@/modules/notifications/domain/v2/entities/delete-all-subscriptions.dto.entity';
-import { DeleteAllSubscriptionsDto } from '@/modules/notifications/routes/v2/entities/delete-all-subscriptions.dto.entity';
+import type { DeleteAllSubscriptionsDto } from '@/modules/notifications/routes/v2/entities/delete-all-subscriptions.dto.entity';
 import type { Address } from 'viem';
 
 @ApiTags('notifications')

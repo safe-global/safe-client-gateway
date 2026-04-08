@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import {
   Controller,
   Delete,
@@ -17,7 +18,7 @@ import { PortfolioApiService } from '@/modules/portfolio/v1/portfolio.service';
 import { Portfolio } from '@/modules/portfolio/v1/entities/portfolio.entity';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { GetPortfolioDto } from '@/modules/portfolio/v1/entities/get-portfolio.dto.entity';
+import type { GetPortfolioDto } from '@/modules/portfolio/v1/entities/get-portfolio.dto.entity';
 import { GetPortfolioDtoSchema } from '@/modules/portfolio/v1/entities/schemas/get-portfolio.dto.schema';
 import type { Address } from 'viem';
 

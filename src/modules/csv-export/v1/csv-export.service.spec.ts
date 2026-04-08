@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import type { ICloudStorageApiService } from '@/datasources/storage/cloud-storage-api.service';
 import type { CsvService } from '@/modules/csv-export/csv-utils/csv.service';
@@ -641,7 +642,6 @@ describe('CsvExportService', () => {
       csvRow = `${faker.string.uuid()},${faker.string.numeric(1)},${faker.lorem.word()},${faker.date.recent().toISOString()}`;
       mockCsvService.toCsv.mockImplementation(
         async (readable: Readable, stream) => {
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
           for await (const _ of readable) {
             // Just consume the data
           }

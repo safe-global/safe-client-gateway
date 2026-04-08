@@ -7,10 +7,10 @@ import type {
   MaliciousOrModerateThreatAnalysisResult,
   UnofficialFallbackHandlerAnalysisResult,
 } from '../../analysis-result.entity';
-import {
-  type RecipientAnalysisResult,
-  type ContractAnalysisResult,
-  type ThreatAnalysisResult,
+import type {
+  RecipientAnalysisResult,
+  ContractAnalysisResult,
+  ThreatAnalysisResult,
 } from '../../analysis-result.entity';
 import type { Address } from 'viem';
 import { getAddress } from 'viem';

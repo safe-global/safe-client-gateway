@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Controller, Get, Param } from '@nestjs/common';
 import {
   ApiOkResponse,
@@ -14,11 +15,11 @@ import { GasPriceResponse } from '@/modules/chains/routes/entities/gas-price-res
 import { MasterCopy } from '@/modules/chains/routes/entities/master-copy.entity';
 import { PaginationDataDecorator } from '@/routes/common/decorators/pagination.data.decorator';
 import { RouteUrlDecorator } from '@/routes/common/decorators/route.url.decorator';
-import { Page } from '@/routes/common/entities/page.entity';
-import { PaginationData } from '@/routes/common/pagination/pagination.data';
+import type { Page } from '@/routes/common/entities/page.entity';
+import type { PaginationData } from '@/routes/common/pagination/pagination.data';
 import {
   Backbone as ApiBackbone,
-  Backbone,
+  type Backbone,
 } from '@/modules/chains/routes/entities/backbone.entity';
 import { IndexingStatus } from '@/modules/chains/routes/entities/indexing-status.entity';
 

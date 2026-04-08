@@ -148,7 +148,7 @@ export class NotificationsController {
         (safeV2Safes) => safeV2Safes.address,
       );
 
-      let recoveredAddress: Address | undefined = undefined;
+      let recoveredAddress: Address | undefined;
       if (safeV2.upsertSubscriptionsDto.signature) {
         recoveredAddress = await this.recoverAddress({
           registerDeviceDto: args,

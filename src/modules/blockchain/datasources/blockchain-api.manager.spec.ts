@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import { BlockchainApiManager } from '@/modules/blockchain/datasources/blockchain-api.manager';
 import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
@@ -107,7 +108,6 @@ describe('BlockchainApiManager', () => {
       const client = target._createCachedRpcClient(chain);
       const fetchSpy = jest.spyOn(global, 'fetch');
       const chainId = toHex(chain.chainId);
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       fetchSpy.mockImplementation((_: unknown) => {
         return Promise.resolve({
           headers: new Headers({ 'Content-Type': 'application/json' }),
@@ -166,7 +166,6 @@ describe('BlockchainApiManager', () => {
         number: null,
         totalDifficulty: null,
       };
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       fetchSpy.mockImplementation((_: unknown) => {
         return Promise.resolve({
           headers: new Headers({ 'Content-Type': 'application/json' }),

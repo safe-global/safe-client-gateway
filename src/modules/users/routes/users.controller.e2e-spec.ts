@@ -73,7 +73,6 @@ describe('UsersController', () => {
   it('should require authentication for every endpoint', () => {
     const endpoints = Object.values(
       UsersController.prototype,
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
     ) as Array<Function>;
 
     endpoints.forEach((fn) => checkGuardIsApplied(AuthGuard, fn));

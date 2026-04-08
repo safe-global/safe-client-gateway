@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
-import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
+import type { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
+import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { IAddressBookItemsRepository } from '@/modules/spaces/domain/address-books/address-book-items.repository.interface';
-import { SpaceAddressBookDto } from '@/modules/spaces/routes/entities/space-address-book.dto.entity';
+import type { SpaceAddressBookDto } from '@/modules/spaces/routes/entities/space-address-book.dto.entity';
 import { ForbiddenException, Inject } from '@nestjs/common';
-import { UpsertAddressBookItemsDto } from '@/modules/spaces/routes/entities/upsert-address-book-items.dto.entity';
+import type { UpsertAddressBookItemsDto } from '@/modules/spaces/routes/entities/upsert-address-book-items.dto.entity';
 import type { AddressBookDbItem } from '@/modules/spaces/domain/address-books/entities/address-book-item.db.entity';
 
 export class AddressBooksService {

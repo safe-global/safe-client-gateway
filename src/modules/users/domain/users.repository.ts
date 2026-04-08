@@ -7,13 +7,16 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import type { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
-import { User, UserStatus } from '@/modules/users/domain/entities/user.entity';
-import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
+import type {
+  User,
+  UserStatus,
+} from '@/modules/users/domain/entities/user.entity';
+import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { User as DbUser } from '@/modules/users/datasources/entities/users.entity.db';
-import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
-import { EntityManager } from 'typeorm';
+import type { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
+import type { EntityManager } from 'typeorm';
 import type { FindOptionsRelations, FindOptionsWhere } from 'typeorm';
 import { IWalletsRepository } from '@/modules/wallets/domain/wallets.repository.interface';
 import type { Address } from 'viem';

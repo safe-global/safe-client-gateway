@@ -1,18 +1,22 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import {
   CacheService,
-  ICacheService,
+  type ICacheService,
 } from '@/datasources/cache/cache.service.interface';
-import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
-import { ICachedQueryResolver } from '@/datasources/db/v1/cached-query-resolver.interface';
+import type { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
+import type { ICachedQueryResolver } from '@/datasources/db/v1/cached-query-resolver.interface';
 import { LogType } from '@/domain/common/entities/log-type.entity';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
 import { asError } from '@/logging/utils';
 import {
   Inject,
   Injectable,
   InternalServerErrorException,
 } from '@nestjs/common';
-import postgres from 'postgres';
+import type postgres from 'postgres';
 
 @Injectable()
 export class CachedQueryResolver implements ICachedQueryResolver {

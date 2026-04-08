@@ -1,27 +1,31 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { CacheRouter } from '@/datasources/cache/cache.router';
 import {
   CacheService,
-  ICacheService,
+  type ICacheService,
 } from '@/datasources/cache/cache.service.interface';
-import { CachedQueryResolver } from '@/datasources/db/v1/cached-query-resolver';
+import type { CachedQueryResolver } from '@/datasources/db/v1/cached-query-resolver';
 import { ICachedQueryResolver } from '@/datasources/db/v1/cached-query-resolver.interface';
 import { OutreachDbMapper } from '@/modules/targeted-messaging/datasources/entities/outreach.db.mapper';
-import { Outreach as DbOutreach } from '@/modules/targeted-messaging/datasources/entities/outreach.entity';
+import type { Outreach as DbOutreach } from '@/modules/targeted-messaging/datasources/entities/outreach.entity';
 import { SubmissionDbMapper } from '@/modules/targeted-messaging/datasources/entities/submission.db.mapper';
-import { Submission as DbSubmission } from '@/modules/targeted-messaging/datasources/entities/submission.entity';
+import type { Submission as DbSubmission } from '@/modules/targeted-messaging/datasources/entities/submission.entity';
 import { TargetedSafeDbMapper } from '@/modules/targeted-messaging/datasources/entities/targeted-safe.db.mapper';
-import { TargetedSafe as DbTargetedSafe } from '@/modules/targeted-messaging/datasources/entities/targeted-safe.entity';
-import { ITargetedMessagingDatasource } from '@/domain/interfaces/targeted-messaging.datasource.interface';
-import { CreateOutreachDto } from '@/modules/targeted-messaging/domain/entities/create-outreach.dto.entity';
-import { CreateTargetedSafesDto } from '@/modules/targeted-messaging/domain/entities/create-targeted-safes.dto.entity';
-import { Outreach } from '@/modules/targeted-messaging/domain/entities/outreach.entity';
-import { Submission } from '@/modules/targeted-messaging/domain/entities/submission.entity';
-import { TargetedSafe } from '@/modules/targeted-messaging/domain/entities/targeted-safe.entity';
-import { UpdateOutreachDto } from '@/modules/targeted-messaging/domain/entities/update-outreach.dto.entity';
+import type { TargetedSafe as DbTargetedSafe } from '@/modules/targeted-messaging/datasources/entities/targeted-safe.entity';
+import type { ITargetedMessagingDatasource } from '@/domain/interfaces/targeted-messaging.datasource.interface';
+import type { CreateOutreachDto } from '@/modules/targeted-messaging/domain/entities/create-outreach.dto.entity';
+import type { CreateTargetedSafesDto } from '@/modules/targeted-messaging/domain/entities/create-targeted-safes.dto.entity';
+import type { Outreach } from '@/modules/targeted-messaging/domain/entities/outreach.entity';
+import type { Submission } from '@/modules/targeted-messaging/domain/entities/submission.entity';
+import type { TargetedSafe } from '@/modules/targeted-messaging/domain/entities/targeted-safe.entity';
+import type { UpdateOutreachDto } from '@/modules/targeted-messaging/domain/entities/update-outreach.dto.entity';
 import { SubmissionNotFoundError } from '@/modules/targeted-messaging/domain/errors/submission-not-found.error';
 import { TargetedSafeNotFoundError } from '@/modules/targeted-messaging/domain/errors/targeted-safe-not-found.error';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
 import { asError } from '@/logging/utils';
 import {
   Inject,
@@ -29,8 +33,8 @@ import {
   NotFoundException,
   UnprocessableEntityException,
 } from '@nestjs/common';
-import postgres from 'postgres';
-import { type Address } from 'viem';
+import type postgres from 'postgres';
+import type { Address } from 'viem';
 
 @Injectable()
 export class TargetedMessagingDatasource implements ITargetedMessagingDatasource {

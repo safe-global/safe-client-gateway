@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
 
-// eslint-disable-next-line no-control-regex
 const CONTROL_CHARS_REGEX = /[\x00-\x1f\x7f]/;
 
 export const RedirectUrlSchema = z

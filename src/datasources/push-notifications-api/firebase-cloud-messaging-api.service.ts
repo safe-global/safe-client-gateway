@@ -1,16 +1,17 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { CacheRouter } from '@/datasources/cache/cache.router';
 import {
   CacheService,
-  ICacheService,
+  type ICacheService,
 } from '@/datasources/cache/cache.service.interface';
 import {
   NetworkService,
-  INetworkService,
+  type INetworkService,
 } from '@/datasources/network/network.service.interface';
-import { IPushNotificationsApi } from '@/domain/interfaces/push-notifications-api.interface';
+import type { IPushNotificationsApi } from '@/domain/interfaces/push-notifications-api.interface';
 import { Inject, Injectable } from '@nestjs/common';
-import {
+import type {
   FirebaseAndroidMessageConfig,
   FireabaseNotificationApn,
   FirebaseNotification,
@@ -18,7 +19,7 @@ import {
 } from '@/datasources/push-notifications-api/entities/firebase-notification.entity';
 import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
 import {
-  FirebaseOauth2Token,
+  type FirebaseOauth2Token,
   FirebaseOauth2TokenSchema,
 } from '@/datasources/push-notifications-api/entities/firebase-oauth2-token.entity';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';

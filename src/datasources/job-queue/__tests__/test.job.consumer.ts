@@ -1,6 +1,7 @@
-import { TestJobData } from '@/datasources/job-queue/__tests__/test.job.data';
+// SPDX-License-Identifier: FSL-1.1-MIT
+import type { TestJobData } from '@/datasources/job-queue/__tests__/test.job.data';
 import { OnWorkerEvent, Processor, WorkerHost } from '@nestjs/bullmq';
-import { Job } from 'bullmq';
+import type { Job } from 'bullmq';
 
 @Processor('test-queue')
 export class TestJobConsumer extends WorkerHost {

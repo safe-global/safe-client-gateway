@@ -1,7 +1,8 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
-import { Estimation } from '@/modules/estimations/domain/entities/estimation.entity';
-import { GetEstimationDto } from '@/modules/estimations/domain/entities/get-estimation.dto.entity';
-import { IEstimationsRepository } from '@/modules/estimations/domain/estimations.repository.interface';
+import type { Estimation } from '@/modules/estimations/domain/entities/estimation.entity';
+import type { GetEstimationDto } from '@/modules/estimations/domain/entities/get-estimation.dto.entity';
+import type { IEstimationsRepository } from '@/modules/estimations/domain/estimations.repository.interface';
 import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
 import { EstimationSchema } from '@/modules/estimations/domain/entities/schemas/estimation.schema';
 import type { Address } from 'viem';

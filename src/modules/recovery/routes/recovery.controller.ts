@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import {
   Body,
   Controller,
@@ -8,13 +9,13 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { AddRecoveryModuleDto } from '@/modules/recovery/routes/entities/add-recovery-module.dto.entity';
+import type { AddRecoveryModuleDto } from '@/modules/recovery/routes/entities/add-recovery-module.dto.entity';
 import { RecoveryService } from '@/modules/recovery/routes/recovery.service';
 import { AddRecoveryModuleDtoSchema } from '@/modules/recovery/routes/entities/schemas/add-recovery-module.dto.schema';
 import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
 import { Auth } from '@/modules/auth/routes/decorators/auth.decorator';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
+import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import type { Address } from 'viem';
 

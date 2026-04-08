@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import semverSatisfies from 'semver/functions/satisfies';
 import type { Address } from 'viem';
 import { hashMessage, hashTypedData, zeroAddress } from 'viem';
@@ -219,7 +220,6 @@ function detectSafeMigration(args: {
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 export function _getSafeDomain(args: {
   address: Safe['address'];
   version: NonNullable<Safe['version']>;
@@ -235,7 +235,6 @@ export function _getSafeDomain(args: {
   };
 }
 
-// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 export function _getSafeTxTypesAndMessage(args: {
   transaction: BaseMultisigTransaction;
   version: NonNullable<Safe['version']>;

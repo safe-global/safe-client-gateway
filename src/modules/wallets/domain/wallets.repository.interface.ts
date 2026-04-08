@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type {
   DeleteResult,
   FindOptionsRelations,
@@ -5,7 +6,7 @@ import type {
   FindOptionsWhere,
   InsertResult,
 } from 'typeorm';
-import { type Repository, type EntityManager } from 'typeorm';
+import type { Repository, EntityManager } from 'typeorm';
 import type { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
 import type { User } from '@/modules/users/domain/entities/user.entity';
 import type { Address } from 'viem';

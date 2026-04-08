@@ -4,13 +4,16 @@ import {
   PUSH_NOTIFICATION_WORKER_CONCURRENCY,
 } from '@/domain/common/jobs.constants';
 import { LogType } from '@/domain/common/entities/log-type.entity';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
 import { asError } from '@/logging/utils';
 import {
   JobType,
   type JobTypeName,
 } from '@/datasources/job-queue/types/job-types';
-import { PushNotificationService } from '@/modules/notifications/domain/push/push-notification.service';
+import type { PushNotificationService } from '@/modules/notifications/domain/push/push-notification.service';
 import type {
   PushNotificationEventJobData,
   PushNotificationDeliveryJobData,
@@ -20,7 +23,7 @@ import type {
 } from '@/modules/notifications/domain/push/entities/push-notification-job-data.entity';
 import { OnWorkerEvent, Processor, WorkerHost } from '@nestjs/bullmq';
 import { Inject } from '@nestjs/common';
-import { Job } from 'bullmq';
+import type { Job } from 'bullmq';
 
 @Processor(PUSH_NOTIFICATION_QUEUE, {
   concurrency: PUSH_NOTIFICATION_WORKER_CONCURRENCY,

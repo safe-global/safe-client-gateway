@@ -1,11 +1,12 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { PaginationDataDecorator } from '@/routes/common/decorators/pagination.data.decorator';
 import { RouteUrlDecorator } from '@/routes/common/decorators/route.url.decorator';
-import { Page } from '@/routes/common/entities/page.entity';
-import { PaginationData } from '@/routes/common/pagination/pagination.data';
+import type { Page } from '@/routes/common/entities/page.entity';
+import type { PaginationData } from '@/routes/common/pagination/pagination.data';
 import { CreateDelegateDto } from '@/modules/delegate/routes/entities/create-delegate.dto.entity';
-import { Delegate } from '@/modules/delegate/routes/entities/delegate.entity';
+import type { Delegate } from '@/modules/delegate/routes/entities/delegate.entity';
 import { DelegatePage } from '@/modules/delegate/routes/entities/delegate.page.entity';
-import { GetDelegateDto } from '@/modules/delegate/routes/entities/get-delegate.dto.entity';
+import type { GetDelegateDto } from '@/modules/delegate/routes/entities/get-delegate.dto.entity';
 import { CreateDelegateDtoSchema } from '@/modules/delegate/routes/entities/schemas/create-delegate.dto.schema';
 import { GetDelegateDtoSchema } from '@/modules/delegate/routes/entities/schemas/get-delegate.dto.schema';
 import { DelegatesV2Service } from '@/modules/delegate/routes/v2/delegates.v2.service';

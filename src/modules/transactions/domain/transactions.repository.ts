@@ -1,5 +1,6 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
-import { ITransactionsRepository } from '@/modules/transactions/domain/transactions.repository.interface';
+import type { ITransactionsRepository } from '@/modules/transactions/domain/transactions.repository.interface';
 import { Inject, Injectable } from '@nestjs/common';
 
 @Injectable()

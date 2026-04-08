@@ -1,7 +1,8 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { expect } from '@jest/globals';
 import type { MatcherFunction } from 'expect';
 
-const anyStringOrNull: MatcherFunction = function (actual) {
+const anyStringOrNull: MatcherFunction = (actual) => {
   const pass = actual === null || typeof actual === 'string';
   if (pass) {
     return {
@@ -10,7 +11,6 @@ const anyStringOrNull: MatcherFunction = function (actual) {
     };
   } else {
     return {
-      // eslint-disable-next-line @typescript-eslint/no-base-to-string
       message: () => `expected ${actual} to be string or null`,
       pass: false,
     };

@@ -1,5 +1,6 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { ApiProperty } from '@nestjs/swagger';
-import {
+import type {
   NativeToken as DomainNativeToken,
   Erc20Token as DomainErc20Token,
   Erc721Token as DomainErc721Token,

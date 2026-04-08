@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Body, Controller, Get, HttpCode, Param, Post } from '@nestjs/common';
 import {
   ApiOkResponse,
@@ -11,11 +12,11 @@ import {
 } from '@nestjs/swagger';
 import { PaginationDataDecorator } from '@/routes/common/decorators/pagination.data.decorator';
 import { RouteUrlDecorator } from '@/routes/common/decorators/route.url.decorator';
-import { DateLabel } from '@/routes/common/entities/date-label.entity';
-import { Page } from '@/routes/common/entities/page.entity';
-import { PaginationData } from '@/routes/common/pagination/pagination.data';
+import type { DateLabel } from '@/routes/common/entities/date-label.entity';
+import type { Page } from '@/routes/common/entities/page.entity';
+import type { PaginationData } from '@/routes/common/pagination/pagination.data';
 import { CreateMessageDto } from '@/modules/messages/routes/entities/create-message.dto.entity';
-import { MessageItem } from '@/modules/messages/routes/entities/message-item.entity';
+import type { MessageItem } from '@/modules/messages/routes/entities/message-item.entity';
 import { Message } from '@/modules/messages/routes/entities/message.entity';
 import { MessagePage } from '@/modules/messages/routes/entities/messages-page.entity';
 import { UpdateMessageSignatureDto } from '@/modules/messages/routes/entities/update-message-signature.entity';

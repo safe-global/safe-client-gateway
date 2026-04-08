@@ -1,9 +1,10 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import isEmpty from 'lodash/isEmpty';
-import { ContractsRepository } from '@/modules/contracts/domain/contracts.repository';
+import type { ContractsRepository } from '@/modules/contracts/domain/contracts.repository';
 import { IContractsRepository } from '@/modules/contracts/domain/contracts.repository.interface';
 import { Operation } from '@/modules/safe/domain/entities/operation.entity';
-import {
+import type {
   BaseDataDecoded,
   DataDecoded,
   DataDecodedParameter,
@@ -15,13 +16,13 @@ import {
   TRANSACTIONS_PARAMETER_NAME,
   ADDRESS_PARAMETER_TYPE,
 } from '@/modules/transactions/routes/constants';
-import { PreviewTransactionDto } from '@/modules/transactions/routes/entities/preview-transaction.dto.entity';
+import type { PreviewTransactionDto } from '@/modules/transactions/routes/entities/preview-transaction.dto.entity';
 import { TransactionData } from '@/modules/transactions/routes/entities/transaction-data.entity';
 import { DataDecodedParamHelper } from '@/modules/transactions/routes/mappers/common/data-decoded-param.helper';
-import { AddressInfo } from '@/routes/common/entities/address-info.entity';
+import type { AddressInfo } from '@/routes/common/entities/address-info.entity';
 import type { Address } from 'viem';
 import { getAddress } from 'viem';
-import {
+import type {
   Erc20Token,
   Erc721Token,
   NativeToken,

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { ConflictException, Inject } from '@nestjs/common';
 import { IMembersRepository } from '@/modules/users/domain/members.repository.interface';
-import { User } from '@/modules/users/domain/entities/user.entity';
+import type { User } from '@/modules/users/domain/entities/user.entity';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import type { Space } from '@/modules/spaces/domain/entities/space.entity';
@@ -13,7 +13,7 @@ import type {
 } from '@/modules/spaces/routes/entities/members.dto.entity';
 import type { UpdateRoleDto } from '@/modules/spaces/routes/entities/update-role.dto.entity';
 import type { UpdateMemberAliasDto } from '@/modules/spaces/routes/entities/update-member-name.dto.entity';
-import { AcceptInviteDto } from '@/modules/spaces/routes/entities/accept-invite.dto.entity';
+import type { AcceptInviteDto } from '@/modules/spaces/routes/entities/accept-invite.dto.entity';
 
 export class MembersService {
   private readonly maxInvites: number;

@@ -1,7 +1,8 @@
-import { UpsertSubscriptionsDto } from '@/modules/notifications/domain/v2/entities/upsert-subscriptions.dto.entity';
-import { FirebaseNotification } from '@/datasources/push-notifications-api/entities/firebase-notification.entity';
+// SPDX-License-Identifier: FSL-1.1-MIT
+import type { UpsertSubscriptionsDto } from '@/modules/notifications/domain/v2/entities/upsert-subscriptions.dto.entity';
+import type { FirebaseNotification } from '@/datasources/push-notifications-api/entities/firebase-notification.entity';
 import { IPushNotificationsApi } from '@/domain/interfaces/push-notifications-api.interface';
-import { UUID } from 'crypto';
+import type { UUID } from 'crypto';
 import type { INotificationsRepositoryV2 } from '@/modules/notifications/domain/v2/notifications.repository.interface';
 import {
   Inject,
@@ -10,14 +11,17 @@ import {
   UnauthorizedException,
   UnprocessableEntityException,
 } from '@nestjs/common';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
 import get from 'lodash/get';
-import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
+import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { NotificationSubscription } from '@/modules/notifications/datasources/entities/notification-subscription.entity.db';
 import { NotificationDevice } from '@/modules/notifications/datasources/entities/notification-devices.entity.db';
 import { NotificationType } from '@/modules/notifications/datasources/entities/notification-type.entity.db';
-import { NotificationTypeResponseDto } from '@/modules/notifications/routes/v2/entities/notification-type-response.dto.entity';
-import { EntityManager, In, IsNull } from 'typeorm';
+import type { NotificationTypeResponseDto } from '@/modules/notifications/routes/v2/entities/notification-type-response.dto.entity';
+import { type EntityManager, In, IsNull } from 'typeorm';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { NotificationSubscriptionNotificationType } from '@/modules/notifications/datasources/entities/notification-subscription-notification-type.entity.db';
 import { IConfigurationService } from '@/config/configuration.service.interface';

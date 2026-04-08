@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import {
   ApiConflictResponse,
   ApiNotFoundResponse,
@@ -30,7 +31,7 @@ import { WalletAddedToUser } from '@/modules/users/routes/entities/wallet-added-
 import { SiweDtoSchema } from '@/modules/auth/routes/entities/siwe.dto.entity';
 import { SiweDto } from '@/modules/auth/routes/entities/siwe.dto.entity';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { type Address } from 'viem';
+import type { Address } from 'viem';
 
 @ApiTags('users')
 @Controller({ path: 'users', version: '1' })

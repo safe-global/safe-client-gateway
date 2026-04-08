@@ -41,7 +41,7 @@ import type {
 } from '@/modules/safe/domain/entities/transfer.entity';
 import { rawify } from '@/validation/entities/raw.entity';
 import { faker } from '@faker-js/faker';
-import { type Address, type Hash } from 'viem';
+import type { Address, Hash } from 'viem';
 import { getQueueToken } from '@nestjs/bullmq';
 import { PUSH_NOTIFICATION_QUEUE } from '@/domain/common/jobs.constants';
 import type { Queue } from 'bullmq';

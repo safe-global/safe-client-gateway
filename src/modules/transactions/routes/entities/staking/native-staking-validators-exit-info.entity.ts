@@ -1,5 +1,6 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { StakingStatus } from '@/modules/transactions/routes/entities/staking/staking.entity';
-import { TokenInfo } from '@/modules/transactions/routes/entities/swaps/token-info.entity';
+import type { TokenInfo } from '@/modules/transactions/routes/entities/swaps/token-info.entity';
 import {
   TransactionInfo,
   TransactionInfoType,

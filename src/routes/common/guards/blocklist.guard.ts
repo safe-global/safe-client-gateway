@@ -7,8 +7,8 @@ import {
   type ILoggingService,
 } from '@/logging/logging.interface';
 import {
-  CanActivate,
-  ExecutionContext,
+  type CanActivate,
+  type ExecutionContext,
   ForbiddenException,
   Inject,
   Injectable,

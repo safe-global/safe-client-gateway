@@ -1,8 +1,9 @@
-import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { UpsertSubscriptionsDto } from '@/modules/notifications/domain/v2/entities/upsert-subscriptions.dto.entity';
+// SPDX-License-Identifier: FSL-1.1-MIT
+import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
+import type { UpsertSubscriptionsDto } from '@/modules/notifications/domain/v2/entities/upsert-subscriptions.dto.entity';
 import { Inject, Injectable } from '@nestjs/common';
-import { UUID } from 'crypto';
-import { NotificationTypeResponseDto } from '@/modules/notifications/routes/v2/entities/notification-type-response.dto.entity';
+import type { UUID } from 'crypto';
+import type { NotificationTypeResponseDto } from '@/modules/notifications/routes/v2/entities/notification-type-response.dto.entity';
 import { INotificationsRepositoryV2 } from '@/modules/notifications/domain/v2/notifications.repository.interface';
 import type { Address } from 'viem';
 

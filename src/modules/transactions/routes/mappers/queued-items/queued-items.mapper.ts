@@ -1,11 +1,12 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import groupBy from 'lodash/groupBy';
-import { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
-import { Safe } from '@/modules/safe/domain/entities/safe.entity';
+import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
+import type { Safe } from '@/modules/safe/domain/entities/safe.entity';
 import { MultisigTransactionMapper } from '@/modules/transactions/routes/mappers/multisig-transactions/multisig-transaction.mapper';
-import { Page } from '@/domain/entities/page.entity';
+import type { Page } from '@/domain/entities/page.entity';
 import { ConflictType } from '@/modules/transactions/routes/entities/conflict-type.entity';
-import { QueuedItem } from '@/modules/transactions/routes/entities/queued-item.entity';
+import type { QueuedItem } from '@/modules/transactions/routes/entities/queued-item.entity';
 import { ConflictHeaderQueuedItem } from '@/modules/transactions/routes/entities/queued-items/conflict-header-queued-item.entity';
 import {
   LabelItem,

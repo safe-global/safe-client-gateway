@@ -1,11 +1,14 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import type { Address } from 'viem';
-import { IRelayer } from '@/modules/relay/domain/interfaces/relayer.interface';
+import type { IRelayer } from '@/modules/relay/domain/interfaces/relayer.interface';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { IRelayApi } from '@/domain/interfaces/relay-api.interface';
-import { LimitAddressesMapper } from '@/modules/relay/domain/limit-addresses.mapper';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import type { LimitAddressesMapper } from '@/modules/relay/domain/limit-addresses.mapper';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
 import type { Relay } from '@/modules/relay/domain/entities/relay.entity';
 import type { RelayEligibility } from '@/modules/relay/domain/entities/relay-eligibility.entity';
 import { RelayLimitReachedError } from '@/modules/relay/domain/errors/relay-limit-reached.error';

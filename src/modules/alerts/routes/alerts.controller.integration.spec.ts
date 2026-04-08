@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { faker } from '@faker-js/faker';
@@ -172,10 +173,9 @@ describe('Alerts Controller', () => {
             .build();
           const timestamp = Date.now().toString();
           // TODO: Check value of threshold and owner in email
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          const { threshold, owner } = addOwnerWithThreshold.build();
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          const signature = fakeTenderlySignature({
+          const { threshold: _threshold, owner: _owner } =
+            addOwnerWithThreshold.build();
+          const __signature = fakeTenderlySignature({
             signingKey,
             alert,
             timestamp,
@@ -227,10 +227,8 @@ describe('Alerts Controller', () => {
             .build();
           const timestamp = Date.now().toString();
           // TODO: Check value of threshold in email
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          const { threshold } = removeOwner.build();
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          const signature = fakeTenderlySignature({
+          const { threshold: _threshold } = removeOwner.build();
+          const __signature = fakeTenderlySignature({
             signingKey,
             alert,
             timestamp,
@@ -281,10 +279,8 @@ describe('Alerts Controller', () => {
             .build();
           const timestamp = Date.now().toString();
           // TODO: Check value of newOwner in email
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          const { newOwner } = swapOwner.build();
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          const signature = fakeTenderlySignature({
+          const { newOwner: _newOwner } = swapOwner.build();
+          const __signature = fakeTenderlySignature({
             signingKey,
             alert,
             timestamp,
@@ -325,10 +321,8 @@ describe('Alerts Controller', () => {
             .build();
           const timestamp = Date.now().toString();
           // TODO: Check value of threshold in email
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          const { threshold } = changeThreshold.build();
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          const signature = fakeTenderlySignature({
+          const { threshold: _threshold } = changeThreshold.build();
+          const __signature = fakeTenderlySignature({
             signingKey,
             alert,
             timestamp,
@@ -405,8 +399,7 @@ describe('Alerts Controller', () => {
             .with('event_type', EventType.ALERT)
             .build();
           const timestamp = Date.now().toString();
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          const signature = fakeTenderlySignature({
+          const __signature = fakeTenderlySignature({
             signingKey,
             alert,
             timestamp,
@@ -446,10 +439,9 @@ describe('Alerts Controller', () => {
             .build();
           const timestamp = Date.now().toString();
           // TODO: Check value of threshold and owner in email
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          const { threshold, owner } = addOwnerWithThreshold.build();
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          const signature = fakeTenderlySignature({
+          const { threshold: _threshold, owner: _owner } =
+            addOwnerWithThreshold.build();
+          const __signature = fakeTenderlySignature({
             signingKey,
             alert,
             timestamp,
@@ -490,10 +482,9 @@ describe('Alerts Controller', () => {
             .build();
           const timestamp = Date.now().toString();
           // TODO: Check value of threshold and owner in email
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          const { threshold, owner } = addOwnerWithThreshold.build();
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          const signature = fakeTenderlySignature({
+          const { threshold: _threshold, owner: _owner } =
+            addOwnerWithThreshold.build();
+          const __signature = fakeTenderlySignature({
             signingKey,
             alert,
             timestamp,
@@ -534,8 +525,7 @@ describe('Alerts Controller', () => {
             .with('event_type', EventType.ALERT)
             .build();
           const timestamp = Date.now().toString();
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          const signature = fakeTenderlySignature({
+          const __signature = fakeTenderlySignature({
             signingKey,
             alert,
             timestamp,
@@ -573,8 +563,7 @@ describe('Alerts Controller', () => {
             .with('event_type', EventType.ALERT)
             .build();
           const timestamp = Date.now().toString();
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          const signature = fakeTenderlySignature({
+          const __signature = fakeTenderlySignature({
             signingKey,
             alert,
             timestamp,
@@ -648,8 +637,7 @@ describe('Alerts Controller', () => {
             .with('event_type', EventType.ALERT)
             .build();
           const timestamp = Date.now().toString();
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          const signature = fakeTenderlySignature({
+          const __signature = fakeTenderlySignature({
             signingKey,
             alert,
             timestamp,
@@ -722,8 +710,7 @@ describe('Alerts Controller', () => {
             .with('event_type', EventType.ALERT)
             .build();
           const timestamp = Date.now().toString();
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          const signature = fakeTenderlySignature({
+          const __signature = fakeTenderlySignature({
             signingKey,
             alert,
             timestamp,
@@ -764,12 +751,10 @@ describe('Alerts Controller', () => {
             .build();
           const timestamp = Date.now().toString();
           // TODO: Check threshold and expected owners in email
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          const { threshold, owner } = addOwnerWithThreshold.build();
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          const expectedOwners = [...safe.owners, owner];
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          const signature = fakeTenderlySignature({
+          const { threshold: _threshold, owner: _owner } =
+            addOwnerWithThreshold.build();
+          const _expectedOwners = [...safe.owners, owner];
+          const __signature = fakeTenderlySignature({
             signingKey,
             alert,
             timestamp,
@@ -807,8 +792,7 @@ describe('Alerts Controller', () => {
             .with('event_type', EventType.ALERT)
             .build();
           const timestamp = Date.now().toString();
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          const signature = fakeTenderlySignature({
+          const __signature = fakeTenderlySignature({
             signingKey,
             alert,
             timestamp,

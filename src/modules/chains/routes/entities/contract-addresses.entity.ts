@@ -1,5 +1,6 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { ContractAddresses as DomainContractAddresses } from '@/modules/chains/domain/entities/contract-addresses.entity';
+import type { ContractAddresses as DomainContractAddresses } from '@/modules/chains/domain/entities/contract-addresses.entity';
 import type { Address } from 'viem';
 
 export class ContractAddresses implements DomainContractAddresses {

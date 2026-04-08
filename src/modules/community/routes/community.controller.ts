@@ -1,14 +1,15 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { EligibilityRequestSchema } from '@/modules/community/domain/entities/eligibility-request.entity';
 import { PaginationDataDecorator } from '@/routes/common/decorators/pagination.data.decorator';
 import { RouteUrlDecorator } from '@/routes/common/decorators/route.url.decorator';
-import { PaginationData } from '@/routes/common/pagination/pagination.data';
+import type { PaginationData } from '@/routes/common/pagination/pagination.data';
 import { CommunityService } from '@/modules/community/routes/community.service';
-import { CampaignActivityPage } from '@/modules/community/routes/entities/campaign-activity.page.entity';
+import type { CampaignActivityPage } from '@/modules/community/routes/entities/campaign-activity.page.entity';
 import { CampaignRank } from '@/modules/community/routes/entities/campaign-rank.entity';
 import { CampaignRankPage } from '@/modules/community/routes/entities/campaign-rank.page.entity';
 import { Campaign } from '@/modules/community/routes/entities/campaign.entity';
 import { CampaignPage } from '@/modules/community/routes/entities/campaign.page.entity';
-import { EligibilityRequest } from '@/modules/community/routes/entities/eligibility-request.entity';
+import type { EligibilityRequest } from '@/modules/community/routes/entities/eligibility-request.entity';
 import { Eligibility } from '@/modules/community/routes/entities/eligibility.entity';
 import { LockingEventPage } from '@/modules/community/routes/entities/locking-event.page.entity';
 import { LockingRank } from '@/modules/community/routes/entities/locking-rank.entity';

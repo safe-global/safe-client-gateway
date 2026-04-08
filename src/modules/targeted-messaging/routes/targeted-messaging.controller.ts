@@ -1,7 +1,8 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { TargetedSafeSchema } from '@/modules/targeted-messaging/domain/entities/targeted-safe.entity';
 import { TargetedSafeNotFoundError } from '@/modules/targeted-messaging/domain/errors/targeted-safe-not-found.error';
 import {
-  CreateSubmissionDto,
+  type CreateSubmissionDto,
   CreateSubmissionDtoSchema,
 } from '@/modules/targeted-messaging/routes/entities/create-submission.dto.entity';
 import { Submission } from '@/modules/targeted-messaging/routes/entities/submission.entity';
@@ -27,7 +28,7 @@ import {
   ApiOkResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { Response } from 'express';
+import type { Response } from 'express';
 import type { Address } from 'viem';
 
 @ApiTags('targeted-messaging')

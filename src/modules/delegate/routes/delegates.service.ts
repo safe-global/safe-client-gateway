@@ -1,15 +1,16 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import { IDelegateRepository } from '@/modules/delegate/domain/delegate.repository.interface';
-import { Page } from '@/routes/common/entities/page.entity';
+import type { Page } from '@/routes/common/entities/page.entity';
 import {
-  PaginationData,
+  type PaginationData,
   cursorUrlFromLimitAndOffset,
 } from '@/routes/common/pagination/pagination.data';
-import { CreateDelegateDto } from '@/modules/delegate/routes/entities/create-delegate.dto.entity';
-import { Delegate } from '@/modules/delegate/routes/entities/delegate.entity';
-import { DeleteDelegateDto } from '@/modules/delegate/routes/entities/delete-delegate.dto.entity';
-import { DeleteSafeDelegateDto } from '@/modules/delegate/routes/entities/delete-safe-delegate.dto.entity';
-import { GetDelegateDto } from '@/modules/delegate/routes/entities/get-delegate.dto.entity';
+import type { CreateDelegateDto } from '@/modules/delegate/routes/entities/create-delegate.dto.entity';
+import type { Delegate } from '@/modules/delegate/routes/entities/delegate.entity';
+import type { DeleteDelegateDto } from '@/modules/delegate/routes/entities/delete-delegate.dto.entity';
+import type { DeleteSafeDelegateDto } from '@/modules/delegate/routes/entities/delete-safe-delegate.dto.entity';
+import type { GetDelegateDto } from '@/modules/delegate/routes/entities/get-delegate.dto.entity';
 import type { Address } from 'viem';
 
 @Injectable()

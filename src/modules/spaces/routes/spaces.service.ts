@@ -5,7 +5,7 @@ import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authen
 import { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
 import { IMembersRepository } from '@/modules/users/domain/members.repository.interface';
 import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
-import { CreateSpaceResponse } from '@/modules/spaces/routes/entities/create-space.dto.entity';
+import type { CreateSpaceResponse } from '@/modules/spaces/routes/entities/create-space.dto.entity';
 import type { GetSpaceResponse } from '@/modules/spaces/routes/entities/get-space.dto.entity';
 import type {
   UpdateSpaceDto,

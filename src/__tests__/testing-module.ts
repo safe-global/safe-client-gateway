@@ -55,7 +55,7 @@ export async function createTestModule(
     cacheKeyPrefix,
     overridePostgresV2,
     modules: additionalOverrides = [],
-    guards: guards = [],
+    guards = [],
     providers = [],
   } = options;
 
@@ -99,7 +99,7 @@ export async function createBaseTestModule(
     overridePostgresV2 = true, // Enable Postgres V2 by default
     cacheKeyPrefix = crypto.randomUUID(),
     modules: additionalOverrides = [],
-    guards: guards = [],
+    guards = [],
     providers = [],
   } = options;
 
