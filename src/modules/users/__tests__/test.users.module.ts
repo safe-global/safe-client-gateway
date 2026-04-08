@@ -8,6 +8,7 @@ import { IMembersRepository } from '@/modules/users/domain/members.repository.in
     {
       provide: IUsersRepository,
       useValue: {
+        findOneOrFail: jest.fn(),
         createWithWallet: jest.fn(),
         create: jest.fn(),
         getWithWallets: jest.fn(),
@@ -22,6 +23,7 @@ import { IMembersRepository } from '@/modules/users/domain/members.repository.in
         findOrCreateByExtUserId: (): Promise<number> => Promise.resolve(1),
         update: jest.fn(),
         updateStatus: jest.fn(),
+        activateIfPending: jest.fn(),
       },
     },
     {
