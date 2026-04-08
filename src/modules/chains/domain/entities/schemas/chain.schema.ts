@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
 import { RpcUriAuthentication } from '@/modules/chains/domain/entities/rpc-uri-authentication.entity';
 import { buildLenientPageSchema } from '@/domain/entities/schemas/page.schema.factory';

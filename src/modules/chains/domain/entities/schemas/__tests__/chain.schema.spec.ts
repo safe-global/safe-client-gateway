@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { balancesProviderBuilder } from '@/modules/chains/domain/entities/__tests__/balances-provider.builder';
 import { beaconChainExplorerUriTemplateBuilder } from '@/modules/chains/domain/entities/__tests__/beacon-chain-explorer-uri-template.builder';
 import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
@@ -461,9 +462,9 @@ describe('Chain schemas', () => {
     // @see https://github.com/safe-global/safe-config-service/pull/1339
     it('should default zk to false', () => {
       const chain = chainBuilder().build();
-      delete chain.zk;
+      const { zk: _, ...chainWithoutZk } = chain;
 
-      const result = ChainSchema.safeParse(chain);
+      const result = ChainSchema.safeParse(chainWithoutZk);
 
       expect(result.success && result.data.zk).toBe(false);
     });
