@@ -1,10 +1,18 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { encryptData, decryptData } from '@/domain/common/utils/encryption';
-import { MAX_DERIVED_KEY_CACHE_SIZE } from '@/datasources/cache/constants';
+import {
+  encryptData,
+  decryptData,
+  clearDerivedKeyCache,
+  MAX_DERIVED_KEY_CACHE_SIZE,
+} from '@/domain/common/utils/encryption';
 import { faker } from '@faker-js/faker/.';
 import { getAddress } from 'viem';
 
 describe('Encryption Utils', () => {
+  afterEach(() => {
+    clearDerivedKeyCache();
+  });
+
   const testKey = faker.string.alphanumeric();
   const testSalt = faker.string.alphanumeric();
   const testData = {
