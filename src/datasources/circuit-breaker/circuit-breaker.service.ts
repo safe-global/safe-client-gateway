@@ -105,10 +105,7 @@ export class CircuitBreakerService {
    */
   public canProceedOrFail(name: string): void {
     if (!this.canProceed(name)) {
-      throw new CircuitBreakerException({
-        name,
-        message: 'Circuit breaker is open',
-      });
+      throw new CircuitBreakerException();
     }
   }
 
@@ -427,27 +424,23 @@ export class CircuitBreakerService {
    */
   @Cron(CronExpression.EVERY_30_MINUTES)
   public cleanupStaleCircuits(): void {
-    const circuitCount = this.circuits.size;
-    const staleCircuits: Array<string> = [];
+    const totalBefore = this.circuits.size;
+    let removed = 0;
 
-    this.circuits.forEach((circuit: ICircuit): void => {
+    for (const [name, circuit] of this.circuits) {
       if (this.isStale(circuit)) {
-        staleCircuits.push(circuit.name);
+        this.circuits.delete(name);
+        removed++;
       }
-    });
-
-    for (const name of staleCircuits) {
-      this.circuits.delete(name);
     }
 
-    if (staleCircuits.length > 0) {
+    if (removed > 0) {
       this.loggingService.info({
         type: LogType.CircuitBreakerCleanup,
-        totalCircuits: circuitCount,
-        staleCircuitsRemoved: staleCircuits.length,
+        totalCircuits: totalBefore,
+        staleCircuitsRemoved: removed,
         remainingCircuits: this.circuits.size,
-        removedCircuits: staleCircuits,
-        message: `Cleaned up ${staleCircuits.length} stale circuit(s): ${staleCircuits.join(', ')}`,
+        message: `Cleaned up ${removed} stale circuit(s)`,
       });
     }
   }
@@ -471,18 +464,9 @@ export class CircuitBreakerService {
     const staleRollingWindow =
       this.config.rollingWindow * this.STALE_BUFFER_FACTOR;
 
-    const staleNextAttemptTime = circuit.metrics.nextAttemptTime
-      ? circuit.metrics.nextAttemptTime +
-        this.config.timeout * this.STALE_BUFFER_FACTOR
-      : undefined;
-
-    const isWaitingForNextAttempt =
-      circuit.metrics.state === CircuitState.OPEN &&
-      staleNextAttemptTime &&
-      now < staleNextAttemptTime;
-
     return (
-      timeSinceLastFailure > staleRollingWindow && !isWaitingForNextAttempt
+      circuit.metrics.state === CircuitState.CLOSED &&
+      timeSinceLastFailure > staleRollingWindow
     );
   }
 }
