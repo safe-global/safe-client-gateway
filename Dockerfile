@@ -18,6 +18,7 @@ RUN bun install --frozen-lockfile \
 # PRODUCTION CONTAINER
 #
 FROM oven/bun:1.3.11-alpine AS production
+WORKDIR /app
 USER bun
 
 ARG VERSION
