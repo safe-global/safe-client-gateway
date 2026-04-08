@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { INestApplication } from '@nestjs/common';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import request from 'supertest';
@@ -12,6 +13,10 @@ describe('Root Controller tests', () => {
 
     app = await new TestAppProvider().provide(moduleFixture);
     await app.init();
+  });
+
+  afterEach(async () => {
+    await app.close();
   });
 
   it('should redirect / to /api', async () => {

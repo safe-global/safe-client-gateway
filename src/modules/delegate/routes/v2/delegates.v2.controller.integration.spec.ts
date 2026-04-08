@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { createTestModule } from '@/__tests__/testing-module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
@@ -46,6 +47,10 @@ describe('Delegates controller', () => {
 
     app = await new TestAppProvider().provide(moduleFixture);
     await app.init();
+  });
+
+  afterEach(async () => {
+    await app.close();
   });
 
   describe('GET delegates for a Safe (v2)', () => {
