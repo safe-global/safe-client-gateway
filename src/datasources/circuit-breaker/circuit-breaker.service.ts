@@ -21,6 +21,11 @@ import { LogType } from '@/domain/common/entities/log-type.entity';
  */
 @Injectable()
 export class CircuitBreakerService {
+  /**
+   * Multiplier applied to the rolling window to determine when a circuit
+   * is stale. E.g., with a 60s rolling window, circuits inactive for
+   * 60s * 10 = 10 minutes are considered stale and eligible for cleanup.
+   */
   private readonly STALE_MULTIPLIER: number = 10;
 
   private readonly enabled: boolean;
