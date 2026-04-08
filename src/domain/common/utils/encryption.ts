@@ -5,8 +5,7 @@ import {
   randomBytes,
   scryptSync,
 } from 'crypto';
-import { MAX_DERIVED_KEY_CACHE_SIZE } from '@/datasources/cache/constants';
-
+export const MAX_DERIVED_KEY_CACHE_SIZE = 50;
 const derivedKeyCache = new Map<string, Buffer>();
 
 function getDerivedKey(encryptionKey: string, salt: string): Buffer {
@@ -14,14 +13,25 @@ function getDerivedKey(encryptionKey: string, salt: string): Buffer {
   const cacheKey = `${encryptionKey.length}:${encryptionKey}:${salt}`;
   const cached = derivedKeyCache.get(cacheKey);
   if (cached) {
+    // Promote to end of Map for LRU eviction
+    derivedKeyCache.delete(cacheKey);
+    derivedKeyCache.set(cacheKey, cached);
     return cached;
   }
   const derived = scryptSync(encryptionKey, Buffer.from(salt, 'utf8'), 32);
   if (derivedKeyCache.size >= MAX_DERIVED_KEY_CACHE_SIZE) {
+    // Evict least recently used (first entry in insertion order)
     derivedKeyCache.delete(derivedKeyCache.keys().next().value!);
   }
   derivedKeyCache.set(cacheKey, derived);
   return derived;
+}
+
+/**
+ * Clears the derived key cache. Exported for testing and key rotation.
+ */
+export function clearDerivedKeyCache(): void {
+  derivedKeyCache.clear();
 }
 
 /**

@@ -18,11 +18,3 @@ export const CacheKeyPrefix = Symbol('CacheKeyPrefix');
  * Ref: https://github.com/redis/redis/blob/cc244370a2d622d5d2fec5573ae87de6c59ed3b9/src/expire.c#L573
  */
 export const MAX_TTL = Number.MAX_SAFE_INTEGER - 1;
-
-/**
- * Maximum number of entries in the in-memory derived-key cache used by the
- * encryption utilities. Oldest entries are evicted (FIFO) once this limit
- * is reached, bounding memory usage while avoiding repeated scrypt calls for
- * frequently used (key, salt) pairs.
- */
-export const MAX_DERIVED_KEY_CACHE_SIZE = 50;
