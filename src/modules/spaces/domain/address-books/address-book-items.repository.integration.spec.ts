@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import configuration from '@/config/entities/__tests__/configuration';
 import { postgresConfig } from '@/config/entities/postgres.config';
@@ -9,7 +10,7 @@ import { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
 import { Member } from '@/modules/users/datasources/entities/member.entity.db';
 import { User } from '@/modules/users/datasources/entities/users.entity.db';
 import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
-import { authPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
+import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
 import { nameBuilder } from '@/domain/common/entities/name.builder';
@@ -18,8 +19,6 @@ import type { IAddressBookItemsRepository } from '@/modules/spaces/domain/addres
 import { addressBookItemBuilder } from '@/modules/spaces/domain/address-books/entities/__tests__/address-book-item.db.builder';
 import { spaceBuilder } from '@/modules/spaces/domain/entities/__tests__/space.entity.db.builder';
 import { SpacesRepository } from '@/modules/spaces/domain/spaces.repository';
-import { UsersRepository } from '@/modules/users/domain/users.repository';
-import { WalletsRepository } from '@/modules/wallets/domain/wallets.repository';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { faker } from '@faker-js/faker/.';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
@@ -120,7 +119,6 @@ describe('AddressBookItemsRepository', () => {
     addressBookItemsRepository = new AddressBookItemsRepository(
       dbService,
       new SpacesRepository(dbService, mockConfigurationService),
-      new UsersRepository(dbService, new WalletsRepository(dbService)),
       mockConfigService,
     );
   });
@@ -538,10 +536,13 @@ describe('AddressBookItemsRepository', () => {
     user: User;
     authPayload: AuthPayload;
   }> => {
-    const authPayload = new AuthPayload(authPayloadDtoBuilder().build());
     const user = await dbUserRepo.insert({
       status: 'ACTIVE',
     });
+    const authPayloadDto = siweAuthPayloadDtoBuilder()
+      .with('sub', (user.generatedMaps[0].id as number).toString())
+      .build();
+    const authPayload = new AuthPayload(authPayloadDto);
     await dbWalletRepo.insert({
       user: user.generatedMaps[0],
       address: authPayload.signer_address,

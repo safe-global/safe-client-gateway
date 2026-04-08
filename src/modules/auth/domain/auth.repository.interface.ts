@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { AuthPayloadDto } from '@/modules/auth/domain/entities/auth-payload.entity';
 import type { JwtPayloadWithClaims as AuthPayloadWithClaims } from '@/datasources/jwt/jwt-claims.entity';
 
@@ -16,4 +17,8 @@ export interface IAuthRepository {
   verifyToken(accessToken: string): AuthPayloadDto;
 
   decodeToken(accessToken: string): AuthPayloadWithClaims<AuthPayloadDto>;
+
+  decodeTokenWithoutVerification(
+    accessToken: string,
+  ): AuthPayloadWithClaims<AuthPayloadDto> | null;
 }

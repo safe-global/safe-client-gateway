@@ -330,6 +330,11 @@ export class CircuitBreakerService {
     });
 
     if (circuit.metrics.state === CircuitState.HALF_OPEN) {
+      circuit.metrics.halfOpenRequestCounts = Math.max(
+        0,
+        circuit.metrics.halfOpenRequestCounts - 1,
+      );
+
       if (
         circuit.metrics.consecutiveSuccesses >= circuit.config.successThreshold
       ) {
@@ -387,6 +392,14 @@ export class CircuitBreakerService {
    * @returns {void}
    */
   public recordFailure(circuit: ICircuit): void {
+    if (
+      !this.enabled ||
+      !circuit ||
+      circuit.metrics.state === CircuitState.OPEN
+    ) {
+      return void 0;
+    }
+
     const now = Date.now();
 
     this.discardOldFailures(circuit, now);

@@ -1,7 +1,8 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import configuration from '@/config/entities/__tests__/configuration';
 import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
-import { authPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
+import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { nameBuilder } from '@/domain/common/entities/name.builder';
 import { NotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/notifications.repository.module';
 import { TestNotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/test.notification.repository.module';
@@ -209,7 +210,7 @@ describe('AddressBooksController', () => {
 
     it('should return a 404 if the user does not exist', async () => {
       const { spaceId } = await createSpace();
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const nonExistentUserAccessToken = jwtService.sign(authPayloadDto);
 
       await request(app.getHttpServer())
@@ -239,7 +240,7 @@ describe('AddressBooksController', () => {
 
     it('should return a 403 if the AuthPayload is empty', async () => {
       const { spaceId } = await createSpace();
-      const authPayloadDto = authPayloadDtoBuilder()
+      const authPayloadDto = siweAuthPayloadDtoBuilder()
         .with('signer_address', undefined as unknown as Address)
         .build();
       const accessToken = jwtService.sign(authPayloadDto);
@@ -541,7 +542,7 @@ describe('AddressBooksController', () => {
 
     it('should return a 404 if the user does not exist', async () => {
       const { spaceId } = await createSpace();
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
 
       await request(app.getHttpServer())
@@ -674,7 +675,7 @@ describe('AddressBooksController', () => {
 
     it('should return a 404 if the user does not exist', async () => {
       const { spaceId } = await createSpace();
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const address = getAddress(faker.finance.ethereumAddress());
 
@@ -744,7 +745,7 @@ describe('AddressBooksController', () => {
     spaceId: string;
     accessToken: string;
   }> => {
-    const authPayloadDto = authPayloadDtoBuilder().build();
+    const authPayloadDto = siweAuthPayloadDtoBuilder().build();
     const accessToken = jwtService.sign(authPayloadDto);
     const spaceName = nameBuilder();
     await request(app.getHttpServer())
@@ -764,7 +765,7 @@ describe('AddressBooksController', () => {
     spaceId: string;
     adminAccessToken: string;
   }): Promise<{ memberAccessToken: string }> => {
-    const memberAuthPayloadDto = authPayloadDtoBuilder().build();
+    const memberAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
     const memberAccessToken = jwtService.sign(memberAuthPayloadDto);
     const member = {
       role: 'MEMBER',
