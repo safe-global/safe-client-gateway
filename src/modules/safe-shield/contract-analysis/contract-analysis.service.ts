@@ -65,7 +65,7 @@ export class ContractAnalysisService {
     private readonly dataDecoderApi: IDataDecoderApi,
     @Inject(ITransactionApiManager)
     private readonly transactionApiManager: ITransactionApiManager,
-    private readonly erc20Decoder: Erc20Decoder,
+    @Inject(Erc20Decoder) private readonly erc20Decoder: Erc20Decoder,
     @Inject(CacheService)
     private readonly cacheService: ICacheService,
     @Inject(IConfigurationService)

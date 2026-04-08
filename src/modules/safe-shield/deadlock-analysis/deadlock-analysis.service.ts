@@ -108,10 +108,7 @@ export class DeadlockAnalysisService {
       }),
     );
 
-    return results.reduce<DeadlockAnalysisResponse>(
-      (merged, result) => ({ ...merged, ...result }),
-      {},
-    );
+    return Object.assign({} as DeadlockAnalysisResponse, ...results);
   }
 
   /**

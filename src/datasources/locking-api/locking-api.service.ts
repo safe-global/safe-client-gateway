@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import type { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
+import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import {
   NetworkService,
   type INetworkService,
@@ -24,6 +24,7 @@ export class LockingApi implements ILockingApi {
     private readonly configurationService: IConfigurationService,
     @Inject(NetworkService)
     private readonly networkService: INetworkService,
+    @Inject(HttpErrorFactory)
     private readonly httpErrorFactory: HttpErrorFactory,
   ) {
     this.baseUri =

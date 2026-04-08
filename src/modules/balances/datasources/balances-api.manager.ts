@@ -2,12 +2,12 @@
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { SafeBalancesApi } from '@/modules/balances/datasources/safe-balances-api.service';
 import { IZerionBalancesApi } from '@/modules/balances/datasources/zerion-balances-api.service';
-import type { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
+import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
 import {
   CacheService,
   type ICacheService,
 } from '@/datasources/cache/cache.service.interface';
-import type { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
+import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import {
   type INetworkService,
   NetworkService,
@@ -28,7 +28,6 @@ import type { Address } from 'viem';
 export class BalancesApiManager implements IBalancesApiManager {
   private safeBalancesApiMap: Record<string, SafeBalancesApi> = {};
   private readonly isCounterFactualBalancesEnabled: boolean;
-  private readonly zerionBalancesEnabled: boolean;
   private readonly zerionBalancesApi: IBalancesApi;
   private readonly useVpcUrl: boolean;
 
@@ -36,8 +35,10 @@ export class BalancesApiManager implements IBalancesApiManager {
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
     @Inject(IConfigApi) private readonly configApi: IConfigApi,
+    @Inject(CacheFirstDataSource)
     private readonly dataSource: CacheFirstDataSource,
     @Inject(CacheService) private readonly cacheService: ICacheService,
+    @Inject(HttpErrorFactory)
     private readonly httpErrorFactory: HttpErrorFactory,
     @Inject(IZerionBalancesApi) zerionBalancesApi: IBalancesApi,
     @Inject(IPricesApi) private readonly coingeckoApi: IPricesApi,
@@ -49,9 +50,6 @@ export class BalancesApiManager implements IBalancesApiManager {
       this.configurationService.getOrThrow<boolean>(
         'features.counterfactualBalances',
       );
-    this.zerionBalancesEnabled = this.configurationService.getOrThrow<boolean>(
-      'features.zerionBalancesEnabled',
-    );
     this.useVpcUrl = this.configurationService.getOrThrow<boolean>(
       'safeTransaction.useVpcUrl',
     );
@@ -70,9 +68,8 @@ export class BalancesApiManager implements IBalancesApiManager {
     const isSafe = await transactionApi.isSafe(safeAddress);
     if (isSafe) {
       return this._getSafeBalancesApi(chainId);
-    } else {
-      return this.zerionBalancesApi;
     }
+    return this.zerionBalancesApi;
   }
 
   async getFiatCodes(): Promise<Raw<Array<string>>> {

@@ -5,7 +5,7 @@ import {
   CacheService,
   type ICacheService,
 } from '@/datasources/cache/cache.service.interface';
-import type { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
+import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { KilnApi } from '@/modules/staking/datasources/kiln-api.service';
 import { ChainSchema } from '@/modules/chains/domain/entities/schemas/chain.schema';
 import { IConfigApi } from '@/domain/interfaces/config-api.interface';
@@ -22,10 +22,12 @@ export class EarnApiManager implements IStakingApiManager {
   private readonly apis: Record<string, IStakingApi> = {};
 
   constructor(
+    @Inject(CacheFirstDataSource)
     private readonly dataSource: CacheFirstDataSource,
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
     @Inject(IConfigApi) private readonly configApi: IConfigApi,
+    @Inject(HttpErrorFactory)
     private readonly httpErrorFactory: HttpErrorFactory,
     @Inject(CacheService)
     private readonly cacheService: ICacheService,

@@ -59,8 +59,7 @@ export class HooksRepository implements IHooksRepository, OnModuleInit {
       ]).finally(() => {
         this.eventCacheHelper.onEventLog(event);
       });
-    } else {
-      return this.eventCacheHelper.onUnsupportedChainEvent(event);
     }
+    return this.eventCacheHelper.onUnsupportedChainEvent(event);
   }
 }

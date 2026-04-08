@@ -24,6 +24,7 @@ export class TenderlyApi implements IAlertsApi {
     private readonly configurationService: IConfigurationService,
     @Inject(NetworkService)
     private readonly networkService: INetworkService,
+    @Inject(HttpErrorFactory)
     private readonly httpErrorFactory: HttpErrorFactory,
   ) {
     this.apiKey =

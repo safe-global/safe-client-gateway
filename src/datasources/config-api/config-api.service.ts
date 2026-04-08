@@ -26,10 +26,12 @@ export class ConfigApi implements IConfigApi {
   private readonly areConfigHooksDebugLogsEnabled: boolean;
 
   constructor(
+    @Inject(CacheFirstDataSource)
     private readonly dataSource: CacheFirstDataSource,
     @Inject(CacheService) private readonly cacheService: ICacheService,
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
+    @Inject(HttpErrorFactory)
     private readonly httpErrorFactory: HttpErrorFactory,
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
   ) {

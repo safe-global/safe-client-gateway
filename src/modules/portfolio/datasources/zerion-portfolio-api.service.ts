@@ -64,10 +64,10 @@ export class ZerionPortfolioApi implements IPortfolioApi {
     @Inject(NetworkService) private readonly networkService: INetworkService,
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
+    @Inject(HttpErrorFactory)
     private readonly httpErrorFactory: HttpErrorFactory,
-    @Inject(LoggingService)
-    private readonly loggingService: ILoggingService,
-    @Inject(CacheService) private readonly cacheService: ICacheService,
+    @Inject(LoggingService) readonly _loggingService: ILoggingService,
+    @Inject(CacheService) readonly _cacheService: ICacheService,
     private readonly zerionChainMappingService: ZerionChainMappingService,
   ) {
     this.apiKey = this.configurationService.get<string>(

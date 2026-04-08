@@ -55,7 +55,6 @@ export class ZerionBalancesApi implements IBalancesApi {
   private readonly apiKey: string | undefined;
   private readonly baseUri: string;
   private readonly defaultExpirationTimeInSeconds: number;
-  private readonly defaultNotFoundExpirationTimeSeconds: number;
   private readonly fiatCodes: Array<string>;
   // Number of seconds for each rate-limit cycle
   private readonly limitPeriodSeconds: number;
@@ -80,6 +79,7 @@ export class ZerionBalancesApi implements IBalancesApi {
     @Inject(NetworkService) private readonly networkService: INetworkService,
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
+    @Inject(HttpErrorFactory)
     private readonly httpErrorFactory: HttpErrorFactory,
   ) {
     this.apiKey = this.configurationService.get<string>(
@@ -91,10 +91,6 @@ export class ZerionBalancesApi implements IBalancesApi {
     this.defaultExpirationTimeInSeconds =
       this.configurationService.getOrThrow<number>(
         'expirationTimeInSeconds.default',
-      );
-    this.defaultNotFoundExpirationTimeSeconds =
-      this.configurationService.getOrThrow<number>(
-        'expirationTimeInSeconds.notFound.default',
       );
     this.fiatCodes = this.configurationService.getOrThrow<Array<string>>(
       'balances.providers.zerion.currencies',
@@ -204,42 +200,41 @@ export class ZerionBalancesApi implements IBalancesApi {
       this.loggingService.debug({ type: LogType.CacheHit, key, field });
       const data = ZerionCollectiblesSchema.parse(JSON.parse(cached));
       return this._buildCollectiblesPage(data.links.next, data.data);
-    } else {
-      try {
-        await this._checkRateLimit();
-        const chainName = await this._getChainName(args.chain);
-        const url = `${this.baseUri}/v1/wallets/${args.safeAddress}/nft-positions`;
-        const pageAfter = this._encodeZerionPageOffset(args.offset);
-        const networkRequest = {
-          headers: getZerionHeaders(this.apiKey, args.chain.isTestnet),
-          params: {
-            'filter[chain_ids]': chainName,
-            sort: ZerionBalancesApi.COLLECTIBLES_SORTING,
-            'page[size]': args.limit,
-            ...(pageAfter && { 'page[after]': pageAfter }),
-          },
-        };
-        const zerionCollectibles = await this.networkService
-          .get<ZerionCollectibles>({
-            url,
-            networkRequest,
-          })
-          .then(({ data }) => ZerionCollectiblesSchema.parse(data));
-        await this.cacheService.hSet(
-          cacheDir,
-          JSON.stringify(zerionCollectibles),
-          this.defaultExpirationTimeInSeconds,
-        );
-        return this._buildCollectiblesPage(
-          zerionCollectibles.links.next,
-          zerionCollectibles.data,
-        );
-      } catch (error) {
-        if (error instanceof ZodError) {
-          throw error;
-        }
-        throw this.httpErrorFactory.from(error);
+    }
+    try {
+      await this._checkRateLimit();
+      const chainName = await this._getChainName(args.chain);
+      const url = `${this.baseUri}/v1/wallets/${args.safeAddress}/nft-positions`;
+      const pageAfter = this._encodeZerionPageOffset(args.offset);
+      const networkRequest = {
+        headers: getZerionHeaders(this.apiKey, args.chain.isTestnet),
+        params: {
+          'filter[chain_ids]': chainName,
+          sort: ZerionBalancesApi.COLLECTIBLES_SORTING,
+          'page[size]': args.limit,
+          ...(pageAfter && { 'page[after]': pageAfter }),
+        },
+      };
+      const zerionCollectibles = await this.networkService
+        .get<ZerionCollectibles>({
+          url,
+          networkRequest,
+        })
+        .then(({ data }) => ZerionCollectiblesSchema.parse(data));
+      await this.cacheService.hSet(
+        cacheDir,
+        JSON.stringify(zerionCollectibles),
+        this.defaultExpirationTimeInSeconds,
+      );
+      return this._buildCollectiblesPage(
+        zerionCollectibles.links.next,
+        zerionCollectibles.data,
+      );
+    } catch (error) {
+      if (error instanceof ZodError) {
+        throw error;
       }
+      throw this.httpErrorFactory.from(error);
     }
   }
 

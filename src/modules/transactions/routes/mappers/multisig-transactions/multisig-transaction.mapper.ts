@@ -24,13 +24,21 @@ export class MultisigTransactionMapper {
   constructor(
     @Inject(IDataDecoderRepository)
     private readonly dataDecoderRepository: IDataDecoderRepository,
+    @Inject(MultisigTransactionStatusMapper)
     private readonly statusMapper: MultisigTransactionStatusMapper,
+    @Inject(MultisigTransactionInfoMapper)
     private readonly transactionInfoMapper: MultisigTransactionInfoMapper,
+    @Inject(MultisigTransactionExecutionInfoMapper)
     private readonly executionInfoMapper: MultisigTransactionExecutionInfoMapper,
+    @Inject(SafeAppInfoMapper)
     private readonly safeAppInfoMapper: SafeAppInfoMapper,
+    @Inject(MultisigTransactionNoteMapper)
     private readonly noteMapper: MultisigTransactionNoteMapper,
+    @Inject(TransactionVerifierHelper)
     private readonly transactionVerifier: TransactionVerifierHelper,
+    @Inject(AddressInfoHelper)
     private readonly addressInfoHelper: AddressInfoHelper,
+    @Inject(DataDecodedParamHelper)
     private readonly dataDecodedParamHelper: DataDecodedParamHelper,
   ) {}
 

@@ -25,6 +25,7 @@ export class Auth0Api implements IAuth0Api {
     private readonly networkService: INetworkService,
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
+    @Inject(HttpErrorFactory)
     private readonly httpErrorFactory: HttpErrorFactory,
   ) {
     const prefix = 'auth.auth0';

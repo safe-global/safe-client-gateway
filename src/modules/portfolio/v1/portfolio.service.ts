@@ -15,6 +15,7 @@ export class PortfolioApiService {
   constructor(
     @Inject(DomainPortfolioService)
     private readonly domainPortfolioService: DomainPortfolioService,
+    @Inject(PortfolioRouteMapper)
     private readonly portfolioRouteMapper: PortfolioRouteMapper,
     @Inject(IChainsRepository)
     private readonly chainsRepository: IChainsRepository,

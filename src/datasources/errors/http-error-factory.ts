@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { HttpStatus, Injectable } from '@nestjs/common';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 import { DataSourceError } from '@/domain/errors/data-source.error';
@@ -18,11 +19,10 @@ export class HttpErrorFactory {
     if (source instanceof NetworkResponseError) {
       const errorMessage = get(source, 'data.message', 'An error occurred');
       return new DataSourceError(errorMessage, source.response.status);
-    } else {
-      return new DataSourceError(
-        'Service unavailable',
-        HttpStatus.SERVICE_UNAVAILABLE,
-      );
     }
+    return new DataSourceError(
+      'Service unavailable',
+      HttpStatus.SERVICE_UNAVAILABLE,
+    );
   }
 }

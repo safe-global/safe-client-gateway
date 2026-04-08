@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { Controller, Get, Param } from '@nestjs/common';
+import { Inject, Controller, Get, Param } from '@nestjs/common';
 import {
   ApiOkResponse,
   ApiTags,
@@ -20,7 +20,10 @@ import type { Address } from 'viem';
   version: '1',
 })
 export class ContractsController {
-  constructor(private readonly contractsService: ContractsService) {}
+  constructor(
+    @Inject(ContractsService)
+    private readonly contractsService: ContractsService,
+  ) {}
 
   @ApiOperation({
     summary: 'Get contract information',

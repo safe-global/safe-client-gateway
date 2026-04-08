@@ -149,14 +149,14 @@ describe('SpacesRepository', () => {
   // As the triggers are set on the database level, Jest's fake timers are not accurate
   describe('createdAt/updatedAt', () => {
     it('should set createdAt and updatedAt when creating a Space', async () => {
-      const before = new Date().getTime();
+      const before = Date.now();
 
       const space = await dbSpacesRepository.insert({
         name: faker.word.noun(),
         status: 'ACTIVE',
       });
 
-      const after = new Date().getTime();
+      const after = Date.now();
 
       const createdAt = space.generatedMaps[0].createdAt;
       const updatedAt = space.generatedMaps[0].updatedAt;
@@ -376,7 +376,9 @@ describe('SpacesRepository', () => {
           name: spaceName,
           status: spaceStatus,
         })
-        .catch(() => {});
+        .catch(() => {
+          /* expected */
+        });
 
       await expect(dbUserRepo.find()).resolves.toEqual([]);
       await expect(dbMembersRepository.find()).resolves.toEqual([]);

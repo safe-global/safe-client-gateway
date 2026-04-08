@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import type { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
 import { CacheRouter } from '@/datasources/cache/cache.router';
@@ -223,12 +224,11 @@ export class TransactionApi implements ITransactionApi {
       });
 
       return cached === 'true';
-    } else {
-      this.loggingService.debug({
-        type: LogType.CacheMiss,
-        ...cacheDir,
-      });
     }
+    this.loggingService.debug({
+      type: LogType.CacheMiss,
+      ...cacheDir,
+    });
 
     const isSafe = await (async (): Promise<boolean> => {
       try {

@@ -1013,55 +1013,54 @@ describe('Messages controller', () => {
         expect(loggingService.error).not.toHaveBeenCalled();
       });
 
-      it.each(Object.values(SignatureType))(
-        'should throw and log if a %s signature is invalid',
-        async (signatureType) => {
-          const chain = chainBuilder().build();
-          const privateKey = generatePrivateKey();
-          const signer = privateKeyToAccount(privateKey);
-          const safe = safeBuilder().with('owners', [signer.address]).build();
-          const message = await messageBuilder()
-            .with('safe', safe.address)
-            .buildWithConfirmations({
-              chainId: chain.chainId,
-              safe,
-              signers: [signer],
-              signatureType,
-            });
-          const v = message.confirmations[0].signature?.slice(-2);
-          networkService.get.mockImplementation(({ url }) => {
-            switch (url) {
-              case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
-                return Promise.resolve({ data: rawify(chain), status: 200 });
-              case `${chain.transactionService}/api/v1/safes/${safe.address}`:
-                return Promise.resolve({
-                  data: rawify(safe),
-                  status: 200,
-                });
-              default:
-                return Promise.reject(new Error(`Could not match ${url}`));
-            }
+      it.each(
+        Object.values(SignatureType),
+      )('should throw and log if a %s signature is invalid', async (signatureType) => {
+        const chain = chainBuilder().build();
+        const privateKey = generatePrivateKey();
+        const signer = privateKeyToAccount(privateKey);
+        const safe = safeBuilder().with('owners', [signer.address]).build();
+        const message = await messageBuilder()
+          .with('safe', safe.address)
+          .buildWithConfirmations({
+            chainId: chain.chainId,
+            safe,
+            signers: [signer],
+            signatureType,
+          });
+        const v = message.confirmations[0].signature?.slice(-2);
+        networkService.get.mockImplementation(({ url }) => {
+          switch (url) {
+            case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+              return Promise.resolve({ data: rawify(chain), status: 200 });
+            case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+              return Promise.resolve({
+                data: rawify(safe),
+                status: 200,
+              });
+            default:
+              return Promise.reject(new Error(`Could not match ${url}`));
+          }
+        });
+
+        await request(app.getHttpServer())
+          .post(`/v1/chains/${chain.chainId}/safes/${safe.address}/messages`)
+          .send(
+            createMessageDtoBuilder()
+              .with('message', message.message)
+              .with('signature', `0x${'-'.repeat(128)}${v}`)
+              .build(),
+          )
+          .expect(422)
+          .expect({
+            statusCode: 422,
+            code: 'custom',
+            message: 'Invalid "0x" notated hex string',
+            path: ['signature'],
           });
 
-          await request(app.getHttpServer())
-            .post(`/v1/chains/${chain.chainId}/safes/${safe.address}/messages`)
-            .send(
-              createMessageDtoBuilder()
-                .with('message', message.message)
-                .with('signature', `0x${'-'.repeat(128)}${v}`)
-                .build(),
-            )
-            .expect(422)
-            .expect({
-              statusCode: 422,
-              code: 'custom',
-              message: 'Invalid "0x" notated hex string',
-              path: ['signature'],
-            });
-
-          expect(loggingService.error).not.toHaveBeenCalled();
-        },
-      );
+        expect(loggingService.error).not.toHaveBeenCalled();
+      });
 
       it('should throw and log if the signer is blocked', async () => {
         const chain = chainBuilder().build();
@@ -1574,63 +1573,62 @@ describe('Messages controller', () => {
         expect(loggingService.error).not.toHaveBeenCalled();
       });
 
-      it.each(Object.values(SignatureType))(
-        'should throw and log if a %s signature is invalid',
-        async (signatureType) => {
-          const chain = chainBuilder().build();
-          const privateKey = generatePrivateKey();
-          const signer = privateKeyToAccount(privateKey);
-          const safe = safeBuilder().with('owners', [signer.address]).build();
-          const message = await messageBuilder()
-            .with('safeAppId', null)
-            .with('safe', safe.address)
-            .with('created', faker.date.recent())
-            .buildWithConfirmations({
-              chainId: chain.chainId,
-              safe,
-              signers: [signer],
-              signatureType,
-            });
-          const v = message.confirmations[0].signature?.slice(-2);
-          networkService.get.mockImplementation(({ url }) => {
-            switch (url) {
-              case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
-                return Promise.resolve({ data: rawify(chain), status: 200 });
-              case `${chain.transactionService}/api/v1/safes/${safe.address}`:
-                return Promise.resolve({
-                  data: rawify(safe),
-                  status: 200,
-                });
-              case `${chain.transactionService}/api/v1/messages/${message.messageHash}`:
-                return Promise.resolve({
-                  data: rawify(messageToJson(message)),
-                  status: 200,
-                });
-              default:
-                return Promise.reject(new Error(`Could not match ${url}`));
-            }
+      it.each(
+        Object.values(SignatureType),
+      )('should throw and log if a %s signature is invalid', async (signatureType) => {
+        const chain = chainBuilder().build();
+        const privateKey = generatePrivateKey();
+        const signer = privateKeyToAccount(privateKey);
+        const safe = safeBuilder().with('owners', [signer.address]).build();
+        const message = await messageBuilder()
+          .with('safeAppId', null)
+          .with('safe', safe.address)
+          .with('created', faker.date.recent())
+          .buildWithConfirmations({
+            chainId: chain.chainId,
+            safe,
+            signers: [signer],
+            signatureType,
+          });
+        const v = message.confirmations[0].signature?.slice(-2);
+        networkService.get.mockImplementation(({ url }) => {
+          switch (url) {
+            case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+              return Promise.resolve({ data: rawify(chain), status: 200 });
+            case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+              return Promise.resolve({
+                data: rawify(safe),
+                status: 200,
+              });
+            case `${chain.transactionService}/api/v1/messages/${message.messageHash}`:
+              return Promise.resolve({
+                data: rawify(messageToJson(message)),
+                status: 200,
+              });
+            default:
+              return Promise.reject(new Error(`Could not match ${url}`));
+          }
+        });
+
+        await request(app.getHttpServer())
+          .post(
+            `/v1/chains/${chain.chainId}/messages/${message.messageHash}/signatures`,
+          )
+          .send(
+            updateMessageSignatureDtoBuilder()
+              .with('signature', `0x${'-'.repeat(128)}${v}`)
+              .build(),
+          )
+          .expect(422)
+          .expect({
+            statusCode: 422,
+            code: 'custom',
+            message: 'Invalid "0x" notated hex string',
+            path: ['signature'],
           });
 
-          await request(app.getHttpServer())
-            .post(
-              `/v1/chains/${chain.chainId}/messages/${message.messageHash}/signatures`,
-            )
-            .send(
-              updateMessageSignatureDtoBuilder()
-                .with('signature', `0x${'-'.repeat(128)}${v}`)
-                .build(),
-            )
-            .expect(422)
-            .expect({
-              statusCode: 422,
-              code: 'custom',
-              message: 'Invalid "0x" notated hex string',
-              path: ['signature'],
-            });
-
-          expect(loggingService.error).not.toHaveBeenCalled();
-        },
-      );
+        expect(loggingService.error).not.toHaveBeenCalled();
+      });
 
       it('should throw and log if the signer is blocked', async () => {
         const chain = chainBuilder().build();

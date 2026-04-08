@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import {
+  Inject,
   Controller,
   DefaultValuePipe,
   Get,
@@ -24,7 +25,9 @@ import type { Address } from 'viem';
   version: '2',
 })
 export class CollectiblesController {
-  constructor(private readonly service: CollectiblesService) {}
+  constructor(
+    @Inject(CollectiblesService) private readonly service: CollectiblesService,
+  ) {}
 
   @ApiOkResponse({ type: CollectiblePage })
   @ApiQuery({

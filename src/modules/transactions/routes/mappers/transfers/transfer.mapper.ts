@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import type { Safe } from '@/modules/safe/domain/entities/safe.entity';
 import type { Transfer } from '@/modules/safe/domain/entities/transfer.entity';
 import {
@@ -15,7 +15,10 @@ import { isSwapTransferTransactionInfo } from '@/modules/transactions/routes/swa
 
 @Injectable()
 export class TransferMapper {
-  constructor(private readonly transferInfoMapper: TransferInfoMapper) {}
+  constructor(
+    @Inject(TransferInfoMapper)
+    private readonly transferInfoMapper: TransferInfoMapper,
+  ) {}
 
   private async mapTransfer(
     chainId: string,

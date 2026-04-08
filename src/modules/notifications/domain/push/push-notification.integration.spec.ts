@@ -251,48 +251,47 @@ describe('Push notification queue integration', () => {
       ],
     ];
 
-    it.each(externalTransferCases)(
-      'should deliver for %s when transfer is from external address',
-      async (_type, factory) => {
-        const safeAddress = addr();
-        const { event, transfer } = factory(safeAddress);
-        currentChainId = event.chainId;
-        const chain = chainBuilder().with('chainId', event.chainId).build();
-        const subs = createSubscribers(1);
+    it.each(
+      externalTransferCases,
+    )('should deliver for %s when transfer is from external address', async (_type, factory) => {
+      const safeAddress = addr();
+      const { event, transfer } = factory(safeAddress);
+      currentChainId = event.chainId;
+      const chain = chainBuilder().with('chainId', event.chainId).build();
+      const subs = createSubscribers(1);
 
-        notificationsRepository.getSubscribersBySafe.mockResolvedValue(subs);
-        notificationsRepository.enqueueNotification.mockResolvedValue();
-        networkService.get.mockImplementation(({ url }) => {
-          if (url === `${safeConfigUrl}/api/v1/chains/${event.chainId}`) {
-            return Promise.resolve({ data: rawify(chain), status: 200 });
-          }
-          if (
-            url ===
-            `${chain.transactionService}/api/v1/safes/${event.address}/incoming-transfers/`
-          ) {
-            return Promise.resolve({
-              data: rawify(
-                pageBuilder()
-                  .with('results', [transfer as never])
-                  .build(),
-              ),
-              status: 200,
-            });
-          }
-          return Promise.reject(`No matching rule for url: ${url}`);
-        });
+      notificationsRepository.getSubscribersBySafe.mockResolvedValue(subs);
+      notificationsRepository.enqueueNotification.mockResolvedValue();
+      networkService.get.mockImplementation(({ url }) => {
+        if (url === `${safeConfigUrl}/api/v1/chains/${event.chainId}`) {
+          return Promise.resolve({ data: rawify(chain), status: 200 });
+        }
+        if (
+          url ===
+          `${chain.transactionService}/api/v1/safes/${event.address}/incoming-transfers/`
+        ) {
+          return Promise.resolve({
+            data: rawify(
+              pageBuilder()
+                .with('results', [transfer as never])
+                .build(),
+            ),
+            status: 200,
+          });
+        }
+        return Promise.reject(`No matching rule for url: ${url}`);
+      });
 
-        await pushNotificationService.enqueueEvent(event);
+      await pushNotificationService.enqueueEvent(event);
 
-        await retry(async () => {
-          const counts = await queue.getJobCounts();
-          expect(counts.active + counts.waiting + counts.delayed).toBe(0);
-          expect(
-            notificationsRepository.enqueueNotification,
-          ).toHaveBeenCalledTimes(1);
-        });
-      },
-    );
+      await retry(async () => {
+        const counts = await queue.getJobCounts();
+        expect(counts.active + counts.waiting + counts.delayed).toBe(0);
+        expect(
+          notificationsRepository.enqueueNotification,
+        ).toHaveBeenCalledTimes(1);
+      });
+    });
 
     const selfSendCases: Array<[string, IncomingAssetFactory]> = [
       [
@@ -323,48 +322,47 @@ describe('Push notification queue integration', () => {
       ],
     ];
 
-    it.each(selfSendCases)(
-      'should suppress %s when transfer is self-send',
-      async (_type, factory) => {
-        const safeAddress = addr();
-        const { event, transfer } = factory(safeAddress);
-        currentChainId = event.chainId;
-        const chain = chainBuilder().with('chainId', event.chainId).build();
-        const subs = createSubscribers(1);
+    it.each(
+      selfSendCases,
+    )('should suppress %s when transfer is self-send', async (_type, factory) => {
+      const safeAddress = addr();
+      const { event, transfer } = factory(safeAddress);
+      currentChainId = event.chainId;
+      const chain = chainBuilder().with('chainId', event.chainId).build();
+      const subs = createSubscribers(1);
 
-        notificationsRepository.getSubscribersBySafe.mockResolvedValue(subs);
-        networkService.get.mockImplementation(({ url }) => {
-          if (url === `${safeConfigUrl}/api/v1/chains/${event.chainId}`) {
-            return Promise.resolve({ data: rawify(chain), status: 200 });
-          }
-          if (
-            url ===
-            `${chain.transactionService}/api/v1/safes/${event.address}/incoming-transfers/`
-          ) {
-            return Promise.resolve({
-              data: rawify(
-                pageBuilder()
-                  .with('results', [transfer as never])
-                  .build(),
-              ),
-              status: 200,
-            });
-          }
-          return Promise.reject(`No matching rule for url: ${url}`);
-        });
+      notificationsRepository.getSubscribersBySafe.mockResolvedValue(subs);
+      networkService.get.mockImplementation(({ url }) => {
+        if (url === `${safeConfigUrl}/api/v1/chains/${event.chainId}`) {
+          return Promise.resolve({ data: rawify(chain), status: 200 });
+        }
+        if (
+          url ===
+          `${chain.transactionService}/api/v1/safes/${event.address}/incoming-transfers/`
+        ) {
+          return Promise.resolve({
+            data: rawify(
+              pageBuilder()
+                .with('results', [transfer as never])
+                .build(),
+            ),
+            status: 200,
+          });
+        }
+        return Promise.reject(`No matching rule for url: ${url}`);
+      });
 
-        await pushNotificationService.enqueueEvent(event);
+      await pushNotificationService.enqueueEvent(event);
 
-        await retry(async () => {
-          const counts = await queue.getJobCounts();
-          expect(counts.active + counts.waiting + counts.delayed).toBe(0);
-        });
+      await retry(async () => {
+        const counts = await queue.getJobCounts();
+        expect(counts.active + counts.waiting + counts.delayed).toBe(0);
+      });
 
-        expect(
-          notificationsRepository.enqueueNotification,
-        ).not.toHaveBeenCalled();
-      },
-    );
+      expect(
+        notificationsRepository.enqueueNotification,
+      ).not.toHaveBeenCalled();
+    });
   });
 
   describe('PENDING_MULTISIG_TRANSACTION filtering', () => {

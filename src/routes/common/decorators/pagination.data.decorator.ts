@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { ExecutionContext } from '@nestjs/common';
 import { createParamDecorator } from '@nestjs/common';
 import { getRouteUrl } from '@/routes/common/decorators/utils';
@@ -11,7 +12,7 @@ import type { Request } from 'express';
  * If the cursor does not exist or is invalid a default one is returned instead
  */
 export const PaginationDataDecorator = createParamDecorator(
-  (data: unknown, ctx: ExecutionContext): PaginationData => {
+  (_data: unknown, ctx: ExecutionContext): PaginationData => {
     const request: Request = ctx.switchToHttp().getRequest();
     return PaginationData.fromCursor(getRouteUrl(request));
   },

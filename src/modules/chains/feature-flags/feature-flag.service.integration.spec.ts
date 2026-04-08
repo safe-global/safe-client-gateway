@@ -87,7 +87,9 @@ describe('FeatureFlagService Integration', () => {
       });
       const app = await new TestAppProvider().provide(moduleFixture);
       await app.init();
-      await featureFlagSvc.isFeatureEnabled('1', 'test').catch(() => {});
+      await featureFlagSvc.isFeatureEnabled('1', 'test').catch(() => {
+        /* expected */
+      });
 
       expect(networkService.get).toHaveBeenCalledWith(
         expect.objectContaining({

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { NotificationSubscription } from '@/modules/notifications/datasources/entities/notification-subscription.entity.db';
 import { RowSchema } from '@/datasources/db/v1/entities/row.entity';
 import { DeviceType } from '@/modules/notifications/domain/v2/entities/device-type.entity';
@@ -20,9 +21,9 @@ export const NotificationDeviceSchema = RowSchema.extend({
 
 @Entity('push_notification_devices')
 @Unique('device_uuid', ['device_uuid'])
-export class NotificationDevice implements z.infer<
-  typeof NotificationDeviceSchema
-> {
+export class NotificationDevice
+  implements z.infer<typeof NotificationDeviceSchema>
+{
   @PrimaryGeneratedColumn()
   id!: number;
 

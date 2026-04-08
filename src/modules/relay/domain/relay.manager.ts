@@ -2,7 +2,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type { IRelayManager } from '@/modules/relay/domain/interfaces/relay-manager.interface';
 import type { IRelayer } from '@/modules/relay/domain/interfaces/relayer.interface';
-import type { DailyLimitRelayer } from '@/modules/relay/domain/relayers/daily-limit.relayer';
+import { DailyLimitRelayer } from '@/modules/relay/domain/relayers/daily-limit.relayer';
 import { NoFeeCampaignRelayer } from '@/modules/relay/domain/relayers/no-fee-campaign.relayer';
 import { RelayFeeRelayer } from '@/modules/relay/domain/relayers/relay-fee.relayer';
 import { IConfigurationService } from '@/config/configuration.service.interface';
@@ -17,7 +17,9 @@ export class RelayManager implements IRelayManager {
 
   constructor(
     @Inject(IConfigurationService) configurationService: IConfigurationService,
+    @Inject(DailyLimitRelayer)
     private readonly dailyLimitRelayer: DailyLimitRelayer,
+    @Inject(NoFeeCampaignRelayer)
     private readonly noFeeCampaignRelayer: NoFeeCampaignRelayer,
     private readonly relayFeeRelayer: RelayFeeRelayer,
   ) {

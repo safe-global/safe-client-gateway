@@ -49,12 +49,17 @@ import { CommonStatus } from '@/modules/safe-shield/entities/analysis-result.ent
 @Injectable()
 export class SafeShieldService {
   constructor(
+    @Inject(RecipientAnalysisService)
     private readonly recipientAnalysisService: RecipientAnalysisService,
+    @Inject(ContractAnalysisService)
     private readonly contractAnalysisService: ContractAnalysisService,
+    @Inject(DeadlockAnalysisService)
     private readonly deadlockAnalysisService: DeadlockAnalysisService,
+    @Inject(ThreatAnalysisService)
     private readonly threatAnalysisService: ThreatAnalysisService,
     @Inject(LoggingService)
     private readonly loggingService: ILoggingService,
+    @Inject(TransactionsService)
     private readonly transactionsService: TransactionsService,
     @Inject(IConfigApi)
     private readonly configApi: IConfigApi,

@@ -11,12 +11,13 @@ import {
   type ILoggingService,
   LoggingService,
 } from '@/logging/logging.interface';
-import type { HttpAdapterHost } from '@nestjs/core';
+import { HttpAdapterHost } from '@nestjs/core';
 import { HttpExceptionNoLog } from '@/domain/common/errors/http-exception-no-log.error';
 
 @Catch()
 export class GlobalErrorFilter implements ExceptionFilter {
   constructor(
+    @Inject(HttpAdapterHost)
     private readonly httpAdapterHost: HttpAdapterHost,
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
   ) {}

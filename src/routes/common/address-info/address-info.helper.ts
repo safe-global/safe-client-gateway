@@ -95,7 +95,7 @@ export class AddressInfoHelper {
     ).then((results) =>
       results.map((result) => {
         if (result.status == 'fulfilled') return result.value;
-        else throw new Error('Error processing address collection');
+        throw new Error('Error processing address collection');
       }),
     );
   }

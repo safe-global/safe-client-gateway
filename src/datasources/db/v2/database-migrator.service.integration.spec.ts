@@ -84,7 +84,9 @@ describe('PostgresDatabaseService', () => {
     await moduleRef.close();
   });
 
-  beforeEach(() => {});
+  beforeEach(() => {
+    /* reset */
+  });
 
   afterEach(() => {
     jest.resetAllMocks();

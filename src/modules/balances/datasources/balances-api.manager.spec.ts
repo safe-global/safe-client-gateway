@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import { BalancesApiManager } from '@/modules/balances/datasources/balances-api.manager';
 import type { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
@@ -78,7 +79,7 @@ beforeEach(() => {
     if (key === 'features.zerionBalancesEnabled') return false;
     if (key === 'features.counterfactualBalances') return true;
     // TODO: Remove after Vault decoding has been released
-    else if (key === 'application.isProduction') return true;
+    if (key === 'application.isProduction') return true;
   });
 });
 
@@ -127,14 +128,14 @@ describe('Balances API Manager Tests', () => {
       const notFoundExpireTimeSeconds = faker.number.int();
       configurationServiceMock.getOrThrow.mockImplementation((key) => {
         if (key === 'safeTransaction.useVpcUrl') return useVpcUrl;
-        else if (key === 'expirationTimeInSeconds.default')
+        if (key === 'expirationTimeInSeconds.default')
           return expirationTimeInSeconds;
-        else if (key === 'expirationTimeInSeconds.notFound.default')
+        if (key === 'expirationTimeInSeconds.notFound.default')
           return notFoundExpireTimeSeconds;
-        else if (key === 'features.zerionBalancesEnabled') return false;
-        else if (key === 'features.counterfactualBalances') return true;
+        if (key === 'features.zerionBalancesEnabled') return false;
+        if (key === 'features.counterfactualBalances') return true;
         // TODO: Remove after Vault decoding has been released
-        else if (key === 'application.isProduction') return true;
+        if (key === 'application.isProduction') return true;
         throw new Error(`Unexpected key: ${key}`);
       });
       configApiMock.getChain.mockResolvedValue(rawify(chain));

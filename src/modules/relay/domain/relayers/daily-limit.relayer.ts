@@ -4,7 +4,7 @@ import type { Address } from 'viem';
 import type { IRelayer } from '@/modules/relay/domain/interfaces/relayer.interface';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { IRelayApi } from '@/domain/interfaces/relay-api.interface';
-import type { LimitAddressesMapper } from '@/modules/relay/domain/limit-addresses.mapper';
+import { LimitAddressesMapper } from '@/modules/relay/domain/limit-addresses.mapper';
 import {
   type ILoggingService,
   LoggingService,
@@ -21,6 +21,7 @@ export class DailyLimitRelayer implements IRelayer {
   constructor(
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
     @Inject(IConfigurationService) configurationService: IConfigurationService,
+    @Inject(LimitAddressesMapper)
     private readonly limitAddressesMapper: LimitAddressesMapper,
     @Inject(IRelayApi) private readonly relayApi: IRelayApi,
   ) {

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { networkStatsBuilder } from '@/modules/staking/datasources/entities/__tests__/network-stats.entity.builder';
 import type { NetworkStats } from '@/modules/staking/datasources/entities/network-stats.entity';
 import { NetworkStatsSchema } from '@/modules/staking/datasources/entities/network-stats.entity';
@@ -82,17 +83,16 @@ describe('NetworkStatsSchema', () => {
     expect(result.success && result.data.updated_at).toStrictEqual(updatedAt);
   });
 
-  it.each(Object.keys(NetworkStatsSchema.shape) as Array<keyof NetworkStats>)(
-    'should not validate missing %s values',
-    (key) => {
-      const networkStats = networkStatsBuilder().build();
-      delete networkStats[key];
+  it.each(
+    Object.keys(NetworkStatsSchema.shape) as Array<keyof NetworkStats>,
+  )('should not validate missing %s values', (key) => {
+    const networkStats = networkStatsBuilder().build();
+    delete networkStats[key];
 
-      const result = NetworkStatsSchema.safeParse(networkStats);
+    const result = NetworkStatsSchema.safeParse(networkStats);
 
-      expect(!result.success && result.error.issues[0].path[0]).toBe(key);
-    },
-  );
+    expect(!result.success && result.error.issues[0].path[0]).toBe(key);
+  });
 
   it('should not validate an invalid NetworkStats object', () => {
     const networkStats = {

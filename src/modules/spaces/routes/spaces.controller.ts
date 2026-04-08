@@ -11,6 +11,7 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import {
+  Inject,
   Body,
   Controller,
   Delete,
@@ -48,7 +49,9 @@ import { SpacesCreationRateLimitGuard } from '@/modules/spaces/routes/guards/spa
 @UseGuards(AuthGuard)
 @Controller({ path: 'spaces', version: '1' })
 export class SpacesController {
-  public constructor(private readonly spacesService: SpacesService) {}
+  public constructor(
+    @Inject(SpacesService) private readonly spacesService: SpacesService,
+  ) {}
 
   @ApiOperation({
     summary: 'Create space',

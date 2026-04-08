@@ -240,10 +240,7 @@ export class SafesV2Service {
           !confirmations?.some((confirmation) => {
             return confirmation.owner === args.walletAddress;
           });
-        if (isSignable) {
-          acc++;
-        }
-        return acc;
+        return isSignable ? acc + 1 : acc;
       },
       0,
     );

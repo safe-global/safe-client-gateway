@@ -15,10 +15,10 @@ import { SwapAppsHelper } from '@/modules/transactions/routes/helpers/swap-apps.
 @Injectable()
 export class SwapTransferInfoMapper {
   constructor(
-    private readonly swapOrderHelper: SwapOrderHelper,
+    @Inject(SwapOrderHelper) private readonly swapOrderHelper: SwapOrderHelper,
     @Inject(ISwapsRepository)
     private readonly swapsRepository: ISwapsRepository,
-    private readonly swapAppsHelper: SwapAppsHelper,
+    @Inject(SwapAppsHelper) private readonly swapAppsHelper: SwapAppsHelper,
   ) {}
 
   /**

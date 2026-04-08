@@ -9,9 +9,9 @@ import type { AnalysisResult, AnalysisStatus } from '../analysis-result.entity';
  *
  * @template T - The specific status type (extends AnalysisStatus)
  */
-export class AnalysisResultDto<
-  T extends AnalysisStatus,
-> implements AnalysisResult<T> {
+export class AnalysisResultDto<T extends AnalysisStatus>
+  implements AnalysisResult<T>
+{
   @ApiProperty({
     description: 'Severity level indicating the importance and risk',
     enum: getStringEnumKeys(Severity),

@@ -37,10 +37,13 @@ export class TransactionDataMapper {
   private readonly maxTokenInfoIndexSize: number;
 
   constructor(
+    @Inject(AddressInfoHelper)
     private readonly addressInfoHelper: AddressInfoHelper,
     @Inject(IContractsRepository)
     private readonly contractRepository: ContractsRepository,
+    @Inject(DataDecodedParamHelper)
     private readonly dataDecodedParamHelper: DataDecodedParamHelper,
+    @Inject(MultisigTransactionInfoMapper)
     private readonly transactionInfoMapper: MultisigTransactionInfoMapper,
     @Inject(IChainsRepository)
     private readonly chainsRepository: IChainsRepository,
@@ -246,12 +249,11 @@ export class TransactionDataMapper {
               symbol: nativeCurrency.symbol,
               trusted: true,
             };
-          } else {
-            return await this.tokenRepository.getToken({
-              chainId: args.chainId,
-              address: tokenAddress,
-            });
           }
+          return await this.tokenRepository.getToken({
+            chainId: args.chainId,
+            address: tokenAddress,
+          });
         }),
       )
     )

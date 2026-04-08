@@ -37,11 +37,16 @@ export class TransactionsHistoryMapper {
     private readonly configurationService: IConfigurationService,
     @Inject(IDataDecoderRepository)
     private readonly dataDecoderRepository: IDataDecoderRepository,
+    @Inject(MultisigTransactionMapper)
     private readonly multisigTransactionMapper: MultisigTransactionMapper,
+    @Inject(ModuleTransactionMapper)
     private readonly moduleTransactionMapper: ModuleTransactionMapper,
-    private readonly transferMapper: TransferMapper,
+    @Inject(TransferMapper) private readonly transferMapper: TransferMapper,
+    @Inject(TransferImitationMapper)
     private readonly transferImitationMapper: TransferImitationMapper,
+    @Inject(CreationTransactionMapper)
     private readonly creationTransactionMapper: CreationTransactionMapper,
+    @Inject(AddressInfoHelper)
     private readonly addressInfoHelper: AddressInfoHelper,
   ) {
     this.maxNestedTransfers = this.configurationService.getOrThrow(
@@ -70,6 +75,7 @@ export class TransactionsHistoryMapper {
     });
 
     let previousTransaction: TransactionItem | undefined;
+    let transactions = transactionsDomain;
 
     /**
      * We insert a {@link DateLabel} between transactions on different days.
@@ -85,11 +91,11 @@ export class TransactionsHistoryMapper {
       });
 
       // Remove first transaction that was requested to get previous day timestamp
-      transactionsDomain = transactionsDomain.slice(1);
+      transactions = transactionsDomain.slice(1);
     }
 
     const mappedTransactions = await this.getMappedTransactions({
-      transactionsDomain,
+      transactionsDomain: transactions,
       chainId,
       safe,
       previousTransaction,
@@ -290,7 +296,8 @@ export class TransactionsHistoryMapper {
           dataDecoded,
         ),
       );
-    } else if (isModuleTransaction(transaction)) {
+    }
+    if (isModuleTransaction(transaction)) {
       return new TransactionItem(
         await this.moduleTransactionMapper.mapTransaction(
           chainId,
@@ -298,7 +305,8 @@ export class TransactionsHistoryMapper {
           dataDecoded,
         ),
       );
-    } else if (isEthereumTransaction(transaction)) {
+    }
+    if (isEthereumTransaction(transaction)) {
       const transfers = transaction.transfers;
       if (transfers != null) {
         return await this.mapTransfers(transfers, chainId, safe, onlyTrusted);

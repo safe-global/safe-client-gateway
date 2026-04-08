@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { shuffle } from 'lodash';
 import type { Address, Hex } from 'viem';
@@ -12,23 +13,22 @@ import {
 } from '@/domain/common/utils/signatures';
 
 describe('parseSignaturesByType', () => {
-  it.each(Object.values(SignatureType))(
-    'should parse a %s signature',
-    async (signatureType) => {
-      const privateKey = generatePrivateKey();
-      const signer = privateKeyToAccount(privateKey);
-      const hash = faker.string.hexadecimal({ length: 66 }) as Hex;
-      const signature = await getSignature({
-        signer,
-        hash,
-        signatureType,
-      });
+  it.each(
+    Object.values(SignatureType),
+  )('should parse a %s signature', async (signatureType) => {
+    const privateKey = generatePrivateKey();
+    const signer = privateKeyToAccount(privateKey);
+    const hash = faker.string.hexadecimal({ length: 66 }) as Hex;
+    const signature = await getSignature({
+      signer,
+      hash,
+      signatureType,
+    });
 
-      const parsedSignatures = parseSignaturesByType(signature);
+    const parsedSignatures = parseSignaturesByType(signature);
 
-      expect(parsedSignatures).toStrictEqual([signature]);
-    },
-  );
+    expect(parsedSignatures).toStrictEqual([signature]);
+  });
 
   it('should parse concatenated signatures', async () => {
     const privateKey = generatePrivateKey();

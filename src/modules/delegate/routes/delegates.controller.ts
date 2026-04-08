@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import {
+  Inject,
   Body,
   Controller,
   Delete,
@@ -43,7 +44,9 @@ import type { Address } from 'viem';
   version: '1',
 })
 export class DelegatesController {
-  constructor(private readonly service: DelegatesService) {}
+  constructor(
+    @Inject(DelegatesService) private readonly service: DelegatesService,
+  ) {}
 
   @ApiOperation({
     deprecated: true,

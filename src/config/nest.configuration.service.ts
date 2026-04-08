@@ -1,11 +1,14 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type { IConfigurationService } from '@/config/configuration.service.interface';
-import { Injectable } from '@nestjs/common';
-import type { ConfigService as NestConfigService } from '@nestjs/config';
+import { Inject, Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class NestConfigurationService implements IConfigurationService {
-  constructor(private readonly configService: NestConfigService) {}
+  constructor(
+    @Inject(ConfigService)
+    private readonly configService: ConfigService,
+  ) {}
 
   get<T>(key: string): T | undefined {
     return this.configService.get<T>(key);

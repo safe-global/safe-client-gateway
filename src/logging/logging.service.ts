@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { Injectable } from '@nestjs/common';
-import { Inject } from '@nestjs/common/decorators';
-import type { ClsService } from 'nestjs-cls';
+import { Inject, Injectable } from '@nestjs/common';
+import { ClsService } from 'nestjs-cls';
 import type winston from 'winston';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import type { ILoggingService } from '@/logging/logging.interface';
@@ -18,9 +17,9 @@ export class RequestScopedLoggingService implements ILoggingService {
 
   constructor(
     @Inject(IConfigurationService)
-    private readonly configurationService: IConfigurationService,
+    readonly configurationService: IConfigurationService,
     @Inject('Logger') private readonly logger: winston.Logger,
-    private readonly cls: ClsService,
+    @Inject(ClsService) private readonly cls: ClsService,
   ) {
     this.version = configurationService.get('about.version');
     this.buildNumber = configurationService.get('about.buildNumber');

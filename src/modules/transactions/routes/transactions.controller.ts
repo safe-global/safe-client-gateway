@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import {
+  Inject,
   Body,
   Controller,
   DefaultValuePipe,
@@ -63,7 +64,10 @@ import type { Address } from 'viem';
   version: '1',
 })
 export class TransactionsController {
-  constructor(private readonly transactionsService: TransactionsService) {}
+  constructor(
+    @Inject(TransactionsService)
+    private readonly transactionsService: TransactionsService,
+  ) {}
 
   @ApiOperation({
     summary: 'Get transaction details',

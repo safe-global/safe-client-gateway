@@ -66,15 +66,25 @@ export class TransactionsService {
     @Inject(ISafeRepository) private readonly safeRepository: SafeRepository,
     @Inject(IDataDecoderRepository)
     private readonly dataDecoderRepository: IDataDecoderRepository,
+    @Inject(MultisigTransactionMapper)
     private readonly multisigTransactionMapper: MultisigTransactionMapper,
+    @Inject(TransferMapper)
     private readonly transferMapper: TransferMapper,
+    @Inject(ModuleTransactionMapper)
     private readonly moduleTransactionMapper: ModuleTransactionMapper,
+    @Inject(QueuedItemsMapper)
     private readonly queuedItemsMapper: QueuedItemsMapper,
+    @Inject(TransactionsHistoryMapper)
     private readonly transactionsHistoryMapper: TransactionsHistoryMapper,
+    @Inject(TransactionPreviewMapper)
     private readonly transactionPreviewMapper: TransactionPreviewMapper,
+    @Inject(ModuleTransactionDetailsMapper)
     private readonly moduleTransactionDetailsMapper: ModuleTransactionDetailsMapper,
+    @Inject(MultisigTransactionDetailsMapper)
     private readonly multisigTransactionDetailsMapper: MultisigTransactionDetailsMapper,
+    @Inject(MultisigTransactionNoteMapper)
     private readonly multisigTransactionNoteMapper: MultisigTransactionNoteMapper,
+    @Inject(TransferDetailsMapper)
     private readonly transferDetailsMapper: TransferDetailsMapper,
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
     @Inject(ITokenRepository)
@@ -650,12 +660,11 @@ export class TransactionsService {
         paginationData.limit + 1,
         paginationData.offset,
       );
-    } else {
-      return new PaginationData(
-        paginationData.limit + 2,
-        paginationData.offset - 1,
-      );
     }
+    return new PaginationData(
+      paginationData.limit + 2,
+      paginationData.offset - 1,
+    );
   }
 
   private async parseTokenValue(args: {
@@ -683,9 +692,7 @@ export class TransactionsService {
     page: Page<DomainMultisigTransaction>,
     paginationData?: PaginationData,
   ): number | null {
-    return paginationData && paginationData.offset
-      ? this.getFirstTransactionNonce(page)
-      : null;
+    return paginationData?.offset ? this.getFirstTransactionNonce(page) : null;
   }
 
   /**

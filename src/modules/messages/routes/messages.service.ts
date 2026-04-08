@@ -31,7 +31,7 @@ export class MessagesService {
     private readonly messagesRepository: MessagesRepository,
     @Inject(ISafeRepository)
     private readonly safeRepository: SafeRepository,
-    private readonly messageMapper: MessageMapper,
+    @Inject(MessageMapper) private readonly messageMapper: MessageMapper,
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
   ) {}
 

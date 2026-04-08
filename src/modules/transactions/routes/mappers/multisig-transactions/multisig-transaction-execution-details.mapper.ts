@@ -21,10 +21,11 @@ import {
 @Injectable()
 export class MultisigTransactionExecutionDetailsMapper {
   constructor(
+    @Inject(AddressInfoHelper)
     private readonly addressInfoHelper: AddressInfoHelper,
     @Inject(ITokenRepository) private readonly tokenRepository: TokenRepository,
     @Inject(ISafeRepository) private readonly safeRepository: SafeRepository,
-    @Inject(LoggingService) private readonly loggingService: ILoggingService,
+    @Inject(LoggingService) readonly _loggingService: ILoggingService,
   ) {}
 
   async mapMultisigExecutionDetails(

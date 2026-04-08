@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { ILoggingService } from '@/logging/logging.interface';
-import { Injectable } from '@nestjs/common';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
+import { Inject, Injectable } from '@nestjs/common';
 import {
   AbstractLogger,
   type LoggerOptions,
@@ -11,7 +14,7 @@ import {
 @Injectable()
 export class PostgresqlLogger extends AbstractLogger {
   public constructor(
-    private readonly loggingService: ILoggingService,
+    @Inject(LoggingService) private readonly loggingService: ILoggingService,
     public options?: LoggerOptions,
   ) {
     super(options);

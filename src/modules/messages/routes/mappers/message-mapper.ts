@@ -18,6 +18,7 @@ export class MessageMapper {
   constructor(
     @Inject(ISafeAppsRepository)
     private readonly safeAppsRepository: SafeAppsRepository,
+    @Inject(AddressInfoHelper)
     private readonly addressInfoHelper: AddressInfoHelper,
   ) {}
 

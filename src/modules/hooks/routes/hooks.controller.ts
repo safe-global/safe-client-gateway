@@ -31,7 +31,7 @@ import { IConfigurationService } from '@/config/configuration.service.interface'
 export class HooksController {
   private isHookHttpPostEventEnabled: boolean;
   constructor(
-    private readonly hooksService: HooksService,
+    @Inject(HooksService) private readonly hooksService: HooksService,
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
 
     @Inject(IConfigurationService)

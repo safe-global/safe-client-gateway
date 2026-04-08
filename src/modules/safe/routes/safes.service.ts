@@ -41,6 +41,7 @@ export class SafesService {
     private readonly safeRepository: ISafeRepository,
     @Inject(IChainsRepository)
     private readonly chainsRepository: IChainsRepository,
+    @Inject(AddressInfoHelper)
     private readonly addressInfoHelper: AddressInfoHelper,
     @Inject(IMessagesRepository)
     private readonly messagesRepository: MessagesRepository,
@@ -222,10 +223,7 @@ export class SafesService {
           !confirmations?.some((confirmation) => {
             return confirmation.owner === args.walletAddress;
           });
-        if (isSignable) {
-          acc++;
-        }
-        return acc;
+        return isSignable ? acc + 1 : acc;
       },
       0,
     );

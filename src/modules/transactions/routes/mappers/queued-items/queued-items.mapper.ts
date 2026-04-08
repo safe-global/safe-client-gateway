@@ -26,8 +26,10 @@ export class QueuedItemsMapper {
   constructor(
     @Inject(IDataDecoderRepository)
     private readonly dataDecoderRepository: IDataDecoderRepository,
+    @Inject(MultisigTransactionMapper)
     private readonly mapper: MultisigTransactionMapper,
-    private readonly addressInfoHelper: AddressInfoHelper,
+    @Inject(AddressInfoHelper)
+    readonly _addressInfoHelper: AddressInfoHelper,
   ) {}
 
   async getQueuedItems(
@@ -126,11 +128,11 @@ export class QueuedItemsMapper {
     if (isFirstInGroup) {
       if (hasConflicts) {
         return ConflictType.HasNext;
-      } else if (conflictFromPreviousPage) {
-        return ConflictType.End;
-      } else {
-        return ConflictType.None;
       }
+      if (conflictFromPreviousPage) {
+        return ConflictType.End;
+      }
+      return ConflictType.None;
     }
     return !isLastInGroup || isEdgeGroup
       ? ConflictType.HasNext

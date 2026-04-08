@@ -56,6 +56,7 @@ export class SafeRepository implements ISafeRepository {
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
     @Inject(IChainsRepository)
     private readonly chainsRepository: IChainsRepository,
+    @Inject(TransactionVerifierHelper)
     private readonly transactionVerifier: TransactionVerifierHelper,
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,

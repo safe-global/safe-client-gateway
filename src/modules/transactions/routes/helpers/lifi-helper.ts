@@ -14,7 +14,8 @@ import { type Address, isAddressEqual } from 'viem';
 @Injectable()
 export class LiFiHelper {
   constructor(
-    private readonly liFiDecoder: LiFiDecoder,
+    @Inject(LiFiDecoder) private readonly liFiDecoder: LiFiDecoder,
+    @Inject(TransactionFinder)
     private readonly transactionFinder: TransactionFinder,
     @Inject(IBridgeRepository)
     private readonly bridgeRepository: IBridgeRepository,

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { amqpClientFactory } from '@/__tests__/amqp-client.factory';
 import { redisClientFactory } from '@/__tests__/redis-client.factory';
 import { retry } from '@/__tests__/util/retry';
@@ -556,36 +557,37 @@ describe('Events queue processing e2e tests', () => {
     });
   });
 
-  it.each(['NEW_DELEGATE', 'UPDATED_DELEGATE', 'DELETED_DELEGATE'])(
-    '%s clears delegates',
-    async (type) => {
-      const cacheDir = new CacheDir(
-        `${TEST_SAFE.chainId}_delegates_${TEST_SAFE.address}`,
-        '',
-      );
-      await redisClient.hSet(
+  it.each([
+    'NEW_DELEGATE',
+    'UPDATED_DELEGATE',
+    'DELETED_DELEGATE',
+  ])('%s clears delegates', async (type) => {
+    const cacheDir = new CacheDir(
+      `${TEST_SAFE.chainId}_delegates_${TEST_SAFE.address}`,
+      '',
+    );
+    await redisClient.hSet(
+      `${cacheKeyPrefix}-${cacheDir.key}`,
+      cacheDir.field,
+      faker.string.alpha(),
+    );
+    const data = {
+      type,
+      chainId: TEST_SAFE.chainId,
+      address: TEST_SAFE.address,
+      delegate: faker.finance.ethereumAddress(),
+      delegator: faker.finance.ethereumAddress(),
+      label: faker.lorem.word(),
+    };
+
+    await channel.sendToQueue(queueName, data);
+
+    await retry(async () => {
+      const cacheContent = await redisClient.hGet(
         `${cacheKeyPrefix}-${cacheDir.key}`,
         cacheDir.field,
-        faker.string.alpha(),
       );
-      const data = {
-        type,
-        chainId: TEST_SAFE.chainId,
-        address: TEST_SAFE.address,
-        delegate: faker.finance.ethereumAddress(),
-        delegator: faker.finance.ethereumAddress(),
-        label: faker.lorem.word(),
-      };
-
-      await channel.sendToQueue(queueName, data);
-
-      await retry(async () => {
-        const cacheContent = await redisClient.hGet(
-          `${cacheKeyPrefix}-${cacheDir.key}`,
-          cacheDir.field,
-        );
-        expect(cacheContent).toBeNull();
-      });
-    },
-  );
+      expect(cacheContent).toBeNull();
+    });
+  });
 });

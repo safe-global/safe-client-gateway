@@ -2,7 +2,7 @@
 import { Inject, Injectable, Module } from '@nestjs/common';
 import { TokenInfo } from '@/modules/transactions/routes/entities/swaps/token-info.entity';
 import {
-  type SwapOrderHelper,
+  SwapOrderHelper,
   SwapOrderHelperModule,
 } from '@/modules/transactions/routes/helpers/swap-order.helper';
 import { ComposableCowDecoder } from '@/modules/swaps/domain/contracts/decoders/composable-cow-decoder.helper';
@@ -43,12 +43,14 @@ export class TwapOrderMapper {
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
-    private readonly swapOrderHelper: SwapOrderHelper,
+    @Inject(SwapOrderHelper) private readonly swapOrderHelper: SwapOrderHelper,
     @Inject(ISwapsRepository)
     private readonly swapsRepository: ISwapsRepository,
+    @Inject(ComposableCowDecoder)
     private readonly composableCowDecoder: ComposableCowDecoder,
     private readonly gpv2OrderHelper: GPv2OrderHelper,
-    private readonly twapOrderHelper: TwapOrderHelper,
+    @Inject(TwapOrderHelper) private readonly twapOrderHelper: TwapOrderHelper,
+    @Inject(SwapAppsHelper)
     private readonly swapAppsHelper: SwapAppsHelper,
   ) {
     this.maxNumberOfParts = this.configurationService.getOrThrow(

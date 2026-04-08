@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { Controller, Get, Param, Query } from '@nestjs/common';
+import { Inject, Controller, Get, Param, Query } from '@nestjs/common';
 import {
   ApiOkResponse,
   ApiOperation,
@@ -16,7 +16,9 @@ import { SafeAppsService } from '@/modules/safe-apps/routes/safe-apps.service';
   version: '1',
 })
 export class SafeAppsController {
-  constructor(private readonly safeAppsService: SafeAppsService) {}
+  constructor(
+    @Inject(SafeAppsService) private readonly safeAppsService: SafeAppsService,
+  ) {}
 
   @ApiOperation({
     summary: 'Get Safe Apps',

@@ -1,10 +1,14 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { MultiSendDecoder } from '@/modules/contracts/domain/decoders/multi-send-decoder.helper';
-import { Injectable, Module } from '@nestjs/common';
+import { Inject, Injectable, Module } from '@nestjs/common';
 import type { Address, Hex } from 'viem';
 
 @Injectable()
 export class TransactionFinder {
-  constructor(private readonly multiSendDecoder: MultiSendDecoder) {}
+  constructor(
+    @Inject(MultiSendDecoder)
+    private readonly multiSendDecoder: MultiSendDecoder,
+  ) {}
 
   /**
    * Finds transaction data in a given transaction, if directly called or in a MultiSend

@@ -16,9 +16,11 @@ export class EtherscanApi implements IEtherscanApi {
   private readonly notFoundCacheTimeSeconds: number;
 
   constructor(
+    @Inject(CacheFirstDataSource)
     private readonly dataSource: CacheFirstDataSource,
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
+    @Inject(HttpErrorFactory)
     private readonly httpErrorFactory: HttpErrorFactory,
   ) {
     this.apiKey = this.configurationService.get<string>('etherscan.apiKey');

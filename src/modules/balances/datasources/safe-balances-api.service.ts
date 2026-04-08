@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
+import type { IConfigurationService } from '@/config/configuration.service.interface';
+import type { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
 import { CacheRouter } from '@/datasources/cache/cache.router';
-import { ICacheService } from '@/datasources/cache/cache.service.interface';
-import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
-import { INetworkService } from '@/datasources/network/network.service.interface';
+import type { ICacheService } from '@/datasources/cache/cache.service.interface';
+import type { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
+import type { INetworkService } from '@/datasources/network/network.service.interface';
 import {
   type Balance,
   BalancesSchema,
@@ -13,7 +13,7 @@ import type { Collectible } from '@/modules/collectibles/domain/entities/collect
 import { getNumberString } from '@/domain/common/utils/utils';
 import type { Page } from '@/domain/entities/page.entity';
 import type { IBalancesApi } from '@/domain/interfaces/balances-api.interface';
-import { IPricesApi } from '@/modules/balances/datasources/prices-api.interface';
+import type { IPricesApi } from '@/modules/balances/datasources/prices-api.interface';
 import { Injectable } from '@nestjs/common';
 import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
 import { rawify, type Raw } from '@/validation/entities/raw.entity';

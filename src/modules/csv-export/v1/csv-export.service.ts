@@ -47,7 +47,7 @@ export class CsvExportService {
   constructor(
     @Inject(IExportApiManager)
     private readonly exportApiManager: IExportApiManager,
-    private readonly csvService: CsvService,
+    @Inject(CsvService) private readonly csvService: CsvService,
     @Inject(IJobQueueService)
     private readonly jobQueueService: IJobQueueService,
     @Inject(ICloudStorageApiService)
@@ -115,7 +115,9 @@ export class CsvExportService {
       limit?: number;
       offset?: number;
     },
-    onProgress: (percentage: number) => Promise<void> = async () => {},
+    onProgress: (percentage: number) => Promise<void> = async () => {
+      /* no-op */
+    },
   ): Promise<string> {
     const { chainId, safeAddress, timestamp } = args;
     const fileName = this.generateFileName(chainId, safeAddress, timestamp);

@@ -6,7 +6,7 @@ import {
 } from '@/datasources/network/network.service.interface';
 import type { ISwapsApi } from '@/domain/interfaces/swaps-api.interface';
 import type { ISwapsApiFactory } from '@/domain/interfaces/swaps-api.factory';
-import type { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
+import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { CowSwapApi } from '@/modules/swaps/datasources/cowswap-api.service';
 
@@ -16,6 +16,7 @@ export class SwapsApiFactory implements ISwapsApiFactory {
 
   constructor(
     @Inject(NetworkService) private readonly networkService: INetworkService,
+    @Inject(HttpErrorFactory)
     private readonly httpErrorFactory: HttpErrorFactory,
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,

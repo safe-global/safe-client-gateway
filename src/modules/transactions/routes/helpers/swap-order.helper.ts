@@ -30,8 +30,9 @@ export class SwapOrderHelper {
   private readonly swapsExplorerBaseUri: string;
 
   constructor(
+    @Inject(TransactionFinder)
     private readonly transactionFinder: TransactionFinder,
-    private readonly gpv2Decoder: GPv2Decoder,
+    @Inject(GPv2Decoder) private readonly gpv2Decoder: GPv2Decoder,
     @Inject(ITokenRepository)
     private readonly tokenRepository: ITokenRepository,
     @Inject(ISwapsRepository)
@@ -146,12 +147,11 @@ export class SwapOrderHelper {
         type: 'NATIVE_TOKEN',
         trusted: true,
       };
-    } else {
-      return await this.tokenRepository.getToken({
-        chainId: args.chainId,
-        address: args.address,
-      });
     }
+    return await this.tokenRepository.getToken({
+      chainId: args.chainId,
+      address: args.address,
+    });
   }
 }
 

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { nativeTokenTransferBuilder } from '@/modules/safe/domain/entities/__tests__/native-token-transfer.builder';
 import { NativeTokenTransferSchema } from '@/modules/safe/domain/entities/schemas/native-token-transfer.schema';
 import { faker } from '@faker-js/faker';
@@ -34,23 +35,21 @@ describe('NativeTokenTransferSchema', () => {
     expect(result.success).toBe(false);
   });
 
-  it.each(['to' as const, 'from' as const])(
-    `should checksum the %s`,
-    (field) => {
-      const nonChecksummedAddress = faker.finance
-        .ethereumAddress()
-        .toLowerCase();
-      const nativeTokenTransfer = nativeTokenTransferBuilder()
-        .with(field, nonChecksummedAddress as Address)
-        .build();
+  it.each([
+    'to' as const,
+    'from' as const,
+  ])(`should checksum the %s`, (field) => {
+    const nonChecksummedAddress = faker.finance.ethereumAddress().toLowerCase();
+    const nativeTokenTransfer = nativeTokenTransferBuilder()
+      .with(field, nonChecksummedAddress as Address)
+      .build();
 
-      const result = NativeTokenTransferSchema.safeParse(nativeTokenTransfer);
+    const result = NativeTokenTransferSchema.safeParse(nativeTokenTransfer);
 
-      expect(result.success && result.data[field]).toBe(
-        getAddress(nonChecksummedAddress),
-      );
-    },
-  );
+    expect(result.success && result.data[field]).toBe(
+      getAddress(nonChecksummedAddress),
+    );
+  });
 
   it('should allow an undefined tokenAddress', () => {
     const nativeTokenTransfer = nativeTokenTransferBuilder().build();

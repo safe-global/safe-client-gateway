@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { campaignActivityBuilder } from '@/modules/community/domain/entities/__tests__/campaign-activity.builder';
 import { CampaignActivitySchema } from '@/modules/community/domain/entities/campaign-activity.entity';
 import { faker } from '@faker-js/faker';
@@ -23,18 +24,18 @@ describe('CampaignActivitySchema', () => {
     );
   });
 
-  it.each(['startDate' as const, 'endDate' as const])(
-    `should coerce %s to a Date`,
-    (field) => {
-      const campaignActivity = campaignActivityBuilder()
-        .with(field, faker.date.recent().toISOString() as unknown as Date)
-        .build();
+  it.each([
+    'startDate' as const,
+    'endDate' as const,
+  ])(`should coerce %s to a Date`, (field) => {
+    const campaignActivity = campaignActivityBuilder()
+      .with(field, faker.date.recent().toISOString() as unknown as Date)
+      .build();
 
-      const result = CampaignActivitySchema.safeParse(campaignActivity);
+    const result = CampaignActivitySchema.safeParse(campaignActivity);
 
-      expect(result.success && result.data[field]).toBeInstanceOf(Date);
-    },
-  );
+    expect(result.success && result.data[field]).toBeInstanceOf(Date);
+  });
 
   it.each([
     'boost' as const,

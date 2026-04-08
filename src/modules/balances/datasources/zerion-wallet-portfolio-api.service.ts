@@ -56,6 +56,7 @@ export class ZerionWalletPortfolioApi implements IZerionWalletPortfolioApi {
     private readonly configurationService: IConfigurationService,
     @Inject(NetworkService)
     private readonly networkService: INetworkService,
+    @Inject(HttpErrorFactory)
     private readonly httpErrorFactory: HttpErrorFactory,
     @Inject(CacheService) private readonly cacheService: ICacheService,
     @Inject(LoggingService) private readonly loggingService: ILoggingService,

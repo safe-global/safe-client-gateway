@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { Controller, Get, Param } from '@nestjs/common';
+import { Inject, Controller, Get, Param } from '@nestjs/common';
 import {
   ApiOkResponse,
   ApiOperation,
@@ -18,7 +18,9 @@ import type { Address } from 'viem';
   version: '1',
 })
 export class OwnersControllerV1 {
-  constructor(private readonly ownersService: OwnersService) {}
+  constructor(
+    @Inject(OwnersService) private readonly ownersService: OwnersService,
+  ) {}
 
   @ApiOperation({
     summary: 'Get Safes by owner',

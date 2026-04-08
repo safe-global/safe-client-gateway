@@ -63,7 +63,7 @@ export class AuthController {
   constructor(
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
-    private readonly authService: AuthService,
+    @Inject(AuthService) private readonly authService: AuthService,
   ) {
     this.isProduction = this.configurationService.getOrThrow<boolean>(
       'application.isProduction',

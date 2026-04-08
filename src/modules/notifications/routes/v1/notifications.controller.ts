@@ -168,7 +168,7 @@ export class NotificationsController {
   }
 
   private validateTimestamp(timestamp: number): void {
-    const now = new Date().getTime();
+    const now = Date.now();
     const expires = Math.floor(
       (now + NotificationsController.REGISTRATION_TIMESTAMP_EXPIRY) / 1000,
     );
@@ -201,12 +201,11 @@ export class NotificationsController {
         },
         signature: args.safeV2Dto.upsertSubscriptionsDto.signature,
       });
-    } else {
-      return await recoverAddress({
-        hash: this.messageToRecover(args),
-        signature: args.safeV2Dto.upsertSubscriptionsDto.signature,
-      });
     }
+    return await recoverAddress({
+      hash: this.messageToRecover(args),
+      signature: args.safeV2Dto.upsertSubscriptionsDto.signature,
+    });
   }
 
   @ApiOperation({

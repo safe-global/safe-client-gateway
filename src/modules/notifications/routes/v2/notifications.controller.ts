@@ -10,6 +10,7 @@ import { NumericStringSchema } from '@/validation/entities/schemas/numeric-strin
 import { UuidSchema } from '@/validation/entities/schemas/uuid.schema';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import {
+  Inject,
   Body,
   Controller,
   Delete,
@@ -41,7 +42,10 @@ import type { Address } from 'viem';
 @ApiTags('notifications')
 @Controller({ path: '', version: '2' })
 export class NotificationsControllerV2 {
-  constructor(private readonly notificationsService: NotificationsServiceV2) {}
+  constructor(
+    @Inject(NotificationsServiceV2)
+    private readonly notificationsService: NotificationsServiceV2,
+  ) {}
 
   @ApiOperation({
     summary: 'Register device for notifications',

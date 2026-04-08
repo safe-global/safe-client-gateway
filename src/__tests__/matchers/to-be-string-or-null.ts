@@ -9,12 +9,11 @@ const anyStringOrNull: MatcherFunction = (actual) => {
       message: () => `expected ${actual} to be string or null`,
       pass: true,
     };
-  } else {
-    return {
-      message: () => `expected ${actual} to be string or null`,
-      pass: false,
-    };
   }
+  return {
+    message: () => `expected ${actual} to be string or null`,
+    pass: false,
+  };
 };
 
 expect.extend({

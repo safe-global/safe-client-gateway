@@ -1,5 +1,12 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { Body, Controller, HttpCode, Param, Post } from '@nestjs/common';
+import {
+  Inject,
+  Body,
+  Controller,
+  HttpCode,
+  Param,
+  Post,
+} from '@nestjs/common';
 import {
   ApiOkResponse,
   ApiTags,
@@ -21,7 +28,10 @@ import { ValidationPipe } from '@/validation/pipes/validation.pipe';
   version: '1',
 })
 export class DataDecodedController {
-  constructor(private readonly dataDecodedService: DataDecodedService) {}
+  constructor(
+    @Inject(DataDecodedService)
+    private readonly dataDecodedService: DataDecodedService,
+  ) {}
 
   @ApiOperation({
     summary: 'Decode transaction data',

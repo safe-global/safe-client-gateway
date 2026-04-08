@@ -24,6 +24,7 @@ import type { Address } from 'viem';
 @Injectable()
 export class UsersRepository implements IUsersRepository {
   constructor(
+    @Inject(PostgresDatabaseService)
     private readonly postgresDatabaseService: PostgresDatabaseService,
     @Inject(IWalletsRepository)
     private readonly walletsRepository: IWalletsRepository,

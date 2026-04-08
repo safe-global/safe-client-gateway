@@ -40,6 +40,7 @@ export class HumanDescriptionMapper {
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
     @Inject(IHumanDescriptionRepository)
     private readonly humanDescriptionRepository: HumanDescriptionRepository,
+    @Inject(SafeAppInfoMapper)
     private readonly safeAppInfoMapper: SafeAppInfoMapper,
   ) {}
 
@@ -149,7 +150,7 @@ export class HumanDescriptionMapper {
     let amount: string;
     if (fragment.value.amount === MAX_UINT256) {
       amount = 'unlimited';
-    } else if (token && token.decimals) {
+    } else if (token?.decimals) {
       amount = formatUnits(fragment.value.amount, token.decimals);
     } else {
       amount = fragment.value.amount.toString();

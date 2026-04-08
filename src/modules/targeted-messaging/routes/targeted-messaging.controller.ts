@@ -12,6 +12,7 @@ import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import {
+  Inject,
   Body,
   Controller,
   Get,
@@ -37,7 +38,10 @@ import type { Address } from 'viem';
   version: '1',
 })
 export class TargetedMessagingController {
-  constructor(private readonly service: TargetedMessagingService) {}
+  constructor(
+    @Inject(TargetedMessagingService)
+    private readonly service: TargetedMessagingService,
+  ) {}
 
   @ApiOkResponse({ type: TargetedSafe })
   @ApiNotFoundResponse({ description: 'Safe not targeted.' })

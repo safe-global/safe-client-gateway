@@ -25,6 +25,7 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
   private readonly maxItems: number;
 
   constructor(
+    @Inject(PostgresDatabaseService)
     private readonly db: PostgresDatabaseService,
     @Inject(ISpacesRepository)
     private readonly spacesRepository: ISpacesRepository,

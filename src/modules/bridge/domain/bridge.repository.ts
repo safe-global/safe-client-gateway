@@ -25,7 +25,7 @@ export class BridgeRepository implements IBridgeRepository {
       return chain.id === chainId && chain.diamondAddress;
     });
 
-    if (!chain || !chain.diamondAddress) {
+    if (!chain?.diamondAddress) {
       throw new NotFoundException(`Chain not found. chainId=${chainId}`);
     }
 

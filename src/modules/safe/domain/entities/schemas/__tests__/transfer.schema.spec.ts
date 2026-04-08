@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { fakeJson } from '@/__tests__/faker';
 import { erc20TransferBuilder } from '@/modules/safe/domain/entities/__tests__/erc20-transfer.builder';
 import { erc721TransferBuilder } from '@/modules/safe/domain/entities/__tests__/erc721-transfer.builder';
@@ -9,7 +10,7 @@ describe('TransferSchema', () => {
     ['NativeTokenTransfer', nativeTokenTransferBuilder().build()],
     ['Erc20Transfer', erc20TransferBuilder().build()],
     ['Erc721Transfer', erc721TransferBuilder().build()],
-  ])('should allow %s', (name, transfer) => {
+  ])('should allow %s', (_name, transfer) => {
     const result = TransferSchema.safeParse(transfer);
 
     expect(result.success).toBe(true);

@@ -55,7 +55,9 @@ export class ZerionPositionsApi implements IPositionsApi {
     @Inject(NetworkService) private readonly networkService: INetworkService,
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
+    @Inject(HttpErrorFactory)
     private readonly httpErrorFactory: HttpErrorFactory,
+    @Inject(ZerionChainMappingService)
     private readonly zerionChainMappingService: ZerionChainMappingService,
   ) {
     this.apiKey = this.configurationService.get<string>(

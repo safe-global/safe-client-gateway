@@ -32,6 +32,7 @@ import { UniqueConstraintError } from '@/datasources/errors/unique-constraint-er
 @Injectable()
 export class MembersRepository implements IMembersRepository {
   constructor(
+    @Inject(PostgresDatabaseService)
     private readonly postgresDatabaseService: PostgresDatabaseService,
     @Inject(IUsersRepository)
     private readonly usersRepository: IUsersRepository,

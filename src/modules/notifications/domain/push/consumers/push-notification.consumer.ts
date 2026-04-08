@@ -13,7 +13,7 @@ import {
   JobType,
   type JobTypeName,
 } from '@/datasources/job-queue/types/job-types';
-import type { PushNotificationService } from '@/modules/notifications/domain/push/push-notification.service';
+import { PushNotificationService } from '@/modules/notifications/domain/push/push-notification.service';
 import type {
   PushNotificationEventJobData,
   PushNotificationDeliveryJobData,
@@ -32,6 +32,7 @@ export class PushNotificationConsumer extends WorkerHost {
   constructor(
     @Inject(LoggingService)
     private readonly loggingService: ILoggingService,
+    @Inject(PushNotificationService)
     private readonly pushNotificationService: PushNotificationService,
   ) {
     super();

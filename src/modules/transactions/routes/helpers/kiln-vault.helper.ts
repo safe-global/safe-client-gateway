@@ -7,7 +7,7 @@ import {
   TransactionFinder,
   TransactionFinderModule,
 } from '@/modules/transactions/routes/helpers/transaction-finder.helper';
-import { Injectable, Module } from '@nestjs/common';
+import { Inject, Injectable, Module } from '@nestjs/common';
 import {
   type Address,
   type ContractFunctionName,
@@ -19,7 +19,10 @@ import {
 
 @Injectable()
 export class KilnVaultHelper extends Erc4262Decoder {
-  constructor(private readonly transactionFinder: TransactionFinder) {
+  constructor(
+    @Inject(TransactionFinder)
+    private readonly transactionFinder: TransactionFinder,
+  ) {
     super();
   }
 

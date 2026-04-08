@@ -72,22 +72,34 @@ export class MultisigTransactionInfoMapper {
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
+    @Inject(BridgeTransactionMapper)
     private readonly bridgeTransactionMapper: BridgeTransactionMapper,
+    @Inject(DataDecodedParamHelper)
     private readonly dataDecodedParamHelper: DataDecodedParamHelper,
+    @Inject(CustomTransactionMapper)
     private readonly customTransactionMapper: CustomTransactionMapper,
     private readonly settingsChangeMapper: SettingsChangeMapper,
-    private readonly liFiHelper: LiFiHelper,
+    @Inject(LiFiHelper) private readonly liFiHelper: LiFiHelper,
+    @Inject(NativeCoinTransferMapper)
     private readonly nativeCoinTransferMapper: NativeCoinTransferMapper,
+    @Inject(Erc20TransferMapper)
     private readonly erc20TransferMapper: Erc20TransferMapper,
+    @Inject(Erc721TransferMapper)
     private readonly erc721TransferMapper: Erc721TransferMapper,
+    @Inject(HumanDescriptionMapper)
     private readonly humanDescriptionMapper: HumanDescriptionMapper,
+    @Inject(SwapOrderMapper)
     private readonly swapOrderMapper: SwapOrderMapper,
-    private readonly swapOrderHelper: SwapOrderHelper,
+    @Inject(SwapOrderHelper) private readonly swapOrderHelper: SwapOrderHelper,
+    @Inject(TwapOrderMapper)
     private readonly twapOrderMapper: TwapOrderMapper,
-    private readonly twapOrderHelper: TwapOrderHelper,
+    @Inject(TwapOrderHelper) private readonly twapOrderHelper: TwapOrderHelper,
+    @Inject(KilnNativeStakingHelper)
     private readonly kilnNativeStakingHelper: KilnNativeStakingHelper,
-    private readonly kilnVaultHelper: KilnVaultHelper,
+    @Inject(KilnVaultHelper) private readonly kilnVaultHelper: KilnVaultHelper,
+    @Inject(NativeStakingMapper)
     private readonly nativeStakingMapper: NativeStakingMapper,
+    @Inject(VaultTransactionMapper)
     private readonly vaultTransactionMapper: VaultTransactionMapper,
   ) {
     this.isVaultTransactionsMappingEnabled =

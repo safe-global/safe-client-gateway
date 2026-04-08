@@ -11,6 +11,7 @@ export class Auth0Repository implements IAuth0Repository {
   constructor(
     @Inject(IAuth0Api)
     private readonly auth0Api: IAuth0Api,
+    @Inject(Auth0TokenVerifier)
     private readonly auth0TokenVerifier: Auth0TokenVerifier,
   ) {}
 

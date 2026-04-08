@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { safeAppsEventBuilder } from '@/modules/hooks/routes/entities/__tests__/safe-apps-update.builder';
 import type { ConfigEventType } from '@/modules/hooks/routes/entities/event-type.entity';
 import { SafeAppsUpdateEventSchema } from '@/modules/hooks/routes/entities/schemas/safe-apps-update.schema';
@@ -29,20 +30,20 @@ describe('SafeAppsUpdateEventSchema', () => {
     ]);
   });
 
-  it.each(['type' as const, 'chainId' as const])(
-    'should not allow a missing %s',
-    (field) => {
-      const safeAppsEvent = safeAppsEventBuilder().build();
-      delete safeAppsEvent[field];
+  it.each([
+    'type' as const,
+    'chainId' as const,
+  ])('should not allow a missing %s', (field) => {
+    const safeAppsEvent = safeAppsEventBuilder().build();
+    delete safeAppsEvent[field];
 
-      const result = SafeAppsUpdateEventSchema.safeParse(safeAppsEvent);
+    const result = SafeAppsUpdateEventSchema.safeParse(safeAppsEvent);
 
-      expect(
-        !result.success &&
-          result.error.issues.length === 1 &&
-          result.error.issues[0].path.length === 1 &&
-          result.error.issues[0].path[0] === field,
-      ).toBe(true);
-    },
-  );
+    expect(
+      !result.success &&
+        result.error.issues.length === 1 &&
+        result.error.issues[0].path.length === 1 &&
+        result.error.issues[0].path[0] === field,
+    ).toBe(true);
+  });
 });

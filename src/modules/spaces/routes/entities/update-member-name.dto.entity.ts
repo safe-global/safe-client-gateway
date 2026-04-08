@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
 import { ApiProperty } from '@nestjs/swagger';
 import { NameSchema } from '@/domain/common/schemas/name.schema';
@@ -6,9 +7,9 @@ export const UpdateMemberAliasDtoSchema = z.object({
   alias: NameSchema,
 });
 
-export class UpdateMemberAliasDto implements z.infer<
-  typeof UpdateMemberAliasDtoSchema
-> {
+export class UpdateMemberAliasDto
+  implements z.infer<typeof UpdateMemberAliasDtoSchema>
+{
   @ApiProperty({
     type: String,
     description: 'The new alias for the member',

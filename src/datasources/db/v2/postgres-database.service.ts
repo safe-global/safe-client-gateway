@@ -5,18 +5,15 @@ import {
 } from '@/logging/logging.interface';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { Inject, Injectable } from '@nestjs/common';
-import type {
-  DataSource,
-  EntityManager,
-  ObjectLiteral,
-  Repository,
-} from 'typeorm';
+import { DataSource } from 'typeorm';
+import type { EntityManager, ObjectLiteral, Repository } from 'typeorm';
 
 @Injectable()
 export class PostgresDatabaseService {
   public constructor(
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
     @InjectDataSource()
+    @Inject(DataSource)
     private readonly dataSource: DataSource,
   ) {}
 

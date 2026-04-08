@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import type { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
 import { CacheRouter } from '@/datasources/cache/cache.router';
@@ -379,8 +380,7 @@ export class KilnApi implements IStakingApi {
     if (chain) {
       const chainIdentifier = chain[0];
       return `${chainIdentifier}_${vault}`;
-    } else {
-      throw new Error(`${this.chainId} is not supported for DeFi by Kiln`);
     }
+    throw new Error(`${this.chainId} is not supported for DeFi by Kiln`);
   }
 }

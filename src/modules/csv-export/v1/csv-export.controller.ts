@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import {
+  Inject,
   Body,
   Controller,
   Get,
@@ -33,7 +34,10 @@ import type { Address } from 'viem';
   version: '1',
 })
 export class CsvExportController {
-  constructor(private readonly csvExportService: CsvExportService) {}
+  constructor(
+    @Inject(CsvExportService)
+    private readonly csvExportService: CsvExportService,
+  ) {}
 
   @ApiAcceptedResponse({ type: JobStatusDto })
   @ApiBody({

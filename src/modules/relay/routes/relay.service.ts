@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { RelayRepository } from '@/modules/relay/domain/relay.repository';
 import type { RelayDto } from '@/modules/relay/routes/entities/relay.dto.entity';
 import { Relay } from '@/modules/relay/routes/entities/relay.entity';
@@ -9,7 +9,9 @@ import type { Address, Hex } from 'viem';
 
 @Injectable()
 export class RelayService {
-  constructor(private readonly relayRepository: RelayRepository) {}
+  constructor(
+    @Inject(RelayRepository) private readonly relayRepository: RelayRepository,
+  ) {}
 
   async relay(args: { chainId: string; relayDto: RelayDto }): Promise<Relay> {
     const relay = await this.relayRepository.relay({

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { orderBuilder } from '@/modules/swaps/domain/entities/__tests__/order.builder';
 import { faker } from '@faker-js/faker';
 import { getAddress, type Hex } from 'viem';
@@ -23,19 +24,21 @@ describe('OrderSchema', () => {
     expect(result.success).toBe(true);
   });
 
-  it.each([null, undefined, faker.string.sample(), faker.string.numeric()])(
-    `should fail validation if signature is not hexadecimal`,
-    (signature) => {
-      const order = {
-        ...orderBuilder().build(),
-        signature,
-      };
+  it.each([
+    null,
+    undefined,
+    faker.string.sample(),
+    faker.string.numeric(),
+  ])(`should fail validation if signature is not hexadecimal`, (signature) => {
+    const order = {
+      ...orderBuilder().build(),
+      signature,
+    };
 
-      const result = OrderSchema.safeParse(order);
+    const result = OrderSchema.safeParse(order);
 
-      expect(result.success).toBe(false);
-    },
-  );
+    expect(result.success).toBe(false);
+  });
 
   it('should fallback to unknown placementError on order with an invalid placementError', () => {
     const order = {

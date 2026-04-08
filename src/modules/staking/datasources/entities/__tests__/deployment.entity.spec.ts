@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { deploymentBuilder } from '@/modules/staking/datasources/entities/__tests__/deployment.entity.builder';
 import { DeploymentSchema } from '@/modules/staking/datasources/entities/deployment.entity';
 import { faker } from '@faker-js/faker';
@@ -13,39 +14,40 @@ describe('DeploymentSchema', () => {
     expect(result.success).toBe(true);
   });
 
-  it.each(['id' as const, 'organization_id' as const])(
-    `should not validate non-UUID %s values`,
-    (key) => {
-      const deployment = deploymentBuilder()
-        .with(key, faker.string.numeric())
-        .build();
+  it.each([
+    'id' as const,
+    'organization_id' as const,
+  ])(`should not validate non-UUID %s values`, (key) => {
+    const deployment = deploymentBuilder()
+      .with(key, faker.string.numeric())
+      .build();
 
-      const result = DeploymentSchema.safeParse(deployment);
+    const result = DeploymentSchema.safeParse(deployment);
 
-      expect(!result.success && result.error.issues).toEqual([
-        expect.objectContaining({
-          code: 'invalid_format',
-          format: 'uuid',
-          message: 'Invalid UUID',
-          origin: 'string',
-          path: [key],
-        }),
-      ]);
-    },
-  );
+    expect(!result.success && result.error.issues).toEqual([
+      expect.objectContaining({
+        code: 'invalid_format',
+        format: 'uuid',
+        message: 'Invalid UUID',
+        origin: 'string',
+        path: [key],
+      }),
+    ]);
+  });
 
-  it.each(['product_type' as const, 'chain' as const, 'status' as const])(
-    `should not default non-enum %s values to unknown`,
-    (key) => {
-      const deployment = deploymentBuilder()
-        .with(key, faker.string.alpha() as 'unknown')
-        .build();
+  it.each([
+    'product_type' as const,
+    'chain' as const,
+    'status' as const,
+  ])(`should not default non-enum %s values to unknown`, (key) => {
+    const deployment = deploymentBuilder()
+      .with(key, faker.string.alpha() as 'unknown')
+      .build();
 
-      const result = DeploymentSchema.safeParse(deployment);
+    const result = DeploymentSchema.safeParse(deployment);
 
-      expect(result.success && result.data[key]).toBe('unknown');
-    },
-  );
+    expect(result.success && result.data[key]).toBe('unknown');
+  });
 
   it('should not validate numeric string chain_id values', () => {
     const deployment = deploymentBuilder()

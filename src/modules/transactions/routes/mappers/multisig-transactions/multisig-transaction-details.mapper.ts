@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import isEmpty from 'lodash/isEmpty';
 import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
 import type { Safe } from '@/modules/safe/domain/entities/safe.entity';
@@ -24,13 +24,21 @@ import type { Address } from 'viem';
 @Injectable()
 export class MultisigTransactionDetailsMapper {
   constructor(
+    @Inject(AddressInfoHelper)
     private readonly addressInfoHelper: AddressInfoHelper,
+    @Inject(MultisigTransactionStatusMapper)
     private readonly statusMapper: MultisigTransactionStatusMapper,
+    @Inject(MultisigTransactionInfoMapper)
     private readonly transactionInfoMapper: MultisigTransactionInfoMapper,
+    @Inject(TransactionDataMapper)
     private readonly transactionDataMapper: TransactionDataMapper,
+    @Inject(SafeAppInfoMapper)
     private readonly safeAppInfoMapper: SafeAppInfoMapper,
+    @Inject(MultisigTransactionExecutionDetailsMapper)
     private readonly multisigTransactionExecutionDetailsMapper: MultisigTransactionExecutionDetailsMapper,
+    @Inject(MultisigTransactionNoteMapper)
     private readonly noteMapper: MultisigTransactionNoteMapper,
+    @Inject(TransactionVerifierHelper)
     private readonly transactionVerifier: TransactionVerifierHelper,
   ) {}
 

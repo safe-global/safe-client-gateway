@@ -14,6 +14,7 @@ import { DeleteDelegateV2Dto } from '@/modules/delegate/routes/v2/entities/delet
 import { DeleteDelegateV2DtoSchema } from '@/modules/delegate/routes/v2/entities/schemas/delete-delegate.v2.dto.schema';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import {
+  Inject,
   Body,
   Controller,
   Delete,
@@ -38,7 +39,9 @@ import type { Address } from 'viem';
 @ApiTags('delegates')
 @Controller({ version: '2' })
 export class DelegatesV2Controller {
-  constructor(private readonly service: DelegatesV2Service) {}
+  constructor(
+    @Inject(DelegatesV2Service) private readonly service: DelegatesV2Service,
+  ) {}
 
   @ApiOperation({
     summary: 'Get delegates',

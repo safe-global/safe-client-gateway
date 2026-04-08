@@ -38,6 +38,7 @@ export class GelatoApi implements IRelayApi {
     private readonly networkService: INetworkService,
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
+    @Inject(HttpErrorFactory)
     private readonly httpErrorFactory: HttpErrorFactory,
     @Inject(CacheService) private readonly cacheService: ICacheService,
     @Inject(LoggingService) private readonly loggingService: ILoggingService,

@@ -8,6 +8,7 @@ import {
   ApiNotFoundResponse,
 } from '@nestjs/swagger';
 import {
+  Inject,
   Controller,
   DefaultValuePipe,
   Get,
@@ -32,7 +33,7 @@ import type { Address } from 'viem';
   version: '1',
 })
 export class SafesController {
-  constructor(private readonly service: SafesService) {}
+  constructor(@Inject(SafesService) private readonly service: SafesService) {}
 
   @ApiOperation({
     summary: 'Get Safe information',

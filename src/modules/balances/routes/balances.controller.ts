@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import {
+  Inject,
   Controller,
   DefaultValuePipe,
   Get,
@@ -26,7 +27,9 @@ import type { Address } from 'viem';
   version: '1',
 })
 export class BalancesController {
-  constructor(private readonly balancesService: BalancesService) {}
+  constructor(
+    @Inject(BalancesService) private readonly balancesService: BalancesService,
+  ) {}
 
   @ApiOperation({
     summary: 'Get Safe balances',

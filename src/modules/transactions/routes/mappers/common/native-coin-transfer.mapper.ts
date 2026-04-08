@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import type { ModuleTransaction } from '@/modules/safe/domain/entities/module-transaction.entity';
 import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
 import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
@@ -12,7 +12,10 @@ import { NativeCoinTransfer } from '@/modules/transactions/routes/entities/trans
 
 @Injectable()
 export class NativeCoinTransferMapper {
-  constructor(private readonly addressInfoHelper: AddressInfoHelper) {}
+  constructor(
+    @Inject(AddressInfoHelper)
+    private readonly addressInfoHelper: AddressInfoHelper,
+  ) {}
 
   async mapNativeCoinTransfer(
     chainId: string,

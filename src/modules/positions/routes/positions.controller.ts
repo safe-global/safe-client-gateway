@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import {
+  Inject,
   Controller,
   Get,
   Param,
@@ -20,7 +21,10 @@ import type { Address } from 'viem';
   version: '1',
 })
 export class PositionsController {
-  constructor(private readonly positionsService: PositionsService) {}
+  constructor(
+    @Inject(PositionsService)
+    private readonly positionsService: PositionsService,
+  ) {}
 
   @ApiOkResponse({ type: Protocol, isArray: true })
   @ApiQuery({

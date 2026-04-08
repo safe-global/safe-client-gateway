@@ -1,17 +1,17 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
-import { Injectable } from '@nestjs/common';
-import { Queue } from 'bullmq';
-import type { Job } from 'bullmq';
-import type { IJobQueueService } from '@/domain/interfaces/job-queue.interface';
+import { Inject, Injectable } from "@nestjs/common";
+import { Queue } from "bullmq";
+import type { Job } from "bullmq";
+import type { IJobQueueService } from "@/domain/interfaces/job-queue.interface";
 import type {
   JobData,
   JobTypeName,
-} from '@/datasources/job-queue/types/job-types';
+} from "@/datasources/job-queue/types/job-types";
 
 @Injectable()
 export class JobQueueService implements IJobQueueService {
-  constructor(private readonly queue: Queue) {}
+  constructor(@Inject(Queue) private readonly queue: Queue) {}
 
   public async getJob(jobId: string): Promise<Job | null> {
     return await this.queue.getJob(jobId);

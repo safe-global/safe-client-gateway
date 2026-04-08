@@ -4,7 +4,7 @@ import type { Address } from 'viem';
 import type { IRelayer } from '@/modules/relay/domain/interfaces/relayer.interface';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { IRelayApi } from '@/domain/interfaces/relay-api.interface';
-import type { LimitAddressesMapper } from '@/modules/relay/domain/limit-addresses.mapper';
+import { LimitAddressesMapper } from '@/modules/relay/domain/limit-addresses.mapper';
 import {
   type ILoggingService,
   LoggingService,
@@ -27,6 +27,7 @@ export class NoFeeCampaignRelayer implements IRelayer {
   constructor(
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
     @Inject(IConfigurationService) configurationService: IConfigurationService,
+    @Inject(LimitAddressesMapper)
     private readonly limitAddressesMapper: LimitAddressesMapper,
     @Inject(IRelayApi) private readonly relayApi: IRelayApi,
     @Inject(BalancesService) private readonly balancesService: BalancesService,
@@ -147,13 +148,12 @@ export class NoFeeCampaignRelayer implements IRelayer {
         remaining: Math.max(relayLimit - currentCount, 0),
         limit: relayLimit,
       };
-    } else {
-      // Outside no-fee campaign window for configured chains - no relays allowed
-      return {
-        remaining: 0,
-        limit: 0,
-      };
     }
+    // Outside no-fee campaign window for configured chains - no relays allowed
+    return {
+      remaining: 0,
+      limit: 0,
+    };
   }
 
   private async getRelayCount(args: {
@@ -176,7 +176,7 @@ export class NoFeeCampaignRelayer implements IRelayer {
 
       const ttlSeconds = Math.floor(
         this.relayConfiguration[parseInt(args.chainId)].endsAtTimeStamp -
-          new Date().getTime() / 1000,
+          Date.now() / 1000,
       );
 
       return this.relayApi.setRelayCount({
@@ -236,10 +236,10 @@ export class NoFeeCampaignRelayer implements IRelayer {
 
   private isActive(chainId: string): boolean {
     const chainConfiguration = this.relayConfiguration[parseInt(chainId)];
-    const unixTimestampNow: number = new Date().getTime() / 1000;
+    const unixTimestampNow: number = Date.now() / 1000;
 
     // Return false of configuration for no-fee campaign is absent
-    if (!chainConfiguration || !chainConfiguration.safeTokenAddress) {
+    if (!chainConfiguration?.safeTokenAddress) {
       return false;
     }
 

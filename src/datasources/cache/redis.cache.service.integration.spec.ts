@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
@@ -273,8 +274,7 @@ describe('RedisCacheService', () => {
     try {
       await redisCacheService.hSet(new CacheDir(key, ''), value, MAX_TTL, 0);
     } catch (err) {
-      console.error(err);
-      throw new Error('Should not throw');
+      throw new Error(`Should not throw: ${err}`);
     }
 
     const storedValue = await redisClient.hGet(key, '');

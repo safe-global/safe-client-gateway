@@ -4,9 +4,9 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import type { z } from 'zod';
 import type { Address } from 'viem';
 
-export class DeleteDelegateV2Dto implements z.infer<
-  typeof DeleteDelegateV2DtoSchema
-> {
+export class DeleteDelegateV2Dto
+  implements z.infer<typeof DeleteDelegateV2DtoSchema>
+{
   @ApiPropertyOptional({ type: String, nullable: true })
   delegator!: Address | null;
   @ApiPropertyOptional({ type: String, nullable: true })

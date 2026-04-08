@@ -1,5 +1,13 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { Body, Controller, Get, HttpCode, Param, Post } from '@nestjs/common';
+import {
+  Inject,
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  Param,
+  Post,
+} from '@nestjs/common';
 import {
   ApiOkResponse,
   ApiQuery,
@@ -33,7 +41,9 @@ import type { Address, Hash } from 'viem';
   version: '1',
 })
 export class MessagesController {
-  constructor(private readonly messagesService: MessagesService) {}
+  constructor(
+    @Inject(MessagesService) private readonly messagesService: MessagesService,
+  ) {}
 
   @ApiOperation({
     summary: 'Get message by hash',

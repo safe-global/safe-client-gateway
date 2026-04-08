@@ -751,7 +751,7 @@ describe('Alerts Controller', () => {
             .build();
           const timestamp = Date.now().toString();
           // TODO: Check threshold and expected owners in email
-          const { threshold: _threshold, owner: _owner } =
+          const { threshold: _threshold, owner } =
             addOwnerWithThreshold.build();
           const _expectedOwners = [...safe.owners, owner];
           const __signature = fakeTenderlySignature({

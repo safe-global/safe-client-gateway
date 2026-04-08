@@ -4,9 +4,9 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import type { z } from 'zod';
 import type { Address } from 'viem';
 
-export class CreateDelegateDto implements z.infer<
-  typeof CreateDelegateDtoSchema
-> {
+export class CreateDelegateDto
+  implements z.infer<typeof CreateDelegateDtoSchema>
+{
   @ApiPropertyOptional({ type: String, nullable: true })
   safe!: Address | null;
   @ApiProperty()

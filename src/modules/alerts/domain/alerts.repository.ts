@@ -21,8 +21,10 @@ export class AlertsRepository implements IAlertsRepository {
   constructor(
     @Inject(IAlertsApi)
     private readonly alertsApi: IAlertsApi,
+    @Inject(DelayModifierDecoder)
     private readonly delayModifierDecoder: DelayModifierDecoder,
-    private readonly safeDecoder: SafeDecoder,
+    @Inject(SafeDecoder) private readonly safeDecoder: SafeDecoder,
+    @Inject(MultiSendDecoder)
     private readonly multiSendDecoder: MultiSendDecoder,
     @Inject(LoggingService)
     private readonly loggingService: ILoggingService,

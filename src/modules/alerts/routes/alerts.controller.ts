@@ -27,7 +27,7 @@ import { AlertSchema } from '@/modules/alerts/routes/entities/schemas/alerts.sch
 @ApiExcludeController()
 export class AlertsController {
   constructor(
-    private readonly alertsService: AlertsService,
+    @Inject(AlertsService) private readonly alertsService: AlertsService,
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
   ) {}
 

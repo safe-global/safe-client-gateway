@@ -26,6 +26,7 @@ export class DataDecoderApi implements IDataDecoderApi {
     private readonly configurationService: IConfigurationService,
     @Inject(CacheFirstDataSource)
     private readonly dataSource: CacheFirstDataSource,
+    @Inject(HttpErrorFactory)
     private readonly httpErrorFactory: HttpErrorFactory,
   ) {
     this.baseUrl = this.configurationService.getOrThrow<string>(

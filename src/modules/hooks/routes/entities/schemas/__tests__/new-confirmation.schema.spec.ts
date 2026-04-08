@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { newConfirmationEventBuilder } from '@/modules/hooks/routes/entities/__tests__/new-confirmation.builder';
 import type { TransactionEventType } from '@/modules/hooks/routes/entities/event-type.entity';
 import { NewConfirmationEventSchema } from '@/modules/hooks/routes/entities/schemas/new-confirmation.schema';
@@ -33,43 +34,43 @@ describe('NewConfirmationEventSchema', () => {
     ]);
   });
 
-  it.each(['address' as const, 'owner' as const])(
-    'should not allow a non-address %s',
-    (field) => {
-      const newConfirmationEvent = newConfirmationEventBuilder()
-        .with(field, faker.string.alpha() as Address)
-        .build();
+  it.each([
+    'address' as const,
+    'owner' as const,
+  ])('should not allow a non-address %s', (field) => {
+    const newConfirmationEvent = newConfirmationEventBuilder()
+      .with(field, faker.string.alpha() as Address)
+      .build();
 
-      const result = NewConfirmationEventSchema.safeParse(newConfirmationEvent);
+    const result = NewConfirmationEventSchema.safeParse(newConfirmationEvent);
 
-      expect(result.success).toBe(false);
-      expect(!result.success && result.error.issues).toEqual([
-        expect.objectContaining({
-          code: 'custom',
-          message: 'Invalid address',
-          path: [field],
-        }),
-      ]);
-    },
-  );
+    expect(result.success).toBe(false);
+    expect(!result.success && result.error.issues).toEqual([
+      expect.objectContaining({
+        code: 'custom',
+        message: 'Invalid address',
+        path: [field],
+      }),
+    ]);
+  });
 
-  it.each(['address' as const, 'owner' as const])(
-    'should checksum the  %s',
-    (field) => {
-      const nonChecksummedAddress = faker.finance
-        .ethereumAddress()
-        .toLowerCase() as Address;
-      const newConfirmationEvent = newConfirmationEventBuilder()
-        .with(field, nonChecksummedAddress)
-        .build();
+  it.each([
+    'address' as const,
+    'owner' as const,
+  ])('should checksum the  %s', (field) => {
+    const nonChecksummedAddress = faker.finance
+      .ethereumAddress()
+      .toLowerCase() as Address;
+    const newConfirmationEvent = newConfirmationEventBuilder()
+      .with(field, nonChecksummedAddress)
+      .build();
 
-      const result = NewConfirmationEventSchema.safeParse(newConfirmationEvent);
+    const result = NewConfirmationEventSchema.safeParse(newConfirmationEvent);
 
-      expect(result.success && result.data[field]).toStrictEqual(
-        getAddress(nonChecksummedAddress),
-      );
-    },
-  );
+    expect(result.success && result.data[field]).toStrictEqual(
+      getAddress(nonChecksummedAddress),
+    );
+  });
 
   it.each([
     'type' as const,

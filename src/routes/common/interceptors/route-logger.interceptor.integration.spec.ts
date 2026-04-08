@@ -34,7 +34,7 @@ const mockLoggingService: jest.MockedObjectDeep<ILoggingService> = {
 };
 
 class ErrorWithCode extends Error {
-  private readonly code: number;
+  public readonly code: number;
 
   public constructor(message: string, code: number) {
     super(message);
@@ -61,7 +61,9 @@ class TestController {
   validationError(
     @Query('numeric_string', new ValidationPipe(NumericStringSchema))
     _: Address,
-  ): void {}
+  ): void {
+    /* test endpoint */
+  }
   /* eslint-enable @typescript-eslint/no-unused-vars */
 
   @Get('zod-error')

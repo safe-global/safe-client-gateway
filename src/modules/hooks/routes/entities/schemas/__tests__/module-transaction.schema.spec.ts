@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { ModuleTransactionEventSchema } from '@/modules/hooks/routes/entities/schemas/module-transaction.schema';
 import type { TransactionEventType } from '@/modules/hooks/routes/entities/event-type.entity';
 import { faker } from '@faker-js/faker';
@@ -37,46 +38,46 @@ describe('ModuleTransactionEventSchema', () => {
     ]);
   });
 
-  it.each(['address' as const, 'module' as const])(
-    'should not allow a non-address %s',
-    (field) => {
-      const moduleTransactionEvent = moduleTransactionEventBuilder()
-        .with(field, faker.string.alpha() as Address)
-        .build();
+  it.each([
+    'address' as const,
+    'module' as const,
+  ])('should not allow a non-address %s', (field) => {
+    const moduleTransactionEvent = moduleTransactionEventBuilder()
+      .with(field, faker.string.alpha() as Address)
+      .build();
 
-      const result = ModuleTransactionEventSchema.safeParse(
-        moduleTransactionEvent,
-      );
+    const result = ModuleTransactionEventSchema.safeParse(
+      moduleTransactionEvent,
+    );
 
-      expect(!result.success && result.error.issues).toStrictEqual([
-        {
-          code: 'custom',
-          message: 'Invalid address',
-          path: [field],
-        },
-      ]);
-    },
-  );
+    expect(!result.success && result.error.issues).toStrictEqual([
+      {
+        code: 'custom',
+        message: 'Invalid address',
+        path: [field],
+      },
+    ]);
+  });
 
-  it.each(['address' as const, 'module' as const])(
-    'should checksum the %s',
-    (field) => {
-      const nonChecksummedAddress = faker.finance
-        .ethereumAddress()
-        .toLowerCase() as Address;
-      const moduleTransactionEvent = moduleTransactionEventBuilder()
-        .with(field, nonChecksummedAddress)
-        .build();
+  it.each([
+    'address' as const,
+    'module' as const,
+  ])('should checksum the %s', (field) => {
+    const nonChecksummedAddress = faker.finance
+      .ethereumAddress()
+      .toLowerCase() as Address;
+    const moduleTransactionEvent = moduleTransactionEventBuilder()
+      .with(field, nonChecksummedAddress)
+      .build();
 
-      const result = ModuleTransactionEventSchema.safeParse(
-        moduleTransactionEvent,
-      );
+    const result = ModuleTransactionEventSchema.safeParse(
+      moduleTransactionEvent,
+    );
 
-      expect(result.success && result.data[field]).toBe(
-        getAddress(nonChecksummedAddress),
-      );
-    },
-  );
+    expect(result.success && result.data[field]).toBe(
+      getAddress(nonChecksummedAddress),
+    );
+  });
 
   it.each([
     'type' as const,

@@ -327,9 +327,8 @@ export class PushNotificationService implements IPushNotificationService {
       event.type === TransactionEventType.INCOMING_TOKEN
     ) {
       return this.mapIncomingAssetEventNotification(event);
-    } else if (
-      event.type === TransactionEventType.PENDING_MULTISIG_TRANSACTION
-    ) {
+    }
+    if (event.type === TransactionEventType.PENDING_MULTISIG_TRANSACTION) {
       if (!subscriber) {
         return null;
       }
@@ -339,7 +338,8 @@ export class PushNotificationService implements IPushNotificationService {
         safe,
         delegates,
       );
-    } else if (event.type === TransactionEventType.MESSAGE_CREATED) {
+    }
+    if (event.type === TransactionEventType.MESSAGE_CREATED) {
       if (!subscriber) {
         return null;
       }
@@ -349,18 +349,16 @@ export class PushNotificationService implements IPushNotificationService {
         safe,
         delegates,
       );
-    } else if (
-      event.type === TransactionEventType.DELETED_MULTISIG_TRANSACTION
-    ) {
+    }
+    if (event.type === TransactionEventType.DELETED_MULTISIG_TRANSACTION) {
       return {
         type: event.type,
         chainId: event.chainId,
         address: event.address,
         safeTxHash: event.safeTxHash,
       };
-    } else if (
-      event.type === TransactionEventType.EXECUTED_MULTISIG_TRANSACTION
-    ) {
+    }
+    if (event.type === TransactionEventType.EXECUTED_MULTISIG_TRANSACTION) {
       return {
         type: event.type,
         chainId: event.chainId,
@@ -371,7 +369,8 @@ export class PushNotificationService implements IPushNotificationService {
         failed: event.failed,
         data: event.data,
       };
-    } else if (event.type === TransactionEventType.MODULE_TRANSACTION) {
+    }
+    if (event.type === TransactionEventType.MODULE_TRANSACTION) {
       return {
         type: event.type,
         chainId: event.chainId,

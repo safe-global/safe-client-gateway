@@ -318,17 +318,20 @@ export class CacheFirstDataSource {
               confirmations: transaction.confirmations,
               confirmationRequired: transaction.confirmationsRequired,
             };
-          } else if (isEthereumTransaction(transaction)) {
+          }
+          if (isEthereumTransaction(transaction)) {
             return {
               txType: 'ethereum',
               txHash: transaction.txHash,
             };
-          } else if (isModuleTransaction(transaction)) {
+          }
+          if (isModuleTransaction(transaction)) {
             return {
               txType: 'module',
               transactionHash: transaction.transactionHash,
             };
-          } else if (isCreationTransaction(transaction)) {
+          }
+          if (isCreationTransaction(transaction)) {
             return {
               txType: 'creation',
               transactionHash: transaction.transactionHash,

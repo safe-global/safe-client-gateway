@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { createTestModule } from '@/__tests__/testing-module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
@@ -768,7 +769,8 @@ describe('Balances Controller', () => {
               data: rawify(chainResponse),
               status: 200,
             });
-          } else if (
+          }
+          if (
             url ==
             `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`
           ) {
@@ -776,7 +778,8 @@ describe('Balances Controller', () => {
               data: rawify(safeBuilder().build()),
               status: 200,
             });
-          } else if (url == transactionServiceUrl) {
+          }
+          if (url == transactionServiceUrl) {
             const error = new NetworkResponseError(
               new URL(transactionServiceUrl),
               {
@@ -784,9 +787,8 @@ describe('Balances Controller', () => {
               } as Response,
             );
             return Promise.reject(error);
-          } else {
-            return Promise.reject(new Error(`Could not match ${url}`));
           }
+          return Promise.reject(new Error(`Could not match ${url}`));
         });
 
         await request(app.getHttpServer())
@@ -808,7 +810,8 @@ describe('Balances Controller', () => {
       networkService.get.mockImplementation(({ url }) => {
         if (url == `${safeConfigUrl}/api/v1/chains/${chainId}`) {
           return Promise.resolve({ data: rawify(chainResponse), status: 200 });
-        } else if (
+        }
+        if (
           url ==
           `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/balances/`
         ) {
@@ -816,7 +819,8 @@ describe('Balances Controller', () => {
             data: rawify([{ invalid: 'data' }]),
             status: 200,
           });
-        } else if (
+        }
+        if (
           url ==
           `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`
         ) {
@@ -824,9 +828,8 @@ describe('Balances Controller', () => {
             data: rawify(safeBuilder().build()),
             status: 200,
           });
-        } else {
-          return Promise.reject(new Error(`Could not match ${url}`));
         }
+        return Promise.reject(new Error(`Could not match ${url}`));
       });
 
       await request(app.getHttpServer())

@@ -146,23 +146,22 @@ describe('PushNotificationService (Unit)', () => {
       { name: 'MODULE_TRANSACTION', builder: moduleTransactionEventBuilder },
     ];
 
-    it.each(notifiableBuilders)(
-      'should process $name events (notifiable)',
-      async ({ builder }) => {
-        const event = builder().build();
-        mockNotificationsRepository.getSubscribersBySafe.mockResolvedValue([]);
-        // For owner-only events, provide a Safe
-        mockSafeRepository.getSafe.mockResolvedValue(createSafe());
+    it.each(
+      notifiableBuilders,
+    )('should process $name events (notifiable)', async ({ builder }) => {
+      const event = builder().build();
+      mockNotificationsRepository.getSubscribersBySafe.mockResolvedValue([]);
+      // For owner-only events, provide a Safe
+      mockSafeRepository.getSafe.mockResolvedValue(createSafe());
 
-        const result = await service.processEvent(event);
+      const result = await service.processEvent(event);
 
-        // With 0 subscribers, should return 0 delivery jobs
-        expect(result).toBe(0);
-        expect(
-          mockNotificationsRepository.getSubscribersBySafe,
-        ).toHaveBeenCalled();
-      },
-    );
+      // With 0 subscribers, should return 0 delivery jobs
+      expect(result).toBe(0);
+      expect(
+        mockNotificationsRepository.getSubscribersBySafe,
+      ).toHaveBeenCalled();
+    });
 
     it('should skip non-notifiable events (CHAIN_UPDATE)', async () => {
       const event = chainUpdateEventBuilder().build();
@@ -256,32 +255,27 @@ describe('PushNotificationService (Unit)', () => {
     it.each([
       ['INCOMING_TOKEN', incomingTokenEventBuilder],
       ['INCOMING_ETHER', incomingEtherEventBuilder],
-    ])(
-      'should suppress %s self-send (from === address)',
-      async (_type, builderFn) => {
-        const event = builderFn().build();
-        const sub = createSubscriber();
+    ])('should suppress %s self-send (from === address)', async (_type, builderFn) => {
+      const event = builderFn().build();
+      const sub = createSubscriber();
 
-        mockNotificationsRepository.getSubscribersBySafe.mockResolvedValue([
-          sub,
-        ]);
-        mockSafeRepository.getIncomingTransfers.mockResolvedValue(
-          pageBuilder<Transfer>()
-            .with('results', [
-              nativeTokenTransferBuilder()
-                .with('transactionHash', event.txHash as Hash)
-                .with('from', event.address)
-                .build(),
-            ])
-            .build(),
-        );
+      mockNotificationsRepository.getSubscribersBySafe.mockResolvedValue([sub]);
+      mockSafeRepository.getIncomingTransfers.mockResolvedValue(
+        pageBuilder<Transfer>()
+          .with('results', [
+            nativeTokenTransferBuilder()
+              .with('transactionHash', event.txHash as Hash)
+              .with('from', event.address)
+              .build(),
+          ])
+          .build(),
+      );
 
-        const result = await service.processEvent(event);
+      const result = await service.processEvent(event);
 
-        expect(result).toBe(0);
-        expect(mockJobQueueService.addJob).not.toHaveBeenCalled();
-      },
-    );
+      expect(result).toBe(0);
+      expect(mockJobQueueService.addJob).not.toHaveBeenCalled();
+    });
 
     it('should create ConfirmationRequest for pending TX with threshold > 1 and unsigned subscriber', async () => {
       const ownerAddress = addr();

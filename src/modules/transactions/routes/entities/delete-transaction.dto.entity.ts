@@ -3,9 +3,9 @@ import type { DeleteTransactionDtoSchema } from '@/modules/transactions/routes/e
 import { ApiProperty } from '@nestjs/swagger';
 import type { z } from 'zod';
 
-export class DeleteTransactionDto implements z.infer<
-  typeof DeleteTransactionDtoSchema
-> {
+export class DeleteTransactionDto
+  implements z.infer<typeof DeleteTransactionDtoSchema>
+{
   @ApiProperty()
   signature!: string;
 }

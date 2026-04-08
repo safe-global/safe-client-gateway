@@ -6,6 +6,7 @@ import {
   ApiOperation,
 } from '@nestjs/swagger';
 import {
+  Inject,
   Controller,
   DefaultValuePipe,
   Get,
@@ -27,7 +28,9 @@ import { SafesV2Service } from './safes.v2.service';
   version: '2',
 })
 export class SafesV2Controller {
-  constructor(private readonly service: SafesV2Service) {}
+  constructor(
+    @Inject(SafesV2Service) private readonly service: SafesV2Service,
+  ) {}
 
   @ApiOperation({
     summary: 'Get Safe overview (v2)',

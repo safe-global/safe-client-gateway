@@ -11,9 +11,9 @@ import type { z } from 'zod';
 import type { Address } from 'viem';
 
 @ApiExtraModels(TypedData)
-export class CreateMessageDto implements z.infer<
-  typeof CreateMessageDtoSchema
-> {
+export class CreateMessageDto
+  implements z.infer<typeof CreateMessageDtoSchema>
+{
   @ApiProperty({
     oneOf: [{ type: 'string' }, { $ref: getSchemaPath(TypedData) }],
   })

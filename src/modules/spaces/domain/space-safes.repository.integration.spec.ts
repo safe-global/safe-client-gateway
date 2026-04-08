@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { DataSource } from 'typeorm';
 import { getAddress, maxUint256 } from 'viem';
@@ -146,7 +147,7 @@ describe('SpaceSafesRepository', () => {
   // As the triggers are set on the database level, Jest's fake timers are not accurate
   describe('createdAt/updatedAt', () => {
     it('should set createdAt and updatedAt when creating a SpaceSafe', async () => {
-      const before = new Date().getTime();
+      const before = Date.now();
       const space = await dbSpaceRepository.insert({
         status: faker.helpers.arrayElement(SpaceStatusKeys),
         name: faker.word.noun(),
@@ -157,7 +158,7 @@ describe('SpaceSafesRepository', () => {
         space: space.identifiers[0].id,
       });
 
-      const after = new Date().getTime();
+      const after = Date.now();
 
       const createdAt = spaceSafe.generatedMaps[0].createdAt;
       const updatedAt = spaceSafe.generatedMaps[0].updatedAt;

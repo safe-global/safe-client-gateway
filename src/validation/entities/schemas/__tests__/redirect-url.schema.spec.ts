@@ -39,16 +39,19 @@ describe('RedirectUrlSchema', () => {
     expect(result.success).toBe(true);
   });
 
-  it.each(['\r', '\n', '\0', '\t', '\x1f', '\x7f'])(
-    'should reject a string containing control character %j',
-    (char) => {
-      const url =
-        faker.internet.url({ appendSlash: false }) + `/${char}injected`;
-      const result = RedirectUrlSchema.safeParse(url);
+  it.each([
+    '\r',
+    '\n',
+    '\0',
+    '\t',
+    '\x1f',
+    '\x7f',
+  ])('should reject a string containing control character %j', (char) => {
+    const url = faker.internet.url({ appendSlash: false }) + `/${char}injected`;
+    const result = RedirectUrlSchema.safeParse(url);
 
-      expect(result.success).toBe(false);
-    },
-  );
+    expect(result.success).toBe(false);
+  });
 
   it('should reject non-string types', () => {
     expect(RedirectUrlSchema.safeParse(faker.number.int()).success).toBe(false);

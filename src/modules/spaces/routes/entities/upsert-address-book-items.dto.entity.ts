@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { ApiExtraModels, ApiProperty, getSchemaPath } from '@nestjs/swagger';
@@ -25,9 +26,9 @@ export const UpsertAddressBookItemsSchema = z.object({
 });
 
 @ApiExtraModels(AddressBookItem)
-export class UpsertAddressBookItemsDto implements z.infer<
-  typeof UpsertAddressBookItemsSchema
-> {
+export class UpsertAddressBookItemsDto
+  implements z.infer<typeof UpsertAddressBookItemsSchema>
+{
   @ApiProperty({
     items: { $ref: getSchemaPath(AddressBookItem) },
     type: 'array',

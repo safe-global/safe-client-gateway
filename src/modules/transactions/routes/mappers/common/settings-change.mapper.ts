@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import type { DataDecoded } from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';
 import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
 import { NULL_ADDRESS } from '@/routes/common/constants';
@@ -43,7 +43,9 @@ export class SettingsChangeMapper {
   ];
 
   constructor(
+    @Inject(AddressInfoHelper)
     private readonly addressInfoHelper: AddressInfoHelper,
+    @Inject(DataDecodedParamHelper)
     private readonly dataDecodedParamHelper: DataDecodedParamHelper,
   ) {}
 
@@ -197,9 +199,8 @@ export class SettingsChangeMapper {
         ['CONTRACT'],
       );
       return new SetGuard(guardAddressInfo);
-    } else {
-      return new DeleteGuard();
     }
+    return new DeleteGuard();
   }
 
   async mapSettingsChange(

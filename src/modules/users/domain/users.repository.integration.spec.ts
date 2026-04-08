@@ -126,12 +126,12 @@ describe('UsersRepository', () => {
   describe('createdAt/updatedAt', () => {
     it('should set createdAt and updatedAt when creating a User', async () => {
       const dbUserRepository = dataSource.getRepository(User);
-      const before = new Date().getTime();
+      const before = Date.now();
       const user = await dbUserRepository.insert({
         status: faker.helpers.arrayElement(UserStatusKeys),
       });
 
-      const after = new Date().getTime();
+      const after = Date.now();
 
       const createdAt = user.generatedMaps[0].createdAt;
       const updatedAt = user.generatedMaps[0].updatedAt;

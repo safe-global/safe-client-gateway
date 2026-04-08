@@ -15,7 +15,7 @@ import { Erc721Transfer } from '@/modules/transactions/routes/entities/transfers
 import { NativeCoinTransfer } from '@/modules/transactions/routes/entities/transfers/native-coin-transfer.entity';
 import { getTransferDirection } from '@/modules/transactions/routes/mappers/common/transfer-direction.helper';
 import type { Transfer } from '@/modules/transactions/routes/entities/transfers/transfer.entity';
-import type { SwapTransferInfoMapper } from '@/modules/transactions/routes/mappers/transfers/swap-transfer-info.mapper';
+import { SwapTransferInfoMapper } from '@/modules/transactions/routes/mappers/transfers/swap-transfer-info.mapper';
 import type { SwapTransferTransactionInfo } from '@/modules/transactions/routes/swap-transfer-transaction-info.entity';
 import type { AddressInfo } from '@/routes/common/entities/address-info.entity';
 import {
@@ -28,7 +28,9 @@ import type { Address } from 'viem';
 export class TransferInfoMapper {
   constructor(
     @Inject(ITokenRepository) private readonly tokenRepository: TokenRepository,
+    @Inject(SwapTransferInfoMapper)
     private readonly swapTransferInfoMapper: SwapTransferInfoMapper,
+    @Inject(AddressInfoHelper)
     private readonly addressInfoHelper: AddressInfoHelper,
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
   ) {}
@@ -120,7 +122,8 @@ export class TransferInfoMapper {
         token?.decimals,
         token?.trusted,
       );
-    } else if (domainTransfer.type === 'ERC721_TRANSFER') {
+    }
+    if (domainTransfer.type === 'ERC721_TRANSFER') {
       const { tokenAddress, tokenId } = domainTransfer;
       const token = await this.getToken(chainId, tokenAddress).catch(
         () => null,
@@ -133,11 +136,11 @@ export class TransferInfoMapper {
         token?.logoUri,
         token?.trusted,
       );
-    } else if (domainTransfer.type === 'ETHER_TRANSFER') {
-      return new NativeCoinTransfer(domainTransfer.value);
-    } else {
-      throw Error('Unknown transfer type');
     }
+    if (domainTransfer.type === 'ETHER_TRANSFER') {
+      return new NativeCoinTransfer(domainTransfer.value);
+    }
+    throw Error('Unknown transfer type');
   }
 
   private getToken(

@@ -21,7 +21,7 @@ import {
   type TwapOrderInfo,
 } from '@/modules/transactions/routes/entities/swaps/twap-order-info.entity';
 import type { GPv2OrderParameters } from '@/modules/swaps/domain/contracts/decoders/gp-v2-decoder.helper';
-import { Injectable, Module } from '@nestjs/common';
+import { Inject, Injectable, Module } from '@nestjs/common';
 import { type Address, type Hex, isAddressEqual } from 'viem';
 
 /**
@@ -34,7 +34,9 @@ export class TwapOrderHelper {
     '0xfdaFc9d1902f4e0b84f65F49f244b32b31013b74';
 
   constructor(
+    @Inject(TransactionFinder)
     private readonly transactionFinder: TransactionFinder,
+    @Inject(ComposableCowDecoder)
     private readonly composableCowDecoder: ComposableCowDecoder,
   ) {}
 

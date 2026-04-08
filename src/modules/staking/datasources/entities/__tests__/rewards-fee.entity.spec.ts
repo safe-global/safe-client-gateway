@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { rewardsFeeBuilder } from '@/modules/staking/datasources/entities/__tests__/rewards-fee.entity.builder';
 import { RewardsFeeSchema } from '@/modules/staking/datasources/entities/rewards-fee.entity';
 import { faker } from '@faker-js/faker';
@@ -37,22 +38,19 @@ describe('RewardsFeeSchema', () => {
     ['boolean', faker.datatype.boolean()],
     ['object', {}],
     ['array', []],
-  ])(
-    'should not validate a RewardsFee object with a %s fee value',
-    (type, invalidFee) => {
-      const rewardsFee = { fee: invalidFee };
+  ])('should not validate a RewardsFee object with a %s fee value', (type, invalidFee) => {
+    const rewardsFee = { fee: invalidFee };
 
-      const result = RewardsFeeSchema.safeParse(rewardsFee);
+    const result = RewardsFeeSchema.safeParse(rewardsFee);
 
-      expect(result.success).toBe(false);
-      expect(result.error?.issues[0]).toStrictEqual({
-        code: 'invalid_type',
-        expected: 'number',
-        message: `Invalid input: expected number, received ${type}`,
-        path: ['fee'],
-      });
-    },
-  );
+    expect(result.success).toBe(false);
+    expect(result.error?.issues[0]).toStrictEqual({
+      code: 'invalid_type',
+      expected: 'number',
+      message: `Invalid input: expected number, received ${type}`,
+      path: ['fee'],
+    });
+  });
 
   it('should validate a RewardsFee object with extra properties and strip them', () => {
     const rewardsFee = {

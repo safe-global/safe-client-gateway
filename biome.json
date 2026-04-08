@@ -17,10 +17,17 @@
   "javascript": {
     "parser": {
       "unsafeParameterDecoratorsEnabled": true
+    },
+    "formatter": {
+      "quoteStyle": "single",
+      "trailingCommas": "all"
     }
   },
   "formatter": {
-    "enabled": false
+    "enabled": true,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 80
   },
   "linter": {
     "enabled": true,
@@ -29,13 +36,13 @@
       "correctness": {
         "noUnusedVariables": "error",
         "noUnusedImports": "error",
-        "noUnusedFunctionParameters": "off",
-        "noUnusedPrivateClassMembers": "off",
+        "noUnusedFunctionParameters": "error",
+        "noUnusedPrivateClassMembers": "error",
         "useParseIntRadix": "off",
         "noVoidTypeReturn": "off"
       },
       "style": {
-        "useImportType": "off",
+        "useImportType": "error",
         "useConsistentArrayType": {
           "level": "error",
           "options": {
@@ -44,6 +51,11 @@
         },
         "noNonNullAssertion": "off",
         "noNestedTernary": "error",
+        "noParameterAssign": "error",
+        "noUselessElse": "error",
+        "noYodaExpression": "error",
+        "useDefaultParameterLast": "error",
+        "useThrowOnlyError": "error",
         "useNodejsImportProtocol": "off",
         "useTemplate": "off",
         "useLiteralEnumMembers": "off",
@@ -58,6 +70,9 @@
       },
       "suspicious": {
         "noExplicitAny": "error",
+        "noConsole": "error",
+        "noVar": "error",
+        "noEmptyBlockStatements": "error",
         "noControlCharactersInRegex": "off",
         "noAssignInExpressions": "off",
         "noDoubleEquals": "off",
@@ -68,18 +83,21 @@
         "noExportsInTest": "off"
       },
       "complexity": {
+        "noUselessConstructor": "error",
+        "noUselessSwitchCase": "error",
+        "noUselessTernary": "error",
+        "useOptionalChain": "error",
+        "useDateNow": "error",
         "noForEach": "off",
         "noStaticOnlyClass": "off",
         "useLiteralKeys": "off",
-        "noUselessConstructor": "off",
-        "useDateNow": "off",
-        "useOptionalChain": "off",
-        "noBannedTypes": "off",
-        "noUselessSwitchCase": "off",
-        "noUselessTernary": "off"
+        "noBannedTypes": "off"
       },
       "performance": {
-        "noAccumulatingSpread": "off"
+        "noAccumulatingSpread": "error"
+      },
+      "security": {
+        "noGlobalEval": "error"
       }
     }
   },
@@ -90,6 +108,16 @@
         "rules": {
           "style": {
             "noRestrictedImports": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": ["**/src/logging/__tests__/**"],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noConsole": "off"
           }
         }
       }

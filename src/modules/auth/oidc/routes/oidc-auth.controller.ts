@@ -57,7 +57,7 @@ export class OidcAuthController {
   constructor(
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
-    private readonly oidcAuthService: OidcAuthService,
+    @Inject(OidcAuthService) private readonly oidcAuthService: OidcAuthService,
     @Inject(LoggingService)
     private readonly loggingService: ILoggingService,
   ) {

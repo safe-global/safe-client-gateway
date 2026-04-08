@@ -18,9 +18,11 @@ export class ExportApi implements IExportApi {
   constructor(
     private readonly chainId: string,
     private readonly baseUrl: string,
+    @Inject(CacheFirstDataSource)
     private readonly dataSource: CacheFirstDataSource,
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
+    @Inject(HttpErrorFactory)
     private readonly httpErrorFactory: HttpErrorFactory,
   ) {
     this.defaultExpirationTimeInSeconds =

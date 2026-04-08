@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import {
+  Inject,
   Body,
   Controller,
   Delete,
@@ -25,7 +26,9 @@ import type { Address } from 'viem';
   path: 'chains/:chainId/safes/:safeAddress/recovery',
 })
 export class RecoveryController {
-  constructor(private readonly recoveryService: RecoveryService) {}
+  constructor(
+    @Inject(RecoveryService) private readonly recoveryService: RecoveryService,
+  ) {}
 
   @HttpCode(200)
   @Post()

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import type { ModuleTransaction } from '@/modules/safe/domain/entities/module-transaction.entity';
 import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
 import type { Erc721Token } from '@/modules/tokens/domain/entities/token.entity';
@@ -15,7 +15,9 @@ import type { DataDecoded } from '@/modules/data-decoder/routes/entities/data-de
 @Injectable()
 export class Erc721TransferMapper {
   constructor(
+    @Inject(AddressInfoHelper)
     private readonly addressInfoHelper: AddressInfoHelper,
+    @Inject(DataDecodedParamHelper)
     private readonly dataDecodedParamHelper: DataDecodedParamHelper,
   ) {}
 

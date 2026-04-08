@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import {
+  Inject,
   Controller,
   Delete,
   Get,
@@ -32,7 +33,10 @@ import type { Address } from 'viem';
   version: '1',
 })
 export class PortfolioController {
-  constructor(private readonly portfolioService: PortfolioApiService) {}
+  constructor(
+    @Inject(PortfolioApiService)
+    private readonly portfolioService: PortfolioApiService,
+  ) {}
 
   @ApiOperation({
     summary: 'Get portfolio',

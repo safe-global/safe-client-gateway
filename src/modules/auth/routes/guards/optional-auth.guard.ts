@@ -2,6 +2,7 @@
 import { ACCESS_TOKEN_COOKIE_NAME } from '@/modules/auth/utils/auth-cookie.utils';
 import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
 import {
+  Inject,
   type CanActivate,
   type ExecutionContext,
   Injectable,
@@ -10,7 +11,7 @@ import type { Request } from 'express';
 
 @Injectable()
 export class OptionalAuthGuard implements CanActivate {
-  constructor(private readonly authGuard: AuthGuard) {}
+  constructor(@Inject(AuthGuard) private readonly authGuard: AuthGuard) {}
   canActivate(context: ExecutionContext): boolean {
     const request: Request = context.switchToHttp().getRequest();
 

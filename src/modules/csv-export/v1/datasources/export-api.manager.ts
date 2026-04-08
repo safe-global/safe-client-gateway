@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import type { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
+import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { ChainSchema } from '@/modules/chains/domain/entities/schemas/chain.schema';
 import { IConfigApi } from '@/domain/interfaces/config-api.interface';
@@ -18,7 +18,9 @@ export class ExportApiManager implements IExportApiManager {
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
     @Inject(IConfigApi) private readonly configApi: IConfigApi,
+    @Inject(CacheFirstDataSource)
     private readonly dataSource: CacheFirstDataSource,
+    @Inject(HttpErrorFactory)
     private readonly httpErrorFactory: HttpErrorFactory,
   ) {
     this.useVpcUrl = this.configurationService.getOrThrow<boolean>(

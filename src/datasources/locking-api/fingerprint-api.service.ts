@@ -24,7 +24,7 @@ export class FingerprintApiService implements IIdentityApi {
   constructor(
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
-    @Inject(LoggingService) private readonly loggingService: ILoggingService,
+    @Inject(LoggingService) readonly _loggingService: ILoggingService,
   ) {
     this.eligibilityEncryptionKey =
       this.configurationService.getOrThrow<string>(

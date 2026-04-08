@@ -10,6 +10,7 @@ import type { AddressBookDbItem } from '@/modules/spaces/domain/address-books/en
 
 export class AddressBooksService {
   // TODO: Investigate and implement usage of this
+  // biome-ignore lint/correctness/noUnusedPrivateClassMembers: planned for future use
   private readonly maxItems: number;
 
   constructor(

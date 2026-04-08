@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { Controller, Get, Param } from '@nestjs/common';
+import { Inject, Controller, Get, Param } from '@nestjs/common';
 import {
   ApiOkResponse,
   ApiQuery,
@@ -29,7 +29,9 @@ import { IndexingStatus } from '@/modules/chains/routes/entities/indexing-status
   version: '1',
 })
 export class ChainsController {
-  constructor(private readonly chainsService: ChainsService) {}
+  constructor(
+    @Inject(ChainsService) private readonly chainsService: ChainsService,
+  ) {}
 
   @ApiOperation({
     summary: 'Get supported chains',

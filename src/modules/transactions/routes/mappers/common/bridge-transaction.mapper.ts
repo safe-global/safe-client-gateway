@@ -17,9 +17,10 @@ import type { Address } from 'viem';
 @Injectable()
 export class BridgeTransactionMapper {
   constructor(
-    private readonly liFiDecoder: LiFiDecoder,
+    @Inject(LiFiDecoder) private readonly liFiDecoder: LiFiDecoder,
     @Inject(ITokenRepository)
     private readonly tokenRepository: ITokenRepository,
+    @Inject(AddressInfoHelper)
     private readonly addressInfoHelper: AddressInfoHelper,
     @Inject(IBridgeRepository)
     private readonly bridgeRepository: IBridgeRepository,
@@ -126,12 +127,11 @@ export class BridgeTransactionMapper {
         symbol: nativeCurrency.symbol,
         trusted: true,
       };
-    } else {
-      return this.tokenRepository.getToken({
-        chainId: args.chainId,
-        address: args.tokenAddress,
-      });
     }
+    return this.tokenRepository.getToken({
+      chainId: args.chainId,
+      address: args.tokenAddress,
+    });
   }
 
   private async getExecutedSwapInfo(args: {

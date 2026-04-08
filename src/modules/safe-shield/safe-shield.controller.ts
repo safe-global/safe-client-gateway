@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import {
+  Inject,
   Body,
   Controller,
   Get,
@@ -47,7 +48,10 @@ import {
   version: '1',
 })
 export class SafeShieldController {
-  constructor(private readonly safeShieldService: SafeShieldService) {}
+  constructor(
+    @Inject(SafeShieldService)
+    private readonly safeShieldService: SafeShieldService,
+  ) {}
 
   @ApiOperation({
     summary: 'Analyze recipient address',
@@ -207,9 +211,9 @@ export class SafeShieldController {
   @Post('chains/:chainId/security/:safeAddress/report-false-result')
   public async reportFalseResult(
     @Param('chainId', new ValidationPipe(NumericStringSchema))
-    chainId: string,
+    _chainId: string,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
-    safeAddress: Address,
+    _safeAddress: Address,
     @Body(new ValidationPipe(ReportFalseResultRequestSchema))
     request: ReportFalseResultRequestDto,
   ): Promise<ReportFalseResultResponseDto> {

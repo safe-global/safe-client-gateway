@@ -22,6 +22,7 @@ export class PushwooshApi implements IEmailApi {
     private readonly configurationService: IConfigurationService,
     @Inject(NetworkService)
     private readonly networkService: INetworkService,
+    @Inject(HttpErrorFactory)
     private readonly httpErrorFactory: HttpErrorFactory,
   ) {
     this.apiKey = this.configurationService.getOrThrow<string>('email.apiKey');

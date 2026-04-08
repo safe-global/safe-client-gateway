@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import {
   LoggingService,
@@ -62,19 +63,18 @@ export class DatabaseMigrator {
 
         this.loggingService.info('Migrations: Finished.');
         break;
-      } else {
-        if (numberOfIterations === numberOfRetries) {
-          throw new Error(
-            'Migrations: Migrations are still running in another instance!',
-          );
-        }
-        this.loggingService.info('Migrations: Running in another instance...');
-        const retryAfterMs = this.configService.getOrThrow<number>(
-          'db.migrator.retryAfterMs',
-        );
-
-        await new Promise((resolve) => setTimeout(resolve, retryAfterMs));
       }
+      if (numberOfIterations === numberOfRetries) {
+        throw new Error(
+          'Migrations: Migrations are still running in another instance!',
+        );
+      }
+      this.loggingService.info('Migrations: Running in another instance...');
+      const retryAfterMs = this.configService.getOrThrow<number>(
+        'db.migrator.retryAfterMs',
+      );
+
+      await new Promise((resolve) => setTimeout(resolve, retryAfterMs));
     }
   }
 

@@ -33,7 +33,7 @@ export class TransferImitationMapper {
 
   constructor(
     @Inject(IConfigurationService)
-    private readonly configurationService: IConfigurationService,
+    readonly configurationService: IConfigurationService,
   ) {
     this.isImproved = configurationService.getOrThrow(
       'features.improvedAddressPoisoning',

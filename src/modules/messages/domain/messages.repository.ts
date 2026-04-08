@@ -20,6 +20,7 @@ export class MessagesRepository implements IMessagesRepository {
     private readonly transactionApiManager: ITransactionApiManager,
     @Inject(ISafeRepository)
     private readonly safeRepository: ISafeRepository,
+    @Inject(MessageVerifierHelper)
     private readonly messageVerifier: MessageVerifierHelper,
   ) {}
 

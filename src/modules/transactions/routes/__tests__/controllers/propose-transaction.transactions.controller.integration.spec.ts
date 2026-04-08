@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
@@ -111,126 +112,125 @@ describe('Propose transaction - Transactions Controller', () => {
       });
   });
 
-  it.each(Object.values(SignatureType))(
-    'should propose a transaction with %s signature',
-    async (signatureType) => {
-      const chainId = faker.string.numeric();
-      const safeAddress = getAddress(faker.finance.ethereumAddress());
-      const chain = chainBuilder().with('chainId', chainId).build();
-      const privateKey = generatePrivateKey();
-      const signer = privateKeyToAccount(privateKey);
-      const safe = safeBuilder()
-        .with('address', safeAddress)
-        .with('owners', [signer.address])
-        .build();
-      const safeApps = [safeAppBuilder().build()];
-      const contractPage = pageBuilder()
-        .with('results', [contractBuilder().build()])
-        .build();
-      const transaction = await multisigTransactionBuilder()
-        .with('safe', safeAddress)
-        .with('nonce', safe.nonce)
-        .with(
-          'origin',
-          `{"url": "${faker.internet.url({
-            appendSlash: false,
-          })}", "name": "${faker.word.words()}", "note": "<script>document.write('<img src=s onerror=alert(Hello World)>')</script>"}`,
-        )
-        .with('operation', Operation.CALL)
-        .buildWithConfirmations({
-          chainId,
-          safe,
-          signers: [signer],
-          signatureType,
-        });
-      const dataDecoded = dataDecodedBuilder().build();
-      const proposeTransactionDto = proposeTransactionDtoBuilder()
-        .with('to', transaction.to)
-        .with('value', transaction.value)
-        .with('data', transaction.data)
-        .with('nonce', transaction.nonce.toString())
-        .with('operation', transaction.operation)
-        .with('safeTxGas', transaction.safeTxGas!.toString())
-        .with('baseGas', transaction.baseGas!.toString())
-        .with('gasPrice', transaction.gasPrice!)
-        .with('gasToken', transaction.gasToken!)
-        .with('refundReceiver', transaction.refundReceiver)
-        .with('safeTxHash', transaction.safeTxHash)
-        .with('sender', transaction.confirmations![0].owner)
-        .with('signature', transaction.confirmations![0].signature)
-        .build();
-      const transactions = pageBuilder().build();
-      const token = tokenBuilder().build();
-      const gasToken = tokenBuilder().build();
-      networkService.get.mockImplementation(({ url }) => {
-        const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainId}`;
-        const getMultisigTransactionUrl = `${chain.transactionService}/api/v2/multisig-transactions/${proposeTransactionDto.safeTxHash}/`;
-        const getMultisigTransactionsUrl = `${chain.transactionService}/api/v2/safes/${safe.address}/multisig-transactions/`;
-        const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safeAddress}`;
-        const getSafeAppsUrl = `${safeConfigUrl}/api/v1/safe-apps/`;
-        const getContractUrl = `${safeDecoderUrl}/api/v1/contracts/${transaction.to}`;
-        const getTokenUrl = `${chain.transactionService}/api/v1/tokens/${transaction.to}`;
-        const getGasTokenContractUrl = `${chain.transactionService}/api/v1/tokens/${transaction.gasToken}`;
-        switch (url) {
-          case getChainUrl:
-            return Promise.resolve({ data: rawify(chain), status: 200 });
-          case getMultisigTransactionUrl:
-            return Promise.resolve({
-              data: rawify(multisigToJson(transaction)),
-              status: 200,
-            });
-          case getMultisigTransactionsUrl:
-            return Promise.resolve({ data: rawify(transactions), status: 200 });
-          case getSafeUrl:
-            return Promise.resolve({ data: rawify(safe), status: 200 });
-          case getSafeAppsUrl:
-            return Promise.resolve({ data: rawify(safeApps), status: 200 });
-          case getContractUrl:
-            return Promise.resolve({ data: rawify(contractPage), status: 200 });
-          case getTokenUrl:
-            return Promise.resolve({ data: rawify(token), status: 200 });
-          case getGasTokenContractUrl:
-            return Promise.resolve({ data: rawify(gasToken), status: 200 });
-          default:
-            return Promise.reject(new Error(`Could not match ${url}`));
-        }
+  it.each(
+    Object.values(SignatureType),
+  )('should propose a transaction with %s signature', async (signatureType) => {
+    const chainId = faker.string.numeric();
+    const safeAddress = getAddress(faker.finance.ethereumAddress());
+    const chain = chainBuilder().with('chainId', chainId).build();
+    const privateKey = generatePrivateKey();
+    const signer = privateKeyToAccount(privateKey);
+    const safe = safeBuilder()
+      .with('address', safeAddress)
+      .with('owners', [signer.address])
+      .build();
+    const safeApps = [safeAppBuilder().build()];
+    const contractPage = pageBuilder()
+      .with('results', [contractBuilder().build()])
+      .build();
+    const transaction = await multisigTransactionBuilder()
+      .with('safe', safeAddress)
+      .with('nonce', safe.nonce)
+      .with(
+        'origin',
+        `{"url": "${faker.internet.url({
+          appendSlash: false,
+        })}", "name": "${faker.word.words()}", "note": "<script>document.write('<img src=s onerror=alert(Hello World)>')</script>"}`,
+      )
+      .with('operation', Operation.CALL)
+      .buildWithConfirmations({
+        chainId,
+        safe,
+        signers: [signer],
+        signatureType,
       });
-      networkService.post.mockImplementation(({ url }) => {
-        const proposeTransactionUrl = `${chain.transactionService}/api/v2/safes/${safeAddress}/multisig-transactions/`;
-        const getDataDecodedUrl = `${safeDecoderUrl}/api/v1/data-decoder`;
-        switch (url) {
-          case proposeTransactionUrl:
-            return Promise.resolve({ data: rawify({}), status: 200 });
-          case getDataDecodedUrl:
-            return Promise.resolve({ data: rawify(dataDecoded), status: 200 });
-          default:
-            return Promise.reject(new Error(`Could not match ${url}`));
-        }
-      });
-      await request(app.getHttpServer())
-        .post(`/v1/chains/${chainId}/transactions/${safeAddress}/propose`)
-        .send(proposeTransactionDto)
-        .expect(200)
-        .expect(({ body }) =>
-          expect(body).toEqual(
-            expect.objectContaining({
-              txId: `multisig_${safeAddress}_${transaction.safeTxHash}`,
-              executedAt: transaction.executionDate?.getTime(),
-              txStatus: expect.any(String),
-              txInfo: expect.any(Object),
-              detailedExecutionInfo: expect.objectContaining({
-                type: 'MULTISIG',
-                nonce: transaction.nonce,
-              }),
-              safeAppInfo: expect.any(Object),
-              safeAddress,
-              txHash: transaction.transactionHash,
-              note: '',
+    const dataDecoded = dataDecodedBuilder().build();
+    const proposeTransactionDto = proposeTransactionDtoBuilder()
+      .with('to', transaction.to)
+      .with('value', transaction.value)
+      .with('data', transaction.data)
+      .with('nonce', transaction.nonce.toString())
+      .with('operation', transaction.operation)
+      .with('safeTxGas', transaction.safeTxGas!.toString())
+      .with('baseGas', transaction.baseGas!.toString())
+      .with('gasPrice', transaction.gasPrice!)
+      .with('gasToken', transaction.gasToken!)
+      .with('refundReceiver', transaction.refundReceiver)
+      .with('safeTxHash', transaction.safeTxHash)
+      .with('sender', transaction.confirmations![0].owner)
+      .with('signature', transaction.confirmations![0].signature)
+      .build();
+    const transactions = pageBuilder().build();
+    const token = tokenBuilder().build();
+    const gasToken = tokenBuilder().build();
+    networkService.get.mockImplementation(({ url }) => {
+      const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainId}`;
+      const getMultisigTransactionUrl = `${chain.transactionService}/api/v2/multisig-transactions/${proposeTransactionDto.safeTxHash}/`;
+      const getMultisigTransactionsUrl = `${chain.transactionService}/api/v2/safes/${safe.address}/multisig-transactions/`;
+      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safeAddress}`;
+      const getSafeAppsUrl = `${safeConfigUrl}/api/v1/safe-apps/`;
+      const getContractUrl = `${safeDecoderUrl}/api/v1/contracts/${transaction.to}`;
+      const getTokenUrl = `${chain.transactionService}/api/v1/tokens/${transaction.to}`;
+      const getGasTokenContractUrl = `${chain.transactionService}/api/v1/tokens/${transaction.gasToken}`;
+      switch (url) {
+        case getChainUrl:
+          return Promise.resolve({ data: rawify(chain), status: 200 });
+        case getMultisigTransactionUrl:
+          return Promise.resolve({
+            data: rawify(multisigToJson(transaction)),
+            status: 200,
+          });
+        case getMultisigTransactionsUrl:
+          return Promise.resolve({ data: rawify(transactions), status: 200 });
+        case getSafeUrl:
+          return Promise.resolve({ data: rawify(safe), status: 200 });
+        case getSafeAppsUrl:
+          return Promise.resolve({ data: rawify(safeApps), status: 200 });
+        case getContractUrl:
+          return Promise.resolve({ data: rawify(contractPage), status: 200 });
+        case getTokenUrl:
+          return Promise.resolve({ data: rawify(token), status: 200 });
+        case getGasTokenContractUrl:
+          return Promise.resolve({ data: rawify(gasToken), status: 200 });
+        default:
+          return Promise.reject(new Error(`Could not match ${url}`));
+      }
+    });
+    networkService.post.mockImplementation(({ url }) => {
+      const proposeTransactionUrl = `${chain.transactionService}/api/v2/safes/${safeAddress}/multisig-transactions/`;
+      const getDataDecodedUrl = `${safeDecoderUrl}/api/v1/data-decoder`;
+      switch (url) {
+        case proposeTransactionUrl:
+          return Promise.resolve({ data: rawify({}), status: 200 });
+        case getDataDecodedUrl:
+          return Promise.resolve({ data: rawify(dataDecoded), status: 200 });
+        default:
+          return Promise.reject(new Error(`Could not match ${url}`));
+      }
+    });
+    await request(app.getHttpServer())
+      .post(`/v1/chains/${chainId}/transactions/${safeAddress}/propose`)
+      .send(proposeTransactionDto)
+      .expect(200)
+      .expect(({ body }) =>
+        expect(body).toEqual(
+          expect.objectContaining({
+            txId: `multisig_${safeAddress}_${transaction.safeTxHash}`,
+            executedAt: transaction.executionDate?.getTime(),
+            txStatus: expect.any(String),
+            txInfo: expect.any(Object),
+            detailedExecutionInfo: expect.objectContaining({
+              type: 'MULTISIG',
+              nonce: transaction.nonce,
             }),
-          ),
-        );
-    },
-  );
+            safeAppInfo: expect.any(Object),
+            safeAddress,
+            txHash: transaction.transactionHash,
+            note: '',
+          }),
+        ),
+      );
+  });
 
   it('should propose a transaction with concatenated signatures', async () => {
     const chainId = faker.string.numeric();
@@ -1203,73 +1203,72 @@ describe('Propose transaction - Transactions Controller', () => {
       expect(loggingService.error).not.toHaveBeenCalled();
     });
 
-    it.each(Object.values(SignatureType))(
-      'should throw and log if a %s signature is invalid',
-      async (signatureType) => {
-        const chain = chainBuilder().build();
-        const privateKey = generatePrivateKey();
-        const signer = privateKeyToAccount(privateKey);
-        const safe = safeBuilder().with('owners', [signer.address]).build();
-        const transaction = await multisigTransactionBuilder()
-          .with('safe', safe.address)
-          .with('nonce', safe.nonce)
-          .with('operation', Operation.CALL)
-          .buildWithConfirmations({
-            chainId: chain.chainId,
-            safe,
-            signers: [signer],
-            signatureType,
-          });
-        const v = transaction.confirmations![0].signature?.slice(-2);
-        const proposeTransactionDto = proposeTransactionDtoBuilder()
-          .with('to', transaction.to)
-          .with('value', transaction.value)
-          .with('data', transaction.data)
-          .with('nonce', transaction.nonce.toString())
-          .with('operation', transaction.operation)
-          .with('safeTxGas', transaction.safeTxGas!.toString())
-          .with('baseGas', transaction.baseGas!.toString())
-          .with('gasPrice', transaction.gasPrice!)
-          .with('gasToken', transaction.gasToken!)
-          .with('refundReceiver', transaction.refundReceiver)
-          .with('safeTxHash', transaction.safeTxHash)
-          .with('sender', transaction.confirmations![0].owner)
-          .with('signature', `0x${'-'.repeat(128)}${v}`)
-          .build();
-        const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
-        const getMultisigTransactionUrl = `${chain.transactionService}/api/v2/multisig-transactions/${proposeTransactionDto.safeTxHash}/`;
-        const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
-        networkService.get.mockImplementation(({ url }) => {
-          switch (url) {
-            case getChainUrl:
-              return Promise.resolve({ data: rawify(chain), status: 200 });
-            case getMultisigTransactionUrl:
-              return Promise.resolve({
-                data: rawify(multisigToJson(transaction)),
-                status: 200,
-              });
-            case getSafeUrl:
-              return Promise.resolve({ data: rawify(safe), status: 200 });
-            default:
-              return Promise.reject(new Error(`Could not match ${url}`));
-          }
+    it.each(
+      Object.values(SignatureType),
+    )('should throw and log if a %s signature is invalid', async (signatureType) => {
+      const chain = chainBuilder().build();
+      const privateKey = generatePrivateKey();
+      const signer = privateKeyToAccount(privateKey);
+      const safe = safeBuilder().with('owners', [signer.address]).build();
+      const transaction = await multisigTransactionBuilder()
+        .with('safe', safe.address)
+        .with('nonce', safe.nonce)
+        .with('operation', Operation.CALL)
+        .buildWithConfirmations({
+          chainId: chain.chainId,
+          safe,
+          signers: [signer],
+          signatureType,
         });
-        await request(app.getHttpServer())
-          .post(
-            `/v1/chains/${chain.chainId}/transactions/${safe.address}/propose`,
-          )
-          .send(proposeTransactionDto)
-          .expect(422)
-          .expect({
-            statusCode: 422,
-            code: 'custom',
-            message: 'Invalid "0x" notated hex string',
-            path: ['signature'],
-          });
+      const v = transaction.confirmations![0].signature?.slice(-2);
+      const proposeTransactionDto = proposeTransactionDtoBuilder()
+        .with('to', transaction.to)
+        .with('value', transaction.value)
+        .with('data', transaction.data)
+        .with('nonce', transaction.nonce.toString())
+        .with('operation', transaction.operation)
+        .with('safeTxGas', transaction.safeTxGas!.toString())
+        .with('baseGas', transaction.baseGas!.toString())
+        .with('gasPrice', transaction.gasPrice!)
+        .with('gasToken', transaction.gasToken!)
+        .with('refundReceiver', transaction.refundReceiver)
+        .with('safeTxHash', transaction.safeTxHash)
+        .with('sender', transaction.confirmations![0].owner)
+        .with('signature', `0x${'-'.repeat(128)}${v}`)
+        .build();
+      const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
+      const getMultisigTransactionUrl = `${chain.transactionService}/api/v2/multisig-transactions/${proposeTransactionDto.safeTxHash}/`;
+      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
+      networkService.get.mockImplementation(({ url }) => {
+        switch (url) {
+          case getChainUrl:
+            return Promise.resolve({ data: rawify(chain), status: 200 });
+          case getMultisigTransactionUrl:
+            return Promise.resolve({
+              data: rawify(multisigToJson(transaction)),
+              status: 200,
+            });
+          case getSafeUrl:
+            return Promise.resolve({ data: rawify(safe), status: 200 });
+          default:
+            return Promise.reject(new Error(`Could not match ${url}`));
+        }
+      });
+      await request(app.getHttpServer())
+        .post(
+          `/v1/chains/${chain.chainId}/transactions/${safe.address}/propose`,
+        )
+        .send(proposeTransactionDto)
+        .expect(422)
+        .expect({
+          statusCode: 422,
+          code: 'custom',
+          message: 'Invalid "0x" notated hex string',
+          path: ['signature'],
+        });
 
-        expect(loggingService.error).not.toHaveBeenCalled();
-      },
-    );
+      expect(loggingService.error).not.toHaveBeenCalled();
+    });
 
     it('should throw and log if a signer is blocked', async () => {
       const chain = chainBuilder().build();

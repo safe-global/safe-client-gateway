@@ -78,7 +78,7 @@ export class RecipientAnalysisService {
   constructor(
     @Inject(ITransactionApiManager)
     private readonly transactionApiManager: ITransactionApiManager,
-    private readonly erc20Decoder: Erc20Decoder,
+    @Inject(Erc20Decoder) private readonly erc20Decoder: Erc20Decoder,
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
     @Inject(CacheService)
@@ -87,6 +87,7 @@ export class RecipientAnalysisService {
     private readonly loggingService: ILoggingService,
     @Inject(IChainsRepository)
     private readonly chainsRepository: IChainsRepository,
+    @Inject(TransactionsService)
     private readonly transactionsService: TransactionsService,
   ) {
     this.defaultExpirationTimeInSeconds =
@@ -293,18 +294,17 @@ export class RecipientAnalysisService {
       // Not found = it is not a Safe
       if (error instanceof DataSourceError && error.code === 404) {
         return [undefined, isSafe];
-      } else {
-        this.loggingService.warn(
-          `Failed to analyze recipient activity: ${error}`,
-        );
-        return [
-          this.mapToAnalysisResult({
-            type: CommonStatus.FAILED,
-            error: 'recipient activity check unavailable',
-          }),
-          isSafe,
-        ];
       }
+      this.loggingService.warn(
+        `Failed to analyze recipient activity: ${error}`,
+      );
+      return [
+        this.mapToAnalysisResult({
+          type: CommonStatus.FAILED,
+          error: 'recipient activity check unavailable',
+        }),
+        isSafe,
+      ];
     }
   }
 
@@ -460,21 +460,20 @@ export class RecipientAnalysisService {
           return [BridgeStatus.DIFFERENT_SAFE_SETUP, targetChainId];
         }
         return undefined;
-      } else {
-        const [safeCreationData, targetChain] = await Promise.all([
-          this.getSafeCreationData({
-            chainId: args.chainId,
-            safeAddress: args.safeAddress,
-          }),
-          this.chainsRepository.getChain(targetChainId),
-        ]);
-
-        if (!this.isNetworkCompatible(targetChain, safeCreationData)) {
-          return [BridgeStatus.INCOMPATIBLE_SAFE, targetChainId];
-        }
-
-        return [BridgeStatus.MISSING_OWNERSHIP, targetChainId];
       }
+      const [safeCreationData, targetChain] = await Promise.all([
+        this.getSafeCreationData({
+          chainId: args.chainId,
+          safeAddress: args.safeAddress,
+        }),
+        this.chainsRepository.getChain(targetChainId),
+      ]);
+
+      if (!this.isNetworkCompatible(targetChain, safeCreationData)) {
+        return [BridgeStatus.INCOMPATIBLE_SAFE, targetChainId];
+      }
+
+      return [BridgeStatus.MISSING_OWNERSHIP, targetChainId];
     } catch (error) {
       this.loggingService.warn(
         `Failed to analyze target chain compatibility: ${error}`,
@@ -527,8 +526,7 @@ export class RecipientAnalysisService {
       });
 
     if (
-      !creationTransaction ||
-      !creationTransaction.masterCopy ||
+      !creationTransaction?.masterCopy ||
       !creationTransaction.setupData ||
       !creationTransaction.dataDecoded?.parameters ||
       creationTransaction.setupData === '0x'

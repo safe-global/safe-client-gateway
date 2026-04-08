@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { DataSource } from 'typeorm';
 import { type Address, getAddress } from 'viem';
@@ -116,7 +117,7 @@ describe('WalletsRepository', () => {
     it('should set createdAt and updatedAt when creating a Wallet', async () => {
       const dbWalletRepository = dataSource.getRepository(Wallet);
       const dbUserRepository = dataSource.getRepository(User);
-      const before = new Date().getTime();
+      const before = Date.now();
       const user = await dbUserRepository.insert({
         status: faker.helpers.arrayElement(UserStatusKeys),
       });
@@ -127,7 +128,7 @@ describe('WalletsRepository', () => {
         },
       });
 
-      const after = new Date().getTime();
+      const after = Date.now();
 
       const createdAt = wallet.generatedMaps[0].createdAt;
       const updatedAt = wallet.generatedMaps[0].updatedAt;

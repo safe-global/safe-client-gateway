@@ -5,8 +5,6 @@ import type { Contract as DataDecoderContract } from '@/modules/data-decoder/dom
 
 @Injectable()
 export class ContractMapper {
-  public constructor() {}
-
   public map(contract: DataDecoderContract): Contract {
     const contractAbi = contract.abi?.abiJson
       ? { abi: contract.abi.abiJson }

@@ -17,7 +17,9 @@ import { asError } from '@/logging/utils';
 @Injectable()
 export class TransactionPreviewMapper {
   constructor(
+    @Inject(MultisigTransactionInfoMapper)
     private readonly transactionInfoMapper: MultisigTransactionInfoMapper,
+    @Inject(TransactionDataMapper)
     private readonly transactionDataMapper: TransactionDataMapper,
     @Inject(IDataDecoderRepository)
     private readonly dataDecoderRepository: IDataDecoderRepository,

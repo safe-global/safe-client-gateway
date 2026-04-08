@@ -10,7 +10,7 @@ import { asError } from '@/logging/utils';
 @Injectable()
 export class JobQueueShutdownHook implements OnModuleDestroy {
   constructor(
-    private readonly queue: Queue,
+    @Inject(Queue) private readonly queue: Queue,
     @Inject(LoggingService)
     private readonly loggingService: ILoggingService,
   ) {}

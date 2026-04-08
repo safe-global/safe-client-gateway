@@ -16,7 +16,7 @@ export class CaptchaGuard implements CanActivate {
   private readonly isEnabled: boolean;
 
   constructor(
-    private readonly captchaService: CaptchaService,
+    @Inject(CaptchaService) private readonly captchaService: CaptchaService,
     @Inject(IConfigurationService)
     configurationService: IConfigurationService,
   ) {

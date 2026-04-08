@@ -7,7 +7,7 @@ import {
   TransactionFinder,
   TransactionFinderModule,
 } from '@/modules/transactions/routes/helpers/transaction-finder.helper';
-import { Injectable, Module } from '@nestjs/common';
+import { Inject, Injectable, Module } from '@nestjs/common';
 import { getAbiItem, toFunctionSelector } from 'viem';
 import type { Address, Hex } from 'viem';
 
@@ -26,7 +26,10 @@ export class KilnNativeStakingHelper {
     name: 'batchWithdrawCLFee',
   });
 
-  constructor(private readonly transactionFinder: TransactionFinder) {}
+  constructor(
+    @Inject(TransactionFinder)
+    private readonly transactionFinder: TransactionFinder,
+  ) {}
 
   public findDepositTransaction(args: {
     to?: Address;

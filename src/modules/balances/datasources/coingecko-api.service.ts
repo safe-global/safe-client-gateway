@@ -83,6 +83,7 @@ export class CoingeckoApi implements IPricesApi {
   constructor(
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
+    @Inject(CacheFirstDataSource)
     private readonly dataSource: CacheFirstDataSource,
     @Inject(NetworkService) private readonly networkService: INetworkService,
     @Inject(CacheService) private readonly cacheService: ICacheService,
@@ -115,9 +116,9 @@ export class CoingeckoApi implements IPricesApi {
       );
     // Coingecko expects the token addresses to be lowercase, so lowercase addresses are enforced here.
     this.highRefreshRateTokens = this.configurationService
-      .getOrThrow<
-        Array<string>
-      >('balances.providers.safe.prices.highRefreshRateTokens')
+      .getOrThrow<Array<string>>(
+        'balances.providers.safe.prices.highRefreshRateTokens',
+      )
       .map((tokenAddress) => tokenAddress.toLowerCase());
 
     this.highRefreshRateTokensTtlSeconds =

@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import type { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
+import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
 import {
   CacheService,
   type ICacheService,
 } from '@/datasources/cache/cache.service.interface';
-import type { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
+import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import {
   type INetworkService,
   NetworkService,
@@ -30,8 +30,10 @@ export class TransactionApiManager implements ITransactionApiManager {
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
     @Inject(IConfigApi) private readonly configApi: IConfigApi,
+    @Inject(CacheFirstDataSource)
     private readonly dataSource: CacheFirstDataSource,
     @Inject(CacheService) private readonly cacheService: ICacheService,
+    @Inject(HttpErrorFactory)
     private readonly httpErrorFactory: HttpErrorFactory,
     @Inject(NetworkService) private readonly networkService: INetworkService,
     @Inject(LoggingService) private readonly loggingService: ILoggingService,

@@ -17,6 +17,7 @@ import { LockingRankPage } from '@/modules/community/routes/entities/locking-ran
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import {
+  Inject,
   Body,
   Controller,
   Get,
@@ -34,7 +35,10 @@ import type { Address } from 'viem';
   version: '1',
 })
 export class CommunityController {
-  constructor(private readonly communityService: CommunityService) {}
+  constructor(
+    @Inject(CommunityService)
+    private readonly communityService: CommunityService,
+  ) {}
 
   @ApiOkResponse({ type: CampaignPage })
   @ApiQuery({

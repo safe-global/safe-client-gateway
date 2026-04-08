@@ -67,7 +67,7 @@ jobs:
       - run: yarn install --immutable
       - run: yarn run env:validate:silent
 
-  prettier:
+  biome-format:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -234,7 +234,7 @@ jobs:
 
   docker-publish-staging:
     if: (github.event_name == 'push' && github.ref == 'refs/heads/main')
-    needs: [prettier, biome-lint, tests-finish]
+    needs: [biome-format, biome-lint, tests-finish]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -263,7 +263,7 @@ jobs:
 
   docker-publish-release:
     if: (github.event_name == 'release' && github.event.action == 'released')
-    needs: [prettier, biome-lint, tests-finish]
+    needs: [biome-format, biome-lint, tests-finish]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2

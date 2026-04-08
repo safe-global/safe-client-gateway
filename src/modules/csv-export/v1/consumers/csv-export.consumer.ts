@@ -8,7 +8,7 @@ import {
   type ILoggingService,
   LoggingService,
 } from '@/logging/logging.interface';
-import type { CsvExportService } from '@/modules/csv-export/v1/csv-export.service';
+import { CsvExportService } from '@/modules/csv-export/v1/csv-export.service';
 import type {
   CsvExportJobData,
   CsvExportJobResponse,
@@ -21,6 +21,7 @@ import type { Job } from 'bullmq';
 export class CsvExportConsumer extends WorkerHost {
   constructor(
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
+    @Inject(CsvExportService)
     private readonly csvExportService: CsvExportService,
   ) {
     super();

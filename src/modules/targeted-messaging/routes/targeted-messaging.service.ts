@@ -54,9 +54,8 @@ export class TargetedMessagingService {
           args.signerAddress,
           null,
         );
-      } else {
-        throw err;
       }
+      throw err;
     }
   }
 
@@ -112,9 +111,8 @@ export class TargetedMessagingService {
           submission.signerAddress,
           submission.completionDate,
         );
-      } else {
-        throw err;
       }
+      throw err;
     }
   }
 }

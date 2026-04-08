@@ -33,7 +33,8 @@ export class NativeStakingMapper {
     private readonly stakingRepository: IStakingRepositoryWithRewardsFee,
     @Inject(IChainsRepository)
     private readonly chainsRepository: IChainsRepository,
-    private readonly kilnDecoder: KilnDecoder,
+    @Inject(KilnDecoder) private readonly kilnDecoder: KilnDecoder,
+    @Inject(KilnNativeStakingHelper)
     private readonly kilnNativeStakingHelper: KilnNativeStakingHelper,
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
   ) {}

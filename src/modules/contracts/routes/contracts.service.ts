@@ -11,7 +11,7 @@ export class ContractsService {
   constructor(
     @Inject(IContractsRepository)
     private readonly contractsRepository: ContractsRepository,
-    private readonly contractMapper: ContractMapper,
+    @Inject(ContractMapper) private readonly contractMapper: ContractMapper,
   ) {}
 
   async getContract(args: {

@@ -71,7 +71,7 @@ export class FakeCacheService implements ICacheService, ICacheReadiness {
 
   increment(
     cacheKey: string,
-    expireTimeSeconds: number | undefined,
+    _expireTimeSeconds: number | undefined,
   ): Promise<number> {
     let currentValue: number = this.cache[cacheKey] as number;
     currentValue = currentValue ? currentValue + 1 : 1;
@@ -82,7 +82,7 @@ export class FakeCacheService implements ICacheService, ICacheReadiness {
   setCounter(
     key: string,
     value: number,
-    expireTimeSeconds: number | undefined,
+    _expireTimeSeconds: number | undefined,
   ): Promise<void> {
     this.cache[key] = value;
     return Promise.resolve();

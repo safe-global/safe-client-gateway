@@ -25,10 +25,13 @@ export class LimitAddressesMapper {
   constructor(
     @Inject(ISafeRepository)
     private readonly safeRepository: ISafeRepository,
-    private readonly erc20Decoder: Erc20Decoder,
-    private readonly safeDecoder: SafeDecoder,
+    @Inject(Erc20Decoder) private readonly erc20Decoder: Erc20Decoder,
+    @Inject(SafeDecoder) private readonly safeDecoder: SafeDecoder,
+    @Inject(MultiSendDecoder)
     private readonly multiSendDecoder: MultiSendDecoder,
+    @Inject(ProxyFactoryDecoder)
     private readonly proxyFactoryDecoder: ProxyFactoryDecoder,
+    @Inject(DelayModifierDecoder)
     private readonly delayModifierDecoder: DelayModifierDecoder,
   ) {}
 

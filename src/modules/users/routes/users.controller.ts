@@ -12,6 +12,7 @@ import {
   ApiCreatedResponse,
 } from '@nestjs/swagger';
 import {
+  Inject,
   Body,
   Controller,
   Delete,
@@ -36,7 +37,9 @@ import type { Address } from 'viem';
 @ApiTags('users')
 @Controller({ path: 'users', version: '1' })
 export class UsersController {
-  public constructor(private readonly usersService: UsersService) {}
+  public constructor(
+    @Inject(UsersService) private readonly usersService: UsersService,
+  ) {}
 
   @ApiOperation({
     summary: 'Get user with wallets',

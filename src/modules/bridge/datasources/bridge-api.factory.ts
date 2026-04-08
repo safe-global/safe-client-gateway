@@ -21,6 +21,7 @@ export class BridgeApiFactory implements IBridgeApiFactory {
   constructor(
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
+    @Inject(HttpErrorFactory)
     private readonly httpErrorFactory: HttpErrorFactory,
     @Inject(NetworkService) private readonly networkService: INetworkService,
     @Inject(CacheFirstDataSource)

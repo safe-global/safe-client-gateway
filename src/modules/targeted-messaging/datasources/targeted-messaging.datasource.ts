@@ -37,7 +37,9 @@ import type postgres from 'postgres';
 import type { Address } from 'viem';
 
 @Injectable()
-export class TargetedMessagingDatasource implements ITargetedMessagingDatasource {
+export class TargetedMessagingDatasource
+  implements ITargetedMessagingDatasource
+{
   private readonly defaultExpirationTimeInSeconds: number;
 
   constructor(
@@ -48,8 +50,11 @@ export class TargetedMessagingDatasource implements ITargetedMessagingDatasource
     private readonly cachedQueryResolver: CachedQueryResolver,
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
+    @Inject(OutreachDbMapper)
     private readonly outreachDbMapper: OutreachDbMapper,
+    @Inject(SubmissionDbMapper)
     private readonly submissionDbMapper: SubmissionDbMapper,
+    @Inject(TargetedSafeDbMapper)
     private readonly targetedSafeDbMapper: TargetedSafeDbMapper,
   ) {
     this.defaultExpirationTimeInSeconds =
