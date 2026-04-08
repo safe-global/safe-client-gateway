@@ -141,7 +141,7 @@ describe('RedisCacheService with a Key Prefix', () => {
     expect(result).toBe(0);
   });
 
-  it('deleteByKey should throw if invalidation marker pipeline replies are invalid', async () => {
+  it('deleteByKey should log if invalidation marker hSet reply is invalid', async () => {
     const key = faker.string.alphanumeric();
     multiMock.exec.mockResolvedValueOnce([
       1,
@@ -149,8 +149,41 @@ describe('RedisCacheService with a Key Prefix', () => {
       true,
     ]);
 
-    await expect(redisCacheService.deleteByKey(key)).rejects.toThrow(
-      `Invalidation marker failed for key "${key}"`,
+    const result = await redisCacheService.deleteByKey(key);
+
+    expect(result).toBe(1);
+    expect(mockLoggingService.error).toHaveBeenCalledWith(
+      expect.objectContaining({
+        event: `Invalidation marker failed for key "${key}"`,
+      }),
+    );
+  });
+
+  it('deleteByKey should log if expire returns an unexpected type', async () => {
+    const key = faker.string.alphanumeric();
+    multiMock.exec.mockResolvedValueOnce([1, 1, 'unexpected']);
+
+    const result = await redisCacheService.deleteByKey(key);
+
+    expect(result).toBe(1);
+    expect(mockLoggingService.error).toHaveBeenCalledWith(
+      expect.objectContaining({
+        event: `Invalidation marker failed for key "${key}"`,
+      }),
+    );
+  });
+
+  it('deleteByKey should log and return 0 if exec rejects', async () => {
+    const key = faker.string.alphanumeric();
+    multiMock.exec.mockRejectedValueOnce(new Error('Connection lost'));
+
+    const result = await redisCacheService.deleteByKey(key);
+
+    expect(result).toBe(0);
+    expect(mockLoggingService.error).toHaveBeenCalledWith(
+      expect.objectContaining({
+        event: `Invalidation pipeline failed for key "${key}"`,
+      }),
     );
   });
 });

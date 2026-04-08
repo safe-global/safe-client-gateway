@@ -105,19 +105,33 @@ export class RedisCacheService
       this.defaultExpirationTimeInSeconds,
     );
 
-    const results = await this.client
-      .multi()
-      .unlink(keyWithPrefix)
-      .hSet(invalidationKey, '', Date.now().toString())
-      .expire(invalidationKey, expirationTime)
-      .exec();
+    let results: Array<unknown>;
+    try {
+      results = await this.client
+        .multi()
+        .unlink(keyWithPrefix)
+        .hSet(invalidationKey, '', Date.now().toString())
+        .expire(invalidationKey, expirationTime)
+        .exec();
+    } catch {
+      this.loggingService.error({
+        type: LogType.CacheError,
+        source: 'RedisCacheService',
+        event: `Invalidation pipeline failed for key "${key}"`,
+      });
+      return 0;
+    }
 
     const [unlinkResult, hSetResult, expireResult] = results;
 
     // hSet returns the count of added fields (number), expire returns boolean.
     // A mismatched type (e.g. Error) indicates a pipeline command failure.
     if (typeof hSetResult !== 'number' || typeof expireResult !== 'boolean') {
-      throw new Error(`Invalidation marker failed for key "${key}"`);
+      this.loggingService.error({
+        type: LogType.CacheError,
+        source: 'RedisCacheService',
+        event: `Invalidation marker failed for key "${key}"`,
+      });
     }
 
     return typeof unlinkResult === 'number' ? unlinkResult : 0;
