@@ -4,7 +4,7 @@
   "private": true,
   "license": "MIT",
   "scripts": {
-    "build": "bun generate-abis && nest build",
+    "build": "bun generate-abis && nest build && tsc-alias",
     "format": "prettier --write .",
     "format-check": "prettier --check .",
     "generate-abis": "bun ./scripts/generate-abis.js",
@@ -103,6 +103,7 @@
     "source-map-support": "0.5.21",
     "supertest": "7.2.2",
     "ts-jest": "29.4.9",
+    "tsc-alias": "^1.8.16",
     "tsconfig-paths": "4.2.0",
     "typescript": "5.9.3",
     "typescript-eslint": "8.56.1"
