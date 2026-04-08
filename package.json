@@ -15,7 +15,7 @@
     "start:prod": "bun dist/src/main.js",
     "lint": "eslint \"{src,apps,libs,test,migrations}/**/*.ts\" --fix",
     "lint-check": "eslint \"{src,apps,libs,test,migrations}/**/*.ts\"",
-    "test": "bun ./node_modules/.bin/jest",
+    "test": "jest",
     "test:watch": "bun run test --watch",
     "test:cov": "bun run test --coverage",
     "test:debug": "bun --inspect-brk ./node_modules/.bin/jest --runInBand",
