@@ -27,7 +27,6 @@ ENV APPLICATION_VERSION=${VERSION} \
     APPLICATION_BUILD_NUMBER=${BUILD_NUMBER} \
     NODE_ENV=production
 
-COPY --chown=bun:bun --from=base /app/tsconfig*.json ./
 COPY --chown=bun:bun --from=base /app/abis ./abis
 COPY --chown=bun:bun --from=base /app/node_modules ./node_modules
 COPY --chown=bun:bun --from=base /app/dist ./dist
