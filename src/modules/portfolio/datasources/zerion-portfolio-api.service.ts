@@ -258,10 +258,8 @@ export class ZerionPortfolioApi implements IPortfolioApi {
       return {
         tokenInfo: {
           ...meta.tokenInfo,
-          symbol:
-            meta.tokenInfo.symbol || position.attributes.name,
-          name:
-            meta.tokenInfo.name || position.attributes.name,
+          symbol: meta.tokenInfo.symbol || position.attributes.name,
+          name: meta.tokenInfo.name || position.attributes.name,
         },
         balance: position.attributes.quantity.int,
         balanceFiat:
