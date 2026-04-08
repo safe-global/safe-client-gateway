@@ -23,6 +23,7 @@ import {
 } from '@/logging/logging.interface';
 import { createTestModule } from '@/__tests__/testing-module';
 import { SAFE_TRANSACTION_SERVICE_MAX_LIMIT } from '@/domain/common/constants';
+import configuration from '@/config/entities/__tests__/configuration';
 
 describe('Owners Controller V3 (Unit)', () => {
   let app: INestApplication<Server>;
@@ -1076,6 +1077,124 @@ describe('Owners Controller V3 (Unit)', () => {
         .expect({
           [chainId]: [getAddress(safeAddress)],
         });
+    });
+  });
+
+  describe('CaptchaGuard', () => {
+    const turnstileUrl =
+      'https://challenges.cloudflare.com/turnstile/v0/siteverify';
+    const captchaSecretKey = faker.string.alphanumeric(32);
+
+    beforeEach(async () => {
+      jest.resetAllMocks();
+
+      const customConfig = (): ReturnType<typeof configuration> => ({
+        ...configuration(),
+        captcha: { enabled: true, secretKey: captchaSecretKey },
+      });
+      const moduleFixture = await createTestModule({ config: customConfig });
+      networkService = moduleFixture.get(NetworkService);
+      app = await new TestAppProvider().provide(moduleFixture);
+      await app.init();
+    });
+
+    it('returns 401 when the captcha token header is missing', async () => {
+      const ownerAddress = faker.finance.ethereumAddress();
+
+      await request(app.getHttpServer())
+        .get(`/v3/owners/${ownerAddress}/safes`)
+        .expect(401);
+    });
+
+    it('returns 401 when the captcha token is invalid', async () => {
+      const ownerAddress = faker.finance.ethereumAddress();
+      const token = faker.string.alphanumeric();
+
+      networkService.post.mockImplementation(({ url }) => {
+        if (url === turnstileUrl) {
+          return Promise.resolve({
+            data: rawify({ success: false }),
+            status: 200,
+          });
+        }
+        return Promise.reject(`No matching rule for url: ${url}`);
+      });
+
+      await request(app.getHttpServer())
+        .get(`/v3/owners/${ownerAddress}/safes`)
+        .set('x-captcha-token', token)
+        .expect(401);
+    });
+
+    it('returns 200 when the captcha token is valid', async () => {
+      const ownerAddress = faker.finance.ethereumAddress();
+      const token = faker.string.alphanumeric();
+      const chainId = faker.string.numeric();
+      const chain = chainBuilder().with('chainId', chainId).build();
+
+      networkService.post.mockImplementation(({ url }) => {
+        if (url === turnstileUrl) {
+          return Promise.resolve({
+            data: rawify({ success: true }),
+            status: 200,
+          });
+        }
+        return Promise.reject(`No matching rule for url: ${url}`);
+      });
+
+      networkService.get.mockImplementation(
+        ({
+          url,
+          networkRequest,
+        }: {
+          url: string;
+          networkRequest?: NetworkRequest;
+        }) => {
+          switch (url) {
+            case `${chain.transactionService}/api/v1/about/`:
+              return Promise.resolve({ data: rawify({}), status: 200 });
+            case `${chain.transactionService}/api/v2/owners/${getAddress(ownerAddress)}/safes/`: {
+              if (
+                networkRequest?.params?.limit ===
+                  SAFE_TRANSACTION_SERVICE_MAX_LIMIT &&
+                networkRequest?.params?.offset === 0
+              ) {
+                return Promise.resolve({
+                  data: rawify(
+                    pageBuilder()
+                      .with('results', [])
+                      .with('count', 0)
+                      .with('next', null)
+                      .build(),
+                  ),
+                  status: 200,
+                });
+              }
+              return Promise.reject(`No matching rule for url: ${url}`);
+            }
+            default: {
+              // chains config calls
+              if (url.includes('/api/v1/chains')) {
+                return Promise.resolve({
+                  data: rawify(
+                    pageBuilder()
+                      .with('results', [chain])
+                      .with('next', null)
+                      .build(),
+                  ),
+                  status: 200,
+                });
+              }
+              return Promise.reject(`No matching rule for url: ${url}`);
+            }
+          }
+        },
+      );
+
+      await request(app.getHttpServer())
+        .get(`/v3/owners/${ownerAddress}/safes`)
+        .set('x-captcha-token', token)
+        .expect(200);
     });
   });
 });
