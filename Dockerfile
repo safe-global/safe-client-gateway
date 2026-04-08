@@ -1,7 +1,8 @@
 #
 # BUILD CONTAINER
 #
-FROM oven/bun:1.3.11-alpine AS base
+ARG BUN_VERSION=1.3.11
+FROM oven/bun:${BUN_VERSION}-alpine AS base
 ENV NODE_ENV=production
 WORKDIR /app
 COPY --chown=bun:bun package.json bun.lock tsconfig*.json ./
@@ -17,7 +18,7 @@ RUN bun install --frozen-lockfile \
 #
 # PRODUCTION CONTAINER
 #
-FROM oven/bun:1.3.11-alpine AS production
+FROM oven/bun:${BUN_VERSION}-alpine AS production
 WORKDIR /app
 USER bun
 
