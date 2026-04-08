@@ -57,6 +57,11 @@ export interface ICircuitMetrics {
    * Number of consecutive successful requests (used in HALF_OPEN state)
    */
   consecutiveSuccesses: number;
+
+  /**
+   * Timestamp of the last success or failure, used for stale circuit cleanup
+   */
+  lastActivityTime?: number;
 }
 
 /**

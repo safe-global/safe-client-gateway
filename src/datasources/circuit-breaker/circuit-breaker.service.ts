@@ -21,7 +21,7 @@ import { LogType } from '@/domain/common/entities/log-type.entity';
  */
 @Injectable()
 export class CircuitBreakerService {
-  private readonly STALE_BUFFER_FACTOR: number = 2;
+  private readonly STALE_MULTIPLIER: number = 10;
 
   private readonly enabled: boolean;
   private readonly config: ICircuitConfig;
@@ -129,6 +129,7 @@ export class CircuitBreakerService {
         consecutiveSuccesses: 0,
         state: CircuitState.CLOSED,
         lastFailureTime: undefined,
+        lastActivityTime: undefined,
         nextAttemptTime: undefined,
       },
     };
@@ -223,6 +224,8 @@ export class CircuitBreakerService {
       return;
     }
 
+    circuit.metrics.lastActivityTime = Date.now();
+
     if (circuit.metrics.state === CircuitState.HALF_OPEN) {
       circuit.metrics.consecutiveSuccesses++;
 
@@ -312,6 +315,7 @@ export class CircuitBreakerService {
 
     circuit.metrics.failureCount++;
     circuit.metrics.lastFailureTime = now;
+    circuit.metrics.lastActivityTime = now;
     circuit.metrics.consecutiveSuccesses = 0;
 
     const effectiveThreshold = this.getEffectiveFailureThreshold(circuit);
@@ -455,18 +459,12 @@ export class CircuitBreakerService {
    * @returns {boolean} True if the circuit is stale and should be removed
    */
   private isStale(circuit: ICircuit): boolean {
-    const now = Date.now();
-    if (!circuit.metrics.lastFailureTime) {
+    if (!circuit.metrics.lastActivityTime) {
       return true;
     }
 
-    const timeSinceLastFailure = now - circuit.metrics.lastFailureTime;
-    const staleRollingWindow =
-      this.config.rollingWindow * this.STALE_BUFFER_FACTOR;
+    const timeSinceLastActivity = Date.now() - circuit.metrics.lastActivityTime;
 
-    return (
-      circuit.metrics.state === CircuitState.CLOSED &&
-      timeSinceLastFailure > staleRollingWindow
-    );
+    return timeSinceLastActivity > this.config.rollingWindow * this.STALE_MULTIPLIER;
   }
 }
