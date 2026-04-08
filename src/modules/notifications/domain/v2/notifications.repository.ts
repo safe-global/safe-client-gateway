@@ -176,7 +176,7 @@ export class NotificationsRepositoryV2 implements INotificationsRepositoryV2 {
   ): Promise<void> {
     const safes = args.upsertSubscriptionsDto.safes;
     if (safes.length === 0) {
-      return undefined;
+      return;
     }
 
     const conditions = safes.map((_, i) => {

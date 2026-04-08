@@ -15,7 +15,6 @@ import {
 } from '@/modules/indexing/domain/entities/indexing-status.entity';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 
-import { PaginationData } from '@/routes/common/pagination/pagination.data';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { LenientBasePageSchema } from '@/domain/entities/schemas/page.schema.factory';
 import {
@@ -103,37 +102,24 @@ export class ChainsRepository implements IChainsRepository {
 
   async getAllChains(): Promise<Array<Chain>> {
     const firstPage = await this.getChains(ChainsRepository.MAX_LIMIT, 0);
-    const chains: Array<Chain> = [...firstPage.results];
 
     if (!firstPage.next) {
-      return chains;
+      return firstPage.results;
     }
 
     const totalCount = firstPage.count ?? firstPage.results.length;
     const totalPages = Math.ceil(totalCount / ChainsRepository.MAX_LIMIT);
-    const remainingPageCount = Math.min(
-      totalPages - 1,
-      this.maxSequentialPages - 1,
-    );
+    const pagesToFetch = Math.min(totalPages - 1, this.maxSequentialPages - 1);
 
-    const firstNextUrl = new URL(firstPage.next);
-    const firstNextOffset =
-      PaginationData.fromLimitAndOffset(firstNextUrl).offset;
-
-    const remainingOffsets: Array<number> = [];
-    for (let i = 0; i < remainingPageCount; i++) {
-      remainingOffsets.push(firstNextOffset + i * ChainsRepository.MAX_LIMIT);
-    }
-
+    // Offsets assume the config service returns fixed-size pages of MAX_LIMIT
     const remainingPages = await Promise.all(
-      remainingOffsets.map((offset) =>
-        this.getChains(ChainsRepository.MAX_LIMIT, offset),
+      Array.from({ length: pagesToFetch }, (_, i) =>
+        this.getChains(
+          ChainsRepository.MAX_LIMIT,
+          (i + 1) * ChainsRepository.MAX_LIMIT,
+        ),
       ),
     );
-
-    for (const page of remainingPages) {
-      chains.push(...page.results);
-    }
 
     if (totalPages > this.maxSequentialPages) {
       this.loggingService.error(
@@ -141,7 +127,7 @@ export class ChainsRepository implements IChainsRepository {
       );
     }
 
-    return chains;
+    return [firstPage, ...remainingPages].flatMap((p) => p.results);
   }
 
   async getSingletons(chainId: string): Promise<Array<Singleton>> {
