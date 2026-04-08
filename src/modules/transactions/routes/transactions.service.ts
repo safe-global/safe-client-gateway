@@ -239,10 +239,12 @@ export class TransactionsService {
         chainId: args.chainId,
         address: args.safeAddress,
       }),
-      this.multisigTransactionMapper.prefetchAddressInfos({
-        chainId: args.chainId,
-        transactions: domainTransactions.results,
-      }),
+      this.multisigTransactionMapper
+        .prefetchAddressInfos({
+          chainId: args.chainId,
+          transactions: domainTransactions.results,
+        })
+        .catch(() => undefined),
     ]);
 
     const dataDecoded = await Promise.all(
