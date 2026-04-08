@@ -122,7 +122,7 @@
       "^.+\\.(t|j)s$": "ts-jest"
     },
     "transformIgnorePatterns": [
-      "node_modules/(?\!@faker-js).+"
+      "node_modules/(?!@faker-js).+"
     ],
     "roots": [
       "./src",
