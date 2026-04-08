@@ -465,6 +465,8 @@ export class CircuitBreakerService {
 
     const timeSinceLastActivity = Date.now() - circuit.metrics.lastActivityTime;
 
-    return timeSinceLastActivity > this.config.rollingWindow * this.STALE_MULTIPLIER;
+    return (
+      timeSinceLastActivity > this.config.rollingWindow * this.STALE_MULTIPLIER
+    );
   }
 }

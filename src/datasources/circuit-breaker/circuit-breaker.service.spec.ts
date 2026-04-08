@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { CircuitBreakerService } from '@/datasources/circuit-breaker/circuit-breaker.service';
 import { CircuitState } from '@/datasources/circuit-breaker/enums/circuit-state.enum';
+import { CircuitBreakerException } from '@/datasources/circuit-breaker/exceptions/circuit-breaker.exception';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { faker } from '@faker-js/faker';
@@ -346,9 +347,10 @@ describe('CircuitBreakerService', () => {
       service.recordFailure(circuit.name);
       expect(service.get('test-circuit')).toBeDefined();
 
-      // Advance time past the stale window (rollingWindow * 2)
+      // Advance time past the stale window (rollingWindow * 10)
       const original = Date.now;
-      Date.now = jest.fn(() => original() + rollingWindow * 3);
+      const pastStaleWindow = faker.number.int({ min: 11, max: 100 });
+      Date.now = jest.fn(() => original() + rollingWindow * pastStaleWindow);
 
       service.cleanupStaleCircuits();
       expect(service.get('test-circuit')).toBeUndefined();
@@ -427,7 +429,7 @@ describe('CircuitBreakerService', () => {
 
       expect(circuit.metrics.state).toBe(CircuitState.OPEN);
       expect(() => service.canProceedOrFail('test-circuit')).toThrow(
-        'Circuit breaker is open',
+        CircuitBreakerException,
       );
     });
   });
