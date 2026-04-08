@@ -82,7 +82,13 @@ export class RedisCacheService
         source: 'RedisCacheService',
         event: `Error setting/expiring ${key}:${cacheDir.field}`,
       });
-      await this.client.unlink(key).catch(() => {});
+      await this.client.unlink(key).catch(() => {
+        this.loggingService.warn({
+          type: LogType.CacheError,
+          source: 'RedisCacheService',
+          event: `Cleanup unlink failed for ${key}`,
+        });
+      });
       throw error;
     }
   }
@@ -106,7 +112,14 @@ export class RedisCacheService
       .expire(invalidationKey, expirationTime, 'NX')
       .exec();
 
-    const unlinkResult = results[0];
+    const [unlinkResult, hSetResult, expireResult] = results;
+
+    // hSet returns the count of added fields (number), expire returns 0 or 1 (number).
+    // A non-number value (e.g. Error) indicates a pipeline command failure.
+    if (typeof hSetResult !== 'number' || typeof expireResult !== 'number') {
+      throw new Error(`Invalidation marker failed for key "${key}"`);
+    }
+
     return typeof unlinkResult === 'number' ? unlinkResult : 0;
   }
 

@@ -108,7 +108,7 @@ describe('RedisCacheService with a Key Prefix', () => {
     jest.useFakeTimers();
     const now = jest.now();
     const key = faker.string.alphanumeric();
-    multiMock.exec.mockResolvedValueOnce([1, 1, true]);
+    multiMock.exec.mockResolvedValueOnce([1, 1, 1]);
 
     await redisCacheService.deleteByKey(key);
 
@@ -129,16 +129,21 @@ describe('RedisCacheService with a Key Prefix', () => {
   });
 
   it('deleteByKey should return 0 if the pipeline unlink result is not a number', async () => {
-    multiMock.exec.mockResolvedValueOnce([
-      new Error('Pipeline error'),
-      1,
-      true,
-    ]);
+    multiMock.exec.mockResolvedValueOnce([new Error('Pipeline error'), 1, 1]);
 
     const result = await redisCacheService.deleteByKey(
       faker.string.alphanumeric(),
     );
 
     expect(result).toBe(0);
+  });
+
+  it('deleteByKey should throw if invalidation marker pipeline replies are invalid', async () => {
+    const key = faker.string.alphanumeric();
+    multiMock.exec.mockResolvedValueOnce([1, new Error('Pipeline error'), 1]);
+
+    await expect(redisCacheService.deleteByKey(key)).rejects.toThrow(
+      `Invalidation marker failed for key "${key}"`,
+    );
   });
 });
