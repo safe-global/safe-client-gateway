@@ -151,7 +151,9 @@ export class SafesService {
           fiatCode: args.currency,
           excludeSpam: args.excludeSpam,
         });
-        // Prevent unhandled rejection if safePromise rejects first
+        // Swallow rejection to prevent Node unhandled rejection warning
+        // if safePromise rejects before balancesPromise is awaited.
+        // The actual error still propagates via Promise.all below.
         balancesPromise.catch(() => {});
 
         const safe = await safePromise;
