@@ -128,7 +128,11 @@ describe('RedisCacheService with a Key Prefix', () => {
   });
 
   it('deleteByKey should return 0 if the pipeline unlink result is not a number', async () => {
-    multiMock.exec.mockResolvedValueOnce([new Error('Pipeline error'), 1, true]);
+    multiMock.exec.mockResolvedValueOnce([
+      new Error('Pipeline error'),
+      1,
+      true,
+    ]);
 
     const result = await redisCacheService.deleteByKey(
       faker.string.alphanumeric(),
@@ -139,7 +143,11 @@ describe('RedisCacheService with a Key Prefix', () => {
 
   it('deleteByKey should throw if invalidation marker pipeline replies are invalid', async () => {
     const key = faker.string.alphanumeric();
-    multiMock.exec.mockResolvedValueOnce([1, new Error('Pipeline error'), true]);
+    multiMock.exec.mockResolvedValueOnce([
+      1,
+      new Error('Pipeline error'),
+      true,
+    ]);
 
     await expect(redisCacheService.deleteByKey(key)).rejects.toThrow(
       `Invalidation marker failed for key "${key}"`,
