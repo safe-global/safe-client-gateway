@@ -109,14 +109,14 @@ export class RedisCacheService
       .multi()
       .unlink(keyWithPrefix)
       .hSet(invalidationKey, '', Date.now().toString())
-      .expire(invalidationKey, expirationTime, 'NX')
+      .expire(invalidationKey, expirationTime)
       .exec();
 
     const [unlinkResult, hSetResult, expireResult] = results;
 
-    // hSet returns the count of added fields (number), expire returns 0 or 1 (number).
-    // A non-number value (e.g. Error) indicates a pipeline command failure.
-    if (typeof hSetResult !== 'number' || typeof expireResult !== 'number') {
+    // hSet returns the count of added fields (number), expire returns boolean.
+    // A mismatched type (e.g. Error) indicates a pipeline command failure.
+    if (typeof hSetResult !== 'number' || typeof expireResult !== 'boolean') {
       throw new Error(`Invalidation marker failed for key "${key}"`);
     }
 
