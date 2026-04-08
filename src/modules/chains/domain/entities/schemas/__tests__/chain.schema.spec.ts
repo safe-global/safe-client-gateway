@@ -462,9 +462,10 @@ describe('Chain schemas', () => {
     // @see https://github.com/safe-global/safe-config-service/pull/1339
     it('should default zk to false', () => {
       const chain = chainBuilder().build();
-      const { zk: _, ...chainWithoutZk } = chain;
+      // @ts-expect-error - zk is expected to be a boolean
+      delete chain.zk;
 
-      const result = ChainSchema.safeParse(chainWithoutZk);
+      const result = ChainSchema.safeParse(chain);
 
       expect(result.success && result.data.zk).toBe(false);
     });
