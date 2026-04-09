@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import type { TestingModule } from '@nestjs/testing';
@@ -43,6 +44,10 @@ describe('Messages controller', () => {
   let blocklistService: jest.MockedObjectDeep<IBlocklistService>;
 
   async function initApp(config: typeof configuration): Promise<void> {
+    if (app) {
+      await app.close();
+    }
+
     const moduleFixture: TestingModule = await createTestModule({
       config,
       providers: [
@@ -73,6 +78,10 @@ describe('Messages controller', () => {
     jest.resetAllMocks();
 
     await initApp(configuration);
+  });
+
+  afterEach(async () => {
+    await app.close();
   });
 
   describe('GET messages by hash', () => {
