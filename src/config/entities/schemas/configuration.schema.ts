@@ -171,6 +171,14 @@ export const RootConfigurationSchema = z
     TX_SERVICE_API_KEY: z.string().trim().min(1).optional(),
     CAPTCHA_ENABLED: z.string().optional().default('false'),
     CAPTCHA_SECRET_KEY: z.string().optional(),
+    DD_TRACE_ENABLED: z.enum(['true', 'false']).optional().default('false'),
+    DD_ENV: z.string().optional(),
+    DD_SERVICE: z.string().optional(),
+    DD_VERSION: z.string().optional(),
+    DD_AGENT_HOST: z.string().optional(),
+    DD_TRACE_SAMPLE_RATE: z.coerce.number().min(0).max(1).optional(),
+    DD_RUNTIME_METRICS_ENABLED: z.enum(['true', 'false']).optional(),
+    DD_DBM_PROPAGATION_MODE: z.enum(['disabled', 'service', 'full']).optional(),
   })
   .superRefine((config, ctx) =>
     // Check for AWS_* and Blockaid fields in production and staging environments

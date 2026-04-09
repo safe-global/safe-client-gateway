@@ -745,6 +745,17 @@ export default () => ({
     enabled: process.env.CAPTCHA_ENABLED?.toLowerCase() === 'true',
     secretKey: process.env.CAPTCHA_SECRET_KEY,
   },
+  datadog: {
+    traceEnabled: process.env.DD_TRACE_ENABLED?.toLowerCase() === 'true',
+    env: process.env.DD_ENV,
+    service: process.env.DD_SERVICE || 'safe-client-gateway',
+    version: process.env.DD_VERSION || process.env.APPLICATION_VERSION,
+    agentHost: process.env.DD_AGENT_HOST || 'localhost',
+    traceSampleRate: parseFloat(process.env.DD_TRACE_SAMPLE_RATE ?? '1.0'),
+    runtimeMetricsEnabled:
+      process.env.DD_RUNTIME_METRICS_ENABLED?.toLowerCase() !== 'false',
+    dbmPropagationMode: process.env.DD_DBM_PROPAGATION_MODE,
+  },
 });
 
 // Helper function to parse relay rules from environment variable
