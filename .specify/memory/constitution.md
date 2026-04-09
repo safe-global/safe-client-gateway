@@ -1,4 +1,7 @@
 <!--
+  SPDX-License-Identifier: FSL-1.1-MIT
+ -->
+<!--
 SYNC IMPACT REPORT
 ==================
 Version change: N/A (initial) → 1.0.0
@@ -24,9 +27,9 @@ Follow-up TODOs: None
 
 Every code change MUST pass the following checks in sequence before commit:
 
-1. **Format**: `yarn format` - Prettier formatting applied
-2. **Lint**: `yarn lint --fix` - ESLint rules enforced, remaining errors fixed manually
-3. **Test**: `yarn test` - All unit tests pass
+1. **Format**: `bun run format` - Prettier formatting applied
+2. **Lint**: `bun run lint --fix` - ESLint rules enforced, remaining errors fixed manually
+3. **Test**: `bun run test` - All unit tests pass
 
 **Rationale**: These gates prevent broken code from entering the repository. Skipping any step is forbidden, even for "minor" changes. If any command fails, the issue MUST be resolved before committing.
 
@@ -82,9 +85,9 @@ Use descriptive branch names following the pattern:
 ```bash
 # 1. Make code changes
 # 2. Run quality gates (MANDATORY)
-yarn format
-yarn lint --fix
-yarn test
+bun run format
+bun run lint --fix
+bun run test
 
 # 3. Only after ALL checks pass
 git add <files>

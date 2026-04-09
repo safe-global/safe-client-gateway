@@ -1,3 +1,6 @@
+<!--
+  SPDX-License-Identifier: FSL-1.1-MIT
+ -->
 # Quickstart: Service-Aware Feature Configuration Integration
 
 **Feature Branch**: `001-service-aware-config`  
@@ -5,8 +8,8 @@
 
 ## Prerequisites
 
-- Node.js 22.x
-- Yarn 4.x
+- Bun 1.3.x (includes Node.js compatibility)
+- Bun 1.3.x
 - Docker (for Redis)
 - Access to Config Service v2 endpoints
 
@@ -30,13 +33,13 @@ docker-compose up -d redis postgres
 ### 2. Install Dependencies
 
 ```bash
-yarn install
+bun install
 ```
 
 ### 3. Run Development Server
 
 ```bash
-yarn start:dev
+bun run start:dev
 ```
 
 ### 4. Test the New Endpoints
@@ -66,17 +69,17 @@ curl http://localhost:3000/v1/chains/1
 
 ```bash
 # All unit tests
-yarn test
+bun run test
 
 # Specific to chains module
-yarn test --testPathPattern=chains
+bun run test --testPathPattern=chains
 ```
 
 ### Integration Tests
 
 ```bash
 # Requires running Docker dependencies
-yarn test:integration --testPathPattern=chains.v2
+bun run test:integration --testPathPattern=chains.v2
 ```
 
 ## File Locations

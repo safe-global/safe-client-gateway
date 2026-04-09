@@ -1,3 +1,6 @@
+<!--
+  SPDX-License-Identifier: FSL-1.1-MIT
+ -->
 # Implementation Plan: Service-Aware Feature Configuration Integration
 
 **Branch**: `001-service-aware-config` | **Date**: 2026-02-04 | **Spec**: [spec.md](./spec.md)
@@ -25,7 +28,7 @@ _GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
 
 | Principle                   | Status         | Notes                                                                    |
 | --------------------------- | -------------- | ------------------------------------------------------------------------ |
-| I. Pre-Commit Quality Gates | ✅ Will comply | `yarn format`, `yarn lint --fix`, `yarn test` before each commit         |
+| I. Pre-Commit Quality Gates | ✅ Will comply | `bun run format`, `bun run lint --fix`, `bun run test` before each commit         |
 | II. Testing Discipline      | ✅ Will comply | Unit tests for services/controllers, integration tests for API endpoints |
 | III. API Consistency        | ✅ Will comply | OpenAPI decorators, Zod schemas, versioned endpoints (v2)                |
 | IV. Database Integrity      | ✅ N/A         | No database changes - caching only                                       |
