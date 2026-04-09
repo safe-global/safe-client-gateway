@@ -1,7 +1,3 @@
-<!--
-  SPDX-License-Identifier: FSL-1.1-MIT
- -->
-
 # SPDX-License-Identifier: FSL-1.1-MIT
 
 # Tasks: CGW Feature Flag System
@@ -159,9 +155,9 @@
 - [ ] T042 [P] Add JSDoc comments to FeatureFlagService methods in `src/modules/chains/feature-flags/feature-flag.service.ts`
 - [ ] T043 [P] Add JSDoc comments to IFeatureFlagService interface in `src/modules/chains/feature-flags/feature-flag.service.interface.ts`
 - [ ] T044 [P] Add JSDoc comments to new ChainsRepository methods (getChainV2ForCgw, getChainsV2ForCgw) in `src/modules/chains/domain/chains.repository.ts`
-- [ ] T045 Run `bun run format` and fix formatting issues
-- [ ] T046 Run `bun run lint --fix` and fix remaining lint errors
-- [ ] T047 Run `bun run test` and ensure all tests pass
+- [ ] T045 Run `yarn format` and fix formatting issues
+- [ ] T046 Run `yarn lint --fix` and fix remaining lint errors
+- [ ] T047 Run `yarn test` and ensure all tests pass
 - [ ] T048 Verify FeatureFlagService can be injected in example controller/guard/interceptor (manual validation)
 - [ ] T049 Update README.md if needed with feature flag usage documentation
 

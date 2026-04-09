@@ -1,7 +1,3 @@
-<!--
-  SPDX-License-Identifier: FSL-1.1-MIT
- -->
-
 # SPDX-License-Identifier: FSL-1.1-MIT
 
 # Implementation Plan: CGW Feature Flag System
@@ -31,7 +27,7 @@ _GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
 
 | Principle                   | Status         | Notes                                                                      |
 | --------------------------- | -------------- | -------------------------------------------------------------------------- |
-| I. Pre-Commit Quality Gates | ✅ Will comply | `bun run format`, `bun run lint --fix`, `bun run test` before each commit  |
+| I. Pre-Commit Quality Gates | ✅ Will comply | `yarn format`, `yarn lint --fix`, `yarn test` before each commit           |
 | II. Testing Discipline      | ✅ Will comply | Unit tests for FeatureFlagService, integration tests for service injection |
 | III. API Consistency        | ✅ N/A         | Internal service API only (no REST endpoints)                              |
 | IV. Database Integrity      | ✅ N/A         | No database changes - caching only                                         |

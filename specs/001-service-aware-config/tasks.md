@@ -1,7 +1,3 @@
-<!--
-  SPDX-License-Identifier: FSL-1.1-MIT
- -->
-
 # Tasks: Service-Aware Feature Configuration Integration
 
 **Input**: Design documents from `/specs/001-service-aware-config/`  
@@ -142,10 +138,10 @@
 
 **Purpose**: Final quality checks and documentation
 
-- [x] T037 [P] Run `bun run format` to ensure code formatting
-- [x] T038 [P] Run `bun run lint --fix` to fix linting issues
-- [x] T039 Run `bun run test` to verify all unit tests pass
-- [ ] T040 Run `bun run test:integration` to verify all integration tests pass
+- [x] T037 [P] Run `yarn format` to ensure code formatting
+- [x] T038 [P] Run `yarn lint --fix` to fix linting issues
+- [x] T039 Run `yarn test` to verify all unit tests pass
+- [ ] T040 Run `yarn test:integration` to verify all integration tests pass
 - [ ] T041 [P] Verify v1 endpoints still work unchanged (regression test)
 - [ ] T042 [P] Update Swagger documentation if needed
 - [ ] T043 Validate implementation against `specs/001-service-aware-config/quickstart.md`
@@ -245,4 +241,4 @@ Commit checkpoints:
 - Existing v1 endpoints MUST remain unchanged (FR-003)
 - Internal components continue using v1 (FR-003a)
 - Response format must match existing Chain entity (FR-006)
-- Run quality gates (`bun run format`, `bun run lint --fix`, `bun run test`) before each commit
+- Run quality gates (`yarn format`, `yarn lint --fix`, `yarn test`) before each commit
