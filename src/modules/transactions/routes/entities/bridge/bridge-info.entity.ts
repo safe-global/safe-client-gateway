@@ -1,5 +1,6 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import {
-  BridgeStatus,
+  type BridgeStatus,
   StatusMessages,
   SubstatusesDone,
   SubstatusesFailed,

@@ -3,7 +3,7 @@ import { faker } from '@faker-js/faker';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 import type { NetworkRequest } from '@/datasources/network/entities/network.request.entity';
-import type { FetchClient } from '@/datasources/network/network.module';
+import type { FetchClient } from '@/datasources/network/fetch-client.types';
 import { FetchNetworkService } from '@/datasources/network/fetch.network.service';
 import { rawify } from '@/validation/entities/raw.entity';
 

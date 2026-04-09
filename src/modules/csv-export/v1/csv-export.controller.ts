@@ -21,7 +21,7 @@ import { CsvExportService } from '@/modules/csv-export/v1/csv-export.service';
 import {
   JobStatusDto,
   JobStatusErrorDto,
-  JobStatusResponseDto,
+  type JobStatusResponseDto,
 } from '@/modules/csv-export/v1/entities/job-status.dto';
 import { TransactionExportDtoSchema } from '@/modules/csv-export/v1/entities/schemas/transaction-export.dto.schema';
 import { TransactionExportDto } from '@/modules/csv-export/v1/entities/transaction-export-request';

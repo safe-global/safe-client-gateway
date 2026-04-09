@@ -14,7 +14,7 @@ import { IAuthRepository } from '@/modules/auth/domain/auth.repository.interface
 import { AuthMethod } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import {
-  OidcState,
+  type OidcState,
   OidcStateSchema,
 } from '@/modules/auth/oidc/routes/entities/oidc-state.entity';
 import { IAuth0Repository } from '@/modules/auth/oidc/auth0/domain/auth0.repository.interface';

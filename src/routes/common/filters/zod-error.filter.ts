@@ -1,11 +1,12 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import {
-  ArgumentsHost,
+  type ArgumentsHost,
   Catch,
-  ExceptionFilter,
+  type ExceptionFilter,
   HttpStatus,
 } from '@nestjs/common';
 import { ZodError, z } from 'zod';
-import { Response } from 'express';
+import type { Response } from 'express';
 import { ZodErrorWithCode } from '@/validation/pipes/validation.pipe';
 
 /**

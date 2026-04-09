@@ -78,8 +78,6 @@ function jwtClientFactory() {
   };
 }
 
-export type JwtClient = ReturnType<typeof jwtClientFactory>;
-
 @Module({
   providers: [
     {

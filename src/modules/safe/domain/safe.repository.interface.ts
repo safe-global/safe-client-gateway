@@ -1,21 +1,15 @@
-import { Page } from '@/domain/entities/page.entity';
-import { CreationTransaction } from '@/modules/safe/domain/entities/creation-transaction.entity';
-import { ModuleTransaction } from '@/modules/safe/domain/entities/module-transaction.entity';
-import { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
-import { SafeList } from '@/modules/safe/domain/entities/safe-list.entity';
-import { Safe } from '@/modules/safe/domain/entities/safe.entity';
-import { Transaction } from '@/modules/safe/domain/entities/transaction.entity';
-import { Transfer } from '@/modules/safe/domain/entities/transfer.entity';
-import { AddConfirmationDto } from '@/modules/transactions/domain/entities/add-confirmation.dto.entity';
-import { ProposeTransactionDto } from '@/modules/transactions/domain/entities/propose-transaction.dto.entity';
-import { SafesByChainId } from '@/modules/safe/domain/entities/safes-by-chain-id.entity';
-import { Module } from '@nestjs/common';
-import { SafeRepository } from '@/modules/safe/domain/safe.repository';
-import { ChainsModule } from '@/modules/chains/chains.module';
-import { TransactionApiManagerModule } from '@/domain/interfaces/transaction-api.manager.interface';
-import { TransactionVerifierHelper } from '@/modules/transactions/routes/helpers/transaction-verifier.helper';
-import { DelegatesV2RepositoryModule } from '@/modules/delegate/domain/v2/delegates.v2.repository.interface';
-import { ContractsModule } from '@/modules/contracts/contracts.module';
+// SPDX-License-Identifier: FSL-1.1-MIT
+import type { Page } from '@/domain/entities/page.entity';
+import type { CreationTransaction } from '@/modules/safe/domain/entities/creation-transaction.entity';
+import type { ModuleTransaction } from '@/modules/safe/domain/entities/module-transaction.entity';
+import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
+import type { SafeList } from '@/modules/safe/domain/entities/safe-list.entity';
+import type { Safe } from '@/modules/safe/domain/entities/safe.entity';
+import type { Transaction } from '@/modules/safe/domain/entities/transaction.entity';
+import type { Transfer } from '@/modules/safe/domain/entities/transfer.entity';
+import { type AddConfirmationDto } from '@/modules/transactions/domain/entities/add-confirmation.dto.entity';
+import { type ProposeTransactionDto } from '@/modules/transactions/domain/entities/propose-transaction.dto.entity';
+import type { SafesByChainId } from '@/modules/safe/domain/entities/safes-by-chain-id.entity';
 import type { Address } from 'viem';
 
 export const ISafeRepository = Symbol('ISafeRepository');
@@ -222,21 +216,3 @@ export interface ISafeRepository {
     moduleAddress: Address;
   }): Promise<SafeList>;
 }
-
-@Module({
-  imports: [
-    ChainsModule,
-    TransactionApiManagerModule,
-    DelegatesV2RepositoryModule,
-    ContractsModule,
-  ],
-  providers: [
-    {
-      provide: ISafeRepository,
-      useClass: SafeRepository,
-    },
-    TransactionVerifierHelper,
-  ],
-  exports: [ISafeRepository],
-})
-export class SafeRepositoryModule {}

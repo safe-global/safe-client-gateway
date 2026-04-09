@@ -1,6 +1,7 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { DeviceType } from '@/modules/notifications/domain/v2/entities/device-type.entity';
 import { NotificationType } from '@/modules/notifications/domain/v2/entities/notification-type.entity';
-import {
+import type {
   UpsertSubscriptionsSafesDto as DomainUpsertSubscriptionsSafesDto,
   UpsertSubscriptionsDto as DomainUpsertSubscriptionsDto,
 } from '@/modules/notifications/domain/v2/entities/upsert-subscriptions.dto.entity';

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import {
   Body,
@@ -5,7 +6,7 @@ import {
   Get,
   HttpException,
   HttpStatus,
-  INestApplication,
+  type INestApplication,
   Post,
 } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
@@ -18,7 +19,10 @@ import configuration from '@/config/entities/__tests__/configuration';
 import { GlobalErrorFilter } from '@/routes/common/filters/global-error.filter';
 import { Server } from 'net';
 import { HttpExceptionNoLog } from '@/domain/common/errors/http-exception-no-log.error';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
 
 @Controller({})
 class TestController {

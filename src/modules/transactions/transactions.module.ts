@@ -1,5 +1,6 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Module } from '@nestjs/common';
-import { TransactionApiManagerModule } from '@/domain/interfaces/transaction-api.manager.interface';
+import { TransactionApiManagerModule } from '@/domain/interfaces/transaction-api.manager.module';
 import { ITransactionsRepository } from '@/modules/transactions/domain/transactions.repository.interface';
 import { TransactionsRepository } from '@/modules/transactions/domain/transactions.repository';
 import { ChainsModule } from '@/modules/chains/chains.module';
@@ -8,7 +9,7 @@ import { DataDecoderModule } from '@/modules/data-decoder/data-decoder.module';
 import { EarnModule } from '@/modules/earn/earn.module';
 import { HumanDescriptionModule } from '@/modules/human-description/human-description.module';
 import { SafeAppsModule } from '@/modules/safe-apps/safe-apps.module';
-import { SafeRepositoryModule } from '@/modules/safe/domain/safe.repository.interface';
+import { SafeRepositoryModule } from '@/modules/safe/domain/safe.repository.module';
 import { StakingModule } from '@/modules/staking/staking.module';
 import { GPv2DecoderModule } from '@/modules/swaps/domain/contracts/decoders/gp-v2-decoder.helper';
 import { SwapsModule } from '@/modules/swaps/swaps.module';
@@ -53,7 +54,7 @@ import { TransferMapper } from '@/modules/transactions/routes/mappers/transfers/
 import { TransactionsController } from '@/modules/transactions/routes/transactions.controller';
 import { TransactionsService } from '@/modules/transactions/routes/transactions.service';
 import { TransactionVerifierHelper } from '@/modules/transactions/routes/helpers/transaction-verifier.helper';
-import { DelegatesV2RepositoryModule } from '@/modules/delegate/domain/v2/delegates.v2.repository.interface';
+import { DelegatesV2RepositoryModule } from '@/modules/delegate/domain/v2/delegates.v2.repository.module';
 import { KilnVaultHelperModule } from '@/modules/transactions/routes/helpers/kiln-vault.helper';
 import { VaultTransactionMapper } from '@/modules/transactions/routes/mappers/common/vault-transaction.mapper';
 import { BridgeTransactionMapper } from '@/modules/transactions/routes/mappers/common/bridge-transaction.mapper';

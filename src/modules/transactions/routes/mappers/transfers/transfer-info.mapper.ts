@@ -1,7 +1,8 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
-import { Safe } from '@/modules/safe/domain/entities/safe.entity';
-import { Transfer as DomainTransfer } from '@/modules/safe/domain/entities/transfer.entity';
-import { Token } from '@/modules/tokens/domain/entities/token.entity';
+import type { Safe } from '@/modules/safe/domain/entities/safe.entity';
+import type { Transfer as DomainTransfer } from '@/modules/safe/domain/entities/transfer.entity';
+import type { Token } from '@/modules/tokens/domain/entities/token.entity';
 import { TokenRepository } from '@/modules/tokens/domain/token.repository';
 import { ITokenRepository } from '@/modules/tokens/domain/token.repository.interface';
 import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
@@ -17,7 +18,10 @@ import { Transfer } from '@/modules/transactions/routes/entities/transfers/trans
 import { SwapTransferInfoMapper } from '@/modules/transactions/routes/mappers/transfers/swap-transfer-info.mapper';
 import { SwapTransferTransactionInfo } from '@/modules/transactions/routes/swap-transfer-transaction-info.entity';
 import { AddressInfo } from '@/routes/common/entities/address-info.entity';
-import { LoggingService, ILoggingService } from '@/logging/logging.interface';
+import {
+  LoggingService,
+  type ILoggingService,
+} from '@/logging/logging.interface';
 import { type Address } from 'viem';
 
 @Injectable()

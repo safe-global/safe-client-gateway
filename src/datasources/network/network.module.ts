@@ -3,17 +3,20 @@ import { Global, Module } from '@nestjs/common';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { FetchNetworkService } from '@/datasources/network/fetch.network.service';
 import { NetworkService } from '@/datasources/network/network.service.interface';
-import { NetworkResponse } from '@/datasources/network/entities/network.response.entity';
+import type { NetworkResponse } from '@/datasources/network/entities/network.response.entity';
 import {
   NetworkRequestError,
   NetworkResponseError,
 } from '@/datasources/network/entities/network.error.entity';
 import type { Raw } from '@/validation/entities/raw.entity';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
 import { LogType } from '@/domain/common/entities/log-type.entity';
 import { hashSha1 } from '@/domain/common/utils/utils';
 import { CircuitBreakerService } from '@/datasources/circuit-breaker/circuit-breaker.service';
-import { NetworkRequest } from '@/datasources/network/entities/network.request.entity';
+import type { NetworkRequest } from '@/datasources/network/entities/network.request.entity';
 import { setGlobalDispatcher, Agent } from 'undici';
 import {
   UndiciAgent,
@@ -21,14 +24,10 @@ import {
 } from '@/datasources/network/undici.shutdown.hook';
 import { asError } from '@/logging/utils';
 
-export const FetchClientToken = Symbol('FetchClient');
-
-export type FetchClient = <T>(
-  url: string,
-  options: RequestInit,
-  timeout?: number,
-  circuitBreaker?: NetworkRequest['circuitBreaker'],
-) => Promise<NetworkResponse<T>>;
+import {
+  FetchClientToken,
+  type FetchClient,
+} from '@/datasources/network/fetch-client.types';
 
 const cache: Record<string, Promise<NetworkResponse<unknown>>> = {};
 

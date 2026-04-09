@@ -1,7 +1,8 @@
-import { UpsertSubscriptionsDto } from '@/modules/notifications/domain/v2/entities/upsert-subscriptions.dto.entity';
-import { FirebaseNotification } from '@/datasources/push-notifications-api/entities/firebase-notification.entity';
+// SPDX-License-Identifier: FSL-1.1-MIT
+import type { UpsertSubscriptionsDto } from '@/modules/notifications/domain/v2/entities/upsert-subscriptions.dto.entity';
+import type { FirebaseNotification } from '@/datasources/push-notifications-api/entities/firebase-notification.entity';
 import { IPushNotificationsApi } from '@/domain/interfaces/push-notifications-api.interface';
-import { UUID } from 'crypto';
+import type { UUID } from 'crypto';
 import type { INotificationsRepositoryV2 } from '@/modules/notifications/domain/v2/notifications.repository.interface';
 import {
   Inject,
@@ -10,7 +11,10 @@ import {
   UnauthorizedException,
   UnprocessableEntityException,
 } from '@nestjs/common';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
 import get from 'lodash/get';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { NotificationSubscription } from '@/modules/notifications/datasources/entities/notification-subscription.entity.db';

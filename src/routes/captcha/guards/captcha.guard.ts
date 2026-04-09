@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import {
-  CanActivate,
-  ExecutionContext,
+  type CanActivate,
+  type ExecutionContext,
   Inject,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
-import { Request } from 'express';
+import type { Request } from 'express';
 import { CaptchaService } from '@/routes/captcha/captcha.service';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { getClientIp } from '@/routes/common/utils/request.utils';

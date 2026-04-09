@@ -1,8 +1,9 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { RowSchema } from '@/datasources/db/v1/entities/row.entity';
-import { NotificationDevice } from '@/modules/notifications/datasources/entities/notification-devices.entity.db';
+import type { NotificationDevice } from '@/modules/notifications/datasources/entities/notification-devices.entity.db';
 import {
-  NotificationSubscriptionNotificationType,
   NotificationSubscriptionNotificationTypeSchema,
+  type NotificationSubscriptionNotificationType,
 } from '@/modules/notifications/datasources/entities/notification-subscription-notification-type.entity.db';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
@@ -15,7 +16,7 @@ import {
   OneToMany,
   JoinColumn,
 } from 'typeorm';
-import { Address, getAddress } from 'viem';
+import { type Address, getAddress } from 'viem';
 import { z } from 'zod';
 
 export const NotificationSubscriptionSchema = RowSchema.extend({
@@ -23,7 +24,7 @@ export const NotificationSubscriptionSchema = RowSchema.extend({
   safe_address: AddressSchema,
   signer_address: AddressSchema.nullable(),
   notification_subscription_notification_type: z.array(
-    NotificationSubscriptionNotificationTypeSchema,
+    z.lazy(() => NotificationSubscriptionNotificationTypeSchema),
   ),
 });
 
@@ -40,9 +41,14 @@ export class NotificationSubscription implements z.infer<
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @ManyToOne(() => NotificationDevice, (device) => device.id, {
-    onDelete: 'CASCADE',
-  })
+  @ManyToOne(
+    () =>
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      require('@/modules/notifications/datasources/entities/notification-devices.entity.db')
+        .NotificationDevice,
+    (device: NotificationDevice) => device.id,
+    { onDelete: 'CASCADE' },
+  )
   @JoinColumn({ name: 'push_notification_device_id' })
   push_notification_device!: NotificationDevice;
 
@@ -95,9 +101,11 @@ export class NotificationSubscription implements z.infer<
   updated_at!: Date;
 
   @OneToMany(
-    () => NotificationSubscriptionNotificationType,
-    (notificationSubscriptionNotificationType) =>
-      notificationSubscriptionNotificationType.id,
+    () =>
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      require('@/modules/notifications/datasources/entities/notification-subscription-notification-type.entity.db')
+        .NotificationSubscriptionNotificationType,
+    (nsnt: NotificationSubscriptionNotificationType) => nsnt.id,
   )
   notification_subscription_notification_type!: Array<NotificationSubscriptionNotificationType>;
 }

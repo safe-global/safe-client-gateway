@@ -2,7 +2,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { IRelayManager } from '@/modules/relay/domain/interfaces/relay-manager.interface';
 import { IRelayApi } from '@/domain/interfaces/relay-api.interface';
-import { Relay } from '@/modules/relay/domain/entities/relay.entity';
+import type { Relay } from '@/modules/relay/domain/entities/relay.entity';
 import type { RelayTaskStatus } from '@/modules/relay/domain/entities/relay-task-status.entity';
 import type { Address } from 'viem';
 

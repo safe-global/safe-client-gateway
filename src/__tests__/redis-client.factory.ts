@@ -1,4 +1,5 @@
-import type { RedisClientType } from '@/datasources/cache/cache.module';
+// SPDX-License-Identifier: FSL-1.1-MIT
+import type { RedisClientType } from '@/datasources/cache/cache.types';
 import { createClient } from 'redis';
 
 export async function redisClientFactory(): Promise<RedisClientType> {

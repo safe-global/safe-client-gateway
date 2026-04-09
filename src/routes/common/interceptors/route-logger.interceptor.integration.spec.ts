@@ -1,11 +1,12 @@
-import { ILoggingService } from '@/logging/logging.interface';
+// SPDX-License-Identifier: FSL-1.1-MIT
+import type { ILoggingService } from '@/logging/logging.interface';
 import { Test, TestingModule } from '@nestjs/testing';
 import {
   Controller,
   Get,
   HttpException,
   HttpStatus,
-  INestApplication,
+  type INestApplication,
   Query,
 } from '@nestjs/common';
 import request from 'supertest';

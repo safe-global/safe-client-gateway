@@ -1,4 +1,5 @@
-import { NativeCurrency as DomainNativeCurrency } from '@/modules/chains/domain/entities/native.currency.entity';
+// SPDX-License-Identifier: FSL-1.1-MIT
+import type { NativeCurrency as DomainNativeCurrency } from '@/modules/chains/domain/entities/native.currency.entity';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class NativeCurrency implements DomainNativeCurrency {

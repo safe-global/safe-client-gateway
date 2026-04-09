@@ -1,5 +1,9 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { AbiDecoder } from '@/modules/contracts/domain/decoders/abi-decoder.helper';
-import { LoggingService, ILoggingService } from '@/logging/logging.interface';
+import {
+  LoggingService,
+  type ILoggingService,
+} from '@/logging/logging.interface';
 import { Inject, Injectable } from '@nestjs/common';
 import { parseAbi } from 'viem';
 import type { Address, Hex } from 'viem';

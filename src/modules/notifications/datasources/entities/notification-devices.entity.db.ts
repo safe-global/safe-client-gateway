@@ -1,4 +1,5 @@
-import { NotificationSubscription } from '@/modules/notifications/datasources/entities/notification-subscription.entity.db';
+// SPDX-License-Identifier: FSL-1.1-MIT
+import type { NotificationSubscription } from '@/modules/notifications/datasources/entities/notification-subscription.entity.db';
 import { RowSchema } from '@/datasources/db/v1/entities/row.entity';
 import { DeviceType } from '@/modules/notifications/domain/v2/entities/device-type.entity';
 import { UuidSchema } from '@/validation/entities/schemas/uuid.schema';
@@ -52,11 +53,12 @@ export class NotificationDevice implements z.infer<
   updated_at!: Date;
 
   @OneToMany(
-    () => NotificationSubscription,
-    (subscription) => subscription.id,
-    {
-      onDelete: 'CASCADE',
-    },
+    () =>
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      require('@/modules/notifications/datasources/entities/notification-subscription.entity.db')
+        .NotificationSubscription,
+    (subscription: NotificationSubscription) => subscription.id,
+    { onDelete: 'CASCADE' },
   )
   notification_subscriptions!: Array<NotificationSubscription>;
 }

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { PostgresqlLogger } from '@/datasources/db/v2/postgresql-logger.service';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { readFileSync } from 'fs';
@@ -49,7 +50,7 @@ export const postgresConfig = (
     username: postgresEnvConfig.username,
     password: postgresEnvConfig.password,
     database: postgresEnvConfig.database,
-    migrations: ['dist/migrations/*.js'],
+    migrations: ['migrations/*.ts'],
     logger: logger ? new PostgresqlLogger(logger) : undefined,
     cache: postgresEnvConfig.cache,
     ssl: isSslEnabled

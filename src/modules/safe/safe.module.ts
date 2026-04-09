@@ -10,9 +10,9 @@ import { ChainsModule } from '@/modules/chains/chains.module';
 import { MessagesModule } from '@/modules/messages/messages.module';
 import { SafeRepository } from '@/modules/safe/domain/safe.repository';
 import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
-import { TransactionApiManagerModule } from '@/domain/interfaces/transaction-api.manager.interface';
+import { TransactionApiManagerModule } from '@/domain/interfaces/transaction-api.manager.module';
 import { TransactionVerifierHelper } from '@/modules/transactions/routes/helpers/transaction-verifier.helper';
-import { DelegatesV2RepositoryModule } from '@/modules/delegate/domain/v2/delegates.v2.repository.interface';
+import { DelegatesV2RepositoryModule } from '@/modules/delegate/domain/v2/delegates.v2.repository.module';
 import { ContractsModule } from '@/modules/contracts/contracts.module';
 import { FeatureFlagsModule } from '@/modules/chains/feature-flags/feature-flags.module';
 

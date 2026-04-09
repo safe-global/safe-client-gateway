@@ -1,6 +1,7 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import groupBy from 'lodash/groupBy';
-import { Message as DomainMessage } from '@/modules/messages/domain/entities/message.entity';
+import type { Message as DomainMessage } from '@/modules/messages/domain/entities/message.entity';
 import { MessagesRepository } from '@/modules/messages/domain/messages.repository';
 import { IMessagesRepository } from '@/modules/messages/domain/messages.repository.interface';
 import { SafeRepository } from '@/modules/safe/domain/safe.repository';
@@ -16,7 +17,10 @@ import { MessageItem } from '@/modules/messages/routes/entities/message-item.ent
 import { Message } from '@/modules/messages/routes/entities/message.entity';
 import { UpdateMessageSignatureDto } from '@/modules/messages/routes/entities/update-message-signature.entity';
 import { MessageMapper } from '@/modules/messages/routes/mappers/message-mapper';
-import { LoggingService, ILoggingService } from '@/logging/logging.interface';
+import {
+  LoggingService,
+  type ILoggingService,
+} from '@/logging/logging.interface';
 import { LogType } from '@/domain/common/entities/log-type.entity';
 import type { Address, Hash } from 'viem';
 

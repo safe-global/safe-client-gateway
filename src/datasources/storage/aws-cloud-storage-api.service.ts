@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { ICloudStorageApiService } from '@/datasources/storage/cloud-storage-api.service';
 import {
   AWS_BUCKET_NAME,
@@ -6,12 +7,15 @@ import {
   AWS_SECRET_ACCESS_KEY,
 } from '@/datasources/storage/constants';
 import { LogType } from '@/domain/common/entities/log-type.entity';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
 import { asError } from '@/logging/utils';
 import {
-  CompleteMultipartUploadCommandOutput,
+  type CompleteMultipartUploadCommandOutput,
   GetObjectCommand,
-  PutObjectCommandInput,
+  type PutObjectCommandInput,
   S3,
 } from '@aws-sdk/client-s3';
 import { Upload } from '@aws-sdk/lib-storage';

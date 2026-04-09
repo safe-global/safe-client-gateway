@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import {
   ApiExtraModels,
   ApiProperty,
@@ -13,7 +14,7 @@ export enum RichFragmentType {
 }
 
 export abstract class RichDecodedInfoFragment {
-  @ApiProperty()
+  @ApiProperty({ enum: RichFragmentType })
   type: RichFragmentType;
   @ApiProperty()
   value: string;

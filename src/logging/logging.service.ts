@@ -1,9 +1,10 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Injectable } from '@nestjs/common';
 import { Inject } from '@nestjs/common/decorators';
 import { ClsService } from 'nestjs-cls';
 import winston from 'winston';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import { ILoggingService } from '@/logging/logging.interface';
+import type { ILoggingService } from '@/logging/logging.interface';
 
 /**
  * Implementation of ILoggingService which prepends the current time and a unique request ID to every logged message.

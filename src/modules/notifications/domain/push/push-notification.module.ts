@@ -3,15 +3,18 @@ import { JobQueueService } from '@/datasources/job-queue/job-queue.service';
 import { JobQueueShutdownHook } from '@/datasources/job-queue/job-queue.shutdown.hook';
 import { PUSH_NOTIFICATION_QUEUE } from '@/domain/common/jobs.constants';
 import { IJobQueueService } from '@/domain/interfaces/job-queue.interface';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { PushNotificationConsumer } from '@/modules/notifications/domain/push/consumers/push-notification.consumer';
 import { PushNotificationService } from '@/modules/notifications/domain/push/push-notification.service';
 import { IPushNotificationService } from '@/modules/notifications/domain/push/push-notification.service.interface';
 import { NotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/notifications.repository.module';
-import { DelegatesV2RepositoryModule } from '@/modules/delegate/domain/v2/delegates.v2.repository.interface';
+import { DelegatesV2RepositoryModule } from '@/modules/delegate/domain/v2/delegates.v2.repository.module';
 import { MessagesModule } from '@/modules/messages/messages.module';
-import { SafeRepositoryModule } from '@/modules/safe/domain/safe.repository.interface';
+import { SafeRepositoryModule } from '@/modules/safe/domain/safe.repository.module';
 import { BullModule, getQueueToken } from '@nestjs/bullmq';
 import { Module } from '@nestjs/common';
 import { Queue } from 'bullmq';

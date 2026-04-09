@@ -1,7 +1,8 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Module } from '@nestjs/common';
 import { AddressInfoModule } from '@/routes/common/address-info/address-info.module';
-import { TransactionApiManagerModule } from '@/domain/interfaces/transaction-api.manager.interface';
-import { SafeRepositoryModule } from '@/modules/safe/domain/safe.repository.interface';
+import { TransactionApiManagerModule } from '@/domain/interfaces/transaction-api.manager.module';
+import { SafeRepositoryModule } from '@/modules/safe/domain/safe.repository.module';
 import { SafeAppsModule } from '@/modules/safe-apps/safe-apps.module';
 import { IMessagesRepository } from '@/modules/messages/domain/messages.repository.interface';
 import { MessagesRepository } from '@/modules/messages/domain/messages.repository';

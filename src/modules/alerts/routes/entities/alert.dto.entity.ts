@@ -1,10 +1,14 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type {
   AlertLogSchema,
   AlertSchema,
   AlertTransactionSchema,
 } from '@/modules/alerts/routes/entities/schemas/alerts.schema';
+import { EventType } from '@/modules/alerts/routes/entities/event-type.entity';
 import type { z } from 'zod';
 import type { Address, Hex } from 'viem';
+
+export { EventType };
 
 export class AlertLog implements z.infer<typeof AlertLogSchema> {
   address!: Address;
@@ -31,11 +35,6 @@ export class AlertTransaction implements z.infer<
   gas_price!: string;
   gas_tip_cap!: string;
   gas_fee_cap!: string;
-}
-
-export enum EventType {
-  ALERT = 'ALERT',
-  TEST = 'TEST',
 }
 
 export class Alert implements z.infer<typeof AlertSchema> {

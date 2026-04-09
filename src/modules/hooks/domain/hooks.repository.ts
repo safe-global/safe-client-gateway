@@ -1,7 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
-import { LoggingService, ILoggingService } from '@/logging/logging.interface';
-import { Event } from '@/modules/hooks/routes/entities/event.entity';
+import { Inject, Injectable, type OnModuleInit } from '@nestjs/common';
+import {
+  LoggingService,
+  type ILoggingService,
+} from '@/logging/logging.interface';
+import type { Event } from '@/modules/hooks/routes/entities/event.entity';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { IQueuesRepository } from '@/modules/queues/domain/queues-repository.interface';
 import { ConsumeMessage } from 'amqplib';

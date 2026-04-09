@@ -31,7 +31,8 @@ ENV APPLICATION_VERSION=${VERSION} \
 
 COPY --chown=bun:bun --from=base /app/abis ./abis
 COPY --chown=bun:bun --from=base /app/node_modules ./node_modules
-COPY --chown=bun:bun --from=base /app/dist ./dist
+COPY --chown=bun:bun --from=base /app/src ./src
+COPY --chown=bun:bun --from=base /app/tsconfig*.json ./
 COPY --chown=bun:bun --from=base /app/assets ./assets
 COPY --chown=bun:bun --from=base /app/migrations ./migrations
-CMD [ "bun", "dist/src/main.js" ]
+CMD [ "bun", "src/main.ts" ]

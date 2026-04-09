@@ -1,6 +1,7 @@
-import { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
+// SPDX-License-Identifier: FSL-1.1-MIT
+import type { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
 import { databaseAddressTransformer } from '@/domain/common/transformers/databaseAddress.transformer';
-import { SpaceSafe as DomainSpaceSafe } from '@/modules/spaces/domain/entities/space-safe.entity';
+import type { SpaceSafe as DomainSpaceSafe } from '@/modules/spaces/domain/entities/space-safe.entity';
 import { CHAIN_ID_MAXLENGTH } from '@/routes/common/constants';
 import {
   Column,
@@ -50,10 +51,13 @@ export class SpaceSafe implements DomainSpaceSafe {
   })
   public readonly updatedAt!: Date;
 
-  @ManyToOne(() => Space, (space: Space) => space.id, {
-    onDelete: 'CASCADE',
-    nullable: false,
-  })
+  @ManyToOne(
+    () =>
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      require('@/modules/spaces/datasources/entities/space.entity.db').Space,
+    (space: Space) => space.id,
+    { onDelete: 'CASCADE', nullable: false },
+  )
   @JoinColumn({
     name: 'space_id',
     foreignKeyConstraintName: 'FK_SS_space_id',

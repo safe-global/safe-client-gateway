@@ -1,8 +1,6 @@
-import { Delegate } from '@/modules/delegate/domain/entities/delegate.entity';
-import { DelegatesV2Repository } from '@/modules/delegate/domain/v2/delegates.v2.repository';
-import { Page } from '@/domain/entities/page.entity';
-import { TransactionApiManagerModule } from '@/domain/interfaces/transaction-api.manager.interface';
-import { Module } from '@nestjs/common';
+// SPDX-License-Identifier: FSL-1.1-MIT
+import type { Delegate } from '@/modules/delegate/domain/entities/delegate.entity';
+import type { Page } from '@/domain/entities/page.entity';
 import type { Address } from 'viem';
 
 export const IDelegatesV2Repository = Symbol('IDelegatesV2Repository');
@@ -40,15 +38,3 @@ export interface IDelegatesV2Repository {
     signature: string;
   }): Promise<unknown>;
 }
-
-@Module({
-  imports: [TransactionApiManagerModule],
-  providers: [
-    {
-      provide: IDelegatesV2Repository,
-      useClass: DelegatesV2Repository,
-    },
-  ],
-  exports: [IDelegatesV2Repository],
-})
-export class DelegatesV2RepositoryModule {}

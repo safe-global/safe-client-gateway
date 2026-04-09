@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import {
   Inject,
   Injectable,
@@ -5,7 +6,10 @@ import {
 } from '@nestjs/common';
 import { HealthEntity } from '@/modules/health/domain/entities/health.entity';
 import { IHealthRepository } from '@/modules/health/domain/health.repository.interface';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
 import {
   Health,
   HealthStatus,

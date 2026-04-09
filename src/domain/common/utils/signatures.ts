@@ -1,13 +1,21 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { HEX_BYTES_LENGTH, HEX_PREFIX_LENGTH } from '@/routes/common/constants';
 import { isHexBytes } from '@/validation/entities/schemas/hexbytes.schema';
-import { isSignatureLike } from '@/validation/entities/schemas/signature.schema';
+import {
+  isSignatureLike,
+  R_OR_S_HEX_LENGTH,
+  V_HEX_LENGTH,
+  SIGNATURE_HEX_LENGTH,
+  DYNAMIC_PART_LENGTH_FIELD_HEX_LENGTH,
+} from '@/validation/entities/schemas/signature.schema';
 import type { Address, Hex } from 'viem';
 
-export const R_OR_S_HEX_LENGTH = 32 * HEX_BYTES_LENGTH; // 32 bytes in hex
-export const V_HEX_LENGTH = 1 * HEX_BYTES_LENGTH; // 1 byte in hex
-export const SIGNATURE_HEX_LENGTH =
-  R_OR_S_HEX_LENGTH + R_OR_S_HEX_LENGTH + V_HEX_LENGTH; // 65 bytes in hex
-export const DYNAMIC_PART_LENGTH_FIELD_HEX_LENGTH = 32 * HEX_BYTES_LENGTH; // 32 bytes in hex
+export {
+  R_OR_S_HEX_LENGTH,
+  V_HEX_LENGTH,
+  SIGNATURE_HEX_LENGTH,
+  DYNAMIC_PART_LENGTH_FIELD_HEX_LENGTH,
+};
 
 /**
  * Parses a (concatenated) signature string into individual signature types

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import {
   ApiExtraModels,
   ApiProperty,
@@ -18,7 +19,7 @@ export class RegisterDeviceDto {
   buildNumber!: string;
   @ApiProperty()
   bundle!: string;
-  @ApiProperty()
+  @ApiProperty({ enum: DeviceType })
   deviceType!: DeviceType;
   @ApiProperty()
   version!: string;

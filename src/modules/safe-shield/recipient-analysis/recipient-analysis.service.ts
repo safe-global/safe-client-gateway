@@ -1,11 +1,12 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
 import { TransferPageSchema } from '@/modules/safe/domain/entities/transfer.entity';
 import {
-  AnalysisResult,
+  type AnalysisResult,
   CommonStatus,
 } from '@/modules/safe-shield/entities/analysis-result.entity';
 import { Inject, Injectable } from '@nestjs/common';
-import { getAddress, Hex, zeroAddress, type Address } from 'viem';
+import { getAddress, type Hex, zeroAddress, type Address } from 'viem';
 import { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
 import { SafeSchema } from '@/modules/safe/domain/entities/schemas/safe.schema';
 import {
@@ -17,18 +18,21 @@ import { RecipientStatus } from '@/modules/safe-shield/entities/recipient-status
 import { BridgeStatus } from '@/modules/safe-shield/entities/bridge-status.entity';
 import type { DecodedTransactionData } from '@/modules/safe-shield/entities/transaction-data.entity';
 import { Erc20Decoder } from '@/modules/relay/domain/contracts/decoders/erc-20-decoder.helper';
-import {
+import type {
   RecipientAnalysisResponse,
   RecipientAnalysisResponseWithoutIsSafe,
   SingleRecipientAnalysisResponse,
 } from '@/modules/safe-shield/entities/analysis-responses.entity';
 import {
   CacheService,
-  ICacheService,
+  type ICacheService,
 } from '@/datasources/cache/cache.service.interface';
 import { CacheRouter } from '@/datasources/cache/cache.router';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
 import { extractRecipients } from '../utils/extraction.utils';
 import { logCacheHit, logCacheMiss } from '@/modules/safe-shield/utils/common';
 import { TransactionInfo } from '@/modules/transactions/routes/entities/transaction-info.entity';
@@ -37,7 +41,7 @@ import {
   isBridgeAndSwapTransactionInfo,
   isSwapTransactionInfo,
 } from '@/modules/transactions/routes/entities/bridge/bridge-info.entity';
-import { Safe } from '@/modules/safe/domain/entities/safe.entity';
+import type { Safe } from '@/modules/safe/domain/entities/safe.entity';
 import { TransactionsService } from '@/modules/transactions/routes/transactions.service';
 import {
   hasCanonicalDeploymentSafeToL2Migration,
@@ -50,7 +54,7 @@ import {
 import { Chain } from '@/modules/chains/routes/entities/chain.entity';
 import { merge } from 'lodash';
 import type { SafeCreationData } from '@/modules/safe-shield/entities/safe-creation-data.entity';
-import { ITransactionApi } from '@/domain/interfaces/transaction-api.interface';
+import type { ITransactionApi } from '@/domain/interfaces/transaction-api.interface';
 import { DataSourceError } from '@/domain/errors/data-source.error';
 import { isSwapOrderTransactionInfo } from '@/modules/transactions/routes/entities/swaps/swap-order-info.entity';
 import { RecipientStatusGroup } from '@/modules/safe-shield/entities/status-group.entity';

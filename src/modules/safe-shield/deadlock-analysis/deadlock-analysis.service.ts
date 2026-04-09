@@ -21,11 +21,14 @@ import {
 } from './utils/owner-config-decoder.utils';
 import {
   CacheService,
-  ICacheService,
+  type ICacheService,
 } from '@/datasources/cache/cache.service.interface';
 import { CacheRouter } from '@/datasources/cache/cache.router';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
 import { DataSourceError } from '@/domain/errors/data-source.error';
 import { logCacheHit, logCacheMiss } from '@/modules/safe-shield/utils/common';
 import { asError } from '@/logging/utils';

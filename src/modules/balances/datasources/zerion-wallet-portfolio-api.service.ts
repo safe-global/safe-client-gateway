@@ -2,7 +2,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import {
-  INetworkService,
+  type INetworkService,
   NetworkService,
 } from '@/datasources/network/network.service.interface';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
@@ -15,10 +15,13 @@ import type { Address } from 'viem';
 import { ZodError } from 'zod';
 import {
   CacheService,
-  ICacheService,
+  type ICacheService,
 } from '@/datasources/cache/cache.service.interface';
 import { CacheRouter } from '@/datasources/cache/cache.router';
-import { LoggingService, ILoggingService } from '@/logging/logging.interface';
+import {
+  LoggingService,
+  type ILoggingService,
+} from '@/logging/logging.interface';
 import { LogType } from '@/domain/common/entities/log-type.entity';
 
 export const IZerionWalletPortfolioApi = Symbol('IZerionWalletPortfolioApi');

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import {
   Column,
   Entity,
@@ -7,11 +8,11 @@ import {
 } from 'typeorm';
 import {
   SpaceStatus,
-  Space as DomainSpace,
+  type Space as DomainSpace,
 } from '@/modules/spaces/domain/entities/space.entity';
-import { Member } from '@/modules/users/datasources/entities/member.entity.db';
+import type { Member } from '@/modules/users/datasources/entities/member.entity.db';
 import { databaseEnumTransformer } from '@/domain/common/utils/enum';
-import { SpaceSafe } from '@/modules/spaces/datasources/entities/space-safes.entity.db';
+import type { SpaceSafe } from '@/modules/spaces/datasources/entities/space-safes.entity.db';
 import { NAME_MAX_LENGTH } from '@/domain/common/schemas/name.schema';
 
 @Entity('spaces')
@@ -45,13 +46,22 @@ export class Space implements DomainSpace {
   })
   updatedAt!: Date;
 
-  @OneToMany(() => Member, (member: Member) => member.space, {
-    cascade: ['update', 'insert'],
-  })
+  @OneToMany(
+    () =>
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      require('@/modules/users/datasources/entities/member.entity.db').Member,
+    (member: Member) => member.space,
+    { cascade: ['update', 'insert'] },
+  )
   members!: Array<Member>;
 
-  @OneToMany(() => SpaceSafe, (safeList: SpaceSafe) => safeList.space, {
-    cascade: ['update', 'insert'],
-  })
+  @OneToMany(
+    () =>
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      require('@/modules/spaces/datasources/entities/space-safes.entity.db')
+        .SpaceSafe,
+    (safeList: SpaceSafe) => safeList.space,
+    { cascade: ['update', 'insert'] },
+  )
   safes?: Array<SpaceSafe>;
 }

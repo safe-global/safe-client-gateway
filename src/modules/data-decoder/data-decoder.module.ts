@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Module } from '@nestjs/common';
 import { DataDecoderApi } from '@/modules/data-decoder/datasources/data-decoder-api.service';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
@@ -7,7 +8,7 @@ import { DataDecoderRepository } from '@/modules/data-decoder/domain/v2/data-dec
 import { IDataDecoderRepository } from '@/modules/data-decoder/domain/v2/data-decoder.repository.interface';
 import { DataDecodedRepository } from '@/modules/data-decoder/domain/v1/data-decoded.repository';
 import { IDataDecodedRepository } from '@/modules/data-decoder/domain/v1/data-decoded.repository.interface';
-import { TransactionApiManagerModule } from '@/domain/interfaces/transaction-api.manager.interface';
+import { TransactionApiManagerModule } from '@/domain/interfaces/transaction-api.manager.module';
 import { DataDecodedController } from '@/modules/data-decoder/routes/data-decoded.controller';
 import { DataDecodedService } from '@/modules/data-decoder/routes/data-decoded.service';
 

@@ -37,7 +37,7 @@ import {
   ApiForbiddenResponse,
   ApiResponse,
 } from '@nestjs/swagger';
-import { type CookieOptions, Request, Response } from 'express';
+import type { CookieOptions, Request, Response } from 'express';
 import { UserSession } from '@/modules/auth/routes/entities/user-session.entity';
 import {
   LogoutDto,

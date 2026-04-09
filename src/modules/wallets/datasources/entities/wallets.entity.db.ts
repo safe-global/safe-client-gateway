@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import {
   Column,
   Entity,
@@ -7,7 +8,7 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { z } from 'zod';
-import { User } from '@/modules/users/datasources/entities/users.entity.db';
+import type { User } from '@/modules/users/datasources/entities/users.entity.db';
 import { WalletSchema } from '@/modules/wallets/domain/entities/wallet.entity';
 import { databaseAddressTransformer } from '@/domain/common/transformers/databaseAddress.transformer';
 import type { Address } from 'viem';
@@ -18,10 +19,12 @@ export class Wallet implements z.infer<typeof WalletSchema> {
   @PrimaryGeneratedColumn({ primaryKeyConstraintName: 'PK_wallet_id' })
   id!: number;
 
-  @ManyToOne(() => User, (user: User) => user.id, {
-    onDelete: 'CASCADE',
-    nullable: false,
-  })
+  @ManyToOne(
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    () => require('@/modules/users/datasources/entities/users.entity.db').User,
+    (user: User) => user.id,
+    { onDelete: 'CASCADE', nullable: false },
+  )
   @JoinColumn({
     name: 'user_id',
     foreignKeyConstraintName: 'FK_wallets_user_id',

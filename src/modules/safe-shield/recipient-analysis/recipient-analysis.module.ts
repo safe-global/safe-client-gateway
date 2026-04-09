@@ -1,6 +1,7 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Module } from '@nestjs/common';
 import { RecipientAnalysisService } from './recipient-analysis.service';
-import { TransactionApiManagerModule } from '@/domain/interfaces/transaction-api.manager.interface';
+import { TransactionApiManagerModule } from '@/domain/interfaces/transaction-api.manager.module';
 import { Erc20Decoder } from '@/modules/relay/domain/contracts/decoders/erc-20-decoder.helper';
 import { ChainsModule } from '@/modules/chains/chains.module';
 import { TransactionsModule } from '@/modules/transactions/transactions.module';

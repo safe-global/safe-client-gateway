@@ -14,7 +14,10 @@ import type {
   ThreatAnalysisResponse,
 } from './entities/analysis-responses.entity';
 import type { DecodedTransactionData } from '@/modules/safe-shield/entities/transaction-data.entity';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
 import { mapDecodedTransactions } from './utils/transaction-mapping.utils';
 import { TransactionsService } from '@/modules/transactions/routes/transactions.service';
 import { Operation } from '@/modules/safe/domain/entities/operation.entity';
@@ -24,7 +27,7 @@ import {
   DeadlockStatusGroup,
   RecipientStatusGroup,
 } from '@/modules/safe-shield/entities/status-group.entity';
-import { ThreatAnalysisRequest } from '@/modules/safe-shield/entities/analysis-requests.entity';
+import type { ThreatAnalysisRequest } from '@/modules/safe-shield/entities/analysis-requests.entity';
 import { IConfigApi } from '@/domain/interfaces/config-api.interface';
 import { ChainSchema } from '@/modules/chains/domain/entities/schemas/chain.schema';
 import { FF_RISK_MITIGATION } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-api.constants';

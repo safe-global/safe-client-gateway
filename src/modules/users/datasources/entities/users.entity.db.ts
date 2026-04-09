@@ -8,10 +8,10 @@ import {
 } from 'typeorm';
 import {
   UserStatus,
-  User as DomainUser,
+  type User as DomainUser,
 } from '@/modules/users/domain/entities/user.entity';
-import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
-import { Member } from '@/modules/users/datasources/entities/member.entity.db';
+import type { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
+import type { Member } from '@/modules/users/datasources/entities/member.entity.db';
 import { databaseEnumTransformer } from '@/domain/common/utils/enum';
 
 @Entity('users')
@@ -39,9 +39,14 @@ export class User implements DomainUser {
   })
   extUserId!: string | null;
 
-  @OneToMany(() => Wallet, (wallet: Wallet) => wallet.id, {
-    onDelete: 'CASCADE',
-  })
+  @OneToMany(
+    () =>
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      require('@/modules/wallets/datasources/entities/wallets.entity.db')
+        .Wallet,
+    (wallet: Wallet) => wallet.id,
+    { onDelete: 'CASCADE' },
+  )
   wallets!: Array<Wallet>;
 
   @Column({
@@ -60,6 +65,11 @@ export class User implements DomainUser {
   })
   updatedAt!: Date;
 
-  @OneToMany(() => Member, (member: Member) => member.user)
+  @OneToMany(
+    () =>
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      require('@/modules/users/datasources/entities/member.entity.db').Member,
+    (member: Member) => member.user,
+  )
   members!: Array<Member>;
 }

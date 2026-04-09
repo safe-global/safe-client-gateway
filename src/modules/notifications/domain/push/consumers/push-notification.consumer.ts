@@ -4,7 +4,10 @@ import {
   PUSH_NOTIFICATION_WORKER_CONCURRENCY,
 } from '@/domain/common/jobs.constants';
 import { LogType } from '@/domain/common/entities/log-type.entity';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
 import { asError } from '@/logging/utils';
 import {
   JobType,

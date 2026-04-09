@@ -1,12 +1,16 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import {
-  ArgumentsHost,
+  type ArgumentsHost,
   Catch,
-  ExceptionFilter,
+  type ExceptionFilter,
   HttpException,
   HttpStatus,
   Inject,
 } from '@nestjs/common';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
 import { HttpAdapterHost } from '@nestjs/core';
 import { HttpExceptionNoLog } from '@/domain/common/errors/http-exception-no-log.error';
 

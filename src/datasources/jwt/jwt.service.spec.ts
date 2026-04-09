@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { fakeJson } from '@/__tests__/faker';
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
-import type { JwtClient } from '@/datasources/jwt/jwt.module';
+import type { JwtClient } from '@/datasources/jwt/jwt.types';
 import { JwtService } from '@/datasources/jwt/jwt.service';
 import { faker } from '@faker-js/faker';
 

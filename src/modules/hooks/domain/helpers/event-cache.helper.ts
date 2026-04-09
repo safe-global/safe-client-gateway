@@ -2,7 +2,7 @@
 import { CacheRouter } from '@/datasources/cache/cache.router';
 import {
   CacheService,
-  ICacheService,
+  type ICacheService,
 } from '@/datasources/cache/cache.service.interface';
 import { MAX_TTL } from '@/datasources/cache/constants';
 import { IBalancesRepository } from '@/modules/balances/domain/balances.repository.interface';
@@ -15,12 +15,15 @@ import { ISafeAppsRepository } from '@/modules/safe-apps/domain/safe-apps.reposi
 import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
 import { IStakingRepositoryWithRewardsFee } from '@/modules/staking/domain/staking.repository.interface';
 import { ITransactionsRepository } from '@/modules/transactions/domain/transactions.repository.interface';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
 import {
   ConfigEventType,
   TransactionEventType,
 } from '@/modules/hooks/routes/entities/event-type.entity';
-import { Event } from '@/modules/hooks/routes/entities/event.entity';
+import type { Event } from '@/modules/hooks/routes/entities/event.entity';
 import { Inject, Injectable } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import memoize from 'lodash/memoize';
