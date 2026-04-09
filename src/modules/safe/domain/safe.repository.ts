@@ -43,8 +43,6 @@ import { IQueueServiceApi } from '@/datasources/queue-service-api/queue-service-
 import { QueueServiceRoutingHelper } from '@/datasources/queue-service-api/queue-service-routing.helper';
 import type { Address } from 'viem';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import { IQueueServiceApi } from '@/datasources/queue-service-api/queue-service-api.interface';
-import { QueueServiceRoutingHelper } from '@/datasources/queue-service-api/queue-service-routing.helper';
 
 @Injectable()
 export class SafeRepository implements ISafeRepository {

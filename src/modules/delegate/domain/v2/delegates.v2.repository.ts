@@ -29,10 +29,9 @@ export class DelegatesV2Repository implements IDelegatesV2Repository {
     offset?: number;
   }): Promise<Page<Delegate>> {
     const page = await this.routingHelper.route({
-      chainId: args.chainId,
       whenEnabled: () =>
         this.queueServiceApi.getDelegates({
-          chainId: args.chainId,
+          chainId: Number(args.chainId),
           safe: args.safeAddress,
           delegate: args.delegate,
           delegator: args.delegator,
@@ -76,14 +75,13 @@ export class DelegatesV2Repository implements IDelegatesV2Repository {
     label: string;
   }): Promise<void> {
     await this.routingHelper.route({
-      chainId: args.chainId,
       whenEnabled: () =>
         this.queueServiceApi.postDelegate({
           delegate: args.delegate,
           delegator: args.delegator,
           signature: args.signature,
-          chainId: args.chainId,
-          safe: args.safeAddress,
+          chainId: Number(args.chainId),
+          safe: args.safeAddress ?? undefined,
           label: args.label,
         }),
       whenDisabled: async () => {
@@ -109,14 +107,13 @@ export class DelegatesV2Repository implements IDelegatesV2Repository {
     signature: string;
   }): Promise<unknown> {
     return this.routingHelper.route({
-      chainId: args.chainId,
       whenEnabled: () =>
         this.queueServiceApi.deleteDelegate({
           delegate: args.delegate,
           delegator: args.delegator,
           signature: args.signature,
-          chainId: args.chainId,
-          safe: args.safeAddress,
+          chainId: Number(args.chainId),
+          safe: args.safeAddress ?? undefined,
         }),
       whenDisabled: async () => {
         const transactionService = await this.transactionApiManager.getApi(
