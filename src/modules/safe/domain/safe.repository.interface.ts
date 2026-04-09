@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Module } from '@nestjs/common';
 import type { Address } from 'viem';
+import { QueueServiceApiModule } from '@/datasources/queue-service-api/queue-service-api.module';
 import type { Page } from '@/domain/entities/page.entity';
 import { TransactionApiManagerModule } from '@/domain/interfaces/transaction-api.manager.interface';
 import { ChainsModule } from '@/modules/chains/chains.module';
@@ -230,6 +231,7 @@ export interface ISafeRepository {
     TransactionApiManagerModule,
     DelegatesV2RepositoryModule,
     ContractsModule,
+    QueueServiceApiModule,
   ],
   providers: [
     {
