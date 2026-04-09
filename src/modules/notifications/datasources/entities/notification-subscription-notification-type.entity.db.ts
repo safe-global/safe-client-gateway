@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import {
   Entity,
   JoinColumn,
@@ -5,8 +6,8 @@ import {
   PrimaryGeneratedColumn,
   Unique,
 } from 'typeorm';
-import { NotificationType } from '@/modules/notifications/datasources/entities/notification-type.entity.db';
-import { NotificationSubscription } from '@/modules/notifications/datasources/entities/notification-subscription.entity.db';
+import type { NotificationType } from '@/modules/notifications/datasources/entities/notification-type.entity.db';
+import type { NotificationSubscription } from '@/modules/notifications/datasources/entities/notification-subscription.entity.db';
 import { z } from 'zod';
 
 export const NotificationSubscriptionNotificationTypeSchema = z.object({
@@ -22,8 +23,8 @@ export class NotificationSubscriptionNotificationType implements z.infer<
   id!: number;
 
   @ManyToOne(
-    () => NotificationSubscription,
-    (subscription) => subscription.id,
+    () => require('@/modules/notifications/datasources/entities/notification-subscription.entity.db').NotificationSubscription,
+    (subscription: NotificationSubscription) => subscription.id,
     { onDelete: 'CASCADE' },
   )
   @JoinColumn({
@@ -32,12 +33,10 @@ export class NotificationSubscriptionNotificationType implements z.infer<
   notification_subscription!: NotificationSubscription;
 
   @ManyToOne(
-    () => NotificationType,
-    (notificationType) =>
+    () => require('@/modules/notifications/datasources/entities/notification-type.entity.db').NotificationType,
+    (notificationType: NotificationType) =>
       notificationType.notification_subscription_notification_type,
-    {
-      onDelete: 'CASCADE',
-    },
+    { onDelete: 'CASCADE' },
   )
   @JoinColumn({ name: 'notification_type_id' })
   notification_type!: NotificationType;

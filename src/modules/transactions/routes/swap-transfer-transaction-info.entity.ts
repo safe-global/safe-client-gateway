@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import {
   ApiProperty,
   ApiPropertyOptional,
@@ -39,7 +40,7 @@ export class SwapTransferTransactionInfo
   @ApiProperty()
   recipient: AddressInfo;
 
-  @ApiProperty()
+  @ApiProperty({ enum: TransferDirection })
   direction: TransferDirection;
 
   @ApiProperty({

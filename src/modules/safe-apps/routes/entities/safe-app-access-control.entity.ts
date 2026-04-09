@@ -6,7 +6,7 @@ import {
 } from '@/modules/safe-apps/domain/entities/safe-app-access-control.entity';
 
 export class SafeAppAccessControl implements DomainSafeAppAccessControl {
-  @ApiProperty()
+  @ApiProperty({ enum: SafeAppAccessControlPolicies })
   type!: SafeAppAccessControlPolicies;
   @ApiPropertyOptional({ type: String, isArray: true, nullable: true })
   value!: Array<string> | null;

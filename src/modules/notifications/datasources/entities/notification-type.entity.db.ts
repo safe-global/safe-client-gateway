@@ -1,6 +1,7 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import {
-  NotificationSubscriptionNotificationType,
   NotificationSubscriptionNotificationTypeSchema,
+  type NotificationSubscriptionNotificationType,
 } from '@/modules/notifications/datasources/entities/notification-subscription-notification-type.entity.db';
 import { NotificationType as NotificationTypeEnum } from '@/modules/notifications/domain/v2/entities/notification.entity';
 import {
@@ -16,7 +17,7 @@ export const NotificationTypeSchema = z.object({
   id: z.number(),
   name: z.enum(NotificationTypeEnum),
   notification_subscription_notification_type: z.array(
-    NotificationSubscriptionNotificationTypeSchema,
+    z.lazy(() => NotificationSubscriptionNotificationTypeSchema),
   ),
 });
 
@@ -35,9 +36,9 @@ export class NotificationType implements z.infer<
   name!: NotificationTypeEnum;
 
   @OneToMany(
-    () => NotificationSubscriptionNotificationType,
-    (notificationSubscriptionType) =>
-      notificationSubscriptionType.notification_type,
+    () => require('@/modules/notifications/datasources/entities/notification-subscription-notification-type.entity.db').NotificationSubscriptionNotificationType,
+    (nsnt: NotificationSubscriptionNotificationType) =>
+      nsnt.notification_type,
     { onDelete: 'CASCADE' },
   )
   notification_subscription_notification_type!: Array<NotificationSubscriptionNotificationType>;

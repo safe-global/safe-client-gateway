@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { RowSchema } from '@/datasources/db/v1/entities/row.entity';
-import { NotificationDevice } from '@/modules/notifications/datasources/entities/notification-devices.entity.db';
+import type { NotificationDevice } from '@/modules/notifications/datasources/entities/notification-devices.entity.db';
 import {
-  NotificationSubscriptionNotificationType,
   NotificationSubscriptionNotificationTypeSchema,
+  type NotificationSubscriptionNotificationType,
 } from '@/modules/notifications/datasources/entities/notification-subscription-notification-type.entity.db';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
@@ -41,9 +41,11 @@ export class NotificationSubscription implements z.infer<
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @ManyToOne(() => NotificationDevice, (device) => device.id, {
-    onDelete: 'CASCADE',
-  })
+  @ManyToOne(
+    () => require('@/modules/notifications/datasources/entities/notification-devices.entity.db').NotificationDevice,
+    (device: NotificationDevice) => device.id,
+    { onDelete: 'CASCADE' },
+  )
   @JoinColumn({ name: 'push_notification_device_id' })
   push_notification_device!: NotificationDevice;
 
@@ -96,9 +98,8 @@ export class NotificationSubscription implements z.infer<
   updated_at!: Date;
 
   @OneToMany(
-    () => NotificationSubscriptionNotificationType,
-    (notificationSubscriptionNotificationType) =>
-      notificationSubscriptionNotificationType.id,
+    () => require('@/modules/notifications/datasources/entities/notification-subscription-notification-type.entity.db').NotificationSubscriptionNotificationType,
+    (nsnt: NotificationSubscriptionNotificationType) => nsnt.id,
   )
   notification_subscription_notification_type!: Array<NotificationSubscriptionNotificationType>;
 }
