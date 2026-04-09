@@ -1,6 +1,7 @@
 <!--
   SPDX-License-Identifier: FSL-1.1-MIT
  -->
+
 # Tasks: Service-Aware Feature Configuration Integration
 
 **Input**: Design documents from `/specs/001-service-aware-config/`  

@@ -1,6 +1,7 @@
 <!--
   SPDX-License-Identifier: FSL-1.1-MIT
  -->
+
 # Quickstart: Service-Aware Feature Configuration Integration
 
 **Feature Branch**: `001-service-aware-config`  

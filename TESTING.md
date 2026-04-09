@@ -1,6 +1,7 @@
 <!--
   SPDX-License-Identifier: FSL-1.1-MIT
  -->
+
 # Testing Guide
 
 This document describes the testing strategy and organization for the Safe Client Gateway.
