@@ -568,6 +568,9 @@ export default () => ({
       process.env.SAFE_DATA_DECODER_BASE_URI ||
       'https://safe-decoder.safe.global',
   },
+  queueService: {
+    baseUri: process.env.QUEUE_SERVICE_URL || '',
+  },
   safeTransaction: {
     useVpcUrl: process.env.USE_TX_SERVICE_VPC_URL?.toLowerCase() === 'true',
     apiKey: process.env.TX_SERVICE_API_KEY,

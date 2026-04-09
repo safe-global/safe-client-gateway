@@ -388,6 +388,9 @@ export default (): ReturnType<typeof configuration> => ({
   safeDataDecoder: {
     baseUri: faker.internet.url({ appendSlash: false }),
   },
+  queueService: {
+    baseUri: faker.internet.url({ appendSlash: false }),
+  },
   safeTransaction: {
     useVpcUrl: false,
     apiKey: faker.string.hexadecimal({ length: 32 }),
