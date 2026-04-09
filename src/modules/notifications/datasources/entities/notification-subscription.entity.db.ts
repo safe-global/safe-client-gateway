@@ -24,7 +24,7 @@ export const NotificationSubscriptionSchema = RowSchema.extend({
   safe_address: AddressSchema,
   signer_address: AddressSchema.nullable(),
   notification_subscription_notification_type: z.array(
-    NotificationSubscriptionNotificationTypeSchema,
+    z.lazy(() => NotificationSubscriptionNotificationTypeSchema),
   ),
 });
 

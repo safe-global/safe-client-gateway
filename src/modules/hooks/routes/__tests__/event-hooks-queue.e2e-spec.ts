@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { amqpClientFactory } from '@/__tests__/amqp-client.factory';
 import { redisClientFactory } from '@/__tests__/redis-client.factory';
 import { retry } from '@/__tests__/util/retry';
@@ -14,7 +15,7 @@ import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.b
 import { PushNotificationsApiModule } from '@/datasources/push-notifications-api/push-notifications-api.module';
 import { TestPushNotificationsApiModule } from '@/datasources/push-notifications-api/__tests__/test.push-notifications-api.module';
 import { createBaseTestModule } from '@/__tests__/testing-module';
-import type { RedisClientType } from '@/datasources/cache/cache.module';
+import type { RedisClientType } from '@/datasources/cache/cache.types';
 
 describe('Events queue processing e2e tests', () => {
   let app: INestApplication<Server>;

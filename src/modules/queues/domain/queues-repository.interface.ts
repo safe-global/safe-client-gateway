@@ -1,6 +1,4 @@
-import { QueuesApiModule } from '@/modules/queues/datasources/queues-api.module';
-import { QueuesRepository } from '@/modules/queues/domain/queues-repository';
-import { Module } from '@nestjs/common';
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { ConsumeMessage } from 'amqplib';
 
 export const IQueuesRepository = Symbol('IQueuesRepository');
@@ -18,10 +16,3 @@ export interface IQueuesRepository {
     fn: (msg: ConsumeMessage) => Promise<void>,
   ): Promise<void>;
 }
-
-@Module({
-  imports: [QueuesApiModule],
-  providers: [{ provide: IQueuesRepository, useClass: QueuesRepository }],
-  exports: [IQueuesRepository],
-})
-export class QueuesRepositoryModule {}

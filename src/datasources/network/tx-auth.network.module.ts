@@ -4,8 +4,10 @@ import { IConfigurationService } from '@/config/configuration.service.interface'
 import { getTxAuthHeaders } from '@/datasources/network/auth/tx-auth-headers.helper';
 import { FetchNetworkService } from '@/datasources/network/fetch.network.service';
 import { NetworkService } from '@/datasources/network/network.service.interface';
-import type { FetchClient } from '@/datasources/network/network.module';
-import { FetchClientToken } from '@/datasources/network/network.module';
+import {
+  type FetchClient,
+  FetchClientToken,
+} from '@/datasources/network/fetch-client.types';
 import {
   type ILoggingService,
   LoggingService,

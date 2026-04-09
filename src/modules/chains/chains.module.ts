@@ -1,7 +1,8 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Module } from '@nestjs/common';
 import { ConfigApiModule } from '@/datasources/config-api/config-api.module';
 import { EtherscanApiModule } from '@/datasources/etherscan-api/etherscan-api.module';
-import { TransactionApiManagerModule } from '@/domain/interfaces/transaction-api.manager.interface';
+import { TransactionApiManagerModule } from '@/domain/interfaces/transaction-api.manager.module';
 import { BackboneModule } from '@/modules/backbone/backbone.module';
 import { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
 import { ChainsRepository } from '@/modules/chains/domain/chains.repository';

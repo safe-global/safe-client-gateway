@@ -1,4 +1,5 @@
-import { EventType } from '@/modules/alerts/routes/entities/alert.dto.entity';
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { EventType } from '@/modules/alerts/routes/entities/event-type.entity';
 import { z } from 'zod';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { HexSchema } from '@/validation/entities/schemas/hex.schema';

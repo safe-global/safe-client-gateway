@@ -6,7 +6,7 @@ import { HooksRepository } from '@/modules/hooks/domain/hooks.repository';
 import { IHooksRepository } from '@/modules/hooks/domain/hooks.repository.interface';
 import { HooksController } from '@/modules/hooks/routes/hooks.controller';
 import { HooksService } from '@/modules/hooks/routes/hooks.service';
-import { QueuesRepositoryModule } from '../queues/domain/queues-repository.interface';
+import { QueuesRepositoryModule } from '../queues/domain/queues-repository.module';
 
 @Module({
   imports: [

@@ -1,6 +1,6 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
 import type { SpaceStatus } from '@/modules/spaces/domain/entities/space.entity';
-import type { SpacesRepository } from '@/modules/spaces/domain/spaces.repository';
 import type { User } from '@/modules/users/domain/entities/user.entity';
 import type {
   FindOptionsRelations,
@@ -17,9 +17,11 @@ export interface ISpacesRepository {
     status: keyof typeof SpaceStatus;
   }): Promise<Pick<Space, 'id' | 'name'>>;
 
-  findOneOrFail(
-    args: Parameters<SpacesRepository['findOne']>[0],
-  ): Promise<Space>;
+  findOneOrFail(args: {
+    where: Array<FindOptionsWhere<Space>> | FindOptionsWhere<Space>;
+    select?: FindOptionsSelect<Space>;
+    relations?: FindOptionsRelations<Space>;
+  }): Promise<Space>;
 
   findOne(args: {
     where: Array<FindOptionsWhere<Space>> | FindOptionsWhere<Space>;
@@ -27,9 +29,11 @@ export interface ISpacesRepository {
     relations?: FindOptionsRelations<Space>;
   }): Promise<Space | null>;
 
-  findOrFail(
-    args: Parameters<SpacesRepository['find']>[0],
-  ): Promise<Array<Space>>;
+  findOrFail(args: {
+    where: Array<FindOptionsWhere<Space>> | FindOptionsWhere<Space>;
+    select?: FindOptionsSelect<Space>;
+    relations?: FindOptionsRelations<Space>;
+  }): Promise<Array<Space>>;
 
   find(args: {
     where: Array<FindOptionsWhere<Space>> | FindOptionsWhere<Space>;
@@ -37,9 +41,11 @@ export interface ISpacesRepository {
     relations?: FindOptionsRelations<Space>;
   }): Promise<Array<Space>>;
 
-  findByUserIdOrFail(
-    args: Parameters<SpacesRepository['findByUserId']>[0],
-  ): Promise<Array<Space>>;
+  findByUserIdOrFail(args: {
+    userId: User['id'];
+    select?: FindOptionsSelect<Space>;
+    relations?: FindOptionsRelations<Space>;
+  }): Promise<Array<Space>>;
 
   findByUserId(args: {
     userId: User['id'];
@@ -47,9 +53,11 @@ export interface ISpacesRepository {
     relations?: FindOptionsRelations<Space>;
   }): Promise<Array<Space>>;
 
-  findOneByUserIdOrFail(
-    args: Parameters<SpacesRepository['findByUserId']>[0],
-  ): Promise<Space>;
+  findOneByUserIdOrFail(args: {
+    userId: User['id'];
+    select?: FindOptionsSelect<Space>;
+    relations?: FindOptionsRelations<Space>;
+  }): Promise<Space>;
 
   findOneByUserId(args: {
     userId: User['id'];

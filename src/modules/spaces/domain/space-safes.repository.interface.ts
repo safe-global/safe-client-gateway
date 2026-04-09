@@ -1,6 +1,6 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { SpaceSafe } from '@/modules/spaces/datasources/entities/space-safes.entity.db';
 import type { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
-import type { SpaceSafesRepository } from '@/modules/spaces/domain/space-safes.repository';
 import type {
   FindOptionsRelations,
   FindOptionsSelect,
@@ -22,9 +22,11 @@ export interface ISpaceSafesRepository {
     spaceId: Space['id'],
   ): Promise<Array<Pick<SpaceSafe, 'chainId' | 'address'>>>;
 
-  findOrFail(
-    args: Parameters<SpaceSafesRepository['find']>[0],
-  ): Promise<Array<SpaceSafe>>;
+  findOrFail(args: {
+    where: Array<FindOptionsWhere<SpaceSafe>> | FindOptionsWhere<SpaceSafe>;
+    select?: FindOptionsSelect<SpaceSafe>;
+    relations?: FindOptionsRelations<SpaceSafe>;
+  }): Promise<Array<SpaceSafe>>;
 
   find(args: {
     where: Array<FindOptionsWhere<SpaceSafe>> | FindOptionsWhere<SpaceSafe>;

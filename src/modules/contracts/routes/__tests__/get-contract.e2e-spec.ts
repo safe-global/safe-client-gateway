@@ -1,10 +1,11 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import request from 'supertest';
 import type { INestApplication } from '@nestjs/common';
 import { redisClientFactory } from '@/__tests__/redis-client.factory';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import type { Server } from 'net';
 import { createBaseTestModule } from '@/__tests__/testing-module';
-import type { RedisClientType } from '@/datasources/cache/cache.module';
+import type { RedisClientType } from '@/datasources/cache/cache.types';
 
 describe('Get contract e2e test', () => {
   let app: INestApplication<Server>;

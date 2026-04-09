@@ -10,7 +10,7 @@ import type { INetworkService } from '@/datasources/network/network.service.inte
 import {
   type FetchClient,
   FetchClientToken,
-} from '@/datasources/network/network.module';
+} from '@/datasources/network/fetch-client.types';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 import { LogType } from '@/domain/common/entities/log-type.entity';
 

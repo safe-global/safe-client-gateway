@@ -1,19 +1,14 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { QueueApiService } from '@/modules/queues/datasources/queues-api.service';
 import { IQueuesApiService } from '@/modules/queues/datasources/queues-api.service.interface';
 import { QueuesApiShutdownHook } from '@/modules/queues/datasources/queues-api.shutdown.hook';
 import { QueueReadiness } from '@/domain/interfaces/queue-readiness.interface';
 import { Module } from '@nestjs/common';
-import amqp, {
-  AmqpConnectionManager,
-  ChannelWrapper,
-} from 'amqp-connection-manager';
+import amqp from 'amqp-connection-manager';
 import { Channel } from 'amqplib';
 
-export interface QueueConsumer {
-  connection: AmqpConnectionManager;
-  channel: ChannelWrapper;
-}
+import type { QueueConsumer } from '@/modules/queues/datasources/queue-consumer.interface';
 
 function queueConsumerFactory(
   configurationService: IConfigurationService,

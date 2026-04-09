@@ -24,14 +24,10 @@ import {
 } from '@/datasources/network/undici.shutdown.hook';
 import { asError } from '@/logging/utils';
 
-export const FetchClientToken = Symbol('FetchClient');
-
-export type FetchClient = <T>(
-  url: string,
-  options: RequestInit,
-  timeout?: number,
-  circuitBreaker?: NetworkRequest['circuitBreaker'],
-) => Promise<NetworkResponse<T>>;
+import {
+  FetchClientToken,
+  type FetchClient,
+} from '@/datasources/network/fetch-client.types';
 
 const cache: Record<string, Promise<NetworkResponse<unknown>>> = {};
 

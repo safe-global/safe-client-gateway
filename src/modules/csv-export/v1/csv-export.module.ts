@@ -13,7 +13,7 @@ import { Queue } from 'bullmq';
 import { CsvExportConsumer } from '@/modules/csv-export/v1/consumers/csv-export.consumer';
 import { CsvExportController } from '@/modules/csv-export/v1/csv-export.controller';
 import { CsvExportService } from '@/modules/csv-export/v1/csv-export.service';
-import { ExportApiManagerModule } from '@/modules/csv-export/v1/datasources/export-api.manager.interface';
+import { ExportApiManagerModule } from '@/modules/csv-export/v1/datasources/export-api.manager.module';
 import { CloudStorageModule } from '@/datasources/storage/cloud-storage.module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { CsvService } from '../csv-utils/csv.service';

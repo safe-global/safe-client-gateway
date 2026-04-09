@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable, type OnModuleDestroy } from '@nestjs/common';
-import type { RedisClientType } from '@/datasources/cache/cache.module';
+import type { RedisClientType } from '@/datasources/cache/cache.types';
 import type { ICacheService } from '@/datasources/cache/cache.service.interface';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import type { ICacheReadiness } from '@/domain/interfaces/cache-readiness.interface';

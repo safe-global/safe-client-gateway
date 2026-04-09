@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import type { JwtClient } from '@/datasources/jwt/jwt.module';
+import type { JwtClient } from '@/datasources/jwt/jwt.types';
 import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
 import { Inject, Injectable } from '@nestjs/common';
 import { IConfigurationService } from '@/config/configuration.service.interface';

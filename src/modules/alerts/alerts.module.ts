@@ -10,7 +10,7 @@ import { SafeDecoder } from '@/modules/contracts/domain/decoders/safe-decoder.he
 import { AlertsRepository } from '@/modules/alerts/domain/alerts.repository';
 import { IAlertsRepository } from '@/modules/alerts/domain/alerts.repository.interface';
 import { EmailModule } from '@/modules/email/email.module';
-import { SafeRepositoryModule } from '@/modules/safe/domain/safe.repository.interface';
+import { SafeRepositoryModule } from '@/modules/safe/domain/safe.repository.module';
 import { ChainsModule } from '@/modules/chains/chains.module';
 import { AlertsController } from '@/modules/alerts/routes/alerts.controller';
 import { AlertsService } from '@/modules/alerts/routes/alerts.service';

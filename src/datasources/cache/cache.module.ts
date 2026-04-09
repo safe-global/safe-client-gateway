@@ -11,8 +11,7 @@ import {
 } from '@/logging/logging.interface';
 import { CacheKeyPrefix } from '@/datasources/cache/constants';
 import { LogType } from '@/domain/common/entities/log-type.entity';
-
-export type RedisClientType = ReturnType<typeof createClient>;
+import type { RedisClientType } from '@/datasources/cache/cache.types';
 
 async function redisClientFactory(
   configurationService: IConfigurationService,

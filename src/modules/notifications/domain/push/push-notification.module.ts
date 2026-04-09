@@ -12,9 +12,9 @@ import { PushNotificationConsumer } from '@/modules/notifications/domain/push/co
 import { PushNotificationService } from '@/modules/notifications/domain/push/push-notification.service';
 import { IPushNotificationService } from '@/modules/notifications/domain/push/push-notification.service.interface';
 import { NotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/notifications.repository.module';
-import { DelegatesV2RepositoryModule } from '@/modules/delegate/domain/v2/delegates.v2.repository.interface';
+import { DelegatesV2RepositoryModule } from '@/modules/delegate/domain/v2/delegates.v2.repository.module';
 import { MessagesModule } from '@/modules/messages/messages.module';
-import { SafeRepositoryModule } from '@/modules/safe/domain/safe.repository.interface';
+import { SafeRepositoryModule } from '@/modules/safe/domain/safe.repository.module';
 import { BullModule, getQueueToken } from '@nestjs/bullmq';
 import { Module } from '@nestjs/common';
 import { Queue } from 'bullmq';
