@@ -39,6 +39,8 @@ import { TransactionVerifierHelper } from '@/modules/transactions/routes/helpers
 import { PaginationData } from '@/routes/common/pagination/pagination.data';
 import { SAFE_TRANSACTION_SERVICE_MAX_LIMIT } from '@/domain/common/constants';
 import { DataSourceError } from '@/domain/errors/data-source.error';
+import { IQueueServiceApi } from '@/datasources/queue-service-api/queue-service-api.interface';
+import { QueueServiceRoutingHelper } from '@/datasources/queue-service-api/queue-service-routing.helper';
 import type { Address } from 'viem';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 
@@ -55,6 +57,9 @@ export class SafeRepository implements ISafeRepository {
     private readonly transactionVerifier: TransactionVerifierHelper,
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
+    @Inject(IQueueServiceApi)
+    private readonly queueServiceApi: IQueueServiceApi,
+    private readonly queueServiceRoutingHelper: QueueServiceRoutingHelper,
   ) {
     this.maxSequentialPages = this.configurationService.getOrThrow<number>(
       'safeConfig.safes.maxSequentialPages',
@@ -266,14 +271,25 @@ export class SafeRepository implements ISafeRepository {
     offset?: number;
     trusted?: boolean;
   }): Promise<Page<MultisigTransaction>> {
-    const transactionService = await this.transactionApiManager.getApi(
-      args.chainId,
-    );
-    const page = await transactionService.getMultisigTransactions({
-      ...args,
-      safeAddress: args.safe.address,
-      executed: false,
-      nonceGte: args.safe.nonce,
+    const page = await this.queueServiceRoutingHelper.route({
+      whenEnabled: () =>
+        this.queueServiceApi.getTransactionQueue({
+          safes: [`${args.safe.address}:${args.chainId}`],
+          nonceOrder: args.ordering.includes('-') ? 'desc' : 'asc',
+          limit: args.limit,
+          offset: args.offset,
+        }),
+      whenDisabled: async () => {
+        const transactionService = await this.transactionApiManager.getApi(
+          args.chainId,
+        );
+        return transactionService.getMultisigTransactions({
+          ...args,
+          safeAddress: args.safe.address,
+          executed: false,
+          nonceGte: args.safe.nonce,
+        });
+      },
     });
     return MultisigTransactionPageSchema.parse(page);
   }
@@ -359,14 +375,34 @@ export class SafeRepository implements ISafeRepository {
     chainId: string;
     safeTransactionHash: string;
   }): Promise<MultisigTransaction> {
+    if (this.queueServiceRoutingHelper.isEnabled) {
+      try {
+        const tx = await this.queueServiceApi.getMultisigTransaction(
+          args.safeTransactionHash,
+        );
+        return MultisigTransactionSchema.parse(tx);
+      } catch (error) {
+        // 404 means not in queue service (e.g. already executed),
+        // fall back to TX service
+        if (error instanceof DataSourceError && error.code === 404) {
+          const transactionService = await this.transactionApiManager.getApi(
+            args.chainId,
+          );
+          const tx = await transactionService.getMultisigTransaction(
+            args.safeTransactionHash,
+          );
+          return MultisigTransactionSchema.parse(tx);
+        }
+        throw error;
+      }
+    }
     const transactionService = await this.transactionApiManager.getApi(
       args.chainId,
     );
-    const multiSigTransaction = await transactionService.getMultisigTransaction(
+    const tx = await transactionService.getMultisigTransaction(
       args.safeTransactionHash,
     );
-
-    return MultisigTransactionSchema.parse(multiSigTransaction);
+    return MultisigTransactionSchema.parse(tx);
   }
 
   async getMultiSigTransactionWithNoCache(args: {
