@@ -21,11 +21,15 @@ import { LogType } from '@/domain/common/entities/log-type.entity';
  */
 @Injectable()
 export class CircuitBreakerService {
-  private readonly DEFAULT_STATE: CircuitState = CircuitState.CLOSED;
-  private readonly STALE_BUFFER_FACTOR: number = 2;
+  /**
+   * Multiplier applied to the rolling window to determine when a circuit
+   * is stale. E.g., with a 60s rolling window, circuits inactive for
+   * 60s * 10 = 10 minutes are considered stale and eligible for cleanup.
+   */
+  private readonly STALE_MULTIPLIER: number = 10;
 
   private readonly enabled: boolean;
-  private readonly initialConfig: ICircuitConfig;
+  private readonly config: ICircuitConfig;
   private readonly circuits: Map<string, ICircuit> = new Map();
 
   /**
@@ -43,20 +47,20 @@ export class CircuitBreakerService {
     this.enabled = this.configurationService.getOrThrow<boolean>(
       'circuitBreaker.enabled',
     );
-    this.initialConfig = {
-      failureThreshold: this.configurationService.getOrThrow(
-        'circuitBreaker.failureThreshold',
+    this.config = {
+      threshold: this.configurationService.getOrThrow<number>(
+        'circuitBreaker.threshold',
       ),
-      successThreshold: this.configurationService.getOrThrow(
-        'circuitBreaker.successThreshold',
+      timeout: this.configurationService.getOrThrow<number>(
+        'circuitBreaker.timeout',
       ),
-      timeout: this.configurationService.getOrThrow('circuitBreaker.timeout'),
-      rollingWindow: this.configurationService.getOrThrow(
+      rollingWindow: this.configurationService.getOrThrow<number>(
         'circuitBreaker.rollingWindow',
       ),
-      halfOpenMaxRequests: this.configurationService.getOrThrow(
-        'circuitBreaker.halfOpenMaxRequests',
-      ),
+      halfOpenFailureRateThreshold:
+        this.configurationService.getOrThrow<number>(
+          'circuitBreaker.halfOpenFailureRateThreshold',
+        ),
     };
   }
 
@@ -91,81 +95,47 @@ export class CircuitBreakerService {
       return true;
     }
 
-    switch (circuit.metrics.state) {
-      case CircuitState.OPEN:
-        return this.canProceedInOpenState(circuit);
-      case CircuitState.HALF_OPEN:
-        return this.canProceedInHalfOpenState(circuit);
-      case CircuitState.CLOSED:
-      default:
-        return this.canProceedInClosedState();
-    }
-  }
-
-  /**
-   * Checks if a request can proceed through the circuit
-   *
-   * If no circuit exists, the endpoint is considered healthy and the request proceeds.
-   * Circuits are only created when failures occur.
-   *
-   * @param {string} name - Circuit identifier
-   *
-   * @returns {boolean} True if request can proceed, false if circuit is open
-   */
-  public canProceedOrFail(name: string): boolean {
-    const canProceed = this.canProceed(name);
-
-    if (!canProceed) {
-      throw new CircuitBreakerException({
-        name,
-        message: 'Circuit breaker is open',
-      });
+    if (circuit.metrics.state === CircuitState.OPEN) {
+      return this.canProceedInOpenState(circuit);
     }
 
     return true;
   }
 
   /**
-   * Gets an existing circuit or registers a new one if it doesn't exist
+   * Checks if a request can proceed, throws if circuit is open
    *
-   * This method ensures that a circuit is always available for the given name,
-   * creating it with the provided configuration if needed.
-   *
-   * @param {string} name - Unique identifier for the circuit
-   * @param {ICircuitConfig} config? - Optional configuration for the circuit (used only if circuit doesn't exist)
-   *
-   * @returns {ICircuit} The circuit instance for the given name
+   * @param {string} name - Circuit identifier
+   * @throws {CircuitBreakerException} If circuit is open
    */
-  public getOrRegisterCircuit(name: string, config?: ICircuitConfig): ICircuit {
-    return this.circuits.get(name) ?? this.registerCircuit(name, config);
+  public canProceedOrFail(name: string): void {
+    if (!this.canProceed(name)) {
+      throw new CircuitBreakerException();
+    }
   }
 
   /**
-   * Creates and registers a new circuit with the given configuration
-   *
-   * Merges the provided config with default configuration values.
-   * Note: This will overwrite any existing circuit with the same name.
+   * Gets an existing circuit or registers a new one if it doesn't exist
    *
    * @param {string} name - Unique identifier for the circuit
-   * @param {ICircuitConfig} config? - Optional configuration to override defaults
    *
-   * @returns {ICircuit} The registered circuit
+   * @returns {ICircuit} The circuit instance for the given name
    */
-  private registerCircuit(name: string, config?: ICircuitConfig): ICircuit {
+  public getOrRegisterCircuit(name: string): ICircuit {
+    const existing = this.circuits.get(name);
+    if (existing) {
+      return existing;
+    }
+
     const circuit: ICircuit = {
       name,
       metrics: {
         failureCount: 0,
-        successCount: 0,
         consecutiveSuccesses: 0,
-        halfOpenRequestCounts: 0,
-        state: this.DEFAULT_STATE,
+        state: CircuitState.CLOSED,
         lastFailureTime: undefined,
+        lastActivityTime: undefined,
         nextAttemptTime: undefined,
-      },
-      config: {
-        ...this.initialConfig,
-        ...config,
       },
     };
 
@@ -175,14 +145,7 @@ export class CircuitBreakerService {
       type: LogType.CircuitBreakerRegistered,
       circuit: circuit.name,
       state: circuit.metrics.state,
-      config: {
-        failureThreshold: circuit.config.failureThreshold,
-        successThreshold: circuit.config.successThreshold,
-        timeout: circuit.config.timeout,
-        rollingWindow: circuit.config.rollingWindow,
-        halfOpenMaxRequests: circuit.config.halfOpenMaxRequests,
-      },
-      message: `Circuit "${circuit.name}" registered with initial state ${this.DEFAULT_STATE}`,
+      message: `Circuit "${circuit.name}" registered`,
     });
 
     return circuit;
@@ -206,7 +169,7 @@ export class CircuitBreakerService {
     ) {
       this.transitionToHalfOpen(circuit);
 
-      return this.canProceedInHalfOpenState(circuit);
+      return true;
     }
 
     const timeUntilRetry = circuit.metrics.nextAttemptTime
@@ -237,67 +200,16 @@ export class CircuitBreakerService {
    */
   private transitionToHalfOpen(circuit: ICircuit): void {
     circuit.metrics.consecutiveSuccesses = 0;
+    circuit.metrics.failureCount = 0;
     circuit.metrics.state = CircuitState.HALF_OPEN;
-    circuit.metrics.halfOpenRequestCounts = 0;
 
     this.loggingService.info({
       type: LogType.CircuitBreakerStateTransition,
       circuit: circuit.name,
       from: CircuitState.OPEN,
       to: CircuitState.HALF_OPEN,
-      maxTestRequests: circuit.config.halfOpenMaxRequests,
-      message: `Circuit "${circuit.name}" transitioned from OPEN to HALF_OPEN. Allowing ${circuit.config.halfOpenMaxRequests} test requests`,
+      message: `Circuit "${circuit.name}" transitioned from OPEN to HALF_OPEN`,
     });
-  }
-
-  /**
-   * Handles circuit logic when in HALF_OPEN state
-   *
-   * Allows a limited number of test requests through to check if the service has recovered.
-   * Once the maximum number of test requests is reached, additional requests are blocked.
-   *
-   * @param {ICircuit} circuit - The circuit instance
-   *
-   * @returns {boolean} True if request can proceed (within limit), false if limit reached
-   */
-  private canProceedInHalfOpenState(circuit: ICircuit): boolean {
-    if (
-      circuit.metrics.halfOpenRequestCounts < circuit.config.halfOpenMaxRequests
-    ) {
-      circuit.metrics.halfOpenRequestCounts++;
-
-      this.loggingService.debug({
-        type: LogType.CircuitBreakerHalfOpenRequest,
-        circuit: circuit.name,
-        state: CircuitState.HALF_OPEN,
-        testRequestNumber: circuit.metrics.halfOpenRequestCounts,
-        maxTestRequests: circuit.config.halfOpenMaxRequests,
-        message: `Circuit "${circuit.name}" allowing test request ${circuit.metrics.halfOpenRequestCounts}/${circuit.config.halfOpenMaxRequests} in HALF_OPEN state`,
-      });
-
-      return true;
-    }
-
-    this.loggingService.warn({
-      type: LogType.CircuitBreakerRequestBlocked,
-      circuit: circuit.name,
-      state: CircuitState.HALF_OPEN,
-      reason: 'Max test requests reached',
-      message: `Request blocked: Circuit "${circuit.name}" is HALF_OPEN and max test requests (${circuit.config.halfOpenMaxRequests}) reached`,
-    });
-
-    return false;
-  }
-
-  /**
-   * Handles circuit logic for default state
-   *
-   * In default state, all requests are allowed through.
-   *
-   * @returns {boolean} Always returns true (requests allowed)
-   */
-  private canProceedInClosedState(): boolean {
-    return true;
   }
 
   /**
@@ -317,27 +229,21 @@ export class CircuitBreakerService {
       return;
     }
 
-    circuit.metrics.successCount++;
-    circuit.metrics.consecutiveSuccesses++;
-
-    this.loggingService.debug({
-      type: LogType.CircuitBreakerSuccessRecorded,
-      circuit: circuit.name,
-      state: circuit.metrics.state,
-      consecutiveSuccesses: circuit.metrics.consecutiveSuccesses,
-      successThreshold: circuit.config.successThreshold,
-      message: `Success recorded for circuit "${circuit.name}" (${circuit.metrics.consecutiveSuccesses}/${circuit.config.successThreshold} consecutive successes)`,
-    });
+    circuit.metrics.lastActivityTime = Date.now();
 
     if (circuit.metrics.state === CircuitState.HALF_OPEN) {
-      circuit.metrics.halfOpenRequestCounts = Math.max(
-        0,
-        circuit.metrics.halfOpenRequestCounts - 1,
-      );
+      circuit.metrics.consecutiveSuccesses++;
 
-      if (
-        circuit.metrics.consecutiveSuccesses >= circuit.config.successThreshold
-      ) {
+      this.loggingService.debug({
+        type: LogType.CircuitBreakerSuccessRecorded,
+        circuit: circuit.name,
+        state: circuit.metrics.state,
+        consecutiveSuccesses: circuit.metrics.consecutiveSuccesses,
+        threshold: this.config.threshold,
+        message: `Success recorded for circuit "${circuit.name}" (${circuit.metrics.consecutiveSuccesses}/${this.config.threshold} consecutive successes)`,
+      });
+
+      if (circuit.metrics.consecutiveSuccesses >= this.config.threshold) {
         this.transitionToClosed(circuit);
       }
     }
@@ -359,69 +265,76 @@ export class CircuitBreakerService {
       circuit: circuit.name,
       from: CircuitState.HALF_OPEN,
       to: CircuitState.CLOSED,
-      totalSuccesses: circuit.metrics.successCount,
       totalFailures: circuit.metrics.failureCount,
       message: `Circuit "${circuit.name}" transitioned from HALF_OPEN to CLOSED. Service recovered successfully`,
     });
 
-    this.removeCircuit(circuit);
+    this.circuits.delete(circuit.name);
   }
 
   /**
-   * Removes a circuit from memory
+   * Returns the failure threshold for the current circuit state
    *
-   * Used to clean up healthy circuits to prevent memory exhaustion.
-   * Circuit will be recreated if failures occur again.
+   * In HALF_OPEN state, uses a percentage of the full threshold to
+   * allow faster detection of still-failing services.
    *
-   * @param {ICircuit} circuit - Circuit identifier
-   * @returns {void}
+   * @param {ICircuit} circuit - Circuit instance
+   * @returns {number} The effective failure threshold
    */
-  private removeCircuit(circuit: ICircuit): void {
-    this.circuits.delete(circuit.name);
+  private getEffectiveFailureThreshold(circuit: ICircuit): number {
+    if (circuit.metrics.state === CircuitState.HALF_OPEN) {
+      return Math.ceil(
+        (this.config.threshold * this.config.halfOpenFailureRateThreshold) /
+          100,
+      );
+    }
+    return this.config.threshold;
   }
 
   /**
    * Records a failed request for the circuit
    *
    * Updates failure metrics and handles state transitions:
-   * - In HALF_OPEN: Any failure immediately reopens the circuit
+   * - In HALF_OPEN: Reopens the circuit when the effective threshold is reached
    * - In CLOSED: Opens circuit if failure threshold is exceeded
    *
-   * @param {ICircuit} circuit - Circuit instance
+   * @param {string} name - Circuit identifier
    *
    * @returns {void}
    */
-  public recordFailure(circuit: ICircuit): void {
+  public recordFailure(name: string): void {
+    const circuit = this.circuits.get(name);
     if (
       !this.enabled ||
       !circuit ||
       circuit.metrics.state === CircuitState.OPEN
     ) {
-      return void 0;
+      return;
     }
 
     const now = Date.now();
 
-    this.discardOldFailures(circuit, now);
+    if (circuit.metrics.state !== CircuitState.HALF_OPEN) {
+      this.discardOldFailures(circuit, now);
+    }
 
     circuit.metrics.failureCount++;
     circuit.metrics.lastFailureTime = now;
+    circuit.metrics.lastActivityTime = now;
     circuit.metrics.consecutiveSuccesses = 0;
+
+    const effectiveThreshold = this.getEffectiveFailureThreshold(circuit);
 
     this.loggingService.warn({
       type: LogType.CircuitBreakerFailureRecorded,
       circuit: circuit.name,
       state: circuit.metrics.state,
       failureCount: circuit.metrics.failureCount,
-      failureThreshold: circuit.config.failureThreshold,
-      message: `Failure recorded for circuit "${circuit.name}" (${circuit.metrics.failureCount}/${circuit.config.failureThreshold} failures in rolling window)`,
+      threshold: effectiveThreshold,
+      message: `Failure recorded for circuit "${circuit.name}" (${circuit.metrics.failureCount}/${effectiveThreshold} failures in rolling window)`,
     });
 
-    if (
-      circuit.metrics.state === CircuitState.HALF_OPEN ||
-      (circuit.metrics.state === CircuitState.CLOSED &&
-        circuit.metrics.failureCount >= circuit.config.failureThreshold) // if CLOSED And failure count exceeds threshold
-    ) {
+    if (circuit.metrics.failureCount >= effectiveThreshold) {
       this.transitionToOpen(circuit);
     }
   }
@@ -446,21 +359,19 @@ export class CircuitBreakerService {
     if (
       circuit.metrics.lastFailureTime &&
       currentTimestamp - circuit.metrics.lastFailureTime >
-        circuit.config.rollingWindow
+        this.config.rollingWindow
     ) {
-      const oldFailureCount = circuit.metrics.failureCount;
+      const discarded = circuit.metrics.failureCount;
       circuit.metrics.failureCount = 0;
 
-      if (oldFailureCount > 0) {
-        this.loggingService.debug({
-          type: LogType.CircuitBreakerFailuresDiscarded,
-          circuit: circuit.name,
-          state: circuit.metrics.state,
-          discardedFailures: oldFailureCount,
-          rollingWindowMs: circuit.config.rollingWindow,
-          message: `Discarded ${oldFailureCount} old failure(s) for circuit "${circuit.name}" (outside rolling window)`,
-        });
-      }
+      this.loggingService.debug({
+        type: LogType.CircuitBreakerFailuresDiscarded,
+        circuit: circuit.name,
+        state: circuit.metrics.state,
+        discardedFailures: discarded,
+        rollingWindowMs: this.config.rollingWindow,
+        message: `Discarded ${discarded} old failure(s) for circuit "${circuit.name}" (outside rolling window)`,
+      });
     }
   }
 
@@ -476,10 +387,11 @@ export class CircuitBreakerService {
    */
   private transitionToOpen(circuit: ICircuit): void {
     const previousState = circuit.metrics.state;
+    const effectiveThreshold = this.getEffectiveFailureThreshold(circuit);
     circuit.metrics.state = CircuitState.OPEN;
-    circuit.metrics.nextAttemptTime = Date.now() + circuit.config.timeout;
+    circuit.metrics.nextAttemptTime = Date.now() + this.config.timeout;
 
-    const timeoutSeconds = Math.ceil(circuit.config.timeout / 1000);
+    const timeoutSeconds = Math.ceil(this.config.timeout / 1000);
 
     this.loggingService.error({
       type: LogType.CircuitBreakerStateTransition,
@@ -487,10 +399,10 @@ export class CircuitBreakerService {
       from: previousState,
       to: CircuitState.OPEN,
       failureCount: circuit.metrics.failureCount,
-      failureThreshold: circuit.config.failureThreshold,
+      threshold: effectiveThreshold,
       timeoutSeconds: timeoutSeconds,
       nextAttemptTime: new Date(circuit.metrics.nextAttemptTime).toISOString(),
-      message: `Circuit "${circuit.name}" transitioned from ${previousState} to OPEN. Failure threshold reached (${circuit.metrics.failureCount}/${circuit.config.failureThreshold}). Will retry in ${timeoutSeconds}s`,
+      message: `Circuit "${circuit.name}" transitioned from ${previousState} to OPEN. Threshold reached (${circuit.metrics.failureCount}/${effectiveThreshold}). Will retry in ${timeoutSeconds}s`,
     });
   }
 
@@ -521,31 +433,23 @@ export class CircuitBreakerService {
    */
   @Cron(CronExpression.EVERY_30_MINUTES)
   public cleanupStaleCircuits(): void {
-    const circuitCount = this.circuits.size;
-    const staleCircuits: Array<string> = [];
+    const totalBefore = this.circuits.size;
+    let removed = 0;
 
-    this.circuits.forEach((circuit: ICircuit): void => {
+    for (const [name, circuit] of this.circuits) {
       if (this.isStale(circuit)) {
-        staleCircuits.push(circuit.name);
-        this.removeCircuit(circuit);
+        this.circuits.delete(name);
+        removed++;
       }
-    });
+    }
 
-    if (staleCircuits.length > 0) {
+    if (removed > 0) {
       this.loggingService.info({
         type: LogType.CircuitBreakerCleanup,
-        totalCircuits: circuitCount,
-        staleCircuitsRemoved: staleCircuits.length,
+        totalCircuits: totalBefore,
+        staleCircuitsRemoved: removed,
         remainingCircuits: this.circuits.size,
-        removedCircuits: staleCircuits,
-        message: `Cleaned up ${staleCircuits.length} stale circuit(s): ${staleCircuits.join(', ')}`,
-      });
-    } else {
-      this.loggingService.debug({
-        type: LogType.CircuitBreakerCleanup,
-        totalCircuits: circuitCount,
-        staleCircuitsRemoved: 0,
-        message: `Circuit cleanup ran: no stale circuits found (${circuitCount} active)`,
+        message: `Cleaned up ${removed} stale circuit(s)`,
       });
     }
   }
@@ -553,40 +457,21 @@ export class CircuitBreakerService {
   /**
    * Determines if a circuit is stale and should be cleaned up
    *
-   * A circuit is considered stale if:
-   * - it's in CLOSED state and hasn't had any failures for a threshold factor times the rolling window duration
-   * - it's in OPEN state and the next attempt time has already passed. This helps prevent
-   *
-   * This helps prevent stale circuits from being removed prematurely.
-   *
-   * This helps prevent memory leaks by removing unused circuits.
+   * A circuit is stale if its last failure is outside the rolling window
+   * and it's not an OPEN circuit still waiting for its retry timeout.
    *
    * @param {ICircuit} circuit - The circuit to check for staleness
-   *
    * @returns {boolean} True if the circuit is stale and should be removed
    */
   private isStale(circuit: ICircuit): boolean {
-    const now = Date.now();
-    if (!circuit.metrics.lastFailureTime) {
-      return false;
+    if (!circuit.metrics.lastActivityTime) {
+      return true;
     }
 
-    const timeSinceLastFailure = now - circuit.metrics.lastFailureTime;
-    const staleRollingWindow =
-      circuit.config.rollingWindow * this.STALE_BUFFER_FACTOR;
+    const timeSinceLastActivity = Date.now() - circuit.metrics.lastActivityTime;
 
-    const staleNextAttemptTime = circuit.metrics.nextAttemptTime
-      ? circuit.metrics.nextAttemptTime +
-        circuit.config.timeout * this.STALE_BUFFER_FACTOR
-      : undefined;
-
-    const isWaitingForNextAttempt =
-      circuit.metrics.state === CircuitState.OPEN &&
-      staleNextAttemptTime &&
-      now < staleNextAttemptTime;
-
-    return timeSinceLastFailure > staleRollingWindow && !isWaitingForNextAttempt
-      ? true
-      : false;
+    return (
+      timeSinceLastActivity > this.config.rollingWindow * this.STALE_MULTIPLIER
+    );
   }
 }

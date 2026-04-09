@@ -344,23 +344,17 @@ export default () => ({
   circuitBreaker: {
     // Whether the circuit breaker is enabled
     enabled: process.env.CIRCUIT_BREAKER_ENABLED?.toLowerCase() !== 'false',
-    // Number of failures before the circuit opens
-    failureThreshold: parseInt(
-      process.env.CIRCUIT_BREAKER_FAILURE_THRESHOLD ?? `${20}`,
-    ),
-    // Number of consecutive successes required to close the circuit from half-open state
-    successThreshold: parseInt(
-      process.env.CIRCUIT_BREAKER_SUCCESS_THRESHOLD ?? `${10}`,
-    ),
+    // Number of failures to open the circuit, and consecutive successes to close it
+    threshold: parseInt(process.env.CIRCUIT_BREAKER_THRESHOLD ?? `${10}`),
     // Time in milliseconds to wait before attempting to close the circuit (timeout period)
     timeout: parseInt(process.env.CIRCUIT_BREAKER_TIMEOUT ?? `${30_000}`), // 30 seconds
     // Time window in milliseconds for tracking failures
     rollingWindow: parseInt(
       process.env.CIRCUIT_BREAKER_ROLLING_WINDOW ?? `${60_000}`,
-    ), // 10 seconds
-    // Maximum number of requests allowed in half-open state
-    halfOpenMaxRequests: parseInt(
-      process.env.CIRCUIT_BREAKER_HALF_OPEN_MAX_REQUESTS ?? `${10}`,
+    ), // 60 seconds
+    // Percentage of threshold used in HALF_OPEN state (0–100)
+    halfOpenFailureRateThreshold: parseInt(
+      process.env.CIRCUIT_BREAKER_HALF_OPEN_FAILURE_RATE_THRESHOLD ?? `${30}`,
     ),
   },
   jwt: {
