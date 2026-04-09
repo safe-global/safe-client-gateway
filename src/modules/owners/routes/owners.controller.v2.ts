@@ -7,7 +7,7 @@ import {
   ApiParam,
 } from '@nestjs/swagger';
 import { OwnersService } from '@/modules/owners/routes/owners.service';
-import { SafesByChainId } from '@/modules/safe/domain/entities/safes-by-chain-id.entity';
+import type { SafesByChainId } from '@/modules/safe/domain/entities/safes-by-chain-id.entity';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { CaptchaGuard } from '@/routes/captcha/guards/captcha.guard';

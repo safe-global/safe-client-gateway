@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
 import {
   ACCESS_TOKEN_COOKIE_NAME,
   getCookieOptions,
@@ -28,7 +31,7 @@ import {
   ApiOperation,
   ApiQuery,
 } from '@nestjs/swagger';
-import { type CookieOptions, Request, Response } from 'express';
+import type { CookieOptions, Request, Response } from 'express';
 
 /**
  * The OidcAuthController handles OIDC (Auth0) authentication:

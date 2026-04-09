@@ -1,4 +1,5 @@
-import { Deployment } from '@/modules/staking/datasources/entities/deployment.entity';
+// SPDX-License-Identifier: FSL-1.1-MIT
+import type { Deployment } from '@/modules/staking/datasources/entities/deployment.entity';
 import { StakeState } from '@/modules/staking/datasources/entities/stake.entity';
 import { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
 import { ChainsModule } from '@/modules/chains/chains.module';
@@ -6,7 +7,10 @@ import { getNumberString } from '@/domain/common/utils/utils';
 import { KilnDecoder } from '@/modules/staking/domain/contracts/decoders/kiln-decoder.helper';
 import { IStakingRepositoryWithRewardsFee } from '@/modules/staking/domain/staking.repository.interface';
 import { StakingModule } from '@/modules/staking/staking.module';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
 import { NULL_ADDRESS } from '@/routes/common/constants';
 import { NativeStakingDepositTransactionInfo } from '@/modules/transactions/routes/entities/staking/native-staking-deposit-info.entity';
 import { NativeStakingValidatorsExitTransactionInfo } from '@/modules/transactions/routes/entities/staking/native-staking-validators-exit-info.entity';

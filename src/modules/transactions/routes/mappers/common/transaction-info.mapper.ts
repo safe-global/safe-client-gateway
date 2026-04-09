@@ -1,6 +1,7 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { ModuleTransaction } from '@/modules/safe/domain/entities/module-transaction.entity';
-import { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
+import type { ModuleTransaction } from '@/modules/safe/domain/entities/module-transaction.entity';
+import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
 import { Operation } from '@/modules/safe/domain/entities/operation.entity';
 import { TokenRepository } from '@/modules/tokens/domain/token.repository';
 import { ITokenRepository } from '@/modules/tokens/domain/token.repository.interface';
@@ -14,7 +15,10 @@ import { HumanDescriptionMapper } from '@/modules/transactions/routes/mappers/co
 import { NativeCoinTransferMapper } from '@/modules/transactions/routes/mappers/common/native-coin-transfer.mapper';
 import { SettingsChangeMapper } from '@/modules/transactions/routes/mappers/common/settings-change.mapper';
 import { SwapOrderMapper } from '@/modules/transactions/routes/mappers/common/swap-order.mapper';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
 import { SwapOrderTransactionInfo } from '@/modules/transactions/routes/entities/swaps/swap-order-info.entity';
 import { SwapOrderHelper } from '@/modules/transactions/routes/helpers/swap-order.helper';
 import { TwapOrderMapper } from '@/modules/transactions/routes/mappers/common/twap-order.mapper';
@@ -38,7 +42,7 @@ import {
   BridgeAndSwapTransactionInfo,
   SwapTransactionInfo,
 } from '@/modules/transactions/routes/entities/bridge/bridge-info.entity';
-import {
+import type {
   BaseDataDecoded,
   DataDecoded,
 } from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import {
   ApiExtraModels,
   ApiProperty,
@@ -12,7 +13,7 @@ import {
   BlockExplorerUriTemplate,
   BlockExplorerUriTemplate as ApiBlockExplorerUriTemplate,
 } from '@/modules/chains/routes/entities/block-explorer-uri-template.entity';
-import {
+import type {
   BeaconChainExplorerUriTemplate,
   BeaconChainExplorerUriTemplate as ApiBeaconChainExplorerUriTemplate,
 } from '@/modules/chains/domain/entities/beacon-chain-explorer-uri-template.entity';

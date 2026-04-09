@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { isUniqueConstraintError } from '@/datasources/errors/helpers/is-unique-constraint-error.helper';
@@ -6,7 +7,7 @@ import { SpaceSafe } from '@/modules/spaces/datasources/entities/space-safes.ent
 import { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
 import type { ISpaceSafesRepository } from '@/modules/spaces/domain/space-safes.repository.interface';
 import { BadRequestException, Inject, NotFoundException } from '@nestjs/common';
-import {
+import type {
   FindOptionsRelations,
   FindOptionsSelect,
   FindOptionsWhere,

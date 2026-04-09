@@ -3,7 +3,10 @@ import { Inject, Injectable } from '@nestjs/common';
 import { IJobQueueService } from '@/domain/interfaces/job-queue.interface';
 import { JobType } from '@/datasources/job-queue/types/job-types';
 import { LogType } from '@/domain/common/entities/log-type.entity';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
 import { asError } from '@/logging/utils';
 import { TransactionEventType } from '@/modules/hooks/routes/entities/event-type.entity';
 import type { Event } from '@/modules/hooks/routes/entities/event.entity';

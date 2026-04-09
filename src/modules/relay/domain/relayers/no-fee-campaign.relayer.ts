@@ -5,12 +5,15 @@ import { IRelayer } from '@/modules/relay/domain/interfaces/relayer.interface';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { IRelayApi } from '@/domain/interfaces/relay-api.interface';
 import { LimitAddressesMapper } from '@/modules/relay/domain/limit-addresses.mapper';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
 import type { Relay } from '@/modules/relay/domain/entities/relay.entity';
 import { RelayLimitReachedError } from '@/modules/relay/domain/errors/relay-limit-reached.error';
 import { ExceedsMaxGasLimitError } from '@/modules/relay/domain/errors/exceeds-max-gas-limit';
 import { BalancesService } from '@/modules/balances/routes/balances.service';
-import {
+import type {
   NoFeeCampaignConfiguration,
   RelayRules,
 } from '@/modules/relay/domain/entities/relay.configuration';

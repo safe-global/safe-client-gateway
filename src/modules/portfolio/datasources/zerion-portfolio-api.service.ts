@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import { groupBy } from 'lodash';
 import type { Address } from 'viem';
@@ -5,7 +6,7 @@ import { getAddress, isAddress } from 'viem';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import {
-  INetworkService,
+  type INetworkService,
   NetworkService,
 } from '@/datasources/network/network.service.interface';
 import { IPortfolioApi } from '@/modules/portfolio/interfaces/portfolio-api.interface';
@@ -21,10 +22,13 @@ import { rawify, type Raw } from '@/validation/entities/raw.entity';
 import type { ZerionBalance } from '@/modules/balances/datasources/entities/zerion-balance.entity';
 import { ZerionBalancesSchema } from '@/modules/balances/datasources/entities/zerion-balance.entity';
 import { ZodError } from 'zod';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
 import {
   CacheService,
-  ICacheService,
+  type ICacheService,
 } from '@/datasources/cache/cache.service.interface';
 import { getNumberString } from '@/domain/common/utils/utils';
 import {

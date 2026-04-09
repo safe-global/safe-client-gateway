@@ -1,7 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { Injectable, Inject, OnModuleDestroy } from '@nestjs/common';
+import { Injectable, Inject, type OnModuleDestroy } from '@nestjs/common';
 import type { Agent } from 'undici';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
 import { asError } from '@/logging/utils';
 
 export const UndiciAgent = Symbol('UndiciAgent');

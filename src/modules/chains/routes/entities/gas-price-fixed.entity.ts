@@ -1,5 +1,6 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { ApiProperty } from '@nestjs/swagger';
-import { GasPriceFixed as DomainGasPriceFixed } from '@/modules/chains/domain/entities/gas-price-fixed.entity';
+import type { GasPriceFixed as DomainGasPriceFixed } from '@/modules/chains/domain/entities/gas-price-fixed.entity';
 
 export class GasPriceFixed implements DomainGasPriceFixed {
   @ApiProperty({ enum: ['fixed'] })

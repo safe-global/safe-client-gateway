@@ -2,7 +2,10 @@
 import { Injectable } from '@nestjs/common';
 import { Queue, Job } from 'bullmq';
 import { IJobQueueService } from '@/domain/interfaces/job-queue.interface';
-import { JobData, JobTypeName } from '@/datasources/job-queue/types/job-types';
+import type {
+  JobData,
+  JobTypeName,
+} from '@/datasources/job-queue/types/job-types';
 
 @Injectable()
 export class JobQueueService implements IJobQueueService {

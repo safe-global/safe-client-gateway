@@ -1,4 +1,5 @@
-import { DynamicModule, Module } from '@nestjs/common';
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { type DynamicModule, Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { IAlertsApi } from '@/domain/interfaces/alerts-api.interface';

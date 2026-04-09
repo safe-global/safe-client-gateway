@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { RowSchema } from '@/datasources/db/v1/entities/row.entity';
 import { NotificationDevice } from '@/modules/notifications/datasources/entities/notification-devices.entity.db';
 import {
@@ -15,7 +16,7 @@ import {
   OneToMany,
   JoinColumn,
 } from 'typeorm';
-import { Address, getAddress } from 'viem';
+import { type Address, getAddress } from 'viem';
 import { z } from 'zod';
 
 export const NotificationSubscriptionSchema = RowSchema.extend({

@@ -1,37 +1,41 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import {
-  ZerionAttributes,
-  ZerionBalance,
+  type ZerionAttributes,
+  type ZerionBalance,
   ZerionBalanceSchema,
-  ZerionBalances,
+  type ZerionBalances,
   ZerionBalancesSchema,
 } from '@/modules/balances/datasources/entities/zerion-balance.entity';
 import { CacheRouter } from '@/datasources/cache/cache.router';
 import {
   CacheService,
-  ICacheService,
+  type ICacheService,
 } from '@/datasources/cache/cache.service.interface';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { LimitReachedError } from '@/datasources/network/entities/errors/limit-reached.error';
 import {
-  INetworkService,
+  type INetworkService,
   NetworkService,
 } from '@/datasources/network/network.service.interface';
-import {
+import type {
   Erc20Balance,
   NativeBalance,
 } from '@/modules/balances/domain/entities/balance.entity';
-import { Chain } from '@/modules/chains/domain/entities/chain.entity';
+import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
 import { LogType } from '@/domain/common/entities/log-type.entity';
 import { getNumberString } from '@/domain/common/utils/utils';
 import { DataSourceError } from '@/domain/errors/data-source.error';
 import { IPositionsApi } from '@/domain/interfaces/positions-api.interface';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
 import { rawify, type Raw } from '@/validation/entities/raw.entity';
 import { Inject, Injectable } from '@nestjs/common';
-import { Address, getAddress } from 'viem';
+import { type Address, getAddress } from 'viem';
 import { z, ZodError } from 'zod';
-import { Position } from '@/modules/positions/domain/entities/position.entity';
+import type { Position } from '@/modules/positions/domain/entities/position.entity';
 import {
   getZerionHeaders,
   normalizeZerionBalances,

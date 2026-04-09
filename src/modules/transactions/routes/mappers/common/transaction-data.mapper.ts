@@ -1,9 +1,10 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import isEmpty from 'lodash/isEmpty';
 import { ContractsRepository } from '@/modules/contracts/domain/contracts.repository';
 import { IContractsRepository } from '@/modules/contracts/domain/contracts.repository.interface';
 import { Operation } from '@/modules/safe/domain/entities/operation.entity';
-import {
+import type {
   BaseDataDecoded,
   DataDecoded,
   DataDecodedParameter,
@@ -21,7 +22,7 @@ import { DataDecodedParamHelper } from '@/modules/transactions/routes/mappers/co
 import { AddressInfo } from '@/routes/common/entities/address-info.entity';
 import type { Address } from 'viem';
 import { getAddress } from 'viem';
-import {
+import type {
   Erc20Token,
   Erc721Token,
   NativeToken,

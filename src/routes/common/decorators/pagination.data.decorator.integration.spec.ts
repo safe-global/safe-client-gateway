@@ -1,4 +1,5 @@
-import { Controller, Get, INestApplication, Module } from '@nestjs/common';
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { Controller, Get, type INestApplication, Module } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 import { PaginationDataDecorator } from '@/routes/common/decorators/pagination.data.decorator';

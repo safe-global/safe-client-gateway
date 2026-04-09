@@ -3,11 +3,11 @@ import { Inject, Injectable } from '@nestjs/common';
 import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
 import { IAuthRepository } from '@/modules/auth/domain/auth.repository.interface';
 import {
-  AuthPayloadDto,
+  type AuthPayloadDto,
   AuthPayloadDtoSchema,
   AuthPayloadWithClaimsDtoSchema,
 } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { JwtPayloadWithClaims } from '@/datasources/jwt/jwt-claims.entity';
+import type { JwtPayloadWithClaims } from '@/datasources/jwt/jwt-claims.entity';
 
 @Injectable()
 export class AuthRepository implements IAuthRepository {

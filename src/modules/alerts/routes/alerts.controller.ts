@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import {
   Body,
   Controller,
@@ -13,7 +14,10 @@ import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import { AlertsService } from '@/modules/alerts/routes/alerts.service';
 import { AlertsRouteGuard } from '@/modules/alerts/routes/guards/alerts-route.guard';
 import { TenderlySignatureGuard } from '@/modules/alerts/routes/guards/tenderly-signature.guard';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
 import { AlertSchema } from '@/modules/alerts/routes/entities/schemas/alerts.schema';
 
 @Controller({

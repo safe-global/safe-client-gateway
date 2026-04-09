@@ -10,13 +10,18 @@ import { AuthModule } from '@/modules/auth/auth.module';
 import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import {
   AuthPayload,
-  AuthPayloadDto,
+  type AuthPayloadDto,
 } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { Auth } from '@/modules/auth/routes/decorators/auth.decorator';
 import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
 import { UsersModule } from '@/modules/users/users.module';
 import { TestUsersModule } from '@/modules/users/__tests__/test.users.module';
-import { INestApplication, Controller, Get, UseGuards } from '@nestjs/common';
+import {
+  type INestApplication,
+  Controller,
+  Get,
+  UseGuards,
+} from '@nestjs/common';
 import { TestingModule, Test } from '@nestjs/testing';
 import { Server } from 'net';
 import request from 'supertest';

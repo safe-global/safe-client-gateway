@@ -1,8 +1,9 @@
-import { Response } from 'express';
+// SPDX-License-Identifier: FSL-1.1-MIT
+import type { Response } from 'express';
 import {
   Catch,
-  ExceptionFilter,
-  ArgumentsHost,
+  type ExceptionFilter,
+  type ArgumentsHost,
   HttpStatus,
 } from '@nestjs/common';
 import { UnofficialProxyFactoryError } from '@/modules/relay/domain/errors/unofficial-proxy-factory.error';

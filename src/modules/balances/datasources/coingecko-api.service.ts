@@ -1,8 +1,9 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { IPricesApi } from '@/modules/balances/datasources/prices-api.interface';
 import {
-  AssetPrice,
+  type AssetPrice,
   getAssetPriceSchema,
 } from '@/modules/balances/datasources/entities/asset-price.entity';
 import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
@@ -10,23 +11,26 @@ import { CacheRouter } from '@/datasources/cache/cache.router';
 import { DataSourceError } from '@/domain/errors/data-source.error';
 import {
   CacheService,
-  ICacheService,
+  type ICacheService,
 } from '@/datasources/cache/cache.service.interface';
 import {
   NetworkService,
-  INetworkService,
+  type INetworkService,
 } from '@/datasources/network/network.service.interface';
 import difference from 'lodash/difference';
 import get from 'lodash/get';
 import random from 'lodash/random';
-import { LoggingService, ILoggingService } from '@/logging/logging.interface';
+import {
+  LoggingService,
+  type ILoggingService,
+} from '@/logging/logging.interface';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 import { asError } from '@/logging/utils';
-import { Chain } from '@/modules/chains/domain/entities/chain.entity';
+import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
 import { z } from 'zod';
 import { rawify, type Raw } from '@/validation/entities/raw.entity';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
-import { Cache } from 'cache-manager';
+import type { Cache } from 'cache-manager';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { LogType } from '@/domain/common/entities/log-type.entity';
 import chunk from 'lodash/chunk';
