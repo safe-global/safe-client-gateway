@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Module } from '@nestjs/common';
+import { QueueServiceApiModule } from '@/datasources/queue-service-api/queue-service-api.module';
+import { QueueServiceRoutingModule } from '@/datasources/queue-service-api/queue-service-routing.module';
 import { TransactionApiManagerModule } from '@/domain/interfaces/transaction-api.manager.interface';
 import { MessageVerifierHelper } from '@/modules/messages/domain/helpers/message-verifier.helper';
 import { MessagesRepository } from '@/modules/messages/domain/messages.repository';
@@ -17,6 +19,8 @@ import { AddressInfoModule } from '@/routes/common/address-info/address-info.mod
     TransactionApiManagerModule,
     SafeRepositoryModule,
     SafeAppsModule,
+    QueueServiceApiModule,
+    QueueServiceRoutingModule,
   ],
   providers: [
     {
