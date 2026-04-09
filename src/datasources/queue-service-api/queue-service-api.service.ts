@@ -22,13 +22,16 @@ import type { Message } from '@/modules/messages/domain/entities/message.entity'
 import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
 import type {
   IQueueServiceApi,
+  QueueMultisigTransaction,
   QueueProposeTransactionDto,
 } from '@/datasources/queue-service-api/queue-service-api.interface';
 import { rawify } from '@/validation/entities/raw.entity';
 import type { Raw } from '@/validation/entities/raw.entity';
-import { Inject } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import type { Address } from 'viem';
 
+@Injectable()
 export class QueueServiceApi implements IQueueServiceApi {
   private readonly baseUri: string;
 
@@ -37,6 +40,8 @@ export class QueueServiceApi implements IQueueServiceApi {
     private readonly configurationService: IConfigurationService,
     @Inject(NetworkService)
     private readonly networkService: INetworkService,
+    @Inject(LoggingService)
+    private readonly loggingService: ILoggingService,
     private readonly errorMapper: QueueServiceErrorMapper,
   ) {
     this.baseUri = this.configurationService.getOrThrow<string>(
@@ -338,5 +343,43 @@ export class QueueServiceApi implements IQueueServiceApi {
     } catch (error) {
       throw this.errorMapper.from(error);
     }
+  }
+
+  async getTransactionMetadataBatch(args: {
+    safeTxHashes: Array<string>;
+  }): Promise<Map<string, QueueMultisigTransaction>> {
+    const results = new Map<string, QueueMultisigTransaction>();
+    if (args.safeTxHashes.length === 0) return results;
+
+    const settled = await Promise.allSettled(
+      args.safeTxHashes.map(async (hash) => {
+        const url = `${this.baseUri}/api/v1/multisig-transactions/${hash}`;
+        const { data } = await this.networkService.get<unknown>({ url });
+        const raw = data as unknown as Record<string, unknown>;
+        return {
+          hash,
+          tx: {
+            safeTxHash: hash,
+            proposer: (raw.proposer as Address) ?? null,
+            proposedByDelegate: (raw.proposedByDelegate as Address) ?? null,
+            originName:
+              typeof raw.originName === 'string' ? raw.originName : null,
+            originUrl: typeof raw.originUrl === 'string' ? raw.originUrl : null,
+          } satisfies QueueMultisigTransaction,
+        };
+      }),
+    );
+
+    for (const result of settled) {
+      if (result.status === 'fulfilled') {
+        results.set(result.value.hash, result.value.tx);
+      } else {
+        this.loggingService.warn(
+          `Queue service metadata fetch failed: ${result.reason}`,
+        );
+      }
+    }
+
+    return results;
   }
 }

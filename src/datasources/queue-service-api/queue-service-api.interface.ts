@@ -107,4 +107,20 @@ export interface IQueueServiceApi {
     messageHash: string;
     signatures: Array<string>;
   }): Promise<unknown>;
+
+  getTransactionMetadataBatch(args: {
+    safeTxHashes: Array<string>;
+  }): Promise<Map<string, QueueMultisigTransaction>>;
+}
+
+/**
+ * Subset of MultisigTransaction fields that the queue service provides.
+ * Used for merging metadata into TX-service-sourced executed transactions.
+ */
+export interface QueueMultisigTransaction {
+  safeTxHash: string;
+  proposer: MultisigTransaction['proposer'];
+  proposedByDelegate: MultisigTransaction['proposedByDelegate'];
+  originName: string | null;
+  originUrl: string | null;
 }
