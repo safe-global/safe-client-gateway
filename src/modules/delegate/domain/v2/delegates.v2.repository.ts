@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { IQueueServiceApi } from '@/datasources/queue-service-api/queue-service-api.interface';
+import { QueueServiceRoutingHelper } from '@/datasources/queue-service-api/queue-service-routing.helper';
 import { Delegate } from '@/modules/delegate/domain/entities/delegate.entity';
 import { DelegatePageSchema } from '@/modules/delegate/domain/entities/schemas/delegate.schema';
 import { IDelegatesV2Repository } from '@/modules/delegate/domain/v2/delegates.v2.repository.interface';
@@ -11,6 +14,9 @@ export class DelegatesV2Repository implements IDelegatesV2Repository {
   constructor(
     @Inject(ITransactionApiManager)
     private readonly transactionApiManager: ITransactionApiManager,
+    @Inject(IQueueServiceApi)
+    private readonly queueServiceApi: IQueueServiceApi,
+    private readonly routingHelper: QueueServiceRoutingHelper,
   ) {}
 
   async getDelegates(args: {
@@ -22,16 +28,30 @@ export class DelegatesV2Repository implements IDelegatesV2Repository {
     limit?: number;
     offset?: number;
   }): Promise<Page<Delegate>> {
-    const transactionService = await this.transactionApiManager.getApi(
-      args.chainId,
-    );
-    const page = await transactionService.getDelegatesV2({
-      safeAddress: args.safeAddress,
-      delegate: args.delegate,
-      delegator: args.delegator,
-      label: args.label,
-      limit: args.limit,
-      offset: args.offset,
+    const page = await this.routingHelper.route({
+      chainId: args.chainId,
+      whenEnabled: () =>
+        this.queueServiceApi.getDelegates({
+          chainId: args.chainId,
+          safe: args.safeAddress,
+          delegate: args.delegate,
+          delegator: args.delegator,
+          limit: args.limit,
+          offset: args.offset,
+        }),
+      whenDisabled: async () => {
+        const transactionService = await this.transactionApiManager.getApi(
+          args.chainId,
+        );
+        return transactionService.getDelegatesV2({
+          safeAddress: args.safeAddress,
+          delegate: args.delegate,
+          delegator: args.delegator,
+          label: args.label,
+          limit: args.limit,
+          offset: args.offset,
+        });
+      },
     });
 
     return DelegatePageSchema.parse(page);
@@ -55,15 +75,29 @@ export class DelegatesV2Repository implements IDelegatesV2Repository {
     signature: string;
     label: string;
   }): Promise<void> {
-    const transactionService = await this.transactionApiManager.getApi(
-      args.chainId,
-    );
-    await transactionService.postDelegateV2({
-      safeAddress: args.safeAddress,
-      delegate: args.delegate,
-      delegator: args.delegator,
-      signature: args.signature,
-      label: args.label,
+    await this.routingHelper.route({
+      chainId: args.chainId,
+      whenEnabled: () =>
+        this.queueServiceApi.postDelegate({
+          delegate: args.delegate,
+          delegator: args.delegator,
+          signature: args.signature,
+          chainId: args.chainId,
+          safe: args.safeAddress,
+          label: args.label,
+        }),
+      whenDisabled: async () => {
+        const transactionService = await this.transactionApiManager.getApi(
+          args.chainId,
+        );
+        await transactionService.postDelegateV2({
+          safeAddress: args.safeAddress,
+          delegate: args.delegate,
+          delegator: args.delegator,
+          signature: args.signature,
+          label: args.label,
+        });
+      },
     });
   }
 
@@ -74,14 +108,27 @@ export class DelegatesV2Repository implements IDelegatesV2Repository {
     safeAddress: Address | null;
     signature: string;
   }): Promise<unknown> {
-    const transactionService = await this.transactionApiManager.getApi(
-      args.chainId,
-    );
-    return transactionService.deleteDelegateV2({
-      delegate: args.delegate,
-      delegator: args.delegator,
-      safeAddress: args.safeAddress,
-      signature: args.signature,
+    return this.routingHelper.route({
+      chainId: args.chainId,
+      whenEnabled: () =>
+        this.queueServiceApi.deleteDelegate({
+          delegate: args.delegate,
+          delegator: args.delegator,
+          signature: args.signature,
+          chainId: args.chainId,
+          safe: args.safeAddress,
+        }),
+      whenDisabled: async () => {
+        const transactionService = await this.transactionApiManager.getApi(
+          args.chainId,
+        );
+        return transactionService.deleteDelegateV2({
+          delegate: args.delegate,
+          delegator: args.delegator,
+          safeAddress: args.safeAddress,
+          signature: args.signature,
+        });
+      },
     });
   }
 }
