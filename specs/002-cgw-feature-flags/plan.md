@@ -1,3 +1,7 @@
+<!--
+  SPDX-License-Identifier: FSL-1.1-MIT
+ -->
+
 # SPDX-License-Identifier: FSL-1.1-MIT
 
 # Implementation Plan: CGW Feature Flag System

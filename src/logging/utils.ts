@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+
 import type { Request } from 'express';
 import get from 'lodash/get';
 
