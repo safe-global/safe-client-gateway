@@ -36,11 +36,11 @@ export class NotificationType implements z.infer<
   name!: NotificationTypeEnum;
 
   @OneToMany(
-     
+    () =>
       // eslint-disable-next-line @typescript-eslint/no-require-imports
-      () => require('@/modules/notifications/datasources/entities/notification-subscription-notification-type.entity.db').NotificationSubscriptionNotificationType,
-    (nsnt: NotificationSubscriptionNotificationType) =>
-      nsnt.notification_type,
+      require('@/modules/notifications/datasources/entities/notification-subscription-notification-type.entity.db')
+        .NotificationSubscriptionNotificationType,
+    (nsnt: NotificationSubscriptionNotificationType) => nsnt.notification_type,
     { onDelete: 'CASCADE' },
   )
   notification_subscription_notification_type!: Array<NotificationSubscriptionNotificationType>;

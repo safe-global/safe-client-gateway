@@ -1,8 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import {
-  HEX_BYTES_LENGTH,
-  HEX_PREFIX_LENGTH,
-} from '@/routes/common/constants';
+import { HEX_BYTES_LENGTH, HEX_PREFIX_LENGTH } from '@/routes/common/constants';
 import { isHexBytes } from '@/validation/entities/schemas/hexbytes.schema';
 import {
   isSignatureLike,

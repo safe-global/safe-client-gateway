@@ -52,8 +52,9 @@ export class SpaceSafe implements DomainSpaceSafe {
   public readonly updatedAt!: Date;
 
   @ManyToOne(
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-      () => require('@/modules/spaces/datasources/entities/space.entity.db').Space,
+    () =>
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      require('@/modules/spaces/datasources/entities/space.entity.db').Space,
     (space: Space) => space.id,
     { onDelete: 'CASCADE', nullable: false },
   )

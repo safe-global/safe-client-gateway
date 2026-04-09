@@ -20,9 +20,8 @@ export class Wallet implements z.infer<typeof WalletSchema> {
   id!: number;
 
   @ManyToOne(
-     
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      () => require('@/modules/users/datasources/entities/users.entity.db').User,
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    () => require('@/modules/users/datasources/entities/users.entity.db').User,
     (user: User) => user.id,
     { onDelete: 'CASCADE', nullable: false },
   )

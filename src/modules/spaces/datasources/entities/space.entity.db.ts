@@ -47,16 +47,19 @@ export class Space implements DomainSpace {
   updatedAt!: Date;
 
   @OneToMany(
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-      () => require('@/modules/users/datasources/entities/member.entity.db').Member,
+    () =>
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      require('@/modules/users/datasources/entities/member.entity.db').Member,
     (member: Member) => member.space,
     { cascade: ['update', 'insert'] },
   )
   members!: Array<Member>;
 
   @OneToMany(
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-      () => require('@/modules/spaces/datasources/entities/space-safes.entity.db').SpaceSafe,
+    () =>
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      require('@/modules/spaces/datasources/entities/space-safes.entity.db')
+        .SpaceSafe,
     (safeList: SpaceSafe) => safeList.space,
     { cascade: ['update', 'insert'] },
   )
