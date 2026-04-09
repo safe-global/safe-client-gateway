@@ -4,7 +4,11 @@ import isEmpty from 'lodash/isEmpty';
 import type { Address } from 'viem';
 import { z } from 'zod';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import { IQueueServiceApi } from '@/datasources/queue-service-api/queue-service-api.interface';
+import { mergeTransactionMetadata } from '@/datasources/queue-service-api/mappers/metadata-merge.helper';
+import {
+  IQueueServiceApi,
+  type QueueMultisigTransaction,
+} from '@/datasources/queue-service-api/queue-service-api.interface';
 import { QueueServiceRoutingHelper } from '@/datasources/queue-service-api/queue-service-routing.helper';
 import { SAFE_TRANSACTION_SERVICE_MAX_LIMIT } from '@/domain/common/constants';
 import type { Page } from '@/domain/entities/page.entity';
@@ -36,7 +40,10 @@ import {
 } from '@/modules/safe/domain/entities/schemas/safe.schema';
 import { SafeListSchema } from '@/modules/safe/domain/entities/schemas/safe-list.schema';
 import { TransactionTypePageSchema } from '@/modules/safe/domain/entities/schemas/transaction-type.schema';
-import type { Transaction } from '@/modules/safe/domain/entities/transaction.entity';
+import {
+  isMultisigTransaction,
+  type Transaction,
+} from '@/modules/safe/domain/entities/transaction.entity';
 import {
   type Transfer,
   TransferPageSchema,
@@ -356,7 +363,13 @@ export class SafeRepository implements ISafeRepository {
       executed: true,
       queued: false,
     });
-    return TransactionTypePageSchema.parse(page);
+    const parsed = TransactionTypePageSchema.parse(page);
+
+    if (this.queueServiceRoutingHelper.isEnabled && parsed.results.length > 0) {
+      return this.enrichHistoryWithQueueMetadata(parsed);
+    }
+
+    return parsed;
   }
 
   async clearAllExecutedTransactions(args: {
@@ -413,7 +426,13 @@ export class SafeRepository implements ISafeRepository {
     const tx = await transactionService.getMultisigTransaction(
       args.safeTransactionHash,
     );
-    return MultisigTransactionSchema.parse(tx);
+    const parsed = MultisigTransactionSchema.parse(tx);
+
+    if (this.queueServiceRoutingHelper.isEnabled && parsed.isExecuted) {
+      return this.enrichSingleTxWithQueueMetadata(parsed);
+    }
+
+    return parsed;
   }
 
   async getMultiSigTransactionWithNoCache(args: {
@@ -828,5 +847,65 @@ export class SafeRepository implements ISafeRepository {
     );
 
     return SafeListSchema.parse(safesByModule);
+  }
+
+  /**
+   * Enriches a page of history transactions with metadata from the queue
+   * service. Only MultisigTransaction entries are enriched; other
+   * transaction types are returned as-is.
+   *
+   * Failures are logged and swallowed -- the TX service data is returned
+   * without metadata when the queue service is unavailable.
+   */
+  private async enrichHistoryWithQueueMetadata(
+    page: Page<Transaction>,
+  ): Promise<Page<Transaction>> {
+    const multisigTxs = page.results.filter(isMultisigTransaction);
+    if (multisigTxs.length === 0) return page;
+
+    const hashes = multisigTxs.map((tx) => tx.safeTxHash);
+
+    let metadata: Map<string, QueueMultisigTransaction>;
+    try {
+      metadata = await this.queueServiceApi.getTransactionMetadataBatch({
+        safeTxHashes: hashes,
+      });
+    } catch (error) {
+      this.loggingService.warn(
+        `Failed to fetch queue service metadata for history: ${error}`,
+      );
+      return page;
+    }
+
+    return {
+      ...page,
+      results: page.results.map((tx) => {
+        if (!isMultisigTransaction(tx)) return tx;
+        return mergeTransactionMetadata(
+          tx,
+          metadata.get(tx.safeTxHash) ?? null,
+        );
+      }),
+    };
+  }
+
+  /**
+   * Enriches a single executed MultisigTransaction with metadata from the
+   * queue service. Returns the original transaction on failure.
+   */
+  private async enrichSingleTxWithQueueMetadata(
+    tx: MultisigTransaction,
+  ): Promise<MultisigTransaction> {
+    try {
+      const metadata = await this.queueServiceApi.getTransactionMetadataBatch({
+        safeTxHashes: [tx.safeTxHash],
+      });
+      return mergeTransactionMetadata(tx, metadata.get(tx.safeTxHash) ?? null);
+    } catch (error) {
+      this.loggingService.warn(
+        `Failed to fetch queue service metadata for ${tx.safeTxHash}: ${error}`,
+      );
+      return tx;
+    }
   }
 }
