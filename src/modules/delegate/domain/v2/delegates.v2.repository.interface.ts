@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Module } from '@nestjs/common';
 import type { Address } from 'viem';
+import { QueueServiceApiModule } from '@/datasources/queue-service-api/queue-service-api.module';
+import { QueueServiceRoutingModule } from '@/datasources/queue-service-api/queue-service-routing.module';
 import type { Page } from '@/domain/entities/page.entity';
 import { TransactionApiManagerModule } from '@/domain/interfaces/transaction-api.manager.interface';
 import type { Delegate } from '@/modules/delegate/domain/entities/delegate.entity';
@@ -43,7 +45,11 @@ export interface IDelegatesV2Repository {
 }
 
 @Module({
-  imports: [TransactionApiManagerModule],
+  imports: [
+    TransactionApiManagerModule,
+    QueueServiceApiModule,
+    QueueServiceRoutingModule,
+  ],
   providers: [
     {
       provide: IDelegatesV2Repository,
