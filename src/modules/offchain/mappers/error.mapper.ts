@@ -17,7 +17,7 @@ interface FastApiValidationError {
  * - `{ detail: [{ loc, msg, type }] }` for validation errors
  */
 @Injectable()
-export class QueueServiceErrorMapper {
+export class OffchainErrorMapper {
   from(source: unknown): DataSourceError {
     if (source instanceof NetworkResponseError) {
       const message = this.extractMessage(source.data);

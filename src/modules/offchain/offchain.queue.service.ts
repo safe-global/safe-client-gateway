@@ -1,17 +1,17 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import {
-  QueueMultisigTransactionPageSchema,
-  QueueMultisigTransactionSchema,
-} from '@/datasources/queue-service-api/entities/queue-multisig-transaction.entity';
+  OffchainMultisigTransactionPageSchema,
+  OffchainMultisigTransactionSchema,
+} from '@/modules/offchain/entities/multisig-transaction.entity';
 import {
-  QueueMessagePageSchema,
-  QueueMessageSchema,
-} from '@/datasources/queue-service-api/entities/queue-message.entity';
-import { QueueDelegatePageSchema } from '@/datasources/queue-service-api/entities/queue-delegate.entity';
-import { QueueServiceErrorMapper } from '@/datasources/queue-service-api/mappers/queue-error.mapper';
-import { mapQueueToMultisigTransaction } from '@/datasources/queue-service-api/mappers/queue-to-transaction.mapper';
-import { mapQueueToMessage } from '@/datasources/queue-service-api/mappers/queue-to-message.mapper';
+  OffchainMessagePageSchema,
+  OffchainMessageSchema,
+} from '@/modules/offchain/entities/message.entity';
+import { OffchainDelegatePageSchema } from '@/modules/offchain/entities/delegate.entity';
+import { OffchainErrorMapper } from '@/modules/offchain/mappers/error.mapper';
+import { mapOffchainToMultisigTransaction } from '@/modules/offchain/mappers/transaction.mapper';
+import { mapOffchainToMessage } from '@/modules/offchain/mappers/message.mapper';
 import {
   NetworkService,
   INetworkService,
@@ -20,19 +20,19 @@ import type { Page } from '@/domain/entities/page.entity';
 import type { Delegate } from '@/modules/delegate/domain/entities/delegate.entity';
 import type { Message } from '@/modules/messages/domain/entities/message.entity';
 import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
+import type { ProposeTransactionDto } from '@/modules/transactions/domain/entities/propose-transaction.dto.entity';
 import type {
-  IQueueServiceApi,
-  QueueMultisigTransaction,
-  QueueProposeTransactionDto,
-} from '@/datasources/queue-service-api/queue-service-api.interface';
+  IOffchain,
+  OffchainMultisigTransaction,
+} from '@/modules/offchain/offchain.interface';
 import { rawify } from '@/validation/entities/raw.entity';
 import type { Raw } from '@/validation/entities/raw.entity';
 import { Inject, Injectable } from '@nestjs/common';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
-import type { Address } from 'viem';
+import type { Address, Hex } from 'viem';
 
 @Injectable()
-export class QueueServiceApi implements IQueueServiceApi {
+export class OffchainQueueService implements IOffchain {
   private readonly baseUri: string;
 
   constructor(
@@ -42,7 +42,7 @@ export class QueueServiceApi implements IQueueServiceApi {
     private readonly networkService: INetworkService,
     @Inject(LoggingService)
     private readonly loggingService: ILoggingService,
-    private readonly errorMapper: QueueServiceErrorMapper,
+    private readonly errorMapper: OffchainErrorMapper,
   ) {
     this.baseUri = this.configurationService.getOrThrow<string>(
       'queueService.baseUri',
@@ -51,14 +51,33 @@ export class QueueServiceApi implements IQueueServiceApi {
 
   async proposeTransaction(args: {
     chainId: string;
-    safe: Address;
-    data: QueueProposeTransactionDto;
+    safeAddress: Address;
+    proposeTransactionDto: ProposeTransactionDto;
   }): Promise<unknown> {
     try {
-      const url = `${this.baseUri}/api/v1/chains/${args.chainId}/safes/${args.safe}/multisig-transactions`;
+      const dto = args.proposeTransactionDto;
+      const { originName, originUrl } = this.parseOrigin(dto.origin);
+
+      const url = `${this.baseUri}/api/v1/chains/${args.chainId}/safes/${args.safeAddress}/multisig-transactions`;
       const { data } = await this.networkService.post<unknown>({
         url,
-        data: args.data,
+        data: {
+          to: dto.to,
+          value: Number(dto.value),
+          data: dto.data,
+          nonce: Number(dto.nonce),
+          operation: dto.operation,
+          safeTxGas: Number(dto.safeTxGas),
+          baseGas: Number(dto.baseGas),
+          gasPrice: Number(dto.gasPrice),
+          gasToken: dto.gasToken,
+          refundReceiver: dto.refundReceiver,
+          safeTxHash: dto.safeTxHash,
+          proposer: dto.sender,
+          signature: dto.signature ?? '',
+          originName,
+          originUrl,
+        },
       });
       return data;
     } catch (error) {
@@ -66,75 +85,48 @@ export class QueueServiceApi implements IQueueServiceApi {
     }
   }
 
-  async getMultisigTransaction(
-    safeTxHash: string,
-  ): Promise<Raw<MultisigTransaction>> {
+  async getMultisigTransaction(args: {
+    chainId: string;
+    safeTxHash: string;
+  }): Promise<Raw<MultisigTransaction>> {
     try {
-      const url = `${this.baseUri}/api/v1/multisig-transactions/${safeTxHash}`;
+      const url = `${this.baseUri}/api/v1/multisig-transactions/${args.safeTxHash}`;
       const { data } = await this.networkService.get<unknown>({ url });
-      const parsed = QueueMultisigTransactionSchema.parse(data);
-      return rawify(mapQueueToMultisigTransaction(parsed));
+      const parsed = OffchainMultisigTransactionSchema.parse(data);
+      return rawify(mapOffchainToMultisigTransaction(parsed));
     } catch (error) {
       throw this.errorMapper.from(error);
     }
   }
 
   async getTransactionQueue(args: {
-    safes: Array<string>;
-    nonceOrder?: 'asc' | 'desc';
+    chainId: string;
+    safeAddress: Address;
+    ordering?: string;
+    trusted?: boolean;
     limit?: number;
     offset?: number;
   }): Promise<Raw<Page<MultisigTransaction>>> {
     try {
       const url = `${this.baseUri}/api/v1/multisig-transactions/queue`;
+      const nonceOrder = args.ordering?.includes('-') ? 'desc' : 'asc';
       const { data } = await this.networkService.get<unknown>({
         url,
         networkRequest: {
           params: {
-            safes: args.safes.join(','),
-            nonce_order: args.nonceOrder,
+            safes: `${args.safeAddress}:${args.chainId}`,
+            nonce_order: nonceOrder,
             limit: args.limit,
             offset: args.offset,
           },
         },
       });
-      const parsed = QueueMultisigTransactionPageSchema.parse(data);
+      const parsed = OffchainMultisigTransactionPageSchema.parse(data);
       return rawify({
         count: parsed.count,
         next: parsed.next,
         previous: parsed.previous,
-        results: parsed.results.map(mapQueueToMultisigTransaction),
-      });
-    } catch (error) {
-      throw this.errorMapper.from(error);
-    }
-  }
-
-  async getMultisigTransactions(args: {
-    safes: Array<string>;
-    executed?: boolean;
-    limit?: number;
-    offset?: number;
-  }): Promise<Raw<Page<MultisigTransaction>>> {
-    try {
-      const url = `${this.baseUri}/api/v1/multisig-transactions`;
-      const { data } = await this.networkService.get<unknown>({
-        url,
-        networkRequest: {
-          params: {
-            safes: args.safes.join(','),
-            executed: args.executed,
-            limit: args.limit,
-            offset: args.offset,
-          },
-        },
-      });
-      const parsed = QueueMultisigTransactionPageSchema.parse(data);
-      return rawify({
-        count: parsed.count,
-        next: parsed.next,
-        previous: parsed.previous,
-        results: parsed.results.map(mapQueueToMultisigTransaction),
+        results: parsed.results.map(mapOffchainToMultisigTransaction),
       });
     } catch (error) {
       throw this.errorMapper.from(error);
@@ -142,14 +134,15 @@ export class QueueServiceApi implements IQueueServiceApi {
   }
 
   async postConfirmation(args: {
+    chainId: string;
     safeTxHash: string;
-    signatures: Array<string>;
+    signature: string;
   }): Promise<unknown> {
     try {
       const url = `${this.baseUri}/api/v1/multisig-transactions/${args.safeTxHash}/confirmations`;
       const { data } = await this.networkService.post<unknown>({
         url,
-        data: { signatures: args.signatures },
+        data: { signatures: [args.signature] },
       });
       return data;
     } catch (error) {
@@ -158,6 +151,7 @@ export class QueueServiceApi implements IQueueServiceApi {
   }
 
   async deleteTransaction(args: {
+    chainId: string;
     safeTxHash: string;
     signature: string;
   }): Promise<void> {
@@ -173,10 +167,11 @@ export class QueueServiceApi implements IQueueServiceApi {
   }
 
   async getDelegates(args: {
-    chainId?: number;
-    safe?: Address;
+    chainId: string;
+    safeAddress?: Address;
     delegate?: Address;
     delegator?: Address;
+    label?: string;
     limit?: number;
     offset?: number;
   }): Promise<Raw<Page<Delegate>>> {
@@ -186,8 +181,8 @@ export class QueueServiceApi implements IQueueServiceApi {
         url,
         networkRequest: {
           params: {
-            chain_id: args.chainId,
-            safe: args.safe,
+            chain_id: Number(args.chainId),
+            safe: args.safeAddress,
             delegate: args.delegate,
             delegator: args.delegator,
             limit: args.limit,
@@ -195,7 +190,7 @@ export class QueueServiceApi implements IQueueServiceApi {
           },
         },
       });
-      const parsed = QueueDelegatePageSchema.parse(data);
+      const parsed = OffchainDelegatePageSchema.parse(data);
       return rawify({
         count: parsed.count,
         next: parsed.next,
@@ -213,12 +208,12 @@ export class QueueServiceApi implements IQueueServiceApi {
   }
 
   async postDelegate(args: {
+    chainId: string;
+    safeAddress: Address | null;
     delegate: Address;
     delegator: Address;
     signature: string;
-    chainId?: number;
-    safe?: Address;
-    label?: string;
+    label: string;
   }): Promise<void> {
     try {
       const url = `${this.baseUri}/api/v1/delegates`;
@@ -228,8 +223,8 @@ export class QueueServiceApi implements IQueueServiceApi {
           delegate: args.delegate,
           delegator: args.delegator,
           signature: args.signature,
-          chain_id: args.chainId,
-          safe: args.safe,
+          chain_id: Number(args.chainId),
+          safe: args.safeAddress ?? undefined,
           label: args.label,
         },
       });
@@ -239,11 +234,11 @@ export class QueueServiceApi implements IQueueServiceApi {
   }
 
   async deleteDelegate(args: {
+    chainId: string;
     delegate: Address;
     delegator: Address;
+    safeAddress: Address | null;
     signature: string;
-    chainId?: number;
-    safe?: Address;
   }): Promise<void> {
     try {
       const url = `${this.baseUri}/api/v1/delegates/${args.delegate}`;
@@ -252,8 +247,8 @@ export class QueueServiceApi implements IQueueServiceApi {
         data: {
           delegator: args.delegator,
           signature: args.signature,
-          chain_id: args.chainId,
-          safe: args.safe,
+          chain_id: Number(args.chainId),
+          safe: args.safeAddress ?? undefined,
         },
       });
     } catch (error) {
@@ -261,20 +256,23 @@ export class QueueServiceApi implements IQueueServiceApi {
     }
   }
 
-  async getMessageByHash(messageHash: string): Promise<Raw<Message>> {
+  async getMessageByHash(args: {
+    chainId: string;
+    messageHash: string;
+  }): Promise<Raw<Message>> {
     try {
-      const url = `${this.baseUri}/api/v1/messages/${messageHash}`;
+      const url = `${this.baseUri}/api/v1/messages/${args.messageHash}`;
       const { data } = await this.networkService.get<unknown>({ url });
-      const parsed = QueueMessageSchema.parse(data);
-      return rawify(mapQueueToMessage(parsed));
+      const parsed = OffchainMessageSchema.parse(data);
+      return rawify(mapOffchainToMessage(parsed));
     } catch (error) {
       throw this.errorMapper.from(error);
     }
   }
 
   async getMessagesBySafe(args: {
+    chainId: string;
     safeAddress: Address;
-    chainId?: number;
     limit?: number;
     offset?: number;
   }): Promise<Raw<Page<Message>>> {
@@ -284,18 +282,18 @@ export class QueueServiceApi implements IQueueServiceApi {
         url,
         networkRequest: {
           params: {
-            chain_id: args.chainId,
+            chain_id: Number(args.chainId),
             limit: args.limit,
             offset: args.offset,
           },
         },
       });
-      const parsed = QueueMessagePageSchema.parse(data);
+      const parsed = OffchainMessagePageSchema.parse(data);
       return rawify({
         count: parsed.count,
         next: parsed.next,
         previous: parsed.previous,
-        results: parsed.results.map(mapQueueToMessage),
+        results: parsed.results.map(mapOffchainToMessage),
       });
     } catch (error) {
       throw this.errorMapper.from(error);
@@ -303,41 +301,43 @@ export class QueueServiceApi implements IQueueServiceApi {
   }
 
   async postMessage(args: {
+    chainId: string;
     safeAddress: Address;
-    chainId: number;
     message: unknown;
-    signatures: Array<string>;
-    originName?: string;
-    originUrl?: string;
+    safeAppId: number | null;
+    signature: string;
+    origin: string | null;
   }): Promise<Raw<Message>> {
     try {
+      const { originName, originUrl } = this.parseOrigin(args.origin);
       const url = `${this.baseUri}/api/v1/safes/${args.safeAddress}/messages`;
       const { data } = await this.networkService.post<unknown>({
         url,
         data: {
-          chain_id: args.chainId,
+          chain_id: Number(args.chainId),
           message: args.message,
-          signatures: args.signatures,
-          origin_name: args.originName,
-          origin_url: args.originUrl,
+          signatures: [args.signature],
+          origin_name: originName,
+          origin_url: originUrl,
         },
       });
-      const parsed = QueueMessageSchema.parse(data);
-      return rawify(mapQueueToMessage(parsed));
+      const parsed = OffchainMessageSchema.parse(data);
+      return rawify(mapOffchainToMessage(parsed));
     } catch (error) {
       throw this.errorMapper.from(error);
     }
   }
 
   async postMessageSignature(args: {
+    chainId: string;
     messageHash: string;
-    signatures: Array<string>;
+    signature: Hex;
   }): Promise<unknown> {
     try {
       const url = `${this.baseUri}/api/v1/messages/${args.messageHash}/signatures`;
       const { data } = await this.networkService.post<unknown>({
         url,
-        data: { signatures: args.signatures },
+        data: { signatures: [args.signature] },
       });
       return data;
     } catch (error) {
@@ -347,8 +347,8 @@ export class QueueServiceApi implements IQueueServiceApi {
 
   async getTransactionMetadataBatch(args: {
     safeTxHashes: Array<string>;
-  }): Promise<Map<string, QueueMultisigTransaction>> {
-    const results = new Map<string, QueueMultisigTransaction>();
+  }): Promise<Map<string, OffchainMultisigTransaction>> {
+    const results = new Map<string, OffchainMultisigTransaction>();
     if (args.safeTxHashes.length === 0) return results;
 
     const settled = await Promise.allSettled(
@@ -365,7 +365,7 @@ export class QueueServiceApi implements IQueueServiceApi {
             originName:
               typeof raw.originName === 'string' ? raw.originName : null,
             originUrl: typeof raw.originUrl === 'string' ? raw.originUrl : null,
-          } satisfies QueueMultisigTransaction,
+          } satisfies OffchainMultisigTransaction,
         };
       }),
     );
@@ -381,5 +381,31 @@ export class QueueServiceApi implements IQueueServiceApi {
     }
 
     return results;
+  }
+
+  /**
+   * Parses the TX service origin JSON string into separate
+   * originName/originUrl fields for the queue service.
+   */
+  private parseOrigin(origin: string | null): {
+    originName?: string;
+    originUrl?: string;
+  } {
+    if (!origin) {
+      return {};
+    }
+    try {
+      const parsed: unknown = JSON.parse(origin);
+      if (typeof parsed === 'object' && parsed !== null) {
+        const obj = parsed as Record<string, unknown>;
+        return {
+          originName: typeof obj.name === 'string' ? obj.name : undefined,
+          originUrl: typeof obj.url === 'string' ? obj.url : undefined,
+        };
+      }
+      return {};
+    } catch {
+      return {};
+    }
   }
 }

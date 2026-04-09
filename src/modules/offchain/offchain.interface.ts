@@ -3,121 +3,109 @@ import type { Page } from '@/domain/entities/page.entity';
 import type { Delegate } from '@/modules/delegate/domain/entities/delegate.entity';
 import type { Message } from '@/modules/messages/domain/entities/message.entity';
 import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
+import type { ProposeTransactionDto } from '@/modules/transactions/domain/entities/propose-transaction.dto.entity';
 import type { Raw } from '@/validation/entities/raw.entity';
-import type { Address } from 'viem';
+import type { Address, Hex } from 'viem';
 
-export const IQueueServiceApi = Symbol('IQueueServiceApi');
+export const IOffchain = Symbol('IOffchain');
 
-export interface QueueProposeTransactionDto {
-  to: Address;
-  value: number;
-  data: string | null;
-  nonce: number;
-  operation: number;
-  safeTxGas: number;
-  baseGas: number;
-  gasPrice: number;
-  gasToken: Address | null;
-  refundReceiver: Address | null;
-  safeTxHash: string;
-  proposer: Address;
-  signature: string;
-  originName?: string;
-  originUrl?: string;
-}
-
-export interface IQueueServiceApi {
+export interface IOffchain {
   proposeTransaction(args: {
     chainId: string;
-    safe: Address;
-    data: QueueProposeTransactionDto;
+    safeAddress: Address;
+    proposeTransactionDto: ProposeTransactionDto;
   }): Promise<unknown>;
 
-  getMultisigTransaction(safeTxHash: string): Promise<Raw<MultisigTransaction>>;
+  getMultisigTransaction(args: {
+    chainId: string;
+    safeTxHash: string;
+  }): Promise<Raw<MultisigTransaction>>;
 
   getTransactionQueue(args: {
-    safes: Array<string>;
-    nonceOrder?: 'asc' | 'desc';
-    limit?: number;
-    offset?: number;
-  }): Promise<Raw<Page<MultisigTransaction>>>;
-
-  getMultisigTransactions(args: {
-    safes: Array<string>;
-    executed?: boolean;
+    chainId: string;
+    safeAddress: Address;
+    ordering?: string;
+    trusted?: boolean;
     limit?: number;
     offset?: number;
   }): Promise<Raw<Page<MultisigTransaction>>>;
 
   postConfirmation(args: {
+    chainId: string;
     safeTxHash: string;
-    signatures: Array<string>;
+    signature: string;
   }): Promise<unknown>;
 
   deleteTransaction(args: {
+    chainId: string;
     safeTxHash: string;
     signature: string;
   }): Promise<void>;
 
   getDelegates(args: {
-    chainId?: number;
-    safe?: Address;
+    chainId: string;
+    safeAddress?: Address;
     delegate?: Address;
     delegator?: Address;
+    label?: string;
     limit?: number;
     offset?: number;
   }): Promise<Raw<Page<Delegate>>>;
 
   postDelegate(args: {
+    chainId: string;
+    safeAddress: Address | null;
     delegate: Address;
     delegator: Address;
     signature: string;
-    chainId?: number;
-    safe?: Address;
-    label?: string;
+    label: string;
   }): Promise<void>;
 
   deleteDelegate(args: {
+    chainId: string;
     delegate: Address;
     delegator: Address;
+    safeAddress: Address | null;
     signature: string;
-    chainId?: number;
-    safe?: Address;
-  }): Promise<void>;
+  }): Promise<unknown>;
 
-  getMessageByHash(messageHash: string): Promise<Raw<Message>>;
+  getMessageByHash(args: {
+    chainId: string;
+    messageHash: string;
+  }): Promise<Raw<Message>>;
 
   getMessagesBySafe(args: {
+    chainId: string;
     safeAddress: Address;
-    chainId?: number;
     limit?: number;
     offset?: number;
   }): Promise<Raw<Page<Message>>>;
 
   postMessage(args: {
+    chainId: string;
     safeAddress: Address;
-    chainId: number;
     message: unknown;
-    signatures: Array<string>;
-    originName?: string;
-    originUrl?: string;
+    safeAppId: number | null;
+    signature: string;
+    origin: string | null;
   }): Promise<Raw<Message>>;
 
   postMessageSignature(args: {
+    chainId: string;
     messageHash: string;
-    signatures: Array<string>;
+    signature: Hex;
   }): Promise<unknown>;
 
   getTransactionMetadataBatch(args: {
     safeTxHashes: Array<string>;
-  }): Promise<Map<string, QueueMultisigTransaction>>;
+  }): Promise<Map<string, OffchainMultisigTransaction>>;
 }
 
 /**
  * Subset of MultisigTransaction fields that the queue service provides.
  * Used for merging metadata into TX-service-sourced executed transactions.
  */
-export interface QueueMultisigTransaction {
+export interface OffchainMultisigTransaction {
   safeTxHash: string;
   proposer: MultisigTransaction['proposer'];
   proposedByDelegate: MultisigTransaction['proposedByDelegate'];

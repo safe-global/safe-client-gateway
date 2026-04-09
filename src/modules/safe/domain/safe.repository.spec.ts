@@ -1,23 +1,22 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { SafeRepository } from '@/modules/safe/domain/safe.repository';
+import type { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
+import type { ITransactionApi } from '@/domain/interfaces/transaction-api.interface';
+import type { ILoggingService } from '@/logging/logging.interface';
+import type { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
+import type { TransactionVerifierHelper } from '@/modules/transactions/routes/helpers/transaction-verifier.helper';
+import type { IConfigurationService } from '@/config/configuration.service.interface';
+import type { IOffchain } from '@/modules/offchain/offchain.interface';
 import { faker } from '@faker-js/faker';
 import type { Address } from 'viem';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
-import type { IConfigurationService } from '@/config/configuration.service.interface';
-import type { IQueueServiceApi } from '@/datasources/queue-service-api/queue-service-api.interface';
-import type { QueueServiceRoutingHelper } from '@/datasources/queue-service-api/queue-service-routing.helper';
 import { SAFE_TRANSACTION_SERVICE_MAX_LIMIT } from '@/domain/common/constants';
-import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
-import type { ITransactionApi } from '@/domain/interfaces/transaction-api.interface';
-import type { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
-import type { ILoggingService } from '@/logging/logging.interface';
-import type { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
 import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
-import type { SafeV2 } from '@/modules/safe/domain/entities/safe.entity';
-import { SafeRepository } from '@/modules/safe/domain/safe.repository';
-import type { TransactionVerifierHelper } from '@/modules/transactions/routes/helpers/transaction-verifier.helper';
 import { rawify } from '@/validation/entities/raw.entity';
+import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
+import type { SafeV2 } from '@/modules/safe/domain/entities/safe.entity';
 
 const mockTransactionApiManager = {
   getApi: vi.fn(),
@@ -48,30 +47,21 @@ const mockConfigurationService = {
   getOrThrow: vi.fn(),
 } as MockedObject<IConfigurationService>;
 
-const mockQueueServiceApi = {
-  getMultisigTransaction: jest.fn(),
-  getTransactionQueue: jest.fn(),
-  getMultisigTransactions: jest.fn(),
-  proposeTransaction: jest.fn(),
-  postConfirmation: jest.fn(),
-  deleteTransaction: jest.fn(),
-  getDelegates: jest.fn(),
-  postDelegate: jest.fn(),
-  deleteDelegate: jest.fn(),
-  getMessageByHash: jest.fn(),
-  getMessagesBySafe: jest.fn(),
-  postMessage: jest.fn(),
-  postMessageSignature: jest.fn(),
-} as jest.MockedObjectDeep<IQueueServiceApi>;
-
-const mockQueueServiceRoutingHelper = {
-  isEnabled: false,
-  route: jest
-    .fn()
-    .mockImplementation((args: { whenDisabled: () => unknown }) =>
-      args.whenDisabled(),
-    ),
-} as jest.MockedObjectDeep<QueueServiceRoutingHelper>;
+const mockOffchainService = {
+  getMultisigTransaction: vi.fn(),
+  getTransactionQueue: vi.fn(),
+  proposeTransaction: vi.fn(),
+  postConfirmation: vi.fn(),
+  deleteTransaction: vi.fn(),
+  getDelegates: vi.fn(),
+  postDelegate: vi.fn(),
+  deleteDelegate: vi.fn(),
+  getMessageByHash: vi.fn(),
+  getMessagesBySafe: vi.fn(),
+  postMessage: vi.fn(),
+  postMessageSignature: vi.fn(),
+  getTransactionMetadataBatch: vi.fn(),
+} as MockedObject<IOffchain>;
 
 describe('SafeRepository', () => {
   let repository: SafeRepository;
@@ -93,8 +83,7 @@ describe('SafeRepository', () => {
       mockChainsRepository,
       mockTransactionVerifier,
       mockConfigurationService,
-      mockQueueServiceApi,
-      mockQueueServiceRoutingHelper,
+      mockOffchainService,
     );
   });
 
@@ -223,11 +212,11 @@ describe('SafeRepository', () => {
           .build(),
       );
 
-      for (const page of pages) {
+      pages.forEach((page) => {
         mockTransactionApi.getSafesByOwnerV2.mockResolvedValueOnce(
           rawify(page),
         );
-      }
+      });
 
       const result = await repository.getSafesByOwnerV2({
         chainId,
