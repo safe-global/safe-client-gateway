@@ -1,59 +1,53 @@
-// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import isEmpty from 'lodash/isEmpty';
-import type { Address } from 'viem';
-import { z } from 'zod';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { mergeTransactionMetadata } from '@/datasources/queue-service-api/mappers/metadata-merge.helper';
-import {
-  IQueueServiceApi,
-  type QueueMultisigTransaction,
-} from '@/datasources/queue-service-api/queue-service-api.interface';
-import { QueueServiceRoutingHelper } from '@/datasources/queue-service-api/queue-service-routing.helper';
-import { SAFE_TRANSACTION_SERVICE_MAX_LIMIT } from '@/domain/common/constants';
-import type { Page } from '@/domain/entities/page.entity';
-import { DataSourceError } from '@/domain/errors/data-source.error';
+import { Page } from '@/domain/entities/page.entity';
 import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
+import { CreationTransaction } from '@/modules/safe/domain/entities/creation-transaction.entity';
+import { ModuleTransaction } from '@/modules/safe/domain/entities/module-transaction.entity';
+import { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
+import { SafeList } from '@/modules/safe/domain/entities/safe-list.entity';
+import { Safe } from '@/modules/safe/domain/entities/safe.entity';
 import {
-  type ILoggingService,
-  LoggingService,
-} from '@/logging/logging.interface';
-import { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
-import type { CreationTransaction } from '@/modules/safe/domain/entities/creation-transaction.entity';
+  Transaction,
+  isMultisigTransaction,
+} from '@/modules/safe/domain/entities/transaction.entity';
 import {
-  type ModuleTransaction,
+  Transfer,
+  TransferPageSchema,
+  TransferSchema,
+} from '@/modules/safe/domain/entities/transfer.entity';
+import {
   ModuleTransactionPageSchema,
   ModuleTransactionSchema,
 } from '@/modules/safe/domain/entities/module-transaction.entity';
 import {
-  type MultisigTransaction,
   MultisigTransactionPageSchema,
   MultisigTransactionSchema,
 } from '@/modules/safe/domain/entities/multisig-transaction.entity';
-import type { Safe } from '@/modules/safe/domain/entities/safe.entity';
-import type { SafeList } from '@/modules/safe/domain/entities/safe-list.entity';
-import type { SafesByChainId } from '@/modules/safe/domain/entities/safes-by-chain-id.entity';
+import { SafeListSchema } from '@/modules/safe/domain/entities/schemas/safe-list.schema';
+import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
+import { TransactionTypePageSchema } from '@/modules/safe/domain/entities/schemas/transaction-type.schema';
+import { ProposeTransactionDto } from '@/modules/transactions/domain/entities/propose-transaction.dto.entity';
+import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
 import { CreationTransactionSchema } from '@/modules/safe/domain/entities/schemas/creation-transaction.schema';
 import {
-  SafePageV2Schema,
   SafeSchema,
+  SafePageV2Schema,
 } from '@/modules/safe/domain/entities/schemas/safe.schema';
-import { SafeListSchema } from '@/modules/safe/domain/entities/schemas/safe-list.schema';
-import { TransactionTypePageSchema } from '@/modules/safe/domain/entities/schemas/transaction-type.schema';
-import {
-  isMultisigTransaction,
-  type Transaction,
-} from '@/modules/safe/domain/entities/transaction.entity';
-import {
-  type Transfer,
-  TransferPageSchema,
-  TransferSchema,
-} from '@/modules/safe/domain/entities/transfer.entity';
-import type { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
-import type { AddConfirmationDto } from '@/modules/transactions/domain/entities/add-confirmation.dto.entity';
-import type { ProposeTransactionDto } from '@/modules/transactions/domain/entities/propose-transaction.dto.entity';
+import { SafesByChainId } from '@/modules/safe/domain/entities/safes-by-chain-id.entity';
+import { z } from 'zod';
 import { TransactionVerifierHelper } from '@/modules/transactions/routes/helpers/transaction-verifier.helper';
 import { PaginationData } from '@/routes/common/pagination/pagination.data';
+import { SAFE_TRANSACTION_SERVICE_MAX_LIMIT } from '@/domain/common/constants';
+import { DataSourceError } from '@/domain/errors/data-source.error';
+import {
+  IOffchain,
+  type OffchainMultisigTransaction,
+} from '@/modules/offchain/offchain.interface';
+import { mergeTransactionMetadata } from '@/modules/offchain/mappers/metadata-merge.helper';
+import type { Address } from 'viem';
+import { IConfigurationService } from '@/config/configuration.service.interface';
 
 @Injectable()
 export class SafeRepository implements ISafeRepository {
@@ -68,9 +62,8 @@ export class SafeRepository implements ISafeRepository {
     private readonly transactionVerifier: TransactionVerifierHelper,
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
-    @Inject(IQueueServiceApi)
-    private readonly queueServiceApi: IQueueServiceApi,
-    private readonly queueServiceRoutingHelper: QueueServiceRoutingHelper,
+    @Inject(IOffchain)
+    private readonly offchainService: IOffchain,
   ) {
     this.maxSequentialPages = this.configurationService.getOrThrow<number>(
       'safeConfig.safes.maxSequentialPages',
@@ -183,12 +176,8 @@ export class SafeRepository implements ISafeRepository {
   async addConfirmation(args: {
     chainId: string;
     safeTxHash: string;
-    addConfirmationDto: AddConfirmationDto;
+    addConfirmationDto: { signature: Address };
   }): Promise<void> {
-    const transactionService = await this.transactionApiManager.getApi(
-      args.chainId,
-    );
-
     const transaction = await this.getMultiSigTransaction({
       chainId: args.chainId,
       safeTransactionHash: args.safeTxHash,
@@ -206,13 +195,10 @@ export class SafeRepository implements ISafeRepository {
       signature: args.addConfirmationDto.signature,
     });
 
-    await this.queueServiceRoutingHelper.route({
-      whenEnabled: () =>
-        this.queueServiceApi.postConfirmation({
-          safeTxHash: args.safeTxHash,
-          signatures: [args.addConfirmationDto.signature],
-        }),
-      whenDisabled: () => transactionService.postConfirmation(args),
+    await this.offchainService.postConfirmation({
+      chainId: args.chainId,
+      safeTxHash: args.safeTxHash,
+      signature: args.addConfirmationDto.signature,
     });
   }
 
@@ -256,7 +242,7 @@ export class SafeRepository implements ISafeRepository {
     return transactionService.clearModuleTransactions(args.safeAddress);
   }
 
-  getTransactionQueue(args: {
+  async getTransactionQueue(args: {
     chainId: string;
     safe: Safe;
     limit?: number;
@@ -269,7 +255,7 @@ export class SafeRepository implements ISafeRepository {
     });
   }
 
-  getTransactionQueueByModified(args: {
+  async getTransactionQueueByModified(args: {
     chainId: string;
     safe: Safe;
     limit?: number;
@@ -289,25 +275,13 @@ export class SafeRepository implements ISafeRepository {
     offset?: number;
     trusted?: boolean;
   }): Promise<Page<MultisigTransaction>> {
-    const page = await this.queueServiceRoutingHelper.route({
-      whenEnabled: () =>
-        this.queueServiceApi.getTransactionQueue({
-          safes: [`${args.safe.address}:${args.chainId}`],
-          nonceOrder: args.ordering.includes('-') ? 'desc' : 'asc',
-          limit: args.limit,
-          offset: args.offset,
-        }),
-      whenDisabled: async () => {
-        const transactionService = await this.transactionApiManager.getApi(
-          args.chainId,
-        );
-        return transactionService.getMultisigTransactions({
-          ...args,
-          safeAddress: args.safe.address,
-          executed: false,
-          nonceGte: args.safe.nonce,
-        });
-      },
+    const page = await this.offchainService.getTransactionQueue({
+      chainId: args.chainId,
+      safeAddress: args.safe.address,
+      ordering: args.ordering,
+      trusted: args.trusted,
+      limit: args.limit,
+      offset: args.offset,
     });
     return MultisigTransactionPageSchema.parse(page);
   }
@@ -339,7 +313,7 @@ export class SafeRepository implements ISafeRepository {
     return CreationTransactionSchema.parse(createTransaction);
   }
 
-  getTransactionHistory(args: {
+  async getTransactionHistory(args: {
     chainId: string;
     safeAddress: Address;
     limit?: number;
@@ -365,7 +339,7 @@ export class SafeRepository implements ISafeRepository {
     });
     const parsed = TransactionTypePageSchema.parse(page);
 
-    if (this.queueServiceRoutingHelper.isEnabled && parsed.results.length > 0) {
+    if (parsed.results.length > 0) {
       return this.enrichHistoryWithQueueMetadata(parsed);
     }
 
@@ -399,40 +373,26 @@ export class SafeRepository implements ISafeRepository {
     chainId: string;
     safeTransactionHash: string;
   }): Promise<MultisigTransaction> {
-    if (this.queueServiceRoutingHelper.isEnabled) {
-      try {
-        const tx = await this.queueServiceApi.getMultisigTransaction(
+    try {
+      const tx = await this.offchainService.getMultisigTransaction({
+        chainId: args.chainId,
+        safeTxHash: args.safeTransactionHash,
+      });
+      return MultisigTransactionSchema.parse(tx);
+    } catch (error) {
+      // 404 means not in queue service (e.g. already executed),
+      // fall back to TX service
+      if (error instanceof DataSourceError && error.code === 404) {
+        const transactionService = await this.transactionApiManager.getApi(
+          args.chainId,
+        );
+        const tx = await transactionService.getMultisigTransaction(
           args.safeTransactionHash,
         );
         return MultisigTransactionSchema.parse(tx);
-      } catch (error) {
-        // 404 means not in queue service (e.g. already executed),
-        // fall back to TX service
-        if (error instanceof DataSourceError && error.code === 404) {
-          const transactionService = await this.transactionApiManager.getApi(
-            args.chainId,
-          );
-          const tx = await transactionService.getMultisigTransaction(
-            args.safeTransactionHash,
-          );
-          return MultisigTransactionSchema.parse(tx);
-        }
-        throw error;
       }
+      throw error;
     }
-    const transactionService = await this.transactionApiManager.getApi(
-      args.chainId,
-    );
-    const tx = await transactionService.getMultisigTransaction(
-      args.safeTransactionHash,
-    );
-    const parsed = MultisigTransactionSchema.parse(tx);
-
-    if (this.queueServiceRoutingHelper.isEnabled && parsed.isExecuted) {
-      return this.enrichSingleTxWithQueueMetadata(parsed);
-    }
-
-    return parsed;
   }
 
   async getMultiSigTransactionWithNoCache(args: {
@@ -473,13 +433,10 @@ export class SafeRepository implements ISafeRepository {
     );
     const { safe } = MultisigTransactionSchema.parse(transaction);
 
-    await this.queueServiceRoutingHelper.route({
-      whenEnabled: () =>
-        this.queueServiceApi.deleteTransaction({
-          safeTxHash: args.safeTxHash,
-          signature: args.signature,
-        }),
-      whenDisabled: () => transactionService.deleteTransaction(args),
+    await this.offchainService.deleteTransaction({
+      chainId: args.chainId,
+      safeTxHash: args.safeTxHash,
+      signature: args.signature,
     });
 
     // Ensure transaction is removed from cache in case event is not received
@@ -698,7 +655,9 @@ export class SafeRepository implements ISafeRepository {
     return result;
   }
 
-  getAllSafesByOwner(args: { ownerAddress: Address }): Promise<SafesByChainId> {
+  async getAllSafesByOwner(args: {
+    ownerAddress: Address;
+  }): Promise<SafesByChainId> {
     return this.getAllSafesByOwnerForChains((chainId) =>
       this.getSafesByOwner({
         chainId,
@@ -707,7 +666,7 @@ export class SafeRepository implements ISafeRepository {
     );
   }
 
-  getAllSafesByOwnerV2(args: {
+  async getAllSafesByOwnerV2(args: {
     ownerAddress: Address;
   }): Promise<SafesByChainId> {
     return this.getAllSafesByOwnerForChains((chainId) =>
@@ -764,50 +723,10 @@ export class SafeRepository implements ISafeRepository {
       transaction,
     });
 
-    return this.queueServiceRoutingHelper.route({
-      whenEnabled: () => {
-        const data = args.proposeTransactionDto;
-        let originName: string | undefined;
-        let originUrl: string | undefined;
-        if (data.origin) {
-          try {
-            const parsed: { name?: string; url?: string } = JSON.parse(
-              data.origin,
-            );
-            originName = parsed.name;
-            originUrl = parsed.url;
-          } catch {
-            // Ignore malformed origin JSON
-          }
-        }
-
-        return this.queueServiceApi.proposeTransaction({
-          chainId: args.chainId,
-          safe: args.safeAddress,
-          data: {
-            to: data.to,
-            value: Number(data.value),
-            data: data.data,
-            nonce: Number(data.nonce),
-            operation: data.operation,
-            safeTxGas: Number(data.safeTxGas),
-            baseGas: Number(data.baseGas),
-            gasPrice: Number(data.gasPrice),
-            gasToken: data.gasToken,
-            refundReceiver: data.refundReceiver,
-            safeTxHash: data.safeTxHash,
-            proposer: data.sender,
-            signature: data.signature ?? '',
-            originName,
-            originUrl,
-          },
-        });
-      },
-      whenDisabled: () =>
-        transactionService.postMultisigTransaction({
-          address: args.safeAddress,
-          data: args.proposeTransactionDto,
-        }),
+    return this.offchainService.proposeTransaction({
+      chainId: args.chainId,
+      safeAddress: args.safeAddress,
+      proposeTransactionDto: args.proposeTransactionDto,
     });
   }
 
@@ -865,9 +784,9 @@ export class SafeRepository implements ISafeRepository {
 
     const hashes = multisigTxs.map((tx) => tx.safeTxHash);
 
-    let metadata: Map<string, QueueMultisigTransaction>;
+    let metadata: Map<string, OffchainMultisigTransaction>;
     try {
-      metadata = await this.queueServiceApi.getTransactionMetadataBatch({
+      metadata = await this.offchainService.getTransactionMetadataBatch({
         safeTxHashes: hashes,
       });
     } catch (error) {
@@ -887,25 +806,5 @@ export class SafeRepository implements ISafeRepository {
         );
       }),
     };
-  }
-
-  /**
-   * Enriches a single executed MultisigTransaction with metadata from the
-   * queue service. Returns the original transaction on failure.
-   */
-  private async enrichSingleTxWithQueueMetadata(
-    tx: MultisigTransaction,
-  ): Promise<MultisigTransaction> {
-    try {
-      const metadata = await this.queueServiceApi.getTransactionMetadataBatch({
-        safeTxHashes: [tx.safeTxHash],
-      });
-      return mergeTransactionMetadata(tx, metadata.get(tx.safeTxHash) ?? null);
-    } catch (error) {
-      this.loggingService.warn(
-        `Failed to fetch queue service metadata for ${tx.safeTxHash}: ${error}`,
-      );
-      return tx;
-    }
   }
 }

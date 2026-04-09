@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import type { QueueMessage } from '@/datasources/queue-service-api/entities/queue-message.entity';
-import type { QueueMessageConfirmation } from '@/datasources/queue-service-api/entities/queue-message.entity';
+import type { OffchainMessage } from '@/modules/offchain/entities/message.entity';
+import type { OffchainMessageConfirmation } from '@/modules/offchain/entities/message.entity';
 import type { MessageConfirmation } from '@/modules/messages/domain/entities/message-confirmation.entity';
 import type { Message } from '@/modules/messages/domain/entities/message.entity';
 
 function mapMessageConfirmation(
-  confirmation: QueueMessageConfirmation,
+  confirmation: OffchainMessageConfirmation,
 ): MessageConfirmation {
   return {
     created: confirmation.created,
@@ -19,7 +19,7 @@ function mapMessageConfirmation(
 /**
  * Maps a queue service Message to the CGW Message type.
  */
-export function mapQueueToMessage(queue: QueueMessage): Message {
+export function mapOffchainToMessage(queue: OffchainMessage): Message {
   return {
     created: queue.created,
     modified: queue.modified,

@@ -1,21 +1,19 @@
-// SPDX-License-Identifier: FSL-1.1-MIT
+import { SafeRepository } from '@/modules/safe/domain/safe.repository';
+import type { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
+import type { ITransactionApi } from '@/domain/interfaces/transaction-api.interface';
+import type { ILoggingService } from '@/logging/logging.interface';
+import type { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
+import type { TransactionVerifierHelper } from '@/modules/transactions/routes/helpers/transaction-verifier.helper';
+import type { IConfigurationService } from '@/config/configuration.service.interface';
+import type { IOffchain } from '@/modules/offchain/offchain.interface';
 import { faker } from '@faker-js/faker';
 import type { Address } from 'viem';
 import { getAddress } from 'viem';
-import type { IConfigurationService } from '@/config/configuration.service.interface';
-import type { IQueueServiceApi } from '@/datasources/queue-service-api/queue-service-api.interface';
-import type { QueueServiceRoutingHelper } from '@/datasources/queue-service-api/queue-service-routing.helper';
 import { SAFE_TRANSACTION_SERVICE_MAX_LIMIT } from '@/domain/common/constants';
-import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
-import type { ITransactionApi } from '@/domain/interfaces/transaction-api.interface';
-import type { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
-import type { ILoggingService } from '@/logging/logging.interface';
-import type { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
 import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
-import type { SafeV2 } from '@/modules/safe/domain/entities/safe.entity';
-import { SafeRepository } from '@/modules/safe/domain/safe.repository';
-import type { TransactionVerifierHelper } from '@/modules/transactions/routes/helpers/transaction-verifier.helper';
 import { rawify } from '@/validation/entities/raw.entity';
+import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
+import type { SafeV2 } from '@/modules/safe/domain/entities/safe.entity';
 
 const mockTransactionApiManager = {
   getApi: jest.fn(),
@@ -46,10 +44,9 @@ const mockConfigurationService = {
   getOrThrow: jest.fn(),
 } as jest.MockedObjectDeep<IConfigurationService>;
 
-const mockQueueServiceApi = {
+const mockOffchainService = {
   getMultisigTransaction: jest.fn(),
   getTransactionQueue: jest.fn(),
-  getMultisigTransactions: jest.fn(),
   proposeTransaction: jest.fn(),
   postConfirmation: jest.fn(),
   deleteTransaction: jest.fn(),
@@ -60,16 +57,8 @@ const mockQueueServiceApi = {
   getMessagesBySafe: jest.fn(),
   postMessage: jest.fn(),
   postMessageSignature: jest.fn(),
-} as jest.MockedObjectDeep<IQueueServiceApi>;
-
-const mockQueueServiceRoutingHelper = {
-  isEnabled: false,
-  route: jest
-    .fn()
-    .mockImplementation((args: { whenDisabled: () => unknown }) =>
-      args.whenDisabled(),
-    ),
-} as jest.MockedObjectDeep<QueueServiceRoutingHelper>;
+  getTransactionMetadataBatch: jest.fn(),
+} as jest.MockedObjectDeep<IOffchain>;
 
 describe('SafeRepository', () => {
   let repository: SafeRepository;
@@ -91,8 +80,7 @@ describe('SafeRepository', () => {
       mockChainsRepository,
       mockTransactionVerifier,
       mockConfigurationService,
-      mockQueueServiceApi,
-      mockQueueServiceRoutingHelper,
+      mockOffchainService,
     );
   });
 
@@ -221,11 +209,11 @@ describe('SafeRepository', () => {
           .build(),
       );
 
-      for (const page of pages) {
+      pages.forEach((page) => {
         mockTransactionApi.getSafesByOwnerV2.mockResolvedValueOnce(
           rawify(page),
         );
-      }
+      });
 
       const result = await repository.getSafesByOwnerV2({
         chainId,
