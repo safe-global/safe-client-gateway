@@ -199,7 +199,14 @@ export class SafeRepository implements ISafeRepository {
       signature: args.addConfirmationDto.signature,
     });
 
-    await transactionService.postConfirmation(args);
+    await this.queueServiceRoutingHelper.route({
+      whenEnabled: () =>
+        this.queueServiceApi.postConfirmation({
+          safeTxHash: args.safeTxHash,
+          signatures: [args.addConfirmationDto.signature],
+        }),
+      whenDisabled: () => transactionService.postConfirmation(args),
+    });
   }
 
   async getModuleTransaction(args: {
@@ -446,7 +453,15 @@ export class SafeRepository implements ISafeRepository {
       args.safeTxHash,
     );
     const { safe } = MultisigTransactionSchema.parse(transaction);
-    await transactionService.deleteTransaction(args);
+
+    await this.queueServiceRoutingHelper.route({
+      whenEnabled: () =>
+        this.queueServiceApi.deleteTransaction({
+          safeTxHash: args.safeTxHash,
+          signature: args.signature,
+        }),
+      whenDisabled: () => transactionService.deleteTransaction(args),
+    });
 
     // Ensure transaction is removed from cache in case event is not received
     Promise.all([
@@ -730,9 +745,50 @@ export class SafeRepository implements ISafeRepository {
       transaction,
     });
 
-    return transactionService.postMultisigTransaction({
-      address: args.safeAddress,
-      data: args.proposeTransactionDto,
+    return this.queueServiceRoutingHelper.route({
+      whenEnabled: () => {
+        const data = args.proposeTransactionDto;
+        let originName: string | undefined;
+        let originUrl: string | undefined;
+        if (data.origin) {
+          try {
+            const parsed: { name?: string; url?: string } = JSON.parse(
+              data.origin,
+            );
+            originName = parsed.name;
+            originUrl = parsed.url;
+          } catch {
+            // Ignore malformed origin JSON
+          }
+        }
+
+        return this.queueServiceApi.proposeTransaction({
+          chainId: args.chainId,
+          safe: args.safeAddress,
+          data: {
+            to: data.to,
+            value: Number(data.value),
+            data: data.data,
+            nonce: Number(data.nonce),
+            operation: data.operation,
+            safeTxGas: Number(data.safeTxGas),
+            baseGas: Number(data.baseGas),
+            gasPrice: Number(data.gasPrice),
+            gasToken: data.gasToken,
+            refundReceiver: data.refundReceiver,
+            safeTxHash: data.safeTxHash,
+            proposer: data.sender,
+            signature: data.signature ?? '',
+            originName,
+            originUrl,
+          },
+        });
+      },
+      whenDisabled: () =>
+        transactionService.postMultisigTransaction({
+          address: args.safeAddress,
+          data: args.proposeTransactionDto,
+        }),
     });
   }
 
