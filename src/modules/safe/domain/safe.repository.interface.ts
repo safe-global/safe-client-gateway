@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Page } from '@/domain/entities/page.entity';
 import { CreationTransaction } from '@/modules/safe/domain/entities/creation-transaction.entity';
 import { ModuleTransaction } from '@/modules/safe/domain/entities/module-transaction.entity';
