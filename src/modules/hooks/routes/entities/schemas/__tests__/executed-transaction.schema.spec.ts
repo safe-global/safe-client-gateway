@@ -140,4 +140,36 @@ describe('ExecutedTransactionEventSchema', () => {
 
     expect(result.success && result.data.data).toBe(undefined);
   });
+
+  it.each([true, false])(
+    'should coerce boolean failed=%s to string (queue service format)',
+    (booleanValue) => {
+      const executedTransactionEvent =
+        executedTransactionEventBuilder().build();
+      // Queue service sends boolean `failed` instead of string
+      // @ts-expect-error - testing runtime coercion of boolean to string
+      executedTransactionEvent.failed = booleanValue;
+
+      const result = ExecutedTransactionEventSchema.safeParse(
+        executedTransactionEvent,
+      );
+
+      expect(result.success && result.data.failed).toBe(String(booleanValue));
+    },
+  );
+
+  it.each(['true', 'false'] as const)(
+    'should accept string failed="%s" (TX service format)',
+    (stringValue) => {
+      const executedTransactionEvent = executedTransactionEventBuilder()
+        .with('failed', stringValue)
+        .build();
+
+      const result = ExecutedTransactionEventSchema.safeParse(
+        executedTransactionEvent,
+      );
+
+      expect(result.success && result.data.failed).toBe(stringValue);
+    },
+  );
 });

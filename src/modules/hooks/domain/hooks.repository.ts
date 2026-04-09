@@ -11,6 +11,15 @@ import { EventCacheHelper } from '@/modules/hooks/domain/helpers/event-cache.hel
 import { ConfigEventType } from '@/modules/hooks/routes/entities/event-type.entity';
 import { IPushNotificationService } from '@/modules/notifications/domain/push/push-notification.service.interface';
 
+/**
+ * Consumes AMQP events from the shared RabbitMQ exchange. Events may
+ * originate from either the Transaction Service or the Queue Service
+ * (both publish to the same exchange with identical payload shapes).
+ *
+ * All event handlers are idempotent: receiving the same logical event
+ * twice (e.g. from both services) results in redundant cache
+ * invalidations that are safe to replay.
+ */
 @Injectable()
 export class HooksRepository implements IHooksRepository, OnModuleInit {
   private readonly queueName: string;
