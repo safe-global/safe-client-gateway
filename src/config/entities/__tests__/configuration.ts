@@ -370,6 +370,9 @@ export default (): ReturnType<typeof configuration> => ({
       },
     },
   },
+  queueService: {
+    baseUri: faker.internet.url({ appendSlash: false }),
+  },
   safeConfig: {
     baseUri: faker.internet.url({ appendSlash: false }),
     chains: {

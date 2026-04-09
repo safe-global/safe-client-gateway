@@ -542,6 +542,9 @@ export default () => ({
       },
     },
   },
+  queueService: {
+    baseUri: process.env.QUEUE_SERVICE_BASE_URI,
+  },
   safeConfig: {
     baseUri:
       process.env.SAFE_CONFIG_BASE_URI || 'https://safe-config.safe.global/',
