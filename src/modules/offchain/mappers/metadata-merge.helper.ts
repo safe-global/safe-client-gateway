@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
-import type { QueueMultisigTransaction } from '@/datasources/queue-service-api/queue-service-api.interface';
+import type { OffchainMultisigTransaction } from '@/modules/offchain/offchain.interface';
 
 /**
  * Merges metadata from the queue service into a TX service
@@ -16,7 +16,7 @@ import type { QueueMultisigTransaction } from '@/datasources/queue-service-api/q
  */
 export function mergeTransactionMetadata(
   txServiceTx: MultisigTransaction,
-  queueServiceTx: QueueMultisigTransaction | null,
+  queueServiceTx: OffchainMultisigTransaction | null,
 ): MultisigTransaction {
   if (!queueServiceTx) return txServiceTx;
 

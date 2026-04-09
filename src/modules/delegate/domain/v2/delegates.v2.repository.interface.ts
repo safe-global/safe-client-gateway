@@ -1,5 +1,4 @@
-import { QueueServiceApiModule } from '@/datasources/queue-service-api/queue-service-api.module';
-import { QueueServiceRoutingModule } from '@/datasources/queue-service-api/queue-service-routing.module';
+import { OffchainModule } from '@/modules/offchain/offchain.module';
 import { Delegate } from '@/modules/delegate/domain/entities/delegate.entity';
 import { DelegatesV2Repository } from '@/modules/delegate/domain/v2/delegates.v2.repository';
 import { Page } from '@/domain/entities/page.entity';
@@ -44,11 +43,7 @@ export interface IDelegatesV2Repository {
 }
 
 @Module({
-  imports: [
-    TransactionApiManagerModule,
-    QueueServiceApiModule,
-    QueueServiceRoutingModule,
-  ],
+  imports: [TransactionApiManagerModule, OffchainModule],
   providers: [
     {
       provide: IDelegatesV2Repository,

@@ -16,7 +16,7 @@ import { TransactionApiManagerModule } from '@/domain/interfaces/transaction-api
 import { TransactionVerifierHelper } from '@/modules/transactions/routes/helpers/transaction-verifier.helper';
 import { DelegatesV2RepositoryModule } from '@/modules/delegate/domain/v2/delegates.v2.repository.interface';
 import { ContractsModule } from '@/modules/contracts/contracts.module';
-import { QueueServiceApiModule } from '@/datasources/queue-service-api/queue-service-api.module';
+import { OffchainModule } from '@/modules/offchain/offchain.module';
 import type { Address } from 'viem';
 
 export const ISafeRepository = Symbol('ISafeRepository');
@@ -230,7 +230,7 @@ export interface ISafeRepository {
     TransactionApiManagerModule,
     DelegatesV2RepositoryModule,
     ContractsModule,
-    QueueServiceApiModule,
+    OffchainModule,
   ],
   providers: [
     {

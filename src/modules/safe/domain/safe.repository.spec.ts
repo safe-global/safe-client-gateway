@@ -5,8 +5,7 @@ import type { ILoggingService } from '@/logging/logging.interface';
 import type { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
 import type { TransactionVerifierHelper } from '@/modules/transactions/routes/helpers/transaction-verifier.helper';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
-import type { IQueueServiceApi } from '@/datasources/queue-service-api/queue-service-api.interface';
-import type { QueueServiceRoutingHelper } from '@/datasources/queue-service-api/queue-service-routing.helper';
+import type { IOffchain } from '@/modules/offchain/offchain.interface';
 import { faker } from '@faker-js/faker';
 import type { Address } from 'viem';
 import { getAddress } from 'viem';
@@ -45,10 +44,9 @@ const mockConfigurationService = {
   getOrThrow: jest.fn(),
 } as jest.MockedObjectDeep<IConfigurationService>;
 
-const mockQueueServiceApi = {
+const mockOffchainService = {
   getMultisigTransaction: jest.fn(),
   getTransactionQueue: jest.fn(),
-  getMultisigTransactions: jest.fn(),
   proposeTransaction: jest.fn(),
   postConfirmation: jest.fn(),
   deleteTransaction: jest.fn(),
@@ -59,16 +57,8 @@ const mockQueueServiceApi = {
   getMessagesBySafe: jest.fn(),
   postMessage: jest.fn(),
   postMessageSignature: jest.fn(),
-} as jest.MockedObjectDeep<IQueueServiceApi>;
-
-const mockQueueServiceRoutingHelper = {
-  isEnabled: false,
-  route: jest
-    .fn()
-    .mockImplementation((args: { whenDisabled: () => unknown }) =>
-      args.whenDisabled(),
-    ),
-} as jest.MockedObjectDeep<QueueServiceRoutingHelper>;
+  getTransactionMetadataBatch: jest.fn(),
+} as jest.MockedObjectDeep<IOffchain>;
 
 describe('SafeRepository', () => {
   let repository: SafeRepository;
@@ -90,8 +80,7 @@ describe('SafeRepository', () => {
       mockChainsRepository,
       mockTransactionVerifier,
       mockConfigurationService,
-      mockQueueServiceApi,
-      mockQueueServiceRoutingHelper,
+      mockOffchainService,
     );
   });
 
