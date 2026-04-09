@@ -42,7 +42,9 @@ export class NotificationSubscription implements z.infer<
   id!: number;
 
   @ManyToOne(
-    () => require('@/modules/notifications/datasources/entities/notification-devices.entity.db').NotificationDevice,
+     
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      () => require('@/modules/notifications/datasources/entities/notification-devices.entity.db').NotificationDevice,
     (device: NotificationDevice) => device.id,
     { onDelete: 'CASCADE' },
   )
@@ -98,7 +100,9 @@ export class NotificationSubscription implements z.infer<
   updated_at!: Date;
 
   @OneToMany(
-    () => require('@/modules/notifications/datasources/entities/notification-subscription-notification-type.entity.db').NotificationSubscriptionNotificationType,
+     
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      () => require('@/modules/notifications/datasources/entities/notification-subscription-notification-type.entity.db').NotificationSubscriptionNotificationType,
     (nsnt: NotificationSubscriptionNotificationType) => nsnt.id,
   )
   notification_subscription_notification_type!: Array<NotificationSubscriptionNotificationType>;

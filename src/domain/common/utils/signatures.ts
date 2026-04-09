@@ -4,7 +4,13 @@ import {
   HEX_PREFIX_LENGTH,
 } from '@/routes/common/constants';
 import { isHexBytes } from '@/validation/entities/schemas/hexbytes.schema';
-import { isSignatureLike } from '@/validation/entities/schemas/signature.schema';
+import {
+  isSignatureLike,
+  R_OR_S_HEX_LENGTH,
+  V_HEX_LENGTH,
+  SIGNATURE_HEX_LENGTH,
+  DYNAMIC_PART_LENGTH_FIELD_HEX_LENGTH,
+} from '@/validation/entities/schemas/signature.schema';
 import type { Address, Hex } from 'viem';
 
 export {
@@ -12,7 +18,7 @@ export {
   V_HEX_LENGTH,
   SIGNATURE_HEX_LENGTH,
   DYNAMIC_PART_LENGTH_FIELD_HEX_LENGTH,
-} from '@/validation/entities/schemas/signature.schema';
+};
 
 /**
  * Parses a (concatenated) signature string into individual signature types

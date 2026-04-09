@@ -31,7 +31,8 @@ export class Member implements DomainMember {
   id!: number;
 
   @ManyToOne(
-    () => require('@/modules/users/datasources/entities/users.entity.db').User,
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+      () => require('@/modules/users/datasources/entities/users.entity.db').User,
     (user: User) => user.id,
     { cascade: true, nullable: false },
   )
@@ -42,7 +43,8 @@ export class Member implements DomainMember {
   user!: User;
 
   @ManyToOne(
-    () => require('@/modules/spaces/datasources/entities/space.entity.db').Space,
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+      () => require('@/modules/spaces/datasources/entities/space.entity.db').Space,
     (space: Space) => space.id,
     { cascade: true, nullable: false },
   )

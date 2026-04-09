@@ -53,7 +53,9 @@ export class NotificationDevice implements z.infer<
   updated_at!: Date;
 
   @OneToMany(
-    () => require('@/modules/notifications/datasources/entities/notification-subscription.entity.db').NotificationSubscription,
+     
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      () => require('@/modules/notifications/datasources/entities/notification-subscription.entity.db').NotificationSubscription,
     (subscription: NotificationSubscription) => subscription.id,
     { onDelete: 'CASCADE' },
   )

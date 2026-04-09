@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { ConsumeMessage } from 'amqplib';
+import { type ConsumeMessage } from 'amqplib';
 
 export const IQueuesRepository = Symbol('IQueuesRepository');
 

@@ -7,8 +7,8 @@ import type { SafeList } from '@/modules/safe/domain/entities/safe-list.entity';
 import type { Safe } from '@/modules/safe/domain/entities/safe.entity';
 import type { Transaction } from '@/modules/safe/domain/entities/transaction.entity';
 import type { Transfer } from '@/modules/safe/domain/entities/transfer.entity';
-import { AddConfirmationDto } from '@/modules/transactions/domain/entities/add-confirmation.dto.entity';
-import { ProposeTransactionDto } from '@/modules/transactions/domain/entities/propose-transaction.dto.entity';
+import { type AddConfirmationDto } from '@/modules/transactions/domain/entities/add-confirmation.dto.entity';
+import { type ProposeTransactionDto } from '@/modules/transactions/domain/entities/propose-transaction.dto.entity';
 import type { SafesByChainId } from '@/modules/safe/domain/entities/safes-by-chain-id.entity';
 import type { Address } from 'viem';
 

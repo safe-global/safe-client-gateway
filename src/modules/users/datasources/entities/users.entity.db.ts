@@ -40,7 +40,8 @@ export class User implements DomainUser {
   extUserId!: string | null;
 
   @OneToMany(
-    () => require('@/modules/wallets/datasources/entities/wallets.entity.db').Wallet,
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+      () => require('@/modules/wallets/datasources/entities/wallets.entity.db').Wallet,
     (wallet: Wallet) => wallet.id,
     { onDelete: 'CASCADE' },
   )
@@ -63,7 +64,8 @@ export class User implements DomainUser {
   updatedAt!: Date;
 
   @OneToMany(
-    () => require('@/modules/users/datasources/entities/member.entity.db').Member,
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+      () => require('@/modules/users/datasources/entities/member.entity.db').Member,
     (member: Member) => member.user,
   )
   members!: Array<Member>;
