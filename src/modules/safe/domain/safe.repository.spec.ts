@@ -3,6 +3,8 @@ import { faker } from '@faker-js/faker';
 import type { Address } from 'viem';
 import { getAddress } from 'viem';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
+import type { IQueueServiceApi } from '@/datasources/queue-service-api/queue-service-api.interface';
+import type { QueueServiceRoutingHelper } from '@/datasources/queue-service-api/queue-service-routing.helper';
 import { SAFE_TRANSACTION_SERVICE_MAX_LIMIT } from '@/domain/common/constants';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import type { ITransactionApi } from '@/domain/interfaces/transaction-api.interface';
@@ -44,6 +46,31 @@ const mockConfigurationService = {
   getOrThrow: jest.fn(),
 } as jest.MockedObjectDeep<IConfigurationService>;
 
+const mockQueueServiceApi = {
+  getMultisigTransaction: jest.fn(),
+  getTransactionQueue: jest.fn(),
+  getMultisigTransactions: jest.fn(),
+  proposeTransaction: jest.fn(),
+  postConfirmation: jest.fn(),
+  deleteTransaction: jest.fn(),
+  getDelegates: jest.fn(),
+  postDelegate: jest.fn(),
+  deleteDelegate: jest.fn(),
+  getMessageByHash: jest.fn(),
+  getMessagesBySafe: jest.fn(),
+  postMessage: jest.fn(),
+  postMessageSignature: jest.fn(),
+} as jest.MockedObjectDeep<IQueueServiceApi>;
+
+const mockQueueServiceRoutingHelper = {
+  isEnabled: false,
+  route: jest
+    .fn()
+    .mockImplementation((args: { whenDisabled: () => unknown }) =>
+      args.whenDisabled(),
+    ),
+} as jest.MockedObjectDeep<QueueServiceRoutingHelper>;
+
 describe('SafeRepository', () => {
   let repository: SafeRepository;
   const maxSequentialPages = 5;
@@ -64,6 +91,8 @@ describe('SafeRepository', () => {
       mockChainsRepository,
       mockTransactionVerifier,
       mockConfigurationService,
+      mockQueueServiceApi,
+      mockQueueServiceRoutingHelper,
     );
   });
 
