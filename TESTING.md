@@ -1,3 +1,7 @@
+<!--
+  SPDX-License-Identifier: FSL-1.1-MIT
+ -->
+
 # Testing Guide
 
 This document describes the testing strategy and organization for the Safe Client Gateway.
@@ -32,28 +36,28 @@ This document describes the testing strategy and organization for the Safe Clien
 
 ```bash
 # Run all unit tests (default config from package.json)
-yarn test
+bun run test
 
 # Run unit tests explicitly (uses test/jest-unit.json config)
-yarn test:unit
+bun run test:unit
 
 # Run unit tests with coverage
-yarn test:unit:cov
+bun run test:unit:cov
 
 # Run integration tests (uses test/jest-integration.json config)
-yarn test:integration
+bun run test:integration
 
 # Run integration tests with coverage
-yarn test:integration:cov
+bun run test:integration:cov
 
 # Run all tests (unit + integration)
-yarn test:all
+bun run test:all
 
 # Run in watch mode
-yarn test:watch
+bun run test:watch
 ```
 
-**Note**: Both `yarn test` and `yarn test:unit` run the same unit tests, but `yarn test` uses the default Jest configuration from `package.json` while `yarn test:unit` explicitly uses `test/jest-unit.json`.
+**Note**: Both `bun run test` and `bun run test:unit` run the same unit tests, but `bun run test` uses the default Jest configuration from `package.json` while `bun run test:unit` explicitly uses `test/jest-unit.json`.
 
 ### CI/CD
 
@@ -126,10 +130,10 @@ export REDIS_HOST=localhost
 export REDIS_PORT=6379
 
 # Run integration tests
-yarn test:integration
+bun run test:integration
 ```
 
-**Note**: Unit tests (`yarn test` or `yarn test:unit`) do NOT require these services and can run without Docker.
+**Note**: Unit tests (`bun run test` or `bun run test:unit`) do NOT require these services and can run without Docker.
 
 ## Writing Tests
 
@@ -174,23 +178,23 @@ Keep integration tests co-located with the code they test to maintain feature or
 
 ```bash
 # Debug unit tests
-yarn test:debug
+bun run test:debug
 
 # Debug specific test file
-yarn test:debug path/to/file.spec.ts
+bun run test:debug path/to/file.spec.ts
 
 # Run tests with verbose output
-yarn test --verbose
+bun run test --verbose
 ```
 
 ## Coverage
 
 ```bash
 # Generate coverage report for unit tests
-yarn test:unit:cov
+bun run test:unit:cov
 
 # Generate coverage report for integration tests
-yarn test:integration:cov
+bun run test:integration:cov
 
 # View coverage report
 open coverage/lcov-report/index.html
