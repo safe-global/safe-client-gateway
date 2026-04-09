@@ -19,19 +19,24 @@ It provides UI-oriented mappings and data structures for easier integration with
 
 ## Requirements
 
-- Bun v1.3.11+ – https://bun.sh/
+- Node.js v24.11.0 'Krypton' LTS ([Node.js Release Schedule](https://nodejs.org/en/about/previous-releases)) – https://nodejs.org/en/
 - Docker Compose – https://docs.docker.com/compose/
 
 ## Installation
 
+**Optional:** If you have NVM installed, you can run `nvm use` in the root folder of the project to use the recommended
+Node version set for this project.
+
+We use Yarn as the package manager for this project. Yarn is bundled with the project so to use it run:
+
 ```bash
-bun install
+corepack enable && yarn install
 ```
 
 The project requires some ABIs that are generated after install. In order to manually generate them, run:
 
 ```bash
-bun generate-abis
+yarn generate-abis
 ```
 
 ## Setup your env
@@ -90,19 +95,19 @@ Please review the required API keys in the `.env` file and ensure you have creat
 
 ```bash
 # Generate .env file from required variables
-bun run env:generate
+yarn env:generate
 
 # Generate .env file (force overwrite existing)
-bun run env:generate:force
+yarn env:generate:force
 
 # Generate or update .env file (creates if missing, updates if exists)
-bun run env:generate:update
+yarn env:generate:update
 
 # Validate that all env vars are documented (verbose)
-bun run env:validate
+yarn env:validate
 
 # Validate silently (Only exit if there is an error)
-bun run env:validate:silent
+yarn env:validate:silent
 ```
 
 ## Running the app
@@ -128,13 +133,13 @@ To generate a key, go to:
 
 ```bash
 # development
-bun run start
+yarn run start
 
 # watch mode
-bun run start:dev
+yarn run start:dev
 
 # production mode
-bun run start:prod
+yarn run start:prod
 ```
 
 ## Test
@@ -156,25 +161,25 @@ With the right permissions set on the `server.key` file we can now start the `db
 docker compose up -d db-test
 
 # unit tests
-bun run test
+yarn run test
 
 # e2e tests
-docker-compose up -d redis rabbitmq && bun run test:e2e
+docker-compose up -d redis rabbitmq && yarn run test:e2e
 
 # test coverage
-bun run test:cov
+yarn run test:cov
 ```
 
 ## Linter and Style Guide
 
 We use [ESLint](https://eslint.org/) as a linter and [Prettier](https://prettier.io/) as a code formatter.
-You can run `bun run lint` to execute ESLint and `bun run format` to execute Prettier.
+You can run `yarn run lint` to execute ESLint and `yarn run format` to execute Prettier.
 
 These checks can be automatically executed using Git hooks. If you wish to install the provided git hooks:
 
 ```shell
-bun install
-bun run husky install
+yarn install
+yarn husky install
 ```
 
 ## Database Migrations

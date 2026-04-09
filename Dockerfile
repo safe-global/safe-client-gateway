@@ -1,26 +1,25 @@
 #
 # BUILD CONTAINER
 #
-ARG BUN_VERSION=1.3.11
-FROM oven/bun:${BUN_VERSION}-alpine AS base
+FROM node:24.11.0-alpine3.21 AS base
 ENV NODE_ENV=production
 WORKDIR /app
-COPY --chown=bun:bun package.json bun.lock tsconfig*.json ./
-COPY --chown=bun:bun scripts/generate-abis.js ./scripts/generate-abis.js
-COPY --chown=bun:bun assets ./assets
-COPY --chown=bun:bun migrations ./migrations
-COPY --chown=bun:bun src ./src
-RUN bun install --frozen-lockfile \
-     && bun run build \
+COPY --chown=node:node .yarn/releases ./.yarn/releases
+COPY --chown=node:node package.json yarn.lock .yarnrc.yml tsconfig*.json ./
+COPY --chown=node:node scripts/generate-abis.js ./scripts/generate-abis.js
+COPY --chown=node:node assets ./assets
+COPY --chown=node:node migrations ./migrations
+COPY --chown=node:node src ./src
+RUN yarn install --immutable \
+     && yarn run build \
      && rm -rf ./node_modules \
-     && bun install --frozen-lockfile --production
+     && yarn workspaces focus --production
 
 #
 # PRODUCTION CONTAINER
 #
-FROM oven/bun:${BUN_VERSION}-alpine AS production
-WORKDIR /app
-USER bun
+FROM node:24.11.0-alpine3.21 AS production
+USER node
 
 ARG VERSION
 ARG BUILD_NUMBER
@@ -29,9 +28,9 @@ ENV APPLICATION_VERSION=${VERSION} \
     APPLICATION_BUILD_NUMBER=${BUILD_NUMBER} \
     NODE_ENV=production
 
-COPY --chown=bun:bun --from=base /app/abis ./abis
-COPY --chown=bun:bun --from=base /app/node_modules ./node_modules
-COPY --chown=bun:bun --from=base /app/dist ./dist
-COPY --chown=bun:bun --from=base /app/assets ./assets
-COPY --chown=bun:bun --from=base /app/migrations ./migrations
-CMD [ "bun", "dist/src/main.js" ]
+COPY --chown=node:node --from=base /app/abis ./abis
+COPY --chown=node:node --from=base /app/node_modules ./node_modules
+COPY --chown=node:node --from=base /app/dist ./dist
+COPY --chown=node:node --from=base /app/assets ./assets
+COPY --chown=node:node --from=base /app/migrations ./migrations
+CMD [ "node", "dist/src/main.js" ]

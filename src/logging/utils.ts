@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
 import type { Request } from 'express';
 import get from 'lodash/get';
 
@@ -25,8 +26,7 @@ export function formatRouteLogMessage(
 } {
   const clientIp = request.header(HEADER_IP_ADDRESS) ?? null;
   const safeAppUserAgent = request.header(HEADER_SAFE_APP_USER_AGENT) ?? null;
-  const chainIdParam = request.params['chainId'] ?? null;
-  const chainId = Array.isArray(chainIdParam) ? chainIdParam[0] : chainIdParam;
+  const chainId = request.params['chainId'] ?? null;
   const origin = request.header(HEADER_ORIGIN) ?? null;
 
   return {
