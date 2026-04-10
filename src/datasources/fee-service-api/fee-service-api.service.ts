@@ -16,12 +16,14 @@ import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { RelayFeeConfiguration } from '@/modules/relay/domain/entities/relay.configuration';
 import type { TxFeesRequest } from '@/modules/transactions/domain/entities/relay-fee/tx-fees-request.dto';
 import type { TxFeesResponse } from '@/modules/transactions/domain/entities/relay-fee/tx-fees-response.dto';
-import { TxFeesResponseSchema } from '@/modules/transactions/domain/entities/relay-fee/schemas/tx-fees-response.schema';
+import {
+  CanRelayResponseSchema,
+  TxFeesResponseSchema,
+} from '@/modules/transactions/domain/entities/relay-fee/schemas/tx-fees-response.schema';
 import type { Address } from 'viem';
 
 @Injectable()
 export class FeeServiceApiService implements IFeeServiceApi {
-  private readonly baseUri: string;
   private readonly relayFeeConfiguration: RelayFeeConfiguration;
 
   constructor(
@@ -35,8 +37,6 @@ export class FeeServiceApiService implements IFeeServiceApi {
     @Inject(LoggingService)
     private readonly loggingService: ILoggingService,
   ) {
-    this.baseUri =
-      this.configurationService.getOrThrow<string>('relay.fee.baseUri');
     this.relayFeeConfiguration =
       this.configurationService.getOrThrow('relay.fee');
   }
@@ -61,7 +61,7 @@ export class FeeServiceApiService implements IFeeServiceApi {
     safeTxHash?: string;
   }): Promise<{ result: boolean; reason?: string }> {
     try {
-      const url = `${this.baseUri}/v1/fees/can-relay`;
+      const url = `${this.relayFeeConfiguration.baseUri}/v1/fees/can-relay`;
       const { data: response } = await this.networkService.post<{
         result: boolean;
         reason?: string;
@@ -76,7 +76,7 @@ export class FeeServiceApiService implements IFeeServiceApi {
           ...(args.safeTxHash && { safeTxHash: args.safeTxHash }),
         },
       });
-      return response as unknown as { result: boolean; reason?: string };
+      return CanRelayResponseSchema.parse(response);
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
@@ -115,7 +115,7 @@ export class FeeServiceApiService implements IFeeServiceApi {
 
     // 2. Cache miss — call fee service
     try {
-      const url = `${this.baseUri}/v1/chains/${args.chainId}/safes/${args.safeAddress}/transactions/relay-fees`;
+      const url = `${this.relayFeeConfiguration.baseUri}/v1/chains/${args.chainId}/safes/${args.safeAddress}/transactions/relay-fees`;
       const { data: feeData } = await this.networkService.post<TxFeesResponse>({
         url,
         data: args.request,

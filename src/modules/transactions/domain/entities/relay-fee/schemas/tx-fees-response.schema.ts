@@ -3,6 +3,11 @@ import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { PriceSource } from '@/modules/transactions/domain/entities/relay-fee/tx-fees-response.dto';
 import { z } from 'zod';
 
+export const CanRelayResponseSchema = z.object({
+  result: z.boolean(),
+  reason: z.string().optional(),
+});
+
 export const TxDataResponseSchema = z.object({
   chainId: z.number(),
   safeAddress: AddressSchema,
