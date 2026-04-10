@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { Address } from 'viem';
 import type { Relay } from '@/modules/relay/domain/entities/relay.entity';
 
@@ -9,11 +10,13 @@ export interface IRelayer {
    * @param {object} args - Chain ID and address to check
    * @param {string} args.chainId - The chain identifier
    * @param {Address} args.address - The address to check relay eligibility for
+   * @param {string} [args.safeTxHash] - Optional Safe transaction hash for relay-fee eligibility
    * @returns Object containing whether relay is allowed, current count, and limit
    */
   canRelay(args: {
     chainId: string;
     address: Address;
+    safeTxHash?: string;
   }): Promise<{ result: boolean; currentCount: number; limit: number }>;
 
   /**
@@ -24,6 +27,7 @@ export interface IRelayer {
    * @param {Address} args.to - The target address
    * @param {Address} args.data - The transaction data
    * @param {bigint | null} args.gasLimit - The gas limit or null for automatic
+   * @param {string} [args.safeTxHash] - Optional Safe transaction hash for relay-fee
    * @returns Relay result
    */
   relay(args: {
@@ -32,6 +36,7 @@ export interface IRelayer {
     to: Address;
     data: Address;
     gasLimit: bigint | null;
+    safeTxHash?: string;
   }): Promise<Relay>;
 
   /**

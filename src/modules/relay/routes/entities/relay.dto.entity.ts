@@ -20,4 +20,10 @@ export class RelayDto implements z.infer<typeof RelayDtoSchema> {
     description: `Accepted for backward compatibility and validation; not forwarded to the relay provider (Gelato).`,
   })
   gasLimit!: bigint | null;
+
+  @ApiPropertyOptional({
+    type: String,
+    description: 'Safe transaction hash for relay-fee eligibility check',
+  })
+  safeTxHash?: Hex;
 }

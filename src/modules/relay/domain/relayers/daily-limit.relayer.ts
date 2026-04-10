@@ -42,6 +42,7 @@ export class DailyLimitRelayer implements IRelayer {
     to: Address;
     data: Address;
     gasLimit: bigint | null;
+    safeTxHash?: string;
   }): Promise<Relay> {
     const relayAddresses =
       await this.limitAddressesMapper.getLimitAddresses(args);

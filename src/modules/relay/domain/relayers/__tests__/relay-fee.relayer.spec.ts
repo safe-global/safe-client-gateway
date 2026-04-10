@@ -1,0 +1,256 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
+import { RelayFeeRelayer } from '@/modules/relay/domain/relayers/relay-fee.relayer';
+import { faker } from '@faker-js/faker';
+import { getAddress } from 'viem';
+import type { IRelayApi } from '@/domain/interfaces/relay-api.interface';
+import type { IFeeServiceApi } from '@/domain/interfaces/fee-service-api.interface';
+import type { LimitAddressesMapper } from '@/modules/relay/domain/limit-addresses.mapper';
+import type { ILoggingService } from '@/logging/logging.interface';
+import { RelayLimitReachedError } from '@/modules/relay/domain/errors/relay-limit-reached.error';
+import type { Address } from 'viem';
+
+const mockLoggingService = jest.mocked({
+  info: jest.fn(),
+  warn: jest.fn(),
+  error: jest.fn(),
+  debug: jest.fn(),
+} as jest.MockedObjectDeep<ILoggingService>);
+
+const mockRelayApi = jest.mocked({
+  relay: jest.fn(),
+  getRelayCount: jest.fn(),
+  setRelayCount: jest.fn(),
+} as jest.MockedObjectDeep<IRelayApi>);
+
+const mockFeeServiceApi = jest.mocked({
+  canRelay: jest.fn(),
+} as jest.MockedObjectDeep<IFeeServiceApi>);
+
+const mockLimitAddressesMapper = jest.mocked({
+  getLimitAddresses: jest.fn(),
+} as unknown as jest.MockedObjectDeep<LimitAddressesMapper>);
+
+describe('RelayFeeRelayer', () => {
+  let target: RelayFeeRelayer;
+  let fakeConfigurationService: FakeConfigurationService;
+  let enabledChainId: string;
+
+  beforeEach(() => {
+    jest.resetAllMocks();
+
+    fakeConfigurationService = new FakeConfigurationService();
+    enabledChainId = faker.string.numeric();
+    fakeConfigurationService.set('relay.fee', {
+      enabledChainIds: [enabledChainId],
+      baseUri: faker.internet.url({ appendSlash: false }),
+    });
+
+    target = new RelayFeeRelayer(
+      mockLoggingService,
+      fakeConfigurationService,
+      mockLimitAddressesMapper,
+      mockRelayApi,
+      mockFeeServiceApi,
+    );
+  });
+
+  describe('canRelay', () => {
+    it('should return false for chains not enabled for relay-fee', async () => {
+      const result = await target.canRelay({
+        chainId: faker.string.numeric({ length: 5 }),
+        address: getAddress(faker.finance.ethereumAddress()),
+      });
+
+      expect(result).toEqual({ result: false, currentCount: 0, limit: 0 });
+      expect(mockFeeServiceApi.canRelay).not.toHaveBeenCalled();
+    });
+
+    it('should return true when FeeEngine approves', async () => {
+      const address = getAddress(faker.finance.ethereumAddress());
+      mockFeeServiceApi.canRelay.mockResolvedValueOnce({ result: true });
+
+      const result = await target.canRelay({
+        chainId: enabledChainId,
+        address,
+      });
+
+      expect(result).toEqual({ result: true, currentCount: 0, limit: 1 });
+      expect(mockFeeServiceApi.canRelay).toHaveBeenCalledWith({
+        chainId: enabledChainId,
+        safeAddress: address,
+        to: address,
+        value: '0',
+        data: '0x',
+        safeTxHash: undefined,
+      });
+    });
+
+    it('should return false when FeeEngine denies', async () => {
+      const address = getAddress(faker.finance.ethereumAddress());
+      mockFeeServiceApi.canRelay.mockResolvedValueOnce({
+        result: false,
+        reason: 'Insufficient fee balance',
+      });
+
+      const result = await target.canRelay({
+        chainId: enabledChainId,
+        address,
+      });
+
+      expect(result).toEqual({ result: false, currentCount: 0, limit: 0 });
+      expect(mockLoggingService.info).toHaveBeenCalledWith(
+        expect.stringContaining('relay-fee canRelay denied'),
+      );
+    });
+
+    it('should pass safeTxHash to FeeEngine when provided', async () => {
+      const address = getAddress(faker.finance.ethereumAddress());
+      const safeTxHash = faker.string.hexadecimal({ length: 64 });
+      mockFeeServiceApi.canRelay.mockResolvedValueOnce({ result: true });
+
+      await target.canRelay({
+        chainId: enabledChainId,
+        address,
+        safeTxHash,
+      });
+
+      expect(mockFeeServiceApi.canRelay).toHaveBeenCalledWith(
+        expect.objectContaining({ safeTxHash }),
+      );
+    });
+  });
+
+  describe('relay', () => {
+    it('should relay when FeeEngine approves all addresses', async () => {
+      const address = getAddress(faker.finance.ethereumAddress());
+      const taskId = faker.string.uuid();
+      mockLimitAddressesMapper.getLimitAddresses.mockResolvedValueOnce([
+        address,
+      ]);
+      mockFeeServiceApi.canRelay.mockResolvedValueOnce({ result: true });
+      mockRelayApi.relay.mockResolvedValueOnce({ taskId });
+
+      const result = await target.relay({
+        version: '1.3.0',
+        chainId: enabledChainId,
+        to: address,
+        data: '0x' as Address,
+        gasLimit: null,
+      });
+
+      expect(result).toEqual({ taskId });
+      expect(mockRelayApi.relay).toHaveBeenCalled();
+    });
+
+    it('should throw RelayLimitReachedError when FeeEngine denies', async () => {
+      const address = getAddress(faker.finance.ethereumAddress());
+      mockLimitAddressesMapper.getLimitAddresses.mockResolvedValueOnce([
+        address,
+      ]);
+      mockFeeServiceApi.canRelay.mockResolvedValueOnce({
+        result: false,
+        reason: 'Fee not paid',
+      });
+
+      await expect(
+        target.relay({
+          version: '1.3.0',
+          chainId: enabledChainId,
+          to: address,
+          data: '0x' as Address,
+          gasLimit: null,
+        }),
+      ).rejects.toThrow(RelayLimitReachedError);
+
+      expect(mockRelayApi.relay).not.toHaveBeenCalled();
+    });
+
+    it('should pass safeTxHash through to FeeEngine check', async () => {
+      const address = getAddress(faker.finance.ethereumAddress());
+      const safeTxHash = faker.string.hexadecimal({ length: 64 });
+      const taskId = faker.string.uuid();
+      mockLimitAddressesMapper.getLimitAddresses.mockResolvedValueOnce([
+        address,
+      ]);
+      mockFeeServiceApi.canRelay.mockResolvedValueOnce({ result: true });
+      mockRelayApi.relay.mockResolvedValueOnce({ taskId });
+
+      await target.relay({
+        version: '1.3.0',
+        chainId: enabledChainId,
+        to: address,
+        data: '0x' as Address,
+        gasLimit: null,
+        safeTxHash,
+      });
+
+      expect(mockFeeServiceApi.canRelay).toHaveBeenCalledWith(
+        expect.objectContaining({ safeTxHash }),
+      );
+    });
+
+    it('should check all limit addresses', async () => {
+      const address1 = getAddress(faker.finance.ethereumAddress());
+      const address2 = getAddress(faker.finance.ethereumAddress());
+      const taskId = faker.string.uuid();
+      mockLimitAddressesMapper.getLimitAddresses.mockResolvedValueOnce([
+        address1,
+        address2,
+      ]);
+      mockFeeServiceApi.canRelay
+        .mockResolvedValueOnce({ result: true })
+        .mockResolvedValueOnce({ result: true });
+      mockRelayApi.relay.mockResolvedValueOnce({ taskId });
+
+      const result = await target.relay({
+        version: '1.3.0',
+        chainId: enabledChainId,
+        to: address1,
+        data: '0x' as Address,
+        gasLimit: null,
+      });
+
+      expect(result).toEqual({ taskId });
+      expect(mockFeeServiceApi.canRelay).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe('getRelaysRemaining', () => {
+    it('should return 0 for chains not enabled for relay-fee', async () => {
+      const result = await target.getRelaysRemaining({
+        chainId: faker.string.numeric({ length: 5 }),
+        address: getAddress(faker.finance.ethereumAddress()),
+      });
+
+      expect(result).toEqual({ remaining: 0, limit: 0 });
+    });
+
+    it('should return 1 remaining when FeeEngine approves', async () => {
+      const address = getAddress(faker.finance.ethereumAddress());
+      mockFeeServiceApi.canRelay.mockResolvedValueOnce({ result: true });
+
+      const result = await target.getRelaysRemaining({
+        chainId: enabledChainId,
+        address,
+      });
+
+      expect(result).toEqual({ remaining: 1, limit: 1 });
+    });
+
+    it('should return 0 remaining when FeeEngine denies', async () => {
+      const address = getAddress(faker.finance.ethereumAddress());
+      mockFeeServiceApi.canRelay.mockResolvedValueOnce({
+        result: false,
+        reason: 'Not eligible',
+      });
+
+      const result = await target.getRelaysRemaining({
+        chainId: enabledChainId,
+        address,
+      });
+
+      expect(result).toEqual({ remaining: 0, limit: 0 });
+    });
+  });
+});

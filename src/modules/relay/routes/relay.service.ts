@@ -18,6 +18,7 @@ export class RelayService {
       to: args.relayDto.to,
       data: args.relayDto.data,
       gasLimit: args.relayDto.gasLimit,
+      safeTxHash: args.relayDto.safeTxHash,
     });
 
     return new Relay(relay);

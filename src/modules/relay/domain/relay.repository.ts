@@ -19,6 +19,7 @@ export class RelayRepository {
     to: Address;
     data: Address;
     gasLimit: bigint | null;
+    safeTxHash?: string;
   }): Promise<Relay> {
     return this.relayManager.getRelayer(args.chainId).relay(args);
   }

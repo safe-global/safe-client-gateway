@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import {
   Body,
   Controller,
@@ -54,6 +55,9 @@ import { TimezoneSchema } from '@/validation/entities/schemas/timezone.schema';
 import { TXSMultisigTransaction } from '@/modules/transactions/routes/entities/txs-multisig-transaction.entity';
 import { TXSMultisigTransactionPage } from '@/modules/transactions/routes/entities/txs-multisig-transaction-page.entity';
 import { TXSCreationTransaction } from '@/modules/transactions/routes/entities/txs-creation-transaction.entity';
+import { FeePreviewTransactionDto } from '@/modules/transactions/routes/entities/fee-preview-transaction.dto.entity';
+import { FeePreviewResponse } from '@/modules/transactions/routes/entities/fee-preview-response.entity';
+import { FeePreviewTransactionDtoSchema } from '@/modules/transactions/routes/entities/schemas/fee-preview-transaction.dto.schema';
 import type { Address } from 'viem';
 
 @ApiTags('transactions')
@@ -606,6 +610,55 @@ export class TransactionsController {
       chainId,
       safeAddress,
       previewTransactionDto,
+    });
+  }
+
+  @ApiOperation({
+    summary: 'Get transaction fee preview',
+    description:
+      'Calculates the estimated fees for executing a transaction via Pay with Safe, including gas costs, relay fees, and total costs in USD.',
+  })
+  @ApiParam({
+    name: 'chainId',
+    type: 'string',
+    description: 'Chain ID where the Safe is deployed',
+    example: '1',
+  })
+  @ApiParam({
+    name: 'safeAddress',
+    type: 'string',
+    description: 'Safe contract address (0x prefixed hex string)',
+  })
+  @ApiBody({
+    type: FeePreviewTransactionDto,
+    description:
+      'Transaction data for fee calculation including recipient, value, data, operation type, gas token, and number of signatures',
+  })
+  @ApiOkResponse({
+    type: FeePreviewResponse,
+    description:
+      'Fee preview with transaction data, relay cost, and pricing context',
+  })
+  @ApiBadRequestResponse({
+    description:
+      'Invalid transaction data or Pay with Safe not available for this chain',
+  })
+  @ApiNotFoundResponse({
+    description: 'Safe not found',
+  })
+  @HttpCode(200)
+  @Post('chains/:chainId/fees/:safeAddress/preview')
+  async getFeePreview(
+    @Param('chainId') chainId: string,
+    @Param('safeAddress', new ValidationPipe(AddressSchema))
+    safeAddress: Address,
+    @Body(new ValidationPipe(FeePreviewTransactionDtoSchema))
+    feePreviewDto: FeePreviewTransactionDto,
+  ): Promise<FeePreviewResponse> {
+    return this.transactionsService.getFeePreview({
+      chainId,
+      safeAddress,
+      feePreviewDto,
     });
   }
 

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Module } from '@nestjs/common';
 import { TransactionApiManagerModule } from '@/domain/interfaces/transaction-api.manager.interface';
 import { ITransactionsRepository } from '@/modules/transactions/domain/transactions.repository.interface';
@@ -60,6 +61,7 @@ import { BridgeTransactionMapper } from '@/modules/transactions/routes/mappers/c
 import { LiFiDecoderModule } from '@/modules/bridge/domain/contracts/decoders/lifi-decoder.helper';
 import { LiFiHelperModule } from '@/modules/transactions/routes/helpers/lifi-helper';
 import { BridgeModule } from '@/modules/bridge/bridge.module';
+import { FeeServiceApiModule } from '@/datasources/fee-service-api/fee-service-api.module';
 
 @Module({
   controllers: [TransactionsController],
@@ -71,6 +73,7 @@ import { BridgeModule } from '@/modules/bridge/bridge.module';
     DataDecoderModule,
     DelegatesV2RepositoryModule,
     EarnModule,
+    FeeServiceApiModule,
     GPv2DecoderModule,
     HumanDescriptionModule,
     KilnNativeStakingHelperModule,
