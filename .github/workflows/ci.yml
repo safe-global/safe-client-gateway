@@ -60,31 +60,34 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+      - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:
-          bun-version-file: '.bun-version'
-      - run: bun install --frozen-lockfile
-      - run: bun run env:validate:silent
+          node-version: '24.11.0' # Krypton
+          cache: 'yarn'
+      - run: yarn install --immutable
+      - run: yarn run env:validate:silent
 
   prettier:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+      - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:
-          bun-version-file: '.bun-version'
-      - run: bun install --frozen-lockfile
-      - run: bun run format-check
+          node-version: '24.11.0' # Krypton
+          cache: 'yarn'
+      - run: yarn install --immutable
+      - run: yarn run format-check
 
   es-lint:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+      - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:
-          bun-version-file: '.bun-version'
-      - run: bun install --frozen-lockfile
-      - run: bun run lint-check
+          node-version: '24.11.0' # Krypton
+          cache: 'yarn'
+      - run: yarn install --immutable
+      - run: yarn run lint-check
 
   unit-tests:
     runs-on: ubuntu-latest
@@ -127,12 +130,13 @@ jobs:
           --health-retries 5
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+      - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:
-          bun-version-file: '.bun-version'
-      - run: bun install --frozen-lockfile
-      - run: bun run build
-      - run: bun run test:unit:cov
+          node-version: '22.11.0' # jod
+          cache: 'yarn'
+      - run: yarn install --immutable
+      - run: yarn run build
+      - run: yarn run test:unit:cov
         env:
           REDIS_HOST: localhost
           REDIS_PORT: 6379
@@ -189,12 +193,13 @@ jobs:
           --health-retries 5
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+      - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:
-          bun-version-file: '.bun-version'
-      - run: bun install --frozen-lockfile
-      - run: bun run build
-      - run: bun run test:integration:cov
+          node-version: '24.11.0' # Krypton
+          cache: 'yarn'
+      - run: yarn install --immutable
+      - run: yarn run build
+      - run: yarn run test:integration:cov
         env:
           REDIS_HOST: localhost
           REDIS_PORT: 6379
@@ -236,7 +241,6 @@ jobs:
       - run: |
           BUILD_NUMBER=${{ github.sha }}
           echo "BUILD_NUMBER=${BUILD_NUMBER::7}" >> "$GITHUB_ENV"
-          echo "BUN_VERSION=$(cat .bun-version)" >> "$GITHUB_ENV"
       - uses: docker/setup-qemu-action@ce360397dd3f832beb865e1373c09c0e9f86d70a # v4.0.0
         with:
           platforms: arm64
@@ -252,7 +256,6 @@ jobs:
           build-args: |
             BUILD_NUMBER=${{ env.BUILD_NUMBER }}
             VERSION=${{ github.ref_name }}
-            BUN_VERSION=${{ env.BUN_VERSION }}
           tags: ${{ env.DOCKER_IMAGE_REGISTRY }}/${{ env.DOCKER_IMAGE_NAME }}:staging
           # Use Registry cache backend https://docs.docker.com/build/cache/backends/registry/
           cache-from: type=registry,ref=${{ env.DOCKER_IMAGE_REGISTRY }}/${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_BUILD_IMAGE_TAG }}
@@ -267,7 +270,6 @@ jobs:
       - run: |
           BUILD_NUMBER=${{ github.sha }}
           echo "BUILD_NUMBER=${BUILD_NUMBER::7}" >> "$GITHUB_ENV"
-          echo "BUN_VERSION=$(cat .bun-version)" >> "$GITHUB_ENV"
       - uses: docker/setup-qemu-action@ce360397dd3f832beb865e1373c09c0e9f86d70a # v4.0.0
         with:
           platforms: arm64
@@ -283,7 +285,6 @@ jobs:
           build-args: |
             BUILD_NUMBER=${{ env.BUILD_NUMBER }}
             VERSION=${{ github.ref_name }}
-            BUN_VERSION=${{ env.BUN_VERSION }}
           tags: |
             ${{ env.DOCKER_IMAGE_REGISTRY }}/${{ env.DOCKER_IMAGE_NAME }}:${{ github.ref_name }}
             ${{ env.DOCKER_IMAGE_REGISTRY }}/${{ env.DOCKER_IMAGE_NAME }}:latest

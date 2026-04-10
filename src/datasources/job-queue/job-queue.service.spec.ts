@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
 import type { Queue } from 'bullmq';
 import { JobQueueService } from '@/datasources/job-queue/job-queue.service';
 import { JobType } from '@/datasources/job-queue/types/job-types';
@@ -36,7 +37,7 @@ describe('JobQueueService', () => {
 
     it('should return null if job does not exist', async () => {
       const jobId = faker.string.uuid();
-      mockQueue.getJob.mockResolvedValue(undefined);
+      mockQueue.getJob.mockResolvedValue(null);
 
       const result = await service.getJob(jobId);
 
