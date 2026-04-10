@@ -39,10 +39,12 @@ export class RelayService {
   async getRelaysRemaining(args: {
     chainId: string;
     safeAddress: Address;
+    safeTxHash?: string;
   }): Promise<{ remaining: number; limit: number }> {
     const relaysRemaining = await this.relayRepository.getRelaysRemaining({
       chainId: args.chainId,
       address: args.safeAddress,
+      safeTxHash: args.safeTxHash,
     });
 
     return new RelaysRemaining(relaysRemaining);

@@ -1,5 +1,13 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { Controller, Post, Param, Get, UseFilters, Body } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Param,
+  Get,
+  Query,
+  UseFilters,
+  Body,
+} from '@nestjs/common';
 import {
   ApiOkResponse,
   ApiTags,
@@ -136,7 +144,12 @@ export class RelayController {
     @Param('chainId') chainId: string,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
     safeAddress: Address,
+    @Query('safeTxHash') safeTxHash?: string,
   ): Promise<RelaysRemaining> {
-    return this.relayService.getRelaysRemaining({ chainId, safeAddress });
+    return this.relayService.getRelaysRemaining({
+      chainId,
+      safeAddress,
+      safeTxHash,
+    });
   }
 }

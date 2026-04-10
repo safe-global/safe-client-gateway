@@ -2846,6 +2846,17 @@ describe('Relay controller', () => {
           .expect({ remaining: 5, limit: 5 });
       });
 
+      it('should accept safeTxHash query parameter and return relay limits', async () => {
+        const safeAddress = faker.finance.ethereumAddress();
+        const safeTxHash = faker.string.hexadecimal({ length: 64 });
+        await request(app.getHttpServer())
+          .get(
+            `/v1/chains/${chainId}/relay/${safeAddress}?safeTxHash=${safeTxHash}`,
+          )
+          .expect(200)
+          .expect({ remaining: 5, limit: 5 });
+      });
+
       it('should not return negative limits if more requests were made than the limit', async () => {
         // Version supported by all contracts
         const version = '1.3.0';

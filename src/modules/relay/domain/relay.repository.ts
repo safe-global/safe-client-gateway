@@ -34,6 +34,7 @@ export class RelayRepository {
   async getRelaysRemaining(args: {
     chainId: string;
     address: Address;
+    safeTxHash?: string;
   }): Promise<{ remaining: number; limit: number }> {
     return this.relayManager.getRelayer(args.chainId).getRelaysRemaining(args);
   }

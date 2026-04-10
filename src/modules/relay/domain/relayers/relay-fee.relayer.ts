@@ -31,7 +31,7 @@ export class RelayFeeRelayer implements IRelayer {
   /**
    * Checks whether the fee service permits relaying for the given Safe.
    * Requires a safeTxHash to query the fee service eligibility endpoint.
-   * Count-based limits are not tracked — the FeeEngine API is authoritative.
+   * Count-based limits are not tracked — the FeeService API is authoritative.
    *
    * @param args.chainId - Chain ID
    * @param args.address - Safe address to check
@@ -63,14 +63,14 @@ export class RelayFeeRelayer implements IRelayer {
       return { result: false, currentCount: 0, limit: 0 };
     }
 
-    // relay-fee does not track count-based limits - the FeeEngine API is authoritative.
+    // relay-fee does not track count-based limits - the FeeService API is authoritative.
     // currentCount=0, limit=1 mirrors getRelaysRemaining.
     return { result: true, currentCount: 0, limit: 1 };
   }
 
   /**
    * Relays a transaction after verifying all limit addresses are eligible via the fee service.
-   * Throws {@link RelayDeniedError} if any address is denied by the FeeEngine.
+   * Throws {@link RelayDeniedError} if any address is denied by the FeeService.
    *
    * @param args.version - Safe contract version
    * @param args.chainId - Chain ID
@@ -131,7 +131,7 @@ export class RelayFeeRelayer implements IRelayer {
       return { remaining: 0, limit: 0 };
     }
 
-    // For relay-fee, the FeeEngine API is the authority on relay eligibility.
+    // For relay-fee, the FeeService API is the authority on relay eligibility.
     // We report a simplified view: remaining=1 if eligible, 0 if not.
     const feeServiceResult = await this.feeServiceApi.canRelay({
       chainId: args.chainId,
