@@ -3,9 +3,7 @@ import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
-import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
 import { Operation } from '@/modules/safe/domain/entities/operation.entity';
-import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
 import { NetworkService } from '@/datasources/network/network.service.interface';
@@ -19,7 +17,6 @@ const ENABLED_CHAIN_ID = '1';
 
 describe('Fee Preview - Transactions Controller', () => {
   let app: INestApplication<Server>;
-  let safeConfigUrl: string;
   let feeServiceBaseUri: string;
   let networkService: jest.MockedObjectDeep<INetworkService>;
 
@@ -46,7 +43,6 @@ describe('Fee Preview - Transactions Controller', () => {
     const configService = moduleFixture.get<IConfigurationService>(
       IConfigurationService,
     );
-    safeConfigUrl = configService.getOrThrow('safeConfig.baseUri');
     feeServiceBaseUri = configService.getOrThrow('relay.fee.baseUri');
     networkService = moduleFixture.get(NetworkService);
 
@@ -102,8 +98,6 @@ describe('Fee Preview - Transactions Controller', () => {
 
   it('should return fee preview when relay-fee is enabled', async () => {
     const safeAddress = getAddress(faker.finance.ethereumAddress());
-    const chainResponse = chainBuilder().build();
-    const safeResponse = safeBuilder().with('address', safeAddress).build();
     const feePreviewDto = {
       to: getAddress(faker.finance.ethereumAddress()),
       value: '1000000000000000000',
@@ -132,18 +126,6 @@ describe('Fee Preview - Transactions Controller', () => {
       },
     };
 
-    networkService.get.mockImplementation(({ url }) => {
-      if (url === `${safeConfigUrl}/api/v1/chains/${ENABLED_CHAIN_ID}`) {
-        return Promise.resolve({ data: rawify(chainResponse), status: 200 });
-      }
-      if (
-        url ===
-        `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`
-      ) {
-        return Promise.resolve({ data: rawify(safeResponse), status: 200 });
-      }
-      return Promise.reject(new Error(`Could not match ${url}`));
-    });
     networkService.post.mockImplementation(({ url }) => {
       if (
         url ===

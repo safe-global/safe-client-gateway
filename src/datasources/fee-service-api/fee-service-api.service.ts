@@ -120,9 +120,7 @@ export class FeeServiceApiService implements IFeeServiceApi {
         url,
         data: args.request,
       });
-      const feeResponse = TxFeesResponseSchema.parse(
-        feeData as unknown as TxFeesResponse,
-      );
+      const feeResponse = TxFeesResponseSchema.parse(feeData);
 
       // 3. Store in cache
       const feePreviewTtlSeconds =

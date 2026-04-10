@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import type { Address } from 'viem';
+import type { Address, Hex } from 'viem';
 import type { Relay } from '@/modules/relay/domain/entities/relay.entity';
 
 export const IRelayer = Symbol('IRelayer');
@@ -25,7 +25,7 @@ export interface IRelayer {
    * @param {string} args.version - The contract version
    * @param {string} args.chainId - The chain identifier
    * @param {Address} args.to - The target address
-   * @param {Address} args.data - The transaction data
+   * @param {Hex} args.data - The transaction data
    * @param {bigint | null} args.gasLimit - The gas limit or null for automatic
    * @param {string} [args.safeTxHash] - Optional Safe transaction hash for relay-fee
    * @returns Relay result
@@ -34,7 +34,7 @@ export interface IRelayer {
     version: string;
     chainId: string;
     to: Address;
-    data: Address;
+    data: Hex;
     gasLimit: bigint | null;
     safeTxHash?: string;
   }): Promise<Relay>;

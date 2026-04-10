@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
-import type { Address } from 'viem';
+import type { Address, Hex } from 'viem';
 import { IRelayer } from '@/modules/relay/domain/interfaces/relayer.interface';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { IRelayApi } from '@/domain/interfaces/relay-api.interface';
@@ -87,7 +87,7 @@ export class RelayFeeRelayer implements IRelayer {
     version: string;
     chainId: string;
     to: Address;
-    data: Address;
+    data: Hex;
     gasLimit: bigint | null;
     safeTxHash?: string;
   }): Promise<Relay> {
