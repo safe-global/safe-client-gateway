@@ -10,13 +10,7 @@ export const ExecutedTransactionEventSchema = HookEventBaseSchema.extend({
   to: AddressSchema,
   safeTxHash: HexSchema,
   txHash: HexSchema,
-  // The TX service sends `failed` as a string ('true'/'false'), while the
-  // queue service sends it as a boolean. Coerce booleans to strings so the
-  // downstream type stays consistent (Firebase data values must be strings).
-  failed: z.preprocess(
-    (val) => (typeof val === 'boolean' ? String(val) : val),
-    z.enum(['true', 'false']),
-  ),
+  failed: z.enum(['true', 'false']),
   // FirebaseNotification['data'] does not accept null values
   data: z.preprocess((val) => val ?? undefined, HexSchema.optional()),
 });
