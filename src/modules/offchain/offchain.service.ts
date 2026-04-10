@@ -1,5 +1,12 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { IConfigurationService } from '@/config/configuration.service.interface';
+import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
+import { CacheRouter } from '@/datasources/cache/cache.router';
+import {
+  CacheService,
+  ICacheService,
+} from '@/datasources/cache/cache.service.interface';
+import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import {
   OffchainMultisigTransactionPageSchema,
   OffchainMultisigTransactionSchema,
@@ -9,7 +16,7 @@ import {
   OffchainMessageSchema,
 } from '@/modules/offchain/entities/message.entity';
 import { OffchainDelegatePageSchema } from '@/modules/offchain/entities/delegate.entity';
-import { OffchainErrorMapper } from '@/modules/offchain/mappers/error.mapper';
+import { parseOrigin } from '@/modules/offchain/helpers/origin.helper';
 import { mapOffchainToMultisigTransaction } from '@/modules/offchain/mappers/transaction.mapper';
 import { mapOffchainToMessage } from '@/modules/offchain/mappers/message.mapper';
 import {
@@ -21,32 +28,42 @@ import type { Delegate } from '@/modules/delegate/domain/entities/delegate.entit
 import type { Message } from '@/modules/messages/domain/entities/message.entity';
 import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
 import type { ProposeTransactionDto } from '@/modules/transactions/domain/entities/propose-transaction.dto.entity';
-import type {
-  IOffchain,
-  OffchainMultisigTransaction,
-} from '@/modules/offchain/offchain.interface';
+import type { IOffchain } from '@/modules/offchain/offchain.interface';
 import { rawify } from '@/validation/entities/raw.entity';
 import type { Raw } from '@/validation/entities/raw.entity';
 import { Inject, Injectable } from '@nestjs/common';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import type { Address, Hex } from 'viem';
+import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
 
 @Injectable()
-export class OffchainQueueService implements IOffchain {
+export class OffchainService implements IOffchain {
   private readonly baseUri: string;
+  private readonly defaultExpirationTimeInSeconds: number;
+  private readonly defaultNotFoundExpirationTimeSeconds: number;
 
   constructor(
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
     @Inject(NetworkService)
     private readonly networkService: INetworkService,
-    @Inject(LoggingService)
-    private readonly loggingService: ILoggingService,
-    private readonly errorMapper: OffchainErrorMapper,
+    @Inject(CacheService)
+    private readonly cacheService: ICacheService,
+    @Inject(ISafeRepository)
+    private readonly safeRepository: ISafeRepository,
+    private readonly dataSource: CacheFirstDataSource,
+    private readonly httpErrorFactory: HttpErrorFactory,
   ) {
     this.baseUri = this.configurationService.getOrThrow<string>(
       'queueService.baseUri',
     );
+    this.defaultExpirationTimeInSeconds =
+      this.configurationService.getOrThrow<number>(
+        'expirationTimeInSeconds.default',
+      );
+    this.defaultNotFoundExpirationTimeSeconds =
+      this.configurationService.getOrThrow<number>(
+        'expirationTimeInSeconds.notFound.default',
+      );
   }
 
   async proposeTransaction(args: {
@@ -56,16 +73,16 @@ export class OffchainQueueService implements IOffchain {
   }): Promise<unknown> {
     try {
       const dto = args.proposeTransactionDto;
-      const { originName, originUrl } = this.parseOrigin(dto.origin);
+      const { originName, originUrl } = parseOrigin(dto.origin);
 
-      const url = `${this.baseUri}/api/v1/chains/${args.chainId}/safes/${args.safeAddress}/multisig-transactions`;
-      const { data } = await this.networkService.post<unknown>({
+      const url = `${this.baseUri}/api/v1/multisig-transactions`;
+      return await this.networkService.post({
         url,
         data: {
           to: dto.to,
           value: Number(dto.value),
           data: dto.data,
-          nonce: Number(dto.nonce),
+          nonce: dto.nonce,
           operation: dto.operation,
           safeTxGas: Number(dto.safeTxGas),
           baseGas: Number(dto.baseGas),
@@ -79,9 +96,8 @@ export class OffchainQueueService implements IOffchain {
           originUrl,
         },
       });
-      return data;
     } catch (error) {
-      throw this.errorMapper.from(error);
+      throw this.httpErrorFactory.from(error);
     }
   }
 
@@ -90,12 +106,68 @@ export class OffchainQueueService implements IOffchain {
     safeTxHash: string;
   }): Promise<Raw<MultisigTransaction>> {
     try {
+      const cacheDir = CacheRouter.getMultisigTransactionCacheDir({
+        chainId: args.chainId,
+        safeTransactionHash: args.safeTxHash,
+      });
       const url = `${this.baseUri}/api/v1/multisig-transactions/${args.safeTxHash}`;
-      const { data } = await this.networkService.get<unknown>({ url });
+      const data = await this.dataSource.get({
+        cacheDir,
+        url,
+        notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
+        expireTimeSeconds: this.defaultExpirationTimeInSeconds,
+      });
       const parsed = OffchainMultisigTransactionSchema.parse(data);
-      return rawify(mapOffchainToMultisigTransaction(parsed));
+      const safe = await this.safeRepository.getSafe({
+        chainId: args.chainId,
+        address: parsed.safe,
+      });
+      return rawify(mapOffchainToMultisigTransaction(parsed, safe));
     } catch (error) {
-      throw this.errorMapper.from(error);
+      throw this.httpErrorFactory.from(error);
+    }
+  }
+
+  async getMultisigTransactions(args: {
+    chainId: string;
+    safeAddress: Address;
+    ordering?: string;
+    executed?: boolean;
+    trusted?: boolean;
+    limit?: number;
+    offset?: number;
+  }): Promise<Raw<Page<MultisigTransaction>>> {
+    try {
+      const url = `${this.baseUri}/api/v1/multisig-transactions`;
+      const safe = await this.safeRepository.getSafe({
+        chainId: args.chainId,
+        address: args.safeAddress,
+      });
+      const { data } = await this.networkService.get({
+        url,
+        networkRequest: {
+          params: {
+            safe: args.safeAddress,
+            chain_id: Number(args.chainId),
+            ordering: args.ordering,
+            executed: args.executed,
+            trusted: args.trusted,
+            limit: args.limit,
+            offset: args.offset,
+          },
+        },
+      });
+      const parsed = OffchainMultisigTransactionPageSchema.parse(data);
+      return rawify({
+        count: parsed.count,
+        next: parsed.next,
+        previous: parsed.previous,
+        results: parsed.results.map((tx) =>
+          mapOffchainToMultisigTransaction(tx, safe),
+        ),
+      });
+    } catch (error) {
+      throw this.httpErrorFactory.from(error);
     }
   }
 
@@ -103,13 +175,16 @@ export class OffchainQueueService implements IOffchain {
     chainId: string;
     safeAddress: Address;
     ordering?: string;
-    trusted?: boolean;
     limit?: number;
     offset?: number;
   }): Promise<Raw<Page<MultisigTransaction>>> {
     try {
       const url = `${this.baseUri}/api/v1/multisig-transactions/queue`;
       const nonceOrder = args.ordering?.includes('-') ? 'desc' : 'asc';
+      const safe = await this.safeRepository.getSafe({
+        chainId: args.chainId,
+        address: args.safeAddress,
+      });
       const { data } = await this.networkService.get<unknown>({
         url,
         networkRequest: {
@@ -126,10 +201,12 @@ export class OffchainQueueService implements IOffchain {
         count: parsed.count,
         next: parsed.next,
         previous: parsed.previous,
-        results: parsed.results.map(mapOffchainToMultisigTransaction),
+        results: parsed.results.map((tx) =>
+          mapOffchainToMultisigTransaction(tx, safe),
+        ),
       });
     } catch (error) {
-      throw this.errorMapper.from(error);
+      throw this.httpErrorFactory.from(error);
     }
   }
 
@@ -139,14 +216,14 @@ export class OffchainQueueService implements IOffchain {
     signature: string;
   }): Promise<unknown> {
     try {
-      const url = `${this.baseUri}/api/v1/multisig-transactions/${args.safeTxHash}/confirmations`;
+      const url = `${this.baseUri}/api/v1/multisig-transactions/${args.safeTxHash}/signatures`;
       const { data } = await this.networkService.post<unknown>({
         url,
         data: { signatures: [args.signature] },
       });
       return data;
     } catch (error) {
-      throw this.errorMapper.from(error);
+      throw this.httpErrorFactory.from(error);
     }
   }
 
@@ -162,7 +239,7 @@ export class OffchainQueueService implements IOffchain {
         data: { signature: args.signature },
       });
     } catch (error) {
-      throw this.errorMapper.from(error);
+      throw this.httpErrorFactory.from(error);
     }
   }
 
@@ -203,7 +280,7 @@ export class OffchainQueueService implements IOffchain {
         })),
       });
     } catch (error) {
-      throw this.errorMapper.from(error);
+      throw this.httpErrorFactory.from(error);
     }
   }
 
@@ -229,7 +306,7 @@ export class OffchainQueueService implements IOffchain {
         },
       });
     } catch (error) {
-      throw this.errorMapper.from(error);
+      throw this.httpErrorFactory.from(error);
     }
   }
 
@@ -252,7 +329,7 @@ export class OffchainQueueService implements IOffchain {
         },
       });
     } catch (error) {
-      throw this.errorMapper.from(error);
+      throw this.httpErrorFactory.from(error);
     }
   }
 
@@ -266,7 +343,7 @@ export class OffchainQueueService implements IOffchain {
       const parsed = OffchainMessageSchema.parse(data);
       return rawify(mapOffchainToMessage(parsed));
     } catch (error) {
-      throw this.errorMapper.from(error);
+      throw this.httpErrorFactory.from(error);
     }
   }
 
@@ -296,7 +373,7 @@ export class OffchainQueueService implements IOffchain {
         results: parsed.results.map(mapOffchainToMessage),
       });
     } catch (error) {
-      throw this.errorMapper.from(error);
+      throw this.httpErrorFactory.from(error);
     }
   }
 
@@ -309,7 +386,7 @@ export class OffchainQueueService implements IOffchain {
     origin: string | null;
   }): Promise<Raw<Message>> {
     try {
-      const { originName, originUrl } = this.parseOrigin(args.origin);
+      const { originName, originUrl } = parseOrigin(args.origin);
       const url = `${this.baseUri}/api/v1/safes/${args.safeAddress}/messages`;
       const { data } = await this.networkService.post<unknown>({
         url,
@@ -324,7 +401,7 @@ export class OffchainQueueService implements IOffchain {
       const parsed = OffchainMessageSchema.parse(data);
       return rawify(mapOffchainToMessage(parsed));
     } catch (error) {
-      throw this.errorMapper.from(error);
+      throw this.httpErrorFactory.from(error);
     }
   }
 
@@ -335,77 +412,79 @@ export class OffchainQueueService implements IOffchain {
   }): Promise<unknown> {
     try {
       const url = `${this.baseUri}/api/v1/messages/${args.messageHash}/signatures`;
-      const { data } = await this.networkService.post<unknown>({
+      const { data } = await this.networkService.post({
         url,
         data: { signatures: [args.signature] },
       });
       return data;
     } catch (error) {
-      throw this.errorMapper.from(error);
+      throw this.httpErrorFactory.from(error);
     }
   }
 
-  async getTransactionMetadataBatch(args: {
-    safeTxHashes: Array<string>;
-  }): Promise<Map<string, OffchainMultisigTransaction>> {
-    const results = new Map<string, OffchainMultisigTransaction>();
-    if (args.safeTxHashes.length === 0) return results;
-
-    const settled = await Promise.allSettled(
-      args.safeTxHashes.map(async (hash) => {
-        const url = `${this.baseUri}/api/v1/multisig-transactions/${hash}`;
-        const { data } = await this.networkService.get<unknown>({ url });
-        const raw = data as unknown as Record<string, unknown>;
-        return {
-          hash,
-          tx: {
-            safeTxHash: hash,
-            proposer: (raw.proposer as Address) ?? null,
-            proposedByDelegate: (raw.proposedByDelegate as Address) ?? null,
-            originName:
-              typeof raw.originName === 'string' ? raw.originName : null,
-            originUrl: typeof raw.originUrl === 'string' ? raw.originUrl : null,
-          } satisfies OffchainMultisigTransaction,
-        };
-      }),
-    );
-
-    for (const result of settled) {
-      if (result.status === 'fulfilled') {
-        results.set(result.value.hash, result.value.tx);
-      } else {
-        this.loggingService.warn(
-          `Queue service metadata fetch failed: ${result.reason}`,
-        );
-      }
-    }
-
-    return results;
+  async clearMultisigTransaction(args: {
+    chainId: string;
+    safeTxHash: string;
+  }): Promise<void> {
+    const key = CacheRouter.getMultisigTransactionCacheKey({
+      chainId: args.chainId,
+      safeTransactionHash: args.safeTxHash,
+    });
+    await this.cacheService.deleteByKey(key);
   }
 
-  /**
-   * Parses the TX service origin JSON string into separate
-   * originName/originUrl fields for the queue service.
-   */
-  private parseOrigin(origin: string | null): {
-    originName?: string;
-    originUrl?: string;
-  } {
-    if (!origin) {
-      return {};
-    }
-    try {
-      const parsed: unknown = JSON.parse(origin);
-      if (typeof parsed === 'object' && parsed !== null) {
-        const obj = parsed as Record<string, unknown>;
-        return {
-          originName: typeof obj.name === 'string' ? obj.name : undefined,
-          originUrl: typeof obj.url === 'string' ? obj.url : undefined,
-        };
-      }
-      return {};
-    } catch {
-      return {};
-    }
+  async clearMultisigTransactions(args: {
+    chainId: string;
+    safeAddress: Address;
+  }): Promise<void> {
+    const key = CacheRouter.getMultisigTransactionsCacheKey({
+      chainId: args.chainId,
+      safeAddress: args.safeAddress,
+    });
+    await this.cacheService.deleteByKey(key);
+  }
+
+  async clearAllTransactions(args: {
+    chainId: string;
+    safeAddress: Address;
+  }): Promise<void> {
+    const key = CacheRouter.getAllTransactionsKey({
+      chainId: args.chainId,
+      safeAddress: args.safeAddress,
+    });
+    await this.cacheService.deleteByKey(key);
+  }
+
+  async clearMessagesBySafe(args: {
+    chainId: string;
+    safeAddress: Address;
+  }): Promise<void> {
+    const key = CacheRouter.getMessagesBySafeCacheKey({
+      chainId: args.chainId,
+      safeAddress: args.safeAddress,
+    });
+    await this.cacheService.deleteByKey(key);
+  }
+
+  async clearMessagesByHash(args: {
+    chainId: string;
+    messageHash: string;
+  }): Promise<void> {
+    const key = CacheRouter.getMessageByHashCacheKey({
+      chainId: args.chainId,
+      messageHash: args.messageHash,
+    });
+    await this.cacheService.deleteByKey(key);
+  }
+
+  async clearDelegates(args: {
+    chainId: string;
+    safeAddress?: Address;
+  }): Promise<void> {
+    const key = CacheRouter.getDelegatesCacheKey({
+      chainId: args.chainId,
+      safeAddress: args.safeAddress,
+    });
+    await this.cacheService.deleteByKey(key);
   }
 }

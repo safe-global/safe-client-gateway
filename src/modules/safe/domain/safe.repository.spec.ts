@@ -47,6 +47,7 @@ const mockConfigurationService = {
 
 const mockOffchainService = {
   getMultisigTransaction: jest.fn(),
+  getMultisigTransactions: jest.fn(),
   getTransactionQueue: jest.fn(),
   proposeTransaction: jest.fn(),
   postConfirmation: jest.fn(),
@@ -58,7 +59,6 @@ const mockOffchainService = {
   getMessagesBySafe: jest.fn(),
   postMessage: jest.fn(),
   postMessageSignature: jest.fn(),
-  getTransactionMetadataBatch: jest.fn(),
 } as jest.MockedObjectDeep<IOffchain>;
 
 describe('SafeRepository', () => {
