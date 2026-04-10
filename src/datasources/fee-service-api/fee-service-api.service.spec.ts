@@ -14,6 +14,7 @@ import { Operation } from '@/modules/safe/domain/entities/operation.entity';
 import { PriceSource } from '@/modules/transactions/domain/entities/relay-fee/tx-fees-response.dto';
 
 const mockNetworkService = jest.mocked({
+  get: jest.fn(),
   post: jest.fn(),
 } as jest.MockedObjectDeep<INetworkService>);
 
@@ -74,121 +75,64 @@ describe('FeeServiceApiService', () => {
   });
 
   describe('canRelay', () => {
-    it('should call the fee service API with correct payload', async () => {
+    it('should call the fee service API with correct URL', async () => {
       const chainId = faker.string.numeric();
       const safeAddress = getAddress(faker.finance.ethereumAddress());
-      const to = getAddress(faker.finance.ethereumAddress());
-      const value = faker.string.numeric();
-      const data = faker.string.hexadecimal();
       const safeTxHash = faker.string.hexadecimal({ length: 64 });
 
-      mockNetworkService.post.mockResolvedValueOnce({
+      mockNetworkService.get.mockResolvedValueOnce({
         status: 200,
-        data: rawify({ result: true }),
+        data: rawify({ canRelay: true }),
       });
 
       const result = await target.canRelay({
         chainId,
         safeAddress,
-        to,
-        value,
-        data,
         safeTxHash,
       });
 
-      expect(result).toEqual({ result: true });
-      expect(mockNetworkService.post).toHaveBeenCalledWith({
-        url: `${baseUri}/v1/fees/can-relay`,
-        data: {
-          chainId,
-          safe: safeAddress,
-          to,
-          value,
-          data,
-          safeTxHash,
-        },
+      expect(result).toEqual({ canRelay: true });
+      expect(mockNetworkService.get).toHaveBeenCalledWith({
+        url: `${baseUri}/v1/chains/${chainId}/transactions/${safeTxHash}/can-relay`,
       });
     });
 
-    it('should not include safeTxHash when not provided', async () => {
+    it('should return canRelay false', async () => {
       const chainId = faker.string.numeric();
       const safeAddress = getAddress(faker.finance.ethereumAddress());
-      const to = getAddress(faker.finance.ethereumAddress());
-      const value = faker.string.numeric();
-      const data = faker.string.hexadecimal();
+      const safeTxHash = faker.string.hexadecimal({ length: 64 });
 
-      mockNetworkService.post.mockResolvedValueOnce({
+      mockNetworkService.get.mockResolvedValueOnce({
         status: 200,
-        data: rawify({ result: true }),
-      });
-
-      await target.canRelay({
-        chainId,
-        safeAddress,
-        to,
-        value,
-        data,
-      });
-
-      expect(mockNetworkService.post).toHaveBeenCalledWith({
-        url: `${baseUri}/v1/fees/can-relay`,
-        data: {
-          chainId,
-          safe: safeAddress,
-          to,
-          value,
-          data,
-        },
-      });
-    });
-
-    it('should return result false with reason', async () => {
-      const chainId = faker.string.numeric();
-      const safeAddress = getAddress(faker.finance.ethereumAddress());
-      const to = getAddress(faker.finance.ethereumAddress());
-      const reason = 'Insufficient fee balance';
-
-      mockNetworkService.post.mockResolvedValueOnce({
-        status: 200,
-        data: rawify({ result: false, reason }),
+        data: rawify({ canRelay: false }),
       });
 
       const result = await target.canRelay({
         chainId,
         safeAddress,
-        to,
-        value: '0',
-        data: '0x',
+        safeTxHash,
       });
 
-      expect(result).toEqual({ result: false, reason });
+      expect(result).toEqual({ canRelay: false });
     });
 
     it('should forward network errors', async () => {
       const chainId = faker.string.numeric();
       const safeAddress = getAddress(faker.finance.ethereumAddress());
-      const to = getAddress(faker.finance.ethereumAddress());
+      const safeTxHash = faker.string.hexadecimal({ length: 64 });
       const status = faker.internet.httpStatusCode({ types: ['serverError'] });
       const error = new NetworkResponseError(
-        new URL(`${baseUri}/v1/fees/can-relay`),
-        {
-          status,
-        } as Response,
-        {
-          message: 'Unexpected error',
-        },
+        new URL(
+          `${baseUri}/v1/chains/${chainId}/transactions/${safeTxHash}/can-relay`,
+        ),
+        { status } as Response,
+        { message: 'Internal server error' },
       );
-      mockNetworkService.post.mockRejectedValueOnce(error);
+      mockNetworkService.get.mockRejectedValueOnce(error);
 
       await expect(
-        target.canRelay({
-          chainId,
-          safeAddress,
-          to,
-          value: '0',
-          data: '0x',
-        }),
-      ).rejects.toThrow(new DataSourceError('Unexpected error', status));
+        target.canRelay({ chainId, safeAddress, safeTxHash }),
+      ).rejects.toThrow(new DataSourceError('Internal server error', status));
     });
   });
 

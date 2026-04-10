@@ -4,8 +4,7 @@ import { PriceSource } from '@/modules/transactions/domain/entities/relay-fee/tx
 import { z } from 'zod';
 
 export const CanRelayResponseSchema = z.object({
-  result: z.boolean(),
-  reason: z.string().optional(),
+  canRelay: z.boolean(),
 });
 
 export const TxDataResponseSchema = z.object({

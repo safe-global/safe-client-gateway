@@ -30,38 +30,35 @@ export class RelayFeeRelayer implements IRelayer {
 
   /**
    * Checks whether the fee service permits relaying for the given Safe.
-   * Uses a lightweight eligibility call (safe address as target, empty data).
+   * Requires a safeTxHash to query the fee service eligibility endpoint.
    * Count-based limits are not tracked — the FeeEngine API is authoritative.
    *
    * @param args.chainId - Chain ID
    * @param args.address - Safe address to check
-   * @param args.safeTxHash - Optional Safe transaction hash for relay-fee eligibility
-   * @returns Result with currentCount=0 and limit=1 when eligible (mirrors getRelaysRemaining), or all zeros when denied
+   * @param args.safeTxHash - Safe transaction hash for relay-fee eligibility
+   * @returns Result with currentCount=0 and limit=1 when eligible, or all zeros when denied
    */
   async canRelay(args: {
     chainId: string;
     address: Address;
     safeTxHash?: string;
   }): Promise<{ result: boolean; currentCount: number; limit: number }> {
-    if (!this.relayFeeConfiguration.enabledChainIds.includes(args.chainId)) {
+    if (
+      !this.relayFeeConfiguration.enabledChainIds.includes(args.chainId) ||
+      !args.safeTxHash
+    ) {
       return { result: false, currentCount: 0, limit: 0 };
     }
 
     const feeServiceResult = await this.feeServiceApi.canRelay({
       chainId: args.chainId,
       safeAddress: args.address,
-      // The FeeEngine API requires to, value, data - for canRelay checks
-      // use the safe address as the target with empty data as a
-      // lightweight eligibility check.
-      to: args.address,
-      value: '0',
-      data: '0x',
       safeTxHash: args.safeTxHash,
     });
 
-    if (!feeServiceResult.result) {
+    if (!feeServiceResult.canRelay) {
       this.loggingService.info(
-        `relay-fee canRelay denied for ${args.address} on chain ${args.chainId}: ${feeServiceResult.reason ?? 'unknown reason'}`,
+        `relay-fee canRelay denied for ${args.address} on chain ${args.chainId}`,
       );
       return { result: false, currentCount: 0, limit: 0 };
     }
@@ -73,14 +70,14 @@ export class RelayFeeRelayer implements IRelayer {
 
   /**
    * Relays a transaction after verifying all limit addresses are eligible via the fee service.
-   * Throws {@link RelayLimitReachedError} if any address is denied by the FeeEngine.
+   * Throws {@link RelayDeniedError} if any address is denied by the FeeEngine.
    *
    * @param args.version - Safe contract version
    * @param args.chainId - Chain ID
    * @param args.to - Transaction recipient address
    * @param args.data - Encoded transaction data
    * @param args.gasLimit - Gas limit, or null for automatic estimation
-   * @param args.safeTxHash - Optional Safe transaction hash for relay-fee eligibility
+   * @param args.safeTxHash - Safe transaction hash for relay-fee eligibility
    * @returns Relay result from the relay API
    */
   async relay(args: {
@@ -94,21 +91,18 @@ export class RelayFeeRelayer implements IRelayer {
     const relayAddresses =
       await this.limitAddressesMapper.getLimitAddresses(args);
 
-    for (const address of relayAddresses) {
-      const feeServiceResult = await this.feeServiceApi.canRelay({
-        chainId: args.chainId,
-        safeAddress: address,
-        to: args.to,
-        value: '0',
-        data: args.data,
-        safeTxHash: args.safeTxHash,
-      });
+    if (args.safeTxHash) {
+      for (const address of relayAddresses) {
+        const feeServiceResult = await this.feeServiceApi.canRelay({
+          chainId: args.chainId,
+          safeAddress: address,
+          safeTxHash: args.safeTxHash,
+        });
 
-      if (!feeServiceResult.result) {
-        this.loggingService.info(
-          `relay-fee relay denied for ${address}: ${feeServiceResult.reason ?? 'unknown reason'}`,
-        );
-        throw new RelayDeniedError(address, feeServiceResult.reason);
+        if (!feeServiceResult.canRelay) {
+          this.loggingService.info(`relay-fee relay denied for ${address}`);
+          throw new RelayDeniedError(address);
+        }
       }
     }
 
@@ -121,8 +115,8 @@ export class RelayFeeRelayer implements IRelayer {
 
   /**
    * Returns a simplified relay budget view for the given Safe.
-   * Returns `remaining=1, limit=1` when the FeeEngine permits relaying, or `0, 0` when denied.
-   * Count tracking is not performed — the FeeEngine API is the authority on eligibility.
+   * Returns `remaining=1, limit=1` when the chain is enabled, or `0, 0` when not.
+   * Per-transaction eligibility requires a safeTxHash and is checked in relay().
    *
    * @param args.chainId - Chain ID
    * @param args.address - Safe address to query
@@ -131,6 +125,7 @@ export class RelayFeeRelayer implements IRelayer {
   async getRelaysRemaining(args: {
     chainId: string;
     address: Address;
+    safeTxHash?: string;
   }): Promise<{ remaining: number; limit: number }> {
     if (!this.relayFeeConfiguration.enabledChainIds.includes(args.chainId)) {
       return { remaining: 0, limit: 0 };
@@ -141,14 +136,12 @@ export class RelayFeeRelayer implements IRelayer {
     const feeServiceResult = await this.feeServiceApi.canRelay({
       chainId: args.chainId,
       safeAddress: args.address,
-      to: args.address,
-      value: '0',
-      data: '0x',
+      safeTxHash: args.safeTxHash ?? '',
     });
 
     return {
-      remaining: feeServiceResult.result ? 1 : 0,
-      limit: feeServiceResult.result ? 1 : 0,
+      remaining: feeServiceResult.canRelay ? 1 : 0,
+      limit: feeServiceResult.canRelay ? 1 : 0,
     };
   }
 }

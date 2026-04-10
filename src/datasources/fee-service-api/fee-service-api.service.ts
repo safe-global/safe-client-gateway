@@ -55,27 +55,13 @@ export class FeeServiceApiService implements IFeeServiceApi {
   async canRelay(args: {
     chainId: string;
     safeAddress: Address;
-    to: Address;
-    value: string;
-    data: string;
-    safeTxHash?: string;
-  }): Promise<{ result: boolean; reason?: string }> {
+    safeTxHash: string;
+  }): Promise<{ canRelay: boolean }> {
     try {
-      const url = `${this.relayFeeConfiguration.baseUri}/v1/fees/can-relay`;
-      const { data: response } = await this.networkService.post<{
-        result: boolean;
-        reason?: string;
-      }>({
-        url,
-        data: {
-          chainId: args.chainId,
-          safe: args.safeAddress,
-          to: args.to,
-          value: args.value,
-          data: args.data,
-          ...(args.safeTxHash && { safeTxHash: args.safeTxHash }),
-        },
-      });
+      const url = `${this.relayFeeConfiguration.baseUri}/v1/chains/${args.chainId}/transactions/${args.safeTxHash}/can-relay`;
+      const { data: response } = await this.networkService.get<{
+        canRelay: boolean;
+      }>({ url });
       return CanRelayResponseSchema.parse(response);
     } catch (error) {
       throw this.httpErrorFactory.from(error);

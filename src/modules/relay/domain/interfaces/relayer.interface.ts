@@ -44,10 +44,12 @@ export interface IRelayer {
    * @param {object} args - Chain ID and address
    * @param {string} args.chainId - The chain identifier
    * @param {Address} args.address - The address to get remaining relays for
+   * @param {string} [args.safeTxHash] - Optional Safe transaction hash for relay-fee eligibility
    * @returns Object containing remaining count and limit
    */
   getRelaysRemaining(args: {
     chainId: string;
     address: Address;
+    safeTxHash?: string;
   }): Promise<{ remaining: number; limit: number }>;
 }

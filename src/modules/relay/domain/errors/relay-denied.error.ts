@@ -7,8 +7,6 @@ export class RelayDeniedError extends ForbiddenException {
     readonly address: Address,
     readonly reason?: string,
   ) {
-    super(
-      `Relay denied for ${address}${reason ? `: ${reason}` : ''}`,
-    );
+    super(`Relay denied for ${address}${reason ? `: ${reason}` : ''}`);
   }
 }

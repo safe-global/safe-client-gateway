@@ -12,11 +12,8 @@ export interface IFeeServiceApi {
   canRelay(args: {
     chainId: string;
     safeAddress: Address;
-    to: Address;
-    value: string;
-    data: string;
-    safeTxHash?: string;
-  }): Promise<{ result: boolean; reason?: string }>;
+    safeTxHash: string;
+  }): Promise<{ canRelay: boolean }>;
 
   /**
    * Gets transaction fees from Fee Service.
