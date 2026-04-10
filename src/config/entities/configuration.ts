@@ -543,7 +543,8 @@ export default () => ({
     },
   },
   queueService: {
-    baseUri: process.env.QUEUE_SERVICE_BASE_URI,
+    baseUri:
+      process.env.QUEUE_SERVICE_BASE_URI || 'https://api.safe.global/offchain',
   },
   safeConfig: {
     baseUri:

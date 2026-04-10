@@ -4,15 +4,12 @@ import { Delegate } from '@/modules/delegate/domain/entities/delegate.entity';
 import { DelegatePageSchema } from '@/modules/delegate/domain/entities/schemas/delegate.schema';
 import { IDelegatesV2Repository } from '@/modules/delegate/domain/v2/delegates.v2.repository.interface';
 import { Page } from '@/domain/entities/page.entity';
-import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
 import { Inject, Injectable } from '@nestjs/common';
 import type { Address } from 'viem';
 
 @Injectable()
 export class DelegatesV2Repository implements IDelegatesV2Repository {
   constructor(
-    @Inject(ITransactionApiManager)
-    private readonly transactionApiManager: ITransactionApiManager,
     @Inject(IOffchain)
     private readonly offchainService: IOffchain,
   ) {}
@@ -43,10 +40,7 @@ export class DelegatesV2Repository implements IDelegatesV2Repository {
     chainId: string;
     safeAddress?: Address;
   }): Promise<void> {
-    const transactionService = await this.transactionApiManager.getApi(
-      args.chainId,
-    );
-    await transactionService.clearDelegates(args.safeAddress);
+    await this.offchainService.clearDelegates(args);
   }
 
   async postDelegate(args: {
