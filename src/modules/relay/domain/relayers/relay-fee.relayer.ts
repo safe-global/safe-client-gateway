@@ -11,7 +11,7 @@ import {
   Relay,
   RelaySchema,
 } from '@/modules/relay/domain/entities/relay.entity';
-import { RelayLimitReachedError } from '@/modules/relay/domain/errors/relay-limit-reached.error';
+import { RelayDeniedError } from '@/modules/relay/domain/errors/relay-denied.error';
 import { RelayFeeConfiguration } from '@/modules/relay/domain/entities/relay.configuration';
 
 @Injectable()
@@ -105,11 +105,10 @@ export class RelayFeeRelayer implements IRelayer {
       });
 
       if (!feeServiceResult.result) {
-        const error = new RelayLimitReachedError(address, 0, 0);
         this.loggingService.info(
           `relay-fee relay denied for ${address}: ${feeServiceResult.reason ?? 'unknown reason'}`,
         );
-        throw error;
+        throw new RelayDeniedError(address, feeServiceResult.reason);
       }
     }
 

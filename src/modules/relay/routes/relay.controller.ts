@@ -13,6 +13,7 @@ import {
 import { RelayDto } from '@/modules/relay/routes/entities/relay.dto.entity';
 import { RelayService } from '@/modules/relay/routes/relay.service';
 import { RelayLimitReachedExceptionFilter } from '@/modules/relay/domain/exception-filters/relay-limit-reached.exception-filter';
+import { RelayDeniedExceptionFilter } from '@/modules/relay/domain/exception-filters/relay-denied.exception-filter';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import { InvalidMultiSendExceptionFilter } from '@/modules/relay/domain/exception-filters/invalid-multisend.exception-filter';
 import { InvalidTransferExceptionFilter } from '@/modules/relay/domain/exception-filters/invalid-transfer.exception-filter';
@@ -64,6 +65,7 @@ export class RelayController {
   @Post()
   @UseFilters(
     RelayLimitReachedExceptionFilter,
+    RelayDeniedExceptionFilter,
     InvalidMultiSendExceptionFilter,
     InvalidTransferExceptionFilter,
     UnofficialMasterCopyExceptionFilter,

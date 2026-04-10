@@ -7,7 +7,7 @@ import type { IRelayApi } from '@/domain/interfaces/relay-api.interface';
 import type { IFeeServiceApi } from '@/domain/interfaces/fee-service-api.interface';
 import type { LimitAddressesMapper } from '@/modules/relay/domain/limit-addresses.mapper';
 import type { ILoggingService } from '@/logging/logging.interface';
-import { RelayLimitReachedError } from '@/modules/relay/domain/errors/relay-limit-reached.error';
+import { RelayDeniedError } from '@/modules/relay/domain/errors/relay-denied.error';
 import type { Address } from 'viem';
 
 const mockLoggingService = jest.mocked({
@@ -143,7 +143,7 @@ describe('RelayFeeRelayer', () => {
       expect(mockRelayApi.relay).toHaveBeenCalled();
     });
 
-    it('should throw RelayLimitReachedError when FeeEngine denies', async () => {
+    it('should throw RelayDeniedError when Fee Service denies', async () => {
       const address = getAddress(faker.finance.ethereumAddress());
       mockLimitAddressesMapper.getLimitAddresses.mockResolvedValueOnce([
         address,
@@ -161,7 +161,7 @@ describe('RelayFeeRelayer', () => {
           data: '0x' as Address,
           gasLimit: null,
         }),
-      ).rejects.toThrow(RelayLimitReachedError);
+      ).rejects.toThrow(RelayDeniedError);
 
       expect(mockRelayApi.relay).not.toHaveBeenCalled();
     });
