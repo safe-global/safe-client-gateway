@@ -21,11 +21,20 @@ export interface IOffchain {
     safeTxHash: string;
   }): Promise<Raw<MultisigTransaction>>;
 
+  getMultisigTransactions(args: {
+    chainId: string;
+    safeAddress: Address;
+    ordering?: string;
+    executed?: boolean;
+    trusted?: boolean;
+    limit?: number;
+    offset?: number;
+  }): Promise<Raw<Page<MultisigTransaction>>>;
+
   getTransactionQueue(args: {
     chainId: string;
     safeAddress: Address;
     ordering?: string;
-    trusted?: boolean;
     limit?: number;
     offset?: number;
   }): Promise<Raw<Page<MultisigTransaction>>>;
@@ -96,19 +105,34 @@ export interface IOffchain {
     signature: Hex;
   }): Promise<unknown>;
 
-  getTransactionMetadataBatch(args: {
-    safeTxHashes: Array<string>;
-  }): Promise<Map<string, OffchainMultisigTransaction>>;
-}
+  // Cache clearing
+  clearMultisigTransaction(args: {
+    chainId: string;
+    safeTxHash: string;
+  }): Promise<void>;
 
-/**
- * Subset of MultisigTransaction fields that the queue service provides.
- * Used for merging metadata into TX-service-sourced executed transactions.
- */
-export interface OffchainMultisigTransaction {
-  safeTxHash: string;
-  proposer: MultisigTransaction['proposer'];
-  proposedByDelegate: MultisigTransaction['proposedByDelegate'];
-  originName: string | null;
-  originUrl: string | null;
+  clearMultisigTransactions(args: {
+    chainId: string;
+    safeAddress: Address;
+  }): Promise<void>;
+
+  clearAllTransactions(args: {
+    chainId: string;
+    safeAddress: Address;
+  }): Promise<void>;
+
+  clearMessagesBySafe(args: {
+    chainId: string;
+    safeAddress: Address;
+  }): Promise<void>;
+
+  clearMessagesByHash(args: {
+    chainId: string;
+    messageHash: string;
+  }): Promise<void>;
+
+  clearDelegates(args: {
+    chainId: string;
+    safeAddress?: Address;
+  }): Promise<void>;
 }

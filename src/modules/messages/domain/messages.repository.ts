@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import { Page } from '@/domain/entities/page.entity';
-import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
 import { Message } from '@/modules/messages/domain/entities/message.entity';
 import { IMessagesRepository } from '@/modules/messages/domain/messages.repository.interface';
 import {
@@ -17,8 +16,6 @@ import type { Address, Hash, Hex } from 'viem';
 @Injectable()
 export class MessagesRepository implements IMessagesRepository {
   constructor(
-    @Inject(ITransactionApiManager)
-    private readonly transactionApiManager: ITransactionApiManager,
     @Inject(ISafeRepository)
     private readonly safeRepository: ISafeRepository,
     @Inject(IOffchain)
@@ -110,15 +107,13 @@ export class MessagesRepository implements IMessagesRepository {
     chainId: string;
     safeAddress: Address;
   }): Promise<void> {
-    const api = await this.transactionApiManager.getApi(args.chainId);
-    await api.clearMessagesBySafe(args);
+    await this.offchainService.clearMessagesBySafe(args);
   }
 
   async clearMessagesByHash(args: {
     chainId: string;
     messageHash: string;
   }): Promise<void> {
-    const api = await this.transactionApiManager.getApi(args.chainId);
-    await api.clearMessagesByHash(args);
+    await this.offchainService.clearMessagesByHash(args);
   }
 }

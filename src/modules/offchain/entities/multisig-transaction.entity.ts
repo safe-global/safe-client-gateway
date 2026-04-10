@@ -10,6 +10,8 @@ import {
   NullableStringSchema,
 } from '@/validation/entities/schemas/nullable.schema';
 import { z } from 'zod';
+import { Operation } from '@/modules/safe/domain/entities/operation.entity';
+import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
 
 export type OffchainConfirmation = z.infer<typeof OffchainConfirmationSchema>;
 
@@ -35,13 +37,13 @@ export const OffchainMultisigTransactionSchema = z.object({
   to: AddressSchema,
   value: z.number(),
   data: NullableHexSchema,
-  operation: z.number(),
-  safeTxGas: z.number(),
-  baseGas: z.number(),
-  gasPrice: z.number(),
+  operation: z.enum(Operation),
+  safeTxGas: NumericStringSchema.nullable(),
+  baseGas: NumericStringSchema.nullable(),
+  gasPrice: NumericStringSchema.nullable(),
   gasToken: NullableAddressSchema,
   refundReceiver: NullableAddressSchema,
-  failed: z.boolean().nullable().default(null),
+  failed: z.boolean().nullable(),
   notes: NullableStringSchema,
   originName: NullableStringSchema,
   originUrl: NullableStringSchema,

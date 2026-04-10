@@ -48,6 +48,7 @@ const mockConfigurationService = {
 
 const mockOffchainService = {
   getMultisigTransaction: vi.fn(),
+  getMultisigTransactions: vi.fn(),
   getTransactionQueue: vi.fn(),
   proposeTransaction: vi.fn(),
   postConfirmation: vi.fn(),
@@ -59,7 +60,6 @@ const mockOffchainService = {
   getMessagesBySafe: vi.fn(),
   postMessage: vi.fn(),
   postMessageSignature: vi.fn(),
-  getTransactionMetadataBatch: vi.fn(),
 } as MockedObject<IOffchain>;
 
 describe('SafeRepository', () => {
