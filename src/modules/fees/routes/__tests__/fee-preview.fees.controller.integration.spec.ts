@@ -15,7 +15,7 @@ import configuration from '@/config/entities/__tests__/configuration';
 
 const ENABLED_CHAIN_ID = '1';
 
-describe('Fee Preview - Transactions Controller', () => {
+describe('Fees Controller', () => {
   let app: INestApplication<Server>;
   let feeServiceBaseUri: string;
   let networkService: jest.MockedObjectDeep<INetworkService>;

@@ -53,9 +53,6 @@ import { TXSCreationTransaction } from '@/modules/transactions/routes/entities/t
 import { ITokenRepository } from '@/modules/tokens/domain/token.repository.interface';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { IDataDecoderRepository } from '@/modules/data-decoder/domain/v2/data-decoder.repository.interface';
-import { FeePreviewTransactionDto } from '@/modules/transactions/routes/entities/fee-preview-transaction.dto.entity';
-import { FeePreviewResponse } from '@/modules/transactions/routes/entities/fee-preview-response.entity';
-import { IFeeServiceApi } from '@/domain/interfaces/fee-service-api.interface';
 import type { Address } from 'viem';
 
 @Injectable()
@@ -81,8 +78,6 @@ export class TransactionsService {
     private readonly tokenRepository: ITokenRepository,
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
-    @Inject(IFeeServiceApi)
-    private readonly feeServiceApi: IFeeServiceApi,
   ) {
     this.isFilterValueParsingEnabled = this.configurationService.getOrThrow(
       'features.filterValueParsing',
@@ -750,40 +745,5 @@ export class TransactionsService {
       chainId: args.chainId,
       type: LogType.TransactionPropose,
     });
-  }
-
-  /**
-   * Gets fee preview for a transaction via Fee service API. This is used to estimate the fees for a transaction before proposing it.
-   */
-  async getFeePreview(args: {
-    chainId: string;
-    safeAddress: Address;
-    feePreviewDto: FeePreviewTransactionDto;
-  }): Promise<FeePreviewResponse> {
-    // Check if Pay with Safe is enabled for this chain
-    if (!this.feeServiceApi.isPayWithSafeEnabled(args.chainId)) {
-      throw new BadRequestException(
-        'Pay with Safe not available for this chain',
-      );
-    }
-
-    // Convert fee preview DTO to TxFeesRequest format
-    const request = {
-      to: args.feePreviewDto.to,
-      value: args.feePreviewDto.value,
-      data: args.feePreviewDto.data,
-      operation: args.feePreviewDto.operation,
-      gasToken: args.feePreviewDto.gasToken,
-      numberSignatures: args.feePreviewDto.numberSignatures,
-    };
-
-    // Get fee response from Fee Engine API
-    const feeResponse = await this.feeServiceApi.getRelayFees({
-      chainId: args.chainId,
-      safeAddress: args.safeAddress,
-      request,
-    });
-
-    return feeResponse;
   }
 }

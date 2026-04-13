@@ -46,6 +46,7 @@ import { RootModule } from '@/modules/root/root.module';
 import { AlertsModule } from '@/modules/alerts/alerts.module';
 import { RecoveryModule } from '@/modules/recovery/recovery.module';
 import { RelayModule } from '@/modules/relay/relay.module';
+import { FeesModule } from '@/modules/fees/fees.module';
 import { ZodErrorFilter } from '@/routes/common/filters/zod-error.filter';
 import { CacheControlInterceptor } from '@/routes/common/interceptors/cache-control.interceptor';
 import { AuthModule } from '@/modules/auth/auth.module';
@@ -100,6 +101,7 @@ export class AppModule implements NestModule {
         // Note: this feature will not work as expected until we reintegrate the email service
         ...(isEmailFeatureEnabled ? [AlertsModule, RecoveryModule] : []),
         EstimationsModule,
+        FeesModule,
         HealthModule,
         HooksModule,
         NotificationsModule,
