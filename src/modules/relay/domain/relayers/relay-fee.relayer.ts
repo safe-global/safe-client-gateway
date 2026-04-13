@@ -52,7 +52,6 @@ export class RelayFeeRelayer implements IRelayer {
 
     const feeServiceResult = await this.feeServiceApi.canRelay({
       chainId: args.chainId,
-      safeAddress: args.address,
       safeTxHash: args.safeTxHash,
     });
 
@@ -95,7 +94,6 @@ export class RelayFeeRelayer implements IRelayer {
       for (const address of relayAddresses) {
         const feeServiceResult = await this.feeServiceApi.canRelay({
           chainId: args.chainId,
-          safeAddress: address,
           safeTxHash: args.safeTxHash,
         });
 
@@ -135,7 +133,6 @@ export class RelayFeeRelayer implements IRelayer {
     // We report a simplified view: remaining=1 if eligible, 0 if not.
     const feeServiceResult = await this.feeServiceApi.canRelay({
       chainId: args.chainId,
-      safeAddress: args.address,
       safeTxHash: args.safeTxHash ?? '',
     });
 

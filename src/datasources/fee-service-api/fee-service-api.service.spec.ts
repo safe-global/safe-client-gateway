@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
-import { FeeServiceApiService } from '@/datasources/fee-service-api/fee-service-api.service';
+import { FeeServiceApi } from '@/datasources/fee-service-api/fee-service-api.service';
 import { faker } from '@faker-js/faker';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
 import type { ICacheService } from '@/datasources/cache/cache.service.interface';
@@ -28,8 +28,8 @@ const mockLoggingService = jest.mocked({
   info: jest.fn(),
 } as jest.MockedObjectDeep<ILoggingService>);
 
-describe('FeeServiceApiService', () => {
-  let target: FeeServiceApiService;
+describe('FeeServiceApi', () => {
+  let target: FeeServiceApi;
   let fakeConfigurationService: FakeConfigurationService;
   let httpErrorFactory: HttpErrorFactory;
   let baseUri: string;
@@ -49,7 +49,7 @@ describe('FeeServiceApiService', () => {
       feePreviewTtlSeconds: 60,
     });
 
-    target = new FeeServiceApiService(
+    target = new FeeServiceApi(
       mockNetworkService,
       fakeConfigurationService,
       httpErrorFactory,
@@ -64,7 +64,7 @@ describe('FeeServiceApiService', () => {
 
     expect(
       () =>
-        new FeeServiceApiService(
+        new FeeServiceApi(
           mockNetworkService,
           emptyConfigService,
           errorFactory,
@@ -77,7 +77,6 @@ describe('FeeServiceApiService', () => {
   describe('canRelay', () => {
     it('should call the fee service API with correct URL', async () => {
       const chainId = faker.string.numeric();
-      const safeAddress = getAddress(faker.finance.ethereumAddress());
       const safeTxHash = faker.string.hexadecimal({ length: 64 });
 
       mockNetworkService.get.mockResolvedValueOnce({
@@ -87,7 +86,6 @@ describe('FeeServiceApiService', () => {
 
       const result = await target.canRelay({
         chainId,
-        safeAddress,
         safeTxHash,
       });
 
@@ -99,7 +97,6 @@ describe('FeeServiceApiService', () => {
 
     it('should return canRelay false', async () => {
       const chainId = faker.string.numeric();
-      const safeAddress = getAddress(faker.finance.ethereumAddress());
       const safeTxHash = faker.string.hexadecimal({ length: 64 });
 
       mockNetworkService.get.mockResolvedValueOnce({
@@ -109,7 +106,6 @@ describe('FeeServiceApiService', () => {
 
       const result = await target.canRelay({
         chainId,
-        safeAddress,
         safeTxHash,
       });
 
@@ -118,7 +114,6 @@ describe('FeeServiceApiService', () => {
 
     it('should forward network errors', async () => {
       const chainId = faker.string.numeric();
-      const safeAddress = getAddress(faker.finance.ethereumAddress());
       const safeTxHash = faker.string.hexadecimal({ length: 64 });
       const status = faker.internet.httpStatusCode({ types: ['serverError'] });
       const error = new NetworkResponseError(
@@ -130,9 +125,9 @@ describe('FeeServiceApiService', () => {
       );
       mockNetworkService.get.mockRejectedValueOnce(error);
 
-      await expect(
-        target.canRelay({ chainId, safeAddress, safeTxHash }),
-      ).rejects.toThrow(new DataSourceError('Internal server error', status));
+      await expect(target.canRelay({ chainId, safeTxHash })).rejects.toThrow(
+        new DataSourceError('Internal server error', status),
+      );
     });
   });
 

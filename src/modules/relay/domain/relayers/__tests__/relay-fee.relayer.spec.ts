@@ -90,7 +90,6 @@ describe('RelayFeeRelayer', () => {
       expect(result).toEqual({ result: true, currentCount: 0, limit: 1 });
       expect(mockFeeServiceApi.canRelay).toHaveBeenCalledWith({
         chainId: enabledChainId,
-        safeAddress: address,
         safeTxHash,
       });
     });
@@ -157,7 +156,6 @@ describe('RelayFeeRelayer', () => {
       expect(result).toEqual({ taskId });
       expect(mockFeeServiceApi.canRelay).toHaveBeenCalledWith({
         chainId: enabledChainId,
-        safeAddress: address,
         safeTxHash,
       });
       expect(mockRelayApi.relay).toHaveBeenCalled();
@@ -251,7 +249,6 @@ describe('RelayFeeRelayer', () => {
       expect(result).toEqual({ remaining: 1, limit: 1 });
       expect(mockFeeServiceApi.canRelay).toHaveBeenCalledWith({
         chainId: enabledChainId,
-        safeAddress: address,
         safeTxHash,
       });
     });

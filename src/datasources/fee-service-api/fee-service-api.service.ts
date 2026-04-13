@@ -23,7 +23,7 @@ import {
 import type { Address } from 'viem';
 
 @Injectable()
-export class FeeServiceApiService implements IFeeServiceApi {
+export class FeeServiceApi implements IFeeServiceApi {
   private readonly relayFeeConfiguration: RelayFeeConfiguration;
 
   constructor(
@@ -54,7 +54,6 @@ export class FeeServiceApiService implements IFeeServiceApi {
    */
   async canRelay(args: {
     chainId: string;
-    safeAddress: Address;
     safeTxHash: string;
   }): Promise<{ canRelay: boolean }> {
     try {

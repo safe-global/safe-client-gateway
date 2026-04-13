@@ -11,7 +11,6 @@ export interface IFeeServiceApi {
    */
   canRelay(args: {
     chainId: string;
-    safeAddress: Address;
     safeTxHash: string;
   }): Promise<{ canRelay: boolean }>;
 
