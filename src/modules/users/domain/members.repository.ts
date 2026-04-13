@@ -417,7 +417,7 @@ export class MembersRepository implements IMembersRepository {
       spaceId: Space['id'];
     },
     relations?: FindOptionsRelations<DbMember>,
-  ): Promise<DbMember> {
+  ): Promise<Member> {
     const userId = getAuthenticatedUserIdOrFail(args.authPayload);
 
     const membersRepository =

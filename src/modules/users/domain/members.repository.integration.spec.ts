@@ -1790,6 +1790,56 @@ describe('MembersRepository', () => {
         );
       },
     );
+
+    it('should throw ForbiddenException for a DECLINED caller', async () => {
+      const spaceName = nameBuilder();
+      const { user, authPayload, authPayloadDto } = await createSiweUser();
+      const space = await dbSpacesRepository.insert({
+        name: spaceName,
+        status: 'ACTIVE',
+      });
+      const spaceId = space.generatedMaps[0].id;
+      await dbMembersRepository.insert({
+        user,
+        space: space.generatedMaps[0],
+        name: faker.person.firstName(),
+        role: faker.helpers.arrayElement(MemberRoleKeys),
+        status: 'DECLINED',
+        invitedBy: authPayloadDto.signer_address,
+      });
+
+      await expect(
+        membersRepository.findSelfMembershipOrFail({
+          authPayload,
+          spaceId,
+        }),
+      ).rejects.toThrow(
+        new ForbiddenException(
+          'The user is not an active member of the space.',
+        ),
+      );
+    });
+
+    it('should throw ForbiddenException when the caller has no membership row in the space', async () => {
+      const spaceName = nameBuilder();
+      const { authPayload } = await createSiweUser();
+      const space = await dbSpacesRepository.insert({
+        name: spaceName,
+        status: 'ACTIVE',
+      });
+      const spaceId = space.generatedMaps[0].id;
+
+      await expect(
+        membersRepository.findSelfMembershipOrFail({
+          authPayload,
+          spaceId,
+        }),
+      ).rejects.toThrow(
+        new ForbiddenException(
+          'The user is not an active member of the space.',
+        ),
+      );
+    });
   });
 
   describe('updateRole', () => {
