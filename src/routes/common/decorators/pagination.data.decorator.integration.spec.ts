@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Controller, Get, INestApplication, Module } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
@@ -30,6 +31,10 @@ describe('PaginationDataDecorator', () => {
 
     app = moduleFixture.createNestApplication();
     await app.init();
+  });
+
+  afterEach(async () => {
+    await app.close();
   });
 
   it('no cursor', async () => {

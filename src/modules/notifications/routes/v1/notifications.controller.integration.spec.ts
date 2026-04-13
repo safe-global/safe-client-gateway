@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { NotFoundException, type INestApplication } from '@nestjs/common';
 import request from 'supertest';
@@ -57,6 +58,10 @@ describe('Notifications Controller', () => {
 
     app = await new TestAppProvider().provide(moduleFixture);
     await app.init();
+  });
+
+  afterEach(async () => {
+    await app.close();
   });
 
   const buildInputDto = async (

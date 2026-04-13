@@ -1,4 +1,8 @@
 <!--
+  SPDX-License-Identifier: FSL-1.1-MIT
+-->
+
+<!--
 SYNC IMPACT REPORT
 ==================
 Version change: N/A (initial) → 1.0.0

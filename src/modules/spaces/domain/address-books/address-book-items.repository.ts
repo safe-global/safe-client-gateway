@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { AddressBookItem as DbAddressBookItem } from '@/modules/spaces/datasources/entities/address-book-item.entity.db';
@@ -7,12 +8,12 @@ import type { AddressBookDbItem } from '@/modules/spaces/domain/address-books/en
 import { AddressBookItem } from '@/modules/spaces/domain/address-books/entities/address-book-item.entity';
 import { Space } from '@/modules/spaces/domain/entities/space.entity';
 import { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
-import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
+import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
 import {
   BadRequestException,
+  ForbiddenException,
   Inject,
   Injectable,
-  UnauthorizedException,
 } from '@nestjs/common';
 import { EntityManager, In } from 'typeorm';
 import { UpsertAddressBookItemsDto } from '@/modules/spaces/routes/entities/upsert-address-book-items.dto.entity';
@@ -27,8 +28,6 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
     private readonly db: PostgresDatabaseService,
     @Inject(ISpacesRepository)
     private readonly spacesRepository: ISpacesRepository,
-    @Inject(IUsersRepository)
-    private readonly userRepository: IUsersRepository,
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
   ) {
@@ -106,13 +105,8 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
     spaceId: Space['id'];
     memberRoleIn: Array<keyof typeof MemberRole>;
   }): Promise<Space> {
-    // TODO: Move this assertion to the service
-    if (!args.authPayload.signer_address) {
-      throw new UnauthorizedException('Signer address not provided.');
-    }
-    const signerAddress = args.authPayload.signer_address;
-    const { id: userId } =
-      await this.userRepository.findByWalletAddressOrFail(signerAddress);
+    const userId = getAuthenticatedUserIdOrFail(args.authPayload);
+
     return this.spacesRepository.findOneOrFail({
       where: {
         id: args.spaceId,
@@ -131,6 +125,11 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
     space: Space;
     entityManager: EntityManager;
   }): Promise<Array<DbAddressBookItem['address']>> {
+    if (!args.authPayload.isSiwe()) {
+      throw new ForbiddenException(
+        'Address book writes require wallet authentication',
+      );
+    }
     const repository = args.entityManager.getRepository(DbAddressBookItem);
     const existingAddressBookItems = await repository.findBy({
       space: { id: args.space.id },
@@ -158,6 +157,11 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
     space: Space;
     entityManager: EntityManager;
   }): Promise<Array<DbAddressBookItem['id']>> {
+    if (!args.authPayload.isSiwe()) {
+      throw new ForbiddenException(
+        'Address book writes require wallet authentication',
+      );
+    }
     await this.checkItemsLimit(args);
     const repository = args.entityManager.getRepository(DbAddressBookItem);
     const insertedIds = await repository.insert(

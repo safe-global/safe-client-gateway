@@ -63,22 +63,14 @@ export const RootConfigurationSchema = z
     BLOCKLIST_SECRET_KEY: z.string(),
     BLOCKLIST_SECRET_SALT: z.string(),
     CGW_ENV: z.string().optional(),
-    CIRCUIT_BREAKER_FAILURE_THRESHOLD: z.coerce
-      .number()
-      .int()
-      .min(1)
-      .optional(),
-    CIRCUIT_BREAKER_SUCCESS_THRESHOLD: z.coerce
-      .number()
-      .int()
-      .min(1)
-      .optional(),
+    CIRCUIT_BREAKER_THRESHOLD: z.coerce.number().int().min(1).optional(),
     CIRCUIT_BREAKER_TIMEOUT: z.coerce.number().int().min(0).optional(),
     CIRCUIT_BREAKER_ROLLING_WINDOW: z.coerce.number().int().min(0).optional(),
-    CIRCUIT_BREAKER_HALF_OPEN_MAX_REQUESTS: z.coerce
+    CIRCUIT_BREAKER_HALF_OPEN_FAILURE_RATE_THRESHOLD: z.coerce
       .number()
       .int()
       .min(1)
+      .max(100)
       .optional(),
     SAFE_CONFIG_CGW_KEY: z.string().min(1).optional(),
     LOG_LEVEL: z

@@ -9,7 +9,10 @@ import { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
 import { Member } from '@/modules/users/datasources/entities/member.entity.db';
 import { User } from '@/modules/users/datasources/entities/users.entity.db';
 import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
-import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
+import {
+  siweAuthPayloadDtoBuilder,
+  oidcAuthPayloadDtoBuilder,
+} from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
 import { nameBuilder } from '@/domain/common/entities/name.builder';
@@ -27,7 +30,7 @@ import { UsersRepository } from '@/modules/users/domain/users.repository';
 import { WalletsRepository } from '@/modules/wallets/domain/wallets.repository';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { faker } from '@faker-js/faker';
-import { UnauthorizedException } from '@nestjs/common';
+import { ForbiddenException } from '@nestjs/common';
 import type { ConfigService } from '@nestjs/config';
 import { DataSource, In } from 'typeorm';
 import type { Address } from 'viem';
@@ -517,23 +520,20 @@ describe('MembersRepository', () => {
 
   describe('inviteUsers', () => {
     it('should invite users to a space and return the members', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const spaceName = nameBuilder();
       const adminName = nameBuilder();
-      const owner = await dbUserRepo.insert({
-        status: 'ACTIVE',
-      });
-      await dbWalletRepo.insert({
-        user: owner.generatedMaps[0],
-        address: authPayloadDto.signer_address,
-      });
+      const {
+        user: owner,
+        authPayload,
+        authPayloadDto,
+      } = await createSiweUser();
       const space = await dbSpacesRepository.insert({
         name: spaceName,
         status: 'ACTIVE',
       });
       const spaceId = space.generatedMaps[0].id;
       await dbMembersRepository.insert({
-        user: owner.generatedMaps[0],
+        user: owner,
         space: space.generatedMaps[0],
         name: adminName,
         role: 'ADMIN',
@@ -552,7 +552,7 @@ describe('MembersRepository', () => {
       );
 
       const member = await membersRepository.inviteUsers({
-        authPayload: new AuthPayload(authPayloadDto),
+        authPayload,
         spaceId,
         users,
       });
@@ -571,24 +571,65 @@ describe('MembersRepository', () => {
       );
     });
 
-    it('should not create PENDING users for existing ones', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
+    it('should invite users as OIDC admin with invitedBy null', async () => {
       const spaceName = nameBuilder();
       const adminName = nameBuilder();
-      const owner = await dbUserRepo.insert({
-        status: 'ACTIVE',
-      });
-      await dbWalletRepo.insert({
-        user: owner.generatedMaps[0],
-        address: authPayloadDto.signer_address,
-      });
+      const { user: owner, authPayload } = await createOidcUser();
       const space = await dbSpacesRepository.insert({
         name: spaceName,
         status: 'ACTIVE',
       });
       const spaceId = space.generatedMaps[0].id;
       await dbMembersRepository.insert({
-        user: owner.generatedMaps[0],
+        user: owner,
+        space: space.generatedMaps[0],
+        name: adminName,
+        role: 'ADMIN',
+        status: 'ACTIVE',
+        invitedBy: getAddress(faker.finance.ethereumAddress()),
+      });
+      const users = faker.helpers.multiple(
+        () => {
+          return {
+            address: getAddress(faker.finance.ethereumAddress()),
+            role: faker.helpers.arrayElement(MemberRoleKeys),
+            name: faker.person.firstName(),
+          };
+        },
+        { count: { min: 2, max: 5 } },
+      );
+
+      const member = await membersRepository.inviteUsers({
+        authPayload,
+        spaceId,
+        users,
+      });
+
+      expect(member).toEqual(
+        users.map((user) => {
+          return {
+            userId: expect.any(Number),
+            spaceId,
+            name: user.name,
+            role: user.role,
+            status: 'INVITED',
+            invitedBy: null,
+          };
+        }),
+      );
+    });
+
+    it('should not create PENDING users for existing ones', async () => {
+      const spaceName = nameBuilder();
+      const adminName = nameBuilder();
+      const { user: owner, authPayload } = await createSiweUser();
+      const space = await dbSpacesRepository.insert({
+        name: spaceName,
+        status: 'ACTIVE',
+      });
+      const spaceId = space.generatedMaps[0].id;
+      await dbMembersRepository.insert({
+        user: owner,
         space: space.generatedMaps[0],
         name: adminName,
         role: 'ADMIN',
@@ -607,7 +648,7 @@ describe('MembersRepository', () => {
       const memberName = nameBuilder();
 
       await membersRepository.inviteUsers({
-        authPayload: new AuthPayload(authPayloadDto),
+        authPayload,
         spaceId,
         users: [
           {
@@ -642,10 +683,7 @@ describe('MembersRepository', () => {
       ]);
     });
 
-    it('should throw an error if the signer_address does not exist', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder()
-        .with('signer_address', undefined as unknown as Address)
-        .build();
+    it('should throw an error if not authenticated', async () => {
       const spaceId = faker.string.uuid() as UUID;
       const users: Array<{
         address: Address;
@@ -655,49 +693,24 @@ describe('MembersRepository', () => {
 
       await expect(
         membersRepository.inviteUsers({
-          authPayload: new AuthPayload(authPayloadDto),
+          authPayload: new AuthPayload(),
           spaceId,
           users,
         }),
-      ).rejects.toThrow('Signer address not provided.');
-    });
-
-    it('should throw if the signer_address has no user', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const spaceId = faker.string.uuid() as UUID;
-      const users: Array<{
-        address: Address;
-        role: keyof typeof MemberRole;
-        name: string;
-      }> = [];
-
-      await expect(
-        membersRepository.inviteUsers({
-          authPayload: new AuthPayload(authPayloadDto),
-          spaceId,
-          users,
-        }),
-      ).rejects.toThrow('User not found.');
+      ).rejects.toThrow('Not authenticated');
     });
 
     it('should not allow inviting users if the user is not an ADMIN', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const spaceName = nameBuilder();
       const memberName = nameBuilder();
-      const owner = await dbUserRepo.insert({
-        status: 'ACTIVE',
-      });
-      await dbWalletRepo.insert({
-        user: owner.generatedMaps[0],
-        address: authPayloadDto.signer_address,
-      });
+      const { user: owner, authPayload } = await createSiweUser();
       const space = await dbSpacesRepository.insert({
         name: spaceName,
         status: 'ACTIVE',
       });
       const spaceId = space.generatedMaps[0].id;
       await dbMembersRepository.insert({
-        user: owner.generatedMaps[0],
+        user: owner,
         space: space.generatedMaps[0],
         name: memberName,
         role: 'MEMBER',
@@ -717,33 +730,24 @@ describe('MembersRepository', () => {
 
       await expect(
         membersRepository.inviteUsers({
-          authPayload: new AuthPayload(authPayloadDto),
+          authPayload,
           spaceId,
           users,
         }),
-      ).rejects.toThrow(
-        new UnauthorizedException('Signer is not an active admin.'),
-      );
+      ).rejects.toThrow(new ForbiddenException('User is not an active admin.'));
     });
 
     it('should not allow inviting users if the user is a NON-ACTIVE ADMIN', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const spaceName = nameBuilder();
       const memberName = nameBuilder();
-      const owner = await dbUserRepo.insert({
-        status: 'ACTIVE',
-      });
-      await dbWalletRepo.insert({
-        user: owner.generatedMaps[0],
-        address: authPayloadDto.signer_address,
-      });
+      const { user: owner, authPayload } = await createSiweUser();
       const space = await dbSpacesRepository.insert({
         name: spaceName,
         status: 'ACTIVE',
       });
       const spaceId = space.generatedMaps[0].id;
       await dbMembersRepository.insert({
-        user: owner.generatedMaps[0],
+        user: owner,
         space: space.generatedMaps[0],
         name: memberName,
         role: 'ADMIN',
@@ -763,27 +767,18 @@ describe('MembersRepository', () => {
 
       await expect(
         membersRepository.inviteUsers({
-          authPayload: new AuthPayload(authPayloadDto),
+          authPayload,
           spaceId,
           users,
         }),
-      ).rejects.toThrow(
-        new UnauthorizedException('Signer is not an active admin.'),
-      );
+      ).rejects.toThrow(new ForbiddenException('User is not an active admin.'));
     });
 
     it('should not allow inviting users if the signer is an admin of another space', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const sourceSpaceName = nameBuilder();
       const targetSpaceName = nameBuilder();
       const memberName = nameBuilder();
-      const owner = await dbUserRepo.insert({
-        status: 'ACTIVE',
-      });
-      await dbWalletRepo.insert({
-        user: owner.generatedMaps[0],
-        address: authPayloadDto.signer_address,
-      });
+      const { user: owner, authPayload } = await createSiweUser();
       const sourceSpace = await dbSpacesRepository.insert({
         name: sourceSpaceName,
         status: 'ACTIVE',
@@ -794,7 +789,7 @@ describe('MembersRepository', () => {
       });
       const targetSpaceId = targetSpace.generatedMaps[0].id;
       await dbMembersRepository.insert({
-        user: owner.generatedMaps[0],
+        user: owner,
         space: sourceSpace.generatedMaps[0],
         name: memberName,
         role: 'ADMIN',
@@ -814,24 +809,15 @@ describe('MembersRepository', () => {
 
       await expect(
         membersRepository.inviteUsers({
-          authPayload: new AuthPayload(authPayloadDto),
+          authPayload,
           spaceId: targetSpaceId,
           users,
         }),
-      ).rejects.toThrow(
-        new UnauthorizedException('Signer is not an active admin.'),
-      );
+      ).rejects.toThrow(new ForbiddenException('User is not an active admin.'));
     });
 
     it('should throw an error if the space does not exist', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const owner = await dbUserRepo.insert({
-        status: 'ACTIVE',
-      });
-      await dbWalletRepo.insert({
-        user: owner.generatedMaps[0],
-        address: authPayloadDto.signer_address,
-      });
+      const { authPayload } = await createSiweUser();
       const spaceId = faker.string.uuid() as UUID;
       const users: Array<{
         address: Address;
@@ -841,7 +827,7 @@ describe('MembersRepository', () => {
 
       await expect(
         membersRepository.inviteUsers({
-          authPayload: new AuthPayload(authPayloadDto),
+          authPayload,
           spaceId,
           users,
         }),
@@ -849,31 +835,18 @@ describe('MembersRepository', () => {
     });
 
     it('should throw an error if the signer_address member is not ACTIVE', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const pendingAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
       const spaceName = nameBuilder();
       const adminName = nameBuilder();
-      const admin = await dbUserRepo.insert({
-        status: 'ACTIVE',
-      });
-      const invitedAdmin = await dbUserRepo.insert({
-        status: 'ACTIVE',
-      });
-      await dbWalletRepo.insert({
-        user: admin.generatedMaps[0],
-        address: authPayloadDto.signer_address,
-      });
-      await dbWalletRepo.insert({
-        user: invitedAdmin.generatedMaps[0],
-        address: pendingAuthPayloadDto.signer_address,
-      });
+      const { user: admin } = await createSiweUser();
+      const { user: invitedAdmin, authPayload: invitedAdminAuthPayload } =
+        await createSiweUser();
       const space = await dbSpacesRepository.insert({
         name: spaceName,
         status: 'ACTIVE',
       });
       const spaceId = space.generatedMaps[0].id;
       await dbMembersRepository.insert({
-        user: admin.generatedMaps[0],
+        user: admin,
         space: space.generatedMaps[0],
         name: adminName,
         role: 'ADMIN',
@@ -881,7 +854,7 @@ describe('MembersRepository', () => {
         invitedBy: getAddress(faker.finance.ethereumAddress()),
       });
       await dbMembersRepository.insert({
-        user: invitedAdmin.generatedMaps[0],
+        user: invitedAdmin,
         space: space.generatedMaps[0],
         name: adminName,
         role: 'ADMIN',
@@ -896,19 +869,16 @@ describe('MembersRepository', () => {
 
       await expect(
         membersRepository.inviteUsers({
-          authPayload: new AuthPayload(pendingAuthPayloadDto),
+          authPayload: invitedAdminAuthPayload,
           spaceId,
           users,
         }),
-      ).rejects.toThrow(
-        new UnauthorizedException('Signer is not an active admin.'),
-      );
+      ).rejects.toThrow(new ForbiddenException('User is not an active admin.'));
     });
   });
 
   describe('acceptInvite', () => {
     it('should accept an invite to a space, setting the member and user to ACTIVE', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const memberInvitedBy = getAddress(faker.finance.ethereumAddress());
       const spaceName = nameBuilder();
       const adminName = nameBuilder();
@@ -916,17 +886,12 @@ describe('MembersRepository', () => {
       const admin = await dbUserRepo.insert({
         status: 'ACTIVE',
       });
-      const user = await dbUserRepo.insert({
+      const { userId, user, authPayload } = await createSiweUser({
         status: 'PENDING',
       });
-      const userId = user.generatedMaps[0].id;
       await dbWalletRepo.insert({
         user: admin.generatedMaps[0],
         address: getAddress(faker.finance.ethereumAddress()),
-      });
-      await dbWalletRepo.insert({
-        user: user.generatedMaps[0],
-        address: authPayloadDto.signer_address,
       });
       const space = await dbSpacesRepository.insert({
         name: spaceName,
@@ -943,7 +908,7 @@ describe('MembersRepository', () => {
         invitedBy: memberInvitedBy,
       });
       const member = await dbMembersRepository.insert({
-        user: user.generatedMaps[0],
+        user,
         space: space.generatedMaps[0],
         name: memberName,
         role: memberRole,
@@ -953,7 +918,7 @@ describe('MembersRepository', () => {
       const memberId = member.identifiers[0].id as Member['id'];
 
       await membersRepository.acceptInvite({
-        authPayload: new AuthPayload(authPayloadDto),
+        authPayload,
         spaceId,
         payload: {
           name: memberName,
@@ -976,7 +941,7 @@ describe('MembersRepository', () => {
       });
       await expect(
         dbUserRepo.findOneOrFail({
-          where: { id: user.generatedMaps[0].id },
+          where: { id: userId },
         }),
       ).resolves.toEqual({
         createdAt: expect.any(Date),
@@ -987,8 +952,7 @@ describe('MembersRepository', () => {
       });
     });
 
-    it('should accept an invite to a space and override the name', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
+    it('should accept an invite for OIDC user', async () => {
       const memberInvitedBy = getAddress(faker.finance.ethereumAddress());
       const spaceName = nameBuilder();
       const adminName = nameBuilder();
@@ -996,17 +960,12 @@ describe('MembersRepository', () => {
       const admin = await dbUserRepo.insert({
         status: 'ACTIVE',
       });
-      const user = await dbUserRepo.insert({
+      const { user, authPayload } = await createOidcUser({
         status: 'PENDING',
       });
-      const userId = user.generatedMaps[0].id;
       await dbWalletRepo.insert({
         user: admin.generatedMaps[0],
         address: getAddress(faker.finance.ethereumAddress()),
-      });
-      await dbWalletRepo.insert({
-        user: user.generatedMaps[0],
-        address: authPayloadDto.signer_address,
       });
       const space = await dbSpacesRepository.insert({
         name: spaceName,
@@ -1023,7 +982,7 @@ describe('MembersRepository', () => {
         invitedBy: memberInvitedBy,
       });
       const member = await dbMembersRepository.insert({
-        user: user.generatedMaps[0],
+        user,
         space: space.generatedMaps[0],
         name: memberName,
         role: memberRole,
@@ -1031,13 +990,12 @@ describe('MembersRepository', () => {
         invitedBy: memberInvitedBy,
       });
       const memberId = member.identifiers[0].id as Member['id'];
-      const updatedName = nameBuilder();
 
       await membersRepository.acceptInvite({
-        authPayload: new AuthPayload(authPayloadDto),
+        authPayload,
         spaceId,
         payload: {
-          name: updatedName,
+          name: memberName,
         },
       });
 
@@ -1045,47 +1003,102 @@ describe('MembersRepository', () => {
         dbMembersRepository.findOneOrFail({
           where: { id: memberId },
         }),
-      ).resolves.toEqual({
-        createdAt: expect.any(Date),
-        id: memberId,
-        name: updatedName,
-        alias: null,
-        role: memberRole,
-        status: 'ACTIVE',
-        invitedBy: memberInvitedBy,
-        updatedAt: expect.any(Date),
-      });
-      await expect(
-        dbUserRepo.findOneOrFail({
-          where: { id: user.generatedMaps[0].id },
+      ).resolves.toEqual(
+        expect.objectContaining({
+          id: memberId,
+          status: 'ACTIVE',
+          name: memberName,
         }),
-      ).resolves.toEqual({
-        createdAt: expect.any(Date),
-        extUserId: null,
-        id: userId,
-        status: 'ACTIVE', // No longer PENDING
-        updatedAt: expect.any(Date),
-      });
+      );
     });
 
+    it.each([
+      ['SIWE', createSiweUser],
+      ['OIDC', createOidcUser],
+    ] as const)(
+      'should accept an invite to a space and override the name (%s)',
+      async (_label, createUser) => {
+        const memberInvitedBy = getAddress(faker.finance.ethereumAddress());
+        const spaceName = nameBuilder();
+        const adminName = nameBuilder();
+        const memberName = nameBuilder();
+        const admin = await dbUserRepo.insert({
+          status: 'ACTIVE',
+        });
+        const { userId, user, authPayload } = await createUser({
+          status: 'PENDING',
+        });
+        await dbWalletRepo.insert({
+          user: admin.generatedMaps[0],
+          address: getAddress(faker.finance.ethereumAddress()),
+        });
+        const space = await dbSpacesRepository.insert({
+          name: spaceName,
+          status: 'ACTIVE',
+        });
+        const memberRole = faker.helpers.arrayElement(MemberRoleKeys);
+        const spaceId = space.generatedMaps[0].id;
+        await dbMembersRepository.insert({
+          user: admin.generatedMaps[0],
+          space: space.generatedMaps[0],
+          name: adminName,
+          role: 'ADMIN',
+          status: 'ACTIVE',
+          invitedBy: memberInvitedBy,
+        });
+        const member = await dbMembersRepository.insert({
+          user,
+          space: space.generatedMaps[0],
+          name: memberName,
+          role: memberRole,
+          status: 'INVITED',
+          invitedBy: memberInvitedBy,
+        });
+        const memberId = member.identifiers[0].id as Member['id'];
+        const updatedName = nameBuilder();
+
+        await membersRepository.acceptInvite({
+          authPayload,
+          spaceId,
+          payload: {
+            name: updatedName,
+          },
+        });
+
+        await expect(
+          dbMembersRepository.findOneOrFail({
+            where: { id: memberId },
+          }),
+        ).resolves.toEqual({
+          createdAt: expect.any(Date),
+          id: memberId,
+          name: updatedName,
+          alias: null,
+          role: memberRole,
+          status: 'ACTIVE',
+          invitedBy: memberInvitedBy,
+          updatedAt: expect.any(Date),
+        });
+        await expect(
+          dbUserRepo.findOneOrFail({
+            where: { id: userId },
+          }),
+        ).resolves.toEqual({
+          createdAt: expect.any(Date),
+          extUserId: null,
+          id: userId,
+          status: 'ACTIVE', // No longer PENDING
+          updatedAt: expect.any(Date),
+        });
+      },
+    );
+
     it('should not accept the invite if the user was not invited', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const memberAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
       const spaceName = nameBuilder();
       const adminName = nameBuilder();
-      const admin = await dbUserRepo.insert({
-        status: 'ACTIVE',
-      });
-      await dbWalletRepo.insert({
-        user: admin.generatedMaps[0],
-        address: authPayloadDto.signer_address,
-      });
-      const nonMember = await dbUserRepo.insert({
+      const { user: admin } = await createSiweUser();
+      const { authPayload: nonMemberAuthPayload } = await createSiweUser({
         status: 'PENDING',
-      });
-      await dbWalletRepo.insert({
-        user: nonMember.generatedMaps[0],
-        address: memberAuthPayloadDto.signer_address,
       });
       const space = await dbSpacesRepository.insert({
         name: spaceName,
@@ -1094,7 +1107,7 @@ describe('MembersRepository', () => {
       const memberRole = faker.helpers.arrayElement(MemberRoleKeys);
       const spaceId = space.generatedMaps[0].id;
       await dbMembersRepository.insert({
-        user: admin.generatedMaps[0],
+        user: admin,
         space: space.generatedMaps[0],
         name: adminName,
         role: memberRole,
@@ -1104,7 +1117,7 @@ describe('MembersRepository', () => {
 
       await expect(
         membersRepository.acceptInvite({
-          authPayload: new AuthPayload(memberAuthPayloadDto),
+          authPayload: nonMemberAuthPayload,
           spaceId,
           payload: {
             name: adminName,
@@ -1113,25 +1126,22 @@ describe('MembersRepository', () => {
       ).rejects.toThrow('Space not found.');
     });
 
-    it('should throw an error if the signer_address does not exist', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder()
-        .with('signer_address', undefined as unknown as Address)
-        .build();
+    it('should throw an error if not authenticated', async () => {
       const spaceId = faker.string.uuid() as UUID;
       const memberName = nameBuilder();
 
       await expect(
         membersRepository.acceptInvite({
-          authPayload: new AuthPayload(authPayloadDto),
+          authPayload: new AuthPayload(),
           spaceId,
           payload: {
             name: memberName,
           },
         }),
-      ).rejects.toThrow('Signer address not provided.');
+      ).rejects.toThrow('Not authenticated');
     });
 
-    it('should throw if the signer_address has no user', async () => {
+    it('should throw if the user is not found', async () => {
       const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const spaceId = faker.string.uuid() as UUID;
       const memberName = nameBuilder();
@@ -1144,24 +1154,17 @@ describe('MembersRepository', () => {
             name: memberName,
           },
         }),
-      ).rejects.toThrow('User not found.');
+      ).rejects.toThrow('Space not found.');
     });
 
     it('should throw an error if the space does not exist', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const memberName = nameBuilder();
-      const user = await dbUserRepo.insert({
-        status: 'PENDING',
-      });
-      await dbWalletRepo.insert({
-        user: user.generatedMaps[0],
-        address: authPayloadDto.signer_address,
-      });
+      const { authPayload } = await createSiweUser({ status: 'PENDING' });
       const spaceId = faker.string.uuid() as UUID;
 
       await expect(
         membersRepository.acceptInvite({
-          authPayload: new AuthPayload(authPayloadDto),
+          authPayload,
           spaceId,
           payload: {
             name: memberName,
@@ -1171,25 +1174,12 @@ describe('MembersRepository', () => {
     });
 
     it('should throw an error if the user is already a member of the space', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const memberAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
       const spaceName = nameBuilder();
       const adminName = nameBuilder();
       const memberName = nameBuilder();
-      const admin = await dbUserRepo.insert({
-        status: 'ACTIVE',
-      });
-      await dbWalletRepo.insert({
-        user: admin.generatedMaps[0],
-        address: authPayloadDto.signer_address,
-      });
-      const member = await dbUserRepo.insert({
-        status: 'ACTIVE',
-      });
-      await dbWalletRepo.insert({
-        user: member.generatedMaps[0],
-        address: memberAuthPayloadDto.signer_address,
-      });
+      const { user: admin } = await createSiweUser();
+      const { user: member, authPayload: memberAuthPayload } =
+        await createSiweUser();
       const space = await dbSpacesRepository.insert({
         name: spaceName,
         status: 'ACTIVE',
@@ -1197,7 +1187,7 @@ describe('MembersRepository', () => {
       const memberRole = faker.helpers.arrayElement(MemberRoleKeys);
       const spaceId = space.generatedMaps[0].id;
       await dbMembersRepository.insert({
-        user: admin.generatedMaps[0],
+        user: admin,
         space: space.generatedMaps[0],
         name: adminName,
         role: 'ADMIN',
@@ -1205,7 +1195,7 @@ describe('MembersRepository', () => {
         invitedBy: getAddress(faker.finance.ethereumAddress()),
       });
       await dbMembersRepository.insert({
-        user: member.generatedMaps[0],
+        user: member,
         space: space.generatedMaps[0],
         name: memberName,
         role: memberRole,
@@ -1215,7 +1205,7 @@ describe('MembersRepository', () => {
 
       await expect(
         membersRepository.acceptInvite({
-          authPayload: new AuthPayload(memberAuthPayloadDto),
+          authPayload: memberAuthPayload,
           spaceId,
           payload: { name: memberName },
         }),
@@ -1223,23 +1213,18 @@ describe('MembersRepository', () => {
     });
 
     it('should throw an error if the user is not INVITED to the space', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const spaceName = nameBuilder();
       const adminName = nameBuilder();
       const memberName = nameBuilder();
       const admin = await dbUserRepo.insert({
         status: 'ACTIVE',
       });
-      const user = await dbUserRepo.insert({
+      const { user, authPayload } = await createSiweUser({
         status: 'PENDING',
       });
       await dbWalletRepo.insert({
         user: admin.generatedMaps[0],
         address: getAddress(faker.finance.ethereumAddress()),
-      });
-      await dbWalletRepo.insert({
-        user: user.generatedMaps[0],
-        address: authPayloadDto.signer_address,
       });
       const space = await dbSpacesRepository.insert({
         name: spaceName,
@@ -1256,7 +1241,7 @@ describe('MembersRepository', () => {
         invitedBy: getAddress(faker.finance.ethereumAddress()),
       });
       await dbMembersRepository.insert({
-        user: user.generatedMaps[0],
+        user,
         space: space.generatedMaps[0],
         name: memberName,
         role: memberRole,
@@ -1266,7 +1251,7 @@ describe('MembersRepository', () => {
 
       await expect(
         membersRepository.acceptInvite({
-          authPayload: new AuthPayload(authPayloadDto),
+          authPayload,
           spaceId,
           payload: {
             name: memberName,
@@ -1278,7 +1263,6 @@ describe('MembersRepository', () => {
 
   describe('declineInvite', () => {
     it('should accept an invite to a space, setting the member to DECLINED', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const memberInvitedBy = getAddress(faker.finance.ethereumAddress());
       const spaceName = nameBuilder();
       const adminName = nameBuilder();
@@ -1286,17 +1270,12 @@ describe('MembersRepository', () => {
       const admin = await dbUserRepo.insert({
         status: 'ACTIVE',
       });
-      const user = await dbUserRepo.insert({
+      const { userId, user, authPayload } = await createSiweUser({
         status: 'PENDING',
       });
-      const userId = user.generatedMaps[0].id;
       await dbWalletRepo.insert({
         user: admin.generatedMaps[0],
         address: getAddress(faker.finance.ethereumAddress()),
-      });
-      await dbWalletRepo.insert({
-        user: user.generatedMaps[0],
-        address: authPayloadDto.signer_address,
       });
       const space = await dbSpacesRepository.insert({
         name: spaceName,
@@ -1313,7 +1292,7 @@ describe('MembersRepository', () => {
         invitedBy: memberInvitedBy,
       });
       const member = await dbMembersRepository.insert({
-        user: user.generatedMaps[0],
+        user,
         space: space.generatedMaps[0],
         name: memberName,
         role: memberRole,
@@ -1323,7 +1302,7 @@ describe('MembersRepository', () => {
       const memberId = member.identifiers[0].id as Member['id'];
 
       await membersRepository.declineInvite({
-        authPayload: new AuthPayload(authPayloadDto),
+        authPayload,
         spaceId,
       });
 
@@ -1343,7 +1322,7 @@ describe('MembersRepository', () => {
       });
       await expect(
         dbUserRepo.findOneOrFail({
-          where: { id: user.generatedMaps[0].id },
+          where: { id: userId },
         }),
       ).resolves.toEqual({
         createdAt: expect.any(Date),
@@ -1395,121 +1374,179 @@ describe('MembersRepository', () => {
         }),
       ).rejects.toThrow('Space not found.');
     });
-
-    it('should throw an error if the signer_address does not exist', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder()
-        .with('signer_address', undefined as unknown as Address)
-        .build();
-      const spaceId = faker.string.uuid() as UUID;
-
-      await expect(
-        membersRepository.declineInvite({
-          authPayload: new AuthPayload(authPayloadDto),
-          spaceId,
-        }),
-      ).rejects.toThrow('Signer address not provided.');
-    });
-
-    it('should throw if the signer_address has no user', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const spaceId = faker.string.uuid() as UUID;
-
-      await expect(
-        membersRepository.declineInvite({
-          authPayload: new AuthPayload(authPayloadDto),
-          spaceId,
-        }),
-      ).rejects.toThrow('User not found.');
-    });
-
-    it('should throw an error if the space does not exist', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const user = await dbUserRepo.insert({
-        status: 'PENDING',
-      });
-      await dbWalletRepo.insert({
-        user: user.generatedMaps[0],
-        address: authPayloadDto.signer_address,
-      });
-      const spaceId = faker.string.uuid() as UUID;
-
-      await expect(
-        membersRepository.declineInvite({
-          authPayload: new AuthPayload(authPayloadDto),
-          spaceId,
-        }),
-      ).rejects.toThrow('Space not found.');
-    });
-
-    it('should throw an error if the user is already a member of the space', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const memberAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
+    it('should decline an invite for OIDC user', async () => {
+      const memberInvitedBy = getAddress(faker.finance.ethereumAddress());
       const spaceName = nameBuilder();
       const adminName = nameBuilder();
       const memberName = nameBuilder();
       const admin = await dbUserRepo.insert({
         status: 'ACTIVE',
       });
-      await dbWalletRepo.insert({
-        user: admin.generatedMaps[0],
-        address: authPayloadDto.signer_address,
-      });
-      const member = await dbUserRepo.insert({
-        status: 'ACTIVE',
-      });
-      await dbWalletRepo.insert({
-        user: member.generatedMaps[0],
-        address: memberAuthPayloadDto.signer_address,
-      });
-      const space = await dbSpacesRepository.insert({
-        name: spaceName,
-        status: 'ACTIVE',
-      });
-      const memberRole = faker.helpers.arrayElement(MemberRoleKeys);
-      const spaceId = space.generatedMaps[0].id;
-      await dbMembersRepository.insert({
-        user: admin.generatedMaps[0],
-        space: space.generatedMaps[0],
-        name: adminName,
-        role: 'ADMIN',
-        status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
-      });
-      await dbMembersRepository.insert({
-        user: member.generatedMaps[0],
-        space: space.generatedMaps[0],
-        name: memberName,
-        role: memberRole,
-        status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
-      });
-
-      await expect(
-        membersRepository.declineInvite({
-          authPayload: new AuthPayload(memberAuthPayloadDto),
-          spaceId,
-        }),
-      ).rejects.toThrow('Space not found.');
-    });
-
-    it('should throw an error if the user is not INVITED to the space', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const spaceName = nameBuilder();
-      const adminName = nameBuilder();
-      const memberName = nameBuilder();
-      const admin = await dbUserRepo.insert({
-        status: 'ACTIVE',
-      });
-      const user = await dbUserRepo.insert({
+      const { user, authPayload } = await createOidcUser({
         status: 'PENDING',
       });
       await dbWalletRepo.insert({
         user: admin.generatedMaps[0],
         address: getAddress(faker.finance.ethereumAddress()),
       });
+      const space = await dbSpacesRepository.insert({
+        name: spaceName,
+        status: 'ACTIVE',
+      });
+      const memberRole = faker.helpers.arrayElement(MemberRoleKeys);
+      const spaceId = space.generatedMaps[0].id;
+      await dbMembersRepository.insert({
+        user: admin.generatedMaps[0],
+        space: space.generatedMaps[0],
+        name: adminName,
+        role: 'ADMIN',
+        status: 'ACTIVE',
+        invitedBy: memberInvitedBy,
+      });
+      const member = await dbMembersRepository.insert({
+        user,
+        space: space.generatedMaps[0],
+        name: memberName,
+        role: memberRole,
+        status: 'INVITED',
+        invitedBy: memberInvitedBy,
+      });
+      const memberId = member.identifiers[0].id as Member['id'];
+
+      await membersRepository.declineInvite({
+        authPayload,
+        spaceId,
+      });
+
+      await expect(
+        dbMembersRepository.findOneOrFail({
+          where: { id: memberId },
+        }),
+      ).resolves.toEqual(
+        expect.objectContaining({
+          id: memberId,
+          status: 'DECLINED',
+          name: memberName,
+        }),
+      );
+    });
+
+    it('should not decline the invite if the user was not invited', async () => {
+      const spaceName = nameBuilder();
+      const adminName = nameBuilder();
+      const { user: admin } = await createSiweUser();
+      const { authPayload: nonMemberAuthPayload } = await createSiweUser({
+        status: 'PENDING',
+      });
+      const space = await dbSpacesRepository.insert({
+        name: spaceName,
+        status: 'ACTIVE',
+      });
+      const memberRole = faker.helpers.arrayElement(MemberRoleKeys);
+      const spaceId = space.generatedMaps[0].id;
+      await dbMembersRepository.insert({
+        user: admin,
+        space: space.generatedMaps[0],
+        name: adminName,
+        role: memberRole,
+        status: 'ACTIVE',
+        invitedBy: getAddress(faker.finance.ethereumAddress()),
+      });
+
+      await expect(
+        membersRepository.declineInvite({
+          authPayload: nonMemberAuthPayload,
+          spaceId,
+        }),
+      ).rejects.toThrow('Space not found.');
+    });
+
+    it('should throw an error if not authenticated', async () => {
+      const spaceId = faker.string.uuid() as UUID;
+
+      await expect(
+        membersRepository.declineInvite({
+          authPayload: new AuthPayload(),
+          spaceId,
+        }),
+      ).rejects.toThrow('Not authenticated');
+    });
+
+    it('should throw if the user is not found', async () => {
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
+      const spaceId = faker.string.uuid() as UUID;
+
+      await expect(
+        membersRepository.declineInvite({
+          authPayload: new AuthPayload(authPayloadDto),
+          spaceId,
+        }),
+      ).rejects.toThrow('Space not found.');
+    });
+
+    it('should throw an error if the space does not exist', async () => {
+      const { authPayload } = await createSiweUser({ status: 'PENDING' });
+      const spaceId = faker.string.uuid() as UUID;
+
+      await expect(
+        membersRepository.declineInvite({
+          authPayload,
+          spaceId,
+        }),
+      ).rejects.toThrow('Space not found.');
+    });
+
+    it('should throw an error if the user is already a member of the space', async () => {
+      const spaceName = nameBuilder();
+      const adminName = nameBuilder();
+      const memberName = nameBuilder();
+      const { user: admin } = await createSiweUser();
+      const { user: member, authPayload: memberAuthPayload } =
+        await createSiweUser();
+      const space = await dbSpacesRepository.insert({
+        name: spaceName,
+        status: 'ACTIVE',
+      });
+      const memberRole = faker.helpers.arrayElement(MemberRoleKeys);
+      const spaceId = space.generatedMaps[0].id;
+      await dbMembersRepository.insert({
+        user: admin,
+        space: space.generatedMaps[0],
+        name: adminName,
+        role: 'ADMIN',
+        status: 'ACTIVE',
+        invitedBy: getAddress(faker.finance.ethereumAddress()),
+      });
+      await dbMembersRepository.insert({
+        user: member,
+        space: space.generatedMaps[0],
+        name: memberName,
+        role: memberRole,
+        status: 'ACTIVE',
+        invitedBy: getAddress(faker.finance.ethereumAddress()),
+      });
+
+      await expect(
+        membersRepository.declineInvite({
+          authPayload: memberAuthPayload,
+          spaceId,
+        }),
+      ).rejects.toThrow('Space not found.');
+    });
+
+    it('should throw an error if the user is not INVITED to the space', async () => {
+      const spaceName = nameBuilder();
+      const adminName = nameBuilder();
+      const memberName = nameBuilder();
+      const admin = await dbUserRepo.insert({
+        status: 'ACTIVE',
+      });
+      const { user, authPayload } = await createSiweUser({
+        status: 'PENDING',
+      });
       await dbWalletRepo.insert({
-        user: user.generatedMaps[0],
-        address: authPayloadDto.signer_address,
+        user: admin.generatedMaps[0],
+        address: getAddress(faker.finance.ethereumAddress()),
       });
       const space = await dbSpacesRepository.insert({
         name: spaceName,
@@ -1526,7 +1563,7 @@ describe('MembersRepository', () => {
         invitedBy: getAddress(faker.finance.ethereumAddress()),
       });
       await dbMembersRepository.insert({
-        user: user.generatedMaps[0],
+        user,
         space: space.generatedMaps[0],
         name: memberName,
         role: memberRole,
@@ -1536,7 +1573,7 @@ describe('MembersRepository', () => {
 
       await expect(
         membersRepository.declineInvite({
-          authPayload: new AuthPayload(authPayloadDto),
+          authPayload,
           spaceId,
         }),
       ).rejects.toThrow('Space not found.');
@@ -1545,17 +1582,14 @@ describe('MembersRepository', () => {
 
   describe('findAuthorizedMembersOrFail', () => {
     it('should find members by space id', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const spaceName = nameBuilder();
       const memberName = nameBuilder();
-      const userStatus = faker.helpers.arrayElement(UserStatusKeys);
+      const userStatus = faker.helpers.arrayElement<'ACTIVE' | 'PENDING'>(
+        UserStatusKeys,
+      );
       const memberInvitedBy = getAddress(faker.finance.ethereumAddress());
-      const user = await dbUserRepo.insert({
+      const { userId, user, authPayload } = await createSiweUser({
         status: userStatus,
-      });
-      await dbWalletRepo.insert({
-        user: user.generatedMaps[0],
-        address: authPayloadDto.signer_address,
       });
       const space = await dbSpacesRepository.insert({
         name: spaceName,
@@ -1564,7 +1598,7 @@ describe('MembersRepository', () => {
       const memberRole = faker.helpers.arrayElement(MemberRoleKeys);
       const spaceId = space.generatedMaps[0].id;
       const member = await dbMembersRepository.insert({
-        user: user.generatedMaps[0],
+        user,
         space: space.generatedMaps[0],
         name: memberName,
         role: memberRole,
@@ -1575,7 +1609,7 @@ describe('MembersRepository', () => {
 
       await expect(
         membersRepository.findAuthorizedMembersOrFail({
-          authPayload: new AuthPayload(authPayloadDto),
+          authPayload,
           spaceId,
         }),
       ).resolves.toEqual([
@@ -1591,7 +1625,7 @@ describe('MembersRepository', () => {
           user: {
             createdAt: expect.any(Date),
             extUserId: null,
-            id: user.generatedMaps[0].id,
+            id: userId,
             status: userStatus,
             updatedAt: expect.any(Date),
           },
@@ -1599,48 +1633,61 @@ describe('MembersRepository', () => {
       ]);
     });
 
-    it('should throw an error if the signer_address does not exist', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder()
-        .with('signer_address', undefined as unknown as Address)
-        .build();
-      const spaceId = faker.string.uuid() as UUID;
-
-      await expect(
-        membersRepository.findAuthorizedMembersOrFail({
-          authPayload: new AuthPayload(authPayloadDto),
-          spaceId,
-        }),
-      ).rejects.toThrow('Signer address not provided.');
-    });
-
-    it('should throw if the signer_address has no user', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const spaceId = faker.string.uuid() as UUID;
-
-      await expect(
-        membersRepository.findAuthorizedMembersOrFail({
-          authPayload: new AuthPayload(authPayloadDto),
-          spaceId,
-        }),
-      ).rejects.toThrow('User not found.');
-    });
-
-    it('should throw an error if the user is not a member of the space', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const userStatus = faker.helpers.arrayElement(UserStatusKeys);
+    it('should find members by space id for OIDC user', async () => {
       const spaceName = nameBuilder();
-      const user = await dbUserRepo.insert({
+      const memberName = nameBuilder();
+      const userStatus = faker.helpers.arrayElement<'ACTIVE' | 'PENDING'>(
+        UserStatusKeys,
+      );
+      const memberInvitedBy = getAddress(faker.finance.ethereumAddress());
+      const { user, authPayload } = await createOidcUser({
         status: userStatus,
-      });
-      await dbWalletRepo.insert({
-        user: user.generatedMaps[0],
-        address: authPayloadDto.signer_address,
       });
       const space = await dbSpacesRepository.insert({
         name: spaceName,
         status: 'ACTIVE',
       });
+      const memberRole = faker.helpers.arrayElement(MemberRoleKeys);
       const spaceId = space.generatedMaps[0].id;
+      const member = await dbMembersRepository.insert({
+        user,
+        space: space.generatedMaps[0],
+        name: memberName,
+        role: memberRole,
+        status: 'ACTIVE',
+        invitedBy: memberInvitedBy,
+      });
+      const memberId = member.identifiers[0].id as Member['id'];
+
+      await expect(
+        membersRepository.findAuthorizedMembersOrFail({
+          authPayload,
+          spaceId,
+        }),
+      ).resolves.toEqual([
+        expect.objectContaining({
+          id: memberId,
+          name: memberName,
+          role: memberRole,
+          status: 'ACTIVE',
+        }),
+      ]);
+    });
+
+    it('should throw an error if not authenticated', async () => {
+      const spaceId = faker.string.uuid() as UUID;
+
+      await expect(
+        membersRepository.findAuthorizedMembersOrFail({
+          authPayload: new AuthPayload(),
+          spaceId,
+        }),
+      ).rejects.toThrow('Not authenticated');
+    });
+
+    it('should throw if the user is not found', async () => {
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
+      const spaceId = faker.string.uuid() as UUID;
 
       await expect(
         membersRepository.findAuthorizedMembersOrFail({
@@ -1648,29 +1695,46 @@ describe('MembersRepository', () => {
           spaceId,
         }),
       ).rejects.toThrow(
-        new UnauthorizedException(
+        new ForbiddenException(
+          'The user is not an active member of the space.',
+        ),
+      );
+    });
+
+    it('should throw an error if the user is not a member of the space', async () => {
+      const userStatus = faker.helpers.arrayElement<'ACTIVE' | 'PENDING'>(
+        UserStatusKeys,
+      );
+      const spaceName = nameBuilder();
+      const { authPayload } = await createSiweUser({ status: userStatus });
+      const space = await dbSpacesRepository.insert({
+        name: spaceName,
+        status: 'ACTIVE',
+      });
+      const spaceId = space.generatedMaps[0].id;
+
+      await expect(
+        membersRepository.findAuthorizedMembersOrFail({
+          authPayload,
+          spaceId,
+        }),
+      ).rejects.toThrow(
+        new ForbiddenException(
           'The user is not an active member of the space.',
         ),
       );
     });
 
     it('should throw an error if the user is not an active member of the space', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const spaceName = nameBuilder();
-      const user = await dbUserRepo.insert({
-        status: 'ACTIVE',
-      });
-      await dbWalletRepo.insert({
-        user: user.generatedMaps[0],
-        address: authPayloadDto.signer_address,
-      });
+      const { user, authPayload, authPayloadDto } = await createSiweUser();
       const space = await dbSpacesRepository.insert({
         name: spaceName,
         status: 'ACTIVE',
       });
       const spaceId = space.generatedMaps[0].id;
       await dbMembersRepository.insert({
-        user: user.generatedMaps[0],
+        user,
         space: space.generatedMaps[0],
         name: faker.person.firstName(),
         role: faker.helpers.arrayElement(MemberRoleKeys),
@@ -1680,11 +1744,11 @@ describe('MembersRepository', () => {
 
       await expect(
         membersRepository.findAuthorizedMembersOrFail({
-          authPayload: new AuthPayload(authPayloadDto),
+          authPayload,
           spaceId,
         }),
       ).rejects.toThrow(
-        new UnauthorizedException(
+        new ForbiddenException(
           'The user is not an active member of the space.',
         ),
       );
@@ -1693,17 +1757,10 @@ describe('MembersRepository', () => {
 
   describe('updateRole', () => {
     it('should update the role of a member', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const spaceName = nameBuilder();
       const adminName = nameBuilder();
       const memberName = nameBuilder();
-      const owner = await dbUserRepo.insert({
-        status: 'ACTIVE',
-      });
-      await dbWalletRepo.insert({
-        user: owner.generatedMaps[0],
-        address: authPayloadDto.signer_address,
-      });
+      const { user: owner, authPayload } = await createSiweUser();
       const member = await dbUserRepo.insert({
         status: 'ACTIVE',
       });
@@ -1718,7 +1775,7 @@ describe('MembersRepository', () => {
       });
       const spaceId = space.generatedMaps[0].id;
       await dbMembersRepository.insert({
-        user: owner.generatedMaps[0],
+        user: owner,
         space: space.generatedMaps[0],
         name: adminName,
         role: 'ADMIN',
@@ -1736,7 +1793,7 @@ describe('MembersRepository', () => {
 
       await expect(
         membersRepository.updateRole({
-          authPayload: new AuthPayload(authPayloadDto),
+          authPayload,
           spaceId,
           role: 'ADMIN',
           userId: memberUserId,
@@ -1744,65 +1801,36 @@ describe('MembersRepository', () => {
       ).resolves.not.toThrow();
     });
 
-    it('should update the role of a member within the space only', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const authPayloadDto2 = siweAuthPayloadDtoBuilder().build();
+    it('should update the role of a member as OIDC admin', async () => {
       const spaceName = nameBuilder();
-      const space2Name = faker.word.noun();
       const adminName = nameBuilder();
       const memberName = nameBuilder();
-      const member2Name = nameBuilder();
-      const adminUser = await dbUserRepo.insert({
+      const { user: owner, authPayload } = await createOidcUser();
+      const member = await dbUserRepo.insert({
         status: 'ACTIVE',
       });
-      const memberUser = await dbUserRepo.insert({
-        status: 'ACTIVE',
-      });
+      const memberUserId = member.generatedMaps[0].id;
       await dbWalletRepo.insert({
-        user: adminUser.generatedMaps[0],
-        address: authPayloadDto.signer_address,
-      });
-      await dbWalletRepo.insert({
-        user: memberUser.generatedMaps[0],
-        address: authPayloadDto2.signer_address,
-      });
-      const memberUserId = memberUser.generatedMaps[0].id;
-      await dbWalletRepo.insert({
-        user: memberUser.generatedMaps[0],
+        user: member.generatedMaps[0],
         address: getAddress(faker.finance.ethereumAddress()),
       });
       const space = await dbSpacesRepository.insert({
         name: spaceName,
         status: 'ACTIVE',
       });
-      const space2 = await dbSpacesRepository.insert({
-        name: space2Name,
-        status: 'ACTIVE',
-      });
       const spaceId = space.generatedMaps[0].id;
-      const space2Id = space2.generatedMaps[0].id;
       await dbMembersRepository.insert({
-        user: adminUser.generatedMaps[0],
+        user: owner,
         space: space.generatedMaps[0],
         name: adminName,
         role: 'ADMIN',
         status: 'ACTIVE',
         invitedBy: getAddress(faker.finance.ethereumAddress()),
       });
-      // Add the user to space1
       await dbMembersRepository.insert({
-        user: memberUser.generatedMaps[0],
+        user: member.generatedMaps[0],
         space: space.generatedMaps[0],
         name: memberName,
-        role: 'MEMBER',
-        status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
-      });
-      // Add the user to space2
-      await dbMembersRepository.insert({
-        user: memberUser.generatedMaps[0],
-        space: space2.generatedMaps[0],
-        name: member2Name,
         role: 'MEMBER',
         status: 'ACTIVE',
         invitedBy: getAddress(faker.finance.ethereumAddress()),
@@ -1810,82 +1838,134 @@ describe('MembersRepository', () => {
 
       await expect(
         membersRepository.updateRole({
-          authPayload: new AuthPayload(authPayloadDto),
+          authPayload,
           spaceId,
           role: 'ADMIN',
           userId: memberUserId,
         }),
       ).resolves.not.toThrow();
-      // Member role in space1 is updated
-      await expect(
-        membersRepository.findOneOrFail(
-          {
-            space: { id: spaceId },
-            user: { id: memberUserId },
-          },
-          { space: true },
-        ),
-      ).resolves.toEqual({
-        createdAt: expect.any(Date),
-        id: expect.any(Number),
-        name: memberName,
-        alias: null,
-        role: 'ADMIN',
-        status: 'ACTIVE',
-        invitedBy: expect.any(String),
-        updatedAt: expect.any(Date),
-        space: expect.objectContaining({ id: spaceId }),
-      });
-      // Member role in space2 should not be affected
-      await expect(
-        membersRepository.findOneOrFail(
-          {
-            space: { id: space2Id },
-            user: { id: memberUserId },
-          },
-          { space: true },
-        ),
-      ).resolves.toEqual({
-        createdAt: expect.any(Date),
-        id: expect.any(Number),
-        name: member2Name,
-        alias: null,
-        role: 'MEMBER',
-        status: 'ACTIVE',
-        invitedBy: expect.any(String),
-        updatedAt: expect.any(Date),
-        space: expect.objectContaining({ id: space2Id }),
-      });
     });
 
+    it.each([
+      ['SIWE', createSiweUser],
+      ['OIDC', createOidcUser],
+    ] as const)(
+      'should update the role of a member within the space only (%s)',
+      async (_label, createUser) => {
+        const spaceName = nameBuilder();
+        const space2Name = faker.word.noun();
+        const adminName = nameBuilder();
+        const memberName = nameBuilder();
+        const member2Name = nameBuilder();
+        const { user: adminUser, authPayload } = await createUser();
+        const { userId: memberUserId, user: memberUser } = await createUser();
+        await dbWalletRepo.insert({
+          user: memberUser,
+          address: getAddress(faker.finance.ethereumAddress()),
+        });
+        const space = await dbSpacesRepository.insert({
+          name: spaceName,
+          status: 'ACTIVE',
+        });
+        const space2 = await dbSpacesRepository.insert({
+          name: space2Name,
+          status: 'ACTIVE',
+        });
+        const spaceId = space.generatedMaps[0].id;
+        const space2Id = space2.generatedMaps[0].id;
+        await dbMembersRepository.insert({
+          user: adminUser,
+          space: space.generatedMaps[0],
+          name: adminName,
+          role: 'ADMIN',
+          status: 'ACTIVE',
+          invitedBy: getAddress(faker.finance.ethereumAddress()),
+        });
+        // Add the user to space1
+        await dbMembersRepository.insert({
+          user: memberUser,
+          space: space.generatedMaps[0],
+          name: memberName,
+          role: 'MEMBER',
+          status: 'ACTIVE',
+          invitedBy: getAddress(faker.finance.ethereumAddress()),
+        });
+        // Add the user to space2
+        await dbMembersRepository.insert({
+          user: memberUser,
+          space: space2.generatedMaps[0],
+          name: member2Name,
+          role: 'MEMBER',
+          status: 'ACTIVE',
+          invitedBy: getAddress(faker.finance.ethereumAddress()),
+        });
+
+        await expect(
+          membersRepository.updateRole({
+            authPayload,
+            spaceId,
+            role: 'ADMIN',
+            userId: memberUserId,
+          }),
+        ).resolves.not.toThrow();
+        // Member role in space1 is updated
+        await expect(
+          membersRepository.findOneOrFail(
+            {
+              space: { id: spaceId },
+              user: { id: memberUserId },
+            },
+            { space: true },
+          ),
+        ).resolves.toEqual({
+          createdAt: expect.any(Date),
+          id: expect.any(Number),
+          name: memberName,
+          alias: null,
+          role: 'ADMIN',
+          status: 'ACTIVE',
+          invitedBy: expect.any(String),
+          updatedAt: expect.any(Date),
+          space: expect.objectContaining({ id: spaceId }),
+        });
+        // Member role in space2 should not be affected
+        await expect(
+          membersRepository.findOneOrFail(
+            {
+              space: { id: space2Id },
+              user: { id: memberUserId },
+            },
+            { space: true },
+          ),
+        ).resolves.toEqual({
+          createdAt: expect.any(Date),
+          id: expect.any(Number),
+          name: member2Name,
+          alias: null,
+          role: 'MEMBER',
+          status: 'ACTIVE',
+          invitedBy: expect.any(String),
+          updatedAt: expect.any(Date),
+          space: expect.objectContaining({ id: space2Id }),
+        });
+      },
+    );
+
     it('should not allow updating MEMBERs if the signer is not an ADMIN', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const memberAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
       const spaceName = nameBuilder();
       const memberName = nameBuilder();
       const memberName2 = nameBuilder();
-      const userToUpdate = await dbUserRepo.insert({
-        status: 'ACTIVE',
-      });
-      const userToUpdateId = userToUpdate.generatedMaps[0].id;
-      await dbWalletRepo.insert({
-        user: userToUpdate.generatedMaps[0],
-        address: authPayloadDto.signer_address,
-      });
-      const member = await dbUserRepo.insert({
-        status: 'ACTIVE',
-      });
-      await dbWalletRepo.insert({
-        user: member.generatedMaps[0],
-        address: memberAuthPayloadDto.signer_address,
-      });
+      const { userId: userToUpdateId, user: userToUpdate } =
+        await createSiweUser();
+      const { user: member, authPayload: memberAuthPayload } =
+        await createSiweUser();
       const space = await dbSpacesRepository.insert({
         name: spaceName,
         status: 'ACTIVE',
       });
       const spaceId = space.generatedMaps[0].id;
       await dbMembersRepository.insert({
-        user: userToUpdate.generatedMaps[0],
+        user: userToUpdate,
         space: space.generatedMaps[0],
         name: memberName,
         role: 'MEMBER',
@@ -1893,7 +1973,7 @@ describe('MembersRepository', () => {
         invitedBy: getAddress(faker.finance.ethereumAddress()),
       });
       await dbMembersRepository.insert({
-        user: member.generatedMaps[0],
+        user: member,
         space: space.generatedMaps[0],
         name: memberName2,
         role: 'MEMBER',
@@ -1903,7 +1983,7 @@ describe('MembersRepository', () => {
 
       await expect(
         membersRepository.updateRole({
-          authPayload: new AuthPayload(memberAuthPayloadDto),
+          authPayload: memberAuthPayload,
           spaceId,
           role: 'ADMIN',
           userId: userToUpdateId,
@@ -1912,33 +1992,20 @@ describe('MembersRepository', () => {
     });
 
     it('should not allow updating ADMINs if the signer is not an ADMIN', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const memberAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
       const spaceName = nameBuilder();
       const memberName = nameBuilder();
       const memberName2 = nameBuilder();
-      const userToUpdate = await dbUserRepo.insert({
-        status: 'ACTIVE',
-      });
-      const userToUpdateId = userToUpdate.generatedMaps[0].id;
-      await dbWalletRepo.insert({
-        user: userToUpdate.generatedMaps[0],
-        address: authPayloadDto.signer_address,
-      });
-      const member = await dbUserRepo.insert({
-        status: 'ACTIVE',
-      });
-      await dbWalletRepo.insert({
-        user: member.generatedMaps[0],
-        address: memberAuthPayloadDto.signer_address,
-      });
+      const { userId: userToUpdateId, user: userToUpdate } =
+        await createSiweUser();
+      const { user: member, authPayload: memberAuthPayload } =
+        await createSiweUser();
       const space = await dbSpacesRepository.insert({
         name: spaceName,
         status: 'ACTIVE',
       });
       const spaceId = space.generatedMaps[0].id;
       await dbMembersRepository.insert({
-        user: userToUpdate.generatedMaps[0],
+        user: userToUpdate,
         space: space.generatedMaps[0],
         name: memberName,
         role: 'ADMIN',
@@ -1946,7 +2013,7 @@ describe('MembersRepository', () => {
         invitedBy: getAddress(faker.finance.ethereumAddress()),
       });
       await dbMembersRepository.insert({
-        user: member.generatedMaps[0],
+        user: member,
         space: space.generatedMaps[0],
         name: memberName2,
         role: 'MEMBER',
@@ -1956,18 +2023,15 @@ describe('MembersRepository', () => {
 
       await expect(
         membersRepository.updateRole({
-          authPayload: new AuthPayload(memberAuthPayloadDto),
+          authPayload: memberAuthPayload,
           spaceId,
           role: 'ADMIN',
           userId: userToUpdateId,
         }),
-      ).rejects.toThrow('Signer is not an active admin.');
+      ).rejects.toThrow('User is not an active admin.');
     });
 
-    it('should throw an error if the signer_address does not exist', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder()
-        .with('signer_address', undefined as unknown as Address)
-        .build();
+    it('should throw an error if not authenticated', async () => {
       const spaceId = faker.string.uuid() as UUID;
       const userId = faker.number.int({
         min: 69420,
@@ -1976,44 +2040,19 @@ describe('MembersRepository', () => {
 
       await expect(
         membersRepository.updateRole({
-          authPayload: new AuthPayload(authPayloadDto),
+          authPayload: new AuthPayload(),
           spaceId,
           role: 'ADMIN',
           userId: userId,
         }),
-      ).rejects.toThrow('Signer address not provided.');
-    });
-
-    it('should throw if the signer_address has no user', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const spaceId = faker.string.uuid() as UUID;
-      const userId = faker.number.int({
-        min: 69420,
-        max: DB_MAX_SAFE_INTEGER,
-      });
-
-      await expect(
-        membersRepository.updateRole({
-          authPayload: new AuthPayload(authPayloadDto),
-          spaceId,
-          role: 'ADMIN',
-          userId,
-        }),
-      ).rejects.toThrow('User not found.');
+      ).rejects.toThrow('Not authenticated');
     });
 
     it('should throw an error if user does not have access to upgrade to ADMIN', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const spaceName = nameBuilder();
       const memberName = nameBuilder();
       const memberName2 = nameBuilder();
-      const owner = await dbUserRepo.insert({
-        status: 'ACTIVE',
-      });
-      await dbWalletRepo.insert({
-        user: owner.generatedMaps[0],
-        address: authPayloadDto.signer_address,
-      });
+      const { user: owner, authPayload } = await createSiweUser();
       const member = await dbUserRepo.insert({
         status: 'ACTIVE',
       });
@@ -2028,7 +2067,7 @@ describe('MembersRepository', () => {
       });
       const spaceId = space.generatedMaps[0].id;
       await dbMembersRepository.insert({
-        user: owner.generatedMaps[0],
+        user: owner,
         space: space.generatedMaps[0],
         name: memberName,
         role: 'MEMBER',
@@ -2046,7 +2085,7 @@ describe('MembersRepository', () => {
 
       await expect(
         membersRepository.updateRole({
-          authPayload: new AuthPayload(authPayloadDto),
+          authPayload,
           spaceId,
           role: 'ADMIN',
           userId: memberUserId,
@@ -2055,24 +2094,16 @@ describe('MembersRepository', () => {
     });
 
     it('should throw an error if downgrading the last ACTIVE ADMIN', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const spaceName = nameBuilder();
       const memberName = nameBuilder();
-      const user = await dbUserRepo.insert({
-        status: 'ACTIVE',
-      });
-      const userId = user.generatedMaps[0].id;
-      await dbWalletRepo.insert({
-        user: user.generatedMaps[0],
-        address: authPayloadDto.signer_address,
-      });
+      const { userId, user, authPayload } = await createSiweUser();
       const space = await dbSpacesRepository.insert({
         name: spaceName,
         status: 'ACTIVE',
       });
       const spaceId = space.generatedMaps[0].id;
       await dbMembersRepository.insert({
-        user: user.generatedMaps[0],
+        user,
         space: space.generatedMaps[0],
         name: memberName,
         role: 'ADMIN',
@@ -2082,7 +2113,7 @@ describe('MembersRepository', () => {
 
       await expect(
         membersRepository.updateRole({
-          authPayload: new AuthPayload(authPayloadDto),
+          authPayload,
           spaceId,
           role: 'MEMBER',
           userId,
@@ -2093,17 +2124,10 @@ describe('MembersRepository', () => {
 
   describe('removeUser', () => {
     it('should remove the user', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const spaceName = nameBuilder();
       const memberName = nameBuilder();
       const memberName2 = nameBuilder();
-      const owner = await dbUserRepo.insert({
-        status: 'ACTIVE',
-      });
-      await dbWalletRepo.insert({
-        user: owner.generatedMaps[0],
-        address: authPayloadDto.signer_address,
-      });
+      const { user: owner, authPayload } = await createSiweUser();
       const memberUser = await dbUserRepo.insert({
         status: 'ACTIVE',
       });
@@ -2118,7 +2142,7 @@ describe('MembersRepository', () => {
       });
       const spaceId = space.generatedMaps[0].id;
       await dbMembersRepository.insert({
-        user: owner.generatedMaps[0],
+        user: owner,
         space: space.generatedMaps[0],
         name: memberName,
         role: 'ADMIN',
@@ -2137,7 +2161,7 @@ describe('MembersRepository', () => {
 
       await expect(
         membersRepository.removeUser({
-          authPayload: new AuthPayload(authPayloadDto),
+          authPayload,
           spaceId,
           userId: memberUserId,
         }),
@@ -2148,21 +2172,11 @@ describe('MembersRepository', () => {
       ).resolves.toBeNull();
     });
 
-    it('should keep the user as a member of other spaces', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
+    it('should remove the user as OIDC admin', async () => {
       const spaceName = nameBuilder();
-      const space2Name = faker.word.noun();
-      const adminName = nameBuilder();
       const memberName = nameBuilder();
-      const admin2Name = nameBuilder();
-      const member2Name = nameBuilder();
-      const owner = await dbUserRepo.insert({
-        status: 'ACTIVE',
-      });
-      await dbWalletRepo.insert({
-        user: owner.generatedMaps[0],
-        address: authPayloadDto.signer_address,
-      });
+      const memberName2 = nameBuilder();
+      const { user: owner, authPayload } = await createOidcUser();
       const memberUser = await dbUserRepo.insert({
         status: 'ACTIVE',
       });
@@ -2175,17 +2189,11 @@ describe('MembersRepository', () => {
         name: spaceName,
         status: 'ACTIVE',
       });
-      const space2 = await dbSpacesRepository.insert({
-        name: space2Name,
-        status: 'ACTIVE',
-      });
-
-      // Add as a member of space1
       const spaceId = space.generatedMaps[0].id;
       await dbMembersRepository.insert({
-        user: owner.generatedMaps[0],
+        user: owner,
         space: space.generatedMaps[0],
-        name: adminName,
+        name: memberName,
         role: 'ADMIN',
         status: 'ACTIVE',
         invitedBy: getAddress(faker.finance.ethereumAddress()),
@@ -2193,88 +2201,138 @@ describe('MembersRepository', () => {
       const member = await dbMembersRepository.insert({
         user: memberUser.generatedMaps[0],
         space: space.generatedMaps[0],
-        name: memberName,
+        name: memberName2,
         role: 'MEMBER',
         status: 'ACTIVE',
         invitedBy: getAddress(faker.finance.ethereumAddress()),
       });
       const memberId = member.identifiers[0].id as Member['id'];
 
-      // Add as a member of space2
-      await dbMembersRepository.insert({
-        user: owner.generatedMaps[0],
-        space: space2.generatedMaps[0],
-        name: admin2Name,
-        role: 'ADMIN',
-        status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
-      });
-      const member2InvitedBy = getAddress(faker.finance.ethereumAddress());
-      const member2 = await dbMembersRepository.insert({
-        user: memberUser.generatedMaps[0],
-        space: space2.generatedMaps[0],
-        name: member2Name,
-        role: 'MEMBER',
-        status: 'ACTIVE',
-        invitedBy: member2InvitedBy,
-      });
-      const member2memberId = member2.identifiers[0].id as Member['id'];
-
-      // Delete from space1
       await expect(
         membersRepository.removeUser({
-          authPayload: new AuthPayload(authPayloadDto),
+          authPayload,
           spaceId,
           userId: memberUserId,
         }),
       ).resolves.not.toThrow();
+
       await expect(
         dbMembersRepository.findOne({ where: { id: memberId } }),
       ).resolves.toBeNull();
-
-      // Ensure still a member of space2
-      await expect(
-        dbMembersRepository.findOne({ where: { id: member2memberId } }),
-      ).resolves.toEqual({
-        createdAt: expect.any(Date),
-        id: member2memberId,
-        name: member2Name,
-        alias: null,
-        role: 'MEMBER',
-        status: 'ACTIVE',
-        invitedBy: member2InvitedBy,
-        updatedAt: expect.any(Date),
-      });
     });
 
+    it.each([
+      ['SIWE', createSiweUser],
+      ['OIDC', createOidcUser],
+    ] as const)(
+      'should keep the user as a member of other spaces (%s)',
+      async (_label, createUser) => {
+        const spaceName = nameBuilder();
+        const space2Name = faker.word.noun();
+        const adminName = nameBuilder();
+        const memberName = nameBuilder();
+        const admin2Name = nameBuilder();
+        const member2Name = nameBuilder();
+        const { user: owner, authPayload } = await createUser();
+        const memberUser = await dbUserRepo.insert({
+          status: 'ACTIVE',
+        });
+        const memberUserId = memberUser.generatedMaps[0].id;
+        await dbWalletRepo.insert({
+          user: memberUser.generatedMaps[0],
+          address: getAddress(faker.finance.ethereumAddress()),
+        });
+        const space = await dbSpacesRepository.insert({
+          name: spaceName,
+          status: 'ACTIVE',
+        });
+        const space2 = await dbSpacesRepository.insert({
+          name: space2Name,
+          status: 'ACTIVE',
+        });
+
+        // Add as a member of space1
+        const spaceId = space.generatedMaps[0].id;
+        await dbMembersRepository.insert({
+          user: owner,
+          space: space.generatedMaps[0],
+          name: adminName,
+          role: 'ADMIN',
+          status: 'ACTIVE',
+          invitedBy: getAddress(faker.finance.ethereumAddress()),
+        });
+        const member = await dbMembersRepository.insert({
+          user: memberUser.generatedMaps[0],
+          space: space.generatedMaps[0],
+          name: memberName,
+          role: 'MEMBER',
+          status: 'ACTIVE',
+          invitedBy: getAddress(faker.finance.ethereumAddress()),
+        });
+        const memberId = member.identifiers[0].id as Member['id'];
+
+        // Add as a member of space2
+        await dbMembersRepository.insert({
+          user: owner,
+          space: space2.generatedMaps[0],
+          name: admin2Name,
+          role: 'ADMIN',
+          status: 'ACTIVE',
+          invitedBy: getAddress(faker.finance.ethereumAddress()),
+        });
+        const member2InvitedBy = getAddress(faker.finance.ethereumAddress());
+        const member2 = await dbMembersRepository.insert({
+          user: memberUser.generatedMaps[0],
+          space: space2.generatedMaps[0],
+          name: member2Name,
+          role: 'MEMBER',
+          status: 'ACTIVE',
+          invitedBy: member2InvitedBy,
+        });
+        const member2memberId = member2.identifiers[0].id as Member['id'];
+
+        // Delete from space1
+        await expect(
+          membersRepository.removeUser({
+            authPayload,
+            spaceId,
+            userId: memberUserId,
+          }),
+        ).resolves.not.toThrow();
+        await expect(
+          dbMembersRepository.findOne({ where: { id: memberId } }),
+        ).resolves.toBeNull();
+
+        // Ensure still a member of space2
+        await expect(
+          dbMembersRepository.findOne({ where: { id: member2memberId } }),
+        ).resolves.toEqual({
+          createdAt: expect.any(Date),
+          id: member2memberId,
+          name: member2Name,
+          alias: null,
+          role: 'MEMBER',
+          status: 'ACTIVE',
+          invitedBy: member2InvitedBy,
+          updatedAt: expect.any(Date),
+        });
+      },
+    );
+
     it('should not allow removing a user if the user is not an ADMIN', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const memberAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
       const spaceName = nameBuilder();
       const adminName = nameBuilder();
       const memberName = nameBuilder();
-      const admin = await dbUserRepo.insert({
-        status: 'ACTIVE',
-      });
-      const adminUserId = admin.generatedMaps[0].id;
-      await dbWalletRepo.insert({
-        user: admin.generatedMaps[0],
-        address: authPayloadDto.signer_address,
-      });
-      const member = await dbUserRepo.insert({
-        status: 'ACTIVE',
-      });
-      await dbWalletRepo.insert({
-        user: member.generatedMaps[0],
-        address: memberAuthPayloadDto.signer_address,
-      });
+      const { userId: adminUserId, user: admin } = await createSiweUser();
+      const { user: member, authPayload: memberAuthPayload } =
+        await createSiweUser();
       const space = await dbSpacesRepository.insert({
         name: spaceName,
         status: 'ACTIVE',
       });
       const spaceId = space.generatedMaps[0].id;
       await dbMembersRepository.insert({
-        user: admin.generatedMaps[0],
+        user: admin,
         space: space.generatedMaps[0],
         name: adminName,
         role: 'ADMIN',
@@ -2282,7 +2340,7 @@ describe('MembersRepository', () => {
         invitedBy: getAddress(faker.finance.ethereumAddress()),
       });
       await dbMembersRepository.insert({
-        user: member.generatedMaps[0],
+        user: member,
         space: space.generatedMaps[0],
         name: memberName,
         role: 'MEMBER',
@@ -2292,17 +2350,14 @@ describe('MembersRepository', () => {
 
       await expect(
         membersRepository.removeUser({
-          authPayload: new AuthPayload(memberAuthPayloadDto),
+          authPayload: memberAuthPayload,
           spaceId,
           userId: adminUserId,
         }),
-      ).rejects.toThrow('Signer is not an active admin.');
+      ).rejects.toThrow('User is not an active admin.');
     });
 
-    it('should throw an error if the signer_address does not exist', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder()
-        .with('signer_address', undefined as unknown as Address)
-        .build();
+    it('should throw an error if not authenticated', async () => {
       const spaceId = faker.string.uuid() as UUID;
       const userId = faker.number.int({
         min: 69420,
@@ -2311,80 +2366,53 @@ describe('MembersRepository', () => {
 
       await expect(
         membersRepository.removeUser({
-          authPayload: new AuthPayload(authPayloadDto),
+          authPayload: new AuthPayload(),
           spaceId,
           userId,
         }),
-      ).rejects.toThrow('Signer address not provided.');
+      ).rejects.toThrow('Not authenticated');
     });
 
-    it('should throw if the signer_address has no user', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const spaceId = faker.string.uuid() as UUID;
-      const userId = faker.number.int({
-        min: 69420,
-        max: DB_MAX_SAFE_INTEGER,
-      });
+    it.each([
+      ['SIWE', createSiweUser],
+      ['OIDC', createOidcUser],
+    ] as const)(
+      'should throw an error if removing the last ACTIVE ADMIN (%s)',
+      async (_label, createUser) => {
+        const spaceName = nameBuilder();
+        const memberName = nameBuilder();
+        const { userId, user, authPayload } = await createUser();
+        const space = await dbSpacesRepository.insert({
+          name: spaceName,
+          status: 'ACTIVE',
+        });
+        const spaceId = space.generatedMaps[0].id;
+        await dbMembersRepository.insert({
+          user,
+          name: memberName,
+          space: space.generatedMaps[0],
+          role: 'ADMIN',
+          status: 'ACTIVE',
+          invitedBy: getAddress(faker.finance.ethereumAddress()),
+        });
 
-      await expect(
-        membersRepository.removeUser({
-          authPayload: new AuthPayload(authPayloadDto),
-          spaceId,
-          userId,
-        }),
-      ).rejects.toThrow('User not found.');
-    });
-
-    it('should throw an error if removing the last ACTIVE ADMIN', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const spaceName = nameBuilder();
-      const memberName = nameBuilder();
-      const user = await dbUserRepo.insert({
-        status: 'ACTIVE',
-      });
-      const userId = user.generatedMaps[0].id;
-      await dbWalletRepo.insert({
-        user: user.generatedMaps[0],
-        address: authPayloadDto.signer_address,
-      });
-      const space = await dbSpacesRepository.insert({
-        name: spaceName,
-        status: 'ACTIVE',
-      });
-      const spaceId = space.generatedMaps[0].id;
-      await dbMembersRepository.insert({
-        user: user.generatedMaps[0],
-        name: memberName,
-        space: space.generatedMaps[0],
-        role: 'ADMIN',
-        status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
-      });
-
-      await expect(
-        membersRepository.removeUser({
-          authPayload: new AuthPayload(authPayloadDto),
-          spaceId,
-          userId,
-        }),
-      ).rejects.toThrow('Cannot remove last admin.');
-    });
+        await expect(
+          membersRepository.removeUser({
+            authPayload,
+            spaceId,
+            userId,
+          }),
+        ).rejects.toThrow('Cannot remove last admin.');
+      },
+    );
 
     it('should throw an error if there are no members for the given space id', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const user = await dbUserRepo.insert({
-        status: 'ACTIVE',
-      });
-      await dbWalletRepo.insert({
-        user: user.generatedMaps[0],
-        address: authPayloadDto.signer_address,
-      });
+      const { userId, authPayload } = await createSiweUser();
       const spaceId = faker.string.uuid() as UUID;
-      const userId = user.generatedMaps[0].id;
 
       await expect(
         membersRepository.removeUser({
-          authPayload: new AuthPayload(authPayloadDto),
+          authPayload,
           spaceId,
           userId,
         }),
@@ -2392,16 +2420,9 @@ describe('MembersRepository', () => {
     });
 
     it('should throw an error if the user is not a member of the space', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const spaceName = nameBuilder();
       const adminName = nameBuilder();
-      const admin = await dbUserRepo.insert({
-        status: 'ACTIVE',
-      });
-      await dbWalletRepo.insert({
-        user: admin.generatedMaps[0],
-        address: authPayloadDto.signer_address,
-      });
+      const { user: admin, authPayload } = await createSiweUser();
       const nonMember = await dbUserRepo.insert({
         status: 'ACTIVE',
       });
@@ -2416,7 +2437,7 @@ describe('MembersRepository', () => {
       });
       const spaceId = space.generatedMaps[0].id;
       await dbMembersRepository.insert({
-        user: admin.generatedMaps[0],
+        user: admin,
         space: space.generatedMaps[0],
         name: adminName,
         role: 'ADMIN',
@@ -2426,7 +2447,7 @@ describe('MembersRepository', () => {
 
       await expect(
         membersRepository.removeUser({
-          authPayload: new AuthPayload(authPayloadDto),
+          authPayload,
           spaceId,
           userId: nonMemberUserId,
         }),
@@ -2436,17 +2457,10 @@ describe('MembersRepository', () => {
 
   describe('removeSelf', () => {
     it('should remove the signer', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const spaceName = nameBuilder();
       const adminName = nameBuilder();
       const memberName = nameBuilder();
-      const signerUser = await dbUserRepo.insert({
-        status: 'ACTIVE',
-      });
-      await dbWalletRepo.insert({
-        user: signerUser.generatedMaps[0],
-        address: authPayloadDto.signer_address,
-      });
+      const { user: signerUser, authPayload } = await createSiweUser();
       const otherAdmin = await dbUserRepo.insert({
         status: 'ACTIVE',
       });
@@ -2468,7 +2482,7 @@ describe('MembersRepository', () => {
         invitedBy: getAddress(faker.finance.ethereumAddress()),
       });
       const signerMember = await dbMembersRepository.insert({
-        user: signerUser.generatedMaps[0],
+        user: signerUser,
         space: space.generatedMaps[0],
         name: adminName,
         role: 'ADMIN',
@@ -2479,7 +2493,7 @@ describe('MembersRepository', () => {
 
       await expect(
         membersRepository.removeSelf({
-          authPayload: new AuthPayload(authPayloadDto),
+          authPayload,
           spaceId,
         }),
       ).resolves.not.toThrow();
@@ -2489,23 +2503,16 @@ describe('MembersRepository', () => {
       ).resolves.toBeNull();
     });
 
-    it('should remove the signer even if they are not an ACTIVE ADMIN', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
+    it('should remove self as OIDC user', async () => {
       const spaceName = nameBuilder();
-      const memberName = nameBuilder();
       const adminName = nameBuilder();
-      const signerUser = await dbUserRepo.insert({
+      const memberName = nameBuilder();
+      const { user: signerUser, authPayload } = await createOidcUser();
+      const otherAdmin = await dbUserRepo.insert({
         status: 'ACTIVE',
       });
       await dbWalletRepo.insert({
-        user: signerUser.generatedMaps[0],
-        address: authPayloadDto.signer_address,
-      });
-      const admin = await dbUserRepo.insert({
-        status: 'ACTIVE',
-      });
-      await dbWalletRepo.insert({
-        user: admin.generatedMaps[0],
+        user: otherAdmin.generatedMaps[0],
         address: getAddress(faker.finance.ethereumAddress()),
       });
       const space = await dbSpacesRepository.insert({
@@ -2514,18 +2521,18 @@ describe('MembersRepository', () => {
       });
       const spaceId = space.generatedMaps[0].id;
       await dbMembersRepository.insert({
-        user: admin.generatedMaps[0],
+        user: otherAdmin.generatedMaps[0],
         space: space.generatedMaps[0],
-        name: adminName,
+        name: memberName,
         role: 'ADMIN',
         status: 'ACTIVE',
         invitedBy: getAddress(faker.finance.ethereumAddress()),
       });
       const signerMember = await dbMembersRepository.insert({
-        user: signerUser.generatedMaps[0],
+        user: signerUser,
         space: space.generatedMaps[0],
-        name: memberName,
-        role: 'MEMBER',
+        name: adminName,
+        role: 'ADMIN',
         status: 'ACTIVE',
         invitedBy: getAddress(faker.finance.ethereumAddress()),
       });
@@ -2533,7 +2540,7 @@ describe('MembersRepository', () => {
 
       await expect(
         membersRepository.removeSelf({
-          authPayload: new AuthPayload(authPayloadDto),
+          authPayload,
           spaceId,
         }),
       ).resolves.not.toThrow();
@@ -2543,115 +2550,160 @@ describe('MembersRepository', () => {
       ).resolves.toBeNull();
     });
 
-    it('should keep the signer as a member of other spaces', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const space1Name = nameBuilder();
-      const space2Name = faker.word.noun();
-      const member1Name = nameBuilder();
-      const member2Name = nameBuilder();
-      const adminName = nameBuilder();
-      const signerUser = await dbUserRepo.insert({
-        status: 'ACTIVE',
-      });
-      await dbWalletRepo.insert({
-        user: signerUser.generatedMaps[0],
-        address: authPayloadDto.signer_address,
-      });
-      const admin = await dbUserRepo.insert({
-        status: 'ACTIVE',
-      });
-      await dbWalletRepo.insert({
-        user: admin.generatedMaps[0],
-        address: getAddress(faker.finance.ethereumAddress()),
-      });
-      const space1 = await dbSpacesRepository.insert({
-        name: space1Name,
-        status: 'ACTIVE',
-      });
-      const space2 = await dbSpacesRepository.insert({
-        name: space2Name,
-        status: 'ACTIVE',
-      });
-      const spaceId1 = space1.generatedMaps[0].id;
+    it.each([
+      ['SIWE', createSiweUser],
+      ['OIDC', createOidcUser],
+    ] as const)(
+      'should remove the signer even if they are not an ACTIVE ADMIN (%s)',
+      async (_label, createUser) => {
+        const spaceName = nameBuilder();
+        const memberName = nameBuilder();
+        const adminName = nameBuilder();
+        const { user: signerUser, authPayload } = await createUser();
+        const admin = await dbUserRepo.insert({
+          status: 'ACTIVE',
+        });
+        await dbWalletRepo.insert({
+          user: admin.generatedMaps[0],
+          address: getAddress(faker.finance.ethereumAddress()),
+        });
+        const space = await dbSpacesRepository.insert({
+          name: spaceName,
+          status: 'ACTIVE',
+        });
+        const spaceId = space.generatedMaps[0].id;
+        await dbMembersRepository.insert({
+          user: admin.generatedMaps[0],
+          space: space.generatedMaps[0],
+          name: adminName,
+          role: 'ADMIN',
+          status: 'ACTIVE',
+          invitedBy: getAddress(faker.finance.ethereumAddress()),
+        });
+        const signerMember = await dbMembersRepository.insert({
+          user: signerUser,
+          space: space.generatedMaps[0],
+          name: memberName,
+          role: 'MEMBER',
+          status: 'ACTIVE',
+          invitedBy: getAddress(faker.finance.ethereumAddress()),
+        });
+        const signerMemberId = signerMember.identifiers[0].id;
 
-      // Add to first space
-      await dbMembersRepository.insert({
-        user: admin.generatedMaps[0],
-        space: space1.generatedMaps[0],
-        name: adminName,
-        role: 'ADMIN',
-        status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
-      });
-      const signerMember1 = await dbMembersRepository.insert({
-        user: signerUser.generatedMaps[0],
-        space: space1.generatedMaps[0],
-        name: member1Name,
-        role: 'MEMBER',
-        status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
-      });
-      const signerMemberId1 = signerMember1.identifiers[0].id;
+        await expect(
+          membersRepository.removeSelf({
+            authPayload,
+            spaceId,
+          }),
+        ).resolves.not.toThrow();
 
-      // Add to second space
-      const signerMember2InvitedBy = getAddress(
-        faker.finance.ethereumAddress(),
-      );
-      const signerMember2 = await dbMembersRepository.insert({
-        user: signerUser.generatedMaps[0],
-        space: space2.generatedMaps[0],
-        name: member2Name,
-        role: 'MEMBER',
-        status: 'ACTIVE',
-        invitedBy: signerMember2InvitedBy,
-      });
-      const signerMemberId2 = signerMember2.identifiers[0].id;
+        await expect(
+          dbMembersRepository.findOne({ where: { id: signerMemberId } }),
+        ).resolves.toBeNull();
+      },
+    );
 
-      await expect(
-        membersRepository.removeSelf({
-          authPayload: new AuthPayload(authPayloadDto),
-          spaceId: spaceId1,
-        }),
-      ).resolves.not.toThrow();
+    it.each([
+      ['SIWE', createSiweUser],
+      ['OIDC', createOidcUser],
+    ] as const)(
+      'should keep the signer as a member of other spaces (%s)',
+      async (_label, createUser) => {
+        const space1Name = nameBuilder();
+        const space2Name = faker.word.noun();
+        const member1Name = nameBuilder();
+        const member2Name = nameBuilder();
+        const adminName = nameBuilder();
+        const { user: signerUser, authPayload } = await createUser();
+        const admin = await dbUserRepo.insert({
+          status: 'ACTIVE',
+        });
+        await dbWalletRepo.insert({
+          user: admin.generatedMaps[0],
+          address: getAddress(faker.finance.ethereumAddress()),
+        });
+        const space1 = await dbSpacesRepository.insert({
+          name: space1Name,
+          status: 'ACTIVE',
+        });
+        const space2 = await dbSpacesRepository.insert({
+          name: space2Name,
+          status: 'ACTIVE',
+        });
+        const spaceId1 = space1.generatedMaps[0].id;
 
-      // Should be removed from first space
-      await expect(
-        dbMembersRepository.findOne({ where: { id: signerMemberId1 } }),
-      ).resolves.toBeNull();
+        // Add to first space
+        await dbMembersRepository.insert({
+          user: admin.generatedMaps[0],
+          space: space1.generatedMaps[0],
+          name: adminName,
+          role: 'ADMIN',
+          status: 'ACTIVE',
+          invitedBy: getAddress(faker.finance.ethereumAddress()),
+        });
+        const signerMember1 = await dbMembersRepository.insert({
+          user: signerUser,
+          space: space1.generatedMaps[0],
+          name: member1Name,
+          role: 'MEMBER',
+          status: 'ACTIVE',
+          invitedBy: getAddress(faker.finance.ethereumAddress()),
+        });
+        const signerMemberId1 = signerMember1.identifiers[0].id;
 
-      // Should still be in second space
-      await expect(
-        dbMembersRepository.findOne({ where: { id: signerMemberId2 } }),
-      ).resolves.toEqual({
-        createdAt: expect.any(Date),
-        id: signerMemberId2,
-        name: member2Name,
-        alias: null,
-        role: 'MEMBER',
-        status: 'ACTIVE',
-        invitedBy: signerMember2InvitedBy,
-        updatedAt: expect.any(Date),
-      });
-    });
+        // Add to second space
+        const signerMember2InvitedBy = getAddress(
+          faker.finance.ethereumAddress(),
+        );
+        const signerMember2 = await dbMembersRepository.insert({
+          user: signerUser,
+          space: space2.generatedMaps[0],
+          name: member2Name,
+          role: 'MEMBER',
+          status: 'ACTIVE',
+          invitedBy: signerMember2InvitedBy,
+        });
+        const signerMemberId2 = signerMember2.identifiers[0].id;
+
+        await expect(
+          membersRepository.removeSelf({
+            authPayload,
+            spaceId: spaceId1,
+          }),
+        ).resolves.not.toThrow();
+
+        // Should be removed from first space
+        await expect(
+          dbMembersRepository.findOne({ where: { id: signerMemberId1 } }),
+        ).resolves.toBeNull();
+
+        // Should still be in second space
+        await expect(
+          dbMembersRepository.findOne({ where: { id: signerMemberId2 } }),
+        ).resolves.toEqual({
+          createdAt: expect.any(Date),
+          id: signerMemberId2,
+          name: member2Name,
+          alias: null,
+          role: 'MEMBER',
+          status: 'ACTIVE',
+          invitedBy: signerMember2InvitedBy,
+          updatedAt: expect.any(Date),
+        });
+      },
+    );
 
     it('should throw an error if the signer is the last ACTIVE ADMIN', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const spaceName = nameBuilder();
       const signerMemberName = nameBuilder();
-      const signerUser = await dbUserRepo.insert({
-        status: 'ACTIVE',
-      });
-      await dbWalletRepo.insert({
-        user: signerUser.generatedMaps[0],
-        address: authPayloadDto.signer_address,
-      });
+      const { user: signerUser, authPayload } = await createSiweUser();
       const space = await dbSpacesRepository.insert({
         name: spaceName,
         status: 'ACTIVE',
       });
       const spaceId = space.generatedMaps[0].id;
       await dbMembersRepository.insert({
-        user: signerUser.generatedMaps[0],
+        user: signerUser,
         space: space.generatedMaps[0],
         name: signerMemberName,
         role: 'ADMIN',
@@ -2661,23 +2713,16 @@ describe('MembersRepository', () => {
 
       await expect(
         membersRepository.removeSelf({
-          authPayload: new AuthPayload(authPayloadDto),
+          authPayload,
           spaceId,
         }),
       ).rejects.toThrow('Cannot remove last admin.');
     });
 
     it('should throw an error if the signer is not a member of the space', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const spaceName = nameBuilder();
       const adminName = nameBuilder();
-      const signerUser = await dbUserRepo.insert({
-        status: 'ACTIVE',
-      });
-      await dbWalletRepo.insert({
-        user: signerUser.generatedMaps[0],
-        address: authPayloadDto.signer_address,
-      });
+      const { authPayload } = await createSiweUser();
       const member = await dbUserRepo.insert({
         status: 'ACTIVE',
       });
@@ -2701,7 +2746,7 @@ describe('MembersRepository', () => {
 
       await expect(
         membersRepository.removeSelf({
-          authPayload: new AuthPayload(authPayloadDto),
+          authPayload,
           spaceId,
         }),
       ).rejects.toThrow('Member not found.');
@@ -2710,25 +2755,18 @@ describe('MembersRepository', () => {
 
   describe('updateAlias', () => {
     it('should add an alias for the authenticated user', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const spaceName = nameBuilder();
       const memberName = nameBuilder();
       const newAlias = nameBuilder();
 
-      const user = await dbUserRepo.insert({
-        status: 'ACTIVE',
-      });
-      await dbWalletRepo.insert({
-        user: user.generatedMaps[0],
-        address: authPayloadDto.signer_address,
-      });
+      const { user, authPayload } = await createSiweUser();
       const space = await dbSpacesRepository.insert({
         name: spaceName,
         status: 'ACTIVE',
       });
       const spaceId = space.generatedMaps[0].id;
       const member = await dbMembersRepository.insert({
-        user: user.generatedMaps[0],
+        user,
         space: space.generatedMaps[0],
         name: memberName,
         role: 'MEMBER',
@@ -2738,7 +2776,7 @@ describe('MembersRepository', () => {
 
       await expect(
         membersRepository.updateAlias({
-          authPayload: new AuthPayload(authPayloadDto),
+          authPayload,
           spaceId,
           alias: newAlias,
         }),
@@ -2750,37 +2788,29 @@ describe('MembersRepository', () => {
       expect(updatedMember.alias).toBe(newAlias);
     });
 
-    it('should update alias from one value to another', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
+    it('should add an alias for OIDC user', async () => {
       const spaceName = nameBuilder();
       const memberName = nameBuilder();
       const newAlias = nameBuilder();
 
-      const user = await dbUserRepo.insert({
-        status: 'ACTIVE',
-      });
-      await dbWalletRepo.insert({
-        user: user.generatedMaps[0],
-        address: authPayloadDto.signer_address,
-      });
+      const { user, authPayload } = await createOidcUser();
       const space = await dbSpacesRepository.insert({
         name: spaceName,
         status: 'ACTIVE',
       });
       const spaceId = space.generatedMaps[0].id;
       const member = await dbMembersRepository.insert({
-        user: user.generatedMaps[0],
+        user,
         space: space.generatedMaps[0],
         name: memberName,
         role: 'MEMBER',
         status: 'ACTIVE',
-        alias: nameBuilder(),
         invitedBy: getAddress(faker.finance.ethereumAddress()),
       });
 
       await expect(
         membersRepository.updateAlias({
-          authPayload: new AuthPayload(authPayloadDto),
+          authPayload,
           spaceId,
           alias: newAlias,
         }),
@@ -2792,80 +2822,93 @@ describe('MembersRepository', () => {
       expect(updatedMember.alias).toBe(newAlias);
     });
 
-    it('should update alias to null', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const spaceName = nameBuilder();
-      const memberName = nameBuilder();
+    it.each([
+      ['SIWE', createSiweUser],
+      ['OIDC', createOidcUser],
+    ] as const)(
+      'should update alias from one value to another (%s)',
+      async (_label, createUser) => {
+        const spaceName = nameBuilder();
+        const memberName = nameBuilder();
+        const newAlias = nameBuilder();
 
-      const user = await dbUserRepo.insert({
-        status: 'ACTIVE',
-      });
-      await dbWalletRepo.insert({
-        user: user.generatedMaps[0],
-        address: authPayloadDto.signer_address,
-      });
-      const space = await dbSpacesRepository.insert({
-        name: spaceName,
-        status: 'ACTIVE',
-      });
-      const spaceId = space.generatedMaps[0].id;
-      const member = await dbMembersRepository.insert({
-        user: user.generatedMaps[0],
-        space: space.generatedMaps[0],
-        name: memberName,
-        role: 'MEMBER',
-        status: 'ACTIVE',
-        alias: nameBuilder(),
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
-      });
+        const { user, authPayload } = await createUser();
+        const space = await dbSpacesRepository.insert({
+          name: spaceName,
+          status: 'ACTIVE',
+        });
+        const spaceId = space.generatedMaps[0].id;
+        const member = await dbMembersRepository.insert({
+          user,
+          space: space.generatedMaps[0],
+          name: memberName,
+          role: 'MEMBER',
+          status: 'ACTIVE',
+          alias: nameBuilder(),
+          invitedBy: getAddress(faker.finance.ethereumAddress()),
+        });
 
-      await expect(
-        membersRepository.updateAlias({
-          authPayload: new AuthPayload(authPayloadDto),
-          spaceId,
-          alias: null,
-        }),
-      ).resolves.toBeUndefined();
+        await expect(
+          membersRepository.updateAlias({
+            authPayload,
+            spaceId,
+            alias: newAlias,
+          }),
+        ).resolves.toBeUndefined();
 
-      const updatedMember = await dbMembersRepository.findOneOrFail({
-        where: { id: member.identifiers[0].id },
-      });
-      expect(updatedMember.alias).toBeNull();
-    });
+        const updatedMember = await dbMembersRepository.findOneOrFail({
+          where: { id: member.identifiers[0].id },
+        });
+        expect(updatedMember.alias).toBe(newAlias);
+      },
+    );
 
-    it('should throw NotFoundException if user is not found', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const spaceName = nameBuilder();
-      const newAlias = nameBuilder();
+    it.each([
+      ['SIWE', createSiweUser],
+      ['OIDC', createOidcUser],
+    ] as const)(
+      'should update alias to null (%s)',
+      async (_label, createUser) => {
+        const spaceName = nameBuilder();
+        const memberName = nameBuilder();
 
-      const space = await dbSpacesRepository.insert({
-        name: spaceName,
-        status: 'ACTIVE',
-      });
-      const spaceId = space.generatedMaps[0].id;
+        const { user, authPayload } = await createUser();
+        const space = await dbSpacesRepository.insert({
+          name: spaceName,
+          status: 'ACTIVE',
+        });
+        const spaceId = space.generatedMaps[0].id;
+        const member = await dbMembersRepository.insert({
+          user,
+          space: space.generatedMaps[0],
+          name: memberName,
+          role: 'MEMBER',
+          status: 'ACTIVE',
+          alias: nameBuilder(),
+          invitedBy: getAddress(faker.finance.ethereumAddress()),
+        });
 
-      await expect(
-        membersRepository.updateAlias({
-          authPayload: new AuthPayload(authPayloadDto),
-          spaceId,
-          alias: newAlias,
-        }),
-      ).rejects.toThrow('User not found.');
-    });
+        await expect(
+          membersRepository.updateAlias({
+            authPayload,
+            spaceId,
+            alias: null,
+          }),
+        ).resolves.toBeUndefined();
+
+        const updatedMember = await dbMembersRepository.findOneOrFail({
+          where: { id: member.identifiers[0].id },
+        });
+        expect(updatedMember.alias).toBeNull();
+      },
+    );
 
     it('should throw NotFoundException if signer is not a member of the space', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const spaceName = nameBuilder();
       const memberName = nameBuilder();
       const newAlias = nameBuilder();
 
-      const user = await dbUserRepo.insert({
-        status: 'ACTIVE',
-      });
-      await dbWalletRepo.insert({
-        user: user.generatedMaps[0],
-        address: authPayloadDto.signer_address,
-      });
+      const { authPayload } = await createSiweUser();
       const space = await dbSpacesRepository.insert({
         name: spaceName,
         status: 'ACTIVE',
@@ -2887,7 +2930,7 @@ describe('MembersRepository', () => {
 
       await expect(
         membersRepository.updateAlias({
-          authPayload: new AuthPayload(authPayloadDto),
+          authPayload,
           spaceId,
           alias: newAlias,
         }),
@@ -2910,7 +2953,57 @@ describe('MembersRepository', () => {
           spaceId,
           alias: newAlias,
         }),
-      ).rejects.toThrow('Signer address not provided.');
+      ).rejects.toThrow('Not authenticated');
     });
   });
+
+  async function createSiweUser(
+    opts: { status?: 'ACTIVE' | 'PENDING' } = {},
+  ): Promise<{
+    userId: number;
+    user: Record<string, unknown>;
+    authPayload: AuthPayload;
+    authPayloadDto: ReturnType<
+      ReturnType<typeof siweAuthPayloadDtoBuilder>['build']
+    >;
+  }> {
+    const user = await dbUserRepo.insert({
+      status: opts.status ?? 'ACTIVE',
+    });
+    const userId = user.generatedMaps[0].id as number;
+    const authPayloadDto = siweAuthPayloadDtoBuilder()
+      .with('sub', userId.toString())
+      .build();
+    await dbWalletRepo.insert({
+      user: user.generatedMaps[0],
+      address: authPayloadDto.signer_address,
+    });
+    return {
+      userId,
+      user: user.generatedMaps[0],
+      authPayload: new AuthPayload(authPayloadDto),
+      authPayloadDto,
+    };
+  }
+
+  async function createOidcUser(
+    opts: { status?: 'ACTIVE' | 'PENDING' } = {},
+  ): Promise<{
+    userId: number;
+    user: Record<string, unknown>;
+    authPayload: AuthPayload;
+  }> {
+    const user = await dbUserRepo.insert({
+      status: opts.status ?? 'ACTIVE',
+    });
+    const userId = user.generatedMaps[0].id as number;
+    const authPayloadDto = oidcAuthPayloadDtoBuilder()
+      .with('sub', userId.toString())
+      .build();
+    return {
+      userId,
+      user: user.generatedMaps[0],
+      authPayload: new AuthPayload(authPayloadDto),
+    };
+  }
 });

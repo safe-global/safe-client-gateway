@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { DynamicModule, INestApplication } from '@nestjs/common';
 import { VersioningType } from '@nestjs/common';
 import type { SwaggerDocumentOptions } from '@nestjs/swagger';
@@ -15,7 +16,14 @@ function configureVersioning(app: INestApplication): void {
 }
 
 export function configureShutdownHooks(app: INestApplication): void {
-  app.enableShutdownHooks();
+  const configurationService = app.get<IConfigurationService>(
+    IConfigurationService,
+  );
+  // Skip shutdown hooks in development to allow fast restarts.
+  // In dev mode, the OS reclaims connections when the process exits.
+  if (!configurationService.getOrThrow('application.isDevelopment')) {
+    app.enableShutdownHooks();
+  }
 }
 
 function configureSwagger(app: INestApplication): void {

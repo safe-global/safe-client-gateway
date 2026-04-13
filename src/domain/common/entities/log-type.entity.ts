@@ -11,7 +11,6 @@ export enum LogType {
   CircuitBreakerCleanup = 'CIRCUIT_BREAKER_CLEANUP',
   CircuitBreakerFailureRecorded = 'CIRCUIT_BREAKER_FAILURE_RECORDED',
   CircuitBreakerFailuresDiscarded = 'CIRCUIT_BREAKER_FAILURES_DISCARDED',
-  CircuitBreakerHalfOpenRequest = 'CIRCUIT_BREAKER_HALF_OPEN_REQUEST',
   CircuitBreakerRegistered = 'CIRCUIT_BREAKER_REGISTERED',
   CircuitBreakerRequestBlocked = 'CIRCUIT_BREAKER_REQUEST_BLOCKED',
   CircuitBreakerStateTransition = 'CIRCUIT_BREAKER_STATE_TRANSITION',
