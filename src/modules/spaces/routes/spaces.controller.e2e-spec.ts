@@ -17,7 +17,6 @@ import {
   MemberRole,
   MemberStatus,
 } from '@/modules/users/domain/entities/member.entity';
-import { UserStatus } from '@/modules/users/domain/entities/user.entity';
 import { getEnumKey } from '@/domain/common/utils/enum';
 import { nameBuilder } from '@/domain/common/entities/name.builder';
 import { createTestModule } from '@/__tests__/testing-module';
@@ -106,7 +105,7 @@ describe('SpacesController', () => {
         .expect(201)
         .expect(({ body }) =>
           expect(body).toEqual({
-            id: expect.any(Number),
+            id: expect.any(String),
             name: spaceName,
           }),
         );
@@ -178,7 +177,7 @@ describe('SpacesController', () => {
         .expect(201)
         .expect(({ body }) =>
           expect(body).toEqual({
-            id: expect.any(Number),
+            id: expect.any(String),
             name: expect.any(String),
           }),
         );
@@ -249,7 +248,7 @@ describe('SpacesController', () => {
         .expect(201)
         .expect(({ body }) =>
           expect(body).toEqual({
-            id: expect.any(Number),
+            id: expect.any(String),
             name: spaceName,
           }),
         );
@@ -267,7 +266,7 @@ describe('SpacesController', () => {
         .expect(201)
         .expect(({ body }) =>
           expect(body).toEqual({
-            id: expect.any(Number),
+            id: expect.any(String),
             name: spaceName,
           }),
         );
@@ -351,51 +350,33 @@ describe('SpacesController', () => {
         .expect(({ body }) => {
           expect(body).toEqual([
             {
-              id: expect.any(Number),
+              id: expect.any(String),
               name: firstSpaceName,
-              status: getEnumKey(SpaceStatus, SpaceStatus.ACTIVE),
-              createdAt: expect.any(String),
-              updatedAt: expect.any(String),
+              safeCount: 0,
               members: [
                 {
-                  id: expect.any(Number),
                   name: expect.any(String),
-                  alias: null,
                   invitedBy: null,
                   role: getEnumKey(MemberRole, MemberRole.ADMIN),
-                  status: getEnumKey(SpaceStatus, SpaceStatus.ACTIVE),
-                  createdAt: expect.any(String),
-                  updatedAt: expect.any(String),
+                  status: getEnumKey(MemberStatus, MemberStatus.ACTIVE),
                   user: {
                     id: expect.any(Number),
-                    status: getEnumKey(UserStatus, UserStatus.ACTIVE),
-                    createdAt: expect.any(String),
-                    updatedAt: expect.any(String),
                   },
                 },
               ],
             },
             {
-              id: expect.any(Number),
+              id: expect.any(String),
               name: secondSpaceName,
-              status: getEnumKey(SpaceStatus, SpaceStatus.ACTIVE),
-              createdAt: expect.any(String),
-              updatedAt: expect.any(String),
+              safeCount: 0,
               members: [
                 {
-                  id: expect.any(Number),
                   name: expect.any(String),
-                  alias: null,
                   invitedBy: null,
                   role: getEnumKey(MemberRole, MemberRole.ADMIN),
                   status: getEnumKey(MemberStatus, MemberStatus.ACTIVE),
-                  createdAt: expect.any(String),
-                  updatedAt: expect.any(String),
                   user: {
                     id: expect.any(Number),
-                    status: getEnumKey(UserStatus, UserStatus.ACTIVE),
-                    createdAt: expect.any(String),
-                    updatedAt: expect.any(String),
                   },
                 },
               ],
@@ -472,24 +453,15 @@ describe('SpacesController', () => {
           expect(body).toEqual({
             id: spaceId,
             name: spaceName,
-            status: getEnumKey(SpaceStatus, SpaceStatus.ACTIVE),
-            createdAt: expect.any(String),
-            updatedAt: expect.any(String),
+            safeCount: 0,
             members: [
               {
-                id: expect.any(Number),
                 name: expect.any(String),
-                alias: null,
                 invitedBy: null,
                 status: getEnumKey(MemberStatus, MemberStatus.ACTIVE),
                 role: getEnumKey(MemberRole, MemberRole.ADMIN),
-                createdAt: expect.any(String),
-                updatedAt: expect.any(String),
                 user: {
                   id: userId,
-                  status: getEnumKey(UserStatus, UserStatus.ACTIVE),
-                  createdAt: expect.any(String),
-                  updatedAt: expect.any(String),
                 },
               },
             ],
@@ -540,7 +512,7 @@ describe('SpacesController', () => {
             expect.objectContaining({
               id: spaceId,
               name: spaceName,
-              status: getEnumKey(SpaceStatus, SpaceStatus.ACTIVE),
+              safeCount: 0,
               members: expect.arrayContaining([
                 expect.objectContaining({
                   invitedBy: null,
@@ -548,16 +520,13 @@ describe('SpacesController', () => {
                   role: getEnumKey(MemberRole, MemberRole.ADMIN),
                   user: expect.objectContaining({
                     id: userId,
-                    status: getEnumKey(UserStatus, UserStatus.ACTIVE),
                   }),
                 }),
                 expect.objectContaining({
                   invitedBy: adminAuthPayloadDto.signer_address,
                   status: getEnumKey(MemberStatus, MemberStatus.INVITED),
                   role: getEnumKey(MemberRole, MemberRole.MEMBER),
-                  user: expect.objectContaining({
-                    status: getEnumKey(UserStatus, UserStatus.PENDING),
-                  }),
+                  user: expect.objectContaining({ id: expect.any(Number) }),
                 }),
               ]),
             }),
@@ -618,7 +587,7 @@ describe('SpacesController', () => {
     it('Should return a 404 if a space id does not exist', async () => {
       const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const spaceId = faker.number.int({ min: 10000, max: 20000 });
+      const spaceId = faker.string.uuid();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -639,7 +608,7 @@ describe('SpacesController', () => {
     it('Should return a 404 if the user does not exist', async () => {
       const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const spaceId = faker.number.int({ min: 10000, max: 20000 });
+      const spaceId = faker.string.uuid();
 
       await request(app.getHttpServer())
         .get(`/v1/spaces/${spaceId}`)
@@ -712,7 +681,7 @@ describe('SpacesController', () => {
     });
 
     it('should return a 403 if not authenticated', async () => {
-      const spaceId = faker.number.int({ min: 900000, max: 990000 });
+      const spaceId = faker.string.uuid();
 
       await request(app.getHttpServer())
         .patch(`/v1/spaces/${spaceId}`)
@@ -729,7 +698,7 @@ describe('SpacesController', () => {
         .with('signer_address', undefined as unknown as Address)
         .build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const spaceId = faker.number.int({ min: 1 });
+      const spaceId = faker.string.uuid();
 
       await request(app.getHttpServer())
         .patch(`/v1/spaces/${spaceId}`)
@@ -746,7 +715,7 @@ describe('SpacesController', () => {
       const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const spaceName = nameBuilder();
-      const spaceId = faker.number.int({ min: 900000, max: 990000 });
+      const spaceId = faker.string.uuid();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -938,7 +907,7 @@ describe('SpacesController', () => {
       const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const spaceName = nameBuilder();
-      const spaceId = faker.number.int({ min: 900000, max: 990000 });
+      const spaceId = faker.string.uuid();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -1093,7 +1062,7 @@ describe('SpacesController', () => {
         .with('signer_address', undefined as unknown as Address)
         .build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const spaceId = faker.number.int({ min: 1 });
+      const spaceId = faker.string.uuid();
 
       await request(app.getHttpServer())
         .delete(`/v1/spaces/${spaceId}`)
@@ -1107,7 +1076,7 @@ describe('SpacesController', () => {
     });
 
     it('should return a 403 if not authenticated', async () => {
-      const spaceId = faker.number.int({ min: 900000, max: 990000 });
+      const spaceId = faker.string.uuid();
 
       await request(app.getHttpServer())
         .delete(`/v1/spaces/${spaceId}`)

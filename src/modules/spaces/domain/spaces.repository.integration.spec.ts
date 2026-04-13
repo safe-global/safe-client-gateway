@@ -17,6 +17,7 @@ import { UserStatus } from '@/modules/users/domain/entities/user.entity';
 import { SpaceStatus } from '@/modules/spaces/domain/entities/space.entity';
 import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
 import { SpaceSafe } from '@/modules/spaces/datasources/entities/space-safes.entity.db';
+import type { UUID } from 'crypto';
 import { nameBuilder } from '@/domain/common/entities/name.builder';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 
@@ -179,7 +180,7 @@ describe('SpacesRepository', () => {
         name: faker.word.noun(),
         status: 'ACTIVE',
       });
-      const spaceId = prevSpace.identifiers[0].id as User['id'];
+      const spaceId = prevSpace.identifiers[0].id as Space['id'];
       await dbSpacesRepository.update(spaceId, {
         name: faker.word.noun(),
       });
@@ -216,7 +217,7 @@ describe('SpacesRepository', () => {
       });
 
       expect(space).toEqual({
-        id: expect.any(Number),
+        id: expect.any(String),
         name,
       });
 
@@ -245,7 +246,7 @@ describe('SpacesRepository', () => {
           updatedAt: expect.any(Date),
         },
         space: {
-          id: expect.any(Number),
+          id: expect.any(String),
           name,
           status: spaceStatus,
           createdAt: expect.any(Date),
@@ -277,7 +278,7 @@ describe('SpacesRepository', () => {
           status: spaceStatus,
         }),
       ).resolves.toEqual({
-        id: expect.any(Number),
+        id: expect.any(String),
         name,
       });
 
@@ -307,7 +308,7 @@ describe('SpacesRepository', () => {
       });
 
       expect(space).toEqual({
-        id: expect.any(Number),
+        id: expect.any(String),
         name: spaceName,
       });
 
@@ -336,7 +337,7 @@ describe('SpacesRepository', () => {
           updatedAt: expect.any(Date),
         },
         space: {
-          id: expect.any(Number),
+          id: expect.any(String),
           name: spaceName,
           status: spaceStatus,
           createdAt: expect.any(Date),
@@ -411,10 +412,7 @@ describe('SpacesRepository', () => {
     });
 
     it('should throw an error if the space does not exist', async () => {
-      const spaceId = faker.number.int({
-        min: 69420,
-        max: DB_MAX_SAFE_INTEGER,
-      });
+      const spaceId = faker.string.uuid() as UUID;
 
       await expect(
         spacesRepository.findOneOrFail({ where: { id: spaceId } }),
@@ -449,10 +447,7 @@ describe('SpacesRepository', () => {
     });
 
     it('should return null if the space does not exist', async () => {
-      const spaceId = faker.number.int({
-        min: 69420,
-        max: DB_MAX_SAFE_INTEGER,
-      });
+      const spaceId = faker.string.uuid() as UUID;
 
       await expect(
         spacesRepository.findOne({ where: { id: spaceId } }),
@@ -505,10 +500,7 @@ describe('SpacesRepository', () => {
     });
 
     it('should throw an error if spaces do not exist', async () => {
-      const spaceId = faker.number.int({
-        min: 69420,
-        max: DB_MAX_SAFE_INTEGER,
-      });
+      const spaceId = faker.string.uuid() as UUID;
 
       await expect(
         spacesRepository.findOrFail({ where: { id: spaceId } }),
@@ -563,10 +555,7 @@ describe('SpacesRepository', () => {
     });
 
     it('should return an empty array if spaces do not exist', async () => {
-      const spaceId = faker.number.int({
-        min: 69420,
-        max: DB_MAX_SAFE_INTEGER,
-      });
+      const spaceId = faker.string.uuid() as UUID;
 
       await expect(
         spacesRepository.find({ where: { id: spaceId } }),

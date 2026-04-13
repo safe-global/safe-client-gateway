@@ -10,6 +10,7 @@ import {
   siweAuthPayloadDtoBuilder,
   oidcAuthPayloadDtoBuilder,
 } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
+import type { UUID } from 'crypto';
 import type { Address } from 'viem';
 import { getAddress } from 'viem';
 import { spaceBuilder } from '@/modules/spaces/domain/entities/__tests__/space.entity.db.builder';
@@ -48,7 +49,7 @@ describe('SpaceSafesService', () => {
       ['SIWE', siweAuthPayloadDtoBuilder],
       ['OIDC', oidcAuthPayloadDtoBuilder],
     ] as const)('should create safes for %s admin', async (_label, builder) => {
-      const spaceId = faker.number.int();
+      const spaceId = faker.string.uuid() as UUID;
       const authPayload = new AuthPayload(builder().build());
       const chainId = faker.number.int().toString();
       const payload = [{ address: addr(), chainId }];
@@ -67,7 +68,7 @@ describe('SpaceSafesService', () => {
     it('should throw when not authenticated', async () => {
       await expect(
         service.create({
-          spaceId: faker.number.int(),
+          spaceId: faker.string.uuid() as UUID,
           authPayload: new AuthPayload(),
           payload: [],
         }),
@@ -87,7 +88,7 @@ describe('SpaceSafesService', () => {
 
         await expect(
           service.create({
-            spaceId: faker.number.int(),
+            spaceId: faker.string.uuid() as UUID,
             authPayload,
             payload: [],
           }),
@@ -103,7 +104,7 @@ describe('SpaceSafesService', () => {
     ] as const)(
       'should return safes for %s member',
       async (_label, builder) => {
-        const spaceId = faker.number.int();
+        const spaceId = faker.string.uuid() as UUID;
         const authPayload = new AuthPayload(builder().build());
         const chainId1 = faker.number.int().toString();
         const chainId2 = faker.number.int().toString();
@@ -134,7 +135,7 @@ describe('SpaceSafesService', () => {
 
     it('should throw when not authenticated', async () => {
       await expect(
-        service.get(faker.number.int(), new AuthPayload()),
+        service.get(faker.string.uuid() as UUID, new AuthPayload()),
       ).rejects.toThrow(UnauthorizedException);
 
       expect(spaceSafesRepositoryMock.findBySpaceId).not.toHaveBeenCalled();
@@ -150,7 +151,7 @@ describe('SpaceSafesService', () => {
         membersRepositoryMock.findOne.mockResolvedValue(null);
 
         await expect(
-          service.get(faker.number.int(), authPayload),
+          service.get(faker.string.uuid() as UUID, authPayload),
         ).rejects.toThrow(ForbiddenException);
 
         expect(spaceSafesRepositoryMock.findBySpaceId).not.toHaveBeenCalled();
@@ -163,7 +164,7 @@ describe('SpaceSafesService', () => {
       ['SIWE', siweAuthPayloadDtoBuilder],
       ['OIDC', oidcAuthPayloadDtoBuilder],
     ] as const)('should delete safes for %s admin', async (_label, builder) => {
-      const spaceId = faker.number.int();
+      const spaceId = faker.string.uuid() as UUID;
       const authPayload = new AuthPayload(builder().build());
       const chainId = faker.number.int().toString();
       const payload = [{ address: addr(), chainId }];
@@ -182,7 +183,7 @@ describe('SpaceSafesService', () => {
     it('should throw when not authenticated', async () => {
       await expect(
         service.delete({
-          spaceId: faker.number.int(),
+          spaceId: faker.string.uuid() as UUID,
           authPayload: new AuthPayload(),
           payload: [],
         }),
@@ -202,7 +203,7 @@ describe('SpaceSafesService', () => {
 
         await expect(
           service.delete({
-            spaceId: faker.number.int(),
+            spaceId: faker.string.uuid() as UUID,
             authPayload,
             payload: [],
           }),

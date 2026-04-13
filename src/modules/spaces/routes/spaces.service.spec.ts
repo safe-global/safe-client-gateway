@@ -18,6 +18,7 @@ import {
   siweAuthPayloadDtoBuilder,
   oidcAuthPayloadDtoBuilder,
 } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
+import type { UUID } from 'crypto';
 
 const spacesRepositoryMock = {
   create: jest.fn(),
@@ -258,9 +259,10 @@ describe('SpacesService', () => {
 
         membersRepositoryMock.find.mockResolvedValue([member]);
         spacesRepositoryMock.find.mockResolvedValue([space]);
+        const missingSpaceId = faker.string.uuid() as UUID;
 
         await expect(
-          service.getActiveOrInvitedSpace(999999, authPayload),
+          service.getActiveOrInvitedSpace(missingSpaceId, authPayload),
         ).rejects.toThrow(new NotFoundException('Space not found.'));
       },
     );
@@ -276,7 +278,10 @@ describe('SpacesService', () => {
         membersRepositoryMock.find.mockResolvedValue([]);
 
         await expect(
-          service.getActiveOrInvitedSpace(1, authPayload),
+          service.getActiveOrInvitedSpace(
+            faker.string.uuid() as UUID,
+            authPayload,
+          ),
         ).rejects.toThrow(new NotFoundException('Space not found.'));
       },
     );
@@ -290,7 +295,7 @@ describe('SpacesService', () => {
       const authPayload = new AuthPayload(builder().build());
       const userId = Number(authPayload.sub);
       const name = faker.word.noun();
-      const expectedResponse = { id: faker.number.int(), name };
+      const expectedResponse = { id: faker.string.uuid() as UUID, name };
 
       spacesRepositoryMock.create.mockResolvedValue(expectedResponse);
 
@@ -318,7 +323,7 @@ describe('SpacesService', () => {
         const authPayload = new AuthPayload(builder().build());
         const userId = Number(authPayload.sub);
         const expectedResponse = {
-          id: faker.number.int(),
+          id: faker.string.uuid() as UUID,
           name: faker.word.noun(),
         };
 
@@ -377,7 +382,7 @@ describe('SpacesService', () => {
       ['SIWE', siweAuthPayloadDtoBuilder] as const,
       ['OIDC', oidcAuthPayloadDtoBuilder] as const,
     ])('should update space for %s admin', async (_label, builder) => {
-      const spaceId = faker.number.int();
+      const spaceId = faker.string.uuid() as UUID;
       const authPayload = new AuthPayload(builder().build());
       const updatePayload = { name: faker.word.noun() };
       const expectedResponse = { id: spaceId, name: updatePayload.name };
@@ -405,7 +410,7 @@ describe('SpacesService', () => {
 
       await expect(
         service.update({
-          id: faker.number.int(),
+          id: faker.string.uuid() as UUID,
           updatePayload: { name: faker.word.noun() },
           authPayload,
         }),
@@ -418,7 +423,7 @@ describe('SpacesService', () => {
       ['SIWE', siweAuthPayloadDtoBuilder] as const,
       ['OIDC', oidcAuthPayloadDtoBuilder] as const,
     ])('should delete space for %s admin', async (_label, builder) => {
-      const spaceId = faker.number.int();
+      const spaceId = faker.string.uuid() as UUID;
       const authPayload = new AuthPayload(builder().build());
 
       spacesRepositoryMock.findOne.mockResolvedValue(
@@ -439,7 +444,7 @@ describe('SpacesService', () => {
 
       await expect(
         service.delete({
-          id: faker.number.int(),
+          id: faker.string.uuid() as UUID,
           authPayload,
         }),
       ).rejects.toThrow(ForbiddenException);

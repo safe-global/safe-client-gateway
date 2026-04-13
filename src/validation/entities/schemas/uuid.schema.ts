@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { UUID } from 'crypto';
 import { z } from 'zod';
 
@@ -5,7 +6,7 @@ export const UuidSchema = z
   .uuid({
     error: 'Invalid UUID',
   })
-  // Return type of uuid is string so we need to cast it
+  // PG returns lowercase UUIDs; normalize to match and avoid case-mismatch bugs
   .transform((uuid) => {
-    return uuid as UUID;
+    return uuid.toLowerCase() as UUID;
   });

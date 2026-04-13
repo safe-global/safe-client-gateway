@@ -16,6 +16,7 @@ import {
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
 import { nameBuilder } from '@/domain/common/entities/name.builder';
+import type { UUID } from 'crypto';
 import { getStringEnumKeys } from '@/domain/common/utils/enum';
 import { SpaceStatus } from '@/modules/spaces/domain/entities/space.entity';
 import { SpacesRepository } from '@/modules/spaces/domain/spaces.repository';
@@ -683,10 +684,7 @@ describe('MembersRepository', () => {
     });
 
     it('should throw an error if not authenticated', async () => {
-      const spaceId = faker.number.int({
-        min: 69420,
-        max: DB_MAX_SAFE_INTEGER,
-      });
+      const spaceId = faker.string.uuid() as UUID;
       const users: Array<{
         address: Address;
         role: keyof typeof MemberRole;
@@ -820,10 +818,7 @@ describe('MembersRepository', () => {
 
     it('should throw an error if the space does not exist', async () => {
       const { authPayload } = await createSiweUser();
-      const spaceId = faker.number.int({
-        min: 69420,
-        max: DB_MAX_SAFE_INTEGER,
-      });
+      const spaceId = faker.string.uuid() as UUID;
       const users: Array<{
         address: Address;
         role: keyof typeof MemberRole;
@@ -1132,10 +1127,7 @@ describe('MembersRepository', () => {
     });
 
     it('should throw an error if not authenticated', async () => {
-      const spaceId = faker.number.int({
-        min: 69420,
-        max: DB_MAX_SAFE_INTEGER,
-      });
+      const spaceId = faker.string.uuid() as UUID;
       const memberName = nameBuilder();
 
       await expect(
@@ -1151,10 +1143,7 @@ describe('MembersRepository', () => {
 
     it('should throw if the user is not found', async () => {
       const authPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const spaceId = faker.number.int({
-        min: 69420,
-        max: DB_MAX_SAFE_INTEGER,
-      });
+      const spaceId = faker.string.uuid() as UUID;
       const memberName = nameBuilder();
 
       await expect(
@@ -1171,10 +1160,7 @@ describe('MembersRepository', () => {
     it('should throw an error if the space does not exist', async () => {
       const memberName = nameBuilder();
       const { authPayload } = await createSiweUser({ status: 'PENDING' });
-      const spaceId = faker.number.int({
-        min: 69420,
-        max: DB_MAX_SAFE_INTEGER,
-      });
+      const spaceId = faker.string.uuid() as UUID;
 
       await expect(
         membersRepository.acceptInvite({
@@ -1347,6 +1333,47 @@ describe('MembersRepository', () => {
       });
     });
 
+    it('should not decline the invite if the user was not invited', async () => {
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
+      const memberAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
+      const spaceName = nameBuilder();
+      const adminName = nameBuilder();
+      const admin = await dbUserRepo.insert({
+        status: 'ACTIVE',
+      });
+      await dbWalletRepo.insert({
+        user: admin.generatedMaps[0],
+        address: authPayloadDto.signer_address,
+      });
+      const nonMember = await dbUserRepo.insert({
+        status: 'PENDING',
+      });
+      await dbWalletRepo.insert({
+        user: nonMember.generatedMaps[0],
+        address: memberAuthPayloadDto.signer_address,
+      });
+      const space = await dbSpacesRepository.insert({
+        name: spaceName,
+        status: 'ACTIVE',
+      });
+      const memberRole = faker.helpers.arrayElement(MemberRoleKeys);
+      const spaceId = space.generatedMaps[0].id;
+      await dbMembersRepository.insert({
+        user: admin.generatedMaps[0],
+        space: space.generatedMaps[0],
+        name: adminName,
+        role: memberRole,
+        status: 'ACTIVE',
+        invitedBy: getAddress(faker.finance.ethereumAddress()),
+      });
+
+      await expect(
+        membersRepository.declineInvite({
+          authPayload: new AuthPayload(memberAuthPayloadDto),
+          spaceId,
+        }),
+      ).rejects.toThrow('Space not found.');
+    });
     it('should decline an invite for OIDC user', async () => {
       const memberInvitedBy = getAddress(faker.finance.ethereumAddress());
       const spaceName = nameBuilder();
@@ -1435,10 +1462,7 @@ describe('MembersRepository', () => {
     });
 
     it('should throw an error if not authenticated', async () => {
-      const spaceId = faker.number.int({
-        min: 69420,
-        max: DB_MAX_SAFE_INTEGER,
-      });
+      const spaceId = faker.string.uuid() as UUID;
 
       await expect(
         membersRepository.declineInvite({
@@ -1450,10 +1474,7 @@ describe('MembersRepository', () => {
 
     it('should throw if the user is not found', async () => {
       const authPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const spaceId = faker.number.int({
-        min: 69420,
-        max: DB_MAX_SAFE_INTEGER,
-      });
+      const spaceId = faker.string.uuid() as UUID;
 
       await expect(
         membersRepository.declineInvite({
@@ -1465,10 +1486,7 @@ describe('MembersRepository', () => {
 
     it('should throw an error if the space does not exist', async () => {
       const { authPayload } = await createSiweUser({ status: 'PENDING' });
-      const spaceId = faker.number.int({
-        min: 69420,
-        max: DB_MAX_SAFE_INTEGER,
-      });
+      const spaceId = faker.string.uuid() as UUID;
 
       await expect(
         membersRepository.declineInvite({
@@ -1657,10 +1675,7 @@ describe('MembersRepository', () => {
     });
 
     it('should throw an error if not authenticated', async () => {
-      const spaceId = faker.number.int({
-        min: 69420,
-        max: DB_MAX_SAFE_INTEGER,
-      });
+      const spaceId = faker.string.uuid() as UUID;
 
       await expect(
         membersRepository.findAuthorizedMembersOrFail({
@@ -1672,10 +1687,7 @@ describe('MembersRepository', () => {
 
     it('should throw if the user is not found', async () => {
       const authPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const spaceId = faker.number.int({
-        min: 69420,
-        max: DB_MAX_SAFE_INTEGER,
-      });
+      const spaceId = faker.string.uuid() as UUID;
 
       await expect(
         membersRepository.findAuthorizedMembersOrFail({
@@ -2020,10 +2032,7 @@ describe('MembersRepository', () => {
     });
 
     it('should throw an error if not authenticated', async () => {
-      const spaceId = faker.number.int({
-        min: 69420,
-        max: DB_MAX_SAFE_INTEGER,
-      });
+      const spaceId = faker.string.uuid() as UUID;
       const userId = faker.number.int({
         min: 69420,
         max: DB_MAX_SAFE_INTEGER,
@@ -2349,10 +2358,7 @@ describe('MembersRepository', () => {
     });
 
     it('should throw an error if not authenticated', async () => {
-      const spaceId = faker.number.int({
-        min: 69420,
-        max: DB_MAX_SAFE_INTEGER,
-      });
+      const spaceId = faker.string.uuid() as UUID;
       const userId = faker.number.int({
         min: 69420,
         max: DB_MAX_SAFE_INTEGER,
@@ -2402,10 +2408,7 @@ describe('MembersRepository', () => {
 
     it('should throw an error if there are no members for the given space id', async () => {
       const { userId, authPayload } = await createSiweUser();
-      const spaceId = faker.number.int({
-        min: 69420,
-        max: DB_MAX_SAFE_INTEGER,
-      });
+      const spaceId = faker.string.uuid() as UUID;
 
       await expect(
         membersRepository.removeUser({

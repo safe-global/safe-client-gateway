@@ -11,7 +11,6 @@ import type { INestApplication } from '@nestjs/common';
 import type { Server } from 'net';
 import request from 'supertest';
 import { type Address, getAddress } from 'viem';
-import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { addressBookItemBuilder } from '@/modules/spaces/domain/address-books/entities/__tests__/address-book-item.db.builder';
 import { createTestModule } from '@/__tests__/testing-module';
@@ -528,10 +527,7 @@ describe('AddressBooksController', () => {
 
     it('should return a 404 if a space id does not exist', async () => {
       const { accessToken } = await createSpace();
-      const nonExistingSpaceId = faker.number.int({
-        min: 69420,
-        max: DB_MAX_SAFE_INTEGER,
-      });
+      const nonExistingSpaceId = faker.string.uuid();
 
       await request(app.getHttpServer())
         .put(`/v1/spaces/${nonExistingSpaceId}/address-book`)
@@ -656,10 +652,7 @@ describe('AddressBooksController', () => {
 
     it('should return a 404 if a space ID does not exist', async () => {
       const { accessToken } = await createSpace();
-      const nonExistingSpaceId = faker.number.int({
-        min: 69420,
-        max: DB_MAX_SAFE_INTEGER,
-      });
+      const nonExistingSpaceId = faker.string.uuid();
       const address = getAddress(faker.finance.ethereumAddress());
 
       await request(app.getHttpServer())
