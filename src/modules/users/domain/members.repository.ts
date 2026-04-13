@@ -243,28 +243,22 @@ export class MembersRepository implements IMembersRepository {
     authPayload: AuthPayload;
     spaceId: Space['id'];
   }): Promise<Array<Member>> {
-    const userId = getAuthenticatedUserIdOrFail(args.authPayload);
-
-    const membersRepository =
-      await this.postgresDatabaseService.getRepository(DbMember);
-    const member = await membersRepository.findOne({
-      where: {
-        user: { id: userId },
-        space: { id: args.spaceId },
-        status: In(['ACTIVE', 'INVITED']),
-      },
-    });
-    if (!member) {
-      throw new ForbiddenException(
-        'The user is not an active member of the space.',
-      );
-    }
+    await this.findActiveOrInvitedMemberOrFail(args);
     const space = await this.spacesRepository.findOneOrFail({
       where: { id: args.spaceId },
       relations: { members: { user: true } },
     });
 
     return space.members;
+  }
+
+  public async findSelfMembershipOrFail(args: {
+    authPayload: AuthPayload;
+    spaceId: Space['id'];
+  }): Promise<Member> {
+    return await this.findActiveOrInvitedMemberOrFail(args, {
+      user: true,
+    });
   }
 
   private findActiveAdminsOrFail(spaceId: Space['id']): Promise<Array<Member>> {
@@ -405,5 +399,42 @@ export class MembersRepository implements IMembersRepository {
 
   private isActiveAdmin(member: DbMember): boolean {
     return member.role === 'ADMIN' && member.status === 'ACTIVE';
+  }
+
+  /**
+   * Returns the authenticated user's `ACTIVE` or `INVITED` membership row
+   * for the given space, or throws `ForbiddenException` if none exists.
+   *
+   * Shared by {@link findAuthorizedMembersOrFail} (which uses it as an
+   * authorization gate and discards the row, so it omits `relations`) and
+   * by {@link findSelfMembershipOrFail} (which returns the row to the
+   * caller and passes `{ user: true }` so the response includes
+   * `user.status`).
+   */
+  private async findActiveOrInvitedMemberOrFail(
+    args: {
+      authPayload: AuthPayload;
+      spaceId: Space['id'];
+    },
+    relations?: FindOptionsRelations<DbMember>,
+  ): Promise<Member> {
+    const userId = getAuthenticatedUserIdOrFail(args.authPayload);
+
+    const membersRepository =
+      await this.postgresDatabaseService.getRepository(DbMember);
+    const member = await membersRepository.findOne({
+      where: {
+        user: { id: userId },
+        space: { id: args.spaceId },
+        status: In(['ACTIVE', 'INVITED']),
+      },
+      relations,
+    });
+    if (!member) {
+      throw new ForbiddenException(
+        'The user is not an active member of the space.',
+      );
+    }
+    return member;
   }
 }

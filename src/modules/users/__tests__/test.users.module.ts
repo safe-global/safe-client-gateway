@@ -37,6 +37,7 @@ import { IMembersRepository } from '@/modules/users/domain/members.repository.in
         acceptInvite: jest.fn(),
         declineInvite: jest.fn(),
         findAuthorizedMembersOrFail: jest.fn(),
+        findSelfMembershipOrFail: jest.fn(),
         updateRole: jest.fn(),
         updateAlias: jest.fn(),
         removeUser: jest.fn(),

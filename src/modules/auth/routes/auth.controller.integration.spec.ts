@@ -655,7 +655,7 @@ describe('AuthController', () => {
   });
 
   describe('GET /v1/auth/me', () => {
-    it('should return 200 with user id for a valid Siwe access token', async () => {
+    it('should return 200 with id, authMethod and signerAddress for a valid Siwe access token', async () => {
       const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
 
@@ -664,11 +664,15 @@ describe('AuthController', () => {
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(200)
         .expect(({ body }) => {
-          expect(body).toEqual({ id: authPayloadDto.sub });
+          expect(body).toEqual({
+            id: authPayloadDto.sub,
+            authMethod: 'siwe',
+            signerAddress: authPayloadDto.signer_address,
+          });
         });
     });
 
-    it('should return 200 with user id for a valid OIDC access token', async () => {
+    it('should return 200 with id and authMethod (no signerAddress) for a valid OIDC access token', async () => {
       const authPayloadDto = oidcAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
 
@@ -677,7 +681,11 @@ describe('AuthController', () => {
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(200)
         .expect(({ body }) => {
-          expect(body).toEqual({ id: authPayloadDto.sub });
+          expect(body).toEqual({
+            id: authPayloadDto.sub,
+            authMethod: 'oidc',
+          });
+          expect(body).not.toHaveProperty('signerAddress');
         });
     });
 
