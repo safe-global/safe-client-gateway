@@ -18,6 +18,7 @@ import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import {
   Body,
   Controller,
+  ForbiddenException,
   Get,
   HttpCode,
   Inject,
@@ -72,14 +73,27 @@ export class AuthController {
   @ApiOperation({
     summary: 'Get authenticated user',
     description:
-      'Returns the authenticated user ID if a valid session cookie is present, 403 otherwise.',
+      'Returns the authenticated user session if a valid session cookie is present, 403 otherwise. ' +
+      'The response includes the user ID, the authentication method used, and (for SIWE users) the wallet signer address.',
   })
-  @ApiOkResponse({ description: 'Authenticated user ID', type: UserSession })
+  @ApiOkResponse({
+    description: 'Authenticated user session',
+    type: UserSession,
+  })
   @ApiForbiddenResponse({ description: 'Not authenticated' })
   @UseGuards(AuthGuard)
   @Get('me')
   getMe(@Auth() authPayload: AuthPayload): UserSession {
-    return { id: authPayload.getUserId() as string };
+    if (!authPayload.isAuthenticated()) {
+      throw new ForbiddenException('Not authenticated');
+    }
+    return {
+      id: authPayload.sub,
+      authMethod: authPayload.auth_method,
+      ...(authPayload.isSiwe() && {
+        signerAddress: authPayload.signer_address,
+      }),
+    };
   }
 
   @ApiOperation({

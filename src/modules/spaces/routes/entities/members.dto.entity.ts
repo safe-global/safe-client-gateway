@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { getStringEnumKeys } from '@/domain/common/utils/enum';
 import {
   MemberRole,
@@ -18,7 +19,7 @@ class MemberUser implements Pick<User, 'id'> {
   status!: keyof typeof UserStatus;
 }
 
-class Member {
+export class MemberDto {
   @ApiProperty({ type: Number })
   id!: DomainMember['id'];
 
@@ -48,6 +49,6 @@ class Member {
 }
 
 export class MembersDto {
-  @ApiProperty({ type: Member, isArray: true })
-  members!: Array<Member>;
+  @ApiProperty({ type: MemberDto, isArray: true })
+  members!: Array<MemberDto>;
 }
