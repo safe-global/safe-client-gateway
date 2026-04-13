@@ -5,7 +5,6 @@ import {
   ACCESS_TOKEN_COOKIE_NAME,
   getCookieOptions,
 } from '@/modules/auth/utils/auth-cookie.utils';
-import { assertAuthenticated } from '@/modules/auth/utils/assert-authenticated.utils';
 import { Auth } from '@/modules/auth/routes/decorators/auth.decorator';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
@@ -19,6 +18,7 @@ import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import {
   Body,
   Controller,
+  ForbiddenException,
   Get,
   HttpCode,
   Inject,
@@ -84,7 +84,9 @@ export class AuthController {
   @UseGuards(AuthGuard)
   @Get('me')
   getMe(@Auth() authPayload: AuthPayload): UserSession {
-    assertAuthenticated(authPayload);
+    if (!authPayload.isAuthenticated()) {
+      throw new ForbiddenException('Not authenticated');
+    }
     const session: UserSession = {
       id: authPayload.sub,
       authMethod: authPayload.auth_method,
