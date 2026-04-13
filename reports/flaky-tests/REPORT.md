@@ -1,15 +1,15 @@
 # Flaky Test Baseline Report
 
-Generated: 2026-03-17T01:20:51.304Z | Period: 2026-01-16 to 2026-03-17
+Generated: 2026-04-13T16:22:07.834Z | Period: 2026-01-16 to 2026-04-13
 
 ## Summary
 
 | Metric | Value |
 |--------|-------|
-| Total unique commits | 541 |
-| Flaky commits (pass + fail on same SHA) | 41 |
-| Flakiness rate | 7.6% |
-| Cascade baseline | 1 failures (7 tests) |
+| Total unique commits | 765 |
+| Flaky commits (pass + fail on same SHA) | 57 |
+| Flakiness rate | 7.5% |
+| Cascade baseline | 5 failures (6 tests) |
 
 ## Weekly Trend
 
@@ -27,55 +27,41 @@ Generated: 2026-03-17T01:20:51.304Z | Period: 2026-01-16 to 2026-03-17
 | 2026-03-08 | 3 | 0 | 0% |
 | 2026-03-09 | 44 | 1 | 2.3% |
 | 2026-03-16 | 31 | 3 | 9.7% |
-
-## Per-Test Flakiness Heatmap
-
-Failures per week for non-cascade flaky tests (only on commits where CI also passed).
-
-| Test | 1/12 | 1/19 | 1/26 | 2/2 | 2/9 | 2/15 | 2/16 | 2/23 | 3/2 | 3/8 | 3/9 | 3/16 | Total |
-|------|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|------:|
-| targeted-messaging/targeted-messaging.datasource [Fixed] | . | **5** | **7** | . | . | . | . | . | . | . | . | . | 12 |
-| users/members.repository [Fixed] | . | 1 | **4** | . | . | . | . | . | . | . | . | . | 5 |
-| transactions/preview-transaction-kiln.transactions.controller [Fixed] | . | . | . | . | 2 | . | 1 | . | 1 | . | . | . | 4 |
-| safe-shield/recipient-analysis.service | . | . | . | . | 1 | . | . | . | 1 | . | . | 2 | 4 |
-| cache/redis.cache.service | . | . | 2 | . | . | . | . | 1 | . | . | . | . | 3 |
-| transactions/add-transaction-confirmations.transactions.controller [Fixed] | . | . | 1 | . | . | . | . | . | 2 | . | . | . | 3 |
-| transactions/transaction-verifier.helper [Fixed] | 1 | 2 | . | . | . | . | . | . | . | . | . | . | 3 |
-| transactions/preview-transaction-cow-swap.transactions.controller [Fixed] | . | . | . | 1 | . | . | 1 | . | . | . | . | 1 | 3 |
-| notifications/notifications.controller [Fixed] | . | . | . | 1 | . | . | . | . | 1 | . | 1 | . | 3 |
-| transactions/transaction-data.mapper | . | . | 1 | . | . | . | 1 | . | . | . | . | . | 2 |
-| common/rate-limit.guard | . | . | . | 1 | . | . | . | . | 1 | . | . | . | 2 |
-
-Legend: `.` = no failures, **bold** = 3+ failures that week
+| 2026-03-23 | 59 | 3 | 5.1% |
+| 2026-03-30 | 38 | 2 | 5.3% |
+| 2026-04-06 | 116 | 11 | 9.5% |
+| 2026-04-13 | 11 | 0 | 0% |
 
 ## Flaky Test Leaderboard (Non-Cascade)
 
 | File | Failures | Status | Fix PR |
 |------|----------|--------|--------|
 | `src/modules/targeted-messaging/datasources/targeted-messaging.datasource.integration.spec.ts` | 12 | Fixed | [#2891](https://github.com/safe-global/safe-client-gateway/pull/2891) |
-| `src/modules/users/domain/members.repository.integration.spec.ts` | 5 | Fixed | [#2891](https://github.com/safe-global/safe-client-gateway/pull/2891) |
 | `src/modules/transactions/routes/__tests__/controllers/preview-transaction-kiln.transactions.controller.integration.spec.ts` | 4 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
-| `src/modules/safe-shield/recipient-analysis/recipient-analysis.service.spec.ts` | 4 | Open | [#2977](https://github.com/safe-global/safe-client-gateway/pull/2977) |
-| `src/datasources/cache/redis.cache.service.integration.spec.ts` | 3 | Open | - |
-| `src/modules/transactions/routes/__tests__/controllers/add-transaction-confirmations.transactions.controller.integration.spec.ts` | 3 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
+| `src/modules/transactions/routes/__tests__/controllers/add-transaction-confirmations.transactions.controller.integration.spec.ts` | 4 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
+| `src/modules/notifications/routes/v2/notifications.controller.integration.spec.ts` | 4 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
 | `src/modules/transactions/routes/helpers/transaction-verifier.helper.spec.ts` | 3 | Fixed | [#2891](https://github.com/safe-global/safe-client-gateway/pull/2891) |
-| `src/modules/transactions/routes/__tests__/controllers/preview-transaction-cow-swap.transactions.controller.integration.spec.ts` | 3 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
-| `src/modules/notifications/routes/v2/notifications.controller.integration.spec.ts` | 3 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
-| `src/modules/transactions/routes/mappers/common/transaction-data.mapper.spec.ts` | 2 | Open | - |
-| `src/routes/common/guards/rate-limit.guard.spec.ts` | 2 | Open | - |
+| `src/modules/transactions/routes/mappers/common/transaction-data.mapper.spec.ts` | 3 | Open | - |
+| `src/routes/common/guards/rate-limit.guard.spec.ts` | 3 | Open | - |
+| `src/modules/transactions/routes/__tests__/controllers/get-transaction-by-id.transactions.controller.integration.spec.ts` | 2 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
+| `src/modules/transactions/routes/__tests__/controllers/preview-transaction-cow-swap.transactions.controller.spec.ts` | 1 | Open | - |
+| `src/modules/transactions/routes/__tests__/controllers/preview-transaction-kiln.transactions.controller.spec.ts` | 1 | Open | - |
+| `src/modules/safe-shield/safe-shield.controller.integration.spec.ts` | 1 | Open | [#2842](https://github.com/safe-global/safe-client-gateway/pull/2842) |
+| `src/modules/safe-apps/routes/safe-apps.controller.integration.spec.ts` | 1 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
+| `src/domain/common/entities/safe-signature.spec.ts` | 1 | Fixed | [#2647](https://github.com/safe-global/safe-client-gateway/pull/2647) |
+| `src/modules/bridge/domain/entities/bridge-name.entity.spec.ts` | 1 | Open | - |
 
 ## Cascade Tests
 
-These 7 tests all failed exactly 1 times, suggesting they fail together as a cascade (e.g., shared infrastructure issue).
+These 6 tests all failed exactly 5 times, suggesting they fail together as a cascade (e.g., shared infrastructure issue).
 
 <details>
 <summary>Click to expand cascade test list</summary>
 
-- `src/modules/transactions/routes/__tests__/controllers/preview-transaction-cow-swap.transactions.controller.spec.ts`
-- `src/modules/transactions/routes/__tests__/controllers/preview-transaction-kiln.transactions.controller.spec.ts`
-- `src/modules/safe-shield/safe-shield.controller.integration.spec.ts`
-- `src/modules/safe-apps/routes/safe-apps.controller.integration.spec.ts`
-- `src/modules/transactions/routes/__tests__/controllers/get-transaction-by-id.transactions.controller.integration.spec.ts`
+- `src/modules/users/domain/members.repository.integration.spec.ts`
+- `src/modules/safe-shield/recipient-analysis/recipient-analysis.service.spec.ts`
+- `src/datasources/cache/redis.cache.service.integration.spec.ts`
+- `src/modules/transactions/routes/__tests__/controllers/preview-transaction-cow-swap.transactions.controller.integration.spec.ts`
 - `src/modules/transactions/routes/__tests__/controllers/propose-transaction.transactions.controller.integration.spec.ts`
 - `src/datasources/job-queue/__tests__/job-queue.service.integration.spec.ts`
 
@@ -83,7 +69,24 @@ These 7 tests all failed exactly 1 times, suggesting they fail together as a cas
 
 ## Fix PRs
 
-### [#2977](https://github.com/safe-global/safe-client-gateway/pull/2977) - fix(tests): resolve flaky tests from chain ID collisions and missing mock resets (Open)
+### [#3014](https://github.com/safe-global/safe-client-gateway/pull/3014) - fix: add missing app.close() teardown in integration tests (Merged)
+
+- `src/modules/chains/routes/chains.controller.integration.spec.ts`
+- `src/modules/delegate/routes/delegates.controller.integration.spec.ts`
+- `src/modules/delegate/routes/v2/delegates.v2.controller.integration.spec.ts`
+- `src/modules/messages/routes/messages.controller.integration.spec.ts`
+- `src/modules/notifications/routes/v1/notifications.controller.integration.spec.ts`
+- `src/modules/root/routes/root.controller.integration.spec.ts`
+- `src/modules/safe/routes/safes.controller.nonces.integration.spec.ts`
+- `src/routes/common/decorators/pagination.data.decorator.integration.spec.ts`
+- `src/routes/common/interceptors/cache-control.interceptor.integration.spec.ts`
+
+### [#2992](https://github.com/safe-global/safe-client-gateway/pull/2992) - fix: allow subdomains for redirect url to test previews (Merged)
+
+- `src/modules/auth/oidc/routes/oidc-auth.controller.integration.spec.ts`
+- `src/modules/auth/oidc/routes/oidc-auth.service.spec.ts`
+
+### [#2977](https://github.com/safe-global/safe-client-gateway/pull/2977) - fix(tests): resolve flaky tests from chain ID collisions and missing mock resets (Merged)
 
 - `src/modules/safe-shield/recipient-analysis/recipient-analysis.service.spec.ts`
 - `src/modules/transactions/routes/__tests__/controllers/preview-transaction-cow-swap.transactions.controller.integration.spec.ts`
@@ -540,10 +543,12 @@ These 7 tests all failed exactly 1 times, suggesting they fail together as a cas
 
 ## Still-Open Flaky Tests
 
-- `src/modules/safe-shield/recipient-analysis/recipient-analysis.service.spec.ts` (4 failures)
-- `src/datasources/cache/redis.cache.service.integration.spec.ts` (3 failures)
-- `src/modules/transactions/routes/mappers/common/transaction-data.mapper.spec.ts` (2 failures)
-- `src/routes/common/guards/rate-limit.guard.spec.ts` (2 failures)
+- `src/modules/transactions/routes/mappers/common/transaction-data.mapper.spec.ts` (3 failures)
+- `src/routes/common/guards/rate-limit.guard.spec.ts` (3 failures)
+- `src/modules/transactions/routes/__tests__/controllers/preview-transaction-cow-swap.transactions.controller.spec.ts` (1 failures)
+- `src/modules/transactions/routes/__tests__/controllers/preview-transaction-kiln.transactions.controller.spec.ts` (1 failures)
+- `src/modules/safe-shield/safe-shield.controller.integration.spec.ts` (1 failures)
+- `src/modules/bridge/domain/entities/bridge-name.entity.spec.ts` (1 failures)
 
 ---
 

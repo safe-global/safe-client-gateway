@@ -1,11 +1,38 @@
 {
-  "generated_at": "2026-03-17T01:20:51.301Z",
+  "generated_at": "2026-04-13T16:22:07.832Z",
   "prs": [
+    {
+      "number": 3014,
+      "title": "fix: add missing app.close() teardown in integration tests",
+      "url": "https://github.com/safe-global/safe-client-gateway/pull/3014",
+      "merged_at": "2026-04-09T05:59:48Z",
+      "tests_fixed": [
+        "src/modules/chains/routes/chains.controller.integration.spec.ts",
+        "src/modules/delegate/routes/delegates.controller.integration.spec.ts",
+        "src/modules/delegate/routes/v2/delegates.v2.controller.integration.spec.ts",
+        "src/modules/messages/routes/messages.controller.integration.spec.ts",
+        "src/modules/notifications/routes/v1/notifications.controller.integration.spec.ts",
+        "src/modules/root/routes/root.controller.integration.spec.ts",
+        "src/modules/safe/routes/safes.controller.nonces.integration.spec.ts",
+        "src/routes/common/decorators/pagination.data.decorator.integration.spec.ts",
+        "src/routes/common/interceptors/cache-control.interceptor.integration.spec.ts"
+      ]
+    },
+    {
+      "number": 2992,
+      "title": "fix: allow subdomains for redirect url to test previews",
+      "url": "https://github.com/safe-global/safe-client-gateway/pull/2992",
+      "merged_at": "2026-03-26T14:57:44Z",
+      "tests_fixed": [
+        "src/modules/auth/oidc/routes/oidc-auth.controller.integration.spec.ts",
+        "src/modules/auth/oidc/routes/oidc-auth.service.spec.ts"
+      ]
+    },
     {
       "number": 2977,
       "title": "fix(tests): resolve flaky tests from chain ID collisions and missing mock resets",
       "url": "https://github.com/safe-global/safe-client-gateway/pull/2977",
-      "merged_at": null,
+      "merged_at": "2026-03-18T11:02:40Z",
       "tests_fixed": [
         "src/modules/safe-shield/recipient-analysis/recipient-analysis.service.spec.ts",
         "src/modules/transactions/routes/__tests__/controllers/preview-transaction-cow-swap.transactions.controller.integration.spec.ts"

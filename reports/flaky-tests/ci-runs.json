@@ -1,23 +1,42 @@
 {
-  "generated_at": "2026-03-17T01:20:51.301Z",
+  "generated_at": "2026-04-13T16:22:07.832Z",
+  "last_checked_at": "2026-04-13T16:22:07.832Z",
   "period": {
     "from": "2026-01-16",
-    "to": "2026-03-17"
+    "to": "2026-04-13"
   },
   "flaky_shas": [
-    "0079a46",
-    "c0a5bf4",
-    "fbe305c",
-    "4fbe004",
-    "e1901e5",
-    "aaeea65",
-    "b88de97",
-    "b22d9c1",
-    "98f7cb9",
-    "1efc9d3",
-    "47477af",
-    "dc3acbd",
-    "ab8c16f",
+    "df09feb",
+    "0e93fdb",
+    "45fd20c",
+    "fc05a1e",
+    "b9229d0",
+    "f792af7",
+    "e436368",
+    "2f71b22",
+    "46fd01d",
+    "d3c8117",
+    "6ed3010",
+    "8767311",
+    "e8ce821",
+    "0327391",
+    "a66c492",
+    "46287cf",
+    "2172096",
+    "cc09b28",
+    "50c8662",
+    "1fe5a4f",
+    "0bd2bab",
+    "c4ced4d",
+    "55492c7",
+    "2df2b42",
+    "993b83f",
+    "b321fb0",
+    "4fd1213",
+    "80e1604",
+    "96c4a89",
+    "8c2a666",
+    "ead5453",
     "dcca899",
     "5e8df46",
     "710dd3d",
@@ -32,22 +51,326 @@
     "75a99c2",
     "e85d9ac",
     "18336a7",
-    "4fd1213",
-    "80e1604",
-    "96c4a89",
-    "8c2a666",
-    "ead5453",
-    "0bd2bab",
-    "c4ced4d",
-    "55492c7",
-    "2df2b42",
-    "993b83f",
-    "b321fb0",
-    "cc09b28",
-    "50c8662",
-    "1fe5a4f"
+    "0079a46",
+    "c0a5bf4",
+    "fbe305c",
+    "4fbe004",
+    "e1901e5",
+    "aaeea65",
+    "b88de97",
+    "b22d9c1",
+    "98f7cb9",
+    "1efc9d3",
+    "47477af",
+    "dc3acbd",
+    "ab8c16f"
   ],
   "runs": [
+    {
+      "id": 24241345487,
+      "sha": "df09feb",
+      "branch": "feat/relay-fee-preview",
+      "conclusion": "failure",
+      "created_at": "2026-04-10T11:45:56Z",
+      "failed_jobs": [
+        "integration-tests"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/modules/transactions/routes/__tests__/controllers/propose-transaction.transactions.controller.integration.spec.ts",
+          "name": "Propose transaction - Transactions Controller › should propose a transaction with ETH_SIGN signature",
+          "error": "expected 200 \"OK\", got 500 \"Internal Server Error\""
+        }
+      ]
+    },
+    {
+      "id": 24238112932,
+      "sha": "0e93fdb",
+      "branch": "feat/relay-fee-preview",
+      "conclusion": "failure",
+      "created_at": "2026-04-10T10:16:03Z",
+      "failed_jobs": [
+        "integration-tests"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/datasources/cache/redis.cache.service.integration.spec.ts",
+          "name": "RedisCacheService › sets and gets the value of a zero-value counter",
+          "error": "ERR value is not an integer or out of range"
+        }
+      ]
+    },
+    {
+      "id": 24237536738,
+      "sha": "45fd20c",
+      "branch": "feat/relay-fee-preview",
+      "conclusion": "failure",
+      "created_at": "2026-04-10T10:00:56Z",
+      "failed_jobs": [
+        "integration-tests"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/modules/transactions/routes/__tests__/controllers/get-transaction-by-id.transactions.controller.integration.spec.ts",
+          "name": "Get by id - Transactions Controller › Get an Multisig Transaction by ID",
+          "error": "expected 200 \"OK\", got 500 \"Internal Server Error\""
+        }
+      ]
+    },
+    {
+      "id": 24151370147,
+      "sha": "fc05a1e",
+      "branch": "chore/migrate-node-to-bun",
+      "conclusion": "failure",
+      "created_at": "2026-04-08T18:19:29Z",
+      "failed_jobs": [
+        "unit-tests"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/modules/transactions/routes/mappers/common/transaction-data.mapper.spec.ts",
+          "name": "Transaction Data Mapper (Unit) › Build address info index › should return an empty address info index if dataDecoded.parameters contains invalid addresses only",
+          "error": "InvalidAddressError: Address \"0xeFbB8\" is invalid."
+        }
+      ]
+    },
+    {
+      "id": 24150460675,
+      "sha": "b9229d0",
+      "branch": "chore/migrate-node-to-bun",
+      "conclusion": "failure",
+      "created_at": "2026-04-08T17:57:53Z",
+      "failed_jobs": [
+        "integration-tests"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/datasources/job-queue/__tests__/job-queue.service.integration.spec.ts",
+          "name": "JobQueueService & TestJobConsumer integration › should invoke worker event handlers",
+          "error": "expect(received).toContainEqual(expected) // deep equality"
+        }
+      ]
+    },
+    {
+      "id": 24097393294,
+      "sha": "f792af7",
+      "branch": "feat/counterfactual-safes-backend",
+      "conclusion": "failure",
+      "created_at": "2026-04-07T18:20:35Z",
+      "failed_jobs": [
+        "integration-tests"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/datasources/job-queue/__tests__/job-queue.service.integration.spec.ts",
+          "name": "JobQueueService & TestJobConsumer integration › should invoke worker event handlers",
+          "error": "expect(received).toContainEqual(expected) // deep equality"
+        }
+      ]
+    },
+    {
+      "id": 24097028692,
+      "sha": "e436368",
+      "branch": "feat/counterfactual-safes-backend",
+      "conclusion": "failure",
+      "created_at": "2026-04-07T18:12:23Z",
+      "failed_jobs": [
+        "integration-tests"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/modules/transactions/routes/__tests__/controllers/add-transaction-confirmations.transactions.controller.integration.spec.ts",
+          "name": "Add transaction confirmations - Transactions Controller › should confirm a transaction with a APPROVED_HASH signature and return the updated transaction",
+          "error": "expected 200 \"OK\", got 500 \"Internal Server Error\""
+        },
+        {
+          "file": "src/datasources/job-queue/__tests__/job-queue.service.integration.spec.ts",
+          "name": "JobQueueService & TestJobConsumer integration › should handle job failure",
+          "error": "expect(received).toHaveLength(expected)"
+        }
+      ]
+    },
+    {
+      "id": 24092657080,
+      "sha": "2f71b22",
+      "branch": "refactor/simplify-circuit-breaker-config",
+      "conclusion": "failure",
+      "created_at": "2026-04-07T16:32:23Z",
+      "failed_jobs": [
+        "integration-tests"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/datasources/job-queue/__tests__/job-queue.service.integration.spec.ts",
+          "name": "JobQueueService & TestJobConsumer integration › should handle job failure",
+          "error": "expect(received).toHaveLength(expected)"
+        }
+      ]
+    },
+    {
+      "id": 24092557481,
+      "sha": "46fd01d",
+      "branch": "refactor/simplify-circuit-breaker-config",
+      "conclusion": "failure",
+      "created_at": "2026-04-07T16:30:15Z",
+      "failed_jobs": [
+        "integration-tests"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/modules/transactions/routes/__tests__/controllers/propose-transaction.transactions.controller.integration.spec.ts",
+          "name": "Propose transaction - Transactions Controller › should propose a transaction with concatenated signatures",
+          "error": "expected 200 \"OK\", got 500 \"Internal Server Error\""
+        }
+      ]
+    },
+    {
+      "id": 24091956844,
+      "sha": "d3c8117",
+      "branch": "refactor/simplify-circuit-breaker-config",
+      "conclusion": "failure",
+      "created_at": "2026-04-07T16:16:48Z",
+      "failed_jobs": [
+        "unit-tests"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/modules/bridge/domain/entities/bridge-name.entity.spec.ts",
+          "name": "BridgeStatusSchema › should not allow an unknown bridge name",
+          "error": "expect(received).toEqual(expected) // deep equality"
+        }
+      ]
+    },
+    {
+      "id": 24086104868,
+      "sha": "6ed3010",
+      "branch": "feat/auth-agnostic-spaces",
+      "conclusion": "failure",
+      "created_at": "2026-04-07T14:14:45Z",
+      "failed_jobs": [
+        "unit-tests",
+        "integration-tests"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/modules/safe-shield/recipient-analysis/recipient-analysis.service.spec.ts",
+          "name": "RecipientAnalysisService › analyze › should analyze BridgeAndSwap with recipient same as Safe address",
+          "error": "expect(received).toEqual(expected) // deep equality"
+        },
+        {
+          "file": "src/datasources/cache/redis.cache.service.integration.spec.ts",
+          "name": "RedisCacheService › sets and gets the value of a counter key",
+          "error": "ERR value is not an integer or out of range"
+        }
+      ]
+    },
+    {
+      "id": 23880554909,
+      "sha": "8767311",
+      "branch": "dependabot/github_actions/docker/setup-buildx-action-4.0.0",
+      "conclusion": "failure",
+      "created_at": "2026-04-02T02:20:27Z",
+      "failed_jobs": [
+        "integration-tests"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/modules/transactions/routes/__tests__/controllers/preview-transaction-cow-swap.transactions.controller.integration.spec.ts",
+          "name": "Preview transaction - CoW Swap - Transactions Controller › Swaps › should return a \"standard\" transaction preview if buy token is not available",
+          "error": "expected 200 \"OK\", got 500 \"Internal Server Error\""
+        }
+      ]
+    },
+    {
+      "id": 23799756668,
+      "sha": "e8ce821",
+      "branch": "fix/circuit-breaker-half-open-request-tracking",
+      "conclusion": "failure",
+      "created_at": "2026-03-31T13:26:22Z",
+      "failed_jobs": [
+        "unit-tests"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/routes/common/guards/rate-limit.guard.spec.ts",
+          "name": "RateLimitGuard › should log a warning for invalid client IP",
+          "error": "expect(received).rejects.toThrow()"
+        }
+      ]
+    },
+    {
+      "id": 23592497273,
+      "sha": "0327391",
+      "branch": "fix/allowed-domain-redirect",
+      "conclusion": "failure",
+      "created_at": "2026-03-26T11:43:38Z",
+      "failed_jobs": [
+        "unit-tests"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/domain/common/entities/safe-signature.spec.ts",
+          "name": "SafeSignature › should return the v value",
+          "error": "Insufficient length for dynamic part length field"
+        }
+      ]
+    },
+    {
+      "id": 23537189191,
+      "sha": "a66c492",
+      "branch": "epic/email-auth",
+      "conclusion": "failure",
+      "created_at": "2026-03-25T10:48:49Z",
+      "failed_jobs": [
+        "integration-tests"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/modules/transactions/routes/__tests__/controllers/propose-transaction.transactions.controller.integration.spec.ts",
+          "name": "Propose transaction - Transactions Controller › should propose a transaction with CONTRACT_SIGNATURE signature",
+          "error": "expected 200 \"OK\", got 500 \"Internal Server Error\""
+        },
+        {
+          "file": "src/modules/transactions/routes/__tests__/controllers/preview-transaction-cow-swap.transactions.controller.integration.spec.ts",
+          "name": "Preview transaction - CoW Swap - Transactions Controller › TWAPs › should return a \"standard\" transaction preview if the swap app is restricted",
+          "error": "expected 200 \"OK\", got 500 \"Internal Server Error\""
+        }
+      ]
+    },
+    {
+      "id": 23440657251,
+      "sha": "46287cf",
+      "branch": "feat/spaces-pending-tx",
+      "conclusion": "failure",
+      "created_at": "2026-03-23T13:49:33Z",
+      "failed_jobs": [
+        "integration-tests"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/modules/notifications/routes/v2/notifications.controller.integration.spec.ts",
+          "name": "Notifications Controller V2 › GET /v2/chains/:chainId/notifications/devices/:deviceUuid/safes/:safeAddress › authentication › should return 403 if token is invalid",
+          "error": "expect(received).toThrow(expected)"
+        }
+      ]
+    },
+    {
+      "id": 23270701430,
+      "sha": "2172096",
+      "branch": "valentin/wa-1583-replace-sequential-spaceid-with-global-uuid",
+      "conclusion": "failure",
+      "created_at": "2026-03-18T22:43:34Z",
+      "failed_jobs": [
+        "integration-tests"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/modules/transactions/routes/__tests__/controllers/propose-transaction.transactions.controller.integration.spec.ts",
+          "name": "Propose transaction - Transactions Controller › Verification › should not throw if the eth_sign signature is an existing signature",
+          "error": "expected 200 \"OK\", got 500 \"Internal Server Error\""
+        }
+      ]
+    },
     {
       "id": 23141887897,
       "sha": "cc09b28",

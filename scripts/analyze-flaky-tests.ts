@@ -73,14 +73,23 @@ function gh(endpoint: string, params: Record<string, string> = {}): unknown {
   return JSON.parse(result);
 }
 
-function getDateRange(): { from: string; to: string } {
+function getDateRange(resumeAfter?: string | null): {
+  from: string;
+  to: string;
+} {
   const to = new Date();
+  const toStr = to.toISOString().split('T')[0];
+
+  if (resumeAfter) {
+    // Resume from 1 day before last check to catch in-progress runs
+    const resume = new Date(resumeAfter);
+    resume.setDate(resume.getDate() - 1);
+    return { from: resume.toISOString().split('T')[0], to: toStr };
+  }
+
   const from = new Date(to);
   from.setDate(from.getDate() - PERIOD_DAYS);
-  return {
-    from: from.toISOString().split('T')[0],
-    to: to.toISOString().split('T')[0],
-  };
+  return { from: from.toISOString().split('T')[0], to: toStr };
 }
 
 function getWeekStart(dateStr: string): string {
@@ -89,6 +98,56 @@ function getWeekStart(dateStr: string): string {
   const diff = date.getDate() - day + (day === 0 ? -6 : 1);
   const monday = new Date(date.setDate(diff));
   return monday.toISOString().split('T')[0];
+}
+
+// --- Incremental support ---
+
+interface ExistingData {
+  lastCheckedAt: string;
+  runs: Array<CiRun>;
+  periodFrom: string;
+  weeklyTrend: Array<WeeklyTrend>;
+  testCounts: Map<string, number>;
+  cascadeBaseline: number;
+  cascadeTestsCount: number;
+}
+
+function loadExistingData(): ExistingData | null {
+  const ciRunsPath = path.join(OUTPUT_DIR, 'ci-runs.json');
+  const flakyTestsPath = path.join(OUTPUT_DIR, 'flaky-tests.json');
+  if (!fs.existsSync(ciRunsPath) || !fs.existsSync(flakyTestsPath)) {
+    return null;
+  }
+
+  try {
+    const ciData = JSON.parse(fs.readFileSync(ciRunsPath, 'utf-8'));
+    const flakyData = JSON.parse(fs.readFileSync(flakyTestsPath, 'utf-8'));
+
+    const lastCheckedAt =
+      ciData.last_checked_at ?? ciData.generated_at ?? null;
+    if (!lastCheckedAt) return null;
+
+    const runs: Array<CiRun> = ciData.runs ?? [];
+    const periodFrom: string = ciData.period?.from ?? '';
+    const weeklyTrend: Array<WeeklyTrend> = flakyData.weekly_trend ?? [];
+    const testCounts = new Map<string, number>();
+    for (const t of flakyData.tests ?? []) {
+      testCounts.set(t.file, t.failure_count);
+    }
+
+    return {
+      lastCheckedAt,
+      runs,
+      periodFrom,
+      weeklyTrend,
+      testCounts,
+      cascadeBaseline: flakyData.cascade_baseline ?? 0,
+      cascadeTestsCount: flakyData.cascade_tests_count ?? 0,
+    };
+  } catch (err) {
+    console.warn('Could not load existing data, starting fresh:', err);
+    return null;
+  }
 }
 
 // --- Fetchers ---
@@ -520,25 +579,44 @@ function generateReport(args: {
 // --- Main ---
 
 async function main(): Promise<void> {
-  const { from, to } = getDateRange();
-  console.log(`Analyzing flaky tests from ${from} to ${to}`);
-  console.log(`Output: ${OUTPUT_DIR}`);
-  console.log('');
+  // Load existing data for incremental mode
+  const existing = loadExistingData();
+  const { from, to } = getDateRange(existing?.lastCheckedAt);
 
-  // 1. Fetch all CI runs
+  if (existing) {
+    console.log(
+      `Incremental mode: resuming from ${existing.lastCheckedAt}`,
+    );
+    console.log(`Existing data: ${existing.runs.length} flaky runs, ` +
+      `${existing.weeklyTrend.length} weekly rows`);
+  } else {
+    console.log('Full mode: no existing data found');
+  }
+  console.log(`Fetching runs from ${from} to ${to}`);
+  console.log(`Output: ${OUTPUT_DIR}\n`);
+
+  // 1. Fetch CI runs for the date range
   const allGhRuns = await fetchAllCiRuns(from, to);
-  console.log(`\nTotal CI runs fetched: ${allGhRuns.length}`);
+  console.log(`\nCI runs fetched: ${allGhRuns.length}`);
 
-  // 2. Build run data with failure details
+  // 2. Deduplicate against existing runs
+  const existingRunIds = new Set(existing?.runs.map((r) => r.id) ?? []);
+  const newGhRuns = allGhRuns.filter((r) => !existingRunIds.has(r.id));
+  const skipped = allGhRuns.length - newGhRuns.length;
+  if (skipped > 0) {
+    console.log(`Skipping ${skipped} already-processed runs`);
+  }
+  console.log(`New runs to process: ${newGhRuns.length}`);
+
+  // 3. Build run data with failure details for new runs only
   const runs: Array<CiRun> = [];
-  const failedGhRuns = allGhRuns.filter((r) => r.conclusion === 'failure');
-  const passedGhRuns = allGhRuns.filter((r) => r.conclusion === 'success');
+  const failedGhRuns = newGhRuns.filter((r) => r.conclusion === 'failure');
+  const passedGhRuns = newGhRuns.filter((r) => r.conclusion === 'success');
 
   console.log(
-    `\nFailed runs: ${failedGhRuns.length}, Passed runs: ${passedGhRuns.length}`,
+    `\nNew failed: ${failedGhRuns.length}, New passed: ${passedGhRuns.length}`,
   );
 
-  // Add passed runs (no failure details needed)
   for (const r of passedGhRuns) {
     runs.push({
       id: r.id,
@@ -551,85 +629,169 @@ async function main(): Promise<void> {
     });
   }
 
-  // Fetch failure details for failed runs
-  console.log('\nFetching failure details...');
-  let processed = 0;
-  for (const r of failedGhRuns) {
-    processed++;
-    process.stdout.write(
-      `  [${processed}/${failedGhRuns.length}] Run ${r.id}...`,
-    );
-
-    const { failedJobs, failedTests } = await fetchFailedTestDetails(r.id);
-
-    runs.push({
-      id: r.id,
-      sha: r.head_sha.substring(0, 7),
-      branch: r.head_branch,
-      conclusion: 'failure',
-      created_at: r.created_at,
-      failed_jobs: failedJobs,
-      failed_tests: failedTests,
-    });
-
-    if (failedTests.length > 0) {
-      console.log(
-        ` ${failedJobs.join(', ')} -> ${failedTests.length} test(s)`,
+  if (failedGhRuns.length > 0) {
+    console.log('\nFetching failure details...');
+    let processed = 0;
+    for (const r of failedGhRuns) {
+      processed++;
+      process.stdout.write(
+        `  [${processed}/${failedGhRuns.length}] Run ${r.id}...`,
       );
-    } else if (failedJobs.length > 0) {
-      console.log(` ${failedJobs.join(', ')} (no test failures parsed)`);
-    } else {
-      console.log(' (non-test failure)');
-    }
 
-    await sleep(DELAY_MS);
+      const { failedJobs, failedTests } = await fetchFailedTestDetails(r.id);
+
+      runs.push({
+        id: r.id,
+        sha: r.head_sha.substring(0, 7),
+        branch: r.head_branch,
+        conclusion: 'failure',
+        created_at: r.created_at,
+        failed_jobs: failedJobs,
+        failed_tests: failedTests,
+      });
+
+      if (failedTests.length > 0) {
+        console.log(
+          ` ${failedJobs.join(', ')} -> ${failedTests.length} test(s)`,
+        );
+      } else if (failedJobs.length > 0) {
+        console.log(` ${failedJobs.join(', ')} (no test failures parsed)`);
+      } else {
+        console.log(' (non-test failure)');
+      }
+
+      await sleep(DELAY_MS);
+    }
   }
 
-  // 3. Identify flaky commits (same SHA with both pass + fail = non-deterministic)
+  // 4. Analyze new runs for flakiness
   const shaMap = identifyFlakyCommits(runs);
-  const uniqueCommits = shaMap.size;
-  const flakyCommits = Array.from(shaMap.values()).filter(
-    (v) => v.pass && v.fail,
-  ).length;
-  const flakinessRate =
-    uniqueCommits > 0
-      ? Math.round((flakyCommits / uniqueCommits) * 1000) / 10
+  const newFlakyShas = new Set<string>();
+  for (const [sha, state] of shaMap) {
+    if (state.pass && state.fail) newFlakyShas.add(sha);
+  }
+
+  const newUniqueCommits = shaMap.size;
+  const newFlakyCommits = newFlakyShas.size;
+  console.log(
+    `\nNew period flakiness: ${newFlakyCommits}/${newUniqueCommits} commits`,
+  );
+
+  // 5. Build test failure counts for new period
+  const newTestCounts = new Map<string, number>();
+  for (const run of runs) {
+    if (!newFlakyShas.has(run.sha)) continue;
+    for (const test of run.failed_tests) {
+      newTestCounts.set(
+        test.file,
+        (newTestCounts.get(test.file) ?? 0) + 1,
+      );
+    }
+  }
+
+  // 6. Detect cascade in new data
+  detectCascadeBaseline(newTestCounts);
+
+  // 7. Merge with existing data
+  // Merge flaky runs (append new, deduplicate by id)
+  const mergedRuns = [...(existing?.runs ?? [])];
+  const mergedRunIds = new Set(mergedRuns.map((r) => r.id));
+  for (const run of runs) {
+    if (
+      run.failed_tests.length > 0 &&
+      newFlakyShas.has(run.sha) &&
+      !mergedRunIds.has(run.id)
+    ) {
+      mergedRuns.push(run);
+    }
+  }
+  mergedRuns.sort(
+    (a, b) =>
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+  );
+
+  // Merge flaky SHAs
+  const mergedFlakyShas = new Set([
+    ...(existing?.runs.map((r) => r.sha) ?? []),
+    ...newFlakyShas,
+  ]);
+
+  // Merge weekly trend (keep existing weeks, add new ones)
+  const existingWeeks = new Set(
+    existing?.weeklyTrend.map((w) => w.week) ?? [],
+  );
+  const newWeeklyMap = new Map<
+    string,
+    { commits: Set<string>; flaky: Set<string> }
+  >();
+  for (const run of runs) {
+    const week = getWeekStart(run.created_at);
+    if (existingWeeks.has(week)) continue;
+    const entry = newWeeklyMap.get(week) ?? {
+      commits: new Set(),
+      flaky: new Set(),
+    };
+    entry.commits.add(run.sha);
+    if (newFlakyShas.has(run.sha)) {
+      entry.flaky.add(run.sha);
+    }
+    newWeeklyMap.set(week, entry);
+  }
+  const newWeeklyRows: Array<WeeklyTrend> = Array.from(
+    newWeeklyMap.entries(),
+  ).map(([week, data]) => ({
+    week,
+    commits: data.commits.size,
+    flaky: data.flaky.size,
+    rate:
+      data.commits.size > 0
+        ? Math.round((data.flaky.size / data.commits.size) * 1000) / 10
+        : 0,
+  }));
+  const mergedWeeklyTrend = [
+    ...(existing?.weeklyTrend ?? []),
+    ...newWeeklyRows,
+  ].sort((a, b) => a.week.localeCompare(b.week));
+
+  // Merge test failure counts
+  const mergedTestCounts = new Map(existing?.testCounts ?? []);
+  for (const [file, count] of newTestCounts) {
+    mergedTestCounts.set(
+      file,
+      (mergedTestCounts.get(file) ?? 0) + count,
+    );
+  }
+
+  // Re-detect cascade on merged counts
+  const {
+    baseline: finalCascadeBaseline,
+    cascadeTests: finalCascadeFiles,
+  } = detectCascadeBaseline(mergedTestCounts);
+  console.log(
+    `Merged cascade baseline: ${finalCascadeBaseline} failures (${finalCascadeFiles.length} tests)`,
+  );
+
+  // Compute merged summary
+  const mergedTotalCommits = mergedWeeklyTrend.reduce(
+    (sum, w) => sum + w.commits,
+    0,
+  );
+  const mergedFlakyCommits = mergedWeeklyTrend.reduce(
+    (sum, w) => sum + w.flaky,
+    0,
+  );
+  const mergedFlakinessRate =
+    mergedTotalCommits > 0
+      ? Math.round(
+          (mergedFlakyCommits / mergedTotalCommits) * 1000,
+        ) / 10
       : 0;
 
-  // Build set of truly flaky SHAs for filtering test counts
-  const flakyShas = new Set<string>();
-  for (const [sha, state] of shaMap) {
-    if (state.pass && state.fail) flakyShas.add(sha);
-  }
-
-  console.log(
-    `\nFlakiness: ${flakyCommits}/${uniqueCommits} commits = ${flakinessRate}%`,
-  );
-
-  // 4. Build test failure counts (only from flaky commits — same SHA passed elsewhere)
-  const testFailureCounts = new Map<string, number>();
-  for (const run of runs) {
-    if (!flakyShas.has(run.sha)) continue;
-    for (const test of run.failed_tests) {
-      testFailureCounts.set(
-        test.file,
-        (testFailureCounts.get(test.file) ?? 0) + 1,
-      );
-    }
-  }
-
-  // 5. Detect cascade pattern
-  const { baseline: cascadeBaseline, cascadeTests: cascadeTestFiles } =
-    detectCascadeBaseline(testFailureCounts);
-  console.log(
-    `Cascade baseline: ${cascadeBaseline} failures (${cascadeTestFiles.length} tests)`,
-  );
-
-  // 6. Fetch test-related PRs
+  // 8. Fetch test-related PRs (always re-fetch, cheap)
   const fixPrs = await fetchTestFixPrs();
   console.log(`Found ${fixPrs.length} test-related PRs`);
 
-  // 7. Build flaky tests list with PR correlation
+  // 9. Build flaky tests list with PR correlation
   const prFileMap = new Map<string, FixPr>();
   for (const pr of fixPrs) {
     for (const file of pr.tests_fixed) {
@@ -638,10 +800,10 @@ async function main(): Promise<void> {
   }
 
   const flakyTests: Array<FlakyTest> = Array.from(
-    testFailureCounts.entries(),
+    mergedTestCounts.entries(),
   ).map(([file, count]) => {
     const matchedPr = prFileMap.get(file) ?? null;
-    const isCascade = cascadeTestFiles.includes(file);
+    const isCascade = finalCascadeFiles.includes(file);
     return {
       file,
       failure_count: count,
@@ -653,64 +815,31 @@ async function main(): Promise<void> {
     };
   });
 
-  // 8. Build weekly trend (only count truly flaky: same SHA passed + failed)
-  const weeklyMap = new Map<
-    string,
-    { commits: Set<string>; flaky: Set<string> }
-  >();
-  for (const run of runs) {
-    const week = getWeekStart(run.created_at);
-    const entry = weeklyMap.get(week) ?? {
-      commits: new Set(),
-      flaky: new Set(),
-    };
-    entry.commits.add(run.sha);
-    if (flakyShas.has(run.sha)) {
-      entry.flaky.add(run.sha);
-    }
-    weeklyMap.set(week, entry);
-  }
-
-  const weeklyTrend: Array<WeeklyTrend> = Array.from(weeklyMap.entries())
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([week, data]) => ({
-      week,
-      commits: data.commits.size,
-      flaky: data.flaky.size,
-      rate:
-        data.commits.size > 0
-          ? Math.round((data.flaky.size / data.commits.size) * 1000) / 10
-          : 0,
-    }));
-
-  // 9. Write output files
+  // 10. Write output files
   const now = new Date().toISOString();
-  const period = { from, to };
+  const periodFrom = existing?.periodFrom ?? from;
+  const period = { from: periodFrom, to };
 
   const ciRunsData = {
     generated_at: now,
+    last_checked_at: now,
     period,
-    flaky_shas: Array.from(flakyShas),
-    runs: runs
-      .filter((r) => r.failed_tests.length > 0 && flakyShas.has(r.sha))
-      .sort(
-        (a, b) =>
-          new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-      ),
+    flaky_shas: Array.from(mergedFlakyShas),
+    runs: mergedRuns,
   };
 
   const flakyTestsData = {
     generated_at: now,
     summary: {
-      total_commits: uniqueCommits,
-      flaky_commits: flakyCommits,
-      flakiness_rate: flakinessRate,
+      total_commits: mergedTotalCommits,
+      flaky_commits: mergedFlakyCommits,
+      flakiness_rate: mergedFlakinessRate,
       period,
     },
-    weekly_trend: weeklyTrend,
+    weekly_trend: mergedWeeklyTrend,
     tests: flakyTests.sort((a, b) => b.failure_count - a.failure_count),
-    cascade_baseline: cascadeBaseline,
-    cascade_tests_count: cascadeTestFiles.length,
+    cascade_baseline: finalCascadeBaseline,
+    cascade_tests_count: finalCascadeFiles.length,
   };
 
   const fixPrsData = {
@@ -736,14 +865,14 @@ async function main(): Promise<void> {
   const report = generateReport({
     period,
     summary: {
-      total_commits: uniqueCommits,
-      flaky_commits: flakyCommits,
-      flakiness_rate: flakinessRate,
+      total_commits: mergedTotalCommits,
+      flaky_commits: mergedFlakyCommits,
+      flakiness_rate: mergedFlakinessRate,
     },
-    weeklyTrend,
+    weeklyTrend: mergedWeeklyTrend,
     tests: flakyTests,
-    cascadeBaseline,
-    cascadeTestsCount: cascadeTestFiles.length,
+    cascadeBaseline: finalCascadeBaseline,
+    cascadeTestsCount: finalCascadeFiles.length,
     prs: fixPrs,
   });
   fs.writeFileSync(path.join(OUTPUT_DIR, 'REPORT.md'), report);
