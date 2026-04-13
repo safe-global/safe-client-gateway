@@ -19,7 +19,7 @@ class MemberUser implements Pick<User, 'id'> {
   status!: keyof typeof UserStatus;
 }
 
-export class Member {
+export class MemberDto {
   @ApiProperty({ type: Number })
   id!: DomainMember['id'];
 
@@ -49,6 +49,6 @@ export class Member {
 }
 
 export class MembersDto {
-  @ApiProperty({ type: Member, isArray: true })
-  members!: Array<Member>;
+  @ApiProperty({ type: MemberDto, isArray: true })
+  members!: Array<MemberDto>;
 }

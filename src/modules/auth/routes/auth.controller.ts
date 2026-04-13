@@ -87,14 +87,13 @@ export class AuthController {
     if (!authPayload.isAuthenticated()) {
       throw new ForbiddenException('Not authenticated');
     }
-    const session: UserSession = {
+    return {
       id: authPayload.sub,
       authMethod: authPayload.auth_method,
+      ...(authPayload.isSiwe() && {
+        signerAddress: authPayload.signer_address,
+      }),
     };
-    if (authPayload.isSiwe()) {
-      session.signerAddress = authPayload.signer_address;
-    }
-    return session;
   }
 
   @ApiOperation({

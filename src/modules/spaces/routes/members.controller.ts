@@ -33,7 +33,7 @@ import {
 import { UpdateRoleDtoSchema } from '@/modules/spaces/routes/entities/update-role.dto.entity';
 import { RowSchema } from '@/datasources/db/v1/entities/row.entity';
 import {
-  Member,
+  MemberDto,
   MembersDto,
 } from '@/modules/spaces/routes/entities/members.dto.entity';
 import { Invitation } from '@/modules/spaces/routes/entities/invitation.entity';
@@ -234,7 +234,7 @@ export class MembersController {
   })
   @ApiOkResponse({
     description: 'Membership retrieved successfully',
-    type: Member,
+    type: MemberDto,
   })
   @ApiForbiddenResponse({
     description:
@@ -247,7 +247,7 @@ export class MembersController {
     @Auth() authPayload: AuthPayload,
     @Param('spaceId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
     spaceId: number,
-  ): Promise<Member> {
+  ): Promise<MemberDto> {
     return await this.membersService.getSelfMembership({
       authPayload,
       spaceId,

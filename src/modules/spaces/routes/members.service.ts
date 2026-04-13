@@ -8,7 +8,7 @@ import type { Space } from '@/modules/spaces/domain/entities/space.entity';
 import type { InviteUsersDto } from '@/modules/spaces/routes/entities/invite-users.dto.entity';
 import type { Invitation } from '@/modules/spaces/routes/entities/invitation.entity';
 import type {
-  Member,
+  MemberDto,
   MembersDto,
 } from '@/modules/spaces/routes/entities/members.dto.entity';
 import type { UpdateRoleDto } from '@/modules/spaces/routes/entities/update-role.dto.entity';
@@ -80,7 +80,7 @@ export class MembersService {
   public async getSelfMembership(args: {
     authPayload: AuthPayload;
     spaceId: Space['id'];
-  }): Promise<Member> {
+  }): Promise<MemberDto> {
     return await this.membersRepository.findSelfMembershipOrFail({
       authPayload: args.authPayload,
       spaceId: args.spaceId,
