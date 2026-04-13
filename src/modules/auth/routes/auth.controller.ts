@@ -5,6 +5,7 @@ import {
   ACCESS_TOKEN_COOKIE_NAME,
   getCookieOptions,
 } from '@/modules/auth/utils/auth-cookie.utils';
+import { assertAuthenticated } from '@/modules/auth/utils/assert-authenticated.utils';
 import { Auth } from '@/modules/auth/routes/decorators/auth.decorator';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
@@ -72,14 +73,26 @@ export class AuthController {
   @ApiOperation({
     summary: 'Get authenticated user',
     description:
-      'Returns the authenticated user ID if a valid session cookie is present, 403 otherwise.',
+      'Returns the authenticated user session if a valid session cookie is present, 403 otherwise. ' +
+      'The response includes the user ID, the authentication method used, and (for SIWE users) the wallet signer address.',
   })
-  @ApiOkResponse({ description: 'Authenticated user ID', type: UserSession })
+  @ApiOkResponse({
+    description: 'Authenticated user session',
+    type: UserSession,
+  })
   @ApiForbiddenResponse({ description: 'Not authenticated' })
   @UseGuards(AuthGuard)
   @Get('me')
   getMe(@Auth() authPayload: AuthPayload): UserSession {
-    return { id: authPayload.getUserId() as string };
+    assertAuthenticated(authPayload);
+    const session: UserSession = {
+      id: authPayload.sub,
+      authMethod: authPayload.auth_method,
+    };
+    if (authPayload.isSiwe()) {
+      session.signerAddress = authPayload.signer_address;
+    }
+    return session;
   }
 
   @ApiOperation({

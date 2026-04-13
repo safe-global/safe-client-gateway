@@ -1743,6 +1743,55 @@ describe('MembersRepository', () => {
     });
   });
 
+  describe('findSelfMembershipOrFail', () => {
+    it.each([
+      ['SIWE', 'ACTIVE', createSiweUser],
+      ['OIDC', 'ACTIVE', createOidcUser],
+      ['SIWE', 'INVITED', createSiweUser],
+      ['OIDC', 'INVITED', createOidcUser],
+    ] as const)(
+      'should return the membership row for a %s caller with %s status',
+      async (_authLabel, memberStatus, createUser) => {
+        const spaceName = nameBuilder();
+        const memberName = nameBuilder();
+        const memberInvitedBy = getAddress(faker.finance.ethereumAddress());
+        const { userId, user, authPayload } = await createUser();
+        const space = await dbSpacesRepository.insert({
+          name: spaceName,
+          status: 'ACTIVE',
+        });
+        const memberRole = faker.helpers.arrayElement(MemberRoleKeys);
+        const spaceId = space.generatedMaps[0].id;
+        const member = await dbMembersRepository.insert({
+          user,
+          space: space.generatedMaps[0],
+          name: memberName,
+          role: memberRole,
+          status: memberStatus,
+          invitedBy: memberInvitedBy,
+        });
+        const memberId = member.identifiers[0].id as Member['id'];
+
+        await expect(
+          membersRepository.findSelfMembershipOrFail({
+            authPayload,
+            spaceId,
+          }),
+        ).resolves.toEqual(
+          expect.objectContaining({
+            id: memberId,
+            name: memberName,
+            alias: null,
+            role: memberRole,
+            status: memberStatus,
+            invitedBy: memberInvitedBy,
+            user: expect.objectContaining({ id: userId }),
+          }),
+        );
+      },
+    );
+  });
+
   describe('updateRole', () => {
     it('should update the role of a member', async () => {
       const spaceName = nameBuilder();
