@@ -11,7 +11,7 @@ import {
   Relay,
   RelaySchema,
 } from '@/modules/relay/domain/entities/relay.entity';
-import { RelayDeniedError } from '@/modules/relay/domain/errors/relay-denied.error';
+import { RelayTxDeniedError } from '@/modules/relay/domain/errors/relay-tx-denied.error';
 import { RelayFeeConfiguration } from '@/modules/relay/domain/entities/relay.configuration';
 
 @Injectable()
@@ -85,22 +85,19 @@ export class RelayFeeRelayer implements IRelayer {
     to: Address;
     data: Hex;
     gasLimit: bigint | null;
-    safeTxHash?: string;
+    safeTxHash?: Hex;
   }): Promise<Relay> {
-    const relayAddresses =
-      await this.limitAddressesMapper.getLimitAddresses(args);
-
     if (args.safeTxHash) {
-      for (const address of relayAddresses) {
-        const feeServiceResult = await this.feeServiceApi.canRelay({
-          chainId: args.chainId,
-          safeTxHash: args.safeTxHash,
-        });
+      const feeServiceResult = await this.feeServiceApi.canRelay({
+        chainId: args.chainId,
+        safeTxHash: args.safeTxHash,
+      });
 
-        if (!feeServiceResult.canRelay) {
-          this.loggingService.info(`relay-fee relay denied for ${address}`);
-          throw new RelayDeniedError(address);
-        }
+      if (!feeServiceResult.canRelay) {
+        this.loggingService.info(
+          `relay-fee relay denied for ${args.safeTxHash}`,
+        );
+        throw new RelayTxDeniedError(args.safeTxHash);
       }
     }
 

@@ -7,8 +7,8 @@ import type { IRelayApi } from '@/domain/interfaces/relay-api.interface';
 import type { IFeeServiceApi } from '@/domain/interfaces/fee-service-api.interface';
 import type { LimitAddressesMapper } from '@/modules/relay/domain/limit-addresses.mapper';
 import type { ILoggingService } from '@/logging/logging.interface';
-import { RelayDeniedError } from '@/modules/relay/domain/errors/relay-denied.error';
-import type { Address } from 'viem';
+import type { Address, Hex } from 'viem';
+import { RelayTxDeniedError } from '@/modules/relay/domain/errors/relay-tx-denied.error';
 
 const mockLoggingService = jest.mocked({
   info: jest.fn(),
@@ -136,7 +136,7 @@ describe('RelayFeeRelayer', () => {
 
     it('should relay when FeeService approves all addresses', async () => {
       const address = getAddress(faker.finance.ethereumAddress());
-      const safeTxHash = faker.string.hexadecimal({ length: 64 });
+      const safeTxHash = faker.string.hexadecimal({ length: 64 }) as Hex;
       const taskId = faker.string.uuid();
       mockLimitAddressesMapper.getLimitAddresses.mockResolvedValueOnce([
         address,
@@ -163,7 +163,7 @@ describe('RelayFeeRelayer', () => {
 
     it('should throw RelayDeniedError when Fee Service denies', async () => {
       const address = getAddress(faker.finance.ethereumAddress());
-      const safeTxHash = faker.string.hexadecimal({ length: 64 });
+      const safeTxHash = faker.string.hexadecimal({ length: 64 }) as Hex;
       mockLimitAddressesMapper.getLimitAddresses.mockResolvedValueOnce([
         address,
       ]);
@@ -178,36 +178,9 @@ describe('RelayFeeRelayer', () => {
           gasLimit: null,
           safeTxHash,
         }),
-      ).rejects.toThrow(RelayDeniedError);
+      ).rejects.toThrow(RelayTxDeniedError);
 
       expect(mockRelayApi.relay).not.toHaveBeenCalled();
-    });
-
-    it('should check all limit addresses', async () => {
-      const address1 = getAddress(faker.finance.ethereumAddress());
-      const address2 = getAddress(faker.finance.ethereumAddress());
-      const safeTxHash = faker.string.hexadecimal({ length: 64 });
-      const taskId = faker.string.uuid();
-      mockLimitAddressesMapper.getLimitAddresses.mockResolvedValueOnce([
-        address1,
-        address2,
-      ]);
-      mockFeeServiceApi.canRelay
-        .mockResolvedValueOnce({ canRelay: true })
-        .mockResolvedValueOnce({ canRelay: true });
-      mockRelayApi.relay.mockResolvedValueOnce({ taskId });
-
-      const result = await target.relay({
-        version: '1.3.0',
-        chainId: enabledChainId,
-        to: address1,
-        data: '0x' as Address,
-        gasLimit: null,
-        safeTxHash,
-      });
-
-      expect(result).toEqual({ taskId });
-      expect(mockFeeServiceApi.canRelay).toHaveBeenCalledTimes(2);
     });
   });
 
