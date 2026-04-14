@@ -11,6 +11,7 @@ import {
   Relay,
   RelaySchema,
 } from '@/modules/relay/domain/entities/relay.entity';
+import type { RelayEligibility } from '@/modules/relay/domain/entities/relay-eligibility.entity';
 import { RelayTxDeniedError } from '@/modules/relay/domain/errors/relay-tx-denied.error';
 import { RelayFeeConfiguration } from '@/modules/relay/domain/entities/relay.configuration';
 
@@ -42,7 +43,7 @@ export class RelayFeeRelayer implements IRelayer {
     chainId: string;
     address: Address;
     safeTxHash?: string;
-  }): Promise<{ result: boolean; currentCount: number; limit: number }> {
+  }): Promise<RelayEligibility> {
     if (
       !this.relayFeeConfiguration.enabledChainIds.includes(args.chainId) ||
       !args.safeTxHash

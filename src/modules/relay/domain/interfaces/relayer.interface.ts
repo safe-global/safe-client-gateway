@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type { Address, Hex } from 'viem';
 import type { Relay } from '@/modules/relay/domain/entities/relay.entity';
+import type { RelayEligibility } from '@/modules/relay/domain/entities/relay-eligibility.entity';
 
 export const IRelayer = Symbol('IRelayer');
 
@@ -17,7 +18,7 @@ export interface IRelayer {
     chainId: string;
     address: Address;
     safeTxHash?: string;
-  }): Promise<{ result: boolean; currentCount: number; limit: number }>;
+  }): Promise<RelayEligibility>;
 
   /**
    * Performs a relay operation
