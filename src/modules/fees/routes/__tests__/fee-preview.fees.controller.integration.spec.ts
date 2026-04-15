@@ -3,7 +3,6 @@ import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
-import { Operation } from '@/modules/safe/domain/entities/operation.entity';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
 import { NetworkService } from '@/datasources/network/network.service.interface';
@@ -12,6 +11,8 @@ import type { Server } from 'net';
 import { rawify } from '@/validation/entities/raw.entity';
 import { createTestModule } from '@/__tests__/testing-module';
 import configuration from '@/config/entities/__tests__/configuration';
+import { feePreviewTransactionDtoBuilder } from '@/modules/fees/routes/entities/__tests__/fee-preview-transaction.dto.builder';
+import { txFeesResponseBuilder } from '@/modules/transactions/domain/entities/relay-fee/__tests__/tx-fees-response.builder';
 
 const ENABLED_CHAIN_ID = '1';
 
@@ -60,14 +61,7 @@ describe('Fees Controller', () => {
 
     await request(app.getHttpServer())
       .post(`/v1/chains/${chainId}/fees/${safeAddress}/preview`)
-      .send({
-        to: getAddress(faker.finance.ethereumAddress()),
-        value: '0',
-        data: '0x',
-        operation: Operation.CALL,
-        gasToken: '0x0000000000000000000000000000000000000000',
-        numberSignatures: 2,
-      })
+      .send(feePreviewTransactionDtoBuilder().build())
       .expect(400)
       .expect(({ body }) => {
         expect(body.message).toBe('Pay with Safe not available for this chain');
@@ -79,14 +73,11 @@ describe('Fees Controller', () => {
 
     await request(app.getHttpServer())
       .post(`/v1/chains/${ENABLED_CHAIN_ID}/fees/${safeAddress}/preview`)
-      .send({
-        to: 'invalid-address',
-        value: '0',
-        data: '0x',
-        operation: Operation.CALL,
-        gasToken: '0x0000000000000000000000000000000000000000',
-        numberSignatures: 1,
-      })
+      .send(
+        feePreviewTransactionDtoBuilder()
+          .with('to', 'invalid-address' as `0x${string}`)
+          .build(),
+      )
       .expect(422)
       .expect({
         statusCode: 422,
@@ -98,33 +89,10 @@ describe('Fees Controller', () => {
 
   it('should return fee preview when relay-fee is enabled', async () => {
     const safeAddress = getAddress(faker.finance.ethereumAddress());
-    const feePreviewDto = {
-      to: getAddress(faker.finance.ethereumAddress()),
-      value: '1000000000000000000',
-      data: '0x',
-      operation: Operation.CALL,
-      gasToken: '0x0000000000000000000000000000000000000000',
-      numberSignatures: 2,
-    };
-    const mockFeeResponse = {
-      txData: {
-        chainId: 1,
-        safeAddress,
-        safeTxGas: '150000',
-        baseGas: '48564',
-        gasPrice: '195000000000000',
-        gasToken: '0x0000000000000000000000000000000000000000',
-        refundReceiver: '0x0000000000000000000000000000000000000000',
-        numberSignatures: 2,
-      },
-      relayCostUsd: 38.22,
-      pricingContextSnapshot: {
-        phase: 1,
-        priceSource: 'COINGECKO',
-        priceTimestamp: 1700000000,
-        gasVolatilityBuffer: 1.3,
-      },
-    };
+    const feePreviewDto = feePreviewTransactionDtoBuilder()
+      .with('value', '1000000000000000000')
+      .build();
+    const mockFeeResponse = txFeesResponseBuilder().build();
 
     networkService.post.mockImplementation(({ url }) => {
       if (
@@ -150,14 +118,9 @@ describe('Fees Controller', () => {
 
     await request(app.getHttpServer())
       .post(`/v1/chains/${ENABLED_CHAIN_ID}/fees/${safeAddress}/preview`)
-      .send({
-        to: getAddress(faker.finance.ethereumAddress()),
-        value: '0',
-        data: '0x',
-        operation: Operation.CALL,
-        gasToken: '0x0000000000000000000000000000000000000000',
-        numberSignatures: 0,
-      })
+      .send(
+        feePreviewTransactionDtoBuilder().with('numberSignatures', 0).build(),
+      )
       .expect(422)
       .expect(({ body }) => {
         expect(body.code).toBe('too_small');

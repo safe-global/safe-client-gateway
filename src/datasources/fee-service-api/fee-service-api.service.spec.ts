@@ -10,8 +10,13 @@ import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 import { DataSourceError } from '@/domain/errors/data-source.error';
 import { rawify } from '@/validation/entities/raw.entity';
-import { Operation } from '@/modules/safe/domain/entities/operation.entity';
 import { PriceSource } from '@/modules/transactions/domain/entities/relay-fee/tx-fees-response.dto';
+import { feePreviewTransactionDtoBuilder } from '@/modules/fees/routes/entities/__tests__/fee-preview-transaction.dto.builder';
+import {
+  txFeesResponseBuilder,
+  txDataResponseBuilder,
+  pricingContextSnapshotBuilder,
+} from '@/modules/transactions/domain/entities/relay-fee/__tests__/tx-fees-response.builder';
 
 const mockNetworkService = jest.mocked({
   get: jest.fn(),
@@ -134,34 +139,25 @@ describe('FeeServiceApi', () => {
   describe('getRelayFees', () => {
     const chainId = '1';
     const safeAddress = getAddress(faker.finance.ethereumAddress());
-    const request = {
-      to: getAddress(faker.finance.ethereumAddress()),
-      value: '1000000000000000000',
-      data: '0x' as `0x${string}`,
-      operation: Operation.CALL,
-      gasToken: getAddress('0x0000000000000000000000000000000000000000'),
-      numberSignatures: 1,
-    };
+    const request = feePreviewTransactionDtoBuilder().build();
 
-    const mockFeeResponse = {
-      txData: {
-        chainId: 1,
-        safeAddress,
-        safeTxGas: '150000',
-        baseGas: '48564',
-        gasPrice: '195000000000000',
-        gasToken: request.gasToken,
-        refundReceiver: '0x0000000000000000000000000000000000000000',
-        numberSignatures: 1,
-      },
-      relayCostUsd: 38.22,
-      pricingContextSnapshot: {
-        phase: 1,
-        priceSource: PriceSource.COINGECKO,
-        priceTimestamp: 1700000000,
-        gasVolatilityBuffer: 1.3,
-      },
-    };
+    const mockFeeResponse = txFeesResponseBuilder()
+      .with(
+        'txData',
+        txDataResponseBuilder()
+          .with('chainId', 1)
+          .with('safeAddress', safeAddress)
+          .with('gasToken', request.gasToken)
+          .with('numberSignatures', request.numberSignatures)
+          .build(),
+      )
+      .with(
+        'pricingContextSnapshot',
+        pricingContextSnapshotBuilder()
+          .with('priceSource', PriceSource.COINGECKO)
+          .build(),
+      )
+      .build();
 
     it('should return cached response when available', async () => {
       const cachedResponse = JSON.stringify(mockFeeResponse);
