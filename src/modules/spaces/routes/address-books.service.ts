@@ -79,6 +79,8 @@ export class AddressBooksService {
       chainIds: item.chainIds,
       createdBy: item.createdBy,
       lastUpdatedBy: item.lastUpdatedBy,
+      createdAt: item.createdAt,
+      updatedAt: item.updatedAt,
     }));
 
     return {
