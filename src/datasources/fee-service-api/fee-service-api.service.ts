@@ -7,12 +7,8 @@ import {
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { IFeeServiceApi } from '@/domain/interfaces/fee-service-api.interface';
-import {
-  CacheService,
-  ICacheService,
-} from '@/datasources/cache/cache.service.interface';
+import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
 import { CacheRouter } from '@/datasources/cache/cache.router';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { RelayFeeConfiguration } from '@/modules/relay/domain/entities/relay.configuration';
 import type { TxFeesRequest } from '@/modules/fees/domain/entities/tx-fees-request.dto';
 import type { TxFeesResponse } from '@/modules/fees/domain/entities/tx-fees-response.dto';
@@ -25,20 +21,22 @@ import type { Address } from 'viem';
 @Injectable()
 export class FeeServiceApi implements IFeeServiceApi {
   private readonly relayFeeConfiguration: RelayFeeConfiguration;
+  private readonly notFoundExpireTimeSeconds: number;
 
   constructor(
+    private readonly dataSource: CacheFirstDataSource,
     @Inject(NetworkService)
     private readonly networkService: INetworkService,
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
     private readonly httpErrorFactory: HttpErrorFactory,
-    @Inject(CacheService)
-    private readonly cacheService: ICacheService,
-    @Inject(LoggingService)
-    private readonly loggingService: ILoggingService,
   ) {
     this.relayFeeConfiguration =
       this.configurationService.getOrThrow('relay.fee');
+    this.notFoundExpireTimeSeconds =
+      this.configurationService.getOrThrow<number>(
+        'expirationTimeInSeconds.notFound.default',
+      );
   }
 
   /**
@@ -68,10 +66,8 @@ export class FeeServiceApi implements IFeeServiceApi {
   }
 
   /**
-   * Gets relay fees from the fee service with internal caching.
-   * 1. Checks cache for existing fee response
-   * 2. On cache miss: calls the external fee service API
-   * 3. Stores the response in cache with configured TTL
+   * Gets relay fees from the fee service, using {@link CacheFirstDataSource}
+   * for cache-first lookups with automatic cache writes on miss.
    */
   async getRelayFees(args: {
     chainId: string;
@@ -88,41 +84,17 @@ export class FeeServiceApi implements IFeeServiceApi {
       gasToken: args.request.gasToken,
       threshold: args.request.numberSignatures,
     });
+    const url = `${this.relayFeeConfiguration.baseUri}/v1/chains/${args.chainId}/safes/${args.safeAddress}/transactions/relay-fees`;
 
-    // 1. Check cache
-    const cached = await this.cacheService.hGet(cacheDir);
-    if (cached) {
-      this.loggingService.debug(
-        `Fee cache hit for ${args.safeAddress} on chain ${args.chainId}`,
-      );
-      return TxFeesResponseSchema.parse(JSON.parse(cached));
-    }
-
-    // 2. Cache miss — call fee service
     try {
-      const url = `${this.relayFeeConfiguration.baseUri}/v1/chains/${args.chainId}/safes/${args.safeAddress}/transactions/relay-fees`;
-      const { data: feeData } = await this.networkService.post<TxFeesResponse>({
+      const data = await this.dataSource.post<TxFeesResponse>({
+        cacheDir,
         url,
         data: args.request,
+        notFoundExpireTimeSeconds: this.notFoundExpireTimeSeconds,
+        expireTimeSeconds: this.relayFeeConfiguration.feePreviewTtlSeconds,
       });
-      const feeResponse = TxFeesResponseSchema.parse(feeData);
-
-      // 3. Store in cache
-      const feePreviewTtlSeconds =
-        this.relayFeeConfiguration.feePreviewTtlSeconds;
-      await this.cacheService.hSet(
-        cacheDir,
-        JSON.stringify(feeResponse),
-        feePreviewTtlSeconds,
-      );
-
-      this.loggingService.info(
-        feePreviewTtlSeconds > 0
-          ? `relay-fee fees fetched and cached for ${args.safeAddress} on chain ${args.chainId}`
-          : `relay-fee fees fetched for ${args.safeAddress} on chain ${args.chainId}; cache disabled`,
-      );
-
-      return feeResponse;
+      return TxFeesResponseSchema.parse(data);
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }

@@ -3,8 +3,7 @@ import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.
 import { FeeServiceApi } from '@/datasources/fee-service-api/fee-service-api.service';
 import { faker } from '@faker-js/faker';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
-import type { ICacheService } from '@/datasources/cache/cache.service.interface';
-import type { ILoggingService } from '@/logging/logging.interface';
+import type { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
 import { getAddress } from 'viem';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
@@ -23,15 +22,10 @@ const mockNetworkService = jest.mocked({
   post: jest.fn(),
 } as jest.MockedObjectDeep<INetworkService>);
 
-const mockCacheService = jest.mocked({
-  hGet: jest.fn(),
-  hSet: jest.fn(),
-} as jest.MockedObjectDeep<ICacheService>);
-
-const mockLoggingService = jest.mocked({
-  debug: jest.fn(),
-  info: jest.fn(),
-} as jest.MockedObjectDeep<ILoggingService>);
+const mockDataSource = jest.mocked({
+  get: jest.fn(),
+  post: jest.fn(),
+} as jest.MockedObjectDeep<CacheFirstDataSource>);
 
 describe('FeeServiceApi', () => {
   let target: FeeServiceApi;
@@ -47,34 +41,36 @@ describe('FeeServiceApi', () => {
     baseUri = faker.internet.url({ appendSlash: false });
 
     // Configure relay-fee settings
-    fakeConfigurationService.set('relay.fee.baseUri', baseUri);
     fakeConfigurationService.set('relay.fee', {
       baseUri,
-      enabledChainIds: ['1', '137', '8453'], // Enable for Ethereum, Polygon, Base
+      enabledChainIds: ['1', '137', '8453'],
       feePreviewTtlSeconds: 60,
     });
+    fakeConfigurationService.set(
+      'expirationTimeInSeconds.notFound.default',
+      30,
+    );
 
     target = new FeeServiceApi(
+      mockDataSource,
       mockNetworkService,
       fakeConfigurationService,
       httpErrorFactory,
-      mockCacheService,
-      mockLoggingService,
     );
   });
 
   it('should error if baseUri is not defined', () => {
     const emptyConfigService = new FakeConfigurationService();
+    emptyConfigService.set('expirationTimeInSeconds.notFound.default', 30);
     const errorFactory = new HttpErrorFactory();
 
     expect(
       () =>
         new FeeServiceApi(
+          mockDataSource,
           mockNetworkService,
           emptyConfigService,
           errorFactory,
-          mockCacheService,
-          mockLoggingService,
         ),
     ).toThrow();
   });
@@ -159,9 +155,8 @@ describe('FeeServiceApi', () => {
       )
       .build();
 
-    it('should return cached response when available', async () => {
-      const cachedResponse = JSON.stringify(mockFeeResponse);
-      mockCacheService.hGet.mockResolvedValueOnce(cachedResponse);
+    it('should call dataSource.post with correct arguments', async () => {
+      mockDataSource.post.mockResolvedValueOnce(rawify(mockFeeResponse));
 
       const result = await target.getRelayFees({
         chainId,
@@ -170,67 +165,27 @@ describe('FeeServiceApi', () => {
       });
 
       expect(result).toEqual(mockFeeResponse);
-      expect(mockCacheService.hGet).toHaveBeenCalledWith(
-        expect.objectContaining({
+      expect(mockDataSource.post).toHaveBeenCalledWith({
+        cacheDir: expect.objectContaining({
           key: expect.stringContaining('relay_fee_preview'),
         }),
-      );
-      expect(mockLoggingService.debug).toHaveBeenCalledWith(
-        expect.stringContaining('cache hit'),
-      );
-      expect(mockNetworkService.post).not.toHaveBeenCalled();
-    });
-
-    it('should call API and cache response when cache miss', async () => {
-      mockCacheService.hGet.mockResolvedValueOnce(null); // Cache miss
-      mockNetworkService.post.mockResolvedValueOnce({
-        status: 200,
-        data: rawify(mockFeeResponse),
-      });
-
-      const result = await target.getRelayFees({
-        chainId,
-        safeAddress,
-        request,
-      });
-
-      expect(result).toEqual(mockFeeResponse);
-
-      // Verify API call
-      expect(mockNetworkService.post).toHaveBeenCalledWith({
         url: `${baseUri}/v1/chains/${chainId}/safes/${safeAddress}/transactions/relay-fees`,
         data: request,
+        notFoundExpireTimeSeconds: 30,
+        expireTimeSeconds: 60,
       });
-
-      // Verify caching
-      expect(mockCacheService.hSet).toHaveBeenCalledWith(
-        expect.objectContaining({
-          key: expect.stringContaining('relay_fee_preview'),
-        }),
-        JSON.stringify(mockFeeResponse),
-        60, // TTL
-      );
-
-      expect(mockLoggingService.info).toHaveBeenCalledWith(
-        expect.stringContaining('fetched and cached'),
-      );
     });
 
-    it('should forward network errors', async () => {
-      mockCacheService.hGet.mockResolvedValueOnce(null);
+    it('should forward errors from dataSource', async () => {
       const status = faker.internet.httpStatusCode({ types: ['serverError'] });
       const error = new NetworkResponseError(
         new URL(
           `${baseUri}/v1/chains/${chainId}/safes/${safeAddress}/transactions/relay-fees`,
         ),
-        {
-          status,
-        } as Response,
-        {
-          message: 'Unexpected error',
-        },
+        { status } as Response,
+        { message: 'Unexpected error' },
       );
-      mockNetworkService.post.mockRejectedValueOnce(error);
+      mockDataSource.post.mockRejectedValueOnce(error);
 
       await expect(
         target.getRelayFees({
@@ -250,9 +205,9 @@ describe('FeeServiceApi', () => {
     });
 
     it('should return false for disabled chain IDs', () => {
-      expect(target.isPayWithSafeEnabled('42161')).toBe(false); // Arbitrum
-      expect(target.isPayWithSafeEnabled('10')).toBe(false); // Optimism
-      expect(target.isPayWithSafeEnabled('999999')).toBe(false); // Non-existent
+      expect(target.isPayWithSafeEnabled('42161')).toBe(false);
+      expect(target.isPayWithSafeEnabled('10')).toBe(false);
+      expect(target.isPayWithSafeEnabled('999999')).toBe(false);
     });
   });
 });
