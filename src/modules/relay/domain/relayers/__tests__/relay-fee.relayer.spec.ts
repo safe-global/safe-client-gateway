@@ -5,7 +5,6 @@ import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 import type { IRelayApi } from '@/domain/interfaces/relay-api.interface';
 import type { IFeeServiceApi } from '@/domain/interfaces/fee-service-api.interface';
-import type { LimitAddressesMapper } from '@/modules/relay/domain/limit-addresses.mapper';
 import type { ILoggingService } from '@/logging/logging.interface';
 import type { Address, Hex } from 'viem';
 import { RelayTxDeniedError } from '@/modules/relay/domain/errors/relay-tx-denied.error';
@@ -27,10 +26,6 @@ const mockFeeServiceApi = jest.mocked({
   canRelay: jest.fn(),
 } as jest.MockedObjectDeep<IFeeServiceApi>);
 
-const mockLimitAddressesMapper = jest.mocked({
-  getLimitAddresses: jest.fn(),
-} as unknown as jest.MockedObjectDeep<LimitAddressesMapper>);
-
 describe('RelayFeeRelayer', () => {
   let target: RelayFeeRelayer;
   let fakeConfigurationService: FakeConfigurationService;
@@ -49,7 +44,6 @@ describe('RelayFeeRelayer', () => {
     target = new RelayFeeRelayer(
       mockLoggingService,
       fakeConfigurationService,
-      mockLimitAddressesMapper,
       mockRelayApi,
       mockFeeServiceApi,
     );
@@ -116,9 +110,6 @@ describe('RelayFeeRelayer', () => {
     it('should relay without fee check when no safeTxHash is provided', async () => {
       const address = getAddress(faker.finance.ethereumAddress());
       const taskId = faker.string.uuid();
-      mockLimitAddressesMapper.getLimitAddresses.mockResolvedValueOnce([
-        address,
-      ]);
       mockRelayApi.relay.mockResolvedValueOnce({ taskId });
 
       const result = await target.relay({
@@ -138,9 +129,6 @@ describe('RelayFeeRelayer', () => {
       const address = getAddress(faker.finance.ethereumAddress());
       const safeTxHash = faker.string.hexadecimal({ length: 64 }) as Hex;
       const taskId = faker.string.uuid();
-      mockLimitAddressesMapper.getLimitAddresses.mockResolvedValueOnce([
-        address,
-      ]);
       mockFeeServiceApi.canRelay.mockResolvedValueOnce({ canRelay: true });
       mockRelayApi.relay.mockResolvedValueOnce({ taskId });
 
@@ -164,9 +152,6 @@ describe('RelayFeeRelayer', () => {
     it('should throw RelayDeniedError when Fee Service denies', async () => {
       const address = getAddress(faker.finance.ethereumAddress());
       const safeTxHash = faker.string.hexadecimal({ length: 64 }) as Hex;
-      mockLimitAddressesMapper.getLimitAddresses.mockResolvedValueOnce([
-        address,
-      ]);
       mockFeeServiceApi.canRelay.mockResolvedValueOnce({ canRelay: false });
 
       await expect(

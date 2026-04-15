@@ -5,7 +5,6 @@ import { IRelayer } from '@/modules/relay/domain/interfaces/relayer.interface';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { IRelayApi } from '@/domain/interfaces/relay-api.interface';
 import { IFeeServiceApi } from '@/domain/interfaces/fee-service-api.interface';
-import { LimitAddressesMapper } from '@/modules/relay/domain/limit-addresses.mapper';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import {
   Relay,
@@ -22,7 +21,6 @@ export class RelayFeeRelayer implements IRelayer {
   constructor(
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
     @Inject(IConfigurationService) configurationService: IConfigurationService,
-    private readonly limitAddressesMapper: LimitAddressesMapper,
     @Inject(IRelayApi) private readonly relayApi: IRelayApi,
     @Inject(IFeeServiceApi) private readonly feeServiceApi: IFeeServiceApi,
   ) {
