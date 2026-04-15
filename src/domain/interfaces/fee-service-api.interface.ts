@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type { Address } from 'viem';
-import type { TxFeesRequest } from '@/modules/transactions/domain/entities/relay-fee/tx-fees-request.dto';
-import type { TxFeesResponse } from '@/modules/transactions/domain/entities/relay-fee/tx-fees-response.dto';
+import type { TxFeesRequest } from '@/modules/fees/domain/entities/tx-fees-request.dto';
+import type { TxFeesResponse } from '@/modules/fees/domain/entities/tx-fees-response.dto';
 
 export const IFeeServiceApi = Symbol('IFeeServiceApi');
 

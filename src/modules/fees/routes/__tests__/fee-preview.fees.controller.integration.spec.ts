@@ -12,7 +12,7 @@ import { rawify } from '@/validation/entities/raw.entity';
 import { createTestModule } from '@/__tests__/testing-module';
 import configuration from '@/config/entities/__tests__/configuration';
 import { feePreviewTransactionDtoBuilder } from '@/modules/fees/routes/entities/__tests__/fee-preview-transaction.dto.builder';
-import { txFeesResponseBuilder } from '@/modules/transactions/domain/entities/relay-fee/__tests__/tx-fees-response.builder';
+import { txFeesResponseBuilder } from '@/modules/fees/domain/entities/__tests__/tx-fees-response.builder';
 
 const ENABLED_CHAIN_ID = '1';
 

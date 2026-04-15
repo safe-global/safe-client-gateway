@@ -3,4 +3,4 @@ export {
   TxDataResponse as FeePreviewTxData,
   PricingContextSnapshot as FeePreviewPricingContext,
   TxFeesResponse as FeePreviewResponse,
-} from '@/modules/transactions/domain/entities/relay-fee/tx-fees-response.dto';
+} from '@/modules/fees/domain/entities/tx-fees-response.dto';

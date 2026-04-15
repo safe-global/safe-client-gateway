@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { PriceSource } from '@/modules/transactions/domain/entities/relay-fee/tx-fees-response.dto';
+import { PriceSource } from '@/modules/fees/domain/entities/tx-fees-response.dto';
 import { z } from 'zod';
 
 export const CanRelayResponseSchema = z.object({

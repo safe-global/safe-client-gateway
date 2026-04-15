@@ -10,13 +10,13 @@ import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 import { DataSourceError } from '@/domain/errors/data-source.error';
 import { rawify } from '@/validation/entities/raw.entity';
-import { PriceSource } from '@/modules/transactions/domain/entities/relay-fee/tx-fees-response.dto';
+import { PriceSource } from '@/modules/fees/domain/entities/tx-fees-response.dto';
 import { feePreviewTransactionDtoBuilder } from '@/modules/fees/routes/entities/__tests__/fee-preview-transaction.dto.builder';
 import {
   txFeesResponseBuilder,
   txDataResponseBuilder,
   pricingContextSnapshotBuilder,
-} from '@/modules/transactions/domain/entities/relay-fee/__tests__/tx-fees-response.builder';
+} from '@/modules/fees/domain/entities/__tests__/tx-fees-response.builder';
 
 const mockNetworkService = jest.mocked({
   get: jest.fn(),
