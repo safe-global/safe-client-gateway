@@ -61,6 +61,7 @@ import {
 } from '@/logging/logging.interface';
 import { UsersModule } from '@/modules/users/users.module';
 import { SpacesModule } from '@/modules/spaces/spaces.module';
+import { CounterfactualSafesModule } from '@/modules/counterfactual-safes/counterfactual-safes.module';
 import { BullModule } from '@nestjs/bullmq';
 import { CsvExportModule } from '@/modules/csv-export/csv-export.module';
 import { SafeShieldModule } from '@/modules/safe-shield/safe-shield.module';
@@ -104,7 +105,9 @@ export class AppModule implements NestModule {
         HooksModule,
         NotificationsModule,
         MessagesModule,
-        ...(isUsersFeatureEnabled ? [UsersModule, SpacesModule] : []),
+        ...(isUsersFeatureEnabled
+          ? [UsersModule, SpacesModule, CounterfactualSafesModule]
+          : []),
         OwnersModule,
         RelayModule,
         RootModule,

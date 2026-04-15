@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { AppModule } from '@/app.module';
 import { DefaultAppProvider } from '@/app.provider';
 import { IConfigurationService } from '@/config/configuration.service.interface';
@@ -14,7 +15,7 @@ async function bootstrap(): Promise<void> {
     configurationService.getOrThrow('application.allowCors') &&
     configurationService.getOrThrow('application.isDevelopment')
   ) {
-    app.enableCors();
+    app.enableCors({ origin: true, credentials: true });
   }
 
   await app.listen(applicationPort);
