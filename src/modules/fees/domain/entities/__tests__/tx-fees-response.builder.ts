@@ -7,8 +7,8 @@ import type {
   PricingContextSnapshot,
   TxDataResponse,
   TxFeesResponse,
-} from '@/modules/fees/domain/entities/tx-fees-response.dto';
-import { PriceSource } from '@/modules/fees/domain/entities/tx-fees-response.dto';
+} from '@/modules/fees/domain/entities/tx-fees-response.entity';
+import { PriceSource } from '@/modules/fees/domain/entities/price-source.entity';
 
 export function txDataResponseBuilder(): IBuilder<TxDataResponse> {
   return new Builder<TxDataResponse>()

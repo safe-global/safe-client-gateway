@@ -10,12 +10,11 @@ import { IFeeServiceApi } from '@/domain/interfaces/fee-service-api.interface';
 import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
 import { CacheRouter } from '@/datasources/cache/cache.router';
 import { RelayFeeConfiguration } from '@/modules/relay/domain/entities/relay.configuration';
-import type { TxFeesRequest } from '@/modules/fees/domain/entities/tx-fees-request.dto';
-import type { TxFeesResponse } from '@/modules/fees/domain/entities/tx-fees-response.dto';
-import {
-  CanRelayResponseSchema,
-  TxFeesResponseSchema,
-} from '@/modules/fees/domain/entities/schemas/tx-fees-response.schema';
+import type { CanRelayResponse } from '@/modules/fees/domain/entities/can-relay-response.entity';
+import { CanRelayResponseSchema } from '@/modules/fees/domain/entities/schemas/can-relay-response.schema';
+import type { TxFeesRequest } from '@/modules/fees/domain/entities/tx-fees-request.entity';
+import type { TxFeesResponse } from '@/modules/fees/domain/entities/tx-fees-response.entity';
+import { TxFeesResponseSchema } from '@/modules/fees/domain/entities/schemas/tx-fees-response.schema';
 import type { Address } from 'viem';
 
 @Injectable()
@@ -53,7 +52,7 @@ export class FeeServiceApi implements IFeeServiceApi {
   async canRelay(args: {
     chainId: string;
     safeTxHash: string;
-  }): Promise<{ canRelay: boolean }> {
+  }): Promise<CanRelayResponse> {
     try {
       const url = `${this.relayFeeConfiguration.baseUri}/v1/chains/${args.chainId}/transactions/${args.safeTxHash}/can-relay`;
       const { data: response } = await this.networkService.get<{

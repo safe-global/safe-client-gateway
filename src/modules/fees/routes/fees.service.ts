@@ -32,10 +32,12 @@ export class FeesService {
       numberSignatures: args.feePreviewDto.numberSignatures,
     };
 
-    return this.feeServiceApi.getRelayFees({
+    const txFeesResponse = await this.feeServiceApi.getRelayFees({
       chainId: args.chainId,
       safeAddress: args.safeAddress,
       request,
     });
+
+    return new FeePreviewResponse(txFeesResponse);
   }
 }
