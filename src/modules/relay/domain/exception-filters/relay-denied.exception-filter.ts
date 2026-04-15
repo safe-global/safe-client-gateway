@@ -7,10 +7,14 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { RelayDeniedError } from '@/modules/relay/domain/errors/relay-denied.error';
+import { RelayTxDeniedError } from '@/modules/relay/domain/errors/relay-tx-denied.error';
 
-@Catch(RelayDeniedError)
+@Catch(RelayDeniedError, RelayTxDeniedError)
 export class RelayDeniedExceptionFilter implements ExceptionFilter {
-  catch(exception: RelayDeniedError, host: ArgumentsHost): void {
+  catch(
+    exception: RelayDeniedError | RelayTxDeniedError,
+    host: ArgumentsHost,
+  ): void {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
 
