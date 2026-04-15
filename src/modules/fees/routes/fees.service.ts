@@ -23,19 +23,10 @@ export class FeesService {
       );
     }
 
-    const request = {
-      to: args.feePreviewDto.to,
-      value: args.feePreviewDto.value,
-      data: args.feePreviewDto.data,
-      operation: args.feePreviewDto.operation,
-      gasToken: args.feePreviewDto.gasToken,
-      numberSignatures: args.feePreviewDto.numberSignatures,
-    };
-
     const txFeesResponse = await this.feeServiceApi.getRelayFees({
       chainId: args.chainId,
       safeAddress: args.safeAddress,
-      request,
+      request: args.feePreviewDto,
     });
 
     return new FeePreviewResponse(txFeesResponse);
