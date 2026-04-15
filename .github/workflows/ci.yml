@@ -142,6 +142,12 @@ jobs:
           REDIS_PORT: 6379
           SAFE_CONFIG_BASE_URI: ${{ secrets.SAFE_CONFIG_BASE_URI }}
           LOG_SILENT: true
+          NODE_OPTIONS: ${{ secrets.DD_API_KEY != '' && '-r dd-trace/ci/init' || '' }}
+          DD_CIVISIBILITY_AGENTLESS_ENABLED: ${{ secrets.DD_API_KEY != '' && 'true' || '' }}
+          DD_API_KEY: ${{ secrets.DD_API_KEY }}
+          DD_SITE: datadoghq.eu
+          DD_ENV: ci
+          DD_SERVICE: safe-client-gateway
       - name: Coveralls Parallel
         continue-on-error: true
         uses: coverallsapp/github-action@5cbfd81b66ca5d10c19b062c04de0199c215fb6e # v2.3.7
@@ -205,6 +211,12 @@ jobs:
           REDIS_PORT: 6379
           SAFE_CONFIG_BASE_URI: ${{ secrets.SAFE_CONFIG_BASE_URI }}
           LOG_SILENT: true
+          NODE_OPTIONS: ${{ secrets.DD_API_KEY != '' && '-r dd-trace/ci/init' || '' }}
+          DD_CIVISIBILITY_AGENTLESS_ENABLED: ${{ secrets.DD_API_KEY != '' && 'true' || '' }}
+          DD_API_KEY: ${{ secrets.DD_API_KEY }}
+          DD_SITE: datadoghq.eu
+          DD_ENV: ci
+          DD_SERVICE: safe-client-gateway
       - name: Coveralls Parallel
         continue-on-error: true
         uses: coverallsapp/github-action@5cbfd81b66ca5d10c19b062c04de0199c215fb6e # v2.3.7

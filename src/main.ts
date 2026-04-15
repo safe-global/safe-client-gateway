@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+// dd-trace must be imported before all other modules
+import './tracer';
 import { AppModule } from '@/app.module';
 import { DefaultAppProvider } from '@/app.provider';
 import { IConfigurationService } from '@/config/configuration.service.interface';
