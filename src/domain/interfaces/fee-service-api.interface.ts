@@ -8,7 +8,12 @@ export const IFeeServiceApi = Symbol('IFeeServiceApi');
 
 export interface IFeeServiceApi {
   /**
-   * Checks if a transaction can be relayed via the fee service
+   * Checks with the fee service whether a transaction can be relayed.
+   *
+   * @param args.chainId - Chain ID
+   * @param args.safeTxHash - Safe transaction hash to check relay eligibility for
+   * @returns Object indicating whether the transaction can be relayed
+   * @throws {DataSourceError} If the fee service request fails
    */
   canRelay(args: {
     chainId: string;
@@ -16,10 +21,13 @@ export interface IFeeServiceApi {
   }): Promise<CanRelayResponse>;
 
   /**
-   * Gets transaction fees from Fee Service.
-   * Internally caches the result.
-   * @param args - Chain, safe address, and transaction parameters
+   * Gets transaction relay fees from the fee service.
+   *
+   * @param args.chainId - Chain ID
+   * @param args.safeAddress - Safe address initiating the relay
+   * @param args.request - Transaction parameters for fee calculation
    * @returns Fee response with txData, relayCostUsd, and pricingContextSnapshot
+   * @throws {DataSourceError} If the fee service request fails
    */
   getRelayFees(args: {
     chainId: string;
@@ -28,7 +36,10 @@ export interface IFeeServiceApi {
   }): Promise<TxFeesResponse>;
 
   /**
-   * Checks if 'Pay with Safe' is enabled for the given chain
+   * Checks if 'Pay with Safe' is enabled for the given chain.
+   *
+   * @param chainId - Chain ID to check
+   * @returns `true` if Pay with Safe is enabled for the chain, `false` otherwise
    */
   isPayWithSafeEnabled(chainId: string): boolean;
 }

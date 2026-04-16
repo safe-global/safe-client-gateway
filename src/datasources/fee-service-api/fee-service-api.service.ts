@@ -39,15 +39,9 @@ export class FeeServiceApi implements IFeeServiceApi {
   }
 
   /**
-   * Checks with the fee service whether a transaction can be relayed.
+   * {@inheritdoc IFeeServiceApi.canRelay}
    *
-   * @param args.chainId - Chain ID
-   * @param args.safeAddress - Safe address initiating the relay
-   * @param args.to - Transaction recipient address
-   * @param args.value - Native value in wei
-   * @param args.data - Encoded transaction data
-   * @param args.safeTxHash - Optional Safe transaction hash for eligibility check
-   * @returns Object indicating whether relay is allowed and an optional denial reason
+   * Delegates directly to the fee service with no caching.
    */
   async canRelay(args: {
     chainId: string;
@@ -65,8 +59,10 @@ export class FeeServiceApi implements IFeeServiceApi {
   }
 
   /**
-   * Gets relay fees from the fee service, using {@link CacheFirstDataSource}
-   * for cache-first lookups with automatic cache writes on miss.
+   * {@inheritdoc IFeeServiceApi.getRelayFees}
+   *
+   * Uses {@link CacheFirstDataSource} keyed on chain, safe address, and
+   * transaction parameters — serves from cache on hit, writes through on miss.
    */
   async getRelayFees(args: {
     chainId: string;
@@ -99,9 +95,7 @@ export class FeeServiceApi implements IFeeServiceApi {
     }
   }
 
-  /**
-   * Checks if 'Pay with Safe' is enabled for the given chain
-   */
+  /** @inheritdoc */
   isPayWithSafeEnabled(chainId: string): boolean {
     return this.relayFeeConfiguration.enabledChainIds.includes(chainId);
   }
