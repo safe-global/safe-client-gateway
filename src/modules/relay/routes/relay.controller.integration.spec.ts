@@ -9,7 +9,7 @@ import type { INestApplication } from '@nestjs/common';
 import { faker } from '@faker-js/faker';
 import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
 import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
-import { getAddress } from 'viem';
+import { getAddress, type Hex } from 'viem';
 import {
   addOwnerWithThresholdEncoder,
   changeThresholdEncoder,
@@ -106,6 +106,7 @@ describe('Relay controller', () => {
   let balancesService: jest.MockedObjectDeep<BalancesService>;
   let safeConfigUrl: string;
   let relayUrl: string;
+  let relayLimit: number;
 
   beforeEach(async () => {
     jest.resetAllMocks();
@@ -126,6 +127,7 @@ describe('Relay controller', () => {
     configurationService = moduleFixture.get(IConfigurationService);
     safeConfigUrl = configurationService.getOrThrow('safeConfig.baseUri');
     relayUrl = configurationService.getOrThrow('relay.baseUri');
+    relayLimit = configurationService.getOrThrow('relay.limit');
     networkService = moduleFixture.get(NetworkService);
     balancesService = moduleFixture.get(BalancesService);
 
@@ -2843,18 +2845,21 @@ describe('Relay controller', () => {
         await request(app.getHttpServer())
           .get(`/v1/chains/${chainId}/relay/${safeAddress}`)
           .expect(200)
-          .expect({ remaining: 5, limit: 5 });
+          .expect({ remaining: relayLimit, limit: relayLimit });
       });
 
       it('should accept safeTxHash query parameter and return relay limits', async () => {
         const safeAddress = faker.finance.ethereumAddress();
-        const safeTxHash = faker.string.hexadecimal({ length: 64 });
+        const safeTxHash = faker.string.hexadecimal({
+          length: 64,
+          casing: 'lower',
+        }) as Hex;
         await request(app.getHttpServer())
           .get(
             `/v1/chains/${chainId}/relay/${safeAddress}?safeTxHash=${safeTxHash}`,
           )
           .expect(200)
-          .expect({ remaining: 5, limit: 5 });
+          .expect({ remaining: relayLimit, limit: relayLimit });
       });
 
       it('should not return negative limits if more requests were made than the limit', async () => {
@@ -2907,7 +2912,7 @@ describe('Relay controller', () => {
           .expect({
             // Not negative
             remaining: 0,
-            limit: 5,
+            limit: relayLimit,
           });
       });
     });
