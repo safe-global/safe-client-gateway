@@ -36,6 +36,7 @@ export interface IAddressBookItemsRepository {
     authPayload: AuthPayload;
     spaceId: Space['id'];
     addressBookItems: UpsertAddressBookItemsDto['items'];
+    createdByOverride?: `0x${string}`;
   }): Promise<Array<AddressBookDbItem>>;
 
   /**

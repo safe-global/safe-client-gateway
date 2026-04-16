@@ -52,6 +52,7 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
     authPayload: AuthPayload;
     spaceId: Space['id'];
     addressBookItems: UpsertAddressBookItemsDto['items'];
+    createdByOverride?: `0x${string}`;
   }): Promise<Array<AddressBookDbItem>> {
     const space = await this.getSpaceAs({
       ...args,
@@ -78,6 +79,7 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
         addressBookItems: newAddressBookItems,
         space,
         authPayload: args.authPayload,
+        createdByOverride: args.createdByOverride,
       });
     });
     return repository.findBy({ space: { id: space.id } });
@@ -156,6 +158,7 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
     addressBookItems: Array<AddressBookItem>;
     space: Space;
     entityManager: EntityManager;
+    createdByOverride?: `0x${string}`;
   }): Promise<Array<DbAddressBookItem['id']>> {
     if (!args.authPayload.isSiwe()) {
       throw new ForbiddenException(
@@ -170,7 +173,7 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
         address: addressBookItem.address,
         name: addressBookItem.name,
         chainIds: addressBookItem.chainIds,
-        createdBy: args.authPayload.signer_address,
+        createdBy: args.createdByOverride ?? args.authPayload.signer_address,
         lastUpdatedBy: args.authPayload.signer_address,
       })),
     );

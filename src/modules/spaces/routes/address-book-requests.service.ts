@@ -124,7 +124,22 @@ export class AddressBookRequestsService {
       throw new BadRequestException('Only pending requests can be approved.');
     }
 
-    // Add to the shared space address book using the existing repository
+    // Look up the requester's private contact to get original author's wallet address
+    const requesterId = request.requestedBy?.id;
+    let createdByOverride: `0x${string}` | undefined;
+    if (requesterId) {
+      const privateContact =
+        await this.privateRepository.findOneBySpaceCreatorAndAddress({
+          spaceId,
+          creatorId: requesterId,
+          address: request.address,
+        });
+      if (privateContact?.createdBy) {
+        createdByOverride = privateContact.createdBy;
+      }
+    }
+
+    // Add to the shared space address book, preserving original author
     await this.spaceAddressBookRepository.upsertMany({
       authPayload,
       spaceId,
@@ -135,6 +150,7 @@ export class AddressBookRequestsService {
           chainIds: request.chainIds,
         },
       ],
+      createdByOverride,
     });
 
     // Mark the request as approved
