@@ -13,6 +13,7 @@ import {
 import type { RelayEligibility } from '@/modules/relay/domain/entities/relay-eligibility.entity';
 import { RelayTxDeniedError } from '@/modules/relay/domain/errors/relay-tx-denied.error';
 import { RelayFeeConfiguration } from '@/modules/relay/domain/entities/relay.configuration';
+import { LogType } from '@/domain/common/entities/log-type.entity';
 
 @Injectable()
 export class RelayFeeRelayer implements IRelayer {
@@ -55,9 +56,10 @@ export class RelayFeeRelayer implements IRelayer {
     });
 
     if (!feeServiceResult.canRelay) {
-      this.loggingService.info(
-        `relay-fee canRelay denied for ${args.address} on chain ${args.chainId}`,
-      );
+      this.loggingService.error({
+        type: LogType.TxRelayEligibilityError,
+        message: `relay-fee canRelay denied for ${args.address} on chain ${args.chainId}`,
+      });
       return { result: false, currentCount: 0, limit: 0 };
     }
 
@@ -93,9 +95,10 @@ export class RelayFeeRelayer implements IRelayer {
       });
 
       if (!feeServiceResult.canRelay) {
-        this.loggingService.info(
-          `relay-fee relay denied for ${args.safeTxHash}`,
-        );
+        this.loggingService.error({
+          type: LogType.TxRelayEligibilityError,
+          message: `relay-fee relay denied for ${args.safeTxHash}`,
+        });
         throw new RelayTxDeniedError(args.safeTxHash);
       }
     }

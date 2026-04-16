@@ -31,6 +31,7 @@ export enum LogType {
   NotificationEventProcessed = 'NOTIFICATION_EVENT_PROCESSED',
   NotificationDeliveryQueued = 'NOTIFICATION_DELIVERY_QUEUED',
   RateLimit = 'RATE_LIMIT',
+  TxRelayEligibilityError = 'TX_RELAY_ELIGIBILITY_ERROR',
   TransactionPropose = 'TRANSACTION_PROPOSE',
   TransactionValidity = 'TRANSACTION_VALIDITY',
   TxnExportFetchRequest = 'TRANSACTION_EXPORT_FETCH_REQUEST',
