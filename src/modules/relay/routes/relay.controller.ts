@@ -30,10 +30,11 @@ import { UnofficialMultiSendExceptionFilter } from '@/modules/relay/domain/excep
 import { UnofficialProxyFactoryExceptionFilter } from '@/modules/relay/domain/exception-filters/unofficial-proxy-factory.exception-filter';
 import { RelayDtoSchema } from '@/modules/relay/routes/entities/schemas/relay.dto.schema';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
+import { HexSchema } from '@/validation/entities/schemas/hex.schema';
 import { Relay } from '@/modules/relay/routes/entities/relay.entity';
 import { RelayTaskStatus } from '@/modules/relay/routes/entities/relay-task-status.entity';
 import { RelaysRemaining } from '@/modules/relay/routes/entities/relays-remaining.entity';
-import type { Address } from 'viem';
+import type { Address, Hex } from 'viem';
 
 @ApiTags('relay')
 @Controller({
@@ -144,7 +145,8 @@ export class RelayController {
     @Param('chainId') chainId: string,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
     safeAddress: Address,
-    @Query('safeTxHash') safeTxHash?: string,
+    @Query('safeTxHash', new ValidationPipe(HexSchema.optional()))
+    safeTxHash?: Hex,
   ): Promise<RelaysRemaining> {
     return this.relayService.getRelaysRemaining({
       chainId,

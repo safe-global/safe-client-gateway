@@ -15,7 +15,7 @@ import { CanRelayResponseSchema } from '@/modules/fees/domain/entities/schemas/c
 import type { TxFeesRequest } from '@/modules/fees/domain/entities/tx-fees-request.entity';
 import type { TxFeesResponse } from '@/modules/fees/domain/entities/tx-fees-response.entity';
 import { TxFeesResponseSchema } from '@/modules/fees/domain/entities/schemas/tx-fees-response.schema';
-import type { Address } from 'viem';
+import type { Address, Hex } from 'viem';
 
 @Injectable()
 export class FeeServiceApi implements IFeeServiceApi {
@@ -51,7 +51,7 @@ export class FeeServiceApi implements IFeeServiceApi {
    */
   async canRelay(args: {
     chainId: string;
-    safeTxHash: string;
+    safeTxHash: Hex;
   }): Promise<CanRelayResponse> {
     try {
       const url = `${this.relayFeeConfiguration.baseUri}/v1/chains/${args.chainId}/transactions/${args.safeTxHash}/can-relay`;

@@ -4,7 +4,7 @@ import { IRelayManager } from '@/modules/relay/domain/interfaces/relay-manager.i
 import { IRelayApi } from '@/domain/interfaces/relay-api.interface';
 import { Relay } from '@/modules/relay/domain/entities/relay.entity';
 import type { RelayTaskStatus } from '@/modules/relay/domain/entities/relay-task-status.entity';
-import type { Address } from 'viem';
+import type { Address, Hex } from 'viem';
 
 @Injectable()
 export class RelayRepository {
@@ -19,7 +19,7 @@ export class RelayRepository {
     to: Address;
     data: Address;
     gasLimit: bigint | null;
-    safeTxHash?: string;
+    safeTxHash?: Hex;
   }): Promise<Relay> {
     return this.relayManager.getRelayer(args.chainId).relay(args);
   }
@@ -34,7 +34,7 @@ export class RelayRepository {
   async getRelaysRemaining(args: {
     chainId: string;
     address: Address;
-    safeTxHash?: string;
+    safeTxHash?: Hex;
   }): Promise<{ remaining: number; limit: number }> {
     return this.relayManager.getRelayer(args.chainId).getRelaysRemaining(args);
   }

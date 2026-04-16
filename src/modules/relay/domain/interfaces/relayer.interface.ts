@@ -11,13 +11,13 @@ export interface IRelayer {
    * @param {object} args - Chain ID and address to check
    * @param {string} args.chainId - The chain identifier
    * @param {Address} args.address - The address to check relay eligibility for
-   * @param {string} [args.safeTxHash] - Optional Safe transaction hash for relay-fee eligibility
+   * @param {Hex} [args.safeTxHash] - Optional Safe transaction hash for relay-fee eligibility
    * @returns Object containing whether relay is allowed, current count, and limit
    */
   canRelay(args: {
     chainId: string;
     address: Address;
-    safeTxHash?: string;
+    safeTxHash?: Hex;
   }): Promise<RelayEligibility>;
 
   /**
@@ -28,7 +28,7 @@ export interface IRelayer {
    * @param {Address} args.to - The target address
    * @param {Hex} args.data - The transaction data
    * @param {bigint | null} args.gasLimit - The gas limit or null for automatic
-   * @param {string} [args.safeTxHash] - Optional Safe transaction hash for relay-fee
+   * @param {Hex} [args.safeTxHash] - Optional Safe transaction hash for relay-fee
    * @returns Relay result
    */
   relay(args: {
@@ -37,7 +37,7 @@ export interface IRelayer {
     to: Address;
     data: Hex;
     gasLimit: bigint | null;
-    safeTxHash?: string;
+    safeTxHash?: Hex;
   }): Promise<Relay>;
 
   /**
@@ -45,12 +45,12 @@ export interface IRelayer {
    * @param {object} args - Chain ID and address
    * @param {string} args.chainId - The chain identifier
    * @param {Address} args.address - The address to get remaining relays for
-   * @param {string} [args.safeTxHash] - Optional Safe transaction hash for relay-fee eligibility
+   * @param {Hex} [args.safeTxHash] - Optional Safe transaction hash for relay-fee eligibility
    * @returns Object containing remaining count and limit
    */
   getRelaysRemaining(args: {
     chainId: string;
     address: Address;
-    safeTxHash?: string;
+    safeTxHash?: Hex;
   }): Promise<{ remaining: number; limit: number }>;
 }

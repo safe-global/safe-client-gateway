@@ -4,7 +4,7 @@ import { FeeServiceApi } from '@/datasources/fee-service-api/fee-service-api.ser
 import { faker } from '@faker-js/faker';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
 import type { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
-import { getAddress } from 'viem';
+import { getAddress, type Hex } from 'viem';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 import { DataSourceError } from '@/domain/errors/data-source.error';
@@ -78,7 +78,10 @@ describe('FeeServiceApi', () => {
   describe('canRelay', () => {
     it('should call the fee service API with correct URL', async () => {
       const chainId = faker.string.numeric();
-      const safeTxHash = faker.string.hexadecimal({ length: 64 });
+      const safeTxHash = faker.string.hexadecimal({
+        length: 64,
+        casing: 'lower',
+      }) as Hex;
 
       mockNetworkService.get.mockResolvedValueOnce({
         status: 200,
@@ -98,7 +101,10 @@ describe('FeeServiceApi', () => {
 
     it('should return canRelay false', async () => {
       const chainId = faker.string.numeric();
-      const safeTxHash = faker.string.hexadecimal({ length: 64 });
+      const safeTxHash = faker.string.hexadecimal({
+        length: 64,
+        casing: 'lower',
+      }) as Hex;
 
       mockNetworkService.get.mockResolvedValueOnce({
         status: 200,
@@ -115,7 +121,10 @@ describe('FeeServiceApi', () => {
 
     it('should forward network errors', async () => {
       const chainId = faker.string.numeric();
-      const safeTxHash = faker.string.hexadecimal({ length: 64 });
+      const safeTxHash = faker.string.hexadecimal({
+        length: 64,
+        casing: 'lower',
+      }) as Hex;
       const status = faker.internet.httpStatusCode({ types: ['serverError'] });
       const error = new NetworkResponseError(
         new URL(

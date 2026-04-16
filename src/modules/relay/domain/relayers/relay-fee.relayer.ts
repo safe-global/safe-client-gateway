@@ -40,7 +40,7 @@ export class RelayFeeRelayer implements IRelayer {
   async canRelay(args: {
     chainId: string;
     address: Address;
-    safeTxHash?: string;
+    safeTxHash?: Hex;
   }): Promise<RelayEligibility> {
     if (
       !this.relayFeeConfiguration.enabledChainIds.includes(args.chainId) ||
@@ -119,7 +119,7 @@ export class RelayFeeRelayer implements IRelayer {
   async getRelaysRemaining(args: {
     chainId: string;
     address: Address;
-    safeTxHash?: string;
+    safeTxHash: Hex;
   }): Promise<{ remaining: number; limit: number }> {
     if (!this.relayFeeConfiguration.enabledChainIds.includes(args.chainId)) {
       return { remaining: 0, limit: 0 };
@@ -129,7 +129,7 @@ export class RelayFeeRelayer implements IRelayer {
     // We report a simplified view: remaining=1 if eligible, 0 if not.
     const feeServiceResult = await this.feeServiceApi.canRelay({
       chainId: args.chainId,
-      safeTxHash: args.safeTxHash ?? '',
+      safeTxHash: args.safeTxHash,
     });
 
     return {
