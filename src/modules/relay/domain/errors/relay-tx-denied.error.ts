@@ -4,11 +4,13 @@ import type { Hex } from 'viem';
 
 export class RelayTxDeniedError extends ForbiddenException {
   constructor(
-    readonly safeTxHash: Hex,
+    readonly safeTxHash: Hex | undefined,
     readonly reason?: string,
   ) {
     super(
-      `Relay denied for safe transaction hash ${safeTxHash}${reason ? `: ${reason}` : ''}`,
+      safeTxHash
+        ? `Relay denied for safe transaction hash ${safeTxHash}${reason ? `: ${reason}` : ''}`
+        : `Relay denied: no safe transaction hash provided`,
     );
   }
 }

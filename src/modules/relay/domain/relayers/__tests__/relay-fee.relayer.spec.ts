@@ -106,29 +106,30 @@ describe('RelayFeeRelayer', () => {
       });
 
       expect(result).toEqual({ result: false, currentCount: 0, limit: 0 });
-      expect(mockLoggingService.info).toHaveBeenCalledWith(
-        expect.stringContaining('relay-fee canRelay denied'),
+      expect(mockLoggingService.error).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: expect.stringContaining('relay-fee canRelay denied'),
+        }),
       );
     });
   });
 
   describe('relay', () => {
-    it('should relay without fee check when no safeTxHash is provided', async () => {
+    it('should throw RelayTxDeniedError when no safeTxHash is provided', async () => {
       const address = getAddress(faker.finance.ethereumAddress());
-      const taskId = faker.string.uuid();
-      mockRelayApi.relay.mockResolvedValueOnce({ taskId });
 
-      const result = await target.relay({
-        version: '1.3.0',
-        chainId: enabledChainId,
-        to: address,
-        data: '0x' as Address,
-        gasLimit: null,
-      });
+      await expect(
+        target.relay({
+          version: '1.3.0',
+          chainId: enabledChainId,
+          to: address,
+          data: '0x' as Address,
+          gasLimit: null,
+        }),
+      ).rejects.toThrow(RelayTxDeniedError);
 
-      expect(result).toEqual({ taskId });
       expect(mockFeeServiceApi.canRelay).not.toHaveBeenCalled();
-      expect(mockRelayApi.relay).toHaveBeenCalled();
+      expect(mockRelayApi.relay).not.toHaveBeenCalled();
     });
 
     it('should relay when FeeService approves all addresses', async () => {

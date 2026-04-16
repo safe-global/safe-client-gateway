@@ -88,19 +88,21 @@ export class RelayFeeRelayer implements IRelayer {
     gasLimit: bigint | null;
     safeTxHash?: Hex;
   }): Promise<Relay> {
-    if (args.safeTxHash) {
-      const feeServiceResult = await this.feeServiceApi.canRelay({
-        chainId: args.chainId,
-        safeTxHash: args.safeTxHash,
-      });
+    if (!args.safeTxHash) {
+      throw new RelayTxDeniedError(args.safeTxHash);
+    }
 
-      if (!feeServiceResult.canRelay) {
-        this.loggingService.error({
-          type: LogType.TxRelayEligibilityError,
-          message: `relay-fee relay denied for ${args.safeTxHash}`,
-        });
-        throw new RelayTxDeniedError(args.safeTxHash);
-      }
+    const feeServiceResult = await this.feeServiceApi.canRelay({
+      chainId: args.chainId,
+      safeTxHash: args.safeTxHash,
+    });
+
+    if (!feeServiceResult.canRelay) {
+      this.loggingService.error({
+        type: LogType.TxRelayEligibilityError,
+        message: `relay-fee relay denied for ${args.safeTxHash}`,
+      });
+      throw new RelayTxDeniedError(args.safeTxHash);
     }
 
     const relayResponse = await this.relayApi
