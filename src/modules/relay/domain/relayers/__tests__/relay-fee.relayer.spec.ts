@@ -106,7 +106,7 @@ describe('RelayFeeRelayer', () => {
       });
 
       expect(result).toEqual({ result: false, currentCount: 0, limit: 0 });
-      expect(mockLoggingService.error).toHaveBeenCalledWith(
+      expect(mockLoggingService.warn).toHaveBeenCalledWith(
         expect.objectContaining({
           message: expect.stringContaining('relay-fee canRelay denied'),
         }),

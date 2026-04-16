@@ -56,8 +56,8 @@ export class RelayFeeRelayer implements IRelayer {
     });
 
     if (!feeServiceResult.canRelay) {
-      this.loggingService.error({
-        type: LogType.TxRelayEligibilityError,
+      this.loggingService.warn({
+        type: LogType.TxRelayEligibility,
         message: `relay-fee canRelay denied for ${args.address} on chain ${args.chainId}`,
       });
       return { result: false, currentCount: 0, limit: 0 };
@@ -99,7 +99,7 @@ export class RelayFeeRelayer implements IRelayer {
 
     if (!feeServiceResult.canRelay) {
       this.loggingService.error({
-        type: LogType.TxRelayEligibilityError,
+        type: LogType.TxRelayEligibility,
         message: `relay-fee relay denied for ${args.safeTxHash}`,
       });
       throw new RelayTxDeniedError(args.safeTxHash);
