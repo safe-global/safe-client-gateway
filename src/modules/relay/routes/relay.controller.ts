@@ -31,6 +31,7 @@ import { UnofficialProxyFactoryExceptionFilter } from '@/modules/relay/domain/ex
 import { RelayDtoSchema } from '@/modules/relay/routes/entities/schemas/relay.dto.schema';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { HexSchema } from '@/validation/entities/schemas/hex.schema';
+import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
 import { Relay } from '@/modules/relay/routes/entities/relay.entity';
 import { RelayTaskStatus } from '@/modules/relay/routes/entities/relay-task-status.entity';
 import { RelaysRemaining } from '@/modules/relay/routes/entities/relays-remaining.entity';
@@ -142,7 +143,7 @@ export class RelayController {
   })
   @Get(':safeAddress')
   async getRelaysRemaining(
-    @Param('chainId') chainId: string,
+    @Param('chainId', new ValidationPipe(NumericStringSchema)) chainId: string,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
     safeAddress: Address,
     @Query('safeTxHash', new ValidationPipe(HexSchema.optional()))
