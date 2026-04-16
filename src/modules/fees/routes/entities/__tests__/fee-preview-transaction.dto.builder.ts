@@ -10,7 +10,7 @@ export function feePreviewTransactionDtoBuilder(): IBuilder<FeePreviewTransactio
   return new Builder<FeePreviewTransactionDto>()
     .with('to', getAddress(faker.finance.ethereumAddress()))
     .with('value', '0')
-    .with('data', '0x')
+    .with('data', faker.string.hexadecimal({ casing: 'lower', prefix: '0x' }) as `0x${string}` ) 
     .with('operation', Operation.CALL)
     .with('gasToken', getAddress(zeroAddress))
     .with('numberSignatures', faker.number.int({ min: 1, max: 10 }));
