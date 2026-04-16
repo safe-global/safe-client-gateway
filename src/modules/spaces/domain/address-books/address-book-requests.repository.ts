@@ -31,7 +31,7 @@ export class AddressBookRequestsRepository
     }
     return repository.find({
       where,
-      relations: { requestedBy: { wallets: true } },
+      relations: ['requestedBy'],
       order: { createdAt: 'DESC' },
     });
   }
@@ -51,7 +51,7 @@ export class AddressBookRequestsRepository
     }
     return repository.find({
       where,
-      relations: { requestedBy: { wallets: true } },
+      relations: ['requestedBy'],
       order: { createdAt: 'DESC' },
     });
   }
@@ -66,7 +66,7 @@ export class AddressBookRequestsRepository
         id: args.id,
         space: { id: args.spaceId },
       },
-      relations: { requestedBy: { wallets: true } },
+      relations: ['requestedBy'],
     });
     if (!request) {
       throw new NotFoundException('Address book request not found.');

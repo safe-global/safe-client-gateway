@@ -5,6 +5,7 @@ import { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.int
 import { IAddressBookRequestsRepository } from '@/modules/spaces/domain/address-books/address-book-requests.repository.interface';
 import { IUserAddressBookItemsRepository } from '@/modules/spaces/domain/address-books/user-address-book-items.repository.interface';
 import { IAddressBookItemsRepository } from '@/modules/spaces/domain/address-books/address-book-items.repository.interface';
+import { IWalletsRepository } from '@/modules/wallets/domain/wallets.repository.interface';
 import {
   AddressBookRequestsDto,
   AddressBookRequestItemDto,
@@ -34,6 +35,8 @@ export class AddressBookRequestsService {
     private readonly membersRepository: IMembersRepository,
     @Inject(ISpacesRepository)
     private readonly spacesRepository: ISpacesRepository,
+    @Inject(IWalletsRepository)
+    private readonly walletsRepository: IWalletsRepository,
   ) {}
 
   public async findPending(
@@ -203,25 +206,36 @@ export class AddressBookRequestsService {
     }
   }
 
-  private mapRequests(
+  private async mapRequests(
     spaceId: Space['id'],
     requests: Array<AddressBookRequest>,
-  ): AddressBookRequestsDto {
+  ): Promise<AddressBookRequestsDto> {
+    const data = await Promise.all(
+      requests.map((request) => this.mapRequestItem(request)),
+    );
     return {
       spaceId: spaceId.toString(),
-      data: requests.map(this.mapRequestItem),
+      data,
     };
   }
 
-  private mapRequestItem(
+  private async mapRequestItem(
     request: AddressBookRequest,
-  ): AddressBookRequestItemDto {
+  ): Promise<AddressBookRequestItemDto> {
+    let requestedByAddress = '';
+    if (request.requestedBy?.id) {
+      const wallets = await this.walletsRepository.findByUser(
+        request.requestedBy.id,
+      );
+      requestedByAddress = wallets[0]?.address ?? '';
+    }
+
     return {
       id: request.id,
       name: request.name,
       address: request.address,
       chainIds: request.chainIds,
-      requestedBy: request.requestedBy?.wallets?.[0]?.address ?? '',
+      requestedBy: requestedByAddress,
       status: request.status,
       createdAt: request.createdAt,
       updatedAt: request.updatedAt,
