@@ -7,6 +7,7 @@ import { IRelayApi } from '@/domain/interfaces/relay-api.interface';
 import { LimitAddressesMapper } from '@/modules/relay/domain/limit-addresses.mapper';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import type { Relay } from '@/modules/relay/domain/entities/relay.entity';
+import type { RelayEligibility } from '@/modules/relay/domain/entities/relay-eligibility.entity';
 import { RelayLimitReachedError } from '@/modules/relay/domain/errors/relay-limit-reached.error';
 import { ExceedsMaxGasLimitError } from '@/modules/relay/domain/errors/exceeds-max-gas-limit';
 import { BalancesService } from '@/modules/balances/routes/balances.service';
@@ -35,7 +36,7 @@ export class NoFeeCampaignRelayer implements IRelayer {
   async canRelay(args: {
     chainId: string;
     address: Address;
-  }): Promise<{ result: boolean; currentCount: number; limit: number }> {
+  }): Promise<RelayEligibility> {
     const chainConfiguration = this.relayConfiguration[parseInt(args.chainId)];
 
     if (!chainConfiguration) {
@@ -68,6 +69,7 @@ export class NoFeeCampaignRelayer implements IRelayer {
     to: Address;
     data: Address;
     gasLimit: bigint | null;
+    safeTxHash?: string;
   }): Promise<Relay> {
     const relayAddresses =
       await this.limitAddressesMapper.getLimitAddresses(args);
