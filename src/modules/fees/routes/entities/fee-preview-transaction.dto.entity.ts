@@ -9,31 +9,40 @@ export class FeePreviewTransactionDto implements z.infer<
   typeof FeePreviewTransactionDtoSchema
 > {
   @ApiProperty()
-  to!: Address;
+  to: Address;
 
   @ApiProperty()
-  value!: string;
+  value: string;
 
   @ApiProperty()
-  data!: Hex;
+  data: Hex;
 
   @ApiProperty({
     enum: Operation,
     enumName: 'Operation',
     description: 'Operation type: 0 for CALL, 1 for DELEGATE',
   })
-  operation!: Operation;
+  operation: Operation;
 
   @ApiProperty({
     description: 'Gas token address (0x0...0 for native token)',
     example: '0x0000000000000000000000000000000000000000',
   })
-  gasToken!: Address;
+  gasToken: Address;
 
   @ApiProperty({
     description: 'Number of signatures required for execution',
     example: 2,
     minimum: 1,
   })
-  numberSignatures!: number;
+  numberSignatures: number;
+
+  constructor(dto: z.infer<typeof FeePreviewTransactionDtoSchema>) {
+    this.to = dto.to;
+    this.value = dto.value;
+    this.data = dto.data;
+    this.operation = dto.operation;
+    this.gasToken = dto.gasToken;
+    this.numberSignatures = dto.numberSignatures;
+  }
 }
