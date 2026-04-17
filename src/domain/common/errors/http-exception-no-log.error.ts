@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { HttpStatus } from '@nestjs/common';
 import { HttpException } from '@nestjs/common';
 

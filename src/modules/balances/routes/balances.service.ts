@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import orderBy from 'lodash/orderBy';
 import type { Address } from 'viem';

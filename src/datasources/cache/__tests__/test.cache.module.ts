@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Global, Module } from '@nestjs/common';
 import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
 import { CacheService } from '@/datasources/cache/cache.service.interface';

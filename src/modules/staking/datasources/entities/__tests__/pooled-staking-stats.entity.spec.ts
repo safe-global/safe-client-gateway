@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress } from 'viem';
 import { pooledStakingStatsBuilder } from '@/modules/staking/datasources/entities/__tests__/pooled-staking-stats.entity.builder';

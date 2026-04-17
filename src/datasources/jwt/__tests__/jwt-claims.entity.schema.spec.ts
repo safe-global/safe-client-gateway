@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { JwtClaimsSchema } from '@/datasources/jwt/jwt-claims.entity';
 import { toSecondsTimestamp } from '@/domain/common/utils/time';

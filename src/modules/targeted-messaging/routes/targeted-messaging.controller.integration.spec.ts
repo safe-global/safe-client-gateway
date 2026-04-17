@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { Server } from 'node:http';
 import { faker } from '@faker-js/faker/.';
 import type { INestApplication } from '@nestjs/common';

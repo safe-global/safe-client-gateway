@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { Readable, Writable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import { Injectable } from '@nestjs/common';

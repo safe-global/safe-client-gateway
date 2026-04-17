@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import type { ILoggingService } from '@/logging/logging.interface';
 import type { QueueConsumer } from '@/modules/queues/datasources/queues-api.module';

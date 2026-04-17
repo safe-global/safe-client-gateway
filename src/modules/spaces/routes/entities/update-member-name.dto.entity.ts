@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { ApiProperty } from '@nestjs/swagger';
 import { z } from 'zod';
 import { NameSchema } from '@/domain/common/schemas/name.schema';

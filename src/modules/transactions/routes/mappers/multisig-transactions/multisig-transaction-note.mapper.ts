@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Injectable } from '@nestjs/common';
 import sanitizeHtml from 'sanitize-html';
 import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
