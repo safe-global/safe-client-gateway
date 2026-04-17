@@ -162,14 +162,14 @@ describe('CounterfactualSafesRepository', () => {
       const user = await dbUserRepo.insert({ status: 'ACTIVE' });
       const userId = user.identifiers[0].id as User['id'];
       const payload = buildCounterfactualSafePayload();
-      const before = new Date().getTime();
+      const before = Date.now();
 
       await counterfactualSafesRepo.create({
         creatorId: userId,
         payload: [payload],
       });
 
-      const after = new Date().getTime();
+      const after = Date.now();
 
       const saved = await dbCounterfactualSafeRepo.findOneOrFail({
         where: { chainId: payload.chainId, address: payload.address },

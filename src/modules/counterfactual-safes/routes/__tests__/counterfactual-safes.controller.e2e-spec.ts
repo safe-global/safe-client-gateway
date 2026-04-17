@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { type Server } from 'http';
+import type { Server } from 'http';
 import request from 'supertest';
 import type { INestApplication } from '@nestjs/common';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
@@ -17,7 +17,9 @@ import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.b
 import { counterfactualSafeBuilder } from '@/modules/counterfactual-safes/datasources/entities/__tests__/counterfactual-safe.entity.db.builder';
 import { createTestModule } from '@/__tests__/testing-module';
 
-function buildCounterfactualSafe(chainId?: string): Record<string, unknown> {
+function buildCounterfactualSafe(
+  chainId?: string,
+): Record<string, unknown> & { chainId: string } {
   const cfSafe = counterfactualSafeBuilder()
     .with('chainId', chainId ?? chainBuilder().build().chainId)
     .build();
