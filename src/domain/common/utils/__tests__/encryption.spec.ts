@@ -4,6 +4,7 @@ import {
   decryptData,
   clearDerivedKeyCache,
   MAX_DERIVED_KEY_CACHE_SIZE,
+  DERIVED_KEY_MAX_AGE_MS,
 } from '@/domain/common/utils/encryption';
 import { faker } from '@faker-js/faker/.';
 import { getAddress } from 'viem';
@@ -196,6 +197,22 @@ describe('Encryption Utils', () => {
       expect(() => decryptData(encrypted2, 'a:b', 'c')).toThrow(
         'Failed to decrypt data',
       );
+    });
+
+    it('should re-derive key after TTL expiration', () => {
+      jest.useFakeTimers();
+      const data = { value: faker.string.alphanumeric() };
+      const key = faker.string.alphanumeric(16);
+      const salt = faker.string.alphanumeric(8);
+
+      const encrypted = encryptData(data, key, salt);
+
+      // Advance past the TTL so the cached entry expires
+      jest.advanceTimersByTime(DERIVED_KEY_MAX_AGE_MS + 1);
+
+      // Should still decrypt correctly by re-deriving the key
+      expect(decryptData(encrypted, key, salt)).toEqual(data);
+      jest.useRealTimers();
     });
 
     it('should still work correctly after cache eviction', () => {

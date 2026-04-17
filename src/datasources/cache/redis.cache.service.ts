@@ -117,6 +117,8 @@ export class RedisCacheService
         .multi()
         .unlink(keyWithPrefix)
         .hSet(invalidationKey, '', Date.now().toString())
+        // No NX — refresh TTL on every invalidation so the marker persists
+        // for the full duration from the most recent delete, not the first.
         .expire(invalidationKey, expirationTime)
         .exec();
     } catch {
