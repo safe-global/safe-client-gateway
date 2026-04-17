@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { AddressBookRequest as DbAddressBookRequest } from '@/modules/spaces/datasources/entities/address-book-request.entity.db';
 import { IAddressBookRequestsRepository } from '@/modules/spaces/domain/address-books/address-book-requests.repository.interface';
@@ -13,9 +14,7 @@ import type { Address } from 'viem';
 import type { FindOptionsWhere } from 'typeorm';
 
 @Injectable()
-export class AddressBookRequestsRepository
-  implements IAddressBookRequestsRepository
-{
+export class AddressBookRequestsRepository implements IAddressBookRequestsRepository {
   constructor(private readonly db: PostgresDatabaseService) {}
 
   public async findBySpaceId(args: {

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { Auth } from '@/modules/auth/routes/decorators/auth.decorator';
 import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
@@ -138,11 +139,7 @@ export class AddressBookRequestsController {
     @Auth() authPayload: AuthPayload,
     @Param('spaceId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
     spaceId: number,
-    @Param(
-      'requestId',
-      ParseIntPipe,
-      new ValidationPipe(RowSchema.shape.id),
-    )
+    @Param('requestId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
     requestId: number,
   ): Promise<void> {
     return this.service.approve(authPayload, spaceId, requestId);
@@ -178,11 +175,7 @@ export class AddressBookRequestsController {
     @Auth() authPayload: AuthPayload,
     @Param('spaceId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
     spaceId: number,
-    @Param(
-      'requestId',
-      ParseIntPipe,
-      new ValidationPipe(RowSchema.shape.id),
-    )
+    @Param('requestId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
     requestId: number,
   ): Promise<void> {
     return this.service.reject(authPayload, spaceId, requestId);

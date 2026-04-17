@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
 import { IMembersRepository } from '@/modules/users/domain/members.repository.interface';
@@ -10,7 +11,10 @@ import {
   AddressBookRequestsDto,
   AddressBookRequestItemDto,
 } from '@/modules/spaces/routes/entities/address-book-request.dto.entity';
-import { assertMember, assertAdmin } from '@/modules/spaces/routes/utils/space-assert.utils';
+import {
+  assertMember,
+  assertAdmin,
+} from '@/modules/spaces/routes/utils/space-assert.utils';
 import type { AddressBookRequest } from '@/modules/spaces/domain/address-books/entities/address-book-request.entity';
 import type { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
 import {
@@ -160,7 +164,7 @@ export class AddressBookRequestsService {
     await this.requestsRepository.updateStatus({
       id: requestId,
       status: 'APPROVED',
-      reviewedBy: authPayload.signer_address as Address,
+      reviewedBy: authPayload.signer_address,
     });
   }
 
@@ -190,7 +194,7 @@ export class AddressBookRequestsService {
     await this.requestsRepository.updateStatus({
       id: requestId,
       status: 'REJECTED',
-      reviewedBy: authPayload.signer_address as Address,
+      reviewedBy: authPayload.signer_address,
     });
   }
 

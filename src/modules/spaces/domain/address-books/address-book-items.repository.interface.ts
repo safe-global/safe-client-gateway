@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import type { AddressBookDbItem } from '@/modules/spaces/domain/address-books/entities/address-book-item.db.entity';
 import type { Space } from '@/modules/spaces/domain/entities/space.entity';

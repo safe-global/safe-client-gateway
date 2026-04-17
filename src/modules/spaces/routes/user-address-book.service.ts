@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
 import { IMembersRepository } from '@/modules/users/domain/members.repository.interface';
@@ -50,7 +51,7 @@ export class UserAddressBookService {
     const items = await this.repository.upsertMany({
       spaceId,
       creatorId: userId,
-      signerAddress: authPayload.signer_address as `0x${string}`,
+      signerAddress: authPayload.signer_address,
       items: dto.items,
     });
 

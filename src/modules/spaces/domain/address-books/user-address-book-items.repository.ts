@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { UserAddressBookItem as DbUserAddressBookItem } from '@/modules/spaces/datasources/entities/user-address-book-item.entity.db';
 import { IUserAddressBookItemsRepository } from '@/modules/spaces/domain/address-books/user-address-book-items.repository.interface';
@@ -10,9 +11,7 @@ import { In, type EntityManager } from 'typeorm';
 import { isAddressEqual, type Address } from 'viem';
 
 @Injectable()
-export class UserAddressBookItemsRepository
-  implements IUserAddressBookItemsRepository
-{
+export class UserAddressBookItemsRepository implements IUserAddressBookItemsRepository {
   constructor(private readonly db: PostgresDatabaseService) {}
 
   public async findBySpaceAndCreator(args: {

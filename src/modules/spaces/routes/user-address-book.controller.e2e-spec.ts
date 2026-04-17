@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import configuration from '@/config/entities/__tests__/configuration';
 import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
@@ -171,7 +172,11 @@ describe('UserAddressBookController', () => {
       await request(app.getHttpServer())
         .put(`/v1/spaces/${spaceId}/address-book/private`)
         .set('Cookie', [`access_token=${accessToken}`])
-        .send({ items: [{ name: mockName, address: mockAddress, chainIds: mockChainIds }] })
+        .send({
+          items: [
+            { name: mockName, address: mockAddress, chainIds: mockChainIds },
+          ],
+        })
         .expect(200)
         .expect(({ body }) =>
           expect(body.data).toEqual(
@@ -199,19 +204,28 @@ describe('UserAddressBookController', () => {
       await request(app.getHttpServer())
         .put(`/v1/spaces/${spaceId}/address-book/private`)
         .set('Cookie', [`access_token=${memberAccessToken}`])
-        .send({ items: [{ name: mockName, address: mockAddress, chainIds: ['1'] }] })
+        .send({
+          items: [{ name: mockName, address: mockAddress, chainIds: ['1'] }],
+        })
         .expect(200);
     });
 
     it('should update an existing private contact', async () => {
       const { spaceId, accessToken } = await createSpace();
-      const { mockAddress } = await createPrivateContact({ spaceId, accessToken });
+      const { mockAddress } = await createPrivateContact({
+        spaceId,
+        accessToken,
+      });
       const updatedName = nameBuilder();
 
       await request(app.getHttpServer())
         .put(`/v1/spaces/${spaceId}/address-book/private`)
         .set('Cookie', [`access_token=${accessToken}`])
-        .send({ items: [{ name: updatedName, address: mockAddress, chainIds: ['1', '10'] }] })
+        .send({
+          items: [
+            { name: updatedName, address: mockAddress, chainIds: ['1', '10'] },
+          ],
+        })
         .expect(200)
         .expect(({ body }) =>
           expect(body.data).toEqual(
@@ -230,7 +244,10 @@ describe('UserAddressBookController', () => {
   describe('DELETE /spaces/:spaceId/address-book/private/:address', () => {
     it('should delete a private contact', async () => {
       const { spaceId, accessToken } = await createSpace();
-      const { mockAddress } = await createPrivateContact({ spaceId, accessToken });
+      const { mockAddress } = await createPrivateContact({
+        spaceId,
+        accessToken,
+      });
 
       await request(app.getHttpServer())
         .delete(`/v1/spaces/${spaceId}/address-book/private/${mockAddress}`)
