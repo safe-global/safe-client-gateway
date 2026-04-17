@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Module } from '@nestjs/common';
 import { MultiSendDecoder } from '@/modules/contracts/domain/decoders/multi-send-decoder.helper';
 import { SafeDecoder } from '@/modules/contracts/domain/decoders/safe-decoder.helper';

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import semverSatisfies from 'semver/functions/satisfies';
 import type { Address } from 'viem';
 import { hashMessage, hashTypedData, zeroAddress } from 'viem';

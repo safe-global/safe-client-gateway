@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import type { Address } from 'viem';
 import { ITargetedMessagingDatasource } from '@/domain/interfaces/targeted-messaging.datasource.interface';

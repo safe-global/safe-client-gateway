@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Global, Module } from '@nestjs/common';
 import winston from 'winston';
 import type Transport from 'winston-transport';

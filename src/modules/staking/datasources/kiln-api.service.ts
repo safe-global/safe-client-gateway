@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { Address, Hash } from 'viem';
 import { ZodError, z } from 'zod';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
