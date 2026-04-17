@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+
 import type { Queue } from 'bullmq';
 import { JobQueueService } from '@/datasources/job-queue/job-queue.service';
 import { JobType } from '@/datasources/job-queue/types/job-types';

@@ -71,6 +71,10 @@ describe('Chains Controller', () => {
     await app.init();
   });
 
+  afterEach(async () => {
+    await app.close();
+  });
+
   describe('GET /chains', () => {
     it('Success', async () => {
       networkService.get.mockResolvedValueOnce({

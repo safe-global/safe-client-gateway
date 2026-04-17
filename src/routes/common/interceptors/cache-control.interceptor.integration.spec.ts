@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import {
   Controller,
   Get,
@@ -37,6 +38,10 @@ describe('CacheControlInterceptor tests', () => {
 
     app = module.createNestApplication();
     await app.init();
+  });
+
+  afterEach(async () => {
+    await app.close();
   });
 
   it('should set the Cache-Control header to no-cache', () => {

@@ -1,17 +1,22 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import {
+  AuthMethod,
   AuthPayload,
   AuthPayloadDtoSchema,
 } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { authPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
+import {
+  siweAuthPayloadDtoBuilder,
+  oidcAuthPayloadDtoBuilder,
+} from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress } from 'viem';
 
 describe('AuthPayload entity', () => {
-  describe('AuthPayload', () => {
+  describe('SIWE', () => {
     describe('isForChain', () => {
       it("should return true if `chainId` matches `AuthPayload['chain_id']`", () => {
         const chainId = faker.string.numeric({ exclude: ['0'] });
-        const authPayloadDto = authPayloadDtoBuilder()
+        const authPayloadDto = siweAuthPayloadDtoBuilder()
           .with('chain_id', chainId)
           .build();
         const authPayload = new AuthPayload(authPayloadDto);
@@ -22,7 +27,7 @@ describe('AuthPayload entity', () => {
       });
 
       it('should return false if `chainId` does not match `AuthPayload[chain_id]`', () => {
-        const authPayloadDto = authPayloadDtoBuilder().build();
+        const authPayloadDto = siweAuthPayloadDtoBuilder().build();
         const chainId = faker.string.numeric({
           exclude: [authPayloadDto.chain_id],
         });
@@ -37,7 +42,7 @@ describe('AuthPayload entity', () => {
     describe('isForSigner', () => {
       describe('should return true if `signerAddress` matches `AuthPayload[signer_address]`', () => {
         it('if both are checksummed', () => {
-          const authPayloadDto = authPayloadDtoBuilder()
+          const authPayloadDto = siweAuthPayloadDtoBuilder()
             .with('signer_address', getAddress(faker.finance.ethereumAddress()))
             .build();
           const authPayload = new AuthPayload(authPayloadDto);
@@ -48,7 +53,7 @@ describe('AuthPayload entity', () => {
         });
 
         it('if neither are checksummed', () => {
-          const authPayloadDto = authPayloadDtoBuilder()
+          const authPayloadDto = siweAuthPayloadDtoBuilder()
             .with(
               'signer_address',
               faker.finance.ethereumAddress().toLowerCase() as Address,
@@ -62,7 +67,7 @@ describe('AuthPayload entity', () => {
         });
 
         it('if `signer_address` is checksummed and `signerAddress` is not', () => {
-          const authPayloadDto = authPayloadDtoBuilder()
+          const authPayloadDto = siweAuthPayloadDtoBuilder()
             .with('signer_address', getAddress(faker.finance.ethereumAddress()))
             .build();
           const signerAddress =
@@ -75,7 +80,7 @@ describe('AuthPayload entity', () => {
         });
 
         it('if `signer_address` is not checksummed and `signerAddress` is', () => {
-          const authPayloadDto = authPayloadDtoBuilder()
+          const authPayloadDto = siweAuthPayloadDtoBuilder()
             .with(
               'signer_address',
               faker.finance.ethereumAddress().toLowerCase() as Address,
@@ -91,7 +96,7 @@ describe('AuthPayload entity', () => {
       });
 
       it('should return false if `signerAddress` does not match `AuthPayload[signer_address]`', () => {
-        const authPayloadDto = authPayloadDtoBuilder()
+        const authPayloadDto = siweAuthPayloadDtoBuilder()
           .with('signer_address', getAddress(faker.finance.ethereumAddress()))
           .build();
         const signerAddress = getAddress(faker.finance.ethereumAddress());
@@ -103,9 +108,127 @@ describe('AuthPayload entity', () => {
       });
     });
 
-    describe('AuthPayloadDtoSchema', () => {
-      it('should parse a valid AuthPayloadDto', () => {
-        const authPayloadDto = authPayloadDtoBuilder().build();
+    describe('getUserId', () => {
+      it('should return sub', () => {
+        const sub = faker.string.numeric({ exclude: ['0'] });
+        const authPayloadDto = siweAuthPayloadDtoBuilder()
+          .with('sub', sub)
+          .build();
+        const authPayload = new AuthPayload(authPayloadDto);
+
+        expect(authPayload.getUserId()).toBe(sub);
+      });
+    });
+
+    describe('isSiwe', () => {
+      it('should return true', () => {
+        const authPayloadDto = siweAuthPayloadDtoBuilder().build();
+        const authPayload = new AuthPayload(authPayloadDto);
+
+        expect(authPayload.isSiwe()).toBe(true);
+      });
+    });
+
+    describe('isOidc', () => {
+      it('should return false', () => {
+        const authPayloadDto = siweAuthPayloadDtoBuilder().build();
+        const authPayload = new AuthPayload(authPayloadDto);
+
+        expect(authPayload.isOidc()).toBe(false);
+      });
+    });
+  });
+
+  describe('OIDC', () => {
+    describe('isForChain', () => {
+      it('should return false', () => {
+        const authPayloadDto = oidcAuthPayloadDtoBuilder().build();
+        const authPayload = new AuthPayload(authPayloadDto);
+
+        const result = authPayload.isForChain('1');
+
+        expect(result).toBe(false);
+      });
+    });
+
+    describe('isForSigner', () => {
+      it('should return false', () => {
+        const authPayloadDto = oidcAuthPayloadDtoBuilder().build();
+        const authPayload = new AuthPayload(authPayloadDto);
+
+        const result = authPayload.isForSigner(
+          getAddress(faker.finance.ethereumAddress()),
+        );
+
+        expect(result).toBe(false);
+      });
+    });
+
+    describe('getUserId', () => {
+      it('should return sub', () => {
+        const sub = faker.string.numeric({ exclude: ['0'] });
+        const authPayloadDto = oidcAuthPayloadDtoBuilder()
+          .with('sub', sub)
+          .build();
+        const authPayload = new AuthPayload(authPayloadDto);
+
+        expect(authPayload.getUserId()).toBe(sub);
+      });
+    });
+
+    describe('isSiwe', () => {
+      it('should return false', () => {
+        const authPayloadDto = oidcAuthPayloadDtoBuilder().build();
+        const authPayload = new AuthPayload(authPayloadDto);
+
+        expect(authPayload.isSiwe()).toBe(false);
+      });
+    });
+
+    describe('isOidc', () => {
+      it('should return true', () => {
+        const authPayloadDto = oidcAuthPayloadDtoBuilder().build();
+        const authPayload = new AuthPayload(authPayloadDto);
+
+        expect(authPayload.isOidc()).toBe(true);
+      });
+    });
+  });
+
+  describe('Unauthenticated', () => {
+    it('getUserId should return undefined when no payload is provided', () => {
+      const authPayload = new AuthPayload();
+
+      expect(authPayload.getUserId()).toBeUndefined();
+    });
+  });
+
+  describe('isAuthenticated', () => {
+    it('should return true for SIWE payload', () => {
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
+      const authPayload = new AuthPayload(authPayloadDto);
+
+      expect(authPayload.isAuthenticated()).toBe(true);
+    });
+
+    it('should return true for OIDC payload', () => {
+      const authPayloadDto = oidcAuthPayloadDtoBuilder().build();
+      const authPayload = new AuthPayload(authPayloadDto);
+
+      expect(authPayload.isAuthenticated()).toBe(true);
+    });
+
+    it('should return false when no payload is provided', () => {
+      const authPayload = new AuthPayload();
+
+      expect(authPayload.isAuthenticated()).toBe(false);
+    });
+  });
+
+  describe('AuthPayloadDtoSchema', () => {
+    describe('SIWE', () => {
+      it('should parse a valid SIWE AuthPayloadDto', () => {
+        const authPayloadDto = siweAuthPayloadDtoBuilder().build();
 
         const result = AuthPayloadDtoSchema.safeParse(authPayloadDto);
 
@@ -118,19 +241,21 @@ describe('AuthPayload entity', () => {
         const nonChecksummedAddress = faker.finance
           .ethereumAddress()
           .toLowerCase();
-        const authPayloadDto = authPayloadDtoBuilder()
+        const authPayloadDto = siweAuthPayloadDtoBuilder()
           .with('signer_address', nonChecksummedAddress as Address)
           .build();
 
         const result = AuthPayloadDtoSchema.safeParse(authPayloadDto);
 
-        expect(result.success && result.data.signer_address).toBe(
-          getAddress(nonChecksummedAddress),
-        );
+        expect(
+          result.success &&
+            result.data.auth_method === AuthMethod.Siwe &&
+            result.data.signer_address,
+        ).toBe(getAddress(nonChecksummedAddress));
       });
 
       it('should not allow a non-numeric chain_id', () => {
-        const authPayloadDto = authPayloadDtoBuilder()
+        const authPayloadDto = siweAuthPayloadDtoBuilder()
           .with('chain_id', faker.lorem.word())
           .build();
 
@@ -147,7 +272,7 @@ describe('AuthPayload entity', () => {
       });
 
       it('should not allow a non-address signer_address', () => {
-        const authPayloadDto = authPayloadDtoBuilder()
+        const authPayloadDto = siweAuthPayloadDtoBuilder()
           .with('signer_address', faker.lorem.word() as Address)
           .build();
 
@@ -163,8 +288,30 @@ describe('AuthPayload entity', () => {
         ]);
       });
 
-      it('should not parse an invalid AuthPayloadDtoSchema', () => {
+      it('should not parse without sub', () => {
+        const payload = {
+          auth_method: AuthMethod.Siwe,
+          chain_id: faker.string.numeric({ exclude: ['0'] }),
+          signer_address: getAddress(faker.finance.ethereumAddress()),
+        };
+
+        const result = AuthPayloadDtoSchema.safeParse(payload);
+
+        expect(result.success).toBe(false);
+        expect(!result.success && result.error.issues).toStrictEqual([
+          {
+            code: 'invalid_type',
+            expected: 'string',
+            message: 'Invalid input: expected string, received undefined',
+            path: ['sub'],
+          },
+        ]);
+      });
+
+      it('should not parse without chain_id and signer_address', () => {
         const authPayloadDto = {
+          auth_method: AuthMethod.Siwe,
+          sub: faker.string.numeric({ exclude: ['0'] }),
           unknown: 'payload',
         };
 
@@ -186,6 +333,57 @@ describe('AuthPayload entity', () => {
           },
         ]);
       });
+    });
+
+    describe('OIDC', () => {
+      it('should parse a valid OIDC AuthPayloadDto', () => {
+        const authPayloadDto = oidcAuthPayloadDtoBuilder().build();
+
+        const result = AuthPayloadDtoSchema.safeParse(authPayloadDto);
+
+        expect(result.success).toBe(true);
+        expect(result.success && result.data).toStrictEqual(authPayloadDto);
+      });
+
+      it('should not parse without sub', () => {
+        const authPayloadDto = {
+          auth_method: AuthMethod.Oidc,
+        };
+
+        const result = AuthPayloadDtoSchema.safeParse(authPayloadDto);
+
+        expect(result.success).toBe(false);
+        expect(!result.success && result.error.issues).toStrictEqual([
+          {
+            code: 'invalid_type',
+            expected: 'string',
+            message: 'Invalid input: expected string, received undefined',
+            path: ['sub'],
+          },
+        ]);
+      });
+    });
+
+    it('should not parse a payload without auth_method', () => {
+      const payload = {
+        sub: faker.string.numeric({ exclude: ['0'] }),
+        chain_id: faker.string.numeric({ exclude: ['0'] }),
+        signer_address: getAddress(faker.finance.ethereumAddress()),
+      };
+
+      const result = AuthPayloadDtoSchema.safeParse(payload);
+
+      expect(result.success).toBe(false);
+      expect(!result.success && result.error.issues).toStrictEqual([
+        {
+          code: 'invalid_union',
+          discriminator: 'auth_method',
+          errors: [],
+          message: 'Invalid input',
+          note: 'No matching discriminator',
+          path: ['auth_method'],
+        },
+      ]);
     });
   });
 });

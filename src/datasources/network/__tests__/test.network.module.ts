@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Global, Module } from '@nestjs/common';
 import {
   INetworkService,
@@ -7,6 +8,7 @@ import {
 export const networkService: INetworkService = {
   get: jest.fn(),
   post: jest.fn(),
+  postForm: jest.fn(),
   delete: jest.fn(),
 };
 

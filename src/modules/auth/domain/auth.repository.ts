@@ -1,14 +1,13 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
 import { IAuthRepository } from '@/modules/auth/domain/auth.repository.interface';
 import {
   AuthPayloadDto,
   AuthPayloadDtoSchema,
+  AuthPayloadWithClaimsDtoSchema,
 } from '@/modules/auth/domain/entities/auth-payload.entity';
-import {
-  JwtClaimsSchema,
-  JwtPayloadWithClaims,
-} from '@/datasources/jwt/jwt-claims.entity';
+import { JwtPayloadWithClaims } from '@/datasources/jwt/jwt-claims.entity';
 
 @Injectable()
 export class AuthRepository implements IAuthRepository {
@@ -41,6 +40,14 @@ export class AuthRepository implements IAuthRepository {
 
   decodeToken(accessToken: string): JwtPayloadWithClaims<AuthPayloadDto> {
     const decoded = this.jwtService.decode(accessToken);
-    return AuthPayloadDtoSchema.extend(JwtClaimsSchema.shape).parse(decoded);
+    return AuthPayloadWithClaimsDtoSchema.parse(decoded);
+  }
+
+  decodeTokenWithoutVerification(
+    accessToken: string,
+  ): JwtPayloadWithClaims<AuthPayloadDto> | null {
+    const decoded = this.jwtService.decodeWithoutVerification(accessToken);
+    if (!decoded) return null;
+    return AuthPayloadWithClaimsDtoSchema.parse(decoded);
   }
 }

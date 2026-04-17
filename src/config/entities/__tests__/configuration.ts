@@ -27,6 +27,22 @@ export default (): ReturnType<typeof configuration> => ({
     token: faker.string.hexadecimal({ length: 32 }),
     nonceTtlSeconds: faker.number.int(),
     maxValidityPeriodSeconds: faker.number.int({ min: 1, max: 60 * 1_000 }),
+    stateTtlMs: faker.number.int({ min: 60_000, max: 600_000 }),
+    postLoginRedirectUri: faker.internet.url(),
+    allowedRedirectDomain: undefined,
+    auth0: {
+      domain: faker.internet.domainName(),
+      clientId: faker.string.uuid(),
+      clientSecret: faker.string.uuid(),
+      redirectUri: faker.internet.url(),
+      audience: faker.internet.url({ appendSlash: false }),
+      signingSecret: faker.string.alphanumeric(32),
+      scope: 'openid email',
+    },
+    rateLimit: {
+      max: faker.number.int({ min: 100, max: 200 }),
+      windowSeconds: faker.number.int({ min: 100, max: 200 }),
+    },
   },
   balances: {
     providers: {
@@ -157,6 +173,7 @@ export default (): ReturnType<typeof configuration> => ({
     debugLogs: false,
     configHooksDebugLogs: false,
     auth: false,
+    oidc_auth: false,
     counterfactualBalances: false,
     users: false,
     hookHttpPostEvent: false,
@@ -191,11 +208,10 @@ export default (): ReturnType<typeof configuration> => ({
   },
   circuitBreaker: {
     enabled: true,
-    failureThreshold: faker.number.int(),
-    successThreshold: faker.number.int(),
-    timeout: faker.number.int(),
-    rollingWindow: faker.number.int(),
-    halfOpenMaxRequests: faker.number.int(),
+    threshold: faker.number.int({ min: 2, max: 5 }),
+    timeout: faker.number.int({ min: 500, max: 2000 }),
+    rollingWindow: faker.number.int({ min: 60_000, max: 300_000 }),
+    halfOpenFailureRateThreshold: faker.number.int({ min: 10, max: 100 }),
   },
   locking: {
     baseUri: faker.internet.url({ appendSlash: false }),
@@ -352,6 +368,11 @@ export default (): ReturnType<typeof configuration> => ({
           },
         ],
       },
+    },
+    fee: {
+      enabledChainIds: [],
+      baseUri: faker.internet.url({ appendSlash: false }),
+      feePreviewTtlSeconds: 60,
     },
   },
   safeConfig: {

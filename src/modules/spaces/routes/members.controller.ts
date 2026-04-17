@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import {
   ApiBody,
   ApiConflictResponse,
@@ -31,7 +32,10 @@ import {
 } from '@/modules/spaces/routes/entities/invite-users.dto.entity';
 import { UpdateRoleDtoSchema } from '@/modules/spaces/routes/entities/update-role.dto.entity';
 import { RowSchema } from '@/datasources/db/v1/entities/row.entity';
-import { MembersDto } from '@/modules/spaces/routes/entities/members.dto.entity';
+import {
+  MemberDto,
+  MembersDto,
+} from '@/modules/spaces/routes/entities/members.dto.entity';
 import { Invitation } from '@/modules/spaces/routes/entities/invitation.entity';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { UpdateRoleDto } from '@/modules/spaces/routes/entities/update-role.dto.entity';
@@ -217,6 +221,40 @@ export class MembersController {
   }
 
   @ApiOperation({
+    summary: "Get the authenticated user's membership in a space",
+    description:
+      'Returns the membership record of the authenticated user for the given space. ' +
+      'Returns 403 if the caller has no ACTIVE or INVITED membership in the space.',
+  })
+  @ApiParam({
+    name: 'spaceId',
+    type: 'number',
+    description: "Space ID to fetch the caller's membership for",
+    example: 1,
+  })
+  @ApiOkResponse({
+    description: 'Membership retrieved successfully',
+    type: MemberDto,
+  })
+  @ApiForbiddenResponse({
+    description:
+      'Access forbidden - user not authenticated, or has no ACTIVE/INVITED membership in this space',
+  })
+  @ApiUnauthorizedResponse({ description: 'Not authenticated' })
+  @Get('/:spaceId/membership')
+  @UseGuards(AuthGuard)
+  public async getMembership(
+    @Auth() authPayload: AuthPayload,
+    @Param('spaceId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
+    spaceId: number,
+  ): Promise<MemberDto> {
+    return await this.membersService.getSelfMembership({
+      authPayload,
+      spaceId,
+    });
+  }
+
+  @ApiOperation({
     summary: 'Update member role',
     description:
       'Updates the role of a space member. Only space admins can change member roles. Cannot remove the last admin from a space.',
@@ -278,9 +316,9 @@ export class MembersController {
       'Update the alias of the authenticated member in a space. Users can only update their own alias.',
   })
   @ApiOkResponse({ description: 'Alias updated' })
-  @ApiForbiddenResponse({ description: 'Signer not authorized' })
+  @ApiForbiddenResponse({ description: 'User not authorized' })
   @ApiNotFoundResponse({
-    description: 'Signer, space or member not found',
+    description: 'Space or member not found',
   })
   @Patch('/:spaceId/members/alias')
   @UseGuards(AuthGuard)
@@ -351,12 +389,12 @@ export class MembersController {
     description: 'Remove own membership from a space.',
   })
   @ApiOkResponse({ description: 'Membership deleted' })
-  @ApiForbiddenResponse({ description: 'Signer not authorized' })
+  @ApiForbiddenResponse({ description: 'User not authorized' })
   @ApiNotFoundResponse({
-    description: 'Signer or space not found',
+    description: 'Space not found',
   })
   @ApiUnauthorizedResponse({
-    description: 'Signer address not provided',
+    description: 'Not authenticated',
   })
   @ApiConflictResponse({ description: 'Cannot remove last admin' })
   @Delete('/:spaceId/members')

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import configuration from '@/config/entities/__tests__/configuration';
@@ -5,6 +6,10 @@ import { EmailModule } from '@/modules/email/email.module';
 import { TestEmailApiModule } from '@/modules/email/datasources/__tests__/test.email-api.module';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { createTestModule } from '@/__tests__/testing-module';
+import {
+  oidcAuthPayloadDtoBuilder,
+  siweAuthPayloadDtoBuilder,
+} from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { siweMessageBuilder } from '@/modules/siwe/domain/entities/__tests__/siwe-message.builder';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 import { faker } from '@faker-js/faker';
@@ -15,32 +20,45 @@ import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { getSecondsUntil } from '@/domain/common/utils/time';
 import type { Server } from 'net';
 import { IConfigurationService } from '@/config/configuration.service.interface';
+import { UsersModule } from '@/modules/users/users.module';
+import { TestUsersModule } from '@/modules/users/__tests__/test.users.module';
+import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
+import type { TestingModule } from '@nestjs/testing';
 
 describe('AuthController', () => {
   let app: INestApplication<Server>;
   let cacheService: FakeCacheService;
+  let jwtService: IJwtService;
+
   let maxValidityPeriodInMs: number;
 
   async function initApp(config: typeof configuration): Promise<void> {
-    const moduleFixture = await createTestModule({
+    await app?.close();
+    const moduleFixture: TestingModule = await createTestModule({
       config,
       modules: [
         {
           originalModule: EmailModule,
           testModule: TestEmailApiModule,
         },
+        {
+          originalModule: UsersModule,
+          testModule: TestUsersModule,
+        },
       ],
     });
 
     cacheService = moduleFixture.get(CacheService);
+    jwtService = moduleFixture.get(IJwtService);
+
     const configService: IConfigurationService = moduleFixture.get(
       IConfigurationService,
     );
+
     maxValidityPeriodInMs =
       configService.getOrThrow<number>('auth.maxValidityPeriodSeconds') * 1_000;
 
     app = await new TestAppProvider().provide(moduleFixture);
-
     await app.init();
   }
 
@@ -64,12 +82,9 @@ describe('AuthController', () => {
     await initApp(testConfiguration);
   });
 
-  afterAll(async () => {
-    await app.close();
-  });
-
-  afterEach(() => {
+  afterEach(async () => {
     jest.useRealTimers();
+    await app?.close();
   });
 
   describe('GET /v1/auth/nonce', () => {
@@ -308,6 +323,7 @@ describe('AuthController', () => {
       const signature = await signer.signMessage({
         message,
       });
+
       // Mimic ttl expiration
       await cacheService.deleteByKey(cacheDir.key);
 
@@ -506,6 +522,182 @@ describe('AuthController', () => {
             'access_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; Secure; SameSite=Lax',
           );
         });
+    });
+  });
+
+  describe('POST /v1/auth/logout/redirect', () => {
+    it('should redirect OIDC user through Auth0 logout', async () => {
+      const authPayloadDto = oidcAuthPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+
+      await request(app.getHttpServer())
+        .post('/v1/auth/logout/redirect')
+        .send({})
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(303)
+        .expect(({ headers }) => {
+          expect(headers.location).toMatch(
+            /^https:\/\/.*\/v2\/logout\?client_id=.*&returnTo=/,
+          );
+          const setCookie = headers['set-cookie'].toString();
+          expect(setCookie).toContain('access_token=;');
+          expect(setCookie).toContain('Expires=Thu, 01 Jan 1970 00:00:00 GMT');
+        });
+    });
+
+    it('should redirect SiWe user directly to postLoginRedirectUri', async () => {
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+
+      const configService: IConfigurationService = app.get(
+        IConfigurationService,
+      );
+      const postLoginRedirectUri = configService.getOrThrow<string>(
+        'auth.postLoginRedirectUri',
+      );
+
+      await request(app.getHttpServer())
+        .post('/v1/auth/logout/redirect')
+        .send({})
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(303)
+        .expect(({ headers }) => {
+          expect(headers.location).toBe(postLoginRedirectUri);
+          const setCookie = headers['set-cookie'].toString();
+          expect(setCookie).toContain('access_token=;');
+        });
+    });
+
+    it('should redirect to postLoginRedirectUri when no token present', async () => {
+      const configService: IConfigurationService = app.get(
+        IConfigurationService,
+      );
+      const postLoginRedirectUri = configService.getOrThrow<string>(
+        'auth.postLoginRedirectUri',
+      );
+
+      await request(app.getHttpServer())
+        .post('/v1/auth/logout/redirect')
+        .send({})
+        .expect(303)
+        .expect(({ headers }) => {
+          expect(headers.location).toBe(postLoginRedirectUri);
+          const setCookie = headers['set-cookie'].toString();
+          expect(setCookie).toContain('access_token=;');
+        });
+    });
+
+    it('should include redirect_url in the redirect location', async () => {
+      const configService: IConfigurationService = app.get(
+        IConfigurationService,
+      );
+      const postLoginRedirectUri = configService.getOrThrow<string>(
+        'auth.postLoginRedirectUri',
+      );
+      const redirectUrl = `${postLoginRedirectUri}/settings`;
+
+      await request(app.getHttpServer())
+        .post('/v1/auth/logout/redirect')
+        .send({ redirect_url: redirectUrl })
+        .expect(303)
+        .expect(({ headers }) => {
+          expect(headers.location).toBe(redirectUrl);
+        });
+    });
+
+    it('should redirect expired OIDC token through Auth0 logout', async () => {
+      const authPayloadDto = oidcAuthPayloadDtoBuilder().build();
+      // Sign with an already-expired expiration
+      const accessToken = jwtService.sign({
+        ...authPayloadDto,
+        exp: new Date(Date.now() - 60_000),
+      });
+
+      await request(app.getHttpServer())
+        .post('/v1/auth/logout/redirect')
+        .send({})
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(303)
+        .expect(({ headers }) => {
+          expect(headers.location).toMatch(
+            /^https:\/\/.*\/v2\/logout\?client_id=.*&returnTo=/,
+          );
+          const setCookie = headers['set-cookie'].toString();
+          expect(setCookie).toContain('access_token=;');
+        });
+    });
+
+    it('should accept redirect_url from application/x-www-form-urlencoded body', async () => {
+      const configService: IConfigurationService = app.get(
+        IConfigurationService,
+      );
+      const postLoginRedirectUri = configService.getOrThrow<string>(
+        'auth.postLoginRedirectUri',
+      );
+      const redirectUrl = `${postLoginRedirectUri}/settings`;
+
+      await request(app.getHttpServer())
+        .post('/v1/auth/logout/redirect')
+        .type('form')
+        .send(`redirect_url=${encodeURIComponent(redirectUrl)}`)
+        .expect(303)
+        .expect(({ headers }) => {
+          expect(headers.location).toBe(redirectUrl);
+        });
+    });
+
+    it('should return 400 for cross-origin redirect_url', async () => {
+      await request(app.getHttpServer())
+        .post('/v1/auth/logout/redirect')
+        .send({ redirect_url: 'https://evil.com' })
+        .expect(400);
+    });
+  });
+
+  describe('GET /v1/auth/me', () => {
+    it('should return 200 with id, authMethod and signerAddress for a valid Siwe access token', async () => {
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+
+      await request(app.getHttpServer())
+        .get('/v1/auth/me')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(200)
+        .expect(({ body }) => {
+          expect(body).toEqual({
+            id: authPayloadDto.sub,
+            authMethod: 'siwe',
+            signerAddress: authPayloadDto.signer_address,
+          });
+        });
+    });
+
+    it('should return 200 with id and authMethod (no signerAddress) for a valid OIDC access token', async () => {
+      const authPayloadDto = oidcAuthPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+
+      await request(app.getHttpServer())
+        .get('/v1/auth/me')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(200)
+        .expect(({ body }) => {
+          expect(body).toEqual({
+            id: authPayloadDto.sub,
+            authMethod: 'oidc',
+          });
+          expect(body).not.toHaveProperty('signerAddress');
+        });
+    });
+
+    it('should return 403 without an access token', async () => {
+      await request(app.getHttpServer()).get('/v1/auth/me').expect(403);
+    });
+
+    it('should return 403 with an invalid access token', async () => {
+      await request(app.getHttpServer())
+        .get('/v1/auth/me')
+        .set('Cookie', ['access_token=invalid-token'])
+        .expect(403);
     });
   });
 });

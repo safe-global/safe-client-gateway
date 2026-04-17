@@ -47,6 +47,26 @@ export default () => ({
     maxValidityPeriodSeconds: parseInt(
       process.env.AUTH_VALIDITY_PERIOD_SECONDS ?? `${24 * 60 * 60}`, // 24 hours
     ),
+    stateTtlMs: parseInt(
+      process.env.AUTH_STATE_TTL_MILLISECONDS ?? `${5 * 60 * 1_000}`, // 5 minutes
+    ),
+    postLoginRedirectUri: process.env.AUTH_POST_LOGIN_REDIRECT_URI,
+    allowedRedirectDomain: process.env.AUTH_ALLOWED_REDIRECT_DOMAIN,
+    auth0: {
+      domain: process.env.AUTH0_DOMAIN,
+      clientId: process.env.AUTH0_CLIENT_ID,
+      clientSecret: process.env.AUTH0_CLIENT_SECRET,
+      redirectUri: process.env.AUTH0_REDIRECT_URI,
+      audience: process.env.AUTH0_API_AUDIENCE,
+      signingSecret: process.env.AUTH0_SIGNING_SECRET,
+      scope: process.env.AUTH0_SCOPE || 'openid',
+    },
+    rateLimit: {
+      max: parseInt(process.env.AUTH_RATE_LIMIT_MAX ?? `${5}`),
+      windowSeconds: parseInt(
+        process.env.AUTH_RATE_LIMIT_WINDOW_SECONDS ?? `${60}`,
+      ),
+    },
   },
   balances: {
     providers: {
@@ -255,6 +275,7 @@ export default () => ({
     configHooksDebugLogs:
       process.env.FF_CONFIG_HOOKS_DEBUG_LOGS?.toLowerCase() === 'true',
     auth: process.env.FF_AUTH?.toLowerCase() === 'true',
+    oidc_auth: process.env.FF_OIDC_AUTH?.toLowerCase() === 'true',
     counterfactualBalances:
       process.env.FF_COUNTERFACTUAL_BALANCES?.toLowerCase() === 'true',
     users: process.env.FF_USERS?.toLowerCase() === 'true',
@@ -323,23 +344,17 @@ export default () => ({
   circuitBreaker: {
     // Whether the circuit breaker is enabled
     enabled: process.env.CIRCUIT_BREAKER_ENABLED?.toLowerCase() !== 'false',
-    // Number of failures before the circuit opens
-    failureThreshold: parseInt(
-      process.env.CIRCUIT_BREAKER_FAILURE_THRESHOLD ?? `${20}`,
-    ),
-    // Number of consecutive successes required to close the circuit from half-open state
-    successThreshold: parseInt(
-      process.env.CIRCUIT_BREAKER_SUCCESS_THRESHOLD ?? `${10}`,
-    ),
+    // Number of failures to open the circuit, and consecutive successes to close it
+    threshold: parseInt(process.env.CIRCUIT_BREAKER_THRESHOLD ?? `${10}`),
     // Time in milliseconds to wait before attempting to close the circuit (timeout period)
     timeout: parseInt(process.env.CIRCUIT_BREAKER_TIMEOUT ?? `${30_000}`), // 30 seconds
     // Time window in milliseconds for tracking failures
     rollingWindow: parseInt(
       process.env.CIRCUIT_BREAKER_ROLLING_WINDOW ?? `${60_000}`,
-    ), // 10 seconds
-    // Maximum number of requests allowed in half-open state
-    halfOpenMaxRequests: parseInt(
-      process.env.CIRCUIT_BREAKER_HALF_OPEN_MAX_REQUESTS ?? `${10}`,
+    ), // 60 seconds
+    // Percentage of threshold used in HALF_OPEN state (0–100)
+    halfOpenFailureRateThreshold: parseInt(
+      process.env.CIRCUIT_BREAKER_HALF_OPEN_FAILURE_RATE_THRESHOLD ?? `${30}`,
     ),
   },
   jwt: {
@@ -524,6 +539,13 @@ export default () => ({
             process.env.RELAY_NO_FEE_CAMPAIGN_SEPOLIA_RELAY_RULES,
           ) ?? [],
       },
+    },
+    fee: {
+      enabledChainIds: process.env.RELAY_FEE_CHAIN_IDS?.split(',') ?? [],
+      baseUri: process.env.FEE_SERVICE_BASE_URI,
+      feePreviewTtlSeconds: parseInt(
+        process.env.RELAY_FEE_PREVIEW_TTL_SECONDS ?? `${0}`,
+      ),
     },
   },
   safeConfig: {
