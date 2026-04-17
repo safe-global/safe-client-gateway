@@ -98,6 +98,12 @@ export class RedisCacheService
     return await this.client.hGet(key, cacheDir.field);
   }
 
+  /**
+   * Deletes a cache key and writes an invalidation marker.
+   *
+   * @returns The number of keys removed, or 0 if the key did not exist
+   *   **or** the pipeline failed (failures are logged, not thrown).
+   */
   async deleteByKey(key: string): Promise<number> {
     const keyWithPrefix = this._prefixKey(key);
     const invalidationKey = this._prefixKey(`invalidationTimeMs:${key}`);
