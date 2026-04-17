@@ -1,7 +1,9 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import type { AddressBookDbItem } from '@/modules/spaces/domain/address-books/entities/address-book-item.db.entity';
 import type { Space } from '@/modules/spaces/domain/entities/space.entity';
 import type { UpsertAddressBookItemsDto } from '@/modules/spaces/routes/entities/upsert-address-book-items.dto.entity';
+import type { Address } from 'viem';
 
 export const IAddressBookItemsRepository = Symbol(
   'IAddressBookItemsRepository',
@@ -36,6 +38,7 @@ export interface IAddressBookItemsRepository {
     authPayload: AuthPayload;
     spaceId: Space['id'];
     addressBookItems: UpsertAddressBookItemsDto['items'];
+    createdByOverride?: Address;
   }): Promise<Array<AddressBookDbItem>>;
 
   /**
