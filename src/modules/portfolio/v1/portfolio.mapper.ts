@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Injectable } from '@nestjs/common';
 import type { AppBalance as DomainAppBalance } from '@/modules/portfolio/domain/entities/app-balance.entity';
 import type {

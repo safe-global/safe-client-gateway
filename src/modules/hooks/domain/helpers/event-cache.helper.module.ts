@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Module } from '@nestjs/common';
 import { BalancesModule } from '@/modules/balances/balances.module';
 import { BlockchainModule } from '@/modules/blockchain/blockchain.module';

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Injectable, Module } from '@nestjs/common';
 import {
   type AbiParameterToPrimitiveType,

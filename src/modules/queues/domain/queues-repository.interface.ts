@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Module } from '@nestjs/common';
 import type { ConsumeMessage } from 'amqplib';
 import { QueuesApiModule } from '@/modules/queues/datasources/queues-api.module';

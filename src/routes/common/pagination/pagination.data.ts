@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 const QUERY_PARAM_CURSOR = 'cursor';
 const QUERY_PARAM_LIMIT = 'limit';
 const QUERY_PARAM_OFFSET = 'offset';

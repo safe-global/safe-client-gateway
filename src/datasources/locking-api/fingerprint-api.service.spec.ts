@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { unsealEventsResponse } from '@fingerprintjs/fingerprintjs-pro-server-api';
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';

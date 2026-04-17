@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import type { Address, Hash, Hex } from 'viem';
 import { isAddressEqual } from 'viem';

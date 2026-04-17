@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 /**
  * These interfaces map Zerion responses for the list of wallet's fungible positions.
  * Reference documentation: https://developers.zerion.io/reference/listwalletpositions
