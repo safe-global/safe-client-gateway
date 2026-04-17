@@ -41,4 +41,16 @@ export interface IAddressBookRequestsRepository {
     status: keyof typeof AddressBookRequestStatus;
     reviewedBy: Address;
   }): Promise<void>;
+
+  transitionFromPending(args: {
+    id: AddressBookRequest['id'];
+    spaceId: Space['id'];
+    toStatus: 'APPROVED' | 'REJECTED';
+    reviewedBy: Address;
+  }): Promise<boolean>;
+
+  revertToPending(args: {
+    id: AddressBookRequest['id'];
+    spaceId: Space['id'];
+  }): Promise<void>;
 }

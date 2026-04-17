@@ -3,7 +3,7 @@ import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity'
 import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
 import { IMembersRepository } from '@/modules/users/domain/members.repository.interface';
 import { IUserAddressBookItemsRepository } from '@/modules/spaces/domain/address-books/user-address-book-items.repository.interface';
-import { SpaceAddressBookDto } from '@/modules/spaces/routes/entities/space-address-book.dto.entity';
+import { UserAddressBookDto } from '@/modules/spaces/routes/entities/space-address-book.dto.entity';
 import { assertMember } from '@/modules/spaces/routes/utils/space-assert.utils';
 import type { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
 import type { UpsertAddressBookItemsDto } from '@/modules/spaces/routes/entities/upsert-address-book-items.dto.entity';
@@ -22,7 +22,7 @@ export class UserAddressBookService {
   public async findAll(
     authPayload: AuthPayload,
     spaceId: Space['id'],
-  ): Promise<SpaceAddressBookDto> {
+  ): Promise<UserAddressBookDto> {
     const userId = getAuthenticatedUserIdOrFail(authPayload);
     await assertMember(this.membersRepository, spaceId, userId);
 
@@ -38,7 +38,7 @@ export class UserAddressBookService {
     authPayload: AuthPayload,
     spaceId: Space['id'],
     dto: UpsertAddressBookItemsDto,
-  ): Promise<SpaceAddressBookDto> {
+  ): Promise<UserAddressBookDto> {
     if (!authPayload.isSiwe()) {
       throw new ForbiddenException(
         'Address book writes require wallet authentication',
@@ -82,13 +82,12 @@ export class UserAddressBookService {
   private mapItems(
     spaceId: Space['id'],
     items: Array<UserAddressBookItem>,
-  ): SpaceAddressBookDto {
+  ): UserAddressBookDto {
     const data = items.map((item) => ({
       name: item.name,
       address: item.address,
       chainIds: item.chainIds,
       createdBy: item.createdBy,
-      lastUpdatedBy: item.createdBy,
       createdAt: item.createdAt,
       updatedAt: item.updatedAt,
     }));

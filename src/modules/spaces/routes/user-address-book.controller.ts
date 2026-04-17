@@ -3,7 +3,7 @@ import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity'
 import { Auth } from '@/modules/auth/routes/decorators/auth.decorator';
 import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
 import { UserAddressBookService } from '@/modules/spaces/routes/user-address-book.service';
-import { SpaceAddressBookDto } from '@/modules/spaces/routes/entities/space-address-book.dto.entity';
+import { UserAddressBookDto } from '@/modules/spaces/routes/entities/space-address-book.dto.entity';
 import {
   Body,
   Controller,
@@ -56,7 +56,7 @@ export class UserAddressBookController {
   })
   @ApiOkResponse({
     description: 'Private address book items retrieved successfully',
-    type: SpaceAddressBookDto,
+    type: UserAddressBookDto,
   })
   @ApiUnauthorizedResponse({ description: 'Authentication required' })
   @ApiForbiddenResponse({
@@ -68,7 +68,7 @@ export class UserAddressBookController {
     @Auth() authPayload: AuthPayload,
     @Param('spaceId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
     spaceId: number,
-  ): Promise<SpaceAddressBookDto> {
+  ): Promise<UserAddressBookDto> {
     return this.service.findAll(authPayload, spaceId);
   }
 
@@ -89,7 +89,7 @@ export class UserAddressBookController {
   })
   @ApiOkResponse({
     description: 'Private address book updated successfully',
-    type: SpaceAddressBookDto,
+    type: UserAddressBookDto,
   })
   @ApiUnauthorizedResponse({ description: 'Authentication required' })
   @ApiForbiddenResponse({
@@ -104,7 +104,7 @@ export class UserAddressBookController {
     spaceId: number,
     @Body(new ValidationPipe(UpsertAddressBookItemsSchema))
     dto: UpsertAddressBookItemsDto,
-  ): Promise<SpaceAddressBookDto> {
+  ): Promise<UserAddressBookDto> {
     return this.service.upsertMany(authPayload, spaceId, dto);
   }
 

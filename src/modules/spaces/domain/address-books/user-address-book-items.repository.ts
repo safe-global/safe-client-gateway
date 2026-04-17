@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import { IConfigurationService } from '@/config/configuration.service.interface';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { UserAddressBookItem as DbUserAddressBookItem } from '@/modules/spaces/datasources/entities/user-address-book-item.entity.db';
 import { IUserAddressBookItemsRepository } from '@/modules/spaces/domain/address-books/user-address-book-items.repository.interface';
@@ -6,13 +7,23 @@ import type { UserAddressBookItem } from '@/modules/spaces/domain/address-books/
 import type { AddressBookItem } from '@/modules/spaces/domain/address-books/entities/address-book-item.entity';
 import type { Space } from '@/modules/spaces/domain/entities/space.entity';
 import type { User } from '@/modules/users/domain/entities/user.entity';
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { In, type EntityManager } from 'typeorm';
 import { isAddressEqual, type Address } from 'viem';
 
 @Injectable()
 export class UserAddressBookItemsRepository implements IUserAddressBookItemsRepository {
-  constructor(private readonly db: PostgresDatabaseService) {}
+  private readonly maxItems: number;
+
+  constructor(
+    private readonly db: PostgresDatabaseService,
+    @Inject(IConfigurationService)
+    private readonly configurationService: IConfigurationService,
+  ) {
+    this.maxItems = this.configurationService.getOrThrow<number>(
+      'spaces.addressBooks.maxItems',
+    );
+  }
 
   public async findBySpaceAndCreator(args: {
     spaceId: Space['id'];
@@ -47,12 +58,7 @@ export class UserAddressBookItemsRepository implements IUserAddressBookItemsRepo
     const repository = await this.db.getRepository(DbUserAddressBookItem);
 
     await this.db.transaction(async (entityManager) => {
-      await this.updateExisting({
-        entityManager,
-        ...args,
-      });
-
-      const existingAddresses = await this.getExistingAddresses({
+      const existingAddresses = await this.updateExisting({
         entityManager,
         ...args,
       });
@@ -65,6 +71,12 @@ export class UserAddressBookItemsRepository implements IUserAddressBookItemsRepo
       );
 
       if (newItems.length > 0) {
+        await this.checkItemsLimit({
+          entityManager,
+          spaceId: args.spaceId,
+          creatorId: args.creatorId,
+          newItemsCount: newItems.length,
+        });
         await entityManager.getRepository(DbUserAddressBookItem).insert(
           newItems.map((item) => ({
             space: { id: args.spaceId },
@@ -102,7 +114,7 @@ export class UserAddressBookItemsRepository implements IUserAddressBookItemsRepo
     spaceId: Space['id'];
     creatorId: User['id'];
     items: Array<AddressBookItem>;
-  }): Promise<void> {
+  }): Promise<Array<UserAddressBookItem['address']>> {
     const repository = args.entityManager.getRepository(DbUserAddressBookItem);
     const existing = await repository.findBy({
       space: { id: args.spaceId },
@@ -121,20 +133,27 @@ export class UserAddressBookItemsRepository implements IUserAddressBookItemsRepo
         });
       }
     }
+
+    return existing.map((item) => item.address);
   }
 
-  private async getExistingAddresses(args: {
+  private async checkItemsLimit(args: {
     entityManager: EntityManager;
     spaceId: Space['id'];
     creatorId: User['id'];
-    items: Array<AddressBookItem>;
-  }): Promise<Array<UserAddressBookItem['address']>> {
+    newItemsCount: number;
+  }): Promise<void> {
     const repository = args.entityManager.getRepository(DbUserAddressBookItem);
-    const existing = await repository.findBy({
-      space: { id: args.spaceId },
-      creator: { id: args.creatorId },
-      address: In(args.items.map((item) => item.address)),
+    const existingCount = await repository.count({
+      where: {
+        space: { id: args.spaceId },
+        creator: { id: args.creatorId },
+      },
     });
-    return existing.map((item) => item.address);
+    if (existingCount + args.newItemsCount > this.maxItems) {
+      throw new BadRequestException(
+        `This Space only allows a maximum of ${this.maxItems} private contacts per user. You can only add up to ${this.maxItems - existingCount} more.`,
+      );
+    }
   }
 }

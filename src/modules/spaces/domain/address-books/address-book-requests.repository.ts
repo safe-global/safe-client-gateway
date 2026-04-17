@@ -116,4 +116,29 @@ export class AddressBookRequestsRepository implements IAddressBookRequestsReposi
       reviewedBy: args.reviewedBy,
     });
   }
+
+  public async transitionFromPending(args: {
+    id: AddressBookRequest['id'];
+    spaceId: Space['id'];
+    toStatus: 'APPROVED' | 'REJECTED';
+    reviewedBy: Address;
+  }): Promise<boolean> {
+    const repository = await this.db.getRepository(DbAddressBookRequest);
+    const result = await repository.update(
+      { id: args.id, space: { id: args.spaceId }, status: 'PENDING' },
+      { status: args.toStatus, reviewedBy: args.reviewedBy },
+    );
+    return (result.affected ?? 0) > 0;
+  }
+
+  public async revertToPending(args: {
+    id: AddressBookRequest['id'];
+    spaceId: Space['id'];
+  }): Promise<void> {
+    const repository = await this.db.getRepository(DbAddressBookRequest);
+    await repository.update(
+      { id: args.id, space: { id: args.spaceId } },
+      { status: 'PENDING', reviewedBy: null },
+    );
+  }
 }

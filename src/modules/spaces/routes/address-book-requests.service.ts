@@ -13,6 +13,7 @@ import {
 import {
   assertMember,
   assertAdmin,
+  isAdmin,
 } from '@/modules/spaces/routes/utils/space-assert.utils';
 import type { AddressBookRequest } from '@/modules/spaces/domain/address-books/entities/address-book-request.entity';
 import type { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
@@ -47,10 +48,9 @@ export class AddressBookRequestsService {
     const userId = getAuthenticatedUserIdOrFail(authPayload);
     await assertMember(this.membersRepository, spaceId, userId);
 
-    // Check if user is admin to determine what they can see
-    const isAdmin = await this.isSpaceAdmin(spaceId, userId);
+    const callerIsAdmin = await isAdmin(this.spacesRepository, spaceId, userId);
 
-    const requests = isAdmin
+    const requests = callerIsAdmin
       ? await this.requestsRepository.findBySpaceId({
           spaceId,
           status: 'PENDING',
@@ -95,7 +95,7 @@ export class AddressBookRequestsService {
     const request = await this.requestsRepository.create({
       spaceId,
       requestedById: userId,
-      requestedByWallet: authPayload.signer_address as Address,
+      requestedByWallet: authPayload.signer_address,
       item: {
         name: privateContact.name,
         address: privateContact.address,
@@ -125,30 +125,38 @@ export class AddressBookRequestsService {
       spaceId,
     });
 
-    if (request.status !== 'PENDING') {
+    // Atomically claim the request so concurrent approvals cannot both proceed.
+    const claimed = await this.requestsRepository.transitionFromPending({
+      id: requestId,
+      spaceId,
+      toStatus: 'APPROVED',
+      reviewedBy: authPayload.signer_address,
+    });
+    if (!claimed) {
       throw new BadRequestException('Only pending requests can be approved.');
     }
 
-    // Add to the shared space address book, attributing to the original requester
-    await this.spaceAddressBookRepository.upsertMany({
-      authPayload,
-      spaceId,
-      addressBookItems: [
-        {
-          name: request.name,
-          address: request.address,
-          chainIds: request.chainIds,
-        },
-      ],
-      createdByOverride: request.requestedByWallet,
-    });
-
-    // Mark the request as approved
-    await this.requestsRepository.updateStatus({
-      id: requestId,
-      status: 'APPROVED',
-      reviewedBy: authPayload.signer_address,
-    });
+    try {
+      await this.spaceAddressBookRepository.upsertMany({
+        authPayload,
+        spaceId,
+        addressBookItems: [
+          {
+            name: request.name,
+            address: request.address,
+            chainIds: request.chainIds,
+          },
+        ],
+        createdByOverride: request.requestedByWallet,
+      });
+    } catch (err) {
+      // Compensate so the request can be retried if the upsert fails.
+      await this.requestsRepository.revertToPending({
+        id: requestId,
+        spaceId,
+      });
+      throw err;
+    }
   }
 
   public async reject(
@@ -165,31 +173,14 @@ export class AddressBookRequestsService {
     const userId = getAuthenticatedUserIdOrFail(authPayload);
     await assertAdmin(this.spacesRepository, spaceId, userId);
 
-    const request = await this.requestsRepository.findOneOrFail({
+    const rejected = await this.requestsRepository.transitionFromPending({
       id: requestId,
       spaceId,
-    });
-
-    if (request.status !== 'PENDING') {
-      throw new BadRequestException('Only pending requests can be rejected.');
-    }
-
-    await this.requestsRepository.updateStatus({
-      id: requestId,
-      status: 'REJECTED',
+      toStatus: 'REJECTED',
       reviewedBy: authPayload.signer_address,
     });
-  }
-
-  private async isSpaceAdmin(
-    spaceId: Space['id'],
-    userId: number,
-  ): Promise<boolean> {
-    try {
-      await assertAdmin(this.spacesRepository, spaceId, userId);
-      return true;
-    } catch {
-      return false;
+    if (!rejected) {
+      throw new BadRequestException('Only pending requests can be rejected.');
     }
   }
 
