@@ -35,7 +35,7 @@ import {
   getZerionHeaders,
   normalizeZerionBalances,
 } from '@/modules/balances/datasources/zerion-api.helpers';
-import type { ZerionChainMappingService } from '@/modules/zerion/datasources/zerion-chain-mapping.service';
+import { ZerionChainMappingService } from '@/modules/zerion/datasources/zerion-chain-mapping.service';
 
 /**
  * Zerion portfolio API integration.
@@ -68,6 +68,7 @@ export class ZerionPortfolioApi implements IPortfolioApi {
     private readonly httpErrorFactory: HttpErrorFactory,
     @Inject(LoggingService) readonly _loggingService: ILoggingService,
     @Inject(CacheService) readonly _cacheService: ICacheService,
+    @Inject(ZerionChainMappingService)
     private readonly zerionChainMappingService: ZerionChainMappingService,
   ) {
     this.apiKey = this.configurationService.get<string>(
