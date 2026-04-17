@@ -14,6 +14,7 @@ import {
   ApiOperation,
   ApiParam,
   ApiBody,
+  ApiQuery,
   ApiBadRequestResponse,
   ApiTooManyRequestsResponse,
   ApiNotFoundResponse,
@@ -136,6 +137,12 @@ export class RelayController {
     name: 'safeAddress',
     type: 'string',
     description: 'Safe contract address (0x prefixed hex string)',
+  })
+  @ApiQuery({
+    name: 'safeTxHash',
+    required: false,
+    description:
+      'Safe transaction hash (0x prefixed hex string). Required for chains enabled for relay-fee relayer',
   })
   @ApiOkResponse({
     type: RelaysRemaining,
