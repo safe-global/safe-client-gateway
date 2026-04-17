@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 /**
  * Represents a type that has not been validated yet but should be
  * before being used.

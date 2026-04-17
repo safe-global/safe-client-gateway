@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable, type OnModuleDestroy } from '@nestjs/common';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import type { RedisClientType } from '@/datasources/cache/cache.module';

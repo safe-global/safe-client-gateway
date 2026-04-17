@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Module } from '@nestjs/common';
 import { AlertsModule } from '@/modules/alerts/alerts.module';
 import { AuthModule } from '@/modules/auth/auth.module';

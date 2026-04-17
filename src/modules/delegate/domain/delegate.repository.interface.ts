@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Module } from '@nestjs/common';
 import type { Address } from 'viem';
 import type { Page } from '@/domain/entities/page.entity';

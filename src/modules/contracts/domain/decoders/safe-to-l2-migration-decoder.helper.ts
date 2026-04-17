@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Injectable } from '@nestjs/common';
 import type { Address, Hex } from 'viem';
 import SafeToL2Migration from '@/abis/safe/v1.4.1/SafeToL2Migration.abi';

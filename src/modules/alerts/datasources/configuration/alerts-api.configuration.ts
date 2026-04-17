@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { registerAs } from '@nestjs/config';
 import { z } from 'zod';
 import configurationValidator from '@/config/configuration.validator';

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { indexingStatusBuilder } from '@/modules/chains/domain/entities/__tests__/indexing-status.builder';
 import { IndexingStatusSchema } from '@/modules/indexing/domain/entities/indexing-status.entity';

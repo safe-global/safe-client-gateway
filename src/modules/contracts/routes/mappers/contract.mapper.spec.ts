@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { ContractMapper } from '@/modules/contracts/routes/mappers/contract.mapper';
 import {
   abiBuilder,

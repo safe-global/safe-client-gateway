@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import type { Builder, IBuilder } from '@/__tests__/builder';
 import { zerionApplicationMetadataBuilder } from '@/modules/balances/datasources/entities/__tests__/zerion-balance.entity.builder';

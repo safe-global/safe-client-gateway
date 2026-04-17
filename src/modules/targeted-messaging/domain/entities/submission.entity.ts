@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
 import { RowSchema } from '@/datasources/db/v1/entities/row.entity';
 import { OutreachSchema } from '@/modules/targeted-messaging/domain/entities/outreach.entity';

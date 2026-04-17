@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { rewardsFeeBuilder } from '@/modules/staking/datasources/entities/__tests__/rewards-fee.entity.builder';
 import { RewardsFeeSchema } from '@/modules/staking/datasources/entities/rewards-fee.entity';

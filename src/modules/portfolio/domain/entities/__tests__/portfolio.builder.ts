@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { IBuilder } from '@/__tests__/builder';
 import { Builder } from '@/__tests__/builder';
 import { appBalanceBuilder } from '@/modules/portfolio/domain/entities/__tests__/app-balance.builder';

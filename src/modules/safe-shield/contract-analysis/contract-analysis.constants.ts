@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { Address } from 'viem';
 import { CommonStatus } from '@/modules/safe-shield/entities/analysis-result.entity';
 import {

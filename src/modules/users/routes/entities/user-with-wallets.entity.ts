@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { ApiExtraModels, ApiProperty } from '@nestjs/swagger';
 import type { Address } from 'viem';
 import type { User } from '@/modules/users/domain/entities/user.entity';

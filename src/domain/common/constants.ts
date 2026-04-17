@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 /**
  * The maximum safe integer for the database.
  * This is the maximum value that can be stored in the database for an integer column.
