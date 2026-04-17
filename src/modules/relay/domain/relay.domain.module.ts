@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Module } from '@nestjs/common';
 import { LimitAddressesMapper } from '@/modules/relay/domain/limit-addresses.mapper';
 import { RelayRepository } from '@/modules/relay/domain/relay.repository';
@@ -8,8 +9,10 @@ import { DelayModifierDecoder } from '@/modules/alerts/domain/contracts/decoders
 import { BalancesModule } from '@/modules/balances/balances.module';
 import { DailyLimitRelayer } from '@/modules/relay/domain/relayers/daily-limit.relayer';
 import { NoFeeCampaignRelayer } from '@/modules/relay/domain/relayers/no-fee-campaign.relayer';
+import { RelayFeeRelayer } from '@/modules/relay/domain/relayers/relay-fee.relayer';
 import { RelayManager } from '@/modules/relay/domain/relay.manager';
 import { IRelayManager } from '@/modules/relay/domain/interfaces/relay-manager.interface';
+import { FeeServiceApiModule } from '@/datasources/fee-service-api/fee-service-api.module';
 
 @Module({
   imports: [
@@ -17,6 +20,7 @@ import { IRelayManager } from '@/modules/relay/domain/interfaces/relay-manager.i
     RelayDecodersModule,
     SafeRepositoryModule,
     BalancesModule,
+    FeeServiceApiModule,
   ],
   providers: [
     LimitAddressesMapper,
@@ -24,6 +28,7 @@ import { IRelayManager } from '@/modules/relay/domain/interfaces/relay-manager.i
     DelayModifierDecoder,
     DailyLimitRelayer,
     NoFeeCampaignRelayer,
+    RelayFeeRelayer,
     {
       provide: IRelayManager,
       useClass: RelayManager,

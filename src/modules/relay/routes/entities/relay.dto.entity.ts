@@ -6,18 +6,32 @@ import type { Address, Hex } from 'viem';
 
 export class RelayDto implements z.infer<typeof RelayDtoSchema> {
   @ApiProperty()
-  version!: string;
+  version: string;
 
   @ApiProperty()
-  to!: Address;
+  to: Address;
 
   @ApiProperty()
-  data!: Hex;
+  data: Hex;
 
   @ApiPropertyOptional({
     type: String,
     nullable: true,
     description: `Accepted for backward compatibility and validation; not forwarded to the relay provider (Gelato).`,
   })
-  gasLimit!: bigint | null;
+  gasLimit: bigint | null;
+
+  @ApiPropertyOptional({
+    type: String,
+    description: 'Safe transaction hash for relay-fee eligibility check',
+  })
+  safeTxHash?: Hex;
+
+  constructor(dto: z.infer<typeof RelayDtoSchema>) {
+    this.version = dto.version;
+    this.to = dto.to;
+    this.data = dto.data;
+    this.gasLimit = dto.gasLimit;
+    this.safeTxHash = dto.safeTxHash;
+  }
 }
