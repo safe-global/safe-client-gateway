@@ -1,8 +1,8 @@
+import { faker } from '@faker-js/faker';
+import { getAddress } from 'viem';
 import type { IBuilder } from '@/__tests__/builder';
 import { Builder } from '@/__tests__/builder';
 import type { LockingRank } from '@/modules/community/domain/entities/locking-rank.entity';
-import { faker } from '@faker-js/faker';
-import { getAddress } from 'viem';
 
 export function lockingRankBuilder(): IBuilder<LockingRank> {
   return new Builder<LockingRank>()

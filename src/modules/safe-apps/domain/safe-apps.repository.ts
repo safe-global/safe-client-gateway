@@ -1,8 +1,8 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { IConfigApi } from '@/domain/interfaces/config-api.interface';
-import { SafeApp } from '@/modules/safe-apps/domain/entities/safe-app.entity';
-import { ISafeAppsRepository } from '@/modules/safe-apps/domain/safe-apps.repository.interface';
+import type { SafeApp } from '@/modules/safe-apps/domain/entities/safe-app.entity';
 import { SafeAppsSchema } from '@/modules/safe-apps/domain/entities/schemas/safe-app.schema';
+import type { ISafeAppsRepository } from '@/modules/safe-apps/domain/safe-apps.repository.interface';
 
 @Injectable()
 export class SafeAppsRepository implements ISafeAppsRepository {
@@ -21,7 +21,7 @@ export class SafeAppsRepository implements ISafeAppsRepository {
     return SafeAppsSchema.parse(safeApps);
   }
 
-  async clearSafeApps(chainId: string): Promise<void> {
+  clearSafeApps(chainId: string): Promise<void> {
     return this.configApi.clearSafeApps(chainId);
   }
 

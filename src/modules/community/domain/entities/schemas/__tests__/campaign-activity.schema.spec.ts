@@ -1,7 +1,7 @@
-import { campaignActivityBuilder } from '@/modules/community/domain/entities/__tests__/campaign-activity.builder';
-import { CampaignActivitySchema } from '@/modules/community/domain/entities/campaign-activity.entity';
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress } from 'viem';
+import { campaignActivityBuilder } from '@/modules/community/domain/entities/__tests__/campaign-activity.builder';
+import { CampaignActivitySchema } from '@/modules/community/domain/entities/campaign-activity.entity';
 
 describe('CampaignActivitySchema', () => {
   it('should validate a valid CampaignActivity', () => {

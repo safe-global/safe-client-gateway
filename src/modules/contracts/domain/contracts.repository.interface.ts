@@ -1,5 +1,5 @@
-import type { Contract } from '@/modules/data-decoder/domain/v2/entities/contract.entity';
 import type { Address } from 'viem';
+import type { Contract } from '@/modules/data-decoder/domain/v2/entities/contract.entity';
 
 export const IContractsRepository = Symbol('IContractsRepository');
 

@@ -1,3 +1,5 @@
+import { faker } from '@faker-js/faker';
+import { getAddress } from 'viem';
 import type { IBuilder } from '@/__tests__/builder';
 import { Builder } from '@/__tests__/builder';
 import type {
@@ -7,8 +9,6 @@ import type {
   ZerionCollectionInfo,
   ZerionNFTInfo,
 } from '@/modules/balances/datasources/entities/zerion-collectible.entity';
-import { faker } from '@faker-js/faker';
-import { getAddress } from 'viem';
 
 export function zerionNFTInfoBuilder(): IBuilder<ZerionNFTInfo> {
   return new Builder<ZerionNFTInfo>()

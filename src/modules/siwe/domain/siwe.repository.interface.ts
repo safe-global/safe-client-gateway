@@ -1,5 +1,5 @@
-import type { SiweMessage } from 'viem/siwe';
 import type { Hex } from 'viem';
+import type { SiweMessage } from 'viem/siwe';
 
 export const ISiweRepository = Symbol('ISiweRepository');
 

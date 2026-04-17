@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
+import { faker } from '@faker-js/faker/.';
 import type { IBuilder } from '@/__tests__/builder';
 import { Builder } from '@/__tests__/builder';
-import { faker } from '@faker-js/faker/.';
-import type { User } from '@/modules/users/datasources/entities/users.entity.db';
 import { getStringEnumKeys } from '@/domain/common/utils/enum';
+import type { User } from '@/modules/users/datasources/entities/users.entity.db';
 import { UserStatus } from '@/modules/users/domain/entities/user.entity';
 
 export function userBuilder(): IBuilder<User> {

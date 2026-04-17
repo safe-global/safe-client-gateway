@@ -1,8 +1,8 @@
+import type { Address } from 'viem';
 import { z } from 'zod';
+import { TransactionBaseSchema } from '@/domain/common/schemas/transaction-base.schema';
 import { AddressSchema as _AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { HexSchema as _HexSchema } from '@/validation/entities/schemas/hex.schema';
-import type { Address } from 'viem';
-import { TransactionBaseSchema } from '@/domain/common/schemas/transaction-base.schema';
 
 // ZodEffects cannot be recursively inferred and need be casted
 const AddressSchema = _AddressSchema as z.ZodType<Address>;

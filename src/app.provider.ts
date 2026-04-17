@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type { DynamicModule, INestApplication } from '@nestjs/common';
 import { VersioningType } from '@nestjs/common';
+import { NestFactory } from '@nestjs/core';
 import type { SwaggerDocumentOptions } from '@nestjs/swagger';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { NestFactory } from '@nestjs/core';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { json } from 'express';
-import cookieParser from 'cookie-parser';
 import type { TestingModule } from '@nestjs/testing';
+import cookieParser from 'cookie-parser';
+import { json } from 'express';
+import { IConfigurationService } from '@/config/configuration.service.interface';
 
 function configureVersioning(app: INestApplication): void {
   app.enableVersioning({
@@ -106,7 +106,9 @@ export abstract class AppProvider<T extends DynamicModule | TestingModule> {
 
   public async provide(module: T): Promise<INestApplication> {
     const app = await this.getApp(module);
-    this.configuration.forEach((f) => f(app));
+    for (const f of this.configuration) {
+      f(app);
+    }
     return app;
   }
 

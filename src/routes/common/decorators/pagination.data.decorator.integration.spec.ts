@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { Controller, Get, INestApplication, Module } from '@nestjs/common';
-import { Test, TestingModule } from '@nestjs/testing';
+
+import type { Server } from 'node:net';
+import { Controller, Get, type INestApplication, Module } from '@nestjs/common';
+import { Test, type TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 import { PaginationDataDecorator } from '@/routes/common/decorators/pagination.data.decorator';
 import { PaginationData } from '@/routes/common/pagination/pagination.data';
-import { Server } from 'net';
 
 describe('PaginationDataDecorator', () => {
   let app: INestApplication<Server>;

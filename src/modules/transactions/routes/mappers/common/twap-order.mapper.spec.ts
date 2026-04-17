@@ -1,24 +1,24 @@
+import { NotFoundException } from '@nestjs/common';
+import { getAddress } from 'viem';
 import { fakeJson } from '@/__tests__/faker';
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
+import type { ILoggingService } from '@/logging/logging.interface';
 import type { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
 import { MultiSendDecoder } from '@/modules/contracts/domain/decoders/multi-send-decoder.helper';
 import { ComposableCowDecoder } from '@/modules/swaps/domain/contracts/decoders/composable-cow-decoder.helper';
 import { GPv2Decoder } from '@/modules/swaps/domain/contracts/decoders/gp-v2-decoder.helper';
+import { fullAppDataBuilder } from '@/modules/swaps/domain/entities/__tests__/full-app-data.builder';
 import type { Order } from '@/modules/swaps/domain/entities/order.entity';
 import type { ISwapsRepository } from '@/modules/swaps/domain/swaps.repository';
 import { tokenBuilder } from '@/modules/tokens/domain/__tests__/token.builder';
 import type { ITokenRepository } from '@/modules/tokens/domain/token.repository.interface';
 import { GPv2OrderHelper } from '@/modules/transactions/routes/helpers/gp-v2-order.helper';
+import { SwapAppsHelper } from '@/modules/transactions/routes/helpers/swap-apps.helper';
 import { SwapOrderHelper } from '@/modules/transactions/routes/helpers/swap-order.helper';
+import { TransactionFinder } from '@/modules/transactions/routes/helpers/transaction-finder.helper';
 import { TwapOrderHelper } from '@/modules/transactions/routes/helpers/twap-order.helper';
 import { TwapOrderMapper } from '@/modules/transactions/routes/mappers/common/twap-order.mapper';
-import type { ILoggingService } from '@/logging/logging.interface';
-import { getAddress } from 'viem';
-import { fullAppDataBuilder } from '@/modules/swaps/domain/entities/__tests__/full-app-data.builder';
-import { TransactionFinder } from '@/modules/transactions/routes/helpers/transaction-finder.helper';
-import { SwapAppsHelper } from '@/modules/transactions/routes/helpers/swap-apps.helper';
-import { NotFoundException } from '@nestjs/common';
 
 const loggingService = {
   debug: jest.fn(),
@@ -110,7 +110,7 @@ describe('TwapOrderMapper', () => {
     mockSwapsRepository.getOrder.mockRejectedValue(
       new Error('Order not found'),
     );
-    mockTokenRepository.getToken.mockImplementation(async ({ address }) => {
+    mockTokenRepository.getToken.mockImplementation(({ address }) => {
       // We only need mock part1 addresses as all parts use the same tokens
       switch (address) {
         case buyToken.address: {
@@ -298,7 +298,7 @@ describe('TwapOrderMapper', () => {
     mockSwapsRepository.getOrder
       .mockResolvedValueOnce(part1)
       .mockResolvedValueOnce(part2);
-    mockTokenRepository.getToken.mockImplementation(async ({ address }) => {
+    mockTokenRepository.getToken.mockImplementation(({ address }) => {
       // We only need mock part1 addresses as all parts use the same tokens
       switch (address) {
         case buyToken.address: {
@@ -442,14 +442,14 @@ describe('TwapOrderMapper', () => {
     const fullAppData = JSON.parse(fakeJson());
 
     mockSwapsRepository.getOrder.mockImplementation(
-      async (_chainId: string, orderUid: string) => {
+      (_chainId: string, orderUid: string) => {
         if (orderUid === part2.uid) {
           return Promise.resolve(part2);
         }
         return Promise.reject(new NotFoundException());
       },
     );
-    mockTokenRepository.getToken.mockImplementation(async ({ address }) => {
+    mockTokenRepository.getToken.mockImplementation(({ address }) => {
       // We only need mock part1 addresses as all parts use the same tokens
       switch (address) {
         case buyToken.address: {
@@ -683,7 +683,7 @@ describe('TwapOrderMapper', () => {
     const fullAppData = JSON.parse(fakeJson());
 
     mockSwapsRepository.getOrder.mockResolvedValueOnce(part1);
-    mockTokenRepository.getToken.mockImplementation(async ({ address }) => {
+    mockTokenRepository.getToken.mockImplementation(({ address }) => {
       // We only need mock part1 addresses as all parts use the same tokens
       switch (address) {
         case buyToken.address: {
@@ -784,14 +784,14 @@ describe('TwapOrderMapper', () => {
       .build();
 
     mockSwapsRepository.getOrder.mockImplementation(
-      async (_chainId: string, orderUid: string) => {
+      (_chainId: string, orderUid: string) => {
         if (orderUid === part1.uid) {
           return Promise.resolve(part1);
         }
         return Promise.reject(new NotFoundException());
       },
     );
-    mockTokenRepository.getToken.mockImplementation(async ({ address }) => {
+    mockTokenRepository.getToken.mockImplementation(({ address }) => {
       // We only need mock part1 addresses as all parts use the same tokens
       switch (address) {
         case buyToken.address: {
@@ -854,7 +854,7 @@ describe('TwapOrderMapper', () => {
     mockSwapsRepository.getOrder.mockRejectedValue(
       new Error('Order not found'),
     );
-    mockTokenRepository.getToken.mockImplementation(async ({ address }) => {
+    mockTokenRepository.getToken.mockImplementation(({ address }) => {
       // We only need mock part1 addresses as all parts use the same tokens
       switch (address) {
         case buyToken.address: {
@@ -1014,7 +1014,7 @@ describe('TwapOrderMapper', () => {
       const fullAppData = JSON.parse(fakeJson());
 
       mockSwapsRepository.getOrder.mockImplementation(
-        async (_chainId: string, orderUid: string) => {
+        (_chainId: string, orderUid: string) => {
           const order = orders.find((order) => order.uid === orderUid);
           if (order) {
             return Promise.resolve(order);
@@ -1022,7 +1022,7 @@ describe('TwapOrderMapper', () => {
           return Promise.reject(new NotFoundException());
         },
       );
-      mockTokenRepository.getToken.mockImplementation(async ({ address }) => {
+      mockTokenRepository.getToken.mockImplementation(({ address }) => {
         // We only need mock part1 addresses as all parts use the same tokens
         switch (address) {
           case buyToken.address: {
@@ -1132,7 +1132,7 @@ describe('TwapOrderMapper', () => {
       const fullAppData = JSON.parse(fakeJson());
 
       mockSwapsRepository.getOrder.mockImplementation(
-        async (_chainId: string, orderUid: string) => {
+        (_chainId: string, orderUid: string) => {
           const order = orders.find((order) => order.uid === orderUid);
           if (order) {
             return Promise.resolve(order);
@@ -1140,7 +1140,7 @@ describe('TwapOrderMapper', () => {
           return Promise.reject(new NotFoundException());
         },
       );
-      mockTokenRepository.getToken.mockImplementation(async ({ address }) => {
+      mockTokenRepository.getToken.mockImplementation(({ address }) => {
         // We only need mock part1 addresses as all parts use the same tokens
         switch (address) {
           case buyToken.address: {
@@ -1292,7 +1292,7 @@ describe('TwapOrderMapper', () => {
       const fullAppData = JSON.parse(fakeJson());
 
       mockSwapsRepository.getOrder.mockImplementation(
-        async (_chainId: string, orderUid: string) => {
+        (_chainId: string, orderUid: string) => {
           const order = orders.find((order) => order.uid === orderUid);
           if (order) {
             return Promise.resolve(order);
@@ -1300,7 +1300,7 @@ describe('TwapOrderMapper', () => {
           return Promise.reject(new NotFoundException());
         },
       );
-      mockTokenRepository.getToken.mockImplementation(async ({ address }) => {
+      mockTokenRepository.getToken.mockImplementation(({ address }) => {
         // We only need mock part1 addresses as all parts use the same tokens
         switch (address) {
           case buyToken.address: {
@@ -1489,7 +1489,7 @@ describe('TwapOrderMapper', () => {
       const fullAppData = JSON.parse(fakeJson());
 
       mockSwapsRepository.getOrder.mockImplementation(
-        async (_chainId: string, orderUid: string) => {
+        (_chainId: string, orderUid: string) => {
           const order = orders.find((order) => order.uid === orderUid);
           if (order) {
             return Promise.resolve(order);
@@ -1497,7 +1497,7 @@ describe('TwapOrderMapper', () => {
           return Promise.reject(new NotFoundException());
         },
       );
-      mockTokenRepository.getToken.mockImplementation(async ({ address }) => {
+      mockTokenRepository.getToken.mockImplementation(({ address }) => {
         // We only need mock part1 addresses as all parts use the same tokens
         switch (address) {
           case buyToken.address: {
@@ -1685,7 +1685,7 @@ describe('TwapOrderMapper', () => {
       const fullAppData = JSON.parse(fakeJson());
 
       mockSwapsRepository.getOrder.mockImplementation(
-        async (_chainId: string, orderUid: string) => {
+        (_chainId: string, orderUid: string) => {
           const order = orders.find((order) => order.uid === orderUid);
           if (order) {
             return Promise.resolve(order);
@@ -1693,7 +1693,7 @@ describe('TwapOrderMapper', () => {
           return Promise.reject(new NotFoundException());
         },
       );
-      mockTokenRepository.getToken.mockImplementation(async ({ address }) => {
+      mockTokenRepository.getToken.mockImplementation(({ address }) => {
         // We only need mock part1 addresses as all parts use the same tokens
         switch (address) {
           case buyToken.address: {

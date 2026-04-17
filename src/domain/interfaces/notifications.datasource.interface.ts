@@ -1,7 +1,7 @@
-import type { UpsertSubscriptionsDto } from '@/modules/notifications/domain/v2/entities/upsert-subscriptions.dto.entity';
-import type { NotificationType } from '@/modules/notifications/domain/v2/entities/notification-type.entity';
-import type { UUID } from 'crypto';
+import type { UUID } from 'node:crypto';
 import type { Address } from 'viem';
+import type { NotificationType } from '@/modules/notifications/domain/v2/entities/notification-type.entity';
+import type { UpsertSubscriptionsDto } from '@/modules/notifications/domain/v2/entities/upsert-subscriptions.dto.entity';
 
 export const INotificationsDatasource = Symbol('INotificationsDatasource');
 

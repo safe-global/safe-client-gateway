@@ -1,8 +1,8 @@
+import { faker } from '@faker-js/faker';
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
-import { SiweApi } from '@/modules/siwe/datasources/siwe-api.service';
 import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
-import { faker } from '@faker-js/faker';
+import { SiweApi } from '@/modules/siwe/datasources/siwe-api.service';
 
 describe('SiweApiService', () => {
   let service: SiweApi;

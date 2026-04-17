@@ -1,7 +1,7 @@
+import { faker } from '@faker-js/faker';
 import type { IBuilder } from '@/__tests__/builder';
 import { Builder } from '@/__tests__/builder';
 import type { IndexingStatus } from '@/modules/indexing/domain/entities/indexing-status.entity';
-import { faker } from '@faker-js/faker';
 
 export function indexingStatusBuilder(): IBuilder<IndexingStatus> {
   return new Builder<IndexingStatus>()

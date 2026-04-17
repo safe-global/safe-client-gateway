@@ -1,7 +1,7 @@
+import type { Readable, Writable } from 'node:stream';
+import { pipeline } from 'node:stream/promises';
 import { Injectable } from '@nestjs/common';
-import { ColumnOption, Options, stringify } from 'csv-stringify';
-import { Readable, Writable } from 'stream';
-import { pipeline } from 'stream/promises';
+import { type ColumnOption, type Options, stringify } from 'csv-stringify';
 
 export interface CsvOptions extends Options {
   columns: Array<ColumnOption>;

@@ -1,14 +1,14 @@
-import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
-import { ZerionBalancesApi } from '@/modules/balances/datasources/zerion-balances-api.service';
-import type { ICacheService } from '@/datasources/cache/cache.service.interface';
-import type { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
-import type { INetworkService } from '@/datasources/network/network.service.interface';
-import { balancesProviderBuilder } from '@/modules/chains/domain/entities/__tests__/balances-provider.builder';
-import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
-import type { ILoggingService } from '@/logging/logging.interface';
-import { rawify } from '@/validation/entities/raw.entity';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
+import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
+import type { ICacheService } from '@/datasources/cache/cache.service.interface';
+import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
+import type { INetworkService } from '@/datasources/network/network.service.interface';
+import type { ILoggingService } from '@/logging/logging.interface';
+import { ZerionBalancesApi } from '@/modules/balances/datasources/zerion-balances-api.service';
+import { balancesProviderBuilder } from '@/modules/chains/domain/entities/__tests__/balances-provider.builder';
+import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
+import { rawify } from '@/validation/entities/raw.entity';
 
 const mockCacheService = jest.mocked({
   increment: jest.fn(),

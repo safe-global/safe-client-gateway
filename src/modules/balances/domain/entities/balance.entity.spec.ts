@@ -1,11 +1,11 @@
+import { faker } from '@faker-js/faker';
+import { type Address, getAddress } from 'viem';
 import { balanceBuilder } from '@/modules/balances/domain/entities/__tests__/balance.builder';
 import {
   BalanceSchema,
   Erc20BalanceSchema,
   NativeBalanceSchema,
 } from '@/modules/balances/domain/entities/balance.entity';
-import { faker } from '@faker-js/faker';
-import { type Address, getAddress } from 'viem';
 
 describe('Balance entity schemas', () => {
   describe('NativeBalanceSchema', () => {
@@ -23,9 +23,9 @@ describe('Balance entity schemas', () => {
     it('should allow optional tokenAddress and token and default to null', () => {
       const nativeBalance = balanceBuilder().build();
       // @ts-expect-error - inferred types don't allow optional fields
-      delete nativeBalance.tokenAddress;
+      nativeBalance.tokenAddress = undefined;
       // @ts-expect-error - inferred types don't allow optional fields
-      delete nativeBalance.token;
+      nativeBalance.token = undefined;
 
       const result = NativeBalanceSchema.safeParse(nativeBalance);
 
@@ -152,9 +152,9 @@ describe('Balance entity schemas', () => {
     it('should allow optional fiatBalance and fiatConversion and default to null', () => {
       const nativeBalance = balanceBuilder().build();
       // @ts-expect-error - inferred types don't allow optional fields
-      delete nativeBalance.fiatBalance;
+      nativeBalance.fiatBalance = undefined;
       // @ts-expect-error - inferred types don't allow optional fields
-      delete nativeBalance.fiatConversion;
+      nativeBalance.fiatConversion = undefined;
 
       const result = BalanceSchema.safeParse(nativeBalance);
 
@@ -165,7 +165,7 @@ describe('Balance entity schemas', () => {
     it('should now allow a malformed balance-type', () => {
       const nativeBalance = balanceBuilder().build();
       // @ts-expect-error - inferred types don't allow optional fields
-      delete nativeBalance.token; // Native balance-like, but ERC-20 balance requires it
+      nativeBalance.token = undefined; // Native balance-like, but ERC-20 balance requires it
 
       const result = BalanceSchema.safeParse(nativeBalance);
 

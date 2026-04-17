@@ -1,3 +1,5 @@
+import { faker } from '@faker-js/faker';
+import { type Address, getAddress } from 'viem';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import {
   lockEventItemBuilder,
@@ -11,8 +13,6 @@ import {
   UnlockEventItemSchema,
   WithdrawEventItemSchema,
 } from '@/modules/community/domain/entities/schemas/locking-event.schema';
-import { faker } from '@faker-js/faker';
-import { type Address, getAddress } from 'viem';
 
 describe('Locking event schemas', () => {
   describe('LockingEventItemSchema', () => {
@@ -442,7 +442,7 @@ describe('Locking event schemas', () => {
       ['LockingEventItem', lockEventItemBuilder],
       ['UnlockEventItem', unlockEventItemBuilder],
       ['WithdrawEventItem', withdrawEventItemBuilder],
-    ])(`should validate a valid %s page`, (event, eventBuilder) => {
+    ])(`should validate a valid %s page`, (_event, eventBuilder) => {
       const lockingEvent = eventBuilder().build();
       const lockingEventPage = pageBuilder()
         .with('results', [lockingEvent])

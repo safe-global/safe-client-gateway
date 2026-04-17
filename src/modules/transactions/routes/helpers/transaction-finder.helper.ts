@@ -1,6 +1,6 @@
-import { MultiSendDecoder } from '@/modules/contracts/domain/decoders/multi-send-decoder.helper';
 import { Injectable, Module } from '@nestjs/common';
 import type { Address, Hex } from 'viem';
+import { MultiSendDecoder } from '@/modules/contracts/domain/decoders/multi-send-decoder.helper';
 
 @Injectable()
 export class TransactionFinder {

@@ -1,8 +1,8 @@
+import { z } from 'zod';
 import { buildPageSchema } from '@/domain/entities/schemas/page.schema.factory';
 import { Erc20TransferSchema } from '@/modules/safe/domain/entities/schemas/erc20-transfer.schema';
 import { Erc721TransferSchema } from '@/modules/safe/domain/entities/schemas/erc721-transfer.schema';
 import { NativeTokenTransferSchema } from '@/modules/safe/domain/entities/schemas/native-token-transfer.schema';
-import { z } from 'zod';
 
 export type Transfer = z.infer<typeof TransferSchema>;
 

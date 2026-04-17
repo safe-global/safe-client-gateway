@@ -1,9 +1,9 @@
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
-import type { PortfolioApiService } from '@/modules/portfolio/v1/portfolio.service';
-import { PortfolioController } from '@/modules/portfolio/v1/portfolio.controller';
 import type { GetPortfolioDto } from '@/modules/portfolio/v1/entities/get-portfolio.dto.entity';
 import type { Portfolio } from '@/modules/portfolio/v1/entities/portfolio.entity';
+import { PortfolioController } from '@/modules/portfolio/v1/portfolio.controller';
+import type { PortfolioApiService } from '@/modules/portfolio/v1/portfolio.service';
 
 const service = {
   getPortfolio: jest.fn(),

@@ -4,11 +4,11 @@ import {
   ApiPropertyOptional,
   getSchemaPath,
 } from '@nestjs/swagger';
+import { BaseTransaction } from '@/modules/transactions/routes/entities/base-transaction.entity';
 import { SafeAppInfo } from '@/modules/transactions/routes/entities/safe-app-info.entity';
 import { TransactionData } from '@/modules/transactions/routes/entities/transaction-data.entity';
 import { ModuleExecutionDetails } from '@/modules/transactions/routes/entities/transaction-details/module-execution-details.entity';
 import { MultisigExecutionDetails } from '@/modules/transactions/routes/entities/transaction-details/multisig-execution-details.entity';
-import { BaseTransaction } from '@/modules/transactions/routes/entities/base-transaction.entity';
 import { TransactionStatus } from '@/modules/transactions/routes/entities/transaction-status.entity';
 
 @ApiExtraModels(

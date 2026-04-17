@@ -1,9 +1,9 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import type { Address } from 'viem';
 import {
   Transfer,
   TransferType,
 } from '@/modules/transactions/routes/entities/transfers/transfer.entity';
-import type { Address } from 'viem';
 
 export class Erc20Transfer extends Transfer {
   @ApiProperty({ enum: [TransferType.Erc20] })
@@ -33,7 +33,7 @@ export class Erc20Transfer extends Transfer {
     logoUri: string | null = null,
     decimals: number | null = null,
     trusted: boolean | null = null,
-    imitation: boolean = false,
+    imitation = false,
   ) {
     super(TransferType.Erc20);
     this.tokenAddress = tokenAddress;

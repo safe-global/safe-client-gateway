@@ -1,16 +1,19 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { IContractsRepository } from '@/modules/contracts/domain/contracts.repository.interface';
 import type { Address } from 'viem';
 import { isAddressEqual } from 'viem';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import { PaginationData } from '@/routes/common/pagination/pagination.data';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { SAFE_TRANSACTION_SERVICE_MAX_LIMIT } from '@/domain/common/constants';
 import { IDataDecoderApi } from '@/domain/interfaces/data-decoder-api.interface';
 import {
-  Contract,
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
+import type { IContractsRepository } from '@/modules/contracts/domain/contracts.repository.interface';
+import {
+  type Contract,
   ContractPageSchema,
 } from '@/modules/data-decoder/domain/v2/entities/contract.entity';
+import { PaginationData } from '@/routes/common/pagination/pagination.data';
 
 @Injectable()
 export class ContractsRepository implements IContractsRepository {
@@ -70,7 +73,7 @@ export class ContractsRepository implements IContractsRepository {
     const contracts: Array<Contract> = [];
 
     let offset = 0;
-    let next = null;
+    let next: string | null = null;
 
     for (let i = 0; i < this.maxSequentialPages; i++) {
       const result =

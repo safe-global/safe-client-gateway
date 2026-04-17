@@ -1,10 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { getStringEnumKeys } from '@/domain/common/utils/enum';
+import type { AnalysisResult, AnalysisStatus } from '../analysis-result.entity';
 import { Severity } from '../severity.entity';
-import {
-  type AnalysisResult,
-  type AnalysisStatus,
-} from '../analysis-result.entity';
 
 /**
  * Generic DTO for a single analysis result.

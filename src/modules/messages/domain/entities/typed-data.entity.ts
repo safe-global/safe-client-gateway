@@ -1,10 +1,10 @@
-import { z } from 'zod';
 import {
   TypedDataDomain as TypedDataDomainSchema,
   TypedDataParameter as TypedDataParameterSchema,
 } from 'abitype/zod';
-import { HexSchema } from '@/validation/entities/schemas/hex.schema';
+import { z } from 'zod';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
+import { HexSchema } from '@/validation/entities/schemas/hex.schema';
 
 export const _TypedDataDomainSchema = z.object({
   name: z.union([TypedDataDomainSchema.shape.name, z.literal('')]),

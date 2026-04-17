@@ -1,5 +1,5 @@
-import { Eligibility as DomainEligibility } from '@/modules/community/domain/entities/eligibility.entity';
 import { ApiProperty } from '@nestjs/swagger';
+import type { Eligibility as DomainEligibility } from '@/modules/community/domain/entities/eligibility.entity';
 
 export class Eligibility implements DomainEligibility {
   @ApiProperty()

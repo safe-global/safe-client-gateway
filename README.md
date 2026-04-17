@@ -172,8 +172,8 @@ yarn run test:cov
 
 ## Linter and Style Guide
 
-We use [ESLint](https://eslint.org/) as a linter and [Prettier](https://prettier.io/) as a code formatter.
-You can run `yarn run lint` to execute ESLint and `yarn run format` to execute Prettier.
+We use [Biome](https://biomejs.dev/) as a linter and [Prettier](https://prettier.io/) as a code formatter.
+You can run `yarn run lint` to execute Biome and `yarn run format` to execute Prettier.
 
 These checks can be automatically executed using Git hooks. If you wish to install the provided git hooks:
 

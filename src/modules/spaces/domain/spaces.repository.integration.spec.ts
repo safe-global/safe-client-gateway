@@ -1,24 +1,24 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
+import type { ConfigService } from '@nestjs/config';
 import { DataSource, EntityNotFoundError, In } from 'typeorm';
+import type { IConfigurationService } from '@/config/configuration.service.interface';
 import configuration from '@/config/entities/__tests__/configuration';
 import { postgresConfig } from '@/config/entities/postgres.config';
-import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { DatabaseMigrator } from '@/datasources/db/v2/database-migrator.service';
-import { User } from '@/modules/users/datasources/entities/users.entity.db';
-import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
-import type { ConfigService } from '@nestjs/config';
-import type { ILoggingService } from '@/logging/logging.interface';
-import { Member } from '@/modules/users/datasources/entities/member.entity.db';
-import { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
-import { SpacesRepository } from '@/modules/spaces/domain/spaces.repository';
-import { getStringEnumKeys } from '@/domain/common/utils/enum';
-import { UserStatus } from '@/modules/users/domain/entities/user.entity';
-import { SpaceStatus } from '@/modules/spaces/domain/entities/space.entity';
+import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
-import { SpaceSafe } from '@/modules/spaces/datasources/entities/space-safes.entity.db';
 import { nameBuilder } from '@/domain/common/entities/name.builder';
-import type { IConfigurationService } from '@/config/configuration.service.interface';
+import { getStringEnumKeys } from '@/domain/common/utils/enum';
+import type { ILoggingService } from '@/logging/logging.interface';
+import { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
+import { SpaceSafe } from '@/modules/spaces/datasources/entities/space-safes.entity.db';
+import { SpaceStatus } from '@/modules/spaces/domain/entities/space.entity';
+import { SpacesRepository } from '@/modules/spaces/domain/spaces.repository';
+import { Member } from '@/modules/users/datasources/entities/member.entity.db';
+import { User } from '@/modules/users/datasources/entities/users.entity.db';
+import { UserStatus } from '@/modules/users/domain/entities/user.entity';
+import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
 
 const mockLoggingService = {
   debug: jest.fn(),
@@ -149,19 +149,19 @@ describe('SpacesRepository', () => {
   // As the triggers are set on the database level, Jest's fake timers are not accurate
   describe('createdAt/updatedAt', () => {
     it('should set createdAt and updatedAt when creating a Space', async () => {
-      const before = new Date().getTime();
+      const before = Date.now();
 
       const space = await dbSpacesRepository.insert({
         name: faker.word.noun(),
         status: 'ACTIVE',
       });
 
-      const after = new Date().getTime();
+      const after = Date.now();
 
       const createdAt = space.generatedMaps[0].createdAt;
       const updatedAt = space.generatedMaps[0].updatedAt;
 
-      if (!(createdAt instanceof Date) || !(updatedAt instanceof Date)) {
+      if (!(createdAt instanceof Date && updatedAt instanceof Date)) {
         throw new Error('createdAt and/or updatedAt is not a Date');
       }
 

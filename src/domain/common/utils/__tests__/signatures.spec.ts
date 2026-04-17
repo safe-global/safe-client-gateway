@@ -72,7 +72,7 @@ describe('parseSignaturesByType', () => {
       signatureType,
     });
 
-    expect(() => parseSignaturesByType((signature + '0') as Hex)).toThrow(
+    expect(() => parseSignaturesByType(`${signature}0` as Hex)).toThrow(
       'Invalid hex bytes length',
     );
   });

@@ -1,11 +1,11 @@
+import { faker } from '@faker-js/faker';
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
-import { PushwooshApi } from '@/modules/email/datasources/pushwoosh-api.service';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
-import type { CreateEmailMessageDto } from '@/modules/email/domain/entities/create-email-message.dto.entity';
 import { DataSourceError } from '@/domain/errors/data-source.error';
-import { faker } from '@faker-js/faker';
+import { PushwooshApi } from '@/modules/email/datasources/pushwoosh-api.service';
+import type { CreateEmailMessageDto } from '@/modules/email/domain/entities/create-email-message.dto.entity';
 
 const networkService = {
   post: jest.fn(),

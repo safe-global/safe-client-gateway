@@ -1,4 +1,4 @@
 export enum HealthEntity {
-  READY,
-  NOT_READY,
+  READY = 0,
+  NOT_READY = 1,
 }

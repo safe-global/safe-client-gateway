@@ -1,8 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {
-  NativeToken,
   Erc20Token,
   Erc721Token,
+  NativeToken,
 } from '@/modules/balances/routes/entities/token.entity';
 
 export class PortfolioNativeToken extends NativeToken {

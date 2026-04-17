@@ -1,12 +1,12 @@
+import { Module } from '@nestjs/common';
 import { PostgresDatabaseModule } from '@/datasources/db/v1/postgres-database.module';
 import { CloudStorageModule } from '@/datasources/storage/cloud-storage.module';
+import { ITargetedMessagingDatasource } from '@/domain/interfaces/targeted-messaging.datasource.interface';
 import { OutreachDbMapper } from '@/modules/targeted-messaging/datasources/entities/outreach.db.mapper';
 import { SubmissionDbMapper } from '@/modules/targeted-messaging/datasources/entities/submission.db.mapper';
 import { TargetedSafeDbMapper } from '@/modules/targeted-messaging/datasources/entities/targeted-safe.db.mapper';
 import { OutreachFileProcessor } from '@/modules/targeted-messaging/datasources/outreach-file-processor';
 import { TargetedMessagingDatasource } from '@/modules/targeted-messaging/datasources/targeted-messaging.datasource';
-import { ITargetedMessagingDatasource } from '@/domain/interfaces/targeted-messaging.datasource.interface';
-import { Module } from '@nestjs/common';
 
 @Module({
   imports: [

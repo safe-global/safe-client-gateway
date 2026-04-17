@@ -1,6 +1,6 @@
+import { faker } from '@faker-js/faker';
 import { JwtClaimsSchema } from '@/datasources/jwt/jwt-claims.entity';
 import { toSecondsTimestamp } from '@/domain/common/utils/time';
-import { faker } from '@faker-js/faker';
 
 describe('JwtClaimsSchema', () => {
   it('should vaidate a valid JwtClaims', () => {

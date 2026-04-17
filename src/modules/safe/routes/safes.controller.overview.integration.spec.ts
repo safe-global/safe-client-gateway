@@ -1,26 +1,26 @@
+import type { Server } from 'node:net';
+import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
-import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
-import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
+import { getAddress } from 'viem';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
-import configuration from '@/config/entities/__tests__/configuration';
+import { createTestModule } from '@/__tests__/testing-module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
+import configuration from '@/config/entities/__tests__/configuration';
+import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
 import { NetworkService } from '@/datasources/network/network.service.interface';
-import { faker } from '@faker-js/faker';
+import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import { balanceBuilder } from '@/modules/balances/domain/entities/__tests__/balance.builder';
 import { balanceTokenBuilder } from '@/modules/balances/domain/entities/__tests__/balance.token.builder';
+import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
 import {
   multisigTransactionBuilder,
   toJson as multisigTransactionToJson,
 } from '@/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
 import { confirmationBuilder } from '@/modules/safe/domain/entities/__tests__/multisig-transaction-confirmation.builder';
-import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
-import { getAddress } from 'viem';
-import type { Server } from 'net';
+import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
 import { rawify } from '@/validation/entities/raw.entity';
-import { createTestModule } from '@/__tests__/testing-module';
 
 describe('Safes Controller Overview', () => {
   let app: INestApplication<Server>;
@@ -95,7 +95,7 @@ describe('Safes Controller Overview', () => {
       ];
       const currency = faker.finance.currencyCode();
       const nativeCoinPriceProviderResponse = {
-        [chain.pricesProvider.nativeCoin!]: {
+        [chain.pricesProvider.nativeCoin as string]: {
           [currency.toLowerCase()]: 1536.75,
         },
       };
@@ -257,7 +257,7 @@ describe('Safes Controller Overview', () => {
       ];
       const currency = faker.finance.currencyCode();
       const nativeCoinPriceProviderResponse = {
-        [chain.pricesProvider.nativeCoin!]: {
+        [chain.pricesProvider.nativeCoin as string]: {
           [currency.toLowerCase()]: 1536.75,
         },
       };
@@ -467,10 +467,10 @@ describe('Safes Controller Overview', () => {
       ];
       const currency = faker.finance.currencyCode();
       const nativeCoinPriceProviderResponse = {
-        [chain1.pricesProvider.nativeCoin!]: {
+        [chain1.pricesProvider.nativeCoin as string]: {
           [currency.toLowerCase()]: 1536.75,
         },
-        [chain2.pricesProvider.nativeCoin!]: {
+        [chain2.pricesProvider.nativeCoin as string]: {
           [currency.toLowerCase()]: 1536.75,
         },
       };
@@ -691,10 +691,10 @@ describe('Safes Controller Overview', () => {
       ];
       const currency = faker.finance.currencyCode();
       const nativeCoinPriceProviderResponse = {
-        [chain1.pricesProvider.nativeCoin!]: {
+        [chain1.pricesProvider.nativeCoin as string]: {
           [currency.toLowerCase()]: 1536.75,
         },
-        [chain2.pricesProvider.nativeCoin!]: {
+        [chain2.pricesProvider.nativeCoin as string]: {
           [currency.toLowerCase()]: 1536.75,
         },
       };
@@ -872,7 +872,7 @@ describe('Safes Controller Overview', () => {
       ];
       const currency = faker.finance.currencyCode();
       const nativeCoinPriceProviderResponse = {
-        [chain.pricesProvider.nativeCoin!]: {
+        [chain.pricesProvider.nativeCoin as string]: {
           [currency.toLowerCase()]: 1536.75,
         },
       };
@@ -1024,7 +1024,7 @@ describe('Safes Controller Overview', () => {
       ];
       const currency = faker.finance.currencyCode();
       const nativeCoinPriceProviderResponse = {
-        [chain.pricesProvider.nativeCoin!]: {
+        [chain.pricesProvider.nativeCoin as string]: {
           [currency.toLowerCase()]: 1536.75,
         },
       };
@@ -1219,10 +1219,10 @@ describe('Safes Controller Overview', () => {
       ];
       const currency = faker.finance.currencyCode();
       const nativeCoinPriceProviderResponse = {
-        [chain1.pricesProvider.nativeCoin!]: {
+        [chain1.pricesProvider.nativeCoin as string]: {
           [currency.toLowerCase()]: 1536.75,
         },
-        [chain2.pricesProvider.nativeCoin!]: {
+        [chain2.pricesProvider.nativeCoin as string]: {
           [currency.toLowerCase()]: 1536.75,
         },
       };
@@ -1413,10 +1413,10 @@ describe('Safes Controller Overview', () => {
       ];
       const currency = faker.finance.currencyCode();
       const nativeCoinPriceProviderResponse = {
-        [chain1.pricesProvider.nativeCoin!]: {
+        [chain1.pricesProvider.nativeCoin as string]: {
           [currency.toLowerCase()]: 1536.75,
         },
-        [chain2.pricesProvider.nativeCoin!]: {
+        [chain2.pricesProvider.nativeCoin as string]: {
           [currency.toLowerCase()]: 1536.75,
         },
       };
@@ -1613,10 +1613,10 @@ describe('Safes Controller Overview', () => {
       ];
       const currency = faker.finance.currencyCode();
       const nativeCoinPriceProviderResponse = {
-        [chain1.pricesProvider.nativeCoin!]: {
+        [chain1.pricesProvider.nativeCoin as string]: {
           [currency.toLowerCase()]: 1536.75,
         },
-        [chain2.pricesProvider.nativeCoin!]: {
+        [chain2.pricesProvider.nativeCoin as string]: {
           [currency.toLowerCase()]: 1536.75,
         },
       };
@@ -1769,7 +1769,7 @@ describe('Safes Controller Overview', () => {
       const chainName = chain.pricesProvider.chainName;
       const currency = faker.finance.currencyCode();
       const nativeCoinPriceProviderResponse = {
-        [nativeCoinId!]: { [currency.toLowerCase()]: 1536.75 },
+        [nativeCoinId as string]: { [currency.toLowerCase()]: 1536.75 },
       };
       const walletAddress = faker.finance.ethereumAddress();
       const multisigTransactions = [

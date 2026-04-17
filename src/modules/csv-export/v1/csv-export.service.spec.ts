@@ -1,30 +1,30 @@
+import fs from 'node:fs';
+import { access, mkdir, readFile, rm } from 'node:fs/promises';
+import path from 'node:path';
+import type { Writable } from 'node:stream';
+import { PassThrough, Readable, Transform } from 'node:stream';
+import { pipeline } from 'node:stream/promises';
+import type { CompleteMultipartUploadCommandOutput } from '@aws-sdk/client-s3';
+import { faker } from '@faker-js/faker/.';
+import { UnrecoverableError } from 'bullmq';
+import type { Address } from 'viem';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import type { ICloudStorageApiService } from '@/datasources/storage/cloud-storage-api.service';
+import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
+import type { Page } from '@/domain/entities/page.entity';
+import { DataSourceError } from '@/domain/errors/data-source.error';
+import type { IJobQueueService } from '@/domain/interfaces/job-queue.interface';
+import type { ILoggingService } from '@/logging/logging.interface';
 import type { CsvService } from '@/modules/csv-export/csv-utils/csv.service';
 import { CsvExportService } from '@/modules/csv-export/v1/csv-export.service';
+import type { IExportApi } from '@/modules/csv-export/v1/datasources/export-api.interface';
 import type { IExportApiManager } from '@/modules/csv-export/v1/datasources/export-api.manager.interface';
 import {
   transactionExportBuilder,
   transformTransactionExport,
 } from '@/modules/csv-export/v1/entities/__tests__/transaction-export.builder';
-import { faker } from '@faker-js/faker/.';
-import type { Writable } from 'stream';
-import { PassThrough, Readable, Transform } from 'stream';
-import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
-import { rawify } from '@/validation/entities/raw.entity';
-import fs from 'fs';
-import type { IExportApi } from '@/modules/csv-export/v1/datasources/export-api.interface';
-import type { IJobQueueService } from '@/domain/interfaces/job-queue.interface';
-import type { ILoggingService } from '@/logging/logging.interface';
-import type { Page } from '@/domain/entities/page.entity';
-import { mkdir, rm, readFile, access } from 'fs/promises';
-import path from 'path';
-import { DataSourceError } from '@/domain/errors/data-source.error';
-import { UnrecoverableError } from 'bullmq';
 import type { TransactionExport } from '@/modules/csv-export/v1/entities/transaction-export.entity';
-import type { CompleteMultipartUploadCommandOutput } from '@aws-sdk/client-s3';
-import { pipeline } from 'stream/promises';
-import type { Address } from 'viem';
+import { rawify } from '@/validation/entities/raw.entity';
 
 const exportApi = {
   export: jest.fn(),
@@ -626,7 +626,7 @@ describe('CsvExportService', () => {
   });
 
   describe('export with local storage', () => {
-    let csvRow: string = '';
+    let csvRow = '';
     const csvHeader = 'id,chainId,type,timestamp';
     const localBaseDir = 'assets/csv-export';
     const fileName = `transactions_export_${exportArgs.chainId}_${exportArgs.safeAddress}_${exportArgs.timestamp}.csv`;
@@ -641,13 +641,12 @@ describe('CsvExportService', () => {
       csvRow = `${faker.string.uuid()},${faker.string.numeric(1)},${faker.lorem.word()},${faker.date.recent().toISOString()}`;
       mockCsvService.toCsv.mockImplementation(
         async (readable: Readable, stream) => {
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
           for await (const _ of readable) {
             // Just consume the data
           }
           // Write to the stream and wait for it to finish
-          stream.write(csvHeader + '\n');
-          stream.write(csvRow + '\n');
+          stream.write(`${csvHeader}\n`);
+          stream.write(`${csvRow}\n`);
           stream.end();
 
           // Wait for the stream to finish writing to disk

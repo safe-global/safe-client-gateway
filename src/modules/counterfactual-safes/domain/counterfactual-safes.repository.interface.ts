@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import type { CounterfactualSafe } from '@/modules/counterfactual-safes/datasources/entities/counterfactual-safe.entity.db';
-import type { User } from '@/modules/users/datasources/entities/users.entity.db';
-import type { CounterfactualSafesRepository } from '@/modules/counterfactual-safes/domain/counterfactual-safes.repository';
+
 import type {
   FindOptionsRelations,
   FindOptionsSelect,
   FindOptionsWhere,
 } from 'typeorm';
+import type { CounterfactualSafe } from '@/modules/counterfactual-safes/datasources/entities/counterfactual-safe.entity.db';
+import type { CounterfactualSafesRepository } from '@/modules/counterfactual-safes/domain/counterfactual-safes.repository';
+import type { User } from '@/modules/users/datasources/entities/users.entity.db';
 
 export const ICounterfactualSafesRepository = Symbol(
   'ICounterfactualSafesRepository',

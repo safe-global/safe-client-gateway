@@ -1,6 +1,9 @@
-import { Injectable, Inject, OnModuleDestroy } from '@nestjs/common';
+import { Inject, Injectable, type OnModuleDestroy } from '@nestjs/common';
 import type { Queue } from 'bullmq';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
 import { asError } from '@/logging/utils';
 
 @Injectable()

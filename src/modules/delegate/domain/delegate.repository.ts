@@ -1,10 +1,10 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { IDelegateRepository } from '@/modules/delegate/domain/delegate.repository.interface';
-import { Delegate } from '@/modules/delegate/domain/entities/delegate.entity';
-import { Page } from '@/domain/entities/page.entity';
-import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
-import { DelegatePageSchema } from '@/modules/delegate/domain/entities/schemas/delegate.schema';
 import type { Address } from 'viem';
+import type { Page } from '@/domain/entities/page.entity';
+import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
+import type { IDelegateRepository } from '@/modules/delegate/domain/delegate.repository.interface';
+import type { Delegate } from '@/modules/delegate/domain/entities/delegate.entity';
+import { DelegatePageSchema } from '@/modules/delegate/domain/entities/schemas/delegate.schema';
 
 @Injectable()
 export class DelegateRepository implements IDelegateRepository {

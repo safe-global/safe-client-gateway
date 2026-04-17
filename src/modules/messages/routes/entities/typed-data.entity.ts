@@ -1,4 +1,3 @@
-import { TypedData as DomainTypedData } from '@/modules/messages/domain/entities/typed-data.entity';
 import {
   ApiExtraModels,
   ApiProperty,
@@ -6,6 +5,7 @@ import {
   getSchemaPath,
 } from '@nestjs/swagger';
 import type { Address } from 'viem';
+import type { TypedData as DomainTypedData } from '@/modules/messages/domain/entities/typed-data.entity';
 
 class TypedDataDomain {
   @ApiPropertyOptional({ type: Number })

@@ -1,5 +1,5 @@
-import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { Inject, Injectable, type OnModuleInit } from '@nestjs/common';
+import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 
 @Injectable()
 export class DatabaseInitializeHook implements OnModuleInit {

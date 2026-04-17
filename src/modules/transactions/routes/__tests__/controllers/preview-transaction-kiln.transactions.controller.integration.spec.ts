@@ -1,43 +1,43 @@
+import type { Server } from 'node:net';
 import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
+import type { Address } from 'viem';
+import { concat } from 'viem';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
-import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
-import { contractBuilder as contractTokenBuilder } from '@/modules/contracts/domain/entities/__tests__/contract.builder';
-import { contractBuilder } from '@/modules/data-decoder/domain/v2/entities/__tests__/contract.builder';
-import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
-import { dataDecodedBuilder } from '@/modules/data-decoder/domain/v2/entities/__tests__/data-decoded.builder';
-import { Operation } from '@/modules/safe/domain/entities/operation.entity';
-import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
+import { createTestModule } from '@/__tests__/testing-module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
 import { NetworkService } from '@/datasources/network/network.service.interface';
-import { previewTransactionDtoBuilder } from '@/modules/transactions/routes/entities/__tests__/preview-transaction.dto.builder';
-import { concat } from 'viem';
-import type { Server } from 'net';
-import { tokenBuilder } from '@/modules/tokens/domain/__tests__/token.builder';
-import { deploymentBuilder } from '@/modules/staking/datasources/entities/__tests__/deployment.entity.builder';
+import { getNumberString } from '@/domain/common/utils/utils';
+import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
+import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
+import {
+  multiSendEncoder,
+  multiSendTransactionsEncoder,
+} from '@/modules/contracts/domain/__tests__/encoders/multi-send-encoder.builder';
+import { contractBuilder as contractTokenBuilder } from '@/modules/contracts/domain/entities/__tests__/contract.builder';
+import { contractBuilder } from '@/modules/data-decoder/domain/v2/entities/__tests__/contract.builder';
+import { dataDecodedBuilder } from '@/modules/data-decoder/domain/v2/entities/__tests__/data-decoded.builder';
+import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
+import { Operation } from '@/modules/safe/domain/entities/operation.entity';
 import { dedicatedStakingStatsBuilder } from '@/modules/staking/datasources/entities/__tests__/dedicated-staking-stats.entity.builder';
+import { deploymentBuilder } from '@/modules/staking/datasources/entities/__tests__/deployment.entity.builder';
 import { networkStatsBuilder } from '@/modules/staking/datasources/entities/__tests__/network-stats.entity.builder';
+import { rewardsFeeBuilder } from '@/modules/staking/datasources/entities/__tests__/rewards-fee.entity.builder';
+import { stakeBuilder } from '@/modules/staking/datasources/entities/__tests__/stake.entity.builder';
 import type { Stake } from '@/modules/staking/datasources/entities/stake.entity';
 import { StakeState } from '@/modules/staking/datasources/entities/stake.entity';
-import { getNumberString } from '@/domain/common/utils/utils';
-import { NULL_ADDRESS } from '@/routes/common/constants';
-import { KilnDecoder } from '@/modules/staking/domain/contracts/decoders/kiln-decoder.helper';
-import { stakeBuilder } from '@/modules/staking/datasources/entities/__tests__/stake.entity.builder';
 import {
   batchWithdrawCLFeeEncoder,
   depositEncoder,
   requestValidatorsExitEncoder,
 } from '@/modules/staking/domain/contracts/decoders/__tests__/encoders/kiln-encoder.builder';
-import {
-  multiSendEncoder,
-  multiSendTransactionsEncoder,
-} from '@/modules/contracts/domain/__tests__/encoders/multi-send-encoder.builder';
+import { KilnDecoder } from '@/modules/staking/domain/contracts/decoders/kiln-decoder.helper';
+import { tokenBuilder } from '@/modules/tokens/domain/__tests__/token.builder';
+import { previewTransactionDtoBuilder } from '@/modules/transactions/routes/entities/__tests__/preview-transaction.dto.builder';
+import { NULL_ADDRESS } from '@/routes/common/constants';
 import { rawify } from '@/validation/entities/raw.entity';
-import { createTestModule } from '@/__tests__/testing-module';
-import { rewardsFeeBuilder } from '@/modules/staking/datasources/entities/__tests__/rewards-fee.entity.builder';
-import type { Address } from 'viem';
 
 describe('Preview transaction - Kiln - Transactions Controller', () => {
   let app: INestApplication<Server>;
@@ -153,7 +153,7 @@ describe('Preview transaction - Kiln - Transactions Controller', () => {
         const expectedMonthlyReward = expectedAnnualReward / 12;
         const expectedFiatAnnualReward =
           (expectedAnnualReward * networkStats.eth_price_usd) /
-          Math.pow(10, chain.nativeCurrency.decimals);
+          10 ** chain.nativeCurrency.decimals;
         const expectedFiatMonthlyReward = expectedFiatAnnualReward / 12;
 
         await request(app.getHttpServer())
@@ -322,7 +322,7 @@ describe('Preview transaction - Kiln - Transactions Controller', () => {
         const expectedMonthlyReward = expectedAnnualReward / 12;
         const expectedFiatAnnualReward =
           (expectedAnnualReward * networkStats.eth_price_usd) /
-          Math.pow(10, chain.nativeCurrency.decimals);
+          10 ** chain.nativeCurrency.decimals;
         const expectedFiatMonthlyReward = expectedFiatAnnualReward / 12;
 
         await request(app.getHttpServer())
@@ -1821,8 +1821,8 @@ describe('Preview transaction - Kiln - Transactions Controller', () => {
               type: 'NativeStakingWithdraw',
               humanDescription: null,
               value: (
-                +stakes[0].net_claimable_consensus_rewards! +
-                +stakes[1].net_claimable_consensus_rewards!
+                +(stakes[0].net_claimable_consensus_rewards as string) +
+                +(stakes[1].net_claimable_consensus_rewards as string)
               ).toString(),
               tokenInfo: {
                 address: NULL_ADDRESS,
@@ -1983,8 +1983,8 @@ describe('Preview transaction - Kiln - Transactions Controller', () => {
               type: 'NativeStakingWithdraw',
               humanDescription: null,
               value: (
-                +stakes[0].net_claimable_consensus_rewards! +
-                +stakes[1].net_claimable_consensus_rewards!
+                +(stakes[0].net_claimable_consensus_rewards as string) +
+                +(stakes[1].net_claimable_consensus_rewards as string)
               ).toString(),
               tokenInfo: {
                 address: NULL_ADDRESS,

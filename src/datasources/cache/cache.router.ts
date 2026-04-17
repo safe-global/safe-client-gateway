@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import crypto from 'crypto';
-import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
+import crypto from 'node:crypto';
 import type { Address, Hash } from 'viem';
-import type { TransactionInfo } from '@/modules/transactions/routes/entities/transaction-info.entity';
-import type { ExtractedContract } from '@/modules/safe-shield/entities/extracted-contract.entity';
+import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import type { BaseDataDecoded } from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';
+import type { ExtractedContract } from '@/modules/safe-shield/entities/extracted-contract.entity';
+import type { TransactionInfo } from '@/modules/transactions/routes/entities/transaction-info.entity';
 
 export class CacheRouter {
   private static readonly ACCOUNT_DATA_SETTINGS_KEY = 'account_data_settings';
@@ -513,7 +513,7 @@ export class CacheRouter {
     offset?: number;
   }): CacheDir {
     return new CacheDir(
-      this.getSafesByOwnerV2CacheKey(args),
+      CacheRouter.getSafesByOwnerV2CacheKey(args),
       `${args.limit}_${args.offset}`,
     );
   }
@@ -529,7 +529,7 @@ export class CacheRouter {
     chainId: string;
     messageHash: string;
   }): CacheDir {
-    return new CacheDir(this.getMessageByHashCacheKey(args), '');
+    return new CacheDir(CacheRouter.getMessageByHashCacheKey(args), '');
   }
 
   static getMessagesBySafeCacheKey(args: {
@@ -546,7 +546,7 @@ export class CacheRouter {
     offset?: number;
   }): CacheDir {
     return new CacheDir(
-      this.getMessagesBySafeCacheKey(args),
+      CacheRouter.getMessagesBySafeCacheKey(args),
       `${args.limit}_${args.offset}`,
     );
   }
@@ -703,7 +703,7 @@ export class CacheRouter {
   static getStakingDeploymentsCacheDir(
     cacheType: 'earn' | 'staking',
   ): CacheDir {
-    return new CacheDir(this.STAKING_DEPLOYMENTS_KEY, cacheType);
+    return new CacheDir(CacheRouter.STAKING_DEPLOYMENTS_KEY, cacheType);
   }
 
   static getStakingRewardsFeeCacheDir(args: {
@@ -712,7 +712,7 @@ export class CacheRouter {
     contract: Address;
   }): CacheDir {
     return new CacheDir(
-      `${args.chainId}_${this.STAKING_REWARDS_FEE_KEY}_${args.contract}`,
+      `${args.chainId}_${CacheRouter.STAKING_REWARDS_FEE_KEY}_${args.contract}`,
       args.cacheType,
     );
   }
@@ -720,13 +720,16 @@ export class CacheRouter {
   static getStakingNetworkStatsCacheDir(
     cacheType: 'earn' | 'staking',
   ): CacheDir {
-    return new CacheDir(this.STAKING_NETWORK_STATS_KEY, cacheType);
+    return new CacheDir(CacheRouter.STAKING_NETWORK_STATS_KEY, cacheType);
   }
 
   static getStakingDedicatedStakingStatsCacheDir(
     cacheType: 'earn' | 'staking',
   ): CacheDir {
-    return new CacheDir(this.STAKING_DEDICATED_STAKING_STATS_KEY, cacheType);
+    return new CacheDir(
+      CacheRouter.STAKING_DEDICATED_STAKING_STATS_KEY,
+      cacheType,
+    );
   }
 
   static getStakingPooledStakingStatsCacheDir(args: {
@@ -734,7 +737,7 @@ export class CacheRouter {
     pool: Address;
   }): CacheDir {
     return new CacheDir(
-      `${this.STAKING_POOLED_STAKING_STATS_KEY}_${args.pool}`,
+      `${CacheRouter.STAKING_POOLED_STAKING_STATS_KEY}_${args.pool}`,
       args.cacheType,
     );
   }
@@ -745,7 +748,7 @@ export class CacheRouter {
     vault: Address;
   }): CacheDir {
     return new CacheDir(
-      `${args.chainId}_${this.STAKING_DEFI_VAULT_STATS_KEY}_${args.vault}`,
+      `${args.chainId}_${CacheRouter.STAKING_DEFI_VAULT_STATS_KEY}_${args.vault}`,
       args.cacheType,
     );
   }
@@ -757,7 +760,7 @@ export class CacheRouter {
     vault: Address;
   }): CacheDir {
     return new CacheDir(
-      `${args.chainId}_${this.STAKING_DEFI_VAULT_STAKES_KEY}_${args.safeAddress}_${args.vault}`,
+      `${args.chainId}_${CacheRouter.STAKING_DEFI_VAULT_STAKES_KEY}_${args.safeAddress}_${args.vault}`,
       args.cacheType,
     );
   }
@@ -768,7 +771,7 @@ export class CacheRouter {
     safeAddress: Address;
   }): CacheDir {
     return new CacheDir(
-      `${args.chainId}_${this.STAKING_DEFI_MORPHO_EXTRA_REWARDS_KEY}_${args.safeAddress}`,
+      `${args.chainId}_${CacheRouter.STAKING_DEFI_MORPHO_EXTRA_REWARDS_KEY}_${args.safeAddress}`,
       args.cacheType,
     );
   }
@@ -815,7 +818,7 @@ export class CacheRouter {
   }
 
   static getUnsupportedChainEventCacheKey(chainId: string): string {
-    return `${chainId}_${this.UNSUPPORTED_CHAIN_EVENT}`;
+    return `${chainId}_${CacheRouter.UNSUPPORTED_CHAIN_EVENT}`;
   }
 
   static getStakingTransactionStatusCacheDir(args: {

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { ApiProperty } from '@nestjs/swagger';
-import { zeroAddress } from 'viem';
 import type { Address } from 'viem';
+import { zeroAddress } from 'viem';
 import { PriceSource } from '@/modules/fees/domain/entities/price-source.entity';
 import type { TxFeesResponse } from '@/modules/fees/domain/entities/tx-fees-response.entity';
 

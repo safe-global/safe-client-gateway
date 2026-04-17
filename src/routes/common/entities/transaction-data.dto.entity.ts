@@ -1,8 +1,8 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { z } from 'zod';
-import { HexSchema } from '@/validation/entities/schemas/hex.schema';
-import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import type { Address } from 'viem';
+import { z } from 'zod';
+import { AddressSchema } from '@/validation/entities/schemas/address.schema';
+import { HexSchema } from '@/validation/entities/schemas/hex.schema';
 
 export const TransactionDataDtoSchema = z.object({
   data: HexSchema,

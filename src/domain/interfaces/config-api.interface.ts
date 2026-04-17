@@ -1,5 +1,5 @@
-import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
 import type { Page } from '@/domain/entities/page.entity';
+import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
 import type { SafeApp } from '@/modules/safe-apps/domain/entities/safe-app.entity';
 import type { Raw } from '@/validation/entities/raw.entity';
 

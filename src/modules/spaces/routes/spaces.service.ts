@@ -1,19 +1,20 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import type { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
+
+import { Inject, NotFoundException } from '@nestjs/common';
+import { In } from 'typeorm';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
+import type { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
 import { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
-import { IMembersRepository } from '@/modules/users/domain/members.repository.interface';
-import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
-import { CreateSpaceResponse } from '@/modules/spaces/routes/entities/create-space.dto.entity';
+import type { CreateSpaceResponse } from '@/modules/spaces/routes/entities/create-space.dto.entity';
 import type { GetSpaceResponse } from '@/modules/spaces/routes/entities/get-space.dto.entity';
 import type {
   UpdateSpaceDto,
   UpdateSpaceResponse,
 } from '@/modules/spaces/routes/entities/update-space.dto.entity';
 import { assertAdmin } from '@/modules/spaces/routes/utils/space-assert.utils';
-import { Inject, NotFoundException } from '@nestjs/common';
-import { In } from 'typeorm';
+import { IMembersRepository } from '@/modules/users/domain/members.repository.interface';
+import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
 
 export class SpacesService {
   public constructor(

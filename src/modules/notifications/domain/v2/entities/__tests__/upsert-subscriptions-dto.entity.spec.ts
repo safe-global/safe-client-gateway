@@ -1,10 +1,10 @@
+import type { UUID } from 'node:crypto';
+import { faker } from '@faker-js/faker';
+import { type Address, getAddress } from 'viem';
 import type { DeviceType } from '@/modules/notifications/domain/v2/entities/device-type.entity';
 import { NotificationType } from '@/modules/notifications/domain/v2/entities/notification-type.entity';
-import { upsertSubscriptionsDtoBuilder } from '@/modules/notifications/routes/v2/entities/__tests__/upsert-subscriptions.dto.builder';
 import { UpsertSubscriptionsDtoSchema } from '@/modules/notifications/domain/v2/entities/upsert-subscriptions.dto.entity';
-import { faker } from '@faker-js/faker';
-import type { UUID } from 'crypto';
-import { type Address, getAddress } from 'viem';
+import { upsertSubscriptionsDtoBuilder } from '@/modules/notifications/routes/v2/entities/__tests__/upsert-subscriptions.dto.builder';
 
 describe('UpsertSubscriptionsDtoSchema', () => {
   it('should validate a valid UpsertSubscriptionsDto', () => {
@@ -20,7 +20,7 @@ describe('UpsertSubscriptionsDtoSchema', () => {
   it('should require cloudMessagingToken', () => {
     const upsertSubscriptionsDto = upsertSubscriptionsDtoBuilder().build();
     // @ts-expect-error - testing required field
-    delete upsertSubscriptionsDto.cloudMessagingToken;
+    upsertSubscriptionsDto.cloudMessagingToken = undefined;
 
     const result = UpsertSubscriptionsDtoSchema.safeParse(
       upsertSubscriptionsDto,
@@ -39,7 +39,7 @@ describe('UpsertSubscriptionsDtoSchema', () => {
   it('should require safes', () => {
     const upsertSubscriptionsDto = upsertSubscriptionsDtoBuilder().build();
     // @ts-expect-error - testing required field
-    delete upsertSubscriptionsDto.safes;
+    upsertSubscriptionsDto.safes = undefined;
 
     const result = UpsertSubscriptionsDtoSchema.safeParse(
       upsertSubscriptionsDto,
@@ -58,7 +58,7 @@ describe('UpsertSubscriptionsDtoSchema', () => {
   it('should require deviceType', () => {
     const upsertSubscriptionsDto = upsertSubscriptionsDtoBuilder().build();
     // @ts-expect-error - testing required field
-    delete upsertSubscriptionsDto.deviceType;
+    upsertSubscriptionsDto.deviceType = undefined;
 
     const result = UpsertSubscriptionsDtoSchema.safeParse(
       upsertSubscriptionsDto,
@@ -114,7 +114,7 @@ describe('UpsertSubscriptionsDtoSchema', () => {
   it('should allow a nullish deviceUuid, defaulting to null', () => {
     const upsertSubscriptionsDto = upsertSubscriptionsDtoBuilder().build();
     // @ts-expect-error - inferred type doesn't allow optional properties
-    delete upsertSubscriptionsDto.deviceUuid;
+    upsertSubscriptionsDto.deviceUuid = undefined;
 
     const result = UpsertSubscriptionsDtoSchema.safeParse(
       upsertSubscriptionsDto,
@@ -136,7 +136,7 @@ describe('UpsertSubscriptionsDtoSchema', () => {
       ])
       .build();
     // @ts-expect-error - testing required field
-    delete upsertSubscriptionsDto.safes[0].chainId;
+    upsertSubscriptionsDto.safes[0].chainId = undefined;
 
     const result = UpsertSubscriptionsDtoSchema.safeParse(
       upsertSubscriptionsDto,
@@ -165,7 +165,7 @@ describe('UpsertSubscriptionsDtoSchema', () => {
       ])
       .build();
     // @ts-expect-error - testing required field
-    delete upsertSubscriptionsDto.safes[0].address;
+    upsertSubscriptionsDto.safes[0].address = undefined;
 
     const result = UpsertSubscriptionsDtoSchema.safeParse(
       upsertSubscriptionsDto,
@@ -194,7 +194,7 @@ describe('UpsertSubscriptionsDtoSchema', () => {
       ])
       .build();
     // @ts-expect-error - testing required field
-    delete upsertSubscriptionsDto.safes[0].notificationTypes;
+    upsertSubscriptionsDto.safes[0].notificationTypes = undefined;
 
     const result = UpsertSubscriptionsDtoSchema.safeParse(
       upsertSubscriptionsDto,

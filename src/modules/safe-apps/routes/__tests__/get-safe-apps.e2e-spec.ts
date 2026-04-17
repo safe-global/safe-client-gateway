@@ -1,11 +1,11 @@
+import type { Server } from 'node:net';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { redisClientFactory } from '@/__tests__/redis-client.factory';
-import type { SafeApp } from '@/modules/safe-apps/routes/entities/safe-app.entity';
-import type { Server } from 'net';
+import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { createBaseTestModule } from '@/__tests__/testing-module';
 import type { RedisClientType } from '@/datasources/cache/cache.module';
+import type { SafeApp } from '@/modules/safe-apps/routes/entities/safe-app.entity';
 
 describe('Get Safe Apps e2e test', () => {
   let app: INestApplication<Server>;
@@ -35,8 +35,7 @@ describe('Get Safe Apps e2e test', () => {
       .expect(200)
       .expect(({ body }) => {
         expect(body).toBeInstanceOf(Array);
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-        body.forEach((safeApp: SafeApp) =>
+        for (const safeApp of body as Array<SafeApp>) {
           expect(safeApp).toEqual(
             expect.objectContaining({
               id: expect.any(Number),
@@ -52,8 +51,8 @@ describe('Get Safe Apps e2e test', () => {
               features: expect.any(Array),
               socialProfiles: expect.any(Array),
             }),
-          ),
-        );
+          );
+        }
       });
 
     const cacheContent = await redisClient.hGet(
@@ -63,7 +62,7 @@ describe('Get Safe Apps e2e test', () => {
     expect(cacheContent).not.toBeNull();
   });
 
-  it('GET /chains/<chainId>/safe-apps?url=${transactionBuilderUrl}', async () => {
+  it('GET /chains/<chainId>/safe-apps?url=<transactionBuilderUrl>', async () => {
     const safeAppsCacheKey = `${cacheKeyPrefix}-${chainId}_safe_apps`;
     const transactionBuilderUrl = 'https://safe-apps.dev.5afe.dev/tx-builder';
     const safeAppsCacheField = `undefined_true_${transactionBuilderUrl}`;

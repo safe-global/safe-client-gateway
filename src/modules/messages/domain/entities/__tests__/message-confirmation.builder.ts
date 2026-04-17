@@ -1,9 +1,9 @@
 import { faker } from '@faker-js/faker';
+import { getAddress, type Hex } from 'viem';
 import type { IBuilder } from '@/__tests__/builder';
 import { Builder } from '@/__tests__/builder';
-import type { MessageConfirmation } from '@/modules/messages/domain/entities/message-confirmation.entity';
-import { type Hex, getAddress } from 'viem';
 import { SignatureType } from '@/domain/common/entities/signature-type.entity';
+import type { MessageConfirmation } from '@/modules/messages/domain/entities/message-confirmation.entity';
 
 export function messageConfirmationBuilder(): IBuilder<MessageConfirmation> {
   return new Builder<MessageConfirmation>()

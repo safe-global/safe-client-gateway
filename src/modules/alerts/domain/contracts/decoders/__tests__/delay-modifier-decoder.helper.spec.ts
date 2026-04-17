@@ -1,7 +1,7 @@
-import { toHex } from 'viem';
 import { faker } from '@faker-js/faker';
-import { DelayModifierDecoder } from '@/modules/alerts/domain/contracts/decoders/delay-modifier-decoder.helper';
+import { toHex } from 'viem';
 import { transactionAddedEventBuilder } from '@/modules/alerts/domain/contracts/__tests__/encoders/delay-modifier-encoder.builder';
+import { DelayModifierDecoder } from '@/modules/alerts/domain/contracts/decoders/delay-modifier-decoder.helper';
 
 describe('DelayModifierDecoder', () => {
   let target: DelayModifierDecoder;

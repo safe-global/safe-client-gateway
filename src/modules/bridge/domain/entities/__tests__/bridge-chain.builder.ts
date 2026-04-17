@@ -1,7 +1,7 @@
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
-import { Builder } from '@/__tests__/builder';
 import type { IBuilder } from '@/__tests__/builder';
+import { Builder } from '@/__tests__/builder';
 import type {
   BridgeChain,
   BridgeChainPage,

@@ -1,15 +1,16 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { getStringEnumKeys } from '@/domain/common/utils/enum';
 import {
+  type Member as DomainMember,
   MemberRole,
   MemberStatus,
-  type Member as DomainMember,
 } from '@/modules/users/domain/entities/member.entity';
 import {
-  UserStatus,
   type User,
+  UserStatus,
 } from '@/modules/users/domain/entities/user.entity';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 class MemberUser implements Pick<User, 'id'> {
   @ApiProperty({ type: Number })

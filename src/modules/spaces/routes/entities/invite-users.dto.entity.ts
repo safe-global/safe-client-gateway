@@ -1,13 +1,13 @@
-import { z } from 'zod';
-import { MemberRole } from '@/modules/users/domain/entities/member.entity';
-import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { getStringEnumKeys } from '@/domain/common/utils/enum';
 import { ApiProperty } from '@nestjs/swagger';
+import type { Address } from 'viem';
+import { z } from 'zod';
 import {
   NAME_MAX_LENGTH,
   NAME_MIN_LENGTH,
 } from '@/domain/common/schemas/name.schema';
-import type { Address } from 'viem';
+import { getStringEnumKeys } from '@/domain/common/utils/enum';
+import { MemberRole } from '@/modules/users/domain/entities/member.entity';
+import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 
 const InviteUserDtoSchema = z
   .array(

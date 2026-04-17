@@ -1,4 +1,3 @@
-import type { IEncoder } from '@/__tests__/encoder-builder';
 import { faker } from '@faker-js/faker';
 import type { Address, Hash, Hex } from 'viem';
 import {
@@ -11,6 +10,7 @@ import {
   toBytes,
 } from 'viem';
 import { Builder } from '@/__tests__/builder';
+import type { IEncoder } from '@/__tests__/encoder-builder';
 import { DelayModifierAbi } from '@/modules/alerts/domain/contracts/decoders/delay-modifier-decoder.helper';
 
 // TransactionAdded
@@ -44,7 +44,7 @@ class TransactionAddedEventBuilder<T extends TransactionAddedEventArgs>
     const data = encodeAbiParameters(
       // Only non-indexed parameters
       this.item.inputs.filter((input) => {
-        return !('indexed' in input) || !input.indexed;
+        return !('indexed' in input && input.indexed);
       }),
       [args.to, args.value, args.data, args.operation],
     );

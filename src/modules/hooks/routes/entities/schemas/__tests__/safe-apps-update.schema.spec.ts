@@ -1,7 +1,7 @@
+import { faker } from '@faker-js/faker';
 import { safeAppsEventBuilder } from '@/modules/hooks/routes/entities/__tests__/safe-apps-update.builder';
 import type { ConfigEventType } from '@/modules/hooks/routes/entities/event-type.entity';
 import { SafeAppsUpdateEventSchema } from '@/modules/hooks/routes/entities/schemas/safe-apps-update.schema';
-import { faker } from '@faker-js/faker';
 
 describe('SafeAppsUpdateEventSchema', () => {
   it('should validate a valid Safe Apps event', () => {

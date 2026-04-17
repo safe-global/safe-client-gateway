@@ -1,19 +1,19 @@
 import { faker } from '@faker-js/faker';
+import { getAddress, type Hash, type Hex, type PrivateKeyAccount } from 'viem';
 import { Builder } from '@/__tests__/builder';
+import { SignatureType } from '@/domain/common/entities/signature-type.entity';
+import { getSignature } from '@/domain/common/utils/__tests__/signatures.builder';
+import { getSafeTxHash } from '@/domain/common/utils/safe';
 import {
   confirmationBuilder,
   toJson as confirmationToJson,
 } from '@/modules/safe/domain/entities/__tests__/multisig-transaction-confirmation.builder';
-import { getSafeTxHash } from '@/domain/common/utils/safe';
-import { SignatureType } from '@/domain/common/entities/signature-type.entity';
 import type {
   Confirmation,
   MultisigTransaction,
 } from '@/modules/safe/domain/entities/multisig-transaction.entity';
-import type { Safe } from '@/modules/safe/domain/entities/safe.entity';
 import type { Operation } from '@/modules/safe/domain/entities/operation.entity';
-import { getAddress, type Hash, type Hex, type PrivateKeyAccount } from 'viem';
-import { getSignature } from '@/domain/common/utils/__tests__/signatures.builder';
+import type { Safe } from '@/modules/safe/domain/entities/safe.entity';
 
 const HASH_LENGTH = 32;
 

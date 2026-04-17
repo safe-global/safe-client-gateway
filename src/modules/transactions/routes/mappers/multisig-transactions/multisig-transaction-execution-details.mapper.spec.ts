@@ -1,22 +1,22 @@
 import { faker } from '@faker-js/faker';
+import { getAddress } from 'viem';
+import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
+import { getSafeTxHash } from '@/domain/common/utils/safe';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
-import { confirmationBuilder } from '@/modules/safe/domain/entities/__tests__/multisig-transaction-confirmation.builder';
+import type { ILoggingService } from '@/logging/logging.interface';
 import { multisigTransactionBuilder } from '@/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
+import { confirmationBuilder } from '@/modules/safe/domain/entities/__tests__/multisig-transaction-confirmation.builder';
 import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
 import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
 import type { SafeRepository } from '@/modules/safe/domain/safe.repository';
 import { tokenBuilder } from '@/modules/tokens/domain/__tests__/token.builder';
 import type { TokenRepository } from '@/modules/tokens/domain/token.repository';
-import type { ILoggingService } from '@/logging/logging.interface';
+import { MultisigConfirmationDetails } from '@/modules/transactions/routes/entities/transaction-details/multisig-execution-details.entity';
+import { MultisigTransactionExecutionDetailsMapper } from '@/modules/transactions/routes/mappers/multisig-transactions/multisig-transaction-execution-details.mapper';
 import { addressInfoBuilder } from '@/routes/common/__tests__/entities/address-info.builder';
 import type { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
 import { NULL_ADDRESS } from '@/routes/common/constants';
 import { AddressInfo } from '@/routes/common/entities/address-info.entity';
-import { MultisigConfirmationDetails } from '@/modules/transactions/routes/entities/transaction-details/multisig-execution-details.entity';
-import { MultisigTransactionExecutionDetailsMapper } from '@/modules/transactions/routes/mappers/multisig-transactions/multisig-transaction-execution-details.mapper';
-import { getAddress } from 'viem';
-import { getSafeTxHash } from '@/domain/common/utils/safe';
-import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 
 const addressInfoHelper = jest.mocked({
   getOrDefault: jest.fn(),
@@ -92,7 +92,7 @@ describe('MultisigTransactionExecutionDetails mapper (Unit)', () => {
         rejectors: [],
         gasTokenInfo,
         trusted: transaction.trusted,
-        proposer: new AddressInfo(transaction.proposer!),
+        proposer: new AddressInfo(transaction.proposer as `0x${string}`),
         proposedByDelegate: null,
       }),
     );
@@ -127,16 +127,19 @@ describe('MultisigTransactionExecutionDetails mapper (Unit)', () => {
     safeRepository.getMultisigTransactions.mockResolvedValue(
       pageBuilder<MultisigTransaction>().with('results', [rejectionTx]).build(),
     );
+    const txConfirmations = transaction.confirmations as NonNullable<
+      typeof transaction.confirmations
+    >;
     const expectedConfirmationsDetails = [
       new MultisigConfirmationDetails(
-        new AddressInfo(transaction.confirmations![0].owner),
-        transaction.confirmations![0].signature,
-        transaction.confirmations![0].submissionDate.getTime(),
+        new AddressInfo(txConfirmations[0].owner),
+        txConfirmations[0].signature,
+        txConfirmations[0].submissionDate.getTime(),
       ),
       new MultisigConfirmationDetails(
-        new AddressInfo(transaction.confirmations![1].owner),
-        transaction.confirmations![1].signature,
-        transaction.confirmations![1].submissionDate.getTime(),
+        new AddressInfo(txConfirmations[1].owner),
+        txConfirmations[1].signature,
+        txConfirmations[1].submissionDate.getTime(),
       ),
     ];
     const expectedRejectors = [new AddressInfo(rejectionTxConfirmation.owner)];
@@ -165,7 +168,7 @@ describe('MultisigTransactionExecutionDetails mapper (Unit)', () => {
         rejectors: expectedRejectors,
         gasTokenInfo: null,
         trusted: transaction.trusted,
-        proposer: new AddressInfo(transaction.proposer!),
+        proposer: new AddressInfo(transaction.proposer as `0x${string}`),
         proposedByDelegate: null,
       }),
     );
@@ -203,20 +206,26 @@ describe('MultisigTransactionExecutionDetails mapper (Unit)', () => {
         .with('results', [transaction, rejectionTx]) // returns both rejected and rejection txs
         .build(),
     );
+    const txConfirmations = transaction.confirmations as NonNullable<
+      typeof transaction.confirmations
+    >;
+    const rejectionConfirmations = rejectionTx.confirmations as NonNullable<
+      typeof rejectionTx.confirmations
+    >;
     const expectedConfirmationsDetails = [
       new MultisigConfirmationDetails(
-        new AddressInfo(transaction.confirmations![0].owner),
-        transaction.confirmations![0].signature,
-        transaction.confirmations![0].submissionDate.getTime(),
+        new AddressInfo(txConfirmations[0].owner),
+        txConfirmations[0].signature,
+        txConfirmations[0].submissionDate.getTime(),
       ),
       new MultisigConfirmationDetails(
-        new AddressInfo(transaction.confirmations![1].owner),
-        transaction.confirmations![1].signature,
-        transaction.confirmations![1].submissionDate.getTime(),
+        new AddressInfo(txConfirmations[1].owner),
+        txConfirmations[1].signature,
+        txConfirmations[1].submissionDate.getTime(),
       ),
     ];
     const expectedRejectors = [
-      new AddressInfo(rejectionTx.confirmations![0].owner),
+      new AddressInfo(rejectionConfirmations[0].owner),
     ];
 
     const actual = await mapper.mapMultisigExecutionDetails(
@@ -243,7 +252,7 @@ describe('MultisigTransactionExecutionDetails mapper (Unit)', () => {
         rejectors: expectedRejectors,
         gasTokenInfo: null,
         trusted: transaction.trusted,
-        proposer: new AddressInfo(transaction.proposer!),
+        proposer: new AddressInfo(transaction.proposer as `0x${string}`),
         proposedByDelegate: null,
       }),
     );

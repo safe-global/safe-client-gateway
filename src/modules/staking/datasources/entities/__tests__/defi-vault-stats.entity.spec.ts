@@ -1,3 +1,6 @@
+import { faker } from '@faker-js/faker';
+import type { Address } from 'viem';
+import { getAddress } from 'viem';
 import {
   defiVaultAdditionalRewardBuilder,
   defiVaultStatsBuilder,
@@ -6,9 +9,6 @@ import {
   DefiVaultStatsAdditionalRewardSchema,
   DefiVaultStatsSchema,
 } from '@/modules/staking/datasources/entities/defi-vault-stats.entity';
-import { faker } from '@faker-js/faker';
-import type { Address } from 'viem';
-import { getAddress } from 'viem';
 
 describe('DefiVaultStatsSchema', () => {
   it('should validate a valid DefiVaultStats object', () => {
@@ -272,7 +272,7 @@ describe('DefiVaultStatsSchema', () => {
       defiVaultStatsAdditionalReward,
     );
 
-    expect(result.success && result.data['asset']).toBe(
+    expect(result.success && result.data.asset).toBe(
       getAddress(nonChecksummedAddress),
     );
   });

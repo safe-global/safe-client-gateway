@@ -1,5 +1,5 @@
-import { getAddress } from 'viem';
 import { faker } from '@faker-js/faker';
+import { getAddress } from 'viem';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 
 describe('AddressSchema', () => {

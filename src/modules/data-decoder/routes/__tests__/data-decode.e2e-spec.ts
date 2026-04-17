@@ -1,11 +1,11 @@
+import type { Server } from 'node:net';
 import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
+import { createBaseTestModule } from '@/__tests__/testing-module';
 import type { DataDecoded } from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';
 import { transactionDataDtoBuilder } from '@/modules/data-decoder/routes/entities/__tests__/transaction-data.dto.builder';
-import type { Server } from 'net';
-import { createBaseTestModule } from '@/__tests__/testing-module';
 
 describe('Data decode e2e tests', () => {
   let app: INestApplication<Server>;

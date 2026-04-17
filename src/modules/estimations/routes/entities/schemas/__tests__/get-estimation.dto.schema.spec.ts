@@ -1,7 +1,7 @@
-import { getEstimationDtoBuilder } from '@/modules/estimations/routes/entities/__tests__/get-estimation.dto.builder';
-import { GetEstimationDtoSchema } from '@/modules/estimations/routes/entities/schemas/get-estimation.dto.schema';
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress } from 'viem';
+import { getEstimationDtoBuilder } from '@/modules/estimations/routes/entities/__tests__/get-estimation.dto.builder';
+import { GetEstimationDtoSchema } from '@/modules/estimations/routes/entities/schemas/get-estimation.dto.schema';
 
 describe('GetEstimationDtoSchema', () => {
   it('should validate a valid GetEstimationDto', () => {
@@ -58,7 +58,7 @@ describe('GetEstimationDtoSchema', () => {
   it('should allow nullish data, defaulting to null', () => {
     const getEstimationDto = getEstimationDtoBuilder().build();
     // @ts-expect-error - inferred type does not allow optional properties
-    delete getEstimationDto.data;
+    getEstimationDto.data = undefined;
 
     const result = GetEstimationDtoSchema.safeParse(getEstimationDto);
 

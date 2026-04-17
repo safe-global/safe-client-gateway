@@ -1,13 +1,14 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
+import { faker } from '@faker-js/faker';
+import { BadRequestException } from '@nestjs/common';
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import {
   buildAuth0LogoutBaseUrl,
   getRedirectConfig,
-  resolveAndValidateRedirectUrl,
   type RedirectConfig,
+  resolveAndValidateRedirectUrl,
 } from '@/modules/auth/utils/auth-redirect.helper';
-import { BadRequestException } from '@nestjs/common';
-import { faker } from '@faker-js/faker';
 
 describe('Auth-redirect helper functions', () => {
   describe('buildAuth0LogoutBaseUrl', () => {

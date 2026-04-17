@@ -1,10 +1,10 @@
-import { Response } from 'express';
 import {
+  type ArgumentsHost,
   Catch,
-  ExceptionFilter,
-  ArgumentsHost,
+  type ExceptionFilter,
   HttpStatus,
 } from '@nestjs/common';
+import type { Response } from 'express';
 import { UnofficialMultiSendError } from '@/modules/relay/domain/errors/unofficial-multisend.error';
 
 @Catch(UnofficialMultiSendError)

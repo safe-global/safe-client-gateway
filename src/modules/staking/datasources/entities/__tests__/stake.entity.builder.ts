@@ -1,10 +1,10 @@
+import { faker } from '@faker-js/faker';
+import type { Address } from 'viem';
 import type { IBuilder } from '@/__tests__/builder';
 import { Builder } from '@/__tests__/builder';
 import type { Stake } from '@/modules/staking/datasources/entities/stake.entity';
 import { StakeState } from '@/modules/staking/datasources/entities/stake.entity';
 import { KilnDecoder } from '@/modules/staking/domain/contracts/decoders/kiln-decoder.helper';
-import { faker } from '@faker-js/faker';
-import type { Address } from 'viem';
 
 export function stakeBuilder(): IBuilder<Stake> {
   return new Builder<Stake>()

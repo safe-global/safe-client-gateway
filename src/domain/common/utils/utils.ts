@@ -1,5 +1,5 @@
-import { createHash } from 'crypto';
-import type { BinaryLike } from 'crypto';
+import type { BinaryLike } from 'node:crypto';
+import { createHash } from 'node:crypto';
 import type { Address } from 'viem';
 
 // We use the maximum value in order to preserve all decimals
@@ -23,7 +23,7 @@ export function getNumberString(value: number): string {
  * @param {number} [length] of the prefix and suffix, minus hex prefix
  * @returns {Address} truncated address
  */
-export function truncateAddress(address: Address, length: number = 4): Address {
+export function truncateAddress(address: Address, length = 4): Address {
   return `${address.slice(0, length + 2)}...${address.slice(-length)}` as Address;
 }
 

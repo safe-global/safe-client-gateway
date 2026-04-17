@@ -2,8 +2,8 @@ import { faker } from '@faker-js/faker';
 import { type Address, getAddress } from 'viem';
 import {
   _TypedDataDomainSchema,
-  TypedDataSchema,
   type TypedData,
+  TypedDataSchema,
 } from '@/modules/messages/domain/entities/typed-data.entity';
 import {
   typedDataBuilder,

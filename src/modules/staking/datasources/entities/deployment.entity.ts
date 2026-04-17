@@ -1,5 +1,5 @@
-import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { z } from 'zod';
+import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 
 export const DeploymentProductTypes = ['defi', 'pooling', 'dedicated'] as const;
 

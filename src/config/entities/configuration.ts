@@ -23,7 +23,7 @@ export default () => ({
     // Limits the number of unacknowledged messages delivered to a given channel/consumer.
     prefetch:
       process.env.AMQP_PREFETCH != null
-        ? parseInt(process.env.AMQP_PREFETCH)
+        ? Number.parseInt(process.env.AMQP_PREFETCH)
         : 100,
     heartbeatIntervalInSeconds: +(
       process.env.AMQP_HEARBEAT_INTERVAL_SECONDS || 60
@@ -41,13 +41,13 @@ export default () => ({
   },
   auth: {
     token: process.env.AUTH_TOKEN,
-    nonceTtlSeconds: parseInt(
+    nonceTtlSeconds: Number.parseInt(
       process.env.AUTH_NONCE_TTL_SECONDS ?? `${5 * 60}`,
     ),
-    maxValidityPeriodSeconds: parseInt(
+    maxValidityPeriodSeconds: Number.parseInt(
       process.env.AUTH_VALIDITY_PERIOD_SECONDS ?? `${24 * 60 * 60}`, // 24 hours
     ),
-    stateTtlMs: parseInt(
+    stateTtlMs: Number.parseInt(
       process.env.AUTH_STATE_TTL_MILLISECONDS ?? `${5 * 60 * 1_000}`, // 5 minutes
     ),
     postLoginRedirectUri: process.env.AUTH_POST_LOGIN_REDIRECT_URI,
@@ -62,8 +62,8 @@ export default () => ({
       scope: process.env.AUTH0_SCOPE || 'openid',
     },
     rateLimit: {
-      max: parseInt(process.env.AUTH_RATE_LIMIT_MAX ?? `${5}`),
-      windowSeconds: parseInt(
+      max: Number.parseInt(process.env.AUTH_RATE_LIMIT_MAX ?? `${5}`),
+      windowSeconds: Number.parseInt(
         process.env.AUTH_RATE_LIMIT_WINDOW_SECONDS ?? `${60}`,
       ),
     },
@@ -76,18 +76,18 @@ export default () => ({
             process.env.PRICES_PROVIDER_API_BASE_URI ||
             'https://api.coingecko.com/api/v3',
           apiKey: process.env.PRICES_PROVIDER_API_KEY,
-          pricesTtlSeconds: parseInt(
+          pricesTtlSeconds: Number.parseInt(
             process.env.PRICES_TTL_SECONDS ?? `${300}`,
           ),
-          nativeCoinPricesTtlSeconds: parseInt(
+          nativeCoinPricesTtlSeconds: Number.parseInt(
             process.env.NATIVE_COINS_PRICES_TTL_SECONDS ?? `${100}`,
           ),
-          notFoundPriceTtlSeconds: parseInt(
+          notFoundPriceTtlSeconds: Number.parseInt(
             process.env.NOT_FOUND_PRICE_TTL_SECONDS ?? `${72 * 60 * 60}`,
           ),
           highRefreshRateTokens:
             process.env.HIGH_REFRESH_RATE_TOKENS?.split(',') ?? [],
-          highRefreshRateTokensTtlSeconds: parseInt(
+          highRefreshRateTokensTtlSeconds: Number.parseInt(
             process.env.HIGH_REFRESH_RATE_TOKENS_TTL_SECONDS ?? `${30}`,
           ),
         },
@@ -113,10 +113,10 @@ export default () => ({
           'TRY',
           'ZAR',
         ],
-        limitPeriodSeconds: parseInt(
+        limitPeriodSeconds: Number.parseInt(
           process.env.ZERION_RATE_LIMIT_PERIOD_SECONDS ?? `${10}`,
         ),
-        limitCalls: parseInt(
+        limitCalls: Number.parseInt(
           process.env.ZERION_RATE_LIMIT_CALLS_BY_PERIOD ?? `${2}`,
         ),
       },
@@ -124,10 +124,12 @@ export default () => ({
   },
   portfolio: {
     cache: {
-      ttlSeconds: parseInt(process.env.PORTFOLIO_CACHE_TTL_SECONDS ?? `${10}`),
+      ttlSeconds: Number.parseInt(
+        process.env.PORTFOLIO_CACHE_TTL_SECONDS ?? `${10}`,
+      ),
     },
     filters: {
-      dustThresholdUsd: parseFloat(
+      dustThresholdUsd: Number.parseFloat(
         process.env.PORTFOLIO_DUST_THRESHOLD_USD ?? `${0.001}`,
       ),
     },
@@ -147,7 +149,7 @@ export default () => ({
   },
   contracts: {
     trustedForDelegateCall: {
-      maxSequentialPages: parseInt(
+      maxSequentialPages: Number.parseInt(
         process.env.TRUSTED_CONTRACTS_MAX_SEQUENTIAL_PAGES ?? `${3}`,
       ),
     },
@@ -184,7 +186,9 @@ export default () => ({
                 username: process.env.REDIS_USER,
                 password: process.env.REDIS_PASS,
               },
-              duration: parseInt(process.env.ORM_CACHE_DURATION ?? `${1000}`),
+              duration: Number.parseInt(
+                process.env.ORM_CACHE_DURATION ?? `${1000}`,
+              ),
               /**
                * @todo Fix the underlying issue with the Redis client shutting down
                */
@@ -235,23 +239,33 @@ export default () => ({
     fromName: process.env.EMAIL_API_FROM_NAME || 'Safe',
   },
   expirationTimeInSeconds: {
-    deviatePercent: parseInt(process.env.EXPIRATION_DEVIATE_PERCENT ?? `${10}`),
-    default: parseInt(process.env.EXPIRATION_TIME_DEFAULT_SECONDS ?? `${60}`),
-    rpc: parseInt(process.env.EXPIRATION_TIME_RPC_SECONDS ?? `${15}`),
-    hoodi: parseInt(process.env.HOODI_EXPIRATION_TIME_SECONDS ?? `${60}`),
-    indexing: parseInt(process.env.EXPIRATION_TIME_INDEXING_SECONDS ?? `${5}`),
-    staking: parseInt(process.env.EXPIRATION_TIME_STAKING_SECONDS ?? `${60}`),
-    zerionPositions: parseInt(
+    deviatePercent: Number.parseInt(
+      process.env.EXPIRATION_DEVIATE_PERCENT ?? `${10}`,
+    ),
+    default: Number.parseInt(
+      process.env.EXPIRATION_TIME_DEFAULT_SECONDS ?? `${60}`,
+    ),
+    rpc: Number.parseInt(process.env.EXPIRATION_TIME_RPC_SECONDS ?? `${15}`),
+    hoodi: Number.parseInt(
+      process.env.HOODI_EXPIRATION_TIME_SECONDS ?? `${60}`,
+    ),
+    indexing: Number.parseInt(
+      process.env.EXPIRATION_TIME_INDEXING_SECONDS ?? `${5}`,
+    ),
+    staking: Number.parseInt(
+      process.env.EXPIRATION_TIME_STAKING_SECONDS ?? `${60}`,
+    ),
+    zerionPositions: Number.parseInt(
       process.env.EXPIRATION_TIME_POSITIONS_SECONDS ?? `${300}`,
     ),
     notFound: {
-      default: parseInt(
+      default: Number.parseInt(
         process.env.DEFAULT_NOT_FOUND_EXPIRE_TIME_SECONDS ?? `${30}`,
       ),
-      contract: parseInt(
+      contract: Number.parseInt(
         process.env.CONTRACT_NOT_FOUND_EXPIRE_TIME_SECONDS ?? `${60}`,
       ),
-      token: parseInt(
+      token: Number.parseInt(
         process.env.TOKEN_NOT_FOUND_EXPIRE_TIME_SECONDS ?? `${60}`,
       ),
     },
@@ -316,28 +330,28 @@ export default () => ({
   httpClient: {
     // Timeout in milliseconds to be used for the HTTP client.
     // A value of 0 disables the timeout.
-    requestTimeout: parseInt(
+    requestTimeout: Number.parseInt(
       process.env.HTTP_CLIENT_REQUEST_TIMEOUT_MILLISECONDS ?? `${5_000}`,
     ),
-    ownersTimeout: parseInt(
+    ownersTimeout: Number.parseInt(
       process.env.HTTP_CLIENT_REQUEST_TIMEOUT_MILLISECONDS_OWNERS ?? `${5_000}`,
     ),
   },
   undici: {
     // Maximum number of connections per origin. Defaults to 100.
-    connections: parseInt(process.env.UNDICI_CONNECTIONS ?? `${100}`),
+    connections: Number.parseInt(process.env.UNDICI_CONNECTIONS ?? `${100}`),
     // Number of requests to pipeline. Defaults to 1 (no pipelining).
-    pipelining: parseInt(process.env.UNDICI_PIPELINING ?? `${1}`),
+    pipelining: Number.parseInt(process.env.UNDICI_PIPELINING ?? `${1}`),
     // Timeout for socket connection in milliseconds. Defaults to 10000 (10 seconds).
-    connectTimeout: parseInt(
+    connectTimeout: Number.parseInt(
       process.env.UNDICI_CONNECT_TIMEOUT_MILLISECONDS ?? `${10_000}`,
     ),
     // Time of inactivity on socket in milliseconds before closing. Defaults to 30000 (30 seconds).
-    keepAliveTimeout: parseInt(
+    keepAliveTimeout: Number.parseInt(
       process.env.UNDICI_KEEP_ALIVE_TIMEOUT_MILLISECONDS ?? `${30_000}`,
     ),
     // Maximum time to keep a connection alive in milliseconds. Defaults to 600000 (600 seconds / 10 minutes).
-    keepAliveMaxTimeout: parseInt(
+    keepAliveMaxTimeout: Number.parseInt(
       process.env.UNDICI_KEEP_ALIVE_MAX_TIMEOUT_MILLISECONDS ?? `${600_000}`,
     ),
   },
@@ -345,15 +359,19 @@ export default () => ({
     // Whether the circuit breaker is enabled
     enabled: process.env.CIRCUIT_BREAKER_ENABLED?.toLowerCase() !== 'false',
     // Number of failures to open the circuit, and consecutive successes to close it
-    threshold: parseInt(process.env.CIRCUIT_BREAKER_THRESHOLD ?? `${10}`),
+    threshold: Number.parseInt(
+      process.env.CIRCUIT_BREAKER_THRESHOLD ?? `${10}`,
+    ),
     // Time in milliseconds to wait before attempting to close the circuit (timeout period)
-    timeout: parseInt(process.env.CIRCUIT_BREAKER_TIMEOUT ?? `${30_000}`), // 30 seconds
+    timeout: Number.parseInt(
+      process.env.CIRCUIT_BREAKER_TIMEOUT ?? `${30_000}`,
+    ), // 30 seconds
     // Time window in milliseconds for tracking failures
-    rollingWindow: parseInt(
+    rollingWindow: Number.parseInt(
       process.env.CIRCUIT_BREAKER_ROLLING_WINDOW ?? `${60_000}`,
     ), // 60 seconds
     // Percentage of threshold used in HALF_OPEN state (0–100)
-    halfOpenFailureRateThreshold: parseInt(
+    halfOpenFailureRateThreshold: Number.parseInt(
       process.env.CIRCUIT_BREAKER_HALF_OPEN_FAILURE_RATE_THRESHOLD ?? `${30}`,
     ),
   },
@@ -380,28 +398,36 @@ export default () => ({
   },
   owners: {
     // There is no hook to invalidate the owners, so defaulting 0 disables the cache
-    ownersTtlSeconds: parseInt(process.env.OWNERS_TTL_SECONDS ?? `${0}`),
+    ownersTtlSeconds: Number.parseInt(process.env.OWNERS_TTL_SECONDS ?? `${0}`),
   },
   mappings: {
     imitation: {
-      lookupDistance: parseInt(process.env.IMITATION_LOOKUP_DISTANCE ?? `${3}`),
-      prefixLength: parseInt(process.env.IMITATION_PREFIX_LENGTH ?? `${3}`),
-      suffixLength: parseInt(process.env.IMITATION_SUFFIX_LENGTH ?? `${4}`),
+      lookupDistance: Number.parseInt(
+        process.env.IMITATION_LOOKUP_DISTANCE ?? `${3}`,
+      ),
+      prefixLength: Number.parseInt(
+        process.env.IMITATION_PREFIX_LENGTH ?? `${3}`,
+      ),
+      suffixLength: Number.parseInt(
+        process.env.IMITATION_SUFFIX_LENGTH ?? `${4}`,
+      ),
       // Note: due to high value formatted token values, we use bigint
       // This means the value tolerance can only be an integer
       valueTolerance: BigInt(process.env.IMITATION_VALUE_TOLERANCE ?? 1),
       echoLimit: BigInt(process.env.IMITATION_ECHO_LIMIT ?? `${10}`),
     },
     history: {
-      maxNestedTransfers: parseInt(
+      maxNestedTransfers: Number.parseInt(
         process.env.MAX_NESTED_TRANSFERS ?? `${100}`,
       ),
     },
     transactionData: {
-      maxTokenInfoIndexSize: parseInt(process.env.MAX_TOKEN_INFO ?? `${100}`),
+      maxTokenInfoIndexSize: Number.parseInt(
+        process.env.MAX_TOKEN_INFO ?? `${100}`,
+      ),
     },
     safe: {
-      maxOverviews: parseInt(process.env.MAX_SAFE_OVERVIEWS ?? `${10}`),
+      maxOverviews: Number.parseInt(process.env.MAX_SAFE_OVERVIEWS ?? `${10}`),
     },
   },
   pushNotifications: {
@@ -419,39 +445,39 @@ export default () => ({
       process.env.PUSH_NOTIFICATIONS_GET_SUBSCRIBERS_BY_SAFE_TTL_MILLISECONDS ||
       60 * 1_000
     ),
-    oauth2TokenTtlBufferInSeconds: parseInt(
+    oauth2TokenTtlBufferInSeconds: Number.parseInt(
       process.env.PUSH_NOTIFICATIONS_API_OAUTH2_TOKEN_TTL_BUFFER_IN_SECONDS ??
         `${120}`,
     ),
     queue: {
       removeOnComplete: {
-        age: parseInt(
+        age: Number.parseInt(
           process.env.PUSH_NOTIFICATION_QUEUE_REMOVE_ON_COMPLETE_AGE ??
             `${3600}`,
         ),
-        count: parseInt(
+        count: Number.parseInt(
           process.env.PUSH_NOTIFICATION_QUEUE_REMOVE_ON_COMPLETE_COUNT ??
             `${5000}`,
         ),
       },
       removeOnFail: {
-        age: parseInt(
+        age: Number.parseInt(
           process.env.PUSH_NOTIFICATION_QUEUE_REMOVE_ON_FAIL_AGE ?? `${43200}`,
         ),
-        count: parseInt(
+        count: Number.parseInt(
           process.env.PUSH_NOTIFICATION_QUEUE_REMOVE_ON_FAIL_COUNT ?? `${500}`,
         ),
       },
       backoff: {
         type: process.env.PUSH_NOTIFICATION_QUEUE_BACKOFF_TYPE || 'exponential',
-        delay: parseInt(
+        delay: Number.parseInt(
           process.env.PUSH_NOTIFICATION_QUEUE_BACKOFF_DELAY ?? `${1000}`,
         ),
       },
-      attempts: parseInt(
+      attempts: Number.parseInt(
         process.env.PUSH_NOTIFICATION_QUEUE_ATTEMPTS ?? `${3}`,
       ),
-      concurrency: parseInt(
+      concurrency: Number.parseInt(
         process.env.PUSH_NOTIFICATION_QUEUE_CONCURRENCY ?? `${5}`,
       ),
     },
@@ -469,8 +495,8 @@ export default () => ({
   relay: {
     baseUri:
       process.env.RELAY_PROVIDER_API_BASE_URI || 'https://api.gelato.cloud',
-    limit: parseInt(process.env.RELAY_THROTTLE_LIMIT ?? `${5}`),
-    ttlSeconds: parseInt(
+    limit: Number.parseInt(process.env.RELAY_THROTTLE_LIMIT ?? `${5}`),
+    ttlSeconds: Number.parseInt(
       process.env.RELAY_THROTTLE_TTL_SECONDS ?? `${60 * 60 * 24}`,
     ),
     dailyLimitRelayerChainsIds:
@@ -506,13 +532,13 @@ export default () => ({
     noFeeCampaign: {
       // Key is the chainId
       1: {
-        startsAtTimeStamp: parseInt(
+        startsAtTimeStamp: Number.parseInt(
           process.env.RELAY_NO_FEE_CAMPAIGN_MAINNET_START_TIMESTAMP ?? `${0}`,
         ),
-        endsAtTimeStamp: parseInt(
+        endsAtTimeStamp: Number.parseInt(
           process.env.RELAY_NO_FEE_CAMPAIGN_MAINNET_END_TIMESTAMP ?? `${0}`,
         ),
-        maxGasLimit: parseInt(
+        maxGasLimit: Number.parseInt(
           process.env.RELAY_NO_FEE_CAMPAIGN_MAINNET_MAX_GAS_LIMIT ?? `${0}`,
         ),
         safeTokenAddress:
@@ -523,13 +549,13 @@ export default () => ({
           ) ?? [],
       },
       11155111: {
-        startsAtTimeStamp: parseInt(
+        startsAtTimeStamp: Number.parseInt(
           process.env.RELAY_NO_FEE_CAMPAIGN_SEPOLIA_START_TIMESTAMP ?? `${0}`,
         ),
-        endsAtTimeStamp: parseInt(
+        endsAtTimeStamp: Number.parseInt(
           process.env.RELAY_NO_FEE_CAMPAIGN_SEPOLIA_END_TIMESTAMP ?? `${0}`,
         ),
-        maxGasLimit: parseInt(
+        maxGasLimit: Number.parseInt(
           process.env.RELAY_NO_FEE_CAMPAIGN_SEPOLIA_MAX_GAS_LIMIT ?? `${0}`,
         ),
         safeTokenAddress:
@@ -552,12 +578,12 @@ export default () => ({
     baseUri:
       process.env.SAFE_CONFIG_BASE_URI || 'https://safe-config.safe.global/',
     chains: {
-      maxSequentialPages: parseInt(
+      maxSequentialPages: Number.parseInt(
         process.env.SAFE_CONFIG_CHAINS_MAX_SEQUENTIAL_PAGES ?? `${3}`,
       ),
     },
     safes: {
-      maxSequentialPages: parseInt(
+      maxSequentialPages: Number.parseInt(
         process.env.SAFE_CONFIG_SAFES_MAX_SEQUENTIAL_PAGES ?? `${10}`,
       ),
     },
@@ -573,7 +599,7 @@ export default () => ({
     apiKey: process.env.TX_SERVICE_API_KEY,
   },
   transactions: {
-    statusIndexingGracePeriodMs: parseInt(
+    statusIndexingGracePeriodMs: Number.parseInt(
       process.env.TRANSACTION_STATUS_INDEXING_GRACE_PERIOD_MS ?? `${60 * 1000}`,
     ),
   },
@@ -582,29 +608,29 @@ export default () => ({
   },
   spaces: {
     addressBooks: {
-      maxItems: parseInt(
+      maxItems: Number.parseInt(
         process.env.SPACES_MAX_ADDRESS_BOOK_ITEMS_PER_SPACE ?? `${500}`,
       ),
     },
-    maxSafesPerSpace: parseInt(
+    maxSafesPerSpace: Number.parseInt(
       process.env.SPACES_MAX_SAFES_PER_SPACE ?? `${10}`,
     ),
-    maxSpaceCreationsPerUser: parseInt(
+    maxSpaceCreationsPerUser: Number.parseInt(
       process.env.MAX_SPACE_CREATIONS_PER_USER ?? `${3}`,
     ),
-    maxInvites: parseInt(process.env.SPACES_MAX_INVITES ?? `${50}`),
+    maxInvites: Number.parseInt(process.env.SPACES_MAX_INVITES ?? `${50}`),
     rateLimit: {
       creation: {
-        max: parseInt(process.env.SPACES_RATE_LIMIT_MAX ?? `${10}`),
-        windowSeconds: parseInt(
+        max: Number.parseInt(process.env.SPACES_RATE_LIMIT_MAX ?? `${10}`),
+        windowSeconds: Number.parseInt(
           process.env.SPACES_RATE_LIMIT_WINDOW_SECONDS ?? `${600}`,
         ),
       },
       addressBookUpsertion: {
-        max: parseInt(
+        max: Number.parseInt(
           process.env.SPACES_ADDRESS_BOOK_RATE_LIMIT_MAX ?? `${500}`,
         ),
-        windowSeconds: parseInt(
+        windowSeconds: Number.parseInt(
           process.env.SPACES_ADDRESS_BOOK_RATE_LIMIT_WINDOW_SECONDS ?? `${600}`,
         ),
       },
@@ -651,7 +677,7 @@ export default () => ({
     // Upper limit of parts we will request from CoW for TWAP orders, after
     // which we return base values for those orders
     // Note: 11 is the average number of parts, confirmed by CoW
-    maxNumberOfParts: parseInt(
+    maxNumberOfParts: Number.parseInt(
       process.env.SWAPS_MAX_NUMBER_OF_PARTS ?? `${11}`,
     ),
   },
@@ -702,35 +728,39 @@ export default () => ({
     },
     // The time-to-live (TTL) for the signed URLs generated for CSV exports.
     // Defaults to 3600 seconds (1 hour).
-    signedUrlTtlSeconds: parseInt(
+    signedUrlTtlSeconds: Number.parseInt(
       process.env.CSV_EXPORT_SIGNED_URL_TTL_SECONDS ?? `${60 * 60}`,
     ),
     // BullMq queue configuration for CSV exports.
     queue: {
       removeOnComplete: {
-        age: parseInt(
+        age: Number.parseInt(
           process.env.CSV_EXPORT_QUEUE_REMOVE_ON_COMPLETE_AGE ?? `${86400}`,
         ), // 24 hours
-        count: parseInt(
+        count: Number.parseInt(
           process.env.CSV_EXPORT_QUEUE_REMOVE_ON_COMPLETE_COUNT ?? `${1000}`,
         ), // last 1000
       },
       removeOnFail: {
-        age: parseInt(
+        age: Number.parseInt(
           process.env.CSV_EXPORT_QUEUE_REMOVE_ON_FAIL_AGE ?? `${43200}`,
         ), // 12 hours
-        count: parseInt(
+        count: Number.parseInt(
           process.env.CSV_EXPORT_QUEUE_REMOVE_ON_FAIL_COUNT ?? `${100}`,
         ), // last 100
       },
       backoff: {
         type: process.env.CSV_EXPORT_QUEUE_BACKOFF_TYPE || 'exponential',
-        delay: parseInt(
+        delay: Number.parseInt(
           process.env.CSV_EXPORT_QUEUE_BACKOFF_DELAY ?? `${2000}`,
         ), // 2 seconds
       },
-      attempts: parseInt(process.env.CSV_EXPORT_QUEUE_ATTEMPTS ?? `${3}`),
-      concurrency: parseInt(process.env.CSV_EXPORT_QUEUE_CONCURRENCY ?? `${3}`),
+      attempts: Number.parseInt(
+        process.env.CSV_EXPORT_QUEUE_ATTEMPTS ?? `${3}`,
+      ),
+      concurrency: Number.parseInt(
+        process.env.CSV_EXPORT_QUEUE_CONCURRENCY ?? `${3}`,
+      ),
     },
   },
   safeShield: {
@@ -744,7 +774,7 @@ export default () => ({
     baseUri:
       process.env.ETHERSCAN_BASE_URI || 'https://api.etherscan.io/v2/api',
     apiKey: process.env.ETHERSCAN_API_KEY,
-    gasPriceCacheTtlSeconds: parseInt(
+    gasPriceCacheTtlSeconds: Number.parseInt(
       process.env.ETHERSCAN_GAS_PRICE_CACHE_TTL_SECONDS ?? `${10}`,
     ),
   },

@@ -3,27 +3,27 @@ import {
   ApiPropertyOptional,
   getSchemaPath,
 } from '@nestjs/swagger';
-import { AddressInfo } from '@/routes/common/entities/address-info.entity';
+import type { Address } from 'viem';
+import {
+  OrderClass,
+  OrderKind,
+  OrderStatus,
+} from '@/modules/swaps/domain/entities/order.entity';
+import type { SwapOrderTransactionInfo } from '@/modules/transactions/routes/entities/swaps/swap-order-info.entity';
+import type { TokenInfo } from '@/modules/transactions/routes/entities/swaps/token-info.entity';
 import {
   TransactionInfo,
   TransactionInfoType,
 } from '@/modules/transactions/routes/entities/transaction-info.entity';
-import { Transfer } from '@/modules/transactions/routes/entities/transfers/transfer.entity';
-import { SwapOrderTransactionInfo } from '@/modules/transactions/routes/entities/swaps/swap-order-info.entity';
-import {
-  OrderStatus,
-  OrderClass,
-  OrderKind,
-} from '@/modules/swaps/domain/entities/order.entity';
-import { TokenInfo } from '@/modules/transactions/routes/entities/swaps/token-info.entity';
-import {
+import type {
   TransferDirection,
   TransferTransactionInfo,
 } from '@/modules/transactions/routes/entities/transfer-transaction-info.entity';
 import { Erc20Transfer } from '@/modules/transactions/routes/entities/transfers/erc20-transfer.entity';
 import { Erc721Transfer } from '@/modules/transactions/routes/entities/transfers/erc721-transfer.entity';
 import { NativeCoinTransfer } from '@/modules/transactions/routes/entities/transfers/native-coin-transfer.entity';
-import type { Address } from 'viem';
+import type { Transfer } from '@/modules/transactions/routes/entities/transfers/transfer.entity';
+import type { AddressInfo } from '@/routes/common/entities/address-info.entity';
 
 export class SwapTransferTransactionInfo
   extends TransactionInfo

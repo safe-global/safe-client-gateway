@@ -1,8 +1,8 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type { Address } from 'viem';
-import { IPortfolioService } from '@/modules/portfolio/domain/portfolio.service.interface';
-import { IPortfolioRepository } from '@/modules/portfolio/domain/portfolio.repository.interface';
 import type { Portfolio } from '@/modules/portfolio/domain/entities/portfolio.entity';
+import { IPortfolioRepository } from '@/modules/portfolio/domain/portfolio.repository.interface';
+import type { IPortfolioService } from '@/modules/portfolio/domain/portfolio.service.interface';
 
 /**
  * Domain portfolio service.
@@ -15,7 +15,7 @@ export class PortfolioService implements IPortfolioService {
     private readonly portfolioRepository: IPortfolioRepository,
   ) {}
 
-  public async getPortfolio(args: {
+  public getPortfolio(args: {
     address: Address;
     fiatCode: string;
     chainIds?: Array<string>;

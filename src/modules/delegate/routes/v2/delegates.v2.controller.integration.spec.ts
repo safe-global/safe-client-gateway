@@ -1,4 +1,11 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
+import type { Server } from 'node:net';
+import { faker } from '@faker-js/faker';
+import type { INestApplication } from '@nestjs/common';
+import omit from 'lodash/omit';
+import request from 'supertest';
+import { getAddress } from 'viem';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { createTestModule } from '@/__tests__/testing-module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
@@ -6,18 +13,12 @@ import configuration from '@/config/entities/__tests__/configuration';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
 import { NetworkService } from '@/datasources/network/network.service.interface';
+import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
 import { delegateBuilder } from '@/modules/delegate/domain/entities/__tests__/delegate.builder';
-import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import { createDelegateDtoBuilder } from '@/modules/delegate/routes/entities/__tests__/create-delegate.dto.builder';
 import { deleteDelegateV2DtoBuilder } from '@/modules/delegate/routes/v2/entities/__tests__/delete-delegate.v2.dto.builder';
 import { rawify } from '@/validation/entities/raw.entity';
-import { faker } from '@faker-js/faker';
-import type { INestApplication } from '@nestjs/common';
-import omit from 'lodash/omit';
-import type { Server } from 'net';
-import request from 'supertest';
-import { getAddress } from 'viem';
 
 describe('Delegates controller', () => {
   let app: INestApplication<Server>;
@@ -474,9 +475,9 @@ describe('Delegates controller', () => {
       const delegateAddress = getAddress(faker.finance.ethereumAddress());
       const deleteDelegateV2Dto = deleteDelegateV2DtoBuilder().build();
       // @ts-expect-error - inferred types don't allow optional fields
-      delete deleteDelegateV2Dto.delegator;
+      deleteDelegateV2Dto.delegator = undefined;
       // @ts-expect-error - inferred types don't allow optional fields
-      delete deleteDelegateV2Dto.safe;
+      deleteDelegateV2Dto.safe = undefined;
       const chain = chainBuilder().build();
 
       await request(app.getHttpServer())

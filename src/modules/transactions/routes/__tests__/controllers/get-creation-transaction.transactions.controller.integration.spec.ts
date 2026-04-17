@@ -1,3 +1,6 @@
+import type { Server } from 'node:net';
+import type { INestApplication } from '@nestjs/common';
+import request from 'supertest';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { createTestModule } from '@/__tests__/testing-module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
@@ -12,9 +15,6 @@ import {
 } from '@/modules/safe/domain/entities/__tests__/creation-transaction.builder';
 import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
 import { rawify } from '@/validation/entities/raw.entity';
-import type { INestApplication } from '@nestjs/common';
-import type { Server } from 'net';
-import request from 'supertest';
 
 describe('Get creation transaction', () => {
   let app: INestApplication<Server>;

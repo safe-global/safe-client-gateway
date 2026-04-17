@@ -1,7 +1,7 @@
+import { faker } from '@faker-js/faker/.';
 import { Builder, type IBuilder } from '@/__tests__/builder';
 import { fakeJson } from '@/__tests__/faker';
 import type { EligibilityRequest } from '@/modules/community/domain/entities/eligibility-request.entity';
-import { faker } from '@faker-js/faker/.';
 
 export function eligibilityRequestBuilder(): IBuilder<EligibilityRequest> {
   return new Builder<EligibilityRequest>()

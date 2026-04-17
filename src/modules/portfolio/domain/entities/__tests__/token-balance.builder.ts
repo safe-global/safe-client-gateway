@@ -1,8 +1,8 @@
 import { faker } from '@faker-js/faker';
 import type { IBuilder } from '@/__tests__/builder';
 import { Builder } from '@/__tests__/builder';
-import type { TokenBalance } from '@/modules/portfolio/domain/entities/token-balance.entity';
 import { tokenInfoBuilder } from '@/modules/portfolio/domain/entities/__tests__/token-info.builder';
+import type { TokenBalance } from '@/modules/portfolio/domain/entities/token-balance.entity';
 
 export function tokenBalanceBuilder(): IBuilder<TokenBalance> {
   return new Builder<TokenBalance>()

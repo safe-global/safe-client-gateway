@@ -1,9 +1,9 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { AddressInfo } from '@/routes/common/entities/address-info.entity';
 import {
   TransactionInfo,
   TransactionInfoType,
 } from '@/modules/transactions/routes/entities/transaction-info.entity';
+import type { AddressInfo } from '@/routes/common/entities/address-info.entity';
 
 export class CustomTransactionInfo extends TransactionInfo {
   @ApiProperty({ enum: [TransactionInfoType.Custom] })

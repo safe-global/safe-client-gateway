@@ -1,13 +1,13 @@
-import configuration from '@/config/entities/__tests__/configuration';
-import { TestAppProvider } from '@/__tests__/test-app.provider';
+import type { Server } from 'node:net';
 import type { INestApplication } from '@nestjs/common';
-import { CacheService } from '@/datasources/cache/cache.service.interface';
-import type { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
 import request from 'supertest';
+import { TestAppProvider } from '@/__tests__/test-app.provider';
+import { createTestModule } from '@/__tests__/testing-module';
+import configuration from '@/config/entities/__tests__/configuration';
+import type { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
+import { CacheService } from '@/datasources/cache/cache.service.interface';
 import type { IQueueReadiness } from '@/domain/interfaces/queue-readiness.interface';
 import { QueueReadiness } from '@/domain/interfaces/queue-readiness.interface';
-import type { Server } from 'net';
-import { createTestModule } from '@/__tests__/testing-module';
 
 describe('Health Controller tests', () => {
   let app: INestApplication<Server>;

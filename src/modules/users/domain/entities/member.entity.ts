@@ -1,13 +1,13 @@
+import type { Address } from 'viem';
 import { z } from 'zod';
 import { RowSchema } from '@/datasources/db/v2/entities/row.entity';
-import { SpaceSchema } from '@/modules/spaces/domain/entities/space.entity';
-import { UserSchema } from '@/modules/users/domain/entities/user.entity';
+import { NameSchema } from '@/domain/common/schemas/name.schema';
 import { getStringEnumKeys } from '@/domain/common/utils/enum';
 import type { Space } from '@/modules/spaces/domain/entities/space.entity';
+import { SpaceSchema } from '@/modules/spaces/domain/entities/space.entity';
 import type { User } from '@/modules/users/domain/entities/user.entity';
+import { UserSchema } from '@/modules/users/domain/entities/user.entity';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { NameSchema } from '@/domain/common/schemas/name.schema';
-import type { Address } from 'viem';
 
 export enum MemberRole {
   ADMIN = 1,

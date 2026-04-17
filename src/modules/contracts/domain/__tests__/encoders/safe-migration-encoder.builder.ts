@@ -1,8 +1,8 @@
 import type { Hex } from 'viem';
 import { encodeFunctionData } from 'viem';
-import SafeMigration from '@/abis/safe/v1.4.1/SafeMigration.abi';
-import type { IEncoder } from '@/__tests__/encoder-builder';
 import { Builder } from '@/__tests__/builder';
+import type { IEncoder } from '@/__tests__/encoder-builder';
+import SafeMigration from '@/abis/safe/v1.4.1/SafeMigration.abi';
 
 // migrateL2Singleton (no args)
 

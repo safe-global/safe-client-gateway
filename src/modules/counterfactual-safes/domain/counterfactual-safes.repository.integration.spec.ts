@@ -1,24 +1,24 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
+import type { ConfigService } from '@nestjs/config';
+import type { Repository } from 'typeorm';
 import { DataSource } from 'typeorm';
-import { getAddress, type Address } from 'viem';
+import { type Address, getAddress } from 'viem';
 import configuration from '@/config/entities/__tests__/configuration';
 import { postgresConfig } from '@/config/entities/postgres.config';
-import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { DatabaseMigrator } from '@/datasources/db/v2/database-migrator.service';
-import { User } from '@/modules/users/datasources/entities/users.entity.db';
-import { Member } from '@/modules/users/datasources/entities/member.entity.db';
-import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
-import { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
-import { SpaceSafe } from '@/modules/spaces/datasources/entities/space-safes.entity.db';
+import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
+import { UniqueConstraintError } from '@/datasources/errors/unique-constraint-error';
+import type { ILoggingService } from '@/logging/logging.interface';
+import { counterfactualSafeBuilder } from '@/modules/counterfactual-safes/datasources/entities/__tests__/counterfactual-safe.entity.db.builder';
 import { CounterfactualSafe } from '@/modules/counterfactual-safes/datasources/entities/counterfactual-safe.entity.db';
 import { CounterfactualSafesRepository } from '@/modules/counterfactual-safes/domain/counterfactual-safes.repository';
-import { counterfactualSafeBuilder } from '@/modules/counterfactual-safes/datasources/entities/__tests__/counterfactual-safe.entity.db.builder';
-import { UniqueConstraintError } from '@/datasources/errors/unique-constraint-error';
-import { BadRequestException, NotFoundException } from '@nestjs/common';
-import type { Repository } from 'typeorm';
-import type { ConfigService } from '@nestjs/config';
-import type { ILoggingService } from '@/logging/logging.interface';
+import { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
+import { SpaceSafe } from '@/modules/spaces/datasources/entities/space-safes.entity.db';
+import { Member } from '@/modules/users/datasources/entities/member.entity.db';
+import { User } from '@/modules/users/datasources/entities/users.entity.db';
+import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
 
 const mockLoggingService = {
   debug: jest.fn(),
@@ -162,14 +162,14 @@ describe('CounterfactualSafesRepository', () => {
       const user = await dbUserRepo.insert({ status: 'ACTIVE' });
       const userId = user.identifiers[0].id as User['id'];
       const payload = buildCounterfactualSafePayload();
-      const before = new Date().getTime();
+      const before = Date.now();
 
       await counterfactualSafesRepo.create({
         creatorId: userId,
         payload: [payload],
       });
 
-      const after = new Date().getTime();
+      const after = Date.now();
 
       const saved = await dbCounterfactualSafeRepo.findOneOrFail({
         where: { chainId: payload.chainId, address: payload.address },

@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { OidcAuthRateLimitGuard } from './oidc-auth-rate-limit.guard';
-import { RateLimitGuard } from '@/routes/common/guards/rate-limit.guard';
+
+import { faker } from '@faker-js/faker/.';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import type { ICacheService } from '@/datasources/cache/cache.service.interface';
 import type { ILoggingService } from '@/logging/logging.interface';
-import { faker } from '@faker-js/faker/.';
+import { RateLimitGuard } from '@/routes/common/guards/rate-limit.guard';
+import { OidcAuthRateLimitGuard } from './oidc-auth-rate-limit.guard';
 
 const mockCacheService = jest.mocked({
   increment: jest.fn(),

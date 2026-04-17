@@ -1,6 +1,6 @@
+import { faker } from '@faker-js/faker';
 import { dedicatedStakingStatsBuilder } from '@/modules/staking/datasources/entities/__tests__/dedicated-staking-stats.entity.builder';
 import { DedicatedStakingStatsSchema } from '@/modules/staking/datasources/entities/dedicated-staking-stats.entity';
-import { faker } from '@faker-js/faker';
 
 describe('DedicatedStakingStatsSchema', () => {
   it('should validate a DedicatedStakingStats object', () => {

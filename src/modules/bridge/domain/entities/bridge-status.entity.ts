@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { TokenSchema } from '@/modules/bridge/domain/entities/token.entity';
+import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import {
   NullableNumberSchema,
   NullableStringSchema,

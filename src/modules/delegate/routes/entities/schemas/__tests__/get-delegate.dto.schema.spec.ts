@@ -1,6 +1,6 @@
-import { GetDelegateDtoSchema } from '@/modules/delegate/routes/entities/schemas/get-delegate.dto.schema';
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress } from 'viem';
+import { GetDelegateDtoSchema } from '@/modules/delegate/routes/entities/schemas/get-delegate.dto.schema';
 
 describe('GetDelegateDtoSchema', () => {
   it('should validate a valid GetDelegateDto', () => {

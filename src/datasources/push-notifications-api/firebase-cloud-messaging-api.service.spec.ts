@@ -1,3 +1,4 @@
+import { faker } from '@faker-js/faker';
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
@@ -7,7 +8,6 @@ import type { INetworkService } from '@/datasources/network/network.service.inte
 import { firebaseNotificationBuilder } from '@/datasources/push-notifications-api/__tests__/firebase-notification.builder';
 import { FirebaseCloudMessagingApiService } from '@/datasources/push-notifications-api/firebase-cloud-messaging-api.service';
 import { rawify } from '@/validation/entities/raw.entity';
-import { faker } from '@faker-js/faker';
 
 const mockNetworkService = jest.mocked({
   get: jest.fn(),

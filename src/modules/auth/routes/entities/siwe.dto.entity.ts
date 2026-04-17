@@ -1,7 +1,7 @@
-import { HexSchema } from '@/validation/entities/schemas/hex.schema';
 import { ApiProperty } from '@nestjs/swagger';
-import { z } from 'zod';
 import type { Address } from 'viem';
+import { z } from 'zod';
+import { HexSchema } from '@/validation/entities/schemas/hex.schema';
 
 export class SiweDto implements z.infer<typeof SiweDtoSchema> {
   @ApiProperty()

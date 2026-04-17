@@ -9,33 +9,33 @@ import {
   Query,
 } from '@nestjs/common';
 import {
+  ApiBadRequestResponse,
+  ApiBody,
+  ApiNoContentResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiParam,
   ApiQuery,
   ApiTags,
-  ApiParam,
-  ApiBody,
-  ApiBadRequestResponse,
-  ApiNoContentResponse,
 } from '@nestjs/swagger';
-import { PaginationDataDecorator } from '@/routes/common/decorators/pagination.data.decorator';
-import { RouteUrlDecorator } from '@/routes/common/decorators/route.url.decorator';
-import { Page } from '@/routes/common/entities/page.entity';
-import { PaginationData } from '@/routes/common/pagination/pagination.data';
+import type { Address } from 'viem';
 import { DelegatesService } from '@/modules/delegate/routes/delegates.service';
 import { CreateDelegateDto } from '@/modules/delegate/routes/entities/create-delegate.dto.entity';
-import { Delegate } from '@/modules/delegate/routes/entities/delegate.entity';
+import type { Delegate } from '@/modules/delegate/routes/entities/delegate.entity';
 import { DelegatePage } from '@/modules/delegate/routes/entities/delegate.page.entity';
 import { DeleteDelegateDto } from '@/modules/delegate/routes/entities/delete-delegate.dto.entity';
 import { DeleteSafeDelegateDto } from '@/modules/delegate/routes/entities/delete-safe-delegate.dto.entity';
-import { GetDelegateDto } from '@/modules/delegate/routes/entities/get-delegate.dto.entity';
-import { ValidationPipe } from '@/validation/pipes/validation.pipe';
-import { GetDelegateDtoSchema } from '@/modules/delegate/routes/entities/schemas/get-delegate.dto.schema';
+import type { GetDelegateDto } from '@/modules/delegate/routes/entities/get-delegate.dto.entity';
 import { CreateDelegateDtoSchema } from '@/modules/delegate/routes/entities/schemas/create-delegate.dto.schema';
 import { DeleteDelegateDtoSchema } from '@/modules/delegate/routes/entities/schemas/delete-delegate.dto.schema';
 import { DeleteSafeDelegateDtoSchema } from '@/modules/delegate/routes/entities/schemas/delete-safe-delegate.dto.schema';
+import { GetDelegateDtoSchema } from '@/modules/delegate/routes/entities/schemas/get-delegate.dto.schema';
+import { PaginationDataDecorator } from '@/routes/common/decorators/pagination.data.decorator';
+import { RouteUrlDecorator } from '@/routes/common/decorators/route.url.decorator';
+import type { Page } from '@/routes/common/entities/page.entity';
+import type { PaginationData } from '@/routes/common/pagination/pagination.data';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import type { Address } from 'viem';
+import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 
 @ApiTags('delegates')
 @Controller({
@@ -91,7 +91,7 @@ export class DelegatesController {
     description: 'Paginated list of delegates retrieved successfully',
   })
   @Get('chains/:chainId/delegates')
-  async getDelegates(
+  getDelegates(
     @Param('chainId') chainId: string,
     @RouteUrlDecorator() routeUrl: URL,
     @Query(new ValidationPipe(GetDelegateDtoSchema))
@@ -167,7 +167,7 @@ export class DelegatesController {
     description: 'Invalid signature or unauthorized deletion attempt',
   })
   @Delete('chains/:chainId/delegates/:delegateAddress')
-  async deleteDelegate(
+  deleteDelegate(
     @Param('chainId') chainId: string,
     @Param('delegateAddress', new ValidationPipe(AddressSchema))
     delegateAddress: Address,
@@ -214,7 +214,7 @@ export class DelegatesController {
     description: 'Invalid signature or unauthorized removal attempt',
   })
   @Delete('chains/:chainId/safes/:safeAddress/delegates/:delegateAddress')
-  async deleteSafeDelegate(
+  deleteSafeDelegate(
     @Param('chainId') chainId: string,
     @Body(new ValidationPipe(DeleteSafeDelegateDtoSchema))
     deleteSafeDelegateRequest: DeleteSafeDelegateDto,

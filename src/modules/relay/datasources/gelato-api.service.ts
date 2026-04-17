@@ -1,30 +1,33 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
-import {
-  NetworkService,
-  INetworkService,
-} from '@/datasources/network/network.service.interface';
-import { IRelayApi } from '@/domain/interfaces/relay-api.interface';
+import type { Address } from 'viem';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { CacheRouter } from '@/datasources/cache/cache.router';
 import {
   CacheService,
-  ICacheService,
+  type ICacheService,
 } from '@/datasources/cache/cache.service.interface';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
+import {
+  type INetworkService,
+  NetworkService,
+} from '@/datasources/network/network.service.interface';
+import type { IRelayApi } from '@/domain/interfaces/relay-api.interface';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
 import { asError } from '@/logging/utils';
 import {
-  type Relay,
   type GelatoRelayResponse,
   GelatoRelayResponseSchema,
+  type Relay,
 } from '@/modules/relay/domain/entities/relay.entity';
 import {
-  type RelayTaskStatus,
   type GelatoTaskStatusResponse,
   GelatoTaskStatusResponseSchema,
+  type RelayTaskStatus,
 } from '@/modules/relay/domain/entities/relay-task-status.entity';
-import type { Address } from 'viem';
 
 @Injectable()
 export class GelatoApi implements IRelayApi {
@@ -134,7 +137,7 @@ export class GelatoApi implements IRelayApi {
   }): Promise<number> {
     const cacheDir = CacheRouter.getRelayCacheDir(args);
     const count = await this.cacheService.hGet(cacheDir);
-    return count ? parseInt(count) : 0;
+    return count ? Number.parseInt(count) : 0;
   }
 
   async setRelayCount(args: {

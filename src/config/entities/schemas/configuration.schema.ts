@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
+
 const relayRulesValidator = z
   .string()
   .refine(
@@ -180,9 +181,9 @@ export const RootConfigurationSchema = z
     CAPTCHA_ENABLED: z.string().optional().default('false'),
     CAPTCHA_SECRET_KEY: z.string().optional(),
   })
-  .superRefine((config, ctx) =>
+  .superRefine((config, ctx) => {
     // Check for AWS_* and Blockaid fields in production and staging environments
-    [
+    for (const field of [
       'AWS_ACCESS_KEY_ID',
       'AWS_KMS_ENCRYPTION_KEY_ID',
       'AWS_SECRET_ACCESS_KEY',
@@ -190,7 +191,7 @@ export const RootConfigurationSchema = z
       'CSV_AWS_ACCESS_KEY_ID',
       'CSV_AWS_SECRET_ACCESS_KEY',
       'BLOCKAID_CLIENT_API_KEY',
-    ].forEach((field) => {
+    ]) {
       if (
         config.CGW_ENV &&
         config instanceof Object &&
@@ -203,8 +204,8 @@ export const RootConfigurationSchema = z
           path: [field],
         });
       }
-    }),
-  );
+    }
+  });
 
 export type FileStorageType = z.infer<
   typeof RootConfigurationSchema

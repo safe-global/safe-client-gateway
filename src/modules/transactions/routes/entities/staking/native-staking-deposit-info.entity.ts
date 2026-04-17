@@ -1,15 +1,15 @@
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import type { Address } from 'viem';
 import {
+  type StakingFinancialInfo,
   StakingStatus,
-  StakingTimeInfo,
-  StakingFinancialInfo,
+  type StakingTimeInfo,
 } from '@/modules/transactions/routes/entities/staking/staking.entity';
-import { TokenInfo } from '@/modules/transactions/routes/entities/swaps/token-info.entity';
+import type { TokenInfo } from '@/modules/transactions/routes/entities/swaps/token-info.entity';
 import {
   TransactionInfo,
   TransactionInfoType,
 } from '@/modules/transactions/routes/entities/transaction-info.entity';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import type { Address } from 'viem';
 
 export type NativeStakingDepositInfo = StakingTimeInfo & StakingFinancialInfo;
 

@@ -1,29 +1,30 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { type ILoggingService } from '@/logging/logging.interface';
-import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { NotificationsRepositoryV2 } from '@/modules/notifications/domain/v2/notifications.repository';
-import type { IPushNotificationsApi } from '@/domain/interfaces/push-notifications-api.interface';
-import { NotificationType } from '@/modules/notifications/datasources/entities/notification-type.entity.db';
-import type { INotificationsRepositoryV2 } from '@/modules/notifications/domain/v2/notifications.repository.interface';
-import { NotificationSubscription } from '@/modules/notifications/datasources/entities/notification-subscription.entity.db';
-import { upsertSubscriptionsDtoBuilder } from '@/modules/notifications/routes/v2/entities/__tests__/upsert-subscriptions.dto.builder';
-import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
-import { NotificationDevice } from '@/modules/notifications/datasources/entities/notification-devices.entity.db';
-import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
-import { DataSource, In, type EntityManager } from 'typeorm';
-import { postgresConfig } from '@/config/entities/postgres.config';
-import configuration from '@/config/entities/__tests__/configuration';
-import { NotificationSubscriptionNotificationType } from '@/modules/notifications/datasources/entities/notification-subscription-notification-type.entity.db';
-import type { UUID } from 'crypto';
+
+import type { UUID } from 'node:crypto';
 import { faker } from '@faker-js/faker/.';
-import { notificationDeviceBuilder } from '@/modules/notifications/datasources/entities/__tests__/notification-devices.entity.db.builder';
-import { NotificationType as NotificationTypeEnum } from '@/modules/notifications/domain/v2/entities/notification.entity';
-import { DatabaseMigrator } from '@/datasources/db/v2/database-migrator.service';
-import type { ConfigService } from '@nestjs/config';
 import { NotFoundException } from '@nestjs/common';
-import { CacheRouter } from '@/datasources/cache/cache.router';
+import type { ConfigService } from '@nestjs/config';
+import { DataSource, type EntityManager, In } from 'typeorm';
 import { getAddress } from 'viem';
+import configuration from '@/config/entities/__tests__/configuration';
+import { postgresConfig } from '@/config/entities/postgres.config';
+import { CacheRouter } from '@/datasources/cache/cache.router';
+import { DatabaseMigrator } from '@/datasources/db/v2/database-migrator.service';
+import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
+import type { IPushNotificationsApi } from '@/domain/interfaces/push-notifications-api.interface';
+import type { ILoggingService } from '@/logging/logging.interface';
+import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
+import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
+import { notificationDeviceBuilder } from '@/modules/notifications/datasources/entities/__tests__/notification-devices.entity.db.builder';
+import { NotificationDevice } from '@/modules/notifications/datasources/entities/notification-devices.entity.db';
+import { NotificationSubscription } from '@/modules/notifications/datasources/entities/notification-subscription.entity.db';
+import { NotificationSubscriptionNotificationType } from '@/modules/notifications/datasources/entities/notification-subscription-notification-type.entity.db';
+import { NotificationType } from '@/modules/notifications/datasources/entities/notification-type.entity.db';
 import { deleteAllSubscriptionsDtoBuilder } from '@/modules/notifications/domain/v2/entities/__tests__/delete-all-subscriptions.dto.builder';
+import { NotificationType as NotificationTypeEnum } from '@/modules/notifications/domain/v2/entities/notification.entity';
+import { NotificationsRepositoryV2 } from '@/modules/notifications/domain/v2/notifications.repository';
+import type { INotificationsRepositoryV2 } from '@/modules/notifications/domain/v2/notifications.repository.interface';
+import { upsertSubscriptionsDtoBuilder } from '@/modules/notifications/routes/v2/entities/__tests__/upsert-subscriptions.dto.builder';
 
 describe('NotificationsRepositoryV2', () => {
   const mockLoggingService = {

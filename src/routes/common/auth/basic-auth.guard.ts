@@ -1,6 +1,6 @@
 import {
-  CanActivate,
-  ExecutionContext,
+  type CanActivate,
+  type ExecutionContext,
   Inject,
   Injectable,
 } from '@nestjs/common';
@@ -16,6 +16,6 @@ export class BasicAuthGuard implements CanActivate {
   canActivate(context: ExecutionContext): boolean | Promise<boolean> {
     const request = context.switchToHttp().getRequest();
     const token = this.configurationService.getOrThrow('auth.token');
-    return request.headers['authorization'] === `Basic ${token}`;
+    return request.headers.authorization === `Basic ${token}`;
   }
 }

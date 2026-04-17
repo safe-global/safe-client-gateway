@@ -1,13 +1,13 @@
+import { faker } from '@faker-js/faker';
+import { type Address, getAddress } from 'viem';
 import {
   erc20TokenBuilder,
   erc721TokenBuilder,
   nativeTokenBuilder,
   tokenBuilder,
 } from '@/modules/tokens/domain/__tests__/token.builder';
-import { TokenSchema } from '@/modules/tokens/domain/entities/token.entity';
 import type { Token } from '@/modules/tokens/domain/entities/token.entity';
-import { faker } from '@faker-js/faker';
-import { type Address, getAddress } from 'viem';
+import { TokenSchema } from '@/modules/tokens/domain/entities/token.entity';
 
 describe('Token', () => {
   it('should validate a token', () => {
@@ -26,7 +26,7 @@ describe('Token', () => {
 
     const result = TokenSchema.safeParse(token);
 
-    expect(result.success && result.data['address']).toBe(
+    expect(result.success && result.data.address).toBe(
       getAddress(nonChecksummedAddress),
     );
   });
@@ -55,7 +55,7 @@ describe('Token', () => {
   it('should not allow native tokens to have undefined decimals', () => {
     const token = nativeTokenBuilder().build();
     // @ts-expect-error - inferred type does not allow undefined decimals
-    delete token.decimals;
+    token.decimals = undefined;
 
     const result = TokenSchema.safeParse(token);
 
@@ -72,7 +72,7 @@ describe('Token', () => {
   it('should default ERC-20 decimals to 0', () => {
     const token = erc20TokenBuilder().build();
     // @ts-expect-error - inferred type does not allow undefined decimals
-    delete token.decimals;
+    token.decimals = undefined;
 
     const result = TokenSchema.safeParse(token);
 
@@ -82,7 +82,7 @@ describe('Token', () => {
   it('should default ERC-721 decimals to 0', () => {
     const token = erc721TokenBuilder().build();
     // @ts-expect-error - inferred type does not allow undefined decimals
-    delete token.decimals;
+    token.decimals = undefined;
 
     const result = TokenSchema.safeParse(token);
 

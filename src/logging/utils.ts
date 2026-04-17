@@ -26,7 +26,7 @@ export function formatRouteLogMessage(
 } {
   const clientIp = request.header(HEADER_IP_ADDRESS) ?? null;
   const safeAppUserAgent = request.header(HEADER_SAFE_APP_USER_AGENT) ?? null;
-  const chainId = request.params['chainId'] ?? null;
+  const chainId = request.params.chainId ?? null;
   const origin = request.header(HEADER_ORIGIN) ?? null;
 
   return {

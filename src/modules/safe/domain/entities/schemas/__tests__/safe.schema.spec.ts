@@ -1,3 +1,5 @@
+import { faker } from '@faker-js/faker';
+import { type Address, getAddress } from 'viem';
 import {
   safeBuilder,
   safeV2Builder,
@@ -6,8 +8,6 @@ import {
   SafeSchema,
   SafeSchemaV2,
 } from '@/modules/safe/domain/entities/schemas/safe.schema';
-import { faker } from '@faker-js/faker';
-import { type Address, getAddress } from 'viem';
 
 describe('Safe Schemas', () => {
   describe('SafeSchema', () => {
@@ -159,7 +159,7 @@ describe('Safe Schemas', () => {
     it.each([
       ['boolean', faker.datatype.boolean()],
       ['number', faker.number.int({ min: 1 })],
-    ])(`should not allow a %s version`, (type, value) => {
+    ])(`should not allow a %s version`, (_type, value) => {
       const safe = safeBuilder()
         .with('version', value as unknown as string)
         .build();
@@ -190,7 +190,7 @@ describe('Safe Schemas', () => {
     it('should not allow optional nonce', () => {
       const safe = safeBuilder().build();
       // @ts-expect-error nonce is not optional
-      delete safe.nonce;
+      safe.nonce = undefined;
 
       const result = SafeSchema.safeParse(safe);
 
@@ -359,7 +359,7 @@ describe('Safe Schemas', () => {
       ['undefined', undefined],
       ['null', null],
       ['string', faker.string.numeric()],
-    ])('should not allow a %s threshold', (type, value) => {
+    ])('should not allow a %s threshold', (_type, value) => {
       const safeV2 = safeV2Builder()
         .with('threshold', value as unknown as number)
         .build();
@@ -402,7 +402,7 @@ describe('Safe Schemas', () => {
     it('should not allow optional nonce', () => {
       const safeV2 = safeV2Builder().build();
       // @ts-expect-error nonce is not optional
-      delete safeV2.nonce;
+      safeV2.nonce = undefined;
 
       const result = SafeSchemaV2.safeParse(safeV2);
 

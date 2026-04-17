@@ -1,27 +1,28 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { type Server } from 'http';
-import request from 'supertest';
+
+import type { Server } from 'node:http';
+import { faker } from '@faker-js/faker/.';
 import type { INestApplication } from '@nestjs/common';
+import request from 'supertest';
+import type { Address } from 'viem';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
+import { createTestModule } from '@/__tests__/testing-module';
+import { checkGuardIsApplied } from '@/__tests__/util/check-guard';
 import configuration from '@/config/entities/__tests__/configuration';
 import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
+import { nameBuilder } from '@/domain/common/entities/name.builder';
+import { getEnumKey } from '@/domain/common/utils/enum';
+import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
+import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
 import { NotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/notifications.repository.module';
 import { TestNotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/test.notification.repository.module';
-import { SpacesController } from '@/modules/spaces/routes/spaces.controller';
-import { checkGuardIsApplied } from '@/__tests__/util/check-guard';
-import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
-import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
-import { faker } from '@faker-js/faker/.';
 import { SpaceStatus } from '@/modules/spaces/domain/entities/space.entity';
+import { SpacesController } from '@/modules/spaces/routes/spaces.controller';
 import {
   MemberRole,
   MemberStatus,
 } from '@/modules/users/domain/entities/member.entity';
 import { UserStatus } from '@/modules/users/domain/entities/user.entity';
-import { getEnumKey } from '@/domain/common/utils/enum';
-import { nameBuilder } from '@/domain/common/entities/name.builder';
-import { createTestModule } from '@/__tests__/testing-module';
-import type { Address } from 'viem';
 
 describe('SpacesController', () => {
   let app: INestApplication<Server>;
@@ -81,12 +82,13 @@ describe('SpacesController', () => {
   });
 
   it('should require authentication for every endpoint', () => {
-    const endpoints = Object.values(
-      SpacesController.prototype,
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
-    ) as Array<Function>;
+    const endpoints = Object.values(SpacesController.prototype) as Array<
+      (...args: Array<unknown>) => unknown
+    >;
 
-    endpoints.forEach((fn) => checkGuardIsApplied(AuthGuard, fn));
+    for (const fn of endpoints) {
+      checkGuardIsApplied(AuthGuard, fn);
+    }
   });
 
   describe('POST /v1/spaces', () => {

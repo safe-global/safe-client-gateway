@@ -1,6 +1,6 @@
+import { faker } from '@faker-js/faker';
 import { campaignBuilder } from '@/modules/community/domain/entities/__tests__/campaign.builder';
 import { CampaignSchema } from '@/modules/community/domain/entities/campaign.entity';
-import { faker } from '@faker-js/faker';
 
 describe('CampaignSchema', () => {
   it('should validate a valid campaign', () => {
@@ -21,7 +21,7 @@ describe('CampaignSchema', () => {
       const result = CampaignSchema.safeParse(campaign);
 
       expect(result.success && result.data[field]).toStrictEqual(
-        new Date(campaign[field]!),
+        new Date(campaign[field] as Date),
       );
     },
   );

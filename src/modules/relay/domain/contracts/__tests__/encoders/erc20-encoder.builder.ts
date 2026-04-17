@@ -1,6 +1,6 @@
 import { faker } from '@faker-js/faker';
 import type { Address } from 'viem';
-import { encodeFunctionData, getAddress, erc20Abi } from 'viem';
+import { encodeFunctionData, erc20Abi, getAddress } from 'viem';
 import { Builder } from '@/__tests__/builder';
 import type { IEncoder } from '@/__tests__/encoder-builder';
 

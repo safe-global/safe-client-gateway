@@ -1,15 +1,15 @@
-import {
-  counterpartyAnalysisRequestDtoBuilder,
-  threatAnalysisRequestBuilder,
-} from './builders/analysis-requests.builder';
+import { faker } from '@faker-js/faker';
+import { getAddress } from 'viem';
+import type { TypedData } from '@/modules/messages/domain/entities/typed-data.entity';
+import { typedDataBuilder } from '@/modules/messages/routes/entities/__tests__/typed-data.builder';
 import {
   CounterpartyAnalysisRequestSchema,
   ThreatAnalysisRequestSchema,
 } from '../analysis-requests.entity';
-import { faker } from '@faker-js/faker';
-import { typedDataBuilder } from '@/modules/messages/routes/entities/__tests__/typed-data.builder';
-import type { TypedData } from '@/modules/messages/domain/entities/typed-data.entity';
-import { getAddress } from 'viem';
+import {
+  counterpartyAnalysisRequestDtoBuilder,
+  threatAnalysisRequestBuilder,
+} from './builders/analysis-requests.builder';
 
 describe('Analysis Request Schemas', () => {
   describe('CounterpartyAnalysisRequestBodySchema', () => {
@@ -70,8 +70,7 @@ describe('Analysis Request Schemas', () => {
 
     it('should validate without origin field', () => {
       const request = threatAnalysisRequestBuilder().build();
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { origin, ...requestWoOrigin } = request;
+      const { origin: _origin, ...requestWoOrigin } = request;
 
       const result = ThreatAnalysisRequestSchema.safeParse(requestWoOrigin);
 
@@ -97,8 +96,7 @@ describe('Analysis Request Schemas', () => {
 
     it('should reject missing walletAddress', () => {
       const request = threatAnalysisRequestBuilder().build();
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { walletAddress, ...requestWoAddress } = request;
+      const { walletAddress: _walletAddress, ...requestWoAddress } = request;
 
       const result = ThreatAnalysisRequestSchema.safeParse(requestWoAddress);
 
@@ -208,8 +206,7 @@ describe('Analysis Request Schemas', () => {
 
     it('should reject typed data with missing primaryType', () => {
       const typedData = typedDataBuilder().build();
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { primaryType, ...invalidTypedData } = typedData;
+      const { primaryType: _primaryType, ...invalidTypedData } = typedData;
 
       const invalidRequest = {
         walletAddress: faker.finance.ethereumAddress() as `0x${string}`,
@@ -230,8 +227,7 @@ describe('Analysis Request Schemas', () => {
 
     it('should reject typed data with missing types', () => {
       const typedData = typedDataBuilder().build();
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { types, ...invalidTypedData } = typedData;
+      const { types: _types, ...invalidTypedData } = typedData;
 
       const invalidRequest = {
         walletAddress: faker.finance.ethereumAddress() as `0x${string}`,
@@ -252,8 +248,7 @@ describe('Analysis Request Schemas', () => {
 
     it('should reject typed data with missing message', () => {
       const typedData = typedDataBuilder().build();
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { message, ...invalidTypedData } = typedData;
+      const { message: _message, ...invalidTypedData } = typedData;
 
       const invalidRequest = {
         walletAddress: faker.finance.ethereumAddress() as `0x${string}`,

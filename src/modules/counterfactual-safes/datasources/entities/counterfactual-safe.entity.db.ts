@@ -1,20 +1,21 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { User } from '@/modules/users/datasources/entities/users.entity.db';
-import {
-  databaseAddressTransformer,
-  databaseNullableAddressTransformer,
-} from '@/domain/common/transformers/databaseAddress.transformer';
-import { CounterfactualSafe as DomainCounterfactualSafe } from '@/modules/counterfactual-safes/domain/entities/counterfactual-safe.entity';
-import { CHAIN_ID_MAXLENGTH } from '@/routes/common/constants';
+
 import {
   Column,
   Entity,
-  ManyToOne,
   JoinColumn,
+  ManyToOne,
   PrimaryGeneratedColumn,
   Unique,
 } from 'typeorm';
 import type { Address, Hex } from 'viem';
+import {
+  databaseAddressTransformer,
+  databaseNullableAddressTransformer,
+} from '@/domain/common/transformers/databaseAddress.transformer';
+import type { CounterfactualSafe as DomainCounterfactualSafe } from '@/modules/counterfactual-safes/domain/entities/counterfactual-safe.entity';
+import { User } from '@/modules/users/datasources/entities/users.entity.db';
+import { CHAIN_ID_MAXLENGTH } from '@/routes/common/constants';
 
 @Entity('counterfactual_safes')
 @Unique('UQ_CFS_chainId_address', ['chainId', 'address'])

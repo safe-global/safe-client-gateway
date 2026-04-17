@@ -1,5 +1,5 @@
-import { HexSchema } from '@/validation/entities/schemas/hex.schema';
 import { faker } from '@faker-js/faker';
+import { HexSchema } from '@/validation/entities/schemas/hex.schema';
 
 describe('HexSchema', () => {
   it('should validate a valid hex string', () => {

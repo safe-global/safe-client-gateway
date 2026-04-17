@@ -1,20 +1,20 @@
 import {
-  OrderStatus,
-  OrderKind,
-  OrderClass,
-} from '@/modules/swaps/domain/entities/order.entity';
-import { TokenInfo } from '@/modules/transactions/routes/entities/swaps/token-info.entity';
-import {
-  TransactionInfo,
-  TransactionInfoType,
-} from '@/modules/transactions/routes/entities/transaction-info.entity';
-import {
   ApiExtraModels,
   ApiProperty,
   ApiPropertyOptional,
   getSchemaPath,
 } from '@nestjs/swagger';
 import type { Address } from 'viem';
+import {
+  OrderClass,
+  OrderKind,
+  OrderStatus,
+} from '@/modules/swaps/domain/entities/order.entity';
+import { TokenInfo } from '@/modules/transactions/routes/entities/swaps/token-info.entity';
+import {
+  TransactionInfo,
+  TransactionInfoType,
+} from '@/modules/transactions/routes/entities/transaction-info.entity';
 
 export enum DurationType {
   Auto = 'AUTO',

@@ -1,17 +1,17 @@
+import { faker } from '@faker-js/faker';
+import { getAddress } from 'viem';
 import { erc20TransferBuilder } from '@/modules/safe/domain/entities/__tests__/erc20-transfer.builder';
 import { orderBuilder } from '@/modules/swaps/domain/entities/__tests__/order.builder';
 import { OrdersSchema } from '@/modules/swaps/domain/entities/order.entity';
 import type { ISwapsRepository } from '@/modules/swaps/domain/swaps.repository';
 import { tokenBuilder } from '@/modules/tokens/domain/__tests__/token.builder';
-import { addressInfoBuilder } from '@/routes/common/__tests__/entities/address-info.builder';
 import { TransferDirection } from '@/modules/transactions/routes/entities/transfer-transaction-info.entity';
 import { Erc20Transfer } from '@/modules/transactions/routes/entities/transfers/erc20-transfer.entity';
 import type { SwapAppsHelper } from '@/modules/transactions/routes/helpers/swap-apps.helper';
 import type { SwapOrderHelper } from '@/modules/transactions/routes/helpers/swap-order.helper';
 import { getTransferDirection } from '@/modules/transactions/routes/mappers/common/transfer-direction.helper';
 import { SwapTransferInfoMapper } from '@/modules/transactions/routes/mappers/transfers/swap-transfer-info.mapper';
-import { faker } from '@faker-js/faker';
-import { getAddress } from 'viem';
+import { addressInfoBuilder } from '@/routes/common/__tests__/entities/address-info.builder';
 
 const mockSwapOrderHelper = jest.mocked({
   getToken: jest.fn(),

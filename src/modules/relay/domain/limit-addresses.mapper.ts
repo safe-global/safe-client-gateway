@@ -1,23 +1,23 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { Erc20Decoder } from '@/modules/relay/domain/contracts/decoders/erc-20-decoder.helper';
-import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
-import { MultiSendDecoder } from '@/modules/contracts/domain/decoders/multi-send-decoder.helper';
-import { ProxyFactoryDecoder } from '@/modules/relay/domain/contracts/decoders/proxy-factory-decoder.helper';
+import type { Address } from 'viem';
 import {
-  getSafeSingletonDeployments,
-  getSafeL2SingletonDeployments,
   getMultiSendCallOnlyDeployments,
   getMultiSendDeployments,
   getProxyFactoryDeployments,
+  getSafeL2SingletonDeployments,
+  getSafeSingletonDeployments,
 } from '@/domain/common/utils/deployments';
+import { DelayModifierDecoder } from '@/modules/alerts/domain/contracts/decoders/delay-modifier-decoder.helper';
+import { MultiSendDecoder } from '@/modules/contracts/domain/decoders/multi-send-decoder.helper';
 import { SafeDecoder } from '@/modules/contracts/domain/decoders/safe-decoder.helper';
+import { Erc20Decoder } from '@/modules/relay/domain/contracts/decoders/erc-20-decoder.helper';
+import { ProxyFactoryDecoder } from '@/modules/relay/domain/contracts/decoders/proxy-factory-decoder.helper';
+import { InvalidMultiSendError } from '@/modules/relay/domain/errors/invalid-multisend.error';
+import { InvalidTransferError } from '@/modules/relay/domain/errors/invalid-transfer.error';
 import { UnofficialMasterCopyError } from '@/modules/relay/domain/errors/unofficial-master-copy.error';
 import { UnofficialMultiSendError } from '@/modules/relay/domain/errors/unofficial-multisend.error';
-import { InvalidTransferError } from '@/modules/relay/domain/errors/invalid-transfer.error';
-import { InvalidMultiSendError } from '@/modules/relay/domain/errors/invalid-multisend.error';
 import { UnofficialProxyFactoryError } from '@/modules/relay/domain/errors/unofficial-proxy-factory.error';
-import { DelayModifierDecoder } from '@/modules/alerts/domain/contracts/decoders/delay-modifier-decoder.helper';
-import type { Address } from 'viem';
+import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
 
 @Injectable()
 export class LimitAddressesMapper {
@@ -240,12 +240,14 @@ export class LimitAddressesMapper {
       const execTransactionData = decoded.args[2];
 
       if (
-        !this.safeDecoder.helpers.isAddOwnerWithThreshold(
-          execTransactionData,
-        ) &&
-        !this.safeDecoder.helpers.isRemoveOwner(execTransactionData) &&
-        !this.safeDecoder.helpers.isSwapOwner(execTransactionData) &&
-        !this.safeDecoder.helpers.isChangeThreshold(execTransactionData)
+        !(
+          this.safeDecoder.helpers.isAddOwnerWithThreshold(
+            execTransactionData,
+          ) ||
+          this.safeDecoder.helpers.isRemoveOwner(execTransactionData) ||
+          this.safeDecoder.helpers.isSwapOwner(execTransactionData) ||
+          this.safeDecoder.helpers.isChangeThreshold(execTransactionData)
+        )
       ) {
         return false;
       }

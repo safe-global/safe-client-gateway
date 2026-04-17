@@ -41,11 +41,13 @@ export function groupOwnerConfigsByTarget(
     if (!isOwnerConfigTransaction(tx.dataDecoded)) continue;
 
     const normalizedAddress = getAddress(tx.to);
+    // dataDecoded is guaranteed non-null by isOwnerConfigTransaction check above
+    const dataDecoded = tx.dataDecoded as BaseDataDecoded;
     const existing = groups.get(normalizedAddress);
     if (existing) {
-      existing.push(tx.dataDecoded!);
+      existing.push(dataDecoded);
     } else {
-      groups.set(normalizedAddress, [tx.dataDecoded!]);
+      groups.set(normalizedAddress, [dataDecoded]);
     }
   }
 

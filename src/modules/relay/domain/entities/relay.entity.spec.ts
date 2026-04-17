@@ -1,5 +1,5 @@
-import { RelaySchema } from '@/modules/relay/domain/entities/relay.entity';
 import { faker } from '@faker-js/faker';
+import { RelaySchema } from '@/modules/relay/domain/entities/relay.entity';
 
 // Note: no builder exists for Relay as it is only tested here
 describe('RelaySchema', () => {

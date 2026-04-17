@@ -1,4 +1,3 @@
-import { SafeDecoder } from '@/modules/contracts/domain/decoders/safe-decoder.helper';
 import {
   addOwnerWithThresholdEncoder,
   changeThresholdEncoder,
@@ -7,6 +6,7 @@ import {
   setupEncoder,
   swapOwnerEncoder,
 } from '@/modules/contracts/domain/__tests__/encoders/safe-encoder.builder';
+import { SafeDecoder } from '@/modules/contracts/domain/decoders/safe-decoder.helper';
 
 describe('SafeDecoder', () => {
   let target: SafeDecoder;
@@ -106,17 +106,17 @@ describe('SafeDecoder', () => {
 
   describe('isCall', () => {
     it('returns true if the data is a valid function call', () => {
-      [
+      for (const encoder of [
         setupEncoder,
         addOwnerWithThresholdEncoder,
         removeOwnerEncoder,
         swapOwnerEncoder,
         changeThresholdEncoder,
-      ].forEach((encoder) => {
+      ]) {
         const data = encoder().encode();
 
         expect(target.isCall(data)).toBe(true);
-      });
+      }
     });
 
     it('returns false if the data is not a valid function call', () => {

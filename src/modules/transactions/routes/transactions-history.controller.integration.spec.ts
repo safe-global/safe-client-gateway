@@ -1,20 +1,34 @@
+import type { Server } from 'node:net';
 import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
+import { getAddress } from 'viem';
+import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { createTestModule } from '@/__tests__/testing-module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import configuration from '@/config/entities/__tests__/configuration';
+import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
+import type { INetworkService } from '@/datasources/network/network.service.interface';
+import { NetworkService } from '@/datasources/network/network.service.interface';
+import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
 import {
   dataDecodedBuilder,
   dataDecodedParameterBuilder,
 } from '@/modules/data-decoder/domain/v2/entities/__tests__/data-decoded.builder';
-import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import {
   creationTransactionBuilder,
   toJson as creationTransactionToJson,
 } from '@/modules/safe/domain/entities/__tests__/creation-transaction.builder';
+import {
+  erc20TransferBuilder,
+  toJson as erc20TransferToJson,
+} from '@/modules/safe/domain/entities/__tests__/erc20-transfer.builder';
+import {
+  erc721TransferBuilder,
+  toJson as erc721TransferToJson,
+} from '@/modules/safe/domain/entities/__tests__/erc721-transfer.builder';
 import {
   ethereumTransactionBuilder,
   toJson as ethereumTransactionToJson,
@@ -32,27 +46,13 @@ import {
   toJson as nativeTokenTransferToJson,
 } from '@/modules/safe/domain/entities/__tests__/native-token-transfer.builder';
 import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
+import type { Transfer } from '@/modules/safe/domain/entities/transfer.entity';
 import {
   erc20TokenBuilder,
   erc721TokenBuilder,
 } from '@/modules/tokens/domain/__tests__/token.builder';
-import type { Transfer } from '@/modules/safe/domain/entities/transfer.entity';
-import type { INetworkService } from '@/datasources/network/network.service.interface';
-import { NetworkService } from '@/datasources/network/network.service.interface';
-import {
-  erc20TransferBuilder,
-  toJson as erc20TransferToJson,
-} from '@/modules/safe/domain/entities/__tests__/erc20-transfer.builder';
-import {
-  erc721TransferBuilder,
-  toJson as erc721TransferToJson,
-} from '@/modules/safe/domain/entities/__tests__/erc721-transfer.builder';
 import type { TransactionItem } from '@/modules/transactions/routes/entities/transaction-item.entity';
-import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
-import { getAddress } from 'viem';
-import type { Server } from 'net';
 import { rawify } from '@/validation/entities/raw.entity';
-import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 
 describe('Transactions History Controller', () => {
   let app: INestApplication<Server>;
@@ -1030,7 +1030,6 @@ describe('Transactions History Controller', () => {
       .then(({ body }) => {
         expect(
           // the amount of TransactionItems is limited to the max value
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-call
           body.results.filter(
             (item: TransactionItem) => item.type === 'TRANSACTION',
           ),
@@ -1101,8 +1100,8 @@ describe('Transactions History Controller', () => {
       .expect(200)
       .expect((response) => {
         // One date label and one transaction
-        expect(response.body['results']).toHaveLength(2);
-        expect(response.body['results'][1]).toMatchObject({
+        expect(response.body.results).toHaveLength(2);
+        expect(response.body.results[1]).toMatchObject({
           transaction: {
             txInfo: {
               transferInfo: {
@@ -1194,7 +1193,7 @@ describe('Transactions History Controller', () => {
       .expect(200)
       .expect((response) => {
         // Empty array
-        expect(response.body['results']).toEqual([]);
+        expect(response.body.results).toEqual([]);
       });
   });
 
@@ -1300,11 +1299,11 @@ describe('Transactions History Controller', () => {
       .expect(200)
       .expect((response) => {
         // Two date labels and two transactions
-        expect(response.body['results']).toHaveLength(4);
-        expect(response.body['results'][0]).toMatchObject({
+        expect(response.body.results).toHaveLength(4);
+        expect(response.body.results[0]).toMatchObject({
           type: 'DATE_LABEL',
         });
-        expect(response.body['results'][1]).toMatchObject({
+        expect(response.body.results[1]).toMatchObject({
           transaction: {
             txInfo: {
               transferInfo: {
@@ -1313,10 +1312,10 @@ describe('Transactions History Controller', () => {
             },
           },
         });
-        expect(response.body['results'][2]).toMatchObject({
+        expect(response.body.results[2]).toMatchObject({
           type: 'DATE_LABEL',
         });
-        expect(response.body['results'][3]).toMatchObject({
+        expect(response.body.results[3]).toMatchObject({
           transaction: {
             txInfo: {
               transferInfo: {
@@ -1391,8 +1390,8 @@ describe('Transactions History Controller', () => {
       .expect(200)
       .expect((response) => {
         // One date label and one transaction
-        expect(response.body['results']).toHaveLength(3);
-        expect(response.body['results'][1]).toMatchObject({
+        expect(response.body.results).toHaveLength(3);
+        expect(response.body.results[1]).toMatchObject({
           transaction: {
             txInfo: {
               transferInfo: {
@@ -1401,7 +1400,7 @@ describe('Transactions History Controller', () => {
             },
           },
         });
-        expect(response.body['results'][2]).toMatchObject({
+        expect(response.body.results[2]).toMatchObject({
           transaction: {
             txInfo: {
               transferInfo: {
@@ -1473,8 +1472,8 @@ describe('Transactions History Controller', () => {
       .expect(200)
       .expect((response) => {
         // One date label and one transaction
-        expect(response.body['results']).toHaveLength(2);
-        expect(response.body['results'][1]).toMatchObject({
+        expect(response.body.results).toHaveLength(2);
+        expect(response.body.results[1]).toMatchObject({
           transaction: {
             txInfo: {
               transferInfo: {
@@ -1553,8 +1552,8 @@ describe('Transactions History Controller', () => {
       .expect(200)
       .expect((response) => {
         // One date label and one transaction
-        expect(response.body['results']).toHaveLength(3);
-        expect(response.body['results'][1]).toMatchObject({
+        expect(response.body.results).toHaveLength(3);
+        expect(response.body.results[1]).toMatchObject({
           transaction: {
             txInfo: {
               transferInfo: {
@@ -1563,7 +1562,7 @@ describe('Transactions History Controller', () => {
             },
           },
         });
-        expect(response.body['results'][2]).toMatchObject({
+        expect(response.body.results[2]).toMatchObject({
           transaction: {
             txInfo: {
               transferInfo: {

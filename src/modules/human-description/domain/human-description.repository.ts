@@ -1,13 +1,13 @@
 import { Inject, Injectable } from '@nestjs/common';
+import type { Address } from 'viem';
 import { toFunctionSelector } from 'viem';
-import { HumanDescriptionTemplate } from '@/modules/human-description/domain/entities/human-description-template.entity';
-import {
+import { IHumanDescriptionApi } from '@/domain/interfaces/human-description-api.interface';
+import type {
   FunctionSignatureHash,
   HumanDescriptionFragment,
 } from '@/modules/human-description/domain/entities/human-description.entity';
-import { IHumanDescriptionRepository } from '@/modules/human-description/domain/human-description.repository.interface';
-import { IHumanDescriptionApi } from '@/domain/interfaces/human-description-api.interface';
-import type { Address } from 'viem';
+import { HumanDescriptionTemplate } from '@/modules/human-description/domain/entities/human-description-template.entity';
+import type { IHumanDescriptionRepository } from '@/modules/human-description/domain/human-description.repository.interface';
 
 @Injectable()
 export class HumanDescriptionRepository implements IHumanDescriptionRepository {

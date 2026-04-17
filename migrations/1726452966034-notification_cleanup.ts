@@ -31,5 +31,7 @@ export class NotificationCleanup1726452966034 implements MigrationInterface {
     );
   }
 
-  public async down(): Promise<void> {}
+  public async down(): Promise<void> {
+    // No rollback: dropped objects cannot be reliably recreated
+  }
 }

@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { convertToDate } from '@/modules/targeted-messaging/datasources/entities/utils';
-import { Outreach as DbOutreach } from '@/modules/targeted-messaging/datasources/entities/outreach.entity';
-import { Outreach } from '@/modules/targeted-messaging/domain/entities/outreach.entity';
+
 import { Injectable } from '@nestjs/common';
+import type { Outreach as DbOutreach } from '@/modules/targeted-messaging/datasources/entities/outreach.entity';
+import { convertToDate } from '@/modules/targeted-messaging/datasources/entities/utils';
+import type { Outreach } from '@/modules/targeted-messaging/domain/entities/outreach.entity';
 
 @Injectable()
 export class OutreachDbMapper {

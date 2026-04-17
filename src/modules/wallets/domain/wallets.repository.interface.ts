@@ -1,14 +1,15 @@
 import type {
   DeleteResult,
+  EntityManager,
   FindOptionsRelations,
   FindOptionsSelect,
   FindOptionsWhere,
   InsertResult,
+  Repository,
 } from 'typeorm';
-import { type Repository, type EntityManager } from 'typeorm';
-import type { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
-import type { User } from '@/modules/users/domain/entities/user.entity';
 import type { Address } from 'viem';
+import type { User } from '@/modules/users/domain/entities/user.entity';
+import type { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
 
 export const IWalletsRepository = Symbol('IWalletsRepository');
 

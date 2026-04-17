@@ -1,6 +1,6 @@
-import { RelayDtoSchema } from '@/modules/relay/routes/entities/schemas/relay.dto.schema';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
+import { RelayDtoSchema } from '@/modules/relay/routes/entities/schemas/relay.dto.schema';
 
 describe('RelayDtoSchema', () => {
   it('should validate a valid relay DTO without a gasLimit and coerce it to null', () => {
