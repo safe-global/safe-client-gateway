@@ -216,11 +216,17 @@ describe('Owners Controller V3 (Unit)', () => {
       const chain2 = chainBuilder().with('chainId', chainId2).build();
 
       const chainsUrl = `${safeConfigUrl}/api/v1/chains`;
-      const offset = 1;
       const chainsPage1 = pageBuilder()
         .with('results', [chain1])
         .with('count', ChainsRepository.MAX_LIMIT + 1)
-        .with('next', limitAndOffsetUrlFactory(undefined, offset, chainsUrl))
+        .with(
+          'next',
+          limitAndOffsetUrlFactory(
+            undefined,
+            ChainsRepository.MAX_LIMIT,
+            chainsUrl,
+          ),
+        )
         .build();
       const chainsPage2 = pageBuilder()
         .with('results', [chain2])
@@ -252,7 +258,10 @@ describe('Owners Controller V3 (Unit)', () => {
               status: 200,
             });
           }
-          if (url === chainsUrl && networkRequest!.params!.offset === offset) {
+          if (
+            url === chainsUrl &&
+            networkRequest!.params!.offset === ChainsRepository.MAX_LIMIT
+          ) {
             return Promise.resolve({
               data: rawify(chainsPage2),
               status: 200,
