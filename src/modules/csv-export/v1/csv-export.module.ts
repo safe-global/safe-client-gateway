@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { BullModule, getQueueToken } from '@nestjs/bullmq';
 import { Module } from '@nestjs/common';
 import type { Queue } from 'bullmq';

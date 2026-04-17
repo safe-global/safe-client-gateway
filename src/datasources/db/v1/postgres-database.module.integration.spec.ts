@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { join } from 'node:path';
 import { Test } from '@nestjs/testing';
 import type postgres from 'postgres';

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker/.';
 import type { ExecutionContext } from '@nestjs/common';
 import { BadRequestException, HttpException, HttpStatus } from '@nestjs/common';

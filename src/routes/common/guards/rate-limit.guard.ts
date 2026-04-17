@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { CanActivate, ExecutionContext } from '@nestjs/common';
 import { BadRequestException, HttpException, HttpStatus } from '@nestjs/common';
 import type { Request } from 'express';

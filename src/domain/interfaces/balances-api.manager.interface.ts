@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { Address } from 'viem';
 import type { IApiManager } from '@/domain/interfaces/api.manager.interface';
 import type { IBalancesApi } from '@/domain/interfaces/balances-api.interface';

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { parseSiweMessage } from 'viem/siwe';
 import { z } from 'zod';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';

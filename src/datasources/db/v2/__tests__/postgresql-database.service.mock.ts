@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { EntityManager } from 'typeorm';
 import { mockEntityManager } from '@/datasources/db/v2/__tests__/entity-manager.mock';
 import { mockPostgresDataSource } from '@/datasources/db/v2/__tests__/postgresql-datasource.mock';

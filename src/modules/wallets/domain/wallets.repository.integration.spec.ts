@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import type { ConfigService } from '@nestjs/config';
 import { DataSource } from 'typeorm';
