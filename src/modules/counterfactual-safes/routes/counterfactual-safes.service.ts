@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
+import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
 import { ICounterfactualSafesRepository } from '@/modules/counterfactual-safes/domain/counterfactual-safes.repository.interface';
-import { CreateCounterfactualSafeDto } from '@/modules/counterfactual-safes/routes/entities/create-counterfactual-safe.dto.entity';
-import { DeleteCounterfactualSafeDto } from '@/modules/counterfactual-safes/routes/entities/delete-counterfactual-safe.dto.entity';
-import { GetCounterfactualSafesResponse } from '@/modules/counterfactual-safes/routes/entities/get-counterfactual-safe.dto.entity';
+import type { CreateCounterfactualSafeDto } from '@/modules/counterfactual-safes/routes/entities/create-counterfactual-safe.dto.entity';
+import type { DeleteCounterfactualSafeDto } from '@/modules/counterfactual-safes/routes/entities/delete-counterfactual-safe.dto.entity';
+import type { GetCounterfactualSafesResponse } from '@/modules/counterfactual-safes/routes/entities/get-counterfactual-safe.dto.entity';
 import { transformCounterfactualSafesResponse } from '@/modules/counterfactual-safes/routes/counterfactual-safes.utils';
 import { Inject, Injectable } from '@nestjs/common';
 

@@ -4,9 +4,9 @@ import type { IRelayManager } from '@/modules/relay/domain/interfaces/relay-mana
 import type { IRelayer } from '@/modules/relay/domain/interfaces/relayer.interface';
 import { DailyLimitRelayer } from '@/modules/relay/domain/relayers/daily-limit.relayer';
 import { NoFeeCampaignRelayer } from '@/modules/relay/domain/relayers/no-fee-campaign.relayer';
-import { RelayFeeRelayer } from '@/modules/relay/domain/relayers/relay-fee.relayer';
+import type { RelayFeeRelayer } from '@/modules/relay/domain/relayers/relay-fee.relayer';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import { RelayFeeConfiguration } from '@/modules/relay/domain/entities/relay.configuration';
+import type { RelayFeeConfiguration } from '@/modules/relay/domain/entities/relay.configuration';
 import type { NoFeeCampaignConfiguration } from '@/modules/relay/domain/entities/relay.configuration';
 
 @Injectable()

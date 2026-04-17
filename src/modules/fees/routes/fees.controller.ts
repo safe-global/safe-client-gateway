@@ -14,7 +14,7 @@ import { NumericStringSchema } from '@/validation/entities/schemas/numeric-strin
 import { FeePreviewTransactionDto } from '@/modules/fees/routes/entities/fee-preview-transaction.dto.entity';
 import { FeePreviewResponse } from '@/modules/fees/routes/entities/fee-preview-response.entity';
 import { FeePreviewTransactionDtoSchema } from '@/modules/fees/routes/entities/schemas/fee-preview-transaction.dto.schema';
-import { FeesService } from '@/modules/fees/routes/fees.service';
+import type { FeesService } from '@/modules/fees/routes/fees.service';
 import type { Address } from 'viem';
 
 @ApiTags('fees')

@@ -3,17 +3,19 @@ import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.s
 import { isUniqueConstraintError } from '@/datasources/errors/helpers/is-unique-constraint-error.helper';
 import { UniqueConstraintError } from '@/datasources/errors/unique-constraint-error';
 import { CounterfactualSafe } from '@/modules/counterfactual-safes/datasources/entities/counterfactual-safe.entity.db';
-import { User } from '@/modules/users/datasources/entities/users.entity.db';
+import type { User } from '@/modules/users/datasources/entities/users.entity.db';
 import type { ICounterfactualSafesRepository } from '@/modules/counterfactual-safes/domain/counterfactual-safes.repository.interface';
 import { BadRequestException, Inject, NotFoundException } from '@nestjs/common';
-import {
+import type {
   FindOptionsRelations,
   FindOptionsSelect,
   FindOptionsWhere,
 } from 'typeorm';
 import { getAddress } from 'viem';
 
-export class CounterfactualSafesRepository implements ICounterfactualSafesRepository {
+export class CounterfactualSafesRepository
+  implements ICounterfactualSafesRepository
+{
   public constructor(
     @Inject(PostgresDatabaseService)
     private readonly postgresDatabaseService: PostgresDatabaseService,

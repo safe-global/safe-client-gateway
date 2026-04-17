@@ -1,18 +1,18 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { Inject, Injectable } from "@nestjs/common";
-import { CircuitState } from "@/datasources/circuit-breaker/enums/circuit-state.enum";
+import { Inject, Injectable } from '@nestjs/common';
+import { CircuitState } from '@/datasources/circuit-breaker/enums/circuit-state.enum';
 import type {
   ICircuit,
   ICircuitConfig,
-} from "@/datasources/circuit-breaker/interfaces/circuit-breaker.interface";
-import { IConfigurationService } from "@/config/configuration.service.interface";
-import { Cron, CronExpression } from "@nestjs/schedule";
-import { CircuitBreakerException } from "@/datasources/circuit-breaker/exceptions/circuit-breaker.exception";
+} from '@/datasources/circuit-breaker/interfaces/circuit-breaker.interface';
+import { IConfigurationService } from '@/config/configuration.service.interface';
+import { Cron, CronExpression } from '@nestjs/schedule';
+import { CircuitBreakerException } from '@/datasources/circuit-breaker/exceptions/circuit-breaker.exception';
 import {
   type ILoggingService,
   LoggingService,
-} from "@/logging/logging.interface";
-import { LogType } from "@/domain/common/entities/log-type.entity";
+} from '@/logging/logging.interface';
+import { LogType } from '@/domain/common/entities/log-type.entity';
 
 /**
  * Circuit Breaker Service
@@ -48,21 +48,21 @@ export class CircuitBreakerService {
     private readonly loggingService: ILoggingService,
   ) {
     this.enabled = this.configurationService.getOrThrow<boolean>(
-      "circuitBreaker.enabled",
+      'circuitBreaker.enabled',
     );
     this.config = {
       threshold: this.configurationService.getOrThrow<number>(
-        "circuitBreaker.threshold",
+        'circuitBreaker.threshold',
       ),
       timeout: this.configurationService.getOrThrow<number>(
-        "circuitBreaker.timeout",
+        'circuitBreaker.timeout',
       ),
       rollingWindow: this.configurationService.getOrThrow<number>(
-        "circuitBreaker.rollingWindow",
+        'circuitBreaker.rollingWindow',
       ),
       halfOpenFailureRateThreshold:
         this.configurationService.getOrThrow<number>(
-          "circuitBreaker.halfOpenFailureRateThreshold",
+          'circuitBreaker.halfOpenFailureRateThreshold',
         ),
     };
   }

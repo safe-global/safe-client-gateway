@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { IFeeServiceApi } from '@/domain/interfaces/fee-service-api.interface';
-import { FeePreviewTransactionDto } from '@/modules/fees/routes/entities/fee-preview-transaction.dto.entity';
+import type { FeePreviewTransactionDto } from '@/modules/fees/routes/entities/fee-preview-transaction.dto.entity';
 import { FeePreviewResponse } from '@/modules/fees/routes/entities/fee-preview-response.entity';
 import type { Address } from 'viem';
 

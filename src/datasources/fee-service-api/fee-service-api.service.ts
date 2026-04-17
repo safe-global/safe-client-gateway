@@ -2,14 +2,14 @@
 import { Inject, Injectable } from '@nestjs/common';
 import {
   NetworkService,
-  INetworkService,
+  type INetworkService,
 } from '@/datasources/network/network.service.interface';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
-import { IFeeServiceApi } from '@/domain/interfaces/fee-service-api.interface';
-import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
+import type { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
+import type { IFeeServiceApi } from '@/domain/interfaces/fee-service-api.interface';
+import type { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
 import { CacheRouter } from '@/datasources/cache/cache.router';
-import { RelayFeeConfiguration } from '@/modules/relay/domain/entities/relay.configuration';
+import type { RelayFeeConfiguration } from '@/modules/relay/domain/entities/relay.configuration';
 import type { CanRelayResponse } from '@/modules/fees/domain/entities/can-relay-response.entity';
 import { CanRelayResponseSchema } from '@/modules/fees/domain/entities/schemas/can-relay-response.schema';
 import type { TxFeesRequest } from '@/modules/fees/domain/entities/tx-fees-request.entity';

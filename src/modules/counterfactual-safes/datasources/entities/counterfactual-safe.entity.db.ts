@@ -4,7 +4,7 @@ import {
   databaseAddressTransformer,
   databaseNullableAddressTransformer,
 } from '@/domain/common/transformers/databaseAddress.transformer';
-import { CounterfactualSafe as DomainCounterfactualSafe } from '@/modules/counterfactual-safes/domain/entities/counterfactual-safe.entity';
+import type { CounterfactualSafe as DomainCounterfactualSafe } from '@/modules/counterfactual-safes/domain/entities/counterfactual-safe.entity';
 import { CHAIN_ID_MAXLENGTH } from '@/routes/common/constants';
 import {
   Column,
@@ -142,10 +142,14 @@ export class CounterfactualSafe implements DomainCounterfactualSafe {
   })
   public readonly updatedAt!: Date;
 
-  @ManyToOne(() => User, (user: User) => user.id, {
-    onDelete: 'SET NULL',
-    nullable: true,
-  })
+  @ManyToOne(
+    () => User,
+    (user: User) => user.id,
+    {
+      onDelete: 'SET NULL',
+      nullable: true,
+    },
+  )
   @JoinColumn({
     name: 'creator_id',
     foreignKeyConstraintName: 'FK_CFS_creator_id',
