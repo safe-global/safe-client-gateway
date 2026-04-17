@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { Address } from 'viem';
 import { z } from 'zod';
 import { TransactionBaseSchema } from '@/domain/common/schemas/transaction-base.schema';

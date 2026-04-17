@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { BridgeName } from '@/modules/bridge/domain/entities/bridge-name.entity';
 import type { ExchangeName } from '@/modules/bridge/domain/entities/exchange-name.entity';
 

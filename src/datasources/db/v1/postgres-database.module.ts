@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import fs from 'node:fs';
 import { Module } from '@nestjs/common';
 import postgres from 'postgres';

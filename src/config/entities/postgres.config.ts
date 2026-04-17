@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { readFileSync } from 'node:fs';
 import type { PostgresConnectionOptions } from 'typeorm/driver/postgres/PostgresConnectionOptions';
 import { PostgresqlLogger } from '@/datasources/db/v2/postgresql-logger.service';

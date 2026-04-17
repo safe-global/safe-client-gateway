@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import fs from 'node:fs';
 import path from 'node:path';
 import postgres from 'postgres';

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 import { SafeListSchema } from '@/modules/safe/domain/entities/schemas/safe-list.schema';

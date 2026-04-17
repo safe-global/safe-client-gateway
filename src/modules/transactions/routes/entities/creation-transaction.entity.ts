@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import type { Address, Hash } from 'viem';
 import { DataDecoded } from '@/modules/data-decoder/routes/entities/data-decoded.entity';

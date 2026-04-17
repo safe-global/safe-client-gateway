@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable, type OnModuleInit } from '@nestjs/common';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { DatabaseMigrator } from '@/datasources/db/v2/database-migrator.service';

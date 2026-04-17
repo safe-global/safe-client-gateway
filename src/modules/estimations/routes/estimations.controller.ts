@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Body, Controller, HttpCode, Param, Post } from '@nestjs/common';
 import {
   ApiBadRequestResponse,

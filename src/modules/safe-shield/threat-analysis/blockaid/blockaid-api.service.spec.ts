@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type Blockaid from '@blockaid/client';
 // import { GUARD_STORAGE_POSITION } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-api.constants';
 import type { TransactionScanResponse } from '@blockaid/client/resources/evm/evm';
