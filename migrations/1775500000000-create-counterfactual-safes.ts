@@ -3,12 +3,6 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 export class CreateCounterfactualSafes1775500000000 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
-    // Drop the orphaned table left over from the deprecated Knex "accounts"
-    // module (removed in #2804). That schema is incompatible with the one
-    // below and its FK target (accounts) no longer exists.
-    await queryRunner.query(
-      `DROP TABLE IF EXISTS counterfactual_safes CASCADE;`,
-    );
     await queryRunner.query(
       `CREATE TABLE counterfactual_safes (
         id SERIAL NOT NULL,
