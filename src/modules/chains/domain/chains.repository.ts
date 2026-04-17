@@ -111,7 +111,8 @@ export class ChainsRepository implements IChainsRepository {
     const totalPages = Math.ceil(totalCount / ChainsRepository.MAX_LIMIT);
     const pagesToFetch = Math.min(totalPages - 1, this.maxSequentialPages - 1);
 
-    // Offsets assume the config service returns fixed-size pages of MAX_LIMIT
+    // Offsets assume the config service returns fixed-size pages of MAX_LIMIT.
+    // Chain configuration changes are infrequent, so parallel fetch is safe.
     const remainingPages = await Promise.all(
       Array.from({ length: pagesToFetch }, (_, i) =>
         this.getChains(

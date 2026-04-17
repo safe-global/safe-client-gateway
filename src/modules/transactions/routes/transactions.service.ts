@@ -244,7 +244,13 @@ export class TransactionsService {
           chainId: args.chainId,
           transactions: domainTransactions.results,
         })
-        .catch(() => undefined),
+        .catch((error) => {
+          this.loggingService.debug({
+            type: LogType.ExternalRequest,
+            message: 'prefetchAddressInfos failed; falling back to on-demand',
+            error,
+          });
+        }),
     ]);
 
     const dataDecoded = await Promise.all(

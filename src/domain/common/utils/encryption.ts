@@ -6,24 +6,35 @@ import {
   scryptSync,
 } from 'crypto';
 export const MAX_DERIVED_KEY_CACHE_SIZE = 50;
-const derivedKeyCache = new Map<string, Buffer>();
+export const DERIVED_KEY_MAX_AGE_MS = 15 * 60 * 1000; // 15 minutes
+
+interface CachedKey {
+  key: Buffer;
+  createdAt: number;
+}
+
+const derivedKeyCache = new Map<string, CachedKey>();
 
 function getDerivedKey(encryptionKey: string, salt: string): Buffer {
   // Length-prefix the key to avoid collisions e.g. ("a:b","c") vs ("a","b:c")
   const cacheKey = `${encryptionKey.length}:${encryptionKey}:${salt}`;
   const cached = derivedKeyCache.get(cacheKey);
-  if (cached) {
+  if (cached && Date.now() - cached.createdAt < DERIVED_KEY_MAX_AGE_MS) {
     // Promote to end of Map for LRU eviction
     derivedKeyCache.delete(cacheKey);
     derivedKeyCache.set(cacheKey, cached);
-    return cached;
+    return cached.key;
+  }
+  // Remove stale entry if it expired
+  if (cached) {
+    derivedKeyCache.delete(cacheKey);
   }
   const derived = scryptSync(encryptionKey, Buffer.from(salt, 'utf8'), 32);
   if (derivedKeyCache.size >= MAX_DERIVED_KEY_CACHE_SIZE) {
     // Evict least recently used (first entry in insertion order)
     derivedKeyCache.delete(derivedKeyCache.keys().next().value!);
   }
-  derivedKeyCache.set(cacheKey, derived);
+  derivedKeyCache.set(cacheKey, { key: derived, createdAt: Date.now() });
   return derived;
 }
 

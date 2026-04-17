@@ -200,11 +200,14 @@ export class ZerionPortfolioApi implements IPortfolioApi {
   /**
    * Resolves a position's network, implementation, and token info.
    * Shared by _buildTokenBalances and _buildAppPositions.
+   *
+   * Uses || (not ??) for symbol/name so that empty strings fall back
+   * to position.attributes.name instead of displaying blank.
    */
   private _resolvePositionMeta(
     position: ZerionBalance,
     networkMap: Map<string, string>,
-  ): { tokenInfo: TokenBalance['tokenInfo'] } | null {
+  ): TokenBalance['tokenInfo'] | null {
     const networkName = position.relationships?.chain?.data?.id;
     if (!networkName) return null;
 
@@ -223,20 +226,19 @@ export class ZerionPortfolioApi implements IPortfolioApi {
     const address = impl.address ? getAddress(impl.address) : null;
 
     return {
-      tokenInfo: {
-        address,
-        decimals: impl.decimals,
-        symbol: position.attributes.fungible_info.symbol ?? '',
-        name: position.attributes.fungible_info.name ?? '',
-        logoUri: position.attributes.fungible_info.icon?.url ?? '',
-        chainId,
-        trusted: !(position.attributes.flags.is_trash ?? false),
-        type:
-          address === null ||
-          address === '0x0000000000000000000000000000000000000000'
-            ? 'NATIVE_TOKEN'
-            : 'ERC20',
-      },
+      address,
+      decimals: impl.decimals,
+      symbol:
+        position.attributes.fungible_info.symbol || position.attributes.name,
+      name: position.attributes.fungible_info.name || position.attributes.name,
+      logoUri: position.attributes.fungible_info.icon?.url ?? '',
+      chainId,
+      trusted: !(position.attributes.flags.is_trash ?? false),
+      type:
+        address === null ||
+        address === '0x0000000000000000000000000000000000000000'
+          ? 'NATIVE_TOKEN'
+          : 'ERC20',
     };
   }
 
@@ -252,17 +254,11 @@ export class ZerionPortfolioApi implements IPortfolioApi {
     networkMap: Map<string, string>,
   ): Array<TokenBalance> {
     const tokenBalances = positions.map((position): TokenBalance | null => {
-      const meta = this._resolvePositionMeta(position, networkMap);
-      if (!meta) return null;
+      const tokenInfo = this._resolvePositionMeta(position, networkMap);
+      if (!tokenInfo) return null;
 
       return {
-        tokenInfo: {
-          ...meta.tokenInfo,
-          // Use || (not ??) so empty-string symbol/name falls back to
-          // position.attributes.name instead of displaying blank.
-          symbol: meta.tokenInfo.symbol || position.attributes.name,
-          name: meta.tokenInfo.name || position.attributes.name,
-        },
+        tokenInfo,
         balance: position.attributes.quantity.int,
         balanceFiat:
           position.attributes.value !== null
@@ -367,8 +363,8 @@ export class ZerionPortfolioApi implements IPortfolioApi {
     networkMap: Map<string, string>,
   ): Array<AppPosition> {
     const appPositions = positions.map((position): AppPosition | null => {
-      const meta = this._resolvePositionMeta(position, networkMap);
-      if (!meta) return null;
+      const tokenInfo = this._resolvePositionMeta(position, networkMap);
+      if (!tokenInfo) return null;
 
       const poolAddress = position.attributes.pool_address;
       const receiptTokenAddress =
@@ -381,7 +377,7 @@ export class ZerionPortfolioApi implements IPortfolioApi {
         type: position.attributes.position_type,
         name: position.attributes.name,
         groupId: position.attributes.group_id ?? undefined,
-        tokenInfo: meta.tokenInfo,
+        tokenInfo,
         receiptTokenAddress,
         balance: position.attributes.quantity.int,
         balanceFiat:
