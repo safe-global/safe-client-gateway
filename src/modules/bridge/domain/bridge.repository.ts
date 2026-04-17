@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import type { Address, Hash } from 'viem';
 import { IBridgeApiFactory } from '@/domain/interfaces/bridge-api.factory.interface';

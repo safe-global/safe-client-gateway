@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import '@/__tests__/matchers/to-be-string-or-null';
 import type { Server } from 'node:net';
 import { expect } from '@jest/globals';

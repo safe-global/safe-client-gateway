@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import type { Address, Hash, Hex } from 'viem';
 import type { IBridgeRepository } from '@/modules/bridge/domain/bridge.repository.interface';

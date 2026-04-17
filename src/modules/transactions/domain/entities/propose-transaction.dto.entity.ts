@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { Address, Hash, Hex } from 'viem';
 import type { z } from 'zod';
 import type { Operation } from '@/modules/safe/domain/entities/operation.entity';

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { getAddress } from 'viem';
 import { appBalanceBuilder } from '@/modules/portfolio/domain/entities/__tests__/app-balance.builder';
 import { appPositionBuilder } from '@/modules/portfolio/domain/entities/__tests__/app-position.builder';

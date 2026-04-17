@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { isHex } from 'viem';
 import { z } from 'zod';
 

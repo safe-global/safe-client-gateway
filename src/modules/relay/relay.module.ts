@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Module } from '@nestjs/common';
 import { RelayApiModule } from '@/modules/relay/datasources/relay-api.module';
 import { RelayDomainModule } from '@/modules/relay/domain/relay.domain.module';

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { ApiProperty } from '@nestjs/swagger';
 import type {
   GasPriceResponse as DomainGasPriceResponse,

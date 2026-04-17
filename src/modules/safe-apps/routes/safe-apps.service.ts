@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import type { SafeApp as DomainSafeApp } from '@/modules/safe-apps/domain/entities/safe-app.entity';
 import { SafeAppAccessControlPolicies } from '@/modules/safe-apps/domain/entities/safe-app-access-control.entity';

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { DeletedMultisigTransactionEvent } from '@/modules/hooks/routes/entities/schemas/deleted-multisig-transaction.schema';
 import type { ExecutedTransactionEvent } from '@/modules/hooks/routes/entities/schemas/executed-transaction.schema';
 import type { IncomingEtherEvent } from '@/modules/hooks/routes/entities/schemas/incoming-ether.schema';

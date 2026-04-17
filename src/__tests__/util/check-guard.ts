@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 export const checkGuardIsApplied = (
   guard: abstract new (...args: Array<any>) => unknown,
   fn: (...args: Array<any>) => unknown,

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Module } from '@nestjs/common';
 import { IIdentityApi } from '@/domain/interfaces/identity-api.interface';
 

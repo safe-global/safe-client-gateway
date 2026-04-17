@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { Address } from 'viem';
 import type { Balance } from '@/modules/balances/domain/entities/balance.entity';
 import type { Chain } from '@/modules/chains/domain/entities/chain.entity';

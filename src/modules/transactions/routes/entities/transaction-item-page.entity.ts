@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { ApiExtraModels, ApiProperty, getSchemaPath } from '@nestjs/swagger';
 import { TransactionItem } from '@/modules/transactions/routes/entities/transaction-item.entity';
 import { DateLabel } from '@/routes/common/entities/date-label.entity';

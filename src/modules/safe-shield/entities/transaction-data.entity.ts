@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { Address, Hex } from 'viem';
 import type { DataDecoded } from '@/modules/data-decoder/routes/entities/data-decoded.entity';
 

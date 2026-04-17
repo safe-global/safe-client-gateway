@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Module } from '@nestjs/common';
 import { CacheModule } from '@/datasources/cache/cache.module';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';

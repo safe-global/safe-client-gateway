@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { ApiProperty } from '@nestjs/swagger';
 import type { GasPriceFixedEIP1559 as DomainGasPriceFixedEIP1559 } from '@/modules/chains/domain/entities/gas-price-fixed-eip-1559.entity';
 

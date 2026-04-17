@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Module } from '@nestjs/common';
 import { HealthRepository } from '@/modules/health/domain/health.repository';
 import { IHealthRepository } from '@/modules/health/domain/health.repository.interface';

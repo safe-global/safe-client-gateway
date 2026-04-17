@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import type { Hex } from 'viem';
 import { erc20TransferEncoder } from '@/modules/relay/domain/contracts/__tests__/encoders/erc20-encoder.builder';

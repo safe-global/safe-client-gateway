@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
 import { DeviceType } from '@/modules/notifications/domain/v2/entities/device-type.entity';
 import { NotificationType } from '@/modules/notifications/domain/v2/entities/notification-type.entity';

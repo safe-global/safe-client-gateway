@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import get from 'lodash/get';
 import type { Address } from 'viem';
 import type { IConfigurationService } from '@/config/configuration.service.interface';

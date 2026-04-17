@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Module } from '@nestjs/common';
 import { CacheFirstDataSourceModule } from '@/datasources/cache/cache.first.data.source.module';
 import { ConfigApi } from '@/datasources/config-api/config-api.service';

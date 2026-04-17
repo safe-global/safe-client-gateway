@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { ApiProperty } from '@nestjs/swagger';
 import type { Address } from 'viem';
 import type { AddConfirmationDto as DomainCreateConfirmationDto } from '@/modules/transactions/domain/entities/add-confirmation.dto.entity';

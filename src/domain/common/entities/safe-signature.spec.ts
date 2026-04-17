@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { shuffle } from 'lodash';
 import type { Hash, Hex } from 'viem';
