@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import Blockaid from '@blockaid/client';
 import type { JsonRpcScanParams } from '@blockaid/client/resources/evm/json-rpc';
 import type { TransactionScanResponse } from '@blockaid/client/resources/index';

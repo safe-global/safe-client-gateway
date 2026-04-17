@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Module } from '@nestjs/common';
 import { ConfigApiModule } from '@/datasources/config-api/config-api.module';
 import { TxAuthNetworkModule } from '@/datasources/network/tx-auth.network.module';

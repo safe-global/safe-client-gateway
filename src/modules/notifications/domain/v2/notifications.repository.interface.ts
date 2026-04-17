@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { UUID } from 'node:crypto';
 import type { Address } from 'viem';
 import type { FirebaseNotification } from '@/datasources/push-notifications-api/entities/firebase-notification.entity';

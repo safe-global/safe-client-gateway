@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import type { Message as DomainMessage } from '@/modules/messages/domain/entities/message.entity';
 import type { MessageConfirmation as DomainMessageConfirmation } from '@/modules/messages/domain/entities/message-confirmation.entity';

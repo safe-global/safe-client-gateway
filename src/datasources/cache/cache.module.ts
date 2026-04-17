@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Global, Module } from '@nestjs/common';
 import { createClient } from 'redis';
 import { IConfigurationService } from '@/config/configuration.service.interface';

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import type { Hex } from 'viem';
 import { verifyMessage } from 'viem';

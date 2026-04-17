@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
 import { EventTopicsSchema } from '@/validation/entities/schemas/event-topics.schema';
 import { HexSchema } from '@/validation/entities/schemas/hex.schema';

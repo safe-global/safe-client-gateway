@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress } from 'viem';
 import { campaignActivityBuilder } from '@/modules/community/domain/entities/__tests__/campaign-activity.builder';

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker/.';
 import { BullModule, getQueueToken } from '@nestjs/bullmq';
 import type { INestApplication } from '@nestjs/common';

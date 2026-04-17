@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { Severity } from '@/modules/safe-shield/entities/severity.entity';
 
 export const GUARD_STORAGE_POSITION =

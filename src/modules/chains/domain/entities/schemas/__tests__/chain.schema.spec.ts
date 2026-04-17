@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import { faker } from '@faker-js/faker';
+import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import { balancesProviderBuilder } from '@/modules/chains/domain/entities/__tests__/balances-provider.builder';
 import { beaconChainExplorerUriTemplateBuilder } from '@/modules/chains/domain/entities/__tests__/beacon-chain-explorer-uri-template.builder';
 import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
 import { gasPriceFixedEIP1559Builder } from '@/modules/chains/domain/entities/__tests__/gas-price-fixed-eip-1559.builder';
-import { faker } from '@faker-js/faker';
 import { gasPriceFixedBuilder } from '@/modules/chains/domain/entities/__tests__/gas-price-fixed.builder';
 import { gasPriceOracleBuilder } from '@/modules/chains/domain/entities/__tests__/gas-price-oracle.builder';
 import { nativeCurrencyBuilder } from '@/modules/chains/domain/entities/__tests__/native.currency.builder';
@@ -25,7 +26,6 @@ import {
   RpcUriSchema,
   ThemeSchema,
 } from '@/modules/chains/domain/entities/schemas/chain.schema';
-import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 
 describe('Chain schemas', () => {
   describe('NativeCurrencySchema', () => {
