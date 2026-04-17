@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Readable, Writable } from 'node:stream';
 import { faker } from '@faker-js/faker';
 import type { CsvOptions } from './csv.service';

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { secp256k1 } from '@noble/curves/secp256k1';
 import { memoize } from 'lodash';

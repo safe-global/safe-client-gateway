@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Injectable } from '@nestjs/common';
 import type { IHumanDescriptionApi } from '@/domain/interfaces/human-description-api.interface';
 import ContractDescriptions from '@/modules/human-description/datasources/json';

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { get } from 'lodash';
 import { type Address, getAddress } from 'viem';

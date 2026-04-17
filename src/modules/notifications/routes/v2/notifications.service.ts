@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { UUID } from 'node:crypto';
 import { Inject, Injectable } from '@nestjs/common';
 import type { Address } from 'viem';

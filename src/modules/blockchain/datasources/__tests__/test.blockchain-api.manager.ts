@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Module } from '@nestjs/common';
 import { IBlockchainApiManager } from '@/domain/interfaces/blockchain-api.manager.interface';
 import { FakeBlockchainApiManager } from '@/modules/blockchain/datasources/__tests__/fake.blockchain-api.manager';

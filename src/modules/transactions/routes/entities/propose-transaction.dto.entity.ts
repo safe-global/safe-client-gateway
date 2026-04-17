@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import type { Address, Hash, Hex } from 'viem';
 import { Operation } from '@/modules/safe/domain/entities/operation.entity';

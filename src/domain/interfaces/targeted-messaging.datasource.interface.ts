@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { Address } from 'viem';
 import type { CreateOutreachDto } from '@/modules/targeted-messaging/domain/entities/create-outreach.dto.entity';
 import type { CreateTargetedSafesDto } from '@/modules/targeted-messaging/domain/entities/create-targeted-safes.dto.entity';
