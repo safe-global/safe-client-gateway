@@ -258,6 +258,8 @@ export class ZerionPortfolioApi implements IPortfolioApi {
       return {
         tokenInfo: {
           ...meta.tokenInfo,
+          // Use || (not ??) so empty-string symbol/name falls back to
+          // position.attributes.name instead of displaying blank.
           symbol: meta.tokenInfo.symbol || position.attributes.name,
           name: meta.tokenInfo.name || position.attributes.name,
         },
