@@ -51,10 +51,14 @@ export class SpaceSafe implements DomainSpaceSafe {
   })
   public readonly updatedAt!: Date;
 
-  @ManyToOne(() => Space, (space: Space) => space.id, {
-    onDelete: 'CASCADE',
-    nullable: false,
-  })
+  @ManyToOne(
+    () => Space,
+    (space: Space) => space.id,
+    {
+      onDelete: 'CASCADE',
+      nullable: false,
+    },
+  )
   @JoinColumn({
     name: 'space_id',
     foreignKeyConstraintName: 'FK_SS_space_id',

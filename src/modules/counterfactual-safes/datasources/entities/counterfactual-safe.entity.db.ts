@@ -143,10 +143,14 @@ export class CounterfactualSafe implements DomainCounterfactualSafe {
   })
   public readonly updatedAt!: Date;
 
-  @ManyToOne(() => User, (user: User) => user.id, {
-    onDelete: 'SET NULL',
-    nullable: true,
-  })
+  @ManyToOne(
+    () => User,
+    (user: User) => user.id,
+    {
+      onDelete: 'SET NULL',
+      nullable: true,
+    },
+  )
   @JoinColumn({
     name: 'creator_id',
     foreignKeyConstraintName: 'FK_CFS_creator_id',

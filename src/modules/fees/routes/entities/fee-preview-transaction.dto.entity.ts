@@ -5,9 +5,9 @@ import type { z } from 'zod';
 import type { FeePreviewTransactionDtoSchema } from '@/modules/fees/routes/entities/schemas/fee-preview-transaction.dto.schema';
 import { Operation } from '@/modules/safe/domain/entities/operation.entity';
 
-export class FeePreviewTransactionDto implements z.infer<
-  typeof FeePreviewTransactionDtoSchema
-> {
+export class FeePreviewTransactionDto
+  implements z.infer<typeof FeePreviewTransactionDtoSchema>
+{
   @ApiProperty()
   to: Address;
 

@@ -14,7 +14,9 @@ import { CounterfactualSafe } from '@/modules/counterfactual-safes/datasources/e
 import type { ICounterfactualSafesRepository } from '@/modules/counterfactual-safes/domain/counterfactual-safes.repository.interface';
 import type { User } from '@/modules/users/datasources/entities/users.entity.db';
 
-export class CounterfactualSafesRepository implements ICounterfactualSafesRepository {
+export class CounterfactualSafesRepository
+  implements ICounterfactualSafesRepository
+{
   public constructor(
     @Inject(PostgresDatabaseService)
     private readonly postgresDatabaseService: PostgresDatabaseService,

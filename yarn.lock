@@ -8832,15 +8832,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"prettier@npm:3.7.4":
-  version: 3.7.4
-  resolution: "prettier@npm:3.7.4"
-  bin:
-    prettier: bin/prettier.cjs
-  checksum: 10/b4d00ea13baed813cb777c444506632fb10faaef52dea526cacd03085f01f6db11fc969ccebedf05bf7d93c3960900994c6adf1b150e28a31afd5cfe7089b313
-  languageName: node
-  linkType: hard
-
 "pretty-format@npm:^29.0.0, pretty-format@npm:^29.7.0":
   version: 29.7.0
   resolution: "pretty-format@npm:29.7.0"
@@ -9214,7 +9205,6 @@ __metadata:
     nestjs-cls: "npm:6.2.0"
     pg: "npm:8.18.0"
     postgres: "npm:3.4.7"
-    prettier: "npm:3.7.4"
     redis: "npm:5.10.0"
     reflect-metadata: "npm:0.2.2"
     rxjs: "npm:7.8.2"
