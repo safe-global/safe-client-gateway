@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import path from 'node:path';
 import { Readable } from 'node:stream';
 import {

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { ApiProperty } from '@nestjs/swagger';
 import { ModuleTransaction } from '@/modules/transactions/routes/entities/module-transaction.entity';
 import { Page } from '@/routes/common/entities/page.entity';

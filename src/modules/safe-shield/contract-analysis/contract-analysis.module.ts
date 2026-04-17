@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Module } from '@nestjs/common';
 import { TransactionApiManagerModule } from '@/domain/interfaces/transaction-api.manager.interface';
 import { DataDecoderModule } from '@/modules/data-decoder/data-decoder.module';
