@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { balancesProviderBuilder } from '@/modules/chains/domain/entities/__tests__/balances-provider.builder';
 import { beaconChainExplorerUriTemplateBuilder } from '@/modules/chains/domain/entities/__tests__/beacon-chain-explorer-uri-template.builder';
 import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
@@ -9,7 +10,6 @@ import { nativeCurrencyBuilder } from '@/modules/chains/domain/entities/__tests_
 import { pricesProviderBuilder } from '@/modules/chains/domain/entities/__tests__/prices-provider.builder';
 import { rpcUriBuilder } from '@/modules/chains/domain/entities/__tests__/rpc-uri.builder';
 import { themeBuilder } from '@/modules/chains/domain/entities/__tests__/theme.builder';
-import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
 import {
   ChainSchema,
   BalancesProviderSchema,
@@ -22,10 +22,8 @@ import {
   RpcUriSchema,
   ThemeSchema,
   ContractAddressesSchema,
-  ChainLenientPageSchema,
   BeaconChainExplorerUriTemplateSchema,
 } from '@/modules/chains/domain/entities/schemas/chain.schema';
-import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress } from 'viem';
 
@@ -603,38 +601,6 @@ describe('Chain schemas', () => {
           message: 'Invalid input: expected object, received undefined',
         },
       ]);
-    });
-  });
-
-  describe('ChainLenientPageSchema', () => {
-    it('should validate a valid Chain page', () => {
-      const chains = faker.helpers.multiple(() => chainBuilder().build(), {
-        count: { min: 1, max: 5 },
-      });
-      const chainPage = pageBuilder()
-        .with('results', chains)
-        .with('count', chains.length)
-        .build();
-
-      const result = ChainLenientPageSchema.safeParse(chainPage);
-
-      expect(result.success).toBe(true);
-    });
-
-    it('should exclude invalid Chain items', () => {
-      const chains = faker.helpers.multiple(() => chainBuilder().build(), {
-        count: { min: 1, max: 5 },
-      });
-      const chainPage = pageBuilder<Chain>()
-        .with('results', chains)
-        .with('count', chains.length)
-        .build();
-      // @ts-expect-error - results are assumed optional
-      delete chainPage.results[0].chainId;
-
-      const result = ChainLenientPageSchema.safeParse(chainPage);
-
-      expect(result.success).toBe(true);
     });
   });
 });

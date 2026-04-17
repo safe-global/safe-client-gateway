@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 /**
  * The {@link CacheKeyPrefix} is meant to be used whenever a prefix should be added to the keys
  * registered in the cache.
