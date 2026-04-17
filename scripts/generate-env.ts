@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: FSL-1.1-MIT
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import {
@@ -131,6 +130,7 @@ export function updateEnvFile(): void {
   const envExists = fs.existsSync(ENV_OUTPUT_PATH);
 
   if (!envExists) {
+    console.info(MESSAGES.update.noFileCreating);
     generateNewEnvFile();
 
     return;
@@ -147,6 +147,7 @@ export function updateEnvFile(): void {
   );
 
   if (missingRequired.length === 0 && missingOptional.length === 0) {
+    console.info(MESSAGES.update.upToDate);
     process.exit(0);
   }
 
@@ -182,6 +183,23 @@ export function updateEnvFile(): void {
 
   fs.appendFileSync(ENV_OUTPUT_PATH, linesToAdd.join('\n'), 'utf-8');
   setFilePermissions(ENV_OUTPUT_PATH, MESSAGES.error.generic);
+
+  console.info(MESSAGES.update.success);
+  console.info('');
+
+  if (missingRequired.length > 0) {
+    console.info(MESSAGES.update.actionRequired);
+    console.info(MESSAGES.update.reviewRequired);
+    console.info(MESSAGES.update.updateValues);
+    console.info('');
+  }
+
+  if (missingOptional.length > 0) {
+    console.info(MESSAGES.update.optionalVarsTitle);
+    console.info(MESSAGES.update.optionalCommented);
+    console.info(MESSAGES.update.uncommentToOverride);
+    console.info('');
+  }
 }
 
 /**
@@ -242,6 +260,14 @@ export function generateNewEnvFile(): void {
 
   fs.writeFileSync(ENV_OUTPUT_PATH, lines.join('\n'), 'utf-8');
   setFilePermissions(ENV_OUTPUT_PATH, MESSAGES.error.generic);
+
+  console.info(MESSAGES.generate.success);
+  console.info('');
+  console.info(MESSAGES.common.nextSteps);
+  console.info(MESSAGES.common.step1);
+  console.info(MESSAGES.common.step2);
+  console.info(MESSAGES.common.step3);
+  console.info('');
 }
 
 /**
