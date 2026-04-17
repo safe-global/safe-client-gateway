@@ -46,13 +46,21 @@ export class Space implements DomainSpace {
   })
   updatedAt!: Date;
 
-  @OneToMany(() => Member, (member: Member) => member.space, {
-    cascade: ['update', 'insert'],
-  })
+  @OneToMany(
+    () => Member,
+    (member: Member) => member.space,
+    {
+      cascade: ['update', 'insert'],
+    },
+  )
   members!: Array<Member>;
 
-  @OneToMany(() => SpaceSafe, (safeList: SpaceSafe) => safeList.space, {
-    cascade: ['update', 'insert'],
-  })
+  @OneToMany(
+    () => SpaceSafe,
+    (safeList: SpaceSafe) => safeList.space,
+    {
+      cascade: ['update', 'insert'],
+    },
+  )
   safes?: Array<SpaceSafe>;
 }

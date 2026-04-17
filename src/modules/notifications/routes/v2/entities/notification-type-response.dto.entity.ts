@@ -7,9 +7,9 @@ export const NotificationTypeResponseSchema = z.object({
   name: z.enum(NotificationTypeEnum),
 });
 
-export class NotificationTypeResponseDto implements z.infer<
-  typeof NotificationTypeResponseSchema
-> {
+export class NotificationTypeResponseDto
+  implements z.infer<typeof NotificationTypeResponseSchema>
+{
   @ApiProperty({
     type: NotificationTypeEnum,
     enum: NotificationTypeEnum,

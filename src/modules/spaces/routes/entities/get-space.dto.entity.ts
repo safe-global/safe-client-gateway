@@ -12,7 +12,7 @@ import {
 
 class UserDto extends User {
   @ApiProperty({ type: Number })
-  declare public id: User['id'];
+  public declare id: User['id'];
 }
 
 class SpaceMemberDto {

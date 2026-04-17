@@ -115,9 +115,9 @@ export class CoingeckoApi implements IPricesApi {
       );
     // Coingecko expects the token addresses to be lowercase, so lowercase addresses are enforced here.
     this.highRefreshRateTokens = this.configurationService
-      .getOrThrow<
-        Array<string>
-      >('balances.providers.safe.prices.highRefreshRateTokens')
+      .getOrThrow<Array<string>>(
+        'balances.providers.safe.prices.highRefreshRateTokens',
+      )
       .map((tokenAddress) => tokenAddress.toLowerCase());
 
     this.highRefreshRateTokensTtlSeconds =

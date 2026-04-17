@@ -30,20 +30,28 @@ export class Member implements DomainMember {
   })
   id!: number;
 
-  @ManyToOne(() => User, (user: User) => user.id, {
-    cascade: true,
-    nullable: false,
-  })
+  @ManyToOne(
+    () => User,
+    (user: User) => user.id,
+    {
+      cascade: true,
+      nullable: false,
+    },
+  )
   @JoinColumn({
     name: 'user_id',
     foreignKeyConstraintName: 'FK_members_user_id',
   })
   user!: User;
 
-  @ManyToOne(() => Space, (space: Space) => space.id, {
-    cascade: true,
-    nullable: false,
-  })
+  @ManyToOne(
+    () => Space,
+    (space: Space) => space.id,
+    {
+      cascade: true,
+      nullable: false,
+    },
+  )
   @JoinColumn({
     name: 'space_id',
     foreignKeyConstraintName: 'FK_members_space_id',

@@ -1,6 +1,9 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class UpdateOrganizationsTimestampTrigger1737988602722 implements MigrationInterface {
+export class UpdateOrganizationsTimestampTrigger1737988602722
+  implements MigrationInterface
+{
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
                     CREATE TRIGGER update_organizations_updated_at

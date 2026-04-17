@@ -23,10 +23,14 @@ export class AddressBookItem implements DomainAddressBookItem {
   })
   id!: number;
 
-  @ManyToOne(() => Space, (space: Space) => space.id, {
-    onDelete: 'CASCADE',
-    nullable: false,
-  })
+  @ManyToOne(
+    () => Space,
+    (space: Space) => space.id,
+    {
+      onDelete: 'CASCADE',
+      nullable: false,
+    },
+  )
   @JoinColumn({
     name: 'space_id',
     foreignKeyConstraintName: 'FK_SABI_space_id',

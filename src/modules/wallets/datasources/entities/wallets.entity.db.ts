@@ -19,10 +19,14 @@ export class Wallet implements z.infer<typeof WalletSchema> {
   @PrimaryGeneratedColumn({ primaryKeyConstraintName: 'PK_wallet_id' })
   id!: number;
 
-  @ManyToOne(() => User, (user: User) => user.id, {
-    onDelete: 'CASCADE',
-    nullable: false,
-  })
+  @ManyToOne(
+    () => User,
+    (user: User) => user.id,
+    {
+      onDelete: 'CASCADE',
+      nullable: false,
+    },
+  )
   @JoinColumn({
     name: 'user_id',
     foreignKeyConstraintName: 'FK_wallets_user_id',

@@ -29,9 +29,9 @@ export const CounterfactualSafesSchema = z.object({
   safes: z.array(CounterfactualSafeSchema).nonempty().max(100),
 });
 
-export class CounterfactualSafeDto implements z.infer<
-  typeof CounterfactualSafeSchema
-> {
+export class CounterfactualSafeDto
+  implements z.infer<typeof CounterfactualSafeSchema>
+{
   @ApiProperty({ type: String })
   public readonly chainId!: CounterfactualSafe['chainId'];
 
@@ -75,9 +75,9 @@ export class CounterfactualSafeDto implements z.infer<
   public readonly paymentReceiver?: CounterfactualSafe['paymentReceiver'];
 }
 
-export class CounterfactualSafesDto implements z.infer<
-  typeof CounterfactualSafesSchema
-> {
+export class CounterfactualSafesDto
+  implements z.infer<typeof CounterfactualSafesSchema>
+{
   @ApiProperty({ type: CounterfactualSafeDto, isArray: true })
   public readonly safes!: [
     CounterfactualSafeDto,

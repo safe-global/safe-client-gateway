@@ -9,7 +9,9 @@ import type { TargetedSafe } from '@/modules/targeted-messaging/domain/entities/
 import type { ITargetedMessagingRepository } from '@/modules/targeted-messaging/domain/targeted-messaging.repository.interface';
 
 @Injectable()
-export class TargetedMessagingRepository implements ITargetedMessagingRepository {
+export class TargetedMessagingRepository
+  implements ITargetedMessagingRepository
+{
   constructor(
     @Inject(ITargetedMessagingDatasource)
     private readonly datasource: ITargetedMessagingDatasource,

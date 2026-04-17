@@ -11,9 +11,9 @@ import type { CreateMessageDtoSchema } from '@/modules/messages/routes/entities/
 import { TypedData } from '@/modules/messages/routes/entities/typed-data.entity';
 
 @ApiExtraModels(TypedData)
-export class CreateMessageDto implements z.infer<
-  typeof CreateMessageDtoSchema
-> {
+export class CreateMessageDto
+  implements z.infer<typeof CreateMessageDtoSchema>
+{
   @ApiProperty({
     oneOf: [{ type: 'string' }, { $ref: getSchemaPath(TypedData) }],
   })

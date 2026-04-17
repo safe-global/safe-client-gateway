@@ -9,7 +9,9 @@ import type {
   UpsertSubscriptionsSafesDto as DomainUpsertSubscriptionsSafesDto,
 } from '@/modules/notifications/domain/v2/entities/upsert-subscriptions.dto.entity';
 
-export class UpsertSubscriptionsSafesDto implements DomainUpsertSubscriptionsSafesDto {
+export class UpsertSubscriptionsSafesDto
+  implements DomainUpsertSubscriptionsSafesDto
+{
   @ApiProperty()
   chainId!: string;
 

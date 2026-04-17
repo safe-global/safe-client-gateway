@@ -776,7 +776,9 @@ describe('Propose transaction - Transactions Controller', () => {
       const contractPage = pageBuilder()
         .with('results', [
           // transaction.to address is not in the list of trusted contracts
-          contractBuilder().with('trustedForDelegateCall', true).build(),
+          contractBuilder()
+            .with('trustedForDelegateCall', true)
+            .build(),
           contractBuilder().with('trustedForDelegateCall', true).build(),
         ])
         .with('next', null)

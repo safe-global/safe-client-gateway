@@ -13,9 +13,9 @@ export const CreateOutreachDtoSchema = OutreachBaseSchema.extend({
   targetAll: z.boolean(),
 });
 
-export class CreateOutreachDto implements z.infer<
-  typeof CreateOutreachDtoSchema
-> {
+export class CreateOutreachDto
+  implements z.infer<typeof CreateOutreachDtoSchema>
+{
   name: string;
   startDate: Date;
   endDate: Date;
