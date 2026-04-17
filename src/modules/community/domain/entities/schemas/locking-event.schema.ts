@@ -1,10 +1,10 @@
+import { z } from 'zod';
 import { buildPageSchema } from '@/domain/entities/schemas/page.schema.factory';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { HexSchema } from '@/validation/entities/schemas/hex.schema';
 import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
-import { z } from 'zod';
 
-export const enum LockingEventType {
+export enum LockingEventType {
   LOCKED = 'LOCKED',
   UNLOCKED = 'UNLOCKED',
   WITHDRAWN = 'WITHDRAWN',

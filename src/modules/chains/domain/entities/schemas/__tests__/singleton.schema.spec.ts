@@ -1,8 +1,8 @@
+import { faker } from '@faker-js/faker';
+import { type Address, getAddress } from 'viem';
 import { singletonBuilder } from '@/modules/chains/domain/entities/__tests__/singleton.builder';
 import { SingletonSchema } from '@/modules/chains/domain/entities/schemas/singleton.schema';
 import type { Singleton } from '@/modules/chains/domain/entities/singleton.entity';
-import { faker } from '@faker-js/faker';
-import { type Address, getAddress } from 'viem';
 
 describe('SingletonSchema', () => {
   it('should validate a singleton', () => {

@@ -1,12 +1,4 @@
 import {
-  ApiOkResponse,
-  ApiQuery,
-  ApiTags,
-  ApiOperation,
-  ApiParam,
-  ApiNotFoundResponse,
-} from '@nestjs/swagger';
-import {
   Controller,
   DefaultValuePipe,
   Get,
@@ -14,17 +6,25 @@ import {
   ParseBoolPipe,
   Query,
 } from '@nestjs/common';
-import { SafeState } from '@/modules/safe/routes/entities/safe-info.entity';
-import { SafesService } from '@/modules/safe/routes/safes.service';
-import { SafeNonces } from '@/modules/safe/routes/entities/nonces.entity';
-import { SafeOverview } from '@/modules/safe/routes/entities/safe-overview.entity';
 import {
-  Caip10AddressesSchema,
-  type Caip10Addresses,
-} from '@/modules/safe/routes/entities/caip-10-addresses.entity';
-import { ValidationPipe } from '@/validation/pipes/validation.pipe';
-import { AddressSchema } from '@/validation/entities/schemas/address.schema';
+  ApiNotFoundResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiParam,
+  ApiQuery,
+  ApiTags,
+} from '@nestjs/swagger';
 import type { Address } from 'viem';
+import {
+  type Caip10Addresses,
+  Caip10AddressesSchema,
+} from '@/modules/safe/routes/entities/caip-10-addresses.entity';
+import { SafeNonces } from '@/modules/safe/routes/entities/nonces.entity';
+import { SafeState } from '@/modules/safe/routes/entities/safe-info.entity';
+import { SafeOverview } from '@/modules/safe/routes/entities/safe-overview.entity';
+import { SafesService } from '@/modules/safe/routes/safes.service';
+import { AddressSchema } from '@/validation/entities/schemas/address.schema';
+import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 
 @ApiTags('safes')
 @Controller({
@@ -57,7 +57,7 @@ export class SafesController {
     description: 'Safe not found on the specified chain',
   })
   @Get('chains/:chainId/safes/:safeAddress')
-  async getSafe(
+  getSafe(
     @Param('chainId') chainId: string,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
     safeAddress: Address,
@@ -89,7 +89,7 @@ export class SafesController {
     description: 'Safe not found on the specified chain',
   })
   @Get('chains/:chainId/safes/:safeAddress/nonces')
-  async getNonces(
+  getNonces(
     @Param('chainId') chainId: string,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
     safeAddress: Address,
@@ -146,7 +146,7 @@ export class SafesController {
     description: 'Array of Safe overviews with balances and metadata',
   })
   @Get('safes')
-  async getSafeOverview(
+  getSafeOverview(
     @Query('currency') currency: string,
     @Query('safes', new ValidationPipe(Caip10AddressesSchema))
     addresses: Caip10Addresses,

@@ -1,10 +1,10 @@
-import { TokenInfo } from '@/modules/transactions/routes/entities/swaps/token-info.entity';
+import { ApiProperty } from '@nestjs/swagger';
+import type { Address } from 'viem';
+import type { TokenInfo } from '@/modules/transactions/routes/entities/swaps/token-info.entity';
 import {
   TransactionInfo,
   TransactionInfoType,
 } from '@/modules/transactions/routes/entities/transaction-info.entity';
-import { ApiProperty } from '@nestjs/swagger';
-import type { Address } from 'viem';
 
 export class NativeStakingWithdrawTransactionInfo extends TransactionInfo {
   @ApiProperty({ enum: [TransactionInfoType.NativeStakingWithdraw] })

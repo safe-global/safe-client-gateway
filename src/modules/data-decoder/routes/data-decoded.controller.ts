@@ -1,10 +1,10 @@
 import { Body, Controller, HttpCode, Param, Post } from '@nestjs/common';
 import {
+  ApiBody,
   ApiOkResponse,
-  ApiTags,
   ApiOperation,
   ApiParam,
-  ApiBody,
+  ApiTags,
 } from '@nestjs/swagger';
 import { DataDecodedService } from '@/modules/data-decoder/routes/data-decoded.service';
 import { DataDecoded } from '@/modules/data-decoder/routes/entities/data-decoded.entity';
@@ -45,7 +45,7 @@ export class DataDecodedController {
   })
   @HttpCode(200)
   @Post('chains/:chainId/data-decoder')
-  async getDataDecoded(
+  getDataDecoded(
     @Param('chainId') chainId: string,
     @Body(new ValidationPipe(TransactionDataDtoSchema))
     getDataDecodedDto: TransactionDataDto,

@@ -1,6 +1,6 @@
-import { EventTopicsSchema } from '@/validation/entities/schemas/event-topics.schema';
 import { faker } from '@faker-js/faker/.';
 import type { Address } from 'viem';
+import { EventTopicsSchema } from '@/validation/entities/schemas/event-topics.schema';
 
 describe('EventTopicsSchema', () => {
   it('validate an EventTopicsSchema', () => {

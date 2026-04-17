@@ -1,3 +1,14 @@
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  OneToMany,
+  PrimaryGeneratedColumn,
+  Unique,
+} from 'typeorm';
+import { type Address, getAddress } from 'viem';
+import { z } from 'zod';
 import { RowSchema } from '@/datasources/db/v1/entities/row.entity';
 import { NotificationDevice } from '@/modules/notifications/datasources/entities/notification-devices.entity.db';
 import {
@@ -6,17 +17,6 @@ import {
 } from '@/modules/notifications/datasources/entities/notification-subscription-notification-type.entity.db';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
-import {
-  Column,
-  Entity,
-  Unique,
-  ManyToOne,
-  PrimaryGeneratedColumn,
-  OneToMany,
-  JoinColumn,
-} from 'typeorm';
-import { Address, getAddress } from 'viem';
-import { z } from 'zod';
 
 export const NotificationSubscriptionSchema = RowSchema.extend({
   chain_id: NumericStringSchema,

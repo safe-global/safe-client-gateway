@@ -1,5 +1,5 @@
-import { z } from 'zod';
 import { getAddress } from 'viem';
+import { z } from 'zod';
 
 export const AddressSchema = z.string().transform((value, ctx) => {
   try {

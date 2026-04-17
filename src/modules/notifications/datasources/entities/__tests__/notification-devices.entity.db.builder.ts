@@ -1,9 +1,9 @@
+import type { UUID } from 'node:crypto';
+import { faker } from '@faker-js/faker/.';
 import type { IBuilder } from '@/__tests__/builder';
 import { Builder } from '@/__tests__/builder';
 import type { NotificationDevice } from '@/modules/notifications/datasources/entities/notification-devices.entity.db';
 import { DeviceType } from '@/modules/notifications/domain/v2/entities/device-type.entity';
-import { faker } from '@faker-js/faker/.';
-import type { UUID } from 'crypto';
 
 export function notificationDeviceBuilder(): IBuilder<NotificationDevice> {
   return new Builder<NotificationDevice>()

@@ -1,23 +1,23 @@
+import type { Server } from 'node:net';
 import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
-import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
+import { createTestModule } from '@/__tests__/testing-module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import type { INetworkService } from '@/datasources/network/network.service.interface';
-import { NetworkService } from '@/datasources/network/network.service.interface';
-import type { DeleteTransactionDto } from '@/modules/transactions/routes/entities/delete-transaction.dto.entity';
-import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
-import {
-  multisigTransactionBuilder,
-  toJson as multisigToJson,
-} from '@/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
+import type { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
 import { CacheService } from '@/datasources/cache/cache.service.interface';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
-import type { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
-import type { Server } from 'net';
+import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
+import type { INetworkService } from '@/datasources/network/network.service.interface';
+import { NetworkService } from '@/datasources/network/network.service.interface';
+import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
+import {
+  toJson as multisigToJson,
+  multisigTransactionBuilder,
+} from '@/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
+import type { DeleteTransactionDto } from '@/modules/transactions/routes/entities/delete-transaction.dto.entity';
 import { rawify } from '@/validation/entities/raw.entity';
-import { createTestModule } from '@/__tests__/testing-module';
 
 describe('Delete Transaction - Transactions Controller', () => {
   let app: INestApplication<Server>;

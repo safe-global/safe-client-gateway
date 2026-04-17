@@ -1,24 +1,27 @@
 import { Inject, Injectable } from '@nestjs/common';
 import groupBy from 'lodash/groupBy';
-import { Message as DomainMessage } from '@/modules/messages/domain/entities/message.entity';
-import { MessagesRepository } from '@/modules/messages/domain/messages.repository';
+import type { Address, Hash } from 'viem';
+import { LogType } from '@/domain/common/entities/log-type.entity';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
+import type { Message as DomainMessage } from '@/modules/messages/domain/entities/message.entity';
+import type { MessagesRepository } from '@/modules/messages/domain/messages.repository';
 import { IMessagesRepository } from '@/modules/messages/domain/messages.repository.interface';
-import { SafeRepository } from '@/modules/safe/domain/safe.repository';
+import type { CreateMessageDto } from '@/modules/messages/routes/entities/create-message.dto.entity';
+import type { Message } from '@/modules/messages/routes/entities/message.entity';
+import type { MessageItem } from '@/modules/messages/routes/entities/message-item.entity';
+import type { UpdateMessageSignatureDto } from '@/modules/messages/routes/entities/update-message-signature.entity';
+import { MessageMapper } from '@/modules/messages/routes/mappers/message-mapper';
+import type { SafeRepository } from '@/modules/safe/domain/safe.repository';
 import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
 import { DateLabel } from '@/routes/common/entities/date-label.entity';
-import { Page } from '@/routes/common/entities/page.entity';
+import type { Page } from '@/routes/common/entities/page.entity';
 import {
-  PaginationData,
   cursorUrlFromLimitAndOffset,
+  type PaginationData,
 } from '@/routes/common/pagination/pagination.data';
-import { CreateMessageDto } from '@/modules/messages/routes/entities/create-message.dto.entity';
-import { MessageItem } from '@/modules/messages/routes/entities/message-item.entity';
-import { Message } from '@/modules/messages/routes/entities/message.entity';
-import { UpdateMessageSignatureDto } from '@/modules/messages/routes/entities/update-message-signature.entity';
-import { MessageMapper } from '@/modules/messages/routes/mappers/message-mapper';
-import { LoggingService, ILoggingService } from '@/logging/logging.interface';
-import { LogType } from '@/domain/common/entities/log-type.entity';
-import type { Address, Hash } from 'viem';
 
 @Injectable()
 export class MessagesService {

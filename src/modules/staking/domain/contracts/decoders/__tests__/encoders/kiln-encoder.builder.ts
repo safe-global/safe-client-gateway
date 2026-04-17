@@ -1,21 +1,21 @@
 // DepositEvent
 
+import { faker } from '@faker-js/faker/.';
+import type { Address, Hex } from 'viem';
+import {
+  encodeAbiParameters,
+  encodeEventTopics,
+  encodeFunctionData,
+  getAbiItem,
+  getAddress,
+  toHex,
+} from 'viem';
 import { Builder } from '@/__tests__/builder';
 import type { IEncoder } from '@/__tests__/encoder-builder';
 import {
   KilnAbi,
   KilnDecoder,
 } from '@/modules/staking/domain/contracts/decoders/kiln-decoder.helper';
-import { faker } from '@faker-js/faker/.';
-import {
-  encodeAbiParameters,
-  encodeEventTopics,
-  toHex,
-  encodeFunctionData,
-  getAbiItem,
-  getAddress,
-} from 'viem';
-import type { Address, Hex } from 'viem';
 
 // deposit
 
@@ -204,7 +204,7 @@ class WithdrawalEventBuilder<T extends WithdrawalArgs>
     const data = encodeAbiParameters(
       // Only non-indexed parameters
       this.item.inputs.filter((input) => {
-        return !('indexed' in input) || !input.indexed;
+        return !('indexed' in input && input.indexed);
       }),
       [args.pubKeyRoot, args.rewards, args.nodeOperatorFee, args.treasuryFee],
     );

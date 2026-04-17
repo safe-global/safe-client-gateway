@@ -1,15 +1,15 @@
 import { faker } from '@faker-js/faker';
 import { getAddress, type Hex } from 'viem';
-import { DataDecoderApi } from '@/modules/data-decoder/datasources/data-decoder-api.service';
-import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
-import { dataDecodedBuilder } from '@/modules/data-decoder/domain/v2/entities/__tests__/data-decoded.builder';
-import { contractBuilder } from '@/modules/data-decoder/domain/v2/entities/__tests__/contract.builder';
-import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
-import { DataSourceError } from '@/domain/errors/data-source.error';
-import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
-import { rawify } from '@/validation/entities/raw.entity';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import type { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
+import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
+import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
+import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
+import { DataSourceError } from '@/domain/errors/data-source.error';
+import { DataDecoderApi } from '@/modules/data-decoder/datasources/data-decoder-api.service';
+import { contractBuilder } from '@/modules/data-decoder/domain/v2/entities/__tests__/contract.builder';
+import { dataDecodedBuilder } from '@/modules/data-decoder/domain/v2/entities/__tests__/data-decoded.builder';
+import { rawify } from '@/validation/entities/raw.entity';
 
 const mockConfigurationService = jest.mocked({
   getOrThrow: jest.fn(),

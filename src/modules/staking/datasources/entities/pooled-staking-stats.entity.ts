@@ -1,6 +1,6 @@
+import { z } from 'zod';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
-import { z } from 'zod';
 
 export const PooledStakingStatsSchema = z.object({
   address: AddressSchema,

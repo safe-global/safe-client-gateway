@@ -1,73 +1,74 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
+import { join } from 'node:path';
+import { BullModule } from '@nestjs/bullmq';
+import { CacheModule as InMemoryCacheModule } from '@nestjs/cache-manager';
 import {
-  DynamicModule,
-  MiddlewareConsumer,
+  type DynamicModule,
+  type MiddlewareConsumer,
   Module,
-  NestModule,
+  type NestModule,
   RequestMethod,
 } from '@nestjs/common';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ScheduleModule } from '@nestjs/schedule';
-import { CacheModule as InMemoryCacheModule } from '@nestjs/cache-manager';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { ClsMiddleware, ClsModule } from 'nestjs-cls';
-import { join } from 'path';
+import { ConfigurationModule } from '@/config/configuration.module';
+import { BlocklistModule } from '@/config/entities/blocklist.module';
+import configuration from '@/config/entities/configuration';
+import { postgresConfig } from '@/config/entities/postgres.config';
+import { CacheModule } from '@/datasources/cache/cache.module';
+import { CircuitBreakerModule } from '@/datasources/circuit-breaker/circuit-breaker.module';
+import { PostgresDatabaseModule } from '@/datasources/db/v1/postgres-database.module';
+import { NetworkModule } from '@/datasources/network/network.module';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
+import { RequestScopedLoggingModule } from '@/logging/logging.module';
+import { NotFoundLoggerMiddleware } from '@/middleware/not-found-logger.middleware';
+import { AboutModule } from '@/modules/about/about.module';
+import { AlertsModule } from '@/modules/alerts/alerts.module';
+import { AuthModule } from '@/modules/auth/auth.module';
+import { OidcAuthModule } from '@/modules/auth/oidc/oidc-auth.module';
+import { BalancesModule } from '@/modules/balances/balances.module';
 import { ChainsModule } from '@/modules/chains/chains.module';
 import { FeatureFlagsModule } from '@/modules/chains/feature-flags/feature-flags.module';
-import { BalancesModule } from '@/modules/balances/balances.module';
-import { PositionsModule } from '@/modules/positions/positions.module';
-import { PortfolioModule } from '@/modules/portfolio/portfolio.module';
-import { NetworkModule } from '@/datasources/network/network.module';
-import { ConfigurationModule } from '@/config/configuration.module';
-import { CacheModule } from '@/datasources/cache/cache.module';
 import { CollectiblesModule } from '@/modules/collectibles/collectibles.module';
 import { CommunityModule } from '@/modules/community/community.module';
 import { ContractsModule } from '@/modules/contracts/contracts.module';
+import { CounterfactualSafesModule } from '@/modules/counterfactual-safes/counterfactual-safes.module';
+import { CsvExportModule } from '@/modules/csv-export/csv-export.module';
 import { DataDecoderModule } from '@/modules/data-decoder/data-decoder.module';
 import { DelegateModule } from '@/modules/delegate/delegate.module';
-import { HooksModule } from '@/modules/hooks/hooks.module';
-import { SafeAppsModule } from '@/modules/safe-apps/safe-apps.module';
-import { HealthModule } from '@/modules/health/health.module';
-import { OwnersModule } from '@/modules/owners/owners.module';
-import { AboutModule } from '@/modules/about/about.module';
-import { TransactionsModule } from '@/modules/transactions/transactions.module';
-import { SafeModule } from '@/modules/safe/safe.module';
-import { NotificationsModule } from '@/modules/notifications/notifications.module';
 import { EstimationsModule } from '@/modules/estimations/estimations.module';
+import { FeesModule } from '@/modules/fees/fees.module';
+import { HealthModule } from '@/modules/health/health.module';
+import { HooksModule } from '@/modules/hooks/hooks.module';
 import { MessagesModule } from '@/modules/messages/messages.module';
-import { RequestScopedLoggingModule } from '@/logging/logging.module';
-import { RouteLoggerInterceptor } from '@/routes/common/interceptors/route-logger.interceptor';
-import { NotFoundLoggerMiddleware } from '@/middleware/not-found-logger.middleware';
-import { BlocklistGuard } from '@/routes/common/guards/blocklist.guard';
-import configuration from '@/config/entities/configuration';
-import { GlobalErrorFilter } from '@/routes/common/filters/global-error.filter';
-import { DataSourceErrorFilter } from '@/routes/common/filters/data-source-error.filter';
-import { ServeStaticModule } from '@nestjs/serve-static';
-import { RootModule } from '@/modules/root/root.module';
-import { AlertsModule } from '@/modules/alerts/alerts.module';
+import { NotificationsModule } from '@/modules/notifications/notifications.module';
+import { OwnersModule } from '@/modules/owners/owners.module';
+import { PortfolioModule } from '@/modules/portfolio/portfolio.module';
+import { PositionsModule } from '@/modules/positions/positions.module';
 import { RecoveryModule } from '@/modules/recovery/recovery.module';
 import { RelayModule } from '@/modules/relay/relay.module';
-import { FeesModule } from '@/modules/fees/fees.module';
-import { ZodErrorFilter } from '@/routes/common/filters/zod-error.filter';
-import { CacheControlInterceptor } from '@/routes/common/interceptors/cache-control.interceptor';
-import { AuthModule } from '@/modules/auth/auth.module';
-import { OidcAuthModule } from '@/modules/auth/oidc/oidc-auth.module';
-import { TargetedMessagingModule } from '@/modules/targeted-messaging/targeted-messaging.module';
-import { PostgresDatabaseModule } from '@/datasources/db/v1/postgres-database.module';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { ConfigModule, ConfigService } from '@nestjs/config';
-import { postgresConfig } from '@/config/entities/postgres.config';
-import {
-  LoggingService,
-  type ILoggingService,
-} from '@/logging/logging.interface';
-import { UsersModule } from '@/modules/users/users.module';
-import { SpacesModule } from '@/modules/spaces/spaces.module';
-import { CounterfactualSafesModule } from '@/modules/counterfactual-safes/counterfactual-safes.module';
-import { BullModule } from '@nestjs/bullmq';
-import { CsvExportModule } from '@/modules/csv-export/csv-export.module';
+import { RootModule } from '@/modules/root/root.module';
+import { SafeModule } from '@/modules/safe/safe.module';
+import { SafeAppsModule } from '@/modules/safe-apps/safe-apps.module';
 import { SafeShieldModule } from '@/modules/safe-shield/safe-shield.module';
-import { CircuitBreakerModule } from '@/datasources/circuit-breaker/circuit-breaker.module';
-import { BlocklistModule } from '@/config/entities/blocklist.module';
+import { SpacesModule } from '@/modules/spaces/spaces.module';
+import { TargetedMessagingModule } from '@/modules/targeted-messaging/targeted-messaging.module';
+import { TransactionsModule } from '@/modules/transactions/transactions.module';
+import { UsersModule } from '@/modules/users/users.module';
+import { DataSourceErrorFilter } from '@/routes/common/filters/data-source-error.filter';
+import { GlobalErrorFilter } from '@/routes/common/filters/global-error.filter';
+import { ZodErrorFilter } from '@/routes/common/filters/zod-error.filter';
+import { BlocklistGuard } from '@/routes/common/guards/blocklist.guard';
+import { CacheControlInterceptor } from '@/routes/common/interceptors/cache-control.interceptor';
+import { RouteLoggerInterceptor } from '@/routes/common/interceptors/route-logger.interceptor';
 
 @Module({})
 export class AppModule implements NestModule {
@@ -78,7 +79,7 @@ export class AppModule implements NestModule {
       users: isUsersFeatureEnabled,
       email: isEmailFeatureEnabled,
       zerionPositions: isZerionPositionsFeatureEnabled,
-    } = configFactory()['features'];
+    } = configFactory().features;
 
     return {
       module: AppModule,

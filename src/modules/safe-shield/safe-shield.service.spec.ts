@@ -1,70 +1,71 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { SafeShieldService } from './safe-shield.service';
-import type { RecipientAnalysisService } from './recipient-analysis/recipient-analysis.service';
-import type { ContractAnalysisService } from './contract-analysis/contract-analysis.service';
-import type { DeadlockAnalysisService } from './deadlock-analysis/deadlock-analysis.service';
-import type { ThreatAnalysisService } from './threat-analysis/threat-analysis.service';
-import type { ILoggingService } from '@/logging/logging.interface';
-import {
-  ReportEvent,
-  type ReportFalseResultRequest,
-} from './entities/dtos/report-false-result.dto';
-import type { DataDecoded } from '@/modules/data-decoder/routes/entities/data-decoded.entity';
-import type { DecodedTransactionData } from '@/modules/safe-shield/entities/transaction-data.entity';
-import type {
-  RecipientAnalysisResponse,
-  SingleRecipientAnalysisResponse,
-  ThreatAnalysisResponse,
-  ContractAnalysisResponse,
-} from './entities/analysis-responses.entity';
-import type { TransactionsService } from '@/modules/transactions/routes/transactions.service';
-import type { TransactionPreview } from '@/modules/transactions/routes/entities/transaction-preview.entity';
-import {
-  TransferTransactionInfo,
-  TransferDirection,
-} from '@/modules/transactions/routes/entities/transfer-transaction-info.entity';
-import { CustomTransactionInfo } from '@/modules/transactions/routes/entities/custom-transaction.entity';
-import { NativeCoinTransfer } from '@/modules/transactions/routes/entities/transfers/native-coin-transfer.entity';
-import { TransactionData } from '@/modules/transactions/routes/entities/transaction-data.entity';
-import { AddressInfo } from '@/routes/common/entities/address-info.entity';
+
 import { faker } from '@faker-js/faker';
 import { getAddress, type Hex } from 'viem';
-import {
-  recipientAnalysisResponseBuilder,
-  contractAnalysisResponseBuilder,
-  threatAnalysisResponseBuilder,
-  deadlockAnalysisResponseBuilder,
-} from './entities/__tests__/builders/analysis-responses.builder';
+import type { IConfigApi } from '@/domain/interfaces/config-api.interface';
+import type { ILoggingService } from '@/logging/logging.interface';
+import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
 import { dataDecodedBuilder } from '@/modules/data-decoder/domain/v2/entities/__tests__/data-decoded.builder';
+import type { DataDecoded } from '@/modules/data-decoder/routes/entities/data-decoded.entity';
+import { Operation } from '@/modules/safe/domain/entities/operation.entity';
+import { threatAnalysisRequestBuilder } from '@/modules/safe-shield/entities/__tests__/builders/analysis-requests.builder';
 import {
   contractAnalysisResultBuilder,
-  recipientAnalysisResultBuilder,
   maliciousOrModerateThreatBuilder,
   masterCopyChangeThreatBuilder,
+  recipientAnalysisResultBuilder,
   threatAnalysisResultBuilder,
   unofficialFallbackHandlerAnalysisResultBuilder,
 } from '@/modules/safe-shield/entities/__tests__/builders/analysis-result.builder';
-import { Operation } from '@/modules/safe/domain/entities/operation.entity';
-import {
-  COMMON_DESCRIPTION_MAPPING,
-  COMMON_SEVERITY_MAPPING,
-} from './entities/common-status.constants';
-import { threatAnalysisRequestBuilder } from '@/modules/safe-shield/entities/__tests__/builders/analysis-requests.builder';
-import type { IConfigApi } from '@/domain/interfaces/config-api.interface';
-import { FF_RISK_MITIGATION } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-api.constants';
-import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
-import { rawify } from '@/validation/entities/raw.entity';
-import { DESCRIPTION_MAPPING } from '@/modules/safe-shield/threat-analysis/threat-analysis.constants';
+import { CommonStatus } from '@/modules/safe-shield/entities/analysis-result.entity';
+import { ContractStatus } from '@/modules/safe-shield/entities/contract-status.entity';
+import { RecipientStatus } from '@/modules/safe-shield/entities/recipient-status.entity';
 import {
   ContractStatusGroup,
   DeadlockStatusGroup,
   RecipientStatusGroup,
   ThreatStatusGroup,
 } from '@/modules/safe-shield/entities/status-group.entity';
-import { ContractStatus } from '@/modules/safe-shield/entities/contract-status.entity';
-import { RecipientStatus } from '@/modules/safe-shield/entities/recipient-status.entity';
 import { ThreatStatus } from '@/modules/safe-shield/entities/threat-status.entity';
-import { CommonStatus } from '@/modules/safe-shield/entities/analysis-result.entity';
+import type { DecodedTransactionData } from '@/modules/safe-shield/entities/transaction-data.entity';
+import { FF_RISK_MITIGATION } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-api.constants';
+import { DESCRIPTION_MAPPING } from '@/modules/safe-shield/threat-analysis/threat-analysis.constants';
+import { CustomTransactionInfo } from '@/modules/transactions/routes/entities/custom-transaction.entity';
+import { TransactionData } from '@/modules/transactions/routes/entities/transaction-data.entity';
+import type { TransactionPreview } from '@/modules/transactions/routes/entities/transaction-preview.entity';
+import {
+  TransferDirection,
+  TransferTransactionInfo,
+} from '@/modules/transactions/routes/entities/transfer-transaction-info.entity';
+import { NativeCoinTransfer } from '@/modules/transactions/routes/entities/transfers/native-coin-transfer.entity';
+import type { TransactionsService } from '@/modules/transactions/routes/transactions.service';
+import { AddressInfo } from '@/routes/common/entities/address-info.entity';
+import { rawify } from '@/validation/entities/raw.entity';
+import type { ContractAnalysisService } from './contract-analysis/contract-analysis.service';
+import type { DeadlockAnalysisService } from './deadlock-analysis/deadlock-analysis.service';
+import {
+  contractAnalysisResponseBuilder,
+  deadlockAnalysisResponseBuilder,
+  recipientAnalysisResponseBuilder,
+  threatAnalysisResponseBuilder,
+} from './entities/__tests__/builders/analysis-responses.builder';
+import type {
+  ContractAnalysisResponse,
+  RecipientAnalysisResponse,
+  SingleRecipientAnalysisResponse,
+  ThreatAnalysisResponse,
+} from './entities/analysis-responses.entity';
+import {
+  COMMON_DESCRIPTION_MAPPING,
+  COMMON_SEVERITY_MAPPING,
+} from './entities/common-status.constants';
+import {
+  ReportEvent,
+  type ReportFalseResultRequest,
+} from './entities/dtos/report-false-result.dto';
+import type { RecipientAnalysisService } from './recipient-analysis/recipient-analysis.service';
+import { SafeShieldService } from './safe-shield.service';
+import type { ThreatAnalysisService } from './threat-analysis/threat-analysis.service';
 
 // Utility function for generating Wei values
 const generateRandomWeiAmount = (): bigint =>
@@ -106,7 +107,7 @@ const createTransactionPreviewMock = ({
 const createTransferTransactionInfo = (
   sender: string,
   recipient: string,
-  value: string = '0',
+  value = '0',
 ): TransferTransactionInfo =>
   new TransferTransactionInfo(
     new AddressInfo(sender),
@@ -120,9 +121,9 @@ const createTransferTransactionInfo = (
 const createCustomTransactionInfo = (
   to: string,
   dataSize: string,
-  value: string = '0',
-  methodName: string = 'customMethod',
-  description: string = 'Custom transaction',
+  value = '0',
+  methodName = 'customMethod',
+  description = 'Custom transaction',
 ): CustomTransactionInfo =>
   new CustomTransactionInfo(
     new AddressInfo(to),

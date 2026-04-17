@@ -1,3 +1,5 @@
+import { faker } from '@faker-js/faker';
+import { type Address, getAddress } from 'viem';
 import {
   alertBuilder,
   alertLogBuilder,
@@ -8,8 +10,6 @@ import {
   AlertSchema,
   AlertTransactionSchema,
 } from '@/modules/alerts/routes/entities/schemas/alerts.schema';
-import { faker } from '@faker-js/faker';
-import { type Address, getAddress } from 'viem';
 
 describe('Alerts schemas', () => {
   describe('AlertLogSchema', () => {

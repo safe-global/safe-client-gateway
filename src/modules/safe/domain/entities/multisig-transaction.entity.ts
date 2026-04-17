@@ -1,10 +1,10 @@
-import { buildPageSchema } from '@/domain/entities/schemas/page.schema.factory';
+import { z } from 'zod';
 import { SignatureType } from '@/domain/common/entities/signature-type.entity';
 import { TransactionBaseSchema } from '@/domain/common/schemas/transaction-base.schema';
+import { buildPageSchema } from '@/domain/entities/schemas/page.schema.factory';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { HexSchema } from '@/validation/entities/schemas/hex.schema';
-import { z } from 'zod';
 import { CoercedNumberSchema } from '@/validation/entities/schemas/coerced-number.schema';
+import { HexSchema } from '@/validation/entities/schemas/hex.schema';
 import { HexBytesSchema } from '@/validation/entities/schemas/hexbytes.schema';
 import {
   NullableAddressSchema,

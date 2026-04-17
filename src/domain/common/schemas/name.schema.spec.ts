@@ -1,8 +1,8 @@
+import { faker } from '@faker-js/faker/.';
 import {
   makeNameSchema,
   NameSchema,
 } from '@/domain/common/schemas/name.schema';
-import { faker } from '@faker-js/faker/.';
 
 describe('NameSchema', () => {
   it('should validate a valid name', () => {
@@ -262,10 +262,10 @@ describe('makeNameSchema', () => {
         'Mixed_Types.And-Spaces 123',
       ];
 
-      validNames.forEach((name) => {
+      for (const name of validNames) {
         const result = schema.safeParse(name);
         expect(result.success && result.data).toBe(name);
-      });
+      }
     });
   });
 

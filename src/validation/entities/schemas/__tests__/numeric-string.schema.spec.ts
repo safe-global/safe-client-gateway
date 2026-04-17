@@ -1,5 +1,5 @@
-import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
 import { faker } from '@faker-js/faker';
+import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
 
 describe('NumericStringSchema', () => {
   it('should validate a valid integer string', () => {

@@ -1,6 +1,6 @@
-import { IBlockchainRepository } from '@/modules/blockchain/domain/blockchain.repository.interface';
-import { IBlockchainApiManager } from '@/domain/interfaces/blockchain-api.manager.interface';
 import { Inject, Injectable } from '@nestjs/common';
+import { IBlockchainApiManager } from '@/domain/interfaces/blockchain-api.manager.interface';
+import type { IBlockchainRepository } from '@/modules/blockchain/domain/blockchain.repository.interface';
 
 @Injectable()
 export class BlockchainRepository implements IBlockchainRepository {

@@ -1,10 +1,10 @@
-import { Response } from 'express';
 import {
+  type ArgumentsHost,
   Catch,
-  ExceptionFilter,
-  ArgumentsHost,
+  type ExceptionFilter,
   HttpStatus,
 } from '@nestjs/common';
+import type { Response } from 'express';
 import { UnofficialProxyFactoryError } from '@/modules/relay/domain/errors/unofficial-proxy-factory.error';
 
 @Catch(UnofficialProxyFactoryError)

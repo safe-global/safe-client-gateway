@@ -1,13 +1,16 @@
-import { Inject, Injectable, OnModuleDestroy } from '@nestjs/common';
-import { RedisClientType } from '@/datasources/cache/cache.module';
-import { ICacheService } from '@/datasources/cache/cache.service.interface';
-import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
-import { ICacheReadiness } from '@/domain/interfaces/cache-readiness.interface';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import { Inject, Injectable, type OnModuleDestroy } from '@nestjs/common';
 import { IConfigurationService } from '@/config/configuration.service.interface';
+import type { RedisClientType } from '@/datasources/cache/cache.module';
+import type { ICacheService } from '@/datasources/cache/cache.service.interface';
 import { CacheKeyPrefix, MAX_TTL } from '@/datasources/cache/constants';
+import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { LogType } from '@/domain/common/entities/log-type.entity';
 import { deviateRandomlyByPercentage } from '@/domain/common/utils/number';
+import type { ICacheReadiness } from '@/domain/interfaces/cache-readiness.interface';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
 
 @Injectable()
 export class RedisCacheService
@@ -34,7 +37,7 @@ export class RedisCacheService
       );
   }
 
-  async ping(): Promise<unknown> {
+  ping(): Promise<unknown> {
     return this.client.ping();
   }
 

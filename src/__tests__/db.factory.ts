@@ -1,6 +1,6 @@
-import postgres from 'postgres';
 import fs from 'node:fs';
 import path from 'node:path';
+import postgres from 'postgres';
 import configuration from '@/config/entities/__tests__/configuration';
 
 export class TestDbFactory {
@@ -45,7 +45,7 @@ export class TestDbFactory {
     const sslEnabled = !this.isCIContext && ssl.enabled;
     return postgres({
       host,
-      port: parseInt(port),
+      port: Number.parseInt(port),
       db: dbName,
       user: username,
       password,

@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { getClientIp } from '@/routes/common/utils/request.utils';
-import type { Request } from 'express';
+
 import { faker } from '@faker-js/faker';
+import type { Request } from 'express';
+import { getClientIp } from '@/routes/common/utils/request.utils';
 
 function buildRequest(
   overrides: Partial<{

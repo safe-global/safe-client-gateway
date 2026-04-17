@@ -1,16 +1,19 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { type Hex } from 'viem';
-import { IAlertsRepository } from '@/modules/alerts/domain/alerts.repository.interface';
+import type { Hex } from 'viem';
 import { IAlertsApi } from '@/domain/interfaces/alerts-api.interface';
-import { AlertsRegistration } from '@/modules/alerts/domain/entities/alerts-registration.entity';
-import { AlertsDeletion } from '@/modules/alerts/domain/entities/alerts-deletion.entity';
-import { AlertLog } from '@/modules/alerts/routes/entities/alert.dto.entity';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
+import type { IAlertsRepository } from '@/modules/alerts/domain/alerts.repository.interface';
 import { DelayModifierDecoder } from '@/modules/alerts/domain/contracts/decoders/delay-modifier-decoder.helper';
-import { SafeDecoder } from '@/modules/contracts/domain/decoders/safe-decoder.helper';
+import type { AlertsDeletion } from '@/modules/alerts/domain/entities/alerts-deletion.entity';
+import type { AlertsRegistration } from '@/modules/alerts/domain/entities/alerts-registration.entity';
+import type { AlertLog } from '@/modules/alerts/routes/entities/alert.dto.entity';
 import { MultiSendDecoder } from '@/modules/contracts/domain/decoders/multi-send-decoder.helper';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import { SafeDecoder } from '@/modules/contracts/domain/decoders/safe-decoder.helper';
+import type { Safe } from '@/modules/safe/domain/entities/safe.entity';
 import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
-import { Safe } from '@/modules/safe/domain/entities/safe.entity';
 
 @Injectable()
 export class AlertsRepository implements IAlertsRepository {
@@ -63,8 +66,7 @@ export class AlertsRepository implements IAlertsRepository {
         decodedEvent.args.data,
       );
 
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const newSafeState = this._mapSafeSetup({
+      const _newSafeState = this._mapSafeSetup({
         safe,
         decodedTransactions,
       });

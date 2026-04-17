@@ -1,6 +1,6 @@
-import { encryptData, decryptData } from '@/domain/common/utils/encryption';
 import { faker } from '@faker-js/faker/.';
 import { getAddress } from 'viem';
+import { decryptData, encryptData } from '@/domain/common/utils/encryption';
 
 describe('Encryption Utils', () => {
   const testKey = faker.string.alphanumeric();

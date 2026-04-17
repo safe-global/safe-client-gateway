@@ -1,36 +1,37 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { DeadlockAnalysisService } from './deadlock-analysis.service';
-import type { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
-import type { ITransactionApi } from '@/domain/interfaces/transaction-api.interface';
+
+import { faker } from '@faker-js/faker';
+import { type Address, getAddress } from 'viem';
+import type { IConfigurationService } from '@/config/configuration.service.interface';
 import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
 import { CacheRouter } from '@/datasources/cache/cache.router';
-import type { IConfigurationService } from '@/config/configuration.service.interface';
+import { DataSourceError } from '@/domain/errors/data-source.error';
+import type { ITransactionApi } from '@/domain/interfaces/transaction-api.interface';
+import type { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
 import type { ILoggingService } from '@/logging/logging.interface';
-import { getAddress, type Address } from 'viem';
-import { faker } from '@faker-js/faker';
-import { rawify, type Raw } from '@/validation/entities/raw.entity';
+import type { BaseDataDecoded } from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';
 import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
 import type { Safe } from '@/modules/safe/domain/entities/safe.entity';
 import type { DecodedTransactionData } from '@/modules/safe-shield/entities/transaction-data.entity';
-import type { BaseDataDecoded } from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';
-import { DataSourceError } from '@/domain/errors/data-source.error';
-import {
-  addOwnerDecoded,
-  removeOwnerDecoded,
-  swapOwnerDecoded,
-  changeThresholdDecoded,
-} from './utils/__tests__/helpers/base-data-decoded.helpers';
-import { DeadlockStatus } from '../entities/deadlock-status.entity';
-import { CommonStatus } from '../entities/analysis-result.entity';
-import { DeadlockStatusGroup } from '../entities/status-group.entity';
-import {
-  DEADLOCK_SEVERITY_MAPPING,
-  DEADLOCK_TITLE_MAPPING,
-  DEADLOCK_DESCRIPTION_MAPPING,
-} from './deadlock-status.constants';
-import type { DeadlockAnalysisResponse } from '../entities/analysis-responses.entity';
+import { type Raw, rawify } from '@/validation/entities/raw.entity';
 import { deadlockAnalysisResponseBuilder } from '../entities/__tests__/builders/analysis-responses.builder';
 import { deadlockAnalysisResultBuilder } from '../entities/__tests__/builders/analysis-result.builder';
+import type { DeadlockAnalysisResponse } from '../entities/analysis-responses.entity';
+import { CommonStatus } from '../entities/analysis-result.entity';
+import { DeadlockStatus } from '../entities/deadlock-status.entity';
+import { DeadlockStatusGroup } from '../entities/status-group.entity';
+import { DeadlockAnalysisService } from './deadlock-analysis.service';
+import {
+  DEADLOCK_DESCRIPTION_MAPPING,
+  DEADLOCK_SEVERITY_MAPPING,
+  DEADLOCK_TITLE_MAPPING,
+} from './deadlock-status.constants';
+import {
+  addOwnerDecoded,
+  changeThresholdDecoded,
+  removeOwnerDecoded,
+  swapOwnerDecoded,
+} from './utils/__tests__/helpers/base-data-decoded.helpers';
 
 const mockTransactionApi = {
   getSafe: jest.fn(),
@@ -973,7 +974,7 @@ describe('DeadlockAnalysisService', () => {
       });
       const cached = await fakeCacheService.hGet(cacheDir);
       expect(cached).not.toBeNull();
-      expect(JSON.parse(cached!)).toEqual({});
+      expect(JSON.parse(cached as string)).toEqual({});
     });
 
     it('should not cache when no owner config transaction is found', async () => {

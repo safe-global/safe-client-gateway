@@ -24,7 +24,7 @@ export function buildAuth0LogoutBaseUrl(
   const domain = configurationService.get<string>(`${key}.domain`);
   const clientId = configurationService.get<string>(`${key}.clientId`);
 
-  if (!domain || !clientId?.trim()) return null;
+  if (!(domain && clientId?.trim())) return null;
 
   try {
     const url = new URL(AUTH0_LOGOUT_PATH, `https://${domain}`);

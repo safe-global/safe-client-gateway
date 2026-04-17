@@ -1,8 +1,8 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Operation } from '@/modules/safe/domain/entities/operation.entity';
-import { z } from 'zod';
-import { PreviewTransactionDtoSchema } from '@/modules/transactions/routes/entities/schemas/preview-transaction.dto.schema';
 import type { Address, Hex } from 'viem';
+import type { z } from 'zod';
+import { Operation } from '@/modules/safe/domain/entities/operation.entity';
+import type { PreviewTransactionDtoSchema } from '@/modules/transactions/routes/entities/schemas/preview-transaction.dto.schema';
 
 export class PreviewTransactionDto implements z.infer<
   typeof PreviewTransactionDtoSchema

@@ -1,6 +1,6 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { ContractAddresses as DomainContractAddresses } from '@/modules/chains/domain/entities/contract-addresses.entity';
 import type { Address } from 'viem';
+import type { ContractAddresses as DomainContractAddresses } from '@/modules/chains/domain/entities/contract-addresses.entity';
 
 export class ContractAddresses implements DomainContractAddresses {
   @ApiPropertyOptional({ type: String, nullable: true })

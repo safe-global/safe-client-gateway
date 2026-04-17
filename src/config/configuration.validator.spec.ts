@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
+import { faker } from '@faker-js/faker';
+import omit from 'lodash/omit';
 import { fakeJson } from '@/__tests__/faker';
 import configurationValidator from '@/config/configuration.validator';
 import { RootConfigurationSchema } from '@/config/entities/schemas/configuration.schema';
-import { faker } from '@faker-js/faker';
-import omit from 'lodash/omit';
 
 describe('Configuration validator', () => {
   const originalNodeEnv = process.env.NODE_ENV;

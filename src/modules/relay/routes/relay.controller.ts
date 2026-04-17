@@ -1,42 +1,42 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import {
+  Body,
   Controller,
-  Post,
-  Param,
   Get,
+  Param,
+  Post,
   Query,
   UseFilters,
-  Body,
 } from '@nestjs/common';
 import {
+  ApiBadRequestResponse,
+  ApiBody,
+  ApiNotFoundResponse,
   ApiOkResponse,
-  ApiTags,
   ApiOperation,
   ApiParam,
-  ApiBody,
   ApiQuery,
-  ApiBadRequestResponse,
+  ApiTags,
   ApiTooManyRequestsResponse,
-  ApiNotFoundResponse,
 } from '@nestjs/swagger';
-import { RelayDto } from '@/modules/relay/routes/entities/relay.dto.entity';
-import { RelayService } from '@/modules/relay/routes/relay.service';
-import { RelayLimitReachedExceptionFilter } from '@/modules/relay/domain/exception-filters/relay-limit-reached.exception-filter';
-import { RelayDeniedExceptionFilter } from '@/modules/relay/domain/exception-filters/relay-denied.exception-filter';
-import { ValidationPipe } from '@/validation/pipes/validation.pipe';
+import type { Address, Hex } from 'viem';
 import { InvalidMultiSendExceptionFilter } from '@/modules/relay/domain/exception-filters/invalid-multisend.exception-filter';
 import { InvalidTransferExceptionFilter } from '@/modules/relay/domain/exception-filters/invalid-transfer.exception-filter';
+import { RelayDeniedExceptionFilter } from '@/modules/relay/domain/exception-filters/relay-denied.exception-filter';
+import { RelayLimitReachedExceptionFilter } from '@/modules/relay/domain/exception-filters/relay-limit-reached.exception-filter';
 import { UnofficialMasterCopyExceptionFilter } from '@/modules/relay/domain/exception-filters/unofficial-master-copy.exception-filter';
 import { UnofficialMultiSendExceptionFilter } from '@/modules/relay/domain/exception-filters/unofficial-multisend.error';
 import { UnofficialProxyFactoryExceptionFilter } from '@/modules/relay/domain/exception-filters/unofficial-proxy-factory.exception-filter';
-import { RelayDtoSchema } from '@/modules/relay/routes/entities/schemas/relay.dto.schema';
-import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { HexSchema } from '@/validation/entities/schemas/hex.schema';
-import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
+import { RelayDto } from '@/modules/relay/routes/entities/relay.dto.entity';
 import { Relay } from '@/modules/relay/routes/entities/relay.entity';
 import { RelayTaskStatus } from '@/modules/relay/routes/entities/relay-task-status.entity';
 import { RelaysRemaining } from '@/modules/relay/routes/entities/relays-remaining.entity';
-import type { Address, Hex } from 'viem';
+import { RelayDtoSchema } from '@/modules/relay/routes/entities/schemas/relay.dto.schema';
+import { RelayService } from '@/modules/relay/routes/relay.service';
+import { AddressSchema } from '@/validation/entities/schemas/address.schema';
+import { HexSchema } from '@/validation/entities/schemas/hex.schema';
+import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
+import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 
 @ApiTags('relay')
 @Controller({
@@ -83,7 +83,7 @@ export class RelayController {
     UnofficialMultiSendExceptionFilter,
     UnofficialProxyFactoryExceptionFilter,
   )
-  async relay(
+  relay(
     @Param('chainId') chainId: string,
     @Body(new ValidationPipe(RelayDtoSchema))
     relayDto: RelayDto,
@@ -115,7 +115,7 @@ export class RelayController {
     description: 'Task not found',
   })
   @Get('status/:taskId')
-  async getTaskStatus(
+  getTaskStatus(
     @Param('chainId') chainId: string,
     @Param('taskId') taskId: string,
   ): Promise<RelayTaskStatus> {
@@ -149,7 +149,7 @@ export class RelayController {
     description: 'Remaining relay quota retrieved successfully',
   })
   @Get(':safeAddress')
-  async getRelaysRemaining(
+  getRelaysRemaining(
     @Param('chainId', new ValidationPipe(NumericStringSchema)) chainId: string,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
     safeAddress: Address,

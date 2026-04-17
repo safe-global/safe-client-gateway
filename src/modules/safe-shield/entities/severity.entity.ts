@@ -1,5 +1,5 @@
-import { getStringEnumKeys } from '@/domain/common/utils/enum';
 import { z } from 'zod';
+import { getStringEnumKeys } from '@/domain/common/utils/enum';
 
 /**
  * Analysis result severity levels for Safe Shield security analysis.

@@ -1,8 +1,8 @@
+import { faker } from '@faker-js/faker';
+import { type Address, getAddress } from 'viem';
 import { deleteSafeDelegateDtoBuilder } from '@/modules/delegate/routes/entities/__tests__/delete-safe-delegate.dto.builder';
 import type { DeleteSafeDelegateDto } from '@/modules/delegate/routes/entities/delete-safe-delegate.dto.entity';
 import { DeleteSafeDelegateDtoSchema } from '@/modules/delegate/routes/entities/schemas/delete-safe-delegate.dto.schema';
-import { faker } from '@faker-js/faker';
-import { type Address, getAddress } from 'viem';
 
 describe('DeleteSafeDelegateDtoSchema', () => {
   it('should validate a DeleteSafeDelegateDto', () => {

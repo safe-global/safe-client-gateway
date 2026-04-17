@@ -1,23 +1,23 @@
 import { faker } from '@faker-js/faker';
-import { Builder } from '@/__tests__/builder';
-import {
-  SubstatusesDone,
-  SubstatusesFailed,
-  SubstatusesPending,
-} from '@/modules/bridge/domain/entities/bridge-status.entity';
+import type { Address, Hash, Hex } from 'viem';
 import type { IBuilder } from '@/__tests__/builder';
+import { Builder } from '@/__tests__/builder';
+import { tokenBuilder } from '@/modules/bridge/domain/entities/__tests__/token.builder';
 import type {
   BaseTransactionInfo,
   BridgeStatus,
   ExtendedTransactionInfo,
   FailedStatusData,
+  PendingReceivingInfo,
   PendingStatusData,
   SuccessStatusData,
-  PendingReceivingInfo,
   TransferMetadata,
 } from '@/modules/bridge/domain/entities/bridge-status.entity';
-import { tokenBuilder } from '@/modules/bridge/domain/entities/__tests__/token.builder';
-import type { Address, Hash, Hex } from 'viem';
+import {
+  SubstatusesDone,
+  SubstatusesFailed,
+  SubstatusesPending,
+} from '@/modules/bridge/domain/entities/bridge-status.entity';
 
 export function baseStatusDataBuilder<
   T extends SuccessStatusData | FailedStatusData | PendingStatusData,

@@ -1,29 +1,30 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
+import type { Server } from 'node:net';
+import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
+import type { TestingModule } from '@nestjs/testing';
 import request from 'supertest';
-import configuration from '@/config/entities/__tests__/configuration';
-import { EmailModule } from '@/modules/email/email.module';
-import { TestEmailApiModule } from '@/modules/email/datasources/__tests__/test.email-api.module';
+import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
+import { createSiweMessage } from 'viem/siwe';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { createTestModule } from '@/__tests__/testing-module';
+import { IConfigurationService } from '@/config/configuration.service.interface';
+import configuration from '@/config/entities/__tests__/configuration';
+import type { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
+import { CacheService } from '@/datasources/cache/cache.service.interface';
+import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
+import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
+import { getSecondsUntil } from '@/domain/common/utils/time';
 import {
   oidcAuthPayloadDtoBuilder,
   siweAuthPayloadDtoBuilder,
 } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
+import { TestEmailApiModule } from '@/modules/email/datasources/__tests__/test.email-api.module';
+import { EmailModule } from '@/modules/email/email.module';
 import { siweMessageBuilder } from '@/modules/siwe/domain/entities/__tests__/siwe-message.builder';
-import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
-import { faker } from '@faker-js/faker';
-import { createSiweMessage } from 'viem/siwe';
-import { CacheService } from '@/datasources/cache/cache.service.interface';
-import type { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
-import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
-import { getSecondsUntil } from '@/domain/common/utils/time';
-import type { Server } from 'net';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { UsersModule } from '@/modules/users/users.module';
 import { TestUsersModule } from '@/modules/users/__tests__/test.users.module';
-import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
-import type { TestingModule } from '@nestjs/testing';
+import { UsersModule } from '@/modules/users/users.module';
 
 describe('AuthController', () => {
   let app: INestApplication<Server>;

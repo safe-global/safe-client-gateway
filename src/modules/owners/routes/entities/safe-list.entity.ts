@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { SafeList as DomainSafeList } from '@/modules/safe/domain/entities/safe-list.entity';
 import type { Address } from 'viem';
+import type { SafeList as DomainSafeList } from '@/modules/safe/domain/entities/safe-list.entity';
 
 export class SafeList implements DomainSafeList {
   @ApiProperty()

@@ -1,15 +1,21 @@
+import type { Server } from 'node:net';
+import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
+import { getAddress } from 'viem';
+import { TestAppProvider } from '@/__tests__/test-app.provider';
+import { createTestModule } from '@/__tests__/testing-module';
+import { IConfigurationService } from '@/config/configuration.service.interface';
+import type { INetworkService } from '@/datasources/network/network.service.interface';
+import { NetworkService } from '@/datasources/network/network.service.interface';
+import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
-import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
 import { singletonBuilder } from '@/modules/chains/domain/entities/__tests__/singleton.builder';
 import { contractBuilder } from '@/modules/data-decoder/domain/v2/entities/__tests__/contract.builder';
-import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import {
-  multisigTransactionBuilder,
-  toJson as multisigTransactionToJson,
-} from '@/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
-import { faker } from '@faker-js/faker';
+  messageBuilder,
+  toJson as messageToJson,
+} from '@/modules/messages/domain/entities/__tests__/message.builder';
 import {
   erc721TransferBuilder,
   toJson as erc721TransferToJson,
@@ -18,19 +24,13 @@ import {
   moduleTransactionBuilder,
   toJson as moduleTransactionToJson,
 } from '@/modules/safe/domain/entities/__tests__/module-transaction.builder';
-import { TestAppProvider } from '@/__tests__/test-app.provider';
-import { IConfigurationService } from '@/config/configuration.service.interface';
 import {
-  messageBuilder,
-  toJson as messageToJson,
-} from '@/modules/messages/domain/entities/__tests__/message.builder';
-import type { INetworkService } from '@/datasources/network/network.service.interface';
-import { NetworkService } from '@/datasources/network/network.service.interface';
+  multisigTransactionBuilder,
+  toJson as multisigTransactionToJson,
+} from '@/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
+import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
 import { NULL_ADDRESS } from '@/routes/common/constants';
-import { getAddress } from 'viem';
-import type { Server } from 'net';
 import { rawify } from '@/validation/entities/raw.entity';
-import { createTestModule } from '@/__tests__/testing-module';
 
 describe('Safes Controller', () => {
   let app: INestApplication<Server>;
@@ -114,7 +114,7 @@ describe('Safes Controller', () => {
       ])
       .build();
 
-    networkService.get.mockImplementation(async ({ url }) => {
+    networkService.get.mockImplementation(({ url }) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
           return Promise.resolve({ data: rawify(chain), status: 200 });
@@ -638,7 +638,7 @@ describe('Safes Controller', () => {
     const moduleTransactions = pageBuilder().build();
     const messages = pageBuilder().build();
 
-    networkService.get.mockImplementation(async ({ url }) => {
+    networkService.get.mockImplementation(({ url }) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
           return Promise.resolve({ data: rawify(chain), status: 200 });
@@ -1122,7 +1122,7 @@ describe('Safes Controller', () => {
     const moduleTransactions = pageBuilder().build();
     const messages = pageBuilder().build();
 
-    networkService.get.mockImplementation(async ({ url }) => {
+    networkService.get.mockImplementation(({ url }) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
           return Promise.resolve({ data: rawify(chain), status: 200 });
@@ -1217,7 +1217,7 @@ describe('Safes Controller', () => {
     const moduleTransactions = pageBuilder().build();
     const messages = pageBuilder().build();
 
-    networkService.get.mockImplementation(async ({ url }) => {
+    networkService.get.mockImplementation(({ url }) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
           return Promise.resolve({ data: rawify(chain), status: 200 });
@@ -1314,7 +1314,7 @@ describe('Safes Controller', () => {
     const moduleTransactions = pageBuilder().build();
     const messages = pageBuilder().build();
 
-    networkService.get.mockImplementation(async ({ url }) => {
+    networkService.get.mockImplementation(({ url }) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
           return Promise.resolve({ data: rawify(chain), status: 200 });
@@ -1407,7 +1407,7 @@ describe('Safes Controller', () => {
 
     const messages = pageBuilder().build();
 
-    networkService.get.mockImplementation(async ({ url }) => {
+    networkService.get.mockImplementation(({ url }) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
           return Promise.resolve({ data: rawify(chain), status: 200 });

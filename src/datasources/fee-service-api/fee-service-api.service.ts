@@ -1,21 +1,21 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
-import {
-  NetworkService,
-  INetworkService,
-} from '@/datasources/network/network.service.interface';
+import type { Address, Hex } from 'viem';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
-import { IFeeServiceApi } from '@/domain/interfaces/fee-service-api.interface';
 import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
 import { CacheRouter } from '@/datasources/cache/cache.router';
-import { RelayFeeConfiguration } from '@/modules/relay/domain/entities/relay.configuration';
+import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
+import {
+  type INetworkService,
+  NetworkService,
+} from '@/datasources/network/network.service.interface';
+import type { IFeeServiceApi } from '@/domain/interfaces/fee-service-api.interface';
 import type { CanRelayResponse } from '@/modules/fees/domain/entities/can-relay-response.entity';
 import { CanRelayResponseSchema } from '@/modules/fees/domain/entities/schemas/can-relay-response.schema';
+import { TxFeesResponseSchema } from '@/modules/fees/domain/entities/schemas/tx-fees-response.schema';
 import type { TxFeesRequest } from '@/modules/fees/domain/entities/tx-fees-request.entity';
 import type { TxFeesResponse } from '@/modules/fees/domain/entities/tx-fees-response.entity';
-import { TxFeesResponseSchema } from '@/modules/fees/domain/entities/schemas/tx-fees-response.schema';
-import type { Address, Hex } from 'viem';
+import type { RelayFeeConfiguration } from '@/modules/relay/domain/entities/relay.configuration';
 
 @Injectable()
 export class FeeServiceApi implements IFeeServiceApi {

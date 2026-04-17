@@ -1,5 +1,5 @@
-import { EstimationSchema } from '@/modules/estimations/domain/entities/schemas/estimation.schema';
 import { faker } from '@faker-js/faker';
+import { EstimationSchema } from '@/modules/estimations/domain/entities/schemas/estimation.schema';
 
 describe('EstimationSchema', () => {
   it('should validate a valid estimation', () => {

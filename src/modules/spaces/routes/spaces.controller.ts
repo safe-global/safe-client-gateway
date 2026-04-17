@@ -1,15 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import {
-  ApiBody,
-  ApiForbiddenResponse,
-  ApiNotFoundResponse,
-  ApiOkResponse,
-  ApiOperation,
-  ApiParam,
-  ApiResponse,
-  ApiTags,
-  ApiUnauthorizedResponse,
-} from '@nestjs/swagger';
+
 import {
   Body,
   Controller,
@@ -23,10 +13,22 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
-import { SpacesService } from '@/modules/spaces/routes/spaces.service';
-import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
+import {
+  ApiBody,
+  ApiForbiddenResponse,
+  ApiNotFoundResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiParam,
+  ApiResponse,
+  ApiTags,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
+import { RowSchema } from '@/datasources/db/v1/entities/row.entity';
+import { getEnumKey } from '@/domain/common/utils/enum';
+import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { Auth } from '@/modules/auth/routes/decorators/auth.decorator';
-import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
+import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
 import { SpaceStatus } from '@/modules/spaces/domain/entities/space.entity';
 import {
   CreateSpaceDto,
@@ -39,10 +41,9 @@ import {
   UpdateSpaceResponse,
   UpdateSpaceSchema,
 } from '@/modules/spaces/routes/entities/update-space.dto.entity';
-import { ValidationPipe } from '@/validation/pipes/validation.pipe';
-import { RowSchema } from '@/datasources/db/v1/entities/row.entity';
-import { getEnumKey } from '@/domain/common/utils/enum';
 import { SpacesCreationRateLimitGuard } from '@/modules/spaces/routes/guards/spaces-creation-rate-limit.guard';
+import { SpacesService } from '@/modules/spaces/routes/spaces.service';
+import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 
 @ApiTags('spaces')
 @UseGuards(AuthGuard)

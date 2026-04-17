@@ -1,14 +1,14 @@
-import { IBridgeRepository } from '@/modules/bridge/domain/bridge.repository.interface';
+import { Inject, Injectable, Module } from '@nestjs/common';
+import { type Address, isAddressEqual } from 'viem';
 import { BridgeModule } from '@/modules/bridge/bridge.module';
+import { IBridgeRepository } from '@/modules/bridge/domain/bridge.repository.interface';
 import { LiFiDecoder } from '@/modules/bridge/domain/contracts/decoders/lifi-decoder.helper';
-import { ModuleTransaction } from '@/modules/safe/domain/entities/module-transaction.entity';
-import { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
+import type { ModuleTransaction } from '@/modules/safe/domain/entities/module-transaction.entity';
+import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
 import {
   TransactionFinder,
   TransactionFinderModule,
 } from '@/modules/transactions/routes/helpers/transaction-finder.helper';
-import { Inject, Injectable, Module } from '@nestjs/common';
-import { type Address, isAddressEqual } from 'viem';
 
 @Injectable()
 export class LiFiHelper {
@@ -89,7 +89,7 @@ export class LiFiHelper {
 
     return this.transactionFinder.findTransaction(
       ({ to, data }) => {
-        if (!to || !isAddressEqual(to, diamondAddress)) {
+        if (!(to && isAddressEqual(to, diamondAddress))) {
           return false;
         }
         return args.predicate(data);

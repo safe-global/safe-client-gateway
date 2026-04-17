@@ -1,5 +1,5 @@
-import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { z } from 'zod';
+import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 
 export type ZerionCollectionInfo = z.infer<typeof ZerionCollectionInfoSchema>;
 

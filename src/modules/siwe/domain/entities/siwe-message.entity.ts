@@ -1,6 +1,6 @@
-import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { parseSiweMessage } from 'viem/siwe';
 import { z } from 'zod';
+import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 
 /**
  * viem provides both parseSiweMessage (used here) and validatedSiweMessage

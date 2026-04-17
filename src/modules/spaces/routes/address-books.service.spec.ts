@@ -1,16 +1,17 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { AddressBooksService } from '@/modules/spaces/routes/address-books.service';
-import type { IAddressBookItemsRepository } from '@/modules/spaces/domain/address-books/address-book-items.repository.interface';
-import type { IConfigurationService } from '@/config/configuration.service.interface';
-import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { ForbiddenException, UnauthorizedException } from '@nestjs/common';
+
 import { faker } from '@faker-js/faker';
-import {
-  siweAuthPayloadDtoBuilder,
-  oidcAuthPayloadDtoBuilder,
-} from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
-import { addressBookItemBuilder } from '@/modules/spaces/domain/address-books/entities/__tests__/address-book-item.db.builder';
+import { ForbiddenException, UnauthorizedException } from '@nestjs/common';
 import { getAddress } from 'viem';
+import type { IConfigurationService } from '@/config/configuration.service.interface';
+import {
+  oidcAuthPayloadDtoBuilder,
+  siweAuthPayloadDtoBuilder,
+} from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
+import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
+import type { IAddressBookItemsRepository } from '@/modules/spaces/domain/address-books/address-book-items.repository.interface';
+import { addressBookItemBuilder } from '@/modules/spaces/domain/address-books/entities/__tests__/address-book-item.db.builder';
+import { AddressBooksService } from '@/modules/spaces/routes/address-books.service';
 
 const repositoryMock = {
   findAllBySpaceId: jest.fn(),

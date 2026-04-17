@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
-import { ContractAnalysisService } from './contract-analysis.service';
+import { TransactionApiManagerModule } from '@/domain/interfaces/transaction-api.manager.interface';
 import { DataDecoderModule } from '@/modules/data-decoder/data-decoder.module';
 import { Erc20Decoder } from '@/modules/relay/domain/contracts/decoders/erc-20-decoder.helper';
-import { TransactionApiManagerModule } from '@/domain/interfaces/transaction-api.manager.interface';
+import { ContractAnalysisService } from './contract-analysis.service';
 
 /**
  * Module for contract analysis functionality.

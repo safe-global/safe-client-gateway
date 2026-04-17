@@ -1,4 +1,5 @@
 import { faker } from '@faker-js/faker';
+import { getAddress } from 'viem';
 import type { IBuilder } from '@/__tests__/builder';
 import { Builder } from '@/__tests__/builder';
 import type {
@@ -7,7 +8,6 @@ import type {
   NativeToken,
   Token,
 } from '@/modules/tokens/domain/entities/token.entity';
-import { getAddress } from 'viem';
 
 export function nativeTokenBuilder(): IBuilder<NativeToken> {
   return new Builder<NativeToken>()

@@ -20,7 +20,7 @@ import { safeAppsEventBuilder } from '@/modules/hooks/routes/entities/__tests__/
 import { EventSchema } from '@/modules/hooks/routes/entities/schemas/event.schema';
 
 describe('EventSchema', () => {
-  [
+  for (const builder of [
     chainUpdateEventBuilder,
     deletedDelegateEventBuilder,
     deletedMultisigTransactionEventBuilder,
@@ -38,7 +38,7 @@ describe('EventSchema', () => {
     reorgDetectedEventBuilder,
     safeAppsEventBuilder,
     updatedDelegateEventBuilder,
-  ].forEach((builder) => {
+  ]) {
     const event = builder().build();
 
     it(`should validate a ${event.type} event`, () => {
@@ -46,7 +46,7 @@ describe('EventSchema', () => {
 
       expect(result.success).toBe(true);
     });
-  });
+  }
 
   it('should not allow an invalid event', () => {
     const invalidEvent = {

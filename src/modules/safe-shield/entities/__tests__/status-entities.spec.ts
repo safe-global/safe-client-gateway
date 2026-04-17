@@ -1,19 +1,20 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import {
-  RecipientStatus,
-  RecipientStatusSchema,
-} from '../recipient-status.entity';
+
+import { CommonStatus } from '@/modules/safe-shield/entities/analysis-result.entity';
 import { BridgeStatus, BridgeStatusSchema } from '../bridge-status.entity';
 import {
   ContractStatus,
   ContractStatusSchema,
 } from '../contract-status.entity';
-import { ThreatStatus, ThreatStatusSchema } from '../threat-status.entity';
 import {
   DeadlockStatus,
   DeadlockStatusSchema,
 } from '../deadlock-status.entity';
-import { CommonStatus } from '@/modules/safe-shield/entities/analysis-result.entity';
+import {
+  RecipientStatus,
+  RecipientStatusSchema,
+} from '../recipient-status.entity';
+import { ThreatStatus, ThreatStatusSchema } from '../threat-status.entity';
 
 describe('Status Entities', () => {
   const recipientStatus = Object.values(RecipientStatus);
@@ -141,14 +142,14 @@ describe('Status Entities', () => {
         CommonStatus,
       ];
 
-      allStatusEnums.forEach((statusEnum) => {
-        Object.values(statusEnum).forEach((value) => {
+      for (const statusEnum of allStatusEnums) {
+        for (const value of Object.values(statusEnum)) {
           // All status values should be uppercase with underscores
           expect(value).toMatch(/^[A-Z_]+$/);
           // Should not start or end with underscore
           expect(value).not.toMatch(/^_|_$/);
-        });
-      });
+        }
+      }
     });
 
     it('should have unique values across different status types', () => {

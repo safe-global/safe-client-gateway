@@ -1,4 +1,5 @@
 import { faker } from '@faker-js/faker';
+import { getAddress } from 'viem';
 import type { IBuilder } from '@/__tests__/builder';
 import { Builder } from '@/__tests__/builder';
 import type {
@@ -12,7 +13,6 @@ import type {
   ZerionImplementation,
   ZerionQuantity,
 } from '@/modules/balances/datasources/entities/zerion-balance.entity';
-import { getAddress } from 'viem';
 import { PositionTypes } from '@/modules/positions/domain/entities/position-type.entity';
 
 export function zerionImplementationBuilder(): IBuilder<ZerionImplementation> {

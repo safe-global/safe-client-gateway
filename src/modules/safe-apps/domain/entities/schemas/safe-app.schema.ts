@@ -1,5 +1,5 @@
-import { SafeAppAccessControlPolicies } from '@/modules/safe-apps/domain/entities/safe-app-access-control.entity';
 import { z } from 'zod';
+import { SafeAppAccessControlPolicies } from '@/modules/safe-apps/domain/entities/safe-app-access-control.entity';
 
 export const SafeAppAccessControlSchema = z.discriminatedUnion('type', [
   z.object({

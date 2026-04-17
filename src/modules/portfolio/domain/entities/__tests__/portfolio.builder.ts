@@ -1,10 +1,10 @@
 import type { IBuilder } from '@/__tests__/builder';
 import { Builder } from '@/__tests__/builder';
+import { appBalanceBuilder } from '@/modules/portfolio/domain/entities/__tests__/app-balance.builder';
+import { tokenBalanceBuilder } from '@/modules/portfolio/domain/entities/__tests__/token-balance.builder';
+import type { AppBalance } from '@/modules/portfolio/domain/entities/app-balance.entity';
 import type { Portfolio } from '@/modules/portfolio/domain/entities/portfolio.entity';
 import type { TokenBalance } from '@/modules/portfolio/domain/entities/token-balance.entity';
-import type { AppBalance } from '@/modules/portfolio/domain/entities/app-balance.entity';
-import { tokenBalanceBuilder } from '@/modules/portfolio/domain/entities/__tests__/token-balance.builder';
-import { appBalanceBuilder } from '@/modules/portfolio/domain/entities/__tests__/app-balance.builder';
 
 class PortfolioBuilder extends Builder<Portfolio> {
   private tokenBalances: Array<TokenBalance> = [

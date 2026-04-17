@@ -1,8 +1,8 @@
 import { faker } from '@faker-js/faker';
+import { type Address, getAddress } from 'viem';
 import type { IBuilder } from '@/__tests__/builder';
 import { Builder } from '@/__tests__/builder';
 import type { ERC20Transfer } from '@/modules/safe/domain/entities/transfer.entity';
-import { type Address, getAddress } from 'viem';
 
 export function erc20TransferBuilder(): IBuilder<ERC20Transfer> {
   return new Builder<ERC20Transfer>()

@@ -1,22 +1,22 @@
+import type { Server } from 'node:http';
+import { faker } from '@faker-js/faker/.';
+import type { INestApplication } from '@nestjs/common';
+import request from 'supertest';
+import { getAddress } from 'viem';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { createTestModule } from '@/__tests__/testing-module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
 import { NetworkService } from '@/datasources/network/network.service.interface';
-import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
 import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
 import { ITargetedMessagingDatasource } from '@/domain/interfaces/targeted-messaging.datasource.interface';
+import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
 import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
 import { submissionBuilder } from '@/modules/targeted-messaging/domain/entities/tests/submission.builder';
 import { targetedSafeBuilder } from '@/modules/targeted-messaging/domain/entities/tests/targeted-safe.builder';
 import { SubmissionNotFoundError } from '@/modules/targeted-messaging/domain/errors/submission-not-found.error';
 import { TargetedSafeNotFoundError } from '@/modules/targeted-messaging/domain/errors/targeted-safe-not-found.error';
 import { rawify } from '@/validation/entities/raw.entity';
-import { faker } from '@faker-js/faker/.';
-import type { INestApplication } from '@nestjs/common';
-import type { Server } from 'http';
-import request from 'supertest';
-import { getAddress } from 'viem';
 
 describe('TargetedMessagingController', () => {
   let app: INestApplication<Server>;

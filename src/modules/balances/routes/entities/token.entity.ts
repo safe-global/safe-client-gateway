@@ -1,10 +1,10 @@
 import { ApiProperty } from '@nestjs/swagger';
-import {
-  NativeToken as DomainNativeToken,
+import type { Address } from 'viem';
+import type {
   Erc20Token as DomainErc20Token,
   Erc721Token as DomainErc721Token,
+  NativeToken as DomainNativeToken,
 } from '@/modules/tokens/domain/entities/token.entity';
-import type { Address } from 'viem';
 
 class BaseToken {
   @ApiProperty()

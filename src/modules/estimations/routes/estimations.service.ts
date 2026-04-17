@@ -1,11 +1,11 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { GetEstimationDto } from '@/modules/estimations/domain/entities/get-estimation.dto.entity';
-import { EstimationsRepository } from '@/modules/estimations/domain/estimations.repository';
-import { IEstimationsRepository } from '@/modules/estimations/domain/estimations.repository.interface';
-import { SafeRepository } from '@/modules/safe/domain/safe.repository';
-import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
-import { EstimationResponse } from '@/modules/estimations/routes/entities/estimation-response.entity';
 import type { Address } from 'viem';
+import type { GetEstimationDto } from '@/modules/estimations/domain/entities/get-estimation.dto.entity';
+import type { EstimationsRepository } from '@/modules/estimations/domain/estimations.repository';
+import { IEstimationsRepository } from '@/modules/estimations/domain/estimations.repository.interface';
+import { EstimationResponse } from '@/modules/estimations/routes/entities/estimation-response.entity';
+import type { SafeRepository } from '@/modules/safe/domain/safe.repository';
+import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
 
 @Injectable()
 export class EstimationsService {

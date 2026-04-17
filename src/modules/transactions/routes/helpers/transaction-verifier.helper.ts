@@ -1,25 +1,28 @@
 import { HttpStatus, Inject, Injectable } from '@nestjs/common';
+import { type Address, type Hash, type Hex, isAddressEqual } from 'viem';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import {
-  BaseMultisigTransaction,
-  getBaseMultisigTransaction,
-  getSafeTxHash,
-} from '@/domain/common/utils/safe';
-import { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
-import { Safe } from '@/modules/safe/domain/entities/safe.entity';
-import { ProposeTransactionDto } from '@/modules/transactions/domain/entities/propose-transaction.dto.entity';
-import { IDelegatesV2Repository } from '@/modules/delegate/domain/v2/delegates.v2.repository.interface';
-import { HttpExceptionNoLog } from '@/domain/common/errors/http-exception-no-log.error';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import { IBlocklistService } from '@/config/entities/blocklist.interface';
+import { LogSource } from '@/domain/common/entities/log-source.entity';
 import { LogType } from '@/domain/common/entities/log-type.entity';
 import { SafeSignature } from '@/domain/common/entities/safe-signature';
 import { SignatureType } from '@/domain/common/entities/signature-type.entity';
-import { LogSource } from '@/domain/common/entities/log-source.entity';
-import { type Address, type Hash, Hex, isAddressEqual } from 'viem';
-import { IContractsRepository } from '@/modules/contracts/domain/contracts.repository.interface';
-import { Operation } from '@/modules/safe/domain/entities/operation.entity';
+import { HttpExceptionNoLog } from '@/domain/common/errors/http-exception-no-log.error';
+import {
+  type BaseMultisigTransaction,
+  getBaseMultisigTransaction,
+  getSafeTxHash,
+} from '@/domain/common/utils/safe';
 import { parseSignaturesByType } from '@/domain/common/utils/signatures';
-import { IBlocklistService } from '@/config/entities/blocklist.interface';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
+import { IContractsRepository } from '@/modules/contracts/domain/contracts.repository.interface';
+import { IDelegatesV2Repository } from '@/modules/delegate/domain/v2/delegates.v2.repository.interface';
+import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
+import { Operation } from '@/modules/safe/domain/entities/operation.entity';
+import type { Safe } from '@/modules/safe/domain/entities/safe.entity';
+import type { ProposeTransactionDto } from '@/modules/transactions/domain/entities/propose-transaction.dto.entity';
 
 enum ErrorMessage {
   MalformedHash = 'Could not calculate safeTxHash',
@@ -313,8 +316,7 @@ export class TransactionVerifierHelper {
       });
       if (
         // We can be certain of no ownership changes as we only verify the queue
-        !isOwner ||
-        !isAddressEqual(signature.owner, confirmation.owner)
+        !(isOwner && isAddressEqual(signature.owner, confirmation.owner))
       ) {
         this.logInvalidSignature({
           ...args,
@@ -368,8 +370,7 @@ export class TransactionVerifierHelper {
       );
 
       if (
-        !this.isEthSignEnabled &&
-        !isExisting &&
+        !(this.isEthSignEnabled || isExisting) &&
         signature.signatureType === SignatureType.EthSign
       ) {
         throw new HttpExceptionNoLog(ErrorMessage.EthSignDisabled, args.code);

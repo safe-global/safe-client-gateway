@@ -1,5 +1,5 @@
-import type { Hex } from 'viem/types/misc';
 import type { Address } from 'viem';
+import type { Hex } from 'viem/types/misc';
 
 export enum ValueType {
   Text = 'text',

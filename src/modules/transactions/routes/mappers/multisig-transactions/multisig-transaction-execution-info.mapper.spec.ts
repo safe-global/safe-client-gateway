@@ -1,12 +1,12 @@
 import { faker } from '@faker-js/faker';
-import { confirmationBuilder } from '@/modules/safe/domain/entities/__tests__/multisig-transaction-confirmation.builder';
+import { getAddress } from 'viem';
 import { multisigTransactionBuilder } from '@/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
+import { confirmationBuilder } from '@/modules/safe/domain/entities/__tests__/multisig-transaction-confirmation.builder';
 import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
-import { AddressInfo } from '@/routes/common/entities/address-info.entity';
 import { MultisigExecutionInfo } from '@/modules/transactions/routes/entities/multisig-execution-info.entity';
 import { TransactionStatus } from '@/modules/transactions/routes/entities/transaction-status.entity';
 import { MultisigTransactionExecutionInfoMapper } from '@/modules/transactions/routes/mappers/multisig-transactions/multisig-transaction-execution-info.mapper';
-import { getAddress } from 'viem';
+import { AddressInfo } from '@/routes/common/entities/address-info.entity';
 
 describe('Multisig Transaction execution info mapper (Unit)', () => {
   let mapper: MultisigTransactionExecutionInfoMapper;

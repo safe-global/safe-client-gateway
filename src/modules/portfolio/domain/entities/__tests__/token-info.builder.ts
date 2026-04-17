@@ -1,8 +1,8 @@
 import { faker } from '@faker-js/faker';
+import { getAddress } from 'viem';
 import type { IBuilder } from '@/__tests__/builder';
 import { Builder } from '@/__tests__/builder';
 import type { TokenInfo } from '@/modules/portfolio/domain/entities/token-info.entity';
-import { getAddress } from 'viem';
 
 export function tokenInfoBuilder(): IBuilder<TokenInfo> {
   return new Builder<TokenInfo>()

@@ -1,6 +1,6 @@
+import { faker } from '@faker-js/faker/.';
 import { Builder, type IBuilder } from '@/__tests__/builder';
 import type { Eligibility } from '@/modules/community/domain/entities/eligibility.entity';
-import { faker } from '@faker-js/faker/.';
 
 export function eligibilityBuilder(): IBuilder<Eligibility> {
   return new Builder<Eligibility>()

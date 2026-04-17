@@ -1,7 +1,7 @@
+import type { Address, Hash, Hex } from 'viem';
+import type { z } from 'zod';
 import type { Operation } from '@/modules/safe/domain/entities/operation.entity';
 import type { ProposeTransactionDtoSchema } from '@/modules/transactions/routes/entities/schemas/propose-transaction.dto.schema';
-import type { z } from 'zod';
-import type { Address, Hash, Hex } from 'viem';
 
 export class ProposeTransactionDto implements z.infer<
   typeof ProposeTransactionDtoSchema

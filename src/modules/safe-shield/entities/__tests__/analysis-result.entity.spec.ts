@@ -1,31 +1,32 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
+import { omit } from 'lodash';
 import {
   AnalysisResultBaseSchema,
-  RecipientAnalysisResultSchema,
-  ContractAnalysisResultSchema,
-  ThreatAnalysisResultSchema,
-  DeadlockAnalysisResultSchema,
   AnalysisStatusSchema,
-  type ContractAnalysisResult,
   CommonStatus,
+  type ContractAnalysisResult,
+  ContractAnalysisResultSchema,
+  DeadlockAnalysisResultSchema,
+  RecipientAnalysisResultSchema,
+  ThreatAnalysisResultSchema,
   UnofficialFallbackHandlerAnalysisResultSchema,
 } from '../analysis-result.entity';
-import { compareSeverityString } from '../severity.entity';
-import { RecipientStatus } from '../recipient-status.entity';
 import { BridgeStatus } from '../bridge-status.entity';
 import { ContractStatus } from '../contract-status.entity';
-import { ThreatStatus } from '../threat-status.entity';
 import { DeadlockStatus } from '../deadlock-status.entity';
+import { RecipientStatus } from '../recipient-status.entity';
+import { compareSeverityString } from '../severity.entity';
+import { ThreatStatus } from '../threat-status.entity';
 import {
-  recipientAnalysisResultBuilder,
   contractAnalysisResultBuilder,
-  threatAnalysisResultBuilder,
   deadlockAnalysisResultBuilder,
-  masterCopyChangeThreatBuilder,
   maliciousOrModerateThreatBuilder,
+  masterCopyChangeThreatBuilder,
+  recipientAnalysisResultBuilder,
+  threatAnalysisResultBuilder,
   unofficialFallbackHandlerAnalysisResultBuilder,
 } from './builders/analysis-result.builder';
-import { omit } from 'lodash';
 
 describe('AnalysisResult', () => {
   describe('AnalysisResult interface', () => {
@@ -526,14 +527,14 @@ describe('AnalysisResult', () => {
       ];
 
       // Verify all results have the required structure
-      results.forEach((result) => {
+      for (const result of results) {
         expect(result).toHaveProperty('severity');
         expect(result).toHaveProperty('type');
         expect(result).toHaveProperty('title');
         expect(result).toHaveProperty('description');
         expect(typeof result.title).toBe('string');
         expect(typeof result.description).toBe('string');
-      });
+      }
     });
 
     it('should work with sorting by severity', () => {

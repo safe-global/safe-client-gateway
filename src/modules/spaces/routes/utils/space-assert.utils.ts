@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import type { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
-import type { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
-import type { IMembersRepository } from '@/modules/users/domain/members.repository.interface';
-import { getEnumKey } from '@/domain/common/utils/enum';
-import { MemberRole } from '@/modules/users/domain/entities/member.entity';
+
 import { ForbiddenException } from '@nestjs/common';
 import { In } from 'typeorm';
+import { getEnumKey } from '@/domain/common/utils/enum';
+import type { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
+import type { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
+import { MemberRole } from '@/modules/users/domain/entities/member.entity';
+import type { IMembersRepository } from '@/modules/users/domain/members.repository.interface';
 
 export async function assertAdmin(
   spacesRepository: ISpacesRepository,

@@ -1,14 +1,14 @@
-import { confirmationBuilder } from '@/modules/safe/domain/entities/__tests__/multisig-transaction-confirmation.builder';
-import { multisigTransactionBuilder } from '@/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
+import { faker } from '@faker-js/faker/.';
+import { type Address, getAddress } from 'viem';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
+import { multisigTransactionBuilder } from '@/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
+import { confirmationBuilder } from '@/modules/safe/domain/entities/__tests__/multisig-transaction-confirmation.builder';
 import {
   ConfirmationSchema,
   MultisigTransactionPageSchema,
   MultisigTransactionSchema,
   MultisigTransactionTypeSchema,
 } from '@/modules/safe/domain/entities/multisig-transaction.entity';
-import { faker } from '@faker-js/faker/.';
-import { type Address, getAddress } from 'viem';
 
 describe('MultisigTransaction', () => {
   describe('ConfirmationSchema', () => {

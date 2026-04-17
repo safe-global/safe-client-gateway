@@ -5,8 +5,8 @@ import {
 } from '@/domain/common/utils/enum';
 
 enum NumericEnum {
-  A,
-  B,
+  A = 0,
+  B = 1,
 }
 
 enum NumericEnumExplicit {

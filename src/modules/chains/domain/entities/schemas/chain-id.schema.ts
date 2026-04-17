@@ -1,5 +1,5 @@
-import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
 import { CHAIN_ID_MAXLENGTH } from '@/routes/common/constants';
+import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
 
 export const ChainIdSchema = NumericStringSchema.refine(
   (val) => val.length <= CHAIN_ID_MAXLENGTH,

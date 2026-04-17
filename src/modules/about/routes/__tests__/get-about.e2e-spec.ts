@@ -1,9 +1,9 @@
 import '@/__tests__/matchers/to-be-string-or-null';
-import { createBaseTestModule } from '@/__tests__/testing-module';
+import type { Server } from 'node:net';
 import { expect } from '@jest/globals';
 import type { INestApplication } from '@nestjs/common';
-import type { Server } from 'net';
 import request from 'supertest';
+import { createBaseTestModule } from '@/__tests__/testing-module';
 
 describe('Get about e2e test', () => {
   let app: INestApplication<Server>;

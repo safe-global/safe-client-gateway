@@ -1,9 +1,9 @@
 import { faker } from '@faker-js/faker';
+import { getAddress } from 'viem';
 import type { IBuilder } from '@/__tests__/builder';
 import { Builder } from '@/__tests__/builder';
-import type { AppPosition } from '@/modules/portfolio/domain/entities/app-position.entity';
-import { getAddress } from 'viem';
 import { tokenInfoBuilder } from '@/modules/portfolio/domain/entities/__tests__/token-info.builder';
+import type { AppPosition } from '@/modules/portfolio/domain/entities/app-position.entity';
 
 export function appPositionBuilder(): IBuilder<AppPosition> {
   return new Builder<AppPosition>()

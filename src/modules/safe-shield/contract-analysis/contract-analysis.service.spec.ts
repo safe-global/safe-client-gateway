@@ -1,32 +1,32 @@
-import { ContractAnalysisService } from '@/modules/safe-shield/contract-analysis/contract-analysis.service';
-import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
-import { CacheRouter } from '@/datasources/cache/cache.router';
-import type { IConfigurationService } from '@/config/configuration.service.interface';
-import type { ILoggingService } from '@/logging/logging.interface';
-import type { IDataDecoderApi } from '@/domain/interfaces/data-decoder-api.interface';
-import type { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
-import type { ITransactionApi } from '@/domain/interfaces/transaction-api.interface';
-import type { Erc20Decoder } from '@/modules/relay/domain/contracts/decoders/erc-20-decoder.helper';
 import { faker } from '@faker-js/faker';
-import { LogType } from '@/domain/common/entities/log-type.entity';
 import type { Hex } from 'viem';
 import { getAddress } from 'viem';
+import type { IConfigurationService } from '@/config/configuration.service.interface';
+import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
+import { CacheRouter } from '@/datasources/cache/cache.router';
+import { LogType } from '@/domain/common/entities/log-type.entity';
+import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
+import type { IDataDecoderApi } from '@/domain/interfaces/data-decoder-api.interface';
+import type { ITransactionApi } from '@/domain/interfaces/transaction-api.interface';
+import type { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
+import type { ILoggingService } from '@/logging/logging.interface';
+import { contractBuilder } from '@/modules/data-decoder/domain/v2/entities/__tests__/contract.builder';
+import type { Erc20Decoder } from '@/modules/relay/domain/contracts/decoders/erc-20-decoder.helper';
+import { ContractAnalysisService } from '@/modules/safe-shield/contract-analysis/contract-analysis.service';
 import type { ContractAnalysisResponse } from '@/modules/safe-shield/entities/analysis-responses.entity';
 import type { ContractAnalysisResult } from '@/modules/safe-shield/entities/analysis-result.entity';
+import { ContractStatus } from '@/modules/safe-shield/entities/contract-status.entity';
+import type { ExtractedContract } from '@/modules/safe-shield/entities/extracted-contract.entity';
 import type { ContractStatusGroup } from '@/modules/safe-shield/entities/status-group.entity';
 import type { DecodedTransactionData } from '@/modules/safe-shield/entities/transaction-data.entity';
+import { extractContracts } from '@/modules/safe-shield/utils/extraction.utils';
+import { rawify } from '@/validation/entities/raw.entity';
 import {
+  DESCRIPTION_MAPPING,
   SEVERITY_MAPPING,
   TITLE_MAPPING,
-  DESCRIPTION_MAPPING,
   TWAP_FALLBACK_HANDLER,
 } from './contract-analysis.constants';
-import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
-import { rawify } from '@/validation/entities/raw.entity';
-import { contractBuilder } from '@/modules/data-decoder/domain/v2/entities/__tests__/contract.builder';
-import type { ExtractedContract } from '@/modules/safe-shield/entities/extracted-contract.entity';
-import { extractContracts } from '@/modules/safe-shield/utils/extraction.utils';
-import { ContractStatus } from '@/modules/safe-shield/entities/contract-status.entity';
 
 jest.mock('@/modules/safe-shield/utils/extraction.utils', () => ({
   extractContracts: jest.fn(),

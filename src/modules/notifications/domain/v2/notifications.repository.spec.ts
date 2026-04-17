@@ -1,26 +1,27 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import type { UUID } from 'crypto';
+
+import type { UUID } from 'node:crypto';
 import { faker } from '@faker-js/faker/.';
 import { NotFoundException, UnauthorizedException } from '@nestjs/common';
-import { type ILoggingService } from '@/logging/logging.interface';
-import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { NotificationsRepositoryV2 } from '@/modules/notifications/domain/v2/notifications.repository';
-import type { IPushNotificationsApi } from '@/domain/interfaces/push-notifications-api.interface';
-import type { NotificationType } from '@/modules/notifications/datasources/entities/notification-type.entity.db';
-import type { INotificationsRepositoryV2 } from '@/modules/notifications/domain/v2/notifications.repository.interface';
-import { notificationTypeBuilder } from '@/modules/notifications/datasources/entities/__tests__/notification-type.entity.db.builder';
-import { notificationSubscriptionBuilder } from '@/modules/notifications/datasources/entities/__tests__/notification-subscription.entity.db.builder';
-import { NotificationSubscription } from '@/modules/notifications/datasources/entities/notification-subscription.entity.db';
-import { upsertSubscriptionsDtoBuilder } from '@/modules/notifications/routes/v2/entities/__tests__/upsert-subscriptions.dto.builder';
-import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
-import { NotificationDevice } from '@/modules/notifications/datasources/entities/notification-devices.entity.db';
+import type { ConfigService } from '@nestjs/config';
+import { IsNull } from 'typeorm';
+import { type Address, getAddress } from 'viem';
 import { mockEntityManager } from '@/datasources/db/v2/__tests__/entity-manager.mock';
 import { mockPostgresDatabaseService } from '@/datasources/db/v2/__tests__/postgresql-database.service.mock';
 import { mockRepository } from '@/datasources/db/v2/__tests__/repository.mock';
-import { type Address, getAddress } from 'viem';
-import { IsNull } from 'typeorm';
+import type { IPushNotificationsApi } from '@/domain/interfaces/push-notifications-api.interface';
+import type { ILoggingService } from '@/logging/logging.interface';
+import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
+import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
+import { notificationSubscriptionBuilder } from '@/modules/notifications/datasources/entities/__tests__/notification-subscription.entity.db.builder';
+import { notificationTypeBuilder } from '@/modules/notifications/datasources/entities/__tests__/notification-type.entity.db.builder';
+import { NotificationDevice } from '@/modules/notifications/datasources/entities/notification-devices.entity.db';
+import { NotificationSubscription } from '@/modules/notifications/datasources/entities/notification-subscription.entity.db';
+import type { NotificationType } from '@/modules/notifications/datasources/entities/notification-type.entity.db';
 import { deleteAllSubscriptionsDtoBuilder } from '@/modules/notifications/domain/v2/entities/__tests__/delete-all-subscriptions.dto.builder';
-import type { ConfigService } from '@nestjs/config';
+import { NotificationsRepositoryV2 } from '@/modules/notifications/domain/v2/notifications.repository';
+import type { INotificationsRepositoryV2 } from '@/modules/notifications/domain/v2/notifications.repository.interface';
+import { upsertSubscriptionsDtoBuilder } from '@/modules/notifications/routes/v2/entities/__tests__/upsert-subscriptions.dto.builder';
 
 describe('NotificationsRepositoryV2', () => {
   let notificationsRepository: INotificationsRepositoryV2;

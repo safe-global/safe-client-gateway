@@ -1,7 +1,7 @@
-import { HexSchema } from '@/validation/entities/schemas/hex.schema';
-import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
 import { z } from 'zod';
+import { HexSchema } from '@/validation/entities/schemas/hex.schema';
 import { NullableNumericStringSchema } from '@/validation/entities/schemas/nullable.schema';
+import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
 
 export enum StakeState {
   Unknown = 'unknown',

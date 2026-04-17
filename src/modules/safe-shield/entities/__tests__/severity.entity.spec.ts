@@ -1,8 +1,8 @@
 import {
-  Severity,
-  SeveritySchema,
   compareSeverity,
   compareSeverityString,
+  Severity,
+  SeveritySchema,
 } from '../severity.entity';
 
 describe('Severity', () => {

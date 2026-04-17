@@ -1,6 +1,6 @@
-import { TestJobData } from '@/datasources/job-queue/__tests__/test.job.data';
 import { OnWorkerEvent, Processor, WorkerHost } from '@nestjs/bullmq';
-import { Job } from 'bullmq';
+import type { Job } from 'bullmq';
+import type { TestJobData } from '@/datasources/job-queue/__tests__/test.job.data';
 
 @Processor('test-queue')
 export class TestJobConsumer extends WorkerHost {

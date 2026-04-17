@@ -22,11 +22,11 @@ export function fakeJson(): string {
   const properties = ['foo', 'bar', 'bike', 'a', 'b', 'name', 'prop'];
   const returnObject: Record<string, string | number> = {};
 
-  properties.forEach((prop) => {
+  for (const prop of properties) {
     returnObject[prop] = faker.datatype.boolean()
       ? faker.string.sample()
       : faker.number.int();
-  });
+  }
 
   return JSON.stringify(returnObject);
 }

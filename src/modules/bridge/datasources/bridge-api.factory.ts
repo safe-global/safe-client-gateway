@@ -1,14 +1,14 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import { LifiBridgeApi } from '@/modules/bridge/datasources/lifi-api.service';
+import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import {
-  INetworkService,
+  type INetworkService,
   NetworkService,
 } from '@/datasources/network/network.service.interface';
 import type { IBridgeApiFactory } from '@/domain/interfaces/bridge-api.factory.interface';
 import type { IBridgeApi } from '@/domain/interfaces/bridge-api.inferface';
-import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
+import { LifiBridgeApi } from '@/modules/bridge/datasources/lifi-api.service';
 
 @Injectable()
 export class BridgeApiFactory implements IBridgeApiFactory {

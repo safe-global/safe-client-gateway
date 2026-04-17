@@ -1,8 +1,8 @@
-import { EventType } from '@/modules/alerts/routes/entities/alert.dto.entity';
 import { z } from 'zod';
+import { EventType } from '@/modules/alerts/routes/entities/alert.dto.entity';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { HexSchema } from '@/validation/entities/schemas/hex.schema';
 import { EventTopicsSchema } from '@/validation/entities/schemas/event-topics.schema';
+import { HexSchema } from '@/validation/entities/schemas/hex.schema';
 
 export const AlertLogSchema = z.object({
   address: AddressSchema,

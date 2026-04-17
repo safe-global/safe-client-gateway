@@ -1,6 +1,6 @@
-import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { z } from 'zod';
 import type { Address } from 'viem';
+import { z } from 'zod';
+import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 
 /**
  * Schema for targeted safe entry that supports both legacy and chain-specific formats.

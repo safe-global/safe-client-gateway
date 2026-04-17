@@ -1,4 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-export default () => {
+export default (): void => {
   process.env.TZ = 'UTC';
 };

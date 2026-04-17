@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Transaction } from '@/modules/transactions/routes/entities/transaction.entity';
 import { ConflictType } from '@/modules/transactions/routes/entities/conflict-type.entity';
+import type { Transaction } from '@/modules/transactions/routes/entities/transaction.entity';
 
 export class IncomingTransfer {
   @ApiProperty({ enum: ['TRANSACTION'] })

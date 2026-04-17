@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
+import { faker } from '@faker-js/faker';
+import type { IConfigurationService } from '@/config/configuration.service.interface';
 import { CircuitBreakerService } from '@/datasources/circuit-breaker/circuit-breaker.service';
 import { CircuitState } from '@/datasources/circuit-breaker/enums/circuit-state.enum';
 import { CircuitBreakerException } from '@/datasources/circuit-breaker/exceptions/circuit-breaker.exception';
-import type { IConfigurationService } from '@/config/configuration.service.interface';
 import type { ILoggingService } from '@/logging/logging.interface';
-import { faker } from '@faker-js/faker';
 
 describe('CircuitBreakerService', () => {
   let mockLoggingService: jest.MockedObjectDeep<ILoggingService>;

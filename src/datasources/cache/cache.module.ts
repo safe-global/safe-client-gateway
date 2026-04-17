@@ -2,11 +2,14 @@ import { Global, Module } from '@nestjs/common';
 import { createClient } from 'redis';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { CacheService } from '@/datasources/cache/cache.service.interface';
-import { RedisCacheService } from '@/datasources/cache/redis.cache.service';
-import { CacheReadiness } from '@/domain/interfaces/cache-readiness.interface';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { CacheKeyPrefix } from '@/datasources/cache/constants';
+import { RedisCacheService } from '@/datasources/cache/redis.cache.service';
 import { LogType } from '@/domain/common/entities/log-type.entity';
+import { CacheReadiness } from '@/domain/interfaces/cache-readiness.interface';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
 
 export type RedisClientType = ReturnType<typeof createClient>;
 

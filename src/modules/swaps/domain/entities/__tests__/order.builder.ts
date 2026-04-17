@@ -1,3 +1,7 @@
+import { faker } from '@faker-js/faker';
+import { type Address, getAddress, type Hex } from 'viem';
+import type { IBuilder } from '@/__tests__/builder';
+import { Builder } from '@/__tests__/builder';
 import type { Order } from '@/modules/swaps/domain/entities/order.entity';
 import {
   BuyTokenBalance,
@@ -6,10 +10,6 @@ import {
   OrderStatus,
   SellTokenBalance,
 } from '@/modules/swaps/domain/entities/order.entity';
-import type { IBuilder } from '@/__tests__/builder';
-import { Builder } from '@/__tests__/builder';
-import { faker } from '@faker-js/faker';
-import { type Address, getAddress, type Hex } from 'viem';
 
 export function orderBuilder(): IBuilder<Order> {
   const executedFee = faker.number.bigInt({ min: 1 });

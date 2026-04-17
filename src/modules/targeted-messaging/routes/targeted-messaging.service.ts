@@ -1,11 +1,11 @@
-import { TargetedSafe } from '@/modules/targeted-messaging/domain/entities/targeted-safe.entity';
-import { SubmissionNotFoundError } from '@/modules/targeted-messaging/domain/errors/submission-not-found.error';
-import { ITargetedMessagingRepository } from '@/modules/targeted-messaging/domain/targeted-messaging.repository.interface';
-import { CreateSubmissionDto } from '@/modules/targeted-messaging/routes/entities/create-submission.dto.entity';
-import { Submission } from '@/modules/targeted-messaging/routes/entities/submission.entity';
-import { TargetedSafe as RouteTargetedSafe } from '@/modules/targeted-messaging/routes/entities/targeted-safe.entity';
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import type { Address } from 'viem';
+import type { TargetedSafe } from '@/modules/targeted-messaging/domain/entities/targeted-safe.entity';
+import { SubmissionNotFoundError } from '@/modules/targeted-messaging/domain/errors/submission-not-found.error';
+import { ITargetedMessagingRepository } from '@/modules/targeted-messaging/domain/targeted-messaging.repository.interface';
+import type { CreateSubmissionDto } from '@/modules/targeted-messaging/routes/entities/create-submission.dto.entity';
+import { Submission } from '@/modules/targeted-messaging/routes/entities/submission.entity';
+import type { TargetedSafe as RouteTargetedSafe } from '@/modules/targeted-messaging/routes/entities/targeted-safe.entity';
 
 @Injectable()
 export class TargetedMessagingService {
@@ -53,9 +53,8 @@ export class TargetedMessagingService {
           args.signerAddress,
           null,
         );
-      } else {
-        throw err;
       }
+      throw err;
     }
   }
 
@@ -111,9 +110,8 @@ export class TargetedMessagingService {
           submission.signerAddress,
           submission.completionDate,
         );
-      } else {
-        throw err;
       }
+      throw err;
     }
   }
 }

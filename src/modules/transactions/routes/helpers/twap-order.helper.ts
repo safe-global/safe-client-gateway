@@ -1,11 +1,10 @@
-import {
-  TransactionFinder,
-  TransactionFinderModule,
-} from '@/modules/transactions/routes/helpers/transaction-finder.helper';
+import { Injectable, Module } from '@nestjs/common';
+import { type Address, type Hex, isAddressEqual } from 'viem';
 import {
   ComposableCowDecoder,
-  TwapStruct,
+  type TwapStruct,
 } from '@/modules/swaps/domain/contracts/decoders/composable-cow-decoder.helper';
+import type { GPv2OrderParameters } from '@/modules/swaps/domain/contracts/decoders/gp-v2-decoder.helper';
 import {
   BuyTokenBalance,
   OrderClass,
@@ -17,11 +16,12 @@ import {
   DurationLimit,
   StartTimeAtEpoch,
   StartTimeAtMining,
-  TwapOrderInfo,
+  type TwapOrderInfo,
 } from '@/modules/transactions/routes/entities/swaps/twap-order-info.entity';
-import { GPv2OrderParameters } from '@/modules/swaps/domain/contracts/decoders/gp-v2-decoder.helper';
-import { Injectable, Module } from '@nestjs/common';
-import { type Address, type Hex, isAddressEqual } from 'viem';
+import {
+  TransactionFinder,
+  TransactionFinderModule,
+} from '@/modules/transactions/routes/helpers/transaction-finder.helper';
 
 /**
  *

@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { SafeAppAccessControl } from '@/modules/safe-apps/routes/entities/safe-app-access-control.entity';
+import type { SafeAppAccessControl } from '@/modules/safe-apps/routes/entities/safe-app-access-control.entity';
 import { SafeAppProvider } from '@/modules/safe-apps/routes/entities/safe-app-provider.entity';
 import { SafeAppSocialProfile } from '@/modules/safe-apps/routes/entities/safe-app-social-profile.entity';
 

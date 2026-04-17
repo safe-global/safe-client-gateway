@@ -1,15 +1,34 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
+import type { Server } from 'node:net';
+import { faker } from '@faker-js/faker';
+import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import configuration from '@/config/entities/__tests__/configuration';
+import { getAddress, type Hex } from 'viem';
+import { getDeploymentVersionsByChainIds } from '@/__tests__/deployments.helper';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
+import { createTestModule } from '@/__tests__/testing-module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
+import configuration from '@/config/entities/__tests__/configuration';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
 import { NetworkService } from '@/datasources/network/network.service.interface';
-import type { INestApplication } from '@nestjs/common';
-import { faker } from '@faker-js/faker';
+import {
+  getMultiSendCallOnlyDeployments,
+  getMultiSendDeployments,
+  getProxyFactoryDeployments,
+  getSafeL2SingletonDeployments,
+  getSafeSingletonDeployments,
+} from '@/domain/common/utils/deployments';
+import {
+  execTransactionFromModuleEncoder,
+  executeNextTxEncoder,
+} from '@/modules/alerts/domain/contracts/__tests__/encoders/delay-modifier-encoder.builder';
+import { BalancesService } from '@/modules/balances/routes/balances.service';
 import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
-import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
-import { getAddress, type Hex } from 'viem';
+import {
+  multiSendEncoder,
+  multiSendTransactionsEncoder,
+} from '@/modules/contracts/domain/__tests__/encoders/multi-send-encoder.builder';
 import {
   addOwnerWithThresholdEncoder,
   changeThresholdEncoder,
@@ -27,28 +46,10 @@ import {
   erc20TransferEncoder,
   erc20TransferFromEncoder,
 } from '@/modules/relay/domain/contracts/__tests__/encoders/erc20-encoder.builder';
-import {
-  multiSendEncoder,
-  multiSendTransactionsEncoder,
-} from '@/modules/contracts/domain/__tests__/encoders/multi-send-encoder.builder';
-import {
-  getMultiSendCallOnlyDeployments,
-  getMultiSendDeployments,
-  getProxyFactoryDeployments,
-  getSafeL2SingletonDeployments,
-  getSafeSingletonDeployments,
-} from '@/domain/common/utils/deployments';
 import { createProxyWithNonceEncoder } from '@/modules/relay/domain/contracts/__tests__/encoders/proxy-factory-encoder.builder';
-import { getDeploymentVersionsByChainIds } from '@/__tests__/deployments.helper';
-import type { Server } from 'net';
-import {
-  execTransactionFromModuleEncoder,
-  executeNextTxEncoder,
-} from '@/modules/alerts/domain/contracts/__tests__/encoders/delay-modifier-encoder.builder';
-import { rawify } from '@/validation/entities/raw.entity';
-import { createTestModule } from '@/__tests__/testing-module';
-import { BalancesService } from '@/modules/balances/routes/balances.service';
 import type { NoFeeCampaignConfiguration } from '@/modules/relay/domain/entities/relay.configuration';
+import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
+import { rawify } from '@/validation/entities/raw.entity';
 
 const allSupportedChainIds = Object.keys(configuration().relay.apiKey);
 const noFeeCampaignChains = Object.keys(
@@ -94,10 +95,8 @@ const PROXY_FACTORY_VERSIONS = getDeploymentVersionsByChainIds(
   supportedChainIds,
 );
 
-const getScaledBalance = (
-  tokens: bigint | number,
-  decimals: number = 18,
-): bigint => BigInt(tokens) * BigInt(10) ** BigInt(decimals);
+const getScaledBalance = (tokens: bigint | number, decimals = 18): bigint =>
+  BigInt(tokens) * BigInt(10) ** BigInt(decimals);
 
 describe('Relay controller', () => {
   let app: INestApplication<Server>;
@@ -148,7 +147,7 @@ describe('Relay controller', () => {
         ) as NoFeeCampaignConfiguration;
 
         const tokenBalance = {
-          tokenAddress: noFeeConfig[parseInt(chainId)]
+          tokenAddress: noFeeConfig[Number.parseInt(chainId)]
             ?.safeTokenAddress as string,
           balance: (BigInt(100) * BigInt(10 ** 18)).toString(),
           fiatBalance: '1000',
@@ -2725,7 +2724,6 @@ describe('Relay controller', () => {
           }
         });
 
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         for (const _ of Array.from({ length: 5 })) {
           await request(app.getHttpServer())
             .post(`/v1/chains/${chain.chainId}/relay`)
@@ -2895,7 +2893,6 @@ describe('Relay controller', () => {
           }
         });
 
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         for (const _ of Array.from({ length: 6 })) {
           await request(app.getHttpServer())
             .post(`/v1/chains/${chain.chainId}/relay`)
@@ -2939,7 +2936,7 @@ describe('Relay controller', () => {
             'relay.noFeeCampaign',
           ) as NoFeeCampaignConfiguration;
           const startsAtTimeStamp =
-            noFeeConfig[parseInt(chainId)]?.startsAtTimeStamp;
+            noFeeConfig[Number.parseInt(chainId)]?.startsAtTimeStamp;
 
           const beforeStartTime = startsAtTimeStamp - 100_000;
           jest
@@ -2948,7 +2945,7 @@ describe('Relay controller', () => {
 
           // Mock BalancesService to return sufficient token balance
           const tokenBalance = {
-            tokenAddress: noFeeConfig[parseInt(chainId)]
+            tokenAddress: noFeeConfig[Number.parseInt(chainId)]
               ?.safeTokenAddress as string,
             balance: '100000000000000000000', // 100 tokens in wei
             fiatBalance: '100',
@@ -3001,14 +2998,14 @@ describe('Relay controller', () => {
             'relay.noFeeCampaign',
           ) as NoFeeCampaignConfiguration;
           const endsAtTimeStamp =
-            noFeeConfig[parseInt(chainId)]?.endsAtTimeStamp;
+            noFeeConfig[Number.parseInt(chainId)]?.endsAtTimeStamp;
 
           const afterEndTime = endsAtTimeStamp + 100_000;
           jest.spyOn(Date.prototype, 'getTime').mockReturnValue(afterEndTime);
 
           // Mock BalancesService to return sufficient token balance
           const tokenBalance = {
-            tokenAddress: noFeeConfig[parseInt(chainId)]
+            tokenAddress: noFeeConfig[Number.parseInt(chainId)]
               ?.safeTokenAddress as string,
             balance: '100000000000000000000', // 100 tokens in wei
             fiatBalance: '100',
@@ -3092,7 +3089,7 @@ describe('Relay controller', () => {
           const noFeeConfig = configurationService.get(
             'relay.noFeeCampaign',
           ) as NoFeeCampaignConfiguration;
-          const tokenAddress = noFeeConfig[parseInt(chainId)]
+          const tokenAddress = noFeeConfig[Number.parseInt(chainId)]
             ?.safeTokenAddress as string;
 
           // Verify that BalancesService was called to get token balance
@@ -3194,7 +3191,7 @@ describe('Relay controller', () => {
                 const noFeeConfig = configurationService.get(
                   'relay.noFeeCampaign',
                 ) as NoFeeCampaignConfiguration;
-                const tokenAddress = noFeeConfig[parseInt(chainId)]
+                const tokenAddress = noFeeConfig[Number.parseInt(chainId)]
                   ?.safeTokenAddress as string;
 
                 // Mock BalancesService based on token amount
@@ -3293,7 +3290,7 @@ describe('Relay controller', () => {
                 ) as NoFeeCampaignConfiguration;
                 // Mock BalancesService to return sufficient token balance
                 const tokenBalance = {
-                  tokenAddress: noFeeConfig[parseInt(chainId)]
+                  tokenAddress: noFeeConfig[Number.parseInt(chainId)]
                     ?.safeTokenAddress as string,
                   balance: (
                     faker.number.bigInt({ min: balanceMin, max: balanceMax }) *
@@ -3354,7 +3351,7 @@ describe('Relay controller', () => {
                   .expect(201)
                   .expect({ taskId });
 
-                const tokenAddress = noFeeConfig[parseInt(chainId)]
+                const tokenAddress = noFeeConfig[Number.parseInt(chainId)]
                   ?.safeTokenAddress as string;
 
                 // Verify that BalancesService was called to get token balance
@@ -3407,7 +3404,8 @@ describe('Relay controller', () => {
                 'relay.noFeeCampaign',
               ) as NoFeeCampaignConfiguration;
 
-              const maxGasLimit = noFeeConfig[parseInt(chainId)]?.maxGasLimit;
+              const maxGasLimit =
+                noFeeConfig[Number.parseInt(chainId)]?.maxGasLimit;
               const actualGasLimit =
                 typeof gasLimit === 'function'
                   ? gasLimit(maxGasLimit)
@@ -3415,7 +3413,7 @@ describe('Relay controller', () => {
 
               // Mock BalancesService to return sufficient token balance
               const tokenBalance = {
-                tokenAddress: noFeeConfig[parseInt(chainId)]
+                tokenAddress: noFeeConfig[Number.parseInt(chainId)]
                   ?.safeTokenAddress as string,
                 balance: getScaledBalance(1000).toString(), // 1000 tokens
                 fiatBalance: '1000',
@@ -3511,7 +3509,7 @@ describe('Relay controller', () => {
 
             // Mock BalancesService to return sufficient token balance
             const tokenBalance = {
-              tokenAddress: noFeeConfig[parseInt(chainId)]
+              tokenAddress: noFeeConfig[Number.parseInt(chainId)]
                 ?.safeTokenAddress as string,
               balance: getScaledBalance(1000).toString(), // 1000 tokens
               fiatBalance: '1000',
@@ -3549,7 +3547,7 @@ describe('Relay controller', () => {
               data,
               version,
               gasLimit: (
-                noFeeConfig[parseInt(chainId)]?.maxGasLimit + 100_000
+                noFeeConfig[Number.parseInt(chainId)]?.maxGasLimit + 100_000
               ).toString(),
             };
 

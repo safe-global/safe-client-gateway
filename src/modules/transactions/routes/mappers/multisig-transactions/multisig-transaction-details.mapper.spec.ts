@@ -1,11 +1,19 @@
 import { faker } from '@faker-js/faker';
+import type { Address } from 'viem';
+import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
+import type { IConfigurationService } from '@/config/configuration.service.interface';
+import type { IBlocklistService } from '@/config/entities/blocklist.interface';
+import type { ILoggingService } from '@/logging/logging.interface';
+import type { IContractsRepository } from '@/modules/contracts/domain/contracts.repository.interface';
+import { dataDecodedBuilder } from '@/modules/data-decoder/domain/v2/entities/__tests__/data-decoded.builder';
+import type { DelegatesV2Repository } from '@/modules/delegate/domain/v2/delegates.v2.repository';
 import { multisigTransactionBuilder } from '@/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
 import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
-import { addressInfoBuilder } from '@/routes/common/__tests__/entities/address-info.builder';
-import type { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
+import { Operation } from '@/modules/safe/domain/entities/operation.entity';
 import { safeAppInfoBuilder } from '@/modules/transactions/routes/entities/__tests__/safe-app-info.builder';
 import { transferTransactionInfoBuilder } from '@/modules/transactions/routes/entities/__tests__/transfer-transaction-info.builder';
 import { TransactionStatus } from '@/modules/transactions/routes/entities/transaction-status.entity';
+import { TransactionVerifierHelper } from '@/modules/transactions/routes/helpers/transaction-verifier.helper';
 import { multisigExecutionDetailsBuilder } from '@/modules/transactions/routes/mappers/__tests__/multisig-execution-details.builder';
 import type { SafeAppInfoMapper } from '@/modules/transactions/routes/mappers/common/safe-app-info.mapper';
 import type { TransactionDataMapper } from '@/modules/transactions/routes/mappers/common/transaction-data.mapper';
@@ -13,16 +21,8 @@ import type { MultisigTransactionInfoMapper } from '@/modules/transactions/route
 import { MultisigTransactionDetailsMapper } from '@/modules/transactions/routes/mappers/multisig-transactions/multisig-transaction-details.mapper';
 import type { MultisigTransactionExecutionDetailsMapper } from '@/modules/transactions/routes/mappers/multisig-transactions/multisig-transaction-execution-details.mapper';
 import type { MultisigTransactionStatusMapper } from '@/modules/transactions/routes/mappers/multisig-transactions/multisig-transaction-status.mapper';
-import type { IConfigurationService } from '@/config/configuration.service.interface';
-import { TransactionVerifierHelper } from '@/modules/transactions/routes/helpers/transaction-verifier.helper';
-import type { DelegatesV2Repository } from '@/modules/delegate/domain/v2/delegates.v2.repository';
-import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
-import type { ILoggingService } from '@/logging/logging.interface';
-import type { IContractsRepository } from '@/modules/contracts/domain/contracts.repository.interface';
-import { Operation } from '@/modules/safe/domain/entities/operation.entity';
-import { dataDecodedBuilder } from '@/modules/data-decoder/domain/v2/entities/__tests__/data-decoded.builder';
-import type { Address } from 'viem';
-import type { IBlocklistService } from '@/config/entities/blocklist.interface';
+import { addressInfoBuilder } from '@/routes/common/__tests__/entities/address-info.builder';
+import type { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
 
 const addressInfoHelper = jest.mocked({
   getOrDefault: jest.fn(),

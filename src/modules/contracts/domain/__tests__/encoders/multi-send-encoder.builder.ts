@@ -1,4 +1,3 @@
-import type { IEncoder } from '@/__tests__/encoder-builder';
 import { faker } from '@faker-js/faker';
 import type { Hex } from 'viem';
 import {
@@ -8,8 +7,9 @@ import {
   getAddress,
   size,
 } from 'viem';
-import MultiSendCallOnly130 from '@/abis/safe/v1.3.0/MultiSendCallOnly.abi';
 import { Builder } from '@/__tests__/builder';
+import type { IEncoder } from '@/__tests__/encoder-builder';
+import MultiSendCallOnly130 from '@/abis/safe/v1.3.0/MultiSendCallOnly.abi';
 
 // multiSend
 

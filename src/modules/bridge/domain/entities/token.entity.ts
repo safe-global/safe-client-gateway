@@ -1,7 +1,7 @@
 import { z } from 'zod';
+import { TokenDetailsSchema } from '@/domain/common/schemas/token-metadata.schema';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { NullableStringSchema } from '@/validation/entities/schemas/nullable.schema';
-import { TokenDetailsSchema } from '@/domain/common/schemas/token-metadata.schema';
 
 export const TokenSchema = TokenDetailsSchema.extend({
   chainId: z.coerce.string(),

@@ -110,7 +110,7 @@ export const prepareDescription = (
   const classificationMsg =
     classification && CLASSIFICATION_MAPPING[classification];
 
-  if (!reasonMsg || !classificationMsg) {
+  if (!(reasonMsg && classificationMsg)) {
     return undefined;
   }
 

@@ -1,5 +1,5 @@
-import type { AlertsRegistration } from '@/modules/alerts/domain/entities/alerts-registration.entity';
 import type { AlertsDeletion } from '@/modules/alerts/domain/entities/alerts-deletion.entity';
+import type { AlertsRegistration } from '@/modules/alerts/domain/entities/alerts-registration.entity';
 
 export const IAlertsApi = Symbol('IAlertsApi');
 

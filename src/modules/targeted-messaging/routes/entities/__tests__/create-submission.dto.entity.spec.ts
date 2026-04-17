@@ -13,7 +13,7 @@ describe('CreateSubmissionDtoSchema', () => {
   it('should require completed', () => {
     const createSubmissionDto = createSubmissionDtoBuilder().build();
     // @ts-expect-error - inferred type doesn't allow optional properties
-    delete createSubmissionDto.completed;
+    createSubmissionDto.completed = undefined;
 
     const result = CreateSubmissionDtoSchema.safeParse(createSubmissionDto);
 

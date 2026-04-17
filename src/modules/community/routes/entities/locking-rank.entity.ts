@@ -1,6 +1,6 @@
-import { LockingRank as DomainLockingRank } from '@/modules/community/domain/entities/locking-rank.entity';
 import { ApiProperty } from '@nestjs/swagger';
 import type { Address } from 'viem';
+import type { LockingRank as DomainLockingRank } from '@/modules/community/domain/entities/locking-rank.entity';
 
 export class LockingRank implements DomainLockingRank {
   @ApiProperty()

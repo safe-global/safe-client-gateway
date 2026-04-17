@@ -1,8 +1,18 @@
-import { AbiDecoder } from '@/modules/contracts/domain/decoders/abi-decoder.helper';
 import { Inject, Injectable } from '@nestjs/common';
-import { getAddress, Hex, hexToBigInt, hexToNumber, size, slice } from 'viem';
+import {
+  getAddress,
+  type Hex,
+  hexToBigInt,
+  hexToNumber,
+  size,
+  slice,
+} from 'viem';
 import MultiSendCallOnly130 from '@/abis/safe/v1.3.0/MultiSendCallOnly.abi';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
+import { AbiDecoder } from '@/modules/contracts/domain/decoders/abi-decoder.helper';
 
 @Injectable()
 export class MultiSendDecoder extends AbiDecoder<typeof MultiSendCallOnly130> {
@@ -40,35 +50,29 @@ export class MultiSendDecoder extends AbiDecoder<typeof MultiSendCallOnly130> {
       let cursor = 0;
 
       while (cursor < transactionsSize) {
-        const operation = slice(
-          transactions,
-          cursor,
-          (cursor += MultiSendDecoder.OPERATION_SIZE),
-        );
+        const operationEnd = cursor + MultiSendDecoder.OPERATION_SIZE;
+        const operation = slice(transactions, cursor, operationEnd);
+        cursor = operationEnd;
 
-        const to = slice(
-          transactions,
-          cursor,
-          (cursor += MultiSendDecoder.TO_SIZE),
-        );
+        const toEnd = cursor + MultiSendDecoder.TO_SIZE;
+        const to = slice(transactions, cursor, toEnd);
+        cursor = toEnd;
 
-        const value = slice(
-          transactions,
-          cursor,
-          (cursor += MultiSendDecoder.VALUE_SIZE),
-        );
+        const valueEnd = cursor + MultiSendDecoder.VALUE_SIZE;
+        const value = slice(transactions, cursor, valueEnd);
+        cursor = valueEnd;
 
-        const dataLength = slice(
-          transactions,
-          cursor,
-          (cursor += MultiSendDecoder.DATA_LENGTH_SIZE),
-        );
+        const dataLengthEnd = cursor + MultiSendDecoder.DATA_LENGTH_SIZE;
+        const dataLength = slice(transactions, cursor, dataLengthEnd);
+        cursor = dataLengthEnd;
 
         const dataLengthNumber = hexToNumber(dataLength);
-        const data =
-          dataLengthNumber === 0
-            ? '0x'
-            : slice(transactions, cursor, (cursor += dataLengthNumber));
+        let data: Hex = '0x';
+        if (dataLengthNumber !== 0) {
+          const dataEnd = cursor + dataLengthNumber;
+          data = slice(transactions, cursor, dataEnd);
+          cursor = dataEnd;
+        }
 
         mapped.push({
           operation: hexToNumber(operation),

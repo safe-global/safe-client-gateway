@@ -21,7 +21,7 @@ describe('BackboneSchema', () => {
   it('should allow optional headers and default to null', () => {
     const backbone = backboneBuilder().build();
     // @ts-expect-error - inferred type takes default into account
-    delete backbone.headers;
+    backbone.headers = undefined;
 
     const result = BackboneSchema.safeParse(backbone);
 
@@ -39,7 +39,7 @@ describe('BackboneSchema', () => {
   it('should allow optional settings and default to null', () => {
     const backbone = backboneBuilder().build();
     // @ts-expect-error - inferred type takes default into account
-    delete backbone.settings;
+    backbone.settings = undefined;
 
     const result = BackboneSchema.safeParse(backbone);
 

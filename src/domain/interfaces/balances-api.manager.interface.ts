@@ -1,7 +1,7 @@
+import type { Address } from 'viem';
 import type { IApiManager } from '@/domain/interfaces/api.manager.interface';
 import type { IBalancesApi } from '@/domain/interfaces/balances-api.interface';
 import type { Raw } from '@/validation/entities/raw.entity';
-import type { Address } from 'viem';
 
 export const IBalancesApiManager = Symbol('IBalancesApiManager');
 

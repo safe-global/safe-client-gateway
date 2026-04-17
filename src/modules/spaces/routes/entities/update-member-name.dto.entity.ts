@@ -1,5 +1,5 @@
-import { z } from 'zod';
 import { ApiProperty } from '@nestjs/swagger';
+import { z } from 'zod';
 import { NameSchema } from '@/domain/common/schemas/name.schema';
 
 export const UpdateMemberAliasDtoSchema = z.object({

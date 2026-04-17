@@ -1,8 +1,8 @@
 import { faker } from '@faker-js/faker';
+import { getAddress, type Hash, type Hex } from 'viem';
 import type { IBuilder } from '@/__tests__/builder';
 import { Builder } from '@/__tests__/builder';
 import type { ModuleTransaction } from '@/modules/safe/domain/entities/module-transaction.entity';
-import { getAddress, type Hash, type Hex } from 'viem';
 
 export function moduleTransactionBuilder(): IBuilder<ModuleTransaction> {
   return new Builder<ModuleTransaction>()

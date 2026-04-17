@@ -1,7 +1,7 @@
-import { z } from 'zod';
-import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { ApiExtraModels, ApiProperty, getSchemaPath } from '@nestjs/swagger';
 import type { Address } from 'viem';
+import { z } from 'zod';
+import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 
 const AddressBookItemSchema = z.object({
   name: z.string(),

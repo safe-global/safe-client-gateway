@@ -1,29 +1,29 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
+import { NotFoundException } from '@nestjs/common';
+import type { ConfigService } from '@nestjs/config';
 import { DataSource } from 'typeorm';
 import { type Address, getAddress } from 'viem';
 import configuration from '@/config/entities/__tests__/configuration';
 import { postgresConfig } from '@/config/entities/postgres.config';
-import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { DatabaseMigrator } from '@/datasources/db/v2/database-migrator.service';
-import { User } from '@/modules/users/datasources/entities/users.entity.db';
-import { UsersRepository } from '@/modules/users/domain/users.repository';
-import { WalletsRepository } from '@/modules/wallets/domain/wallets.repository';
+import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
+import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
+import { getStringEnumKeys } from '@/domain/common/utils/enum';
+import type { ILoggingService } from '@/logging/logging.interface';
 import {
   oidcAuthPayloadDtoBuilder,
   siweAuthPayloadDtoBuilder,
 } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { UserStatus } from '@/modules/users/domain/entities/user.entity';
-import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
-import { NotFoundException } from '@nestjs/common';
-import type { ConfigService } from '@nestjs/config';
-import type { ILoggingService } from '@/logging/logging.interface';
-import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
-import { getStringEnumKeys } from '@/domain/common/utils/enum';
-import { Member } from '@/modules/users/datasources/entities/member.entity.db';
 import { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
 import { SpaceSafe } from '@/modules/spaces/datasources/entities/space-safes.entity.db';
+import { Member } from '@/modules/users/datasources/entities/member.entity.db';
+import { User } from '@/modules/users/datasources/entities/users.entity.db';
+import { UserStatus } from '@/modules/users/domain/entities/user.entity';
+import { UsersRepository } from '@/modules/users/domain/users.repository';
+import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
+import { WalletsRepository } from '@/modules/wallets/domain/wallets.repository';
 
 const mockLoggingService = {
   debug: jest.fn(),
@@ -126,17 +126,17 @@ describe('UsersRepository', () => {
   describe('createdAt/updatedAt', () => {
     it('should set createdAt and updatedAt when creating a User', async () => {
       const dbUserRepository = dataSource.getRepository(User);
-      const before = new Date().getTime();
+      const before = Date.now();
       const user = await dbUserRepository.insert({
         status: faker.helpers.arrayElement(UserStatusKeys),
       });
 
-      const after = new Date().getTime();
+      const after = Date.now();
 
       const createdAt = user.generatedMaps[0].createdAt;
       const updatedAt = user.generatedMaps[0].updatedAt;
 
-      if (!(createdAt instanceof Date) || !(updatedAt instanceof Date)) {
+      if (!(createdAt instanceof Date && updatedAt instanceof Date)) {
         throw new Error('createdAt and/or updatedAt is not a Date');
       }
 

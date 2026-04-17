@@ -1,6 +1,9 @@
-import { Inject, Injectable, NestMiddleware } from '@nestjs/common';
-import { NextFunction, Request, Response } from 'express';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import { Inject, Injectable, type NestMiddleware } from '@nestjs/common';
+import type { NextFunction, Request, Response } from 'express';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
 import { formatRouteLogMessage } from '@/logging/utils';
 
 /**

@@ -1,11 +1,11 @@
 import { faker } from '@faker-js/faker';
-import { Builder } from '@/__tests__/builder';
+import type { Address } from 'viem';
 import type { IBuilder } from '@/__tests__/builder';
+import { Builder } from '@/__tests__/builder';
 import type {
   CsvExportJobData,
   CsvExportJobResponse,
 } from '@/modules/csv-export/v1/entities/csv-export-job-data.entity';
-import type { Address } from 'viem';
 
 export function csvExportJobDataBuilder(): IBuilder<CsvExportJobData> {
   return new Builder<CsvExportJobData>()
