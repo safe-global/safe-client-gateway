@@ -1,22 +1,22 @@
 import { faker } from '@faker-js/faker';
+import { getAddress } from 'viem';
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
-import type { INetworkService } from '@/datasources/network/network.service.interface';
-import { DataSourceError } from '@/domain/errors/data-source.error';
-import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 import { LockingApi } from '@/datasources/locking-api/locking-api.service';
+import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
+import type { INetworkService } from '@/datasources/network/network.service.interface';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
+import { DataSourceError } from '@/domain/errors/data-source.error';
+import { campaignBuilder } from '@/modules/community/domain/entities/__tests__/campaign.builder';
+import { campaignActivityBuilder } from '@/modules/community/domain/entities/__tests__/campaign-activity.builder';
+import { campaignRankBuilder } from '@/modules/community/domain/entities/__tests__/campaign-rank.builder';
 import {
   lockEventItemBuilder,
   unlockEventItemBuilder,
   withdrawEventItemBuilder,
 } from '@/modules/community/domain/entities/__tests__/locking-event.builder';
-import { getAddress } from 'viem';
 import { lockingRankBuilder } from '@/modules/community/domain/entities/__tests__/locking-rank.builder';
-import { campaignBuilder } from '@/modules/community/domain/entities/__tests__/campaign.builder';
-import { campaignRankBuilder } from '@/modules/community/domain/entities/__tests__/campaign-rank.builder';
 import type { CampaignRank } from '@/modules/community/domain/entities/campaign-rank.entity';
-import { campaignActivityBuilder } from '@/modules/community/domain/entities/__tests__/campaign-activity.builder';
 import { rawify } from '@/validation/entities/raw.entity';
 
 const networkService = {

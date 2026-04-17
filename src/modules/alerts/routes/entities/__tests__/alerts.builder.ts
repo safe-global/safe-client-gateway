@@ -1,13 +1,13 @@
 import { faker } from '@faker-js/faker';
+import { type Address, getAddress, type Hash } from 'viem';
 import type { IBuilder } from '@/__tests__/builder';
 import { Builder } from '@/__tests__/builder';
 import type {
+  Alert,
   AlertLog,
   AlertTransaction,
-  Alert,
 } from '@/modules/alerts/routes/entities/alert.dto.entity';
 import { EventType } from '@/modules/alerts/routes/entities/alert.dto.entity';
-import { type Address, getAddress, type Hash } from 'viem';
 
 export function alertLogBuilder(): IBuilder<AlertLog> {
   return new Builder<AlertLog>()

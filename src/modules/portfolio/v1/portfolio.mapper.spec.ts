@@ -1,11 +1,11 @@
-import { PortfolioRouteMapper } from '@/modules/portfolio/v1/portfolio.mapper';
-import { portfolioBuilder } from '@/modules/portfolio/domain/entities/__tests__/portfolio.builder';
-import { tokenBalanceBuilder } from '@/modules/portfolio/domain/entities/__tests__/token-balance.builder';
+import { getAddress } from 'viem';
 import { appBalanceBuilder } from '@/modules/portfolio/domain/entities/__tests__/app-balance.builder';
 import { appPositionBuilder } from '@/modules/portfolio/domain/entities/__tests__/app-position.builder';
 import { appPositionGroupBuilder } from '@/modules/portfolio/domain/entities/__tests__/app-position-group.builder';
+import { portfolioBuilder } from '@/modules/portfolio/domain/entities/__tests__/portfolio.builder';
+import { tokenBalanceBuilder } from '@/modules/portfolio/domain/entities/__tests__/token-balance.builder';
 import { tokenInfoBuilder } from '@/modules/portfolio/domain/entities/__tests__/token-info.builder';
-import { getAddress } from 'viem';
+import { PortfolioRouteMapper } from '@/modules/portfolio/v1/portfolio.mapper';
 import { NULL_ADDRESS } from '@/routes/common/constants';
 
 describe('PortfolioRouteMapper', () => {

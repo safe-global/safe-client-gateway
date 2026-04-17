@@ -1,16 +1,16 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { Page } from '@/domain/entities/page.entity';
+import type { Address, Hash, Hex } from 'viem';
+import type { Page } from '@/domain/entities/page.entity';
 import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
-import { Message } from '@/modules/messages/domain/entities/message.entity';
-import { IMessagesRepository } from '@/modules/messages/domain/messages.repository.interface';
 import {
+  type Message,
   MessagePageSchema,
   MessageSchema,
 } from '@/modules/messages/domain/entities/message.entity';
+import type { TypedData } from '@/modules/messages/domain/entities/typed-data.entity';
 import { MessageVerifierHelper } from '@/modules/messages/domain/helpers/message-verifier.helper';
+import type { IMessagesRepository } from '@/modules/messages/domain/messages.repository.interface';
 import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
-import { TypedData } from '@/modules/messages/domain/entities/typed-data.entity';
-import type { Address, Hash, Hex } from 'viem';
 
 @Injectable()
 export class MessagesRepository implements IMessagesRepository {

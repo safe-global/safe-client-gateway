@@ -1,6 +1,6 @@
-import { CampaignActivity as DomainCampaignActivity } from '@/modules/community/domain/entities/campaign-activity.entity';
 import { ApiProperty } from '@nestjs/swagger';
 import type { Address } from 'viem';
+import type { CampaignActivity as DomainCampaignActivity } from '@/modules/community/domain/entities/campaign-activity.entity';
 
 export class CampaignActivity implements DomainCampaignActivity {
   @ApiProperty()

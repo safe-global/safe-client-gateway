@@ -1,9 +1,9 @@
+import { z } from 'zod';
 import { buildPageSchema } from '@/domain/entities/schemas/page.schema.factory';
 import { MessageConfirmationSchema } from '@/modules/messages/domain/entities/message-confirmation.entity';
 import { TypedDataSchema } from '@/modules/messages/domain/entities/typed-data.entity';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { HexSchema } from '@/validation/entities/schemas/hex.schema';
-import { z } from 'zod';
 import {
   NullableHexSchema,
   NullableNumberSchema,

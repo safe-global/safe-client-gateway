@@ -1,5 +1,5 @@
-import { AddressInfo } from '@/routes/common/entities/address-info.entity';
 import { faker } from '@faker-js/faker';
+import { AddressInfo } from '@/routes/common/entities/address-info.entity';
 
 describe('AddressInfo entity', () => {
   it('should build an AddressInfo', () => {

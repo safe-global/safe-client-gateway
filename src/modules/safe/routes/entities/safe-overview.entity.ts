@@ -1,5 +1,5 @@
-import { AddressInfo } from '@/routes/common/entities/address-info.entity';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { AddressInfo } from '@/routes/common/entities/address-info.entity';
 
 export class SafeOverview {
   @ApiProperty()

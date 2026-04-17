@@ -4,7 +4,6 @@ import {
   ApiPropertyOptional,
   getSchemaPath,
 } from '@nestjs/swagger';
-import { AddressInfo } from '@/routes/common/entities/address-info.entity';
 import {
   Erc20Token,
   Erc721Token,
@@ -14,6 +13,7 @@ import {
   ExecutionDetails,
   ExecutionDetailsType,
 } from '@/modules/transactions/routes/entities/transaction-details/execution-details.entity';
+import { AddressInfo } from '@/routes/common/entities/address-info.entity';
 
 export class MultisigConfirmationDetails {
   @ApiProperty()

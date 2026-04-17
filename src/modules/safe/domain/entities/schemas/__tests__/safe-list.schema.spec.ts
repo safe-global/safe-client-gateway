@@ -1,6 +1,6 @@
-import { SafeListSchema } from '@/modules/safe/domain/entities/schemas/safe-list.schema';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
+import { SafeListSchema } from '@/modules/safe/domain/entities/schemas/safe-list.schema';
 
 describe('SafeListSchema', () => {
   it('should validate a SafeList', () => {

@@ -1,6 +1,6 @@
-import { CampaignRank as DomainCampaignRank } from '@/modules/community/domain/entities/campaign-rank.entity';
 import { ApiProperty } from '@nestjs/swagger';
 import type { Address } from 'viem';
+import type { CampaignRank as DomainCampaignRank } from '@/modules/community/domain/entities/campaign-rank.entity';
 
 export class CampaignRank implements DomainCampaignRank {
   @ApiProperty()

@@ -1,26 +1,26 @@
 import { Controller, Get, Param } from '@nestjs/common';
 import {
   ApiOkResponse,
-  ApiQuery,
-  ApiTags,
   ApiOperation,
   ApiParam,
+  ApiQuery,
+  ApiTags,
 } from '@nestjs/swagger';
 import { ChainsService } from '@/modules/chains/routes/chains.service';
 import { AboutChain } from '@/modules/chains/routes/entities/about-chain.entity';
-import { ChainPage } from '@/modules/chains/routes/entities/chain-page.entity';
+import {
+  Backbone as ApiBackbone,
+  type Backbone,
+} from '@/modules/chains/routes/entities/backbone.entity';
 import { Chain } from '@/modules/chains/routes/entities/chain.entity';
+import { ChainPage } from '@/modules/chains/routes/entities/chain-page.entity';
 import { GasPriceResponse } from '@/modules/chains/routes/entities/gas-price-response.entity';
+import { IndexingStatus } from '@/modules/chains/routes/entities/indexing-status.entity';
 import { MasterCopy } from '@/modules/chains/routes/entities/master-copy.entity';
 import { PaginationDataDecorator } from '@/routes/common/decorators/pagination.data.decorator';
 import { RouteUrlDecorator } from '@/routes/common/decorators/route.url.decorator';
-import { Page } from '@/routes/common/entities/page.entity';
-import { PaginationData } from '@/routes/common/pagination/pagination.data';
-import {
-  Backbone as ApiBackbone,
-  Backbone,
-} from '@/modules/chains/routes/entities/backbone.entity';
-import { IndexingStatus } from '@/modules/chains/routes/entities/indexing-status.entity';
+import type { Page } from '@/routes/common/entities/page.entity';
+import type { PaginationData } from '@/routes/common/pagination/pagination.data';
 
 @ApiTags('chains')
 @Controller({
@@ -46,7 +46,7 @@ export class ChainsController {
     description: 'Paginated list of supported chains',
   })
   @Get()
-  async getChains(
+  getChains(
     @RouteUrlDecorator() routeUrl: URL,
     @PaginationDataDecorator() paginationData: PaginationData,
   ): Promise<Page<Chain>> {
@@ -69,7 +69,7 @@ export class ChainsController {
     description: 'Chain details retrieved successfully',
   })
   @Get('/:chainId')
-  async getChain(@Param('chainId') chainId: string): Promise<Chain> {
+  getChain(@Param('chainId') chainId: string): Promise<Chain> {
     return this.chainsService.getChain(chainId);
   }
 
@@ -89,7 +89,7 @@ export class ChainsController {
     description: 'Chain information retrieved successfully',
   })
   @Get('/:chainId/about')
-  async getAboutChain(@Param('chainId') chainId: string): Promise<AboutChain> {
+  getAboutChain(@Param('chainId') chainId: string): Promise<AboutChain> {
     return this.chainsService.getAboutChain(chainId);
   }
 
@@ -109,7 +109,7 @@ export class ChainsController {
     description: 'Chain backbone information retrieved successfully',
   })
   @Get('/:chainId/about/backbone')
-  async getBackbone(@Param('chainId') chainId: string): Promise<Backbone> {
+  getBackbone(@Param('chainId') chainId: string): Promise<Backbone> {
     return this.chainsService.getBackbone(chainId);
   }
 
@@ -130,7 +130,7 @@ export class ChainsController {
     description: 'List of Safe master copy contracts',
   })
   @Get('/:chainId/about/master-copies')
-  async getMasterCopies(
+  getMasterCopies(
     @Param('chainId') chainId: string,
   ): Promise<Array<MasterCopy>> {
     return this.chainsService.getMasterCopies(chainId);
@@ -152,7 +152,7 @@ export class ChainsController {
     description: 'Chain indexing status retrieved successfully',
   })
   @Get('/:chainId/about/indexing')
-  async getIndexingStatus(
+  getIndexingStatus(
     @Param('chainId') chainId: string,
   ): Promise<IndexingStatus> {
     return this.chainsService.getIndexingStatus(chainId);
@@ -162,9 +162,7 @@ export class ChainsController {
   @ApiParam({ name: 'chainId', type: 'string', example: '1' })
   @ApiOkResponse({ type: GasPriceResponse })
   @Get('/:chainId/gas-price')
-  async getGasPrice(
-    @Param('chainId') chainId: string,
-  ): Promise<GasPriceResponse> {
+  getGasPrice(@Param('chainId') chainId: string): Promise<GasPriceResponse> {
     return this.chainsService.getGasPrice(chainId);
   }
 }

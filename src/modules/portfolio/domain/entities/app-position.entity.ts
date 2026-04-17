@@ -1,9 +1,9 @@
 import { z } from 'zod';
-import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import {
   FiatStringSchema,
   TokenInfoSchema,
 } from '@/modules/portfolio/domain/entities/token-info.entity';
+import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 
 export const AppPositionSchema = z.object({
   key: z.string(),

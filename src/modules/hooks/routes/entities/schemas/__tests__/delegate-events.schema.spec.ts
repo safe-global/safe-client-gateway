@@ -1,4 +1,5 @@
 import { faker } from '@faker-js/faker';
+import { type Address, getAddress } from 'viem';
 import {
   deletedDelegateEventBuilder,
   newDelegateEventBuilder,
@@ -9,7 +10,6 @@ import {
   NewDelegateEventSchema,
   UpdatedDelegateEventSchema,
 } from '@/modules/hooks/routes/entities/schemas/delegate-events.schema';
-import { type Address, getAddress } from 'viem';
 
 describe.each([
   ['NewDelegateEventSchema', NewDelegateEventSchema, newDelegateEventBuilder],

@@ -1,8 +1,8 @@
+import { faker } from '@faker-js/faker';
+import { type Address, getAddress } from 'viem';
 import type { IBuilder } from '@/__tests__/builder';
 import { Builder } from '@/__tests__/builder';
 import type { DeleteDelegateV2Dto } from '@/modules/delegate/routes/v2/entities/delete-delegate.v2.dto.entity';
-import { faker } from '@faker-js/faker';
-import { type Address, getAddress } from 'viem';
 
 export function deleteDelegateV2DtoBuilder(): IBuilder<DeleteDelegateV2Dto> {
   return new Builder<DeleteDelegateV2Dto>()

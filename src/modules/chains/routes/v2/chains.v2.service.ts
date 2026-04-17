@@ -1,10 +1,10 @@
 import { Inject, Injectable } from '@nestjs/common';
+import type { Page } from '@/domain/entities/page.entity';
 import { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
-import { Page } from '@/domain/entities/page.entity';
 import { Chain } from '@/modules/chains/routes/entities/chain.entity';
 import {
-  PaginationData,
   cursorUrlFromLimitAndOffset,
+  type PaginationData,
 } from '@/routes/common/pagination/pagination.data';
 
 @Injectable()

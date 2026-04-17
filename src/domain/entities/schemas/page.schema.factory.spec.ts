@@ -1,10 +1,10 @@
+import { faker } from '@faker-js/faker';
+import { z } from 'zod';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import {
   buildLenientPageSchema,
   buildPageSchema,
 } from '@/domain/entities/schemas/page.schema.factory';
-import { faker } from '@faker-js/faker';
-import { z } from 'zod';
 
 describe('Page schema factory', () => {
   describe('buildPageSchema', () => {

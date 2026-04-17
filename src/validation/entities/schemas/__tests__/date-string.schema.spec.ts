@@ -16,10 +16,10 @@ describe('DateStringSchema', () => {
       '2023-12-25T10:30:00.123Z',
     ];
 
-    validDates.forEach((date) => {
+    for (const date of validDates) {
       const result = DateStringSchema.safeParse(date);
       expect(result.success).toBe(true);
-    });
+    }
   });
 
   it('should not validate an invalid date string', () => {
@@ -36,10 +36,10 @@ describe('DateStringSchema', () => {
       'Invalid Date',
     ];
 
-    invalidDates.forEach((date) => {
+    for (const date of invalidDates) {
       const result = DateStringSchema.safeParse(date);
       expect(result.success).toBe(false);
-    });
+    }
   });
 
   it('should not validate a non-string value', () => {
@@ -54,10 +54,10 @@ describe('DateStringSchema', () => {
       false,
     ];
 
-    nonStringValues.forEach((value) => {
+    for (const value of nonStringValues) {
       const result = DateStringSchema.safeParse(value);
       expect(result.success).toBe(false);
-    });
+    }
   });
 
   it('should return correct error message for invalid date string', () => {
@@ -77,9 +77,9 @@ describe('DateStringSchema', () => {
       '2100-12-31T23:59:59Z',
     ];
 
-    edgeCaseDates.forEach((date) => {
+    for (const date of edgeCaseDates) {
       const result = DateStringSchema.safeParse(date);
       expect(result.success).toBe(true);
-    });
+    }
   });
 });

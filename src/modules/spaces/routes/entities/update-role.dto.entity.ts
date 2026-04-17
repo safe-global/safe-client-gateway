@@ -1,7 +1,7 @@
-import { z } from 'zod';
-import { MemberRole } from '@/modules/users/domain/entities/member.entity';
-import { getStringEnumKeys } from '@/domain/common/utils/enum';
 import { ApiProperty } from '@nestjs/swagger';
+import { z } from 'zod';
+import { getStringEnumKeys } from '@/domain/common/utils/enum';
+import { MemberRole } from '@/modules/users/domain/entities/member.entity';
 
 export const UpdateRoleDtoSchema = z.object({
   role: z.enum(getStringEnumKeys(MemberRole)),

@@ -1,14 +1,15 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
+import { UnauthorizedException } from '@nestjs/common';
+import {
+  oidcAuthPayloadDtoBuilder,
+  siweAuthPayloadDtoBuilder,
+} from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
+import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import {
   assertAuthenticated,
   getAuthenticatedUserIdOrFail,
 } from '@/modules/auth/utils/assert-authenticated.utils';
-import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import {
-  siweAuthPayloadDtoBuilder,
-  oidcAuthPayloadDtoBuilder,
-} from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
-import { UnauthorizedException } from '@nestjs/common';
 
 describe('assert-authenticated.utils', () => {
   describe('assertAuthenticated', () => {

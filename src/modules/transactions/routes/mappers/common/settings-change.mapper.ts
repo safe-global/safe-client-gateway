@@ -1,8 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { DataDecoded } from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';
-import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
-import { NULL_ADDRESS } from '@/routes/common/constants';
-import { AddressInfo } from '@/routes/common/entities/address-info.entity';
+import { getAddress } from 'viem';
+import type { DataDecoded } from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';
 import { AddOwner } from '@/modules/transactions/routes/entities/settings-changes/add-owner.entity';
 import { ChangeMasterCopy } from '@/modules/transactions/routes/entities/settings-changes/change-master-copy.entity';
 import { ChangeThreshold } from '@/modules/transactions/routes/entities/settings-changes/change-threshold.entity';
@@ -12,10 +10,12 @@ import { EnableModule } from '@/modules/transactions/routes/entities/settings-ch
 import { RemoveOwner } from '@/modules/transactions/routes/entities/settings-changes/remove-owner.entity';
 import { SetFallbackHandler } from '@/modules/transactions/routes/entities/settings-changes/set-fallback-handler.entity';
 import { SetGuard } from '@/modules/transactions/routes/entities/settings-changes/set-guard.entity';
-import { SettingsChange } from '@/modules/transactions/routes/entities/settings-changes/settings-change.entity';
+import type { SettingsChange } from '@/modules/transactions/routes/entities/settings-changes/settings-change.entity';
 import { SwapOwner } from '@/modules/transactions/routes/entities/settings-changes/swap-owner.entity';
 import { DataDecodedParamHelper } from '@/modules/transactions/routes/mappers/common/data-decoded-param.helper';
-import { getAddress } from 'viem';
+import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
+import { NULL_ADDRESS } from '@/routes/common/constants';
+import { AddressInfo } from '@/routes/common/entities/address-info.entity';
 
 @Injectable()
 export class SettingsChangeMapper {
@@ -75,7 +75,7 @@ export class SettingsChangeMapper {
     );
 
     if (typeof owner !== 'string') return null;
-    if (isNaN(threshold)) return null;
+    if (Number.isNaN(threshold)) return null;
 
     return new AddOwner(new AddressInfo(owner), threshold);
   }
@@ -90,7 +90,7 @@ export class SettingsChangeMapper {
     );
 
     if (typeof owner !== 'string') return null;
-    if (isNaN(threshold)) return null;
+    if (Number.isNaN(threshold)) return null;
 
     return new RemoveOwner(new AddressInfo(owner), threshold);
   }
@@ -173,7 +173,7 @@ export class SettingsChangeMapper {
       this.dataDecodedParamHelper.getValueAtPosition(dataDecoded, 0),
     );
 
-    if (isNaN(threshold)) return null;
+    if (Number.isNaN(threshold)) return null;
 
     return new ChangeThreshold(threshold);
   }
@@ -196,11 +196,11 @@ export class SettingsChangeMapper {
         ['CONTRACT'],
       );
       return new SetGuard(guardAddressInfo);
-    } else {
-      return new DeleteGuard();
     }
+    return new DeleteGuard();
   }
 
+  // biome-ignore lint/suspicious/useAwait: async needed to wrap non-Promise returns in Promise
   async mapSettingsChange(
     chainId: string,
     dataDecoded: DataDecoded | null,

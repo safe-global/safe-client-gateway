@@ -1,10 +1,10 @@
-import { TestDbFactory } from '@/__tests__/db.factory';
-import { PostgresDatabaseMigrator } from '@/datasources/db/v1/postgres-database.migrator';
-import type { Outreach } from '@/modules/targeted-messaging/datasources/entities/outreach.entity';
-import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
 import { faker } from '@faker-js/faker';
 import type postgres from 'postgres';
 import type { Sql } from 'postgres';
+import { TestDbFactory } from '@/__tests__/db.factory';
+import { PostgresDatabaseMigrator } from '@/datasources/db/v1/postgres-database.migrator';
+import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
+import type { Outreach } from '@/modules/targeted-messaging/datasources/entities/outreach.entity';
 
 describe('Migration 00007_targeted_messaging_update', () => {
   let sql: postgres.Sql;

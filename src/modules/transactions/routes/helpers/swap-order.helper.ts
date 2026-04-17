@@ -1,23 +1,23 @@
 import { Inject, Injectable, Module } from '@nestjs/common';
+import type { Address, Hex } from 'viem';
+import { IConfigurationService } from '@/config/configuration.service.interface';
+import { ChainsModule } from '@/modules/chains/chains.module';
+import { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
+import { GPv2Decoder } from '@/modules/swaps/domain/contracts/decoders/gp-v2-decoder.helper';
+import {
+  type KnownOrder,
+  type Order,
+  OrderKind,
+} from '@/modules/swaps/domain/entities/order.entity';
+import { ISwapsRepository } from '@/modules/swaps/domain/swaps.repository';
+import { SwapsModule } from '@/modules/swaps/swaps.module';
+import type { Token } from '@/modules/tokens/domain/entities/token.entity';
+import { ITokenRepository } from '@/modules/tokens/domain/token.repository.interface';
+import { TokensModule } from '@/modules/tokens/tokens.module';
 import {
   TransactionFinder,
   TransactionFinderModule,
 } from '@/modules/transactions/routes/helpers/transaction-finder.helper';
-import { GPv2Decoder } from '@/modules/swaps/domain/contracts/decoders/gp-v2-decoder.helper';
-import { ITokenRepository } from '@/modules/tokens/domain/token.repository.interface';
-import { TokensModule } from '@/modules/tokens/tokens.module';
-import { ISwapsRepository } from '@/modules/swaps/domain/swaps.repository';
-import { Token } from '@/modules/tokens/domain/entities/token.entity';
-import {
-  KnownOrder,
-  Order,
-  OrderKind,
-} from '@/modules/swaps/domain/entities/order.entity';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { SwapsModule } from '@/modules/swaps/swaps.module';
-import { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
-import { ChainsModule } from '@/modules/chains/chains.module';
-import type { Address, Hex } from 'viem';
 
 @Injectable()
 export class SwapOrderHelper {
@@ -145,12 +145,11 @@ export class SwapOrderHelper {
         type: 'NATIVE_TOKEN',
         trusted: true,
       };
-    } else {
-      return await this.tokenRepository.getToken({
-        chainId: args.chainId,
-        address: args.address,
-      });
     }
+    return await this.tokenRepository.getToken({
+      chainId: args.chainId,
+      address: args.address,
+    });
   }
 }
 

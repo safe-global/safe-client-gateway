@@ -1,44 +1,12 @@
-import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
-import { TransferPageSchema } from '@/modules/safe/domain/entities/transfer.entity';
-import {
-  AnalysisResult,
-  CommonStatus,
-} from '@/modules/safe-shield/entities/analysis-result.entity';
 import { Inject, Injectable } from '@nestjs/common';
-import { getAddress, Hex, zeroAddress, type Address } from 'viem';
-import { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
-import { SafeSchema } from '@/modules/safe/domain/entities/schemas/safe.schema';
-import {
-  SEVERITY_MAPPING,
-  TITLE_MAPPING,
-  DESCRIPTION_MAPPING,
-} from './recipient-analysis.constants';
-import { RecipientStatus } from '@/modules/safe-shield/entities/recipient-status.entity';
-import { BridgeStatus } from '@/modules/safe-shield/entities/bridge-status.entity';
-import type { DecodedTransactionData } from '@/modules/safe-shield/entities/transaction-data.entity';
-import { Erc20Decoder } from '@/modules/relay/domain/contracts/decoders/erc-20-decoder.helper';
-import {
-  RecipientAnalysisResponse,
-  RecipientAnalysisResponseWithoutIsSafe,
-  SingleRecipientAnalysisResponse,
-} from '@/modules/safe-shield/entities/analysis-responses.entity';
+import { merge } from 'lodash';
+import { type Address, getAddress, type Hex, zeroAddress } from 'viem';
+import { IConfigurationService } from '@/config/configuration.service.interface';
+import { CacheRouter } from '@/datasources/cache/cache.router';
 import {
   CacheService,
-  ICacheService,
+  type ICacheService,
 } from '@/datasources/cache/cache.service.interface';
-import { CacheRouter } from '@/datasources/cache/cache.router';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
-import { extractRecipients } from '../utils/extraction.utils';
-import { logCacheHit, logCacheMiss } from '@/modules/safe-shield/utils/common';
-import { TransactionInfo } from '@/modules/transactions/routes/entities/transaction-info.entity';
-import {
-  BridgeAndSwapTransactionInfo,
-  isBridgeAndSwapTransactionInfo,
-  isSwapTransactionInfo,
-} from '@/modules/transactions/routes/entities/bridge/bridge-info.entity';
-import { Safe } from '@/modules/safe/domain/entities/safe.entity';
-import { TransactionsService } from '@/modules/transactions/routes/transactions.service';
 import {
   hasCanonicalDeploymentSafeToL2Migration,
   hasCanonicalDeploymentSafeToL2Setup,
@@ -47,13 +15,48 @@ import {
   isL2SingletonDeployed,
   isProxyFactoryDeployed,
 } from '@/domain/common/utils/deployments';
-import { Chain } from '@/modules/chains/routes/entities/chain.entity';
-import { merge } from 'lodash';
-import type { SafeCreationData } from '@/modules/safe-shield/entities/safe-creation-data.entity';
-import { ITransactionApi } from '@/domain/interfaces/transaction-api.interface';
 import { DataSourceError } from '@/domain/errors/data-source.error';
-import { isSwapOrderTransactionInfo } from '@/modules/transactions/routes/entities/swaps/swap-order-info.entity';
+import type { ITransactionApi } from '@/domain/interfaces/transaction-api.interface';
+import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
+import { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
+import type { Chain } from '@/modules/chains/routes/entities/chain.entity';
+import { Erc20Decoder } from '@/modules/relay/domain/contracts/decoders/erc-20-decoder.helper';
+import type { Safe } from '@/modules/safe/domain/entities/safe.entity';
+import { SafeSchema } from '@/modules/safe/domain/entities/schemas/safe.schema';
+import { TransferPageSchema } from '@/modules/safe/domain/entities/transfer.entity';
+import type {
+  RecipientAnalysisResponse,
+  RecipientAnalysisResponseWithoutIsSafe,
+  SingleRecipientAnalysisResponse,
+} from '@/modules/safe-shield/entities/analysis-responses.entity';
+import {
+  type AnalysisResult,
+  CommonStatus,
+} from '@/modules/safe-shield/entities/analysis-result.entity';
+import { BridgeStatus } from '@/modules/safe-shield/entities/bridge-status.entity';
+import { RecipientStatus } from '@/modules/safe-shield/entities/recipient-status.entity';
+import type { SafeCreationData } from '@/modules/safe-shield/entities/safe-creation-data.entity';
 import { RecipientStatusGroup } from '@/modules/safe-shield/entities/status-group.entity';
+import type { DecodedTransactionData } from '@/modules/safe-shield/entities/transaction-data.entity';
+import { logCacheHit, logCacheMiss } from '@/modules/safe-shield/utils/common';
+import {
+  type BridgeAndSwapTransactionInfo,
+  isBridgeAndSwapTransactionInfo,
+  isSwapTransactionInfo,
+} from '@/modules/transactions/routes/entities/bridge/bridge-info.entity';
+import { isSwapOrderTransactionInfo } from '@/modules/transactions/routes/entities/swaps/swap-order-info.entity';
+import type { TransactionInfo } from '@/modules/transactions/routes/entities/transaction-info.entity';
+import { TransactionsService } from '@/modules/transactions/routes/transactions.service';
+import { extractRecipients } from '../utils/extraction.utils';
+import {
+  DESCRIPTION_MAPPING,
+  SEVERITY_MAPPING,
+  TITLE_MAPPING,
+} from './recipient-analysis.constants';
 
 const SAFE_VERSIONS = ['1.4.1', '1.3.0', '1.2.0', '1.1.1', '1.0.0'] as const;
 type SafeVersion = (typeof SAFE_VERSIONS)[number];
@@ -273,7 +276,7 @@ export class RecipientAnalysisService {
     [AnalysisResult<RecipientStatus | CommonStatus> | undefined, boolean]
   > {
     const { transactionApi, recipient } = args;
-    let isSafe: boolean = false;
+    let isSafe = false;
     try {
       const response = await transactionApi.getSafe(recipient);
       const { nonce } = SafeSchema.parse(response);
@@ -289,21 +292,21 @@ export class RecipientAnalysisService {
       // Not found = it is not a Safe
       if (error instanceof DataSourceError && error.code === 404) {
         return [undefined, isSafe];
-      } else {
-        this.loggingService.warn(
-          `Failed to analyze recipient activity: ${error}`,
-        );
-        return [
-          this.mapToAnalysisResult({
-            type: CommonStatus.FAILED,
-            error: 'recipient activity check unavailable',
-          }),
-          isSafe,
-        ];
       }
+      this.loggingService.warn(
+        `Failed to analyze recipient activity: ${error}`,
+      );
+      return [
+        this.mapToAnalysisResult({
+          type: CommonStatus.FAILED,
+          error: 'recipient activity check unavailable',
+        }),
+        isSafe,
+      ];
     }
   }
 
+  // biome-ignore lint/suspicious/useAwait: async needed to wrap non-Promise returns in Promise
   private async analyzeBridgeAndSwap(args: {
     chainId: string;
     safeAddress: Address;
@@ -456,21 +459,20 @@ export class RecipientAnalysisService {
           return [BridgeStatus.DIFFERENT_SAFE_SETUP, targetChainId];
         }
         return undefined;
-      } else {
-        const [safeCreationData, targetChain] = await Promise.all([
-          this.getSafeCreationData({
-            chainId: args.chainId,
-            safeAddress: args.safeAddress,
-          }),
-          this.chainsRepository.getChain(targetChainId),
-        ]);
-
-        if (!this.isNetworkCompatible(targetChain, safeCreationData)) {
-          return [BridgeStatus.INCOMPATIBLE_SAFE, targetChainId];
-        }
-
-        return [BridgeStatus.MISSING_OWNERSHIP, targetChainId];
       }
+      const [safeCreationData, targetChain] = await Promise.all([
+        this.getSafeCreationData({
+          chainId: args.chainId,
+          safeAddress: args.safeAddress,
+        }),
+        this.chainsRepository.getChain(targetChainId),
+      ]);
+
+      if (!this.isNetworkCompatible(targetChain, safeCreationData)) {
+        return [BridgeStatus.INCOMPATIBLE_SAFE, targetChainId];
+      }
+
+      return [BridgeStatus.MISSING_OWNERSHIP, targetChainId];
     } catch (error) {
       this.loggingService.warn(
         `Failed to analyze target chain compatibility: ${error}`,
@@ -523,10 +525,11 @@ export class RecipientAnalysisService {
       });
 
     if (
-      !creationTransaction ||
-      !creationTransaction.masterCopy ||
-      !creationTransaction.setupData ||
-      !creationTransaction.dataDecoded?.parameters ||
+      !(
+        creationTransaction?.masterCopy &&
+        creationTransaction.setupData &&
+        creationTransaction.dataDecoded?.parameters
+      ) ||
       creationTransaction.setupData === '0x'
     ) {
       throw new Error(

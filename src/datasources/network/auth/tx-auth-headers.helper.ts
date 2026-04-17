@@ -22,7 +22,7 @@ export function getTxAuthHeaders(
   );
 
   const isTxAuthEnabled = isDevelopment && !useVpcUrl;
-  if (!isTxAuthEnabled || !apiKey) {
+  if (!(isTxAuthEnabled && apiKey)) {
     return undefined;
   }
 

@@ -1,7 +1,7 @@
 import { z } from 'zod';
-import { SignatureSchema } from '@/validation/entities/schemas/signature.schema';
 import { MessageSchema } from '@/modules/messages/domain/entities/message.entity';
 import { NullableStringSchema } from '@/validation/entities/schemas/nullable.schema';
+import { SignatureSchema } from '@/validation/entities/schemas/signature.schema';
 
 export const CreateMessageDtoSchema = z.object({
   message: MessageSchema.shape.message,

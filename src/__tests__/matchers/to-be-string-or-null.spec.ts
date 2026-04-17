@@ -19,7 +19,6 @@ describe('anyStringOrNull', () => {
     (): void => {},
   ])('should fail when the input is %s', (input) => {
     expect(() => expect(input).anyStringOrNull()).toThrow(
-      // eslint-disable-next-line @typescript-eslint/no-base-to-string
       `expected ${input} to be string or null`,
     );
   });

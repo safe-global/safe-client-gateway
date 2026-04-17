@@ -1,14 +1,17 @@
 import { Inject, Injectable } from '@nestjs/common';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
+import { asError } from '@/logging/utils';
 import { IDataDecoderRepository } from '@/modules/data-decoder/domain/v2/data-decoder.repository.interface';
-import { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
-import { Safe } from '@/modules/safe/domain/entities/safe.entity';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
-import { PreviewTransactionDto } from '@/modules/transactions/routes/entities/preview-transaction.dto.entity';
+import type { DataDecoded } from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';
+import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
+import type { Safe } from '@/modules/safe/domain/entities/safe.entity';
+import type { PreviewTransactionDto } from '@/modules/transactions/routes/entities/preview-transaction.dto.entity';
 import { TransactionPreview } from '@/modules/transactions/routes/entities/transaction-preview.entity';
 import { TransactionDataMapper } from '@/modules/transactions/routes/mappers/common/transaction-data.mapper';
 import { MultisigTransactionInfoMapper } from '@/modules/transactions/routes/mappers/common/transaction-info.mapper';
-import { DataDecoded } from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';
-import { asError } from '@/logging/utils';
 
 @Injectable()
 export class TransactionPreviewMapper {

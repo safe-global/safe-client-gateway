@@ -3,12 +3,12 @@ import { faker } from '@faker-js/faker';
 import { getAddress, zeroAddress } from 'viem';
 import type { IBuilder } from '@/__tests__/builder';
 import { Builder } from '@/__tests__/builder';
+import { PriceSource } from '@/modules/fees/domain/entities/price-source.entity';
 import type {
   PricingContextSnapshot,
   TxDataResponse,
   TxFeesResponse,
 } from '@/modules/fees/domain/entities/tx-fees-response.entity';
-import { PriceSource } from '@/modules/fees/domain/entities/price-source.entity';
 
 export function txDataResponseBuilder(): IBuilder<TxDataResponse> {
   return new Builder<TxDataResponse>()

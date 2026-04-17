@@ -1,9 +1,9 @@
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress } from 'viem';
-import { typedDataBuilder } from '@/modules/messages/routes/entities/__tests__/typed-data.builder';
 import { messageBuilder } from '@/modules/messages/domain/entities/__tests__/message.builder';
-import { MessageSchema } from '@/modules/messages/domain/entities/message.entity';
 import type { Message } from '@/modules/messages/domain/entities/message.entity';
+import { MessageSchema } from '@/modules/messages/domain/entities/message.entity';
+import { typedDataBuilder } from '@/modules/messages/routes/entities/__tests__/typed-data.builder';
 
 describe('MessageSchema', () => {
   it('should validate a Message', () => {

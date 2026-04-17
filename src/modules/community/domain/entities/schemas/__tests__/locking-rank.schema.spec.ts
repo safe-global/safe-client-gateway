@@ -1,7 +1,7 @@
-import { lockingRankBuilder } from '@/modules/community/domain/entities/__tests__/locking-rank.builder';
-import { LockingRankSchema } from '@/modules/community/domain/entities/schemas/locking-rank.schema';
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress } from 'viem';
+import { lockingRankBuilder } from '@/modules/community/domain/entities/__tests__/locking-rank.builder';
+import { LockingRankSchema } from '@/modules/community/domain/entities/schemas/locking-rank.schema';
 
 describe('RankSchema', () => {
   it('should validate a valid locking rank', () => {

@@ -1,5 +1,10 @@
 import { z } from 'zod';
 import { ChainUpdateEventSchema } from '@/modules/hooks/routes/entities/schemas/chain-update.schema';
+import {
+  DeletedDelegateEventSchema,
+  NewDelegateEventSchema,
+  UpdatedDelegateEventSchema,
+} from '@/modules/hooks/routes/entities/schemas/delegate-events.schema';
 import { DeletedMultisigTransactionEventSchema } from '@/modules/hooks/routes/entities/schemas/deleted-multisig-transaction.schema';
 import { ExecutedTransactionEventSchema } from '@/modules/hooks/routes/entities/schemas/executed-transaction.schema';
 import { IncomingEtherEventSchema } from '@/modules/hooks/routes/entities/schemas/incoming-ether.schema';
@@ -14,11 +19,6 @@ import { PendingTransactionEventSchema } from '@/modules/hooks/routes/entities/s
 import { ReorgDetectedEventSchema } from '@/modules/hooks/routes/entities/schemas/reorg-detected.schema';
 import { SafeAppsUpdateEventSchema } from '@/modules/hooks/routes/entities/schemas/safe-apps-update.schema';
 import { SafeCreatedEventSchema } from '@/modules/hooks/routes/entities/schemas/safe-created.schema';
-import {
-  DeletedDelegateEventSchema,
-  NewDelegateEventSchema,
-  UpdatedDelegateEventSchema,
-} from '@/modules/hooks/routes/entities/schemas/delegate-events.schema';
 
 export const EventSchema = z.discriminatedUnion('type', [
   ChainUpdateEventSchema,

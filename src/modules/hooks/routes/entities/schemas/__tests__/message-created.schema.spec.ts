@@ -1,8 +1,8 @@
+import { faker } from '@faker-js/faker';
+import { type Address, getAddress } from 'viem';
 import { messageCreatedEventBuilder } from '@/modules/hooks/routes/entities/__tests__/message-created.builder';
 import type { TransactionEventType } from '@/modules/hooks/routes/entities/event-type.entity';
 import { MessageCreatedEventSchema } from '@/modules/hooks/routes/entities/schemas/message-created.schema';
-import { faker } from '@faker-js/faker';
-import { type Address, getAddress } from 'viem';
 
 describe('MessageCreatedEventSchema', () => {
   it('should validate a message created event', () => {

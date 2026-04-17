@@ -3,9 +3,12 @@ import {
   Injectable,
   ServiceUnavailableException,
 } from '@nestjs/common';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
 import { HealthEntity } from '@/modules/health/domain/entities/health.entity';
 import { IHealthRepository } from '@/modules/health/domain/health.repository.interface';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import {
   Health,
   HealthStatus,

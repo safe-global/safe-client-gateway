@@ -8,16 +8,16 @@ import {
 } from '@nestjs/common';
 import {
   ApiOkResponse,
-  ApiQuery,
-  ApiTags,
   ApiOperation,
   ApiParam,
+  ApiQuery,
+  ApiTags,
 } from '@nestjs/swagger';
+import type { Address } from 'viem';
 import { BalancesService } from '@/modules/balances/routes/balances.service';
 import { Balances } from '@/modules/balances/routes/entities/balances.entity';
-import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import type { Address } from 'viem';
+import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 
 @ApiTags('balances')
 @Controller({
@@ -68,7 +68,7 @@ export class BalancesController {
     description: 'Safe balances retrieved successfully with fiat conversions',
   })
   @Get('chains/:chainId/safes/:safeAddress/balances/:fiatCode')
-  async getBalances(
+  getBalances(
     @Param('chainId') chainId: string,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
     safeAddress: Address,
@@ -98,7 +98,7 @@ export class BalancesController {
       'List of supported fiat currency codes (e.g., ["USD", "EUR", "GBP"])',
   })
   @Get('balances/supported-fiat-codes')
-  async getSupportedFiatCodes(): Promise<Array<string>> {
+  getSupportedFiatCodes(): Promise<Array<string>> {
     return this.balancesService.getSupportedFiatCodes();
   }
 }

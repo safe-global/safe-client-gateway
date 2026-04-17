@@ -1,5 +1,5 @@
-import * as fs from 'fs';
-import * as path from 'path';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 import { z } from 'zod';
 
 export const PROJECT_ROOT = path.resolve(__dirname, '..');
@@ -93,8 +93,20 @@ export function setFilePermissions(
 export function sanitizeEnvValue(value: unknown): string {
   const strValue = String(value);
 
-  // eslint-disable-next-line no-control-regex
-  return strValue.replace(/[\x00-\x08\x0A-\x1F\x7F]/g, '');
+  let result = '';
+  for (let i = 0; i < strValue.length; i++) {
+    const code = strValue.charCodeAt(i);
+    // Keep tab (\x09), remove all other control chars (0x00-0x08, 0x0A-0x1F, 0x7F)
+    if (
+      (code >= 0x00 && code <= 0x08) ||
+      (code >= 0x0a && code <= 0x1f) ||
+      code === 0x7f
+    ) {
+      continue;
+    }
+    result += strValue[i];
+  }
+  return result;
 }
 
 /**
@@ -213,7 +225,9 @@ export function loadEnvJson(): Array<EnvVariable> {
 
   if (duplicates.length > 0) {
     console.error('❌ Error: Duplicate variable names in .env.sample.json:');
-    duplicates.forEach((name) => console.error(`   - ${name}`));
+    for (const name of duplicates) {
+      console.error(`   - ${name}`);
+    }
     console.error('');
     console.error('Each variable name must be unique.');
     process.exit(1);

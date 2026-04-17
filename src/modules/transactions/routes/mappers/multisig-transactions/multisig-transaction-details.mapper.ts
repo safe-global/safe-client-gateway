@@ -1,24 +1,24 @@
 import { Injectable } from '@nestjs/common';
 import isEmpty from 'lodash/isEmpty';
-import { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
-import { Safe } from '@/modules/safe/domain/entities/safe.entity';
-import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
+import type { Address } from 'viem';
+import type { DataDecoded } from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';
+import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
+import type { Safe } from '@/modules/safe/domain/entities/safe.entity';
 import {
   MULTISIG_TRANSACTION_PREFIX,
   TRANSACTION_ID_SEPARATOR,
 } from '@/modules/transactions/routes/constants';
 import { TransactionData } from '@/modules/transactions/routes/entities/transaction-data.entity';
-import { TransactionDetails } from '@/modules/transactions/routes/entities/transaction-details/transaction-details.entity';
-import { AddressInfo } from '@/routes/common/entities/address-info.entity';
+import type { TransactionDetails } from '@/modules/transactions/routes/entities/transaction-details/transaction-details.entity';
+import { TransactionVerifierHelper } from '@/modules/transactions/routes/helpers/transaction-verifier.helper';
 import { SafeAppInfoMapper } from '@/modules/transactions/routes/mappers/common/safe-app-info.mapper';
 import { TransactionDataMapper } from '@/modules/transactions/routes/mappers/common/transaction-data.mapper';
 import { MultisigTransactionInfoMapper } from '@/modules/transactions/routes/mappers/common/transaction-info.mapper';
 import { MultisigTransactionExecutionDetailsMapper } from '@/modules/transactions/routes/mappers/multisig-transactions/multisig-transaction-execution-details.mapper';
-import { MultisigTransactionStatusMapper } from '@/modules/transactions/routes/mappers/multisig-transactions/multisig-transaction-status.mapper';
 import { MultisigTransactionNoteMapper } from '@/modules/transactions/routes/mappers/multisig-transactions/multisig-transaction-note.mapper';
-import { TransactionVerifierHelper } from '@/modules/transactions/routes/helpers/transaction-verifier.helper';
-import { DataDecoded } from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';
-import { type Address } from 'viem';
+import { MultisigTransactionStatusMapper } from '@/modules/transactions/routes/mappers/multisig-transactions/multisig-transaction-status.mapper';
+import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
+import type { AddressInfo } from '@/routes/common/entities/address-info.entity';
 
 @Injectable()
 export class MultisigTransactionDetailsMapper {

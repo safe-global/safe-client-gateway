@@ -1,7 +1,7 @@
+import { readFileSync } from 'node:fs';
+import type { PostgresConnectionOptions } from 'typeorm/driver/postgres/PostgresConnectionOptions';
 import { PostgresqlLogger } from '@/datasources/db/v2/postgresql-logger.service';
 import type { ILoggingService } from '@/logging/logging.interface';
-import { readFileSync } from 'fs';
-import type { PostgresConnectionOptions } from 'typeorm/driver/postgres/PostgresConnectionOptions';
 
 interface IPostgresEnvConfig {
   type: 'postgres';

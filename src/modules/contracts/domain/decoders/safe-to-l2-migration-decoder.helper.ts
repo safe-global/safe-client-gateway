@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
+import type { Address, Hex } from 'viem';
 import SafeToL2Migration from '@/abis/safe/v1.4.1/SafeToL2Migration.abi';
 import { AbiDecoder } from '@/modules/contracts/domain/decoders/abi-decoder.helper';
-import type { Address, Hex } from 'viem';
 
 @Injectable()
 export class SafeToL2MigrationDecoder extends AbiDecoder<

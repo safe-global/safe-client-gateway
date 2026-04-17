@@ -1,19 +1,20 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { SpaceSafesService } from '@/modules/spaces/routes/space-safes.service';
-import type { ISpaceSafesRepository } from '@/modules/spaces/domain/space-safes.repository.interface';
-import type { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
-import type { IMembersRepository } from '@/modules/users/domain/members.repository.interface';
-import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { ForbiddenException, UnauthorizedException } from '@nestjs/common';
+
 import { faker } from '@faker-js/faker';
-import {
-  siweAuthPayloadDtoBuilder,
-  oidcAuthPayloadDtoBuilder,
-} from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
+import { ForbiddenException, UnauthorizedException } from '@nestjs/common';
 import type { Address } from 'viem';
 import { getAddress } from 'viem';
+import {
+  oidcAuthPayloadDtoBuilder,
+  siweAuthPayloadDtoBuilder,
+} from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
+import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { spaceBuilder } from '@/modules/spaces/domain/entities/__tests__/space.entity.db.builder';
+import type { ISpaceSafesRepository } from '@/modules/spaces/domain/space-safes.repository.interface';
+import type { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
+import { SpaceSafesService } from '@/modules/spaces/routes/space-safes.service';
 import { memberBuilder } from '@/modules/users/datasources/entities/__tests__/member.entity.db.builder';
+import type { IMembersRepository } from '@/modules/users/domain/members.repository.interface';
 
 const addr = (): Address => getAddress(faker.finance.ethereumAddress());
 

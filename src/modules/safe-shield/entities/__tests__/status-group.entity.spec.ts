@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import {
-  StatusGroup,
-  StatusGroupSchema,
-  RecipientStatusGroup,
-  RecipientStatusGroupSchema,
   ContractStatusGroup,
   ContractStatusGroupSchema,
-  ThreatStatusGroup,
-  ThreatStatusGroupSchema,
   DeadlockStatusGroup,
   DeadlockStatusGroupSchema,
+  RecipientStatusGroup,
+  RecipientStatusGroupSchema,
+  StatusGroup,
+  StatusGroupSchema,
+  ThreatStatusGroup,
+  ThreatStatusGroupSchema,
 } from '../status-group.entity';
 
 describe('StatusGroup', () => {
@@ -35,12 +35,12 @@ describe('StatusGroup', () => {
     });
 
     it('should have consistent naming convention', () => {
-      statusGroup.forEach((value) => {
+      for (const value of statusGroup) {
         // All values should be uppercase with underscores
         expect(value).toMatch(/^[A-Z_]+$/);
         // Should not start or end with underscore
         expect(value).not.toMatch(/^_|_$/);
-      });
+      }
     });
   });
 

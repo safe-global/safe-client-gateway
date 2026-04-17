@@ -1,11 +1,11 @@
+import { ApiProperty } from '@nestjs/swagger';
+import type { Address } from 'viem';
 import { StakingStatus } from '@/modules/transactions/routes/entities/staking/staking.entity';
-import { TokenInfo } from '@/modules/transactions/routes/entities/swaps/token-info.entity';
+import type { TokenInfo } from '@/modules/transactions/routes/entities/swaps/token-info.entity';
 import {
   TransactionInfo,
   TransactionInfoType,
 } from '@/modules/transactions/routes/entities/transaction-info.entity';
-import { ApiProperty } from '@nestjs/swagger';
-import type { Address } from 'viem';
 
 export class NativeStakingValidatorsExitTransactionInfo extends TransactionInfo {
   @ApiProperty({ enum: [TransactionInfoType.NativeStakingValidatorsExit] })

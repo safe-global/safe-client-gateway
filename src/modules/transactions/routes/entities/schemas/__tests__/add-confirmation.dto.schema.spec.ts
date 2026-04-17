@@ -1,6 +1,6 @@
-import { AddConfirmationDtoSchema } from '@/modules/transactions/routes/entities/schemas/add-confirmation.dto.schema';
 import { faker } from '@faker-js/faker';
 import type { Address } from 'viem';
+import { AddConfirmationDtoSchema } from '@/modules/transactions/routes/entities/schemas/add-confirmation.dto.schema';
 
 describe('AddConfirmationDtoSchema', () => {
   it('should validate a signature', () => {

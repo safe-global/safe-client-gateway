@@ -1,9 +1,9 @@
+import type { Address } from 'viem';
+import type { Page } from '@/domain/entities/page.entity';
 import type { Balance } from '@/modules/balances/domain/entities/balance.entity';
 import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
 import type { Collectible } from '@/modules/collectibles/domain/entities/collectible.entity';
-import type { Page } from '@/domain/entities/page.entity';
 import type { Raw } from '@/validation/entities/raw.entity';
-import type { Address } from 'viem';
 
 export interface IBalancesApi {
   getBalances(args: {

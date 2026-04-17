@@ -1,14 +1,14 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { IBalancesRepository } from '@/modules/balances/domain/balances.repository.interface';
+import type { Address } from 'viem';
+import { z } from 'zod';
+import { IBalancesApiManager } from '@/domain/interfaces/balances-api.manager.interface';
+import type { IBalancesRepository } from '@/modules/balances/domain/balances.repository.interface';
 import {
-  Balance,
+  type Balance,
   BalanceSchema,
   BalancesSchema,
 } from '@/modules/balances/domain/entities/balance.entity';
-import { IBalancesApiManager } from '@/domain/interfaces/balances-api.manager.interface';
-import { Chain } from '@/modules/chains/domain/entities/chain.entity';
-import { z } from 'zod';
-import type { Address } from 'viem';
+import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
 
 @Injectable()
 export class BalancesRepository implements IBalancesRepository {
@@ -59,7 +59,7 @@ export class BalancesRepository implements IBalancesRepository {
     await api.clearBalances({ safeAddress: args.safeAddress });
   }
 
-  async getFiatCodes(): Promise<Array<string>> {
+  getFiatCodes(): Promise<Array<string>> {
     return this.balancesApiManager
       .getFiatCodes()
       .then(z.array(z.string()).parse);

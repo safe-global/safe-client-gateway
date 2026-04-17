@@ -1,27 +1,28 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
+import type { UUID } from 'node:crypto';
+import type { Server } from 'node:net';
 import { faker } from '@faker-js/faker';
-import { NotFoundException, type INestApplication } from '@nestjs/common';
+import { type INestApplication, NotFoundException } from '@nestjs/common';
 import request from 'supertest';
+import { getAddress } from 'viem';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
-import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
-import configuration from '@/config/entities/__tests__/configuration';
+import { createTestModule } from '@/__tests__/testing-module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
+import configuration from '@/config/entities/__tests__/configuration';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
 import { NetworkService } from '@/datasources/network/network.service.interface';
+import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
+import { NotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/notifications.repository.module';
+import { TestNotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/test.notification.repository.module';
+import { createV2RegisterDtoBuilder } from '@/modules/notifications/routes/v1/entities/__tests__/create-registration-v2.dto.builder';
 import { registerDeviceDtoBuilder } from '@/modules/notifications/routes/v1/entities/__tests__/register-device.dto.builder';
 import { safeRegistrationBuilder } from '@/modules/notifications/routes/v1/entities/__tests__/safe-registration.builder';
 import type { RegisterDeviceDto } from '@/modules/notifications/routes/v1/entities/register-device.dto.entity';
-import type { Server } from 'net';
-import { getAddress } from 'viem';
-import { rawify } from '@/validation/entities/raw.entity';
-import { NotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/notifications.repository.module';
-import { TestNotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/test.notification.repository.module';
-import { NotificationsServiceV2 } from '@/modules/notifications/routes/v2/notifications.service';
 import { NotificationsModuleV2 } from '@/modules/notifications/routes/v2/notifications.module';
+import { NotificationsServiceV2 } from '@/modules/notifications/routes/v2/notifications.service';
 import { TestNotificationsModuleV2 } from '@/modules/notifications/routes/v2/test.notifications.module';
-import type { UUID } from 'crypto';
-import { createV2RegisterDtoBuilder } from '@/modules/notifications/routes/v1/entities/__tests__/create-registration-v2.dto.builder';
-import { createTestModule } from '@/__tests__/testing-module';
+import { rawify } from '@/validation/entities/raw.entity';
 
 describe('Notifications Controller', () => {
   let app: INestApplication<Server>;
@@ -65,11 +66,11 @@ describe('Notifications Controller', () => {
   });
 
   const buildInputDto = async (
-    safeRegistrationsLength: number = 4,
+    safeRegistrationsLength = 4,
   ): Promise<RegisterDeviceDto> => {
     const uuid = faker.string.uuid() as UUID;
     const cloudMessagingToken = faker.string.uuid() as UUID;
-    const currentTimestampInSeconds = Math.floor(new Date().getTime() / 1000);
+    const currentTimestampInSeconds = Math.floor(Date.now() / 1000);
 
     const safeRegistrations = await Promise.all(
       faker.helpers.multiple(
@@ -157,7 +158,8 @@ describe('Notifications Controller', () => {
       const registerDeviceDto = await buildInputDto();
       const expiryThresholdSeconds = REGISTRATION_TIMESTAMP_EXPIRY + 60;
       const expiredDateTime =
-        parseInt(registerDeviceDto.timestamp!) - expiryThresholdSeconds;
+        Number.parseInt(registerDeviceDto.timestamp as string) -
+        expiryThresholdSeconds;
       const expiredTimestampInSeconds = Math.floor(expiredDateTime);
       registerDeviceDto.timestamp = expiredTimestampInSeconds.toString();
       networkService.get.mockImplementation(({ url }) =>
@@ -191,7 +193,8 @@ describe('Notifications Controller', () => {
       const registerDeviceDto = await buildInputDto();
       const expiryThresholdSeconds = REGISTRATION_TIMESTAMP_EXPIRY + 60;
       const expiryDateTime =
-        parseInt(registerDeviceDto.timestamp!) + expiryThresholdSeconds;
+        Number.parseInt(registerDeviceDto.timestamp as string) +
+        expiryThresholdSeconds;
       const expiredTimestampInSeconds = Math.floor(expiryDateTime);
       registerDeviceDto.timestamp = expiredTimestampInSeconds.toString();
       networkService.get.mockImplementation(({ url }) =>
@@ -223,7 +226,8 @@ describe('Notifications Controller', () => {
 
     it(`Should pass if the timestamp in within then last ${REGISTRATION_TIMESTAMP_EXPIRY_MINUTES} minutes`, async () => {
       const registerDeviceDto = await buildInputDto();
-      const expiredDateTime = parseInt(registerDeviceDto.timestamp!) * 1000;
+      const expiredDateTime =
+        Number.parseInt(registerDeviceDto.timestamp as string) * 1000;
       const expiredTimestampInSeconds = Math.floor(expiredDateTime / 1000);
       registerDeviceDto.timestamp = expiredTimestampInSeconds.toString();
       networkService.get.mockImplementation(({ url }) =>

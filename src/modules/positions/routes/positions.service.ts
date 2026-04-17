@@ -1,19 +1,19 @@
-import { groupBy } from 'lodash';
 import { Inject, Injectable } from '@nestjs/common';
-import { IPositionsRepository } from '@/modules/positions/domain/positions.repository.interface';
-import {
+import { groupBy } from 'lodash';
+import type { Address } from 'viem';
+import type { z } from 'zod';
+import { getNumberString } from '@/domain/common/utils/utils';
+import { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
+import type { NativeCurrency } from '@/modules/chains/domain/entities/native.currency.entity';
+import type {
   ApplicationMetadataSchema,
   Position as DomainPosition,
 } from '@/modules/positions/domain/entities/position.entity';
-import { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
-import { NativeCurrency } from '@/modules/chains/domain/entities/native.currency.entity';
+import { IPositionsRepository } from '@/modules/positions/domain/positions.repository.interface';
+import type { Position } from '@/modules/positions/routes/entities/position.entity';
+import type { PositionGroup } from '@/modules/positions/routes/entities/position-group.entity';
+import type { Protocol } from '@/modules/positions/routes/entities/protocol.entity';
 import { NULL_ADDRESS } from '@/routes/common/constants';
-import { getNumberString } from '@/domain/common/utils/utils';
-import { Protocol } from '@/modules/positions/routes/entities/protocol.entity';
-import { Position } from '@/modules/positions/routes/entities/position.entity';
-import { PositionGroup } from '@/modules/positions/routes/entities/position-group.entity';
-import { z } from 'zod';
-import type { Address } from 'viem';
 
 const DUST_THRESHOLD_USD = 0.01;
 
@@ -89,7 +89,11 @@ export class PositionsService {
     }, 0);
     return {
       protocol,
-      protocol_metadata: filteredPositions[0].application_metadata!,
+      // application_metadata is guaranteed non-null by the filter above
+      protocol_metadata: filteredPositions[0]
+        .application_metadata as NonNullable<
+        PositionEntry['application_metadata']
+      >,
       fiatTotal: getNumberString(fiatTotal),
       items: positionGroups,
     };

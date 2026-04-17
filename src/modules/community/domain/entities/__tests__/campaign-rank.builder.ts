@@ -1,8 +1,8 @@
+import { faker } from '@faker-js/faker';
+import { getAddress } from 'viem';
 import type { IBuilder } from '@/__tests__/builder';
 import { Builder } from '@/__tests__/builder';
 import type { CampaignRank } from '@/modules/community/domain/entities/campaign-rank.entity';
-import { faker } from '@faker-js/faker';
-import { getAddress } from 'viem';
 
 export function campaignRankBuilder(): IBuilder<CampaignRank> {
   return new Builder<CampaignRank>()

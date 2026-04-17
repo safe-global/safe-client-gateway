@@ -1,8 +1,11 @@
-import { AbiDecoder } from '@/modules/contracts/domain/decoders/abi-decoder.helper';
-import { LoggingService, ILoggingService } from '@/logging/logging.interface';
 import { Inject, Injectable } from '@nestjs/common';
-import { parseAbi } from 'viem';
 import type { Address, Hex } from 'viem';
+import { parseAbi } from 'viem';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
+import { AbiDecoder } from '@/modules/contracts/domain/decoders/abi-decoder.helper';
 
 export const KilnAbi = parseAbi([
   'event DepositEvent(bytes pubkey, bytes withdrawal_credentials, bytes amount, bytes signature, bytes index)',

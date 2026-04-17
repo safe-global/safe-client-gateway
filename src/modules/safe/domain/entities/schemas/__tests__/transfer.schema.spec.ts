@@ -9,7 +9,7 @@ describe('TransferSchema', () => {
     ['NativeTokenTransfer', nativeTokenTransferBuilder().build()],
     ['Erc20Transfer', erc20TransferBuilder().build()],
     ['Erc721Transfer', erc721TransferBuilder().build()],
-  ])('should allow %s', (name, transfer) => {
+  ])('should allow %s', (_name, transfer) => {
     const result = TransferSchema.safeParse(transfer);
 
     expect(result.success).toBe(true);

@@ -1,16 +1,16 @@
 import {
   Column,
   Entity,
-  Unique,
-  PrimaryGeneratedColumn,
-  ManyToOne,
   JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+  Unique,
 } from 'typeorm';
-import { z } from 'zod';
-import { User } from '@/modules/users/datasources/entities/users.entity.db';
-import { WalletSchema } from '@/modules/wallets/domain/entities/wallet.entity';
-import { databaseAddressTransformer } from '@/domain/common/transformers/databaseAddress.transformer';
 import type { Address } from 'viem';
+import type { z } from 'zod';
+import { databaseAddressTransformer } from '@/domain/common/transformers/databaseAddress.transformer';
+import { User } from '@/modules/users/datasources/entities/users.entity.db';
+import type { WalletSchema } from '@/modules/wallets/domain/entities/wallet.entity';
 
 @Entity('wallets')
 @Unique('UQ_wallet_address', ['address'])

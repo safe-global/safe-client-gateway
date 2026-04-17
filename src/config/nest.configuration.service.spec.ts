@@ -1,6 +1,6 @@
-import { NestConfigurationService } from '@/config/nest.configuration.service';
 import { faker } from '@faker-js/faker';
 import type { ConfigService } from '@nestjs/config';
+import { NestConfigurationService } from '@/config/nest.configuration.service';
 
 const configService = {
   get: jest.fn(),

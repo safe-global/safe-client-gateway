@@ -1,6 +1,6 @@
 import { registerAs } from '@nestjs/config';
-import configurationValidator from '@/config/configuration.validator';
 import { z } from 'zod';
+import configurationValidator from '@/config/configuration.validator';
 
 const schema = z.object({
   apiKey: z.string(),

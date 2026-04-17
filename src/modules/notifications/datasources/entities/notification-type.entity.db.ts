@@ -1,9 +1,4 @@
 import {
-  NotificationSubscriptionNotificationType,
-  NotificationSubscriptionNotificationTypeSchema,
-} from '@/modules/notifications/datasources/entities/notification-subscription-notification-type.entity.db';
-import { NotificationType as NotificationTypeEnum } from '@/modules/notifications/domain/v2/entities/notification.entity';
-import {
   Column,
   Entity,
   OneToMany,
@@ -11,6 +6,11 @@ import {
   Unique,
 } from 'typeorm';
 import { z } from 'zod';
+import {
+  NotificationSubscriptionNotificationType,
+  NotificationSubscriptionNotificationTypeSchema,
+} from '@/modules/notifications/datasources/entities/notification-subscription-notification-type.entity.db';
+import { NotificationType as NotificationTypeEnum } from '@/modules/notifications/domain/v2/entities/notification.entity';
 
 export const NotificationTypeSchema = z.object({
   id: z.number(),

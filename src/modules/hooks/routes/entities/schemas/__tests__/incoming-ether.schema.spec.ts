@@ -1,8 +1,8 @@
+import { faker } from '@faker-js/faker';
+import { type Address, getAddress } from 'viem';
 import { incomingEtherEventBuilder } from '@/modules/hooks/routes/entities/__tests__/incoming-ether.builder';
 import type { TransactionEventType } from '@/modules/hooks/routes/entities/event-type.entity';
 import { IncomingEtherEventSchema } from '@/modules/hooks/routes/entities/schemas/incoming-ether.schema';
-import { faker } from '@faker-js/faker';
-import { type Address, getAddress } from 'viem';
 
 describe('IncomingEtherEventSchema', () => {
   it('should validate an incoming Ether event', () => {

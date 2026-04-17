@@ -1,12 +1,12 @@
+import { faker } from '@faker-js/faker';
+import { type Address, encodeFunctionData, erc20Abi, getAddress } from 'viem';
+import type { ILoggingService } from '@/logging/logging.interface';
 import {
   multiSendEncoder,
   multiSendTransactionsEncoder,
 } from '@/modules/contracts/domain/__tests__/encoders/multi-send-encoder.builder';
 import { MultiSendDecoder } from '@/modules/contracts/domain/decoders/multi-send-decoder.helper';
-import type { ILoggingService } from '@/logging/logging.interface';
 import { TransactionFinder } from '@/modules/transactions/routes/helpers/transaction-finder.helper';
-import { faker } from '@faker-js/faker';
-import { type Address, encodeFunctionData, erc20Abi, getAddress } from 'viem';
 
 const mockLoggingService = {
   warn: jest.fn(),
@@ -30,7 +30,6 @@ describe('TransactionFinder', () => {
       }),
       value: faker.string.numeric(),
     };
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const isTransactionData = (_: unknown): boolean => true;
 
     const result = target.findTransaction(isTransactionData, transaction);
@@ -81,7 +80,6 @@ describe('TransactionFinder', () => {
       }),
       value: faker.string.numeric(),
     };
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const isTransactionData = (_: unknown): boolean => false;
 
     const result = target.findTransaction(isTransactionData, transaction);

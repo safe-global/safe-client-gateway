@@ -1,7 +1,7 @@
 import { z } from 'zod';
+import { TransactionBaseSchema } from '@/domain/common/schemas/transaction-base.schema';
 import { TypedDataSchema } from '@/modules/messages/domain/entities/typed-data.entity';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { TransactionBaseSchema } from '@/domain/common/schemas/transaction-base.schema';
 
 /**
  * Request schema for counterparty analysis endpoint.

@@ -1,5 +1,5 @@
-import type { ZerionBalance } from './entities/zerion-balance.entity';
 import { PositionType } from '@/modules/positions/domain/entities/position-type.entity';
+import type { ZerionBalance } from './entities/zerion-balance.entity';
 
 /**
  * Builds headers for Zerion API requests.

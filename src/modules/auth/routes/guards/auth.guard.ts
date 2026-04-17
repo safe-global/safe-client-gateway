@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import {
-  CanActivate,
-  ExecutionContext,
+  type CanActivate,
+  type ExecutionContext,
   Inject,
   Injectable,
 } from '@nestjs/common';
+import type { Request } from 'express';
 import { IAuthRepository } from '@/modules/auth/domain/auth.repository.interface';
+import type { AuthPayloadDto } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { ACCESS_TOKEN_COOKIE_NAME } from '@/modules/auth/utils/auth-cookie.utils';
-import { AuthPayloadDto } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { Request } from 'express';
 
 declare module 'express' {
   // Inject AuthPayload to express.Request

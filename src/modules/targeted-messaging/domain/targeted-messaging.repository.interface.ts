@@ -1,7 +1,7 @@
+import type { Address } from 'viem';
 import type { Outreach } from '@/modules/targeted-messaging/domain/entities/outreach.entity';
 import type { Submission } from '@/modules/targeted-messaging/domain/entities/submission.entity';
 import type { TargetedSafe } from '@/modules/targeted-messaging/domain/entities/targeted-safe.entity';
-import type { Address } from 'viem';
 
 export const ITargetedMessagingRepository = Symbol(
   'ITargetedMessagingRepository',

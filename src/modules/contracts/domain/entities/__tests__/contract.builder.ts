@@ -1,9 +1,9 @@
 import { faker } from '@faker-js/faker';
+import { getAddress } from 'viem';
 import type { IBuilder } from '@/__tests__/builder';
 import { Builder } from '@/__tests__/builder';
 import { fakeJson } from '@/__tests__/faker';
 import type { Contract } from '@/modules/contracts/domain/entities/contract.entity';
-import { getAddress } from 'viem';
 
 export function contractBuilder(): IBuilder<Contract> {
   return new Builder<Contract>()

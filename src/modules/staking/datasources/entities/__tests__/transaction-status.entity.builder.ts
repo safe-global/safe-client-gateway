@@ -1,8 +1,8 @@
+import { faker } from '@faker-js/faker';
+import type { Address, Hex } from 'viem';
 import type { IBuilder } from '@/__tests__/builder';
 import { Builder } from '@/__tests__/builder';
 import type { TransactionStatus } from '@/modules/staking/datasources/entities/transaction-status.entity';
-import { faker } from '@faker-js/faker';
-import type { Address, Hex } from 'viem';
 
 export function transactionStatusReceiptLogBuilder(): IBuilder<
   TransactionStatus['receipt']['logs'][number]

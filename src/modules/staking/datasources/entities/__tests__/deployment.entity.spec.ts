@@ -1,8 +1,8 @@
-import { deploymentBuilder } from '@/modules/staking/datasources/entities/__tests__/deployment.entity.builder';
-import { DeploymentSchema } from '@/modules/staking/datasources/entities/deployment.entity';
 import { faker } from '@faker-js/faker';
 import type { Address } from 'viem';
 import { getAddress } from 'viem';
+import { deploymentBuilder } from '@/modules/staking/datasources/entities/__tests__/deployment.entity.builder';
+import { DeploymentSchema } from '@/modules/staking/datasources/entities/deployment.entity';
 
 describe('DeploymentSchema', () => {
   it('should validate a Deployment object', () => {
@@ -80,15 +80,17 @@ describe('DeploymentSchema', () => {
   it('should default external_links to null', () => {
     const deployment = deploymentBuilder().build();
     // @ts-expect-error - inferred type does not allow undefined
-    delete deployment.external_links;
+    deployment.external_links = undefined;
     const result = DeploymentSchema.safeParse(deployment);
     expect(result.success && result.data.external_links).toBe(null);
   });
 
   it('should default external_links.deposit_url to null', () => {
     const deployment = deploymentBuilder().build();
-    // @ts-expect-error - inferred type does not allow undefined
-    delete deployment.external_links?.deposit_url;
+    deployment.external_links = {
+      ...deployment.external_links,
+      deposit_url: null,
+    };
 
     const result = DeploymentSchema.safeParse(deployment);
 

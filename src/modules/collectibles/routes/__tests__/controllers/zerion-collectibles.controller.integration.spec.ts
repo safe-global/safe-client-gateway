@@ -1,23 +1,23 @@
+import type { Server } from 'node:net';
 import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
+import { getAddress } from 'viem';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
+import { createTestModule } from '@/__tests__/testing-module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import configuration from '@/config/entities/__tests__/configuration';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
 import { NetworkService } from '@/datasources/network/network.service.interface';
-import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
 import {
   zerionCollectibleAttributesBuilder,
   zerionCollectibleBuilder,
   zerionCollectiblesBuilder,
   zerionNFTInfoBuilder,
 } from '@/modules/balances/datasources/entities/__tests__/zerion-collectible.entity.builder';
-import { getAddress } from 'viem';
-import type { Server } from 'net';
 import { balancesProviderBuilder } from '@/modules/chains/domain/entities/__tests__/balances-provider.builder';
+import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
 import { rawify } from '@/validation/entities/raw.entity';
-import { createTestModule } from '@/__tests__/testing-module';
 
 describe('Zerion Collectibles Controller', () => {
   let app: INestApplication<Server>;

@@ -1,7 +1,7 @@
-import { delegateBuilder } from '@/modules/delegate/domain/entities/__tests__/delegate.builder';
-import { DelegateSchema } from '@/modules/delegate/domain/entities/schemas/delegate.schema';
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress } from 'viem';
+import { delegateBuilder } from '@/modules/delegate/domain/entities/__tests__/delegate.builder';
+import { DelegateSchema } from '@/modules/delegate/domain/entities/schemas/delegate.schema';
 
 describe('DelegateSchema', () => {
   it('should validate a valid delegate', () => {
@@ -15,7 +15,7 @@ describe('DelegateSchema', () => {
   it('should allow optional safe, defaulting to null', () => {
     const delegate = delegateBuilder().build();
     // @ts-expect-error - inferred type doesn't allow optional properties
-    delete delegate.safe;
+    delegate.safe = undefined;
 
     const result = DelegateSchema.safeParse(delegate);
 

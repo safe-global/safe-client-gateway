@@ -1,24 +1,27 @@
-import { Deployment } from '@/modules/staking/datasources/entities/deployment.entity';
-import { StakeState } from '@/modules/staking/datasources/entities/stake.entity';
-import { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
-import { ChainsModule } from '@/modules/chains/chains.module';
+import { Inject, Injectable, Module, NotFoundException } from '@nestjs/common';
+import type { Address, Hash } from 'viem';
 import { getNumberString } from '@/domain/common/utils/utils';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
+import { ChainsModule } from '@/modules/chains/chains.module';
+import { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
+import type { Deployment } from '@/modules/staking/datasources/entities/deployment.entity';
+import { StakeState } from '@/modules/staking/datasources/entities/stake.entity';
 import { KilnDecoder } from '@/modules/staking/domain/contracts/decoders/kiln-decoder.helper';
 import { IStakingRepositoryWithRewardsFee } from '@/modules/staking/domain/staking.repository.interface';
 import { StakingModule } from '@/modules/staking/staking.module';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
-import { NULL_ADDRESS } from '@/routes/common/constants';
 import { NativeStakingDepositTransactionInfo } from '@/modules/transactions/routes/entities/staking/native-staking-deposit-info.entity';
 import { NativeStakingValidatorsExitTransactionInfo } from '@/modules/transactions/routes/entities/staking/native-staking-validators-exit-info.entity';
 import { NativeStakingWithdrawTransactionInfo } from '@/modules/transactions/routes/entities/staking/native-staking-withdraw-info.entity';
 import { StakingStatus } from '@/modules/transactions/routes/entities/staking/staking.entity';
 import { TokenInfo } from '@/modules/transactions/routes/entities/swaps/token-info.entity';
-import { Inject, Injectable, Module, NotFoundException } from '@nestjs/common';
 import {
   KilnNativeStakingHelper,
   KilnNativeStakingHelperModule,
 } from '@/modules/transactions/routes/helpers/kiln-native-staking.helper';
-import type { Address, Hash } from 'viem';
+import { NULL_ADDRESS } from '@/routes/common/constants';
 
 @Injectable()
 export class NativeStakingMapper {
@@ -78,7 +81,7 @@ export class NativeStakingMapper {
     const value = args.value ? Number(args.value) : 0;
     const numValidators = Math.floor(
       value /
-        Math.pow(10, chain.nativeCurrency.decimals) /
+        10 ** chain.nativeCurrency.decimals /
         NativeStakingMapper.ETH_ETHERS_PER_VALIDATOR,
     );
     const fee = rewardsFee.fee ?? 0;
@@ -89,7 +92,7 @@ export class NativeStakingMapper {
     const expectedMonthlyReward = expectedAnnualReward / 12;
     const expectedFiatAnnualReward =
       (expectedAnnualReward * (networkStats.eth_price_usd ?? 0)) /
-      Math.pow(10, chain.nativeCurrency.decimals);
+      10 ** chain.nativeCurrency.decimals;
     const expectedFiatMonthlyReward = expectedFiatAnnualReward / 12;
 
     return new NativeStakingDepositTransactionInfo({
@@ -183,14 +186,19 @@ export class NativeStakingMapper {
       }),
     ]);
     this.validateDeployment(deployment);
-    const publicKeys = this.kilnNativeStakingHelper.splitPublicKeys(
-      this.kilnDecoder.decodeValidatorsExit(args.data)!,
-    );
+    const decodedExit = this.kilnDecoder.decodeValidatorsExit(args.data);
+    if (decodedExit === null) {
+      throw new NotFoundException(
+        'Failed to decode validators exit transaction data',
+      );
+    }
+    const publicKeys =
+      this.kilnNativeStakingHelper.splitPublicKeys(decodedExit);
 
     const value =
       publicKeys.length *
       NativeStakingMapper.ETH_ETHERS_PER_VALIDATOR *
-      Math.pow(10, chain.nativeCurrency.decimals);
+      10 ** chain.nativeCurrency.decimals;
     const [status, networkStats] = await Promise.all([
       this._getStatus({
         chainId: args.chainId,
@@ -247,9 +255,16 @@ export class NativeStakingMapper {
     ]);
     this.validateDeployment(deployment);
 
-    const publicKeys = this.kilnNativeStakingHelper.splitPublicKeys(
-      this.kilnDecoder.decodeBatchWithdrawCLFee(args.data)!,
+    const decodedWithdraw = this.kilnDecoder.decodeBatchWithdrawCLFee(
+      args.data,
     );
+    if (decodedWithdraw === null) {
+      throw new NotFoundException(
+        'Failed to decode batch withdraw transaction data',
+      );
+    }
+    const publicKeys =
+      this.kilnNativeStakingHelper.splitPublicKeys(decodedWithdraw);
     const value = await this.getWithdrawValue({
       txHash: args.txHash,
       publicKeys: publicKeys,

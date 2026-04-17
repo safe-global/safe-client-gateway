@@ -1,6 +1,6 @@
 import { Global, Module } from '@nestjs/common';
 import winston from 'winston';
-import Transport from 'winston-transport';
+import type Transport from 'winston-transport';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { LoggingService } from '@/logging/logging.interface';
 import { RequestScopedLoggingService } from '@/logging/logging.service';

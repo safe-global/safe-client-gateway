@@ -1,8 +1,8 @@
+import type { Readable } from 'node:stream';
 import type {
   CompleteMultipartUploadCommandOutput,
   PutObjectCommandInput,
 } from '@aws-sdk/client-s3';
-import type { Readable } from 'stream';
 
 export const ICloudStorageApiService = Symbol('ICloudStorageApiService');
 

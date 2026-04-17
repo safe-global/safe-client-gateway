@@ -1,7 +1,7 @@
 import { faker } from '@faker-js/faker';
 import { reorgDetectedEventBuilder } from '@/modules/hooks/routes/entities/__tests__/reorg-detected.builder';
-import { ReorgDetectedEventSchema } from '@/modules/hooks/routes/entities/schemas/reorg-detected.schema';
 import type { TransactionEventType } from '@/modules/hooks/routes/entities/event-type.entity';
+import { ReorgDetectedEventSchema } from '@/modules/hooks/routes/entities/schemas/reorg-detected.schema';
 
 describe('ReorgDetectedEventSchema', () => {
   it('should validate a reorg detected event', () => {

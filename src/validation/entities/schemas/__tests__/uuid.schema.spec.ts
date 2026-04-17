@@ -1,5 +1,5 @@
-import { UuidSchema } from '@/validation/entities/schemas/uuid.schema';
 import { faker } from '@faker-js/faker';
+import { UuidSchema } from '@/validation/entities/schemas/uuid.schema';
 
 describe('UuidSchema', () => {
   it('should validate a valid UUID string', () => {

@@ -1,34 +1,35 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
+import type { Server } from 'node:net';
+import { faker } from '@faker-js/faker';
+import type { INestApplication } from '@nestjs/common';
 import type { TestingModule } from '@nestjs/testing';
 import { Test } from '@nestjs/testing';
-import { RequestScopedLoggingModule } from '@/logging/logging.module';
 import { ClsModule } from 'nestjs-cls';
+import { getGlobalDispatcher } from 'undici';
+import { fakeJson } from '@/__tests__/faker';
 import { ConfigurationModule } from '@/config/configuration.module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import configuration from '@/config/entities/configuration';
+import { CircuitBreakerModule } from '@/datasources/circuit-breaker/circuit-breaker.module';
+import { CircuitBreakerService } from '@/datasources/circuit-breaker/circuit-breaker.service';
+import { CircuitBreakerException } from '@/datasources/circuit-breaker/exceptions/circuit-breaker.exception';
+import {
+  NetworkRequestError,
+  NetworkResponseError,
+} from '@/datasources/network/entities/network.error.entity';
 import type { FetchClient } from '@/datasources/network/network.module';
 import {
   FetchClientToken,
   NetworkModule,
 } from '@/datasources/network/network.module';
-import { faker } from '@faker-js/faker';
-import type { INestApplication } from '@nestjs/common';
-import {
-  NetworkRequestError,
-  NetworkResponseError,
-} from '@/datasources/network/entities/network.error.entity';
-import { fakeJson } from '@/__tests__/faker';
-import type { Server } from 'net';
+import { UndiciShutdownHook } from '@/datasources/network/undici.shutdown.hook';
+import { hashSha1 } from '@/domain/common/utils/utils';
 import {
   type ILoggingService,
   LoggingService,
 } from '@/logging/logging.interface';
-import { hashSha1 } from '@/domain/common/utils/utils';
-import { CircuitBreakerModule } from '@/datasources/circuit-breaker/circuit-breaker.module';
-import { CircuitBreakerService } from '@/datasources/circuit-breaker/circuit-breaker.service';
-import { CircuitBreakerException } from '@/datasources/circuit-breaker/exceptions/circuit-breaker.exception';
-import { getGlobalDispatcher } from 'undici';
-import { UndiciShutdownHook } from '@/datasources/network/undici.shutdown.hook';
+import { RequestScopedLoggingModule } from '@/logging/logging.module';
 
 describe('NetworkModule', () => {
   let app: INestApplication<Server>;
@@ -198,8 +199,9 @@ describe('NetworkModule', () => {
       const url = faker.internet.url({ appendSlash: false });
       const options = { method: 'GET' };
 
-      void fetchClient(url, options);
+      const pendingRequest = fetchClient(url, options);
       await fetchClient(url, options);
+      await pendingRequest;
 
       expect(fetchMock).toHaveBeenCalledTimes(1);
 
@@ -304,8 +306,9 @@ describe('NetworkModule', () => {
           },
         };
 
-        void fetchClient(url, options);
+        const pendingRequest = fetchClient(url, options);
         await fetchClient(url, options);
+        await pendingRequest;
 
         expect(fetchMock).toHaveBeenCalledTimes(1);
 
@@ -537,13 +540,17 @@ describe('NetworkModule', () => {
       const url = faker.internet.url({ appendSlash: false });
       const options = { method: 'GET' };
 
-      void fetchClient(url, options, undefined, undefined);
+      const pendingRequest1 = fetchClient(url, options, undefined, undefined);
       await fetchClient(url, options, undefined, undefined);
+      await pendingRequest1;
 
       expect(fetchMock).toHaveBeenCalledTimes(1);
 
-      void fetchClient(url, options, undefined, { key: 'test-circuit' });
+      const pendingRequest2 = fetchClient(url, options, undefined, {
+        key: 'test-circuit',
+      });
       await fetchClient(url, options, undefined, { key: 'test-circuit' });
+      await pendingRequest2;
 
       expect(fetchMock).toHaveBeenCalledTimes(2);
 
@@ -569,8 +576,11 @@ describe('NetworkModule', () => {
       const url = faker.internet.url({ appendSlash: false });
       const options = { method: 'GET' };
 
-      void fetchClient(url, options, undefined, { key: 'test-circuit' });
+      const pendingCBRequest = fetchClient(url, options, undefined, {
+        key: 'test-circuit',
+      });
       await fetchClient(url, options, undefined, { key: 'test-circuit' });
+      await pendingCBRequest;
 
       expect(fetchMock).toHaveBeenCalledTimes(1);
 

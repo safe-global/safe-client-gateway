@@ -1,8 +1,8 @@
 import { faker } from '@faker-js/faker';
+import { type Address, getAddress } from 'viem';
 import type { IBuilder } from '@/__tests__/builder';
 import { Builder } from '@/__tests__/builder';
 import type { CreationTransaction } from '@/modules/safe/domain/entities/creation-transaction.entity';
-import { type Address, getAddress } from 'viem';
 
 export function creationTransactionBuilder(): IBuilder<CreationTransaction> {
   return new Builder<CreationTransaction>()

@@ -1,5 +1,5 @@
-import { mockEntityManager } from '@/datasources/db/v2/__tests__/entity-manager.mock';
 import type { ObjectLiteral, Repository } from 'typeorm';
+import { mockEntityManager } from '@/datasources/db/v2/__tests__/entity-manager.mock';
 
 export const mockRepository = {
   find: jest.fn(),

@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { IDataDecoderRepository } from '@/modules/data-decoder/domain/v2/data-decoder.repository.interface';
-import { TransactionDataDto } from '@/routes/common/entities/transaction-data.dto.entity';
-import { DataDecoded } from '@/modules/data-decoder/routes/entities/data-decoded.entity';
+import type { DataDecoded } from '@/modules/data-decoder/routes/entities/data-decoded.entity';
+import type { TransactionDataDto } from '@/routes/common/entities/transaction-data.dto.entity';
 
 @Injectable()
 export class DataDecodedService {
@@ -10,7 +10,7 @@ export class DataDecodedService {
     private readonly dataDecoderRepository: IDataDecoderRepository,
   ) {}
 
-  async getDataDecoded(args: {
+  getDataDecoded(args: {
     chainId: string;
     getDataDecodedDto: TransactionDataDto;
   }): Promise<DataDecoded> {

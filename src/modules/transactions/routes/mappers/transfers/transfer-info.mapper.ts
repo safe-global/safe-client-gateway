@@ -1,24 +1,27 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { Safe } from '@/modules/safe/domain/entities/safe.entity';
-import { Transfer as DomainTransfer } from '@/modules/safe/domain/entities/transfer.entity';
-import { Token } from '@/modules/tokens/domain/entities/token.entity';
-import { TokenRepository } from '@/modules/tokens/domain/token.repository';
-import { ITokenRepository } from '@/modules/tokens/domain/token.repository.interface';
-import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
+import type { Address } from 'viem';
 import {
-  TransferDirection,
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
+import type { Safe } from '@/modules/safe/domain/entities/safe.entity';
+import type { Transfer as DomainTransfer } from '@/modules/safe/domain/entities/transfer.entity';
+import type { Token } from '@/modules/tokens/domain/entities/token.entity';
+import type { TokenRepository } from '@/modules/tokens/domain/token.repository';
+import { ITokenRepository } from '@/modules/tokens/domain/token.repository.interface';
+import {
+  type TransferDirection,
   TransferTransactionInfo,
 } from '@/modules/transactions/routes/entities/transfer-transaction-info.entity';
 import { Erc20Transfer } from '@/modules/transactions/routes/entities/transfers/erc20-transfer.entity';
 import { Erc721Transfer } from '@/modules/transactions/routes/entities/transfers/erc721-transfer.entity';
 import { NativeCoinTransfer } from '@/modules/transactions/routes/entities/transfers/native-coin-transfer.entity';
+import type { Transfer } from '@/modules/transactions/routes/entities/transfers/transfer.entity';
 import { getTransferDirection } from '@/modules/transactions/routes/mappers/common/transfer-direction.helper';
-import { Transfer } from '@/modules/transactions/routes/entities/transfers/transfer.entity';
 import { SwapTransferInfoMapper } from '@/modules/transactions/routes/mappers/transfers/swap-transfer-info.mapper';
-import { SwapTransferTransactionInfo } from '@/modules/transactions/routes/swap-transfer-transaction-info.entity';
-import { AddressInfo } from '@/routes/common/entities/address-info.entity';
-import { LoggingService, ILoggingService } from '@/logging/logging.interface';
-import { type Address } from 'viem';
+import type { SwapTransferTransactionInfo } from '@/modules/transactions/routes/swap-transfer-transaction-info.entity';
+import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
+import type { AddressInfo } from '@/routes/common/entities/address-info.entity';
 
 @Injectable()
 export class TransferInfoMapper {
@@ -116,7 +119,8 @@ export class TransferInfoMapper {
         token?.decimals,
         token?.trusted,
       );
-    } else if (domainTransfer.type === 'ERC721_TRANSFER') {
+    }
+    if (domainTransfer.type === 'ERC721_TRANSFER') {
       const { tokenAddress, tokenId } = domainTransfer;
       const token = await this.getToken(chainId, tokenAddress).catch(
         () => null,
@@ -129,11 +133,11 @@ export class TransferInfoMapper {
         token?.logoUri,
         token?.trusted,
       );
-    } else if (domainTransfer.type === 'ETHER_TRANSFER') {
-      return new NativeCoinTransfer(domainTransfer.value);
-    } else {
-      throw Error('Unknown transfer type');
     }
+    if (domainTransfer.type === 'ETHER_TRANSFER') {
+      return new NativeCoinTransfer(domainTransfer.value);
+    }
+    throw Error('Unknown transfer type');
   }
 
   private getToken(

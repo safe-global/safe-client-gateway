@@ -1,6 +1,6 @@
-import { Inject, Injectable } from '@nestjs/common';
 import fs from 'node:fs';
 import { join } from 'node:path';
+import { Inject, Injectable } from '@nestjs/common';
 import type { Sql, TransactionSql } from 'postgres';
 
 type Migration = {
@@ -149,7 +149,7 @@ export class PostgresDatabaseMigrator {
       .map((file) => {
         return {
           path: join(path, file),
-          id: parseInt(file.slice(0, 5)),
+          id: Number.parseInt(file.slice(0, 5)),
           name: file.slice(6),
         };
       });

@@ -1,7 +1,7 @@
+import type { Address, Hex } from 'viem';
 import type { Page } from '@/domain/entities/page.entity';
 import type { Message } from '@/modules/messages/domain/entities/message.entity';
 import type { TypedData } from '@/modules/messages/domain/entities/typed-data.entity';
-import type { Address, Hex } from 'viem';
 
 export const IMessagesRepository = Symbol('IMessagesRepository');
 

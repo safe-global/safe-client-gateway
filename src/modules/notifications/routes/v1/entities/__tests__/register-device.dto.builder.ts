@@ -1,10 +1,10 @@
+import type { UUID } from 'node:crypto';
 import { faker } from '@faker-js/faker';
-import { DeviceType } from '@/modules/notifications/domain/v1/entities/device.entity';
 import type { IBuilder } from '@/__tests__/builder';
 import { Builder } from '@/__tests__/builder';
-import type { RegisterDeviceDto } from '@/modules/notifications/routes/v1/entities/register-device.dto.entity';
+import { DeviceType } from '@/modules/notifications/domain/v1/entities/device.entity';
 import { safeRegistrationBuilder } from '@/modules/notifications/routes/v1/entities/__tests__/safe-registration.builder';
-import type { UUID } from 'crypto';
+import type { RegisterDeviceDto } from '@/modules/notifications/routes/v1/entities/register-device.dto.entity';
 
 export async function registerDeviceDtoBuilder(args: {
   uuid: UUID;

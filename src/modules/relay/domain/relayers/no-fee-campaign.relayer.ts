@@ -1,20 +1,23 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import type { Address } from 'viem';
-import { IRelayer } from '@/modules/relay/domain/interfaces/relayer.interface';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { IRelayApi } from '@/domain/interfaces/relay-api.interface';
-import { LimitAddressesMapper } from '@/modules/relay/domain/limit-addresses.mapper';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
-import type { Relay } from '@/modules/relay/domain/entities/relay.entity';
-import type { RelayEligibility } from '@/modules/relay/domain/entities/relay-eligibility.entity';
-import { RelayLimitReachedError } from '@/modules/relay/domain/errors/relay-limit-reached.error';
-import { ExceedsMaxGasLimitError } from '@/modules/relay/domain/errors/exceeds-max-gas-limit';
-import { BalancesService } from '@/modules/balances/routes/balances.service';
 import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
+import { BalancesService } from '@/modules/balances/routes/balances.service';
+import type {
   NoFeeCampaignConfiguration,
   RelayRules,
 } from '@/modules/relay/domain/entities/relay.configuration';
+import type { Relay } from '@/modules/relay/domain/entities/relay.entity';
+import type { RelayEligibility } from '@/modules/relay/domain/entities/relay-eligibility.entity';
+import { ExceedsMaxGasLimitError } from '@/modules/relay/domain/errors/exceeds-max-gas-limit';
+import { RelayLimitReachedError } from '@/modules/relay/domain/errors/relay-limit-reached.error';
+import type { IRelayer } from '@/modules/relay/domain/interfaces/relayer.interface';
+import { LimitAddressesMapper } from '@/modules/relay/domain/limit-addresses.mapper';
 
 @Injectable()
 export class NoFeeCampaignRelayer implements IRelayer {
@@ -37,7 +40,8 @@ export class NoFeeCampaignRelayer implements IRelayer {
     chainId: string;
     address: Address;
   }): Promise<RelayEligibility> {
-    const chainConfiguration = this.relayConfiguration[parseInt(args.chainId)];
+    const chainConfiguration =
+      this.relayConfiguration[Number.parseInt(args.chainId)];
 
     if (!chainConfiguration) {
       return { result: false, currentCount: 0, limit: 0 };
@@ -75,7 +79,7 @@ export class NoFeeCampaignRelayer implements IRelayer {
       await this.limitAddressesMapper.getLimitAddresses(args);
 
     const maxGasLimit = BigInt(
-      this.relayConfiguration[parseInt(args.chainId)].maxGasLimit,
+      this.relayConfiguration[Number.parseInt(args.chainId)].maxGasLimit,
     );
 
     // Use maxGasLimit if no gasLimit provided
@@ -124,7 +128,8 @@ export class NoFeeCampaignRelayer implements IRelayer {
     chainId: string;
     address: Address;
   }): Promise<{ remaining: number; limit: number }> {
-    const chainConfiguration = this.relayConfiguration[parseInt(args.chainId)];
+    const chainConfiguration =
+      this.relayConfiguration[Number.parseInt(args.chainId)];
 
     if (!chainConfiguration) {
       return { remaining: 0, limit: 0 };
@@ -144,21 +149,20 @@ export class NoFeeCampaignRelayer implements IRelayer {
         remaining: Math.max(relayLimit - currentCount, 0),
         limit: relayLimit,
       };
-    } else {
-      // Outside no-fee campaign window for configured chains - no relays allowed
-      return {
-        remaining: 0,
-        limit: 0,
-      };
     }
+    // Outside no-fee campaign window for configured chains - no relays allowed
+    return {
+      remaining: 0,
+      limit: 0,
+    };
   }
 
-  private async getRelayCount(args: {
+  private getRelayCount(args: {
     chainId: string;
     address: Address;
   }): Promise<number> {
     if (!this.isActive(args.chainId)) {
-      return 0;
+      return Promise.resolve(0);
     }
     return this.relayApi.getRelayCount(args);
   }
@@ -172,8 +176,8 @@ export class NoFeeCampaignRelayer implements IRelayer {
       const incremented = currentCount + 1;
 
       const ttlSeconds = Math.floor(
-        this.relayConfiguration[parseInt(args.chainId)].endsAtTimeStamp -
-          new Date().getTime() / 1000,
+        this.relayConfiguration[Number.parseInt(args.chainId)].endsAtTimeStamp -
+          Date.now() / 1000,
       );
 
       return this.relayApi.setRelayCount({
@@ -207,7 +211,8 @@ export class NoFeeCampaignRelayer implements IRelayer {
     chainId: string;
     address: Address;
   }): Promise<bigint> {
-    const chainConfiguration = this.relayConfiguration[parseInt(args.chainId)];
+    const chainConfiguration =
+      this.relayConfiguration[Number.parseInt(args.chainId)];
 
     if (!chainConfiguration) return BigInt(0);
 
@@ -232,11 +237,12 @@ export class NoFeeCampaignRelayer implements IRelayer {
   }
 
   private isActive(chainId: string): boolean {
-    const chainConfiguration = this.relayConfiguration[parseInt(chainId)];
-    const unixTimestampNow: number = new Date().getTime() / 1000;
+    const chainConfiguration =
+      this.relayConfiguration[Number.parseInt(chainId)];
+    const unixTimestampNow: number = Date.now() / 1000;
 
     // Return false of configuration for no-fee campaign is absent
-    if (!chainConfiguration || !chainConfiguration.safeTokenAddress) {
+    if (!chainConfiguration?.safeTokenAddress) {
       return false;
     }
 

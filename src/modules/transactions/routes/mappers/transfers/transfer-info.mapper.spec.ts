@@ -1,5 +1,6 @@
 import { faker } from '@faker-js/faker';
-import type { TokenRepository } from '@/modules/tokens/domain/token.repository';
+import { getAddress } from 'viem';
+import type { ILoggingService } from '@/logging/logging.interface';
 import { erc20TransferBuilder } from '@/modules/safe/domain/entities/__tests__/erc20-transfer.builder';
 import { erc721TransferBuilder } from '@/modules/safe/domain/entities/__tests__/erc721-transfer.builder';
 import { nativeTokenTransferBuilder } from '@/modules/safe/domain/entities/__tests__/native-token-transfer.builder';
@@ -9,19 +10,18 @@ import {
   erc721TokenBuilder,
   tokenBuilder,
 } from '@/modules/tokens/domain/__tests__/token.builder';
-import type { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
-import { AddressInfo } from '@/routes/common/entities/address-info.entity';
+import type { TokenRepository } from '@/modules/tokens/domain/token.repository';
 import {
-  TransferTransactionInfo,
   TransferDirection,
+  TransferTransactionInfo,
 } from '@/modules/transactions/routes/entities/transfer-transaction-info.entity';
 import { Erc20Transfer } from '@/modules/transactions/routes/entities/transfers/erc20-transfer.entity';
 import { Erc721Transfer } from '@/modules/transactions/routes/entities/transfers/erc721-transfer.entity';
 import { NativeCoinTransfer } from '@/modules/transactions/routes/entities/transfers/native-coin-transfer.entity';
-import { TransferInfoMapper } from '@/modules/transactions/routes/mappers/transfers/transfer-info.mapper';
-import { getAddress } from 'viem';
 import type { SwapTransferInfoMapper } from '@/modules/transactions/routes/mappers/transfers/swap-transfer-info.mapper';
-import type { ILoggingService } from '@/logging/logging.interface';
+import { TransferInfoMapper } from '@/modules/transactions/routes/mappers/transfers/transfer-info.mapper';
+import type { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
+import { AddressInfo } from '@/routes/common/entities/address-info.entity';
 
 // Note: we mock this as there is a dedicated test for this mapper
 const swapTransferInfoMapper = jest.mocked({

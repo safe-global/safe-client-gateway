@@ -1,3 +1,4 @@
+import type { Address } from 'viem';
 import type { Page } from '@/domain/entities/page.entity';
 import type { Campaign } from '@/modules/community/domain/entities/campaign.entity';
 import type { CampaignActivity } from '@/modules/community/domain/entities/campaign-activity.entity';
@@ -5,7 +6,6 @@ import type { CampaignRank } from '@/modules/community/domain/entities/campaign-
 import type { LockingEvent } from '@/modules/community/domain/entities/locking-event.entity';
 import type { LockingRank } from '@/modules/community/domain/entities/locking-rank.entity';
 import type { Raw } from '@/validation/entities/raw.entity';
-import type { Address } from 'viem';
 
 export const ILockingApi = Symbol('ILockingApi');
 

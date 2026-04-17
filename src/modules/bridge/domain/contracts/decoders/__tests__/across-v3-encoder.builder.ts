@@ -1,15 +1,14 @@
 import { faker } from '@faker-js/faker';
-import { encodeFunctionData, getAddress, parseAbi } from 'viem';
+import type { ParseStructs } from 'abitype/dist/types/human-readable/types/structs';
 import type {
   AbiParameter,
   AbiParameterToPrimitiveType,
   Address,
   Hex,
 } from 'viem';
-import type { ParseStructs } from 'abitype/dist/types/human-readable/types/structs';
-
-import { Builder } from '@/__tests__/builder';
+import { encodeFunctionData, getAddress, parseAbi } from 'viem';
 import type { IBuilder } from '@/__tests__/builder';
+import { Builder } from '@/__tests__/builder';
 import type { IEncoder } from '@/__tests__/encoder-builder';
 import { LiFiDecoder } from '@/modules/bridge/domain/contracts/decoders/lifi-decoder.helper';
 

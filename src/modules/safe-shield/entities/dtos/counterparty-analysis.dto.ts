@@ -5,27 +5,27 @@ import {
   ApiPropertyOptional,
   getSchemaPath,
 } from '@nestjs/swagger';
-import {
-  CommonStatus,
-  RecipientAnalysisResult,
-  UnofficialFallbackHandlerAnalysisResult,
-  type ContractAnalysisResult,
-} from '../analysis-result.entity';
+import type { Address } from 'viem';
 import type {
   CounterpartyAnalysisResponse,
   GroupedAnalysisResults,
 } from '@/modules/safe-shield/entities/analysis-responses.entity';
-import { ContractStatus } from '@/modules/safe-shield/entities/contract-status.entity';
-import { AnalysisResultDto } from './analysis-result.dto';
 import { BridgeStatus } from '@/modules/safe-shield/entities/bridge-status.entity';
+import { ContractStatus } from '@/modules/safe-shield/entities/contract-status.entity';
+import { DeadlockStatus } from '@/modules/safe-shield/entities/deadlock-status.entity';
 import { RecipientStatus } from '@/modules/safe-shield/entities/recipient-status.entity';
-import { Address } from 'viem';
 import {
   ContractStatusGroup,
   DeadlockStatusGroup,
   RecipientStatusGroup,
 } from '@/modules/safe-shield/entities/status-group.entity';
-import { DeadlockStatus } from '@/modules/safe-shield/entities/deadlock-status.entity';
+import {
+  CommonStatus,
+  type ContractAnalysisResult,
+  type RecipientAnalysisResult,
+  type UnofficialFallbackHandlerAnalysisResult,
+} from '../analysis-result.entity';
+import { AnalysisResultDto } from './analysis-result.dto';
 
 /**
  * DTO for contract analysis result.

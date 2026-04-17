@@ -1,14 +1,14 @@
-import type { Deployment } from '@/modules/staking/datasources/entities/deployment.entity';
+import type { Address, Hash } from 'viem';
 import type { DedicatedStakingStats } from '@/modules/staking/datasources/entities/dedicated-staking-stats.entity';
+import type { DefiMorphoExtraReward } from '@/modules/staking/datasources/entities/defi-morpho-extra-reward.entity';
+import type { DefiVaultStake } from '@/modules/staking/datasources/entities/defi-vault-stake.entity';
+import type { DefiVaultStats } from '@/modules/staking/datasources/entities/defi-vault-stats.entity';
+import type { Deployment } from '@/modules/staking/datasources/entities/deployment.entity';
 import type { NetworkStats } from '@/modules/staking/datasources/entities/network-stats.entity';
 import type { PooledStakingStats } from '@/modules/staking/datasources/entities/pooled-staking-stats.entity';
-import type { DefiVaultStats } from '@/modules/staking/datasources/entities/defi-vault-stats.entity';
+import type { RewardsFee } from '@/modules/staking/datasources/entities/rewards-fee.entity';
 import type { Stake } from '@/modules/staking/datasources/entities/stake.entity';
 import type { TransactionStatus } from '@/modules/staking/datasources/entities/transaction-status.entity';
-import type { DefiVaultStake } from '@/modules/staking/datasources/entities/defi-vault-stake.entity';
-import type { DefiMorphoExtraReward } from '@/modules/staking/datasources/entities/defi-morpho-extra-reward.entity';
-import type { RewardsFee } from '@/modules/staking/datasources/entities/rewards-fee.entity';
-import type { Address, Hash } from 'viem';
 
 export const IStakingRepository = Symbol('IStakingRepository');
 export const IStakingRepositoryWithRewardsFee = Symbol(

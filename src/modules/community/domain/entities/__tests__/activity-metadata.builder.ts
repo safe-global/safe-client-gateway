@@ -1,7 +1,7 @@
+import { faker } from '@faker-js/faker';
 import type { IBuilder } from '@/__tests__/builder';
 import { Builder } from '@/__tests__/builder';
 import type { ActivityMetadata } from '@/modules/community/domain/entities/activity-metadata.entity';
-import { faker } from '@faker-js/faker';
 
 export function activityMetadataBuilder(): IBuilder<ActivityMetadata> {
   return new Builder<ActivityMetadata>()

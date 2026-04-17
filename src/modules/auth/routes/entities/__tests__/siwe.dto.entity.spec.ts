@@ -1,7 +1,7 @@
-import { siweMessageBuilder } from '@/modules/siwe/domain/entities/__tests__/siwe-message.builder';
-import { SiweDtoSchema } from '@/modules/auth/routes/entities/siwe.dto.entity';
 import { faker } from '@faker-js/faker';
 import { createSiweMessage } from 'viem/siwe';
+import { SiweDtoSchema } from '@/modules/auth/routes/entities/siwe.dto.entity';
+import { siweMessageBuilder } from '@/modules/siwe/domain/entities/__tests__/siwe-message.builder';
 
 describe('SiweDtoSchema', () => {
   it('should validate a valid SiweDto', () => {

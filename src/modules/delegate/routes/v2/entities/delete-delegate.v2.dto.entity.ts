@@ -1,7 +1,7 @@
-import { DeleteDelegateV2DtoSchema } from '@/modules/delegate/routes/v2/entities/schemas/delete-delegate.v2.dto.schema';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { z } from 'zod';
 import type { Address } from 'viem';
+import type { z } from 'zod';
+import type { DeleteDelegateV2DtoSchema } from '@/modules/delegate/routes/v2/entities/schemas/delete-delegate.v2.dto.schema';
 
 export class DeleteDelegateV2Dto implements z.infer<
   typeof DeleteDelegateV2DtoSchema

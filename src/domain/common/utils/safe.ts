@@ -1,16 +1,16 @@
 import semverSatisfies from 'semver/functions/satisfies';
 import type { Address } from 'viem';
 import { hashMessage, hashTypedData, zeroAddress } from 'viem';
-import { MessageSchema } from '@/modules/messages/domain/entities/message.entity';
-import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
-import type { Safe } from '@/modules/safe/domain/entities/safe.entity';
-import type { TypedData } from '@/modules/messages/domain/entities/typed-data.entity';
 import {
+  getSafeL2SingletonDeployments,
   getSafeMigrationDeployments,
   getSafeSingletonDeployments,
-  getSafeL2SingletonDeployments,
 } from '@/domain/common/utils/deployments';
+import { MessageSchema } from '@/modules/messages/domain/entities/message.entity';
+import type { TypedData } from '@/modules/messages/domain/entities/typed-data.entity';
+import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
 import { Operation } from '@/modules/safe/domain/entities/operation.entity';
+import type { Safe } from '@/modules/safe/domain/entities/safe.entity';
 
 const CHAIN_ID_DOMAIN_HASH_VERSION = '>=1.3.0';
 const TRANSACTION_PRIMARY_TYPE = 'SafeTx';
@@ -219,7 +219,6 @@ function detectSafeMigration(args: {
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 export function _getSafeDomain(args: {
   address: Safe['address'];
   version: NonNullable<Safe['version']>;
@@ -235,7 +234,6 @@ export function _getSafeDomain(args: {
   };
 }
 
-// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 export function _getSafeTxTypesAndMessage(args: {
   transaction: BaseMultisigTransaction;
   version: NonNullable<Safe['version']>;

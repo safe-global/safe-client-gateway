@@ -1,9 +1,9 @@
 import { z } from 'zod';
+import { OutreachBaseSchema } from '@/modules/targeted-messaging/domain/entities/outreach.entity';
 import {
   NullableCoercedDateSchema,
   NullableStringSchema,
 } from '@/validation/entities/schemas/nullable.schema';
-import { OutreachBaseSchema } from '@/modules/targeted-messaging/domain/entities/outreach.entity';
 
 export const CreateOutreachDtoSchema = OutreachBaseSchema.extend({
   sourceFile: NullableStringSchema,

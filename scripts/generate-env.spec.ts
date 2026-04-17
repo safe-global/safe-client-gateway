@@ -1,24 +1,24 @@
-import * as fs from 'fs';
-import * as path from 'path';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 import {
-  parseExistingEnv,
-  updateEnvFile,
-  generateNewEnvFile,
-  generateEnvFile,
-} from './generate-env';
-import {
+  type EnvVariable,
+  isSymbolicLink,
   loadEnvJson,
   PROJECT_ROOT,
-  isSymbolicLink,
-  type EnvVariable,
 } from './env-json-helpers';
 import {
-  mockProcessExit,
-  captureWriteContent,
+  generateEnvFile,
+  generateNewEnvFile,
+  parseExistingEnv,
+  updateEnvFile,
+} from './generate-env';
+import {
   captureAppendContent,
+  captureWriteContent,
+  mockProcessExit,
 } from './test-utils';
 
-jest.mock('fs');
+jest.mock('node:fs');
 jest.mock('./env-json-helpers', () => ({
   ...jest.requireActual('./env-json-helpers'),
   loadEnvJson: jest.fn(),
@@ -26,9 +26,11 @@ jest.mock('./env-json-helpers', () => ({
   setFilePermissions: jest.fn(),
 }));
 
-const mockFs = jest.mocked(fs);
-const mockLoadEnvJson = jest.mocked(loadEnvJson);
-const mockIsSymbolicLink = jest.mocked(isSymbolicLink);
+const mockFs: jest.Mocked<typeof fs> = jest.mocked(fs);
+const mockLoadEnvJson: jest.MockedFunction<typeof loadEnvJson> =
+  jest.mocked(loadEnvJson);
+const mockIsSymbolicLink: jest.MockedFunction<typeof isSymbolicLink> =
+  jest.mocked(isSymbolicLink);
 
 describe('generate-env', () => {
   const ENV_OUTPUT_PATH = path.join(PROJECT_ROOT, '.env');

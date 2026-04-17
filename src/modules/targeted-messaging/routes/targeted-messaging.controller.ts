@@ -1,15 +1,3 @@
-import { TargetedSafeSchema } from '@/modules/targeted-messaging/domain/entities/targeted-safe.entity';
-import { TargetedSafeNotFoundError } from '@/modules/targeted-messaging/domain/errors/targeted-safe-not-found.error';
-import {
-  CreateSubmissionDto,
-  CreateSubmissionDtoSchema,
-} from '@/modules/targeted-messaging/routes/entities/create-submission.dto.entity';
-import { Submission } from '@/modules/targeted-messaging/routes/entities/submission.entity';
-import { TargetedSafe } from '@/modules/targeted-messaging/routes/entities/targeted-safe.entity';
-import { TargetedMessagingService } from '@/modules/targeted-messaging/routes/targeted-messaging.service';
-import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
-import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import {
   Body,
   Controller,
@@ -27,8 +15,20 @@ import {
   ApiOkResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { Response } from 'express';
+import type { Response } from 'express';
 import type { Address } from 'viem';
+import { TargetedSafeSchema } from '@/modules/targeted-messaging/domain/entities/targeted-safe.entity';
+import { TargetedSafeNotFoundError } from '@/modules/targeted-messaging/domain/errors/targeted-safe-not-found.error';
+import {
+  type CreateSubmissionDto,
+  CreateSubmissionDtoSchema,
+} from '@/modules/targeted-messaging/routes/entities/create-submission.dto.entity';
+import { Submission } from '@/modules/targeted-messaging/routes/entities/submission.entity';
+import { TargetedSafe } from '@/modules/targeted-messaging/routes/entities/targeted-safe.entity';
+import { TargetedMessagingService } from '@/modules/targeted-messaging/routes/targeted-messaging.service';
+import { AddressSchema } from '@/validation/entities/schemas/address.schema';
+import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
+import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 
 @ApiTags('targeted-messaging')
 @Controller({
@@ -41,7 +41,7 @@ export class TargetedMessagingController {
   @ApiOkResponse({ type: TargetedSafe })
   @ApiNotFoundResponse({ description: 'Safe not targeted.' })
   @Get(':outreachId/chains/:chainId/safes/:safeAddress')
-  async getTargetedSafe(
+  getTargetedSafe(
     @Param(
       'outreachId',
       ParseIntPipe,

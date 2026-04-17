@@ -1,8 +1,11 @@
+import type { Address, Hash } from 'viem';
+import { ZodError, z } from 'zod';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import type { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
 import { CacheRouter } from '@/datasources/cache/cache.router';
 import type { ICacheService } from '@/datasources/cache/cache.service.interface';
-import type { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
+import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
+import type { IStakingApi } from '@/domain/interfaces/staking-api.interface';
 import type { DedicatedStakingStats } from '@/modules/staking/datasources/entities/dedicated-staking-stats.entity';
 import type { DefiMorphoExtraReward } from '@/modules/staking/datasources/entities/defi-morpho-extra-reward.entity';
 import type { DefiVaultStake } from '@/modules/staking/datasources/entities/defi-vault-stake.entity';
@@ -16,10 +19,7 @@ import type { PooledStakingStats } from '@/modules/staking/datasources/entities/
 import type { RewardsFee } from '@/modules/staking/datasources/entities/rewards-fee.entity';
 import type { Stake } from '@/modules/staking/datasources/entities/stake.entity';
 import type { TransactionStatus } from '@/modules/staking/datasources/entities/transaction-status.entity';
-import type { IStakingApi } from '@/domain/interfaces/staking-api.interface';
 import type { Raw } from '@/validation/entities/raw.entity';
-import { z, ZodError } from 'zod';
-import type { Address, Hash } from 'viem';
 
 export class KilnApi implements IStakingApi {
   public static DefiVaultStatsChains: {
@@ -379,8 +379,7 @@ export class KilnApi implements IStakingApi {
     if (chain) {
       const chainIdentifier = chain[0];
       return `${chainIdentifier}_${vault}`;
-    } else {
-      throw new Error(`${this.chainId} is not supported for DeFi by Kiln`);
     }
+    throw new Error(`${this.chainId} is not supported for DeFi by Kiln`);
   }
 }

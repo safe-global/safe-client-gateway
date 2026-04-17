@@ -1,13 +1,13 @@
-import { CreateMessageDtoSchema } from '@/modules/messages/routes/entities/schemas/create-message.dto.schema';
-import { TypedData } from '@/modules/messages/routes/entities/typed-data.entity';
 import {
   ApiExtraModels,
   ApiProperty,
   ApiPropertyOptional,
   getSchemaPath,
 } from '@nestjs/swagger';
-import { z } from 'zod';
 import type { Address } from 'viem';
+import type { z } from 'zod';
+import type { CreateMessageDtoSchema } from '@/modules/messages/routes/entities/schemas/create-message.dto.schema';
+import { TypedData } from '@/modules/messages/routes/entities/typed-data.entity';
 
 @ApiExtraModels(TypedData)
 export class CreateMessageDto implements z.infer<

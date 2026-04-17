@@ -1,8 +1,8 @@
 import { faker } from '@faker-js/faker';
+import { getAddress } from 'viem';
+import { dataDecodedBuilder } from '@/modules/data-decoder/domain/v2/entities/__tests__/data-decoded.builder';
 import { moduleTransactionBuilder } from '@/modules/safe/domain/entities/__tests__/module-transaction.builder';
 import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
-import { addressInfoBuilder } from '@/routes/common/__tests__/entities/address-info.builder';
-import type { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
 import { transferTransactionInfoBuilder } from '@/modules/transactions/routes/entities/__tests__/transfer-transaction-info.builder';
 import { ModuleExecutionDetails } from '@/modules/transactions/routes/entities/transaction-details/module-execution-details.entity';
 import { TransactionStatus } from '@/modules/transactions/routes/entities/transaction-status.entity';
@@ -10,8 +10,8 @@ import type { TransactionDataMapper } from '@/modules/transactions/routes/mapper
 import type { MultisigTransactionInfoMapper } from '@/modules/transactions/routes/mappers/common/transaction-info.mapper';
 import { ModuleTransactionDetailsMapper } from '@/modules/transactions/routes/mappers/module-transactions/module-transaction-details.mapper';
 import type { ModuleTransactionStatusMapper } from '@/modules/transactions/routes/mappers/module-transactions/module-transaction-status.mapper';
-import { getAddress } from 'viem';
-import { dataDecodedBuilder } from '@/modules/data-decoder/domain/v2/entities/__tests__/data-decoded.builder';
+import { addressInfoBuilder } from '@/routes/common/__tests__/entities/address-info.builder';
+import type { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
 
 describe('ModuleTransactionDetails mapper (Unit)', () => {
   let mapper: ModuleTransactionDetailsMapper;

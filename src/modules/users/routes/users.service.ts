@@ -1,15 +1,15 @@
 import { Inject } from '@nestjs/common';
-import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
-import { UserStatus } from '@/modules/users/domain/entities/user.entity';
-import { ISiweRepository } from '@/modules/siwe/domain/siwe.repository.interface';
-import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import type { UsersRepository } from '@/modules/users/domain/users.repository';
-import type { UserWithWallets } from '@/modules/users/routes/entities/user-with-wallets.entity';
-import type { CreatedUserWithWallet } from '@/modules/users/routes/entities/created-user-with-wallet.entity';
-import type { WalletAddedToUser } from '@/modules/users/routes/entities/wallet-added-to-user.entity';
-import { getEnumKey } from '@/domain/common/utils/enum';
-import type { SiweDto } from '@/modules/auth/routes/entities/siwe.dto.entity';
 import type { Address } from 'viem';
+import { getEnumKey } from '@/domain/common/utils/enum';
+import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
+import type { SiweDto } from '@/modules/auth/routes/entities/siwe.dto.entity';
+import { ISiweRepository } from '@/modules/siwe/domain/siwe.repository.interface';
+import { UserStatus } from '@/modules/users/domain/entities/user.entity';
+import type { UsersRepository } from '@/modules/users/domain/users.repository';
+import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
+import type { CreatedUserWithWallet } from '@/modules/users/routes/entities/created-user-with-wallet.entity';
+import type { UserWithWallets } from '@/modules/users/routes/entities/user-with-wallets.entity';
+import type { WalletAddedToUser } from '@/modules/users/routes/entities/wallet-added-to-user.entity';
 
 export class UsersService {
   public constructor(

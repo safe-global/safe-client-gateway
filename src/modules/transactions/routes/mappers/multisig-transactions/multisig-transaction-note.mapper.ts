@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
 import sanitizeHtml from 'sanitize-html';
-import { ProposeTransactionDto } from '@/modules/transactions/domain/entities/propose-transaction.dto.entity';
+import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
+import type { ProposeTransactionDto } from '@/modules/transactions/domain/entities/propose-transaction.dto.entity';
 
 @Injectable()
 export class MultisigTransactionNoteMapper {

@@ -1,24 +1,25 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
+import type { Server } from 'node:net';
 import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import omit from 'lodash/omit';
 import request from 'supertest';
+import { getAddress } from 'viem';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
-import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
-import { delegateBuilder } from '@/modules/delegate/domain/entities/__tests__/delegate.builder';
-import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
-import configuration from '@/config/entities/__tests__/configuration';
+import { createTestModule } from '@/__tests__/testing-module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
+import configuration from '@/config/entities/__tests__/configuration';
+import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
 import { NetworkService } from '@/datasources/network/network.service.interface';
+import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
+import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
+import { delegateBuilder } from '@/modules/delegate/domain/entities/__tests__/delegate.builder';
 import { createDelegateDtoBuilder } from '@/modules/delegate/routes/entities/__tests__/create-delegate.dto.builder';
 import { deleteDelegateDtoBuilder } from '@/modules/delegate/routes/entities/__tests__/delete-delegate.dto.builder';
 import { deleteSafeDelegateDtoBuilder } from '@/modules/delegate/routes/entities/__tests__/delete-safe-delegate.dto.builder';
-import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
-import { getAddress } from 'viem';
-import type { Server } from 'net';
 import { rawify } from '@/validation/entities/raw.entity';
-import { createTestModule } from '@/__tests__/testing-module';
 
 describe('Delegates controller', () => {
   let app: INestApplication<Server>;

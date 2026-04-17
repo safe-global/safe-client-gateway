@@ -1,7 +1,7 @@
-import { addRecoveryModuleDtoBuilder } from '@/modules/recovery/routes/entities/__tests__/add-recovery-module.dto.builder';
-import { AddRecoveryModuleDtoSchema } from '@/modules/recovery/routes/entities/schemas/add-recovery-module.dto.schema';
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress } from 'viem';
+import { addRecoveryModuleDtoBuilder } from '@/modules/recovery/routes/entities/__tests__/add-recovery-module.dto.builder';
+import { AddRecoveryModuleDtoSchema } from '@/modules/recovery/routes/entities/schemas/add-recovery-module.dto.schema';
 
 describe('AddRecoveryModuleDtoSchema', () => {
   it('should validate a valid AddRecoveryModuleDto', () => {

@@ -1,10 +1,9 @@
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
-
-import { Builder } from '@/__tests__/builder';
-import { DefiVaultStatsChains } from '@/modules/staking/datasources/entities/defi-vault-stats.entity';
 import type { IBuilder } from '@/__tests__/builder';
+import { Builder } from '@/__tests__/builder';
 import type { DefiVaultStake } from '@/modules/staking/datasources/entities/defi-vault-stake.entity';
+import { DefiVaultStatsChains } from '@/modules/staking/datasources/entities/defi-vault-stats.entity';
 
 export function defiVaultStakeBuilder(): IBuilder<DefiVaultStake> {
   return new Builder<DefiVaultStake>()

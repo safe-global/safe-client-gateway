@@ -1,15 +1,15 @@
-import { ThreatAnalysisService } from '@/modules/safe-shield/threat-analysis/threat-analysis.service';
-import type { ILoggingService } from '@/logging/logging.interface';
-import type { IBlockaidApi } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-api.interface';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
+import type { ILoggingService } from '@/logging/logging.interface';
 import { threatAnalysisRequestBuilder } from '@/modules/safe-shield/entities/__tests__/builders/analysis-requests.builder';
+import type { IBlockaidApi } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-api.interface';
+import type { BlockaidScanResponse } from '@/modules/safe-shield/threat-analysis/blockaid/schemas/blockaid-scan-response.schema';
 import {
   DESCRIPTION_MAPPING,
   SEVERITY_MAPPING,
   TITLE_MAPPING,
 } from '@/modules/safe-shield/threat-analysis/threat-analysis.constants';
-import type { BlockaidScanResponse } from '@/modules/safe-shield/threat-analysis/blockaid/schemas/blockaid-scan-response.schema';
+import { ThreatAnalysisService } from '@/modules/safe-shield/threat-analysis/threat-analysis.service';
 
 const mockBlockaidApi = {
   scanTransaction: jest.fn(),
@@ -129,13 +129,11 @@ describe('ThreatAnalysisService', () => {
     });
 
     it('should handle message serialization failure', async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const circularData: any = { domain: {} };
       circularData.domain.circular = circularData;
 
       const requestWithCircularData = threatAnalysisRequestBuilder()
         .with('walletAddress', walletAddress)
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         .with('data', circularData)
         .build();
 

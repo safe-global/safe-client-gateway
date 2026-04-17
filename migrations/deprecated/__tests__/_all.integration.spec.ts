@@ -1,7 +1,7 @@
-import { TestDbFactory } from '@/__tests__/db.factory';
-import { PostgresDatabaseMigrator } from '@/datasources/db/v1/postgres-database.migrator';
 import { faker } from '@faker-js/faker';
 import type postgres from 'postgres';
+import { TestDbFactory } from '@/__tests__/db.factory';
+import { PostgresDatabaseMigrator } from '@/datasources/db/v1/postgres-database.migrator';
 
 describe('Migrations', () => {
   let sql: postgres.Sql;

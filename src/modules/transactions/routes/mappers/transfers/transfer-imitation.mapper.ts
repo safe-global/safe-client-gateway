@@ -1,17 +1,17 @@
+import { Inject } from '@nestjs/common';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import { TransactionInfo } from '@/modules/transactions/routes/entities/transaction-info.entity';
-import { TransactionItem } from '@/modules/transactions/routes/entities/transaction-item.entity';
+import type { TransactionInfo } from '@/modules/transactions/routes/entities/transaction-info.entity';
+import type { TransactionItem } from '@/modules/transactions/routes/entities/transaction-item.entity';
 import {
   isTransferTransactionInfo,
   TransferDirection,
-  TransferTransactionInfo,
+  type TransferTransactionInfo,
 } from '@/modules/transactions/routes/entities/transfer-transaction-info.entity';
 import {
-  Erc20Transfer,
+  type Erc20Transfer,
   isErc20Transfer,
 } from '@/modules/transactions/routes/entities/transfers/erc20-transfer.entity';
 import { isSwapTransferTransactionInfo } from '@/modules/transactions/routes/swap-transfer-transaction-info.entity';
-import { Inject } from '@nestjs/common';
 
 type Erc20TransferTransactionInfo = Omit<
   TransferTransactionInfo,
@@ -189,7 +189,7 @@ export class TransferImitationMapper {
       txInfo.transferInfo.tokenAddress === prevTxInfo.transferInfo.tokenAddress;
     const isIncoming = txInfo.direction === TransferDirection.Incoming;
     const isPrevOutgoing = prevTxInfo.direction === TransferDirection.Outgoing;
-    if (!isSameToken || !isIncoming || !isPrevOutgoing) {
+    if (!(isSameToken && isIncoming && isPrevOutgoing)) {
       return false;
     }
 

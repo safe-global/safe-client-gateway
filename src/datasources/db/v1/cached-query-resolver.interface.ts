@@ -1,5 +1,5 @@
-import type { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import type postgres from 'postgres';
+import type { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 
 export const ICachedQueryResolver = Symbol('ICachedQueryResolver');
 

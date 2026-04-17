@@ -1,11 +1,12 @@
+import { ApiExtraModels, ApiProperty } from '@nestjs/swagger';
+import type { Address } from 'viem';
 import {
-  BridgeStatus,
+  type BridgeStatus,
   StatusMessages,
   SubstatusesDone,
   SubstatusesFailed,
   SubstatusesPending,
 } from '@/modules/bridge/domain/entities/bridge-status.entity';
-import { AddressInfo } from '@/routes/common/entities/address-info.entity';
 import { BridgeFee } from '@/modules/transactions/routes/entities/bridge/fees.entity';
 import { TokenInfo } from '@/modules/transactions/routes/entities/swaps/token-info.entity';
 import {
@@ -13,8 +14,7 @@ import {
   TransactionInfo,
   TransactionInfoType,
 } from '@/modules/transactions/routes/entities/transaction-info.entity';
-import { ApiExtraModels, ApiProperty } from '@nestjs/swagger';
-import type { Address } from 'viem';
+import { AddressInfo } from '@/routes/common/entities/address-info.entity';
 
 @ApiExtraModels(BridgeFee)
 export class SwapTransactionInfo extends TransactionInfo {

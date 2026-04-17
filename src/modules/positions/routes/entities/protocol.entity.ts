@@ -1,6 +1,6 @@
 import { ApiExtraModels, ApiProperty, getSchemaPath } from '@nestjs/swagger';
 import { PositionGroup } from '@/modules/positions/routes/entities/position-group.entity';
-import { ProtocolMetadata } from '@/modules/positions/routes/entities/protocol-metadata.entity';
+import type { ProtocolMetadata } from '@/modules/positions/routes/entities/protocol-metadata.entity';
 
 @ApiExtraModels(PositionGroup)
 export class Protocol {

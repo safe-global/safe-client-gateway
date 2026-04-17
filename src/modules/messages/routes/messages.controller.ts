@@ -1,30 +1,30 @@
 import { Body, Controller, Get, HttpCode, Param, Post } from '@nestjs/common';
 import {
-  ApiOkResponse,
-  ApiQuery,
-  ApiTags,
-  ApiOperation,
-  ApiParam,
+  ApiBadRequestResponse,
   ApiBody,
   ApiNotFoundResponse,
-  ApiBadRequestResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiParam,
+  ApiQuery,
+  ApiTags,
 } from '@nestjs/swagger';
-import { PaginationDataDecorator } from '@/routes/common/decorators/pagination.data.decorator';
-import { RouteUrlDecorator } from '@/routes/common/decorators/route.url.decorator';
-import { DateLabel } from '@/routes/common/entities/date-label.entity';
-import { Page } from '@/routes/common/entities/page.entity';
-import { PaginationData } from '@/routes/common/pagination/pagination.data';
+import type { Address, Hash } from 'viem';
 import { CreateMessageDto } from '@/modules/messages/routes/entities/create-message.dto.entity';
-import { MessageItem } from '@/modules/messages/routes/entities/message-item.entity';
 import { Message } from '@/modules/messages/routes/entities/message.entity';
+import type { MessageItem } from '@/modules/messages/routes/entities/message-item.entity';
 import { MessagePage } from '@/modules/messages/routes/entities/messages-page.entity';
+import { CreateMessageDtoSchema } from '@/modules/messages/routes/entities/schemas/create-message.dto.schema';
+import { UpdateMessageSignatureDtoSchema } from '@/modules/messages/routes/entities/schemas/update-message-signature.dto.schema';
 import { UpdateMessageSignatureDto } from '@/modules/messages/routes/entities/update-message-signature.entity';
 import { MessagesService } from '@/modules/messages/routes/messages.service';
-import { ValidationPipe } from '@/validation/pipes/validation.pipe';
-import { UpdateMessageSignatureDtoSchema } from '@/modules/messages/routes/entities/schemas/update-message-signature.dto.schema';
-import { CreateMessageDtoSchema } from '@/modules/messages/routes/entities/schemas/create-message.dto.schema';
+import { PaginationDataDecorator } from '@/routes/common/decorators/pagination.data.decorator';
+import { RouteUrlDecorator } from '@/routes/common/decorators/route.url.decorator';
+import type { DateLabel } from '@/routes/common/entities/date-label.entity';
+import type { Page } from '@/routes/common/entities/page.entity';
+import type { PaginationData } from '@/routes/common/pagination/pagination.data';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import type { Address, Hash } from 'viem';
+import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 
 @ApiTags('messages')
 @Controller({
@@ -58,7 +58,7 @@ export class MessagesController {
     description: 'Message not found',
   })
   @Get('chains/:chainId/messages/:messageHash')
-  async getMessageByHash(
+  getMessageByHash(
     @Param('chainId') chainId: string,
     @Param('messageHash') messageHash: Hash,
   ): Promise<Message> {
@@ -95,7 +95,7 @@ export class MessagesController {
     description: 'Safe not found on the specified chain',
   })
   @Get('chains/:chainId/safes/:safeAddress/messages')
-  async getMessagesBySafe(
+  getMessagesBySafe(
     @Param('chainId') chainId: string,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
     safeAddress: Address,
@@ -138,7 +138,7 @@ export class MessagesController {
   })
   @HttpCode(200)
   @Post('chains/:chainId/safes/:safeAddress/messages')
-  async createMessage(
+  createMessage(
     @Param('chainId') chainId: string,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
     safeAddress: Address,
@@ -183,7 +183,7 @@ export class MessagesController {
   })
   @HttpCode(200)
   @Post('chains/:chainId/messages/:messageHash/signatures')
-  async updateMessageSignature(
+  updateMessageSignature(
     @Param('chainId') chainId: string,
     @Param('messageHash') messageHash: Hash,
     @Body(new ValidationPipe(UpdateMessageSignatureDtoSchema))

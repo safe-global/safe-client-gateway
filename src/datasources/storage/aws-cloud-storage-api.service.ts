@@ -1,24 +1,27 @@
-import type { ICloudStorageApiService } from '@/datasources/storage/cloud-storage-api.service';
+import path from 'node:path';
+import { Readable } from 'node:stream';
 import {
-  AWS_BUCKET_NAME,
-  AWS_BASE_PATH,
-  AWS_ACCESS_KEY_ID,
-  AWS_SECRET_ACCESS_KEY,
-} from '@/datasources/storage/constants';
-import { LogType } from '@/domain/common/entities/log-type.entity';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
-import { asError } from '@/logging/utils';
-import {
-  CompleteMultipartUploadCommandOutput,
+  type CompleteMultipartUploadCommandOutput,
   GetObjectCommand,
-  PutObjectCommandInput,
+  type PutObjectCommandInput,
   S3,
 } from '@aws-sdk/client-s3';
 import { Upload } from '@aws-sdk/lib-storage';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { Inject, Injectable } from '@nestjs/common';
-import path from 'path';
-import { Readable } from 'stream';
+import type { ICloudStorageApiService } from '@/datasources/storage/cloud-storage-api.service';
+import {
+  AWS_ACCESS_KEY_ID,
+  AWS_BASE_PATH,
+  AWS_BUCKET_NAME,
+  AWS_SECRET_ACCESS_KEY,
+} from '@/datasources/storage/constants';
+import { LogType } from '@/domain/common/entities/log-type.entity';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
+import { asError } from '@/logging/utils';
 
 @Injectable()
 export class AwsCloudStorageApiService implements ICloudStorageApiService {
@@ -42,9 +45,8 @@ export class AwsCloudStorageApiService implements ICloudStorageApiService {
       });
       if (response.Body instanceof Readable) {
         return await this.streamToString(response.Body);
-      } else {
-        throw new Error('Unexpected response body type');
       }
+      throw new Error('Unexpected response body type');
     } catch (err) {
       throw new Error(
         `Error getting file content from S3: ${asError(err).message}`,
@@ -52,7 +54,7 @@ export class AwsCloudStorageApiService implements ICloudStorageApiService {
     }
   }
 
-  async createUploadStream(
+  createUploadStream(
     fileName: string,
     body: Readable,
     options: Partial<PutObjectCommandInput> = {},
@@ -102,7 +104,7 @@ export class AwsCloudStorageApiService implements ICloudStorageApiService {
     }
   }
 
-  private async streamToString(stream: Readable): Promise<string> {
+  private streamToString(stream: Readable): Promise<string> {
     return new Promise<string>((resolve, reject) => {
       const chunks: Array<Buffer> = [];
 

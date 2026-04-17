@@ -1,12 +1,15 @@
 import { Inject, Injectable, Module } from '@nestjs/common';
+import type { Address, Hex } from 'viem';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
 import { AbiDecoder } from '@/modules/contracts/domain/decoders/abi-decoder.helper';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import {
   BuyTokenBalance,
   OrderKind,
   SellTokenBalance,
 } from '@/modules/swaps/domain/entities/order.entity';
-import type { Address, Hex } from 'viem';
 
 /**
  * Taken from CoW contracts:
@@ -717,7 +720,6 @@ export class GPv2Decoder extends AbiDecoder<typeof GPv2Abi> {
   }
 
   // Use inferred return type
-  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
   private decodeSettle(data: Address) {
     if (!this.helpers.isSettle(data)) {
       return null;

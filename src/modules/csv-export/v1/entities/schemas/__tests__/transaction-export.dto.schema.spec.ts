@@ -28,7 +28,7 @@ describe('TransactionExportDtoSchema', () => {
   it('should not validate invalid executionDateGte and executionDateLte dates', () => {
     const invalidDates = ['invalid-date', '2023-13-01', '', '123abc'];
 
-    invalidDates.forEach((date) => {
+    for (const date of invalidDates) {
       const payload = { executionDateGte: date, executionDateLte: date };
       const result = TransactionExportDtoSchema.safeParse(payload);
 
@@ -46,26 +46,26 @@ describe('TransactionExportDtoSchema', () => {
           message: 'Invalid ISO datetime',
         }),
       ]);
-    });
+    }
   });
 
   it('should not validate zero or negative limit values', () => {
     const invalidLimits = [0, -1, -10];
 
-    invalidLimits.forEach((limit) => {
+    for (const limit of invalidLimits) {
       const payload = { limit };
       const result = TransactionExportDtoSchema.safeParse(payload);
 
       expect(result.success).toBe(false);
       expect(!result.success && result.error.issues[0].code).toBe('too_small');
       expect(!result.success && result.error.issues[0].path).toEqual(['limit']);
-    });
+    }
   });
 
   it('should not validate negative offset values', () => {
     const invalidOffsets = [-1, -10, -100];
 
-    invalidOffsets.forEach((offset) => {
+    for (const offset of invalidOffsets) {
       const payload = { offset };
       const result = TransactionExportDtoSchema.safeParse(payload);
 
@@ -74,7 +74,7 @@ describe('TransactionExportDtoSchema', () => {
       expect(!result.success && result.error.issues[0].path).toEqual([
         'offset',
       ]);
-    });
+    }
   });
 
   it('should validate large valid numbers for limit and offset', () => {

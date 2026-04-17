@@ -1,37 +1,37 @@
+import get from 'lodash/get';
+import type { Address } from 'viem';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import type { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
 import { CacheRouter } from '@/datasources/cache/cache.router';
 import type { ICacheService } from '@/datasources/cache/cache.service.interface';
 import { MAX_TTL } from '@/datasources/cache/constants';
 import { CircuitBreakerKeys } from '@/datasources/circuit-breaker/circuit-breaker.keys';
-import type { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
+import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
+import { LogType } from '@/domain/common/entities/log-type.entity';
+import type { Page } from '@/domain/entities/page.entity';
+import type { ITransactionApi } from '@/domain/interfaces/transaction-api.interface';
+import type { ILoggingService } from '@/logging/logging.interface';
 import type { Backbone } from '@/modules/backbone/domain/entities/backbone.entity';
 import type { Singleton } from '@/modules/chains/domain/entities/singleton.entity';
-import { LogType } from '@/domain/common/entities/log-type.entity';
 import type { DataDecoded } from '@/modules/data-decoder/domain/v1/entities/data-decoded.entity';
 import type { Delegate } from '@/modules/delegate/domain/entities/delegate.entity';
-import type { Page } from '@/domain/entities/page.entity';
 import type { Estimation } from '@/modules/estimations/domain/entities/estimation.entity';
 import type { GetEstimationDto } from '@/modules/estimations/domain/entities/get-estimation.dto.entity';
 import type { IndexingStatus } from '@/modules/indexing/domain/entities/indexing-status.entity';
-import type { ITransactionApi } from '@/domain/interfaces/transaction-api.interface';
 import type { Message } from '@/modules/messages/domain/entities/message.entity';
 import type { CreationTransaction } from '@/modules/safe/domain/entities/creation-transaction.entity';
 import type { ModuleTransaction } from '@/modules/safe/domain/entities/module-transaction.entity';
 import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
-import type { SafeList } from '@/modules/safe/domain/entities/safe-list.entity';
 import type { Safe, SafeV2 } from '@/modules/safe/domain/entities/safe.entity';
+import type { SafeList } from '@/modules/safe/domain/entities/safe-list.entity';
 import type { Transaction } from '@/modules/safe/domain/entities/transaction.entity';
 import type { Transfer } from '@/modules/safe/domain/entities/transfer.entity';
 import type { Token } from '@/modules/tokens/domain/entities/token.entity';
 import type { AddConfirmationDto } from '@/modules/transactions/domain/entities/add-confirmation.dto.entity';
 import type { ProposeTransactionDto } from '@/modules/transactions/domain/entities/propose-transaction.dto.entity';
-import type { ILoggingService } from '@/logging/logging.interface';
 import type { Raw } from '@/validation/entities/raw.entity';
-import get from 'lodash/get';
-import type { Address } from 'viem';
 
 export class TransactionApi implements ITransactionApi {
   private static readonly ERROR_ARRAY_PATH = 'nonFieldErrors';
@@ -223,12 +223,11 @@ export class TransactionApi implements ITransactionApi {
       });
 
       return cached === 'true';
-    } else {
-      this.loggingService.debug({
-        type: LogType.CacheMiss,
-        ...cacheDir,
-      });
     }
+    this.loggingService.debug({
+      type: LogType.CacheMiss,
+      ...cacheDir,
+    });
 
     const isSafe = await (async (): Promise<boolean> => {
       try {

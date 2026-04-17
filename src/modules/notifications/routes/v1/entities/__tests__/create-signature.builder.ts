@@ -1,6 +1,6 @@
-import type { UUID } from 'crypto';
-import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
+import type { UUID } from 'node:crypto';
 import type { Address } from 'viem';
+import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 
 export async function safeRegistrationSignatureBuilder(args: {
   signaturePrefix: string;

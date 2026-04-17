@@ -1,9 +1,9 @@
-import { TestDbFactory } from '@/__tests__/db.factory';
-import { PostgresDatabaseMigrator } from '@/datasources/db/v1/postgres-database.migrator';
-import type { Outreach } from '@/modules/targeted-messaging/domain/entities/outreach.entity';
 import { faker } from '@faker-js/faker';
 import type postgres from 'postgres';
 import type { Sql } from 'postgres';
+import { TestDbFactory } from '@/__tests__/db.factory';
+import { PostgresDatabaseMigrator } from '@/datasources/db/v1/postgres-database.migrator';
+import type { Outreach } from '@/modules/targeted-messaging/domain/entities/outreach.entity';
 
 describe('Migration 00014_targeted_messaging_add_chain_id', () => {
   let sql: postgres.Sql;
@@ -82,12 +82,12 @@ describe('Migration 00014_targeted_messaging_add_chain_id', () => {
     expect(result.after.rows).toHaveLength(2);
     expect(result.after.rows[0]).toMatchObject({
       address: expect.any(String),
-      outreach_id: result.before!.outreachId,
+      outreach_id: result.before?.outreachId,
       chain_id: null,
     });
     expect(result.after.rows[1]).toMatchObject({
       address: expect.any(String),
-      outreach_id: result.before!.outreachId,
+      outreach_id: result.before?.outreachId,
       chain_id: null,
     });
   });

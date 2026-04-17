@@ -1,14 +1,15 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
+import type { Server } from 'node:net';
 import type { INestApplication } from '@nestjs/common';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
-import { IFeatureFlagService } from '@/modules/chains/feature-flags/feature-flag.service.interface';
-import { IConfigurationService } from '@/config/configuration.service.interface';
 import { createTestModule } from '@/__tests__/testing-module';
+import { IConfigurationService } from '@/config/configuration.service.interface';
 import configuration from '@/config/entities/__tests__/configuration';
-import { NetworkService } from '@/datasources/network/network.service.interface';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
+import { NetworkService } from '@/datasources/network/network.service.interface';
+import { IFeatureFlagService } from '@/modules/chains/feature-flags/feature-flag.service.interface';
 import { rawify } from '@/validation/entities/raw.entity';
-import type { Server } from 'net';
 
 const CUSTOM_CGW_KEY = 'CUSTOM_CGW_KEY';
 

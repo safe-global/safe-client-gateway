@@ -1,19 +1,19 @@
 import { Inject, Injectable } from '@nestjs/common';
 import groupBy from 'lodash/groupBy';
-import { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
-import { Safe } from '@/modules/safe/domain/entities/safe.entity';
-import { MultisigTransactionMapper } from '@/modules/transactions/routes/mappers/multisig-transactions/multisig-transaction.mapper';
-import { Page } from '@/domain/entities/page.entity';
+import type { Page } from '@/domain/entities/page.entity';
+import { IDataDecoderRepository } from '@/modules/data-decoder/domain/v2/data-decoder.repository.interface';
+import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
+import type { Safe } from '@/modules/safe/domain/entities/safe.entity';
 import { ConflictType } from '@/modules/transactions/routes/entities/conflict-type.entity';
-import { QueuedItem } from '@/modules/transactions/routes/entities/queued-item.entity';
+import type { QueuedItem } from '@/modules/transactions/routes/entities/queued-item.entity';
 import { ConflictHeaderQueuedItem } from '@/modules/transactions/routes/entities/queued-items/conflict-header-queued-item.entity';
 import {
   LabelItem,
   LabelQueuedItem,
 } from '@/modules/transactions/routes/entities/queued-items/label-queued-item.entity';
 import { TransactionQueuedItem } from '@/modules/transactions/routes/entities/queued-items/transaction-queued-item.entity';
+import { MultisigTransactionMapper } from '@/modules/transactions/routes/mappers/multisig-transactions/multisig-transaction.mapper';
 import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
-import { IDataDecoderRepository } from '@/modules/data-decoder/domain/v2/data-decoder.repository.interface';
 
 class TransactionGroup {
   nonce!: number;
@@ -125,11 +125,11 @@ export class QueuedItemsMapper {
     if (isFirstInGroup) {
       if (hasConflicts) {
         return ConflictType.HasNext;
-      } else if (conflictFromPreviousPage) {
-        return ConflictType.End;
-      } else {
-        return ConflictType.None;
       }
+      if (conflictFromPreviousPage) {
+        return ConflictType.End;
+      }
+      return ConflictType.None;
     }
     return !isLastInGroup || isEdgeGroup
       ? ConflictType.HasNext

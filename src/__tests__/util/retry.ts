@@ -10,10 +10,10 @@ export async function waitMilliseconds(milliseconds: number): Promise<void> {
  * Uses a linear strategy by retrying each {@link delayMs} milliseconds.
  * If {@link maxAttempts} is reached, it throws the error returned by {@link fn} last execution.
  */
-export async function retry(
+export function retry(
   fn: () => Promise<void>,
-  maxAttempts: number = 40,
-  delayMs: number = 100,
+  maxAttempts = 40,
+  delayMs = 100,
 ): Promise<void> {
   let attempt = 0;
   const execute = async (): Promise<void> => {

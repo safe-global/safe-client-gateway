@@ -1,7 +1,7 @@
+import { z } from 'zod';
 import { buildPageSchema } from '@/domain/entities/schemas/page.schema.factory';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
-import { z } from 'zod';
 
 export const CampaignActivitySchema = z.object({
   startDate: z.coerce.date(),

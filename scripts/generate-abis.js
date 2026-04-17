@@ -1,6 +1,5 @@
-/* eslint-disable @typescript-eslint/no-var-requires */
-const path = require('path');
-const fs = require('fs');
+const path = require('node:path');
+const fs = require('node:fs');
 
 /**
  * This generates const TypeScript ABIs for each asset in
@@ -28,7 +27,6 @@ const assetsDir = path.join(
 // Path to directory where ABIs will be written
 const outputDir = path.join(process.cwd(), 'abis', 'safe');
 
-// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 function main() {
   // Remove any existing ABIs
   try {
@@ -77,7 +75,7 @@ function main() {
     }
   }
 
-  console.log('ABIs generated successfully!');
+  console.info('ABIs generated successfully!');
 }
 
 main();

@@ -1,5 +1,5 @@
-import { registerAs } from '@nestjs/config';
 import { faker } from '@faker-js/faker';
+import { registerAs } from '@nestjs/config';
 
 export default registerAs('alerts-api', () => ({
   apiKey: faker.string.hexadecimal({ length: 32 }),

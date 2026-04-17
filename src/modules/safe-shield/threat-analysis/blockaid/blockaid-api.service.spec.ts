@@ -1,12 +1,12 @@
-import { BlockaidApi } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-api.service';
+import type Blockaid from '@blockaid/client';
 // import { GUARD_STORAGE_POSITION } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-api.constants';
 import type { TransactionScanResponse } from '@blockaid/client/resources/evm/evm';
-import type { Address } from 'viem';
 import { faker } from '@faker-js/faker';
-import type Blockaid from '@blockaid/client';
+import type { Address } from 'viem';
 import type { ILoggingService } from '@/logging/logging.interface';
-import type { BlockaidScanResponse } from '@/modules/safe-shield/threat-analysis/blockaid/schemas/blockaid-scan-response.schema';
 import { ReportEvent } from '@/modules/safe-shield/entities/dtos/report-false-result.dto';
+import { BlockaidApi } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-api.service';
+import type { BlockaidScanResponse } from '@/modules/safe-shield/threat-analysis/blockaid/schemas/blockaid-scan-response.schema';
 
 const createMockWithResponse = (
   data: TransactionScanResponse,
@@ -50,7 +50,6 @@ describe('BlockaidApi', () => {
     jest.resetAllMocks();
 
     service = new BlockaidApi(mockLoggingService);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (service as any).blockaidClient = mockBlockaidClient;
   });
 

@@ -1,8 +1,8 @@
 import { faker } from '@faker-js/faker';
-import { outreachFileBuilder } from '@/modules/targeted-messaging/datasources/entities/__tests__/outreach-file.builder';
-import { OutreachFileSchema } from '@/modules/targeted-messaging/datasources/entities/outreach-file.entity';
 import type { Address } from 'viem';
 import { getAddress } from 'viem';
+import { outreachFileBuilder } from '@/modules/targeted-messaging/datasources/entities/__tests__/outreach-file.builder';
+import { OutreachFileSchema } from '@/modules/targeted-messaging/datasources/entities/outreach-file.entity';
 
 describe('OutreachFileSchema', () => {
   it('should validate an OutreachFile', () => {

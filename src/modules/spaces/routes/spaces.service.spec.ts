@@ -1,23 +1,24 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { SpacesService } from '@/modules/spaces/routes/spaces.service';
-import type { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
-import type { IMembersRepository } from '@/modules/users/domain/members.repository.interface';
-import type { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
-import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
+
+import { faker } from '@faker-js/faker';
 import {
   ForbiddenException,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { faker } from '@faker-js/faker';
-import { userBuilder } from '@/modules/users/datasources/entities/__tests__/users.entity.db.builder';
-import { memberBuilder } from '@/modules/users/datasources/entities/__tests__/member.entity.db.builder';
-import { spaceBuilder } from '@/modules/spaces/domain/entities/__tests__/space.entity.db.builder';
-import type { SpaceSafe } from '@/modules/spaces/datasources/entities/space-safes.entity.db';
 import {
-  siweAuthPayloadDtoBuilder,
   oidcAuthPayloadDtoBuilder,
+  siweAuthPayloadDtoBuilder,
 } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
+import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
+import type { SpaceSafe } from '@/modules/spaces/datasources/entities/space-safes.entity.db';
+import { spaceBuilder } from '@/modules/spaces/domain/entities/__tests__/space.entity.db.builder';
+import type { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
+import { SpacesService } from '@/modules/spaces/routes/spaces.service';
+import { memberBuilder } from '@/modules/users/datasources/entities/__tests__/member.entity.db.builder';
+import { userBuilder } from '@/modules/users/datasources/entities/__tests__/users.entity.db.builder';
+import type { IMembersRepository } from '@/modules/users/domain/members.repository.interface';
+import type { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
 
 const spacesRepositoryMock = {
   create: jest.fn(),

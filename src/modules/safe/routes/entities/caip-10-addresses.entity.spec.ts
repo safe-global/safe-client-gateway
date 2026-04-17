@@ -1,6 +1,6 @@
-import { Caip10AddressesSchema } from '@/modules/safe/routes/entities/caip-10-addresses.entity';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
+import { Caip10AddressesSchema } from '@/modules/safe/routes/entities/caip-10-addresses.entity';
 
 describe('Caip10AddressesSchema', () => {
   const caip10Addresses = faker.helpers.multiple(

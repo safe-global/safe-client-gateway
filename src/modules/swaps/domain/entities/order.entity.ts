@@ -1,7 +1,7 @@
 import { z } from 'zod';
+import { FullAppDataSchema } from '@/modules/swaps/domain/entities/full-app-data.entity';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { HexSchema } from '@/validation/entities/schemas/hex.schema';
-import { FullAppDataSchema } from '@/modules/swaps/domain/entities/full-app-data.entity';
 import {
   NullableAddressSchema,
   NullableHexSchema,

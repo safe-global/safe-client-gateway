@@ -1,6 +1,6 @@
+import type { Address } from 'viem';
 import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
 import type { Position } from '@/modules/positions/domain/entities/position.entity';
-import type { Address } from 'viem';
 
 export const IPositionsRepository = Symbol('IPositionsRepository');
 

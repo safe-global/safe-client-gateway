@@ -1,18 +1,21 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { hexToNumber, isHex } from 'viem';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import { CacheRouter } from '@/datasources/cache/cache.router';
 import {
   CacheService,
-  ICacheService,
+  type ICacheService,
 } from '@/datasources/cache/cache.service.interface';
 import {
-  INetworkService,
+  type INetworkService,
   NetworkService,
 } from '@/datasources/network/network.service.interface';
-import { CacheRouter } from '@/datasources/cache/cache.router';
-import { ZerionChainsSchema } from '@/modules/portfolio/datasources/entities/zerion-chain.entity';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
 import { getZerionHeaders } from '@/modules/balances/datasources/zerion-api.helpers';
-import { hexToNumber, isHex } from 'viem';
+import { ZerionChainsSchema } from '@/modules/portfolio/datasources/entities/zerion-chain.entity';
 
 @Injectable()
 export class ZerionChainMappingService {

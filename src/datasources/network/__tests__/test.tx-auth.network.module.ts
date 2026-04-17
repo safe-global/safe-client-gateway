@@ -1,12 +1,12 @@
 import { Module } from '@nestjs/common';
+import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
+import { CacheFirstDataSourceModule } from '@/datasources/cache/cache.first.data.source.module';
+import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
+import { networkService } from '@/datasources/network/__tests__/test.network.module';
 import {
-  INetworkService,
+  type INetworkService,
   NetworkService,
 } from '@/datasources/network/network.service.interface';
-import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
-import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
-import { CacheFirstDataSourceModule } from '@/datasources/cache/cache.first.data.source.module';
-import { networkService } from '@/datasources/network/__tests__/test.network.module';
 
 /**
  * Test module that overrides {@link TxAuthNetworkModule} with mocked dependencies.

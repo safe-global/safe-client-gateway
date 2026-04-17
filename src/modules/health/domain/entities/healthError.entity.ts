@@ -1,5 +1,1 @@
-export class HealthCheckError extends Error {
-  public constructor(message: string) {
-    super(message);
-  }
-}
+export class HealthCheckError extends Error {}

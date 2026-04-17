@@ -1,7 +1,7 @@
 import { faker } from '@faker-js/faker';
-import { Erc20Decoder } from '@/modules/relay/domain/contracts/decoders/erc-20-decoder.helper';
-import { erc20TransferEncoder } from '@/modules/relay/domain/contracts/__tests__/encoders/erc20-encoder.builder';
 import type { Hex } from 'viem';
+import { erc20TransferEncoder } from '@/modules/relay/domain/contracts/__tests__/encoders/erc20-encoder.builder';
+import { Erc20Decoder } from '@/modules/relay/domain/contracts/decoders/erc-20-decoder.helper';
 
 describe('Erc20Decoder', () => {
   let target: Erc20Decoder;

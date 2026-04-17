@@ -1,8 +1,8 @@
-import { typedDataBuilder } from '@/modules/messages/routes/entities/__tests__/typed-data.builder';
-import { createMessageDtoBuilder } from '@/modules/messages/routes/entities/__tests__/create-message.dto.builder';
-import { CreateMessageDtoSchema } from '@/modules/messages/routes/entities/schemas/create-message.dto.schema';
 import { faker } from '@faker-js/faker';
 import type { Address } from 'viem';
+import { createMessageDtoBuilder } from '@/modules/messages/routes/entities/__tests__/create-message.dto.builder';
+import { typedDataBuilder } from '@/modules/messages/routes/entities/__tests__/typed-data.builder';
+import { CreateMessageDtoSchema } from '@/modules/messages/routes/entities/schemas/create-message.dto.schema';
 
 describe('CreateMessageDtoSchema', () => {
   describe('message', () => {
@@ -30,7 +30,7 @@ describe('CreateMessageDtoSchema', () => {
     it('should not validate without a message', () => {
       const createMessageDto = createMessageDtoBuilder().build();
       // @ts-expect-error - inferred type doesn't allow optional properties
-      delete createMessageDto.message;
+      createMessageDto.message = undefined;
 
       const result = CreateMessageDtoSchema.safeParse(createMessageDto);
 
@@ -121,7 +121,7 @@ describe('CreateMessageDtoSchema', () => {
     it('should validate without safeAppId, defaulting to null', () => {
       const createMessageDto = createMessageDtoBuilder().build();
       // @ts-expect-error - inferred type doesn't allow optional properties
-      delete createMessageDto.safeAppId;
+      createMessageDto.safeAppId = undefined;
 
       const result = CreateMessageDtoSchema.safeParse(createMessageDto);
 
@@ -159,7 +159,7 @@ describe('CreateMessageDtoSchema', () => {
     it('should not validate without a signature', () => {
       const createMessageDto = createMessageDtoBuilder().build();
       // @ts-expect-error - inferred type doesn't allow optional properties
-      delete createMessageDto.signature;
+      createMessageDto.signature = undefined;
 
       const result = CreateMessageDtoSchema.safeParse(createMessageDto);
 
@@ -178,7 +178,7 @@ describe('CreateMessageDtoSchema', () => {
     it('should validate without origin, defaulting to null', () => {
       const createMessageDto = createMessageDtoBuilder().build();
       // @ts-expect-error - inferred type doesn't allow optional properties
-      delete createMessageDto.origin;
+      createMessageDto.origin = undefined;
 
       const result = CreateMessageDtoSchema.safeParse(createMessageDto);
 

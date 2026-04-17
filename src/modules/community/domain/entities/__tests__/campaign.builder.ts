@@ -1,8 +1,8 @@
+import { faker } from '@faker-js/faker';
 import type { IBuilder } from '@/__tests__/builder';
 import { Builder } from '@/__tests__/builder';
 import { activityMetadataBuilder } from '@/modules/community/domain/entities/__tests__/activity-metadata.builder';
 import type { Campaign } from '@/modules/community/domain/entities/campaign.entity';
-import { faker } from '@faker-js/faker';
 
 export function campaignBuilder(): IBuilder<Campaign> {
   return new Builder<Campaign>()

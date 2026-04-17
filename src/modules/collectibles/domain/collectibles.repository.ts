@@ -1,11 +1,11 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { ICollectiblesRepository } from '@/modules/collectibles/domain/collectibles.repository.interface';
-import { CollectiblePageSchema } from '@/modules/collectibles/domain/entities/schemas/collectible.schema';
-import { Collectible } from '@/modules/collectibles/domain/entities/collectible.entity';
-import { Page } from '@/domain/entities/page.entity';
-import { IBalancesApiManager } from '@/domain/interfaces/balances-api.manager.interface';
-import { Chain } from '@/modules/chains/domain/entities/chain.entity';
 import type { Address } from 'viem';
+import type { Page } from '@/domain/entities/page.entity';
+import { IBalancesApiManager } from '@/domain/interfaces/balances-api.manager.interface';
+import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
+import type { ICollectiblesRepository } from '@/modules/collectibles/domain/collectibles.repository.interface';
+import type { Collectible } from '@/modules/collectibles/domain/entities/collectible.entity';
+import { CollectiblePageSchema } from '@/modules/collectibles/domain/entities/schemas/collectible.schema';
 
 @Injectable()
 export class CollectiblesRepository implements ICollectiblesRepository {

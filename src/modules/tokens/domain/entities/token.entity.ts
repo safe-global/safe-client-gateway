@@ -1,7 +1,7 @@
 import { z } from 'zod';
+import { TokenMetadataSchema } from '@/domain/common/schemas/token-metadata.schema';
 import { buildPageSchema } from '@/domain/entities/schemas/page.schema.factory';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { TokenMetadataSchema } from '@/domain/common/schemas/token-metadata.schema';
 
 /**
  * ERC-20 decimals are optional

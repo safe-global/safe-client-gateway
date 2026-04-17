@@ -1,26 +1,30 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import {
-  PUSH_NOTIFICATION_QUEUE,
-  PUSH_NOTIFICATION_WORKER_CONCURRENCY,
-} from '@/domain/common/jobs.constants';
-import { LogType } from '@/domain/common/entities/log-type.entity';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
-import { asError } from '@/logging/utils';
+
+import { OnWorkerEvent, Processor, WorkerHost } from '@nestjs/bullmq';
+import { Inject } from '@nestjs/common';
+import type { Job } from 'bullmq';
 import {
   JobType,
   type JobTypeName,
 } from '@/datasources/job-queue/types/job-types';
-import { PushNotificationService } from '@/modules/notifications/domain/push/push-notification.service';
+import { LogType } from '@/domain/common/entities/log-type.entity';
+import {
+  PUSH_NOTIFICATION_QUEUE,
+  PUSH_NOTIFICATION_WORKER_CONCURRENCY,
+} from '@/domain/common/jobs.constants';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
+import { asError } from '@/logging/utils';
 import type {
-  PushNotificationEventJobData,
-  PushNotificationDeliveryJobData,
-  PushNotificationJobResponse,
-  PushNotificationJob,
   JobMetadata,
+  PushNotificationDeliveryJobData,
+  PushNotificationEventJobData,
+  PushNotificationJob,
+  PushNotificationJobResponse,
 } from '@/modules/notifications/domain/push/entities/push-notification-job-data.entity';
-import { OnWorkerEvent, Processor, WorkerHost } from '@nestjs/bullmq';
-import { Inject } from '@nestjs/common';
-import { Job } from 'bullmq';
+import { PushNotificationService } from '@/modules/notifications/domain/push/push-notification.service';
 
 @Processor(PUSH_NOTIFICATION_QUEUE, {
   concurrency: PUSH_NOTIFICATION_WORKER_CONCURRENCY,
@@ -34,7 +38,7 @@ export class PushNotificationConsumer extends WorkerHost {
     super();
   }
 
-  async process(
+  process(
     job: PushNotificationJob,
   ): Promise<PushNotificationJobResponse | number> {
     const jobName = job.name as JobTypeName;
@@ -99,10 +103,10 @@ export class PushNotificationConsumer extends WorkerHost {
       jobName: job.name,
       attemptsMade: job.attemptsMade,
       ...(deliveryData && {
-        chainId: deliveryData.chainId,
-        safeAddress: deliveryData.safeAddress,
-        notificationType: deliveryData.notificationType,
-        deviceUuid: deliveryData.deviceUuid,
+        chainId: deliveryData.chainId as string,
+        safeAddress: deliveryData.safeAddress as string,
+        notificationType: deliveryData.notificationType as string,
+        deviceUuid: deliveryData.deviceUuid as string,
       }),
     };
   }

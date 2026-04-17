@@ -1,32 +1,35 @@
 import { Inject, Injectable } from '@nestjs/common';
 import max from 'lodash/max';
 import semver from 'semver';
+import type { Address } from 'viem';
+import { IConfigurationService } from '@/config/configuration.service.interface';
+import { getNumberString } from '@/domain/common/utils/utils';
+import type { Page } from '@/domain/entities/page.entity';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
+import { asError } from '@/logging/utils';
+import { IBalancesRepository } from '@/modules/balances/domain/balances.repository.interface';
 import { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
-import { Singleton } from '@/modules/chains/domain/entities/singleton.entity';
-import { MessagesRepository } from '@/modules/messages/domain/messages.repository';
+import type { Singleton } from '@/modules/chains/domain/entities/singleton.entity';
+import type { MessagesRepository } from '@/modules/messages/domain/messages.repository';
 import { IMessagesRepository } from '@/modules/messages/domain/messages.repository.interface';
-import { ModuleTransaction } from '@/modules/safe/domain/entities/module-transaction.entity';
-import { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
-import { Safe } from '@/modules/safe/domain/entities/safe.entity';
-import { Transfer } from '@/modules/safe/domain/entities/transfer.entity';
+import type { ModuleTransaction } from '@/modules/safe/domain/entities/module-transaction.entity';
+import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
+import type { Safe } from '@/modules/safe/domain/entities/safe.entity';
+import type { Transfer } from '@/modules/safe/domain/entities/transfer.entity';
 import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
-import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
-import { NULL_ADDRESS } from '@/routes/common/constants';
-import { AddressInfo } from '@/routes/common/entities/address-info.entity';
+import type { Caip10Addresses } from '@/modules/safe/routes/entities/caip-10-addresses.entity';
+import { SafeNonces } from '@/modules/safe/routes/entities/nonces.entity';
 import {
   MasterCopyVersionState,
   SafeState,
 } from '@/modules/safe/routes/entities/safe-info.entity';
-import { SafeNonces } from '@/modules/safe/routes/entities/nonces.entity';
-import { Page } from '@/domain/entities/page.entity';
-import { IBalancesRepository } from '@/modules/balances/domain/balances.repository.interface';
-import { getNumberString } from '@/domain/common/utils/utils';
 import { SafeOverview } from '@/modules/safe/routes/entities/safe-overview.entity';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { LoggingService, ILoggingService } from '@/logging/logging.interface';
-import { asError } from '@/logging/utils';
-import { Caip10Addresses } from '@/modules/safe/routes/entities/caip-10-addresses.entity';
-import type { Address } from 'viem';
+import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
+import { NULL_ADDRESS } from '@/routes/common/constants';
+import { AddressInfo } from '@/routes/common/entities/address-info.entity';
 
 @Injectable()
 export class SafesService {
@@ -107,7 +110,7 @@ export class SafesService {
           'CONTRACT',
         ]);
       moduleAddressesInfo =
-        moduleInfoCollection.length == 0 ? null : moduleInfoCollection;
+        moduleInfoCollection.length === 0 ? null : moduleInfoCollection;
     }
 
     return new SafeState(
@@ -213,13 +216,14 @@ export class SafesService {
       (acc, { confirmationsRequired, confirmations }) => {
         const isConfirmed =
           !!confirmations && confirmations.length >= confirmationsRequired;
-        const isSignable =
-          !isConfirmed &&
-          !confirmations?.some((confirmation) => {
+        const isSignable = !(
+          isConfirmed ||
+          confirmations?.some((confirmation) => {
             return confirmation.owner === args.walletAddress;
-          });
+          })
+        );
         if (isSignable) {
-          acc++;
+          return acc + 1;
         }
         return acc;
       },

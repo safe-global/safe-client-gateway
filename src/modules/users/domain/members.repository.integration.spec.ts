@@ -1,24 +1,31 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
+import { faker } from '@faker-js/faker';
+import { ForbiddenException } from '@nestjs/common';
+import type { ConfigService } from '@nestjs/config';
+import { DataSource, In } from 'typeorm';
+import type { Address } from 'viem';
+import { getAddress } from 'viem';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import configuration from '@/config/entities/__tests__/configuration';
 import { postgresConfig } from '@/config/entities/postgres.config';
 import { DatabaseMigrator } from '@/datasources/db/v2/database-migrator.service';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
-import { SpaceSafe } from '@/modules/spaces/datasources/entities/space-safes.entity.db';
-import { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
-import { Member } from '@/modules/users/datasources/entities/member.entity.db';
-import { User } from '@/modules/users/datasources/entities/users.entity.db';
-import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
-import {
-  siweAuthPayloadDtoBuilder,
-  oidcAuthPayloadDtoBuilder,
-} from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
-import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
 import { nameBuilder } from '@/domain/common/entities/name.builder';
 import { getStringEnumKeys } from '@/domain/common/utils/enum';
+import type { ILoggingService } from '@/logging/logging.interface';
+import {
+  oidcAuthPayloadDtoBuilder,
+  siweAuthPayloadDtoBuilder,
+} from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
+import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
+import { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
+import { SpaceSafe } from '@/modules/spaces/datasources/entities/space-safes.entity.db';
 import { SpaceStatus } from '@/modules/spaces/domain/entities/space.entity';
 import { SpacesRepository } from '@/modules/spaces/domain/spaces.repository';
+import { Member } from '@/modules/users/datasources/entities/member.entity.db';
+import { User } from '@/modules/users/datasources/entities/users.entity.db';
 import {
   MemberRole,
   MemberStatus,
@@ -26,14 +33,8 @@ import {
 import { UserStatus } from '@/modules/users/domain/entities/user.entity';
 import { MembersRepository } from '@/modules/users/domain/members.repository';
 import { UsersRepository } from '@/modules/users/domain/users.repository';
+import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
 import { WalletsRepository } from '@/modules/wallets/domain/wallets.repository';
-import type { ILoggingService } from '@/logging/logging.interface';
-import { faker } from '@faker-js/faker';
-import { ForbiddenException } from '@nestjs/common';
-import type { ConfigService } from '@nestjs/config';
-import { DataSource, In } from 'typeorm';
-import type { Address } from 'viem';
-import { getAddress } from 'viem';
 
 const mockLoggingService = {
   debug: jest.fn(),
@@ -170,7 +171,7 @@ describe('MembersRepository', () => {
   // As the triggers are set on the database level, Jest's fake timers are not accurate
   describe('createdAt/updatedAt', () => {
     it('should set createdAt and updatedAt when creating a member', async () => {
-      const before = new Date().getTime();
+      const before = Date.now();
 
       const dbUserRepo = dataSource.getRepository(User);
       const dbSpacesRepository = dataSource.getRepository(Space);
@@ -191,12 +192,12 @@ describe('MembersRepository', () => {
         invitedBy: getAddress(faker.finance.ethereumAddress()),
       });
 
-      const after = new Date().getTime();
+      const after = Date.now();
 
       const createdAt = member.generatedMaps[0].createdAt;
       const updatedAt = member.generatedMaps[0].updatedAt;
 
-      if (!(createdAt instanceof Date) || !(updatedAt instanceof Date)) {
+      if (!(createdAt instanceof Date && updatedAt instanceof Date)) {
         throw new Error('createdAt and/or updatedAt is not a Date');
       }
 

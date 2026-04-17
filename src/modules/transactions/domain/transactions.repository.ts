@@ -1,6 +1,6 @@
-import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
-import { ITransactionsRepository } from '@/modules/transactions/domain/transactions.repository.interface';
 import { Inject, Injectable } from '@nestjs/common';
+import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
+import type { ITransactionsRepository } from '@/modules/transactions/domain/transactions.repository.interface';
 
 @Injectable()
 export class TransactionsRepository implements ITransactionsRepository {

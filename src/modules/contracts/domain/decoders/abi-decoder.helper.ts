@@ -51,7 +51,6 @@ export abstract class AbiDecoder<TAbi extends Abi> {
   }
 
   // Use inferred types from viem
-  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
   decodeEventLog<
     const abi extends TAbi,
     eventName extends ContractEventName<abi> | undefined = undefined,
@@ -71,7 +70,6 @@ export abstract class AbiDecoder<TAbi extends Abi> {
   }
 
   // Use inferred types from viem
-  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
   decodeFunctionData<TAbi extends Abi>(
     args: Omit<DecodeFunctionDataParameters<TAbi>, 'abi'>,
   ) {

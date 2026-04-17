@@ -1,22 +1,22 @@
-import * as fs from 'fs';
-import * as path from 'path';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 import {
-  PROJECT_ROOT,
-  EnvVariableSchema,
   EnvConfigSchema,
-  loadEnvJson,
-  isSymbolicLink,
-  sanitizeEnvValue,
-  formatRequiredVar,
-  formatOptionalVar,
-  findDuplicateNames,
   type EnvVariable,
+  EnvVariableSchema,
+  findDuplicateNames,
+  formatOptionalVar,
+  formatRequiredVar,
+  isSymbolicLink,
+  loadEnvJson,
+  PROJECT_ROOT,
+  sanitizeEnvValue,
 } from './env-json-helpers';
 import { createMockStats, mockProcessExit } from './test-utils';
 
 // Mock fs module
-jest.mock('fs');
-const mockFs = jest.mocked(fs);
+jest.mock('node:fs');
+const mockFs: jest.Mocked<typeof fs> = jest.mocked(fs);
 
 describe('env-json-helpers', () => {
   beforeEach(() => {

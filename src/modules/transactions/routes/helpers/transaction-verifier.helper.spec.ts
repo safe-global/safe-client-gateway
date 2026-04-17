@@ -1,26 +1,26 @@
 import { faker } from '@faker-js/faker';
 import { get } from 'lodash';
-import { type Address, type Hex, concat, getAddress } from 'viem';
+import { type Address, concat, getAddress, type Hex } from 'viem';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
+import type { IConfigurationService } from '@/config/configuration.service.interface';
+import configuration from '@/config/entities/__tests__/configuration';
+import type { IBlocklistService } from '@/config/entities/blocklist.interface';
 import { SignatureType } from '@/domain/common/entities/signature-type.entity';
+import { HttpExceptionNoLog } from '@/domain/common/errors/http-exception-no-log.error';
+import { getSignature } from '@/domain/common/utils/__tests__/signatures.builder';
+import { getSafeTxHash } from '@/domain/common/utils/safe';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
+import type { ILoggingService } from '@/logging/logging.interface';
+import type { IContractsRepository } from '@/modules/contracts/domain/contracts.repository.interface';
 import { delegateBuilder } from '@/modules/delegate/domain/entities/__tests__/delegate.builder';
+import type { Delegate } from '@/modules/delegate/domain/entities/delegate.entity';
+import type { DelegatesV2Repository } from '@/modules/delegate/domain/v2/delegates.v2.repository';
 import { multisigTransactionBuilder } from '@/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
+import { confirmationBuilder } from '@/modules/safe/domain/entities/__tests__/multisig-transaction-confirmation.builder';
 import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
+import { Operation } from '@/modules/safe/domain/entities/operation.entity';
 import { proposeTransactionDtoBuilder } from '@/modules/transactions/routes/entities/__tests__/propose-transaction.dto.builder';
 import { TransactionVerifierHelper } from '@/modules/transactions/routes/helpers/transaction-verifier.helper';
-import { HttpExceptionNoLog } from '@/domain/common/errors/http-exception-no-log.error';
-import { Operation } from '@/modules/safe/domain/entities/operation.entity';
-import configuration from '@/config/entities/__tests__/configuration';
-import { getSignature } from '@/domain/common/utils/__tests__/signatures.builder';
-import type { IConfigurationService } from '@/config/configuration.service.interface';
-import type { DelegatesV2Repository } from '@/modules/delegate/domain/v2/delegates.v2.repository';
-import type { ILoggingService } from '@/logging/logging.interface';
-import type { Delegate } from '@/modules/delegate/domain/entities/delegate.entity';
-import type { IContractsRepository } from '@/modules/contracts/domain/contracts.repository.interface';
-import { getSafeTxHash } from '@/domain/common/utils/safe';
-import { confirmationBuilder } from '@/modules/safe/domain/entities/__tests__/multisig-transaction-confirmation.builder';
-import type { IBlocklistService } from '@/config/entities/blocklist.interface';
 
 const mockConfigurationService = jest.mocked({
   getOrThrow: jest.fn(),
@@ -395,7 +395,7 @@ describe('TransactionVerifierHelper', () => {
           safe,
         });
       transaction.confirmations![0].signature =
-        transaction.confirmations![0].signature!.slice(0, 129) as Address;
+        transaction.confirmations![0].signature?.slice(0, 129) as Address;
 
       expect(() => {
         return target.verifyApiTransaction({ chainId, safe, transaction });
@@ -419,7 +419,7 @@ describe('TransactionVerifierHelper', () => {
           safe,
         });
       transaction.confirmations![0].signature =
-        transaction.confirmations![0].signature!.slice(0, 128) as Address;
+        transaction.confirmations![0].signature?.slice(0, 128) as Address;
 
       expect(() => {
         return target.verifyApiTransaction({ chainId, safe, transaction });
@@ -445,7 +445,7 @@ describe('TransactionVerifierHelper', () => {
             safe,
             signatureType,
           });
-        const v = transaction.confirmations![0].signature?.slice(-2);
+        const v = transaction.confirmations?.[0].signature?.slice(-2);
         transaction.confirmations![0].signature = `0x${'-'.repeat(128)}${v}`;
 
         expect(() => {
@@ -527,8 +527,8 @@ describe('TransactionVerifierHelper', () => {
         safeAddress: safe.address,
         safeVersion: safe.version,
         safeTxHash: transaction.safeTxHash,
-        signerAddress: transaction.confirmations![0].owner,
-        signature: transaction.confirmations![0].signature,
+        signerAddress: transaction.confirmations?.[0].owner,
+        signature: transaction.confirmations?.[0].signature,
         type: 'TRANSACTION_VALIDITY',
         source: 'API',
       });
@@ -646,8 +646,8 @@ describe('TransactionVerifierHelper', () => {
           .with('operation', transaction.operation)
           .with('safeTxGas', transaction.safeTxGas!.toString())
           .with('baseGas', transaction.baseGas!.toString())
-          .with('gasPrice', transaction.gasPrice!)
-          .with('gasToken', transaction.gasToken!)
+          .with('gasPrice', transaction.gasPrice as string)
+          .with('gasToken', transaction.gasToken as Address)
           .with('refundReceiver', transaction.refundReceiver)
           .with('safeTxHash', transaction.safeTxHash)
           .with('sender', transaction.confirmations![0].owner)
@@ -697,8 +697,8 @@ describe('TransactionVerifierHelper', () => {
         .with('operation', transaction.operation)
         .with('safeTxGas', transaction.safeTxGas!.toString())
         .with('baseGas', transaction.baseGas!.toString())
-        .with('gasPrice', transaction.gasPrice!)
-        .with('gasToken', transaction.gasToken!)
+        .with('gasPrice', transaction.gasPrice as string)
+        .with('gasToken', transaction.gasToken as Address)
         .with('refundReceiver', transaction.refundReceiver)
         .with('safeTxHash', transaction.safeTxHash)
         .with('sender', transaction.confirmations![0].owner)
@@ -706,7 +706,7 @@ describe('TransactionVerifierHelper', () => {
           'signature',
           concat(
             transaction.confirmations!.map(
-              (confirmation) => confirmation.signature!,
+              (confirmation) => confirmation.signature as Hex,
             ),
           ),
         )
@@ -759,8 +759,8 @@ describe('TransactionVerifierHelper', () => {
         .with('operation', transaction.operation)
         .with('safeTxGas', transaction.safeTxGas!.toString())
         .with('baseGas', transaction.baseGas!.toString())
-        .with('gasPrice', transaction.gasPrice!)
-        .with('gasToken', transaction.gasToken!)
+        .with('gasPrice', transaction.gasPrice as string)
+        .with('gasToken', transaction.gasToken as Address)
         .with('refundReceiver', transaction.refundReceiver)
         .with('safeTxHash', transaction.safeTxHash)
         .with('sender', delegate.address)
@@ -814,8 +814,8 @@ describe('TransactionVerifierHelper', () => {
         .with('operation', transaction.operation)
         .with('safeTxGas', transaction.safeTxGas!.toString())
         .with('baseGas', transaction.baseGas!.toString())
-        .with('gasPrice', transaction.gasPrice!)
-        .with('gasToken', transaction.gasToken!)
+        .with('gasPrice', transaction.gasPrice as string)
+        .with('gasToken', transaction.gasToken as Address)
         .with('refundReceiver', transaction.refundReceiver)
         .with('safeTxHash', transaction.safeTxHash)
         .with('sender', transaction.confirmations![0].owner)
@@ -875,8 +875,8 @@ describe('TransactionVerifierHelper', () => {
         .with('operation', transaction.operation)
         .with('safeTxGas', transaction.safeTxGas!.toString())
         .with('baseGas', transaction.baseGas!.toString())
-        .with('gasPrice', transaction.gasPrice!)
-        .with('gasToken', transaction.gasToken!)
+        .with('gasPrice', transaction.gasPrice as string)
+        .with('gasToken', transaction.gasToken as Address)
         .with('refundReceiver', transaction.refundReceiver)
         .with('safeTxHash', transaction.safeTxHash)
         .with('sender', transaction.confirmations![0].owner)
@@ -937,8 +937,8 @@ describe('TransactionVerifierHelper', () => {
         .with('operation', transaction.operation)
         .with('safeTxGas', transaction.safeTxGas!.toString())
         .with('baseGas', transaction.baseGas!.toString())
-        .with('gasPrice', transaction.gasPrice!)
-        .with('gasToken', transaction.gasToken!)
+        .with('gasPrice', transaction.gasPrice as string)
+        .with('gasToken', transaction.gasToken as Address)
         .with('refundReceiver', transaction.refundReceiver)
         .with('safeTxHash', transaction.safeTxHash)
         .with('sender', transaction.confirmations![0].owner)
@@ -1001,8 +1001,8 @@ describe('TransactionVerifierHelper', () => {
         .with('operation', transaction.operation)
         .with('safeTxGas', transaction.safeTxGas!.toString())
         .with('baseGas', transaction.baseGas!.toString())
-        .with('gasPrice', transaction.gasPrice!)
-        .with('gasToken', transaction.gasToken!)
+        .with('gasPrice', transaction.gasPrice as string)
+        .with('gasToken', transaction.gasToken as Address)
         .with('refundReceiver', transaction.refundReceiver)
         .with('safeTxHash', transaction.safeTxHash)
         .with('sender', transaction.confirmations![0].owner)
@@ -1065,8 +1065,8 @@ describe('TransactionVerifierHelper', () => {
         .with('operation', transaction.operation)
         .with('safeTxGas', transaction.safeTxGas!.toString())
         .with('baseGas', transaction.baseGas!.toString())
-        .with('gasPrice', transaction.gasPrice!)
-        .with('gasToken', transaction.gasToken!)
+        .with('gasPrice', transaction.gasPrice as string)
+        .with('gasToken', transaction.gasToken as Address)
         .with('refundReceiver', transaction.refundReceiver)
         .with('safeTxHash', transaction.safeTxHash)
         .with('sender', transaction.confirmations![0].owner)
@@ -1122,8 +1122,8 @@ describe('TransactionVerifierHelper', () => {
         .with('operation', transaction.operation)
         .with('safeTxGas', transaction.safeTxGas!.toString())
         .with('baseGas', transaction.baseGas!.toString())
-        .with('gasPrice', transaction.gasPrice!)
-        .with('gasToken', transaction.gasToken!)
+        .with('gasPrice', transaction.gasPrice as string)
+        .with('gasToken', transaction.gasToken as Address)
         .with('refundReceiver', transaction.refundReceiver)
         .with('safeTxHash', transaction.safeTxHash)
         .with('sender', transaction.confirmations![0].owner)
@@ -1197,8 +1197,8 @@ describe('TransactionVerifierHelper', () => {
         .with('operation', transaction.operation)
         .with('safeTxGas', transaction.safeTxGas!.toString())
         .with('baseGas', transaction.baseGas!.toString())
-        .with('gasPrice', transaction.gasPrice!)
-        .with('gasToken', transaction.gasToken!)
+        .with('gasPrice', transaction.gasPrice as string)
+        .with('gasToken', transaction.gasToken as Address)
         .with('refundReceiver', transaction.refundReceiver)
         .with('safeTxHash', transaction.safeTxHash)
         .with('sender', transaction.confirmations![0].owner)
@@ -1261,7 +1261,7 @@ describe('TransactionVerifierHelper', () => {
           safe,
         });
       transaction.confirmations![0].signature =
-        transaction.confirmations![0].signature!.slice(0, 129) as Address;
+        transaction.confirmations![0].signature?.slice(0, 129) as Address;
       const proposal = proposeTransactionDtoBuilder()
         .with('to', transaction.to)
         .with('value', transaction.value)
@@ -1270,8 +1270,8 @@ describe('TransactionVerifierHelper', () => {
         .with('operation', transaction.operation)
         .with('safeTxGas', transaction.safeTxGas!.toString())
         .with('baseGas', transaction.baseGas!.toString())
-        .with('gasPrice', transaction.gasPrice!)
-        .with('gasToken', transaction.gasToken!)
+        .with('gasPrice', transaction.gasPrice as string)
+        .with('gasToken', transaction.gasToken as Address)
         .with('refundReceiver', transaction.refundReceiver)
         .with('safeTxHash', transaction.safeTxHash)
         .with('sender', transaction.confirmations![0].owner)
@@ -1313,7 +1313,7 @@ describe('TransactionVerifierHelper', () => {
           safe,
         });
       transaction.confirmations![0].signature =
-        transaction.confirmations![0].signature!.slice(0, 128) as Address;
+        transaction.confirmations![0].signature?.slice(0, 128) as Address;
       const proposal = proposeTransactionDtoBuilder()
         .with('to', transaction.to)
         .with('value', transaction.value)
@@ -1322,8 +1322,8 @@ describe('TransactionVerifierHelper', () => {
         .with('operation', transaction.operation)
         .with('safeTxGas', transaction.safeTxGas!.toString())
         .with('baseGas', transaction.baseGas!.toString())
-        .with('gasPrice', transaction.gasPrice!)
-        .with('gasToken', transaction.gasToken!)
+        .with('gasPrice', transaction.gasPrice as string)
+        .with('gasToken', transaction.gasToken as Address)
         .with('refundReceiver', transaction.refundReceiver)
         .with('safeTxHash', transaction.safeTxHash)
         .with('sender', transaction.confirmations![0].owner)
@@ -1367,7 +1367,7 @@ describe('TransactionVerifierHelper', () => {
             safe,
             signatureType,
           });
-        const v = transaction.confirmations![0].signature?.slice(-2);
+        const v = transaction.confirmations?.[0].signature?.slice(-2);
         const proposal = proposeTransactionDtoBuilder()
           .with('to', transaction.to)
           .with('value', transaction.value)
@@ -1376,8 +1376,8 @@ describe('TransactionVerifierHelper', () => {
           .with('operation', transaction.operation)
           .with('safeTxGas', transaction.safeTxGas!.toString())
           .with('baseGas', transaction.baseGas!.toString())
-          .with('gasPrice', transaction.gasPrice!)
-          .with('gasToken', transaction.gasToken!)
+          .with('gasPrice', transaction.gasPrice as string)
+          .with('gasToken', transaction.gasToken as Address)
           .with('refundReceiver', transaction.refundReceiver)
           .with('safeTxHash', transaction.safeTxHash)
           .with('sender', transaction.confirmations![0].owner)
@@ -1434,8 +1434,8 @@ describe('TransactionVerifierHelper', () => {
         .with('operation', transaction.operation)
         .with('safeTxGas', transaction.safeTxGas!.toString())
         .with('baseGas', transaction.baseGas!.toString())
-        .with('gasPrice', transaction.gasPrice!)
-        .with('gasToken', transaction.gasToken!)
+        .with('gasPrice', transaction.gasPrice as string)
+        .with('gasToken', transaction.gasToken as Address)
         .with('refundReceiver', transaction.refundReceiver)
         .with('safeTxHash', transaction.safeTxHash)
         .with('sender', transaction.confirmations![0].owner)
@@ -1506,8 +1506,8 @@ describe('TransactionVerifierHelper', () => {
         .with('operation', transaction.operation)
         .with('safeTxGas', transaction.safeTxGas!.toString())
         .with('baseGas', transaction.baseGas!.toString())
-        .with('gasPrice', transaction.gasPrice!)
-        .with('gasToken', transaction.gasToken!)
+        .with('gasPrice', transaction.gasPrice as string)
+        .with('gasToken', transaction.gasToken as Address)
         .with('refundReceiver', transaction.refundReceiver)
         .with('safeTxHash', transaction.safeTxHash)
         .with('sender', transaction.confirmations![0].owner)
@@ -1599,8 +1599,8 @@ describe('TransactionVerifierHelper', () => {
         .with('operation', transaction.operation)
         .with('safeTxGas', transaction.safeTxGas!.toString())
         .with('baseGas', transaction.baseGas!.toString())
-        .with('gasPrice', transaction.gasPrice!)
-        .with('gasToken', transaction.gasToken!)
+        .with('gasPrice', transaction.gasPrice as string)
+        .with('gasToken', transaction.gasToken as Address)
         .with('refundReceiver', transaction.refundReceiver)
         .with('safeTxHash', transaction.safeTxHash)
         // Sender is the last signer
@@ -1610,7 +1610,7 @@ describe('TransactionVerifierHelper', () => {
           // eth_sign is included in concatenated proposal
           concat(
             transaction.confirmations!.map(
-              (confirmation) => confirmation.signature!,
+              (confirmation) => confirmation.signature as Hex,
             ),
           ),
         )
@@ -1664,8 +1664,8 @@ describe('TransactionVerifierHelper', () => {
         .with('operation', transaction.operation)
         .with('safeTxGas', transaction.safeTxGas!.toString())
         .with('baseGas', transaction.baseGas!.toString())
-        .with('gasPrice', transaction.gasPrice!)
-        .with('gasToken', transaction.gasToken!)
+        .with('gasPrice', transaction.gasPrice as string)
+        .with('gasToken', transaction.gasToken as Address)
         .with('refundReceiver', transaction.refundReceiver)
         .with('safeTxHash', transaction.safeTxHash)
         .with('sender', getAddress(faker.finance.ethereumAddress()))
@@ -1726,8 +1726,8 @@ describe('TransactionVerifierHelper', () => {
         .with('operation', transaction.operation)
         .with('safeTxGas', transaction.safeTxGas!.toString())
         .with('baseGas', transaction.baseGas!.toString())
-        .with('gasPrice', transaction.gasPrice!)
-        .with('gasToken', transaction.gasToken!)
+        .with('gasPrice', transaction.gasPrice as string)
+        .with('gasToken', transaction.gasToken as Address)
         .with('refundReceiver', transaction.refundReceiver)
         .with('safeTxHash', transaction.safeTxHash)
         .with('sender', transaction.confirmations![0].owner)
@@ -1795,7 +1795,7 @@ describe('TransactionVerifierHelper', () => {
             transaction,
             signature: faker.helpers.arrayElement(
               transaction.confirmations!.map((confirmation) => {
-                return confirmation.signature!;
+                return confirmation.signature as Hex;
               }),
             ),
           });
@@ -1840,7 +1840,7 @@ describe('TransactionVerifierHelper', () => {
           transaction,
           signature: faker.helpers.arrayElement(
             transaction.confirmations!.map((confirmation) => {
-              return confirmation.signature!;
+              return confirmation.signature as Hex;
             }),
           ),
         });
@@ -1884,7 +1884,7 @@ describe('TransactionVerifierHelper', () => {
           transaction,
           signature: faker.helpers.arrayElement(
             transaction.confirmations!.map((confirmation) => {
-              return confirmation.signature!;
+              return confirmation.signature as Hex;
             }),
           ),
         });
@@ -1930,7 +1930,7 @@ describe('TransactionVerifierHelper', () => {
           transaction,
           signature: faker.helpers.arrayElement(
             transaction.confirmations!.map((confirmation) => {
-              return confirmation.signature!;
+              return confirmation.signature as Hex;
             }),
           ),
         });
@@ -1997,7 +1997,7 @@ describe('TransactionVerifierHelper', () => {
           transaction,
           signature: faker.helpers.arrayElement(
             transaction.confirmations!.map((confirmation) => {
-              return confirmation.signature!;
+              return confirmation.signature as Hex;
             }),
           ),
         });
@@ -2062,7 +2062,7 @@ describe('TransactionVerifierHelper', () => {
           transaction,
           signature: faker.helpers.arrayElement(
             transaction.confirmations!.map((confirmation) => {
-              return confirmation.signature!.slice(0, 129) as Address;
+              return confirmation.signature?.slice(0, 129) as Address;
             }),
           ),
         });
@@ -2106,7 +2106,7 @@ describe('TransactionVerifierHelper', () => {
           transaction,
           signature: faker.helpers.arrayElement(
             transaction.confirmations!.map((confirmation) => {
-              return confirmation.signature!.slice(0, 128) as Address;
+              return confirmation.signature?.slice(0, 128) as Address;
             }),
           ),
         });
@@ -2146,7 +2146,7 @@ describe('TransactionVerifierHelper', () => {
             signatureType,
           });
 
-        const signature = transaction.confirmations![0].signature as Hex;
+        const signature = transaction.confirmations?.[0].signature as Hex;
         // Replace one hex digit in the r component with 'g' (invalid hex char)
         const invalidSignature =
           `${signature.slice(0, 65)}g${signature.slice(66)}` as Hex;
@@ -2202,15 +2202,18 @@ describe('TransactionVerifierHelper', () => {
         });
       // We need to remove the blocked signer from the signers array
       // so as to not be verified as an API signature
-      const blockedConfirmation = transaction.confirmations![0];
-      transaction.confirmations?.shift();
+      const confirmations = transaction.confirmations as NonNullable<
+        typeof transaction.confirmations
+      >;
+      const blockedConfirmation = confirmations[0];
+      confirmations.shift();
 
       expect(() => {
         return target.verifyConfirmation({
           chainId,
           safe,
           transaction,
-          signature: blockedConfirmation.signature!,
+          signature: blockedConfirmation.signature as Hex,
         });
       }).toThrow(new HttpExceptionNoLog('Unauthorized address', 422));
 
@@ -2274,7 +2277,7 @@ describe('TransactionVerifierHelper', () => {
           transaction,
           signature: faker.helpers.arrayElement(
             transaction.confirmations!.map((confirmation) => {
-              return confirmation.signature!;
+              return confirmation.signature as Hex;
             }),
           ),
         });
@@ -2306,7 +2309,7 @@ describe('TransactionVerifierHelper', () => {
           transaction,
           signature: faker.helpers.arrayElement(
             transaction.confirmations!.map((confirmation) => {
-              return confirmation.signature!;
+              return confirmation.signature as Hex;
             }),
           ),
         });
@@ -2319,8 +2322,8 @@ describe('TransactionVerifierHelper', () => {
         safeAddress: safe.address,
         safeVersion: safe.version,
         safeTxHash: transaction.safeTxHash,
-        signerAddress: transaction.confirmations![0].owner,
-        signature: transaction.confirmations![0].signature,
+        signerAddress: transaction.confirmations?.[0].owner,
+        signature: transaction.confirmations?.[0].signature,
         type: 'TRANSACTION_VALIDITY',
         source: 'API',
       });
@@ -2362,7 +2365,7 @@ describe('TransactionVerifierHelper', () => {
           transaction,
           signature: faker.helpers.arrayElement(
             transaction.confirmations!.map((confirmation) => {
-              return confirmation.signature!;
+              return confirmation.signature as Hex;
             }),
           ),
         });

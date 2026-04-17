@@ -1,4 +1,4 @@
-import * as fs from 'fs';
+import type * as fs from 'node:fs';
 
 /**
  * Shared test utilities for env scripts.

@@ -1,4 +1,3 @@
-import { type ILoggingService } from '@/logging/logging.interface';
 import { Injectable } from '@nestjs/common';
 import {
   AbstractLogger,
@@ -6,6 +5,7 @@ import {
   type LogLevel,
   type LogMessage,
 } from 'typeorm';
+import type { ILoggingService } from '@/logging/logging.interface';
 
 @Injectable()
 export class PostgresqlLogger extends AbstractLogger {

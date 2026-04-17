@@ -1,7 +1,11 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { JobData, JobResponse } from '@/datasources/job-queue/types/job-types';
+
 import { ApiProperty } from '@nestjs/swagger';
-import { Job } from 'bullmq';
+import type { Job } from 'bullmq';
+import type {
+  JobData,
+  JobResponse,
+} from '@/datasources/job-queue/types/job-types';
 
 export class JobStatusDto {
   @ApiProperty({ description: 'Job ID' })

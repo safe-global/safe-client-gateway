@@ -1,6 +1,6 @@
-import { Campaign as DomainCampaign } from '@/modules/community/domain/entities/campaign.entity';
-import { ActivityMetadata } from '@/modules/community/routes/entities/activity-metadata.entity';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import type { Campaign as DomainCampaign } from '@/modules/community/domain/entities/campaign.entity';
+import { ActivityMetadata } from '@/modules/community/routes/entities/activity-metadata.entity';
 
 export class Campaign implements DomainCampaign {
   @ApiProperty()

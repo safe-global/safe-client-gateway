@@ -1,6 +1,6 @@
-import { GetPortfolioDtoSchema } from '@/modules/portfolio/v1/entities/schemas/get-portfolio.dto.schema';
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { z } from 'zod';
+import type { z } from 'zod';
+import type { GetPortfolioDtoSchema } from '@/modules/portfolio/v1/entities/schemas/get-portfolio.dto.schema';
 
 export class GetPortfolioDto implements z.infer<typeof GetPortfolioDtoSchema> {
   @ApiPropertyOptional({

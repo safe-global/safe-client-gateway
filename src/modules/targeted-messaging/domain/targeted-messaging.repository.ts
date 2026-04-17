@@ -1,11 +1,11 @@
-import { ITargetedMessagingDatasource } from '@/domain/interfaces/targeted-messaging.datasource.interface';
-import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
-import { Outreach } from '@/modules/targeted-messaging/domain/entities/outreach.entity';
-import { Submission } from '@/modules/targeted-messaging/domain/entities/submission.entity';
-import { TargetedSafe } from '@/modules/targeted-messaging/domain/entities/targeted-safe.entity';
-import { ITargetedMessagingRepository } from '@/modules/targeted-messaging/domain/targeted-messaging.repository.interface';
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import type { Address } from 'viem';
+import { ITargetedMessagingDatasource } from '@/domain/interfaces/targeted-messaging.datasource.interface';
+import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
+import type { Outreach } from '@/modules/targeted-messaging/domain/entities/outreach.entity';
+import type { Submission } from '@/modules/targeted-messaging/domain/entities/submission.entity';
+import type { TargetedSafe } from '@/modules/targeted-messaging/domain/entities/targeted-safe.entity';
+import type { ITargetedMessagingRepository } from '@/modules/targeted-messaging/domain/targeted-messaging.repository.interface';
 
 @Injectable()
 export class TargetedMessagingRepository implements ITargetedMessagingRepository {
@@ -16,7 +16,7 @@ export class TargetedMessagingRepository implements ITargetedMessagingRepository
     private readonly safeRepository: ISafeRepository,
   ) {}
 
-  async getTargetedSafe(args: {
+  getTargetedSafe(args: {
     outreachId: number;
     safeAddress: Address;
     chainId?: string;
@@ -24,7 +24,7 @@ export class TargetedMessagingRepository implements ITargetedMessagingRepository
     return this.datasource.getTargetedSafe(args);
   }
 
-  async addSafeToOutreach(args: {
+  addSafeToOutreach(args: {
     outreachId: number;
     safeAddress: Address;
   }): Promise<Array<TargetedSafe>> {
@@ -50,14 +50,14 @@ export class TargetedMessagingRepository implements ITargetedMessagingRepository
     return this.datasource.getSubmission(args);
   }
 
-  async createSubmission(args: {
+  createSubmission(args: {
     targetedSafe: TargetedSafe;
     signerAddress: Address;
   }): Promise<Submission> {
     return this.datasource.createSubmission(args);
   }
 
-  async getOutreachOrFail(outreachId: number): Promise<Outreach> {
+  getOutreachOrFail(outreachId: number): Promise<Outreach> {
     return this.datasource.getOutreachOrFail(outreachId);
   }
 }

@@ -1,24 +1,24 @@
 import {
-  ApiOkResponse,
-  ApiQuery,
-  ApiTags,
-  ApiOperation,
-} from '@nestjs/swagger';
-import {
   Controller,
   DefaultValuePipe,
   Get,
   ParseBoolPipe,
   Query,
 } from '@nestjs/common';
-import { SafeOverview } from '@/modules/safe/routes/entities/safe-overview.entity';
 import {
-  Caip10AddressesSchema,
-  type Caip10Addresses,
-} from '@/modules/safe/routes/entities/caip-10-addresses.entity';
-import { ValidationPipe } from '@/validation/pipes/validation.pipe';
-import { AddressSchema } from '@/validation/entities/schemas/address.schema';
+  ApiOkResponse,
+  ApiOperation,
+  ApiQuery,
+  ApiTags,
+} from '@nestjs/swagger';
 import type { Address } from 'viem';
+import {
+  type Caip10Addresses,
+  Caip10AddressesSchema,
+} from '@/modules/safe/routes/entities/caip-10-addresses.entity';
+import { SafeOverview } from '@/modules/safe/routes/entities/safe-overview.entity';
+import { AddressSchema } from '@/validation/entities/schemas/address.schema';
+import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import { SafesV2Service } from './safes.v2.service';
 
 @ApiTags('safes')
@@ -70,7 +70,7 @@ export class SafesV2Controller {
     description: 'Array of Safe overviews with balances and metadata',
   })
   @Get('safes')
-  async getSafeOverview(
+  getSafeOverview(
     @Query('currency') currency: string,
     @Query('safes', new ValidationPipe(Caip10AddressesSchema))
     addresses: Caip10Addresses,

@@ -1,13 +1,13 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { AlertsRegistration } from '@/modules/alerts/domain/entities/alerts-registration.entity';
-import { AlertsDeletion } from '@/modules/alerts/domain/entities/alerts-deletion.entity';
-import { IAlertsApi } from '@/domain/interfaces/alerts-api.interface';
-import {
-  INetworkService,
-  NetworkService,
-} from '@/datasources/network/network.service.interface';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
+import {
+  type INetworkService,
+  NetworkService,
+} from '@/datasources/network/network.service.interface';
+import type { IAlertsApi } from '@/domain/interfaces/alerts-api.interface';
+import type { AlertsDeletion } from '@/modules/alerts/domain/entities/alerts-deletion.entity';
+import type { AlertsRegistration } from '@/modules/alerts/domain/entities/alerts-registration.entity';
 
 @Injectable()
 export class TenderlyApi implements IAlertsApi {

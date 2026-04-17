@@ -1,18 +1,18 @@
-import { Page } from '@/domain/entities/page.entity';
-import { Campaign } from '@/modules/community/domain/entities/campaign.entity';
-import { CampaignRank } from '@/modules/community/domain/entities/campaign-rank.entity';
-import { LockingEvent } from '@/modules/community/domain/entities/locking-event.entity';
-import { LockingRank } from '@/modules/community/domain/entities/locking-rank.entity';
-import { ICommunityRepository } from '@/modules/community/domain/community.repository.interface';
-import {
-  PaginationData,
-  cursorUrlFromLimitAndOffset,
-} from '@/routes/common/pagination/pagination.data';
 import { Inject, Injectable } from '@nestjs/common';
-import { CampaignActivity } from '@/modules/community/domain/entities/campaign-activity.entity';
-import { Eligibility } from '@/modules/community/routes/entities/eligibility.entity';
-import { EligibilityRequest } from '@/modules/community/routes/entities/eligibility-request.entity';
 import type { Address } from 'viem';
+import type { Page } from '@/domain/entities/page.entity';
+import { ICommunityRepository } from '@/modules/community/domain/community.repository.interface';
+import type { Campaign } from '@/modules/community/domain/entities/campaign.entity';
+import type { CampaignActivity } from '@/modules/community/domain/entities/campaign-activity.entity';
+import type { CampaignRank } from '@/modules/community/domain/entities/campaign-rank.entity';
+import type { LockingEvent } from '@/modules/community/domain/entities/locking-event.entity';
+import type { LockingRank } from '@/modules/community/domain/entities/locking-rank.entity';
+import type { Eligibility } from '@/modules/community/routes/entities/eligibility.entity';
+import type { EligibilityRequest } from '@/modules/community/routes/entities/eligibility-request.entity';
+import {
+  cursorUrlFromLimitAndOffset,
+  type PaginationData,
+} from '@/routes/common/pagination/pagination.data';
 
 @Injectable()
 export class CommunityService {
@@ -43,7 +43,7 @@ export class CommunityService {
     };
   }
 
-  async getCampaignById(resourceId: string): Promise<Campaign> {
+  getCampaignById(resourceId: string): Promise<Campaign> {
     return this.communityRepository.getCampaignById(resourceId);
   }
 
@@ -99,7 +99,7 @@ export class CommunityService {
     };
   }
 
-  async getCampaignRank(args: {
+  getCampaignRank(args: {
     resourceId: string;
     safeAddress: Address;
   }): Promise<CampaignRank> {
@@ -128,7 +128,7 @@ export class CommunityService {
     };
   }
 
-  async getLockingRank(safeAddress: Address): Promise<LockingRank> {
+  getLockingRank(safeAddress: Address): Promise<LockingRank> {
     return this.communityRepository.getLockingRank(safeAddress);
   }
 
@@ -157,7 +157,7 @@ export class CommunityService {
     };
   }
 
-  async checkEligibility(
+  checkEligibility(
     eligibilityRequest: EligibilityRequest,
   ): Promise<Eligibility> {
     return this.communityRepository.checkEligibility(eligibilityRequest);

@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { TokenBalance } from '@/modules/portfolio/v1/entities/token-balance.entity';
 import { AppBalance } from '@/modules/portfolio/v1/entities/app-balance.entity';
+import { TokenBalance } from '@/modules/portfolio/v1/entities/token-balance.entity';
 
 export class Portfolio {
   @ApiProperty({
