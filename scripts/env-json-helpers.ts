@@ -94,20 +94,8 @@ export function setFilePermissions(
 export function sanitizeEnvValue(value: unknown): string {
   const strValue = String(value);
 
-  let result = '';
-  for (let i = 0; i < strValue.length; i++) {
-    const code = strValue.charCodeAt(i);
-    // Keep tab (\x09), remove all other control chars (0x00-0x08, 0x0A-0x1F, 0x7F)
-    if (
-      (code >= 0x00 && code <= 0x08) ||
-      (code >= 0x0a && code <= 0x1f) ||
-      code === 0x7f
-    ) {
-      continue;
-    }
-    result += strValue[i];
-  }
-  return result;
+  // biome-ignore lint/suspicious/noControlCharactersInRegex: intentional control char removal
+  return strValue.replace(/[\x00-\x08\x0A-\x1F\x7F]/g, '');
 }
 
 /**
