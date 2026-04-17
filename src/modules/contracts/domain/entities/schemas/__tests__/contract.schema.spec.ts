@@ -1,7 +1,8 @@
-import { contractBuilder } from '@/modules/contracts/domain/entities/__tests__/contract.builder';
-import { ContractSchema } from '@/modules/contracts/domain/entities/schemas/contract.schema';
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress } from 'viem';
+import { contractBuilder } from '@/modules/contracts/domain/entities/__tests__/contract.builder';
+import { ContractSchema } from '@/modules/contracts/domain/entities/schemas/contract.schema';
 
 describe('ContractSchema', () => {
   it('should validate a valid contract', () => {
@@ -30,9 +31,9 @@ describe('ContractSchema', () => {
   it('should allow undefined logoUri and contractAbi', () => {
     const contract = contractBuilder().build();
     // @ts-expect-error - inferred type doesn't allow optional properties
-    delete contract.logoUri;
+    contract.logoUri = undefined;
     // @ts-expect-error - inferred type doesn't allow optional properties
-    delete contract.contractAbi;
+    contract.contractAbi = undefined;
 
     const result = ContractSchema.safeParse(contract);
 

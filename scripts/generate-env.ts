@@ -1,13 +1,14 @@
-import * as fs from 'fs';
-import * as path from 'path';
+// SPDX-License-Identifier: FSL-1.1-MIT
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 import {
-  PROJECT_ROOT,
-  loadEnvJson,
-  setFilePermissions,
-  isSymbolicLink,
-  sanitizeEnvValue,
-  formatRequiredVar,
   formatOptionalVar,
+  formatRequiredVar,
+  isSymbolicLink,
+  loadEnvJson,
+  PROJECT_ROOT,
+  sanitizeEnvValue,
+  setFilePermissions,
 } from './env-json-helpers';
 
 const ENV_OUTPUT_PATH = path.join(PROJECT_ROOT, '.env');
@@ -130,7 +131,7 @@ export function updateEnvFile(): void {
   const envExists = fs.existsSync(ENV_OUTPUT_PATH);
 
   if (!envExists) {
-    console.log(MESSAGES.update.noFileCreating);
+    console.info(MESSAGES.update.noFileCreating);
     generateNewEnvFile();
 
     return;
@@ -143,11 +144,11 @@ export function updateEnvFile(): void {
     (v) => v.required && !existingVars.has(v.name),
   );
   const missingOptional = envVars.filter(
-    (v) => !v.required && !existingVars.has(v.name) && v.defaultValue !== null,
+    (v) => !(v.required || existingVars.has(v.name)) && v.defaultValue !== null,
   );
 
   if (missingRequired.length === 0 && missingOptional.length === 0) {
-    console.log(MESSAGES.update.upToDate);
+    console.info(MESSAGES.update.upToDate);
     process.exit(0);
   }
 
@@ -184,21 +185,21 @@ export function updateEnvFile(): void {
   fs.appendFileSync(ENV_OUTPUT_PATH, linesToAdd.join('\n'), 'utf-8');
   setFilePermissions(ENV_OUTPUT_PATH, MESSAGES.error.generic);
 
-  console.log(MESSAGES.update.success);
-  console.log('');
+  console.info(MESSAGES.update.success);
+  console.info('');
 
   if (missingRequired.length > 0) {
-    console.log(MESSAGES.update.actionRequired);
-    console.log(MESSAGES.update.reviewRequired);
-    console.log(MESSAGES.update.updateValues);
-    console.log('');
+    console.info(MESSAGES.update.actionRequired);
+    console.info(MESSAGES.update.reviewRequired);
+    console.info(MESSAGES.update.updateValues);
+    console.info('');
   }
 
   if (missingOptional.length > 0) {
-    console.log(MESSAGES.update.optionalVarsTitle);
-    console.log(MESSAGES.update.optionalCommented);
-    console.log(MESSAGES.update.uncommentToOverride);
-    console.log('');
+    console.info(MESSAGES.update.optionalVarsTitle);
+    console.info(MESSAGES.update.optionalCommented);
+    console.info(MESSAGES.update.uncommentToOverride);
+    console.info('');
   }
 }
 
@@ -261,13 +262,13 @@ export function generateNewEnvFile(): void {
   fs.writeFileSync(ENV_OUTPUT_PATH, lines.join('\n'), 'utf-8');
   setFilePermissions(ENV_OUTPUT_PATH, MESSAGES.error.generic);
 
-  console.log(MESSAGES.generate.success);
-  console.log();
-  console.log(MESSAGES.common.nextSteps);
-  console.log(MESSAGES.common.step1);
-  console.log(MESSAGES.common.step2);
-  console.log(MESSAGES.common.step3);
-  console.log();
+  console.info(MESSAGES.generate.success);
+  console.info('');
+  console.info(MESSAGES.common.nextSteps);
+  console.info(MESSAGES.common.step1);
+  console.info(MESSAGES.common.step2);
+  console.info(MESSAGES.common.step3);
+  console.info('');
 }
 
 /**

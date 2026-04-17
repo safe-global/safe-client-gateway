@@ -1,31 +1,35 @@
-import { Hex } from 'viem/types/misc';
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import { formatUnits, isAddress, isHex } from 'viem';
-import { ITokenRepository } from '@/modules/tokens/domain/token.repository.interface';
-import { TokenRepository } from '@/modules/tokens/domain/token.repository';
-import { MAX_UINT256 } from '@/modules/transactions/routes/constants';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
-import { IHumanDescriptionRepository } from '@/modules/human-description/domain/human-description.repository.interface';
-import { HumanDescriptionRepository } from '@/modules/human-description/domain/human-description.repository';
+import type { Hex } from 'viem/types/misc';
+import { truncateAddress } from '@/domain/common/utils/utils';
 import {
-  HumanDescriptionFragment,
-  TokenValueFragment,
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
+import { asError } from '@/logging/utils';
+import {
+  type HumanDescriptionFragment,
+  type TokenValueFragment,
   ValueType,
 } from '@/modules/human-description/domain/entities/human-description.entity';
-import { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
-import { ModuleTransaction } from '@/modules/safe/domain/entities/module-transaction.entity';
+import type { HumanDescriptionRepository } from '@/modules/human-description/domain/human-description.repository';
+import { IHumanDescriptionRepository } from '@/modules/human-description/domain/human-description.repository.interface';
+import type { ModuleTransaction } from '@/modules/safe/domain/entities/module-transaction.entity';
+import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
 import { isMultisigTransaction } from '@/modules/safe/domain/entities/transaction.entity';
+import type { TokenRepository } from '@/modules/tokens/domain/token.repository';
+import { ITokenRepository } from '@/modules/tokens/domain/token.repository.interface';
+import { MAX_UINT256 } from '@/modules/transactions/routes/constants';
 import {
   RichAddressFragment,
   RichDecodedInfo,
-  RichDecodedInfoFragment,
+  type RichDecodedInfoFragment,
   RichFragmentType,
   RichTextFragment,
   RichTokenValueFragment,
 } from '@/modules/transactions/routes/entities/human-description.entity';
 import { SafeAppInfoMapper } from '@/modules/transactions/routes/mappers/common/safe-app-info.mapper';
-import { asError } from '@/logging/utils';
-import { truncateAddress } from '@/domain/common/utils/utils';
 
 @Injectable()
 export class HumanDescriptionMapper {
@@ -72,7 +76,7 @@ export class HumanDescriptionMapper {
     transaction: MultisigTransaction | ModuleTransaction,
     chainId: string,
   ): Promise<RichDecodedInfo | null> {
-    if (!transaction.data || !isHex(transaction.data) || !transaction.to) {
+    if (!(transaction.data && isHex(transaction.data) && transaction.to)) {
       return null;
     }
 
@@ -109,13 +113,13 @@ export class HumanDescriptionMapper {
     }
   }
 
-  private async enrichFragments(
+  private enrichFragments(
     fragments: Array<HumanDescriptionFragment>,
     transaction: MultisigTransaction | ModuleTransaction,
     chainId: string,
   ): Promise<Array<RichDecodedInfoFragment>> {
     return Promise.all(
-      fragments.map(async (fragment) => {
+      fragments.map((fragment) => {
         switch (fragment.type) {
           case ValueType.TokenValue:
             return this.enrichTokenValue(fragment, transaction, chainId);
@@ -145,7 +149,7 @@ export class HumanDescriptionMapper {
     let amount: string;
     if (fragment.value.amount === MAX_UINT256) {
       amount = 'unlimited';
-    } else if (token && token.decimals) {
+    } else if (token?.decimals) {
       amount = formatUnits(fragment.value.amount, token.decimals);
     } else {
       amount = fragment.value.amount.toString();

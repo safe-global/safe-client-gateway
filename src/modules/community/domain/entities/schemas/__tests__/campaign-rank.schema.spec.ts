@@ -1,7 +1,8 @@
-import { campaignRankBuilder } from '@/modules/community/domain/entities/__tests__/campaign-rank.builder';
-import { CampaignRankSchema } from '@/modules/community/domain/entities/campaign-rank.entity';
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress } from 'viem';
+import { campaignRankBuilder } from '@/modules/community/domain/entities/__tests__/campaign-rank.builder';
+import { CampaignRankSchema } from '@/modules/community/domain/entities/campaign-rank.entity';
 
 describe('CampaignRankSchema', () => {
   it('should validate a valid holder', () => {

@@ -1,8 +1,9 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { ApiExtraModels, ApiProperty, getSchemaPath } from '@nestjs/swagger';
 import {
-  NativeToken,
   Erc20Token,
   Erc721Token,
+  NativeToken,
 } from '@/modules/balances/routes/entities/token.entity';
 import { PositionType } from '@/modules/positions/domain/entities/position-type.entity';
 

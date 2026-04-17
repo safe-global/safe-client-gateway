@@ -1,17 +1,18 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { faker } from '@faker-js/faker/.';
+import { getAddress } from 'viem';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
-import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
 import { SAFE_TRANSACTION_SERVICE_MAX_LIMIT as LIMIT } from '@/domain/common/constants';
-import { ContractsRepository } from '@/modules/contracts/domain/contracts.repository';
-import { contractBuilder } from '@/modules/data-decoder/domain/v2/entities/__tests__/contract.builder';
 import {
   limitAndOffsetUrlFactory,
   pageBuilder,
 } from '@/domain/entities/__tests__/page.builder';
 import type { IDataDecoderApi } from '@/domain/interfaces/data-decoder-api.interface';
 import type { ILoggingService } from '@/logging/logging.interface';
+import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
+import { ContractsRepository } from '@/modules/contracts/domain/contracts.repository';
+import { contractBuilder } from '@/modules/data-decoder/domain/v2/entities/__tests__/contract.builder';
 import { rawify } from '@/validation/entities/raw.entity';
-import { faker } from '@faker-js/faker/.';
-import { getAddress } from 'viem';
 
 const mockLoggingService = {
   error: jest.fn(),

@@ -1,20 +1,21 @@
-import {
-  isTransactionInfoOfType,
-  TransactionInfo,
-  TransactionInfoType,
-} from '@/modules/transactions/routes/entities/transaction-info.entity';
+// SPDX-License-Identifier: FSL-1.1-MIT
 import {
   ApiExtraModels,
   ApiProperty,
   ApiPropertyOptional,
 } from '@nestjs/swagger';
+import type { Address } from 'viem';
 import {
   OrderClass,
   OrderKind,
   OrderStatus,
 } from '@/modules/swaps/domain/entities/order.entity';
 import { TokenInfo } from '@/modules/transactions/routes/entities/swaps/token-info.entity';
-import type { Address } from 'viem';
+import {
+  isTransactionInfoOfType,
+  TransactionInfo,
+  TransactionInfoType,
+} from '@/modules/transactions/routes/entities/transaction-info.entity';
 
 export interface OrderInfo {
   uid: string;

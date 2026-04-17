@@ -1,11 +1,12 @@
-import * as fs from 'fs';
-import * as path from 'path';
+// SPDX-License-Identifier: FSL-1.1-MIT
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 import {
-  PROJECT_ROOT,
-  loadEnvJson,
-  readDirectory,
-  findDuplicateNames,
   type EnvVariable,
+  findDuplicateNames,
+  loadEnvJson,
+  PROJECT_ROOT,
+  readDirectory,
 } from './env-json-helpers';
 
 const SILENT_MODE = process.argv.includes('--silent');
@@ -62,7 +63,7 @@ const MESSAGES = {
  */
 function log(message: string): void {
   if (!SILENT_MODE) {
-    console.log(message);
+    console.info(message);
   }
 }
 
@@ -111,15 +112,16 @@ export function extractProcessEnvVariables(): Set<string> {
 
   for (const filePath of tsFiles) {
     const content = fs.readFileSync(filePath, 'utf-8');
-    let match;
     // Reset regex lastIndex for each file to ensure proper matching
     PROCESS_ENV_REGEX.lastIndex = 0;
 
-    while ((match = PROCESS_ENV_REGEX.exec(content)) !== null) {
+    let match: RegExpExecArray | null = PROCESS_ENV_REGEX.exec(content);
+    while (match !== null) {
       const varName = match[1];
       if (!IGNORE_VARIABLES.has(varName)) {
         variables.add(varName);
       }
+      match = PROCESS_ENV_REGEX.exec(content);
     }
   }
 
@@ -135,7 +137,9 @@ export function checkDuplicates(envVars: Array<EnvVariable>): boolean {
 
   if (duplicates.length > 0) {
     console.error(MESSAGES.duplicatesFound);
-    duplicates.forEach((name) => console.error(MESSAGES.listItem(name)));
+    for (const name of duplicates) {
+      console.error(MESSAGES.listItem(name));
+    }
     return false;
   }
 
@@ -196,17 +200,17 @@ export function main(): void {
   if (missingInJson.length > 0) {
     hasErrors = true;
     console.error(MESSAGES.missingInJson);
-    missingInJson.forEach((name) => {
+    for (const name of missingInJson) {
       console.error(MESSAGES.listItem(name));
-    });
+    }
     console.error('');
   }
 
   if (extraInJson.length > 0) {
     log(MESSAGES.extraInJson);
-    extraInJson.forEach((name) => {
+    for (const name of extraInJson) {
       log(MESSAGES.listItem(name));
-    });
+    }
     log(MESSAGES.extraVarsDeprecated);
   }
 

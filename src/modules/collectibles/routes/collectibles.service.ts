@@ -1,13 +1,14 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
-import { ICollectiblesRepository } from '@/modules/collectibles/domain/collectibles.repository.interface';
-import { Collectible } from '@/modules/collectibles/routes/entities/collectible.entity';
-import { Page } from '@/routes/common/entities/page.entity';
-import {
-  PaginationData,
-  cursorUrlFromLimitAndOffset,
-} from '@/routes/common/pagination/pagination.data';
-import { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
 import type { Address } from 'viem';
+import { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
+import { ICollectiblesRepository } from '@/modules/collectibles/domain/collectibles.repository.interface';
+import type { Collectible } from '@/modules/collectibles/routes/entities/collectible.entity';
+import type { Page } from '@/routes/common/entities/page.entity';
+import {
+  cursorUrlFromLimitAndOffset,
+  type PaginationData,
+} from '@/routes/common/pagination/pagination.data';
 
 @Injectable()
 export class CollectiblesService {

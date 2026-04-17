@@ -1,42 +1,46 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { Inject, Injectable } from '@nestjs/common';
+import { type Address, getAddress } from 'viem';
+import { ZodError, z } from 'zod';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import {
-  ZerionAttributes,
-  ZerionBalance,
-  ZerionBalanceSchema,
-  ZerionBalances,
-  ZerionBalancesSchema,
-} from '@/modules/balances/datasources/entities/zerion-balance.entity';
 import { CacheRouter } from '@/datasources/cache/cache.router';
 import {
   CacheService,
-  ICacheService,
+  type ICacheService,
 } from '@/datasources/cache/cache.service.interface';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { LimitReachedError } from '@/datasources/network/entities/errors/limit-reached.error';
 import {
-  INetworkService,
+  type INetworkService,
   NetworkService,
 } from '@/datasources/network/network.service.interface';
-import {
-  Erc20Balance,
-  NativeBalance,
-} from '@/modules/balances/domain/entities/balance.entity';
-import { Chain } from '@/modules/chains/domain/entities/chain.entity';
 import { LogType } from '@/domain/common/entities/log-type.entity';
 import { getNumberString } from '@/domain/common/utils/utils';
 import { DataSourceError } from '@/domain/errors/data-source.error';
-import { IPositionsApi } from '@/domain/interfaces/positions-api.interface';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
-import { rawify, type Raw } from '@/validation/entities/raw.entity';
-import { Inject, Injectable } from '@nestjs/common';
-import { Address, getAddress } from 'viem';
-import { z, ZodError } from 'zod';
-import { Position } from '@/modules/positions/domain/entities/position.entity';
+import type { IPositionsApi } from '@/domain/interfaces/positions-api.interface';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
+import {
+  type ZerionAttributes,
+  type ZerionBalance,
+  ZerionBalanceSchema,
+  type ZerionBalances,
+  ZerionBalancesSchema,
+} from '@/modules/balances/datasources/entities/zerion-balance.entity';
 import {
   getZerionHeaders,
   normalizeZerionBalances,
 } from '@/modules/balances/datasources/zerion-api.helpers';
-import { ZerionChainMappingService } from '@/modules/zerion/datasources/zerion-chain-mapping.service';
+import type {
+  Erc20Balance,
+  NativeBalance,
+} from '@/modules/balances/domain/entities/balance.entity';
+import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
+import type { Position } from '@/modules/positions/domain/entities/position.entity';
+import type { ZerionChainMappingService } from '@/modules/zerion/datasources/zerion-chain-mapping.service';
+import { type Raw, rawify } from '@/validation/entities/raw.entity';
 
 @Injectable()
 export class ZerionPositionsApi implements IPositionsApi {
@@ -113,7 +117,7 @@ export class ZerionPositionsApi implements IPositionsApi {
         sort: 'value',
       };
       if (args.sync) {
-        params['sync'] = 'true';
+        params.sync = 'true';
       }
       const networkRequest = {
         headers: getZerionHeaders(this.apiKey, args.chain.isTestnet),
@@ -150,7 +154,7 @@ export class ZerionPositionsApi implements IPositionsApi {
     await this.cacheService.deleteByKey(key);
   }
 
-  async getFiatCodes(): Promise<Raw<Array<string>>> {
+  getFiatCodes(): Promise<Raw<Array<string>>> {
     return Promise.resolve(rawify(this.fiatCodes));
   }
 

@@ -1,42 +1,43 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import type { Server } from 'node:net';
 import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
+import { APP_FILTER } from '@nestjs/core';
 import request from 'supertest';
+import { type Address, concat, getAddress, type Hex } from 'viem';
+import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
-import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
-import { safeAppBuilder } from '@/modules/safe-apps/domain/entities/__tests__/safe-app.builder';
-import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
-import {
-  multisigTransactionBuilder,
-  toJson as multisigToJson,
-} from '@/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
-import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
-import configuration from '@/config/entities/__tests__/configuration';
+import { createTestModule } from '@/__tests__/testing-module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import { tokenBuilder } from '@/modules/tokens/domain/__tests__/token.builder';
+import configuration from '@/config/entities/__tests__/configuration';
+import { IBlocklistService } from '@/config/entities/blocklist.interface';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
 import { NetworkService } from '@/datasources/network/network.service.interface';
-import { proposeTransactionDtoBuilder } from '@/modules/transactions/routes/entities/__tests__/propose-transaction.dto.builder';
-import { type Address, concat, getAddress } from 'viem';
-import type { Server } from 'net';
-import { rawify } from '@/validation/entities/raw.entity';
-import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 import { SignatureType } from '@/domain/common/entities/signature-type.entity';
-import { Operation } from '@/modules/safe/domain/entities/operation.entity';
-import { GlobalErrorFilter } from '@/routes/common/filters/global-error.filter';
-import { APP_FILTER } from '@nestjs/core';
 import { getSignature } from '@/domain/common/utils/__tests__/signatures.builder';
-import { delegateBuilder } from '@/modules/delegate/domain/entities/__tests__/delegate.builder';
-import type { Delegate } from '@/modules/delegate/domain/entities/delegate.entity';
+import { getSafeTxHash } from '@/domain/common/utils/safe';
+import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import {
   type ILoggingService,
   LoggingService,
 } from '@/logging/logging.interface';
-import { getSafeTxHash } from '@/domain/common/utils/safe';
-import { confirmationBuilder } from '@/modules/safe/domain/entities/__tests__/multisig-transaction-confirmation.builder';
-import { dataDecodedBuilder } from '@/modules/data-decoder/domain/v2/entities/__tests__/data-decoded.builder';
-import { createTestModule } from '@/__tests__/testing-module';
+import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
 import { contractBuilder } from '@/modules/data-decoder/domain/v2/entities/__tests__/contract.builder';
-import { IBlocklistService } from '@/config/entities/blocklist.interface';
+import { dataDecodedBuilder } from '@/modules/data-decoder/domain/v2/entities/__tests__/data-decoded.builder';
+import { delegateBuilder } from '@/modules/delegate/domain/entities/__tests__/delegate.builder';
+import type { Delegate } from '@/modules/delegate/domain/entities/delegate.entity';
+import {
+  toJson as multisigToJson,
+  multisigTransactionBuilder,
+} from '@/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
+import { confirmationBuilder } from '@/modules/safe/domain/entities/__tests__/multisig-transaction-confirmation.builder';
+import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
+import { Operation } from '@/modules/safe/domain/entities/operation.entity';
+import { safeAppBuilder } from '@/modules/safe-apps/domain/entities/__tests__/safe-app.builder';
+import { tokenBuilder } from '@/modules/tokens/domain/__tests__/token.builder';
+import { proposeTransactionDtoBuilder } from '@/modules/transactions/routes/entities/__tests__/propose-transaction.dto.builder';
+import { GlobalErrorFilter } from '@/routes/common/filters/global-error.filter';
+import { rawify } from '@/validation/entities/raw.entity';
 
 describe('Propose transaction - Transactions Controller', () => {
   let app: INestApplication<Server>;
@@ -152,8 +153,8 @@ describe('Propose transaction - Transactions Controller', () => {
         .with('operation', transaction.operation)
         .with('safeTxGas', transaction.safeTxGas!.toString())
         .with('baseGas', transaction.baseGas!.toString())
-        .with('gasPrice', transaction.gasPrice!)
-        .with('gasToken', transaction.gasToken!)
+        .with('gasPrice', transaction.gasPrice as string)
+        .with('gasToken', transaction.gasToken as Address)
         .with('refundReceiver', transaction.refundReceiver)
         .with('safeTxHash', transaction.safeTxHash)
         .with('sender', transaction.confirmations![0].owner)
@@ -272,14 +273,20 @@ describe('Propose transaction - Transactions Controller', () => {
       .with('operation', transaction.operation)
       .with('safeTxGas', transaction.safeTxGas!.toString())
       .with('baseGas', transaction.baseGas!.toString())
-      .with('gasPrice', transaction.gasPrice!)
-      .with('gasToken', transaction.gasToken!)
+      .with('gasPrice', transaction.gasPrice as string)
+      .with('gasToken', transaction.gasToken as Address)
       .with('refundReceiver', transaction.refundReceiver)
       .with('safeTxHash', transaction.safeTxHash)
       .with('sender', transaction.confirmations![0].owner)
       .with(
         'signature',
-        concat(transaction.confirmations!.map((c) => c.signature!)),
+        concat(
+          (
+            transaction.confirmations as NonNullable<
+              typeof transaction.confirmations
+            >
+          ).map((c) => c.signature as Hex),
+        ),
       )
       .build();
     const transactions = pageBuilder().build();
@@ -398,8 +405,8 @@ describe('Propose transaction - Transactions Controller', () => {
       .with('operation', transaction.operation)
       .with('safeTxGas', transaction.safeTxGas!.toString())
       .with('baseGas', transaction.baseGas!.toString())
-      .with('gasPrice', transaction.gasPrice!)
-      .with('gasToken', transaction.gasToken!)
+      .with('gasPrice', transaction.gasPrice as string)
+      .with('gasToken', transaction.gasToken as Address)
       .with('refundReceiver', transaction.refundReceiver)
       .with('safeTxHash', transaction.safeTxHash)
       .with('sender', delegate.address)
@@ -500,8 +507,8 @@ describe('Propose transaction - Transactions Controller', () => {
         .with('operation', transaction.operation)
         .with('safeTxGas', transaction.safeTxGas!.toString())
         .with('baseGas', transaction.baseGas!.toString())
-        .with('gasPrice', transaction.gasPrice!)
-        .with('gasToken', transaction.gasToken!)
+        .with('gasPrice', transaction.gasPrice as string)
+        .with('gasToken', transaction.gasToken as Address)
         .with('refundReceiver', transaction.refundReceiver)
         .with('safeTxHash', transaction.safeTxHash)
         .with('sender', transaction.confirmations![0].owner)
@@ -591,8 +598,8 @@ describe('Propose transaction - Transactions Controller', () => {
         .with('operation', transaction.operation)
         .with('safeTxGas', transaction.safeTxGas!.toString())
         .with('baseGas', transaction.baseGas!.toString())
-        .with('gasPrice', transaction.gasPrice!)
-        .with('gasToken', transaction.gasToken!)
+        .with('gasPrice', transaction.gasPrice as string)
+        .with('gasToken', transaction.gasToken as Address)
         .with('refundReceiver', transaction.refundReceiver)
         .with('safeTxHash', transaction.safeTxHash)
         .with('sender', transaction.confirmations![0].owner)
@@ -697,8 +704,8 @@ describe('Propose transaction - Transactions Controller', () => {
         .with('operation', transaction.operation)
         .with('safeTxGas', transaction.safeTxGas!.toString())
         .with('baseGas', transaction.baseGas!.toString())
-        .with('gasPrice', transaction.gasPrice!)
-        .with('gasToken', transaction.gasToken!)
+        .with('gasPrice', transaction.gasPrice as string)
+        .with('gasToken', transaction.gasToken as Address)
         .with('refundReceiver', transaction.refundReceiver)
         .with('safeTxHash', transaction.safeTxHash)
         .with('sender', transaction.confirmations![0].owner)
@@ -769,7 +776,9 @@ describe('Propose transaction - Transactions Controller', () => {
       const contractPage = pageBuilder()
         .with('results', [
           // transaction.to address is not in the list of trusted contracts
-          contractBuilder().with('trustedForDelegateCall', true).build(),
+          contractBuilder()
+            .with('trustedForDelegateCall', true)
+            .build(),
           contractBuilder().with('trustedForDelegateCall', true).build(),
         ])
         .with('next', null)
@@ -782,8 +791,8 @@ describe('Propose transaction - Transactions Controller', () => {
         .with('operation', transaction.operation)
         .with('safeTxGas', transaction.safeTxGas!.toString())
         .with('baseGas', transaction.baseGas!.toString())
-        .with('gasPrice', transaction.gasPrice!)
-        .with('gasToken', transaction.gasToken!)
+        .with('gasPrice', transaction.gasPrice as string)
+        .with('gasToken', transaction.gasToken as Address)
         .with('refundReceiver', transaction.refundReceiver)
         .with('safeTxHash', transaction.safeTxHash)
         .with('sender', transaction.confirmations![0].owner)
@@ -892,8 +901,8 @@ describe('Propose transaction - Transactions Controller', () => {
         .with('operation', transaction.operation)
         .with('safeTxGas', transaction.safeTxGas!.toString())
         .with('baseGas', transaction.baseGas!.toString())
-        .with('gasPrice', transaction.gasPrice!)
-        .with('gasToken', transaction.gasToken!)
+        .with('gasPrice', transaction.gasPrice as string)
+        .with('gasToken', transaction.gasToken as Address)
         .with('refundReceiver', transaction.refundReceiver)
         .with('safeTxHash', transaction.safeTxHash)
         .with('sender', transaction.confirmations![0].owner)
@@ -965,8 +974,8 @@ describe('Propose transaction - Transactions Controller', () => {
         .with('operation', transaction.operation)
         .with('safeTxGas', transaction.safeTxGas!.toString())
         .with('baseGas', transaction.baseGas!.toString())
-        .with('gasPrice', transaction.gasPrice!)
-        .with('gasToken', transaction.gasToken!)
+        .with('gasPrice', transaction.gasPrice as string)
+        .with('gasToken', transaction.gasToken as Address)
         .with('refundReceiver', transaction.refundReceiver)
         .with('safeTxHash', transaction.safeTxHash)
         .with('sender', transaction.confirmations![0].owner)
@@ -1048,8 +1057,8 @@ describe('Propose transaction - Transactions Controller', () => {
         .with('operation', transaction.operation)
         .with('safeTxGas', transaction.safeTxGas!.toString())
         .with('baseGas', transaction.baseGas!.toString())
-        .with('gasPrice', transaction.gasPrice!)
-        .with('gasToken', transaction.gasToken!)
+        .with('gasPrice', transaction.gasPrice as string)
+        .with('gasToken', transaction.gasToken as Address)
         .with('refundReceiver', transaction.refundReceiver)
         .with('safeTxHash', transaction.safeTxHash)
         .with('sender', transaction.confirmations![0].owner)
@@ -1122,7 +1131,7 @@ describe('Propose transaction - Transactions Controller', () => {
           signers: [signer],
         });
       transaction.confirmations![0].signature =
-        transaction.confirmations![0].signature!.slice(0, 129) as Address;
+        transaction.confirmations![0].signature?.slice(0, 129) as Address;
       const proposeTransactionDto = proposeTransactionDtoBuilder()
         .with('to', transaction.to)
         .with('value', transaction.value)
@@ -1131,8 +1140,8 @@ describe('Propose transaction - Transactions Controller', () => {
         .with('operation', transaction.operation)
         .with('safeTxGas', transaction.safeTxGas!.toString())
         .with('baseGas', transaction.baseGas!.toString())
-        .with('gasPrice', transaction.gasPrice!)
-        .with('gasToken', transaction.gasToken!)
+        .with('gasPrice', transaction.gasPrice as string)
+        .with('gasToken', transaction.gasToken as Address)
         .with('refundReceiver', transaction.refundReceiver)
         .with('safeTxHash', transaction.safeTxHash)
         .with('sender', transaction.confirmations![0].owner)
@@ -1170,7 +1179,7 @@ describe('Propose transaction - Transactions Controller', () => {
           signers: [signer],
         });
       transaction.confirmations![0].signature =
-        transaction.confirmations![0].signature!.slice(0, 128) as Address;
+        transaction.confirmations![0].signature?.slice(0, 128) as Address;
       const proposeTransactionDto = proposeTransactionDtoBuilder()
         .with('to', transaction.to)
         .with('value', transaction.value)
@@ -1179,8 +1188,8 @@ describe('Propose transaction - Transactions Controller', () => {
         .with('operation', transaction.operation)
         .with('safeTxGas', transaction.safeTxGas!.toString())
         .with('baseGas', transaction.baseGas!.toString())
-        .with('gasPrice', transaction.gasPrice!)
-        .with('gasToken', transaction.gasToken!)
+        .with('gasPrice', transaction.gasPrice as string)
+        .with('gasToken', transaction.gasToken as Address)
         .with('refundReceiver', transaction.refundReceiver)
         .with('safeTxHash', transaction.safeTxHash)
         .with('sender', transaction.confirmations![0].owner)
@@ -1220,7 +1229,7 @@ describe('Propose transaction - Transactions Controller', () => {
             signers: [signer],
             signatureType,
           });
-        const v = transaction.confirmations![0].signature?.slice(-2);
+        const v = transaction.confirmations?.[0].signature?.slice(-2);
         const proposeTransactionDto = proposeTransactionDtoBuilder()
           .with('to', transaction.to)
           .with('value', transaction.value)
@@ -1229,8 +1238,8 @@ describe('Propose transaction - Transactions Controller', () => {
           .with('operation', transaction.operation)
           .with('safeTxGas', transaction.safeTxGas!.toString())
           .with('baseGas', transaction.baseGas!.toString())
-          .with('gasPrice', transaction.gasPrice!)
-          .with('gasToken', transaction.gasToken!)
+          .with('gasPrice', transaction.gasPrice as string)
+          .with('gasToken', transaction.gasToken as Address)
           .with('refundReceiver', transaction.refundReceiver)
           .with('safeTxHash', transaction.safeTxHash)
           .with('sender', transaction.confirmations![0].owner)
@@ -1307,8 +1316,8 @@ describe('Propose transaction - Transactions Controller', () => {
         .with('operation', transaction.operation)
         .with('safeTxGas', transaction.safeTxGas!.toString())
         .with('baseGas', transaction.baseGas!.toString())
-        .with('gasPrice', transaction.gasPrice!)
-        .with('gasToken', transaction.gasToken!)
+        .with('gasPrice', transaction.gasPrice as string)
+        .with('gasToken', transaction.gasToken as Address)
         .with('refundReceiver', transaction.refundReceiver)
         .with('safeTxHash', transaction.safeTxHash)
         .with('sender', transaction.confirmations![0].owner)
@@ -1387,8 +1396,8 @@ describe('Propose transaction - Transactions Controller', () => {
         .with('operation', transaction.operation)
         .with('safeTxGas', transaction.safeTxGas!.toString())
         .with('baseGas', transaction.baseGas!.toString())
-        .with('gasPrice', transaction.gasPrice!)
-        .with('gasToken', transaction.gasToken!)
+        .with('gasPrice', transaction.gasPrice as string)
+        .with('gasToken', transaction.gasToken as Address)
         .with('refundReceiver', transaction.refundReceiver)
         .with('safeTxHash', transaction.safeTxHash)
         .with('sender', transaction.confirmations![0].owner)
@@ -1507,8 +1516,8 @@ describe('Propose transaction - Transactions Controller', () => {
         .with('operation', transaction.operation)
         .with('safeTxGas', transaction.safeTxGas!.toString())
         .with('baseGas', transaction.baseGas!.toString())
-        .with('gasPrice', transaction.gasPrice!)
-        .with('gasToken', transaction.gasToken!)
+        .with('gasPrice', transaction.gasPrice as string)
+        .with('gasToken', transaction.gasToken as Address)
         .with('refundReceiver', transaction.refundReceiver)
         .with('safeTxHash', transaction.safeTxHash)
         // Sender is the last signer
@@ -1518,7 +1527,7 @@ describe('Propose transaction - Transactions Controller', () => {
           // eth_sign is included in concatenated proposal
           concat(
             transaction.confirmations!.map(
-              (confirmation) => confirmation.signature!,
+              (confirmation) => confirmation.signature as Hex,
             ),
           ),
         )
@@ -1623,8 +1632,8 @@ describe('Propose transaction - Transactions Controller', () => {
         .with('operation', transaction.operation)
         .with('safeTxGas', transaction.safeTxGas!.toString())
         .with('baseGas', transaction.baseGas!.toString())
-        .with('gasPrice', transaction.gasPrice!)
-        .with('gasToken', transaction.gasToken!)
+        .with('gasPrice', transaction.gasPrice as string)
+        .with('gasToken', transaction.gasToken as Address)
         .with('refundReceiver', transaction.refundReceiver)
         .with('safeTxHash', transaction.safeTxHash)
         .with('sender', getAddress(faker.finance.ethereumAddress()))
@@ -1713,8 +1722,8 @@ describe('Propose transaction - Transactions Controller', () => {
         .with('operation', transaction.operation)
         .with('safeTxGas', transaction.safeTxGas!.toString())
         .with('baseGas', transaction.baseGas!.toString())
-        .with('gasPrice', transaction.gasPrice!)
-        .with('gasToken', transaction.gasToken!)
+        .with('gasPrice', transaction.gasPrice as string)
+        .with('gasToken', transaction.gasToken as Address)
         .with('refundReceiver', transaction.refundReceiver)
         .with('safeTxHash', transaction.safeTxHash)
         .with('sender', delegate.address)

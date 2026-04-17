@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 /**
  * These interfaces map Zerion responses for the list of wallet's fungible positions.
  * Reference documentation: https://developers.zerion.io/reference/listwalletpositions
@@ -5,16 +6,16 @@
 
 import { getAddress, isAddress } from 'viem';
 import { z } from 'zod';
+import type { ApplicationMetadataSchema } from '@/modules/positions/domain/entities/position.entity';
+import { PositionAttributeSchema } from '@/modules/positions/domain/entities/position.entity';
 import {
-  PositionTypeSchema,
   PositionType,
+  PositionTypeSchema,
 } from '@/modules/positions/domain/entities/position-type.entity';
 import {
   NullableNumberSchema,
   NullableStringSchema,
 } from '@/validation/entities/schemas/nullable.schema';
-import type { ApplicationMetadataSchema } from '@/modules/positions/domain/entities/position.entity';
-import { PositionAttributeSchema } from '@/modules/positions/domain/entities/position.entity';
 
 export type ZerionFungibleInfo = z.infer<typeof ZerionFungibleInfoSchema>;
 

@@ -1,35 +1,36 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import isEmpty from 'lodash/isEmpty';
-import { ContractsRepository } from '@/modules/contracts/domain/contracts.repository';
+import type { Address } from 'viem';
+import { getAddress } from 'viem';
+import { IConfigurationService } from '@/config/configuration.service.interface';
+import { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
+import type { ContractsRepository } from '@/modules/contracts/domain/contracts.repository';
 import { IContractsRepository } from '@/modules/contracts/domain/contracts.repository.interface';
-import { Operation } from '@/modules/safe/domain/entities/operation.entity';
-import {
+import type {
   BaseDataDecoded,
   DataDecoded,
   DataDecodedParameter,
 } from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';
-import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
-import { NULL_ADDRESS } from '@/routes/common/constants';
-import {
-  MULTI_SEND_METHOD_NAME,
-  TRANSACTIONS_PARAMETER_NAME,
-  ADDRESS_PARAMETER_TYPE,
-} from '@/modules/transactions/routes/constants';
-import { PreviewTransactionDto } from '@/modules/transactions/routes/entities/preview-transaction.dto.entity';
-import { TransactionData } from '@/modules/transactions/routes/entities/transaction-data.entity';
-import { DataDecodedParamHelper } from '@/modules/transactions/routes/mappers/common/data-decoded-param.helper';
-import { AddressInfo } from '@/routes/common/entities/address-info.entity';
-import type { Address } from 'viem';
-import { getAddress } from 'viem';
-import {
+import { Operation } from '@/modules/safe/domain/entities/operation.entity';
+import type {
   Erc20Token,
   Erc721Token,
   NativeToken,
 } from '@/modules/tokens/domain/entities/token.entity';
-import { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
 import { ITokenRepository } from '@/modules/tokens/domain/token.repository.interface';
+import {
+  ADDRESS_PARAMETER_TYPE,
+  MULTI_SEND_METHOD_NAME,
+  TRANSACTIONS_PARAMETER_NAME,
+} from '@/modules/transactions/routes/constants';
+import type { PreviewTransactionDto } from '@/modules/transactions/routes/entities/preview-transaction.dto.entity';
+import { TransactionData } from '@/modules/transactions/routes/entities/transaction-data.entity';
+import { DataDecodedParamHelper } from '@/modules/transactions/routes/mappers/common/data-decoded-param.helper';
 import { MultisigTransactionInfoMapper } from '@/modules/transactions/routes/mappers/common/transaction-info.mapper';
-import { IConfigurationService } from '@/config/configuration.service.interface';
+import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
+import { NULL_ADDRESS } from '@/routes/common/constants';
+import type { AddressInfo } from '@/routes/common/entities/address-info.entity';
 
 @Injectable()
 export class TransactionDataMapper {
@@ -187,7 +188,7 @@ export class TransactionDataMapper {
         parameter.name === TRANSACTIONS_PARAMETER_NAME &&
         parameter.type === 'bytes';
 
-      if (!isMultiSend || !Array.isArray(parameter.valueDecoded)) {
+      if (!(isMultiSend && Array.isArray(parameter.valueDecoded))) {
         continue;
       }
 
@@ -245,12 +246,11 @@ export class TransactionDataMapper {
               symbol: nativeCurrency.symbol,
               trusted: true,
             };
-          } else {
-            return await this.tokenRepository.getToken({
-              chainId: args.chainId,
-              address: tokenAddress,
-            });
           }
+          return await this.tokenRepository.getToken({
+            chainId: args.chainId,
+            address: tokenAddress,
+          });
         }),
       )
     )
@@ -307,6 +307,7 @@ export class TransactionDataMapper {
    * @param chainId - chain id to use
    * @param valueDecoded - valueDecoded to use
    */
+  // biome-ignore lint/suspicious/useAwait: async needed to wrap non-Promise returns in Promise
   private async _getFromValueDecoded(
     chainId: string,
     valueDecoded: unknown,

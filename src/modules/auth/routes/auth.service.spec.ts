@@ -1,16 +1,17 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
-import type { IAuthRepository } from '@/modules/auth/domain/auth.repository.interface';
-import { AuthService } from '@/modules/auth/routes/auth.service';
-import type { ISiweRepository } from '@/modules/siwe/domain/siwe.repository.interface';
-import type { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
-import type { ILoggingService } from '@/logging/logging.interface';
+
 import { faker } from '@faker-js/faker';
 import { BadRequestException, ForbiddenException } from '@nestjs/common';
-import { siweMessageBuilder } from '@/modules/siwe/domain/entities/__tests__/siwe-message.builder';
 import type { Hex } from 'viem';
+import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import type { JwtPayloadWithClaims } from '@/datasources/jwt/jwt-claims.entity';
+import type { ILoggingService } from '@/logging/logging.interface';
+import type { IAuthRepository } from '@/modules/auth/domain/auth.repository.interface';
 import type { AuthPayloadDto } from '@/modules/auth/domain/entities/auth-payload.entity';
+import { AuthService } from '@/modules/auth/routes/auth.service';
+import { siweMessageBuilder } from '@/modules/siwe/domain/entities/__tests__/siwe-message.builder';
+import type { ISiweRepository } from '@/modules/siwe/domain/siwe.repository.interface';
+import type { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
 
 const siweRepositoryMock = {
   generateNonce: jest.fn(),
@@ -157,9 +158,9 @@ describe('AuthService', () => {
           signer_address: siweMessage.address,
         },
         {
-          nbf: new Date(siweMessage.notBefore!),
-          exp: new Date(siweMessage.expirationTime!),
-          iat: new Date(siweMessage.issuedAt!),
+          nbf: new Date(siweMessage.notBefore as Date),
+          exp: new Date(siweMessage.expirationTime as Date),
+          iat: new Date(siweMessage.issuedAt as Date),
         },
       );
     });

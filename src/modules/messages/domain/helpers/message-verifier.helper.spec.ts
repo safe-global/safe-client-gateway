@@ -1,16 +1,17 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { get } from 'lodash';
 import { type Address, getAddress } from 'viem';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
-import { MessageVerifierHelper } from '@/modules/messages/domain/helpers/message-verifier.helper';
-import { messageBuilder } from '@/modules/messages/domain/entities/__tests__/message.builder';
-import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
-import { HttpExceptionNoLog } from '@/domain/common/errors/http-exception-no-log.error';
-import configuration from '@/config/entities/__tests__/configuration';
-import { SignatureType } from '@/domain/common/entities/signature-type.entity';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
-import type { ILoggingService } from '@/logging/logging.interface';
+import configuration from '@/config/entities/__tests__/configuration';
 import type { IBlocklistService } from '@/config/entities/blocklist.interface';
+import { SignatureType } from '@/domain/common/entities/signature-type.entity';
+import { HttpExceptionNoLog } from '@/domain/common/errors/http-exception-no-log.error';
+import type { ILoggingService } from '@/logging/logging.interface';
+import { messageBuilder } from '@/modules/messages/domain/entities/__tests__/message.builder';
+import { MessageVerifierHelper } from '@/modules/messages/domain/helpers/message-verifier.helper';
+import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
 
 const mockConfigurationService = jest.mocked({
   getOrThrow: jest.fn(),

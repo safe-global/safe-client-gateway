@@ -1,13 +1,14 @@
-import type { Queue } from 'bullmq';
-import { Test } from '@nestjs/testing';
-import { BullModule, getQueueToken } from '@nestjs/bullmq';
-import { JobQueueService } from './../job-queue.service';
-import { TestJobConsumer } from './../__tests__/test.job.consumer';
-import { JobType } from './../types/job-types';
-import { IJobQueueService } from '@/domain/interfaces/job-queue.interface';
-import type { TestJobData } from '@/datasources/job-queue/__tests__/test.job.data';
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker/.';
+import { BullModule, getQueueToken } from '@nestjs/bullmq';
 import type { INestApplication } from '@nestjs/common';
+import { Test } from '@nestjs/testing';
+import type { Queue } from 'bullmq';
+import type { TestJobData } from '@/datasources/job-queue/__tests__/test.job.data';
+import { IJobQueueService } from '@/domain/interfaces/job-queue.interface';
+import { TestJobConsumer } from './../__tests__/test.job.consumer';
+import { JobQueueService } from './../job-queue.service';
+import { JobType } from './../types/job-types';
 
 describe('JobQueueService & TestJobConsumer integration', () => {
   let app: INestApplication;
@@ -135,7 +136,7 @@ describe('JobQueueService & TestJobConsumer integration', () => {
   });
 });
 
-async function waitUntil(
+function waitUntil(
   condition: () => boolean,
   timeout = 5000,
   interval = 50,
@@ -143,9 +144,14 @@ async function waitUntil(
   const start = Date.now();
   return new Promise((resolve, reject) => {
     const check = (): void => {
-      if (condition()) return resolve();
-      if (Date.now() - start > timeout)
-        return reject(new Error('Timeout waiting for condition'));
+      if (condition()) {
+        resolve();
+        return;
+      }
+      if (Date.now() - start > timeout) {
+        reject(new Error('Timeout waiting for condition'));
+        return;
+      }
       setTimeout(check, interval);
     };
     check();

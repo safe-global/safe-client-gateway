@@ -1,7 +1,8 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { faker } from '@faker-js/faker';
 import { networkStatsBuilder } from '@/modules/staking/datasources/entities/__tests__/network-stats.entity.builder';
 import type { NetworkStats } from '@/modules/staking/datasources/entities/network-stats.entity';
 import { NetworkStatsSchema } from '@/modules/staking/datasources/entities/network-stats.entity';
-import { faker } from '@faker-js/faker';
 
 describe('NetworkStatsSchema', () => {
   it('should validate a NetworkStats object', () => {

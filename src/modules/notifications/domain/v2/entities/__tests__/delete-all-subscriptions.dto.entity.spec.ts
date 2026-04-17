@@ -1,8 +1,9 @@
-import { DeleteAllSubscriptionsDtoSchema } from '@/modules/notifications/domain/v2/entities/delete-all-subscriptions.dto.entity';
-import { deleteAllSubscriptionsDtoBuilder } from '@/modules/notifications/domain/v2/entities/__tests__/delete-all-subscriptions.dto.builder';
+// SPDX-License-Identifier: FSL-1.1-MIT
+import type { UUID } from 'node:crypto';
 import { faker } from '@faker-js/faker';
-import type { UUID } from 'crypto';
 import { type Address, getAddress } from 'viem';
+import { deleteAllSubscriptionsDtoBuilder } from '@/modules/notifications/domain/v2/entities/__tests__/delete-all-subscriptions.dto.builder';
+import { DeleteAllSubscriptionsDtoSchema } from '@/modules/notifications/domain/v2/entities/delete-all-subscriptions.dto.entity';
 
 describe('DeleteAllSubscriptionsDtoSchema', () => {
   it('should validate a valid DeleteAllSubscriptionsDto', () => {

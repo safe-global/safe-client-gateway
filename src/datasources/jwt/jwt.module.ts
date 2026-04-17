@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import jwt from 'jsonwebtoken';
+
 import { Module } from '@nestjs/common';
+import jwt from 'jsonwebtoken';
 import { JwtService } from '@/datasources/jwt/jwt.service';
 import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
 import { toSecondsTimestamp } from '@/domain/common/utils/time';
 
 // Use inferred type
-// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 function jwtClientFactory() {
   return {
     sign: <

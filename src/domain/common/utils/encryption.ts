@@ -1,9 +1,10 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import {
   createCipheriv,
   createDecipheriv,
   randomBytes,
   scryptSync,
-} from 'crypto';
+} from 'node:crypto';
 
 /**
  * Encrypts data using AES-256-GCM encryption.
@@ -20,7 +21,7 @@ export function encryptData<T>(
   encryptionKey: string,
   salt: string,
 ): string {
-  if (!encryptionKey || !salt) {
+  if (!(encryptionKey && salt)) {
     throw new Error('Encryption key and salt are required');
   }
 
@@ -58,7 +59,7 @@ export function decryptData<T>(
   encryptionKey: string,
   salt: string,
 ): T {
-  if (!encryptionKey || !encryptedData || !salt) {
+  if (!(encryptionKey && encryptedData && salt)) {
     throw new Error('Decryption data and configuration are required');
   }
 

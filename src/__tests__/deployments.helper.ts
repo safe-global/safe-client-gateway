@@ -1,5 +1,6 @@
-import path from 'path';
-import fs from 'fs';
+// SPDX-License-Identifier: FSL-1.1-MIT
+import fs from 'node:fs';
+import path from 'node:path';
 
 /**
  * This generates a map of contract names to chain IDs to a versions array

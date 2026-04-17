@@ -1,16 +1,17 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Injectable, Module } from '@nestjs/common';
+import type { Address } from 'viem';
 import { GPv2Decoder } from '@/modules/swaps/domain/contracts/decoders/gp-v2-decoder.helper';
 import { SwapOrderTransactionInfo } from '@/modules/transactions/routes/entities/swaps/swap-order-info.entity';
 import { TokenInfo } from '@/modules/transactions/routes/entities/swaps/token-info.entity';
 import {
-  SwapOrderHelper,
-  SwapOrderHelperModule,
-} from '@/modules/transactions/routes/helpers/swap-order.helper';
-import {
   SwapAppsHelper,
   SwapAppsHelperModule,
 } from '@/modules/transactions/routes/helpers/swap-apps.helper';
-import type { Address } from 'viem';
+import {
+  SwapOrderHelper,
+  SwapOrderHelperModule,
+} from '@/modules/transactions/routes/helpers/swap-order.helper';
 
 @Injectable()
 export class SwapOrderMapper {

@@ -1,8 +1,9 @@
-import { ModuleTransactionEventSchema } from '@/modules/hooks/routes/entities/schemas/module-transaction.schema';
-import type { TransactionEventType } from '@/modules/hooks/routes/entities/event-type.entity';
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress } from 'viem';
 import { moduleTransactionEventBuilder } from '@/modules/hooks/routes/entities/__tests__/module-transaction.builder';
+import type { TransactionEventType } from '@/modules/hooks/routes/entities/event-type.entity';
+import { ModuleTransactionEventSchema } from '@/modules/hooks/routes/entities/schemas/module-transaction.schema';
 
 describe('ModuleTransactionEventSchema', () => {
   it('should validate an module transaction event', () => {

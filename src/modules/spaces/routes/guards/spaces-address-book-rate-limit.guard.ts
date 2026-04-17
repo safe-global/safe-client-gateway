@@ -1,11 +1,15 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { Inject, Injectable } from '@nestjs/common';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import {
   CacheService,
-  ICacheService,
+  type ICacheService,
 } from '@/datasources/cache/cache.service.interface';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
 import { RateLimitGuard } from '@/routes/common/guards/rate-limit.guard';
-import { Inject, Injectable } from '@nestjs/common';
 
 @Injectable()
 export class SpacesAddressBookRateLimitGuard extends RateLimitGuard {

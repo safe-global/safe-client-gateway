@@ -1,17 +1,18 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import {
   Controller,
+  DefaultValuePipe,
   Get,
   Param,
-  Query,
-  DefaultValuePipe,
   ParseBoolPipe,
+  Query,
 } from '@nestjs/common';
-import { ApiOkResponse, ApiTags, ApiQuery } from '@nestjs/swagger';
-import { PositionsService } from '@/modules/positions/routes/positions.service';
-import { ValidationPipe } from '@/validation/pipes/validation.pipe';
-import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { Protocol } from '@/modules/positions/routes/entities/protocol.entity';
+import { ApiOkResponse, ApiQuery, ApiTags } from '@nestjs/swagger';
 import type { Address } from 'viem';
+import { Protocol } from '@/modules/positions/routes/entities/protocol.entity';
+import type { PositionsService } from '@/modules/positions/routes/positions.service';
+import { AddressSchema } from '@/validation/entities/schemas/address.schema';
+import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 
 @ApiTags('positions')
 @Controller({
@@ -39,7 +40,7 @@ export class PositionsController {
     example: false,
   })
   @Get('chains/:chainId/safes/:safeAddress/positions/:fiatCode')
-  async getPositions(
+  getPositions(
     @Param('chainId') chainId: string,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
     safeAddress: Address,

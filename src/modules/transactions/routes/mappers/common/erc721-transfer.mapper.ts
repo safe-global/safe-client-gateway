@@ -1,15 +1,16 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Injectable } from '@nestjs/common';
-import { ModuleTransaction } from '@/modules/safe/domain/entities/module-transaction.entity';
-import { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
-import { Erc721Token } from '@/modules/tokens/domain/entities/token.entity';
-import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
-import { NULL_ADDRESS } from '@/routes/common/constants';
+import { getAddress } from 'viem';
+import type { DataDecoded } from '@/modules/data-decoder/routes/entities/data-decoded.entity';
+import type { ModuleTransaction } from '@/modules/safe/domain/entities/module-transaction.entity';
+import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
+import type { Erc721Token } from '@/modules/tokens/domain/entities/token.entity';
 import { TransferTransactionInfo } from '@/modules/transactions/routes/entities/transfer-transaction-info.entity';
 import { Erc721Transfer } from '@/modules/transactions/routes/entities/transfers/erc721-transfer.entity';
 import { DataDecodedParamHelper } from '@/modules/transactions/routes/mappers/common/data-decoded-param.helper';
 import { getTransferDirection } from '@/modules/transactions/routes/mappers/common/transfer-direction.helper';
-import { getAddress } from 'viem';
-import { DataDecoded } from '@/modules/data-decoder/routes/entities/data-decoded.entity';
+import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
+import { NULL_ADDRESS } from '@/routes/common/constants';
 
 @Injectable()
 export class Erc721TransferMapper {

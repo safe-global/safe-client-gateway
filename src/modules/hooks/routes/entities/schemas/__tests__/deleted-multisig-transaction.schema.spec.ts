@@ -1,8 +1,9 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { faker } from '@faker-js/faker';
+import { type Address, getAddress } from 'viem';
 import { deletedMultisigTransactionEventBuilder } from '@/modules/hooks/routes/entities/__tests__/deleted-multisig-transaction.builder';
 import type { TransactionEventType } from '@/modules/hooks/routes/entities/event-type.entity';
 import { DeletedMultisigTransactionEventSchema } from '@/modules/hooks/routes/entities/schemas/deleted-multisig-transaction.schema';
-import { faker } from '@faker-js/faker';
-import { type Address, getAddress } from 'viem';
 
 describe('DeletedMultisigTransactionEventSchema', () => {
   it('should validate a valid delete event', () => {

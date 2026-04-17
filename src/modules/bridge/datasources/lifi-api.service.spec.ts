@@ -1,16 +1,17 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
-import { LifiBridgeApi } from '@/modules/bridge/datasources/lifi-api.service';
+import type { Hash } from 'viem';
+import type { IConfigurationService } from '@/config/configuration.service.interface';
+import type { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
+import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
+import type { INetworkService } from '@/datasources/network/network.service.interface';
+import { DataSourceError } from '@/domain/errors/data-source.error';
+import { LifiBridgeApi } from '@/modules/bridge/datasources/lifi-api.service';
+import { bridgeChainPageBuilder } from '@/modules/bridge/domain/entities/__tests__/bridge-chain.builder';
 import { bridgeStatusBuilder } from '@/modules/bridge/domain/entities/__tests__/bridge-status.builder';
 import { BridgeNames } from '@/modules/bridge/domain/entities/bridge-name.entity';
 import { rawify } from '@/validation/entities/raw.entity';
-import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
-import { DataSourceError } from '@/domain/errors/data-source.error';
-import type { INetworkService } from '@/datasources/network/network.service.interface';
-import { bridgeChainPageBuilder } from '@/modules/bridge/domain/entities/__tests__/bridge-chain.builder';
-import { type CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
-import { type IConfigurationService } from '@/config/configuration.service.interface';
-import type { Hash } from 'viem';
 
 const mockNetworkService = jest.mocked({
   get: jest.fn(),

@@ -1,7 +1,8 @@
-import { erc20TransferBuilder } from '@/modules/safe/domain/entities/__tests__/erc20-transfer.builder';
-import { Erc20TransferSchema } from '@/modules/safe/domain/entities/schemas/erc20-transfer.schema';
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress } from 'viem';
+import { erc20TransferBuilder } from '@/modules/safe/domain/entities/__tests__/erc20-transfer.builder';
+import { Erc20TransferSchema } from '@/modules/safe/domain/entities/schemas/erc20-transfer.schema';
 
 describe('Erc20TransferSchema', () => {
   it('should validate a Erc20Transfer', () => {

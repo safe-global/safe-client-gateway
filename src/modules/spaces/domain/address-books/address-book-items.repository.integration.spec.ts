@@ -1,31 +1,32 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import type { IConfigurationService } from '@/config/configuration.service.interface';
-import configuration from '@/config/entities/__tests__/configuration';
-import { postgresConfig } from '@/config/entities/postgres.config';
-import { DatabaseMigrator } from '@/datasources/db/v2/database-migrator.service';
-import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
-import { AddressBookItem } from '@/modules/spaces/datasources/entities/address-book-item.entity.db';
-import { SpaceSafe } from '@/modules/spaces/datasources/entities/space-safes.entity.db';
-import { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
-import { Member } from '@/modules/users/datasources/entities/member.entity.db';
-import { User } from '@/modules/users/datasources/entities/users.entity.db';
-import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
-import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
-import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
-import { nameBuilder } from '@/domain/common/entities/name.builder';
-import { AddressBookItemsRepository } from '@/modules/spaces/domain/address-books/address-book-items.repository';
-import type { IAddressBookItemsRepository } from '@/modules/spaces/domain/address-books/address-book-items.repository.interface';
-import { addressBookItemBuilder } from '@/modules/spaces/domain/address-books/entities/__tests__/address-book-item.db.builder';
-import { spaceBuilder } from '@/modules/spaces/domain/entities/__tests__/space.entity.db.builder';
-import { SpacesRepository } from '@/modules/spaces/domain/spaces.repository';
-import type { ILoggingService } from '@/logging/logging.interface';
+
 import { faker } from '@faker-js/faker/.';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import type { ConfigService } from '@nestjs/config';
 import { range } from 'lodash';
 import { DataSource } from 'typeorm';
 import { type Address, getAddress } from 'viem';
+import type { IConfigurationService } from '@/config/configuration.service.interface';
+import configuration from '@/config/entities/__tests__/configuration';
+import { postgresConfig } from '@/config/entities/postgres.config';
+import { DatabaseMigrator } from '@/datasources/db/v2/database-migrator.service';
+import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
+import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
+import { nameBuilder } from '@/domain/common/entities/name.builder';
+import type { ILoggingService } from '@/logging/logging.interface';
+import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
+import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
+import { AddressBookItem } from '@/modules/spaces/datasources/entities/address-book-item.entity.db';
+import { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
+import { SpaceSafe } from '@/modules/spaces/datasources/entities/space-safes.entity.db';
+import { AddressBookItemsRepository } from '@/modules/spaces/domain/address-books/address-book-items.repository';
+import type { IAddressBookItemsRepository } from '@/modules/spaces/domain/address-books/address-book-items.repository.interface';
+import { addressBookItemBuilder } from '@/modules/spaces/domain/address-books/entities/__tests__/address-book-item.db.builder';
+import { spaceBuilder } from '@/modules/spaces/domain/entities/__tests__/space.entity.db.builder';
+import { SpacesRepository } from '@/modules/spaces/domain/spaces.repository';
+import { Member } from '@/modules/users/datasources/entities/member.entity.db';
+import { User } from '@/modules/users/datasources/entities/users.entity.db';
+import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
 
 const mockLoggingService = {
   debug: jest.fn(),

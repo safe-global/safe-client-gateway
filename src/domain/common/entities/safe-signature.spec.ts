@@ -1,15 +1,16 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { shuffle } from 'lodash';
+import type { Hash, Hex } from 'viem';
 import * as viem from 'viem';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 import { SafeSignature } from '@/domain/common/entities/safe-signature';
 import { SignatureType } from '@/domain/common/entities/signature-type.entity';
 import { getSignature } from '@/domain/common/utils/__tests__/signatures.builder';
 import {
-  SIGNATURE_HEX_LENGTH,
   DYNAMIC_PART_LENGTH_FIELD_HEX_LENGTH,
+  SIGNATURE_HEX_LENGTH,
 } from '@/domain/common/utils/signatures';
-import type { Hex, Hash } from 'viem';
 
 describe('SafeSignature', () => {
   it('should create an instance', () => {
@@ -170,7 +171,7 @@ describe('SafeSignature', () => {
       hash,
     });
 
-    expect(safeSignature.v).toBe(parseInt(signature.slice(-2), 16));
+    expect(safeSignature.v).toBe(Number.parseInt(signature.slice(-2), 16));
   });
 
   describe('signatureType', () => {

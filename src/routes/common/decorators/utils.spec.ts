@@ -1,6 +1,7 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
-import { getRouteUrl } from '@/routes/common/decorators/utils';
 import type { Request } from 'express';
+import { getRouteUrl } from '@/routes/common/decorators/utils';
 
 describe('utils tests', () => {
   describe('getRouteUrl tests', () => {
@@ -16,13 +17,13 @@ describe('utils tests', () => {
       const protocol = faker.internet.protocol();
       const host = faker.internet.domainName();
       request.get.mockImplementation((arg) => {
-        if (arg == 'X-Forwarded-Proto') {
+        if (arg === 'X-Forwarded-Proto') {
           return protocol;
-        } else if (arg == 'Host') {
-          return host;
-        } else {
-          throw Error('Unknown arg');
         }
+        if (arg === 'Host') {
+          return host;
+        }
+        throw Error('Unknown arg');
       });
 
       const actual = getRouteUrl(requestMock).toString();
@@ -33,13 +34,13 @@ describe('utils tests', () => {
     it('Uses request protocol if X-Forwarded-Proto is not set', () => {
       const host = faker.internet.domainName();
       request.get.mockImplementation((arg) => {
-        if (arg == 'X-Forwarded-Proto') {
+        if (arg === 'X-Forwarded-Proto') {
           return undefined;
-        } else if (arg == 'Host') {
-          return host;
-        } else {
-          throw Error('Unknown arg');
         }
+        if (arg === 'Host') {
+          return host;
+        }
+        throw Error('Unknown arg');
       });
 
       const actual = getRouteUrl(requestMock).toString();

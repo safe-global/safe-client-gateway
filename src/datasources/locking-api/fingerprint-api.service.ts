@@ -1,17 +1,21 @@
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import {
-  FingerprintUnsealedData,
-  FingerprintUnsealedDataSchema,
-} from '@/datasources/locking-api/entities/fingerprint-unsealed-data.entity';
-import type { EligibilityRequest } from '@/modules/community/domain/entities/eligibility-request.entity';
-import type { Eligibility } from '@/modules/community/domain/entities/eligibility.entity';
-import type { IIdentityApi } from '@/domain/interfaces/identity-api.interface';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+// SPDX-License-Identifier: FSL-1.1-MIT
 import {
   DecryptionAlgorithm,
   unsealEventsResponse,
 } from '@fingerprintjs/fingerprintjs-pro-server-api';
 import { Inject } from '@nestjs/common';
+import { IConfigurationService } from '@/config/configuration.service.interface';
+import {
+  type FingerprintUnsealedData,
+  FingerprintUnsealedDataSchema,
+} from '@/datasources/locking-api/entities/fingerprint-unsealed-data.entity';
+import type { IIdentityApi } from '@/domain/interfaces/identity-api.interface';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
+import type { Eligibility } from '@/modules/community/domain/entities/eligibility.entity';
+import type { EligibilityRequest } from '@/modules/community/domain/entities/eligibility-request.entity';
 
 export class FingerprintApiService implements IIdentityApi {
   private readonly eligibilityEncryptionKey: string;

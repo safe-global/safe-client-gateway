@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { shuffle } from 'lodash';
 import type { Address, Hex } from 'viem';
@@ -72,7 +73,7 @@ describe('parseSignaturesByType', () => {
       signatureType,
     });
 
-    expect(() => parseSignaturesByType((signature + '0') as Hex)).toThrow(
+    expect(() => parseSignaturesByType(`${signature}0` as Hex)).toThrow(
       'Invalid hex bytes length',
     );
   });

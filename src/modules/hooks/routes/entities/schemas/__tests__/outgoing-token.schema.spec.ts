@@ -1,8 +1,9 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { faker } from '@faker-js/faker';
+import { type Address, getAddress } from 'viem';
 import { outgoingTokenEventBuilder } from '@/modules/hooks/routes/entities/__tests__/outgoing-token.builder';
 import type { TransactionEventType } from '@/modules/hooks/routes/entities/event-type.entity';
 import { OutgoingTokenEventSchema } from '@/modules/hooks/routes/entities/schemas/outgoing-token.schema';
-import { faker } from '@faker-js/faker';
-import { type Address, getAddress } from 'viem';
 
 describe('OutgoingTokenEventSchema', () => {
   it('should validate an outgoing token event', () => {

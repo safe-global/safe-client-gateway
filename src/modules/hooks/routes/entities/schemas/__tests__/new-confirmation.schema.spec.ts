@@ -1,8 +1,9 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { faker } from '@faker-js/faker';
+import { type Address, getAddress } from 'viem';
 import { newConfirmationEventBuilder } from '@/modules/hooks/routes/entities/__tests__/new-confirmation.builder';
 import type { TransactionEventType } from '@/modules/hooks/routes/entities/event-type.entity';
 import { NewConfirmationEventSchema } from '@/modules/hooks/routes/entities/schemas/new-confirmation.schema';
-import { faker } from '@faker-js/faker';
-import { type Address, getAddress } from 'viem';
 
 describe('NewConfirmationEventSchema', () => {
   it('should validate a new confirmation event', () => {

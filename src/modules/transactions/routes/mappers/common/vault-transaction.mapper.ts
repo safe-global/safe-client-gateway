@@ -1,20 +1,21 @@
-import {
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import type { Address } from 'viem';
+import { getNumberString } from '@/domain/common/utils/utils';
+import { EarnRepository } from '@/modules/earn/domain/earn.repository';
+import type {
   DefiVaultStats,
   DefiVaultStatsAdditionalReward,
 } from '@/modules/staking/datasources/entities/defi-vault-stats.entity';
-import { Deployment } from '@/modules/staking/datasources/entities/deployment.entity';
-import { getNumberString } from '@/domain/common/utils/utils';
-import { EarnRepository } from '@/modules/earn/domain/earn.repository';
+import type { Deployment } from '@/modules/staking/datasources/entities/deployment.entity';
 import { ITokenRepository } from '@/modules/tokens/domain/token.repository.interface';
 import { TokenInfo } from '@/modules/transactions/routes/entities/swaps/token-info.entity';
 import { VaultExtraReward } from '@/modules/transactions/routes/entities/vaults/vault-extra-reward.entity';
 import { VaultInfo } from '@/modules/transactions/routes/entities/vaults/vault-info.entity';
 import {
   VaultDepositTransactionInfo,
-  VaultRedeemTransactionInfo as VaultRedeemTransactionInfo,
+  VaultRedeemTransactionInfo,
 } from '@/modules/transactions/routes/entities/vaults/vault-transaction-info.entity';
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
-import type { Address } from 'viem';
 
 @Injectable()
 export class VaultTransactionMapper {
@@ -145,7 +146,7 @@ export class VaultTransactionMapper {
       .getDefiMorphoExtraRewards(args)
       .catch(() => []);
 
-    const rewards = [];
+    const rewards: Array<VaultExtraReward> = [];
     for (const reward of args.additionalRewards) {
       const token = await this.tokenRepository
         .getToken({

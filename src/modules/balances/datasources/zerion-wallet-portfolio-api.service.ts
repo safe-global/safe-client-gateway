@@ -1,25 +1,28 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import {
-  INetworkService,
-  NetworkService,
-} from '@/datasources/network/network.service.interface';
-import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
-import { getZerionHeaders } from '@/modules/balances/datasources/zerion-api.helpers';
-import {
-  ZerionWalletPortfolioSchema,
-  type ZerionWalletPortfolio,
-} from '@/modules/balances/datasources/entities/zerion-wallet-portfolio.entity';
 import type { Address } from 'viem';
 import { ZodError } from 'zod';
+import { IConfigurationService } from '@/config/configuration.service.interface';
+import { CacheRouter } from '@/datasources/cache/cache.router';
 import {
   CacheService,
-  ICacheService,
+  type ICacheService,
 } from '@/datasources/cache/cache.service.interface';
-import { CacheRouter } from '@/datasources/cache/cache.router';
-import { LoggingService, ILoggingService } from '@/logging/logging.interface';
+import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
+import {
+  type INetworkService,
+  NetworkService,
+} from '@/datasources/network/network.service.interface';
 import { LogType } from '@/domain/common/entities/log-type.entity';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
+import {
+  type ZerionWalletPortfolio,
+  ZerionWalletPortfolioSchema,
+} from '@/modules/balances/datasources/entities/zerion-wallet-portfolio.entity';
+import { getZerionHeaders } from '@/modules/balances/datasources/zerion-api.helpers';
 
 export const IZerionWalletPortfolioApi = Symbol('IZerionWalletPortfolioApi');
 

@@ -1,11 +1,12 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
+import { type Address, getAddress } from 'viem';
 import {
-  DataDecodedAccuracy,
   type DataDecoded,
+  DataDecodedAccuracy,
   type DataDecodedParameter,
 } from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';
 import { DataDecodedParamHelper } from '@/modules/transactions/routes/mappers/common/data-decoded-param.helper';
-import { type Address, getAddress } from 'viem';
 
 describe('DataDecoded param helper (Unit)', () => {
   const helper = new DataDecodedParamHelper();

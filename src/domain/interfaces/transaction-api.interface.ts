@@ -1,8 +1,10 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import type { Address, Hex } from 'viem';
+import type { Page } from '@/domain/entities/page.entity';
 import type { Backbone } from '@/modules/backbone/domain/entities/backbone.entity';
 import type { Singleton } from '@/modules/chains/domain/entities/singleton.entity';
 import type { DataDecoded } from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';
 import type { Delegate } from '@/modules/delegate/domain/entities/delegate.entity';
-import type { Page } from '@/domain/entities/page.entity';
 import type { Estimation } from '@/modules/estimations/domain/entities/estimation.entity';
 import type { GetEstimationDto } from '@/modules/estimations/domain/entities/get-estimation.dto.entity';
 import type { IndexingStatus } from '@/modules/indexing/domain/entities/indexing-status.entity';
@@ -10,15 +12,14 @@ import type { Message } from '@/modules/messages/domain/entities/message.entity'
 import type { CreationTransaction } from '@/modules/safe/domain/entities/creation-transaction.entity';
 import type { ModuleTransaction } from '@/modules/safe/domain/entities/module-transaction.entity';
 import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
-import type { SafeList } from '@/modules/safe/domain/entities/safe-list.entity';
 import type { Safe, SafeV2 } from '@/modules/safe/domain/entities/safe.entity';
+import type { SafeList } from '@/modules/safe/domain/entities/safe-list.entity';
 import type { Transaction } from '@/modules/safe/domain/entities/transaction.entity';
 import type { Transfer } from '@/modules/safe/domain/entities/transfer.entity';
 import type { Token } from '@/modules/tokens/domain/entities/token.entity';
 import type { AddConfirmationDto } from '@/modules/transactions/domain/entities/add-confirmation.dto.entity';
 import type { ProposeTransactionDto } from '@/modules/transactions/domain/entities/propose-transaction.dto.entity';
 import type { Raw } from '@/validation/entities/raw.entity';
-import type { Address, Hex } from 'viem';
 
 export interface ITransactionApi {
   getDataDecoded(args: {

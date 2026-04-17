@@ -1,17 +1,18 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Injectable } from '@nestjs/common';
-import type { Portfolio as DomainPortfolio } from '@/modules/portfolio/domain/entities/portfolio.entity';
-import type { TokenBalance as DomainTokenBalance } from '@/modules/portfolio/domain/entities/token-balance.entity';
 import type { AppBalance as DomainAppBalance } from '@/modules/portfolio/domain/entities/app-balance.entity';
 import type {
   AppPosition as DomainAppPosition,
   AppPositionGroup as DomainAppPositionGroup,
 } from '@/modules/portfolio/domain/entities/app-position.entity';
-import type { Portfolio } from '@/modules/portfolio/v1/entities/portfolio.entity';
-import { NULL_ADDRESS } from '@/routes/common/constants';
-import type { TokenBalance } from '@/modules/portfolio/v1/entities/token-balance.entity';
+import type { Portfolio as DomainPortfolio } from '@/modules/portfolio/domain/entities/portfolio.entity';
+import type { TokenBalance as DomainTokenBalance } from '@/modules/portfolio/domain/entities/token-balance.entity';
 import type { AppBalance } from '@/modules/portfolio/v1/entities/app-balance.entity';
 import type { AppPosition } from '@/modules/portfolio/v1/entities/app-position.entity';
 import type { AppPositionGroup } from '@/modules/portfolio/v1/entities/app-position-group.entity';
+import type { Portfolio } from '@/modules/portfolio/v1/entities/portfolio.entity';
+import type { TokenBalance } from '@/modules/portfolio/v1/entities/token-balance.entity';
+import { NULL_ADDRESS } from '@/routes/common/constants';
 
 /**
  * Portfolio route mapper.

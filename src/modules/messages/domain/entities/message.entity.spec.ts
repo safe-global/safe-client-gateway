@@ -1,12 +1,13 @@
-import { typedDataBuilder } from '@/modules/messages/routes/entities/__tests__/typed-data.builder';
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { faker } from '@faker-js/faker';
+import { type Address, getAddress } from 'viem';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import { messageBuilder } from '@/modules/messages/domain/entities/__tests__/message.builder';
 import {
-  MessageSchema,
   MessagePageSchema,
+  MessageSchema,
 } from '@/modules/messages/domain/entities/message.entity';
-import { faker } from '@faker-js/faker';
-import { type Address, getAddress } from 'viem';
+import { typedDataBuilder } from '@/modules/messages/routes/entities/__tests__/typed-data.builder';
 
 describe('Message entity schemas', () => {
   describe('MessageSchema', () => {

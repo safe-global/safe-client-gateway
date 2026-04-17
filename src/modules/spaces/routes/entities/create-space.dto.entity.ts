@@ -1,6 +1,7 @@
-import { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { ApiProperty } from '@nestjs/swagger';
 import { z } from 'zod';
+import type { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
 
 export const CreateSpaceSchema = z.object({
   name: z.string(),

@@ -1,9 +1,13 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { faker } from '@faker-js/faker';
+import { type Address, getAddress } from 'viem';
+import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import { balancesProviderBuilder } from '@/modules/chains/domain/entities/__tests__/balances-provider.builder';
 import { beaconChainExplorerUriTemplateBuilder } from '@/modules/chains/domain/entities/__tests__/beacon-chain-explorer-uri-template.builder';
 import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
 import { contractAddressesBuilder } from '@/modules/chains/domain/entities/__tests__/contract-addresses.builder';
-import { gasPriceFixedEIP1559Builder } from '@/modules/chains/domain/entities/__tests__/gas-price-fixed-eip-1559.builder';
 import { gasPriceFixedBuilder } from '@/modules/chains/domain/entities/__tests__/gas-price-fixed.builder';
+import { gasPriceFixedEIP1559Builder } from '@/modules/chains/domain/entities/__tests__/gas-price-fixed-eip-1559.builder';
 import { gasPriceOracleBuilder } from '@/modules/chains/domain/entities/__tests__/gas-price-oracle.builder';
 import { nativeCurrencyBuilder } from '@/modules/chains/domain/entities/__tests__/native.currency.builder';
 import { pricesProviderBuilder } from '@/modules/chains/domain/entities/__tests__/prices-provider.builder';
@@ -11,8 +15,11 @@ import { rpcUriBuilder } from '@/modules/chains/domain/entities/__tests__/rpc-ur
 import { themeBuilder } from '@/modules/chains/domain/entities/__tests__/theme.builder';
 import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
 import {
-  ChainSchema,
   BalancesProviderSchema,
+  BeaconChainExplorerUriTemplateSchema,
+  ChainLenientPageSchema,
+  ChainSchema,
+  ContractAddressesSchema,
   GasPriceFixedEip1559Schema,
   GasPriceFixedSchema,
   GasPriceOracleSchema,
@@ -21,13 +28,7 @@ import {
   PricesProviderSchema,
   RpcUriSchema,
   ThemeSchema,
-  ContractAddressesSchema,
-  ChainLenientPageSchema,
-  BeaconChainExplorerUriTemplateSchema,
 } from '@/modules/chains/domain/entities/schemas/chain.schema';
-import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
-import { faker } from '@faker-js/faker';
-import { type Address, getAddress } from 'viem';
 
 describe('Chain schemas', () => {
   describe('NativeCurrencySchema', () => {
@@ -409,7 +410,7 @@ describe('Chain schemas', () => {
     it('should default balancesProvider chainName to null', () => {
       const balancesProvider = balancesProviderBuilder().build();
       // @ts-expect-error - inferred types don't allow optional fields
-      delete balancesProvider.chainName;
+      balancesProvider.chainName = undefined;
 
       const result = BalancesProviderSchema.safeParse(balancesProvider);
 
@@ -419,7 +420,7 @@ describe('Chain schemas', () => {
     it('should not validate an undefined balancesProvider enablement status', () => {
       const balancesProvider = balancesProviderBuilder().build();
       // @ts-expect-error - inferred types don't allow optional fields
-      delete balancesProvider.enabled;
+      balancesProvider.enabled = undefined;
 
       const result = BalancesProviderSchema.safeParse(balancesProvider);
 
@@ -460,7 +461,7 @@ describe('Chain schemas', () => {
       expect(result.success).toBe(true);
     });
 
-    [
+    for (const field of [
       'safeSingletonAddress' as const,
       'safeProxyFactoryAddress' as const,
       'multiSendAddress' as const,
@@ -470,7 +471,7 @@ describe('Chain schemas', () => {
       'createCallAddress' as const,
       'simulateTxAccessorAddress' as const,
       'safeWebAuthnSignerFactoryAddress' as const,
-    ].forEach((field) => {
+    ]) {
       it(`should checksum the ${field}`, () => {
         const contractAddresses = contractAddressesBuilder()
           .with(field, faker.finance.ethereumAddress().toLowerCase() as Address)
@@ -479,7 +480,7 @@ describe('Chain schemas', () => {
         const result = ContractAddressesSchema.safeParse(contractAddresses);
 
         expect(result.success && result.data[field]).toBe(
-          getAddress(contractAddresses[field]!),
+          getAddress(contractAddresses[field] as Address),
         );
       });
 
@@ -491,7 +492,7 @@ describe('Chain schemas', () => {
 
         expect(result.success && result.data[field]).toBe(null);
       });
-    });
+    }
   });
 
   describe('ChainSchema', () => {
@@ -508,7 +509,7 @@ describe('Chain schemas', () => {
     it('should default zk to false', () => {
       const chain = chainBuilder().build();
       // @ts-expect-error - zk is expected to be a boolean
-      delete chain.zk;
+      chain.zk = undefined;
 
       const result = ChainSchema.safeParse(chain);
 
@@ -630,7 +631,7 @@ describe('Chain schemas', () => {
         .with('count', chains.length)
         .build();
       // @ts-expect-error - results are assumed optional
-      delete chainPage.results[0].chainId;
+      chainPage.results[0].chainId = undefined;
 
       const result = ChainLenientPageSchema.safeParse(chainPage);
 

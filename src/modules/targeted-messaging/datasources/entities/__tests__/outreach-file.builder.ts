@@ -1,8 +1,9 @@
-import { Builder, type IBuilder } from '@/__tests__/builder';
-import type { OutreachFile } from '@/modules/targeted-messaging/datasources/entities/outreach-file.entity';
-import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker/.';
 import { getAddress } from 'viem';
+import { Builder, type IBuilder } from '@/__tests__/builder';
+import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
+import type { OutreachFile } from '@/modules/targeted-messaging/datasources/entities/outreach-file.entity';
 
 export function outreachFileBuilder(): IBuilder<OutreachFile> {
   return new Builder<OutreachFile>()

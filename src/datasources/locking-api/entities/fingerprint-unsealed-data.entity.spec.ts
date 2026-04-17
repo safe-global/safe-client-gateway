@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { faker } from '@faker-js/faker';
 import {
   fingerprintIpDataBuilder,
   fingerprintIpInfoBuilder,
@@ -12,7 +14,6 @@ import {
   FingerprintUnsealedDataSchema,
   FingerprintVpnSchema,
 } from '@/datasources/locking-api/entities/fingerprint-unsealed-data.entity';
-import { faker } from '@faker-js/faker';
 
 describe('FingerprintUnsealedData schemas', () => {
   describe('FingerprintUnsealedDataEntity', () => {
@@ -80,7 +81,7 @@ describe('FingerprintUnsealedData schemas', () => {
     it('should allow undefined country, defaulting to null', () => {
       const fingerprintIpData = fingerprintIpDataBuilder().build();
       // @ts-expect-error - inferred types don't allow optional fields
-      delete fingerprintIpData.geolocation.country;
+      fingerprintIpData.geolocation.country = undefined;
 
       const result = FingerprintIpDataSchema.safeParse(fingerprintIpData);
 
@@ -125,7 +126,7 @@ describe('FingerprintUnsealedData schemas', () => {
       const fingerprintLocationSpoofing =
         fingerprintLocationSpoofingBuilder().build();
       // @ts-expect-error - inferred types don't allow optional fields
-      delete fingerprintLocationSpoofing.data;
+      fingerprintLocationSpoofing.data = undefined;
 
       const result = FingerprintLocationSpoofingSchema.safeParse(
         fingerprintLocationSpoofing,
@@ -168,7 +169,7 @@ describe('FingerprintUnsealedData schemas', () => {
       const fingerprintVpn = fingerprintVpnBuilder().build();
 
       // @ts-expect-error - inferred types don't allow optional fields
-      delete fingerprintVpn.data;
+      fingerprintVpn.data = undefined;
 
       const result = FingerprintVpnSchema.safeParse(fingerprintVpn);
 

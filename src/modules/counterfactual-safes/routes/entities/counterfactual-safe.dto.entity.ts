@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import type { CounterfactualSafe } from '@/modules/counterfactual-safes/datasources/entities/counterfactual-safe.entity.db';
+import z from 'zod';
 import { ChainIdSchema } from '@/modules/chains/domain/entities/schemas/chain-id.schema';
+import type { CounterfactualSafe } from '@/modules/counterfactual-safes/datasources/entities/counterfactual-safe.entity.db';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { HexSchema } from '@/validation/entities/schemas/hex.schema';
 import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
 import { SemverSchema } from '@/validation/entities/schemas/semver.schema';
-import z from 'zod';
 
 export const CounterfactualSafeSchema = z.object({
   chainId: ChainIdSchema,
@@ -29,9 +29,9 @@ export const CounterfactualSafesSchema = z.object({
   safes: z.array(CounterfactualSafeSchema).nonempty().max(100),
 });
 
-export class CounterfactualSafeDto implements z.infer<
-  typeof CounterfactualSafeSchema
-> {
+export class CounterfactualSafeDto
+  implements z.infer<typeof CounterfactualSafeSchema>
+{
   @ApiProperty({ type: String })
   public readonly chainId!: CounterfactualSafe['chainId'];
 
@@ -75,9 +75,9 @@ export class CounterfactualSafeDto implements z.infer<
   public readonly paymentReceiver?: CounterfactualSafe['paymentReceiver'];
 }
 
-export class CounterfactualSafesDto implements z.infer<
-  typeof CounterfactualSafesSchema
-> {
+export class CounterfactualSafesDto
+  implements z.infer<typeof CounterfactualSafesSchema>
+{
   @ApiProperty({ type: CounterfactualSafeDto, isArray: true })
   public readonly safes!: [
     CounterfactualSafeDto,

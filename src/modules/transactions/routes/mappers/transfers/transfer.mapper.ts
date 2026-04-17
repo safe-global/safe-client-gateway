@@ -1,15 +1,16 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Injectable } from '@nestjs/common';
-import { Safe } from '@/modules/safe/domain/entities/safe.entity';
-import { Transfer } from '@/modules/safe/domain/entities/transfer.entity';
+import type { Safe } from '@/modules/safe/domain/entities/safe.entity';
+import type { Transfer } from '@/modules/safe/domain/entities/transfer.entity';
 import {
   TRANSACTION_ID_SEPARATOR,
   TRANSFER_PREFIX,
 } from '@/modules/transactions/routes/constants';
-import { TransactionStatus } from '@/modules/transactions/routes/entities/transaction-status.entity';
-import { TransferInfoMapper } from '@/modules/transactions/routes/mappers/transfers/transfer-info.mapper';
 import { Transaction } from '@/modules/transactions/routes/entities/transaction.entity';
+import { TransactionStatus } from '@/modules/transactions/routes/entities/transaction-status.entity';
 import { isTransferTransactionInfo } from '@/modules/transactions/routes/entities/transfer-transaction-info.entity';
 import { isErc20Transfer } from '@/modules/transactions/routes/entities/transfers/erc20-transfer.entity';
+import { TransferInfoMapper } from '@/modules/transactions/routes/mappers/transfers/transfer-info.mapper';
 import { isSwapTransferTransactionInfo } from '@/modules/transactions/routes/swap-transfer-transaction-info.entity';
 
 @Injectable()
@@ -65,8 +66,10 @@ export class TransferMapper {
    */
   private isTransferWithValue(transaction: Transaction): boolean {
     if (
-      !isTransferTransactionInfo(transaction.txInfo) &&
-      !isSwapTransferTransactionInfo(transaction.txInfo)
+      !(
+        isTransferTransactionInfo(transaction.txInfo) ||
+        isSwapTransferTransactionInfo(transaction.txInfo)
+      )
     )
       return true;
     if (!isErc20Transfer(transaction.txInfo.transferInfo)) return true;
@@ -76,8 +79,10 @@ export class TransferMapper {
 
   private isTrustedTransfer(transaction: Transaction): boolean {
     if (
-      !isTransferTransactionInfo(transaction.txInfo) &&
-      !isSwapTransferTransactionInfo(transaction.txInfo)
+      !(
+        isTransferTransactionInfo(transaction.txInfo) ||
+        isSwapTransferTransactionInfo(transaction.txInfo)
+      )
     )
       return true;
     if (!isErc20Transfer(transaction.txInfo.transferInfo)) return true;

@@ -1,9 +1,10 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import type { Address } from 'viem';
 import { getAddress } from 'viem';
-import { fakeJson } from '@/__tests__/faker';
-import { Builder } from '@/__tests__/builder';
 import type { IBuilder } from '@/__tests__/builder';
+import { Builder } from '@/__tests__/builder';
+import { fakeJson } from '@/__tests__/faker';
 import type { Contract } from '@/modules/data-decoder/domain/v2/entities/contract.entity';
 
 export function projectBuilder(): IBuilder<NonNullable<Contract['project']>> {

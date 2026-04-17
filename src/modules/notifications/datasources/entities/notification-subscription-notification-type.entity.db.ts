@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import {
   Entity,
   JoinColumn,
@@ -5,9 +6,9 @@ import {
   PrimaryGeneratedColumn,
   Unique,
 } from 'typeorm';
-import { NotificationType } from '@/modules/notifications/datasources/entities/notification-type.entity.db';
-import { NotificationSubscription } from '@/modules/notifications/datasources/entities/notification-subscription.entity.db';
 import { z } from 'zod';
+import { NotificationSubscription } from '@/modules/notifications/datasources/entities/notification-subscription.entity.db';
+import { NotificationType } from '@/modules/notifications/datasources/entities/notification-type.entity.db';
 
 export const NotificationSubscriptionNotificationTypeSchema = z.object({
   id: z.number(),
@@ -15,9 +16,9 @@ export const NotificationSubscriptionNotificationTypeSchema = z.object({
 
 @Entity('notification_subscription_notification_types')
 @Unique(['notification_subscription', 'notification_type'])
-export class NotificationSubscriptionNotificationType implements z.infer<
-  typeof NotificationSubscriptionNotificationTypeSchema
-> {
+export class NotificationSubscriptionNotificationType
+  implements z.infer<typeof NotificationSubscriptionNotificationTypeSchema>
+{
   @PrimaryGeneratedColumn()
   id!: number;
 

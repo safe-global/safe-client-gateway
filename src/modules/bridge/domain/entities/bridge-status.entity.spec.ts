@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress } from 'viem';
 import {
@@ -47,7 +48,7 @@ describe('BridgeStatusSchema', () => {
     it('should default substatusMessage to null', () => {
       const baseStatusData = baseStatusDataBuilder().build();
       // @ts-expect-error - inferred type expects defined value
-      delete baseStatusData.substatusMessage;
+      baseStatusData.substatusMessage = undefined;
 
       const result = BaseStatusDataSchema.safeParse(baseStatusData);
 
@@ -165,7 +166,7 @@ describe('BridgeStatusSchema', () => {
     it('should default bridgeExplorerLink to null', () => {
       const fullStatusData = successStatusDataBuilder().build();
       // @ts-expect-error - inferred type expects defined value
-      delete fullStatusData.bridgeExplorerLink;
+      fullStatusData.bridgeExplorerLink = undefined;
 
       const result = SuccessStatusDataSchema.safeParse(fullStatusData);
 

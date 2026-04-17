@@ -1,20 +1,21 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Controller, Get, Param, Query } from '@nestjs/common';
 import {
   ApiOkResponse,
-  ApiQuery,
-  ApiTags,
   ApiOperation,
   ApiParam,
+  ApiQuery,
+  ApiTags,
 } from '@nestjs/swagger';
-import { ChainsV2Service } from './chains.v2.service';
-import { ChainPage } from '@/modules/chains/routes/entities/chain-page.entity';
 import { Chain } from '@/modules/chains/routes/entities/chain.entity';
+import { ChainPage } from '@/modules/chains/routes/entities/chain-page.entity';
 import { ServiceKeyQuerySchema } from '@/modules/chains/routes/v2/entities/schemas/serviceKey.schema';
 import { PaginationDataDecorator } from '@/routes/common/decorators/pagination.data.decorator';
 import { RouteUrlDecorator } from '@/routes/common/decorators/route.url.decorator';
-import { Page } from '@/routes/common/entities/page.entity';
-import { PaginationData } from '@/routes/common/pagination/pagination.data';
+import type { Page } from '@/routes/common/entities/page.entity';
+import type { PaginationData } from '@/routes/common/pagination/pagination.data';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
+import { ChainsV2Service } from './chains.v2.service';
 
 @ApiTags('chains')
 @Controller({
@@ -49,7 +50,7 @@ export class ChainsV2Controller {
       'Paginated list of supported chains with service-scoped features',
   })
   @Get()
-  async getChains(
+  getChains(
     @Query('serviceKey', new ValidationPipe(ServiceKeyQuerySchema))
     serviceKey: string,
     @RouteUrlDecorator() routeUrl: URL,
@@ -82,7 +83,7 @@ export class ChainsV2Controller {
     description: 'Chain details with service-scoped features',
   })
   @Get(':chainId')
-  async getChain(
+  getChain(
     @Param('chainId') chainId: string,
     @Query('serviceKey', new ValidationPipe(ServiceKeyQuerySchema))
     serviceKey: string,

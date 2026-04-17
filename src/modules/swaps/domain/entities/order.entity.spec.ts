@@ -1,6 +1,7 @@
-import { orderBuilder } from '@/modules/swaps/domain/entities/__tests__/order.builder';
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { getAddress, type Hex } from 'viem';
+import { orderBuilder } from '@/modules/swaps/domain/entities/__tests__/order.builder';
 import type { Order } from '@/modules/swaps/domain/entities/order.entity';
 import { OrderSchema } from '@/modules/swaps/domain/entities/order.entity';
 

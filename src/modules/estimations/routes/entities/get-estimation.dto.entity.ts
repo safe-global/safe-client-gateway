@@ -1,7 +1,8 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { GetEstimationDto as DomainGetEstimationDto } from '@/modules/estimations/domain/entities/get-estimation.dto.entity';
-import { Operation } from '@/modules/safe/domain/entities/operation.entity';
 import type { Address, Hex } from 'viem';
+import type { GetEstimationDto as DomainGetEstimationDto } from '@/modules/estimations/domain/entities/get-estimation.dto.entity';
+import { Operation } from '@/modules/safe/domain/entities/operation.entity';
 
 export class GetEstimationDto implements DomainGetEstimationDto {
   @ApiProperty()

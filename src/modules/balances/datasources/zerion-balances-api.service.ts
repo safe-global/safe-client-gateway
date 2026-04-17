@@ -1,46 +1,50 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { Inject, Injectable } from '@nestjs/common';
+import { type Address, getAddress, hexToNumber, isHex } from 'viem';
+import { ZodError, z } from 'zod';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import {
-  ZerionAttributes,
-  ZerionBalance,
-  ZerionBalanceSchema,
-  ZerionBalances,
-  ZerionBalancesSchema,
-} from '@/modules/balances/datasources/entities/zerion-balance.entity';
-import {
-  ZerionCollectible,
-  ZerionCollectibles,
-  ZerionCollectiblesSchema,
-} from '@/modules/balances/datasources/entities/zerion-collectible.entity';
 import { CacheRouter } from '@/datasources/cache/cache.router';
 import {
   CacheService,
-  ICacheService,
+  type ICacheService,
 } from '@/datasources/cache/cache.service.interface';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { LimitReachedError } from '@/datasources/network/entities/errors/limit-reached.error';
 import {
-  INetworkService,
+  type INetworkService,
   NetworkService,
 } from '@/datasources/network/network.service.interface';
+import { LogType } from '@/domain/common/entities/log-type.entity';
+import { getNumberString } from '@/domain/common/utils/utils';
+import type { Page } from '@/domain/entities/page.entity';
+import { DataSourceError } from '@/domain/errors/data-source.error';
+import type { IBalancesApi } from '@/domain/interfaces/balances-api.interface';
 import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
+import {
+  type ZerionAttributes,
+  type ZerionBalance,
+  ZerionBalanceSchema,
+  type ZerionBalances,
+  ZerionBalancesSchema,
+} from '@/modules/balances/datasources/entities/zerion-balance.entity';
+import {
+  type ZerionCollectible,
+  type ZerionCollectibles,
+  ZerionCollectiblesSchema,
+} from '@/modules/balances/datasources/entities/zerion-collectible.entity';
+import { getZerionHeaders } from '@/modules/balances/datasources/zerion-api.helpers';
+import type {
   Balance,
   Erc20Balance,
   NativeBalance,
 } from '@/modules/balances/domain/entities/balance.entity';
-import { Chain } from '@/modules/chains/domain/entities/chain.entity';
-import { Collectible } from '@/modules/collectibles/domain/entities/collectible.entity';
-import { LogType } from '@/domain/common/entities/log-type.entity';
-import { getNumberString } from '@/domain/common/utils/utils';
-import { Page } from '@/domain/entities/page.entity';
-import { DataSourceError } from '@/domain/errors/data-source.error';
-import { IBalancesApi } from '@/domain/interfaces/balances-api.interface';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
-import { rawify, type Raw } from '@/validation/entities/raw.entity';
-import { Inject, Injectable } from '@nestjs/common';
-import { Address, getAddress, hexToNumber, isHex } from 'viem';
-import { z, ZodError } from 'zod';
-import { getZerionHeaders } from '@/modules/balances/datasources/zerion-api.helpers';
+import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
+import type { Collectible } from '@/modules/collectibles/domain/entities/collectible.entity';
 import { ZerionChainsSchema } from '@/modules/portfolio/datasources/entities/zerion-chain.entity';
+import { type Raw, rawify } from '@/validation/entities/raw.entity';
 
 export const IZerionBalancesApi = Symbol('IZerionBalancesApi');
 
@@ -103,8 +107,7 @@ export class ZerionBalancesApi implements IBalancesApi {
     );
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars,@typescript-eslint/require-await
-  async getBalance(_args: {
+  getBalance(_args: {
     safeAddress: Address;
     fiatCode: string;
     chain: Chain;
@@ -201,42 +204,41 @@ export class ZerionBalancesApi implements IBalancesApi {
       this.loggingService.debug({ type: LogType.CacheHit, key, field });
       const data = ZerionCollectiblesSchema.parse(JSON.parse(cached));
       return this._buildCollectiblesPage(data.links.next, data.data);
-    } else {
-      try {
-        await this._checkRateLimit();
-        const chainName = await this._getChainName(args.chain);
-        const url = `${this.baseUri}/v1/wallets/${args.safeAddress}/nft-positions`;
-        const pageAfter = this._encodeZerionPageOffset(args.offset);
-        const networkRequest = {
-          headers: getZerionHeaders(this.apiKey, args.chain.isTestnet),
-          params: {
-            'filter[chain_ids]': chainName,
-            sort: ZerionBalancesApi.COLLECTIBLES_SORTING,
-            'page[size]': args.limit,
-            ...(pageAfter && { 'page[after]': pageAfter }),
-          },
-        };
-        const zerionCollectibles = await this.networkService
-          .get<ZerionCollectibles>({
-            url,
-            networkRequest,
-          })
-          .then(({ data }) => ZerionCollectiblesSchema.parse(data));
-        await this.cacheService.hSet(
-          cacheDir,
-          JSON.stringify(zerionCollectibles),
-          this.defaultExpirationTimeInSeconds,
-        );
-        return this._buildCollectiblesPage(
-          zerionCollectibles.links.next,
-          zerionCollectibles.data,
-        );
-      } catch (error) {
-        if (error instanceof ZodError) {
-          throw error;
-        }
-        throw this.httpErrorFactory.from(error);
+    }
+    try {
+      await this._checkRateLimit();
+      const chainName = await this._getChainName(args.chain);
+      const url = `${this.baseUri}/v1/wallets/${args.safeAddress}/nft-positions`;
+      const pageAfter = this._encodeZerionPageOffset(args.offset);
+      const networkRequest = {
+        headers: getZerionHeaders(this.apiKey, args.chain.isTestnet),
+        params: {
+          'filter[chain_ids]': chainName,
+          sort: ZerionBalancesApi.COLLECTIBLES_SORTING,
+          'page[size]': args.limit,
+          ...(pageAfter && { 'page[after]': pageAfter }),
+        },
+      };
+      const zerionCollectibles = await this.networkService
+        .get<ZerionCollectibles>({
+          url,
+          networkRequest,
+        })
+        .then(({ data }) => ZerionCollectiblesSchema.parse(data));
+      await this.cacheService.hSet(
+        cacheDir,
+        JSON.stringify(zerionCollectibles),
+        this.defaultExpirationTimeInSeconds,
+      );
+      return this._buildCollectiblesPage(
+        zerionCollectibles.links.next,
+        zerionCollectibles.data,
+      );
+    } catch (error) {
+      if (error instanceof ZodError) {
+        throw error;
       }
+      throw this.httpErrorFactory.from(error);
     }
   }
 
@@ -277,7 +279,7 @@ export class ZerionBalancesApi implements IBalancesApi {
     return rawify(balances);
   }
 
-  async getFiatCodes(): Promise<Raw<Array<string>>> {
+  getFiatCodes(): Promise<Raw<Array<string>>> {
     // Resolving to conform with interface
     return Promise.resolve(rawify(this.fiatCodes));
   }
@@ -385,7 +387,7 @@ export class ZerionBalancesApi implements IBalancesApi {
     this.chainMappingsInitialized = true;
 
     // If both fetches failed, throw an error
-    if (!mainnetSuccess && !testnetSuccess) {
+    if (!(mainnetSuccess || testnetSuccess)) {
       throw new DataSourceError(
         'Failed to fetch chain mappings from Zerion for both mainnet and testnet',
         500,

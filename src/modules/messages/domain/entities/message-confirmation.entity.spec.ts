@@ -1,8 +1,9 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { faker } from '@faker-js/faker';
+import { type Address, getAddress } from 'viem';
 import type { SignatureType } from '@/domain/common/entities/signature-type.entity';
 import { messageConfirmationBuilder } from '@/modules/messages/domain/entities/__tests__/message-confirmation.builder';
 import { MessageConfirmationSchema } from '@/modules/messages/domain/entities/message-confirmation.entity';
-import { faker } from '@faker-js/faker';
-import { type Address, getAddress } from 'viem';
 
 describe('MessageConfirmationSchema', () => {
   it('should validate a valid MessageConfirmation', () => {

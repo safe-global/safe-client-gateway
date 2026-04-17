@@ -1,14 +1,15 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
+import { faker } from '@faker-js/faker';
+import { ForbiddenException } from '@nestjs/common';
+import { spaceBuilder } from '@/modules/spaces/domain/entities/__tests__/space.entity.db.builder';
+import type { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
 import {
   assertAdmin,
   assertMember,
 } from '@/modules/spaces/routes/utils/space-assert.utils';
-import type { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
-import type { IMembersRepository } from '@/modules/users/domain/members.repository.interface';
-import { ForbiddenException } from '@nestjs/common';
-import { faker } from '@faker-js/faker';
-import { spaceBuilder } from '@/modules/spaces/domain/entities/__tests__/space.entity.db.builder';
 import { memberBuilder } from '@/modules/users/datasources/entities/__tests__/member.entity.db.builder';
+import type { IMembersRepository } from '@/modules/users/domain/members.repository.interface';
 
 const spacesRepositoryMock = {
   findOne: jest.fn(),

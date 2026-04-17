@@ -1,40 +1,43 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
-import { RecipientAnalysisService } from './recipient-analysis/recipient-analysis.service';
-import { ContractAnalysisService } from './contract-analysis/contract-analysis.service';
-import { DeadlockAnalysisService } from './deadlock-analysis/deadlock-analysis.service';
-import { ThreatAnalysisService } from './threat-analysis/threat-analysis.service';
-import { type Address, type Hex } from 'viem';
-import type {
-  ContractAnalysisResponse,
-  DeadlockAnalysisResponse,
-  RecipientAnalysisResponse,
-  CounterpartyAnalysisResponse,
-  SingleRecipientAnalysisResponse,
-  ThreatAnalysisResponse,
-} from './entities/analysis-responses.entity';
-import type { DecodedTransactionData } from '@/modules/safe-shield/entities/transaction-data.entity';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
-import { mapDecodedTransactions } from './utils/transaction-mapping.utils';
-import { TransactionsService } from '@/modules/transactions/routes/transactions.service';
-import { Operation } from '@/modules/safe/domain/entities/operation.entity';
-import type { TransactionInfo } from '@/modules/transactions/routes/entities/transaction-info.entity';
-import {
-  ContractStatusGroup,
-  DeadlockStatusGroup,
-  RecipientStatusGroup,
-} from '@/modules/safe-shield/entities/status-group.entity';
-import { ThreatAnalysisRequest } from '@/modules/safe-shield/entities/analysis-requests.entity';
+import type { Address, Hex } from 'viem';
 import { IConfigApi } from '@/domain/interfaces/config-api.interface';
-import { ChainSchema } from '@/modules/chains/domain/entities/schemas/chain.schema';
-import { FF_RISK_MITIGATION } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-api.constants';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
 import { asError } from '@/logging/utils';
+import { ChainSchema } from '@/modules/chains/domain/entities/schemas/chain.schema';
+import type { Operation } from '@/modules/safe/domain/entities/operation.entity';
+import type { ThreatAnalysisRequest } from '@/modules/safe-shield/entities/analysis-requests.entity';
+import { CommonStatus } from '@/modules/safe-shield/entities/analysis-result.entity';
 import {
   COMMON_DESCRIPTION_MAPPING,
   COMMON_SEVERITY_MAPPING,
 } from '@/modules/safe-shield/entities/common-status.constants';
 import type { ReportFalseResultRequest } from '@/modules/safe-shield/entities/dtos/report-false-result.dto';
-import { CommonStatus } from '@/modules/safe-shield/entities/analysis-result.entity';
+import {
+  ContractStatusGroup,
+  DeadlockStatusGroup,
+  RecipientStatusGroup,
+} from '@/modules/safe-shield/entities/status-group.entity';
+import type { DecodedTransactionData } from '@/modules/safe-shield/entities/transaction-data.entity';
+import { FF_RISK_MITIGATION } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-api.constants';
+import type { TransactionInfo } from '@/modules/transactions/routes/entities/transaction-info.entity';
+import { TransactionsService } from '@/modules/transactions/routes/transactions.service';
+import { ContractAnalysisService } from './contract-analysis/contract-analysis.service';
+import { DeadlockAnalysisService } from './deadlock-analysis/deadlock-analysis.service';
+import type {
+  ContractAnalysisResponse,
+  CounterpartyAnalysisResponse,
+  DeadlockAnalysisResponse,
+  RecipientAnalysisResponse,
+  SingleRecipientAnalysisResponse,
+  ThreatAnalysisResponse,
+} from './entities/analysis-responses.entity';
+import { RecipientAnalysisService } from './recipient-analysis/recipient-analysis.service';
+import { ThreatAnalysisService } from './threat-analysis/threat-analysis.service';
+import { mapDecodedTransactions } from './utils/transaction-mapping.utils';
 
 /**
  * Main orchestration service for Safe Shield transaction analysis.
@@ -135,6 +138,7 @@ export class SafeShieldService {
    * @param {TransactionInfo} txInfo - The transaction info (optional)
    * @returns {Promise<RecipientAnalysisResponse>} Map of recipient addresses to their analysis results
    */
+  // biome-ignore lint/suspicious/useAwait: async needed to wrap non-Promise returns in Promise
   public async analyzeRecipients(
     chainId: string,
     safeAddress: Address,
@@ -161,7 +165,7 @@ export class SafeShieldService {
    * @param {Address} recipientAddress - The recipient address to analyze
    * @returns {Promise<SingleRecipientAnalysisResponse>} Analysis result for groups RECIPIENT_INTERACTION and RECIPIENT_ACTIVITY
    */
-  public async analyzeRecipient(
+  public analyzeRecipient(
     chainId: string,
     safeAddress: Address,
     recipientAddress: Address,
@@ -181,6 +185,7 @@ export class SafeShieldService {
    * @param {Array<DecodedTransactionData>} transactions - A list of decoded transactions
    * @returns {Promise<ContractAnalysisResponse>} Map of contract addresses to their analysis results
    */
+  // biome-ignore lint/suspicious/useAwait: async needed to wrap non-Promise returns in Promise
   public async analyzeContracts(
     chainId: string,
     safeAddress: Address,
@@ -204,6 +209,7 @@ export class SafeShieldService {
    * @param {Array<DecodedTransactionData>} transactions - A list of decoded transactions
    * @returns {Promise<DeadlockAnalysisResponse>} Deadlock analysis results (empty if not applicable)
    */
+  // biome-ignore lint/suspicious/useAwait: async needed to wrap non-Promise returns in Promise
   public async analyzeDeadlock(
     chainId: string,
     transactions: Array<DecodedTransactionData>,

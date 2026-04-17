@@ -1,8 +1,9 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import {
-  Severity,
-  SeveritySchema,
   compareSeverity,
   compareSeverityString,
+  Severity,
+  SeveritySchema,
 } from '../severity.entity';
 
 describe('Severity', () => {

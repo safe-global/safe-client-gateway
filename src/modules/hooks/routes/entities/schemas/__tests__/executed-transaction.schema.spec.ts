@@ -1,8 +1,9 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { faker } from '@faker-js/faker';
+import { type Address, getAddress } from 'viem';
 import { executedTransactionEventBuilder } from '@/modules/hooks/routes/entities/__tests__/executed-transaction.builder';
 import type { TransactionEventType } from '@/modules/hooks/routes/entities/event-type.entity';
 import { ExecutedTransactionEventSchema } from '@/modules/hooks/routes/entities/schemas/executed-transaction.schema';
-import { faker } from '@faker-js/faker';
-import { type Address, getAddress } from 'viem';
 
 describe('ExecutedTransactionEventSchema', () => {
   it('should validate an execution event', () => {
@@ -120,7 +121,7 @@ describe('ExecutedTransactionEventSchema', () => {
 
   it('should allow undefined data', () => {
     const executedTransactionEvent = executedTransactionEventBuilder().build();
-    delete executedTransactionEvent.data;
+    executedTransactionEvent.data = undefined;
 
     const result = ExecutedTransactionEventSchema.safeParse(
       executedTransactionEvent,

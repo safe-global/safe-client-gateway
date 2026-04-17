@@ -1,17 +1,18 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Controller, Get, Param } from '@nestjs/common';
 import {
   ApiOkResponse,
-  ApiTags,
   ApiOperation,
   ApiParam,
+  ApiTags,
 } from '@nestjs/swagger';
-import { Contract } from '@/modules/contracts/domain/entities/contract.entity';
+import type { Address } from 'viem';
+import type { Contract } from '@/modules/contracts/domain/entities/contract.entity';
 import { ContractsService } from '@/modules/contracts/routes/contracts.service';
 import { Contract as ApiContract } from '@/modules/contracts/routes/entities/contract.entity';
-import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
-import type { Address } from 'viem';
+import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 
 @ApiTags('contracts')
 @Controller({
@@ -42,7 +43,7 @@ export class ContractsController {
     description: 'Contract information retrieved successfully',
   })
   @Get('chains/:chainId/contracts/:contractAddress')
-  async getContract(
+  getContract(
     @Param('chainId', new ValidationPipe(NumericStringSchema)) chainId: string,
     @Param('contractAddress', new ValidationPipe(AddressSchema))
     contractAddress: Address,

@@ -1,7 +1,8 @@
-import { z } from 'zod';
-import { MemberRole } from '@/modules/users/domain/entities/member.entity';
-import { getStringEnumKeys } from '@/domain/common/utils/enum';
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { ApiProperty } from '@nestjs/swagger';
+import { z } from 'zod';
+import { getStringEnumKeys } from '@/domain/common/utils/enum';
+import { MemberRole } from '@/modules/users/domain/entities/member.entity';
 
 export const UpdateRoleDtoSchema = z.object({
   role: z.enum(getStringEnumKeys(MemberRole)),

@@ -1,5 +1,6 @@
-import { HttpException } from '@nestjs/common';
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { HttpStatus } from '@nestjs/common';
+import { HttpException } from '@nestjs/common';
 
 /**
  * The following errors combine with out {@link GlobalErrorFilter} to prevent
@@ -10,6 +11,13 @@ export class HttpExceptionNoLog extends HttpException {
   constructor(message: string, code: HttpStatus) {
     // Create body in a similar fashion to code-specific exceptions
     // @see https://github.com/nestjs/nest/blob/3eaa07ae17245c43732c852084928012c745fa71/packages/common/exceptions/bad-gateway.exception.ts#L44-L49
-    super(HttpExceptionNoLog.createBody(message, undefined!, code), code);
+    super(
+      HttpExceptionNoLog.createBody(
+        message,
+        undefined as unknown as string,
+        code,
+      ),
+      code,
+    );
   }
 }

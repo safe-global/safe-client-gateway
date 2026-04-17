@@ -1,7 +1,8 @@
-import { nativeTokenTransferBuilder } from '@/modules/safe/domain/entities/__tests__/native-token-transfer.builder';
-import { NativeTokenTransferSchema } from '@/modules/safe/domain/entities/schemas/native-token-transfer.schema';
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress } from 'viem';
+import { nativeTokenTransferBuilder } from '@/modules/safe/domain/entities/__tests__/native-token-transfer.builder';
+import { NativeTokenTransferSchema } from '@/modules/safe/domain/entities/schemas/native-token-transfer.schema';
 
 describe('NativeTokenTransferSchema', () => {
   it('should validate a NativeTokenTransfer', () => {
@@ -55,7 +56,7 @@ describe('NativeTokenTransferSchema', () => {
   it('should allow an undefined tokenAddress', () => {
     const nativeTokenTransfer = nativeTokenTransferBuilder().build();
     // @ts-expect-error - type reflectes inferred coercion
-    delete nativeTokenTransfer.tokenAddress;
+    nativeTokenTransfer.tokenAddress = undefined;
 
     const result = NativeTokenTransferSchema.safeParse(nativeTokenTransfer);
 

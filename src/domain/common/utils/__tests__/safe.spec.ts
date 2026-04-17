@@ -1,9 +1,14 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { getAddress, type Hex } from 'viem';
+import type { IBuilder } from '@/__tests__/builder';
 import { Builder } from '@/__tests__/builder';
-import { multisigTransactionBuilder } from '@/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
-import { Operation } from '@/modules/safe/domain/entities/operation.entity';
-import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
+import {
+  getSafeL2SingletonDeployments,
+  getSafeMigrationDeployments,
+  getSafeSingletonDeployments,
+} from '@/domain/common/utils/deployments';
+import type { BaseMultisigTransaction } from '@/domain/common/utils/safe';
 import {
   _getSafeDomain,
   _getSafeTxTypesAndMessage,
@@ -11,20 +16,16 @@ import {
   getSafeMessageMessageHash,
   getSafeTxHash,
 } from '@/domain/common/utils/safe';
-import { typedDataBuilder } from '@/modules/messages/routes/entities/__tests__/typed-data.builder';
-import type { BaseMultisigTransaction } from '@/domain/common/utils/safe';
-import type { IBuilder } from '@/__tests__/builder';
 import {
   migrateL2SingletonEncoder,
   migrateL2WithFallbackHandlerEncoder,
   migrateSingletonEncoder,
   migrateWithFallbackHandlerEncoder,
 } from '@/modules/contracts/domain/__tests__/encoders/safe-migration-encoder.builder';
-import {
-  getSafeL2SingletonDeployments,
-  getSafeSingletonDeployments,
-  getSafeMigrationDeployments,
-} from '@/domain/common/utils/deployments';
+import { typedDataBuilder } from '@/modules/messages/routes/entities/__tests__/typed-data.builder';
+import { multisigTransactionBuilder } from '@/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
+import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
+import { Operation } from '@/modules/safe/domain/entities/operation.entity';
 
 // Audited versions only
 const DOMAIN_WITHOUT_CHAIN_ID_VERSIONS = [
@@ -640,9 +641,9 @@ describe('Safe', () => {
             value: BigInt(transaction.value),
             data: transaction.data,
             operation: transaction.operation,
-            safeTxGas: BigInt(transaction.safeTxGas!),
-            dataGas: BigInt(transaction.baseGas!),
-            gasPrice: BigInt(transaction.gasPrice!),
+            safeTxGas: BigInt(transaction.safeTxGas as number),
+            dataGas: BigInt(transaction.baseGas as number),
+            gasPrice: BigInt(transaction.gasPrice as string),
             gasToken: transaction.gasToken,
             refundReceiver: transaction.refundReceiver,
             nonce: BigInt(transaction.nonce),
@@ -681,9 +682,9 @@ describe('Safe', () => {
             value: BigInt(transaction.value),
             data: transaction.data,
             operation: transaction.operation,
-            safeTxGas: BigInt(transaction.safeTxGas!),
-            baseGas: BigInt(transaction.baseGas!),
-            gasPrice: BigInt(transaction.gasPrice!),
+            safeTxGas: BigInt(transaction.safeTxGas as number),
+            baseGas: BigInt(transaction.baseGas as number),
+            gasPrice: BigInt(transaction.gasPrice as string),
             gasToken: transaction.gasToken,
             refundReceiver: transaction.refundReceiver,
             nonce: BigInt(transaction.nonce),

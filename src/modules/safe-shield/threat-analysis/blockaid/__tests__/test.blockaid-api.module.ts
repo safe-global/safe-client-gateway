@@ -1,5 +1,6 @@
-import { IBlockaidApi } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-api.interface';
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Module } from '@nestjs/common';
+import { IBlockaidApi } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-api.interface';
 
 const blockaidApi = {
   scanTransaction: jest.fn(),

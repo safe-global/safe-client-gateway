@@ -1,40 +1,41 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
+import type { Server } from 'node:net';
 import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
+import { APP_FILTER } from '@nestjs/core';
 import type { TestingModule } from '@nestjs/testing';
 import request from 'supertest';
-import { TestAppProvider } from '@/__tests__/test-app.provider';
-import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
-import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
-import { messageConfirmationBuilder } from '@/modules/messages/domain/entities/__tests__/message-confirmation.builder';
-import {
-  messageBuilder,
-  toJson as messageToJson,
-} from '@/modules/messages/domain/entities/__tests__/message.builder';
-import { safeAppBuilder } from '@/modules/safe-apps/domain/entities/__tests__/safe-app.builder';
-import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
-import configuration from '@/config/entities/__tests__/configuration';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import type { INetworkService } from '@/datasources/network/network.service.interface';
-import { NetworkService } from '@/datasources/network/network.service.interface';
-import { createMessageDtoBuilder } from '@/modules/messages/routes/entities/__tests__/create-message.dto.builder';
-import { updateMessageSignatureDtoBuilder } from '@/modules/messages/routes/entities/__tests__/update-message-signature.dto.builder';
-import { MessageStatus } from '@/modules/messages/routes/entities/message.entity';
-import type { SafeApp } from '@/modules/safe-apps/routes/entities/safe-app.entity';
-import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
-import type { Server } from 'net';
-import { rawify } from '@/validation/entities/raw.entity';
 import { type Address, getAddress } from 'viem';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
-import { GlobalErrorFilter } from '@/routes/common/filters/global-error.filter';
-import { APP_FILTER } from '@nestjs/core';
+import { TestAppProvider } from '@/__tests__/test-app.provider';
+import { createTestModule } from '@/__tests__/testing-module';
+import { IConfigurationService } from '@/config/configuration.service.interface';
+import configuration from '@/config/entities/__tests__/configuration';
+import { IBlocklistService } from '@/config/entities/blocklist.interface';
+import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
+import type { INetworkService } from '@/datasources/network/network.service.interface';
+import { NetworkService } from '@/datasources/network/network.service.interface';
 import { SignatureType } from '@/domain/common/entities/signature-type.entity';
+import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import {
   type ILoggingService,
   LoggingService,
 } from '@/logging/logging.interface';
-import { createTestModule } from '@/__tests__/testing-module';
-import { IBlocklistService } from '@/config/entities/blocklist.interface';
+import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
+import {
+  messageBuilder,
+  toJson as messageToJson,
+} from '@/modules/messages/domain/entities/__tests__/message.builder';
+import { messageConfirmationBuilder } from '@/modules/messages/domain/entities/__tests__/message-confirmation.builder';
+import { createMessageDtoBuilder } from '@/modules/messages/routes/entities/__tests__/create-message.dto.builder';
+import { updateMessageSignatureDtoBuilder } from '@/modules/messages/routes/entities/__tests__/update-message-signature.dto.builder';
+import { MessageStatus } from '@/modules/messages/routes/entities/message.entity';
+import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
+import { safeAppBuilder } from '@/modules/safe-apps/domain/entities/__tests__/safe-app.builder';
+import type { SafeApp } from '@/modules/safe-apps/routes/entities/safe-app.entity';
+import { GlobalErrorFilter } from '@/routes/common/filters/global-error.filter';
+import { rawify } from '@/validation/entities/raw.entity';
 
 describe('Messages controller', () => {
   let app: INestApplication<Server>;

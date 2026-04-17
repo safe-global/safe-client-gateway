@@ -1,3 +1,10 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { createHash } from 'node:crypto';
+import { mkdir, rm, writeFile } from 'node:fs/promises';
+import path from 'node:path';
+import { faker } from '@faker-js/faker/.';
+import type postgres from 'postgres';
+import { type Address, getAddress } from 'viem';
 import { TestDbFactory } from '@/__tests__/db.factory';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
@@ -5,21 +12,15 @@ import { CacheRouter } from '@/datasources/cache/cache.router';
 import { CachedQueryResolver } from '@/datasources/db/v1/cached-query-resolver';
 import { PostgresDatabaseMigrator } from '@/datasources/db/v1/postgres-database.migrator';
 import type { ICloudStorageApiService } from '@/datasources/storage/cloud-storage-api.service';
+import type { ILoggingService } from '@/logging/logging.interface';
 import { outreachFileBuilder } from '@/modules/targeted-messaging/datasources/entities/__tests__/outreach-file.builder';
 import { OutreachDbMapper } from '@/modules/targeted-messaging/datasources/entities/outreach.db.mapper';
+import { SubmissionDbMapper } from '@/modules/targeted-messaging/datasources/entities/submission.db.mapper';
+import { TargetedSafeDbMapper } from '@/modules/targeted-messaging/datasources/entities/targeted-safe.db.mapper';
 import type { TargetedSafe as DbTargetedSafe } from '@/modules/targeted-messaging/datasources/entities/targeted-safe.entity';
 import { TargetedMessagingDatasource } from '@/modules/targeted-messaging/datasources/targeted-messaging.datasource';
 import { createOutreachDtoBuilder } from '@/modules/targeted-messaging/domain/entities/tests/create-outreach.dto.builder';
-import type { ILoggingService } from '@/logging/logging.interface';
-import { faker } from '@faker-js/faker/.';
-import { createHash } from 'crypto';
-import { mkdir, rm, writeFile } from 'fs/promises';
-import path from 'path';
-import type postgres from 'postgres';
-import { type Address, getAddress } from 'viem';
 import { OutreachFileProcessor } from './outreach-file-processor';
-import { SubmissionDbMapper } from '@/modules/targeted-messaging/datasources/entities/submission.db.mapper';
-import { TargetedSafeDbMapper } from '@/modules/targeted-messaging/datasources/entities/targeted-safe.db.mapper';
 
 const mockLoggingService = {
   debug: jest.fn(),

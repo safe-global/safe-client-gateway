@@ -1,5 +1,6 @@
-import { getAddress } from 'viem';
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
+import { getAddress } from 'viem';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 
 describe('AddressSchema', () => {

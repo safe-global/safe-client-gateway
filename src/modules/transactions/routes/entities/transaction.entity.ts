@@ -1,17 +1,18 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import {
   ApiExtraModels,
   ApiProperty,
   ApiPropertyOptional,
   getSchemaPath,
 } from '@nestjs/swagger';
+import type { Hash } from 'viem';
 import { BaseTransaction } from '@/modules/transactions/routes/entities/base-transaction.entity';
-import { ExecutionInfo } from '@/modules/transactions/routes/entities/execution-info.entity';
+import type { ExecutionInfo } from '@/modules/transactions/routes/entities/execution-info.entity';
 import { ModuleExecutionInfo } from '@/modules/transactions/routes/entities/module-execution-info.entity';
 import { MultisigExecutionInfo } from '@/modules/transactions/routes/entities/multisig-execution-info.entity';
 import { SafeAppInfo } from '@/modules/transactions/routes/entities/safe-app-info.entity';
-import { TransactionInfo } from '@/modules/transactions/routes/entities/transaction-info.entity';
+import type { TransactionInfo } from '@/modules/transactions/routes/entities/transaction-info.entity';
 import { TransactionStatus } from '@/modules/transactions/routes/entities/transaction-status.entity';
-import type { Hash } from 'viem';
 
 @ApiExtraModels(ModuleExecutionInfo, MultisigExecutionInfo)
 export class Transaction extends BaseTransaction {

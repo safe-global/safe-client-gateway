@@ -1,34 +1,38 @@
-import { Page } from '@/domain/entities/page.entity';
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { Inject, Injectable } from '@nestjs/common';
+import type { Address } from 'viem';
+import type { Page } from '@/domain/entities/page.entity';
+import { IIdentityApi } from '@/domain/interfaces/identity-api.interface';
 import { ILockingApi } from '@/domain/interfaces/locking-api.interface';
 import {
-  Campaign,
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
+import { asError } from '@/logging/utils';
+import type { ICommunityRepository } from '@/modules/community/domain/community.repository.interface';
+import {
+  type Campaign,
   CampaignPageSchema,
   CampaignSchema,
 } from '@/modules/community/domain/entities/campaign.entity';
 import {
-  CampaignRank,
+  type CampaignActivity,
+  CampaignActivityPageSchema,
+} from '@/modules/community/domain/entities/campaign-activity.entity';
+import {
+  type CampaignRank,
   CampaignRankPageSchema,
   CampaignRankSchema,
 } from '@/modules/community/domain/entities/campaign-rank.entity';
-import { LockingEvent } from '@/modules/community/domain/entities/locking-event.entity';
-import { LockingRank } from '@/modules/community/domain/entities/locking-rank.entity';
+import type { Eligibility } from '@/modules/community/domain/entities/eligibility.entity';
+import type { EligibilityRequest } from '@/modules/community/domain/entities/eligibility-request.entity';
+import type { LockingEvent } from '@/modules/community/domain/entities/locking-event.entity';
+import type { LockingRank } from '@/modules/community/domain/entities/locking-rank.entity';
 import { LockingEventPageSchema } from '@/modules/community/domain/entities/schemas/locking-event.schema';
 import {
   LockingRankPageSchema,
   LockingRankSchema,
 } from '@/modules/community/domain/entities/schemas/locking-rank.schema';
-import { ICommunityRepository } from '@/modules/community/domain/community.repository.interface';
-import { Inject, Injectable } from '@nestjs/common';
-import {
-  CampaignActivity,
-  CampaignActivityPageSchema,
-} from '@/modules/community/domain/entities/campaign-activity.entity';
-import { EligibilityRequest } from '@/modules/community/domain/entities/eligibility-request.entity';
-import { Eligibility } from '@/modules/community/domain/entities/eligibility.entity';
-import { asError } from '@/logging/utils';
-import { LoggingService, ILoggingService } from '@/logging/logging.interface';
-import { IIdentityApi } from '@/domain/interfaces/identity-api.interface';
-import type { Address } from 'viem';
 
 @Injectable()
 export class CommunityRepository implements ICommunityRepository {

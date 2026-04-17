@@ -1,6 +1,10 @@
-import { Inject, Injectable, OnModuleDestroy } from '@nestjs/common';
-import postgres from 'postgres';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { Inject, Injectable, type OnModuleDestroy } from '@nestjs/common';
+import type postgres from 'postgres';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
 
 @Injectable()
 export class PostgresDatabaseShutdownHook implements OnModuleDestroy {

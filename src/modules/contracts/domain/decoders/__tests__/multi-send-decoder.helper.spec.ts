@@ -1,19 +1,19 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
-
-import { MultiSendDecoder } from '@/modules/contracts/domain/decoders/multi-send-decoder.helper';
+import type { ILoggingService } from '@/logging/logging.interface';
+import {
+  multiSendEncoder,
+  multiSendTransactionsEncoder,
+} from '@/modules/contracts/domain/__tests__/encoders/multi-send-encoder.builder';
 import {
   addOwnerWithThresholdEncoder,
   changeThresholdEncoder,
   removeOwnerEncoder,
   swapOwnerEncoder,
 } from '@/modules/contracts/domain/__tests__/encoders/safe-encoder.builder';
-import {
-  multiSendEncoder,
-  multiSendTransactionsEncoder,
-} from '@/modules/contracts/domain/__tests__/encoders/multi-send-encoder.builder';
+import { MultiSendDecoder } from '@/modules/contracts/domain/decoders/multi-send-decoder.helper';
 import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
-import type { ILoggingService } from '@/logging/logging.interface';
 
 const mockLoggingService = {
   warn: jest.fn(),

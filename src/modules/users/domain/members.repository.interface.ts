@@ -1,16 +1,17 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import type { Member as DbMember } from '@/modules/users/datasources/entities/member.entity.db';
-import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import type { Space } from '@/modules/spaces/domain/entities/space.entity';
-import type { Invitation } from '@/modules/users/domain/entities/invitation.entity';
-import type { Member } from '@/modules/users/domain/entities/member.entity';
-import type { User } from '@/modules/users/domain/entities/user.entity';
+
 import type {
   FindManyOptions,
   FindOptionsRelations,
   FindOptionsWhere,
 } from 'typeorm';
 import type { Address } from 'viem';
+import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
+import type { Space } from '@/modules/spaces/domain/entities/space.entity';
+import type { Member as DbMember } from '@/modules/users/datasources/entities/member.entity.db';
+import type { Invitation } from '@/modules/users/domain/entities/invitation.entity';
+import type { Member } from '@/modules/users/domain/entities/member.entity';
+import type { User } from '@/modules/users/domain/entities/user.entity';
 
 export const IMembersRepository = Symbol('IMembersRepository');
 

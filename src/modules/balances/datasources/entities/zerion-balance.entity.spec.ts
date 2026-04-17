@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { faker } from '@faker-js/faker';
+import { getAddress } from 'viem';
 import {
   zerionAttributesBuilder,
   zerionBalanceBuilder,
@@ -16,8 +19,6 @@ import {
   ZerionImplementationSchema,
   ZerionQuantitySchema,
 } from '@/modules/balances/datasources/entities/zerion-balance.entity';
-import { faker } from '@faker-js/faker';
-import { getAddress } from 'viem';
 
 describe('Zerion Balance Entity schemas', () => {
   describe('ZerionBalancesSchema', () => {
@@ -68,7 +69,7 @@ describe('Zerion Balance Entity schemas', () => {
     it('should fallback to "unknown" if type is not defined', () => {
       const zerionBalance = zerionBalanceBuilder().build();
       // @ts-expect-error - type is expected to be a 'positions' literal
-      delete zerionBalance['type'];
+      zerionBalance.type = undefined;
 
       const result = ZerionBalanceSchema.safeParse(zerionBalance);
 
@@ -297,7 +298,7 @@ describe('Zerion Balance Entity schemas', () => {
     it('should not allow displayable to be undefined', () => {
       const zerionFlags = zerionFlagsBuilder().build();
       // @ts-expect-error - inferred types don't allow optional fields
-      delete zerionFlags.displayable;
+      zerionFlags.displayable = undefined;
 
       const result = ZerionFlagsSchema.safeParse(zerionFlags);
 

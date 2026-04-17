@@ -1,12 +1,16 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
+import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
+import { JsonWebTokenError } from 'jsonwebtoken';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { JWT_ALGORITHM } from '@/datasources/jwt/jwt.constants';
 import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
 import type { Auth0Token } from '@/modules/auth/oidc/auth0/domain/entities/auth0-token.entity';
 import { Auth0TokenSchema } from '@/modules/auth/oidc/auth0/domain/entities/auth0-token.entity';
-import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
-import { JsonWebTokenError } from 'jsonwebtoken';
 
 @Injectable()
 export class Auth0TokenVerifier {

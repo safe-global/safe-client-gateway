@@ -1,20 +1,21 @@
-import { amqpClientFactory } from '@/__tests__/amqp-client.factory';
-import { redisClientFactory } from '@/__tests__/redis-client.factory';
-import { retry } from '@/__tests__/util/retry';
-import { TestAppProvider } from '@/__tests__/test-app.provider';
-import configuration from '@/config/entities/configuration';
-import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
+// SPDX-License-Identifier: FSL-1.1-MIT
+import type { Server } from 'node:net';
 import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import type { ChannelWrapper } from 'amqp-connection-manager';
 import { getAddress } from 'viem';
-import type { Server } from 'net';
-import { TEST_SAFE } from '@/routes/common/__tests__/constants';
-import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
-import { PushNotificationsApiModule } from '@/datasources/push-notifications-api/push-notifications-api.module';
-import { TestPushNotificationsApiModule } from '@/datasources/push-notifications-api/__tests__/test.push-notifications-api.module';
+import { amqpClientFactory } from '@/__tests__/amqp-client.factory';
+import { redisClientFactory } from '@/__tests__/redis-client.factory';
+import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { createBaseTestModule } from '@/__tests__/testing-module';
+import { retry } from '@/__tests__/util/retry';
+import configuration from '@/config/entities/configuration';
 import type { RedisClientType } from '@/datasources/cache/cache.module';
+import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
+import { TestPushNotificationsApiModule } from '@/datasources/push-notifications-api/__tests__/test.push-notifications-api.module';
+import { PushNotificationsApiModule } from '@/datasources/push-notifications-api/push-notifications-api.module';
+import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
+import { TEST_SAFE } from '@/routes/common/__tests__/constants';
 
 describe('Events queue processing e2e tests', () => {
   let app: INestApplication<Server>;

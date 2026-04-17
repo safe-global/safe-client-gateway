@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
+import type { Server } from 'node:net';
 import type { INestApplication } from '@nestjs/common';
-import { TestAppProvider } from '@/__tests__/test-app.provider';
 import request from 'supertest';
-import type { Server } from 'net';
+import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { createTestModule } from '@/__tests__/testing-module';
 
 describe('Root Controller tests', () => {
