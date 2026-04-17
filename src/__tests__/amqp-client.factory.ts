@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { ChannelWrapper } from 'amqp-connection-manager';
 import amqp from 'amqp-connection-manager';
 import type { Channel } from 'amqplib';

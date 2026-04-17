@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject } from '@nestjs/common';
 import type { ConsumeMessage } from 'amqplib';
 import type { IQueueReadiness } from '@/domain/interfaces/queue-readiness.interface';

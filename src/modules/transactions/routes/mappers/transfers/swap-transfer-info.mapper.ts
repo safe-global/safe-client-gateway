@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import { type Address, getAddress, isAddressEqual } from 'viem';
 import type { Transfer as DomainTransfer } from '@/modules/safe/domain/entities/transfer.entity';

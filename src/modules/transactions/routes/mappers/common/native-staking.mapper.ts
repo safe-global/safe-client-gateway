@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable, Module, NotFoundException } from '@nestjs/common';
 import type { Address, Hash } from 'viem';
 import { getNumberString } from '@/domain/common/utils/utils';

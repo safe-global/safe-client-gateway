@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import {
   TypedDataDomain as TypedDataDomainSchema,
   TypedDataParameter as TypedDataParameterSchema,

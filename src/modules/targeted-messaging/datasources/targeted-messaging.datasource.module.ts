@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Module } from '@nestjs/common';
 import { PostgresDatabaseModule } from '@/datasources/db/v1/postgres-database.module';
 import { CloudStorageModule } from '@/datasources/storage/cloud-storage.module';

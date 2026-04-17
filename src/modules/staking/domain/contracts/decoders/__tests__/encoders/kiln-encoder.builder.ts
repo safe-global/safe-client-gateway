@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 // DepositEvent
 
 import { faker } from '@faker-js/faker/.';

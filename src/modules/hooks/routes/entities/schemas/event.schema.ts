@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
 import { ChainUpdateEventSchema } from '@/modules/hooks/routes/entities/schemas/chain-update.schema';
 import {

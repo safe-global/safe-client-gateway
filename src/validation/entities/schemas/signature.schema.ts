@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { Hex } from 'viem';
 import { SIGNATURE_HEX_LENGTH } from '@/domain/common/utils/signatures';
 import { HEX_PREFIX_LENGTH } from '@/routes/common/constants';
