@@ -5,9 +5,9 @@ import type { z } from 'zod';
 import { Operation } from '@/modules/safe/domain/entities/operation.entity';
 import type { CounterpartyAnalysisRequestSchema } from '@/modules/safe-shield/entities/analysis-requests.entity';
 
-export class CounterpartyAnalysisRequestDto implements z.infer<
-  typeof CounterpartyAnalysisRequestSchema
-> {
+export class CounterpartyAnalysisRequestDto
+  implements z.infer<typeof CounterpartyAnalysisRequestSchema>
+{
   @ApiProperty({
     type: String,
     description: 'Recipient address of the transaction.',

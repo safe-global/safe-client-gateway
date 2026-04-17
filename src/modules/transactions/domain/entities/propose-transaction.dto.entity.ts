@@ -4,9 +4,9 @@ import type { z } from 'zod';
 import type { Operation } from '@/modules/safe/domain/entities/operation.entity';
 import type { ProposeTransactionDtoSchema } from '@/modules/transactions/routes/entities/schemas/propose-transaction.dto.schema';
 
-export class ProposeTransactionDto implements z.infer<
-  typeof ProposeTransactionDtoSchema
-> {
+export class ProposeTransactionDto
+  implements z.infer<typeof ProposeTransactionDtoSchema>
+{
   to!: Address;
   value!: string;
   data!: Hex | null;

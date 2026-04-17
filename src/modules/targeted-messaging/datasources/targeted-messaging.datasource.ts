@@ -37,7 +37,9 @@ import { SubmissionNotFoundError } from '@/modules/targeted-messaging/domain/err
 import { TargetedSafeNotFoundError } from '@/modules/targeted-messaging/domain/errors/targeted-safe-not-found.error';
 
 @Injectable()
-export class TargetedMessagingDatasource implements ITargetedMessagingDatasource {
+export class TargetedMessagingDatasource
+  implements ITargetedMessagingDatasource
+{
   private readonly defaultExpirationTimeInSeconds: number;
 
   constructor(

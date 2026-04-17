@@ -23,9 +23,9 @@ export const NotificationTypeSchema = z.object({
 
 @Entity('notification_types')
 @Unique('name', ['name'])
-export class NotificationType implements z.infer<
-  typeof NotificationTypeSchema
-> {
+export class NotificationType
+  implements z.infer<typeof NotificationTypeSchema>
+{
   @PrimaryGeneratedColumn()
   id!: number;
 
