@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { ApiExtraModels, ApiProperty, getSchemaPath } from '@nestjs/swagger';
 import type { QueuedItem } from '@/modules/transactions/routes/entities/queued-item.entity';
 import { ConflictHeaderQueuedItem } from '@/modules/transactions/routes/entities/queued-items/conflict-header-queued-item.entity';

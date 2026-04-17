@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable, Module } from '@nestjs/common';
 import { type Address, isAddressEqual } from 'viem';
 import { BridgeModule } from '@/modules/bridge/bridge.module';

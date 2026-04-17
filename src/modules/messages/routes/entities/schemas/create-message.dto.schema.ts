@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
 import { MessageSchema } from '@/modules/messages/domain/entities/message.entity';
 import { NullableStringSchema } from '@/validation/entities/schemas/nullable.schema';

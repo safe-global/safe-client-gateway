@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Module } from '@nestjs/common';
 import { IdentityApiModule } from '@/datasources/locking-api/identity-api.module';
 import { LockingApiModule } from '@/datasources/locking-api/locking-api.module';

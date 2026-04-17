@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { IApiManager } from '@/domain/interfaces/api.manager.interface';
 import type { ISwapsApi } from '@/domain/interfaces/swaps-api.interface';
 

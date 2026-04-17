@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 /**
  * Faker v8.0.2
  * https://fakerjs.dev/

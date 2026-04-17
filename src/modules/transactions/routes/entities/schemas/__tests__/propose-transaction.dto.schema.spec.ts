@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress, type Hash, type Hex } from 'viem';
 import type { Operation } from '@/modules/safe/domain/entities/operation.entity';

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { InternalServerErrorException } from '@nestjs/common';
 import type postgres from 'postgres';
 import type { ICacheService } from '@/datasources/cache/cache.service.interface';

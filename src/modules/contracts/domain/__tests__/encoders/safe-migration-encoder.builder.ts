@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { Hex } from 'viem';
 import { encodeFunctionData } from 'viem';
 import { Builder } from '@/__tests__/builder';

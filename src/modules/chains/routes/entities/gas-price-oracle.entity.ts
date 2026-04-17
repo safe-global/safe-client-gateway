@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { ApiProperty } from '@nestjs/swagger';
 import type { GasPriceOracle as DomainGasPriceOracle } from '@/modules/chains/domain/entities/gas-price-oracle.entity';
 

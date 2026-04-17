@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
 import { TokenSchema } from '@/modules/bridge/domain/entities/token.entity';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
