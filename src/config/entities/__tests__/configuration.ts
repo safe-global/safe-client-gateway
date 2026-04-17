@@ -375,6 +375,9 @@ export default (): ReturnType<typeof configuration> => ({
       feePreviewTtlSeconds: 60,
     },
   },
+  queueService: {
+    baseUri: faker.internet.url({ appendSlash: false }),
+  },
   safeConfig: {
     baseUri: faker.internet.url({ appendSlash: false }),
     chains: {

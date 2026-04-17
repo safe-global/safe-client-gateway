@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { SafeRepository } from '@/modules/safe/domain/safe.repository';
 import type { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
 import type { ITransactionApi } from '@/domain/interfaces/transaction-api.interface';
@@ -5,6 +6,7 @@ import type { ILoggingService } from '@/logging/logging.interface';
 import type { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
 import type { TransactionVerifierHelper } from '@/modules/transactions/routes/helpers/transaction-verifier.helper';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
+import type { IOffchain } from '@/modules/offchain/offchain.interface';
 import { faker } from '@faker-js/faker';
 import type { Address } from 'viem';
 import { getAddress } from 'viem';
@@ -43,6 +45,22 @@ const mockConfigurationService = {
   getOrThrow: jest.fn(),
 } as jest.MockedObjectDeep<IConfigurationService>;
 
+const mockOffchainService = {
+  getMultisigTransaction: jest.fn(),
+  getMultisigTransactions: jest.fn(),
+  getTransactionQueue: jest.fn(),
+  proposeTransaction: jest.fn(),
+  postConfirmation: jest.fn(),
+  deleteTransaction: jest.fn(),
+  getDelegates: jest.fn(),
+  postDelegate: jest.fn(),
+  deleteDelegate: jest.fn(),
+  getMessageByHash: jest.fn(),
+  getMessagesBySafe: jest.fn(),
+  postMessage: jest.fn(),
+  postMessageSignature: jest.fn(),
+} as jest.MockedObjectDeep<IOffchain>;
+
 describe('SafeRepository', () => {
   let repository: SafeRepository;
   const maxSequentialPages = 5;
@@ -63,6 +81,7 @@ describe('SafeRepository', () => {
       mockChainsRepository,
       mockTransactionVerifier,
       mockConfigurationService,
+      mockOffchainService,
     );
   });
 

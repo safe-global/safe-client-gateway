@@ -1,6 +1,6 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import { Page } from '@/domain/entities/page.entity';
-import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
 import { Message } from '@/modules/messages/domain/entities/message.entity';
 import { IMessagesRepository } from '@/modules/messages/domain/messages.repository.interface';
 import {
@@ -10,15 +10,16 @@ import {
 import { MessageVerifierHelper } from '@/modules/messages/domain/helpers/message-verifier.helper';
 import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
 import { TypedData } from '@/modules/messages/domain/entities/typed-data.entity';
+import { IOffchain } from '@/modules/offchain/offchain.interface';
 import type { Address, Hash, Hex } from 'viem';
 
 @Injectable()
 export class MessagesRepository implements IMessagesRepository {
   constructor(
-    @Inject(ITransactionApiManager)
-    private readonly transactionApiManager: ITransactionApiManager,
     @Inject(ISafeRepository)
     private readonly safeRepository: ISafeRepository,
+    @Inject(IOffchain)
+    private readonly offchainService: IOffchain,
     private readonly messageVerifier: MessageVerifierHelper,
   ) {}
 
@@ -26,10 +27,10 @@ export class MessagesRepository implements IMessagesRepository {
     chainId: string;
     messageHash: Hash;
   }): Promise<Message> {
-    const transactionService = await this.transactionApiManager.getApi(
-      args.chainId,
-    );
-    const message = await transactionService.getMessageByHash(args.messageHash);
+    const message = await this.offchainService.getMessageByHash({
+      chainId: args.chainId,
+      messageHash: args.messageHash,
+    });
     return MessageSchema.parse(message);
   }
 
@@ -39,10 +40,8 @@ export class MessagesRepository implements IMessagesRepository {
     limit?: number | undefined;
     offset?: number | undefined;
   }): Promise<Page<Message>> {
-    const transactionService = await this.transactionApiManager.getApi(
-      args.chainId,
-    );
-    const page = await transactionService.getMessagesBySafe({
+    const page = await this.offchainService.getMessagesBySafe({
+      chainId: args.chainId,
       safeAddress: args.safeAddress,
       limit: args.limit,
       offset: args.offset,
@@ -69,10 +68,8 @@ export class MessagesRepository implements IMessagesRepository {
       message: args.message,
       signature: args.signature,
     });
-    const transactionService = await this.transactionApiManager.getApi(
-      args.chainId,
-    );
-    return transactionService.postMessage({
+    return this.offchainService.postMessage({
+      chainId: args.chainId,
       safeAddress: args.safeAddress,
       message: args.message,
       safeAppId: args.safeAppId,
@@ -99,10 +96,8 @@ export class MessagesRepository implements IMessagesRepository {
       safe,
       message: message.message,
     });
-    const transactionService = await this.transactionApiManager.getApi(
-      args.chainId,
-    );
-    return transactionService.postMessageSignature({
+    return this.offchainService.postMessageSignature({
+      chainId: args.chainId,
       messageHash: args.messageHash,
       signature: args.signature,
     });
@@ -112,15 +107,13 @@ export class MessagesRepository implements IMessagesRepository {
     chainId: string;
     safeAddress: Address;
   }): Promise<void> {
-    const api = await this.transactionApiManager.getApi(args.chainId);
-    await api.clearMessagesBySafe(args);
+    await this.offchainService.clearMessagesBySafe(args);
   }
 
   async clearMessagesByHash(args: {
     chainId: string;
     messageHash: string;
   }): Promise<void> {
-    const api = await this.transactionApiManager.getApi(args.chainId);
-    await api.clearMessagesByHash(args);
+    await this.offchainService.clearMessagesByHash(args);
   }
 }

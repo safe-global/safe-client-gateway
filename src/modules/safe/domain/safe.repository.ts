@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import isEmpty from 'lodash/isEmpty';
 import { Page } from '@/domain/entities/page.entity';
@@ -24,7 +25,6 @@ import {
 import { SafeListSchema } from '@/modules/safe/domain/entities/schemas/safe-list.schema';
 import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
 import { TransactionTypePageSchema } from '@/modules/safe/domain/entities/schemas/transaction-type.schema';
-import { AddConfirmationDto } from '@/modules/transactions/domain/entities/add-confirmation.dto.entity';
 import { ProposeTransactionDto } from '@/modules/transactions/domain/entities/propose-transaction.dto.entity';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
@@ -39,6 +39,7 @@ import { TransactionVerifierHelper } from '@/modules/transactions/routes/helpers
 import { PaginationData } from '@/routes/common/pagination/pagination.data';
 import { SAFE_TRANSACTION_SERVICE_MAX_LIMIT } from '@/domain/common/constants';
 import { DataSourceError } from '@/domain/errors/data-source.error';
+import { IOffchain } from '@/modules/offchain/offchain.interface';
 import type { Address } from 'viem';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 
@@ -55,6 +56,8 @@ export class SafeRepository implements ISafeRepository {
     private readonly transactionVerifier: TransactionVerifierHelper,
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
+    @Inject(IOffchain)
+    private readonly offchainService: IOffchain,
   ) {
     this.maxSequentialPages = this.configurationService.getOrThrow<number>(
       'safeConfig.safes.maxSequentialPages',
@@ -167,12 +170,8 @@ export class SafeRepository implements ISafeRepository {
   async addConfirmation(args: {
     chainId: string;
     safeTxHash: string;
-    addConfirmationDto: AddConfirmationDto;
+    addConfirmationDto: { signature: Address };
   }): Promise<void> {
-    const transactionService = await this.transactionApiManager.getApi(
-      args.chainId,
-    );
-
     const transaction = await this.getMultiSigTransaction({
       chainId: args.chainId,
       safeTransactionHash: args.safeTxHash,
@@ -190,7 +189,11 @@ export class SafeRepository implements ISafeRepository {
       signature: args.addConfirmationDto.signature,
     });
 
-    await transactionService.postConfirmation(args);
+    await this.offchainService.postConfirmation({
+      chainId: args.chainId,
+      safeTxHash: args.safeTxHash,
+      signature: args.addConfirmationDto.signature,
+    });
   }
 
   async getModuleTransaction(args: {
@@ -264,16 +267,13 @@ export class SafeRepository implements ISafeRepository {
     ordering: string;
     limit?: number;
     offset?: number;
-    trusted?: boolean;
   }): Promise<Page<MultisigTransaction>> {
-    const transactionService = await this.transactionApiManager.getApi(
-      args.chainId,
-    );
-    const page = await transactionService.getMultisigTransactions({
-      ...args,
+    const page = await this.offchainService.getTransactionQueue({
+      chainId: args.chainId,
       safeAddress: args.safe.address,
-      executed: false,
-      nonceGte: args.safe.nonce,
+      ordering: args.ordering,
+      limit: args.limit,
+      offset: args.offset,
     });
     return MultisigTransactionPageSchema.parse(page);
   }
@@ -406,7 +406,11 @@ export class SafeRepository implements ISafeRepository {
       args.safeTxHash,
     );
     const { safe } = MultisigTransactionSchema.parse(transaction);
-    await transactionService.deleteTransaction(args);
+
+    await transactionService.deleteTransaction({
+      safeTxHash: args.safeTxHash,
+      signature: args.signature,
+    });
 
     // Ensure transaction is removed from cache in case event is not received
     Promise.all([
@@ -692,9 +696,10 @@ export class SafeRepository implements ISafeRepository {
       transaction,
     });
 
-    return transactionService.postMultisigTransaction({
-      address: args.safeAddress,
-      data: args.proposeTransactionDto,
+    return this.offchainService.proposeTransaction({
+      chainId: args.chainId,
+      safeAddress: args.safeAddress,
+      proposeTransactionDto: args.proposeTransactionDto,
     });
   }
 

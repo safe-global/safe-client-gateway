@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 /**
  * Circuit Breaker Key Generator
  *
@@ -8,6 +9,7 @@
 export class CircuitBreakerKeys {
   private static readonly SERVICE_PREFIX = {
     TRANSACTION_SERVICE: 'txs-service',
+    QUEUE_SERVICE: 'queue-service',
   };
 
   /**
@@ -18,5 +20,15 @@ export class CircuitBreakerKeys {
    */
   static getTransactionServiceKey(chainId: string): string {
     return `${CircuitBreakerKeys.SERVICE_PREFIX.TRANSACTION_SERVICE}-${chainId}`;
+  }
+
+  /**
+   * Generates a circuit breaker key for the queue service
+   *
+   * @param chainId - The chain ID to scope the circuit breaker to
+   * @returns Circuit breaker key in the format: `queue-service-{chainId}`
+   */
+  static getQueueServiceKey(chainId: string): string {
+    return `${CircuitBreakerKeys.SERVICE_PREFIX.QUEUE_SERVICE}-${chainId}`;
   }
 }

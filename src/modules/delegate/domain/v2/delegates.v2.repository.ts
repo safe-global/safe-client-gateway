@@ -1,16 +1,17 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { IOffchain } from '@/modules/offchain/offchain.interface';
 import { Delegate } from '@/modules/delegate/domain/entities/delegate.entity';
 import { DelegatePageSchema } from '@/modules/delegate/domain/entities/schemas/delegate.schema';
 import { IDelegatesV2Repository } from '@/modules/delegate/domain/v2/delegates.v2.repository.interface';
 import { Page } from '@/domain/entities/page.entity';
-import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
 import { Inject, Injectable } from '@nestjs/common';
 import type { Address } from 'viem';
 
 @Injectable()
 export class DelegatesV2Repository implements IDelegatesV2Repository {
   constructor(
-    @Inject(ITransactionApiManager)
-    private readonly transactionApiManager: ITransactionApiManager,
+    @Inject(IOffchain)
+    private readonly offchainService: IOffchain,
   ) {}
 
   async getDelegates(args: {
@@ -22,10 +23,8 @@ export class DelegatesV2Repository implements IDelegatesV2Repository {
     limit?: number;
     offset?: number;
   }): Promise<Page<Delegate>> {
-    const transactionService = await this.transactionApiManager.getApi(
-      args.chainId,
-    );
-    const page = await transactionService.getDelegatesV2({
+    const page = await this.offchainService.getDelegates({
+      chainId: args.chainId,
       safeAddress: args.safeAddress,
       delegate: args.delegate,
       delegator: args.delegator,
@@ -41,10 +40,7 @@ export class DelegatesV2Repository implements IDelegatesV2Repository {
     chainId: string;
     safeAddress?: Address;
   }): Promise<void> {
-    const transactionService = await this.transactionApiManager.getApi(
-      args.chainId,
-    );
-    await transactionService.clearDelegates(args.safeAddress);
+    await this.offchainService.clearDelegates(args);
   }
 
   async postDelegate(args: {
@@ -55,10 +51,8 @@ export class DelegatesV2Repository implements IDelegatesV2Repository {
     signature: string;
     label: string;
   }): Promise<void> {
-    const transactionService = await this.transactionApiManager.getApi(
-      args.chainId,
-    );
-    await transactionService.postDelegateV2({
+    await this.offchainService.postDelegate({
+      chainId: args.chainId,
       safeAddress: args.safeAddress,
       delegate: args.delegate,
       delegator: args.delegator,
@@ -74,10 +68,8 @@ export class DelegatesV2Repository implements IDelegatesV2Repository {
     safeAddress: Address | null;
     signature: string;
   }): Promise<unknown> {
-    const transactionService = await this.transactionApiManager.getApi(
-      args.chainId,
-    );
-    return transactionService.deleteDelegateV2({
+    return this.offchainService.deleteDelegate({
+      chainId: args.chainId,
       delegate: args.delegate,
       delegator: args.delegator,
       safeAddress: args.safeAddress,
