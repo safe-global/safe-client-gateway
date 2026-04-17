@@ -32,6 +32,7 @@ export interface IAddressBookRequestsRepository {
   create(args: {
     spaceId: Space['id'];
     requestedById: User['id'];
+    requestedByWallet: Address;
     item: AddressBookItem;
   }): Promise<AddressBookRequest>;
 

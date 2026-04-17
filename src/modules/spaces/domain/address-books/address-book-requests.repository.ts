@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
+import { isUniqueConstraintError } from '@/datasources/errors/helpers/is-unique-constraint-error.helper';
+import { UniqueConstraintError } from '@/datasources/errors/unique-constraint-error';
 import { AddressBookRequest as DbAddressBookRequest } from '@/modules/spaces/datasources/entities/address-book-request.entity.db';
 import { IAddressBookRequestsRepository } from '@/modules/spaces/domain/address-books/address-book-requests.repository.interface';
 import type {
@@ -11,7 +13,7 @@ import type { Space } from '@/modules/spaces/domain/entities/space.entity';
 import type { User } from '@/modules/users/domain/entities/user.entity';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import type { Address } from 'viem';
-import type { FindOptionsWhere } from 'typeorm';
+import type { FindOptionsWhere, InsertResult } from 'typeorm';
 
 @Injectable()
 export class AddressBookRequestsRepository implements IAddressBookRequestsRepository {
@@ -76,17 +78,29 @@ export class AddressBookRequestsRepository implements IAddressBookRequestsReposi
   public async create(args: {
     spaceId: Space['id'];
     requestedById: User['id'];
+    requestedByWallet: Address;
     item: AddressBookItem;
   }): Promise<AddressBookRequest> {
     const repository = await this.db.getRepository(DbAddressBookRequest);
-    const result = await repository.insert({
-      space: { id: args.spaceId },
-      requestedBy: { id: args.requestedById },
-      address: args.item.address,
-      name: args.item.name,
-      chainIds: args.item.chainIds,
-      status: 'PENDING',
-    });
+    let result: InsertResult;
+    try {
+      result = await repository.insert({
+        space: { id: args.spaceId },
+        requestedBy: { id: args.requestedById },
+        requestedByWallet: args.requestedByWallet,
+        address: args.item.address,
+        name: args.item.name,
+        chainIds: args.item.chainIds,
+        status: 'PENDING',
+      });
+    } catch (err) {
+      if (isUniqueConstraintError(err)) {
+        throw new UniqueConstraintError(
+          'A request for this address already exists.',
+        );
+      }
+      throw err;
+    }
     const insertedId = result.identifiers[0].id;
     return this.findOneOrFail({ id: insertedId, spaceId: args.spaceId });
   }

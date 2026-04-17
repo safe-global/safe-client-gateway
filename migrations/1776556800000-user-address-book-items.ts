@@ -34,6 +34,7 @@ export class UserAddressBookItems1776556800000 implements MigrationInterface {
         id SERIAL NOT NULL,
         space_id INTEGER NOT NULL,
         requested_by INTEGER NOT NULL,
+        requested_by_wallet VARCHAR(42) NOT NULL,
         address VARCHAR(42) NOT NULL,
         name VARCHAR(50) NOT NULL,
         chain_ids VARCHAR(32) ARRAY DEFAULT '{}' NOT NULL,

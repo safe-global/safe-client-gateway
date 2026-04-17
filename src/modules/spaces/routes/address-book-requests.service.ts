@@ -6,7 +6,6 @@ import { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.int
 import { IAddressBookRequestsRepository } from '@/modules/spaces/domain/address-books/address-book-requests.repository.interface';
 import { IUserAddressBookItemsRepository } from '@/modules/spaces/domain/address-books/user-address-book-items.repository.interface';
 import { IAddressBookItemsRepository } from '@/modules/spaces/domain/address-books/address-book-items.repository.interface';
-import { IWalletsRepository } from '@/modules/wallets/domain/wallets.repository.interface';
 import {
   AddressBookRequestsDto,
   AddressBookRequestItemDto,
@@ -39,8 +38,6 @@ export class AddressBookRequestsService {
     private readonly membersRepository: IMembersRepository,
     @Inject(ISpacesRepository)
     private readonly spacesRepository: ISpacesRepository,
-    @Inject(IWalletsRepository)
-    private readonly walletsRepository: IWalletsRepository,
   ) {}
 
   public async findPending(
@@ -98,6 +95,7 @@ export class AddressBookRequestsService {
     const request = await this.requestsRepository.create({
       spaceId,
       requestedById: userId,
+      requestedByWallet: authPayload.signer_address as Address,
       item: {
         name: privateContact.name,
         address: privateContact.address,
@@ -131,22 +129,7 @@ export class AddressBookRequestsService {
       throw new BadRequestException('Only pending requests can be approved.');
     }
 
-    // Look up the requester's private contact to get original author's wallet address
-    const requesterId = request.requestedBy?.id;
-    let createdByOverride: `0x${string}` | undefined;
-    if (requesterId) {
-      const privateContact =
-        await this.privateRepository.findOneBySpaceCreatorAndAddress({
-          spaceId,
-          creatorId: requesterId,
-          address: request.address,
-        });
-      if (privateContact?.createdBy) {
-        createdByOverride = privateContact.createdBy;
-      }
-    }
-
-    // Add to the shared space address book, preserving original author
+    // Add to the shared space address book, attributing to the original requester
     await this.spaceAddressBookRepository.upsertMany({
       authPayload,
       spaceId,
@@ -157,7 +140,7 @@ export class AddressBookRequestsService {
           chainIds: request.chainIds,
         },
       ],
-      createdByOverride,
+      createdByOverride: request.requestedByWallet,
     });
 
     // Mark the request as approved
@@ -210,36 +193,25 @@ export class AddressBookRequestsService {
     }
   }
 
-  private async mapRequests(
+  private mapRequests(
     spaceId: Space['id'],
     requests: Array<AddressBookRequest>,
-  ): Promise<AddressBookRequestsDto> {
-    const data = await Promise.all(
-      requests.map((request) => this.mapRequestItem(request)),
-    );
+  ): AddressBookRequestsDto {
     return {
       spaceId: spaceId.toString(),
-      data,
+      data: requests.map((request) => this.mapRequestItem(request)),
     };
   }
 
-  private async mapRequestItem(
+  private mapRequestItem(
     request: AddressBookRequest,
-  ): Promise<AddressBookRequestItemDto> {
-    let requestedByAddress = '';
-    if (request.requestedBy?.id) {
-      const wallets = await this.walletsRepository.findByUser(
-        request.requestedBy.id,
-      );
-      requestedByAddress = wallets[0]?.address ?? '';
-    }
-
+  ): AddressBookRequestItemDto {
     return {
       id: request.id,
       name: request.name,
       address: request.address,
       chainIds: request.chainIds,
-      requestedBy: requestedByAddress,
+      requestedBy: request.requestedByWallet,
       status: request.status,
       createdAt: request.createdAt,
       updatedAt: request.updatedAt,

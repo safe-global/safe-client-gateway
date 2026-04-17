@@ -59,6 +59,15 @@ export class AddressBookRequest implements DomainAddressBookRequest {
   public readonly chainIds!: Array<string>;
 
   @Column({
+    name: 'requested_by_wallet',
+    type: 'varchar',
+    length: 42,
+    nullable: false,
+    transformer: databaseAddressTransformer,
+  })
+  requestedByWallet!: Address;
+
+  @Column({
     name: 'address',
     type: 'varchar',
     length: 42,

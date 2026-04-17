@@ -18,7 +18,7 @@ import {
 import { EntityManager, In } from 'typeorm';
 import { UpsertAddressBookItemsDto } from '@/modules/spaces/routes/entities/upsert-address-book-items.dto.entity';
 import { MemberRole } from '@/modules/users/domain/entities/member.entity';
-import { isAddressEqual } from 'viem';
+import { isAddressEqual, type Address } from 'viem';
 
 @Injectable()
 export class AddressBookItemsRepository implements IAddressBookItemsRepository {
@@ -52,7 +52,7 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
     authPayload: AuthPayload;
     spaceId: Space['id'];
     addressBookItems: UpsertAddressBookItemsDto['items'];
-    createdByOverride?: `0x${string}`;
+    createdByOverride?: Address;
   }): Promise<Array<AddressBookDbItem>> {
     const space = await this.getSpaceAs({
       ...args,
@@ -158,7 +158,7 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
     addressBookItems: Array<AddressBookItem>;
     space: Space;
     entityManager: EntityManager;
-    createdByOverride?: `0x${string}`;
+    createdByOverride?: Address;
   }): Promise<Array<DbAddressBookItem['id']>> {
     if (!args.authPayload.isSiwe()) {
       throw new ForbiddenException(
