@@ -11,13 +11,13 @@ import {
   OffchainMultisigTransactionPageSchema,
   OffchainMultisigTransactionSchema,
 } from '@/modules/offchain/entities/multisig-transaction.entity';
+import type { OffchainMultisigTransactionEntity } from '@/modules/offchain/entities/multisig-transaction.entity';
 import {
   OffchainMessagePageSchema,
   OffchainMessageSchema,
 } from '@/modules/offchain/entities/message.entity';
 import { OffchainDelegatePageSchema } from '@/modules/offchain/entities/delegate.entity';
 import { parseOrigin } from '@/modules/offchain/helpers/origin.helper';
-import { mapOffchainToMultisigTransaction } from '@/modules/offchain/mappers/transaction.mapper';
 import { mapOffchainToMessage } from '@/modules/offchain/mappers/message.mapper';
 import {
   NetworkService,
@@ -26,14 +26,12 @@ import {
 import type { Page } from '@/domain/entities/page.entity';
 import type { Delegate } from '@/modules/delegate/domain/entities/delegate.entity';
 import type { Message } from '@/modules/messages/domain/entities/message.entity';
-import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
 import type { ProposeTransactionDto } from '@/modules/transactions/domain/entities/propose-transaction.dto.entity';
 import type { IOffchain } from '@/modules/offchain/offchain.interface';
 import { rawify } from '@/validation/entities/raw.entity';
 import type { Raw } from '@/validation/entities/raw.entity';
 import { Inject, Injectable } from '@nestjs/common';
 import type { Address, Hex } from 'viem';
-import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
 
 @Injectable()
 export class OffchainService implements IOffchain {
@@ -48,8 +46,6 @@ export class OffchainService implements IOffchain {
     private readonly networkService: INetworkService,
     @Inject(CacheService)
     private readonly cacheService: ICacheService,
-    @Inject(ISafeRepository)
-    private readonly safeRepository: ISafeRepository,
     private readonly dataSource: CacheFirstDataSource,
     private readonly httpErrorFactory: HttpErrorFactory,
   ) {
@@ -104,7 +100,7 @@ export class OffchainService implements IOffchain {
   async getMultisigTransaction(args: {
     chainId: string;
     safeTxHash: string;
-  }): Promise<Raw<MultisigTransaction>> {
+  }): Promise<Raw<OffchainMultisigTransactionEntity>> {
     try {
       const cacheDir = CacheRouter.getMultisigTransactionCacheDir({
         chainId: args.chainId,
@@ -117,12 +113,7 @@ export class OffchainService implements IOffchain {
         notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
         expireTimeSeconds: this.defaultExpirationTimeInSeconds,
       });
-      const parsed = OffchainMultisigTransactionSchema.parse(data);
-      const safe = await this.safeRepository.getSafe({
-        chainId: args.chainId,
-        address: parsed.safe,
-      });
-      return rawify(mapOffchainToMultisigTransaction(parsed, safe));
+      return rawify(OffchainMultisigTransactionSchema.parse(data));
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
@@ -136,13 +127,9 @@ export class OffchainService implements IOffchain {
     trusted?: boolean;
     limit?: number;
     offset?: number;
-  }): Promise<Raw<Page<MultisigTransaction>>> {
+  }): Promise<Raw<Page<OffchainMultisigTransactionEntity>>> {
     try {
       const url = `${this.baseUri}/api/v1/multisig-transactions`;
-      const safe = await this.safeRepository.getSafe({
-        chainId: args.chainId,
-        address: args.safeAddress,
-      });
       const { data } = await this.networkService.get({
         url,
         networkRequest: {
@@ -157,15 +144,7 @@ export class OffchainService implements IOffchain {
           },
         },
       });
-      const parsed = OffchainMultisigTransactionPageSchema.parse(data);
-      return rawify({
-        count: parsed.count,
-        next: parsed.next,
-        previous: parsed.previous,
-        results: parsed.results.map((tx) =>
-          mapOffchainToMultisigTransaction(tx, safe),
-        ),
-      });
+      return rawify(OffchainMultisigTransactionPageSchema.parse(data));
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
@@ -177,14 +156,10 @@ export class OffchainService implements IOffchain {
     ordering?: string;
     limit?: number;
     offset?: number;
-  }): Promise<Raw<Page<MultisigTransaction>>> {
+  }): Promise<Raw<Page<OffchainMultisigTransactionEntity>>> {
     try {
       const url = `${this.baseUri}/api/v1/multisig-transactions/queue`;
       const nonceOrder = args.ordering?.includes('-') ? 'desc' : 'asc';
-      const safe = await this.safeRepository.getSafe({
-        chainId: args.chainId,
-        address: args.safeAddress,
-      });
       const { data } = await this.networkService.get<unknown>({
         url,
         networkRequest: {
@@ -196,15 +171,7 @@ export class OffchainService implements IOffchain {
           },
         },
       });
-      const parsed = OffchainMultisigTransactionPageSchema.parse(data);
-      return rawify({
-        count: parsed.count,
-        next: parsed.next,
-        previous: parsed.previous,
-        results: parsed.results.map((tx) =>
-          mapOffchainToMultisigTransaction(tx, safe),
-        ),
-      });
+      return rawify(OffchainMultisigTransactionPageSchema.parse(data));
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }

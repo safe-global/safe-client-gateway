@@ -4,10 +4,9 @@ import { CacheFirstDataSourceModule } from '@/datasources/cache/cache.first.data
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { IOffchain } from '@/modules/offchain/offchain.interface';
 import { OffchainService } from '@/modules/offchain/offchain.service';
-import { SafeRepositoryModule } from '@/modules/safe/domain/safe.repository.interface';
 
 @Module({
-  imports: [CacheFirstDataSourceModule, SafeRepositoryModule],
+  imports: [CacheFirstDataSourceModule],
   providers: [
     HttpErrorFactory,
     { provide: IOffchain, useClass: OffchainService },
