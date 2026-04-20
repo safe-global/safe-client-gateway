@@ -22,6 +22,8 @@ import {
   MultisigTransactionPageSchema,
   MultisigTransactionSchema,
 } from '@/modules/safe/domain/entities/multisig-transaction.entity';
+import { OffchainMultisigTransactionPageSchema } from '@/modules/offchain/entities/multisig-transaction.entity';
+import { mapOffchainToMultisigTransaction } from '@/modules/offchain/mappers/transaction.mapper';
 import { SafeListSchema } from '@/modules/safe/domain/entities/schemas/safe-list.schema';
 import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
 import { TransactionTypePageSchema } from '@/modules/safe/domain/entities/schemas/transaction-type.schema';
@@ -275,7 +277,15 @@ export class SafeRepository implements ISafeRepository {
       limit: args.limit,
       offset: args.offset,
     });
-    return MultisigTransactionPageSchema.parse(page);
+    const parsed = OffchainMultisigTransactionPageSchema.parse(page);
+    return {
+      count: parsed.count,
+      next: parsed.next,
+      previous: parsed.previous,
+      results: parsed.results.map((tx) =>
+        mapOffchainToMultisigTransaction(tx, args.safe),
+      ),
+    };
   }
 
   async getCreationTransaction(args: {

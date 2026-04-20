@@ -2,7 +2,7 @@
 import type { Page } from '@/domain/entities/page.entity';
 import type { Delegate } from '@/modules/delegate/domain/entities/delegate.entity';
 import type { Message } from '@/modules/messages/domain/entities/message.entity';
-import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
+import type { OffchainMultisigTransactionEntity } from '@/modules/offchain/entities/multisig-transaction.entity';
 import type { ProposeTransactionDto } from '@/modules/transactions/domain/entities/propose-transaction.dto.entity';
 import type { Raw } from '@/validation/entities/raw.entity';
 import type { Address, Hex } from 'viem';
@@ -19,7 +19,7 @@ export interface IOffchain {
   getMultisigTransaction(args: {
     chainId: string;
     safeTxHash: string;
-  }): Promise<Raw<MultisigTransaction>>;
+  }): Promise<Raw<OffchainMultisigTransactionEntity>>;
 
   getMultisigTransactions(args: {
     chainId: string;
@@ -29,7 +29,7 @@ export interface IOffchain {
     trusted?: boolean;
     limit?: number;
     offset?: number;
-  }): Promise<Raw<Page<MultisigTransaction>>>;
+  }): Promise<Raw<Page<OffchainMultisigTransactionEntity>>>;
 
   getTransactionQueue(args: {
     chainId: string;
@@ -37,7 +37,7 @@ export interface IOffchain {
     ordering?: string;
     limit?: number;
     offset?: number;
-  }): Promise<Raw<Page<MultisigTransaction>>>;
+  }): Promise<Raw<Page<OffchainMultisigTransactionEntity>>>;
 
   postConfirmation(args: {
     chainId: string;
