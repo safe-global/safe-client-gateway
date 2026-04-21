@@ -4,8 +4,8 @@ import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import { balancesProviderBuilder } from '@/modules/chains/domain/entities/__tests__/balances-provider.builder';
 import { beaconChainExplorerUriTemplateBuilder } from '@/modules/chains/domain/entities/__tests__/beacon-chain-explorer-uri-template.builder';
 import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
-import { gasPriceFixedEIP1559Builder } from '@/modules/chains/domain/entities/__tests__/gas-price-fixed-eip-1559.builder';
 import { gasPriceFixedBuilder } from '@/modules/chains/domain/entities/__tests__/gas-price-fixed.builder';
+import { gasPriceFixedEIP1559Builder } from '@/modules/chains/domain/entities/__tests__/gas-price-fixed-eip-1559.builder';
 import { gasPriceOracleBuilder } from '@/modules/chains/domain/entities/__tests__/gas-price-oracle.builder';
 import { nativeCurrencyBuilder } from '@/modules/chains/domain/entities/__tests__/native.currency.builder';
 import { pricesProviderBuilder } from '@/modules/chains/domain/entities/__tests__/prices-provider.builder';
@@ -470,41 +470,41 @@ describe('Chain schemas', () => {
       expect(result.success && result.data.zk).toBe(false);
     });
 
-    it.each([['chainLogoUri' as const], ['ensRegistryAddress' as const]])(
-      'should allow undefined %s and default to null',
-      (field) => {
-        const chain = chainBuilder().build();
-        delete chain[field];
+    it.each([
+      ['chainLogoUri' as const],
+      ['ensRegistryAddress' as const],
+    ])('should allow undefined %s and default to null', (field) => {
+      const chain = chainBuilder().build();
+      delete chain[field];
 
-        const result = ChainSchema.safeParse(chain);
+      const result = ChainSchema.safeParse(chain);
 
-        expect(result.success && result.data[field]).toBe(null);
-      },
-    );
+      expect(result.success && result.data[field]).toBe(null);
+    });
 
-    it.each(['transactionService' as const, 'vpcTransactionService' as const])(
-      'accept non-trailing slash %s as is',
-      (field) => {
-        const url = faker.internet.url({ appendSlash: false });
-        const chain = chainBuilder().with(field, url).build();
+    it.each([
+      'transactionService' as const,
+      'vpcTransactionService' as const,
+    ])('accept non-trailing slash %s as is', (field) => {
+      const url = faker.internet.url({ appendSlash: false });
+      const chain = chainBuilder().with(field, url).build();
 
-        const result = ChainSchema.safeParse(chain);
+      const result = ChainSchema.safeParse(chain);
 
-        expect(result.success && result.data[field]).toBe(url);
-      },
-    );
+      expect(result.success && result.data[field]).toBe(url);
+    });
 
-    it.each(['transactionService' as const, 'vpcTransactionService' as const])(
-      'should remove trailing slashes from %s',
-      (field) => {
-        const url = faker.internet.url({ appendSlash: false });
-        const chain = chainBuilder().with(field, `${url}/`).build();
+    it.each([
+      'transactionService' as const,
+      'vpcTransactionService' as const,
+    ])('should remove trailing slashes from %s', (field) => {
+      const url = faker.internet.url({ appendSlash: false });
+      const chain = chainBuilder().with(field, `${url}/`).build();
 
-        const result = ChainSchema.safeParse(chain);
+      const result = ChainSchema.safeParse(chain);
 
-        expect(result.success && result.data[field]).toBe(url);
-      },
-    );
+      expect(result.success && result.data[field]).toBe(url);
+    });
 
     it.each([
       ['chainId' as const],

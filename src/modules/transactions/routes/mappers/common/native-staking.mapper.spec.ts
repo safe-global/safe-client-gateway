@@ -789,7 +789,7 @@ describe('NativeStakingMapper', () => {
       expect(actual).toBe('NOT_STAKED');
     });
 
-    [
+    const orderedStates = [
       StakeState.Unknown,
       StakeState.Unstaked,
       StakeState.PendingQueued,
@@ -803,8 +803,9 @@ describe('NativeStakingMapper', () => {
       StakeState.WithdrawalDone,
       StakeState.ActiveSlashed,
       StakeState.ExitedSlashed,
-    ].map((state, i, arr) => {
-      const nextState = arr[i + 1];
+    ];
+    for (const [i, state] of orderedStates.entries()) {
+      const nextState = orderedStates[i + 1];
 
       it(`should return ${statusMap[state]} if ${state} is the earliest state in returned Stakes`, async () => {
         const chainId = faker.string.numeric();
@@ -826,6 +827,6 @@ describe('NativeStakingMapper', () => {
 
         expect(actual).toBe(statusMap[state]);
       });
-    });
+    }
   });
 });

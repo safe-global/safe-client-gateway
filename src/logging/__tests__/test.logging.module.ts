@@ -11,7 +11,7 @@ class TestLoggingService implements ILoggingService {
 
   constructor(
     @Inject(IConfigurationService)
-    private readonly configurationService: IConfigurationService,
+    readonly configurationService: IConfigurationService,
   ) {
     this.isSilent = configurationService.getOrThrow<boolean>('log.silent');
   }

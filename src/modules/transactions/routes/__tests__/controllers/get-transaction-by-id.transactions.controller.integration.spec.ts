@@ -1331,72 +1331,71 @@ describe('Get by id - Transactions Controller', () => {
       );
     });
 
-    it.each(Object.values(SignatureType))(
-      'should throw if a confirmation contains an invalid %s signature',
-      async (signatureType) => {
-        const chain = chainBuilder().build();
-        const signers = Array.from({ length: 2 }, () => {
-          const privateKey = generatePrivateKey();
-          return privateKeyToAccount(privateKey);
+    it.each(
+      Object.values(SignatureType),
+    )('should throw if a confirmation contains an invalid %s signature', async (signatureType) => {
+      const chain = chainBuilder().build();
+      const signers = Array.from({ length: 2 }, () => {
+        const privateKey = generatePrivateKey();
+        return privateKeyToAccount(privateKey);
+      });
+      const safe = safeBuilder()
+        .with(
+          'owners',
+          signers.map((signer) => signer.address),
+        )
+        .build();
+      const multisigTransaction = await multisigTransactionBuilder()
+        .with('safe', safe.address)
+        .with('isExecuted', false)
+        .with('nonce', safe.nonce)
+        .buildWithConfirmations({
+          chainId: chain.chainId,
+          signers,
+          safe,
+          signatureType,
         });
-        const safe = safeBuilder()
-          .with(
-            'owners',
-            signers.map((signer) => signer.address),
-          )
-          .build();
-        const multisigTransaction = await multisigTransactionBuilder()
-          .with('safe', safe.address)
-          .with('isExecuted', false)
-          .with('nonce', safe.nonce)
-          .buildWithConfirmations({
-            chainId: chain.chainId,
-            signers,
-            safe,
-            signatureType,
-          });
-        const confirmations = multisigTransaction.confirmations as NonNullable<
-          typeof multisigTransaction.confirmations
-        >;
-        const v = confirmations[0].signature?.slice(-2);
-        confirmations[0].signature = `0x${'-'.repeat(128)}${v}`;
+      const confirmations = multisigTransaction.confirmations as NonNullable<
+        typeof multisigTransaction.confirmations
+      >;
+      const v = confirmations[0].signature?.slice(-2);
+      confirmations[0].signature = `0x${'-'.repeat(128)}${v}`;
 
-        const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
-        const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
-        const getMultisigTransactionUrl = `${chain.transactionService}/api/v2/multisig-transactions/${multisigTransaction.safeTxHash}/`;
-        networkService.get.mockImplementation(({ url }) => {
-          switch (url) {
-            case getChainUrl:
-              return Promise.resolve({ data: rawify(chain), status: 200 });
-            case getMultisigTransactionUrl:
-              return Promise.resolve({
-                data: rawify(multisigToJson(multisigTransaction)),
-                status: 200,
-              });
-            case getSafeUrl:
-              return Promise.resolve({ data: rawify(safe), status: 200 });
-            default:
-              return Promise.reject(new Error(`Could not match ${url}`));
-          }
+      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
+      const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
+      const getMultisigTransactionUrl = `${chain.transactionService}/api/v2/multisig-transactions/${multisigTransaction.safeTxHash}/`;
+      networkService.get.mockImplementation(({ url }) => {
+        switch (url) {
+          case getChainUrl:
+            return Promise.resolve({ data: rawify(chain), status: 200 });
+          case getMultisigTransactionUrl:
+            return Promise.resolve({
+              data: rawify(multisigToJson(multisigTransaction)),
+              status: 200,
+            });
+          case getSafeUrl:
+            return Promise.resolve({ data: rawify(safe), status: 200 });
+          default:
+            return Promise.reject(new Error(`Could not match ${url}`));
+        }
+      });
+
+      await request(app.getHttpServer())
+        .get(
+          `/v1/chains/${chain.chainId}/transactions/multisig_${safe.address}_${multisigTransaction.safeTxHash}`,
+        )
+        .expect(502)
+        .expect({
+          message: 'Bad gateway',
+          statusCode: 502,
         });
 
-        await request(app.getHttpServer())
-          .get(
-            `/v1/chains/${chain.chainId}/transactions/multisig_${safe.address}_${multisigTransaction.safeTxHash}`,
-          )
-          .expect(502)
-          .expect({
-            message: 'Bad gateway',
-            statusCode: 502,
-          });
-
-        expect(loggingService.error).not.toHaveBeenCalledWith(
-          expect.objectContaining({
-            type: 'TRANSACTION_VALIDITY',
-          }),
-        );
-      },
-    );
+      expect(loggingService.error).not.toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'TRANSACTION_VALIDITY',
+        }),
+      );
+    });
 
     it('should throw and log if a signer is blocked', async () => {
       const chain = chainBuilder().build();

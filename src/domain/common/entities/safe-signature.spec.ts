@@ -229,23 +229,22 @@ describe('SafeSignature', () => {
   });
 
   describe('owner', () => {
-    it.each(Object.values(SignatureType))(
-      'should recover the address of a %s signature',
-      async (signatureType) => {
-        const privateKey = generatePrivateKey();
-        const signer = privateKeyToAccount(privateKey);
-        const hash = faker.string.hexadecimal({ length: 66 }) as Hash;
-        const signature = await getSignature({
-          signer,
-          hash,
-          signatureType,
-        });
+    it.each(
+      Object.values(SignatureType),
+    )('should recover the address of a %s signature', async (signatureType) => {
+      const privateKey = generatePrivateKey();
+      const signer = privateKeyToAccount(privateKey);
+      const hash = faker.string.hexadecimal({ length: 66 }) as Hash;
+      const signature = await getSignature({
+        signer,
+        hash,
+        signatureType,
+      });
 
-        const safeSignature = new SafeSignature({ signature, hash });
+      const safeSignature = new SafeSignature({ signature, hash });
 
-        expect(safeSignature.owner).toBe(signer.address);
-      },
-    );
+      expect(safeSignature.owner).toBe(signer.address);
+    });
 
     it('should memoize the owner', async () => {
       const getAddressSpy = jest.spyOn(viem, 'getAddress');

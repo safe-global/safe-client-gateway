@@ -87,24 +87,24 @@ describe('Locking event schemas', () => {
       );
     });
 
-    it.each([['amount' as const], ['logIndex' as const]])(
-      'should not allow a non-numeric string %s',
-      (field) => {
-        const lockEventItem = lockEventItemBuilder()
-          .with(field, faker.string.alpha())
-          .build();
+    it.each([
+      ['amount' as const],
+      ['logIndex' as const],
+    ])('should not allow a non-numeric string %s', (field) => {
+      const lockEventItem = lockEventItemBuilder()
+        .with(field, faker.string.alpha())
+        .build();
 
-        const result = LockEventItemSchema.safeParse(lockEventItem);
+      const result = LockEventItemSchema.safeParse(lockEventItem);
 
-        expect(!result.success && result.error.issues).toStrictEqual([
-          {
-            code: 'custom',
-            message: 'Invalid base-10 numeric string',
-            path: [field],
-          },
-        ]);
-      },
-    );
+      expect(!result.success && result.error.issues).toStrictEqual([
+        {
+          code: 'custom',
+          message: 'Invalid base-10 numeric string',
+          path: [field],
+        },
+      ]);
+    });
 
     it('should not validate an invalid LockEventItem', () => {
       const lockEventItem = { invalid: 'lockEventItem' };

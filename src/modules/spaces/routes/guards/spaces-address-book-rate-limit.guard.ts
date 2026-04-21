@@ -15,7 +15,7 @@ import { RateLimitGuard } from '@/routes/common/guards/rate-limit.guard';
 export class SpacesAddressBookRateLimitGuard extends RateLimitGuard {
   constructor(
     @Inject(IConfigurationService)
-    private readonly configurationService: IConfigurationService,
+    readonly configurationService: IConfigurationService,
     @Inject(CacheService) cacheService: ICacheService,
     @Inject(LoggingService) loggingService: ILoggingService,
   ) {

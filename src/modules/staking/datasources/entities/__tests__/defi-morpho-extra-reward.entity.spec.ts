@@ -27,24 +27,22 @@ describe('DefiMorphoExtraRewardSchema', () => {
     );
   });
 
-  it.each(['claimable' as const, 'claimable_next' as const])(
-    'should not allow a non-numerical string for %s',
-    (field) => {
-      const defiMorphoExtraReward = defiMorphoExtraRewardBuilder()
-        .with(field, 'not-a-number')
-        .build();
+  it.each([
+    'claimable' as const,
+    'claimable_next' as const,
+  ])('should not allow a non-numerical string for %s', (field) => {
+    const defiMorphoExtraReward = defiMorphoExtraRewardBuilder()
+      .with(field, 'not-a-number')
+      .build();
 
-      const result = DefiMorphoExtraRewardSchema.safeParse(
-        defiMorphoExtraReward,
-      );
+    const result = DefiMorphoExtraRewardSchema.safeParse(defiMorphoExtraReward);
 
-      expect(!result.success && result.error.issues[0]).toStrictEqual({
-        code: 'custom',
-        message: 'Invalid base-10 numeric string',
-        path: [field],
-      });
-    },
-  );
+    expect(!result.success && result.error.issues[0]).toStrictEqual({
+      code: 'custom',
+      message: 'Invalid base-10 numeric string',
+      path: [field],
+    });
+  });
 
   it('should not validate a non-DefiMorphoExtraRewardSchema', () => {
     const defiMorphoExtraReward = {

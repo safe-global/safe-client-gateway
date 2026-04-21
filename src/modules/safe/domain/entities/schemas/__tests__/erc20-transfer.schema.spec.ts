@@ -35,21 +35,20 @@ describe('Erc20TransferSchema', () => {
     expect(result.success).toBe(false);
   });
 
-  it.each(['to' as const, 'from' as const, 'tokenAddress' as const])(
-    `should checksum the %s`,
-    (field) => {
-      const nonChecksummedAddress = faker.finance
-        .ethereumAddress()
-        .toLowerCase();
-      const erc20Transfer = erc20TransferBuilder()
-        .with(field, nonChecksummedAddress as Address)
-        .build();
+  it.each([
+    'to' as const,
+    'from' as const,
+    'tokenAddress' as const,
+  ])(`should checksum the %s`, (field) => {
+    const nonChecksummedAddress = faker.finance.ethereumAddress().toLowerCase();
+    const erc20Transfer = erc20TransferBuilder()
+      .with(field, nonChecksummedAddress as Address)
+      .build();
 
-      const result = Erc20TransferSchema.safeParse(erc20Transfer);
+    const result = Erc20TransferSchema.safeParse(erc20Transfer);
 
-      expect(result.success && result.data[field]).toBe(
-        getAddress(nonChecksummedAddress),
-      );
-    },
-  );
+    expect(result.success && result.data[field]).toBe(
+      getAddress(nonChecksummedAddress),
+    );
+  });
 });

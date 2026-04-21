@@ -12,27 +12,26 @@ describe('DedicatedStakingStatsSchema', () => {
     expect(result.success).toBe(true);
   });
 
-  it.each(['last_1d' as const, 'last_7d' as const, 'last_30d' as const])(
-    'should not validate numeric string %s values',
-    (key) => {
-      const dedicatedStakingStats = dedicatedStakingStatsBuilder().build();
-      dedicatedStakingStats.gross_apy[key] =
-        faker.string.numeric() as unknown as number;
+  it.each([
+    'last_1d' as const,
+    'last_7d' as const,
+    'last_30d' as const,
+  ])('should not validate numeric string %s values', (key) => {
+    const dedicatedStakingStats = dedicatedStakingStatsBuilder().build();
+    dedicatedStakingStats.gross_apy[key] =
+      faker.string.numeric() as unknown as number;
 
-      const result = DedicatedStakingStatsSchema.safeParse(
-        dedicatedStakingStats,
-      );
+    const result = DedicatedStakingStatsSchema.safeParse(dedicatedStakingStats);
 
-      expect(!result.success && result.error.issues).toStrictEqual([
-        {
-          code: 'invalid_type',
-          expected: 'number',
-          message: 'Invalid input: expected number, received string',
-          path: ['gross_apy', key],
-        },
-      ]);
-    },
-  );
+    expect(!result.success && result.error.issues).toStrictEqual([
+      {
+        code: 'invalid_type',
+        expected: 'number',
+        message: 'Invalid input: expected number, received string',
+        path: ['gross_apy', key],
+      },
+    ]);
+  });
 
   it('should coerce the updated_at field to a date', () => {
     const updatedAt = faker.date.recent().toISOString().slice(0, 10);

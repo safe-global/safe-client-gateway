@@ -287,47 +287,47 @@ describe('NetworkModule', () => {
       expect(fetchMock).toHaveBeenCalledTimes(1);
     });
 
-    it.each(['POST', 'DELETE'])(
-      'caches %s requests based on URL and options',
-      async (method) => {
-        const json = fakeJson();
-        const response = {
-          ok: true,
-          json: () => Promise.resolve(json),
-        } as Response;
-        fetchMock.mockResolvedValue(response);
+    it.each([
+      'POST',
+      'DELETE',
+    ])('caches %s requests based on URL and options', async (method) => {
+      const json = fakeJson();
+      const response = {
+        ok: true,
+        json: () => Promise.resolve(json),
+      } as Response;
+      fetchMock.mockResolvedValue(response);
 
-        const url = faker.internet.url({ appendSlash: false });
-        const options = {
-          method,
-          body: JSON.stringify({ example: 'data' }),
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        };
+      const url = faker.internet.url({ appendSlash: false });
+      const options = {
+        method,
+        body: JSON.stringify({ example: 'data' }),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      };
 
-        const pendingRequest = fetchClient(url, options);
-        await fetchClient(url, options);
-        await pendingRequest;
+      const pendingRequest = fetchClient(url, options);
+      await fetchClient(url, options);
+      await pendingRequest;
 
-        expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(fetchMock).toHaveBeenCalledTimes(1);
 
-        const key = hashSha1(
-          JSON.stringify({ url, ...options, circuitBreakerKey: '' }),
-        );
-        expect(loggingService.debug).toHaveBeenCalledTimes(2);
-        expect(loggingService.debug).toHaveBeenNthCalledWith(1, {
-          type: 'EXTERNAL_REQUEST_CACHE_MISS',
-          url,
-          key,
-        });
-        expect(loggingService.debug).toHaveBeenNthCalledWith(2, {
-          type: 'EXTERNAL_REQUEST_CACHE_HIT',
-          url,
-          key,
-        });
-      },
-    );
+      const key = hashSha1(
+        JSON.stringify({ url, ...options, circuitBreakerKey: '' }),
+      );
+      expect(loggingService.debug).toHaveBeenCalledTimes(2);
+      expect(loggingService.debug).toHaveBeenNthCalledWith(1, {
+        type: 'EXTERNAL_REQUEST_CACHE_MISS',
+        url,
+        key,
+      });
+      expect(loggingService.debug).toHaveBeenNthCalledWith(2, {
+        type: 'EXTERNAL_REQUEST_CACHE_HIT',
+        url,
+        key,
+      });
+    });
 
     it('clears the cache after successful request', async () => {
       const json = fakeJson();

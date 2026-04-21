@@ -83,17 +83,16 @@ describe('NetworkStatsSchema', () => {
     expect(result.success && result.data.updated_at).toStrictEqual(updatedAt);
   });
 
-  it.each(Object.keys(NetworkStatsSchema.shape) as Array<keyof NetworkStats>)(
-    'should not validate missing %s values',
-    (key) => {
-      const networkStats = networkStatsBuilder().build();
-      delete networkStats[key];
+  it.each(
+    Object.keys(NetworkStatsSchema.shape) as Array<keyof NetworkStats>,
+  )('should not validate missing %s values', (key) => {
+    const networkStats = networkStatsBuilder().build();
+    delete networkStats[key];
 
-      const result = NetworkStatsSchema.safeParse(networkStats);
+    const result = NetworkStatsSchema.safeParse(networkStats);
 
-      expect(!result.success && result.error.issues[0].path[0]).toBe(key);
-    },
-  );
+    expect(!result.success && result.error.issues[0].path[0]).toBe(key);
+  });
 
   it('should not validate an invalid NetworkStats object', () => {
     const networkStats = {

@@ -69,44 +69,43 @@ describe('TransactionVerifierHelper', () => {
   });
 
   describe('verifyApiTransaction', () => {
-    it.each(Object.values(SignatureType))(
-      'should allow a transaction with %s signature',
-      async (signatureType) => {
-        const chainId = faker.string.numeric();
-        const signers = Array.from(
-          { length: faker.number.int({ min: 1, max: 5 }) },
-          () => {
-            const privateKey = generatePrivateKey();
-            return privateKeyToAccount(privateKey);
-          },
-        );
-        const safe = safeBuilder()
-          .with(
-            'owners',
-            signers.map((s) => s.address),
-          )
-          .build();
-        const transaction = await multisigTransactionBuilder()
-          .with('safe', safe.address)
-          .with('isExecuted', false)
-          .with('nonce', safe.nonce)
-          .buildWithConfirmations({
-            chainId,
-            signers: faker.helpers.arrayElements(signers, {
-              min: 1,
-              max: signers.length,
-            }),
-            safe,
-            signatureType,
-          });
+    it.each(
+      Object.values(SignatureType),
+    )('should allow a transaction with %s signature', async (signatureType) => {
+      const chainId = faker.string.numeric();
+      const signers = Array.from(
+        { length: faker.number.int({ min: 1, max: 5 }) },
+        () => {
+          const privateKey = generatePrivateKey();
+          return privateKeyToAccount(privateKey);
+        },
+      );
+      const safe = safeBuilder()
+        .with(
+          'owners',
+          signers.map((s) => s.address),
+        )
+        .build();
+      const transaction = await multisigTransactionBuilder()
+        .with('safe', safe.address)
+        .with('isExecuted', false)
+        .with('nonce', safe.nonce)
+        .buildWithConfirmations({
+          chainId,
+          signers: faker.helpers.arrayElements(signers, {
+            min: 1,
+            max: signers.length,
+          }),
+          safe,
+          signatureType,
+        });
 
-        expect(() => {
-          return target.verifyApiTransaction({ chainId, safe, transaction });
-        }).not.toThrow();
+      expect(() => {
+        return target.verifyApiTransaction({ chainId, safe, transaction });
+      }).not.toThrow();
 
-        expect(mockLoggingRepository.error).not.toHaveBeenCalled();
-      },
-    );
+      expect(mockLoggingRepository.error).not.toHaveBeenCalled();
+    });
 
     it('should allow a transaction with a mixture of signature type confirmations', async () => {
       const chainId = faker.string.numeric();
@@ -429,33 +428,32 @@ describe('TransactionVerifierHelper', () => {
       expect(mockLoggingRepository.error).not.toHaveBeenCalled();
     });
 
-    it.each(Object.values(SignatureType))(
-      'should throw if a confirmation contains an invalid %s signature',
-      async (signatureType) => {
-        const chainId = faker.string.numeric();
-        const privateKey = generatePrivateKey();
-        const signer = privateKeyToAccount(privateKey);
-        const safe = safeBuilder().with('owners', [signer.address]).build();
-        const transaction = await multisigTransactionBuilder()
-          .with('safe', safe.address)
-          .with('isExecuted', false)
-          .with('nonce', safe.nonce)
-          .buildWithConfirmations({
-            chainId,
-            signers: [signer],
-            safe,
-            signatureType,
-          });
-        const v = transaction.confirmations?.[0].signature?.slice(-2);
-        transaction.confirmations![0].signature = `0x${'-'.repeat(128)}${v}`;
+    it.each(
+      Object.values(SignatureType),
+    )('should throw if a confirmation contains an invalid %s signature', async (signatureType) => {
+      const chainId = faker.string.numeric();
+      const privateKey = generatePrivateKey();
+      const signer = privateKeyToAccount(privateKey);
+      const safe = safeBuilder().with('owners', [signer.address]).build();
+      const transaction = await multisigTransactionBuilder()
+        .with('safe', safe.address)
+        .with('isExecuted', false)
+        .with('nonce', safe.nonce)
+        .buildWithConfirmations({
+          chainId,
+          signers: [signer],
+          safe,
+          signatureType,
+        });
+      const v = transaction.confirmations?.[0].signature?.slice(-2);
+      transaction.confirmations![0].signature = `0x${'-'.repeat(128)}${v}`;
 
-        expect(() => {
-          return target.verifyApiTransaction({ chainId, safe, transaction });
-        }).toThrow(new Error('Could not recover address'));
+      expect(() => {
+        return target.verifyApiTransaction({ chainId, safe, transaction });
+      }).toThrow(new Error('Could not recover address'));
 
-        expect(mockLoggingRepository.error).not.toHaveBeenCalled();
-      },
-    );
+      expect(mockLoggingRepository.error).not.toHaveBeenCalled();
+    });
 
     it('should throw and log if a signer is blocked', async () => {
       const privateKey = generatePrivateKey();
@@ -609,59 +607,58 @@ describe('TransactionVerifierHelper', () => {
   });
 
   describe('verifyProposal', () => {
-    it.each(Object.values(SignatureType))(
-      'should allow a transaction with %s signature',
-      async (signatureType) => {
-        const chainId = faker.string.numeric();
-        const signers = Array.from(
-          { length: faker.number.int({ min: 1, max: 5 }) },
-          () => {
-            const privateKey = generatePrivateKey();
-            return privateKeyToAccount(privateKey);
-          },
-        );
-        const safe = safeBuilder()
-          .with(
-            'owners',
-            signers.map((s) => s.address),
-          )
-          .build();
-        const transaction = await multisigTransactionBuilder()
-          .with('safe', safe.address)
-          .with('nonce', safe.nonce)
-          .with('operation', Operation.CALL)
-          .buildWithConfirmations({
-            chainId,
-            signers: faker.helpers.arrayElements(signers, {
-              min: 1,
-              max: signers.length,
-            }),
-            safe,
-            signatureType,
-          });
-        const proposal = proposeTransactionDtoBuilder()
-          .with('to', transaction.to)
-          .with('value', transaction.value)
-          .with('data', transaction.data)
-          .with('nonce', transaction.nonce.toString())
-          .with('operation', transaction.operation)
-          .with('safeTxGas', transaction.safeTxGas!.toString())
-          .with('baseGas', transaction.baseGas!.toString())
-          .with('gasPrice', transaction.gasPrice as string)
-          .with('gasToken', transaction.gasToken as Address)
-          .with('refundReceiver', transaction.refundReceiver)
-          .with('safeTxHash', transaction.safeTxHash)
-          .with('sender', transaction.confirmations![0].owner)
-          .with('signature', transaction.confirmations![0].signature)
-          .build();
+    it.each(
+      Object.values(SignatureType),
+    )('should allow a transaction with %s signature', async (signatureType) => {
+      const chainId = faker.string.numeric();
+      const signers = Array.from(
+        { length: faker.number.int({ min: 1, max: 5 }) },
+        () => {
+          const privateKey = generatePrivateKey();
+          return privateKeyToAccount(privateKey);
+        },
+      );
+      const safe = safeBuilder()
+        .with(
+          'owners',
+          signers.map((s) => s.address),
+        )
+        .build();
+      const transaction = await multisigTransactionBuilder()
+        .with('safe', safe.address)
+        .with('nonce', safe.nonce)
+        .with('operation', Operation.CALL)
+        .buildWithConfirmations({
+          chainId,
+          signers: faker.helpers.arrayElements(signers, {
+            min: 1,
+            max: signers.length,
+          }),
+          safe,
+          signatureType,
+        });
+      const proposal = proposeTransactionDtoBuilder()
+        .with('to', transaction.to)
+        .with('value', transaction.value)
+        .with('data', transaction.data)
+        .with('nonce', transaction.nonce.toString())
+        .with('operation', transaction.operation)
+        .with('safeTxGas', transaction.safeTxGas!.toString())
+        .with('baseGas', transaction.baseGas!.toString())
+        .with('gasPrice', transaction.gasPrice as string)
+        .with('gasToken', transaction.gasToken as Address)
+        .with('refundReceiver', transaction.refundReceiver)
+        .with('safeTxHash', transaction.safeTxHash)
+        .with('sender', transaction.confirmations![0].owner)
+        .with('signature', transaction.confirmations![0].signature)
+        .build();
 
-        await expect(
-          target.verifyProposal({ chainId, safe, proposal, transaction }),
-        ).resolves.not.toThrow();
+      await expect(
+        target.verifyProposal({ chainId, safe, proposal, transaction }),
+      ).resolves.not.toThrow();
 
-        expect(mockLoggingRepository.error).not.toHaveBeenCalled();
-      },
-    );
+      expect(mockLoggingRepository.error).not.toHaveBeenCalled();
+    });
 
     it('should allow a transaction with concatenated signatures', async () => {
       const chainId = faker.string.numeric();
@@ -1338,60 +1335,59 @@ describe('TransactionVerifierHelper', () => {
       expect(mockLoggingRepository.error).not.toHaveBeenCalled();
     });
 
-    it.each(Object.values(SignatureType))(
-      'should throw if a %s signature is invalid',
-      async (signatureType) => {
-        const chainId = faker.string.numeric();
-        const signers = Array.from(
-          { length: faker.number.int({ min: 1, max: 5 }) },
-          () => {
-            const privateKey = generatePrivateKey();
-            return privateKeyToAccount(privateKey);
-          },
-        );
-        const safe = safeBuilder()
-          .with(
-            'owners',
-            signers.map((s) => s.address),
-          )
-          .build();
-        const transaction = await multisigTransactionBuilder()
-          .with('safe', safe.address)
-          .with('nonce', safe.nonce)
-          .with('operation', Operation.CALL)
-          .buildWithConfirmations({
-            chainId,
-            signers: faker.helpers.arrayElements(signers, {
-              min: 1,
-              max: signers.length,
-            }),
-            safe,
-            signatureType,
-          });
-        const v = transaction.confirmations?.[0].signature?.slice(-2);
-        const proposal = proposeTransactionDtoBuilder()
-          .with('to', transaction.to)
-          .with('value', transaction.value)
-          .with('data', transaction.data)
-          .with('nonce', transaction.nonce.toString())
-          .with('operation', transaction.operation)
-          .with('safeTxGas', transaction.safeTxGas!.toString())
-          .with('baseGas', transaction.baseGas!.toString())
-          .with('gasPrice', transaction.gasPrice as string)
-          .with('gasToken', transaction.gasToken as Address)
-          .with('refundReceiver', transaction.refundReceiver)
-          .with('safeTxHash', transaction.safeTxHash)
-          .with('sender', transaction.confirmations![0].owner)
-          .with('signature', `0x${'-'.repeat(128)}${v}`)
-          .build();
+    it.each(
+      Object.values(SignatureType),
+    )('should throw if a %s signature is invalid', async (signatureType) => {
+      const chainId = faker.string.numeric();
+      const signers = Array.from(
+        { length: faker.number.int({ min: 1, max: 5 }) },
+        () => {
+          const privateKey = generatePrivateKey();
+          return privateKeyToAccount(privateKey);
+        },
+      );
+      const safe = safeBuilder()
+        .with(
+          'owners',
+          signers.map((s) => s.address),
+        )
+        .build();
+      const transaction = await multisigTransactionBuilder()
+        .with('safe', safe.address)
+        .with('nonce', safe.nonce)
+        .with('operation', Operation.CALL)
+        .buildWithConfirmations({
+          chainId,
+          signers: faker.helpers.arrayElements(signers, {
+            min: 1,
+            max: signers.length,
+          }),
+          safe,
+          signatureType,
+        });
+      const v = transaction.confirmations?.[0].signature?.slice(-2);
+      const proposal = proposeTransactionDtoBuilder()
+        .with('to', transaction.to)
+        .with('value', transaction.value)
+        .with('data', transaction.data)
+        .with('nonce', transaction.nonce.toString())
+        .with('operation', transaction.operation)
+        .with('safeTxGas', transaction.safeTxGas!.toString())
+        .with('baseGas', transaction.baseGas!.toString())
+        .with('gasPrice', transaction.gasPrice as string)
+        .with('gasToken', transaction.gasToken as Address)
+        .with('refundReceiver', transaction.refundReceiver)
+        .with('safeTxHash', transaction.safeTxHash)
+        .with('sender', transaction.confirmations![0].owner)
+        .with('signature', `0x${'-'.repeat(128)}${v}`)
+        .build();
 
-        await expect(
-          target.verifyProposal({ chainId, safe, proposal, transaction }),
-        ).rejects.toThrow(new Error('Could not recover address'));
+      await expect(
+        target.verifyProposal({ chainId, safe, proposal, transaction }),
+      ).rejects.toThrow(new Error('Could not recover address'));
 
-        expect(mockLoggingRepository.error).not.toHaveBeenCalled();
-      },
-    );
+      expect(mockLoggingRepository.error).not.toHaveBeenCalled();
+    });
 
     it('should throw and log if a signer is blocked', async () => {
       const chainId = faker.string.numeric();
@@ -1758,53 +1754,52 @@ describe('TransactionVerifierHelper', () => {
   });
 
   describe('verifyConfirmation', () => {
-    it.each(Object.values(SignatureType))(
-      'should allow a transaction with %s signature',
-      async (signatureType) => {
-        const chainId = faker.string.numeric();
-        const signers = Array.from(
-          { length: faker.number.int({ min: 1, max: 5 }) },
-          () => {
-            const privateKey = generatePrivateKey();
-            return privateKeyToAccount(privateKey);
-          },
-        );
-        const safe = safeBuilder()
-          .with(
-            'owners',
-            signers.map((s) => s.address),
-          )
-          .build();
-        const transaction = await multisigTransactionBuilder()
-          .with('safe', safe.address)
-          .with('isExecuted', false)
-          .with('nonce', safe.nonce)
-          .buildWithConfirmations({
-            chainId,
-            signers: faker.helpers.arrayElements(signers, {
-              min: 1,
-              max: signers.length,
+    it.each(
+      Object.values(SignatureType),
+    )('should allow a transaction with %s signature', async (signatureType) => {
+      const chainId = faker.string.numeric();
+      const signers = Array.from(
+        { length: faker.number.int({ min: 1, max: 5 }) },
+        () => {
+          const privateKey = generatePrivateKey();
+          return privateKeyToAccount(privateKey);
+        },
+      );
+      const safe = safeBuilder()
+        .with(
+          'owners',
+          signers.map((s) => s.address),
+        )
+        .build();
+      const transaction = await multisigTransactionBuilder()
+        .with('safe', safe.address)
+        .with('isExecuted', false)
+        .with('nonce', safe.nonce)
+        .buildWithConfirmations({
+          chainId,
+          signers: faker.helpers.arrayElements(signers, {
+            min: 1,
+            max: signers.length,
+          }),
+          safe,
+          signatureType,
+        });
+
+      expect(() => {
+        return target.verifyConfirmation({
+          chainId,
+          safe,
+          transaction,
+          signature: faker.helpers.arrayElement(
+            transaction.confirmations!.map((confirmation) => {
+              return confirmation.signature as Hex;
             }),
-            safe,
-            signatureType,
-          });
+          ),
+        });
+      }).not.toThrow();
 
-        expect(() => {
-          return target.verifyConfirmation({
-            chainId,
-            safe,
-            transaction,
-            signature: faker.helpers.arrayElement(
-              transaction.confirmations!.map((confirmation) => {
-                return confirmation.signature as Hex;
-              }),
-            ),
-          });
-        }).not.toThrow();
-
-        expect(mockLoggingRepository.error).not.toHaveBeenCalled();
-      },
-    );
+      expect(mockLoggingRepository.error).not.toHaveBeenCalled();
+    });
 
     it('should throw for executed transactions', async () => {
       const chainId = faker.string.numeric();
@@ -2116,54 +2111,53 @@ describe('TransactionVerifierHelper', () => {
       expect(mockLoggingRepository.error).not.toHaveBeenCalled();
     });
 
-    it.each(Object.values(SignatureType))(
-      'should throw if a %s signature is invalid',
-      async (signatureType) => {
-        const chainId = faker.string.numeric();
-        const signers = Array.from(
-          { length: faker.number.int({ min: 1, max: 5 }) },
-          () => {
-            const privateKey = generatePrivateKey();
-            return privateKeyToAccount(privateKey);
-          },
-        );
-        const safe = safeBuilder()
-          .with(
-            'owners',
-            signers.map((s) => s.address),
-          )
-          .build();
-        const transaction = await multisigTransactionBuilder()
-          .with('safe', safe.address)
-          .with('isExecuted', false)
-          .with('nonce', safe.nonce)
-          .buildWithConfirmations({
-            chainId,
-            signers: faker.helpers.arrayElements(signers, {
-              min: 1,
-              max: signers.length,
-            }),
-            safe,
-            signatureType,
-          });
+    it.each(
+      Object.values(SignatureType),
+    )('should throw if a %s signature is invalid', async (signatureType) => {
+      const chainId = faker.string.numeric();
+      const signers = Array.from(
+        { length: faker.number.int({ min: 1, max: 5 }) },
+        () => {
+          const privateKey = generatePrivateKey();
+          return privateKeyToAccount(privateKey);
+        },
+      );
+      const safe = safeBuilder()
+        .with(
+          'owners',
+          signers.map((s) => s.address),
+        )
+        .build();
+      const transaction = await multisigTransactionBuilder()
+        .with('safe', safe.address)
+        .with('isExecuted', false)
+        .with('nonce', safe.nonce)
+        .buildWithConfirmations({
+          chainId,
+          signers: faker.helpers.arrayElements(signers, {
+            min: 1,
+            max: signers.length,
+          }),
+          safe,
+          signatureType,
+        });
 
-        const signature = transaction.confirmations?.[0].signature as Hex;
-        // Replace one hex digit in the r component with 'g' (invalid hex char)
-        const invalidSignature =
-          `${signature.slice(0, 65)}g${signature.slice(66)}` as Hex;
+      const signature = transaction.confirmations?.[0].signature as Hex;
+      // Replace one hex digit in the r component with 'g' (invalid hex char)
+      const invalidSignature =
+        `${signature.slice(0, 65)}g${signature.slice(66)}` as Hex;
 
-        expect(() => {
-          return target.verifyConfirmation({
-            chainId,
-            safe,
-            transaction,
-            signature: invalidSignature,
-          });
-        }).toThrow(new Error('Could not recover address'));
+      expect(() => {
+        return target.verifyConfirmation({
+          chainId,
+          safe,
+          transaction,
+          signature: invalidSignature,
+        });
+      }).toThrow(new Error('Could not recover address'));
 
-        expect(mockLoggingRepository.error).not.toHaveBeenCalled();
-      },
-    );
+      expect(mockLoggingRepository.error).not.toHaveBeenCalled();
+    });
 
     it('should throw and log if a signer is blocked', async () => {
       const [blockedSigner, ...otherSigners] = Array.from(

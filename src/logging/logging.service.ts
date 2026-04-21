@@ -18,7 +18,7 @@ export class RequestScopedLoggingService implements ILoggingService {
 
   constructor(
     @Inject(IConfigurationService)
-    private readonly configurationService: IConfigurationService,
+    readonly configurationService: IConfigurationService,
     @Inject('Logger') private readonly logger: winston.Logger,
     private readonly cls: ClsService,
   ) {

@@ -22,31 +22,25 @@ describe('assert-authenticated.utils', () => {
     it.each([
       ['SIWE', siweAuthPayloadDtoBuilder],
       ['OIDC', oidcAuthPayloadDtoBuilder],
-    ] as const)(
-      'should not throw for %s authenticated payload',
-      (_label, builder) => {
-        const authPayload = new AuthPayload(builder().build());
-        expect(() => assertAuthenticated(authPayload)).not.toThrow();
-      },
-    );
+    ] as const)('should not throw for %s authenticated payload', (_label, builder) => {
+      const authPayload = new AuthPayload(builder().build());
+      expect(() => assertAuthenticated(authPayload)).not.toThrow();
+    });
   });
 
   describe('getAuthenticatedUserIdOrFail', () => {
     it.each([
       ['SIWE', siweAuthPayloadDtoBuilder],
       ['OIDC', oidcAuthPayloadDtoBuilder],
-    ] as const)(
-      'should return numeric userId for %s payload',
-      (_label, builder) => {
-        const dto = builder().build();
-        const authPayload = new AuthPayload(dto);
+    ] as const)('should return numeric userId for %s payload', (_label, builder) => {
+      const dto = builder().build();
+      const authPayload = new AuthPayload(dto);
 
-        const userId = getAuthenticatedUserIdOrFail(authPayload);
+      const userId = getAuthenticatedUserIdOrFail(authPayload);
 
-        expect(userId).toBe(Number(dto.sub));
-        expect(Number.isInteger(userId)).toBe(true);
-      },
-    );
+      expect(userId).toBe(Number(dto.sub));
+      expect(Number.isInteger(userId)).toBe(true);
+    });
 
     it('should throw UnauthorizedException for unauthenticated payload', () => {
       expect(() => getAuthenticatedUserIdOrFail(new AuthPayload())).toThrow(

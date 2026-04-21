@@ -30,20 +30,20 @@ describe('ChainUpdateEventSchema', () => {
     ]);
   });
 
-  it.each(['type' as const, 'chainId' as const])(
-    'should not allow a missing %s',
-    (field) => {
-      const chainUpdateEvent = chainUpdateEventBuilder().build();
-      delete chainUpdateEvent[field];
+  it.each([
+    'type' as const,
+    'chainId' as const,
+  ])('should not allow a missing %s', (field) => {
+    const chainUpdateEvent = chainUpdateEventBuilder().build();
+    delete chainUpdateEvent[field];
 
-      const result = ChainUpdateEventSchema.safeParse(chainUpdateEvent);
+    const result = ChainUpdateEventSchema.safeParse(chainUpdateEvent);
 
-      expect(
-        !result.success &&
-          result.error.issues.length === 1 &&
-          result.error.issues[0].path.length === 1 &&
-          result.error.issues[0].path[0] === field,
-      ).toBe(true);
-    },
-  );
+    expect(
+      !result.success &&
+        result.error.issues.length === 1 &&
+        result.error.issues[0].path.length === 1 &&
+        result.error.issues[0].path[0] === field,
+    ).toBe(true);
+  });
 });

@@ -89,14 +89,11 @@ describe('Hook Events for Notifications', () => {
       updatedDelegateEventBuilder().build(),
       deletedDelegateEventBuilder().build(),
     ].map((event) => [event.type, event]),
-  )(
-    'should not enqueue %s events when chain is unsupported',
-    async (_, event) => {
-      await hooksRepository.onEvent(event);
+  )('should not enqueue %s events when chain is unsupported', async (_, event) => {
+    await hooksRepository.onEvent(event);
 
-      expect(pushNotificationService.enqueueEvent).not.toHaveBeenCalled();
-    },
-  );
+    expect(pushNotificationService.enqueueEvent).not.toHaveBeenCalled();
+  });
 
   it('should enqueue CHAIN_UPDATE events regardless of chain support', async () => {
     const event = chainUpdateEventBuilder().build();

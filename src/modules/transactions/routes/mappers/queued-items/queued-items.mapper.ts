@@ -14,7 +14,6 @@ import {
 } from '@/modules/transactions/routes/entities/queued-items/label-queued-item.entity';
 import { TransactionQueuedItem } from '@/modules/transactions/routes/entities/queued-items/transaction-queued-item.entity';
 import { MultisigTransactionMapper } from '@/modules/transactions/routes/mappers/multisig-transactions/multisig-transaction.mapper';
-import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
 
 class TransactionGroup {
   nonce!: number;
@@ -27,7 +26,6 @@ export class QueuedItemsMapper {
     @Inject(IDataDecoderRepository)
     private readonly dataDecoderRepository: IDataDecoderRepository,
     private readonly mapper: MultisigTransactionMapper,
-    private readonly addressInfoHelper: AddressInfoHelper,
   ) {}
 
   async getQueuedItems(

@@ -48,33 +48,34 @@ describe.each([
     ]);
   });
 
-  it.each(['address' as const, 'delegate' as const, 'delegator' as const])(
-    'should checksum %s',
-    (field) => {
-      const nonChecksummedAddress = faker.finance.ethereumAddress();
-      const event = builder()
-        .with(field, nonChecksummedAddress as Address)
-        .build();
+  it.each([
+    'address' as const,
+    'delegate' as const,
+    'delegator' as const,
+  ])('should checksum %s', (field) => {
+    const nonChecksummedAddress = faker.finance.ethereumAddress();
+    const event = builder()
+      .with(field, nonChecksummedAddress as Address)
+      .build();
 
-      const result = Schema.safeParse(event);
+    const result = Schema.safeParse(event);
 
-      expect(result.success && result.data[field]).toBe(
-        getAddress(nonChecksummedAddress),
-      );
-    },
-  );
+    expect(result.success && result.data[field]).toBe(
+      getAddress(nonChecksummedAddress),
+    );
+  });
 
-  it.each(['address' as const, 'expiryDateSeconds' as const])(
-    'should allow nullish %s, defaulting to null',
-    (field) => {
-      const event = builder().build();
-      delete event[field];
+  it.each([
+    'address' as const,
+    'expiryDateSeconds' as const,
+  ])('should allow nullish %s, defaulting to null', (field) => {
+    const event = builder().build();
+    delete event[field];
 
-      const result = Schema.safeParse(event);
+    const result = Schema.safeParse(event);
 
-      expect(result.success && result.data[field]).toBe(null);
-    },
-  );
+    expect(result.success && result.data[field]).toBe(null);
+  });
 
   it('should throw if the event is invalid', () => {
     const event = {

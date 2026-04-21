@@ -29,8 +29,8 @@ export class AwsCloudStorageApiService implements ICloudStorageApiService {
   private readonly s3Client: S3;
 
   constructor(
-    @Inject(AWS_ACCESS_KEY_ID) private readonly accessKeyId: string,
-    @Inject(AWS_SECRET_ACCESS_KEY) private readonly secretAccessKey: string,
+    @Inject(AWS_ACCESS_KEY_ID) readonly accessKeyId: string,
+    @Inject(AWS_SECRET_ACCESS_KEY) readonly secretAccessKey: string,
     @Inject(AWS_BUCKET_NAME) private readonly bucket: string,
     @Inject(AWS_BASE_PATH) private readonly basePath: string,
     @Inject(LoggingService)

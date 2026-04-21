@@ -150,7 +150,7 @@ export class PostgresDatabaseMigrator {
       .map((file) => {
         return {
           path: join(path, file),
-          id: Number.parseInt(file.slice(0, 5)),
+          id: Number.parseInt(file.slice(0, 5), 10),
           name: file.slice(6),
         };
       });

@@ -45,49 +45,50 @@ describe('Page schema factory', () => {
       });
     });
 
-    it.each(['next' as const, 'previous' as const])(
-      'should expect a string %s',
-      (key) => {
-        const results = faker.helpers.multiple(() => faker.lorem.word(), {
-          count: { min: 1, max: 5 },
-        });
-        const page = pageBuilder()
-          .with('results', results)
-          .with('count', results.length)
-          .with(key, faker.number.int() as unknown as string)
-          .build();
-        const Schema = buildPageSchema(z.string());
+    it.each([
+      'next' as const,
+      'previous' as const,
+    ])('should expect a string %s', (key) => {
+      const results = faker.helpers.multiple(() => faker.lorem.word(), {
+        count: { min: 1, max: 5 },
+      });
+      const page = pageBuilder()
+        .with('results', results)
+        .with('count', results.length)
+        .with(key, faker.number.int() as unknown as string)
+        .build();
+      const Schema = buildPageSchema(z.string());
 
-        const result = Schema.safeParse(page);
+      const result = Schema.safeParse(page);
 
-        expect(!result.success && result.error.issues.length).toBe(1);
-        expect(!result.success && result.error.issues[0]).toStrictEqual({
-          code: 'invalid_type',
-          expected: 'string',
-          message: 'Invalid input: expected string, received number',
-          path: [key],
-        });
-      },
-    );
+      expect(!result.success && result.error.issues.length).toBe(1);
+      expect(!result.success && result.error.issues[0]).toStrictEqual({
+        code: 'invalid_type',
+        expected: 'string',
+        message: 'Invalid input: expected string, received number',
+        path: [key],
+      });
+    });
 
-    it.each(['count' as const, 'next' as const, 'previous' as const])(
-      'should allow a nullable %s',
-      (key) => {
-        const results = faker.helpers.multiple(() => faker.lorem.word(), {
-          count: { min: 1, max: 5 },
-        });
-        const page = pageBuilder()
-          .with('results', results)
-          .with('count', results.length)
-          .with(key, null)
-          .build();
-        const Schema = buildPageSchema(z.string());
+    it.each([
+      'count' as const,
+      'next' as const,
+      'previous' as const,
+    ])('should allow a nullable %s', (key) => {
+      const results = faker.helpers.multiple(() => faker.lorem.word(), {
+        count: { min: 1, max: 5 },
+      });
+      const page = pageBuilder()
+        .with('results', results)
+        .with('count', results.length)
+        .with(key, null)
+        .build();
+      const Schema = buildPageSchema(z.string());
 
-        const result = Schema.safeParse(page);
+      const result = Schema.safeParse(page);
 
-        expect(result.success);
-      },
-    );
+      expect(result.success);
+    });
   });
 
   describe('buildLenientPageSchema', () => {
@@ -127,49 +128,50 @@ describe('Page schema factory', () => {
       });
     });
 
-    it.each(['next' as const, 'previous' as const])(
-      'should expect a string %s',
-      (key) => {
-        const results = faker.helpers.multiple(() => faker.lorem.word(), {
-          count: { min: 1, max: 5 },
-        });
-        const page = pageBuilder()
-          .with('results', results)
-          .with('count', results.length)
-          .with(key, faker.number.int() as unknown as string)
-          .build();
-        const Schema = buildLenientPageSchema(z.string());
+    it.each([
+      'next' as const,
+      'previous' as const,
+    ])('should expect a string %s', (key) => {
+      const results = faker.helpers.multiple(() => faker.lorem.word(), {
+        count: { min: 1, max: 5 },
+      });
+      const page = pageBuilder()
+        .with('results', results)
+        .with('count', results.length)
+        .with(key, faker.number.int() as unknown as string)
+        .build();
+      const Schema = buildLenientPageSchema(z.string());
 
-        const result = Schema.safeParse(page);
+      const result = Schema.safeParse(page);
 
-        expect(!result.success && result.error.issues.length).toBe(1);
-        expect(!result.success && result.error.issues[0]).toStrictEqual({
-          code: 'invalid_type',
-          expected: 'string',
-          message: 'Invalid input: expected string, received number',
-          path: [key],
-        });
-      },
-    );
+      expect(!result.success && result.error.issues.length).toBe(1);
+      expect(!result.success && result.error.issues[0]).toStrictEqual({
+        code: 'invalid_type',
+        expected: 'string',
+        message: 'Invalid input: expected string, received number',
+        path: [key],
+      });
+    });
 
-    it.each(['count' as const, 'next' as const, 'previous' as const])(
-      'should allow a nullable %s',
-      (key) => {
-        const results = faker.helpers.multiple(() => faker.lorem.word(), {
-          count: { min: 1, max: 5 },
-        });
-        const page = pageBuilder()
-          .with('results', results)
-          .with('count', results.length)
-          .with(key, null)
-          .build();
-        const Schema = buildLenientPageSchema(z.string());
+    it.each([
+      'count' as const,
+      'next' as const,
+      'previous' as const,
+    ])('should allow a nullable %s', (key) => {
+      const results = faker.helpers.multiple(() => faker.lorem.word(), {
+        count: { min: 1, max: 5 },
+      });
+      const page = pageBuilder()
+        .with('results', results)
+        .with('count', results.length)
+        .with(key, null)
+        .build();
+      const Schema = buildLenientPageSchema(z.string());
 
-        const result = Schema.safeParse(page);
+      const result = Schema.safeParse(page);
 
-        expect(result.success);
-      },
-    );
+      expect(result.success);
+    });
 
     it('should remove invalid items from results', () => {
       const results = faker.helpers.multiple(

@@ -49,20 +49,29 @@ describe('Severity', () => {
   });
 
   describe('SeveritySchema', () => {
-    it.each(['OK', 'INFO', 'WARN', 'CRITICAL'])(
-      'should validate correct severity string = %s',
-      (severityString) => {
-        expect(() => SeveritySchema.parse(severityString)).not.toThrow();
-        expect(SeveritySchema.parse(severityString)).toBe(severityString);
-      },
-    );
+    it.each([
+      'OK',
+      'INFO',
+      'WARN',
+      'CRITICAL',
+    ])('should validate correct severity string = %s', (severityString) => {
+      expect(() => SeveritySchema.parse(severityString)).not.toThrow();
+      expect(SeveritySchema.parse(severityString)).toBe(severityString);
+    });
 
-    it.each(['INVALID', '', null, undefined, 123, 0, 1, 2, 3] as const)(
-      'should reject invalid value = %s',
-      (invalidSeverity) => {
-        expect(() => SeveritySchema.parse(invalidSeverity)).toThrow();
-      },
-    );
+    it.each([
+      'INVALID',
+      '',
+      null,
+      undefined,
+      123,
+      0,
+      1,
+      2,
+      3,
+    ] as const)('should reject invalid value = %s', (invalidSeverity) => {
+      expect(() => SeveritySchema.parse(invalidSeverity)).toThrow();
+    });
   });
 
   describe('integration tests', () => {

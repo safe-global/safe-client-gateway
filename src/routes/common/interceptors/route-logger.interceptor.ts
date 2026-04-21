@@ -10,6 +10,7 @@ import {
 import { Inject } from '@nestjs/common/decorators';
 import type { Request, Response } from 'express';
 import isNumber from 'lodash/isNumber';
+// biome-ignore lint/suspicious/noDeprecatedImports: only multi-callback `tap` overloads are deprecated in rxjs; we use the observer-object signature.
 import { type Observable, tap } from 'rxjs';
 import { ZodError } from 'zod';
 import {

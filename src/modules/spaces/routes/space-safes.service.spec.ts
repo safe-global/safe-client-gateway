@@ -80,58 +80,50 @@ describe('SpaceSafesService', () => {
     it.each([
       ['SIWE', siweAuthPayloadDtoBuilder],
       ['OIDC', oidcAuthPayloadDtoBuilder],
-    ] as const)(
-      'should throw when %s user is not admin',
-      async (_label, builder) => {
-        const authPayload = new AuthPayload(builder().build());
-        spacesRepositoryMock.findOne.mockResolvedValue(null);
+    ] as const)('should throw when %s user is not admin', async (_label, builder) => {
+      const authPayload = new AuthPayload(builder().build());
+      spacesRepositoryMock.findOne.mockResolvedValue(null);
 
-        await expect(
-          service.create({
-            spaceId: faker.number.int(),
-            authPayload,
-            payload: [],
-          }),
-        ).rejects.toThrow(ForbiddenException);
-      },
-    );
+      await expect(
+        service.create({
+          spaceId: faker.number.int(),
+          authPayload,
+          payload: [],
+        }),
+      ).rejects.toThrow(ForbiddenException);
+    });
   });
 
   describe('get', () => {
     it.each([
       ['SIWE', siweAuthPayloadDtoBuilder],
       ['OIDC', oidcAuthPayloadDtoBuilder],
-    ] as const)(
-      'should return safes for %s member',
-      async (_label, builder) => {
-        const spaceId = faker.number.int();
-        const authPayload = new AuthPayload(builder().build());
-        const chainId1 = faker.number.int().toString();
-        const chainId2 = faker.number.int().toString();
-        const addr1 = addr();
-        const addr2 = addr();
-        const addr3 = addr();
+    ] as const)('should return safes for %s member', async (_label, builder) => {
+      const spaceId = faker.number.int();
+      const authPayload = new AuthPayload(builder().build());
+      const chainId1 = faker.number.int().toString();
+      const chainId2 = faker.number.int().toString();
+      const addr1 = addr();
+      const addr2 = addr();
+      const addr3 = addr();
 
-        membersRepositoryMock.findOne.mockResolvedValue(
-          memberBuilder().build(),
-        );
-        spaceSafesRepositoryMock.findBySpaceId.mockResolvedValue([
-          { chainId: chainId1, address: addr1 },
-          { chainId: chainId1, address: addr2 },
-          { chainId: chainId2, address: addr3 },
-        ]);
+      membersRepositoryMock.findOne.mockResolvedValue(memberBuilder().build());
+      spaceSafesRepositoryMock.findBySpaceId.mockResolvedValue([
+        { chainId: chainId1, address: addr1 },
+        { chainId: chainId1, address: addr2 },
+        { chainId: chainId2, address: addr3 },
+      ]);
 
-        const result = await service.get(spaceId, authPayload);
+      const result = await service.get(spaceId, authPayload);
 
-        expect(membersRepositoryMock.findOne).toHaveBeenCalled();
-        expect(result).toEqual({
-          safes: {
-            [chainId1]: [addr1, addr2],
-            [chainId2]: [addr3],
-          },
-        });
-      },
-    );
+      expect(membersRepositoryMock.findOne).toHaveBeenCalled();
+      expect(result).toEqual({
+        safes: {
+          [chainId1]: [addr1, addr2],
+          [chainId2]: [addr3],
+        },
+      });
+    });
 
     it('should throw when not authenticated', async () => {
       await expect(
@@ -144,19 +136,16 @@ describe('SpaceSafesService', () => {
     it.each([
       ['SIWE', siweAuthPayloadDtoBuilder],
       ['OIDC', oidcAuthPayloadDtoBuilder],
-    ] as const)(
-      'should throw when %s user is not a member',
-      async (_label, builder) => {
-        const authPayload = new AuthPayload(builder().build());
-        membersRepositoryMock.findOne.mockResolvedValue(null);
+    ] as const)('should throw when %s user is not a member', async (_label, builder) => {
+      const authPayload = new AuthPayload(builder().build());
+      membersRepositoryMock.findOne.mockResolvedValue(null);
 
-        await expect(
-          service.get(faker.number.int(), authPayload),
-        ).rejects.toThrow(ForbiddenException);
+      await expect(
+        service.get(faker.number.int(), authPayload),
+      ).rejects.toThrow(ForbiddenException);
 
-        expect(spaceSafesRepositoryMock.findBySpaceId).not.toHaveBeenCalled();
-      },
-    );
+      expect(spaceSafesRepositoryMock.findBySpaceId).not.toHaveBeenCalled();
+    });
   });
 
   describe('delete', () => {
@@ -195,20 +184,17 @@ describe('SpaceSafesService', () => {
     it.each([
       ['SIWE', siweAuthPayloadDtoBuilder],
       ['OIDC', oidcAuthPayloadDtoBuilder],
-    ] as const)(
-      'should throw when %s user is not admin',
-      async (_label, builder) => {
-        const authPayload = new AuthPayload(builder().build());
-        spacesRepositoryMock.findOne.mockResolvedValue(null);
+    ] as const)('should throw when %s user is not admin', async (_label, builder) => {
+      const authPayload = new AuthPayload(builder().build());
+      spacesRepositoryMock.findOne.mockResolvedValue(null);
 
-        await expect(
-          service.delete({
-            spaceId: faker.number.int(),
-            authPayload,
-            payload: [],
-          }),
-        ).rejects.toThrow(ForbiddenException);
-      },
-    );
+      await expect(
+        service.delete({
+          spaceId: faker.number.int(),
+          authPayload,
+          payload: [],
+        }),
+      ).rejects.toThrow(ForbiddenException);
+    });
   });
 });

@@ -113,37 +113,35 @@ describe('Safe', () => {
         ).not.toThrow();
       });
 
-      it.each(DOMAIN_WITHOUT_CHAIN_ID_VERSIONS)(
-        "should handle versions that don't include the chainId in the domain (%s)",
-        (version) => {
-          const chainId = faker.string.numeric();
-          const safe = safeBuilder().with('version', version).build();
-          const message = faker.helpers.arrayElement([
-            faker.lorem.sentence(),
-            typedDataBuilder().build(),
-          ]);
+      it.each(
+        DOMAIN_WITHOUT_CHAIN_ID_VERSIONS,
+      )("should handle versions that don't include the chainId in the domain (%s)", (version) => {
+        const chainId = faker.string.numeric();
+        const safe = safeBuilder().with('version', version).build();
+        const message = faker.helpers.arrayElement([
+          faker.lorem.sentence(),
+          typedDataBuilder().build(),
+        ]);
 
-          expect(() =>
-            getSafeMessageMessageHash({ chainId, message, safe }),
-          ).not.toThrow();
-        },
-      );
+        expect(() =>
+          getSafeMessageMessageHash({ chainId, message, safe }),
+        ).not.toThrow();
+      });
 
-      it.each(DOMAIN_WITH_CHAIN_ID_VERSIONS)(
-        'should handle versions that include the chainId in the domain (%s)',
-        (version) => {
-          const chainId = faker.string.numeric();
-          const safe = safeBuilder().with('version', version).build();
-          const message = faker.helpers.arrayElement([
-            faker.lorem.sentence(),
-            typedDataBuilder().build(),
-          ]);
+      it.each(
+        DOMAIN_WITH_CHAIN_ID_VERSIONS,
+      )('should handle versions that include the chainId in the domain (%s)', (version) => {
+        const chainId = faker.string.numeric();
+        const safe = safeBuilder().with('version', version).build();
+        const message = faker.helpers.arrayElement([
+          faker.lorem.sentence(),
+          typedDataBuilder().build(),
+        ]);
 
-          expect(() =>
-            getSafeMessageMessageHash({ chainId, message, safe }),
-          ).not.toThrow();
-        },
-      );
+        expect(() =>
+          getSafeMessageMessageHash({ chainId, message, safe }),
+        ).not.toThrow();
+      });
     });
 
     describe.skip('examples', () => {
@@ -345,57 +343,53 @@ describe('Safe', () => {
         ).not.toThrow();
       });
 
-      it.each(DOMAIN_WITHOUT_CHAIN_ID_VERSIONS)(
-        "should handle versions that don't include the chainId in the domain (%s)",
-        (version) => {
-          const chainId = faker.string.numeric();
-          const safe = safeBuilder().with('version', version).build();
-          const transaction = safeTxHashMultisigTransactionBuilder().build();
+      it.each(
+        DOMAIN_WITHOUT_CHAIN_ID_VERSIONS,
+      )("should handle versions that don't include the chainId in the domain (%s)", (version) => {
+        const chainId = faker.string.numeric();
+        const safe = safeBuilder().with('version', version).build();
+        const transaction = safeTxHashMultisigTransactionBuilder().build();
 
-          expect(() =>
-            getSafeTxHash({ chainId, transaction, safe }),
-          ).not.toThrow();
-        },
-      );
+        expect(() =>
+          getSafeTxHash({ chainId, transaction, safe }),
+        ).not.toThrow();
+      });
 
-      it.each(DOMAIN_WITH_CHAIN_ID_VERSIONS)(
-        'should handle versions that include the chainId in the domain (%s)',
-        (version) => {
-          const chainId = faker.string.numeric();
-          const safe = safeBuilder().with('version', version).build();
-          const transaction = safeTxHashMultisigTransactionBuilder().build();
+      it.each(
+        DOMAIN_WITH_CHAIN_ID_VERSIONS,
+      )('should handle versions that include the chainId in the domain (%s)', (version) => {
+        const chainId = faker.string.numeric();
+        const safe = safeBuilder().with('version', version).build();
+        const transaction = safeTxHashMultisigTransactionBuilder().build();
 
-          expect(() =>
-            getSafeTxHash({ chainId, transaction, safe }),
-          ).not.toThrow();
-        },
-      );
+        expect(() =>
+          getSafeTxHash({ chainId, transaction, safe }),
+        ).not.toThrow();
+      });
 
-      it.each(TYPES_WITH_DATAGAS_VERSIONS)(
-        'should handle versions that use dataGas instead of baseGas (%s)',
-        (version) => {
-          const chainId = faker.string.numeric();
-          const safe = safeBuilder().with('version', version).build();
-          const transaction = safeTxHashMultisigTransactionBuilder().build();
+      it.each(
+        TYPES_WITH_DATAGAS_VERSIONS,
+      )('should handle versions that use dataGas instead of baseGas (%s)', (version) => {
+        const chainId = faker.string.numeric();
+        const safe = safeBuilder().with('version', version).build();
+        const transaction = safeTxHashMultisigTransactionBuilder().build();
 
-          expect(() =>
-            getSafeTxHash({ chainId, transaction, safe }),
-          ).not.toThrow();
-        },
-      );
+        expect(() =>
+          getSafeTxHash({ chainId, transaction, safe }),
+        ).not.toThrow();
+      });
 
-      it.each(TYPES_WITH_BASEGAS_VERSIONS)(
-        'should handle versions that use baseGas instead of dataGas (%s)',
-        (version) => {
-          const chainId = faker.string.numeric();
-          const safe = safeBuilder().with('version', version).build();
-          const transaction = safeTxHashMultisigTransactionBuilder().build();
+      it.each(
+        TYPES_WITH_BASEGAS_VERSIONS,
+      )('should handle versions that use baseGas instead of dataGas (%s)', (version) => {
+        const chainId = faker.string.numeric();
+        const safe = safeBuilder().with('version', version).build();
+        const transaction = safeTxHashMultisigTransactionBuilder().build();
 
-          expect(() =>
-            getSafeTxHash({ chainId, transaction, safe }),
-          ).not.toThrow();
-        },
-      );
+        expect(() =>
+          getSafeTxHash({ chainId, transaction, safe }),
+        ).not.toThrow();
+      });
 
       describe.skip('examples', () => {
         it('should generate a valid 1.0.0 safeTxHash', () => {
@@ -524,42 +518,40 @@ describe('Safe', () => {
   });
 
   describe('getSafeTxDomain', () => {
-    it.each(DOMAIN_WITHOUT_CHAIN_ID_VERSIONS)(
-      "should return a domain without the chainId for versions that don't include it (%s)",
-      (version) => {
-        const chainId = faker.string.numeric();
-        const address = getAddress(faker.finance.ethereumAddress());
+    it.each(
+      DOMAIN_WITHOUT_CHAIN_ID_VERSIONS,
+    )("should return a domain without the chainId for versions that don't include it (%s)", (version) => {
+      const chainId = faker.string.numeric();
+      const address = getAddress(faker.finance.ethereumAddress());
 
-        const result = _getSafeDomain({
-          address,
-          version,
-          chainId,
-        });
+      const result = _getSafeDomain({
+        address,
+        version,
+        chainId,
+      });
 
-        expect(result).toEqual({
-          verifyingContract: address,
-        });
-      },
-    );
+      expect(result).toEqual({
+        verifyingContract: address,
+      });
+    });
 
-    it.each(DOMAIN_WITH_CHAIN_ID_VERSIONS)(
-      'should return a domain with the chainId for versions that include it (%s)',
-      (version) => {
-        const chainId = faker.string.numeric();
-        const address = getAddress(faker.finance.ethereumAddress());
+    it.each(
+      DOMAIN_WITH_CHAIN_ID_VERSIONS,
+    )('should return a domain with the chainId for versions that include it (%s)', (version) => {
+      const chainId = faker.string.numeric();
+      const address = getAddress(faker.finance.ethereumAddress());
 
-        const result = _getSafeDomain({
-          address,
-          version,
-          chainId,
-        });
+      const result = _getSafeDomain({
+        address,
+        version,
+        chainId,
+      });
 
-        expect(result).toEqual({
-          chainId: Number(chainId),
-          verifyingContract: address,
-        });
-      },
-    );
+      expect(result).toEqual({
+        chainId: Number(chainId),
+        verifyingContract: address,
+      });
+    });
   });
 
   describe('getSafeTxTypesAndMessage', () => {
@@ -577,24 +569,24 @@ describe('Safe', () => {
       expect(result.message.data).toEqual('0x');
     });
 
-    it.each<keyof BaseMultisigTransaction>(['gasToken', 'refundReceiver'])(
-      'should default a missing %s to a zero address if not present',
-      (key) => {
-        const transaction = safeTxHashMultisigTransactionBuilder()
-          .with(key, null)
-          .build();
-        const version = faker.helpers.arrayElement(TYPES_WITH_BASEGAS_VERSIONS);
+    it.each<keyof BaseMultisigTransaction>([
+      'gasToken',
+      'refundReceiver',
+    ])('should default a missing %s to a zero address if not present', (key) => {
+      const transaction = safeTxHashMultisigTransactionBuilder()
+        .with(key, null)
+        .build();
+      const version = faker.helpers.arrayElement(TYPES_WITH_BASEGAS_VERSIONS);
 
-        const result = _getSafeTxTypesAndMessage({
-          transaction,
-          version,
-        });
+      const result = _getSafeTxTypesAndMessage({
+        transaction,
+        version,
+      });
 
-        expect(result.message[key]).toEqual(
-          '0x0000000000000000000000000000000000000000',
-        );
-      },
-    );
+      expect(result.message[key]).toEqual(
+        '0x0000000000000000000000000000000000000000',
+      );
+    });
 
     it.each<keyof BaseMultisigTransaction>([
       'safeTxGas',
@@ -611,87 +603,85 @@ describe('Safe', () => {
       );
     });
 
-    it.each(TYPES_WITH_DATAGAS_VERSIONS)(
-      'should handle versions that use dataGas instead of baseGas (%s)',
-      (version) => {
-        const transaction = safeTxHashMultisigTransactionBuilder().build();
+    it.each(
+      TYPES_WITH_DATAGAS_VERSIONS,
+    )('should handle versions that use dataGas instead of baseGas (%s)', (version) => {
+      const transaction = safeTxHashMultisigTransactionBuilder().build();
 
-        const result = _getSafeTxTypesAndMessage({
-          transaction,
-          version,
-        });
+      const result = _getSafeTxTypesAndMessage({
+        transaction,
+        version,
+      });
 
-        expect(result).toEqual({
-          types: {
-            SafeTx: [
-              { name: 'to', type: 'address' },
-              { name: 'value', type: 'uint256' },
-              { name: 'data', type: 'bytes' },
-              { name: 'operation', type: 'uint8' },
-              { name: 'safeTxGas', type: 'uint256' },
-              { name: 'dataGas', type: 'uint256' },
-              { name: 'gasPrice', type: 'uint256' },
-              { name: 'gasToken', type: 'address' },
-              { name: 'refundReceiver', type: 'address' },
-              { name: 'nonce', type: 'uint256' },
-            ],
-          },
-          message: {
-            to: transaction.to,
-            value: BigInt(transaction.value),
-            data: transaction.data,
-            operation: transaction.operation,
-            safeTxGas: BigInt(transaction.safeTxGas as number),
-            dataGas: BigInt(transaction.baseGas as number),
-            gasPrice: BigInt(transaction.gasPrice as string),
-            gasToken: transaction.gasToken,
-            refundReceiver: transaction.refundReceiver,
-            nonce: BigInt(transaction.nonce),
-          },
-        });
-      },
-    );
+      expect(result).toEqual({
+        types: {
+          SafeTx: [
+            { name: 'to', type: 'address' },
+            { name: 'value', type: 'uint256' },
+            { name: 'data', type: 'bytes' },
+            { name: 'operation', type: 'uint8' },
+            { name: 'safeTxGas', type: 'uint256' },
+            { name: 'dataGas', type: 'uint256' },
+            { name: 'gasPrice', type: 'uint256' },
+            { name: 'gasToken', type: 'address' },
+            { name: 'refundReceiver', type: 'address' },
+            { name: 'nonce', type: 'uint256' },
+          ],
+        },
+        message: {
+          to: transaction.to,
+          value: BigInt(transaction.value),
+          data: transaction.data,
+          operation: transaction.operation,
+          safeTxGas: BigInt(transaction.safeTxGas as number),
+          dataGas: BigInt(transaction.baseGas as number),
+          gasPrice: BigInt(transaction.gasPrice as string),
+          gasToken: transaction.gasToken,
+          refundReceiver: transaction.refundReceiver,
+          nonce: BigInt(transaction.nonce),
+        },
+      });
+    });
 
-    it.each(TYPES_WITH_BASEGAS_VERSIONS)(
-      'should handle versions that use baseGas instead of dataGas (%s)',
-      (version) => {
-        const transaction = safeTxHashMultisigTransactionBuilder().build();
+    it.each(
+      TYPES_WITH_BASEGAS_VERSIONS,
+    )('should handle versions that use baseGas instead of dataGas (%s)', (version) => {
+      const transaction = safeTxHashMultisigTransactionBuilder().build();
 
-        const result = _getSafeTxTypesAndMessage({
-          transaction,
-          version,
-        });
+      const result = _getSafeTxTypesAndMessage({
+        transaction,
+        version,
+      });
 
-        expect(result).toEqual({
-          types: {
-            SafeTx: [
-              { name: 'to', type: 'address' },
-              { name: 'value', type: 'uint256' },
-              { name: 'data', type: 'bytes' },
-              { name: 'operation', type: 'uint8' },
-              { name: 'safeTxGas', type: 'uint256' },
-              { name: 'baseGas', type: 'uint256' },
-              { name: 'gasPrice', type: 'uint256' },
-              { name: 'gasToken', type: 'address' },
-              { name: 'refundReceiver', type: 'address' },
-              { name: 'nonce', type: 'uint256' },
-            ],
-          },
-          message: {
-            to: transaction.to,
-            value: BigInt(transaction.value),
-            data: transaction.data,
-            operation: transaction.operation,
-            safeTxGas: BigInt(transaction.safeTxGas as number),
-            baseGas: BigInt(transaction.baseGas as number),
-            gasPrice: BigInt(transaction.gasPrice as string),
-            gasToken: transaction.gasToken,
-            refundReceiver: transaction.refundReceiver,
-            nonce: BigInt(transaction.nonce),
-          },
-        });
-      },
-    );
+      expect(result).toEqual({
+        types: {
+          SafeTx: [
+            { name: 'to', type: 'address' },
+            { name: 'value', type: 'uint256' },
+            { name: 'data', type: 'bytes' },
+            { name: 'operation', type: 'uint8' },
+            { name: 'safeTxGas', type: 'uint256' },
+            { name: 'baseGas', type: 'uint256' },
+            { name: 'gasPrice', type: 'uint256' },
+            { name: 'gasToken', type: 'address' },
+            { name: 'refundReceiver', type: 'address' },
+            { name: 'nonce', type: 'uint256' },
+          ],
+        },
+        message: {
+          to: transaction.to,
+          value: BigInt(transaction.value),
+          data: transaction.data,
+          operation: transaction.operation,
+          safeTxGas: BigInt(transaction.safeTxGas as number),
+          baseGas: BigInt(transaction.baseGas as number),
+          gasPrice: BigInt(transaction.gasPrice as string),
+          gasToken: transaction.gasToken,
+          refundReceiver: transaction.refundReceiver,
+          nonce: BigInt(transaction.nonce),
+        },
+      });
+    });
   });
 
   describe('getSafeTxHash with null version (SafeMigration)', () => {

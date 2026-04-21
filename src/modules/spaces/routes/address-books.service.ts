@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import { ForbiddenException, Inject } from '@nestjs/common';
-import { IConfigurationService } from '@/config/configuration.service.interface';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import type { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
 import { IAddressBookItemsRepository } from '@/modules/spaces/domain/address-books/address-book-items.repository.interface';
@@ -10,19 +9,10 @@ import type { SpaceAddressBookDto } from '@/modules/spaces/routes/entities/space
 import type { UpsertAddressBookItemsDto } from '@/modules/spaces/routes/entities/upsert-address-book-items.dto.entity';
 
 export class AddressBooksService {
-  // TODO: Investigate and implement usage of this
-  private readonly maxItems: number;
-
   constructor(
     @Inject(IAddressBookItemsRepository)
     private readonly repository: IAddressBookItemsRepository,
-    @Inject(IConfigurationService)
-    private readonly configurationService: IConfigurationService,
-  ) {
-    this.maxItems = this.configurationService.getOrThrow<number>(
-      'spaces.addressBooks.maxItems',
-    );
-  }
+  ) {}
 
   public async findAllBySpaceId(
     authPayload: AuthPayload,

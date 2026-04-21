@@ -46,7 +46,7 @@ export class TestDbFactory {
     const sslEnabled = !this.isCIContext && ssl.enabled;
     return postgres({
       host,
-      port: Number.parseInt(port),
+      port: Number.parseInt(port, 10),
       db: dbName,
       user: username,
       password,

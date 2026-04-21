@@ -1,9 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
-import {
-  type ILoggingService,
-  LoggingService,
-} from '@/logging/logging.interface';
 import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
 import type { Safe } from '@/modules/safe/domain/entities/safe.entity';
 import type { SafeRepository } from '@/modules/safe/domain/safe.repository';
@@ -24,7 +20,6 @@ export class MultisigTransactionExecutionDetailsMapper {
     private readonly addressInfoHelper: AddressInfoHelper,
     @Inject(ITokenRepository) private readonly tokenRepository: TokenRepository,
     @Inject(ISafeRepository) private readonly safeRepository: SafeRepository,
-    @Inject(LoggingService) private readonly loggingService: ILoggingService,
   ) {}
 
   async mapMultisigExecutionDetails(

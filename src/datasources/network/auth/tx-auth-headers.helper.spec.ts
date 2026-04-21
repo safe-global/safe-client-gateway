@@ -68,19 +68,20 @@ describe('getTxAuthHeaders', () => {
       useVpcUrl: true,
       apiKey: 'test-key',
     },
-  ])(
-    'should return undefined when $description',
-    ({ isDevelopment, useVpcUrl, apiKey }) => {
-      mockConfigService.getOrThrow.mockImplementation((key: string) => {
-        if (key === 'application.isDevelopment') return isDevelopment;
-        if (key === 'safeTransaction.useVpcUrl') return useVpcUrl;
-        throw new Error(`Unexpected key: ${key}`);
-      });
-      mockConfigService.get.mockReturnValue(apiKey);
+  ])('should return undefined when $description', ({
+    isDevelopment,
+    useVpcUrl,
+    apiKey,
+  }) => {
+    mockConfigService.getOrThrow.mockImplementation((key: string) => {
+      if (key === 'application.isDevelopment') return isDevelopment;
+      if (key === 'safeTransaction.useVpcUrl') return useVpcUrl;
+      throw new Error(`Unexpected key: ${key}`);
+    });
+    mockConfigService.get.mockReturnValue(apiKey);
 
-      const result = getTxAuthHeaders(mockConfigService);
+    const result = getTxAuthHeaders(mockConfigService);
 
-      expect(result).toBeUndefined();
-    },
-  );
+    expect(result).toBeUndefined();
+  });
 });

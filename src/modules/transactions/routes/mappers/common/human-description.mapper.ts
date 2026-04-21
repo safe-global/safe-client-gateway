@@ -129,6 +129,8 @@ export class HumanDescriptionMapper {
             return new RichTextFragment(fragment.value);
           case ValueType.Number:
             return new RichTextFragment(fragment.value.toString());
+          default:
+            throw new Error(`Unhandled fragment type: ${fragment}`);
         }
       }),
     );

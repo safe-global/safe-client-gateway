@@ -14,25 +14,23 @@ describe('DeleteSafeDelegateDtoSchema', () => {
     expect(result.success).toBe(true);
   });
 
-  it.each<keyof DeleteSafeDelegateDto>(['delegate', 'safe'])(
-    'should checksum %s',
-    (key) => {
-      const nonChecksummedAddress = faker.finance
-        .ethereumAddress()
-        .toLowerCase() as Address;
-      const deleteSafeDelegateDto = deleteSafeDelegateDtoBuilder()
-        .with(key, nonChecksummedAddress)
-        .build();
+  it.each<keyof DeleteSafeDelegateDto>([
+    'delegate',
+    'safe',
+  ])('should checksum %s', (key) => {
+    const nonChecksummedAddress = faker.finance
+      .ethereumAddress()
+      .toLowerCase() as Address;
+    const deleteSafeDelegateDto = deleteSafeDelegateDtoBuilder()
+      .with(key, nonChecksummedAddress)
+      .build();
 
-      const result = DeleteSafeDelegateDtoSchema.safeParse(
-        deleteSafeDelegateDto,
-      );
+    const result = DeleteSafeDelegateDtoSchema.safeParse(deleteSafeDelegateDto);
 
-      expect(result.success && result.data[key]).toBe(
-        getAddress(nonChecksummedAddress),
-      );
-    },
-  );
+    expect(result.success && result.data[key]).toBe(
+      getAddress(nonChecksummedAddress),
+    );
+  });
 
   it('should not allow non-hex signature', () => {
     const deleteSafeDelegateDto = deleteSafeDelegateDtoBuilder()
@@ -50,24 +48,23 @@ describe('DeleteSafeDelegateDtoSchema', () => {
     ]);
   });
 
-  it.each<keyof DeleteSafeDelegateDto>(['delegate', 'safe', 'signature'])(
-    `should not allow %s to be undefined`,
-    (key) => {
-      const deleteSafeDelegateDto = deleteSafeDelegateDtoBuilder().build();
-      delete deleteSafeDelegateDto[key];
+  it.each<keyof DeleteSafeDelegateDto>([
+    'delegate',
+    'safe',
+    'signature',
+  ])(`should not allow %s to be undefined`, (key) => {
+    const deleteSafeDelegateDto = deleteSafeDelegateDtoBuilder().build();
+    delete deleteSafeDelegateDto[key];
 
-      const result = DeleteSafeDelegateDtoSchema.safeParse(
-        deleteSafeDelegateDto,
-      );
+    const result = DeleteSafeDelegateDtoSchema.safeParse(deleteSafeDelegateDto);
 
-      expect(!result.success && result.error.issues).toStrictEqual([
-        {
-          code: 'invalid_type',
-          expected: expect.any(String),
-          message: 'Invalid input: expected string, received undefined',
-          path: [key],
-        },
-      ]);
-    },
-  );
+    expect(!result.success && result.error.issues).toStrictEqual([
+      {
+        code: 'invalid_type',
+        expected: expect.any(String),
+        message: 'Invalid input: expected string, received undefined',
+        path: [key],
+      },
+    ]);
+  });
 });

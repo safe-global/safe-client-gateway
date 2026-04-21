@@ -69,7 +69,7 @@ export class NotificationsController {
     @Body() registerDeviceDto: RegisterDeviceDto,
   ): Promise<void> {
     if (registerDeviceDto.timestamp) {
-      this.validateTimestamp(Number.parseInt(registerDeviceDto.timestamp));
+      this.validateTimestamp(Number.parseInt(registerDeviceDto.timestamp, 10));
     }
 
     const compatibleV2Requests =

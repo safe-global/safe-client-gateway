@@ -93,20 +93,21 @@ describe('GetEstimationDtoSchema', () => {
     ]);
   });
 
-  it.each(['to' as const, 'value' as const, 'operation' as const])(
-    'should not allow %s to be undefined',
-    (key) => {
-      const getEstimationDto = getEstimationDtoBuilder().build();
-      delete getEstimationDto[key];
+  it.each([
+    'to' as const,
+    'value' as const,
+    'operation' as const,
+  ])('should not allow %s to be undefined', (key) => {
+    const getEstimationDto = getEstimationDtoBuilder().build();
+    delete getEstimationDto[key];
 
-      const result = GetEstimationDtoSchema.safeParse(getEstimationDto);
+    const result = GetEstimationDtoSchema.safeParse(getEstimationDto);
 
-      expect(
-        !result.success &&
-          result.error.issues.length === 1 &&
-          result.error.issues[0].path.length === 1 &&
-          result.error.issues[0].path[0] === key,
-      ).toBe(true);
-    },
-  );
+    expect(
+      !result.success &&
+        result.error.issues.length === 1 &&
+        result.error.issues[0].path.length === 1 &&
+        result.error.issues[0].path[0] === key,
+    ).toBe(true);
+  });
 });

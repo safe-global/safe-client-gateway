@@ -129,35 +129,34 @@ describe('Configuration validator', () => {
     { key: 'RELAY_PROVIDER_API_KEY_SEPOLIA' },
     { key: 'STAKING_API_KEY' },
     { key: 'STAKING_TESTNET_API_KEY' },
-  ])(
-    'should detect that $key is missing in the configuration in production environment',
-    ({ key }) => {
-      process.env.NODE_ENV = 'production';
-      expect(() =>
-        configurationValidator(
-          omit(validConfiguration, key),
-          RootConfigurationSchema,
-        ),
-      ).toThrow(
-        `Configuration is invalid: ${key} Invalid input: expected string, received undefined`,
-      );
-    },
-  );
+  ])('should detect that $key is missing in the configuration in production environment', ({
+    key,
+  }) => {
+    process.env.NODE_ENV = 'production';
+    expect(() =>
+      configurationValidator(
+        omit(validConfiguration, key),
+        RootConfigurationSchema,
+      ),
+    ).toThrow(
+      `Configuration is invalid: ${key} Invalid input: expected string, received undefined`,
+    );
+  });
 
-  it.each(['', '   '])(
-    'should reject empty TX_SERVICE_API_KEY values in production environment',
-    (apiKey) => {
-      process.env.NODE_ENV = 'production';
-      expect(() =>
-        configurationValidator(
-          { ...validConfiguration, TX_SERVICE_API_KEY: apiKey },
-          RootConfigurationSchema,
-        ),
-      ).toThrow(
-        'Configuration is invalid: TX_SERVICE_API_KEY Too small: expected string to have >=1 characters',
-      );
-    },
-  );
+  it.each([
+    '',
+    '   ',
+  ])('should reject empty TX_SERVICE_API_KEY values in production environment', (apiKey) => {
+    process.env.NODE_ENV = 'production';
+    expect(() =>
+      configurationValidator(
+        { ...validConfiguration, TX_SERVICE_API_KEY: apiKey },
+        RootConfigurationSchema,
+      ),
+    ).toThrow(
+      'Configuration is invalid: TX_SERVICE_API_KEY Too small: expected string to have >=1 characters',
+    );
+  });
 
   it('should detect an invalid LOG_LEVEL configuration in production environment', () => {
     process.env.NODE_ENV = 'production';
@@ -207,21 +206,20 @@ describe('Configuration validator', () => {
   it.each([
     { key: 'TARGETED_MESSAGING_FILE_STORAGE_TYPE' },
     { key: 'CSV_EXPORT_FILE_STORAGE_TYPE' },
-  ])(
-    `should detect an invalid $key configuration in production environment`,
-    ({ key }) => {
-      process.env.NODE_ENV = 'production';
-      const config = {
-        ...omit(validConfiguration, key),
-        [`${key}`]: faker.lorem.words(),
-      };
-      expect(() =>
-        configurationValidator(config, RootConfigurationSchema),
-      ).toThrow(
-        new RegExp(`${key} Invalid option: expected one of "local"\\|"aws"`),
-      );
-    },
-  );
+  ])(`should detect an invalid $key configuration in production environment`, ({
+    key,
+  }) => {
+    process.env.NODE_ENV = 'production';
+    const config = {
+      ...omit(validConfiguration, key),
+      [`${key}`]: faker.lorem.words(),
+    };
+    expect(() =>
+      configurationValidator(config, RootConfigurationSchema),
+    ).toThrow(
+      new RegExp(`${key} Invalid option: expected one of "local"\\|"aws"`),
+    );
+  });
 
   it('should detect an invalid TARGETED_MESSAGING_FILE_STORAGE_TYPE configuration in production environment', () => {
     process.env.NODE_ENV = 'production';
@@ -547,22 +545,23 @@ describe('Configuration validator', () => {
         value: '-1',
         min: 0,
       },
-    ])(
-      'should reject invalid $key with value $value',
-      ({ key, value, min }) => {
-        const config = {
-          ...validConfiguration,
-          [key]: value,
-        };
-        expect(() =>
-          configurationValidator(config, RootConfigurationSchema),
-        ).toThrow(
-          new RegExp(
-            `Configuration is invalid: ${key} Too small: expected number to be >=${min}`,
-          ),
-        );
-      },
-    );
+    ])('should reject invalid $key with value $value', ({
+      key,
+      value,
+      min,
+    }) => {
+      const config = {
+        ...validConfiguration,
+        [key]: value,
+      };
+      expect(() =>
+        configurationValidator(config, RootConfigurationSchema),
+      ).toThrow(
+        new RegExp(
+          `Configuration is invalid: ${key} Too small: expected number to be >=${min}`,
+        ),
+      );
+    });
 
     it('should accept zero UNDICI_PIPELINING', () => {
       const config = {

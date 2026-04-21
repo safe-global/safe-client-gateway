@@ -104,61 +104,60 @@ describe('Notifications Controller', () => {
     Promise.reject(`No matching rule for url: ${url}`);
 
   describe('POST /register/notifications', () => {
-    it.each([5, 20])(
-      'Success for a subscription with %i safe registrations',
-      async (safeRegistrationLength: number) => {
-        const registerDeviceDto = await buildInputDto(safeRegistrationLength);
-        const upsertSubscriptionsV2Dto =
-          await createV2RegisterDtoBuilder(registerDeviceDto);
+    it.each([
+      5, 20,
+    ])('Success for a subscription with %i safe registrations', async (safeRegistrationLength: number) => {
+      const registerDeviceDto = await buildInputDto(safeRegistrationLength);
+      const upsertSubscriptionsV2Dto =
+        await createV2RegisterDtoBuilder(registerDeviceDto);
 
-        networkService.get.mockImplementation(({ url }) =>
-          url.includes(`${safeConfigUrl}/api/v1/chains/`)
-            ? Promise.resolve({
-                data: rawify(chainBuilder().build()),
-                status: 200,
-              })
-            : rejectForUrl(url),
-        );
-        networkService.post.mockImplementation(({ url }) =>
-          url.includes('/api/v1/notifications/devices/')
-            ? Promise.resolve({ data: rawify({}), status: 200 })
-            : rejectForUrl(url),
-        );
+      networkService.get.mockImplementation(({ url }) =>
+        url.includes(`${safeConfigUrl}/api/v1/chains/`)
+          ? Promise.resolve({
+              data: rawify(chainBuilder().build()),
+              status: 200,
+            })
+          : rejectForUrl(url),
+      );
+      networkService.post.mockImplementation(({ url }) =>
+        url.includes('/api/v1/notifications/devices/')
+          ? Promise.resolve({ data: rawify({}), status: 200 })
+          : rejectForUrl(url),
+      );
 
-        await request(app.getHttpServer())
-          .post('/v1/register/notifications')
-          .send(registerDeviceDto)
-          .expect(200)
-          .expect({});
+      await request(app.getHttpServer())
+        .post('/v1/register/notifications')
+        .send(registerDeviceDto)
+        .expect(200)
+        .expect({});
 
-        // @TODO Remove NotificationModuleV2 after all clients have migrated and compatibility is no longer needed.
-        // We call V2 as many times as we have a registration with at least one safe
-        const safeRegistrationsWithSafe =
-          registerDeviceDto.safeRegistrations.filter(
-            (safeRegistration) => safeRegistration.safes.length > 0,
-          );
-
-        expect(notificationServiceV2.upsertSubscriptions).toHaveBeenCalledTimes(
-          safeRegistrationsWithSafe.length,
+      // @TODO Remove NotificationModuleV2 after all clients have migrated and compatibility is no longer needed.
+      // We call V2 as many times as we have a registration with at least one safe
+      const safeRegistrationsWithSafe =
+        registerDeviceDto.safeRegistrations.filter(
+          (safeRegistration) => safeRegistration.safes.length > 0,
         );
 
-        for (const [
-          index,
-          upsertSubscriptionsV2,
-        ] of upsertSubscriptionsV2Dto.entries()) {
-          const nthCall = index + 1; // Convert zero-based index to a one-based call number
-          expect(
-            notificationServiceV2.upsertSubscriptions,
-          ).toHaveBeenNthCalledWith(nthCall, upsertSubscriptionsV2);
-        }
-      },
-    );
+      expect(notificationServiceV2.upsertSubscriptions).toHaveBeenCalledTimes(
+        safeRegistrationsWithSafe.length,
+      );
+
+      for (const [
+        index,
+        upsertSubscriptionsV2,
+      ] of upsertSubscriptionsV2Dto.entries()) {
+        const nthCall = index + 1; // Convert zero-based index to a one-based call number
+        expect(
+          notificationServiceV2.upsertSubscriptions,
+        ).toHaveBeenNthCalledWith(nthCall, upsertSubscriptionsV2);
+      }
+    });
 
     it(`Should throw if the timestamp in request is older than ${REGISTRATION_TIMESTAMP_EXPIRY_MINUTES} minutes ago`, async () => {
       const registerDeviceDto = await buildInputDto();
       const expiryThresholdSeconds = REGISTRATION_TIMESTAMP_EXPIRY + 60;
       const expiredDateTime =
-        Number.parseInt(registerDeviceDto.timestamp as string) -
+        Number.parseInt(registerDeviceDto.timestamp as string, 10) -
         expiryThresholdSeconds;
       const expiredTimestampInSeconds = Math.floor(expiredDateTime);
       registerDeviceDto.timestamp = expiredTimestampInSeconds.toString();
@@ -193,7 +192,7 @@ describe('Notifications Controller', () => {
       const registerDeviceDto = await buildInputDto();
       const expiryThresholdSeconds = REGISTRATION_TIMESTAMP_EXPIRY + 60;
       const expiryDateTime =
-        Number.parseInt(registerDeviceDto.timestamp as string) +
+        Number.parseInt(registerDeviceDto.timestamp as string, 10) +
         expiryThresholdSeconds;
       const expiredTimestampInSeconds = Math.floor(expiryDateTime);
       registerDeviceDto.timestamp = expiredTimestampInSeconds.toString();
@@ -227,7 +226,7 @@ describe('Notifications Controller', () => {
     it(`Should pass if the timestamp in within then last ${REGISTRATION_TIMESTAMP_EXPIRY_MINUTES} minutes`, async () => {
       const registerDeviceDto = await buildInputDto();
       const expiredDateTime =
-        Number.parseInt(registerDeviceDto.timestamp as string) * 1000;
+        Number.parseInt(registerDeviceDto.timestamp as string, 10) * 1000;
       const expiredTimestampInSeconds = Math.floor(expiredDateTime / 1000);
       registerDeviceDto.timestamp = expiredTimestampInSeconds.toString();
       networkService.get.mockImplementation(({ url }) =>

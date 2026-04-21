@@ -15,7 +15,6 @@ import type {
   BlockExplorerUriTemplate as ApiBlockExplorerUriTemplate,
   BlockExplorerUriTemplate,
 } from '@/modules/chains/routes/entities/block-explorer-uri-template.entity';
-import type { ContractAddresses } from '@/modules/chains/routes/entities/contract-addresses.entity';
 import {
   GasPriceFixed as ApiGasPriceFixed,
   type GasPriceFixed,

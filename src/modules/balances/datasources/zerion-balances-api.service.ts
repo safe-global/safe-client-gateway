@@ -55,7 +55,6 @@ export class ZerionBalancesApi implements IBalancesApi {
   private readonly apiKey: string | undefined;
   private readonly baseUri: string;
   private readonly defaultExpirationTimeInSeconds: number;
-  private readonly defaultNotFoundExpirationTimeSeconds: number;
   private readonly fiatCodes: Array<string>;
   // Number of seconds for each rate-limit cycle
   private readonly limitPeriodSeconds: number;
@@ -91,10 +90,6 @@ export class ZerionBalancesApi implements IBalancesApi {
     this.defaultExpirationTimeInSeconds =
       this.configurationService.getOrThrow<number>(
         'expirationTimeInSeconds.default',
-      );
-    this.defaultNotFoundExpirationTimeSeconds =
-      this.configurationService.getOrThrow<number>(
-        'expirationTimeInSeconds.notFound.default',
       );
     this.fiatCodes = this.configurationService.getOrThrow<Array<string>>(
       'balances.providers.zerion.currencies',

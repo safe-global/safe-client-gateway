@@ -41,7 +41,7 @@ export class NoFeeCampaignRelayer implements IRelayer {
     address: Address;
   }): Promise<RelayEligibility> {
     const chainConfiguration =
-      this.relayConfiguration[Number.parseInt(args.chainId)];
+      this.relayConfiguration[Number.parseInt(args.chainId, 10)];
 
     if (!chainConfiguration) {
       return { result: false, currentCount: 0, limit: 0 };
@@ -79,7 +79,7 @@ export class NoFeeCampaignRelayer implements IRelayer {
       await this.limitAddressesMapper.getLimitAddresses(args);
 
     const maxGasLimit = BigInt(
-      this.relayConfiguration[Number.parseInt(args.chainId)].maxGasLimit,
+      this.relayConfiguration[Number.parseInt(args.chainId, 10)].maxGasLimit,
     );
 
     // Use maxGasLimit if no gasLimit provided
@@ -129,7 +129,7 @@ export class NoFeeCampaignRelayer implements IRelayer {
     address: Address;
   }): Promise<{ remaining: number; limit: number }> {
     const chainConfiguration =
-      this.relayConfiguration[Number.parseInt(args.chainId)];
+      this.relayConfiguration[Number.parseInt(args.chainId, 10)];
 
     if (!chainConfiguration) {
       return { remaining: 0, limit: 0 };
@@ -176,7 +176,8 @@ export class NoFeeCampaignRelayer implements IRelayer {
       const incremented = currentCount + 1;
 
       const ttlSeconds = Math.floor(
-        this.relayConfiguration[Number.parseInt(args.chainId)].endsAtTimeStamp -
+        this.relayConfiguration[Number.parseInt(args.chainId, 10)]
+          .endsAtTimeStamp -
           Date.now() / 1000,
       );
 
@@ -212,7 +213,7 @@ export class NoFeeCampaignRelayer implements IRelayer {
     address: Address;
   }): Promise<bigint> {
     const chainConfiguration =
-      this.relayConfiguration[Number.parseInt(args.chainId)];
+      this.relayConfiguration[Number.parseInt(args.chainId, 10)];
 
     if (!chainConfiguration) return BigInt(0);
 
@@ -238,7 +239,7 @@ export class NoFeeCampaignRelayer implements IRelayer {
 
   private isActive(chainId: string): boolean {
     const chainConfiguration =
-      this.relayConfiguration[Number.parseInt(chainId)];
+      this.relayConfiguration[Number.parseInt(chainId, 10)];
     const unixTimestampNow: number = Date.now() / 1000;
 
     // Return false of configuration for no-fee campaign is absent
