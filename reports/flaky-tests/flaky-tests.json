@@ -1,12 +1,12 @@
 {
-  "generated_at": "2026-04-13T16:22:07.832Z",
+  "generated_at": "2026-04-21T14:55:46.306Z",
   "summary": {
-    "total_commits": 765,
-    "flaky_commits": 57,
-    "flakiness_rate": 7.5,
+    "total_commits": 784,
+    "flaky_commits": 58,
+    "flakiness_rate": 7.4,
     "period": {
       "from": "2026-01-16",
-      "to": "2026-04-13"
+      "to": "2026-04-21"
     }
   },
   "weekly_trend": [
@@ -105,6 +105,12 @@
       "commits": 11,
       "flaky": 0,
       "rate": 0
+    },
+    {
+      "week": "2026-04-20",
+      "commits": 19,
+      "flaky": 1,
+      "rate": 5.3
     }
   ],
   "tests": [
@@ -119,9 +125,39 @@
       }
     },
     {
+      "file": "src/datasources/job-queue/__tests__/job-queue.service.integration.spec.ts",
+      "failure_count": 7,
+      "is_cascade": false,
+      "status": "open",
+      "fix_pr": {
+        "number": 2781,
+        "url": "https://github.com/safe-global/safe-client-gateway/pull/2781"
+      }
+    },
+    {
+      "file": "src/modules/transactions/routes/__tests__/controllers/preview-transaction-cow-swap.transactions.controller.integration.spec.ts",
+      "failure_count": 6,
+      "is_cascade": false,
+      "status": "fixed",
+      "fix_pr": {
+        "number": 2890,
+        "url": "https://github.com/safe-global/safe-client-gateway/pull/2890"
+      }
+    },
+    {
+      "file": "src/modules/transactions/routes/__tests__/controllers/preview-transaction-kiln.transactions.controller.integration.spec.ts",
+      "failure_count": 6,
+      "is_cascade": false,
+      "status": "fixed",
+      "fix_pr": {
+        "number": 2890,
+        "url": "https://github.com/safe-global/safe-client-gateway/pull/2890"
+      }
+    },
+    {
       "file": "src/modules/users/domain/members.repository.integration.spec.ts",
       "failure_count": 5,
-      "is_cascade": true,
+      "is_cascade": false,
       "status": "fixed",
       "fix_pr": {
         "number": 2891,
@@ -131,7 +167,7 @@
     {
       "file": "src/modules/safe-shield/recipient-analysis/recipient-analysis.service.spec.ts",
       "failure_count": 5,
-      "is_cascade": true,
+      "is_cascade": false,
       "status": "fixed",
       "fix_pr": {
         "number": 2977,
@@ -141,53 +177,13 @@
     {
       "file": "src/datasources/cache/redis.cache.service.integration.spec.ts",
       "failure_count": 5,
-      "is_cascade": true,
+      "is_cascade": false,
       "status": "open",
       "fix_pr": null
     },
     {
-      "file": "src/modules/transactions/routes/__tests__/controllers/preview-transaction-cow-swap.transactions.controller.integration.spec.ts",
-      "failure_count": 5,
-      "is_cascade": true,
-      "status": "fixed",
-      "fix_pr": {
-        "number": 2890,
-        "url": "https://github.com/safe-global/safe-client-gateway/pull/2890"
-      }
-    },
-    {
       "file": "src/modules/transactions/routes/__tests__/controllers/propose-transaction.transactions.controller.integration.spec.ts",
       "failure_count": 5,
-      "is_cascade": true,
-      "status": "fixed",
-      "fix_pr": {
-        "number": 2890,
-        "url": "https://github.com/safe-global/safe-client-gateway/pull/2890"
-      }
-    },
-    {
-      "file": "src/datasources/job-queue/__tests__/job-queue.service.integration.spec.ts",
-      "failure_count": 5,
-      "is_cascade": true,
-      "status": "open",
-      "fix_pr": {
-        "number": 2781,
-        "url": "https://github.com/safe-global/safe-client-gateway/pull/2781"
-      }
-    },
-    {
-      "file": "src/modules/transactions/routes/__tests__/controllers/preview-transaction-kiln.transactions.controller.integration.spec.ts",
-      "failure_count": 4,
-      "is_cascade": false,
-      "status": "fixed",
-      "fix_pr": {
-        "number": 2890,
-        "url": "https://github.com/safe-global/safe-client-gateway/pull/2890"
-      }
-    },
-    {
-      "file": "src/modules/transactions/routes/__tests__/controllers/add-transaction-confirmations.transactions.controller.integration.spec.ts",
-      "failure_count": 4,
       "is_cascade": false,
       "status": "fixed",
       "fix_pr": {
@@ -197,6 +193,16 @@
     },
     {
       "file": "src/modules/notifications/routes/v2/notifications.controller.integration.spec.ts",
+      "failure_count": 5,
+      "is_cascade": false,
+      "status": "fixed",
+      "fix_pr": {
+        "number": 2890,
+        "url": "https://github.com/safe-global/safe-client-gateway/pull/2890"
+      }
+    },
+    {
+      "file": "src/modules/transactions/routes/__tests__/controllers/add-transaction-confirmations.transactions.controller.integration.spec.ts",
       "failure_count": 4,
       "is_cascade": false,
       "status": "fixed",
@@ -240,23 +246,33 @@
       }
     },
     {
+      "file": "src/domain/common/entities/safe-signature.spec.ts",
+      "failure_count": 2,
+      "is_cascade": false,
+      "status": "fixed",
+      "fix_pr": {
+        "number": 2647,
+        "url": "https://github.com/safe-global/safe-client-gateway/pull/2647"
+      }
+    },
+    {
       "file": "src/modules/transactions/routes/__tests__/controllers/preview-transaction-cow-swap.transactions.controller.spec.ts",
       "failure_count": 1,
-      "is_cascade": false,
+      "is_cascade": true,
       "status": "open",
       "fix_pr": null
     },
     {
       "file": "src/modules/transactions/routes/__tests__/controllers/preview-transaction-kiln.transactions.controller.spec.ts",
       "failure_count": 1,
-      "is_cascade": false,
+      "is_cascade": true,
       "status": "open",
       "fix_pr": null
     },
     {
       "file": "src/modules/safe-shield/safe-shield.controller.integration.spec.ts",
       "failure_count": 1,
-      "is_cascade": false,
+      "is_cascade": true,
       "status": "open",
       "fix_pr": {
         "number": 2842,
@@ -266,7 +282,7 @@
     {
       "file": "src/modules/safe-apps/routes/safe-apps.controller.integration.spec.ts",
       "failure_count": 1,
-      "is_cascade": false,
+      "is_cascade": true,
       "status": "fixed",
       "fix_pr": {
         "number": 2890,
@@ -274,23 +290,23 @@
       }
     },
     {
-      "file": "src/domain/common/entities/safe-signature.spec.ts",
-      "failure_count": 1,
-      "is_cascade": false,
-      "status": "fixed",
-      "fix_pr": {
-        "number": 2647,
-        "url": "https://github.com/safe-global/safe-client-gateway/pull/2647"
-      }
-    },
-    {
       "file": "src/modules/bridge/domain/entities/bridge-name.entity.spec.ts",
       "failure_count": 1,
-      "is_cascade": false,
+      "is_cascade": true,
       "status": "open",
       "fix_pr": null
+    },
+    {
+      "file": "src/modules/auth/routes/auth.controller.integration.spec.ts",
+      "failure_count": 1,
+      "is_cascade": true,
+      "status": "fixed",
+      "fix_pr": {
+        "number": 2890,
+        "url": "https://github.com/safe-global/safe-client-gateway/pull/2890"
+      }
     }
   ],
-  "cascade_baseline": 5,
+  "cascade_baseline": 1,
   "cascade_tests_count": 6
 }

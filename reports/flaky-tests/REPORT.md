@@ -1,15 +1,15 @@
 # Flaky Test Baseline Report
 
-Generated: 2026-04-13T16:22:07.834Z | Period: 2026-01-16 to 2026-04-13
+Generated: 2026-04-21T14:55:46.308Z | Period: 2026-01-16 to 2026-04-21
 
 ## Summary
 
 | Metric | Value |
 |--------|-------|
-| Total unique commits | 765 |
-| Flaky commits (pass + fail on same SHA) | 57 |
-| Flakiness rate | 7.5% |
-| Cascade baseline | 5 failures (6 tests) |
+| Total unique commits | 784 |
+| Flaky commits (pass + fail on same SHA) | 58 |
+| Flakiness rate | 7.4% |
+| Cascade baseline | 1 failures (6 tests) |
 
 ## Weekly Trend
 
@@ -31,39 +31,41 @@ Generated: 2026-04-13T16:22:07.834Z | Period: 2026-01-16 to 2026-04-13
 | 2026-03-30 | 38 | 2 | 5.3% |
 | 2026-04-06 | 116 | 11 | 9.5% |
 | 2026-04-13 | 11 | 0 | 0% |
+| 2026-04-20 | 19 | 1 | 5.3% |
 
 ## Flaky Test Leaderboard (Non-Cascade)
 
 | File | Failures | Status | Fix PR |
 |------|----------|--------|--------|
 | `src/modules/targeted-messaging/datasources/targeted-messaging.datasource.integration.spec.ts` | 12 | Fixed | [#2891](https://github.com/safe-global/safe-client-gateway/pull/2891) |
-| `src/modules/transactions/routes/__tests__/controllers/preview-transaction-kiln.transactions.controller.integration.spec.ts` | 4 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
+| `src/datasources/job-queue/__tests__/job-queue.service.integration.spec.ts` | 7 | Open | [#2781](https://github.com/safe-global/safe-client-gateway/pull/2781) |
+| `src/modules/transactions/routes/__tests__/controllers/preview-transaction-cow-swap.transactions.controller.integration.spec.ts` | 6 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
+| `src/modules/transactions/routes/__tests__/controllers/preview-transaction-kiln.transactions.controller.integration.spec.ts` | 6 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
+| `src/modules/users/domain/members.repository.integration.spec.ts` | 5 | Fixed | [#2891](https://github.com/safe-global/safe-client-gateway/pull/2891) |
+| `src/modules/safe-shield/recipient-analysis/recipient-analysis.service.spec.ts` | 5 | Fixed | [#2977](https://github.com/safe-global/safe-client-gateway/pull/2977) |
+| `src/datasources/cache/redis.cache.service.integration.spec.ts` | 5 | Open | - |
+| `src/modules/transactions/routes/__tests__/controllers/propose-transaction.transactions.controller.integration.spec.ts` | 5 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
+| `src/modules/notifications/routes/v2/notifications.controller.integration.spec.ts` | 5 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
 | `src/modules/transactions/routes/__tests__/controllers/add-transaction-confirmations.transactions.controller.integration.spec.ts` | 4 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
-| `src/modules/notifications/routes/v2/notifications.controller.integration.spec.ts` | 4 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
 | `src/modules/transactions/routes/helpers/transaction-verifier.helper.spec.ts` | 3 | Fixed | [#2891](https://github.com/safe-global/safe-client-gateway/pull/2891) |
 | `src/modules/transactions/routes/mappers/common/transaction-data.mapper.spec.ts` | 3 | Open | - |
 | `src/routes/common/guards/rate-limit.guard.spec.ts` | 3 | Open | - |
 | `src/modules/transactions/routes/__tests__/controllers/get-transaction-by-id.transactions.controller.integration.spec.ts` | 2 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
-| `src/modules/transactions/routes/__tests__/controllers/preview-transaction-cow-swap.transactions.controller.spec.ts` | 1 | Open | - |
-| `src/modules/transactions/routes/__tests__/controllers/preview-transaction-kiln.transactions.controller.spec.ts` | 1 | Open | - |
-| `src/modules/safe-shield/safe-shield.controller.integration.spec.ts` | 1 | Open | [#2842](https://github.com/safe-global/safe-client-gateway/pull/2842) |
-| `src/modules/safe-apps/routes/safe-apps.controller.integration.spec.ts` | 1 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
-| `src/domain/common/entities/safe-signature.spec.ts` | 1 | Fixed | [#2647](https://github.com/safe-global/safe-client-gateway/pull/2647) |
-| `src/modules/bridge/domain/entities/bridge-name.entity.spec.ts` | 1 | Open | - |
+| `src/domain/common/entities/safe-signature.spec.ts` | 2 | Fixed | [#2647](https://github.com/safe-global/safe-client-gateway/pull/2647) |
 
 ## Cascade Tests
 
-These 6 tests all failed exactly 5 times, suggesting they fail together as a cascade (e.g., shared infrastructure issue).
+These 6 tests all failed exactly 1 times, suggesting they fail together as a cascade (e.g., shared infrastructure issue).
 
 <details>
 <summary>Click to expand cascade test list</summary>
 
-- `src/modules/users/domain/members.repository.integration.spec.ts`
-- `src/modules/safe-shield/recipient-analysis/recipient-analysis.service.spec.ts`
-- `src/datasources/cache/redis.cache.service.integration.spec.ts`
-- `src/modules/transactions/routes/__tests__/controllers/preview-transaction-cow-swap.transactions.controller.integration.spec.ts`
-- `src/modules/transactions/routes/__tests__/controllers/propose-transaction.transactions.controller.integration.spec.ts`
-- `src/datasources/job-queue/__tests__/job-queue.service.integration.spec.ts`
+- `src/modules/transactions/routes/__tests__/controllers/preview-transaction-cow-swap.transactions.controller.spec.ts`
+- `src/modules/transactions/routes/__tests__/controllers/preview-transaction-kiln.transactions.controller.spec.ts`
+- `src/modules/safe-shield/safe-shield.controller.integration.spec.ts`
+- `src/modules/safe-apps/routes/safe-apps.controller.integration.spec.ts`
+- `src/modules/bridge/domain/entities/bridge-name.entity.spec.ts`
+- `src/modules/auth/routes/auth.controller.integration.spec.ts`
 
 </details>
 
@@ -543,12 +545,10 @@ These 6 tests all failed exactly 5 times, suggesting they fail together as a cas
 
 ## Still-Open Flaky Tests
 
+- `src/datasources/job-queue/__tests__/job-queue.service.integration.spec.ts` (7 failures)
+- `src/datasources/cache/redis.cache.service.integration.spec.ts` (5 failures)
 - `src/modules/transactions/routes/mappers/common/transaction-data.mapper.spec.ts` (3 failures)
 - `src/routes/common/guards/rate-limit.guard.spec.ts` (3 failures)
-- `src/modules/transactions/routes/__tests__/controllers/preview-transaction-cow-swap.transactions.controller.spec.ts` (1 failures)
-- `src/modules/transactions/routes/__tests__/controllers/preview-transaction-kiln.transactions.controller.spec.ts` (1 failures)
-- `src/modules/safe-shield/safe-shield.controller.integration.spec.ts` (1 failures)
-- `src/modules/bridge/domain/entities/bridge-name.entity.spec.ts` (1 failures)
 
 ---
 

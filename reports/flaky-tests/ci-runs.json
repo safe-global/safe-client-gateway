@@ -1,9 +1,9 @@
 {
-  "generated_at": "2026-04-13T16:22:07.832Z",
-  "last_checked_at": "2026-04-13T16:22:07.832Z",
+  "generated_at": "2026-04-21T14:55:46.306Z",
+  "last_checked_at": "2026-04-21T14:55:46.306Z",
   "period": {
     "from": "2026-01-16",
-    "to": "2026-04-13"
+    "to": "2026-04-21"
   },
   "flaky_shas": [
     "df09feb",
@@ -63,9 +63,140 @@
     "1efc9d3",
     "47477af",
     "dc3acbd",
-    "ab8c16f"
+    "ab8c16f",
+    "fd92912",
+    "71fa82c",
+    "0f9f8f4",
+    "a7cf84a",
+    "7413480",
+    "2216407",
+    "8f3c2e7"
   ],
   "runs": [
+    {
+      "id": 24656435199,
+      "sha": "fd92912",
+      "branch": "fix/addressBookResponse",
+      "conclusion": "failure",
+      "created_at": "2026-04-20T08:29:23Z",
+      "failed_jobs": [
+        "integration-tests"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/modules/transactions/routes/__tests__/controllers/preview-transaction-cow-swap.transactions.controller.integration.spec.ts",
+          "name": "Preview transaction - CoW Swap - Transactions Controller › TWAPs › should return a \"standard\" transaction preview if the swap app is restricted",
+          "error": "expected 200 \"OK\", got 500 \"Internal Server Error\""
+        },
+        {
+          "file": "src/datasources/job-queue/__tests__/job-queue.service.integration.spec.ts",
+          "name": "JobQueueService & TestJobConsumer integration › should invoke worker event handlers",
+          "error": "expect(received).toHaveLength(expected)"
+        }
+      ]
+    },
+    {
+      "id": 24578645233,
+      "sha": "71fa82c",
+      "branch": "feat/private-address-book",
+      "conclusion": "failure",
+      "created_at": "2026-04-17T17:41:08Z",
+      "failed_jobs": [
+        "integration-tests"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/modules/transactions/routes/__tests__/controllers/preview-transaction-kiln.transactions.controller.integration.spec.ts",
+          "name": "Preview transaction - Kiln - Transactions Controller › Native (dedicated) staking › batchWithdrawCLFee › should return a \"standard\" transaction preview if the deployment is unavailable",
+          "error": "expected 200 \"OK\", got 500 \"Internal Server Error\""
+        }
+      ]
+    },
+    {
+      "id": 24576662464,
+      "sha": "0f9f8f4",
+      "branch": "refactor/performanceImprovements",
+      "conclusion": "failure",
+      "created_at": "2026-04-17T16:52:38Z",
+      "failed_jobs": [
+        "integration-tests"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/datasources/job-queue/__tests__/job-queue.service.integration.spec.ts",
+          "name": "JobQueueService & TestJobConsumer integration › should invoke worker event handlers",
+          "error": "expect(received).toHaveLength(expected)"
+        }
+      ]
+    },
+    {
+      "id": 24509840494,
+      "sha": "a7cf84a",
+      "branch": "feat/relay-fee-preview",
+      "conclusion": "failure",
+      "created_at": "2026-04-16T12:20:13Z",
+      "failed_jobs": [
+        "integration-tests"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/modules/notifications/routes/v2/notifications.controller.integration.spec.ts",
+          "name": "Notifications Controller V2 › GET /v2/chains/:chainId/notifications/devices/:deviceUuid/safes/:safeAddress › authentication › should return 403 if token is invalid",
+          "error": "expect(received).toThrow(expected)"
+        }
+      ]
+    },
+    {
+      "id": 24504994967,
+      "sha": "7413480",
+      "branch": "feat/relay-fee-preview",
+      "conclusion": "failure",
+      "created_at": "2026-04-16T10:20:54Z",
+      "failed_jobs": [
+        "integration-tests"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/modules/transactions/routes/__tests__/controllers/preview-transaction-kiln.transactions.controller.integration.spec.ts",
+          "name": "Preview transaction - Kiln - Transactions Controller › Native (dedicated) staking › batchWithdrawCLFee › should preview a batched transaction",
+          "error": "expected 200 \"OK\", got 500 \"Internal Server Error\""
+        }
+      ]
+    },
+    {
+      "id": 24504178560,
+      "sha": "2216407",
+      "branch": "feat/relay-fee-preview",
+      "conclusion": "failure",
+      "created_at": "2026-04-16T10:01:20Z",
+      "failed_jobs": [
+        "unit-tests"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/domain/common/entities/safe-signature.spec.ts",
+          "name": "SafeSignature › should return the r value",
+          "error": "Insufficient length for dynamic part length field"
+        }
+      ]
+    },
+    {
+      "id": 24448251978,
+      "sha": "8f3c2e7",
+      "branch": "feat/relay-fee-preview",
+      "conclusion": "failure",
+      "created_at": "2026-04-15T09:58:14Z",
+      "failed_jobs": [
+        "integration-tests"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/modules/auth/routes/auth.controller.integration.spec.ts",
+          "name": "AuthController › POST /v1/auth/logout › should log a signer out",
+          "error": "expected 200 \"OK\", got 500 \"Internal Server Error\""
+        }
+      ]
+    },
     {
       "id": 24241345487,
       "sha": "df09feb",
