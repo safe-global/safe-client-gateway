@@ -98,8 +98,17 @@
         "useNumericLiterals": "error"
       },
       "style": {
-        "noRestrictedImports": "error",
+        "noRestrictedImports": {
+          "level": "error",
+          "options": {
+            "paths": {
+              "@safe-global/safe-deployments": "Please import from @/domain/common/utils/deployments instead."
+            }
+          }
+        },
         "useImportType": "off",
+        "useThrowOnlyError": "warn",
+        "noNestedTernary": "error",
         "noNonNullAssertion": "warn",
         "useConsistentArrayType": {
           "level": "error",
@@ -127,7 +136,11 @@
         "noDelete": "warn",
         "noBarrelFile": "warn"
       },
-      "nursery": {}
+      "nursery": {
+        "noFloatingPromises": "warn",
+        "noImpliedEval": "error",
+        "noMisusedPromises": "error"
+      }
     }
   },
   "overrides": [
@@ -178,6 +191,16 @@
         "rules": {
           "complexity": {
             "noStaticOnlyClass": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": ["src/domain/common/utils/deployments.ts"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": "off"
           }
         }
       }
