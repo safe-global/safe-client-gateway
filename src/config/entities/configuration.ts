@@ -544,7 +544,7 @@ export default () => ({
       enabledChainIds: process.env.RELAY_FEE_CHAIN_IDS?.split(',') ?? [],
       baseUri: process.env.FEE_SERVICE_BASE_URI,
       feePreviewTtlSeconds: parseInt(
-        process.env.RELAY_FEE_PREVIEW_TTL_SECONDS ?? `${0}`,
+        process.env.RELAY_FEE_PREVIEW_TTL_SECONDS ?? `${10}`,
       ),
     },
   },

@@ -18,10 +18,10 @@ export class SpaceAddressBookItemDto {
   @ApiProperty({ type: String })
   public lastUpdatedBy!: AddressBookDbItem['lastUpdatedBy'];
 
-  @ApiProperty()
+  @ApiProperty({ type: Date })
   public createdAt!: AddressBookDbItem['createdAt'];
 
-  @ApiProperty()
+  @ApiProperty({ type: Date })
   public updatedAt!: AddressBookDbItem['updatedAt'];
 }
 

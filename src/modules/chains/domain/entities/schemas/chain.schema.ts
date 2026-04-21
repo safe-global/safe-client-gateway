@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
 import { RpcUriAuthentication } from '@/modules/chains/domain/entities/rpc-uri-authentication.entity';
 import { buildLenientPageSchema } from '@/domain/entities/schemas/page.schema.factory';
@@ -69,18 +70,6 @@ export const BalancesProviderSchema = z.object({
   enabled: z.boolean(),
 });
 
-export const ContractAddressesSchema = z.object({
-  safeSingletonAddress: NullableAddressSchema,
-  safeProxyFactoryAddress: NullableAddressSchema,
-  multiSendAddress: NullableAddressSchema,
-  multiSendCallOnlyAddress: NullableAddressSchema,
-  fallbackHandlerAddress: NullableAddressSchema,
-  signMessageLibAddress: NullableAddressSchema,
-  createCallAddress: NullableAddressSchema,
-  simulateTxAccessorAddress: NullableAddressSchema,
-  safeWebAuthnSignerFactoryAddress: NullableAddressSchema,
-});
-
 function removeTrailingSlash(url: string): string {
   return url.replace(/\/$/, '');
 }
@@ -103,7 +92,6 @@ export const ChainSchema = z.object({
   publicRpcUri: RpcUriSchema,
   blockExplorerUriTemplate: BlockExplorerUriTemplateSchema,
   beaconChainExplorerUriTemplate: BeaconChainExplorerUriTemplateSchema,
-  contractAddresses: ContractAddressesSchema,
   nativeCurrency: NativeCurrencySchema,
   pricesProvider: PricesProviderSchema,
   balancesProvider: BalancesProviderSchema,
