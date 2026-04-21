@@ -72,11 +72,12 @@ type UnionToTuple<T, R extends Array<unknown> = []> = [T] extends [never]
   : UnionToTuple<Exclude<T, LastOf<T>>, [LastOf<T>, ...R]>;
 
 // Gets the last element of a union
-type LastOf<T> = UnionToIntersection<
-  T extends unknown ? (x: T) => 0 : never
-> extends (x: infer Last) => 0
-  ? Last
-  : never;
+type LastOf<T> =
+  UnionToIntersection<T extends unknown ? (x: T) => 0 : never> extends (
+    x: infer Last,
+  ) => 0
+    ? Last
+    : never;
 
 // Converts a union to an intersection of functions
 type UnionToIntersection<U> = (

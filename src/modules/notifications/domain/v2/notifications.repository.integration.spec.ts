@@ -514,9 +514,9 @@ describe('NotificationsRepositoryV2', () => {
         });
 
       const upsertNotificationTypes: Array<string> = [];
-      upsertSubscriptionsDto.safes.map((safe) => {
+      for (const safe of upsertSubscriptionsDto.safes) {
         upsertNotificationTypes.push(...safe.notificationTypes);
-      });
+      }
 
       expect(upsertNotificationTypes.length).toBe(
         subscriptionNotificationTypes.length,

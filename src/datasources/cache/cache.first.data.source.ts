@@ -337,6 +337,7 @@ export class CacheFirstDataSource {
               transactionHash: transaction.transactionHash,
             };
           }
+          return undefined;
         }),
     });
   }

@@ -19,55 +19,53 @@ describe('Message entity schemas', () => {
       expect(result.success).toBe(true);
     });
 
-    it.each(['created' as const, 'modified' as const])(
-      'should coerce %s to a date',
-      (key) => {
-        const message = messageBuilder().build();
+    it.each([
+      'created' as const,
+      'modified' as const,
+    ])('should coerce %s to a date', (key) => {
+      const message = messageBuilder().build();
 
-        const result = MessageSchema.safeParse(message);
+      const result = MessageSchema.safeParse(message);
 
-        expect(result.success && result.data[key]).toStrictEqual(
-          new Date(message[key]),
-        );
-      },
-    );
+      expect(result.success && result.data[key]).toStrictEqual(
+        new Date(message[key]),
+      );
+    });
 
-    it.each(['safe' as const, 'proposedBy' as const])(
-      'should checksum the %s',
-      (key) => {
-        const nonChecksummedAddress = faker.finance
-          .ethereumAddress()
-          .toLowerCase() as Address;
-        const message = messageBuilder()
-          .with(key, nonChecksummedAddress)
-          .build();
+    it.each([
+      'safe' as const,
+      'proposedBy' as const,
+    ])('should checksum the %s', (key) => {
+      const nonChecksummedAddress = faker.finance
+        .ethereumAddress()
+        .toLowerCase() as Address;
+      const message = messageBuilder().with(key, nonChecksummedAddress).build();
 
-        const result = MessageSchema.safeParse(message);
+      const result = MessageSchema.safeParse(message);
 
-        expect(result.success && result.data[key]).toBe(
-          getAddress(nonChecksummedAddress),
-        );
-      },
-    );
+      expect(result.success && result.data[key]).toBe(
+        getAddress(nonChecksummedAddress),
+      );
+    });
 
-    it.each(['messageHash' as const, 'preparedSignature' as const])(
-      'should not allow non-hex %s',
-      (key) => {
-        const message = messageBuilder()
-          .with(key, faker.string.numeric() as Address)
-          .build();
+    it.each([
+      'messageHash' as const,
+      'preparedSignature' as const,
+    ])('should not allow non-hex %s', (key) => {
+      const message = messageBuilder()
+        .with(key, faker.string.numeric() as Address)
+        .build();
 
-        const result = MessageSchema.safeParse(message);
+      const result = MessageSchema.safeParse(message);
 
-        expect(!result.success && result.error.issues).toEqual([
-          {
-            code: 'custom',
-            message: 'Invalid "0x" notated hex string',
-            path: [key],
-          },
-        ]);
-      },
-    );
+      expect(!result.success && result.error.issues).toEqual([
+        {
+          code: 'custom',
+          message: 'Invalid "0x" notated hex string',
+          path: [key],
+        },
+      ]);
+    });
 
     it.each([
       ['string', faker.lorem.sentence()],
@@ -81,17 +79,17 @@ describe('Message entity schemas', () => {
       expect(result.success).toBe(true);
     });
 
-    it.each(['safeAppId' as const, 'preparedSignature' as const])(
-      'should allow undefined %s, defaulting to null',
-      (key) => {
-        const message = messageBuilder().build();
-        delete message[key];
+    it.each([
+      'safeAppId' as const,
+      'preparedSignature' as const,
+    ])('should allow undefined %s, defaulting to null', (key) => {
+      const message = messageBuilder().build();
+      delete message[key];
 
-        const result = MessageSchema.safeParse(message);
+      const result = MessageSchema.safeParse(message);
 
-        expect(result.success && result.data[key]).toBe(null);
-      },
-    );
+      expect(result.success && result.data[key]).toBe(null);
+    });
 
     it('should allow empty confirmations', () => {
       const message = messageBuilder().with('confirmations', []).build();

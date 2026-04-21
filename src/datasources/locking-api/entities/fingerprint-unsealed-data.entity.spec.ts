@@ -28,20 +28,21 @@ describe('FingerprintUnsealedData schemas', () => {
       expect(result.success).toBe(true);
     });
 
-    it.each(['locationSpoofing' as const, 'ipInfo' as const, 'vpn' as const])(
-      'should allow undefined %s, defaulting to null',
-      (key) => {
-        const fingerprintUnsealedDataEntity =
-          fingerprintUnsealedDataBuilder().build();
-        delete fingerprintUnsealedDataEntity.products[key];
+    it.each([
+      'locationSpoofing' as const,
+      'ipInfo' as const,
+      'vpn' as const,
+    ])('should allow undefined %s, defaulting to null', (key) => {
+      const fingerprintUnsealedDataEntity =
+        fingerprintUnsealedDataBuilder().build();
+      delete fingerprintUnsealedDataEntity.products[key];
 
-        const result = FingerprintUnsealedDataSchema.safeParse(
-          fingerprintUnsealedDataEntity,
-        );
+      const result = FingerprintUnsealedDataSchema.safeParse(
+        fingerprintUnsealedDataEntity,
+      );
 
-        expect(result.success && result.data.products[key]).toBe(null);
-      },
-    );
+      expect(result.success && result.data.products[key]).toBe(null);
+    });
   });
 
   describe('FingerprintIpInfo', () => {
@@ -53,20 +54,18 @@ describe('FingerprintUnsealedData schemas', () => {
       expect(result.success).toBe(true);
     });
 
-    it.each(['v4' as const, 'v6' as const])(
-      'should allow undefined %s, defaulting to null',
-      (key) => {
-        const fingerprintIpInfo = fingerprintIpInfoBuilder().build();
-        // @ts-expect-error - inferred types don't allow optional fields
-        delete fingerprintIpInfo.data[key];
+    it.each([
+      'v4' as const,
+      'v6' as const,
+    ])('should allow undefined %s, defaulting to null', (key) => {
+      const fingerprintIpInfo = fingerprintIpInfoBuilder().build();
+      // @ts-expect-error - inferred types don't allow optional fields
+      delete fingerprintIpInfo.data[key];
 
-        const result = FingerprintIpInfoSchema.safeParse(fingerprintIpInfo);
+      const result = FingerprintIpInfoSchema.safeParse(fingerprintIpInfo);
 
-        expect(
-          result.success && result?.data?.data && result?.data?.data[key],
-        ).toBe(null);
-      },
-    );
+      expect(result.success && result?.data?.data?.[key]).toBe(null);
+    });
   });
 
   describe('FingerprintIpDataSchema', () => {
@@ -85,11 +84,7 @@ describe('FingerprintUnsealedData schemas', () => {
 
       const result = FingerprintIpDataSchema.safeParse(fingerprintIpData);
 
-      expect(
-        result.success &&
-          result.data.geolocation &&
-          result.data.geolocation.country,
-      ).toBe(null);
+      expect(result.success && result.data.geolocation?.country).toBe(null);
     });
 
     it('should not allow non-string country', () => {

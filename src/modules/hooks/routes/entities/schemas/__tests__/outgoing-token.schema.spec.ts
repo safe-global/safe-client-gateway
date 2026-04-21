@@ -31,42 +31,42 @@ describe('OutgoingTokenEventSchema', () => {
     ]);
   });
 
-  it.each(['address' as const, 'tokenAddress' as const])(
-    'should not allow a non-address %s',
-    (field) => {
-      const outgoingTokenEvent = outgoingTokenEventBuilder()
-        .with(field, faker.string.alpha() as Address)
-        .build();
+  it.each([
+    'address' as const,
+    'tokenAddress' as const,
+  ])('should not allow a non-address %s', (field) => {
+    const outgoingTokenEvent = outgoingTokenEventBuilder()
+      .with(field, faker.string.alpha() as Address)
+      .build();
 
-      const result = OutgoingTokenEventSchema.safeParse(outgoingTokenEvent);
+    const result = OutgoingTokenEventSchema.safeParse(outgoingTokenEvent);
 
-      expect(!result.success && result.error.issues).toEqual([
-        expect.objectContaining({
-          code: 'custom',
-          message: 'Invalid address',
-          path: [field],
-        }),
-      ]);
-    },
-  );
+    expect(!result.success && result.error.issues).toEqual([
+      expect.objectContaining({
+        code: 'custom',
+        message: 'Invalid address',
+        path: [field],
+      }),
+    ]);
+  });
 
-  it.each(['address' as const, 'tokenAddress' as const])(
-    'should checksum the %s',
-    (field) => {
-      const nonChecksummedAddress = faker.finance
-        .ethereumAddress()
-        .toLowerCase() as Address;
-      const outgoingTokenEvent = outgoingTokenEventBuilder()
-        .with(field, nonChecksummedAddress)
-        .build();
+  it.each([
+    'address' as const,
+    'tokenAddress' as const,
+  ])('should checksum the %s', (field) => {
+    const nonChecksummedAddress = faker.finance
+      .ethereumAddress()
+      .toLowerCase() as Address;
+    const outgoingTokenEvent = outgoingTokenEventBuilder()
+      .with(field, nonChecksummedAddress)
+      .build();
 
-      const result = OutgoingTokenEventSchema.safeParse(outgoingTokenEvent);
+    const result = OutgoingTokenEventSchema.safeParse(outgoingTokenEvent);
 
-      expect(result.success && result.data[field]).toBe(
-        getAddress(nonChecksummedAddress),
-      );
-    },
-  );
+    expect(result.success && result.data[field]).toBe(
+      getAddress(nonChecksummedAddress),
+    );
+  });
 
   it.each([
     'type' as const,

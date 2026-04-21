@@ -138,11 +138,9 @@ describe('CsvExportService', () => {
       expect(lines.length).toBe(3);
       expect(lines[0]).toBe('name,age,active,tags,details');
       expect(lines[1]).toBe(
-        `${name},${age},1,\"[\"\"${tag}\"\",\"\"${tag}\"\"]\",\"{\"\"foo\"\":\"\"${val}\"\"}\"`,
+        `${name},${age},1,"[""${tag}"",""${tag}""]","{""foo"":""${val}""}"`,
       );
-      expect(lines[2]).toBe(
-        `${name},${age},,[],\"{\"\"bar\"\":\"\"${val}\"\"}\"`,
-      );
+      expect(lines[2]).toBe(`${name},${age},,[],"{""bar"":""${val}""}"`);
     });
 
     it('handles nested objects', async () => {

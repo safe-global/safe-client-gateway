@@ -3,7 +3,6 @@
 import { faker } from '@faker-js/faker';
 import { ForbiddenException, UnauthorizedException } from '@nestjs/common';
 import { getAddress } from 'viem';
-import type { IConfigurationService } from '@/config/configuration.service.interface';
 import {
   oidcAuthPayloadDtoBuilder,
   siweAuthPayloadDtoBuilder,
@@ -19,41 +18,33 @@ const repositoryMock = {
   deleteByAddress: jest.fn(),
 } as jest.MockedObjectDeep<IAddressBookItemsRepository>;
 
-const configurationServiceMock = {
-  getOrThrow: jest.fn().mockReturnValue(20),
-} as jest.MockedObjectDeep<IConfigurationService>;
-
 describe('AddressBooksService', () => {
   let service: AddressBooksService;
 
   beforeEach(() => {
     jest.resetAllMocks();
-    configurationServiceMock.getOrThrow.mockReturnValue(20);
-    service = new AddressBooksService(repositoryMock, configurationServiceMock);
+    service = new AddressBooksService(repositoryMock);
   });
 
   describe('findAllBySpaceId', () => {
     it.each([
       ['SIWE', siweAuthPayloadDtoBuilder],
       ['OIDC', oidcAuthPayloadDtoBuilder],
-    ] as const)(
-      'should return address book items for %s user',
-      async (_label, builder) => {
-        const spaceId = faker.number.int();
-        const authPayload = new AuthPayload(builder().build());
-        const items = [addressBookItemBuilder().build()];
-        repositoryMock.findAllBySpaceId.mockResolvedValue(items);
+    ] as const)('should return address book items for %s user', async (_label, builder) => {
+      const spaceId = faker.number.int();
+      const authPayload = new AuthPayload(builder().build());
+      const items = [addressBookItemBuilder().build()];
+      repositoryMock.findAllBySpaceId.mockResolvedValue(items);
 
-        const result = await service.findAllBySpaceId(authPayload, spaceId);
+      const result = await service.findAllBySpaceId(authPayload, spaceId);
 
-        expect(result.spaceId).toBe(spaceId.toString());
-        expect(result.data).toHaveLength(1);
-        expect(repositoryMock.findAllBySpaceId).toHaveBeenCalledWith({
-          authPayload,
-          spaceId,
-        });
-      },
-    );
+      expect(result.spaceId).toBe(spaceId.toString());
+      expect(result.data).toHaveLength(1);
+      expect(repositoryMock.findAllBySpaceId).toHaveBeenCalledWith({
+        authPayload,
+        spaceId,
+      });
+    });
 
     it('should throw for unauthenticated user', async () => {
       const spaceId = faker.number.int();

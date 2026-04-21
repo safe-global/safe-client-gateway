@@ -36,15 +36,15 @@ describe('TokenSchema', () => {
     );
   });
 
-  it.each(['coinKey' as const, 'logoURI' as const])(
-    '%s should default to null',
-    (key) => {
-      const token = tokenBuilder().build();
-      delete token[key];
+  it.each([
+    'coinKey' as const,
+    'logoURI' as const,
+  ])('%s should default to null', (key) => {
+    const token = tokenBuilder().build();
+    delete token[key];
 
-      const result = TokenSchema.safeParse(token);
+    const result = TokenSchema.safeParse(token);
 
-      expect(result.success && result.data[key]).toBe(null);
-    },
-  );
+    expect(result.success && result.data[key]).toBe(null);
+  });
 });

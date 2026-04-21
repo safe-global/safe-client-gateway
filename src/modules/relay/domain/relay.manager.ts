@@ -56,7 +56,7 @@ export class RelayManager implements IRelayManager {
     }
 
     const noFeeCampaignConfigurationPerChain =
-      this.noFeeCampaignConfiguration[Number.parseInt(chainId)];
+      this.noFeeCampaignConfiguration[Number.parseInt(chainId, 10)];
 
     // If chain has no-fee campaign configuration, use no-fee campaign relayer
     if (noFeeCampaignConfigurationPerChain !== undefined) {

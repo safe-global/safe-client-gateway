@@ -79,7 +79,7 @@
     "zod": "4.3.6"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.0.0",
+    "@biomejs/biome": "2.4.12",
     "@faker-js/faker": "10.3.0",
     "@nestjs/cli": "11.0.14",
     "@nestjs/schematics": "11.0.5",

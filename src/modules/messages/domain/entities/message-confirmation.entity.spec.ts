@@ -14,20 +14,20 @@ describe('MessageConfirmationSchema', () => {
     expect(result.success).toBe(true);
   });
 
-  it.each(['created' as const, 'modified' as const])(
-    'should coerce %s to a date',
-    (key) => {
-      const messageConfirmation = messageConfirmationBuilder()
-        .with(key, faker.date.recent().toISOString() as unknown as Date)
-        .build();
+  it.each([
+    'created' as const,
+    'modified' as const,
+  ])('should coerce %s to a date', (key) => {
+    const messageConfirmation = messageConfirmationBuilder()
+      .with(key, faker.date.recent().toISOString() as unknown as Date)
+      .build();
 
-      const result = MessageConfirmationSchema.safeParse(messageConfirmation);
+    const result = MessageConfirmationSchema.safeParse(messageConfirmation);
 
-      expect(result.success && result.data[key]).toStrictEqual(
-        new Date(messageConfirmation[key]),
-      );
-    },
-  );
+    expect(result.success && result.data[key]).toStrictEqual(
+      new Date(messageConfirmation[key]),
+    );
+  });
 
   it('should checksum the owner', () => {
     const nonChecksummedAddress = faker.finance

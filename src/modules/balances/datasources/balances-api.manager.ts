@@ -28,7 +28,6 @@ import { type Raw, rawify } from '@/validation/entities/raw.entity';
 export class BalancesApiManager implements IBalancesApiManager {
   private safeBalancesApiMap: Record<string, SafeBalancesApi> = {};
   private readonly isCounterFactualBalancesEnabled: boolean;
-  private readonly zerionBalancesEnabled: boolean;
   private readonly zerionBalancesApi: IBalancesApi;
   private readonly useVpcUrl: boolean;
 
@@ -49,9 +48,6 @@ export class BalancesApiManager implements IBalancesApiManager {
       this.configurationService.getOrThrow<boolean>(
         'features.counterfactualBalances',
       );
-    this.zerionBalancesEnabled = this.configurationService.getOrThrow<boolean>(
-      'features.zerionBalancesEnabled',
-    );
     this.useVpcUrl = this.configurationService.getOrThrow<boolean>(
       'safeTransaction.useVpcUrl',
     );

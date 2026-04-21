@@ -12,20 +12,21 @@ describe('CampaignSchema', () => {
     expect(result.success).toBe(true);
   });
 
-  it.each(['startDate' as const, 'endDate' as const, 'lastUpdated' as const])(
-    `should coerce %s to a date`,
-    (field) => {
-      const campaign = campaignBuilder()
-        .with(field, faker.date.recent().toISOString() as unknown as Date)
-        .build();
+  it.each([
+    'startDate' as const,
+    'endDate' as const,
+    'lastUpdated' as const,
+  ])(`should coerce %s to a date`, (field) => {
+    const campaign = campaignBuilder()
+      .with(field, faker.date.recent().toISOString() as unknown as Date)
+      .build();
 
-      const result = CampaignSchema.safeParse(campaign);
+    const result = CampaignSchema.safeParse(campaign);
 
-      expect(result.success && result.data[field]).toStrictEqual(
-        new Date(campaign[field] as Date),
-      );
-    },
-  );
+    expect(result.success && result.data[field]).toStrictEqual(
+      new Date(campaign[field] as Date),
+    );
+  });
 
   it.each([
     'lastUpdated' as const,
@@ -44,25 +45,26 @@ describe('CampaignSchema', () => {
     expect(result.success && result.data[key]).toBe(null);
   });
 
-  it.each(['iconUrl' as const, 'safeAppUrl' as const, 'partnerUrl' as const])(
-    'should not validate a non-URL %s value',
-    (key) => {
-      const campaign = campaignBuilder()
-        .with(key, faker.string.alphanumeric())
-        .build();
+  it.each([
+    'iconUrl' as const,
+    'safeAppUrl' as const,
+    'partnerUrl' as const,
+  ])('should not validate a non-URL %s value', (key) => {
+    const campaign = campaignBuilder()
+      .with(key, faker.string.alphanumeric())
+      .build();
 
-      const result = CampaignSchema.safeParse(campaign);
+    const result = CampaignSchema.safeParse(campaign);
 
-      expect(!result.success && result.error.issues).toStrictEqual([
-        {
-          format: 'url',
-          code: 'invalid_format',
-          message: 'Invalid URL',
-          path: [key],
-        },
-      ]);
-    },
-  );
+    expect(!result.success && result.error.issues).toStrictEqual([
+      {
+        format: 'url',
+        code: 'invalid_format',
+        message: 'Invalid URL',
+        path: [key],
+      },
+    ]);
+  });
 
   it('should not validate a non-numerical rewardValue', () => {
     const campaign = campaignBuilder()

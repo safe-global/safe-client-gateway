@@ -66,70 +66,69 @@ describe('Swap Order Helper tests', () => {
     );
   });
 
-  it.each([Object.values(OrderStatus)])(
-    'should map %s swap orders successfully',
-    async (orderStatus) => {
-      const chainId = faker.string.numeric();
-      const buyToken = tokenBuilder().build();
-      const sellToken = tokenBuilder().build();
-      const order = orderBuilder()
-        .with('status', orderStatus)
-        .with('buyToken', getAddress(buyToken.address))
-        .with('sellToken', getAddress(sellToken.address))
-        .build();
-      gpv2DecoderMock.getOrderUidFromSetPreSignature.mockReturnValue(
-        order.uid as Address,
-      );
-      swapsRepositoryMock.getOrder.mockResolvedValue(order);
-      tokenRepositoryMock.getToken.mockImplementation(({ address }) => {
-        if (address === order.buyToken) return Promise.resolve(buyToken);
-        if (address === order.sellToken) return Promise.resolve(sellToken);
-        return Promise.reject(new Error(`Token ${address} not found.`));
-      });
+  it.each([
+    Object.values(OrderStatus),
+  ])('should map %s swap orders successfully', async (orderStatus) => {
+    const chainId = faker.string.numeric();
+    const buyToken = tokenBuilder().build();
+    const sellToken = tokenBuilder().build();
+    const order = orderBuilder()
+      .with('status', orderStatus)
+      .with('buyToken', getAddress(buyToken.address))
+      .with('sellToken', getAddress(sellToken.address))
+      .build();
+    gpv2DecoderMock.getOrderUidFromSetPreSignature.mockReturnValue(
+      order.uid as Address,
+    );
+    swapsRepositoryMock.getOrder.mockResolvedValue(order);
+    tokenRepositoryMock.getToken.mockImplementation(({ address }) => {
+      if (address === order.buyToken) return Promise.resolve(buyToken);
+      if (address === order.sellToken) return Promise.resolve(sellToken);
+      return Promise.reject(new Error(`Token ${address} not found.`));
+    });
 
-      const actual = await target.getOrder({
-        chainId,
-        orderUid: order.uid as Address,
-      });
+    const actual = await target.getOrder({
+      chainId,
+      orderUid: order.uid as Address,
+    });
 
-      expect(actual).toEqual({
-        appData: order.appData,
-        availableBalance: order.availableBalance,
-        buyAmount: order.buyAmount,
-        buyToken: order.buyToken,
-        buyTokenBalance: order.buyTokenBalance,
-        class: order.class,
-        creationDate: order.creationDate,
-        ethflowData: order.ethflowData,
-        executedBuyAmount: order.executedBuyAmount,
-        executedFeeAmount: order.executedFeeAmount,
-        executedSellAmount: order.executedSellAmount,
-        executedSellAmountBeforeFees: order.executedSellAmountBeforeFees,
-        executedFee: order.executedFee,
-        executedFeeToken: order.executedFeeToken,
-        feeAmount: order.feeAmount,
-        from: order.from,
-        fullAppData: order.fullAppData,
-        invalidated: order.invalidated,
-        isLiquidityOrder: order.isLiquidityOrder,
-        kind: order.kind,
-        onchainOrderData: order.onchainOrderData,
-        onchainUser: order.onchainUser,
-        owner: order.owner,
-        partiallyFillable: order.partiallyFillable,
-        quoteId: order.quoteId,
-        receiver: order.receiver,
-        sellAmount: order.sellAmount,
-        sellToken: order.sellToken,
-        sellTokenBalance: order.sellTokenBalance,
-        signature: order.signature,
-        signingScheme: order.signingScheme,
-        status: order.status,
-        uid: order.uid,
-        validTo: order.validTo,
-      });
-    },
-  );
+    expect(actual).toEqual({
+      appData: order.appData,
+      availableBalance: order.availableBalance,
+      buyAmount: order.buyAmount,
+      buyToken: order.buyToken,
+      buyTokenBalance: order.buyTokenBalance,
+      class: order.class,
+      creationDate: order.creationDate,
+      ethflowData: order.ethflowData,
+      executedBuyAmount: order.executedBuyAmount,
+      executedFeeAmount: order.executedFeeAmount,
+      executedSellAmount: order.executedSellAmount,
+      executedSellAmountBeforeFees: order.executedSellAmountBeforeFees,
+      executedFee: order.executedFee,
+      executedFeeToken: order.executedFeeToken,
+      feeAmount: order.feeAmount,
+      from: order.from,
+      fullAppData: order.fullAppData,
+      invalidated: order.invalidated,
+      isLiquidityOrder: order.isLiquidityOrder,
+      kind: order.kind,
+      onchainOrderData: order.onchainOrderData,
+      onchainUser: order.onchainUser,
+      owner: order.owner,
+      partiallyFillable: order.partiallyFillable,
+      quoteId: order.quoteId,
+      receiver: order.receiver,
+      sellAmount: order.sellAmount,
+      sellToken: order.sellToken,
+      sellTokenBalance: order.sellTokenBalance,
+      signature: order.signature,
+      signingScheme: order.signingScheme,
+      status: order.status,
+      uid: order.uid,
+      validTo: order.validTo,
+    });
+  });
 
   it(`should throw if repository getOrder throws an error`, async () => {
     const chainId = faker.string.numeric();
@@ -167,30 +166,29 @@ describe('Swap Order Helper tests', () => {
     });
   });
 
-  it.each(Object.values(OrderStatus))(
-    'should throw if %s order kind is unknown',
-    async (status) => {
-      const chainId = faker.string.numeric();
-      const order = orderBuilder()
-        .with('status', status)
-        .with('kind', OrderKind.Unknown)
-        .build();
-      swapsRepositoryMock.getOrder.mockResolvedValue(order);
+  it.each(
+    Object.values(OrderStatus),
+  )('should throw if %s order kind is unknown', async (status) => {
+    const chainId = faker.string.numeric();
+    const order = orderBuilder()
+      .with('status', status)
+      .with('kind', OrderKind.Unknown)
+      .build();
+    swapsRepositoryMock.getOrder.mockResolvedValue(order);
 
-      await expect(
-        target.getOrder({
-          chainId,
-          orderUid: order.uid as Address,
-        }),
-      ).rejects.toThrow('Unknown order kind');
-
-      expect(swapsRepositoryMock.getOrder).toHaveBeenCalledTimes(1);
-      expect(swapsRepositoryMock.getOrder).toHaveBeenCalledWith(
+    await expect(
+      target.getOrder({
         chainId,
-        order.uid,
-      );
-    },
-  );
+        orderUid: order.uid as Address,
+      }),
+    ).rejects.toThrow('Unknown order kind');
+
+    expect(swapsRepositoryMock.getOrder).toHaveBeenCalledTimes(1);
+    expect(swapsRepositoryMock.getOrder).toHaveBeenCalledWith(
+      chainId,
+      order.uid,
+    );
+  });
 
   it('maps to native token if token is 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE', async () => {
     const chainId = faker.string.numeric();

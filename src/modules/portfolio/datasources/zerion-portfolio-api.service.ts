@@ -5,10 +5,6 @@ import type { Address } from 'viem';
 import { getAddress, isAddress } from 'viem';
 import { ZodError } from 'zod';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import {
-  CacheService,
-  type ICacheService,
-} from '@/datasources/cache/cache.service.interface';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import {
   type INetworkService,
@@ -16,10 +12,6 @@ import {
 } from '@/datasources/network/network.service.interface';
 import { getNumberString } from '@/domain/common/utils/utils';
 import { DataSourceError } from '@/domain/errors/data-source.error';
-import {
-  type ILoggingService,
-  LoggingService,
-} from '@/logging/logging.interface';
 import type { ZerionBalance } from '@/modules/balances/datasources/entities/zerion-balance.entity';
 import { ZerionBalancesSchema } from '@/modules/balances/datasources/entities/zerion-balance.entity';
 import {
@@ -65,9 +57,6 @@ export class ZerionPortfolioApi implements IPortfolioApi {
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
     private readonly httpErrorFactory: HttpErrorFactory,
-    @Inject(LoggingService)
-    private readonly loggingService: ILoggingService,
-    @Inject(CacheService) private readonly cacheService: ICacheService,
     private readonly zerionChainMappingService: ZerionChainMappingService,
   ) {
     this.apiKey = this.configurationService.get<string>(

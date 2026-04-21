@@ -88,54 +88,51 @@ describe('AnalysisResult', () => {
   });
 
   describe('AnalysisStatusSchema', () => {
-    it.each(Object.values(RecipientStatus))(
-      'should validate all recipient status values = %s',
-      (value) => {
-        expect(() => AnalysisStatusSchema.parse(value)).not.toThrow();
-      },
-    );
+    it.each(
+      Object.values(RecipientStatus),
+    )('should validate all recipient status values = %s', (value) => {
+      expect(() => AnalysisStatusSchema.parse(value)).not.toThrow();
+    });
 
-    it.each(Object.values(BridgeStatus))(
-      'should validate all bridge status values = %s',
-      (value) => {
-        expect(() => AnalysisStatusSchema.parse(value)).not.toThrow();
-      },
-    );
+    it.each(
+      Object.values(BridgeStatus),
+    )('should validate all bridge status values = %s', (value) => {
+      expect(() => AnalysisStatusSchema.parse(value)).not.toThrow();
+    });
 
-    it.each(Object.values(ContractStatus))(
-      'should validate all contract status values = %s',
-      (value) => {
-        expect(() => AnalysisStatusSchema.parse(value)).not.toThrow();
-      },
-    );
+    it.each(
+      Object.values(ContractStatus),
+    )('should validate all contract status values = %s', (value) => {
+      expect(() => AnalysisStatusSchema.parse(value)).not.toThrow();
+    });
 
-    it.each(Object.values(ThreatStatus))(
-      'should validate all threat status values = %s',
-      (value) => {
-        expect(() => AnalysisStatusSchema.parse(value)).not.toThrow();
-      },
-    );
+    it.each(
+      Object.values(ThreatStatus),
+    )('should validate all threat status values = %s', (value) => {
+      expect(() => AnalysisStatusSchema.parse(value)).not.toThrow();
+    });
 
-    it.each(Object.values(DeadlockStatus))(
-      'should validate all deadlock status values = %s',
-      (value) => {
-        expect(() => AnalysisStatusSchema.parse(value)).not.toThrow();
-      },
-    );
+    it.each(
+      Object.values(DeadlockStatus),
+    )('should validate all deadlock status values = %s', (value) => {
+      expect(() => AnalysisStatusSchema.parse(value)).not.toThrow();
+    });
 
-    it.each(Object.values(CommonStatus))(
-      'should validate all common status values = %s',
-      (value) => {
-        expect(() => AnalysisStatusSchema.parse(value)).not.toThrow();
-      },
-    );
+    it.each(
+      Object.values(CommonStatus),
+    )('should validate all common status values = %s', (value) => {
+      expect(() => AnalysisStatusSchema.parse(value)).not.toThrow();
+    });
 
-    it.each(['INVALID_STATUS', '', null, undefined, 123] as const)(
-      'should reject invalid status values = %s',
-      (value) => {
-        expect(() => AnalysisStatusSchema.parse(value)).toThrow();
-      },
-    );
+    it.each([
+      'INVALID_STATUS',
+      '',
+      null,
+      undefined,
+      123,
+    ] as const)('should reject invalid status values = %s', (value) => {
+      expect(() => AnalysisStatusSchema.parse(value)).toThrow();
+    });
   });
 
   describe('AnalysisResultBaseSchema', () => {
@@ -467,16 +464,15 @@ describe('AnalysisResult', () => {
       ).not.toThrow();
     });
 
-    it.each(Object.values(DeadlockStatus))(
-      'should validate deadlock status = %s',
-      (status) => {
-        const result = deadlockAnalysisResultBuilder()
-          .with('type', status)
-          .build();
+    it.each(
+      Object.values(DeadlockStatus),
+    )('should validate deadlock status = %s', (status) => {
+      const result = deadlockAnalysisResultBuilder()
+        .with('type', status)
+        .build();
 
-        expect(() => DeadlockAnalysisResultSchema.parse(result)).not.toThrow();
-      },
-    );
+      expect(() => DeadlockAnalysisResultSchema.parse(result)).not.toThrow();
+    });
 
     it('should validate common status FAILED', () => {
       const failedResult = {

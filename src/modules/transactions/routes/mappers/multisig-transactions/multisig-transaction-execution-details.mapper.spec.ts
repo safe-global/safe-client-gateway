@@ -4,7 +4,6 @@ import { getAddress } from 'viem';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 import { getSafeTxHash } from '@/domain/common/utils/safe';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
-import type { ILoggingService } from '@/logging/logging.interface';
 import { multisigTransactionBuilder } from '@/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
 import { confirmationBuilder } from '@/modules/safe/domain/entities/__tests__/multisig-transaction-confirmation.builder';
 import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
@@ -31,10 +30,6 @@ const safeRepository = jest.mocked({
   getMultisigTransactions: jest.fn(),
 } as jest.MockedObjectDeep<SafeRepository>);
 
-const loggingService = jest.mocked({
-  debug: jest.fn(),
-} as jest.MockedObjectDeep<ILoggingService>);
-
 describe('MultisigTransactionExecutionDetails mapper (Unit)', () => {
   let mapper: MultisigTransactionExecutionDetailsMapper;
 
@@ -45,7 +40,6 @@ describe('MultisigTransactionExecutionDetails mapper (Unit)', () => {
       addressInfoHelper,
       tokenRepository,
       safeRepository,
-      loggingService,
     );
   });
 

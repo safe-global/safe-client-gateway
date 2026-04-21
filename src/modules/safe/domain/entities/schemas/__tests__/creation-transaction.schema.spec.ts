@@ -45,17 +45,18 @@ describe('CreationTransactionSchema', () => {
     );
   });
 
-  it.each(['masterCopy' as const, 'setupData' as const, 'saltNonce' as const])(
-    'should allow an optional %s',
-    (field) => {
-      const creationTransaction = creationTransactionBuilder().build();
-      delete creationTransaction[field];
+  it.each([
+    'masterCopy' as const,
+    'setupData' as const,
+    'saltNonce' as const,
+  ])('should allow an optional %s', (field) => {
+    const creationTransaction = creationTransactionBuilder().build();
+    delete creationTransaction[field];
 
-      const result = CreationTransactionSchema.safeParse(creationTransaction);
+    const result = CreationTransactionSchema.safeParse(creationTransaction);
 
-      expect(result.success && result.data[field]).toBe(null);
-    },
-  );
+    expect(result.success && result.data[field]).toBe(null);
+  });
 
   it.each([
     'creator' as const,
@@ -77,24 +78,24 @@ describe('CreationTransactionSchema', () => {
     ]);
   });
 
-  it.each(['transactionHash' as const, 'setupData' as const])(
-    'should not allow non-hex %s',
-    (field) => {
-      const creationTransaction = creationTransactionBuilder()
-        .with(field, 'not a hex string' as Address)
-        .build();
+  it.each([
+    'transactionHash' as const,
+    'setupData' as const,
+  ])('should not allow non-hex %s', (field) => {
+    const creationTransaction = creationTransactionBuilder()
+      .with(field, 'not a hex string' as Address)
+      .build();
 
-      const result = CreationTransactionSchema.safeParse(creationTransaction);
+    const result = CreationTransactionSchema.safeParse(creationTransaction);
 
-      expect(!result.success && result.error.issues).toEqual([
-        {
-          code: 'custom',
-          message: 'Invalid "0x" notated hex string',
-          path: [field],
-        },
-      ]);
-    },
-  );
+    expect(!result.success && result.error.issues).toEqual([
+      {
+        code: 'custom',
+        message: 'Invalid "0x" notated hex string',
+        path: [field],
+      },
+    ]);
+  });
 
   it.each([
     'created' as const,

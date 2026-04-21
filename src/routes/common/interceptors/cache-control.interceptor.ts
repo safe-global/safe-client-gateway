@@ -6,6 +6,7 @@ import {
   type NestInterceptor,
 } from '@nestjs/common';
 import type { Response } from 'express';
+// biome-ignore lint/suspicious/noDeprecatedImports: only multi-callback `tap` overloads are deprecated in rxjs; we use the single-observer signature.
 import { type Observable, tap } from 'rxjs';
 
 /**

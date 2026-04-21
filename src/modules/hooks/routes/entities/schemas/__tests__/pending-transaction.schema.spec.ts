@@ -38,45 +38,45 @@ describe('PendingTransactionEventSchema', () => {
     ]);
   });
 
-  it.each(['to' as const, 'address' as const])(
-    'should not allow a non-address %s',
-    (field) => {
-      const pendingTransactionEvent = pendingTransactionEventBuilder()
-        .with(field, faker.string.sample() as Address)
-        .build();
+  it.each([
+    'to' as const,
+    'address' as const,
+  ])('should not allow a non-address %s', (field) => {
+    const pendingTransactionEvent = pendingTransactionEventBuilder()
+      .with(field, faker.string.sample() as Address)
+      .build();
 
-      const result = PendingTransactionEventSchema.safeParse(
-        pendingTransactionEvent,
-      );
+    const result = PendingTransactionEventSchema.safeParse(
+      pendingTransactionEvent,
+    );
 
-      expect(!result.success && result.error.issues).toStrictEqual([
-        {
-          code: 'custom',
-          message: 'Invalid address',
-          path: [field],
-        },
-      ]);
-    },
-  );
+    expect(!result.success && result.error.issues).toStrictEqual([
+      {
+        code: 'custom',
+        message: 'Invalid address',
+        path: [field],
+      },
+    ]);
+  });
 
-  it.each(['to' as const, 'address' as const])(
-    'should checksum the %s',
-    (field) => {
-      const nonChecksummedAddress = faker.finance
-        .ethereumAddress()
-        .toLowerCase() as Address;
-      const pendingTransactionEvent = pendingTransactionEventBuilder()
-        .with(field, nonChecksummedAddress)
-        .build();
+  it.each([
+    'to' as const,
+    'address' as const,
+  ])('should checksum the %s', (field) => {
+    const nonChecksummedAddress = faker.finance
+      .ethereumAddress()
+      .toLowerCase() as Address;
+    const pendingTransactionEvent = pendingTransactionEventBuilder()
+      .with(field, nonChecksummedAddress)
+      .build();
 
-      const result = PendingTransactionEventSchema.safeParse(
-        pendingTransactionEvent,
-      );
-      expect(result.success && result.data[field]).toBe(
-        getAddress(nonChecksummedAddress),
-      );
-    },
-  );
+    const result = PendingTransactionEventSchema.safeParse(
+      pendingTransactionEvent,
+    );
+    expect(result.success && result.data[field]).toBe(
+      getAddress(nonChecksummedAddress),
+    );
+  });
 
   it.each([
     'type' as const,

@@ -95,15 +95,12 @@ describe('prepareErrorMessage', () => {
         'GS400',
         'Fallback handler cannot be the Safe itself. Use a different address.',
       ],
-    ])(
-      'should map error code %s to user-friendly message',
-      (errorCode, expectedMessage) => {
-        const error = `Error: ${errorCode}`;
-        const result = prepareErrorMessage(error);
+    ])('should map error code %s to user-friendly message', (errorCode, expectedMessage) => {
+      const error = `Error: ${errorCode}`;
+      const result = prepareErrorMessage(error);
 
-        expect(result).toBe(expectedMessage);
-      },
-    );
+      expect(result).toBe(expectedMessage);
+    });
 
     it('should extract error code from error string in single quotation marks', () => {
       const error = `Reverted with reason string: 'GS030'`;
