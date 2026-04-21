@@ -692,6 +692,24 @@ describe('AuthController', () => {
         });
     });
 
+    it('should omit email for a valid OIDC access token when none is stored', async () => {
+      const authPayloadDto = oidcAuthPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      usersRepository.findEmailById.mockResolvedValue(undefined);
+
+      await request(app.getHttpServer())
+        .get('/v1/auth/me')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(200)
+        .expect(({ body }) => {
+          expect(body).toEqual({
+            id: authPayloadDto.sub,
+            authMethod: 'oidc',
+          });
+          expect(body).not.toHaveProperty('email');
+        });
+    });
+
     it('should return 200 with email for a valid OIDC access token when stored', async () => {
       const authPayloadDto = oidcAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
