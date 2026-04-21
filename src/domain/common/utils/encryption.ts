@@ -1,49 +1,9 @@
-// SPDX-License-Identifier: FSL-1.1-MIT
 import {
   createCipheriv,
   createDecipheriv,
   randomBytes,
   scryptSync,
 } from 'crypto';
-export const MAX_DERIVED_KEY_CACHE_SIZE = 50;
-export const DERIVED_KEY_MAX_AGE_MS = 15 * 60 * 1000; // 15 minutes
-
-interface CachedKey {
-  key: Buffer;
-  createdAt: number;
-}
-
-const derivedKeyCache = new Map<string, CachedKey>();
-
-function getDerivedKey(encryptionKey: string, salt: string): Buffer {
-  // Length-prefix the key to avoid collisions e.g. ("a:b","c") vs ("a","b:c")
-  const cacheKey = `${encryptionKey.length}:${encryptionKey}:${salt}`;
-  const cached = derivedKeyCache.get(cacheKey);
-  if (cached && Date.now() - cached.createdAt < DERIVED_KEY_MAX_AGE_MS) {
-    // Promote to end of Map for LRU eviction
-    derivedKeyCache.delete(cacheKey);
-    derivedKeyCache.set(cacheKey, cached);
-    return cached.key;
-  }
-  // Remove stale entry if it expired
-  if (cached) {
-    derivedKeyCache.delete(cacheKey);
-  }
-  const derived = scryptSync(encryptionKey, Buffer.from(salt, 'utf8'), 32);
-  if (derivedKeyCache.size >= MAX_DERIVED_KEY_CACHE_SIZE) {
-    // Evict least recently used (first entry in insertion order)
-    derivedKeyCache.delete(derivedKeyCache.keys().next().value!);
-  }
-  derivedKeyCache.set(cacheKey, { key: derived, createdAt: Date.now() });
-  return derived;
-}
-
-/**
- * Clears the derived key cache. Exported for testing and key rotation.
- */
-export function clearDerivedKeyCache(): void {
-  derivedKeyCache.clear();
-}
 
 /**
  * Encrypts data using AES-256-GCM encryption.
@@ -65,7 +25,8 @@ export function encryptData<T>(
   }
 
   try {
-    const key = getDerivedKey(encryptionKey, salt);
+    const saltBuffer = Buffer.from(salt, 'utf8');
+    const key = scryptSync(encryptionKey, saltBuffer, 32);
     const iv = randomBytes(16);
     const cipher = createCipheriv('aes-256-gcm', key, iv);
     const dataString = JSON.stringify(data);
@@ -102,7 +63,8 @@ export function decryptData<T>(
   }
 
   try {
-    const key = getDerivedKey(encryptionKey, salt);
+    const saltBuffer = Buffer.from(salt, 'utf8');
+    const key = scryptSync(encryptionKey, saltBuffer, 32);
     const buffer = Buffer.from(encryptedData, 'base64');
     const iv = buffer.subarray(0, 16);
     const authTag = buffer.subarray(16, 32);

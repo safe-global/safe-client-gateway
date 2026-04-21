@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable, OnModuleDestroy } from '@nestjs/common';
 import { RedisClientType } from '@/datasources/cache/cache.module';
 import { ICacheService } from '@/datasources/cache/cache.service.interface';
@@ -68,27 +67,17 @@ export class RedisCacheService
     );
 
     try {
-      // Pipeline hSet + expire into a single round-trip
-      await this.client
-        .multi()
-        .hSet(key, cacheDir.field, value)
-        // NX - Set expiry only when the key has no expiry
-        // See https://redis.io/commands/expire/
-        .expire(key, expirationTime, 'NX')
-        .exec();
+      await this.client.hSet(key, cacheDir.field, value);
+      // NX - Set expiry only when the key has no expiry
+      // See https://redis.io/commands/expire/
+      await this.client.expire(key, expirationTime, 'NX');
     } catch (error) {
       this.loggingService.error({
         type: LogType.CacheError,
         source: 'RedisCacheService',
         event: `Error setting/expiring ${key}:${cacheDir.field}`,
       });
-      await this.client.unlink(key).catch(() => {
-        this.loggingService.warn({
-          type: LogType.CacheError,
-          source: 'RedisCacheService',
-          event: `Cleanup unlink failed for ${key}`,
-        });
-      });
+      await this.client.unlink(key);
       throw error;
     }
   }
@@ -98,51 +87,18 @@ export class RedisCacheService
     return await this.client.hGet(key, cacheDir.field);
   }
 
-  /**
-   * Deletes a cache key and writes an invalidation marker.
-   *
-   * @returns The number of keys removed, or 0 if the key did not exist
-   *   **or** the pipeline failed (failures are logged, not thrown).
-   */
   async deleteByKey(key: string): Promise<number> {
     const keyWithPrefix = this._prefixKey(key);
-    const invalidationKey = this._prefixKey(`invalidationTimeMs:${key}`);
-    const expirationTime = this.enforceMaxRedisTTL(
+    // see https://redis.io/commands/unlink/
+    const result = await this.client.unlink(keyWithPrefix);
+
+    await this.hSet(
+      new CacheDir(`invalidationTimeMs:${key}`, ''),
+      Date.now().toString(),
       this.defaultExpirationTimeInSeconds,
+      0,
     );
-
-    let results: Array<unknown>;
-    try {
-      results = await this.client
-        .multi()
-        .unlink(keyWithPrefix)
-        .hSet(invalidationKey, '', Date.now().toString())
-        // No NX — refresh TTL on every invalidation so the marker persists
-        // for the full duration from the most recent delete, not the first.
-        .expire(invalidationKey, expirationTime)
-        .exec();
-    } catch {
-      this.loggingService.error({
-        type: LogType.CacheError,
-        source: 'RedisCacheService',
-        event: `Invalidation pipeline failed for key "${key}"`,
-      });
-      return 0;
-    }
-
-    const [unlinkResult, hSetResult, expireResult] = results;
-
-    // hSet returns the count of added fields (number), expire returns boolean.
-    // A mismatched type (e.g. Error) indicates a pipeline command failure.
-    if (typeof hSetResult !== 'number' || typeof expireResult !== 'boolean') {
-      this.loggingService.error({
-        type: LogType.CacheError,
-        source: 'RedisCacheService',
-        event: `Invalidation marker failed for key "${key}"`,
-      });
-    }
-
-    return typeof unlinkResult === 'number' ? unlinkResult : 0;
+    return result;
   }
 
   async increment(

@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import max from 'lodash/max';
 import semver from 'semver';
@@ -142,25 +141,23 @@ export class SafesService {
     const settledOverviews = await Promise.allSettled(
       limitedSafes.map(async ({ chainId, address }) => {
         const chain = await this.chainsRepository.getChain(chainId);
-
-        const safePromise = this.safeRepository.getSafe({ chainId, address });
-        const balancesPromise = this.balancesRepository.getBalances({
-          chain,
-          safeAddress: address,
-          trusted: args.trusted,
-          fiatCode: args.currency,
-          excludeSpam: args.excludeSpam,
-        });
-        // Swallow rejection to prevent Node unhandled rejection warning
-        // if safePromise rejects before balancesPromise is awaited.
-        // The actual error still propagates via Promise.all below.
-        balancesPromise.catch(() => {});
-
-        const safe = await safePromise;
-        const [balances, queue] = await Promise.all([
-          balancesPromise,
-          this.safeRepository.getTransactionQueue({ chainId, safe }),
+        const [safe, balances] = await Promise.all([
+          this.safeRepository.getSafe({
+            chainId,
+            address,
+          }),
+          this.balancesRepository.getBalances({
+            chain,
+            safeAddress: address,
+            trusted: args.trusted,
+            fiatCode: args.currency,
+            excludeSpam: args.excludeSpam,
+          }),
         ]);
+        const queue = await this.safeRepository.getTransactionQueue({
+          chainId,
+          safe,
+        });
 
         const fiatBalance = balances
           .filter((b) => b.fiatBalance !== null)

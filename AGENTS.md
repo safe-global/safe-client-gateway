@@ -42,15 +42,7 @@ Before creating **EACH** commit, you MUST run the following commands in sequence
 
    If there are any remaining lint errors, fix them manually before proceeding.
 
-3. **Validate environment configuration:**
-
-   ```bash
-   yarn env:validate
-   ```
-
-   **Stop immediately if this fails.** It means the configuration schema is broken and must be fixed before proceeding.
-
-4. **Run tests:**
+3. **Run tests:**
 
    ```bash
    yarn test
@@ -67,23 +59,12 @@ The correct workflow for making commits is:
 # 2. Run quality checks
 yarn format
 yarn lint --fix
-yarn env:validate  # STOP if this fails
 yarn test
 
 # 3. Only after all checks pass, commit
 git add <files>
 git commit -m "Your commit message"
 ```
-
-### Batch Related Changes
-
-When committing multiple files, **group related changes into logical commits** rather than committing all files at once or one file at a time. Each commit should represent a single coherent change:
-
-- Files that fix the same issue or implement the same feature go together
-- A source file and its corresponding test file go in the same commit
-- Unrelated changes get separate commits even if made at the same time
-
-For example, if you fix a bug in `encryption.ts`, update its test, and also fix an unrelated issue in `redis.cache.service.ts`, make two commits — not one and not three.
 
 ## License Headers
 
@@ -100,7 +81,7 @@ For `.md` files the hook uses a multi-line HTML comment style (`<!--| | -->`), s
 
 This is enforced by a `pre-commit` hook (`insert-license` from `Lucas-C/pre-commit-hooks`) and a `license-headers` CI job. The canonical header text lives in `LICENSE_HEADER.txt`.
 
-Every file you create or modify in a PR **MUST** have the correct license header. **Always add the license header yourself to every modified file** — do not rely on the pre-commit hook to do it for you. If the pre-commit hook adds it automatically, include that change in your commit.
+Every file you create or modify in a PR **MUST** have the correct license header. Add it yourself — do not rely on the pre-commit hook to do it for you. If the pre-commit hook adds it automatically, include that change in your commit.
 
 ## Important Notes
 
