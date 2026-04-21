@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import { groupBy } from 'lodash';
 import type { Address } from 'viem';
@@ -169,10 +170,13 @@ export class ZerionPortfolioApi implements IPortfolioApi {
       (p) => p.attributes.position_type !== 'wallet',
     );
 
-    const [tokenBalances, appBalances] = await Promise.all([
-      this._buildTokenBalances(walletPositions, isTestnet),
-      this._buildAppBalances(appPositions, isTestnet),
-    ]);
+    const networkMap = await this._buildNetworkChainIdMap(
+      displayablePositions,
+      isTestnet,
+    );
+
+    const tokenBalances = this._buildTokenBalances(walletPositions, networkMap);
+    const appBalances = this._buildAppBalances(appPositions, networkMap);
 
     const totalBalanceFiat = getNumberString(
       this._calculateTotalBalance(displayablePositions),
@@ -194,71 +198,83 @@ export class ZerionPortfolioApi implements IPortfolioApi {
   }
 
   /**
+   * Resolves a position's network, implementation, and token info.
+   * Shared by _buildTokenBalances and _buildAppPositions.
+   *
+   * Uses || (not ??) for symbol/name so that empty strings fall back
+   * to position.attributes.name instead of displaying blank.
+   */
+  private _resolvePositionMeta(
+    position: ZerionBalance,
+    networkMap: Map<string, string>,
+  ): TokenBalance['tokenInfo'] | null {
+    const networkName = position.relationships?.chain?.data?.id;
+    if (!networkName) return null;
+
+    const chainId = networkMap.get(networkName);
+    if (!chainId) return null;
+
+    const impl = position.attributes.fungible_info.implementations.find(
+      (i) => i.chain_id === networkName,
+    );
+    if (!impl) return null;
+
+    if (impl.address !== null && !isAddress(impl.address)) {
+      return null;
+    }
+
+    const address = impl.address ? getAddress(impl.address) : null;
+
+    return {
+      address,
+      decimals: impl.decimals,
+      symbol:
+        position.attributes.fungible_info.symbol || position.attributes.name,
+      name: position.attributes.fungible_info.name || position.attributes.name,
+      logoUri: position.attributes.fungible_info.icon?.url ?? '',
+      chainId,
+      trusted: !(position.attributes.flags.is_trash ?? false),
+      type:
+        address === null ||
+        address === '0x0000000000000000000000000000000000000000'
+          ? 'NATIVE_TOKEN'
+          : 'ERC20',
+    };
+  }
+
+  /**
    * Maps Zerion wallet positions to domain TokenBalance entities.
    *
    * @param {Array<ZerionBalance>} positions - Zerion wallet positions
-   * @param {boolean} isTestnet - Whether this is a testnet request
-   * @returns {Promise<Array<TokenBalance>>} Promise that resolves to token balance entities
+   * @param {Map<string, string>} networkMap - Map of Zerion network IDs to chain IDs
+   * @returns {Array<TokenBalance>} Token balance entities
    */
-  private async _buildTokenBalances(
+  private _buildTokenBalances(
     positions: Array<ZerionBalance>,
-    isTestnet: boolean,
-  ): Promise<Array<TokenBalance>> {
-    const tokenBalances = await Promise.all(
-      positions.map(async (position): Promise<TokenBalance | null> => {
-        const networkName = position.relationships?.chain?.data?.id;
-        if (!networkName) return null;
+    networkMap: Map<string, string>,
+  ): Array<TokenBalance> {
+    const tokenBalances = positions.map((position): TokenBalance | null => {
+      const tokenInfo = this._resolvePositionMeta(position, networkMap);
+      if (!tokenInfo) return null;
 
-        const chainId = await this._mapNetworkToChainId(networkName, isTestnet);
-        if (!chainId) return null;
-
-        const impl = position.attributes.fungible_info.implementations.find(
-          (i) => i.chain_id === networkName,
-        );
-        if (!impl) return null;
-
-        if (impl.address !== null && !isAddress(impl.address)) {
-          return null;
-        }
-
-        const address = impl.address ? getAddress(impl.address) : null;
-
-        return {
-          tokenInfo: {
-            address,
-            decimals: impl.decimals,
-            symbol:
-              position.attributes.fungible_info.symbol ??
-              position.attributes.name,
-            name:
-              position.attributes.fungible_info.name ??
-              position.attributes.name,
-            logoUri: position.attributes.fungible_info.icon?.url ?? '',
-            chainId,
-            trusted: !(position.attributes.flags.is_trash ?? false),
-            type:
-              address === null ||
-              address === '0x0000000000000000000000000000000000000000'
-                ? 'NATIVE_TOKEN'
-                : 'ERC20',
-          },
-          balance: position.attributes.quantity.int,
-          balanceFiat:
-            position.attributes.value !== null
-              ? getNumberString(position.attributes.value)
-              : undefined,
-          price:
-            position.attributes.price !== null
-              ? getNumberString(position.attributes.price)
-              : undefined,
-          priceChangePercentage1d:
-            position.attributes.changes?.percent_1d !== null &&
-            position.attributes.changes?.percent_1d !== undefined
-              ? getNumberString(position.attributes.changes.percent_1d)
-              : undefined,
-        };
-      }),
-    );
+      return {
+        tokenInfo,
+        balance: position.attributes.quantity.int,
+        balanceFiat:
+          position.attributes.value !== null
+            ? getNumberString(position.attributes.value)
+            : undefined,
+        price:
+          position.attributes.price !== null
+            ? getNumberString(position.attributes.price)
+            : undefined,
+        priceChangePercentage1d:
+          position.attributes.changes?.percent_1d !== null &&
+          position.attributes.changes?.percent_1d !== undefined
+            ? getNumberString(position.attributes.changes.percent_1d)
+            : undefined,
+      };
+    });
 
     return tokenBalances.filter(
       (token): token is TokenBalance => token !== null,
@@ -269,13 +285,13 @@ export class ZerionPortfolioApi implements IPortfolioApi {
    * Maps Zerion app positions to domain AppBalance entities, grouped by app and group_id.
    *
    * @param {Array<ZerionBalance>} positions - Zerion app positions
-   * @param {boolean} isTestnet - Whether this is a testnet request
-   * @returns {Promise<Array<AppBalance>>} Promise that resolves to app balance entities
+   * @param {Map<string, string>} networkMap - Map of Zerion network IDs to chain IDs
+   * @returns {Array<AppBalance>} App balance entities
    */
-  private async _buildAppBalances(
+  private _buildAppBalances(
     positions: Array<ZerionBalance>,
-    isTestnet: boolean,
-  ): Promise<Array<AppBalance>> {
+    networkMap: Map<string, string>,
+  ): Array<AppBalance> {
     const groupedByApp = new Map<string, Array<ZerionBalance>>();
 
     for (const position of positions) {
@@ -289,31 +305,26 @@ export class ZerionPortfolioApi implements IPortfolioApi {
       groupedByApp.get(appName)!.push(position);
     }
 
-    return Promise.all(
-      Array.from(groupedByApp.entries()).map(
-        async ([appName, appPositions]): Promise<AppBalance> => {
-          const appMetadata = appPositions[0].attributes.application_metadata;
+    return Array.from(groupedByApp.entries()).map(
+      ([appName, appPositions]): AppBalance => {
+        const appMetadata = appPositions[0].attributes.application_metadata;
 
-          const positions = await this._buildAppPositions(
-            appPositions,
-            isTestnet,
-          );
+        const positions = this._buildAppPositions(appPositions, networkMap);
 
-          const groups = this.groupPositions(positions);
+        const groups = this.groupPositions(positions);
 
-          return {
-            appInfo: {
-              name: appName,
-              logoUrl: appMetadata?.icon?.url ?? undefined,
-              url: appMetadata?.url ?? undefined,
-            },
-            balanceFiat: getNumberString(
-              this._calculatePositionsBalance(appPositions),
-            ),
-            groups,
-          };
-        },
-      ),
+        return {
+          appInfo: {
+            name: appName,
+            logoUrl: appMetadata?.icon?.url ?? undefined,
+            url: appMetadata?.url ?? undefined,
+          },
+          balanceFiat: getNumberString(
+            this._calculateTotalBalance(appPositions),
+          ),
+          groups,
+        };
+      },
     );
   }
 
@@ -344,71 +355,42 @@ export class ZerionPortfolioApi implements IPortfolioApi {
    * Maps Zerion positions to domain AppPosition entities.
    *
    * @param {Array<ZerionBalance>} positions - Zerion balance positions
-   * @param {boolean} isTestnet - Whether this is a testnet request
-   * @returns {Promise<Array<AppPosition>>} Promise that resolves to app position entities
+   * @param {Map<string, string>} networkMap - Map of Zerion network IDs to chain IDs
+   * @returns {Array<AppPosition>} App position entities
    */
-  private async _buildAppPositions(
+  private _buildAppPositions(
     positions: Array<ZerionBalance>,
-    isTestnet: boolean,
-  ): Promise<Array<AppPosition>> {
-    const appPositions = await Promise.all(
-      positions.map(async (position): Promise<AppPosition | null> => {
-        const networkName = position.relationships?.chain?.data?.id;
-        if (!networkName) return null;
+    networkMap: Map<string, string>,
+  ): Array<AppPosition> {
+    const appPositions = positions.map((position): AppPosition | null => {
+      const tokenInfo = this._resolvePositionMeta(position, networkMap);
+      if (!tokenInfo) return null;
 
-        const chainId = await this._mapNetworkToChainId(networkName, isTestnet);
-        if (!chainId) return null;
+      const poolAddress = position.attributes.pool_address;
+      const receiptTokenAddress =
+        poolAddress != null && isAddress(poolAddress)
+          ? getAddress(poolAddress)
+          : undefined;
 
-        const impl = position.attributes.fungible_info.implementations.find(
-          (i) => i.chain_id === networkName,
-        );
-        if (!impl) return null;
-
-        if (impl.address !== null && !isAddress(impl.address)) {
-          return null;
-        }
-
-        const address = impl.address ? getAddress(impl.address) : null;
-
-        const poolAddress = position.attributes.pool_address;
-        const receiptTokenAddress =
-          poolAddress != null && isAddress(poolAddress)
-            ? getAddress(poolAddress)
-            : undefined;
-
-        return {
-          key: position.id,
-          type: position.attributes.position_type,
-          name: position.attributes.name,
-          groupId: position.attributes.group_id ?? undefined,
-          tokenInfo: {
-            address,
-            decimals: impl.decimals,
-            symbol: position.attributes.fungible_info.symbol ?? '',
-            name: position.attributes.fungible_info.name ?? '',
-            logoUri: position.attributes.fungible_info.icon?.url ?? '',
-            chainId,
-            trusted: !(position.attributes.flags.is_trash ?? false),
-            type:
-              address === null ||
-              address === '0x0000000000000000000000000000000000000000'
-                ? 'NATIVE_TOKEN'
-                : 'ERC20',
-          },
-          receiptTokenAddress,
-          balance: position.attributes.quantity.int,
-          balanceFiat:
-            position.attributes.value !== null
-              ? getNumberString(position.attributes.value)
-              : undefined,
-          priceChangePercentage1d:
-            position.attributes.changes?.percent_1d !== null &&
-            position.attributes.changes?.percent_1d !== undefined
-              ? getNumberString(position.attributes.changes.percent_1d)
-              : undefined,
-        };
-      }),
-    );
+      return {
+        key: position.id,
+        type: position.attributes.position_type,
+        name: position.attributes.name,
+        groupId: position.attributes.group_id ?? undefined,
+        tokenInfo,
+        receiptTokenAddress,
+        balance: position.attributes.quantity.int,
+        balanceFiat:
+          position.attributes.value !== null
+            ? getNumberString(position.attributes.value)
+            : undefined,
+        priceChangePercentage1d:
+          position.attributes.changes?.percent_1d !== null &&
+          position.attributes.changes?.percent_1d !== undefined
+            ? getNumberString(position.attributes.changes.percent_1d)
+            : undefined,
+      };
+    });
 
     return appPositions.filter((pos): pos is AppPosition => pos !== null);
   }
@@ -426,15 +408,35 @@ export class ZerionPortfolioApi implements IPortfolioApi {
   }
 
   /**
-   * Calculates total fiat value of app positions.
-   *
-   * @param {Array<ZerionBalance>} positions - App positions to calculate balance for
-   * @returns {number} Total fiat value
+   * Pre-computes a map of unique Zerion network names to chain IDs.
+   * Deduplicates lookups so each network is resolved only once.
    */
-  private _calculatePositionsBalance(positions: Array<ZerionBalance>): number {
-    return positions.reduce((sum, position) => {
-      return sum + (position.attributes.value ?? 0);
-    }, 0);
+  private async _buildNetworkChainIdMap(
+    positions: Array<ZerionBalance>,
+    isTestnet: boolean,
+  ): Promise<Map<string, string>> {
+    const uniqueNetworks = [
+      ...new Set(
+        positions
+          .map((p) => p.relationships?.chain?.data?.id)
+          .filter((id): id is string => id != null),
+      ),
+    ];
+
+    const entries = await Promise.all(
+      uniqueNetworks.map(async (network) => {
+        const chainId = await this._mapNetworkToChainId(network, isTestnet);
+        return [network, chainId] as const;
+      }),
+    );
+
+    const map = new Map<string, string>();
+    for (const [network, chainId] of entries) {
+      if (chainId) {
+        map.set(network, chainId);
+      }
+    }
+    return map;
   }
 
   /**

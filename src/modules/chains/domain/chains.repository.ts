@@ -1,10 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
-import {
-  ChainLenientPageSchema,
-  ChainSchema,
-} from '@/modules/chains/domain/entities/schemas/chain.schema';
+import { ChainSchema } from '@/modules/chains/domain/entities/schemas/chain.schema';
 import { Chain } from '@/modules/chains/domain/entities/chain.entity';
 import { Singleton } from '@/modules/chains/domain/entities/singleton.entity';
 import { SingletonsSchema } from '@/modules/chains/domain/entities/schemas/singleton.schema';
@@ -17,8 +14,7 @@ import {
   IndexingStatusSchema,
 } from '@/modules/indexing/domain/entities/indexing-status.entity';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
-import differenceBy from 'lodash/differenceBy';
-import { PaginationData } from '@/routes/common/pagination/pagination.data';
+
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { LenientBasePageSchema } from '@/domain/entities/schemas/page.schema.factory';
 import {
@@ -61,14 +57,7 @@ export class ChainsRepository implements IChainsRepository {
     const page = await this.configApi
       .getChains({ limit, offset })
       .then(LenientBasePageSchema.parse);
-    const valid = ChainLenientPageSchema.parse(page);
-    if (valid.results.length < page.results.length) {
-      this.loggingService.error({
-        message: 'Some chains could not be parsed',
-        errors: differenceBy(page.results, valid.results, 'chainId'),
-      });
-    }
-    return valid;
+    return this.parseChainPage(page);
   }
 
   async getChainsV2(
@@ -79,14 +68,7 @@ export class ChainsRepository implements IChainsRepository {
     const page = await this.configApi
       .getChainsV2(serviceKey, { limit, offset })
       .then(LenientBasePageSchema.parse);
-    const valid = ChainLenientPageSchema.parse(page);
-    if (valid.results.length < page.results.length) {
-      this.loggingService.error({
-        message: 'Some chains could not be parsed',
-        errors: differenceBy(page.results, valid.results, 'chainId'),
-      });
-    }
-    return valid;
+    return this.parseChainPage(page);
   }
 
   async getChainV2(serviceKey: string, chainId: string): Promise<Chain> {
@@ -98,34 +80,55 @@ export class ChainsRepository implements IChainsRepository {
     return this.configApi.clearChainV2(serviceKey, chainId);
   }
 
-  async getAllChains(): Promise<Array<Chain>> {
-    const chains: Array<Chain> = [];
-
-    let offset = 0;
-    let next = null;
-
-    for (let i = 0; i < this.maxSequentialPages; i++) {
-      const result = await this.getChains(ChainsRepository.MAX_LIMIT, offset);
-
-      next = result.next;
-      chains.push(...result.results);
-
-      if (!next) {
-        break;
+  private parseChainPage(page: Page<unknown>): Page<Chain> {
+    const valid: Array<Chain> = [];
+    const invalid: Array<unknown> = [];
+    for (const item of page.results) {
+      const result = ChainSchema.safeParse(item);
+      if (result.success) {
+        valid.push(result.data);
+      } else {
+        invalid.push(item);
       }
+    }
+    if (invalid.length > 0) {
+      this.loggingService.error({
+        message: 'Some chains could not be parsed',
+        errors: invalid,
+      });
+    }
+    return { ...page, results: valid };
+  }
 
-      const url = new URL(next);
-      const paginationData = PaginationData.fromLimitAndOffset(url);
-      offset = paginationData.offset;
+  async getAllChains(): Promise<Array<Chain>> {
+    const firstPage = await this.getChains(ChainsRepository.MAX_LIMIT, 0);
+
+    if (!firstPage.next) {
+      return firstPage.results;
     }
 
-    if (next) {
+    const totalCount = firstPage.count ?? firstPage.results.length;
+    const totalPages = Math.ceil(totalCount / ChainsRepository.MAX_LIMIT);
+    const pagesToFetch = Math.min(totalPages - 1, this.maxSequentialPages - 1);
+
+    // Offsets assume the config service returns fixed-size pages of MAX_LIMIT.
+    // Chain configuration changes are infrequent, so parallel fetch is safe.
+    const remainingPages = await Promise.all(
+      Array.from({ length: pagesToFetch }, (_, i) =>
+        this.getChains(
+          ChainsRepository.MAX_LIMIT,
+          (i + 1) * ChainsRepository.MAX_LIMIT,
+        ),
+      ),
+    );
+
+    if (totalPages > this.maxSequentialPages) {
       this.loggingService.error(
         'More chains available despite request limit reached',
       );
     }
 
-    return chains;
+    return [firstPage, ...remainingPages].flatMap((p) => p.results);
   }
 
   async getSingletons(chainId: string): Promise<Array<Singleton>> {

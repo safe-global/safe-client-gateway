@@ -234,14 +234,24 @@ export class TransactionsService {
         offset: args.paginationData.offset,
       });
 
-    const safeInfo = await this.safeRepository.getSafe({
-      chainId: args.chainId,
-      address: args.safeAddress,
-    });
-    await this.multisigTransactionMapper.prefetchAddressInfos({
-      chainId: args.chainId,
-      transactions: domainTransactions.results,
-    });
+    const [safeInfo] = await Promise.all([
+      this.safeRepository.getSafe({
+        chainId: args.chainId,
+        address: args.safeAddress,
+      }),
+      this.multisigTransactionMapper
+        .prefetchAddressInfos({
+          chainId: args.chainId,
+          transactions: domainTransactions.results,
+        })
+        .catch((error) => {
+          this.loggingService.debug({
+            type: LogType.ExternalRequest,
+            message: 'prefetchAddressInfos failed; falling back to on-demand',
+            error,
+          });
+        }),
+    ]);
 
     const dataDecoded = await Promise.all(
       domainTransactions.results.map((domainTransaction) => {
