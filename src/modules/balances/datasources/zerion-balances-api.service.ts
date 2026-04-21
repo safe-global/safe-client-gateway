@@ -342,7 +342,7 @@ export class ZerionBalancesApi implements IBalancesApi {
     }
 
     // If fetch is in progress, wait for it
-    if (this.chainMappingsPromise) {
+    if (this.chainMappingsPromise !== null) {
       return this.chainMappingsPromise;
     }
 
