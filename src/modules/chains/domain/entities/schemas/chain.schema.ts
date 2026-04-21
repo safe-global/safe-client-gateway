@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
 import { RpcUriAuthentication } from '@/modules/chains/domain/entities/rpc-uri-authentication.entity';
-
+import { buildLenientPageSchema } from '@/domain/entities/schemas/page.schema.factory';
 import { TokenDetailsSchema } from '@/domain/common/schemas/token-metadata.schema';
 import {
   NullableAddressSchema,
@@ -107,3 +107,5 @@ export const ChainSchema = z.object({
 });
 
 // TODO: Merge schema definitions with ChainEntity.
+
+export const ChainLenientPageSchema = buildLenientPageSchema(ChainSchema);
