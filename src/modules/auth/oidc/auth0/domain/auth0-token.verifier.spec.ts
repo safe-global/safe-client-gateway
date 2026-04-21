@@ -81,6 +81,27 @@ describe('Auth0TokenVerifier', () => {
       expect(result.exp).toBeUndefined();
     });
 
+    it('should parse verified email claims when present', () => {
+      const accessToken = faker.string.alphanumeric();
+      const email = faker.internet.email().toLowerCase();
+      const decoded = {
+        sub: faker.string.numeric(),
+        email,
+        email_verified: true,
+      };
+      jwtServiceMock.decode.mockReturnValue(decoded);
+
+      const result = target.verifyAndDecode(accessToken);
+
+      expect(result).toEqual(
+        expect.objectContaining({
+          sub: decoded.sub,
+          email,
+          email_verified: true,
+        }),
+      );
+    });
+
     it('should throw if sub is missing', () => {
       const accessToken = faker.string.alphanumeric();
       jwtServiceMock.decode.mockReturnValue({});
