@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import {
   ApiExtraModels,
   ApiProperty,
@@ -37,7 +38,6 @@ import {
   Theme as ApiTheme,
 } from '@/modules/chains/routes/entities/theme.entity';
 import { BalancesProvider } from '@/modules/chains/routes/entities/balances-provider.entity';
-import { ContractAddresses } from '@/modules/chains/routes/entities/contract-addresses.entity';
 import type { Address } from 'viem';
 
 @ApiExtraModels(ApiGasPriceOracle, ApiGasPriceFixed, ApiGasPriceFixedEIP1559)
@@ -70,8 +70,6 @@ export class Chain {
   ensRegistryAddress: Address | null;
   @ApiProperty()
   balancesProvider: BalancesProvider;
-  @ApiProperty()
-  contractAddresses: ContractAddresses;
   @ApiProperty()
   features: Array<string>;
   @ApiProperty({
@@ -122,7 +120,6 @@ export class Chain {
     isTestnet: boolean;
     chainLogoUri: string | null;
     balancesProvider: BalancesProvider;
-    contractAddresses: ContractAddresses;
     recommendedMasterCopyVersion: string | null;
   }) {
     this.chainId = args.chainId;
@@ -146,7 +143,6 @@ export class Chain {
     this.shortName = args.shortName;
     this.theme = args.theme;
     this.balancesProvider = args.balancesProvider;
-    this.contractAddresses = args.contractAddresses;
     this.recommendedMasterCopyVersion = args.recommendedMasterCopyVersion;
   }
 }

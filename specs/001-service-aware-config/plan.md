@@ -1,3 +1,7 @@
+<!--
+  SPDX-License-Identifier: FSL-1.1-MIT
+ -->
+
 # Implementation Plan: Service-Aware Feature Configuration Integration
 
 **Branch**: `001-service-aware-config` | **Date**: 2026-02-04 | **Spec**: [spec.md](./spec.md)

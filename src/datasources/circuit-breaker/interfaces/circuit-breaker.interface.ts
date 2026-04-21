@@ -6,14 +6,10 @@ import type { CircuitState } from '@/datasources/circuit-breaker/enums/circuit-s
  */
 export interface ICircuitConfig {
   /**
-   * Number of failures required to open the circuit
+   * Number of failures to open the circuit (CLOSED state),
+   * and consecutive successes to close it (HALF_OPEN state)
    */
-  failureThreshold: number;
-
-  /**
-   * Number of consecutive successes required in HALF_OPEN state to close the circuit
-   */
-  successThreshold: number;
+  threshold: number;
 
   /**
    * Time in milliseconds to wait before transitioning from OPEN to HALF_OPEN
@@ -27,9 +23,10 @@ export interface ICircuitConfig {
   rollingWindow: number;
 
   /**
-   * Maximum number of test requests to allow in HALF_OPEN state
+   * Percentage of threshold used in HALF_OPEN state (0–100)
+   * E.g. 30 with threshold 10 means 3 failures reopen the circuit
    */
-  halfOpenMaxRequests: number;
+  halfOpenFailureRateThreshold: number;
 }
 
 /**
@@ -47,11 +44,6 @@ export interface ICircuitMetrics {
   failureCount: number;
 
   /**
-   * Total number of successful requests recorded
-   */
-  successCount: number;
-
-  /**
    * Timestamp of the last failure occurrence
    */
   lastFailureTime?: number;
@@ -67,9 +59,9 @@ export interface ICircuitMetrics {
   consecutiveSuccesses: number;
 
   /**
-   * Map tracking the number of requests made in HALF_OPEN state for a circuit
+   * Timestamp of the last success or failure, used for stale circuit cleanup
    */
-  halfOpenRequestCounts: number;
+  lastActivityTime?: number;
 }
 
 /**
@@ -80,11 +72,6 @@ export interface ICircuit {
    * Unique name for this circuit
    */
   name: string;
-
-  /**
-   * Configuration settings for this circuit breaker
-   */
-  config: ICircuitConfig;
 
   /**
    * Current metrics and state information

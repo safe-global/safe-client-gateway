@@ -5,7 +5,7 @@ import { RelayDto } from '@/modules/relay/routes/entities/relay.dto.entity';
 import { Relay } from '@/modules/relay/routes/entities/relay.entity';
 import { RelayTaskStatus } from '@/modules/relay/routes/entities/relay-task-status.entity';
 import { RelaysRemaining } from '@/modules/relay/routes/entities/relays-remaining.entity';
-import type { Address } from 'viem';
+import type { Address, Hex } from 'viem';
 
 @Injectable()
 export class RelayService {
@@ -18,6 +18,7 @@ export class RelayService {
       to: args.relayDto.to,
       data: args.relayDto.data,
       gasLimit: args.relayDto.gasLimit,
+      safeTxHash: args.relayDto.safeTxHash,
     });
 
     return new Relay(relay);
@@ -38,10 +39,12 @@ export class RelayService {
   async getRelaysRemaining(args: {
     chainId: string;
     safeAddress: Address;
+    safeTxHash?: Hex;
   }): Promise<{ remaining: number; limit: number }> {
     const relaysRemaining = await this.relayRepository.getRelaysRemaining({
       chainId: args.chainId,
       address: args.safeAddress,
+      safeTxHash: args.safeTxHash,
     });
 
     return new RelaysRemaining(relaysRemaining);

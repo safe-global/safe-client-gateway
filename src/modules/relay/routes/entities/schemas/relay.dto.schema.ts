@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
 import semver from 'semver';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
@@ -27,4 +28,5 @@ export const RelayDtoSchema = z.object({
         return z.NEVER;
       }
     }),
+  safeTxHash: HexSchema.optional(),
 });

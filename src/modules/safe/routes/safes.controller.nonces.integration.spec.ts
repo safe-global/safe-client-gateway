@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
 import { NetworkService } from '@/datasources/network/network.service.interface';
@@ -32,6 +33,10 @@ describe('Safes Controller Nonces', () => {
 
     app = await new TestAppProvider().provide(moduleFixture);
     await app.init();
+  });
+
+  afterEach(async () => {
+    await app.close();
   });
 
   it('returns latest transaction nonce + 1 if greater than safe nonce', async () => {

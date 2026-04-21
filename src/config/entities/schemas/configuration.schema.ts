@@ -31,9 +31,30 @@ const relayRulesValidator = z
   )
   .optional();
 
+const DomainSchema = z.string().refine(
+  (val) => {
+    try {
+      return new URL(`https://${val}`).hostname === val;
+    } catch {
+      return false;
+    }
+  },
+  { message: 'Must be a valid domain (e.g. tenant.auth0.com)' },
+);
+
 export const RootConfigurationSchema = z
   .object({
     AUTH_TOKEN: z.string(),
+    AUTH_POST_LOGIN_REDIRECT_URI: z.url(),
+    AUTH_ALLOWED_REDIRECT_DOMAIN: DomainSchema.optional(),
+    AUTH0_API_AUDIENCE: z.string().optional(),
+    AUTH0_DOMAIN: DomainSchema.optional(),
+    AUTH0_CLIENT_ID: z.string().optional(),
+    AUTH0_CLIENT_SECRET: z.string().optional(),
+    AUTH0_REDIRECT_URI: z.url().optional(),
+    AUTH0_SIGNING_SECRET: z.string().optional(),
+    AUTH0_SCOPE: z.string().optional(),
+    AUTH_STATE_TTL_MILLISECONDS: z.coerce.number().int().min(1).optional(),
     AWS_ACCESS_KEY_ID: z.string().optional(),
     AWS_KMS_ENCRYPTION_KEY_ID: z.string().optional(),
     AWS_SECRET_ACCESS_KEY: z.string().optional(),
@@ -42,22 +63,14 @@ export const RootConfigurationSchema = z
     BLOCKLIST_SECRET_KEY: z.string(),
     BLOCKLIST_SECRET_SALT: z.string(),
     CGW_ENV: z.string().optional(),
-    CIRCUIT_BREAKER_FAILURE_THRESHOLD: z.coerce
-      .number()
-      .int()
-      .min(1)
-      .optional(),
-    CIRCUIT_BREAKER_SUCCESS_THRESHOLD: z.coerce
-      .number()
-      .int()
-      .min(1)
-      .optional(),
+    CIRCUIT_BREAKER_THRESHOLD: z.coerce.number().int().min(1).optional(),
     CIRCUIT_BREAKER_TIMEOUT: z.coerce.number().int().min(0).optional(),
     CIRCUIT_BREAKER_ROLLING_WINDOW: z.coerce.number().int().min(0).optional(),
-    CIRCUIT_BREAKER_HALF_OPEN_MAX_REQUESTS: z.coerce
+    CIRCUIT_BREAKER_HALF_OPEN_FAILURE_RATE_THRESHOLD: z.coerce
       .number()
       .int()
       .min(1)
+      .max(100)
       .optional(),
     SAFE_CONFIG_CGW_KEY: z.string().min(1).optional(),
     LOG_LEVEL: z
@@ -114,6 +127,14 @@ export const RootConfigurationSchema = z
       .transform((value) => value.split(',').map((item) => item.trim()))
       .pipe(z.array(z.string()))
       .optional(),
+    // Relay-fee configuration
+    RELAY_FEE_CHAIN_IDS: z
+      .string()
+      .transform((value) => value.split(',').map((item) => item.trim()))
+      .pipe(z.array(z.string()))
+      .optional(),
+    FEE_SERVICE_BASE_URI: z.url().optional(),
+    RELAY_FEE_PREVIEW_TTL_SECONDS: z.coerce.number().int().min(0).optional(),
     RELAY_NO_FEE_CAMPAIGN_SEPOLIA_SAFE_TOKEN_ADDRESS: z.string().optional(),
     RELAY_NO_FEE_CAMPAIGN_SEPOLIA_START_TIMESTAMP: z.coerce
       .number()
@@ -153,6 +174,7 @@ export const RootConfigurationSchema = z
     CSV_AWS_ACCESS_KEY_ID: z.string().optional(),
     CSV_AWS_SECRET_ACCESS_KEY: z.string().optional(),
     CSV_EXPORT_QUEUE_CONCURRENCY: z.coerce.number().min(1).optional(),
+    PUSH_NOTIFICATION_QUEUE_CONCURRENCY: z.coerce.number().min(1).optional(),
     BLOCKAID_CLIENT_API_KEY: z.string().optional(),
     TX_SERVICE_API_KEY: z.string().trim().min(1).optional(),
     CAPTCHA_ENABLED: z.string().optional().default('false'),

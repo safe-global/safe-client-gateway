@@ -1,10 +1,11 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { ConfigurationModule } from '@/config/configuration.module';
 import configuration from '@/config/entities/__tests__/configuration';
 import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module';
 import { CacheModule } from '@/datasources/cache/cache.module';
 import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
-import { authPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
+import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import { OptionalAuthGuard } from '@/modules/auth/routes/guards/optional-auth.guard';
 import { faker } from '@faker-js/faker';
@@ -14,6 +15,8 @@ import request from 'supertest';
 import { AuthModule } from '@/modules/auth/auth.module';
 import { Server } from 'net';
 import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
+import { UsersModule } from '@/modules/users/users.module';
+import { TestUsersModule } from '@/modules/users/__tests__/test.users.module';
 
 @Controller()
 class TestController {
@@ -52,6 +55,8 @@ describe('OptionalAuthGuard', () => {
     })
       .overrideModule(CacheModule)
       .useModule(TestCacheModule)
+      .overrideModule(UsersModule)
+      .useModule(TestUsersModule)
       .compile();
 
     jwtService = moduleFixture.get<IJwtService>(IJwtService);
@@ -88,7 +93,7 @@ describe('OptionalAuthGuard', () => {
   });
 
   it('should not allow access if a token is not yet valid', async () => {
-    const authPayloadDto = authPayloadDtoBuilder().build();
+    const authPayloadDto = siweAuthPayloadDtoBuilder().build();
     const accessToken = jwtService.sign({
       ...authPayloadDto,
       nbf: faker.date.future(),
@@ -108,7 +113,7 @@ describe('OptionalAuthGuard', () => {
   });
 
   it('should not allow access if a token has expired', async () => {
-    const authPayloadDto = authPayloadDtoBuilder().build();
+    const authPayloadDto = siweAuthPayloadDtoBuilder().build();
     const accessToken = jwtService.sign({
       ...authPayloadDto,
       exp: new Date(), // Now
@@ -149,7 +154,7 @@ describe('OptionalAuthGuard', () => {
 
   describe('should allow access if the AuthPayload is valid', () => {
     it('when nbf nor exp is specified', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
 
       expect(() => jwtService.verify(accessToken)).not.toThrow();
@@ -162,7 +167,7 @@ describe('OptionalAuthGuard', () => {
     });
 
     it('when nbf is and exp is not specified', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign({
         ...authPayloadDto,
         nbf: faker.date.past(),
@@ -178,7 +183,7 @@ describe('OptionalAuthGuard', () => {
     });
 
     it('when exp is and nbf is not specified', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign({
         ...authPayloadDto,
         exp: faker.date.future(),
@@ -194,7 +199,7 @@ describe('OptionalAuthGuard', () => {
     });
 
     it('when nbf and exp are specified', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign({
         ...authPayloadDto,
         nbf: faker.date.past(),

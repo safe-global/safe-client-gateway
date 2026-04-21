@@ -1,11 +1,20 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { Controller, Post, Param, Get, UseFilters, Body } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Param,
+  Get,
+  Query,
+  UseFilters,
+  Body,
+} from '@nestjs/common';
 import {
   ApiOkResponse,
   ApiTags,
   ApiOperation,
   ApiParam,
   ApiBody,
+  ApiQuery,
   ApiBadRequestResponse,
   ApiTooManyRequestsResponse,
   ApiNotFoundResponse,
@@ -13,6 +22,7 @@ import {
 import { RelayDto } from '@/modules/relay/routes/entities/relay.dto.entity';
 import { RelayService } from '@/modules/relay/routes/relay.service';
 import { RelayLimitReachedExceptionFilter } from '@/modules/relay/domain/exception-filters/relay-limit-reached.exception-filter';
+import { RelayDeniedExceptionFilter } from '@/modules/relay/domain/exception-filters/relay-denied.exception-filter';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import { InvalidMultiSendExceptionFilter } from '@/modules/relay/domain/exception-filters/invalid-multisend.exception-filter';
 import { InvalidTransferExceptionFilter } from '@/modules/relay/domain/exception-filters/invalid-transfer.exception-filter';
@@ -21,10 +31,12 @@ import { UnofficialMultiSendExceptionFilter } from '@/modules/relay/domain/excep
 import { UnofficialProxyFactoryExceptionFilter } from '@/modules/relay/domain/exception-filters/unofficial-proxy-factory.exception-filter';
 import { RelayDtoSchema } from '@/modules/relay/routes/entities/schemas/relay.dto.schema';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
+import { HexSchema } from '@/validation/entities/schemas/hex.schema';
+import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
 import { Relay } from '@/modules/relay/routes/entities/relay.entity';
 import { RelayTaskStatus } from '@/modules/relay/routes/entities/relay-task-status.entity';
 import { RelaysRemaining } from '@/modules/relay/routes/entities/relays-remaining.entity';
-import type { Address } from 'viem';
+import type { Address, Hex } from 'viem';
 
 @ApiTags('relay')
 @Controller({
@@ -64,6 +76,7 @@ export class RelayController {
   @Post()
   @UseFilters(
     RelayLimitReachedExceptionFilter,
+    RelayDeniedExceptionFilter,
     InvalidMultiSendExceptionFilter,
     InvalidTransferExceptionFilter,
     UnofficialMasterCopyExceptionFilter,
@@ -125,16 +138,28 @@ export class RelayController {
     type: 'string',
     description: 'Safe contract address (0x prefixed hex string)',
   })
+  @ApiQuery({
+    name: 'safeTxHash',
+    required: false,
+    description:
+      'Safe transaction hash (0x prefixed hex string). Required for chains enabled for relay-fee relayer',
+  })
   @ApiOkResponse({
     type: RelaysRemaining,
     description: 'Remaining relay quota retrieved successfully',
   })
   @Get(':safeAddress')
   async getRelaysRemaining(
-    @Param('chainId') chainId: string,
+    @Param('chainId', new ValidationPipe(NumericStringSchema)) chainId: string,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
     safeAddress: Address,
+    @Query('safeTxHash', new ValidationPipe(HexSchema.optional()))
+    safeTxHash?: Hex,
   ): Promise<RelaysRemaining> {
-    return this.relayService.getRelaysRemaining({ chainId, safeAddress });
+    return this.relayService.getRelaysRemaining({
+      chainId,
+      safeAddress,
+      safeTxHash,
+    });
   }
 }

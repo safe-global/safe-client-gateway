@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
@@ -70,6 +71,10 @@ describe('Chains Controller', () => {
     await app.init();
   });
 
+  afterEach(async () => {
+    await app.close();
+  });
+
   describe('GET /chains', () => {
     it('Success', async () => {
       networkService.get.mockResolvedValueOnce({
@@ -111,7 +116,6 @@ describe('Chains Controller', () => {
               disabledWallets: chainsResponse.results[0].disabledWallets,
               features: chainsResponse.results[0].features,
               balancesProvider: chainsResponse.results[0].balancesProvider,
-              contractAddresses: chainsResponse.results[0].contractAddresses,
               recommendedMasterCopyVersion:
                 chainsResponse.results[0].recommendedMasterCopyVersion,
             },
@@ -141,7 +145,6 @@ describe('Chains Controller', () => {
               disabledWallets: chainsResponse.results[1].disabledWallets,
               features: chainsResponse.results[1].features,
               balancesProvider: chainsResponse.results[1].balancesProvider,
-              contractAddresses: chainsResponse.results[1].contractAddresses,
               recommendedMasterCopyVersion:
                 chainsResponse.results[1].recommendedMasterCopyVersion,
             },
@@ -230,7 +233,6 @@ describe('Chains Controller', () => {
               disabledWallets: chainsResponse.results[0].disabledWallets,
               features: chainsResponse.results[0].features,
               balancesProvider: chainsResponse.results[0].balancesProvider,
-              contractAddresses: chainsResponse.results[0].contractAddresses,
               recommendedMasterCopyVersion:
                 chainsResponse.results[0].recommendedMasterCopyVersion,
             },
@@ -260,7 +262,6 @@ describe('Chains Controller', () => {
               disabledWallets: chainsResponse.results[1].disabledWallets,
               features: chainsResponse.results[1].features,
               balancesProvider: chainsResponse.results[1].balancesProvider,
-              contractAddresses: chainsResponse.results[1].contractAddresses,
               recommendedMasterCopyVersion:
                 chainsResponse.results[1].recommendedMasterCopyVersion,
             },
@@ -335,7 +336,6 @@ describe('Chains Controller', () => {
           ? getAddress(chainDomain.ensRegistryAddress)
           : chainDomain.ensRegistryAddress,
         balancesProvider: chainDomain.balancesProvider,
-        contractAddresses: chainDomain.contractAddresses,
         recommendedMasterCopyVersion: chainDomain.recommendedMasterCopyVersion,
       };
       networkService.get.mockResolvedValueOnce({
