@@ -8,6 +8,7 @@ import type { IUsersRepository } from '@/modules/users/domain/users.repository.i
 import { faker } from '@faker-js/faker';
 import {
   BadRequestException,
+  ConflictException,
   ForbiddenException,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -20,6 +21,7 @@ const authRepositoryMock = {
 
 const usersRepositoryMock = {
   findOrCreateByExtUserId: jest.fn(),
+  ensureVerifiedEmail: jest.fn(),
 } as unknown as jest.MockedObjectDeep<IUsersRepository>;
 
 const auth0RepositoryMock = {
@@ -143,6 +145,114 @@ describe('OidcAuthService', () => {
           iat: new Date(),
         },
       );
+    });
+
+    it('should persist a verified email after finding or creating the user', async () => {
+      const now = new Date();
+      jest.setSystemTime(now);
+
+      const extUserId = `auth0|${faker.string.uuid()}`;
+      const userId = faker.number.int();
+      const email = faker.internet.email().toLowerCase();
+
+      auth0RepositoryMock.authenticateWithAuthorizationCode.mockResolvedValue({
+        sub: extUserId,
+        email,
+        email_verified: true,
+        exp: new Date(now.getTime() + 3600 * 1_000),
+        nbf: undefined,
+        iat: undefined,
+      });
+      usersRepositoryMock.findOrCreateByExtUserId.mockResolvedValue(userId);
+      authRepositoryMock.signToken.mockReturnValue('token');
+
+      await target.authenticateWithOidc(faker.string.alphanumeric(32));
+
+      expect(usersRepositoryMock.ensureVerifiedEmail).toHaveBeenCalledWith(
+        userId,
+        email,
+      );
+    });
+
+    it('should not persist an unverified email', async () => {
+      const now = new Date();
+      jest.setSystemTime(now);
+
+      const extUserId = `auth0|${faker.string.uuid()}`;
+      const userId = faker.number.int();
+
+      auth0RepositoryMock.authenticateWithAuthorizationCode.mockResolvedValue({
+        sub: extUserId,
+        email: faker.internet.email().toLowerCase(),
+        email_verified: false,
+        exp: new Date(now.getTime() + 3600 * 1_000),
+        nbf: undefined,
+        iat: undefined,
+      });
+      usersRepositoryMock.findOrCreateByExtUserId.mockResolvedValue(userId);
+      authRepositoryMock.signToken.mockReturnValue('token');
+
+      await target.authenticateWithOidc(faker.string.alphanumeric(32));
+
+      expect(usersRepositoryMock.ensureVerifiedEmail).not.toHaveBeenCalled();
+    });
+
+    it('should ignore unverified email even when that email would conflict', async () => {
+      const now = new Date();
+      jest.setSystemTime(now);
+
+      const extUserId = `auth0|${faker.string.uuid()}`;
+      const userId = faker.number.int();
+      const accessToken = faker.string.alphanumeric(64);
+
+      auth0RepositoryMock.authenticateWithAuthorizationCode.mockResolvedValue({
+        sub: extUserId,
+        email: faker.internet.email().toLowerCase(),
+        email_verified: false,
+        exp: new Date(now.getTime() + 3600 * 1_000),
+        nbf: undefined,
+        iat: undefined,
+      });
+      usersRepositoryMock.findOrCreateByExtUserId.mockResolvedValue(userId);
+      usersRepositoryMock.ensureVerifiedEmail.mockRejectedValue(
+        new ConflictException('Email already belongs to another user'),
+      );
+      authRepositoryMock.signToken.mockReturnValue(accessToken);
+
+      await expect(
+        target.authenticateWithOidc(faker.string.alphanumeric(32)),
+      ).resolves.toEqual(expect.objectContaining({ accessToken }));
+
+      expect(usersRepositoryMock.ensureVerifiedEmail).not.toHaveBeenCalled();
+    });
+
+    it('should propagate email ownership conflicts', async () => {
+      const now = new Date();
+      jest.setSystemTime(now);
+
+      const extUserId = `auth0|${faker.string.uuid()}`;
+      const userId = faker.number.int();
+      const email = faker.internet.email().toLowerCase();
+      const error = new ConflictException(
+        'Email already belongs to another user',
+      );
+
+      auth0RepositoryMock.authenticateWithAuthorizationCode.mockResolvedValue({
+        sub: extUserId,
+        email,
+        email_verified: true,
+        exp: new Date(now.getTime() + 3600 * 1_000),
+        nbf: undefined,
+        iat: undefined,
+      });
+      usersRepositoryMock.findOrCreateByExtUserId.mockResolvedValue(userId);
+      usersRepositoryMock.ensureVerifiedEmail.mockRejectedValue(error);
+
+      await expect(
+        target.authenticateWithOidc(faker.string.alphanumeric(32)),
+      ).rejects.toThrow(error);
+
+      expect(authRepositoryMock.signToken).not.toHaveBeenCalled();
     });
 
     it('should throw ForbiddenException when exp exceeds max', async () => {

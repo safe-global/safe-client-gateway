@@ -251,6 +251,64 @@ export class UsersRepository implements IUsersRepository {
     }
   }
 
+  public async ensureVerifiedEmail(
+    userId: User['id'],
+    email: string,
+  ): Promise<void> {
+    const userRepository =
+      await this.postgresDatabaseService.getRepository(DbUser);
+    const normalizedEmail = email.trim().toLowerCase();
+    const user = await userRepository.findOneOrFail({
+      where: { id: userId },
+    });
+
+    if (user.email !== null) {
+      return;
+    }
+
+    try {
+      const result = await userRepository
+        .createQueryBuilder()
+        .update(DbUser)
+        .set({ email: normalizedEmail })
+        .where('id = :userId', { userId })
+        .andWhere('email IS NULL')
+        .execute();
+
+      if ((result.affected ?? 0) > 0) {
+        return;
+      }
+
+      // Another request may have stored the email after our initial read.
+      const updatedUser = await userRepository.findOneOrFail({
+        where: { id: userId },
+      });
+      if (updatedUser.email !== null) {
+        return;
+      }
+    } catch (error) {
+      if (
+        error instanceof Error &&
+        (error.message.includes('users_email_key') ||
+          error.message.includes('duplicate key'))
+      ) {
+        throw new ConflictException('Email already belongs to another user');
+      }
+      throw error;
+    }
+  }
+
+  public async findEmailById(userId: User['id']): Promise<string | undefined> {
+    const userRepository =
+      await this.postgresDatabaseService.getRepository(DbUser);
+    const user = await userRepository.findOne({
+      where: { id: userId },
+      select: { email: true },
+    });
+
+    return user?.email ?? undefined;
+  }
+
   public async update(args: {
     userId: User['id'];
     user: Partial<User>;
