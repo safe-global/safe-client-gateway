@@ -1755,6 +1755,105 @@ describe('MembersRepository', () => {
     });
   });
 
+  describe('findSelfMembershipOrFail', () => {
+    it.each([
+      ['SIWE', 'ACTIVE', createSiweUser],
+      ['OIDC', 'ACTIVE', createOidcUser],
+      ['SIWE', 'INVITED', createSiweUser],
+      ['OIDC', 'INVITED', createOidcUser],
+    ] as const)(
+      'should return the membership row for a %s caller with %s status',
+      async (_authLabel, memberStatus, createUser) => {
+        const spaceName = nameBuilder();
+        const memberName = nameBuilder();
+        const memberInvitedBy = getAddress(faker.finance.ethereumAddress());
+        const { userId, user, authPayload } = await createUser();
+        const space = await dbSpacesRepository.insert({
+          name: spaceName,
+          status: 'ACTIVE',
+        });
+        const memberRole = faker.helpers.arrayElement(MemberRoleKeys);
+        const spaceId = space.generatedMaps[0].id;
+        const member = await dbMembersRepository.insert({
+          user,
+          space: space.generatedMaps[0],
+          name: memberName,
+          role: memberRole,
+          status: memberStatus,
+          invitedBy: memberInvitedBy,
+        });
+        const memberId = member.identifiers[0].id as Member['id'];
+
+        await expect(
+          membersRepository.findSelfMembershipOrFail({
+            authPayload,
+            spaceId,
+          }),
+        ).resolves.toEqual(
+          expect.objectContaining({
+            id: memberId,
+            name: memberName,
+            alias: null,
+            role: memberRole,
+            status: memberStatus,
+            invitedBy: memberInvitedBy,
+            user: expect.objectContaining({ id: userId }),
+          }),
+        );
+      },
+    );
+
+    it('should throw ForbiddenException for a DECLINED caller', async () => {
+      const spaceName = nameBuilder();
+      const { user, authPayload, authPayloadDto } = await createSiweUser();
+      const space = await dbSpacesRepository.insert({
+        name: spaceName,
+        status: 'ACTIVE',
+      });
+      const spaceId = space.generatedMaps[0].id;
+      await dbMembersRepository.insert({
+        user,
+        space: space.generatedMaps[0],
+        name: faker.person.firstName(),
+        role: faker.helpers.arrayElement(MemberRoleKeys),
+        status: 'DECLINED',
+        invitedBy: authPayloadDto.signer_address,
+      });
+
+      await expect(
+        membersRepository.findSelfMembershipOrFail({
+          authPayload,
+          spaceId,
+        }),
+      ).rejects.toThrow(
+        new ForbiddenException(
+          'The user is not an active member of the space.',
+        ),
+      );
+    });
+
+    it('should throw ForbiddenException when the caller has no membership row in the space', async () => {
+      const spaceName = nameBuilder();
+      const { authPayload } = await createSiweUser();
+      const space = await dbSpacesRepository.insert({
+        name: spaceName,
+        status: 'ACTIVE',
+      });
+      const spaceId = space.generatedMaps[0].id;
+
+      await expect(
+        membersRepository.findSelfMembershipOrFail({
+          authPayload,
+          spaceId,
+        }),
+      ).rejects.toThrow(
+        new ForbiddenException(
+          'The user is not an active member of the space.',
+        ),
+      );
+    });
+  });
+
   describe('updateRole', () => {
     it('should update the role of a member', async () => {
       const spaceName = nameBuilder();

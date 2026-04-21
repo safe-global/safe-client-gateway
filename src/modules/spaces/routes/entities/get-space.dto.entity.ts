@@ -14,7 +14,7 @@ class UserDto extends User {
   declare public id: User['id'];
 }
 
-class MemberDto {
+class SpaceMemberDto {
   @ApiProperty({ type: String, enum: getStringEnumKeys(MemberRole) })
   public role!: Member['role'];
 
@@ -41,8 +41,8 @@ export class GetSpaceResponse {
   @ApiProperty({ type: String })
   public name!: Space['name'];
 
-  @ApiProperty({ type: MemberDto, isArray: true })
-  public members!: Array<MemberDto>;
+  @ApiProperty({ type: SpaceMemberDto, isArray: true })
+  public members!: Array<SpaceMemberDto>;
 
   @ApiProperty({
     type: Number,

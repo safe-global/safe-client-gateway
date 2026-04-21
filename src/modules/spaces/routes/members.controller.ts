@@ -34,7 +34,10 @@ import { UpdateRoleDtoSchema } from '@/modules/spaces/routes/entities/update-rol
 import { RowSchema } from '@/datasources/db/v1/entities/row.entity';
 import { UuidSchema } from '@/validation/entities/schemas/uuid.schema';
 import type { UUID } from 'crypto';
-import { MembersDto } from '@/modules/spaces/routes/entities/members.dto.entity';
+import {
+  MemberDto,
+  MembersDto,
+} from '@/modules/spaces/routes/entities/members.dto.entity';
 import { Invitation } from '@/modules/spaces/routes/entities/invitation.entity';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { UpdateRoleDto } from '@/modules/spaces/routes/entities/update-role.dto.entity';
@@ -214,6 +217,40 @@ export class MembersController {
     spaceId: UUID,
   ): Promise<MembersDto> {
     return await this.membersService.get({
+      authPayload,
+      spaceId,
+    });
+  }
+
+  @ApiOperation({
+    summary: "Get the authenticated user's membership in a space",
+    description:
+      'Returns the membership record of the authenticated user for the given space. ' +
+      'Returns 403 if the caller has no ACTIVE or INVITED membership in the space.',
+  })
+  @ApiParam({
+    name: 'spaceId',
+    type: 'string',
+    format: 'uuid',
+    description: "Space ID to fetch the caller's membership for",
+  })
+  @ApiOkResponse({
+    description: 'Membership retrieved successfully',
+    type: MemberDto,
+  })
+  @ApiForbiddenResponse({
+    description:
+      'Access forbidden - user not authenticated, or has no ACTIVE/INVITED membership in this space',
+  })
+  @ApiUnauthorizedResponse({ description: 'Not authenticated' })
+  @Get('/:spaceId/membership')
+  @UseGuards(AuthGuard)
+  public async getMembership(
+    @Auth() authPayload: AuthPayload,
+    @Param('spaceId', new ValidationPipe(UuidSchema))
+    spaceId: UUID,
+  ): Promise<MemberDto> {
+    return await this.membersService.getSelfMembership({
       authPayload,
       spaceId,
     });

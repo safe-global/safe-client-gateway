@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { Member as DbMember } from '@/modules/users/datasources/entities/member.entity.db';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import type { Space } from '@/modules/spaces/domain/entities/space.entity';
@@ -55,6 +56,11 @@ export interface IMembersRepository {
     authPayload: AuthPayload;
     spaceId: Space['id'];
   }): Promise<Array<Member>>;
+
+  findSelfMembershipOrFail(args: {
+    authPayload: AuthPayload;
+    spaceId: Space['id'];
+  }): Promise<Member>;
 
   updateRole(args: {
     authPayload: AuthPayload;

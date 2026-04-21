@@ -46,6 +46,7 @@ import { RootModule } from '@/modules/root/root.module';
 import { AlertsModule } from '@/modules/alerts/alerts.module';
 import { RecoveryModule } from '@/modules/recovery/recovery.module';
 import { RelayModule } from '@/modules/relay/relay.module';
+import { FeesModule } from '@/modules/fees/fees.module';
 import { ZodErrorFilter } from '@/routes/common/filters/zod-error.filter';
 import { CacheControlInterceptor } from '@/routes/common/interceptors/cache-control.interceptor';
 import { AuthModule } from '@/modules/auth/auth.module';
@@ -61,6 +62,7 @@ import {
 } from '@/logging/logging.interface';
 import { UsersModule } from '@/modules/users/users.module';
 import { SpacesModule } from '@/modules/spaces/spaces.module';
+import { CounterfactualSafesModule } from '@/modules/counterfactual-safes/counterfactual-safes.module';
 import { BullModule } from '@nestjs/bullmq';
 import { CsvExportModule } from '@/modules/csv-export/csv-export.module';
 import { SafeShieldModule } from '@/modules/safe-shield/safe-shield.module';
@@ -100,11 +102,14 @@ export class AppModule implements NestModule {
         // Note: this feature will not work as expected until we reintegrate the email service
         ...(isEmailFeatureEnabled ? [AlertsModule, RecoveryModule] : []),
         EstimationsModule,
+        FeesModule,
         HealthModule,
         HooksModule,
         NotificationsModule,
         MessagesModule,
-        ...(isUsersFeatureEnabled ? [UsersModule, SpacesModule] : []),
+        ...(isUsersFeatureEnabled
+          ? [UsersModule, SpacesModule, CounterfactualSafesModule]
+          : []),
         OwnersModule,
         RelayModule,
         RootModule,

@@ -369,6 +369,11 @@ export default (): ReturnType<typeof configuration> => ({
         ],
       },
     },
+    fee: {
+      enabledChainIds: [],
+      baseUri: faker.internet.url({ appendSlash: false }),
+      feePreviewTtlSeconds: 60,
+    },
   },
   safeConfig: {
     baseUri: faker.internet.url({ appendSlash: false }),
