@@ -2,6 +2,7 @@
 import { ConflictException, Inject } from '@nestjs/common';
 import { IMembersRepository } from '@/modules/users/domain/members.repository.interface';
 import { User } from '@/modules/users/domain/entities/user.entity';
+import type { Member } from '@/modules/users/domain/entities/member.entity';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import type { Space } from '@/modules/spaces/domain/entities/space.entity';
@@ -70,10 +71,12 @@ export class MembersService {
     spaceId: Space['id'];
   }): Promise<MembersDto> {
     return {
-      members: await this.membersRepository.findAuthorizedMembersOrFail({
-        authPayload: args.authPayload,
-        spaceId: args.spaceId,
-      }),
+      members: (
+        await this.membersRepository.findAuthorizedMembersOrFail({
+          authPayload: args.authPayload,
+          spaceId: args.spaceId,
+        })
+      ).map((member) => this.toMemberDto(member)),
     };
   }
 
@@ -81,10 +84,12 @@ export class MembersService {
     authPayload: AuthPayload;
     spaceId: Space['id'];
   }): Promise<MemberDto> {
-    return await this.membersRepository.findSelfMembershipOrFail({
-      authPayload: args.authPayload,
-      spaceId: args.spaceId,
-    });
+    return this.toMemberDto(
+      await this.membersRepository.findSelfMembershipOrFail({
+        authPayload: args.authPayload,
+        spaceId: args.spaceId,
+      }),
+    );
   }
 
   public async updateRole(args: {
@@ -133,5 +138,15 @@ export class MembersService {
       authPayload: args.authPayload,
       spaceId: args.spaceId,
     });
+  }
+
+  private toMemberDto(member: Member): MemberDto {
+    return {
+      ...member,
+      user: {
+        ...member.user,
+        email: member.status === 'ACTIVE' ? member.user.email : null,
+      },
+    };
   }
 }
