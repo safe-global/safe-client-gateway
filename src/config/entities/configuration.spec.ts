@@ -8,11 +8,11 @@ describe('configuration', () => {
     process.env.AUTH0_SCOPE = originalAuth0Scope;
   });
 
-  it('should default AUTH0_SCOPE to openid email profile', () => {
+  it('should default AUTH0_SCOPE to openid email', () => {
     delete process.env.AUTH0_SCOPE;
 
     const result = configuration();
 
-    expect(result.auth.auth0.scope).toBe('openid email profile');
+    expect(result.auth.auth0.scope).toBe('openid email');
   });
 });

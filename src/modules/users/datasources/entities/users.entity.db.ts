@@ -39,7 +39,10 @@ export class User implements DomainUser {
   })
   extUserId!: string | null;
 
-  @Index('users_email_key', { unique: true })
+  @Index('users_email_key', {
+    unique: true,
+    where: '"email" IS NOT NULL',
+  })
   @Column({
     name: 'email',
     type: 'varchar',

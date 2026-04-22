@@ -290,6 +290,15 @@ describe('AuthService', () => {
   });
 
   describe('getUserSession', () => {
+    it('should reject with ForbiddenException when the user is not authenticated', async () => {
+      const authPayload = new AuthPayload();
+
+      await expect(target.getUserSession(authPayload)).rejects.toThrow(
+        ForbiddenException,
+      );
+      expect(usersRepositoryMock.findEmailById).not.toHaveBeenCalled();
+    });
+
     it('should return signerAddress for SIWE sessions without querying email', async () => {
       const authPayload = new AuthPayload({
         auth_method: AuthMethod.Siwe,
