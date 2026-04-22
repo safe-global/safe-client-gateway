@@ -71,7 +71,7 @@ export class UserAddressBookItemsRepository implements IUserAddressBookItemsRepo
       );
 
       if (newItems.length > 0) {
-        await this.checkItemsLimit({
+        await this.assertItemsLimitNotReached({
           entityManager,
           spaceId: args.spaceId,
           creatorId: args.creatorId,
@@ -137,7 +137,7 @@ export class UserAddressBookItemsRepository implements IUserAddressBookItemsRepo
     return existing.map((item) => item.address);
   }
 
-  private async checkItemsLimit(args: {
+  private async assertItemsLimitNotReached(args: {
     entityManager: EntityManager;
     spaceId: Space['id'];
     creatorId: User['id'];
