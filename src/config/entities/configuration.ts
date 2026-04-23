@@ -59,7 +59,7 @@ export default () => ({
       redirectUri: process.env.AUTH0_REDIRECT_URI,
       audience: process.env.AUTH0_API_AUDIENCE,
       signingSecret: process.env.AUTH0_SIGNING_SECRET,
-      scope: process.env.AUTH0_SCOPE || 'openid',
+      scope: process.env.AUTH0_SCOPE || 'openid email',
     },
     rateLimit: {
       max: parseInt(process.env.AUTH_RATE_LIMIT_MAX ?? `${5}`),

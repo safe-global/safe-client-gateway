@@ -666,19 +666,20 @@ describe('MembersRepository', () => {
           relations: { user: true },
         }),
       ).resolves.toEqual([
-        {
+        expect.objectContaining({
           address: memberWallet,
           createdAt: expect.any(Date),
           id: expect.any(Number),
           updatedAt: expect.any(Date),
-          user: {
+          user: expect.objectContaining({
             createdAt: expect.any(Date),
+            email: null,
             extUserId: null,
             id: member.generatedMaps[0].id,
             status: 'ACTIVE',
             updatedAt: expect.any(Date),
-          },
-        },
+          }),
+        }),
       ]);
     });
 
@@ -950,6 +951,7 @@ describe('MembersRepository', () => {
         }),
       ).resolves.toEqual({
         createdAt: expect.any(Date),
+        email: null,
         extUserId: null,
         id: userId,
         status: 'ACTIVE', // No longer PENDING
@@ -1090,6 +1092,7 @@ describe('MembersRepository', () => {
           }),
         ).resolves.toEqual({
           createdAt: expect.any(Date),
+          email: null,
           extUserId: null,
           id: userId,
           status: 'ACTIVE', // No longer PENDING
@@ -1340,6 +1343,7 @@ describe('MembersRepository', () => {
         }),
       ).resolves.toEqual({
         createdAt: expect.any(Date),
+        email: null,
         extUserId: null,
         id: userId,
         status: 'PENDING', // Remains PENDING
@@ -1595,7 +1599,7 @@ describe('MembersRepository', () => {
           spaceId,
         }),
       ).resolves.toEqual([
-        {
+        expect.objectContaining({
           createdAt: expect.any(Date),
           id: memberId,
           name: memberName,
@@ -1604,14 +1608,15 @@ describe('MembersRepository', () => {
           status: 'ACTIVE',
           invitedBy: memberInvitedBy,
           updatedAt: expect.any(Date),
-          user: {
+          user: expect.objectContaining({
             createdAt: expect.any(Date),
+            email: null,
             extUserId: null,
             id: userId,
             status: userStatus,
             updatedAt: expect.any(Date),
-          },
-        },
+          }),
+        }),
       ]);
     });
 

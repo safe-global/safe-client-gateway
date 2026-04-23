@@ -4,6 +4,8 @@ import { z } from 'zod';
 
 export const Auth0TokenSchema = JwtClaimsSchema.extend({
   sub: z.string().min(1),
+  email: z.email().optional(),
+  email_verified: z.boolean().optional(),
 });
 
 export type Auth0Token = z.infer<typeof Auth0TokenSchema>;
