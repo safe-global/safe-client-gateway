@@ -10,7 +10,11 @@ import { BadRequestException, ForbiddenException } from '@nestjs/common';
 import { siweMessageBuilder } from '@/modules/siwe/domain/entities/__tests__/siwe-message.builder';
 import type { Hex } from 'viem';
 import type { JwtPayloadWithClaims } from '@/datasources/jwt/jwt-claims.entity';
-import type { AuthPayloadDto } from '@/modules/auth/domain/entities/auth-payload.entity';
+import {
+  AuthMethod,
+  AuthPayload,
+  type AuthPayloadDto,
+} from '@/modules/auth/domain/entities/auth-payload.entity';
 
 const siweRepositoryMock = {
   generateNonce: jest.fn(),
@@ -26,9 +30,11 @@ const authRepositoryMock = {
 
 const usersRepositoryMock = {
   findOrCreateByWalletAddress: jest.fn(),
+  findEmailById: jest.fn(),
 } as unknown as jest.MockedObjectDeep<IUsersRepository>;
 
 const loggingServiceMock = {
+  info: jest.fn(),
   debug: jest.fn(),
 } as jest.MockedObjectDeep<ILoggingService>;
 
@@ -280,6 +286,64 @@ describe('AuthService', () => {
 
       await expect(target.authenticateWithSiwe(siweArgs)).resolves.toEqual({
         accessToken: 'token',
+      });
+    });
+  });
+
+  describe('getUserSession', () => {
+    it('should reject with ForbiddenException when the user is not authenticated', async () => {
+      const authPayload = new AuthPayload();
+
+      await expect(target.getUserSession(authPayload)).rejects.toThrow(
+        ForbiddenException,
+      );
+      expect(usersRepositoryMock.findEmailById).not.toHaveBeenCalled();
+    });
+
+    it('should return signerAddress for SIWE sessions without querying email', async () => {
+      const authPayload = new AuthPayload({
+        auth_method: AuthMethod.Siwe,
+        sub: faker.string.numeric(),
+        chain_id: faker.string.numeric(),
+        signer_address: faker.finance.ethereumAddress() as `0x${string}`,
+      });
+
+      await expect(target.getUserSession(authPayload)).resolves.toEqual({
+        id: authPayload.sub,
+        authMethod: AuthMethod.Siwe,
+        signerAddress: authPayload.signer_address,
+      });
+      expect(usersRepositoryMock.findEmailById).not.toHaveBeenCalled();
+    });
+
+    it('should return email for OIDC sessions when it exists', async () => {
+      const authPayload = new AuthPayload({
+        auth_method: AuthMethod.Oidc,
+        sub: faker.string.numeric(),
+      });
+      const email = faker.internet.email().toLowerCase();
+      usersRepositoryMock.findEmailById.mockResolvedValue(email);
+
+      await expect(target.getUserSession(authPayload)).resolves.toEqual({
+        id: authPayload.sub,
+        authMethod: AuthMethod.Oidc,
+        email,
+      });
+      expect(usersRepositoryMock.findEmailById).toHaveBeenCalledWith(
+        Number(authPayload.sub),
+      );
+    });
+
+    it('should omit email for OIDC sessions when none is stored', async () => {
+      const authPayload = new AuthPayload({
+        auth_method: AuthMethod.Oidc,
+        sub: faker.string.numeric(),
+      });
+      usersRepositoryMock.findEmailById.mockResolvedValue(undefined);
+
+      await expect(target.getUserSession(authPayload)).resolves.toEqual({
+        id: authPayload.sub,
+        authMethod: AuthMethod.Oidc,
       });
     });
   });
