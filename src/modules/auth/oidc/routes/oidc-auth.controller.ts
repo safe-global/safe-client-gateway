@@ -168,7 +168,9 @@ export class OidcAuthController {
       this.loggingService.warn(
         `Auth callback: provider error: ${error}${errorDescription ? ` - ${errorDescription}` : ''}`,
       );
-      res.redirect(this.buildErrorRedirectUrl(error, expectedState));
+      res.redirect(
+        this.buildErrorRedirectUrl(error, expectedState, errorDescription),
+      );
       return;
     }
 
@@ -212,11 +214,19 @@ export class OidcAuthController {
    * @param state optional OIDC state value used to resolve the redirect URL
    * from the original authorization request. If omitted, falls back to the
    * configured default post-login redirect URI.
+   * @param errorDescription optional description of the error
    * @returns fully qualified URL to redirect the user to
    */
-  private buildErrorRedirectUrl(error: string, state?: string): string {
+  private buildErrorRedirectUrl(
+    error: string,
+    state?: string,
+    errorDescription?: string,
+  ): string {
     const url = new URL(this.oidcAuthService.getPostLoginRedirectUri(state));
     url.searchParams.set('error', error);
+    if (errorDescription) {
+      url.searchParams.set('error_description', errorDescription);
+    }
     return url.toString();
   }
 }
