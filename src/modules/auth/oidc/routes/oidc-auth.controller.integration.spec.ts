@@ -286,6 +286,7 @@ describe('OidcAuthController', () => {
         response: request.Response,
         expectedError: string,
         expectedBaseUrl?: string,
+        expectedErrorDescription?: string,
       ): void {
         expect(response.status).toBe(302);
         const location = new URL(response.headers.location);
@@ -295,6 +296,13 @@ describe('OidcAuthController', () => {
           redirectBase.origin + redirectBase.pathname,
         );
         expect(location.searchParams.get('error')).toBe(expectedError);
+        if (expectedErrorDescription) {
+          expect(location.searchParams.get('error_description')).toBe(
+            expectedErrorDescription,
+          );
+        } else {
+          expect(location.searchParams.has('error_description')).toBe(false);
+        }
         // State cookie should always be cleared
         expect(response.headers['set-cookie']).toEqual(
           expect.arrayContaining([
@@ -478,7 +486,7 @@ describe('OidcAuthController', () => {
         expect(networkService.postForm).not.toHaveBeenCalled();
       });
 
-      it('should redirect with only error when the OIDC provider returns an error with description', async () => {
+      it('should redirect with error and error_description when the OIDC provider returns an error with description', async () => {
         const response = await request(app.getHttpServer())
           .get('/v1/auth/oidc/callback')
           .query({
@@ -486,7 +494,12 @@ describe('OidcAuthController', () => {
             error_description: 'User denied access',
           });
 
-        expectErrorRedirect(response, 'access_denied');
+        expectErrorRedirect(
+          response,
+          'access_denied',
+          undefined,
+          'User denied access',
+        );
         expect(networkService.postForm).not.toHaveBeenCalled();
       });
 
@@ -614,7 +627,12 @@ describe('OidcAuthController', () => {
             error_description: 'User denied access',
           });
 
-        expectErrorRedirect(response, 'access_denied', customRedirectUrl);
+        expectErrorRedirect(
+          response,
+          'access_denied',
+          customRedirectUrl,
+          'User denied access',
+        );
         expect(networkService.postForm).not.toHaveBeenCalled();
       });
     });
