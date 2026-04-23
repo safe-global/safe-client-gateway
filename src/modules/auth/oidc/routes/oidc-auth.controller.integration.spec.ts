@@ -20,11 +20,14 @@ import {
 } from '@/datasources/network/network.service.interface';
 import type { TestingModule } from '@nestjs/testing';
 import { rawify } from '@/validation/entities/raw.entity';
+import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
+import { ConflictException } from '@nestjs/common';
 
 describe('OidcAuthController', () => {
   let app: INestApplication<Server>;
   let networkService: jest.MockedObjectDeep<INetworkService>;
   let jwtService: IJwtService;
+  let usersRepository: jest.MockedObjectDeep<IUsersRepository>;
 
   let maxValidityPeriodInMs: number;
   let stateTtlMs: number;
@@ -44,6 +47,8 @@ describe('OidcAuthController', () => {
     exp?: number;
     iat?: number;
     nbf?: number;
+    email?: string;
+    email_verified?: boolean;
   }): string {
     return sign(claims, auth0Config.signingSecret, {
       algorithm: 'HS256',
@@ -71,6 +76,7 @@ describe('OidcAuthController', () => {
 
     networkService = moduleFixture.get(NetworkService);
     jwtService = moduleFixture.get(IJwtService);
+    usersRepository = moduleFixture.get(IUsersRepository);
 
     const configService: IConfigurationService = moduleFixture.get(
       IConfigurationService,
@@ -513,6 +519,57 @@ describe('OidcAuthController', () => {
           exp: farFutureExp,
           iat: Math.floor(Date.now() / 1_000),
         });
+
+        networkService.postForm.mockResolvedValueOnce({
+          status: 200,
+          data: rawify({
+            access_token: auth0Token,
+            id_token: 'auth0-id-token',
+            token_type: 'Bearer',
+          }),
+        });
+
+        const authorizeResponse = await request(app.getHttpServer())
+          .get('/v1/auth/oidc/authorize')
+          .expect(302);
+
+        const state = new URL(
+          authorizeResponse.headers.location,
+        ).searchParams.get('state');
+        const stateCookie = (
+          authorizeResponse.headers['set-cookie'] as unknown as Array<string>
+        )
+          .find((cookie) => cookie.startsWith('auth_state='))
+          ?.split(';')[0];
+
+        const response = await request(app.getHttpServer())
+          .get('/v1/auth/oidc/callback')
+          .set('Cookie', stateCookie!)
+          .query({
+            code: 'auth-code',
+            state,
+          });
+
+        expectErrorRedirect(response, 'authentication_failed');
+      });
+
+      it('should redirect with authentication_failed when verified email ownership conflicts', async () => {
+        jest.setSystemTime(0);
+
+        const expirationTime = faker.date.between({
+          from: new Date(),
+          to: new Date(Date.now() + maxValidityPeriodInMs),
+        });
+        const auth0Token = signAuth0Token({
+          sub: faker.string.uuid(),
+          email: faker.internet.email().toLowerCase(),
+          email_verified: true,
+          exp: Math.floor(expirationTime.getTime() / 1_000),
+          iat: Math.floor(Date.now() / 1_000),
+        });
+        usersRepository.persistVerifiedEmail.mockRejectedValue(
+          new ConflictException('Email already belongs to another user'),
+        );
 
         networkService.postForm.mockResolvedValueOnce({
           status: 200,
