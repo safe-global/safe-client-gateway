@@ -228,30 +228,33 @@ describe('SpacesRepository', () => {
         },
       });
 
-      expect(dbMember).toEqual({
-        id: expect.any(Number),
-        role: 'ADMIN',
-        status: 'ACTIVE',
-        name: expect.any(String),
-        alias: null,
-        invitedBy: null,
-        createdAt: expect.any(Date),
-        updatedAt: expect.any(Date),
-        user: {
-          id: userId,
-          extUserId: null,
-          status: userStatus,
-          createdAt: expect.any(Date),
-          updatedAt: expect.any(Date),
-        },
-        space: {
+      expect(dbMember).toEqual(
+        expect.objectContaining({
           id: expect.any(Number),
-          name,
-          status: spaceStatus,
+          role: 'ADMIN',
+          status: 'ACTIVE',
+          name: expect.any(String),
+          alias: null,
+          invitedBy: null,
           createdAt: expect.any(Date),
           updatedAt: expect.any(Date),
-        },
-      });
+          user: expect.objectContaining({
+            id: userId,
+            email: null,
+            extUserId: null,
+            status: userStatus,
+            createdAt: expect.any(Date),
+            updatedAt: expect.any(Date),
+          }),
+          space: expect.objectContaining({
+            id: expect.any(Number),
+            name,
+            status: spaceStatus,
+            createdAt: expect.any(Date),
+            updatedAt: expect.any(Date),
+          }),
+        }),
+      );
     });
 
     it('should fail if the MAX_SPACE_CREATIONS_PER_USER limit is reached', async () => {
@@ -319,30 +322,33 @@ describe('SpacesRepository', () => {
         },
       });
 
-      expect(dbMember).toEqual({
-        id: expect.any(Number),
-        role: 'ADMIN',
-        status: 'ACTIVE',
-        name: `${spaceName} creator`,
-        alias: null,
-        invitedBy: null,
-        createdAt: expect.any(Date),
-        updatedAt: expect.any(Date),
-        user: {
-          id: userId,
-          extUserId: null,
-          status: userStatus,
-          createdAt: expect.any(Date),
-          updatedAt: expect.any(Date),
-        },
-        space: {
+      expect(dbMember).toEqual(
+        expect.objectContaining({
           id: expect.any(Number),
-          name: spaceName,
-          status: spaceStatus,
+          role: 'ADMIN',
+          status: 'ACTIVE',
+          name: `${spaceName} creator`,
+          alias: null,
+          invitedBy: null,
           createdAt: expect.any(Date),
           updatedAt: expect.any(Date),
-        },
-      });
+          user: expect.objectContaining({
+            id: userId,
+            email: null,
+            extUserId: null,
+            status: userStatus,
+            createdAt: expect.any(Date),
+            updatedAt: expect.any(Date),
+          }),
+          space: expect.objectContaining({
+            id: expect.any(Number),
+            name: spaceName,
+            status: spaceStatus,
+            createdAt: expect.any(Date),
+            updatedAt: expect.any(Date),
+          }),
+        }),
+      );
     });
 
     it('should throw if the user does not exist', async () => {

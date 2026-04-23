@@ -21,6 +21,7 @@ describe('UserSchema', () => {
     { field: 'wallets' as const },
     { field: 'members' as const },
     { field: 'extUserId' as const },
+    { field: 'email' as const },
   ])('should not validate a User without $field', ({ field }) => {
     const user = userBuilder().build();
 
@@ -89,6 +90,37 @@ describe('UserSchema', () => {
       const user = userBuilder().build();
 
       const result = UserSchema.safeParse({ ...user, extUserId: value });
+
+      expect(result.success).toBe(false);
+    });
+  });
+
+  describe('email', () => {
+    it.each([
+      {
+        label: 'valid email',
+        value: faker.internet.email().toLowerCase(),
+      },
+      { label: 'null', value: null },
+    ])('should allow email with $label', ({ value }) => {
+      const user = userBuilder().build();
+
+      const result = UserSchema.safeParse({ ...user, email: value });
+
+      expect(result.success).toBe(true);
+    });
+
+    it.each([
+      { label: 'invalid email', value: faker.word.noun() },
+      {
+        label: 'length 256',
+        value: `${'a'.repeat(244)}@example.com`,
+      },
+      { label: 'non-string', value: faker.number.int() },
+    ])('should not allow email with $label', ({ value }) => {
+      const user = userBuilder().build();
+
+      const result = UserSchema.safeParse({ ...user, email: value });
 
       expect(result.success).toBe(false);
     });
