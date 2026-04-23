@@ -58,6 +58,10 @@ export interface IUsersRepository {
 
   findOrCreateByExtUserId(extUserId: string): Promise<User['id']>;
 
+  persistVerifiedEmail(userId: User['id'], email: string): Promise<void>;
+
+  findEmailById(userId: User['id']): Promise<string | undefined>;
+
   update(args: {
     userId: User['id'];
     user: Partial<User>;
