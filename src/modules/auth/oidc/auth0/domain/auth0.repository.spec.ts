@@ -11,7 +11,8 @@ const auth0ApiMock = {
 } as jest.MockedObjectDeep<IAuth0Api>;
 
 const auth0TokenVerifierMock = {
-  verifyAndDecode: jest.fn(),
+  verifyAndDecodeAccessToken: jest.fn(),
+  verifyAndDecodeIdToken: jest.fn(),
 } as jest.MockedObjectDeep<Auth0TokenVerifier>;
 
 describe('Auth0Repository', () => {
@@ -20,7 +21,12 @@ describe('Auth0Repository', () => {
   beforeEach(() => {
     jest.resetAllMocks();
 
-    target = new Auth0Repository(auth0ApiMock, auth0TokenVerifierMock);
+    target = new Auth0Repository(auth0ApiMock, auth0TokenVerifierMock, {
+      info: jest.fn(),
+      warn: jest.fn(),
+      error: jest.fn(),
+      debug: jest.fn(),
+    });
   });
 
   describe('getAuthorizationUrl', () => {
@@ -54,10 +60,58 @@ describe('Auth0Repository', () => {
   });
 
   describe('authenticateWithAuthorizationCode', () => {
-    it('should exchange the code and verify the returned access token', async () => {
+    it('should exchange the code and use email claims from the decoded id token', async () => {
       const code = faker.string.alphanumeric(32);
       const accessToken = faker.string.alphanumeric(64);
-      const decodedToken = {
+      const decodedAccessToken = {
+        sub: `auth0|${faker.string.uuid()}`,
+        iat: faker.date.past(),
+        nbf: faker.date.recent(),
+        exp: faker.date.future(),
+      };
+      const decodedIdToken = {
+        sub: decodedAccessToken.sub,
+        iat: faker.date.past(),
+        nbf: faker.date.recent(),
+        exp: faker.date.future(),
+        email: faker.internet.email().toLowerCase(),
+        email_verified: true,
+      };
+
+      auth0ApiMock.exchangeAuthorizationCode.mockResolvedValue(
+        rawify({
+          access_token: accessToken,
+          refresh_token: faker.string.alphanumeric(64),
+          id_token: faker.string.alphanumeric(64),
+          token_type: 'Bearer',
+          expires_in: 3600,
+        }),
+      );
+      auth0TokenVerifierMock.verifyAndDecodeAccessToken.mockReturnValue(
+        decodedAccessToken,
+      );
+      auth0TokenVerifierMock.verifyAndDecodeIdToken.mockResolvedValue(
+        decodedIdToken,
+      );
+
+      const result = await target.authenticateWithAuthorizationCode(code);
+
+      expect(result).toEqual({
+        ...decodedAccessToken,
+        email: decodedIdToken.email,
+        email_verified: decodedIdToken.email_verified,
+      });
+      expect(auth0ApiMock.exchangeAuthorizationCode).toHaveBeenCalledWith(code);
+      expect(
+        auth0TokenVerifierMock.verifyAndDecodeAccessToken,
+      ).toHaveBeenCalledWith(accessToken);
+      expect(auth0TokenVerifierMock.verifyAndDecodeIdToken).toHaveBeenCalled();
+    });
+
+    it('should keep authentication working when the id token does not provide email claims', async () => {
+      const code = faker.string.alphanumeric(32);
+      const accessToken = faker.string.alphanumeric(64);
+      const decodedAccessToken = {
         sub: `auth0|${faker.string.uuid()}`,
         iat: faker.date.past(),
         nbf: faker.date.recent(),
@@ -73,15 +127,86 @@ describe('Auth0Repository', () => {
           expires_in: 3600,
         }),
       );
-      auth0TokenVerifierMock.verifyAndDecode.mockReturnValue(decodedToken);
+      auth0TokenVerifierMock.verifyAndDecodeAccessToken.mockReturnValue(
+        decodedAccessToken,
+      );
+      auth0TokenVerifierMock.verifyAndDecodeIdToken.mockResolvedValue({
+        sub: decodedAccessToken.sub,
+        iat: faker.date.past(),
+        nbf: faker.date.recent(),
+        exp: faker.date.future(),
+      });
 
       const result = await target.authenticateWithAuthorizationCode(code);
 
-      expect(result).toEqual(decodedToken);
-      expect(auth0ApiMock.exchangeAuthorizationCode).toHaveBeenCalledWith(code);
-      expect(auth0TokenVerifierMock.verifyAndDecode).toHaveBeenCalledWith(
-        accessToken,
+      expect(result).toEqual(decodedAccessToken);
+    });
+
+    it('should keep authentication working when id token decoding fails', async () => {
+      const code = faker.string.alphanumeric(32);
+      const accessToken = faker.string.alphanumeric(64);
+      const decodedAccessToken = {
+        sub: `auth0|${faker.string.uuid()}`,
+        iat: faker.date.past(),
+        nbf: faker.date.recent(),
+        exp: faker.date.future(),
+      };
+
+      auth0ApiMock.exchangeAuthorizationCode.mockResolvedValue(
+        rawify({
+          access_token: accessToken,
+          refresh_token: faker.string.alphanumeric(64),
+          id_token: faker.string.alphanumeric(64),
+          token_type: 'Bearer',
+          expires_in: 3600,
+        }),
       );
+      auth0TokenVerifierMock.verifyAndDecodeAccessToken.mockReturnValue(
+        decodedAccessToken,
+      );
+      auth0TokenVerifierMock.verifyAndDecodeIdToken.mockRejectedValue(
+        new Error('id token failed'),
+      );
+
+      const result = await target.authenticateWithAuthorizationCode(code);
+
+      expect(result).toEqual(decodedAccessToken);
+    });
+
+    it('should omit email when decoded id token sub does not match the access token sub', async () => {
+      const code = faker.string.alphanumeric(32);
+      const accessToken = faker.string.alphanumeric(64);
+      const decodedAccessToken = {
+        sub: `auth0|${faker.string.uuid()}`,
+        iat: faker.date.past(),
+        nbf: faker.date.recent(),
+        exp: faker.date.future(),
+      };
+
+      auth0ApiMock.exchangeAuthorizationCode.mockResolvedValue(
+        rawify({
+          access_token: accessToken,
+          refresh_token: faker.string.alphanumeric(64),
+          id_token: faker.string.alphanumeric(64),
+          token_type: 'Bearer',
+          expires_in: 3600,
+        }),
+      );
+      auth0TokenVerifierMock.verifyAndDecodeAccessToken.mockReturnValue(
+        decodedAccessToken,
+      );
+      auth0TokenVerifierMock.verifyAndDecodeIdToken.mockResolvedValue({
+        sub: `auth0|${faker.string.uuid()}`,
+        iat: faker.date.past(),
+        nbf: faker.date.recent(),
+        exp: faker.date.future(),
+        email: faker.internet.email().toLowerCase(),
+        email_verified: true,
+      });
+
+      const result = await target.authenticateWithAuthorizationCode(code);
+
+      expect(result).toEqual(decodedAccessToken);
     });
 
     it('should propagate code exchange errors', async () => {
@@ -93,10 +218,12 @@ describe('Auth0Repository', () => {
       await expect(
         target.authenticateWithAuthorizationCode(code),
       ).rejects.toThrow(error);
-      expect(auth0TokenVerifierMock.verifyAndDecode).not.toHaveBeenCalled();
+      expect(
+        auth0TokenVerifierMock.verifyAndDecodeAccessToken,
+      ).not.toHaveBeenCalled();
     });
 
-    it('should propagate token verifier errors', async () => {
+    it('should propagate access token verifier errors', async () => {
       const code = faker.string.alphanumeric(32);
       const error = new Error('invalid access token');
 
@@ -108,9 +235,11 @@ describe('Auth0Repository', () => {
           token_type: 'Bearer',
         }),
       );
-      auth0TokenVerifierMock.verifyAndDecode.mockImplementation(() => {
-        throw error;
-      });
+      auth0TokenVerifierMock.verifyAndDecodeAccessToken.mockImplementation(
+        () => {
+          throw error;
+        },
+      );
 
       await expect(
         target.authenticateWithAuthorizationCode(code),
@@ -131,7 +260,9 @@ describe('Auth0Repository', () => {
       await expect(
         target.authenticateWithAuthorizationCode(code),
       ).rejects.toThrow();
-      expect(auth0TokenVerifierMock.verifyAndDecode).not.toHaveBeenCalled();
+      expect(
+        auth0TokenVerifierMock.verifyAndDecodeAccessToken,
+      ).not.toHaveBeenCalled();
     });
 
     it('should throw when Auth0 returns an unexpected token_type', async () => {
@@ -148,7 +279,9 @@ describe('Auth0Repository', () => {
       await expect(
         target.authenticateWithAuthorizationCode(code),
       ).rejects.toThrow();
-      expect(auth0TokenVerifierMock.verifyAndDecode).not.toHaveBeenCalled();
+      expect(
+        auth0TokenVerifierMock.verifyAndDecodeAccessToken,
+      ).not.toHaveBeenCalled();
     });
   });
 });
