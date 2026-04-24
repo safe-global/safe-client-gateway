@@ -120,7 +120,7 @@ describe('CounterfactualSafesController', () => {
         .expect(201);
     });
 
-    it('Should fail on duplicate chainId + address', async () => {
+    it('Should be idempotent when the same user re-submits identical init params', async () => {
       const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const cfSafe = buildCounterfactualSafe();
@@ -139,7 +139,70 @@ describe('CounterfactualSafesController', () => {
         .post('/v1/users/counterfactual-safes')
         .set('Cookie', [`access_token=${accessToken}`])
         .send({ safes: [cfSafe] })
+        .expect(201);
+    });
+
+    it('Should return 409 when (chainId, address) collides with different init params', async () => {
+      const authPayloadDto1 = siweAuthPayloadDtoBuilder().build();
+      const accessToken1 = jwtService.sign(authPayloadDto1);
+      const authPayloadDto2 = siweAuthPayloadDtoBuilder().build();
+      const accessToken2 = jwtService.sign(authPayloadDto2);
+      const cfSafe = buildCounterfactualSafe();
+
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken1}`]);
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken2}`]);
+
+      await request(app.getHttpServer())
+        .post('/v1/users/counterfactual-safes')
+        .set('Cookie', [`access_token=${accessToken1}`])
+        .send({ safes: [cfSafe] })
+        .expect(201);
+
+      await request(app.getHttpServer())
+        .post('/v1/users/counterfactual-safes')
+        .set('Cookie', [`access_token=${accessToken2}`])
+        .send({
+          safes: [{ ...cfSafe, threshold: (cfSafe.threshold as number) + 1 }],
+        })
         .expect(409);
+    });
+
+    it('Should allow a second user to attach to an existing counterfactual safe with matching init params', async () => {
+      const authPayloadDto1 = siweAuthPayloadDtoBuilder().build();
+      const accessToken1 = jwtService.sign(authPayloadDto1);
+      const authPayloadDto2 = siweAuthPayloadDtoBuilder().build();
+      const accessToken2 = jwtService.sign(authPayloadDto2);
+      const cfSafe = buildCounterfactualSafe();
+
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken1}`]);
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken2}`]);
+
+      await request(app.getHttpServer())
+        .post('/v1/users/counterfactual-safes')
+        .set('Cookie', [`access_token=${accessToken1}`])
+        .send({ safes: [cfSafe] })
+        .expect(201);
+
+      await request(app.getHttpServer())
+        .post('/v1/users/counterfactual-safes')
+        .set('Cookie', [`access_token=${accessToken2}`])
+        .send({ safes: [cfSafe] })
+        .expect(201);
+
+      const getResponse = await request(app.getHttpServer())
+        .get('/v1/users/counterfactual-safes')
+        .set('Cookie', [`access_token=${accessToken2}`])
+        .expect(200);
+
+      expect(getResponse.body.safes[cfSafe.chainId as string]).toHaveLength(1);
     });
 
     it('Should return 422 for invalid data (non-hex data field)', async () => {
@@ -223,10 +286,11 @@ describe('CounterfactualSafesController', () => {
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(200);
 
+      const chainId = cfSafe.chainId as string;
       expect(getResponse.body.safes).toBeDefined();
-      expect(getResponse.body.safes[cfSafe.chainId]).toBeDefined();
-      expect(getResponse.body.safes[cfSafe.chainId]).toHaveLength(1);
-      expect(getResponse.body.safes[cfSafe.chainId][0]).toMatchObject({
+      expect(getResponse.body.safes[chainId]).toBeDefined();
+      expect(getResponse.body.safes[chainId]).toHaveLength(1);
+      expect(getResponse.body.safes[chainId][0]).toMatchObject({
         address: cfSafe.address,
         factoryAddress: cfSafe.factoryAddress,
         masterCopy: cfSafe.masterCopy,
@@ -347,7 +411,7 @@ describe('CounterfactualSafesController', () => {
         .expect(404);
     });
 
-    it("Should not allow deleting another user's safe", async () => {
+    it("Should not allow deleting a safe the caller isn't associated with", async () => {
       const authPayloadDto1 = siweAuthPayloadDtoBuilder().build();
       const accessToken1 = jwtService.sign(authPayloadDto1);
       const authPayloadDto2 = siweAuthPayloadDtoBuilder().build();
