@@ -63,7 +63,7 @@ describe('SesEmailService', () => {
               },
             },
           },
-          FromEmailAddress: `${sesFromName} <${sesFromEmail}>`,
+          FromEmailAddress: `"${sesFromName}" <${sesFromEmail}>`,
         }),
       );
     });
@@ -96,7 +96,7 @@ describe('SesEmailService', () => {
       );
     });
 
-    it.each(['TimeoutError', 'NetworkingError'])(
+    it.each(['TimeoutError', 'NetworkingError', 'SendingPausedException'])(
       'should throw TransientEmailError on %s',
       async (errorName) => {
         const error = new Error('Timeout');
@@ -112,7 +112,6 @@ describe('SesEmailService', () => {
     it.each([
       'MessageRejected',
       'MailFromDomainNotVerifiedException',
-      'SendingPausedException',
       'BadRequestException',
       'NotFoundException',
     ])('should throw PermanentEmailError on %s', async (errorName) => {

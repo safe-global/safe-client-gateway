@@ -40,5 +40,16 @@ describe('EmailQueueService', () => {
         data,
       );
     });
+
+    it('should propagate addJob errors to the caller', async () => {
+      mockJobQueueService.addJob.mockRejectedValueOnce(
+        new Error('Redis connection refused'),
+      );
+      const data = sendEmailJobDataBuilder().build();
+
+      await expect(service.enqueue(data)).rejects.toThrow(
+        'Redis connection refused',
+      );
+    });
   });
 });

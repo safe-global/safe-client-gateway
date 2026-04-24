@@ -24,7 +24,7 @@ export class SesEmailService implements IEmailService {
       this.configurationService.getOrThrow<string>('email.ses.fromName');
 
     this.client = new SESv2Client({});
-    this.fromAddress = `${fromName} <${fromEmail}>`;
+    this.fromAddress = `"${fromName.replace(/"/g, '\\"')}" <${fromEmail}>`;
   }
 
   async send(args: {
@@ -65,14 +65,15 @@ export class SesEmailService implements IEmailService {
       case 'InternalServiceErrorException':
       case 'TimeoutError':
       case 'NetworkingError':
+      case 'SendingPausedException':
         throw new TransientEmailError(
           `SES transient failure: ${message}`,
           error as Error,
         );
 
       // Permanent: all other errors (MessageRejected,
-      // MailFromDomainNotVerifiedException, SendingPausedException,
-      // BadRequestException, NotFoundException, etc.)
+      // MailFromDomainNotVerifiedException, BadRequestException,
+      // NotFoundException, etc.)
       default:
         throw new PermanentEmailError(
           `SES rejected: ${message}`,
