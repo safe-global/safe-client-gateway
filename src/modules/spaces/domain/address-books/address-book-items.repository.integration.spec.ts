@@ -15,8 +15,8 @@ import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
 import { nameBuilder } from '@/domain/common/entities/name.builder';
 import type { ILoggingService } from '@/logging/logging.interface';
 import {
-  siweAuthPayloadDtoBuilder,
   oidcAuthPayloadDtoBuilder,
+  siweAuthPayloadDtoBuilder,
 } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { AddressBookItem } from '@/modules/spaces/datasources/entities/address-book-item.entity.db';
@@ -148,13 +148,14 @@ describe('AddressBookItemsRepository', () => {
 
     it('should return an array of address book items for the given Space ID', async () => {
       const { spaceId, authPayload } = await createSpaceAsAdmin();
+      const userId = Number(authPayload.sub);
       const items = range(1, 5).map(() => ({
         chainIds: range(2, 5).map(() => faker.string.numeric()),
         address: getAddress(faker.finance.ethereumAddress()),
         name: nameBuilder(),
         space: { id: spaceId },
-        createdBy: faker.number.int({ min: 1, max: DB_MAX_SAFE_INTEGER }),
-        lastUpdatedBy: faker.number.int({ min: 1, max: DB_MAX_SAFE_INTEGER }),
+        createdBy: userId,
+        lastUpdatedBy: userId,
       }));
       await Promise.all(
         items.map((item) => dbAddressBookItemsRepository.insert(item)),
@@ -182,15 +183,17 @@ describe('AddressBookItemsRepository', () => {
     });
 
     it('should return an array of address book items for the given Space ID for a Space Member', async () => {
-      const { spaceId } = await createSpaceAsAdmin();
+      const { spaceId, authPayload: adminAuthPayload } =
+        await createSpaceAsAdmin();
+      const adminUserId = Number(adminAuthPayload.sub);
       const authPayload = await addMemberToSpaceWithStatus(spaceId, 'ACTIVE');
       const items = range(1, 5).map(() => ({
         chainIds: range(2, 5).map(() => faker.string.numeric()),
         address: getAddress(faker.finance.ethereumAddress()),
         name: nameBuilder(),
         space: { id: spaceId },
-        createdBy: faker.number.int({ min: 1, max: DB_MAX_SAFE_INTEGER }),
-        lastUpdatedBy: faker.number.int({ min: 1, max: DB_MAX_SAFE_INTEGER }),
+        createdBy: adminUserId,
+        lastUpdatedBy: adminUserId,
       }));
       await Promise.all(
         items.map((item) => dbAddressBookItemsRepository.insert(item)),
@@ -411,6 +414,27 @@ describe('AddressBookItemsRepository', () => {
           ),
         ),
       );
+    });
+
+    it('should attribute creation to createdByOverride user, not the authenticated admin', async () => {
+      const { spaceId, authPayload: adminAuthPayload } =
+        await createSpaceAsAdmin();
+      const adminUserId = Number(adminAuthPayload.sub);
+      const requesterAuthPayload = await addAdminToSpace(spaceId);
+      const requesterUserId = Number(requesterAuthPayload.sub);
+      const items = [addressBookItemBuilder().build()];
+
+      const result = await addressBookItemsRepository.upsertMany({
+        authPayload: adminAuthPayload,
+        spaceId,
+        addressBookItems: items,
+        createdByOverride: requesterUserId,
+      });
+
+      // createdBy should be the override (requester), not the admin
+      expect(result[0].createdBy).toBe(requesterUserId);
+      // lastUpdatedBy should still be the admin who performed the action
+      expect(result[0].lastUpdatedBy).toBe(adminUserId);
     });
   });
 

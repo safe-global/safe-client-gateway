@@ -25,5 +25,7 @@ export function addressBookItemBuilder(): IBuilder<AddressBookItem> {
     .with(
       'lastUpdatedBy',
       faker.number.int({ min: 1, max: DB_MAX_SAFE_INTEGER }),
-    );
+    )
+    .with('createdAt', new Date())
+    .with('updatedAt', new Date());
 }

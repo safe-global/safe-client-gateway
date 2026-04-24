@@ -1,13 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
-import {
-  BadRequestException,
-  ForbiddenException,
-  Inject,
-  Injectable,
-} from '@nestjs/common';
+import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { EntityManager, In } from 'typeorm';
-import { type Address, isAddressEqual } from 'viem';
+import { isAddressEqual } from 'viem';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
@@ -53,8 +48,9 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
     authPayload: AuthPayload;
     spaceId: Space['id'];
     addressBookItems: UpsertAddressBookItemsDto['items'];
-    createdByOverride?: Address;
+    createdByOverride?: number;
   }): Promise<Array<AddressBookDbItem>> {
+    const userId = getAuthenticatedUserIdOrFail(args.authPayload);
     const space = await this.getSpaceAs({
       ...args,
       memberRoleIn: ['ADMIN'],
@@ -65,7 +61,7 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
         entityManager,
         addressBookItems: args.addressBookItems,
         space,
-        authPayload: args.authPayload,
+        userId,
       });
 
       const newAddressBookItems = args.addressBookItems.filter(
@@ -79,7 +75,7 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
         entityManager,
         addressBookItems: newAddressBookItems,
         space,
-        authPayload: args.authPayload,
+        userId,
         createdByOverride: args.createdByOverride,
       });
     });
@@ -123,12 +119,11 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
   }
 
   private async updateExistingAddressBookItems(args: {
-    authPayload: AuthPayload;
+    userId: number;
     addressBookItems: Array<AddressBookItem>;
     space: Space;
     entityManager: EntityManager;
   }): Promise<Array<DbAddressBookItem['address']>> {
-    const userId = getAuthenticatedUserIdOrFail(args.authPayload);
     const repository = args.entityManager.getRepository(DbAddressBookItem);
     const existingAddressBookItems = await repository.findBy({
       space: { id: args.space.id },
@@ -144,20 +139,19 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
       await repository.update(item.id, {
         name: patch.name,
         chainIds: patch.chainIds,
-        lastUpdatedBy: userId,
+        lastUpdatedBy: args.userId,
       });
     }
     return existingAddressBookItems.map((item) => item.address);
   }
 
   private async createNewAddressBookItems(args: {
-    authPayload: AuthPayload;
+    userId: number;
     addressBookItems: Array<AddressBookItem>;
     space: Space;
     entityManager: EntityManager;
-    createdByOverride?: Address;
+    createdByOverride?: number;
   }): Promise<Array<DbAddressBookItem['id']>> {
-    const userId = getAuthenticatedUserIdOrFail(args.authPayload);
     await this.checkItemsLimit(args);
     const repository = args.entityManager.getRepository(DbAddressBookItem);
     const insertedIds = await repository.insert(
@@ -166,10 +160,8 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
         address: addressBookItem.address,
         name: addressBookItem.name,
         chainIds: addressBookItem.chainIds,
-        createdBy: args.createdByOverride
-          ? args.authPayload.signer_address
-          : userId, //TODO revisit
-        lastUpdatedBy: args.authPayload.signer_address ?? userId, //TODO revisit
+        createdBy: args.createdByOverride ?? args.userId,
+        lastUpdatedBy: args.userId,
       })),
     );
     return insertedIds.identifiers.map((i) => i.id);

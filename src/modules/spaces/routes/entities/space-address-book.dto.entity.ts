@@ -2,6 +2,7 @@
 
 import { ApiProperty } from '@nestjs/swagger';
 import type { AddressBookDbItem } from '@/modules/spaces/domain/address-books/entities/address-book-item.db.entity';
+import type { UserAddressBookItem } from '@/modules/spaces/domain/address-books/entities/user-address-book-item.entity';
 
 export class SpaceAddressBookItemDto {
   @ApiProperty({ type: String })
@@ -13,11 +14,31 @@ export class SpaceAddressBookItemDto {
   @ApiProperty({ type: String, isArray: true })
   public chainIds!: AddressBookDbItem['chainIds'];
 
-  @ApiProperty({ type: String, description: 'User ID of the creator' })
+  @ApiProperty({
+    type: String,
+    description:
+      'Email or wallet address of the creator, "Unknown user" if the user has no display identity, or "Deleted user"',
+  })
   public createdBy!: string;
 
-  @ApiProperty({ type: String, description: 'User ID of the last updater' })
+  @ApiProperty({
+    type: Number,
+    description: 'User ID of the creator',
+  })
+  public createdByUserId!: number;
+
+  @ApiProperty({
+    type: String,
+    description:
+      'Email or wallet address of the last editor, "Unknown user" if the user has no display identity, or "Deleted user"',
+  })
   public lastUpdatedBy!: string;
+
+  @ApiProperty({
+    type: Number,
+    description: 'User ID of the last editor',
+  })
+  public lastUpdatedByUserId!: number;
 
   @ApiProperty({ type: Date })
   public createdAt!: AddressBookDbItem['createdAt'];
@@ -36,22 +57,22 @@ export class SpaceAddressBookDto {
 
 export class UserAddressBookItemDto {
   @ApiProperty({ type: String })
-  public name!: AddressBookDbItem['name'];
+  public name!: UserAddressBookItem['name'];
 
   @ApiProperty({ type: String })
-  public address!: AddressBookDbItem['address'];
+  public address!: UserAddressBookItem['address'];
 
   @ApiProperty({ type: String, isArray: true })
-  public chainIds!: AddressBookDbItem['chainIds'];
+  public chainIds!: UserAddressBookItem['chainIds'];
 
   @ApiProperty({ type: String })
-  public createdBy!: AddressBookDbItem['createdBy'];
+  public createdBy!: UserAddressBookItem['createdBy'];
 
   @ApiProperty()
-  public createdAt!: AddressBookDbItem['createdAt'];
+  public createdAt!: UserAddressBookItem['createdAt'];
 
   @ApiProperty()
-  public updatedAt!: AddressBookDbItem['updatedAt'];
+  public updatedAt!: UserAddressBookItem['updatedAt'];
 }
 
 export class UserAddressBookDto {

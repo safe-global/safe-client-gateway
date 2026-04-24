@@ -23,8 +23,8 @@ export const AddressBookDbItemSchema: z.ZodType<
   chainIds: z.array(z.string()),
   address: AddressSchema as z.ZodType<Address>,
   name: makeNameSchema({ maxLength: ADDRESS_BOOK_NAME_MAX_LENGTH }),
-  createdBy: z.number().int(),
-  lastUpdatedBy: z.number().int(),
+  createdBy: z.number().int().positive(),
+  lastUpdatedBy: z.number().int().positive(),
 });
 
 export type AddressBookDbItem = z.infer<typeof AddressBookDbItemSchema>;

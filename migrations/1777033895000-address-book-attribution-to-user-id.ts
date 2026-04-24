@@ -1,19 +1,21 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class AddressBookAttributionToUserId1777033895000 implements MigrationInterface {
+export class AddressBookAttributionToUserId1777033895000
+  implements MigrationInterface
+{
   public async up(queryRunner: QueryRunner): Promise<void> {
-    // Verify all wallet addresses resolve to a user before altering columns.
+    // Preflight: verify all wallet addresses resolve to a user before altering columns.
     await queryRunner.query(`
       DO $$
       BEGIN
         IF EXISTS (
           SELECT 1 FROM space_address_book_items sabi
           WHERE NOT EXISTS (
-            SELECT 1 FROM wallets w WHERE w.address = sabi.created_by
+            SELECT 1 FROM wallets w WHERE LOWER(w.address) = LOWER(sabi.created_by)
           )
           OR NOT EXISTS (
-            SELECT 1 FROM wallets w WHERE w.address = sabi.last_updated_by
+            SELECT 1 FROM wallets w WHERE LOWER(w.address) = LOWER(sabi.last_updated_by)
           )
         ) THEN
           RAISE EXCEPTION
@@ -31,18 +33,19 @@ export class AddressBookAttributionToUserId1777033895000 implements MigrationInt
     `);
 
     // Backfill: resolve wallet addresses to user IDs via the wallets table.
+    // Uses LOWER() for case-insensitive comparison.
     await queryRunner.query(`
       UPDATE space_address_book_items sabi
       SET created_by_uid = w.user_id
       FROM wallets w
-      WHERE w.address = sabi.created_by;
+      WHERE LOWER(w.address) = LOWER(sabi.created_by);
     `);
 
     await queryRunner.query(`
       UPDATE space_address_book_items sabi
       SET last_updated_by_uid = w.user_id
       FROM wallets w
-      WHERE w.address = sabi.last_updated_by;
+      WHERE LOWER(w.address) = LOWER(sabi.last_updated_by);
     `);
 
     // Drop old varchar columns and rename new ones.
@@ -62,7 +65,7 @@ export class AddressBookAttributionToUserId1777033895000 implements MigrationInt
         RENAME COLUMN last_updated_by_uid TO last_updated_by;
     `);
 
-    // Set NOT NULL constraint on the new columns.
+    // Set NOT NULL — preflight guarantees all rows were resolved.
     await queryRunner.query(`
       ALTER TABLE space_address_book_items
         ALTER COLUMN created_by SET NOT NULL,
@@ -72,9 +75,10 @@ export class AddressBookAttributionToUserId1777033895000 implements MigrationInt
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     // Reverse is lossy: OIDC-created entries have no wallet to map back to,
-    // and users with multiple wallets pick one arbitrarily (LIMIT 1).
+    // and users with multiple wallets pick the oldest one (ORDER BY created_at ASC).
     // Columns are intentionally left nullable (unlike the original NOT NULL)
     // because OIDC-created entries will have NULL after rollback.
+
     await queryRunner.query(`
       ALTER TABLE space_address_book_items
         ADD COLUMN created_by_addr varchar(42),
@@ -82,11 +86,13 @@ export class AddressBookAttributionToUserId1777033895000 implements MigrationInt
     `);
 
     // Best-effort backfill from user IDs to wallet addresses.
+    // Uses deterministic ORDER BY to pick the oldest wallet for users with multiple.
     await queryRunner.query(`
       UPDATE space_address_book_items sabi
       SET created_by_addr = (
         SELECT w.address FROM wallets w
-        WHERE w.user_id = sabi.created_by LIMIT 1
+        WHERE w.user_id = sabi.created_by
+        ORDER BY w.created_at ASC LIMIT 1
       );
     `);
 
@@ -94,7 +100,8 @@ export class AddressBookAttributionToUserId1777033895000 implements MigrationInt
       UPDATE space_address_book_items sabi
       SET last_updated_by_addr = (
         SELECT w.address FROM wallets w
-        WHERE w.user_id = sabi.last_updated_by LIMIT 1
+        WHERE w.user_id = sabi.last_updated_by
+        ORDER BY w.created_at ASC LIMIT 1
       );
     `);
 
