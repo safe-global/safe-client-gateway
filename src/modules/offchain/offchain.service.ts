@@ -13,10 +13,9 @@ import {
 } from '@/modules/offchain/entities/multisig-transaction.entity';
 import type { OffchainMultisigTransactionEntity } from '@/modules/offchain/entities/multisig-transaction.entity';
 import {
-  OffchainMessagePageSchema,
+  OffchainMessage,
   OffchainMessageSchema,
 } from '@/modules/offchain/entities/message.entity';
-import { OffchainDelegatePageSchema } from '@/modules/offchain/entities/delegate.entity';
 import { parseOrigin } from '@/modules/offchain/helpers/origin.helper';
 import { mapOffchainToMessage } from '@/modules/offchain/mappers/message.mapper';
 import {
@@ -160,7 +159,7 @@ export class OffchainService implements IOffchain {
     try {
       const url = `${this.baseUri}/api/v1/multisig-transactions/queue`;
       const nonceOrder = args.ordering?.includes('-') ? 'desc' : 'asc';
-      const { data } = await this.networkService.get<unknown>({
+      const { data } = await this.networkService.get({
         url,
         networkRequest: {
           params: {
@@ -220,12 +219,16 @@ export class OffchainService implements IOffchain {
     offset?: number;
   }): Promise<Raw<Page<Delegate>>> {
     try {
+      const cacheDir = CacheRouter.getDelegatesCacheDir(args);
       const url = `${this.baseUri}/api/v1/delegates`;
-      const { data } = await this.networkService.get<unknown>({
+      const data = await this.dataSource.get({
+        cacheDir,
         url,
+        notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
+        expireTimeSeconds: this.defaultExpirationTimeInSeconds,
         networkRequest: {
           params: {
-            chain_id: Number(args.chainId),
+            chain_id: args.chainId,
             safe: args.safeAddress,
             delegate: args.delegate,
             delegator: args.delegator,
@@ -234,18 +237,7 @@ export class OffchainService implements IOffchain {
           },
         },
       });
-      const parsed = OffchainDelegatePageSchema.parse(data);
-      return rawify({
-        count: parsed.count,
-        next: parsed.next,
-        previous: parsed.previous,
-        results: parsed.results.map((d) => ({
-          safe: d.safe,
-          delegate: d.delegate,
-          delegator: d.delegator,
-          label: d.label ?? '',
-        })),
-      });
+      return data;
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
@@ -303,12 +295,20 @@ export class OffchainService implements IOffchain {
   async getMessageByHash(args: {
     chainId: string;
     messageHash: string;
-  }): Promise<Raw<Message>> {
+  }): Promise<Raw<OffchainMessage>> {
     try {
+      const cacheDir = CacheRouter.getMessageByHashCacheDir({
+        chainId: args.chainId,
+        messageHash: args.messageHash,
+      });
       const url = `${this.baseUri}/api/v1/messages/${args.messageHash}`;
-      const { data } = await this.networkService.get<unknown>({ url });
-      const parsed = OffchainMessageSchema.parse(data);
-      return rawify(mapOffchainToMessage(parsed));
+      const data = await this.dataSource.get({
+        cacheDir,
+        url,
+        notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
+        expireTimeSeconds: this.defaultExpirationTimeInSeconds,
+      });
+      return data;
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
@@ -319,26 +319,29 @@ export class OffchainService implements IOffchain {
     safeAddress: Address;
     limit?: number;
     offset?: number;
-  }): Promise<Raw<Page<Message>>> {
+  }): Promise<Raw<Page<OffchainMessage>>> {
     try {
+      const cacheDir = CacheRouter.getMessagesBySafeCacheDir({
+        chainId: args.chainId,
+        safeAddress: args.safeAddress,
+        limit: args.limit,
+        offset: args.offset,
+      });
       const url = `${this.baseUri}/api/v1/safes/${args.safeAddress}/messages`;
-      const { data } = await this.networkService.get<unknown>({
+      const data = await this.dataSource.get({
+        cacheDir,
         url,
+        notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
+        expireTimeSeconds: this.defaultExpirationTimeInSeconds,
         networkRequest: {
           params: {
-            chain_id: Number(args.chainId),
+            chain_id: args.chainId,
             limit: args.limit,
             offset: args.offset,
           },
         },
       });
-      const parsed = OffchainMessagePageSchema.parse(data);
-      return rawify({
-        count: parsed.count,
-        next: parsed.next,
-        previous: parsed.previous,
-        results: parsed.results.map(mapOffchainToMessage),
-      });
+      return data;
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
