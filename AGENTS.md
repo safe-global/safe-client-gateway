@@ -24,6 +24,10 @@ Each external API gets its own datasource:
 
 When adding constructor dependencies, update all spec files that instantiate the class.
 
+## Code Review Conventions
+
+See [`REVIEW_LEARNINGS.md`](./REVIEW_LEARNINGS.md) — structural conventions distilled from recurring PR review feedback. **Read it before opening any PR**, and again when reviewing one. This file is maintained semi-automatically by the `/safe-engineering:pr-learnings` skill, which merges new patterns from recent PR comments on each run.
+
 ## Pre-Commit Checklist
 
 Before creating **EACH** commit, you MUST run the following commands in sequence and fix any issues:
