@@ -13,11 +13,11 @@ export class SpaceAddressBookItemDto {
   @ApiProperty({ type: String, isArray: true })
   public chainIds!: AddressBookDbItem['chainIds'];
 
-  @ApiProperty({ type: String })
-  public createdBy!: AddressBookDbItem['createdBy'];
+  @ApiProperty({ type: String, description: 'User ID of the creator' })
+  public createdBy!: string;
 
-  @ApiProperty({ type: String })
-  public lastUpdatedBy!: AddressBookDbItem['lastUpdatedBy'];
+  @ApiProperty({ type: String, description: 'User ID of the last updater' })
+  public lastUpdatedBy!: string;
 
   @ApiProperty({ type: Date })
   public createdAt!: AddressBookDbItem['createdAt'];

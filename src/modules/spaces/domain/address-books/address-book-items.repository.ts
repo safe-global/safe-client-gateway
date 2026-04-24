@@ -128,11 +128,7 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
     space: Space;
     entityManager: EntityManager;
   }): Promise<Array<DbAddressBookItem['address']>> {
-    if (!args.authPayload.isSiwe()) {
-      throw new ForbiddenException(
-        'Address book writes require wallet authentication',
-      );
-    }
+    const userId = getAuthenticatedUserIdOrFail(args.authPayload);
     const repository = args.entityManager.getRepository(DbAddressBookItem);
     const existingAddressBookItems = await repository.findBy({
       space: { id: args.space.id },
@@ -148,7 +144,7 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
       await repository.update(item.id, {
         name: patch.name,
         chainIds: patch.chainIds,
-        lastUpdatedBy: args.authPayload.signer_address,
+        lastUpdatedBy: userId,
       });
     }
     return existingAddressBookItems.map((item) => item.address);
@@ -161,11 +157,7 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
     entityManager: EntityManager;
     createdByOverride?: Address;
   }): Promise<Array<DbAddressBookItem['id']>> {
-    if (!args.authPayload.isSiwe()) {
-      throw new ForbiddenException(
-        'Address book writes require wallet authentication',
-      );
-    }
+    const userId = getAuthenticatedUserIdOrFail(args.authPayload);
     await this.checkItemsLimit(args);
     const repository = args.entityManager.getRepository(DbAddressBookItem);
     const insertedIds = await repository.insert(
@@ -174,8 +166,10 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
         address: addressBookItem.address,
         name: addressBookItem.name,
         chainIds: addressBookItem.chainIds,
-        createdBy: args.createdByOverride ?? args.authPayload.signer_address,
-        lastUpdatedBy: args.authPayload.signer_address,
+        createdBy: args.createdByOverride
+          ? args.authPayload.signer_address
+          : userId, //TODO revisit
+        lastUpdatedBy: args.authPayload.signer_address ?? userId, //TODO revisit
       })),
     );
     return insertedIds.identifiers.map((i) => i.id);

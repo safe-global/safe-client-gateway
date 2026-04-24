@@ -15,16 +15,16 @@ export const AddressBookDbItemSchema: z.ZodType<
     chainIds: Array<string>;
     address: Address;
     name: string;
-    createdBy: Address;
-    lastUpdatedBy: Address;
+    createdBy: number;
+    lastUpdatedBy: number;
   }
 > = RowSchema.extend({
   space: z.lazy(() => SpaceSchema),
   chainIds: z.array(z.string()),
   address: AddressSchema as z.ZodType<Address>,
   name: makeNameSchema({ maxLength: ADDRESS_BOOK_NAME_MAX_LENGTH }),
-  createdBy: AddressSchema as z.ZodType<Address>,
-  lastUpdatedBy: AddressSchema as z.ZodType<Address>,
+  createdBy: z.number().int(),
+  lastUpdatedBy: z.number().int(),
 });
 
 export type AddressBookDbItem = z.infer<typeof AddressBookDbItemSchema>;
