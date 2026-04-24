@@ -52,7 +52,6 @@ export const RootConfigurationSchema = z
     AUTH0_CLIENT_ID: z.string().optional(),
     AUTH0_CLIENT_SECRET: z.string().optional(),
     AUTH0_REDIRECT_URI: z.url().optional(),
-    AUTH0_SIGNING_SECRET: z.string().optional(),
     AUTH0_SCOPE: z.string().optional(),
     AUTH_STATE_TTL_MILLISECONDS: z.coerce.number().int().min(1).optional(),
     AWS_ACCESS_KEY_ID: z.string().optional(),

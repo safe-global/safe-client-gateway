@@ -125,17 +125,16 @@ The redirect target is resolved from the state cookie's `redirectUrl` when avail
 
 ## Auth0 Configuration
 
-| Env var                | Description                                  |
-| ---------------------- | -------------------------------------------- |
-| `AUTH0_DOMAIN`         | Auth0 tenant domain, e.g. `tenant.auth0.com` |
-| `AUTH0_CLIENT_ID`      | Application client ID                        |
-| `AUTH0_CLIENT_SECRET`  | Application client secret                    |
-| `AUTH0_REDIRECT_URI`   | Callback URL (must be allowlisted in Auth0)  |
-| `AUTH0_API_AUDIENCE`   | API identifier (audience claim in tokens)    |
-| `AUTH0_SIGNING_SECRET` | HS256 secret for verifying Auth0 JWTs        |
-| `AUTH0_SCOPE`          | Requested scopes, defaults to `openid`       |
+| Env var               | Description                                  |
+| --------------------- | -------------------------------------------- |
+| `AUTH0_DOMAIN`        | Auth0 tenant domain, e.g. `tenant.auth0.com` |
+| `AUTH0_CLIENT_ID`     | Application client ID                        |
+| `AUTH0_CLIENT_SECRET` | Application client secret                    |
+| `AUTH0_REDIRECT_URI`  | Callback URL (must be allowlisted in Auth0)  |
+| `AUTH0_API_AUDIENCE`  | API audience sent on the Auth0 authorize URL |
+| `AUTH0_SCOPE`         | Requested scopes, defaults to `openid`       |
 
-Auth0 tokens are verified using **HS256** (HMAC-SHA256). The verifier checks issuer (`https://{domain}/`), audience, and signature before extracting claims. The Auth0 `sub` (external user ID) is then mapped to an internal numeric user ID via `usersRepository.findOrCreateByExtUserId()`.
+CGW verifies the Auth0 `id_token` using **RS256** and Auth0's JWKS (`/.well-known/jwks.json`). The verifier checks issuer (`https://{domain}/`), audience (`AUTH0_CLIENT_ID`), and signature before extracting claims. The Auth0 `sub` (external user ID) is then mapped to an internal numeric user ID via `usersRepository.findOrCreateByExtUserId()`.
 
 > **Auth0 dashboard requirements:** Both redirect URLs must be allowlisted in the Auth0 application settings:
 >

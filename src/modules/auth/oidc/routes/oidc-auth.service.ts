@@ -21,6 +21,7 @@ import { IAuth0Repository } from '@/modules/auth/oidc/auth0/domain/auth0.reposit
 import type { OidcConnection } from '@/modules/auth/oidc/routes/entities/oidc-connection.entity';
 import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
 import { getMillisecondsUntil } from '@/domain/common/utils/time';
+import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 
 type OidcAuthTokenResponse = {
   accessToken: string;
@@ -42,6 +43,8 @@ export class OidcAuthService {
     private readonly usersRepository: IUsersRepository,
     @Inject(IAuth0Repository)
     private readonly auth0Repository: IAuth0Repository,
+    @Inject(LoggingService)
+    private readonly loggingService: ILoggingService,
   ) {
     this.maxValidityPeriodInSeconds = this.configurationService.getOrThrow(
       'auth.maxValidityPeriodSeconds',
@@ -54,6 +57,7 @@ export class OidcAuthService {
   public async authenticateWithOidc(
     code: string,
   ): Promise<OidcAuthTokenResponse> {
+    this.loggingService.debug('OIDC: exchanging authorization code with Auth0');
     const {
       sub: extUserId,
       email,
@@ -75,10 +79,20 @@ export class OidcAuthService {
       );
     }
 
+    const verifiedEmail = emailVerified === true ? email : undefined;
+    this.loggingService.debug(
+      `OIDC: resolved token subject ${extUserId} with verifiedEmail=${verifiedEmail ? 'present' : 'absent'}`,
+    );
     const userId =
       await this.usersRepository.findOrCreateByExtUserId(extUserId);
-    if (emailVerified === true && email) {
-      await this.usersRepository.persistVerifiedEmail(userId, email);
+    this.loggingService.debug(
+      `OIDC: resolved internal user ${userId} for subject ${extUserId}`,
+    );
+    if (verifiedEmail) {
+      this.loggingService.debug(
+        `OIDC: persisting verified email for user ${userId}`,
+      );
+      await this.usersRepository.persistVerifiedEmail(userId, verifiedEmail);
     }
     const accessToken = this.authRepository.signToken(
       {
@@ -93,6 +107,9 @@ export class OidcAuthService {
     );
 
     const exp = expirationTime ?? maxExpirationTime;
+    this.loggingService.debug(
+      `OIDC: minted CGW access token for user ${userId} with maxAge=${getMillisecondsUntil(exp) ?? 'undefined'}`,
+    );
     return {
       accessToken,
       maxAge: getMillisecondsUntil(exp),
@@ -131,6 +148,10 @@ export class OidcAuthService {
 
     const state = Buffer.from(JSON.stringify(statePayload)).toString(
       'base64url',
+    );
+
+    this.loggingService.debug(
+      `OIDC: created authorization request with redirectUrl=${resolvedRedirectUrl ?? 'default'} and connection=${connection ?? 'default'}`,
     );
 
     return {

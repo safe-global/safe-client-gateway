@@ -1,13 +1,14 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { generateKeyPairSync } from 'node:crypto';
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
-import type { INetworkService } from '@/datasources/network/network.service.interface';
+import { AUTH0_ID_TOKEN_ALGORITHM } from '@/datasources/jwt/jwt.constants';
 import type { IJwtService } from '@/datasources/jwt/jwt.service.interface';
+import type { INetworkService } from '@/datasources/network/network.service.interface';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { Auth0TokenVerifier } from '@/modules/auth/oidc/auth0/domain/auth0-token.verifier';
 import { faker } from '@faker-js/faker';
 import { UnauthorizedException } from '@nestjs/common';
-import jwt, { JsonWebTokenError, TokenExpiredError } from 'jsonwebtoken';
+import jwt, { JsonWebTokenError } from 'jsonwebtoken';
 
 const jwtServiceMock = {
   decode: jest.fn(),
@@ -20,6 +21,8 @@ const networkServiceMock = {
 const loggingServiceMock = {
   debug: jest.fn(),
   info: jest.fn(),
+  warn: jest.fn(),
+  error: jest.fn(),
 } as jest.MockedObjectDeep<ILoggingService>;
 
 function verifyJwtWithJsonWebToken(
@@ -54,10 +57,10 @@ function signRs256IdToken(args: {
 
   return {
     idToken: jwt.sign(args.payload, privateKey, {
-      algorithm: 'RS256',
+      algorithm: AUTH0_ID_TOKEN_ALGORITHM,
       issuer: args.issuer,
       audience: args.audience,
-      header: { kid: args.kid, alg: 'RS256' },
+      header: { kid: args.kid, alg: AUTH0_ID_TOKEN_ALGORITHM },
     }),
     publicJwk,
   };
@@ -79,24 +82,18 @@ function replaceJwtHeader(
 describe('Auth0TokenVerifier', () => {
   let target: Auth0TokenVerifier;
   let issuer: string;
-  let audience: string;
   let clientId: string;
-  let signingSecret: string;
 
   beforeEach(() => {
     jest.resetAllMocks();
 
     const domain = faker.internet.domainName();
     issuer = `https://${domain}/`;
-    audience = faker.string.alphanumeric();
     clientId = faker.string.uuid();
-    signingSecret = faker.string.alphanumeric(32);
 
     const fakeConfigurationService = new FakeConfigurationService();
     fakeConfigurationService.set('auth.auth0.domain', domain);
-    fakeConfigurationService.set('auth.auth0.audience', audience);
     fakeConfigurationService.set('auth.auth0.clientId', clientId);
-    fakeConfigurationService.set('auth.auth0.signingSecret', signingSecret);
 
     target = new Auth0TokenVerifier(
       jwtServiceMock,
@@ -104,120 +101,6 @@ describe('Auth0TokenVerifier', () => {
       fakeConfigurationService,
       loggingServiceMock,
     );
-  });
-
-  describe('verifyAndDecodeAccessToken', () => {
-    it('should decode and parse the access token with correct options', () => {
-      const accessToken = faker.string.alphanumeric();
-      const now = Math.floor(Date.now() / 1_000);
-      const decoded = {
-        sub: faker.string.uuid(),
-        iat: now,
-        nbf: now,
-        exp: now + 3600,
-      };
-      jwtServiceMock.decode.mockReturnValue(decoded);
-
-      const result = target.verifyAndDecodeAccessToken(accessToken);
-
-      expect(result.sub).toBe(decoded.sub);
-      expect(result.iat).toEqual(new Date(now * 1_000));
-      expect(result.nbf).toEqual(new Date(now * 1_000));
-      expect(result.exp).toEqual(new Date((now + 3600) * 1_000));
-      expect(jwtServiceMock.decode).toHaveBeenCalledTimes(1);
-      expect(jwtServiceMock.decode).toHaveBeenCalledWith(accessToken, {
-        issuer,
-        audience,
-        secretOrPrivateKey: signingSecret,
-        algorithms: ['HS256'],
-      });
-    });
-
-    it('should parse an access token without optional claims', () => {
-      const accessToken = faker.string.alphanumeric();
-      const decoded = { sub: faker.string.numeric() };
-      jwtServiceMock.decode.mockReturnValue(decoded);
-
-      const result = target.verifyAndDecodeAccessToken(accessToken);
-
-      expect(result.sub).toBe(decoded.sub);
-      expect(result.iat).toBeUndefined();
-      expect(result.nbf).toBeUndefined();
-      expect(result.exp).toBeUndefined();
-    });
-
-    it('should preserve verified email claims when present in the verified token payload', () => {
-      const accessToken = faker.string.alphanumeric();
-      const email = faker.internet.email().toLowerCase();
-      const decoded = {
-        sub: faker.string.numeric(),
-        email,
-        email_verified: true,
-      };
-      jwtServiceMock.decode.mockReturnValue(decoded);
-
-      const result = target.verifyAndDecodeAccessToken(accessToken);
-
-      expect(result).toEqual(
-        expect.objectContaining({
-          sub: decoded.sub,
-          email,
-          email_verified: true,
-        }),
-      );
-    });
-
-    it('should throw if sub is missing', () => {
-      const accessToken = faker.string.alphanumeric();
-      jwtServiceMock.decode.mockReturnValue({});
-
-      expect(() => target.verifyAndDecodeAccessToken(accessToken)).toThrow();
-    });
-
-    it('should throw UnauthorizedException for JsonWebTokenError', () => {
-      const accessToken = faker.string.alphanumeric();
-      const message =
-        'jwt audience invalid. expected: https://secret.example.com/';
-      jwtServiceMock.decode.mockImplementation(() => {
-        throw new JsonWebTokenError(message);
-      });
-
-      expect(() => target.verifyAndDecodeAccessToken(accessToken)).toThrow(
-        new UnauthorizedException('Invalid access token'),
-      );
-      expect(loggingServiceMock.debug).toHaveBeenCalledTimes(1);
-      expect(loggingServiceMock.debug).toHaveBeenCalledWith(
-        `Auth0: access token JWT verification failed: ${message}`,
-      );
-    });
-
-    it('should throw UnauthorizedException for TokenExpiredError', () => {
-      const accessToken = faker.string.alphanumeric();
-      const message = 'jwt expired';
-      jwtServiceMock.decode.mockImplementation(() => {
-        throw new TokenExpiredError(message, new Date());
-      });
-
-      expect(() => target.verifyAndDecodeAccessToken(accessToken)).toThrow(
-        new UnauthorizedException('Invalid access token'),
-      );
-      expect(loggingServiceMock.debug).toHaveBeenCalledTimes(1);
-      expect(loggingServiceMock.debug).toHaveBeenCalledWith(
-        `Auth0: access token JWT verification failed: ${message}`,
-      );
-    });
-
-    it('should propagate non-JWT errors from jwtService.decode', () => {
-      const accessToken = faker.string.alphanumeric();
-      const error = new Error('unexpected error');
-      jwtServiceMock.decode.mockImplementation(() => {
-        throw error;
-      });
-
-      expect(() => target.verifyAndDecodeAccessToken(accessToken)).toThrow(
-        error,
-      );
-    });
   });
 
   describe('verifyAndDecodeIdToken', () => {
@@ -242,7 +125,7 @@ describe('Auth0TokenVerifier', () => {
             {
               kid,
               kty: 'RSA',
-              alg: 'RS256',
+              alg: AUTH0_ID_TOKEN_ALGORITHM,
               use: 'sig',
               n: publicJwk.n,
               e: publicJwk.e,
@@ -270,7 +153,7 @@ describe('Auth0TokenVerifier', () => {
         expect.objectContaining({
           issuer,
           audience: clientId,
-          algorithms: ['RS256'],
+          algorithms: [AUTH0_ID_TOKEN_ALGORITHM],
         }),
       );
     });
@@ -285,10 +168,10 @@ describe('Auth0TokenVerifier', () => {
       const sub = faker.string.uuid();
       const sign = (): string =>
         jwt.sign({ sub }, privateKey, {
-          algorithm: 'RS256',
+          algorithm: AUTH0_ID_TOKEN_ALGORITHM,
           issuer,
           audience: clientId,
-          header: { kid, alg: 'RS256' },
+          header: { kid, alg: AUTH0_ID_TOKEN_ALGORITHM },
         });
       const firstToken = sign();
       const secondToken = sign();
@@ -300,7 +183,7 @@ describe('Auth0TokenVerifier', () => {
             {
               kid,
               kty: 'RSA',
-              alg: 'RS256',
+              alg: AUTH0_ID_TOKEN_ALGORITHM,
               use: 'sig',
               n: publicJwk.n,
               e: publicJwk.e,
@@ -381,7 +264,7 @@ describe('Auth0TokenVerifier', () => {
             {
               kid,
               kty: 'RSA',
-              alg: 'RS256',
+              alg: AUTH0_ID_TOKEN_ALGORITHM,
               use: 'sig',
               n: publicJwk.n,
               e: publicJwk.e,

@@ -83,6 +83,27 @@ This is enforced by a `pre-commit` hook (`insert-license` from `Lucas-C/pre-comm
 
 Every file you create or modify in a PR **MUST** have the correct license header. Add it yourself — do not rely on the pre-commit hook to do it for you. If the pre-commit hook adds it automatically, include that change in your commit.
 
+## PR Structure Rules
+
+- Before coding, inspect 2-3 nearby files in the same area and follow their placement patterns.
+- Do not change config defaults unless the ticket explicitly requires it.
+- Put constants, schemas, and tests where that local area already puts them.
+- Prefer typed mocks based on repo interfaces.
+- Once the trusted source of truth is decided, remove redundant parallel logic.
+- Keep docs aligned with the final implementation before the PR is considered ready.
+
+## Pre-PR Checklist
+
+- Does every changed file belong to this ticket?
+- Is every changed file in the correct directory for this repo?
+- Did any config default change?
+- If yes, was that explicitly required by the ticket?
+- Is there any duplicate or transitional logic that should now be removed?
+- Do docs describe the actual implementation?
+- Is there one clear source of truth in the code?
+- Would a reviewer reasonably ask why a file is here, why a default changed, or why two paths still exist?
+- If yes, the PR is not ready.
+
 ## Important Notes
 
 - **Never skip these steps** - even for "minor" changes

@@ -1,43 +1,33 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { createPublicKey } from 'node:crypto';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import { JWT_ALGORITHM } from '@/datasources/jwt/jwt.constants';
+import { AUTH0_ID_TOKEN_ALGORITHM } from '@/datasources/jwt/jwt.constants';
 import {
   NetworkService,
   type INetworkService,
 } from '@/datasources/network/network.service.interface';
 import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
-import type { Auth0Token } from '@/modules/auth/oidc/auth0/domain/entities/auth0-token.entity';
-import { Auth0TokenSchema } from '@/modules/auth/oidc/auth0/domain/entities/auth0-token.entity';
+import {
+  type Auth0Jwk,
+  type Auth0Jwks,
+  Auth0JwksSchema,
+} from '@/modules/auth/oidc/auth0/domain/entities/auth0-jwk.entity';
+import type {
+  Auth0Token,
+  Auth0TokenHeader,
+} from '@/modules/auth/oidc/auth0/domain/entities/auth0-token.entity';
+import {
+  Auth0TokenHeaderSchema,
+  Auth0TokenSchema,
+} from '@/modules/auth/oidc/auth0/domain/entities/auth0-token.entity';
 import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JsonWebTokenError } from 'jsonwebtoken';
-import { z } from 'zod';
-
-const AUTH0_ID_TOKEN_ALGORITHM = 'RS256' as const;
-
-const Auth0JwkSchema = z.object({
-  kid: z.string().min(1),
-  kty: z.literal('RSA'),
-  use: z.string().optional(),
-  alg: z.string().optional(),
-  n: z.string().min(1).optional(),
-  e: z.string().min(1).optional(),
-  x5c: z.array(z.string().min(1)).optional(),
-});
-
-const Auth0JwksSchema = z.object({
-  keys: z.array(Auth0JwkSchema),
-});
-
-type Auth0Jwk = z.infer<typeof Auth0JwkSchema>;
 
 @Injectable()
 export class Auth0TokenVerifier {
   private readonly issuer: string;
-  private readonly accessTokenAudience: string;
   private readonly idTokenAudience: string;
-  private readonly signingSecret: string;
   private readonly idTokenSigningKeys = new Map<string, string>();
 
   constructor(
@@ -53,35 +43,9 @@ export class Auth0TokenVerifier {
     const domain =
       this.configurationService.getOrThrow<string>('auth.auth0.domain');
     this.issuer = `https://${domain}/`;
-    this.accessTokenAudience = this.configurationService.getOrThrow<string>(
-      'auth.auth0.audience',
-    );
     this.idTokenAudience = this.configurationService.getOrThrow<string>(
       'auth.auth0.clientId',
     );
-    this.signingSecret = this.configurationService.getOrThrow<string>(
-      'auth.auth0.signingSecret',
-    );
-  }
-
-  verifyAndDecodeAccessToken(accessToken: string): Auth0Token {
-    try {
-      const decoded = this.jwtService.decode<{ sub: string }>(accessToken, {
-        issuer: this.issuer,
-        audience: this.accessTokenAudience,
-        secretOrPrivateKey: this.signingSecret,
-        algorithms: [JWT_ALGORITHM],
-      });
-      return Auth0TokenSchema.parse(decoded);
-    } catch (error) {
-      if (error instanceof JsonWebTokenError) {
-        this.loggingService.debug(
-          `Auth0: access token JWT verification failed: ${error.message}`,
-        );
-        throw new UnauthorizedException('Invalid access token');
-      }
-      throw error;
-    }
   }
 
   public async verifyAndDecodeIdToken(idToken: string): Promise<Auth0Token> {
@@ -137,7 +101,7 @@ export class Auth0TokenVerifier {
     return signingPublicKey;
   }
 
-  private decodeIdTokenHeader(idToken: string): { kid: string; alg: string } {
+  private decodeIdTokenHeader(idToken: string): Auth0TokenHeader {
     const [encodedHeader] = idToken.split('.');
 
     if (!encodedHeader) {
@@ -145,20 +109,15 @@ export class Auth0TokenVerifier {
     }
 
     try {
-      return z
-        .object({
-          kid: z.string().min(1),
-          alg: z.string().min(1),
-        })
-        .parse(
-          JSON.parse(Buffer.from(encodedHeader, 'base64url').toString('utf8')),
-        );
+      return Auth0TokenHeaderSchema.parse(
+        JSON.parse(Buffer.from(encodedHeader, 'base64url').toString('utf8')),
+      );
     } catch {
       throw new UnauthorizedException('Invalid id token');
     }
   }
 
-  private async fetchJsonWebKeySet(): Promise<z.infer<typeof Auth0JwksSchema>> {
+  private async fetchJsonWebKeySet(): Promise<Auth0Jwks> {
     const response = await this.networkService.get<unknown>({
       url: new URL('/.well-known/jwks.json', this.issuer).toString(),
     });

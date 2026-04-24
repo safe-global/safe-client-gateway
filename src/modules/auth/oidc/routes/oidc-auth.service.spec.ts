@@ -5,6 +5,7 @@ import type { IAuthRepository } from '@/modules/auth/domain/auth.repository.inte
 import { AuthMethod } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { OidcAuthService } from '@/modules/auth/oidc/routes/oidc-auth.service';
 import type { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
+import type { ILoggingService } from '@/logging/logging.interface';
 import { faker } from '@faker-js/faker';
 import {
   BadRequestException,
@@ -28,6 +29,13 @@ const auth0RepositoryMock = {
   getAuthorizationUrl: jest.fn(),
   authenticateWithAuthorizationCode: jest.fn(),
 } as jest.MockedObjectDeep<IAuth0Repository>;
+
+const loggingServiceMock = {
+  debug: jest.fn(),
+  info: jest.fn(),
+  warn: jest.fn(),
+  error: jest.fn(),
+} as jest.MockedObjectDeep<ILoggingService>;
 
 describe('OidcAuthService', () => {
   let target: OidcAuthService;
@@ -60,6 +68,7 @@ describe('OidcAuthService', () => {
       fakeConfigurationService,
       usersRepositoryMock,
       auth0RepositoryMock,
+      loggingServiceMock,
     );
   });
 
@@ -106,6 +115,9 @@ describe('OidcAuthService', () => {
           iat,
         },
       );
+      expect(usersRepositoryMock.findOrCreateByExtUserId).toHaveBeenCalledWith(
+        extUserId,
+      );
     });
 
     it('should use max expiration time when OIDC token has no exp', async () => {
@@ -145,6 +157,9 @@ describe('OidcAuthService', () => {
           iat: new Date(),
         },
       );
+      expect(usersRepositoryMock.findOrCreateByExtUserId).toHaveBeenCalledWith(
+        extUserId,
+      );
     });
 
     it('should persist a verified email after finding or creating the user', async () => {
@@ -168,6 +183,9 @@ describe('OidcAuthService', () => {
 
       await target.authenticateWithOidc(faker.string.alphanumeric(32));
 
+      expect(usersRepositoryMock.findOrCreateByExtUserId).toHaveBeenCalledWith(
+        extUserId,
+      );
       expect(usersRepositoryMock.persistVerifiedEmail).toHaveBeenCalledWith(
         userId,
         email,
@@ -194,6 +212,9 @@ describe('OidcAuthService', () => {
 
       await target.authenticateWithOidc(faker.string.alphanumeric(32));
 
+      expect(usersRepositoryMock.findOrCreateByExtUserId).toHaveBeenCalledWith(
+        extUserId,
+      );
       expect(usersRepositoryMock.persistVerifiedEmail).not.toHaveBeenCalled();
     });
 
@@ -223,6 +244,9 @@ describe('OidcAuthService', () => {
         target.authenticateWithOidc(faker.string.alphanumeric(32)),
       ).resolves.toEqual(expect.objectContaining({ accessToken }));
 
+      expect(usersRepositoryMock.findOrCreateByExtUserId).toHaveBeenCalledWith(
+        extUserId,
+      );
       expect(usersRepositoryMock.persistVerifiedEmail).not.toHaveBeenCalled();
     });
 
@@ -252,6 +276,9 @@ describe('OidcAuthService', () => {
         target.authenticateWithOidc(faker.string.alphanumeric(32)),
       ).rejects.toThrow(error);
 
+      expect(usersRepositoryMock.findOrCreateByExtUserId).toHaveBeenCalledWith(
+        extUserId,
+      );
       expect(authRepositoryMock.signToken).not.toHaveBeenCalled();
     });
 
@@ -439,6 +466,7 @@ describe('OidcAuthService', () => {
           fakeConfigurationService,
           usersRepositoryMock,
           auth0RepositoryMock,
+          loggingServiceMock,
         );
       });
 
@@ -559,6 +587,7 @@ describe('OidcAuthService', () => {
           fakeConfigurationService,
           usersRepositoryMock,
           auth0RepositoryMock,
+          loggingServiceMock,
         );
 
         // A subdomain that would pass the domain-suffix check should be

@@ -95,6 +95,9 @@ export class OidcAuthController {
     @Query('connection', new ValidationPipe(OidcConnectionSchema.optional()))
     connection?: OidcConnection,
   ): void {
+    this.loggingService.debug(
+      `Auth authorize: starting OIDC authorize redirect with redirectUrl=${redirectUrl ?? 'default'} and connection=${connection ?? 'default'}`,
+    );
     const { authorizationUrl, state, stateMaxAge } =
       this.oidcAuthService.createOidcAuthorizationRequest(
         redirectUrl,
@@ -156,6 +159,9 @@ export class OidcAuthController {
     @Query('error') error?: string,
     @Query('error_description') errorDescription?: string,
   ): Promise<void> {
+    this.loggingService.debug(
+      `Auth callback: received callback with code=${code ? 'present' : 'absent'}, state=${state ? 'present' : 'absent'}, error=${error ?? 'none'}`,
+    );
     const expectedState: string | undefined =
       req.cookies?.[OidcAuthController.OIDC_STATE_COOKIE_NAME];
     // Always clear the one-time state cookie
@@ -188,14 +194,23 @@ export class OidcAuthController {
       return;
     }
 
+    this.loggingService.debug('Auth callback: state validated successfully');
+
     try {
       const { accessToken, maxAge } =
         await this.oidcAuthService.authenticateWithOidc(code);
+      this.loggingService.debug(
+        `Auth callback: OIDC authentication succeeded, setting access token cookie with maxAge=${maxAge ?? 'undefined'}`,
+      );
       res.cookie(ACCESS_TOKEN_COOKIE_NAME, accessToken, {
         ...this.getCookieOptions(),
         maxAge,
       });
-      res.redirect(this.oidcAuthService.getPostLoginRedirectUri(state));
+      const redirectUrl = this.oidcAuthService.getPostLoginRedirectUri(state);
+      this.loggingService.debug(
+        `Auth callback: redirecting authenticated user to ${redirectUrl}`,
+      );
+      res.redirect(redirectUrl);
     } catch (err) {
       this.loggingService.error(
         `Auth callback: authentication failed: ${err instanceof Error ? err.message : 'Unknown error'}`,
