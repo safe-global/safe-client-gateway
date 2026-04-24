@@ -27,7 +27,7 @@ export const OffchainMessageConfirmationSchema = z.object({
 
 export const OffchainMessageSchema = z.object({
   messageHash: HexSchema,
-  chainId: z.number(),
+  chainId: z.coerce.number(),
   safe: AddressSchema,
   message: z.union([z.string(), TypedDataSchema]),
   proposedBy: AddressSchema,

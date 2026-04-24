@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { IOffchain } from '@/modules/offchain/offchain.interface';
-import { Delegate } from '@/modules/delegate/domain/entities/delegate.entity';
-import { DelegatePageSchema } from '@/modules/delegate/domain/entities/schemas/delegate.schema';
 import { IDelegatesV2Repository } from '@/modules/delegate/domain/v2/delegates.v2.repository.interface';
 import { Page } from '@/domain/entities/page.entity';
 import { Inject, Injectable } from '@nestjs/common';
 import type { Address } from 'viem';
+import { OffchainDelegatePageSchema } from '@/modules/offchain/entities/delegate.entity';
+import { mapOffchainToDelegate } from '@/modules/offchain/mappers/delegate.mapper';
+import { Delegate } from '@/modules/delegate/domain/entities/delegate.entity';
 
 @Injectable()
 export class DelegatesV2Repository implements IDelegatesV2Repository {
@@ -32,8 +33,11 @@ export class DelegatesV2Repository implements IDelegatesV2Repository {
       limit: args.limit,
       offset: args.offset,
     });
-
-    return DelegatePageSchema.parse(page);
+    const parsed = OffchainDelegatePageSchema.parse(page);
+    return {
+      ...parsed,
+      results: parsed.results.map(mapOffchainToDelegate),
+    };
   }
 
   async clearDelegates(args: {
