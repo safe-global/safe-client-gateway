@@ -12,7 +12,7 @@ import {
  * Maps each recipient or bridge status to its corresponding severity level.
  */
 export const SEVERITY_MAPPING: Record<
-  RecipientStatus    ,
+  RecipientStatus | BridgeStatus | CommonStatus,
   keyof typeof Severity
 > = {
   ...COMMON_SEVERITY_MAPPING,
@@ -30,7 +30,7 @@ export const SEVERITY_MAPPING: Record<
  * Maps each recipient or bridge status to its user-facing title.
  */
 export const TITLE_MAPPING: Record<
-  RecipientStatus    ,
+  RecipientStatus | BridgeStatus | CommonStatus,
   string
 > = {
   [RecipientStatus.NEW_RECIPIENT]: 'New recipient',
@@ -53,7 +53,7 @@ type DescriptionArgs = {
  * Maps each recipient or bridge status to a function that generates the description.
  */
 export const DESCRIPTION_MAPPING: Record<
-  RecipientStatus    ,
+  RecipientStatus | BridgeStatus | CommonStatus,
   (args?: DescriptionArgs) => string
 > = {
   ...COMMON_DESCRIPTION_MAPPING,

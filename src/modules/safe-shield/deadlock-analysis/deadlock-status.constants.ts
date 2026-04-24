@@ -8,7 +8,7 @@ import {
 } from '../entities/common-status.constants';
 
 export const DEADLOCK_SEVERITY_MAPPING: Record<
-  DeadlockStatus  ,
+  DeadlockStatus | CommonStatus,
   keyof typeof Severity
 > = {
   ...COMMON_SEVERITY_MAPPING,
@@ -17,7 +17,7 @@ export const DEADLOCK_SEVERITY_MAPPING: Record<
 };
 
 export const DEADLOCK_TITLE_MAPPING: Record<
-  DeadlockStatus  ,
+  DeadlockStatus | CommonStatus,
   string
 > = {
   [DeadlockStatus.DEADLOCK_DETECTED]: 'Signing deadlock risk detected',
@@ -28,7 +28,7 @@ export const DEADLOCK_TITLE_MAPPING: Record<
 type DescriptionArgs = { error?: string };
 
 export const DEADLOCK_DESCRIPTION_MAPPING: Record<
-  DeadlockStatus  ,
+  DeadlockStatus | CommonStatus,
   (args?: DescriptionArgs) => string
 > = {
   ...COMMON_DESCRIPTION_MAPPING,

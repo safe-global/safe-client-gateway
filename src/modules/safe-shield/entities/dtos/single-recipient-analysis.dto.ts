@@ -9,14 +9,14 @@ import { RecipientStatusGroup } from '@/modules/safe-shield/entities/status-grou
  * DTO for recipient interaction analysis result.
  */
 export class SingleRecipientAnalysisResultDto extends AnalysisResultDto<
-  RecipientStatus  
+  RecipientStatus | CommonStatus
 > {
   @ApiProperty({
     description: 'Recipient interaction status code',
     enum: [...Object.values(RecipientStatus), ...Object.values(CommonStatus)],
     example: 'NEW_RECIPIENT',
   })
-  declare type: RecipientStatus  ;
+  declare type: RecipientStatus | CommonStatus;
 }
 
 /**

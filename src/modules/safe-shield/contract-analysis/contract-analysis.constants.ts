@@ -47,7 +47,7 @@ export const tWAPFallbackHandlerAddress = (
  * Maps each contract status to its corresponding severity level.
  */
 export const SEVERITY_MAPPING: Record<
-  ContractStatus  ,
+  ContractStatus | CommonStatus,
   keyof typeof Severity
 > = {
   ...COMMON_SEVERITY_MAPPING,
@@ -65,7 +65,7 @@ export const SEVERITY_MAPPING: Record<
  * Title mapping for contract analysis results.
  * Maps each contract status to its user-facing title.
  */
-export const TITLE_MAPPING: Record<ContractStatus  , string> = {
+export const TITLE_MAPPING: Record<ContractStatus | CommonStatus, string> = {
   [ContractStatus.VERIFIED]: 'Verified contract',
   [ContractStatus.NOT_VERIFIED]: 'Unverified contract',
   [ContractStatus.NOT_VERIFIED_BY_SAFE]: 'New contract',
@@ -87,7 +87,7 @@ type DescriptionArgs = {
  * Maps each contract status to a function that generates the description.
  */
 export const DESCRIPTION_MAPPING: Record<
-  ContractStatus  ,
+  ContractStatus | CommonStatus,
   (args?: DescriptionArgs) => string
 > = {
   ...COMMON_DESCRIPTION_MAPPING,

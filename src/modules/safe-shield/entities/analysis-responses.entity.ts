@@ -183,12 +183,12 @@ export type GroupedAnalysisResults<
  */
 export type SingleRecipientAnalysisResponse = Required<
   Pick<
-    GroupedAnalysisResults<AnalysisResult<RecipientStatus  >>,
+    GroupedAnalysisResults<AnalysisResult<RecipientStatus | CommonStatus>>,
     'RECIPIENT_INTERACTION'
   >
 > &
   Pick<
-    GroupedAnalysisResults<AnalysisResult<RecipientStatus  >>,
+    GroupedAnalysisResults<AnalysisResult<RecipientStatus | CommonStatus>>,
     'RECIPIENT_ACTIVITY'
   > & {
     isSafe: boolean;

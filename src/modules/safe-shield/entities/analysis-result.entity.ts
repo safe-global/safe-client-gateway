@@ -61,11 +61,11 @@ export interface AnalysisResult<T extends AnalysisStatus = AnalysisStatus> {
  */
 export type AnalysisStatus =
   | CommonStatus
-   
-   
-   
-   
-   ;
+  | RecipientStatus
+  | BridgeStatus
+  | ContractStatus
+  | ThreatStatus
+  | DeadlockStatus;
 
 /**
  * Zod schema for validating any status enum value.

@@ -232,7 +232,7 @@ export class RecipientAnalysisService {
     transactionApi: ITransactionApi;
     safeAddress: Address;
     recipient: Address;
-  }): Promise<AnalysisResult<RecipientStatus  >> {
+  }): Promise<AnalysisResult<RecipientStatus | CommonStatus>> {
     try {
       const page = await args.transactionApi.getTransfers({
         safeAddress: args.safeAddress,
@@ -270,7 +270,7 @@ export class RecipientAnalysisService {
     transactionApi: ITransactionApi;
     recipient: Address;
   }): Promise<
-    [AnalysisResult<RecipientStatus  > | undefined, boolean]
+    [AnalysisResult<RecipientStatus | CommonStatus> | undefined, boolean]
   > {
     const { transactionApi, recipient } = args;
     let isSafe: boolean = false;
@@ -418,7 +418,7 @@ export class RecipientAnalysisService {
     chainId: string;
     safeAddress: Address;
     txInfo: BridgeAndSwapTransactionInfo;
-  }): Promise<[BridgeStatus  , string] | undefined> {
+  }): Promise<[BridgeStatus | CommonStatus, string] | undefined> {
     if (
       getAddress(args.txInfo.recipient.value) !== getAddress(args.safeAddress)
     ) {
@@ -705,7 +705,7 @@ export class RecipientAnalysisService {
    * @template T
    */
   private mapToAnalysisResult<
-    T extends RecipientStatus    ,
+    T extends RecipientStatus | BridgeStatus | CommonStatus,
   >(args: {
     type: T;
     interactions?: number;

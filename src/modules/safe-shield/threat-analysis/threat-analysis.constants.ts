@@ -8,7 +8,7 @@ import { ThreatStatus } from '@/modules/safe-shield/entities/threat-status.entit
  * Maps each contract status to its corresponding severity level.
  */
 export const SEVERITY_MAPPING: Record<
-  ThreatStatus  ,
+  ThreatStatus | CommonStatus,
   keyof typeof Severity
 > = {
   ...COMMON_SEVERITY_MAPPING,
@@ -24,7 +24,7 @@ export const SEVERITY_MAPPING: Record<
  * Title mapping for threat analysis results.
  * Maps each threat status to its user-facing title.
  */
-export const TITLE_MAPPING: Record<ThreatStatus  , string> = {
+export const TITLE_MAPPING: Record<ThreatStatus | CommonStatus, string> = {
   [ThreatStatus.MALICIOUS]: 'Malicious threat detected',
   [ThreatStatus.MODERATE]: 'Moderate threat detected',
   [ThreatStatus.NO_THREAT]: 'No threat detected',
@@ -43,7 +43,7 @@ type DescriptionArgs = {
  * Maps each threat status to a function that generates the description.
  */
 export const DESCRIPTION_MAPPING: Record<
-  ThreatStatus  ,
+  ThreatStatus | CommonStatus,
   (args?: DescriptionArgs) => string
 > = {
   [ThreatStatus.MALICIOUS]: ({ description } = {}) => `${description || ''}`,
