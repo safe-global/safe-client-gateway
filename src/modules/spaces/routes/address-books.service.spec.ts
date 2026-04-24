@@ -93,6 +93,18 @@ describe('AddressBooksService', () => {
       expect(repositoryMock.upsertMany).toHaveBeenCalled();
     });
 
+    it('should propagate UnauthorizedException for unauthenticated user', async () => {
+      const spaceId = faker.number.int();
+      const authPayload = new AuthPayload();
+      repositoryMock.upsertMany.mockRejectedValue(
+        new UnauthorizedException('Not authenticated'),
+      );
+
+      await expect(
+        service.upsertMany(authPayload, spaceId, { items: [] }),
+      ).rejects.toThrow(UnauthorizedException);
+    });
+
     it('should serialize createdBy/lastUpdatedBy as strings', async () => {
       const spaceId = faker.number.int();
       const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
@@ -130,6 +142,19 @@ describe('AddressBooksService', () => {
         spaceId,
         address,
       });
+    });
+
+    it('should propagate UnauthorizedException for unauthenticated user', async () => {
+      const spaceId = faker.number.int();
+      const address = getAddress(faker.finance.ethereumAddress());
+      const authPayload = new AuthPayload();
+      repositoryMock.deleteByAddress.mockRejectedValue(
+        new UnauthorizedException('Not authenticated'),
+      );
+
+      await expect(
+        service.deleteByAddress({ authPayload, spaceId, address }),
+      ).rejects.toThrow(UnauthorizedException);
     });
   });
 });

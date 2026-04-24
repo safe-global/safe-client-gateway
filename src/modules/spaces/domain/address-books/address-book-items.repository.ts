@@ -48,6 +48,7 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
     spaceId: Space['id'];
     addressBookItems: UpsertAddressBookItemsDto['items'];
   }): Promise<Array<AddressBookDbItem>> {
+    const userId = getAuthenticatedUserIdOrFail(args.authPayload);
     const space = await this.getSpaceAs({
       ...args,
       memberRoleIn: ['ADMIN'],
@@ -58,7 +59,7 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
         entityManager,
         addressBookItems: args.addressBookItems,
         space,
-        authPayload: args.authPayload,
+        userId,
       });
 
       const newAddressBookItems = args.addressBookItems.filter(
@@ -72,7 +73,7 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
         entityManager,
         addressBookItems: newAddressBookItems,
         space,
-        authPayload: args.authPayload,
+        userId,
       });
     });
     return repository.findBy({ space: { id: space.id } });
@@ -115,12 +116,11 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
   }
 
   private async updateExistingAddressBookItems(args: {
-    authPayload: AuthPayload;
+    userId: number;
     addressBookItems: Array<AddressBookItem>;
     space: Space;
     entityManager: EntityManager;
   }): Promise<Array<DbAddressBookItem['address']>> {
-    const userId = getAuthenticatedUserIdOrFail(args.authPayload);
     const repository = args.entityManager.getRepository(DbAddressBookItem);
     const existingAddressBookItems = await repository.findBy({
       space: { id: args.space.id },
@@ -136,19 +136,18 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
       await repository.update(item.id, {
         name: patch.name,
         chainIds: patch.chainIds,
-        lastUpdatedBy: userId,
+        lastUpdatedBy: args.userId,
       });
     }
     return existingAddressBookItems.map((item) => item.address);
   }
 
   private async createNewAddressBookItems(args: {
-    authPayload: AuthPayload;
+    userId: number;
     addressBookItems: Array<AddressBookItem>;
     space: Space;
     entityManager: EntityManager;
   }): Promise<Array<DbAddressBookItem['id']>> {
-    const userId = getAuthenticatedUserIdOrFail(args.authPayload);
     await this.checkItemsLimit(args);
     const repository = args.entityManager.getRepository(DbAddressBookItem);
     const insertedIds = await repository.insert(
@@ -157,8 +156,8 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
         address: addressBookItem.address,
         name: addressBookItem.name,
         chainIds: addressBookItem.chainIds,
-        createdBy: userId,
-        lastUpdatedBy: userId,
+        createdBy: args.userId,
+        lastUpdatedBy: args.userId,
       })),
     );
     return insertedIds.identifiers.map((i) => i.id);
