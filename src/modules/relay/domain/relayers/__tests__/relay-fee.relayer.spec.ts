@@ -153,7 +153,11 @@ describe('RelayFeeRelayer', () => {
         chainId: enabledChainId,
         safeTxHash,
       });
-      expect(mockRelayApi.relay).toHaveBeenCalled();
+      expect(mockRelayApi.relay).toHaveBeenCalledWith({
+        chainId: enabledChainId,
+        to: address,
+        data: '0x',
+      });
     });
 
     it('should throw RelayDeniedError when Fee Service denies', async () => {

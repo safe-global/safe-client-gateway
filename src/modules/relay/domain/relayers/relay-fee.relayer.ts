@@ -106,7 +106,11 @@ export class RelayFeeRelayer implements IRelayer {
     }
 
     const relayResponse = await this.relayApi
-      .relay(args)
+      .relay({
+        chainId: args.chainId,
+        to: args.to,
+        data: args.data,
+      })
       .then(RelaySchema.parse);
 
     return relayResponse;
