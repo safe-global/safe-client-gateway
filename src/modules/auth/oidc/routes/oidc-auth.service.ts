@@ -1,6 +1,11 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { randomBytes } from 'node:crypto';
-import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  ConflictException,
+  Inject,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import {
   assertExpirationTime,
   getMaxExpirationTime,
@@ -89,10 +94,7 @@ export class OidcAuthService {
       `OIDC: resolved internal user ${userId} for subject ${extUserId}`,
     );
     if (verifiedEmail) {
-      this.loggingService.debug(
-        `OIDC: persisting verified email for user ${userId}`,
-      );
-      await this.usersRepository.persistVerifiedEmail(userId, verifiedEmail);
+      await this.persistVerifiedEmail(userId, verifiedEmail);
     }
     const accessToken = this.authRepository.signToken(
       {
@@ -181,6 +183,27 @@ export class OidcAuthService {
       return OidcStateSchema.parse(JSON.parse(json));
     } catch {
       throw new UnauthorizedException('Invalid OAuth state');
+    }
+  }
+
+  private async persistVerifiedEmail(
+    userId: number,
+    verifiedEmail: string,
+  ): Promise<void> {
+    try {
+      this.loggingService.debug(
+        `OIDC: persisting verified email for user ${userId}`,
+      );
+      await this.usersRepository.persistVerifiedEmail(userId, verifiedEmail);
+    } catch (error) {
+      if (error instanceof ConflictException) {
+        this.loggingService.warn(
+          `OIDC: verified email already belongs to another user for user ${userId}`,
+        );
+        return;
+      }
+
+      throw error;
     }
   }
 }

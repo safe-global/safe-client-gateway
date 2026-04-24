@@ -103,6 +103,10 @@ describe('Auth0TokenVerifier', () => {
     );
   });
 
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
   describe('verifyAndDecodeIdToken', () => {
     it('should verify the id token with the Auth0 JWKS public key', async () => {
       const kid = faker.string.alphanumeric(12);
@@ -199,6 +203,126 @@ describe('Auth0TokenVerifier', () => {
       await target.verifyAndDecodeIdToken(secondToken);
 
       expect(networkServiceMock.get).toHaveBeenCalledTimes(1);
+    });
+
+    it('should refresh the cached signing key after the cache ttl expires', async () => {
+      jest.useFakeTimers().setSystemTime(new Date('2026-01-01T00:00:00.000Z'));
+
+      const kid = faker.string.alphanumeric(12);
+      const firstToken = signRs256IdToken({
+        issuer,
+        audience: clientId,
+        kid,
+        payload: { sub: faker.string.uuid() },
+      });
+      const secondToken = signRs256IdToken({
+        issuer,
+        audience: clientId,
+        kid,
+        payload: { sub: faker.string.uuid() },
+      });
+
+      networkServiceMock.get
+        .mockResolvedValueOnce({
+          status: 200,
+          data: {
+            keys: [
+              {
+                kid,
+                kty: 'RSA',
+                alg: AUTH0_ID_TOKEN_ALGORITHM,
+                use: 'sig',
+                n: firstToken.publicJwk.n,
+                e: firstToken.publicJwk.e,
+              },
+            ],
+          },
+        } as never)
+        .mockResolvedValueOnce({
+          status: 200,
+          data: {
+            keys: [
+              {
+                kid,
+                kty: 'RSA',
+                alg: AUTH0_ID_TOKEN_ALGORITHM,
+                use: 'sig',
+                n: secondToken.publicJwk.n,
+                e: secondToken.publicJwk.e,
+              },
+            ],
+          },
+        } as never);
+      jwtServiceMock.decode.mockImplementation((token, options) =>
+        verifyJwtWithJsonWebToken(token, options!),
+      );
+
+      await target.verifyAndDecodeIdToken(firstToken.idToken);
+
+      jest.setSystemTime(new Date(Date.now() + 60 * 60 * 1_000 + 1));
+
+      await target.verifyAndDecodeIdToken(secondToken.idToken);
+
+      expect(networkServiceMock.get).toHaveBeenCalledTimes(2);
+    });
+
+    it('should refresh the JWKS and retry when cached key verification fails', async () => {
+      const kid = faker.string.alphanumeric(12);
+      const firstToken = signRs256IdToken({
+        issuer,
+        audience: clientId,
+        kid,
+        payload: { sub: faker.string.uuid() },
+      });
+      const secondToken = signRs256IdToken({
+        issuer,
+        audience: clientId,
+        kid,
+        payload: { sub: faker.string.uuid() },
+      });
+
+      networkServiceMock.get
+        .mockResolvedValueOnce({
+          status: 200,
+          data: {
+            keys: [
+              {
+                kid,
+                kty: 'RSA',
+                alg: AUTH0_ID_TOKEN_ALGORITHM,
+                use: 'sig',
+                n: firstToken.publicJwk.n,
+                e: firstToken.publicJwk.e,
+              },
+            ],
+          },
+        } as never)
+        .mockResolvedValueOnce({
+          status: 200,
+          data: {
+            keys: [
+              {
+                kid,
+                kty: 'RSA',
+                alg: AUTH0_ID_TOKEN_ALGORITHM,
+                use: 'sig',
+                n: secondToken.publicJwk.n,
+                e: secondToken.publicJwk.e,
+              },
+            ],
+          },
+        } as never);
+      jwtServiceMock.decode.mockImplementation((token, options) =>
+        verifyJwtWithJsonWebToken(token, options!),
+      );
+
+      await target.verifyAndDecodeIdToken(firstToken.idToken);
+      await expect(
+        target.verifyAndDecodeIdToken(secondToken.idToken),
+      ).resolves.toEqual(expect.objectContaining({ sub: expect.any(String) }));
+
+      expect(networkServiceMock.get).toHaveBeenCalledTimes(2);
+      expect(jwtServiceMock.decode).toHaveBeenCalledTimes(3);
     });
 
     it('should throw when the id token header has no kid', async () => {

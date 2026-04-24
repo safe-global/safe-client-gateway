@@ -24,11 +24,23 @@ import {
 import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JsonWebTokenError } from 'jsonwebtoken';
 
+const AUTH0_ID_TOKEN_SIGNING_KEY_CACHE_TTL_MS = 60 * 60 * 1_000;
+
+type CachedSigningKey = {
+  publicKey: string;
+  expiresAt: number;
+};
+
+type ResolvedSigningKey = {
+  publicKey: string;
+  fromCache: boolean;
+};
+
 @Injectable()
 export class Auth0TokenVerifier {
   private readonly issuer: string;
   private readonly idTokenAudience: string;
-  private readonly idTokenSigningKeys = new Map<string, string>();
+  private readonly idTokenSigningKeys = new Map<string, CachedSigningKey>();
 
   constructor(
     @Inject(IJwtService)
@@ -49,44 +61,74 @@ export class Auth0TokenVerifier {
   }
 
   public async verifyAndDecodeIdToken(idToken: string): Promise<Auth0Token> {
-    const signingPublicKey = await this.getIdTokenSigningPublicKey(idToken);
+    const header = this.decodeIdTokenHeader(idToken);
+    const signingKey = await this.getIdTokenSigningPublicKey(header);
+
     try {
-      const decoded = this.jwtService.decode<{ sub: string }>(idToken, {
-        issuer: this.issuer,
-        audience: this.idTokenAudience,
-        secretOrPrivateKey: signingPublicKey,
-        algorithms: [AUTH0_ID_TOKEN_ALGORITHM],
-      });
-      this.loggingService.debug(
-        `Auth0: id token verified successfully for sub ${decoded.sub}`,
-      );
-      return Auth0TokenSchema.parse(decoded);
+      return this.verifyIdTokenWithSigningKey(idToken, signingKey.publicKey);
     } catch (error) {
       if (error instanceof JsonWebTokenError) {
         this.loggingService.debug(
           `Auth0: id token JWT verification failed: ${error.message}`,
         );
-        throw new UnauthorizedException('Invalid id token');
+
+        if (!signingKey.fromCache) {
+          throw new UnauthorizedException('Invalid id token');
+        }
+
+        const refreshedSigningPublicKey =
+          await this.refreshIdTokenSigningPublicKey(header);
+
+        try {
+          return this.verifyIdTokenWithSigningKey(
+            idToken,
+            refreshedSigningPublicKey,
+          );
+        } catch (retryError) {
+          if (retryError instanceof JsonWebTokenError) {
+            this.loggingService.debug(
+              `Auth0: id token JWT verification failed after JWKS refresh: ${retryError.message}`,
+            );
+            throw new UnauthorizedException('Invalid id token');
+          }
+
+          throw retryError;
+        }
       }
+
       throw error;
     }
   }
 
-  private async getIdTokenSigningPublicKey(idToken: string): Promise<string> {
-    const { kid, alg } = this.decodeIdTokenHeader(idToken);
-
-    if (alg !== AUTH0_ID_TOKEN_ALGORITHM) {
-      throw new UnauthorizedException('Invalid id token');
-    }
-
+  private async getIdTokenSigningPublicKey({
+    kid,
+    alg,
+  }: Auth0TokenHeader): Promise<ResolvedSigningKey> {
+    this.assertIdTokenAlgorithm(alg);
     const cachedKey = this.idTokenSigningKeys.get(kid);
-    if (cachedKey) {
+
+    if (cachedKey && cachedKey.expiresAt > Date.now()) {
       this.loggingService.debug(
         `Auth0: using cached JWKS signing key for kid ${kid}`,
       );
-      return cachedKey;
+      return { publicKey: cachedKey.publicKey, fromCache: true };
     }
 
+    if (cachedKey) {
+      this.idTokenSigningKeys.delete(kid);
+    }
+
+    return {
+      publicKey: await this.refreshIdTokenSigningPublicKey({ kid, alg }),
+      fromCache: false,
+    };
+  }
+
+  private async refreshIdTokenSigningPublicKey({
+    kid,
+    alg,
+  }: Auth0TokenHeader): Promise<string> {
+    this.assertIdTokenAlgorithm(alg);
     const jwks = await this.fetchJsonWebKeySet();
     const jwk = jwks.keys.find((candidate) => candidate.kid === kid);
     if (!jwk) {
@@ -94,11 +136,36 @@ export class Auth0TokenVerifier {
     }
 
     const signingPublicKey = this.toPemPublicKey(jwk);
-    this.idTokenSigningKeys.set(kid, signingPublicKey);
+    this.idTokenSigningKeys.set(kid, {
+      publicKey: signingPublicKey,
+      expiresAt: Date.now() + AUTH0_ID_TOKEN_SIGNING_KEY_CACHE_TTL_MS,
+    });
     this.loggingService.debug(
       `Auth0: resolved JWKS signing key for kid ${kid}`,
     );
     return signingPublicKey;
+  }
+
+  private assertIdTokenAlgorithm(alg: Auth0TokenHeader['alg']): void {
+    if (alg !== AUTH0_ID_TOKEN_ALGORITHM) {
+      throw new UnauthorizedException('Invalid id token');
+    }
+  }
+
+  private verifyIdTokenWithSigningKey(
+    idToken: string,
+    signingPublicKey: string,
+  ): Auth0Token {
+    const decoded = this.jwtService.decode<{ sub: string }>(idToken, {
+      issuer: this.issuer,
+      audience: this.idTokenAudience,
+      secretOrPrivateKey: signingPublicKey,
+      algorithms: [AUTH0_ID_TOKEN_ALGORITHM],
+    });
+    this.loggingService.debug(
+      `Auth0: id token verified successfully for sub ${decoded.sub}`,
+    );
+    return Auth0TokenSchema.parse(decoded);
   }
 
   private decodeIdTokenHeader(idToken: string): Auth0TokenHeader {

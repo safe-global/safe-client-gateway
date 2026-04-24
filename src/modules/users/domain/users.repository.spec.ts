@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
-import { ConflictException } from '@nestjs/common';
+import {
+  ConflictException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import type { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { UsersRepository } from '@/modules/users/domain/users.repository';
 import { User as DbUser } from '@/modules/users/datasources/entities/users.entity.db';
@@ -102,6 +105,26 @@ describe('UsersRepository', () => {
       await expect(
         target.persistVerifiedEmail(userId, faker.internet.email()),
       ).rejects.toThrow(ConflictException);
+    });
+
+    it('should throw when the conditional email update does not persist an email', async () => {
+      const userId = faker.number.int({ min: 1 });
+      const queryBuilder = createQueryBuilder();
+      userRepository.findOneOrFail
+        .mockResolvedValueOnce({
+          id: userId,
+          email: null,
+        })
+        .mockResolvedValueOnce({
+          id: userId,
+          email: null,
+        });
+      userRepository.createQueryBuilder.mockReturnValue(queryBuilder);
+      queryBuilder.execute.mockResolvedValue({ affected: 0 });
+
+      await expect(
+        target.persistVerifiedEmail(userId, faker.internet.email()),
+      ).rejects.toThrow(InternalServerErrorException);
     });
   });
 
