@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { AddressBookDbItem } from '@/modules/spaces/domain/address-books/entities/address-book-item.db.entity';
+import type { AddressBookDbItem } from '@/modules/spaces/domain/address-books/entities/address-book-item.db.entity';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class SpaceAddressBookItemDto {
@@ -12,11 +12,11 @@ export class SpaceAddressBookItemDto {
   @ApiProperty({ type: String, isArray: true })
   public chainIds!: AddressBookDbItem['chainIds'];
 
-  @ApiProperty({ type: String })
-  public createdBy!: AddressBookDbItem['createdBy'];
+  @ApiProperty({ type: String, description: 'User ID of the creator' })
+  public createdBy!: string;
 
-  @ApiProperty({ type: String })
-  public lastUpdatedBy!: AddressBookDbItem['lastUpdatedBy'];
+  @ApiProperty({ type: String, description: 'User ID of the last updater' })
+  public lastUpdatedBy!: string;
 
   @ApiProperty({ type: Date })
   public createdAt!: AddressBookDbItem['createdAt'];

@@ -10,7 +10,10 @@ import { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
 import { Member } from '@/modules/users/datasources/entities/member.entity.db';
 import { User } from '@/modules/users/datasources/entities/users.entity.db';
 import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
-import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
+import {
+  siweAuthPayloadDtoBuilder,
+  oidcAuthPayloadDtoBuilder,
+} from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
 import { nameBuilder } from '@/domain/common/entities/name.builder';
@@ -25,7 +28,7 @@ import { BadRequestException, NotFoundException } from '@nestjs/common';
 import type { ConfigService } from '@nestjs/config';
 import { range } from 'lodash';
 import { DataSource } from 'typeorm';
-import { type Address, getAddress } from 'viem';
+import { getAddress } from 'viem';
 
 const mockLoggingService = {
   debug: jest.fn(),
@@ -149,8 +152,8 @@ describe('AddressBookItemsRepository', () => {
         address: getAddress(faker.finance.ethereumAddress()),
         name: nameBuilder(),
         space: { id: spaceId },
-        createdBy: getAddress(faker.finance.ethereumAddress()),
-        lastUpdatedBy: getAddress(faker.finance.ethereumAddress()),
+        createdBy: faker.number.int({ min: 1, max: DB_MAX_SAFE_INTEGER }),
+        lastUpdatedBy: faker.number.int({ min: 1, max: DB_MAX_SAFE_INTEGER }),
       }));
       await Promise.all(
         items.map((item) => dbAddressBookItemsRepository.insert(item)),
@@ -185,8 +188,8 @@ describe('AddressBookItemsRepository', () => {
         address: getAddress(faker.finance.ethereumAddress()),
         name: nameBuilder(),
         space: { id: spaceId },
-        createdBy: getAddress(faker.finance.ethereumAddress()),
-        lastUpdatedBy: getAddress(faker.finance.ethereumAddress()),
+        createdBy: faker.number.int({ min: 1, max: DB_MAX_SAFE_INTEGER }),
+        lastUpdatedBy: faker.number.int({ min: 1, max: DB_MAX_SAFE_INTEGER }),
       }));
       await Promise.all(
         items.map((item) => dbAddressBookItemsRepository.insert(item)),
@@ -249,12 +252,13 @@ describe('AddressBookItemsRepository', () => {
   describe('upsertMany', () => {
     it('should insert new Address Book Items and update existing ones', async () => {
       const { spaceId, authPayload } = await createSpaceAsAdmin();
+      const firstAdminUserId = Number(authPayload.sub);
       const existingAddressBookItems = faker.helpers.multiple(
         () =>
           addressBookItemBuilder()
             .with('space', spaceBuilder().with('id', spaceId).build())
-            .with('createdBy', authPayload.signer_address as Address)
-            .with('lastUpdatedBy', authPayload.signer_address as Address)
+            .with('createdBy', firstAdminUserId)
+            .with('lastUpdatedBy', firstAdminUserId)
             .build(),
         { count: { min: 2, max: 5 } },
       );
@@ -267,6 +271,7 @@ describe('AddressBookItemsRepository', () => {
       );
       await dbAddressBookItemsRepository.insert(existingAddressBookItems);
       const newAdminAuthPayload = await addAdminToSpace(spaceId);
+      const secondAdminUserId = Number(newAdminAuthPayload.sub);
       const newName = nameBuilder();
       const newChainIds = range(2, 5).map(() => faker.string.numeric());
       const modifiedAddressBookItems = existingAddressBookItems.map((item) => ({
@@ -291,8 +296,8 @@ describe('AddressBookItemsRepository', () => {
               name: newName, // modified name
               chainIds: newChainIds, // modified chainIds
               address: item.address, // address remains the same
-              createdBy: authPayload.signer_address, // created by the first admin who created the Space
-              lastUpdatedBy: newAdminAuthPayload.signer_address, // modified by the second admin
+              createdBy: firstAdminUserId, // created by the first admin who created the Space
+              lastUpdatedBy: secondAdminUserId, // modified by the second admin
             }),
           ),
         ),
@@ -304,8 +309,8 @@ describe('AddressBookItemsRepository', () => {
               name: item.name, // name remains the same
               chainIds: item.chainIds, // chainIds remains the same
               address: item.address, // address remains the same
-              createdBy: newAdminAuthPayload.signer_address, // created by the second admin
-              lastUpdatedBy: newAdminAuthPayload.signer_address, // modified by the second admin
+              createdBy: secondAdminUserId, // created by the second admin
+              lastUpdatedBy: secondAdminUserId, // modified by the second admin
             }),
           ),
         ),
@@ -315,12 +320,13 @@ describe('AddressBookItemsRepository', () => {
     it('should throw BadRequestException if the amount of items in the Space surpasses the limit', async () => {
       const { spaceId, authPayload } = await createSpaceAsAdmin();
       const limit = testConfiguration.spaces.addressBooks.maxItems;
+      const userId = Number(authPayload.sub);
       const existingAddressBookItems = faker.helpers.multiple(
         () =>
           addressBookItemBuilder()
             .with('space', spaceBuilder().with('id', spaceId).build())
-            .with('createdBy', authPayload.signer_address as Address)
-            .with('lastUpdatedBy', authPayload.signer_address as Address)
+            .with('createdBy', userId)
+            .with('lastUpdatedBy', userId)
             .build(),
         {
           count: limit - 1,
@@ -362,7 +368,7 @@ describe('AddressBookItemsRepository', () => {
       ).rejects.toThrow(new NotFoundException('Space not found.'));
     });
 
-    it('should throw ForbiddenException if the user is not an admin', async () => {
+    it('should throw NotFoundException if the user is not an admin', async () => {
       const { spaceId } = await createSpaceAsAdmin();
       const authPayload = await addMemberToSpaceWithStatus(spaceId, 'ACTIVE');
       const addressBookItems = faker.helpers.multiple(() =>
@@ -376,15 +382,45 @@ describe('AddressBookItemsRepository', () => {
         }),
       ).rejects.toThrow(new NotFoundException('Space not found.'));
     });
+
+    it('should upsert items for an OIDC admin', async () => {
+      const { spaceId, authPayload } = await createSpaceAsOidcAdmin();
+      const userId = Number(authPayload.sub);
+      const newItems = faker.helpers.multiple(
+        () => addressBookItemBuilder().build(),
+        { count: { min: 1, max: 3 } },
+      );
+
+      const actual = await addressBookItemsRepository.upsertMany({
+        authPayload,
+        spaceId,
+        addressBookItems: newItems,
+      });
+
+      expect(actual).toHaveLength(newItems.length);
+      expect(actual).toEqual(
+        expect.arrayContaining(
+          newItems.map((item) =>
+            expect.objectContaining({
+              address: item.address,
+              name: item.name,
+              createdBy: userId,
+              lastUpdatedBy: userId,
+            }),
+          ),
+        ),
+      );
+    });
   });
 
   describe('deleteByAddress', () => {
     it('should delete an address book item by address', async () => {
       const { spaceId, authPayload } = await createSpaceAsAdmin();
+      const userId = Number(authPayload.sub);
       const addressBookItem = addressBookItemBuilder()
         .with('space', spaceBuilder().with('id', spaceId).build())
-        .with('createdBy', authPayload.signer_address as Address)
-        .with('lastUpdatedBy', authPayload.signer_address as Address)
+        .with('createdBy', userId)
+        .with('lastUpdatedBy', userId)
         .build();
       await dbAddressBookItemsRepository.insert(addressBookItem);
 
@@ -406,18 +442,20 @@ describe('AddressBookItemsRepository', () => {
         await createSpaceAsAdmin();
       const { spaceId: spaceId2, authPayload: authPayload2 } =
         await createSpaceAsAdmin();
+      const userId1 = Number(authPayload1.sub);
+      const userId2 = Number(authPayload2.sub);
       const address = getAddress(faker.finance.ethereumAddress());
       const addressBookItem1 = addressBookItemBuilder()
         .with('address', address)
         .with('space', spaceBuilder().with('id', spaceId1).build())
-        .with('createdBy', authPayload1.signer_address as Address)
-        .with('lastUpdatedBy', authPayload1.signer_address as Address)
+        .with('createdBy', userId1)
+        .with('lastUpdatedBy', userId1)
         .build();
       const addressBookItem2 = addressBookItemBuilder()
         .with('address', address)
         .with('space', spaceBuilder().with('id', spaceId2).build())
-        .with('createdBy', authPayload2.signer_address as Address)
-        .with('lastUpdatedBy', authPayload2.signer_address as Address)
+        .with('createdBy', userId2)
+        .with('lastUpdatedBy', userId2)
         .build();
       await dbAddressBookItemsRepository.insert(addressBookItem1);
       await dbAddressBookItemsRepository.insert(addressBookItem2);
@@ -472,6 +510,29 @@ describe('AddressBookItemsRepository', () => {
           address: addressBookItem.address,
         }),
       ).rejects.toThrow(new NotFoundException('Space not found.'));
+    });
+
+    it('should delete an address book item as an OIDC admin', async () => {
+      const { spaceId, authPayload } = await createSpaceAsOidcAdmin();
+      const userId = Number(authPayload.sub);
+      const addressBookItem = addressBookItemBuilder()
+        .with('space', spaceBuilder().with('id', spaceId).build())
+        .with('createdBy', userId)
+        .with('lastUpdatedBy', userId)
+        .build();
+      await dbAddressBookItemsRepository.insert(addressBookItem);
+
+      await addressBookItemsRepository.deleteByAddress({
+        authPayload,
+        spaceId,
+        address: addressBookItem.address,
+      });
+
+      await expect(
+        dbAddressBookItemsRepository.findOneBy({
+          address: addressBookItem.address,
+        }),
+      ).resolves.toBe(null);
     });
   });
 
@@ -548,5 +609,41 @@ describe('AddressBookItemsRepository', () => {
       address: authPayload.signer_address,
     });
     return { user: user.raw[0], authPayload };
+  };
+
+  const createOidcUser = async (): Promise<{
+    user: User;
+    authPayload: AuthPayload;
+  }> => {
+    const user = await dbUserRepo.insert({
+      status: 'ACTIVE',
+    });
+    const authPayloadDto = oidcAuthPayloadDtoBuilder()
+      .with('sub', (user.generatedMaps[0].id as number).toString())
+      .build();
+    return {
+      user: user.raw[0],
+      authPayload: new AuthPayload(authPayloadDto),
+    };
+  };
+
+  const createSpaceAsOidcAdmin = async (): Promise<{
+    spaceId: Space['id'];
+    authPayload: AuthPayload;
+  }> => {
+    const { user, authPayload } = await createOidcUser();
+    const space = await dbSpacesRepository.insert({
+      name: nameBuilder(),
+      status: 'ACTIVE',
+    });
+    await dbMembersRepository.insert({
+      user,
+      space: space.generatedMaps[0],
+      name: nameBuilder(),
+      status: 'ACTIVE',
+      role: 'ADMIN',
+      invitedBy: getAddress(faker.finance.ethereumAddress()),
+    });
+    return { spaceId: space.generatedMaps[0].id, authPayload };
   };
 });

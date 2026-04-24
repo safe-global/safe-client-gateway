@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { IBuilder } from '@/__tests__/builder';
 import { Builder } from '@/__tests__/builder';
 import type { AddressBookItem } from '@/modules/spaces/datasources/entities/address-book-item.entity.db';
@@ -19,6 +20,9 @@ export function addressBookItemBuilder(): IBuilder<AddressBookItem> {
     )
     .with('address', getAddress(faker.finance.ethereumAddress()))
     .with('name', nameBuilder())
-    .with('createdBy', getAddress(faker.finance.ethereumAddress()))
-    .with('lastUpdatedBy', getAddress(faker.finance.ethereumAddress()));
+    .with('createdBy', faker.number.int({ min: 1, max: DB_MAX_SAFE_INTEGER }))
+    .with(
+      'lastUpdatedBy',
+      faker.number.int({ min: 1, max: DB_MAX_SAFE_INTEGER }),
+    );
 }

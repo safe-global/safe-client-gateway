@@ -4,7 +4,7 @@ import { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { IAddressBookItemsRepository } from '@/modules/spaces/domain/address-books/address-book-items.repository.interface';
 import { SpaceAddressBookDto } from '@/modules/spaces/routes/entities/space-address-book.dto.entity';
-import { ForbiddenException, Inject } from '@nestjs/common';
+import { Inject } from '@nestjs/common';
 import { UpsertAddressBookItemsDto } from '@/modules/spaces/routes/entities/upsert-address-book-items.dto.entity';
 import type { AddressBookDbItem } from '@/modules/spaces/domain/address-books/entities/address-book-item.db.entity';
 
@@ -40,12 +40,6 @@ export class AddressBooksService {
     spaceId: Space['id'],
     addressBookItems: UpsertAddressBookItemsDto,
   ): Promise<SpaceAddressBookDto> {
-    if (!authPayload.isSiwe()) {
-      throw new ForbiddenException(
-        'Address book writes require wallet authentication',
-      );
-    }
-
     const updatedItems = await this.repository.upsertMany({
       authPayload,
       spaceId,
@@ -60,12 +54,6 @@ export class AddressBooksService {
     spaceId: Space['id'];
     address: AddressBookDbItem['address'];
   }): Promise<void> {
-    if (!args.authPayload.isSiwe()) {
-      throw new ForbiddenException(
-        'Address book writes require wallet authentication',
-      );
-    }
-
     await this.repository.deleteByAddress(args);
   }
 
@@ -77,8 +65,8 @@ export class AddressBooksService {
       name: item.name,
       address: item.address,
       chainIds: item.chainIds,
-      createdBy: item.createdBy,
-      lastUpdatedBy: item.lastUpdatedBy,
+      createdBy: item.createdBy.toString(),
+      lastUpdatedBy: item.lastUpdatedBy.toString(),
       createdAt: item.createdAt,
       updatedAt: item.updatedAt,
     }));

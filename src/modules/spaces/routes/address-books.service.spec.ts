@@ -3,7 +3,7 @@ import { AddressBooksService } from '@/modules/spaces/routes/address-books.servi
 import type { IAddressBookItemsRepository } from '@/modules/spaces/domain/address-books/address-book-items.repository.interface';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { ForbiddenException, UnauthorizedException } from '@nestjs/common';
+import { UnauthorizedException } from '@nestjs/common';
 import { faker } from '@faker-js/faker';
 import {
   siweAuthPayloadDtoBuilder,
@@ -68,9 +68,12 @@ describe('AddressBooksService', () => {
   });
 
   describe('upsertMany', () => {
-    it('should upsert items for SIWE user', async () => {
+    it.each([
+      ['SIWE', siweAuthPayloadDtoBuilder],
+      ['OIDC', oidcAuthPayloadDtoBuilder],
+    ] as const)('should upsert items for %s user', async (_label, builder) => {
       const spaceId = faker.number.int();
-      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      const authPayload = new AuthPayload(builder().build());
       const items = faker.helpers.multiple(
         () => addressBookItemBuilder().build(),
         { count: { min: 2, max: 5 } },
@@ -90,36 +93,34 @@ describe('AddressBooksService', () => {
       expect(repositoryMock.upsertMany).toHaveBeenCalled();
     });
 
-    it('should throw ForbiddenException for OIDC user', async () => {
+    it('should serialize createdBy/lastUpdatedBy as strings', async () => {
       const spaceId = faker.number.int();
-      const authPayload = new AuthPayload(oidcAuthPayloadDtoBuilder().build());
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      const items = [addressBookItemBuilder().build()];
+      repositoryMock.upsertMany.mockResolvedValue(items);
 
-      await expect(
-        service.upsertMany(authPayload, spaceId, { items: [] }),
-      ).rejects.toThrow(
-        new ForbiddenException(
-          'Address book writes require wallet authentication',
-        ),
-      );
-      expect(repositoryMock.upsertMany).not.toHaveBeenCalled();
-    });
+      const result = await service.upsertMany(authPayload, spaceId, {
+        items: items.map((i) => ({
+          address: i.address,
+          name: i.name,
+          chainIds: i.chainIds,
+        })),
+      });
 
-    it('should throw ForbiddenException for unauthenticated user (no wallet)', async () => {
-      const spaceId = faker.number.int();
-      const authPayload = new AuthPayload();
-
-      await expect(
-        service.upsertMany(authPayload, spaceId, { items: [] }),
-      ).rejects.toThrow(ForbiddenException);
-      expect(repositoryMock.upsertMany).not.toHaveBeenCalled();
+      expect(typeof result.data[0].createdBy).toBe('string');
+      expect(typeof result.data[0].lastUpdatedBy).toBe('string');
+      expect(result.data[0].createdBy).toBe(items[0].createdBy.toString());
     });
   });
 
   describe('deleteByAddress', () => {
-    it('should delete for SIWE user', async () => {
+    it.each([
+      ['SIWE', siweAuthPayloadDtoBuilder],
+      ['OIDC', oidcAuthPayloadDtoBuilder],
+    ] as const)('should delete for %s user', async (_label, builder) => {
       const spaceId = faker.number.int();
       const address = getAddress(faker.finance.ethereumAddress());
-      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      const authPayload = new AuthPayload(builder().build());
       repositoryMock.deleteByAddress.mockResolvedValue();
 
       await service.deleteByAddress({ authPayload, spaceId, address });
@@ -129,32 +130,6 @@ describe('AddressBooksService', () => {
         spaceId,
         address,
       });
-    });
-
-    it('should throw ForbiddenException for OIDC user', async () => {
-      const spaceId = faker.number.int();
-      const address = getAddress(faker.finance.ethereumAddress());
-      const authPayload = new AuthPayload(oidcAuthPayloadDtoBuilder().build());
-
-      await expect(
-        service.deleteByAddress({ authPayload, spaceId, address }),
-      ).rejects.toThrow(
-        new ForbiddenException(
-          'Address book writes require wallet authentication',
-        ),
-      );
-      expect(repositoryMock.deleteByAddress).not.toHaveBeenCalled();
-    });
-
-    it('should throw ForbiddenException for unauthenticated user (no wallet)', async () => {
-      const spaceId = faker.number.int();
-      const address = getAddress(faker.finance.ethereumAddress());
-      const authPayload = new AuthPayload();
-
-      await expect(
-        service.deleteByAddress({ authPayload, spaceId, address }),
-      ).rejects.toThrow(ForbiddenException);
-      expect(repositoryMock.deleteByAddress).not.toHaveBeenCalled();
     });
   });
 });
