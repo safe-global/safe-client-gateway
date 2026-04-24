@@ -24,7 +24,10 @@ export class SesEmailService implements IEmailService {
       this.configurationService.getOrThrow<string>('email.ses.fromName');
 
     this.client = new SESv2Client({});
-    this.fromAddress = `"${fromName.replace(/"/g, '\\"')}" <${fromEmail}>`;
+    const escapedFromName = fromName
+      .replace(/\\/g, '\\\\')
+      .replace(/"/g, '\\"');
+    this.fromAddress = `"${escapedFromName}" <${fromEmail}>`;
   }
 
   async send(args: {
