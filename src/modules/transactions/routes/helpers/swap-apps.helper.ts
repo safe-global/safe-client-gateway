@@ -1,6 +1,7 @@
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { FullAppData } from '@/modules/swaps/domain/entities/full-app-data.entity';
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable, Module } from '@nestjs/common';
+import { IConfigurationService } from '@/config/configuration.service.interface';
+import type { FullAppData } from '@/modules/swaps/domain/entities/full-app-data.entity';
 
 @Injectable()
 export class SwapAppsHelper {

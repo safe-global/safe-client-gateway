@@ -1,7 +1,11 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import type { Server } from 'node:net';
 import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
+import { getAddress } from 'viem';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
+import { createTestModule } from '@/__tests__/testing-module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import configuration from '@/config/entities/__tests__/configuration';
 import {
@@ -10,19 +14,16 @@ import {
 } from '@/datasources/network/entities/network.error.entity';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
 import { NetworkService } from '@/datasources/network/network.service.interface';
-import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
-import { collectibleBuilder } from '@/modules/collectibles/domain/entities/__tests__/collectible.builder';
-import type { Collectible } from '@/modules/collectibles/domain/entities/collectible.entity';
 import {
   limitAndOffsetUrlFactory,
   pageBuilder,
 } from '@/domain/entities/__tests__/page.builder';
-import { PaginationData } from '@/routes/common/pagination/pagination.data';
-import type { Server } from 'net';
-import { getAddress } from 'viem';
+import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
+import { collectibleBuilder } from '@/modules/collectibles/domain/entities/__tests__/collectible.builder';
+import type { Collectible } from '@/modules/collectibles/domain/entities/collectible.entity';
 import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
+import { PaginationData } from '@/routes/common/pagination/pagination.data';
 import { rawify } from '@/validation/entities/raw.entity';
-import { createTestModule } from '@/__tests__/testing-module';
 
 describe('Collectibles Controller', () => {
   let app: INestApplication<Server>;

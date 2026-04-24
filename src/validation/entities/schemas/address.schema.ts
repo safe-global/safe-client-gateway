@@ -1,5 +1,6 @@
-import { z } from 'zod';
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { getAddress } from 'viem';
+import { z } from 'zod';
 
 export const AddressSchema = z.string().transform((value, ctx) => {
   try {

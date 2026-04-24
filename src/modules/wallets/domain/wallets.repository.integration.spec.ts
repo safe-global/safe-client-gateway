@@ -1,20 +1,21 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
+import type { ConfigService } from '@nestjs/config';
 import { DataSource } from 'typeorm';
 import { type Address, getAddress } from 'viem';
 import configuration from '@/config/entities/__tests__/configuration';
 import { postgresConfig } from '@/config/entities/postgres.config';
-import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { DatabaseMigrator } from '@/datasources/db/v2/database-migrator.service';
-import { User } from '@/modules/users/datasources/entities/users.entity.db';
-import { WalletsRepository } from '@/modules/wallets/domain/wallets.repository';
-import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
-import { UserStatus } from '@/modules/users/domain/entities/user.entity';
+import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { getStringEnumKeys } from '@/domain/common/utils/enum';
-import type { ConfigService } from '@nestjs/config';
 import type { ILoggingService } from '@/logging/logging.interface';
-import { Member } from '@/modules/users/datasources/entities/member.entity.db';
 import { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
 import { SpaceSafe } from '@/modules/spaces/datasources/entities/space-safes.entity.db';
+import { Member } from '@/modules/users/datasources/entities/member.entity.db';
+import { User } from '@/modules/users/datasources/entities/users.entity.db';
+import { UserStatus } from '@/modules/users/domain/entities/user.entity';
+import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
+import { WalletsRepository } from '@/modules/wallets/domain/wallets.repository';
 
 const mockLoggingService = {
   debug: jest.fn(),
@@ -116,7 +117,7 @@ describe('WalletsRepository', () => {
     it('should set createdAt and updatedAt when creating a Wallet', async () => {
       const dbWalletRepository = dataSource.getRepository(Wallet);
       const dbUserRepository = dataSource.getRepository(User);
-      const before = new Date().getTime();
+      const before = Date.now();
       const user = await dbUserRepository.insert({
         status: faker.helpers.arrayElement(UserStatusKeys),
       });
@@ -127,18 +128,18 @@ describe('WalletsRepository', () => {
         },
       });
 
-      const after = new Date().getTime();
+      const after = Date.now();
 
       const createdAt = wallet.generatedMaps[0].createdAt;
       const updatedAt = wallet.generatedMaps[0].updatedAt;
 
-      if (!(createdAt instanceof Date) || !(updatedAt instanceof Date)) {
+      if (!(createdAt instanceof Date && updatedAt instanceof Date)) {
         throw new Error('createdAt and/or updatedAt is not a Date');
       }
 
       expect(createdAt).toEqual(updatedAt);
 
-      if (!(createdAt instanceof Date) || !(updatedAt instanceof Date)) {
+      if (!(createdAt instanceof Date && updatedAt instanceof Date)) {
         throw new Error('createdAt and/or updatedAt is not a Date');
       }
 

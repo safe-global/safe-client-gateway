@@ -1,6 +1,7 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Module } from '@nestjs/common';
-import { ThreatAnalysisService } from './threat-analysis.service';
 import { BlockaidApiModule } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-api.module';
+import { ThreatAnalysisService } from './threat-analysis.service';
 
 /**
  * Module for threat analysis functionality.

@@ -1,13 +1,14 @@
-import { PortfolioApiService } from '@/modules/portfolio/v1/portfolio.service';
-import type { IPortfolioService as IDomainPortfolioService } from '@/modules/portfolio/domain/portfolio.service.interface';
-import type { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
-import { portfolioBuilder } from '@/modules/portfolio/domain/entities/__tests__/portfolio.builder';
-import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
-import { PortfolioRouteMapper } from '@/modules/portfolio/v1/portfolio.mapper';
+import type { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
+import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
 import { appBalanceBuilder } from '@/modules/portfolio/domain/entities/__tests__/app-balance.builder';
+import { portfolioBuilder } from '@/modules/portfolio/domain/entities/__tests__/portfolio.builder';
 import { tokenBalanceBuilder } from '@/modules/portfolio/domain/entities/__tests__/token-balance.builder';
+import type { IPortfolioService as IDomainPortfolioService } from '@/modules/portfolio/domain/portfolio.service.interface';
+import { PortfolioRouteMapper } from '@/modules/portfolio/v1/portfolio.mapper';
+import { PortfolioApiService } from '@/modules/portfolio/v1/portfolio.service';
 
 describe('PortfolioApiService', () => {
   let service: PortfolioApiService;

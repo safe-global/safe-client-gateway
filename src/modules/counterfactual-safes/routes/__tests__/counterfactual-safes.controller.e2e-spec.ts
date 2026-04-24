@@ -1,21 +1,22 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { type Server } from 'http';
-import request from 'supertest';
+
+import type { Server } from 'node:http';
+import { faker } from '@faker-js/faker/.';
 import type { INestApplication } from '@nestjs/common';
+import request from 'supertest';
+import { getAddress } from 'viem';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
+import { createTestModule } from '@/__tests__/testing-module';
+import { checkGuardIsApplied } from '@/__tests__/util/check-guard';
 import configuration from '@/config/entities/__tests__/configuration';
 import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
-import { NotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/notifications.repository.module';
-import { TestNotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/test.notification.repository.module';
-import { CounterfactualSafesController } from '@/modules/counterfactual-safes/routes/counterfactual-safes.controller';
-import { checkGuardIsApplied } from '@/__tests__/util/check-guard';
-import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
 import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
-import { faker } from '@faker-js/faker/.';
-import { getAddress } from 'viem';
+import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
 import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
 import { counterfactualSafeBuilder } from '@/modules/counterfactual-safes/datasources/entities/__tests__/counterfactual-safe.entity.db.builder';
-import { createTestModule } from '@/__tests__/testing-module';
+import { CounterfactualSafesController } from '@/modules/counterfactual-safes/routes/counterfactual-safes.controller';
+import { NotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/notifications.repository.module';
+import { TestNotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/test.notification.repository.module';
 
 function buildCounterfactualSafe(chainId?: string): Record<string, unknown> {
   const cfSafe = counterfactualSafeBuilder()
@@ -80,10 +81,11 @@ describe('CounterfactualSafesController', () => {
   it('should require authentication for every endpoint', () => {
     const endpoints = Object.values(
       CounterfactualSafesController.prototype,
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
-    ) as Array<Function>;
+    ) as Array<(...args: Array<unknown>) => unknown>;
 
-    endpoints.forEach((fn) => checkGuardIsApplied(AuthGuard, fn));
+    for (const fn of endpoints) {
+      checkGuardIsApplied(AuthGuard, fn);
+    }
   });
 
   describe('POST /v1/users/counterfactual-safes', () => {
@@ -224,21 +226,23 @@ describe('CounterfactualSafesController', () => {
         .expect(200);
 
       expect(getResponse.body.safes).toBeDefined();
-      expect(getResponse.body.safes[cfSafe.chainId]).toBeDefined();
-      expect(getResponse.body.safes[cfSafe.chainId]).toHaveLength(1);
-      expect(getResponse.body.safes[cfSafe.chainId][0]).toMatchObject({
-        address: cfSafe.address,
-        factoryAddress: cfSafe.factoryAddress,
-        masterCopy: cfSafe.masterCopy,
-        saltNonce: cfSafe.saltNonce,
-        safeVersion: cfSafe.safeVersion,
-        threshold: cfSafe.threshold,
-        owners: cfSafe.owners,
-        fallbackHandler: cfSafe.fallbackHandler,
-        to: cfSafe.to,
-        data: cfSafe.data,
-        paymentReceiver: cfSafe.paymentReceiver,
-      });
+      expect(getResponse.body.safes[cfSafe.chainId as string]).toBeDefined();
+      expect(getResponse.body.safes[cfSafe.chainId as string]).toHaveLength(1);
+      expect(getResponse.body.safes[cfSafe.chainId as string][0]).toMatchObject(
+        {
+          address: cfSafe.address,
+          factoryAddress: cfSafe.factoryAddress,
+          masterCopy: cfSafe.masterCopy,
+          saltNonce: cfSafe.saltNonce,
+          safeVersion: cfSafe.safeVersion,
+          threshold: cfSafe.threshold,
+          owners: cfSafe.owners,
+          fallbackHandler: cfSafe.fallbackHandler,
+          to: cfSafe.to,
+          data: cfSafe.data,
+          paymentReceiver: cfSafe.paymentReceiver,
+        },
+      );
     });
 
     it('Should return empty safes for a user with none', async () => {

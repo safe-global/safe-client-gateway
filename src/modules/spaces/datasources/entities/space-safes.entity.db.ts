@@ -1,16 +1,17 @@
-import { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
-import { databaseAddressTransformer } from '@/domain/common/transformers/databaseAddress.transformer';
-import { SpaceSafe as DomainSpaceSafe } from '@/modules/spaces/domain/entities/space-safe.entity';
-import { CHAIN_ID_MAXLENGTH } from '@/routes/common/constants';
+// SPDX-License-Identifier: FSL-1.1-MIT
 import {
   Column,
   Entity,
-  ManyToOne,
   JoinColumn,
+  ManyToOne,
   PrimaryGeneratedColumn,
   Unique,
 } from 'typeorm';
 import type { Address } from 'viem';
+import { databaseAddressTransformer } from '@/domain/common/transformers/databaseAddress.transformer';
+import { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
+import type { SpaceSafe as DomainSpaceSafe } from '@/modules/spaces/domain/entities/space-safe.entity';
+import { CHAIN_ID_MAXLENGTH } from '@/routes/common/constants';
 
 @Entity('space_safes')
 @Unique('UQ_SS_chainId_address_space', ['chainId', 'address', 'space'])
@@ -50,10 +51,14 @@ export class SpaceSafe implements DomainSpaceSafe {
   })
   public readonly updatedAt!: Date;
 
-  @ManyToOne(() => Space, (space: Space) => space.id, {
-    onDelete: 'CASCADE',
-    nullable: false,
-  })
+  @ManyToOne(
+    () => Space,
+    (space: Space) => space.id,
+    {
+      onDelete: 'CASCADE',
+      nullable: false,
+    },
+  )
   @JoinColumn({
     name: 'space_id',
     foreignKeyConstraintName: 'FK_SS_space_id',

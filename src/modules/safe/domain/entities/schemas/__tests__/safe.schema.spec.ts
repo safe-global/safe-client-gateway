@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { faker } from '@faker-js/faker';
+import { type Address, getAddress } from 'viem';
 import {
   safeBuilder,
   safeV2Builder,
@@ -6,8 +9,6 @@ import {
   SafeSchema,
   SafeSchemaV2,
 } from '@/modules/safe/domain/entities/schemas/safe.schema';
-import { faker } from '@faker-js/faker';
-import { type Address, getAddress } from 'viem';
 
 describe('Safe Schemas', () => {
   describe('SafeSchema', () => {
@@ -127,26 +128,26 @@ describe('Safe Schemas', () => {
       ]);
     });
 
-    it.each(['owners' as const, 'modules' as const])(
-      'should checksum the array of %s',
-      (field) => {
-        const nonChecksummedAddresses = faker.helpers.multiple(
-          () => faker.finance.ethereumAddress().toLowerCase() as Address,
-          {
-            count: { min: 1, max: 5 },
-          },
-        );
-        const safe = safeBuilder().with(field, nonChecksummedAddresses).build();
+    it.each([
+      'owners' as const,
+      'modules' as const,
+    ])('should checksum the array of %s', (field) => {
+      const nonChecksummedAddresses = faker.helpers.multiple(
+        () => faker.finance.ethereumAddress().toLowerCase() as Address,
+        {
+          count: { min: 1, max: 5 },
+        },
+      );
+      const safe = safeBuilder().with(field, nonChecksummedAddresses).build();
 
-        const result = SafeSchema.safeParse(safe);
+      const result = SafeSchema.safeParse(safe);
 
-        expect(result.success && result.data[field]).toStrictEqual(
-          nonChecksummedAddresses.map((nonChecksummedAddresses) =>
-            getAddress(nonChecksummedAddresses),
-          ),
-        );
-      },
-    );
+      expect(result.success && result.data[field]).toStrictEqual(
+        nonChecksummedAddresses.map((nonChecksummedAddresses) =>
+          getAddress(nonChecksummedAddresses),
+        ),
+      );
+    });
 
     it('should allow a semver version', () => {
       const safe = safeBuilder().with('version', faker.system.semver()).build();
@@ -159,7 +160,7 @@ describe('Safe Schemas', () => {
     it.each([
       ['boolean', faker.datatype.boolean()],
       ['number', faker.number.int({ min: 1 })],
-    ])(`should not allow a %s version`, (type, value) => {
+    ])(`should not allow a %s version`, (_type, value) => {
       const safe = safeBuilder()
         .with('version', value as unknown as string)
         .build();
@@ -175,22 +176,22 @@ describe('Safe Schemas', () => {
       ]);
     });
 
-    it.each(['modules' as const, 'version' as const])(
-      'should allow optional %s, defaulting to null',
-      (field) => {
-        const safe = safeBuilder().build();
-        delete safe[field];
+    it.each([
+      'modules' as const,
+      'version' as const,
+    ])('should allow optional %s, defaulting to null', (field) => {
+      const safe = safeBuilder().build();
+      delete safe[field];
 
-        const result = SafeSchema.safeParse(safe);
+      const result = SafeSchema.safeParse(safe);
 
-        expect(result.success && result.data[field]).toBe(null);
-      },
-    );
+      expect(result.success && result.data[field]).toBe(null);
+    });
 
     it('should not allow optional nonce', () => {
       const safe = safeBuilder().build();
       // @ts-expect-error nonce is not optional
-      delete safe.nonce;
+      safe.nonce = undefined;
 
       const result = SafeSchema.safeParse(safe);
 
@@ -278,23 +279,21 @@ describe('Safe Schemas', () => {
       );
     });
 
-    it.each(['guard' as const, 'moduleGuard' as const])(
-      'should checksum %s when provided',
-      (field) => {
-        const nonChecksummedAddress = faker.finance
-          .ethereumAddress()
-          .toLowerCase() as Address;
-        const safeV2 = safeV2Builder()
-          .with(field, nonChecksummedAddress)
-          .build();
+    it.each([
+      'guard' as const,
+      'moduleGuard' as const,
+    ])('should checksum %s when provided', (field) => {
+      const nonChecksummedAddress = faker.finance
+        .ethereumAddress()
+        .toLowerCase() as Address;
+      const safeV2 = safeV2Builder().with(field, nonChecksummedAddress).build();
 
-        const result = SafeSchemaV2.safeParse(safeV2);
+      const result = SafeSchemaV2.safeParse(safeV2);
 
-        expect(result.success && result.data[field]).toBe(
-          getAddress(nonChecksummedAddress),
-        );
-      },
-    );
+      expect(result.success && result.data[field]).toBe(
+        getAddress(nonChecksummedAddress),
+      );
+    });
 
     it('should allow an integer nonce', () => {
       const safeV2 = safeV2Builder()
@@ -359,7 +358,7 @@ describe('Safe Schemas', () => {
       ['undefined', undefined],
       ['null', null],
       ['string', faker.string.numeric()],
-    ])('should not allow a %s threshold', (type, value) => {
+    ])('should not allow a %s threshold', (_type, value) => {
       const safeV2 = safeV2Builder()
         .with('threshold', value as unknown as number)
         .build();
@@ -376,33 +375,33 @@ describe('Safe Schemas', () => {
       ]);
     });
 
-    it.each(['owners' as const, 'enabledModules' as const])(
-      'should checksum the array of %s',
-      (field) => {
-        const nonChecksummedAddresses = faker.helpers.multiple(
-          () => faker.finance.ethereumAddress().toLowerCase() as Address,
-          {
-            count: { min: 1, max: 5 },
-          },
-        );
-        const safeV2 = safeV2Builder()
-          .with(field, nonChecksummedAddresses)
-          .build();
+    it.each([
+      'owners' as const,
+      'enabledModules' as const,
+    ])('should checksum the array of %s', (field) => {
+      const nonChecksummedAddresses = faker.helpers.multiple(
+        () => faker.finance.ethereumAddress().toLowerCase() as Address,
+        {
+          count: { min: 1, max: 5 },
+        },
+      );
+      const safeV2 = safeV2Builder()
+        .with(field, nonChecksummedAddresses)
+        .build();
 
-        const result = SafeSchemaV2.safeParse(safeV2);
+      const result = SafeSchemaV2.safeParse(safeV2);
 
-        expect(result.success && result.data[field]).toStrictEqual(
-          nonChecksummedAddresses.map((nonChecksummedAddress) =>
-            getAddress(nonChecksummedAddress),
-          ),
-        );
-      },
-    );
+      expect(result.success && result.data[field]).toStrictEqual(
+        nonChecksummedAddresses.map((nonChecksummedAddress) =>
+          getAddress(nonChecksummedAddress),
+        ),
+      );
+    });
 
     it('should not allow optional nonce', () => {
       const safeV2 = safeV2Builder().build();
       // @ts-expect-error nonce is not optional
-      delete safeV2.nonce;
+      safeV2.nonce = undefined;
 
       const result = SafeSchemaV2.safeParse(safeV2);
 
@@ -455,34 +454,34 @@ describe('Safe Schemas', () => {
       );
     });
 
-    it.each(['guard' as const, 'moduleGuard' as const])(
-      'should allow null %s',
-      (field) => {
-        const safeV2 = safeV2Builder().with(field, null).build();
+    it.each([
+      'guard' as const,
+      'moduleGuard' as const,
+    ])('should allow null %s', (field) => {
+      const safeV2 = safeV2Builder().with(field, null).build();
 
-        const result = SafeSchemaV2.safeParse(safeV2);
+      const result = SafeSchemaV2.safeParse(safeV2);
 
-        expect(result.success).toBe(true);
-        expect(result.success && result.data[field]).toBe(null);
-      },
-    );
+      expect(result.success).toBe(true);
+      expect(result.success && result.data[field]).toBe(null);
+    });
 
-    it.each(['guard' as const, 'moduleGuard' as const])(
-      'should not allow undefined %s',
-      (field) => {
-        const safeV2 = safeV2Builder().build();
-        delete safeV2[field];
+    it.each([
+      'guard' as const,
+      'moduleGuard' as const,
+    ])('should not allow undefined %s', (field) => {
+      const safeV2 = safeV2Builder().build();
+      delete safeV2[field];
 
-        const result = SafeSchemaV2.safeParse(safeV2);
+      const result = SafeSchemaV2.safeParse(safeV2);
 
-        expect(!result.success && result.error.issues).toContainEqual(
-          expect.objectContaining({
-            code: 'invalid_type',
-            path: [field],
-            message: 'Invalid input: expected string, received undefined',
-          }),
-        );
-      },
-    );
+      expect(!result.success && result.error.issues).toContainEqual(
+        expect.objectContaining({
+          code: 'invalid_type',
+          path: [field],
+          message: 'Invalid input: expected string, received undefined',
+        }),
+      );
+    });
   });
 });

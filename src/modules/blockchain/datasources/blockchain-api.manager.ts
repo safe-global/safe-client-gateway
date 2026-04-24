@@ -1,23 +1,24 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { Inject, Injectable } from '@nestjs/common';
+import {
+  type Chain,
+  createPublicClient,
+  custom,
+  type PublicClient,
+  RpcRequestError,
+} from 'viem';
+import { getHttpRpcClient } from 'viem/utils';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { CacheRouter } from '@/datasources/cache/cache.router';
 import {
   CacheService,
-  ICacheService,
+  type ICacheService,
 } from '@/datasources/cache/cache.service.interface';
-import { Chain as DomainChain } from '@/modules/chains/domain/entities/chain.entity';
+import type { IBlockchainApiManager } from '@/domain/interfaces/blockchain-api.manager.interface';
+import { IConfigApi } from '@/domain/interfaces/config-api.interface';
+import type { Chain as DomainChain } from '@/modules/chains/domain/entities/chain.entity';
 import { RpcUriAuthentication } from '@/modules/chains/domain/entities/rpc-uri-authentication.entity';
 import { ChainSchema } from '@/modules/chains/domain/entities/schemas/chain.schema';
-import { IBlockchainApiManager } from '@/domain/interfaces/blockchain-api.manager.interface';
-import { IConfigApi } from '@/domain/interfaces/config-api.interface';
-import { Inject, Injectable } from '@nestjs/common';
-import {
-  Chain,
-  PublicClient,
-  RpcRequestError,
-  createPublicClient,
-  custom,
-} from 'viem';
-import { getHttpRpcClient } from 'viem/utils';
 
 @Injectable()
 export class BlockchainApiManager implements IBlockchainApiManager {
@@ -63,7 +64,9 @@ export class BlockchainApiManager implements IBlockchainApiManager {
     delete this.blockchainApiMap[chainId];
 
     const key = CacheRouter.getRpcRequestsKey(chainId);
-    void this.cacheService.deleteByKey(key);
+    this.cacheService.deleteByKey(key).catch(() => {
+      // Cache deletion is best-effort; failures are non-critical
+    });
   }
 
   /**

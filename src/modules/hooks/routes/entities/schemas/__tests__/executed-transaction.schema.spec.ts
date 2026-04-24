@@ -1,8 +1,9 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { faker } from '@faker-js/faker';
+import { type Address, getAddress } from 'viem';
 import { executedTransactionEventBuilder } from '@/modules/hooks/routes/entities/__tests__/executed-transaction.builder';
 import type { TransactionEventType } from '@/modules/hooks/routes/entities/event-type.entity';
 import { ExecutedTransactionEventSchema } from '@/modules/hooks/routes/entities/schemas/executed-transaction.schema';
-import { faker } from '@faker-js/faker';
-import { type Address, getAddress } from 'viem';
 
 describe('ExecutedTransactionEventSchema', () => {
   it('should validate an execution event', () => {
@@ -37,45 +38,45 @@ describe('ExecutedTransactionEventSchema', () => {
     ]);
   });
 
-  it.each(['to' as const, 'address' as const])(
-    'should not allow a non-address %s',
-    (field) => {
-      const executedTransactionEvent = executedTransactionEventBuilder()
-        .with(field, faker.string.sample() as Address)
-        .build();
+  it.each([
+    'to' as const,
+    'address' as const,
+  ])('should not allow a non-address %s', (field) => {
+    const executedTransactionEvent = executedTransactionEventBuilder()
+      .with(field, faker.string.sample() as Address)
+      .build();
 
-      const result = ExecutedTransactionEventSchema.safeParse(
-        executedTransactionEvent,
-      );
+    const result = ExecutedTransactionEventSchema.safeParse(
+      executedTransactionEvent,
+    );
 
-      expect(!result.success && result.error.issues).toEqual([
-        expect.objectContaining({
-          code: 'custom',
-          message: 'Invalid address',
-          path: [field],
-        }),
-      ]);
-    },
-  );
+    expect(!result.success && result.error.issues).toEqual([
+      expect.objectContaining({
+        code: 'custom',
+        message: 'Invalid address',
+        path: [field],
+      }),
+    ]);
+  });
 
-  it.each(['to' as const, 'address' as const])(
-    'should checksum the %s',
-    (field) => {
-      const nonChecksummedAddress = faker.finance
-        .ethereumAddress()
-        .toLowerCase() as Address;
-      const executedTransactionEvent = executedTransactionEventBuilder()
-        .with(field, nonChecksummedAddress)
-        .build();
+  it.each([
+    'to' as const,
+    'address' as const,
+  ])('should checksum the %s', (field) => {
+    const nonChecksummedAddress = faker.finance
+      .ethereumAddress()
+      .toLowerCase() as Address;
+    const executedTransactionEvent = executedTransactionEventBuilder()
+      .with(field, nonChecksummedAddress)
+      .build();
 
-      const result = ExecutedTransactionEventSchema.safeParse(
-        executedTransactionEvent,
-      );
-      expect(result.success && result.data[field]).toBe(
-        getAddress(nonChecksummedAddress),
-      );
-    },
-  );
+    const result = ExecutedTransactionEventSchema.safeParse(
+      executedTransactionEvent,
+    );
+    expect(result.success && result.data[field]).toBe(
+      getAddress(nonChecksummedAddress),
+    );
+  });
 
   it.each([
     'type' as const,
@@ -120,7 +121,7 @@ describe('ExecutedTransactionEventSchema', () => {
 
   it('should allow undefined data', () => {
     const executedTransactionEvent = executedTransactionEventBuilder().build();
-    delete executedTransactionEvent.data;
+    executedTransactionEvent.data = undefined;
 
     const result = ExecutedTransactionEventSchema.safeParse(
       executedTransactionEvent,

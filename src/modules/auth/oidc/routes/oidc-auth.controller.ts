@@ -1,18 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
-import {
-  ACCESS_TOKEN_COOKIE_NAME,
-  getCookieOptions,
-} from '@/modules/auth/utils/auth-cookie.utils';
-import { OidcAuthRateLimitGuard } from '@/modules/auth/oidc/routes/guards/oidc-auth-rate-limit.guard';
-import { OidcAuthService } from '@/modules/auth/oidc/routes/oidc-auth.service';
-import {
-  OidcConnectionSchema,
-  type OidcConnection,
-} from '@/modules/auth/oidc/routes/entities/oidc-connection.entity';
-import { RedirectUrlSchema } from '@/validation/entities/schemas/redirect-url.schema';
-import { ValidationPipe } from '@/validation/pipes/validation.pipe';
+
 import {
   Controller,
   Get,
@@ -24,11 +11,28 @@ import {
 } from '@nestjs/common';
 import {
   ApiFoundResponse,
-  ApiTags,
   ApiOperation,
   ApiQuery,
+  ApiTags,
 } from '@nestjs/swagger';
-import { type CookieOptions, Request, Response } from 'express';
+import type { CookieOptions, Request, Response } from 'express';
+import { IConfigurationService } from '@/config/configuration.service.interface';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
+import {
+  type OidcConnection,
+  OidcConnectionSchema,
+} from '@/modules/auth/oidc/routes/entities/oidc-connection.entity';
+import { OidcAuthRateLimitGuard } from '@/modules/auth/oidc/routes/guards/oidc-auth-rate-limit.guard';
+import { OidcAuthService } from '@/modules/auth/oidc/routes/oidc-auth.service';
+import {
+  ACCESS_TOKEN_COOKIE_NAME,
+  getCookieOptions,
+} from '@/modules/auth/utils/auth-cookie.utils';
+import { RedirectUrlSchema } from '@/validation/entities/schemas/redirect-url.schema';
+import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 
 /**
  * The OidcAuthController handles OIDC (Auth0) authentication:
@@ -174,7 +178,7 @@ export class OidcAuthController {
       return;
     }
 
-    if (!code || !state) {
+    if (!(code && state)) {
       this.loggingService.warn('Auth callback: missing code or state');
       res.redirect(
         this.buildErrorRedirectUrl('invalid_request', expectedState),

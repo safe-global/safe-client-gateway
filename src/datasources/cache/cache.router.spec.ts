@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
+import { faker } from '@faker-js/faker';
+import { getAddress } from 'viem';
 import { CacheRouter } from '@/datasources/cache/cache.router';
 import type { BaseDataDecoded } from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';
-import { getAddress } from 'viem';
-import { faker } from '@faker-js/faker';
 
 const address = getAddress(faker.finance.ethereumAddress());
 

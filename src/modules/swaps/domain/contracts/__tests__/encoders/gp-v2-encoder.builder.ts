@@ -1,10 +1,10 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
-import type { Hex } from 'viem';
+import type { Address, Hex } from 'viem';
 import { encodeFunctionData, keccak256, toBytes } from 'viem';
 import { Builder } from '@/__tests__/builder';
 import type { IEncoder } from '@/__tests__/encoder-builder';
 import { GPv2Abi } from '@/modules/swaps/domain/contracts/decoders/gp-v2-decoder.helper';
-import type { Address } from 'viem';
 
 type SetPreSignatureArgs = {
   orderUid: Address;

@@ -1,8 +1,4 @@
-import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { Auth } from '@/modules/auth/routes/decorators/auth.decorator';
-import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
-import { AddressBooksService } from '@/modules/spaces/routes/address-books.service';
-import { SpaceAddressBookDto } from '@/modules/spaces/routes/entities/space-address-book.dto.entity';
+// SPDX-License-Identifier: FSL-1.1-MIT
 import {
   Body,
   Controller,
@@ -16,25 +12,30 @@ import {
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
+  ApiBody,
   ApiForbiddenResponse,
+  ApiNoContentResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
-  ApiTags,
-  ApiUnauthorizedResponse,
   ApiOperation,
   ApiParam,
-  ApiBody,
-  ApiNoContentResponse,
+  ApiTags,
+  ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { ValidationPipe } from '@/validation/pipes/validation.pipe';
+import type { Address } from 'viem';
 import { RowSchema } from '@/datasources/db/v2/entities/row.entity';
+import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
+import { Auth } from '@/modules/auth/routes/decorators/auth.decorator';
+import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
+import { AddressBooksService } from '@/modules/spaces/routes/address-books.service';
+import { SpaceAddressBookDto } from '@/modules/spaces/routes/entities/space-address-book.dto.entity';
 import {
   UpsertAddressBookItemsDto,
   UpsertAddressBookItemsSchema,
 } from '@/modules/spaces/routes/entities/upsert-address-book-items.dto.entity';
-import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { SpacesAddressBookRateLimitGuard } from '@/modules/spaces/routes/guards/spaces-address-book-rate-limit.guard';
-import type { Address } from 'viem';
+import { AddressSchema } from '@/validation/entities/schemas/address.schema';
+import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 
 @ApiTags('spaces')
 @Controller({ path: 'spaces', version: '1' })
@@ -70,7 +71,7 @@ export class AddressBooksController {
   })
   @Get('/:spaceId/address-book')
   @UseGuards(AuthGuard)
-  public async getAddressBookItems(
+  public getAddressBookItems(
     @Auth() authPayload: AuthPayload,
     @Param('spaceId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
     spaceId: number,
@@ -114,7 +115,7 @@ export class AddressBooksController {
   @Put('/:spaceId/address-book')
   @UseGuards(SpacesAddressBookRateLimitGuard)
   @UseGuards(AuthGuard)
-  public async upsertAddressBookItems(
+  public upsertAddressBookItems(
     @Auth() authPayload: AuthPayload,
     @Param('spaceId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
     spaceId: number,
@@ -153,7 +154,7 @@ export class AddressBooksController {
   })
   @Delete('/:spaceId/address-book/:address')
   @UseGuards(AuthGuard)
-  public async deleteByAddress(
+  public deleteByAddress(
     @Auth() authPayload: AuthPayload,
     @Param('spaceId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
     spaceId: number,

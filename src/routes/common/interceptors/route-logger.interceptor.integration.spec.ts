@@ -1,22 +1,23 @@
-import { ILoggingService } from '@/logging/logging.interface';
-import { Test, TestingModule } from '@nestjs/testing';
+// SPDX-License-Identifier: FSL-1.1-MIT
+import type { Server } from 'node:net';
+import { faker } from '@faker-js/faker';
 import {
   Controller,
   Get,
   HttpException,
   HttpStatus,
-  INestApplication,
+  type INestApplication,
   Query,
 } from '@nestjs/common';
+import { Test, type TestingModule } from '@nestjs/testing';
 import request from 'supertest';
-import { DataSourceError } from '@/domain/errors/data-source.error';
-import { faker } from '@faker-js/faker';
-import { RouteLoggerInterceptor } from '@/routes/common/interceptors/route-logger.interceptor';
-import { Server } from 'net';
-import { ValidationPipe } from '@/validation/pipes/validation.pipe';
-import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
-import { ZodError } from 'zod';
 import type { Address } from 'viem';
+import { ZodError } from 'zod';
+import { DataSourceError } from '@/domain/errors/data-source.error';
+import type { ILoggingService } from '@/logging/logging.interface';
+import { RouteLoggerInterceptor } from '@/routes/common/interceptors/route-logger.interceptor';
+import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
+import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 
 // We expect 500 instead of the status code of the DataSourceError
 // The reason is that this test webserver does not have logic to map
@@ -33,8 +34,7 @@ const mockLoggingService: jest.MockedObjectDeep<ILoggingService> = {
 };
 
 class ErrorWithCode extends Error {
-  private readonly code: number;
-
+  public code: number;
   public constructor(message: string, code: number) {
     super(message);
     this.code = code;
@@ -56,13 +56,11 @@ class TestController {
     );
   }
 
-  /* eslint-disable @typescript-eslint/no-unused-vars */
   @Get('validation-error')
   validationError(
     @Query('numeric_string', new ValidationPipe(NumericStringSchema))
     _: Address,
   ): void {}
-  /* eslint-enable @typescript-eslint/no-unused-vars */
 
   @Get('zod-error')
   zodError(): never {

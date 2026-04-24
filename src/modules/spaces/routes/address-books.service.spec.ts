@@ -1,16 +1,16 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { AddressBooksService } from '@/modules/spaces/routes/address-books.service';
-import type { IAddressBookItemsRepository } from '@/modules/spaces/domain/address-books/address-book-items.repository.interface';
-import type { IConfigurationService } from '@/config/configuration.service.interface';
-import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { ForbiddenException, UnauthorizedException } from '@nestjs/common';
+
 import { faker } from '@faker-js/faker';
-import {
-  siweAuthPayloadDtoBuilder,
-  oidcAuthPayloadDtoBuilder,
-} from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
-import { addressBookItemBuilder } from '@/modules/spaces/domain/address-books/entities/__tests__/address-book-item.db.builder';
+import { ForbiddenException, UnauthorizedException } from '@nestjs/common';
 import { getAddress } from 'viem';
+import {
+  oidcAuthPayloadDtoBuilder,
+  siweAuthPayloadDtoBuilder,
+} from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
+import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
+import type { IAddressBookItemsRepository } from '@/modules/spaces/domain/address-books/address-book-items.repository.interface';
+import { addressBookItemBuilder } from '@/modules/spaces/domain/address-books/entities/__tests__/address-book-item.db.builder';
+import { AddressBooksService } from '@/modules/spaces/routes/address-books.service';
 
 const repositoryMock = {
   findAllBySpaceId: jest.fn(),
@@ -18,41 +18,33 @@ const repositoryMock = {
   deleteByAddress: jest.fn(),
 } as jest.MockedObjectDeep<IAddressBookItemsRepository>;
 
-const configurationServiceMock = {
-  getOrThrow: jest.fn().mockReturnValue(20),
-} as jest.MockedObjectDeep<IConfigurationService>;
-
 describe('AddressBooksService', () => {
   let service: AddressBooksService;
 
   beforeEach(() => {
     jest.resetAllMocks();
-    configurationServiceMock.getOrThrow.mockReturnValue(20);
-    service = new AddressBooksService(repositoryMock, configurationServiceMock);
+    service = new AddressBooksService(repositoryMock);
   });
 
   describe('findAllBySpaceId', () => {
     it.each([
       ['SIWE', siweAuthPayloadDtoBuilder],
       ['OIDC', oidcAuthPayloadDtoBuilder],
-    ] as const)(
-      'should return address book items for %s user',
-      async (_label, builder) => {
-        const spaceId = faker.number.int();
-        const authPayload = new AuthPayload(builder().build());
-        const items = [addressBookItemBuilder().build()];
-        repositoryMock.findAllBySpaceId.mockResolvedValue(items);
+    ] as const)('should return address book items for %s user', async (_label, builder) => {
+      const spaceId = faker.number.int();
+      const authPayload = new AuthPayload(builder().build());
+      const items = [addressBookItemBuilder().build()];
+      repositoryMock.findAllBySpaceId.mockResolvedValue(items);
 
-        const result = await service.findAllBySpaceId(authPayload, spaceId);
+      const result = await service.findAllBySpaceId(authPayload, spaceId);
 
-        expect(result.spaceId).toBe(spaceId.toString());
-        expect(result.data).toHaveLength(1);
-        expect(repositoryMock.findAllBySpaceId).toHaveBeenCalledWith({
-          authPayload,
-          spaceId,
-        });
-      },
-    );
+      expect(result.spaceId).toBe(spaceId.toString());
+      expect(result.data).toHaveLength(1);
+      expect(repositoryMock.findAllBySpaceId).toHaveBeenCalledWith({
+        authPayload,
+        spaceId,
+      });
+    });
 
     it('should throw for unauthenticated user', async () => {
       const spaceId = faker.number.int();

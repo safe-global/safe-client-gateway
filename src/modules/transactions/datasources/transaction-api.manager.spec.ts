@@ -1,14 +1,15 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { faker } from '@faker-js/faker';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import type { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
 import type { ICacheService } from '@/datasources/cache/cache.service.interface';
-import type { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
+import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
-import { TransactionApiManager } from '@/modules/transactions/datasources/transaction-api.manager';
-import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
 import type { IConfigApi } from '@/domain/interfaces/config-api.interface';
 import type { ILoggingService } from '@/logging/logging.interface';
+import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
+import { TransactionApiManager } from '@/modules/transactions/datasources/transaction-api.manager';
 import { rawify } from '@/validation/entities/raw.entity';
-import { faker } from '@faker-js/faker';
 
 const configurationService = {
   getOrThrow: jest.fn(),
@@ -65,18 +66,18 @@ describe('Transaction API Manager Tests', () => {
     const ownerTimeout = faker.number.int();
     configurationServiceMock.getOrThrow.mockImplementation((key) => {
       if (key === 'safeTransaction.useVpcUrl') return useVpcUrl;
-      else if (key === 'expirationTimeInSeconds.default')
+      if (key === 'expirationTimeInSeconds.default')
         return expirationTimeInSeconds;
-      else if (key === 'expirationTimeInSeconds.indexing')
+      if (key === 'expirationTimeInSeconds.indexing')
         return indexingExpirationTimeInSeconds;
-      else if (key === 'expirationTimeInSeconds.notFound.default')
+      if (key === 'expirationTimeInSeconds.notFound.default')
         return notFoundExpireTimeSeconds;
-      else if (key === 'expirationTimeInSeconds.notFound.token')
+      if (key === 'expirationTimeInSeconds.notFound.token')
         return notFoundExpireTimeSeconds;
-      else if (key === 'owners.ownersTtlSeconds') return ownersTtlSeconds;
-      else if (key === 'httpClient.ownersTimeout') return ownerTimeout;
+      if (key === 'owners.ownersTtlSeconds') return ownersTtlSeconds;
+      if (key === 'httpClient.ownersTimeout') return ownerTimeout;
       // TODO: Remove after Vault decoding has been released
-      else if (key === 'application.isProduction') return true;
+      if (key === 'application.isProduction') return true;
 
       throw new Error(`Unexpected key: ${key}`);
     });

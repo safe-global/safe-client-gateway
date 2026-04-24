@@ -1,11 +1,12 @@
-import { RelayLimitReachedError } from '@/modules/relay/domain/errors/relay-limit-reached.error';
-import { Response } from 'express';
+// SPDX-License-Identifier: FSL-1.1-MIT
 import {
+  type ArgumentsHost,
   Catch,
-  ExceptionFilter,
-  ArgumentsHost,
+  type ExceptionFilter,
   HttpStatus,
 } from '@nestjs/common';
+import type { Response } from 'express';
+import { RelayLimitReachedError } from '@/modules/relay/domain/errors/relay-limit-reached.error';
 
 @Catch(RelayLimitReachedError)
 export class RelayLimitReachedExceptionFilter implements ExceptionFilter {

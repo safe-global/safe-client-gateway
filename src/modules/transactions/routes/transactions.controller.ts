@@ -13,49 +13,49 @@ import {
   Query,
 } from '@nestjs/common';
 import {
+  ApiBadRequestResponse,
+  ApiBody,
+  ApiNoContentResponse,
+  ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiParam,
   ApiQuery,
   ApiTags,
-  ApiParam,
-  ApiBody,
-  ApiNotFoundResponse,
-  ApiBadRequestResponse,
-  ApiNoContentResponse,
 } from '@nestjs/swagger';
-import { PaginationDataDecorator } from '@/routes/common/decorators/pagination.data.decorator';
-import { RouteUrlDecorator } from '@/routes/common/decorators/route.url.decorator';
-import { Page } from '@/routes/common/entities/page.entity';
-import { PaginationData } from '@/routes/common/pagination/pagination.data';
+import type { Address } from 'viem';
 import { AddConfirmationDto } from '@/modules/transactions/routes/entities/add-confirmation.dto';
+import { CreationTransaction } from '@/modules/transactions/routes/entities/creation-transaction.entity';
+import { DeleteTransactionDto } from '@/modules/transactions/routes/entities/delete-transaction.dto.entity';
+import type { IncomingTransfer } from '@/modules/transactions/routes/entities/incoming-transfer.entity';
 import { IncomingTransferPage } from '@/modules/transactions/routes/entities/incoming-transfer-page.entity';
-import { IncomingTransfer } from '@/modules/transactions/routes/entities/incoming-transfer.entity';
+import type { ModuleTransaction } from '@/modules/transactions/routes/entities/module-transaction.entity';
 import { ModuleTransactionPage } from '@/modules/transactions/routes/entities/module-transaction-page.entity';
-import { ModuleTransaction } from '@/modules/transactions/routes/entities/module-transaction.entity';
+import type { MultisigTransaction } from '@/modules/transactions/routes/entities/multisig-transaction.entity';
 import { MultisigTransactionPage } from '@/modules/transactions/routes/entities/multisig-transaction-page.entity';
-import { MultisigTransaction } from '@/modules/transactions/routes/entities/multisig-transaction.entity';
 import { PreviewTransactionDto } from '@/modules/transactions/routes/entities/preview-transaction.dto.entity';
 import { ProposeTransactionDto } from '@/modules/transactions/routes/entities/propose-transaction.dto.entity';
+import type { QueuedItem } from '@/modules/transactions/routes/entities/queued-item.entity';
 import { QueuedItemPage } from '@/modules/transactions/routes/entities/queued-item-page.entity';
-import { QueuedItem } from '@/modules/transactions/routes/entities/queued-item.entity';
+import { AddConfirmationDtoSchema } from '@/modules/transactions/routes/entities/schemas/add-confirmation.dto.schema';
+import { DeleteTransactionDtoSchema } from '@/modules/transactions/routes/entities/schemas/delete-transaction.dto.schema';
+import { PreviewTransactionDtoSchema } from '@/modules/transactions/routes/entities/schemas/preview-transaction.dto.schema';
+import { ProposeTransactionDtoSchema } from '@/modules/transactions/routes/entities/schemas/propose-transaction.dto.schema';
+import { Transaction } from '@/modules/transactions/routes/entities/transaction.entity';
 import { TransactionDetails } from '@/modules/transactions/routes/entities/transaction-details/transaction-details.entity';
 import { TransactionItemPage } from '@/modules/transactions/routes/entities/transaction-item-page.entity';
 import { TransactionPreview } from '@/modules/transactions/routes/entities/transaction-preview.entity';
-import { Transaction } from '@/modules/transactions/routes/entities/transaction.entity';
-import { AddConfirmationDtoSchema } from '@/modules/transactions/routes/entities/schemas/add-confirmation.dto.schema';
-import { PreviewTransactionDtoSchema } from '@/modules/transactions/routes/entities/schemas/preview-transaction.dto.schema';
-import { ProposeTransactionDtoSchema } from '@/modules/transactions/routes/entities/schemas/propose-transaction.dto.schema';
-import { TransactionsService } from '@/modules/transactions/routes/transactions.service';
-import { DeleteTransactionDto } from '@/modules/transactions/routes/entities/delete-transaction.dto.entity';
-import { ValidationPipe } from '@/validation/pipes/validation.pipe';
-import { DeleteTransactionDtoSchema } from '@/modules/transactions/routes/entities/schemas/delete-transaction.dto.schema';
-import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { CreationTransaction } from '@/modules/transactions/routes/entities/creation-transaction.entity';
-import { TimezoneSchema } from '@/validation/entities/schemas/timezone.schema';
+import { TXSCreationTransaction } from '@/modules/transactions/routes/entities/txs-creation-transaction.entity';
 import { TXSMultisigTransaction } from '@/modules/transactions/routes/entities/txs-multisig-transaction.entity';
 import { TXSMultisigTransactionPage } from '@/modules/transactions/routes/entities/txs-multisig-transaction-page.entity';
-import { TXSCreationTransaction } from '@/modules/transactions/routes/entities/txs-creation-transaction.entity';
-import type { Address } from 'viem';
+import { TransactionsService } from '@/modules/transactions/routes/transactions.service';
+import { PaginationDataDecorator } from '@/routes/common/decorators/pagination.data.decorator';
+import { RouteUrlDecorator } from '@/routes/common/decorators/route.url.decorator';
+import type { Page } from '@/routes/common/entities/page.entity';
+import type { PaginationData } from '@/routes/common/pagination/pagination.data';
+import { AddressSchema } from '@/validation/entities/schemas/address.schema';
+import { TimezoneSchema } from '@/validation/entities/schemas/timezone.schema';
+import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 
 @ApiTags('transactions')
 @Controller({
@@ -91,7 +91,7 @@ export class TransactionsController {
     description: 'Transaction not found',
   })
   @Get(`chains/:chainId/transactions/:id`)
-  async getTransactionById(
+  getTransactionById(
     @Param('chainId') chainId: string,
     @Param('id') id: string,
   ): Promise<TransactionDetails> {
@@ -104,7 +104,7 @@ export class TransactionsController {
   @ApiOkResponse({ type: TXSMultisigTransaction })
   @ApiOperation({ deprecated: true, summary: 'Deprecated' })
   @Get('chains/:chainId/multisig-transactions/:safeTxHash/raw')
-  async getDomainMultisigTransactionBySafeTxHash(
+  getDomainMultisigTransactionBySafeTxHash(
     @Param('chainId') chainId: string,
     @Param('safeTxHash') safeTxHash: string,
   ): Promise<TXSMultisigTransaction> {
@@ -143,7 +143,7 @@ export class TransactionsController {
   @ApiQuery({ name: 'offset', required: false, type: Number })
   @ApiOperation({ deprecated: true, summary: 'Deprecated' })
   @Get('chains/:chainId/safes/:safeAddress/multisig-transactions/raw')
-  async getDomainMultisigTransactions(
+  getDomainMultisigTransactions(
     @Param('chainId') chainId: string,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
     safeAddress: Address,
@@ -280,7 +280,7 @@ export class TransactionsController {
     description: 'Paginated list of multisig transactions',
   })
   @Get('chains/:chainId/safes/:safeAddress/multisig-transactions')
-  async getMultisigTransactions(
+  getMultisigTransactions(
     @Param('chainId') chainId: string,
     @RouteUrlDecorator() routeUrl: URL,
     @PaginationDataDecorator() paginationData: PaginationData,
@@ -339,7 +339,7 @@ export class TransactionsController {
     description: 'Transaction not found',
   })
   @Delete('chains/:chainId/transactions/:safeTxHash')
-  async deleteTransaction(
+  deleteTransaction(
     @Param('chainId') chainId: string,
     @Param('safeTxHash') safeTxHash: string,
     @Body(new ValidationPipe(DeleteTransactionDtoSchema))
@@ -397,7 +397,7 @@ export class TransactionsController {
     description: 'Paginated list of module transactions',
   })
   @Get('chains/:chainId/safes/:safeAddress/module-transactions')
-  async getModuleTransactions(
+  getModuleTransactions(
     @Param('chainId') chainId: string,
     @RouteUrlDecorator() routeUrl: URL,
     @PaginationDataDecorator() paginationData: PaginationData,
@@ -452,7 +452,7 @@ export class TransactionsController {
   })
   @HttpCode(200)
   @Post('chains/:chainId/transactions/:safeTxHash/confirmations')
-  async addConfirmation(
+  addConfirmation(
     @Param('chainId') chainId: string,
     @Param('safeTxHash') safeTxHash: string,
     @Body(new ValidationPipe(AddConfirmationDtoSchema))
@@ -532,7 +532,7 @@ export class TransactionsController {
     description: 'Paginated list of incoming transfers',
   })
   @Get('chains/:chainId/safes/:safeAddress/incoming-transfers')
-  async getIncomingTransfers(
+  getIncomingTransfers(
     @Param('chainId') chainId: string,
     @RouteUrlDecorator() routeUrl: URL,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
@@ -596,7 +596,7 @@ export class TransactionsController {
   })
   @HttpCode(200)
   @Post('chains/:chainId/transactions/:safeAddress/preview')
-  async previewTransaction(
+  previewTransaction(
     @Param('chainId') chainId: string,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
     safeAddress: Address,
@@ -644,7 +644,7 @@ export class TransactionsController {
     description: 'Paginated list of queued transactions',
   })
   @Get('chains/:chainId/safes/:safeAddress/transactions/queued')
-  async getTransactionQueue(
+  getTransactionQueue(
     @Param('chainId') chainId: string,
     @RouteUrlDecorator() routeUrl: URL,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
@@ -718,7 +718,7 @@ export class TransactionsController {
     description: 'Paginated list of historical transactions',
   })
   @Get('chains/:chainId/safes/:safeAddress/transactions/history')
-  async getTransactionsHistory(
+  getTransactionsHistory(
     @Param('chainId') chainId: string,
     @RouteUrlDecorator() routeUrl: URL,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
@@ -775,7 +775,7 @@ export class TransactionsController {
   })
   @HttpCode(200)
   @Post('chains/:chainId/transactions/:safeAddress/propose')
-  async proposeTransaction(
+  proposeTransaction(
     @Param('chainId') chainId: string,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
     safeAddress: Address,
@@ -814,7 +814,7 @@ export class TransactionsController {
   })
   @HttpCode(200)
   @Get('chains/:chainId/safes/:safeAddress/transactions/creation')
-  async getCreationTransaction(
+  getCreationTransaction(
     @Param('chainId') chainId: string,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
     safeAddress: Address,
@@ -829,7 +829,7 @@ export class TransactionsController {
   @ApiOkResponse({ type: TXSCreationTransaction })
   @ApiOperation({ deprecated: true, summary: 'Deprecated' })
   @Get('chains/:chainId/safes/:safeAddress/creation/raw')
-  async getDomainCreationTransaction(
+  getDomainCreationTransaction(
     @Param('chainId') chainId: string,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
     safeAddress: Address,

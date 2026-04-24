@@ -1,21 +1,22 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import type { Address } from 'viem';
-import { IPortfolioRepository } from '@/modules/portfolio/domain/portfolio.repository.interface';
-import { IPortfolioApi } from '@/modules/portfolio/interfaces/portfolio-api.interface';
+import { IConfigurationService } from '@/config/configuration.service.interface';
+import { CacheRouter } from '@/datasources/cache/cache.router';
 import {
-  Portfolio,
-  PortfolioSchema,
-} from '@/modules/portfolio/domain/entities/portfolio.entity';
-import type { TokenBalance } from '@/modules/portfolio/domain/entities/token-balance.entity';
+  CacheService,
+  type ICacheService,
+} from '@/datasources/cache/cache.service.interface';
+import { getNumberString } from '@/domain/common/utils/utils';
 import type { AppBalance } from '@/modules/portfolio/domain/entities/app-balance.entity';
 import type { AppPosition } from '@/modules/portfolio/domain/entities/app-position.entity';
 import {
-  CacheService,
-  ICacheService,
-} from '@/datasources/cache/cache.service.interface';
-import { CacheRouter } from '@/datasources/cache/cache.router';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { getNumberString } from '@/domain/common/utils/utils';
+  type Portfolio,
+  PortfolioSchema,
+} from '@/modules/portfolio/domain/entities/portfolio.entity';
+import type { TokenBalance } from '@/modules/portfolio/domain/entities/token-balance.entity';
+import type { IPortfolioRepository } from '@/modules/portfolio/domain/portfolio.repository.interface';
+import { IPortfolioApi } from '@/modules/portfolio/interfaces/portfolio-api.interface';
 
 /**
  * Portfolio repository.

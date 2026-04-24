@@ -1,9 +1,10 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 import type { z } from 'zod';
-import { TransactionEventType } from '@/modules/hooks/routes/entities/event-type.entity';
-import { Builder } from '@/__tests__/builder';
 import type { IBuilder } from '@/__tests__/builder';
+import { Builder } from '@/__tests__/builder';
+import { TransactionEventType } from '@/modules/hooks/routes/entities/event-type.entity';
 import type {
   DelegateEventPayloadSchema,
   DeletedDelegateEvent,

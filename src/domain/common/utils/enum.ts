@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { ValueTransformer } from 'typeorm';
 
 /**
@@ -58,7 +58,7 @@ export function getStringEnumKeys<T extends NumericEnum>(
   enumObj: T,
 ): NumericEnumKeysTuple<T> {
   return Object.keys(enumObj).filter((key) =>
-    isNaN(Number(key)),
+    Number.isNaN(Number(key)),
   ) as NumericEnumKeysTuple<T>;
 }
 
@@ -67,21 +67,23 @@ type NumericEnumKeysTuple<T> = UnionToTuple<ExcludeNumberKeys<T>>;
 type ExcludeNumberKeys<T> = Exclude<keyof T, `${number}`>;
 
 // Recursively removes last element of union and pushes it to tuple
-type UnionToTuple<T, R extends Array<any> = []> = [T] extends [never]
+type UnionToTuple<T, R extends Array<unknown> = []> = [T] extends [never]
   ? R
   : UnionToTuple<Exclude<T, LastOf<T>>, [LastOf<T>, ...R]>;
 
 // Gets the last element of a union
 type LastOf<T> =
-  UnionToIntersection<T extends any ? (x: T) => 0 : never> extends (
+  UnionToIntersection<T extends unknown ? (x: T) => 0 : never> extends (
     x: infer Last,
   ) => 0
     ? Last
     : never;
 
 // Converts a union to an intersection of functions
-type UnionToIntersection<U> = (U extends any ? (x: U) => any : never) extends (
-  x: infer I,
-) => any
+type UnionToIntersection<U> = (
+  U extends unknown
+    ? (x: U) => unknown
+    : never
+) extends (x: infer I) => unknown
   ? I
   : never;

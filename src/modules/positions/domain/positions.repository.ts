@@ -1,13 +1,14 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
-import { IPositionsRepository } from '@/modules/positions/domain/positions.repository.interface';
-import { IPositionsApi } from '@/domain/interfaces/positions-api.interface';
-import { Chain } from '@/modules/chains/domain/entities/chain.entity';
+import type { Address } from 'viem';
 import { z } from 'zod';
+import { IPositionsApi } from '@/domain/interfaces/positions-api.interface';
+import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
 import {
-  Position,
+  type Position,
   PositionsSchema,
 } from '@/modules/positions/domain/entities/position.entity';
-import type { Address } from 'viem';
+import type { IPositionsRepository } from '@/modules/positions/domain/positions.repository.interface';
 
 @Injectable()
 export class PositionsRepository implements IPositionsRepository {
@@ -33,7 +34,7 @@ export class PositionsRepository implements IPositionsRepository {
     await this.positionsApi.clearPositions(args);
   }
 
-  async getFiatCodes(): Promise<Array<string>> {
+  getFiatCodes(): Promise<Array<string>> {
     return this.positionsApi.getFiatCodes().then(z.array(z.string()).parse);
   }
 }

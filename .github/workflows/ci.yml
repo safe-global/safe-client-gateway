@@ -67,7 +67,7 @@ jobs:
       - run: yarn install --immutable
       - run: yarn run env:validate:silent
 
-  prettier:
+  biome:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -77,16 +77,6 @@ jobs:
           cache: 'yarn'
       - run: yarn install --immutable
       - run: yarn run format-check
-
-  es-lint:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-      - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
-        with:
-          node-version: '24.11.0' # Krypton
-          cache: 'yarn'
-      - run: yarn install --immutable
       - run: yarn run lint-check
 
   unit-tests:
@@ -234,7 +224,7 @@ jobs:
 
   docker-publish-staging:
     if: (github.event_name == 'push' && github.ref == 'refs/heads/main')
-    needs: [prettier, es-lint, tests-finish]
+    needs: [biome, tests-finish]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -263,7 +253,7 @@ jobs:
 
   docker-publish-release:
     if: (github.event_name == 'release' && github.event.action == 'released')
-    needs: [prettier, es-lint, tests-finish]
+    needs: [biome, tests-finish]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2

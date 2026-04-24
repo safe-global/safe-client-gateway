@@ -1,24 +1,25 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
-import { AddressBookItem as DbAddressBookItem } from '@/modules/spaces/datasources/entities/address-book-item.entity.db';
-import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { IAddressBookItemsRepository } from '@/modules/spaces/domain/address-books/address-book-items.repository.interface';
-import type { AddressBookDbItem } from '@/modules/spaces/domain/address-books/entities/address-book-item.db.entity';
-import { AddressBookItem } from '@/modules/spaces/domain/address-books/entities/address-book-item.entity';
-import { Space } from '@/modules/spaces/domain/entities/space.entity';
-import { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
-import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
+
 import {
   BadRequestException,
   ForbiddenException,
   Inject,
   Injectable,
 } from '@nestjs/common';
-import { EntityManager, In } from 'typeorm';
-import { UpsertAddressBookItemsDto } from '@/modules/spaces/routes/entities/upsert-address-book-items.dto.entity';
-import { MemberRole } from '@/modules/users/domain/entities/member.entity';
+import { type EntityManager, In } from 'typeorm';
 import { isAddressEqual } from 'viem';
+import { IConfigurationService } from '@/config/configuration.service.interface';
+import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
+import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
+import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
+import { AddressBookItem as DbAddressBookItem } from '@/modules/spaces/datasources/entities/address-book-item.entity.db';
+import type { IAddressBookItemsRepository } from '@/modules/spaces/domain/address-books/address-book-items.repository.interface';
+import type { AddressBookDbItem } from '@/modules/spaces/domain/address-books/entities/address-book-item.db.entity';
+import type { AddressBookItem } from '@/modules/spaces/domain/address-books/entities/address-book-item.entity';
+import type { Space } from '@/modules/spaces/domain/entities/space.entity';
+import { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
+import type { UpsertAddressBookItemsDto } from '@/modules/spaces/routes/entities/upsert-address-book-items.dto.entity';
+import type { MemberRole } from '@/modules/users/domain/entities/member.entity';
 
 @Injectable()
 export class AddressBookItemsRepository implements IAddressBookItemsRepository {
@@ -100,7 +101,7 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
     });
   }
 
-  private async getSpaceAs(args: {
+  private getSpaceAs(args: {
     authPayload: AuthPayload;
     spaceId: Space['id'];
     memberRoleIn: Array<keyof typeof MemberRole>;

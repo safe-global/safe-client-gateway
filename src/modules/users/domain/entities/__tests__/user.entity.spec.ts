@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { UserSchema } from '@/modules/users/domain/entities/user.entity';
-import { userBuilder } from '@/modules/users/datasources/entities/__tests__/users.entity.db.builder';
+
 import { faker } from '@faker-js/faker';
 import omit from 'lodash/omit';
+import { userBuilder } from '@/modules/users/datasources/entities/__tests__/users.entity.db.builder';
+import { UserSchema } from '@/modules/users/domain/entities/user.entity';
 
 describe('UserSchema', () => {
   it('should validate a valid User', () => {
@@ -46,16 +47,16 @@ describe('UserSchema', () => {
   });
 
   describe('status', () => {
-    it.each([{ status: 'PENDING' as const }, { status: 'ACTIVE' as const }])(
-      'should validate $status status',
-      ({ status }) => {
-        const user = userBuilder().with('status', status).build();
+    it.each([
+      { status: 'PENDING' as const },
+      { status: 'ACTIVE' as const },
+    ])('should validate $status status', ({ status }) => {
+      const user = userBuilder().with('status', status).build();
 
-        const result = UserSchema.safeParse(user);
+      const result = UserSchema.safeParse(user);
 
-        expect(result.success).toBe(true);
-      },
-    );
+      expect(result.success).toBe(true);
+    });
   });
 
   describe('extUserId', () => {

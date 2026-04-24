@@ -1,7 +1,4 @@
-import { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
-import { NAME_MAX_LENGTH } from '@/domain/common/schemas/name.schema';
-import { databaseAddressTransformer } from '@/domain/common/transformers/databaseAddress.transformer';
-import { AddressBookDbItem as DomainAddressBookItem } from '@/modules/spaces/domain/address-books/entities/address-book-item.db.entity';
+// SPDX-License-Identifier: FSL-1.1-MIT
 import {
   Column,
   Entity,
@@ -12,6 +9,10 @@ import {
   Unique,
 } from 'typeorm';
 import type { Address } from 'viem';
+import { NAME_MAX_LENGTH } from '@/domain/common/schemas/name.schema';
+import { databaseAddressTransformer } from '@/domain/common/transformers/databaseAddress.transformer';
+import { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
+import type { AddressBookDbItem as DomainAddressBookItem } from '@/modules/spaces/domain/address-books/entities/address-book-item.db.entity';
 
 @Entity('space_address_book_items')
 @Unique('UQ_SABI_space_id_address', ['space', 'address'])
@@ -22,10 +23,14 @@ export class AddressBookItem implements DomainAddressBookItem {
   })
   id!: number;
 
-  @ManyToOne(() => Space, (space: Space) => space.id, {
-    onDelete: 'CASCADE',
-    nullable: false,
-  })
+  @ManyToOne(
+    () => Space,
+    (space: Space) => space.id,
+    {
+      onDelete: 'CASCADE',
+      nullable: false,
+    },
+  )
   @JoinColumn({
     name: 'space_id',
     foreignKeyConstraintName: 'FK_SABI_space_id',

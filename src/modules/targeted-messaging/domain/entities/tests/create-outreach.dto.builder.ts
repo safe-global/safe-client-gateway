@@ -1,8 +1,9 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { faker } from '@faker-js/faker/.';
 import type { IBuilder } from '@/__tests__/builder';
 import { Builder } from '@/__tests__/builder';
 import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
 import type { CreateOutreachDto } from '@/modules/targeted-messaging/domain/entities/create-outreach.dto.entity';
-import { faker } from '@faker-js/faker/.';
 
 export function createOutreachDtoBuilder(): IBuilder<CreateOutreachDto> {
   const startDate = faker.date.recent();

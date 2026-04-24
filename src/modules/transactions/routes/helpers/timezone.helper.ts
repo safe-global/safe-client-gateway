@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 /**
  * Converts a given date to a specified timezone.
  *
@@ -15,10 +16,15 @@ export const convertToTimezone = (date: Date, timeZone: string): Date => {
     day: '2-digit',
   }).formatToParts(date);
 
-  const year = ~~convertedDateParts.find((part) => part.type === 'year')!.value;
-  const month = ~~convertedDateParts.find((part) => part.type === 'month')!
-    .value;
-  const day = ~~convertedDateParts.find((part) => part.type === 'day')!.value;
+  const year = ~~(
+    convertedDateParts.find((part) => part.type === 'year')?.value ?? ''
+  );
+  const month = ~~(
+    convertedDateParts.find((part) => part.type === 'month')?.value ?? ''
+  );
+  const day = ~~(
+    convertedDateParts.find((part) => part.type === 'day')?.value ?? ''
+  );
 
   const zeroBasedMonth = month - 1; // JavaScript months are zero-indexed (0 for January, 11 for December), so we subtract 1
 

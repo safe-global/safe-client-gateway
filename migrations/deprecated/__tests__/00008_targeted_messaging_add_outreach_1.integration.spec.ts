@@ -1,8 +1,9 @@
-import { TestDbFactory } from '@/__tests__/db.factory';
-import { PostgresDatabaseMigrator } from '@/datasources/db/v1/postgres-database.migrator';
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import type postgres from 'postgres';
 import type { Sql } from 'postgres';
+import { TestDbFactory } from '@/__tests__/db.factory';
+import { PostgresDatabaseMigrator } from '@/datasources/db/v1/postgres-database.migrator';
 
 describe('Migration 00008_targeted_messaging_add_outreach_1', () => {
   let sql: postgres.Sql;

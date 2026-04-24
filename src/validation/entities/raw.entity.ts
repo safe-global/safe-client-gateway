@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 /**
  * Represents a type that has not been validated yet but should be
  * before being used.
@@ -15,7 +16,6 @@
  * ```
  */
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export type Raw<_> = symbol;
 
 export function rawify<T>(value: T): Raw<T> {

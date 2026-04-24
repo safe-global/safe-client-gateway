@@ -1,42 +1,43 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import type { IJobQueueService } from '@/domain/interfaces/job-queue.interface';
-import { LogType } from '@/domain/common/entities/log-type.entity';
-import type { ILoggingService } from '@/logging/logging.interface';
-import type { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
-import type { IDelegatesV2Repository } from '@/modules/delegate/domain/v2/delegates.v2.repository.interface';
-import type { IMessagesRepository } from '@/modules/messages/domain/messages.repository.interface';
-import type { INotificationsRepositoryV2 } from '@/modules/notifications/domain/v2/notifications.repository.interface';
-import { PushNotificationService } from '@/modules/notifications/domain/push/push-notification.service';
+
+import type { UUID } from 'node:crypto';
+import { faker } from '@faker-js/faker';
+import type { Job } from 'bullmq';
+import type { Address, Hash } from 'viem';
 import { JobType } from '@/datasources/job-queue/types/job-types';
-import { NotificationType } from '@/modules/notifications/domain/v2/entities/notification.entity';
-import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
-import { nativeTokenTransferBuilder } from '@/modules/safe/domain/entities/__tests__/native-token-transfer.builder';
-import { multisigTransactionBuilder } from '@/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
-import { confirmationBuilder } from '@/modules/safe/domain/entities/__tests__/multisig-transaction-confirmation.builder';
+import { LogType } from '@/domain/common/entities/log-type.entity';
+import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
+import type { IJobQueueService } from '@/domain/interfaces/job-queue.interface';
+import type { ILoggingService } from '@/logging/logging.interface';
+import { delegateBuilder } from '@/modules/delegate/domain/entities/__tests__/delegate.builder';
+import type { Delegate } from '@/modules/delegate/domain/entities/delegate.entity';
+import type { IDelegatesV2Repository } from '@/modules/delegate/domain/v2/delegates.v2.repository.interface';
+import { chainUpdateEventBuilder } from '@/modules/hooks/routes/entities/__tests__/chain-update.builder';
+import { deletedMultisigTransactionEventBuilder } from '@/modules/hooks/routes/entities/__tests__/deleted-multisig-transaction.builder';
+import { executedTransactionEventBuilder } from '@/modules/hooks/routes/entities/__tests__/executed-transaction.builder';
+import { incomingEtherEventBuilder } from '@/modules/hooks/routes/entities/__tests__/incoming-ether.builder';
+import { incomingTokenEventBuilder } from '@/modules/hooks/routes/entities/__tests__/incoming-token.builder';
+import { messageCreatedEventBuilder } from '@/modules/hooks/routes/entities/__tests__/message-created.builder';
+import { moduleTransactionEventBuilder } from '@/modules/hooks/routes/entities/__tests__/module-transaction.builder';
+import { pendingTransactionEventBuilder } from '@/modules/hooks/routes/entities/__tests__/pending-transaction.builder';
 import { messageBuilder } from '@/modules/messages/domain/entities/__tests__/message.builder';
 import { messageConfirmationBuilder } from '@/modules/messages/domain/entities/__tests__/message-confirmation.builder';
-import { delegateBuilder } from '@/modules/delegate/domain/entities/__tests__/delegate.builder';
-import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
-import { incomingTokenEventBuilder } from '@/modules/hooks/routes/entities/__tests__/incoming-token.builder';
-import { incomingEtherEventBuilder } from '@/modules/hooks/routes/entities/__tests__/incoming-ether.builder';
-import { pendingTransactionEventBuilder } from '@/modules/hooks/routes/entities/__tests__/pending-transaction.builder';
-import { messageCreatedEventBuilder } from '@/modules/hooks/routes/entities/__tests__/message-created.builder';
-import { executedTransactionEventBuilder } from '@/modules/hooks/routes/entities/__tests__/executed-transaction.builder';
-import { deletedMultisigTransactionEventBuilder } from '@/modules/hooks/routes/entities/__tests__/deleted-multisig-transaction.builder';
-import { moduleTransactionEventBuilder } from '@/modules/hooks/routes/entities/__tests__/module-transaction.builder';
-import { chainUpdateEventBuilder } from '@/modules/hooks/routes/entities/__tests__/chain-update.builder';
-import { pushNotificationDeliveryJobDataBuilder } from '@/modules/notifications/domain/push/entities/__tests__/push-notification-delivery-job-data.builder';
-import { faker } from '@faker-js/faker';
-import { type Address, type Hash } from 'viem';
-import type { Job } from 'bullmq';
-import type { UUID } from 'crypto';
-import type { Transfer } from '@/modules/safe/domain/entities/transfer.entity';
-import type { Delegate } from '@/modules/delegate/domain/entities/delegate.entity';
-import type { Safe } from '@/modules/safe/domain/entities/safe.entity';
+import type { IMessagesRepository } from '@/modules/messages/domain/messages.repository.interface';
 import {
   addr,
   createSubscriber,
 } from '@/modules/notifications/domain/push/__tests__/helpers';
+import { pushNotificationDeliveryJobDataBuilder } from '@/modules/notifications/domain/push/entities/__tests__/push-notification-delivery-job-data.builder';
+import { PushNotificationService } from '@/modules/notifications/domain/push/push-notification.service';
+import { NotificationType } from '@/modules/notifications/domain/v2/entities/notification.entity';
+import type { INotificationsRepositoryV2 } from '@/modules/notifications/domain/v2/notifications.repository.interface';
+import { multisigTransactionBuilder } from '@/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
+import { confirmationBuilder } from '@/modules/safe/domain/entities/__tests__/multisig-transaction-confirmation.builder';
+import { nativeTokenTransferBuilder } from '@/modules/safe/domain/entities/__tests__/native-token-transfer.builder';
+import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
+import type { Safe } from '@/modules/safe/domain/entities/safe.entity';
+import type { Transfer } from '@/modules/safe/domain/entities/transfer.entity';
+import type { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
 
 const mockJobQueueService = jest.mocked({
   addJob: jest.fn(),
@@ -146,23 +147,22 @@ describe('PushNotificationService (Unit)', () => {
       { name: 'MODULE_TRANSACTION', builder: moduleTransactionEventBuilder },
     ];
 
-    it.each(notifiableBuilders)(
-      'should process $name events (notifiable)',
-      async ({ builder }) => {
-        const event = builder().build();
-        mockNotificationsRepository.getSubscribersBySafe.mockResolvedValue([]);
-        // For owner-only events, provide a Safe
-        mockSafeRepository.getSafe.mockResolvedValue(createSafe());
+    it.each(
+      notifiableBuilders,
+    )('should process $name events (notifiable)', async ({ builder }) => {
+      const event = builder().build();
+      mockNotificationsRepository.getSubscribersBySafe.mockResolvedValue([]);
+      // For owner-only events, provide a Safe
+      mockSafeRepository.getSafe.mockResolvedValue(createSafe());
 
-        const result = await service.processEvent(event);
+      const result = await service.processEvent(event);
 
-        // With 0 subscribers, should return 0 delivery jobs
-        expect(result).toBe(0);
-        expect(
-          mockNotificationsRepository.getSubscribersBySafe,
-        ).toHaveBeenCalled();
-      },
-    );
+      // With 0 subscribers, should return 0 delivery jobs
+      expect(result).toBe(0);
+      expect(
+        mockNotificationsRepository.getSubscribersBySafe,
+      ).toHaveBeenCalled();
+    });
 
     it('should skip non-notifiable events (CHAIN_UPDATE)', async () => {
       const event = chainUpdateEventBuilder().build();
@@ -256,32 +256,27 @@ describe('PushNotificationService (Unit)', () => {
     it.each([
       ['INCOMING_TOKEN', incomingTokenEventBuilder],
       ['INCOMING_ETHER', incomingEtherEventBuilder],
-    ])(
-      'should suppress %s self-send (from === address)',
-      async (_type, builderFn) => {
-        const event = builderFn().build();
-        const sub = createSubscriber();
+    ])('should suppress %s self-send (from === address)', async (_type, builderFn) => {
+      const event = builderFn().build();
+      const sub = createSubscriber();
 
-        mockNotificationsRepository.getSubscribersBySafe.mockResolvedValue([
-          sub,
-        ]);
-        mockSafeRepository.getIncomingTransfers.mockResolvedValue(
-          pageBuilder<Transfer>()
-            .with('results', [
-              nativeTokenTransferBuilder()
-                .with('transactionHash', event.txHash as Hash)
-                .with('from', event.address)
-                .build(),
-            ])
-            .build(),
-        );
+      mockNotificationsRepository.getSubscribersBySafe.mockResolvedValue([sub]);
+      mockSafeRepository.getIncomingTransfers.mockResolvedValue(
+        pageBuilder<Transfer>()
+          .with('results', [
+            nativeTokenTransferBuilder()
+              .with('transactionHash', event.txHash as Hash)
+              .with('from', event.address)
+              .build(),
+          ])
+          .build(),
+      );
 
-        const result = await service.processEvent(event);
+      const result = await service.processEvent(event);
 
-        expect(result).toBe(0);
-        expect(mockJobQueueService.addJob).not.toHaveBeenCalled();
-      },
-    );
+      expect(result).toBe(0);
+      expect(mockJobQueueService.addJob).not.toHaveBeenCalled();
+    });
 
     it('should create ConfirmationRequest for pending TX with threshold > 1 and unsigned subscriber', async () => {
       const ownerAddress = addr();
@@ -903,7 +898,7 @@ describe('PushNotificationService (Unit)', () => {
 
       const message = messageBuilder().build();
       // @ts-expect-error - testing runtime guard when confirmations is absent
-      delete message['confirmations'];
+      message.confirmations = undefined;
       mockMessagesRepository.getMessageByHash.mockResolvedValue(message);
 
       const result = await service.processEvent(event);

@@ -1,19 +1,20 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import {
-  RecipientStatus,
-  RecipientStatusSchema,
-} from '../recipient-status.entity';
+
+import { CommonStatus } from '@/modules/safe-shield/entities/analysis-result.entity';
 import { BridgeStatus, BridgeStatusSchema } from '../bridge-status.entity';
 import {
   ContractStatus,
   ContractStatusSchema,
 } from '../contract-status.entity';
-import { ThreatStatus, ThreatStatusSchema } from '../threat-status.entity';
 import {
   DeadlockStatus,
   DeadlockStatusSchema,
 } from '../deadlock-status.entity';
-import { CommonStatus } from '@/modules/safe-shield/entities/analysis-result.entity';
+import {
+  RecipientStatus,
+  RecipientStatusSchema,
+} from '../recipient-status.entity';
+import { ThreatStatus, ThreatStatusSchema } from '../threat-status.entity';
 
 describe('Status Entities', () => {
   const recipientStatus = Object.values(RecipientStatus);
@@ -34,12 +35,15 @@ describe('Status Entities', () => {
       expect(() => RecipientStatusSchema.parse(value)).not.toThrow();
     });
 
-    it.each(['INVALID', '', null, undefined, 123] as const)(
-      'should reject invalid value = %s',
-      (invalidValue) => {
-        expect(() => RecipientStatusSchema.parse(invalidValue)).toThrow();
-      },
-    );
+    it.each([
+      'INVALID',
+      '',
+      null,
+      undefined,
+      123,
+    ] as const)('should reject invalid value = %s', (invalidValue) => {
+      expect(() => RecipientStatusSchema.parse(invalidValue)).toThrow();
+    });
   });
 
   describe('BridgeStatus', () => {
@@ -55,12 +59,15 @@ describe('Status Entities', () => {
       expect(() => BridgeStatusSchema.parse(value)).not.toThrow();
     });
 
-    it.each(['INVALID', '', null, undefined, 123] as const)(
-      'should reject invalid value = %s',
-      (invalidValue) => {
-        expect(() => BridgeStatusSchema.parse(invalidValue)).toThrow();
-      },
-    );
+    it.each([
+      'INVALID',
+      '',
+      null,
+      undefined,
+      123,
+    ] as const)('should reject invalid value = %s', (invalidValue) => {
+      expect(() => BridgeStatusSchema.parse(invalidValue)).toThrow();
+    });
   });
 
   describe('ContractStatus', () => {
@@ -80,12 +87,15 @@ describe('Status Entities', () => {
       expect(() => ContractStatusSchema.parse(value)).not.toThrow();
     });
 
-    it.each(['INVALID', '', null, undefined, 123] as const)(
-      'should reject invalid value = %s',
-      (invalidValue) => {
-        expect(() => ContractStatusSchema.parse(invalidValue)).toThrow();
-      },
-    );
+    it.each([
+      'INVALID',
+      '',
+      null,
+      undefined,
+      123,
+    ] as const)('should reject invalid value = %s', (invalidValue) => {
+      expect(() => ContractStatusSchema.parse(invalidValue)).toThrow();
+    });
   });
 
   describe('ThreatStatus', () => {
@@ -103,12 +113,15 @@ describe('Status Entities', () => {
       expect(() => ThreatStatusSchema.parse(value)).not.toThrow();
     });
 
-    it.each(['INVALID', '', null, undefined, 123] as const)(
-      'should reject invalid value = %s',
-      (invalidValue) => {
-        expect(() => ThreatStatusSchema.parse(invalidValue)).toThrow();
-      },
-    );
+    it.each([
+      'INVALID',
+      '',
+      null,
+      undefined,
+      123,
+    ] as const)('should reject invalid value = %s', (invalidValue) => {
+      expect(() => ThreatStatusSchema.parse(invalidValue)).toThrow();
+    });
   });
 
   describe('DeadlockStatus', () => {
@@ -122,12 +135,15 @@ describe('Status Entities', () => {
       expect(() => DeadlockStatusSchema.parse(value)).not.toThrow();
     });
 
-    it.each(['INVALID', '', null, undefined, 123] as const)(
-      'should reject invalid value = %s',
-      (invalidValue) => {
-        expect(() => DeadlockStatusSchema.parse(invalidValue)).toThrow();
-      },
-    );
+    it.each([
+      'INVALID',
+      '',
+      null,
+      undefined,
+      123,
+    ] as const)('should reject invalid value = %s', (invalidValue) => {
+      expect(() => DeadlockStatusSchema.parse(invalidValue)).toThrow();
+    });
   });
 
   describe('cross-entity consistency', () => {
@@ -141,14 +157,14 @@ describe('Status Entities', () => {
         CommonStatus,
       ];
 
-      allStatusEnums.forEach((statusEnum) => {
-        Object.values(statusEnum).forEach((value) => {
+      for (const statusEnum of allStatusEnums) {
+        for (const value of Object.values(statusEnum)) {
           // All status values should be uppercase with underscores
           expect(value).toMatch(/^[A-Z_]+$/);
           // Should not start or end with underscore
           expect(value).not.toMatch(/^_|_$/);
-        });
-      });
+        }
+      }
     });
 
     it('should have unique values across different status types', () => {

@@ -1,8 +1,9 @@
-import { OwnersService } from '@/modules/owners/routes/owners.service';
-import type { SafeRepository } from '@/modules/safe/domain/safe.repository';
-import type { ILoggingService } from '@/logging/logging.interface';
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import type { Address } from 'viem';
+import type { ILoggingService } from '@/logging/logging.interface';
+import { OwnersService } from '@/modules/owners/routes/owners.service';
+import type { SafeRepository } from '@/modules/safe/domain/safe.repository';
 
 const safeRepositoryMock: jest.MockedObjectDeep<SafeRepository> = {
   getSafesByOwner: jest.fn(),

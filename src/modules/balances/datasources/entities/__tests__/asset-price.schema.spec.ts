@@ -1,5 +1,6 @@
-import { getAssetPriceSchema } from '@/modules/balances/datasources/entities/asset-price.entity';
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
+import { getAssetPriceSchema } from '@/modules/balances/datasources/entities/asset-price.entity';
 
 describe('getAssetPriceSchema', () => {
   it('should allow an object with string keys and a mixture of number and null values', () => {

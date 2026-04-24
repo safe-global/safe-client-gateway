@@ -1,8 +1,9 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import type { Job } from 'bullmq';
 import type {
   JobData,
   JobTypeName,
 } from '@/datasources/job-queue/types/job-types';
-import type { Job } from 'bullmq';
 
 export const IJobQueueService = Symbol('IJobQueueService');
 

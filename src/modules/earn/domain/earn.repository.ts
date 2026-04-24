@@ -1,43 +1,44 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { Inject, Injectable } from '@nestjs/common';
+import type { Address, Hash } from 'viem';
 import { EarnApiManager } from '@/modules/earn/datasources/earn-api.manager';
 import {
-  NetworkStats,
-  NetworkStatsSchema,
-} from '@/modules/staking/datasources/entities/network-stats.entity';
-import {
-  PooledStakingStats,
-  PooledStakingStatsSchema,
-} from '@/modules/staking/datasources/entities/pooled-staking-stats.entity';
-import { IStakingRepository } from '@/modules/staking/domain/staking.repository.interface';
-import { Inject, Injectable } from '@nestjs/common';
-import {
-  DedicatedStakingStats,
+  type DedicatedStakingStats,
   DedicatedStakingStatsSchema,
 } from '@/modules/staking/datasources/entities/dedicated-staking-stats.entity';
 import {
-  Deployment,
-  DeploymentsSchema,
-} from '@/modules/staking/datasources/entities/deployment.entity';
+  type DefiMorphoExtraReward,
+  DefiMorphoExtraRewardsSchema,
+} from '@/modules/staking/datasources/entities/defi-morpho-extra-reward.entity';
 import {
-  DefiVaultsStateSchema,
-  DefiVaultStats,
-} from '@/modules/staking/datasources/entities/defi-vault-stats.entity';
-import {
-  Stake,
-  StakesSchema,
-} from '@/modules/staking/datasources/entities/stake.entity';
-import {
-  TransactionStatus,
-  TransactionStatusSchema,
-} from '@/modules/staking/datasources/entities/transaction-status.entity';
-import {
-  DefiVaultStake,
+  type DefiVaultStake,
   DefiVaultStakesSchema,
 } from '@/modules/staking/datasources/entities/defi-vault-stake.entity';
 import {
-  DefiMorphoExtraReward,
-  DefiMorphoExtraRewardsSchema,
-} from '@/modules/staking/datasources/entities/defi-morpho-extra-reward.entity';
-import type { Address, Hash } from 'viem';
+  type DefiVaultStats,
+  DefiVaultsStateSchema,
+} from '@/modules/staking/datasources/entities/defi-vault-stats.entity';
+import {
+  type Deployment,
+  DeploymentsSchema,
+} from '@/modules/staking/datasources/entities/deployment.entity';
+import {
+  type NetworkStats,
+  NetworkStatsSchema,
+} from '@/modules/staking/datasources/entities/network-stats.entity';
+import {
+  type PooledStakingStats,
+  PooledStakingStatsSchema,
+} from '@/modules/staking/datasources/entities/pooled-staking-stats.entity';
+import {
+  type Stake,
+  StakesSchema,
+} from '@/modules/staking/datasources/entities/stake.entity';
+import {
+  type TransactionStatus,
+  TransactionStatusSchema,
+} from '@/modules/staking/datasources/entities/transaction-status.entity';
+import type { IStakingRepository } from '@/modules/staking/domain/staking.repository.interface';
 
 // TODO: Deduplicate code with StakingRepository
 
@@ -60,7 +61,7 @@ export class EarnRepository implements IStakingRepository {
     const deployment = deployments.find((deployment) => {
       return (
         args.chainId === deployment.chain_id.toString() &&
-        args.address == deployment.address
+        args.address === deployment.address
       );
     });
     if (!deployment) {

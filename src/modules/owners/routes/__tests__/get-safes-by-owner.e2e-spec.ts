@@ -1,10 +1,11 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import type { Server } from 'node:net';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { redisClientFactory } from '@/__tests__/redis-client.factory';
-import type { Server } from 'net';
-import { TEST_SAFE } from '@/routes/common/__tests__/constants';
 import { createBaseTestModule } from '@/__tests__/testing-module';
 import type { RedisClientType } from '@/datasources/cache/cache.module';
+import { TEST_SAFE } from '@/routes/common/__tests__/constants';
 
 describe('Get safes by owner e2e test', () => {
   let app: INestApplication<Server>;

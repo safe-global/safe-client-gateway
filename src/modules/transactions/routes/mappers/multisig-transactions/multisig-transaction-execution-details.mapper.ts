@@ -1,18 +1,18 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
-import { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
-import { Safe } from '@/modules/safe/domain/entities/safe.entity';
-import { SafeRepository } from '@/modules/safe/domain/safe.repository';
+import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
+import type { Safe } from '@/modules/safe/domain/entities/safe.entity';
+import type { SafeRepository } from '@/modules/safe/domain/safe.repository';
 import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
-import { TokenRepository } from '@/modules/tokens/domain/token.repository';
+import type { TokenRepository } from '@/modules/tokens/domain/token.repository';
 import { ITokenRepository } from '@/modules/tokens/domain/token.repository.interface';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
-import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
-import { NULL_ADDRESS } from '@/routes/common/constants';
-import { AddressInfo } from '@/routes/common/entities/address-info.entity';
 import {
   MultisigConfirmationDetails,
   MultisigExecutionDetails,
 } from '@/modules/transactions/routes/entities/transaction-details/multisig-execution-details.entity';
+import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
+import { NULL_ADDRESS } from '@/routes/common/constants';
+import { AddressInfo } from '@/routes/common/entities/address-info.entity';
 
 @Injectable()
 export class MultisigTransactionExecutionDetailsMapper {
@@ -20,7 +20,6 @@ export class MultisigTransactionExecutionDetailsMapper {
     private readonly addressInfoHelper: AddressInfoHelper,
     @Inject(ITokenRepository) private readonly tokenRepository: TokenRepository,
     @Inject(ISafeRepository) private readonly safeRepository: SafeRepository,
-    @Inject(LoggingService) private readonly loggingService: ILoggingService,
   ) {}
 
   async mapMultisigExecutionDetails(
@@ -49,7 +48,7 @@ export class MultisigTransactionExecutionDetailsMapper {
 
     const [gasTokenInfo, executor, refundReceiver, rejectors] =
       await Promise.all([
-        gasToken != NULL_ADDRESS
+        gasToken !== NULL_ADDRESS
           ? this.tokenRepository.getToken({ chainId, address: gasToken })
           : Promise.resolve(null),
         transaction.executor
@@ -117,7 +116,7 @@ export class MultisigTransactionExecutionDetailsMapper {
     // would cover the vast majority of the cases. If needed, could be
     // extended by requesting and iterating over multiple pages.
     const rejectionTx = rejectionTxsPage.results.find(
-      (tx) => tx.safeTxHash != transaction.safeTxHash,
+      (tx) => tx.safeTxHash !== transaction.safeTxHash,
     );
 
     return (

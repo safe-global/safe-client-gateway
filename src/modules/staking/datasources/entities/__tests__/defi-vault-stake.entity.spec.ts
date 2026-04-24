@@ -13,21 +13,21 @@ describe('DefiVaultStakeSchema', () => {
     expect(result.success).toBe(true);
   });
 
-  it.each(['owner' as const, 'vault' as const])(
-    'should checksum the %s address',
-    (field) => {
-      const lowerCaseAddress = faker.finance.ethereumAddress().toLowerCase();
-      const defiVaultStake = defiVaultStakeBuilder()
-        .with(field, lowerCaseAddress as Address)
-        .build();
+  it.each([
+    'owner' as const,
+    'vault' as const,
+  ])('should checksum the %s address', (field) => {
+    const lowerCaseAddress = faker.finance.ethereumAddress().toLowerCase();
+    const defiVaultStake = defiVaultStakeBuilder()
+      .with(field, lowerCaseAddress as Address)
+      .build();
 
-      const result = DefiVaultStakeSchema.safeParse(defiVaultStake);
+    const result = DefiVaultStakeSchema.safeParse(defiVaultStake);
 
-      expect(result.success && result.data[field]).toBe(
-        getAddress(lowerCaseAddress),
-      );
-    },
-  );
+    expect(result.success && result.data[field]).toBe(
+      getAddress(lowerCaseAddress),
+    );
+  });
 
   it.each([
     'current_balance' as const,

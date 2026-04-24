@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { faker } from '@faker-js/faker';
+import type { Address } from 'viem';
+import { getAddress } from 'viem';
 import {
   defiVaultAdditionalRewardBuilder,
   defiVaultStatsBuilder,
@@ -6,9 +10,6 @@ import {
   DefiVaultStatsAdditionalRewardSchema,
   DefiVaultStatsSchema,
 } from '@/modules/staking/datasources/entities/defi-vault-stats.entity';
-import { faker } from '@faker-js/faker';
-import type { Address } from 'viem';
-import { getAddress } from 'viem';
 
 describe('DefiVaultStatsSchema', () => {
   it('should validate a valid DefiVaultStats object', () => {
@@ -19,42 +20,40 @@ describe('DefiVaultStatsSchema', () => {
     expect(result.success).toBe(true);
   });
 
-  it.each(['asset' as const, 'vault' as const])(
-    'should checksum an %s address',
-    (key) => {
-      const nonChecksummedAddress = faker.finance
-        .ethereumAddress()
-        .toLowerCase();
-      const defiVaultStats = defiVaultStatsBuilder()
-        .with(key, nonChecksummedAddress as Address)
-        .build();
+  it.each([
+    'asset' as const,
+    'vault' as const,
+  ])('should checksum an %s address', (key) => {
+    const nonChecksummedAddress = faker.finance.ethereumAddress().toLowerCase();
+    const defiVaultStats = defiVaultStatsBuilder()
+      .with(key, nonChecksummedAddress as Address)
+      .build();
 
-      const result = DefiVaultStatsSchema.safeParse(defiVaultStats);
+    const result = DefiVaultStatsSchema.safeParse(defiVaultStats);
 
-      expect(result.success && result.data[key]).toBe(
-        getAddress(nonChecksummedAddress),
-      );
-    },
-  );
+    expect(result.success && result.data[key]).toBe(
+      getAddress(nonChecksummedAddress),
+    );
+  });
 
-  it.each(['asset_icon' as const, 'protocol_icon' as const])(
-    'should not allow a non-URL %s',
-    (key) => {
-      const defiVaultStats = defiVaultStatsBuilder()
-        .with(key, faker.string.numeric())
-        .build();
+  it.each([
+    'asset_icon' as const,
+    'protocol_icon' as const,
+  ])('should not allow a non-URL %s', (key) => {
+    const defiVaultStats = defiVaultStatsBuilder()
+      .with(key, faker.string.numeric())
+      .build();
 
-      const result = DefiVaultStatsSchema.safeParse(defiVaultStats);
+    const result = DefiVaultStatsSchema.safeParse(defiVaultStats);
 
-      expect(!result.success && result.error.issues.length).toBe(1);
-      expect(!result.success && result.error.issues[0]).toStrictEqual({
-        code: 'invalid_format',
-        message: 'Invalid URL',
-        path: [key],
-        format: 'url',
-      });
-    },
-  );
+    expect(!result.success && result.error.issues.length).toBe(1);
+    expect(!result.success && result.error.issues[0]).toStrictEqual({
+      code: 'invalid_format',
+      message: 'Invalid URL',
+      path: [key],
+      format: 'url',
+    });
+  });
 
   it.each([
     'tvl' as const,
@@ -76,18 +75,18 @@ describe('DefiVaultStatsSchema', () => {
     });
   });
 
-  it.each(['protocol' as const, 'chain' as const])(
-    'should default to unknown for unknown %s values',
-    (key) => {
-      const defiVaultStats = defiVaultStatsBuilder()
-        .with(key, faker.string.alpha() as 'unknown')
-        .build();
+  it.each([
+    'protocol' as const,
+    'chain' as const,
+  ])('should default to unknown for unknown %s values', (key) => {
+    const defiVaultStats = defiVaultStatsBuilder()
+      .with(key, faker.string.alpha() as 'unknown')
+      .build();
 
-      const result = DefiVaultStatsSchema.safeParse(defiVaultStats);
+    const result = DefiVaultStatsSchema.safeParse(defiVaultStats);
 
-      expect(result.success && result.data[key]).toBe('unknown');
-    },
-  );
+    expect(result.success && result.data[key]).toBe('unknown');
+  });
 
   it.each([
     'asset' as const,
@@ -246,21 +245,21 @@ describe('DefiVaultStatsSchema', () => {
     ]);
   });
 
-  it.each(['asset' as const, 'nrr' as const])(
-    'should not allow missing %s values',
-    (key) => {
-      const defiVaultStatsAdditionalReward =
-        defiVaultAdditionalRewardBuilder().build();
-      delete defiVaultStatsAdditionalReward[key];
+  it.each([
+    'asset' as const,
+    'nrr' as const,
+  ])('should not allow missing %s values', (key) => {
+    const defiVaultStatsAdditionalReward =
+      defiVaultAdditionalRewardBuilder().build();
+    delete defiVaultStatsAdditionalReward[key];
 
-      const result = DefiVaultStatsAdditionalRewardSchema.safeParse(
-        defiVaultStatsAdditionalReward,
-      );
+    const result = DefiVaultStatsAdditionalRewardSchema.safeParse(
+      defiVaultStatsAdditionalReward,
+    );
 
-      expect(!result.success && result.error.issues.length).toBe(1);
-      expect(!result.success && result.error.issues[0].path[0]).toBe(key);
-    },
-  );
+    expect(!result.success && result.error.issues.length).toBe(1);
+    expect(!result.success && result.error.issues[0].path[0]).toBe(key);
+  });
 
   it('should checksum an asset address', () => {
     const nonChecksummedAddress = faker.finance.ethereumAddress().toLowerCase();
@@ -272,7 +271,7 @@ describe('DefiVaultStatsSchema', () => {
       defiVaultStatsAdditionalReward,
     );
 
-    expect(result.success && result.data['asset']).toBe(
+    expect(result.success && result.data.asset).toBe(
       getAddress(nonChecksummedAddress),
     );
   });

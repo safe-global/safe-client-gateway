@@ -1,15 +1,28 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import type { Server } from 'node:net';
 import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
+import { type Address, getAddress, parseUnits, zeroAddress } from 'viem';
+import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
+import { createTestModule } from '@/__tests__/testing-module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import configuration from '@/config/entities/__tests__/configuration';
+import type { INetworkService } from '@/datasources/network/network.service.interface';
+import { NetworkService } from '@/datasources/network/network.service.interface';
+import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
 import {
   dataDecodedBuilder,
   dataDecodedParameterBuilder,
 } from '@/modules/data-decoder/domain/v2/entities/__tests__/data-decoded.builder';
-import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
+import type { DataDecoded } from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';
+import { erc20TransferEncoder } from '@/modules/relay/domain/contracts/__tests__/encoders/erc20-encoder.builder';
+import {
+  erc20TransferBuilder,
+  toJson as erc20TransferToJson,
+} from '@/modules/safe/domain/entities/__tests__/erc20-transfer.builder';
 import {
   ethereumTransactionBuilder,
   toJson as ethereumTransactionToJson,
@@ -19,27 +32,15 @@ import {
   toJson as multisigTransactionToJson,
 } from '@/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
 import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
-import { erc20TokenBuilder } from '@/modules/tokens/domain/__tests__/token.builder';
-import { type Token } from '@/modules/tokens/domain/entities/token.entity';
+import type { EthereumTransaction } from '@/modules/safe/domain/entities/ethereum-transaction.entity';
+import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
 import type {
   ERC20Transfer,
   Transfer,
 } from '@/modules/safe/domain/entities/transfer.entity';
-import type { INetworkService } from '@/datasources/network/network.service.interface';
-import { NetworkService } from '@/datasources/network/network.service.interface';
-import {
-  erc20TransferBuilder,
-  toJson as erc20TransferToJson,
-} from '@/modules/safe/domain/entities/__tests__/erc20-transfer.builder';
-import { type Address, getAddress, parseUnits, zeroAddress } from 'viem';
-import { erc20TransferEncoder } from '@/modules/relay/domain/contracts/__tests__/encoders/erc20-encoder.builder';
-import type { EthereumTransaction } from '@/modules/safe/domain/entities/ethereum-transaction.entity';
-import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
-import type { Server } from 'net';
+import { erc20TokenBuilder } from '@/modules/tokens/domain/__tests__/token.builder';
+import type { Token } from '@/modules/tokens/domain/entities/token.entity';
 import { rawify } from '@/validation/entities/raw.entity';
-import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
-import type { DataDecoded } from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';
-import { createTestModule } from '@/__tests__/testing-module';
 
 describe('Transactions History Controller - Imitation Transactions', () => {
   faker.seed(123);
@@ -428,7 +429,7 @@ describe('Transactions History Controller - Imitation Transactions', () => {
                   },
                   txStatus: 'SUCCESS',
                   txHash:
-                    imitationIncomingTransaction.transfers![0].transactionHash,
+                    imitationIncomingTransaction.transfers?.[0].transactionHash,
                 },
                 type: 'TRANSACTION',
               },
@@ -514,7 +515,7 @@ describe('Transactions History Controller - Imitation Transactions', () => {
                   },
                   txStatus: 'SUCCESS',
                   txHash:
-                    imitationOutgoingTransaction.transfers![0].transactionHash,
+                    imitationOutgoingTransaction.transfers?.[0].transactionHash,
                 },
                 type: 'TRANSACTION',
               },
@@ -725,7 +726,7 @@ describe('Transactions History Controller - Imitation Transactions', () => {
                   },
                   txStatus: 'SUCCESS',
                   txHash:
-                    imitationIncomingTransaction.transfers![0].transactionHash,
+                    imitationIncomingTransaction.transfers?.[0].transactionHash,
                 },
                 type: 'TRANSACTION',
               },
@@ -766,7 +767,7 @@ describe('Transactions History Controller - Imitation Transactions', () => {
                   },
                   txStatus: 'SUCCESS',
                   txHash:
-                    imitationOutgoingTransaction.transfers![0].transactionHash,
+                    imitationOutgoingTransaction.transfers?.[0].transactionHash,
                 },
                 type: 'TRANSACTION',
               },
@@ -1238,7 +1239,7 @@ describe('Transactions History Controller - Imitation Transactions', () => {
                   },
                   txStatus: 'SUCCESS',
                   txHash:
-                    imitationIncomingTransaction.transfers![0].transactionHash,
+                    imitationIncomingTransaction.transfers?.[0].transactionHash,
                 },
                 type: 'TRANSACTION',
               },
@@ -1279,7 +1280,7 @@ describe('Transactions History Controller - Imitation Transactions', () => {
                   },
                   txStatus: 'SUCCESS',
                   txHash:
-                    imitationOutgoingTransaction.transfers![0].transactionHash,
+                    imitationOutgoingTransaction.transfers?.[0].transactionHash,
                 },
                 type: 'TRANSACTION',
               },
@@ -1436,7 +1437,7 @@ describe('Transactions History Controller - Imitation Transactions', () => {
         );
         valueIntolerantIncomingTransaction = ((): EthereumTransaction => {
           const transaction = structuredClone(imitationIncomingTransaction);
-          (transaction.transfers![0] as ERC20Transfer).value = faker.helpers
+          (transaction.transfers?.[0] as ERC20Transfer).value = faker.helpers
             .arrayElement([
               multisigTransferValue + intolerantDiff,
               multisigTransferValue - intolerantDiff,
@@ -1446,7 +1447,7 @@ describe('Transactions History Controller - Imitation Transactions', () => {
         })();
         valueIntolerantOutgoingTransaction = ((): EthereumTransaction => {
           const transaction = structuredClone(imitationOutgoingTransaction);
-          (transaction.transfers![0] as ERC20Transfer).value = faker.helpers
+          (transaction.transfers?.[0] as ERC20Transfer).value = faker.helpers
             .arrayElement([
               multisigTransferValue + intolerantDiff,
               multisigTransferValue - intolerantDiff,
@@ -1563,14 +1564,14 @@ describe('Transactions History Controller - Imitation Transactions', () => {
                       type: 'ERC20',
                       value: (
                         valueIntolerantIncomingTransaction
-                          .transfers![0] as ERC20Transfer
+                          .transfers?.[0] as ERC20Transfer
                       ).value,
                     },
                     type: 'Transfer',
                   },
                   txStatus: 'SUCCESS',
                   txHash:
-                    valueIntolerantIncomingTransaction.transfers![0]
+                    valueIntolerantIncomingTransaction.transfers?.[0]
                       .transactionHash,
                 },
                 type: 'TRANSACTION',
@@ -1655,14 +1656,14 @@ describe('Transactions History Controller - Imitation Transactions', () => {
                       type: 'ERC20',
                       value: (
                         valueIntolerantOutgoingTransaction
-                          .transfers![0] as ERC20Transfer
+                          .transfers?.[0] as ERC20Transfer
                       ).value,
                     },
                     type: 'Transfer',
                   },
                   txStatus: 'SUCCESS',
                   txHash:
-                    valueIntolerantOutgoingTransaction.transfers![0]
+                    valueIntolerantOutgoingTransaction.transfers?.[0]
                       .transactionHash,
                 },
                 type: 'TRANSACTION',
@@ -1869,14 +1870,14 @@ describe('Transactions History Controller - Imitation Transactions', () => {
                       type: 'ERC20',
                       value: (
                         valueIntolerantIncomingTransaction
-                          .transfers![0] as ERC20Transfer
+                          .transfers?.[0] as ERC20Transfer
                       ).value,
                     },
                     type: 'Transfer',
                   },
                   txStatus: 'SUCCESS',
                   txHash:
-                    valueIntolerantIncomingTransaction.transfers![0]
+                    valueIntolerantIncomingTransaction.transfers?.[0]
                       .transactionHash,
                 },
                 type: 'TRANSACTION',
@@ -1916,14 +1917,14 @@ describe('Transactions History Controller - Imitation Transactions', () => {
                       type: 'ERC20',
                       value: (
                         valueIntolerantOutgoingTransaction
-                          .transfers![0] as ERC20Transfer
+                          .transfers?.[0] as ERC20Transfer
                       ).value,
                     },
                     type: 'Transfer',
                   },
                   txStatus: 'SUCCESS',
                   txHash:
-                    valueIntolerantOutgoingTransaction.transfers![0]
+                    valueIntolerantOutgoingTransaction.transfers?.[0]
                       .transactionHash,
                 },
                 type: 'TRANSACTION',
@@ -2176,14 +2177,14 @@ describe('Transactions History Controller - Imitation Transactions', () => {
                       type: 'ERC20',
                       value: (
                         valueIntolerantIncomingTransaction
-                          .transfers![0] as ERC20Transfer
+                          .transfers?.[0] as ERC20Transfer
                       ).value,
                     },
                     type: 'Transfer',
                   },
                   txStatus: 'SUCCESS',
                   txHash:
-                    valueIntolerantIncomingTransaction.transfers![0]
+                    valueIntolerantIncomingTransaction.transfers?.[0]
                       .transactionHash,
                 },
                 type: 'TRANSACTION',
@@ -2268,14 +2269,14 @@ describe('Transactions History Controller - Imitation Transactions', () => {
                       type: 'ERC20',
                       value: (
                         valueIntolerantOutgoingTransaction
-                          .transfers![0] as ERC20Transfer
+                          .transfers?.[0] as ERC20Transfer
                       ).value,
                     },
                     type: 'Transfer',
                   },
                   txStatus: 'SUCCESS',
                   txHash:
-                    valueIntolerantOutgoingTransaction.transfers![0]
+                    valueIntolerantOutgoingTransaction.transfers?.[0]
                       .transactionHash,
                 },
                 type: 'TRANSACTION',
@@ -2482,14 +2483,14 @@ describe('Transactions History Controller - Imitation Transactions', () => {
                       type: 'ERC20',
                       value: (
                         valueIntolerantIncomingTransaction
-                          .transfers![0] as ERC20Transfer
+                          .transfers?.[0] as ERC20Transfer
                       ).value,
                     },
                     type: 'Transfer',
                   },
                   txStatus: 'SUCCESS',
                   txHash:
-                    valueIntolerantIncomingTransaction.transfers![0]
+                    valueIntolerantIncomingTransaction.transfers?.[0]
                       .transactionHash,
                 },
                 type: 'TRANSACTION',
@@ -2529,14 +2530,14 @@ describe('Transactions History Controller - Imitation Transactions', () => {
                       type: 'ERC20',
                       value: (
                         valueIntolerantOutgoingTransaction
-                          .transfers![0] as ERC20Transfer
+                          .transfers?.[0] as ERC20Transfer
                       ).value,
                     },
                     type: 'Transfer',
                   },
                   txStatus: 'SUCCESS',
                   txHash:
-                    valueIntolerantOutgoingTransaction.transfers![0]
+                    valueIntolerantOutgoingTransaction.transfers?.[0]
                       .transactionHash,
                 },
                 type: 'TRANSACTION',
@@ -2685,7 +2686,7 @@ describe('Transactions History Controller - Imitation Transactions', () => {
 
     it('should detect imitation tokens using differing decimals', async () => {
       const differentDecimals = multisigToken.decimals + 1;
-      const differentValue = multisigTransfer.value + '0';
+      const differentValue = `${multisigTransfer.value}0`;
       const imitationWithDifferentDecimalsAddress = getImitationAddress(
         multisigTransfer.to,
       );
@@ -2835,7 +2836,7 @@ describe('Transactions History Controller - Imitation Transactions', () => {
                 txStatus: 'SUCCESS',
                 txHash:
                   imitationWithDifferentDecimalsIncomingTransaction
-                    .transfers![0].transactionHash,
+                    .transfers?.[0].transactionHash,
               },
               type: 'TRANSACTION',
             },
@@ -3149,7 +3150,7 @@ describe('Transactions History Controller - Imitation Transactions', () => {
                     sender: {
                       logoUri: null,
                       name: null,
-                      value: imitationIncomingTransaction.transfers![0].from,
+                      value: imitationIncomingTransaction.transfers?.[0].from,
                     },
                     transferInfo: {
                       decimals: multisigToken.decimals,
@@ -3166,7 +3167,7 @@ describe('Transactions History Controller - Imitation Transactions', () => {
                   },
                   txStatus: 'SUCCESS',
                   txHash:
-                    imitationIncomingTransaction.transfers![0].transactionHash,
+                    imitationIncomingTransaction.transfers?.[0].transactionHash,
                 },
                 type: 'TRANSACTION',
               },
@@ -3308,7 +3309,7 @@ describe('Transactions History Controller - Imitation Transactions', () => {
                     sender: {
                       logoUri: null,
                       name: null,
-                      value: imitationIncomingTransaction.transfers![0].from,
+                      value: imitationIncomingTransaction.transfers?.[0].from,
                     },
                     transferInfo: {
                       decimals: multisigToken.decimals,
@@ -3325,7 +3326,7 @@ describe('Transactions History Controller - Imitation Transactions', () => {
                   },
                   txStatus: 'SUCCESS',
                   txHash:
-                    imitationIncomingTransaction.transfers![0].transactionHash,
+                    imitationIncomingTransaction.transfers?.[0].transactionHash,
                 },
                 type: 'TRANSACTION',
               },
@@ -3710,7 +3711,7 @@ describe('Transactions History Controller - Imitation Transactions', () => {
                     sender: {
                       logoUri: null,
                       name: null,
-                      value: imitationIncomingTransaction.transfers![0].from,
+                      value: imitationIncomingTransaction.transfers?.[0].from,
                     },
                     transferInfo: {
                       decimals: multisigToken.decimals,
@@ -3727,7 +3728,7 @@ describe('Transactions History Controller - Imitation Transactions', () => {
                   },
                   txStatus: 'SUCCESS',
                   txHash:
-                    imitationIncomingTransaction.transfers![0].transactionHash,
+                    imitationIncomingTransaction.transfers?.[0].transactionHash,
                 },
                 type: 'TRANSACTION',
               },
@@ -4041,7 +4042,7 @@ describe('Transactions History Controller - Imitation Transactions', () => {
                     sender: {
                       logoUri: null,
                       name: null,
-                      value: aboveLimitIncomingTransaction.transfers![0].from,
+                      value: aboveLimitIncomingTransaction.transfers?.[0].from,
                     },
                     transferInfo: {
                       decimals: multisigToken.decimals,
@@ -4058,7 +4059,8 @@ describe('Transactions History Controller - Imitation Transactions', () => {
                   },
                   txStatus: 'SUCCESS',
                   txHash:
-                    aboveLimitIncomingTransaction.transfers![0].transactionHash,
+                    aboveLimitIncomingTransaction.transfers?.[0]
+                      .transactionHash,
                 },
                 type: 'TRANSACTION',
               },
@@ -4208,7 +4210,7 @@ describe('Transactions History Controller - Imitation Transactions', () => {
                     sender: {
                       logoUri: null,
                       name: null,
-                      value: aboveLimitIncomingTransaction.transfers![0].from,
+                      value: aboveLimitIncomingTransaction.transfers?.[0].from,
                     },
                     transferInfo: {
                       decimals: multisigToken.decimals,
@@ -4225,7 +4227,8 @@ describe('Transactions History Controller - Imitation Transactions', () => {
                   },
                   txStatus: 'SUCCESS',
                   txHash:
-                    aboveLimitIncomingTransaction.transfers![0].transactionHash,
+                    aboveLimitIncomingTransaction.transfers?.[0]
+                      .transactionHash,
                 },
                 type: 'TRANSACTION',
               },

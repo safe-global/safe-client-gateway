@@ -1,10 +1,10 @@
-import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { makeNameSchema } from '@/domain/common/schemas/name.schema';
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
+import { makeNameSchema } from '@/domain/common/schemas/name.schema';
+import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 
 export const ADDRESS_BOOK_NAME_MAX_LENGTH = 50;
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const AddressBookItemSchema = z.object({
   chainIds: z.array(z.string()),
   address: AddressSchema,

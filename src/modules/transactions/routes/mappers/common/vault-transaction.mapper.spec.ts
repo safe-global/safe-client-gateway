@@ -1,3 +1,9 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { faker } from '@faker-js/faker/.';
+import { NotFoundException } from '@nestjs/common';
+import { type Address, getAddress } from 'viem';
+import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
+import type { EarnRepository } from '@/modules/earn/domain/earn.repository';
 import { defiMorphoExtraRewardBuilder } from '@/modules/staking/datasources/entities/__tests__/defi-morpho-extra-reward.entity.builder';
 import { defiVaultStakeBuilder } from '@/modules/staking/datasources/entities/__tests__/defi-vault-state.entity.builder';
 import {
@@ -5,17 +11,12 @@ import {
   defiVaultStatsBuilder,
 } from '@/modules/staking/datasources/entities/__tests__/defi-vault-stats.entity.builder';
 import { deploymentBuilder } from '@/modules/staking/datasources/entities/__tests__/deployment.entity.builder';
-import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
-import type { EarnRepository } from '@/modules/earn/domain/earn.repository';
 import { tokenBuilder } from '@/modules/tokens/domain/__tests__/token.builder';
 import type { ITokenRepository } from '@/modules/tokens/domain/token.repository.interface';
 import { TokenInfo } from '@/modules/transactions/routes/entities/swaps/token-info.entity';
 import { TransactionInfoType } from '@/modules/transactions/routes/entities/transaction-info.entity';
 import { VaultInfo } from '@/modules/transactions/routes/entities/vaults/vault-info.entity';
 import { VaultTransactionMapper } from '@/modules/transactions/routes/mappers/common/vault-transaction.mapper';
-import { faker } from '@faker-js/faker/.';
-import { NotFoundException } from '@nestjs/common';
-import { type Address, getAddress } from 'viem';
 
 const mockEarnRepository = jest.mocked({
   getDeployment: jest.fn(),

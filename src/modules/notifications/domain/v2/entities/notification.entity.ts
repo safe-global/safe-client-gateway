@@ -1,4 +1,4 @@
-import { TransactionEventType } from '@/modules/hooks/routes/entities/event-type.entity';
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { DeletedMultisigTransactionEvent } from '@/modules/hooks/routes/entities/schemas/deleted-multisig-transaction.schema';
 import type { ExecutedTransactionEvent } from '@/modules/hooks/routes/entities/schemas/executed-transaction.schema';
 import type { IncomingEtherEvent } from '@/modules/hooks/routes/entities/schemas/incoming-ether.schema';
@@ -9,11 +9,11 @@ import type { PendingTransactionEvent } from '@/modules/hooks/routes/entities/sc
 
 export enum NotificationType {
   CONFIRMATION_REQUEST = 'CONFIRMATION_REQUEST', // TransactionEventType.PENDING_MULTISIG_TRANSACTION
-  DELETED_MULTISIG_TRANSACTION = TransactionEventType.DELETED_MULTISIG_TRANSACTION,
-  EXECUTED_MULTISIG_TRANSACTION = TransactionEventType.EXECUTED_MULTISIG_TRANSACTION,
-  INCOMING_ETHER = TransactionEventType.INCOMING_ETHER,
-  INCOMING_TOKEN = TransactionEventType.INCOMING_TOKEN,
-  MODULE_TRANSACTION = TransactionEventType.MODULE_TRANSACTION,
+  DELETED_MULTISIG_TRANSACTION = 'DELETED_MULTISIG_TRANSACTION',
+  EXECUTED_MULTISIG_TRANSACTION = 'EXECUTED_MULTISIG_TRANSACTION',
+  INCOMING_ETHER = 'INCOMING_ETHER',
+  INCOMING_TOKEN = 'INCOMING_TOKEN',
+  MODULE_TRANSACTION = 'MODULE_TRANSACTION',
   MESSAGE_CONFIRMATION_REQUEST = 'MESSAGE_CONFIRMATION_REQUEST', // TransactionEventType.MESSAGE_CREATED
 }
 

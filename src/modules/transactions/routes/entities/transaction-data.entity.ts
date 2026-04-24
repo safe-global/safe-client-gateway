@@ -1,18 +1,19 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import {
   ApiExtraModels,
   ApiProperty,
   ApiPropertyOptional,
   getSchemaPath,
 } from '@nestjs/swagger';
-import { Operation } from '@/modules/safe/domain/entities/operation.entity';
-import { AddressInfo } from '@/routes/common/entities/address-info.entity';
-import { DataDecoded } from '@/modules/data-decoder/routes/entities/data-decoded.entity';
+import type { Address } from 'viem';
 import {
   Erc20Token,
   Erc721Token,
   NativeToken,
 } from '@/modules/balances/routes/entities/token.entity';
-import type { Address } from 'viem';
+import { DataDecoded } from '@/modules/data-decoder/routes/entities/data-decoded.entity';
+import { Operation } from '@/modules/safe/domain/entities/operation.entity';
+import { AddressInfo } from '@/routes/common/entities/address-info.entity';
 
 @ApiExtraModels(AddressInfo, DataDecoded, Erc20Token, Erc721Token, NativeToken)
 export class TransactionData {

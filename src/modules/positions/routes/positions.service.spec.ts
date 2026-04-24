@@ -1,12 +1,16 @@
-import { PositionsService } from '@/modules/positions/routes/positions.service';
-import type { IPositionsRepository } from '@/modules/positions/domain/positions.repository.interface';
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { faker } from '@faker-js/faker';
+import type { Address } from 'viem';
 import type { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
+import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
 import { positionBuilder } from '@/modules/positions/domain/entities/__tests__/position.builder';
 import { PositionType } from '@/modules/positions/domain/entities/position-type.entity';
-import { faker } from '@faker-js/faker';
+import type { IPositionsRepository } from '@/modules/positions/domain/positions.repository.interface';
+import type { Position } from '@/modules/positions/routes/entities/position.entity';
+import type { PositionGroup } from '@/modules/positions/routes/entities/position-group.entity';
+import type { Protocol } from '@/modules/positions/routes/entities/protocol.entity';
+import { PositionsService } from '@/modules/positions/routes/positions.service';
 import { NULL_ADDRESS } from '@/routes/common/constants';
-import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
-import type { Address } from 'viem';
 
 const positionsRepoMock = jest.mocked({
   getPositions: jest.fn(),
@@ -76,7 +80,7 @@ describe('PositionsService', () => {
 
     expect(res.map((p) => p.protocol).sort()).toEqual(['Aave', 'unknown']);
 
-    const aave = res.find((p) => p.protocol === 'Aave')!;
+    const aave = res.find((p) => p.protocol === 'Aave') as Protocol;
     expect(aave).toEqual(
       expect.objectContaining({
         protocol: 'Aave',
@@ -106,7 +110,7 @@ describe('PositionsService', () => {
       }),
     );
 
-    const unknown = res.find((p) => p.protocol === 'unknown')!;
+    const unknown = res.find((p) => p.protocol === 'unknown') as Protocol;
     expect(unknown).toEqual(
       expect.objectContaining({
         protocol: 'unknown',
@@ -158,8 +162,10 @@ describe('PositionsService', () => {
       fiatCode: 'USD',
     });
 
-    const aave = res.find((p) => p.protocol === 'Aave')!;
-    const usdcGroup = aave.items.find((g) => g.name === 'USDC')!;
+    const aave = res.find((p) => p.protocol === 'Aave') as Protocol;
+    const usdcGroup = aave.items.find(
+      (g) => g.name === 'USDC',
+    ) as PositionGroup;
 
     expect(usdcGroup.items).toHaveLength(2);
     expect(usdcGroup.items).toEqual(
@@ -280,8 +286,11 @@ describe('PositionsService', () => {
       fiatCode: 'USD',
     });
 
-    const items = maker.items.find((g) => g.name === 'ETH')!.items;
-    const loanItem = items.find((i) => i.position_type === PositionType.loan)!;
+    const items = (maker.items.find((g) => g.name === 'ETH') as PositionGroup)
+      .items;
+    const loanItem = items.find(
+      (i) => i.position_type === PositionType.loan,
+    ) as Position;
     expect(loanItem.balance).toBe('1');
     expect(maker.fiatTotal).toBe('4500');
   });
@@ -356,7 +365,9 @@ describe('PositionsService', () => {
       fiatCode: 'USD',
     });
 
-    const usdtGroup = aave.items.find((g) => g.name === 'USDT')!;
+    const usdtGroup = aave.items.find(
+      (g) => g.name === 'USDT',
+    ) as PositionGroup;
     expect(usdtGroup.items).toHaveLength(2);
     expect(usdtGroup.items[0].balance).toBe('1000000000000000');
     expect(usdtGroup.items[0].fiatBalance).toBe('2000000000000000');

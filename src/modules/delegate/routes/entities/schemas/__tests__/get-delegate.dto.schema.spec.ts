@@ -1,6 +1,7 @@
-import { GetDelegateDtoSchema } from '@/modules/delegate/routes/entities/schemas/get-delegate.dto.schema';
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress } from 'viem';
+import { GetDelegateDtoSchema } from '@/modules/delegate/routes/entities/schemas/get-delegate.dto.schema';
 
 describe('GetDelegateDtoSchema', () => {
   it('should validate a valid GetDelegateDto', () => {
@@ -43,22 +44,23 @@ describe('GetDelegateDtoSchema', () => {
     ]);
   });
 
-  it.each(['safe' as const, 'delegate' as const, 'delegator' as const])(
-    'should not validate non-address %s',
-    (property) => {
-      const getDelegateDto = { [property]: faker.word.sample() };
+  it.each([
+    'safe' as const,
+    'delegate' as const,
+    'delegator' as const,
+  ])('should not validate non-address %s', (property) => {
+    const getDelegateDto = { [property]: faker.word.sample() };
 
-      const result = GetDelegateDtoSchema.safeParse(getDelegateDto);
+    const result = GetDelegateDtoSchema.safeParse(getDelegateDto);
 
-      expect(!result.success && result.error.issues).toStrictEqual([
-        {
-          code: 'custom',
-          message: 'Invalid address',
-          path: [property],
-        },
-      ]);
-    },
-  );
+    expect(!result.success && result.error.issues).toStrictEqual([
+      {
+        code: 'custom',
+        message: 'Invalid address',
+        path: [property],
+      },
+    ]);
+  });
 
   it.each([['safe' as const], ['delegate' as const], ['delegator' as const]])(
     'should checksum %s' as const,

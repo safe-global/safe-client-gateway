@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { JwtClient } from '@/datasources/jwt/jwt.module';
-import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
+
 import { Inject, Injectable } from '@nestjs/common';
-import { IConfigurationService } from '@/config/configuration.service.interface';
 import type { Algorithm, JwtPayload } from 'jsonwebtoken';
+import { IConfigurationService } from '@/config/configuration.service.interface';
 import { JWT_ALGORITHM } from '@/datasources/jwt/jwt.constants';
+import type { JwtClient } from '@/datasources/jwt/jwt.module';
+import type { IJwtService } from '@/datasources/jwt/jwt.service.interface';
 
 @Injectable()
 export class JwtService implements IJwtService {

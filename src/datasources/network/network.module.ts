@@ -1,25 +1,28 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Global, Module } from '@nestjs/common';
+import { Agent, setGlobalDispatcher } from 'undici';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import { FetchNetworkService } from '@/datasources/network/fetch.network.service';
-import { NetworkService } from '@/datasources/network/network.service.interface';
-import { NetworkResponse } from '@/datasources/network/entities/network.response.entity';
+import { CircuitBreakerService } from '@/datasources/circuit-breaker/circuit-breaker.service';
 import {
   NetworkRequestError,
   NetworkResponseError,
 } from '@/datasources/network/entities/network.error.entity';
-import type { Raw } from '@/validation/entities/raw.entity';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
-import { LogType } from '@/domain/common/entities/log-type.entity';
-import { hashSha1 } from '@/domain/common/utils/utils';
-import { CircuitBreakerService } from '@/datasources/circuit-breaker/circuit-breaker.service';
-import { NetworkRequest } from '@/datasources/network/entities/network.request.entity';
-import { setGlobalDispatcher, Agent } from 'undici';
+import type { NetworkRequest } from '@/datasources/network/entities/network.request.entity';
+import type { NetworkResponse } from '@/datasources/network/entities/network.response.entity';
+import { FetchNetworkService } from '@/datasources/network/fetch.network.service';
+import { NetworkService } from '@/datasources/network/network.service.interface';
 import {
   UndiciAgent,
   UndiciShutdownHook,
 } from '@/datasources/network/undici.shutdown.hook';
+import { LogType } from '@/domain/common/entities/log-type.entity';
+import { hashSha1 } from '@/domain/common/utils/utils';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
 import { asError } from '@/logging/utils';
+import type { Raw } from '@/validation/entities/raw.entity';
 
 export const FetchClientToken = Symbol('FetchClient');
 
@@ -124,7 +127,7 @@ function createCircuitBreakerRequestFunction(
     timeout?: number,
     circuitBreaker?: NetworkRequest['circuitBreaker'],
   ): Promise<NetworkResponse<T>> => {
-    if (!circuitBreaker || !circuitBreaker.key) {
+    if (!circuitBreaker?.key) {
       return request(url, options, timeout);
     }
 
@@ -159,7 +162,7 @@ function createCachedRequestFunction(
   ) => Promise<NetworkResponse<T>>,
   loggingService: ILoggingService,
 ) {
-  return async <T>(
+  return <T>(
     url: string,
     options: RequestInit,
     timeout?: number,
@@ -193,7 +196,7 @@ function createCachedRequestFunction(
         });
     }
 
-    return cache[key];
+    return cache[key] as Promise<NetworkResponse<T>>;
   };
 }
 

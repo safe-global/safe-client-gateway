@@ -1,20 +1,21 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { IBlocklistService } from '@/config/entities/blocklist.interface';
-import { LogType } from '@/domain/common/entities/log-type.entity';
+
 import {
-  LoggingService,
-  type ILoggingService,
-} from '@/logging/logging.interface';
-import {
-  CanActivate,
-  ExecutionContext,
+  type CanActivate,
+  type ExecutionContext,
   ForbiddenException,
   Inject,
   Injectable,
 } from '@nestjs/common';
 import type { Request } from 'express';
 import { getAddress, isAddress } from 'viem';
+import { IConfigurationService } from '@/config/configuration.service.interface';
+import { IBlocklistService } from '@/config/entities/blocklist.interface';
+import { LogType } from '@/domain/common/entities/log-type.entity';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
 import { getClientIp } from '@/routes/common/utils/request.utils';
 
 @Injectable()
@@ -42,7 +43,7 @@ export class BlocklistGuard implements CanActivate {
     const request: Request = context.switchToHttp().getRequest();
     const addressParam = request.params[this.parameterName];
 
-    if (!addressParam || !isAddress(addressParam)) {
+    if (!(addressParam && isAddress(addressParam))) {
       return true;
     }
 

@@ -1,23 +1,24 @@
-import { DynamicModule, Module } from '@nestjs/common';
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { type DynamicModule, Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
-import { IAlertsApi } from '@/domain/interfaces/alerts-api.interface';
-import { TenderlyApi } from '@/modules/alerts/datasources/tenderly-api.service';
-import { DelayModifierDecoder } from '@/modules/alerts/domain/contracts/decoders/delay-modifier-decoder.helper';
-import { MultiSendDecoder } from '@/modules/contracts/domain/decoders/multi-send-decoder.helper';
-import { SafeDecoder } from '@/modules/contracts/domain/decoders/safe-decoder.helper';
-import { AlertsRepository } from '@/modules/alerts/domain/alerts.repository';
-import { IAlertsRepository } from '@/modules/alerts/domain/alerts.repository.interface';
-import { EmailModule } from '@/modules/email/email.module';
-import { SafeRepositoryModule } from '@/modules/safe/domain/safe.repository.interface';
-import { ChainsModule } from '@/modules/chains/chains.module';
-import { AlertsController } from '@/modules/alerts/routes/alerts.controller';
-import { AlertsService } from '@/modules/alerts/routes/alerts.service';
+import type { ConfigFactory } from '@nestjs/config/dist/interfaces/config-factory.interface';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { NestConfigurationService } from '@/config/nest.configuration.service';
-import { ConfigFactory } from '@nestjs/config/dist/interfaces/config-factory.interface';
-import alertsConfiguration from '@/modules/alerts/routes/configuration/alerts.configuration';
+import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
+import { IAlertsApi } from '@/domain/interfaces/alerts-api.interface';
 import alertsApiConfiguration from '@/modules/alerts/datasources/configuration/alerts-api.configuration';
+import { TenderlyApi } from '@/modules/alerts/datasources/tenderly-api.service';
+import { AlertsRepository } from '@/modules/alerts/domain/alerts.repository';
+import { IAlertsRepository } from '@/modules/alerts/domain/alerts.repository.interface';
+import { DelayModifierDecoder } from '@/modules/alerts/domain/contracts/decoders/delay-modifier-decoder.helper';
+import { AlertsController } from '@/modules/alerts/routes/alerts.controller';
+import { AlertsService } from '@/modules/alerts/routes/alerts.service';
+import alertsConfiguration from '@/modules/alerts/routes/configuration/alerts.configuration';
+import { ChainsModule } from '@/modules/chains/chains.module';
+import { MultiSendDecoder } from '@/modules/contracts/domain/decoders/multi-send-decoder.helper';
+import { SafeDecoder } from '@/modules/contracts/domain/decoders/safe-decoder.helper';
+import { EmailModule } from '@/modules/email/email.module';
+import { SafeRepositoryModule } from '@/modules/safe/domain/safe.repository.interface';
 
 @Module({})
 export class AlertsConfigurationModule {

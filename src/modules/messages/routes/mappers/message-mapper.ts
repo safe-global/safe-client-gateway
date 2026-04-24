@@ -1,16 +1,17 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
-import { MessageConfirmation as DomainMessageConfirmation } from '@/modules/messages/domain/entities/message-confirmation.entity';
-import { Message as DomainMessage } from '@/modules/messages/domain/entities/message.entity';
-import { SafeAppsRepository } from '@/modules/safe-apps/domain/safe-apps.repository';
-import { ISafeAppsRepository } from '@/modules/safe-apps/domain/safe-apps.repository.interface';
-import { Safe } from '@/modules/safe/domain/entities/safe.entity';
-import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
+import type { Message as DomainMessage } from '@/modules/messages/domain/entities/message.entity';
+import type { MessageConfirmation as DomainMessageConfirmation } from '@/modules/messages/domain/entities/message-confirmation.entity';
+import {
+  Message,
+  MessageStatus,
+} from '@/modules/messages/routes/entities/message.entity';
 import { MessageConfirmation } from '@/modules/messages/routes/entities/message-confirmation.entity';
 import { MessageItem } from '@/modules/messages/routes/entities/message-item.entity';
-import {
-  MessageStatus,
-  Message,
-} from '@/modules/messages/routes/entities/message.entity';
+import type { Safe } from '@/modules/safe/domain/entities/safe.entity';
+import type { SafeAppsRepository } from '@/modules/safe-apps/domain/safe-apps.repository';
+import { ISafeAppsRepository } from '@/modules/safe-apps/domain/safe-apps.repository.interface';
+import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
 
 @Injectable()
 export class MessageMapper {
@@ -20,7 +21,7 @@ export class MessageMapper {
     private readonly addressInfoHelper: AddressInfoHelper,
   ) {}
 
-  async mapMessageItems(
+  mapMessageItems(
     chainId: string,
     domainMessages: Array<DomainMessage>,
     safe: Safe,
@@ -90,7 +91,7 @@ export class MessageMapper {
     );
   }
 
-  private async mapConfirmations(
+  private mapConfirmations(
     chainId: string,
     confirmations: Array<DomainMessageConfirmation>,
   ): Promise<Array<MessageConfirmation>> {

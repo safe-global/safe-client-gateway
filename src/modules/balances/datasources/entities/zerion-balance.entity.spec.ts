@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { faker } from '@faker-js/faker';
+import { getAddress } from 'viem';
 import {
   zerionAttributesBuilder,
   zerionBalanceBuilder,
@@ -16,8 +19,6 @@ import {
   ZerionImplementationSchema,
   ZerionQuantitySchema,
 } from '@/modules/balances/datasources/entities/zerion-balance.entity';
-import { faker } from '@faker-js/faker';
-import { getAddress } from 'viem';
 
 describe('Zerion Balance Entity schemas', () => {
   describe('ZerionBalancesSchema', () => {
@@ -68,7 +69,7 @@ describe('Zerion Balance Entity schemas', () => {
     it('should fallback to "unknown" if type is not defined', () => {
       const zerionBalance = zerionBalanceBuilder().build();
       // @ts-expect-error - type is expected to be a 'positions' literal
-      delete zerionBalance['type'];
+      zerionBalance.type = undefined;
 
       const result = ZerionBalanceSchema.safeParse(zerionBalance);
 
@@ -92,22 +93,22 @@ describe('Zerion Balance Entity schemas', () => {
       ]);
     });
 
-    it.each(['id' as const, 'attributes' as const])(
-      'should not allow %s to be undefined',
-      (key) => {
-        const zerionBalance = zerionBalanceBuilder().build();
-        delete zerionBalance[key];
+    it.each([
+      'id' as const,
+      'attributes' as const,
+    ])('should not allow %s to be undefined', (key) => {
+      const zerionBalance = zerionBalanceBuilder().build();
+      delete zerionBalance[key];
 
-        const result = ZerionBalanceSchema.safeParse(zerionBalance);
+      const result = ZerionBalanceSchema.safeParse(zerionBalance);
 
-        expect(
-          !result.success &&
-            result.error.issues.length === 1 &&
-            result.error.issues[0].path.length === 1 &&
-            result.error.issues[0].path[0] === key,
-        ).toBe(true);
-      },
-    );
+      expect(
+        !result.success &&
+          result.error.issues.length === 1 &&
+          result.error.issues[0].path.length === 1 &&
+          result.error.issues[0].path[0] === key,
+      ).toBe(true);
+    });
   });
 
   describe('ZerionAttributesSchema', () => {
@@ -119,22 +120,22 @@ describe('Zerion Balance Entity schemas', () => {
       expect(result.success).toBe(true);
     });
 
-    it.each(['name' as const, 'quantity' as const])(
-      'should not allow %s to be undefined',
-      (key) => {
-        const zerionAttributes = zerionAttributesBuilder().build();
-        delete zerionAttributes[key];
+    it.each([
+      'name' as const,
+      'quantity' as const,
+    ])('should not allow %s to be undefined', (key) => {
+      const zerionAttributes = zerionAttributesBuilder().build();
+      delete zerionAttributes[key];
 
-        const result = ZerionAttributesSchema.safeParse(zerionAttributes);
+      const result = ZerionAttributesSchema.safeParse(zerionAttributes);
 
-        expect(
-          !result.success &&
-            result.error.issues.length === 1 &&
-            result.error.issues[0].path.length === 1 &&
-            result.error.issues[0].path[0] === key,
-        ).toBe(true);
-      },
-    );
+      expect(
+        !result.success &&
+          result.error.issues.length === 1 &&
+          result.error.issues[0].path.length === 1 &&
+          result.error.issues[0].path[0] === key,
+      ).toBe(true);
+    });
 
     it('should not allow an invalid name value', () => {
       const zerionAttributes = zerionAttributesBuilder().build();
@@ -297,7 +298,7 @@ describe('Zerion Balance Entity schemas', () => {
     it('should not allow displayable to be undefined', () => {
       const zerionFlags = zerionFlagsBuilder().build();
       // @ts-expect-error - inferred types don't allow optional fields
-      delete zerionFlags.displayable;
+      zerionFlags.displayable = undefined;
 
       const result = ZerionFlagsSchema.safeParse(zerionFlags);
 
@@ -431,23 +432,22 @@ describe('Zerion Balance Entity schemas', () => {
       expect(result.success).toBe(true);
     });
 
-    it.each(['chain_id' as const, 'decimals' as const])(
-      'should not allow %s to be undefined',
-      (key) => {
-        const zerionImplementation = zerionImplementationBuilder().build();
-        delete zerionImplementation[key];
+    it.each([
+      'chain_id' as const,
+      'decimals' as const,
+    ])('should not allow %s to be undefined', (key) => {
+      const zerionImplementation = zerionImplementationBuilder().build();
+      delete zerionImplementation[key];
 
-        const result =
-          ZerionImplementationSchema.safeParse(zerionImplementation);
+      const result = ZerionImplementationSchema.safeParse(zerionImplementation);
 
-        expect(
-          !result.success &&
-            result.error.issues.length === 1 &&
-            result.error.issues[0].path.length === 1 &&
-            result.error.issues[0].path[0] === key,
-        ).toBe(true);
-      },
-    );
+      expect(
+        !result.success &&
+          result.error.issues.length === 1 &&
+          result.error.issues[0].path.length === 1 &&
+          result.error.issues[0].path[0] === key,
+      ).toBe(true);
+    });
 
     it('should not allow an invalid chain_id value', () => {
       const zerionImplementation = zerionImplementationBuilder().build();

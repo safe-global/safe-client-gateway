@@ -1,16 +1,17 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { get } from 'lodash';
 import { type Address, getAddress } from 'viem';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
-import { MessageVerifierHelper } from '@/modules/messages/domain/helpers/message-verifier.helper';
-import { messageBuilder } from '@/modules/messages/domain/entities/__tests__/message.builder';
-import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
-import { HttpExceptionNoLog } from '@/domain/common/errors/http-exception-no-log.error';
-import configuration from '@/config/entities/__tests__/configuration';
-import { SignatureType } from '@/domain/common/entities/signature-type.entity';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
-import type { ILoggingService } from '@/logging/logging.interface';
+import configuration from '@/config/entities/__tests__/configuration';
 import type { IBlocklistService } from '@/config/entities/blocklist.interface';
+import { SignatureType } from '@/domain/common/entities/signature-type.entity';
+import { HttpExceptionNoLog } from '@/domain/common/errors/http-exception-no-log.error';
+import type { ILoggingService } from '@/logging/logging.interface';
+import { messageBuilder } from '@/modules/messages/domain/entities/__tests__/message.builder';
+import { MessageVerifierHelper } from '@/modules/messages/domain/helpers/message-verifier.helper';
+import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
 
 const mockConfigurationService = jest.mocked({
   getOrThrow: jest.fn(),
@@ -265,49 +266,48 @@ describe('MessageVerifierHelper', () => {
       expect(mockLoggingRepository.error).not.toHaveBeenCalled();
     });
 
-    it.each(Object.values(SignatureType))(
-      'should throw if an address cannot be recovered from an %s signature',
-      async (signatureType) => {
-        const chainId = faker.string.numeric();
-        const signers = Array.from(
-          { length: faker.number.int({ min: 1, max: 5 }) },
-          () => {
-            const privateKey = generatePrivateKey();
-            return privateKeyToAccount(privateKey);
-          },
-        );
-        const safe = safeBuilder()
-          .with(
-            'owners',
-            signers.map((s) => s.address),
-          )
-          .build();
-        const message = await messageBuilder()
-          .with('safe', safe.address)
-          .buildWithConfirmations({
-            chainId,
-            signers: faker.helpers.arrayElements(signers, {
-              min: 1,
-              max: signers.length,
-            }),
-            safe,
-            signatureType,
-          });
-        const v = message.confirmations[0].signature?.slice(-2);
+    it.each(
+      Object.values(SignatureType),
+    )('should throw if an address cannot be recovered from an %s signature', async (signatureType) => {
+      const chainId = faker.string.numeric();
+      const signers = Array.from(
+        { length: faker.number.int({ min: 1, max: 5 }) },
+        () => {
+          const privateKey = generatePrivateKey();
+          return privateKeyToAccount(privateKey);
+        },
+      );
+      const safe = safeBuilder()
+        .with(
+          'owners',
+          signers.map((s) => s.address),
+        )
+        .build();
+      const message = await messageBuilder()
+        .with('safe', safe.address)
+        .buildWithConfirmations({
+          chainId,
+          signers: faker.helpers.arrayElements(signers, {
+            min: 1,
+            max: signers.length,
+          }),
+          safe,
+          signatureType,
+        });
+      const v = message.confirmations[0].signature?.slice(-2);
 
-        expect(() => {
-          return target.verifyUpdate({
-            chainId,
-            safe,
-            message: message.message,
-            messageHash: message.messageHash,
-            signature: `0x${'-'.repeat(128)}${v}`,
-          });
-        }).toThrow(new HttpExceptionNoLog('Could not recover address', 422));
+      expect(() => {
+        return target.verifyUpdate({
+          chainId,
+          safe,
+          message: message.message,
+          messageHash: message.messageHash,
+          signature: `0x${'-'.repeat(128)}${v}`,
+        });
+      }).toThrow(new HttpExceptionNoLog('Could not recover address', 422));
 
-        expect(mockLoggingRepository.error).not.toHaveBeenCalled();
-      },
-    );
+      expect(mockLoggingRepository.error).not.toHaveBeenCalled();
+    });
 
     it('should throw and log if the recovered address is blocked', async () => {
       const chainId = faker.string.numeric();
@@ -667,49 +667,48 @@ describe('MessageVerifierHelper', () => {
       expect(mockLoggingRepository.error).not.toHaveBeenCalled();
     });
 
-    it.each(Object.values(SignatureType))(
-      'should throw if an address cannot be recovered from an %s signature',
-      async (signatureType) => {
-        const chainId = faker.string.numeric();
-        const signers = Array.from(
-          { length: faker.number.int({ min: 1, max: 5 }) },
-          () => {
-            const privateKey = generatePrivateKey();
-            return privateKeyToAccount(privateKey);
-          },
-        );
-        const safe = safeBuilder()
-          .with(
-            'owners',
-            signers.map((s) => s.address),
-          )
-          .build();
-        const message = await messageBuilder()
-          .with('safe', safe.address)
-          .buildWithConfirmations({
-            chainId,
-            signers: faker.helpers.arrayElements(signers, {
-              min: 1,
-              max: signers.length,
-            }),
-            safe,
-            signatureType,
-          });
-        const v = message.confirmations[0].signature?.slice(-2);
+    it.each(
+      Object.values(SignatureType),
+    )('should throw if an address cannot be recovered from an %s signature', async (signatureType) => {
+      const chainId = faker.string.numeric();
+      const signers = Array.from(
+        { length: faker.number.int({ min: 1, max: 5 }) },
+        () => {
+          const privateKey = generatePrivateKey();
+          return privateKeyToAccount(privateKey);
+        },
+      );
+      const safe = safeBuilder()
+        .with(
+          'owners',
+          signers.map((s) => s.address),
+        )
+        .build();
+      const message = await messageBuilder()
+        .with('safe', safe.address)
+        .buildWithConfirmations({
+          chainId,
+          signers: faker.helpers.arrayElements(signers, {
+            min: 1,
+            max: signers.length,
+          }),
+          safe,
+          signatureType,
+        });
+      const v = message.confirmations[0].signature?.slice(-2);
 
-        expect(() => {
-          return target.verifyUpdate({
-            chainId,
-            safe,
-            message: message.message,
-            messageHash: message.messageHash,
-            signature: `0x${'-'.repeat(128)}${v}`,
-          });
-        }).toThrow(new HttpExceptionNoLog('Could not recover address', 422));
+      expect(() => {
+        return target.verifyUpdate({
+          chainId,
+          safe,
+          message: message.message,
+          messageHash: message.messageHash,
+          signature: `0x${'-'.repeat(128)}${v}`,
+        });
+      }).toThrow(new HttpExceptionNoLog('Could not recover address', 422));
 
-        expect(mockLoggingRepository.error).not.toHaveBeenCalled();
-      },
-    );
+      expect(mockLoggingRepository.error).not.toHaveBeenCalled();
+    });
 
     it('should throw and log if the recovered address is blocked', async () => {
       const chainId = faker.string.numeric();

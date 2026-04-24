@@ -1,7 +1,8 @@
-import { getEstimationDtoBuilder } from '@/modules/estimations/routes/entities/__tests__/get-estimation.dto.builder';
-import { GetEstimationDtoSchema } from '@/modules/estimations/routes/entities/schemas/get-estimation.dto.schema';
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress } from 'viem';
+import { getEstimationDtoBuilder } from '@/modules/estimations/routes/entities/__tests__/get-estimation.dto.builder';
+import { GetEstimationDtoSchema } from '@/modules/estimations/routes/entities/schemas/get-estimation.dto.schema';
 
 describe('GetEstimationDtoSchema', () => {
   it('should validate a valid GetEstimationDto', () => {
@@ -58,7 +59,7 @@ describe('GetEstimationDtoSchema', () => {
   it('should allow nullish data, defaulting to null', () => {
     const getEstimationDto = getEstimationDtoBuilder().build();
     // @ts-expect-error - inferred type does not allow optional properties
-    delete getEstimationDto.data;
+    getEstimationDto.data = undefined;
 
     const result = GetEstimationDtoSchema.safeParse(getEstimationDto);
 
@@ -92,20 +93,21 @@ describe('GetEstimationDtoSchema', () => {
     ]);
   });
 
-  it.each(['to' as const, 'value' as const, 'operation' as const])(
-    'should not allow %s to be undefined',
-    (key) => {
-      const getEstimationDto = getEstimationDtoBuilder().build();
-      delete getEstimationDto[key];
+  it.each([
+    'to' as const,
+    'value' as const,
+    'operation' as const,
+  ])('should not allow %s to be undefined', (key) => {
+    const getEstimationDto = getEstimationDtoBuilder().build();
+    delete getEstimationDto[key];
 
-      const result = GetEstimationDtoSchema.safeParse(getEstimationDto);
+    const result = GetEstimationDtoSchema.safeParse(getEstimationDto);
 
-      expect(
-        !result.success &&
-          result.error.issues.length === 1 &&
-          result.error.issues[0].path.length === 1 &&
-          result.error.issues[0].path[0] === key,
-      ).toBe(true);
-    },
-  );
+    expect(
+      !result.success &&
+        result.error.issues.length === 1 &&
+        result.error.issues[0].path.length === 1 &&
+        result.error.issues[0].path[0] === key,
+    ).toBe(true);
+  });
 });

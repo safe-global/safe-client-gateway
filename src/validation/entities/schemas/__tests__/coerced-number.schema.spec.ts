@@ -1,5 +1,6 @@
-import { CoercedNumberSchema } from '@/validation/entities/schemas/coerced-number.schema';
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
+import { CoercedNumberSchema } from '@/validation/entities/schemas/coerced-number.schema';
 
 describe('CoercedNumberSchema', () => {
   it('should return a number as is', () => {

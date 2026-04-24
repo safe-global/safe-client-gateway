@@ -1,7 +1,8 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import type { Server } from 'node:net';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
-import type { Server } from 'net';
 import { createBaseTestModule } from '@/__tests__/testing-module';
 
 describe('Get health e2e test', () => {

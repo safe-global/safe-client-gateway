@@ -1,8 +1,9 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { faker } from '@faker-js/faker';
+import { type Address, getAddress } from 'viem';
 import { pooledStakingStatsBuilder } from '@/modules/staking/datasources/entities/__tests__/pooled-staking-stats.entity.builder';
 import type { PooledStakingStats } from '@/modules/staking/datasources/entities/pooled-staking-stats.entity';
 import { PooledStakingStatsSchema } from '@/modules/staking/datasources/entities/pooled-staking-stats.entity';
-import { faker } from '@faker-js/faker';
-import { type Address, getAddress } from 'viem';
 
 describe('PooledStakingSchema', () => {
   it('should validate a PooledStakingStats object', () => {
@@ -26,23 +27,23 @@ describe('PooledStakingSchema', () => {
     );
   });
 
-  it.each(['total_supply' as const, 'total_underlying_supply' as const])(
-    'should not validate non-numeric string %s values',
-    (key) => {
-      const pooledStakingStats = pooledStakingStatsBuilder()
-        .with(key, faker.string.alpha())
-        .build();
+  it.each([
+    'total_supply' as const,
+    'total_underlying_supply' as const,
+  ])('should not validate non-numeric string %s values', (key) => {
+    const pooledStakingStats = pooledStakingStatsBuilder()
+      .with(key, faker.string.alpha())
+      .build();
 
-      const result = PooledStakingStatsSchema.safeParse(pooledStakingStats);
+    const result = PooledStakingStatsSchema.safeParse(pooledStakingStats);
 
-      expect(!result.success && result.error.issues.length).toBe(1);
-      expect(!result.success && result.error.issues[0]).toStrictEqual({
-        code: 'custom',
-        message: 'Invalid base-10 numeric string',
-        path: [key],
-      });
-    },
-  );
+    expect(!result.success && result.error.issues.length).toBe(1);
+    expect(!result.success && result.error.issues[0]).toStrictEqual({
+      code: 'custom',
+      message: 'Invalid base-10 numeric string',
+      path: [key],
+    });
+  });
 
   it('should not validate non-numeric pools[number]total_deposited values', () => {
     const pooledStakingStats = pooledStakingStatsBuilder().build();
@@ -125,24 +126,24 @@ describe('PooledStakingSchema', () => {
     ]);
   });
 
-  it.each(['ratio' as const, 'commission' as const])(
-    'should not validate numeric string pools[number]%s values',
-    (key) => {
-      const pooledStakingStats = pooledStakingStatsBuilder().build();
-      pooledStakingStats.pools[0][key] =
-        faker.string.numeric() as unknown as number;
+  it.each([
+    'ratio' as const,
+    'commission' as const,
+  ])('should not validate numeric string pools[number]%s values', (key) => {
+    const pooledStakingStats = pooledStakingStatsBuilder().build();
+    pooledStakingStats.pools[0][key] =
+      faker.string.numeric() as unknown as number;
 
-      const result = PooledStakingStatsSchema.safeParse(pooledStakingStats);
+    const result = PooledStakingStatsSchema.safeParse(pooledStakingStats);
 
-      expect(!result.success && result.error.issues.length).toBe(1);
-      expect(!result.success && result.error.issues[0]).toStrictEqual({
-        code: 'invalid_type',
-        expected: 'number',
-        message: 'Invalid input: expected number, received string',
-        path: ['pools', 0, key],
-      });
-    },
-  );
+    expect(!result.success && result.error.issues.length).toBe(1);
+    expect(!result.success && result.error.issues[0]).toStrictEqual({
+      code: 'invalid_type',
+      expected: 'number',
+      message: 'Invalid input: expected number, received string',
+      path: ['pools', 0, key],
+    });
+  });
 
   it.each(
     Object.keys(PooledStakingStatsSchema.shape) as Array<

@@ -1,7 +1,8 @@
-import { AbiDecoder } from '@/modules/contracts/domain/decoders/abi-decoder.helper';
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Injectable } from '@nestjs/common';
 import type { Address } from 'viem';
 import { decodeAbiParameters, isAddressEqual, parseAbiParameters } from 'viem';
+import { AbiDecoder } from '@/modules/contracts/domain/decoders/abi-decoder.helper';
 
 /**
  * Taken from CoW SDK:
@@ -671,7 +672,6 @@ export class ComposableCowDecoder extends AbiDecoder<typeof ComposableCowAbi> {
    * @returns decoded parameters passed to `createWithContext`
    */
   // Use inferred return type
-  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
   private decodeCreateWithContext(data: Address) {
     if (!this.helpers.isCreateWithContext(data)) {
       return null;

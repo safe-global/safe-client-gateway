@@ -1,15 +1,4 @@
-import {
-  ApiConflictResponse,
-  ApiNotFoundResponse,
-  ApiOkResponse,
-  ApiTags,
-  ApiUnauthorizedResponse,
-  ApiOperation,
-  ApiParam,
-  ApiBody,
-  ApiNoContentResponse,
-  ApiCreatedResponse,
-} from '@nestjs/swagger';
+// SPDX-License-Identifier: FSL-1.1-MIT
 import {
   Body,
   Controller,
@@ -19,18 +8,32 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
-import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
-import { Auth } from '@/modules/auth/routes/decorators/auth.decorator';
-import { UsersService } from '@/modules/users/routes/users.service';
-import { ValidationPipe } from '@/validation/pipes/validation.pipe';
-import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { UserWithWallets } from '@/modules/users/routes/entities/user-with-wallets.entity';
-import { CreatedUserWithWallet } from '@/modules/users/routes/entities/created-user-with-wallet.entity';
-import { WalletAddedToUser } from '@/modules/users/routes/entities/wallet-added-to-user.entity';
-import { SiweDtoSchema } from '@/modules/auth/routes/entities/siwe.dto.entity';
-import { SiweDto } from '@/modules/auth/routes/entities/siwe.dto.entity';
+import {
+  ApiBody,
+  ApiConflictResponse,
+  ApiCreatedResponse,
+  ApiNoContentResponse,
+  ApiNotFoundResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiParam,
+  ApiTags,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
+import type { Address } from 'viem';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { type Address } from 'viem';
+import { Auth } from '@/modules/auth/routes/decorators/auth.decorator';
+import {
+  SiweDto,
+  SiweDtoSchema,
+} from '@/modules/auth/routes/entities/siwe.dto.entity';
+import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
+import { CreatedUserWithWallet } from '@/modules/users/routes/entities/created-user-with-wallet.entity';
+import { UserWithWallets } from '@/modules/users/routes/entities/user-with-wallets.entity';
+import { WalletAddedToUser } from '@/modules/users/routes/entities/wallet-added-to-user.entity';
+import { UsersService } from '@/modules/users/routes/users.service';
+import { AddressSchema } from '@/validation/entities/schemas/address.schema';
+import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 
 @ApiTags('users')
 @Controller({ path: 'users', version: '1' })

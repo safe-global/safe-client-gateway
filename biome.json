@@ -1,0 +1,209 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.4.12/schema.json",
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "useIgnoreFile": true,
+    "defaultBranch": "main"
+  },
+  "javascript": {
+    "globals": ["jest"],
+    "parser": {
+      "unsafeParameterDecoratorsEnabled": true
+    },
+    "formatter": {
+      "quoteStyle": "single",
+      "trailingCommas": "all"
+    }
+  },
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 80
+  },
+  "json": {
+    "formatter": {
+      "trailingCommas": "none"
+    }
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "recommended": true,
+      "correctness": {
+        "noUnusedVariables": "error",
+        "noUnusedImports": "error",
+        "noUnusedFunctionParameters": "error",
+        "noUnusedPrivateClassMembers": "error",
+        "noInvalidUseBeforeDeclaration": "error",
+        "noUndeclaredVariables": "error",
+        "noVoidTypeReturn": "error",
+        "noConstantCondition": "error",
+        "noSelfAssign": "error"
+      },
+      "suspicious": {
+        "noDeprecatedImports": "error",
+        "noExplicitAny": "error",
+        "noImplicitAnyLet": "error",
+        "noDoubleEquals": "error",
+        "noAssignInExpressions": "error",
+        "noConsole": {
+          "level": "warn",
+          "options": {
+            "allow": ["assert", "error", "warn", "info", "debug"]
+          }
+        },
+        "noTemplateCurlyInString": "error",
+        "noControlCharactersInRegex": "error",
+        "noExportsInTest": "error",
+        "noFallthroughSwitchClause": "error",
+        "noRedeclare": "error",
+        "noDuplicateObjectKeys": "error",
+        "noDuplicateCase": "error",
+        "noShadowRestrictedNames": "error",
+        "noAsyncPromiseExecutor": "error",
+        "noMisleadingInstantiator": "error",
+        "noUnsafeDeclarationMerging": "error",
+        "noEmptyBlockStatements": "warn",
+        "useAwait": "error",
+        "noEvolvingTypes": "error",
+        "noVar": "error"
+      },
+      "complexity": {
+        "noUselessConstructor": "error",
+        "noUselessSwitchCase": "error",
+        "useDateNow": "error",
+        "useLiteralKeys": "error",
+        "noExcessiveCognitiveComplexity": {
+          "level": "error",
+          "options": {
+            "maxAllowedComplexity": 35
+          }
+        },
+        "noVoid": "error",
+        "noForEach": "warn",
+        "noUselessTypeConstraint": "error",
+        "noUselessFragments": "error",
+        "noUselessLabel": "error",
+        "noUselessRename": "error",
+        "noUselessTernary": "error",
+        "noUselessLoneBlockStatements": "error",
+        "noUselessThisAlias": "error",
+        "useSimplifiedLogicExpression": "error",
+        "useFlatMap": "error",
+        "useOptionalChain": "error",
+        "noArguments": "error",
+        "noCommaOperator": "error",
+        "useNumericLiterals": "error"
+      },
+      "style": {
+        "noRestrictedImports": {
+          "level": "error",
+          "options": {
+            "paths": {
+              "@safe-global/safe-deployments": "Please import from @/domain/common/utils/deployments instead."
+            }
+          }
+        },
+        "useImportType": "off",
+        "useThrowOnlyError": "warn",
+        "noNestedTernary": "error",
+        "noNonNullAssertion": "warn",
+        "useConsistentArrayType": {
+          "level": "error",
+          "options": {
+            "syntax": "generic"
+          }
+        },
+        "useTemplate": "error",
+        "useConst": "error",
+        "useExponentiationOperator": "error",
+        "useEnumInitializers": "error",
+        "noParameterAssign": "error",
+        "useNodejsImportProtocol": "error",
+        "useNumberNamespace": "error",
+        "useSelfClosingElements": "error",
+        "useShorthandAssign": "error",
+        "useDefaultParameterLast": "error",
+        "useAsConstAssertion": "error",
+        "noUselessElse": "error",
+        "noInferrableTypes": "error",
+        "useArrayLiterals": "error"
+      },
+      "performance": {
+        "noAccumulatingSpread": "warn",
+        "noDelete": "warn",
+        "noBarrelFile": "warn"
+      },
+      "nursery": {
+        "noFloatingPromises": "warn",
+        "noImpliedEval": "error",
+        "noMisusedPromises": "error"
+      }
+    }
+  },
+  "overrides": [
+    {
+      "includes": [
+        "**/*.spec.ts",
+        "**/*.integration.spec.ts",
+        "**/*.e2e-spec.ts",
+        "**/__tests__/**"
+      ],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noExplicitAny": "off",
+            "noConsole": "off",
+            "noExportsInTest": "off",
+            "noEmptyBlockStatements": "off"
+          },
+          "style": {
+            "noNonNullAssertion": "off"
+          },
+          "complexity": {
+            "noExcessiveCognitiveComplexity": "off"
+          },
+          "performance": {
+            "noBarrelFile": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": ["src/config/entities/configuration.ts"],
+      "linter": {
+        "rules": {
+          "complexity": {
+            "noExcessiveCognitiveComplexity": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": [
+        "**/*.module.ts",
+        "src/datasources/cache/cache.router.ts",
+        "src/datasources/circuit-breaker/circuit-breaker.keys.ts"
+      ],
+      "linter": {
+        "rules": {
+          "complexity": {
+            "noStaticOnlyClass": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": ["src/domain/common/utils/deployments.ts"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": "off"
+          }
+        }
+      }
+    }
+  ]
+}

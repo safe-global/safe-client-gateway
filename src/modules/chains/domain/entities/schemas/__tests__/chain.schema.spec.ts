@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import { faker } from '@faker-js/faker';
+import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import { balancesProviderBuilder } from '@/modules/chains/domain/entities/__tests__/balances-provider.builder';
 import { beaconChainExplorerUriTemplateBuilder } from '@/modules/chains/domain/entities/__tests__/beacon-chain-explorer-uri-template.builder';
 import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
-import { gasPriceFixedEIP1559Builder } from '@/modules/chains/domain/entities/__tests__/gas-price-fixed-eip-1559.builder';
 import { gasPriceFixedBuilder } from '@/modules/chains/domain/entities/__tests__/gas-price-fixed.builder';
+import { gasPriceFixedEIP1559Builder } from '@/modules/chains/domain/entities/__tests__/gas-price-fixed-eip-1559.builder';
 import { gasPriceOracleBuilder } from '@/modules/chains/domain/entities/__tests__/gas-price-oracle.builder';
 import { nativeCurrencyBuilder } from '@/modules/chains/domain/entities/__tests__/native.currency.builder';
 import { pricesProviderBuilder } from '@/modules/chains/domain/entities/__tests__/prices-provider.builder';
@@ -11,8 +13,10 @@ import { rpcUriBuilder } from '@/modules/chains/domain/entities/__tests__/rpc-ur
 import { themeBuilder } from '@/modules/chains/domain/entities/__tests__/theme.builder';
 import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
 import {
-  ChainSchema,
   BalancesProviderSchema,
+  BeaconChainExplorerUriTemplateSchema,
+  ChainLenientPageSchema,
+  ChainSchema,
   GasPriceFixedEip1559Schema,
   GasPriceFixedSchema,
   GasPriceOracleSchema,
@@ -21,11 +25,7 @@ import {
   PricesProviderSchema,
   RpcUriSchema,
   ThemeSchema,
-  ChainLenientPageSchema,
-  BeaconChainExplorerUriTemplateSchema,
 } from '@/modules/chains/domain/entities/schemas/chain.schema';
-import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
-import { faker } from '@faker-js/faker';
 
 describe('Chain schemas', () => {
   describe('NativeCurrencySchema', () => {
@@ -407,7 +407,7 @@ describe('Chain schemas', () => {
     it('should default balancesProvider chainName to null', () => {
       const balancesProvider = balancesProviderBuilder().build();
       // @ts-expect-error - inferred types don't allow optional fields
-      delete balancesProvider.chainName;
+      balancesProvider.chainName = undefined;
 
       const result = BalancesProviderSchema.safeParse(balancesProvider);
 
@@ -417,7 +417,7 @@ describe('Chain schemas', () => {
     it('should not validate an undefined balancesProvider enablement status', () => {
       const balancesProvider = balancesProviderBuilder().build();
       // @ts-expect-error - inferred types don't allow optional fields
-      delete balancesProvider.enabled;
+      balancesProvider.enabled = undefined;
 
       const result = BalancesProviderSchema.safeParse(balancesProvider);
 
@@ -463,48 +463,48 @@ describe('Chain schemas', () => {
     it('should default zk to false', () => {
       const chain = chainBuilder().build();
       // @ts-expect-error - zk is expected to be a boolean
-      delete chain.zk;
+      chain.zk = undefined;
 
       const result = ChainSchema.safeParse(chain);
 
       expect(result.success && result.data.zk).toBe(false);
     });
 
-    it.each([['chainLogoUri' as const], ['ensRegistryAddress' as const]])(
-      'should allow undefined %s and default to null',
-      (field) => {
-        const chain = chainBuilder().build();
-        delete chain[field];
+    it.each([
+      ['chainLogoUri' as const],
+      ['ensRegistryAddress' as const],
+    ])('should allow undefined %s and default to null', (field) => {
+      const chain = chainBuilder().build();
+      delete chain[field];
 
-        const result = ChainSchema.safeParse(chain);
+      const result = ChainSchema.safeParse(chain);
 
-        expect(result.success && result.data[field]).toBe(null);
-      },
-    );
+      expect(result.success && result.data[field]).toBe(null);
+    });
 
-    it.each(['transactionService' as const, 'vpcTransactionService' as const])(
-      'accept non-trailing slash %s as is',
-      (field) => {
-        const url = faker.internet.url({ appendSlash: false });
-        const chain = chainBuilder().with(field, url).build();
+    it.each([
+      'transactionService' as const,
+      'vpcTransactionService' as const,
+    ])('accept non-trailing slash %s as is', (field) => {
+      const url = faker.internet.url({ appendSlash: false });
+      const chain = chainBuilder().with(field, url).build();
 
-        const result = ChainSchema.safeParse(chain);
+      const result = ChainSchema.safeParse(chain);
 
-        expect(result.success && result.data[field]).toBe(url);
-      },
-    );
+      expect(result.success && result.data[field]).toBe(url);
+    });
 
-    it.each(['transactionService' as const, 'vpcTransactionService' as const])(
-      'should remove trailing slashes from %s',
-      (field) => {
-        const url = faker.internet.url({ appendSlash: false });
-        const chain = chainBuilder().with(field, `${url}/`).build();
+    it.each([
+      'transactionService' as const,
+      'vpcTransactionService' as const,
+    ])('should remove trailing slashes from %s', (field) => {
+      const url = faker.internet.url({ appendSlash: false });
+      const chain = chainBuilder().with(field, `${url}/`).build();
 
-        const result = ChainSchema.safeParse(chain);
+      const result = ChainSchema.safeParse(chain);
 
-        expect(result.success && result.data[field]).toBe(url);
-      },
-    );
+      expect(result.success && result.data[field]).toBe(url);
+    });
 
     it.each([
       ['chainId' as const],
@@ -584,7 +584,7 @@ describe('Chain schemas', () => {
         .with('count', chains.length)
         .build();
       // @ts-expect-error - results are assumed optional
-      delete chainPage.results[0].chainId;
+      chainPage.results[0].chainId = undefined;
 
       const result = ChainLenientPageSchema.safeParse(chainPage);
 

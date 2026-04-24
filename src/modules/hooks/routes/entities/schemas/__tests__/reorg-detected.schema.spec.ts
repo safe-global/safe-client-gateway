@@ -1,7 +1,8 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { reorgDetectedEventBuilder } from '@/modules/hooks/routes/entities/__tests__/reorg-detected.builder';
-import { ReorgDetectedEventSchema } from '@/modules/hooks/routes/entities/schemas/reorg-detected.schema';
 import type { TransactionEventType } from '@/modules/hooks/routes/entities/event-type.entity';
+import { ReorgDetectedEventSchema } from '@/modules/hooks/routes/entities/schemas/reorg-detected.schema';
 
 describe('ReorgDetectedEventSchema', () => {
   it('should validate a reorg detected event', () => {
@@ -63,18 +64,17 @@ describe('ReorgDetectedEventSchema', () => {
     ]);
   });
 
-  it.each(['type' as const, 'chainId' as const, 'blockNumber' as const])(
-    'should not allow an undefined %s',
-    (key) => {
-      const reorgDetectedEvent = reorgDetectedEventBuilder().build();
-      delete reorgDetectedEvent[key];
+  it.each([
+    'type' as const,
+    'chainId' as const,
+    'blockNumber' as const,
+  ])('should not allow an undefined %s', (key) => {
+    const reorgDetectedEvent = reorgDetectedEventBuilder().build();
+    delete reorgDetectedEvent[key];
 
-      const result = ReorgDetectedEventSchema.safeParse(reorgDetectedEvent);
+    const result = ReorgDetectedEventSchema.safeParse(reorgDetectedEvent);
 
-      expect(!result.success && result.error.issues.length).toBe(1);
-      expect(!result.success && result.error.issues[0].path).toStrictEqual([
-        key,
-      ]);
-    },
-  );
+    expect(!result.success && result.error.issues.length).toBe(1);
+    expect(!result.success && result.error.issues[0].path).toStrictEqual([key]);
+  });
 });

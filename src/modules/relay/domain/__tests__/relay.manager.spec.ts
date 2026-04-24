@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
+import { faker } from '@faker-js/faker';
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import { RelayManager } from '@/modules/relay/domain/relay.manager';
-import { faker } from '@faker-js/faker';
 import type { DailyLimitRelayer } from '@/modules/relay/domain/relayers/daily-limit.relayer';
 import type { NoFeeCampaignRelayer } from '@/modules/relay/domain/relayers/no-fee-campaign.relayer';
 import type { RelayFeeRelayer } from '@/modules/relay/domain/relayers/relay-fee.relayer';

@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { CaptchaGuard } from '@/routes/captcha/guards/captcha.guard';
-import type { CaptchaService } from '@/routes/captcha/captcha.service';
-import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
-import { UnauthorizedException } from '@nestjs/common';
-import type { ExecutionContext } from '@nestjs/common';
+
 import { faker } from '@faker-js/faker';
+import type { ExecutionContext } from '@nestjs/common';
+import { UnauthorizedException } from '@nestjs/common';
+import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
+import type { CaptchaService } from '@/routes/captcha/captcha.service';
+import { CaptchaGuard } from '@/routes/captcha/guards/captcha.guard';
 
 const mockCaptchaService = jest.mocked({
   verifyToken: jest.fn(),

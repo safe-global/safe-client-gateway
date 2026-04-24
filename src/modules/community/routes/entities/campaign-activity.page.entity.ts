@@ -1,6 +1,7 @@
-import { Page } from '@/routes/common/entities/page.entity';
-import { CampaignActivity } from '@/modules/community/routes/entities/campaign-activity.entity';
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { ApiProperty } from '@nestjs/swagger';
+import { CampaignActivity } from '@/modules/community/routes/entities/campaign-activity.entity';
+import { Page } from '@/routes/common/entities/page.entity';
 
 export class CampaignActivityPage extends Page<CampaignActivity> {
   @ApiProperty({ type: CampaignActivity, isArray: true })

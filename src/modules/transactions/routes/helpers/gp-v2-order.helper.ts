@@ -1,7 +1,8 @@
-import { GPv2OrderParameters } from '@/modules/swaps/domain/contracts/decoders/gp-v2-decoder.helper';
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Injectable } from '@nestjs/common';
-import { TypedDataDomain, encodePacked, hashTypedData } from 'viem';
 import type { Address } from 'viem';
+import { encodePacked, hashTypedData, type TypedDataDomain } from 'viem';
+import type { GPv2OrderParameters } from '@/modules/swaps/domain/contracts/decoders/gp-v2-decoder.helper';
 
 @Injectable()
 export class GPv2OrderHelper {

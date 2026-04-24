@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { TransactionBaseSchema } from '@/domain/common/schemas/transaction-base.schema';
+
 import { z } from 'zod';
+import { TransactionBaseSchema } from '@/domain/common/schemas/transaction-base.schema';
+import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 
 export const FeePreviewTransactionDtoSchema = TransactionBaseSchema.extend({
   gasToken: AddressSchema,

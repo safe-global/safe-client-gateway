@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
 import { asError } from '@/logging/utils';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
@@ -15,9 +16,9 @@ export const Caip10AddressesSchema = z.string().transform((str, ctx) => {
         .parse({ chainId, address });
     } catch (e) {
       if (e instanceof z.ZodError) {
-        e.issues.forEach((issue) => {
+        for (const issue of e.issues) {
           ctx.addIssue({ ...issue });
-        });
+        }
       } else {
         ctx.addIssue({
           code: 'custom',

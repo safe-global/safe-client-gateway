@@ -1,4 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
+import type { UUID } from 'node:crypto';
 import {
   BadRequestException,
   Body,
@@ -10,31 +12,30 @@ import {
   Post,
 } from '@nestjs/common';
 import {
+  ApiBadRequestResponse,
+  ApiBody,
+  ApiNoContentResponse,
   ApiOkResponse,
   ApiOperation,
-  ApiTags,
   ApiParam,
-  ApiBody,
-  ApiBadRequestResponse,
-  ApiNoContentResponse,
+  ApiTags,
 } from '@nestjs/swagger';
-import { RegisterDeviceDto } from '@/modules/notifications/routes/v1/entities/register-device.dto.entity';
-import { ValidationPipe } from '@/validation/pipes/validation.pipe';
-import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import type { UpsertSubscriptionsSafesDto } from '@/modules/notifications/routes/v2/entities/upsert-subscriptions.dto.entity';
-import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { NotificationType } from '@/modules/notifications/domain/v2/entities/notification.entity';
-import type { UUID } from 'crypto';
-import { NotificationsServiceV2 } from '@/modules/notifications/routes/v2/notifications.service';
+import type { Address, Hex } from 'viem';
 import {
   keccak256,
   recoverAddress,
   recoverMessageAddress,
   toBytes,
 } from 'viem';
-import { UuidSchema } from '@/validation/entities/schemas/uuid.schema';
+import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { DeviceType } from '@/modules/notifications/domain/v1/entities/device.entity';
-import type { Address, Hex } from 'viem';
+import { NotificationType } from '@/modules/notifications/domain/v2/entities/notification.entity';
+import { RegisterDeviceDto } from '@/modules/notifications/routes/v1/entities/register-device.dto.entity';
+import type { UpsertSubscriptionsSafesDto } from '@/modules/notifications/routes/v2/entities/upsert-subscriptions.dto.entity';
+import { NotificationsServiceV2 } from '@/modules/notifications/routes/v2/notifications.service';
+import { AddressSchema } from '@/validation/entities/schemas/address.schema';
+import { UuidSchema } from '@/validation/entities/schemas/uuid.schema';
+import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 
 @ApiTags('notifications')
 @Controller({ path: '', version: '1' })
@@ -68,7 +69,7 @@ export class NotificationsController {
     @Body() registerDeviceDto: RegisterDeviceDto,
   ): Promise<void> {
     if (registerDeviceDto.timestamp) {
-      this.validateTimestamp(parseInt(registerDeviceDto.timestamp));
+      this.validateTimestamp(Number.parseInt(registerDeviceDto.timestamp, 10));
     }
 
     const compatibleV2Requests =
@@ -148,7 +149,7 @@ export class NotificationsController {
         (safeV2Safes) => safeV2Safes.address,
       );
 
-      let recoveredAddress: Address | undefined = undefined;
+      let recoveredAddress: Address | undefined;
       if (safeV2.upsertSubscriptionsDto.signature) {
         recoveredAddress = await this.recoverAddress({
           registerDeviceDto: args,
@@ -168,7 +169,7 @@ export class NotificationsController {
   }
 
   private validateTimestamp(timestamp: number): void {
-    const now = new Date().getTime();
+    const now = Date.now();
     const expires = Math.floor(
       (now + NotificationsController.REGISTRATION_TIMESTAMP_EXPIRY) / 1000,
     );
@@ -201,12 +202,11 @@ export class NotificationsController {
         },
         signature: args.safeV2Dto.upsertSubscriptionsDto.signature,
       });
-    } else {
-      return await recoverAddress({
-        hash: this.messageToRecover(args),
-        signature: args.safeV2Dto.upsertSubscriptionsDto.signature,
-      });
     }
+    return await recoverAddress({
+      hash: this.messageToRecover(args),
+      signature: args.safeV2Dto.upsertSubscriptionsDto.signature,
+    });
   }
 
   @ApiOperation({

@@ -1,17 +1,18 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
-import { GelatoApi } from '@/modules/relay/datasources/gelato-api.service';
+
 import { faker } from '@faker-js/faker';
-import type { INetworkService } from '@/datasources/network/network.service.interface';
 import type { Hex } from 'viem';
 import { getAddress } from 'viem';
-import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
-import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
-import { DataSourceError } from '@/domain/errors/data-source.error';
+import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
-import { rawify } from '@/validation/entities/raw.entity';
+import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
+import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
+import type { INetworkService } from '@/datasources/network/network.service.interface';
+import { DataSourceError } from '@/domain/errors/data-source.error';
 import type { ILoggingService } from '@/logging/logging.interface';
+import { GelatoApi } from '@/modules/relay/datasources/gelato-api.service';
+import { rawify } from '@/validation/entities/raw.entity';
 
 const mockNetworkService = jest.mocked({
   post: jest.fn(),

@@ -1,19 +1,20 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress } from 'viem';
 import {
   baseDataDecodedBuilder,
   dataDecodedBuilder,
-  multisendBuilder,
   dataDecodedParameterBuilder,
+  multisendBuilder,
 } from '@/modules/data-decoder/domain/v2/entities/__tests__/data-decoded.builder';
+import type { DataDecodedAccuracy } from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';
 import {
   BaseDataDecodedSchema,
+  DataDecodedParameterSchema,
   DataDecodedSchema,
   MultisendSchema,
-  DataDecodedParameterSchema,
   ValueDecodedSchema,
 } from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';
-import type { DataDecodedAccuracy } from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';
 import type { Operation } from '@/modules/safe/domain/entities/operation.entity';
 
 describe('DataDecoded', () => {

@@ -1,24 +1,25 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
+import type { Server } from 'node:net';
+import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
+import type { TestingModule } from '@nestjs/testing';
+import { sign } from 'jsonwebtoken';
 import request from 'supertest';
-import configuration from '@/config/entities/__tests__/configuration';
-import { EmailModule } from '@/modules/email/email.module';
-import { TestEmailApiModule } from '@/modules/email/datasources/__tests__/test.email-api.module';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { createTestModule } from '@/__tests__/testing-module';
-import { faker } from '@faker-js/faker';
-import { getSecondsUntil } from '@/domain/common/utils/time';
-import type { Server } from 'net';
-import { sign } from 'jsonwebtoken';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import { UsersModule } from '@/modules/users/users.module';
-import { TestUsersModule } from '@/modules/users/__tests__/test.users.module';
+import configuration from '@/config/entities/__tests__/configuration';
 import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
 import {
-  NetworkService,
   type INetworkService,
+  NetworkService,
 } from '@/datasources/network/network.service.interface';
-import type { TestingModule } from '@nestjs/testing';
+import { getSecondsUntil } from '@/domain/common/utils/time';
+import { TestEmailApiModule } from '@/modules/email/datasources/__tests__/test.email-api.module';
+import { EmailModule } from '@/modules/email/email.module';
+import { TestUsersModule } from '@/modules/users/__tests__/test.users.module';
+import { UsersModule } from '@/modules/users/users.module';
 import { rawify } from '@/validation/entities/raw.entity';
 
 describe('OidcAuthController', () => {
@@ -273,7 +274,7 @@ describe('OidcAuthController', () => {
       });
 
       it('should return 422 when redirect_url exceeds max length', async () => {
-        const longUrl = '/' + 'a'.repeat(2048);
+        const longUrl = `/${'a'.repeat(2048)}`;
         await request(app.getHttpServer())
           .get('/v1/auth/oidc/authorize')
           .query({ redirect_url: longUrl })
@@ -351,7 +352,7 @@ describe('OidcAuthController', () => {
 
         await request(app.getHttpServer())
           .get('/v1/auth/oidc/callback')
-          .set('Cookie', stateCookie!)
+          .set('Cookie', stateCookie as string)
           .query({
             code: 'auth-code',
             state,
@@ -378,7 +379,7 @@ describe('OidcAuthController', () => {
 
             expect(
               jwtService.verify<{ auth_method: string; sub: string }>(
-                accessToken!,
+                accessToken as string,
               ),
             ).toMatchObject({
               auth_method: 'oidc',
@@ -430,7 +431,7 @@ describe('OidcAuthController', () => {
 
         const response = await request(app.getHttpServer())
           .get('/v1/auth/oidc/callback')
-          .set('Cookie', stateCookie!)
+          .set('Cookie', stateCookie as string)
           .query({
             code: 'auth-code',
             state,
@@ -452,7 +453,7 @@ describe('OidcAuthController', () => {
 
         const response = await request(app.getHttpServer())
           .get('/v1/auth/oidc/callback')
-          .set('Cookie', stateCookie!)
+          .set('Cookie', stateCookie as string)
           .query({
             code: 'auth-code',
             state: 'wrong-state',
@@ -479,7 +480,7 @@ describe('OidcAuthController', () => {
 
         const response = await request(app.getHttpServer())
           .get('/v1/auth/oidc/callback')
-          .set('Cookie', stateCookie!)
+          .set('Cookie', stateCookie as string)
           .query({ state });
 
         expectErrorRedirect(response, 'invalid_request');
@@ -538,7 +539,7 @@ describe('OidcAuthController', () => {
 
         const response = await request(app.getHttpServer())
           .get('/v1/auth/oidc/callback')
-          .set('Cookie', stateCookie!)
+          .set('Cookie', stateCookie as string)
           .query({
             code: 'auth-code',
             state,
@@ -591,7 +592,7 @@ describe('OidcAuthController', () => {
 
         await request(app.getHttpServer())
           .get('/v1/auth/oidc/callback')
-          .set('Cookie', stateCookie!)
+          .set('Cookie', stateCookie as string)
           .query({
             code: 'auth-code',
             state,
@@ -621,7 +622,7 @@ describe('OidcAuthController', () => {
 
         const response = await request(app.getHttpServer())
           .get('/v1/auth/oidc/callback')
-          .set('Cookie', stateCookie!)
+          .set('Cookie', stateCookie as string)
           .query({
             error: 'access_denied',
             error_description: 'User denied access',

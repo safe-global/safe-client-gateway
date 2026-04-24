@@ -1,20 +1,20 @@
-// eslint-disable-next-line no-restricted-imports
+// SPDX-License-Identifier: FSL-1.1-MIT
 import {
+  getCompatibilityFallbackHandlerDeployments as _getFallbackHandlerDeployments,
   getMultiSendCallOnlyDeployments as _getMultiSendCallOnlyDeployments,
   getMultiSendDeployments as _getMultiSendDeployments,
   getProxyFactoryDeployments as _getProxyFactoryDeployments,
   getSafeL2SingletonDeployments as _getSafeL2SingletonDeployments,
-  getSafeSingletonDeployments as _getSafeSingletonDeployments,
-  getCompatibilityFallbackHandlerDeployments as _getFallbackHandlerDeployments,
-  getSafeToL2SetupDeployments as _getSafeToL2SetupDeployments,
-  getSafeToL2MigrationDeployments as _getSafeToL2MigrationDeployments,
   getSafeMigrationDeployments as _getSafeMigrationDeployments,
+  getSafeSingletonDeployments as _getSafeSingletonDeployments,
+  getSafeToL2MigrationDeployments as _getSafeToL2MigrationDeployments,
+  getSafeToL2SetupDeployments as _getSafeToL2SetupDeployments,
 } from '@safe-global/safe-deployments';
 import {
-  _SAFE_DEPLOYMENTS,
   _COMPAT_FALLBACK_HANDLER_DEPLOYMENTS,
+  _SAFE_DEPLOYMENTS,
 } from '@safe-global/safe-deployments/dist/deployments';
-import { getAddress, type Address } from 'viem';
+import { type Address, getAddress } from 'viem';
 
 type Filter = {
   chainId: string;

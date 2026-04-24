@@ -8,8 +8,6 @@ export enum JobType {
 
 export type JobTypeName = (typeof JobType)[keyof typeof JobType];
 
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export interface JobData {}
+export type JobData = Record<string, unknown>;
 
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export interface JobResponse {}
+export type JobResponse = Record<string, unknown>;

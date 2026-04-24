@@ -1,6 +1,7 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import type { Address, Hash } from 'viem';
 import type { BridgeName } from '@/modules/bridge/domain/entities/bridge-name.entity';
 import type { BridgeStatus } from '@/modules/bridge/domain/entities/bridge-status.entity';
-import type { Address, Hash } from 'viem';
 
 export const IBridgeRepository = Symbol('IBridgeRepository');
 

@@ -1,8 +1,9 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
-import type { PositionsService } from '@/modules/positions/routes/positions.service';
-import { PositionsController } from '@/modules/positions/routes/positions.controller';
 import type { Protocol } from '@/modules/positions/routes/entities/protocol.entity';
+import { PositionsController } from '@/modules/positions/routes/positions.controller';
+import type { PositionsService } from '@/modules/positions/routes/positions.service';
 
 const service = {
   getPositions: jest.fn(),

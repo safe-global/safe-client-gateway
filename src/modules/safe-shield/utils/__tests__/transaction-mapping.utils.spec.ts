@@ -1,14 +1,15 @@
-import {
-  mapDecodedTransactions,
-  isMultiSend,
-  isExecTransaction,
-  mapMultiSendTransactions,
-} from '../transaction-mapping.utils';
-import type { DecodedTransactionData } from '@/modules/safe-shield/entities/transaction-data.entity';
-import type { DataDecoded } from '@/modules/data-decoder/routes/entities/data-decoded.entity';
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { getAddress, type Hex } from 'viem';
 import { dataDecodedBuilder } from '@/modules/data-decoder/domain/v2/entities/__tests__/data-decoded.builder';
+import type { DataDecoded } from '@/modules/data-decoder/routes/entities/data-decoded.entity';
+import type { DecodedTransactionData } from '@/modules/safe-shield/entities/transaction-data.entity';
+import {
+  isExecTransaction,
+  isMultiSend,
+  mapDecodedTransactions,
+  mapMultiSendTransactions,
+} from '../transaction-mapping.utils';
 
 describe('mapDecodedTransactions', () => {
   const mockRecipientAddress = getAddress(faker.finance.ethereumAddress());
