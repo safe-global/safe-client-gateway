@@ -105,18 +105,6 @@ export class AddressBookRequestsRepository implements IAddressBookRequestsReposi
     return this.findOneOrFail({ id: insertedId, spaceId: args.spaceId });
   }
 
-  public async updateStatus(args: {
-    id: AddressBookRequest['id'];
-    status: keyof typeof AddressBookRequestStatus;
-    reviewedBy: Address;
-  }): Promise<void> {
-    const repository = await this.db.getRepository(DbAddressBookRequest);
-    await repository.update(args.id, {
-      status: args.status,
-      reviewedBy: args.reviewedBy,
-    });
-  }
-
   public async transitionFromPending(args: {
     id: AddressBookRequest['id'];
     spaceId: Space['id'];

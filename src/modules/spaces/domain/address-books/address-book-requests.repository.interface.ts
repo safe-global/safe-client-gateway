@@ -36,12 +36,6 @@ export interface IAddressBookRequestsRepository {
     item: AddressBookItem;
   }): Promise<AddressBookRequest>;
 
-  updateStatus(args: {
-    id: AddressBookRequest['id'];
-    status: keyof typeof AddressBookRequestStatus;
-    reviewedBy: Address;
-  }): Promise<void>;
-
   transitionFromPending(args: {
     id: AddressBookRequest['id'];
     spaceId: Space['id'];
