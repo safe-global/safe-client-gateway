@@ -8,4 +8,10 @@ export const Auth0TokenSchema = JwtClaimsSchema.extend({
   email_verified: z.boolean().optional(),
 });
 
+export const Auth0TokenHeaderSchema = z.object({
+  kid: z.string().min(1),
+  alg: z.string().min(1),
+});
+
 export type Auth0Token = z.infer<typeof Auth0TokenSchema>;
+export type Auth0TokenHeader = z.infer<typeof Auth0TokenHeaderSchema>;

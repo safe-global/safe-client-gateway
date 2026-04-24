@@ -27,65 +27,12 @@ export class Auth0Repository implements IAuth0Repository {
   public async authenticateWithAuthorizationCode(
     code: string,
   ): Promise<Auth0Token> {
-    const response = await this.auth0Api.exchangeAuthorizationCode(code);
-    const { access_token, id_token } = Auth0TokenResponseSchema.parse(response);
-    const accessTokenClaims =
-      this.auth0TokenVerifier.verifyAndDecodeAccessToken(access_token);
-
-    const emailClaimsFromIdToken = await this.tryGetEmailClaimsFromIdToken(
-      id_token,
-      accessTokenClaims.sub,
-    );
-    if (emailClaimsFromIdToken) {
-      return { ...accessTokenClaims, ...emailClaimsFromIdToken };
-    }
-
     this.loggingService.debug(
-      `Auth0: no usable email claims available in id_token for sub ${accessTokenClaims.sub}`,
+      'Auth0: exchanging authorization code for tokens',
     );
-    return accessTokenClaims;
-  }
-
-  private async tryGetEmailClaimsFromIdToken(
-    idToken: string,
-    accessTokenSub: string,
-  ): Promise<Pick<Auth0Token, 'email' | 'email_verified'> | undefined> {
-    try {
-      const idTokenClaims =
-        await this.auth0TokenVerifier.verifyAndDecodeIdToken(idToken);
-      return this.extractEmailClaimsFromIdToken(idTokenClaims, accessTokenSub);
-    } catch (error) {
-      const detail = error instanceof Error ? error.message : 'unknown error';
-      this.loggingService.debug(
-        `Auth0: failed to verify id_token email claims for sub ${accessTokenSub}: ${detail}`,
-      );
-      return undefined;
-    }
-  }
-
-  private extractEmailClaimsFromIdToken(
-    idTokenClaims: Auth0Token,
-    accessTokenSub: string,
-  ): Pick<Auth0Token, 'email' | 'email_verified'> | undefined {
-    if (idTokenClaims.sub !== accessTokenSub) {
-      this.loggingService.warn(
-        `Auth0: id_token sub mismatch for access token sub ${accessTokenSub}`,
-      );
-      return undefined;
-    }
-
-    if (
-      idTokenClaims.email === undefined &&
-      idTokenClaims.email_verified === undefined
-    ) {
-      this.loggingService.debug(
-        `Auth0: id_token has no email claims for sub ${accessTokenSub}`,
-      );
-      return undefined;
-    }
-    return {
-      email: idTokenClaims.email,
-      email_verified: idTokenClaims.email_verified,
-    };
+    const response = await this.auth0Api.exchangeAuthorizationCode(code);
+    const { id_token } = Auth0TokenResponseSchema.parse(response);
+    this.loggingService.debug('Auth0: received id_token from token exchange');
+    return this.auth0TokenVerifier.verifyAndDecodeIdToken(id_token);
   }
 }

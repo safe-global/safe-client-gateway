@@ -36,7 +36,6 @@ export default (): ReturnType<typeof configuration> => ({
       clientSecret: faker.string.uuid(),
       redirectUri: faker.internet.url(),
       audience: faker.internet.url({ appendSlash: false }),
-      signingSecret: faker.string.alphanumeric(32),
       scope: 'openid email',
     },
     rateLimit: {

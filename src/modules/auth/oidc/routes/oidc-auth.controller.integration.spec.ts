@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import { generateKeyPairSync } from 'node:crypto';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import configuration from '@/config/entities/__tests__/configuration';
+import { AUTH0_ID_TOKEN_ALGORITHM } from '@/datasources/jwt/jwt.constants';
 import { EmailModule } from '@/modules/email/email.module';
 import { TestEmailApiModule } from '@/modules/email/datasources/__tests__/test.email-api.module';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
@@ -37,25 +39,82 @@ describe('OidcAuthController', () => {
     clientSecret: string;
     redirectUri: string;
     audience: string;
-    signingSecret: string;
     scope: string;
   };
   let postLoginRedirectUri: string;
 
-  function signAuth0Token(claims: {
+  function signAuth0IdToken(claims: {
     sub: string;
     exp?: number;
     iat?: number;
     nbf?: number;
     email?: string;
     email_verified?: boolean;
-  }): string {
-    return sign(claims, auth0Config.signingSecret, {
-      algorithm: 'HS256',
-      issuer: `https://${auth0Config.domain}/`,
-      audience: auth0Config.audience,
-      noTimestamp: true,
-    });
+  }): { idToken: string; publicJwk: JsonWebKey; kid: string } {
+    const kid = faker.string.alphanumeric(12);
+    const keyPair = generateKeyPairSync('rsa', { modulusLength: 2048 });
+    const privateKey = keyPair.privateKey
+      .export({ format: 'pem', type: 'pkcs8' })
+      .toString();
+    const publicJwk = keyPair.publicKey.export({ format: 'jwk' });
+
+    return {
+      idToken: sign(claims, privateKey, {
+        algorithm: AUTH0_ID_TOKEN_ALGORITHM,
+        keyid: kid,
+        header: { alg: AUTH0_ID_TOKEN_ALGORITHM, kid },
+        issuer: `https://${auth0Config.domain}/`,
+        audience: auth0Config.clientId,
+        noTimestamp: true,
+      }),
+      publicJwk,
+      kid,
+    };
+  }
+
+  function mockAuth0Jwks(publicJwk: JsonWebKey, kid: string): void {
+    networkService.get.mockResolvedValueOnce({
+      status: 200,
+      data: {
+        keys: [
+          {
+            kid,
+            kty: 'RSA',
+            alg: AUTH0_ID_TOKEN_ALGORITHM,
+            use: 'sig',
+            n: publicJwk.n,
+            e: publicJwk.e,
+          },
+        ],
+      },
+    } as never);
+  }
+
+  function signInvalidAudienceIdToken(claims: {
+    sub: string;
+    exp?: number;
+    iat?: number;
+    nbf?: number;
+  }): { idToken: string; publicJwk: JsonWebKey; kid: string } {
+    const kid = faker.string.alphanumeric(12);
+    const keyPair = generateKeyPairSync('rsa', { modulusLength: 2048 });
+    const privateKey = keyPair.privateKey
+      .export({ format: 'pem', type: 'pkcs8' })
+      .toString();
+    const publicJwk = keyPair.publicKey.export({ format: 'jwk' });
+
+    return {
+      idToken: sign(claims, privateKey, {
+        algorithm: AUTH0_ID_TOKEN_ALGORITHM,
+        keyid: kid,
+        header: { alg: AUTH0_ID_TOKEN_ALGORITHM, kid },
+        issuer: `https://${auth0Config.domain}/`,
+        audience: faker.string.uuid(),
+        noTimestamp: true,
+      }),
+      publicJwk,
+      kid,
+    };
   }
 
   async function initApp(config: typeof configuration): Promise<void> {
@@ -94,9 +153,6 @@ describe('OidcAuthController', () => {
       clientSecret: configService.getOrThrow<string>('auth.auth0.clientSecret'),
       redirectUri: configService.getOrThrow<string>('auth.auth0.redirectUri'),
       audience: configService.getOrThrow<string>('auth.auth0.audience'),
-      signingSecret: configService.getOrThrow<string>(
-        'auth.auth0.signingSecret',
-      ),
       scope: configService.getOrThrow<string>('auth.auth0.scope'),
     };
 
@@ -317,18 +373,18 @@ describe('OidcAuthController', () => {
           to: new Date(Date.now() + maxValidityPeriodInMs),
         });
 
-        const auth0Token = signAuth0Token({
+        const { idToken, publicJwk, kid } = signAuth0IdToken({
           sub: faker.string.uuid(),
           exp: Math.floor(expirationTime.getTime() / 1_000),
           iat: Math.floor(Date.now() / 1_000),
         });
         const maxAge = getSecondsUntil(expirationTime);
+        mockAuth0Jwks(publicJwk, kid);
 
         networkService.postForm.mockResolvedValueOnce({
           status: 200,
           data: rawify({
-            access_token: auth0Token,
-            id_token: 'auth0-id-token',
+            id_token: idToken,
             token_type: 'Bearer',
             scope: faker.lorem.words(),
           }),
@@ -397,18 +453,16 @@ describe('OidcAuthController', () => {
       });
 
       it('should redirect with authentication_failed when the token verification fails', async () => {
-        const invalidToken = sign(
-          { sub: faker.string.uuid() },
-          'wrong-signing-secret',
-          { algorithm: 'HS256' },
-        );
+        const { idToken, publicJwk, kid } = signInvalidAudienceIdToken({
+          sub: faker.string.uuid(),
+        });
+        mockAuth0Jwks(publicJwk, kid);
 
         networkService.postForm.mockResolvedValueOnce({
           status: 200,
           data: rawify({
-            access_token: invalidToken,
             refresh_token: 'auth0-refresh-token',
-            id_token: 'auth0-id-token',
+            id_token: idToken,
             token_type: 'Bearer',
           }),
         });
@@ -501,17 +555,17 @@ describe('OidcAuthController', () => {
 
         const farFutureExp =
           Math.floor(Date.now() / 1_000) + maxValidityPeriodInMs / 1_000 + 3600;
-        const auth0Token = signAuth0Token({
+        const { idToken, publicJwk, kid } = signAuth0IdToken({
           sub: faker.string.uuid(),
           exp: farFutureExp,
           iat: Math.floor(Date.now() / 1_000),
         });
+        mockAuth0Jwks(publicJwk, kid);
 
         networkService.postForm.mockResolvedValueOnce({
           status: 200,
           data: rawify({
-            access_token: auth0Token,
-            id_token: 'auth0-id-token',
+            id_token: idToken,
             token_type: 'Bearer',
           }),
         });
@@ -547,13 +601,14 @@ describe('OidcAuthController', () => {
           from: new Date(),
           to: new Date(Date.now() + maxValidityPeriodInMs),
         });
-        const auth0Token = signAuth0Token({
+        const { idToken, publicJwk, kid } = signAuth0IdToken({
           sub: faker.string.uuid(),
           email: faker.internet.email().toLowerCase(),
           email_verified: true,
           exp: Math.floor(expirationTime.getTime() / 1_000),
           iat: Math.floor(Date.now() / 1_000),
         });
+        mockAuth0Jwks(publicJwk, kid);
         usersRepository.persistVerifiedEmail.mockRejectedValue(
           new ConflictException('Email already belongs to another user'),
         );
@@ -561,8 +616,7 @@ describe('OidcAuthController', () => {
         networkService.postForm.mockResolvedValueOnce({
           status: 200,
           data: rawify({
-            access_token: auth0Token,
-            id_token: 'auth0-id-token',
+            id_token: idToken,
             token_type: 'Bearer',
           }),
         });
@@ -603,17 +657,17 @@ describe('OidcAuthController', () => {
           to: new Date(Date.now() + maxValidityPeriodInMs),
         });
 
-        const auth0Token = signAuth0Token({
+        const { idToken, publicJwk, kid } = signAuth0IdToken({
           sub: faker.string.uuid(),
           exp: Math.floor(expirationTime.getTime() / 1_000),
           iat: Math.floor(Date.now() / 1_000),
         });
+        mockAuth0Jwks(publicJwk, kid);
 
         networkService.postForm.mockResolvedValueOnce({
           status: 200,
           data: rawify({
-            access_token: auth0Token,
-            id_token: 'auth0-id-token',
+            id_token: idToken,
             token_type: 'Bearer',
             scope: faker.lorem.words(),
           }),
