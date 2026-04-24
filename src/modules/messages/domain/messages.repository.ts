@@ -3,15 +3,16 @@ import { Inject, Injectable } from '@nestjs/common';
 import { Page } from '@/domain/entities/page.entity';
 import { Message } from '@/modules/messages/domain/entities/message.entity';
 import { IMessagesRepository } from '@/modules/messages/domain/messages.repository.interface';
-import {
-  MessagePageSchema,
-  MessageSchema,
-} from '@/modules/messages/domain/entities/message.entity';
 import { MessageVerifierHelper } from '@/modules/messages/domain/helpers/message-verifier.helper';
 import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
 import { TypedData } from '@/modules/messages/domain/entities/typed-data.entity';
 import { IOffchain } from '@/modules/offchain/offchain.interface';
 import type { Address, Hash, Hex } from 'viem';
+import {
+  OffchainMessagePageSchema,
+  OffchainMessageSchema,
+} from '@/modules/offchain/entities/message.entity';
+import { mapOffchainToMessage } from '@/modules/offchain/mappers/message.mapper';
 
 @Injectable()
 export class MessagesRepository implements IMessagesRepository {
@@ -31,7 +32,8 @@ export class MessagesRepository implements IMessagesRepository {
       chainId: args.chainId,
       messageHash: args.messageHash,
     });
-    return MessageSchema.parse(message);
+    const parsed = OffchainMessageSchema.parse(message);
+    return mapOffchainToMessage(parsed);
   }
 
   async getMessagesBySafe(args: {
@@ -46,8 +48,12 @@ export class MessagesRepository implements IMessagesRepository {
       limit: args.limit,
       offset: args.offset,
     });
+    const offchainMessages = OffchainMessagePageSchema.parse(page);
 
-    return MessagePageSchema.parse(page);
+    return {
+      ...offchainMessages,
+      results: offchainMessages.results.map(mapOffchainToMessage),
+    };
   }
 
   async createMessage(args: {

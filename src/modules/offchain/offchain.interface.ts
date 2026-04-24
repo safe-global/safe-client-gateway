@@ -2,6 +2,7 @@
 import type { Page } from '@/domain/entities/page.entity';
 import type { Delegate } from '@/modules/delegate/domain/entities/delegate.entity';
 import type { Message } from '@/modules/messages/domain/entities/message.entity';
+import type { OffchainMessage } from '@/modules/offchain/entities/message.entity';
 import type { OffchainMultisigTransactionEntity } from '@/modules/offchain/entities/multisig-transaction.entity';
 import type { ProposeTransactionDto } from '@/modules/transactions/domain/entities/propose-transaction.dto.entity';
 import type { Raw } from '@/validation/entities/raw.entity';
@@ -88,7 +89,7 @@ export interface IOffchain {
     safeAddress: Address;
     limit?: number;
     offset?: number;
-  }): Promise<Raw<Page<Message>>>;
+  }): Promise<Raw<Page<OffchainMessage>>>;
 
   postMessage(args: {
     chainId: string;
