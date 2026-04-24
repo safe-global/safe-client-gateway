@@ -453,7 +453,7 @@ export class ContractAnalysisService {
    * @param {string} args.error - The error message (if applicable).
    * @returns {AnalysisResult<T>} The contract analysis result.
    */
-  private mapToAnalysisResult<T extends ContractStatus | CommonStatus>(args: {
+  private mapToAnalysisResult<T extends ContractStatus  >(args: {
     type: T;
     name?: string;
     error?: string;

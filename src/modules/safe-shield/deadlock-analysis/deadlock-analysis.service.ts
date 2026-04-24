@@ -406,7 +406,7 @@ export class DeadlockAnalysisService {
    * @param args.error - Optional error message for failed analysis results.
    * @returns The analysis result with severity, type, title, and description.
    */
-  private mapToAnalysisResult<T extends DeadlockStatus | CommonStatus>(args: {
+  private mapToAnalysisResult<T extends DeadlockStatus  >(args: {
     type: T;
     error?: string;
   }): AnalysisResult<T> {
@@ -421,7 +421,7 @@ export class DeadlockAnalysisService {
 
   private buildResponse(
     safeAddress: Address,
-    status: DeadlockStatus | CommonStatus,
+    status: DeadlockStatus  ,
     args?: { error?: string },
   ): DeadlockAnalysisResponse {
     return {

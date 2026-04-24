@@ -176,7 +176,7 @@ export class ThreatAnalysisService {
   private analyzeValidation(
     validation?: TransactionValidation,
   ): ThreatAnalysisResult {
-    let type: ThreatStatus | CommonStatus = CommonStatus.FAILED;
+    let type: ThreatStatus   = CommonStatus.FAILED;
 
     if (!validation || validation.result_type === 'Error') {
       return this.mapToAnalysisResult({
@@ -325,7 +325,7 @@ export class ThreatAnalysisService {
    * @returns {ThreatAnalysisResult} The analysis result
    */
   private mapToAnalysisResult(args: {
-    type: ThreatStatus | CommonStatus;
+    type: ThreatStatus  ;
     reason?: string;
     classification?: string;
     description?: string;

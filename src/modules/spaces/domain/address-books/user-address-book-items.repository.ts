@@ -122,18 +122,19 @@ export class UserAddressBookItemsRepository implements IUserAddressBookItemsRepo
       address: In(args.items.map((item) => item.address)),
     });
 
-    await Promise.all(
-      existing.map((item) => {
-        const patch = args.items.find((i) =>
-          isAddressEqual(i.address, item.address),
-        );
-        if (!patch) return;
-        return repository.update(item.id, {
+    const updates = existing.flatMap((item) => {
+      const patch = args.items.find((i) =>
+        isAddressEqual(i.address, item.address),
+      );
+      if (!patch) return [];
+      return [
+        repository.update(item.id, {
           name: patch.name,
           chainIds: patch.chainIds,
-        });
-      }),
-    );
+        }),
+      ];
+    });
+    await Promise.all(updates);
 
     return existing.map((item) => item.address);
   }

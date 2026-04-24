@@ -353,8 +353,8 @@ export class SafeShieldService {
     targetAddress: Address,
     statusGroup:
       | RecipientStatusGroup
-      | ContractStatusGroup
-      | DeadlockStatusGroup,
+       
+       ,
     reason?: unknown,
   ): T {
     const error = asError(reason);

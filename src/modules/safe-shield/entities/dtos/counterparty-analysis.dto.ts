@@ -31,14 +31,14 @@ import { DeadlockStatus } from '@/modules/safe-shield/entities/deadlock-status.e
  * DTO for contract analysis result.
  */
 export class ContractAnalysisResultDto extends AnalysisResultDto<
-  ContractStatus | CommonStatus
+  ContractStatus  
 > {
   @ApiProperty({
     description: 'Contract verification status code',
     enum: [...Object.values(ContractStatus), ...Object.values(CommonStatus)],
     example: 'VERIFIED',
   })
-  declare type: ContractStatus | CommonStatus;
+  declare type: ContractStatus  ;
 }
 
 /**
@@ -180,7 +180,7 @@ export class ContractAnalysisDto implements GroupedAnalysisResults<ContractAnaly
  * DTO for full recipient analysis result.
  */
 export class RecipientResultDto extends AnalysisResultDto<
-  RecipientStatus | BridgeStatus | CommonStatus
+  RecipientStatus    
 > {
   @ApiProperty({
     description: 'Bridge compatibility status code',
@@ -191,7 +191,7 @@ export class RecipientResultDto extends AnalysisResultDto<
     ],
     example: 'MISSING_OWNERSHIP',
   })
-  declare type: RecipientStatus | BridgeStatus | CommonStatus;
+  declare type: RecipientStatus    ;
 
   @ApiPropertyOptional({
     description:
@@ -269,14 +269,14 @@ export class RecipientAnalysisDto implements GroupedAnalysisResults<RecipientAna
  * DTO for deadlock analysis result.
  */
 export class DeadlockAnalysisResultDto extends AnalysisResultDto<
-  DeadlockStatus | CommonStatus
+  DeadlockStatus  
 > {
   @ApiProperty({
     description: 'Deadlock analysis status code',
     enum: [...Object.values(DeadlockStatus), ...Object.values(CommonStatus)],
     example: 'DEADLOCK_DETECTED',
   })
-  declare type: DeadlockStatus | CommonStatus;
+  declare type: DeadlockStatus  ;
 }
 
 /**
