@@ -18,9 +18,7 @@ type CreateItem = Parameters<
   ICounterfactualSafesRepository['create']
 >[0]['payload'][number];
 
-export class CounterfactualSafesRepository
-  implements ICounterfactualSafesRepository
-{
+export class CounterfactualSafesRepository implements ICounterfactualSafesRepository {
   public constructor(
     @Inject(PostgresDatabaseService)
     private readonly postgresDatabaseService: PostgresDatabaseService,
@@ -71,7 +69,11 @@ export class CounterfactualSafesRepository
         }
 
         if (args.creatorId) {
-          await this.associateUser(manager, counterfactualSafeId, args.creatorId);
+          await this.associateUser(
+            manager,
+            counterfactualSafeId,
+            args.creatorId,
+          );
         }
       }
     });

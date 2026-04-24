@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class CreateCounterfactualSafeUsers1777636800000
-  implements MigrationInterface
-{
+export class CreateCounterfactualSafeUsers1777636800000 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(
       `CREATE TABLE counterfactual_safe_users (
