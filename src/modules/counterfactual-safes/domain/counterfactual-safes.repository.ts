@@ -7,7 +7,6 @@ import { User } from '@/modules/users/datasources/entities/users.entity.db';
 import type { ICounterfactualSafesRepository } from '@/modules/counterfactual-safes/domain/counterfactual-safes.repository.interface';
 import { BadRequestException, Inject, NotFoundException } from '@nestjs/common';
 import {
-  EntityManager,
   FindOptionsRelations,
   FindOptionsSelect,
   FindOptionsWhere,
@@ -27,28 +26,41 @@ export class CounterfactualSafesRepository implements ICounterfactualSafesReposi
   public async create(
     args: Parameters<ICounterfactualSafesRepository['create']>[0],
   ): Promise<void> {
+    if (args.payload.length === 0) return;
+
+    // Checksum every address field before comparing against or inserting into
+    // the DB: the canonical row is stored checksummed via the TypeORM
+    // transformer, so the SELECT-back we do inside the transaction only
+    // matches when we look up with the checksummed form too. `getAddress` is
+    // a no-op for already-checksummed input and accepts valid lowercase.
     const normalized = args.payload.map((item) => ({
       ...item,
+      address: getAddress(item.address),
+      factoryAddress: getAddress(item.factoryAddress),
+      masterCopy: getAddress(item.masterCopy),
       owners: item.owners.map((owner) => getAddress(owner)),
+      fallbackHandler: item.fallbackHandler
+        ? getAddress(item.fallbackHandler)
+        : null,
+      setupTo: item.setupTo ? getAddress(item.setupTo) : null,
+      paymentToken: item.paymentToken ? getAddress(item.paymentToken) : null,
+      paymentReceiver: item.paymentReceiver
+        ? getAddress(item.paymentReceiver)
+        : null,
     }));
 
     await this.postgresDatabaseService.transaction(async (manager) => {
-      for (const item of normalized) {
-        const existing = await manager.findOne(CounterfactualSafe, {
-          where: { chainId: item.chainId, address: item.address },
-        });
-
-        let counterfactualSafeId: number;
-
-        if (existing) {
-          if (!isSameInitParams(existing, item)) {
-            throw new UniqueConstraintError(
-              'A counterfactual Safe with the same chainId and address already exists with different initialization parameters.',
-            );
-          }
-          counterfactualSafeId = existing.id;
-        } else {
-          const insertResult = await manager.insert(CounterfactualSafe, {
+      // Bulk-insert canonical rows. `ON CONFLICT DO NOTHING` makes this
+      // race-safe (concurrent POSTs for the same (chainId, address) can't
+      // surface a raw 23505) and also harmless for pre-existing rows — in
+      // both cases the existing row wins and its stored init params are
+      // what the follow-up SELECT will see.
+      await manager
+        .createQueryBuilder()
+        .insert()
+        .into(CounterfactualSafe)
+        .values(
+          normalized.map((item) => ({
             creator: args.creatorId ? { id: args.creatorId } : null,
             chainId: item.chainId,
             address: item.address,
@@ -64,17 +76,65 @@ export class CounterfactualSafesRepository implements ICounterfactualSafesReposi
             paymentToken: item.paymentToken,
             payment: item.payment,
             paymentReceiver: item.paymentReceiver,
-          });
-          counterfactualSafeId = insertResult.identifiers[0].id as number;
-        }
+          })),
+        )
+        .orIgnore()
+        .execute();
 
-        if (args.creatorId) {
-          await this.associateUser(
-            manager,
-            counterfactualSafeId,
-            args.creatorId,
+      // Single SELECT to fetch the authoritative canonical row for every
+      // submitted (chainId, address). Whether each row is newly-inserted or
+      // pre-existing is irrelevant from here on — we only care about its id
+      // and its stored init params.
+      const canonicalRows = await manager
+        .createQueryBuilder(CounterfactualSafe, 'cfs')
+        .where(
+          normalized
+            .map(
+              (_, i) =>
+                `(cfs.chain_id = :chainId${i} AND cfs.address = :address${i})`,
+            )
+            .join(' OR '),
+          normalized.reduce<Record<string, string>>((acc, item, i) => {
+            acc[`chainId${i}`] = item.chainId;
+            acc[`address${i}`] = item.address;
+            return acc;
+          }, {}),
+        )
+        .getMany();
+
+      const rowByKey = new Map<string, CounterfactualSafe>();
+      for (const row of canonicalRows) {
+        rowByKey.set(`${row.chainId}:${row.address}`, row);
+      }
+
+      // Enforce init-params equality per submitted item. A mismatch here
+      // means the caller is trying to register a different prediction at an
+      // (chainId, address) that's already claimed — a genuine collision.
+      for (const item of normalized) {
+        const existing = rowByKey.get(`${item.chainId}:${item.address}`);
+        if (!existing || !isSameInitParams(existing, item)) {
+          throw new UniqueConstraintError(
+            'A counterfactual Safe with the same chainId and address already exists with different initialization parameters.',
           );
         }
+      }
+
+      // Bulk-insert user associations; per-user idempotency comes from the
+      // junction's unique constraint + `ON CONFLICT DO NOTHING`.
+      const userId = args.creatorId;
+      if (userId !== null && userId !== undefined) {
+        await manager
+          .createQueryBuilder()
+          .insert()
+          .into(CounterfactualSafeUser)
+          .values(
+            canonicalRows.map((row) => ({
+              counterfactualSafe: { id: row.id },
+              user: { id: userId },
+            })),
+          )
+          .orIgnore()
+          .execute();
       }
     });
   }
@@ -168,23 +228,6 @@ export class CounterfactualSafesRepository implements ICounterfactualSafesReposi
         targets.map((t) => t.id),
       );
     });
-  }
-
-  private async associateUser(
-    manager: EntityManager,
-    counterfactualSafeId: number,
-    userId: User['id'],
-  ): Promise<void> {
-    await manager
-      .createQueryBuilder()
-      .insert()
-      .into(CounterfactualSafeUser)
-      .values({
-        counterfactualSafe: { id: counterfactualSafeId },
-        user: { id: userId },
-      })
-      .orIgnore()
-      .execute();
   }
 }
 

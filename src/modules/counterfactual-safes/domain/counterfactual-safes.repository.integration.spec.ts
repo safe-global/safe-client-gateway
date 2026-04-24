@@ -499,7 +499,7 @@ describe('CounterfactualSafesRepository', () => {
   });
 
   describe('delete', () => {
-    it('should remove the user association and the canonical row when no other associations remain', async () => {
+    it('should remove the user association but keep the canonical row for audit trail', async () => {
       const user = await dbUserRepo.insert({ status: 'ACTIVE' });
       const userId = user.identifiers[0].id as User['id'];
       const payload = buildCounterfactualSafePayload();
