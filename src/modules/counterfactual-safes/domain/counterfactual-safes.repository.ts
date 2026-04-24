@@ -1,19 +1,26 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
-import { isUniqueConstraintError } from '@/datasources/errors/helpers/is-unique-constraint-error.helper';
 import { UniqueConstraintError } from '@/datasources/errors/unique-constraint-error';
 import { CounterfactualSafe } from '@/modules/counterfactual-safes/datasources/entities/counterfactual-safe.entity.db';
+import { CounterfactualSafeUser } from '@/modules/counterfactual-safes/datasources/entities/counterfactual-safe-user.entity.db';
 import { User } from '@/modules/users/datasources/entities/users.entity.db';
 import type { ICounterfactualSafesRepository } from '@/modules/counterfactual-safes/domain/counterfactual-safes.repository.interface';
 import { BadRequestException, Inject, NotFoundException } from '@nestjs/common';
 import {
+  EntityManager,
   FindOptionsRelations,
   FindOptionsSelect,
   FindOptionsWhere,
 } from 'typeorm';
-import { getAddress } from 'viem';
+import { getAddress, type Address } from 'viem';
 
-export class CounterfactualSafesRepository implements ICounterfactualSafesRepository {
+type CreateItem = Parameters<
+  ICounterfactualSafesRepository['create']
+>[0]['payload'][number];
+
+export class CounterfactualSafesRepository
+  implements ICounterfactualSafesRepository
+{
   public constructor(
     @Inject(PostgresDatabaseService)
     private readonly postgresDatabaseService: PostgresDatabaseService,
@@ -22,48 +29,69 @@ export class CounterfactualSafesRepository implements ICounterfactualSafesReposi
   public async create(
     args: Parameters<ICounterfactualSafesRepository['create']>[0],
   ): Promise<void> {
-    const repository =
-      await this.postgresDatabaseService.getRepository(CounterfactualSafe);
-
-    const itemsToInsert = args.payload.map((item) => ({
-      creator: args.creatorId ? { id: args.creatorId } : null,
-      chainId: item.chainId,
-      address: item.address,
-      factoryAddress: item.factoryAddress,
-      masterCopy: item.masterCopy,
-      saltNonce: item.saltNonce,
-      safeVersion: item.safeVersion,
-      threshold: item.threshold,
+    const normalized = args.payload.map((item) => ({
+      ...item,
       owners: item.owners.map((owner) => getAddress(owner)),
-      fallbackHandler: item.fallbackHandler,
-      setupTo: item.setupTo,
-      setupData: item.setupData,
-      paymentToken: item.paymentToken,
-      payment: item.payment,
-      paymentReceiver: item.paymentReceiver,
     }));
 
-    try {
-      await repository.insert(itemsToInsert);
-    } catch (err) {
-      if (isUniqueConstraintError(err)) {
-        throw new UniqueConstraintError(
-          'A counterfactual Safe with the same chainId and address already exists.',
-        );
+    await this.postgresDatabaseService.transaction(async (manager) => {
+      for (const item of normalized) {
+        const existing = await manager.findOne(CounterfactualSafe, {
+          where: { chainId: item.chainId, address: item.address },
+        });
+
+        let counterfactualSafeId: number;
+
+        if (existing) {
+          if (!isSameInitParams(existing, item)) {
+            throw new UniqueConstraintError(
+              'A counterfactual Safe with the same chainId and address already exists with different initialization parameters.',
+            );
+          }
+          counterfactualSafeId = existing.id;
+        } else {
+          const insertResult = await manager.insert(CounterfactualSafe, {
+            creator: args.creatorId ? { id: args.creatorId } : null,
+            chainId: item.chainId,
+            address: item.address,
+            factoryAddress: item.factoryAddress,
+            masterCopy: item.masterCopy,
+            saltNonce: item.saltNonce,
+            safeVersion: item.safeVersion,
+            threshold: item.threshold,
+            owners: item.owners,
+            fallbackHandler: item.fallbackHandler,
+            setupTo: item.setupTo,
+            setupData: item.setupData,
+            paymentToken: item.paymentToken,
+            payment: item.payment,
+            paymentReceiver: item.paymentReceiver,
+          });
+          counterfactualSafeId = insertResult.identifiers[0].id as number;
+        }
+
+        if (args.creatorId) {
+          await this.associateUser(manager, counterfactualSafeId, args.creatorId);
+        }
       }
-      throw err;
-    }
+    });
   }
 
-  public async findByCreatorId(args: {
-    creatorId: User['id'];
+  public async findByUserId(args: {
+    userId: User['id'];
   }): Promise<Array<CounterfactualSafe>> {
     const repository =
       await this.postgresDatabaseService.getRepository(CounterfactualSafe);
 
-    return await repository.find({
-      where: { creator: { id: args.creatorId } },
-    });
+    return repository
+      .createQueryBuilder('cfs')
+      .innerJoin(
+        CounterfactualSafeUser,
+        'cfsu',
+        'cfsu.counterfactual_safe_id = cfs.id',
+      )
+      .where('cfsu.user_id = :userId', { userId: args.userId })
+      .getMany();
   }
 
   public async findOrFail(
@@ -92,32 +120,99 @@ export class CounterfactualSafesRepository implements ICounterfactualSafesReposi
   }
 
   public async delete(args: {
-    creatorId: User['id'];
+    userId: User['id'];
     payload: Array<{
       chainId: CounterfactualSafe['chainId'];
       address: CounterfactualSafe['address'];
     }>;
   }): Promise<void> {
-    const repository =
-      await this.postgresDatabaseService.getRepository(CounterfactualSafe);
+    await this.postgresDatabaseService.transaction(async (manager) => {
+      const targets = await manager
+        .createQueryBuilder(CounterfactualSafeUser, 'cfsu')
+        .innerJoin(
+          CounterfactualSafe,
+          'cfs',
+          'cfs.id = cfsu.counterfactual_safe_id',
+        )
+        .where('cfsu.user_id = :userId', { userId: args.userId })
+        .andWhere(
+          args.payload
+            .map(
+              (_, i) =>
+                `(cfs.chain_id = :chainId${i} AND cfs.address = :address${i})`,
+            )
+            .join(' OR '),
+          args.payload.reduce<Record<string, string>>((acc, item, i) => {
+            acc[`chainId${i}`] = item.chainId;
+            acc[`address${i}`] = item.address;
+            return acc;
+          }, {}),
+        )
+        .select(['cfsu.id'])
+        .getMany();
 
-    const whereClause: Array<FindOptionsWhere<CounterfactualSafe>> =
-      args.payload.map((item) => ({
-        creator: { id: args.creatorId },
-        chainId: item.chainId,
-        address: item.address,
-      }));
+      if (targets.length === 0) {
+        throw new NotFoundException('Counterfactual Safe not found.');
+      }
 
-    const counterfactualSafes = await this.findOrFail({
-      where: whereClause,
-    });
+      if (targets.length !== args.payload.length) {
+        throw new BadRequestException(
+          `Expected ${args.payload.length} counterfactual Safe(s) to delete, but found ${targets.length}.`,
+        );
+      }
 
-    if (counterfactualSafes.length !== args.payload.length) {
-      throw new BadRequestException(
-        `Expected ${args.payload.length} counterfactual Safe(s) to delete, but found ${counterfactualSafes.length}.`,
+      await manager.delete(
+        CounterfactualSafeUser,
+        targets.map((t) => t.id),
       );
-    }
-
-    await repository.remove(counterfactualSafes);
+    });
   }
+
+  private async associateUser(
+    manager: EntityManager,
+    counterfactualSafeId: number,
+    userId: User['id'],
+  ): Promise<void> {
+    await manager
+      .createQueryBuilder()
+      .insert()
+      .into(CounterfactualSafeUser)
+      .values({
+        counterfactualSafe: { id: counterfactualSafeId },
+        user: { id: userId },
+      })
+      .orIgnore()
+      .execute();
+  }
+}
+
+function isSameInitParams(
+  existing: CounterfactualSafe,
+  incoming: CreateItem,
+): boolean {
+  return (
+    existing.factoryAddress === incoming.factoryAddress &&
+    existing.masterCopy === incoming.masterCopy &&
+    existing.saltNonce === incoming.saltNonce &&
+    existing.safeVersion === incoming.safeVersion &&
+    existing.threshold === incoming.threshold &&
+    isSameAddressList(existing.owners, incoming.owners) &&
+    existing.fallbackHandler === incoming.fallbackHandler &&
+    existing.setupTo === incoming.setupTo &&
+    existing.setupData === incoming.setupData &&
+    existing.paymentToken === incoming.paymentToken &&
+    existing.payment === incoming.payment &&
+    existing.paymentReceiver === incoming.paymentReceiver
+  );
+}
+
+function isSameAddressList(
+  a: ReadonlyArray<Address>,
+  b: ReadonlyArray<Address>,
+): boolean {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) {
+    if (a[i] !== b[i]) return false;
+  }
+  return true;
 }

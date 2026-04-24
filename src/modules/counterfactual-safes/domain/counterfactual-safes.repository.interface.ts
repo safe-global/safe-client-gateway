@@ -36,8 +36,8 @@ export interface ICounterfactualSafesRepository {
     >;
   }): Promise<void>;
 
-  findByCreatorId(args: {
-    creatorId: User['id'];
+  findByUserId(args: {
+    userId: User['id'];
   }): Promise<Array<CounterfactualSafe>>;
 
   findOrFail(
@@ -53,7 +53,7 @@ export interface ICounterfactualSafesRepository {
   }): Promise<Array<CounterfactualSafe>>;
 
   delete(args: {
-    creatorId: User['id'];
+    userId: User['id'];
     payload: Array<{
       chainId: CounterfactualSafe['chainId'];
       address: CounterfactualSafe['address'];
