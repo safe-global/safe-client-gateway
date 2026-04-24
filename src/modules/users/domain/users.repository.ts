@@ -3,6 +3,7 @@ import {
   ConflictException,
   Inject,
   Injectable,
+  InternalServerErrorException,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -286,6 +287,10 @@ export class UsersRepository implements IUsersRepository {
       if (updatedUser.email !== null) {
         return;
       }
+
+      throw new InternalServerErrorException(
+        'Failed to persist verified email',
+      );
     } catch (error) {
       if (
         error instanceof Error &&

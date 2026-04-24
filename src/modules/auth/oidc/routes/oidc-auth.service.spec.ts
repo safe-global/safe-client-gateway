@@ -250,13 +250,14 @@ describe('OidcAuthService', () => {
       expect(usersRepositoryMock.persistVerifiedEmail).not.toHaveBeenCalled();
     });
 
-    it('should propagate email ownership conflicts', async () => {
+    it('should continue authentication when verified email ownership conflicts', async () => {
       const now = new Date();
       jest.setSystemTime(now);
 
       const extUserId = `auth0|${faker.string.uuid()}`;
       const userId = faker.number.int();
       const email = faker.internet.email().toLowerCase();
+      const accessToken = faker.string.alphanumeric(64);
       const error = new ConflictException(
         'Email already belongs to another user',
       );
@@ -271,15 +272,22 @@ describe('OidcAuthService', () => {
       });
       usersRepositoryMock.findOrCreateByExtUserId.mockResolvedValue(userId);
       usersRepositoryMock.persistVerifiedEmail.mockRejectedValue(error);
+      authRepositoryMock.signToken.mockReturnValue(accessToken);
 
       await expect(
         target.authenticateWithOidc(faker.string.alphanumeric(32)),
-      ).rejects.toThrow(error);
+      ).resolves.toEqual(expect.objectContaining({ accessToken }));
 
       expect(usersRepositoryMock.findOrCreateByExtUserId).toHaveBeenCalledWith(
         extUserId,
       );
-      expect(authRepositoryMock.signToken).not.toHaveBeenCalled();
+      expect(usersRepositoryMock.persistVerifiedEmail).toHaveBeenCalledWith(
+        userId,
+        email,
+      );
+      expect(loggingServiceMock.warn).toHaveBeenCalledWith(
+        `OIDC: verified email already belongs to another user for user ${userId}`,
+      );
     });
 
     it('should throw ForbiddenException when exp exceeds max', async () => {

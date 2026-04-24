@@ -594,7 +594,7 @@ describe('OidcAuthController', () => {
         expectErrorRedirect(response, 'authentication_failed');
       });
 
-      it('should redirect with authentication_failed when verified email ownership conflicts', async () => {
+      it('should continue login when verified email ownership conflicts', async () => {
         jest.setSystemTime(0);
 
         const expirationTime = faker.date.between({
@@ -642,7 +642,14 @@ describe('OidcAuthController', () => {
             state,
           });
 
-        expectErrorRedirect(response, 'authentication_failed');
+        expect(response.status).toBe(302);
+        expect(response.headers.location).toBe(postLoginRedirectUri);
+        expect(response.headers['set-cookie']).toEqual(
+          expect.arrayContaining([
+            expect.stringContaining('access_token='),
+            expect.stringContaining('auth_state=;'),
+          ]),
+        );
       });
 
       it('should redirect to the custom redirect_url after login', async () => {
