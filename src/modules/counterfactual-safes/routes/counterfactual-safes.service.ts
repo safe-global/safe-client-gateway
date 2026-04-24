@@ -48,8 +48,8 @@ export class CounterfactualSafesService {
     const userId = getAuthenticatedUserIdOrFail(authPayload);
 
     const counterfactualSafes =
-      await this.counterfactualSafesRepository.findByCreatorId({
-        creatorId: userId,
+      await this.counterfactualSafesRepository.findByUserId({
+        userId,
       });
 
     return {
@@ -64,7 +64,7 @@ export class CounterfactualSafesService {
     const userId = getAuthenticatedUserIdOrFail(args.authPayload);
 
     await this.counterfactualSafesRepository.delete({
-      creatorId: userId,
+      userId,
       payload: args.payload,
     });
   }

@@ -4,6 +4,7 @@ import { UsersModule } from '@/modules/users/users.module';
 import { SpacesModule } from '@/modules/spaces/spaces.module';
 import { PostgresDatabaseModuleV2 } from '@/datasources/db/v2/postgres-database.module';
 import { CounterfactualSafe } from '@/modules/counterfactual-safes/datasources/entities/counterfactual-safe.entity.db';
+import { CounterfactualSafeUser } from '@/modules/counterfactual-safes/datasources/entities/counterfactual-safe-user.entity.db';
 import { CounterfactualSafesRepository } from '@/modules/counterfactual-safes/domain/counterfactual-safes.repository';
 import { ICounterfactualSafesRepository } from '@/modules/counterfactual-safes/domain/counterfactual-safes.repository.interface';
 import { CounterfactualSafesController } from '@/modules/counterfactual-safes/routes/counterfactual-safes.controller';
@@ -16,7 +17,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 @Module({
   imports: [
     PostgresDatabaseModuleV2,
-    TypeOrmModule.forFeature([CounterfactualSafe]),
+    TypeOrmModule.forFeature([CounterfactualSafe, CounterfactualSafeUser]),
     forwardRef(() => AuthModule),
     forwardRef(() => UsersModule),
     forwardRef(() => SpacesModule),

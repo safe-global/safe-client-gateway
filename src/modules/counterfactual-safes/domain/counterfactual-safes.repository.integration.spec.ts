@@ -12,6 +12,7 @@ import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db
 import { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
 import { SpaceSafe } from '@/modules/spaces/datasources/entities/space-safes.entity.db';
 import { CounterfactualSafe } from '@/modules/counterfactual-safes/datasources/entities/counterfactual-safe.entity.db';
+import { CounterfactualSafeUser } from '@/modules/counterfactual-safes/datasources/entities/counterfactual-safe-user.entity.db';
 import { CounterfactualSafesRepository } from '@/modules/counterfactual-safes/domain/counterfactual-safes.repository';
 import { counterfactualSafeBuilder } from '@/modules/counterfactual-safes/datasources/entities/__tests__/counterfactual-safe.entity.db.builder';
 import { UniqueConstraintError } from '@/datasources/errors/unique-constraint-error';
@@ -69,6 +70,7 @@ describe('CounterfactualSafesRepository', () => {
   let dbUserRepo: Repository<User>;
   let dbWalletRepo: Repository<Wallet>;
   let dbCounterfactualSafeRepo: Repository<CounterfactualSafe>;
+  let dbCounterfactualSafeUserRepo: Repository<CounterfactualSafeUser>;
 
   const testDatabaseName = faker.string.alpha({
     length: 10,
@@ -83,7 +85,15 @@ describe('CounterfactualSafesRepository', () => {
       database: testDatabaseName,
     }),
     migrationsTableName: testConfiguration.db.orm.migrationsTableName,
-    entities: [CounterfactualSafe, Member, Space, SpaceSafe, User, Wallet],
+    entities: [
+      CounterfactualSafe,
+      CounterfactualSafeUser,
+      Member,
+      Space,
+      SpaceSafe,
+      User,
+      Wallet,
+    ],
   });
 
   beforeAll(async () => {
@@ -137,12 +147,20 @@ describe('CounterfactualSafesRepository', () => {
     dbUserRepo = dataSource.getRepository(User);
     dbWalletRepo = dataSource.getRepository(Wallet);
     dbCounterfactualSafeRepo = dataSource.getRepository(CounterfactualSafe);
+    dbCounterfactualSafeUserRepo = dataSource.getRepository(
+      CounterfactualSafeUser,
+    );
   });
 
   afterEach(async () => {
     jest.resetAllMocks();
 
     // Delete in dependency order
+    await dbCounterfactualSafeUserRepo
+      .createQueryBuilder()
+      .delete()
+      .where('1=1')
+      .execute();
     await dbCounterfactualSafeRepo
       .createQueryBuilder()
       .delete()
@@ -279,7 +297,7 @@ describe('CounterfactualSafesRepository', () => {
       expect(saved.paymentReceiver).toBeNull();
     });
 
-    it('should throw UniqueConstraintError on duplicate chainId + address', async () => {
+    it('should be idempotent when the same user re-submits identical init params', async () => {
       const user = await dbUserRepo.insert({ status: 'ACTIVE' });
       const userId = user.identifiers[0].id as User['id'];
       const payload = buildCounterfactualSafePayload();
@@ -288,50 +306,50 @@ describe('CounterfactualSafesRepository', () => {
         creatorId: userId,
         payload: [payload],
       });
-
-      await expect(
-        counterfactualSafesRepo.create({
-          creatorId: userId,
-          payload: [payload],
-        }),
-      ).rejects.toThrow(UniqueConstraintError);
-    });
-  });
-
-  describe('findByCreatorId', () => {
-    it('should return counterfactual safes for a creator', async () => {
-      const user = await dbUserRepo.insert({ status: 'ACTIVE' });
-      const userId = user.identifiers[0].id as User['id'];
-      const payload = buildCounterfactualSafePayload();
-
       await counterfactualSafesRepo.create({
         creatorId: userId,
         payload: [payload],
       });
 
-      const found = await counterfactualSafesRepo.findByCreatorId({
-        creatorId: userId,
-      });
+      const all = await dbCounterfactualSafeRepo.find();
+      expect(all).toHaveLength(1);
 
-      expect(found).toHaveLength(1);
-      expect(found[0]).toMatchObject({
-        chainId: payload.chainId,
-        address: payload.address,
-      });
+      const associations = await dbCounterfactualSafeUserRepo.find();
+      expect(associations).toHaveLength(1);
     });
 
-    it('should return empty array for a creator with no safes', async () => {
-      const user = await dbUserRepo.insert({ status: 'ACTIVE' });
-      const userId = user.identifiers[0].id as User['id'];
+    it('should share the canonical row and create a second association when another user submits identical init params', async () => {
+      const user1 = await dbUserRepo.insert({ status: 'ACTIVE' });
+      const userId1 = user1.identifiers[0].id as User['id'];
+      const user2 = await dbUserRepo.insert({ status: 'ACTIVE' });
+      const userId2 = user2.identifiers[0].id as User['id'];
+      const payload = buildCounterfactualSafePayload();
 
-      const found = await counterfactualSafesRepo.findByCreatorId({
-        creatorId: userId,
+      await counterfactualSafesRepo.create({
+        creatorId: userId1,
+        payload: [payload],
+      });
+      await counterfactualSafesRepo.create({
+        creatorId: userId2,
+        payload: [payload],
       });
 
-      expect(found).toEqual([]);
+      const all = await dbCounterfactualSafeRepo.find({
+        relations: { creator: true },
+      });
+      expect(all).toHaveLength(1);
+      expect(all[0].creator?.id).toBe(userId1);
+
+      const associations = await dbCounterfactualSafeUserRepo.find({
+        relations: { user: true },
+      });
+      expect(associations).toHaveLength(2);
+      expect(associations.map((a) => a.user.id).sort()).toEqual(
+        [userId1, userId2].sort(),
+      );
     });
 
-    it('should not return safes created by another user', async () => {
+    it('should throw UniqueConstraintError when (chainId, address) collides with different init params', async () => {
       const user1 = await dbUserRepo.insert({ status: 'ACTIVE' });
       const userId1 = user1.identifiers[0].id as User['id'];
       const user2 = await dbUserRepo.insert({ status: 'ACTIVE' });
@@ -343,11 +361,73 @@ describe('CounterfactualSafesRepository', () => {
         payload: [payload],
       });
 
-      const found = await counterfactualSafesRepo.findByCreatorId({
-        creatorId: userId2,
+      await expect(
+        counterfactualSafesRepo.create({
+          creatorId: userId2,
+          payload: [{ ...payload, threshold: payload.threshold + 1 }],
+        }),
+      ).rejects.toThrow(UniqueConstraintError);
+    });
+  });
+
+  describe('findByUserId', () => {
+    it('should return counterfactual safes for a user', async () => {
+      const user = await dbUserRepo.insert({ status: 'ACTIVE' });
+      const userId = user.identifiers[0].id as User['id'];
+      const payload = buildCounterfactualSafePayload();
+
+      await counterfactualSafesRepo.create({
+        creatorId: userId,
+        payload: [payload],
       });
 
+      const found = await counterfactualSafesRepo.findByUserId({ userId });
+
+      expect(found).toHaveLength(1);
+      expect(found[0]).toMatchObject({
+        chainId: payload.chainId,
+        address: payload.address,
+      });
+    });
+
+    it('should return empty array for a user with no associations', async () => {
+      const user = await dbUserRepo.insert({ status: 'ACTIVE' });
+      const userId = user.identifiers[0].id as User['id'];
+
+      const found = await counterfactualSafesRepo.findByUserId({ userId });
+
       expect(found).toEqual([]);
+    });
+
+    it('should return a safe shared by another user once the second user associates', async () => {
+      const user1 = await dbUserRepo.insert({ status: 'ACTIVE' });
+      const userId1 = user1.identifiers[0].id as User['id'];
+      const user2 = await dbUserRepo.insert({ status: 'ACTIVE' });
+      const userId2 = user2.identifiers[0].id as User['id'];
+      const payload = buildCounterfactualSafePayload();
+
+      await counterfactualSafesRepo.create({
+        creatorId: userId1,
+        payload: [payload],
+      });
+
+      expect(
+        await counterfactualSafesRepo.findByUserId({ userId: userId2 }),
+      ).toEqual([]);
+
+      await counterfactualSafesRepo.create({
+        creatorId: userId2,
+        payload: [payload],
+      });
+
+      const found = await counterfactualSafesRepo.findByUserId({
+        userId: userId2,
+      });
+      expect(found).toHaveLength(1);
+      expect(found[0]).toMatchObject({
+        chainId: payload.chainId,
+        address: payload.address,
+      });
     });
   });
 
@@ -419,7 +499,7 @@ describe('CounterfactualSafesRepository', () => {
   });
 
   describe('delete', () => {
-    it('should delete a counterfactual safe scoped by creator', async () => {
+    it('should remove the user association but keep the canonical row for audit trail', async () => {
       const user = await dbUserRepo.insert({ status: 'ACTIVE' });
       const userId = user.identifiers[0].id as User['id'];
       const payload = buildCounterfactualSafePayload();
@@ -430,15 +510,49 @@ describe('CounterfactualSafesRepository', () => {
       });
 
       await counterfactualSafesRepo.delete({
-        creatorId: userId,
+        userId,
         payload: [{ chainId: payload.chainId, address: payload.address }],
       });
 
+      const associations = await dbCounterfactualSafeUserRepo.find();
+      expect(associations).toHaveLength(0);
+      // Canonical row is intentionally kept (audit trail); only the association is removed.
       const remaining = await dbCounterfactualSafeRepo.find();
-      expect(remaining).toHaveLength(0);
+      expect(remaining).toHaveLength(1);
     });
 
-    it('should delete multiple counterfactual safes', async () => {
+    it('should remove only the requesting user association when the safe is shared', async () => {
+      const user1 = await dbUserRepo.insert({ status: 'ACTIVE' });
+      const userId1 = user1.identifiers[0].id as User['id'];
+      const user2 = await dbUserRepo.insert({ status: 'ACTIVE' });
+      const userId2 = user2.identifiers[0].id as User['id'];
+      const payload = buildCounterfactualSafePayload();
+
+      await counterfactualSafesRepo.create({
+        creatorId: userId1,
+        payload: [payload],
+      });
+      await counterfactualSafesRepo.create({
+        creatorId: userId2,
+        payload: [payload],
+      });
+
+      await counterfactualSafesRepo.delete({
+        userId: userId2,
+        payload: [{ chainId: payload.chainId, address: payload.address }],
+      });
+
+      const associations = await dbCounterfactualSafeUserRepo.find({
+        relations: { user: true },
+      });
+      expect(associations).toHaveLength(1);
+      expect(associations[0].user.id).toBe(userId1);
+
+      const remaining = await dbCounterfactualSafeRepo.find();
+      expect(remaining).toHaveLength(1);
+    });
+
+    it('should delete multiple associations', async () => {
       const user = await dbUserRepo.insert({ status: 'ACTIVE' });
       const userId = user.identifiers[0].id as User['id'];
       const payload1 = buildCounterfactualSafePayload();
@@ -450,24 +564,24 @@ describe('CounterfactualSafesRepository', () => {
       });
 
       await counterfactualSafesRepo.delete({
-        creatorId: userId,
+        userId,
         payload: [
           { chainId: payload1.chainId, address: payload1.address },
           { chainId: payload2.chainId, address: payload2.address },
         ],
       });
 
-      const remaining = await dbCounterfactualSafeRepo.find();
-      expect(remaining).toHaveLength(0);
+      const associations = await dbCounterfactualSafeUserRepo.find();
+      expect(associations).toHaveLength(0);
     });
 
-    it('should throw NotFoundException if counterfactual safe does not exist', async () => {
+    it('should throw NotFoundException if the counterfactual safe does not exist', async () => {
       const user = await dbUserRepo.insert({ status: 'ACTIVE' });
       const userId = user.identifiers[0].id as User['id'];
 
       await expect(
         counterfactualSafesRepo.delete({
-          creatorId: userId,
+          userId,
           payload: [
             {
               chainId: faker.string.numeric(),
@@ -480,7 +594,7 @@ describe('CounterfactualSafesRepository', () => {
       );
     });
 
-    it("should not allow deleting another user's counterfactual safe", async () => {
+    it('should throw NotFoundException if user is not associated with the safe', async () => {
       const user1 = await dbUserRepo.insert({ status: 'ACTIVE' });
       const userId1 = user1.identifiers[0].id as User['id'];
       const user2 = await dbUserRepo.insert({ status: 'ACTIVE' });
@@ -492,19 +606,18 @@ describe('CounterfactualSafesRepository', () => {
         payload: [payload],
       });
 
-      // user2 tries to delete user1's safe — should not find it
       await expect(
         counterfactualSafesRepo.delete({
-          creatorId: userId2,
+          userId: userId2,
           payload: [{ chainId: payload.chainId, address: payload.address }],
         }),
       ).rejects.toThrow(
         new NotFoundException('Counterfactual Safe not found.'),
       );
 
-      // The safe should still exist
-      const remaining = await dbCounterfactualSafeRepo.find();
-      expect(remaining).toHaveLength(1);
+      // The canonical row and user1's association should still exist.
+      const associations = await dbCounterfactualSafeUserRepo.find();
+      expect(associations).toHaveLength(1);
     });
 
     it('should throw BadRequestException if found count does not match payload count', async () => {
@@ -519,7 +632,7 @@ describe('CounterfactualSafesRepository', () => {
 
       await expect(
         counterfactualSafesRepo.delete({
-          creatorId: userId,
+          userId,
           payload: [
             { chainId: payload.chainId, address: payload.address },
             {
