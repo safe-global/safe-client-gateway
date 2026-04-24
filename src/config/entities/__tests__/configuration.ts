@@ -153,6 +153,26 @@ export default (): ReturnType<typeof configuration> => ({
       fromEmail: faker.internet.email(),
       fromName: faker.person.fullName(),
     },
+    ses: {
+      fromEmail: faker.internet.email(),
+      fromName: 'Safe',
+    },
+    queue: {
+      removeOnComplete: {
+        age: faker.number.int({ min: 0, max: 3600 }),
+        count: faker.number.int({ min: 0, max: 1000 }),
+      },
+      removeOnFail: {
+        age: faker.number.int({ min: 0, max: 86400 }),
+        count: faker.number.int({ min: 0, max: 500 }),
+      },
+      backoff: {
+        type: 'exponential',
+        delay: faker.number.int({ min: 0, max: 5000 }),
+      },
+      attempts: faker.number.int({ min: 1, max: 3 }),
+      concurrency: faker.number.int({ min: 1, max: 5 }),
+    },
   },
   expirationTimeInSeconds: {
     deviatePercent: faker.number.int({ min: 10, max: 20 }),
@@ -171,6 +191,7 @@ export default (): ReturnType<typeof configuration> => ({
   express: { jsonLimit: '1mb' },
   features: {
     email: false,
+    sesEmail: false,
     zerionBalancesEnabled: false,
     zerionPositions: false,
     debugLogs: false,

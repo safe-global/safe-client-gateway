@@ -8,3 +8,6 @@ export const CSV_EXPORT_WORKER_CONCURRENCY =
 export const PUSH_NOTIFICATION_QUEUE = 'push-notification';
 export const PUSH_NOTIFICATION_WORKER_CONCURRENCY =
   configuration().pushNotifications.queue.concurrency;
+
+export const EMAIL_QUEUE = 'email';
+export const EMAIL_WORKER_CONCURRENCY = configuration().email.queue.concurrency;
