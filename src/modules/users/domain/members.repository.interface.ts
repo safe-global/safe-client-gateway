@@ -35,7 +35,8 @@ export interface IMembersRepository {
     authPayload: AuthPayload;
     spaceId: Space['id'];
     users: Array<{
-      address: Address;
+      address?: Address;
+      email?: string;
       role: Member['role'];
       name: Member['name'];
     }>;

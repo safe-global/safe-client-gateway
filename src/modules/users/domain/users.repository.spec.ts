@@ -78,12 +78,13 @@ describe('UsersRepository', () => {
 
     it('should not overwrite an existing email', async () => {
       const userId = faker.number.int({ min: 1 });
+      const email = faker.internet.email().toLowerCase();
       userRepository.findOneOrFail.mockResolvedValue({
         id: userId,
-        email: faker.internet.email().toLowerCase(),
+        email,
       });
 
-      await target.persistVerifiedEmail(userId, faker.internet.email());
+      await target.persistVerifiedEmail(userId, email.toUpperCase());
 
       expect(userRepository.createQueryBuilder).not.toHaveBeenCalled();
     });
@@ -146,6 +147,18 @@ describe('UsersRepository', () => {
       userRepository.findOne.mockResolvedValue(null);
 
       await expect(target.findEmailById(userId)).resolves.toBeUndefined();
+    });
+  });
+
+  describe('findOrCreateInviteeByEmail', () => {
+    it('should return the existing user id when the email already exists', async () => {
+      const userId = faker.number.int({ min: 1 });
+      const email = faker.internet.email().toLowerCase();
+      userRepository.findOne.mockResolvedValue({ id: userId });
+
+      await expect(
+        target.findOrCreateInviteeByEmail(email, {} as never),
+      ).resolves.toBe(userId);
     });
   });
 });

@@ -618,6 +618,125 @@ describe('MembersRepository', () => {
       );
     });
 
+    it('should invite an email by creating a pending stub user', async () => {
+      const spaceName = nameBuilder();
+      const adminName = nameBuilder();
+      const invitedEmail = faker.internet.email().toLowerCase();
+      const invitedName = faker.person.firstName();
+      const {
+        user: owner,
+        authPayload,
+        authPayloadDto,
+      } = await createSiweUser();
+      const space = await dbSpacesRepository.insert({
+        name: spaceName,
+        status: 'ACTIVE',
+      });
+      const spaceId = space.generatedMaps[0].id;
+      await dbMembersRepository.insert({
+        user: owner,
+        space: space.generatedMaps[0],
+        name: adminName,
+        role: 'ADMIN',
+        status: 'ACTIVE',
+        invitedBy: getAddress(faker.finance.ethereumAddress()),
+      });
+
+      const invitation = await membersRepository.inviteUsers({
+        authPayload,
+        spaceId,
+        users: [
+          {
+            email: invitedEmail,
+            role: 'MEMBER',
+            name: invitedName,
+          },
+        ],
+      });
+
+      expect(invitation).toEqual([
+        {
+          userId: expect.any(Number),
+          spaceId,
+          name: invitedName,
+          role: 'MEMBER',
+          status: 'INVITED',
+          invitedBy: authPayloadDto.signer_address,
+        },
+      ]);
+
+      await expect(
+        dbUserRepo.findOneOrFail({
+          where: { id: invitation[0].userId },
+        }),
+      ).resolves.toEqual(
+        expect.objectContaining({
+          id: invitation[0].userId,
+          email: invitedEmail,
+          extUserId: null,
+          status: 'PENDING',
+        }),
+      );
+    });
+
+    it('should reuse an existing email-matched user for email invites', async () => {
+      const spaceName = nameBuilder();
+      const adminName = nameBuilder();
+      const invitedEmail = faker.internet.email().toLowerCase();
+      const invitedName = faker.person.firstName();
+      const {
+        user: owner,
+        authPayload,
+        authPayloadDto,
+      } = await createSiweUser();
+      const existingUser = await dbUserRepo.insert({
+        status: 'ACTIVE',
+        email: invitedEmail,
+      });
+      const existingUserId = existingUser.identifiers[0].id as number;
+      const space = await dbSpacesRepository.insert({
+        name: spaceName,
+        status: 'ACTIVE',
+      });
+      const spaceId = space.generatedMaps[0].id;
+      await dbMembersRepository.insert({
+        user: owner,
+        space: space.generatedMaps[0],
+        name: adminName,
+        role: 'ADMIN',
+        status: 'ACTIVE',
+        invitedBy: getAddress(faker.finance.ethereumAddress()),
+      });
+
+      const invitation = await membersRepository.inviteUsers({
+        authPayload,
+        spaceId,
+        users: [
+          {
+            email: invitedEmail,
+            role: 'MEMBER',
+            name: invitedName,
+          },
+        ],
+      });
+
+      expect(invitation).toEqual([
+        {
+          userId: existingUserId,
+          spaceId,
+          name: invitedName,
+          role: 'MEMBER',
+          status: 'INVITED',
+          invitedBy: authPayloadDto.signer_address,
+        },
+      ]);
+      await expect(
+        dbUserRepo.find({
+          where: { email: invitedEmail },
+        }),
+      ).resolves.toHaveLength(1);
+    });
+
     it('should not create PENDING users for existing ones', async () => {
       const spaceName = nameBuilder();
       const adminName = nameBuilder();

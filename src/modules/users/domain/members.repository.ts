@@ -93,7 +93,8 @@ export class MembersRepository implements IMembersRepository {
     spaceId: Space['id'];
     users: Array<{
       name: Member['name'];
-      address: Address;
+      address?: Address;
+      email?: string;
       role: Member['role'];
     }>;
   }): Promise<Array<Invitation>> {
@@ -116,11 +117,16 @@ export class MembersRepository implements IMembersRepository {
       throw new ForbiddenException('User is not an active admin.');
     }
 
-    const invitedAddresses = args.users.map((user) => user.address);
-    const invitedWallets = await this.walletsRepository.find({
-      where: { address: In(invitedAddresses) },
-      relations: { user: true },
-    });
+    const invitedAddresses = args.users.flatMap((user) =>
+      user.address ? [user.address] : [],
+    );
+    const invitedWallets =
+      invitedAddresses.length > 0
+        ? await this.walletsRepository.find({
+            where: { address: In(invitedAddresses) },
+            relations: { user: true },
+          })
+        : [];
     const invitations: Array<Invitation> = [];
 
     // TODO: Until OIDC invite flow is set up, OIDC admins have no wallet
@@ -131,16 +137,11 @@ export class MembersRepository implements IMembersRepository {
 
     await this.postgresDatabaseService.transaction(async (entityManager) => {
       for (const userToInvite of args.users) {
-        // Find existing User via Wallet or create new User and Wallet.
-        const wallet = invitedWallets.find((wallet) => {
-          return isAddressEqual(wallet.address, userToInvite.address);
+        const userIdToInvite = await this.getUserIdToInvite({
+          entityManager,
+          userToInvite,
+          invitedWallets,
         });
-        const userIdToInvite = wallet
-          ? wallet.user.id
-          : await this.createUserAndWallet({
-              entityManager,
-              address: userToInvite.address,
-            });
 
         try {
           await entityManager.insert(DbMember, {
@@ -154,7 +155,7 @@ export class MembersRepository implements IMembersRepository {
         } catch (err) {
           if (isUniqueConstraintError(err)) {
             throw new UniqueConstraintError(
-              `${userToInvite.address} is already in this space or has a pending invite.`,
+              `${userToInvite.address ?? userToInvite.email} is already in this space or has a pending invite.`,
             );
           }
           throw err;
@@ -185,6 +186,39 @@ export class MembersRepository implements IMembersRepository {
       entityManager,
     );
     return userId;
+  }
+
+  private async getUserIdToInvite(args: {
+    entityManager: EntityManager;
+    userToInvite: {
+      name: Member['name'];
+      address?: Address;
+      email?: string;
+      role: Member['role'];
+    };
+    invitedWallets: Array<{
+      address: Address;
+      user: { id: User['id'] };
+    }>;
+  }): Promise<User['id']> {
+    if (args.userToInvite.address) {
+      const wallet = args.invitedWallets.find((wallet) => {
+        return isAddressEqual(wallet.address, args.userToInvite.address!);
+      });
+
+      return (
+        wallet?.user.id ??
+        (await this.createUserAndWallet({
+          entityManager: args.entityManager,
+          address: args.userToInvite.address,
+        }))
+      );
+    }
+
+    return await this.usersRepository.findOrCreateInviteeByEmail(
+      args.userToInvite.email!,
+      args.entityManager,
+    );
   }
 
   public async acceptInvite(args: {

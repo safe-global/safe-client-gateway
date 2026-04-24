@@ -913,7 +913,7 @@ describe('UsersRepository', () => {
     });
   });
 
-  describe('findOrCreateByExtUserId', () => {
+  describe('findOrCreateByExtUserIdOrEmail', () => {
     it('should return the existing user id if the extUserId already exists', async () => {
       const dbUserRepository = dataSource.getRepository(User);
       const extUserId = faker.string.uuid();
@@ -924,7 +924,7 @@ describe('UsersRepository', () => {
       });
       const userId = userInsertResult.identifiers[0].id;
 
-      const result = await usersRepository.findOrCreateByExtUserId(extUserId);
+      const result = await usersRepository.findOrCreateByExtUserIdOrEmail(extUserId);
 
       expect(result).toBe(userId);
       // No additional user should have been created
@@ -935,7 +935,7 @@ describe('UsersRepository', () => {
       const dbUserRepository = dataSource.getRepository(User);
       const extUserId = faker.string.uuid();
 
-      const userId = await usersRepository.findOrCreateByExtUserId(extUserId);
+      const userId = await usersRepository.findOrCreateByExtUserIdOrEmail(extUserId);
 
       const user = await dbUserRepository.findOneOrFail({
         where: { id: userId },
@@ -957,8 +957,8 @@ describe('UsersRepository', () => {
       // Run two calls concurrently — one will win the insert, the other
       // should catch the unique constraint violation and retry the find.
       const [id1, id2] = await Promise.all([
-        usersRepository.findOrCreateByExtUserId(extUserId),
-        usersRepository.findOrCreateByExtUserId(extUserId),
+        usersRepository.findOrCreateByExtUserIdOrEmail(extUserId),
+        usersRepository.findOrCreateByExtUserIdOrEmail(extUserId),
       ]);
 
       expect(id1).toBe(id2);
@@ -972,8 +972,83 @@ describe('UsersRepository', () => {
       jest.spyOn(usersRepository, 'create').mockRejectedValueOnce(error);
 
       await expect(
-        usersRepository.findOrCreateByExtUserId(extUserId),
+        usersRepository.findOrCreateByExtUserIdOrEmail(extUserId),
       ).rejects.toThrow(error);
+    });
+
+    it('should claim an existing email-matched stub user', async () => {
+      const dbUserRepository = dataSource.getRepository(User);
+      const extUserId = faker.string.uuid();
+      const email = faker.internet.email().toLowerCase();
+      const userInsertResult = await dbUserRepository.insert({
+        status: 'PENDING',
+        email,
+        extUserId: null,
+      });
+      const userId = userInsertResult.identifiers[0].id as number;
+
+      const result = await usersRepository.findOrCreateByExtUserIdOrEmail(extUserId, {
+        email,
+      });
+
+      expect(result).toBe(userId);
+      await expect(
+        dbUserRepository.findOneOrFail({ where: { id: userId } }),
+      ).resolves.toEqual(
+        expect.objectContaining({
+          id: userId,
+          email,
+          extUserId,
+          status: 'PENDING',
+        }),
+      );
+    });
+  });
+
+  describe('findOrCreateInviteeByEmail', () => {
+    it('should return the existing user id if the email already exists', async () => {
+      const dbUserRepository = dataSource.getRepository(User);
+      const email = faker.internet.email().toLowerCase();
+      const userInsertResult = await dbUserRepository.insert({
+        status: 'ACTIVE',
+        email,
+      });
+      const userId = userInsertResult.identifiers[0].id as number;
+
+      const result = await postgresDatabaseService.transaction(
+        async (entityManager) =>
+          await usersRepository.findOrCreateInviteeByEmail(
+            email,
+            entityManager,
+          ),
+      );
+
+      expect(result).toBe(userId);
+      await expect(dbUserRepository.find()).resolves.toHaveLength(1);
+    });
+
+    it('should create a pending stub user when the email does not exist', async () => {
+      const dbUserRepository = dataSource.getRepository(User);
+      const email = faker.internet.email().toLowerCase();
+
+      const userId = await postgresDatabaseService.transaction(
+        async (entityManager) =>
+          await usersRepository.findOrCreateInviteeByEmail(
+            email,
+            entityManager,
+          ),
+      );
+
+      await expect(
+        dbUserRepository.findOneOrFail({ where: { id: userId } }),
+      ).resolves.toEqual(
+        expect.objectContaining({
+          id: userId,
+          email,
+          extUserId: null,
+          status: 'PENDING',
+        }),
+      );
     });
   });
 

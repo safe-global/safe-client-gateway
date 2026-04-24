@@ -29,7 +29,7 @@ export interface IUsersRepository {
   create(
     status: keyof typeof UserStatus,
     entityManager: EntityManager,
-    options?: { extUserId?: string },
+    options?: { extUserId?: string; email?: string },
   ): Promise<User['id']>;
 
   getWithWallets(authPayload: AuthPayload): Promise<{
@@ -56,7 +56,15 @@ export interface IUsersRepository {
 
   findOrCreateByWalletAddress(address: Address): Promise<User['id']>;
 
-  findOrCreateByExtUserId(extUserId: string): Promise<User['id']>;
+  findOrCreateInviteeByEmail(
+    email: string,
+    entityManager: EntityManager,
+  ): Promise<User['id']>;
+
+  findOrCreateByExtUserIdOrEmail(
+    extUserId: string,
+    options?: { email?: string },
+  ): Promise<User['id']>;
 
   persistVerifiedEmail(userId: User['id'], email: string): Promise<void>;
 

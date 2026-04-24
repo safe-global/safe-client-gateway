@@ -71,11 +71,12 @@ export class UsersRepository implements IUsersRepository {
   public async create(
     status: keyof typeof UserStatus,
     entityManager: EntityManager,
-    options?: { extUserId?: string },
+    options?: { extUserId?: string; email?: string },
   ): Promise<User['id']> {
     const userInsertResult = await entityManager.insert(DbUser, {
       status,
       ...(options?.extUserId && { extUserId: options.extUserId }),
+      ...(options?.email && { email: this.normalizeEmail(options.email) }),
     });
 
     return userInsertResult.identifiers[0].id;
@@ -218,7 +219,40 @@ export class UsersRepository implements IUsersRepository {
     }
   }
 
-  public async findOrCreateByExtUserId(extUserId: string): Promise<User['id']> {
+  public async findOrCreateInviteeByEmail(
+    email: string,
+    entityManager: EntityManager,
+  ): Promise<User['id']> {
+    const userRepository =
+      await this.postgresDatabaseService.getRepository(DbUser);
+    const normalizedEmail = this.normalizeEmail(email);
+
+    const existing = await userRepository.findOne({
+      where: { email: normalizedEmail },
+    });
+    if (existing) {
+      return existing.id;
+    }
+
+    try {
+      return await this.create('PENDING', entityManager, {
+        email: normalizedEmail,
+      });
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('users_email_key')) {
+        const user = await userRepository.findOneOrFail({
+          where: { email: normalizedEmail },
+        });
+        return user.id;
+      }
+      throw error;
+    }
+  }
+
+  public async findOrCreateByExtUserIdOrEmail(
+    extUserId: string,
+    options?: { email?: string },
+  ): Promise<User['id']> {
     const userRepository =
       await this.postgresDatabaseService.getRepository(DbUser);
 
@@ -227,6 +261,40 @@ export class UsersRepository implements IUsersRepository {
     });
     if (existing) {
       return existing.id;
+    }
+
+    const normalizedEmail = options?.email
+      ? this.normalizeEmail(options.email)
+      : undefined;
+    if (normalizedEmail) {
+      const existingByEmail = await userRepository.findOne({
+        where: { email: normalizedEmail },
+      });
+      if (existingByEmail) {
+        if (existingByEmail.extUserId === extUserId) {
+          return existingByEmail.id;
+        }
+        if (existingByEmail.extUserId !== null) {
+          throw new ConflictException('Email already belongs to another user');
+        }
+
+        await userRepository
+          .createQueryBuilder()
+          .update(DbUser)
+          .set({ extUserId })
+          .where('id = :userId', { userId: existingByEmail.id })
+          .andWhere('ext_user_id IS NULL')
+          .execute();
+
+        const claimedUser = await userRepository.findOneOrFail({
+          where: { id: existingByEmail.id },
+        });
+        if (claimedUser.extUserId === extUserId) {
+          return claimedUser.id;
+        }
+
+        throw new ConflictException('Email already belongs to another user');
+      }
     }
 
     try {
@@ -258,10 +326,14 @@ export class UsersRepository implements IUsersRepository {
   ): Promise<void> {
     const userRepository =
       await this.postgresDatabaseService.getRepository(DbUser);
-    const normalizedEmail = email.trim().toLowerCase();
+    const normalizedEmail = this.normalizeEmail(email);
     const user = await userRepository.findOneOrFail({
       where: { id: userId },
     });
+
+    if (user.email === normalizedEmail) {
+      return;
+    }
 
     if (user.email !== null) {
       return;
@@ -344,6 +416,10 @@ export class UsersRepository implements IUsersRepository {
       { id: userId, status: 'PENDING' },
       { status: 'ACTIVE' },
     );
+  }
+
+  private normalizeEmail(email: string): string {
+    return email.trim().toLowerCase();
   }
 
   private assertSignerAddress(

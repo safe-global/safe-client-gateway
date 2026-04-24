@@ -132,6 +132,52 @@ describe('MembersController', () => {
         );
     });
 
+    it('should invite users by email', async () => {
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const spaceName = nameBuilder();
+      const invitedEmail = faker.internet.email().toLowerCase();
+      const invitedName = faker.person.firstName();
+
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(201);
+
+      const createSpaceResponse = await request(app.getHttpServer())
+        .post('/v1/spaces')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: spaceName })
+        .expect(201);
+      const spaceId = createSpaceResponse.body.id;
+
+      await request(app.getHttpServer())
+        .post(`/v1/spaces/${spaceId}/members/invite`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({
+          users: [
+            {
+              role: 'MEMBER',
+              email: invitedEmail,
+              name: invitedName,
+            },
+          ],
+        })
+        .expect(201)
+        .expect(({ body }) =>
+          expect(body).toEqual([
+            {
+              userId: expect.any(Number),
+              spaceId,
+              name: invitedName,
+              role: 'MEMBER',
+              status: 'INVITED',
+              invitedBy: authPayloadDto.signer_address,
+            },
+          ]),
+        );
+    });
+
     it('should throw a 409 if there are too many invites', async () => {
       const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
