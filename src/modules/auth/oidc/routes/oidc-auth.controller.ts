@@ -31,6 +31,7 @@ import {
 } from '@nestjs/swagger';
 import { type CookieOptions, Request, Response } from 'express';
 import { UserEmailAlreadyInUseError } from '@/modules/users/domain/errors/user-email-already-in-use.error';
+import { asError } from '@/logging/utils';
 
 /**
  * The OidcAuthController handles OIDC (Auth0) authentication:
@@ -226,8 +227,9 @@ export class OidcAuthController {
         throw err;
       }
 
+      const error = asError(err);
       this.loggingService.error(
-        `Auth callback: authentication failed: ${err instanceof Error ? err.message : 'Unknown error'}`,
+        `Auth callback: authentication failed: ${error.message}\n${error.stack ?? ''}`,
       );
       res.redirect(this.buildErrorRedirectUrl('authentication_failed', state));
     }

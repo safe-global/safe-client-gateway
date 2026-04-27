@@ -142,6 +142,27 @@ describe('UsersRepository', () => {
         target.persistVerifiedEmail(userId, faker.internet.email()),
       ).rejects.toThrow(InternalServerErrorException);
     });
+
+    it('should return when a concurrent request persisted the email', async () => {
+      const userId = faker.number.int({ min: 1 });
+      const email = faker.internet.email().toLowerCase();
+      const queryBuilder = createQueryBuilder();
+      userRepository.findOneOrFail
+        .mockResolvedValueOnce({
+          id: userId,
+          email: null,
+        })
+        .mockResolvedValueOnce({
+          id: userId,
+          email,
+        });
+      userRepository.createQueryBuilder.mockReturnValue(queryBuilder);
+      queryBuilder.execute.mockResolvedValue({ affected: 0 });
+
+      await expect(
+        target.persistVerifiedEmail(userId, email),
+      ).resolves.toBeUndefined();
+    });
   });
 
   describe('findEmailById', () => {
