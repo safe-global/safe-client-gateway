@@ -37,6 +37,8 @@ export default (): ReturnType<typeof configuration> => ({
       redirectUri: faker.internet.url(),
       audience: faker.internet.url({ appendSlash: false }),
       scope: 'openid email',
+      jwksCacheMaxAgeMs: faker.number.int({ min: 60_000, max: 3_600_000 }),
+      jwksCooldownMs: faker.number.int({ min: 1_000, max: 60_000 }),
     },
     rateLimit: {
       max: faker.number.int({ min: 100, max: 200 }),

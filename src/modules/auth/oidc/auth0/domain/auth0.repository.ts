@@ -33,6 +33,6 @@ export class Auth0Repository implements IAuth0Repository {
     const response = await this.auth0Api.exchangeAuthorizationCode(code);
     const { id_token } = Auth0TokenResponseSchema.parse(response);
     this.loggingService.debug('Auth0: received id_token from token exchange');
-    return this.auth0TokenVerifier.verifyAndDecodeIdToken(id_token);
+    return this.auth0TokenVerifier.verifyAndDecode(id_token);
   }
 }

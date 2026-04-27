@@ -11,6 +11,7 @@ import {
   BadRequestException,
   ConflictException,
   ForbiddenException,
+  InternalServerErrorException,
   UnauthorizedException,
 } from '@nestjs/common';
 
@@ -287,6 +288,42 @@ describe('OidcAuthService', () => {
       );
       expect(loggingServiceMock.warn).toHaveBeenCalledWith(
         `OIDC: verified email already belongs to another user for user ${userId}`,
+      );
+    });
+
+    it('should continue authentication when verified email persistence fails internally', async () => {
+      const now = new Date();
+      jest.setSystemTime(now);
+
+      const extUserId = `auth0|${faker.string.uuid()}`;
+      const userId = faker.number.int();
+      const email = faker.internet.email().toLowerCase();
+      const accessToken = faker.string.alphanumeric(64);
+
+      auth0RepositoryMock.authenticateWithAuthorizationCode.mockResolvedValue({
+        sub: extUserId,
+        email,
+        email_verified: true,
+        exp: new Date(now.getTime() + 3600 * 1_000),
+        nbf: undefined,
+        iat: undefined,
+      });
+      usersRepositoryMock.findOrCreateByExtUserId.mockResolvedValue(userId);
+      usersRepositoryMock.persistVerifiedEmail.mockRejectedValue(
+        new InternalServerErrorException(),
+      );
+      authRepositoryMock.signToken.mockReturnValue(accessToken);
+
+      await expect(
+        target.authenticateWithOidc(faker.string.alphanumeric(32)),
+      ).resolves.toEqual(expect.objectContaining({ accessToken }));
+
+      expect(usersRepositoryMock.persistVerifiedEmail).toHaveBeenCalledWith(
+        userId,
+        email,
+      );
+      expect(loggingServiceMock.warn).toHaveBeenCalledWith(
+        `OIDC: verified email could not be persisted for user ${userId}`,
       );
     });
 

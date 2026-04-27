@@ -12,7 +12,7 @@ const auth0ApiMock = {
 } as jest.MockedObjectDeep<IAuth0Api>;
 
 const auth0TokenVerifierMock = {
-  verifyAndDecodeIdToken: jest.fn(),
+  verifyAndDecode: jest.fn(),
 } as jest.MockedObjectDeep<Auth0TokenVerifier>;
 
 const loggingServiceMock = {
@@ -86,17 +86,15 @@ describe('Auth0Repository', () => {
           expires_in: 3600,
         }),
       );
-      auth0TokenVerifierMock.verifyAndDecodeIdToken.mockResolvedValue(
-        decodedIdToken,
-      );
+      auth0TokenVerifierMock.verifyAndDecode.mockResolvedValue(decodedIdToken);
 
       const result = await target.authenticateWithAuthorizationCode(code);
 
       expect(result).toEqual(decodedIdToken);
       expect(auth0ApiMock.exchangeAuthorizationCode).toHaveBeenCalledWith(code);
-      expect(
-        auth0TokenVerifierMock.verifyAndDecodeIdToken,
-      ).toHaveBeenCalledWith(idToken);
+      expect(auth0TokenVerifierMock.verifyAndDecode).toHaveBeenCalledWith(
+        idToken,
+      );
     });
 
     it('should keep authentication working when the id token has no email claims', async () => {
@@ -116,9 +114,7 @@ describe('Auth0Repository', () => {
           expires_in: 3600,
         }),
       );
-      auth0TokenVerifierMock.verifyAndDecodeIdToken.mockResolvedValue(
-        decodedIdToken,
-      );
+      auth0TokenVerifierMock.verifyAndDecode.mockResolvedValue(decodedIdToken);
 
       const result = await target.authenticateWithAuthorizationCode(code);
 
@@ -134,9 +130,7 @@ describe('Auth0Repository', () => {
       await expect(
         target.authenticateWithAuthorizationCode(code),
       ).rejects.toThrow(error);
-      expect(
-        auth0TokenVerifierMock.verifyAndDecodeIdToken,
-      ).not.toHaveBeenCalled();
+      expect(auth0TokenVerifierMock.verifyAndDecode).not.toHaveBeenCalled();
     });
 
     it('should propagate id token verifier errors', async () => {
@@ -150,7 +144,7 @@ describe('Auth0Repository', () => {
           token_type: 'Bearer',
         }),
       );
-      auth0TokenVerifierMock.verifyAndDecodeIdToken.mockRejectedValue(error);
+      auth0TokenVerifierMock.verifyAndDecode.mockRejectedValue(error);
 
       await expect(
         target.authenticateWithAuthorizationCode(code),
@@ -170,9 +164,7 @@ describe('Auth0Repository', () => {
       await expect(
         target.authenticateWithAuthorizationCode(code),
       ).rejects.toThrow();
-      expect(
-        auth0TokenVerifierMock.verifyAndDecodeIdToken,
-      ).not.toHaveBeenCalled();
+      expect(auth0TokenVerifierMock.verifyAndDecode).not.toHaveBeenCalled();
     });
   });
 });

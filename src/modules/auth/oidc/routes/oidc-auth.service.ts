@@ -4,6 +4,7 @@ import {
   ConflictException,
   Inject,
   Injectable,
+  InternalServerErrorException,
   UnauthorizedException,
 } from '@nestjs/common';
 import {
@@ -199,6 +200,13 @@ export class OidcAuthService {
       if (error instanceof ConflictException) {
         this.loggingService.warn(
           `OIDC: verified email already belongs to another user for user ${userId}`,
+        );
+        return;
+      }
+
+      if (error instanceof InternalServerErrorException) {
+        this.loggingService.warn(
+          `OIDC: verified email could not be persisted for user ${userId}`,
         );
         return;
       }

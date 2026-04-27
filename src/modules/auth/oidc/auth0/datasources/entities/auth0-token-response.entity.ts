@@ -2,11 +2,7 @@
 import { z } from 'zod';
 
 export const Auth0TokenResponseSchema = z.object({
-  refresh_token: z.string().min(1).optional(), //not included atm
   id_token: z.string().min(1),
-  token_type: z.literal('Bearer'),
-  expires_in: z.number().int().positive().optional(),
-  scope: z.string().optional(),
 });
 
 export type Auth0TokenResponse = z.infer<typeof Auth0TokenResponseSchema>;

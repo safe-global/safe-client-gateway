@@ -53,6 +53,12 @@ export const RootConfigurationSchema = z
     AUTH0_CLIENT_SECRET: z.string().optional(),
     AUTH0_REDIRECT_URI: z.url().optional(),
     AUTH0_SCOPE: z.string().optional(),
+    AUTH0_JWKS_CACHE_MAX_AGE_MILLISECONDS: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .optional(),
+    AUTH0_JWKS_COOLDOWN_MILLISECONDS: z.coerce.number().int().min(1).optional(),
     AUTH_STATE_TTL_MILLISECONDS: z.coerce.number().int().min(1).optional(),
     AWS_ACCESS_KEY_ID: z.string().optional(),
     AWS_KMS_ENCRYPTION_KEY_ID: z.string().optional(),

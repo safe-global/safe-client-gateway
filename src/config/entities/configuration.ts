@@ -59,6 +59,13 @@ export default () => ({
       redirectUri: process.env.AUTH0_REDIRECT_URI,
       audience: process.env.AUTH0_API_AUDIENCE,
       scope: process.env.AUTH0_SCOPE || 'openid',
+      jwksCacheMaxAgeMs: parseInt(
+        process.env.AUTH0_JWKS_CACHE_MAX_AGE_MILLISECONDS ??
+          `${60 * 60 * 1_000}`,
+      ),
+      jwksCooldownMs: parseInt(
+        process.env.AUTH0_JWKS_COOLDOWN_MILLISECONDS ?? `${30_000}`,
+      ),
     },
     rateLimit: {
       max: parseInt(process.env.AUTH_RATE_LIMIT_MAX ?? `${5}`),

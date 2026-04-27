@@ -3,7 +3,7 @@ import { generateKeyPairSync } from 'node:crypto';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import configuration from '@/config/entities/__tests__/configuration';
-import { AUTH0_ID_TOKEN_ALGORITHM } from '@/datasources/jwt/jwt.constants';
+import { JWT_RS_ALGORITHM } from '@/datasources/jwt/jwt.constants';
 import { EmailModule } from '@/modules/email/email.module';
 import { TestEmailApiModule } from '@/modules/email/datasources/__tests__/test.email-api.module';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
@@ -30,6 +30,7 @@ describe('OidcAuthController', () => {
   let networkService: jest.MockedObjectDeep<INetworkService>;
   let jwtService: IJwtService;
   let usersRepository: jest.MockedObjectDeep<IUsersRepository>;
+  let fetchMock: jest.SpiedFunction<typeof fetch> | undefined;
 
   let maxValidityPeriodInMs: number;
   let stateTtlMs: number;
@@ -60,9 +61,9 @@ describe('OidcAuthController', () => {
 
     return {
       idToken: sign(claims, privateKey, {
-        algorithm: AUTH0_ID_TOKEN_ALGORITHM,
+        algorithm: JWT_RS_ALGORITHM,
         keyid: kid,
-        header: { alg: AUTH0_ID_TOKEN_ALGORITHM, kid },
+        header: { alg: JWT_RS_ALGORITHM, kid },
         issuer: `https://${auth0Config.domain}/`,
         audience: auth0Config.clientId,
         noTimestamp: true,
@@ -73,52 +74,31 @@ describe('OidcAuthController', () => {
   }
 
   function mockAuth0Jwks(publicJwk: JsonWebKey, kid: string): void {
-    networkService.get.mockResolvedValueOnce({
-      status: 200,
-      data: {
-        keys: [
-          {
-            kid,
-            kty: 'RSA',
-            alg: AUTH0_ID_TOKEN_ALGORITHM,
-            use: 'sig',
-            n: publicJwk.n,
-            e: publicJwk.e,
-          },
-        ],
-      },
-    } as never);
+    fetchMock?.mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          keys: [
+            {
+              ...publicJwk,
+              kid,
+              alg: JWT_RS_ALGORITHM,
+              use: 'sig',
+            },
+          ],
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      ),
+    );
   }
 
-  function signInvalidAudienceIdToken(claims: {
-    sub: string;
-    exp?: number;
-    iat?: number;
-    nbf?: number;
-  }): { idToken: string; publicJwk: JsonWebKey; kid: string } {
-    const kid = faker.string.alphanumeric(12);
-    const keyPair = generateKeyPairSync('rsa', { modulusLength: 2048 });
-    const privateKey = keyPair.privateKey
-      .export({ format: 'pem', type: 'pkcs8' })
-      .toString();
-    const publicJwk = keyPair.publicKey.export({ format: 'jwk' });
-
-    return {
-      idToken: sign(claims, privateKey, {
-        algorithm: AUTH0_ID_TOKEN_ALGORITHM,
-        keyid: kid,
-        header: { alg: AUTH0_ID_TOKEN_ALGORITHM, kid },
-        issuer: `https://${auth0Config.domain}/`,
-        audience: faker.string.uuid(),
-        noTimestamp: true,
-      }),
-      publicJwk,
-      kid,
-    };
-  }
+  afterEach(() => {
+    fetchMock?.mockRestore();
+  });
 
   async function initApp(config: typeof configuration): Promise<void> {
     await app?.close();
+    fetchMock?.mockRestore();
+    fetchMock = jest.spyOn(global, 'fetch');
     const moduleFixture: TestingModule = await createTestModule({
       config,
       modules: [
@@ -158,6 +138,33 @@ describe('OidcAuthController', () => {
 
     app = await new TestAppProvider().provide(moduleFixture);
     await app.init();
+  }
+
+  function signInvalidAudienceIdToken(claims: {
+    sub: string;
+    exp?: number;
+    iat?: number;
+    nbf?: number;
+  }): { idToken: string; publicJwk: JsonWebKey; kid: string } {
+    const kid = faker.string.alphanumeric(12);
+    const keyPair = generateKeyPairSync('rsa', { modulusLength: 2048 });
+    const privateKey = keyPair.privateKey
+      .export({ format: 'pem', type: 'pkcs8' })
+      .toString();
+    const publicJwk = keyPair.publicKey.export({ format: 'jwk' });
+
+    return {
+      idToken: sign(claims, privateKey, {
+        algorithm: JWT_RS_ALGORITHM,
+        keyid: kid,
+        header: { alg: JWT_RS_ALGORITHM, kid },
+        issuer: `https://${auth0Config.domain}/`,
+        audience: faker.string.uuid(),
+        noTimestamp: true,
+      }),
+      publicJwk,
+      kid,
+    };
   }
 
   describe('default configuration', () => {
