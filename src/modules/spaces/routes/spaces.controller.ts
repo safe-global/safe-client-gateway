@@ -84,9 +84,10 @@ export class SpacesController {
   }
 
   @ApiOperation({
-    summary: 'Create space with user',
+    deprecated: true,
+    summary: 'Create space with user (deprecated)',
     description:
-      'Creates a new space for the authenticated user. Activates the user if their status is PENDING.',
+      'Creates a new space for the authenticated user. This endpoint is deprecated, please use POST /v1/spaces instead.',
   })
   @ApiBody({
     type: CreateSpaceDto,
