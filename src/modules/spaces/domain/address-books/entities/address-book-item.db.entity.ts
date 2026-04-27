@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { RowSchema } from '@/datasources/db/v2/entities/row.entity';
 import type { Space } from '@/modules/spaces/domain/entities/space.entity';
 import { SpaceSchema } from '@/modules/spaces/domain/entities/space.entity';
@@ -14,16 +15,16 @@ export const AddressBookDbItemSchema: z.ZodType<
     chainIds: Array<string>;
     address: Address;
     name: string;
-    createdBy: Address;
-    lastUpdatedBy: Address;
+    createdBy: number;
+    lastUpdatedBy: number;
   }
 > = RowSchema.extend({
   space: z.lazy(() => SpaceSchema),
   chainIds: z.array(z.string()),
   address: AddressSchema as z.ZodType<Address>,
   name: makeNameSchema({ maxLength: ADDRESS_BOOK_NAME_MAX_LENGTH }),
-  createdBy: AddressSchema as z.ZodType<Address>,
-  lastUpdatedBy: AddressSchema as z.ZodType<Address>,
+  createdBy: z.number().int(),
+  lastUpdatedBy: z.number().int(),
 });
 
 export type AddressBookDbItem = z.infer<typeof AddressBookDbItemSchema>;

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
 import { NAME_MAX_LENGTH } from '@/domain/common/schemas/name.schema';
 import { databaseAddressTransformer } from '@/domain/common/transformers/databaseAddress.transformer';
@@ -58,21 +59,17 @@ export class AddressBookItem implements DomainAddressBookItem {
 
   @Column({
     name: 'created_by',
-    type: 'varchar',
-    length: 42,
+    type: 'integer',
     nullable: false,
-    transformer: databaseAddressTransformer,
   })
-  createdBy!: Address;
+  createdBy!: number;
 
   @Column({
     name: 'last_updated_by',
-    type: 'varchar',
-    length: 42,
+    type: 'integer',
     nullable: false,
-    transformer: databaseAddressTransformer,
   })
-  lastUpdatedBy!: Address;
+  lastUpdatedBy!: number;
 
   @Column({
     name: 'created_at',
