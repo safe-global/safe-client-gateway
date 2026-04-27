@@ -45,6 +45,22 @@ export class AddressBookAttributionToUserId1777033895000 implements MigrationInt
       WHERE w.address = sabi.last_updated_by;
     `);
 
+    // Verify backfill left no NULLs (e.g. case mismatch on address JOIN).
+    await queryRunner.query(`
+      DO $$
+      BEGIN
+        IF EXISTS (
+          SELECT 1 FROM space_address_book_items
+          WHERE created_by_uid IS NULL
+            OR last_updated_by_uid IS NULL
+        ) THEN
+          RAISE EXCEPTION
+            'Backfill incomplete: some rows have NULL created_by_uid '
+            'or last_updated_by_uid after wallet address resolution.';
+        END IF;
+      END $$;
+    `);
+
     // Drop old varchar columns and rename new ones.
     await queryRunner.query(`
       ALTER TABLE space_address_book_items
