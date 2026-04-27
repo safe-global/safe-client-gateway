@@ -8,9 +8,7 @@ import {
   PrimaryGeneratedColumn,
   Unique,
 } from 'typeorm';
-import type { Address } from 'viem';
 import { NAME_MAX_LENGTH } from '@/domain/common/schemas/name.schema';
-import { nullableDatabaseAddressTransformer } from '@/domain/common/transformers/nullableDatabaseAddress.transformer';
 import { databaseEnumTransformer } from '@/domain/common/utils/enum';
 import { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
 import { User } from '@/modules/users/datasources/entities/users.entity.db';
