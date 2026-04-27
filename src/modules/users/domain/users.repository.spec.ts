@@ -8,6 +8,7 @@ import type { PostgresDatabaseService } from '@/datasources/db/v2/postgres-datab
 import { UsersRepository } from '@/modules/users/domain/users.repository';
 import { User as DbUser } from '@/modules/users/datasources/entities/users.entity.db';
 import type { IWalletsRepository } from '@/modules/wallets/domain/wallets.repository.interface';
+import { QueryFailedError } from 'typeorm';
 
 function createQueryBuilder(): {
   update: jest.Mock;
@@ -97,8 +98,13 @@ describe('UsersRepository', () => {
       });
       userRepository.createQueryBuilder.mockReturnValue(queryBuilder);
       queryBuilder.execute.mockRejectedValue(
-        new Error(
-          'duplicate key value violates unique constraint "users_email_key"',
+        new QueryFailedError(
+          '',
+          [],
+          Object.assign(new Error('duplicate key'), {
+            code: '23505',
+            detail: 'Key (email)=(alice@example.com) already exists.',
+          }),
         ),
       );
 

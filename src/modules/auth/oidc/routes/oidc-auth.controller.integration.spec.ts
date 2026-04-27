@@ -91,6 +91,29 @@ describe('OidcAuthController', () => {
     );
   }
 
+  function getSetCookies(headers: request.Response['headers']): Array<string> {
+    const setCookie = headers['set-cookie'];
+    if (Array.isArray(setCookie)) {
+      return setCookie;
+    }
+    if (typeof setCookie === 'string') {
+      return [setCookie];
+    }
+    return [];
+  }
+
+  function getAuthStateCookieOrFail(response: request.Response): string {
+    const stateCookie = getSetCookies(response.headers).find((cookie) =>
+      cookie.startsWith('auth_state='),
+    );
+
+    if (!stateCookie) {
+      throw new Error('Expected auth_state cookie');
+    }
+
+    return stateCookie.split(';')[0];
+  }
+
   afterEach(() => {
     fetchMock?.mockRestore();
   });
@@ -412,15 +435,11 @@ describe('OidcAuthController', () => {
         const state = new URL(
           authorizeResponse.headers.location,
         ).searchParams.get('state');
-        const stateCookie = (
-          authorizeResponse.headers['set-cookie'] as unknown as Array<string>
-        )
-          .find((cookie) => cookie.startsWith('auth_state='))
-          ?.split(';')[0];
+        const stateCookie = getAuthStateCookieOrFail(authorizeResponse);
 
         await request(app.getHttpServer())
           .get('/v1/auth/oidc/callback')
-          .set('Cookie', stateCookie!)
+          .set('Cookie', stateCookie)
           .query({
             code: 'auth-code',
             state,
@@ -429,7 +448,7 @@ describe('OidcAuthController', () => {
           .expect(({ headers }) => {
             expect(headers.location).toBe(postLoginRedirectUri);
 
-            const setCookie = headers['set-cookie'] as unknown as Array<string>;
+            const setCookie = getSetCookies(headers);
             const accessTokenCookieRegExp = new RegExp(
               `^access_token=([^;]*); Max-Age=${maxAge}; Path=/; Expires=${expirationTime.toUTCString()}; HttpOnly; Secure; SameSite=Lax$`,
             );
@@ -447,7 +466,7 @@ describe('OidcAuthController', () => {
 
             expect(
               jwtService.verify<{ auth_method: string; sub: string }>(
-                accessToken!,
+                accessToken ?? '',
               ),
             ).toMatchObject({
               auth_method: 'oidc',
@@ -489,15 +508,11 @@ describe('OidcAuthController', () => {
         const state = new URL(
           authorizeResponse.headers.location,
         ).searchParams.get('state');
-        const stateCookie = (
-          authorizeResponse.headers['set-cookie'] as unknown as Array<string>
-        )
-          .find((cookie) => cookie.startsWith('auth_state='))
-          ?.split(';')[0];
+        const stateCookie = getAuthStateCookieOrFail(authorizeResponse);
 
         const response = await request(app.getHttpServer())
           .get('/v1/auth/oidc/callback')
-          .set('Cookie', stateCookie!)
+          .set('Cookie', stateCookie)
           .query({
             code: 'auth-code',
             state,
@@ -511,15 +526,11 @@ describe('OidcAuthController', () => {
           .get('/v1/auth/oidc/authorize')
           .expect(302);
 
-        const stateCookie = (
-          authorizeResponse.headers['set-cookie'] as unknown as Array<string>
-        )
-          .find((cookie) => cookie.startsWith('auth_state='))
-          ?.split(';')[0];
+        const stateCookie = getAuthStateCookieOrFail(authorizeResponse);
 
         const response = await request(app.getHttpServer())
           .get('/v1/auth/oidc/callback')
-          .set('Cookie', stateCookie!)
+          .set('Cookie', stateCookie)
           .query({
             code: 'auth-code',
             state: 'wrong-state',
@@ -534,11 +545,7 @@ describe('OidcAuthController', () => {
           .get('/v1/auth/oidc/authorize')
           .expect(302);
 
-        const stateCookie = (
-          authorizeResponse.headers['set-cookie'] as unknown as Array<string>
-        )
-          .find((cookie) => cookie.startsWith('auth_state='))
-          ?.split(';')[0];
+        const stateCookie = getAuthStateCookieOrFail(authorizeResponse);
 
         const state = new URL(
           authorizeResponse.headers.location,
@@ -546,7 +553,7 @@ describe('OidcAuthController', () => {
 
         const response = await request(app.getHttpServer())
           .get('/v1/auth/oidc/callback')
-          .set('Cookie', stateCookie!)
+          .set('Cookie', stateCookie)
           .query({ state });
 
         expectErrorRedirect(response, 'invalid_request');
@@ -597,15 +604,11 @@ describe('OidcAuthController', () => {
         const state = new URL(
           authorizeResponse.headers.location,
         ).searchParams.get('state');
-        const stateCookie = (
-          authorizeResponse.headers['set-cookie'] as unknown as Array<string>
-        )
-          .find((cookie) => cookie.startsWith('auth_state='))
-          ?.split(';')[0];
+        const stateCookie = getAuthStateCookieOrFail(authorizeResponse);
 
         const response = await request(app.getHttpServer())
           .get('/v1/auth/oidc/callback')
-          .set('Cookie', stateCookie!)
+          .set('Cookie', stateCookie)
           .query({
             code: 'auth-code',
             state,
@@ -648,15 +651,11 @@ describe('OidcAuthController', () => {
         const state = new URL(
           authorizeResponse.headers.location,
         ).searchParams.get('state');
-        const stateCookie = (
-          authorizeResponse.headers['set-cookie'] as unknown as Array<string>
-        )
-          .find((cookie) => cookie.startsWith('auth_state='))
-          ?.split(';')[0];
+        const stateCookie = getAuthStateCookieOrFail(authorizeResponse);
 
         const response = await request(app.getHttpServer())
           .get('/v1/auth/oidc/callback')
-          .set('Cookie', stateCookie!)
+          .set('Cookie', stateCookie)
           .query({
             code: 'auth-code',
             state,
@@ -708,15 +707,11 @@ describe('OidcAuthController', () => {
         const state = new URL(
           authorizeResponse.headers.location,
         ).searchParams.get('state');
-        const stateCookie = (
-          authorizeResponse.headers['set-cookie'] as unknown as Array<string>
-        )
-          .find((cookie) => cookie.startsWith('auth_state='))
-          ?.split(';')[0];
+        const stateCookie = getAuthStateCookieOrFail(authorizeResponse);
 
         await request(app.getHttpServer())
           .get('/v1/auth/oidc/callback')
-          .set('Cookie', stateCookie!)
+          .set('Cookie', stateCookie)
           .query({
             code: 'auth-code',
             state,
@@ -738,15 +733,11 @@ describe('OidcAuthController', () => {
           .query({ redirect_url: customRedirectUrl })
           .expect(302);
 
-        const stateCookie = (
-          authorizeResponse.headers['set-cookie'] as unknown as Array<string>
-        )
-          .find((cookie) => cookie.startsWith('auth_state='))
-          ?.split(';')[0];
+        const stateCookie = getAuthStateCookieOrFail(authorizeResponse);
 
         const response = await request(app.getHttpServer())
           .get('/v1/auth/oidc/callback')
-          .set('Cookie', stateCookie!)
+          .set('Cookie', stateCookie)
           .query({
             error: 'access_denied',
             error_description: 'User denied access',

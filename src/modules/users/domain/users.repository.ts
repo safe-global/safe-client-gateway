@@ -12,6 +12,7 @@ import { User, UserStatus } from '@/modules/users/domain/entities/user.entity';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
+import { isUniqueConstraintError } from '@/datasources/errors/helpers/is-unique-constraint-error.helper';
 import { User as DbUser } from '@/modules/users/datasources/entities/users.entity.db';
 import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
 import { EntityManager } from 'typeorm';
@@ -292,11 +293,7 @@ export class UsersRepository implements IUsersRepository {
         'Failed to persist verified email',
       );
     } catch (error) {
-      if (
-        error instanceof Error &&
-        (error.message.includes('users_email_key') ||
-          error.message.includes('duplicate key'))
-      ) {
+      if (isUniqueConstraintError(error)) {
         throw new ConflictException('Email already belongs to another user');
       }
       throw error;

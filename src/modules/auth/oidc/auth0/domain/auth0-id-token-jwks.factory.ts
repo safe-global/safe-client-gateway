@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type { IConfigurationService } from '@/config/configuration.service.interface';
+import { AUTH0_JWKS_PATH } from '@/modules/auth/oidc/auth0/auth0.constants';
 import type { IAuth0IdTokenJwks } from '@/modules/auth/oidc/auth0/domain/auth0-id-token-jwks.interface';
 import { createRemoteJWKSet } from 'jose';
-
-const AUTH0_JWKS_PATH = '/.well-known/jwks.json';
 
 export function auth0IdTokenJwksFactory(
   configurationService: IConfigurationService,

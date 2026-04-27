@@ -15,6 +15,10 @@ import {
   AuthPayload,
   type AuthPayloadDto,
 } from '@/modules/auth/domain/entities/auth-payload.entity';
+import {
+  oidcAuthPayloadDtoBuilder,
+  siweAuthPayloadDtoBuilder,
+} from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 
 const siweRepositoryMock = {
   generateNonce: jest.fn(),
@@ -301,12 +305,7 @@ describe('AuthService', () => {
     });
 
     it('should return signerAddress for SIWE sessions without querying email', async () => {
-      const authPayload = new AuthPayload({
-        auth_method: AuthMethod.Siwe,
-        sub: faker.string.numeric(),
-        chain_id: faker.string.numeric(),
-        signer_address: faker.finance.ethereumAddress() as `0x${string}`,
-      });
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
 
       await expect(target.getUserSession(authPayload)).resolves.toEqual({
         id: authPayload.sub,
@@ -317,10 +316,7 @@ describe('AuthService', () => {
     });
 
     it('should return email for OIDC sessions when it exists', async () => {
-      const authPayload = new AuthPayload({
-        auth_method: AuthMethod.Oidc,
-        sub: faker.string.numeric(),
-      });
+      const authPayload = new AuthPayload(oidcAuthPayloadDtoBuilder().build());
       const email = faker.internet.email().toLowerCase();
       usersRepositoryMock.findEmailById.mockResolvedValue(email);
 
@@ -335,10 +331,7 @@ describe('AuthService', () => {
     });
 
     it('should omit email for OIDC sessions when none is stored', async () => {
-      const authPayload = new AuthPayload({
-        auth_method: AuthMethod.Oidc,
-        sub: faker.string.numeric(),
-      });
+      const authPayload = new AuthPayload(oidcAuthPayloadDtoBuilder().build());
       usersRepositoryMock.findEmailById.mockResolvedValue(undefined);
 
       await expect(target.getUserSession(authPayload)).resolves.toEqual({
