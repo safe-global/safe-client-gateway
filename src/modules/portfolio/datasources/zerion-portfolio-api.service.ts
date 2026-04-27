@@ -23,6 +23,10 @@ import { ZerionBalancesSchema } from '@/modules/balances/datasources/entities/ze
 import { ZodError } from 'zod';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import {
+  NetworkRequestError,
+  NetworkResponseError,
+} from '@/datasources/network/entities/network.error.entity';
+import {
   CacheService,
   ICacheService,
 } from '@/datasources/cache/cache.service.interface';
@@ -32,6 +36,8 @@ import {
   normalizeZerionBalances,
 } from '@/modules/balances/datasources/zerion-api.helpers';
 import { ZerionChainMappingService } from '@/modules/zerion/datasources/zerion-chain-mapping.service';
+import { LogType } from '@/domain/common/entities/log-type.entity';
+import { asError } from '@/logging/utils';
 
 /**
  * Zerion portfolio API integration.
@@ -106,6 +112,7 @@ export class ZerionPortfolioApi implements IPortfolioApi {
   private async _fetchPositions(args: {
     address: Address;
     fiatCode: string;
+    chainIds?: Array<string>;
     trusted?: boolean;
     isTestnet?: boolean;
     sync?: boolean;
@@ -140,11 +147,83 @@ export class ZerionPortfolioApi implements IPortfolioApi {
 
       return normalizeZerionBalances(response.data);
     } catch (error) {
+      this._logPortfolioError(error, args);
       if (error instanceof ZodError) {
         throw error;
       }
       throw this.httpErrorFactory.from(error);
     }
+  }
+
+  private _logPortfolioError(
+    error: unknown,
+    args: {
+      address: Address;
+      fiatCode: string;
+      chainIds?: Array<string>;
+      trusted?: boolean;
+      isTestnet?: boolean;
+      sync?: boolean;
+    },
+  ): void {
+    const responseError =
+      error instanceof NetworkResponseError ? error : undefined;
+    const requestError =
+      error instanceof NetworkRequestError ? error : undefined;
+    const url = responseError?.url ?? requestError?.url;
+
+    this.loggingService.error({
+      type: LogType.PortfolioError,
+      provider: 'zerion',
+      endpoint: 'portfolio',
+      address: args.address,
+      chain_ids: args.chainIds,
+      fiat_code: args.fiatCode,
+      trusted: args.trusted,
+      is_testnet: args.isTestnet ?? false,
+      sync: args.sync,
+      error_message: this._getErrorMessage(error),
+      ...(url && {
+        protocol: url.protocol,
+        target_host: url.host,
+        path: url.pathname,
+      }),
+      ...(responseError && {
+        request_status: responseError.response.status,
+        detail: responseError.response.statusText,
+        source_error_message: this._getSourceErrorMessage(responseError.data),
+      }),
+    });
+  }
+
+  private _getSourceErrorMessage(data: unknown): string | undefined {
+    if (data == null) {
+      return undefined;
+    }
+
+    if (typeof data === 'string') {
+      return data;
+    }
+
+    if (typeof data === 'object') {
+      const message = 'message' in data ? data.message : undefined;
+      if (typeof message === 'string') {
+        return message;
+      }
+    }
+
+    return undefined;
+  }
+
+  private _getErrorMessage(error: unknown): string {
+    return (
+      this._getSourceErrorMessage(
+        error instanceof NetworkResponseError ? error.data : undefined,
+      ) ||
+      asError(error).message ||
+      (error instanceof Error ? error.name : undefined) ||
+      'Unknown error'
+    );
   }
 
   /**

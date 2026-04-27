@@ -67,6 +67,7 @@ export class PortfolioRepository implements IPortfolioRepository {
       const rawPortfolio = await this.portfolioApi.getPortfolio({
         address: args.address,
         fiatCode: args.fiatCode,
+        chainIds: args.chainIds,
         trusted: args.trusted,
         isTestnet: args.isTestnet,
         sync: args.sync,
