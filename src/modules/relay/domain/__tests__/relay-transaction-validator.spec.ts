@@ -37,6 +37,12 @@ import configuration from '@/config/entities/configuration';
 import { getDeploymentVersionsByChainIds } from '@/__tests__/deployments.helper';
 import type { ILoggingService } from '@/logging/logging.interface';
 import type { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
+import type { IBlockchainApiManager } from '@/domain/interfaces/blockchain-api.manager.interface';
+import type { PublicClient } from 'viem';
+import {
+  execTransactionFromModuleEncoder,
+  executeNextTxEncoder,
+} from '@/modules/alerts/domain/contracts/__tests__/encoders/delay-modifier-encoder.builder';
 
 const supportedChainIds = Object.keys(configuration().relay.apiKey);
 
@@ -54,13 +60,22 @@ const MULTI_SEND_VERSIONS = getDeploymentVersionsByChainIds(
   supportedChainIds,
 );
 
-const mockLoggingService = {
+const mockLoggingService = jest.mocked({
+  info: jest.fn(),
   warn: jest.fn(),
-} as jest.MockedObjectDeep<ILoggingService>;
+  error: jest.fn(),
+  debug: jest.fn(),
+} as jest.MockedObjectDeep<ILoggingService>);
 
-const mockSafeRepository = {
+const mockSafeRepository = jest.mocked({
   getSafe: jest.fn(),
-} as jest.MockedObjectDeep<ISafeRepository>;
+  getSafesByModule: jest.fn(),
+} as jest.MockedObjectDeep<ISafeRepository>);
+
+const mockBlockchainApiManager = jest.mocked({
+  getApi: jest.fn(),
+  destroyApi: jest.fn(),
+} as jest.MockedObjectDeep<IBlockchainApiManager>);
 
 describe('RelayTransactionValidator', () => {
   let validator: RelayTransactionValidator;
@@ -70,6 +85,8 @@ describe('RelayTransactionValidator', () => {
 
     validator = new RelayTransactionValidator(
       mockSafeRepository,
+      mockLoggingService,
+      mockBlockchainApiManager,
       new Erc20Decoder(),
       new SafeDecoder(),
       new MultiSendDecoder(mockLoggingService),
@@ -223,51 +240,248 @@ describe('RelayTransactionValidator', () => {
     });
   });
 
-  describe('getExecTransactionArgs', () => {
-    it('should decode all execTransaction arguments', () => {
-      const to = getAddress(faker.finance.ethereumAddress());
-      const value = faker.number.bigInt({ min: BigInt(0) });
-      const innerData: Hex = '0x1234';
-      const operation: 0 | 1 = faker.number.int({ min: 0, max: 1 }) as 0 | 1;
-      const safeTxGas = faker.number.bigInt({ min: BigInt(0) });
-      const baseGas = faker.number.bigInt({ min: BigInt(0) });
-      const gasPrice = faker.number.bigInt({ min: BigInt(0) });
-      const gasToken = getAddress(faker.finance.ethereumAddress());
-      const refundReceiver = getAddress(faker.finance.ethereumAddress());
+  describe('isSafeTxHashValid', () => {
+    function makePublicClientMock(args: {
+      nonce: bigint;
+      txHash: Hex;
+    }): jest.MockedObjectDeep<PublicClient> {
+      const readContract = jest
+        .fn()
+        .mockResolvedValueOnce(args.nonce)
+        .mockResolvedValueOnce(args.txHash);
+      return { readContract } as unknown as jest.MockedObjectDeep<PublicClient>;
+    }
 
-      const data = execTransactionEncoder()
-        .with('to', to)
-        .with('value', value)
-        .with('data', innerData)
-        .with('operation', operation)
-        .with('safeTxGas', safeTxGas)
-        .with('baseGas', baseGas)
-        .with('gasPrice', gasPrice)
-        .with('gasToken', gasToken)
-        .with('refundReceiver', refundReceiver)
-        .encode();
+    it('should return true when on-chain hash matches the provided safeTxHash', async () => {
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const safeTxHash = faker.string.hexadecimal({
+        length: 64,
+        casing: 'lower',
+      }) as Hex;
+      const data = execTransactionEncoder().encode();
+      const mockPublicClient = makePublicClientMock({
+        nonce: BigInt(0),
+        txHash: safeTxHash,
+      });
+      mockBlockchainApiManager.getApi.mockResolvedValue(
+        mockPublicClient as unknown as PublicClient,
+      );
 
-      const result = validator.getExecTransactionArgs(data);
-
-      expect(result).not.toBeNull();
-      expect(result!.to).toBe(to);
-      expect(result!.value).toBe(value);
-      expect(result!.data).toBe(innerData);
-      expect(result!.operation).toBe(operation);
-      expect(result!.safeTxGas).toBe(safeTxGas);
-      expect(result!.baseGas).toBe(baseGas);
-      expect(result!.gasPrice).toBe(gasPrice);
-      expect(result!.gasToken).toBe(gasToken);
-      expect(result!.refundReceiver).toBe(refundReceiver);
+      await expect(
+        validator.isSafeTxHashValid({
+          version: '1.3.0',
+          chainId: faker.helpers.arrayElement(supportedChainIds),
+          safeAddress,
+          data,
+          safeTxHash,
+        }),
+      ).resolves.toBe(true);
     });
 
-    it('should return null for non-execTransaction calldata', () => {
-      expect(validator.getExecTransactionArgs('0x')).toBeNull();
-      expect(
-        validator.getExecTransactionArgs(
-          erc20TransferEncoder().encode() as Hex,
-        ),
-      ).toBeNull();
+    it('should return false when on-chain hash differs from provided safeTxHash', async () => {
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const safeTxHash = faker.string.hexadecimal({
+        length: 64,
+        casing: 'lower',
+      }) as Hex;
+      const differentHash = faker.string.hexadecimal({
+        length: 64,
+        casing: 'lower',
+      }) as Hex;
+      const data = execTransactionEncoder().encode();
+      const mockPublicClient = makePublicClientMock({
+        nonce: BigInt(0),
+        txHash: differentHash,
+      });
+      mockBlockchainApiManager.getApi.mockResolvedValue(
+        mockPublicClient as unknown as PublicClient,
+      );
+
+      await expect(
+        validator.isSafeTxHashValid({
+          version: '1.3.0',
+          chainId: faker.helpers.arrayElement(supportedChainIds),
+          safeAddress,
+          data,
+          safeTxHash,
+        }),
+      ).resolves.toBe(false);
+
+      expect(mockLoggingService.error).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: expect.stringContaining('safeTxHash mismatch'),
+        }),
+      );
+    });
+
+    it('should return false when the RPC call fails', async () => {
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const safeTxHash = faker.string.hexadecimal({
+        length: 64,
+        casing: 'lower',
+      }) as Hex;
+      const data = execTransactionEncoder().encode();
+      mockBlockchainApiManager.getApi.mockRejectedValue(new Error('RPC error'));
+
+      await expect(
+        validator.isSafeTxHashValid({
+          version: '1.3.0',
+          chainId: faker.helpers.arrayElement(supportedChainIds),
+          safeAddress,
+          data,
+          safeTxHash,
+        }),
+      ).resolves.toBe(false);
+
+      expect(mockLoggingService.error).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: expect.stringContaining('RPC error verifying safeTxHash'),
+        }),
+      );
+    });
+
+    it('should return false when data cannot be decoded as execTransaction', async () => {
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const safeTxHash = faker.string.hexadecimal({
+        length: 64,
+        casing: 'lower',
+      }) as Hex;
+
+      await expect(
+        validator.isSafeTxHashValid({
+          version: '1.3.0',
+          chainId: faker.helpers.arrayElement(supportedChainIds),
+          safeAddress,
+          data: '0x',
+          safeTxHash,
+        }),
+      ).resolves.toBe(false);
+
+      expect(mockBlockchainApiManager.getApi).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('isOwnerManagementTransaction', () => {
+    it.each([
+      ['addOwnerWithThreshold', addOwnerWithThresholdEncoder],
+      ['removeOwner', removeOwnerEncoder],
+      ['swapOwner', swapOwnerEncoder],
+      ['changeThreshold', changeThresholdEncoder],
+    ])(
+      'should return true for %s wrapped in execTransaction',
+      (_, encoderFn) => {
+        const data = execTransactionEncoder()
+          .with('data', encoderFn().encode())
+          .encode();
+
+        expect(validator.isOwnerManagementTransaction(data)).toBe(true);
+      },
+    );
+
+    it('should return false for a non-owner-management execTransaction', () => {
+      const data = execTransactionEncoder()
+        .with('data', erc20TransferEncoder().encode())
+        .encode();
+
+      expect(validator.isOwnerManagementTransaction(data)).toBe(false);
+    });
+
+    it('should return false for non-execTransaction calldata', () => {
+      expect(validator.isOwnerManagementTransaction('0x')).toBe(false);
+    });
+  });
+
+  describe('getSafeBeingRecovered', () => {
+    describe.each([
+      ['execTransactionFromModule', execTransactionFromModuleEncoder],
+      ['executeNextTx', executeNextTxEncoder],
+    ])('%s', (_, encoder) => {
+      it('should return the Safe address for a valid single owner-management call', async () => {
+        const safeAddress = getAddress(faker.finance.ethereumAddress());
+        const moduleAddress = getAddress(faker.finance.ethereumAddress());
+        const data = encoder()
+          .with('to', safeAddress)
+          .with(
+            'data',
+            execTransactionEncoder()
+              .with('data', addOwnerWithThresholdEncoder().encode())
+              .encode(),
+          )
+          .encode();
+
+        mockSafeRepository.getSafesByModule.mockResolvedValue({
+          safes: [safeAddress],
+        });
+
+        await expect(
+          validator.getSafeBeingRecovered({
+            version: faker.system.semver(),
+            chainId: faker.helpers.arrayElement(supportedChainIds),
+            to: moduleAddress,
+            data,
+          }),
+        ).resolves.toBe(safeAddress);
+      });
+
+      it('should return null for a non-owner-management call', async () => {
+        const safeAddress = getAddress(faker.finance.ethereumAddress());
+        const moduleAddress = getAddress(faker.finance.ethereumAddress());
+        const data = encoder()
+          .with('to', safeAddress)
+          .with('data', execTransactionEncoder().encode())
+          .encode();
+
+        mockSafeRepository.getSafesByModule.mockResolvedValue({
+          safes: [safeAddress],
+        });
+
+        await expect(
+          validator.getSafeBeingRecovered({
+            version: faker.system.semver(),
+            chainId: faker.helpers.arrayElement(supportedChainIds),
+            to: moduleAddress,
+            data,
+          }),
+        ).resolves.toBeNull();
+      });
+
+      it('should return null when the module is not enabled on the Safe', async () => {
+        const safeAddress = getAddress(faker.finance.ethereumAddress());
+        const moduleAddress = getAddress(faker.finance.ethereumAddress());
+        const data = encoder()
+          .with('to', safeAddress)
+          .with(
+            'data',
+            execTransactionEncoder()
+              .with('data', addOwnerWithThresholdEncoder().encode())
+              .encode(),
+          )
+          .encode();
+
+        mockSafeRepository.getSafesByModule.mockResolvedValue({ safes: [] });
+
+        await expect(
+          validator.getSafeBeingRecovered({
+            version: faker.system.semver(),
+            chainId: faker.helpers.arrayElement(supportedChainIds),
+            to: moduleAddress,
+            data,
+          }),
+        ).resolves.toBeNull();
+      });
+    });
+
+    it('should return null for non-DelayModifier calldata', async () => {
+      await expect(
+        validator.getSafeBeingRecovered({
+          version: faker.system.semver(),
+          chainId: faker.helpers.arrayElement(supportedChainIds),
+          to: getAddress(faker.finance.ethereumAddress()),
+          data: '0x',
+        }),
+      ).resolves.toBeNull();
+
+      expect(mockSafeRepository.getSafesByModule).not.toHaveBeenCalled();
     });
   });
 

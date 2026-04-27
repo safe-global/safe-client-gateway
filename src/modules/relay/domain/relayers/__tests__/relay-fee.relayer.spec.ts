@@ -6,8 +6,10 @@ import { getAddress } from 'viem';
 import type { IRelayApi } from '@/domain/interfaces/relay-api.interface';
 import type { IFeeServiceApi } from '@/domain/interfaces/fee-service-api.interface';
 import type { ILoggingService } from '@/logging/logging.interface';
+import type { RelayTransactionValidator } from '@/modules/relay/domain/relay-transaction-validator';
 import type { Address, Hex } from 'viem';
 import { RelayTxDeniedError } from '@/modules/relay/domain/errors/relay-tx-denied.error';
+import { SafeTxHashMismatchError } from '@/modules/relay/domain/errors/safe-tx-hash-mismatch.error';
 
 const mockLoggingService = jest.mocked({
   info: jest.fn(),
@@ -25,6 +27,21 @@ const mockRelayApi = jest.mocked({
 const mockFeeServiceApi = jest.mocked({
   canRelay: jest.fn(),
 } as jest.MockedObjectDeep<IFeeServiceApi>);
+
+const mockRelayTransactionValidator = jest.mocked({
+  isValidExecTransactionCall: jest.fn(),
+  isSafeTxHashValid: jest.fn(),
+  isValidCreateProxyWithNonceCall: jest.fn(),
+  isOfficialProxyFactoryDeployment: jest.fn(),
+} as jest.MockedObjectDeep<RelayTransactionValidator>);
+
+function fakeSafeTxHash(): Hex {
+  return faker.string.hexadecimal({ length: 64, casing: 'lower' }) as Hex;
+}
+
+function fakeAddress(): Address {
+  return getAddress(faker.finance.ethereumAddress());
+}
 
 describe('RelayFeeRelayer', () => {
   let target: RelayFeeRelayer;
@@ -46,6 +63,7 @@ describe('RelayFeeRelayer', () => {
       fakeConfigurationService,
       mockRelayApi,
       mockFeeServiceApi,
+      mockRelayTransactionValidator,
     );
   });
 
@@ -53,7 +71,7 @@ describe('RelayFeeRelayer', () => {
     it('should return false for chains not enabled for relay-fee', async () => {
       const result = await target.canRelay({
         chainId: faker.string.numeric({ length: 5 }),
-        address: getAddress(faker.finance.ethereumAddress()),
+        address: fakeAddress(),
       });
 
       expect(result).toEqual({ result: false, currentCount: 0, limit: 0 });
@@ -63,7 +81,7 @@ describe('RelayFeeRelayer', () => {
     it('should return false when no safeTxHash is provided', async () => {
       const result = await target.canRelay({
         chainId: enabledChainId,
-        address: getAddress(faker.finance.ethereumAddress()),
+        address: fakeAddress(),
       });
 
       expect(result).toEqual({ result: false, currentCount: 0, limit: 0 });
@@ -71,16 +89,12 @@ describe('RelayFeeRelayer', () => {
     });
 
     it('should return true when FeeService approves', async () => {
-      const address = getAddress(faker.finance.ethereumAddress());
-      const safeTxHash = faker.string.hexadecimal({
-        length: 64,
-        casing: 'lower',
-      }) as Hex;
+      const safeTxHash = fakeSafeTxHash();
       mockFeeServiceApi.canRelay.mockResolvedValueOnce({ canRelay: true });
 
       const result = await target.canRelay({
         chainId: enabledChainId,
-        address,
+        address: fakeAddress(),
         safeTxHash,
       });
 
@@ -92,16 +106,12 @@ describe('RelayFeeRelayer', () => {
     });
 
     it('should return false when FeeService denies', async () => {
-      const address = getAddress(faker.finance.ethereumAddress());
-      const safeTxHash = faker.string.hexadecimal({
-        length: 64,
-        casing: 'lower',
-      }) as Hex;
+      const safeTxHash = fakeSafeTxHash();
       mockFeeServiceApi.canRelay.mockResolvedValueOnce({ canRelay: false });
 
       const result = await target.canRelay({
         chainId: enabledChainId,
-        address,
+        address: fakeAddress(),
         safeTxHash,
       });
 
@@ -116,14 +126,12 @@ describe('RelayFeeRelayer', () => {
 
   describe('relay', () => {
     it('should throw RelayTxDeniedError when no safeTxHash is provided', async () => {
-      const address = getAddress(faker.finance.ethereumAddress());
-
       await expect(
         target.relay({
           version: '1.3.0',
           chainId: enabledChainId,
-          to: address,
-          data: '0x' as Address,
+          to: fakeAddress(),
+          data: '0x' as Hex,
           gasLimit: null,
         }),
       ).rejects.toThrow(RelayTxDeniedError);
@@ -132,23 +140,39 @@ describe('RelayFeeRelayer', () => {
       expect(mockRelayApi.relay).not.toHaveBeenCalled();
     });
 
-    it('should relay when FeeService approves all addresses', async () => {
-      const address = getAddress(faker.finance.ethereumAddress());
-      const safeTxHash = faker.string.hexadecimal({ length: 64 }) as Hex;
+    // --- execTransaction path ---
+
+    it('should relay when isSafeTxHashValid returns true and fee service approves', async () => {
+      const safeAddress = fakeAddress();
+      const safeTxHash = fakeSafeTxHash();
       const taskId = faker.string.uuid();
+
+      mockRelayTransactionValidator.isValidExecTransactionCall.mockReturnValue(
+        true,
+      );
+      mockRelayTransactionValidator.isSafeTxHashValid.mockResolvedValue(true);
       mockFeeServiceApi.canRelay.mockResolvedValueOnce({ canRelay: true });
       mockRelayApi.relay.mockResolvedValueOnce({ taskId });
 
       const result = await target.relay({
         version: '1.3.0',
         chainId: enabledChainId,
-        to: address,
-        data: '0x' as Address,
+        to: safeAddress,
+        data: '0x' as Hex,
         gasLimit: null,
         safeTxHash,
       });
 
       expect(result).toEqual({ taskId });
+      expect(
+        mockRelayTransactionValidator.isSafeTxHashValid,
+      ).toHaveBeenCalledWith({
+        version: '1.3.0',
+        chainId: enabledChainId,
+        safeAddress,
+        data: '0x',
+        safeTxHash,
+      });
       expect(mockFeeServiceApi.canRelay).toHaveBeenCalledWith({
         chainId: enabledChainId,
         safeTxHash,
@@ -156,17 +180,137 @@ describe('RelayFeeRelayer', () => {
       expect(mockRelayApi.relay).toHaveBeenCalled();
     });
 
-    it('should throw RelayDeniedError when Fee Service denies', async () => {
-      const address = getAddress(faker.finance.ethereumAddress());
-      const safeTxHash = faker.string.hexadecimal({ length: 64 }) as Hex;
+    it('should throw SafeTxHashMismatchError when isSafeTxHashValid returns false', async () => {
+      const safeTxHash = fakeSafeTxHash();
+
+      mockRelayTransactionValidator.isValidExecTransactionCall.mockReturnValue(
+        true,
+      );
+      mockRelayTransactionValidator.isSafeTxHashValid.mockResolvedValue(false);
+
+      await expect(
+        target.relay({
+          version: '1.3.0',
+          chainId: enabledChainId,
+          to: fakeAddress(),
+          data: '0x' as Hex,
+          gasLimit: null,
+          safeTxHash,
+        }),
+      ).rejects.toThrow(SafeTxHashMismatchError);
+
+      expect(mockFeeServiceApi.canRelay).not.toHaveBeenCalled();
+      expect(mockRelayApi.relay).not.toHaveBeenCalled();
+    });
+
+    // --- Safe creation path ---
+
+    it('should relay a Safe creation when factory is official and fee service approves', async () => {
+      const safeAddress = fakeAddress();
+      const safeTxHash = fakeSafeTxHash();
+      const taskId = faker.string.uuid();
+
+      mockRelayTransactionValidator.isValidExecTransactionCall.mockReturnValue(
+        false,
+      );
+      mockRelayTransactionValidator.isValidCreateProxyWithNonceCall.mockReturnValue(
+        true,
+      );
+      mockRelayTransactionValidator.isOfficialProxyFactoryDeployment.mockReturnValue(
+        true,
+      );
+      mockFeeServiceApi.canRelay.mockResolvedValueOnce({ canRelay: true });
+      mockRelayApi.relay.mockResolvedValueOnce({ taskId });
+
+      const result = await target.relay({
+        version: '1.3.0',
+        chainId: enabledChainId,
+        to: safeAddress,
+        data: '0x' as Hex,
+        gasLimit: null,
+        safeTxHash,
+      });
+
+      expect(result).toEqual({ taskId });
+      expect(
+        mockRelayTransactionValidator.isSafeTxHashValid,
+      ).not.toHaveBeenCalled();
+      expect(mockFeeServiceApi.canRelay).toHaveBeenCalledWith({
+        chainId: enabledChainId,
+        safeTxHash,
+      });
+    });
+
+    it('should throw RelayTxDeniedError for unofficial proxy factory', async () => {
+      mockRelayTransactionValidator.isValidExecTransactionCall.mockReturnValue(
+        false,
+      );
+      mockRelayTransactionValidator.isValidCreateProxyWithNonceCall.mockReturnValue(
+        true,
+      );
+      mockRelayTransactionValidator.isOfficialProxyFactoryDeployment.mockReturnValue(
+        false,
+      );
+
+      await expect(
+        target.relay({
+          version: '1.3.0',
+          chainId: enabledChainId,
+          to: fakeAddress(),
+          data: '0x' as Hex,
+          gasLimit: null,
+          safeTxHash: fakeSafeTxHash(),
+        }),
+      ).rejects.toThrow(RelayTxDeniedError);
+
+      expect(mockFeeServiceApi.canRelay).not.toHaveBeenCalled();
+    });
+
+    // --- Unknown tx type ---
+
+    it('should throw RelayTxDeniedError for unrecognised transaction type', async () => {
+      mockRelayTransactionValidator.isValidExecTransactionCall.mockReturnValue(
+        false,
+      );
+      mockRelayTransactionValidator.isValidCreateProxyWithNonceCall.mockReturnValue(
+        false,
+      );
+
+      await expect(
+        target.relay({
+          version: '1.3.0',
+          chainId: enabledChainId,
+          to: fakeAddress(),
+          data: '0x' as Hex,
+          gasLimit: null,
+          safeTxHash: fakeSafeTxHash(),
+        }),
+      ).rejects.toThrow(RelayTxDeniedError);
+
+      expect(mockFeeServiceApi.canRelay).not.toHaveBeenCalled();
+      expect(mockRelayApi.relay).not.toHaveBeenCalled();
+    });
+
+    it('should throw RelayTxDeniedError when Fee Service denies', async () => {
+      const safeTxHash = fakeSafeTxHash();
+
+      mockRelayTransactionValidator.isValidExecTransactionCall.mockReturnValue(
+        false,
+      );
+      mockRelayTransactionValidator.isValidCreateProxyWithNonceCall.mockReturnValue(
+        true,
+      );
+      mockRelayTransactionValidator.isOfficialProxyFactoryDeployment.mockReturnValue(
+        true,
+      );
       mockFeeServiceApi.canRelay.mockResolvedValueOnce({ canRelay: false });
 
       await expect(
         target.relay({
           version: '1.3.0',
           chainId: enabledChainId,
-          to: address,
-          data: '0x' as Address,
+          to: fakeAddress(),
+          data: '0x' as Hex,
           gasLimit: null,
           safeTxHash,
         }),
@@ -180,11 +324,8 @@ describe('RelayFeeRelayer', () => {
     it('should return 0 for chains not enabled for relay-fee', async () => {
       const result = await target.getRelaysRemaining({
         chainId: faker.string.numeric({ length: 5 }),
-        address: getAddress(faker.finance.ethereumAddress()),
-        safeTxHash: faker.string.hexadecimal({
-          length: 64,
-          casing: 'lower',
-        }) as Hex,
+        address: fakeAddress(),
+        safeTxHash: fakeSafeTxHash(),
       });
 
       expect(result).toEqual({ remaining: 0, limit: 0 });
@@ -195,11 +336,8 @@ describe('RelayFeeRelayer', () => {
 
       const result = await target.getRelaysRemaining({
         chainId: enabledChainId,
-        address: getAddress(faker.finance.ethereumAddress()),
-        safeTxHash: faker.string.hexadecimal({
-          length: 64,
-          casing: 'lower',
-        }) as Hex,
+        address: fakeAddress(),
+        safeTxHash: fakeSafeTxHash(),
       });
 
       expect(result).toEqual({ remaining: 1, limit: 1 });
@@ -207,15 +345,12 @@ describe('RelayFeeRelayer', () => {
     });
 
     it('should pass safeTxHash to Fee Service when provided', async () => {
-      const address = getAddress(faker.finance.ethereumAddress());
-      const safeTxHash = faker.string.hexadecimal({
-        length: 64,
-      }) as `0x${string}`;
+      const safeTxHash = fakeSafeTxHash();
       mockFeeServiceApi.canRelay.mockResolvedValueOnce({ canRelay: true });
 
       const result = await target.getRelaysRemaining({
         chainId: enabledChainId,
-        address,
+        address: fakeAddress(),
         safeTxHash,
       });
 
@@ -231,8 +366,8 @@ describe('RelayFeeRelayer', () => {
 
       const result = await target.getRelaysRemaining({
         chainId: enabledChainId,
-        address: getAddress(faker.finance.ethereumAddress()),
-        safeTxHash: faker.string.hexadecimal({ length: 64 }) as `0x${string}`,
+        address: fakeAddress(),
+        safeTxHash: fakeSafeTxHash(),
       });
 
       expect(result).toEqual({ remaining: 0, limit: 0 });

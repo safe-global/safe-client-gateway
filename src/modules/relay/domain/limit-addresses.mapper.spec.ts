@@ -84,27 +84,18 @@ describe('LimitAddressesMapper', () => {
   beforeEach(() => {
     jest.resetAllMocks();
 
-    const erc20Decoder = new Erc20Decoder();
-    const safeDecoder = new SafeDecoder();
-    const multiSendDecoder = new MultiSendDecoder(mockLoggingService);
-    const proxyFactoryDecoder = new ProxyFactoryDecoder();
-    const delayModifierDecoder = new DelayModifierDecoder();
     const relayTransactionValidator = new RelayTransactionValidator(
       mockSafeRepository,
-      erc20Decoder,
-      safeDecoder,
-      multiSendDecoder,
-      proxyFactoryDecoder,
-      delayModifierDecoder,
+      mockLoggingService,
+      { getApi: jest.fn(), destroyApi: jest.fn() } as never,
+      new Erc20Decoder(),
+      new SafeDecoder(),
+      new MultiSendDecoder(mockLoggingService),
+      new ProxyFactoryDecoder(),
+      new DelayModifierDecoder(),
     );
 
-    target = new LimitAddressesMapper(
-      mockSafeRepository,
-      relayTransactionValidator,
-      safeDecoder,
-      multiSendDecoder,
-      delayModifierDecoder,
-    );
+    target = new LimitAddressesMapper(relayTransactionValidator);
   });
 
   describe('Recovery', () => {

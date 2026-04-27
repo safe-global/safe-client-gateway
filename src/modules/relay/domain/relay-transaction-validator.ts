@@ -14,13 +14,31 @@ import { SafeDecoder } from '@/modules/contracts/domain/decoders/safe-decoder.he
 import { InvalidMultiSendError } from '@/modules/relay/domain/errors/invalid-multisend.error';
 import { DelayModifierDecoder } from '@/modules/alerts/domain/contracts/decoders/delay-modifier-decoder.helper';
 import type { SafeTransaction } from '@/modules/transactions/domain/entities/safe-transaction.entity';
-import type { Address } from 'viem';
+import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import { IBlockchainApiManager } from '@/domain/interfaces/blockchain-api.manager.interface';
+import { LogType } from '@/domain/common/entities/log-type.entity';
+import Safe130 from '@/abis/safe/v1.3.0/GnosisSafe.abi';
+import Safe141 from '@/abis/safe/v1.4.1/Safe.abi';
+import Safe150 from '@/abis/safe/v1.5.0/Safe.abi';
+import type { Address, Hex } from 'viem';
+
+type SafeAbi = typeof Safe130 | typeof Safe141 | typeof Safe150;
+
+function getSafeAbi(version: string): SafeAbi {
+  if (version.startsWith('1.5')) return Safe150;
+  if (version.startsWith('1.4')) return Safe141;
+  return Safe130;
+}
 
 @Injectable()
 export class RelayTransactionValidator {
   constructor(
     @Inject(ISafeRepository)
     private readonly safeRepository: ISafeRepository,
+    @Inject(LoggingService)
+    private readonly loggingService: ILoggingService,
+    @Inject(IBlockchainApiManager)
+    private readonly blockchainApiManager: IBlockchainApiManager,
     private readonly erc20Decoder: Erc20Decoder,
     private readonly safeDecoder: SafeDecoder,
     private readonly multiSendDecoder: MultiSendDecoder,
@@ -68,7 +86,7 @@ export class RelayTransactionValidator {
     return isCancellation || this.safeDecoder.isCall(execTransactionArgs.data);
   }
 
-  getExecTransactionArgs(data: Address): SafeTransaction | null {
+  private getExecTransactionArgs(data: Address): SafeTransaction | null {
     try {
       const safeDecodedData = this.safeDecoder.decodeFunctionData({
         data,
@@ -149,6 +167,10 @@ export class RelayTransactionValidator {
     } catch {
       return false;
     }
+  }
+
+  isMultiSend(data: Address): boolean {
+    return this.multiSendDecoder.helpers.isMultiSend(data);
   }
 
   isOfficialMultiSendDeployment(args: {
@@ -246,5 +268,205 @@ export class RelayTransactionValidator {
     }
 
     return decodedSafe.args[0];
+  }
+
+  /**
+   * Returns the address of the Safe being recovered, if the recovery transaction is valid:
+   *
+   * - DelayModifier proposal (execTransactionFromModule) or execution (executeNextTx)
+   * - (Batch) transaction(s) to add/remove/swap owners or change threshold on _a_ Safe
+   * - Via an enabled module on said Safe
+   *
+   * @param {string} args.chainId - Chain ID
+   * @param {string} args.version - Safe version
+   * @param {string} args.to - Transaction recipient
+   * @param {string} args.data - Transaction data
+   *
+   * @returns {string | null} - Safe address being recovered, if valid
+   */
+  async getSafeBeingRecovered(args: {
+    chainId: string;
+    version: string;
+    to: Address;
+    data: Address;
+  }): Promise<Address | null> {
+    let to: Address;
+    let data: Address;
+
+    try {
+      const decoded = this.delayModifierDecoder.decodeFunctionData({
+        data: args.data,
+      });
+
+      if (
+        // Proposal
+        decoded.functionName !== 'execTransactionFromModule' &&
+        // Execution
+        decoded.functionName !== 'executeNextTx'
+      ) {
+        return null;
+      }
+
+      // No need to check value/operation as call is to Safe itself
+      to = decoded.args[0];
+      data = decoded.args[2];
+    } catch {
+      return null;
+    }
+
+    // (Batched) transaction(s) of transaction
+    const transactions = this.decodeTransactions({
+      address: to,
+      version: args.version,
+      chainId: args.chainId,
+      data,
+    });
+
+    const isEveryTransactionOwnerManagement = transactions.every(
+      (transaction) => {
+        return this.isOwnerManagementTransaction(transaction.data);
+      },
+    );
+
+    if (!isEveryTransactionOwnerManagement) {
+      return null;
+    }
+
+    const { safes } = await this.safeRepository.getSafesByModule({
+      chainId: args.chainId,
+      moduleAddress: args.to,
+    });
+
+    // Module enabled on Safe, and batch transactions target the same Safe
+    const isEnabledSafe = transactions.every((transaction, _, arr) => {
+      return transaction.to === arr[0].to && safes.includes(transaction.to);
+    });
+
+    if (!isEnabledSafe) {
+      return null;
+    }
+
+    return transactions[0].to;
+  }
+
+  /**
+   * Maps batched transactions if the data of an official multiSend call
+   * @param {string} args.address - Address of the recipient
+   * @param {string} args.version - Safe version
+   * @param {string} args.chainId - Chain ID
+   * @param {string} args.data - Data of the transaction
+   * @returns {Array<{ to: string; data: string }>} - Array of transactions
+   */
+  private decodeTransactions(args: {
+    address: Address;
+    version: string;
+    chainId: string;
+    data: Address;
+  }): Array<{
+    to: Address;
+    data: Address;
+  }> {
+    if (
+      this.isOfficialMultiSendDeployment(args) &&
+      this.multiSendDecoder.helpers.isMultiSend(args.data)
+    ) {
+      return this.multiSendDecoder.mapMultiSendTransactions(args.data);
+    }
+
+    return [{ to: args.address, data: args.data }];
+  }
+
+  /**
+   * Checks if the data of a transaction is an owner management transaction
+   * @param {string} data - Data of the transaction
+   * @returns {boolean} - Whether the data is of owner management
+   */
+  isOwnerManagementTransaction(data: Address): boolean {
+    try {
+      const decoded = this.safeDecoder.decodeFunctionData({
+        data,
+      });
+
+      if (decoded.functionName !== 'execTransaction') {
+        return false;
+      }
+
+      const execTransactionData = decoded.args[2];
+
+      if (
+        !this.safeDecoder.helpers.isAddOwnerWithThreshold(
+          execTransactionData,
+        ) &&
+        !this.safeDecoder.helpers.isRemoveOwner(execTransactionData) &&
+        !this.safeDecoder.helpers.isSwapOwner(execTransactionData) &&
+        !this.safeDecoder.helpers.isChangeThreshold(execTransactionData)
+      ) {
+        return false;
+      }
+
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  async isSafeTxHashValid(args: {
+    version: string;
+    chainId: string;
+    safeAddress: Address;
+    data: Hex;
+    safeTxHash: Hex;
+  }): Promise<boolean> {
+    const decoded = this.getExecTransactionArgs(args.data);
+
+    if (!decoded) {
+      return false;
+    }
+
+    const abi = getSafeAbi(args.version);
+
+    try {
+      const publicClient = await this.blockchainApiManager.getApi(args.chainId);
+
+      const nonce = await publicClient.readContract({
+        address: args.safeAddress,
+        abi,
+        functionName: 'nonce',
+      });
+
+      const onChainHash = await publicClient.readContract({
+        address: args.safeAddress,
+        abi,
+        functionName: 'getTransactionHash',
+        args: [
+          decoded.to,
+          decoded.value,
+          decoded.data,
+          decoded.operation,
+          decoded.safeTxGas,
+          decoded.baseGas,
+          decoded.gasPrice,
+          decoded.gasToken,
+          decoded.refundReceiver,
+          nonce,
+        ],
+      });
+
+      if (onChainHash !== args.safeTxHash) {
+        this.loggingService.error({
+          type: LogType.TxRelayEligibility,
+          message: `relay-fee safeTxHash mismatch for ${args.safeAddress} on chain ${args.chainId}`,
+        });
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      this.loggingService.error({
+        type: LogType.TxRelayEligibility,
+        message: `relay-fee RPC error verifying safeTxHash for ${args.safeAddress} on chain ${args.chainId}: ${String(error)}`,
+      });
+      return false;
+    }
   }
 }
