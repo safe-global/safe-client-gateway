@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
 import { RowSchema } from '@/datasources/db/v2/entities/row.entity';
 import { SpaceSchema } from '@/modules/spaces/domain/entities/space.entity';
@@ -5,9 +6,7 @@ import { UserSchema } from '@/modules/users/domain/entities/user.entity';
 import { getStringEnumKeys } from '@/domain/common/utils/enum';
 import type { Space } from '@/modules/spaces/domain/entities/space.entity';
 import type { User } from '@/modules/users/domain/entities/user.entity';
-import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { NameSchema } from '@/domain/common/schemas/name.schema';
-import type { Address } from 'viem';
 
 export enum MemberRole {
   ADMIN = 1,
@@ -29,7 +28,7 @@ export const MemberSchema: z.ZodType<
     alias: string | null;
     role: keyof typeof MemberRole;
     status: keyof typeof MemberStatus;
-    invitedBy: Address | null;
+    invitedBy: number | null;
   }
 > = RowSchema.extend({
   user: z.lazy(() => UserSchema),
@@ -38,7 +37,7 @@ export const MemberSchema: z.ZodType<
   alias: NameSchema.nullable(),
   role: z.enum(getStringEnumKeys(MemberRole)),
   status: z.enum(getStringEnumKeys(MemberStatus)),
-  invitedBy: AddressSchema.nullable() as z.ZodType<Address | null>,
+  invitedBy: z.number().int().nullable(),
 });
 
 export type Member = z.infer<typeof MemberSchema>;

@@ -35,7 +35,7 @@ export class MemberDto {
   @ApiPropertyOptional({ type: String, nullable: true })
   alias!: DomainMember['alias'];
 
-  @ApiPropertyOptional({ type: String, nullable: true })
+  @ApiPropertyOptional({ type: Number, nullable: true })
   invitedBy!: DomainMember['invitedBy'];
 
   @ApiProperty()

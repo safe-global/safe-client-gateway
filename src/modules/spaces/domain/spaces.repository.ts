@@ -221,8 +221,6 @@ export class SpacesRepository implements ISpacesRepository {
    * Determines if a user has reached the maximum number of spaces they can create.
    * If the user is member of a space that was not invited by anyone, they are considered to have created that space.
    */
-  // TODO: invitedBy IS NULL also matches invitees of OIDC admins.
-  // Revisit once OIDC invite flow is introduced.
   private async isLimited(userId: number): Promise<boolean> {
     const memberRepository =
       await this.postgresDatabaseService.getRepository(Member);

@@ -492,7 +492,7 @@ describe('AddressBookItemsRepository', () => {
       name: nameBuilder(),
       status: 'ACTIVE',
       role: 'ADMIN',
-      invitedBy: getAddress(faker.finance.ethereumAddress()),
+      invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
     });
     return { spaceId: space.generatedMaps[0].id, authPayload: authPayload };
   };
@@ -509,7 +509,7 @@ describe('AddressBookItemsRepository', () => {
       name: nameBuilder(),
       status: 'ACTIVE',
       role: 'ADMIN',
-      invitedBy: getAddress(faker.finance.ethereumAddress()),
+      invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
     });
     return authPayload;
   };
@@ -527,7 +527,7 @@ describe('AddressBookItemsRepository', () => {
       name: nameBuilder(),
       status: memberStatus,
       role: 'MEMBER',
-      invitedBy: getAddress(faker.finance.ethereumAddress()),
+      invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
     });
     return authPayload;
   };
