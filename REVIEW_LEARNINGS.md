@@ -12,7 +12,7 @@ This file is maintained semi-automatically by the `/safe-engineering:pr-learning
 
 ### Source PRs
 
-Last analyzed 2026-04-27 · window since 2026-02-23 · PR range #2892–#3038 (74 non-bot PRs, 425 human review comments — including 13 follow-up comments on #3036 since the prior run). Next run: resume with `updated:>=2026-04-27` and skip PRs already inside this range unless they have new comments.
+Last analyzed 2026-04-27 · window since 2026-02-23 · PR range #2892–#3038 (74 non-bot PRs, 425 human review comments — including 13 follow-up comments on #3036 since the prior run). Next run: resume from `Last analyzed - 2 days`; re-read matching PRs in full.
 
 ---
 
@@ -52,6 +52,7 @@ Last analyzed 2026-04-27 · window since 2026-02-23 · PR range #2892–#3038 (7
 - **Errors at DB write:** wrap inserts with `isUniqueConstraintError(err)` from `src/datasources/errors/helpers/` and map to the domain error (see `counterfactual-safes.repository` for the canonical 409 mapping pattern).
 - **Error normalization for logs:** use `asError(err)` from `src/logging/utils.ts` instead of hand-rolling `err instanceof Error ? err.message : String(err)`.
 - **Chunking / grouping:** `lodash` is already a dependency — reach for `chunk`, `uniqBy`, etc. before hand-rolling a `for` + `slice`.
+- **Batch lookups while mapping DTOs.** If `mapRequestItem()` or another mapper needs related rows for a list, don't issue one repository call per row. Return the needed IDs in the query, batch the related lookup, or persist a stable snapshot at write time.
 - **Don't hand-roll security-critical primitives.** JWKS resolution, JWT verification, OAuth flows, key rotation, signature schemes — reach for an established library (`jwks-rsa`, `jose`, etc.) before writing your own. These libs handle caching, rotation, rate-limiting, and PEM conversion correctly; rolling your own re-creates subtle correctness bugs that have been solved upstream.
 
 ### Controllers & guards
@@ -62,6 +63,7 @@ Last analyzed 2026-04-27 · window since 2026-02-23 · PR range #2892–#3038 (7
 - **Swagger with referenced models:** declare `@ApiExtraModels(Model)` at the controller/module level once, and use `getSchemaPath(Model)` in `additionalProperties` / `items` — don't repeat `$ref` strings.
 - **Read config once in the constructor**, cache as a class field, and check the field per request. Don't `configurationService.get(...)` on every incoming call.
 - **Return an empty shape (`{}` / `[]`) instead of `undefined`** when a service has nothing to contribute to an aggregated response. Callers don't have to special-case it, and the response schema stays uniform.
+- **Don't use throwing assertions for expected branching.** `assertAdmin` is right when failure should abort the request. If a service needs "is this user an admin?" as control flow, expose a boolean helper (e.g. `isAdmin`) instead of catching an exception.
 
 ### Authentication: SIWE and email users coexist
 
@@ -76,6 +78,8 @@ Users authenticate via SIWE (wallet, has `signer_address`) **or** email (no wall
 
 - **Partial unique indexes for nullable unique columns:** `@Index('users_email_key', { unique: true, where: '"email" IS NOT NULL' })` (or `CREATE UNIQUE INDEX ... WHERE col IS NOT NULL` in a raw migration). A column-level `UNIQUE` on a nullable column differs subtly from the intent across DBs and forbids multiple NULLs on some.
 - **Redis pipelines: validate every result.** `multi().unlink().hSet().expire().exec()` returns `[r1, r2, r3]` — check all three. Ignoring later results means "success" can mean "the first step worked but the marker was never written", which breaks `CacheFirstDataSource` staleness guards.
+- **Multi-step status transitions must be atomic.** Approval/rejection flows should use a transaction or an atomic conditional update with a clear recovery path. A manual "mark approved, do side effect, revert on failure" sequence can leave split-brain state if the process crashes or the compensation fails.
+- **Unique constraints must match the lifecycle.** If rejected requests should be re-submittable, don't use a unique key that blocks all future rows for `(space_id, requested_by, address)` regardless of status. Include lifecycle state or document that resubmission is intentionally impossible.
 
 ### Logging
 
