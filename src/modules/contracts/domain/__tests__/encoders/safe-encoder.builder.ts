@@ -5,6 +5,7 @@ import Safe130 from '@/abis/safe/v1.3.0/GnosisSafe.abi';
 import type { Safe } from '@/modules/safe/domain/entities/safe.entity';
 import type { IEncoder } from '@/__tests__/encoder-builder';
 import { Builder } from '@/__tests__/builder';
+import type { SafeTransactionWithSignature } from '@/modules/transactions/domain/entities/safe-transaction.entity';
 
 const ZERO_ADDRESS = pad('0x0', { size: 20 });
 const SENTINEL_ADDRESS = pad('0x1', { dir: 'left', size: 20 });
@@ -73,20 +74,9 @@ export function setupEncoder(): SetupEncoder<SetupArgs> {
 
 // execTransaction
 
-type ExecTransactionArgs = {
-  to: Hex;
-  value: bigint;
-  data: Hex;
-  operation: 0 | 1;
-  safeTxGas: bigint;
-  baseGas: bigint;
-  gasPrice: bigint;
-  gasToken: Hex;
-  refundReceiver: Hex;
-  signatures: Hex;
-};
+type ExecTransactionEncoderArgs = SafeTransactionWithSignature;
 
-class ExecTransactionEncoder<T extends ExecTransactionArgs>
+class ExecTransactionEncoder<T extends ExecTransactionEncoderArgs>
   extends Builder<T>
   implements IEncoder
 {
@@ -112,7 +102,7 @@ class ExecTransactionEncoder<T extends ExecTransactionArgs>
   }
 }
 
-export function execTransactionEncoder(): ExecTransactionEncoder<ExecTransactionArgs> {
+export function execTransactionEncoder(): ExecTransactionEncoder<ExecTransactionEncoderArgs> {
   return new ExecTransactionEncoder()
     .with('to', getAddress(faker.finance.ethereumAddress()))
     .with('value', BigInt(0))

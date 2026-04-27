@@ -16,6 +16,8 @@ import {
   ApiBody,
   ApiQuery,
   ApiBadRequestResponse,
+  ApiForbiddenResponse,
+  ApiUnprocessableEntityResponse,
   ApiTooManyRequestsResponse,
   ApiNotFoundResponse,
 } from '@nestjs/swagger';
@@ -29,6 +31,7 @@ import { InvalidTransferExceptionFilter } from '@/modules/relay/domain/exception
 import { UnofficialMasterCopyExceptionFilter } from '@/modules/relay/domain/exception-filters/unofficial-master-copy.exception-filter';
 import { UnofficialMultiSendExceptionFilter } from '@/modules/relay/domain/exception-filters/unofficial-multisend.error';
 import { UnofficialProxyFactoryExceptionFilter } from '@/modules/relay/domain/exception-filters/unofficial-proxy-factory.exception-filter';
+import { SafeTxHashMismatchExceptionFilter } from '@/modules/relay/domain/exception-filters/safe-tx-hash-mismatch.exception-filter';
 import { RelayDtoSchema } from '@/modules/relay/routes/entities/schemas/relay.dto.schema';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { HexSchema } from '@/validation/entities/schemas/hex.schema';
@@ -49,7 +52,9 @@ export class RelayController {
   @ApiOperation({
     summary: 'Relay transaction',
     description:
-      'Relays a Safe transaction using the relay service, which pays for gas fees. The transaction must meet certain criteria and the Safe must have remaining relay quota.',
+      'Relays a Safe transaction or Safe creation transaction using the relay service, which pays for gas fees. ' +
+      'Supports execTransaction (Safe tx) and createProxyWithNonce (Safe creation) calldata. ' +
+      'On relay-fee chains, safeTxHash is required and must match the hash derived on-chain from the submitted calldata.'
   })
   @ApiParam({
     name: 'chainId',
@@ -60,15 +65,22 @@ export class RelayController {
   @ApiBody({
     type: RelayDto,
     description:
-      'Transaction data to relay including Safe address, transaction details, and signatures',
+      'Transaction data to relay. safeTxHash is required on relay-fee chains and must correspond to the to + data fields.',
   })
   @ApiOkResponse({
     type: Relay,
-    description: 'Transaction relayed successfully with transaction hash',
+    description: 'Transaction relayed successfully',
   })
   @ApiBadRequestResponse({
+    description: 'Request body failed schema validation',
+  })
+  @ApiForbiddenResponse({
     description:
-      'Invalid transaction data, unofficial contracts, or unsupported operation',
+      'Relay denied: safeTxHash missing, fee service rejected, or unofficial proxy factory',
+  })
+  @ApiUnprocessableEntityResponse({
+    description:
+      'safeTxHash does not match the transaction data, or unrecognised transaction type',
   })
   @ApiTooManyRequestsResponse({
     description: 'Relay limit reached for this Safe',
@@ -77,6 +89,7 @@ export class RelayController {
   @UseFilters(
     RelayLimitReachedExceptionFilter,
     RelayDeniedExceptionFilter,
+    SafeTxHashMismatchExceptionFilter,
     InvalidMultiSendExceptionFilter,
     InvalidTransferExceptionFilter,
     UnofficialMasterCopyExceptionFilter,
@@ -125,7 +138,10 @@ export class RelayController {
   @ApiOperation({
     summary: 'Get remaining relays',
     description:
-      'Retrieves the number of remaining relay transactions available for a specific Safe on the given chain.',
+      'Retrieves the number of remaining relay transactions available for a specific Safe on the given chain. ' +
+      'On relay-fee chains, safeTxHash is forwarded to the fee service to determine per-transaction eligibility ' +
+      '(returns remaining=1 when eligible, 0 when not). ' +
+      'On daily-limit and no-fee-campaign chains, a count-based quota is returned.',
   })
   @ApiParam({
     name: 'chainId',
@@ -142,7 +158,9 @@ export class RelayController {
     name: 'safeTxHash',
     required: false,
     description:
-      'Safe transaction hash (0x prefixed hex string). Required for chains enabled for relay-fee relayer',
+      'Safe transaction hash (0x prefixed hex string). ' +
+      'Required on relay-fee chains to check per-transaction eligibility with the fee service. ' +
+      'Optional on daily-limit and no-fee-campaign chains.',
   })
   @ApiOkResponse({
     type: RelaysRemaining,
