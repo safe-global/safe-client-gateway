@@ -44,6 +44,7 @@ import {
   execTransactionFromModuleEncoder,
   executeNextTxEncoder,
 } from '@/modules/alerts/domain/contracts/__tests__/encoders/delay-modifier-encoder.builder';
+import { RelayTransactionValidator } from '@/modules/relay/domain/relay-transaction-validator';
 
 const supportedChainIds = Object.keys(configuration().relay.apiKey);
 
@@ -88,13 +89,20 @@ describe('LimitAddressesMapper', () => {
     const multiSendDecoder = new MultiSendDecoder(mockLoggingService);
     const proxyFactoryDecoder = new ProxyFactoryDecoder();
     const delayModifierDecoder = new DelayModifierDecoder();
-
-    target = new LimitAddressesMapper(
+    const relayTransactionValidator = new RelayTransactionValidator(
       mockSafeRepository,
       erc20Decoder,
       safeDecoder,
       multiSendDecoder,
       proxyFactoryDecoder,
+      delayModifierDecoder,
+    );
+
+    target = new LimitAddressesMapper(
+      mockSafeRepository,
+      relayTransactionValidator,
+      safeDecoder,
+      multiSendDecoder,
       delayModifierDecoder,
     );
   });

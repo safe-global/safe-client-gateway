@@ -54,7 +54,7 @@ export class RelayController {
     description:
       'Relays a Safe transaction or Safe creation transaction using the relay service, which pays for gas fees. ' +
       'Supports execTransaction (Safe tx) and createProxyWithNonce (Safe creation) calldata. ' +
-      'On relay-fee chains, safeTxHash is required and must match the hash derived on-chain from the submitted calldata.'
+      'On relay-fee chains, safeTxHash is required and must match the hash derived on-chain from the submitted calldata.',
   })
   @ApiParam({
     name: 'chainId',
