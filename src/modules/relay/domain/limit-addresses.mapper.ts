@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Injectable } from '@nestjs/common';
 import { UnofficialMasterCopyError } from '@/modules/relay/domain/errors/unofficial-master-copy.error';
 import { UnofficialMultiSendError } from '@/modules/relay/domain/errors/unofficial-multisend.error';
