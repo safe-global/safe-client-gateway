@@ -19,6 +19,7 @@ import { EntityManager } from 'typeorm';
 import type { FindOptionsRelations, FindOptionsWhere } from 'typeorm';
 import { IWalletsRepository } from '@/modules/wallets/domain/wallets.repository.interface';
 import type { Address } from 'viem';
+import { UserEmailAlreadyInUseError } from '@/modules/users/domain/errors/user-email-already-in-use.error';
 
 @Injectable()
 export class UsersRepository implements IUsersRepository {
@@ -294,7 +295,7 @@ export class UsersRepository implements IUsersRepository {
       );
     } catch (error) {
       if (isUniqueConstraintError(error)) {
-        throw new ConflictException('Email already belongs to another user');
+        throw new UserEmailAlreadyInUseError();
       }
       throw error;
     }

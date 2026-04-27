@@ -1,14 +1,15 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
-import {
-  ConflictException,
-  InternalServerErrorException,
-} from '@nestjs/common';
+import { InternalServerErrorException } from '@nestjs/common';
 import type { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { UsersRepository } from '@/modules/users/domain/users.repository';
 import { User as DbUser } from '@/modules/users/datasources/entities/users.entity.db';
 import type { IWalletsRepository } from '@/modules/wallets/domain/wallets.repository.interface';
 import { QueryFailedError } from 'typeorm';
+import {
+  USER_EMAIL_ALREADY_IN_USE_ERROR_CODE,
+  UserEmailAlreadyInUseError,
+} from '@/modules/users/domain/errors/user-email-already-in-use.error';
 
 function createQueryBuilder(): {
   update: jest.Mock;
@@ -89,7 +90,7 @@ describe('UsersRepository', () => {
       expect(userRepository.createQueryBuilder).not.toHaveBeenCalled();
     });
 
-    it('should throw ConflictException on duplicate email conflicts', async () => {
+    it('should throw UserEmailAlreadyInUseError on duplicate email conflicts', async () => {
       const userId = faker.number.int({ min: 1 });
       const queryBuilder = createQueryBuilder();
       userRepository.findOneOrFail.mockResolvedValue({
@@ -108,9 +109,18 @@ describe('UsersRepository', () => {
         ),
       );
 
-      await expect(
-        target.persistVerifiedEmail(userId, faker.internet.email()),
-      ).rejects.toThrow(ConflictException);
+      const result = target.persistVerifiedEmail(
+        userId,
+        faker.internet.email(),
+      );
+
+      await expect(result).rejects.toThrow(UserEmailAlreadyInUseError);
+      await expect(result).rejects.toMatchObject({
+        response: expect.objectContaining({
+          code: USER_EMAIL_ALREADY_IN_USE_ERROR_CODE,
+          statusCode: 409,
+        }),
+      });
     });
 
     it('should throw when the conditional email update does not persist an email', async () => {

@@ -23,7 +23,10 @@ import {
 import type { TestingModule } from '@nestjs/testing';
 import { rawify } from '@/validation/entities/raw.entity';
 import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
-import { ConflictException } from '@nestjs/common';
+import {
+  USER_EMAIL_ALREADY_IN_USE_ERROR_CODE,
+  UserEmailAlreadyInUseError,
+} from '@/modules/users/domain/errors/user-email-already-in-use.error';
 
 describe('OidcAuthController', () => {
   let app: INestApplication<Server>;
@@ -423,8 +426,6 @@ describe('OidcAuthController', () => {
           status: 200,
           data: rawify({
             id_token: idToken,
-            token_type: 'Bearer',
-            scope: faker.lorem.words(),
           }),
         });
 
@@ -591,7 +592,6 @@ describe('OidcAuthController', () => {
           status: 200,
           data: rawify({
             id_token: idToken,
-            token_type: 'Bearer',
           }),
         });
 
@@ -615,7 +615,7 @@ describe('OidcAuthController', () => {
         expectErrorRedirect(response, 'authentication_failed');
       });
 
-      it('should continue login when verified email ownership conflicts', async () => {
+      it('should return Conflict when verified email ownership conflicts', async () => {
         jest.setSystemTime(0);
 
         const expirationTime = faker.date.between({
@@ -631,14 +631,13 @@ describe('OidcAuthController', () => {
         });
         mockAuth0Jwks(publicJwk, kid);
         usersRepository.persistVerifiedEmail.mockRejectedValue(
-          new ConflictException('Email already belongs to another user'),
+          new UserEmailAlreadyInUseError(),
         );
 
         networkService.postForm.mockResolvedValueOnce({
           status: 200,
           data: rawify({
             id_token: idToken,
-            token_type: 'Bearer',
           }),
         });
 
@@ -659,13 +658,19 @@ describe('OidcAuthController', () => {
             state,
           });
 
-        expect(response.status).toBe(302);
-        expect(response.headers.location).toBe(postLoginRedirectUri);
+        expect(response.status).toBe(409);
+        expect(response.body).toEqual(
+          expect.objectContaining({
+            code: USER_EMAIL_ALREADY_IN_USE_ERROR_CODE,
+            message: 'Email already belongs to another user',
+            statusCode: 409,
+          }),
+        );
         expect(response.headers['set-cookie']).toEqual(
-          expect.arrayContaining([
-            expect.stringContaining('access_token='),
-            expect.stringContaining('auth_state=;'),
-          ]),
+          expect.arrayContaining([expect.stringContaining('auth_state=;')]),
+        );
+        expect(response.headers['set-cookie']).not.toEqual(
+          expect.arrayContaining([expect.stringContaining('access_token=')]),
         );
       });
 
@@ -692,8 +697,6 @@ describe('OidcAuthController', () => {
           status: 200,
           data: rawify({
             id_token: idToken,
-            token_type: 'Bearer',
-            scope: faker.lorem.words(),
           }),
         });
 

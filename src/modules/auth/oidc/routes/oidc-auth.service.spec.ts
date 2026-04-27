@@ -9,11 +9,11 @@ import type { ILoggingService } from '@/logging/logging.interface';
 import { faker } from '@faker-js/faker';
 import {
   BadRequestException,
-  ConflictException,
   ForbiddenException,
   InternalServerErrorException,
   UnauthorizedException,
 } from '@nestjs/common';
+import { UserEmailAlreadyInUseError } from '@/modules/users/domain/errors/user-email-already-in-use.error';
 
 const authRepositoryMock = {
   signToken: jest.fn(),
@@ -219,6 +219,37 @@ describe('OidcAuthService', () => {
       expect(usersRepositoryMock.persistVerifiedEmail).not.toHaveBeenCalled();
     });
 
+    it('should not persist when email is verified but missing', async () => {
+      const now = new Date();
+      jest.setSystemTime(now);
+
+      const extUserId = `auth0|${faker.string.uuid()}`;
+      const userId = faker.number.int();
+      const accessToken = faker.string.alphanumeric(64);
+
+      auth0RepositoryMock.authenticateWithAuthorizationCode.mockResolvedValue({
+        sub: extUserId,
+        email_verified: true,
+        exp: new Date(now.getTime() + 3600 * 1_000),
+        nbf: undefined,
+        iat: undefined,
+      });
+      usersRepositoryMock.findOrCreateByExtUserId.mockResolvedValue(userId);
+      usersRepositoryMock.persistVerifiedEmail.mockRejectedValue(
+        new UserEmailAlreadyInUseError(),
+      );
+      authRepositoryMock.signToken.mockReturnValue(accessToken);
+
+      await expect(
+        target.authenticateWithOidc(faker.string.alphanumeric(32)),
+      ).resolves.toEqual(expect.objectContaining({ accessToken }));
+
+      expect(usersRepositoryMock.findOrCreateByExtUserId).toHaveBeenCalledWith(
+        extUserId,
+      );
+      expect(usersRepositoryMock.persistVerifiedEmail).not.toHaveBeenCalled();
+    });
+
     it('should ignore unverified email even when that email would conflict', async () => {
       const now = new Date();
       jest.setSystemTime(now);
@@ -237,7 +268,7 @@ describe('OidcAuthService', () => {
       });
       usersRepositoryMock.findOrCreateByExtUserId.mockResolvedValue(userId);
       usersRepositoryMock.persistVerifiedEmail.mockRejectedValue(
-        new ConflictException('Email already belongs to another user'),
+        new UserEmailAlreadyInUseError(),
       );
       authRepositoryMock.signToken.mockReturnValue(accessToken);
 
@@ -251,17 +282,14 @@ describe('OidcAuthService', () => {
       expect(usersRepositoryMock.persistVerifiedEmail).not.toHaveBeenCalled();
     });
 
-    it('should continue authentication when verified email ownership conflicts', async () => {
+    it('should fail authentication when verified email ownership conflicts', async () => {
       const now = new Date();
       jest.setSystemTime(now);
 
       const extUserId = `auth0|${faker.string.uuid()}`;
       const userId = faker.number.int();
       const email = faker.internet.email().toLowerCase();
-      const accessToken = faker.string.alphanumeric(64);
-      const error = new ConflictException(
-        'Email already belongs to another user',
-      );
+      const error = new UserEmailAlreadyInUseError();
 
       auth0RepositoryMock.authenticateWithAuthorizationCode.mockResolvedValue({
         sub: extUserId,
@@ -273,11 +301,10 @@ describe('OidcAuthService', () => {
       });
       usersRepositoryMock.findOrCreateByExtUserId.mockResolvedValue(userId);
       usersRepositoryMock.persistVerifiedEmail.mockRejectedValue(error);
-      authRepositoryMock.signToken.mockReturnValue(accessToken);
 
       await expect(
         target.authenticateWithOidc(faker.string.alphanumeric(32)),
-      ).resolves.toEqual(expect.objectContaining({ accessToken }));
+      ).rejects.toThrow(error);
 
       expect(usersRepositoryMock.findOrCreateByExtUserId).toHaveBeenCalledWith(
         extUserId,
@@ -286,19 +313,17 @@ describe('OidcAuthService', () => {
         userId,
         email,
       );
-      expect(loggingServiceMock.warn).toHaveBeenCalledWith(
-        `OIDC: verified email already belongs to another user for user ${userId}`,
-      );
+      expect(authRepositoryMock.signToken).not.toHaveBeenCalled();
     });
 
-    it('should continue authentication when verified email persistence fails internally', async () => {
+    it('should fail authentication when verified email persistence fails internally', async () => {
       const now = new Date();
       jest.setSystemTime(now);
 
       const extUserId = `auth0|${faker.string.uuid()}`;
       const userId = faker.number.int();
       const email = faker.internet.email().toLowerCase();
-      const accessToken = faker.string.alphanumeric(64);
+      const error = new InternalServerErrorException();
 
       auth0RepositoryMock.authenticateWithAuthorizationCode.mockResolvedValue({
         sub: extUserId,
@@ -309,22 +334,17 @@ describe('OidcAuthService', () => {
         iat: undefined,
       });
       usersRepositoryMock.findOrCreateByExtUserId.mockResolvedValue(userId);
-      usersRepositoryMock.persistVerifiedEmail.mockRejectedValue(
-        new InternalServerErrorException(),
-      );
-      authRepositoryMock.signToken.mockReturnValue(accessToken);
+      usersRepositoryMock.persistVerifiedEmail.mockRejectedValue(error);
 
       await expect(
         target.authenticateWithOidc(faker.string.alphanumeric(32)),
-      ).resolves.toEqual(expect.objectContaining({ accessToken }));
+      ).rejects.toThrow(error);
 
       expect(usersRepositoryMock.persistVerifiedEmail).toHaveBeenCalledWith(
         userId,
         email,
       );
-      expect(loggingServiceMock.warn).toHaveBeenCalledWith(
-        `OIDC: verified email could not be persisted for user ${userId}`,
-      );
+      expect(authRepositoryMock.signToken).not.toHaveBeenCalled();
     });
 
     it('should throw ForbiddenException when exp exceeds max', async () => {

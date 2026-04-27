@@ -151,6 +151,51 @@ describe('Auth0TokenVerifier', () => {
       expect(fetchMock).toHaveBeenCalledTimes(1);
     });
 
+    it('should allow email_verified without an email claim', async () => {
+      const kid = faker.string.alphanumeric(12);
+      const { privateKey, publicJwk } = getRsaKeyPair();
+      const idToken = signRs256IdToken({
+        issuer,
+        audience: clientId,
+        kid,
+        privateKey,
+        payload: {
+          sub: faker.string.uuid(),
+          email_verified: true,
+        },
+      });
+      fetchMock.mockResolvedValueOnce(jwksResponse(publicJwk, kid));
+
+      const result = await target.verifyAndDecode(idToken);
+
+      expect(result.email).toBeUndefined();
+      expect(result.email_verified).toBe(true);
+    });
+
+    it('should throw when the id token has an invalid email claim', async () => {
+      const kid = faker.string.alphanumeric(12);
+      const { privateKey, publicJwk } = getRsaKeyPair();
+      const idToken = signRs256IdToken({
+        issuer,
+        audience: clientId,
+        kid,
+        privateKey,
+        payload: {
+          sub: faker.string.uuid(),
+          email: faker.word.noun(),
+          email_verified: true,
+        },
+      });
+      fetchMock.mockResolvedValueOnce(jwksResponse(publicJwk, kid));
+
+      await expect(target.verifyAndDecode(idToken)).rejects.toThrow(
+        new UnauthorizedException('Invalid id token'),
+      );
+      expect(loggingServiceMock.debug).toHaveBeenCalledWith(
+        expect.stringContaining('Auth0: id token verification failed:'),
+      );
+    });
+
     it('should throw when the signing key cannot be found in the JWKS', async () => {
       const kid = faker.string.alphanumeric(12);
       const { privateKey } = getRsaKeyPair();

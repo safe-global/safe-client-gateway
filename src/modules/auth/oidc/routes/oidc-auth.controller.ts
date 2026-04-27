@@ -24,11 +24,13 @@ import {
 } from '@nestjs/common';
 import {
   ApiFoundResponse,
+  ApiConflictResponse,
   ApiTags,
   ApiOperation,
   ApiQuery,
 } from '@nestjs/swagger';
 import { type CookieOptions, Request, Response } from 'express';
+import { UserEmailAlreadyInUseError } from '@/modules/users/domain/errors/user-email-already-in-use.error';
 
 /**
  * The OidcAuthController handles OIDC (Auth0) authentication:
@@ -149,6 +151,10 @@ export class OidcAuthController {
     description:
       'Redirect to the post-login URL. On error, includes error query parameter.',
   })
+  @ApiConflictResponse({
+    description:
+      'The verified email returned by Auth0 already belongs to another user.',
+  })
   @Get('oidc/callback')
   async callback(
     @Req() req: Request,
@@ -212,6 +218,14 @@ export class OidcAuthController {
       );
       res.redirect(redirectUrl);
     } catch (err) {
+      if (err instanceof UserEmailAlreadyInUseError) {
+        // Auth0 should usually prevent duplicate-email identities before CGW sees them.
+        this.loggingService.warn(
+          `Auth callback: authentication failed due to conflict: ${err.message}`,
+        );
+        throw err;
+      }
+
       this.loggingService.error(
         `Auth callback: authentication failed: ${err instanceof Error ? err.message : 'Unknown error'}`,
       );

@@ -1,12 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { randomBytes } from 'node:crypto';
-import {
-  ConflictException,
-  Inject,
-  Injectable,
-  InternalServerErrorException,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import {
   assertExpirationTime,
   getMaxExpirationTime,
@@ -191,27 +185,9 @@ export class OidcAuthService {
     userId: number,
     verifiedEmail: string,
   ): Promise<void> {
-    try {
-      this.loggingService.debug(
-        `OIDC: persisting verified email for user ${userId}`,
-      );
-      await this.usersRepository.persistVerifiedEmail(userId, verifiedEmail);
-    } catch (error) {
-      if (error instanceof ConflictException) {
-        this.loggingService.warn(
-          `OIDC: verified email already belongs to another user for user ${userId}`,
-        );
-        return;
-      }
-
-      if (error instanceof InternalServerErrorException) {
-        this.loggingService.warn(
-          `OIDC: verified email could not be persisted for user ${userId}`,
-        );
-        return;
-      }
-
-      throw error;
-    }
+    this.loggingService.debug(
+      `OIDC: persisting verified email for user ${userId}`,
+    );
+    await this.usersRepository.persistVerifiedEmail(userId, verifiedEmail);
   }
 }

@@ -74,10 +74,11 @@ Client                          Gateway                        Auth0
   │                                │   ?code=...&state=...        │
   ├─ GET /v1/auth/oidc/callback ──►│ validate state vs cookie     │
   │                                │ clear state cookie           │
-  │                                │ exchange code for token ────►│
-  │                                │◄──── Auth0 JWT ──────────────┤
-  │                                │ verify JWT signature + claims│
+  │                                │ exchange code for id_token ─►│
+  │                                │◄──── Auth0 id_token ─────────┤
+  │                                │ verify id_token + claims     │
   │                                │ resolve/create user by sub   │
+  │                                │ persist verified email       │
   │                                │ sign internal JWT (OidcAuthPayload)
   │◄──── Set-Cookie: access_token ─┤                              │
   │◄──── 302 redirect to app ──────┤                              │
@@ -93,6 +94,18 @@ Client                          Gateway                        Auth0
 ```
 
 The Auth0 `sub` (external user ID) is mapped to the internal user ID at login. Subsequent requests only carry the internal ID.
+
+### Email claims
+
+CGW reads email claims from the verified Auth0 `id_token`; it does **not** use the Auth0 access token for identity claims and does **not** call the Auth0 Management API on the auth path.
+
+Only verified emails are persisted or checked for uniqueness. If the `id_token` contains `email_verified: true` and a valid `email`, CGW stores the normalized email on `users.email`. The value is write-once: existing user emails are not overwritten.
+
+If the verified email already belongs to another CGW user, authentication fails with `409 Conflict` and `code: "user_email_already_in_use"`. Two user accounts must not share the same email. This should usually be prevented by Auth0 account-conflict handling before CGW sees it.
+
+Invite-claim flows that intentionally attach a pending invited member to a first-time OIDC user must resolve that ownership before persisting the email.
+
+The internal CGW JWT does not contain the email. `GET /v1/auth/me` returns the stored email for OIDC users by reading `users.email`; SiWe sessions do not include an email.
 
 ### `redirect_url` query parameter
 
@@ -110,7 +123,7 @@ It is stored in a short-lived HTTP-only cookie (`auth_state`, 5 min TTL). On cal
 
 ### Callback error handling
 
-The callback **never returns an HTTP error response**. All failures redirect the browser back to the app with an `?error=<code>` query parameter:
+Most callback failures redirect the browser back to the app with an `?error=<code>` query parameter:
 
 | Scenario                                  | `error` value                          |
 | ----------------------------------------- | -------------------------------------- |
@@ -118,6 +131,8 @@ The callback **never returns an HTTP error response**. All failures redirect the
 | Missing `code` or `state` in callback     | `invalid_request`                      |
 | State cookie mismatch                     | `invalid_request`                      |
 | Code exchange or JWT verification failed  | `authentication_failed`                |
+
+If Auth0 returns a verified email that already belongs to another CGW user, the callback returns `409 Conflict` with `code: "user_email_already_in_use"` instead of redirecting. This is a CGW account-identity conflict, not an Auth0/provider failure.
 
 The redirect target is resolved from the state cookie's `redirectUrl` when available, or falls back to `AUTH_POST_LOGIN_REDIRECT_URI`.
 
@@ -134,7 +149,9 @@ The redirect target is resolved from the state cookie's `redirectUrl` when avail
 | `AUTH0_API_AUDIENCE`  | API audience sent on the Auth0 authorize URL |
 | `AUTH0_SCOPE`         | Requested scopes, defaults to `openid`       |
 
-CGW verifies the Auth0 `id_token` using **RS256** and Auth0's JWKS (`/.well-known/jwks.json`). The verifier checks issuer (`https://{domain}/`), audience (`AUTH0_CLIENT_ID`), and signature before extracting claims. The Auth0 `sub` (external user ID) is then mapped to an internal numeric user ID via `usersRepository.findOrCreateByExtUserId()`.
+Set `AUTH0_SCOPE` to include `email` in environments where CGW should receive email claims, for example `openid email`. `profile` is not required for this flow.
+
+CGW verifies the Auth0 `id_token` using **RS256** and Auth0's JWKS (`/.well-known/jwks.json`) via `jose`'s remote JWKS verifier. The verifier checks issuer (`https://{domain}/`), audience (`AUTH0_CLIENT_ID`), and signature before extracting claims. The Auth0 `sub` (external user ID) is then mapped to an internal numeric user ID via `usersRepository.findOrCreateByExtUserId()`.
 
 > **Auth0 dashboard requirements:** Both redirect URLs must be allowlisted in the Auth0 application settings:
 >
