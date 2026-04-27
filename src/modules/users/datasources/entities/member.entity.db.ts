@@ -80,12 +80,10 @@ export class Member implements DomainMember {
 
   @Column({
     name: 'invited_by',
-    type: 'varchar',
-    length: 42,
+    type: 'integer',
     nullable: true,
-    transformer: nullableDatabaseAddressTransformer,
   })
-  invitedBy!: Address | null;
+  invitedBy!: number | null;
 
   @Column({
     name: 'created_at',

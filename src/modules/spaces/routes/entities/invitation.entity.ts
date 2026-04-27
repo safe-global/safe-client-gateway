@@ -25,6 +25,6 @@ export class Invitation {
   @ApiProperty({ enum: getStringEnumKeys(MemberStatus) })
   status!: keyof typeof MemberStatus;
 
-  @ApiPropertyOptional({ type: String, nullable: true })
+  @ApiPropertyOptional({ type: Number, nullable: true })
   invitedBy!: Member['invitedBy'];
 }

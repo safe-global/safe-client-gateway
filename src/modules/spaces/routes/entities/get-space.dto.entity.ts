@@ -22,7 +22,7 @@ class SpaceMemberDto {
   @ApiProperty({ type: String })
   public name!: Member['name'];
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ type: Number, nullable: true })
   public invitedBy!: Member['invitedBy'];
 
   @ApiProperty({
