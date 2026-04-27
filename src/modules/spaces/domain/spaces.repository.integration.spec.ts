@@ -291,6 +291,49 @@ describe('SpacesRepository', () => {
       ).rejects.toThrow();
     });
 
+    it('should not count OIDC-invited memberships toward the space creation limit', async () => {
+      const config = jest.mocked({
+        getOrThrow: jest.fn(),
+      } as jest.MockedObjectDeep<IConfigurationService>);
+      config.getOrThrow.mockImplementation((key) => {
+        if (key === 'spaces.maxSpaceCreationsPerUser') return 1;
+      });
+      const target = new SpacesRepository(postgresDatabaseService, config);
+
+      const invitee = await dbUserRepo.insert({ status: 'ACTIVE' });
+      const inviteeId = invitee.identifiers[0].id as User['id'];
+
+      const admin = await dbUserRepo.insert({ status: 'ACTIVE' });
+      const adminId = admin.identifiers[0].id as User['id'];
+
+      // Admin creates a space and invites the invitee (invitedBy = adminId)
+      const space = await dbSpacesRepository.insert({
+        name: nameBuilder(),
+        status: 'ACTIVE',
+      });
+      await dbMembersRepository.insert({
+        user: invitee.generatedMaps[0],
+        space: space.generatedMaps[0],
+        name: nameBuilder(),
+        role: 'MEMBER',
+        status: 'ACTIVE',
+        invitedBy: adminId,
+      });
+
+      // Invitee should still be able to create their own space
+      // (the invited membership should NOT count toward the limit)
+      await expect(
+        target.create({
+          userId: inviteeId,
+          name: nameBuilder(),
+          status: 'ACTIVE',
+        }),
+      ).resolves.toEqual({
+        id: expect.any(Number),
+        name: expect.any(String),
+      });
+    });
+
     it('should set the name of the space', async () => {
       const userStatus = faker.helpers.arrayElement(UserStatusKeys);
       const spaceName = nameBuilder();
