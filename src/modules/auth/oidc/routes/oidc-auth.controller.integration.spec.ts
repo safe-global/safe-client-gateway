@@ -495,9 +495,7 @@ describe('OidcAuthController', () => {
         networkService.postForm.mockResolvedValueOnce({
           status: 200,
           data: rawify({
-            refresh_token: 'auth0-refresh-token',
             id_token: idToken,
-            token_type: 'Bearer',
           }),
         });
 

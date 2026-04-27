@@ -72,14 +72,10 @@ describe('Auth0Api', () => {
   });
 
   describe('exchangeAuthorizationCode', () => {
-    it('should exchange an authorization code for tokens', async () => {
+    it('should exchange an authorization code for an ID token', async () => {
       const code = faker.string.alphanumeric(32);
       const tokenResponse = {
-        access_token: faker.string.alphanumeric(),
-        refresh_token: faker.string.alphanumeric(),
         id_token: faker.string.alphanumeric(),
-        token_type: 'Bearer',
-        expires_in: faker.number.int({ min: 60, max: 3_600 }),
       };
       networkService.postForm.mockResolvedValueOnce({
         status: 200,

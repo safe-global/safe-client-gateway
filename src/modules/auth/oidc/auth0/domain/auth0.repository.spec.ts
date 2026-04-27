@@ -80,10 +80,7 @@ describe('Auth0Repository', () => {
 
       auth0ApiMock.exchangeAuthorizationCode.mockResolvedValue(
         rawify({
-          refresh_token: faker.string.alphanumeric(64),
           id_token: idToken,
-          token_type: 'Bearer',
-          expires_in: 3600,
         }),
       );
       auth0TokenVerifierMock.verifyAndDecode.mockResolvedValue(decodedIdToken);
@@ -108,10 +105,7 @@ describe('Auth0Repository', () => {
 
       auth0ApiMock.exchangeAuthorizationCode.mockResolvedValue(
         rawify({
-          refresh_token: faker.string.alphanumeric(64),
           id_token: faker.string.alphanumeric(64),
-          token_type: 'Bearer',
-          expires_in: 3600,
         }),
       );
       auth0TokenVerifierMock.verifyAndDecode.mockResolvedValue(decodedIdToken);
@@ -139,9 +133,7 @@ describe('Auth0Repository', () => {
 
       auth0ApiMock.exchangeAuthorizationCode.mockResolvedValue(
         rawify({
-          refresh_token: faker.string.alphanumeric(64),
           id_token: faker.string.alphanumeric(64),
-          token_type: 'Bearer',
         }),
       );
       auth0TokenVerifierMock.verifyAndDecode.mockRejectedValue(error);
@@ -157,7 +149,6 @@ describe('Auth0Repository', () => {
       auth0ApiMock.exchangeAuthorizationCode.mockResolvedValue(
         rawify({
           id_token: '',
-          token_type: 'Bearer',
         }),
       );
 
