@@ -21,6 +21,7 @@ import { LogType } from '@/domain/common/entities/log-type.entity';
 import Safe130 from '@/abis/safe/v1.3.0/GnosisSafe.abi';
 import Safe141 from '@/abis/safe/v1.4.1/Safe.abi';
 import Safe150 from '@/abis/safe/v1.5.0/Safe.abi';
+import semverSatisfies from 'semver/functions/satisfies';
 import type { Address, Hex } from 'viem';
 
 type SafeAbi = typeof Safe130 | typeof Safe141 | typeof Safe150;
@@ -42,9 +43,9 @@ export class RelayTransactionHelper {
   ) {}
 
   private getSafeAbi(version: string): SafeAbi {
-    if (version.startsWith('1.5')) return Safe150;
-    if (version.startsWith('1.4')) return Safe141;
-    if (version.startsWith('1.3') || version.startsWith('1.2') || version.startsWith('1.1') || version.startsWith('1.0')) return Safe130;
+    if (semverSatisfies(version, '>=1.5.0')) return Safe150;
+    if (semverSatisfies(version, '>=1.4.0')) return Safe141;
+    if (semverSatisfies(version, '>=1.0.0')) return Safe130;
     this.loggingService.warn({
       type: LogType.TxRelayEligibility,
       message: `getSafeAbi: unrecognised Safe version ${version}, falling back to 1.3.0 ABI`,
