@@ -103,9 +103,9 @@ describe('RelayTransactionHelper', () => {
         .with('data', erc20TransferEncoder().with('to', recipient).encode())
         .encode();
 
-      expect(
-        helper.isValidExecTransactionCall({ to: safeAddress, data }),
-      ).toBe(true);
+      expect(helper.isValidExecTransactionCall({ to: safeAddress, data })).toBe(
+        true,
+      );
     });
 
     it('should return false for an ERC-20 transfer back to the Safe itself', () => {
@@ -114,9 +114,9 @@ describe('RelayTransactionHelper', () => {
         .with('data', erc20TransferEncoder().with('to', safeAddress).encode())
         .encode();
 
-      expect(
-        helper.isValidExecTransactionCall({ to: safeAddress, data }),
-      ).toBe(false);
+      expect(helper.isValidExecTransactionCall({ to: safeAddress, data })).toBe(
+        false,
+      );
     });
 
     it('should return true for ERC-20 transferFrom where sender != recipient != Safe', () => {
@@ -133,9 +133,9 @@ describe('RelayTransactionHelper', () => {
         )
         .encode();
 
-      expect(
-        helper.isValidExecTransactionCall({ to: safeAddress, data }),
-      ).toBe(true);
+      expect(helper.isValidExecTransactionCall({ to: safeAddress, data })).toBe(
+        true,
+      );
     });
 
     it('should return false for ERC-20 transferFrom where recipient is the Safe', () => {
@@ -151,9 +151,9 @@ describe('RelayTransactionHelper', () => {
         )
         .encode();
 
-      expect(
-        helper.isValidExecTransactionCall({ to: safeAddress, data }),
-      ).toBe(false);
+      expect(helper.isValidExecTransactionCall({ to: safeAddress, data })).toBe(
+        false,
+      );
     });
 
     it('should return false for ERC-20 transferFrom where sender equals recipient', () => {
@@ -169,9 +169,9 @@ describe('RelayTransactionHelper', () => {
         )
         .encode();
 
-      expect(
-        helper.isValidExecTransactionCall({ to: safeAddress, data }),
-      ).toBe(false);
+      expect(helper.isValidExecTransactionCall({ to: safeAddress, data })).toBe(
+        false,
+      );
     });
 
     it('should return true for a call to a third party (non-Safe) address', () => {
@@ -179,9 +179,9 @@ describe('RelayTransactionHelper', () => {
       const thirdParty = getAddress(faker.finance.ethereumAddress());
       const data = execTransactionEncoder().with('to', thirdParty).encode();
 
-      expect(
-        helper.isValidExecTransactionCall({ to: safeAddress, data }),
-      ).toBe(true);
+      expect(helper.isValidExecTransactionCall({ to: safeAddress, data })).toBe(
+        true,
+      );
     });
 
     it('should return false for a self-call with non-zero value', () => {
@@ -192,9 +192,9 @@ describe('RelayTransactionHelper', () => {
         .with('data', '0x')
         .encode();
 
-      expect(
-        helper.isValidExecTransactionCall({ to: safeAddress, data }),
-      ).toBe(false);
+      expect(helper.isValidExecTransactionCall({ to: safeAddress, data })).toBe(
+        false,
+      );
     });
 
     it('should return true for a cancellation (0x data, 0 value, to self)', () => {
@@ -205,9 +205,9 @@ describe('RelayTransactionHelper', () => {
         .with('data', '0x')
         .encode();
 
-      expect(
-        helper.isValidExecTransactionCall({ to: safeAddress, data }),
-      ).toBe(true);
+      expect(helper.isValidExecTransactionCall({ to: safeAddress, data })).toBe(
+        true,
+      );
     });
 
     it.each([

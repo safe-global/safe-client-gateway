@@ -171,15 +171,15 @@ describe('RelayFeeRelayer', () => {
       });
 
       expect(result).toEqual({ taskId });
-      expect(
-        mockRelayTransactionHelper.isSafeTxHashValid,
-      ).toHaveBeenCalledWith({
-        version: '1.3.0',
-        chainId: enabledChainId,
-        safeAddress,
-        data: '0x',
-        safeTxHash,
-      });
+      expect(mockRelayTransactionHelper.isSafeTxHashValid).toHaveBeenCalledWith(
+        {
+          version: '1.3.0',
+          chainId: enabledChainId,
+          safeAddress,
+          data: '0x',
+          safeTxHash,
+        },
+      );
       expect(mockFeeServiceApi.canRelay).toHaveBeenCalledWith({
         chainId: enabledChainId,
         safeTxHash,

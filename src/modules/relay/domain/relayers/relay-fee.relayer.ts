@@ -93,9 +93,7 @@ export class RelayFeeRelayer implements IRelayer {
   }): Promise<Relay> {
     const { version, chainId, to, data } = args;
 
-    if (
-      this.relayTransactionHelper.isValidExecTransactionCall({ to, data })
-    ) {
+    if (this.relayTransactionHelper.isValidExecTransactionCall({ to, data })) {
       if (!args.safeTxHash) {
         throw new RelayTxDeniedError(undefined);
       }

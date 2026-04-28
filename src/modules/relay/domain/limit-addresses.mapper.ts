@@ -33,11 +33,12 @@ export class LimitAddressesMapper {
       })
     ) {
       // Safe attempting to relay is official
-      const isOfficial =
-        await this.relayTransactionHelper.isOfficialMastercopy({
+      const isOfficial = await this.relayTransactionHelper.isOfficialMastercopy(
+        {
           chainId: args.chainId,
           address: args.to,
-        });
+        },
+      );
 
       if (!isOfficial) {
         throw new UnofficialMasterCopyError();
@@ -62,11 +63,12 @@ export class LimitAddressesMapper {
         this.relayTransactionHelper.getSafeAddressFromMultiSend(args.data);
 
       // Safe attempting to relay is official
-      const isOfficial =
-        await this.relayTransactionHelper.isOfficialMastercopy({
+      const isOfficial = await this.relayTransactionHelper.isOfficialMastercopy(
+        {
           chainId: args.chainId,
           address: safeAddress,
-        });
+        },
+      );
 
       if (!isOfficial) {
         throw new UnofficialMasterCopyError();
