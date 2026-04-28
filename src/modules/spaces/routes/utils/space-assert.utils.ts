@@ -7,11 +7,11 @@ import { MemberRole } from '@/modules/users/domain/entities/member.entity';
 import { ForbiddenException } from '@nestjs/common';
 import { In } from 'typeorm';
 
-export async function assertAdmin(
+export async function isAdmin(
   spacesRepository: ISpacesRepository,
   spaceId: Space['id'],
   userId: number,
-): Promise<void> {
+): Promise<boolean> {
   const space = await spacesRepository.findOne({
     where: {
       id: spaceId,
@@ -22,8 +22,15 @@ export async function assertAdmin(
       },
     },
   });
+  return space !== null;
+}
 
-  if (!space) {
+export async function assertAdmin(
+  spacesRepository: ISpacesRepository,
+  spaceId: Space['id'],
+  userId: number,
+): Promise<void> {
+  if (!(await isAdmin(spacesRepository, spaceId, userId))) {
     throw new ForbiddenException('User is not an admin of this space');
   }
 }
