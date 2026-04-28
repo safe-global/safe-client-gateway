@@ -16,6 +16,7 @@ import { SafeTxHashMismatchError } from '@/modules/relay/domain/errors/safe-tx-h
 import { RelayFeeConfiguration } from '@/modules/relay/domain/entities/relay.configuration';
 import { LogType } from '@/domain/common/entities/log-type.entity';
 import { RelayTransactionHelper } from '@/modules/relay/domain/relay-transaction-helper';
+import type { SafeTransaction } from '@/modules/transactions/domain/entities/safe-transaction.entity';
 
 @Injectable()
 export class RelayFeeRelayer implements IRelayer {
@@ -72,8 +73,7 @@ export class RelayFeeRelayer implements IRelayer {
   }
 
   /**
-   * Relays a transaction after verifying all limit addresses are eligible via the fee service.
-   * Throws {@link RelayDeniedError} if any address is denied by the FeeService.
+   * Relays a transaction after verifying eligibility via the fee service.
    *
    * @param args.version - Safe contract version
    * @param args.chainId - Chain ID
@@ -82,6 +82,11 @@ export class RelayFeeRelayer implements IRelayer {
    * @param args.gasLimit - Gas limit, or null for automatic estimation
    * @param args.safeTxHash - Safe transaction hash for relay-fee eligibility
    * @returns Relay result from the relay API
+   * @throws {@link RelayTxDeniedError} if no safeTxHash is provided for an execTransaction, the
+   *   fee service rejects the safeTxHash, the execTransaction fails validity rules, the proxy
+   *   factory is not an official deployment, or the transaction type is not recognised
+   * @throws {@link SafeTxHashMismatchError} if the provided safeTxHash does not match the
+   *   on-chain hash computed from the decoded execTransaction
    */
   async relay(args: {
     version: string;
@@ -98,36 +103,19 @@ export class RelayFeeRelayer implements IRelayer {
       decoded !== null &&
       this.relayTransactionHelper.isValidDecodedExecTransaction({ to, decoded })
     ) {
-      if (!args.safeTxHash) {
-        throw new RelayTxDeniedError(undefined);
-      }
-
-      const safeTxHash = args.safeTxHash;
-
-      const isValid = await this.relayTransactionHelper.isSafeTxHashValid({
+      await this.validateExecTransaction({
         version,
         chainId,
-        safeAddress: to,
+        to,
         decoded,
-        safeTxHash,
+        safeTxHash: args.safeTxHash,
       });
-
-      if (!isValid) {
-        throw new SafeTxHashMismatchError(safeTxHash);
-      }
-
-      const feeServiceResult = await this.feeServiceApi.canRelay({
+    } else if (decoded !== null) {
+      this.denyInvalidExecTransaction({
+        to,
         chainId,
-        safeTxHash,
+        safeTxHash: args.safeTxHash,
       });
-
-      if (!feeServiceResult.canRelay) {
-        this.loggingService.warn({
-          type: LogType.TxRelayEligibility,
-          message: `relay-fee relay denied for ${args.to} on chain ${chainId}: fee service rejected safeTxHash ${safeTxHash}`,
-        });
-        throw new RelayTxDeniedError(safeTxHash);
-      }
     } else if (
       this.relayTransactionHelper.isValidCreateProxyWithNonceCall({
         version,
@@ -135,48 +123,121 @@ export class RelayFeeRelayer implements IRelayer {
         data,
       })
     ) {
-      if (
-        !this.relayTransactionHelper.isOfficialProxyFactoryDeployment({
-          version,
-          chainId,
-          address: to,
-        })
-      ) {
-        this.loggingService.warn({
-          type: LogType.TxRelayEligibility,
-          message: `relay-fee relay denied for unofficial proxy factory ${to} on chain ${chainId}`,
-        });
-        throw new RelayTxDeniedError(args.safeTxHash);
-      }
-
-      // Safe creation — no on-chain hash to verify; fee service decides when hash is available
-      if (args.safeTxHash) {
-        const feeServiceResult = await this.feeServiceApi.canRelay({
-          chainId,
-          safeTxHash: args.safeTxHash,
-        });
-
-        if (!feeServiceResult.canRelay) {
-          this.loggingService.warn({
-            type: LogType.TxRelayEligibility,
-            message: `relay-fee relay denied for ${args.to} on chain ${chainId}: fee service rejected safeTxHash ${args.safeTxHash}`,
-          });
-          throw new RelayTxDeniedError(args.safeTxHash);
-        }
-      }
+      await this.validateSafeCreation({
+        version,
+        chainId,
+        to,
+        safeTxHash: args.safeTxHash,
+      });
     } else {
+      this.denyUnrecognisedTxType({ to, chainId, safeTxHash: args.safeTxHash });
+    }
+
+    return this.relayApi.relay(args).then(RelaySchema.parse);
+  }
+
+  private async validateExecTransaction(args: {
+    version: string;
+    chainId: string;
+    to: Address;
+    decoded: SafeTransaction;
+    safeTxHash: Hex | undefined;
+  }): Promise<void> {
+    const { version, chainId, to, decoded } = args;
+
+    if (!args.safeTxHash) {
+      throw new RelayTxDeniedError(undefined);
+    }
+
+    const safeTxHash = args.safeTxHash;
+
+    const isValid = await this.relayTransactionHelper.isSafeTxHashValid({
+      version,
+      chainId,
+      safeAddress: to,
+      decoded,
+      safeTxHash,
+    });
+
+    if (!isValid) {
+      throw new SafeTxHashMismatchError(safeTxHash);
+    }
+
+    const feeServiceResult = await this.feeServiceApi.canRelay({
+      chainId,
+      safeTxHash,
+    });
+
+    if (!feeServiceResult.canRelay) {
       this.loggingService.warn({
         type: LogType.TxRelayEligibility,
-        message: `relay-fee relay denied for unrecognised tx type: to=${to} on chain ${chainId}`,
+        message: `relay-fee relay denied for ${to} on chain ${chainId}: fee service rejected safeTxHash ${safeTxHash}`,
+      });
+      throw new RelayTxDeniedError(safeTxHash);
+    }
+  }
+
+  private denyInvalidExecTransaction(args: {
+    to: Address;
+    chainId: string;
+    safeTxHash: Hex | undefined;
+  }): never {
+    this.loggingService.warn({
+      type: LogType.TxRelayEligibility,
+      message: `relay-fee relay denied for invalid execTransaction: to=${args.to} on chain ${args.chainId}`,
+    });
+    throw new RelayTxDeniedError(args.safeTxHash);
+  }
+
+  private async validateSafeCreation(args: {
+    version: string;
+    chainId: string;
+    to: Address;
+    safeTxHash: Hex | undefined;
+  }): Promise<void> {
+    const { version, chainId, to } = args;
+
+    if (
+      !this.relayTransactionHelper.isOfficialProxyFactoryDeployment({
+        version,
+        chainId,
+        address: to,
+      })
+    ) {
+      this.loggingService.warn({
+        type: LogType.TxRelayEligibility,
+        message: `relay-fee relay denied for unofficial proxy factory ${to} on chain ${chainId}`,
       });
       throw new RelayTxDeniedError(args.safeTxHash);
     }
 
-    const relayResponse = await this.relayApi
-      .relay(args)
-      .then(RelaySchema.parse);
+    // Safe creation — no on-chain hash to verify; fee service decides when hash is available
+    if (args.safeTxHash) {
+      const feeServiceResult = await this.feeServiceApi.canRelay({
+        chainId,
+        safeTxHash: args.safeTxHash,
+      });
 
-    return relayResponse;
+      if (!feeServiceResult.canRelay) {
+        this.loggingService.warn({
+          type: LogType.TxRelayEligibility,
+          message: `relay-fee relay denied for ${to} on chain ${chainId}: fee service rejected safeTxHash ${args.safeTxHash}`,
+        });
+        throw new RelayTxDeniedError(args.safeTxHash);
+      }
+    }
+  }
+
+  private denyUnrecognisedTxType(args: {
+    to: Address;
+    chainId: string;
+    safeTxHash: Hex | undefined;
+  }): never {
+    this.loggingService.warn({
+      type: LogType.TxRelayEligibility,
+      message: `relay-fee relay denied for unrecognised tx type: to=${args.to} on chain ${args.chainId}`,
+    });
+    throw new RelayTxDeniedError(args.safeTxHash);
   }
 
   /**

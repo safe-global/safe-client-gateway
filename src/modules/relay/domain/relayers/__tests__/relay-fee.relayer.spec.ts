@@ -165,8 +165,6 @@ describe('RelayFeeRelayer', () => {
       expect(mockRelayApi.relay).not.toHaveBeenCalled();
     });
 
-    // --- execTransaction path ---
-
     it('should relay when isSafeTxHashValid returns true and fee service approves', async () => {
       const safeAddress = fakeAddress();
       const safeTxHash = fakeSafeTxHash();
@@ -265,8 +263,6 @@ describe('RelayFeeRelayer', () => {
         }),
       );
     });
-
-    // --- Safe creation path ---
 
     it('should relay a Safe creation when factory is official and fee service approves', async () => {
       const safeAddress = fakeAddress();
@@ -388,7 +384,36 @@ describe('RelayFeeRelayer', () => {
       );
     });
 
-    // --- Unknown tx type ---
+    it('should throw RelayTxDeniedError with invalid-execTransaction message when decoded but isValidDecodedExecTransaction returns false', async () => {
+      mockRelayTransactionHelper.decodeExecTransaction.mockReturnValue(
+        fakeDecoded,
+      );
+      mockRelayTransactionHelper.isValidDecodedExecTransaction.mockReturnValue(
+        false,
+      );
+
+      await expect(
+        target.relay({
+          version: '1.3.0',
+          chainId: enabledChainId,
+          to: fakeAddress(),
+          data: '0x' as Hex,
+          gasLimit: null,
+          safeTxHash: fakeSafeTxHash(),
+        }),
+      ).rejects.toThrow(RelayTxDeniedError);
+
+      expect(
+        mockRelayTransactionHelper.isValidCreateProxyWithNonceCall,
+      ).not.toHaveBeenCalled();
+      expect(mockFeeServiceApi.canRelay).not.toHaveBeenCalled();
+      expect(mockRelayApi.relay).not.toHaveBeenCalled();
+      expect(mockLoggingService.warn).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: expect.stringContaining('invalid execTransaction'),
+        }),
+      );
+    });
 
     it('should throw RelayTxDeniedError for unrecognised transaction type', async () => {
       mockRelayTransactionHelper.decodeExecTransaction.mockReturnValue(null);
