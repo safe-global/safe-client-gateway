@@ -210,6 +210,35 @@ describe('RelayFeeRelayer', () => {
       expect(mockRelayApi.relay).not.toHaveBeenCalled();
     });
 
+    it('should throw RelayTxDeniedError when fee service denies after hash validation passes', async () => {
+      const safeAddress = fakeAddress();
+      const safeTxHash = fakeSafeTxHash();
+
+      mockRelayTransactionHelper.isValidExecTransactionCall.mockReturnValue(
+        true,
+      );
+      mockRelayTransactionHelper.isSafeTxHashValid.mockResolvedValue(true);
+      mockFeeServiceApi.canRelay.mockResolvedValueOnce({ canRelay: false });
+
+      await expect(
+        target.relay({
+          version: '1.3.0',
+          chainId: enabledChainId,
+          to: safeAddress,
+          data: '0x' as Hex,
+          gasLimit: null,
+          safeTxHash,
+        }),
+      ).rejects.toThrow(RelayTxDeniedError);
+
+      expect(mockRelayApi.relay).not.toHaveBeenCalled();
+      expect(mockLoggingService.warn).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: expect.stringContaining('fee service rejected'),
+        }),
+      );
+    });
+
     // --- Safe creation path ---
 
     it('should relay a Safe creation when factory is official and fee service approves', async () => {
