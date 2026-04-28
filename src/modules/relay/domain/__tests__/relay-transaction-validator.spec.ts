@@ -307,7 +307,7 @@ describe('RelayTransactionValidator', () => {
         }),
       ).resolves.toBe(false);
 
-      expect(mockLoggingService.error).toHaveBeenCalledWith(
+      expect(mockLoggingService.warn).toHaveBeenCalledWith(
         expect.objectContaining({
           message: expect.stringContaining('safeTxHash mismatch'),
         }),

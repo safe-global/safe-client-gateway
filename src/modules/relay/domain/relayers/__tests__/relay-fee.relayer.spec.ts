@@ -125,7 +125,11 @@ describe('RelayFeeRelayer', () => {
   });
 
   describe('relay', () => {
-    it('should throw RelayTxDeniedError when no safeTxHash is provided', async () => {
+    it('should throw RelayTxDeniedError when no safeTxHash is provided for execTransaction', async () => {
+      mockRelayTransactionValidator.isValidExecTransactionCall.mockReturnValue(
+        true,
+      );
+
       await expect(
         target.relay({
           version: '1.3.0',
@@ -136,6 +140,7 @@ describe('RelayFeeRelayer', () => {
         }),
       ).rejects.toThrow(RelayTxDeniedError);
 
+      expect(mockRelayTransactionValidator.isSafeTxHashValid).not.toHaveBeenCalled();
       expect(mockFeeServiceApi.canRelay).not.toHaveBeenCalled();
       expect(mockRelayApi.relay).not.toHaveBeenCalled();
     });
@@ -241,7 +246,36 @@ describe('RelayFeeRelayer', () => {
       });
     });
 
+    it('should relay a Safe creation without safeTxHash when factory is official', async () => {
+      const taskId = faker.string.uuid();
+
+      mockRelayTransactionValidator.isValidExecTransactionCall.mockReturnValue(
+        false,
+      );
+      mockRelayTransactionValidator.isValidCreateProxyWithNonceCall.mockReturnValue(
+        true,
+      );
+      mockRelayTransactionValidator.isOfficialProxyFactoryDeployment.mockReturnValue(
+        true,
+      );
+      mockRelayApi.relay.mockResolvedValueOnce({ taskId });
+
+      const result = await target.relay({
+        version: '1.3.0',
+        chainId: enabledChainId,
+        to: fakeAddress(),
+        data: '0x' as Hex,
+        gasLimit: null,
+      });
+
+      expect(result).toEqual({ taskId });
+      expect(mockFeeServiceApi.canRelay).not.toHaveBeenCalled();
+      expect(mockRelayApi.relay).toHaveBeenCalled();
+    });
+
     it('should throw RelayTxDeniedError for unofficial proxy factory', async () => {
+      const to = fakeAddress();
+
       mockRelayTransactionValidator.isValidExecTransactionCall.mockReturnValue(
         false,
       );
@@ -256,7 +290,7 @@ describe('RelayFeeRelayer', () => {
         target.relay({
           version: '1.3.0',
           chainId: enabledChainId,
-          to: fakeAddress(),
+          to,
           data: '0x' as Hex,
           gasLimit: null,
           safeTxHash: fakeSafeTxHash(),
@@ -264,6 +298,44 @@ describe('RelayFeeRelayer', () => {
       ).rejects.toThrow(RelayTxDeniedError);
 
       expect(mockFeeServiceApi.canRelay).not.toHaveBeenCalled();
+      expect(mockLoggingService.warn).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: expect.stringContaining('unofficial proxy factory'),
+        }),
+      );
+    });
+
+    it('should throw RelayTxDeniedError when fee service denies a Safe creation with safeTxHash', async () => {
+      const safeTxHash = fakeSafeTxHash();
+
+      mockRelayTransactionValidator.isValidExecTransactionCall.mockReturnValue(
+        false,
+      );
+      mockRelayTransactionValidator.isValidCreateProxyWithNonceCall.mockReturnValue(
+        true,
+      );
+      mockRelayTransactionValidator.isOfficialProxyFactoryDeployment.mockReturnValue(
+        true,
+      );
+      mockFeeServiceApi.canRelay.mockResolvedValueOnce({ canRelay: false });
+
+      await expect(
+        target.relay({
+          version: '1.3.0',
+          chainId: enabledChainId,
+          to: fakeAddress(),
+          data: '0x' as Hex,
+          gasLimit: null,
+          safeTxHash,
+        }),
+      ).rejects.toThrow(RelayTxDeniedError);
+
+      expect(mockRelayApi.relay).not.toHaveBeenCalled();
+      expect(mockLoggingService.warn).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: expect.stringContaining('fee service rejected'),
+        }),
+      );
     });
 
     // --- Unknown tx type ---
@@ -321,6 +393,16 @@ describe('RelayFeeRelayer', () => {
   });
 
   describe('getRelaysRemaining', () => {
+    it('should return optimistic 1 when no safeTxHash is provided on an enabled chain', async () => {
+      const result = await target.getRelaysRemaining({
+        chainId: enabledChainId,
+        address: fakeAddress(),
+      });
+
+      expect(result).toEqual({ remaining: 1, limit: 1 });
+      expect(mockFeeServiceApi.canRelay).not.toHaveBeenCalled();
+    });
+
     it('should return 0 for chains not enabled for relay-fee', async () => {
       const result = await target.getRelaysRemaining({
         chainId: faker.string.numeric({ length: 5 }),

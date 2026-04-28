@@ -460,7 +460,7 @@ export class RelayTransactionHelper {
       });
 
       if (onChainHash !== args.safeTxHash) {
-        this.loggingService.error({
+        this.loggingService.warn({
           type: LogType.TxRelayEligibility,
           message: `relay-fee safeTxHash mismatch for ${args.safeAddress} on chain ${args.chainId}`,
         });
