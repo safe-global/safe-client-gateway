@@ -258,7 +258,9 @@ describe('RelayTransactionHelper', () => {
         length: 64,
         casing: 'lower',
       }) as Hex;
-      const data = execTransactionEncoder().encode();
+      const decoded = helper.decodeExecTransaction(
+        execTransactionEncoder().encode(),
+      )!;
       const mockPublicClient = makePublicClientMock({
         nonce: BigInt(0),
         txHash: safeTxHash,
@@ -272,7 +274,7 @@ describe('RelayTransactionHelper', () => {
           version: '1.3.0',
           chainId: faker.helpers.arrayElement(supportedChainIds),
           safeAddress,
-          data,
+          decoded,
           safeTxHash,
         }),
       ).resolves.toBe(true);
@@ -288,7 +290,9 @@ describe('RelayTransactionHelper', () => {
         length: 64,
         casing: 'lower',
       }) as Hex;
-      const data = execTransactionEncoder().encode();
+      const decoded = helper.decodeExecTransaction(
+        execTransactionEncoder().encode(),
+      )!;
       const mockPublicClient = makePublicClientMock({
         nonce: BigInt(0),
         txHash: differentHash,
@@ -302,7 +306,7 @@ describe('RelayTransactionHelper', () => {
           version: '1.3.0',
           chainId: faker.helpers.arrayElement(supportedChainIds),
           safeAddress,
-          data,
+          decoded,
           safeTxHash,
         }),
       ).resolves.toBe(false);
@@ -320,7 +324,9 @@ describe('RelayTransactionHelper', () => {
         length: 64,
         casing: 'lower',
       }) as Hex;
-      const data = execTransactionEncoder().encode();
+      const decoded = helper.decodeExecTransaction(
+        execTransactionEncoder().encode(),
+      )!;
       mockBlockchainApiManager.getApi.mockRejectedValue(new Error('RPC error'));
 
       await expect(
@@ -328,7 +334,7 @@ describe('RelayTransactionHelper', () => {
           version: '1.3.0',
           chainId: faker.helpers.arrayElement(supportedChainIds),
           safeAddress,
-          data,
+          decoded,
           safeTxHash,
         }),
       ).resolves.toBe(false);
@@ -339,25 +345,28 @@ describe('RelayTransactionHelper', () => {
         }),
       );
     });
+  });
 
-    it('should return false when data cannot be decoded as execTransaction', async () => {
-      const safeAddress = getAddress(faker.finance.ethereumAddress());
-      const safeTxHash = faker.string.hexadecimal({
-        length: 64,
-        casing: 'lower',
-      }) as Hex;
+  describe('decodeExecTransaction', () => {
+    it('should return a SafeTransaction for valid execTransaction calldata', () => {
+      const data = execTransactionEncoder().encode();
+      const result = helper.decodeExecTransaction(data);
+      expect(result).not.toBeNull();
+      expect(result).toMatchObject({
+        to: expect.any(String),
+        value: expect.any(BigInt),
+        data: expect.any(String),
+        operation: expect.any(Number),
+        safeTxGas: expect.any(BigInt),
+        baseGas: expect.any(BigInt),
+        gasPrice: expect.any(BigInt),
+        gasToken: expect.any(String),
+        refundReceiver: expect.any(String),
+      });
+    });
 
-      await expect(
-        helper.isSafeTxHashValid({
-          version: '1.3.0',
-          chainId: faker.helpers.arrayElement(supportedChainIds),
-          safeAddress,
-          data: '0x',
-          safeTxHash,
-        }),
-      ).resolves.toBe(false);
-
-      expect(mockBlockchainApiManager.getApi).not.toHaveBeenCalled();
+    it('should return null for non-execTransaction calldata', () => {
+      expect(helper.decodeExecTransaction('0x')).toBeNull();
     });
   });
 

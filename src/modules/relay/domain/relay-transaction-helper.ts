@@ -54,46 +54,45 @@ export class RelayTransactionHelper {
   }
 
   isValidExecTransactionCall(args: { to: Address; data: Hex }): boolean {
-    const execTransactionArgs = this.getExecTransactionArgs(args.data);
-    // Not a valid execTransaction call
-    if (!execTransactionArgs) {
-      return false;
-    }
+    const decoded = this.decodeExecTransaction(args.data);
+    if (!decoded) return false;
+    return this.isValidDecodedExecTransaction({ to: args.to, decoded });
+  }
+
+  isValidDecodedExecTransaction(args: {
+    to: Address;
+    decoded: SafeTransaction;
+  }): boolean {
+    const { decoded } = args;
 
     // Only ERC-20 transfer to other party is valid
-    if (this.erc20Decoder.helpers.isTransfer(execTransactionArgs.data)) {
-      return this.isValidErc20Transfer({
-        to: args.to,
-        data: execTransactionArgs.data,
-      });
+    if (this.erc20Decoder.helpers.isTransfer(decoded.data)) {
+      return this.isValidErc20Transfer({ to: args.to, data: decoded.data });
     }
 
     // Only ERC-20 transferFrom to other party is valid
-    if (this.erc20Decoder.helpers.isTransferFrom(execTransactionArgs.data)) {
-      return this.isValidErc20TransferFrom({
-        to: args.to,
-        data: execTransactionArgs.data,
-      });
+    if (this.erc20Decoder.helpers.isTransferFrom(decoded.data)) {
+      return this.isValidErc20TransferFrom({ to: args.to, data: decoded.data });
     }
 
     // Only transaction to other party is valid
-    const toSelf = execTransactionArgs.to === args.to;
+    const toSelf = decoded.to === args.to;
     if (!toSelf) {
       return true;
     }
 
     // Only transaction with no value is valid
-    const hasValue = execTransactionArgs.value > BigInt(0);
+    const hasValue = decoded.value > BigInt(0);
     if (hasValue) {
       return false;
     }
 
     // Cancellations and Safe calls (e.g. owner management) are valid
-    const isCancellation = execTransactionArgs.data === '0x';
-    return isCancellation || this.safeDecoder.isCall(execTransactionArgs.data);
+    const isCancellation = decoded.data === '0x';
+    return isCancellation || this.safeDecoder.isCall(decoded.data);
   }
 
-  private getExecTransactionArgs(data: Hex): SafeTransaction | null {
+  decodeExecTransaction(data: Hex): SafeTransaction | null {
     try {
       const safeDecodedData = this.safeDecoder.decodeFunctionData({
         data,
@@ -418,15 +417,10 @@ export class RelayTransactionHelper {
     version: string;
     chainId: string;
     safeAddress: Address;
-    data: Hex;
+    decoded: SafeTransaction;
     safeTxHash: Hex;
   }): Promise<boolean> {
-    const decoded = this.getExecTransactionArgs(args.data);
-
-    if (!decoded) {
-      return false;
-    }
-
+    const { decoded } = args;
     const abi = this.getSafeAbi(args.version);
 
     try {
