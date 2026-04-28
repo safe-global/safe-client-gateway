@@ -59,6 +59,10 @@ const MULTI_SEND_VERSIONS = getDeploymentVersionsByChainIds(
   'MultiSend',
   supportedChainIds,
 );
+const SAFE_VERSIONS = getDeploymentVersionsByChainIds(
+  'Safe',
+  supportedChainIds,
+);
 
 const mockLoggingService = jest.mocked({
   info: jest.fn(),
@@ -253,6 +257,8 @@ describe('RelayTransactionHelper', () => {
     }
 
     it('should return true when on-chain hash matches the provided safeTxHash', async () => {
+      const chainId = faker.helpers.arrayElement(supportedChainIds);
+      const version = faker.helpers.arrayElement(SAFE_VERSIONS[chainId]);
       const safeAddress = getAddress(faker.finance.ethereumAddress());
       const safeTxHash = faker.string.hexadecimal({
         length: 64,
@@ -271,8 +277,8 @@ describe('RelayTransactionHelper', () => {
 
       await expect(
         helper.isSafeTxHashValid({
-          version: '1.3.0',
-          chainId: faker.helpers.arrayElement(supportedChainIds),
+          version,
+          chainId,
           safeAddress,
           decoded,
           safeTxHash,
@@ -281,6 +287,8 @@ describe('RelayTransactionHelper', () => {
     });
 
     it('should return false when on-chain hash differs from provided safeTxHash', async () => {
+      const chainId = faker.helpers.arrayElement(supportedChainIds);
+      const version = faker.helpers.arrayElement(SAFE_VERSIONS[chainId]);
       const safeAddress = getAddress(faker.finance.ethereumAddress());
       const safeTxHash = faker.string.hexadecimal({
         length: 64,
@@ -303,8 +311,8 @@ describe('RelayTransactionHelper', () => {
 
       await expect(
         helper.isSafeTxHashValid({
-          version: '1.3.0',
-          chainId: faker.helpers.arrayElement(supportedChainIds),
+          version,
+          chainId,
           safeAddress,
           decoded,
           safeTxHash,
@@ -319,6 +327,8 @@ describe('RelayTransactionHelper', () => {
     });
 
     it('should return false when the RPC call fails', async () => {
+      const chainId = faker.helpers.arrayElement(supportedChainIds);
+      const version = faker.helpers.arrayElement(SAFE_VERSIONS[chainId]);
       const safeAddress = getAddress(faker.finance.ethereumAddress());
       const safeTxHash = faker.string.hexadecimal({
         length: 64,
@@ -331,8 +341,8 @@ describe('RelayTransactionHelper', () => {
 
       await expect(
         helper.isSafeTxHashValid({
-          version: '1.3.0',
-          chainId: faker.helpers.arrayElement(supportedChainIds),
+          version,
+          chainId,
           safeAddress,
           decoded,
           safeTxHash,

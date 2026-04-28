@@ -44,7 +44,7 @@ export class RelayTransactionHelper {
 
   private getSafeAbi(version: string): SafeAbi {
     if (semverSatisfies(version, '>=1.5.0')) return Safe150;
-    if (semverSatisfies(version, '>=1.4.0')) return Safe141;
+    if (semverSatisfies(version, '>=1.4.1')) return Safe141;
     if (semverSatisfies(version, '>=1.0.0')) return Safe130;
     this.loggingService.warn({
       type: LogType.TxRelayEligibility,
