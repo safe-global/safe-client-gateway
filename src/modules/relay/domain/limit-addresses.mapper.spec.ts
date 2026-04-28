@@ -1520,7 +1520,7 @@ describe('LimitAddressesMapper', () => {
         expect(limitAddress).not.toStrictEqual(to);
       });
 
-      it('should throw for createSigner on an unofficial factory', async () => {
+      it('should throw UnofficialSignerFactoryError for createSigner on an unofficial factory', async () => {
         const version = faker.helpers.arrayElement(SAFE_VERSIONS[chainId]);
         const data = createSignerEncoder().encode();
         // Unofficial factory address
@@ -1534,7 +1534,7 @@ describe('LimitAddressesMapper', () => {
             to,
           }),
         ).rejects.toThrow(
-          'Invalid transfer. The proposed transfer is not an execTransaction/multiSend to another party or createProxyWithNonce call.',
+          'SafeWebAuthnSignerFactory contract is not official. Only official SafeWebAuthnSignerFactory contracts are supported.',
         );
       });
 
