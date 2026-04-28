@@ -26,7 +26,7 @@ export class RelayFeeRelayer implements IRelayer {
     @Inject(IConfigurationService) configurationService: IConfigurationService,
     @Inject(IRelayApi) private readonly relayApi: IRelayApi,
     @Inject(IFeeServiceApi) private readonly feeServiceApi: IFeeServiceApi,
-    private readonly relayTransactionValidator: RelayTransactionHelper,
+    private readonly relayTransactionHelper: RelayTransactionHelper,
   ) {
     this.relayFeeConfiguration = configurationService.getOrThrow('relay.fee');
   }
@@ -94,7 +94,7 @@ export class RelayFeeRelayer implements IRelayer {
     const { version, chainId, to, data } = args;
 
     if (
-      this.relayTransactionValidator.isValidExecTransactionCall({ to, data })
+      this.relayTransactionHelper.isValidExecTransactionCall({ to, data })
     ) {
       if (!args.safeTxHash) {
         throw new RelayTxDeniedError(undefined);
@@ -102,7 +102,7 @@ export class RelayFeeRelayer implements IRelayer {
 
       const safeTxHash = args.safeTxHash;
 
-      const isValid = await this.relayTransactionValidator.isSafeTxHashValid({
+      const isValid = await this.relayTransactionHelper.isSafeTxHashValid({
         version,
         chainId,
         safeAddress: to,
@@ -127,14 +127,14 @@ export class RelayFeeRelayer implements IRelayer {
         throw new RelayTxDeniedError(safeTxHash);
       }
     } else if (
-      this.relayTransactionValidator.isValidCreateProxyWithNonceCall({
+      this.relayTransactionHelper.isValidCreateProxyWithNonceCall({
         version,
         chainId,
         data,
       })
     ) {
       if (
-        !this.relayTransactionValidator.isOfficialProxyFactoryDeployment({
+        !this.relayTransactionHelper.isOfficialProxyFactoryDeployment({
           version,
           chainId,
           address: to,

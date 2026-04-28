@@ -77,13 +77,13 @@ const mockBlockchainApiManager = jest.mocked({
   destroyApi: jest.fn(),
 } as jest.MockedObjectDeep<IBlockchainApiManager>);
 
-describe('RelayTransactionValidator', () => {
-  let validator: RelayTransactionHelper;
+describe('RelayTransactionHelper', () => {
+  let helper: RelayTransactionHelper;
 
   beforeEach(() => {
     jest.resetAllMocks();
 
-    validator = new RelayTransactionHelper(
+    helper = new RelayTransactionHelper(
       mockSafeRepository,
       mockLoggingService,
       mockBlockchainApiManager,
@@ -104,7 +104,7 @@ describe('RelayTransactionValidator', () => {
         .encode();
 
       expect(
-        validator.isValidExecTransactionCall({ to: safeAddress, data }),
+        helper.isValidExecTransactionCall({ to: safeAddress, data }),
       ).toBe(true);
     });
 
@@ -115,7 +115,7 @@ describe('RelayTransactionValidator', () => {
         .encode();
 
       expect(
-        validator.isValidExecTransactionCall({ to: safeAddress, data }),
+        helper.isValidExecTransactionCall({ to: safeAddress, data }),
       ).toBe(false);
     });
 
@@ -134,7 +134,7 @@ describe('RelayTransactionValidator', () => {
         .encode();
 
       expect(
-        validator.isValidExecTransactionCall({ to: safeAddress, data }),
+        helper.isValidExecTransactionCall({ to: safeAddress, data }),
       ).toBe(true);
     });
 
@@ -152,7 +152,7 @@ describe('RelayTransactionValidator', () => {
         .encode();
 
       expect(
-        validator.isValidExecTransactionCall({ to: safeAddress, data }),
+        helper.isValidExecTransactionCall({ to: safeAddress, data }),
       ).toBe(false);
     });
 
@@ -170,7 +170,7 @@ describe('RelayTransactionValidator', () => {
         .encode();
 
       expect(
-        validator.isValidExecTransactionCall({ to: safeAddress, data }),
+        helper.isValidExecTransactionCall({ to: safeAddress, data }),
       ).toBe(false);
     });
 
@@ -180,7 +180,7 @@ describe('RelayTransactionValidator', () => {
       const data = execTransactionEncoder().with('to', thirdParty).encode();
 
       expect(
-        validator.isValidExecTransactionCall({ to: safeAddress, data }),
+        helper.isValidExecTransactionCall({ to: safeAddress, data }),
       ).toBe(true);
     });
 
@@ -193,7 +193,7 @@ describe('RelayTransactionValidator', () => {
         .encode();
 
       expect(
-        validator.isValidExecTransactionCall({ to: safeAddress, data }),
+        helper.isValidExecTransactionCall({ to: safeAddress, data }),
       ).toBe(false);
     });
 
@@ -206,7 +206,7 @@ describe('RelayTransactionValidator', () => {
         .encode();
 
       expect(
-        validator.isValidExecTransactionCall({ to: safeAddress, data }),
+        helper.isValidExecTransactionCall({ to: safeAddress, data }),
       ).toBe(true);
     });
 
@@ -226,7 +226,7 @@ describe('RelayTransactionValidator', () => {
           .encode();
 
         expect(
-          validator.isValidExecTransactionCall({ to: safeAddress, data }),
+          helper.isValidExecTransactionCall({ to: safeAddress, data }),
         ).toBe(true);
       },
     );
@@ -235,7 +235,7 @@ describe('RelayTransactionValidator', () => {
       const safeAddress = getAddress(faker.finance.ethereumAddress());
 
       expect(
-        validator.isValidExecTransactionCall({ to: safeAddress, data: '0x' }),
+        helper.isValidExecTransactionCall({ to: safeAddress, data: '0x' }),
       ).toBe(false);
     });
   });
@@ -268,7 +268,7 @@ describe('RelayTransactionValidator', () => {
       );
 
       await expect(
-        validator.isSafeTxHashValid({
+        helper.isSafeTxHashValid({
           version: '1.3.0',
           chainId: faker.helpers.arrayElement(supportedChainIds),
           safeAddress,
@@ -298,7 +298,7 @@ describe('RelayTransactionValidator', () => {
       );
 
       await expect(
-        validator.isSafeTxHashValid({
+        helper.isSafeTxHashValid({
           version: '1.3.0',
           chainId: faker.helpers.arrayElement(supportedChainIds),
           safeAddress,
@@ -324,7 +324,7 @@ describe('RelayTransactionValidator', () => {
       mockBlockchainApiManager.getApi.mockRejectedValue(new Error('RPC error'));
 
       await expect(
-        validator.isSafeTxHashValid({
+        helper.isSafeTxHashValid({
           version: '1.3.0',
           chainId: faker.helpers.arrayElement(supportedChainIds),
           safeAddress,
@@ -348,7 +348,7 @@ describe('RelayTransactionValidator', () => {
       }) as Hex;
 
       await expect(
-        validator.isSafeTxHashValid({
+        helper.isSafeTxHashValid({
           version: '1.3.0',
           chainId: faker.helpers.arrayElement(supportedChainIds),
           safeAddress,
@@ -374,7 +374,7 @@ describe('RelayTransactionValidator', () => {
           .with('data', encoderFn().encode())
           .encode();
 
-        expect(validator.isOwnerManagementTransaction(data)).toBe(true);
+        expect(helper.isOwnerManagementTransaction(data)).toBe(true);
       },
     );
 
@@ -383,11 +383,11 @@ describe('RelayTransactionValidator', () => {
         .with('data', erc20TransferEncoder().encode())
         .encode();
 
-      expect(validator.isOwnerManagementTransaction(data)).toBe(false);
+      expect(helper.isOwnerManagementTransaction(data)).toBe(false);
     });
 
     it('should return false for non-execTransaction calldata', () => {
-      expect(validator.isOwnerManagementTransaction('0x')).toBe(false);
+      expect(helper.isOwnerManagementTransaction('0x')).toBe(false);
     });
   });
 
@@ -414,7 +414,7 @@ describe('RelayTransactionValidator', () => {
         });
 
         await expect(
-          validator.getSafeBeingRecovered({
+          helper.getSafeBeingRecovered({
             version: faker.system.semver(),
             chainId: faker.helpers.arrayElement(supportedChainIds),
             to: moduleAddress,
@@ -436,7 +436,7 @@ describe('RelayTransactionValidator', () => {
         });
 
         await expect(
-          validator.getSafeBeingRecovered({
+          helper.getSafeBeingRecovered({
             version: faker.system.semver(),
             chainId: faker.helpers.arrayElement(supportedChainIds),
             to: moduleAddress,
@@ -461,7 +461,7 @@ describe('RelayTransactionValidator', () => {
         mockSafeRepository.getSafesByModule.mockResolvedValue({ safes: [] });
 
         await expect(
-          validator.getSafeBeingRecovered({
+          helper.getSafeBeingRecovered({
             version: faker.system.semver(),
             chainId: faker.helpers.arrayElement(supportedChainIds),
             to: moduleAddress,
@@ -473,7 +473,7 @@ describe('RelayTransactionValidator', () => {
 
     it('should return null for non-DelayModifier calldata', async () => {
       await expect(
-        validator.getSafeBeingRecovered({
+        helper.getSafeBeingRecovered({
           version: faker.system.semver(),
           chainId: faker.helpers.arrayElement(supportedChainIds),
           to: getAddress(faker.finance.ethereumAddress()),
@@ -496,7 +496,7 @@ describe('RelayTransactionValidator', () => {
           });
 
           expect(
-            validator.isOfficialMultiSendDeployment({
+            helper.isOfficialMultiSendDeployment({
               version,
               chainId,
               address,
@@ -511,7 +511,7 @@ describe('RelayTransactionValidator', () => {
           const [address] = getMultiSendDeployments({ version, chainId });
 
           expect(
-            validator.isOfficialMultiSendDeployment({
+            helper.isOfficialMultiSendDeployment({
               version,
               chainId,
               address,
@@ -526,7 +526,7 @@ describe('RelayTransactionValidator', () => {
       const address = getAddress(faker.finance.ethereumAddress());
 
       expect(
-        validator.isOfficialMultiSendDeployment({
+        helper.isOfficialMultiSendDeployment({
           version: faker.system.semver(),
           chainId,
           address,
@@ -543,7 +543,7 @@ describe('RelayTransactionValidator', () => {
           const [address] = getProxyFactoryDeployments({ version, chainId });
 
           expect(
-            validator.isOfficialProxyFactoryDeployment({
+            helper.isOfficialProxyFactoryDeployment({
               version,
               chainId,
               address,
@@ -558,7 +558,7 @@ describe('RelayTransactionValidator', () => {
       const address = getAddress(faker.finance.ethereumAddress());
 
       expect(
-        validator.isOfficialProxyFactoryDeployment({
+        helper.isOfficialProxyFactoryDeployment({
           version: faker.system.semver(),
           chainId,
           address,
@@ -579,7 +579,7 @@ describe('RelayTransactionValidator', () => {
             .encode();
 
           expect(
-            validator.isValidCreateProxyWithNonceCall({
+            helper.isValidCreateProxyWithNonceCall({
               version,
               chainId,
               data,
@@ -601,7 +601,7 @@ describe('RelayTransactionValidator', () => {
             .encode();
 
           expect(
-            validator.isValidCreateProxyWithNonceCall({
+            helper.isValidCreateProxyWithNonceCall({
               version,
               chainId,
               data,
@@ -619,7 +619,7 @@ describe('RelayTransactionValidator', () => {
         .encode();
 
       expect(
-        validator.isValidCreateProxyWithNonceCall({ version, chainId, data }),
+        helper.isValidCreateProxyWithNonceCall({ version, chainId, data }),
       ).toBe(false);
     });
 
@@ -628,7 +628,7 @@ describe('RelayTransactionValidator', () => {
       const version = PROXY_FACTORY_VERSIONS[chainId][0];
 
       expect(
-        validator.isValidCreateProxyWithNonceCall({
+        helper.isValidCreateProxyWithNonceCall({
           version,
           chainId,
           data: '0x',
@@ -644,7 +644,7 @@ describe('RelayTransactionValidator', () => {
       mockSafeRepository.getSafe.mockResolvedValue(undefined as never);
 
       await expect(
-        validator.isOfficialMastercopy({ chainId, address }),
+        helper.isOfficialMastercopy({ chainId, address }),
       ).resolves.toBe(true);
     });
 
@@ -656,7 +656,7 @@ describe('RelayTransactionValidator', () => {
       );
 
       await expect(
-        validator.isOfficialMastercopy({ chainId, address }),
+        helper.isOfficialMastercopy({ chainId, address }),
       ).resolves.toBe(false);
     });
   });
@@ -677,7 +677,7 @@ describe('RelayTransactionValidator', () => {
         )
         .encode();
 
-      expect(validator.getSafeAddressFromMultiSend(data)).toBe(safeAddress);
+      expect(helper.getSafeAddressFromMultiSend(data)).toBe(safeAddress);
     });
 
     it('should throw InvalidMultiSendError when transactions target different addresses', () => {
@@ -702,7 +702,7 @@ describe('RelayTransactionValidator', () => {
         )
         .encode();
 
-      expect(() => validator.getSafeAddressFromMultiSend(data)).toThrow(
+      expect(() => helper.getSafeAddressFromMultiSend(data)).toThrow(
         InvalidMultiSendError,
       );
     });
@@ -724,7 +724,7 @@ describe('RelayTransactionValidator', () => {
         )
         .encode();
 
-      expect(() => validator.getSafeAddressFromMultiSend(data)).toThrow(
+      expect(() => helper.getSafeAddressFromMultiSend(data)).toThrow(
         InvalidMultiSendError,
       );
     });
@@ -746,7 +746,7 @@ describe('RelayTransactionValidator', () => {
             .with('initializer', setupEncoder().with('owners', owners).encode())
             .encode();
 
-          expect(validator.getOwnersFromCreateProxyWithNonce(data)).toEqual(
+          expect(helper.getOwnersFromCreateProxyWithNonce(data)).toEqual(
             owners,
           );
         },
@@ -769,7 +769,7 @@ describe('RelayTransactionValidator', () => {
             .with('initializer', setupEncoder().with('owners', owners).encode())
             .encode();
 
-          expect(validator.getOwnersFromCreateProxyWithNonce(data)).toEqual(
+          expect(helper.getOwnersFromCreateProxyWithNonce(data)).toEqual(
             owners,
           );
         },
@@ -777,7 +777,7 @@ describe('RelayTransactionValidator', () => {
     });
 
     it('should throw when data is not a createProxyWithNonce call', () => {
-      expect(() => validator.getOwnersFromCreateProxyWithNonce('0x')).toThrow();
+      expect(() => helper.getOwnersFromCreateProxyWithNonce('0x')).toThrow();
     });
 
     it('should throw when the initializer is not a setup call', () => {
@@ -791,7 +791,7 @@ describe('RelayTransactionValidator', () => {
         .with('initializer', execTransactionEncoder().encode())
         .encode();
 
-      expect(() => validator.getOwnersFromCreateProxyWithNonce(data)).toThrow(
+      expect(() => helper.getOwnersFromCreateProxyWithNonce(data)).toThrow(
         'Not a setup call',
       );
     });

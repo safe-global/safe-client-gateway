@@ -10,7 +10,7 @@ import { RelayTransactionHelper } from '@/modules/relay/domain/relay-transaction
 @Injectable()
 export class LimitAddressesMapper {
   constructor(
-    private readonly relayTransactionValidator: RelayTransactionHelper,
+    private readonly relayTransactionHelper: RelayTransactionHelper,
   ) {}
 
   async getLimitAddresses(args: {
@@ -20,21 +20,21 @@ export class LimitAddressesMapper {
     data: Hex;
   }): Promise<ReadonlyArray<Address>> {
     const safeBeingRecovered =
-      await this.relayTransactionValidator.getSafeBeingRecovered(args);
+      await this.relayTransactionHelper.getSafeBeingRecovered(args);
     if (safeBeingRecovered) {
       return [safeBeingRecovered];
     }
 
     // Calldata matches that of execTransaction and meets validity requirements
     if (
-      this.relayTransactionValidator.isValidExecTransactionCall({
+      this.relayTransactionHelper.isValidExecTransactionCall({
         to: args.to,
         data: args.data,
       })
     ) {
       // Safe attempting to relay is official
       const isOfficial =
-        await this.relayTransactionValidator.isOfficialMastercopy({
+        await this.relayTransactionHelper.isOfficialMastercopy({
           chainId: args.chainId,
           address: args.to,
         });
@@ -46,9 +46,9 @@ export class LimitAddressesMapper {
       return [args.to];
     }
 
-    if (this.relayTransactionValidator.isMultiSend(args.data)) {
+    if (this.relayTransactionHelper.isMultiSend(args.data)) {
       if (
-        !this.relayTransactionValidator.isOfficialMultiSendDeployment({
+        !this.relayTransactionHelper.isOfficialMultiSendDeployment({
           version: args.version,
           chainId: args.chainId,
           address: args.to,
@@ -59,11 +59,11 @@ export class LimitAddressesMapper {
 
       // multiSend calldata meets the validity requirements
       const safeAddress =
-        this.relayTransactionValidator.getSafeAddressFromMultiSend(args.data);
+        this.relayTransactionHelper.getSafeAddressFromMultiSend(args.data);
 
       // Safe attempting to relay is official
       const isOfficial =
-        await this.relayTransactionValidator.isOfficialMastercopy({
+        await this.relayTransactionHelper.isOfficialMastercopy({
           chainId: args.chainId,
           address: safeAddress,
         });
@@ -78,14 +78,14 @@ export class LimitAddressesMapper {
 
     // Calldata matches that of createProxyWithNonce and meets validity requirements
     if (
-      this.relayTransactionValidator.isValidCreateProxyWithNonceCall({
+      this.relayTransactionHelper.isValidCreateProxyWithNonceCall({
         version: args.version,
         chainId: args.chainId,
         data: args.data,
       })
     ) {
       if (
-        !this.relayTransactionValidator.isOfficialProxyFactoryDeployment({
+        !this.relayTransactionHelper.isOfficialProxyFactoryDeployment({
           version: args.version,
           chainId: args.chainId,
           address: args.to,
@@ -94,7 +94,7 @@ export class LimitAddressesMapper {
         throw new UnofficialProxyFactoryError();
       }
       // Owners of safe-to-be-created will be limited
-      return this.relayTransactionValidator.getOwnersFromCreateProxyWithNonce(
+      return this.relayTransactionHelper.getOwnersFromCreateProxyWithNonce(
         args.data,
       );
     }

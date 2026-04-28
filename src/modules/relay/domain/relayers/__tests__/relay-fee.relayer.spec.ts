@@ -28,7 +28,7 @@ const mockFeeServiceApi = jest.mocked({
   canRelay: jest.fn(),
 } as jest.MockedObjectDeep<IFeeServiceApi>);
 
-const mockRelayTransactionValidator = jest.mocked({
+const mockRelayTransactionHelper = jest.mocked({
   isValidExecTransactionCall: jest.fn(),
   isSafeTxHashValid: jest.fn(),
   isValidCreateProxyWithNonceCall: jest.fn(),
@@ -63,7 +63,7 @@ describe('RelayFeeRelayer', () => {
       fakeConfigurationService,
       mockRelayApi,
       mockFeeServiceApi,
-      mockRelayTransactionValidator,
+      mockRelayTransactionHelper,
     );
   });
 
@@ -126,7 +126,7 @@ describe('RelayFeeRelayer', () => {
 
   describe('relay', () => {
     it('should throw RelayTxDeniedError when no safeTxHash is provided for execTransaction', async () => {
-      mockRelayTransactionValidator.isValidExecTransactionCall.mockReturnValue(
+      mockRelayTransactionHelper.isValidExecTransactionCall.mockReturnValue(
         true,
       );
 
@@ -141,7 +141,7 @@ describe('RelayFeeRelayer', () => {
       ).rejects.toThrow(RelayTxDeniedError);
 
       expect(
-        mockRelayTransactionValidator.isSafeTxHashValid,
+        mockRelayTransactionHelper.isSafeTxHashValid,
       ).not.toHaveBeenCalled();
       expect(mockFeeServiceApi.canRelay).not.toHaveBeenCalled();
       expect(mockRelayApi.relay).not.toHaveBeenCalled();
@@ -154,10 +154,10 @@ describe('RelayFeeRelayer', () => {
       const safeTxHash = fakeSafeTxHash();
       const taskId = faker.string.uuid();
 
-      mockRelayTransactionValidator.isValidExecTransactionCall.mockReturnValue(
+      mockRelayTransactionHelper.isValidExecTransactionCall.mockReturnValue(
         true,
       );
-      mockRelayTransactionValidator.isSafeTxHashValid.mockResolvedValue(true);
+      mockRelayTransactionHelper.isSafeTxHashValid.mockResolvedValue(true);
       mockFeeServiceApi.canRelay.mockResolvedValueOnce({ canRelay: true });
       mockRelayApi.relay.mockResolvedValueOnce({ taskId });
 
@@ -172,7 +172,7 @@ describe('RelayFeeRelayer', () => {
 
       expect(result).toEqual({ taskId });
       expect(
-        mockRelayTransactionValidator.isSafeTxHashValid,
+        mockRelayTransactionHelper.isSafeTxHashValid,
       ).toHaveBeenCalledWith({
         version: '1.3.0',
         chainId: enabledChainId,
@@ -190,10 +190,10 @@ describe('RelayFeeRelayer', () => {
     it('should throw SafeTxHashMismatchError when isSafeTxHashValid returns false', async () => {
       const safeTxHash = fakeSafeTxHash();
 
-      mockRelayTransactionValidator.isValidExecTransactionCall.mockReturnValue(
+      mockRelayTransactionHelper.isValidExecTransactionCall.mockReturnValue(
         true,
       );
-      mockRelayTransactionValidator.isSafeTxHashValid.mockResolvedValue(false);
+      mockRelayTransactionHelper.isSafeTxHashValid.mockResolvedValue(false);
 
       await expect(
         target.relay({
@@ -217,13 +217,13 @@ describe('RelayFeeRelayer', () => {
       const safeTxHash = fakeSafeTxHash();
       const taskId = faker.string.uuid();
 
-      mockRelayTransactionValidator.isValidExecTransactionCall.mockReturnValue(
+      mockRelayTransactionHelper.isValidExecTransactionCall.mockReturnValue(
         false,
       );
-      mockRelayTransactionValidator.isValidCreateProxyWithNonceCall.mockReturnValue(
+      mockRelayTransactionHelper.isValidCreateProxyWithNonceCall.mockReturnValue(
         true,
       );
-      mockRelayTransactionValidator.isOfficialProxyFactoryDeployment.mockReturnValue(
+      mockRelayTransactionHelper.isOfficialProxyFactoryDeployment.mockReturnValue(
         true,
       );
       mockFeeServiceApi.canRelay.mockResolvedValueOnce({ canRelay: true });
@@ -240,7 +240,7 @@ describe('RelayFeeRelayer', () => {
 
       expect(result).toEqual({ taskId });
       expect(
-        mockRelayTransactionValidator.isSafeTxHashValid,
+        mockRelayTransactionHelper.isSafeTxHashValid,
       ).not.toHaveBeenCalled();
       expect(mockFeeServiceApi.canRelay).toHaveBeenCalledWith({
         chainId: enabledChainId,
@@ -251,13 +251,13 @@ describe('RelayFeeRelayer', () => {
     it('should relay a Safe creation without safeTxHash when factory is official', async () => {
       const taskId = faker.string.uuid();
 
-      mockRelayTransactionValidator.isValidExecTransactionCall.mockReturnValue(
+      mockRelayTransactionHelper.isValidExecTransactionCall.mockReturnValue(
         false,
       );
-      mockRelayTransactionValidator.isValidCreateProxyWithNonceCall.mockReturnValue(
+      mockRelayTransactionHelper.isValidCreateProxyWithNonceCall.mockReturnValue(
         true,
       );
-      mockRelayTransactionValidator.isOfficialProxyFactoryDeployment.mockReturnValue(
+      mockRelayTransactionHelper.isOfficialProxyFactoryDeployment.mockReturnValue(
         true,
       );
       mockRelayApi.relay.mockResolvedValueOnce({ taskId });
@@ -278,13 +278,13 @@ describe('RelayFeeRelayer', () => {
     it('should throw RelayTxDeniedError for unofficial proxy factory', async () => {
       const to = fakeAddress();
 
-      mockRelayTransactionValidator.isValidExecTransactionCall.mockReturnValue(
+      mockRelayTransactionHelper.isValidExecTransactionCall.mockReturnValue(
         false,
       );
-      mockRelayTransactionValidator.isValidCreateProxyWithNonceCall.mockReturnValue(
+      mockRelayTransactionHelper.isValidCreateProxyWithNonceCall.mockReturnValue(
         true,
       );
-      mockRelayTransactionValidator.isOfficialProxyFactoryDeployment.mockReturnValue(
+      mockRelayTransactionHelper.isOfficialProxyFactoryDeployment.mockReturnValue(
         false,
       );
 
@@ -310,13 +310,13 @@ describe('RelayFeeRelayer', () => {
     it('should throw RelayTxDeniedError when fee service denies a Safe creation with safeTxHash', async () => {
       const safeTxHash = fakeSafeTxHash();
 
-      mockRelayTransactionValidator.isValidExecTransactionCall.mockReturnValue(
+      mockRelayTransactionHelper.isValidExecTransactionCall.mockReturnValue(
         false,
       );
-      mockRelayTransactionValidator.isValidCreateProxyWithNonceCall.mockReturnValue(
+      mockRelayTransactionHelper.isValidCreateProxyWithNonceCall.mockReturnValue(
         true,
       );
-      mockRelayTransactionValidator.isOfficialProxyFactoryDeployment.mockReturnValue(
+      mockRelayTransactionHelper.isOfficialProxyFactoryDeployment.mockReturnValue(
         true,
       );
       mockFeeServiceApi.canRelay.mockResolvedValueOnce({ canRelay: false });
@@ -343,10 +343,10 @@ describe('RelayFeeRelayer', () => {
     // --- Unknown tx type ---
 
     it('should throw RelayTxDeniedError for unrecognised transaction type', async () => {
-      mockRelayTransactionValidator.isValidExecTransactionCall.mockReturnValue(
+      mockRelayTransactionHelper.isValidExecTransactionCall.mockReturnValue(
         false,
       );
-      mockRelayTransactionValidator.isValidCreateProxyWithNonceCall.mockReturnValue(
+      mockRelayTransactionHelper.isValidCreateProxyWithNonceCall.mockReturnValue(
         false,
       );
 
@@ -368,13 +368,13 @@ describe('RelayFeeRelayer', () => {
     it('should throw RelayTxDeniedError when Fee Service denies', async () => {
       const safeTxHash = fakeSafeTxHash();
 
-      mockRelayTransactionValidator.isValidExecTransactionCall.mockReturnValue(
+      mockRelayTransactionHelper.isValidExecTransactionCall.mockReturnValue(
         false,
       );
-      mockRelayTransactionValidator.isValidCreateProxyWithNonceCall.mockReturnValue(
+      mockRelayTransactionHelper.isValidCreateProxyWithNonceCall.mockReturnValue(
         true,
       );
-      mockRelayTransactionValidator.isOfficialProxyFactoryDeployment.mockReturnValue(
+      mockRelayTransactionHelper.isOfficialProxyFactoryDeployment.mockReturnValue(
         true,
       );
       mockFeeServiceApi.canRelay.mockResolvedValueOnce({ canRelay: false });
