@@ -4,7 +4,7 @@ import { UnofficialMasterCopyError } from '@/modules/relay/domain/errors/unoffic
 import { UnofficialMultiSendError } from '@/modules/relay/domain/errors/unofficial-multisend.error';
 import { InvalidTransferError } from '@/modules/relay/domain/errors/invalid-transfer.error';
 import { UnofficialProxyFactoryError } from '@/modules/relay/domain/errors/unofficial-proxy-factory.error';
-import type { Address } from 'viem';
+import type { Address, Hex } from 'viem';
 import { RelayTransactionHelper } from '@/modules/relay/domain/relay-transaction-helper';
 
 @Injectable()
@@ -17,7 +17,7 @@ export class LimitAddressesMapper {
     version: string;
     chainId: string;
     to: Address;
-    data: Address;
+    data: Hex;
   }): Promise<ReadonlyArray<Address>> {
     const safeBeingRecovered =
       await this.relayTransactionValidator.getSafeBeingRecovered(args);
