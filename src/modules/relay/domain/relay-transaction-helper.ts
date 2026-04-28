@@ -187,7 +187,7 @@ export class RelayTransactionHelper {
     );
   }
 
-  getSafeAddressFromMultiSend = (data: Hex): Address => {
+  getSafeAddressFromMultiSend(data: Hex): Address {
     // Decode transactions within MultiSend
     const transactions = this.multiSendDecoder.mapMultiSendTransactions(data);
 
@@ -212,7 +212,7 @@ export class RelayTransactionHelper {
     }
 
     return firstRecipient;
-  };
+  }
 
   isOfficialProxyFactoryDeployment(args: {
     version: string;

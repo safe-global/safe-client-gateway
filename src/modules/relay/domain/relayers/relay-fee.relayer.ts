@@ -143,13 +143,11 @@ export class RelayFeeRelayer implements IRelayer {
     decoded: SafeTransaction;
     safeTxHash: Hex | undefined;
   }): Promise<void> {
-    const { version, chainId, to, decoded } = args;
+    const { version, chainId, to, decoded, safeTxHash } = args;
 
-    if (!args.safeTxHash) {
+    if (!safeTxHash) {
       throw new RelayTxDeniedError(undefined);
     }
-
-    const safeTxHash = args.safeTxHash;
 
     const isValid = await this.relayTransactionHelper.isSafeTxHashValid({
       version,
