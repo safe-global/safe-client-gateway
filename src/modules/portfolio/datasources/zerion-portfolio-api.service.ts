@@ -1,5 +1,6 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
-import { groupBy } from 'lodash';
+import { get, groupBy } from 'lodash';
 import type { Address } from 'viem';
 import { getAddress, isAddress } from 'viem';
 import { IConfigurationService } from '@/config/configuration.service.interface';
@@ -22,6 +23,7 @@ import type { ZerionBalance } from '@/modules/balances/datasources/entities/zeri
 import { ZerionBalancesSchema } from '@/modules/balances/datasources/entities/zerion-balance.entity';
 import { ZodError } from 'zod';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import { LogType } from '@/domain/common/entities/log-type.entity';
 import {
   CacheService,
   ICacheService,
@@ -32,6 +34,8 @@ import {
   normalizeZerionBalances,
 } from '@/modules/balances/datasources/zerion-api.helpers';
 import { ZerionChainMappingService } from '@/modules/zerion/datasources/zerion-chain-mapping.service';
+import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
+import { asError } from '@/logging/utils';
 
 /**
  * Zerion portfolio API integration.
@@ -140,11 +144,45 @@ export class ZerionPortfolioApi implements IPortfolioApi {
 
       return normalizeZerionBalances(response.data);
     } catch (error) {
+      this._logPortfolioRequestError({ ...args, error });
+
       if (error instanceof ZodError) {
         throw error;
       }
       throw this.httpErrorFactory.from(error);
     }
+  }
+
+  private _logPortfolioRequestError(args: {
+    address: Address;
+    fiatCode: string;
+    trusted?: boolean;
+    isTestnet?: boolean;
+    sync?: boolean;
+    error: unknown;
+  }): void {
+    this.loggingService.error({
+      type: LogType.PortfolioRequestError,
+      source: 'ZerionPortfolioApi',
+      event: 'Portfolio request failed',
+      safeAddress: args.address,
+      fiatCode: args.fiatCode,
+      trusted: Boolean(args.trusted),
+      sync: Boolean(args.sync),
+      isTestnet: Boolean(args.isTestnet),
+      request_status:
+        args.error instanceof NetworkResponseError
+          ? args.error.response.status
+          : undefined,
+      detail:
+        args.error instanceof NetworkResponseError
+          ? String(
+              get(args.error.data, 'errors[0].detail') ??
+                get(args.error.data, 'errors[0].title') ??
+                args.error.response.statusText,
+            )
+          : asError(args.error).message,
+    });
   }
 
   /**
