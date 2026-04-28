@@ -3,9 +3,22 @@ import { SafeDecoder } from '@/modules/contracts/domain/decoders/safe-decoder.he
 import { Erc20Decoder } from '@/modules/relay/domain/contracts/decoders/erc-20-decoder.helper';
 import { MultiSendDecoder } from '@/modules/contracts/domain/decoders/multi-send-decoder.helper';
 import { ProxyFactoryDecoder } from '@/modules/relay/domain/contracts/decoders/proxy-factory-decoder.helper';
+import { SignerFactoryDecoder } from '@/modules/relay/domain/contracts/decoders/signer-factory-decoder.helper';
 
 @Module({
-  providers: [SafeDecoder, Erc20Decoder, MultiSendDecoder, ProxyFactoryDecoder],
-  exports: [SafeDecoder, Erc20Decoder, MultiSendDecoder, ProxyFactoryDecoder],
+  providers: [
+    SafeDecoder,
+    Erc20Decoder,
+    MultiSendDecoder,
+    ProxyFactoryDecoder,
+    SignerFactoryDecoder,
+  ],
+  exports: [
+    SafeDecoder,
+    Erc20Decoder,
+    MultiSendDecoder,
+    ProxyFactoryDecoder,
+    SignerFactoryDecoder,
+  ],
 })
 export class RelayDecodersModule {}

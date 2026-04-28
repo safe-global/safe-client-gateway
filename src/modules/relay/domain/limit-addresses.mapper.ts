@@ -3,12 +3,14 @@ import { Erc20Decoder } from '@/modules/relay/domain/contracts/decoders/erc-20-d
 import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
 import { MultiSendDecoder } from '@/modules/contracts/domain/decoders/multi-send-decoder.helper';
 import { ProxyFactoryDecoder } from '@/modules/relay/domain/contracts/decoders/proxy-factory-decoder.helper';
+import { SignerFactoryDecoder } from '@/modules/relay/domain/contracts/decoders/signer-factory-decoder.helper';
 import {
   getSafeSingletonDeployments,
   getSafeL2SingletonDeployments,
   getMultiSendCallOnlyDeployments,
   getMultiSendDeployments,
   getProxyFactoryDeployments,
+  getSignerFactoryDeployments,
 } from '@/domain/common/utils/deployments';
 import { SafeDecoder } from '@/modules/contracts/domain/decoders/safe-decoder.helper';
 import { UnofficialMasterCopyError } from '@/modules/relay/domain/errors/unofficial-master-copy.error';
@@ -17,7 +19,13 @@ import { InvalidTransferError } from '@/modules/relay/domain/errors/invalid-tran
 import { InvalidMultiSendError } from '@/modules/relay/domain/errors/invalid-multisend.error';
 import { UnofficialProxyFactoryError } from '@/modules/relay/domain/errors/unofficial-proxy-factory.error';
 import { DelayModifierDecoder } from '@/modules/alerts/domain/contracts/decoders/delay-modifier-decoder.helper';
-import type { Address } from 'viem';
+import {
+  encodeAbiParameters,
+  getAddress,
+  keccak256,
+  parseAbiParameters,
+  type Address,
+} from 'viem';
 
 @Injectable()
 export class LimitAddressesMapper {
@@ -29,6 +37,7 @@ export class LimitAddressesMapper {
     private readonly multiSendDecoder: MultiSendDecoder,
     private readonly proxyFactoryDecoder: ProxyFactoryDecoder,
     private readonly delayModifierDecoder: DelayModifierDecoder,
+    private readonly signerFactoryDecoder: SignerFactoryDecoder,
   ) {}
 
   async getLimitAddresses(args: {
@@ -111,6 +120,16 @@ export class LimitAddressesMapper {
       }
       // Owners of safe-to-be-created will be limited
       return this.getOwnersFromCreateProxyWithNonce(args.data);
+    }
+
+    // Calldata matches createSigner on an official SafeWebAuthnSignerFactory
+    const signerLimitAddress = this.getSignerFactoryLimitAddress({
+      chainId: args.chainId,
+      to: args.to,
+      data: args.data,
+    });
+    if (signerLimitAddress) {
+      return [signerLimitAddress];
     }
 
     throw new InvalidTransferError();
@@ -413,6 +432,69 @@ export class LimitAddressesMapper {
   }): boolean {
     const proxyFactoryDeployments = getProxyFactoryDeployments(args);
     return proxyFactoryDeployments.includes(args.address);
+  }
+
+  private isOfficialSignerFactoryDeployment(args: {
+    chainId: string;
+    address: Address;
+  }): boolean {
+    return getSignerFactoryDeployments({ chainId: args.chainId }).includes(
+      args.address,
+    );
+  }
+
+  /**
+   * If `data` is a `createSigner` call to an official SafeWebAuthnSignerFactory,
+   * returns a per-passkey limit key derived from the call arguments.
+   *
+   * The key is the last 20 bytes of `keccak256(abi.encode(x, y, verifiers))`
+   * cast to an Address-shaped string. This gives each unique passkey
+   * (x, y, verifiers) its own daily relay quota, instead of every user
+   * sharing the factory address as a limit key.
+   *
+   * Returns `null` if the calldata is not a recognised `createSigner` call,
+   * the target is not an official factory, or the args fail to decode.
+   */
+  private getSignerFactoryLimitAddress(args: {
+    chainId: string;
+    to: Address;
+    data: Address;
+  }): Address | null {
+    if (!this.signerFactoryDecoder.helpers.isCreateSigner(args.data)) {
+      return null;
+    }
+    if (
+      !this.isOfficialSignerFactoryDeployment({
+        chainId: args.chainId,
+        address: args.to,
+      })
+    ) {
+      return null;
+    }
+
+    let x: bigint;
+    let y: bigint;
+    let verifiers: bigint;
+    try {
+      const decoded = this.signerFactoryDecoder.decodeFunctionData({
+        data: args.data,
+      });
+      if (decoded.functionName !== 'createSigner') {
+        return null;
+      }
+      [x, y, verifiers] = decoded.args;
+    } catch {
+      return null;
+    }
+
+    const hash = keccak256(
+      encodeAbiParameters(parseAbiParameters('uint256, uint256, uint176'), [
+        x,
+        y,
+        verifiers,
+      ]),
+    );
+    return getAddress(`0x${hash.slice(-40)}`);
   }
 
   private isValidCreateProxyWithNonceCall(args: {

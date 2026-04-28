@@ -47,6 +47,11 @@ export default tseslint.config(
               message:
                 'Please import from @/domain/common/utils/deployments instead.',
             },
+            {
+              name: '@safe-global/safe-modules-deployments',
+              message:
+                'Please import from @/domain/common/utils/deployments instead.',
+            },
           ],
         },
       ],

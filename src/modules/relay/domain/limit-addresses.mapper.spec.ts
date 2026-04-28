@@ -22,8 +22,10 @@ import {
 import { MultiSendDecoder } from '@/modules/contracts/domain/decoders/multi-send-decoder.helper';
 import { SafeDecoder } from '@/modules/contracts/domain/decoders/safe-decoder.helper';
 import { createProxyWithNonceEncoder } from '@/modules/relay/domain/contracts/__tests__/encoders/proxy-factory-encoder.builder';
+import { createSignerEncoder } from '@/modules/relay/domain/contracts/__tests__/encoders/signer-factory-encoder.builder';
 import { Erc20Decoder } from '@/modules/relay/domain/contracts/decoders/erc-20-decoder.helper';
 import { ProxyFactoryDecoder } from '@/modules/relay/domain/contracts/decoders/proxy-factory-decoder.helper';
+import { SignerFactoryDecoder } from '@/modules/relay/domain/contracts/decoders/signer-factory-decoder.helper';
 import { LimitAddressesMapper } from '@/modules/relay/domain/limit-addresses.mapper';
 import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
 import type { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
@@ -34,8 +36,14 @@ import {
   getProxyFactoryDeployments,
   getSafeL2SingletonDeployments,
   getSafeSingletonDeployments,
+  getSignerFactoryDeployments,
 } from '@/domain/common/utils/deployments';
-import { getAddress } from 'viem';
+import {
+  encodeAbiParameters,
+  getAddress,
+  keccak256,
+  parseAbiParameters,
+} from 'viem';
 import configuration from '@/config/entities/configuration';
 import { getDeploymentVersionsByChainIds } from '@/__tests__/deployments.helper';
 import type { ILoggingService } from '@/logging/logging.interface';
@@ -88,6 +96,7 @@ describe('LimitAddressesMapper', () => {
     const multiSendDecoder = new MultiSendDecoder(mockLoggingService);
     const proxyFactoryDecoder = new ProxyFactoryDecoder();
     const delayModifierDecoder = new DelayModifierDecoder();
+    const signerFactoryDecoder = new SignerFactoryDecoder();
 
     target = new LimitAddressesMapper(
       mockSafeRepository,
@@ -96,6 +105,7 @@ describe('LimitAddressesMapper', () => {
       multiSendDecoder,
       proxyFactoryDecoder,
       delayModifierDecoder,
+      signerFactoryDecoder,
     );
   });
 
@@ -1401,6 +1411,161 @@ describe('LimitAddressesMapper', () => {
           });
         },
       );
+    });
+
+    describe('SafeWebAuthnSignerFactory', () => {
+      const expectedLimitKey = (
+        x: bigint,
+        y: bigint,
+        verifiers: bigint,
+      ): string =>
+        getAddress(
+          `0x${keccak256(
+            encodeAbiParameters(
+              parseAbiParameters('uint256, uint256, uint176'),
+              [x, y, verifiers],
+            ),
+          ).slice(-40)}`,
+        );
+
+      const factoryAddresses = getSignerFactoryDeployments({ chainId });
+
+      // The SafeWebAuthnSignerFactory is only deployed on a subset of
+      // supported chains; skip the suite where it isn't.
+      if (factoryAddresses.length === 0) return;
+
+      it('should return a hash-derived limit address for createSigner on an official factory', async () => {
+        const version = faker.helpers.arrayElement(SAFE_VERSIONS[chainId]);
+        const x = faker.number.bigInt();
+        const y = faker.number.bigInt();
+        const verifiers = faker.number.bigInt({
+          min: 0n,
+          max: (1n << 176n) - 1n,
+        });
+        const data = createSignerEncoder()
+          .with('x', x)
+          .with('y', y)
+          .with('verifiers', verifiers)
+          .encode();
+        const to = faker.helpers.arrayElement(factoryAddresses);
+
+        const limitAddresses = await target.getLimitAddresses({
+          version,
+          chainId,
+          data,
+          to,
+        });
+
+        expect(limitAddresses).toStrictEqual([
+          expectedLimitKey(x, y, verifiers),
+        ]);
+      });
+
+      it('should return the same limit address for the same passkey args (deterministic)', async () => {
+        const version = faker.helpers.arrayElement(SAFE_VERSIONS[chainId]);
+        const x = faker.number.bigInt();
+        const y = faker.number.bigInt();
+        const verifiers = faker.number.bigInt({
+          min: 0n,
+          max: (1n << 176n) - 1n,
+        });
+        const data = createSignerEncoder()
+          .with('x', x)
+          .with('y', y)
+          .with('verifiers', verifiers)
+          .encode();
+        const to = faker.helpers.arrayElement(factoryAddresses);
+
+        const first = await target.getLimitAddresses({
+          version,
+          chainId,
+          data,
+          to,
+        });
+        const second = await target.getLimitAddresses({
+          version,
+          chainId,
+          data,
+          to,
+        });
+
+        expect(first).toStrictEqual(second);
+      });
+
+      it('should return different limit addresses for different passkey args', async () => {
+        const version = faker.helpers.arrayElement(SAFE_VERSIONS[chainId]);
+        const to = faker.helpers.arrayElement(factoryAddresses);
+
+        const dataA = createSignerEncoder().encode();
+        const dataB = createSignerEncoder().encode();
+
+        const a = await target.getLimitAddresses({
+          version,
+          chainId,
+          data: dataA,
+          to,
+        });
+        const b = await target.getLimitAddresses({
+          version,
+          chainId,
+          data: dataB,
+          to,
+        });
+
+        expect(a).not.toStrictEqual(b);
+      });
+
+      it('should not key on the factory address itself (preventing global quota sharing)', async () => {
+        const version = faker.helpers.arrayElement(SAFE_VERSIONS[chainId]);
+        const data = createSignerEncoder().encode();
+        const to = faker.helpers.arrayElement(factoryAddresses);
+
+        const [limitAddress] = await target.getLimitAddresses({
+          version,
+          chainId,
+          data,
+          to,
+        });
+
+        expect(limitAddress).not.toStrictEqual(to);
+      });
+
+      it('should throw for createSigner on an unofficial factory', async () => {
+        const version = faker.helpers.arrayElement(SAFE_VERSIONS[chainId]);
+        const data = createSignerEncoder().encode();
+        // Unofficial factory address
+        const to = getAddress(faker.finance.ethereumAddress());
+
+        await expect(
+          target.getLimitAddresses({
+            version,
+            chainId,
+            data,
+            to,
+          }),
+        ).rejects.toThrow(
+          'Invalid transfer. The proposed transfer is not an execTransaction/multiSend to another party or createProxyWithNonce call.',
+        );
+      });
+
+      it('should throw for createSigner-selector calldata with malformed args', async () => {
+        const version = faker.helpers.arrayElement(SAFE_VERSIONS[chainId]);
+        const validData = createSignerEncoder().encode();
+        // Keep the 4-byte selector (`0x` + 8 hex chars) but truncate the args
+        const malformed = validData.slice(0, 10) as `0x${string}`;
+        const to = faker.helpers.arrayElement(factoryAddresses);
+
+        await expect(
+          target.getLimitAddresses({
+            version,
+            chainId,
+            data: malformed,
+            to,
+          }),
+        ).rejects.toThrow(
+          'Invalid transfer. The proposed transfer is not an execTransaction/multiSend to another party or createProxyWithNonce call.',
+        );
+      });
     });
 
     describe('Validation', () => {
