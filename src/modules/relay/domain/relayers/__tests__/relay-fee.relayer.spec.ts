@@ -140,7 +140,9 @@ describe('RelayFeeRelayer', () => {
         }),
       ).rejects.toThrow(RelayTxDeniedError);
 
-      expect(mockRelayTransactionValidator.isSafeTxHashValid).not.toHaveBeenCalled();
+      expect(
+        mockRelayTransactionValidator.isSafeTxHashValid,
+      ).not.toHaveBeenCalled();
       expect(mockFeeServiceApi.canRelay).not.toHaveBeenCalled();
       expect(mockRelayApi.relay).not.toHaveBeenCalled();
     });
