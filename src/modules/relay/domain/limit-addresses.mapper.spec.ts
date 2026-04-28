@@ -45,7 +45,7 @@ import {
   execTransactionFromModuleEncoder,
   executeNextTxEncoder,
 } from '@/modules/alerts/domain/contracts/__tests__/encoders/delay-modifier-encoder.builder';
-import { RelayTransactionValidator } from '@/modules/relay/domain/relay-transaction-validator';
+import { RelayTransactionHelper } from '@/modules/relay/domain/relay-transaction-helper';
 
 const supportedChainIds = Object.keys(configuration().relay.apiKey);
 
@@ -85,7 +85,7 @@ describe('LimitAddressesMapper', () => {
   beforeEach(() => {
     jest.resetAllMocks();
 
-    const relayTransactionValidator = new RelayTransactionValidator(
+    const relayTransactionValidator = new RelayTransactionHelper(
       mockSafeRepository,
       mockLoggingService,
       { getApi: jest.fn(), destroyApi: jest.fn() } as never,

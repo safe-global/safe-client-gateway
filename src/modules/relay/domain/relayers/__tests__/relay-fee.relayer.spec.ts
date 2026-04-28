@@ -6,7 +6,7 @@ import { getAddress } from 'viem';
 import type { IRelayApi } from '@/domain/interfaces/relay-api.interface';
 import type { IFeeServiceApi } from '@/domain/interfaces/fee-service-api.interface';
 import type { ILoggingService } from '@/logging/logging.interface';
-import type { RelayTransactionValidator } from '@/modules/relay/domain/relay-transaction-validator';
+import type { RelayTransactionHelper } from '@/modules/relay/domain/relay-transaction-helper';
 import type { Address, Hex } from 'viem';
 import { RelayTxDeniedError } from '@/modules/relay/domain/errors/relay-tx-denied.error';
 import { SafeTxHashMismatchError } from '@/modules/relay/domain/errors/safe-tx-hash-mismatch.error';
@@ -33,7 +33,7 @@ const mockRelayTransactionValidator = jest.mocked({
   isSafeTxHashValid: jest.fn(),
   isValidCreateProxyWithNonceCall: jest.fn(),
   isOfficialProxyFactoryDeployment: jest.fn(),
-} as jest.MockedObjectDeep<RelayTransactionValidator>);
+} as jest.MockedObjectDeep<RelayTransactionHelper>);
 
 function fakeSafeTxHash(): Hex {
   return faker.string.hexadecimal({ length: 64, casing: 'lower' }) as Hex;

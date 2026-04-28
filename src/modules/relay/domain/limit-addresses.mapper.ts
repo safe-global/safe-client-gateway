@@ -5,12 +5,12 @@ import { UnofficialMultiSendError } from '@/modules/relay/domain/errors/unoffici
 import { InvalidTransferError } from '@/modules/relay/domain/errors/invalid-transfer.error';
 import { UnofficialProxyFactoryError } from '@/modules/relay/domain/errors/unofficial-proxy-factory.error';
 import type { Address } from 'viem';
-import { RelayTransactionValidator } from '@/modules/relay/domain/relay-transaction-validator';
+import { RelayTransactionHelper } from '@/modules/relay/domain/relay-transaction-helper';
 
 @Injectable()
 export class LimitAddressesMapper {
   constructor(
-    private readonly relayTransactionValidator: RelayTransactionValidator,
+    private readonly relayTransactionValidator: RelayTransactionHelper,
   ) {}
 
   async getLimitAddresses(args: {

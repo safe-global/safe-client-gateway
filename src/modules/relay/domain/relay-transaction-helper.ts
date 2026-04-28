@@ -25,14 +25,8 @@ import type { Address, Hex } from 'viem';
 
 type SafeAbi = typeof Safe130 | typeof Safe141 | typeof Safe150;
 
-function getSafeAbi(version: string): SafeAbi {
-  if (version.startsWith('1.5')) return Safe150;
-  if (version.startsWith('1.4')) return Safe141;
-  return Safe130;
-}
-
 @Injectable()
-export class RelayTransactionValidator {
+export class RelayTransactionHelper {
   constructor(
     @Inject(ISafeRepository)
     private readonly safeRepository: ISafeRepository,
@@ -46,6 +40,17 @@ export class RelayTransactionValidator {
     private readonly proxyFactoryDecoder: ProxyFactoryDecoder,
     private readonly delayModifierDecoder: DelayModifierDecoder,
   ) {}
+
+  private getSafeAbi(version: string): SafeAbi {
+    if (version.startsWith('1.5')) return Safe150;
+    if (version.startsWith('1.4')) return Safe141;
+    if (version.startsWith('1.3') || version.startsWith('1.2') || version.startsWith('1.1') || version.startsWith('1.0')) return Safe130;
+    this.loggingService.warn({
+      type: LogType.TxRelayEligibility,
+      message: `getSafeAbi: unrecognised Safe version ${version}, falling back to 1.3.0 ABI`,
+    });
+    return Safe130;
+  }
 
   isValidExecTransactionCall(args: { to: Address; data: Address }): boolean {
     const execTransactionArgs = this.getExecTransactionArgs(args.data);
@@ -424,7 +429,7 @@ export class RelayTransactionValidator {
       return false;
     }
 
-    const abi = getSafeAbi(args.version);
+    const abi = this.getSafeAbi(args.version);
 
     try {
       const publicClient = await this.blockchainApiManager.getApi(args.chainId);
