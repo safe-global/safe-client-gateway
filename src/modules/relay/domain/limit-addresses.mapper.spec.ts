@@ -1531,7 +1531,7 @@ describe('LimitAddressesMapper', () => {
         expect(limitAddress).not.toStrictEqual(to);
       });
 
-      it('should throw for createSigner on an unofficial factory', async () => {
+      it('should throw UnofficialSignerFactoryError for createSigner on an unofficial factory', async () => {
         const version = faker.helpers.arrayElement(SAFE_VERSIONS[chainId]);
         const data = createSignerEncoder().encode();
         // Unofficial factory address
@@ -1545,7 +1545,7 @@ describe('LimitAddressesMapper', () => {
             to,
           }),
         ).rejects.toThrow(
-          'Invalid transfer. The proposed transfer is not an execTransaction/multiSend to another party or createProxyWithNonce call.',
+          'SafeWebAuthnSignerFactory contract is not official. Only official SafeWebAuthnSignerFactory contracts are supported.',
         );
       });
 
@@ -1589,6 +1589,38 @@ describe('LimitAddressesMapper', () => {
           'Invalid transfer. The proposed transfer is not an execTransaction/multiSend to another party or createProxyWithNonce call.',
         );
       });
+    });
+  });
+
+  describe('SafeWebAuthnSignerFactory on chains without a factory deployment', () => {
+    // BSC (56) is configured for relay but has no SafeWebAuthnSignerFactory
+    // v0.2.1 deployment. A createSigner call on such a chain must surface a
+    // dedicated unofficial-factory error rather than silently masquerading as
+    // generic invalid calldata.
+    const chainIdWithoutFactory = '56';
+
+    it('should be a chain that the relay supports but has no factory deployment', () => {
+      expect(supportedChainIds).toContain(chainIdWithoutFactory);
+      expect(
+        getSignerFactoryDeployments({ chainId: chainIdWithoutFactory }),
+      ).toStrictEqual([]);
+    });
+
+    it('should throw UnofficialSignerFactoryError for createSigner on a chain without a factory', async () => {
+      const version = faker.system.semver();
+      const data = createSignerEncoder().encode();
+      const to = getAddress(faker.finance.ethereumAddress());
+
+      await expect(
+        target.getLimitAddresses({
+          version,
+          chainId: chainIdWithoutFactory,
+          data,
+          to,
+        }),
+      ).rejects.toThrow(
+        'SafeWebAuthnSignerFactory contract is not official. Only official SafeWebAuthnSignerFactory contracts are supported.',
+      );
     });
   });
 });

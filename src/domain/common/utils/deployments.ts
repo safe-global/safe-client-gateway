@@ -350,10 +350,25 @@ export function getSignerFactoryDeployments(args: {
 }
 
 /**
+ * Function signatures we type-cast the upstream ABI to in {@link SignerFactoryAbi}.
+ * Verified at module load by {@link getSignerFactoryAbi} so a future package
+ * release that drops/renames a function fails fast instead of silently.
+ */
+const REQUIRED_SIGNER_FACTORY_FUNCTIONS = [
+  { name: 'createSigner', inputs: ['uint256', 'uint256', 'uint176'] },
+  { name: 'getSigner', inputs: ['uint256', 'uint256', 'uint176'] },
+] as const;
+
+/**
  * Returns the SafeWebAuthnSignerFactory ABI as published by
  * `@safe-global/safe-modules-deployments`, pinned to
  * {@link SUPPORTED_SIGNER_FACTORY_VERSION}. Throws if the package is missing
- * the deployment (which would indicate a packaging regression upstream).
+ * the deployment or if its ABI no longer contains the function signatures
+ * encoded in {@link SignerFactoryAbi}.
+ *
+ * The runtime check guards against silent drift: the package types
+ * `Deployment.abi` as `any[]`, so the type cast can't catch upstream changes
+ * by itself.
  */
 export function getSignerFactoryAbi(): SignerFactoryAbi {
   const deployment = getSafeWebAuthnSignerFactoryDeployment({
@@ -364,5 +379,27 @@ export function getSignerFactoryAbi(): SignerFactoryAbi {
       `SafeWebAuthnSignerFactory v${SUPPORTED_SIGNER_FACTORY_VERSION} deployment not found in @safe-global/safe-modules-deployments`,
     );
   }
-  return deployment.abi as unknown as SignerFactoryAbi;
+
+  type AbiFunctionItem = {
+    type?: string;
+    name?: string;
+    inputs?: ReadonlyArray<{ type?: string }>;
+  };
+  const abi = deployment.abi as ReadonlyArray<AbiFunctionItem>;
+  for (const required of REQUIRED_SIGNER_FACTORY_FUNCTIONS) {
+    const match = abi.find(
+      (item) => item.type === 'function' && item.name === required.name,
+    );
+    const inputTypes = match?.inputs?.map((i) => i.type) ?? [];
+    const matches =
+      inputTypes.length === required.inputs.length &&
+      inputTypes.every((t, idx) => t === required.inputs[idx]);
+    if (!matches) {
+      throw new Error(
+        `SafeWebAuthnSignerFactory v${SUPPORTED_SIGNER_FACTORY_VERSION} ABI no longer matches the expected ${required.name}(${required.inputs.join(',')}) signature. The @safe-global/safe-modules-deployments package may have changed; update SignerFactoryAbi and SUPPORTED_SIGNER_FACTORY_VERSION accordingly.`,
+      );
+    }
+  }
+
+  return abi as unknown as SignerFactoryAbi;
 }

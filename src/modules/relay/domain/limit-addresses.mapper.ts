@@ -19,6 +19,7 @@ import { UnofficialMultiSendError } from '@/modules/relay/domain/errors/unoffici
 import { InvalidTransferError } from '@/modules/relay/domain/errors/invalid-transfer.error';
 import { InvalidMultiSendError } from '@/modules/relay/domain/errors/invalid-multisend.error';
 import { UnofficialProxyFactoryError } from '@/modules/relay/domain/errors/unofficial-proxy-factory.error';
+import { UnofficialSignerFactoryError } from '@/modules/relay/domain/errors/unofficial-signer-factory.error';
 import { DelayModifierDecoder } from '@/modules/alerts/domain/contracts/decoders/delay-modifier-decoder.helper';
 import {
   encodeAbiParameters,
@@ -123,14 +124,23 @@ export class LimitAddressesMapper {
       return this.getOwnersFromCreateProxyWithNonce(args.data);
     }
 
-    // Calldata matches createSigner on an official SafeWebAuthnSignerFactory
-    const signerLimitAddress = this.getSignerFactoryLimitAddress({
-      chainId: args.chainId,
-      to: args.to,
-      data: args.data,
-    });
-    if (signerLimitAddress) {
-      return [signerLimitAddress];
+    // Calldata matches createSigner on an official SafeWebAuthnSignerFactory.
+    // If the selector matches but the target isn't official, throw a dedicated
+    // error so operators can distinguish unofficial-factory attempts from
+    // unrecognised calldata.
+    if (this.signerFactoryDecoder.helpers.isCreateSigner(args.data)) {
+      if (
+        !this.isOfficialSignerFactoryDeployment({
+          chainId: args.chainId,
+          address: args.to,
+        })
+      ) {
+        throw new UnofficialSignerFactoryError();
+      }
+      const signerLimitAddress = this.getSignerFactoryLimitAddress(args.data);
+      if (signerLimitAddress) {
+        return [signerLimitAddress];
+      }
     }
 
     throw new InvalidTransferError();
@@ -445,40 +455,29 @@ export class LimitAddressesMapper {
   }
 
   /**
-   * If `data` is a `createSigner` call to an official SafeWebAuthnSignerFactory,
-   * returns a per-passkey limit key derived from the call arguments.
+   * For `createSigner` calldata, returns a per-passkey limit key derived from
+   * the call arguments.
    *
    * The key is the last 20 bytes of `keccak256(abi.encode(x, y, verifiers))`
    * cast to an Address-shaped string. This gives each unique passkey
    * (x, y, verifiers) its own daily relay quota, instead of every user
    * sharing the factory address as a limit key.
    *
-   * Returns `null` if the calldata is not a recognised `createSigner` call,
-   * the target is not an official factory, or the args fail to decode.
+   * Returns `null` if the args fail to decode (e.g. selector matches but the
+   * payload is malformed). Caller must have already verified the selector
+   * matches `createSigner` and that `to` is an official factory.
+   *
+   * Note: the `isCreateSigner` selector pre-check at the call site is not
+   * redundant with the `decodeFunctionData` + `functionName` check here —
+   * `getSigner` is also in the ABI and would decode cleanly.
    */
-  private getSignerFactoryLimitAddress(args: {
-    chainId: string;
-    to: Address;
-    data: Address;
-  }): Address | null {
-    if (!this.signerFactoryDecoder.helpers.isCreateSigner(args.data)) {
-      return null;
-    }
-    if (
-      !this.isOfficialSignerFactoryDeployment({
-        chainId: args.chainId,
-        address: args.to,
-      })
-    ) {
-      return null;
-    }
-
+  private getSignerFactoryLimitAddress(data: Address): Address | null {
     let x: bigint;
     let y: bigint;
     let verifiers: bigint;
     try {
       const decoded = this.signerFactoryDecoder.decodeFunctionData({
-        data: args.data,
+        data,
       });
       if (decoded.functionName !== 'createSigner') {
         return null;
