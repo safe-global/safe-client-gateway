@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 // eslint-disable-next-line no-restricted-imports
 import {
   getMultiSendCallOnlyDeployments as _getMultiSendCallOnlyDeployments,
@@ -10,11 +11,13 @@ import {
   getSafeToL2MigrationDeployments as _getSafeToL2MigrationDeployments,
   getSafeMigrationDeployments as _getSafeMigrationDeployments,
 } from '@safe-global/safe-deployments';
+// eslint-disable-next-line no-restricted-imports
+import { getSafeWebAuthnSignerFactoryDeployment } from '@safe-global/safe-modules-deployments';
 import {
   _SAFE_DEPLOYMENTS,
   _COMPAT_FALLBACK_HANDLER_DEPLOYMENTS,
 } from '@safe-global/safe-deployments/dist/deployments';
-import { getAddress, type Address } from 'viem';
+import { getAddress, type Address, type parseAbi } from 'viem';
 
 type Filter = {
   chainId: string;
@@ -30,6 +33,26 @@ type DeploymentGetter =
   | typeof _getFallbackHandlerDeployments
   | typeof _getSafeToL2SetupDeployments
   | typeof _getSafeToL2MigrationDeployments;
+
+/**
+ * Type-only declaration of the SafeWebAuthnSignerFactory function signatures
+ * that the relay limit logic depends on. The runtime ABI is loaded from
+ * `@safe-global/safe-modules-deployments` by `getSignerFactoryAbi`; this type
+ * exists solely to give viem the literal Abi shape needed for typed helpers
+ * (e.g. `helpers.isCreateSigner`).
+ *
+ * Note: this is a self-declared shape, not derived from the package's types
+ * (the package types `Deployment.abi` as `any[]`). Tests guard against the
+ * runtime selectors drifting; type-level drift is not caught.
+ */
+export type SignerFactoryAbi = ReturnType<
+  typeof parseAbi<
+    [
+      'function createSigner(uint256 x, uint256 y, uint176 verifiers) returns (address signer)',
+      'function getSigner(uint256 x, uint256 y, uint176 verifiers) view returns (address signer)',
+    ]
+  >
+>;
 
 /**
  * Returns a list of official ProxyFactory addresses based on given {@link Filter}.
@@ -291,3 +314,92 @@ export const isProxyFactoryDeployed = (
 export const isFallbackHandlerDeployed = (
   args: Filter & { address: Address },
 ): boolean => isDeployed(getFallbackHandlerDeployments, args);
+
+/**
+ * The SafeWebAuthnSignerFactory contract version supported by the relay.
+ *
+ * Pinned explicitly so that a future package release adding e.g. v0.3.0 does
+ * not silently change which factory addresses we accept (the package's
+ * `findDeployment` picks the latest released version when no filter is
+ * supplied). Bump this constant deliberately when adding support for a new
+ * factory version, after verifying the function signatures are unchanged or
+ * updating `SignerFactoryAbi` accordingly.
+ */
+const SUPPORTED_SIGNER_FACTORY_VERSION = '0.2.1';
+
+/**
+ * Returns a list of official SafeWebAuthnSignerFactory addresses for a chain.
+ * Uses @safe-global/safe-modules-deployments (separate from core safe-deployments).
+ *
+ * Pinned to {@link SUPPORTED_SIGNER_FACTORY_VERSION}.
+ *
+ * @param {string} args.chainId - the chain ID to filter deployments by
+ * @returns {Array<Address>} - a list of checksummed factory addresses
+ */
+export function getSignerFactoryDeployments(args: {
+  chainId: string;
+}): Array<Address> {
+  const deployment = getSafeWebAuthnSignerFactoryDeployment({
+    network: args.chainId,
+    version: SUPPORTED_SIGNER_FACTORY_VERSION,
+  });
+  if (!deployment) return [];
+  const address = deployment.networkAddresses[args.chainId];
+  if (!address) return [];
+  return [getAddress(address)];
+}
+
+/**
+ * Function signatures we type-cast the upstream ABI to in {@link SignerFactoryAbi}.
+ * Verified at module load by {@link getSignerFactoryAbi} so a future package
+ * release that drops/renames a function fails fast instead of silently.
+ */
+const REQUIRED_SIGNER_FACTORY_FUNCTIONS = [
+  { name: 'createSigner', inputs: ['uint256', 'uint256', 'uint176'] },
+  { name: 'getSigner', inputs: ['uint256', 'uint256', 'uint176'] },
+] as const;
+
+/**
+ * Returns the SafeWebAuthnSignerFactory ABI as published by
+ * `@safe-global/safe-modules-deployments`, pinned to
+ * {@link SUPPORTED_SIGNER_FACTORY_VERSION}. Throws if the package is missing
+ * the deployment or if its ABI no longer contains the function signatures
+ * encoded in {@link SignerFactoryAbi}.
+ *
+ * The runtime check guards against silent drift: the package types
+ * `Deployment.abi` as `any[]`, so the type cast can't catch upstream changes
+ * by itself.
+ */
+export function getSignerFactoryAbi(): SignerFactoryAbi {
+  const deployment = getSafeWebAuthnSignerFactoryDeployment({
+    version: SUPPORTED_SIGNER_FACTORY_VERSION,
+  });
+  if (!deployment) {
+    throw new Error(
+      `SafeWebAuthnSignerFactory v${SUPPORTED_SIGNER_FACTORY_VERSION} deployment not found in @safe-global/safe-modules-deployments`,
+    );
+  }
+
+  type AbiFunctionItem = {
+    type?: string;
+    name?: string;
+    inputs?: ReadonlyArray<{ type?: string }>;
+  };
+  const abi = deployment.abi as ReadonlyArray<AbiFunctionItem>;
+  for (const required of REQUIRED_SIGNER_FACTORY_FUNCTIONS) {
+    const match = abi.find(
+      (item) => item.type === 'function' && item.name === required.name,
+    );
+    const inputTypes = match?.inputs?.map((i) => i.type) ?? [];
+    const matches =
+      inputTypes.length === required.inputs.length &&
+      inputTypes.every((t, idx) => t === required.inputs[idx]);
+    if (!matches) {
+      throw new Error(
+        `SafeWebAuthnSignerFactory v${SUPPORTED_SIGNER_FACTORY_VERSION} ABI no longer matches the expected ${required.name}(${required.inputs.join(',')}) signature. The @safe-global/safe-modules-deployments package may have changed; update SignerFactoryAbi and SUPPORTED_SIGNER_FACTORY_VERSION accordingly.`,
+      );
+    }
+  }
+
+  return abi as unknown as SignerFactoryAbi;
+}

@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
+import type { Address } from 'viem';
 import { IRelayManager } from '@/modules/relay/domain/interfaces/relay-manager.interface';
 import { IRelayer } from '@/modules/relay/domain/interfaces/relayer.interface';
 import { DailyLimitRelayer } from '@/modules/relay/domain/relayers/daily-limit.relayer';
 import { NoFeeCampaignRelayer } from '@/modules/relay/domain/relayers/no-fee-campaign.relayer';
 import { RelayFeeRelayer } from '@/modules/relay/domain/relayers/relay-fee.relayer';
+import { SignerFactoryDecoder } from '@/modules/relay/domain/contracts/decoders/signer-factory-decoder.helper';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import {
   RelayFeeConfiguration,
@@ -22,6 +24,7 @@ export class RelayManager implements IRelayManager {
     private readonly dailyLimitRelayer: DailyLimitRelayer,
     private readonly noFeeCampaignRelayer: NoFeeCampaignRelayer,
     private readonly relayFeeRelayer: RelayFeeRelayer,
+    private readonly signerFactoryDecoder: SignerFactoryDecoder,
   ) {
     this.noFeeCampaignConfiguration = configurationService.getOrThrow(
       'relay.noFeeCampaign',
@@ -35,17 +38,29 @@ export class RelayManager implements IRelayManager {
   }
 
   /**
-   * Returns the appropriate relayer for the given chain.
-   * Priority order:
-   * 1. {@link RelayFeeRelayer} — when the chain is in `relay.fee.enabledChainIds`
-   * 2. {@link DailyLimitRelayer} — when the chain is in `relay.dailyLimitRelayerChainsIds`
-   * 3. {@link NoFeeCampaignRelayer} — when the chain has a no-fee campaign configuration
-   * 4. {@link DailyLimitRelayer} — fallback for backward compatibility
+   * Returns the appropriate relayer for the given chain and (optionally) the
+   * transaction calldata. Priority order:
+   * 1. {@link DailyLimitRelayer} — for `createSigner` calls (passkey signer
+   *    deployment is always sponsored, regardless of chain config)
+   * 2. {@link RelayFeeRelayer} — when the chain is in `relay.fee.enabledChainIds`
+   * 3. {@link DailyLimitRelayer} — when the chain is in `relay.dailyLimitRelayerChainsIds`
+   * 4. {@link NoFeeCampaignRelayer} — when the chain has a no-fee campaign configuration
+   * 5. {@link DailyLimitRelayer} — fallback for backward compatibility
    *
    * @param chainId - Chain ID to look up the relayer for
-   * @returns The relayer to use for this chain
+   * @param data - Transaction calldata; required to detect createSigner
+   * @returns The relayer to use
    */
-  public getRelayer(chainId: string): IRelayer {
+  public getRelayer(chainId: string, data?: Address): IRelayer {
+    // Passkey signer deployment via SafeWebAuthnSignerFactory.createSigner is
+    // always sponsored — it must not be subject to noFeeCampaign balance-based
+    // rules or relay-fee charges, so route it straight to the daily-limit
+    // relayer regardless of chain config. The factory address is verified
+    // downstream in LimitAddressesMapper.
+    if (data && this.signerFactoryDecoder.helpers.isCreateSigner(data)) {
+      return this.dailyLimitRelayer;
+    }
+
     // relay-fee takes first priority when enabled for the chain
     if (this.relayFeeConfiguration.enabledChainIds.includes(chainId)) {
       return this.relayFeeRelayer;
