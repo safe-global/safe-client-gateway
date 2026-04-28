@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { type Address, encodeFunctionData, parseAbi } from 'viem';
 import type { IEncoder } from '@/__tests__/encoder-builder';
@@ -34,8 +35,5 @@ export function createSignerEncoder(): CreateSignerEncoder<CreateSignerArgs> {
   return new CreateSignerEncoder<CreateSignerArgs>()
     .with('x', faker.number.bigInt())
     .with('y', faker.number.bigInt())
-    .with(
-      'verifiers',
-      faker.number.bigInt({ min: 0n, max: verifiersMax }),
-    );
+    .with('verifiers', faker.number.bigInt({ min: 0n, max: verifiersMax }));
 }
