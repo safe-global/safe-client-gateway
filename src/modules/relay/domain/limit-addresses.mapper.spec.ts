@@ -85,7 +85,7 @@ describe('LimitAddressesMapper', () => {
   beforeEach(() => {
     jest.resetAllMocks();
 
-    const relayTransactionValidator = new RelayTransactionHelper(
+    const relayTransactionHelper = new RelayTransactionHelper(
       mockSafeRepository,
       mockLoggingService,
       { getApi: jest.fn(), destroyApi: jest.fn() } as never,
@@ -96,7 +96,7 @@ describe('LimitAddressesMapper', () => {
       new DelayModifierDecoder(),
     );
 
-    target = new LimitAddressesMapper(relayTransactionValidator);
+    target = new LimitAddressesMapper(relayTransactionHelper);
   });
 
   describe('Recovery', () => {
