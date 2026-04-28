@@ -125,9 +125,9 @@ export class LimitAddressesMapper {
     }
 
     // Calldata matches createSigner on an official SafeWebAuthnSignerFactory.
-    // If the selector matches but the target isn't official, throw a dedicated
-    // error so operators can distinguish unofficial-factory attempts from
-    // unrecognised calldata.
+    // The branch is self-contained: every outcome of the createSigner path
+    // (unofficial factory, malformed args, success) terminates here so future
+    // branches added below this point can't be reached by createSigner data.
     if (this.signerFactoryDecoder.helpers.isCreateSigner(args.data)) {
       if (
         !this.isOfficialSignerFactoryDeployment({
@@ -138,9 +138,11 @@ export class LimitAddressesMapper {
         throw new UnofficialSignerFactoryError();
       }
       const signerLimitAddress = this.getSignerFactoryLimitAddress(args.data);
-      if (signerLimitAddress) {
-        return [signerLimitAddress];
+      if (!signerLimitAddress) {
+        // Selector matched but the args failed to decode (malformed payload).
+        throw new InvalidTransferError();
       }
+      return [signerLimitAddress];
     }
 
     throw new InvalidTransferError();
