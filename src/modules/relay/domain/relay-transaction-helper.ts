@@ -53,7 +53,7 @@ export class RelayTransactionHelper {
     return Safe130;
   }
 
-  isValidExecTransactionCall(args: { to: Address; data: Address }): boolean {
+  isValidExecTransactionCall(args: { to: Address; data: Hex }): boolean {
     const execTransactionArgs = this.getExecTransactionArgs(args.data);
     // Not a valid execTransaction call
     if (!execTransactionArgs) {
@@ -93,7 +93,7 @@ export class RelayTransactionHelper {
     return isCancellation || this.safeDecoder.isCall(execTransactionArgs.data);
   }
 
-  private getExecTransactionArgs(data: Address): SafeTransaction | null {
+  private getExecTransactionArgs(data: Hex): SafeTransaction | null {
     try {
       const safeDecodedData = this.safeDecoder.decodeFunctionData({
         data,
@@ -131,7 +131,7 @@ export class RelayTransactionHelper {
     }
   }
 
-  private isValidErc20Transfer(args: { to: Address; data: Address }): boolean {
+  private isValidErc20Transfer(args: { to: Address; data: Hex }): boolean {
     // Can throw but called after this.erc20Decoder.helpers.isTransfer
     const erc20DecodedData = this.erc20Decoder.decodeFunctionData({
       data: args.data,
@@ -146,10 +146,7 @@ export class RelayTransactionHelper {
     return to !== args.to;
   }
 
-  private isValidErc20TransferFrom(args: {
-    to: Address;
-    data: Address;
-  }): boolean {
+  private isValidErc20TransferFrom(args: { to: Address; data: Hex }): boolean {
     // Can throw but called after this.erc20Decoder.helpers.isTransferFrom
     const erc20DecodedData = this.erc20Decoder.decodeFunctionData({
       data: args.data,
@@ -176,7 +173,7 @@ export class RelayTransactionHelper {
     }
   }
 
-  isMultiSend(data: Address): boolean {
+  isMultiSend(data: Hex): boolean {
     return this.multiSendDecoder.helpers.isMultiSend(data);
   }
 
@@ -191,7 +188,7 @@ export class RelayTransactionHelper {
     );
   }
 
-  getSafeAddressFromMultiSend = (data: Address): Address => {
+  getSafeAddressFromMultiSend = (data: Hex): Address => {
     // Decode transactions within MultiSend
     const transactions = this.multiSendDecoder.mapMultiSendTransactions(data);
 
@@ -230,7 +227,7 @@ export class RelayTransactionHelper {
   isValidCreateProxyWithNonceCall(args: {
     version: string;
     chainId: string;
-    data: Address;
+    data: Hex;
   }): boolean {
     let singleton: Address | null = null;
 
@@ -254,7 +251,7 @@ export class RelayTransactionHelper {
     );
   }
 
-  getOwnersFromCreateProxyWithNonce(data: Address): ReadonlyArray<Address> {
+  getOwnersFromCreateProxyWithNonce(data: Hex): ReadonlyArray<Address> {
     const decodedProxyFactory = this.proxyFactoryDecoder.decodeFunctionData({
       data,
     });
@@ -295,10 +292,10 @@ export class RelayTransactionHelper {
     chainId: string;
     version: string;
     to: Address;
-    data: Address;
+    data: Hex;
   }): Promise<Address | null> {
     let to: Address;
-    let data: Address;
+    let data: Hex;
 
     try {
       const decoded = this.delayModifierDecoder.decodeFunctionData({
@@ -368,10 +365,10 @@ export class RelayTransactionHelper {
     address: Address;
     version: string;
     chainId: string;
-    data: Address;
+    data: Hex;
   }): Array<{
     to: Address;
-    data: Address;
+    data: Hex;
   }> {
     if (
       this.isOfficialMultiSendDeployment(args) &&
@@ -388,7 +385,7 @@ export class RelayTransactionHelper {
    * @param {string} data - Data of the transaction
    * @returns {boolean} - Whether the data is of owner management
    */
-  isOwnerManagementTransaction(data: Address): boolean {
+  isOwnerManagementTransaction(data: Hex): boolean {
     try {
       const decoded = this.safeDecoder.decodeFunctionData({
         data,
