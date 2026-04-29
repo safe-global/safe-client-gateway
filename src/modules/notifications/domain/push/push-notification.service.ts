@@ -19,6 +19,7 @@ import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface
 import type { Safe } from '@/modules/safe/domain/entities/safe.entity';
 import type { Confirmation } from '@/modules/safe/domain/entities/multisig-transaction.entity';
 import { IDelegatesV2Repository } from '@/modules/delegate/domain/v2/delegates.v2.repository.interface';
+import type { Delegate } from '@/modules/delegate/domain/entities/delegate.entity';
 import { IMessagesRepository } from '@/modules/messages/domain/messages.repository.interface';
 import { INotificationsRepositoryV2 } from '@/modules/notifications/domain/v2/notifications.repository.interface';
 import {
@@ -36,7 +37,6 @@ import type {
   PushNotificationJobResponse,
   ResolvedSubscriber,
 } from '@/modules/notifications/domain/push/entities/push-notification-job-data.entity';
-import type { Delegate } from '@/modules/delegate/domain/entities/delegate.entity';
 import type { Address } from 'viem';
 import uniqBy from 'lodash/uniqBy';
 

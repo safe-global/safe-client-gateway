@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { OffchainModule } from '@/modules/offchain/offchain.module';
 import { Delegate } from '@/modules/delegate/domain/entities/delegate.entity';
 import { DelegatesV2Repository } from '@/modules/delegate/domain/v2/delegates.v2.repository';
 import { Page } from '@/domain/entities/page.entity';
@@ -42,7 +44,7 @@ export interface IDelegatesV2Repository {
 }
 
 @Module({
-  imports: [TransactionApiManagerModule],
+  imports: [TransactionApiManagerModule, OffchainModule],
   providers: [
     {
       provide: IDelegatesV2Repository,

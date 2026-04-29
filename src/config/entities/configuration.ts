@@ -320,6 +320,7 @@ export default () => ({
     cacheInFlightRequests:
       process.env.HTTP_CLIENT_CACHE_IN_FLIGHT_REQUESTS?.toLowerCase() ===
       'true',
+    queueService: process.env.FF_QUEUE_SERVICE?.toLowerCase() === 'true',
   },
   httpClient: {
     // Timeout in milliseconds to be used for the HTTP client.
@@ -555,6 +556,10 @@ export default () => ({
         process.env.RELAY_FEE_PREVIEW_TTL_SECONDS ?? `${10}`,
       ),
     },
+  },
+  queueService: {
+    baseUri:
+      process.env.QUEUE_SERVICE_BASE_URI || 'https://api.safe.global/offchain',
   },
   safeConfig: {
     baseUri:

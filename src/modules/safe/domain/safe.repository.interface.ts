@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Page } from '@/domain/entities/page.entity';
 import { CreationTransaction } from '@/modules/safe/domain/entities/creation-transaction.entity';
 import { ModuleTransaction } from '@/modules/safe/domain/entities/module-transaction.entity';
@@ -16,6 +17,7 @@ import { TransactionApiManagerModule } from '@/domain/interfaces/transaction-api
 import { TransactionVerifierHelper } from '@/modules/transactions/routes/helpers/transaction-verifier.helper';
 import { DelegatesV2RepositoryModule } from '@/modules/delegate/domain/v2/delegates.v2.repository.interface';
 import { ContractsModule } from '@/modules/contracts/contracts.module';
+import { OffchainModule } from '@/modules/offchain/offchain.module';
 import type { Address } from 'viem';
 
 export const ISafeRepository = Symbol('ISafeRepository');
@@ -229,6 +231,7 @@ export interface ISafeRepository {
     TransactionApiManagerModule,
     DelegatesV2RepositoryModule,
     ContractsModule,
+    OffchainModule,
   ],
   providers: [
     {

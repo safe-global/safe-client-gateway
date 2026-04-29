@@ -7,6 +7,6 @@ export class Delegate {
   delegate!: string;
   @ApiProperty()
   delegator!: string;
-  @ApiProperty()
-  label!: string;
+  @ApiPropertyOptional({ type: String, nullable: true })
+  label!: string | null;
 }

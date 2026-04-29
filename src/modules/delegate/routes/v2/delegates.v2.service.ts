@@ -1,5 +1,5 @@
-import { Delegate } from '@/modules/delegate/domain/entities/delegate.entity';
 import { IDelegatesV2Repository } from '@/modules/delegate/domain/v2/delegates.v2.repository.interface';
+import type { Delegate } from '@/modules/delegate/domain/entities/delegate.entity';
 import { Page } from '@/domain/entities/page.entity';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import {
