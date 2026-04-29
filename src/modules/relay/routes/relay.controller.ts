@@ -29,6 +29,7 @@ import { InvalidTransferExceptionFilter } from '@/modules/relay/domain/exception
 import { UnofficialMasterCopyExceptionFilter } from '@/modules/relay/domain/exception-filters/unofficial-master-copy.exception-filter';
 import { UnofficialMultiSendExceptionFilter } from '@/modules/relay/domain/exception-filters/unofficial-multisend.error';
 import { UnofficialProxyFactoryExceptionFilter } from '@/modules/relay/domain/exception-filters/unofficial-proxy-factory.exception-filter';
+import { UnofficialSignerFactoryExceptionFilter } from '@/modules/relay/domain/exception-filters/unofficial-signer-factory.exception-filter';
 import { RelayDtoSchema } from '@/modules/relay/routes/entities/schemas/relay.dto.schema';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { HexSchema } from '@/validation/entities/schemas/hex.schema';
@@ -82,6 +83,7 @@ export class RelayController {
     UnofficialMasterCopyExceptionFilter,
     UnofficialMultiSendExceptionFilter,
     UnofficialProxyFactoryExceptionFilter,
+    UnofficialSignerFactoryExceptionFilter,
   )
   async relay(
     @Param('chainId') chainId: string,
