@@ -1414,26 +1414,63 @@ describe('LimitAddressesMapper', () => {
       );
     });
 
-    describe('SafeWebAuthnSignerFactory', () => {
-      const expectedLimitKey = (
-        x: bigint,
-        y: bigint,
-        verifiers: bigint,
-      ): string =>
-        getAddress(
-          `0x${keccak256(
-            encodeAbiParameters(
-              parseAbiParameters('uint256, uint256, uint176'),
-              [x, y, verifiers],
-            ),
-          ).slice(-40)}`,
+    describe('Validation', () => {
+      it('should throw if not an execTransaction, multiSend or createProxyWithNonceCall', async () => {
+        const version = faker.helpers.arrayElement(SAFE_VERSIONS[chainId]);
+        const safe = safeBuilder().build();
+        const safeAddress = getAddress(safe.address);
+        const data = erc20TransferEncoder().encode();
+        // Official mastercopy
+        mockSafeRepository.getSafe.mockResolvedValue(safe);
+
+        await expect(
+          target.getLimitAddresses({
+            version,
+            chainId,
+            data,
+            to: safeAddress,
+          }),
+        ).rejects.toThrow(
+          'Invalid transfer. The proposed transfer is not an execTransaction/multiSend to another party or createProxyWithNonce call.',
         );
+      });
+    });
+  });
 
-      const factoryAddresses = getSignerFactoryDeployments({ chainId });
+  describe('SafeWebAuthnSignerFactory', () => {
+    // Pick canonical relay-supported chains where v0.2.1 of the factory must
+    // be present. Listed explicitly so any future change that would silently
+    // break coverage (e.g. dropping mainnet from supportedChainIds, or a
+    // deployments package update that changes addresses) fails the suite
+    // loudly rather than skipping the tests.
+    const chainsWithFactory = ['1', '11155111'] as const;
 
-      // The SafeWebAuthnSignerFactory is only deployed on a subset of
-      // supported chains; skip the suite where it isn't.
-      if (factoryAddresses.length === 0) return;
+    const expectedLimitKey = (
+      x: bigint,
+      y: bigint,
+      verifiers: bigint,
+    ): string =>
+      getAddress(
+        `0x${keccak256(
+          encodeAbiParameters(parseAbiParameters('uint256, uint256, uint176'), [
+            x,
+            y,
+            verifiers,
+          ]),
+        ).slice(-40)}`,
+      );
+
+    describe.each(chainsWithFactory)('Chain %s', (chainId) => {
+      let factoryAddresses: ReadonlyArray<string>;
+
+      beforeAll(() => {
+        // Setup-time assertions: the chain must be relay-supported and the
+        // factory must be deployed on it. If either flips, fail loudly here
+        // instead of silently no-oping the tests below.
+        expect(supportedChainIds).toContain(chainId);
+        factoryAddresses = getSignerFactoryDeployments({ chainId });
+        expect(factoryAddresses).not.toHaveLength(0);
+      });
 
       it('should return a hash-derived limit address for createSigner on an official factory', async () => {
         const version = faker.helpers.arrayElement(SAFE_VERSIONS[chainId]);
@@ -1448,7 +1485,7 @@ describe('LimitAddressesMapper', () => {
           .with('y', y)
           .with('verifiers', verifiers)
           .encode();
-        const to = faker.helpers.arrayElement(factoryAddresses);
+        const to = getAddress(faker.helpers.arrayElement(factoryAddresses));
 
         const limitAddresses = await target.getLimitAddresses({
           version,
@@ -1475,7 +1512,7 @@ describe('LimitAddressesMapper', () => {
           .with('y', y)
           .with('verifiers', verifiers)
           .encode();
-        const to = faker.helpers.arrayElement(factoryAddresses);
+        const to = getAddress(faker.helpers.arrayElement(factoryAddresses));
 
         const first = await target.getLimitAddresses({
           version,
@@ -1495,7 +1532,7 @@ describe('LimitAddressesMapper', () => {
 
       it('should return different limit addresses for different passkey args', async () => {
         const version = faker.helpers.arrayElement(SAFE_VERSIONS[chainId]);
-        const to = faker.helpers.arrayElement(factoryAddresses);
+        const to = getAddress(faker.helpers.arrayElement(factoryAddresses));
 
         const dataA = createSignerEncoder().encode();
         const dataB = createSignerEncoder().encode();
@@ -1519,7 +1556,7 @@ describe('LimitAddressesMapper', () => {
       it('should not key on the factory address itself (preventing global quota sharing)', async () => {
         const version = faker.helpers.arrayElement(SAFE_VERSIONS[chainId]);
         const data = createSignerEncoder().encode();
-        const to = faker.helpers.arrayElement(factoryAddresses);
+        const to = getAddress(faker.helpers.arrayElement(factoryAddresses));
 
         const [limitAddress] = await target.getLimitAddresses({
           version,
@@ -1554,7 +1591,7 @@ describe('LimitAddressesMapper', () => {
         const validData = createSignerEncoder().encode();
         // Keep the 4-byte selector (`0x` + 8 hex chars) but truncate the args
         const malformed = validData.slice(0, 10) as `0x${string}`;
-        const to = faker.helpers.arrayElement(factoryAddresses);
+        const to = getAddress(faker.helpers.arrayElement(factoryAddresses));
 
         await expect(
           target.getLimitAddresses({
@@ -1562,28 +1599,6 @@ describe('LimitAddressesMapper', () => {
             chainId,
             data: malformed,
             to,
-          }),
-        ).rejects.toThrow(
-          'Invalid transfer. The proposed transfer is not an execTransaction/multiSend to another party or createProxyWithNonce call.',
-        );
-      });
-    });
-
-    describe('Validation', () => {
-      it('should throw if not an execTransaction, multiSend or createProxyWithNonceCall', async () => {
-        const version = faker.helpers.arrayElement(SAFE_VERSIONS[chainId]);
-        const safe = safeBuilder().build();
-        const safeAddress = getAddress(safe.address);
-        const data = erc20TransferEncoder().encode();
-        // Official mastercopy
-        mockSafeRepository.getSafe.mockResolvedValue(safe);
-
-        await expect(
-          target.getLimitAddresses({
-            version,
-            chainId,
-            data,
-            to: safeAddress,
           }),
         ).rejects.toThrow(
           'Invalid transfer. The proposed transfer is not an execTransaction/multiSend to another party or createProxyWithNonce call.',

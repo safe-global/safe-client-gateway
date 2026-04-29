@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
-import { type Address, encodeFunctionData, parseAbi } from 'viem';
+import { type Hex, encodeFunctionData, parseAbi } from 'viem';
 import type { IEncoder } from '@/__tests__/encoder-builder';
 import { Builder } from '@/__tests__/builder';
 
@@ -18,7 +18,7 @@ class CreateSignerEncoder<T extends CreateSignerArgs>
   extends Builder<T>
   implements IEncoder
 {
-  encode(): Address {
+  encode(): Hex {
     const args = this.build();
 
     return encodeFunctionData({
