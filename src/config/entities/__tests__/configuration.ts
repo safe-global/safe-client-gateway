@@ -145,11 +145,13 @@ export default (): ReturnType<typeof configuration> => ({
     },
   },
   email: {
-    applicationCode: faker.string.alphanumeric(),
-    baseUri: faker.internet.url({ appendSlash: false }),
-    apiKey: faker.string.hexadecimal({ length: 32 }),
-    fromEmail: faker.internet.email(),
-    fromName: faker.person.fullName(),
+    pushwoosh: {
+      applicationCode: faker.string.alphanumeric(),
+      baseUri: faker.internet.url({ appendSlash: false }),
+      apiKey: faker.string.hexadecimal({ length: 32 }),
+      fromEmail: faker.internet.email(),
+      fromName: faker.person.fullName(),
+    },
   },
   expirationTimeInSeconds: {
     deviatePercent: faker.number.int({ min: 10, max: 20 }),

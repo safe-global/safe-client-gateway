@@ -2,8 +2,8 @@
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import configuration from '@/config/entities/__tests__/configuration';
-import { EmailModule } from '@/modules/email/email.module';
-import { TestEmailApiModule } from '@/modules/email/datasources/__tests__/test.email-api.module';
+import { EmailModule } from '@/modules/email/pushwoosh/pushwoosh-email.module';
+import { TestEmailApiModule } from '@/modules/email/pushwoosh/__tests__/test.email-api.module';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { createTestModule } from '@/__tests__/testing-module';
 import { faker } from '@faker-js/faker';

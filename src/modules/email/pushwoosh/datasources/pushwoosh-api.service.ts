@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
@@ -5,7 +6,7 @@ import {
   INetworkService,
   NetworkService,
 } from '@/datasources/network/network.service.interface';
-import { CreateEmailMessageDto } from '@/modules/email/domain/entities/create-email-message.dto.entity';
+import { CreateEmailMessageDto } from '@/modules/email/pushwoosh/domain/entities/create-email-message.dto.entity';
 import { IEmailApi } from '@/domain/interfaces/email-api.interface';
 
 @Injectable()
@@ -23,16 +24,23 @@ export class PushwooshApi implements IEmailApi {
     private readonly networkService: INetworkService,
     private readonly httpErrorFactory: HttpErrorFactory,
   ) {
-    this.apiKey = this.configurationService.getOrThrow<string>('email.apiKey');
-    this.applicationCode = this.configurationService.getOrThrow<string>(
-      'email.applicationCode',
+    const configKey = 'email.pushwoosh';
+
+    this.apiKey = this.configurationService.getOrThrow<string>(
+      `${configKey}.apiKey`,
     );
-    this.baseUri =
-      this.configurationService.getOrThrow<string>('email.baseUri');
-    this.fromEmail =
-      this.configurationService.getOrThrow<string>('email.fromEmail');
-    this.fromName =
-      this.configurationService.getOrThrow<string>('email.fromName');
+    this.applicationCode = this.configurationService.getOrThrow<string>(
+      `${configKey}.applicationCode`,
+    );
+    this.baseUri = this.configurationService.getOrThrow<string>(
+      `${configKey}.baseUri`,
+    );
+    this.fromEmail = this.configurationService.getOrThrow<string>(
+      `${configKey}.fromEmail`,
+    );
+    this.fromName = this.configurationService.getOrThrow<string>(
+      `${configKey}.fromName`,
+    );
   }
 
   /**
