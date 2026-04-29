@@ -37,8 +37,10 @@ import {
   getProxyFactoryDeployments,
   getSafeL2SingletonDeployments,
   getSafeSingletonDeployments,
+  getSignerFactoryDeployments,
 } from '@/domain/common/utils/deployments';
 import { createProxyWithNonceEncoder } from '@/modules/relay/domain/contracts/__tests__/encoders/proxy-factory-encoder.builder';
+import { createSignerEncoder } from '@/modules/relay/domain/contracts/__tests__/encoders/signer-factory-encoder.builder';
 import { getDeploymentVersionsByChainIds } from '@/__tests__/deployments.helper';
 import type { Server } from 'net';
 import {
@@ -3562,4 +3564,90 @@ describe('Relay controller', () => {
       },
     );
   });
+
+  // End-to-end coverage for the createSigner branch added to
+  // LimitAddressesMapper. Picked chains where SafeWebAuthnSignerFactory
+  // v0.2.1 must be deployed and which fall through to the daily-limit
+  // relayer in this suite's test config (noFeeCampaign in the test config
+  // covers '1' and '11155111', and noFeeCampaign uses balance-based limits
+  // that the hash-derived limit address can't satisfy). beforeAll asserts
+  // both relay support and factory presence so config drift fails loudly.
+  describe.each(['10', '8453'])(
+    'SafeWebAuthnSignerFactory: Chain %s',
+    (chainId) => {
+      let factoryAddresses: ReadonlyArray<string>;
+
+      beforeAll(() => {
+        expect(allSupportedChainIds).toContain(chainId);
+        factoryAddresses = getSignerFactoryDeployments({ chainId });
+        expect(factoryAddresses).not.toHaveLength(0);
+      });
+
+      it('should relay createSigner on an official SafeWebAuthnSignerFactory', async () => {
+        const chain = chainBuilder().with('chainId', chainId).build();
+        // The createSigner branch doesn't consult the Safe version, so any
+        // string suffices. Avoid SAFE_VERSIONS[chainId] which is keyed off the
+        // suite's randomly-sampled supportedChainIds and may not contain our
+        // hardcoded factory chains.
+        const version = faker.system.semver();
+        const to = getAddress(faker.helpers.arrayElement(factoryAddresses));
+        const data = createSignerEncoder().encode();
+        const taskId = faker.string.uuid();
+        networkService.get.mockImplementation(({ url }) => {
+          switch (url) {
+            case `${safeConfigUrl}/api/v1/chains/${chainId}`:
+              return Promise.resolve({ data: rawify(chain), status: 200 });
+            default:
+              return Promise.reject(`No matching rule for url: ${url}`);
+          }
+        });
+        networkService.post.mockImplementation(({ url }) => {
+          switch (url) {
+            case `${relayUrl}/rpc`:
+              return Promise.resolve({
+                data: rawify({ jsonrpc: '2.0', result: taskId, id: 1 }),
+                status: 200,
+              });
+            default:
+              return Promise.reject(`No matching rule for url: ${url}`);
+          }
+        });
+
+        await request(app.getHttpServer())
+          .post(`/v1/chains/${chainId}/relay`)
+          .send({ version, to, data })
+          .expect(201)
+          .expect({ taskId });
+      });
+
+      it('should return 422 for createSigner on an unofficial SafeWebAuthnSignerFactory', async () => {
+        const chain = chainBuilder().with('chainId', chainId).build();
+        // The createSigner branch doesn't consult the Safe version, so any
+        // string suffices. Avoid SAFE_VERSIONS[chainId] which is keyed off the
+        // suite's randomly-sampled supportedChainIds and may not contain our
+        // hardcoded factory chains.
+        const version = faker.system.semver();
+        // Unofficial factory address
+        const to = getAddress(faker.finance.ethereumAddress());
+        const data = createSignerEncoder().encode();
+        networkService.get.mockImplementation(({ url }) => {
+          switch (url) {
+            case `${safeConfigUrl}/api/v1/chains/${chainId}`:
+              return Promise.resolve({ data: rawify(chain), status: 200 });
+            default:
+              return Promise.reject(`No matching rule for url: ${url}`);
+          }
+        });
+
+        await request(app.getHttpServer())
+          .post(`/v1/chains/${chainId}/relay`)
+          .send({ version, to, data })
+          .expect(422)
+          .expect({
+            message: 'Unofficial SafeWebAuthnSignerFactory contract.',
+            statusCode: 422,
+          });
+      });
+    },
+  );
 });
