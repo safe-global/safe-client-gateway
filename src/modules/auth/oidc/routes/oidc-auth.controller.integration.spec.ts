@@ -31,7 +31,7 @@ describe('OidcAuthController', () => {
   let app: INestApplication<Server>;
   let networkService: jest.MockedObjectDeep<INetworkService>;
   let jwtService: IJwtService;
-  let fetchMock: jest.SpiedFunction<typeof fetch> | undefined;
+  let fetchMock: jest.SpiedFunction<typeof fetch>;
 
   let maxValidityPeriodInMs: number;
   let stateTtlMs: number;
@@ -45,6 +45,14 @@ describe('OidcAuthController', () => {
   };
   let auth0JwksFixture: Auth0JwksFixture;
   let postLoginRedirectUri: string;
+
+  beforeEach(() => {
+    fetchMock = jest.spyOn(global, 'fetch');
+  });
+
+  afterEach(() => {
+    fetchMock.mockRestore();
+  });
 
   function signAuth0Token(claims: {
     sub: string;
@@ -79,9 +87,6 @@ describe('OidcAuthController', () => {
 
     networkService = moduleFixture.get(NetworkService);
     jwtService = moduleFixture.get(IJwtService);
-    fetchMock?.mockRestore();
-    const mockedFetch = jest.spyOn(global, 'fetch');
-    fetchMock = mockedFetch;
 
     const configService: IConfigurationService = moduleFixture.get(
       IConfigurationService,
@@ -106,7 +111,7 @@ describe('OidcAuthController', () => {
     app = await new TestAppProvider().provide(moduleFixture);
     await app.init();
     mockAuth0Jwks({
-      fetchMock: mockedFetch,
+      fetchMock,
       issuer: `https://${auth0Config.domain}/`,
       publicJwk: auth0JwksFixture.publicJwk,
       kid: auth0JwksFixture.kid,
@@ -136,7 +141,6 @@ describe('OidcAuthController', () => {
 
     afterEach(async () => {
       jest.useRealTimers();
-      fetchMock?.mockRestore();
       await app?.close();
     });
 
@@ -682,7 +686,6 @@ describe('OidcAuthController', () => {
     });
 
     afterEach(async () => {
-      fetchMock?.mockRestore();
       await app?.close();
     });
 
@@ -737,7 +740,6 @@ describe('OidcAuthController', () => {
 
       afterEach(async () => {
         jest.useRealTimers();
-        fetchMock?.mockRestore();
         await app?.close();
       });
 
@@ -764,7 +766,6 @@ describe('OidcAuthController', () => {
     describe('production environment', () => {
       afterEach(async () => {
         jest.useRealTimers();
-        fetchMock?.mockRestore();
         await app?.close();
       });
 

@@ -54,7 +54,7 @@ describe('Auth0Repository', () => {
   });
 
   describe('authenticateWithAuthorizationCode', () => {
-    it('should exchange the code and use claims from the verified token', async () => {
+    it('should exchange the authorization code and return verified token claims', async () => {
       const code = faker.string.alphanumeric(32);
       const token = faker.string.alphanumeric(64);
       const decodedToken = {

@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
+import { toSecondsTimestamp } from '@/domain/common/utils/time';
 import type { ILoggingService } from '@/logging/logging.interface';
 import {
   createAuth0JwksResponse,
@@ -8,6 +9,7 @@ import {
   signAuth0Jwt,
 } from '@/modules/auth/oidc/auth0/__tests__/auth0-jwks.helper';
 import { Auth0TokenVerifier } from '@/modules/auth/oidc/auth0/domain/auth0-token.verifier';
+import { Auth0TokenSchema } from '@/modules/auth/oidc/auth0/domain/entities/auth0-token.entity';
 import { faker } from '@faker-js/faker';
 import { UnauthorizedException } from '@nestjs/common';
 import jwt from 'jsonwebtoken';
@@ -47,9 +49,13 @@ describe('Auth0TokenVerifier', () => {
   });
 
   describe('verifyAndDecode', () => {
-    it('should verify the JWT with the Auth0 JWKS public key', async () => {
+    it('should verify the ID token with the Auth0 JWKS public key', async () => {
       const email = faker.internet.email().toLowerCase();
       const sub = faker.string.uuid();
+      const issuedAt = toSecondsTimestamp(faker.date.recent());
+      const notBefore = toSecondsTimestamp(faker.date.recent());
+      const expiresAt = toSecondsTimestamp(faker.date.future());
+      const jwtId = faker.string.uuid();
       const { privateKey, publicJwk, kid } = getAuth0JwksFixture();
       const token = signAuth0Jwt({
         issuer,
@@ -60,21 +66,27 @@ describe('Auth0TokenVerifier', () => {
           sub,
           email,
           email_verified: true,
+          iat: issuedAt,
+          nbf: notBefore,
+          exp: expiresAt,
+          jti: jwtId,
         },
       });
       fetchMock.mockResolvedValueOnce(createAuth0JwksResponse(publicJwk, kid));
 
       const result = await target.verifyAndDecode(token);
 
-      expect(result).toEqual(
-        expect.objectContaining({
-          aud: clientId,
-          email,
-          email_verified: true,
-          iss: issuer,
-          sub,
-        }),
-      );
+      expect(result).toEqual({
+        aud: clientId,
+        email,
+        email_verified: true,
+        exp: new Date(expiresAt * 1_000),
+        iat: new Date(issuedAt * 1_000),
+        iss: issuer,
+        jti: jwtId,
+        nbf: new Date(notBefore * 1_000),
+        sub,
+      });
       expect(getFetchUrl(fetchMock.mock.calls[0][0])).toBe(
         `${issuer}.well-known/jwks.json`,
       );
@@ -100,7 +112,7 @@ describe('Auth0TokenVerifier', () => {
       expect(fetchMock).toHaveBeenCalledTimes(1);
     });
 
-    it('should allow email_verified without an email claim', async () => {
+    it('should throw when email_verified is true without an email claim', async () => {
       const { privateKey, publicJwk, kid } = getAuth0JwksFixture();
       const token = signAuth0Jwt({
         issuer,
@@ -114,13 +126,15 @@ describe('Auth0TokenVerifier', () => {
       });
       fetchMock.mockResolvedValueOnce(createAuth0JwksResponse(publicJwk, kid));
 
-      const result = await target.verifyAndDecode(token);
-
-      expect(result.email).toBeUndefined();
-      expect(result.email_verified).toBe(true);
+      await expect(target.verifyAndDecode(token)).rejects.toThrow(
+        new UnauthorizedException('Invalid ID token'),
+      );
+      expect(loggingServiceMock.debug).toHaveBeenCalledWith(
+        expect.stringContaining('Auth0: ID token verification failed:'),
+      );
     });
 
-    it('should throw when the JWT has an invalid email claim', async () => {
+    it('should throw when the ID token has an invalid email claim', async () => {
       const { privateKey, publicJwk, kid } = getAuth0JwksFixture();
       const token = signAuth0Jwt({
         issuer,
@@ -136,10 +150,10 @@ describe('Auth0TokenVerifier', () => {
       fetchMock.mockResolvedValueOnce(createAuth0JwksResponse(publicJwk, kid));
 
       await expect(target.verifyAndDecode(token)).rejects.toThrow(
-        new UnauthorizedException('Invalid JWT'),
+        new UnauthorizedException('Invalid ID token'),
       );
       expect(loggingServiceMock.debug).toHaveBeenCalledWith(
-        expect.stringContaining('Auth0: JWT verification failed:'),
+        expect.stringContaining('Auth0: ID token verification failed:'),
       );
     });
 
@@ -158,11 +172,11 @@ describe('Auth0TokenVerifier', () => {
       );
 
       await expect(target.verifyAndDecode(token)).rejects.toThrow(
-        new UnauthorizedException('Invalid JWT'),
+        new UnauthorizedException('Invalid ID token'),
       );
     });
 
-    it('should throw when the JWT uses an unexpected algorithm', async () => {
+    it('should throw when the ID token uses an unexpected algorithm', async () => {
       const token = jwt.sign({ sub: faker.string.uuid() }, 'secret', {
         algorithm: 'HS256',
         header: { kid: faker.string.alphanumeric(12), alg: 'HS256' },
@@ -171,11 +185,103 @@ describe('Auth0TokenVerifier', () => {
       });
 
       await expect(target.verifyAndDecode(token)).rejects.toThrow(
-        new UnauthorizedException('Invalid JWT'),
+        new UnauthorizedException('Invalid ID token'),
       );
     });
 
-    it('should throw when JWT verification fails', async () => {
+    it('should throw when the ID token issuer does not match Auth0 config', async () => {
+      const { privateKey, publicJwk, kid } = getAuth0JwksFixture();
+      const token = signAuth0Jwt({
+        issuer: faker.internet.url(),
+        audience: clientId,
+        kid,
+        privateKey,
+        payload: { sub: faker.string.uuid() },
+      });
+      fetchMock.mockResolvedValueOnce(createAuth0JwksResponse(publicJwk, kid));
+
+      await expect(target.verifyAndDecode(token)).rejects.toThrow(
+        new UnauthorizedException('Invalid ID token'),
+      );
+    });
+
+    it('should throw when the ID token audience does not match Auth0 config', async () => {
+      const { privateKey, publicJwk, kid } = getAuth0JwksFixture();
+      const token = signAuth0Jwt({
+        issuer,
+        audience: faker.string.uuid(),
+        kid,
+        privateKey,
+        payload: { sub: faker.string.uuid() },
+      });
+      fetchMock.mockResolvedValueOnce(createAuth0JwksResponse(publicJwk, kid));
+
+      await expect(target.verifyAndDecode(token)).rejects.toThrow(
+        new UnauthorizedException('Invalid ID token'),
+      );
+    });
+
+    it('should throw when the ID token is expired', async () => {
+      const { privateKey, publicJwk, kid } = getAuth0JwksFixture();
+      const token = signAuth0Jwt({
+        issuer,
+        audience: clientId,
+        kid,
+        privateKey,
+        payload: {
+          sub: faker.string.uuid(),
+          exp: toSecondsTimestamp(faker.date.past()),
+        },
+      });
+      fetchMock.mockResolvedValueOnce(createAuth0JwksResponse(publicJwk, kid));
+
+      await expect(target.verifyAndDecode(token)).rejects.toThrow(
+        new UnauthorizedException('Invalid ID token'),
+      );
+    });
+
+    it('should throw when the ID token has no subject claim', async () => {
+      const { privateKey, publicJwk, kid } = getAuth0JwksFixture();
+      const token = signAuth0Jwt({
+        issuer,
+        audience: clientId,
+        kid,
+        privateKey,
+        payload: {},
+      });
+      fetchMock.mockResolvedValueOnce(createAuth0JwksResponse(publicJwk, kid));
+
+      await expect(target.verifyAndDecode(token)).rejects.toThrow(
+        new UnauthorizedException('Invalid ID token'),
+      );
+    });
+
+    it('should rethrow unexpected verification errors', async () => {
+      const error = new Error('unexpected parse failure');
+      const { privateKey, publicJwk, kid } = getAuth0JwksFixture();
+      const token = signAuth0Jwt({
+        issuer,
+        audience: clientId,
+        kid,
+        privateKey,
+        payload: { sub: faker.string.uuid() },
+      });
+      fetchMock.mockResolvedValueOnce(createAuth0JwksResponse(publicJwk, kid));
+      const parseSpy = jest
+        .spyOn(Auth0TokenSchema, 'parse')
+        .mockImplementationOnce(() => {
+          throw error;
+        });
+
+      try {
+        await expect(target.verifyAndDecode(token)).rejects.toThrow(error);
+        expect(loggingServiceMock.debug).not.toHaveBeenCalled();
+      } finally {
+        parseSpy.mockRestore();
+      }
+    });
+
+    it('should throw when ID token verification fails', async () => {
       const trustedKeyPair = getAuth0JwksFixture();
       const untrustedKeyPair = getAuth0JwksFixture();
       const token = signAuth0Jwt({
@@ -191,10 +297,10 @@ describe('Auth0TokenVerifier', () => {
       );
 
       await expect(target.verifyAndDecode(token)).rejects.toThrow(
-        new UnauthorizedException('Invalid JWT'),
+        new UnauthorizedException('Invalid ID token'),
       );
       expect(loggingServiceMock.debug).toHaveBeenCalledWith(
-        expect.stringContaining('Auth0: JWT verification failed:'),
+        expect.stringContaining('Auth0: ID token verification failed:'),
       );
     });
   });

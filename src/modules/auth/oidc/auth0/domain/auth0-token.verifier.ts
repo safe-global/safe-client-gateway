@@ -45,24 +45,24 @@ export class Auth0TokenVerifier {
   /**
    * Verifies an Auth0 JWT against the tenant JWKS and returns validated token claims.
    *
-   * The audience is the Auth0 application client ID, not the API audience used
-   * for access tokens.
+   * @param idToken - The raw ID token string to verify.
+   * @returns The decoded and validated {@link Auth0Token} claims.
+   * @throws {UnauthorizedException} If the ID token is invalid, expired, or fails verification.
    */
-  public async verifyAndDecode(jwt: string): Promise<Auth0Token> {
+  public async verifyAndDecode(idToken: string): Promise<Auth0Token> {
     try {
-      const { payload } = await jwtVerify(jwt, this.jwks, {
+      const { payload } = await jwtVerify(idToken, this.jwks, {
         issuer: this.issuer,
         audience: this.audience,
         algorithms: [JWT_RS_ALGORITHM],
       });
-      const token = Auth0TokenSchema.parse(payload);
-      return token;
+      return Auth0TokenSchema.parse(payload);
     } catch (error) {
       if (error instanceof errors.JOSEError || error instanceof z.ZodError) {
         this.loggingService.debug(
-          `Auth0: JWT verification failed: ${error.message}`,
+          `Auth0: ID token verification failed: ${error.message}`,
         );
-        throw new UnauthorizedException('Invalid JWT');
+        throw new UnauthorizedException('Invalid ID token');
       }
 
       throw error;
