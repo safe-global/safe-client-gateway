@@ -23,16 +23,23 @@ export class PushwooshApi implements IEmailApi {
     private readonly networkService: INetworkService,
     private readonly httpErrorFactory: HttpErrorFactory,
   ) {
-    this.apiKey = this.configurationService.getOrThrow<string>('email.apiKey');
-    this.applicationCode = this.configurationService.getOrThrow<string>(
-      'email.applicationCode',
+    const configKey = 'email.pushwoosh';
+
+    this.apiKey = this.configurationService.getOrThrow<string>(
+      `${configKey}.apiKey`,
     );
-    this.baseUri =
-      this.configurationService.getOrThrow<string>('email.baseUri');
-    this.fromEmail =
-      this.configurationService.getOrThrow<string>('email.fromEmail');
-    this.fromName =
-      this.configurationService.getOrThrow<string>('email.fromName');
+    this.applicationCode = this.configurationService.getOrThrow<string>(
+      `${configKey}.applicationCode`,
+    );
+    this.baseUri = this.configurationService.getOrThrow<string>(
+      `${configKey}.baseUri`,
+    );
+    this.fromEmail = this.configurationService.getOrThrow<string>(
+      `${configKey}.fromEmail`,
+    );
+    this.fromName = this.configurationService.getOrThrow<string>(
+      `${configKey}.fromName`,
+    );
   }
 
   /**

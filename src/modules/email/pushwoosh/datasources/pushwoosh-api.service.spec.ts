@@ -23,6 +23,8 @@ describe('PushwooshApi', () => {
   let pushwooshFromEmail: string;
   let pushwooshFromName: string;
 
+  const configKey = 'email.pushwoosh';
+
   beforeEach(() => {
     jest.resetAllMocks();
 
@@ -34,13 +36,13 @@ describe('PushwooshApi', () => {
 
     fakeConfigurationService = new FakeConfigurationService();
     fakeConfigurationService.set(
-      'email.applicationCode',
+      `${configKey}.applicationCode`,
       pushwooshApplicationCode,
     );
-    fakeConfigurationService.set('email.apiKey', pushwooshApiKey);
-    fakeConfigurationService.set('email.baseUri', pushwooshBaseUri);
-    fakeConfigurationService.set('email.fromEmail', pushwooshFromEmail);
-    fakeConfigurationService.set('email.fromName', pushwooshFromName);
+    fakeConfigurationService.set(`${configKey}.apiKey`, pushwooshApiKey);
+    fakeConfigurationService.set(`${configKey}.baseUri`, pushwooshBaseUri);
+    fakeConfigurationService.set(`${configKey}.fromEmail`, pushwooshFromEmail);
+    fakeConfigurationService.set(`${configKey}.fromName`, pushwooshFromName);
 
     service = new PushwooshApi(
       fakeConfigurationService,

@@ -228,11 +228,13 @@ export default () => ({
     },
   },
   email: {
-    applicationCode: process.env.EMAIL_API_APPLICATION_CODE,
-    baseUri: process.env.EMAIL_API_BASE_URI || 'https://api.pushwoosh.com',
-    apiKey: process.env.EMAIL_API_KEY,
-    fromEmail: process.env.EMAIL_API_FROM_EMAIL,
-    fromName: process.env.EMAIL_API_FROM_NAME || 'Safe',
+    pushwoosh: {
+      applicationCode: process.env.EMAIL_API_APPLICATION_CODE,
+      baseUri: process.env.EMAIL_API_BASE_URI || 'https://api.pushwoosh.com',
+      apiKey: process.env.EMAIL_API_KEY,
+      fromEmail: process.env.EMAIL_API_FROM_EMAIL,
+      fromName: process.env.EMAIL_API_FROM_NAME || 'Safe',
+    },
   },
   expirationTimeInSeconds: {
     deviatePercent: parseInt(process.env.EXPIRATION_DEVIATE_PERCENT ?? `${10}`),
