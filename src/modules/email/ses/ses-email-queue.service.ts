@@ -5,7 +5,7 @@ import type { SendEmailJobData } from '@/modules/email/ses/domain/entities/email
 import { Inject, Injectable } from '@nestjs/common';
 
 @Injectable()
-export class EmailQueueService {
+export class SesEmailQueueService {
   constructor(
     @Inject(IJobQueueService)
     private readonly jobQueueService: IJobQueueService,

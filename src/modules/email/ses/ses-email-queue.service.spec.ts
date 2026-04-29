@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { EmailQueueService } from '@/modules/email/ses/email-queue.service';
+import { SesEmailQueueService } from '@/modules/email/ses/ses-email-queue.service';
 import { JobType } from '@/datasources/job-queue/types/job-types';
 import type { IJobQueueService } from '@/domain/interfaces/job-queue.interface';
 import { sendEmailJobDataBuilder } from '@/modules/email/ses/domain/entities/__tests__/send-email-job-data.builder';
 
-describe('EmailQueueService', () => {
-  let service: EmailQueueService;
+describe('SesEmailQueueService', () => {
+  let service: SesEmailQueueService;
   const mockJobQueueService = {
     addJob: jest.fn(),
     getJob: jest.fn(),
@@ -13,7 +13,7 @@ describe('EmailQueueService', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    service = new EmailQueueService(mockJobQueueService);
+    service = new SesEmailQueueService(mockJobQueueService);
   });
 
   describe('enqueue', () => {

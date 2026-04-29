@@ -12,17 +12,19 @@ import { faker } from '@faker-js/faker';
 import { UnrecoverableError } from 'bullmq';
 import type { Job } from 'bullmq';
 
+const mockEmailService = {
+  send: jest.fn(),
+} as jest.MockedObjectDeep<IEmailService>;
+
+const mockLoggingService = {
+  info: jest.fn(),
+  error: jest.fn(),
+  warn: jest.fn(),
+  debug: jest.fn(),
+} as jest.MockedObjectDeep<ILoggingService>;
+
 describe('EmailConsumer', () => {
   let consumer: EmailConsumer;
-  const mockEmailService = {
-    send: jest.fn(),
-  } as jest.MockedObjectDeep<IEmailService>;
-  const mockLoggingService = {
-    info: jest.fn(),
-    error: jest.fn(),
-    warn: jest.fn(),
-    debug: jest.fn(),
-  } as jest.MockedObjectDeep<ILoggingService>;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -84,7 +86,7 @@ describe('EmailConsumer', () => {
 
       consumer.onCompleted(job);
 
-      expect(mockLoggingService.info).toHaveBeenCalledWith(
+      expect(mockLoggingService.debug).toHaveBeenCalledWith(
         expect.objectContaining({
           source: 'EmailConsumer',
           event: expect.stringContaining('completed'),

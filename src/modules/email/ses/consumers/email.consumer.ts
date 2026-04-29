@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import {
-  EMAIL_QUEUE,
-  EMAIL_WORKER_CONCURRENCY,
+  SES_EMAIL_QUEUE,
+  SES_EMAIL_WORKER_CONCURRENCY,
 } from '@/domain/common/jobs.constants';
 import { LogType } from '@/domain/common/entities/log-type.entity';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
@@ -13,7 +13,7 @@ import { OnWorkerEvent, Processor, WorkerHost } from '@nestjs/bullmq';
 import { Inject } from '@nestjs/common';
 import { Job, UnrecoverableError } from 'bullmq';
 
-@Processor(EMAIL_QUEUE, { concurrency: EMAIL_WORKER_CONCURRENCY })
+@Processor(SES_EMAIL_QUEUE, { concurrency: SES_EMAIL_WORKER_CONCURRENCY })
 export class EmailConsumer extends WorkerHost {
   constructor(
     @Inject(LoggingService)
@@ -44,7 +44,7 @@ export class EmailConsumer extends WorkerHost {
         this.loggingService.error({
           type: LogType.JobError,
           source: 'EmailConsumer',
-          event: `Email permanently failed for job ${job.id}: ${error.message}`,
+          event: `Permanent email delivery failure. Job ${job.id}: ${error.message}`,
         });
         throw new UnrecoverableError(error.message);
       }
@@ -54,7 +54,7 @@ export class EmailConsumer extends WorkerHost {
 
   @OnWorkerEvent('completed')
   onCompleted(job: Job): void {
-    this.loggingService.info({
+    this.loggingService.debug({
       type: LogType.JobEvent,
       source: 'EmailConsumer',
       event: `Job ${job.id} completed`,
