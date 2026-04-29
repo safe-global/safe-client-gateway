@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Module } from '@nestjs/common';
-import { JwtModule } from '@/datasources/jwt/jwt.module';
 import { NetworkModule } from '@/datasources/network/network.module';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { IAuth0Api } from '@/modules/auth/oidc/auth0/datasources/auth0-api.interface';
@@ -10,7 +9,7 @@ import { IAuth0Repository } from '@/modules/auth/oidc/auth0/domain/auth0.reposit
 import { Auth0Repository } from '@/modules/auth/oidc/auth0/domain/auth0.repository';
 
 @Module({
-  imports: [NetworkModule, JwtModule],
+  imports: [NetworkModule],
   providers: [
     HttpErrorFactory,
     {
