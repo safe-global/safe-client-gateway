@@ -21,7 +21,7 @@ export class RelayRepository {
     gasLimit: bigint | null;
     safeTxHash?: Hex;
   }): Promise<Relay> {
-    return this.relayManager.getRelayer(args.chainId).relay(args);
+    return this.relayManager.getRelayer(args.chainId, args.data).relay(args);
   }
 
   async getTaskStatus(args: {
