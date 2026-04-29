@@ -206,7 +206,7 @@ export class SpacesRepository implements ISpacesRepository {
   }
 
   // @todo Add a soft delete method
-  public async delete(id: number): Promise<void> {
+  public async delete(id: Space['id']): Promise<void> {
     const spaceRepository =
       await this.postgresDatabaseService.getRepository(Space);
 

@@ -11,6 +11,7 @@ import {
 } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { addressBookItemBuilder } from '@/modules/spaces/domain/address-books/entities/__tests__/address-book-item.db.builder';
 import { getAddress } from 'viem';
+import type { UUID } from 'crypto';
 
 const repositoryMock = {
   findAllBySpaceId: jest.fn(),
@@ -38,7 +39,7 @@ describe('AddressBooksService', () => {
     ] as const)(
       'should return address book items for %s user',
       async (_label, builder) => {
-        const spaceId = faker.number.int();
+        const spaceId = faker.string.uuid() as UUID;
         const authPayload = new AuthPayload(builder().build());
         const items = [addressBookItemBuilder().build()];
         repositoryMock.findAllBySpaceId.mockResolvedValue(items);
@@ -55,7 +56,7 @@ describe('AddressBooksService', () => {
     );
 
     it('should throw for unauthenticated user', async () => {
-      const spaceId = faker.number.int();
+      const spaceId = faker.string.uuid() as UUID;
       const authPayload = new AuthPayload();
       repositoryMock.findAllBySpaceId.mockRejectedValue(
         new UnauthorizedException('Not authenticated'),
@@ -69,7 +70,7 @@ describe('AddressBooksService', () => {
 
   describe('upsertMany', () => {
     it('should upsert items for SIWE user', async () => {
-      const spaceId = faker.number.int();
+      const spaceId = faker.string.uuid() as UUID;
       const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
       const items = faker.helpers.multiple(
         () => addressBookItemBuilder().build(),
@@ -91,7 +92,7 @@ describe('AddressBooksService', () => {
     });
 
     it('should throw ForbiddenException for OIDC user', async () => {
-      const spaceId = faker.number.int();
+      const spaceId = faker.string.uuid() as UUID;
       const authPayload = new AuthPayload(oidcAuthPayloadDtoBuilder().build());
 
       await expect(
@@ -105,7 +106,7 @@ describe('AddressBooksService', () => {
     });
 
     it('should throw ForbiddenException for unauthenticated user (no wallet)', async () => {
-      const spaceId = faker.number.int();
+      const spaceId = faker.string.uuid() as UUID;
       const authPayload = new AuthPayload();
 
       await expect(
@@ -117,7 +118,7 @@ describe('AddressBooksService', () => {
 
   describe('deleteByAddress', () => {
     it('should delete for SIWE user', async () => {
-      const spaceId = faker.number.int();
+      const spaceId = faker.string.uuid() as UUID;
       const address = getAddress(faker.finance.ethereumAddress());
       const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
       repositoryMock.deleteByAddress.mockResolvedValue();
@@ -132,7 +133,7 @@ describe('AddressBooksService', () => {
     });
 
     it('should throw ForbiddenException for OIDC user', async () => {
-      const spaceId = faker.number.int();
+      const spaceId = faker.string.uuid() as UUID;
       const address = getAddress(faker.finance.ethereumAddress());
       const authPayload = new AuthPayload(oidcAuthPayloadDtoBuilder().build());
 
@@ -147,7 +148,7 @@ describe('AddressBooksService', () => {
     });
 
     it('should throw ForbiddenException for unauthenticated user (no wallet)', async () => {
-      const spaceId = faker.number.int();
+      const spaceId = faker.string.uuid() as UUID;
       const address = getAddress(faker.finance.ethereumAddress());
       const authPayload = new AuthPayload();
 

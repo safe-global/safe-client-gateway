@@ -75,7 +75,7 @@ export class SpacesService {
   }
 
   public async getActiveOrInvitedSpace(
-    id: number,
+    id: Space['id'],
     authPayload: AuthPayload,
   ): Promise<GetSpaceResponse> {
     const spaces = await this.getActiveOrInvitedSpaces(authPayload);

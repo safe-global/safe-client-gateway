@@ -35,7 +35,7 @@ class SpaceMemberDto {
 }
 
 export class GetSpaceResponse {
-  @ApiProperty({ type: Number })
+  @ApiProperty({ type: String })
   public id!: Space['id'];
 
   @ApiProperty({ type: String })

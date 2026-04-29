@@ -9,6 +9,7 @@ import { ForbiddenException } from '@nestjs/common';
 import { faker } from '@faker-js/faker';
 import { spaceBuilder } from '@/modules/spaces/domain/entities/__tests__/space.entity.db.builder';
 import { memberBuilder } from '@/modules/users/datasources/entities/__tests__/member.entity.db.builder';
+import type { UUID } from 'crypto';
 
 const spacesRepositoryMock = {
   findOne: jest.fn(),
@@ -25,7 +26,7 @@ describe('space-assert.utils', () => {
 
   describe('assertAdmin', () => {
     it('should resolve when user is admin', async () => {
-      const spaceId = faker.number.int();
+      const spaceId = faker.string.uuid() as UUID;
       const userId = faker.number.int();
 
       spacesRepositoryMock.findOne.mockResolvedValue(spaceBuilder().build());
@@ -52,7 +53,7 @@ describe('space-assert.utils', () => {
       await expect(
         assertAdmin(
           spacesRepositoryMock,
-          faker.number.int(),
+          faker.string.uuid() as UUID,
           faker.number.int(),
         ),
       ).rejects.toThrow(
@@ -63,7 +64,7 @@ describe('space-assert.utils', () => {
 
   describe('assertMember', () => {
     it('should resolve when user is member', async () => {
-      const spaceId = faker.number.int();
+      const spaceId = faker.string.uuid() as UUID;
       const userId = faker.number.int();
 
       membersRepositoryMock.findOne.mockResolvedValue(memberBuilder().build());
@@ -86,7 +87,7 @@ describe('space-assert.utils', () => {
       await expect(
         assertMember(
           membersRepositoryMock,
-          faker.number.int(),
+          faker.string.uuid() as UUID,
           faker.number.int(),
         ),
       ).rejects.toThrow(

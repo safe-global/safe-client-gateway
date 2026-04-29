@@ -1,19 +1,13 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { RowSchema } from '@/datasources/db/v2/entities/row.entity';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { Auth } from '@/modules/auth/routes/decorators/auth.decorator';
 import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
 import { SpaceCounterfactualSafesService } from '@/modules/counterfactual-safes/routes/space-counterfactual-safes.service';
 import { GetCounterfactualSafesResponse } from '@/modules/counterfactual-safes/routes/entities/get-counterfactual-safe.dto.entity';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
-import {
-  Controller,
-  Get,
-  Inject,
-  Param,
-  ParseIntPipe,
-  UseGuards,
-} from '@nestjs/common';
+import { UuidSchema } from '@/validation/entities/schemas/uuid.schema';
+import type { UUID } from 'crypto';
+import { Controller, Get, Inject, Param, UseGuards } from '@nestjs/common';
 import {
   ApiOkResponse,
   ApiTags,
@@ -42,9 +36,9 @@ export class SpaceCounterfactualSafesController {
   })
   @ApiParam({
     name: 'spaceId',
-    type: 'number',
+    type: 'string',
+    format: 'uuid',
     description: 'Space ID',
-    example: 1,
   })
   @ApiOkResponse({
     description: 'Counterfactual Safes retrieved successfully',
@@ -59,8 +53,8 @@ export class SpaceCounterfactualSafesController {
   })
   @Get()
   public async get(
-    @Param('spaceId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
-    spaceId: number,
+    @Param('spaceId', new ValidationPipe(UuidSchema))
+    spaceId: UUID,
     @Auth() authPayload: AuthPayload,
   ): Promise<GetCounterfactualSafesResponse> {
     return await this.spaceCounterfactualSafesService.get(spaceId, authPayload);
