@@ -11,7 +11,7 @@ import { CounterfactualSafesController } from '@/modules/counterfactual-safes/ro
 import { checkGuardIsApplied } from '@/__tests__/util/check-guard';
 import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
 import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
-import { faker } from '@faker-js/faker/.';
+import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
 import { counterfactualSafeBuilder } from '@/modules/counterfactual-safes/datasources/entities/__tests__/counterfactual-safe.entity.db.builder';

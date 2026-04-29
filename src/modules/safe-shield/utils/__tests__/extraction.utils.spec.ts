@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { Erc20Decoder } from '@/modules/relay/domain/contracts/decoders/erc-20-decoder.helper';
 import type { DecodedTransactionData } from '@/modules/safe-shield/entities/transaction-data.entity';
 import {
@@ -9,7 +10,7 @@ import type {
   DataDecoded,
   DataDecodedParameter,
 } from '@/modules/data-decoder/routes/entities/data-decoded.entity';
-import { faker } from '@faker-js/faker/.';
+import { faker } from '@faker-js/faker';
 import { getAddress, type Address, type Hex } from 'viem';
 
 const mockErc20Decoder = {

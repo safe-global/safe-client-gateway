@@ -1,6 +1,7 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { Job } from 'bullmq';
 import { TestJobConsumer } from '@/datasources/job-queue/__tests__/test.job.consumer';
-import { faker } from '@faker-js/faker/.';
+import { faker } from '@faker-js/faker';
 import type { TestJobData } from '@/datasources/job-queue/__tests__/test.job.data';
 
 describe('TestJobConsumer', () => {

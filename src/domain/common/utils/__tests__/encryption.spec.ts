@@ -1,5 +1,6 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { encryptData, decryptData } from '@/domain/common/utils/encryption';
-import { faker } from '@faker-js/faker/.';
+import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 
 describe('Encryption Utils', () => {

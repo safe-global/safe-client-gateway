@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { createTestModule } from '@/__tests__/testing-module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
@@ -12,7 +13,7 @@ import { targetedSafeBuilder } from '@/modules/targeted-messaging/domain/entitie
 import { SubmissionNotFoundError } from '@/modules/targeted-messaging/domain/errors/submission-not-found.error';
 import { TargetedSafeNotFoundError } from '@/modules/targeted-messaging/domain/errors/targeted-safe-not-found.error';
 import { rawify } from '@/validation/entities/raw.entity';
-import { faker } from '@faker-js/faker/.';
+import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import type { Server } from 'http';
 import request from 'supertest';

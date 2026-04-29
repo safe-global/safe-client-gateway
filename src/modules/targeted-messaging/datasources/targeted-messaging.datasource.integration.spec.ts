@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { TestDbFactory } from '@/__tests__/db.factory';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
@@ -13,7 +14,7 @@ import { createTargetedSafesDtoBuilder } from '@/modules/targeted-messaging/doma
 import { SubmissionNotFoundError } from '@/modules/targeted-messaging/domain/errors/submission-not-found.error';
 import { TargetedSafeNotFoundError } from '@/modules/targeted-messaging/domain/errors/targeted-safe-not-found.error';
 import type { ILoggingService } from '@/logging/logging.interface';
-import { faker } from '@faker-js/faker/.';
+import { faker } from '@faker-js/faker';
 import type postgres from 'postgres';
 import type { Address } from 'viem';
 import { getAddress } from 'viem';

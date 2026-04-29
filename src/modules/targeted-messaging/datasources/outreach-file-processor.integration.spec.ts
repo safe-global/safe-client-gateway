@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { TestDbFactory } from '@/__tests__/db.factory';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
@@ -11,7 +12,7 @@ import type { TargetedSafe as DbTargetedSafe } from '@/modules/targeted-messagin
 import { TargetedMessagingDatasource } from '@/modules/targeted-messaging/datasources/targeted-messaging.datasource';
 import { createOutreachDtoBuilder } from '@/modules/targeted-messaging/domain/entities/tests/create-outreach.dto.builder';
 import type { ILoggingService } from '@/logging/logging.interface';
-import { faker } from '@faker-js/faker/.';
+import { faker } from '@faker-js/faker';
 import { createHash } from 'crypto';
 import { mkdir, rm, writeFile } from 'fs/promises';
 import path from 'path';

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import type { ICloudStorageApiService } from '@/datasources/storage/cloud-storage-api.service';
 import type { CsvService } from '@/modules/csv-export/csv-utils/csv.service';
@@ -7,7 +8,7 @@ import {
   transactionExportBuilder,
   transformTransactionExport,
 } from '@/modules/csv-export/v1/entities/__tests__/transaction-export.builder';
-import { faker } from '@faker-js/faker/.';
+import { faker } from '@faker-js/faker';
 import type { Writable } from 'stream';
 import { PassThrough, Readable, Transform } from 'stream';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
