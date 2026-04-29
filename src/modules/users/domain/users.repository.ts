@@ -3,6 +3,7 @@ import {
   ConflictException,
   Inject,
   Injectable,
+  InternalServerErrorException,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -11,12 +12,14 @@ import { User, UserStatus } from '@/modules/users/domain/entities/user.entity';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
+import { isUniqueConstraintError } from '@/datasources/errors/helpers/is-unique-constraint-error.helper';
 import { User as DbUser } from '@/modules/users/datasources/entities/users.entity.db';
 import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
 import { EntityManager } from 'typeorm';
 import type { FindOptionsRelations, FindOptionsWhere } from 'typeorm';
 import { IWalletsRepository } from '@/modules/wallets/domain/wallets.repository.interface';
 import type { Address } from 'viem';
+import { UserEmailAlreadyInUseError } from '@/modules/users/domain/errors/user-email-already-in-use.error';
 
 @Injectable()
 export class UsersRepository implements IUsersRepository {
@@ -249,6 +252,73 @@ export class UsersRepository implements IUsersRepository {
       }
       throw error;
     }
+  }
+
+  public async persistVerifiedEmail(
+    userId: User['id'],
+    email: string,
+  ): Promise<void> {
+    const userRepository =
+      await this.postgresDatabaseService.getRepository(DbUser);
+    const normalizedEmail = email.trim().toLowerCase();
+    const user = await userRepository.findOneOrFail({
+      where: { id: userId },
+    });
+
+    if (user.email !== null) {
+      return;
+    }
+
+    try {
+      const result = await userRepository
+        .createQueryBuilder()
+        .update(DbUser)
+        .set({ email: normalizedEmail })
+        .where('id = :userId', { userId })
+        .andWhere('email IS NULL')
+        .execute();
+
+      if ((result.affected ?? 0) > 0) {
+        return;
+      }
+
+      throw new InternalServerErrorException(
+        'Failed to persist verified email',
+      );
+    } catch (error) {
+      if (isUniqueConstraintError(error)) {
+        throw new UserEmailAlreadyInUseError();
+      }
+      throw error;
+    }
+  }
+
+  public async assertEmailCanBeUsedByUser(
+    userId: User['id'],
+    email: string,
+  ): Promise<void> {
+    const userRepository =
+      await this.postgresDatabaseService.getRepository(DbUser);
+    const normalizedEmail = email.trim().toLowerCase();
+    const user = await userRepository.findOne({
+      where: { email: normalizedEmail },
+      select: { id: true },
+    });
+
+    if (user && user.id !== userId) {
+      throw new UserEmailAlreadyInUseError();
+    }
+  }
+
+  public async findEmailById(userId: User['id']): Promise<string | undefined> {
+    const userRepository =
+      await this.postgresDatabaseService.getRepository(DbUser);
+    const user = await userRepository.findOne({
+      where: { id: userId },
+      select: { email: true },
+    });
+
+    return user?.email ?? undefined;
   }
 
   public async update(args: {

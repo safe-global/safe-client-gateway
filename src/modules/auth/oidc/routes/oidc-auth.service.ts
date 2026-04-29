@@ -56,6 +56,8 @@ export class OidcAuthService {
   ): Promise<OidcAuthTokenResponse> {
     const {
       sub: extUserId,
+      email,
+      email_verified: emailVerified,
       exp: expirationTime,
       nbf,
       iat,
@@ -75,6 +77,11 @@ export class OidcAuthService {
 
     const userId =
       await this.usersRepository.findOrCreateByExtUserId(extUserId);
+    if (emailVerified && email) {
+      await this.usersRepository.persistVerifiedEmail(userId, email);
+    } else if (email) {
+      await this.usersRepository.assertEmailCanBeUsedByUser(userId, email);
+    }
     const accessToken = this.authRepository.signToken(
       {
         auth_method: AuthMethod.Oidc,

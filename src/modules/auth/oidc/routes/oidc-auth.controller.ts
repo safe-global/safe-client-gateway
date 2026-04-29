@@ -29,6 +29,8 @@ import {
   ApiQuery,
 } from '@nestjs/swagger';
 import { type CookieOptions, Request, Response } from 'express';
+import { UserEmailAlreadyInUseError } from '@/modules/users/domain/errors/user-email-already-in-use.error';
+import { asError } from '@/logging/utils';
 
 /**
  * The OidcAuthController handles OIDC (Auth0) authentication:
@@ -191,14 +193,27 @@ export class OidcAuthController {
     try {
       const { accessToken, maxAge } =
         await this.oidcAuthService.authenticateWithOidc(code);
+
       res.cookie(ACCESS_TOKEN_COOKIE_NAME, accessToken, {
         ...this.getCookieOptions(),
         maxAge,
       });
       res.redirect(this.oidcAuthService.getPostLoginRedirectUri(state));
     } catch (err) {
-      this.loggingService.error(
-        `Auth callback: authentication failed: ${err instanceof Error ? err.message : 'Unknown error'}`,
+      if (err instanceof UserEmailAlreadyInUseError) {
+        // Duplicate email claims are unexpected; warn and keep the user-facing error generic.
+        this.loggingService.warn(
+          `Auth callback: duplicate email during OIDC authentication: ${err.message}`,
+        );
+        res.redirect(
+          this.buildErrorRedirectUrl('authentication_failed', state),
+        );
+        return;
+      }
+
+      const error = asError(err);
+      this.loggingService.warn(
+        `Auth callback: authentication failed: ${error.message}`,
       );
       res.redirect(this.buildErrorRedirectUrl('authentication_failed', state));
     }

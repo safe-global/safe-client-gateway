@@ -24,6 +24,7 @@ import { getStringEnumKeys } from '@/domain/common/utils/enum';
 import { Member } from '@/modules/users/datasources/entities/member.entity.db';
 import { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
 import { SpaceSafe } from '@/modules/spaces/datasources/entities/space-safes.entity.db';
+import { UserEmailAlreadyInUseError } from '@/modules/users/domain/errors/user-email-already-in-use.error';
 
 const mockLoggingService = {
   debug: jest.fn(),
@@ -218,6 +219,7 @@ describe('UsersRepository', () => {
         updatedAt: expect.any(Date),
         user: {
           createdAt: expect.any(Date),
+          email: null,
           extUserId: null,
           id: wallet.user.id,
           status,
@@ -306,6 +308,7 @@ describe('UsersRepository', () => {
       expect(users).toEqual([
         {
           createdAt: expect.any(Date),
+          email: null,
           extUserId: null,
           id: users[0].id,
           status,
@@ -487,6 +490,7 @@ describe('UsersRepository', () => {
         updatedAt: expect.any(Date),
         user: {
           createdAt: expect.any(Date),
+          email: null,
           extUserId: null,
           id: wallet.user.id,
           status,
@@ -702,6 +706,7 @@ describe('UsersRepository', () => {
           updatedAt: expect.any(Date),
           user: {
             createdAt: expect.any(Date),
+            email: null,
             extUserId: null,
             id: wallets[0].user.id,
             status,
@@ -757,6 +762,7 @@ describe('UsersRepository', () => {
         usersRepository.findByWalletAddressOrFail(address),
       ).resolves.toEqual({
         createdAt: expect.any(Date),
+        email: null,
         extUserId: null,
         id: userInsertResult.identifiers[0].id,
         status,
@@ -793,6 +799,7 @@ describe('UsersRepository', () => {
         usersRepository.findByWalletAddress(address),
       ).resolves.toEqual({
         createdAt: expect.any(Date),
+        email: null,
         extUserId: null,
         id: userInsertResult.identifiers[0].id,
         status,
@@ -842,6 +849,7 @@ describe('UsersRepository', () => {
       });
       expect(user).toEqual({
         createdAt: expect.any(Date),
+        email: null,
         id: userId,
         status: 'ACTIVE',
         updatedAt: expect.any(Date),
@@ -859,6 +867,7 @@ describe('UsersRepository', () => {
         updatedAt: expect.any(Date),
         user: {
           createdAt: expect.any(Date),
+          email: null,
           id: userId,
           status: 'ACTIVE',
           updatedAt: expect.any(Date),
@@ -934,6 +943,7 @@ describe('UsersRepository', () => {
       });
       expect(user).toEqual({
         createdAt: expect.any(Date),
+        email: null,
         extUserId,
         id: userId,
         status: 'ACTIVE',
@@ -968,6 +978,82 @@ describe('UsersRepository', () => {
     });
   });
 
+  describe('persistVerifiedEmail', () => {
+    it('should persist a normalized email when the user has none yet', async () => {
+      const dbUserRepository = dataSource.getRepository(User);
+      const userInsertResult = await dbUserRepository.insert({
+        status: 'ACTIVE',
+      });
+      const userId = userInsertResult.identifiers[0].id as number;
+      const email = faker.internet.email();
+
+      await usersRepository.persistVerifiedEmail(userId, email);
+
+      const user = await dbUserRepository.findOneOrFail({
+        where: { id: userId },
+      });
+      expect(user.email).toBe(email.toLowerCase());
+    });
+
+    it('should not overwrite an existing email for the same user', async () => {
+      const dbUserRepository = dataSource.getRepository(User);
+      const existingEmail = faker.internet.email().toLowerCase();
+      const userInsertResult = await dbUserRepository.insert({
+        status: 'ACTIVE',
+        email: existingEmail,
+      });
+      const userId = userInsertResult.identifiers[0].id as number;
+
+      await usersRepository.persistVerifiedEmail(
+        userId,
+        faker.internet.email().toLowerCase(),
+      );
+
+      const user = await dbUserRepository.findOneOrFail({
+        where: { id: userId },
+      });
+      expect(user.email).toBe(existingEmail);
+    });
+
+    it('should throw when the email belongs to a different user', async () => {
+      const dbUserRepository = dataSource.getRepository(User);
+      const email = faker.internet.email().toLowerCase();
+
+      await dbUserRepository.insert({
+        status: 'ACTIVE',
+        email,
+      });
+      const userInsertResult = await dbUserRepository.insert({
+        status: 'ACTIVE',
+      });
+      const userId = userInsertResult.identifiers[0].id as number;
+
+      await expect(
+        usersRepository.persistVerifiedEmail(userId, email),
+      ).rejects.toThrow(UserEmailAlreadyInUseError);
+    });
+  });
+
+  describe('assertEmailCanBeUsedByUser', () => {
+    it('should throw when the email belongs to a different user', async () => {
+      const dbUserRepository = dataSource.getRepository(User);
+      const email = faker.internet.email().toLowerCase();
+
+      await dbUserRepository.insert({
+        status: 'ACTIVE',
+        email,
+      });
+      const userInsertResult = await dbUserRepository.insert({
+        status: 'ACTIVE',
+      });
+      const userId = userInsertResult.identifiers[0].id as number;
+
+      await expect(
+        usersRepository.assertEmailCanBeUsedByUser(userId, email),
+      ).rejects.toThrow(UserEmailAlreadyInUseError);
+    });
+  });
+
   describe('update', () => {
     it('should update a User', async () => {
       const dbUserRepository = dataSource.getRepository(User);
@@ -990,6 +1076,7 @@ describe('UsersRepository', () => {
 
       expect(user).toEqual({
         createdAt: expect.any(Date),
+        email: null,
         extUserId: null,
         id: userId,
         status: 'ACTIVE',
@@ -1021,6 +1108,7 @@ describe('UsersRepository', () => {
 
       expect(user).toEqual({
         createdAt: expect.any(Date),
+        email: null,
         extUserId: null,
         id: userId,
         status,

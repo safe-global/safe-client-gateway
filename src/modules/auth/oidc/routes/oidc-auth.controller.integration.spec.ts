@@ -26,12 +26,20 @@ import {
 } from '@/datasources/network/network.service.interface';
 import type { TestingModule } from '@nestjs/testing';
 import { rawify } from '@/validation/entities/raw.entity';
+import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
+import { UserEmailAlreadyInUseError } from '@/modules/users/domain/errors/user-email-already-in-use.error';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
 
 describe('OidcAuthController', () => {
   let app: INestApplication<Server>;
   let networkService: jest.MockedObjectDeep<INetworkService>;
   let jwtService: IJwtService;
   let fetchMock: jest.SpiedFunction<typeof fetch>;
+  let usersRepository: jest.MockedObjectDeep<IUsersRepository>;
+  let loggingService: jest.MockedObjectDeep<ILoggingService>;
 
   let maxValidityPeriodInMs: number;
   let stateTtlMs: number;
@@ -59,6 +67,8 @@ describe('OidcAuthController', () => {
     exp?: number;
     iat?: number;
     nbf?: number;
+    email?: string;
+    email_verified?: boolean;
   }): string {
     return signAuth0Jwt({
       issuer: `https://${auth0Config.domain}/`,
@@ -87,6 +97,9 @@ describe('OidcAuthController', () => {
 
     networkService = moduleFixture.get(NetworkService);
     jwtService = moduleFixture.get(IJwtService);
+    usersRepository = moduleFixture.get(IUsersRepository);
+    loggingService = moduleFixture.get(LoggingService);
+    jest.spyOn(loggingService, 'warn');
 
     const configService: IConfigurationService = moduleFixture.get(
       IConfigurationService,
@@ -565,6 +578,63 @@ describe('OidcAuthController', () => {
           });
 
         expectErrorRedirect(response, 'authentication_failed');
+      });
+
+      it('should hide duplicate verified email details from the user and log a warning', async () => {
+        jest.setSystemTime(0);
+
+        const expirationTime = faker.date.between({
+          from: new Date(),
+          to: new Date(Date.now() + maxValidityPeriodInMs),
+        });
+        const auth0Token = signAuth0Token({
+          sub: faker.string.uuid(),
+          email: faker.internet.email().toLowerCase(),
+          email_verified: true,
+          exp: Math.floor(expirationTime.getTime() / 1_000),
+          iat: Math.floor(Date.now() / 1_000),
+        });
+
+        networkService.postForm.mockResolvedValueOnce({
+          status: 200,
+          data: rawify({
+            access_token: faker.string.alphanumeric(64),
+            id_token: auth0Token,
+            token_type: 'Bearer',
+          }),
+        });
+        usersRepository.persistVerifiedEmail.mockRejectedValueOnce(
+          new UserEmailAlreadyInUseError(),
+        );
+
+        const authorizeResponse = await request(app.getHttpServer())
+          .get('/v1/auth/oidc/authorize')
+          .expect(302);
+
+        const state = new URL(
+          authorizeResponse.headers.location,
+        ).searchParams.get('state');
+        const stateCookie = (
+          authorizeResponse.headers['set-cookie'] as unknown as Array<string>
+        )
+          .find((cookie) => cookie.startsWith('auth_state='))
+          ?.split(';')[0];
+
+        const response = await request(app.getHttpServer())
+          .get('/v1/auth/oidc/callback')
+          .set('Cookie', stateCookie!)
+          .query({
+            code: 'auth-code',
+            state,
+          });
+
+        expectErrorRedirect(response, 'authentication_failed');
+        expect(response.headers['set-cookie']).not.toEqual(
+          expect.arrayContaining([expect.stringMatching(/^access_token=/)]),
+        );
+        expect(loggingService.warn).toHaveBeenCalledWith(
+          'Auth callback: duplicate email during OIDC authentication: Email already belongs to another user',
+        );
       });
 
       it('should redirect to the custom redirect_url after login', async () => {
