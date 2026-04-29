@@ -22,7 +22,7 @@ export class Auth0Repository implements IAuth0Repository {
     code: string,
   ): Promise<Auth0Token> {
     const response = await this.auth0Api.exchangeAuthorizationCode(code);
-    const { access_token } = Auth0TokenResponseSchema.parse(response);
-    return this.auth0TokenVerifier.verifyAndDecode(access_token);
+    const { id_token } = Auth0TokenResponseSchema.parse(response);
+    return this.auth0TokenVerifier.verifyAndDecode(id_token);
   }
 }

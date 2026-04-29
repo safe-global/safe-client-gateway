@@ -62,6 +62,7 @@
     "cache-manager": "6.4.1",
     "cookie-parser": "1.4.7",
     "csv-stringify": "^6.7.0",
+    "jose": "6.2.2",
     "jsonwebtoken": "9.0.3",
     "lodash": "4.17.23",
     "nestjs-cls": "6.2.0",
@@ -124,7 +125,7 @@
       "^.+\\.(t|j)s$": "ts-jest"
     },
     "transformIgnorePatterns": [
-      "node_modules/(?!@faker-js).+"
+      "node_modules/(?!(?:@faker-js|jose)/).+"
     ],
     "roots": [
       "./src",

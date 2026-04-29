@@ -58,8 +58,14 @@ export default () => ({
       clientSecret: process.env.AUTH0_CLIENT_SECRET,
       redirectUri: process.env.AUTH0_REDIRECT_URI,
       audience: process.env.AUTH0_API_AUDIENCE,
-      signingSecret: process.env.AUTH0_SIGNING_SECRET,
       scope: process.env.AUTH0_SCOPE || 'openid',
+      jwksCacheMaxAgeMs: parseInt(
+        process.env.AUTH0_JWKS_CACHE_MAX_AGE_MILLISECONDS ??
+          `${60 * 60 * 1_000}`, // 1 hour
+      ),
+      jwksCooldownMs: parseInt(
+        process.env.AUTH0_JWKS_COOLDOWN_MILLISECONDS ?? `${30_000}`, // 30 seconds
+      ),
     },
     rateLimit: {
       max: parseInt(process.env.AUTH_RATE_LIMIT_MAX ?? `${5}`),

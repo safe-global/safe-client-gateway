@@ -10,6 +10,12 @@ import { faker } from '@faker-js/faker';
 import { getSecondsUntil } from '@/domain/common/utils/time';
 import type { Server } from 'net';
 import { sign } from 'jsonwebtoken';
+import {
+  type Auth0JwksFixture,
+  getAuth0JwksFixture,
+  mockAuth0Jwks,
+  signAuth0Jwt,
+} from '@/modules/auth/oidc/auth0/__tests__/auth0-jwks.helper';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { UsersModule } from '@/modules/users/users.module';
 import { TestUsersModule } from '@/modules/users/__tests__/test.users.module';
@@ -25,6 +31,7 @@ describe('OidcAuthController', () => {
   let app: INestApplication<Server>;
   let networkService: jest.MockedObjectDeep<INetworkService>;
   let jwtService: IJwtService;
+  let fetchMock: jest.SpiedFunction<typeof fetch>;
 
   let maxValidityPeriodInMs: number;
   let stateTtlMs: number;
@@ -34,10 +41,18 @@ describe('OidcAuthController', () => {
     clientSecret: string;
     redirectUri: string;
     audience: string;
-    signingSecret: string;
     scope: string;
   };
+  let auth0JwksFixture: Auth0JwksFixture;
   let postLoginRedirectUri: string;
+
+  beforeEach(() => {
+    fetchMock = jest.spyOn(global, 'fetch');
+  });
+
+  afterEach(() => {
+    fetchMock.mockRestore();
+  });
 
   function signAuth0Token(claims: {
     sub: string;
@@ -45,11 +60,12 @@ describe('OidcAuthController', () => {
     iat?: number;
     nbf?: number;
   }): string {
-    return sign(claims, auth0Config.signingSecret, {
-      algorithm: 'HS256',
+    return signAuth0Jwt({
       issuer: `https://${auth0Config.domain}/`,
-      audience: auth0Config.audience,
-      noTimestamp: true,
+      audience: auth0Config.clientId,
+      kid: auth0JwksFixture.kid,
+      privateKey: auth0JwksFixture.privateKey,
+      payload: claims,
     });
   }
 
@@ -88,14 +104,18 @@ describe('OidcAuthController', () => {
       clientSecret: configService.getOrThrow<string>('auth.auth0.clientSecret'),
       redirectUri: configService.getOrThrow<string>('auth.auth0.redirectUri'),
       audience: configService.getOrThrow<string>('auth.auth0.audience'),
-      signingSecret: configService.getOrThrow<string>(
-        'auth.auth0.signingSecret',
-      ),
       scope: configService.getOrThrow<string>('auth.auth0.scope'),
     };
+    auth0JwksFixture = getAuth0JwksFixture();
 
     app = await new TestAppProvider().provide(moduleFixture);
     await app.init();
+    mockAuth0Jwks({
+      fetchMock,
+      issuer: `https://${auth0Config.domain}/`,
+      publicJwk: auth0JwksFixture.publicJwk,
+      kid: auth0JwksFixture.kid,
+    });
   }
 
   describe('default configuration', () => {
@@ -329,8 +349,8 @@ describe('OidcAuthController', () => {
         networkService.postForm.mockResolvedValueOnce({
           status: 200,
           data: rawify({
-            access_token: auth0Token,
-            id_token: 'auth0-id-token',
+            access_token: faker.string.alphanumeric(64),
+            id_token: auth0Token,
             token_type: 'Bearer',
             scope: faker.lorem.words(),
           }),
@@ -408,9 +428,9 @@ describe('OidcAuthController', () => {
         networkService.postForm.mockResolvedValueOnce({
           status: 200,
           data: rawify({
-            access_token: invalidToken,
+            access_token: faker.string.alphanumeric(64),
             refresh_token: 'auth0-refresh-token',
-            id_token: 'auth0-id-token',
+            id_token: invalidToken,
             token_type: 'Bearer',
           }),
         });
@@ -517,8 +537,8 @@ describe('OidcAuthController', () => {
         networkService.postForm.mockResolvedValueOnce({
           status: 200,
           data: rawify({
-            access_token: auth0Token,
-            id_token: 'auth0-id-token',
+            access_token: faker.string.alphanumeric(64),
+            id_token: auth0Token,
             token_type: 'Bearer',
           }),
         });
@@ -568,8 +588,8 @@ describe('OidcAuthController', () => {
         networkService.postForm.mockResolvedValueOnce({
           status: 200,
           data: rawify({
-            access_token: auth0Token,
-            id_token: 'auth0-id-token',
+            access_token: faker.string.alphanumeric(64),
+            id_token: auth0Token,
             token_type: 'Bearer',
             scope: faker.lorem.words(),
           }),
