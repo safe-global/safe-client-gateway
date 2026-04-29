@@ -59,7 +59,7 @@
     "amqp-connection-manager": "5.0.0",
     "amqplib": "1.0.3",
     "bullmq": "^5.56.0",
-    "cache-manager": "6.4.1",
+    "cache-manager": "7.2.8",
     "cookie-parser": "1.4.7",
     "csv-stringify": "^6.7.0",
     "jose": "6.2.2",
