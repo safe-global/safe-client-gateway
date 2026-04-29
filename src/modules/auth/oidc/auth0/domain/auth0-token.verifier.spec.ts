@@ -49,7 +49,7 @@ describe('Auth0TokenVerifier', () => {
   });
 
   describe('verifyAndDecode', () => {
-    it('should verify the ID token with the Auth0 JWKS public key', async () => {
+    it('should decode and parse the ID token with correct options', async () => {
       const email = faker.internet.email().toLowerCase();
       const sub = faker.string.uuid();
       const issuedAt = toSecondsTimestamp(faker.date.recent());
@@ -112,7 +112,28 @@ describe('Auth0TokenVerifier', () => {
       expect(fetchMock).toHaveBeenCalledTimes(1);
     });
 
-    it('should throw when email_verified is true without an email claim', async () => {
+    it('should parse an ID token without optional claims', async () => {
+      const sub = faker.string.uuid();
+      const { privateKey, publicJwk, kid } = getAuth0JwksFixture();
+      const token = signAuth0Jwt({
+        issuer,
+        audience: clientId,
+        kid,
+        privateKey,
+        payload: { sub },
+        noTimestamp: true,
+      });
+      fetchMock.mockResolvedValueOnce(createAuth0JwksResponse(publicJwk, kid));
+
+      const result = await target.verifyAndDecode(token);
+
+      expect(result.sub).toBe(sub);
+      expect(result.iat).toBeUndefined();
+      expect(result.nbf).toBeUndefined();
+      expect(result.exp).toBeUndefined();
+    });
+
+    it('should throw when the ID token has email_verified true without an email claim', async () => {
       const { privateKey, publicJwk, kid } = getAuth0JwksFixture();
       const token = signAuth0Jwt({
         issuer,

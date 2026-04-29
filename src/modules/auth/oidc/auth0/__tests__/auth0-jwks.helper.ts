@@ -71,11 +71,15 @@ export function signAuth0Jwt(args: {
   kid: string;
   privateKey: string;
   payload: object;
+  noTimestamp?: boolean;
 }): string {
   return jwt.sign(args.payload, args.privateKey, {
     algorithm: JWT_RS_ALGORITHM,
     issuer: args.issuer,
     audience: args.audience,
+    ...(args.noTimestamp === undefined
+      ? {}
+      : { noTimestamp: args.noTimestamp }),
     header: { kid: args.kid, alg: JWT_RS_ALGORITHM },
   });
 }
