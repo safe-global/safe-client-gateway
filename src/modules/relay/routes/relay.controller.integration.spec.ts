@@ -3566,13 +3566,15 @@ describe('Relay controller', () => {
   });
 
   // End-to-end coverage for the createSigner branch added to
-  // LimitAddressesMapper. Picked chains where SafeWebAuthnSignerFactory
-  // v0.2.1 must be deployed and which fall through to the daily-limit
-  // relayer in this suite's test config (noFeeCampaign in the test config
-  // covers '1' and '11155111', and noFeeCampaign uses balance-based limits
-  // that the hash-derived limit address can't satisfy). beforeAll asserts
-  // both relay support and factory presence so config drift fails loudly.
-  describe.each(['10', '8453'])(
+  // LimitAddressesMapper. The chosen chains exercise both routing paths:
+  //   - '1' and '11155111' are in the test-config noFeeCampaign and would
+  //     normally route through NoFeeCampaignRelayer. RelayManager overrides
+  //     this for createSigner so passkey deployment isn't subject to the
+  //     campaign's balance-based rules — these tests guard that override.
+  //   - '10' falls through to DailyLimitRelayer (no override needed) and
+  //     covers the non-campaign happy path.
+  // beforeAll asserts factory presence so config drift fails loudly.
+  describe.each(['1', '10', '11155111'])(
     'SafeWebAuthnSignerFactory: Chain %s',
     (chainId) => {
       let factoryAddresses: ReadonlyArray<string>;
