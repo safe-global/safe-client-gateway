@@ -1,9 +1,10 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { BlocklistGuard } from './blocklist.guard';
 import { ForbiddenException } from '@nestjs/common';
 import type { ExecutionContext } from '@nestjs/common';
 import type { ILoggingService } from '@/logging/logging.interface';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
-import { faker } from '@faker-js/faker/.';
+import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 import type { IBlocklistService } from '@/config/entities/blocklist.interface';
 

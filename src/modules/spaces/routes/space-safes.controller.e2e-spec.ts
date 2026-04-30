@@ -11,7 +11,7 @@ import { SpaceSafesController } from '@/modules/spaces/routes/space-safes.contro
 import { checkGuardIsApplied } from '@/__tests__/util/check-guard';
 import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
 import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
-import { faker } from '@faker-js/faker/.';
+import { faker } from '@faker-js/faker';
 import { type Address, getAddress } from 'viem';
 import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
 import { nameBuilder } from '@/domain/common/entities/name.builder';

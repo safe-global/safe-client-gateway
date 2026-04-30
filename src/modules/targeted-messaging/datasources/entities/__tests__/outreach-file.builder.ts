@@ -1,7 +1,8 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Builder, type IBuilder } from '@/__tests__/builder';
 import type { OutreachFile } from '@/modules/targeted-messaging/datasources/entities/outreach-file.entity';
 import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
-import { faker } from '@faker-js/faker/.';
+import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 
 export function outreachFileBuilder(): IBuilder<OutreachFile> {

@@ -15,7 +15,7 @@ import { postgresConfig } from '@/config/entities/postgres.config';
 import configuration from '@/config/entities/__tests__/configuration';
 import { NotificationSubscriptionNotificationType } from '@/modules/notifications/datasources/entities/notification-subscription-notification-type.entity.db';
 import type { UUID } from 'crypto';
-import { faker } from '@faker-js/faker/.';
+import { faker } from '@faker-js/faker';
 import { notificationDeviceBuilder } from '@/modules/notifications/datasources/entities/__tests__/notification-devices.entity.db.builder';
 import { NotificationType as NotificationTypeEnum } from '@/modules/notifications/domain/v2/entities/notification.entity';
 import { DatabaseMigrator } from '@/datasources/db/v2/database-migrator.service';
