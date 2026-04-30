@@ -19,12 +19,14 @@ export const UserSchema: z.ZodType<
   z.infer<typeof RowSchema> & {
     status: keyof typeof UserStatus;
     extUserId: string | null;
+    email: string | null;
     wallets: Array<Wallet>;
     members: Array<Member>;
   }
 > = RowSchema.extend({
   status: z.enum(getStringEnumKeys(UserStatus)),
   extUserId: z.string().min(1).max(255).nullable(),
+  email: z.email().max(255).nullable(),
   wallets: z.array(WalletSchema),
   members: z.array(z.lazy(() => MemberSchema)),
 });

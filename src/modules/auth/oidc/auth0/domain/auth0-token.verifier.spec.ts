@@ -178,6 +178,29 @@ describe('Auth0TokenVerifier', () => {
       );
     });
 
+    it('should throw when the ID token has an oversized email claim', async () => {
+      const { privateKey, publicJwk, kid } = getAuth0JwksFixture();
+      const token = signAuth0Jwt({
+        issuer,
+        audience: clientId,
+        kid,
+        privateKey,
+        payload: {
+          sub: faker.string.uuid(),
+          email: `${faker.string.alphanumeric(245)}@example.com`,
+          email_verified: true,
+        },
+      });
+      fetchMock.mockResolvedValueOnce(createAuth0JwksResponse(publicJwk, kid));
+
+      await expect(target.verifyAndDecode(token)).rejects.toThrow(
+        new UnauthorizedException('Invalid ID token'),
+      );
+      expect(loggingServiceMock.debug).toHaveBeenCalledWith(
+        expect.stringContaining('Auth0: ID token verification failed:'),
+      );
+    });
+
     it('should throw when the signing key cannot be found in the JWKS', async () => {
       const { privateKey, kid } = getAuth0JwksFixture();
       const token = signAuth0Jwt({

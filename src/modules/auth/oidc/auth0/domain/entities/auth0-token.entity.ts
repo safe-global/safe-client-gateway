@@ -6,7 +6,7 @@ import { z } from 'zod';
 // https://auth0.com/docs/tokens/references/id-token-structure
 export const Auth0TokenSchema = JwtClaimsSchema.extend({
   sub: z.string().min(1),
-  email: z.email().optional(),
+  email: z.email().max(255).optional(),
   email_verified: z.boolean().optional(),
 }).superRefine((token, ctx) => {
   if (token.email_verified === true && token.email === undefined) {

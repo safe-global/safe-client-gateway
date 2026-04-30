@@ -29,6 +29,7 @@ import {
   ApiQuery,
 } from '@nestjs/swagger';
 import { type CookieOptions, Request, Response } from 'express';
+import { asError } from '@/logging/utils';
 
 /**
  * The OidcAuthController handles OIDC (Auth0) authentication:
@@ -191,14 +192,16 @@ export class OidcAuthController {
     try {
       const { accessToken, maxAge } =
         await this.oidcAuthService.authenticateWithOidc(code);
+
       res.cookie(ACCESS_TOKEN_COOKIE_NAME, accessToken, {
         ...this.getCookieOptions(),
         maxAge,
       });
       res.redirect(this.oidcAuthService.getPostLoginRedirectUri(state));
     } catch (err) {
-      this.loggingService.error(
-        `Auth callback: authentication failed: ${err instanceof Error ? err.message : 'Unknown error'}`,
+      const error = asError(err);
+      this.loggingService.warn(
+        `Auth callback: authentication failed: ${error.message}`,
       );
       res.redirect(this.buildErrorRedirectUrl('authentication_failed', state));
     }

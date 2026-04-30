@@ -7,16 +7,19 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import type { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
-import { User, UserStatus } from '@/modules/users/domain/entities/user.entity';
+import { UserStatus } from '@/modules/users/domain/entities/user.entity';
+import type { User } from '@/modules/users/domain/entities/user.entity';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
+import { isUniqueConstraintError } from '@/datasources/errors/helpers/is-unique-constraint-error.helper';
 import { User as DbUser } from '@/modules/users/datasources/entities/users.entity.db';
 import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
 import { EntityManager } from 'typeorm';
 import type { FindOptionsRelations, FindOptionsWhere } from 'typeorm';
 import { IWalletsRepository } from '@/modules/wallets/domain/wallets.repository.interface';
 import type { Address } from 'viem';
+import { UserEmailAlreadyInUseError } from '@/modules/users/domain/errors/user-email-already-in-use.error';
 
 @Injectable()
 export class UsersRepository implements IUsersRepository {
@@ -217,20 +220,32 @@ export class UsersRepository implements IUsersRepository {
     }
   }
 
-  public async findOrCreateByExtUserId(extUserId: string): Promise<User['id']> {
+  /**
+   * Finds or creates an OIDC user, then validates or persists the optional email claim.
+   */
+  public async findOrCreateByExtUserIdWithEmail(
+    extUserId: string,
+    email?: { address: string; verified: boolean },
+  ): Promise<User['id']> {
     const userRepository =
       await this.postgresDatabaseService.getRepository(DbUser);
 
-    const existing = await userRepository.findOne({
+    const existingUser = await userRepository.findOne({
       where: { extUserId },
+      select: { email: true, id: true },
     });
-    if (existing) {
-      return existing.id;
+
+    if (existingUser) {
+      if (!existingUser.email && email) {
+        await this.handleUserEmail(existingUser.id, email);
+      }
+      return existingUser.id;
     }
 
+    let userId: User['id'];
     try {
-      return await this.postgresDatabaseService.transaction(
-        async (entityManager: EntityManager) => {
+      userId = await this.postgresDatabaseService.transaction(
+        async (entityManager) => {
           return await this.create('ACTIVE', entityManager, { extUserId });
         },
       );
@@ -238,17 +253,99 @@ export class UsersRepository implements IUsersRepository {
       // Handle race condition: a concurrent call may have created the
       // user between our find and insert, causing a unique constraint
       // violation. Retry the lookup in that case.
-      if (
-        error instanceof Error &&
-        error.message.includes('idx_users_ext_user_id')
-      ) {
-        const user = await userRepository.findOneOrFail({
-          where: { extUserId },
-        });
-        return user.id;
+      if (!this.isUniqueConstraintViolation(error, 'idx_users_ext_user_id')) {
+        throw error;
+      }
+      const user = await userRepository.findOneOrFail({
+        where: { extUserId },
+      });
+      userId = user.id;
+    }
+
+    await this.handleUserEmail(userId, email);
+
+    return userId;
+  }
+
+  private async handleUserEmail(
+    userId: User['id'],
+    email?: { address: string; verified: boolean },
+  ): Promise<void> {
+    if (!email) {
+      return;
+    }
+
+    if (email.verified) {
+      await this.persistVerifiedEmail(userId, email.address);
+    } else {
+      await this.assertEmailNotTaken(userId, email.address);
+    }
+  }
+
+  private async persistVerifiedEmail(
+    userId: User['id'],
+    email: string,
+  ): Promise<void> {
+    const userRepository =
+      await this.postgresDatabaseService.getRepository(DbUser);
+    const normalizedEmail = email.trim().toLowerCase();
+
+    try {
+      await userRepository
+        .createQueryBuilder()
+        .update(DbUser)
+        .set({ email: normalizedEmail })
+        .where('id = :userId', { userId })
+        .andWhere('email IS NULL')
+        .execute();
+    } catch (error) {
+      if (this.isUniqueConstraintViolation(error, 'idx_users_email')) {
+        throw new UserEmailAlreadyInUseError();
       }
       throw error;
     }
+  }
+
+  private async assertEmailNotTaken(
+    userId: User['id'],
+    email: string,
+  ): Promise<void> {
+    const userRepository =
+      await this.postgresDatabaseService.getRepository(DbUser);
+    const normalizedEmail = email.trim().toLowerCase();
+    // The DB unique index is the integrity guard for verified writes; this
+    // check blocks unverified duplicate emails before minting a CGW session.
+    const user = await userRepository.findOne({
+      where: { email: normalizedEmail },
+      select: { id: true },
+    });
+
+    if (user && user.id !== userId) {
+      throw new UserEmailAlreadyInUseError();
+    }
+  }
+
+  public async findEmailById(userId: User['id']): Promise<string | undefined> {
+    const userRepository =
+      await this.postgresDatabaseService.getRepository(DbUser);
+    const user = await userRepository.findOne({
+      where: { id: userId },
+      select: { email: true },
+    });
+
+    // /me omits absent email fields, so normalize null/missing rows to undefined.
+    return user?.email ?? undefined;
+  }
+
+  private isUniqueConstraintViolation(
+    error: unknown,
+    constraint: string,
+  ): boolean {
+    return (
+      isUniqueConstraintError(error) &&
+      'constraint' in error.driverError &&
+      error.driverError.constraint === constraint
+    );
   }
 
   public async update(args: {

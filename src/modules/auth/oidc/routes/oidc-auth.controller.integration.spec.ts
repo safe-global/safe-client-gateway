@@ -59,6 +59,8 @@ describe('OidcAuthController', () => {
     exp?: number;
     iat?: number;
     nbf?: number;
+    email?: string;
+    email_verified?: boolean;
   }): string {
     return signAuth0Jwt({
       issuer: `https://${auth0Config.domain}/`,
