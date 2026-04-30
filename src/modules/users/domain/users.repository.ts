@@ -247,7 +247,7 @@ export class UsersRepository implements IUsersRepository {
     });
 
     if (existingUser) {
-      if (!existingUser.email) {
+      if (!existingUser.email && email) {
         await this.handleUserEmail(existingUser.id, email);
       }
       return existingUser.id;
