@@ -1,7 +1,7 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
 import { User } from '@/modules/users/datasources/entities/users.entity.db';
 import { NAME_MAX_LENGTH } from '@/domain/common/schemas/name.schema';
-import { nullableDatabaseAddressTransformer } from '@/domain/common/transformers/nullableDatabaseAddress.transformer';
 import { databaseEnumTransformer } from '@/domain/common/utils/enum';
 import {
   Member as DomainMember,
@@ -17,7 +17,6 @@ import {
   PrimaryGeneratedColumn,
   Unique,
 } from 'typeorm';
-import type { Address } from 'viem';
 
 @Entity('members')
 @Unique('UQ_members', ['user', 'space'])
@@ -71,12 +70,10 @@ export class Member implements DomainMember {
 
   @Column({
     name: 'invited_by',
-    type: 'varchar',
-    length: 42,
+    type: 'integer',
     nullable: true,
-    transformer: nullableDatabaseAddressTransformer,
   })
-  invitedBy!: Address | null;
+  invitedBy!: number | null;
 
   @Column({
     name: 'created_at',

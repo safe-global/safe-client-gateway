@@ -188,7 +188,7 @@ describe('MembersRepository', () => {
         name: faker.person.firstName(),
         status: faker.helpers.arrayElement(MemberStatusKeys),
         role: faker.helpers.arrayElement(MemberRoleKeys),
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
 
       const after = new Date().getTime();
@@ -226,7 +226,7 @@ describe('MembersRepository', () => {
         name: faker.person.firstName(),
         status: 'ACTIVE',
         role: faker.helpers.arrayElement(MemberRoleKeys),
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
 
       const memberId = prevMember.identifiers[0].id as User['id'];
@@ -257,7 +257,7 @@ describe('MembersRepository', () => {
       const memberName = nameBuilder();
       const memberStatus = faker.helpers.arrayElement(MemberStatusKeys);
       const memberRole = faker.helpers.arrayElement(MemberRoleKeys);
-      const memberInvitedBy = getAddress(faker.finance.ethereumAddress());
+      const memberInvitedBy = faker.number.int({ max: DB_MAX_SAFE_INTEGER });
       const user = await dbUserRepo.insert({
         status: userStatus,
       });
@@ -309,7 +309,7 @@ describe('MembersRepository', () => {
       const memberName = nameBuilder();
       const memberStatus = faker.helpers.arrayElement(MemberStatusKeys);
       const memberRole = faker.helpers.arrayElement(MemberRoleKeys);
-      const memberInvitedBy = getAddress(faker.finance.ethereumAddress());
+      const memberInvitedBy = faker.number.int({ max: DB_MAX_SAFE_INTEGER });
       const user = await dbUserRepo.insert({
         status: userStatus,
       });
@@ -365,8 +365,8 @@ describe('MembersRepository', () => {
       const memberStatus2 = faker.helpers.arrayElement(MemberStatusKeys);
       const memberRole1 = faker.helpers.arrayElement(MemberRoleKeys);
       const memberRole2 = faker.helpers.arrayElement(MemberRoleKeys);
-      const member1InvitedBy = getAddress(faker.finance.ethereumAddress());
-      const member2InvitedBy = getAddress(faker.finance.ethereumAddress());
+      const member1InvitedBy = faker.number.int({ max: DB_MAX_SAFE_INTEGER });
+      const member2InvitedBy = faker.number.int({ max: DB_MAX_SAFE_INTEGER });
       const user1 = await dbUserRepo.insert({
         status: userStatus1,
       });
@@ -448,8 +448,8 @@ describe('MembersRepository', () => {
       const member2Status = faker.helpers.arrayElement(MemberStatusKeys);
       const memberRole1 = faker.helpers.arrayElement(MemberRoleKeys);
       const memberRole2 = faker.helpers.arrayElement(MemberRoleKeys);
-      const member1InvitedBy = getAddress(faker.finance.ethereumAddress());
-      const member2InvitedBy = getAddress(faker.finance.ethereumAddress());
+      const member1InvitedBy = faker.number.int({ max: DB_MAX_SAFE_INTEGER });
+      const member2InvitedBy = faker.number.int({ max: DB_MAX_SAFE_INTEGER });
       const user1 = await dbUserRepo.insert({
         status: userStatus1,
       });
@@ -522,9 +522,9 @@ describe('MembersRepository', () => {
       const spaceName = nameBuilder();
       const adminName = nameBuilder();
       const {
+        userId: adminUserId,
         user: owner,
         authPayload,
-        authPayloadDto,
       } = await createSiweUser();
       const space = await dbSpacesRepository.insert({
         name: spaceName,
@@ -537,7 +537,7 @@ describe('MembersRepository', () => {
         name: adminName,
         role: 'ADMIN',
         status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
       const users = faker.helpers.multiple(
         () => {
@@ -564,16 +564,20 @@ describe('MembersRepository', () => {
             name: user.name,
             role: user.role,
             status: 'INVITED',
-            invitedBy: authPayloadDto.signer_address,
+            invitedBy: adminUserId,
           };
         }),
       );
     });
 
-    it('should invite users as OIDC admin with invitedBy null', async () => {
+    it('should invite users as OIDC admin with invitedBy set to user id', async () => {
       const spaceName = nameBuilder();
       const adminName = nameBuilder();
-      const { user: owner, authPayload } = await createOidcUser();
+      const {
+        userId: adminUserId,
+        user: owner,
+        authPayload,
+      } = await createOidcUser();
       const space = await dbSpacesRepository.insert({
         name: spaceName,
         status: 'ACTIVE',
@@ -585,7 +589,7 @@ describe('MembersRepository', () => {
         name: adminName,
         role: 'ADMIN',
         status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
       const users = faker.helpers.multiple(
         () => {
@@ -612,7 +616,7 @@ describe('MembersRepository', () => {
             name: user.name,
             role: user.role,
             status: 'INVITED',
-            invitedBy: null,
+            invitedBy: adminUserId,
           };
         }),
       );
@@ -633,7 +637,7 @@ describe('MembersRepository', () => {
         name: adminName,
         role: 'ADMIN',
         status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
       const member = await dbUserRepo.insert({
         status: 'ACTIVE',
@@ -717,7 +721,7 @@ describe('MembersRepository', () => {
         name: memberName,
         role: 'MEMBER',
         status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
       const users = faker.helpers.multiple(
         () => {
@@ -754,7 +758,7 @@ describe('MembersRepository', () => {
         name: memberName,
         role: 'ADMIN',
         status: 'INVITED',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
       const users = faker.helpers.multiple(
         () => {
@@ -796,7 +800,7 @@ describe('MembersRepository', () => {
         name: memberName,
         role: 'ADMIN',
         status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
       const users = faker.helpers.multiple(
         () => {
@@ -856,7 +860,7 @@ describe('MembersRepository', () => {
         name: adminName,
         role: 'ADMIN',
         status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
       await dbMembersRepository.insert({
         user: invitedAdmin,
@@ -864,7 +868,7 @@ describe('MembersRepository', () => {
         name: adminName,
         role: 'ADMIN',
         status: 'INVITED',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
       const users: Array<{
         address: Address;
@@ -884,7 +888,7 @@ describe('MembersRepository', () => {
 
   describe('acceptInvite', () => {
     it('should accept an invite to a space, setting the member and user to ACTIVE', async () => {
-      const memberInvitedBy = getAddress(faker.finance.ethereumAddress());
+      const memberInvitedBy = faker.number.int({ max: DB_MAX_SAFE_INTEGER });
       const spaceName = nameBuilder();
       const adminName = nameBuilder();
       const memberName = nameBuilder();
@@ -958,7 +962,7 @@ describe('MembersRepository', () => {
     });
 
     it('should accept an invite for OIDC user', async () => {
-      const memberInvitedBy = getAddress(faker.finance.ethereumAddress());
+      const memberInvitedBy = faker.number.int({ max: DB_MAX_SAFE_INTEGER });
       const spaceName = nameBuilder();
       const adminName = nameBuilder();
       const memberName = nameBuilder();
@@ -1023,7 +1027,7 @@ describe('MembersRepository', () => {
     ] as const)(
       'should accept an invite to a space and override the name (%s)',
       async (_label, createUser) => {
-        const memberInvitedBy = getAddress(faker.finance.ethereumAddress());
+        const memberInvitedBy = faker.number.int({ max: DB_MAX_SAFE_INTEGER });
         const spaceName = nameBuilder();
         const adminName = nameBuilder();
         const memberName = nameBuilder();
@@ -1117,7 +1121,7 @@ describe('MembersRepository', () => {
         name: adminName,
         role: memberRole,
         status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
 
       await expect(
@@ -1206,7 +1210,7 @@ describe('MembersRepository', () => {
         name: adminName,
         role: 'ADMIN',
         status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
       await dbMembersRepository.insert({
         user: member,
@@ -1214,7 +1218,7 @@ describe('MembersRepository', () => {
         name: memberName,
         role: memberRole,
         status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
 
       await expect(
@@ -1252,7 +1256,7 @@ describe('MembersRepository', () => {
         name: adminName,
         role: 'ADMIN',
         status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
       await dbMembersRepository.insert({
         user,
@@ -1260,7 +1264,7 @@ describe('MembersRepository', () => {
         name: memberName,
         role: memberRole,
         status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
 
       await expect(
@@ -1277,7 +1281,7 @@ describe('MembersRepository', () => {
 
   describe('declineInvite', () => {
     it('should accept an invite to a space, setting the member to DECLINED', async () => {
-      const memberInvitedBy = getAddress(faker.finance.ethereumAddress());
+      const memberInvitedBy = faker.number.int({ max: DB_MAX_SAFE_INTEGER });
       const spaceName = nameBuilder();
       const adminName = nameBuilder();
       const memberName = nameBuilder();
@@ -1348,7 +1352,7 @@ describe('MembersRepository', () => {
     });
 
     it('should decline an invite for OIDC user', async () => {
-      const memberInvitedBy = getAddress(faker.finance.ethereumAddress());
+      const memberInvitedBy = faker.number.int({ max: DB_MAX_SAFE_INTEGER });
       const spaceName = nameBuilder();
       const adminName = nameBuilder();
       const memberName = nameBuilder();
@@ -1423,7 +1427,7 @@ describe('MembersRepository', () => {
         name: adminName,
         role: memberRole,
         status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
 
       await expect(
@@ -1497,7 +1501,7 @@ describe('MembersRepository', () => {
         name: adminName,
         role: 'ADMIN',
         status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
       await dbMembersRepository.insert({
         user: member,
@@ -1505,7 +1509,7 @@ describe('MembersRepository', () => {
         name: memberName,
         role: memberRole,
         status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
 
       await expect(
@@ -1542,7 +1546,7 @@ describe('MembersRepository', () => {
         name: adminName,
         role: 'ADMIN',
         status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
       await dbMembersRepository.insert({
         user,
@@ -1550,7 +1554,7 @@ describe('MembersRepository', () => {
         name: memberName,
         role: memberRole,
         status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
 
       await expect(
@@ -1569,7 +1573,7 @@ describe('MembersRepository', () => {
       const userStatus = faker.helpers.arrayElement<'ACTIVE' | 'PENDING'>(
         UserStatusKeys,
       );
-      const memberInvitedBy = getAddress(faker.finance.ethereumAddress());
+      const memberInvitedBy = faker.number.int({ max: DB_MAX_SAFE_INTEGER });
       const { userId, user, authPayload } = await createSiweUser({
         status: userStatus,
       });
@@ -1621,7 +1625,7 @@ describe('MembersRepository', () => {
       const userStatus = faker.helpers.arrayElement<'ACTIVE' | 'PENDING'>(
         UserStatusKeys,
       );
-      const memberInvitedBy = getAddress(faker.finance.ethereumAddress());
+      const memberInvitedBy = faker.number.int({ max: DB_MAX_SAFE_INTEGER });
       const { user, authPayload } = await createOidcUser({
         status: userStatus,
       });
@@ -1715,7 +1719,7 @@ describe('MembersRepository', () => {
 
     it('should throw an error if the user is not an active member of the space', async () => {
       const spaceName = nameBuilder();
-      const { user, authPayload, authPayloadDto } = await createSiweUser();
+      const { user, authPayload } = await createSiweUser();
       const space = await dbSpacesRepository.insert({
         name: spaceName,
         status: 'ACTIVE',
@@ -1727,7 +1731,7 @@ describe('MembersRepository', () => {
         name: faker.person.firstName(),
         role: faker.helpers.arrayElement(MemberRoleKeys),
         status: 'DECLINED',
-        invitedBy: authPayloadDto.signer_address,
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
 
       await expect(
@@ -1754,7 +1758,7 @@ describe('MembersRepository', () => {
       async (_authLabel, memberStatus, createUser) => {
         const spaceName = nameBuilder();
         const memberName = nameBuilder();
-        const memberInvitedBy = getAddress(faker.finance.ethereumAddress());
+        const memberInvitedBy = faker.number.int({ max: DB_MAX_SAFE_INTEGER });
         const { userId, user, authPayload } = await createUser();
         const space = await dbSpacesRepository.insert({
           name: spaceName,
@@ -1793,7 +1797,7 @@ describe('MembersRepository', () => {
 
     it('should throw ForbiddenException for a DECLINED caller', async () => {
       const spaceName = nameBuilder();
-      const { user, authPayload, authPayloadDto } = await createSiweUser();
+      const { user, authPayload } = await createSiweUser();
       const space = await dbSpacesRepository.insert({
         name: spaceName,
         status: 'ACTIVE',
@@ -1805,7 +1809,7 @@ describe('MembersRepository', () => {
         name: faker.person.firstName(),
         role: faker.helpers.arrayElement(MemberRoleKeys),
         status: 'DECLINED',
-        invitedBy: authPayloadDto.signer_address,
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
 
       await expect(
@@ -1867,7 +1871,7 @@ describe('MembersRepository', () => {
         name: adminName,
         role: 'ADMIN',
         status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
       await dbMembersRepository.insert({
         user: member.generatedMaps[0],
@@ -1875,7 +1879,7 @@ describe('MembersRepository', () => {
         name: memberName,
         role: 'MEMBER',
         status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
 
       await expect(
@@ -1912,7 +1916,7 @@ describe('MembersRepository', () => {
         name: adminName,
         role: 'ADMIN',
         status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
       await dbMembersRepository.insert({
         user: member.generatedMaps[0],
@@ -1920,7 +1924,7 @@ describe('MembersRepository', () => {
         name: memberName,
         role: 'MEMBER',
         status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
 
       await expect(
@@ -1966,7 +1970,7 @@ describe('MembersRepository', () => {
           name: adminName,
           role: 'ADMIN',
           status: 'ACTIVE',
-          invitedBy: getAddress(faker.finance.ethereumAddress()),
+          invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
         });
         // Add the user to space1
         await dbMembersRepository.insert({
@@ -1975,7 +1979,7 @@ describe('MembersRepository', () => {
           name: memberName,
           role: 'MEMBER',
           status: 'ACTIVE',
-          invitedBy: getAddress(faker.finance.ethereumAddress()),
+          invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
         });
         // Add the user to space2
         await dbMembersRepository.insert({
@@ -1984,7 +1988,7 @@ describe('MembersRepository', () => {
           name: member2Name,
           role: 'MEMBER',
           status: 'ACTIVE',
-          invitedBy: getAddress(faker.finance.ethereumAddress()),
+          invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
         });
 
         await expect(
@@ -2011,7 +2015,7 @@ describe('MembersRepository', () => {
           alias: null,
           role: 'ADMIN',
           status: 'ACTIVE',
-          invitedBy: expect.any(String),
+          invitedBy: expect.any(Number),
           updatedAt: expect.any(Date),
           space: expect.objectContaining({ id: spaceId }),
         });
@@ -2031,7 +2035,7 @@ describe('MembersRepository', () => {
           alias: null,
           role: 'MEMBER',
           status: 'ACTIVE',
-          invitedBy: expect.any(String),
+          invitedBy: expect.any(Number),
           updatedAt: expect.any(Date),
           space: expect.objectContaining({ id: space2Id }),
         });
@@ -2057,7 +2061,7 @@ describe('MembersRepository', () => {
         name: memberName,
         role: 'MEMBER',
         status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
       await dbMembersRepository.insert({
         user: member,
@@ -2065,7 +2069,7 @@ describe('MembersRepository', () => {
         name: memberName2,
         role: 'MEMBER',
         status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
 
       await expect(
@@ -2097,7 +2101,7 @@ describe('MembersRepository', () => {
         name: memberName,
         role: 'ADMIN',
         status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
       await dbMembersRepository.insert({
         user: member,
@@ -2105,7 +2109,7 @@ describe('MembersRepository', () => {
         name: memberName2,
         role: 'MEMBER',
         status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
 
       await expect(
@@ -2162,7 +2166,7 @@ describe('MembersRepository', () => {
         name: memberName,
         role: 'MEMBER',
         status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
       await dbMembersRepository.insert({
         user: member.generatedMaps[0],
@@ -2170,7 +2174,7 @@ describe('MembersRepository', () => {
         name: memberName2,
         role: 'MEMBER',
         status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
 
       await expect(
@@ -2198,7 +2202,7 @@ describe('MembersRepository', () => {
         name: memberName,
         role: 'ADMIN',
         status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
 
       await expect(
@@ -2237,7 +2241,7 @@ describe('MembersRepository', () => {
         name: memberName,
         role: 'ADMIN',
         status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
       const member = await dbMembersRepository.insert({
         user: memberUser.generatedMaps[0],
@@ -2245,7 +2249,7 @@ describe('MembersRepository', () => {
         name: memberName2,
         role: 'MEMBER',
         status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
       const memberId = member.identifiers[0].id as Member['id'];
 
@@ -2286,7 +2290,7 @@ describe('MembersRepository', () => {
         name: memberName,
         role: 'ADMIN',
         status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
       const member = await dbMembersRepository.insert({
         user: memberUser.generatedMaps[0],
@@ -2294,7 +2298,7 @@ describe('MembersRepository', () => {
         name: memberName2,
         role: 'MEMBER',
         status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
       const memberId = member.identifiers[0].id as Member['id'];
 
@@ -2349,7 +2353,7 @@ describe('MembersRepository', () => {
           name: adminName,
           role: 'ADMIN',
           status: 'ACTIVE',
-          invitedBy: getAddress(faker.finance.ethereumAddress()),
+          invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
         });
         const member = await dbMembersRepository.insert({
           user: memberUser.generatedMaps[0],
@@ -2357,7 +2361,7 @@ describe('MembersRepository', () => {
           name: memberName,
           role: 'MEMBER',
           status: 'ACTIVE',
-          invitedBy: getAddress(faker.finance.ethereumAddress()),
+          invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
         });
         const memberId = member.identifiers[0].id as Member['id'];
 
@@ -2368,9 +2372,9 @@ describe('MembersRepository', () => {
           name: admin2Name,
           role: 'ADMIN',
           status: 'ACTIVE',
-          invitedBy: getAddress(faker.finance.ethereumAddress()),
+          invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
         });
-        const member2InvitedBy = getAddress(faker.finance.ethereumAddress());
+        const member2InvitedBy = faker.number.int({ max: DB_MAX_SAFE_INTEGER });
         const member2 = await dbMembersRepository.insert({
           user: memberUser.generatedMaps[0],
           space: space2.generatedMaps[0],
@@ -2427,7 +2431,7 @@ describe('MembersRepository', () => {
         name: adminName,
         role: 'ADMIN',
         status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
       await dbMembersRepository.insert({
         user: member,
@@ -2435,7 +2439,7 @@ describe('MembersRepository', () => {
         name: memberName,
         role: 'MEMBER',
         status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
 
       await expect(
@@ -2486,7 +2490,7 @@ describe('MembersRepository', () => {
           space: space.generatedMaps[0],
           role: 'ADMIN',
           status: 'ACTIVE',
-          invitedBy: getAddress(faker.finance.ethereumAddress()),
+          invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
         });
 
         await expect(
@@ -2538,7 +2542,7 @@ describe('MembersRepository', () => {
         name: adminName,
         role: 'ADMIN',
         status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
 
       await expect(
@@ -2575,7 +2579,7 @@ describe('MembersRepository', () => {
         name: memberName,
         role: 'ADMIN',
         status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
       const signerMember = await dbMembersRepository.insert({
         user: signerUser,
@@ -2583,7 +2587,7 @@ describe('MembersRepository', () => {
         name: adminName,
         role: 'ADMIN',
         status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
       const signerMemberId = signerMember.identifiers[0].id;
 
@@ -2622,7 +2626,7 @@ describe('MembersRepository', () => {
         name: memberName,
         role: 'ADMIN',
         status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
       const signerMember = await dbMembersRepository.insert({
         user: signerUser,
@@ -2630,7 +2634,7 @@ describe('MembersRepository', () => {
         name: adminName,
         role: 'ADMIN',
         status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
       const signerMemberId = signerMember.identifiers[0].id;
 
@@ -2674,7 +2678,7 @@ describe('MembersRepository', () => {
           name: adminName,
           role: 'ADMIN',
           status: 'ACTIVE',
-          invitedBy: getAddress(faker.finance.ethereumAddress()),
+          invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
         });
         const signerMember = await dbMembersRepository.insert({
           user: signerUser,
@@ -2682,7 +2686,7 @@ describe('MembersRepository', () => {
           name: memberName,
           role: 'MEMBER',
           status: 'ACTIVE',
-          invitedBy: getAddress(faker.finance.ethereumAddress()),
+          invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
         });
         const signerMemberId = signerMember.identifiers[0].id;
 
@@ -2735,7 +2739,7 @@ describe('MembersRepository', () => {
           name: adminName,
           role: 'ADMIN',
           status: 'ACTIVE',
-          invitedBy: getAddress(faker.finance.ethereumAddress()),
+          invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
         });
         const signerMember1 = await dbMembersRepository.insert({
           user: signerUser,
@@ -2743,14 +2747,14 @@ describe('MembersRepository', () => {
           name: member1Name,
           role: 'MEMBER',
           status: 'ACTIVE',
-          invitedBy: getAddress(faker.finance.ethereumAddress()),
+          invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
         });
         const signerMemberId1 = signerMember1.identifiers[0].id;
 
         // Add to second space
-        const signerMember2InvitedBy = getAddress(
-          faker.finance.ethereumAddress(),
-        );
+        const signerMember2InvitedBy = faker.number.int({
+          max: DB_MAX_SAFE_INTEGER,
+        });
         const signerMember2 = await dbMembersRepository.insert({
           user: signerUser,
           space: space2.generatedMaps[0],
@@ -2804,7 +2808,7 @@ describe('MembersRepository', () => {
         name: signerMemberName,
         role: 'ADMIN',
         status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
 
       await expect(
@@ -2837,7 +2841,7 @@ describe('MembersRepository', () => {
         name: adminName,
         role: 'ADMIN',
         status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
 
       await expect(
@@ -2867,7 +2871,7 @@ describe('MembersRepository', () => {
         name: memberName,
         role: 'MEMBER',
         status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
 
       await expect(
@@ -2901,7 +2905,7 @@ describe('MembersRepository', () => {
         name: memberName,
         role: 'MEMBER',
         status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
 
       await expect(
@@ -2941,7 +2945,7 @@ describe('MembersRepository', () => {
           role: 'MEMBER',
           status: 'ACTIVE',
           alias: nameBuilder(),
-          invitedBy: getAddress(faker.finance.ethereumAddress()),
+          invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
         });
 
         await expect(
@@ -2981,7 +2985,7 @@ describe('MembersRepository', () => {
           role: 'MEMBER',
           status: 'ACTIVE',
           alias: nameBuilder(),
-          invitedBy: getAddress(faker.finance.ethereumAddress()),
+          invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
         });
 
         await expect(
@@ -3021,7 +3025,7 @@ describe('MembersRepository', () => {
         role: 'ADMIN',
         status: 'ACTIVE',
         alias: null,
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
 
       await expect(

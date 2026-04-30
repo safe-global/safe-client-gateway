@@ -123,12 +123,6 @@ export class MembersRepository implements IMembersRepository {
     });
     const invitations: Array<Invitation> = [];
 
-    // TODO: Until OIDC invite flow is set up, OIDC admins have no wallet
-    // address to store here. Revisit when OIDC invite identifiers are available.
-    const invitedBy = args.authPayload.isSiwe()
-      ? args.authPayload.signer_address
-      : null;
-
     await this.postgresDatabaseService.transaction(async (entityManager) => {
       for (const userToInvite of args.users) {
         // Find existing User via Wallet or create new User and Wallet.
@@ -149,7 +143,7 @@ export class MembersRepository implements IMembersRepository {
             name: userToInvite.name,
             role: userToInvite.role,
             status: 'INVITED',
-            invitedBy,
+            invitedBy: userId,
           });
         } catch (err) {
           if (isUniqueConstraintError(err)) {
@@ -166,7 +160,7 @@ export class MembersRepository implements IMembersRepository {
           name: userToInvite.name,
           role: userToInvite.role,
           status: 'INVITED',
-          invitedBy,
+          invitedBy: userId,
         });
       }
     });
