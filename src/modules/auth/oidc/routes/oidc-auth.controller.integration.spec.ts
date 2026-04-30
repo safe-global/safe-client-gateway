@@ -603,9 +603,9 @@ describe('OidcAuthController', () => {
             token_type: 'Bearer',
           }),
         });
-        usersRepository.persistVerifiedEmail.mockRejectedValueOnce(
-          new UserEmailAlreadyInUseError(),
-        );
+        jest
+          .spyOn(usersRepository, 'findOrCreateByExtUserIdWithEmail')
+          .mockRejectedValueOnce(new UserEmailAlreadyInUseError());
 
         const authorizeResponse = await request(app.getHttpServer())
           .get('/v1/auth/oidc/authorize')
@@ -633,7 +633,7 @@ describe('OidcAuthController', () => {
           expect.arrayContaining([expect.stringMatching(/^access_token=/)]),
         );
         expect(loggingService.warn).toHaveBeenCalledWith(
-          'Auth callback: duplicate email during OIDC authentication: Email already belongs to another user',
+          'Auth callback: authentication failed: Email already belongs to another user',
         );
       });
 

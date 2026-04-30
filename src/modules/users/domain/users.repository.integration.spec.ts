@@ -978,16 +978,21 @@ describe('UsersRepository', () => {
     });
   });
 
-  describe('persistVerifiedEmail', () => {
+  describe('findOrCreateByExtUserIdWithEmail', () => {
     it('should persist a normalized email when the user has none yet', async () => {
       const dbUserRepository = dataSource.getRepository(User);
+      const extUserId = faker.string.uuid();
       const userInsertResult = await dbUserRepository.insert({
         status: 'ACTIVE',
+        extUserId,
       });
       const userId = userInsertResult.identifiers[0].id as number;
       const email = faker.internet.email();
 
-      await usersRepository.persistVerifiedEmail(userId, email);
+      await usersRepository.findOrCreateByExtUserIdWithEmail(extUserId, {
+        address: email,
+        verified: true,
+      });
 
       const user = await dbUserRepository.findOneOrFail({
         where: { id: userId },
@@ -997,17 +1002,19 @@ describe('UsersRepository', () => {
 
     it('should not overwrite an existing email for the same user', async () => {
       const dbUserRepository = dataSource.getRepository(User);
+      const extUserId = faker.string.uuid();
       const existingEmail = faker.internet.email().toLowerCase();
       const userInsertResult = await dbUserRepository.insert({
         status: 'ACTIVE',
+        extUserId,
         email: existingEmail,
       });
       const userId = userInsertResult.identifiers[0].id as number;
 
-      await usersRepository.persistVerifiedEmail(
-        userId,
-        faker.internet.email().toLowerCase(),
-      );
+      await usersRepository.findOrCreateByExtUserIdWithEmail(extUserId, {
+        address: faker.internet.email().toLowerCase(),
+        verified: true,
+      });
 
       const user = await dbUserRepository.findOneOrFail({
         where: { id: userId },
@@ -1018,26 +1025,25 @@ describe('UsersRepository', () => {
     it('should throw when the email belongs to a different user', async () => {
       const dbUserRepository = dataSource.getRepository(User);
       const email = faker.internet.email().toLowerCase();
+      const extUserId = faker.string.uuid();
 
       await dbUserRepository.insert({
         status: 'ACTIVE',
         email,
       });
-      const userInsertResult = await dbUserRepository.insert({
-        status: 'ACTIVE',
-      });
-      const userId = userInsertResult.identifiers[0].id as number;
 
       await expect(
-        usersRepository.persistVerifiedEmail(userId, email),
+        usersRepository.findOrCreateByExtUserIdWithEmail(extUserId, {
+          address: email,
+          verified: true,
+        }),
       ).rejects.toThrow(UserEmailAlreadyInUseError);
     });
-  });
 
-  describe('assertEmailCanBeUsedByUser', () => {
-    it('should throw when the email belongs to a different user', async () => {
+    it('should throw when an unverified email belongs to a different user', async () => {
       const dbUserRepository = dataSource.getRepository(User);
       const email = faker.internet.email().toLowerCase();
+      const extUserId = faker.string.uuid();
 
       await dbUserRepository.insert({
         status: 'ACTIVE',
@@ -1045,12 +1051,21 @@ describe('UsersRepository', () => {
       });
       const userInsertResult = await dbUserRepository.insert({
         status: 'ACTIVE',
+        extUserId,
       });
       const userId = userInsertResult.identifiers[0].id as number;
 
       await expect(
-        usersRepository.assertEmailCanBeUsedByUser(userId, email),
+        usersRepository.findOrCreateByExtUserIdWithEmail(extUserId, {
+          address: email,
+          verified: false,
+        }),
       ).rejects.toThrow(UserEmailAlreadyInUseError);
+
+      const user = await dbUserRepository.findOneOrFail({
+        where: { id: userId },
+      });
+      expect(user.email).toBeNull();
     });
   });
 

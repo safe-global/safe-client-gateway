@@ -29,7 +29,6 @@ import {
   ApiQuery,
 } from '@nestjs/swagger';
 import { type CookieOptions, Request, Response } from 'express';
-import { UserEmailAlreadyInUseError } from '@/modules/users/domain/errors/user-email-already-in-use.error';
 import { asError } from '@/logging/utils';
 
 /**
@@ -200,17 +199,6 @@ export class OidcAuthController {
       });
       res.redirect(this.oidcAuthService.getPostLoginRedirectUri(state));
     } catch (err) {
-      if (err instanceof UserEmailAlreadyInUseError) {
-        // Duplicate email claims are unexpected; warn and keep the user-facing error generic.
-        this.loggingService.warn(
-          `Auth callback: duplicate email during OIDC authentication: ${err.message}`,
-        );
-        res.redirect(
-          this.buildErrorRedirectUrl('authentication_failed', state),
-        );
-        return;
-      }
-
       const error = asError(err);
       this.loggingService.warn(
         `Auth callback: authentication failed: ${error.message}`,

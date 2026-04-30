@@ -3,7 +3,6 @@ import {
   ConflictException,
   Inject,
   Injectable,
-  InternalServerErrorException,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -254,37 +253,84 @@ export class UsersRepository implements IUsersRepository {
     }
   }
 
-  public async persistVerifiedEmail(
+  /**
+   * Finds or creates an OIDC user, then validates or persists the optional email claim.
+   */
+  public async findOrCreateByExtUserIdWithEmail(
+    extUserId: string,
+    email?: { address: string; verified: boolean },
+  ): Promise<User['id']> {
+    const userRepository =
+      await this.postgresDatabaseService.getRepository(DbUser);
+
+    const existingUser = await userRepository.findOne({
+      where: { extUserId },
+    });
+
+    if (existingUser) {
+      await this.handleUserEmail(existingUser.id, email);
+      return existingUser.id;
+    }
+
+    let userId: User['id'];
+    try {
+      userId = await this.postgresDatabaseService.transaction(
+        async (entityManager) => {
+          return await this.create('ACTIVE', entityManager, { extUserId });
+        },
+      );
+    } catch (error) {
+      // Handle race condition: a concurrent call may have created the
+      // user between our find and insert, causing a unique constraint
+      // violation. Retry the lookup in that case.
+      if (
+        !(error instanceof Error) ||
+        !error.message.includes('idx_users_ext_user_id')
+      ) {
+        throw error;
+      }
+      const user = await userRepository.findOneOrFail({
+        where: { extUserId },
+      });
+      userId = user.id;
+    }
+
+    await this.handleUserEmail(userId, email);
+
+    return userId;
+  }
+
+  private async handleUserEmail(
+    userId: User['id'],
+    email?: { address: string; verified: boolean },
+  ): Promise<void> {
+    if (!email) {
+      return;
+    }
+
+    if (email.verified) {
+      await this.persistVerifiedEmail(userId, email.address);
+    } else {
+      await this.assertEmailCanBeUsedByUser(userId, email.address);
+    }
+  }
+
+  private async persistVerifiedEmail(
     userId: User['id'],
     email: string,
   ): Promise<void> {
     const userRepository =
       await this.postgresDatabaseService.getRepository(DbUser);
     const normalizedEmail = email.trim().toLowerCase();
-    const user = await userRepository.findOneOrFail({
-      where: { id: userId },
-    });
-
-    if (user.email !== null) {
-      return;
-    }
 
     try {
-      const result = await userRepository
+      await userRepository
         .createQueryBuilder()
         .update(DbUser)
         .set({ email: normalizedEmail })
         .where('id = :userId', { userId })
         .andWhere('email IS NULL')
         .execute();
-
-      if ((result.affected ?? 0) > 0) {
-        return;
-      }
-
-      throw new InternalServerErrorException(
-        'Failed to persist verified email',
-      );
     } catch (error) {
       if (isUniqueConstraintError(error)) {
         throw new UserEmailAlreadyInUseError();
@@ -293,7 +339,7 @@ export class UsersRepository implements IUsersRepository {
     }
   }
 
-  public async assertEmailCanBeUsedByUser(
+  private async assertEmailCanBeUsedByUser(
     userId: User['id'],
     email: string,
   ): Promise<void> {

@@ -58,9 +58,10 @@ export interface IUsersRepository {
 
   findOrCreateByExtUserId(extUserId: string): Promise<User['id']>;
 
-  assertEmailCanBeUsedByUser(userId: User['id'], email: string): Promise<void>;
-
-  persistVerifiedEmail(userId: User['id'], email: string): Promise<void>;
+  findOrCreateByExtUserIdWithEmail(
+    extUserId: string,
+    email?: { address: string; verified: boolean },
+  ): Promise<User['id']>;
 
   findEmailById(userId: User['id']): Promise<string | undefined>;
 

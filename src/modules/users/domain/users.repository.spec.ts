@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
-import { InternalServerErrorException } from '@nestjs/common';
 import type { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { UsersRepository } from '@/modules/users/domain/users.repository';
 import { User as DbUser } from '@/modules/users/datasources/entities/users.entity.db';
@@ -49,69 +48,48 @@ describe('UsersRepository', () => {
 
     postgresDatabaseService = {
       getRepository: jest.fn().mockResolvedValue(userRepository),
+      transaction: jest.fn(),
     } as jest.MockedObjectDeep<PostgresDatabaseService>;
 
     target = new UsersRepository(postgresDatabaseService, walletsRepository);
   });
 
-  describe('assertEmailCanBeUsedByUser', () => {
-    it('should return when no user has the email', async () => {
+  describe('findOrCreateByExtUserIdWithEmail', () => {
+    it('should return an existing user id without email handling', async () => {
       const userId = faker.number.int({ min: 1 });
-      const email = faker.internet.email();
-      userRepository.findOne.mockResolvedValue(null);
-
-      await expect(
-        target.assertEmailCanBeUsedByUser(userId, email),
-      ).resolves.toBeUndefined();
-
-      expect(userRepository.findOne).toHaveBeenCalledWith({
-        where: { email: email.toLowerCase() },
-        select: { id: true },
-      });
-    });
-
-    it('should return when the same user already has the email', async () => {
-      const userId = faker.number.int({ min: 1 });
+      const extUserId = faker.string.uuid();
       userRepository.findOne.mockResolvedValue({ id: userId });
 
       await expect(
-        target.assertEmailCanBeUsedByUser(userId, faker.internet.email()),
-      ).resolves.toBeUndefined();
-    });
+        target.findOrCreateByExtUserIdWithEmail(extUserId),
+      ).resolves.toBe(userId);
 
-    it('should throw when a different user already has the email', async () => {
-      const userId = faker.number.int({ min: 1 });
-      userRepository.findOne.mockResolvedValue({ id: userId + 1 });
-
-      const result = target.assertEmailCanBeUsedByUser(
-        userId,
-        faker.internet.email(),
-      );
-
-      await expect(result).rejects.toThrow(UserEmailAlreadyInUseError);
-      await expect(result).rejects.toMatchObject({
-        response: expect.objectContaining({
-          code: USER_EMAIL_ALREADY_IN_USE_ERROR_CODE,
-          statusCode: 409,
-        }),
+      expect(userRepository.findOne).toHaveBeenCalledWith({
+        where: { extUserId },
       });
+      expect(userRepository.createQueryBuilder).not.toHaveBeenCalled();
     });
-  });
 
-  describe('persistVerifiedEmail', () => {
-    it('should persist a normalized email for a user without email', async () => {
+    it('should create a user and persist a verified email', async () => {
       const userId = faker.number.int({ min: 1 });
+      const extUserId = faker.string.uuid();
       const email = '  Alice.Example@Safe.Global ';
       const queryBuilder = createQueryBuilder();
-      userRepository.findOneOrFail.mockResolvedValue({
-        id: userId,
-        email: null,
-      });
+      userRepository.findOne.mockResolvedValue(null);
+      postgresDatabaseService.transaction.mockResolvedValue(userId);
       userRepository.createQueryBuilder.mockReturnValue(queryBuilder);
       queryBuilder.execute.mockResolvedValue({ affected: 1 });
 
-      await target.persistVerifiedEmail(userId, email);
+      await expect(
+        target.findOrCreateByExtUserIdWithEmail(extUserId, {
+          address: email,
+          verified: true,
+        }),
+      ).resolves.toBe(userId);
 
+      expect(postgresDatabaseService.transaction).toHaveBeenCalledWith(
+        expect.any(Function),
+      );
       expect(queryBuilder.update).toHaveBeenCalledWith(DbUser);
       expect(queryBuilder.set).toHaveBeenCalledWith({
         email: 'alice.example@safe.global',
@@ -122,25 +100,67 @@ describe('UsersRepository', () => {
       expect(queryBuilder.andWhere).toHaveBeenCalledWith('email IS NULL');
     });
 
-    it('should not overwrite an existing email', async () => {
+    it('should return when an unverified email is unused', async () => {
       const userId = faker.number.int({ min: 1 });
-      userRepository.findOneOrFail.mockResolvedValue({
-        id: userId,
-        email: faker.internet.email().toLowerCase(),
+      const extUserId = faker.string.uuid();
+      const email = faker.internet.email();
+      userRepository.findOne
+        .mockResolvedValueOnce({ id: userId })
+        .mockResolvedValueOnce(null);
+
+      await expect(
+        target.findOrCreateByExtUserIdWithEmail(extUserId, {
+          address: email,
+          verified: false,
+        }),
+      ).resolves.toBe(userId);
+
+      expect(userRepository.findOne).toHaveBeenNthCalledWith(2, {
+        where: { email: email.toLowerCase() },
+        select: { id: true },
       });
-
-      await target.persistVerifiedEmail(userId, faker.internet.email());
-
       expect(userRepository.createQueryBuilder).not.toHaveBeenCalled();
+    });
+
+    it('should return when an unverified email belongs to the same user', async () => {
+      const userId = faker.number.int({ min: 1 });
+      userRepository.findOne
+        .mockResolvedValueOnce({ id: userId })
+        .mockResolvedValueOnce({ id: userId });
+
+      await expect(
+        target.findOrCreateByExtUserIdWithEmail(faker.string.uuid(), {
+          address: faker.internet.email(),
+          verified: false,
+        }),
+      ).resolves.toBe(userId);
+    });
+
+    it('should throw when an unverified email belongs to a different user', async () => {
+      const userId = faker.number.int({ min: 1 });
+      userRepository.findOne
+        .mockResolvedValueOnce({ id: userId })
+        .mockResolvedValueOnce({ id: userId + 1 });
+
+      const result = target.findOrCreateByExtUserIdWithEmail(
+        faker.string.uuid(),
+        { address: faker.internet.email(), verified: false },
+      );
+
+      await expect(result).rejects.toThrow(UserEmailAlreadyInUseError);
+      await expect(result).rejects.toMatchObject({
+        response: expect.objectContaining({
+          code: USER_EMAIL_ALREADY_IN_USE_ERROR_CODE,
+          statusCode: 409,
+        }),
+      });
     });
 
     it('should throw UserEmailAlreadyInUseError on duplicate email conflicts', async () => {
       const userId = faker.number.int({ min: 1 });
+      const extUserId = faker.string.uuid();
       const queryBuilder = createQueryBuilder();
-      userRepository.findOneOrFail.mockResolvedValue({
-        id: userId,
-        email: null,
-      });
+      userRepository.findOne.mockResolvedValue({ id: userId });
       userRepository.createQueryBuilder.mockReturnValue(queryBuilder);
       queryBuilder.execute.mockRejectedValue(
         new QueryFailedError(
@@ -153,10 +173,10 @@ describe('UsersRepository', () => {
         ),
       );
 
-      const result = target.persistVerifiedEmail(
-        userId,
-        faker.internet.email(),
-      );
+      const result = target.findOrCreateByExtUserIdWithEmail(extUserId, {
+        address: faker.internet.email(),
+        verified: true,
+      });
 
       await expect(result).rejects.toThrow(UserEmailAlreadyInUseError);
       await expect(result).rejects.toMatchObject({
@@ -165,21 +185,6 @@ describe('UsersRepository', () => {
           statusCode: 409,
         }),
       });
-    });
-
-    it('should throw when the conditional email update does not persist an email', async () => {
-      const userId = faker.number.int({ min: 1 });
-      const queryBuilder = createQueryBuilder();
-      userRepository.findOneOrFail.mockResolvedValueOnce({
-        id: userId,
-        email: null,
-      });
-      userRepository.createQueryBuilder.mockReturnValue(queryBuilder);
-      queryBuilder.execute.mockResolvedValue({ affected: 0 });
-
-      await expect(
-        target.persistVerifiedEmail(userId, faker.internet.email()),
-      ).rejects.toThrow(InternalServerErrorException);
     });
   });
 

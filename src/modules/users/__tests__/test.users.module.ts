@@ -21,8 +21,8 @@ import { IMembersRepository } from '@/modules/users/domain/members.repository.in
         // in tests that call getAccessToken → findOrCreate*.
         findOrCreateByWalletAddress: (): Promise<number> => Promise.resolve(1),
         findOrCreateByExtUserId: (): Promise<number> => Promise.resolve(1),
-        assertEmailCanBeUsedByUser: jest.fn().mockResolvedValue(undefined),
-        persistVerifiedEmail: jest.fn().mockResolvedValue(undefined),
+        findOrCreateByExtUserIdWithEmail: (): Promise<number> =>
+          Promise.resolve(1),
         findEmailById: jest.fn().mockResolvedValue(undefined),
         update: jest.fn(),
         updateStatus: jest.fn(),
