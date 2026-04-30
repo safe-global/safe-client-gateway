@@ -2808,6 +2808,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@safe-global/safe-modules-deployments@npm:3.0.1":
+  version: 3.0.1
+  resolution: "@safe-global/safe-modules-deployments@npm:3.0.1"
+  checksum: 10/cb4ab566c3dd7e1b91c2cd3fa8df68132a3acfe15ff3c10485a8d1450a8f69be3ef47f8163860ff16880d8d44b7cb46bd07820f2d173cc622a7bf988a6379039
+  languageName: node
+  linkType: hard
+
 "@scarf/scarf@npm:=1.4.0":
   version: 1.4.0
   resolution: "@scarf/scarf@npm:1.4.0"
@@ -9749,6 +9756,7 @@ __metadata:
     "@nestjs/testing": "npm:11.1.19"
     "@nestjs/typeorm": "npm:11.0.0"
     "@safe-global/safe-deployments": "npm:1.37.51"
+    "@safe-global/safe-modules-deployments": "npm:3.0.1"
     "@smithy/util-stream": "npm:4.5.5"
     "@types/amqplib": "npm:0"
     "@types/cookie-parser": "npm:1.4.8"

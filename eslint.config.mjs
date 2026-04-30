@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import globals from 'globals';
 import eslint from '@eslint/js';
 import tseslint from 'typescript-eslint';
@@ -44,6 +45,11 @@ export default tseslint.config(
           paths: [
             {
               name: '@safe-global/safe-deployments',
+              message:
+                'Please import from @/domain/common/utils/deployments instead.',
+            },
+            {
+              name: '@safe-global/safe-modules-deployments',
               message:
                 'Please import from @/domain/common/utils/deployments instead.',
             },

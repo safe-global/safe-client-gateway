@@ -1,14 +1,17 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import { Erc20Decoder } from '@/modules/relay/domain/contracts/decoders/erc-20-decoder.helper';
 import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
 import { MultiSendDecoder } from '@/modules/contracts/domain/decoders/multi-send-decoder.helper';
 import { ProxyFactoryDecoder } from '@/modules/relay/domain/contracts/decoders/proxy-factory-decoder.helper';
+import { SignerFactoryDecoder } from '@/modules/relay/domain/contracts/decoders/signer-factory-decoder.helper';
 import {
   getSafeSingletonDeployments,
   getSafeL2SingletonDeployments,
   getMultiSendCallOnlyDeployments,
   getMultiSendDeployments,
   getProxyFactoryDeployments,
+  getSignerFactoryDeployments,
 } from '@/domain/common/utils/deployments';
 import { SafeDecoder } from '@/modules/contracts/domain/decoders/safe-decoder.helper';
 import { UnofficialMasterCopyError } from '@/modules/relay/domain/errors/unofficial-master-copy.error';
@@ -16,8 +19,15 @@ import { UnofficialMultiSendError } from '@/modules/relay/domain/errors/unoffici
 import { InvalidTransferError } from '@/modules/relay/domain/errors/invalid-transfer.error';
 import { InvalidMultiSendError } from '@/modules/relay/domain/errors/invalid-multisend.error';
 import { UnofficialProxyFactoryError } from '@/modules/relay/domain/errors/unofficial-proxy-factory.error';
+import { UnofficialSignerFactoryError } from '@/modules/relay/domain/errors/unofficial-signer-factory.error';
 import { DelayModifierDecoder } from '@/modules/alerts/domain/contracts/decoders/delay-modifier-decoder.helper';
-import type { Address } from 'viem';
+import {
+  encodeAbiParameters,
+  getAddress,
+  keccak256,
+  parseAbiParameters,
+  type Address,
+} from 'viem';
 
 @Injectable()
 export class LimitAddressesMapper {
@@ -29,6 +39,7 @@ export class LimitAddressesMapper {
     private readonly multiSendDecoder: MultiSendDecoder,
     private readonly proxyFactoryDecoder: ProxyFactoryDecoder,
     private readonly delayModifierDecoder: DelayModifierDecoder,
+    private readonly signerFactoryDecoder: SignerFactoryDecoder,
   ) {}
 
   async getLimitAddresses(args: {
@@ -111,6 +122,27 @@ export class LimitAddressesMapper {
       }
       // Owners of safe-to-be-created will be limited
       return this.getOwnersFromCreateProxyWithNonce(args.data);
+    }
+
+    // Calldata matches createSigner on an official SafeWebAuthnSignerFactory.
+    // The branch is self-contained: every outcome of the createSigner path
+    // (unofficial factory, malformed args, success) terminates here so future
+    // branches added below this point can't be reached by createSigner data.
+    if (this.signerFactoryDecoder.helpers.isCreateSigner(args.data)) {
+      if (
+        !this.isOfficialSignerFactoryDeployment({
+          chainId: args.chainId,
+          address: args.to,
+        })
+      ) {
+        throw new UnofficialSignerFactoryError();
+      }
+      const signerLimitAddress = this.getSignerFactoryLimitAddress(args.data);
+      if (!signerLimitAddress) {
+        // Selector matched but the args failed to decode (malformed payload).
+        throw new InvalidTransferError();
+      }
+      return [signerLimitAddress];
     }
 
     throw new InvalidTransferError();
@@ -413,6 +445,58 @@ export class LimitAddressesMapper {
   }): boolean {
     const proxyFactoryDeployments = getProxyFactoryDeployments(args);
     return proxyFactoryDeployments.includes(args.address);
+  }
+
+  private isOfficialSignerFactoryDeployment(args: {
+    chainId: string;
+    address: Address;
+  }): boolean {
+    return getSignerFactoryDeployments({ chainId: args.chainId }).includes(
+      args.address,
+    );
+  }
+
+  /**
+   * For `createSigner` calldata, returns a per-passkey limit key derived from
+   * the call arguments.
+   *
+   * The key is the last 20 bytes of `keccak256(abi.encode(x, y, verifiers))`
+   * cast to an Address-shaped string. This gives each unique passkey
+   * (x, y, verifiers) its own daily relay quota, instead of every user
+   * sharing the factory address as a limit key.
+   *
+   * Returns `null` if the args fail to decode (e.g. selector matches but the
+   * payload is malformed). Caller must have already verified the selector
+   * matches `createSigner` and that `to` is an official factory.
+   *
+   * Note: the `isCreateSigner` selector pre-check at the call site is not
+   * redundant with the `decodeFunctionData` + `functionName` check here —
+   * `getSigner` is also in the ABI and would decode cleanly.
+   */
+  private getSignerFactoryLimitAddress(data: Address): Address | null {
+    let x: bigint;
+    let y: bigint;
+    let verifiers: bigint;
+    try {
+      const decoded = this.signerFactoryDecoder.decodeFunctionData({
+        data,
+      });
+      if (decoded.functionName !== 'createSigner') {
+        return null;
+      }
+      [x, y, verifiers] = decoded.args;
+    } catch {
+      return null;
+    }
+
+    const hash = keccak256(
+      encodeAbiParameters(parseAbiParameters('uint256, uint256, uint176'), [
+        x,
+        y,
+        verifiers,
+      ]),
+    );
+    return getAddress(`0x${hash.slice(-40)}`);
   }
 
   private isValidCreateProxyWithNonceCall(args: {
