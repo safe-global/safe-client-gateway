@@ -5,14 +5,15 @@ import { RelayRepository } from '@/modules/relay/domain/relay.repository';
 import { RelayApiModule } from '@/modules/relay/datasources/relay-api.module';
 import { RelayDecodersModule } from '@/modules/relay/domain/relay-decoders.module';
 import { SafeRepositoryModule } from '@/modules/safe/domain/safe.repository.interface';
-import { DelayModifierDecoder } from '@/modules/alerts/domain/contracts/decoders/delay-modifier-decoder.helper';
 import { BalancesModule } from '@/modules/balances/balances.module';
 import { DailyLimitRelayer } from '@/modules/relay/domain/relayers/daily-limit.relayer';
 import { NoFeeCampaignRelayer } from '@/modules/relay/domain/relayers/no-fee-campaign.relayer';
 import { RelayFeeRelayer } from '@/modules/relay/domain/relayers/relay-fee.relayer';
+import { RelayTransactionHelper } from '@/modules/relay/domain/relay-transaction-helper';
 import { RelayManager } from '@/modules/relay/domain/relay.manager';
 import { IRelayManager } from '@/modules/relay/domain/interfaces/relay-manager.interface';
 import { FeeServiceApiModule } from '@/datasources/fee-service-api/fee-service-api.module';
+import { BlockchainModule } from '@/modules/blockchain/blockchain.module';
 
 @Module({
   imports: [
@@ -21,11 +22,12 @@ import { FeeServiceApiModule } from '@/datasources/fee-service-api/fee-service-a
     SafeRepositoryModule,
     BalancesModule,
     FeeServiceApiModule,
+    BlockchainModule,
   ],
   providers: [
+    RelayTransactionHelper,
     LimitAddressesMapper,
     RelayRepository,
-    DelayModifierDecoder,
     DailyLimitRelayer,
     NoFeeCampaignRelayer,
     RelayFeeRelayer,

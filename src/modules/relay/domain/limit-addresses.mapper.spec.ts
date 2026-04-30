@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import {
   erc20ApproveEncoder,
   erc20TransferEncoder,
@@ -44,6 +45,7 @@ import {
   execTransactionFromModuleEncoder,
   executeNextTxEncoder,
 } from '@/modules/alerts/domain/contracts/__tests__/encoders/delay-modifier-encoder.builder';
+import { RelayTransactionHelper } from '@/modules/relay/domain/relay-transaction-helper';
 
 const supportedChainIds = Object.keys(configuration().relay.apiKey);
 
@@ -83,20 +85,18 @@ describe('LimitAddressesMapper', () => {
   beforeEach(() => {
     jest.resetAllMocks();
 
-    const erc20Decoder = new Erc20Decoder();
-    const safeDecoder = new SafeDecoder();
-    const multiSendDecoder = new MultiSendDecoder(mockLoggingService);
-    const proxyFactoryDecoder = new ProxyFactoryDecoder();
-    const delayModifierDecoder = new DelayModifierDecoder();
-
-    target = new LimitAddressesMapper(
+    const relayTransactionHelper = new RelayTransactionHelper(
       mockSafeRepository,
-      erc20Decoder,
-      safeDecoder,
-      multiSendDecoder,
-      proxyFactoryDecoder,
-      delayModifierDecoder,
+      mockLoggingService,
+      { getApi: jest.fn(), destroyApi: jest.fn() } as never,
+      new Erc20Decoder(),
+      new SafeDecoder(),
+      new MultiSendDecoder(mockLoggingService),
+      new ProxyFactoryDecoder(),
+      new DelayModifierDecoder(),
     );
+
+    target = new LimitAddressesMapper(relayTransactionHelper);
   });
 
   describe('Recovery', () => {
