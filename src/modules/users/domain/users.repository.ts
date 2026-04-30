@@ -265,10 +265,13 @@ export class UsersRepository implements IUsersRepository {
 
     const existingUser = await userRepository.findOne({
       where: { extUserId },
+      select: { email: true, id: true },
     });
 
     if (existingUser) {
-      await this.handleUserEmail(existingUser.id, email);
+      if (!existingUser.email) {
+        await this.handleUserEmail(existingUser.id, email);
+      }
       return existingUser.id;
     }
 
@@ -311,7 +314,7 @@ export class UsersRepository implements IUsersRepository {
     if (email.verified) {
       await this.persistVerifiedEmail(userId, email.address);
     } else {
-      await this.assertEmailCanBeUsedByUser(userId, email.address);
+      await this.assertEmailNotTaken(userId, email.address);
     }
   }
 
@@ -339,7 +342,7 @@ export class UsersRepository implements IUsersRepository {
     }
   }
 
-  private async assertEmailCanBeUsedByUser(
+  private async assertEmailNotTaken(
     userId: User['id'],
     email: string,
   ): Promise<void> {

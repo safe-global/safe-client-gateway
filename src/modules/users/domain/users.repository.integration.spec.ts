@@ -106,6 +106,7 @@ describe('UsersRepository', () => {
   });
 
   afterEach(async () => {
+    jest.restoreAllMocks();
     jest.resetAllMocks();
 
     const dbWalletRepository = dataSource.getRepository(Wallet);
@@ -979,6 +980,23 @@ describe('UsersRepository', () => {
   });
 
   describe('findOrCreateByExtUserIdWithEmail', () => {
+    it('should enforce unique non-null user emails', async () => {
+      const dbUserRepository = dataSource.getRepository(User);
+      const email = faker.internet.email().toLowerCase();
+
+      await dbUserRepository.insert({
+        status: 'ACTIVE',
+        email,
+      });
+
+      await expect(
+        dbUserRepository.insert({
+          status: 'ACTIVE',
+          email,
+        }),
+      ).rejects.toThrow(/duplicate key|users_email_key/);
+    });
+
     it('should persist a normalized email when the user has none yet', async () => {
       const dbUserRepository = dataSource.getRepository(User);
       const extUserId = faker.string.uuid();
