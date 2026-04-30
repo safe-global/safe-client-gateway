@@ -915,70 +915,6 @@ describe('UsersRepository', () => {
     });
   });
 
-  describe('findOrCreateByExtUserId', () => {
-    it('should return the existing user id if the extUserId already exists', async () => {
-      const dbUserRepository = dataSource.getRepository(User);
-      const extUserId = faker.string.uuid();
-      const status = faker.helpers.arrayElement(UserStatusKeys);
-      const userInsertResult = await dbUserRepository.insert({
-        status,
-        extUserId,
-      });
-      const userId = userInsertResult.identifiers[0].id;
-
-      const result = await usersRepository.findOrCreateByExtUserId(extUserId);
-
-      expect(result).toBe(userId);
-      // No additional user should have been created
-      await expect(dbUserRepository.find()).resolves.toHaveLength(1);
-    });
-
-    it('should create a new user if none exists with the given extUserId', async () => {
-      const dbUserRepository = dataSource.getRepository(User);
-      const extUserId = faker.string.uuid();
-
-      const userId = await usersRepository.findOrCreateByExtUserId(extUserId);
-
-      const user = await dbUserRepository.findOneOrFail({
-        where: { id: userId },
-      });
-      expect(user).toEqual({
-        createdAt: expect.any(Date),
-        email: null,
-        extUserId,
-        id: userId,
-        status: 'ACTIVE',
-        updatedAt: expect.any(Date),
-      });
-    });
-
-    it('should return the existing user id on concurrent duplicate insert', async () => {
-      const dbUserRepository = dataSource.getRepository(User);
-      const extUserId = faker.string.uuid();
-
-      // Run two calls concurrently — one will win the insert, the other
-      // should catch the unique constraint violation and retry the find.
-      const [id1, id2] = await Promise.all([
-        usersRepository.findOrCreateByExtUserId(extUserId),
-        usersRepository.findOrCreateByExtUserId(extUserId),
-      ]);
-
-      expect(id1).toBe(id2);
-      await expect(dbUserRepository.find()).resolves.toHaveLength(1);
-    });
-
-    it('should rethrow non-constraint-violation errors', async () => {
-      const extUserId = faker.string.uuid();
-      const error = new Error('unexpected failure');
-
-      jest.spyOn(usersRepository, 'create').mockRejectedValueOnce(error);
-
-      await expect(
-        usersRepository.findOrCreateByExtUserId(extUserId),
-      ).rejects.toThrow(error);
-    });
-  });
-
   describe('findOrCreateByExtUserIdWithEmail', () => {
     it('should enforce unique non-null user emails', async () => {
       const dbUserRepository = dataSource.getRepository(User);
@@ -994,7 +930,20 @@ describe('UsersRepository', () => {
           status: 'ACTIVE',
           email,
         }),
-      ).rejects.toThrow(/duplicate key|users_email_key/);
+      ).rejects.toThrow(/duplicate key|idx_users_email/);
+    });
+
+    it('should enforce lowercase user emails', async () => {
+      const dbUserRepository = dataSource.getRepository(User);
+
+      await expect(
+        dbUserRepository.insert({
+          status: 'ACTIVE',
+          email: faker.internet.email().toUpperCase(),
+        }),
+      ).rejects.toThrow(
+        /violates check constraint|users_email_lowercase_check/,
+      );
     });
 
     it('should persist a normalized email when the user has none yet', async () => {

@@ -7,7 +7,8 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import type { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
-import { User, UserStatus } from '@/modules/users/domain/entities/user.entity';
+import { UserStatus } from '@/modules/users/domain/entities/user.entity';
+import type { User } from '@/modules/users/domain/entities/user.entity';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
@@ -19,6 +20,17 @@ import type { FindOptionsRelations, FindOptionsWhere } from 'typeorm';
 import { IWalletsRepository } from '@/modules/wallets/domain/wallets.repository.interface';
 import type { Address } from 'viem';
 import { UserEmailAlreadyInUseError } from '@/modules/users/domain/errors/user-email-already-in-use.error';
+
+function isUniqueConstraintViolation(
+  error: unknown,
+  constraint: string,
+): boolean {
+  return (
+    isUniqueConstraintError(error) &&
+    'constraint' in error.driverError &&
+    error.driverError.constraint === constraint
+  );
+}
 
 @Injectable()
 export class UsersRepository implements IUsersRepository {
@@ -219,40 +231,6 @@ export class UsersRepository implements IUsersRepository {
     }
   }
 
-  public async findOrCreateByExtUserId(extUserId: string): Promise<User['id']> {
-    const userRepository =
-      await this.postgresDatabaseService.getRepository(DbUser);
-
-    const existing = await userRepository.findOne({
-      where: { extUserId },
-    });
-    if (existing) {
-      return existing.id;
-    }
-
-    try {
-      return await this.postgresDatabaseService.transaction(
-        async (entityManager: EntityManager) => {
-          return await this.create('ACTIVE', entityManager, { extUserId });
-        },
-      );
-    } catch (error) {
-      // Handle race condition: a concurrent call may have created the
-      // user between our find and insert, causing a unique constraint
-      // violation. Retry the lookup in that case.
-      if (
-        error instanceof Error &&
-        error.message.includes('idx_users_ext_user_id')
-      ) {
-        const user = await userRepository.findOneOrFail({
-          where: { extUserId },
-        });
-        return user.id;
-      }
-      throw error;
-    }
-  }
-
   /**
    * Finds or creates an OIDC user, then validates or persists the optional email claim.
    */
@@ -286,10 +264,7 @@ export class UsersRepository implements IUsersRepository {
       // Handle race condition: a concurrent call may have created the
       // user between our find and insert, causing a unique constraint
       // violation. Retry the lookup in that case.
-      if (
-        !(error instanceof Error) ||
-        !error.message.includes('idx_users_ext_user_id')
-      ) {
+      if (!isUniqueConstraintViolation(error, 'idx_users_ext_user_id')) {
         throw error;
       }
       const user = await userRepository.findOneOrFail({
@@ -335,7 +310,7 @@ export class UsersRepository implements IUsersRepository {
         .andWhere('email IS NULL')
         .execute();
     } catch (error) {
-      if (isUniqueConstraintError(error)) {
+      if (isUniqueConstraintViolation(error, 'idx_users_email')) {
         throw new UserEmailAlreadyInUseError();
       }
       throw error;
@@ -349,6 +324,8 @@ export class UsersRepository implements IUsersRepository {
     const userRepository =
       await this.postgresDatabaseService.getRepository(DbUser);
     const normalizedEmail = email.trim().toLowerCase();
+    // The DB unique index is the integrity guard for verified writes; this
+    // check blocks unverified duplicate emails before minting a CGW session.
     const user = await userRepository.findOne({
       where: { email: normalizedEmail },
       select: { id: true },
@@ -367,6 +344,7 @@ export class UsersRepository implements IUsersRepository {
       select: { email: true },
     });
 
+    // /me omits absent email fields, so normalize null/missing rows to undefined.
     return user?.email ?? undefined;
   }
 

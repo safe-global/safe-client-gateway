@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import {
+  Check,
   Column,
   Entity,
   Index,
@@ -15,6 +16,10 @@ import { Member } from '@/modules/users/datasources/entities/member.entity.db';
 import { databaseEnumTransformer } from '@/domain/common/utils/enum';
 
 @Entity('users')
+@Check(
+  'users_email_lowercase_check',
+  '"email" IS NULL OR "email" = lower("email")',
+)
 export class User implements DomainUser {
   @PrimaryGeneratedColumn({ primaryKeyConstraintName: 'PK_id' })
   id!: number;
@@ -39,7 +44,7 @@ export class User implements DomainUser {
   })
   extUserId!: string | null;
 
-  @Index('users_email_key', {
+  @Index('idx_users_email', {
     unique: true,
     where: '"email" IS NOT NULL',
   })
