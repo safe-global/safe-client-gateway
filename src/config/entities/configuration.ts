@@ -241,6 +241,48 @@ export default () => ({
       fromEmail: process.env.EMAIL_API_FROM_EMAIL,
       fromName: process.env.EMAIL_API_FROM_NAME || 'Safe',
     },
+    // AWS SES email configuration. Enabled via FF_SES_EMAIL feature flag.
+    // SES region is resolved from AWS_REGION by the SDK default credential chain.
+    // AWS_REGION
+    ses: {
+      // Verified sender email address in SES.
+      fromEmail: process.env.AWS_SES_FROM_EMAIL,
+      // Display name shown in the "From" field. Defaults to 'Safe'.
+      fromName: process.env.AWS_SES_FROM_NAME || 'Safe',
+      // BullMQ queue configuration for email sending.
+      queue: {
+        removeOnComplete: {
+          // Time (in seconds) to keep completed jobs. Defaults to 3600 (1 hour).
+          age: parseInt(
+            process.env.EMAIL_QUEUE_REMOVE_ON_COMPLETE_AGE ?? `${3600}`,
+          ),
+          // Maximum number of completed jobs to keep. Defaults to 1000.
+          count: parseInt(
+            process.env.EMAIL_QUEUE_REMOVE_ON_COMPLETE_COUNT ?? `${1000}`,
+          ),
+        },
+        removeOnFail: {
+          // Time (in seconds) to keep failed jobs. Defaults to 86400 (24 hours).
+          age: parseInt(
+            process.env.EMAIL_QUEUE_REMOVE_ON_FAIL_AGE ?? `${86400}`,
+          ),
+          // Maximum number of failed jobs to keep. Defaults to 500.
+          count: parseInt(
+            process.env.EMAIL_QUEUE_REMOVE_ON_FAIL_COUNT ?? `${500}`,
+          ),
+        },
+        backoff: {
+          // Backoff strategy for retrying failed jobs. Defaults to 'exponential'.
+          type: process.env.EMAIL_QUEUE_BACKOFF_TYPE || 'exponential',
+          // Initial backoff delay in milliseconds. Defaults to 5000 (5s).
+          delay: parseInt(process.env.EMAIL_QUEUE_BACKOFF_DELAY ?? `${5000}`),
+        },
+        // Maximum number of retry attempts. Defaults to 3.
+        attempts: parseInt(process.env.EMAIL_QUEUE_ATTEMPTS ?? `${3}`),
+        // Number of concurrent workers processing email jobs. Defaults to 5.
+        concurrency: parseInt(process.env.EMAIL_QUEUE_CONCURRENCY ?? `${5}`),
+      },
+    },
   },
   expirationTimeInSeconds: {
     deviatePercent: parseInt(process.env.EXPIRATION_DEVIATE_PERCENT ?? `${10}`),
@@ -273,6 +315,7 @@ export default () => ({
   },
   features: {
     email: process.env.FF_EMAIL?.toLowerCase() === 'true',
+    sesEmail: process.env.FF_SES_EMAIL?.toLowerCase() === 'true',
     // Support both new (FF_ZERION_ENABLED) and legacy (FF_ZERION_BALANCES_CHAIN_IDS) env vars
     zerionBalancesEnabled:
       !!process.env.FF_ZERION_ENABLED ||
