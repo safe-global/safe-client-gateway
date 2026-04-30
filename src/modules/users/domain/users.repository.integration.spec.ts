@@ -106,7 +106,6 @@ describe('UsersRepository', () => {
   });
 
   afterEach(async () => {
-    jest.restoreAllMocks();
     jest.resetAllMocks();
 
     const dbWalletRepository = dataSource.getRepository(Wallet);

@@ -21,17 +21,6 @@ import { IWalletsRepository } from '@/modules/wallets/domain/wallets.repository.
 import type { Address } from 'viem';
 import { UserEmailAlreadyInUseError } from '@/modules/users/domain/errors/user-email-already-in-use.error';
 
-function isUniqueConstraintViolation(
-  error: unknown,
-  constraint: string,
-): boolean {
-  return (
-    isUniqueConstraintError(error) &&
-    'constraint' in error.driverError &&
-    error.driverError.constraint === constraint
-  );
-}
-
 @Injectable()
 export class UsersRepository implements IUsersRepository {
   constructor(
@@ -264,7 +253,7 @@ export class UsersRepository implements IUsersRepository {
       // Handle race condition: a concurrent call may have created the
       // user between our find and insert, causing a unique constraint
       // violation. Retry the lookup in that case.
-      if (!isUniqueConstraintViolation(error, 'idx_users_ext_user_id')) {
+      if (!this.isUniqueConstraintViolation(error, 'idx_users_ext_user_id')) {
         throw error;
       }
       const user = await userRepository.findOneOrFail({
@@ -310,7 +299,7 @@ export class UsersRepository implements IUsersRepository {
         .andWhere('email IS NULL')
         .execute();
     } catch (error) {
-      if (isUniqueConstraintViolation(error, 'idx_users_email')) {
+      if (this.isUniqueConstraintViolation(error, 'idx_users_email')) {
         throw new UserEmailAlreadyInUseError();
       }
       throw error;
@@ -346,6 +335,17 @@ export class UsersRepository implements IUsersRepository {
 
     // /me omits absent email fields, so normalize null/missing rows to undefined.
     return user?.email ?? undefined;
+  }
+
+  private isUniqueConstraintViolation(
+    error: unknown,
+    constraint: string,
+  ): boolean {
+    return (
+      isUniqueConstraintError(error) &&
+      'constraint' in error.driverError &&
+      error.driverError.constraint === constraint
+    );
   }
 
   public async update(args: {
