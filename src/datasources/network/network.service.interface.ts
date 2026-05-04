@@ -13,12 +13,6 @@ export interface INetworkService {
   post<T>(args: {
     url: string;
     data?: object;
-    /**
-     * Pre-serialized JSON body. When provided, bypasses internal
-     * JSON.stringify(data) — required for payloads containing BigInt
-     * (e.g. wei values) which the default serializer rejects.
-     */
-    body?: string;
     networkRequest?: NetworkRequest;
   }): Promise<NetworkResponse<T>>;
 
