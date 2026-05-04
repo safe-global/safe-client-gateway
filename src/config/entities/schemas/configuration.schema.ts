@@ -52,13 +52,20 @@ export const RootConfigurationSchema = z
     AUTH0_CLIENT_ID: z.string().optional(),
     AUTH0_CLIENT_SECRET: z.string().optional(),
     AUTH0_REDIRECT_URI: z.url().optional(),
-    AUTH0_SIGNING_SECRET: z.string().optional(),
     AUTH0_SCOPE: z.string().optional(),
+    AUTH0_JWKS_CACHE_MAX_AGE_MILLISECONDS: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .optional(),
+    AUTH0_JWKS_COOLDOWN_MILLISECONDS: z.coerce.number().int().min(1).optional(),
     AUTH_STATE_TTL_MILLISECONDS: z.coerce.number().int().min(1).optional(),
     AWS_ACCESS_KEY_ID: z.string().optional(),
     AWS_KMS_ENCRYPTION_KEY_ID: z.string().optional(),
     AWS_SECRET_ACCESS_KEY: z.string().optional(),
     AWS_REGION: z.string().optional(),
+    AWS_SES_FROM_EMAIL: z.email().optional(),
+    AWS_SES_FROM_NAME: z.string().optional(),
     BLOCKLIST_ENCRYPTED_DATA: z.string(),
     BLOCKLIST_SECRET_KEY: z.string(),
     BLOCKLIST_SECRET_SALT: z.string(),
@@ -175,6 +182,7 @@ export const RootConfigurationSchema = z
     CSV_AWS_SECRET_ACCESS_KEY: z.string().optional(),
     CSV_EXPORT_QUEUE_CONCURRENCY: z.coerce.number().min(1).optional(),
     PUSH_NOTIFICATION_QUEUE_CONCURRENCY: z.coerce.number().min(1).optional(),
+    EMAIL_QUEUE_CONCURRENCY: z.coerce.number().min(1).optional(),
     BLOCKAID_CLIENT_API_KEY: z.string().optional(),
     TX_SERVICE_API_KEY: z.string().trim().min(1).optional(),
     CAPTCHA_ENABLED: z.string().optional().default('false'),

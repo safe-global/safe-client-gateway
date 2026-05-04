@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { DynamicModule, Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
@@ -8,7 +9,7 @@ import { MultiSendDecoder } from '@/modules/contracts/domain/decoders/multi-send
 import { SafeDecoder } from '@/modules/contracts/domain/decoders/safe-decoder.helper';
 import { AlertsRepository } from '@/modules/alerts/domain/alerts.repository';
 import { IAlertsRepository } from '@/modules/alerts/domain/alerts.repository.interface';
-import { EmailModule } from '@/modules/email/email.module';
+import { EmailModule } from '@/modules/email/pushwoosh/pushwoosh-email.module';
 import { SafeRepositoryModule } from '@/modules/safe/domain/safe.repository.interface';
 import { ChainsModule } from '@/modules/chains/chains.module';
 import { AlertsController } from '@/modules/alerts/routes/alerts.controller';

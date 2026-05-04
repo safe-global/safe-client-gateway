@@ -1,9 +1,10 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
-import { PushwooshApi } from '@/modules/email/datasources/pushwoosh-api.service';
+import { PushwooshApi } from '@/modules/email/pushwoosh/datasources/pushwoosh-api.service';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
-import type { CreateEmailMessageDto } from '@/modules/email/domain/entities/create-email-message.dto.entity';
+import type { CreateEmailMessageDto } from '@/modules/email/pushwoosh/domain/entities/create-email-message.dto.entity';
 import { DataSourceError } from '@/domain/errors/data-source.error';
 import { faker } from '@faker-js/faker';
 
@@ -23,6 +24,8 @@ describe('PushwooshApi', () => {
   let pushwooshFromEmail: string;
   let pushwooshFromName: string;
 
+  const configKey = 'email.pushwoosh';
+
   beforeEach(() => {
     jest.resetAllMocks();
 
@@ -34,13 +37,13 @@ describe('PushwooshApi', () => {
 
     fakeConfigurationService = new FakeConfigurationService();
     fakeConfigurationService.set(
-      'email.applicationCode',
+      `${configKey}.applicationCode`,
       pushwooshApplicationCode,
     );
-    fakeConfigurationService.set('email.apiKey', pushwooshApiKey);
-    fakeConfigurationService.set('email.baseUri', pushwooshBaseUri);
-    fakeConfigurationService.set('email.fromEmail', pushwooshFromEmail);
-    fakeConfigurationService.set('email.fromName', pushwooshFromName);
+    fakeConfigurationService.set(`${configKey}.apiKey`, pushwooshApiKey);
+    fakeConfigurationService.set(`${configKey}.baseUri`, pushwooshBaseUri);
+    fakeConfigurationService.set(`${configKey}.fromEmail`, pushwooshFromEmail);
+    fakeConfigurationService.set(`${configKey}.fromName`, pushwooshFromName);
 
     service = new PushwooshApi(
       fakeConfigurationService,

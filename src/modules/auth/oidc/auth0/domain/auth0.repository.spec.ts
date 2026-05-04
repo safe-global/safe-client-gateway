@@ -54,9 +54,41 @@ describe('Auth0Repository', () => {
   });
 
   describe('authenticateWithAuthorizationCode', () => {
-    it('should exchange the code and verify the returned access token', async () => {
+    it('should exchange the authorization code and return verified token claims', async () => {
       const code = faker.string.alphanumeric(32);
-      const accessToken = faker.string.alphanumeric(64);
+      const token = faker.string.alphanumeric(64);
+      const decodedToken = {
+        sub: `auth0|${faker.string.uuid()}`,
+        iat: faker.date.past(),
+        nbf: faker.date.recent(),
+        exp: faker.date.future(),
+        email: faker.internet.email().toLowerCase(),
+        email_verified: true,
+      };
+
+      auth0ApiMock.exchangeAuthorizationCode.mockResolvedValue(
+        rawify({
+          access_token: faker.string.alphanumeric(64),
+          refresh_token: faker.string.alphanumeric(64),
+          id_token: token,
+          token_type: 'Bearer',
+          expires_in: 3600,
+        }),
+      );
+      auth0TokenVerifierMock.verifyAndDecode.mockResolvedValue(decodedToken);
+
+      const result = await target.authenticateWithAuthorizationCode(code);
+
+      expect(result).toEqual(decodedToken);
+      expect(auth0ApiMock.exchangeAuthorizationCode).toHaveBeenCalledWith(code);
+      expect(auth0TokenVerifierMock.verifyAndDecode).toHaveBeenCalledWith(
+        token,
+      );
+    });
+
+    it('should keep authentication working when the token has no email claims', async () => {
+      const code = faker.string.alphanumeric(32);
+      const token = faker.string.alphanumeric(64);
       const decodedToken = {
         sub: `auth0|${faker.string.uuid()}`,
         iat: faker.date.past(),
@@ -66,21 +98,20 @@ describe('Auth0Repository', () => {
 
       auth0ApiMock.exchangeAuthorizationCode.mockResolvedValue(
         rawify({
-          access_token: accessToken,
+          access_token: faker.string.alphanumeric(64),
           refresh_token: faker.string.alphanumeric(64),
-          id_token: faker.string.alphanumeric(64),
+          id_token: token,
           token_type: 'Bearer',
           expires_in: 3600,
         }),
       );
-      auth0TokenVerifierMock.verifyAndDecode.mockReturnValue(decodedToken);
+      auth0TokenVerifierMock.verifyAndDecode.mockResolvedValue(decodedToken);
 
       const result = await target.authenticateWithAuthorizationCode(code);
 
       expect(result).toEqual(decodedToken);
-      expect(auth0ApiMock.exchangeAuthorizationCode).toHaveBeenCalledWith(code);
       expect(auth0TokenVerifierMock.verifyAndDecode).toHaveBeenCalledWith(
-        accessToken,
+        token,
       );
     });
 
@@ -98,7 +129,7 @@ describe('Auth0Repository', () => {
 
     it('should propagate token verifier errors', async () => {
       const code = faker.string.alphanumeric(32);
-      const error = new Error('invalid access token');
+      const error = new Error('invalid token');
 
       auth0ApiMock.exchangeAuthorizationCode.mockResolvedValue(
         rawify({
@@ -106,11 +137,10 @@ describe('Auth0Repository', () => {
           refresh_token: faker.string.alphanumeric(64),
           id_token: faker.string.alphanumeric(64),
           token_type: 'Bearer',
+          expires_in: 3600,
         }),
       );
-      auth0TokenVerifierMock.verifyAndDecode.mockImplementation(() => {
-        throw error;
-      });
+      auth0TokenVerifierMock.verifyAndDecode.mockRejectedValue(error);
 
       await expect(
         target.authenticateWithAuthorizationCode(code),
@@ -122,9 +152,11 @@ describe('Auth0Repository', () => {
 
       auth0ApiMock.exchangeAuthorizationCode.mockResolvedValue(
         rawify({
-          access_token: '',
-          id_token: faker.string.alphanumeric(64),
+          access_token: faker.string.alphanumeric(64),
+          refresh_token: faker.string.alphanumeric(64),
+          id_token: '',
           token_type: 'Bearer',
+          expires_in: 3600,
         }),
       );
 

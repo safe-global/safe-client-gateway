@@ -4,6 +4,7 @@ import { UnofficialMasterCopyError } from '@/modules/relay/domain/errors/unoffic
 import { UnofficialMultiSendError } from '@/modules/relay/domain/errors/unofficial-multisend.error';
 import { InvalidTransferError } from '@/modules/relay/domain/errors/invalid-transfer.error';
 import { UnofficialProxyFactoryError } from '@/modules/relay/domain/errors/unofficial-proxy-factory.error';
+import { UnofficialSignerFactoryError } from '@/modules/relay/domain/errors/unofficial-signer-factory.error';
 import type { Address, Hex } from 'viem';
 import { RelayTransactionHelper } from '@/modules/relay/domain/relay-transaction-helper';
 
@@ -99,6 +100,28 @@ export class LimitAddressesMapper {
       return this.relayTransactionHelper.getOwnersFromCreateProxyWithNonce(
         args.data,
       );
+    }
+
+    // Calldata matches createSigner on an official SafeWebAuthnSignerFactory.
+    // The branch is self-contained: every outcome of the createSigner path
+    // (unofficial factory, malformed args, success) terminates here so future
+    // branches added below this point can't be reached by createSigner data.
+    if (this.relayTransactionHelper.isCreateSigner(args.data)) {
+      if (
+        !this.relayTransactionHelper.isOfficialSignerFactoryDeployment({
+          chainId: args.chainId,
+          address: args.to,
+        })
+      ) {
+        throw new UnofficialSignerFactoryError();
+      }
+      const signerLimitAddress =
+        this.relayTransactionHelper.getSignerFactoryLimitAddress(args.data);
+      if (!signerLimitAddress) {
+        // Selector matched but the args failed to decode (malformed payload).
+        throw new InvalidTransferError();
+      }
+      return [signerLimitAddress];
     }
 
     throw new InvalidTransferError();

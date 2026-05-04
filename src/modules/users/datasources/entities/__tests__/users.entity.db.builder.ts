@@ -11,6 +11,7 @@ export function userBuilder(): IBuilder<User> {
     .with('id', faker.number.int())
     .with('status', faker.helpers.arrayElement(getStringEnumKeys(UserStatus)))
     .with('extUserId', null)
+    .with('email', null)
     .with('wallets', [])
     .with('members', [])
     .with('createdAt', new Date())

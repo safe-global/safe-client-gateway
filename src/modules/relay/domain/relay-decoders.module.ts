@@ -5,6 +5,7 @@ import { Erc20Decoder } from '@/modules/relay/domain/contracts/decoders/erc-20-d
 import { MultiSendDecoder } from '@/modules/contracts/domain/decoders/multi-send-decoder.helper';
 import { ProxyFactoryDecoder } from '@/modules/relay/domain/contracts/decoders/proxy-factory-decoder.helper';
 import { DelayModifierDecoder } from '@/modules/alerts/domain/contracts/decoders/delay-modifier-decoder.helper';
+import { SignerFactoryDecoder } from '@/modules/relay/domain/contracts/decoders/signer-factory-decoder.helper';
 
 @Module({
   providers: [
@@ -13,6 +14,7 @@ import { DelayModifierDecoder } from '@/modules/alerts/domain/contracts/decoders
     MultiSendDecoder,
     ProxyFactoryDecoder,
     DelayModifierDecoder,
+    SignerFactoryDecoder,
   ],
   exports: [
     SafeDecoder,
@@ -20,6 +22,7 @@ import { DelayModifierDecoder } from '@/modules/alerts/domain/contracts/decoders
     MultiSendDecoder,
     ProxyFactoryDecoder,
     DelayModifierDecoder,
+    SignerFactoryDecoder,
   ],
 })
 export class RelayDecodersModule {}

@@ -36,8 +36,9 @@ export default (): ReturnType<typeof configuration> => ({
       clientSecret: faker.string.uuid(),
       redirectUri: faker.internet.url(),
       audience: faker.internet.url({ appendSlash: false }),
-      signingSecret: faker.string.alphanumeric(32),
       scope: 'openid email',
+      jwksCacheMaxAgeMs: faker.number.int({ min: 60_000, max: 3_600_000 }),
+      jwksCooldownMs: faker.number.int({ min: 1_000, max: 60_000 }),
     },
     rateLimit: {
       max: faker.number.int({ min: 100, max: 200 }),
@@ -145,11 +146,33 @@ export default (): ReturnType<typeof configuration> => ({
     },
   },
   email: {
-    applicationCode: faker.string.alphanumeric(),
-    baseUri: faker.internet.url({ appendSlash: false }),
-    apiKey: faker.string.hexadecimal({ length: 32 }),
-    fromEmail: faker.internet.email(),
-    fromName: faker.person.fullName(),
+    pushwoosh: {
+      applicationCode: faker.string.alphanumeric(),
+      baseUri: faker.internet.url({ appendSlash: false }),
+      apiKey: faker.string.hexadecimal({ length: 32 }),
+      fromEmail: faker.internet.email(),
+      fromName: faker.person.fullName(),
+    },
+    ses: {
+      fromEmail: faker.internet.email(),
+      fromName: faker.company.name(),
+      queue: {
+        removeOnComplete: {
+          age: faker.number.int({ min: 0, max: 3600 }),
+          count: faker.number.int({ min: 0, max: 1000 }),
+        },
+        removeOnFail: {
+          age: faker.number.int({ min: 0, max: 86400 }),
+          count: faker.number.int({ min: 0, max: 500 }),
+        },
+        backoff: {
+          type: 'exponential',
+          delay: faker.number.int({ min: 0, max: 5000 }),
+        },
+        attempts: faker.number.int({ min: 1, max: 3 }),
+        concurrency: faker.number.int({ min: 1, max: 5 }),
+      },
+    },
   },
   expirationTimeInSeconds: {
     deviatePercent: faker.number.int({ min: 10, max: 20 }),
@@ -168,6 +191,7 @@ export default (): ReturnType<typeof configuration> => ({
   express: { jsonLimit: '1mb' },
   features: {
     email: false,
+    sesEmail: false,
     zerionBalancesEnabled: false,
     zerionPositions: false,
     debugLogs: false,

@@ -4,6 +4,7 @@ export enum JobType {
   CSV_EXPORT = 'csv-export',
   PUSH_NOTIFICATION_EVENT = 'push-notification-event',
   PUSH_NOTIFICATION_DELIVERY = 'push-notification-delivery',
+  SEND_EMAIL = 'send-email',
 }
 
 export type JobTypeName = (typeof JobType)[keyof typeof JobType];

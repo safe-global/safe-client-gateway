@@ -15,4 +15,10 @@ export class UserSession {
       'Wallet signer address. Present only for SIWE-authenticated users.',
   })
   signerAddress?: Address;
+
+  @ApiPropertyOptional({
+    description:
+      'Verified email address. Present only for OIDC-authenticated users when stored.',
+  })
+  email?: string;
 }

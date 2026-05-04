@@ -24,6 +24,7 @@ import { getStringEnumKeys } from '@/domain/common/utils/enum';
 import { Member } from '@/modules/users/datasources/entities/member.entity.db';
 import { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
 import { SpaceSafe } from '@/modules/spaces/datasources/entities/space-safes.entity.db';
+import { UserEmailAlreadyInUseError } from '@/modules/users/domain/errors/user-email-already-in-use.error';
 
 const mockLoggingService = {
   debug: jest.fn(),
@@ -218,6 +219,7 @@ describe('UsersRepository', () => {
         updatedAt: expect.any(Date),
         user: {
           createdAt: expect.any(Date),
+          email: null,
           extUserId: null,
           id: wallet.user.id,
           status,
@@ -306,6 +308,7 @@ describe('UsersRepository', () => {
       expect(users).toEqual([
         {
           createdAt: expect.any(Date),
+          email: null,
           extUserId: null,
           id: users[0].id,
           status,
@@ -487,6 +490,7 @@ describe('UsersRepository', () => {
         updatedAt: expect.any(Date),
         user: {
           createdAt: expect.any(Date),
+          email: null,
           extUserId: null,
           id: wallet.user.id,
           status,
@@ -702,6 +706,7 @@ describe('UsersRepository', () => {
           updatedAt: expect.any(Date),
           user: {
             createdAt: expect.any(Date),
+            email: null,
             extUserId: null,
             id: wallets[0].user.id,
             status,
@@ -757,6 +762,7 @@ describe('UsersRepository', () => {
         usersRepository.findByWalletAddressOrFail(address),
       ).resolves.toEqual({
         createdAt: expect.any(Date),
+        email: null,
         extUserId: null,
         id: userInsertResult.identifiers[0].id,
         status,
@@ -793,6 +799,7 @@ describe('UsersRepository', () => {
         usersRepository.findByWalletAddress(address),
       ).resolves.toEqual({
         createdAt: expect.any(Date),
+        email: null,
         extUserId: null,
         id: userInsertResult.identifiers[0].id,
         status,
@@ -842,6 +849,7 @@ describe('UsersRepository', () => {
       });
       expect(user).toEqual({
         createdAt: expect.any(Date),
+        email: null,
         id: userId,
         status: 'ACTIVE',
         updatedAt: expect.any(Date),
@@ -859,6 +867,7 @@ describe('UsersRepository', () => {
         updatedAt: expect.any(Date),
         user: {
           createdAt: expect.any(Date),
+          email: null,
           id: userId,
           status: 'ACTIVE',
           updatedAt: expect.any(Date),
@@ -905,66 +914,124 @@ describe('UsersRepository', () => {
     });
   });
 
-  describe('findOrCreateByExtUserId', () => {
-    it('should return the existing user id if the extUserId already exists', async () => {
+  describe('findOrCreateByExtUserIdWithEmail', () => {
+    it('should enforce unique non-null user emails', async () => {
       const dbUserRepository = dataSource.getRepository(User);
-      const extUserId = faker.string.uuid();
-      const status = faker.helpers.arrayElement(UserStatusKeys);
-      const userInsertResult = await dbUserRepository.insert({
-        status,
-        extUserId,
+      const email = faker.internet.email().toLowerCase();
+
+      await dbUserRepository.insert({
+        status: 'ACTIVE',
+        email,
       });
-      const userId = userInsertResult.identifiers[0].id;
 
-      const result = await usersRepository.findOrCreateByExtUserId(extUserId);
-
-      expect(result).toBe(userId);
-      // No additional user should have been created
-      await expect(dbUserRepository.find()).resolves.toHaveLength(1);
+      await expect(
+        dbUserRepository.insert({
+          status: 'ACTIVE',
+          email,
+        }),
+      ).rejects.toThrow(/duplicate key|idx_users_email/);
     });
 
-    it('should create a new user if none exists with the given extUserId', async () => {
+    it('should enforce lowercase user emails', async () => {
+      const dbUserRepository = dataSource.getRepository(User);
+
+      await expect(
+        dbUserRepository.insert({
+          status: 'ACTIVE',
+          email: faker.internet.email().toUpperCase(),
+        }),
+      ).rejects.toThrow(
+        /violates check constraint|users_email_lowercase_check/,
+      );
+    });
+
+    it('should persist a normalized email when the user has none yet', async () => {
       const dbUserRepository = dataSource.getRepository(User);
       const extUserId = faker.string.uuid();
+      const userInsertResult = await dbUserRepository.insert({
+        status: 'ACTIVE',
+        extUserId,
+      });
+      const userId = userInsertResult.identifiers[0].id as number;
+      const email = faker.internet.email();
 
-      const userId = await usersRepository.findOrCreateByExtUserId(extUserId);
+      await usersRepository.findOrCreateByExtUserIdWithEmail(extUserId, {
+        address: email,
+        verified: true,
+      });
 
       const user = await dbUserRepository.findOneOrFail({
         where: { id: userId },
       });
-      expect(user).toEqual({
-        createdAt: expect.any(Date),
-        extUserId,
-        id: userId,
-        status: 'ACTIVE',
-        updatedAt: expect.any(Date),
-      });
+      expect(user.email).toBe(email.toLowerCase());
     });
 
-    it('should return the existing user id on concurrent duplicate insert', async () => {
+    it('should not overwrite an existing email for the same user', async () => {
       const dbUserRepository = dataSource.getRepository(User);
       const extUserId = faker.string.uuid();
+      const existingEmail = faker.internet.email().toLowerCase();
+      const userInsertResult = await dbUserRepository.insert({
+        status: 'ACTIVE',
+        extUserId,
+        email: existingEmail,
+      });
+      const userId = userInsertResult.identifiers[0].id as number;
 
-      // Run two calls concurrently — one will win the insert, the other
-      // should catch the unique constraint violation and retry the find.
-      const [id1, id2] = await Promise.all([
-        usersRepository.findOrCreateByExtUserId(extUserId),
-        usersRepository.findOrCreateByExtUserId(extUserId),
-      ]);
+      await usersRepository.findOrCreateByExtUserIdWithEmail(extUserId, {
+        address: faker.internet.email().toLowerCase(),
+        verified: true,
+      });
 
-      expect(id1).toBe(id2);
-      await expect(dbUserRepository.find()).resolves.toHaveLength(1);
+      const user = await dbUserRepository.findOneOrFail({
+        where: { id: userId },
+      });
+      expect(user.email).toBe(existingEmail);
     });
 
-    it('should rethrow non-constraint-violation errors', async () => {
+    it('should throw when the email belongs to a different user', async () => {
+      const dbUserRepository = dataSource.getRepository(User);
+      const email = faker.internet.email().toLowerCase();
       const extUserId = faker.string.uuid();
-      const error = new Error('unexpected failure');
 
-      jest.spyOn(usersRepository, 'create').mockRejectedValueOnce(error);
+      await dbUserRepository.insert({
+        status: 'ACTIVE',
+        email,
+      });
 
       await expect(
-        usersRepository.findOrCreateByExtUserId(extUserId),
-      ).rejects.toThrow(error);
+        usersRepository.findOrCreateByExtUserIdWithEmail(extUserId, {
+          address: email,
+          verified: true,
+        }),
+      ).rejects.toThrow(UserEmailAlreadyInUseError);
+    });
+
+    it('should throw when an unverified email belongs to a different user', async () => {
+      const dbUserRepository = dataSource.getRepository(User);
+      const email = faker.internet.email().toLowerCase();
+      const extUserId = faker.string.uuid();
+
+      await dbUserRepository.insert({
+        status: 'ACTIVE',
+        email,
+      });
+      const userInsertResult = await dbUserRepository.insert({
+        status: 'ACTIVE',
+        extUserId,
+      });
+      const userId = userInsertResult.identifiers[0].id as number;
+
+      await expect(
+        usersRepository.findOrCreateByExtUserIdWithEmail(extUserId, {
+          address: email,
+          verified: false,
+        }),
+      ).rejects.toThrow(UserEmailAlreadyInUseError);
+
+      const user = await dbUserRepository.findOneOrFail({
+        where: { id: userId },
+      });
+      expect(user.email).toBeNull();
     });
   });
 
@@ -990,6 +1057,7 @@ describe('UsersRepository', () => {
 
       expect(user).toEqual({
         createdAt: expect.any(Date),
+        email: null,
         extUserId: null,
         id: userId,
         status: 'ACTIVE',
@@ -1021,6 +1089,7 @@ describe('UsersRepository', () => {
 
       expect(user).toEqual({
         createdAt: expect.any(Date),
+        email: null,
         extUserId: null,
         id: userId,
         status,

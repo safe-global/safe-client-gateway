@@ -4,12 +4,14 @@ import { Erc20Decoder } from '@/modules/relay/domain/contracts/decoders/erc-20-d
 import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
 import { MultiSendDecoder } from '@/modules/contracts/domain/decoders/multi-send-decoder.helper';
 import { ProxyFactoryDecoder } from '@/modules/relay/domain/contracts/decoders/proxy-factory-decoder.helper';
+import { SignerFactoryDecoder } from '@/modules/relay/domain/contracts/decoders/signer-factory-decoder.helper';
 import {
   getSafeSingletonDeployments,
   getSafeL2SingletonDeployments,
   getMultiSendCallOnlyDeployments,
   getMultiSendDeployments,
   getProxyFactoryDeployments,
+  getSignerFactoryDeployments,
 } from '@/domain/common/utils/deployments';
 import { SafeDecoder } from '@/modules/contracts/domain/decoders/safe-decoder.helper';
 import { InvalidMultiSendError } from '@/modules/relay/domain/errors/invalid-multisend.error';
@@ -23,6 +25,12 @@ import Safe141 from '@/abis/safe/v1.4.1/Safe.abi';
 import Safe150 from '@/abis/safe/v1.5.0/Safe.abi';
 import semverSatisfies from 'semver/functions/satisfies';
 import type { Address, Hex } from 'viem';
+import {
+  encodeAbiParameters,
+  getAddress,
+  keccak256,
+  parseAbiParameters,
+} from 'viem';
 
 type SafeAbi = typeof Safe130 | typeof Safe141 | typeof Safe150;
 
@@ -40,6 +48,7 @@ export class RelayTransactionHelper {
     private readonly multiSendDecoder: MultiSendDecoder,
     private readonly proxyFactoryDecoder: ProxyFactoryDecoder,
     private readonly delayModifierDecoder: DelayModifierDecoder,
+    private readonly signerFactoryDecoder: SignerFactoryDecoder,
   ) {}
 
   private getSafeAbi(version: string): SafeAbi {
@@ -221,6 +230,62 @@ export class RelayTransactionHelper {
   }): boolean {
     const proxyFactoryDeployments = getProxyFactoryDeployments(args);
     return proxyFactoryDeployments.includes(args.address);
+  }
+
+  isCreateSigner(data: Hex): boolean {
+    return this.signerFactoryDecoder.helpers.isCreateSigner(data);
+  }
+
+  isOfficialSignerFactoryDeployment(args: {
+    chainId: string;
+    address: Address;
+  }): boolean {
+    return getSignerFactoryDeployments({ chainId: args.chainId }).includes(
+      args.address,
+    );
+  }
+
+  /**
+   * For `createSigner` calldata, returns a per-passkey limit key derived from
+   * the call arguments.
+   *
+   * The key is the last 20 bytes of `keccak256(abi.encode(x, y, verifiers))`
+   * cast to an Address-shaped string. This gives each unique passkey
+   * (x, y, verifiers) its own daily relay quota, instead of every user
+   * sharing the factory address as a limit key.
+   *
+   * Returns `null` if the args fail to decode (e.g. selector matches but the
+   * payload is malformed). Caller must have already verified the selector
+   * matches `createSigner` and that `to` is an official factory.
+   *
+   * Note: the `isCreateSigner` selector pre-check at the call site is not
+   * redundant with the `decodeFunctionData` + `functionName` check here —
+   * `getSigner` is also in the ABI and would decode cleanly.
+   */
+  getSignerFactoryLimitAddress(data: Hex): Address | null {
+    let x: bigint;
+    let y: bigint;
+    let verifiers: bigint;
+    try {
+      const decoded = this.signerFactoryDecoder.decodeFunctionData({
+        data,
+      });
+      if (decoded.functionName !== 'createSigner') {
+        return null;
+      }
+      [x, y, verifiers] = decoded.args;
+    } catch {
+      return null;
+    }
+
+    const hash = keccak256(
+      encodeAbiParameters(parseAbiParameters('uint256, uint256, uint176'), [
+        x,
+        y,
+        verifiers,
+      ]),
+    );
+    return getAddress(`0x${hash.slice(-40)}`);
   }
 
   isValidCreateProxyWithNonceCall(args: {

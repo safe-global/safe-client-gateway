@@ -68,6 +68,7 @@ import { CsvExportModule } from '@/modules/csv-export/csv-export.module';
 import { SafeShieldModule } from '@/modules/safe-shield/safe-shield.module';
 import { CircuitBreakerModule } from '@/datasources/circuit-breaker/circuit-breaker.module';
 import { BlocklistModule } from '@/config/entities/blocklist.module';
+import { SesEmailModule } from '@/modules/email/ses/ses-email.module';
 
 @Module({})
 export class AppModule implements NestModule {
@@ -77,6 +78,7 @@ export class AppModule implements NestModule {
       oidc_auth: isOidcAuthFeatureEnabled,
       users: isUsersFeatureEnabled,
       email: isEmailFeatureEnabled,
+      sesEmail: isSesEmailFeatureEnabled,
       zerionPositions: isZerionPositionsFeatureEnabled,
     } = configFactory()['features'];
 
@@ -101,6 +103,7 @@ export class AppModule implements NestModule {
         DelegateModule,
         // Note: this feature will not work as expected until we reintegrate the email service
         ...(isEmailFeatureEnabled ? [AlertsModule, RecoveryModule] : []),
+        ...(isSesEmailFeatureEnabled ? [SesEmailModule] : []),
         EstimationsModule,
         FeesModule,
         HealthModule,

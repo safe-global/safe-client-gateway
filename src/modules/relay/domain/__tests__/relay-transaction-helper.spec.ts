@@ -6,6 +6,7 @@ import { Erc20Decoder } from '@/modules/relay/domain/contracts/decoders/erc-20-d
 import { SafeDecoder } from '@/modules/contracts/domain/decoders/safe-decoder.helper';
 import { MultiSendDecoder } from '@/modules/contracts/domain/decoders/multi-send-decoder.helper';
 import { ProxyFactoryDecoder } from '@/modules/relay/domain/contracts/decoders/proxy-factory-decoder.helper';
+import { SignerFactoryDecoder } from '@/modules/relay/domain/contracts/decoders/signer-factory-decoder.helper';
 import { DelayModifierDecoder } from '@/modules/alerts/domain/contracts/decoders/delay-modifier-decoder.helper';
 import { RelayTransactionHelper } from '@/modules/relay/domain/relay-transaction-helper';
 import {
@@ -96,6 +97,7 @@ describe('RelayTransactionHelper', () => {
       new MultiSendDecoder(mockLoggingService),
       new ProxyFactoryDecoder(),
       new DelayModifierDecoder(),
+      new SignerFactoryDecoder(),
     );
   });
 

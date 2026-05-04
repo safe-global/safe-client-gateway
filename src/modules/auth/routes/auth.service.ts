@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { Inject, Injectable } from '@nestjs/common';
+import { ForbiddenException, Inject, Injectable } from '@nestjs/common';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import {
   assertExpirationTime,
@@ -21,6 +21,8 @@ import {
 import { JwtPayloadWithClaims } from '@/datasources/jwt/jwt-claims.entity';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
+import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
+import { UserSession } from '@/modules/auth/routes/entities/user-session.entity';
 
 type AuthTokenResponse = {
   accessToken: string;
@@ -101,6 +103,30 @@ export class AuthService {
     accessToken: string,
   ): JwtPayloadWithClaims<AuthPayloadDto> {
     return this.authRepository.decodeToken(accessToken);
+  }
+
+  public async getUserSession(authPayload: AuthPayload): Promise<UserSession> {
+    if (!authPayload.isAuthenticated()) {
+      throw new ForbiddenException('Not authenticated');
+    }
+
+    if (authPayload.isSiwe()) {
+      return {
+        id: authPayload.sub,
+        authMethod: authPayload.auth_method,
+        signerAddress: authPayload.signer_address,
+      };
+    }
+
+    const email = await this.usersRepository.findEmailById(
+      Number(authPayload.sub),
+    );
+
+    return {
+      id: authPayload.sub,
+      authMethod: authPayload.auth_method,
+      ...(email && { email }),
+    };
   }
 
   public getLogoutRedirectUrl(

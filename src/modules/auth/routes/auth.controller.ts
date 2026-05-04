@@ -18,7 +18,6 @@ import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import {
   Body,
   Controller,
-  ForbiddenException,
   Get,
   HttpCode,
   Inject,
@@ -83,17 +82,8 @@ export class AuthController {
   @ApiForbiddenResponse({ description: 'Not authenticated' })
   @UseGuards(AuthGuard)
   @Get('me')
-  getMe(@Auth() authPayload: AuthPayload): UserSession {
-    if (!authPayload.isAuthenticated()) {
-      throw new ForbiddenException('Not authenticated');
-    }
-    return {
-      id: authPayload.sub,
-      authMethod: authPayload.auth_method,
-      ...(authPayload.isSiwe() && {
-        signerAddress: authPayload.signer_address,
-      }),
-    };
+  async getMe(@Auth() authPayload: AuthPayload): Promise<UserSession> {
+    return this.authService.getUserSession(authPayload);
   }
 
   @ApiOperation({
