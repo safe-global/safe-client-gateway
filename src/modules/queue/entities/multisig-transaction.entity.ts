@@ -12,14 +12,15 @@ import {
 import { z } from 'zod';
 import { Operation } from '@/modules/safe/domain/entities/operation.entity';
 import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
+import { CoercedNumberSchema } from '@/validation/entities/schemas/coerced-number.schema';
 
-export type OffchainConfirmation = z.infer<typeof OffchainConfirmationSchema>;
+export type QueueConfirmation = z.infer<typeof QueueConfirmationSchema>;
 
-export type OffchainMultisigTransactionEntity = z.infer<
-  typeof OffchainMultisigTransactionSchema
+export type QueueMultisigTransactionEntity = z.infer<
+  typeof QueueMultisigTransactionSchema
 >;
 
-export const OffchainConfirmationSchema = z.object({
+export const QueueConfirmationSchema = z.object({
   owner: AddressSchema,
   signature: HexBytesSchema,
   signatureType: z.enum(SignatureType),
@@ -27,15 +28,15 @@ export const OffchainConfirmationSchema = z.object({
   modified: z.coerce.date(),
 });
 
-export const OffchainMultisigTransactionSchema = z.object({
+export const QueueMultisigTransactionSchema = z.object({
   safeTxHash: HexSchema,
-  chainId: z.number(),
+  chainId: NumericStringSchema,
   safe: AddressSchema,
-  nonce: z.number(),
+  nonce: CoercedNumberSchema,
   proposer: NullableAddressSchema,
   proposedByDelegate: NullableAddressSchema,
   to: AddressSchema,
-  value: z.number(),
+  value: NumericStringSchema,
   data: NullableHexSchema,
   operation: z.enum(Operation),
   safeTxGas: NumericStringSchema.nullable(),
@@ -50,9 +51,13 @@ export const OffchainMultisigTransactionSchema = z.object({
   txHash: NullableHexSchema,
   created: z.coerce.date(),
   modified: z.coerce.date(),
-  confirmations: z.array(OffchainConfirmationSchema),
+  confirmations: z.array(QueueConfirmationSchema),
 });
 
-export const OffchainMultisigTransactionPageSchema = buildPageSchema(
-  OffchainMultisigTransactionSchema,
+export const QueueMultisigTransactionPageSchema = buildPageSchema(
+  QueueMultisigTransactionSchema,
+);
+
+export const QueueMultisigTransactionListSchema = z.array(
+  QueueMultisigTransactionSchema,
 );

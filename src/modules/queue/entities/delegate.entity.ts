@@ -8,9 +8,9 @@ import {
 } from '@/validation/entities/schemas/nullable.schema';
 import { z } from 'zod';
 
-export type OffchainDelegate = z.infer<typeof OffchainDelegateSchema>;
+export type QueueDelegate = z.infer<typeof QueueDelegateSchema>;
 
-export const OffchainDelegateSchema = z.object({
+export const QueueDelegateSchema = z.object({
   delegate: AddressSchema,
   delegator: AddressSchema,
   chainId: ChainIdSchema,
@@ -20,6 +20,4 @@ export const OffchainDelegateSchema = z.object({
   modified: z.coerce.date(),
 });
 
-export const OffchainDelegatePageSchema = buildPageSchema(
-  OffchainDelegateSchema,
-);
+export const QueueDelegatePageSchema = buildPageSchema(QueueDelegateSchema);

@@ -11,13 +11,13 @@ import {
 } from '@/validation/entities/schemas/nullable.schema';
 import { z } from 'zod';
 
-export type OffchainMessageConfirmation = z.infer<
-  typeof OffchainMessageConfirmationSchema
+export type QueueMessageConfirmation = z.infer<
+  typeof QueueMessageConfirmationSchema
 >;
 
-export type OffchainMessage = z.infer<typeof OffchainMessageSchema>;
+export type QueueMessage = z.infer<typeof QueueMessageSchema>;
 
-export const OffchainMessageConfirmationSchema = z.object({
+export const QueueMessageConfirmationSchema = z.object({
   owner: AddressSchema,
   signature: HexBytesSchema,
   signatureType: z.enum(SignatureType),
@@ -25,7 +25,7 @@ export const OffchainMessageConfirmationSchema = z.object({
   modified: z.coerce.date(),
 });
 
-export const OffchainMessageSchema = z.object({
+export const QueueMessageSchema = z.object({
   messageHash: HexSchema,
   chainId: z.coerce.number(),
   safe: AddressSchema,
@@ -36,7 +36,7 @@ export const OffchainMessageSchema = z.object({
   originUrl: NullableStringSchema,
   created: z.coerce.date(),
   modified: z.coerce.date(),
-  confirmations: z.array(OffchainMessageConfirmationSchema),
+  confirmations: z.array(QueueMessageConfirmationSchema),
 });
 
-export const OffchainMessagePageSchema = buildPageSchema(OffchainMessageSchema);
+export const QueueMessagePageSchema = buildPageSchema(QueueMessageSchema);

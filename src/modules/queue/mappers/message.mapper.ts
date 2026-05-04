@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import type { OffchainMessage } from '@/modules/offchain/entities/message.entity';
-import { buildOrigin } from '@/modules/offchain/helpers/origin.helper';
+import type { QueueMessage } from '@/modules/queue/entities/message.entity';
+import { buildOrigin } from '@/modules/queue/helpers/origin.helper';
 import type { Message } from '@/modules/messages/domain/entities/message.entity';
 
 /**
@@ -9,7 +9,7 @@ import type { Message } from '@/modules/messages/domain/entities/message.entity'
  * Message confirmations are identical in shape between the queue service
  * and CGW, so no per-confirmation mapping is needed.
  */
-export function mapOffchainToMessage(msg: OffchainMessage): Message {
+export function mapQueueToMessage(msg: QueueMessage): Message {
   return {
     ...msg,
     safeAppId: null,
