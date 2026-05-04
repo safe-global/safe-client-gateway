@@ -1,8 +1,9 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import {
   makeNameSchema,
   NameSchema,
 } from '@/domain/common/schemas/name.schema';
-import { faker } from '@faker-js/faker/.';
+import { faker } from '@faker-js/faker';
 
 describe('NameSchema', () => {
   it('should validate a valid name', () => {

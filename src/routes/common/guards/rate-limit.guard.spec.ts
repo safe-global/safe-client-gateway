@@ -1,9 +1,10 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { RateLimitGuard } from './rate-limit.guard';
 import { BadRequestException, HttpException, HttpStatus } from '@nestjs/common';
 import type { ExecutionContext } from '@nestjs/common';
 import type { ICacheService } from '@/datasources/cache/cache.service.interface';
 import type { ILoggingService } from '@/logging/logging.interface';
-import { faker } from '@faker-js/faker/.';
+import { faker } from '@faker-js/faker';
 
 const mockCacheService = jest.mocked({
   increment: jest.fn(),

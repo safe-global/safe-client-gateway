@@ -4,7 +4,7 @@ import { RateLimitGuard } from '@/routes/common/guards/rate-limit.guard';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import type { ICacheService } from '@/datasources/cache/cache.service.interface';
 import type { ILoggingService } from '@/logging/logging.interface';
-import { faker } from '@faker-js/faker/.';
+import { faker } from '@faker-js/faker';
 
 const mockCacheService = jest.mocked({
   increment: jest.fn(),

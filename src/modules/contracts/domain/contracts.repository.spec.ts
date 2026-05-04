@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
 import { SAFE_TRANSACTION_SERVICE_MAX_LIMIT as LIMIT } from '@/domain/common/constants';
@@ -10,7 +11,7 @@ import {
 import type { IDataDecoderApi } from '@/domain/interfaces/data-decoder-api.interface';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { rawify } from '@/validation/entities/raw.entity';
-import { faker } from '@faker-js/faker/.';
+import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 
 const mockLoggingService = {

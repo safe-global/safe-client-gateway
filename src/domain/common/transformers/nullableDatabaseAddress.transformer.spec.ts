@@ -1,4 +1,5 @@
-import { faker } from '@faker-js/faker/.';
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { faker } from '@faker-js/faker';
 import { nullableDatabaseAddressTransformer } from './nullableDatabaseAddress.transformer';
 import { getAddress } from 'viem';
 

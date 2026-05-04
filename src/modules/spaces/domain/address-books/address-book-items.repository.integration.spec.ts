@@ -20,7 +20,7 @@ import { addressBookItemBuilder } from '@/modules/spaces/domain/address-books/en
 import { spaceBuilder } from '@/modules/spaces/domain/entities/__tests__/space.entity.db.builder';
 import { SpacesRepository } from '@/modules/spaces/domain/spaces.repository';
 import type { ILoggingService } from '@/logging/logging.interface';
-import { faker } from '@faker-js/faker/.';
+import { faker } from '@faker-js/faker';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import type { ConfigService } from '@nestjs/config';
 import { range } from 'lodash';

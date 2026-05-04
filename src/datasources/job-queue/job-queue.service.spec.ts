@@ -4,7 +4,7 @@ import type { Queue } from 'bullmq';
 import { JobQueueService } from '@/datasources/job-queue/job-queue.service';
 import { JobType } from '@/datasources/job-queue/types/job-types';
 import type { TestJobData } from '@/datasources/job-queue/__tests__/test.job.data';
-import { faker } from '@faker-js/faker/.';
+import { faker } from '@faker-js/faker';
 
 describe('JobQueueService', () => {
   let service: JobQueueService;

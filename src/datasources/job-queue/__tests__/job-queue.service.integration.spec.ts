@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { Queue } from 'bullmq';
 import { Test } from '@nestjs/testing';
 import { BullModule, getQueueToken } from '@nestjs/bullmq';
@@ -6,7 +7,7 @@ import { TestJobConsumer } from './../__tests__/test.job.consumer';
 import { JobType } from './../types/job-types';
 import { IJobQueueService } from '@/domain/interfaces/job-queue.interface';
 import type { TestJobData } from '@/datasources/job-queue/__tests__/test.job.data';
-import { faker } from '@faker-js/faker/.';
+import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 
 describe('JobQueueService & TestJobConsumer integration', () => {

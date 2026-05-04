@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { defiMorphoExtraRewardBuilder } from '@/modules/staking/datasources/entities/__tests__/defi-morpho-extra-reward.entity.builder';
 import { defiVaultStakeBuilder } from '@/modules/staking/datasources/entities/__tests__/defi-vault-state.entity.builder';
 import {
@@ -13,7 +14,7 @@ import { TokenInfo } from '@/modules/transactions/routes/entities/swaps/token-in
 import { TransactionInfoType } from '@/modules/transactions/routes/entities/transaction-info.entity';
 import { VaultInfo } from '@/modules/transactions/routes/entities/vaults/vault-info.entity';
 import { VaultTransactionMapper } from '@/modules/transactions/routes/mappers/common/vault-transaction.mapper';
-import { faker } from '@faker-js/faker/.';
+import { faker } from '@faker-js/faker';
 import { NotFoundException } from '@nestjs/common';
 import { type Address, getAddress } from 'viem';
 

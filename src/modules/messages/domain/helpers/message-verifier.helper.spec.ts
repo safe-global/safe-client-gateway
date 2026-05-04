@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { get } from 'lodash';
 import { type Address, getAddress } from 'viem';
@@ -303,7 +304,7 @@ describe('MessageVerifierHelper', () => {
             messageHash: message.messageHash,
             signature: `0x${'-'.repeat(128)}${v}`,
           });
-        }).toThrow(new HttpExceptionNoLog('Could not recover address', 422));
+        }).toThrow('Could not recover address');
 
         expect(mockLoggingRepository.error).not.toHaveBeenCalled();
       },
@@ -705,7 +706,7 @@ describe('MessageVerifierHelper', () => {
             messageHash: message.messageHash,
             signature: `0x${'-'.repeat(128)}${v}`,
           });
-        }).toThrow(new HttpExceptionNoLog('Could not recover address', 422));
+        }).toThrow('Could not recover address');
 
         expect(mockLoggingRepository.error).not.toHaveBeenCalled();
       },
