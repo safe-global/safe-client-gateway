@@ -105,7 +105,7 @@ Request body (no wire change):
 {
   "message": "...",
   "signature": "0x...",
-  "safeAppId": 24,           // deprecated, accepted but ignored server-side
+  "safeAppId": 24, // deprecated, accepted but ignored server-side
   "origin": "{\"name\":\"...\",\"url\":\"https://app.example\"}"
 }
 ```
@@ -119,11 +119,15 @@ ones as deprecated:
 {
   // ...existing fields...
 
-  "safeAppInfo": { "name": "App", "url": "https://app.example", "logoUri": "https://..." },
+  "safeAppInfo": {
+    "name": "App",
+    "url": "https://app.example",
+    "logoUri": "https://..."
+  },
 
-  "safeAppId": 24,           // deprecated; same value as the resolved SafeApp.id, or null
-  "name": "App",             // deprecated; mirrors safeAppInfo.name
-  "logoUri": "https://..."   // deprecated; mirrors safeAppInfo.logoUri
+  "safeAppId": 24, // deprecated; same value as the resolved SafeApp.id, or null
+  "name": "App", // deprecated; mirrors safeAppInfo.name
+  "logoUri": "https://..." // deprecated; mirrors safeAppInfo.logoUri
 }
 ```
 
