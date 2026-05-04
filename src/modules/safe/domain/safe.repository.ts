@@ -203,11 +203,18 @@ export class SafeRepository implements ISafeRepository {
       signature: args.addConfirmationDto.signature,
     });
 
-    await this.queueService.postConfirmation({
-      chainId: args.chainId,
-      safeTxHash: args.safeTxHash,
-      signature: args.addConfirmationDto.signature,
-    });
+    if (this.queueServiceEnabled) {
+      await this.queueService.postConfirmation({
+        chainId: args.chainId,
+        safeTxHash: args.safeTxHash,
+        signature: args.addConfirmationDto.signature,
+      });
+    } else {
+      const transactionService = await this.transactionApiManager.getApi(
+        args.chainId,
+      );
+      await transactionService.postConfirmation(args);
+    }
   }
 
   async getModuleTransaction(args: {
@@ -282,6 +289,18 @@ export class SafeRepository implements ISafeRepository {
     limit?: number;
     offset?: number;
   }): Promise<Page<MultisigTransaction>> {
+    if (!this.queueServiceEnabled) {
+      const transactionService = await this.transactionApiManager.getApi(
+        args.chainId,
+      );
+      const page = await transactionService.getMultisigTransactions({
+        ...args,
+        safeAddress: args.safe.address,
+        executed: false,
+        nonceGte: args.safe.nonce,
+      });
+      return MultisigTransactionPageSchema.parse(page);
+    }
     const page = await this.queueService.getTransactionQueue({
       chainId: args.chainId,
       safeAddress: args.safe.address,
@@ -351,25 +370,9 @@ export class SafeRepository implements ISafeRepository {
       executed: true,
       queued: false,
     });
-    const page = TransactionTypePageSchema.parse(rawPage);
-    return this.enrichWithQueueOrigins(page, args.chainId);
-  }
-
-  private async enrichWithQueueOrigins(
-    page: Page<Transaction>,
-    chainId: string,
-  ): Promise<Page<Transaction>> {
-    if (!this.queueServiceEnabled) return page;
-    const multisigHashes = page.results
-      .filter(isMultisigTransaction)
-      .map((tx) => tx.safeTxHash);
-
-    if (multisigHashes.length === 0) {
-      return page;
-    }
-
-    const origins = await this.fetchQueueOrigins(chainId, multisigHashes);
-    return this.applyQueueOrigins(page, origins);
+    const page: Page<Transaction> = TransactionTypePageSchema.parse(rawPage);
+    await this.bindQueueOrigins(page.results, args.chainId);
+    return page;
   }
 
   private async fetchQueueOrigins(
@@ -377,6 +380,7 @@ export class SafeRepository implements ISafeRepository {
     safeTxHashes: Array<string>,
   ): Promise<Map<string, string | null>> {
     const origins = new Map<string, string | null>();
+    if (safeTxHashes.length === 0) return origins;
     try {
       const raw = await this.queueService.getMultisigTransactionsBatch({
         chainId,
@@ -403,57 +407,39 @@ export class SafeRepository implements ISafeRepository {
     return origins;
   }
 
-  private applyQueueOrigins(
-    page: Page<Transaction>,
-    origins: Map<string, string | null>,
-  ): Page<Transaction> {
-    return {
-      ...page,
-      results: page.results.map((tx) => {
-        if (!isMultisigTransaction(tx)) return tx;
-        const override = origins.get(tx.safeTxHash);
-        return override === undefined ? tx : { ...tx, origin: override };
-      }),
-    };
-  }
-
-  private async enrichMultisigPageWithQueueOrigins(
-    page: Page<MultisigTransaction>,
+  private async bindQueueOrigins(
+    txs: ReadonlyArray<Transaction>,
     chainId: string,
-  ): Promise<Page<MultisigTransaction>> {
-    if (!this.queueServiceEnabled) return page;
-    const hashes = page.results.map((tx) => tx.safeTxHash);
-    if (hashes.length === 0) return page;
-    const origins = await this.fetchQueueOrigins(chainId, hashes);
-    return {
-      ...page,
-      results: page.results.map((tx) => {
-        const override = origins.get(tx.safeTxHash);
-        return override === undefined ? tx : { ...tx, origin: override };
-      }),
-    };
+  ): Promise<void> {
+    if (!this.queueServiceEnabled) return;
+    const multisigs = txs.filter(isMultisigTransaction);
+    if (multisigs.length === 0) return;
+    const origins = await this.fetchQueueOrigins(
+      chainId,
+      multisigs.map((tx) => tx.safeTxHash),
+    );
+    for (const tx of multisigs) {
+      const override = origins.get(tx.safeTxHash);
+      if (override !== undefined) tx.origin = override;
+    }
   }
 
-  private async enrichMultisigWithQueueOrigin(
+  private async bindQueueOrigin(
     tx: MultisigTransaction,
     chainId: string,
-  ): Promise<MultisigTransaction> {
-    if (!this.queueServiceEnabled) return tx;
+  ): Promise<void> {
+    if (!this.queueServiceEnabled) return;
     try {
       const raw = await this.queueService.getMultisigTransaction({
         chainId,
         safeTxHash: tx.safeTxHash,
       });
       const queue = QueueMultisigTransactionSchema.parse(raw);
-      return {
-        ...tx,
-        origin: buildOrigin(queue.originName, queue.originUrl),
-      };
+      tx.origin = buildOrigin(queue.originName, queue.originUrl);
     } catch (error) {
       this.loggingService.warn(
         `Failed to fetch origin from queue service. chainId=${chainId}, safeTxHash=${tx.safeTxHash}, error=${error}`,
       );
-      return tx;
     }
   }
 
@@ -466,10 +452,12 @@ export class SafeRepository implements ISafeRepository {
     );
 
     await transactionService.clearAllTransactions(args.safeAddress);
-    await this.queueService.clearAllTransactions({
-      chainId: args.chainId,
-      safeAddress: args.safeAddress,
-    });
+    if (this.queueServiceEnabled) {
+      await this.queueService.clearAllTransactions({
+        chainId: args.chainId,
+        safeAddress: args.safeAddress,
+      });
+    }
   }
 
   async clearMultisigTransaction(args: {
@@ -480,10 +468,12 @@ export class SafeRepository implements ISafeRepository {
       args.chainId,
     );
     await transactionService.clearMultisigTransaction(args.safeTransactionHash);
-    await this.queueService.clearMultisigTransaction({
-      chainId: args.chainId,
-      safeTxHash: args.safeTransactionHash,
-    });
+    if (this.queueServiceEnabled) {
+      await this.queueService.clearMultisigTransaction({
+        chainId: args.chainId,
+        safeTxHash: args.safeTransactionHash,
+      });
+    }
   }
 
   async getMultiSigTransaction(args: {
@@ -496,8 +486,9 @@ export class SafeRepository implements ISafeRepository {
     const multiSigTransaction = await transactionService.getMultisigTransaction(
       args.safeTransactionHash,
     );
-    const parsed = MultisigTransactionSchema.parse(multiSigTransaction);
-    return this.enrichMultisigWithQueueOrigin(parsed, args.chainId);
+    const tx = MultisigTransactionSchema.parse(multiSigTransaction);
+    await this.bindQueueOrigin(tx, args.chainId);
+    return tx;
   }
 
   async getMultiSigTransactionWithNoCache(args: {
@@ -507,25 +498,23 @@ export class SafeRepository implements ISafeRepository {
     const transactionService = await this.transactionApiManager.getApi(
       args.chainId,
     );
-    const multisigTransaction = await transactionService
+    const tx = await transactionService
       .getMultisigTransactionWithNoCache(args.safeTransactionHash)
       .then(MultisigTransactionSchema.parse);
 
     const safe = await this.getSafe({
       chainId: args.chainId,
-      address: multisigTransaction.safe,
+      address: tx.safe,
     });
 
     this.transactionVerifier.verifyApiTransaction({
       chainId: args.chainId,
-      transaction: multisigTransaction,
+      transaction: tx,
       safe: safe,
     });
 
-    return this.enrichMultisigWithQueueOrigin(
-      multisigTransaction,
-      args.chainId,
-    );
+    await this.bindQueueOrigin(tx, args.chainId);
+    return tx;
   }
 
   async deleteTransaction(args: {
@@ -541,10 +530,11 @@ export class SafeRepository implements ISafeRepository {
     );
     const { safe } = MultisigTransactionSchema.parse(transaction);
 
-    await transactionService.deleteTransaction({
-      safeTxHash: args.safeTxHash,
-      signature: args.signature,
-    });
+    if (this.queueServiceEnabled) {
+      await this.queueService.deleteTransaction(args);
+    } else {
+      await transactionService.deleteTransaction(args);
+    }
 
     // Ensure transaction is removed from cache in case event is not received
     Promise.all([
@@ -616,10 +606,8 @@ export class SafeRepository implements ISafeRepository {
       });
     }
 
-    return this.enrichMultisigPageWithQueueOrigins(
-      multisigTransactions,
-      args.chainId,
-    );
+    await this.bindQueueOrigins(multisigTransactions.results, args.chainId);
+    return multisigTransactions;
   }
 
   async getMultisigTransactions(args: {
@@ -644,7 +632,8 @@ export class SafeRepository implements ISafeRepository {
       trusted: true,
     });
     const parsed = MultisigTransactionPageSchema.parse(page);
-    return this.enrichMultisigPageWithQueueOrigins(parsed, args.chainId);
+    await this.bindQueueOrigins(parsed.results, args.chainId);
+    return parsed;
   }
 
   async getTransfer(args: {
@@ -834,10 +823,16 @@ export class SafeRepository implements ISafeRepository {
       transaction,
     });
 
-    return this.queueService.proposeTransaction({
-      chainId: args.chainId,
-      safeAddress: args.safeAddress,
-      proposeTransactionDto: args.proposeTransactionDto,
+    if (this.queueServiceEnabled) {
+      return this.queueService.proposeTransaction({
+        chainId: args.chainId,
+        safeAddress: args.safeAddress,
+        proposeTransactionDto: args.proposeTransactionDto,
+      });
+    }
+    return transactionService.postMultisigTransaction({
+      address: args.safeAddress,
+      data: args.proposeTransactionDto,
     });
   }
 

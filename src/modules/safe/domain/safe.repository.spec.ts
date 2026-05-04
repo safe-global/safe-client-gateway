@@ -6,9 +6,9 @@ import type { ILoggingService } from '@/logging/logging.interface';
 import type { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
 import type { TransactionVerifierHelper } from '@/modules/transactions/routes/helpers/transaction-verifier.helper';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
-import type { IQueue } from '@/modules/queue/queue.interface';
+import { createMockQueueService } from '@/modules/queue/__tests__/queue.mock';
 import { faker } from '@faker-js/faker';
-import type { Address } from 'viem';
+import type { Address, Hex } from 'viem';
 import { getAddress } from 'viem';
 import { SAFE_TRANSACTION_SERVICE_MAX_LIMIT } from '@/domain/common/constants';
 import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
@@ -28,10 +28,9 @@ import {
   moduleTransactionBuilder,
   toJson as moduleTransactionToJson,
 } from '@/modules/safe/domain/entities/__tests__/module-transaction.builder';
+import { queueMultisigTransactionBuilder } from '@/modules/queue/entities/__tests__/queue-multisig-transaction.builder';
 import type { QueueMultisigTransactionEntity } from '@/modules/queue/entities/multisig-transaction.entity';
 import { buildOrigin } from '@/modules/queue/helpers/origin.helper';
-import type { Hex } from 'viem';
-import { Operation } from '@/modules/safe/domain/entities/operation.entity';
 
 const mockTransactionApiManager = {
   getApi: jest.fn(),
@@ -46,40 +45,6 @@ const mockTransactionApi = {
   getMultisigTransactions: jest.fn(),
   getMultisigTransactionsWithNoCache: jest.fn(),
 } as jest.MockedObjectDeep<ITransactionApi>;
-
-function buildQueueEntity(overrides: {
-  chainId: string;
-  safe: Address;
-  safeTxHash: Hex;
-  originName: string | null;
-  originUrl: string | null;
-}): QueueMultisigTransactionEntity {
-  return {
-    safeTxHash: overrides.safeTxHash,
-    chainId: overrides.chainId,
-    safe: overrides.safe,
-    nonce: faker.number.int({ min: 0, max: 100 }),
-    proposer: getAddress(faker.finance.ethereumAddress()),
-    proposedByDelegate: null,
-    to: getAddress(faker.finance.ethereumAddress()),
-    value: faker.string.numeric(),
-    data: null,
-    operation: Operation.CALL,
-    safeTxGas: null,
-    baseGas: null,
-    gasPrice: null,
-    gasToken: null,
-    refundReceiver: null,
-    failed: false,
-    notes: null,
-    originName: overrides.originName,
-    originUrl: overrides.originUrl,
-    txHash: faker.string.hexadecimal({ length: 64 }) as Hex,
-    created: faker.date.recent(),
-    modified: faker.date.recent(),
-    confirmations: [],
-  };
-}
 
 const mockLoggingService = {
   error: jest.fn(),
@@ -102,27 +67,7 @@ const mockConfigurationService = {
   getOrThrow: jest.fn(),
 } as jest.MockedObjectDeep<IConfigurationService>;
 
-const mockQueueService = {
-  getMultisigTransaction: jest.fn(),
-  getMultisigTransactionsBatch: jest.fn(),
-  getTransactionQueue: jest.fn(),
-  proposeTransaction: jest.fn(),
-  postConfirmation: jest.fn(),
-  deleteTransaction: jest.fn(),
-  getDelegates: jest.fn(),
-  postDelegate: jest.fn(),
-  deleteDelegate: jest.fn(),
-  getMessageByHash: jest.fn(),
-  getMessagesBySafe: jest.fn(),
-  postMessage: jest.fn(),
-  postMessageSignature: jest.fn(),
-  clearMultisigTransaction: jest.fn(),
-  clearMultisigTransactions: jest.fn(),
-  clearAllTransactions: jest.fn(),
-  clearMessagesBySafe: jest.fn(),
-  clearMessagesByHash: jest.fn(),
-  clearDelegates: jest.fn(),
-} as jest.MockedObjectDeep<IQueue>;
+const mockQueueService = createMockQueueService();
 
 describe('SafeRepository', () => {
   let repository: SafeRepository;
@@ -540,9 +485,15 @@ describe('SafeRepository', () => {
       originName: string | null;
       originUrl: string | null;
     }): QueueMultisigTransactionEntity =>
-      buildQueueEntity({ chainId, safe: safeAddress, ...overrides });
+      queueMultisigTransactionBuilder()
+        .with('chainId', chainId)
+        .with('safe', safeAddress)
+        .with('safeTxHash', overrides.safeTxHash)
+        .with('originName', overrides.originName)
+        .with('originUrl', overrides.originUrl)
+        .build();
 
-    it('replaces origin on every multisig entry with queue-service metadata', async () => {
+    it('should replace origin on every multisig entry with queue-service metadata', async () => {
       const multisigA = multisigTransactionBuilder()
         .with('safe', safeAddress)
         .with('origin', 'tx-service-origin-A')
@@ -608,7 +559,7 @@ describe('SafeRepository', () => {
       });
     });
 
-    it('leaves non-multisig entries (ethereum, module) untouched', async () => {
+    it('should leave non-multisig entries (ethereum, module) untouched', async () => {
       const multisig = multisigTransactionBuilder()
         .with('safe', safeAddress)
         .with('origin', 'tx-service-origin')
@@ -669,7 +620,7 @@ describe('SafeRepository', () => {
       });
     });
 
-    it('falls back to tx-service origin for hashes the batch response omits', async () => {
+    it('should fall back to tx-service origin for hashes the batch response omits', async () => {
       const multisigOk = multisigTransactionBuilder()
         .with('safe', safeAddress)
         .with('origin', 'tx-service-origin-ok')
@@ -717,7 +668,7 @@ describe('SafeRepository', () => {
       );
     });
 
-    it('keeps tx-service origin on every entry when the batch call fails', async () => {
+    it('should keep tx-service origin on every entry when the batch call fails', async () => {
       const multisig = multisigTransactionBuilder()
         .with('safe', safeAddress)
         .with('origin', 'tx-service-origin')
@@ -748,7 +699,7 @@ describe('SafeRepository', () => {
       );
     });
 
-    it('skips queue-service calls entirely when the page has no multisig entries', async () => {
+    it('should skip queue-service calls entirely when the page has no multisig entries', async () => {
       const ethereum = ethereumTransactionBuilder().build();
 
       const page = pageBuilder<unknown>()
@@ -766,7 +717,7 @@ describe('SafeRepository', () => {
       ).not.toHaveBeenCalled();
     });
 
-    it('sets origin to null when the queue record has no originName and no originUrl', async () => {
+    it('should set origin to null when the queue record has no originName and no originUrl', async () => {
       const multisig = multisigTransactionBuilder()
         .with('safe', safeAddress)
         .with('origin', 'tx-service-origin')
@@ -805,7 +756,7 @@ describe('SafeRepository', () => {
     const chainId = faker.string.numeric();
     const safeAddress = getAddress(faker.finance.ethereumAddress());
 
-    it('overrides origin with the queue-service value', async () => {
+    it('should override origin with the queue-service value', async () => {
       const tx = multisigTransactionBuilder()
         .with('safe', safeAddress)
         .with('origin', 'tx-service-origin')
@@ -815,13 +766,13 @@ describe('SafeRepository', () => {
       );
       mockQueueService.getMultisigTransaction.mockResolvedValue(
         rawify(
-          buildQueueEntity({
-            chainId,
-            safe: safeAddress,
-            safeTxHash: tx.safeTxHash,
-            originName: 'App',
-            originUrl: 'https://app.example',
-          }),
+          queueMultisigTransactionBuilder()
+            .with('chainId', chainId)
+            .with('safe', safeAddress)
+            .with('safeTxHash', tx.safeTxHash)
+            .with('originName', 'App')
+            .with('originUrl', 'https://app.example')
+            .build(),
         ),
       );
 
@@ -837,7 +788,7 @@ describe('SafeRepository', () => {
       });
     });
 
-    it('keeps tx-service origin when the queue call fails', async () => {
+    it('should keep tx-service origin when the queue call fails', async () => {
       const tx = multisigTransactionBuilder()
         .with('safe', safeAddress)
         .with('origin', 'tx-service-origin')
@@ -860,7 +811,7 @@ describe('SafeRepository', () => {
       );
     });
 
-    it('skips the queue call entirely when FF_QUEUE_SERVICE is off', async () => {
+    it('should skip the queue call entirely when FF_QUEUE_SERVICE is off', async () => {
       const repo = createRepository({ queueServiceEnabled: false });
       const tx = multisigTransactionBuilder()
         .with('safe', safeAddress)
@@ -885,7 +836,7 @@ describe('SafeRepository', () => {
     const safeAddress = getAddress(faker.finance.ethereumAddress());
     const safe = safeBuilder().with('address', safeAddress).build();
 
-    it('overrides origin with the queue-service value', async () => {
+    it('should override origin with the queue-service value', async () => {
       const tx = multisigTransactionBuilder()
         .with('safe', safeAddress)
         .with('origin', 'tx-service-origin')
@@ -896,13 +847,13 @@ describe('SafeRepository', () => {
       mockTransactionApi.getSafe.mockResolvedValue(rawify(safe));
       mockQueueService.getMultisigTransaction.mockResolvedValue(
         rawify(
-          buildQueueEntity({
-            chainId,
-            safe: safeAddress,
-            safeTxHash: tx.safeTxHash,
-            originName: 'App',
-            originUrl: 'https://app.example',
-          }),
+          queueMultisigTransactionBuilder()
+            .with('chainId', chainId)
+            .with('safe', safeAddress)
+            .with('safeTxHash', tx.safeTxHash)
+            .with('originName', 'App')
+            .with('originUrl', 'https://app.example')
+            .build(),
         ),
       );
 
@@ -914,7 +865,7 @@ describe('SafeRepository', () => {
       expect(result.origin).toBe(buildOrigin('App', 'https://app.example'));
     });
 
-    it('skips the queue call entirely when FF_QUEUE_SERVICE is off', async () => {
+    it('should skip the queue call entirely when FF_QUEUE_SERVICE is off', async () => {
       const repo = createRepository({ queueServiceEnabled: false });
       const tx = multisigTransactionBuilder()
         .with('safe', safeAddress)
@@ -939,7 +890,7 @@ describe('SafeRepository', () => {
     const chainId = faker.string.numeric();
     const safeAddress = getAddress(faker.finance.ethereumAddress());
 
-    it('overrides origin on each entry from the batch response', async () => {
+    it('should override origin on each entry from the batch response', async () => {
       const txA = multisigTransactionBuilder()
         .with('safe', safeAddress)
         .with('origin', 'tx-service-origin-A')
@@ -962,20 +913,20 @@ describe('SafeRepository', () => {
       );
       mockQueueService.getMultisigTransactionsBatch.mockResolvedValue(
         rawify([
-          buildQueueEntity({
-            chainId,
-            safe: safeAddress,
-            safeTxHash: txA.safeTxHash,
-            originName: 'AppA',
-            originUrl: 'https://a.example',
-          }),
-          buildQueueEntity({
-            chainId,
-            safe: safeAddress,
-            safeTxHash: txB.safeTxHash,
-            originName: 'AppB',
-            originUrl: 'https://b.example',
-          }),
+          queueMultisigTransactionBuilder()
+            .with('chainId', chainId)
+            .with('safe', safeAddress)
+            .with('safeTxHash', txA.safeTxHash)
+            .with('originName', 'AppA')
+            .with('originUrl', 'https://a.example')
+            .build(),
+          queueMultisigTransactionBuilder()
+            .with('chainId', chainId)
+            .with('safe', safeAddress)
+            .with('safeTxHash', txB.safeTxHash)
+            .with('originName', 'AppB')
+            .with('originUrl', 'https://b.example')
+            .build(),
         ]),
       );
 
@@ -998,7 +949,7 @@ describe('SafeRepository', () => {
       });
     });
 
-    it('keeps tx-service origin for hashes the batch omits', async () => {
+    it('should keep tx-service origin for hashes the batch omits', async () => {
       const txKept = multisigTransactionBuilder()
         .with('safe', safeAddress)
         .with('origin', 'tx-service-origin-kept')
@@ -1021,13 +972,13 @@ describe('SafeRepository', () => {
       );
       mockQueueService.getMultisigTransactionsBatch.mockResolvedValue(
         rawify([
-          buildQueueEntity({
-            chainId,
-            safe: safeAddress,
-            safeTxHash: txKept.safeTxHash,
-            originName: 'AppKept',
-            originUrl: 'https://kept.example',
-          }),
+          queueMultisigTransactionBuilder()
+            .with('chainId', chainId)
+            .with('safe', safeAddress)
+            .with('safeTxHash', txKept.safeTxHash)
+            .with('originName', 'AppKept')
+            .with('originUrl', 'https://kept.example')
+            .build(),
         ]),
       );
 
@@ -1045,7 +996,7 @@ describe('SafeRepository', () => {
       );
     });
 
-    it('skips the queue call entirely when FF_QUEUE_SERVICE is off', async () => {
+    it('should skip the queue call entirely when FF_QUEUE_SERVICE is off', async () => {
       const repo = createRepository({ queueServiceEnabled: false });
       const tx = multisigTransactionBuilder()
         .with('safe', safeAddress)
@@ -1078,7 +1029,7 @@ describe('SafeRepository', () => {
     const safeAddress = getAddress(faker.finance.ethereumAddress());
     const safe = safeBuilder().with('address', safeAddress).build();
 
-    it('overrides origin on each entry from the batch response', async () => {
+    it('should override origin on each entry from the batch response', async () => {
       const tx = multisigTransactionBuilder()
         .with('safe', safeAddress)
         .with('origin', 'tx-service-origin')
@@ -1095,13 +1046,13 @@ describe('SafeRepository', () => {
       mockTransactionApi.getSafe.mockResolvedValue(rawify(safe));
       mockQueueService.getMultisigTransactionsBatch.mockResolvedValue(
         rawify([
-          buildQueueEntity({
-            chainId,
-            safe: safeAddress,
-            safeTxHash: tx.safeTxHash,
-            originName: 'App',
-            originUrl: 'https://app.example',
-          }),
+          queueMultisigTransactionBuilder()
+            .with('chainId', chainId)
+            .with('safe', safeAddress)
+            .with('safeTxHash', tx.safeTxHash)
+            .with('originName', 'App')
+            .with('originUrl', 'https://app.example')
+            .build(),
         ]),
       );
 
@@ -1115,7 +1066,7 @@ describe('SafeRepository', () => {
       );
     });
 
-    it('skips the queue call entirely when FF_QUEUE_SERVICE is off', async () => {
+    it('should skip the queue call entirely when FF_QUEUE_SERVICE is off', async () => {
       const repo = createRepository({ queueServiceEnabled: false });
       const tx = multisigTransactionBuilder()
         .with('safe', safeAddress)
