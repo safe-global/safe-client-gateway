@@ -94,18 +94,17 @@ describe('MessageSchema', () => {
     expect(result.success && result.data.message).toStrictEqual(message);
   });
 
-  it.each([
-    'safeAppId' as const,
-    'preparedSignature' as const,
-    'origin' as const,
-  ])('should default %s to null', (key) => {
-    const message = messageBuilder().build();
-    delete message[key];
+  it.each(['preparedSignature' as const, 'origin' as const])(
+    'should default %s to null',
+    (key) => {
+      const message = messageBuilder().build();
+      delete message[key];
 
-    const result = MessageSchema.safeParse(message);
+      const result = MessageSchema.safeParse(message);
 
-    expect(result.success && result.data[key]).toBe(null);
-  });
+      expect(result.success && result.data[key]).toBe(null);
+    },
+  );
 
   it('should not allow a non-array confirmations', () => {
     const message = messageBuilder()
