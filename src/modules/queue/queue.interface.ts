@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type { Page } from '@/domain/entities/page.entity';
 import type { Delegate } from '@/modules/delegate/domain/entities/delegate.entity';
-import type { Message } from '@/modules/messages/domain/entities/message.entity';
 import type { QueueMessage } from '@/modules/queue/entities/message.entity';
 import type { QueueMultisigTransactionEntity } from '@/modules/queue/entities/multisig-transaction.entity';
 import type { ProposeTransactionDto } from '@/modules/transactions/domain/entities/propose-transaction.dto.entity';
@@ -77,7 +76,7 @@ export interface IQueue {
   getMessageByHash(args: {
     chainId: string;
     messageHash: string;
-  }): Promise<Raw<Message>>;
+  }): Promise<Raw<QueueMessage>>;
 
   getMessagesBySafe(args: {
     chainId: string;
@@ -93,7 +92,7 @@ export interface IQueue {
     safeAppId: number | null;
     signature: string;
     origin: string | null;
-  }): Promise<Raw<Message>>;
+  }): Promise<unknown>;
 
   postMessageSignature(args: {
     chainId: string;
@@ -105,11 +104,6 @@ export interface IQueue {
   clearMultisigTransaction(args: {
     chainId: string;
     safeTxHash: string;
-  }): Promise<void>;
-
-  clearMultisigTransactions(args: {
-    chainId: string;
-    safeAddress: Address;
   }): Promise<void>;
 
   clearAllTransactions(args: {

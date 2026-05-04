@@ -7,25 +7,19 @@ import {
   ICacheService,
 } from '@/datasources/cache/cache.service.interface';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
-import { stringifyWithBigInt } from '@/datasources/network/json.helper';
 import {
   QueueMultisigTransactionListSchema,
   QueueMultisigTransactionSchema,
 } from '@/modules/queue/entities/multisig-transaction.entity';
 import type { QueueMultisigTransactionEntity } from '@/modules/queue/entities/multisig-transaction.entity';
-import {
-  QueueMessage,
-  QueueMessageSchema,
-} from '@/modules/queue/entities/message.entity';
+import { QueueMessage } from '@/modules/queue/entities/message.entity';
 import { parseOrigin } from '@/modules/queue/helpers/origin.helper';
-import { mapQueueToMessage } from '@/modules/queue/mappers/message.mapper';
 import {
   NetworkService,
   INetworkService,
 } from '@/datasources/network/network.service.interface';
 import type { Page } from '@/domain/entities/page.entity';
 import type { Delegate } from '@/modules/delegate/domain/entities/delegate.entity';
-import type { Message } from '@/modules/messages/domain/entities/message.entity';
 import type { ProposeTransactionDto } from '@/modules/transactions/domain/entities/propose-transaction.dto.entity';
 import type { IQueue } from '@/modules/queue/queue.interface';
 import { rawify } from '@/validation/entities/raw.entity';
@@ -72,26 +66,26 @@ export class QueueService implements IQueue {
       const { originName, originUrl } = parseOrigin(dto.origin);
 
       const url = `${this.baseUri}/api/v1/multisig-transactions`;
-      // wei values can exceed Number.MAX_SAFE_INTEGER — serialize as BigInt
-      // to preserve precision against the queue's `integer` schema.
-      const body = stringifyWithBigInt({
-        chainId: Number(args.chainId),
-        safe: args.safeAddress,
-        to: dto.to,
-        value: BigInt(dto.value),
-        data: dto.data,
-        nonce: Number(dto.nonce),
-        operation: dto.operation,
-        safeTxGas: BigInt(dto.safeTxGas),
-        baseGas: BigInt(dto.baseGas),
-        gasPrice: BigInt(dto.gasPrice),
-        gasToken: dto.gasToken,
-        refundReceiver: dto.refundReceiver,
-        originName,
-        originUrl,
-        signatures: dto.signature ? [dto.signature] : [],
+      return await this.networkService.post({
+        url,
+        data: {
+          chainId: Number(args.chainId),
+          safe: args.safeAddress,
+          to: dto.to,
+          value: dto.value,
+          data: dto.data,
+          nonce: Number(dto.nonce),
+          operation: dto.operation,
+          safeTxGas: dto.safeTxGas,
+          baseGas: dto.baseGas,
+          gasPrice: dto.gasPrice,
+          gasToken: dto.gasToken,
+          refundReceiver: dto.refundReceiver,
+          originName,
+          originUrl,
+          signatures: dto.signature ? [dto.signature] : [],
+        },
       });
-      return await this.networkService.post({ url, body });
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
@@ -124,13 +118,12 @@ export class QueueService implements IQueue {
     safeTxHashes: ReadonlyArray<string>;
   }): Promise<Raw<Array<QueueMultisigTransactionEntity>>> {
     try {
-      const url = `${this.baseUri}/api/v1/multisig-transactions/batch`;
-      const { data } = await this.networkService.get({
-        url,
-        networkRequest: {
-          params: { safe_tx_hash: args.safeTxHashes },
-        },
-      });
+      const query = new URLSearchParams();
+      for (const hash of args.safeTxHashes) {
+        query.append('safe_tx_hash', hash);
+      }
+      const url = `${this.baseUri}/api/v1/multisig-transactions/batch?${query.toString()}`;
+      const { data } = await this.networkService.get({ url });
       return rawify(QueueMultisigTransactionListSchema.parse(data));
     } catch (error) {
       throw this.httpErrorFactory.from(error);
@@ -346,7 +339,7 @@ export class QueueService implements IQueue {
     safeAppId: number | null;
     signature: string;
     origin: string | null;
-  }): Promise<Raw<Message>> {
+  }): Promise<unknown> {
     try {
       const { originName, originUrl } = parseOrigin(args.origin);
       const url = `${this.baseUri}/api/v1/safes/${args.safeAddress}/messages`;
@@ -360,8 +353,7 @@ export class QueueService implements IQueue {
           originUrl,
         },
       });
-      const parsed = QueueMessageSchema.parse(data);
-      return rawify(mapQueueToMessage(parsed));
+      return data;
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
@@ -391,17 +383,6 @@ export class QueueService implements IQueue {
     const key = CacheRouter.getMultisigTransactionCacheKey({
       chainId: args.chainId,
       safeTransactionHash: args.safeTxHash,
-    });
-    await this.cacheService.deleteByKey(key);
-  }
-
-  async clearMultisigTransactions(args: {
-    chainId: string;
-    safeAddress: Address;
-  }): Promise<void> {
-    const key = CacheRouter.getMultisigTransactionsCacheKey({
-      chainId: args.chainId,
-      safeAddress: args.safeAddress,
     });
     await this.cacheService.deleteByKey(key);
   }
