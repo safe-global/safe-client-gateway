@@ -17,6 +17,8 @@ import { IBlocklistService } from '@/config/entities/blocklist.interface';
 import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module';
 import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.module';
 import { TestTxAuthNetworkModule } from '@/datasources/network/__tests__/test.tx-auth.network.module';
+import { TestQueueModule } from '@/modules/queue/__tests__/test.queue.module';
+import { QueueModule } from '@/modules/queue/queue.module';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
 import { NetworkService } from '@/datasources/network/network.service.interface';
 import { TxAuthNetworkModule } from '@/datasources/network/tx-auth.network.module';
@@ -75,6 +77,8 @@ describe('Add transaction confirmations - Transactions Controller', () => {
     })
       .overrideModule(TxAuthNetworkModule)
       .useModule(TestTxAuthNetworkModule)
+      .overrideModule(QueueModule)
+      .useModule(TestQueueModule)
       .compile();
 
     const configurationService = moduleFixture.get<IConfigurationService>(

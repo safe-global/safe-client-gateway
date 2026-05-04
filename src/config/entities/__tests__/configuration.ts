@@ -218,7 +218,7 @@ export default (): ReturnType<typeof configuration> => ({
     vaultTransactionsMapping: false,
     lifiTransactionsMapping: false,
     cacheInFlightRequests: false,
-    queueService: true,
+    queueService: false,
   },
   httpClient: {
     requestTimeout: faker.number.int(),
