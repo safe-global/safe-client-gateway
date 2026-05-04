@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
+import { MessageRejected } from '@aws-sdk/client-sesv2';
+import { faker } from '@faker-js/faker';
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import { AwsSesEmailService } from '@/modules/email/ses/datasources/aws-ses-email.service';
 import {
-  TransientEmailError,
   PermanentEmailError,
+  TransientEmailError,
 } from '@/modules/email/ses/domain/errors/email.errors';
-import { MessageRejected } from '@aws-sdk/client-sesv2';
-import { faker } from '@faker-js/faker';
 
 const mockSend = jest.fn();
 

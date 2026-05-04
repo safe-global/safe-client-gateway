@@ -2,12 +2,12 @@
 
 import { faker } from '@faker-js/faker';
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
+import { createSignerEncoder } from '@/modules/relay/domain/contracts/__tests__/encoders/signer-factory-encoder.builder';
+import { SignerFactoryDecoder } from '@/modules/relay/domain/contracts/decoders/signer-factory-decoder.helper';
 import { RelayManager } from '@/modules/relay/domain/relay.manager';
 import type { DailyLimitRelayer } from '@/modules/relay/domain/relayers/daily-limit.relayer';
 import type { NoFeeCampaignRelayer } from '@/modules/relay/domain/relayers/no-fee-campaign.relayer';
 import type { RelayFeeRelayer } from '@/modules/relay/domain/relayers/relay-fee.relayer';
-import { SignerFactoryDecoder } from '@/modules/relay/domain/contracts/decoders/signer-factory-decoder.helper';
-import { createSignerEncoder } from '@/modules/relay/domain/contracts/__tests__/encoders/signer-factory-encoder.builder';
 
 const mockDailyLimitRelayer = {
   canRelay: jest.fn(),

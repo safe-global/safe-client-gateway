@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { Response } from 'express';
+
 import {
+  ArgumentsHost,
   Catch,
   ExceptionFilter,
-  ArgumentsHost,
   HttpStatus,
 } from '@nestjs/common';
+import { Response } from 'express';
 import { UnofficialSignerFactoryError } from '@/modules/relay/domain/errors/unofficial-signer-factory.error';
 
 @Catch(UnofficialSignerFactoryError)

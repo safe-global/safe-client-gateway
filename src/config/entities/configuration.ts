@@ -62,12 +62,14 @@ export default () => ({
       redirectUri: process.env.AUTH0_REDIRECT_URI,
       audience: process.env.AUTH0_API_AUDIENCE,
       scope: process.env.AUTH0_SCOPE || 'openid',
-      jwksCacheMaxAgeMs: parseInt(
+      jwksCacheMaxAgeMs: Number.parseInt(
         process.env.AUTH0_JWKS_CACHE_MAX_AGE_MILLISECONDS ??
-          `${60 * 60 * 1_000}`, // 1 hour
+          `${60 * 60 * 1_000}`,
+        10, // 1 hour
       ),
-      jwksCooldownMs: parseInt(
-        process.env.AUTH0_JWKS_COOLDOWN_MILLISECONDS ?? `${30_000}`, // 30 seconds
+      jwksCooldownMs: Number.parseInt(
+        process.env.AUTH0_JWKS_COOLDOWN_MILLISECONDS ?? `${30_000}`,
+        10, // 30 seconds
       ),
     },
     rateLimit: {
@@ -270,34 +272,47 @@ export default () => ({
       queue: {
         removeOnComplete: {
           // Time (in seconds) to keep completed jobs. Defaults to 3600 (1 hour).
-          age: parseInt(
+          age: Number.parseInt(
             process.env.EMAIL_QUEUE_REMOVE_ON_COMPLETE_AGE ?? `${3600}`,
+            10,
           ),
           // Maximum number of completed jobs to keep. Defaults to 1000.
-          count: parseInt(
+          count: Number.parseInt(
             process.env.EMAIL_QUEUE_REMOVE_ON_COMPLETE_COUNT ?? `${1000}`,
+            10,
           ),
         },
         removeOnFail: {
           // Time (in seconds) to keep failed jobs. Defaults to 86400 (24 hours).
-          age: parseInt(
+          age: Number.parseInt(
             process.env.EMAIL_QUEUE_REMOVE_ON_FAIL_AGE ?? `${86400}`,
+            10,
           ),
           // Maximum number of failed jobs to keep. Defaults to 500.
-          count: parseInt(
+          count: Number.parseInt(
             process.env.EMAIL_QUEUE_REMOVE_ON_FAIL_COUNT ?? `${500}`,
+            10,
           ),
         },
         backoff: {
           // Backoff strategy for retrying failed jobs. Defaults to 'exponential'.
           type: process.env.EMAIL_QUEUE_BACKOFF_TYPE || 'exponential',
           // Initial backoff delay in milliseconds. Defaults to 5000 (5s).
-          delay: parseInt(process.env.EMAIL_QUEUE_BACKOFF_DELAY ?? `${5000}`),
+          delay: Number.parseInt(
+            process.env.EMAIL_QUEUE_BACKOFF_DELAY ?? `${5000}`,
+            10,
+          ),
         },
         // Maximum number of retry attempts. Defaults to 3.
-        attempts: parseInt(process.env.EMAIL_QUEUE_ATTEMPTS ?? `${3}`),
+        attempts: Number.parseInt(
+          process.env.EMAIL_QUEUE_ATTEMPTS ?? `${3}`,
+          10,
+        ),
         // Number of concurrent workers processing email jobs. Defaults to 5.
-        concurrency: parseInt(process.env.EMAIL_QUEUE_CONCURRENCY ?? `${5}`),
+        concurrency: Number.parseInt(
+          process.env.EMAIL_QUEUE_CONCURRENCY ?? `${5}`,
+          10,
+        ),
       },
     },
   },

@@ -1,18 +1,21 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
+import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+import { type EntityManager, In } from 'typeorm';
+import { type Address, isAddressEqual } from 'viem';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { UserAddressBookItem as DbUserAddressBookItem } from '@/modules/spaces/datasources/entities/user-address-book-item.entity.db';
-import { IUserAddressBookItemsRepository } from '@/modules/spaces/domain/address-books/user-address-book-items.repository.interface';
-import type { UserAddressBookItem } from '@/modules/spaces/domain/address-books/entities/user-address-book-item.entity';
 import type { AddressBookItem } from '@/modules/spaces/domain/address-books/entities/address-book-item.entity';
+import type { UserAddressBookItem } from '@/modules/spaces/domain/address-books/entities/user-address-book-item.entity';
+import { IUserAddressBookItemsRepository } from '@/modules/spaces/domain/address-books/user-address-book-items.repository.interface';
 import type { Space } from '@/modules/spaces/domain/entities/space.entity';
 import type { User } from '@/modules/users/domain/entities/user.entity';
-import { BadRequestException, Inject, Injectable } from '@nestjs/common';
-import { In, type EntityManager } from 'typeorm';
-import { isAddressEqual, type Address } from 'viem';
 
 @Injectable()
-export class UserAddressBookItemsRepository implements IUserAddressBookItemsRepository {
+export class UserAddressBookItemsRepository
+  implements IUserAddressBookItemsRepository
+{
   private readonly maxItems: number;
 
   constructor(

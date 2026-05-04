@@ -56,9 +56,13 @@ export class User implements DomainUser {
   })
   email!: string | null;
 
-  @OneToMany(() => Wallet, (wallet: Wallet) => wallet.id, {
-    onDelete: 'CASCADE',
-  })
+  @OneToMany(
+    () => Wallet,
+    (wallet: Wallet) => wallet.id,
+    {
+      onDelete: 'CASCADE',
+    },
+  )
   wallets!: Array<Wallet>;
 
   @Column({
@@ -77,6 +81,9 @@ export class User implements DomainUser {
   })
   updatedAt!: Date;
 
-  @OneToMany(() => Member, (member: Member) => member.user)
+  @OneToMany(
+    () => Member,
+    (member: Member) => member.user,
+  )
   members!: Array<Member>;
 }

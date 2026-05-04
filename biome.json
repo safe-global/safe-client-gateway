@@ -185,7 +185,8 @@
       "includes": [
         "**/*.module.ts",
         "src/datasources/cache/cache.router.ts",
-        "src/datasources/circuit-breaker/circuit-breaker.keys.ts"
+        "src/datasources/circuit-breaker/circuit-breaker.keys.ts",
+        "src/modules/email/ses/datasources/ses-email-error.mapper.ts"
       ],
       "linter": {
         "rules": {

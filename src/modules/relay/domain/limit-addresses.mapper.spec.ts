@@ -1,9 +1,28 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
+import { faker } from '@faker-js/faker';
 import {
-  erc20ApproveEncoder,
-  erc20TransferEncoder,
-  erc20TransferFromEncoder,
-} from '@/modules/relay/domain/contracts/__tests__/encoders/erc20-encoder.builder';
+  encodeAbiParameters,
+  getAddress,
+  keccak256,
+  parseAbiParameters,
+} from 'viem';
+import { getDeploymentVersionsByChainIds } from '@/__tests__/deployments.helper';
+import configuration from '@/config/entities/configuration';
+import {
+  getMultiSendCallOnlyDeployments,
+  getMultiSendDeployments,
+  getProxyFactoryDeployments,
+  getSafeL2SingletonDeployments,
+  getSafeSingletonDeployments,
+  getSignerFactoryDeployments,
+} from '@/domain/common/utils/deployments';
+import type { ILoggingService } from '@/logging/logging.interface';
+import {
+  execTransactionFromModuleEncoder,
+  executeNextTxEncoder,
+} from '@/modules/alerts/domain/contracts/__tests__/encoders/delay-modifier-encoder.builder';
+import { DelayModifierDecoder } from '@/modules/alerts/domain/contracts/decoders/delay-modifier-decoder.helper';
 import {
   multiSendEncoder,
   multiSendTransactionsEncoder,
@@ -22,6 +41,11 @@ import {
 } from '@/modules/contracts/domain/__tests__/encoders/safe-encoder.builder';
 import { MultiSendDecoder } from '@/modules/contracts/domain/decoders/multi-send-decoder.helper';
 import { SafeDecoder } from '@/modules/contracts/domain/decoders/safe-decoder.helper';
+import {
+  erc20ApproveEncoder,
+  erc20TransferEncoder,
+  erc20TransferFromEncoder,
+} from '@/modules/relay/domain/contracts/__tests__/encoders/erc20-encoder.builder';
 import { createProxyWithNonceEncoder } from '@/modules/relay/domain/contracts/__tests__/encoders/proxy-factory-encoder.builder';
 import { createSignerEncoder } from '@/modules/relay/domain/contracts/__tests__/encoders/signer-factory-encoder.builder';
 import { Erc20Decoder } from '@/modules/relay/domain/contracts/decoders/erc-20-decoder.helper';
@@ -30,29 +54,6 @@ import { SignerFactoryDecoder } from '@/modules/relay/domain/contracts/decoders/
 import { LimitAddressesMapper } from '@/modules/relay/domain/limit-addresses.mapper';
 import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
 import type { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
-import { faker } from '@faker-js/faker';
-import {
-  getMultiSendCallOnlyDeployments,
-  getMultiSendDeployments,
-  getProxyFactoryDeployments,
-  getSafeL2SingletonDeployments,
-  getSafeSingletonDeployments,
-  getSignerFactoryDeployments,
-} from '@/domain/common/utils/deployments';
-import {
-  encodeAbiParameters,
-  getAddress,
-  keccak256,
-  parseAbiParameters,
-} from 'viem';
-import configuration from '@/config/entities/configuration';
-import { getDeploymentVersionsByChainIds } from '@/__tests__/deployments.helper';
-import type { ILoggingService } from '@/logging/logging.interface';
-import { DelayModifierDecoder } from '@/modules/alerts/domain/contracts/decoders/delay-modifier-decoder.helper';
-import {
-  execTransactionFromModuleEncoder,
-  executeNextTxEncoder,
-} from '@/modules/alerts/domain/contracts/__tests__/encoders/delay-modifier-encoder.builder';
 
 const supportedChainIds = Object.keys(configuration().relay.apiKey);
 

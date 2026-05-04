@@ -1,10 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { JWT_RS_ALGORITHM } from '@/datasources/jwt/jwt.constants';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
-import { AUTH0_JWKS_PATH } from '@/modules/auth/oidc/auth0/auth0.constants';
-import type { Auth0Token } from '@/modules/auth/oidc/auth0/domain/entities/auth0-token.entity';
-import { Auth0TokenSchema } from '@/modules/auth/oidc/auth0/domain/entities/auth0-token.entity';
+
 import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import {
   createRemoteJWKSet,
@@ -13,6 +8,12 @@ import {
   jwtVerify,
 } from 'jose';
 import { z } from 'zod';
+import { IConfigurationService } from '@/config/configuration.service.interface';
+import { JWT_RS_ALGORITHM } from '@/datasources/jwt/jwt.constants';
+import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import { AUTH0_JWKS_PATH } from '@/modules/auth/oidc/auth0/auth0.constants';
+import type { Auth0Token } from '@/modules/auth/oidc/auth0/domain/entities/auth0-token.entity';
+import { Auth0TokenSchema } from '@/modules/auth/oidc/auth0/domain/entities/auth0-token.entity';
 
 @Injectable()
 export class Auth0TokenVerifier {

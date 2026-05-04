@@ -1,17 +1,18 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
-import { UniqueConstraintError } from '@/datasources/errors/unique-constraint-error';
-import { CounterfactualSafe } from '@/modules/counterfactual-safes/datasources/entities/counterfactual-safe.entity.db';
-import { CounterfactualSafeUser } from '@/modules/counterfactual-safes/datasources/entities/counterfactual-safe-user.entity.db';
-import { User } from '@/modules/users/datasources/entities/users.entity.db';
-import type { ICounterfactualSafesRepository } from '@/modules/counterfactual-safes/domain/counterfactual-safes.repository.interface';
+
 import { BadRequestException, Inject, NotFoundException } from '@nestjs/common';
 import {
   FindOptionsRelations,
   FindOptionsSelect,
   FindOptionsWhere,
 } from 'typeorm';
-import { getAddress, type Address } from 'viem';
+import { type Address, getAddress } from 'viem';
+import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
+import { UniqueConstraintError } from '@/datasources/errors/unique-constraint-error';
+import { CounterfactualSafe } from '@/modules/counterfactual-safes/datasources/entities/counterfactual-safe.entity.db';
+import { CounterfactualSafeUser } from '@/modules/counterfactual-safes/datasources/entities/counterfactual-safe-user.entity.db';
+import type { ICounterfactualSafesRepository } from '@/modules/counterfactual-safes/domain/counterfactual-safes.repository.interface';
+import { User } from '@/modules/users/datasources/entities/users.entity.db';
 
 type CreateItem = Parameters<
   ICounterfactualSafesRepository['create']
@@ -114,7 +115,7 @@ export class CounterfactualSafesRepository
       // (chainId, address) that's already claimed — a genuine collision.
       for (const item of normalized) {
         const existing = rowByKey.get(`${item.chainId}:${item.address}`);
-        if (!existing || !isSameInitParams(existing, item)) {
+        if (!(existing && isSameInitParams(existing, item))) {
           throw new UniqueConstraintError(
             'A counterfactual Safe with the same chainId and address already exists with different initialization parameters.',
           );

@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { IEmailService } from '@/modules/email/ses/domain/interfaces/email-service.interface';
-import { SesEmailErrorMapper } from '@/modules/email/ses/datasources/ses-email-error.mapper';
-import { Inject, Injectable } from '@nestjs/common';
+
 import { SESv2Client, SendEmailCommand } from '@aws-sdk/client-sesv2';
+import { Inject, Injectable } from '@nestjs/common';
+import { IConfigurationService } from '@/config/configuration.service.interface';
+import { SesEmailErrorMapper } from '@/modules/email/ses/datasources/ses-email-error.mapper';
+import { IEmailService } from '@/modules/email/ses/domain/interfaces/email-service.interface';
 
 @Injectable()
 export class AwsSesEmailService implements IEmailService {

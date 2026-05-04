@@ -84,7 +84,7 @@ export class AuthController {
   @UseGuards(AuthGuard)
   @Get('me')
   async getMe(@Auth() authPayload: AuthPayload): Promise<UserSession> {
-    return this.authService.getUserSession(authPayload);
+    return await this.authService.getUserSession(authPayload);
   }
 
   @ApiOperation({
