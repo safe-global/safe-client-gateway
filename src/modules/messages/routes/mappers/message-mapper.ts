@@ -1,23 +1,21 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import type { Message as DomainMessage } from '@/modules/messages/domain/entities/message.entity';
 import type { MessageConfirmation as DomainMessageConfirmation } from '@/modules/messages/domain/entities/message-confirmation.entity';
+import { MessageConfirmation } from '@/modules/messages/routes/entities/message-confirmation.entity';
+import { MessageItem } from '@/modules/messages/routes/entities/message-item.entity';
 import {
   Message,
   MessageStatus,
 } from '@/modules/messages/routes/entities/message.entity';
-import { MessageConfirmation } from '@/modules/messages/routes/entities/message-confirmation.entity';
-import { MessageItem } from '@/modules/messages/routes/entities/message-item.entity';
+import { SafeAppInfoMapper } from '@/modules/safe-apps/mappers/safe-app-info.mapper';
 import type { Safe } from '@/modules/safe/domain/entities/safe.entity';
-import type { SafeAppsRepository } from '@/modules/safe-apps/domain/safe-apps.repository';
-import { ISafeAppsRepository } from '@/modules/safe-apps/domain/safe-apps.repository.interface';
 import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
 
 @Injectable()
 export class MessageMapper {
   constructor(
-    @Inject(ISafeAppsRepository)
-    private readonly safeAppsRepository: SafeAppsRepository,
+    private readonly safeAppInfoMapper: SafeAppInfoMapper,
     private readonly addressInfoHelper: AddressInfoHelper,
   ) {}
 
@@ -29,6 +27,7 @@ export class MessageMapper {
     return Promise.all(
       domainMessages.map(async (domainMessage) => {
         const message = await this.mapMessage(chainId, domainMessage, safe);
+        /* eslint-disable @typescript-eslint/no-deprecated -- forwarding legacy mirror fields to MessageItem */
         return new MessageItem(
           message.messageHash,
           message.status,
@@ -43,7 +42,10 @@ export class MessageMapper {
           message.confirmations,
           message.preparedSignature,
           message.origin,
+          message.safeAppInfo,
+          message.safeAppId,
         );
+        /* eslint-enable @typescript-eslint/no-deprecated */
       }),
     );
   }
@@ -53,9 +55,11 @@ export class MessageMapper {
     message: DomainMessage,
     safe: Safe,
   ): Promise<Message> {
-    const safeApp = message.safeAppId
-      ? await this.safeAppsRepository.getSafeAppById(chainId, message.safeAppId)
-      : null;
+    const safeAppInfo = await this.safeAppInfoMapper.mapSafeAppInfo(
+      chainId,
+      message.origin,
+      message.messageHash,
+    );
     const status =
       message.confirmations.length >= safe.threshold
         ? MessageStatus.Confirmed
@@ -77,8 +81,8 @@ export class MessageMapper {
     return new Message(
       message.messageHash,
       status,
-      safeApp?.iconUrl ?? null,
-      safeApp?.name ?? null,
+      safeAppInfo?.logoUri ?? null,
+      safeAppInfo?.name ?? null,
       message.message,
       message.created.getTime(),
       message.modified.getTime(),
@@ -88,6 +92,8 @@ export class MessageMapper {
       confirmations,
       preparedSignature,
       message.origin,
+      safeAppInfo,
+      safeAppInfo?.id ?? null,
     );
   }
 
