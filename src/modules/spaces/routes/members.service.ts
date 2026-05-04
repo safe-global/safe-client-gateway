@@ -70,10 +70,19 @@ export class MembersService {
     spaceId: Space['id'];
   }): Promise<MembersDto> {
     return {
-      members: await this.membersRepository.findAuthorizedMembersOrFail({
-        authPayload: args.authPayload,
-        spaceId: args.spaceId,
-      }),
+      members: (
+        await this.membersRepository.findAuthorizedMembersOrFail({
+          authPayload: args.authPayload,
+          spaceId: args.spaceId,
+        })
+      ).map((member) => ({
+        ...member,
+        user: {
+          ...member.user,
+          // Only expose email once the member accepted the invite.
+          email: member.status === 'ACTIVE' ? member.user.email : null,
+        },
+      })),
     };
   }
 

@@ -10,9 +10,14 @@ import { MembersController } from '@/modules/spaces/routes/members.controller';
 import { checkGuardIsApplied } from '@/__tests__/util/check-guard';
 import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
 import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
-import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
+import {
+  oidcAuthPayloadDtoBuilder,
+  siweAuthPayloadDtoBuilder,
+} from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
 import { IConfigurationService } from '@/config/configuration.service.interface';
+import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
+import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import type { INestApplication } from '@nestjs/common';
 import type { Server } from 'net';
 import { nameBuilder } from '@/domain/common/entities/name.builder';
@@ -21,6 +26,8 @@ import { createTestModule } from '@/__tests__/testing-module';
 describe('MembersController', () => {
   let app: INestApplication<Server>;
   let jwtService: IJwtService;
+  let usersRepository: IUsersRepository;
+  let postgresDatabaseService: PostgresDatabaseService;
   let maxInvites: number;
 
   beforeAll(async () => {
@@ -48,6 +55,10 @@ describe('MembersController', () => {
     });
 
     jwtService = moduleFixture.get<IJwtService>(IJwtService);
+    usersRepository = moduleFixture.get<IUsersRepository>(IUsersRepository);
+    postgresDatabaseService = moduleFixture.get<PostgresDatabaseService>(
+      PostgresDatabaseService,
+    );
     const configService = moduleFixture.get<IConfigurationService>(
       IConfigurationService,
     );
@@ -1247,6 +1258,7 @@ describe('MembersController', () => {
                 user: {
                   id: expect.any(Number),
                   status: 'ACTIVE',
+                  email: null,
                   createdAt: expect.any(String),
                   updatedAt: expect.any(String),
                 },
@@ -1263,6 +1275,7 @@ describe('MembersController', () => {
                 user: {
                   id: expect.any(Number),
                   status: 'PENDING',
+                  email: null,
                   createdAt: expect.any(String),
                   updatedAt: expect.any(String),
                 },
@@ -1279,12 +1292,118 @@ describe('MembersController', () => {
                 user: {
                   id: expect.any(Number),
                   status: 'PENDING',
+                  email: null,
                   createdAt: expect.any(String),
                   updatedAt: expect.any(String),
                 },
               },
             ],
           });
+        });
+    });
+
+    it('should return email for active members', async () => {
+      const spaceName = nameBuilder();
+      const email = faker.internet.email().toLowerCase();
+
+      const userId = await usersRepository.findOrCreateByExtUserIdWithEmail(
+        faker.string.uuid(),
+        { address: email, verified: true },
+      );
+      const authPayloadDto = oidcAuthPayloadDtoBuilder()
+        .with('sub', userId.toString())
+        .build();
+      const accessToken = jwtService.sign(authPayloadDto);
+
+      const createSpaceResponse = await request(app.getHttpServer())
+        .post('/v1/spaces')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: spaceName })
+        .expect(201);
+      const spaceId = createSpaceResponse.body.id;
+
+      await request(app.getHttpServer())
+        .get(`/v1/spaces/${spaceId}/members`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(200)
+        .expect(({ body }) => {
+          expect(body.members).toEqual(
+            expect.arrayContaining([
+              expect.objectContaining({
+                status: 'ACTIVE',
+                user: expect.objectContaining({
+                  id: userId,
+                  email,
+                }),
+              }),
+            ]),
+          );
+        });
+    });
+
+    it('should hide email for invited members', async () => {
+      const spaceName = nameBuilder();
+      const invitedAddress = getAddress(faker.finance.ethereumAddress());
+      const invitedName = faker.person.firstName();
+      const email = faker.internet.email().toLowerCase();
+      const invitedEmail = faker.internet.email().toLowerCase();
+
+      const userId = await usersRepository.findOrCreateByExtUserIdWithEmail(
+        faker.string.uuid(),
+        { address: email, verified: true },
+      );
+      const authPayloadDto = oidcAuthPayloadDtoBuilder()
+        .with('sub', userId.toString())
+        .build();
+      const accessToken = jwtService.sign(authPayloadDto);
+
+      const createSpaceResponse = await request(app.getHttpServer())
+        .post('/v1/spaces')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: spaceName })
+        .expect(201);
+      const spaceId = createSpaceResponse.body.id;
+
+      await request(app.getHttpServer())
+        .post(`/v1/spaces/${spaceId}/members/invite`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({
+          users: [
+            {
+              role: 'MEMBER',
+              address: invitedAddress,
+              name: invitedName,
+            },
+          ],
+        })
+        .expect(201);
+      const invitedUser =
+        await usersRepository.findByWalletAddressOrFail(invitedAddress);
+      // Seed an invited email to verify it is still redacted below.
+      await postgresDatabaseService.transaction(async (entityManager) => {
+        await usersRepository.update({
+          entityManager,
+          userId: invitedUser.id,
+          user: { id: invitedUser.id, email: invitedEmail },
+        });
+      });
+
+      await request(app.getHttpServer())
+        .get(`/v1/spaces/${spaceId}/members`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(200)
+        .expect(({ body }) => {
+          expect(body.members).toEqual(
+            expect.arrayContaining([
+              expect.objectContaining({
+                status: 'INVITED',
+                user: expect.objectContaining({
+                  id: invitedUser.id,
+                  email: null,
+                }),
+              }),
+            ]),
+          );
         });
     });
 
