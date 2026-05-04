@@ -84,11 +84,12 @@ export class FetchNetworkService implements INetworkService {
   post<T>(args: {
     url: string;
     data?: object;
+    body?: string;
     networkRequest?: NetworkRequest;
   }): Promise<NetworkResponse<T>> {
     return this.postWithBody<T>({
       url: args.url,
-      body: JSON.stringify(args.data),
+      body: args.body ?? JSON.stringify(args.data),
       contentType: 'application/json',
       networkRequest: args.networkRequest,
     });
@@ -160,7 +161,14 @@ export class FetchNetworkService implements INetworkService {
     const urlObject = new URL(baseUrl);
 
     for (const [key, value] of Object.entries(params)) {
-      if (value != null && value !== '') {
+      if (value == null) continue;
+      if (Array.isArray(value)) {
+        for (const item of value) {
+          if (item != null && item !== '') {
+            urlObject.searchParams.append(key, String(item));
+          }
+        }
+      } else if (value !== '') {
         urlObject.searchParams.append(key, String(value));
       }
     }
