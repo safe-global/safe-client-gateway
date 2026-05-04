@@ -226,7 +226,7 @@ export default (): ReturnType<typeof configuration> => ({
     lifiTransactionsMapping: false,
     cacheInFlightRequests: false,
     spaceAuditLog: true,
-    queueService: true,
+    queueService: false,
   },
   httpClient: {
     requestTimeout: faker.number.int(),
