@@ -11,7 +11,7 @@ import {
 } from '@/modules/users/domain/entities/user.entity';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
-class MemberUser implements Pick<User, 'id' | 'status' | 'email'> {
+class MemberUser implements Pick<User, 'id' | 'email'> {
   @ApiProperty({ type: Number })
   id!: User['id'];
 
