@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import type { OffchainConfirmation } from '@/modules/offchain/entities/multisig-transaction.entity';
-import type { OffchainMultisigTransactionEntity } from '@/modules/offchain/entities/multisig-transaction.entity';
-import { buildOrigin } from '@/modules/offchain/helpers/origin.helper';
+import type { QueueConfirmation } from '@/modules/queue/entities/multisig-transaction.entity';
+import type { QueueMultisigTransactionEntity } from '@/modules/queue/entities/multisig-transaction.entity';
+import { buildOrigin } from '@/modules/queue/helpers/origin.helper';
 import type { Confirmation } from '@/modules/safe/domain/entities/multisig-transaction.entity';
 import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
 import type { Safe } from '@/modules/safe/domain/entities/safe.entity';
 
-function mapConfirmation(c: OffchainConfirmation): Confirmation {
+function mapConfirmation(c: QueueConfirmation): Confirmation {
   return {
     ...c,
     submissionDate: c.created,
@@ -20,8 +20,8 @@ function mapConfirmation(c: OffchainConfirmation): Confirmation {
  * Note: `confirmationsRequired` defaults to 0. Callers should override it
  * with the actual threshold from Safe info.
  */
-export function mapOffchainToMultisigTransaction(
-  tx: OffchainMultisigTransactionEntity,
+export function mapQueueToMultisigTransaction(
+  tx: QueueMultisigTransactionEntity,
   safe: Safe,
 ): MultisigTransaction {
   return {

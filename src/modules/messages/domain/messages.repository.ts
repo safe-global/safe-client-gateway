@@ -6,21 +6,21 @@ import { IMessagesRepository } from '@/modules/messages/domain/messages.reposito
 import { MessageVerifierHelper } from '@/modules/messages/domain/helpers/message-verifier.helper';
 import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
 import { TypedData } from '@/modules/messages/domain/entities/typed-data.entity';
-import { IOffchain } from '@/modules/offchain/offchain.interface';
+import { IQueue } from '@/modules/queue/queue.interface';
 import type { Address, Hash, Hex } from 'viem';
 import {
-  OffchainMessagePageSchema,
-  OffchainMessageSchema,
-} from '@/modules/offchain/entities/message.entity';
-import { mapOffchainToMessage } from '@/modules/offchain/mappers/message.mapper';
+  QueueMessagePageSchema,
+  QueueMessageSchema,
+} from '@/modules/queue/entities/message.entity';
+import { mapQueueToMessage } from '@/modules/queue/mappers/message.mapper';
 
 @Injectable()
 export class MessagesRepository implements IMessagesRepository {
   constructor(
     @Inject(ISafeRepository)
     private readonly safeRepository: ISafeRepository,
-    @Inject(IOffchain)
-    private readonly offchainService: IOffchain,
+    @Inject(IQueue)
+    private readonly queueService: IQueue,
     private readonly messageVerifier: MessageVerifierHelper,
   ) {}
 
@@ -28,12 +28,12 @@ export class MessagesRepository implements IMessagesRepository {
     chainId: string;
     messageHash: Hash;
   }): Promise<Message> {
-    const message = await this.offchainService.getMessageByHash({
+    const message = await this.queueService.getMessageByHash({
       chainId: args.chainId,
       messageHash: args.messageHash,
     });
-    const parsed = OffchainMessageSchema.parse(message);
-    return mapOffchainToMessage(parsed);
+    const parsed = QueueMessageSchema.parse(message);
+    return mapQueueToMessage(parsed);
   }
 
   async getMessagesBySafe(args: {
@@ -42,17 +42,17 @@ export class MessagesRepository implements IMessagesRepository {
     limit?: number | undefined;
     offset?: number | undefined;
   }): Promise<Page<Message>> {
-    const page = await this.offchainService.getMessagesBySafe({
+    const page = await this.queueService.getMessagesBySafe({
       chainId: args.chainId,
       safeAddress: args.safeAddress,
       limit: args.limit,
       offset: args.offset,
     });
-    const offchainMessages = OffchainMessagePageSchema.parse(page);
+    const queueMessages = QueueMessagePageSchema.parse(page);
 
     return {
-      ...offchainMessages,
-      results: offchainMessages.results.map(mapOffchainToMessage),
+      ...queueMessages,
+      results: queueMessages.results.map(mapQueueToMessage),
     };
   }
 
@@ -74,7 +74,7 @@ export class MessagesRepository implements IMessagesRepository {
       message: args.message,
       signature: args.signature,
     });
-    return this.offchainService.postMessage({
+    return this.queueService.postMessage({
       chainId: args.chainId,
       safeAddress: args.safeAddress,
       message: args.message,
@@ -102,7 +102,7 @@ export class MessagesRepository implements IMessagesRepository {
       safe,
       message: message.message,
     });
-    return this.offchainService.postMessageSignature({
+    return this.queueService.postMessageSignature({
       chainId: args.chainId,
       messageHash: args.messageHash,
       signature: args.signature,
@@ -113,13 +113,13 @@ export class MessagesRepository implements IMessagesRepository {
     chainId: string;
     safeAddress: Address;
   }): Promise<void> {
-    await this.offchainService.clearMessagesBySafe(args);
+    await this.queueService.clearMessagesBySafe(args);
   }
 
   async clearMessagesByHash(args: {
     chainId: string;
     messageHash: string;
   }): Promise<void> {
-    await this.offchainService.clearMessagesByHash(args);
+    await this.queueService.clearMessagesByHash(args);
   }
 }

@@ -7,17 +7,18 @@ import {
   ICacheService,
 } from '@/datasources/cache/cache.service.interface';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
+import { stringifyWithBigInt } from '@/datasources/network/json.helper';
 import {
-  OffchainMultisigTransactionPageSchema,
-  OffchainMultisigTransactionSchema,
-} from '@/modules/offchain/entities/multisig-transaction.entity';
-import type { OffchainMultisigTransactionEntity } from '@/modules/offchain/entities/multisig-transaction.entity';
+  QueueMultisigTransactionListSchema,
+  QueueMultisigTransactionSchema,
+} from '@/modules/queue/entities/multisig-transaction.entity';
+import type { QueueMultisigTransactionEntity } from '@/modules/queue/entities/multisig-transaction.entity';
 import {
-  OffchainMessage,
-  OffchainMessageSchema,
-} from '@/modules/offchain/entities/message.entity';
-import { parseOrigin } from '@/modules/offchain/helpers/origin.helper';
-import { mapOffchainToMessage } from '@/modules/offchain/mappers/message.mapper';
+  QueueMessage,
+  QueueMessageSchema,
+} from '@/modules/queue/entities/message.entity';
+import { parseOrigin } from '@/modules/queue/helpers/origin.helper';
+import { mapQueueToMessage } from '@/modules/queue/mappers/message.mapper';
 import {
   NetworkService,
   INetworkService,
@@ -26,14 +27,14 @@ import type { Page } from '@/domain/entities/page.entity';
 import type { Delegate } from '@/modules/delegate/domain/entities/delegate.entity';
 import type { Message } from '@/modules/messages/domain/entities/message.entity';
 import type { ProposeTransactionDto } from '@/modules/transactions/domain/entities/propose-transaction.dto.entity';
-import type { IOffchain } from '@/modules/offchain/offchain.interface';
+import type { IQueue } from '@/modules/queue/queue.interface';
 import { rawify } from '@/validation/entities/raw.entity';
 import type { Raw } from '@/validation/entities/raw.entity';
 import { Inject, Injectable } from '@nestjs/common';
 import type { Address, Hex } from 'viem';
 
 @Injectable()
-export class OffchainService implements IOffchain {
+export class QueueService implements IQueue {
   private readonly baseUri: string;
   private readonly defaultExpirationTimeInSeconds: number;
   private readonly defaultNotFoundExpirationTimeSeconds: number;
@@ -71,26 +72,26 @@ export class OffchainService implements IOffchain {
       const { originName, originUrl } = parseOrigin(dto.origin);
 
       const url = `${this.baseUri}/api/v1/multisig-transactions`;
-      return await this.networkService.post({
-        url,
-        data: {
-          to: dto.to,
-          value: Number(dto.value),
-          data: dto.data,
-          nonce: dto.nonce,
-          operation: dto.operation,
-          safeTxGas: Number(dto.safeTxGas),
-          baseGas: Number(dto.baseGas),
-          gasPrice: Number(dto.gasPrice),
-          gasToken: dto.gasToken,
-          refundReceiver: dto.refundReceiver,
-          safeTxHash: dto.safeTxHash,
-          proposer: dto.sender,
-          signature: dto.signature ?? '',
-          originName,
-          originUrl,
-        },
+      // wei values can exceed Number.MAX_SAFE_INTEGER — serialize as BigInt
+      // to preserve precision against the queue's `integer` schema.
+      const body = stringifyWithBigInt({
+        chainId: Number(args.chainId),
+        safe: args.safeAddress,
+        to: dto.to,
+        value: BigInt(dto.value),
+        data: dto.data,
+        nonce: Number(dto.nonce),
+        operation: dto.operation,
+        safeTxGas: BigInt(dto.safeTxGas),
+        baseGas: BigInt(dto.baseGas),
+        gasPrice: BigInt(dto.gasPrice),
+        gasToken: dto.gasToken,
+        refundReceiver: dto.refundReceiver,
+        originName,
+        originUrl,
+        signatures: dto.signature ? [dto.signature] : [],
       });
+      return await this.networkService.post({ url, body });
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
@@ -99,7 +100,7 @@ export class OffchainService implements IOffchain {
   async getMultisigTransaction(args: {
     chainId: string;
     safeTxHash: string;
-  }): Promise<Raw<OffchainMultisigTransactionEntity>> {
+  }): Promise<Raw<QueueMultisigTransactionEntity>> {
     try {
       const cacheDir = CacheRouter.getMultisigTransactionCacheDir({
         chainId: args.chainId,
@@ -112,38 +113,25 @@ export class OffchainService implements IOffchain {
         notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
         expireTimeSeconds: this.defaultExpirationTimeInSeconds,
       });
-      return rawify(OffchainMultisigTransactionSchema.parse(data));
+      return rawify(QueueMultisigTransactionSchema.parse(data));
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
   }
 
-  async getMultisigTransactions(args: {
+  async getMultisigTransactionsBatch(args: {
     chainId: string;
-    safeAddress: Address;
-    ordering?: string;
-    executed?: boolean;
-    trusted?: boolean;
-    limit?: number;
-    offset?: number;
-  }): Promise<Raw<Page<OffchainMultisigTransactionEntity>>> {
+    safeTxHashes: ReadonlyArray<string>;
+  }): Promise<Raw<Array<QueueMultisigTransactionEntity>>> {
     try {
-      const url = `${this.baseUri}/api/v1/multisig-transactions`;
+      const url = `${this.baseUri}/api/v1/multisig-transactions/batch`;
       const { data } = await this.networkService.get({
         url,
         networkRequest: {
-          params: {
-            safe: args.safeAddress,
-            chain_id: Number(args.chainId),
-            ordering: args.ordering,
-            executed: args.executed,
-            trusted: args.trusted,
-            limit: args.limit,
-            offset: args.offset,
-          },
+          params: { safe_tx_hash: args.safeTxHashes },
         },
       });
-      return rawify(OffchainMultisigTransactionPageSchema.parse(data));
+      return rawify(QueueMultisigTransactionListSchema.parse(data));
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
@@ -155,12 +143,16 @@ export class OffchainService implements IOffchain {
     ordering?: string;
     limit?: number;
     offset?: number;
-  }): Promise<Raw<Page<OffchainMultisigTransactionEntity>>> {
+  }): Promise<Raw<Page<QueueMultisigTransactionEntity>>> {
     try {
+      const cacheDir = CacheRouter.getQueuedTransactionsCacheDir(args);
       const url = `${this.baseUri}/api/v1/multisig-transactions/queue`;
       const nonceOrder = args.ordering?.includes('-') ? 'desc' : 'asc';
-      const { data } = await this.networkService.get({
+      return await this.dataSource.get<Page<QueueMultisigTransactionEntity>>({
+        cacheDir,
         url,
+        notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
+        expireTimeSeconds: this.defaultExpirationTimeInSeconds,
         networkRequest: {
           params: {
             safes: `${args.safeAddress}:${args.chainId}`,
@@ -170,7 +162,6 @@ export class OffchainService implements IOffchain {
           },
         },
       });
-      return rawify(OffchainMultisigTransactionPageSchema.parse(data));
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
@@ -228,7 +219,7 @@ export class OffchainService implements IOffchain {
         expireTimeSeconds: this.defaultExpirationTimeInSeconds,
         networkRequest: {
           params: {
-            chain_id: args.chainId,
+            chainId: Number(args.chainId),
             safe: args.safeAddress,
             delegate: args.delegate,
             delegator: args.delegator,
@@ -259,7 +250,7 @@ export class OffchainService implements IOffchain {
           delegate: args.delegate,
           delegator: args.delegator,
           signature: args.signature,
-          chain_id: Number(args.chainId),
+          chainId: Number(args.chainId),
           safe: args.safeAddress ?? undefined,
           label: args.label,
         },
@@ -277,13 +268,14 @@ export class OffchainService implements IOffchain {
     signature: string;
   }): Promise<void> {
     try {
-      const url = `${this.baseUri}/api/v1/delegates/${args.delegate}`;
+      const url = `${this.baseUri}/api/v1/delegates`;
       await this.networkService.delete({
         url,
         data: {
+          delegate: args.delegate,
           delegator: args.delegator,
           signature: args.signature,
-          chain_id: Number(args.chainId),
+          chainId: Number(args.chainId),
           safe: args.safeAddress ?? undefined,
         },
       });
@@ -295,7 +287,7 @@ export class OffchainService implements IOffchain {
   async getMessageByHash(args: {
     chainId: string;
     messageHash: string;
-  }): Promise<Raw<OffchainMessage>> {
+  }): Promise<Raw<QueueMessage>> {
     try {
       const cacheDir = CacheRouter.getMessageByHashCacheDir({
         chainId: args.chainId,
@@ -319,7 +311,7 @@ export class OffchainService implements IOffchain {
     safeAddress: Address;
     limit?: number;
     offset?: number;
-  }): Promise<Raw<Page<OffchainMessage>>> {
+  }): Promise<Raw<Page<QueueMessage>>> {
     try {
       const cacheDir = CacheRouter.getMessagesBySafeCacheDir({
         chainId: args.chainId,
@@ -335,7 +327,7 @@ export class OffchainService implements IOffchain {
         expireTimeSeconds: this.defaultExpirationTimeInSeconds,
         networkRequest: {
           params: {
-            chain_id: args.chainId,
+            chainId: Number(args.chainId),
             limit: args.limit,
             offset: args.offset,
           },
@@ -361,15 +353,15 @@ export class OffchainService implements IOffchain {
       const { data } = await this.networkService.post<unknown>({
         url,
         data: {
-          chain_id: Number(args.chainId),
+          chainId: Number(args.chainId),
           message: args.message,
           signatures: [args.signature],
-          origin_name: originName,
-          origin_url: originUrl,
+          originName,
+          originUrl,
         },
       });
-      const parsed = OffchainMessageSchema.parse(data);
-      return rawify(mapOffchainToMessage(parsed));
+      const parsed = QueueMessageSchema.parse(data);
+      return rawify(mapQueueToMessage(parsed));
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }

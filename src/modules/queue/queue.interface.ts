@@ -2,15 +2,15 @@
 import type { Page } from '@/domain/entities/page.entity';
 import type { Delegate } from '@/modules/delegate/domain/entities/delegate.entity';
 import type { Message } from '@/modules/messages/domain/entities/message.entity';
-import type { OffchainMessage } from '@/modules/offchain/entities/message.entity';
-import type { OffchainMultisigTransactionEntity } from '@/modules/offchain/entities/multisig-transaction.entity';
+import type { QueueMessage } from '@/modules/queue/entities/message.entity';
+import type { QueueMultisigTransactionEntity } from '@/modules/queue/entities/multisig-transaction.entity';
 import type { ProposeTransactionDto } from '@/modules/transactions/domain/entities/propose-transaction.dto.entity';
 import type { Raw } from '@/validation/entities/raw.entity';
 import type { Address, Hex } from 'viem';
 
-export const IOffchain = Symbol('IOffchain');
+export const IQueue = Symbol('IQueue');
 
-export interface IOffchain {
+export interface IQueue {
   proposeTransaction(args: {
     chainId: string;
     safeAddress: Address;
@@ -20,17 +20,12 @@ export interface IOffchain {
   getMultisigTransaction(args: {
     chainId: string;
     safeTxHash: string;
-  }): Promise<Raw<OffchainMultisigTransactionEntity>>;
+  }): Promise<Raw<QueueMultisigTransactionEntity>>;
 
-  getMultisigTransactions(args: {
+  getMultisigTransactionsBatch(args: {
     chainId: string;
-    safeAddress: Address;
-    ordering?: string;
-    executed?: boolean;
-    trusted?: boolean;
-    limit?: number;
-    offset?: number;
-  }): Promise<Raw<Page<OffchainMultisigTransactionEntity>>>;
+    safeTxHashes: ReadonlyArray<string>;
+  }): Promise<Raw<Array<QueueMultisigTransactionEntity>>>;
 
   getTransactionQueue(args: {
     chainId: string;
@@ -38,7 +33,7 @@ export interface IOffchain {
     ordering?: string;
     limit?: number;
     offset?: number;
-  }): Promise<Raw<Page<OffchainMultisigTransactionEntity>>>;
+  }): Promise<Raw<Page<QueueMultisigTransactionEntity>>>;
 
   postConfirmation(args: {
     chainId: string;
@@ -89,7 +84,7 @@ export interface IOffchain {
     safeAddress: Address;
     limit?: number;
     offset?: number;
-  }): Promise<Raw<Page<OffchainMessage>>>;
+  }): Promise<Raw<Page<QueueMessage>>>;
 
   postMessage(args: {
     chainId: string;

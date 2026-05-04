@@ -15,7 +15,7 @@ import { TransactionVerifierHelper } from '@/modules/transactions/routes/helpers
 import { DelegatesV2RepositoryModule } from '@/modules/delegate/domain/v2/delegates.v2.repository.interface';
 import { ContractsModule } from '@/modules/contracts/contracts.module';
 import { FeatureFlagsModule } from '@/modules/chains/feature-flags/feature-flags.module';
-import { OffchainModule } from '@/modules/offchain/offchain.module';
+import { QueueModule } from '@/modules/queue/queue.module';
 
 @Module({
   imports: [
@@ -27,7 +27,7 @@ import { OffchainModule } from '@/modules/offchain/offchain.module';
     DelegatesV2RepositoryModule,
     ContractsModule,
     FeatureFlagsModule,
-    OffchainModule,
+    QueueModule,
   ],
   controllers: [SafesController, SafesV2Controller],
   providers: [

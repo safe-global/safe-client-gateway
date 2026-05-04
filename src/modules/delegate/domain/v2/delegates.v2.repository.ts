@@ -1,18 +1,18 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { IOffchain } from '@/modules/offchain/offchain.interface';
+import { IQueue } from '@/modules/queue/queue.interface';
 import { IDelegatesV2Repository } from '@/modules/delegate/domain/v2/delegates.v2.repository.interface';
 import { Page } from '@/domain/entities/page.entity';
 import { Inject, Injectable } from '@nestjs/common';
 import type { Address } from 'viem';
-import { OffchainDelegatePageSchema } from '@/modules/offchain/entities/delegate.entity';
-import { mapOffchainToDelegate } from '@/modules/offchain/mappers/delegate.mapper';
+import { QueueDelegatePageSchema } from '@/modules/queue/entities/delegate.entity';
+import { mapQueueToDelegate } from '@/modules/queue/mappers/delegate.mapper';
 import { Delegate } from '@/modules/delegate/domain/entities/delegate.entity';
 
 @Injectable()
 export class DelegatesV2Repository implements IDelegatesV2Repository {
   constructor(
-    @Inject(IOffchain)
-    private readonly offchainService: IOffchain,
+    @Inject(IQueue)
+    private readonly queueService: IQueue,
   ) {}
 
   async getDelegates(args: {
@@ -24,7 +24,7 @@ export class DelegatesV2Repository implements IDelegatesV2Repository {
     limit?: number;
     offset?: number;
   }): Promise<Page<Delegate>> {
-    const page = await this.offchainService.getDelegates({
+    const page = await this.queueService.getDelegates({
       chainId: args.chainId,
       safeAddress: args.safeAddress,
       delegate: args.delegate,
@@ -33,10 +33,10 @@ export class DelegatesV2Repository implements IDelegatesV2Repository {
       limit: args.limit,
       offset: args.offset,
     });
-    const parsed = OffchainDelegatePageSchema.parse(page);
+    const parsed = QueueDelegatePageSchema.parse(page);
     return {
       ...parsed,
-      results: parsed.results.map(mapOffchainToDelegate),
+      results: parsed.results.map(mapQueueToDelegate),
     };
   }
 
@@ -44,7 +44,7 @@ export class DelegatesV2Repository implements IDelegatesV2Repository {
     chainId: string;
     safeAddress?: Address;
   }): Promise<void> {
-    await this.offchainService.clearDelegates(args);
+    await this.queueService.clearDelegates(args);
   }
 
   async postDelegate(args: {
@@ -55,7 +55,7 @@ export class DelegatesV2Repository implements IDelegatesV2Repository {
     signature: string;
     label: string;
   }): Promise<void> {
-    await this.offchainService.postDelegate({
+    await this.queueService.postDelegate({
       chainId: args.chainId,
       safeAddress: args.safeAddress,
       delegate: args.delegate,
@@ -72,7 +72,7 @@ export class DelegatesV2Repository implements IDelegatesV2Repository {
     safeAddress: Address | null;
     signature: string;
   }): Promise<unknown> {
-    return this.offchainService.deleteDelegate({
+    return this.queueService.deleteDelegate({
       chainId: args.chainId,
       delegate: args.delegate,
       delegator: args.delegator,
