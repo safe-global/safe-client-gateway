@@ -22,7 +22,7 @@ export function parseOrigin(origin: string | null): {
   try {
     const { name, url } = JSON.parse(origin);
     parsedOrigin.originName = name;
-    parsedOrigin.originName = url;
+    parsedOrigin.originUrl = url;
   } catch {
     // Ignore, no origin
   }

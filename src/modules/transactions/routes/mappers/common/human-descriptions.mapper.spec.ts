@@ -21,7 +21,7 @@ import type { TokenRepository } from '@/modules/tokens/domain/token.repository';
 import { MAX_UINT256 } from '@/modules/transactions/routes/constants';
 import { SafeAppInfo } from '@/modules/transactions/routes/entities/safe-app-info.entity';
 import { HumanDescriptionMapper } from '@/modules/transactions/routes/mappers/common/human-description.mapper';
-import type { SafeAppInfoMapper } from '@/modules/transactions/routes/mappers/common/safe-app-info.mapper';
+import type { SafeAppInfoMapper } from '@/modules/safe-apps/mappers/safe-app-info.mapper';
 import { AddressInfo } from '@/routes/common/entities/address-info.entity';
 
 const tokenRepository = jest.mocked({
@@ -182,6 +182,7 @@ describe('Human descriptions mapper (Unit)', () => {
     tokenRepository.getToken.mockImplementation(() => Promise.resolve(token));
     const mockSafeAppName = faker.word.noun();
     const mockSafeAppInfo = new SafeAppInfo(
+      faker.number.int(),
       mockSafeAppName,
       faker.internet.url(),
       faker.image.avatar(),
