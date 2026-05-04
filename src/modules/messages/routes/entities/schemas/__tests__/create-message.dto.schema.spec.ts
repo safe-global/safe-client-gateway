@@ -122,7 +122,8 @@ describe('CreateMessageDtoSchema', () => {
     it('should validate without safeAppId, defaulting to null', () => {
       const createMessageDto = createMessageDtoBuilder().build();
       // @ts-expect-error - inferred type doesn't allow optional properties
-      createMessageDto.safeAppId = undefined;
+      // eslint-disable-next-line @typescript-eslint/no-deprecated -- intentional test of deprecated field's null default
+      delete createMessageDto.safeAppId;
 
       const result = CreateMessageDtoSchema.safeParse(createMessageDto);
 
