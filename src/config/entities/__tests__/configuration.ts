@@ -402,6 +402,8 @@ export default (): ReturnType<typeof configuration> => ({
   },
   queueService: {
     baseUri: faker.internet.url({ appendSlash: false }),
+    useVpcUrl: false,
+    apiKey: faker.string.hexadecimal({ length: 32 }),
   },
   safeConfig: {
     baseUri: faker.internet.url({ appendSlash: false }),
