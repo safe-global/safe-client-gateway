@@ -374,6 +374,19 @@ export class CacheRouter {
     return `${args.chainId}_${CacheRouter.MULTISIG_TRANSACTIONS_KEY}_${args.safeAddress}`;
   }
 
+  static getQueuedTransactionsCacheDir(args: {
+    chainId: string;
+    safeAddress: Address;
+    ordering?: string;
+    limit?: number;
+    offset?: number;
+  }): CacheDir {
+    return new CacheDir(
+      CacheRouter.getMultisigTransactionsCacheKey(args),
+      `queue_${args.ordering}_${args.limit}_${args.offset}`,
+    );
+  }
+
   static getMultisigTransactionCacheDir(args: {
     chainId: string;
     safeTransactionHash: string;
