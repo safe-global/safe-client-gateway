@@ -18,7 +18,7 @@ import { transferTransactionInfoBuilder } from '@/modules/transactions/routes/en
 import { TransactionStatus } from '@/modules/transactions/routes/entities/transaction-status.entity';
 import { TransactionVerifierHelper } from '@/modules/transactions/routes/helpers/transaction-verifier.helper';
 import { multisigExecutionDetailsBuilder } from '@/modules/transactions/routes/mappers/__tests__/multisig-execution-details.builder';
-import type { SafeAppInfoMapper } from '@/modules/transactions/routes/mappers/common/safe-app-info.mapper';
+import type { SafeAppInfoMapper } from '@/modules/safe-apps/mappers/safe-app-info.mapper';
 import type { TransactionDataMapper } from '@/modules/transactions/routes/mappers/common/transaction-data.mapper';
 import type { MultisigTransactionInfoMapper } from '@/modules/transactions/routes/mappers/common/transaction-info.mapper';
 import { MultisigTransactionDetailsMapper } from '@/modules/transactions/routes/mappers/multisig-transactions/multisig-transaction-details.mapper';

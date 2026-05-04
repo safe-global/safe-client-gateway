@@ -12,7 +12,7 @@ import {
 import { TransactionData } from '@/modules/transactions/routes/entities/transaction-data.entity';
 import type { TransactionDetails } from '@/modules/transactions/routes/entities/transaction-details/transaction-details.entity';
 import { TransactionVerifierHelper } from '@/modules/transactions/routes/helpers/transaction-verifier.helper';
-import { SafeAppInfoMapper } from '@/modules/transactions/routes/mappers/common/safe-app-info.mapper';
+import { SafeAppInfoMapper } from '@/modules/safe-apps/mappers/safe-app-info.mapper';
 import { TransactionDataMapper } from '@/modules/transactions/routes/mappers/common/transaction-data.mapper';
 import { MultisigTransactionInfoMapper } from '@/modules/transactions/routes/mappers/common/transaction-info.mapper';
 import { MultisigTransactionExecutionDetailsMapper } from '@/modules/transactions/routes/mappers/multisig-transactions/multisig-transaction-execution-details.mapper';
@@ -65,7 +65,11 @@ export class MultisigTransactionDetailsMapper {
         dataDecoded,
       ),
       this.transactionDataMapper.buildAddressInfoIndex(chainId, dataDecoded),
-      this.safeAppInfoMapper.mapSafeAppInfo(chainId, transaction),
+      this.safeAppInfoMapper.mapSafeAppInfo(
+        chainId,
+        transaction.origin,
+        transaction.safeTxHash,
+      ),
       this.transactionInfoMapper.mapTransactionInfo(
         chainId,
         transaction,

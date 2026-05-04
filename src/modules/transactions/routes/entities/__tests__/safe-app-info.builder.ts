@@ -5,6 +5,7 @@ import type { SafeAppInfo } from '@/modules/transactions/routes/entities/safe-ap
 
 export function safeAppInfoBuilder(): IBuilder<SafeAppInfo> {
   return new Builder<SafeAppInfo>()
+    .with('id', faker.number.int())
     .with('name', faker.word.words())
     .with('url', faker.internet.url({ appendSlash: false }))
     .with('logoUri', faker.internet.url({ appendSlash: false }));

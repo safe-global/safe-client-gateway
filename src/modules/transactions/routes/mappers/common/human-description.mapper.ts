@@ -29,7 +29,7 @@ import {
   RichTextFragment,
   RichTokenValueFragment,
 } from '@/modules/transactions/routes/entities/human-description.entity';
-import { SafeAppInfoMapper } from '@/modules/transactions/routes/mappers/common/safe-app-info.mapper';
+import { SafeAppInfoMapper } from '@/modules/safe-apps/mappers/safe-app-info.mapper';
 
 @Injectable()
 export class HumanDescriptionMapper {
@@ -170,7 +170,11 @@ export class HumanDescriptionMapper {
     chainId: string,
   ): Promise<Array<RichDecodedInfoFragment>> {
     const safeAppInfo = isMultisigTransaction(transaction)
-      ? await this.safeAppInfoMapper.mapSafeAppInfo(chainId, transaction)
+      ? await this.safeAppInfoMapper.mapSafeAppInfo(
+          chainId,
+          transaction.origin,
+          transaction.safeTxHash,
+        )
       : null;
 
     if (safeAppInfo) {
