@@ -86,7 +86,6 @@ export class MessagesRepository implements IMessagesRepository {
     chainId: string;
     safeAddress: Address;
     message: string | TypedData;
-    safeAppId: number | null;
     signature: Hex;
     origin: string | null;
   }): Promise<unknown> {
@@ -107,7 +106,7 @@ export class MessagesRepository implements IMessagesRepository {
       return transactionService.postMessage({
         safeAddress: args.safeAddress,
         message: args.message,
-        safeAppId: args.safeAppId,
+        safeAppId: null,
         signature: args.signature,
         origin: args.origin,
       });

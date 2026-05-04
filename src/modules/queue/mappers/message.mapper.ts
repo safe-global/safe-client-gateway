@@ -6,7 +6,6 @@ import type { Message } from '@/modules/messages/domain/entities/message.entity'
 export function mapQueueToMessage(msg: QueueMessage): Message {
   return {
     ...msg,
-    safeAppId: null,
     origin: buildOrigin(msg.originName, msg.originUrl),
   };
 }

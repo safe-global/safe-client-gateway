@@ -89,7 +89,6 @@ export interface IQueue {
     chainId: string;
     safeAddress: Address;
     message: unknown;
-    safeAppId: number | null;
     signature: string;
     origin: string | null;
   }): Promise<unknown>;
