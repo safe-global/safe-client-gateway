@@ -1,3 +1,7 @@
+<!--
+  SPDX-License-Identifier: FSL-1.1-MIT
+ -->
+
 # Queue-service origin enrichment on executed transactions
 
 Date: 2026-04-24
