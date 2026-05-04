@@ -2904,7 +2904,7 @@ describe('Relay controller', () => {
           noFeeConfig[Number.parseInt(chainId, 10)]?.startsAtTimeStamp;
 
         const beforeStartTime = startsAtTimeStamp - 100_000;
-        jest.spyOn(Date.prototype, 'getTime').mockReturnValue(beforeStartTime);
+        jest.spyOn(Date, 'now').mockReturnValue(beforeStartTime);
 
         // Mock BalancesService to return sufficient token balance
         const tokenBalance = {
@@ -2964,7 +2964,7 @@ describe('Relay controller', () => {
           noFeeConfig[Number.parseInt(chainId, 10)]?.endsAtTimeStamp;
 
         const afterEndTime = endsAtTimeStamp + 100_000;
-        jest.spyOn(Date.prototype, 'getTime').mockReturnValue(afterEndTime);
+        jest.spyOn(Date, 'now').mockReturnValue(afterEndTime);
 
         // Mock BalancesService to return sufficient token balance
         const tokenBalance = {
