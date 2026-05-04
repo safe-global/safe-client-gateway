@@ -733,6 +733,7 @@ export default () => ({
     baseUri:
       process.env.QUEUE_SERVICE_BASE_URI || 'https://api.safe.global/queue',
     useVpcUrl: process.env.USE_QUEUE_SERVICE_VPC_URL?.toLowerCase() === 'true',
+    apiKey: process.env.QUEUE_SERVICE_API_KEY,
   },
   safeConfig: {
     baseUri:
