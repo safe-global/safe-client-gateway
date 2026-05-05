@@ -6,23 +6,52 @@
 
 This document contains guidelines for AI agents (like Claude Code) working on this codebase.
 
+## Engineering Manual
+
+Before changing module structure, route/controller/service/repository layering,
+DTOs, schemas, datasources, database entities, migrations, or auth/user flows,
+read the CGW-local engineering manual:
+
+- Start with `docs/engineering/README.md`
+- Read `docs/engineering/code-conventions.md` before a coding task
+- Run `docs/engineering/pr-self-review-checklist.md` before opening or
+  finishing a PR
+- For current module conventions and known exceptions, read
+  `docs/engineering/research/module-inventory.md`
+
+The manual records how this repository works. Do not apply generic NestJS
+structure when the local convention is more specific.
+
+## Change Design
+
+Follow the ID-based rules in `docs/engineering/code-conventions.md`, especially
+when adding files, providers, interfaces, factories, injection tokens, helpers,
+DTOs, module exports, persistence workflows, or new telemetry.
+
 ## Architecture
 
+The common CGW route flow is:
+
+```text
+Controller -> Route service -> Repository -> Datasource -> CacheFirstDataSource
 ```
-Controller → Service → Repository → Datasource → CacheFirstDataSource
-```
 
-- **Datasources** (`src/datasources/`): HTTP + caching, use `HttpErrorFactory` for errors
-- **Repositories** (`src/modules/*/domain/`): Inject datasources, validate with Zod schemas
-- **Services** (`src/modules/*/routes/`): Business logic, call repositories (never datasources)
+- **Controllers**: HTTP boundary code with route, guard, pipe, and Swagger
+  decorators.
+- **Route services**: product orchestration; call repositories, not low-level
+  datasources.
+- **Repositories**: domain-data boundary; validate datasource/DB results and
+  map expected persistence errors.
+- **Datasources**: HTTP/cache/external adapter code; use `HttpErrorFactory` for
+  external API errors.
 
-Each external API gets its own datasource:
+Check `docs/engineering/code-conventions.md` and
+`docs/engineering/research/module-inventory.md` before changing that layering
+or choosing where an interface, repository, datasource, DTO, or schema belongs.
+For unsettled layout choices, use `docs/engineering/open-question-options.md`.
 
-- Interface in `src/domain/interfaces/` (Symbol-based DI)
-- Implementation in `src/datasources/<api-name>/`
-- Own NestJS module exporting the interface
-
-When adding constructor dependencies, update all spec files that instantiate the class.
+When adding constructor dependencies, update all spec files that instantiate
+the class.
 
 ## Pre-Commit Checklist
 
