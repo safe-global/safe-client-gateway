@@ -52,7 +52,7 @@
     "@nestjs/config": "4.0.2",
     "@nestjs/core": "11.1.19",
     "@nestjs/platform-express": "11.1.19",
-    "@nestjs/schedule": "6.0.0",
+    "@nestjs/schedule": "6.1.3",
     "@nestjs/serve-static": "5.0.4",
     "@nestjs/swagger": "11.2.6",
     "@nestjs/typeorm": "11.0.0",
