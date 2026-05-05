@@ -60,3 +60,6 @@ data
 
 #CSV Export data files
 /assets/csv-export/*
+
+# Local-only planning documents
+/docs/plans/
