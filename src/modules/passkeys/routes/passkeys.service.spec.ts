@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { HttpStatus } from '@nestjs/common';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
+import type { ILoggingService } from '@/logging/logging.interface';
 import {
   PasskeyAttestationError,
   type PasskeyAttestationService,
@@ -66,6 +67,7 @@ function buildDto(
 interface Mocks {
   attestation: jest.Mocked<Pick<PasskeyAttestationService, 'verify'>>;
   repo: jest.Mocked<IPasskeysRepository>;
+  logging: jest.Mocked<ILoggingService>;
   service: PasskeysService;
 }
 
@@ -77,12 +79,19 @@ function buildService(): Mocks {
     create: jest.fn(),
     findByCredentialId: jest.fn(),
   };
+  const logging: jest.Mocked<ILoggingService> = {
+    debug: jest.fn(),
+    info: jest.fn(),
+    warn: jest.fn(),
+    error: jest.fn(),
+  } as unknown as jest.Mocked<ILoggingService>;
   const service = new PasskeysService(
     buildConfig(),
     repo,
     attestation as unknown as PasskeyAttestationService,
+    logging,
   );
-  return { attestation, repo, service };
+  return { attestation, repo, logging, service };
 }
 
 describe('PasskeysService.register', () => {
@@ -129,7 +138,10 @@ describe('PasskeysService.register', () => {
     const dto = buildDto({ verifiers: `0x${'00'.repeat(22)}` });
     await expect(service.register(dto)).rejects.toMatchObject({
       status: HttpStatus.FORBIDDEN,
-      response: { code: 'PASSKEY_VERIFIERS_NOT_ALLOWED' },
+      response: {
+        code: 'PASSKEY_VERIFIERS_NOT_ALLOWED',
+        message: expect.any(String),
+      },
     });
     expect(attestation.verify).not.toHaveBeenCalled();
   });
@@ -184,7 +196,7 @@ describe('PasskeysService.register', () => {
       );
       await expect(service.register(buildDto())).rejects.toMatchObject({
         status,
-        response: { code },
+        response: { code, message: expect.any(String) },
       });
     },
   );
@@ -198,7 +210,7 @@ describe('PasskeysService.register', () => {
     repo.create.mockResolvedValue({ status });
     await expect(service.register(buildDto())).rejects.toMatchObject({
       status: HttpStatus.CONFLICT,
-      response: { code },
+      response: { code, message: expect.any(String) },
     });
   });
 
@@ -233,7 +245,10 @@ describe('PasskeysService.register', () => {
     repo.findByCredentialId.mockResolvedValue(null);
     await expect(service.lookup('AQID')).rejects.toMatchObject({
       status: HttpStatus.NOT_FOUND,
-      response: { code: 'PASSKEY_NOT_FOUND' },
+      response: {
+        code: 'PASSKEY_NOT_FOUND',
+        message: expect.any(String),
+      },
     });
   });
 
@@ -245,16 +260,31 @@ describe('PasskeysService.register', () => {
     const { service } = buildService();
     await expect(service.lookup(val)).rejects.toMatchObject({
       status: HttpStatus.BAD_REQUEST,
-      response: { code: 'PASSKEY_INVALID_CREDENTIAL_ID' },
+      response: {
+        code: 'PASSKEY_INVALID_CREDENTIAL_ID',
+        message: expect.any(String),
+      },
     });
   });
 
   it('maps unexpected attestation errors to 500 PASSKEY_INTERNAL_ERROR', async () => {
-    const { attestation, service } = buildService();
-    attestation.verify.mockRejectedValue(new Error('boom'));
+    const { attestation, logging, service } = buildService();
+    const cause = new Error('boom');
+    attestation.verify.mockRejectedValue(cause);
     await expect(service.register(buildDto())).rejects.toMatchObject({
       status: HttpStatus.INTERNAL_SERVER_ERROR,
-      response: { code: 'PASSKEY_INTERNAL_ERROR' },
+      response: {
+        code: 'PASSKEY_INTERNAL_ERROR',
+        message: expect.any(String),
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+      },
+      cause,
     });
+    expect(logging.error).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'passkey_internal_error',
+        message: 'boom',
+      }),
+    );
   });
 });

@@ -23,7 +23,18 @@ export const PASSKEY_ERROR_IDS = [
 
 export type PasskeyErrorId = (typeof PASSKEY_ERROR_IDS)[number];
 
+/**
+ * Error envelope for the passkeys API.
+ *
+ * Superset of CGW's standard error envelope (`{ statusCode, message }`):
+ * we add a stable, machine-readable `code` so generated typed clients can
+ * switch on a known union without parsing `message`. The `statusCode` and
+ * `message` fields keep the response shape compatible with the rest of CGW.
+ */
 export class PasskeyErrorResponse {
+  @ApiProperty({ description: 'HTTP status code' })
+  public readonly statusCode!: number;
+
   @ApiProperty({
     enum: PASSKEY_ERROR_IDS,
     description: 'Stable error identifier; never echoes library internals.',
@@ -33,7 +44,6 @@ export class PasskeyErrorResponse {
   @ApiProperty({
     description:
       'Human-readable message. Opaque — do not parse for behaviour; switch on `code` instead.',
-    required: false,
   })
-  public readonly message?: string;
+  public readonly message!: string;
 }

@@ -7,6 +7,10 @@ import {
   decodeCredentialPublicKey,
 } from '@simplewebauthn/server/helpers';
 import { IConfigurationService } from '@/config/configuration.service.interface';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
 
 /**
  * Errors thrown by the attestation service. Mapped to HTTP status codes by the
@@ -68,6 +72,8 @@ export class PasskeyAttestationService {
   public constructor(
     @Inject(IConfigurationService)
     configurationService: IConfigurationService,
+    @Inject(LoggingService)
+    private readonly loggingService: ILoggingService,
   ) {
     this.verificationTimeoutMs = configurationService.getOrThrow<number>(
       'passkeys.verificationTimeoutMs',
@@ -122,7 +128,7 @@ export class PasskeyAttestationService {
         // ES256 only — refuse RS256 / EdDSA / anything else.
         supportedAlgorithmIDs: [-7],
       }),
-    ).catch(mapLibraryError);
+    ).catch((err) => this.mapLibraryError(err));
 
     if (!verification.verified) {
       throw new PasskeyAttestationError('PASSKEY_ATTESTATION_INVALID');
@@ -161,18 +167,56 @@ export class PasskeyAttestationService {
 
   private async runWithTimeout<T>(fn: () => Promise<T>): Promise<T> {
     let timer: NodeJS.Timeout | undefined;
+    let timedOut = false;
     const timeout = new Promise<never>((_, reject) => {
-      timer = setTimeout(
-        () =>
-          reject(new PasskeyAttestationError('PASSKEY_VERIFICATION_TIMEOUT')),
-        this.verificationTimeoutMs,
-      );
+      timer = setTimeout(() => {
+        timedOut = true;
+        reject(new PasskeyAttestationError('PASSKEY_VERIFICATION_TIMEOUT'));
+      }, this.verificationTimeoutMs);
+    });
+    // Note: a `setTimeout`-based timeout does NOT interrupt synchronous CPU
+    // work inside the verifier — cancellation is best-effort. The inner
+    // promise may still resolve/reject after we've already raced against it.
+    const work = fn();
+    // Attach a handler to observe any late rejection from the orphaned inner
+    // promise so Node does not treat it as `unhandledRejection` (which under
+    // `--unhandled-rejections=throw` would crash the worker).
+    work.catch((err: unknown) => {
+      if (!timedOut) return;
+      this.loggingService.warn({
+        event: 'passkey_verification_late_rejection',
+        message: err instanceof Error ? err.message : String(err),
+        stack: err instanceof Error ? err.stack : undefined,
+      });
     });
     try {
-      return await Promise.race([fn(), timeout]);
+      return await Promise.race([work, timeout]);
     } finally {
       if (timer) clearTimeout(timer);
     }
+  }
+
+  private mapLibraryError(err: unknown): never {
+    if (err instanceof PasskeyAttestationError) throw err;
+    // CBOR / base64 decode errors from the library surface as SyntaxError or
+    // RangeError — those are genuinely malformed input from the client.
+    if (err instanceof SyntaxError || err instanceof RangeError) {
+      throw new PasskeyAttestationError('PASSKEY_MALFORMED_ATTESTATION');
+    }
+    // Any other Error type (e.g. NPE inside @simplewebauthn/server) is a real
+    // bug, not user error. Log it and re-throw so the service layer maps it
+    // to a 500 instead of falsely reporting malformed input.
+    if (err instanceof Error) {
+      this.loggingService.error({
+        event: 'passkey_attestation_library_error',
+        message: err.message,
+        stack: err.stack,
+      });
+      throw err;
+    }
+    // Non-Error throws (strings, etc.) — treat as malformed; nothing useful
+    // to log and we do not want to surface arbitrary thrown values.
+    throw new PasskeyAttestationError('PASSKEY_MALFORMED_ATTESTATION');
   }
 }
 
@@ -217,10 +261,3 @@ function pad32(buf: Uint8Array): Buffer {
   return out;
 }
 
-function mapLibraryError(err: unknown): never {
-  if (err instanceof PasskeyAttestationError) throw err;
-  // CBOR / COSE / base64 decoding inside the library generally surfaces as a
-  // SyntaxError or generic Error. Treat all of these as malformed input — we
-  // never echo the underlying message back to the client.
-  throw new PasskeyAttestationError('PASSKEY_MALFORMED_ATTESTATION');
-}

@@ -311,13 +311,10 @@ describe('PasskeysController (HTTP)', () => {
       expect(res.status).toBe(400);
     });
 
-    it('rejects oversize body with 4xx (route-scoped 24 KiB cap)', async () => {
-      // The route-scoped json('24kb') middleware kicks in first; an oversize
-      // request never reaches the handler with a parsed body. Body-parser
-      // surfaces this as an HTTP 4xx (413 from express, downgraded to 400 by
-      // the global filter when the underlying error is not an HttpException).
-      // We assert "rejected" rather than exactly 413 to keep the test stable
-      // against the framework's error-mapping internals.
+    it('rejects 32 KiB body — route-scoped 24 KiB cap fires before global', async () => {
+      // Construct a payload that would otherwise pass DTO validation EXCEPT
+      // for size — this rules out a passing test caused by an unrelated 4xx
+      // (e.g. a Zod regex failure or the verifiers allowlist check).
       const payload = JSON.stringify({
         ...dto(),
         attestationObject: 'A'.repeat(32 * 1024),
@@ -326,11 +323,38 @@ describe('PasskeysController (HTTP)', () => {
         .post('/v1/passkeys')
         .set('Content-Type', 'application/json')
         .send(payload);
-      expect(res.status).toBeGreaterThanOrEqual(400);
-      expect(res.status).toBeLessThan(500);
-      // The body never reached the handler — verifiers allowlist would have
-      // returned 403; happy-path attestation mock never called.
+
+      // body-parser surfaces oversize bodies as PayloadTooLargeError with
+      // status 413. The global error filter passes HttpException-like errors
+      // through unchanged. Pin to the small set {413, 400} — the latter is a
+      // test-environment artifact when the filter chain remaps body-parser
+      // errors that aren't HttpExceptions. Production CGW maps to 413.
+      expect([413, 400]).toContain(res.status);
+      // Defense-in-depth: handler never reached (no 403 from verifiers, no
+      // 422 from attestation, no 200 from happy path).
       expect(h.attestation.verify).not.toHaveBeenCalled();
+    });
+
+    it('accepts a body just under the 24 KiB cap — request reaches the handler', async () => {
+      // Pad the attestationObject to 15 KiB (under the 16 KiB DTO max) so
+      // total JSON body sits comfortably under 24 KiB but well above tiny.
+      // The attestation mock returns 422 so we expect 422 for OTHER reasons;
+      // what we're testing is that body-parser does NOT reject as oversize.
+      h.attestation.verify.mockRejectedValue(
+        new PasskeyAttestationError('PASSKEY_ATTESTATION_INVALID'),
+      );
+      const payload = JSON.stringify({
+        ...dto(),
+        attestationObject: 'A'.repeat(15 * 1024),
+      });
+      const res = await request(h.app.getHttpServer())
+        .post('/v1/passkeys')
+        .set('Content-Type', 'application/json')
+        .send(payload);
+      // The handler ran (attestation mock returned 422); body-parser did not
+      // reject the request as oversize.
+      expect(h.attestation.verify).toHaveBeenCalled();
+      expect(res.status).toBe(422);
     });
   });
 

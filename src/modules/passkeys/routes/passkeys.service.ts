@@ -14,6 +14,10 @@ import {
 } from '@nestjs/common';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
+import {
   PasskeyAttestationError,
   PasskeyAttestationService,
 } from '@/modules/passkeys/domain/passkey-attestation.service';
@@ -41,6 +45,8 @@ export class PasskeysService {
     @Inject(IPasskeysRepository)
     private readonly passkeysRepository: IPasskeysRepository,
     private readonly passkeyAttestationService: PasskeyAttestationService,
+    @Inject(LoggingService)
+    private readonly loggingService: ILoggingService,
   ) {
     this.rpIdAllowlist = configurationService.getOrThrow<ReadonlyArray<string>>(
       'passkeys.rpIdAllowlist',
@@ -56,7 +62,10 @@ export class PasskeysService {
   public async register(dto: RegisterPasskeyDto): Promise<RegisterOutcome> {
     const verifiersNormalised = dto.verifiers.toLowerCase();
     if (!this.verifiersAllowlist.includes(verifiersNormalised)) {
-      throw new ForbiddenException({ code: 'PASSKEY_VERIFIERS_NOT_ALLOWED' });
+      throw new ForbiddenException({
+        code: 'PASSKEY_VERIFIERS_NOT_ALLOWED',
+        message: 'verifiers value is not in the configured allowlist',
+      });
     }
 
     let verified;
@@ -74,7 +83,7 @@ export class PasskeysService {
         this.originAllowlist,
       );
     } catch (err) {
-      throw mapAttestationError(err);
+      throw this.mapAttestationError(err);
     }
 
     const verifiers = Buffer.from(stripHex(verifiersNormalised), 'hex');
@@ -94,9 +103,17 @@ export class PasskeysService {
       case 'identical':
         return { status: HttpStatus.OK, body: serialize(outcome.record) };
       case 'conflict':
-        throw new ConflictException({ code: 'PASSKEY_CONFLICT' });
+        throw new ConflictException({
+          code: 'PASSKEY_CONFLICT',
+          message:
+            'a different record already exists for this credentialId',
+        });
       case 'cross_rp_conflict':
-        throw new ConflictException({ code: 'PASSKEY_CROSS_RP_CONFLICT' });
+        throw new ConflictException({
+          code: 'PASSKEY_CROSS_RP_CONFLICT',
+          message:
+            'a record exists for this credentialId under a different rpId',
+        });
     }
   }
 
@@ -109,7 +126,10 @@ export class PasskeysService {
       credentialId,
     );
     if (!record) {
-      throw new NotFoundException({ code: 'PASSKEY_NOT_FOUND' });
+      throw new NotFoundException({
+        code: 'PASSKEY_NOT_FOUND',
+        message: 'no record for this credentialId',
+      });
     }
     return {
       body: serialize(record),
@@ -118,6 +138,90 @@ export class PasskeysService {
       // client did not already supply on the request URL.
       etag: `"${record.credentialId.subarray(0, 16).toString('hex')}"`,
     };
+  }
+
+  private mapAttestationError(err: unknown): HttpException {
+    if (err instanceof PasskeyAttestationError) {
+      switch (err.errorId) {
+        case 'PASSKEY_RPID_NOT_ALLOWED':
+          return new ForbiddenException({
+            code: err.errorId,
+            message: 'rpId is not in the configured allowlist',
+          });
+        case 'PASSKEY_ORIGIN_NOT_ALLOWED':
+          return new ForbiddenException({
+            code: err.errorId,
+            message: 'origin is not in the configured allowlist',
+          });
+        case 'PASSKEY_NOT_CREATE_TYPE':
+          return new HttpException(
+            {
+              code: err.errorId,
+              message: 'clientData type is not webauthn.create',
+            },
+            HttpStatus.BAD_REQUEST,
+          );
+        case 'PASSKEY_MALFORMED_ATTESTATION':
+          return new HttpException(
+            {
+              code: err.errorId,
+              message: 'attestation payload is malformed',
+            },
+            HttpStatus.BAD_REQUEST,
+          );
+        case 'PASSKEY_UNSUPPORTED_KEY':
+          return new HttpException(
+            {
+              code: err.errorId,
+              message: 'credential public key algorithm is not supported',
+            },
+            HttpStatus.BAD_REQUEST,
+          );
+        case 'PASSKEY_RPID_MISMATCH':
+          return new HttpException(
+            {
+              code: err.errorId,
+              message: 'rpId hash does not match authenticator data',
+            },
+            HttpStatus.BAD_REQUEST,
+          );
+        case 'PASSKEY_CHALLENGE_INVALID':
+          return new HttpException(
+            {
+              code: err.errorId,
+              message: 'challenge does not match expected value',
+            },
+            HttpStatus.BAD_REQUEST,
+          );
+        case 'PASSKEY_ATTESTATION_INVALID':
+          return new UnprocessableEntityException({
+            code: err.errorId,
+            message: 'attestation signature did not verify',
+          });
+        case 'PASSKEY_VERIFICATION_TIMEOUT':
+          return new ServiceUnavailableException({
+            code: err.errorId,
+            message: 'verification timed out',
+          });
+      }
+    }
+    // Anything else maps to a generic 500 with an opaque errorId — message
+    // text and stack trace stay in logs, never in the response body. We log
+    // the original cause and attach it via `cause` so it's not lost.
+    this.loggingService.error({
+      type: 'passkey_internal_error',
+      message: err instanceof Error ? err.message : String(err),
+      stack: err instanceof Error ? err.stack : undefined,
+    });
+    return new HttpException(
+      {
+        code: 'PASSKEY_INTERNAL_ERROR',
+        message: 'internal server error',
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+      },
+      HttpStatus.INTERNAL_SERVER_ERROR,
+      { cause: err instanceof Error ? err : new Error(String(err)) },
+    );
   }
 }
 
@@ -132,14 +236,20 @@ function decodeCredentialId(value: string): Buffer {
     value.length > ENCODED_MAX ||
     !/^[A-Za-z0-9_-]+$/.test(value)
   ) {
-    throw new BadRequestException({ code: 'PASSKEY_INVALID_CREDENTIAL_ID' });
+    throw new BadRequestException({
+      code: 'PASSKEY_INVALID_CREDENTIAL_ID',
+      message: 'malformed credentialId',
+    });
   }
   const buf = Buffer.from(value, 'base64url');
   if (
     buf.length < CREDENTIAL_ID_MIN_BYTES ||
     buf.length > CREDENTIAL_ID_MAX_BYTES
   ) {
-    throw new BadRequestException({ code: 'PASSKEY_INVALID_CREDENTIAL_ID' });
+    throw new BadRequestException({
+      code: 'PASSKEY_INVALID_CREDENTIAL_ID',
+      message: 'malformed credentialId',
+    });
   }
   return buf;
 }
@@ -173,33 +283,4 @@ function serialize(record: PasskeyRecord): PasskeyRecordResponse {
 
 function stripHex(s: string): string {
   return s.startsWith('0x') ? s.slice(2) : s;
-}
-
-function mapAttestationError(err: unknown): HttpException {
-  if (err instanceof PasskeyAttestationError) {
-    switch (err.errorId) {
-      case 'PASSKEY_RPID_NOT_ALLOWED':
-      case 'PASSKEY_ORIGIN_NOT_ALLOWED':
-        return new ForbiddenException({ code: err.errorId });
-      case 'PASSKEY_NOT_CREATE_TYPE':
-      case 'PASSKEY_MALFORMED_ATTESTATION':
-      case 'PASSKEY_UNSUPPORTED_KEY':
-      case 'PASSKEY_RPID_MISMATCH':
-      case 'PASSKEY_CHALLENGE_INVALID':
-        return new HttpException(
-          { code: err.errorId },
-          HttpStatus.BAD_REQUEST,
-        );
-      case 'PASSKEY_ATTESTATION_INVALID':
-        return new UnprocessableEntityException({ code: err.errorId });
-      case 'PASSKEY_VERIFICATION_TIMEOUT':
-        return new ServiceUnavailableException({ code: err.errorId });
-    }
-  }
-  // Anything else maps to a generic 500 with an opaque errorId — message text
-  // and stack trace stay in logs, never in the response body.
-  return new HttpException(
-    { code: 'PASSKEY_INTERNAL_ERROR' },
-    HttpStatus.INTERNAL_SERVER_ERROR,
-  );
 }
