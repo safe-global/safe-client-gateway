@@ -2729,16 +2729,16 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@nestjs/cache-manager@npm:3.1.0":
-  version: 3.1.0
-  resolution: "@nestjs/cache-manager@npm:3.1.0"
+"@nestjs/cache-manager@npm:3.1.2":
+  version: 3.1.2
+  resolution: "@nestjs/cache-manager@npm:3.1.2"
   peerDependencies:
     "@nestjs/common": ^9.0.0 || ^10.0.0 || ^11.0.0
     "@nestjs/core": ^9.0.0 || ^10.0.0 || ^11.0.0
     cache-manager: ">=6"
     keyv: ">=5"
     rxjs: ^7.8.1
-  checksum: 10/48fd73287a67a971a408097d2acd7252d0083dc6cf57c4fe62dd83e6dea3ee774176f9547cf1ac2996eb5101973068309ddbb3bd386483e8945d6530450445a3
+  checksum: 10/963144f433353b9d13b3a6cef5f75e2e23ad93f5012bce980c9fe959d9a9cd20565279ffe0d1b0800908d999e4e6d79f07cf3cc4e266989911c7ab79e0d7a02e
   languageName: node
   linkType: hard
 
@@ -10153,7 +10153,7 @@ __metadata:
     "@faker-js/faker": "npm:10.4.0"
     "@fingerprintjs/fingerprintjs-pro-server-api": "npm:6.10.0"
     "@nestjs/bullmq": "npm:^11.0.3"
-    "@nestjs/cache-manager": "npm:3.1.0"
+    "@nestjs/cache-manager": "npm:3.1.2"
     "@nestjs/cli": "npm:11.0.14"
     "@nestjs/common": "npm:11.1.19"
     "@nestjs/config": "npm:4.0.2"
