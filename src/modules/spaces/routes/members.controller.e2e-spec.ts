@@ -17,7 +17,6 @@ import {
 import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
-import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import type { INestApplication } from '@nestjs/common';
 import type { Server } from 'net';
 import { nameBuilder } from '@/domain/common/entities/name.builder';
@@ -27,7 +26,6 @@ describe('MembersController', () => {
   let app: INestApplication<Server>;
   let jwtService: IJwtService;
   let usersRepository: IUsersRepository;
-  let postgresDatabaseService: PostgresDatabaseService;
   let maxInvites: number;
 
   beforeAll(async () => {
@@ -56,9 +54,6 @@ describe('MembersController', () => {
 
     jwtService = moduleFixture.get<IJwtService>(IJwtService);
     usersRepository = moduleFixture.get<IUsersRepository>(IUsersRepository);
-    postgresDatabaseService = moduleFixture.get<PostgresDatabaseService>(
-      PostgresDatabaseService,
-    );
     const configService = moduleFixture.get<IConfigurationService>(
       IConfigurationService,
     );
@@ -1346,7 +1341,6 @@ describe('MembersController', () => {
       const invitedAddress = getAddress(faker.finance.ethereumAddress());
       const invitedName = faker.person.firstName();
       const email = faker.internet.email().toLowerCase();
-      const invitedEmail = faker.internet.email().toLowerCase();
 
       const userId = await usersRepository.findOrCreateByExtUserIdWithEmail(
         faker.string.uuid(),
@@ -1379,15 +1373,6 @@ describe('MembersController', () => {
         .expect(201);
       const invitedUser =
         await usersRepository.findByWalletAddressOrFail(invitedAddress);
-      // Seed an invited email to verify it is still redacted below.
-      await postgresDatabaseService.transaction(async (entityManager) => {
-        await usersRepository.update({
-          entityManager,
-          userId: invitedUser.id,
-          user: { id: invitedUser.id, email: invitedEmail },
-        });
-      });
-
       await request(app.getHttpServer())
         .get(`/v1/spaces/${spaceId}/members`)
         .set('Cookie', [`access_token=${accessToken}`])

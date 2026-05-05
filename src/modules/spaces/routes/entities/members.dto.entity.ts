@@ -18,7 +18,7 @@ class MemberUser implements Pick<User, 'id' | 'email'> {
   @ApiProperty({ enum: getStringEnumKeys(UserStatus) })
   status!: keyof typeof UserStatus;
 
-  @ApiPropertyOptional({ type: String, nullable: true })
+  @ApiProperty({ type: String, nullable: true })
   email!: User['email'];
 }
 
