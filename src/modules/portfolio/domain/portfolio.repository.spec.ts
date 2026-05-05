@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { PortfolioRepository } from '@/modules/portfolio/domain/portfolio.repository';
 import type { IPortfolioApi } from '@/modules/portfolio/interfaces/portfolio-api.interface';
 import type { ICacheService } from '@/datasources/cache/cache.service.interface';
@@ -87,7 +88,8 @@ describe('PortfolioRepository', () => {
         expect(mockPortfolioApi.getPortfolio).toHaveBeenCalledWith({
           address,
           fiatCode,
-          chainIds: undefined,
+          isTestnet: undefined,
+          sync: undefined,
           trusted: undefined,
         });
 
@@ -120,7 +122,7 @@ describe('PortfolioRepository', () => {
         expect(mockPortfolioApi.getPortfolio).toHaveBeenCalledWith({
           address,
           fiatCode,
-          chainIds: undefined,
+          isTestnet: undefined,
           trusted: undefined,
           sync: true,
         });
