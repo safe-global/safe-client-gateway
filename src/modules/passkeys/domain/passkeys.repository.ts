@@ -35,7 +35,15 @@ export class PasskeysRepository implements IPasskeysRepository {
       .execute();
 
     if (insertResult.raw.length === 1) {
-      return { status: 'created', record: toRecord(insertResult.raw[0]) };
+      // `insertResult.raw` carries driver-level rows (snake_case columns), not
+      // entity-mapped fields, so we re-select via the entity repository to get
+      // a properly mapped row before serialising. The extra round-trip is
+      // negligible — the cold path is gated behind 500 ms attestation
+      // verification.
+      const inserted = await repo.findOneByOrFail({
+        credentialId: record.credentialId,
+      });
+      return { status: 'created', record: toRecord(inserted) };
     }
 
     // PK conflict — re-select to distinguish identical / conflict / cross-RP.
