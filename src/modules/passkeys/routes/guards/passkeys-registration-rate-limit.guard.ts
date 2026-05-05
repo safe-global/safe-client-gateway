@@ -33,9 +33,7 @@ export class PasskeysRegistrationRateLimitGuard extends RateLimitGuard {
     this.windowSeconds = rateLimits.windowSeconds;
   }
 
-  public override async canActivate(
-    context: ExecutionContext,
-  ): Promise<boolean> {
+  public override canActivate(context: ExecutionContext): Promise<boolean> {
     return canActivateWithRateLimitHeaders(
       // Bypass our own override to invoke the parent's canActivate exactly once.
       { canActivate: (ctx) => super.canActivate(ctx) } as RateLimitGuard,

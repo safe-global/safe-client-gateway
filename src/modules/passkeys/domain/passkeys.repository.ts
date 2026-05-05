@@ -39,7 +39,9 @@ export class PasskeysRepository implements IPasskeysRepository {
     }
 
     // PK conflict — re-select to distinguish identical / conflict / cross-RP.
-    const existing = await repo.findOneBy({ credentialId: record.credentialId });
+    const existing = await repo.findOneBy({
+      credentialId: record.credentialId,
+    });
     if (!existing) {
       // Extremely unlikely: row vanished between INSERT and SELECT.
       // Treat as conflict so the caller surfaces a 409 rather than a silent 200.

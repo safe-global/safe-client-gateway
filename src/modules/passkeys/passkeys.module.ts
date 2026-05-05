@@ -59,9 +59,9 @@ export class PasskeysModule implements NestModule, OnModuleInit {
     // Bind directly to the controller class instead of a path string. NestJS
     // resolves the version-prefixed URL ('/v1/passkeys') automatically; using
     // a string here is brittle to versioning changes.
-    consumer.apply(json({ limit: PASSKEYS_BODY_LIMIT })).forRoutes(
-      PasskeysController,
-    );
+    consumer
+      .apply(json({ limit: PASSKEYS_BODY_LIMIT }))
+      .forRoutes(PasskeysController);
   }
 
   public onModuleInit(): void {

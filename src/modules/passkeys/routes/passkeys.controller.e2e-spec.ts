@@ -22,6 +22,8 @@ import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 import { Test, type TestingModule } from '@nestjs/testing';
 import { json } from 'express';
 import request from 'supertest';
+import { ConfigurationModule } from '@/config/configuration.module';
+import configuration from '@/config/entities/__tests__/configuration';
 import {
   CacheService,
   type ICacheService,
@@ -30,17 +32,15 @@ import {
   type ILoggingService,
   LoggingService,
 } from '@/logging/logging.interface';
-import configuration from '@/config/entities/__tests__/configuration';
-import { ConfigurationModule } from '@/config/configuration.module';
+import type { PasskeyRecord } from '@/modules/passkeys/domain/entities/passkey-record.entity';
 import {
   PasskeyAttestationError,
   PasskeyAttestationService,
 } from '@/modules/passkeys/domain/passkey-attestation.service';
-import type { PasskeyRecord } from '@/modules/passkeys/domain/entities/passkey-record.entity';
 import { IPasskeysRepository } from '@/modules/passkeys/domain/passkeys.repository.interface';
-import { PasskeysController } from '@/modules/passkeys/routes/passkeys.controller';
 import { PasskeysLookupRateLimitGuard } from '@/modules/passkeys/routes/guards/passkeys-lookup-rate-limit.guard';
 import { PasskeysRegistrationRateLimitGuard } from '@/modules/passkeys/routes/guards/passkeys-registration-rate-limit.guard';
+import { PasskeysController } from '@/modules/passkeys/routes/passkeys.controller';
 import { PasskeysService } from '@/modules/passkeys/routes/passkeys.service';
 import { GlobalErrorFilter } from '@/routes/common/filters/global-error.filter';
 import { ZodErrorFilter } from '@/routes/common/filters/zod-error.filter';
@@ -65,10 +65,10 @@ function fakeRepo(): jest.Mocked<IPasskeysRepository> {
 function fakeCache(): ICacheService {
   const counts = new Map<string, number>();
   return {
-    increment: jest.fn(async (key: string) => {
+    increment: jest.fn((key: string) => {
       const next = (counts.get(key) ?? 0) + 1;
       counts.set(key, next);
-      return next;
+      return Promise.resolve(next);
     }),
   } as unknown as ICacheService;
 }
@@ -381,9 +381,7 @@ describe('PasskeysController (HTTP)', () => {
 
     it('returns 404 with no-store on miss', async () => {
       h.repo.findByCredentialId.mockResolvedValue(null);
-      const res = await request(h.app.getHttpServer()).get(
-        '/v1/passkeys/AQID',
-      );
+      const res = await request(h.app.getHttpServer()).get('/v1/passkeys/AQID');
       expect(res.status).toBe(404);
       expect(res.headers['cache-control']).toBe('no-store');
       expect(res.body.code).toBe('PASSKEY_NOT_FOUND');

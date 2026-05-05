@@ -172,11 +172,7 @@ describe('PasskeysService.register', () => {
       HttpStatus.BAD_REQUEST,
       'PASSKEY_UNSUPPORTED_KEY',
     ],
-    [
-      'PASSKEY_RPID_MISMATCH',
-      HttpStatus.BAD_REQUEST,
-      'PASSKEY_RPID_MISMATCH',
-    ],
+    ['PASSKEY_RPID_MISMATCH', HttpStatus.BAD_REQUEST, 'PASSKEY_RPID_MISMATCH'],
     [
       'PASSKEY_ATTESTATION_INVALID',
       HttpStatus.UNPROCESSABLE_ENTITY,
@@ -187,19 +183,14 @@ describe('PasskeysService.register', () => {
       HttpStatus.SERVICE_UNAVAILABLE,
       'PASSKEY_VERIFICATION_TIMEOUT',
     ],
-  ] as const)(
-    'maps attestation error %s to HTTP %d with code %s',
-    async (errorId, status, code) => {
-      const { attestation, service } = buildService();
-      attestation.verify.mockRejectedValue(
-        new PasskeyAttestationError(errorId),
-      );
-      await expect(service.register(buildDto())).rejects.toMatchObject({
-        status,
-        response: { code, message: expect.any(String) },
-      });
-    },
-  );
+  ] as const)('maps attestation error %s to HTTP %d with code %s', async (errorId, status, code) => {
+    const { attestation, service } = buildService();
+    attestation.verify.mockRejectedValue(new PasskeyAttestationError(errorId));
+    await expect(service.register(buildDto())).rejects.toMatchObject({
+      status,
+      response: { code, message: expect.any(String) },
+    });
+  });
 
   it.each([
     ['conflict' as const, 'PASSKEY_CONFLICT'],

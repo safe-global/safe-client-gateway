@@ -22,11 +22,7 @@ export const RegisterPasskeySchema = z.object({
     .min(1)
     .max(ATTESTATION_OBJECT_MAX)
     .regex(BASE64URL),
-  clientDataJSON: z
-    .string()
-    .min(1)
-    .max(CLIENT_DATA_JSON_MAX)
-    .regex(BASE64URL),
+  clientDataJSON: z.string().min(1).max(CLIENT_DATA_JSON_MAX).regex(BASE64URL),
   // P256.Verifiers (uint176, 22 bytes). Lower 20 bytes = FCL fallback verifier
   // address; upper 2 bytes = on-chain precompile address (RIP-7212). NOT an
   // Ethereum address — no EIP-55 checksum applies. Lowercased on the wire.

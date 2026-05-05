@@ -9,8 +9,7 @@ import type { Response } from 'express';
 // biome-ignore lint/suspicious/noDeprecatedImports: only the multi-callback tap overloads are deprecated.
 import { catchError, type Observable, tap, throwError } from 'rxjs';
 
-const HIT_CACHE_CONTROL =
-  'public, max-age=86400, s-maxage=2592000, immutable';
+const HIT_CACHE_CONTROL = 'public, max-age=86400, s-maxage=2592000, immutable';
 const MISS_CACHE_CONTROL = 'no-store';
 
 /**

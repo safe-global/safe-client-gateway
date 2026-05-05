@@ -26,7 +26,7 @@ export class CacheControlInterceptor implements NestInterceptor {
         // (e.g. `immutable` on an immutable-row lookup) would be silently
         // downgraded to `no-cache` because the global tap runs last in
         // the chain.
-        if (!response.headersSent && !response.getHeader('Cache-Control')) {
+        if (!(response.headersSent || response.getHeader('Cache-Control'))) {
           response.header('Cache-Control', 'no-cache');
         }
       }),

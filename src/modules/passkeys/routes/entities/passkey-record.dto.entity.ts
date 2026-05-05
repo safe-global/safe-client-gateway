@@ -12,7 +12,9 @@ import { ApiProperty } from '@nestjs/swagger';
  *   - createdAt:    RFC 3339 / ISO 8601 (UTC)
  */
 export class PasskeyRecordResponse {
-  @ApiProperty({ description: 'Credential ID, base64url-encoded (no padding).' })
+  @ApiProperty({
+    description: 'Credential ID, base64url-encoded (no padding).',
+  })
   public readonly credentialId!: string;
 
   @ApiProperty({

@@ -33,9 +33,7 @@ export class PasskeysLookupRateLimitGuard extends RateLimitGuard {
     this.windowSeconds = rateLimits.windowSeconds;
   }
 
-  public override async canActivate(
-    context: ExecutionContext,
-  ): Promise<boolean> {
+  public override canActivate(context: ExecutionContext): Promise<boolean> {
     return canActivateWithRateLimitHeaders(
       { canActivate: (ctx) => super.canActivate(ctx) } as RateLimitGuard,
       context,

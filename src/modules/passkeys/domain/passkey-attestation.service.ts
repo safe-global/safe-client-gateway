@@ -152,7 +152,7 @@ export class PasskeyAttestationService {
     ) {
       throw new PasskeyAttestationError('PASSKEY_UNSUPPORTED_KEY');
     }
-    if (!xRaw || !yRaw) {
+    if (!(xRaw && yRaw)) {
       throw new PasskeyAttestationError('PASSKEY_UNSUPPORTED_KEY');
     }
 
@@ -260,4 +260,3 @@ function pad32(buf: Uint8Array): Buffer {
   out.set(buf, 32 - buf.length);
   return out;
 }
-

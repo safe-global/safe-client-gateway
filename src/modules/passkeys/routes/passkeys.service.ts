@@ -17,11 +17,12 @@ import {
   type ILoggingService,
   LoggingService,
 } from '@/logging/logging.interface';
+import type { PasskeyRecord } from '@/modules/passkeys/domain/entities/passkey-record.entity';
 import {
   PasskeyAttestationError,
   PasskeyAttestationService,
+  type VerifiedPasskey,
 } from '@/modules/passkeys/domain/passkey-attestation.service';
-import type { PasskeyRecord } from '@/modules/passkeys/domain/entities/passkey-record.entity';
 import { IPasskeysRepository } from '@/modules/passkeys/domain/passkeys.repository.interface';
 import type { PasskeyRecordResponse } from '@/modules/passkeys/routes/entities/passkey-record.dto.entity';
 import type { RegisterPasskeyDto } from '@/modules/passkeys/routes/entities/register-passkey.dto.entity';
@@ -68,7 +69,7 @@ export class PasskeysService {
       });
     }
 
-    let verified;
+    let verified: VerifiedPasskey;
     try {
       verified = await this.passkeyAttestationService.verify(
         {
@@ -105,8 +106,7 @@ export class PasskeysService {
       case 'conflict':
         throw new ConflictException({
           code: 'PASSKEY_CONFLICT',
-          message:
-            'a different record already exists for this credentialId',
+          message: 'a different record already exists for this credentialId',
         });
       case 'cross_rp_conflict':
         throw new ConflictException({
@@ -122,9 +122,8 @@ export class PasskeysService {
     etag: string;
   }> {
     const credentialId = decodeCredentialId(credentialIdB64Url);
-    const record = await this.passkeysRepository.findByCredentialId(
-      credentialId,
-    );
+    const record =
+      await this.passkeysRepository.findByCredentialId(credentialId);
     if (!record) {
       throw new NotFoundException({
         code: 'PASSKEY_NOT_FOUND',

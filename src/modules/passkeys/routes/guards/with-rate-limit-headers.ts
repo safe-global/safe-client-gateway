@@ -1,5 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { type ExecutionContext, HttpException, HttpStatus } from '@nestjs/common';
+import {
+  type ExecutionContext,
+  HttpException,
+  HttpStatus,
+} from '@nestjs/common';
 import type { Response } from 'express';
 import type { RateLimitGuard } from '@/routes/common/guards/rate-limit.guard';
 
@@ -19,7 +23,10 @@ export async function canActivateWithRateLimitHeaders(
   try {
     return await guard.canActivate(context);
   } catch (err) {
-    if (err instanceof HttpException && err.getStatus() === HttpStatus.TOO_MANY_REQUESTS) {
+    if (
+      err instanceof HttpException &&
+      err.getStatus() === HttpStatus.TOO_MANY_REQUESTS
+    ) {
       const res = context.switchToHttp().getResponse<Response>();
       if (!res.headersSent) {
         res.setHeader('Retry-After', String(windowSeconds));
