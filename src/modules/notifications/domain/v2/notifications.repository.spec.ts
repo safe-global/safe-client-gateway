@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type { UUID } from 'crypto';
-import { faker } from '@faker-js/faker/.';
+import { faker } from '@faker-js/faker';
 import { NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { type ILoggingService } from '@/logging/logging.interface';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';

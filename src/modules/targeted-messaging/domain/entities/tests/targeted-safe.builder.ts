@@ -1,8 +1,9 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { IBuilder } from '@/__tests__/builder';
 import { Builder } from '@/__tests__/builder';
 import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
 import type { TargetedSafe } from '@/modules/targeted-messaging/domain/entities/targeted-safe.entity';
-import { faker } from '@faker-js/faker/.';
+import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 
 export function targetedSafeBuilder(): IBuilder<TargetedSafe> {

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { faker } from '@faker-js/faker/.';
+import { faker } from '@faker-js/faker';
 import chunk from 'lodash/chunk';
 import { getAddress } from 'viem';
 import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';

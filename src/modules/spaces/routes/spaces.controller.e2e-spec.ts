@@ -11,7 +11,7 @@ import { SpacesController } from '@/modules/spaces/routes/spaces.controller';
 import { checkGuardIsApplied } from '@/__tests__/util/check-guard';
 import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
 import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
-import { faker } from '@faker-js/faker/.';
+import { faker } from '@faker-js/faker';
 import { SpaceStatus } from '@/modules/spaces/domain/entities/space.entity';
 import {
   MemberRole,

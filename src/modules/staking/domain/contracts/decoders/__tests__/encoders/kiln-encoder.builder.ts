@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 // DepositEvent
 
 import { Builder } from '@/__tests__/builder';
@@ -6,7 +7,7 @@ import {
   KilnAbi,
   KilnDecoder,
 } from '@/modules/staking/domain/contracts/decoders/kiln-decoder.helper';
-import { faker } from '@faker-js/faker/.';
+import { faker } from '@faker-js/faker';
 import {
   encodeAbiParameters,
   encodeEventTopics,
