@@ -10,7 +10,7 @@ import {
 import { ApiOkResponse, ApiQuery, ApiTags } from '@nestjs/swagger';
 import type { Address } from 'viem';
 import { Protocol } from '@/modules/positions/routes/entities/protocol.entity';
-import type { PositionsService } from '@/modules/positions/routes/positions.service';
+import { PositionsService } from '@/modules/positions/routes/positions.service';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 
