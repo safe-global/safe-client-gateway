@@ -1,9 +1,9 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
 import { NullableNumberSchema } from '@/validation/entities/schemas/nullable.schema';
 
 export type AssetPrice = z.infer<ReturnType<typeof getAssetPriceSchema>>;
 
-// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 export function getAssetPriceSchema<const T extends string>(
   lowerCaseFiatCode: T,
 ) {
@@ -16,7 +16,6 @@ export function getAssetPriceSchema<const T extends string>(
   );
 }
 
-// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 export function getAssetPricesSchema<const T extends string>(
   lowerCaseFiatCode: T,
 ) {

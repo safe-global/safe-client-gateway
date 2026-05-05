@@ -1,15 +1,16 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
+import type { Address } from 'viem';
+import { z } from 'zod';
 import { RowSchema } from '@/datasources/db/v2/entities/row.entity';
+import { makeNameSchema } from '@/domain/common/schemas/name.schema';
+import { getStringEnumKeys } from '@/domain/common/utils/enum';
+import { ADDRESS_BOOK_NAME_MAX_LENGTH } from '@/modules/spaces/domain/address-books/entities/address-book-item.entity';
 import type { Space } from '@/modules/spaces/domain/entities/space.entity';
 import { SpaceSchema } from '@/modules/spaces/domain/entities/space.entity';
 import type { User } from '@/modules/users/domain/entities/user.entity';
 import { UserSchema } from '@/modules/users/domain/entities/user.entity';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { makeNameSchema } from '@/domain/common/schemas/name.schema';
-import { ADDRESS_BOOK_NAME_MAX_LENGTH } from '@/modules/spaces/domain/address-books/entities/address-book-item.entity';
-import { getStringEnumKeys } from '@/domain/common/utils/enum';
-import { z } from 'zod';
-import type { Address } from 'viem';
 
 export enum AddressBookRequestStatus {
   PENDING = 0,

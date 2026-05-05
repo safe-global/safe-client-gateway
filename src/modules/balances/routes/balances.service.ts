@@ -1,18 +1,19 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
-import { IBalancesRepository } from '@/modules/balances/domain/balances.repository.interface';
-import { Balance as DomainBalance } from '@/modules/balances/domain/entities/balance.entity';
-import { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
-import { NativeCurrency } from '@/modules/chains/domain/entities/native.currency.entity';
-import { Balance } from '@/modules/balances/routes/entities/balance.entity';
-import { Balances } from '@/modules/balances/routes/entities/balances.entity';
-import {
-  NativeToken,
-  Erc20Token,
-} from '@/modules/balances/routes/entities/token.entity';
-import { NULL_ADDRESS } from '@/routes/common/constants';
 import orderBy from 'lodash/orderBy';
-import { getNumberString } from '@/domain/common/utils/utils';
 import type { Address } from 'viem';
+import { getNumberString } from '@/domain/common/utils/utils';
+import { IBalancesRepository } from '@/modules/balances/domain/balances.repository.interface';
+import type { Balance as DomainBalance } from '@/modules/balances/domain/entities/balance.entity';
+import type { Balance } from '@/modules/balances/routes/entities/balance.entity';
+import type { Balances } from '@/modules/balances/routes/entities/balances.entity';
+import type {
+  Erc20Token,
+  NativeToken,
+} from '@/modules/balances/routes/entities/token.entity';
+import { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
+import type { NativeCurrency } from '@/modules/chains/domain/entities/native.currency.entity';
+import { NULL_ADDRESS } from '@/routes/common/constants';
 
 @Injectable()
 export class BalancesService {
@@ -108,7 +109,7 @@ export class BalancesService {
     return this._mapBalance(balance, chain.nativeCurrency);
   }
 
-  async getSupportedFiatCodes(): Promise<Array<string>> {
+  getSupportedFiatCodes(): Promise<Array<string>> {
     return this.balancesRepository.getFiatCodes();
   }
 }

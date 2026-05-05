@@ -1,5 +1,6 @@
-import type { AlertsRegistration } from '@/modules/alerts/domain/entities/alerts-registration.entity';
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { AlertsDeletion } from '@/modules/alerts/domain/entities/alerts-deletion.entity';
+import type { AlertsRegistration } from '@/modules/alerts/domain/entities/alerts-registration.entity';
 
 export const IAlertsApi = Symbol('IAlertsApi');
 

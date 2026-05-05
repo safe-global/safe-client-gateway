@@ -1,12 +1,13 @@
-import {
-  getZerionHeaders,
-  normalizeZerionBalances,
-} from '@/modules/balances/datasources/zerion-api.helpers';
+// SPDX-License-Identifier: FSL-1.1-MIT
 import {
   zerionAttributesBuilder,
   zerionBalanceBuilder,
   zerionChangesBuilder,
 } from '@/modules/balances/datasources/entities/__tests__/zerion-balance.entity.builder';
+import {
+  getZerionHeaders,
+  normalizeZerionBalances,
+} from '@/modules/balances/datasources/zerion-api.helpers';
 
 describe('getZerionHeaders', () => {
   describe('when isTestnet is false (mainnet)', () => {

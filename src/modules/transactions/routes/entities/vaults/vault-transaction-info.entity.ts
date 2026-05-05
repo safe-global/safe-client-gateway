@@ -1,11 +1,12 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { ApiProperty } from '@nestjs/swagger';
-import { TokenInfo } from '@/modules/transactions/routes/entities/swaps/token-info.entity';
+import type { TokenInfo } from '@/modules/transactions/routes/entities/swaps/token-info.entity';
 import {
   TransactionInfo,
   TransactionInfoType,
 } from '@/modules/transactions/routes/entities/transaction-info.entity';
-import { VaultInfo } from '@/modules/transactions/routes/entities/vaults/vault-info.entity';
 import { VaultExtraReward } from '@/modules/transactions/routes/entities/vaults/vault-extra-reward.entity';
+import { VaultInfo } from '@/modules/transactions/routes/entities/vaults/vault-info.entity';
 
 export class VaultRedeemTransactionInfo extends TransactionInfo {
   @ApiProperty({ enum: [TransactionInfoType.VaultRedeem] })

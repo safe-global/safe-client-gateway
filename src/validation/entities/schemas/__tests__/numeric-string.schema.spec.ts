@@ -1,5 +1,6 @@
-import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
+import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
 
 describe('NumericStringSchema', () => {
   it('should validate a valid integer string', () => {

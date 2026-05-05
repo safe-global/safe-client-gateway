@@ -1,6 +1,9 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class MigrateOrganizationSafesToSpaceSafes1742573590016 implements MigrationInterface {
+export class MigrateOrganizationSafesToSpaceSafes1742573590016
+  implements MigrationInterface
+{
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
         ALTER TABLE organization_safes RENAME TO space_safes;

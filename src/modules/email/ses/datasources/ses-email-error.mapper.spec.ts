@@ -1,9 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { SesEmailErrorMapper } from '@/modules/email/ses/datasources/ses-email-error.mapper';
-import {
-  TransientEmailError,
-  PermanentEmailError,
-} from '@/modules/email/ses/domain/errors/email.errors';
+
 import {
   AccountSuspendedException,
   BadRequestException,
@@ -15,6 +11,11 @@ import {
   SendingPausedException,
   TooManyRequestsException,
 } from '@aws-sdk/client-sesv2';
+import { SesEmailErrorMapper } from '@/modules/email/ses/datasources/ses-email-error.mapper';
+import {
+  PermanentEmailError,
+  TransientEmailError,
+} from '@/modules/email/ses/domain/errors/email.errors';
 
 describe('SesEmailErrorMapper', () => {
   describe('transient SES errors', () => {
@@ -74,19 +75,18 @@ describe('SesEmailErrorMapper', () => {
       expect(result).toBeInstanceOf(TransientEmailError);
     });
 
-    it.each([408, 429, 500, 502, 503, 504])(
-      'should return TransientEmailError for HTTP status %s',
-      (statusCode) => {
-        const error = new BadRequestException({
-          message: 'server error',
-          $metadata: { httpStatusCode: statusCode },
-        });
+    it.each([
+      408, 429, 500, 502, 503, 504,
+    ])('should return TransientEmailError for HTTP status %s', (statusCode) => {
+      const error = new BadRequestException({
+        message: 'server error',
+        $metadata: { httpStatusCode: statusCode },
+      });
 
-        const result = SesEmailErrorMapper.fromSesError(error);
+      const result = SesEmailErrorMapper.fromSesError(error);
 
-        expect(result).toBeInstanceOf(TransientEmailError);
-      },
-    );
+      expect(result).toBeInstanceOf(TransientEmailError);
+    });
   });
 
   describe('permanent SES errors', () => {

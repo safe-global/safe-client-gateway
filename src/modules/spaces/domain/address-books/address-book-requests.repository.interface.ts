@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import type { Space } from '@/modules/spaces/domain/entities/space.entity';
-import type { User } from '@/modules/users/domain/entities/user.entity';
+
+import type { Address } from 'viem';
+import type { AddressBookItem } from '@/modules/spaces/domain/address-books/entities/address-book-item.entity';
 import type {
   AddressBookRequest,
   AddressBookRequestStatus,
 } from '@/modules/spaces/domain/address-books/entities/address-book-request.entity';
-import type { AddressBookItem } from '@/modules/spaces/domain/address-books/entities/address-book-item.entity';
-import type { Address } from 'viem';
+import type { Space } from '@/modules/spaces/domain/entities/space.entity';
+import type { User } from '@/modules/users/domain/entities/user.entity';
 
 export const IAddressBookRequestsRepository = Symbol(
   'IAddressBookRequestsRepository',

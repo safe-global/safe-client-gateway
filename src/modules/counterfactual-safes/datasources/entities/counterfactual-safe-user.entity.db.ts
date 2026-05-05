@@ -1,14 +1,15 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { CounterfactualSafe } from '@/modules/counterfactual-safes/datasources/entities/counterfactual-safe.entity.db';
-import { User } from '@/modules/users/datasources/entities/users.entity.db';
+
 import {
   Column,
   Entity,
-  ManyToOne,
   JoinColumn,
+  ManyToOne,
   PrimaryGeneratedColumn,
   Unique,
 } from 'typeorm';
+import { CounterfactualSafe } from '@/modules/counterfactual-safes/datasources/entities/counterfactual-safe.entity.db';
+import { User } from '@/modules/users/datasources/entities/users.entity.db';
 
 @Entity('counterfactual_safe_users')
 @Unique('UQ_CFSU_cf_safe_user', ['counterfactualSafe', 'user'])
@@ -29,10 +30,14 @@ export class CounterfactualSafeUser {
   })
   public readonly counterfactualSafe!: CounterfactualSafe;
 
-  @ManyToOne(() => User, (user: User) => user.id, {
-    onDelete: 'CASCADE',
-    nullable: false,
-  })
+  @ManyToOne(
+    () => User,
+    (user: User) => user.id,
+    {
+      onDelete: 'CASCADE',
+      nullable: false,
+    },
+  )
   @JoinColumn({
     name: 'user_id',
     foreignKeyConstraintName: 'FK_CFSU_user_id',

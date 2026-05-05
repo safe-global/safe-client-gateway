@@ -1,35 +1,36 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import type { Server } from 'node:net';
+import { faker } from '@faker-js/faker';
+import type { INestApplication } from '@nestjs/common';
+import request from 'supertest';
+import { getAddress, type Hash } from 'viem';
+import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { createTestModule } from '@/__tests__/testing-module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import configuration from '@/config/entities/__tests__/configuration';
+import { IBlocklistService } from '@/config/entities/blocklist.interface';
 import { TestIdentityApiModule } from '@/datasources/locking-api/__tests__/test.identity-api.module';
 import { IdentityApiModule } from '@/datasources/locking-api/identity-api.module';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
 import { NetworkService } from '@/datasources/network/network.service.interface';
-import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
 import { SignatureType } from '@/domain/common/entities/signature-type.entity';
-import { contractBuilder } from '@/modules/data-decoder/domain/v2/entities/__tests__/contract.builder';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
-import { safeAppBuilder } from '@/modules/safe-apps/domain/entities/__tests__/safe-app.builder';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
+import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
+import { contractBuilder } from '@/modules/data-decoder/domain/v2/entities/__tests__/contract.builder';
 import {
   toJson as multisigToJson,
   multisigTransactionBuilder,
 } from '@/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
 import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
 import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
+import { safeAppBuilder } from '@/modules/safe-apps/domain/entities/__tests__/safe-app.builder';
 import { erc20TokenBuilder } from '@/modules/tokens/domain/__tests__/token.builder';
-import {
-  type ILoggingService,
-  LoggingService,
-} from '@/logging/logging.interface';
 import { rawify } from '@/validation/entities/raw.entity';
-import { faker } from '@faker-js/faker';
-import type { INestApplication } from '@nestjs/common';
-import type { Server } from 'net';
-import request from 'supertest';
-import { getAddress, type Hash } from 'viem';
-import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
-import { IBlocklistService } from '@/config/entities/blocklist.interface';
 
 describe('List queued transactions by Safe - Transactions Controller', () => {
   let app: INestApplication<Server>;
@@ -141,9 +142,7 @@ describe('List queued transactions by Safe - Transactions Controller', () => {
     const contractResponse = pageBuilder()
       .with('results', [contractBuilder().build()])
       .build();
-    const getTransaction = async (
-      nonce: number,
-    ): Promise<MultisigTransaction> => {
+    const getTransaction = (nonce: number): Promise<MultisigTransaction> => {
       return multisigTransactionBuilder()
         .with('safe', safeAddress)
         .with('isExecuted', false)
@@ -305,9 +304,7 @@ describe('List queued transactions by Safe - Transactions Controller', () => {
         .with('name', faker.word.words())
         .build(),
     ];
-    const getTransaction = async (
-      nonce: number,
-    ): Promise<MultisigTransaction> => {
+    const getTransaction = (nonce: number): Promise<MultisigTransaction> => {
       return multisigTransactionBuilder()
         .with('safe', safeAddress)
         .with('isExecuted', false)
@@ -471,9 +468,7 @@ describe('List queued transactions by Safe - Transactions Controller', () => {
       )
       .build();
     const safeAppsResponse = [safeAppBuilder().build()];
-    const getTransaction = async (
-      nonce: number,
-    ): Promise<MultisigTransaction> => {
+    const getTransaction = (nonce: number): Promise<MultisigTransaction> => {
       return multisigTransactionBuilder()
         .with('safe', safeAddress)
         .with('isExecuted', false)
@@ -589,9 +584,7 @@ describe('List queued transactions by Safe - Transactions Controller', () => {
           signers.map((signer) => signer.address),
         )
         .build();
-      const getTransaction = async (
-        nonce: number,
-      ): Promise<MultisigTransaction> => {
+      const getTransaction = (nonce: number): Promise<MultisigTransaction> => {
         return multisigTransactionBuilder()
           .with('safe', safeAddress)
           .with('isExecuted', false)
@@ -691,9 +684,7 @@ describe('List queued transactions by Safe - Transactions Controller', () => {
           signers.map((signer) => signer.address),
         )
         .build();
-      const getTransaction = async (
-        nonce: number,
-      ): Promise<MultisigTransaction> => {
+      const getTransaction = (nonce: number): Promise<MultisigTransaction> => {
         return multisigTransactionBuilder()
           .with('safe', safeAddress)
           .with('isExecuted', false)
@@ -797,9 +788,7 @@ describe('List queued transactions by Safe - Transactions Controller', () => {
           signers.map((signer) => signer.address),
         )
         .build();
-      const getTransaction = async (
-        nonce: number,
-      ): Promise<MultisigTransaction> => {
+      const getTransaction = (nonce: number): Promise<MultisigTransaction> => {
         return multisigTransactionBuilder()
           .with('safe', safeAddress)
           .with('isExecuted', false)
@@ -814,7 +803,9 @@ describe('List queued transactions by Safe - Transactions Controller', () => {
           });
       };
       const nonce1 = await getTransaction(1);
-      nonce1.confirmations![0].signature = '0xdeadbee';
+      (
+        nonce1.confirmations as NonNullable<typeof nonce1.confirmations>
+      )[0].signature = '0xdeadbee';
       const nonce2 = await getTransaction(2);
       const transactions: Array<MultisigTransaction> = [
         multisigToJson(nonce1) as MultisigTransaction,
@@ -883,9 +874,7 @@ describe('List queued transactions by Safe - Transactions Controller', () => {
           signers.map((signer) => signer.address),
         )
         .build();
-      const getTransaction = async (
-        nonce: number,
-      ): Promise<MultisigTransaction> => {
+      const getTransaction = (nonce: number): Promise<MultisigTransaction> => {
         return multisigTransactionBuilder()
           .with('safe', safeAddress)
           .with('isExecuted', false)
@@ -900,7 +889,9 @@ describe('List queued transactions by Safe - Transactions Controller', () => {
           });
       };
       const nonce1 = await getTransaction(1);
-      nonce1.confirmations![0].signature = '0xdeadbee';
+      (
+        nonce1.confirmations as NonNullable<typeof nonce1.confirmations>
+      )[0].signature = '0xdeadbee';
       const nonce2 = await getTransaction(2);
       const transactions: Array<MultisigTransaction> = [
         multisigToJson(nonce1) as MultisigTransaction,
@@ -954,96 +945,96 @@ describe('List queued transactions by Safe - Transactions Controller', () => {
       );
     });
 
-    it.each(Object.values(SignatureType))(
-      'should throw if a confirmation contains an invalid %s signature',
-      async (signatureType) => {
-        const chainResponse = chainBuilder().build();
-        const signers = Array.from({ length: 3 }, () => {
-          const privateKey = generatePrivateKey();
-          return privateKeyToAccount(privateKey);
-        });
-        const safeAddress = getAddress(faker.finance.ethereumAddress());
-        const safeResponse = safeBuilder()
-          .with('address', safeAddress)
-          .with('nonce', 1)
-          .with(
-            'owners',
-            signers.map((signer) => signer.address),
-          )
-          .build();
-        const getTransaction = async (
-          nonce: number,
-        ): Promise<MultisigTransaction> => {
-          return multisigTransactionBuilder()
-            .with('safe', safeAddress)
-            .with('isExecuted', false)
-            .with('nonce', nonce)
-            .buildWithConfirmations({
-              safe: safeResponse,
-              chainId: chainResponse.chainId,
-              signers: faker.helpers.arrayElements(signers, {
-                min: 1,
-                max: signers.length,
-              }),
-              signatureType,
-            });
-        };
-        const nonce1 = await getTransaction(1);
-        const v = nonce1.confirmations![0].signature?.slice(-2);
-        nonce1.confirmations![0].signature = `0x${'-'.repeat(128)}${v}`;
-        const nonce2 = await getTransaction(2);
-        const transactions: Array<MultisigTransaction> = [
-          multisigToJson(nonce1) as MultisigTransaction,
-          multisigToJson(nonce2) as MultisigTransaction,
-        ];
-
-        const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainResponse.chainId}`;
-        const getMultisigTransactionsUrl = `${chainResponse.transactionService}/api/v2/safes/${safeAddress}/multisig-transactions/`;
-        const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`;
-        networkService.get.mockImplementation(({ url }) => {
-          if (url === getChainUrl) {
-            return Promise.resolve({
-              data: rawify(chainResponse),
-              status: 200,
-            });
-          }
-          if (url === getMultisigTransactionsUrl) {
-            return Promise.resolve({
-              data: rawify({
-                count: 6,
-                next: null,
-                previous: null,
-                results: transactions,
-              }),
-              status: 200,
-            });
-          }
-          if (url === getSafeUrl) {
-            return Promise.resolve({
-              data: rawify(safeResponse),
-              status: 200,
-            });
-          }
-          return Promise.reject(new Error(`Could not match ${url}`));
-        });
-
-        await request(app.getHttpServer())
-          .get(
-            `/v1/chains/${chainResponse.chainId}/safes/${safeAddress}/transactions/queued`,
-          )
-          .expect(502)
-          .expect({
-            message: 'Bad gateway',
-            statusCode: 502,
+    it.each(
+      Object.values(SignatureType),
+    )('should throw if a confirmation contains an invalid %s signature', async (signatureType) => {
+      const chainResponse = chainBuilder().build();
+      const signers = Array.from({ length: 3 }, () => {
+        const privateKey = generatePrivateKey();
+        return privateKeyToAccount(privateKey);
+      });
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const safeResponse = safeBuilder()
+        .with('address', safeAddress)
+        .with('nonce', 1)
+        .with(
+          'owners',
+          signers.map((signer) => signer.address),
+        )
+        .build();
+      const getTransaction = (nonce: number): Promise<MultisigTransaction> => {
+        return multisigTransactionBuilder()
+          .with('safe', safeAddress)
+          .with('isExecuted', false)
+          .with('nonce', nonce)
+          .buildWithConfirmations({
+            safe: safeResponse,
+            chainId: chainResponse.chainId,
+            signers: faker.helpers.arrayElements(signers, {
+              min: 1,
+              max: signers.length,
+            }),
+            signatureType,
           });
+      };
+      const nonce1 = await getTransaction(1);
+      const confirmations = nonce1.confirmations as NonNullable<
+        typeof nonce1.confirmations
+      >;
+      const v = confirmations[0].signature?.slice(-2);
+      confirmations[0].signature = `0x${'-'.repeat(128)}${v}`;
+      const nonce2 = await getTransaction(2);
+      const transactions: Array<MultisigTransaction> = [
+        multisigToJson(nonce1) as MultisigTransaction,
+        multisigToJson(nonce2) as MultisigTransaction,
+      ];
 
-        expect(loggingService.error).not.toHaveBeenCalledWith(
-          expect.objectContaining({
-            type: 'TRANSACTION_VALIDITY',
-          }),
-        );
-      },
-    );
+      const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainResponse.chainId}`;
+      const getMultisigTransactionsUrl = `${chainResponse.transactionService}/api/v2/safes/${safeAddress}/multisig-transactions/`;
+      const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`;
+      networkService.get.mockImplementation(({ url }) => {
+        if (url === getChainUrl) {
+          return Promise.resolve({
+            data: rawify(chainResponse),
+            status: 200,
+          });
+        }
+        if (url === getMultisigTransactionsUrl) {
+          return Promise.resolve({
+            data: rawify({
+              count: 6,
+              next: null,
+              previous: null,
+              results: transactions,
+            }),
+            status: 200,
+          });
+        }
+        if (url === getSafeUrl) {
+          return Promise.resolve({
+            data: rawify(safeResponse),
+            status: 200,
+          });
+        }
+        return Promise.reject(new Error(`Could not match ${url}`));
+      });
+
+      await request(app.getHttpServer())
+        .get(
+          `/v1/chains/${chainResponse.chainId}/safes/${safeAddress}/transactions/queued`,
+        )
+        .expect(502)
+        .expect({
+          message: 'Bad gateway',
+          statusCode: 502,
+        });
+
+      expect(loggingService.error).not.toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'TRANSACTION_VALIDITY',
+        }),
+      );
+    });
 
     it('should throw and log if a signer is blocked', async () => {
       const chainResponse = chainBuilder().build();
@@ -1068,9 +1059,7 @@ describe('List queued transactions by Safe - Transactions Controller', () => {
         .with('nonce', 1)
         .with('owners', [signer.address])
         .build();
-      const getTransaction = async (
-        nonce: number,
-      ): Promise<MultisigTransaction> => {
+      const getTransaction = (nonce: number): Promise<MultisigTransaction> => {
         return multisigTransactionBuilder()
           .with('safe', safeAddress)
           .with('isExecuted', false)
@@ -1154,9 +1143,7 @@ describe('List queued transactions by Safe - Transactions Controller', () => {
         .with('nonce', 1)
         .with('owners', [signer.address])
         .build();
-      const getTransaction = async (
-        nonce: number,
-      ): Promise<MultisigTransaction> => {
+      const getTransaction = (nonce: number): Promise<MultisigTransaction> => {
         return multisigTransactionBuilder()
           .with('safe', safeAddress)
           .with('isExecuted', false)
@@ -1168,9 +1155,9 @@ describe('List queued transactions by Safe - Transactions Controller', () => {
           });
       };
       const nonce1 = await getTransaction(1);
-      nonce1.confirmations![0].owner = getAddress(
-        faker.finance.ethereumAddress(),
-      );
+      (
+        nonce1.confirmations as NonNullable<typeof nonce1.confirmations>
+      )[0].owner = getAddress(faker.finance.ethereumAddress());
       const nonce2 = await getTransaction(2);
       const transactions: Array<MultisigTransaction> = [
         multisigToJson(nonce1) as MultisigTransaction,
@@ -1227,8 +1214,8 @@ describe('List queued transactions by Safe - Transactions Controller', () => {
         safeAddress: safeResponse.address,
         safeVersion: safeResponse.version,
         safeTxHash: nonce1.safeTxHash,
-        signerAddress: nonce1.confirmations![0].owner,
-        signature: nonce1.confirmations![0].signature,
+        signerAddress: nonce1.confirmations?.[0].owner,
+        signature: nonce1.confirmations?.[0].signature,
         type: 'TRANSACTION_VALIDITY',
         source: 'API',
       });
@@ -1244,9 +1231,7 @@ describe('List queued transactions by Safe - Transactions Controller', () => {
         .with('nonce', 1)
         .with('owners', [signer.address])
         .build();
-      const getTransaction = async (
-        nonce: number,
-      ): Promise<MultisigTransaction> => {
+      const getTransaction = (nonce: number): Promise<MultisigTransaction> => {
         return multisigTransactionBuilder()
           .with('safe', safeAddress)
           .with('isExecuted', false)
@@ -1315,8 +1300,8 @@ describe('List queued transactions by Safe - Transactions Controller', () => {
         safeAddress: safeResponse.address,
         safeVersion: safeResponse.version,
         safeTxHash: nonce1.safeTxHash,
-        signerAddress: nonce1.confirmations![0].owner,
-        signature: nonce1.confirmations![0].signature,
+        signerAddress: nonce1.confirmations?.[0].owner,
+        signature: nonce1.confirmations?.[0].signature,
         type: 'TRANSACTION_VALIDITY',
         source: 'API',
       });

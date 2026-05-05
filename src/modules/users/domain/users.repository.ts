@@ -6,20 +6,20 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
-import type { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
-import { UserStatus } from '@/modules/users/domain/entities/user.entity';
-import type { User } from '@/modules/users/domain/entities/user.entity';
-import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
+import type { FindOptionsRelations, FindOptionsWhere } from 'typeorm';
+import { EntityManager } from 'typeorm';
+import type { Address } from 'viem';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { isUniqueConstraintError } from '@/datasources/errors/helpers/is-unique-constraint-error.helper';
+import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
+import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
 import { User as DbUser } from '@/modules/users/datasources/entities/users.entity.db';
-import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
-import { EntityManager } from 'typeorm';
-import type { FindOptionsRelations, FindOptionsWhere } from 'typeorm';
-import { IWalletsRepository } from '@/modules/wallets/domain/wallets.repository.interface';
-import type { Address } from 'viem';
+import type { User } from '@/modules/users/domain/entities/user.entity';
+import { UserStatus } from '@/modules/users/domain/entities/user.entity';
 import { UserEmailAlreadyInUseError } from '@/modules/users/domain/errors/user-email-already-in-use.error';
+import type { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
+import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
+import { IWalletsRepository } from '@/modules/wallets/domain/wallets.repository.interface';
 
 @Injectable()
 export class UsersRepository implements IUsersRepository {

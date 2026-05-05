@@ -1,11 +1,12 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
 import { CacheRouter } from '@/datasources/cache/cache.router';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
-import { IEtherscanApi } from '@/domain/interfaces/etherscan-api.interface';
-import { GasPriceResponse } from '@/modules/chains/routes/entities/gas-price-response.entity';
-import { Raw } from '@/validation/entities/raw.entity';
+import type { IEtherscanApi } from '@/domain/interfaces/etherscan-api.interface';
+import type { GasPriceResponse } from '@/modules/chains/routes/entities/gas-price-response.entity';
+import type { Raw } from '@/validation/entities/raw.entity';
 
 @Injectable()
 export class EtherscanApi implements IEtherscanApi {

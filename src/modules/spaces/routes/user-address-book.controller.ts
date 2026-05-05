@@ -1,9 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { Auth } from '@/modules/auth/routes/decorators/auth.decorator';
-import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
-import { UserAddressBookService } from '@/modules/spaces/routes/user-address-book.service';
-import { UserAddressBookDto } from '@/modules/spaces/routes/entities/space-address-book.dto.entity';
+
 import {
   Body,
   Controller,
@@ -16,24 +12,29 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import {
+  ApiBody,
   ApiForbiddenResponse,
+  ApiNoContentResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
-  ApiTags,
-  ApiUnauthorizedResponse,
   ApiOperation,
   ApiParam,
-  ApiBody,
-  ApiNoContentResponse,
+  ApiTags,
+  ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { ValidationPipe } from '@/validation/pipes/validation.pipe';
+import type { Address } from 'viem';
 import { RowSchema } from '@/datasources/db/v2/entities/row.entity';
+import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
+import { Auth } from '@/modules/auth/routes/decorators/auth.decorator';
+import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
+import { UserAddressBookDto } from '@/modules/spaces/routes/entities/space-address-book.dto.entity';
 import {
   UpsertAddressBookItemsDto,
   UpsertAddressBookItemsSchema,
 } from '@/modules/spaces/routes/entities/upsert-address-book-items.dto.entity';
+import { UserAddressBookService } from '@/modules/spaces/routes/user-address-book.service';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import type { Address } from 'viem';
+import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 
 @ApiTags('spaces')
 @Controller({ path: 'spaces', version: '1' })
@@ -69,7 +70,7 @@ export class UserAddressBookController {
     @Param('spaceId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
     spaceId: number,
   ): Promise<UserAddressBookDto> {
-    return this.service.findAll(authPayload, spaceId);
+    return await this.service.findAll(authPayload, spaceId);
   }
 
   @ApiOperation({
@@ -105,7 +106,7 @@ export class UserAddressBookController {
     @Body(new ValidationPipe(UpsertAddressBookItemsSchema))
     dto: UpsertAddressBookItemsDto,
   ): Promise<UserAddressBookDto> {
-    return this.service.upsertMany(authPayload, spaceId, dto);
+    return await this.service.upsertMany(authPayload, spaceId, dto);
   }
 
   @ApiOperation({
@@ -140,7 +141,7 @@ export class UserAddressBookController {
     @Param('address', new ValidationPipe(AddressSchema))
     address: Address,
   ): Promise<void> {
-    return this.service.deleteByAddress({
+    return await this.service.deleteByAddress({
       authPayload,
       spaceId,
       address,

@@ -1,14 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { Auth } from '@/modules/auth/routes/decorators/auth.decorator';
-import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
-import { AddressBookRequestsService } from '@/modules/spaces/routes/address-book-requests.service';
-import {
-  AddressBookRequestItemDto,
-  AddressBookRequestsDto,
-  CreateAddressBookRequestDto,
-  CreateAddressBookRequestSchema,
-} from '@/modules/spaces/routes/entities/address-book-request.dto.entity';
+
 import {
   Body,
   Controller,
@@ -22,18 +13,28 @@ import {
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
+  ApiBody,
+  ApiCreatedResponse,
   ApiForbiddenResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
-  ApiCreatedResponse,
-  ApiTags,
-  ApiUnauthorizedResponse,
   ApiOperation,
   ApiParam,
-  ApiBody,
+  ApiTags,
+  ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import { RowSchema } from '@/datasources/db/v2/entities/row.entity';
+import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
+import { Auth } from '@/modules/auth/routes/decorators/auth.decorator';
+import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
+import { AddressBookRequestsService } from '@/modules/spaces/routes/address-book-requests.service';
+import {
+  AddressBookRequestItemDto,
+  AddressBookRequestsDto,
+  CreateAddressBookRequestDto,
+  CreateAddressBookRequestSchema,
+} from '@/modules/spaces/routes/entities/address-book-request.dto.entity';
+import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 
 @ApiTags('spaces')
 @Controller({ path: 'spaces', version: '1' })
@@ -69,7 +70,7 @@ export class AddressBookRequestsController {
     @Param('spaceId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
     spaceId: number,
   ): Promise<AddressBookRequestsDto> {
-    return this.service.findPending(authPayload, spaceId);
+    return await this.service.findPending(authPayload, spaceId);
   }
 
   @ApiOperation({
@@ -106,7 +107,7 @@ export class AddressBookRequestsController {
     @Body(new ValidationPipe(CreateAddressBookRequestSchema))
     dto: CreateAddressBookRequestDto,
   ): Promise<AddressBookRequestItemDto> {
-    return this.service.createRequest(authPayload, spaceId, dto.address);
+    return await this.service.createRequest(authPayload, spaceId, dto.address);
   }
 
   @ApiOperation({
@@ -142,7 +143,7 @@ export class AddressBookRequestsController {
     @Param('requestId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
     requestId: number,
   ): Promise<void> {
-    return this.service.approve(authPayload, spaceId, requestId);
+    return await this.service.approve(authPayload, spaceId, requestId);
   }
 
   @ApiOperation({
@@ -178,6 +179,6 @@ export class AddressBookRequestsController {
     @Param('requestId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
     requestId: number,
   ): Promise<void> {
-    return this.service.reject(authPayload, spaceId, requestId);
+    return await this.service.reject(authPayload, spaceId, requestId);
   }
 }

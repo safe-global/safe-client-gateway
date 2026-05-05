@@ -1,8 +1,9 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { faker } from '@faker-js/faker';
+import { type Address, getAddress } from 'viem';
 import { outgoingTokenEventBuilder } from '@/modules/hooks/routes/entities/__tests__/outgoing-token.builder';
 import type { TransactionEventType } from '@/modules/hooks/routes/entities/event-type.entity';
 import { OutgoingTokenEventSchema } from '@/modules/hooks/routes/entities/schemas/outgoing-token.schema';
-import { faker } from '@faker-js/faker';
-import { type Address, getAddress } from 'viem';
 
 describe('OutgoingTokenEventSchema', () => {
   it('should validate an outgoing token event', () => {
@@ -30,42 +31,42 @@ describe('OutgoingTokenEventSchema', () => {
     ]);
   });
 
-  it.each(['address' as const, 'tokenAddress' as const])(
-    'should not allow a non-address %s',
-    (field) => {
-      const outgoingTokenEvent = outgoingTokenEventBuilder()
-        .with(field, faker.string.alpha() as Address)
-        .build();
+  it.each([
+    'address' as const,
+    'tokenAddress' as const,
+  ])('should not allow a non-address %s', (field) => {
+    const outgoingTokenEvent = outgoingTokenEventBuilder()
+      .with(field, faker.string.alpha() as Address)
+      .build();
 
-      const result = OutgoingTokenEventSchema.safeParse(outgoingTokenEvent);
+    const result = OutgoingTokenEventSchema.safeParse(outgoingTokenEvent);
 
-      expect(!result.success && result.error.issues).toEqual([
-        expect.objectContaining({
-          code: 'custom',
-          message: 'Invalid address',
-          path: [field],
-        }),
-      ]);
-    },
-  );
+    expect(!result.success && result.error.issues).toEqual([
+      expect.objectContaining({
+        code: 'custom',
+        message: 'Invalid address',
+        path: [field],
+      }),
+    ]);
+  });
 
-  it.each(['address' as const, 'tokenAddress' as const])(
-    'should checksum the %s',
-    (field) => {
-      const nonChecksummedAddress = faker.finance
-        .ethereumAddress()
-        .toLowerCase() as Address;
-      const outgoingTokenEvent = outgoingTokenEventBuilder()
-        .with(field, nonChecksummedAddress)
-        .build();
+  it.each([
+    'address' as const,
+    'tokenAddress' as const,
+  ])('should checksum the %s', (field) => {
+    const nonChecksummedAddress = faker.finance
+      .ethereumAddress()
+      .toLowerCase() as Address;
+    const outgoingTokenEvent = outgoingTokenEventBuilder()
+      .with(field, nonChecksummedAddress)
+      .build();
 
-      const result = OutgoingTokenEventSchema.safeParse(outgoingTokenEvent);
+    const result = OutgoingTokenEventSchema.safeParse(outgoingTokenEvent);
 
-      expect(result.success && result.data[field]).toBe(
-        getAddress(nonChecksummedAddress),
-      );
-    },
-  );
+    expect(result.success && result.data[field]).toBe(
+      getAddress(nonChecksummedAddress),
+    );
+  });
 
   it.each([
     'type' as const,

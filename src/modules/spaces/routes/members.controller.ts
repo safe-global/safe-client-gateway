@@ -1,15 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import {
-  ApiBody,
-  ApiConflictResponse,
-  ApiForbiddenResponse,
-  ApiNotFoundResponse,
-  ApiOkResponse,
-  ApiOperation,
-  ApiParam,
-  ApiTags,
-  ApiUnauthorizedResponse,
-} from '@nestjs/swagger';
+
 import {
   Body,
   Controller,
@@ -22,31 +12,44 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
-import { MembersService } from '@/modules/spaces/routes/members.service';
+import {
+  ApiBody,
+  ApiConflictResponse,
+  ApiForbiddenResponse,
+  ApiNotFoundResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiParam,
+  ApiTags,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
+import { RowSchema } from '@/datasources/db/v1/entities/row.entity';
+import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { Auth } from '@/modules/auth/routes/decorators/auth.decorator';
 import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
-import { ValidationPipe } from '@/validation/pipes/validation.pipe';
-import {
-  InviteUsersDto,
-  InviteUsersDtoSchema,
-} from '@/modules/spaces/routes/entities/invite-users.dto.entity';
-import { UpdateRoleDtoSchema } from '@/modules/spaces/routes/entities/update-role.dto.entity';
-import { RowSchema } from '@/datasources/db/v1/entities/row.entity';
-import {
-  MemberDto,
-  MembersDto,
-} from '@/modules/spaces/routes/entities/members.dto.entity';
-import { Invitation } from '@/modules/spaces/routes/entities/invitation.entity';
-import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { UpdateRoleDto } from '@/modules/spaces/routes/entities/update-role.dto.entity';
 import {
   AcceptInviteDto,
   AcceptInviteDtoSchema,
 } from '@/modules/spaces/routes/entities/accept-invite.dto.entity';
+import { Invitation } from '@/modules/spaces/routes/entities/invitation.entity';
 import {
-  UpdateMemberAliasDto,
+  InviteUsersDto,
+  InviteUsersDtoSchema,
+} from '@/modules/spaces/routes/entities/invite-users.dto.entity';
+import {
+  MemberDto,
+  MembersDto,
+} from '@/modules/spaces/routes/entities/members.dto.entity';
+import {
+  type UpdateMemberAliasDto,
   UpdateMemberAliasDtoSchema,
 } from '@/modules/spaces/routes/entities/update-member-name.dto.entity';
+import {
+  UpdateRoleDto,
+  UpdateRoleDtoSchema,
+} from '@/modules/spaces/routes/entities/update-role.dto.entity';
+import { MembersService } from '@/modules/spaces/routes/members.service';
+import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 
 @ApiTags('spaces')
 @Controller({ path: 'spaces', version: '1' })

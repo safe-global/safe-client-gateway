@@ -1,8 +1,9 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
+import { getAddress } from 'viem';
 import type { IBuilder } from '@/__tests__/builder';
 import { Builder } from '@/__tests__/builder';
 import type { Safe, SafeV2 } from '@/modules/safe/domain/entities/safe.entity';
-import { getAddress } from 'viem';
 
 export function safeBuilder(): IBuilder<Safe> {
   return new Builder<Safe>()

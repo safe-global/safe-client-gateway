@@ -1,34 +1,37 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { ICloudStorageApiService } from '@/datasources/storage/cloud-storage-api.service';
-import { CsvService } from '@/modules/csv-export/csv-utils/csv.service';
-import { JobType } from '@/datasources/job-queue/types/job-types';
-import { IJobQueueService } from '@/domain/interfaces/job-queue.interface';
-import { CsvExportJobData } from '@/modules/csv-export/v1/entities/csv-export-job-data.entity';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 
-import { IExportApiManager } from '@/modules/csv-export/v1/datasources/export-api.manager.interface';
-import {
-  TransactionExport,
-  TransactionExportPageSchema,
-} from '@/modules/csv-export/v1/entities/transaction-export.entity';
+import fs from 'node:fs';
+import path from 'node:path';
+import { PassThrough, Readable } from 'node:stream';
+import type { CompleteMultipartUploadCommandOutput } from '@aws-sdk/client-s3';
 import { Inject, Injectable } from '@nestjs/common';
-import { PassThrough, Readable } from 'stream';
-import path from 'path';
-import fs from 'fs';
 import { UnrecoverableError } from 'bullmq';
+import type { Address } from 'viem';
+import { IConfigurationService } from '@/config/configuration.service.interface';
+import type { FileStorageType } from '@/config/entities/schemas/configuration.schema';
+import { JobType } from '@/datasources/job-queue/types/job-types';
+import { ICloudStorageApiService } from '@/datasources/storage/cloud-storage-api.service';
+import { LogType } from '@/domain/common/entities/log-type.entity';
+import { DataSourceError } from '@/domain/errors/data-source.error';
+import { IJobQueueService } from '@/domain/interfaces/job-queue.interface';
 import {
-  JobStatusDto,
-  JobStatusResponseDto,
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
+import { asError } from '@/logging/utils';
+import { CsvService } from '@/modules/csv-export/csv-utils/csv.service';
+import { IExportApiManager } from '@/modules/csv-export/v1/datasources/export-api.manager.interface';
+import { CSV_OPTIONS } from '@/modules/csv-export/v1/entities/csv-export.options';
+import type { CsvExportJobData } from '@/modules/csv-export/v1/entities/csv-export-job-data.entity';
+import {
+  type JobStatusDto,
+  type JobStatusResponseDto,
   toJobStatusDto,
 } from '@/modules/csv-export/v1/entities/job-status.dto';
-import { LogType } from '@/domain/common/entities/log-type.entity';
-import { FileStorageType } from '@/config/entities/schemas/configuration.schema';
-import { asError } from '@/logging/utils';
-import { DataSourceError } from '@/domain/errors/data-source.error';
-import { CSV_OPTIONS } from '@/modules/csv-export/v1/entities/csv-export.options';
-import { CompleteMultipartUploadCommandOutput } from '@aws-sdk/client-s3';
-import type { Address } from 'viem';
+import {
+  type TransactionExport,
+  TransactionExportPageSchema,
+} from '@/modules/csv-export/v1/entities/transaction-export.entity';
 
 @Injectable()
 export class CsvExportService {
@@ -112,7 +115,9 @@ export class CsvExportService {
       limit?: number;
       offset?: number;
     },
-    onProgress: (percentage: number) => Promise<void> = async () => {},
+    onProgress: (percentage: number) => Promise<void> = async () => {
+      // Default no-op progress callback
+    },
   ): Promise<string> {
     const { chainId, safeAddress, timestamp } = args;
     const fileName = this.generateFileName(chainId, safeAddress, timestamp);

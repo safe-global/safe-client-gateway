@@ -1,26 +1,27 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
+import type { Server } from 'node:net';
 import { faker } from '@faker-js/faker';
+import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { getAddress } from 'viem';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
-import configuration from '@/config/entities/__tests__/configuration';
-import { NotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/notifications.repository.module';
-import { TestNotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/test.notification.repository.module';
-import { MembersController } from '@/modules/spaces/routes/members.controller';
+import { createTestModule } from '@/__tests__/testing-module';
 import { checkGuardIsApplied } from '@/__tests__/util/check-guard';
-import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
+import { IConfigurationService } from '@/config/configuration.service.interface';
+import configuration from '@/config/entities/__tests__/configuration';
 import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
+import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
+import { nameBuilder } from '@/domain/common/entities/name.builder';
 import {
   oidcAuthPayloadDtoBuilder,
   siweAuthPayloadDtoBuilder,
 } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
-import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
-import { IConfigurationService } from '@/config/configuration.service.interface';
+import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
+import { NotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/notifications.repository.module';
+import { TestNotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/test.notification.repository.module';
+import { MembersController } from '@/modules/spaces/routes/members.controller';
 import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
-import type { INestApplication } from '@nestjs/common';
-import type { Server } from 'net';
-import { nameBuilder } from '@/domain/common/entities/name.builder';
-import { createTestModule } from '@/__tests__/testing-module';
 
 describe('MembersController', () => {
   let app: INestApplication<Server>;
@@ -68,12 +69,13 @@ describe('MembersController', () => {
   });
 
   it('should require authentication for every endpoint', () => {
-    const endpoints = Object.values(
-      MembersController.prototype,
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
-    ) as Array<Function>;
+    const endpoints = Object.values(MembersController.prototype) as Array<
+      (...args: Array<unknown>) => unknown
+    >;
 
-    endpoints.forEach((fn) => checkGuardIsApplied(AuthGuard, fn));
+    for (const fn of endpoints) {
+      checkGuardIsApplied(AuthGuard, fn);
+    }
   });
 
   describe('POST /v1/spaces/:spaceId/members/invite', () => {

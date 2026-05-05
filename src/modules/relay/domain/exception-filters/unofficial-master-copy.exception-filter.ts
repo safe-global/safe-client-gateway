@@ -1,10 +1,11 @@
-import { Response } from 'express';
+// SPDX-License-Identifier: FSL-1.1-MIT
 import {
+  type ArgumentsHost,
   Catch,
-  ExceptionFilter,
-  ArgumentsHost,
+  type ExceptionFilter,
   HttpStatus,
 } from '@nestjs/common';
+import type { Response } from 'express';
 import { UnofficialMasterCopyError } from '@/modules/relay/domain/errors/unofficial-master-copy.error';
 
 @Catch(UnofficialMasterCopyError)

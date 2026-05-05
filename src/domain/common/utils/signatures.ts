@@ -1,7 +1,8 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import type { Address, Hex } from 'viem';
 import { HEX_BYTES_LENGTH, HEX_PREFIX_LENGTH } from '@/routes/common/constants';
 import { isHexBytes } from '@/validation/entities/schemas/hexbytes.schema';
 import { isSignatureLike } from '@/validation/entities/schemas/signature.schema';
-import type { Address, Hex } from 'viem';
 
 export const R_OR_S_HEX_LENGTH = 32 * HEX_BYTES_LENGTH; // 32 bytes in hex
 export const V_HEX_LENGTH = 1 * HEX_BYTES_LENGTH; // 1 byte in hex
@@ -97,6 +98,6 @@ function getDynamicPartLength(remainingHex: string): number {
     0,
     DYNAMIC_PART_LENGTH_FIELD_HEX_LENGTH,
   );
-  const byteLength = parseInt(lengthFieldHex, 16);
+  const byteLength = Number.parseInt(lengthFieldHex, 16);
   return DYNAMIC_PART_LENGTH_FIELD_HEX_LENGTH + byteLength * HEX_BYTES_LENGTH;
 }

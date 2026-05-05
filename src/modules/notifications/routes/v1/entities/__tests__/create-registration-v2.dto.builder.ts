@@ -1,7 +1,5 @@
-import type { UpsertSubscriptionsDto } from '@/modules/notifications/domain/v2/entities/upsert-subscriptions.dto.entity';
-import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { NotificationType } from '@/modules/notifications/domain/v2/entities/notification.entity';
-import type { RegisterDeviceDto } from '@/modules/notifications/routes/v1/entities/register-device.dto.entity';
+// SPDX-License-Identifier: FSL-1.1-MIT
+import type { Address, Hex } from 'viem';
 import {
   getAddress,
   keccak256,
@@ -9,8 +7,11 @@ import {
   recoverMessageAddress,
   toBytes,
 } from 'viem';
+import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { DeviceType } from '@/modules/notifications/domain/v1/entities/device.entity';
-import type { Address, Hex } from 'viem';
+import { NotificationType } from '@/modules/notifications/domain/v2/entities/notification.entity';
+import type { UpsertSubscriptionsDto } from '@/modules/notifications/domain/v2/entities/upsert-subscriptions.dto.entity';
+import type { RegisterDeviceDto } from '@/modules/notifications/routes/v1/entities/register-device.dto.entity';
 
 export const createV2RegisterDtoBuilder = async (
   args: RegisterDeviceDto,

@@ -1,4 +1,4 @@
-// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-export default () => {
+// SPDX-License-Identifier: FSL-1.1-MIT
+export default (): void => {
   process.env.TZ = 'UTC';
 };

@@ -1,13 +1,14 @@
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
-import { CacheRouter } from '@/datasources/cache/cache.router';
-import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
-import { Page } from '@/domain/entities/page.entity';
-import { IExportApi } from '@/modules/csv-export/v1/datasources/export-api.interface';
-import { TransactionExport } from '@/modules/csv-export/v1/entities/transaction-export.entity';
-import { Raw } from '@/validation/entities/raw.entity';
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import type { Address } from 'viem';
+import { IConfigurationService } from '@/config/configuration.service.interface';
+import type { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
+import { CacheRouter } from '@/datasources/cache/cache.router';
+import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
+import type { Page } from '@/domain/entities/page.entity';
+import type { IExportApi } from '@/modules/csv-export/v1/datasources/export-api.interface';
+import type { TransactionExport } from '@/modules/csv-export/v1/entities/transaction-export.entity';
+import type { Raw } from '@/validation/entities/raw.entity';
 
 @Injectable()
 export class ExportApi implements IExportApi {

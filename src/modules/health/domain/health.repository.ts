@@ -1,16 +1,20 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
-import { HealthEntity } from '@/modules/health/domain/entities/health.entity';
-import { IHealthRepository } from '@/modules/health/domain/health.repository.interface';
 import {
   CacheReadiness,
-  ICacheReadiness,
+  type ICacheReadiness,
 } from '@/domain/interfaces/cache-readiness.interface';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import {
-  IQueueReadiness,
+  type IQueueReadiness,
   QueueReadiness,
 } from '@/domain/interfaces/queue-readiness.interface';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
+import { HealthEntity } from '@/modules/health/domain/entities/health.entity';
 import { HealthCheckError } from '@/modules/health/domain/entities/healthError.entity';
+import type { IHealthRepository } from '@/modules/health/domain/health.repository.interface';
 
 @Injectable()
 export class HealthRepository implements IHealthRepository {

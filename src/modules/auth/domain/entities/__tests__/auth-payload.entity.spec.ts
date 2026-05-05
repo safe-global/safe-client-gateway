@@ -1,15 +1,16 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
+import { faker } from '@faker-js/faker';
+import { type Address, getAddress } from 'viem';
+import {
+  oidcAuthPayloadDtoBuilder,
+  siweAuthPayloadDtoBuilder,
+} from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import {
   AuthMethod,
   AuthPayload,
   AuthPayloadDtoSchema,
 } from '@/modules/auth/domain/entities/auth-payload.entity';
-import {
-  siweAuthPayloadDtoBuilder,
-  oidcAuthPayloadDtoBuilder,
-} from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
-import { faker } from '@faker-js/faker';
-import { type Address, getAddress } from 'viem';
 
 describe('AuthPayload entity', () => {
   describe('SIWE', () => {

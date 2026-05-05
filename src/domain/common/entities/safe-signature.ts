@@ -1,6 +1,8 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { Cron, CronExpression } from '@nestjs/schedule';
 import { secp256k1 } from '@noble/curves/secp256k1';
 import { memoize } from 'lodash';
-import { Address, getAddress, hashMessage, Hex } from 'viem';
+import { type Address, getAddress, type Hex, hashMessage } from 'viem';
 import { publicKeyToAddress } from 'viem/utils';
 import { SignatureType } from '@/domain/common/entities/signature-type.entity';
 import {
@@ -10,7 +12,6 @@ import {
   V_HEX_LENGTH,
 } from '@/domain/common/utils/signatures';
 import { ADDRESS_LENGTH, HEX_PREFIX_LENGTH } from '@/routes/common/constants';
-import { Cron, CronExpression } from '@nestjs/schedule';
 
 const ETH_SIGN_V_OFFSET = 4;
 
@@ -44,7 +45,10 @@ export class SafeSignature {
 
   get v(): number {
     const vOffset = HEX_PREFIX_LENGTH + SIGNATURE_HEX_LENGTH - V_HEX_LENGTH;
-    return parseInt(this.signature.slice(vOffset, vOffset + V_HEX_LENGTH), 16);
+    return Number.parseInt(
+      this.signature.slice(vOffset, vOffset + V_HEX_LENGTH),
+      16,
+    );
   }
 
   get signatureType(): SignatureType {
@@ -126,7 +130,7 @@ function recoverPublicKey(args: { hash: Hex; signature: Hex }): Hex {
 }
 
 function toRecoveryBit(signature: Hex): number {
-  const v = parseInt(signature.slice(V_HEX_LENGTH * -1), 16);
+  const v = Number.parseInt(signature.slice(V_HEX_LENGTH * -1), 16);
   if (v === 0 || v === 1) {
     return v;
   }

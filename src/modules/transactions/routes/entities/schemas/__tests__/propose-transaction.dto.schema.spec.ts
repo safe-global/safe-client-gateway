@@ -1,8 +1,9 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { faker } from '@faker-js/faker';
+import { type Address, getAddress, type Hash, type Hex } from 'viem';
 import type { Operation } from '@/modules/safe/domain/entities/operation.entity';
 import { proposeTransactionDtoBuilder } from '@/modules/transactions/routes/entities/__tests__/propose-transaction.dto.builder';
 import { ProposeTransactionDtoSchema } from '@/modules/transactions/routes/entities/schemas/propose-transaction.dto.schema';
-import { faker } from '@faker-js/faker';
-import { type Address, getAddress, type Hash, type Hex } from 'viem';
 
 describe('ProposeTransactionDtoSchema', () => {
   it('should validate a valid ProposeTransactionDto', () => {
@@ -13,7 +14,7 @@ describe('ProposeTransactionDtoSchema', () => {
     expect(result.success).toBe(true);
   });
 
-  ['to' as const, 'gasToken' as const, 'sender' as const].forEach((field) => {
+  for (const field of ['to' as const, 'gasToken' as const, 'sender' as const]) {
     it(`should not allow non-address ${field}`, () => {
       const proposeTransactionDto = proposeTransactionDtoBuilder()
         .with(field, faker.string.alphanumeric() as Address)
@@ -48,15 +49,15 @@ describe('ProposeTransactionDtoSchema', () => {
         getAddress(nonChecksummedAddress),
       );
     });
-  });
+  }
 
-  [
+  for (const field of [
     'value' as const,
     'nonce' as const,
     'safeTxGas' as const,
     'baseGas' as const,
     'gasPrice' as const,
-  ].forEach((field) => {
+  ]) {
     it(`should validate if ${field} is a numeric string`, () => {
       const proposeTransactionDto = proposeTransactionDtoBuilder()
         .with(field, faker.string.numeric())
@@ -86,7 +87,7 @@ describe('ProposeTransactionDtoSchema', () => {
         }),
       ]);
     });
-  });
+  }
 
   it('should validate if safeTxHash is hex', () => {
     const proposeTransactionDto = proposeTransactionDtoBuilder()

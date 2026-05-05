@@ -1,22 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
-import { IMembersRepository } from '@/modules/users/domain/members.repository.interface';
-import { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
-import { IAddressBookRequestsRepository } from '@/modules/spaces/domain/address-books/address-book-requests.repository.interface';
-import { IUserAddressBookItemsRepository } from '@/modules/spaces/domain/address-books/user-address-book-items.repository.interface';
-import { IAddressBookItemsRepository } from '@/modules/spaces/domain/address-books/address-book-items.repository.interface';
-import {
-  AddressBookRequestsDto,
-  AddressBookRequestItemDto,
-} from '@/modules/spaces/routes/entities/address-book-request.dto.entity';
-import {
-  assertMember,
-  assertAdmin,
-  isAdmin,
-} from '@/modules/spaces/routes/utils/space-assert.utils';
-import type { AddressBookRequest } from '@/modules/spaces/domain/address-books/entities/address-book-request.entity';
-import type { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
+
 import {
   BadRequestException,
   ForbiddenException,
@@ -25,6 +8,24 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import type { Address } from 'viem';
+import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
+import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
+import type { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
+import { IAddressBookItemsRepository } from '@/modules/spaces/domain/address-books/address-book-items.repository.interface';
+import { IAddressBookRequestsRepository } from '@/modules/spaces/domain/address-books/address-book-requests.repository.interface';
+import type { AddressBookRequest } from '@/modules/spaces/domain/address-books/entities/address-book-request.entity';
+import { IUserAddressBookItemsRepository } from '@/modules/spaces/domain/address-books/user-address-book-items.repository.interface';
+import { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
+import {
+  AddressBookRequestItemDto,
+  AddressBookRequestsDto,
+} from '@/modules/spaces/routes/entities/address-book-request.dto.entity';
+import {
+  assertAdmin,
+  assertMember,
+  isAdmin,
+} from '@/modules/spaces/routes/utils/space-assert.utils';
+import { IMembersRepository } from '@/modules/users/domain/members.repository.interface';
 
 @Injectable()
 export class AddressBookRequestsService {

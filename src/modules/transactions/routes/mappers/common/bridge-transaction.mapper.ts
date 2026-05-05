@@ -1,17 +1,20 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
+import type { Address } from 'viem';
+import { IBridgeRepository } from '@/modules/bridge/domain/bridge.repository.interface';
 import { LiFiDecoder } from '@/modules/bridge/domain/contracts/decoders/lifi-decoder.helper';
-import { SwapTransactionInfo } from '@/modules/transactions/routes/entities/bridge/bridge-info.entity';
+import type { BridgeStatus } from '@/modules/bridge/domain/entities/bridge-status.entity';
+import { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
+import type { Token } from '@/modules/tokens/domain/entities/token.entity';
 import { ITokenRepository } from '@/modules/tokens/domain/token.repository.interface';
+import {
+  BridgeAndSwapTransactionInfo,
+  SwapTransactionInfo,
+} from '@/modules/transactions/routes/entities/bridge/bridge-info.entity';
+import { BridgeFee } from '@/modules/transactions/routes/entities/bridge/fees.entity';
 import { TokenInfo } from '@/modules/transactions/routes/entities/swaps/token-info.entity';
 import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
-import { IBridgeRepository } from '@/modules/bridge/domain/bridge.repository.interface';
-import { BridgeStatus } from '@/modules/bridge/domain/entities/bridge-status.entity';
-import { BridgeAndSwapTransactionInfo } from '@/modules/transactions/routes/entities/bridge/bridge-info.entity';
-import { Token } from '@/modules/tokens/domain/entities/token.entity';
 import { NULL_ADDRESS } from '@/routes/common/constants';
-import { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
-import { BridgeFee } from '@/modules/transactions/routes/entities/bridge/fees.entity';
-import type { Address } from 'viem';
 
 @Injectable()
 export class BridgeTransactionMapper {
@@ -125,12 +128,11 @@ export class BridgeTransactionMapper {
         symbol: nativeCurrency.symbol,
         trusted: true,
       };
-    } else {
-      return this.tokenRepository.getToken({
-        chainId: args.chainId,
-        address: args.tokenAddress,
-      });
     }
+    return this.tokenRepository.getToken({
+      chainId: args.chainId,
+      address: args.tokenAddress,
+    });
   }
 
   private async getExecutedSwapInfo(args: {

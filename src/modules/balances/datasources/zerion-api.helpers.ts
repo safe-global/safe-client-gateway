@@ -1,5 +1,6 @@
-import type { ZerionBalance } from './entities/zerion-balance.entity';
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { PositionType } from '@/modules/positions/domain/entities/position-type.entity';
+import type { ZerionBalance } from './entities/zerion-balance.entity';
 
 /**
  * Builds headers for Zerion API requests.

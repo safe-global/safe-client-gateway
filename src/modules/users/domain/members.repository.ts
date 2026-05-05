@@ -6,28 +6,28 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import type {
+  EntityManager,
+  FindManyOptions,
+  FindOptionsRelations,
+  FindOptionsWhere,
+} from 'typeorm';
+import { In } from 'typeorm';
 import { type Address, isAddressEqual } from 'viem';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
-import { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
-import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
-import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
-import { Member as DbMember } from '@/modules/users/datasources/entities/member.entity.db';
-import { IWalletsRepository } from '@/modules/wallets/domain/wallets.repository.interface';
-import { In } from 'typeorm';
-import type {
-  FindOptionsWhere,
-  FindOptionsRelations,
-  FindManyOptions,
-  EntityManager,
-} from 'typeorm';
-import type { IMembersRepository } from '@/modules/users/domain/members.repository.interface';
-import type { Space } from '@/modules/spaces/domain/entities/space.entity';
-import type { User } from '@/modules/users/domain/entities/user.entity';
-import type { Invitation } from '@/modules/users/domain/entities/invitation.entity';
-import { type Member } from '@/modules/users/domain/entities/member.entity';
 import { isUniqueConstraintError } from '@/datasources/errors/helpers/is-unique-constraint-error.helper';
 import { UniqueConstraintError } from '@/datasources/errors/unique-constraint-error';
+import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
+import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
+import type { Space } from '@/modules/spaces/domain/entities/space.entity';
+import { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
+import { Member as DbMember } from '@/modules/users/datasources/entities/member.entity.db';
+import type { Invitation } from '@/modules/users/domain/entities/invitation.entity';
+import type { Member } from '@/modules/users/domain/entities/member.entity';
+import type { User } from '@/modules/users/domain/entities/user.entity';
+import type { IMembersRepository } from '@/modules/users/domain/members.repository.interface';
+import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
+import { IWalletsRepository } from '@/modules/wallets/domain/wallets.repository.interface';
 
 @Injectable()
 export class MembersRepository implements IMembersRepository {

@@ -1,6 +1,5 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
-import type { IBuilder } from '../../../../__tests__/builder';
-import { Builder } from '../../../../__tests__/builder';
 import type {
   FingerprintIpData,
   FingerprintIpInfo,
@@ -8,6 +7,8 @@ import type {
   FingerprintUnsealedData,
   FingerprintVpn,
 } from '@/datasources/locking-api/entities/fingerprint-unsealed-data.entity';
+import type { IBuilder } from '../../../../__tests__/builder';
+import { Builder } from '../../../../__tests__/builder';
 
 export function fingerprintLocationSpoofingBuilder(): IBuilder<FingerprintLocationSpoofing> {
   return new Builder<FingerprintLocationSpoofing>().with('data', {

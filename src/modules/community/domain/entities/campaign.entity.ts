@@ -1,6 +1,7 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { z } from 'zod';
 import { buildPageSchema } from '@/domain/entities/schemas/page.schema.factory';
 import { ActivityMetadataSchema } from '@/modules/community/domain/entities/activity-metadata.entity';
-import { z } from 'zod';
 import {
   NullableCoercedDateSchema,
   NullableNumericStringSchema,

@@ -1,13 +1,5 @@
-import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { UpsertSubscriptionsDto } from '@/modules/notifications/routes/v2/entities/upsert-subscriptions.dto.entity';
-import { UpsertSubscriptionsDtoSchema } from '@/modules/notifications/domain/v2/entities/upsert-subscriptions.dto.entity';
-import { NotificationsServiceV2 } from '@/modules/notifications/routes/v2/notifications.service';
-import { Auth } from '@/modules/auth/routes/decorators/auth.decorator';
-import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
-import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
-import { UuidSchema } from '@/validation/entities/schemas/uuid.schema';
-import { ValidationPipe } from '@/validation/pipes/validation.pipe';
+// SPDX-License-Identifier: FSL-1.1-MIT
+import type { UUID } from 'node:crypto';
 import {
   Body,
   Controller,
@@ -18,24 +10,33 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import {
-  ApiNotFoundResponse,
-  ApiOperation,
-  ApiTags,
-  ApiUnprocessableEntityResponse,
-  ApiOkResponse,
-  ApiParam,
+  ApiBadRequestResponse,
   ApiBody,
   ApiCreatedResponse,
   ApiNoContentResponse,
-  ApiBadRequestResponse,
+  ApiNotFoundResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiParam,
+  ApiTags,
   ApiUnauthorizedResponse,
+  ApiUnprocessableEntityResponse,
 } from '@nestjs/swagger';
-import { UUID } from 'crypto';
-import { OptionalAuthGuard } from '@/modules/auth/routes/guards/optional-auth.guard';
-import { NotificationTypeResponseDto } from '@/modules/notifications/routes/v2/entities/notification-type-response.dto.entity';
-import { DeleteAllSubscriptionsDtoSchema } from '@/modules/notifications/domain/v2/entities/delete-all-subscriptions.dto.entity';
-import { DeleteAllSubscriptionsDto } from '@/modules/notifications/routes/v2/entities/delete-all-subscriptions.dto.entity';
 import type { Address } from 'viem';
+import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
+import { Auth } from '@/modules/auth/routes/decorators/auth.decorator';
+import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
+import { OptionalAuthGuard } from '@/modules/auth/routes/guards/optional-auth.guard';
+import { DeleteAllSubscriptionsDtoSchema } from '@/modules/notifications/domain/v2/entities/delete-all-subscriptions.dto.entity';
+import { UpsertSubscriptionsDtoSchema } from '@/modules/notifications/domain/v2/entities/upsert-subscriptions.dto.entity';
+import type { DeleteAllSubscriptionsDto } from '@/modules/notifications/routes/v2/entities/delete-all-subscriptions.dto.entity';
+import { NotificationTypeResponseDto } from '@/modules/notifications/routes/v2/entities/notification-type-response.dto.entity';
+import { UpsertSubscriptionsDto } from '@/modules/notifications/routes/v2/entities/upsert-subscriptions.dto.entity';
+import { NotificationsServiceV2 } from '@/modules/notifications/routes/v2/notifications.service';
+import { AddressSchema } from '@/validation/entities/schemas/address.schema';
+import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
+import { UuidSchema } from '@/validation/entities/schemas/uuid.schema';
+import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 
 @ApiTags('notifications')
 @Controller({ path: '', version: '2' })
@@ -187,7 +188,7 @@ export class NotificationsControllerV2 {
     description: 'The request body is invalid',
   })
   @Delete('notifications/subscriptions')
-  public async deleteAllSubscriptions(
+  public deleteAllSubscriptions(
     @Body(new ValidationPipe(DeleteAllSubscriptionsDtoSchema))
     deleteAllSubscriptionsDto: DeleteAllSubscriptionsDto,
   ): Promise<void> {

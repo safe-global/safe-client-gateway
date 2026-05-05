@@ -1,16 +1,17 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
+import { faker } from '@faker-js/faker';
+import type { Job } from 'bullmq';
+import { UnrecoverableError } from 'bullmq';
+import type { ILoggingService } from '@/logging/logging.interface';
 import { EmailConsumer } from '@/modules/email/ses/consumers/email.consumer';
-import type { IEmailService } from '@/modules/email/ses/domain/interfaces/email-service.interface';
+import { sendEmailJobDataBuilder } from '@/modules/email/ses/domain/entities/__tests__/send-email-job-data.builder';
+import type { SendEmailJobData } from '@/modules/email/ses/domain/entities/email-job-data.entity';
 import {
   PermanentEmailError,
   TransientEmailError,
 } from '@/modules/email/ses/domain/errors/email.errors';
-import type { SendEmailJobData } from '@/modules/email/ses/domain/entities/email-job-data.entity';
-import { sendEmailJobDataBuilder } from '@/modules/email/ses/domain/entities/__tests__/send-email-job-data.builder';
-import type { ILoggingService } from '@/logging/logging.interface';
-import { faker } from '@faker-js/faker';
-import { UnrecoverableError } from 'bullmq';
-import type { Job } from 'bullmq';
+import type { IEmailService } from '@/modules/email/ses/domain/interfaces/email-service.interface';
 
 const mockEmailService = {
   send: jest.fn(),

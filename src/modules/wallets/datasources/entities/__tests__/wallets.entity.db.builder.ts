@@ -1,9 +1,11 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+
+import { faker } from '@faker-js/faker';
+import { getAddress } from 'viem';
 import type { IBuilder } from '@/__tests__/builder';
 import { Builder } from '@/__tests__/builder';
-import { faker } from '@faker-js/faker/.';
-import type { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
 import { userBuilder } from '@/modules/users/datasources/entities/__tests__/users.entity.db.builder';
-import { getAddress } from 'viem';
+import type { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
 
 export function walletBuilder(): IBuilder<Wallet> {
   return new Builder<Wallet>()

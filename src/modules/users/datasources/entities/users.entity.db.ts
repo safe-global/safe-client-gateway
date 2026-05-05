@@ -7,13 +7,13 @@ import {
   OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
+import { databaseEnumTransformer } from '@/domain/common/utils/enum';
+import { Member } from '@/modules/users/datasources/entities/member.entity.db';
 import {
+  type User as DomainUser,
   UserStatus,
-  User as DomainUser,
 } from '@/modules/users/domain/entities/user.entity';
 import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
-import { Member } from '@/modules/users/datasources/entities/member.entity.db';
-import { databaseEnumTransformer } from '@/domain/common/utils/enum';
 
 @Entity('users')
 @Check(
@@ -56,9 +56,13 @@ export class User implements DomainUser {
   })
   email!: string | null;
 
-  @OneToMany(() => Wallet, (wallet: Wallet) => wallet.id, {
-    onDelete: 'CASCADE',
-  })
+  @OneToMany(
+    () => Wallet,
+    (wallet: Wallet) => wallet.id,
+    {
+      onDelete: 'CASCADE',
+    },
+  )
   wallets!: Array<Wallet>;
 
   @Column({
@@ -77,6 +81,9 @@ export class User implements DomainUser {
   })
   updatedAt!: Date;
 
-  @OneToMany(() => Member, (member: Member) => member.user)
+  @OneToMany(
+    () => Member,
+    (member: Member) => member.user,
+  )
   members!: Array<Member>;
 }

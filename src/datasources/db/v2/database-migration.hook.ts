@@ -1,11 +1,12 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable, type OnModuleInit } from '@nestjs/common';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { DatabaseMigrator } from '@/datasources/db/v2/database-migrator.service';
-import {
-  LoggingService,
-  type ILoggingService,
-} from '@/logging/logging.interface';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
 
 @Injectable()
 export class DatabaseMigrationHook implements OnModuleInit {

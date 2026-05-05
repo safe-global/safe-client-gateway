@@ -1,4 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
+import { faker } from '@faker-js/faker';
+import { UnauthorizedException } from '@nestjs/common';
+import jwt from 'jsonwebtoken';
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import { toSecondsTimestamp } from '@/domain/common/utils/time';
 import type { ILoggingService } from '@/logging/logging.interface';
@@ -10,9 +14,6 @@ import {
 } from '@/modules/auth/oidc/auth0/__tests__/auth0-jwks.helper';
 import { Auth0TokenVerifier } from '@/modules/auth/oidc/auth0/domain/auth0-token.verifier';
 import { Auth0TokenSchema } from '@/modules/auth/oidc/auth0/domain/entities/auth0-token.entity';
-import { faker } from '@faker-js/faker';
-import { UnauthorizedException } from '@nestjs/common';
-import jwt from 'jsonwebtoken';
 
 const loggingServiceMock = {
   debug: jest.fn(),
