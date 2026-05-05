@@ -6,7 +6,6 @@ import {
   Module,
   type NestModule,
   OnModuleInit,
-  RequestMethod,
 } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { json } from 'express';
@@ -57,9 +56,12 @@ export class PasskeysModule implements NestModule, OnModuleInit {
    * silent fail-open across origin / RP-ID / verifier validation.
    */
   public configure(consumer: MiddlewareConsumer): void {
-    consumer
-      .apply(json({ limit: PASSKEYS_BODY_LIMIT }))
-      .forRoutes({ path: 'v1/passkeys', method: RequestMethod.POST });
+    // Bind directly to the controller class instead of a path string. NestJS
+    // resolves the version-prefixed URL ('/v1/passkeys') automatically; using
+    // a string here is brittle to versioning changes.
+    consumer.apply(json({ limit: PASSKEYS_BODY_LIMIT })).forRoutes(
+      PasskeysController,
+    );
   }
 
   public onModuleInit(): void {
