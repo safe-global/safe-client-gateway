@@ -176,7 +176,6 @@ describe('Alerts Controller', () => {
           // TODO: Check value of threshold and owner in email
           // biome-ignore lint/correctness/noUnusedVariables: intentionally unused in test
           const { threshold, owner } = addOwnerWithThreshold.build();
-          // biome-ignore lint/correctness/noUnusedVariables: intentionally unused in test
           const _signature = fakeTenderlySignature({
             signingKey,
             alert,
@@ -231,7 +230,6 @@ describe('Alerts Controller', () => {
           // TODO: Check value of threshold in email
           // biome-ignore lint/correctness/noUnusedVariables: intentionally unused in test
           const { threshold } = removeOwner.build();
-          // biome-ignore lint/correctness/noUnusedVariables: intentionally unused in test
           const _signature = fakeTenderlySignature({
             signingKey,
             alert,
@@ -285,7 +283,6 @@ describe('Alerts Controller', () => {
           // TODO: Check value of newOwner in email
           // biome-ignore lint/correctness/noUnusedVariables: intentionally unused in test
           const { newOwner } = swapOwner.build();
-          // biome-ignore lint/correctness/noUnusedVariables: intentionally unused in test
           const _signature = fakeTenderlySignature({
             signingKey,
             alert,
@@ -329,7 +326,6 @@ describe('Alerts Controller', () => {
           // TODO: Check value of threshold in email
           // biome-ignore lint/correctness/noUnusedVariables: intentionally unused in test
           const { threshold } = changeThreshold.build();
-          // biome-ignore lint/correctness/noUnusedVariables: intentionally unused in test
           const _signature = fakeTenderlySignature({
             signingKey,
             alert,
@@ -407,7 +403,6 @@ describe('Alerts Controller', () => {
             .with('event_type', EventType.ALERT)
             .build();
           const timestamp = Date.now().toString();
-          // biome-ignore lint/correctness/noUnusedVariables: intentionally unused in test
           const _signature = fakeTenderlySignature({
             signingKey,
             alert,
@@ -450,7 +445,6 @@ describe('Alerts Controller', () => {
           // TODO: Check value of threshold and owner in email
           // biome-ignore lint/correctness/noUnusedVariables: intentionally unused in test
           const { threshold, owner } = addOwnerWithThreshold.build();
-          // biome-ignore lint/correctness/noUnusedVariables: intentionally unused in test
           const _signature = fakeTenderlySignature({
             signingKey,
             alert,
@@ -494,7 +488,6 @@ describe('Alerts Controller', () => {
           // TODO: Check value of threshold and owner in email
           // biome-ignore lint/correctness/noUnusedVariables: intentionally unused in test
           const { threshold, owner } = addOwnerWithThreshold.build();
-          // biome-ignore lint/correctness/noUnusedVariables: intentionally unused in test
           const _signature = fakeTenderlySignature({
             signingKey,
             alert,
@@ -536,7 +529,6 @@ describe('Alerts Controller', () => {
             .with('event_type', EventType.ALERT)
             .build();
           const timestamp = Date.now().toString();
-          // biome-ignore lint/correctness/noUnusedVariables: intentionally unused in test
           const _signature = fakeTenderlySignature({
             signingKey,
             alert,
@@ -575,7 +567,6 @@ describe('Alerts Controller', () => {
             .with('event_type', EventType.ALERT)
             .build();
           const timestamp = Date.now().toString();
-          // biome-ignore lint/correctness/noUnusedVariables: intentionally unused in test
           const _signature = fakeTenderlySignature({
             signingKey,
             alert,
@@ -650,7 +641,6 @@ describe('Alerts Controller', () => {
             .with('event_type', EventType.ALERT)
             .build();
           const timestamp = Date.now().toString();
-          // biome-ignore lint/correctness/noUnusedVariables: intentionally unused in test
           const _signature = fakeTenderlySignature({
             signingKey,
             alert,
@@ -724,7 +714,6 @@ describe('Alerts Controller', () => {
             .with('event_type', EventType.ALERT)
             .build();
           const timestamp = Date.now().toString();
-          // biome-ignore lint/correctness/noUnusedVariables: intentionally unused in test
           const _signature = fakeTenderlySignature({
             signingKey,
             alert,
@@ -768,9 +757,7 @@ describe('Alerts Controller', () => {
           // TODO: Check threshold and expected owners in email
           // biome-ignore lint/correctness/noUnusedVariables: intentionally unused in test
           const { threshold, owner } = addOwnerWithThreshold.build();
-          // biome-ignore lint/correctness/noUnusedVariables: intentionally unused in test
           const _expectedOwners = [...safe.owners, owner];
-          // biome-ignore lint/correctness/noUnusedVariables: intentionally unused in test
           const _signature = fakeTenderlySignature({
             signingKey,
             alert,
@@ -809,7 +796,6 @@ describe('Alerts Controller', () => {
             .with('event_type', EventType.ALERT)
             .build();
           const timestamp = Date.now().toString();
-          // biome-ignore lint/correctness/noUnusedVariables: intentionally unused in test
           const _signature = fakeTenderlySignature({
             signingKey,
             alert,

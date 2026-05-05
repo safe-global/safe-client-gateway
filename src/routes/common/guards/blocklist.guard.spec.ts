@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { BlocklistGuard } from './blocklist.guard';
-import { ForbiddenException } from '@nestjs/common';
-import type { ExecutionContext } from '@nestjs/common';
-import type { ILoggingService } from '@/logging/logging.interface';
-import type { IConfigurationService } from '@/config/configuration.service.interface';
+
 import { faker } from '@faker-js/faker';
+import type { ExecutionContext } from '@nestjs/common';
+import { ForbiddenException } from '@nestjs/common';
 import { getAddress } from 'viem';
+import type { IConfigurationService } from '@/config/configuration.service.interface';
 import type { IBlocklistService } from '@/config/entities/blocklist.interface';
+import type { ILoggingService } from '@/logging/logging.interface';
+import { BlocklistGuard } from './blocklist.guard';
 
 const mockLoggingService = {
   warn: jest.fn(),

@@ -2687,7 +2687,6 @@ describe('Relay controller', () => {
           }
         });
 
-        // biome-ignore lint/correctness/noUnusedVariables: intentionally unused in test
         for (const _ of Array.from({ length: 5 })) {
           await request(app.getHttpServer())
             .post(`/v1/chains/${chain.chainId}/relay`)
@@ -2857,7 +2856,6 @@ describe('Relay controller', () => {
           }
         });
 
-        // biome-ignore lint/correctness/noUnusedVariables: intentionally unused in test
         for (const _ of Array.from({ length: 6 })) {
           await request(app.getHttpServer())
             .post(`/v1/chains/${chain.chainId}/relay`)
