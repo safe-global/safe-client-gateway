@@ -12,12 +12,15 @@ import {
   UserStatus,
 } from '@/modules/users/domain/entities/user.entity';
 
-class MemberUser implements Pick<User, 'id'> {
+class MemberUser implements Pick<User, 'id' | 'email'> {
   @ApiProperty({ type: Number })
   id!: User['id'];
 
   @ApiProperty({ enum: getStringEnumKeys(UserStatus) })
   status!: keyof typeof UserStatus;
+
+  @ApiProperty({ type: String, nullable: true })
+  email!: User['email'];
 }
 
 export class MemberDto {
