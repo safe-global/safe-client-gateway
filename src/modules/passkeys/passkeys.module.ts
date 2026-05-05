@@ -1,14 +1,28 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
-import { Inject, Module, OnModuleInit } from '@nestjs/common';
+import {
+  Inject,
+  type MiddlewareConsumer,
+  Module,
+  type NestModule,
+  OnModuleInit,
+  RequestMethod,
+} from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { json } from 'express';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { PostgresDatabaseModuleV2 } from '@/datasources/db/v2/postgres-database.module';
 import { PasskeyCoordinates } from '@/modules/passkeys/datasources/entities/passkey-coordinates.entity.db';
+import { PasskeyAttestationService } from '@/modules/passkeys/domain/passkey-attestation.service';
 import { PasskeysRepository } from '@/modules/passkeys/domain/passkeys.repository';
 import { IPasskeysRepository } from '@/modules/passkeys/domain/passkeys.repository.interface';
 import { PasskeysController } from '@/modules/passkeys/routes/passkeys.controller';
 import { PasskeysService } from '@/modules/passkeys/routes/passkeys.service';
+
+// Tight per-route body cap. Sized to ~1.5× the realistic worst-case attestation
+// (TPM with cert chain, ~10 KiB encoded). Anything larger is malformed or
+// hostile — bound CBOR-bomb DoS that the rate limit alone would not stop.
+const PASSKEYS_BODY_LIMIT = '24kb';
 
 @Module({
   imports: [
@@ -18,6 +32,7 @@ import { PasskeysService } from '@/modules/passkeys/routes/passkeys.service';
   controllers: [PasskeysController],
   providers: [
     PasskeysService,
+    PasskeyAttestationService,
     {
       provide: IPasskeysRepository,
       useClass: PasskeysRepository,
@@ -25,7 +40,7 @@ import { PasskeysService } from '@/modules/passkeys/routes/passkeys.service';
   ],
   exports: [IPasskeysRepository],
 })
-export class PasskeysModule implements OnModuleInit {
+export class PasskeysModule implements NestModule, OnModuleInit {
   public constructor(
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
@@ -37,6 +52,12 @@ export class PasskeysModule implements OnModuleInit {
    * introducing "skip check when allowlist empty" semantics — that would be a
    * silent fail-open across origin / RP-ID / verifier validation.
    */
+  public configure(consumer: MiddlewareConsumer): void {
+    consumer
+      .apply(json({ limit: PASSKEYS_BODY_LIMIT }))
+      .forRoutes({ path: 'v1/passkeys', method: RequestMethod.POST });
+  }
+
   public onModuleInit(): void {
     for (const key of [
       'passkeys.rpIdAllowlist',

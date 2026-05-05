@@ -1,0 +1,213 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { HttpStatus } from '@nestjs/common';
+import type { IConfigurationService } from '@/config/configuration.service.interface';
+import {
+  PasskeyAttestationError,
+  type PasskeyAttestationService,
+  type VerifiedPasskey,
+} from '@/modules/passkeys/domain/passkey-attestation.service';
+import type { IPasskeysRepository } from '@/modules/passkeys/domain/passkeys.repository.interface';
+import { PasskeysService } from '@/modules/passkeys/routes/passkeys.service';
+
+const VERIFIERS_HEX = `0x${'a1'.repeat(22)}`;
+
+function buildConfig(
+  overrides: Partial<{
+    rpIdAllowlist: ReadonlyArray<string>;
+    originAllowlist: ReadonlyArray<string>;
+    verifiersAllowlist: ReadonlyArray<string>;
+  }> = {},
+): IConfigurationService {
+  const values: Record<string, ReadonlyArray<string>> = {
+    'passkeys.rpIdAllowlist': overrides.rpIdAllowlist ?? ['app.safe.global'],
+    'passkeys.originAllowlist': overrides.originAllowlist ?? [
+      'https://app.safe.global',
+    ],
+    'passkeys.verifiersAllowlist': overrides.verifiersAllowlist ?? [
+      VERIFIERS_HEX,
+    ],
+  };
+  return {
+    get: jest.fn(),
+    getOrThrow: jest.fn((key: string) => values[key]),
+  } as unknown as IConfigurationService;
+}
+
+function buildVerified(
+  overrides: Partial<VerifiedPasskey> = {},
+): VerifiedPasskey {
+  return {
+    x: Buffer.alloc(32, 0xab),
+    y: Buffer.alloc(32, 0xcd),
+    credentialId: Buffer.from('credential-id-bytes'),
+    rpId: 'app.safe.global',
+    alg: -7,
+    ...overrides,
+  };
+}
+
+function buildDto(
+  overrides: Partial<{
+    rpId: string;
+    origin: string;
+    verifiers: string;
+  }> = {},
+): Parameters<PasskeysService['register']>[0] {
+  return {
+    rpId: overrides.rpId ?? 'app.safe.global',
+    origin: overrides.origin ?? 'https://app.safe.global',
+    verifiers: overrides.verifiers ?? VERIFIERS_HEX,
+    attestationObject: 'a-b64url-string',
+    clientDataJSON: 'a-b64url-string',
+    challenge: 'a-b64url-string',
+  };
+}
+
+interface Mocks {
+  attestation: jest.Mocked<Pick<PasskeyAttestationService, 'verify'>>;
+  repo: jest.Mocked<IPasskeysRepository>;
+  service: PasskeysService;
+}
+
+function buildService(): Mocks {
+  const attestation = {
+    verify: jest.fn(),
+  } as jest.Mocked<Pick<PasskeyAttestationService, 'verify'>>;
+  const repo: jest.Mocked<IPasskeysRepository> = {
+    create: jest.fn(),
+    findByCredentialId: jest.fn(),
+  };
+  const service = new PasskeysService(
+    buildConfig(),
+    repo,
+    attestation as unknown as PasskeyAttestationService,
+  );
+  return { attestation, repo, service };
+}
+
+describe('PasskeysService.register', () => {
+  it('returns 201 when the row is newly inserted', async () => {
+    const { attestation, repo, service } = buildService();
+    const verified = buildVerified();
+    attestation.verify.mockResolvedValue(verified);
+    repo.create.mockResolvedValue({
+      status: 'created',
+      record: {
+        ...verified,
+        verifiers: Buffer.from(VERIFIERS_HEX.slice(2), 'hex'),
+        createdAt: new Date('2026-01-01T00:00:00Z'),
+      },
+    });
+
+    const outcome = await service.register(buildDto());
+
+    expect(outcome.status).toBe(HttpStatus.CREATED);
+    expect(outcome.body.x).toBe(`0x${'ab'.repeat(32)}`);
+    expect(outcome.body.y).toBe(`0x${'cd'.repeat(32)}`);
+    expect(outcome.body.verifiers).toBe(VERIFIERS_HEX);
+  });
+
+  it('returns 200 when the existing row is identical', async () => {
+    const { attestation, repo, service } = buildService();
+    const verified = buildVerified();
+    attestation.verify.mockResolvedValue(verified);
+    repo.create.mockResolvedValue({
+      status: 'identical',
+      record: {
+        ...verified,
+        verifiers: Buffer.from(VERIFIERS_HEX.slice(2), 'hex'),
+        createdAt: new Date('2026-01-01T00:00:00Z'),
+      },
+    });
+
+    const outcome = await service.register(buildDto());
+    expect(outcome.status).toBe(HttpStatus.OK);
+  });
+
+  it('returns 403 PASSKEY_VERIFIERS_NOT_ALLOWED when verifiers is not allowlisted', async () => {
+    const { attestation, service } = buildService();
+    const dto = buildDto({ verifiers: `0x${'00'.repeat(22)}` });
+    await expect(service.register(dto)).rejects.toMatchObject({
+      status: HttpStatus.FORBIDDEN,
+      response: { code: 'PASSKEY_VERIFIERS_NOT_ALLOWED' },
+    });
+    expect(attestation.verify).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    [
+      'PASSKEY_RPID_NOT_ALLOWED',
+      HttpStatus.FORBIDDEN,
+      'PASSKEY_RPID_NOT_ALLOWED',
+    ],
+    [
+      'PASSKEY_ORIGIN_NOT_ALLOWED',
+      HttpStatus.FORBIDDEN,
+      'PASSKEY_ORIGIN_NOT_ALLOWED',
+    ],
+    [
+      'PASSKEY_NOT_CREATE_TYPE',
+      HttpStatus.BAD_REQUEST,
+      'PASSKEY_NOT_CREATE_TYPE',
+    ],
+    [
+      'PASSKEY_MALFORMED_ATTESTATION',
+      HttpStatus.BAD_REQUEST,
+      'PASSKEY_MALFORMED_ATTESTATION',
+    ],
+    [
+      'PASSKEY_UNSUPPORTED_KEY',
+      HttpStatus.BAD_REQUEST,
+      'PASSKEY_UNSUPPORTED_KEY',
+    ],
+    [
+      'PASSKEY_RPID_MISMATCH',
+      HttpStatus.BAD_REQUEST,
+      'PASSKEY_RPID_MISMATCH',
+    ],
+    [
+      'PASSKEY_ATTESTATION_INVALID',
+      HttpStatus.UNPROCESSABLE_ENTITY,
+      'PASSKEY_ATTESTATION_INVALID',
+    ],
+    [
+      'PASSKEY_VERIFICATION_TIMEOUT',
+      HttpStatus.SERVICE_UNAVAILABLE,
+      'PASSKEY_VERIFICATION_TIMEOUT',
+    ],
+  ] as const)(
+    'maps attestation error %s to HTTP %d with code %s',
+    async (errorId, status, code) => {
+      const { attestation, service } = buildService();
+      attestation.verify.mockRejectedValue(
+        new PasskeyAttestationError(errorId),
+      );
+      await expect(service.register(buildDto())).rejects.toMatchObject({
+        status,
+        response: { code },
+      });
+    },
+  );
+
+  it.each([
+    ['conflict' as const, 'PASSKEY_CONFLICT'],
+    ['cross_rp_conflict' as const, 'PASSKEY_CROSS_RP_CONFLICT'],
+  ])('returns 409 %s', async (status, code) => {
+    const { attestation, repo, service } = buildService();
+    attestation.verify.mockResolvedValue(buildVerified());
+    repo.create.mockResolvedValue({ status });
+    await expect(service.register(buildDto())).rejects.toMatchObject({
+      status: HttpStatus.CONFLICT,
+      response: { code },
+    });
+  });
+
+  it('maps unexpected attestation errors to 500 PASSKEY_INTERNAL_ERROR', async () => {
+    const { attestation, service } = buildService();
+    attestation.verify.mockRejectedValue(new Error('boom'));
+    await expect(service.register(buildDto())).rejects.toMatchObject({
+      status: HttpStatus.INTERNAL_SERVER_ERROR,
+      response: { code: 'PASSKEY_INTERNAL_ERROR' },
+    });
+  });
+});
