@@ -70,7 +70,7 @@
     "nestjs-cls": "6.2.0",
     "pg": "8.18.0",
     "postgres": "3.4.7",
-    "redis": "5.10.0",
+    "redis": "5.12.1",
     "reflect-metadata": "0.2.2",
     "rxjs": "7.8.2",
     "sanitize-html": "2.17.0",
