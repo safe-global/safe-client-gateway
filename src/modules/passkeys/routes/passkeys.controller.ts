@@ -8,6 +8,7 @@ import {
   Param,
   Post,
   Res,
+  UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import {
@@ -31,6 +32,8 @@ import {
   RegisterPasskeyDtoEntity,
   RegisterPasskeySchema,
 } from '@/modules/passkeys/routes/entities/register-passkey.dto.entity';
+import { PasskeysLookupRateLimitGuard } from '@/modules/passkeys/routes/guards/passkeys-lookup-rate-limit.guard';
+import { PasskeysRegistrationRateLimitGuard } from '@/modules/passkeys/routes/guards/passkeys-registration-rate-limit.guard';
 import { PasskeysLookupCacheInterceptor } from '@/modules/passkeys/routes/interceptors/passkeys-lookup-cache.interceptor';
 import { PasskeysService } from '@/modules/passkeys/routes/passkeys.service';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
@@ -80,6 +83,7 @@ export class PasskeysController {
       'Attestation verification timed out (slow cert-chain validation).',
   })
   @Post()
+  @UseGuards(PasskeysRegistrationRateLimitGuard)
   // Default 201; the service may downgrade to 200 for idempotent re-POST.
   @HttpCode(HttpStatus.CREATED)
   public async register(
@@ -107,6 +111,7 @@ export class PasskeysController {
   @ApiNotFoundResponse({ description: 'No record for this credentialId.' })
   @ApiTooManyRequestsResponse({ description: 'Per-IP rate limit exceeded.' })
   @Get(':credentialId')
+  @UseGuards(PasskeysLookupRateLimitGuard)
   @UseInterceptors(PasskeysLookupCacheInterceptor)
   public async lookup(
     @Param('credentialId') credentialId: string,
