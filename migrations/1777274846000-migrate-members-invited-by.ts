@@ -22,7 +22,7 @@ export class MigrateMembersInvitedBy1777274846000
         WHERE "invited_by" IS NOT NULL
           AND NOT EXISTS (
             SELECT 1 FROM "wallets"
-            WHERE "wallets"."address" = "members"."invited_by"
+            WHERE LOWER("wallets"."address") = LOWER("members"."invited_by")
           );
         IF unresolvable > 0 THEN
           RAISE EXCEPTION '% members have unresolvable invited_by addresses',
@@ -36,7 +36,7 @@ export class MigrateMembersInvitedBy1777274846000
       UPDATE "members" m
       SET "invited_by_user_id" = (
         SELECT w."user_id" FROM "wallets" w
-        WHERE w."address" = m."invited_by"
+        WHERE LOWER(w."address") = LOWER(m."invited_by")
       )
       WHERE m."invited_by" IS NOT NULL
     `);
