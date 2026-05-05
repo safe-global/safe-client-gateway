@@ -27,6 +27,7 @@ import {
   ApiUnprocessableEntityResponse,
 } from '@nestjs/swagger';
 import type { Response } from 'express';
+import { PasskeyErrorResponse } from '@/modules/passkeys/routes/entities/passkey-error.dto.entity';
 import { PasskeyRecordResponse } from '@/modules/passkeys/routes/entities/passkey-record.dto.entity';
 import {
   RegisterPasskeyDtoEntity,
@@ -65,22 +66,30 @@ export class PasskeysController {
   @ApiBadRequestResponse({
     description:
       'Malformed input, unsupported COSE key, RP-ID mismatch, or non-create clientDataJSON.',
+    type: PasskeyErrorResponse,
   })
   @ApiForbiddenResponse({
     description:
       'rpId, origin, or verifiers value is not in the configured allowlist.',
+    type: PasskeyErrorResponse,
   })
   @ApiUnprocessableEntityResponse({
     description: 'Attestation signature did not verify.',
+    type: PasskeyErrorResponse,
   })
   @ApiConflictResponse({
     description:
       'A different record already exists for this credentialId (PASSKEY_CONFLICT or PASSKEY_CROSS_RP_CONFLICT).',
+    type: PasskeyErrorResponse,
   })
-  @ApiTooManyRequestsResponse({ description: 'Per-IP rate limit exceeded.' })
+  @ApiTooManyRequestsResponse({
+    description: 'Per-IP rate limit exceeded.',
+    type: PasskeyErrorResponse,
+  })
   @ApiServiceUnavailableResponse({
     description:
       'Attestation verification timed out (slow cert-chain validation).',
+    type: PasskeyErrorResponse,
   })
   @Post()
   @UseGuards(PasskeysRegistrationRateLimitGuard)
@@ -106,10 +115,32 @@ export class PasskeysController {
     description:
       'WebAuthn credentialId, base64url-encoded (no padding). 1..1023 decoded bytes.',
   })
-  @ApiOkResponse({ type: PasskeyRecordResponse })
-  @ApiBadRequestResponse({ description: 'Malformed credentialId.' })
-  @ApiNotFoundResponse({ description: 'No record for this credentialId.' })
-  @ApiTooManyRequestsResponse({ description: 'Per-IP rate limit exceeded.' })
+  @ApiOkResponse({
+    type: PasskeyRecordResponse,
+    headers: {
+      'Cache-Control': {
+        description:
+          'public, max-age=86400, s-maxage=2592000, immutable — rows are immutable.',
+        schema: { type: 'string' },
+      },
+      ETag: {
+        description: 'First 16 bytes of credentialId as hex.',
+        schema: { type: 'string' },
+      },
+    },
+  })
+  @ApiBadRequestResponse({
+    description: 'Malformed credentialId.',
+    type: PasskeyErrorResponse,
+  })
+  @ApiNotFoundResponse({
+    description: 'No record for this credentialId.',
+    type: PasskeyErrorResponse,
+  })
+  @ApiTooManyRequestsResponse({
+    description: 'Per-IP rate limit exceeded.',
+    type: PasskeyErrorResponse,
+  })
   @Get(':credentialId')
   @UseGuards(PasskeysLookupRateLimitGuard)
   @UseInterceptors(PasskeysLookupCacheInterceptor)
